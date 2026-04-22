@@ -30,6 +30,7 @@ export interface GridDimensions {
 
 export interface GridAnchor {
   x: number
+  y: number
   z: number
 }
 

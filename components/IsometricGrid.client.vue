@@ -49,7 +49,6 @@ const selectedPokemon = computed(
 
 const scene = new THREE.Scene()
 const raycaster = new THREE.Raycaster()
-const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0)
 const gridGroup = new THREE.Group()
 const worldGroup = new THREE.Group()
 const previewGroup = new THREE.Group()
@@ -313,7 +312,7 @@ const buildRenderObject = (pokemon: SpawnedPokemon): PokemonRenderObject => {
   proxy.userData.pokemonId = pokemon.id
 
   const center = getPokemonCenter(pokemon)
-  const currentCenter = new THREE.Vector3(center.x, 0, center.z)
+  const currentCenter = new THREE.Vector3(center.x, center.y, center.z)
   const targetCenter = currentCenter.clone()
 
   worldGroup.add(volume)
@@ -338,18 +337,18 @@ const buildRenderObject = (pokemon: SpawnedPokemon): PokemonRenderObject => {
 const applyRenderObjectPosition = (renderObject: PokemonRenderObject) => {
   renderObject.sprite.position.set(
     renderObject.currentCenter.x,
-    renderObject.height / 2,
+    renderObject.currentCenter.y + renderObject.height / 2,
     renderObject.currentCenter.z,
   )
   renderObject.volume.position.set(
     renderObject.currentCenter.x,
-    renderObject.clearance / 2,
+    renderObject.currentCenter.y + renderObject.clearance / 2,
     renderObject.currentCenter.z,
   )
   renderObject.edges.position.copy(renderObject.volume.position)
   renderObject.proxy.position.set(
     renderObject.currentCenter.x,
-    Math.max(renderObject.height, renderObject.clearance) / 2,
+    renderObject.currentCenter.y + Math.max(renderObject.height, renderObject.clearance) / 2,
     renderObject.currentCenter.z,
   )
 }
@@ -395,7 +394,7 @@ const syncPokemonObjects = () => {
     }
 
     const center = getPokemonCenter(pokemon)
-    renderObject.targetCenter.set(center.x, 0, center.z)
+    renderObject.targetCenter.set(center.x, center.y, center.z)
   }
 
   refreshPokemonStyles()
@@ -517,11 +516,11 @@ const updatePreviewAtAnchor = (anchor: GridAnchor | null) => {
   const reachable = Boolean(path)
   const center = getAnchorCenter(anchor, selected.base)
 
-  ghostSprite.position.set(center.x, selected.height / 2, center.z)
+  ghostSprite.position.set(center.x, anchor.y + selected.height / 2, center.z)
   ghostSprite.visible = true
   ghostSprite.element.classList.toggle('is-invalid', !reachable)
 
-  previewVolume.position.set(center.x, selected.clearance / 2, center.z)
+  previewVolume.position.set(center.x, anchor.y + selected.clearance / 2, center.z)
   previewVolume.material.color.set(reachable ? 0xfbbf24 : 0xf87171)
   previewVolume.material.opacity = reachable ? 0.12 : 0.1
   previewVolume.visible = true
@@ -534,7 +533,7 @@ const updatePreviewAtAnchor = (anchor: GridAnchor | null) => {
     const points =
       path?.map((step) => {
         const waypoint = getAnchorCenter(step, selected.base)
-        return new THREE.Vector3(waypoint.x, 0.08, waypoint.z)
+        return new THREE.Vector3(waypoint.x, waypoint.y + selected.clearance / 2, waypoint.z)
       }) ?? []
 
     previewPathLine.geometry.dispose()
@@ -579,20 +578,69 @@ const pickPokemonId = (event: MouseEvent | PointerEvent) => {
   return (hit?.userData.pokemonId as string | undefined) ?? null
 }
 
-const getGroundIntersection = (event: MouseEvent | PointerEvent) => {
+const getMoveGridIntersection = (event: MouseEvent | PointerEvent) => {
   if (!camera) {
     return null
   }
 
   setPointerFromEvent(event)
-  const point = new THREE.Vector3()
-  const hit = raycaster.ray.intersectPlane(groundPlane, point)
 
-  if (!hit) {
-    return null
+  const intersections: Array<{ point: THREE.Vector3; distance: number }> = []
+  const rayOrigin = raycaster.ray.origin
+
+  for (let y = 0; y <= props.dimensions.y; y += 1) {
+    const point = new THREE.Vector3()
+
+    if (!raycaster.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 1, 0), -y), point)) {
+      continue
+    }
+
+    if (point.x < 0 || point.x > props.dimensions.x || point.z < 0 || point.z > props.dimensions.z) {
+      continue
+    }
+
+    intersections.push({
+      point: point.clone(),
+      distance: rayOrigin.distanceToSquared(point),
+    })
   }
 
-  return point
+  for (let x = 0; x <= props.dimensions.x; x += 1) {
+    const point = new THREE.Vector3()
+
+    if (!raycaster.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(1, 0, 0), -x), point)) {
+      continue
+    }
+
+    if (point.y < 0 || point.y > props.dimensions.y || point.z < 0 || point.z > props.dimensions.z) {
+      continue
+    }
+
+    intersections.push({
+      point: point.clone(),
+      distance: rayOrigin.distanceToSquared(point),
+    })
+  }
+
+  for (let z = 0; z <= props.dimensions.z; z += 1) {
+    const point = new THREE.Vector3()
+
+    if (!raycaster.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 0, 1), -z), point)) {
+      continue
+    }
+
+    if (point.x < 0 || point.x > props.dimensions.x || point.y < 0 || point.y > props.dimensions.y) {
+      continue
+    }
+
+    intersections.push({
+      point: point.clone(),
+      distance: rayOrigin.distanceToSquared(point),
+    })
+  }
+
+  intersections.sort((left, right) => left.distance - right.distance)
+  return intersections[0]?.point ?? null
 }
 
 const updatePreviewFromPointer = (event: MouseEvent | PointerEvent) => {
@@ -601,25 +649,25 @@ const updatePreviewFromPointer = (event: MouseEvent | PointerEvent) => {
     return
   }
 
-  const point = getGroundIntersection(event)
+  const point = getMoveGridIntersection(event)
 
-  if (
-    !point ||
-    point.x < 0 ||
-    point.x > props.dimensions.x ||
-    point.z < 0 ||
-    point.z > props.dimensions.z ||
-    props.dimensions.x < selectedPokemon.value.base ||
-    props.dimensions.z < selectedPokemon.value.base
-  ) {
+  if (!point) {
     clearPreviewVisuals()
     return
   }
 
   const maxX = props.dimensions.x - selectedPokemon.value.base
+  const maxY = props.dimensions.y - selectedPokemon.value.clearance
   const maxZ = props.dimensions.z - selectedPokemon.value.base
+
+  if (maxX < 0 || maxY < 0 || maxZ < 0) {
+    clearPreviewVisuals()
+    return
+  }
+
   const anchor = {
     x: Math.min(maxX, Math.max(0, Math.round(point.x - selectedPokemon.value.base / 2))),
+    y: Math.min(maxY, Math.max(0, Math.round(point.y - selectedPokemon.value.clearance / 2))),
     z: Math.min(maxZ, Math.max(0, Math.round(point.z - selectedPokemon.value.base / 2))),
   }
 

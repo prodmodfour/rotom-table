@@ -82,7 +82,7 @@ const spawnPokemon = (entry: PokemonCatalogEntry) => {
     reachable: false,
     pathLength: 0,
   }
-  setStatus(`Spawned ${entry.species} at (${position.x}, ${position.z}).`)
+  setStatus(`Spawned ${entry.species} at (${position.x}, ${position.y}, ${position.z}).`)
 }
 
 const selectPokemon = (id: string | null) => {
@@ -127,14 +127,14 @@ const movePokemon = (payload: { id: string; position: GridAnchor }) => {
   )
 
   selectPokemon(null)
-  setStatus(`Moved ${target.species} to (${payload.position.x}, ${payload.position.z}).`)
+  setStatus(`Moved ${target.species} to (${payload.position.x}, ${payload.position.y}, ${payload.position.z}).`)
 }
 
 const updatePreview = (nextPreview: PreviewState) => {
   previewState.value = nextPreview
 }
 
-const formatPosition = (position: GridAnchor) => `(${position.x}, ${position.z})`
+const formatPosition = (position: GridAnchor) => `(${position.x}, ${position.y}, ${position.z})`
 
 watch(
   () => [gridDimensions.x, gridDimensions.y, gridDimensions.z] as const,
@@ -163,6 +163,7 @@ watch(
           !current ||
           current.id !== pokemon.id ||
           current.position.x !== pokemon.position.x ||
+          current.position.y !== pokemon.position.y ||
           current.position.z !== pokemon.position.z
         )
       })
