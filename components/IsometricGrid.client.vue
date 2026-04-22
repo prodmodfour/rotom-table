@@ -735,6 +735,7 @@ onMounted(() => {
   controls = new OrbitControls(camera, renderer.domElement)
   controls.enablePan = false
   controls.enableDamping = true
+  controls.zoomToCursor = true
   controls.minPolarAngle = ISO_POLAR_ANGLE
   controls.maxPolarAngle = ISO_POLAR_ANGLE
   controls.minZoom = 0.4
