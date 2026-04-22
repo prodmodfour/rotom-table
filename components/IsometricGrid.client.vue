@@ -638,7 +638,6 @@ const handleLeftClick = (event: PointerEvent) => {
   }
 
   if (hitId) {
-    emit('select-pokemon', hitId === props.selectedId ? null : hitId)
     return
   }
 
