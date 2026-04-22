@@ -46,6 +46,7 @@ const EMPTY_PREVIEW: PreviewState = {
 }
 
 const container = ref<HTMLDivElement | null>(null)
+const contextMenu = ref<{ x: number; y: number; id: string } | null>(null)
 const selectedPokemon = computed(
   () => props.pokemons.find((pokemon) => pokemon.id === props.selectedId) ?? null,
 )
@@ -730,7 +731,38 @@ const updatePreviewFromPointer = (event: MouseEvent | PointerEvent) => {
   updatePreviewAtAnchor(anchor)
 }
 
+const closeContextMenu = () => {
+  contextMenu.value = null
+}
+
+const openContextMenu = (event: MouseEvent, id: string) => {
+  if (!container.value) {
+    return
+  }
+
+  const bounds = container.value.getBoundingClientRect()
+  const menuWidth = 160
+  const menuHeight = 52
+  const padding = 12
+
+  contextMenu.value = {
+    id,
+    x: Math.min(bounds.width - menuWidth - padding, Math.max(padding, event.clientX - bounds.left)),
+    y: Math.min(bounds.height - menuHeight - padding, Math.max(padding, event.clientY - bounds.top)),
+  }
+}
+
+const handleContextDelete = () => {
+  if (!contextMenu.value) {
+    return
+  }
+
+  emit('delete-pokemon', contextMenu.value.id)
+  closeContextMenu()
+}
+
 const handleLeftClick = (event: PointerEvent) => {
+  closeContextMenu()
   const hitId = pickPokemonId(event)
 
   if (!props.selectedId) {
@@ -753,12 +785,16 @@ const handleRightClick = (event: MouseEvent) => {
   event.preventDefault()
   const hitId = pickPokemonId(event)
 
-  if (hitId) {
-    emit('delete-pokemon', hitId)
+  if (!hitId) {
+    closeContextMenu()
+    return
   }
+
+  openContextMenu(event, hitId)
 }
 
 const handlePointerDown = (event: PointerEvent) => {
+  closeContextMenu()
   pointerDown = { x: event.clientX, y: event.clientY }
   pointerTravel = 0
 }
@@ -812,6 +848,11 @@ const handlePointerUp = (event: PointerEvent) => {
 
 const handleEscape = (event: KeyboardEvent) => {
   if (event.key === 'Escape') {
+    if (contextMenu.value) {
+      closeContextMenu()
+      return
+    }
+
     emit('select-pokemon', null)
   }
 }
@@ -973,6 +1014,7 @@ watch(
 
     if (!selectedPokemon.value) {
       clearPreviewVisuals()
+      closeContextMenu()
       disposeObject3D(ghostSprite)
       disposeObject3D(previewElevationBadge)
       disposeObject3D(previewVolume)
@@ -1014,7 +1056,19 @@ watch(
 </script>
 
 <template>
-  <div ref="container" class="scene-root" />
+  <div ref="container" class="scene-root">
+    <div
+      v-if="contextMenu"
+      class="context-menu"
+      :style="{ left: `${contextMenu.x}px`, top: `${contextMenu.y}px` }"
+      @contextmenu.prevent
+      @pointerdown.stop
+    >
+      <button type="button" class="context-menu__button" @click.stop="handleContextDelete">
+        Delete
+      </button>
+    </div>
+  </div>
 </template>
 
 <style scoped>
@@ -1026,5 +1080,33 @@ watch(
   background:
     radial-gradient(circle at top, rgba(37, 99, 235, 0.12), transparent 40%),
     linear-gradient(180deg, rgba(3, 10, 23, 0.55), rgba(5, 13, 27, 0.92));
+}
+
+.context-menu {
+  position: absolute;
+  z-index: 8;
+  min-width: 160px;
+  padding: 0.45rem;
+  border: 1px solid rgba(96, 165, 250, 0.25);
+  border-radius: 14px;
+  background: rgba(7, 18, 39, 0.96);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(8px);
+}
+
+.context-menu__button {
+  width: 100%;
+  border: 1px solid rgba(96, 165, 250, 0.2);
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.92);
+  color: #eff6ff;
+  padding: 0.65rem 0.8rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.context-menu__button:hover {
+  border-color: rgba(125, 211, 252, 0.7);
+  background: rgba(17, 38, 70, 0.96);
 }
 </style>
