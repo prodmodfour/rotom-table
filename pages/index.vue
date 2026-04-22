@@ -188,11 +188,6 @@ watch(
 <template>
   <div class="layout-shell">
     <aside class="sidebar">
-      <header class="hero-card">
-        <p class="eyebrow">Rotom Table</p>
-        <h1>Nuxt 3 Pokémon Isometric Grid</h1>
-      </header>
-
       <section class="panel-card">
         <div class="panel-heading">
           <h2>Grid dimensions</h2>
@@ -354,7 +349,6 @@ watch(
   min-height: 100vh;
 }
 
-.hero-card,
 .panel-card {
   border: 1px solid rgba(96, 165, 250, 0.22);
   border-radius: 18px;
@@ -363,17 +357,8 @@ watch(
   padding: 1rem;
 }
 
-.hero-card h1,
 .panel-heading h2 {
   margin: 0;
-}
-
-.eyebrow {
-  margin: 0 0 0.5rem;
-  text-transform: uppercase;
-  letter-spacing: 0.16em;
-  font-size: 0.75rem;
-  color: #7dd3fc;
 }
 
 .status-copy {
