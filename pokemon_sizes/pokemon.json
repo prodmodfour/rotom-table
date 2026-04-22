@@ -770,10 +770,10 @@
   {
     "species": "Onix",
     "size": "Huge",
-    "width": 8.32,
-    "height": 8.8,
+    "width": 3,
+    "height": 6,
     "base": 3,
-    "clearance": 9
+    "clearance": 6
   },
   {
     "species": "Paras",
