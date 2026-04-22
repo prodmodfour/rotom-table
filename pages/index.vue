@@ -78,6 +78,7 @@ const spawnEntry = (entry: PokemonCatalogEntry) => {
       ...entry,
       id: createPokemonId(),
       position,
+      turned: false,
     },
   ]
 
@@ -113,6 +114,25 @@ const deletePokemon = (id: string) => {
   if (target) {
     setStatus(`Removed ${target.species} from the board.`)
   }
+}
+
+const turnPokemon = (id: string) => {
+  const target = spawnedPokemon.value.find((pokemon) => pokemon.id === id)
+
+  if (!target) {
+    return
+  }
+
+  spawnedPokemon.value = spawnedPokemon.value.map((pokemon) =>
+    pokemon.id === id
+      ? {
+          ...pokemon,
+          turned: !pokemon.turned,
+        }
+      : pokemon,
+  )
+
+  setStatus(`Turned ${target.species}.`)
 }
 
 const movePokemon = (payload: { id: string; position: GridAnchor }) => {
@@ -344,6 +364,7 @@ watch(
           :selected-id="selectedId"
           @select-pokemon="selectPokemon"
           @move-pokemon="movePokemon"
+          @turn-pokemon="turnPokemon"
           @delete-pokemon="deletePokemon"
           @preview-change="updatePreview"
         />

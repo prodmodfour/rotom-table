@@ -32,6 +32,7 @@ export const trainerCatalog: PokemonCatalogEntry[] = (trainerData as TrainerSize
       clearance: entry.clearance,
       slug: entry.slug,
       spriteUrl: `/trainer-sprites/${sprite.local_path.replace(/^sprites\//, '')}`,
+      entityKind: 'trainer',
       spriteCrop:
         sprite.canvas_width &&
         sprite.canvas_height &&

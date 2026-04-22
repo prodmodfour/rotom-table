@@ -16,6 +16,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (event: 'select-pokemon', id: string | null): void
   (event: 'move-pokemon', payload: { id: string; position: GridAnchor }): void
+  (event: 'turn-pokemon', id: string): void
   (event: 'delete-pokemon', id: string): void
   (event: 'preview-change', preview: PreviewState): void
 }>()
@@ -33,12 +34,19 @@ interface PokemonRenderObject {
   base: number
   clearance: number
   elevation: number
+  spriteUrl: string
+  backSpriteUrl?: string
+  turned: boolean
 }
 
 const SPRITE_PIXELS_PER_METRE = 128
 const ELEVATION_BADGE_PIXELS_PER_METRE = 48
 const ISO_POLAR_ANGLE = THREE.MathUtils.degToRad(54.735610317245346)
 const ISO_AZIMUTH_ANGLE = THREE.MathUtils.degToRad(45)
+const DEFAULT_FACING_DIRECTION = new THREE.Vector2(
+  Math.cos(ISO_AZIMUTH_ANGLE),
+  Math.sin(ISO_AZIMUTH_ANGLE),
+)
 const EMPTY_PREVIEW: PreviewState = {
   position: null,
   reachable: false,
@@ -46,7 +54,7 @@ const EMPTY_PREVIEW: PreviewState = {
 }
 
 const container = ref<HTMLDivElement | null>(null)
-const contextMenu = ref<{ x: number; y: number; id: string } | null>(null)
+const contextMenu = ref<{ x: number; y: number; id: string; canTurn: boolean } | null>(null)
 const selectedPokemon = computed(
   () => props.pokemons.find((pokemon) => pokemon.id === props.selectedId) ?? null,
 )
@@ -176,6 +184,47 @@ const buildElevationBadge = (ghost = false) => {
   badge.scale.setScalar(1 / ELEVATION_BADGE_PIXELS_PER_METRE)
   badge.visible = false
   return badge
+}
+
+const getSpriteImageElement = (sprite: CSS3DSprite) =>
+  sprite.element.querySelector('img') as HTMLImageElement | null
+
+const shouldUseFrontSprite = (center: THREE.Vector3, turned = false) => {
+  if (!camera) {
+    return true
+  }
+
+  const toCamera = new THREE.Vector2(camera.position.x - center.x, camera.position.z - center.z)
+
+  if (toCamera.lengthSq() === 0) {
+    return true
+  }
+
+  toCamera.normalize()
+  const facing = DEFAULT_FACING_DIRECTION.clone().multiplyScalar(turned ? -1 : 1)
+
+  return facing.dot(toCamera) >= 0
+}
+
+const updateSpriteFacing = (
+  sprite: CSS3DSprite,
+  center: THREE.Vector3,
+  frontSpriteUrl: string,
+  backSpriteUrl?: string,
+  turned = false,
+) => {
+  const image = getSpriteImageElement(sprite)
+
+  if (!image) {
+    return
+  }
+
+  const nextSrc = backSpriteUrl && !shouldUseFrontSprite(center, turned) ? backSpriteUrl : frontSpriteUrl
+
+  if (image.dataset.currentSrc !== nextSrc) {
+    image.src = nextSrc
+    image.dataset.currentSrc = nextSrc
+  }
 }
 
 const disposeObject3D = (object: THREE.Object3D | null) => {
@@ -401,6 +450,9 @@ const buildRenderObject = (pokemon: SpawnedPokemon): PokemonRenderObject => {
     base: pokemon.base,
     clearance: pokemon.clearance,
     elevation: pokemon.position.y,
+    spriteUrl: pokemon.spriteUrl,
+    backSpriteUrl: pokemon.backSpriteUrl,
+    turned: Boolean(pokemon.turned),
   }
 }
 
@@ -473,6 +525,9 @@ const syncPokemonObjects = () => {
     const center = getPokemonCenter(pokemon)
     renderObject.targetCenter.set(center.x, center.y, center.z)
     renderObject.elevation = pokemon.position.y
+    renderObject.spriteUrl = pokemon.spriteUrl
+    renderObject.backSpriteUrl = pokemon.backSpriteUrl
+    renderObject.turned = Boolean(pokemon.turned)
   }
 
   refreshPokemonStyles()
@@ -740,16 +795,28 @@ const openContextMenu = (event: MouseEvent, id: string) => {
     return
   }
 
+  const target = props.pokemons.find((pokemon) => pokemon.id === id)
+  const canTurn = Boolean(target?.entityKind === 'pokemon' && target.backSpriteUrl)
   const bounds = container.value.getBoundingClientRect()
-  const menuWidth = 160
-  const menuHeight = 52
+  const menuWidth = 180
+  const menuHeight = canTurn ? 96 : 52
   const padding = 12
 
   contextMenu.value = {
     id,
+    canTurn,
     x: Math.min(bounds.width - menuWidth - padding, Math.max(padding, event.clientX - bounds.left)),
     y: Math.min(bounds.height - menuHeight - padding, Math.max(padding, event.clientY - bounds.top)),
   }
+}
+
+const handleContextTurn = () => {
+  if (!contextMenu.value) {
+    return
+  }
+
+  emit('turn-pokemon', contextMenu.value.id)
+  closeContextMenu()
 }
 
 const handleContextDelete = () => {
@@ -878,6 +945,32 @@ const animate = () => {
   }
 
   controls.update()
+
+  for (const renderObject of renderObjects.values()) {
+    updateSpriteFacing(
+      renderObject.sprite,
+      renderObject.currentCenter,
+      renderObject.spriteUrl,
+      renderObject.backSpriteUrl,
+      renderObject.turned,
+    )
+  }
+
+  if (ghostSprite && selectedPokemon.value) {
+    const ghostCenter = new THREE.Vector3(
+      ghostSprite.position.x,
+      activePreview.position?.y ?? selectedPokemon.value.position.y,
+      ghostSprite.position.z,
+    )
+    updateSpriteFacing(
+      ghostSprite,
+      ghostCenter,
+      selectedPokemon.value.spriteUrl,
+      selectedPokemon.value.backSpriteUrl,
+      Boolean(selectedPokemon.value.turned),
+    )
+  }
+
   renderer.render(scene, camera)
   cssRenderer.render(scene, camera)
 }
@@ -1064,6 +1157,14 @@ watch(
       @contextmenu.prevent
       @pointerdown.stop
     >
+      <button
+        v-if="contextMenu.canTurn"
+        type="button"
+        class="context-menu__button"
+        @click.stop="handleContextTurn"
+      >
+        Turn sprite
+      </button>
       <button type="button" class="context-menu__button" @click.stop="handleContextDelete">
         Delete
       </button>
@@ -1103,6 +1204,10 @@ watch(
   padding: 0.65rem 0.8rem;
   text-align: left;
   cursor: pointer;
+}
+
+.context-menu__button + .context-menu__button {
+  margin-top: 0.35rem;
 }
 
 .context-menu__button:hover {

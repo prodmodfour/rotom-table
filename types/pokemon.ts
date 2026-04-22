@@ -17,6 +17,15 @@ export interface SpriteManifestRecord {
   bytes: number
 }
 
+export interface BackSpriteManifestRecord {
+  species: string
+  slug: string
+  asset_kind: string
+  remote_url: string
+  local_path: string
+  bytes: number
+}
+
 export interface SpriteCrop {
   canvasWidth: number
   canvasHeight: number
@@ -29,6 +38,8 @@ export interface SpriteCrop {
 export interface PokemonCatalogEntry extends PokemonSizeRecord {
   slug: string
   spriteUrl: string
+  backSpriteUrl?: string
+  entityKind: 'pokemon' | 'trainer'
   spriteCrop?: SpriteCrop
 }
 
@@ -74,4 +85,5 @@ export interface GridAnchor {
 export interface SpawnedPokemon extends PokemonCatalogEntry {
   id: string
   position: GridAnchor
+  turned?: boolean
 }
