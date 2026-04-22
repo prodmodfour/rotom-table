@@ -80,7 +80,7 @@ let pointerDown = { x: 0, y: 0 }
 let pointerTravel = 0
 
 const getSceneTarget = () =>
-  new THREE.Vector3(props.dimensions.x / 2, props.dimensions.y / 2, props.dimensions.z / 2)
+  new THREE.Vector3(props.dimensions.x / 2, 0, props.dimensions.z / 2)
 
 const buildFloorGridGeometry = (dimensions: GridDimensions) => {
   const points: number[] = []
@@ -735,6 +735,7 @@ onMounted(() => {
   controls = new OrbitControls(camera, renderer.domElement)
   controls.enablePan = false
   controls.enableDamping = true
+  controls.screenSpacePanning = false
   controls.zoomToCursor = true
   controls.minPolarAngle = ISO_POLAR_ANGLE
   controls.maxPolarAngle = ISO_POLAR_ANGLE
