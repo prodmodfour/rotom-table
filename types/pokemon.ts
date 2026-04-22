@@ -22,6 +22,27 @@ export interface PokemonCatalogEntry extends PokemonSizeRecord {
   spriteUrl: string
 }
 
+export interface TrainerSizeRecord {
+  trainer: string
+  slug: string
+  width: number
+  height: number
+  base: number
+  clearance: number
+  artist: string | null
+}
+
+export interface TrainerSpriteManifestRecord {
+  trainer: string
+  slug: string
+  artist: string | null
+  remote_url: string
+  local_path: string
+  bytes: number
+  pixel_width: number
+  pixel_height: number
+}
+
 export interface GridDimensions {
   x: number
   y: number

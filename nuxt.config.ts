@@ -15,6 +15,10 @@ export default defineNuxtConfig({
         dir: resolve(process.cwd(), 'pokemon_sizes/sprites'),
         baseURL: '/sprites',
       },
+      {
+        dir: resolve(process.cwd(), 'trainer_sizes/sprites'),
+        baseURL: '/trainer-sprites',
+      },
     ],
   },
   app: {

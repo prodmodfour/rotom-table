@@ -2,6 +2,7 @@
 import { computed, reactive, ref, watch } from 'vue'
 import IsometricGrid from '~/components/IsometricGrid.client.vue'
 import { pokemonCatalog } from '~/data/pokemonCatalog'
+import { trainerCatalog } from '~/data/trainerCatalog'
 import type { GridAnchor, GridDimensions, PokemonCatalogEntry, SpawnedPokemon } from '~/types/pokemon'
 import type { PreviewState } from '~/utils/grid'
 import {
@@ -18,6 +19,7 @@ const gridDimensions = reactive<GridDimensions>({
 })
 
 const searchTerm = ref('')
+const trainerSearchTerm = ref('')
 const spawnedPokemon = ref<SpawnedPokemon[]>([])
 const selectedId = ref<string | null>(null)
 const previewState = ref<PreviewState>({
@@ -27,21 +29,21 @@ const previewState = ref<PreviewState>({
 })
 const statusMessage = ref('')
 
-const filteredPokemon = computed(() => {
-  const query = searchTerm.value.trim().toLowerCase()
-  const entries = [...pokemonCatalog]
+const filterCatalogEntries = (entries: PokemonCatalogEntry[], query: string) => {
+  const normalizedQuery = query.trim().toLowerCase()
+  const catalogEntries = [...entries]
 
-  if (!query) {
-    return entries
+  if (!normalizedQuery) {
+    return catalogEntries
   }
 
-  return entries
-    .filter((entry) => entry.species.toLowerCase().includes(query))
+  return catalogEntries
+    .filter((entry) => entry.species.toLowerCase().includes(normalizedQuery))
     .sort((left, right) => {
       const leftName = left.species.toLowerCase()
       const rightName = right.species.toLowerCase()
-      const leftStarts = leftName.startsWith(query) ? 0 : 1
-      const rightStarts = rightName.startsWith(query) ? 0 : 1
+      const leftStarts = leftName.startsWith(normalizedQuery) ? 0 : 1
+      const rightStarts = rightName.startsWith(normalizedQuery) ? 0 : 1
 
       if (leftStarts !== rightStarts) {
         return leftStarts - rightStarts
@@ -49,7 +51,10 @@ const filteredPokemon = computed(() => {
 
       return leftName.localeCompare(rightName)
     })
-})
+}
+
+const filteredPokemon = computed(() => filterCatalogEntries(pokemonCatalog, searchTerm.value))
+const filteredTrainers = computed(() => filterCatalogEntries(trainerCatalog, trainerSearchTerm.value))
 
 const selectedPokemon = computed(
   () => spawnedPokemon.value.find((pokemon) => pokemon.id === selectedId.value) ?? null,
@@ -59,7 +64,7 @@ const setStatus = (message: string) => {
   statusMessage.value = message
 }
 
-const spawnPokemon = (entry: PokemonCatalogEntry) => {
+const spawnEntry = (entry: PokemonCatalogEntry) => {
   const position = findFirstAvailablePosition(entry, spawnedPokemon.value, gridDimensions)
 
   if (!position) {
@@ -177,7 +182,7 @@ watch(
 
     if (reconciliation.removedIds.length > 0) {
       setStatus(
-        `Grid resized. ${reconciliation.removedIds.length} Pokémon no longer fit and were removed.`,
+        `Grid resized. ${reconciliation.removedIds.length} board pieces no longer fit and were removed.`,
       )
     }
   },
@@ -225,10 +230,38 @@ watch(
         <div class="spawn-results">
           <button
             v-for="entry in filteredPokemon"
-            :key="entry.species"
+            :key="entry.slug"
             class="spawn-row"
             type="button"
-            @click="spawnPokemon(entry)"
+            @click="spawnEntry(entry)"
+          >
+            <span class="spawn-name">{{ entry.species }}</span>
+            <span class="spawn-meta">
+              {{ entry.width.toFixed(2) }}m × {{ entry.height.toFixed(2) }}m sprite ·
+              {{ entry.base }} × {{ entry.base }} base · {{ entry.clearance }}m clearance
+            </span>
+          </button>
+        </div>
+      </section>
+
+      <section class="panel-card grow-panel">
+        <div class="panel-heading">
+          <h2>Spawn Trainers</h2>
+          <span class="badge">{{ filteredTrainers.length }} shown</span>
+        </div>
+
+        <label class="search-field">
+          <span class="sr-only">Search Trainers</span>
+          <input v-model.trim="trainerSearchTerm" type="search" placeholder="Search trainers…" />
+        </label>
+
+        <div class="spawn-results">
+          <button
+            v-for="entry in filteredTrainers"
+            :key="entry.slug"
+            class="spawn-row"
+            type="button"
+            @click="spawnEntry(entry)"
           >
             <span class="spawn-name">{{ entry.species }}</span>
             <span class="spawn-meta">
