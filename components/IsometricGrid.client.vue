@@ -46,11 +46,6 @@ const container = ref<HTMLDivElement | null>(null)
 const selectedPokemon = computed(
   () => props.pokemons.find((pokemon) => pokemon.id === props.selectedId) ?? null,
 )
-const overlayText = computed(() =>
-  selectedPokemon.value
-    ? `Moving ${selectedPokemon.value.species}: hover to preview, left click to place.`
-    : 'Drag to rotate · Scroll to zoom · Left click to select · Right click to delete.',
-)
 
 const scene = new THREE.Scene()
 const raycaster = new THREE.Raycaster()
@@ -879,12 +874,7 @@ watch(
 </script>
 
 <template>
-  <div ref="container" class="scene-root">
-    <div class="scene-overlay">
-      <p>{{ overlayText }}</p>
-      <p class="scene-subtle">Grid uses 1 metre squares. Pokémon occupancy is based on base × base × clearance.</p>
-    </div>
-  </div>
+  <div ref="container" class="scene-root" />
 </template>
 
 <style scoped>
@@ -896,32 +886,5 @@ watch(
   background:
     radial-gradient(circle at top, rgba(37, 99, 235, 0.12), transparent 40%),
     linear-gradient(180deg, rgba(3, 10, 23, 0.55), rgba(5, 13, 27, 0.92));
-}
-
-.scene-overlay {
-  position: absolute;
-  top: 1rem;
-  left: 1rem;
-  z-index: 5;
-  max-width: 26rem;
-  pointer-events: none;
-  border: 1px solid rgba(96, 165, 250, 0.22);
-  border-radius: 16px;
-  background: rgba(5, 15, 33, 0.7);
-  padding: 0.8rem 0.95rem;
-  backdrop-filter: blur(8px);
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.2);
-}
-
-.scene-overlay p {
-  margin: 0;
-  color: rgba(226, 242, 255, 0.92);
-  line-height: 1.45;
-}
-
-.scene-subtle {
-  margin-top: 0.35rem !important;
-  color: rgba(191, 219, 254, 0.72) !important;
-  font-size: 0.86rem;
 }
 </style>
