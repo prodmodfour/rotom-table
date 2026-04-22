@@ -288,7 +288,7 @@
     "artist": null
   },
   {
-    "trainer": "Aurora",
+    "trainer": "acetrainersnowf",
     "slug": "acetrainersnowf",
     "width": 1.15,
     "height": 1.75,
@@ -864,6 +864,15 @@
     "artist": "ZacWeavile"
   },
   {
+    "trainer": "Aurora",
+    "slug": "aurora",
+    "width": 1.15,
+    "height": 1.75,
+    "base": 1,
+    "clearance": 2,
+    "artist": null
+  },
+  {
     "trainer": "avery",
     "slug": "avery",
     "width": 0.85,
@@ -936,7 +945,7 @@
     "artist": "kyledove"
   },
   {
-    "trainer": "Hassan",
+    "trainer": "backpacker-gen9",
     "slug": "backpacker-gen9",
     "width": 1.18,
     "height": 1.78,
@@ -2785,6 +2794,15 @@
     "slug": "clair-masters",
     "width": 1.15,
     "height": 1.93,
+    "base": 1,
+    "clearance": 2,
+    "artist": "kyledove"
+  },
+  {
+    "trainer": "Clara",
+    "slug": "clara",
+    "width": 1.8,
+    "height": 1.5,
     "base": 1,
     "clearance": 2,
     "artist": "kyledove"
@@ -5004,6 +5022,15 @@
     "artist": "kyledove"
   },
   {
+    "trainer": "Hassan",
+    "slug": "hassan",
+    "width": 1.18,
+    "height": 1.78,
+    "base": 1,
+    "clearance": 2,
+    "artist": "kyledove"
+  },
+  {
     "trainer": "hassel",
     "slug": "hassel",
     "width": 0.78,
@@ -5112,7 +5139,7 @@
     "artist": null
   },
   {
-    "trainer": "Clara",
+    "trainer": "hexmaniac-gen6",
     "slug": "hexmaniac-gen6",
     "width": 1.8,
     "height": 1.5,
@@ -6480,6 +6507,15 @@
     "artist": null
   },
   {
+    "trainer": "Lenora Vask",
+    "slug": "lenora-vask",
+    "width": 0.53,
+    "height": 1.8,
+    "base": 1,
+    "clearance": 2,
+    "artist": "kyledove"
+  },
+  {
     "trainer": "leon",
     "slug": "leon",
     "width": 1.9,
@@ -7054,6 +7090,15 @@
     "base": 1,
     "clearance": 2,
     "artist": "Gnomowladny"
+  },
+  {
+    "trainer": "Marilena",
+    "slug": "marilena",
+    "width": 0.98,
+    "height": 1.85,
+    "base": 1,
+    "clearance": 2,
+    "artist": null
   },
   {
     "trainer": "marley",
@@ -8127,7 +8172,7 @@
     "artist": "kyledove"
   },
   {
-    "trainer": "Lenora Vask",
+    "trainer": "officeworkerf-gen9",
     "slug": "officeworkerf-gen9",
     "width": 0.53,
     "height": 1.8,
@@ -10485,7 +10530,7 @@
     "artist": "kyledove"
   },
   {
-    "trainer": "Marilena",
+    "trainer": "scientist",
     "slug": "scientist",
     "width": 0.85,
     "height": 1.88,

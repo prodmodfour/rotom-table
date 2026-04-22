@@ -320,7 +320,7 @@
     "pixel_height": 72
   },
   {
-    "trainer": "Aurora",
+    "trainer": "acetrainersnowf",
     "slug": "acetrainersnowf",
     "artist": null,
     "remote_url": "https://play.pokemonshowdown.com/sprites/trainers/acetrainersnowf.png",
@@ -960,6 +960,16 @@
     "pixel_height": 46
   },
   {
+    "trainer": "Aurora",
+    "slug": "aurora",
+    "artist": null,
+    "remote_url": "https://play.pokemonshowdown.com/sprites/trainers/acetrainersnowf.png",
+    "local_path": "sprites/showdown/trainers/acetrainersnowf.png",
+    "bytes": 738,
+    "pixel_width": 46,
+    "pixel_height": 70
+  },
+  {
     "trainer": "avery",
     "slug": "avery",
     "artist": "Brumirage",
@@ -1040,7 +1050,7 @@
     "pixel_height": 75
   },
   {
-    "trainer": "Hassan",
+    "trainer": "backpacker-gen9",
     "slug": "backpacker-gen9",
     "artist": "kyledove",
     "remote_url": "https://play.pokemonshowdown.com/sprites/trainers/backpacker-gen9.png",
@@ -3098,6 +3108,16 @@
     "bytes": 908,
     "pixel_width": 46,
     "pixel_height": 77
+  },
+  {
+    "trainer": "Clara",
+    "slug": "clara",
+    "artist": "kyledove",
+    "remote_url": "https://play.pokemonshowdown.com/sprites/trainers/hexmaniac-gen6.png",
+    "local_path": "sprites/showdown/trainers/hexmaniac-gen6.png",
+    "bytes": 897,
+    "pixel_width": 72,
+    "pixel_height": 60
   },
   {
     "trainer": "clavell-s",
@@ -5560,6 +5580,16 @@
     "pixel_height": 70
   },
   {
+    "trainer": "Hassan",
+    "slug": "hassan",
+    "artist": "kyledove",
+    "remote_url": "https://play.pokemonshowdown.com/sprites/trainers/backpacker-gen9.png",
+    "local_path": "sprites/showdown/trainers/backpacker-gen9.png",
+    "bytes": 888,
+    "pixel_width": 47,
+    "pixel_height": 71
+  },
+  {
     "trainer": "hassel",
     "slug": "hassel",
     "artist": "kyledove",
@@ -5680,7 +5710,7 @@
     "pixel_height": 61
   },
   {
-    "trainer": "Clara",
+    "trainer": "hexmaniac-gen6",
     "slug": "hexmaniac-gen6",
     "artist": "kyledove",
     "remote_url": "https://play.pokemonshowdown.com/sprites/trainers/hexmaniac-gen6.png",
@@ -7200,6 +7230,16 @@
     "pixel_height": 78
   },
   {
+    "trainer": "Lenora Vask",
+    "slug": "lenora-vask",
+    "artist": "kyledove",
+    "remote_url": "https://play.pokemonshowdown.com/sprites/trainers/officeworkerf-gen9.png",
+    "local_path": "sprites/showdown/trainers/officeworkerf-gen9.png",
+    "bytes": 569,
+    "pixel_width": 21,
+    "pixel_height": 72
+  },
+  {
     "trainer": "leon",
     "slug": "leon",
     "artist": "Brumirage",
@@ -7838,6 +7878,16 @@
     "bytes": 685,
     "pixel_width": 30,
     "pixel_height": 78
+  },
+  {
+    "trainer": "Marilena",
+    "slug": "marilena",
+    "artist": null,
+    "remote_url": "https://play.pokemonshowdown.com/sprites/trainers/scientistf.png",
+    "local_path": "sprites/showdown/trainers/scientistf.png",
+    "bytes": 719,
+    "pixel_width": 39,
+    "pixel_height": 74
   },
   {
     "trainer": "marley",
@@ -9030,7 +9080,7 @@
     "pixel_height": 71
   },
   {
-    "trainer": "Lenora Vask",
+    "trainer": "officeworkerf-gen9",
     "slug": "officeworkerf-gen9",
     "artist": "kyledove",
     "remote_url": "https://play.pokemonshowdown.com/sprites/trainers/officeworkerf-gen9.png",
@@ -11650,7 +11700,7 @@
     "pixel_height": 59
   },
   {
-    "trainer": "Marilena",
+    "trainer": "scientist",
     "slug": "scientist",
     "artist": null,
     "remote_url": "https://play.pokemonshowdown.com/sprites/trainers/scientist.png",
