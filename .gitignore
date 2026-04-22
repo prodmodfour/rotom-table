@@ -1,0 +1,12 @@
+node_modules
+.nuxt
+.nuxt-dev
+.nuxt-build
+.output
+.nitro
+.cache
+.playwright-cli
+.DS_Store
+.env
+.env.*
+!.env.example
