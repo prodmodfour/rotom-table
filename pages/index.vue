@@ -191,10 +191,6 @@ watch(
       <header class="hero-card">
         <p class="eyebrow">Rotom Table</p>
         <h1>Nuxt 3 Pokémon Isometric Grid</h1>
-        <p class="hero-copy">
-          Spawn animated Pokémon sprites, rotate the tabletop, preview grid paths, and move creatures
-          around a 1 metre per square three.js board.
-        </p>
       </header>
 
       <section class="panel-card">
@@ -218,9 +214,6 @@ watch(
           </label>
         </div>
 
-        <p class="hint-copy">
-          X/Z define the floor footprint. Y controls the visible vertical grid and Pokémon clearance volume.
-        </p>
       </section>
 
       <section class="panel-card grow-panel">
@@ -257,11 +250,7 @@ watch(
           <span class="badge">{{ spawnedPokemon.length }}</span>
         </div>
 
-        <p v-if="spawnedPokemon.length === 0" class="empty-copy">
-          Nothing on the table yet. Search the Pokédex above and spawn something in.
-        </p>
-
-        <div v-else class="roster-list">
+        <div v-if="spawnedPokemon.length > 0" class="roster-list">
           <article
             v-for="pokemon in spawnedPokemon"
             :key="pokemon.id"
@@ -287,11 +276,6 @@ watch(
           <h2>Move mode</h2>
           <span class="badge active">{{ selectedPokemon.species }}</span>
         </div>
-
-        <p class="hint-copy">
-          Hover the board to preview a path. The current sprite stays solid and a ghost shows the target
-          location. Left click to place, or press the button below to cancel.
-        </p>
 
         <dl class="preview-grid">
           <div>
@@ -392,9 +376,6 @@ watch(
   color: #7dd3fc;
 }
 
-.hero-copy,
-.hint-copy,
-.empty-copy,
 .status-copy {
   margin: 0.75rem 0 0;
   color: rgba(219, 234, 254, 0.8);
