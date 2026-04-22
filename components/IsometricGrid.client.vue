@@ -22,6 +22,7 @@ const emit = defineEmits<{
 
 interface PokemonRenderObject {
   sprite: CSS3DSprite
+  elevationBadge: CSS3DSprite
   volume: THREE.Mesh<THREE.BoxGeometry, THREE.MeshBasicMaterial>
   edges: THREE.LineSegments
   proxy: THREE.Mesh<THREE.BoxGeometry, THREE.MeshBasicMaterial>
@@ -31,9 +32,11 @@ interface PokemonRenderObject {
   height: number
   base: number
   clearance: number
+  elevation: number
 }
 
 const SPRITE_PIXELS_PER_METRE = 128
+const ELEVATION_BADGE_PIXELS_PER_METRE = 48
 const ISO_POLAR_ANGLE = THREE.MathUtils.degToRad(54.735610317245346)
 const ISO_AZIMUTH_ANGLE = THREE.MathUtils.degToRad(45)
 const EMPTY_PREVIEW: PreviewState = {
@@ -69,6 +72,7 @@ let floorGridLines: THREE.LineSegments | null = null
 let moveGridLines: THREE.LineSegments | null = null
 let floorPlane: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial> | null = null
 let ghostSprite: CSS3DSprite | null = null
+let previewElevationBadge: CSS3DSprite | null = null
 let previewVolume: THREE.Mesh<THREE.BoxGeometry, THREE.MeshBasicMaterial> | null = null
 let previewEdges: THREE.LineSegments | null = null
 let previewPathLine: THREE.Line | null = null
@@ -77,6 +81,8 @@ let activePreview: PreviewState = { ...EMPTY_PREVIEW }
 let activePreviewAnchor: GridAnchor | null = null
 let pointerDown = { x: 0, y: 0 }
 let pointerTravel = 0
+
+const getPreviewLayerY = () => activePreviewAnchor?.y ?? selectedPokemon.value?.position.y ?? 0
 
 const getSceneTarget = () =>
   new THREE.Vector3(props.dimensions.x / 2, 0, props.dimensions.z / 2)
@@ -144,6 +150,19 @@ const buildSprite = (pokemon: SpawnedPokemon, ghost = false) => {
   sprite.scale.setScalar(1 / SPRITE_PIXELS_PER_METRE)
   sprite.visible = true
   return sprite
+}
+
+const buildElevationBadge = (ghost = false) => {
+  const wrapper = document.createElement('div')
+  wrapper.className = `elevation-badge${ghost ? ' is-ghost' : ''}`
+  wrapper.setAttribute('aria-hidden', 'true')
+  wrapper.style.pointerEvents = 'none'
+
+  const badge = new CSS3DSprite(wrapper)
+  badge.element.style.pointerEvents = 'none'
+  badge.scale.setScalar(1 / ELEVATION_BADGE_PIXELS_PER_METRE)
+  badge.visible = false
+  return badge
 }
 
 const disposeObject3D = (object: THREE.Object3D | null) => {
@@ -257,7 +276,7 @@ const buildGrid = () => {
     new THREE.LineBasicMaterial({
       color: 0x2d7cff,
       transparent: true,
-      opacity: 0.16,
+      opacity: 0.01,
     }),
   )
   gridGroup.add(moveGridLines)
@@ -279,8 +298,43 @@ const buildGrid = () => {
   updateGridVisibility()
 }
 
+const getElevationBadgeOffset = (center: THREE.Vector3, base: number) => {
+  const inset = Math.min(0.18, base / 4)
+  const edgeOffset = Math.max(base / 2 - inset, 0)
+
+  if (!camera) {
+    return {
+      x: edgeOffset,
+      z: edgeOffset,
+    }
+  }
+
+  return {
+    x: (camera.position.x >= center.x ? 1 : -1) * edgeOffset,
+    z: (camera.position.z >= center.z ? 1 : -1) * edgeOffset,
+  }
+}
+
+const updateElevationBadge = (
+  badge: CSS3DSprite,
+  center: THREE.Vector3,
+  base: number,
+  elevation: number,
+) => {
+  if (elevation <= 0) {
+    badge.visible = false
+    return
+  }
+
+  const offset = getElevationBadgeOffset(center, base)
+  badge.position.set(center.x + offset.x, center.y + 0.08, center.z + offset.z)
+  badge.element.textContent = `${elevation} ↑`
+  badge.visible = true
+}
+
 const buildRenderObject = (pokemon: SpawnedPokemon): PokemonRenderObject => {
   const sprite = buildSprite(pokemon)
+  const elevationBadge = buildElevationBadge()
   const volumeGeometry = new THREE.BoxGeometry(pokemon.base, pokemon.clearance, pokemon.base)
   const volumeMaterial = new THREE.MeshBasicMaterial({
     color: 0x2563eb,
@@ -319,9 +373,11 @@ const buildRenderObject = (pokemon: SpawnedPokemon): PokemonRenderObject => {
   worldGroup.add(edges)
   worldGroup.add(proxy)
   scene.add(sprite)
+  scene.add(elevationBadge)
 
   return {
     sprite,
+    elevationBadge,
     volume,
     edges,
     proxy,
@@ -331,6 +387,7 @@ const buildRenderObject = (pokemon: SpawnedPokemon): PokemonRenderObject => {
     height: pokemon.height,
     base: pokemon.base,
     clearance: pokemon.clearance,
+    elevation: pokemon.position.y,
   }
 }
 
@@ -350,6 +407,12 @@ const applyRenderObjectPosition = (renderObject: PokemonRenderObject) => {
     renderObject.currentCenter.x,
     renderObject.currentCenter.y + Math.max(renderObject.height, renderObject.clearance) / 2,
     renderObject.currentCenter.z,
+  )
+  updateElevationBadge(
+    renderObject.elevationBadge,
+    renderObject.currentCenter,
+    renderObject.base,
+    renderObject.elevation,
   )
 }
 
@@ -378,6 +441,7 @@ const syncPokemonObjects = () => {
     }
 
     disposeObject3D(renderObject.sprite)
+    disposeObject3D(renderObject.elevationBadge)
     disposeObject3D(renderObject.volume)
     disposeObject3D(renderObject.edges)
     disposeObject3D(renderObject.proxy)
@@ -395,6 +459,7 @@ const syncPokemonObjects = () => {
 
     const center = getPokemonCenter(pokemon)
     renderObject.targetCenter.set(center.x, center.y, center.z)
+    renderObject.elevation = pokemon.position.y
   }
 
   refreshPokemonStyles()
@@ -408,6 +473,7 @@ const ensurePreviewObjects = () => {
   if (
     previewOwnerId === selectedPokemon.value.id &&
     ghostSprite &&
+    previewElevationBadge &&
     previewVolume &&
     previewEdges &&
     previewPathLine
@@ -416,9 +482,11 @@ const ensurePreviewObjects = () => {
   }
 
   disposeObject3D(ghostSprite)
+  disposeObject3D(previewElevationBadge)
   disposeObject3D(previewVolume)
   disposeObject3D(previewEdges)
   ghostSprite = null
+  previewElevationBadge = null
   previewVolume = null
   previewEdges = null
 
@@ -427,6 +495,10 @@ const ensurePreviewObjects = () => {
   ghostSprite = buildSprite(selected, true)
   ghostSprite.visible = false
   scene.add(ghostSprite)
+
+  previewElevationBadge = buildElevationBadge(true)
+  previewElevationBadge.visible = false
+  scene.add(previewElevationBadge)
 
   previewVolume = new THREE.Mesh(
     new THREE.BoxGeometry(selected.base, selected.clearance, selected.base),
@@ -474,6 +546,10 @@ const clearPreviewVisuals = () => {
     ghostSprite.element.classList.remove('is-invalid')
   }
 
+  if (previewElevationBadge) {
+    previewElevationBadge.visible = false
+  }
+
   if (previewVolume) {
     previewVolume.visible = false
   }
@@ -499,7 +575,7 @@ const updatePreviewAtAnchor = (anchor: GridAnchor | null) => {
 
   ensurePreviewObjects()
 
-  if (!anchor || !ghostSprite || !previewVolume || !previewEdges) {
+  if (!anchor || !ghostSprite || !previewElevationBadge || !previewVolume || !previewEdges) {
     clearPreviewVisuals()
     return
   }
@@ -528,6 +604,13 @@ const updatePreviewAtAnchor = (anchor: GridAnchor | null) => {
   ;(previewEdges.material as THREE.LineBasicMaterial).color.set(reachable ? 0xfef08a : 0xfca5a5)
   previewEdges.position.copy(previewVolume.position)
   previewEdges.visible = true
+
+  updateElevationBadge(
+    previewElevationBadge,
+    new THREE.Vector3(center.x, anchor.y, center.z),
+    selected.base,
+    anchor.y,
+  )
 
   if (previewPathLine) {
     const points =
@@ -578,69 +661,23 @@ const pickPokemonId = (event: MouseEvent | PointerEvent) => {
   return (hit?.userData.pokemonId as string | undefined) ?? null
 }
 
-const getMoveGridIntersection = (event: MouseEvent | PointerEvent) => {
+const getMoveGridIntersection = (event: MouseEvent | PointerEvent, yLevel: number) => {
   if (!camera) {
     return null
   }
 
   setPointerFromEvent(event)
+  const point = new THREE.Vector3()
+  const hit = raycaster.ray.intersectPlane(
+    new THREE.Plane(new THREE.Vector3(0, 1, 0), -yLevel),
+    point,
+  )
 
-  const intersections: Array<{ point: THREE.Vector3; distance: number }> = []
-  const rayOrigin = raycaster.ray.origin
-
-  for (let y = 0; y <= props.dimensions.y; y += 1) {
-    const point = new THREE.Vector3()
-
-    if (!raycaster.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 1, 0), -y), point)) {
-      continue
-    }
-
-    if (point.x < 0 || point.x > props.dimensions.x || point.z < 0 || point.z > props.dimensions.z) {
-      continue
-    }
-
-    intersections.push({
-      point: point.clone(),
-      distance: rayOrigin.distanceToSquared(point),
-    })
+  if (!hit) {
+    return null
   }
 
-  for (let x = 0; x <= props.dimensions.x; x += 1) {
-    const point = new THREE.Vector3()
-
-    if (!raycaster.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(1, 0, 0), -x), point)) {
-      continue
-    }
-
-    if (point.y < 0 || point.y > props.dimensions.y || point.z < 0 || point.z > props.dimensions.z) {
-      continue
-    }
-
-    intersections.push({
-      point: point.clone(),
-      distance: rayOrigin.distanceToSquared(point),
-    })
-  }
-
-  for (let z = 0; z <= props.dimensions.z; z += 1) {
-    const point = new THREE.Vector3()
-
-    if (!raycaster.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 0, 1), -z), point)) {
-      continue
-    }
-
-    if (point.x < 0 || point.x > props.dimensions.x || point.y < 0 || point.y > props.dimensions.y) {
-      continue
-    }
-
-    intersections.push({
-      point: point.clone(),
-      distance: rayOrigin.distanceToSquared(point),
-    })
-  }
-
-  intersections.sort((left, right) => left.distance - right.distance)
-  return intersections[0]?.point ?? null
+  return point
 }
 
 const updatePreviewFromPointer = (event: MouseEvent | PointerEvent) => {
@@ -649,9 +686,16 @@ const updatePreviewFromPointer = (event: MouseEvent | PointerEvent) => {
     return
   }
 
-  const point = getMoveGridIntersection(event)
+  const previewLayerY = getPreviewLayerY()
+  const point = getMoveGridIntersection(event, previewLayerY)
 
-  if (!point) {
+  if (
+    !point ||
+    point.x < 0 ||
+    point.x > props.dimensions.x ||
+    point.z < 0 ||
+    point.z > props.dimensions.z
+  ) {
     clearPreviewVisuals()
     return
   }
@@ -667,7 +711,7 @@ const updatePreviewFromPointer = (event: MouseEvent | PointerEvent) => {
 
   const anchor = {
     x: Math.min(maxX, Math.max(0, Math.round(point.x - selectedPokemon.value.base / 2))),
-    y: Math.min(maxY, Math.max(0, Math.round(point.y - selectedPokemon.value.clearance / 2))),
+    y: Math.min(maxY, Math.max(0, previewLayerY)),
     z: Math.min(maxZ, Math.max(0, Math.round(point.z - selectedPokemon.value.base / 2))),
   }
 
@@ -716,6 +760,34 @@ const handlePointerMove = (event: PointerEvent) => {
   if (selectedPokemon.value) {
     updatePreviewFromPointer(event)
   }
+}
+
+const handleWheel = (event: WheelEvent) => {
+  if (!selectedPokemon.value) {
+    return
+  }
+
+  event.preventDefault()
+  event.stopPropagation()
+
+  const maxY = props.dimensions.y - selectedPokemon.value.clearance
+
+  if (maxY < 0) {
+    return
+  }
+
+  const currentAnchor = activePreview.position ?? selectedPokemon.value.position
+  const direction = event.deltaY < 0 ? 1 : -1
+  const nextY = Math.min(maxY, Math.max(0, currentAnchor.y + direction))
+
+  if (nextY === currentAnchor.y) {
+    return
+  }
+
+  updatePreviewAtAnchor({
+    ...currentAnchor,
+    y: nextY,
+  })
 }
 
 const handlePointerUp = (event: PointerEvent) => {
@@ -785,6 +857,7 @@ onMounted(() => {
   controls.enableDamping = true
   controls.screenSpacePanning = false
   controls.zoomToCursor = true
+  controls.enableZoom = !selectedPokemon.value
   controls.minPolarAngle = ISO_POLAR_ANGLE
   controls.maxPolarAngle = ISO_POLAR_ANGLE
   controls.minZoom = 0.4
@@ -804,6 +877,7 @@ onMounted(() => {
   renderer.domElement.addEventListener('pointermove', handlePointerMove)
   renderer.domElement.addEventListener('pointerup', handlePointerUp)
   renderer.domElement.addEventListener('contextmenu', handleRightClick)
+  renderer.domElement.addEventListener('wheel', handleWheel, { passive: false })
   window.addEventListener('keydown', handleEscape)
 
   resizeObserver = new ResizeObserver(() => {
@@ -823,6 +897,7 @@ onBeforeUnmount(() => {
     renderer.domElement.removeEventListener('pointermove', handlePointerMove)
     renderer.domElement.removeEventListener('pointerup', handlePointerUp)
     renderer.domElement.removeEventListener('contextmenu', handleRightClick)
+    renderer.domElement.removeEventListener('wheel', handleWheel)
   }
 
   resizeObserver?.disconnect()
@@ -830,12 +905,14 @@ onBeforeUnmount(() => {
 
   clearPreviewVisuals()
   disposeObject3D(ghostSprite)
+  disposeObject3D(previewElevationBadge)
   disposeObject3D(previewVolume)
   disposeObject3D(previewEdges)
   disposeObject3D(previewPathLine)
 
   for (const renderObject of renderObjects.values()) {
     disposeObject3D(renderObject.sprite)
+    disposeObject3D(renderObject.elevationBadge)
     disposeObject3D(renderObject.volume)
     disposeObject3D(renderObject.edges)
     disposeObject3D(renderObject.proxy)
@@ -878,12 +955,18 @@ watch(
     refreshPokemonStyles()
     updateGridVisibility()
 
+    if (controls) {
+      controls.enableZoom = !selectedPokemon.value
+    }
+
     if (!selectedPokemon.value) {
       clearPreviewVisuals()
       disposeObject3D(ghostSprite)
+      disposeObject3D(previewElevationBadge)
       disposeObject3D(previewVolume)
       disposeObject3D(previewEdges)
       ghostSprite = null
+      previewElevationBadge = null
       previewVolume = null
       previewEdges = null
       previewOwnerId = null

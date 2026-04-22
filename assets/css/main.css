@@ -55,3 +55,29 @@ button {
   opacity: 0.24;
   filter: saturate(0.7) sepia(0.35) hue-rotate(-25deg) brightness(1.05) drop-shadow(0 0 18px rgba(248, 113, 113, 0.45));
 }
+
+.elevation-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 42px;
+  padding: 3px 7px;
+  border: 1px solid rgba(96, 165, 250, 0.45);
+  border-radius: 999px;
+  background: rgba(7, 22, 45, 0.86);
+  color: #dbeafe;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  user-select: none;
+  pointer-events: none;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.28);
+}
+
+.elevation-badge.is-ghost {
+  opacity: 0.72;
+  border-color: rgba(253, 230, 138, 0.6);
+  background: rgba(80, 58, 10, 0.55);
+  color: #fef3c7;
+}
