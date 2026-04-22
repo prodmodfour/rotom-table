@@ -32,7 +32,7 @@ const filteredPokemon = computed(() => {
   const entries = [...pokemonCatalog]
 
   if (!query) {
-    return entries.slice(0, 80)
+    return entries
   }
 
   return entries
@@ -49,7 +49,6 @@ const filteredPokemon = computed(() => {
 
       return leftName.localeCompare(rightName)
     })
-    .slice(0, 80)
 })
 
 const selectedPokemon = computed(
