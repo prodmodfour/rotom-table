@@ -510,7 +510,7 @@ const updatePreviewAtAnchor = (anchor: GridAnchor | null) => {
     selected,
     selected.position,
     anchor,
-    props.pokemons,
+    [],
     props.dimensions,
     selected.id,
   )
@@ -634,10 +634,6 @@ const handleLeftClick = (event: PointerEvent) => {
       emit('select-pokemon', hitId)
     }
 
-    return
-  }
-
-  if (hitId) {
     return
   }
 
