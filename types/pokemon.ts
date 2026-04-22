@@ -17,9 +17,19 @@ export interface SpriteManifestRecord {
   bytes: number
 }
 
+export interface SpriteCrop {
+  canvasWidth: number
+  canvasHeight: number
+  left: number
+  top: number
+  width: number
+  height: number
+}
+
 export interface PokemonCatalogEntry extends PokemonSizeRecord {
   slug: string
   spriteUrl: string
+  spriteCrop?: SpriteCrop
 }
 
 export interface TrainerSizeRecord {
@@ -41,6 +51,12 @@ export interface TrainerSpriteManifestRecord {
   bytes: number
   pixel_width: number
   pixel_height: number
+  canvas_width?: number
+  canvas_height?: number
+  bbox_left?: number
+  bbox_top?: number
+  bbox_width?: number
+  bbox_height?: number
 }
 
 export interface GridDimensions {

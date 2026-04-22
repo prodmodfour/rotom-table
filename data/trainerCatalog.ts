@@ -27,6 +27,22 @@ export const trainerCatalog: PokemonCatalogEntry[] = (trainerData as TrainerSize
       clearance: entry.clearance,
       slug: entry.slug,
       spriteUrl: `/trainer-sprites/${sprite.local_path.replace(/^sprites\//, '')}`,
+      spriteCrop:
+        sprite.canvas_width &&
+        sprite.canvas_height &&
+        sprite.bbox_width &&
+        sprite.bbox_height &&
+        sprite.bbox_left !== undefined &&
+        sprite.bbox_top !== undefined
+          ? {
+              canvasWidth: sprite.canvas_width,
+              canvasHeight: sprite.canvas_height,
+              left: sprite.bbox_left,
+              top: sprite.bbox_top,
+              width: sprite.bbox_width,
+              height: sprite.bbox_height,
+            }
+          : undefined,
     }
   })
   .filter((entry): entry is PokemonCatalogEntry => entry !== null)

@@ -143,6 +143,18 @@ const buildSprite = (pokemon: SpawnedPokemon, ghost = false) => {
   image.alt = pokemon.species
   image.draggable = false
 
+  if (pokemon.spriteCrop) {
+    wrapper.style.position = 'relative'
+    wrapper.style.overflow = 'hidden'
+
+    image.style.position = 'absolute'
+    image.style.width = `${(pokemon.spriteCrop.canvasWidth / pokemon.spriteCrop.width) * 100}%`
+    image.style.height = `${(pokemon.spriteCrop.canvasHeight / pokemon.spriteCrop.height) * 100}%`
+    image.style.left = `${-(pokemon.spriteCrop.left / pokemon.spriteCrop.width) * 100}%`
+    image.style.top = `${-(pokemon.spriteCrop.top / pokemon.spriteCrop.height) * 100}%`
+    image.style.objectFit = 'fill'
+  }
+
   wrapper.appendChild(image)
 
   const sprite = new CSS3DSprite(wrapper)

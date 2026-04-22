@@ -38,6 +38,12 @@ class TrainerAsset:
     bytes: int
     pixel_width: int
     pixel_height: int
+    canvas_width: int
+    canvas_height: int
+    bbox_left: int
+    bbox_top: int
+    bbox_width: int
+    bbox_height: int
 
 
 def slugify(filename: str) -> str:
@@ -89,12 +95,19 @@ def parse_index(session: requests.Session) -> list[TrainerSource]:
     return unique_entries
 
 
-def get_non_transparent_bbox_size(image_bytes: bytes) -> tuple[int, int]:
+def get_non_transparent_bbox(image_bytes: bytes) -> tuple[int, int, int, int, int, int]:
     image = Image.open(io.BytesIO(image_bytes)).convert('RGBA')
     bbox = image.getchannel('A').getbbox()
     if not bbox:
-        return (1, 1)
-    return (bbox[2] - bbox[0], bbox[3] - bbox[1])
+        return (image.width, image.height, 0, 0, 1, 1)
+    return (
+        image.width,
+        image.height,
+        bbox[0],
+        bbox[1],
+        bbox[2] - bbox[0],
+        bbox[3] - bbox[1],
+    )
 
 
 def download_one(source: TrainerSource) -> TrainerAsset:
@@ -103,13 +116,19 @@ def download_one(source: TrainerSource) -> TrainerAsset:
     response.raise_for_status()
     content = response.content
     local_file.write_bytes(content)
-    pixel_width, pixel_height = get_non_transparent_bbox_size(content)
+    canvas_width, canvas_height, bbox_left, bbox_top, pixel_width, pixel_height = get_non_transparent_bbox(content)
     return TrainerAsset(
         source=source,
         local_path=str(local_file.relative_to(ROOT)).replace('\\', '/'),
         bytes=len(content),
         pixel_width=pixel_width,
         pixel_height=pixel_height,
+        canvas_width=canvas_width,
+        canvas_height=canvas_height,
+        bbox_left=bbox_left,
+        bbox_top=bbox_top,
+        bbox_width=pixel_width,
+        bbox_height=pixel_height,
     )
 
 
@@ -155,6 +174,12 @@ def build_manifest_json(assets: list[TrainerAsset]) -> list[dict[str, Any]]:
                 'bytes': asset.bytes,
                 'pixel_width': asset.pixel_width,
                 'pixel_height': asset.pixel_height,
+                'canvas_width': asset.canvas_width,
+                'canvas_height': asset.canvas_height,
+                'bbox_left': asset.bbox_left,
+                'bbox_top': asset.bbox_top,
+                'bbox_width': asset.bbox_width,
+                'bbox_height': asset.bbox_height,
             }
         )
     return manifest
