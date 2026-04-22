@@ -10,6 +10,11 @@ const manifestByTrainer = new Map(
   (trainerManifest as TrainerSpriteManifestRecord[]).map((entry) => [entry.trainer, entry]),
 )
 
+const featuredTrainerOrder = ['Lenora Vask', 'Hassan', 'Marilena', 'Clara', 'Aurora']
+const featuredTrainerIndex = new Map(
+  featuredTrainerOrder.map((trainer, index) => [trainer, index]),
+)
+
 export const trainerCatalog: PokemonCatalogEntry[] = (trainerData as TrainerSizeRecord[])
   .map((entry) => {
     const sprite = manifestByTrainer.get(entry.trainer)
@@ -46,4 +51,21 @@ export const trainerCatalog: PokemonCatalogEntry[] = (trainerData as TrainerSize
     }
   })
   .filter((entry): entry is PokemonCatalogEntry => entry !== null)
-  .sort((left, right) => left.species.localeCompare(right.species))
+  .sort((left, right) => {
+    const leftFeaturedIndex = featuredTrainerIndex.get(left.species)
+    const rightFeaturedIndex = featuredTrainerIndex.get(right.species)
+
+    if (leftFeaturedIndex !== undefined || rightFeaturedIndex !== undefined) {
+      if (leftFeaturedIndex === undefined) {
+        return 1
+      }
+
+      if (rightFeaturedIndex === undefined) {
+        return -1
+      }
+
+      return leftFeaturedIndex - rightFeaturedIndex
+    }
+
+    return left.species.localeCompare(right.species)
+  })
