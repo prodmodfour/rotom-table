@@ -4,7 +4,7 @@ import sys
 import unicodedata
 from pathlib import Path
 
-DATA_PATH = Path(__file__).resolve().parent.parent / "pokemon_sizes" / "pokemon.json"
+DATA_PATH = Path(__file__).resolve().parent.parent / "ptu-data" / "data" / "pokedex.json"
 
 
 def normalize_name(value: str) -> str:

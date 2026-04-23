@@ -6,6 +6,8 @@ node_modules
 .nitro
 .cache
 .playwright-cli
+__pycache__/
+*.pyc
 .DS_Store
 .env
 .env.*

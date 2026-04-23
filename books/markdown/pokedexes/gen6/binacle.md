@@ -1,0 +1,120 @@
+## Page 379
+
+379
+BINACLE	
+ 
+	
+	
+ Base Stats:
+  HP:	 	
+	
+4
+  Attack:	
+	
+5
+  Defense:	
+	
+7
+  Special Attack:	
+4
+  Special Defense:	
+6
+  Speed: 	
+	
+5
+	
+	
+Basic Information 
+  Type : Rock / Water
+  Basic Ability 1: Tough Claws
+  Basic Ability 2: Sniper
+  Adv Ability 1: Cluster Mind
+  Adv Ability 2: Pickpocket
+  High Ability: Vicious
+  Evolution:
+  1 - Binacle
+  2 - Barbaracle Minimum 35
+	
+	
+	
+Size Information 
+  Height : 1’ 08” / 0.5m (Small)
+  Weight : 68.3 lbs. / 31 kg (3)
+	
+	
+	
+Breeding Information 
+  Gender Ratio  : 50% M / 50% F
+  Egg Group : Water 1 and Water 3
+  Average Hatch Rate: 10 Days
+  Diet : Herbivore
+  Habitat  : Beach, Ocean
+	
+	
+	
+Capability List 
+Overland 2, Swim 4, Jump 1/1, Power 2,  Gilled, 
+Fountain, Underdog
+	
+	
+Skill List
+Athl 2d6, Acro 1d6-1, Combat 2d6, Stealth 3d6+1, 
+Percep 3d6+1, Focus 3d6
+	
+Move List
+Level Up Move List 
+	
+1  Shell Smash - Normal
+	
+1  Scratch - Normal
+	
+1  Sand Attack - Ground
+	
+4  Water Gun - Water
+	
+7  Withdraw - Water
+	
+10  Fury Swipes - Normal
+	
+13  Slash - Normal
+	
+18  Mud-Slap - Ground
+	
+20  Clamp - Water
+	
+24  Rock Polish - Rock
+	
+28  Ancient Power - Rock
+	
+32  Hone Claws - Dark
+	
+37  Fury Cutter - Bug
+	
+41  Night Slash - Dark
+	
+45  Razor Shell - Water
+	
+49  Cross Chop - Fighting
+ 
+TM/HM Move List 
+A1 Cut, A3 Surf, A4 Strength, 01 Hone Claws, 06 
+Toxic, 10 Hidden Power, 12 Taunt, 13 Ice Beam, 14 
+Blizzard, 17 Protect, 18 Rain Dance, 20 Safeguard, 
+21 Frustration, 23 Smack Down, 26 Earthquake, 27 
+Return, 28 Dig, 31 Brick Break, 32 Double Team, 
+34 Sludge Wave, 36 Sludge Bomb, 37 Sandstorm, 39 
+Rock Tomb, 40 Aerial Ace, 41 Torment, 42 Facade, 
+44 Rest, 45 Attract, 48 Round, 54 False Swipe, 55 
+Scald, 56 Fling, 63 Embargo, 65 Shadow Claw, 66 
+Payback, 69 Rock Polish, 71 Stone Edge, 75 Swords 
+Dance, 78 Bulldoze, 80 Rock Slide, 81 X-Scissor, 83 
+Infestation, 84 Poison Jab, 86 Grass Knot, 87 Swag­
+ger, 88 Sleep Talk, 90 Substitute, 94 Rock Smash, 96 
+Nature Power, 98 Power-Up Punch, 100 Confide
+Egg Move List
+Helping Hand, Switcheroo, Tickle, Water Sport
+Tutor Move List 
+Dual Chop, Endeavor, Helping Hand, Icy Wind, Iron 
+Defense, Snore, Stealth Rock, Water Pulse
+
+
