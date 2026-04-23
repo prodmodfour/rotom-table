@@ -292,65 +292,6 @@ watch(
         </div>
       </section>
 
-      <section class="panel-card roster-panel">
-        <div class="panel-heading">
-          <h2>On the board</h2>
-          <span class="badge">{{ spawnedPokemon.length }}</span>
-        </div>
-
-        <div v-if="spawnedPokemon.length > 0" class="roster-list">
-          <article
-            v-for="pokemon in spawnedPokemon"
-            :key="pokemon.id"
-            :class="['roster-row', { active: selectedId === pokemon.id }]"
-          >
-            <button class="roster-main" type="button" @click="selectPokemon(selectedId === pokemon.id ? null : pokemon.id)">
-              <strong>{{ pokemon.species }}</strong>
-              <span>
-                {{ formatPosition(pokemon.position) }} · {{ pokemon.base }} × {{ pokemon.base }} base ·
-                {{ pokemon.clearance }}m clearance
-              </span>
-            </button>
-
-            <button class="delete-button" type="button" @click="deletePokemon(pokemon.id)">
-              Delete
-            </button>
-          </article>
-        </div>
-      </section>
-
-      <section v-if="selectedPokemon" class="panel-card accent-card">
-        <div class="panel-heading">
-          <h2>Move mode</h2>
-          <span class="badge active">{{ selectedPokemon.species }}</span>
-        </div>
-
-        <dl class="preview-grid">
-          <div>
-            <dt>Current</dt>
-            <dd>{{ formatPosition(selectedPokemon.position) }}</dd>
-          </div>
-          <div>
-            <dt>Preview</dt>
-            <dd>
-              {{ previewState.position ? formatPosition(previewState.position) : '—' }}
-            </dd>
-          </div>
-          <div>
-            <dt>Reachable</dt>
-            <dd>{{ previewState.reachable ? 'Yes' : 'No' }}</dd>
-          </div>
-          <div>
-            <dt>Path length</dt>
-            <dd>{{ previewState.pathLength }}</dd>
-          </div>
-        </dl>
-
-        <button class="secondary-button" type="button" @click="selectPokemon(null)">
-          Cancel move
-        </button>
-      </section>
-
       <p v-if="statusMessage" class="status-copy">
         {{ statusMessage }}
       </p>
