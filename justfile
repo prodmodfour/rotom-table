@@ -1,3 +1,52 @@
+# Show available just commands and common usage.
+default:
+    @printf '%s\n' \
+      'Available just commands:' \
+      '' \
+      '  just' \
+      '  just default' \
+      '      Show this help.' \
+      '' \
+      '  just trainer "<name>"' \
+      '      Lookup a trainer sprite entry.' \
+      '' \
+      '  just encounter' \
+      '      List available regions.' \
+      '' \
+      '  just encounter <region>' \
+      '      List encounter tables in a region.' \
+      '' \
+      '  just encounter <region> <table>' \
+      '      Show entries in an encounter table.' \
+      '' \
+      '  just encounter <region> <table> <count>' \
+      '      Roll encounters and generate PTU stat blocks.' \
+      '' \
+      '  just encounter <region> <table> <count> preview' \
+      '      Preview generated stat blocks in stdout without writing files.' \
+      '' \
+      '  just encounter <region> <table> <count> "" <out_root>' \
+      '      Write generated files under a custom output root.' \
+      '' \
+      '  just encounter --clear' \
+      '  just encounter --clear <out_root>' \
+      '      Clear generated encounter output folders.' \
+      '' \
+      '  just pokemon "<pokemon name>"' \
+      '  just ability "<ability name>"' \
+      '  just move "<move name>"' \
+      '  just capability "<capability name>"' \
+      '  just condition "<condition name>"' \
+      '  just item "<item name>"' \
+      '  just rule "<rule name>"' \
+      '      Lookup PTU reference data.' \
+      '' \
+      '  just rebuild-reference-cache' \
+      '      Rebuild capability, condition, item, and rule lookup caches.'
+
+help:
+    @just default
+
 trainer +name:
     @python3 scripts/trainer_lookup.py {{quote(name)}}
     
