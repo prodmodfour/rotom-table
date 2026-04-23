@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Download back sprite assets corresponding to pokemon_sizes/sprite_manifest.json."""
+"""Download back sprite assets corresponding to data/pokemonSpriteManifest.json."""
 
 from __future__ import annotations
 
@@ -10,9 +10,11 @@ from typing import Any
 
 import requests
 
-ROOT = Path(__file__).resolve().parent
-FRONT_MANIFEST_PATH = ROOT / 'sprite_manifest.json'
-BACK_MANIFEST_PATH = ROOT / 'back_sprite_manifest.json'
+SCRIPT_DIR = Path(__file__).resolve().parent
+REPO_ROOT = SCRIPT_DIR.parent
+PUBLIC_ROOT = REPO_ROOT / 'public'
+FRONT_MANIFEST_PATH = REPO_ROOT / 'data' / 'pokemonSpriteManifest.json'
+BACK_MANIFEST_PATH = REPO_ROOT / 'data' / 'pokemonBackSpriteManifest.json'
 MAX_WORKERS = 16
 USER_AGENT = 'rotom-table back sprite downloader'
 
@@ -58,7 +60,7 @@ def download_one(entry: dict[str, Any]) -> dict[str, Any]:
     response = requests.get(remote_url, headers={'User-Agent': USER_AGENT}, timeout=60)
     response.raise_for_status()
 
-    target = ROOT / local_path
+    target = PUBLIC_ROOT / local_path
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_bytes(response.content)
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Download local sprite assets for pokemon_sizes.
+"""Download local Pokémon sprite assets.
 
 Selection rules:
 - Gen 1-5: prefer animated Black/White GIF sprites from PokémonDB.
@@ -9,14 +9,14 @@ Selection rules:
 - If a Gen 6+ form does not have a public animated GIF in Showdown, fall back
   to Showdown's /sprites/afd/ static PNG for that exact form.
 
-Files are stored locally under pokemon_sizes/sprites/.
+Files are stored locally under public/sprites/.
 
 Examples:
-- pokemon_sizes/sprites/black-white/anim/normal/abra.gif
-- pokemon_sizes/sprites/showdown/ani/palafin-hero.gif
-- pokemon_sizes/sprites/showdown/afd/ogerpon-cornerstone.png
+- public/sprites/black-white/anim/normal/abra.gif
+- public/sprites/showdown/ani/palafin-hero.gif
+- public/sprites/showdown/afd/ogerpon-cornerstone.png
 
-A manifest is written to pokemon_sizes/sprite_manifest.json.
+A manifest is written to data/pokemonSpriteManifest.json.
 """
 
 from __future__ import annotations
@@ -24,6 +24,7 @@ from __future__ import annotations
 import json
 import re
 import shutil
+import unicodedata
 from collections import Counter
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
@@ -31,19 +32,61 @@ from typing import Iterable
 
 import requests
 
-from fill_x_from_sprites import (  # type: ignore
-    BW_EXACT_SPRITE_SLUGS,
-    GEN_1_TO_5,
-    USER_AGENT,
-    add_extra_species_from_pokemondb,
-    build_species_map_from_markdown,
-    load_current_entries,
-)
-
-ROOT = Path(__file__).resolve().parent
-SPRITE_ROOT = ROOT / "sprites"
-MANIFEST_PATH = ROOT / "sprite_manifest.json"
+SCRIPT_DIR = Path(__file__).resolve().parent
+REPO_ROOT = SCRIPT_DIR.parent
+PUBLIC_ROOT = REPO_ROOT / "public"
+SPRITE_ROOT = PUBLIC_ROOT / "sprites"
+MANIFEST_PATH = REPO_ROOT / "data" / "pokemonSpriteManifest.json"
+POKEDEX_PATH = REPO_ROOT / "ptu-data" / "data" / "pokedex.json"
 MAX_WORKERS = 16
+USER_AGENT = "rotom-table sprite downloader"
+GEN_1_TO_5 = {"gen1", "gen2", "gen3", "gen4", "gen5"}
+BW_EXACT_SPRITE_SLUGS: dict[str, str] = {}
+
+
+def has_placement_data(entry: dict) -> bool:
+    return all(entry.get(field) is not None for field in ("width", "height", "base", "clearance"))
+
+
+def slugify_species(species: str) -> str:
+    slug = unicodedata.normalize("NFKD", species)
+    slug = slug.replace("’", "'").replace("♀", "-f").replace("♂", "-m")
+    slug = slug.lower()
+    slug = re.sub(r"[^a-z0-9]+", "-", slug)
+    return slug.strip("-")
+
+
+def load_current_entries() -> list[dict]:
+    pokedex = json.loads(POKEDEX_PATH.read_text(encoding="utf-8"))
+    return [entry for entry in pokedex if isinstance(entry, dict) and entry.get("species") and has_placement_data(entry)]
+
+
+def load_existing_manifest() -> dict[str, dict]:
+    if not MANIFEST_PATH.exists():
+        return {}
+    manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
+    return {
+        entry["species"]: entry
+        for entry in manifest
+        if isinstance(entry, dict) and entry.get("species")
+    }
+
+
+def build_species_map_from_markdown() -> dict[str, dict[str, str | None]]:
+    existing_manifest = load_existing_manifest()
+    species_map: dict[str, dict[str, str | None]] = {}
+    for entry in load_current_entries():
+        species = entry["species"]
+        manifest_entry = existing_manifest.get(species, {})
+        species_map[species] = {
+            "slug": str(manifest_entry.get("slug") or slugify_species(species)),
+            "source_gen": manifest_entry.get("source_gen") or entry.get("source_gen"),
+        }
+    return species_map
+
+
+def add_extra_species_from_pokemondb(species_map: dict[str, dict[str, str | None]]) -> None:
+    return
 
 SHOWDOWN_ANI_INDEX_URL = "https://play.pokemonshowdown.com/sprites/ani/?sort=name"
 SHOWDOWN_AFD_INDEX_URL = "https://play.pokemonshowdown.com/sprites/afd/?sort=name"
@@ -294,7 +337,7 @@ def download_one(species: str, slug: str, source_gen: str) -> dict:
                     "source_gen": source_gen,
                     "asset_kind": "animated-gif",
                     "remote_url": url,
-                    "local_path": local_path.relative_to(ROOT).as_posix(),
+                    "local_path": local_path.relative_to(PUBLIC_ROOT).as_posix(),
                     "bytes": len(response.content),
                 }
             last_error = f"{response.status_code} for {url}"
@@ -313,7 +356,7 @@ def download_one(species: str, slug: str, source_gen: str) -> dict:
                     "source_gen": source_gen,
                     "asset_kind": "static-png-fallback",
                     "remote_url": url,
-                    "local_path": local_path.relative_to(ROOT).as_posix(),
+                    "local_path": local_path.relative_to(PUBLIC_ROOT).as_posix(),
                     "bytes": len(response.content),
                 }
             last_error = f"{response.status_code} for {url}"
@@ -332,7 +375,7 @@ def download_one(species: str, slug: str, source_gen: str) -> dict:
         "source_gen": source_gen,
         "asset_kind": asset_kind,
         "remote_url": url,
-        "local_path": local_path.relative_to(ROOT).as_posix(),
+        "local_path": local_path.relative_to(PUBLIC_ROOT).as_posix(),
         "bytes": len(response.content),
     }
 

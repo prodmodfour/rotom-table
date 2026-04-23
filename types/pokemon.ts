@@ -7,6 +7,18 @@ export interface PokemonSizeRecord {
   clearance: number
 }
 
+export interface PokedexRecord {
+  species: string
+  size?: string
+  width?: number
+  height?: number
+  base?: number
+  clearance?: number
+  types?: string[]
+  source_gen?: string
+  [key: string]: unknown
+}
+
 export interface SpriteManifestRecord {
   species: string
   slug: string
