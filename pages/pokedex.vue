@@ -80,14 +80,6 @@ const isPlacementOnly = computed(() => {
   return !selectedEntry.value.base_stats && !selectedEntry.value.abilities && !selectedEntry.value.level_up_moves
 })
 
-const rawEntry = computed(() => {
-  if (!selectedEntry.value) {
-    return ''
-  }
-
-  return JSON.stringify(selectedEntry.value, null, 2)
-})
-
 const genderSummary = computed(() => {
   const entry = selectedEntry.value
 
@@ -141,12 +133,12 @@ const typeSummary = computed(() => selectedEntry.value?.types?.join(' / ') ?? 'U
         </div>
 
         <p class="sidebar-copy">
-          Browse every Pokémon cache entry currently stored in <code>ptu-data/data/pokedex.json</code>.
+          Browse every Pokémon entry from <code>ptu-data/data/pokedex.json</code>.
         </p>
 
         <label class="search-field">
           <span class="sr-only">Search the Pokédex</span>
-          <input v-model.trim="searchTerm" type="search" placeholder="Search species, type, or source gen…" />
+          <input v-model.trim="searchTerm" type="search" placeholder="Search species, type, or gen…" />
         </label>
 
         <div v-if="filteredEntries.length > 0" class="entry-list">
@@ -397,13 +389,6 @@ const typeSummary = computed(() => selectedEntry.value?.types?.join(' / ') ?? 'U
             <p v-else class="empty-state">No level-up moves recorded.</p>
           </section>
 
-          <section class="panel-card detail-wide">
-            <div class="panel-heading compact">
-              <h3>Raw Cache Entry</h3>
-            </div>
-
-            <pre class="json-block">{{ rawEntry }}</pre>
-          </section>
         </div>
       </template>
 
@@ -418,15 +403,15 @@ const typeSummary = computed(() => selectedEntry.value?.types?.join(' / ') ?? 'U
 <style scoped>
 .pokedex-layout {
   display: grid;
-  grid-template-columns: minmax(320px, 380px) minmax(0, 1fr);
+  grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
   min-height: 100vh;
 }
 
 .pokedex-sidebar {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  padding: 1rem;
+  gap: 0.85rem;
+  padding: 0.85rem;
   border-right: 1px solid rgba(96, 165, 250, 0.2);
   background:
     linear-gradient(180deg, rgba(4, 13, 30, 0.98), rgba(5, 11, 24, 0.94)),
@@ -437,10 +422,10 @@ const typeSummary = computed(() => selectedEntry.value?.types?.join(' / ') ?? 'U
 
 .pokedex-detail {
   min-width: 0;
-  padding: 1rem;
+  padding: 0.85rem;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.85rem;
   background:
     radial-gradient(circle at top, rgba(37, 99, 235, 0.1), transparent 35%),
     #050d1b;
@@ -451,7 +436,7 @@ const typeSummary = computed(() => selectedEntry.value?.types?.join(' / ') ?? 'U
   border-radius: 18px;
   background: rgba(8, 20, 43, 0.82);
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.22);
-  padding: 1rem;
+  padding: 0.85rem;
 }
 
 .sidebar-card {
@@ -465,12 +450,12 @@ const typeSummary = computed(() => selectedEntry.value?.types?.join(' / ') ?? 'U
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 0.85rem;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
 }
 
 .panel-heading.compact {
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.6rem;
 }
 
 .panel-heading h1,
@@ -575,23 +560,23 @@ input:focus {
 }
 
 .hero-card {
-  padding: 1.1rem;
+  padding: 0.95rem;
 }
 
 .hero-inner {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
-  gap: 1rem;
+  gap: 0.85rem;
   align-items: center;
 }
 
 .sprite-frame {
-  width: 124px;
-  height: 124px;
+  width: 96px;
+  height: 96px;
   display: grid;
   place-items: center;
-  padding: 0.75rem;
-  border-radius: 18px;
+  padding: 0.5rem;
+  border-radius: 16px;
   border: 1px solid rgba(96, 165, 250, 0.18);
   background: rgba(9, 18, 35, 0.7);
 }
@@ -610,9 +595,9 @@ input:focus {
 .hero-heading {
   display: flex;
   justify-content: space-between;
-  gap: 1rem;
+  gap: 0.75rem;
   align-items: flex-start;
-  margin-bottom: 0.9rem;
+  margin-bottom: 0.65rem;
 }
 
 .hero-badges {
@@ -626,9 +611,19 @@ input:focus {
 .stats-grid,
 .capability-grid,
 .skill-grid {
+  gap: 0.6rem;
+}
+
+.summary-grid {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.stats-grid,
+.capability-grid,
+.skill-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.75rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .summary-grid div,
@@ -637,15 +632,20 @@ input:focus {
 .skill-grid div {
   border: 1px solid rgba(96, 165, 250, 0.18);
   border-radius: 14px;
-  padding: 0.75rem 0.85rem;
+  padding: 0.6rem 0.7rem;
   background: rgba(9, 18, 35, 0.6);
+}
+
+.summary-grid div {
+  flex: 0 0 auto;
+  min-width: 0;
 }
 
 .summary-grid dt,
 .stats-grid dt,
 .capability-grid dt,
 .skill-grid dt {
-  font-size: 0.76rem;
+  font-size: 0.7rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: rgba(125, 211, 252, 0.74);
@@ -655,14 +655,14 @@ input:focus {
 .stats-grid dd,
 .capability-grid dd,
 .skill-grid dd {
-  margin: 0.35rem 0 0;
+  margin: 0.22rem 0 0;
   font-weight: 700;
 }
 
 .detail-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1rem;
+  gap: 0.85rem;
 }
 
 .detail-wide {
@@ -672,26 +672,26 @@ input:focus {
 .ability-groups {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.75rem;
+  gap: 0.6rem;
 }
 
 .ability-groups > div,
 .capability-other {
   border: 1px solid rgba(96, 165, 250, 0.18);
   border-radius: 14px;
-  padding: 0.75rem 0.85rem;
+  padding: 0.65rem 0.75rem;
   background: rgba(9, 18, 35, 0.6);
 }
 
 .ability-groups h4,
 .capability-other h4 {
-  margin: 0 0 0.6rem;
+  margin: 0 0 0.45rem;
 }
 
 .ability-groups ul,
 .capability-other ul {
   margin: 0;
-  padding-left: 1.1rem;
+  padding-left: 1rem;
   color: rgba(219, 234, 254, 0.9);
 }
 
@@ -706,7 +706,7 @@ table {
 
 th,
  td {
-  padding: 0.7rem 0.75rem;
+  padding: 0.55rem 0.65rem;
   border-bottom: 1px solid rgba(96, 165, 250, 0.15);
   text-align: left;
 }
@@ -716,17 +716,6 @@ th {
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: rgba(125, 211, 252, 0.74);
-}
-
-.json-block {
-  margin: 0;
-  padding: 1rem;
-  border-radius: 14px;
-  border: 1px solid rgba(96, 165, 250, 0.18);
-  background: rgba(9, 18, 35, 0.75);
-  color: #dbeafe;
-  overflow: auto;
-  line-height: 1.5;
 }
 
 .empty-card {

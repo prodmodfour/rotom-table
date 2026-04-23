@@ -37,7 +37,7 @@ const isActive = (path: string) => {
   align-items: center;
   justify-content: center;
   min-width: 0;
-  flex: 1;
+  flex: 0 0 auto;
   padding: 0.72rem 0.9rem;
   border-radius: 12px;
   border: 1px solid rgba(96, 165, 250, 0.22);
