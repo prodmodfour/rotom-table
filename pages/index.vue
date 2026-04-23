@@ -27,7 +27,6 @@ const previewState = ref<PreviewState>({
   reachable: false,
   pathLength: 0,
 })
-const statusMessage = ref('')
 
 const filterCatalogEntries = (entries: PokemonCatalogEntry[], query: string) => {
   const normalizedQuery = query.trim().toLowerCase()
@@ -60,15 +59,10 @@ const selectedPokemon = computed(
   () => spawnedPokemon.value.find((pokemon) => pokemon.id === selectedId.value) ?? null,
 )
 
-const setStatus = (message: string) => {
-  statusMessage.value = message
-}
-
 const spawnEntry = (entry: PokemonCatalogEntry) => {
   const position = findFirstAvailablePosition(entry, spawnedPokemon.value, gridDimensions)
 
   if (!position) {
-    setStatus(`No room left in the current grid for ${entry.species}.`)
     return
   }
 
@@ -88,7 +82,6 @@ const spawnEntry = (entry: PokemonCatalogEntry) => {
     reachable: false,
     pathLength: 0,
   }
-  setStatus(`Spawned ${entry.species} at (${position.x}, ${position.y}, ${position.z}).`)
 }
 
 const selectPokemon = (id: string | null) => {
@@ -111,9 +104,6 @@ const deletePokemon = (id: string) => {
     selectPokemon(null)
   }
 
-  if (target) {
-    setStatus(`Removed ${target.species} from the board.`)
-  }
 }
 
 const turnPokemon = (id: string) => {
@@ -132,7 +122,6 @@ const turnPokemon = (id: string) => {
       : pokemon,
   )
 
-  setStatus(`Turned ${target.species}.`)
 }
 
 const movePokemon = (payload: { id: string; position: GridAnchor }) => {
@@ -152,7 +141,6 @@ const movePokemon = (payload: { id: string; position: GridAnchor }) => {
   )
 
   selectPokemon(null)
-  setStatus(`Moved ${target.species} to (${payload.position.x}, ${payload.position.y}, ${payload.position.z}).`)
 }
 
 const updatePreview = (nextPreview: PreviewState) => {
@@ -201,9 +189,6 @@ watch(
     }
 
     if (reconciliation.removedIds.length > 0) {
-      setStatus(
-        `Grid resized. ${reconciliation.removedIds.length} board pieces no longer fit and were removed.`,
-      )
     }
   },
   { immediate: true },
@@ -292,9 +277,6 @@ watch(
         </div>
       </section>
 
-      <p v-if="statusMessage" class="status-copy">
-        {{ statusMessage }}
-      </p>
     </aside>
 
     <main class="scene-column">
@@ -354,12 +336,6 @@ watch(
 
 .panel-heading h2 {
   margin: 0;
-}
-
-.status-copy {
-  margin: 0.75rem 0 0;
-  color: rgba(219, 234, 254, 0.8);
-  line-height: 1.5;
 }
 
 .panel-heading {
