@@ -7,6 +7,44 @@ export interface PokemonSizeRecord {
   clearance: number
 }
 
+export interface PokedexBaseStats {
+  hp: number
+  atk: number
+  def: number
+  spatk: number
+  spdef: number
+  spd: number
+}
+
+export interface PokedexAbilities {
+  basic?: string[]
+  advanced?: string[]
+  high?: string[]
+}
+
+export interface PokedexEvolution {
+  stage: number
+  species: string
+  min_level?: number
+}
+
+export interface PokedexCapabilities {
+  overland?: number
+  sky?: number
+  swim?: number
+  levitate?: number
+  burrow?: number
+  jump?: string
+  power?: number
+  other?: string[]
+}
+
+export interface PokedexLevelUpMove {
+  level: number
+  name: string
+  type: string
+}
+
 export interface PokedexRecord {
   species: string
   size?: string
@@ -16,6 +54,18 @@ export interface PokedexRecord {
   clearance?: number
   types?: string[]
   source_gen?: string
+  weight?: number
+  genderless?: boolean
+  male_pct?: number | null
+  female_pct?: number | null
+  evolution_stage?: number
+  evolutions_remaining?: number
+  base_stats?: PokedexBaseStats
+  abilities?: PokedexAbilities
+  evolutions?: PokedexEvolution[]
+  capabilities?: PokedexCapabilities
+  skills?: Record<string, string>
+  level_up_moves?: PokedexLevelUpMove[]
   [key: string]: unknown
 }
 

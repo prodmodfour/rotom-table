@@ -198,6 +198,8 @@ watch(
 <template>
   <div class="layout-shell">
     <aside class="sidebar">
+      <AppNavigation />
+
       <section class="panel-card">
         <div class="panel-heading">
           <h2>Grid dimensions</h2>
