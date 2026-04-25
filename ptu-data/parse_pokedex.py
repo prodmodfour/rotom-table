@@ -11,6 +11,62 @@ POKEDEX_DIR = os.path.join(os.path.dirname(__file__), "..", "books", "markdown",
 CACHE_DIR = os.path.join(os.path.dirname(__file__), "data")
 PLACEMENT_FIELDS = ("species", "size", "width", "height", "base", "clearance")
 
+# Anchors that can appear after a move section. Used to bound TM/HM, Egg and
+# Tutor move list extraction so that following sections (Mega Evolution stat
+# blocks, Forme Change blurbs, page footers, etc.) don't bleed into the lists.
+MOVE_SECTION_TERMINATORS = (
+    r"Egg Move List",
+    r"Tutor Move List",
+    r"Mega Evolution",
+    r"Forme? Change",
+    r"Form Information",
+    r"Forme Information",
+    r"Z-Move",
+    r"G-Max",
+    r"Gigantamax",
+    r"Eternamax",
+    r"Notes\s*:",
+    r"Hidden Power\s*:",
+    r"Special\s+Ability",
+    r"Misc\.",
+    r"##\s*Page",
+)
+
+
+def _strip_soft_hyphens(value: str) -> str:
+    """Drop typeset soft hyphens (incl. across line breaks) and noise glyphs.
+
+    The PDF→markdown export inserts U+00AD (soft hyphen) at line-wrap points,
+    e.g. ``Frus\u00ad\ntration``. Removing the hyphen + the line break (and any
+    surrounding whitespace) reconstructs the original word.
+    """
+    s = re.sub(r"\u00ad\s*\n\s*", "", value)
+    s = s.replace("\u00ad", "")
+    return s
+
+
+def _flatten_section(value: str) -> str:
+    """Collapse a multi-line section body into one normalised line."""
+    cleaned = _strip_soft_hyphens(value)
+    cleaned = re.sub(r"\s+", " ", cleaned)
+    return cleaned.strip()
+
+
+def _extract_section(text: str, start_label: str, terminators: tuple[str, ...]) -> str:
+    """Return the body text between ``start_label`` and the next terminator."""
+    start_pattern = rf"^[ \t]*{start_label}[ \t]*\n"
+    start_match = re.search(start_pattern, text, re.MULTILINE)
+    if not start_match:
+        return ""
+    body_start = start_match.end()
+    rest = text[body_start:]
+    end_pos = len(rest)
+    for term in terminators:
+        m = re.search(rf"^[ \t]*{term}\b", rest, re.MULTILINE)
+        if m and m.start() < end_pos:
+            end_pos = m.start()
+    return rest[:end_pos]
+
 
 def normalize_species_name(value: str) -> str:
     value = unicodedata.normalize("NFKD", value).casefold()
@@ -173,6 +229,99 @@ def parse_gender(text: str) -> dict:
     return result
 
 
+def parse_egg_groups(text: str) -> list[str]:
+    m = re.search(r"Egg Group\s*:\s*([^\n]+)", text)
+    if not m:
+        return []
+    raw = _strip_soft_hyphens(m.group(1)).strip()
+    if not raw or raw.lower() in {"none", "n/a", "no eggs", "no egg"}:
+        return []
+    # Authors use both ``/`` and the word ``and`` to join egg groups.
+    parts = re.split(r"\s*/\s*|\s+and\s+", raw)
+    return [p.strip() for p in parts if p.strip()]
+
+
+def parse_hatch_rate(text: str) -> str | None:
+    m = re.search(r"Average Hatch Rate\s*:\s*([^\n]+)", text)
+    if not m:
+        return None
+    value = _strip_soft_hyphens(m.group(1)).strip()
+    return value or None
+
+
+def _split_csv(value: str) -> list[str]:
+    cleaned = _flatten_section(value).rstrip(".")
+    if not cleaned:
+        return []
+    return [p.strip() for p in cleaned.split(",") if p.strip()]
+
+
+def parse_diet(text: str) -> list[str]:
+    m = re.search(r"^[ \t]*Diet\s*:\s*([^\n]*)", text, re.MULTILINE)
+    if not m:
+        return []
+    return _split_csv(m.group(1))
+
+
+def parse_habitat(text: str) -> list[str]:
+    m = re.search(r"^[ \t]*Habitat\s*:\s*([^\n]*)", text, re.MULTILINE)
+    if not m:
+        return []
+    raw = m.group(1).strip()
+    if raw == "???":
+        return []
+    return _split_csv(m.group(1))
+
+
+# Splits TM/HM "06 Toxic", "A1 Cut", "100 Confide", "98 Power-Up Punch", etc.
+TM_HM_ITEM_RE = re.compile(r"^\s*(?P<prefix>[A-Za-z])?(?P<num>\d{1,3})\s+(?P<name>.+?)\s*$")
+
+
+def parse_tm_hm_moves(text: str) -> list[dict]:
+    body = _extract_section(text, "TM/HM Move List", MOVE_SECTION_TERMINATORS)
+    if not body:
+        return []
+    moves: list[dict] = []
+    for raw in _flatten_section(body).split(","):
+        item = raw.strip()
+        if not item:
+            continue
+        match = TM_HM_ITEM_RE.match(item)
+        if not match:
+            continue
+        # ``A`` prefix (a typeset glyph for ``H`` in the source PDF) marks an HM.
+        kind = "HM" if match.group("prefix") else "TM"
+        moves.append({
+            "kind": kind,
+            "number": match.group("num").zfill(2),
+            "name": match.group("name").strip(),
+        })
+    return moves
+
+
+def parse_egg_moves(text: str) -> list[str]:
+    body = _extract_section(text, "Egg Move List", MOVE_SECTION_TERMINATORS)
+    if not body:
+        return []
+    return _split_csv(body)
+
+
+HEART_SCALE_RE = re.compile(r"\s*\(\s*N\s*\)")
+
+
+def parse_tutor_moves(text: str) -> list[dict]:
+    body = _extract_section(text, "Tutor Move List", MOVE_SECTION_TERMINATORS)
+    if not body:
+        return []
+    moves: list[dict] = []
+    for raw in _split_csv(body):
+        heart = bool(HEART_SCALE_RE.search(raw))
+        name = HEART_SCALE_RE.sub("", raw).strip()
+        if name:
+            moves.append({"name": name, "heart_scale": heart})
+    return moves
+
+
 def parse_capabilities(text: str) -> dict:
     result = {"overland": 0, "sky": 0, "swim": 0, "levitate": 0, "burrow": 0,
               "jump": "0/0", "power": 0, "other": []}
@@ -286,6 +435,13 @@ def parse_pokemon_file(filepath: str) -> dict | None:
     capabilities = parse_capabilities(text)
     skills = parse_skills(text)
     level_up_moves = parse_level_up_moves(text)
+    egg_groups = parse_egg_groups(text)
+    hatch_rate = parse_hatch_rate(text)
+    diet = parse_diet(text)
+    habitat = parse_habitat(text)
+    tm_hm_moves = parse_tm_hm_moves(text)
+    egg_moves = parse_egg_moves(text)
+    tutor_moves = parse_tutor_moves(text)
 
     # Determine evolution stage for this species
     evo_stage = 1
@@ -311,9 +467,16 @@ def parse_pokemon_file(filepath: str) -> dict | None:
         "genderless": gender["genderless"],
         "male_pct": gender["male_pct"],
         "female_pct": gender["female_pct"],
+        "egg_groups": egg_groups,
+        "hatch_rate": hatch_rate,
+        "diet": diet,
+        "habitat": habitat,
         "capabilities": capabilities,
         "skills": skills,
         "level_up_moves": level_up_moves,
+        "tm_hm_moves": tm_hm_moves,
+        "egg_moves": egg_moves,
+        "tutor_moves": tutor_moves,
     }
 
 

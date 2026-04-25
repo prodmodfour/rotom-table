@@ -98,14 +98,24 @@ const genderSummary = computed(() => {
   return null
 })
 
-const capabilityRows = computed(() => {
+const typeSummary = computed(() => selectedEntry.value?.types?.join(' / ') ?? 'Unknown type')
+
+// One-page index for the bottom-right page number.
+const pageNumber = computed(() => {
+  const list = filteredEntries.value
+  const index = list.findIndex((entry) => entry.id === selectedId.value)
+  if (index < 0) return null
+  return index + 1
+})
+
+// "Capability List" rendered as the inline, comma-separated phrase used in
+// the printed book (e.g. "Overland 5, Swim 3, Jump 1/1, Power 2, Naturewalk
+// (Grassland, Forest), Underdog").
+const capabilityPhrase = computed(() => {
   const capabilities = selectedEntry.value?.capabilities as PokedexCapabilities | undefined
+  if (!capabilities) return ''
 
-  if (!capabilities) {
-    return []
-  }
-
-  return [
+  const numbered: Array<[string, number | string | undefined]> = [
     ['Overland', capabilities.overland],
     ['Sky', capabilities.sky],
     ['Swim', capabilities.swim],
@@ -113,12 +123,103 @@ const capabilityRows = computed(() => {
     ['Burrow', capabilities.burrow],
     ['Jump', capabilities.jump],
     ['Power', capabilities.power],
-  ].filter(([, value]) => value !== undefined && value !== null)
+  ]
+
+  const parts: string[] = []
+  for (const [label, value] of numbered) {
+    if (value === undefined || value === null || value === 0 || value === '0') continue
+    parts.push(`${label} ${value}`)
+  }
+  for (const extra of capabilities.other ?? []) {
+    if (extra) parts.push(extra)
+  }
+  return parts.join(', ')
 })
 
-const capabilityOther = computed(() => selectedEntry.value?.capabilities?.other ?? [])
-const skillRows = computed(() => Object.entries(selectedEntry.value?.skills ?? {}))
-const typeSummary = computed(() => selectedEntry.value?.types?.join(' / ') ?? 'Unknown type')
+// Skill abbreviations matching the printed book (Athl, Acro, Percep…).
+const SKILL_ABBREVIATIONS: Record<string, string> = {
+  Athletics: 'Athl',
+  Acrobatics: 'Acro',
+  Combat: 'Combat',
+  Stealth: 'Stealth',
+  Perception: 'Percep',
+  Focus: 'Focus',
+}
+
+const skillPhrase = computed(() => {
+  const skills = selectedEntry.value?.skills
+  if (!skills) return ''
+
+  return Object.entries(skills)
+    .map(([skill, value]) => `${SKILL_ABBREVIATIONS[skill] ?? skill} ${value}`)
+    .join(', ')
+})
+
+const heightLabel = computed(() => {
+  const entry = selectedEntry.value
+  if (!entry || entry.height == null) return null
+
+  const meters = entry.height
+  const totalInches = meters / 0.0254
+  const feet = Math.floor(totalInches / 12)
+  const inches = Math.round(totalInches - feet * 12)
+  const sizeSuffix = entry.size ? ` (${entry.size})` : ''
+  return `${feet}' ${inches}" / ${meters.toFixed(1)}m${sizeSuffix}`
+})
+
+const weightLabel = computed(() => {
+  const entry = selectedEntry.value
+  if (!entry || entry.weight == null) return null
+  // PTU "weight class" is a small integer; we only know the class number.
+  return `Weight Class ${entry.weight}`
+})
+
+const eggGroupSummary = computed(() => {
+  const groups = selectedEntry.value?.egg_groups
+  if (!groups || groups.length === 0) return null
+  return groups.join(' / ')
+})
+
+const dietSummary = computed(() => {
+  const diet = selectedEntry.value?.diet
+  if (!diet || diet.length === 0) return null
+  return diet.join(', ')
+})
+
+const habitatSummary = computed(() => {
+  const habitat = selectedEntry.value?.habitat
+  if (!habitat || habitat.length === 0) return null
+  return habitat.join(', ')
+})
+
+// TM/HM list rendered as the comma-separated run-on phrase used in the
+// printed book (e.g. "H01 Cut, 06 Toxic, 10 Hidden Power, ..."). Plain TMs
+// keep just the machine number; HMs are prefixed with ``H`` for clarity.
+const tmHmPhrase = computed(() => {
+  const moves = selectedEntry.value?.tm_hm_moves
+  if (!moves || moves.length === 0) return ''
+  return moves
+    .map((move) => {
+      const prefix = move.kind === 'HM' ? 'H' : ''
+      return `${prefix}${move.number} ${move.name}`
+    })
+    .join(', ')
+})
+
+const eggMovePhrase = computed(() => {
+  const moves = selectedEntry.value?.egg_moves
+  if (!moves || moves.length === 0) return ''
+  return moves.join(', ')
+})
+
+// Tutor moves preserve the (N) Heart-Scale marker the printed book uses.
+const tutorMovePhrase = computed(() => {
+  const moves = selectedEntry.value?.tutor_moves
+  if (!moves || moves.length === 0) return ''
+  return moves
+    .map((move) => (move.heart_scale ? `${move.name} (N)` : move.name))
+    .join(', ')
+})
 </script>
 
 <template>
@@ -126,8 +227,8 @@ const typeSummary = computed(() => selectedEntry.value?.types?.join(' / ') ?? 'U
     <aside class="pokedex-sidebar">
       <AppNavigation />
 
-      <section class="panel-card sidebar-card">
-        <div class="panel-heading">
+      <section class="sidebar-card">
+        <div class="sidebar-heading">
           <h1>Pokédex</h1>
           <span class="badge">{{ filteredEntries.length }} shown</span>
         </div>
@@ -164,237 +265,167 @@ const typeSummary = computed(() => selectedEntry.value?.types?.join(' / ') ?? 'U
     </aside>
 
     <main class="pokedex-detail">
-      <template v-if="selectedEntry">
-        <section class="panel-card hero-card">
-          <div class="hero-inner">
-            <div v-if="selectedSprite" class="sprite-frame">
-              <img :src="selectedSprite.spriteUrl" :alt="selectedEntry.species" />
-            </div>
-
-            <div class="hero-copy">
-              <div class="hero-heading">
-                <div>
-                  <h2>{{ selectedEntry.species }}</h2>
-                  <p class="type-copy">{{ typeSummary }}</p>
-                </div>
-
-                <div class="hero-badges">
-                  <span v-if="selectedEntry.source_gen" class="badge">{{ selectedEntry.source_gen }}</span>
-                  <span v-if="isPlacementOnly" class="badge warn">Placement only</span>
-                </div>
-              </div>
-
-              <div class="summary-grid">
-                <div v-if="selectedEntry.size">
-                  <dt>Size</dt>
-                  <dd>{{ selectedEntry.size }}</dd>
-                </div>
-                <div v-if="selectedEntry.width != null && selectedEntry.height != null">
-                  <dt>Sprite Size</dt>
-                  <dd>{{ selectedEntry.width }}m × {{ selectedEntry.height }}m</dd>
-                </div>
-                <div v-if="selectedEntry.base != null">
-                  <dt>Base</dt>
-                  <dd>{{ selectedEntry.base }} × {{ selectedEntry.base }}</dd>
-                </div>
-                <div v-if="selectedEntry.clearance != null">
-                  <dt>Clearance</dt>
-                  <dd>{{ selectedEntry.clearance }}m</dd>
-                </div>
-                <div v-if="selectedEntry.weight != null">
-                  <dt>Weight Class</dt>
-                  <dd>{{ selectedEntry.weight }}</dd>
-                </div>
-                <div v-if="genderSummary">
-                  <dt>Gender</dt>
-                  <dd>{{ genderSummary }}</dd>
-                </div>
-                <div v-if="selectedEntry.evolution_stage != null">
-                  <dt>Evolution Stage</dt>
-                  <dd>{{ selectedEntry.evolution_stage }}</dd>
-                </div>
-                <div v-if="selectedEntry.evolutions_remaining != null">
-                  <dt>Evolutions Remaining</dt>
-                  <dd>{{ selectedEntry.evolutions_remaining }}</dd>
-                </div>
-              </div>
-            </div>
+      <article v-if="selectedEntry" class="book-page">
+        <header class="book-page__header">
+          <h2 class="species-name">{{ selectedEntry.species.toUpperCase() }}</h2>
+          <div class="header-badges">
+            <span v-if="selectedEntry.source_gen" class="badge">{{ selectedEntry.source_gen }}</span>
+            <span v-if="isPlacementOnly" class="badge warn">Placement only</span>
           </div>
-        </section>
+        </header>
 
-        <div class="detail-grid">
-          <section class="panel-card">
-            <div class="panel-heading compact">
-              <h3>Base Stats</h3>
+        <div class="book-columns">
+          <!-- LEFT COLUMN -->
+          <section class="book-column book-column--left">
+            <div class="sprite-frame">
+              <div class="sprite-frame__inner">
+                <img
+                  v-if="selectedSprite"
+                  :src="selectedSprite.spriteUrl"
+                  :alt="selectedEntry.species"
+                />
+                <span v-else class="sprite-missing">no sprite</span>
+              </div>
+              <span class="bracket bracket--tl" />
+              <span class="bracket bracket--tr" />
+              <span class="bracket bracket--bl" />
+              <span class="bracket bracket--br" />
             </div>
 
-            <dl v-if="selectedEntry.base_stats" class="stats-grid">
-              <div>
-                <dt>HP</dt>
-                <dd>{{ selectedEntry.base_stats.hp }}</dd>
-              </div>
-              <div>
-                <dt>Attack</dt>
-                <dd>{{ selectedEntry.base_stats.atk }}</dd>
-              </div>
-              <div>
-                <dt>Defense</dt>
-                <dd>{{ selectedEntry.base_stats.def }}</dd>
-              </div>
-              <div>
-                <dt>Sp. Attack</dt>
-                <dd>{{ selectedEntry.base_stats.spatk }}</dd>
-              </div>
-              <div>
-                <dt>Sp. Defense</dt>
-                <dd>{{ selectedEntry.base_stats.spdef }}</dd>
-              </div>
-              <div>
-                <dt>Speed</dt>
-                <dd>{{ selectedEntry.base_stats.spd }}</dd>
-              </div>
-            </dl>
-
-            <p v-else class="empty-state">No base stats recorded.</p>
-          </section>
-
-          <section class="panel-card">
-            <div class="panel-heading compact">
-              <h3>Abilities</h3>
-            </div>
-
-            <div v-if="selectedEntry.abilities" class="ability-groups">
-              <div>
-                <h4>Basic</h4>
-                <ul>
-                  <li v-for="ability in selectedEntry.abilities.basic ?? []" :key="`basic-${ability}`">
-                    {{ ability }}
-                  </li>
-                </ul>
-              </div>
-              <div>
-                <h4>Advanced</h4>
-                <ul>
-                  <li v-for="ability in selectedEntry.abilities.advanced ?? []" :key="`advanced-${ability}`">
-                    {{ ability }}
-                  </li>
-                </ul>
-              </div>
-              <div>
-                <h4>High</h4>
-                <ul>
-                  <li v-for="ability in selectedEntry.abilities.high ?? []" :key="`high-${ability}`">
-                    {{ ability }}
-                  </li>
-                </ul>
-              </div>
-            </div>
-
-            <p v-else class="empty-state">No ability data recorded.</p>
-          </section>
-
-          <section class="panel-card">
-            <div class="panel-heading compact">
-              <h3>Evolution</h3>
-            </div>
-
-            <div v-if="selectedEntry.evolutions?.length" class="table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Stage</th>
-                    <th>Species</th>
-                    <th>Minimum Level</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="evolution in selectedEntry.evolutions" :key="`${evolution.stage}-${evolution.species}`">
-                    <td>{{ evolution.stage }}</td>
-                    <td>{{ evolution.species }}</td>
-                    <td>{{ evolution.min_level ?? '—' }}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-            <p v-else class="empty-state">No evolution data recorded.</p>
-          </section>
-
-          <section class="panel-card">
-            <div class="panel-heading compact">
-              <h3>Capabilities</h3>
-            </div>
-
-            <template v-if="capabilityRows.length || capabilityOther.length">
-              <dl v-if="capabilityRows.length" class="capability-grid">
-                <div v-for="[label, value] in capabilityRows" :key="label">
-                  <dt>{{ label }}</dt>
-                  <dd>{{ value }}</dd>
-                </div>
+            <section v-if="selectedEntry.base_stats" class="book-section">
+              <h3 class="book-section__title">Base Stats:</h3>
+              <dl class="stat-list">
+                <div><dt>HP:</dt><dd>{{ selectedEntry.base_stats.hp }}</dd></div>
+                <div><dt>Attack:</dt><dd>{{ selectedEntry.base_stats.atk }}</dd></div>
+                <div><dt>Defense:</dt><dd>{{ selectedEntry.base_stats.def }}</dd></div>
+                <div><dt>Special Attack:</dt><dd>{{ selectedEntry.base_stats.spatk }}</dd></div>
+                <div><dt>Special Defense:</dt><dd>{{ selectedEntry.base_stats.spdef }}</dd></div>
+                <div><dt>Speed:</dt><dd>{{ selectedEntry.base_stats.spd }}</dd></div>
               </dl>
+            </section>
 
-              <div v-if="capabilityOther.length" class="capability-other">
-                <h4>Other</h4>
-                <ul>
-                  <li v-for="capability in capabilityOther" :key="capability">
-                    {{ capability }}
+            <section class="book-section">
+              <h3 class="book-section__title">Basic Information</h3>
+              <p class="info-line">Type : {{ typeSummary }}</p>
+              <template v-if="selectedEntry.abilities">
+                <p
+                  v-for="(ability, index) in selectedEntry.abilities.basic ?? []"
+                  :key="`basic-${ability}`"
+                  class="info-line"
+                >
+                  Basic Ability {{ index + 1 }}: {{ ability }}
+                </p>
+                <p
+                  v-for="(ability, index) in selectedEntry.abilities.advanced ?? []"
+                  :key="`adv-${ability}`"
+                  class="info-line"
+                >
+                  Adv Ability {{ index + 1 }}: {{ ability }}
+                </p>
+                <p
+                  v-for="ability in selectedEntry.abilities.high ?? []"
+                  :key="`high-${ability}`"
+                  class="info-line"
+                >
+                  High Ability: {{ ability }}
+                </p>
+              </template>
+            </section>
+
+            <section v-if="selectedEntry.evolutions?.length" class="book-section">
+              <h3 class="book-section__title">Evolution:</h3>
+              <p
+                v-for="evolution in selectedEntry.evolutions"
+                :key="`${evolution.stage}-${evolution.species}`"
+                class="info-line"
+              >
+                {{ evolution.stage }} - {{ evolution.species }}<template v-if="evolution.min_level && evolution.min_level > 0"> Minimum {{ evolution.min_level }}</template>
+              </p>
+            </section>
+
+            <section v-if="heightLabel || weightLabel" class="book-section">
+              <h3 class="book-section__title">Size Information</h3>
+              <p v-if="heightLabel" class="info-line">Height : {{ heightLabel }}</p>
+              <p v-if="weightLabel" class="info-line">Weight : {{ weightLabel }}</p>
+            </section>
+
+            <section
+              v-if="genderSummary || eggGroupSummary || selectedEntry.hatch_rate"
+              class="book-section"
+            >
+              <h3 class="book-section__title">Breeding Information</h3>
+              <p v-if="genderSummary" class="info-line">Gender Ratio : {{ genderSummary }}</p>
+              <p v-if="eggGroupSummary" class="info-line">Egg Group : {{ eggGroupSummary }}</p>
+              <p v-if="selectedEntry.hatch_rate" class="info-line">
+                Average Hatch Rate: {{ selectedEntry.hatch_rate }}
+              </p>
+            </section>
+
+            <section v-if="dietSummary || habitatSummary" class="book-section book-section--plain">
+              <p v-if="dietSummary" class="info-line">Diet : {{ dietSummary }}</p>
+              <p v-if="habitatSummary" class="info-line">Habitat : {{ habitatSummary }}</p>
+            </section>
+          </section>
+
+          <!-- RIGHT COLUMN -->
+          <section class="book-column book-column--right">
+            <section v-if="capabilityPhrase" class="book-section">
+              <h3 class="book-section__title">Capability List</h3>
+              <p class="paragraph">{{ capabilityPhrase }}</p>
+            </section>
+
+            <section v-if="skillPhrase" class="book-section">
+              <h3 class="book-section__title">Skill List</h3>
+              <p class="paragraph">{{ skillPhrase }}</p>
+            </section>
+
+            <section
+              v-if="selectedEntry.level_up_moves?.length || tmHmPhrase || eggMovePhrase || tutorMovePhrase"
+              class="book-section"
+            >
+              <h3 class="book-section__title">Move List</h3>
+
+              <template v-if="selectedEntry.level_up_moves?.length">
+                <p class="subsection-title">Level Up Move List</p>
+                <ul class="move-list">
+                  <li
+                    v-for="move in selectedEntry.level_up_moves"
+                    :key="`${move.level}-${move.name}`"
+                  >
+                    <span class="move-level">{{ move.level }}</span>
+                    <span class="move-name">{{ move.name }}</span>
+                    <span class="move-sep">-</span>
+                    <span class="move-type">{{ move.type }}</span>
                   </li>
                 </ul>
-              </div>
-            </template>
+              </template>
 
-            <p v-else class="empty-state">No capability data recorded.</p>
+              <template v-if="tmHmPhrase">
+                <p class="subsection-title">TM/HM Move List</p>
+                <p class="paragraph paragraph--indent">{{ tmHmPhrase }}</p>
+              </template>
+
+              <template v-if="eggMovePhrase">
+                <p class="subsection-title">Egg Move List</p>
+                <p class="paragraph paragraph--indent">{{ eggMovePhrase }}</p>
+              </template>
+
+              <template v-if="tutorMovePhrase">
+                <p class="subsection-title">Tutor Move List</p>
+                <p class="paragraph paragraph--indent">{{ tutorMovePhrase }}</p>
+              </template>
+            </section>
           </section>
-
-          <section class="panel-card">
-            <div class="panel-heading compact">
-              <h3>Skills</h3>
-            </div>
-
-            <dl v-if="skillRows.length" class="skill-grid">
-              <div v-for="[skill, value] in skillRows" :key="skill">
-                <dt>{{ skill }}</dt>
-                <dd>{{ value }}</dd>
-              </div>
-            </dl>
-
-            <p v-else class="empty-state">No skill data recorded.</p>
-          </section>
-
-          <section class="panel-card detail-wide">
-            <div class="panel-heading compact">
-              <h3>Level-Up Moves</h3>
-              <span class="badge">{{ selectedEntry.level_up_moves?.length ?? 0 }}</span>
-            </div>
-
-            <div v-if="selectedEntry.level_up_moves?.length" class="table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Level</th>
-                    <th>Move</th>
-                    <th>Type</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="move in selectedEntry.level_up_moves" :key="`${move.level}-${move.name}`">
-                    <td>{{ move.level }}</td>
-                    <td>{{ move.name }}</td>
-                    <td>{{ move.type }}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-            <p v-else class="empty-state">No level-up moves recorded.</p>
-          </section>
-
         </div>
-      </template>
 
-      <section v-else class="panel-card empty-card">
+        <footer v-if="pageNumber != null" class="book-page__footer">
+          <span class="page-number">{{ pageNumber }}</span>
+        </footer>
+      </article>
+
+      <section v-else class="book-page book-page--empty">
         <h2>No entry selected</h2>
-        <p class="empty-state">Pick a Pokémon from the sidebar to inspect its PTU data.</p>
+        <p>Pick a Pokémon from the sidebar to inspect its PTU data.</p>
       </section>
     </main>
   </div>
@@ -405,38 +436,22 @@ const typeSummary = computed(() => selectedEntry.value?.types?.join(' / ') ?? 'U
   display: grid;
   grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
   min-height: 100vh;
+  background: #000;
 }
+
+/* ------------------------------------------------------------------ */
+/* Sidebar (kept utilitarian, dark, app-style)                         */
+/* ------------------------------------------------------------------ */
 
 .pokedex-sidebar {
   display: flex;
   flex-direction: column;
   gap: 0.85rem;
   padding: 0.85rem;
-  border-right: 1px solid rgba(96, 165, 250, 0.2);
-  background:
-    linear-gradient(180deg, rgba(4, 13, 30, 0.98), rgba(5, 11, 24, 0.94)),
-    radial-gradient(circle at top, rgba(29, 78, 216, 0.18), transparent 55%);
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  background: #050505;
   max-height: 100vh;
   overflow: auto;
-}
-
-.pokedex-detail {
-  min-width: 0;
-  padding: 0.85rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.85rem;
-  background:
-    radial-gradient(circle at top, rgba(37, 99, 235, 0.1), transparent 35%),
-    #050d1b;
-}
-
-.panel-card {
-  border: 1px solid rgba(96, 165, 250, 0.22);
-  border-radius: 18px;
-  background: rgba(8, 20, 43, 0.82);
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.22);
-  padding: 0.85rem;
 }
 
 .sidebar-card {
@@ -444,9 +459,13 @@ const typeSummary = computed(() => selectedEntry.value?.types?.join(' / ') ?? 'U
   flex-direction: column;
   min-height: 0;
   flex: 1;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  background: #0a0a0a;
+  padding: 0.85rem;
 }
 
-.panel-heading {
+.sidebar-heading {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -454,38 +473,36 @@ const typeSummary = computed(() => selectedEntry.value?.types?.join(' / ') ?? 'U
   margin-bottom: 0.75rem;
 }
 
-.panel-heading.compact {
-  margin-bottom: 0.6rem;
-}
-
-.panel-heading h1,
-.panel-heading h2,
-.panel-heading h3,
-.hero-heading h2 {
+.sidebar-heading h1 {
   margin: 0;
+  font-size: 1.25rem;
+  letter-spacing: 0.02em;
+  color: #ebe6d8;
 }
 
 .badge {
   display: inline-flex;
   align-items: center;
   border-radius: 999px;
-  padding: 0.28rem 0.7rem;
-  background: rgba(37, 99, 235, 0.18);
-  color: #bfdbfe;
-  font-size: 0.78rem;
+  padding: 0.2rem 0.6rem;
+  background: rgba(255, 255, 255, 0.06);
+  color: #ddd2b0;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
   white-space: nowrap;
 }
 
 .badge.warn {
-  background: rgba(234, 179, 8, 0.18);
+  background: rgba(234, 179, 8, 0.16);
   color: #fde68a;
 }
 
 .sidebar-copy,
 .empty-state {
   margin: 0 0 0.9rem;
-  color: rgba(191, 219, 254, 0.76);
+  color: rgba(235, 230, 216, 0.6);
   line-height: 1.5;
+  font-size: 0.85rem;
 }
 
 .search-field {
@@ -497,23 +514,23 @@ const typeSummary = computed(() => selectedEntry.value?.types?.join(' / ') ?? 'U
 
 input {
   width: 100%;
-  border: 1px solid rgba(96, 165, 250, 0.22);
-  border-radius: 12px;
-  background: rgba(15, 23, 42, 0.96);
-  color: #eff6ff;
-  padding: 0.72rem 0.85rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  background: #000;
+  color: #ebe6d8;
+  padding: 0.6rem 0.75rem;
   outline: none;
 }
 
 input:focus {
-  border-color: rgba(125, 211, 252, 0.8);
-  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
+  border-color: rgba(235, 230, 216, 0.5);
+  box-shadow: 0 0 0 2px rgba(235, 230, 216, 0.08);
 }
 
 .entry-list {
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
+  gap: 0.5rem;
   overflow: auto;
   min-height: 0;
 }
@@ -523,204 +540,292 @@ input:focus {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 0.35rem;
-  padding: 0.85rem 0.9rem;
-  border: 1px solid rgba(96, 165, 250, 0.22);
-  border-radius: 14px;
-  background: rgba(15, 23, 42, 0.8);
-  color: inherit;
+  gap: 0.25rem;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  background: #050505;
+  color: #ebe6d8;
   text-align: left;
   cursor: pointer;
   transition:
     border-color 0.15s ease,
-    background 0.15s ease,
-    transform 0.15s ease;
+    background 0.15s ease;
 }
 
 .entry-button:hover {
-  border-color: rgba(125, 211, 252, 0.7);
-  background: rgba(16, 33, 63, 0.92);
-  transform: translateY(-1px);
+  border-color: rgba(235, 230, 216, 0.35);
+  background: #0d0d0d;
 }
 
 .entry-button.active {
-  border-color: rgba(125, 211, 252, 0.82);
-  background: rgba(11, 47, 92, 0.85);
+  border-color: rgba(235, 230, 216, 0.6);
+  background: #111;
 }
 
 .entry-name {
   font-weight: 700;
+  letter-spacing: 0.02em;
 }
 
-.entry-meta,
-.type-copy {
-  color: rgba(191, 219, 254, 0.76);
-  font-size: 0.83rem;
-  line-height: 1.4;
+.entry-meta {
+  color: rgba(235, 230, 216, 0.55);
+  font-size: 0.78rem;
+  line-height: 1.3;
 }
 
-.hero-card {
-  padding: 0.95rem;
+code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.9em;
+  color: #ddd2b0;
 }
 
-.hero-inner {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: 0.85rem;
-  align-items: center;
-}
+/* ------------------------------------------------------------------ */
+/* Book-style detail panel                                             */
+/* ------------------------------------------------------------------ */
 
-.sprite-frame {
-  width: 96px;
-  height: 96px;
-  display: grid;
-  place-items: center;
-  padding: 0.5rem;
-  border-radius: 16px;
-  border: 1px solid rgba(96, 165, 250, 0.18);
-  background: rgba(9, 18, 35, 0.7);
-}
-
-.sprite-frame img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  image-rendering: pixelated;
-}
-
-.hero-copy {
+.pokedex-detail {
   min-width: 0;
+  padding: 1.5rem;
+  background: #000;
+  display: flex;
+  justify-content: center;
 }
 
-.hero-heading {
+.book-page {
+  position: relative;
+  width: 100%;
+  max-width: 960px;
+  min-height: calc(100vh - 3rem);
+  padding: 2.4rem 2.4rem 3.4rem;
+  background: #050505;
+  border: 1px solid rgba(235, 230, 216, 0.08);
+  box-shadow:
+    0 0 0 1px rgba(235, 230, 216, 0.02),
+    0 30px 60px rgba(0, 0, 0, 0.6);
+  color: #ebe6d8;
+  font-family: "EB Garamond", "Iowan Old Style", "Palatino Linotype",
+    Palatino, "Hoefler Text", "Times New Roman", Georgia, serif;
+  font-size: 1.02rem;
+  line-height: 1.5;
+}
+
+.book-page--empty {
   display: flex;
-  justify-content: space-between;
-  gap: 0.75rem;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  gap: 0.4rem;
+  color: rgba(235, 230, 216, 0.6);
+}
+
+.book-page__header {
+  display: flex;
   align-items: flex-start;
-  margin-bottom: 0.65rem;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.2rem;
 }
 
-.hero-badges {
+.species-name {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #f3edd9;
+}
+
+.header-badges {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.4rem;
   flex-wrap: wrap;
   justify-content: flex-end;
 }
 
-.summary-grid,
-.stats-grid,
-.capability-grid,
-.skill-grid {
-  gap: 0.6rem;
-}
-
-.summary-grid {
-  display: flex;
-  flex-wrap: wrap;
-}
-
-.stats-grid,
-.capability-grid,
-.skill-grid {
+.book-columns {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  column-gap: 2.6rem;
+  row-gap: 1.4rem;
+  align-items: start;
 }
 
-.summary-grid div,
-.stats-grid div,
-.capability-grid div,
-.skill-grid div {
-  border: 1px solid rgba(96, 165, 250, 0.18);
-  border-radius: 14px;
-  padding: 0.6rem 0.7rem;
-  background: rgba(9, 18, 35, 0.6);
-}
-
-.summary-grid div {
-  flex: 0 0 auto;
+.book-column {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
   min-width: 0;
 }
 
-.summary-grid dt,
-.stats-grid dt,
-.capability-grid dt,
-.skill-grid dt {
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: rgba(125, 211, 252, 0.74);
+/* ---- Sprite frame with checker + corner brackets ----------------- */
+
+.sprite-frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  padding: 0.85rem;
 }
 
-.summary-grid dd,
-.stats-grid dd,
-.capability-grid dd,
-.skill-grid dd {
-  margin: 0.22rem 0 0;
+.sprite-frame__inner {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  background-color: #0a0a0a;
+  background-image:
+    linear-gradient(45deg, rgba(255, 255, 255, 0.05) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(255, 255, 255, 0.05) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, rgba(255, 255, 255, 0.05) 75%),
+    linear-gradient(-45deg, transparent 75%, rgba(255, 255, 255, 0.05) 75%);
+  background-size: 18px 18px;
+  background-position: 0 0, 0 9px, 9px -9px, -9px 0;
+}
+
+.sprite-frame__inner img {
+  max-width: 78%;
+  max-height: 78%;
+  object-fit: contain;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.55));
+}
+
+.sprite-missing {
+  color: rgba(235, 230, 216, 0.4);
+  font-size: 0.85rem;
+  font-style: italic;
+}
+
+.bracket {
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  border-color: rgba(235, 230, 216, 0.55);
+  border-style: solid;
+  border-width: 0;
+}
+
+.bracket--tl { top: 0;    left: 0;    border-top-width: 2px;    border-left-width: 2px; }
+.bracket--tr { top: 0;    right: 0;   border-top-width: 2px;    border-right-width: 2px; }
+.bracket--bl { bottom: 0; left: 0;    border-bottom-width: 2px; border-left-width: 2px; }
+.bracket--br { bottom: 0; right: 0;   border-bottom-width: 2px; border-right-width: 2px; }
+
+/* ---- Sections, headings, body type ------------------------------- */
+
+.book-section {
+  margin: 0;
+}
+
+.book-section--plain {
+  /* used for the Diet / Habitat block which has no heading in the book */
+  margin-top: -0.4rem;
+}
+
+.book-section__title {
+  margin: 0 0 0.3rem;
+  text-align: center;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #f3edd9;
+}
+
+.subsection-title {
+  margin: 0.4rem 0 0.2rem;
+  font-weight: 600;
+  color: #f3edd9;
+}
+
+.info-line,
+.paragraph {
+  margin: 0.05rem 0;
+  color: #ebe6d8;
+}
+
+.paragraph {
+  text-align: justify;
+  hyphens: auto;
+}
+
+.paragraph--indent {
+  /* mirrors the leading tab indent the printed book uses for run-on lists */
+  text-indent: 1.6rem;
+}
+
+/* ---- Stat list (label : value, value right-aligned) -------------- */
+
+.stat-list {
+  margin: 0;
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  column-gap: 1.2rem;
+  row-gap: 0.05rem;
+}
+
+.stat-list > div {
+  display: contents;
+}
+
+.stat-list dt {
+  margin: 0;
+  color: #ebe6d8;
+}
+
+.stat-list dd {
+  margin: 0;
+  color: #ebe6d8;
+}
+
+/* ---- Move list -------------------------------------------------- */
+
+.move-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: max-content max-content max-content 1fr;
+  column-gap: 0.5rem;
+  row-gap: 0.05rem;
+  padding-left: 1.6rem; /* matches the indent in the printed book */
+}
+
+.move-list > li {
+  display: contents;
+}
+
+.move-level {
+  text-align: right;
+  color: #ebe6d8;
+}
+
+.move-name {
+  color: #ebe6d8;
+}
+
+.move-sep {
+  color: rgba(235, 230, 216, 0.65);
+}
+
+.move-type {
+  color: #ebe6d8;
+}
+
+/* ---- Page number ------------------------------------------------ */
+
+.book-page__footer {
+  position: absolute;
+  right: 1.6rem;
+  bottom: 1.2rem;
+  color: #f3edd9;
   font-weight: 700;
 }
 
-.detail-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.85rem;
+.page-number {
+  font-size: 0.95rem;
+  letter-spacing: 0.04em;
 }
 
-.detail-wide {
-  grid-column: 1 / -1;
-}
-
-.ability-groups {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.6rem;
-}
-
-.ability-groups > div,
-.capability-other {
-  border: 1px solid rgba(96, 165, 250, 0.18);
-  border-radius: 14px;
-  padding: 0.65rem 0.75rem;
-  background: rgba(9, 18, 35, 0.6);
-}
-
-.ability-groups h4,
-.capability-other h4 {
-  margin: 0 0 0.45rem;
-}
-
-.ability-groups ul,
-.capability-other ul {
-  margin: 0;
-  padding-left: 1rem;
-  color: rgba(219, 234, 254, 0.9);
-}
-
-.table-wrap {
-  overflow: auto;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-th,
- td {
-  padding: 0.55rem 0.65rem;
-  border-bottom: 1px solid rgba(96, 165, 250, 0.15);
-  text-align: left;
-}
-
-th {
-  font-size: 0.78rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: rgba(125, 211, 252, 0.74);
-}
-
-.empty-card {
-  max-width: 720px;
-}
+/* ---- A11y ------------------------------------------------------- */
 
 .sr-only {
   position: absolute;
@@ -734,17 +839,9 @@ th {
   border: 0;
 }
 
-code {
-  font-family: "SFMono-Regular", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 0.9em;
-}
-
-@media (max-width: 1200px) {
-  .detail-grid,
-  .ability-groups {
-    grid-template-columns: 1fr;
-  }
-}
+/* ------------------------------------------------------------------ */
+/* Responsive                                                          */
+/* ------------------------------------------------------------------ */
 
 @media (max-width: 1040px) {
   .pokedex-layout {
@@ -754,25 +851,33 @@ code {
   .pokedex-sidebar {
     max-height: none;
     border-right: 0;
-    border-bottom: 1px solid rgba(96, 165, 250, 0.2);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .pokedex-detail {
+    padding: 1rem;
+  }
+
+  .book-page {
+    padding: 1.6rem 1.4rem 2.6rem;
+    min-height: 0;
   }
 }
 
-@media (max-width: 720px) {
-  .hero-inner,
-  .summary-grid,
-  .stats-grid,
-  .capability-grid,
-  .skill-grid {
+@media (max-width: 760px) {
+  .book-columns {
     grid-template-columns: 1fr;
+    column-gap: 0;
+    row-gap: 1.2rem;
   }
 
-  .hero-heading {
-    flex-direction: column;
+  .sprite-frame {
+    max-width: 320px;
+    margin: 0 auto;
   }
 
-  .hero-badges {
-    justify-content: flex-start;
+  .move-list {
+    padding-left: 0;
   }
 }
 </style>

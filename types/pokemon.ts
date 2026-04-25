@@ -45,6 +45,20 @@ export interface PokedexLevelUpMove {
   type: string
 }
 
+export interface PokedexTmHmMove {
+  /** ``TM`` or ``HM`` — derived from the prefix in the source pokedex. */
+  kind: 'TM' | 'HM'
+  /** Two-or-three-digit machine number, zero-padded (e.g. ``"06"``, ``"100"``). */
+  number: string
+  name: string
+}
+
+export interface PokedexTutorMove {
+  name: string
+  /** True when the source marked the move with ``(N)`` for Heart Scale tutoring. */
+  heart_scale: boolean
+}
+
 export interface PokedexRecord {
   species: string
   size?: string
@@ -63,9 +77,16 @@ export interface PokedexRecord {
   base_stats?: PokedexBaseStats
   abilities?: PokedexAbilities
   evolutions?: PokedexEvolution[]
+  egg_groups?: string[]
+  hatch_rate?: string | null
+  diet?: string[]
+  habitat?: string[]
   capabilities?: PokedexCapabilities
   skills?: Record<string, string>
   level_up_moves?: PokedexLevelUpMove[]
+  tm_hm_moves?: PokedexTmHmMove[]
+  egg_moves?: string[]
+  tutor_moves?: PokedexTutorMove[]
   [key: string]: unknown
 }
 
