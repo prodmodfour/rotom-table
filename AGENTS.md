@@ -8,11 +8,6 @@ just             # same as `just default`
 just default
 ```
 
-Commit everything:
-```
-just push
-```
-
 List/inspect encounter tables:
 ```
 just encounter                              # list regions
