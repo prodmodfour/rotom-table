@@ -30,6 +30,10 @@ export default defineNuxtConfig({
           content: 'A Nuxt 3 tabletop for spawning and moving Pokémon sprites on an isometric Three.js grid.',
         },
       ],
+      link: [
+        { rel: 'icon', type: 'image/png', href: '/favicon.png' },
+        { rel: 'apple-touch-icon', href: '/favicon.png' },
+      ],
     },
   },
 })
