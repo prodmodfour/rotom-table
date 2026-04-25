@@ -120,27 +120,33 @@ const toggleTag = (tag: string) => {
   display: inline-flex;
   align-items: baseline;
   gap: 0.3rem;
-  padding: 0.18rem 0.55rem;
+  padding: 0.18rem 0.6rem;
   border-radius: 999px;
-  border: 1px solid rgba(96, 165, 250, 0.22);
-  background: rgba(15, 23, 42, 0.78);
-  color: rgba(191, 219, 254, 0.85);
-  font-size: 0.78rem;
+  border: 1px solid var(--rule-soft);
+  background: var(--paper);
+  color: var(--ink-soft);
+  font-size: 0.76rem;
+  letter-spacing: 0.04em;
   cursor: pointer;
   transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
 }
 
-.tag-chip:hover { border-color: rgba(125, 211, 252, 0.7); }
+.tag-chip:hover {
+  border-color: var(--rule-strong);
+  background: var(--paper-hover);
+  color: var(--ink-bright);
+}
 
 .tag-chip.active {
-  background: rgba(56, 189, 248, 0.22);
-  border-color: rgba(125, 211, 252, 0.85);
-  color: #f0f9ff;
+  background: var(--paper-active);
+  border-color: var(--rule-active);
+  color: var(--ink-bright);
 }
 
 .tag-count {
-  opacity: 0.65;
+  opacity: 0.6;
   font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
 }
 
 .row-tags {
@@ -150,9 +156,12 @@ const toggleTag = (tag: string) => {
 }
 
 .tag-badge {
-  background: rgba(168, 85, 247, 0.18);
-  color: #ddd6fe;
-  font-size: 0.7rem;
-  padding: 0.1rem 0.45rem;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
 }
 </style>

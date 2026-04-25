@@ -465,7 +465,7 @@ const habitatSummary = computed(() => {
   display: grid;
   grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
   min-height: 100vh;
-  background: #000;
+  background: var(--paper);
 }
 
 /* ------------------------------------------------------------------ */
@@ -477,8 +477,8 @@ const habitatSummary = computed(() => {
   flex-direction: column;
   gap: 0.85rem;
   padding: 0.85rem;
-  border-right: 1px solid rgba(255, 255, 255, 0.08);
-  background: #050505;
+  border-right: 1px solid var(--rule);
+  background: var(--paper);
   max-height: 100vh;
   overflow: auto;
 }
@@ -488,9 +488,9 @@ const habitatSummary = computed(() => {
   flex-direction: column;
   min-height: 0;
   flex: 1;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--rule);
   border-radius: 14px;
-  background: #0a0a0a;
+  background: var(--paper-soft);
   padding: 0.85rem;
 }
 
@@ -504,9 +504,10 @@ const habitatSummary = computed(() => {
 
 .sidebar-heading h1 {
   margin: 0;
-  font-size: 1.25rem;
-  letter-spacing: 0.02em;
-  color: #ebe6d8;
+  font-family: var(--serif);
+  font-size: 1.4rem;
+  letter-spacing: 0.04em;
+  color: var(--ink-bright);
 }
 
 .badge {
@@ -514,22 +515,22 @@ const habitatSummary = computed(() => {
   align-items: center;
   border-radius: 999px;
   padding: 0.2rem 0.6rem;
-  background: rgba(255, 255, 255, 0.06);
-  color: #ddd2b0;
+  background: var(--accent-soft);
+  color: var(--accent);
   font-size: 0.72rem;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
   white-space: nowrap;
 }
 
 .badge.warn {
-  background: rgba(234, 179, 8, 0.16);
-  color: #fde68a;
+  background: rgba(254, 128, 25, 0.18);
+  color: var(--warn);
 }
 
 .sidebar-copy,
 .empty-state {
   margin: 0 0 0.9rem;
-  color: rgba(235, 230, 216, 0.6);
+  color: var(--ink-muted);
   line-height: 1.5;
   font-size: 0.85rem;
 }
@@ -543,17 +544,17 @@ const habitatSummary = computed(() => {
 
 input {
   width: 100%;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--rule-soft);
   border-radius: 10px;
-  background: #000;
-  color: #ebe6d8;
+  background: var(--paper);
+  color: var(--ink);
   padding: 0.6rem 0.75rem;
   outline: none;
 }
 
 input:focus {
-  border-color: rgba(235, 230, 216, 0.5);
-  box-shadow: 0 0 0 2px rgba(235, 230, 216, 0.08);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(250, 189, 47, 0.18);
 }
 
 .entry-list {
@@ -571,25 +572,28 @@ input:focus {
   align-items: flex-start;
   gap: 0.25rem;
   padding: 0.7rem 0.8rem;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--rule-soft);
   border-radius: 10px;
-  background: #050505;
-  color: #ebe6d8;
+  background: var(--paper);
+  color: var(--ink);
   text-align: left;
   cursor: pointer;
   transition:
     border-color 0.15s ease,
-    background 0.15s ease;
+    background 0.15s ease,
+    color 0.15s ease;
 }
 
 .entry-button:hover {
-  border-color: rgba(235, 230, 216, 0.35);
-  background: #0d0d0d;
+  border-color: var(--rule-strong);
+  background: var(--paper-hover);
+  color: var(--ink-bright);
 }
 
 .entry-button.active {
-  border-color: rgba(235, 230, 216, 0.6);
-  background: #111;
+  border-color: var(--accent);
+  background: var(--paper-active);
+  color: var(--ink-bright);
 }
 
 .entry-name {
@@ -598,7 +602,7 @@ input:focus {
 }
 
 .entry-meta {
-  color: rgba(235, 230, 216, 0.55);
+  color: var(--ink-muted);
   font-size: 0.78rem;
   line-height: 1.3;
 }
@@ -606,7 +610,7 @@ input:focus {
 code {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 0.9em;
-  color: #ddd2b0;
+  color: var(--accent);
 }
 
 /* ------------------------------------------------------------------ */
@@ -616,7 +620,7 @@ code {
 .pokedex-detail {
   min-width: 0;
   padding: 1.5rem;
-  background: #000;
+  background: var(--paper);
   display: flex;
   justify-content: center;
 }
@@ -627,16 +631,15 @@ code {
   max-width: 960px;
   min-height: calc(100vh - 3rem);
   padding: 2.4rem 2.4rem 3.4rem;
-  background: #050505;
-  border: 1px solid rgba(235, 230, 216, 0.08);
+  background: var(--paper-soft);
+  border: 1px solid var(--rule);
   box-shadow:
-    0 0 0 1px rgba(235, 230, 216, 0.02),
-    0 30px 60px rgba(0, 0, 0, 0.6);
-  color: #ebe6d8;
-  font-family: "EB Garamond", "Iowan Old Style", "Palatino Linotype",
-    Palatino, "Hoefler Text", "Times New Roman", Georgia, serif;
+    0 0 0 1px var(--rule),
+    0 30px 60px rgba(0, 0, 0, 0.55);
+  color: var(--ink);
+  font-family: var(--serif);
   font-size: 1.02rem;
-  line-height: 1.5;
+  line-height: 1.55;
 }
 
 .book-page--empty {
@@ -646,7 +649,7 @@ code {
   align-items: center;
   text-align: center;
   gap: 0.4rem;
-  color: rgba(235, 230, 216, 0.6);
+  color: var(--ink-muted);
 }
 
 .book-page__header {
@@ -659,10 +662,10 @@ code {
 
 .species-name {
   margin: 0;
-  font-size: 1.05rem;
+  font-size: 1.1rem;
   font-weight: 700;
-  letter-spacing: 0.08em;
-  color: #f3edd9;
+  letter-spacing: 0.12em;
+  color: var(--accent);
 }
 
 .header-badges {
@@ -701,12 +704,12 @@ code {
   height: 100%;
   display: grid;
   place-items: center;
-  background-color: #0a0a0a;
+  background-color: var(--paper);
   background-image:
-    linear-gradient(45deg, rgba(255, 255, 255, 0.05) 25%, transparent 25%),
-    linear-gradient(-45deg, rgba(255, 255, 255, 0.05) 25%, transparent 25%),
-    linear-gradient(45deg, transparent 75%, rgba(255, 255, 255, 0.05) 75%),
-    linear-gradient(-45deg, transparent 75%, rgba(255, 255, 255, 0.05) 75%);
+    linear-gradient(45deg, rgba(235, 219, 178, 0.05) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(235, 219, 178, 0.05) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, rgba(235, 219, 178, 0.05) 75%),
+    linear-gradient(-45deg, transparent 75%, rgba(235, 219, 178, 0.05) 75%);
   background-size: 18px 18px;
   background-position: 0 0, 0 9px, 9px -9px, -9px 0;
 }
@@ -722,7 +725,7 @@ code {
 }
 
 .sprite-missing {
-  color: rgba(235, 230, 216, 0.4);
+  color: var(--ink-faint);
   font-size: 0.85rem;
   font-style: italic;
 }
@@ -731,7 +734,7 @@ code {
   position: absolute;
   width: 22px;
   height: 22px;
-  border-color: rgba(235, 230, 216, 0.55);
+  border-color: var(--accent);
   border-style: solid;
   border-width: 0;
 }
@@ -755,22 +758,22 @@ code {
 .book-section__title {
   margin: 0 0 0.3rem;
   text-align: center;
-  font-size: 1rem;
+  font-size: 1.05rem;
   font-weight: 700;
-  letter-spacing: 0.02em;
-  color: #f3edd9;
+  letter-spacing: 0.04em;
+  color: var(--ink-bright);
 }
 
 .subsection-title {
   margin: 0.4rem 0 0.2rem;
   font-weight: 600;
-  color: #f3edd9;
+  color: var(--ink-bright);
 }
 
 .info-line,
 .paragraph {
   margin: 0.05rem 0;
-  color: #ebe6d8;
+  color: var(--ink);
 }
 
 .paragraph {
@@ -799,12 +802,13 @@ code {
 
 .stat-list dt {
   margin: 0;
-  color: #ebe6d8;
+  color: var(--ink);
 }
 
 .stat-list dd {
   margin: 0;
-  color: #ebe6d8;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
 }
 
 /* ---- Move list -------------------------------------------------- */
@@ -826,19 +830,20 @@ code {
 
 .move-level {
   text-align: right;
-  color: #ebe6d8;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
 }
 
 .move-name {
-  color: #ebe6d8;
+  color: var(--ink);
 }
 
 .move-sep {
-  color: rgba(235, 230, 216, 0.65);
+  color: var(--ink-muted);
 }
 
 .move-type {
-  color: #ebe6d8;
+  color: var(--ink);
 }
 
 /* ---- Page number ------------------------------------------------ */
@@ -847,7 +852,7 @@ code {
   position: absolute;
   right: 1.6rem;
   bottom: 1.2rem;
-  color: #f3edd9;
+  color: var(--accent);
   font-weight: 700;
 }
 

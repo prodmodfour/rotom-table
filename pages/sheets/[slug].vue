@@ -460,9 +460,8 @@ const typeEffectivenessRows = computed(() => {
   gap: 0.85rem;
   padding: 0.85rem;
   min-height: 100vh;
-  background:
-    radial-gradient(circle at top, rgba(37, 99, 235, 0.1), transparent 35%),
-    #050d1b;
+  background: var(--paper);
+  color: var(--ink);
 }
 
 .sheet-header {
@@ -476,14 +475,16 @@ const typeEffectivenessRows = computed(() => {
 }
 
 .back-link {
-  color: rgba(191, 219, 254, 0.85);
+  color: var(--ink-soft);
   text-decoration: none;
   font-size: 0.9rem;
+  letter-spacing: 0.02em;
 }
 
 .back-link:hover {
-  color: #f0f9ff;
+  color: var(--ink-bright);
   text-decoration: underline;
+  text-decoration-color: var(--rule-strong);
 }
 
 .sheet-body,
@@ -494,27 +495,33 @@ const typeEffectivenessRows = computed(() => {
 }
 
 .panel-card {
-  border: 1px solid rgba(96, 165, 250, 0.22);
-  border-radius: 18px;
-  background: rgba(8, 20, 43, 0.82);
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.22);
+  border: 1px solid var(--rule);
+  border-radius: 14px;
+  background: var(--paper-soft);
+  box-shadow: var(--shadow-card);
   padding: 0.95rem;
 }
 
 .panel-title {
   margin: 0 0 0.6rem;
-  font-size: 1rem;
-  letter-spacing: 0.02em;
-  color: #eff6ff;
+  font-family: var(--serif);
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--ink-bright);
+  text-transform: uppercase;
   display: flex;
   align-items: baseline;
   gap: 0.6rem;
 }
 
 .panel-subtle {
-  font-size: 0.78rem;
-  color: rgba(191, 219, 254, 0.6);
+  font-size: 0.74rem;
+  color: var(--ink-muted);
   font-weight: 400;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  font-family: Inter, sans-serif;
 }
 
 .row {
@@ -545,9 +552,9 @@ const typeEffectivenessRows = computed(() => {
   display: grid;
   place-items: center;
   padding: 0.4rem;
-  border: 1px solid rgba(96, 165, 250, 0.18);
-  border-radius: 16px;
-  background: rgba(9, 18, 35, 0.7);
+  border: 1px solid var(--rule-soft);
+  border-radius: 12px;
+  background: var(--paper-inset);
 }
 
 .identity__sprite img {
@@ -558,7 +565,7 @@ const typeEffectivenessRows = computed(() => {
 }
 
 .sprite-missing {
-  color: rgba(191, 219, 254, 0.6);
+  color: var(--ink-faint);
   font-size: 1.5rem;
   font-weight: 700;
 }
@@ -575,14 +582,18 @@ const typeEffectivenessRows = computed(() => {
 
 .identity__heading h1 {
   margin: 0;
-  font-size: 1.5rem;
-  letter-spacing: 0.01em;
+  font-family: var(--serif);
+  font-size: 1.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--ink-bright);
 }
 
 .identity__species {
   margin: 0.15rem 0 0;
-  color: rgba(191, 219, 254, 0.78);
+  color: var(--ink-soft);
   font-size: 0.95rem;
+  font-style: italic;
 }
 
 .identity__badges {
@@ -597,15 +608,16 @@ const typeEffectivenessRows = computed(() => {
   align-items: center;
   border-radius: 999px;
   padding: 0.22rem 0.65rem;
-  background: rgba(37, 99, 235, 0.18);
-  color: #bfdbfe;
-  font-size: 0.78rem;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 0.74rem;
+  letter-spacing: 0.06em;
   white-space: nowrap;
 }
 
 .badge.shiny {
-  background: rgba(234, 179, 8, 0.22);
-  color: #fde68a;
+  background: rgba(221, 210, 176, 0.16);
+  color: var(--ink-bright);
 }
 
 .identity__stats {
@@ -616,23 +628,24 @@ const typeEffectivenessRows = computed(() => {
 }
 
 .identity__stats > div {
-  border: 1px solid rgba(96, 165, 250, 0.18);
-  border-radius: 12px;
+  border: 1px solid var(--rule-soft);
+  border-radius: 10px;
   padding: 0.45rem 0.65rem;
-  background: rgba(9, 18, 35, 0.6);
+  background: var(--paper-inset);
   min-width: 0;
 }
 
 .identity__stats dt {
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: rgba(125, 211, 252, 0.74);
+  letter-spacing: 0.1em;
+  color: var(--ink-muted);
 }
 
 .identity__stats dd {
   margin: 0.18rem 0 0;
   font-weight: 700;
+  color: var(--ink-bright);
 }
 
 /* ---- Stats table ---- */
@@ -648,32 +661,33 @@ const typeEffectivenessRows = computed(() => {
 .stats-table th,
 .stats-table td {
   padding: 0.4rem 0.5rem;
-  border-bottom: 1px solid rgba(96, 165, 250, 0.15);
+  border-bottom: 1px solid var(--rule);
   text-align: right;
 }
 
 .stats-table thead th {
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: rgba(125, 211, 252, 0.78);
+  letter-spacing: 0.1em;
+  color: var(--ink-muted);
   font-weight: 600;
   text-align: right;
 }
 
 .stats-table tbody th {
   text-align: left;
-  color: #eff6ff;
-  font-weight: 600;
+  color: var(--ink-bright);
+  font-weight: 700;
+  letter-spacing: 0.02em;
 }
 
 .stats-table .total {
   font-weight: 700;
-  color: #f0f9ff;
+  color: var(--ink-bright);
 }
 
-.stats-table .mod.plus  { color: #86efac; }
-.stats-table .mod.minus { color: #fca5a5; }
+.stats-table .mod.plus  { color: var(--good); }
+.stats-table .mod.minus { color: var(--bad); }
 
 /* ---- Combat ---- */
 
@@ -688,10 +702,10 @@ const typeEffectivenessRows = computed(() => {
 }
 
 .combat-cell {
-  border: 1px solid rgba(96, 165, 250, 0.18);
-  border-radius: 12px;
+  border: 1px solid var(--rule-soft);
+  border-radius: 10px;
   padding: 0.45rem 0.6rem;
-  background: rgba(9, 18, 35, 0.6);
+  background: var(--paper-inset);
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
@@ -699,30 +713,32 @@ const typeEffectivenessRows = computed(() => {
 
 .combat-cell.hp-cell {
   grid-column: span 2;
-  background: rgba(15, 33, 60, 0.75);
+  background: var(--accent-soft);
+  border-color: var(--accent);
 }
 
 .cell-label {
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: rgba(125, 211, 252, 0.78);
+  letter-spacing: 0.1em;
+  color: var(--ink-muted);
 }
 
 .cell-value {
   font-weight: 700;
   font-variant-numeric: tabular-nums;
+  color: var(--ink-bright);
 }
 
-.cell-value--big { font-size: 1.4rem; }
-.cell-sub { font-weight: 400; color: rgba(191, 219, 254, 0.6); font-size: 0.95rem; }
+.cell-value--big { font-size: 1.5rem; font-family: var(--serif); }
+.cell-sub { font-weight: 400; color: var(--ink-muted); font-size: 0.95rem; }
 
 .evasion-row {
   margin-top: 0.6rem;
   padding: 0.5rem 0.65rem;
-  border: 1px solid rgba(96, 165, 250, 0.18);
-  border-radius: 12px;
-  background: rgba(9, 18, 35, 0.6);
+  border: 1px solid var(--rule-soft);
+  border-radius: 10px;
+  background: var(--paper-inset);
 }
 
 .evasion-row .cell-label { display: block; margin-bottom: 0.3rem; }
@@ -738,17 +754,21 @@ const typeEffectivenessRows = computed(() => {
 
 .evasion-row li {
   font-size: 0.85rem;
-  color: rgba(219, 234, 254, 0.85);
+  color: var(--ink);
+}
+
+.evasion-row li strong {
+  color: var(--ink-bright);
 }
 
 .combat-line {
   margin: 0.55rem 0 0;
   font-size: 0.9rem;
-  color: rgba(219, 234, 254, 0.9);
+  color: var(--ink);
 }
 
 .combat-line.notes {
-  color: rgba(191, 219, 254, 0.78);
+  color: var(--ink-soft);
   font-style: italic;
 }
 
@@ -769,15 +789,15 @@ const typeEffectivenessRows = computed(() => {
 }
 
 .kv-list dt {
-  font-size: 0.78rem;
+  font-size: 0.74rem;
   text-transform: uppercase;
-  letter-spacing: 0.07em;
-  color: rgba(125, 211, 252, 0.78);
+  letter-spacing: 0.1em;
+  color: var(--ink-muted);
 }
 
 .kv-list dd {
   margin: 0;
-  color: #eff6ff;
+  color: var(--ink-bright);
 }
 
 /* ---- Inherited moves ---- */
@@ -790,34 +810,35 @@ const typeEffectivenessRows = computed(() => {
 }
 
 .inherited-grid > div {
-  border: 1px solid rgba(96, 165, 250, 0.18);
-  border-radius: 10px;
+  border: 1px solid var(--rule-soft);
+  border-radius: 8px;
   padding: 0.35rem 0.55rem;
-  background: rgba(9, 18, 35, 0.6);
+  background: var(--paper-inset);
 }
 
 .inherited-grid dt {
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   text-transform: uppercase;
-  letter-spacing: 0.07em;
-  color: rgba(125, 211, 252, 0.78);
+  letter-spacing: 0.1em;
+  color: var(--ink-muted);
 }
 
 .inherited-grid dd {
   margin: 0.15rem 0 0;
-  color: #eff6ff;
+  color: var(--ink-bright);
   font-weight: 600;
 }
 
 .inherited-foot {
   margin: 0.5rem 0 0;
-  color: rgba(191, 219, 254, 0.78);
+  color: var(--ink-soft);
   font-size: 0.85rem;
 }
 
 .bg-desc {
   margin: 0 0 0.55rem;
-  color: rgba(219, 234, 254, 0.9);
+  color: var(--ink);
+  font-family: var(--serif);
   font-style: italic;
 }
 
@@ -836,34 +857,35 @@ const typeEffectivenessRows = computed(() => {
 .kv-table th,
 .kv-table td {
   padding: 0.45rem 0.55rem;
-  border-bottom: 1px solid rgba(96, 165, 250, 0.15);
+  border-bottom: 1px solid var(--rule);
   text-align: left;
   vertical-align: top;
 }
 
 .moves-table th,
 .kv-table th {
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: rgba(125, 211, 252, 0.78);
+  letter-spacing: 0.1em;
+  color: var(--ink-muted);
   font-weight: 600;
 }
 
 .move-name,
 .kv-name {
   font-weight: 700;
-  color: #f0f9ff;
+  color: var(--ink-bright);
+  letter-spacing: 0.02em;
 }
 
 .move-effect {
-  color: rgba(219, 234, 254, 0.85);
+  color: var(--ink-soft);
   font-size: 0.88rem;
 }
 
 .empty-cell {
   text-align: center;
-  color: rgba(191, 219, 254, 0.6);
+  color: var(--ink-muted);
   font-style: italic;
 }
 
@@ -876,30 +898,31 @@ const typeEffectivenessRows = computed(() => {
 }
 
 .type-cell {
-  border: 1px solid rgba(96, 165, 250, 0.18);
-  border-radius: 12px;
+  border: 1px solid var(--rule-soft);
+  border-radius: 10px;
   padding: 0.45rem 0.55rem;
-  background: rgba(9, 18, 35, 0.6);
+  background: var(--paper-inset);
   display: flex;
   flex-direction: column;
   gap: 0.1rem;
 }
 
-.type-cell--weak    { background: rgba(239, 68, 68, 0.16);  border-color: rgba(248, 113, 113, 0.35); }
-.type-cell--resist  { background: rgba(34, 197, 94, 0.14);  border-color: rgba(74, 222, 128, 0.32); }
-.type-cell--immune  { background: rgba(148, 163, 184, 0.18); border-color: rgba(203, 213, 225, 0.4); color: #f1f5f9; }
+.type-cell--weak    { background: rgba(251, 73, 52, 0.14);  border-color: rgba(251, 73, 52, 0.45); }
+.type-cell--resist  { background: rgba(184, 187, 38, 0.14); border-color: rgba(184, 187, 38, 0.45); }
+.type-cell--immune  { background: rgba(168, 153, 132, 0.18); border-color: var(--rule-active); color: var(--ink-soft); }
 
 .type-name {
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   text-transform: uppercase;
-  letter-spacing: 0.07em;
-  color: rgba(191, 219, 254, 0.85);
+  letter-spacing: 0.1em;
+  color: var(--ink-muted);
 }
 
 .type-mult {
   font-weight: 700;
   font-size: 1.05rem;
   font-variant-numeric: tabular-nums;
+  color: var(--ink-bright);
 }
 
 /* ---- Capabilities ---- */
@@ -912,27 +935,33 @@ const typeEffectivenessRows = computed(() => {
 }
 
 .caps-grid > div {
-  border: 1px solid rgba(96, 165, 250, 0.18);
-  border-radius: 10px;
+  border: 1px solid var(--rule-soft);
+  border-radius: 8px;
   padding: 0.4rem 0.55rem;
-  background: rgba(9, 18, 35, 0.6);
+  background: var(--paper-inset);
 }
 
 .caps-grid dt {
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   text-transform: uppercase;
-  letter-spacing: 0.07em;
-  color: rgba(125, 211, 252, 0.78);
+  letter-spacing: 0.1em;
+  color: var(--ink-muted);
 }
 
 .caps-grid dd {
   margin: 0.15rem 0 0;
   font-weight: 700;
+  color: var(--ink-bright);
 }
 
 .caps-line {
   margin: 0.55rem 0 0;
-  color: rgba(219, 234, 254, 0.9);
+  color: var(--ink);
+}
+
+.caps-line strong {
+  color: var(--ink-bright);
+  letter-spacing: 0.02em;
 }
 
 /* ---- Skills ---- */
@@ -948,34 +977,35 @@ const typeEffectivenessRows = computed(() => {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  border: 1px solid rgba(96, 165, 250, 0.18);
-  border-radius: 10px;
+  border: 1px solid var(--rule-soft);
+  border-radius: 8px;
   padding: 0.38rem 0.55rem;
-  background: rgba(9, 18, 35, 0.6);
+  background: var(--paper-inset);
 }
 
 .skill-cell--given {
-  background: rgba(15, 33, 60, 0.85);
-  border-color: rgba(125, 211, 252, 0.45);
+  background: var(--accent-soft);
+  border-color: var(--accent);
 }
 
-.skill-cell--given dt { color: #f0f9ff; font-weight: 700; }
+.skill-cell--given dt { color: var(--ink-bright); font-weight: 700; }
 
 .skill-cell dt {
   margin: 0;
   font-size: 0.85rem;
-  color: rgba(219, 234, 254, 0.88);
+  color: var(--ink);
 }
 
 .skill-cell dd {
   margin: 0;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
+  color: var(--ink-bright);
 }
 
 code {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 0.9em;
-  color: #bfdbfe;
+  color: var(--accent);
 }
 </style>

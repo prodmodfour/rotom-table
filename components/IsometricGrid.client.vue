@@ -24,7 +24,12 @@ const emit = defineEmits<{
 interface PokemonRenderObject {
   sprite: CSS3DSprite
   elevationBadge: CSS3DSprite
-  volume: THREE.Mesh<THREE.BoxGeometry, THREE.MeshBasicMaterial>
+  /**
+   * Volume box wrapping the pokemon's footprint × clearance. Uses a
+   * 6-material array so we can paint each face with the gruvbox
+   * top/left/right brightness ramp (see ``TERRAIN_PALETTE``).
+   */
+  volume: THREE.Mesh<THREE.BoxGeometry, THREE.MeshBasicMaterial[]>
   edges: THREE.LineSegments
   proxy: THREE.Mesh<THREE.BoxGeometry, THREE.MeshBasicMaterial>
   currentCenter: THREE.Vector3
@@ -37,6 +42,102 @@ interface PokemonRenderObject {
   spriteUrl: string
   backSpriteUrl?: string
   turned: boolean
+}
+
+/**
+ * Gruvbox terrain palette for isometric face shading.
+ *
+ * The classic isometric trick is roughly 100 / 80 / 60 % brightness for
+ * top / left / right faces. With gruvbox we step bg3 → bg2 → bg1
+ * (and dark/neutral/bright for accent variants) so everything stays
+ * in-palette without any literal HSL math.
+ *
+ * Opposite faces share roles so 90° azimuth rotations preserve the
+ * lighting pattern: ±X faces are always the "shadow" axis, ±Z faces
+ * are always the "side" axis, and ±Y is top/bottom.
+ */
+const TERRAIN_PALETTE = {
+  idle: {
+    top:    0x665c54, // bg3 — 100% (lit top)
+    side:   0x504945, // bg2 — 80%  (Z-perp visible side)
+    shadow: 0x3c3836, // bg1 — 60%  (X-perp shadowed side)
+    bottom: 0x282828, // bg0 — floor of the cage (rarely seen)
+  },
+  selected: {
+    top:    0xfabd2f, // yellow bright
+    side:   0xd79921, // yellow neutral
+    shadow: 0xb57614, // yellow faded
+    bottom: 0x79740e, // yellow dim
+  },
+  reachable: {
+    top:    0xfabd2f,
+    side:   0xd79921,
+    shadow: 0xb57614,
+    bottom: 0x79740e,
+  },
+  unreachable: {
+    top:    0xfb4934, // red bright
+    side:   0xcc241d, // red neutral
+    shadow: 0x9d0006, // red faded
+    bottom: 0x79190f, // red dim
+  },
+} as const
+
+type TerrainVariant = keyof typeof TERRAIN_PALETTE
+
+/**
+ * Build a 6-material array for a ``THREE.BoxGeometry`` with gruvbox
+ * face shading. BoxGeometry face groups are ordered
+ * ``+X, -X, +Y, -Y, +Z, -Z`` — we map opposing faces to the same role
+ * so the box reads consistently regardless of camera azimuth.
+ */
+const buildVolumeMaterials = (
+  variant: TerrainVariant,
+  opacity: number,
+): THREE.MeshBasicMaterial[] => {
+  const palette = TERRAIN_PALETTE[variant]
+  const make = (color: number) =>
+    new THREE.MeshBasicMaterial({
+      color,
+      transparent: opacity < 1,
+      opacity,
+      depthWrite: false,
+    })
+
+  return [
+    make(palette.shadow), // +X — "right" visible from default isometric
+    make(palette.shadow), // -X — becomes "right" after 180° rotation
+    make(palette.top),    // +Y — top
+    make(palette.bottom), // -Y — bottom
+    make(palette.side),   // +Z — "left" visible from default isometric
+    make(palette.side),   // -Z — becomes "left" after 180° rotation
+  ]
+}
+
+/**
+ * Re-tint an existing per-face material array in place. Avoids
+ * disposing/recreating materials when state flips (selected,
+ * reachable, etc.).
+ */
+const paintVolumeMaterials = (
+  materials: THREE.MeshBasicMaterial[],
+  variant: TerrainVariant,
+  opacity: number,
+) => {
+  const palette = TERRAIN_PALETTE[variant]
+  const colors: ReadonlyArray<number> = [
+    palette.shadow, // +X
+    palette.shadow, // -X
+    palette.top,    // +Y
+    palette.bottom, // -Y
+    palette.side,   // +Z
+    palette.side,   // -Z
+  ]
+  for (let i = 0; i < materials.length; i += 1) {
+    materials[i].color.setHex(colors[i])
+    materials[i].opacity = opacity
+    materials[i].transparent = opacity < 1
+  }
 }
 
 const SPRITE_PIXELS_PER_METRE = 128
@@ -82,7 +183,7 @@ let moveGridLines: THREE.LineSegments | null = null
 let floorPlane: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial> | null = null
 let ghostSprite: CSS3DSprite | null = null
 let previewElevationBadge: CSS3DSprite | null = null
-let previewVolume: THREE.Mesh<THREE.BoxGeometry, THREE.MeshBasicMaterial> | null = null
+let previewVolume: THREE.Mesh<THREE.BoxGeometry, THREE.MeshBasicMaterial[]> | null = null
 let previewEdges: THREE.LineSegments | null = null
 let previewPathLine: THREE.Line | null = null
 let previewOwnerId: string | null = null
@@ -323,12 +424,16 @@ const buildGrid = () => {
   disposeObject3D(moveGridLines)
   disposeObject3D(floorPlane)
 
+  // Gruvbox terrain seam lines: bg0_h, the same warm near-black as the
+  // page background. Per the reference palette, seam lines should
+  // "keep the grid legible without harsh contrast" — they read as
+  // dark grout between lit tiles rather than a bright overlay.
   floorGridLines = new THREE.LineSegments(
     buildFloorGridGeometry(props.dimensions),
     new THREE.LineBasicMaterial({
-      color: 0x2d7cff,
+      color: 0x1d2021, // bg0_h
       transparent: true,
-      opacity: 0.34,
+      opacity: 0.85,
     }),
   )
   gridGroup.add(floorGridLines)
@@ -336,19 +441,22 @@ const buildGrid = () => {
   moveGridLines = new THREE.LineSegments(
     buildMoveGridGeometry(props.dimensions),
     new THREE.LineBasicMaterial({
-      color: 0x2d7cff,
+      color: 0x1d2021,
       transparent: true,
       opacity: 0.01,
     }),
   )
   gridGroup.add(moveGridLines)
 
+  // Floor plane = the lit "top" of the tabletop. bg2 is the classic
+  // gruvbox "left/mid face" tone but feels right for a horizontal
+  // surface that catches no direct sun in the per-face ramp — it
+  // sits just below the bg3 box-tops so anything placed on the grid
+  // visually pops upward.
   floorPlane = new THREE.Mesh(
     new THREE.PlaneGeometry(props.dimensions.x, props.dimensions.z),
     new THREE.MeshBasicMaterial({
-      color: 0x07162d,
-      transparent: true,
-      opacity: 0.55,
+      color: 0x504945, // bg2 — lit horizontal surface
       side: THREE.DoubleSide,
       depthWrite: false,
     }),
@@ -398,20 +506,20 @@ const buildRenderObject = (pokemon: SpawnedPokemon): PokemonRenderObject => {
   const sprite = buildSprite(pokemon)
   const elevationBadge = buildElevationBadge()
   const volumeGeometry = new THREE.BoxGeometry(pokemon.base, pokemon.clearance, pokemon.base)
-  const volumeMaterial = new THREE.MeshBasicMaterial({
-    color: 0x2563eb,
-    transparent: true,
-    opacity: 0.08,
-    depthWrite: false,
-  })
-  const volume = new THREE.Mesh(volumeGeometry, volumeMaterial)
+  // Per-face gruvbox shading: top=bg3, Z-sides=bg2, X-sides=bg1.
+  // Opacity is bumped slightly vs. the old single-material box so the
+  // brightness ramp is actually visible without hiding the sprite.
+  const volume = new THREE.Mesh(
+    volumeGeometry,
+    buildVolumeMaterials('idle', 0.18),
+  )
 
   const edges = new THREE.LineSegments(
     new THREE.EdgesGeometry(volumeGeometry),
     new THREE.LineBasicMaterial({
-      color: 0x60a5fa,
+      color: 0xa89984, // fg4
       transparent: true,
-      opacity: 0.48,
+      opacity: 0.55,
     }),
   )
 
@@ -490,10 +598,15 @@ const refreshPokemonStyles = () => {
     }
 
     const selected = props.selectedId === pokemon.id
-    renderObject.volume.material.color.set(selected ? 0x67e8f9 : 0x2563eb)
-    renderObject.volume.material.opacity = selected ? 0.18 : 0.08
-    ;(renderObject.edges.material as THREE.LineBasicMaterial).color.set(selected ? 0xbef4ff : 0x60a5fa)
-    ;(renderObject.edges.material as THREE.LineBasicMaterial).opacity = selected ? 0.92 : 0.48
+    // Re-tint the per-face material array with the appropriate
+    // gruvbox terrain ramp instead of a single solid color.
+    paintVolumeMaterials(
+      renderObject.volume.material,
+      selected ? 'selected' : 'idle',
+      selected ? 0.32 : 0.18,
+    )
+    ;(renderObject.edges.material as THREE.LineBasicMaterial).color.set(selected ? 0xfbf1c7 : 0xa89984)
+    ;(renderObject.edges.material as THREE.LineBasicMaterial).opacity = selected ? 0.95 : 0.55
   }
 }
 
@@ -568,14 +681,12 @@ const ensurePreviewObjects = () => {
   previewElevationBadge.visible = false
   scene.add(previewElevationBadge)
 
+  // Preview volume gets the same per-face shading as live pokemon
+  // boxes, but tinted with gruvbox yellow (reachable) or red
+  // (unreachable) instead of the warm gray ramp.
   previewVolume = new THREE.Mesh(
     new THREE.BoxGeometry(selected.base, selected.clearance, selected.base),
-    new THREE.MeshBasicMaterial({
-      color: 0xfbbf24,
-      transparent: true,
-      opacity: 0.12,
-      depthWrite: false,
-    }),
+    buildVolumeMaterials('reachable', 0.24),
   )
   previewVolume.visible = false
   previewGroup.add(previewVolume)
@@ -583,9 +694,9 @@ const ensurePreviewObjects = () => {
   previewEdges = new THREE.LineSegments(
     new THREE.EdgesGeometry(new THREE.BoxGeometry(selected.base, selected.clearance, selected.base)),
     new THREE.LineBasicMaterial({
-      color: 0xfde68a,
+      color: 0xfbf1c7, // fg0 - bright cream highlight on the yellow box
       transparent: true,
-      opacity: 0.9,
+      opacity: 0.92,
     }),
   )
   previewEdges.visible = false
@@ -595,7 +706,7 @@ const ensurePreviewObjects = () => {
     previewPathLine = new THREE.Line(
       new THREE.BufferGeometry(),
       new THREE.LineBasicMaterial({
-        color: 0x7dd3fc,
+        color: 0xfabd2f, // gruvbox yellow path trail
         transparent: true,
         opacity: 0.95,
       }),
@@ -665,11 +776,15 @@ const updatePreviewAtAnchor = (anchor: GridAnchor | null) => {
   ghostSprite.element.classList.toggle('is-invalid', !reachable)
 
   previewVolume.position.set(center.x, anchor.y + selected.clearance / 2, center.z)
-  previewVolume.material.color.set(reachable ? 0xfbbf24 : 0xf87171)
-  previewVolume.material.opacity = reachable ? 0.12 : 0.1
+  // Repaint all 6 faces with the appropriate brightness ramp.
+  paintVolumeMaterials(
+    previewVolume.material,
+    reachable ? 'reachable' : 'unreachable',
+    reachable ? 0.24 : 0.22,
+  )
   previewVolume.visible = true
 
-  ;(previewEdges.material as THREE.LineBasicMaterial).color.set(reachable ? 0xfef08a : 0xfca5a5)
+  ;(previewEdges.material as THREE.LineBasicMaterial).color.set(reachable ? 0xfbf1c7 : 0xfb4934)
   previewEdges.position.copy(previewVolume.position)
   previewEdges.visible = true
 
@@ -985,7 +1100,7 @@ onMounted(() => {
   camera.zoom = 1.1
 
   renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false })
-  renderer.setClearColor(0x050d1b, 1)
+  renderer.setClearColor(0x1d2021, 1) // gruvbox bg0_h
   renderer.outputColorSpace = THREE.SRGBColorSpace
   renderer.domElement.style.display = 'block'
   renderer.domElement.style.width = '100%'
@@ -1178,40 +1293,41 @@ watch(
   width: 100%;
   min-height: 100vh;
   overflow: hidden;
-  background:
-    radial-gradient(circle at top, rgba(37, 99, 235, 0.12), transparent 40%),
-    linear-gradient(180deg, rgba(3, 10, 23, 0.55), rgba(5, 13, 27, 0.92));
+  background: var(--paper);
 }
 
 .context-menu {
   position: absolute;
   z-index: 8;
   min-width: 160px;
-  padding: 0.45rem;
-  border: 1px solid rgba(96, 165, 250, 0.25);
-  border-radius: 14px;
-  background: rgba(7, 18, 39, 0.96);
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.28);
+  padding: 0.4rem;
+  border: 1px solid var(--rule-soft);
+  border-radius: 12px;
+  background: var(--paper-soft);
+  box-shadow: var(--shadow-card);
   backdrop-filter: blur(8px);
 }
 
 .context-menu__button {
   width: 100%;
-  border: 1px solid rgba(96, 165, 250, 0.2);
-  border-radius: 10px;
-  background: rgba(15, 23, 42, 0.92);
-  color: #eff6ff;
-  padding: 0.65rem 0.8rem;
+  border: 1px solid var(--rule-soft);
+  border-radius: 8px;
+  background: var(--paper);
+  color: var(--ink);
+  padding: 0.6rem 0.8rem;
   text-align: left;
   cursor: pointer;
+  letter-spacing: 0.02em;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
 }
 
 .context-menu__button + .context-menu__button {
-  margin-top: 0.35rem;
+  margin-top: 0.3rem;
 }
 
 .context-menu__button:hover {
-  border-color: rgba(125, 211, 252, 0.7);
-  background: rgba(17, 38, 70, 0.96);
+  border-color: var(--rule-strong);
+  background: var(--paper-hover);
+  color: var(--ink-bright);
 }
 </style>

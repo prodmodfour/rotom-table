@@ -115,13 +115,18 @@ const filtered = computed(() => {
 }
 
 .type-filter .type-pill.active {
-  outline: 2px solid #f0f9ff;
+  outline: 2px solid var(--ink-bright);
   outline-offset: 1px;
 }
 
 .type-filter .type-pill:not([data-type]) {
-  background: rgba(15, 23, 42, 0.85);
-  color: #eff6ff;
-  border-color: rgba(96, 165, 250, 0.25);
+  background: var(--paper);
+  color: var(--ink);
+  border-color: var(--rule-soft);
+}
+
+.type-filter .type-pill:not([data-type]):hover {
+  border-color: var(--rule-strong);
+  background: var(--paper-hover);
 }
 </style>

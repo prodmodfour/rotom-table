@@ -106,22 +106,26 @@ const siblings = computed(() => {
 }
 
 .tag-badge {
-  background: rgba(168, 85, 247, 0.18);
-  color: #ddd6fe;
-  font-size: 0.74rem;
-  padding: 0.12rem 0.5rem;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.12rem 0.55rem;
+  border-radius: 999px;
 }
 
 .class-note {
   margin: 0 0 0.7rem;
-  color: rgba(191, 219, 254, 0.78);
+  color: var(--ink-soft);
   font-size: 0.92rem;
+  font-style: italic;
 }
 
 .class-note a {
-  color: #bae6fd;
+  color: var(--accent);
   text-decoration: underline;
-  text-decoration-color: rgba(186, 230, 253, 0.45);
+  text-decoration-color: var(--rule-strong);
   text-underline-offset: 0.18em;
 }
 
@@ -138,16 +142,16 @@ const siblings = computed(() => {
   display: flex;
   flex-direction: column;
   gap: 0.2rem;
-  padding: 0.4rem 0.55rem;
-  border: 1px solid rgba(96, 165, 250, 0.18);
-  border-radius: 10px;
-  background: rgba(15, 23, 42, 0.62);
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--rule-soft);
+  border-radius: 8px;
+  background: var(--paper-inset);
 }
 
 .sibling-list a {
-  color: #f0f9ff;
+  color: var(--ink-bright);
   text-decoration: underline;
-  text-decoration-color: rgba(186, 230, 253, 0.4);
+  text-decoration-color: var(--rule-strong);
   text-underline-offset: 0.18em;
 }
 

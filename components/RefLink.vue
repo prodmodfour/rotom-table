@@ -43,26 +43,27 @@ const labelText = computed(() => props.display ?? props.name)
 .ref-link {
   color: inherit;
   text-decoration: underline;
-  text-decoration-color: currentColor;
+  text-decoration-color: var(--rule-strong);
   text-decoration-thickness: 1px;
   text-underline-offset: 0.18em;
   text-decoration-style: dotted;
   cursor: pointer;
-  transition: color 0.12s ease;
+  transition: color 0.12s ease, text-decoration-color 0.12s ease;
 }
 
 .ref-link:hover {
-  color: #f0f9ff;
+  color: var(--ink-bright);
   text-decoration-style: solid;
+  text-decoration-color: var(--accent);
 }
 
 .ref-link--missing {
   cursor: help;
-  text-decoration-color: rgba(148, 163, 184, 0.45);
-  color: inherit;
+  text-decoration-color: var(--rule);
+  color: var(--ink-muted);
 }
 
 .ref-link--missing:hover {
-  color: inherit;
+  color: var(--ink-muted);
 }
 </style>

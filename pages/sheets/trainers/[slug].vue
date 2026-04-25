@@ -617,10 +617,8 @@ const orderedClasses  = computed(() => sheet?.classes ?? [])
   gap: 0.85rem;
   padding: 0.85rem;
   min-height: 100vh;
-  background:
-    radial-gradient(circle at top, rgba(37, 99, 235, 0.1), transparent 35%),
-    #050d1b;
-  color: #eff6ff;
+  background: var(--paper);
+  color: var(--ink);
 }
 
 .sheet-header {
@@ -630,18 +628,22 @@ const orderedClasses  = computed(() => sheet?.classes ?? [])
 }
 
 .back-link {
-  color: #bae6fd;
+  color: var(--ink-soft);
   text-decoration: underline;
-  text-decoration-color: rgba(186, 230, 253, 0.45);
+  text-decoration-color: var(--rule-strong);
   text-underline-offset: 0.18em;
 }
 
+.back-link:hover {
+  color: var(--ink-bright);
+}
+
 .sheet-card {
-  border: 1px solid rgba(96, 165, 250, 0.22);
-  border-radius: 18px;
-  background: rgba(8, 20, 43, 0.82);
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.22);
-  padding: 1rem;
+  border: 1px solid var(--rule);
+  border-radius: 14px;
+  background: var(--paper-soft);
+  box-shadow: var(--shadow-card);
+  padding: 0.95rem;
 }
 
 /* ===== Identity ===== */
@@ -652,23 +654,27 @@ const orderedClasses  = computed(() => sheet?.classes ?? [])
   justify-content: space-between;
   gap: 1rem;
   padding-bottom: 0.85rem;
-  border-bottom: 1px solid rgba(96, 165, 250, 0.18);
+  border-bottom: 1px solid var(--rule-soft);
 }
 
 .identity-info h1 {
   margin: 0 0 0.25rem;
-  font-size: 1.6rem;
-  letter-spacing: 0.02em;
+  font-family: var(--serif);
+  font-size: 1.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--ink-bright);
 }
 
 .identity-meta {
   margin: 0;
-  color: rgba(191, 219, 254, 0.85);
+  color: var(--ink-soft);
+  font-style: italic;
 }
 
 .identity-played-by {
   margin: 0.25rem 0 0;
-  color: rgba(191, 219, 254, 0.65);
+  color: var(--ink-muted);
   font-size: 0.85rem;
 }
 
@@ -684,26 +690,27 @@ const orderedClasses  = computed(() => sheet?.classes ?? [])
   flex-direction: column;
   gap: 0.1rem;
   padding: 0.45rem 0.6rem;
-  border: 1px solid rgba(96, 165, 250, 0.18);
-  border-radius: 12px;
-  background: rgba(15, 23, 42, 0.72);
+  border: 1px solid var(--rule-soft);
+  border-radius: 10px;
+  background: var(--paper-inset);
 }
 
 .vital-label {
-  font-size: 0.7rem;
-  letter-spacing: 0.08em;
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: rgba(191, 219, 254, 0.62);
+  color: var(--ink-muted);
 }
 
 .vital-value {
   font-size: 1.15rem;
   font-weight: 700;
-  color: #f0f9ff;
+  color: var(--ink-bright);
+  font-variant-numeric: tabular-nums;
 }
 
 .vital-divider {
-  color: rgba(191, 219, 254, 0.45);
+  color: var(--ink-faint);
   font-weight: 400;
   margin: 0 0.18rem;
 }
@@ -717,22 +724,27 @@ const orderedClasses  = computed(() => sheet?.classes ?? [])
 }
 
 .tab-btn {
-  padding: 0.55rem 0.95rem;
-  border: 1px solid rgba(96, 165, 250, 0.22);
-  border-radius: 12px;
-  background: rgba(15, 23, 42, 0.72);
-  color: #dbeafe;
+  padding: 0.5rem 0.85rem;
+  border: 1px solid var(--rule-soft);
+  border-radius: 10px;
+  background: var(--paper);
+  color: var(--ink);
   font-weight: 600;
+  letter-spacing: 0.04em;
   cursor: pointer;
-  transition: background 0.12s, border-color 0.12s;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
 }
 
-.tab-btn:hover { border-color: rgba(125, 211, 252, 0.7); }
+.tab-btn:hover {
+  border-color: var(--rule-strong);
+  background: var(--paper-hover);
+  color: var(--ink-bright);
+}
 
 .tab-btn.active {
-  background: rgba(11, 47, 92, 0.85);
-  border-color: rgba(125, 211, 252, 0.82);
-  color: #eff6ff;
+  background: var(--paper-active);
+  border-color: var(--rule-active);
+  color: var(--ink-bright);
 }
 
 .tab-panel {
@@ -749,52 +761,55 @@ const orderedClasses  = computed(() => sheet?.classes ?? [])
 }
 
 .block {
-  border: 1px solid rgba(96, 165, 250, 0.18);
-  border-radius: 14px;
-  background: rgba(15, 23, 42, 0.62);
+  border: 1px solid var(--rule-soft);
+  border-radius: 12px;
+  background: var(--paper-inset);
   padding: 0.7rem 0.85rem;
 }
 
 .block-title {
   margin: 0 0 0.5rem;
-  font-size: 0.95rem;
-  letter-spacing: 0.06em;
+  font-family: var(--serif);
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: rgba(125, 211, 252, 0.85);
+  color: var(--ink-bright);
 }
 
 .block-title--spaced { margin-top: 0.85rem; }
 
-.muted { color: rgba(191, 219, 254, 0.6); font-size: 0.85rem; }
+.muted { color: var(--ink-muted); font-size: 0.85rem; }
 
 /* ===== Tables ===== */
 .data-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.86rem;
+  font-size: 0.88rem;
 }
 
 .data-table th,
 .data-table td {
-  padding: 0.32rem 0.5rem;
+  padding: 0.35rem 0.5rem;
   text-align: left;
-  border-bottom: 1px solid rgba(96, 165, 250, 0.12);
+  border-bottom: 1px solid var(--rule);
 }
 
 .data-table th {
   font-weight: 600;
-  color: #e0f2fe;
+  color: var(--ink-bright);
 }
 
 .data-table thead th {
-  font-size: 0.74rem;
-  letter-spacing: 0.06em;
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: rgba(186, 230, 253, 0.75);
-  background: rgba(15, 23, 42, 0.55);
+  color: var(--ink-muted);
+  background: transparent;
+  font-weight: 600;
 }
 
-.stats-table tbody th { color: #fde68a; }
+.stats-table tbody th { color: var(--accent); letter-spacing: 0.04em; }
 
 /* Skills */
 .skills-grid {
@@ -809,29 +824,29 @@ const orderedClasses  = computed(() => sheet?.classes ?? [])
   align-items: baseline;
   gap: 0.35rem;
   padding: 0.32rem 0.5rem;
-  border: 1px solid rgba(96, 165, 250, 0.14);
-  border-radius: 10px;
-  background: rgba(8, 20, 43, 0.65);
+  border: 1px solid var(--rule-soft);
+  border-radius: 8px;
+  background: var(--paper-inset);
 }
 
 .skill-row.raised {
-  border-color: rgba(74, 222, 128, 0.4);
-  background: rgba(20, 83, 45, 0.32);
+  border-color: rgba(184, 187, 38, 0.45);
+  background: rgba(184, 187, 38, 0.12);
 }
 
 .skill-row.lowered {
-  border-color: rgba(248, 113, 113, 0.4);
-  background: rgba(127, 29, 29, 0.28);
+  border-color: rgba(251, 73, 52, 0.45);
+  background: rgba(251, 73, 52, 0.12);
 }
 
-.skill-label { color: #e0f2fe; font-weight: 500; font-size: 0.86rem; }
-.skill-rank  { color: rgba(186, 230, 253, 0.85); font-size: 0.78rem; }
-.skill-dice  { color: #fde68a; font-weight: 700; font-size: 0.82rem; }
+.skill-label { color: var(--ink); font-weight: 500; font-size: 0.86rem; }
+.skill-rank  { color: var(--ink-muted); font-size: 0.78rem; letter-spacing: 0.04em; }
+.skill-dice  { color: var(--accent); font-weight: 700; font-size: 0.82rem; }
 
 /* Background card */
 .bg-card { display: flex; flex-direction: column; gap: 0.4rem; }
-.bg-name { font-size: 1.05rem; font-weight: 700; color: #fde68a; }
-.bg-desc { margin: 0; color: rgba(191, 219, 254, 0.78); font-size: 0.85rem; }
+.bg-name { font-family: var(--serif); font-size: 1.1rem; font-weight: 700; letter-spacing: 0.04em; color: var(--accent); }
+.bg-desc { margin: 0; color: var(--ink-soft); font-style: italic; font-size: 0.88rem; }
 
 .bg-list {
   list-style: none;
@@ -853,16 +868,16 @@ const orderedClasses  = computed(() => sheet?.classes ?? [])
   display: inline-flex;
   padding: 0.12rem 0.55rem;
   border-radius: 999px;
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   font-weight: 700;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   border: 1px solid transparent;
 }
 
-.bg-tag.adept    { background: rgba(74, 222, 128, 0.2);  color: #bbf7d0; border-color: rgba(74, 222, 128, 0.4); }
-.bg-tag.novice   { background: rgba(56, 189, 248, 0.18); color: #bae6fd; border-color: rgba(56, 189, 248, 0.4); }
-.bg-tag.pathetic { background: rgba(248, 113, 113, 0.2); color: #fecaca; border-color: rgba(248, 113, 113, 0.4); }
+.bg-tag.adept    { background: rgba(184, 187, 38, 0.16); color: var(--good); border-color: rgba(184, 187, 38, 0.45); }
+.bg-tag.novice   { background: var(--accent-soft);       color: var(--accent); border-color: rgba(250, 189, 47, 0.4); }
+.bg-tag.pathetic { background: rgba(251, 73, 52, 0.16);  color: var(--bad);  border-color: rgba(251, 73, 52, 0.45); }
 
 /* Key/value lists */
 .kv-list {
@@ -880,8 +895,8 @@ const orderedClasses  = computed(() => sheet?.classes ?? [])
   justify-content: space-between;
   gap: 0.5rem;
   padding: 0.28rem 0;
-  border-bottom: 1px dashed rgba(96, 165, 250, 0.12);
-  font-size: 0.86rem;
+  border-bottom: 1px dashed var(--rule);
+  font-size: 0.88rem;
 }
 
 .kv-list li:last-child { border-bottom: 0; }
@@ -895,8 +910,8 @@ const orderedClasses  = computed(() => sheet?.classes ?? [])
   gap: 0.32rem;
 }
 
-.cls-spec  { color: rgba(252, 211, 77, 0.92); margin-left: 0.3rem; }
-.cls-notes { color: rgba(191, 219, 254, 0.7); margin-left: 0.4rem; }
+.cls-spec  { color: var(--accent); margin-left: 0.3rem; font-style: italic; }
+.cls-notes { color: var(--ink-soft); margin-left: 0.4rem; }
 
 /* Combat strip */
 .combat-strip {
@@ -909,15 +924,25 @@ const orderedClasses  = computed(() => sheet?.classes ?? [])
   display: flex;
   flex-direction: column;
   gap: 0.1rem;
-  padding: 0.4rem 0.5rem;
-  border: 1px solid rgba(96, 165, 250, 0.18);
+  padding: 0.45rem 0.5rem;
+  border: 1px solid var(--rule-soft);
   border-radius: 10px;
-  background: rgba(15, 23, 42, 0.72);
+  background: var(--paper-inset);
   text-align: center;
 }
 
-.combat-cell span { font-size: 0.7rem; letter-spacing: 0.05em; text-transform: uppercase; color: rgba(191, 219, 254, 0.6); }
-.combat-cell strong { font-size: 1.1rem; color: #fde68a; }
+.combat-cell span {
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.combat-cell strong {
+  font-size: 1.15rem;
+  color: var(--ink-bright);
+  font-variant-numeric: tabular-nums;
+  font-family: var(--serif);
+}
 
 /* Capabilities */
 .cap-grid {
@@ -932,14 +957,14 @@ const orderedClasses  = computed(() => sheet?.classes ?? [])
 .cap-grid li {
   display: flex;
   justify-content: space-between;
-  padding: 0.3rem 0.5rem;
-  border: 1px solid rgba(96, 165, 250, 0.14);
-  border-radius: 10px;
-  background: rgba(8, 20, 43, 0.6);
+  padding: 0.3rem 0.55rem;
+  border: 1px solid var(--rule-soft);
+  border-radius: 8px;
+  background: var(--paper-inset);
 }
 
-.cap-label { color: rgba(191, 219, 254, 0.78); font-size: 0.82rem; }
-.cap-value { color: #fde68a; font-weight: 700; font-size: 0.92rem; }
+.cap-label { color: var(--ink-soft); font-size: 0.82rem; }
+.cap-value { color: var(--ink-bright); font-weight: 700; font-size: 0.92rem; font-variant-numeric: tabular-nums; }
 
 .chip-row {
   list-style: none;
@@ -951,33 +976,38 @@ const orderedClasses  = computed(() => sheet?.classes ?? [])
 }
 
 .chip-row li {
-  padding: 0.2rem 0.55rem;
-  border: 1px solid rgba(96, 165, 250, 0.18);
+  padding: 0.18rem 0.55rem;
+  border: 1px solid var(--rule-soft);
   border-radius: 999px;
-  background: rgba(15, 23, 42, 0.72);
-  font-size: 0.78rem;
-  color: rgba(191, 219, 254, 0.85);
+  background: var(--paper-inset);
+  font-size: 0.76rem;
+  letter-spacing: 0.04em;
+  color: var(--ink-soft);
 }
 
 /* Movelist columns */
 .movelist-table th,
 .movelist-table td { vertical-align: top; }
-.effect-col { color: rgba(191, 219, 254, 0.82); white-space: pre-wrap; max-width: 22rem; }
-.notes-col { color: rgba(191, 219, 254, 0.6); }
+.effect-col { color: var(--ink-soft); white-space: pre-wrap; max-width: 22rem; }
+.notes-col { color: var(--ink-muted); }
 
 /* Tag badges */
 .tag-badge {
   display: inline-flex;
   align-items: center;
   border-radius: 999px;
-  padding: 0.1rem 0.45rem;
-  background: rgba(168, 85, 247, 0.22);
-  color: #ddd6fe;
-  font-size: 0.7rem;
+  padding: 0.1rem 0.5rem;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   margin-right: 0.2rem;
 }
 
-/* Narrative panels */
+/* Narrative panels — "margin notes" in the book.
+   All four use the same parchment look, distinguished only by a thin
+   left rule and label colour, so they read as deliberate annotations. */
 .narrative-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -985,29 +1015,40 @@ const orderedClasses  = computed(() => sheet?.classes ?? [])
 }
 
 .narrative {
-  border-radius: 14px;
-  padding: 0.7rem 0.85rem;
-  border: 1px solid;
+  border-radius: 10px;
+  padding: 0.7rem 0.85rem 0.7rem 1rem;
+  border: 1px solid var(--rule-soft);
+  border-left: 3px solid var(--rule-strong);
+  background: var(--paper-inset);
 }
 
 .narrative h3 {
   margin: 0 0 0.35rem;
+  font-family: var(--serif);
   font-size: 0.95rem;
-  letter-spacing: 0.06em;
+  font-weight: 700;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
+  color: var(--ink-bright);
 }
 
-.narrative p { margin: 0; line-height: 1.5; color: rgba(238, 242, 255, 0.92); font-size: 0.88rem; }
+.narrative p {
+  margin: 0;
+  line-height: 1.55;
+  color: var(--ink);
+  font-family: var(--serif);
+  font-size: 0.95rem;
+}
 
-.narrative--red    { background: rgba(127, 29, 29, 0.32); border-color: rgba(248, 113, 113, 0.45); }
-.narrative--red h3 { color: #fecaca; }
+.narrative--red    { border-left-color: var(--bad); }
+.narrative--red h3 { color: var(--bad); }
 
-.narrative--yellow { background: rgba(120, 53, 15, 0.32); border-color: rgba(252, 211, 77, 0.45); }
-.narrative--yellow h3 { color: #fde68a; }
+.narrative--yellow { border-left-color: var(--accent); }
+.narrative--yellow h3 { color: var(--accent); }
 
-.narrative--purple { background: rgba(76, 29, 149, 0.32); border-color: rgba(192, 132, 252, 0.45); }
-.narrative--purple h3 { color: #ddd6fe; }
+.narrative--purple { border-left-color: var(--magic); }
+.narrative--purple h3 { color: var(--magic); }
 
-.narrative--green  { background: rgba(20, 83, 45, 0.32); border-color: rgba(74, 222, 128, 0.45); }
-.narrative--green h3 { color: #bbf7d0; }
+.narrative--green  { border-left-color: var(--good); }
+.narrative--green h3 { color: var(--good); }
 </style>

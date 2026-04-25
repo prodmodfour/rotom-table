@@ -1,6 +1,53 @@
 :root {
   color-scheme: dark;
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+
+  /* ----------------------------------------------------------------
+   * Gruvbox Dark theme tokens.
+   *
+   * Palette reference (hard variant):
+   *   bg0_h #1d2021   bg0   #282828   bg0_s #32302f
+   *   bg1   #3c3836   bg2   #504945   bg3   #665c54   bg4 #7c6f64
+   *   fg0   #fbf1c7   fg1   #ebdbb2   fg2   #d5c4a1
+   *   fg3   #bdae93   fg4   #a89984   gray  #928374
+   *   yellow #fabd2f  orange #fe8019   red   #fb4934   green #b8bb26
+   *   aqua   #8ec07c  blue   #83a598   purple #d3869b
+   *
+   * Names follow the original "paper / ink / rule" structure so
+   * scoped styles already wired up keep working.
+   * ---------------------------------------------------------------- */
+
+  --paper:         #1d2021;   /* bg0_h - page background */
+  --paper-soft:    #282828;   /* bg0   - card background */
+  --paper-hover:   #32302f;   /* bg0_s - row/btn hover */
+  --paper-active:  #3c3836;   /* bg1   - active row/btn */
+  --paper-inset:   #32302f;   /* inset / sub-card panel */
+
+  --ink:           #ebdbb2;   /* fg1  - primary text */
+  --ink-bright:    #fbf1c7;   /* fg0  - emphasized text */
+  --ink-soft:      #d5c4a1;   /* fg2  - secondary text */
+  --ink-muted:     #a89984;   /* fg4  - tertiary / labels */
+  --ink-faint:     #928374;   /* gray - disabled / faint */
+
+  --rule:          #3c3836;   /* bg1  - hairline */
+  --rule-soft:     #504945;   /* bg2  - normal border */
+  --rule-strong:   #665c54;   /* bg3  - hover border */
+  --rule-active:   #7c6f64;   /* bg4  - active border */
+
+  --accent:        #fabd2f;   /* yellow bright - the iconic gruvbox accent */
+  --accent-soft:   rgba(250, 189, 47, 0.12);
+  --accent-muted:  #d79921;   /* yellow neutral - for subtler accents */
+
+  --good:          #b8bb26;   /* green bright */
+  --bad:           #fb4934;   /* red bright */
+  --info:          #83a598;   /* blue bright */
+  --warn:          #fe8019;   /* orange bright */
+  --magic:         #d3869b;   /* purple bright */
+
+  --shadow-card:   0 18px 40px rgba(0, 0, 0, 0.55);
+
+  --serif: "EB Garamond", "Iowan Old Style", "Palatino Linotype",
+    Palatino, "Hoefler Text", "Times New Roman", Georgia, serif;
 }
 
 * {
@@ -15,8 +62,8 @@ body,
 
 body {
   margin: 0;
-  background: #050d1b;
-  color: #e2f2ff;
+  background: var(--paper);
+  color: var(--ink);
 }
 
 button,
@@ -28,13 +75,53 @@ button {
   color: inherit;
 }
 
+a {
+  color: var(--accent);
+}
+
+::selection {
+  background: rgba(250, 189, 47, 0.28);
+  color: var(--ink-bright);
+}
+
+/* Scrollbars — match the warm dark surface so they don't
+   stand out as ice-blue strips on Chromium. */
+* {
+  scrollbar-color: var(--rule-strong) var(--paper);
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  background: var(--paper);
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--rule-soft);
+  border-radius: 999px;
+  border: 2px solid var(--paper);
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--rule-strong);
+}
+
+/* ------------------------------------------------------------------
+ * Tabletop sprite + elevation badge styling.
+ * Tinted with the Gruvbox yellow accent so they read as a deliberate
+ * highlight on the warm dark backdrop.
+ * ------------------------------------------------------------------ */
+
 .pokemon-sprite {
   display: flex;
   align-items: flex-end;
   justify-content: center;
   transform-origin: center center;
   pointer-events: none;
-  filter: drop-shadow(0 0 16px rgba(72, 187, 255, 0.18));
+  filter: drop-shadow(0 0 16px rgba(250, 189, 47, 0.18));
 }
 
 .pokemon-sprite img {
@@ -47,13 +134,14 @@ button {
 }
 
 .pokemon-sprite.is-ghost {
-  opacity: 0.38;
-  filter: saturate(0.75) brightness(1.2) drop-shadow(0 0 18px rgba(191, 219, 254, 0.55));
+  opacity: 0.4;
+  filter: saturate(0.75) brightness(1.2) drop-shadow(0 0 18px rgba(213, 196, 161, 0.5));
 }
 
 .pokemon-sprite.is-invalid {
-  opacity: 0.24;
-  filter: saturate(0.7) sepia(0.35) hue-rotate(-25deg) brightness(1.05) drop-shadow(0 0 18px rgba(248, 113, 113, 0.45));
+  opacity: 0.28;
+  filter: saturate(0.7) sepia(0.35) hue-rotate(-15deg) brightness(1.05)
+    drop-shadow(0 0 18px rgba(251, 73, 52, 0.45));
 }
 
 .elevation-badge {
@@ -62,22 +150,22 @@ button {
   justify-content: center;
   min-width: 42px;
   padding: 3px 7px;
-  border: 1px solid rgba(96, 165, 250, 0.45);
+  border: 1px solid var(--rule-active);
   border-radius: 999px;
-  background: rgba(7, 22, 45, 0.86);
-  color: #dbeafe;
+  background: rgba(40, 40, 40, 0.88);
+  color: var(--ink);
   font-size: 14px;
   font-weight: 700;
   line-height: 1;
   white-space: nowrap;
   user-select: none;
   pointer-events: none;
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.28);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.5);
 }
 
 .elevation-badge.is-ghost {
-  opacity: 0.72;
-  border-color: rgba(253, 230, 138, 0.6);
-  background: rgba(80, 58, 10, 0.55);
-  color: #fef3c7;
+  opacity: 0.85;
+  border-color: var(--accent);
+  background: rgba(60, 56, 54, 0.85);
+  color: var(--accent);
 }

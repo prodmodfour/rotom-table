@@ -158,9 +158,8 @@ const filteredCount  = computed(() => filteredSheets.value.length + filteredTrai
   gap: 0.85rem;
   padding: 0.85rem;
   min-height: 100vh;
-  background:
-    radial-gradient(circle at top, rgba(37, 99, 235, 0.1), transparent 35%),
-    #050d1b;
+  background: var(--paper);
+  color: var(--ink);
 }
 
 .sheets-header {
@@ -170,10 +169,10 @@ const filteredCount  = computed(() => filteredSheets.value.length + filteredTrai
 }
 
 .panel-card {
-  border: 1px solid rgba(96, 165, 250, 0.22);
-  border-radius: 18px;
-  background: rgba(8, 20, 43, 0.82);
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.22);
+  border: 1px solid var(--rule);
+  border-radius: 14px;
+  background: var(--paper-soft);
+  box-shadow: var(--shadow-card);
   padding: 0.95rem;
 }
 
@@ -187,19 +186,23 @@ const filteredCount  = computed(() => filteredSheets.value.length + filteredTrai
 
 .intro-heading h1 {
   margin: 0;
-  font-size: 1.35rem;
+  font-family: var(--serif);
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--ink-bright);
 }
 
 .intro-copy {
   margin: 0 0 0.85rem;
-  color: rgba(191, 219, 254, 0.78);
+  color: var(--ink-soft);
   line-height: 1.5;
 }
 
 code {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 0.9em;
-  color: #bfdbfe;
+  color: var(--accent);
 }
 
 .search-field {
@@ -208,17 +211,17 @@ code {
 
 input {
   width: 100%;
-  border: 1px solid rgba(96, 165, 250, 0.22);
-  border-radius: 12px;
-  background: rgba(15, 23, 42, 0.96);
-  color: #eff6ff;
-  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--rule-soft);
+  border-radius: 10px;
+  background: var(--paper);
+  color: var(--ink);
+  padding: 0.65rem 0.8rem;
   outline: none;
 }
 
 input:focus {
-  border-color: rgba(125, 211, 252, 0.8);
-  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(250, 189, 47, 0.18);
 }
 
 .badge {
@@ -226,15 +229,16 @@ input:focus {
   align-items: center;
   border-radius: 999px;
   padding: 0.22rem 0.65rem;
-  background: rgba(37, 99, 235, 0.18);
-  color: #bfdbfe;
-  font-size: 0.78rem;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 0.74rem;
+  letter-spacing: 0.06em;
   white-space: nowrap;
 }
 
 .badge.shiny {
-  background: rgba(234, 179, 8, 0.22);
-  color: #fde68a;
+  background: rgba(221, 210, 176, 0.16);
+  color: var(--ink-bright);
   padding: 0.18rem 0.5rem;
   font-size: 0.95rem;
   line-height: 1;
@@ -251,54 +255,54 @@ input:focus {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 1.05rem;
-  letter-spacing: 0.04em;
-  color: #e0f2fe;
+  font-family: var(--serif);
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--ink-bright);
+  text-transform: uppercase;
 }
 
 .sheets-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 0.85rem;
-}
-
-.sheet-card--trainer {
-  border-color: rgba(168, 85, 247, 0.3);
-  background: rgba(38, 16, 56, 0.55);
-}
-
-.sheet-card--trainer:hover {
-  border-color: rgba(216, 180, 254, 0.65);
-  background: rgba(58, 28, 88, 0.78);
-}
-
-.trainer-icon {
-  font-size: 2rem;
-  display: grid;
-  place-items: center;
-  background: rgba(38, 16, 56, 0.85);
-  border-color: rgba(168, 85, 247, 0.32);
+  gap: 0.7rem;
 }
 
 .sheet-card {
   display: flex;
   gap: 0.85rem;
   padding: 0.85rem;
-  border: 1px solid rgba(96, 165, 250, 0.22);
-  border-radius: 16px;
-  background: rgba(8, 20, 43, 0.82);
-  color: inherit;
+  border: 1px solid var(--rule-soft);
+  border-radius: 12px;
+  background: var(--paper-soft);
+  color: var(--ink);
   text-decoration: none;
   transition:
     border-color 0.15s ease,
-    background 0.15s ease,
-    transform 0.15s ease;
+    background 0.15s ease;
 }
 
 .sheet-card:hover {
-  border-color: rgba(125, 211, 252, 0.7);
-  background: rgba(16, 33, 63, 0.92);
-  transform: translateY(-1px);
+  border-color: var(--rule-strong);
+  background: var(--paper-hover);
+}
+
+.sheet-card--trainer {
+  /* Trainer cards share the parchment look but get a slightly
+     stronger left edge so they read as a separate kind of entry. */
+  border-left: 2px solid var(--rule-strong);
+}
+
+.sheet-card--trainer:hover {
+  border-color: var(--rule-active);
+  border-left-color: var(--accent);
+}
+
+.trainer-icon {
+  font-size: 1.8rem;
+  display: grid;
+  place-items: center;
 }
 
 .sheet-card__sprite {
@@ -307,9 +311,9 @@ input:focus {
   height: 72px;
   display: grid;
   place-items: center;
-  border: 1px solid rgba(96, 165, 250, 0.18);
-  border-radius: 12px;
-  background: rgba(9, 18, 35, 0.6);
+  border: 1px solid var(--rule-soft);
+  border-radius: 10px;
+  background: var(--paper-inset);
   padding: 0.3rem;
 }
 
@@ -321,7 +325,7 @@ input:focus {
 }
 
 .sprite-missing {
-  color: rgba(191, 219, 254, 0.6);
+  color: var(--ink-faint);
   font-size: 1.4rem;
   font-weight: 700;
 }
@@ -342,14 +346,17 @@ input:focus {
 .sheet-card__heading h2,
 .sheet-card__heading h3 {
   margin: 0;
-  font-size: 1.05rem;
+  font-family: var(--serif);
+  font-size: 1.1rem;
   font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--ink-bright);
 }
 
 .sheet-card__species {
   margin: 0;
-  color: rgba(191, 219, 254, 0.78);
-  font-size: 0.9rem;
+  color: var(--ink-soft);
+  font-size: 0.88rem;
 }
 
 .sheet-card__meta {
@@ -358,23 +365,25 @@ input:focus {
   padding: 0;
   display: flex;
   flex-wrap: wrap;
-  gap: 0.35rem 0.6rem;
-  color: rgba(191, 219, 254, 0.7);
-  font-size: 0.78rem;
+  gap: 0.35rem 0.5rem;
+  color: var(--ink-muted);
+  font-size: 0.76rem;
+  letter-spacing: 0.04em;
 }
 
 .sheet-card__meta li {
-  padding: 0.12rem 0.45rem;
+  padding: 0.1rem 0.45rem;
   border-radius: 999px;
-  background: rgba(15, 23, 42, 0.7);
-  border: 1px solid rgba(96, 165, 250, 0.16);
+  background: var(--paper-inset);
+  border: 1px solid var(--rule);
 }
 
 .empty-state {
   grid-column: 1 / -1;
   margin: 1.5rem 0;
   text-align: center;
-  color: rgba(191, 219, 254, 0.7);
+  color: var(--ink-muted);
+  font-style: italic;
 }
 
 .sr-only {
