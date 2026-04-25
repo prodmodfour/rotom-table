@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { characterSheets, getPokedexEntry, getSpriteUrl } from '~/data/characterSheets'
 import { trainerSheets } from '~/data/trainerSheets'
+import { groupByFolder } from '~/utils/sheetFolders'
 
 useHead({
   title: 'Sheets · Rotom Table',
@@ -11,13 +12,23 @@ const searchTerm = ref('')
 
 const normalize = (value: string) => value.trim().toLowerCase()
 
-const sheetsWithMeta = computed(() =>
+interface PokemonSheetMeta {
+  sheet: (typeof characterSheets)[number]
+  types: string[]
+  spriteUrl: string | null
+  /** Folder is mirrored from the underlying sheet so ``groupByFolder`` works
+   *  on the wrapper directly. */
+  folder?: string
+}
+
+const sheetsWithMeta = computed<PokemonSheetMeta[]>(() =>
   characterSheets.map((sheet) => {
     const species = getPokedexEntry(sheet.species)
     return {
       sheet,
       types: sheet.types ?? species?.types ?? [],
       spriteUrl: getSpriteUrl(sheet.species),
+      folder: sheet.folder,
     }
   }),
 )
@@ -26,7 +37,7 @@ const filteredSheets = computed(() => {
   const query = normalize(searchTerm.value)
   if (!query) return sheetsWithMeta.value
   return sheetsWithMeta.value.filter(({ sheet, types }) => {
-    const haystacks = [sheet.nickname, sheet.species, sheet.nature ?? '', ...types]
+    const haystacks = [sheet.nickname, sheet.species, sheet.nature ?? '', sheet.folder ?? '', ...types]
     return haystacks.some((value) => normalize(value).includes(query))
   })
 })
@@ -39,11 +50,31 @@ const filteredTrainers = computed(() => {
       t.name,
       t.playedBy ?? '',
       t.skillBackground?.name ?? '',
+      t.folder ?? '',
       ...(t.classes?.map((c) => c.name) ?? []),
     ]
     return haystacks.some((v) => normalize(v).includes(query))
   })
 })
+
+/** Grouped views used by the template — only show folder headers when there
+ *  is more than one folder in play, so a flat data/sheets/ keeps its old
+ *  look. */
+const pokemonGroups   = computed(() => groupByFolder(filteredSheets.value))
+const trainerGroups   = computed(() => groupByFolder(filteredTrainers.value))
+const showPokemonFolders = computed(() => pokemonGroups.value.length > 1)
+const showTrainerFolders = computed(() => trainerGroups.value.length > 1)
+
+/** Per-folder collapsed state. Default: every folder open. Keyed by
+ *  ``"<kind>:<path>"`` so trainer/pokemon namespaces don't collide. */
+const collapsed = reactive<Record<string, boolean>>({})
+const folderKey = (kind: 'pokemon' | 'trainer', path: string) => `${kind}:${path}`
+const toggleFolder = (kind: 'pokemon' | 'trainer', path: string) => {
+  const key = folderKey(kind, path)
+  collapsed[key] = !collapsed[key]
+}
+const isCollapsed = (kind: 'pokemon' | 'trainer', path: string) =>
+  Boolean(collapsed[folderKey(kind, path)])
 
 /** Total counts shown in the intro badge. */
 const totalCount     = computed(() => sheetsWithMeta.value.length + trainerSheets.length)
@@ -64,7 +95,9 @@ const filteredCount  = computed(() => filteredSheets.value.length + filteredTrai
           Trainers and Pokémon character sheets, modelled on the PTU
           <code>pokesheet</code> / <code>trainer</code> spreadsheets. Drop a
           new JSON file into <code>data/sheets/</code> for a Pokémon, or
-          <code>data/trainers/</code> for a trainer.
+          <code>data/trainers/</code> for a trainer. Use subdirectories
+          (e.g. <code>data/sheets/team-alpha/</code>) to group sheets into
+          folders — the directory name becomes the folder label.
         </p>
 
         <label class="search-field">
@@ -81,68 +114,100 @@ const filteredCount  = computed(() => filteredSheets.value.length + filteredTrai
     <!-- ===== Trainers ===== -->
     <section v-if="filteredTrainers.length" class="sheet-section">
       <h2 class="section-title">Trainers <span class="badge">{{ filteredTrainers.length }}</span></h2>
-      <div class="sheets-grid">
-        <NuxtLink
-          v-for="trainer in filteredTrainers"
-          :key="trainer.slug"
-          :to="`/sheets/trainers/${trainer.slug}`"
-          class="sheet-card sheet-card--trainer"
-        >
-          <div class="sheet-card__sprite trainer-icon">
-            <span aria-hidden="true">🎯</span>
-          </div>
-          <div class="sheet-card__body">
-            <div class="sheet-card__heading">
-              <h3>{{ trainer.name }}</h3>
+
+      <template v-for="group in trainerGroups" :key="`trainer-${group.path}`">
+        <div v-if="showTrainerFolders" class="folder-row">
+          <button
+            class="folder-toggle"
+            type="button"
+            :aria-expanded="!isCollapsed('trainer', group.path)"
+            @click="toggleFolder('trainer', group.path)"
+          >
+            <span class="folder-caret" :class="{ collapsed: isCollapsed('trainer', group.path) }" aria-hidden="true">▾</span>
+            <span class="folder-label">{{ group.label }}</span>
+            <span class="folder-count badge">{{ group.items.length }}</span>
+          </button>
+        </div>
+
+        <div v-show="!showTrainerFolders || !isCollapsed('trainer', group.path)" class="sheets-grid">
+          <NuxtLink
+            v-for="trainer in group.items"
+            :key="trainer.slug"
+            :to="`/sheets/trainers/${trainer.slug}`"
+            class="sheet-card sheet-card--trainer"
+          >
+            <div class="sheet-card__sprite trainer-icon">
+              <span aria-hidden="true">🎯</span>
             </div>
-            <p class="sheet-card__species">
-              Trainer · Lv {{ trainer.level }}
-              <span v-if="trainer.classes?.length">· {{ trainer.classes.map((c) => c.name).join(', ') }}</span>
-            </p>
-            <ul class="sheet-card__meta">
-              <li v-if="trainer.skillBackground?.name">{{ trainer.skillBackground.name }}</li>
-              <li v-if="trainer.sex">{{ trainer.sex }}</li>
-              <li v-if="trainer.playedBy">PB: {{ trainer.playedBy }}</li>
-            </ul>
-          </div>
-        </NuxtLink>
-      </div>
+            <div class="sheet-card__body">
+              <div class="sheet-card__heading">
+                <h3>{{ trainer.name }}</h3>
+              </div>
+              <p class="sheet-card__species">
+                Trainer · Lv {{ trainer.level }}
+                <span v-if="trainer.classes?.length">· {{ trainer.classes.map((c) => c.name).join(', ') }}</span>
+              </p>
+              <ul class="sheet-card__meta">
+                <li v-if="trainer.skillBackground?.name">{{ trainer.skillBackground.name }}</li>
+                <li v-if="trainer.sex">{{ trainer.sex }}</li>
+                <li v-if="trainer.playedBy">PB: {{ trainer.playedBy }}</li>
+              </ul>
+            </div>
+          </NuxtLink>
+        </div>
+      </template>
     </section>
 
     <!-- ===== Pokémon ===== -->
     <section class="sheet-section">
       <h2 class="section-title">Pokémon <span class="badge">{{ filteredSheets.length }}</span></h2>
-      <div class="sheets-grid">
-        <NuxtLink
-          v-for="{ sheet, types, spriteUrl } in filteredSheets"
-          :key="sheet.slug"
-          :to="`/sheets/${sheet.slug}`"
-          class="sheet-card"
-        >
-          <div class="sheet-card__sprite">
-            <img v-if="spriteUrl" :src="spriteUrl" :alt="sheet.species" />
-            <span v-else class="sprite-missing">?</span>
-          </div>
 
-          <div class="sheet-card__body">
-            <div class="sheet-card__heading">
-              <h3>{{ sheet.nickname }}</h3>
-              <span v-if="sheet.shiny" class="badge shiny" title="Shiny">★</span>
+      <template v-for="group in pokemonGroups" :key="`pokemon-${group.path}`">
+        <div v-if="showPokemonFolders" class="folder-row">
+          <button
+            class="folder-toggle"
+            type="button"
+            :aria-expanded="!isCollapsed('pokemon', group.path)"
+            @click="toggleFolder('pokemon', group.path)"
+          >
+            <span class="folder-caret" :class="{ collapsed: isCollapsed('pokemon', group.path) }" aria-hidden="true">▾</span>
+            <span class="folder-label">{{ group.label }}</span>
+            <span class="folder-count badge">{{ group.items.length }}</span>
+          </button>
+        </div>
+
+        <div v-show="!showPokemonFolders || !isCollapsed('pokemon', group.path)" class="sheets-grid">
+          <NuxtLink
+            v-for="{ sheet, types, spriteUrl } in group.items"
+            :key="sheet.slug"
+            :to="`/sheets/${sheet.slug}`"
+            class="sheet-card"
+          >
+            <div class="sheet-card__sprite">
+              <img v-if="spriteUrl" :src="spriteUrl" :alt="sheet.species" />
+              <span v-else class="sprite-missing">?</span>
             </div>
-            <p class="sheet-card__species">{{ sheet.species }} · Lv {{ sheet.level }}</p>
 
-            <ul class="sheet-card__meta">
-              <li v-if="sheet.nature">{{ sheet.nature }}</li>
-              <li v-if="sheet.gender">{{ sheet.gender }}</li>
-              <li v-if="types.length">{{ types.join(' / ') }}</li>
-            </ul>
-          </div>
-        </NuxtLink>
+            <div class="sheet-card__body">
+              <div class="sheet-card__heading">
+                <h3>{{ sheet.nickname }}</h3>
+                <span v-if="sheet.shiny" class="badge shiny" title="Shiny">★</span>
+              </div>
+              <p class="sheet-card__species">{{ sheet.species }} · Lv {{ sheet.level }}</p>
 
-        <p v-if="filteredSheets.length === 0" class="empty-state">
-          No Pokémon match that search.
-        </p>
-      </div>
+              <ul class="sheet-card__meta">
+                <li v-if="sheet.nature">{{ sheet.nature }}</li>
+                <li v-if="sheet.gender">{{ sheet.gender }}</li>
+                <li v-if="types.length">{{ types.join(' / ') }}</li>
+              </ul>
+            </div>
+          </NuxtLink>
+        </div>
+      </template>
+
+      <p v-if="filteredSheets.length === 0" class="empty-state">
+        No Pokémon match that search.
+      </p>
     </section>
 
     <p v-if="filteredCount === 0" class="empty-state">
@@ -261,6 +326,71 @@ input:focus {
   letter-spacing: 0.06em;
   color: var(--ink-bright);
   text-transform: uppercase;
+}
+
+/* ---- Folder grouping ---- */
+
+.folder-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0.4rem 0 -0.1rem;
+}
+
+.folder-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.4rem 0.65rem;
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  background: var(--paper-soft);
+  color: var(--ink-soft);
+  text-align: left;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.folder-toggle:hover {
+  border-color: var(--rule-strong);
+  background: var(--paper-hover);
+  color: var(--ink-bright);
+}
+
+.folder-toggle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.folder-caret {
+  font-size: 0.85rem;
+  color: var(--accent);
+  transition: transform 0.15s ease;
+}
+
+.folder-caret.collapsed {
+  transform: rotate(-90deg);
+}
+
+.folder-label {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--serif);
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+.folder-toggle:hover .folder-label {
+  color: var(--ink-bright);
+}
+
+.folder-count {
+  flex: 0 0 auto;
 }
 
 .sheets-grid {

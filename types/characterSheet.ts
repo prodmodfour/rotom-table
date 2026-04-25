@@ -124,6 +124,13 @@ export interface CharacterSheetSkills {
 export interface CharacterSheet {
   /** URL slug for the sheet's subpage (``/sheets/<slug>``). */
   slug: string
+  /**
+   * Optional folder label for grouping on the sheets index. When omitted,
+   * the folder is derived from the file's directory under ``data/sheets/``
+   * (e.g. ``data/sheets/team-alpha/foo.json`` → ``"team-alpha"``). Set this
+   * explicitly to override the auto-derived label.
+   */
+  folder?: string
   nickname: string
   /** Must match a `species` value in `ptu-data/data/pokedex.json`. */
   species: string
