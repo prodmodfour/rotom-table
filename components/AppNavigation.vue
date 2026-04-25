@@ -31,6 +31,12 @@ const isActive = (path: string) => {
     <NuxtLink :class="['nav-link', { active: isActive('/capabilities') }]" to="/capabilities">
       Capabilities
     </NuxtLink>
+    <NuxtLink :class="['nav-link', { active: isActive('/features') }]" to="/features">
+      Features
+    </NuxtLink>
+    <NuxtLink :class="['nav-link', { active: isActive('/edges') }]" to="/edges">
+      Edges
+    </NuxtLink>
   </nav>
 </template>
 

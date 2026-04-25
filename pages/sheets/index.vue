@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { characterSheets, getPokedexEntry, getSpriteUrl } from '~/data/characterSheets'
+import { trainerSheets } from '~/data/trainerSheets'
 
 useHead({
   title: 'Sheets · Rotom Table',
@@ -29,6 +30,24 @@ const filteredSheets = computed(() => {
     return haystacks.some((value) => normalize(value).includes(query))
   })
 })
+
+const filteredTrainers = computed(() => {
+  const query = normalize(searchTerm.value)
+  if (!query) return trainerSheets
+  return trainerSheets.filter((t) => {
+    const haystacks = [
+      t.name,
+      t.playedBy ?? '',
+      t.skillBackground?.name ?? '',
+      ...(t.classes?.map((c) => c.name) ?? []),
+    ]
+    return haystacks.some((v) => normalize(v).includes(query))
+  })
+})
+
+/** Total counts shown in the intro badge. */
+const totalCount     = computed(() => sheetsWithMeta.value.length + trainerSheets.length)
+const filteredCount  = computed(() => filteredSheets.value.length + filteredTrainers.value.length)
 </script>
 
 <template>
@@ -39,12 +58,13 @@ const filteredSheets = computed(() => {
       <section class="panel-card sheets-intro">
         <div class="intro-heading">
           <h1>Character Sheets</h1>
-          <span class="badge">{{ filteredSheets.length }} of {{ sheetsWithMeta.length }}</span>
+          <span class="badge">{{ filteredCount }} of {{ totalCount }}</span>
         </div>
         <p class="intro-copy">
-          Pokémon character sheets, modelled on the PTU
-          <code>pokesheet</code> spreadsheet. Drop a new JSON file into
-          <code>data/sheets/</code> to add another.
+          Trainers and Pokémon character sheets, modelled on the PTU
+          <code>pokesheet</code> / <code>trainer</code> spreadsheets. Drop a
+          new JSON file into <code>data/sheets/</code> for a Pokémon, or
+          <code>data/trainers/</code> for a trainer.
         </p>
 
         <label class="search-field">
@@ -52,43 +72,82 @@ const filteredSheets = computed(() => {
           <input
             v-model.trim="searchTerm"
             type="search"
-            placeholder="Search nickname, species, type, or nature…"
+            placeholder="Search name, species, class, type…"
           />
         </label>
       </section>
     </header>
 
-    <main class="sheets-grid">
-      <NuxtLink
-        v-for="{ sheet, types, spriteUrl } in filteredSheets"
-        :key="sheet.slug"
-        :to="`/sheets/${sheet.slug}`"
-        class="sheet-card"
-      >
-        <div class="sheet-card__sprite">
-          <img v-if="spriteUrl" :src="spriteUrl" :alt="sheet.species" />
-          <span v-else class="sprite-missing">?</span>
-        </div>
-
-        <div class="sheet-card__body">
-          <div class="sheet-card__heading">
-            <h2>{{ sheet.nickname }}</h2>
-            <span v-if="sheet.shiny" class="badge shiny" title="Shiny">★</span>
+    <!-- ===== Trainers ===== -->
+    <section v-if="filteredTrainers.length" class="sheet-section">
+      <h2 class="section-title">Trainers <span class="badge">{{ filteredTrainers.length }}</span></h2>
+      <div class="sheets-grid">
+        <NuxtLink
+          v-for="trainer in filteredTrainers"
+          :key="trainer.slug"
+          :to="`/sheets/trainers/${trainer.slug}`"
+          class="sheet-card sheet-card--trainer"
+        >
+          <div class="sheet-card__sprite trainer-icon">
+            <span aria-hidden="true">🎯</span>
           </div>
-          <p class="sheet-card__species">{{ sheet.species }} · Lv {{ sheet.level }}</p>
+          <div class="sheet-card__body">
+            <div class="sheet-card__heading">
+              <h3>{{ trainer.name }}</h3>
+            </div>
+            <p class="sheet-card__species">
+              Trainer · Lv {{ trainer.level }}
+              <span v-if="trainer.classes?.length">· {{ trainer.classes.map((c) => c.name).join(', ') }}</span>
+            </p>
+            <ul class="sheet-card__meta">
+              <li v-if="trainer.skillBackground?.name">{{ trainer.skillBackground.name }}</li>
+              <li v-if="trainer.sex">{{ trainer.sex }}</li>
+              <li v-if="trainer.playedBy">PB: {{ trainer.playedBy }}</li>
+            </ul>
+          </div>
+        </NuxtLink>
+      </div>
+    </section>
 
-          <ul class="sheet-card__meta">
-            <li v-if="sheet.nature">{{ sheet.nature }}</li>
-            <li v-if="sheet.gender">{{ sheet.gender }}</li>
-            <li v-if="types.length">{{ types.join(' / ') }}</li>
-          </ul>
-        </div>
-      </NuxtLink>
+    <!-- ===== Pokémon ===== -->
+    <section class="sheet-section">
+      <h2 class="section-title">Pokémon <span class="badge">{{ filteredSheets.length }}</span></h2>
+      <div class="sheets-grid">
+        <NuxtLink
+          v-for="{ sheet, types, spriteUrl } in filteredSheets"
+          :key="sheet.slug"
+          :to="`/sheets/${sheet.slug}`"
+          class="sheet-card"
+        >
+          <div class="sheet-card__sprite">
+            <img v-if="spriteUrl" :src="spriteUrl" :alt="sheet.species" />
+            <span v-else class="sprite-missing">?</span>
+          </div>
 
-      <p v-if="filteredSheets.length === 0" class="empty-state">
-        No sheets match that search.
-      </p>
-    </main>
+          <div class="sheet-card__body">
+            <div class="sheet-card__heading">
+              <h3>{{ sheet.nickname }}</h3>
+              <span v-if="sheet.shiny" class="badge shiny" title="Shiny">★</span>
+            </div>
+            <p class="sheet-card__species">{{ sheet.species }} · Lv {{ sheet.level }}</p>
+
+            <ul class="sheet-card__meta">
+              <li v-if="sheet.nature">{{ sheet.nature }}</li>
+              <li v-if="sheet.gender">{{ sheet.gender }}</li>
+              <li v-if="types.length">{{ types.join(' / ') }}</li>
+            </ul>
+          </div>
+        </NuxtLink>
+
+        <p v-if="filteredSheets.length === 0" class="empty-state">
+          No Pokémon match that search.
+        </p>
+      </div>
+    </section>
+
+    <p v-if="filteredCount === 0" class="empty-state">
+      Nothing matches that search.
+    </p>
   </div>
 </template>
 
@@ -181,10 +240,44 @@ input:focus {
   line-height: 1;
 }
 
+.sheet-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.section-title {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.05rem;
+  letter-spacing: 0.04em;
+  color: #e0f2fe;
+}
+
 .sheets-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 0.85rem;
+}
+
+.sheet-card--trainer {
+  border-color: rgba(168, 85, 247, 0.3);
+  background: rgba(38, 16, 56, 0.55);
+}
+
+.sheet-card--trainer:hover {
+  border-color: rgba(216, 180, 254, 0.65);
+  background: rgba(58, 28, 88, 0.78);
+}
+
+.trainer-icon {
+  font-size: 2rem;
+  display: grid;
+  place-items: center;
+  background: rgba(38, 16, 56, 0.85);
+  border-color: rgba(168, 85, 247, 0.32);
 }
 
 .sheet-card {
@@ -246,9 +339,11 @@ input:focus {
   gap: 0.5rem;
 }
 
-.sheet-card__heading h2 {
+.sheet-card__heading h2,
+.sheet-card__heading h3 {
   margin: 0;
   font-size: 1.05rem;
+  font-weight: 700;
 }
 
 .sheet-card__species {

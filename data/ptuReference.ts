@@ -1,7 +1,11 @@
 import abilitiesJson from '~/ptu-data/data/abilities.json'
 import movesJson from '~/ptu-data/data/moves.json'
 import capabilitiesJson from '~/ptu-data/data/capabilities.json'
-import type { PtuAbility, PtuCapability, PtuMove } from '~/types/ptuReference'
+import featuresJson from '~/ptu-data/data/features.json'
+import edgesJson from '~/ptu-data/data/edges.json'
+import type {
+  PtuAbility, PtuCapability, PtuEdge, PtuFeature, PtuMove,
+} from '~/types/ptuReference'
 
 // ---------------------------------------------------------------------------
 // Slug helpers
@@ -33,6 +37,8 @@ export const toSlug = (name: string): string =>
 const abilitiesDict     = abilitiesJson     as Record<string, PtuAbility>
 const movesDict         = movesJson         as Record<string, PtuMove>
 const capabilitiesDict  = capabilitiesJson  as Record<string, PtuCapability>
+const featuresDict      = featuresJson      as Record<string, PtuFeature>
+const edgesDict         = edgesJson         as Record<string, PtuEdge>
 
 const sortedByName = <T extends { name: string }>(dict: Record<string, T>): T[] =>
   Object.values(dict).sort((a, b) => a.name.localeCompare(b.name))
@@ -49,6 +55,13 @@ const VALID_MOVE_TYPES = new Set<string>([
 export const abilities    = sortedByName(abilitiesDict)
 export const moves        = sortedByName(movesDict).filter((m) => VALID_MOVE_TYPES.has(m.type))
 export const capabilities = sortedByName(capabilitiesDict)
+export const features     = sortedByName(featuresDict)
+export const edges        = sortedByName(edgesDict)
+
+/** Trainer Class Features (the ``[Class]``-tagged ones from features.json). */
+export const trainerClasses: PtuFeature[] = features.filter(
+  (f) => Array.isArray(f.tags) && f.tags.includes('Class'),
+)
 
 const buildSlugMap = <T extends { name: string }>(items: T[]): Map<string, T> => {
   const map = new Map<string, T>()
@@ -59,6 +72,8 @@ const buildSlugMap = <T extends { name: string }>(items: T[]): Map<string, T> =>
 export const abilityBySlug    = buildSlugMap(abilities)
 export const moveBySlug       = buildSlugMap(moves)
 export const capabilityBySlug = buildSlugMap(capabilities)
+export const featureBySlug    = buildSlugMap(features)
+export const edgeBySlug       = buildSlugMap(edges)
 
 // ---------------------------------------------------------------------------
 // Name \u2192 entry resolution (handles loose input from pokedex / sheet data)
@@ -73,6 +88,8 @@ const exactByName = <T extends { name: string }>(items: T[]): Map<string, T> => 
 const abilityByName    = exactByName(abilities)
 const moveByName       = exactByName(moves)
 const capabilityByName = exactByName(capabilities)
+const featureByName    = exactByName(features)
+const edgeByName       = exactByName(edges)
 
 const resolveByExactOrSlug = <T extends { name: string }>(
   raw: string,
@@ -107,6 +124,34 @@ export const findAbility = (name: string): PtuAbility | null => {
 
 export const findMove = (name: string): PtuMove | null =>
   resolveByExactOrSlug(name, moveByName, moveBySlug)
+
+/**
+ * Strip a trailing parenthetical specialisation off a feature/edge label.
+ * E.g. ``Type Ace (Fire)`` → ``Type Ace`` so a Branching-Class label still
+ * resolves to the base Class Feature.
+ */
+const stripFeatureParams = (raw: string): string =>
+  raw.replace(/\s*\([^)]*\)\s*$/g, '').trim()
+
+export const findFeature = (name: string): PtuFeature | null => {
+  const direct = resolveByExactOrSlug(name, featureByName, featureBySlug)
+  if (direct) return direct
+  const stripped = stripFeatureParams(name)
+  if (stripped && stripped !== name) {
+    return resolveByExactOrSlug(stripped, featureByName, featureBySlug)
+  }
+  return null
+}
+
+export const findEdge = (name: string): PtuEdge | null => {
+  const direct = resolveByExactOrSlug(name, edgeByName, edgeBySlug)
+  if (direct) return direct
+  const stripped = stripFeatureParams(name)
+  if (stripped && stripped !== name) {
+    return resolveByExactOrSlug(stripped, edgeByName, edgeBySlug)
+  }
+  return null
+}
 
 // ---------------------------------------------------------------------------
 // Capability resolution — needs to handle parameterised input from the pokedex
@@ -154,7 +199,7 @@ export const findCapability = (raw: string): PtuCapability | null => {
 // Convenience: a "ref descriptor" for templates that want to maybe-link.
 // ---------------------------------------------------------------------------
 
-export type RefKind = 'move' | 'ability' | 'capability'
+export type RefKind = 'move' | 'ability' | 'capability' | 'feature' | 'edge'
 
 export interface RefDescriptor {
   kind: RefKind
@@ -170,6 +215,8 @@ const KIND_FINDERS: Record<RefKind, (name: string) => { name: string } | null> =
   move:       findMove,
   ability:    findAbility,
   capability: findCapability,
+  feature:    findFeature,
+  edge:       findEdge,
 }
 
 export const describeRef = (kind: RefKind, name: string): RefDescriptor => {
