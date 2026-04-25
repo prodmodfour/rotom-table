@@ -1,0 +1,294 @@
+/* Shared styles for the PTU reference indexes & detail pages
+   (/abilities, /moves, /capabilities). Loaded globally via nuxt.config.ts. */
+
+.ref-index,
+.ref-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding: 0.85rem;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top, rgba(37, 99, 235, 0.1), transparent 35%),
+    #050d1b;
+}
+
+.ref-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.ref-index .panel-card,
+.ref-detail .panel-card {
+  border: 1px solid rgba(96, 165, 250, 0.22);
+  border-radius: 18px;
+  background: rgba(8, 20, 43, 0.82);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.22);
+  padding: 0.95rem;
+}
+
+.ref-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.4rem;
+}
+
+.ref-heading h1 {
+  margin: 0;
+  font-size: 1.35rem;
+  letter-spacing: 0.02em;
+}
+
+.ref-copy {
+  margin: 0 0 0.85rem;
+  color: rgba(191, 219, 254, 0.78);
+  line-height: 1.5;
+}
+
+.ref-index code,
+.ref-detail code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.9em;
+  color: #bfdbfe;
+}
+
+.ref-index .badge,
+.ref-detail .badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.22rem 0.65rem;
+  background: rgba(37, 99, 235, 0.18);
+  color: #bfdbfe;
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+.ref-index .search-field {
+  display: block;
+}
+
+.ref-index input {
+  width: 100%;
+  border: 1px solid rgba(96, 165, 250, 0.22);
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.96);
+  color: #eff6ff;
+  padding: 0.7rem 0.85rem;
+  outline: none;
+}
+
+.ref-index input:focus {
+  border-color: rgba(125, 211, 252, 0.8);
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
+}
+
+/* ---- index list rows ---- */
+
+.ref-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 0.7rem;
+}
+
+.ref-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid rgba(96, 165, 250, 0.22);
+  border-radius: 14px;
+  background: rgba(8, 20, 43, 0.82);
+  color: inherit;
+  text-decoration: none;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    transform 0.15s ease;
+}
+
+.ref-row:hover {
+  border-color: rgba(125, 211, 252, 0.7);
+  background: rgba(16, 33, 63, 0.92);
+  transform: translateY(-1px);
+}
+
+.ref-row__heading {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.ref-row__heading h2 {
+  margin: 0;
+  font-size: 1.02rem;
+}
+
+.ref-row__freq,
+.ref-row__type {
+  font-size: 0.78rem;
+  color: rgba(191, 219, 254, 0.78);
+}
+
+.ref-row__trigger,
+.ref-row__effect {
+  margin: 0;
+  font-size: 0.85rem;
+  color: rgba(219, 234, 254, 0.85);
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.ref-row__trigger .label {
+  color: rgba(125, 211, 252, 0.85);
+  font-weight: 600;
+}
+
+.ref-row__pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.empty-state {
+  grid-column: 1 / -1;
+  margin: 1.5rem 0;
+  text-align: center;
+  color: rgba(191, 219, 254, 0.7);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---- detail pages ---- */
+
+.ref-detail .back-row {
+  padding: 0 0.25rem;
+}
+
+.ref-detail .back-link {
+  color: rgba(191, 219, 254, 0.85);
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.ref-detail .back-link:hover {
+  color: #f0f9ff;
+  text-decoration: underline;
+}
+
+.ref-detail .detail-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin: 0 0 0.6rem;
+}
+
+.ref-detail .detail-heading h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  letter-spacing: 0.01em;
+}
+
+.ref-detail .detail-pills {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.ref-detail .stat-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.5rem 0 0.85rem;
+}
+
+.ref-detail .stat-strip > div {
+  border: 1px solid rgba(96, 165, 250, 0.18);
+  border-radius: 12px;
+  padding: 0.45rem 0.7rem;
+  background: rgba(9, 18, 35, 0.6);
+  min-width: 0;
+}
+
+.ref-detail .stat-strip dt {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(125, 211, 252, 0.74);
+}
+
+.ref-detail .stat-strip dd {
+  margin: 0.2rem 0 0;
+  font-weight: 700;
+}
+
+.ref-detail .field-block {
+  margin: 0.65rem 0 0;
+}
+
+.ref-detail .field-block h3 {
+  margin: 0 0 0.3rem;
+  font-size: 0.85rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(125, 211, 252, 0.85);
+}
+
+.ref-detail .field-block p {
+  margin: 0;
+  color: rgba(219, 234, 254, 0.92);
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+
+/* ---- type pills (used on /moves/* and the move list rows) ---- */
+
+.type-pill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.18rem 0.6rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.05em;
+  font-weight: 700;
+  background: rgba(148, 163, 184, 0.22);
+  color: #f1f5f9;
+}
+
+.type-pill[data-type="Normal"]   { background: #a8a878; color: #1a1a1a; }
+.type-pill[data-type="Fighting"] { background: #c03028; color: #fff; }
+.type-pill[data-type="Flying"]   { background: #a890f0; color: #1a1a1a; }
+.type-pill[data-type="Poison"]   { background: #a040a0; color: #fff; }
+.type-pill[data-type="Ground"]   { background: #e0c068; color: #1a1a1a; }
+.type-pill[data-type="Rock"]     { background: #b8a038; color: #1a1a1a; }
+.type-pill[data-type="Bug"]      { background: #a8b820; color: #1a1a1a; }
+.type-pill[data-type="Ghost"]    { background: #705898; color: #fff; }
+.type-pill[data-type="Steel"]    { background: #b8b8d0; color: #1a1a1a; }
+.type-pill[data-type="Fire"]     { background: #f08030; color: #fff; }
+.type-pill[data-type="Water"]    { background: #6890f0; color: #fff; }
+.type-pill[data-type="Grass"]    { background: #78c850; color: #1a1a1a; }
+.type-pill[data-type="Electric"] { background: #f8d030; color: #1a1a1a; }
+.type-pill[data-type="Psychic"]  { background: #f85888; color: #fff; }
+.type-pill[data-type="Ice"]      { background: #98d8d8; color: #1a1a1a; }
+.type-pill[data-type="Dragon"]   { background: #7038f8; color: #fff; }
+.type-pill[data-type="Dark"]     { background: #705848; color: #fff; }
+.type-pill[data-type="Fairy"]    { background: #ee99ac; color: #1a1a1a; }

@@ -1,0 +1,53 @@
+{
+  "slug": "iggy-magnemite",
+  "nickname": "Iggy",
+  "species": "Magnemite",
+  "level": 14,
+  "totalExp": 215,
+  "toNextLevel": 30,
+  "gender": "Genderless",
+  "shiny": true,
+  "nature": "Bold",
+  "natureMod": { "plus": "def", "minus": "atk" },
+  "stats": {
+    "hp":   { "base": 1, "added": 2, "stage": 0 },
+    "atk":  { "base": 0, "added": 1, "stage": 0 },
+    "def":  { "base": 3, "added": 2, "stage": 0 },
+    "satk": { "base": 3, "added": 2, "stage": 0 },
+    "sdef": { "base": 1, "added": 1, "stage": 0 },
+    "spd":  { "base": 1, "added": 1, "stage": 0 }
+  },
+  "combat": {
+    "currentHp": 22,
+    "injuries": 0,
+    "tick": 1,
+    "evasion": { "vsAtk": 0, "vsSatk": 0, "vsAny": 0 },
+    "dr": 1,
+    "trainingExp": 2,
+    "notes": "Hovers at chest height. Hums in C-sharp."
+  },
+  "items": {
+    "held": "Magnet",
+    "itemDescription": "Boosts Electric-type damage by +5.",
+    "digestionFood": "Static charge from outlets and lightning rods (Ergovore).",
+    "extraItems": ["Cell Battery"],
+    "pointsLeft": 4
+  },
+  "weapon": { "name": "—", "dbMod": 0, "acMod": 0 },
+  "tutorPoints": { "earned": 2, "spent": 1 },
+  "skillBackground": {
+    "description": "Latched onto the party's tech expert in an abandoned power plant."
+  },
+  "movelist": [
+    { "name": "Tackle",      "type": "Normal",   "category": "Physical", "db": 4, "frequency": "At-Will", "ac": 2, "range": "Melee, 1 Target" },
+    { "name": "Sonic Boom",  "type": "Normal",   "category": "Special",  "db": 0, "frequency": "EOT",     "ac": 2, "range": "Ranged 8, 1 Target", "effect": "Deals 20 fixed damage." },
+    { "name": "Spark",       "type": "Electric", "category": "Physical", "db": 6, "frequency": "EOT",     "ac": 2, "range": "Melee, 1 Target",   "effect": "Paralyze on 17+." },
+    { "name": "Magnet Bomb", "type": "Steel",    "category": "Physical", "db": 6, "frequency": "EOT",     "ac": 0, "range": "Ranged 8, 1 Target", "effect": "Cannot miss." }
+  ],
+  "abilities": [
+    { "name": "Magnet Pull", "frequency": "Static", "effect": "Steel-type foes within 6m may not Shift away from Iggy." },
+    { "name": "Sturdy",      "frequency": "Static", "effect": "When at Full HP, an attack that would KO Iggy leaves it at 1 HP instead." }
+  ],
+  "edges": [],
+  "scene": { "sceneXp": 16, "pkmnCount": 4, "modifiers": 0, "newTotal": 4 }
+}

@@ -1,0 +1,58 @@
+{
+  "slug": "specs-chikorita",
+  "nickname": "Specs",
+  "species": "Chikorita",
+  "level": 6,
+  "totalExp": 60,
+  "toNextLevel": 10,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Modest",
+  "natureMod": { "plus": "satk", "minus": "atk" },
+  "stats": {
+    "hp":   { "base": 1, "added": 0, "stage": 0 },
+    "atk":  { "base": 0, "added": 0, "stage": 0 },
+    "def":  { "base": 1, "added": 1, "stage": 0 },
+    "satk": { "base": 2, "added": 1, "stage": 0 },
+    "sdef": { "base": 1, "added": 0, "stage": 0 },
+    "spd":  { "base": 0, "added": 1, "stage": 0 }
+  },
+  "combat": {
+    "currentHp": 14,
+    "injuries": 0,
+    "tick": 1,
+    "evasion": { "vsAtk": 0, "vsSatk": 0, "vsAny": 0 },
+    "dr": 0,
+    "trainingExp": 0,
+    "notes": "Loves Pecha Berries. Hides behind Trainer when surprised."
+  },
+  "items": {
+    "held": "Pecha Berry",
+    "itemDescription": "Cures Poison when held.",
+    "digestionFood": "Berries, herbs",
+    "extraItems": ["Oran Berry"],
+    "pointsLeft": 11
+  },
+  "weapon": {
+    "name": "—",
+    "dbMod": 0,
+    "acMod": 0,
+    "description": ""
+  },
+  "tutorPoints": { "earned": 1, "spent": 0 },
+  "skillBackground": {
+    "description": "Researcher's assistant — comfortable in greenhouses.",
+    "raised": ["Medicine Ed"],
+    "lowered": ["Intimidate"]
+  },
+  "movelist": [
+    { "name": "Tackle",     "type": "Normal", "category": "Physical", "db": 4, "frequency": "At-Will", "ac": 2, "range": "Melee, 1 Target" },
+    { "name": "Growl",      "type": "Normal", "category": "Status",                 "frequency": "At-Will", "ac": 2, "range": "Burst 2",   "effect": "-2 ATK to all targets for 1 round." },
+    { "name": "Razor Leaf", "type": "Grass",  "category": "Physical", "db": 4, "frequency": "EOT",     "ac": 3, "range": "Cone 4",      "effect": "Crit on 18+." }
+  ],
+  "abilities": [
+    { "name": "Overgrow", "frequency": "Static", "effect": "+5 to Damage Rolls with Grass moves while at or below ⅓ HP." }
+  ],
+  "edges": [],
+  "scene": { "sceneXp": 12, "pkmnCount": 3, "modifiers": 0, "newTotal": 4 }
+}

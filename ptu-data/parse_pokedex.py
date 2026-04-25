@@ -33,6 +33,149 @@ MOVE_SECTION_TERMINATORS = (
 )
 
 
+# ---------------------------------------------------------------------------
+# Move + ability name normalisation
+#
+# The pokedex markdown introduces a lot of small artifacts when the source PDF
+# wraps long lines, mis-spells things, or bleeds descriptive text into a list:
+#
+#   * "Power- Up Punch"  → "Power-Up Punch"  (line wrap put a space after the hyphen)
+#   * "Bubblebeam"        → "Bubble Beam"     (older spelling)
+#   * "§ V-Create"        → "V-Create"        (footnote glyph never stripped)
+#   * "+5 Speed"          → dropped           (stat-bonus pseudo-move)
+#   * "Off"               → dropped           ("Knock Off" half that lost its partner)
+#   * "Mew can be Tutored to learn any Move" → dropped (sentence, not a move)
+#
+# Ability strings have their own quirks: typos (Glutony, Telapathy, Wonderguard),
+# alternative-ability separators ("Drought / Drizzle"), and footnote markers (*).
+# ---------------------------------------------------------------------------
+
+MOVE_NAME_FIXES: dict[str, str] = {
+    "Bubblebeam":     "Bubble Beam",
+    "Solarbeam":      "Solar Beam",
+    "FirePunch":      "Fire Punch",
+    "Roleplay":       "Role Play",
+    "Vicegrip":       "Vice Grip",
+    "Mud-Shot":       "Mud Shot",
+    "Hi Jump Kick":   "High Jump Kick",
+    "Zen Heabutt":    "Zen Headbutt",
+    "Double-Hit":     "Double Hit",
+    "Double Chop":    "Dual Chop",
+    "Flame charge":   "Flame Charge",
+    "Will-o-Wisp":    "Will-O-Wisp",
+    "Will-O-wisp":    "Will-O-Wisp",
+    "U-turn":         "U-Turn",
+    "Double Edge":    "Double-Edge",
+}
+
+# Tokens that are clearly never a move name (single-word leftovers from
+# descriptive text bleeding into tutor lists, or partial fragments such as
+# the orphaned ``Knock`` from a wrapped ``Knock Off``).
+MOVE_NAME_REJECT: frozenset[str] = frozenset({
+    "Off", "Nature", "Capabilities", "Abilities", "Size", "Types",
+    "Skill List", "None", "Power 2", "Jump 1/1", "Swim 2", "Levitate 6",
+    "Telepath", "Telekinetic", "Firestarter", "Knock", "Cringe",
+    "Wise Guard",
+})
+
+
+def normalize_move_name(raw: str | None) -> str | None:
+    """Clean a move name from the pokedex markdown.
+
+    Returns the normalised name, or ``None`` if the value is junk that should
+    be dropped entirely (sentence-length text, stat-bonus pseudo-moves, known
+    descriptive-text leftovers).
+    """
+    if raw is None:
+        return None
+    name = raw.strip()
+    if not name:
+        return None
+    # Strip leading bullet/footnote glyphs (``§``, ``•``, ``·``, leading ``*``).
+    name = re.sub(r"^[§•·*]+\s*", "", name).strip()
+    if not name:
+        return None
+    # Strip Meowstic-style gender prefix (``(M) Mean Look`` → ``Mean Look``).
+    name = re.sub(r"^\([MF]\)\s*", "", name).strip()
+    # Stat-bonus pseudo-moves like ``+5 Speed`` or ``-1 Sp. Def`` are not moves.
+    if re.match(r"^[-+]\d", name):
+        return None
+    # Real move names never contain prose punctuation. Anything containing
+    # ``.``, ``,``, ``;`` or stray parens is a sentence fragment that bled in
+    # from a Notes / Forme / Homebrew block.
+    if any(ch in name for ch in ".,;()"):
+        return None
+    # Sentence-length: anything past 25 chars is bleed-in text from a Mega/
+    # Forme/Notes block, never a real move name. The longest real PTU move
+    # name is 16 chars (e.g. "Springtide Storm").
+    if len(name) > 25:
+        return None
+
+    # Normalisation: collapse spaces, repair hyphen artifacts, title-case
+    # first-word-lowercase patterns ("fire Punch" → "Fire Punch").
+    name = re.sub(r"\s+", " ", name)
+    name = re.sub(r"\s*-\s*", "-", name)
+    parts = name.split(" ")
+    if (
+        parts
+        and parts[0]
+        and parts[0][0].islower()
+        and len(parts) > 1
+        and parts[1][:1].isupper()
+    ):
+        parts[0] = parts[0].capitalize()
+        name = " ".join(parts)
+    name = MOVE_NAME_FIXES.get(name, name)
+
+    # Post-normalisation rejection. Sentence-y connector words never appear
+    # in real PTU move names (the only real prepositional moves are
+    # ``Roar of Time``, ``Light of Ruin``, ``Trick-or-Treat`` — ``of`` /
+    # ``or`` only).
+    SENTENCE_WORDS = {"is", "the", "to", "if", "and", "for", "by",
+                      "from", "with", "at", "an"}
+    tokens = {tok.lower() for tok in re.split(r"[\s\-]+", name) if tok}
+    if tokens & SENTENCE_WORDS:
+        return None
+    # First character must be uppercase — real moves are always Title Case.
+    if name and name[0].islower():
+        return None
+    if name in MOVE_NAME_REJECT:
+        return None
+    return name
+
+
+ABILITY_NAME_FIXES: dict[str, str] = {
+    "Exploitw":             "Exploit",
+    "Glutony":              "Gluttony",
+    "Overgrowth":           "Overgrow",
+    "Overtcoat":            "Overcoat",
+    "Pick Up":              "Pickup",
+    "Probablity Control":   "Probability Control",
+    "Sandstream":           "Sand Stream",
+    "Spining Dance":        "Spinning Dance",
+    "Telapathy":            "Telepathy",
+    "Unnnerve":             "Unnerve",
+    "Wonderguard":          "Wonder Guard",
+}
+
+
+def normalize_ability_name(raw: str) -> str:
+    """Strip footnote markers and apply the ability typo-fix table."""
+    name = raw.strip().rstrip("*").strip()
+    name = re.sub(r"\s+", " ", name)
+    return ABILITY_NAME_FIXES.get(name, name)
+
+
+def split_ability_alternates(raw: str) -> list[str]:
+    """Split ``Drought / Drizzle`` or ``Light Metal or Heavy Metal`` into a
+    list of separate ability names. Returns ``[raw]`` unchanged if no
+    separator is present.
+    """
+    parts = re.split(r"\s+/\s+|\s+or\s+", raw)
+    cleaned = [p.strip() for p in parts if p.strip()]
+    return cleaned if len(cleaned) > 1 else [raw]
+
+
 def _strip_soft_hyphens(value: str) -> str:
     """Drop typeset soft hyphens (incl. across line breaks) and noise glyphs.
 
@@ -149,19 +292,26 @@ def parse_type(text: str) -> list[str]:
 
 def parse_abilities(text: str) -> dict:
     result = {"basic": [], "advanced": [], "high": []}
+
+    def add(category: str, raw: str) -> None:
+        for piece in split_ability_alternates(raw):
+            cleaned = normalize_ability_name(piece)
+            if cleaned:
+                result[category].append(cleaned)
+
     for line in text.splitlines():
         line = line.strip()
         m = re.match(r"Basic Ability \d+:\s*(.+)", line)
         if m:
-            result["basic"].append(m.group(1).strip())
+            add("basic", m.group(1))
             continue
         m = re.match(r"Adv Ability \d+:\s*(.+)", line)
         if m:
-            result["advanced"].append(m.group(1).strip())
+            add("advanced", m.group(1))
             continue
         m = re.match(r"High Ability:\s*(.+)", line)
         if m:
-            result["high"].append(m.group(1).strip())
+            add("high", m.group(1))
     return result
 
 
@@ -291,10 +441,13 @@ def parse_tm_hm_moves(text: str) -> list[dict]:
             continue
         # ``A`` prefix (a typeset glyph for ``H`` in the source PDF) marks an HM.
         kind = "HM" if match.group("prefix") else "TM"
+        cleaned = normalize_move_name(match.group("name"))
+        if cleaned is None:
+            continue
         moves.append({
             "kind": kind,
             "number": match.group("num").zfill(2),
-            "name": match.group("name").strip(),
+            "name": cleaned,
         })
     return moves
 
@@ -303,7 +456,12 @@ def parse_egg_moves(text: str) -> list[str]:
     body = _extract_section(text, "Egg Move List", MOVE_SECTION_TERMINATORS)
     if not body:
         return []
-    return _split_csv(body)
+    cleaned: list[str] = []
+    for raw in _split_csv(body):
+        name = normalize_move_name(raw)
+        if name is not None:
+            cleaned.append(name)
+    return cleaned
 
 
 HEART_SCALE_RE = re.compile(r"\s*\(\s*N\s*\)")
@@ -316,9 +474,10 @@ def parse_tutor_moves(text: str) -> list[dict]:
     moves: list[dict] = []
     for raw in _split_csv(body):
         heart = bool(HEART_SCALE_RE.search(raw))
-        name = HEART_SCALE_RE.sub("", raw).strip()
-        if name:
-            moves.append({"name": name, "heart_scale": heart})
+        cleaned = normalize_move_name(HEART_SCALE_RE.sub("", raw))
+        if cleaned is None:
+            continue
+        moves.append({"name": cleaned, "heart_scale": heart})
     return moves
 
 
@@ -386,13 +545,17 @@ def parse_level_up_moves(text: str) -> list[dict]:
     if not m:
         return moves
     for line in m.group(1).splitlines():
-        line = line.strip()
+        # Strip the ``§`` footnote glyph (sometimes prefixes a level-up entry).
+        line = re.sub(r"^[\s§]+", "", line).rstrip()
         mm = re.match(r"(\d+)\s+(.+?)\s*-\s*(\w+)\s*$", line)
         if mm:
+            cleaned = normalize_move_name(mm.group(2))
+            if cleaned is None:
+                continue
             moves.append({
                 "level": int(mm.group(1)),
-                "name": mm.group(2).strip(),
-                "type": mm.group(3).strip()
+                "name": cleaned,
+                "type": mm.group(3).strip(),
             })
     return moves
 

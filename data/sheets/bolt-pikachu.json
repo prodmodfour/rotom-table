@@ -1,0 +1,63 @@
+{
+  "slug": "bolt-pikachu",
+  "nickname": "Bolt",
+  "species": "Pikachu",
+  "level": 22,
+  "totalExp": 540,
+  "toNextLevel": 60,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Jolly",
+  "natureMod": { "plus": "spd", "minus": "satk" },
+  "stats": {
+    "hp":   { "base": 2, "added": 3, "stage": 0 },
+    "atk":  { "base": 4, "added": 3, "stage": 0 },
+    "def":  { "base": 1, "added": 2, "stage": 0 },
+    "satk": { "base": 0, "added": 2, "stage": 0 },
+    "sdef": { "base": 1, "added": 2, "stage": 0 },
+    "spd":  { "base": 5, "added": 4, "stage": 0 }
+  },
+  "combat": {
+    "currentHp": 32,
+    "injuries": 0,
+    "tick": 1,
+    "evasion": { "vsAtk": 0, "vsSatk": 1, "vsAny": 1 },
+    "dr": 0,
+    "trainingExp": 4,
+    "notes": "Refuses to enter the Poké Ball. Rides on shoulder."
+  },
+  "items": {
+    "held": "Light Ball",
+    "itemDescription": "Pikachu's Attack and Special Attack are doubled while held.",
+    "digestionFood": "Apples, Cheri Berries",
+    "extraItems": ["Sitrus Berry", "Potion ×2"],
+    "pointsLeft": 0
+  },
+  "weapon": { "name": "—", "dbMod": 0, "acMod": 0 },
+  "tutorPoints": { "earned": 4, "spent": 2 },
+  "skillBackground": {
+    "description": "Stage performer — hammed up for crowds since the day it hatched.",
+    "raised": ["Charm", "Acrobatics"],
+    "lowered": ["Stealth"]
+  },
+  "inheritedMoves": {
+    "20": "Volt Tackle"
+  },
+  "inheritedRemaining": 0,
+  "movelist": [
+    { "name": "Thunder Shock", "type": "Electric", "category": "Special",  "db": 4, "frequency": "At-Will", "ac": 2, "range": "Ranged 6, 1 Target", "effect": "Flinch 17+." },
+    { "name": "Quick Attack",  "type": "Normal",   "category": "Physical", "db": 4, "frequency": "At-Will", "ac": 2, "range": "Melee, 1 Target",   "effect": "Priority — resolves first in the turn." },
+    { "name": "Iron Tail",     "type": "Steel",    "category": "Physical", "db": 9, "frequency": "EOT",     "ac": 5, "range": "Melee, 1 Target",   "effect": "Lower target Defense 1 stage on a hit." },
+    { "name": "Volt Tackle",   "type": "Electric", "category": "Physical", "db": 12, "frequency": "Scene x2", "ac": 4, "range": "Melee, 1 Target", "effect": "Self damage equal to ⅓ damage dealt." },
+    { "name": "Thunder Wave",  "type": "Electric", "category": "Status",                 "frequency": "Scene",   "ac": 2, "range": "Ranged 6, 1 Target", "effect": "Paralyzes the target." }
+  ],
+  "abilities": [
+    { "name": "Static",          "frequency": "Static", "effect": "Foes that hit Bolt with a melee Move are Paralyzed on a roll of 17+." },
+    { "name": "Lightning Rod",   "frequency": "Static", "effect": "Bolt is immune to Electric Moves and may redirect them once per scene." }
+  ],
+  "edges": [
+    { "name": "Acrobat",   "cost": 1, "effect": "+2 to Acrobatics checks." },
+    { "name": "Speedy",    "cost": 1, "effect": "Once per scene, gain a Shift Action as a Free Action." }
+  ],
+  "scene": { "sceneXp": 18, "pkmnCount": 4, "modifiers": 0, "newTotal": 5 }
+}

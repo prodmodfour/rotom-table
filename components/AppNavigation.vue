@@ -18,18 +18,40 @@ const isActive = (path: string) => {
     <NuxtLink :class="['nav-link', { active: isActive('/pokedex') }]" to="/pokedex">
       Pokédex
     </NuxtLink>
+    <NuxtLink :class="['nav-link', { active: isActive('/sheets') }]" to="/sheets">
+      Sheets
+    </NuxtLink>
+    <span class="nav-divider" aria-hidden="true" />
+    <NuxtLink :class="['nav-link', { active: isActive('/moves') }]" to="/moves">
+      Moves
+    </NuxtLink>
+    <NuxtLink :class="['nav-link', { active: isActive('/abilities') }]" to="/abilities">
+      Abilities
+    </NuxtLink>
+    <NuxtLink :class="['nav-link', { active: isActive('/capabilities') }]" to="/capabilities">
+      Capabilities
+    </NuxtLink>
   </nav>
 </template>
 
 <style scoped>
 .app-navigation {
   display: flex;
-  gap: 0.75rem;
-  padding: 0.85rem;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.6rem;
+  padding: 0.7rem 0.85rem;
   border: 1px solid rgba(96, 165, 250, 0.22);
   border-radius: 18px;
   background: rgba(8, 20, 43, 0.82);
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.22);
+}
+
+.nav-divider {
+  width: 1px;
+  height: 1.6rem;
+  background: rgba(96, 165, 250, 0.22);
+  display: inline-block;
 }
 
 .nav-link {

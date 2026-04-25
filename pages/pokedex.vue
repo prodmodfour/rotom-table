@@ -108,12 +108,19 @@ const pageNumber = computed(() => {
   return index + 1
 })
 
-// "Capability List" rendered as the inline, comma-separated phrase used in
-// the printed book (e.g. "Overland 5, Swim 3, Jump 1/1, Power 2, Naturewalk
-// (Grassland, Forest), Underdog").
-const capabilityPhrase = computed(() => {
+// "Capability List" rendered as a sequence of items (mostly RefLinks). Each
+// entry has a ``ref`` name (the canonical capability for the link lookup) and
+// a ``display`` string (which may include numbers or ``(args)``). Movement
+// keywords (Overland/Sky/Swim/...) have no link target — RefLink renders them
+// as plain text in that case.
+interface CapabilityToken {
+  display: string
+  /** Link lookup name, or null to render as plain text only. */
+  ref: string | null
+}
+const capabilityTokens = computed<CapabilityToken[]>(() => {
   const capabilities = selectedEntry.value?.capabilities as PokedexCapabilities | undefined
-  if (!capabilities) return ''
+  if (!capabilities) return []
 
   const numbered: Array<[string, number | string | undefined]> = [
     ['Overland', capabilities.overland],
@@ -125,16 +132,41 @@ const capabilityPhrase = computed(() => {
     ['Power', capabilities.power],
   ]
 
-  const parts: string[] = []
+  const tokens: CapabilityToken[] = []
   for (const [label, value] of numbered) {
     if (value === undefined || value === null || value === 0 || value === '0') continue
-    parts.push(`${label} ${value}`)
+    // Movement caps: not in capabilities.json, render as plain text.
+    tokens.push({ display: `${label} ${value}`, ref: null })
   }
   for (const extra of capabilities.other ?? []) {
-    if (extra) parts.push(extra)
+    if (!extra) continue
+    // Use the raw label as both display and ref; RefLink will normalise the
+    // ref via stripCapabilityParams() / aliases.
+    tokens.push({ display: extra, ref: extra })
   }
-  return parts.join(', ')
+  return tokens
 })
+
+// TM/HM, Egg, and Tutor moves rendered as arrays of link tokens so the
+// template can interleave commas between RefLinks.
+interface MoveToken { name: string; display: string }
+const tmHmTokens = computed<MoveToken[]>(() => {
+  const moves = selectedEntry.value?.tm_hm_moves
+  if (!moves || moves.length === 0) return []
+  return moves.map((move) => {
+    const prefix = move.kind === 'HM' ? 'H' : ''
+    return { name: move.name, display: `${prefix}${move.number} ${move.name}` }
+  })
+})
+const eggMoveTokens = computed<MoveToken[]>(
+  () => (selectedEntry.value?.egg_moves ?? []).map((name) => ({ name, display: name })),
+)
+const tutorMoveTokens = computed<MoveToken[]>(
+  () => (selectedEntry.value?.tutor_moves ?? []).map((move) => ({
+    name: move.name,
+    display: move.heart_scale ? `${move.name} (N)` : move.name,
+  })),
+)
 
 // Skill abbreviations matching the printed book (Athl, Acro, Percep…).
 const SKILL_ABBREVIATIONS: Record<string, string> = {
@@ -192,34 +224,6 @@ const habitatSummary = computed(() => {
   return habitat.join(', ')
 })
 
-// TM/HM list rendered as the comma-separated run-on phrase used in the
-// printed book (e.g. "H01 Cut, 06 Toxic, 10 Hidden Power, ..."). Plain TMs
-// keep just the machine number; HMs are prefixed with ``H`` for clarity.
-const tmHmPhrase = computed(() => {
-  const moves = selectedEntry.value?.tm_hm_moves
-  if (!moves || moves.length === 0) return ''
-  return moves
-    .map((move) => {
-      const prefix = move.kind === 'HM' ? 'H' : ''
-      return `${prefix}${move.number} ${move.name}`
-    })
-    .join(', ')
-})
-
-const eggMovePhrase = computed(() => {
-  const moves = selectedEntry.value?.egg_moves
-  if (!moves || moves.length === 0) return ''
-  return moves.join(', ')
-})
-
-// Tutor moves preserve the (N) Heart-Scale marker the printed book uses.
-const tutorMovePhrase = computed(() => {
-  const moves = selectedEntry.value?.tutor_moves
-  if (!moves || moves.length === 0) return ''
-  return moves
-    .map((move) => (move.heart_scale ? `${move.name} (N)` : move.name))
-    .join(', ')
-})
 </script>
 
 <template>
@@ -313,21 +317,21 @@ const tutorMovePhrase = computed(() => {
                   :key="`basic-${ability}`"
                   class="info-line"
                 >
-                  Basic Ability {{ index + 1 }}: {{ ability }}
+                  Basic Ability {{ index + 1 }}: <RefLink kind="ability" :name="ability" />
                 </p>
                 <p
                   v-for="(ability, index) in selectedEntry.abilities.advanced ?? []"
                   :key="`adv-${ability}`"
                   class="info-line"
                 >
-                  Adv Ability {{ index + 1 }}: {{ ability }}
+                  Adv Ability {{ index + 1 }}: <RefLink kind="ability" :name="ability" />
                 </p>
                 <p
                   v-for="ability in selectedEntry.abilities.high ?? []"
                   :key="`high-${ability}`"
                   class="info-line"
                 >
-                  High Ability: {{ ability }}
+                  High Ability: <RefLink kind="ability" :name="ability" />
                 </p>
               </template>
             </section>
@@ -369,9 +373,19 @@ const tutorMovePhrase = computed(() => {
 
           <!-- RIGHT COLUMN -->
           <section class="book-column book-column--right">
-            <section v-if="capabilityPhrase" class="book-section">
+            <section v-if="capabilityTokens.length" class="book-section">
               <h3 class="book-section__title">Capability List</h3>
-              <p class="paragraph">{{ capabilityPhrase }}</p>
+              <p class="paragraph">
+                <template v-for="(token, i) in capabilityTokens" :key="`cap-${i}`"
+                  ><span v-if="i > 0">, </span
+                  ><RefLink
+                    v-if="token.ref"
+                    kind="capability"
+                    :name="token.ref"
+                    :display="token.display"
+                  /><span v-else>{{ token.display }}</span
+                ></template>
+              </p>
             </section>
 
             <section v-if="skillPhrase" class="book-section">
@@ -393,26 +407,41 @@ const tutorMovePhrase = computed(() => {
                     :key="`${move.level}-${move.name}`"
                   >
                     <span class="move-level">{{ move.level }}</span>
-                    <span class="move-name">{{ move.name }}</span>
+                    <span class="move-name"><RefLink kind="move" :name="move.name" /></span>
                     <span class="move-sep">-</span>
                     <span class="move-type">{{ move.type }}</span>
                   </li>
                 </ul>
               </template>
 
-              <template v-if="tmHmPhrase">
+              <template v-if="tmHmTokens.length">
                 <p class="subsection-title">TM/HM Move List</p>
-                <p class="paragraph paragraph--indent">{{ tmHmPhrase }}</p>
+                <p class="paragraph paragraph--indent">
+                  <template v-for="(token, i) in tmHmTokens" :key="`tm-${i}`"
+                    ><span v-if="i > 0">, </span
+                    ><RefLink kind="move" :name="token.name" :display="token.display"
+                  /></template>
+                </p>
               </template>
 
-              <template v-if="eggMovePhrase">
+              <template v-if="eggMoveTokens.length">
                 <p class="subsection-title">Egg Move List</p>
-                <p class="paragraph paragraph--indent">{{ eggMovePhrase }}</p>
+                <p class="paragraph paragraph--indent">
+                  <template v-for="(token, i) in eggMoveTokens" :key="`egg-${i}`"
+                    ><span v-if="i > 0">, </span
+                    ><RefLink kind="move" :name="token.name" :display="token.display"
+                  /></template>
+                </p>
               </template>
 
-              <template v-if="tutorMovePhrase">
+              <template v-if="tutorMoveTokens.length">
                 <p class="subsection-title">Tutor Move List</p>
-                <p class="paragraph paragraph--indent">{{ tutorMovePhrase }}</p>
+                <p class="paragraph paragraph--indent">
+                  <template v-for="(token, i) in tutorMoveTokens" :key="`tut-${i}`"
+                    ><span v-if="i > 0">, </span
+                    ><RefLink kind="move" :name="token.name" :display="token.display"
+                  /></template>
+                </p>
               </template>
             </section>
           </section>
@@ -664,7 +693,7 @@ code {
   position: relative;
   width: 100%;
   aspect-ratio: 1 / 1;
-  padding: 0.85rem;
+  padding: 0.4rem;
 }
 
 .sprite-frame__inner {
@@ -683,8 +712,10 @@ code {
 }
 
 .sprite-frame__inner img {
-  max-width: 78%;
-  max-height: 78%;
+  /* Fill the framed area. BW/Showdown sprites are tiny (≈50px); the
+     ``image-rendering: pixelated`` rule keeps the upscale crisp. */
+  width: 100%;
+  height: 100%;
   object-fit: contain;
   image-rendering: pixelated;
   filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.55));
