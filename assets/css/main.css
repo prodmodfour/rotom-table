@@ -169,3 +169,34 @@ a {
   background: rgba(60, 56, 54, 0.85);
   color: var(--accent);
 }
+
+/* HP bar floating above each token's sprite. Hidden at full HP; the
+   colored fill scales horizontally with the current ratio. Tier colours
+   mirror the gruvbox semantic tokens: green when healthy, orange after
+   50%, red after 25%. */
+.hp-bar {
+  width: 42px;
+  height: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.85);
+  border-radius: 3px;
+  background: rgba(15, 15, 15, 0.85);
+  overflow: hidden;
+  user-select: none;
+  pointer-events: none;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.55);
+}
+
+.hp-bar__fill {
+  height: 100%;
+  width: 100%;
+  background: var(--good);
+  transition: width 0.18s ease, background-color 0.18s ease;
+}
+
+.hp-bar[data-hp-tier='wounded'] .hp-bar__fill {
+  background: var(--warn);
+}
+
+.hp-bar[data-hp-tier='critical'] .hp-bar__fill {
+  background: var(--bad);
+}

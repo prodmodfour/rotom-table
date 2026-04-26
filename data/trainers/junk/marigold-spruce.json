@@ -300,5 +300,6 @@
     "feet": "Hiking Boots",
     "accessory": "Pressed-flower hairclip"
   },
-  "maneuvers": []
+  "maneuvers": [],
+  "portraitUrl": "/trainer-sprites/showdown/trainers/beni-ninja.png"
 }

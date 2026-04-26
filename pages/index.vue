@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import { computed, reactive, ref, watch } from 'vue'
+import { reactive, ref, watch } from 'vue'
 import IsometricGrid from '~/components/IsometricGrid.client.vue'
-import { pokemonCatalog } from '~/data/pokemonCatalog'
-import { trainerCatalog } from '~/data/trainerCatalog'
-import type { GridAnchor, GridDimensions, PokemonCatalogEntry, SpawnedPokemon } from '~/types/pokemon'
+import SheetBrowser, { type SheetSelection } from '~/components/SheetBrowser.vue'
+import type { GridAnchor, GridDimensions, SpawnedPokemon } from '~/types/pokemon'
 import type { PreviewState } from '~/utils/grid'
 import {
   DEFAULT_GRID_DIMENSIONS,
@@ -11,6 +10,12 @@ import {
   normalizeDimensions,
   reconcilePokemonPositions,
 } from '~/utils/grid'
+import {
+  catalogEntryForPokemonSheet,
+  catalogEntryForTrainerSheet,
+  pokemonHpSnapshot,
+  trainerHpSnapshot,
+} from '~/utils/sheetSpawn'
 
 const createPokemonId = () => `pkm-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
 
@@ -18,8 +23,6 @@ const gridDimensions = reactive<GridDimensions>({
   ...DEFAULT_GRID_DIMENSIONS,
 })
 
-const searchTerm = ref('')
-const trainerSearchTerm = ref('')
 const spawnedPokemon = ref<SpawnedPokemon[]>([])
 const selectedId = ref<string | null>(null)
 const previewState = ref<PreviewState>({
@@ -28,51 +31,42 @@ const previewState = ref<PreviewState>({
   pathLength: 0,
 })
 
-const filterCatalogEntries = (entries: PokemonCatalogEntry[], query: string) => {
-  const normalizedQuery = query.trim().toLowerCase()
-  const catalogEntries = [...entries]
+const spawnSheet = (selection: SheetSelection) => {
+  const catalogEntry =
+    selection.kind === 'pokemon'
+      ? catalogEntryForPokemonSheet(selection.sheet)
+      : catalogEntryForTrainerSheet(selection.sheet)
 
-  if (!normalizedQuery) {
-    return catalogEntries
+  if (!catalogEntry) {
+    return
   }
 
-  return catalogEntries
-    .filter((entry) => entry.species.toLowerCase().includes(normalizedQuery))
-    .sort((left, right) => {
-      const leftName = left.species.toLowerCase()
-      const rightName = right.species.toLowerCase()
-      const leftStarts = leftName.startsWith(normalizedQuery) ? 0 : 1
-      const rightStarts = rightName.startsWith(normalizedQuery) ? 0 : 1
-
-      if (leftStarts !== rightStarts) {
-        return leftStarts - rightStarts
-      }
-
-      return leftName.localeCompare(rightName)
-    })
-}
-
-const filteredPokemon = computed(() => filterCatalogEntries(pokemonCatalog, searchTerm.value))
-const filteredTrainers = computed(() => filterCatalogEntries(trainerCatalog, trainerSearchTerm.value))
-
-const selectedPokemon = computed(
-  () => spawnedPokemon.value.find((pokemon) => pokemon.id === selectedId.value) ?? null,
-)
-
-const spawnEntry = (entry: PokemonCatalogEntry) => {
-  const position = findFirstAvailablePosition(entry, spawnedPokemon.value, gridDimensions)
+  const position = findFirstAvailablePosition(catalogEntry, spawnedPokemon.value, gridDimensions)
 
   if (!position) {
     return
   }
 
+  const hp =
+    selection.kind === 'pokemon'
+      ? pokemonHpSnapshot(selection.sheet)
+      : trainerHpSnapshot(selection.sheet)
+
+  const displayName =
+    selection.kind === 'pokemon' ? selection.sheet.nickname : selection.sheet.name
+
   spawnedPokemon.value = [
     ...spawnedPokemon.value,
     {
-      ...entry,
+      ...catalogEntry,
+      species: displayName,
       id: createPokemonId(),
       position,
       turned: false,
+      sheetKind: selection.kind,
+      sheetSlug: selection.sheet.slug,
+      currentHp: hp.currentHp,
+      maxHp: hp.maxHp,
     },
   ]
 
@@ -97,22 +91,14 @@ const selectPokemon = (id: string | null) => {
 }
 
 const deletePokemon = (id: string) => {
-  const target = spawnedPokemon.value.find((pokemon) => pokemon.id === id)
   spawnedPokemon.value = spawnedPokemon.value.filter((pokemon) => pokemon.id !== id)
 
   if (selectedId.value === id) {
     selectPokemon(null)
   }
-
 }
 
 const turnPokemon = (id: string) => {
-  const target = spawnedPokemon.value.find((pokemon) => pokemon.id === id)
-
-  if (!target) {
-    return
-  }
-
   spawnedPokemon.value = spawnedPokemon.value.map((pokemon) =>
     pokemon.id === id
       ? {
@@ -121,16 +107,9 @@ const turnPokemon = (id: string) => {
         }
       : pokemon,
   )
-
 }
 
 const movePokemon = (payload: { id: string; position: GridAnchor }) => {
-  const target = spawnedPokemon.value.find((pokemon) => pokemon.id === payload.id)
-
-  if (!target) {
-    return
-  }
-
   spawnedPokemon.value = spawnedPokemon.value.map((pokemon) =>
     pokemon.id === payload.id
       ? {
@@ -146,8 +125,6 @@ const movePokemon = (payload: { id: string; position: GridAnchor }) => {
 const updatePreview = (nextPreview: PreviewState) => {
   previewState.value = nextPreview
 }
-
-const formatPosition = (position: GridAnchor) => `(${position.x}, ${position.y}, ${position.z})`
 
 watch(
   () => [gridDimensions.x, gridDimensions.y, gridDimensions.z] as const,
@@ -187,9 +164,6 @@ watch(
     if (selectedId.value && !spawnedPokemon.value.some((pokemon) => pokemon.id === selectedId.value)) {
       selectPokemon(null)
     }
-
-    if (reconciliation.removedIds.length > 0) {
-    }
   },
   { immediate: true },
 )
@@ -223,61 +197,7 @@ watch(
 
       </section>
 
-      <section class="panel-card grow-panel">
-        <div class="panel-heading">
-          <h2>Spawn Pokémon</h2>
-          <span class="badge">{{ filteredPokemon.length }} shown</span>
-        </div>
-
-        <label class="search-field">
-          <span class="sr-only">Search Pokémon</span>
-          <input v-model.trim="searchTerm" type="search" placeholder="Search species…" />
-        </label>
-
-        <div class="spawn-results">
-          <button
-            v-for="entry in filteredPokemon"
-            :key="entry.slug"
-            class="spawn-row"
-            type="button"
-            @click="spawnEntry(entry)"
-          >
-            <span class="spawn-name">{{ entry.species }}</span>
-            <span class="spawn-meta">
-              {{ entry.width.toFixed(2) }}m × {{ entry.height.toFixed(2) }}m sprite ·
-              {{ entry.base }} × {{ entry.base }} base · {{ entry.clearance }}m clearance
-            </span>
-          </button>
-        </div>
-      </section>
-
-      <section class="panel-card grow-panel">
-        <div class="panel-heading">
-          <h2>Spawn Trainers</h2>
-          <span class="badge">{{ filteredTrainers.length }} shown</span>
-        </div>
-
-        <label class="search-field">
-          <span class="sr-only">Search Trainers</span>
-          <input v-model.trim="trainerSearchTerm" type="search" placeholder="Search trainers…" />
-        </label>
-
-        <div class="spawn-results">
-          <button
-            v-for="entry in filteredTrainers"
-            :key="entry.slug"
-            class="spawn-row"
-            type="button"
-            @click="spawnEntry(entry)"
-          >
-            <span class="spawn-name">{{ entry.species }}</span>
-            <span class="spawn-meta">
-              {{ entry.width.toFixed(2) }}m × {{ entry.height.toFixed(2) }}m sprite ·
-              {{ entry.base }} × {{ entry.base }} base · {{ entry.clearance }}m clearance
-            </span>
-          </button>
-        </div>
-      </section>
+      <SheetBrowser @select="spawnSheet" />
 
     </aside>
 
@@ -376,8 +296,7 @@ watch(
   gap: 0.75rem;
 }
 
-.dimension-grid label,
-.search-field {
+.dimension-grid label {
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
@@ -405,127 +324,6 @@ input:focus {
   box-shadow: 0 0 0 2px rgba(250, 189, 47, 0.18);
 }
 
-.search-field {
-  margin-bottom: 0.85rem;
-}
-
-.spawn-results,
-.roster-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  overflow: auto;
-}
-
-.grow-panel .spawn-results {
-  max-height: 27vh;
-}
-
-.roster-panel .roster-list {
-  max-height: 22vh;
-}
-
-.spawn-row,
-.roster-main,
-.delete-button,
-.secondary-button {
-  border: 1px solid var(--rule-soft);
-  border-radius: 10px;
-  background: var(--paper);
-  color: var(--ink);
-  cursor: pointer;
-  transition:
-    border-color 0.15s ease,
-    background 0.15s ease;
-}
-
-.spawn-row,
-.roster-main {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.3rem;
-  padding: 0.7rem 0.85rem;
-  text-align: left;
-}
-
-.spawn-row:hover,
-.roster-main:hover,
-.delete-button:hover,
-.secondary-button:hover {
-  border-color: var(--rule-strong);
-  background: var(--paper-hover);
-}
-
-.spawn-name {
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  color: var(--ink-bright);
-}
-
-.spawn-meta,
-.roster-main span {
-  color: var(--ink-muted);
-  font-size: 0.8rem;
-  line-height: 1.4;
-}
-
-.roster-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 0.5rem;
-}
-
-.roster-row.active .roster-main {
-  border-color: var(--rule-active);
-  background: var(--paper-active);
-}
-
-.delete-button,
-.secondary-button {
-  padding: 0.65rem 0.9rem;
-  white-space: nowrap;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-}
-
-.preview-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.6rem;
-  margin: 1rem 0;
-}
-
-.preview-grid div {
-  border: 1px solid var(--rule-soft);
-  border-radius: 10px;
-  padding: 0.65rem 0.8rem;
-  background: var(--paper-inset);
-}
-
-.preview-grid dt {
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--ink-muted);
-}
-
-.preview-grid dd {
-  margin: 0.3rem 0 0;
-  font-weight: 700;
-  color: var(--ink-bright);
-}
-
-.accent-card {
-  border-color: var(--rule-strong);
-}
-
-.status-copy {
-  padding: 0 0.2rem 1rem;
-  color: var(--ink-soft);
-}
-
 .scene-loading {
   display: grid;
   place-items: center;
@@ -533,18 +331,6 @@ input:focus {
   color: var(--ink-muted);
   background: var(--paper);
   font-style: italic;
-}
-
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
 }
 
 @media (max-width: 1100px) {
@@ -557,20 +343,10 @@ input:focus {
     border-right: 0;
     border-bottom: 1px solid var(--rule);
   }
-
-  .grow-panel .spawn-results,
-  .roster-panel .roster-list {
-    max-height: 32vh;
-  }
 }
 
 @media (max-width: 640px) {
-  .dimension-grid,
-  .preview-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .roster-row {
+  .dimension-grid {
     grid-template-columns: 1fr;
   }
 }

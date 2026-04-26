@@ -169,4 +169,12 @@ export interface SpawnedPokemon extends PokemonCatalogEntry {
   id: string
   position: GridAnchor
   turned?: boolean
+  /** Which sheet directory this token's data was loaded from. */
+  sheetKind: 'pokemon' | 'trainer'
+  /** Slug of the source sheet (Pokémon nickname or trainer name keyed). */
+  sheetSlug: string
+  /** Snapshot of the sheet's current HP at spawn time. */
+  currentHp: number
+  /** Snapshot of the sheet's computed max HP at spawn time. */
+  maxHp: number
 }

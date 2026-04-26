@@ -24,6 +24,7 @@ const emit = defineEmits<{
 interface PokemonRenderObject {
   sprite: CSS3DSprite
   elevationBadge: CSS3DSprite
+  hpBar: CSS3DSprite
   /**
    * Volume box wrapping the pokemon's footprint × clearance. Uses a
    * 6-material array so we can paint each face with the gruvbox
@@ -42,6 +43,8 @@ interface PokemonRenderObject {
   spriteUrl: string
   backSpriteUrl?: string
   turned: boolean
+  currentHp: number
+  maxHp: number
 }
 
 /**
@@ -142,6 +145,7 @@ const paintVolumeMaterials = (
 
 const SPRITE_PIXELS_PER_METRE = 128
 const ELEVATION_BADGE_PIXELS_PER_METRE = 48
+const HP_BAR_PIXELS_PER_METRE = 48
 const ISO_POLAR_ANGLE = THREE.MathUtils.degToRad(54.735610317245346)
 const ISO_AZIMUTH_ANGLE = THREE.MathUtils.degToRad(45)
 const DEFAULT_FACING_DIRECTION = new THREE.Vector2(
@@ -285,6 +289,25 @@ const buildElevationBadge = (ghost = false) => {
   badge.scale.setScalar(1 / ELEVATION_BADGE_PIXELS_PER_METRE)
   badge.visible = false
   return badge
+}
+
+const buildHpBar = () => {
+  const wrapper = document.createElement('div')
+  wrapper.className = 'hp-bar'
+  wrapper.setAttribute('aria-hidden', 'true')
+  wrapper.style.pointerEvents = 'none'
+
+  const fill = document.createElement('div')
+  fill.className = 'hp-bar__fill'
+  wrapper.appendChild(fill)
+
+  // CSS3DSprite billboards to the camera so the bar reads as a flat ribbon
+  // floating above the sprite regardless of orbit angle.
+  const bar = new CSS3DSprite(wrapper)
+  bar.element.style.pointerEvents = 'none'
+  bar.scale.setScalar(1 / HP_BAR_PIXELS_PER_METRE)
+  bar.visible = false
+  return bar
 }
 
 const getSpriteImageElement = (sprite: CSS3DSprite) =>
@@ -502,9 +525,44 @@ const updateElevationBadge = (
   badge.visible = true
 }
 
+const hpTierForRatio = (ratio: number): 'critical' | 'wounded' | 'healthy' => {
+  if (ratio <= 0.25) return 'critical'
+  if (ratio <= 0.5) return 'wounded'
+  return 'healthy'
+}
+
+const updateHpBar = (
+  bar: CSS3DSprite,
+  center: THREE.Vector3,
+  spriteHeight: number,
+  currentHp: number,
+  maxHp: number,
+) => {
+  // Hidden at full HP (per spec) and when there's nothing meaningful to
+  // show (max ≤ 0).
+  if (maxHp <= 0 || currentHp >= maxHp) {
+    bar.visible = false
+    return
+  }
+
+  const ratio = Math.max(0, Math.min(1, currentHp / maxHp))
+  const fill = bar.element.firstElementChild as HTMLElement | null
+  if (fill) {
+    fill.style.width = `${ratio * 100}%`
+  }
+  bar.element.dataset.hpTier = hpTierForRatio(ratio)
+
+  // Floats just above the sprite's head; the sprite is centered at
+  // ``center.y + spriteHeight / 2`` so its top edge sits at
+  // ``center.y + spriteHeight``.
+  bar.position.set(center.x, center.y + spriteHeight + 0.18, center.z)
+  bar.visible = true
+}
+
 const buildRenderObject = (pokemon: SpawnedPokemon): PokemonRenderObject => {
   const sprite = buildSprite(pokemon)
   const elevationBadge = buildElevationBadge()
+  const hpBar = buildHpBar()
   const volumeGeometry = new THREE.BoxGeometry(pokemon.base, pokemon.clearance, pokemon.base)
   // Per-face gruvbox shading: top=bg3, Z-sides=bg2, X-sides=bg1.
   // Opacity is bumped slightly vs. the old single-material box so the
@@ -544,10 +602,12 @@ const buildRenderObject = (pokemon: SpawnedPokemon): PokemonRenderObject => {
   worldGroup.add(proxy)
   scene.add(sprite)
   scene.add(elevationBadge)
+  scene.add(hpBar)
 
   return {
     sprite,
     elevationBadge,
+    hpBar,
     volume,
     edges,
     proxy,
@@ -561,6 +621,8 @@ const buildRenderObject = (pokemon: SpawnedPokemon): PokemonRenderObject => {
     spriteUrl: pokemon.spriteUrl,
     backSpriteUrl: pokemon.backSpriteUrl,
     turned: Boolean(pokemon.turned),
+    currentHp: pokemon.currentHp,
+    maxHp: pokemon.maxHp,
   }
 }
 
@@ -586,6 +648,13 @@ const applyRenderObjectPosition = (renderObject: PokemonRenderObject) => {
     renderObject.currentCenter,
     renderObject.base,
     renderObject.elevation,
+  )
+  updateHpBar(
+    renderObject.hpBar,
+    renderObject.currentCenter,
+    renderObject.height,
+    renderObject.currentHp,
+    renderObject.maxHp,
   )
 }
 
@@ -620,6 +689,7 @@ const syncPokemonObjects = () => {
 
     disposeObject3D(renderObject.sprite)
     disposeObject3D(renderObject.elevationBadge)
+    disposeObject3D(renderObject.hpBar)
     disposeObject3D(renderObject.volume)
     disposeObject3D(renderObject.edges)
     disposeObject3D(renderObject.proxy)
@@ -641,6 +711,8 @@ const syncPokemonObjects = () => {
     renderObject.spriteUrl = pokemon.spriteUrl
     renderObject.backSpriteUrl = pokemon.backSpriteUrl
     renderObject.turned = Boolean(pokemon.turned)
+    renderObject.currentHp = pokemon.currentHp
+    renderObject.maxHp = pokemon.maxHp
   }
 
   refreshPokemonStyles()
@@ -1174,6 +1246,7 @@ onBeforeUnmount(() => {
   for (const renderObject of renderObjects.values()) {
     disposeObject3D(renderObject.sprite)
     disposeObject3D(renderObject.elevationBadge)
+    disposeObject3D(renderObject.hpBar)
     disposeObject3D(renderObject.volume)
     disposeObject3D(renderObject.edges)
     disposeObject3D(renderObject.proxy)
