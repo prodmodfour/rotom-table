@@ -21,11 +21,13 @@
 import { readdirSync, writeFileSync } from 'node:fs'
 import { resolve as resolvePath, join as joinPath } from 'node:path'
 import { defineEventHandler, readBody, createError } from 'h3'
+import { publishRealtime } from '../../utils/realtime'
 
 interface SaveBody {
   kind?: 'pokemon' | 'trainer'
   slug?: string
   sheet?: Record<string, unknown>
+  clientId?: string
 }
 
 const PROJECT_ROOT = resolvePath(process.cwd())
@@ -95,6 +97,19 @@ export default defineEventHandler(async (event) => {
   if ('folder' in out) delete out.folder
 
   writeFileSync(path, JSON.stringify(out, null, 2) + '\n', 'utf8')
+
+  publishRealtime({
+    channel: `sheet:${body.kind}:${slug}`,
+    type: 'updated',
+    clientId: body.clientId,
+    data: { kind: body.kind, slug, sheet: out },
+  })
+  publishRealtime({
+    channel: 'sheets',
+    type: 'updated',
+    clientId: body.clientId,
+    data: { kind: body.kind, slug, sheet: out },
+  })
 
   return {
     ok: true as const,

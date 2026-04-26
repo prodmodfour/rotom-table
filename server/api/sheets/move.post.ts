@@ -27,11 +27,13 @@ import {
 } from 'node:fs'
 import { resolve as resolvePath, join as joinPath, dirname, sep } from 'node:path'
 import { defineEventHandler, readBody, createError } from 'h3'
+import { publishRealtime } from '../../utils/realtime'
 
 interface MoveSheetBody {
   kind?: 'pokemon' | 'trainer'
   slug?: string
   folder?: string
+  clientId?: string
 }
 
 const PROJECT_ROOT = resolvePath(process.cwd())
@@ -145,6 +147,13 @@ export default defineEventHandler(async (event) => {
     // Don't fail the move if rewrite fails; surface the issue but keep going.
     console.warn('[sheets/move] rewrite failed for', destPath, err)
   }
+
+  publishRealtime({
+    channel: 'sheets',
+    type: 'moved',
+    clientId: body.clientId,
+    data: { kind: body.kind, slug, folder },
+  })
 
   return {
     ok: true as const,

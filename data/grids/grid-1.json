@@ -1,0 +1,35 @@
+{
+  "slug": "grid-1",
+  "name": "grid 1",
+  "dimensions": {
+    "x": 20,
+    "y": 12,
+    "z": 20
+  },
+  "placements": [
+    {
+      "id": "pkm-mogclnnb-g6m0mh",
+      "sheetKind": "pokemon",
+      "sheetSlug": "iggy-magnemite",
+      "position": {
+        "x": 5,
+        "y": 0,
+        "z": 12
+      },
+      "turned": false
+    },
+    {
+      "id": "pkm-mogcu239-acxfi3",
+      "sheetKind": "trainer",
+      "sheetSlug": "marigold-spruce",
+      "position": {
+        "x": 4,
+        "y": 0,
+        "z": 4
+      },
+      "turned": false
+    }
+  ],
+  "createdAt": 1777242994202,
+  "updatedAt": 1777243406503
+}

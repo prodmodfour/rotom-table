@@ -13,10 +13,12 @@
 import { readdirSync, rmdirSync, unlinkSync } from 'node:fs'
 import { resolve as resolvePath, join as joinPath, dirname, sep } from 'node:path'
 import { defineEventHandler, readBody, createError } from 'h3'
+import { publishRealtime } from '../../utils/realtime'
 
 interface DeleteBody {
   kind?: 'pokemon' | 'trainer'
   slug?: string
+  clientId?: string
 }
 
 const PROJECT_ROOT = resolvePath(process.cwd())
@@ -80,6 +82,19 @@ export default defineEventHandler(async (event) => {
 
   unlinkSync(path)
   pruneEmptyParents(path, root)
+
+  publishRealtime({
+    channel: `sheet:${body.kind}:${slug}`,
+    type: 'deleted',
+    clientId: body.clientId,
+    data: { kind: body.kind, slug },
+  })
+  publishRealtime({
+    channel: 'sheets',
+    type: 'deleted',
+    clientId: body.clientId,
+    data: { kind: body.kind, slug },
+  })
 
   return { ok: true as const, path: path.slice(PROJECT_ROOT.length + 1) }
 })

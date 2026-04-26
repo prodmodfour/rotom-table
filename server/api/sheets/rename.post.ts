@@ -15,11 +15,13 @@
 import { readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import { resolve as resolvePath, join as joinPath } from 'node:path'
 import { defineEventHandler, readBody, createError } from 'h3'
+import { publishRealtime } from '../../utils/realtime'
 
 interface RenameBody {
   kind?: 'pokemon' | 'trainer'
   slug?: string
   name?: string
+  clientId?: string
 }
 
 const PROJECT_ROOT = resolvePath(process.cwd())
@@ -85,6 +87,19 @@ export default defineEventHandler(async (event) => {
   const field = body.kind === 'pokemon' ? 'nickname' : 'name'
   json[field] = name
   writeFileSync(path, JSON.stringify(json, null, 2) + '\n', 'utf8')
+
+  publishRealtime({
+    channel: `sheet:${body.kind}:${slug}`,
+    type: 'updated',
+    clientId: body.clientId,
+    data: { kind: body.kind, slug, sheet: json },
+  })
+  publishRealtime({
+    channel: 'sheets',
+    type: 'updated',
+    clientId: body.clientId,
+    data: { kind: body.kind, slug, sheet: json },
+  })
 
   return {
     ok: true as const,

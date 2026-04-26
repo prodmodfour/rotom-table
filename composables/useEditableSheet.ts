@@ -11,9 +11,14 @@
  * `saveStatus` (`'idle' | 'saving' | 'saved' | 'error'`) and the latest
  * error so the page can surface a small "saved / saving…" indicator.
  *
- * Dev-only: the underlying API endpoint refuses to run in production.
+ * Cross-tab sync: subscribes to `sheet:<kind>:<slug>` over the realtime
+ * SSE channel. Edits made in another tab/device land here as
+ * `updated` events; we replace the local sheet contents (and the
+ * "last server snapshot" so the watcher doesn't echo a save).
  */
 import { getCurrentInstance, onBeforeUnmount, ref, watch, type Ref } from 'vue'
+import { getClientId } from '~/utils/clientId'
+import { subscribeChannel } from './useRealtime'
 
 export type SheetKind = 'pokemon' | 'trainer'
 export type SaveStatus = 'idle' | 'saving' | 'saved' | 'error'
@@ -40,6 +45,8 @@ const deepClone = <T>(value: T): T => {
   return JSON.parse(JSON.stringify(value))
 }
 
+const stableJson = (value: unknown): string => JSON.stringify(value)
+
 export function useEditableSheet<T extends { slug: string }>(
   initial: T,
   kind: SheetKind,
@@ -50,11 +57,19 @@ export function useEditableSheet<T extends { slug: string }>(
   const sheet = ref(deepClone(initial)) as Ref<T>
   const saveStatus = ref<SaveStatus>('idle')
   const saveError = ref<string | null>(null)
+  const clientId = getClientId()
 
   // Track the latest "intended" payload so a save that races with a newer
   // edit always wins (the older save returns into a stale state).
   let saveSeq = 0
   let pendingTimer: ReturnType<typeof setTimeout> | null = null
+  // Mirrors what's persisted on disk; used by the deep watcher to skip
+  // saves when the only change came from an SSE update.
+  let lastServerJson = (() => {
+    const probe: Record<string, unknown> = { ...(initial as unknown as Record<string, unknown>) }
+    delete probe.folder
+    return stableJson(probe)
+  })()
 
   const cancelPendingSave = () => {
     if (pendingTimer != null) {
@@ -69,15 +84,13 @@ export function useEditableSheet<T extends { slug: string }>(
     saveStatus.value = 'saving'
     saveError.value = null
     try {
-      // Strip `folder` from the payload — the server re-derives it from the
-      // file's path and we want a single source of truth.
       const payload: Record<string, unknown> = { ...(sheet.value as Record<string, unknown>) }
       delete payload.folder
       await $fetch('/api/sheets/save', {
         method: 'POST',
-        body: { kind, slug: sheet.value.slug, sheet: payload },
+        body: { kind, slug: sheet.value.slug, sheet: payload, clientId },
       })
-      // If a newer save has started in the meantime, leave its status alone.
+      lastServerJson = stableJson(payload)
       if (seq === saveSeq) saveStatus.value = 'saved'
     } catch (err: unknown) {
       if (seq !== saveSeq) return
@@ -93,12 +106,12 @@ export function useEditableSheet<T extends { slug: string }>(
     await performSave()
   }
 
-  // Deep watch — any mutation (including nested array push/splice) triggers
-  // a debounced save. The watcher is registered after construction so the
-  // initial deep-clone above doesn't itself fire a save.
   watch(
     sheet,
-    () => {
+    (current) => {
+      const probe: Record<string, unknown> = { ...(current as unknown as Record<string, unknown>) }
+      delete probe.folder
+      if (stableJson(probe) === lastServerJson) return
       cancelPendingSave()
       saveStatus.value = 'saving'
       pendingTimer = setTimeout(() => {
@@ -109,16 +122,34 @@ export function useEditableSheet<T extends { slug: string }>(
     { deep: true },
   )
 
-  // If the component is torn down while a save is queued (page navigation,
-  // hot reload), flush it synchronously so the user doesn't lose the last
-  // few keystrokes. Only register when called from a component setup —
-  // composables can also be invoked from non-component code in tests.
+  // Cross-tab sync: replace the editable copy when another tab edits
+  // the same sheet on disk.
+  let unsubscribe: (() => void) | null = null
+  if (typeof window !== 'undefined') {
+    unsubscribe = subscribeChannel(`sheet:${kind}:${initial.slug}`, (event) => {
+      if (event.clientId === clientId) return
+      const payload = event.data as
+        | { kind?: SheetKind; slug?: string; sheet?: T }
+        | undefined
+      if (event.type === 'updated' && payload?.sheet) {
+        const incoming = deepClone(payload.sheet)
+        const probe: Record<string, unknown> = { ...(incoming as unknown as Record<string, unknown>) }
+        delete probe.folder
+        lastServerJson = stableJson(probe)
+        sheet.value = incoming
+        saveStatus.value = 'saved'
+      }
+    })
+  }
+
   if (getCurrentInstance()) {
     onBeforeUnmount(() => {
       if (pendingTimer != null) {
         cancelPendingSave()
         void performSave()
       }
+      unsubscribe?.()
+      unsubscribe = null
     })
   }
 
