@@ -9,6 +9,7 @@
     "postinstall": "nuxt prepare"
   },
   "dependencies": {
+    "@phosphor-icons/vue": "^2.2.1",
     "nuxt": "^3.17.0",
     "three": "^0.176.0"
   },

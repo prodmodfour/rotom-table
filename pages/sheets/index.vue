@@ -1,8 +1,16 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, reactive, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import {
+  PhCaretRight,
+  PhFolder,
+  PhFolderOpen,
+  PhHouse,
+  PhPlus,
+} from '@phosphor-icons/vue'
 import { characterSheets, getPokedexEntry, getSpriteUrl } from '~/data/characterSheets'
 import { trainerSheets } from '~/data/trainerSheets'
-import { formatFolderLabel, groupByFolder } from '~/utils/sheetFolders'
+import { formatFolderLabel } from '~/utils/sheetFolders'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { TrainerSheet } from '~/types/trainerSheet'
 
@@ -10,25 +18,17 @@ useHead({
   title: 'Sheets · Rotom Table',
 })
 
-const searchTerm = ref('')
-
-const normalize = (value: string) => value.trim().toLowerCase()
-
 // ---------------------------------------------------------------------------
-// Unified item model — trainers and Pokémon share one list, with a `kind`
-// discriminator so the template can render the right card variant.
+// Item model
 // ---------------------------------------------------------------------------
 
 interface PokemonItem {
   kind: 'pokemon'
   slug: string
-  /** Mirrored from the underlying sheet (and folder overrides applied) so
-   *  ``groupByFolder`` works on the wrapper directly. */
   folder: string
   sheet: CharacterSheet
   types: string[]
   spriteUrl: string | null
-  /** Lowercased label used to keep ordering inside a folder stable. */
   sortKey: string
 }
 
@@ -43,16 +43,12 @@ interface TrainerItem {
 type SheetItem = PokemonItem | TrainerItem
 
 // ---------------------------------------------------------------------------
-// Local override state. After a drag-drop the server moves the file on disk
-// (Vite HMR will eventually re-read it), but we mirror the change locally so
-// the UI updates instantly without waiting for a reload.
+// Local override state. Drag-drop hits a server endpoint that moves the file
+// on disk, but we mirror the move locally so the UI updates instantly without
+// waiting for Vite HMR to re-import the data globs.
 // ---------------------------------------------------------------------------
 
-/** Per-sheet folder override, keyed by ``"<kind>:<slug>"``. */
 const sheetOverrides = reactive<Record<string, string>>({})
-
-/** Folder rename log applied in order. ``"team-alpha"`` → ``"npcs/team-alpha"``
- *  also rewrites every nested ``team-alpha/...`` path the same way. */
 const folderRenames = ref<Array<{ from: string; to: string }>>([])
 
 const applyFolderRenames = (path: string): string => {
@@ -99,34 +95,10 @@ const items = computed<SheetItem[]>(() =>
   baseItems.value.map((item) => ({ ...item, folder: resolveFolder(item) }) as SheetItem),
 )
 
-const filteredItems = computed<SheetItem[]>(() => {
-  const query = normalize(searchTerm.value)
-  if (!query) return items.value
-  return items.value.filter((item) => {
-    if (item.kind === 'pokemon') {
-      const { sheet, types, folder } = item
-      const haystacks = [sheet.nickname, sheet.species, sheet.nature ?? '', folder, ...types]
-      return haystacks.some((value) => normalize(value).includes(query))
-    }
-    const { sheet, folder } = item
-    const haystacks = [
-      sheet.name,
-      sheet.playedBy ?? '',
-      sheet.skillBackground?.name ?? '',
-      folder,
-      ...(sheet.classes?.map((c) => c.name) ?? []),
-    ]
-    return haystacks.some((value) => normalize(value).includes(query))
-  })
-})
-
-/** Folders the user has created (or that exist on disk) but which contain no
- *  sheets yet. We seed this from `/api/sheets/folders` on mount so empty
- *  directories survive a reload, and add to it when the user clicks
- *  "+ New folder". */
+// Folders explicitly created by the user (or that already exist on disk as
+// empty dirs). Seeded from `/api/sheets/folders` on mount.
 const extraFolders = reactive(new Set<string>())
 
-/** Resolve an extra-folder path through the rename log. */
 const resolvedExtras = computed(() => {
   const out = new Set<string>()
   for (const path of extraFolders) {
@@ -136,67 +108,141 @@ const resolvedExtras = computed(() => {
   return out
 })
 
-const groups = computed(() => {
-  const grouped = groupByFolder(filteredItems.value)
-  const seen = new Set(grouped.map((g) => g.path))
-
-  // Surface empty folders only when the user isn't searching — otherwise an
-  // empty header would show up alongside filtered results, which is noise.
-  if (!searchTerm.value) {
-    for (const path of resolvedExtras.value) {
-      if (seen.has(path)) continue
-      grouped.push({ path, label: formatFolderLabel(path), items: [] })
-      seen.add(path)
-    }
-  }
-
-  // Re-sort: root group first, then alphabetically by path.
-  grouped.sort((a, b) => {
-    if (a.path === b.path) return 0
-    if (a.path === '') return -1
-    if (b.path === '') return 1
-    return a.path.localeCompare(b.path)
-  })
-
-  // Stable alphabetical order inside each group, mixing trainers + Pokémon.
-  return grouped.map((g) => ({
-    ...g,
-    items: [...g.items].sort((a, b) => a.sortKey.localeCompare(b.sortKey)),
-  }))
-})
-
-/** Folders that currently exist as drop targets — both inferred (from sheet
- *  paths) and extras (empty / explicitly created). Used to reject folder
- *  drops that would collide with an existing destination. */
-const knownFolders = computed(() => {
+/** Every folder path that exists, inferred + extras. */
+const allFolders = computed(() => {
   const set = new Set<string>()
-  for (const item of items.value) set.add(item.folder)
+  for (const item of items.value) if (item.folder) set.add(item.folder)
   for (const path of resolvedExtras.value) set.add(path)
   return set
 })
 
-/** Hide folder UI entirely when there's only the root group with no name. */
-const showFolders = computed(
-  () => groups.value.length > 1 || (groups.value[0]?.path ?? '') !== '',
-)
+// ---------------------------------------------------------------------------
+// Folder navigation. The current folder lives in the URL as `?folder=foo/bar`
+// so the browser back/forward buttons work and links can deep-link to a
+// subfolder.
+// ---------------------------------------------------------------------------
 
-/** Per-folder collapsed state. Default: every folder open. */
-const collapsed = reactive<Record<string, boolean>>({})
-const isCollapsed = (path: string) => Boolean(collapsed[path])
-const toggleFolder = (path: string) => {
-  collapsed[path] = !collapsed[path]
+const route = useRoute()
+const router = useRouter()
+
+const currentPath = computed(() => {
+  const raw = route.query.folder
+  if (typeof raw !== 'string') return ''
+  return raw.replace(/^\/+|\/+$/g, '')
+})
+
+const goToFolder = (path: string) => {
+  router.push({ path: '/sheets', query: path ? { folder: path } : {} })
 }
 
-const totalCount = computed(() => baseItems.value.length)
-const filteredCount = computed(() => filteredItems.value.length)
+const breadcrumbs = computed(() => {
+  const out: Array<{ label: string; path: string }> = [{ label: 'Home', path: '' }]
+  if (!currentPath.value) return out
+  let acc = ''
+  for (const seg of currentPath.value.split('/')) {
+    acc = acc ? `${acc}/${seg}` : seg
+    out.push({ label: formatFolderLabel(seg), path: acc })
+  }
+  return out
+})
 
 // ---------------------------------------------------------------------------
-// Drag and drop
-//
-// Dev-only — moves are persisted via `/api/sheets/move(-folder)` which write
-// to disk and refuse to run in production builds. Sheet cards drop onto
-// folder headers; folder headers drop onto other folder headers (or the
-// "Default" header to move back to the root).
+// Search and filtering
+// ---------------------------------------------------------------------------
+
+const searchTerm = ref('')
+const normalize = (value: string) => value.trim().toLowerCase()
+
+const matchesQuery = (item: SheetItem, query: string): boolean => {
+  if (item.kind === 'pokemon') {
+    const { sheet, types, folder } = item
+    const haystacks = [sheet.nickname, sheet.species, sheet.nature ?? '', folder, ...types]
+    return haystacks.some((value) => normalize(value).includes(query))
+  }
+  const { sheet, folder } = item
+  const haystacks = [
+    sheet.name,
+    sheet.playedBy ?? '',
+    sheet.skillBackground?.name ?? '',
+    folder,
+    ...(sheet.classes?.map((c) => c.name) ?? []),
+  ]
+  return haystacks.some((value) => normalize(value).includes(query))
+}
+
+const isInsideCurrent = (folder: string): boolean => {
+  if (!currentPath.value) return true
+  return folder === currentPath.value || folder.startsWith(currentPath.value + '/')
+}
+
+/** Sheets shown in the main grid. While searching, we flatten the entire
+ *  subtree under the current folder; otherwise we show only sheets that live
+ *  *directly* in the current folder. */
+const visibleSheets = computed<SheetItem[]>(() => {
+  const query = normalize(searchTerm.value)
+  const pool = items.value.filter((item) => isInsideCurrent(item.folder))
+  const matched = query ? pool.filter((item) => matchesQuery(item, query)) : pool
+  if (!query) {
+    return matched
+      .filter((item) => item.folder === currentPath.value)
+      .sort((a, b) => a.sortKey.localeCompare(b.sortKey))
+  }
+  return [...matched].sort((a, b) => a.sortKey.localeCompare(b.sortKey))
+})
+
+interface FolderTile {
+  /** Full path under the sheet root, e.g. ``"npcs/wild"``. */
+  path: string
+  /** Display label of the leaf segment, e.g. ``"Wild"``. */
+  label: string
+  /** Total number of sheets contained anywhere under this folder. */
+  count: number
+}
+
+/** Folder tiles shown alongside the sheet cards — direct subfolders of
+ *  ``currentPath``. Hidden during search to avoid noise. */
+const visibleFolders = computed<FolderTile[]>(() => {
+  if (searchTerm.value) return []
+  const prefix = currentPath.value ? currentPath.value + '/' : ''
+  const childPaths = new Set<string>()
+  for (const path of allFolders.value) {
+    if (currentPath.value && !path.startsWith(prefix)) continue
+    if (path === currentPath.value) continue
+    const rest = currentPath.value ? path.slice(prefix.length) : path
+    if (!rest) continue
+    const slash = rest.indexOf('/')
+    const childSeg = slash >= 0 ? rest.slice(0, slash) : rest
+    childPaths.add(currentPath.value ? `${currentPath.value}/${childSeg}` : childSeg)
+  }
+  return Array.from(childPaths)
+    .sort((a, b) => a.localeCompare(b))
+    .map((path) => {
+      const subPrefix = path + '/'
+      let count = 0
+      for (const item of items.value) {
+        if (item.folder === path || item.folder.startsWith(subPrefix)) count++
+      }
+      const leaf = path.split('/').pop() ?? path
+      return { path, label: formatFolderLabel(leaf), count }
+    })
+})
+
+// Counts shown in the intro badge.
+const totalCount = computed(() => baseItems.value.length)
+const filteredCount = computed(() => {
+  const query = normalize(searchTerm.value)
+  if (!query) return totalCount.value
+  return items.value.filter((item) => matchesQuery(item, query)).length
+})
+
+const hasAnything = computed(
+  () => visibleSheets.value.length > 0 || visibleFolders.value.length > 0,
+)
+
+// ---------------------------------------------------------------------------
+// Drag and drop. Drop targets are folder tiles and breadcrumb items; the
+// "Home" breadcrumb is the root drop target. Dev-only — moves are persisted
+// via `/api/sheets/move(-folder)` which write to disk.
 // ---------------------------------------------------------------------------
 
 const canDrag = import.meta.dev
@@ -205,7 +251,6 @@ interface DragSheet {
   type: 'sheet'
   kind: 'pokemon' | 'trainer'
   slug: string
-  /** Folder the sheet is in right now, used to short-circuit no-op drops. */
   from: string
 }
 interface DragFolder {
@@ -215,7 +260,7 @@ interface DragFolder {
 type DragPayload = DragSheet | DragFolder
 
 const drag = ref<DragPayload | null>(null)
-const hoverFolder = ref<string | null>(null)
+const hoverTarget = ref<string | null>(null)
 const moving = ref(false)
 const moveError = ref<string | null>(null)
 
@@ -232,14 +277,13 @@ const onSheetDragStart = (e: DragEvent, item: SheetItem) => {
   drag.value = { type: 'sheet', kind: item.kind, slug: item.slug, from: item.folder }
   if (e.dataTransfer) {
     e.dataTransfer.effectAllowed = 'move'
-    // Firefox refuses to start a drag without setData.
+    // Required for Firefox to actually start the drag.
     e.dataTransfer.setData('application/x-rotom-sheet', `${item.kind}:${item.slug}`)
   }
 }
 
 const onFolderDragStart = (e: DragEvent, path: string) => {
   if (!canDrag || !path) {
-    // Root ("Default") isn't draggable.
     e.preventDefault()
     return
   }
@@ -252,7 +296,7 @@ const onFolderDragStart = (e: DragEvent, path: string) => {
 
 const onDragEnd = () => {
   drag.value = null
-  hoverFolder.value = null
+  hoverTarget.value = null
 }
 
 const canDropOn = (targetPath: string): boolean => {
@@ -261,53 +305,62 @@ const canDropOn = (targetPath: string): boolean => {
   if (d.type === 'sheet') {
     return d.from !== targetPath
   }
-  // Folder rules: can't drop onto self or any of its descendants, and the
-  // would-be destination path mustn't already exist.
   if (d.path === targetPath) return false
   if (targetPath === d.path || targetPath.startsWith(d.path + '/')) return false
   const leaf = d.path.split('/').pop()!
   const newPath = targetPath ? `${targetPath}/${leaf}` : leaf
   if (newPath === d.path) return false
-  if (knownFolders.value.has(newPath)) return false
+  if (allFolders.value.has(newPath)) return false
   return true
 }
 
-const onDragOver = (e: DragEvent, targetPath: string) => {
+const onDropEnter = (e: DragEvent, targetPath: string) => {
+  if (!drag.value || !canDropOn(targetPath)) return
+  e.preventDefault()
+  hoverTarget.value = targetPath
+}
+
+const onDropOver = (e: DragEvent, targetPath: string) => {
   if (!drag.value || !canDropOn(targetPath)) return
   e.preventDefault()
   if (e.dataTransfer) e.dataTransfer.dropEffect = 'move'
-  hoverFolder.value = targetPath
+  hoverTarget.value = targetPath
 }
 
-const onDragLeave = (targetPath: string) => {
-  if (hoverFolder.value === targetPath) hoverFolder.value = null
+const onDropLeave = (targetPath: string) => {
+  if (hoverTarget.value === targetPath) hoverTarget.value = null
+}
+
+const performMove = async (d: DragPayload, targetPath: string) => {
+  if (d.type === 'sheet') {
+    await $fetch('/api/sheets/move', {
+      method: 'POST',
+      body: { kind: d.kind, slug: d.slug, folder: targetPath },
+    })
+    sheetOverrides[`${d.kind}:${d.slug}`] = targetPath
+  } else {
+    const leaf = d.path.split('/').pop()!
+    const newPath = targetPath ? `${targetPath}/${leaf}` : leaf
+    await $fetch('/api/sheets/move-folder', {
+      method: 'POST',
+      body: { from: d.path, to: newPath },
+    })
+    folderRenames.value = [...folderRenames.value, { from: d.path, to: newPath }]
+  }
 }
 
 const onDrop = async (e: DragEvent, targetPath: string) => {
   e.preventDefault()
+  e.stopPropagation()
   const d = drag.value
   drag.value = null
-  hoverFolder.value = null
+  hoverTarget.value = null
   if (!d || !canDropOn(targetPath)) return
 
   moving.value = true
   moveError.value = null
   try {
-    if (d.type === 'sheet') {
-      await $fetch('/api/sheets/move', {
-        method: 'POST',
-        body: { kind: d.kind, slug: d.slug, folder: targetPath },
-      })
-      sheetOverrides[`${d.kind}:${d.slug}`] = targetPath
-    } else {
-      const leaf = d.path.split('/').pop()!
-      const newPath = targetPath ? `${targetPath}/${leaf}` : leaf
-      await $fetch('/api/sheets/move-folder', {
-        method: 'POST',
-        body: { from: d.path, to: newPath },
-      })
-      folderRenames.value = [...folderRenames.value, { from: d.path, to: newPath }]
-    }
+    await performMove(d, targetPath)
   } catch (err: any) {
     const msg = err?.statusMessage ?? err?.data?.statusMessage ?? err?.message ?? String(err)
     moveError.value = msg
@@ -341,18 +394,21 @@ const cancelCreateFolder = () => {
 }
 
 const submitCreateFolder = async () => {
-  const name = newFolderName.value.trim().replace(/^\/+|\/+$/g, '')
-  if (!name) {
+  const leaf = newFolderName.value.trim().replace(/^\/+|\/+$/g, '')
+  if (!leaf) {
     createError.value = 'Folder name is required.'
     return
   }
+  // The form creates folders relative to the current path so the user lands
+  // exactly where they expect.
+  const fullPath = currentPath.value ? `${currentPath.value}/${leaf}` : leaf
   createError.value = null
   try {
     await $fetch('/api/sheets/create-folder', {
       method: 'POST',
-      body: { folder: name },
+      body: { folder: fullPath },
     })
-    extraFolders.add(name)
+    extraFolders.add(fullPath)
     creatingFolder.value = false
     newFolderName.value = ''
   } catch (err: any) {
@@ -360,8 +416,8 @@ const submitCreateFolder = async () => {
   }
 }
 
-// On mount (client only), pull the on-disk folder list so empty folders
-// created in a previous session still show up as drop targets.
+// On mount (client only) seed extraFolders from on-disk dirs so empty
+// folders persist across reloads.
 onMounted(async () => {
   if (!canDrag) return
   try {
@@ -391,8 +447,9 @@ onMounted(async () => {
           (e.g. <code>data/sheets/team-alpha/</code>) to group sheets into
           folders — the directory name becomes the folder label.
           <span v-if="canDrag" class="drag-hint">
-            Tip: drag any card or folder header onto another folder header to
-            rearrange — the change is written straight back to disk.
+            Tip: open a folder by clicking it. Drag any card or folder onto
+            another folder (or a breadcrumb) to move it — the change is
+            written straight back to disk.
           </span>
         </p>
 
@@ -413,7 +470,7 @@ onMounted(async () => {
               class="new-folder-btn"
               @click="startCreateFolder"
             >
-              <span aria-hidden="true">＋</span> New folder
+              <PhPlus :size="16" weight="bold" /> New folder
             </button>
 
             <form v-else class="new-folder-form" @submit.prevent="submitCreateFolder">
@@ -422,127 +479,148 @@ onMounted(async () => {
                 v-model="newFolderName"
                 type="text"
                 class="new-folder-input"
-                placeholder="Folder name (use / for nesting, e.g. npcs/wild)"
+                placeholder="Folder name"
                 @keydown.escape.prevent="cancelCreateFolder"
               />
               <button type="submit" class="new-folder-submit">Create</button>
-              <button type="button" class="new-folder-cancel" @click="cancelCreateFolder">Cancel</button>
+              <button type="button" class="new-folder-cancel" @click="cancelCreateFolder">
+                Cancel
+              </button>
             </form>
           </div>
         </div>
 
-        <p v-if="createError" class="move-error" role="alert">
-          {{ createError }}
-        </p>
-        <p v-if="moveError" class="move-error" role="alert">
-          Move failed: {{ moveError }}
-        </p>
+        <p v-if="createError" class="move-error" role="alert">{{ createError }}</p>
+        <p v-if="moveError" class="move-error" role="alert">Move failed: {{ moveError }}</p>
       </section>
+
+      <nav class="breadcrumbs panel-card" aria-label="Folder path">
+        <template v-for="(crumb, i) in breadcrumbs" :key="`crumb-${crumb.path}`">
+          <PhCaretRight v-if="i > 0" :size="14" weight="bold" class="crumb-sep" aria-hidden="true" />
+          <button
+            type="button"
+            class="crumb"
+            :class="{
+              'crumb--current': crumb.path === currentPath,
+              'drop-target': hoverTarget === crumb.path,
+              'drop-disabled': drag !== null && !canDropOn(crumb.path),
+            }"
+            :aria-current="crumb.path === currentPath ? 'page' : undefined"
+            @click="goToFolder(crumb.path)"
+            @dragenter="onDropEnter($event, crumb.path)"
+            @dragover="onDropOver($event, crumb.path)"
+            @dragleave="onDropLeave(crumb.path)"
+            @drop="onDrop($event, crumb.path)"
+          >
+            <PhHouse v-if="crumb.path === ''" :size="14" weight="bold" aria-hidden="true" />
+            <span>{{ crumb.label }}</span>
+          </button>
+        </template>
+      </nav>
     </header>
 
     <section class="sheet-section">
-      <template v-for="group in groups" :key="`group-${group.path}`">
-        <div
-          v-if="showFolders"
-          class="folder-row"
+      <div v-if="hasAnything" class="sheets-grid">
+        <button
+          v-for="folder in visibleFolders"
+          :key="`folder-${folder.path}`"
+          type="button"
+          class="folder-tile"
           :class="{
-            'drop-target': hoverFolder === group.path,
-            'drop-disabled': drag !== null && !canDropOn(group.path),
-            'is-default': group.path === '',
-            'is-dragging-self': isDraggingFolder(group.path),
+            'drop-target': hoverTarget === folder.path,
+            'drop-disabled': drag !== null && !canDropOn(folder.path),
+            'is-dragging-self': isDraggingFolder(folder.path),
           }"
-          :draggable="canDrag && group.path !== ''"
-          @dragstart="onFolderDragStart($event, group.path)"
+          :draggable="canDrag"
+          @click="goToFolder(folder.path)"
+          @dragstart="onFolderDragStart($event, folder.path)"
           @dragend="onDragEnd"
-          @dragover="onDragOver($event, group.path)"
-          @dragleave="onDragLeave(group.path)"
-          @drop="onDrop($event, group.path)"
+          @dragenter="onDropEnter($event, folder.path)"
+          @dragover="onDropOver($event, folder.path)"
+          @dragleave="onDropLeave(folder.path)"
+          @drop="onDrop($event, folder.path)"
         >
-          <button
-            class="folder-toggle"
-            type="button"
-            :aria-expanded="!isCollapsed(group.path)"
-            @click="toggleFolder(group.path)"
+          <span class="folder-tile__icon">
+            <PhFolderOpen
+              v-if="hoverTarget === folder.path && canDropOn(folder.path)"
+              :size="48"
+              weight="duotone"
+              aria-hidden="true"
+            />
+            <PhFolder v-else :size="48" weight="duotone" aria-hidden="true" />
+          </span>
+          <div class="folder-tile__body">
+            <span class="folder-tile__label">{{ folder.label }}</span>
+            <span class="folder-tile__meta">{{ folder.count }} item{{ folder.count === 1 ? '' : 's' }}</span>
+          </div>
+        </button>
+
+        <template v-for="item in visibleSheets" :key="`${item.kind}:${item.slug}`">
+          <NuxtLink
+            v-if="item.kind === 'pokemon'"
+            :to="`/sheets/${item.slug}`"
+            class="sheet-card"
+            :class="{ 'is-dragging-self': isDraggingSheet(item) }"
+            :draggable="canDrag"
+            @dragstart="onSheetDragStart($event, item)"
+            @dragend="onDragEnd"
           >
-            <span class="folder-caret" :class="{ collapsed: isCollapsed(group.path) }" aria-hidden="true">▾</span>
-            <span class="folder-label">{{ group.label }}</span>
-            <span class="folder-count badge">{{ group.items.length }}</span>
-          </button>
-        </div>
-
-        <p
-          v-if="showFolders && !isCollapsed(group.path) && group.items.length === 0"
-          class="folder-empty-hint"
-        >
-          Empty folder — drag a sheet onto the header above to fill it.
-        </p>
-
-        <div v-show="!showFolders || !isCollapsed(group.path)" class="sheets-grid">
-          <template v-for="item in group.items" :key="`${item.kind}:${item.slug}`">
-            <NuxtLink
-              v-if="item.kind === 'pokemon'"
-              :to="`/sheets/${item.slug}`"
-              class="sheet-card"
-              :class="{ 'is-dragging-self': isDraggingSheet(item) }"
-              :draggable="canDrag"
-              @dragstart="onSheetDragStart($event, item)"
-              @dragend="onDragEnd"
-            >
-              <div class="sheet-card__sprite">
-                <img v-if="item.spriteUrl" :src="item.spriteUrl" :alt="item.sheet.species" />
-                <span v-else class="sprite-missing">?</span>
+            <div class="sheet-card__sprite">
+              <img v-if="item.spriteUrl" :src="item.spriteUrl" :alt="item.sheet.species" />
+              <span v-else class="sprite-missing">?</span>
+            </div>
+            <div class="sheet-card__body">
+              <div class="sheet-card__heading">
+                <h3>{{ item.sheet.nickname }}</h3>
+                <span v-if="item.sheet.shiny" class="badge shiny" title="Shiny">★</span>
               </div>
+              <p class="sheet-card__species">
+                {{ item.sheet.species }} · Lv {{ item.sheet.level }}
+              </p>
+              <ul class="sheet-card__meta">
+                <li v-if="item.sheet.nature">{{ item.sheet.nature }}</li>
+                <li v-if="item.sheet.gender">{{ item.sheet.gender }}</li>
+                <li v-if="item.types.length">{{ item.types.join(' / ') }}</li>
+              </ul>
+            </div>
+          </NuxtLink>
 
-              <div class="sheet-card__body">
-                <div class="sheet-card__heading">
-                  <h3>{{ item.sheet.nickname }}</h3>
-                  <span v-if="item.sheet.shiny" class="badge shiny" title="Shiny">★</span>
-                </div>
-                <p class="sheet-card__species">
-                  {{ item.sheet.species }} · Lv {{ item.sheet.level }}
-                </p>
-
-                <ul class="sheet-card__meta">
-                  <li v-if="item.sheet.nature">{{ item.sheet.nature }}</li>
-                  <li v-if="item.sheet.gender">{{ item.sheet.gender }}</li>
-                  <li v-if="item.types.length">{{ item.types.join(' / ') }}</li>
-                </ul>
+          <NuxtLink
+            v-else
+            :to="`/sheets/trainers/${item.slug}`"
+            class="sheet-card sheet-card--trainer"
+            :class="{ 'is-dragging-self': isDraggingSheet(item) }"
+            :draggable="canDrag"
+            @dragstart="onSheetDragStart($event, item)"
+            @dragend="onDragEnd"
+          >
+            <div class="sheet-card__sprite trainer-icon">
+              <span aria-hidden="true">🎯</span>
+            </div>
+            <div class="sheet-card__body">
+              <div class="sheet-card__heading">
+                <h3>{{ item.sheet.name }}</h3>
               </div>
-            </NuxtLink>
+              <p class="sheet-card__species">
+                Trainer · Lv {{ item.sheet.level }}
+                <span v-if="item.sheet.classes?.length">· {{ item.sheet.classes.map((c) => c.name).join(', ') }}</span>
+              </p>
+              <ul class="sheet-card__meta">
+                <li v-if="item.sheet.skillBackground?.name">{{ item.sheet.skillBackground.name }}</li>
+                <li v-if="item.sheet.sex">{{ item.sheet.sex }}</li>
+                <li v-if="item.sheet.playedBy">PB: {{ item.sheet.playedBy }}</li>
+              </ul>
+            </div>
+          </NuxtLink>
+        </template>
+      </div>
 
-            <NuxtLink
-              v-else
-              :to="`/sheets/trainers/${item.slug}`"
-              class="sheet-card sheet-card--trainer"
-              :class="{ 'is-dragging-self': isDraggingSheet(item) }"
-              :draggable="canDrag"
-              @dragstart="onSheetDragStart($event, item)"
-              @dragend="onDragEnd"
-            >
-              <div class="sheet-card__sprite trainer-icon">
-                <span aria-hidden="true">🎯</span>
-              </div>
-              <div class="sheet-card__body">
-                <div class="sheet-card__heading">
-                  <h3>{{ item.sheet.name }}</h3>
-                </div>
-                <p class="sheet-card__species">
-                  Trainer · Lv {{ item.sheet.level }}
-                  <span v-if="item.sheet.classes?.length">· {{ item.sheet.classes.map((c) => c.name).join(', ') }}</span>
-                </p>
-                <ul class="sheet-card__meta">
-                  <li v-if="item.sheet.skillBackground?.name">{{ item.sheet.skillBackground.name }}</li>
-                  <li v-if="item.sheet.sex">{{ item.sheet.sex }}</li>
-                  <li v-if="item.sheet.playedBy">PB: {{ item.sheet.playedBy }}</li>
-                </ul>
-              </div>
-            </NuxtLink>
-          </template>
-        </div>
-      </template>
-
-      <p v-if="filteredCount === 0" class="empty-state">
+      <p v-else-if="searchTerm" class="empty-state">
         Nothing matches that search.
+      </p>
+      <p v-else class="empty-state">
+        This folder is empty. Drag a sheet here from another folder or use
+        <strong>+ New folder</strong> to add a subfolder.
       </p>
     </section>
   </div>
@@ -622,6 +700,21 @@ code {
   display: block;
 }
 
+input {
+  width: 100%;
+  border: 1px solid var(--rule-soft);
+  border-radius: 10px;
+  background: var(--paper);
+  color: var(--ink);
+  padding: 0.65rem 0.8rem;
+  outline: none;
+}
+
+input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(250, 189, 47, 0.18);
+}
+
 .folder-actions {
   flex: 0 0 auto;
   display: flex;
@@ -631,6 +724,9 @@ code {
 .new-folder-btn,
 .new-folder-submit,
 .new-folder-cancel {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
   border: 1px solid var(--rule);
   border-radius: 10px;
   background: var(--paper-soft);
@@ -684,29 +780,6 @@ code {
   box-shadow: 0 0 0 2px rgba(250, 189, 47, 0.18);
 }
 
-.folder-empty-hint {
-  margin: 0.1rem 0 0.2rem;
-  padding: 0.35rem 0.55rem;
-  color: var(--ink-muted);
-  font-size: 0.8rem;
-  font-style: italic;
-}
-
-input {
-  width: 100%;
-  border: 1px solid var(--rule-soft);
-  border-radius: 10px;
-  background: var(--paper);
-  color: var(--ink);
-  padding: 0.65rem 0.8rem;
-  outline: none;
-}
-
-input:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px rgba(250, 189, 47, 0.18);
-}
-
 .move-error {
   margin: 0.6rem 0 0;
   padding: 0.45rem 0.65rem;
@@ -737,114 +810,167 @@ input:focus {
   line-height: 1;
 }
 
+/* ---- Breadcrumbs ---- */
+
+.breadcrumbs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.35rem;
+  padding: 0.45rem 0.65rem;
+}
+
+.crumb {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.55rem;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink-soft);
+  font: inherit;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.crumb:hover {
+  background: var(--paper-hover);
+  color: var(--ink-bright);
+}
+
+.crumb:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.crumb--current {
+  color: var(--ink-bright);
+  font-weight: 600;
+}
+
+.crumb.drop-target {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.crumb.drop-disabled {
+  opacity: 0.4;
+}
+
+.crumb-sep {
+  color: var(--ink-faint);
+}
+
+/* ---- Sheet section ---- */
+
 .sheet-section {
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
 }
 
-/* ---- Folder grouping ---- */
-
-.folder-row {
-  display: flex;
-  align-items: stretch;
-  gap: 0.6rem;
-  margin: 0.4rem 0 -0.1rem;
-  border-radius: 8px;
-  /* Reserve a transparent border so the dashed hint in is-dragging mode
-     doesn't shift layout when it appears. */
-  border: 1px dashed transparent;
-  transition: background 0.15s ease, border-color 0.15s ease;
-}
-
-.is-dragging .folder-row {
-  border-color: var(--rule);
-}
-
-.is-dragging .folder-row.drop-disabled {
-  border-color: transparent;
-  opacity: 0.5;
-}
-
-.folder-row.drop-target {
-  background: var(--accent-soft);
-  border-color: var(--accent);
-  border-style: solid;
-}
-
-.folder-row.is-dragging-self {
-  opacity: 0.4;
-}
-
-.folder-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  width: 100%;
-  padding: 0.4rem 0.65rem;
-  border: 1px solid var(--rule);
-  border-radius: 8px;
-  background: var(--paper-soft);
-  color: var(--ink-soft);
-  text-align: left;
-  cursor: pointer;
-  letter-spacing: 0.04em;
-  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
-}
-
-.folder-toggle:hover {
-  border-color: var(--rule-strong);
-  background: var(--paper-hover);
-  color: var(--ink-bright);
-}
-
-.folder-toggle:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 1px;
-}
-
-.folder-row[draggable='true'] .folder-toggle {
-  cursor: grab;
-}
-
-.folder-row[draggable='true']:active .folder-toggle {
-  cursor: grabbing;
-}
-
-.folder-caret {
-  font-size: 0.85rem;
-  color: var(--accent);
-  transition: transform 0.15s ease;
-}
-
-.folder-caret.collapsed {
-  transform: rotate(-90deg);
-}
-
-.folder-label {
-  flex: 1;
-  min-width: 0;
-  font-family: var(--serif);
-  font-size: 0.95rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--ink);
-}
-
-.folder-toggle:hover .folder-label {
-  color: var(--ink-bright);
-}
-
-.folder-count {
-  flex: 0 0 auto;
-}
-
 .sheets-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 0.7rem;
+  align-items: stretch;
 }
+
+/* ---- Folder tiles ---- */
+
+.folder-tile {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.85rem;
+  border: 1px solid var(--rule-soft);
+  border-radius: 12px;
+  background: var(--paper-soft);
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    transform 0.1s ease,
+    opacity 0.15s ease;
+}
+
+.folder-tile:hover {
+  border-color: var(--rule-strong);
+  background: var(--paper-hover);
+}
+
+.folder-tile:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.folder-tile[draggable='true']:active {
+  cursor: grabbing;
+  transform: scale(0.99);
+}
+
+.folder-tile.drop-target {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.folder-tile.drop-disabled {
+  opacity: 0.45;
+}
+
+.folder-tile.is-dragging-self {
+  opacity: 0.4;
+}
+
+.folder-tile__icon {
+  flex: 0 0 auto;
+  width: 72px;
+  height: 72px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--rule-soft);
+  border-radius: 10px;
+  background: var(--paper-inset);
+  color: var(--accent);
+}
+
+.folder-tile.drop-target .folder-tile__icon {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--paper-soft);
+}
+
+.folder-tile__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.folder-tile__label {
+  font-family: var(--serif);
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--ink-bright);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.folder-tile__meta {
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  color: var(--ink-muted);
+}
+
+/* ---- Sheet cards ---- */
 
 .sheet-card {
   display: flex;
@@ -879,8 +1005,8 @@ input:focus {
 }
 
 .sheet-card--trainer {
-  /* Trainer cards share the parchment look but get a slightly
-     stronger left edge so they read as a separate kind of entry. */
+  /* Trainer cards share the parchment look but get a slightly stronger left
+     edge so they read as a separate kind of entry. */
   border-left: 2px solid var(--rule-strong);
 }
 
@@ -969,7 +1095,6 @@ input:focus {
 }
 
 .empty-state {
-  grid-column: 1 / -1;
   margin: 1.5rem 0;
   text-align: center;
   color: var(--ink-muted);
