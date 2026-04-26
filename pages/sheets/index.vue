@@ -2,11 +2,14 @@
 import { computed, nextTick, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
+  PhArrowsOutCardinal,
   PhCaretRight,
   PhFolder,
   PhFolderOpen,
   PhHouse,
+  PhPencilSimple,
   PhPlus,
+  PhTrash,
 } from '@phosphor-icons/vue'
 import { characterSheets, getPokedexEntry, getSpriteUrl } from '~/data/characterSheets'
 import { trainerSheets } from '~/data/trainerSheets'
@@ -51,6 +54,15 @@ type SheetItem = PokemonItem | TrainerItem
 const sheetOverrides = reactive<Record<string, string>>({})
 const folderRenames = ref<Array<{ from: string; to: string }>>([])
 
+/** Display-name overrides keyed by ``"<kind>:<slug>"``. */
+const nameOverrides = reactive<Record<string, string>>({})
+
+/** Soft-deleted sheet keys (``"<kind>:<slug>"``) and folder paths. The server
+ *  has already removed them on disk; these sets just keep the UI in sync
+ *  until Vite HMR catches up. */
+const deletedSheets = reactive(new Set<string>())
+const deletedFolders = reactive(new Set<string>())
+
 const applyFolderRenames = (path: string): string => {
   let result = path
   for (const { from, to } of folderRenames.value) {
@@ -91,9 +103,48 @@ const baseItems = computed<SheetItem[]>(() => {
   return [...pokes, ...trainers]
 })
 
-const items = computed<SheetItem[]>(() =>
-  baseItems.value.map((item) => ({ ...item, folder: resolveFolder(item) }) as SheetItem),
-)
+const isDeletedSheet = (kind: 'pokemon' | 'trainer', slug: string): boolean =>
+  deletedSheets.has(`${kind}:${slug}`)
+
+const isInsideDeletedFolder = (folder: string): boolean => {
+  for (const path of deletedFolders) {
+    if (folder === path || folder.startsWith(path + '/')) return true
+  }
+  return false
+}
+
+const items = computed<SheetItem[]>(() => {
+  const out: SheetItem[] = []
+  for (const item of baseItems.value) {
+    if (isDeletedSheet(item.kind, item.slug)) continue
+    const folder = resolveFolder(item)
+    if (isInsideDeletedFolder(folder)) continue
+    const overrideKey = `${item.kind}:${item.slug}`
+    const newName = nameOverrides[overrideKey]
+    if (item.kind === 'pokemon') {
+      const sheet = newName !== undefined ? { ...item.sheet, nickname: newName } : item.sheet
+      out.push({
+        ...item,
+        folder,
+        sheet,
+        sortKey: (newName ?? item.sheet.nickname).toLowerCase(),
+      })
+    } else {
+      const sheet = newName !== undefined ? { ...item.sheet, name: newName } : item.sheet
+      out.push({
+        ...item,
+        folder,
+        sheet,
+        sortKey: (newName ?? item.sheet.name).toLowerCase(),
+      })
+    }
+  }
+  return out
+})
+
+/** Display name for a sheet item (honours local rename overrides). */
+const displayName = (item: SheetItem): string =>
+  item.kind === 'pokemon' ? item.sheet.nickname : item.sheet.name
 
 // Folders explicitly created by the user (or that already exist on disk as
 // empty dirs). Seeded from `/api/sheets/folders` on mount.
@@ -108,11 +159,19 @@ const resolvedExtras = computed(() => {
   return out
 })
 
-/** Every folder path that exists, inferred + extras. */
+/** Every folder path that exists, inferred + extras, minus locally-deleted
+ *  folders (and any descendant of one). */
 const allFolders = computed(() => {
   const set = new Set<string>()
   for (const item of items.value) if (item.folder) set.add(item.folder)
-  for (const path of resolvedExtras.value) set.add(path)
+  for (const path of resolvedExtras.value) {
+    if (isInsideDeletedFolder(path)) continue
+    set.add(path)
+  }
+  for (const deleted of deletedFolders) {
+    set.delete(deleted)
+    for (const f of [...set]) if (f.startsWith(deleted + '/')) set.delete(f)
+  }
   return set
 })
 
@@ -299,9 +358,10 @@ const onDragEnd = () => {
   hoverTarget.value = null
 }
 
-const canDropOn = (targetPath: string): boolean => {
-  const d = drag.value
-  if (!d) return false
+/** Drop validity check that takes an explicit payload, so it stays correct
+ *  even after `drag.value` has been cleared (which `onDrop` does
+ *  optimistically before awaiting the server). */
+const canDropPayloadOn = (d: DragPayload, targetPath: string): boolean => {
   if (d.type === 'sheet') {
     return d.from !== targetPath
   }
@@ -312,6 +372,11 @@ const canDropOn = (targetPath: string): boolean => {
   if (newPath === d.path) return false
   if (allFolders.value.has(newPath)) return false
   return true
+}
+
+const canDropOn = (targetPath: string): boolean => {
+  const d = drag.value
+  return d ? canDropPayloadOn(d, targetPath) : false
 }
 
 const onDropEnter = (e: DragEvent, targetPath: string) => {
@@ -353,9 +418,15 @@ const onDrop = async (e: DragEvent, targetPath: string) => {
   e.preventDefault()
   e.stopPropagation()
   const d = drag.value
+  // Validate against the captured payload before clearing `drag.value` —
+  // `canDropOn` reads `drag.value` and would falsely reject otherwise.
+  if (!d || !canDropPayloadOn(d, targetPath)) {
+    drag.value = null
+    hoverTarget.value = null
+    return
+  }
   drag.value = null
   hoverTarget.value = null
-  if (!d || !canDropOn(targetPath)) return
 
   moving.value = true
   moveError.value = null
@@ -371,37 +442,28 @@ const onDrop = async (e: DragEvent, targetPath: string) => {
 }
 
 // ---------------------------------------------------------------------------
-// New folder
+// New folder — single click creates `new_folder`, then `new_folder_1`, etc.
+// (auto-named so the user can rename afterwards via the context menu).
 // ---------------------------------------------------------------------------
 
-const creatingFolder = ref(false)
-const newFolderName = ref('')
 const createError = ref<string | null>(null)
-const newFolderInput = ref<HTMLInputElement | null>(null)
+const creating = ref(false)
 
-const startCreateFolder = async () => {
-  creatingFolder.value = true
-  newFolderName.value = ''
-  createError.value = null
-  await nextTick()
-  newFolderInput.value?.focus()
+const nextFolderName = (): string => {
+  const base = 'new_folder'
+  const prefix = currentPath.value ? `${currentPath.value}/` : ''
+  const exists = (name: string) => allFolders.value.has(prefix + name)
+  if (!exists(base)) return base
+  let n = 1
+  while (exists(`${base}_${n}`)) n++
+  return `${base}_${n}`
 }
 
-const cancelCreateFolder = () => {
-  creatingFolder.value = false
-  newFolderName.value = ''
-  createError.value = null
-}
-
-const submitCreateFolder = async () => {
-  const leaf = newFolderName.value.trim().replace(/^\/+|\/+$/g, '')
-  if (!leaf) {
-    createError.value = 'Folder name is required.'
-    return
-  }
-  // The form creates folders relative to the current path so the user lands
-  // exactly where they expect.
+const createNewFolder = async () => {
+  if (creating.value) return
+  const leaf = nextFolderName()
   const fullPath = currentPath.value ? `${currentPath.value}/${leaf}` : leaf
+  creating.value = true
   createError.value = null
   try {
     await $fetch('/api/sheets/create-folder', {
@@ -409,10 +471,201 @@ const submitCreateFolder = async () => {
       body: { folder: fullPath },
     })
     extraFolders.add(fullPath)
-    creatingFolder.value = false
-    newFolderName.value = ''
   } catch (err: any) {
     createError.value = err?.statusMessage ?? err?.data?.statusMessage ?? err?.message ?? String(err)
+  } finally {
+    creating.value = false
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Right-click context menu (Move / Rename / Delete)
+// ---------------------------------------------------------------------------
+
+type CtxTarget =
+  | { type: 'sheet'; item: SheetItem }
+  | { type: 'folder'; tile: FolderTile }
+
+type CtxMode = 'menu' | 'rename' | 'move' | 'delete'
+
+interface CtxState {
+  x: number
+  y: number
+  target: CtxTarget
+  mode: CtxMode
+  input: string
+  busy: boolean
+  error: string | null
+}
+
+const ctx = ref<CtxState | null>(null)
+const ctxInput = ref<HTMLInputElement | HTMLSelectElement | null>(null)
+
+const openContext = (e: MouseEvent, target: CtxTarget) => {
+  if (!canDrag) return
+  e.preventDefault()
+  ctx.value = {
+    x: e.clientX,
+    y: e.clientY,
+    target,
+    mode: 'menu',
+    input: '',
+    busy: false,
+    error: null,
+  }
+}
+
+const closeContext = () => {
+  ctx.value = null
+}
+
+const ctxTargetLabel = computed(() => {
+  const c = ctx.value
+  if (!c) return ''
+  if (c.target.type === 'sheet') return displayName(c.target.item)
+  return c.target.tile.label
+})
+
+/** Folder paths the user can pick as a Move destination. Excludes the
+ *  selected folder itself, its descendants, and (for sheets) the current
+ *  folder of the sheet. Always includes a “Home (root)” entry up top. */
+const ctxMoveDestinations = computed<Array<{ value: string; label: string }>>(() => {
+  const c = ctx.value
+  if (!c) return []
+  const dests: Array<{ value: string; label: string }> = []
+  const candidates = ['', ...Array.from(allFolders.value).sort((a, b) => a.localeCompare(b))]
+  for (const path of candidates) {
+    if (c.target.type === 'sheet') {
+      if (path === c.target.item.folder) continue
+    } else {
+      const selfPath = c.target.tile.path
+      if (path === selfPath) continue
+      if (path.startsWith(selfPath + '/')) continue
+      // Drop into current parent is a no-op too.
+      const slash = selfPath.lastIndexOf('/')
+      const parent = slash >= 0 ? selfPath.slice(0, slash) : ''
+      if (path === parent) continue
+    }
+    dests.push({ value: path, label: path ? formatFolderLabel(path) : 'Home (root)' })
+  }
+  return dests
+})
+
+const enterMove = async () => {
+  if (!ctx.value) return
+  ctx.value.mode = 'move'
+  ctx.value.error = null
+  ctx.value.input = ctxMoveDestinations.value[0]?.value ?? ''
+  await nextTick()
+  ctxInput.value?.focus()
+}
+
+const enterRename = async () => {
+  if (!ctx.value) return
+  ctx.value.mode = 'rename'
+  ctx.value.error = null
+  if (ctx.value.target.type === 'sheet') {
+    ctx.value.input = displayName(ctx.value.target.item)
+  } else {
+    const path = ctx.value.target.tile.path
+    const slash = path.lastIndexOf('/')
+    ctx.value.input = slash >= 0 ? path.slice(slash + 1) : path
+  }
+  await nextTick()
+  ctxInput.value?.focus()
+  if (ctxInput.value && 'select' in ctxInput.value) (ctxInput.value as HTMLInputElement).select()
+}
+
+const enterDelete = () => {
+  if (!ctx.value) return
+  ctx.value.mode = 'delete'
+  ctx.value.error = null
+}
+
+/** Apply a rename + the local override / rename log update. */
+const applyRenameSheet = async (item: SheetItem, newName: string) => {
+  await $fetch('/api/sheets/rename', {
+    method: 'POST',
+    body: { kind: item.kind, slug: item.slug, name: newName },
+  })
+  nameOverrides[`${item.kind}:${item.slug}`] = newName
+}
+
+const applyRenameFolder = async (oldPath: string, newLeaf: string) => {
+  const slash = oldPath.lastIndexOf('/')
+  const parent = slash >= 0 ? oldPath.slice(0, slash) : ''
+  const newPath = parent ? `${parent}/${newLeaf}` : newLeaf
+  if (newPath === oldPath) return
+  await $fetch('/api/sheets/move-folder', {
+    method: 'POST',
+    body: { from: oldPath, to: newPath },
+  })
+  folderRenames.value = [...folderRenames.value, { from: oldPath, to: newPath }]
+  // If we were inside the renamed folder, follow it.
+  if (currentPath.value === oldPath || currentPath.value.startsWith(oldPath + '/')) {
+    goToFolder(newPath + currentPath.value.slice(oldPath.length))
+  }
+}
+
+const submitContext = async () => {
+  const c = ctx.value
+  if (!c || c.busy) return
+  c.busy = true
+  c.error = null
+  try {
+    if (c.mode === 'move') {
+      const dest = c.input
+      if (c.target.type === 'sheet') {
+        await performMove({ type: 'sheet', kind: c.target.item.kind, slug: c.target.item.slug, from: c.target.item.folder }, dest)
+      } else {
+        await performMove({ type: 'folder', path: c.target.tile.path }, dest)
+      }
+    } else if (c.mode === 'rename') {
+      const value = c.input.trim()
+      if (!value) {
+        c.error = 'Name required.'
+        return
+      }
+      if (c.target.type === 'sheet') {
+        await applyRenameSheet(c.target.item, value)
+      } else {
+        await applyRenameFolder(c.target.tile.path, value)
+      }
+    } else if (c.mode === 'delete') {
+      if (c.target.type === 'sheet') {
+        await $fetch('/api/sheets/delete', {
+          method: 'POST',
+          body: { kind: c.target.item.kind, slug: c.target.item.slug },
+        })
+        deletedSheets.add(`${c.target.item.kind}:${c.target.item.slug}`)
+      } else {
+        const path = c.target.tile.path
+        await $fetch('/api/sheets/delete-folder', {
+          method: 'POST',
+          body: { folder: path },
+        })
+        deletedFolders.add(path)
+        // Mark contained sheets as deleted so they vanish from the UI immediately.
+        for (const item of items.value) {
+          if (item.folder === path || item.folder.startsWith(path + '/')) {
+            deletedSheets.add(`${item.kind}:${item.slug}`)
+          }
+        }
+        for (const f of [...extraFolders]) {
+          if (f === path || f.startsWith(path + '/')) extraFolders.delete(f)
+        }
+        // If we're inside the deleted subtree, navigate to its parent.
+        if (currentPath.value === path || currentPath.value.startsWith(path + '/')) {
+          const slash = path.lastIndexOf('/')
+          goToFolder(slash >= 0 ? path.slice(0, slash) : '')
+        }
+      }
+    }
+    closeContext()
+  } catch (err: any) {
+    c.error = err?.statusMessage ?? err?.data?.statusMessage ?? err?.message ?? String(err)
+  } finally {
+    if (ctx.value) ctx.value.busy = false
   }
 }
 
@@ -426,6 +679,10 @@ onMounted(async () => {
   } catch (err) {
     console.warn('[sheets] failed to load existing folders', err)
   }
+  // Close the context menu on Escape (anywhere on the page).
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeContext()
+  })
 })
 </script>
 
@@ -447,9 +704,10 @@ onMounted(async () => {
           (e.g. <code>data/sheets/team-alpha/</code>) to group sheets into
           folders — the directory name becomes the folder label.
           <span v-if="canDrag" class="drag-hint">
-            Tip: open a folder by clicking it. Drag any card or folder onto
-            another folder (or a breadcrumb) to move it — the change is
-            written straight back to disk.
+            Tip: click a folder to open it. Drag a card or folder onto
+            another folder (or breadcrumb) to move it. Right-click anything
+            for Move / Rename / Delete — changes are written straight back
+            to disk.
           </span>
         </p>
 
@@ -465,28 +723,13 @@ onMounted(async () => {
 
           <div v-if="canDrag" class="folder-actions">
             <button
-              v-if="!creatingFolder"
               type="button"
               class="new-folder-btn"
-              @click="startCreateFolder"
+              :disabled="creating"
+              @click="createNewFolder"
             >
               <PhPlus :size="16" weight="bold" /> New folder
             </button>
-
-            <form v-else class="new-folder-form" @submit.prevent="submitCreateFolder">
-              <input
-                ref="newFolderInput"
-                v-model="newFolderName"
-                type="text"
-                class="new-folder-input"
-                placeholder="Folder name"
-                @keydown.escape.prevent="cancelCreateFolder"
-              />
-              <button type="submit" class="new-folder-submit">Create</button>
-              <button type="button" class="new-folder-cancel" @click="cancelCreateFolder">
-                Cancel
-              </button>
-            </form>
           </div>
         </div>
 
@@ -533,6 +776,7 @@ onMounted(async () => {
           }"
           :draggable="canDrag"
           @click="goToFolder(folder.path)"
+          @contextmenu="openContext($event, { type: 'folder', tile: folder })"
           @dragstart="onFolderDragStart($event, folder.path)"
           @dragend="onDragEnd"
           @dragenter="onDropEnter($event, folder.path)"
@@ -562,6 +806,7 @@ onMounted(async () => {
             class="sheet-card"
             :class="{ 'is-dragging-self': isDraggingSheet(item) }"
             :draggable="canDrag"
+            @contextmenu="openContext($event, { type: 'sheet', item })"
             @dragstart="onSheetDragStart($event, item)"
             @dragend="onDragEnd"
           >
@@ -591,6 +836,7 @@ onMounted(async () => {
             class="sheet-card sheet-card--trainer"
             :class="{ 'is-dragging-self': isDraggingSheet(item) }"
             :draggable="canDrag"
+            @contextmenu="openContext($event, { type: 'sheet', item })"
             @dragstart="onSheetDragStart($event, item)"
             @dragend="onDragEnd"
           >
@@ -623,6 +869,121 @@ onMounted(async () => {
         <strong>+ New folder</strong> to add a subfolder.
       </p>
     </section>
+
+    <!-- ============ Right-click context menu ============ -->
+    <template v-if="ctx">
+      <div class="ctx-backdrop" @click="closeContext" @contextmenu.prevent="closeContext"></div>
+      <div
+        class="ctx-menu"
+        role="menu"
+        :style="{ left: `${ctx.x}px`, top: `${ctx.y}px` }"
+        @click.stop
+        @contextmenu.prevent
+      >
+        <header class="ctx-header">
+          <span class="ctx-kind">{{ ctx.target.type === 'sheet' ? 'Sheet' : 'Folder' }}</span>
+          <span class="ctx-target">{{ ctxTargetLabel }}</span>
+        </header>
+
+        <template v-if="ctx.mode === 'menu'">
+          <button type="button" class="ctx-item" role="menuitem" @click="enterMove">
+            <PhArrowsOutCardinal :size="16" weight="bold" />
+            <span>Move…</span>
+          </button>
+          <button type="button" class="ctx-item" role="menuitem" @click="enterRename">
+            <PhPencilSimple :size="16" weight="bold" />
+            <span>Rename…</span>
+          </button>
+          <button type="button" class="ctx-item ctx-item--danger" role="menuitem" @click="enterDelete">
+            <PhTrash :size="16" weight="bold" />
+            <span>Delete</span>
+          </button>
+        </template>
+
+        <form v-else-if="ctx.mode === 'rename'" class="ctx-form" @submit.prevent="submitContext">
+          <label class="ctx-label">
+            New name
+            <input
+              ref="ctxInput"
+              v-model="ctx.input"
+              type="text"
+              class="ctx-input"
+              :disabled="ctx.busy"
+              @keydown.escape.prevent="closeContext"
+            />
+          </label>
+          <p v-if="ctx.error" class="ctx-error" role="alert">{{ ctx.error }}</p>
+          <div class="ctx-actions">
+            <button type="button" class="ctx-btn" :disabled="ctx.busy" @click="closeContext">
+              Cancel
+            </button>
+            <button type="submit" class="ctx-btn ctx-btn--primary" :disabled="ctx.busy">
+              Rename
+            </button>
+          </div>
+        </form>
+
+        <form v-else-if="ctx.mode === 'move'" class="ctx-form" @submit.prevent="submitContext">
+          <label class="ctx-label">
+            Move to
+            <select
+              ref="ctxInput"
+              v-model="ctx.input"
+              class="ctx-input"
+              :disabled="ctx.busy || ctxMoveDestinations.length === 0"
+              @keydown.escape.prevent="closeContext"
+            >
+              <option v-if="ctxMoveDestinations.length === 0" value="" disabled>
+                No other destinations
+              </option>
+              <option v-for="d in ctxMoveDestinations" :key="`d-${d.value}`" :value="d.value">
+                {{ d.label }}
+              </option>
+            </select>
+          </label>
+          <p v-if="ctx.error" class="ctx-error" role="alert">{{ ctx.error }}</p>
+          <div class="ctx-actions">
+            <button type="button" class="ctx-btn" :disabled="ctx.busy" @click="closeContext">
+              Cancel
+            </button>
+            <button
+              type="submit"
+              class="ctx-btn ctx-btn--primary"
+              :disabled="ctx.busy || ctxMoveDestinations.length === 0"
+            >
+              Move
+            </button>
+          </div>
+        </form>
+
+        <div v-else-if="ctx.mode === 'delete'" class="ctx-form">
+          <p class="ctx-confirm">
+            <template v-if="ctx.target.type === 'folder'">
+              Delete folder <strong>{{ ctxTargetLabel }}</strong> and everything inside?
+              This cannot be undone.
+            </template>
+            <template v-else>
+              Delete sheet <strong>{{ ctxTargetLabel }}</strong>? The JSON file
+              will be removed from disk.
+            </template>
+          </p>
+          <p v-if="ctx.error" class="ctx-error" role="alert">{{ ctx.error }}</p>
+          <div class="ctx-actions">
+            <button type="button" class="ctx-btn" :disabled="ctx.busy" @click="closeContext">
+              Cancel
+            </button>
+            <button
+              type="button"
+              class="ctx-btn ctx-btn--danger"
+              :disabled="ctx.busy"
+              @click="submitContext"
+            >
+              Delete
+            </button>
+          </div>
+        </div>
+      </div>
+    </template>
   </div>
 </template>
 
@@ -721,9 +1082,7 @@ input:focus {
   align-items: stretch;
 }
 
-.new-folder-btn,
-.new-folder-submit,
-.new-folder-cancel {
+.new-folder-btn {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
@@ -738,46 +1097,20 @@ input:focus {
   transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
 }
 
-.new-folder-btn:hover,
-.new-folder-submit:hover,
-.new-folder-cancel:hover {
+.new-folder-btn:hover:not(:disabled) {
   border-color: var(--rule-strong);
   background: var(--paper-hover);
   color: var(--ink-bright);
 }
 
-.new-folder-btn:focus-visible,
-.new-folder-submit:focus-visible,
-.new-folder-cancel:focus-visible {
+.new-folder-btn:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
 }
 
-.new-folder-submit {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-
-.new-folder-form {
-  display: flex;
-  align-items: stretch;
-  gap: 0.4rem;
-  flex-wrap: wrap;
-}
-
-.new-folder-input {
-  flex: 1 1 220px;
-  border: 1px solid var(--rule-soft);
-  border-radius: 10px;
-  background: var(--paper);
-  color: var(--ink);
-  padding: 0.55rem 0.75rem;
-  outline: none;
-}
-
-.new-folder-input:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px rgba(250, 189, 47, 0.18);
+.new-folder-btn:disabled {
+  opacity: 0.6;
+  cursor: progress;
 }
 
 .move-error {
@@ -1111,5 +1444,177 @@ input:focus {
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
+}
+
+/* ---- Right-click context menu ---- */
+
+.ctx-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: transparent;
+}
+
+.ctx-menu {
+  position: fixed;
+  z-index: 50;
+  min-width: 220px;
+  max-width: min(320px, 90vw);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  background: var(--paper-soft);
+  color: var(--ink);
+  box-shadow: var(--shadow-card), 0 8px 24px rgba(0, 0, 0, 0.35);
+  padding: 0.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.ctx-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.4rem 0.55rem 0.55rem;
+  border-bottom: 1px solid var(--rule-soft);
+  margin-bottom: 0.25rem;
+}
+
+.ctx-kind {
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.ctx-target {
+  font-family: var(--serif);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--ink-bright);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ctx-item {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.45rem 0.6rem;
+  border: none;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  border-radius: 7px;
+  cursor: pointer;
+}
+
+.ctx-item:hover,
+.ctx-item:focus-visible {
+  background: var(--paper-hover);
+  color: var(--ink-bright);
+  outline: none;
+}
+
+.ctx-item--danger {
+  color: #d36464;
+}
+
+.ctx-item--danger:hover,
+.ctx-item--danger:focus-visible {
+  background: rgba(220, 80, 80, 0.16);
+  color: #f08585;
+}
+
+.ctx-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding: 0.35rem 0.55rem 0.55rem;
+}
+
+.ctx-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.ctx-input {
+  font: inherit;
+  width: 100%;
+  border: 1px solid var(--rule-soft);
+  border-radius: 8px;
+  background: var(--paper);
+  color: var(--ink);
+  padding: 0.5rem 0.65rem;
+  outline: none;
+}
+
+.ctx-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(250, 189, 47, 0.18);
+}
+
+.ctx-confirm {
+  margin: 0;
+  color: var(--ink-soft);
+  line-height: 1.4;
+  font-size: 0.9rem;
+}
+
+.ctx-error {
+  margin: 0;
+  color: #d36464;
+  font-size: 0.82rem;
+}
+
+.ctx-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.4rem;
+}
+
+.ctx-btn {
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  background: var(--paper-soft);
+  color: var(--ink);
+  padding: 0.45rem 0.85rem;
+  font: inherit;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.ctx-btn:hover:not(:disabled) {
+  border-color: var(--rule-strong);
+  background: var(--paper-hover);
+  color: var(--ink-bright);
+}
+
+.ctx-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ctx-btn--primary {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.ctx-btn--danger {
+  border-color: rgba(220, 80, 80, 0.6);
+  color: #d36464;
+}
+
+.ctx-btn--danger:hover:not(:disabled) {
+  background: rgba(220, 80, 80, 0.16);
+  color: #f08585;
 }
 </style>
