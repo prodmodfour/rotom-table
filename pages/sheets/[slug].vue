@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { PhPlus, PhX } from '@phosphor-icons/vue'
 import {
   characterSheetsBySlug,
   computeMaxHp,
@@ -10,19 +11,52 @@ import {
   resolveStats,
 } from '~/data/characterSheets'
 import { POKEMON_TYPES, computeMultiplier, formatMultiplier } from '~/utils/typeChart'
+import { normalizeCharacterSheet } from '~/utils/sheetNormalize'
+import { useEditableSheet, type SaveStatus } from '~/composables/useEditableSheet'
+import type {
+  CharacterSheet,
+  CharacterSheetMove,
+  CharacterSheetAbility,
+  CharacterSheetEdge,
+  StatKey,
+} from '~/types/characterSheet'
+
+// ---------------------------------------------------------------------------
+// Resolve the static sheet for this URL, then deep-clone + normalize it into
+// an editable reactive copy. Every mutation auto-persists to disk via
+// `/api/sheets/save` (see useEditableSheet).
+// ---------------------------------------------------------------------------
+
+// Route the page key off the slug so navigating from one Pokémon's sheet
+// to another's forces a fresh component instance — otherwise Vue would
+// reuse this one and our editable copy would still point at the old slug.
+definePageMeta({
+  key: (route) => `sheet-${route.params.slug}`,
+})
 
 const route = useRoute()
+const slug = String(route.params.slug ?? '')
+const baseSheet = characterSheetsBySlug.get(slug) ?? null
 
-const sheet = computed(() => {
-  const slug = String(route.params.slug ?? '')
-  return characterSheetsBySlug.get(slug) ?? null
-})
+const initialClone: CharacterSheet | null = baseSheet
+  ? normalizeCharacterSheet(JSON.parse(JSON.stringify(baseSheet)) as CharacterSheet)
+  : null
+
+const editor = initialClone ? useEditableSheet(initialClone, 'pokemon') : null
+const sheet = computed<CharacterSheet | null>(() => editor?.sheet.value ?? null)
+const saveStatus = computed<SaveStatus>(() => editor?.saveStatus.value ?? 'idle')
+const saveError = computed<string | null>(() => editor?.saveError.value ?? null)
 
 useHead(() => ({
   title: sheet.value
     ? `${sheet.value.nickname} (${sheet.value.species}) · Sheets`
     : 'Sheet not found · Rotom Table',
 }))
+
+// ---------------------------------------------------------------------------
+// Derived data — every read goes through the reactive sheet so edits redraw
+// the table totals, max-HP, skills grid, etc., automatically.
+// ---------------------------------------------------------------------------
 
 const species = computed(() => (sheet.value ? getPokedexEntry(sheet.value.species) : null))
 const spriteUrl = computed(() => (sheet.value ? getSpriteUrl(sheet.value.species) : null))
@@ -46,37 +80,10 @@ const hpThresholds = computed(() => ({
   quarter: Math.floor(maxHp.value / 4),
 }))
 
-const natureSummary = computed(() => {
-  const sheetValue = sheet.value
-  if (!sheetValue) return ''
-  const parts: string[] = []
-  if (sheetValue.nature) parts.push(sheetValue.nature)
-  const plus = sheetValue.natureMod?.plus
-  const minus = sheetValue.natureMod?.minus
-  if (plus || minus) {
-    const tokens: string[] = []
-    if (plus) tokens.push(`+${plus.toUpperCase()}`)
-    if (minus) tokens.push(`-${minus.toUpperCase()}`)
-    parts.push(tokens.join(' '))
-  }
-  return parts.join('  ')
-})
-
-const inheritedRows = computed(() => {
-  const inherited = sheet.value?.inheritedMoves ?? {}
-  const levels = ['20', '30', '40', '50', '60', '70', '80', '90']
-  return levels.map((level) => ({
-    level,
-    move: inherited[level] ?? null,
-  }))
-})
-
 const tutorPointsLeft = computed(() => {
   const tp = sheet.value?.tutorPoints
   if (!tp) return null
-  const earned = tp.earned ?? 0
-  const spent = tp.spent ?? 0
-  return earned - spent
+  return (tp.earned ?? 0) - (tp.spent ?? 0)
 })
 
 const typeEffectivenessRows = computed(() => {
@@ -88,7 +95,6 @@ const typeEffectivenessRows = computed(() => {
       type: attacker,
       mult,
       label: formatMultiplier(mult),
-      // Tag rows so we can colour weakness / resistance.
       tone:
         mult === 0 ? 'immune'
         : mult > 1 ? 'weak'
@@ -97,6 +103,120 @@ const typeEffectivenessRows = computed(() => {
     }
   })
 })
+
+// ---------------------------------------------------------------------------
+// Editing helpers — these mutate the reactive sheet, which in turn fires the
+// deep watcher inside useEditableSheet to persist the change.
+// ---------------------------------------------------------------------------
+
+const NATURE_STAT_OPTIONS = [
+  { value: '',     label: '—' },
+  { value: 'atk',  label: 'ATK' },
+  { value: 'def',  label: 'DEF' },
+  { value: 'satk', label: 'SATK' },
+  { value: 'sdef', label: 'SDEF' },
+  { value: 'spd',  label: 'SPD' },
+]
+
+const GENDER_OPTIONS = ['Male', 'Female', 'Genderless']
+
+const CATEGORY_OPTIONS = ['Physical', 'Special', 'Status']
+
+const TYPE_OPTIONS = POKEMON_TYPES.map((t) => ({ value: t, label: t }))
+
+const INHERITED_LEVELS = ['20', '30', '40', '50', '60', '70', '80', '90']
+
+/** Coerce ``"Electric, Steel"`` into ``["Electric", "Steel"]`` (drops blanks). */
+const splitCSV = (raw: string): string[] =>
+  raw.split(',').map((s) => s.trim()).filter(Boolean)
+
+const typesAsCsv = computed<string>({
+  get: () => sheetTypes.value.join(', '),
+  set: (raw) => {
+    if (!sheet.value) return
+    const next = splitCSV(raw)
+    sheet.value.types = next.length ? next : undefined
+  },
+})
+
+const eggGroupsAsCsv = computed<string>({
+  get: () => eggGroups.value.join(', '),
+  set: (raw) => {
+    if (!sheet.value) return
+    const next = splitCSV(raw)
+    sheet.value.eggGroups = next.length ? next : undefined
+  },
+})
+
+const otherCapsCsv = computed<string>({
+  get: () => sheet.value?.capabilities?.other?.join(', ') ?? '',
+  set: (raw) => {
+    if (!sheet.value) return
+    sheet.value.capabilities!.other = splitCSV(raw)
+  },
+})
+
+const extraItemsCsv = computed<string>({
+  get: () => sheet.value?.items?.extraItems?.join(', ') ?? '',
+  set: (raw) => {
+    if (!sheet.value) return
+    sheet.value.items!.extraItems = splitCSV(raw)
+  },
+})
+
+const skillBgRaisedCsv = computed<string>({
+  get: () => sheet.value?.skillBackground?.raised?.join(', ') ?? '',
+  set: (raw) => {
+    if (!sheet.value) return
+    const next = splitCSV(raw)
+    sheet.value.skillBackground!.raised = next.length ? next : undefined
+  },
+})
+
+const skillBgLoweredCsv = computed<string>({
+  get: () => sheet.value?.skillBackground?.lowered?.join(', ') ?? '',
+  set: (raw) => {
+    if (!sheet.value) return
+    const next = splitCSV(raw)
+    sheet.value.skillBackground!.lowered = next.length ? next : undefined
+  },
+})
+
+const addMove = () => {
+  sheet.value?.movelist?.push({ name: 'New Move' } as CharacterSheetMove)
+}
+const removeMove = (i: number) => {
+  sheet.value?.movelist?.splice(i, 1)
+}
+
+const addAbility = () => {
+  sheet.value?.abilities?.push({ name: 'New Ability' } as CharacterSheetAbility)
+}
+const removeAbility = (i: number) => {
+  sheet.value?.abilities?.splice(i, 1)
+}
+
+const addEdge = () => {
+  sheet.value?.edges?.push({ name: 'New Edge' } as CharacterSheetEdge)
+}
+const removeEdge = (i: number) => {
+  sheet.value?.edges?.splice(i, 1)
+}
+
+const setStat = (key: StatKey, field: 'base' | 'added' | 'stage', value: number | undefined) => {
+  if (!sheet.value?.stats) return
+  const row = sheet.value.stats[key] ?? {}
+  row[field] = typeof value === 'number' ? value : 0
+  sheet.value.stats[key] = row
+}
+
+const setInheritedMove = (level: string, value: string | undefined) => {
+  if (!sheet.value) return
+  const inherited = sheet.value.inheritedMoves ?? {}
+  if (value && value.trim()) inherited[level] = value
+  else delete inherited[level]
+  sheet.value.inheritedMoves = inherited
+}
 </script>
 
 <template>
@@ -106,6 +226,7 @@ const typeEffectivenessRows = computed(() => {
 
       <div class="back-row">
         <NuxtLink to="/sheets" class="back-link">← All sheets</NuxtLink>
+        <SaveIndicator v-if="sheet" :status="saveStatus" :error="saveError" />
       </div>
     </header>
 
@@ -120,28 +241,98 @@ const typeEffectivenessRows = computed(() => {
         <div class="identity__copy">
           <div class="identity__heading">
             <div>
-              <h1>{{ sheet.nickname }}</h1>
+              <h1>
+                <EditableCell v-model="sheet.nickname" placeholder="Nickname" />
+              </h1>
               <p class="identity__species">
-                {{ sheet.species }}
-                <span v-if="sheetTypes.length"> · {{ sheetTypes.join(' / ') }}</span>
+                <EditableCell v-model="sheet.species" placeholder="Species" />
+                <span> · </span>
+                <EditableCell
+                  v-model="typesAsCsv"
+                  :placeholder="`Types (e.g. ${species?.types?.join(', ') ?? 'Electric, Steel'})`"
+                />
               </p>
             </div>
             <div class="identity__badges">
-              <span class="badge">Lv {{ sheet.level }}</span>
-              <span v-if="sheet.shiny" class="badge shiny" title="Shiny">★ Shiny</span>
+              <span class="badge">
+                Lv <EditableCell v-model="sheet.level" type="number" :min="1" />
+              </span>
+              <label class="badge shiny-toggle" :class="{ shiny: sheet.shiny }" title="Shiny">
+                <input v-model="sheet.shiny" type="checkbox" /> ★ Shiny
+              </label>
             </div>
           </div>
 
           <dl class="identity__stats">
-            <div v-if="sheet.totalExp != null"><dt>Total EXP</dt><dd>{{ sheet.totalExp }}</dd></div>
-            <div v-if="sheet.toNextLevel != null"><dt>To Next Lvl</dt><dd>{{ sheet.toNextLevel }}</dd></div>
-            <div v-if="sheet.gender"><dt>Gender</dt><dd>{{ sheet.gender }}</dd></div>
-            <div v-if="natureSummary"><dt>Nature</dt><dd>{{ natureSummary }}</dd></div>
-            <div v-if="eggGroups.length"><dt>Egg Group</dt><dd>{{ eggGroups.join(' / ') }}</dd></div>
-            <div v-if="sheet.scene?.sceneXp != null"><dt>Scene Xp</dt><dd>{{ sheet.scene.sceneXp }}</dd></div>
-            <div v-if="sheet.scene?.pkmnCount != null"><dt># Pkmn</dt><dd>{{ sheet.scene.pkmnCount }}</dd></div>
-            <div v-if="sheet.scene?.modifiers != null"><dt>Modifiers</dt><dd>{{ sheet.scene.modifiers }}</dd></div>
-            <div v-if="sheet.scene?.newTotal != null"><dt>New Total</dt><dd>{{ sheet.scene.newTotal }}</dd></div>
+            <div>
+              <dt>Total EXP</dt>
+              <dd><EditableCell v-model="sheet.totalExp" type="number" /></dd>
+            </div>
+            <div>
+              <dt>To Next Lvl</dt>
+              <dd><EditableCell v-model="sheet.toNextLevel" type="number" /></dd>
+            </div>
+            <div>
+              <dt>Gender</dt>
+              <dd>
+                <EditableCell
+                  v-model="sheet.gender"
+                  type="select"
+                  :options="GENDER_OPTIONS"
+                  placeholder="—"
+                />
+              </dd>
+            </div>
+            <div>
+              <dt>Nature</dt>
+              <dd>
+                <EditableCell v-model="sheet.nature" placeholder="Hardy / Modest / …" />
+              </dd>
+            </div>
+            <div>
+              <dt>Nat +</dt>
+              <dd>
+                <EditableCell
+                  v-model="sheet.natureMod!.plus"
+                  type="select"
+                  :options="NATURE_STAT_OPTIONS"
+                  placeholder="—"
+                />
+              </dd>
+            </div>
+            <div>
+              <dt>Nat −</dt>
+              <dd>
+                <EditableCell
+                  v-model="sheet.natureMod!.minus"
+                  type="select"
+                  :options="NATURE_STAT_OPTIONS"
+                  placeholder="—"
+                />
+              </dd>
+            </div>
+            <div>
+              <dt>Egg Group</dt>
+              <dd>
+                <EditableCell v-model="eggGroupsAsCsv" placeholder="Field, Fairy" />
+              </dd>
+            </div>
+            <div>
+              <dt>Scene Xp</dt>
+              <dd><EditableCell v-model="sheet.scene!.sceneXp" type="number" /></dd>
+            </div>
+            <div>
+              <dt># Pkmn</dt>
+              <dd><EditableCell v-model="sheet.scene!.pkmnCount" type="number" /></dd>
+            </div>
+            <div>
+              <dt>Modifiers</dt>
+              <dd><EditableCell v-model="sheet.scene!.modifiers" type="number" /></dd>
+            </div>
+            <div>
+              <dt>New Total</dt>
+              <dd><EditableCell v-model="sheet.scene!.newTotal" type="number" /></dd>
+            </div>
           </dl>
         </div>
       </section>
@@ -170,10 +361,32 @@ const typeEffectivenessRows = computed(() => {
                   <td :class="['mod', { plus: row.mod > 0, minus: row.mod < 0 }]">
                     {{ row.mod > 0 ? `+${row.mod}` : row.mod }}
                   </td>
-                  <td>{{ row.base }}</td>
-                  <td>{{ row.added }}</td>
+                  <td>
+                    <EditableCell
+                      :model-value="row.base"
+                      type="number"
+                      :min="0"
+                      @update:model-value="(v) => setStat(row.key, 'base', v as number)"
+                    />
+                  </td>
+                  <td>
+                    <EditableCell
+                      :model-value="row.added"
+                      type="number"
+                      :min="0"
+                      @update:model-value="(v) => setStat(row.key, 'added', v as number)"
+                    />
+                  </td>
                   <td class="total">{{ row.total }}</td>
-                  <td>{{ row.stage > 0 ? `+${row.stage}` : row.stage }}</td>
+                  <td>
+                    <EditableCell
+                      :model-value="row.stage"
+                      type="number"
+                      :min="-6"
+                      :max="6"
+                      @update:model-value="(v) => setStat(row.key, 'stage', v as number)"
+                    />
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -185,19 +398,28 @@ const typeEffectivenessRows = computed(() => {
           <div class="combat-grid">
             <div class="combat-cell hp-cell">
               <span class="cell-label">HP</span>
-              <span class="cell-value cell-value--big">{{ currentHp }} <span class="cell-sub">/ {{ maxHp }}</span></span>
+              <span class="cell-value cell-value--big">
+                <EditableCell v-model="sheet.combat!.currentHp" type="number" :min="0" />
+                <span class="cell-sub"> / {{ maxHp }}</span>
+              </span>
             </div>
             <div class="combat-cell">
               <span class="cell-label">Injuries</span>
-              <span class="cell-value">{{ sheet.combat?.injuries ?? 0 }}</span>
+              <span class="cell-value">
+                <EditableCell v-model="sheet.combat!.injuries" type="number" :min="0" :max="10" />
+              </span>
             </div>
             <div class="combat-cell">
               <span class="cell-label">Tick</span>
-              <span class="cell-value">{{ sheet.combat?.tick ?? 1 }}</span>
+              <span class="cell-value">
+                <EditableCell v-model="sheet.combat!.tick" type="number" :min="0" />
+              </span>
             </div>
             <div class="combat-cell">
               <span class="cell-label">DR</span>
-              <span class="cell-value">{{ sheet.combat?.dr ?? 0 }}</span>
+              <span class="cell-value">
+                <EditableCell v-model="sheet.combat!.dr" type="number" :min="0" />
+              </span>
             </div>
             <div class="combat-cell">
               <span class="cell-label">½ HP</span>
@@ -213,27 +435,37 @@ const typeEffectivenessRows = computed(() => {
             </div>
             <div class="combat-cell">
               <span class="cell-label">Training Exp</span>
-              <span class="cell-value">{{ sheet.combat?.trainingExp ?? 0 }}</span>
+              <span class="cell-value">
+                <EditableCell v-model="sheet.combat!.trainingExp" type="number" :min="0" />
+              </span>
             </div>
           </div>
 
           <div class="evasion-row">
             <span class="cell-label">Evasion</span>
             <ul>
-              <li>vs ATK <strong>{{ sheet.combat?.evasion?.vsAtk ?? 0 }}</strong></li>
-              <li>vs SATK <strong>{{ sheet.combat?.evasion?.vsSatk ?? 0 }}</strong></li>
-              <li>vs Any <strong>{{ sheet.combat?.evasion?.vsAny ?? 0 }}</strong></li>
+              <li>vs ATK
+                <strong><EditableCell v-model="sheet.combat!.evasion!.vsAtk" type="number" :min="0" /></strong>
+              </li>
+              <li>vs SATK
+                <strong><EditableCell v-model="sheet.combat!.evasion!.vsSatk" type="number" :min="0" /></strong>
+              </li>
+              <li>vs Any
+                <strong><EditableCell v-model="sheet.combat!.evasion!.vsAny" type="number" :min="0" /></strong>
+              </li>
             </ul>
           </div>
 
-          <p v-if="sheet.combat?.statusAfflictions" class="combat-line">
-            <strong>Status:</strong> {{ sheet.combat.statusAfflictions }}
+          <p class="combat-line">
+            <strong>Status:</strong>
+            <EditableCell v-model="sheet.combat!.statusAfflictions" placeholder="None" />
           </p>
-          <p v-if="sheet.combat?.vitamins" class="combat-line">
-            <strong>Vitamins:</strong> {{ sheet.combat.vitamins }}
+          <p class="combat-line">
+            <strong>Vitamins:</strong>
+            <EditableCell v-model="sheet.combat!.vitamins" placeholder="—" />
           </p>
-          <p v-if="sheet.combat?.notes" class="combat-line notes">
-            {{ sheet.combat.notes }}
+          <p class="combat-line notes">
+            <EditableCell v-model="sheet.combat!.notes" type="textarea" placeholder="Combat notes…" multiline />
           </p>
         </section>
       </div>
@@ -243,13 +475,41 @@ const typeEffectivenessRows = computed(() => {
         <section class="panel-card">
           <h2 class="panel-title">Held Item & Inventory</h2>
           <dl class="kv-list">
-            <div><dt>Held Item</dt><dd>{{ sheet.items?.held || '—' }}</dd></div>
-            <div v-if="sheet.items?.itemDescription"><dt>Description</dt><dd>{{ sheet.items.itemDescription }}</dd></div>
-            <div v-if="sheet.items?.digestionFood"><dt>Digestion / Food</dt><dd>{{ sheet.items.digestionFood }}</dd></div>
-            <div v-if="sheet.items?.pointsLeft != null"><dt>Pts Left</dt><dd>{{ sheet.items.pointsLeft }}</dd></div>
-            <div v-if="sheet.items?.extraItems?.length">
+            <div>
+              <dt>Held Item</dt>
+              <dd><EditableCell v-model="sheet.items!.held" placeholder="None" /></dd>
+            </div>
+            <div>
+              <dt>Description</dt>
+              <dd>
+                <EditableCell
+                  v-model="sheet.items!.itemDescription"
+                  type="textarea"
+                  placeholder="Item description"
+                  multiline
+                />
+              </dd>
+            </div>
+            <div>
+              <dt>Digestion / Food</dt>
+              <dd>
+                <EditableCell
+                  v-model="sheet.items!.digestionFood"
+                  type="textarea"
+                  placeholder="—"
+                  multiline
+                />
+              </dd>
+            </div>
+            <div>
+              <dt>Pts Left</dt>
+              <dd><EditableCell v-model="sheet.items!.pointsLeft" type="number" /></dd>
+            </div>
+            <div>
               <dt>Extra Items</dt>
-              <dd>{{ sheet.items.extraItems.join(', ') }}</dd>
+              <dd>
+                <EditableCell v-model="extraItemsCsv" placeholder="Cell Battery, Magnet" />
+              </dd>
             </div>
           </dl>
         </section>
@@ -257,10 +517,29 @@ const typeEffectivenessRows = computed(() => {
         <section class="panel-card">
           <h2 class="panel-title">Weapon</h2>
           <dl class="kv-list">
-            <div><dt>Name</dt><dd>{{ sheet.weapon?.name || '—' }}</dd></div>
-            <div><dt>DB Mod</dt><dd>{{ sheet.weapon?.dbMod ?? 0 }}</dd></div>
-            <div><dt>AC Mod</dt><dd>{{ sheet.weapon?.acMod ?? 0 }}</dd></div>
-            <div v-if="sheet.weapon?.description"><dt>Description</dt><dd>{{ sheet.weapon.description }}</dd></div>
+            <div>
+              <dt>Name</dt>
+              <dd><EditableCell v-model="sheet.weapon!.name" placeholder="—" /></dd>
+            </div>
+            <div>
+              <dt>DB Mod</dt>
+              <dd><EditableCell v-model="sheet.weapon!.dbMod" type="number" /></dd>
+            </div>
+            <div>
+              <dt>AC Mod</dt>
+              <dd><EditableCell v-model="sheet.weapon!.acMod" type="number" /></dd>
+            </div>
+            <div>
+              <dt>Description</dt>
+              <dd>
+                <EditableCell
+                  v-model="sheet.weapon!.description"
+                  type="textarea"
+                  placeholder="—"
+                  multiline
+                />
+              </dd>
+            </div>
           </dl>
         </section>
       </div>
@@ -270,23 +549,39 @@ const typeEffectivenessRows = computed(() => {
         <section class="panel-card">
           <h2 class="panel-title">Tutor Points</h2>
           <dl class="kv-list">
-            <div><dt>Earned</dt><dd>{{ sheet.tutorPoints?.earned ?? 0 }}</dd></div>
-            <div><dt>Spent</dt><dd>{{ sheet.tutorPoints?.spent ?? 0 }}</dd></div>
-            <div><dt>Left</dt><dd>{{ tutorPointsLeft ?? 0 }}</dd></div>
+            <div>
+              <dt>Earned</dt>
+              <dd><EditableCell v-model="sheet.tutorPoints!.earned" type="number" :min="0" /></dd>
+            </div>
+            <div>
+              <dt>Spent</dt>
+              <dd><EditableCell v-model="sheet.tutorPoints!.spent" type="number" :min="0" /></dd>
+            </div>
+            <div>
+              <dt>Left</dt>
+              <dd>{{ tutorPointsLeft ?? 0 }}</dd>
+            </div>
           </dl>
         </section>
 
         <section class="panel-card">
           <h2 class="panel-title">Skill Background</h2>
-          <p v-if="sheet.skillBackground?.description" class="bg-desc">
-            {{ sheet.skillBackground.description }}
+          <p class="bg-desc">
+            <EditableCell
+              v-model="sheet.skillBackground!.description"
+              type="textarea"
+              placeholder="Skill background description"
+              multiline
+            />
           </p>
           <dl class="kv-list">
-            <div v-if="sheet.skillBackground?.raised?.length">
-              <dt>Raised</dt><dd>{{ sheet.skillBackground.raised.join(', ') }}</dd>
+            <div>
+              <dt>Raised</dt>
+              <dd><EditableCell v-model="skillBgRaisedCsv" placeholder="Athletics, Survival" /></dd>
             </div>
-            <div v-if="sheet.skillBackground?.lowered?.length">
-              <dt>Lowered</dt><dd>{{ sheet.skillBackground.lowered.join(', ') }}</dd>
+            <div>
+              <dt>Lowered</dt>
+              <dd><EditableCell v-model="skillBgLoweredCsv" placeholder="Combat" /></dd>
             </div>
           </dl>
         </section>
@@ -294,20 +589,31 @@ const typeEffectivenessRows = computed(() => {
         <section class="panel-card">
           <h2 class="panel-title">Inherited Moves</h2>
           <dl class="inherited-grid">
-            <div v-for="row in inheritedRows" :key="row.level">
-              <dt>Lvl {{ row.level }}</dt>
-              <dd>{{ row.move ?? '—' }}</dd>
+            <div v-for="level in INHERITED_LEVELS" :key="level">
+              <dt>Lvl {{ level }}</dt>
+              <dd>
+                <EditableCell
+                  :model-value="sheet.inheritedMoves?.[level]"
+                  placeholder="—"
+                  @update:model-value="(v) => setInheritedMove(level, v as string)"
+                />
+              </dd>
             </div>
           </dl>
-          <p v-if="sheet.inheritedRemaining != null" class="inherited-foot">
-            Remaining: <strong>{{ sheet.inheritedRemaining }}</strong>
+          <p class="inherited-foot">
+            Remaining: <strong><EditableCell v-model="sheet.inheritedRemaining" type="number" :min="0" /></strong>
           </p>
         </section>
       </div>
 
       <!-- ============ Movelist ============ -->
       <section class="panel-card">
-        <h2 class="panel-title">Movelist</h2>
+        <h2 class="panel-title">
+          Movelist
+          <button type="button" class="row-add" @click="addMove">
+            <PhPlus :size="14" weight="bold" /> Add row
+          </button>
+        </h2>
         <div class="table-wrap">
           <table class="moves-table">
             <thead>
@@ -321,22 +627,49 @@ const typeEffectivenessRows = computed(() => {
                 <th>AC</th>
                 <th>Range</th>
                 <th>Effect</th>
+                <th aria-label="Row actions"></th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="move in sheet.movelist ?? []" :key="move.name">
-                <td class="move-name"><RefLink kind="move" :name="move.name" /></td>
-                <td>{{ move.type ?? '—' }}</td>
-                <td>{{ move.category ?? '—' }}</td>
-                <td>{{ move.db ?? '—' }}</td>
-                <td>{{ move.damageRoll ?? '—' }}</td>
-                <td>{{ move.frequency ?? '—' }}</td>
-                <td>{{ move.ac ?? '—' }}</td>
-                <td>{{ move.range ?? '—' }}</td>
-                <td class="move-effect">{{ move.effect ?? '' }}</td>
+              <tr v-for="(move, i) in sheet.movelist" :key="i">
+                <td class="move-name"><EditableCell v-model="move.name" placeholder="Move" /></td>
+                <td>
+                  <EditableCell
+                    v-model="move.type"
+                    type="select"
+                    :options="TYPE_OPTIONS"
+                    placeholder="—"
+                  />
+                </td>
+                <td>
+                  <EditableCell
+                    v-model="move.category"
+                    type="select"
+                    :options="CATEGORY_OPTIONS"
+                    placeholder="—"
+                  />
+                </td>
+                <td><EditableCell v-model="move.db" type="number" /></td>
+                <td><EditableCell v-model="move.damageRoll" placeholder="—" /></td>
+                <td><EditableCell v-model="move.frequency" placeholder="At-Will" /></td>
+                <td><EditableCell v-model="move.ac" type="number" /></td>
+                <td><EditableCell v-model="move.range" placeholder="Melee" /></td>
+                <td class="move-effect">
+                  <EditableCell v-model="move.effect" type="textarea" placeholder="—" multiline />
+                </td>
+                <td class="row-actions">
+                  <button
+                    type="button"
+                    class="row-remove"
+                    title="Remove move"
+                    @click="removeMove(i)"
+                  >
+                    <PhX :size="14" weight="bold" />
+                  </button>
+                </td>
               </tr>
               <tr v-if="!sheet.movelist?.length">
-                <td colspan="9" class="empty-cell">No moves recorded.</td>
+                <td colspan="10" class="empty-cell">No moves yet — click "Add row" to start.</td>
               </tr>
             </tbody>
           </table>
@@ -364,60 +697,137 @@ const typeEffectivenessRows = computed(() => {
       <!-- ============ Capabilities ============ -->
       <section class="panel-card">
         <h2 class="panel-title">Capabilities</h2>
-        <dl v-if="capabilities.rows.length" class="caps-grid">
-          <div v-for="row in capabilities.rows" :key="row.label">
-            <dt><RefLink kind="capability" :name="row.label" /></dt>
-            <dd>{{ row.value }}</dd>
+        <dl class="caps-grid">
+          <div>
+            <dt>Overland</dt>
+            <dd><EditableCell v-model="sheet.capabilities!.overland" type="number" :min="0" /></dd>
+          </div>
+          <div>
+            <dt>Sky</dt>
+            <dd><EditableCell v-model="sheet.capabilities!.sky" type="number" :min="0" /></dd>
+          </div>
+          <div>
+            <dt>Swim</dt>
+            <dd><EditableCell v-model="sheet.capabilities!.swim" type="number" :min="0" /></dd>
+          </div>
+          <div>
+            <dt>Levitate</dt>
+            <dd><EditableCell v-model="sheet.capabilities!.levitate" type="number" :min="0" /></dd>
+          </div>
+          <div>
+            <dt>Burrow</dt>
+            <dd><EditableCell v-model="sheet.capabilities!.burrow" type="number" :min="0" /></dd>
+          </div>
+          <div>
+            <dt>Jump</dt>
+            <dd><EditableCell v-model="sheet.capabilities!.jump" placeholder="2/1" /></dd>
+          </div>
+          <div>
+            <dt>Power</dt>
+            <dd><EditableCell v-model="sheet.capabilities!.power" type="number" :min="0" /></dd>
+          </div>
+          <div>
+            <dt>Weight</dt>
+            <dd><EditableCell v-model="sheet.capabilities!.weight" type="number" :min="0" /></dd>
+          </div>
+          <div>
+            <dt>Size</dt>
+            <dd><EditableCell v-model="sheet.capabilities!.size" placeholder="Small" /></dd>
           </div>
         </dl>
-        <p v-if="capabilities.naturewalk" class="caps-line">
-          <strong><RefLink kind="capability" name="Naturewalk" />:</strong>
-          {{ capabilities.naturewalk }}
+        <p class="caps-line">
+          <strong>Naturewalk:</strong>
+          <EditableCell v-model="sheet.capabilities!.naturewalk" placeholder="Forest, Grasslands" />
         </p>
-        <p v-if="capabilities.other.length" class="caps-line">
+        <p class="caps-line">
           <strong>Other:</strong>
-          <template v-for="(name, i) in capabilities.other" :key="`other-${i}`"
-            ><span v-if="i > 0">, </span
-            ><RefLink kind="capability" :name="name"
-          /></template>
+          <EditableCell v-model="otherCapsCsv" placeholder="Telepath, Aura Reader" />
         </p>
       </section>
 
       <!-- ============ Abilities + Edges ============ -->
       <div class="row two-col">
         <section class="panel-card">
-          <h2 class="panel-title">Abilities</h2>
+          <h2 class="panel-title">
+            Abilities
+            <button type="button" class="row-add" @click="addAbility">
+              <PhPlus :size="14" weight="bold" /> Add row
+            </button>
+          </h2>
           <table class="kv-table">
             <thead>
-              <tr><th>Name</th><th>Frequency</th><th>Effect</th></tr>
+              <tr><th>Name</th><th>Frequency</th><th>Effect</th><th aria-label="Row actions"></th></tr>
             </thead>
             <tbody>
-              <tr v-for="ability in sheet.abilities ?? []" :key="ability.name">
-                <td class="kv-name"><RefLink kind="ability" :name="ability.name" /></td>
-                <td>{{ ability.frequency ?? '—' }}</td>
-                <td>{{ ability.effect ?? '' }}</td>
+              <tr v-for="(ability, i) in sheet.abilities" :key="i">
+                <td class="kv-name">
+                  <EditableCell v-model="ability.name" placeholder="Ability" />
+                </td>
+                <td><EditableCell v-model="ability.frequency" placeholder="Static" /></td>
+                <td>
+                  <EditableCell
+                    v-model="ability.effect"
+                    type="textarea"
+                    placeholder="—"
+                    multiline
+                  />
+                </td>
+                <td class="row-actions">
+                  <button
+                    type="button"
+                    class="row-remove"
+                    title="Remove ability"
+                    @click="removeAbility(i)"
+                  >
+                    <PhX :size="14" weight="bold" />
+                  </button>
+                </td>
               </tr>
               <tr v-if="!sheet.abilities?.length">
-                <td colspan="3" class="empty-cell">No abilities recorded.</td>
+                <td colspan="4" class="empty-cell">No abilities yet.</td>
               </tr>
             </tbody>
           </table>
         </section>
 
         <section class="panel-card">
-          <h2 class="panel-title">Poké Edges</h2>
+          <h2 class="panel-title">
+            Poké Edges
+            <button type="button" class="row-add" @click="addEdge">
+              <PhPlus :size="14" weight="bold" /> Add row
+            </button>
+          </h2>
           <table class="kv-table">
             <thead>
-              <tr><th>Name</th><th>Cost</th><th>Effect</th></tr>
+              <tr><th>Name</th><th>Cost</th><th>Effect</th><th aria-label="Row actions"></th></tr>
             </thead>
             <tbody>
-              <tr v-for="edge in sheet.edges ?? []" :key="edge.name">
-                <td class="kv-name">{{ edge.name }}</td>
-                <td>{{ edge.cost ?? '—' }}</td>
-                <td>{{ edge.effect ?? '' }}</td>
+              <tr v-for="(edge, i) in sheet.edges" :key="i">
+                <td class="kv-name">
+                  <EditableCell v-model="edge.name" placeholder="Edge" />
+                </td>
+                <td><EditableCell v-model="edge.cost" placeholder="—" /></td>
+                <td>
+                  <EditableCell
+                    v-model="edge.effect"
+                    type="textarea"
+                    placeholder="—"
+                    multiline
+                  />
+                </td>
+                <td class="row-actions">
+                  <button
+                    type="button"
+                    class="row-remove"
+                    title="Remove edge"
+                    @click="removeEdge(i)"
+                  >
+                    <PhX :size="14" weight="bold" />
+                  </button>
+                </td>
               </tr>
               <tr v-if="!sheet.edges?.length">
-                <td colspan="3" class="empty-cell">No edges recorded.</td>
+                <td colspan="4" class="empty-cell">No edges yet.</td>
               </tr>
             </tbody>
           </table>
@@ -428,7 +838,7 @@ const typeEffectivenessRows = computed(() => {
       <section class="panel-card">
         <h2 class="panel-title">
           Pokémon Skills
-          <span class="panel-subtle">bold = species-given</span>
+          <span class="panel-subtle">bold = species-given · click any value to override</span>
         </h2>
         <dl class="skills-grid">
           <div
@@ -437,7 +847,17 @@ const typeEffectivenessRows = computed(() => {
             :class="['skill-cell', { 'skill-cell--given': skill.speciesGiven }]"
           >
             <dt>{{ skill.label }}</dt>
-            <dd>{{ skill.value }}</dd>
+            <dd>
+              <EditableCell
+                :model-value="sheet.skills?.[skill.key] ?? skill.value"
+                :placeholder="skill.value"
+                @update:model-value="(v) => {
+                  if (!sheet) return
+                  if (typeof v === 'string' && v.trim()) sheet.skills![skill.key] = v
+                  else delete sheet.skills![skill.key]
+                }"
+              />
+            </dd>
           </div>
         </dl>
       </section>
@@ -471,6 +891,10 @@ const typeEffectivenessRows = computed(() => {
 }
 
 .back-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
   padding: 0 0.25rem;
 }
 
@@ -594,6 +1018,9 @@ const typeEffectivenessRows = computed(() => {
   color: var(--ink-soft);
   font-size: 0.95rem;
   font-style: italic;
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
 }
 
 .identity__badges {
@@ -601,11 +1028,13 @@ const typeEffectivenessRows = computed(() => {
   gap: 0.4rem;
   flex-wrap: wrap;
   justify-content: flex-end;
+  align-items: center;
 }
 
 .badge {
   display: inline-flex;
   align-items: center;
+  gap: 0.25rem;
   border-radius: 999px;
   padding: 0.22rem 0.65rem;
   background: var(--accent-soft);
@@ -615,9 +1044,21 @@ const typeEffectivenessRows = computed(() => {
   white-space: nowrap;
 }
 
-.badge.shiny {
+.badge.shiny-toggle {
   background: rgba(221, 210, 176, 0.16);
   color: var(--ink-bright);
+  cursor: pointer;
+  user-select: none;
+}
+
+.badge.shiny-toggle.shiny {
+  background: rgba(221, 210, 176, 0.28);
+}
+
+.badge.shiny-toggle input {
+  width: 0.85em;
+  height: 0.85em;
+  margin: 0;
 }
 
 .identity__stats {
@@ -887,6 +1328,46 @@ const typeEffectivenessRows = computed(() => {
   text-align: center;
   color: var(--ink-muted);
   font-style: italic;
+}
+
+.row-actions {
+  width: 1.5rem;
+}
+
+.row-add,
+.row-remove {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  border: 1px solid var(--rule-soft);
+  border-radius: 6px;
+  background: var(--paper-inset);
+  color: var(--ink-soft);
+  padding: 0.2rem 0.45rem;
+  font: inherit;
+  font-size: 0.74rem;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  margin-left: auto;
+  transition: border-color 0.12s ease, color 0.12s ease, background 0.12s ease;
+}
+
+.row-add:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.row-remove {
+  margin: 0;
+  padding: 0.2rem;
+  border-color: transparent;
+  background: transparent;
+}
+
+.row-remove:hover {
+  color: #d36464;
+  border-color: rgba(220, 80, 80, 0.45);
+  background: rgba(220, 80, 80, 0.08);
 }
 
 /* ---- Type effectiveness ---- */
