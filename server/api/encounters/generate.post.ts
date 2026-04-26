@@ -3,15 +3,20 @@
  *
  * Mirrors the ``just encounter <region> <table> <count>`` recipe in the
  * justfile: rolls N times on an encounter table and runs ``pokegen.sh`` for
- * each rolled species/level pair, writing ``.md`` stat blocks into
- * ``<outRoot>/<table>_<count>[-N]/``.
+ * each rolled species/level pair, writing ``CharacterSheet`` JSON files
+ * into ``<outRoot>/<table>_<count>[-N]/``.
+ *
+ * The default ``outRoot`` is ``data/sheets/wild`` so freshly-generated
+ * encounters land directly inside the Nuxt sheet tree and show up on the
+ * ``/sheets`` page without any manual file moving.
  *
  * Request body:
  *   {
  *     region:   string,           // e.g. "thickerby_vale"
  *     table:    string,           // e.g. "forest"
  *     count:    number,           // 1..30
- *     outRoot?: string,           // default "generated_pokemon"
+ *     outRoot?: string,           // default "data/sheets/wild"; may be a
+ *                                 //   nested path under the project root.
  *     preview?: boolean,          // when true, write to a tempdir and stream
  *                                 //   contents back without keeping files.
  *   }
@@ -56,6 +61,10 @@ const PROJECT_ROOT = resolvePath(process.cwd())
 const ENCOUNTER_ROOT = resolvePath(PROJECT_ROOT, 'encounter_tables')
 const POKEGEN_SCRIPT = resolvePath(PROJECT_ROOT, 'scripts/pokegen.sh')
 
+/** Default destination — the Nuxt ``/sheets`` page reads this directory
+ *  recursively, so generated encounters appear there automatically. */
+const DEFAULT_OUT_ROOT = 'data/sheets/wild'
+
 /** Reject anything that escapes a directory or contains shell metacharacters. */
 const SAFE_NAME = /^[a-zA-Z0-9_-]+$/
 
@@ -68,6 +77,33 @@ const sanitizeNameComponent = (value: string, label: string): string => {
   }
   return value
 }
+
+/** Allow nested ``outRoot`` paths like ``data/sheets/wild`` so callers can
+ *  drop generated mons anywhere under the project root. Each segment is
+ *  validated against {@link SAFE_NAME} to keep shell + path-traversal
+ *  attackers out. */
+const sanitizeOutRoot = (value: string): string => {
+  const normalized = value.replace(/\\/g, '/').replace(/\/+/g, '/').replace(/^\/+|\/+$/g, '')
+  if (!normalized) {
+    throw createError({ statusCode: 400, statusMessage: 'outRoot required' })
+  }
+  const segments = normalized.split('/')
+  for (const seg of segments) {
+    if (!seg || seg === '.' || seg === '..') {
+      throw createError({ statusCode: 400, statusMessage: 'Invalid outRoot segment' })
+    }
+    if (!SAFE_NAME.test(seg)) {
+      throw createError({
+        statusCode: 400,
+        statusMessage: `outRoot segment "${seg}" must match /^[A-Za-z0-9_-]+$/`,
+      })
+    }
+  }
+  return segments.join('/')
+}
+
+const slugify = (value: string): string =>
+  value.replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-+|-+$/g, '').toLowerCase() || 'sheet'
 
 const loadTable = (region: string, key: string): EncounterTable => {
   const path = joinPath(ENCOUNTER_ROOT, region, `${key}.json`)
@@ -111,11 +147,17 @@ const runPokegen = (
   species: string,
   level: number,
   outputDir: string,
+  slugPrefix: string,
 ): Promise<{ ok: boolean; stderr: string }> =>
   new Promise((resolve) => {
     const child = spawn(
       POKEGEN_SCRIPT,
-      ['--species', species, '--level', String(level), '--output-dir', outputDir],
+      [
+        '--species', species,
+        '--level', String(level),
+        '--output-dir', outputDir,
+        '--slug-prefix', slugPrefix,
+      ],
       { cwd: PROJECT_ROOT, stdio: ['ignore', 'pipe', 'pipe'] },
     )
     let stderr = ''
@@ -137,10 +179,7 @@ export default defineEventHandler(async (event) => {
 
   const region = sanitizeNameComponent(String(body?.region ?? ''), 'region')
   const tableKey = sanitizeNameComponent(String(body?.table ?? ''), 'table')
-  const outRoot = sanitizeNameComponent(
-    String(body?.outRoot ?? 'generated_pokemon'),
-    'outRoot',
-  )
+  const outRoot = sanitizeOutRoot(String(body?.outRoot ?? DEFAULT_OUT_ROOT))
   const count = Number(body?.count ?? 0)
   if (!Number.isInteger(count) || count < 1 || count > 30) {
     throw createError({
@@ -176,6 +215,15 @@ export default defineEventHandler(async (event) => {
     mkdirSync(dir, { recursive: true })
   }
 
+  // Slug prefix derived from the rel-path under data/sheets so each
+  // generated sheet's slug is globally unique. For preview runs (tempdir)
+  // we just use the leaf folder name — the JSON never gets imported by
+  // Vite anyway.
+  const relForSlug = preview
+    ? joinPath('preview', tableKey, String(Date.now()))
+    : dir.slice(PROJECT_ROOT.length + 1)
+  const slugPrefix = slugify(relForSlug.replace(/^data\/sheets\//, ''))
+
   // Snapshot what's already in dir before generating, so we can attribute
   // each new file to its rolled encounter.
   const beforeFiles = new Set(existsSync(dir) ? readdirSync(dir) : [])
@@ -188,7 +236,7 @@ export default defineEventHandler(async (event) => {
 
   for (const enc of rolled) {
     const before = new Set(readdirSync(dir))
-    const { ok, stderr } = await runPokegen(enc.species, enc.level, dir)
+    const { ok, stderr } = await runPokegen(enc.species, enc.level, dir, slugPrefix)
     if (!ok) {
       failures += 1
       fileResults.push({

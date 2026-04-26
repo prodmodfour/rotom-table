@@ -26,7 +26,7 @@ const initialEntry = encounterTables[0] ?? null
 const region = ref<string>(String(route.query.region ?? initialEntry?.region ?? ''))
 const tableKey = ref<string>(String(route.query.table ?? initialEntry?.key ?? ''))
 const count = ref<number>(3)
-const outRoot = ref<string>('generated_pokemon')
+const outRoot = ref<string>('data/sheets/wild')
 const preview = ref<boolean>(false)
 
 // Keep the table dropdown in sync with the region.
@@ -146,7 +146,10 @@ watch([region, tableKey], () => {
           Roll on an encounter table and stat the results with the same pipeline
           as <code>just encounter &lt;region&gt; &lt;table&gt; &lt;count&gt;</code>.
           Output lands in <code>&lt;outRoot&gt;/&lt;table&gt;_&lt;count&gt;/</code>
-          as PTU markdown stat blocks. Browse all available tables on the
+          as <code>CharacterSheet</code> JSON files — drop them under
+          <code>data/sheets/</code> (the default) and they show up immediately
+          on the <NuxtLink class="inline-link" to="/sheets">Sheets</NuxtLink>
+          page. Browse all available tables on the
           <NuxtLink class="inline-link" to="/encounter-tables">Encounter Tables</NuxtLink>
           page.
         </p>
@@ -198,7 +201,7 @@ watch([region, tableKey], () => {
               v-model.trim="outRoot"
               type="text"
               :disabled="generating || preview"
-              placeholder="generated_pokemon"
+              placeholder="data/sheets/wild"
             />
           </label>
         </div>

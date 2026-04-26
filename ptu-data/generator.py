@@ -397,6 +397,10 @@ def generate_pokemon(
         "level": level,
         "nature": nature_display,
         "nature_label": nature_label,
+        # Raw (label, raise_stat, lower_stat) tuple, exposed so downstream
+        # consumers (sheet_emitter) can recover the nature delta without
+        # having to re-derive it from the display string.
+        "nature_tuple": nature_tuple,
         "types": entry["types"],
         "gender": gender,
         "shiny": shiny,

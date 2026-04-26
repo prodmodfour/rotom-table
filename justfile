@@ -20,10 +20,12 @@ default:
       '      Show entries in an encounter table.' \
       '' \
       '  just encounter <region> <table> <count>' \
-      '      Roll encounters and generate PTU stat blocks.' \
+      '      Roll encounters and generate PTU CharacterSheet JSON.' \
+      '      Files land in data/sheets/wild/<table>_<count>/ and show up' \
+      '      on the /sheets page automatically.' \
       '' \
       '  just encounter <region> <table> <count> preview' \
-      '      Preview generated stat blocks in stdout without writing files.' \
+      '      Preview generated sheets in stdout without writing files.' \
       '' \
       '  just encounter <region> <table> <count> "" <out_root>' \
       '      Write generated files under a custom output root.' \
@@ -50,19 +52,21 @@ help:
 trainer +name:
     @python3 scripts/trainer_lookup.py {{quote(name)}}
     
-# Roll on an encounter table and generate PTU stat blocks into a dedicated folder.
+# Roll on an encounter table and generate PTU CharacterSheet JSON into a
+# dedicated folder under data/sheets/ (the Nuxt /sheets page reads that
+# tree recursively, so the rolled mons appear there immediately).
 # Usage:
 #   just encounter                                          # list regions
 #   just encounter <region>                                 # list tables in region
 #   just encounter <region> <table>                         # show the table
-#   just encounter <region> <table> <count>                 # roll & generate stat blocks
+#   just encounter <region> <table> <count>                 # roll & generate sheets
 #   just encounter <region> <table> <count> <preview>       # stream to stdout, no files
 #   just encounter <region> <table> <count> <preview> <out_root>
 #   just encounter --clear                                  # remove all generated subfolders
 #   just encounter --clear <out_root>                       # clear a specific root
 # Creates <out_root>/<table>_<count>/ (auto-suffixed -2, -3, ... if it already exists).
 # <preview>: anything non-empty (e.g. "preview", "1", "dry") enables preview mode.
-encounter region="" table="" count="" preview="" out_root="generated_pokemon":
+encounter region="" table="" count="" preview="" out_root="data/sheets/wild":
     #!/usr/bin/env bash
     set -euo pipefail
 
@@ -70,7 +74,7 @@ encounter region="" table="" count="" preview="" out_root="generated_pokemon":
     # Second positional (normally <table>) overrides the target root.
     if [ "{{region}}" = "--clear" ]; then
         target="{{table}}"
-        [ -z "$target" ] && target="generated_pokemon"
+        [ -z "$target" ] && target="data/sheets/wild"
         if [ ! -d "$target" ]; then
             echo "Nothing to clear: '$target' does not exist."
             exit 0
@@ -103,11 +107,12 @@ encounter region="" table="" count="" preview="" out_root="generated_pokemon":
     roll=./scripts/roll.py
     pokegen=./scripts/pokegen.sh
 
-    # Preview mode: stream stat blocks to stdout, write nothing permanent.
+    # Preview mode: stream sheets to stdout, write nothing permanent.
     if [ -n "{{preview}}" ]; then
         dir=$(mktemp -d)
         trap 'rm -rf "$dir"' EXIT
         abs_dir="$dir"
+        slug_prefix="preview-{{table}}-$(date +%s)"
         echo ">>> Rolling {{count}}x on {{region}}/{{table}} (preview, no files written)"
     else
         # Pick a unique output folder so repeat runs don't clobber.
@@ -122,6 +127,12 @@ encounter region="" table="" count="" preview="" out_root="generated_pokemon":
         # pokegen.sh cd's into ptu-data/ before running cli.py, so we must
         # pass an absolute path for --output-dir.
         abs_dir=$(cd "$dir" && pwd)
+        # Slug prefix derived from the per-run path under data/sheets so each
+        # generated sheet's slug stays globally unique. Strip the data/sheets/
+        # prefix when present so the slug doesn't get a redundant ``data-sheets-``.
+        rel="${dir#./}"
+        rel="${rel#data/sheets/}"
+        slug_prefix=$(printf '%s' "$rel" | tr '/_' '-' | tr -cd 'a-zA-Z0-9-' | tr 'A-Z' 'a-z')
         echo ">>> Rolling {{count}}x on {{region}}/{{table}} → $dir"
     fi
     roll_out=$($roll {{region}} {{table}} {{count}})
@@ -141,7 +152,9 @@ encounter region="" table="" count="" preview="" out_root="generated_pokemon":
         fi
         # Silence pokegen's own per-file summary; the roll output above
         # already lists what was generated, and we print the final ls.
-        if ! $pokegen --species "$species" --level "$level" --output-dir "$abs_dir" >/dev/null; then
+        if ! $pokegen --species "$species" --level "$level" \
+                       --output-dir "$abs_dir" \
+                       --slug-prefix "$slug_prefix" >/dev/null; then
             echo "!! pokegen failed for '$species' Lv $level (skipping)" >&2
             failures=$((failures + 1))
         fi
@@ -149,8 +162,8 @@ encounter region="" table="" count="" preview="" out_root="generated_pokemon":
 
     echo
     if [ -n "{{preview}}" ]; then
-        # Stream generated stat blocks to stdout, then discard the tempdir.
-        for f in "$abs_dir"/*.md; do
+        # Stream generated sheets to stdout, then discard the tempdir.
+        for f in "$abs_dir"/*.json; do
             [ -e "$f" ] || continue
             echo "======== $(basename "$f") ========"
             cat "$f"
