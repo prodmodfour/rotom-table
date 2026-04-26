@@ -12,6 +12,7 @@ import {
   computeTrainerMaxAp,
   TRAINER_SKILL_ORDER,
 } from '~/data/trainerSheets'
+import { trainerCatalog } from '~/data/trainerCatalog'
 import { POKEMON_TYPES } from '~/utils/typeChart'
 import { normalizeTrainerSheet } from '~/utils/sheetNormalize'
 import { useEditableSheet, type SaveStatus } from '~/composables/useEditableSheet'
@@ -294,6 +295,45 @@ const setSkillModifier = (key: TrainerSkillKey, modifier: number | undefined) =>
 
 const skillModifier = (key: TrainerSkillKey): number =>
   sheet.value?.skills?.[key]?.modifier ?? 0
+
+// ---------------------------------------------------------------------------
+// Portrait picker — pick a trainer sprite from `trainerCatalog` and write the
+// chosen `spriteUrl` into `sheet.portraitUrl`. The deep watcher in
+// `useEditableSheet` picks up the change and persists it via the auto-save.
+// ---------------------------------------------------------------------------
+
+const portraitPickerOpen = ref(false)
+const portraitQuery = ref('')
+
+const filteredPortraitOptions = computed(() => {
+  const q = portraitQuery.value.trim().toLowerCase()
+  if (!q) return trainerCatalog
+  return trainerCatalog.filter(
+    (t) =>
+      t.species.toLowerCase().includes(q) ||
+      (t.slug?.toLowerCase().includes(q) ?? false),
+  )
+})
+
+const openPortraitPicker = () => {
+  portraitQuery.value = ''
+  portraitPickerOpen.value = true
+}
+
+const closePortraitPicker = () => {
+  portraitPickerOpen.value = false
+}
+
+const selectPortrait = (url: string) => {
+  if (!sheet.value) return
+  sheet.value.portraitUrl = url
+  closePortraitPicker()
+}
+
+const clearPortrait = () => {
+  if (!sheet.value) return
+  sheet.value.portraitUrl = undefined
+}
 </script>
 
 <template>
@@ -309,6 +349,35 @@ const skillModifier = (key: TrainerSkillKey): number =>
     <article v-if="sheet" class="sheet-card">
       <!-- ===== Identity strip ===== -->
       <header class="identity-strip">
+        <div
+          class="portrait-tile"
+          :class="{ 'portrait-tile--empty': !sheet.portraitUrl }"
+          role="button"
+          tabindex="0"
+          :aria-label="sheet.portraitUrl ? 'Change trainer sprite' : 'Pick a trainer sprite'"
+          @click="openPortraitPicker"
+          @keydown.enter.prevent="openPortraitPicker"
+          @keydown.space.prevent="openPortraitPicker"
+        >
+          <img
+            v-if="sheet.portraitUrl"
+            :src="sheet.portraitUrl"
+            :alt="`${sheet.name} portrait`"
+            class="portrait-tile__img"
+          />
+          <span v-else class="portrait-tile__placeholder">
+            Pick<br />sprite
+          </span>
+          <button
+            v-if="sheet.portraitUrl"
+            type="button"
+            class="portrait-tile__clear"
+            title="Remove sprite"
+            @click.stop="clearPortrait"
+          >
+            <PhX :size="12" weight="bold" />
+          </button>
+        </div>
         <div class="identity-info">
           <h1><EditableCell v-model="sheet.name" placeholder="Trainer name" /></h1>
           <p class="identity-meta">
@@ -1222,6 +1291,61 @@ const skillModifier = (key: TrainerSkillKey): number =>
       <p>No trainer for slug <code>{{ slug }}</code>.</p>
       <NuxtLink to="/sheets" class="back-link">← Back to all sheets</NuxtLink>
     </article>
+
+    <!-- ===== Portrait picker modal ===== -->
+    <div
+      v-if="sheet && portraitPickerOpen"
+      class="portrait-picker-backdrop"
+      @click.self="closePortraitPicker"
+    >
+      <div class="portrait-picker" role="dialog" aria-label="Pick a trainer sprite">
+        <header class="portrait-picker__header">
+          <h2>Pick a trainer sprite</h2>
+          <button
+            type="button"
+            class="portrait-picker__close"
+            title="Close"
+            @click="closePortraitPicker"
+          >
+            <PhX :size="16" weight="bold" />
+          </button>
+        </header>
+        <div class="portrait-picker__search">
+          <input
+            v-model="portraitQuery"
+            type="search"
+            placeholder="Search by name or slug…"
+            class="portrait-picker__input"
+            autofocus
+          />
+          <span class="portrait-picker__count">
+            {{ filteredPortraitOptions.length }} sprite{{ filteredPortraitOptions.length === 1 ? '' : 's' }}
+          </span>
+        </div>
+        <div class="portrait-picker__grid">
+          <button
+            v-for="t in filteredPortraitOptions"
+            :key="t.slug"
+            type="button"
+            class="portrait-option"
+            :class="{ 'portrait-option--active': sheet.portraitUrl === t.spriteUrl }"
+            :title="t.species"
+            @click="selectPortrait(t.spriteUrl ?? '')"
+          >
+            <img
+              :src="t.spriteUrl"
+              :alt="t.species"
+              class="portrait-option__img"
+              loading="lazy"
+            />
+            <span class="portrait-option__label">{{ t.species }}</span>
+          </button>
+          <p v-if="!filteredPortraitOptions.length" class="muted portrait-picker__empty">
+            No sprites match "{{ portraitQuery }}".
+          </p>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -1278,6 +1402,76 @@ const skillModifier = (key: TrainerSkillKey): number =>
   padding-bottom: 0.85rem;
   border-bottom: 1px solid var(--rule-soft);
 }
+
+/* Portrait tile in identity strip */
+.portrait-tile {
+  position: relative;
+  flex: 0 0 auto;
+  width: 96px;
+  height: 96px;
+  border: 1px solid var(--rule-soft);
+  border-radius: 12px;
+  background: var(--paper-inset);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  overflow: hidden;
+  transition: border-color 0.12s, background 0.12s, box-shadow 0.12s;
+}
+
+.portrait-tile:hover,
+.portrait-tile:focus-visible {
+  border-color: var(--accent);
+  background: var(--paper-hover);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(250, 189, 47, 0.2);
+}
+
+.portrait-tile--empty {
+  border-style: dashed;
+}
+
+.portrait-tile__img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+.portrait-tile__placeholder {
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  text-align: center;
+  line-height: 1.3;
+}
+
+.portrait-tile__clear {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid var(--rule-soft);
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+
+.portrait-tile__clear:hover {
+  color: #d36464;
+  border-color: rgba(220, 80, 80, 0.45);
+  background: rgba(220, 80, 80, 0.08);
+}
+
+.identity-info { flex: 1 1 auto; min-width: 200px; }
 
 .identity-info h1 {
   margin: 0 0 0.25rem;
@@ -1703,4 +1897,153 @@ const skillModifier = (key: TrainerSkillKey): number =>
 
 .narrative--green  { border-left-color: var(--good); }
 .narrative--green h3 { color: var(--good); }
+
+/* ===== Portrait picker modal ===== */
+.portrait-picker-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 1000;
+}
+
+.portrait-picker {
+  width: min(900px, 100%);
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--rule);
+  border-radius: 14px;
+  background: var(--paper-soft);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+
+.portrait-picker__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--rule-soft);
+  background: var(--paper-inset);
+}
+
+.portrait-picker__header h2 {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 1rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-bright);
+}
+
+.portrait-picker__close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--rule-soft);
+  border-radius: 8px;
+  background: var(--paper);
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+
+.portrait-picker__close:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.portrait-picker__search {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 1rem;
+  border-bottom: 1px solid var(--rule-soft);
+}
+
+.portrait-picker__input {
+  flex: 1 1 auto;
+  font: inherit;
+  color: inherit;
+  border: 1px solid var(--rule-soft);
+  border-radius: 8px;
+  background: var(--paper);
+  padding: 0.4rem 0.6rem;
+}
+
+.portrait-picker__input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(250, 189, 47, 0.18);
+}
+
+.portrait-picker__count {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  white-space: nowrap;
+}
+
+.portrait-picker__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 0.5rem;
+  padding: 0.85rem 1rem;
+  overflow: auto;
+}
+
+.portrait-picker__empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 1.5rem 0;
+}
+
+.portrait-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.45rem 0.35rem;
+  border: 1px solid var(--rule-soft);
+  border-radius: 10px;
+  background: var(--paper-inset);
+  cursor: pointer;
+  transition: border-color 0.12s, background 0.12s, box-shadow 0.12s;
+  font: inherit;
+  color: inherit;
+}
+
+.portrait-option:hover {
+  border-color: var(--accent);
+  background: var(--paper-hover);
+}
+
+.portrait-option--active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  box-shadow: 0 0 0 2px rgba(250, 189, 47, 0.25);
+}
+
+.portrait-option__img {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+.portrait-option__label {
+  font-size: 0.72rem;
+  color: var(--ink-soft);
+  text-align: center;
+  line-height: 1.2;
+  text-transform: capitalize;
+  word-break: break-word;
+}
 </style>
