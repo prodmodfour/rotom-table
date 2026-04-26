@@ -1,0 +1,15 @@
+{
+  "name": "Thickerby Vale Forest",
+  "min_level": 4,
+  "max_level": 8,
+  "entries": [
+    [25, "Caterpie"],
+    [45, "Weedle"],
+    [60, "Pidgey"],
+    [75, "Sentret"],
+    [85, "Hoothoot"],
+    [92, "Spinarak"],
+    [97, "Pineco"],
+    [100, "Cutiefly"]
+  ]
+}

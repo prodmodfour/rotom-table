@@ -1,0 +1,14 @@
+{
+  "name": "Thickerby Vale Riverbank",
+  "min_level": 6,
+  "max_level": 10,
+  "entries": [
+    [30, "Poliwag"],
+    [55, "Goldeen"],
+    [70, "Magikarp"],
+    [82, "Wooper"],
+    [90, "Marill"],
+    [96, "Surskit"],
+    [100, "Pelipper"]
+  ]
+}

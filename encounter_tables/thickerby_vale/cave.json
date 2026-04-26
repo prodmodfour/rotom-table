@@ -1,0 +1,13 @@
+{
+  "name": "Thickerby Vale Caves",
+  "min_level": 8,
+  "max_level": 14,
+  "entries": [
+    [35, "Zubat"],
+    [60, "Geodude"],
+    [78, "Diglett"],
+    [88, "Onix"],
+    [95, "Roggenrola"],
+    [100, "Aron"]
+  ]
+}

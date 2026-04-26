@@ -1,0 +1,15 @@
+{
+  "name": "Scoria Steppes Grasslands",
+  "min_level": 12,
+  "max_level": 18,
+  "entries": [
+    [22, "Tauros"],
+    [40, "Miltank"],
+    [55, "Stantler"],
+    [70, "Doduo"],
+    [82, "Houndour"],
+    [92, "Ponyta"],
+    [98, "Rhyhorn"],
+    [100, "Heracross"]
+  ]
+}

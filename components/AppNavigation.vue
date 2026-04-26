@@ -21,6 +21,9 @@ const isActive = (path: string) => {
     <NuxtLink :class="['nav-link', { active: isActive('/sheets') }]" to="/sheets">
       Sheets
     </NuxtLink>
+    <NuxtLink :class="['nav-link', { active: isActive('/generate') }]" to="/generate">
+      Generate
+    </NuxtLink>
     <span class="nav-divider" aria-hidden="true" />
     <NuxtLink :class="['nav-link', { active: isActive('/moves') }]" to="/moves">
       Moves
@@ -36,6 +39,9 @@ const isActive = (path: string) => {
     </NuxtLink>
     <NuxtLink :class="['nav-link', { active: isActive('/edges') }]" to="/edges">
       Edges
+    </NuxtLink>
+    <NuxtLink :class="['nav-link', { active: isActive('/encounter-tables') }]" to="/encounter-tables">
+      Encounter Tables
     </NuxtLink>
   </nav>
 </template>
