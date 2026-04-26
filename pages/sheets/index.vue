@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue'
+import { computed, nextTick, onMounted, reactive, ref } from 'vue'
 import { characterSheets, getPokedexEntry, getSpriteUrl } from '~/data/characterSheets'
 import { trainerSheets } from '~/data/trainerSheets'
-import { groupByFolder } from '~/utils/sheetFolders'
+import { formatFolderLabel, groupByFolder } from '~/utils/sheetFolders'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { TrainerSheet } from '~/types/trainerSheet'
 
@@ -120,21 +120,58 @@ const filteredItems = computed<SheetItem[]>(() => {
   })
 })
 
+/** Folders the user has created (or that exist on disk) but which contain no
+ *  sheets yet. We seed this from `/api/sheets/folders` on mount so empty
+ *  directories survive a reload, and add to it when the user clicks
+ *  "+ New folder". */
+const extraFolders = reactive(new Set<string>())
+
+/** Resolve an extra-folder path through the rename log. */
+const resolvedExtras = computed(() => {
+  const out = new Set<string>()
+  for (const path of extraFolders) {
+    const renamed = applyFolderRenames(path)
+    if (renamed) out.add(renamed)
+  }
+  return out
+})
+
 const groups = computed(() => {
   const grouped = groupByFolder(filteredItems.value)
-  // Re-sort inside each group so trainers and Pokémon share one alphabetised
-  // sequence. (``groupByFolder`` preserves insertion order across kinds.)
+  const seen = new Set(grouped.map((g) => g.path))
+
+  // Surface empty folders only when the user isn't searching — otherwise an
+  // empty header would show up alongside filtered results, which is noise.
+  if (!searchTerm.value) {
+    for (const path of resolvedExtras.value) {
+      if (seen.has(path)) continue
+      grouped.push({ path, label: formatFolderLabel(path), items: [] })
+      seen.add(path)
+    }
+  }
+
+  // Re-sort: root group first, then alphabetically by path.
+  grouped.sort((a, b) => {
+    if (a.path === b.path) return 0
+    if (a.path === '') return -1
+    if (b.path === '') return 1
+    return a.path.localeCompare(b.path)
+  })
+
+  // Stable alphabetical order inside each group, mixing trainers + Pokémon.
   return grouped.map((g) => ({
     ...g,
     items: [...g.items].sort((a, b) => a.sortKey.localeCompare(b.sortKey)),
   }))
 })
 
-/** Folders that currently exist as drop targets. Used to reject folder drops
- *  that would collide with an existing destination. */
+/** Folders that currently exist as drop targets — both inferred (from sheet
+ *  paths) and extras (empty / explicitly created). Used to reject folder
+ *  drops that would collide with an existing destination. */
 const knownFolders = computed(() => {
   const set = new Set<string>()
   for (const item of items.value) set.add(item.folder)
+  for (const path of resolvedExtras.value) set.add(path)
   return set
 })
 
@@ -279,6 +316,61 @@ const onDrop = async (e: DragEvent, targetPath: string) => {
     moving.value = false
   }
 }
+
+// ---------------------------------------------------------------------------
+// New folder
+// ---------------------------------------------------------------------------
+
+const creatingFolder = ref(false)
+const newFolderName = ref('')
+const createError = ref<string | null>(null)
+const newFolderInput = ref<HTMLInputElement | null>(null)
+
+const startCreateFolder = async () => {
+  creatingFolder.value = true
+  newFolderName.value = ''
+  createError.value = null
+  await nextTick()
+  newFolderInput.value?.focus()
+}
+
+const cancelCreateFolder = () => {
+  creatingFolder.value = false
+  newFolderName.value = ''
+  createError.value = null
+}
+
+const submitCreateFolder = async () => {
+  const name = newFolderName.value.trim().replace(/^\/+|\/+$/g, '')
+  if (!name) {
+    createError.value = 'Folder name is required.'
+    return
+  }
+  createError.value = null
+  try {
+    await $fetch('/api/sheets/create-folder', {
+      method: 'POST',
+      body: { folder: name },
+    })
+    extraFolders.add(name)
+    creatingFolder.value = false
+    newFolderName.value = ''
+  } catch (err: any) {
+    createError.value = err?.statusMessage ?? err?.data?.statusMessage ?? err?.message ?? String(err)
+  }
+}
+
+// On mount (client only), pull the on-disk folder list so empty folders
+// created in a previous session still show up as drop targets.
+onMounted(async () => {
+  if (!canDrag) return
+  try {
+    const data = await $fetch<{ folders: string[] }>('/api/sheets/folders')
+    for (const f of data.folders) extraFolders.add(f)
+  } catch (err) {
+    console.warn('[sheets] failed to load existing folders', err)
+  }
+})
 </script>
 
 <template>
@@ -304,15 +396,44 @@ const onDrop = async (e: DragEvent, targetPath: string) => {
           </span>
         </p>
 
-        <label class="search-field">
-          <span class="sr-only">Search sheets</span>
-          <input
-            v-model.trim="searchTerm"
-            type="search"
-            placeholder="Search name, species, class, type…"
-          />
-        </label>
+        <div class="intro-controls">
+          <label class="search-field">
+            <span class="sr-only">Search sheets</span>
+            <input
+              v-model.trim="searchTerm"
+              type="search"
+              placeholder="Search name, species, class, type…"
+            />
+          </label>
 
+          <div v-if="canDrag" class="folder-actions">
+            <button
+              v-if="!creatingFolder"
+              type="button"
+              class="new-folder-btn"
+              @click="startCreateFolder"
+            >
+              <span aria-hidden="true">＋</span> New folder
+            </button>
+
+            <form v-else class="new-folder-form" @submit.prevent="submitCreateFolder">
+              <input
+                ref="newFolderInput"
+                v-model="newFolderName"
+                type="text"
+                class="new-folder-input"
+                placeholder="Folder name (use / for nesting, e.g. npcs/wild)"
+                @keydown.escape.prevent="cancelCreateFolder"
+              />
+              <button type="submit" class="new-folder-submit">Create</button>
+              <button type="button" class="new-folder-cancel" @click="cancelCreateFolder">Cancel</button>
+            </form>
+          </div>
+        </div>
+
+        <p v-if="createError" class="move-error" role="alert">
+          {{ createError }}
+        </p>
         <p v-if="moveError" class="move-error" role="alert">
           Move failed: {{ moveError }}
         </p>
@@ -348,6 +469,13 @@ const onDrop = async (e: DragEvent, targetPath: string) => {
             <span class="folder-count badge">{{ group.items.length }}</span>
           </button>
         </div>
+
+        <p
+          v-if="showFolders && !isCollapsed(group.path) && group.items.length === 0"
+          class="folder-empty-hint"
+        >
+          Empty folder — drag a sheet onto the header above to fill it.
+        </p>
 
         <div v-show="!showFolders || !isCollapsed(group.path)" class="sheets-grid">
           <template v-for="item in group.items" :key="`${item.kind}:${item.slug}`">
@@ -482,8 +610,86 @@ code {
   color: var(--accent);
 }
 
+.intro-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: stretch;
+}
+
 .search-field {
+  flex: 1 1 240px;
   display: block;
+}
+
+.folder-actions {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: stretch;
+}
+
+.new-folder-btn,
+.new-folder-submit,
+.new-folder-cancel {
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  background: var(--paper-soft);
+  color: var(--ink);
+  padding: 0.55rem 0.85rem;
+  cursor: pointer;
+  font: inherit;
+  letter-spacing: 0.04em;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.new-folder-btn:hover,
+.new-folder-submit:hover,
+.new-folder-cancel:hover {
+  border-color: var(--rule-strong);
+  background: var(--paper-hover);
+  color: var(--ink-bright);
+}
+
+.new-folder-btn:focus-visible,
+.new-folder-submit:focus-visible,
+.new-folder-cancel:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.new-folder-submit {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.new-folder-form {
+  display: flex;
+  align-items: stretch;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.new-folder-input {
+  flex: 1 1 220px;
+  border: 1px solid var(--rule-soft);
+  border-radius: 10px;
+  background: var(--paper);
+  color: var(--ink);
+  padding: 0.55rem 0.75rem;
+  outline: none;
+}
+
+.new-folder-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(250, 189, 47, 0.18);
+}
+
+.folder-empty-hint {
+  margin: 0.1rem 0 0.2rem;
+  padding: 0.35rem 0.55rem;
+  color: var(--ink-muted);
+  font-size: 0.8rem;
+  font-style: italic;
 }
 
 input {
