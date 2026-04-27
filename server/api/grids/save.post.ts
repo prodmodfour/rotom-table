@@ -50,6 +50,7 @@ export default defineEventHandler(async (event) => {
   const persisted: Grid = {
     ...grid,
     folder: folderFromPath(path),
+    voxels: Array.isArray(grid.voxels) ? grid.voxels : [],
     updatedAt: Date.now(),
   }
   writeGridFile(path, persisted)

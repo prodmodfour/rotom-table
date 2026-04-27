@@ -68,6 +68,7 @@ export default defineEventHandler(async (event) => {
     folder,
     dimensions,
     placements: [],
+    voxels: [],
     createdAt: now,
     updatedAt: now,
   }

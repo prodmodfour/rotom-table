@@ -25,6 +25,26 @@ export interface GridPlacement {
   turned?: boolean
 }
 
+export type VoxelMaterial =
+  | 'grass'
+  | 'dirt'
+  | 'stone'
+  | 'water'
+  | 'sand'
+  | 'snow'
+  | 'wood'
+  | 'lava'
+  | 'path'
+
+export interface GridVoxel {
+  x: number
+  y: number
+  z: number
+  material: VoxelMaterial
+  /** Optional ``"#rrggbb"`` override for biomes outside the preset palette. */
+  color?: string
+}
+
 export interface Grid {
   /** URL slug, also the on-disk filename stem (`<slug>.json`). */
   slug: string
@@ -36,6 +56,8 @@ export interface Grid {
   folder?: string
   dimensions: GridDimensions
   placements: GridPlacement[]
+  /** Sparse list of 1×1×1 terrain blocks. */
+  voxels: GridVoxel[]
   createdAt?: number
   updatedAt?: number
 }

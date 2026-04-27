@@ -4,13 +4,31 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { CSS3DRenderer, CSS3DSprite } from 'three/examples/jsm/renderers/CSS3DRenderer.js'
 import type { GridAnchor, GridDimensions, SpawnedPokemon } from '~/types/pokemon'
+import type { GridVoxel, VoxelMaterial } from '~/types/grid'
 import type { PreviewState } from '~/utils/grid'
 import { findPathForPokemon, getAnchorCenter, getPokemonCenter } from '~/utils/grid'
+import {
+  buildFacePalette,
+  buildVoxelOccupancy,
+  cellInsidePokemonFootprint,
+  getMaterialDef,
+  parseHexColor,
+  voxelBaseColor,
+  voxelGroupKey,
+  voxelKey,
+} from '~/utils/voxels'
+
+export type BuildTool = 'pencil' | 'eraser'
 
 const props = defineProps<{
   dimensions: GridDimensions
   pokemons: SpawnedPokemon[]
   selectedId: string | null
+  voxels: GridVoxel[]
+  buildMode: boolean
+  buildTool: BuildTool
+  buildMaterial: VoxelMaterial
+  buildColor: string | null
 }>()
 
 const emit = defineEmits<{
@@ -19,6 +37,8 @@ const emit = defineEmits<{
   (event: 'turn-pokemon', id: string): void
   (event: 'delete-pokemon', id: string): void
   (event: 'preview-change', preview: PreviewState): void
+  (event: 'place-voxel', voxel: GridVoxel): void
+  (event: 'remove-voxel', cell: { x: number; y: number; z: number }): void
 }>()
 
 interface PokemonRenderObject {
@@ -45,6 +65,20 @@ interface PokemonRenderObject {
   turned: boolean
   currentHp: number
   maxHp: number
+}
+
+interface VoxelGroup {
+  key: string
+  geometry: THREE.BoxGeometry
+  materials: THREE.MeshBasicMaterial[]
+  mesh: THREE.InstancedMesh
+  voxels: GridVoxel[]
+}
+
+interface BuildTarget {
+  action: 'place' | 'remove'
+  cell: { x: number; y: number; z: number }
+  valid: boolean
 }
 
 /**
@@ -143,6 +177,95 @@ const paintVolumeMaterials = (
   }
 }
 
+/**
+ * Lazily-built canvas texture used as ``.map`` on voxel top faces. We
+ * draw a thin dark border on the edges so adjacent voxels' top faces
+ * butt up to form a grid pattern — same role the floor's bg0_h seam
+ * lines play for the bare tabletop, but only on +Y. Sides and shadows
+ * stay solid (the elevation badge handles vertical counting).
+ *
+ * Module-level lazy init so we only build the canvas after the
+ * component mounts (the ``.client.vue`` suffix already gates this on
+ * the browser, so ``document`` exists).
+ */
+let topFaceGridTexture: THREE.CanvasTexture | null = null
+
+const getTopFaceGridTexture = (): THREE.CanvasTexture => {
+  if (topFaceGridTexture) return topFaceGridTexture
+  const canvas = document.createElement('canvas')
+  const size = 64
+  canvas.width = size
+  canvas.height = size
+  const ctx = canvas.getContext('2d')
+  if (!ctx) throw new Error('2d canvas context unavailable')
+  // White interior so the face's solid ``color`` shows through
+  // unchanged after the texture multiply.
+  ctx.fillStyle = '#ffffff'
+  ctx.fillRect(0, 0, size, size)
+  // Mid-gray border = ~0.45 multiplier on the face color, giving a
+  // darker-but-in-hue grout line (deep green seams on grass tops,
+  // deep brown on dirt, etc.) instead of pure-black tile lines.
+  ctx.fillStyle = '#737373'
+  const seam = 2
+  ctx.fillRect(0, 0, size, seam)
+  ctx.fillRect(0, size - seam, size, seam)
+  ctx.fillRect(0, 0, seam, size)
+  ctx.fillRect(size - seam, 0, seam, size)
+  const texture = new THREE.CanvasTexture(canvas)
+  texture.magFilter = THREE.NearestFilter
+  texture.minFilter = THREE.NearestFilter
+  texture.colorSpace = THREE.SRGBColorSpace
+  topFaceGridTexture = texture
+  return texture
+}
+
+/**
+ * Build a 6-material array for a solid voxel block from a single
+ * base color, applying the same isometric brightness ramp used for
+ * pokemon volume boxes. Only +Y gets the grid-line texture — sides
+ * stay solid since lateral seams aren't needed for movement clarity.
+ */
+const buildVoxelFaceMaterials = (baseColor: number): THREE.MeshBasicMaterial[] => {
+  const palette = buildFacePalette(baseColor)
+  const make = (color: number) => new THREE.MeshBasicMaterial({ color })
+  const top = make(palette.top)
+  top.map = getTopFaceGridTexture()
+  return [
+    make(palette.shadow), // +X
+    make(palette.shadow), // -X
+    top,                  // +Y — textured grid lines for cell-counting
+    make(palette.bottom), // -Y
+    make(palette.side),   // +Z
+    make(palette.side),   // -Z
+  ]
+}
+
+/**
+ * Re-tint a 6-material array using a base color + per-face palette.
+ * Used by the build ghost preview which switches between the active
+ * material color and a red "blocked / erase" tint.
+ */
+const paintBuildGhostMaterials = (
+  materials: THREE.MeshBasicMaterial[],
+  baseColor: number,
+  opacity: number,
+) => {
+  const palette = buildFacePalette(baseColor)
+  const colors: ReadonlyArray<number> = [
+    palette.shadow,
+    palette.shadow,
+    palette.top,
+    palette.bottom,
+    palette.side,
+    palette.side,
+  ]
+  for (let i = 0; i < materials.length; i += 1) {
+    materials[i].color.setHex(colors[i])
+    materials[i].opacity = opacity
+    materials[i].transparent = opacity < 1
+  }
+}
+
 const SPRITE_PIXELS_PER_METRE = 128
 const ELEVATION_BADGE_PIXELS_PER_METRE = 48
 const HP_BAR_PIXELS_PER_METRE = 48
@@ -163,19 +286,23 @@ const contextMenu = ref<{ x: number; y: number; id: string; canTurn: boolean } |
 const selectedPokemon = computed(
   () => props.pokemons.find((pokemon) => pokemon.id === props.selectedId) ?? null,
 )
+const voxelOccupancy = computed(() => buildVoxelOccupancy(props.voxels))
 
 const scene = new THREE.Scene()
 const raycaster = new THREE.Raycaster()
 const gridGroup = new THREE.Group()
 const worldGroup = new THREE.Group()
 const previewGroup = new THREE.Group()
+const voxelContainer = new THREE.Group()
 const clock = new THREE.Clock()
 
 scene.add(gridGroup)
 scene.add(worldGroup)
 scene.add(previewGroup)
+worldGroup.add(voxelContainer)
 
 const renderObjects = new Map<string, PokemonRenderObject>()
+const voxelGroups = new Map<string, VoxelGroup>()
 let renderer: THREE.WebGLRenderer | null = null
 let cssRenderer: CSS3DRenderer | null = null
 let camera: THREE.OrthographicCamera | null = null
@@ -191,10 +318,13 @@ let previewVolume: THREE.Mesh<THREE.BoxGeometry, THREE.MeshBasicMaterial[]> | nu
 let previewEdges: THREE.LineSegments | null = null
 let previewPathLine: THREE.Line | null = null
 let previewOwnerId: string | null = null
+let buildGhost: THREE.Mesh<THREE.BoxGeometry, THREE.MeshBasicMaterial[]> | null = null
+let buildGhostEdges: THREE.LineSegments | null = null
 let activePreview: PreviewState = { ...EMPTY_PREVIEW }
 let activePreviewAnchor: GridAnchor | null = null
 let pointerDown = { x: 0, y: 0 }
 let pointerTravel = 0
+let lastPointerCoords: { clientX: number; clientY: number } | null = null
 
 const getPreviewLayerY = () => activePreviewAnchor?.y ?? selectedPokemon.value?.position.y ?? 0
 
@@ -278,6 +408,9 @@ const buildSprite = (pokemon: SpawnedPokemon, ghost = false) => {
   return sprite
 }
 
+const getSpriteImageElement = (sprite: CSS3DSprite) =>
+  sprite.element.querySelector('img') as HTMLImageElement | null
+
 const buildElevationBadge = (ghost = false) => {
   const wrapper = document.createElement('div')
   wrapper.className = `elevation-badge${ghost ? ' is-ghost' : ''}`
@@ -309,9 +442,6 @@ const buildHpBar = () => {
   bar.visible = false
   return bar
 }
-
-const getSpriteImageElement = (sprite: CSS3DSprite) =>
-  sprite.element.querySelector('img') as HTMLImageElement | null
 
 const shouldUseFrontSprite = (center: THREE.Vector3, turned = false) => {
   if (!camera) {
@@ -438,7 +568,7 @@ const updateGridVisibility = () => {
   }
 
   if (moveGridLines) {
-    moveGridLines.visible = isMovingPokemon
+    moveGridLines.visible = isMovingPokemon || props.buildMode
   }
 }
 
@@ -718,6 +848,122 @@ const syncPokemonObjects = () => {
   refreshPokemonStyles()
 }
 
+const disposeVoxelGroup = (group: VoxelGroup) => {
+  voxelContainer.remove(group.mesh)
+  group.mesh.dispose()
+  group.geometry.dispose()
+  for (const material of group.materials) material.dispose()
+}
+
+const disposeAllVoxelGroups = () => {
+  for (const group of voxelGroups.values()) {
+    disposeVoxelGroup(group)
+  }
+  voxelGroups.clear()
+}
+
+const syncVoxelMeshes = () => {
+  // Bucket voxels by group key so visually identical voxels share
+  // an InstancedMesh.
+  const buckets = new Map<string, GridVoxel[]>()
+  for (const voxel of props.voxels) {
+    const key = voxelGroupKey(voxel)
+    let arr = buckets.get(key)
+    if (!arr) {
+      arr = []
+      buckets.set(key, arr)
+    }
+    arr.push(voxel)
+  }
+
+  // Drop groups that no longer have any voxels.
+  for (const [key, group] of voxelGroups.entries()) {
+    if (!buckets.has(key)) {
+      disposeVoxelGroup(group)
+      voxelGroups.delete(key)
+    }
+  }
+
+  // Rebuild each bucket. We always rebuild rather than try to mutate
+  // ``InstancedMesh.count`` in place — voxel changes are debounced
+  // through the save layer so the cost is bounded.
+  const matrix = new THREE.Matrix4()
+  for (const [key, voxels] of buckets.entries()) {
+    const existing = voxelGroups.get(key)
+    if (existing) {
+      disposeVoxelGroup(existing)
+      voxelGroups.delete(key)
+    }
+    const baseColor = voxelBaseColor(voxels[0])
+    const geometry = new THREE.BoxGeometry(1, 1, 1)
+    const materials = buildVoxelFaceMaterials(baseColor)
+    const mesh = new THREE.InstancedMesh(geometry, materials, voxels.length)
+    mesh.userData.voxels = voxels
+    for (let i = 0; i < voxels.length; i += 1) {
+      const v = voxels[i]
+      matrix.makeTranslation(v.x + 0.5, v.y + 0.5, v.z + 0.5)
+      mesh.setMatrixAt(i, matrix)
+    }
+    mesh.instanceMatrix.needsUpdate = true
+    voxelContainer.add(mesh)
+    voxelGroups.set(key, { key, geometry, materials, mesh, voxels })
+  }
+}
+
+const ensureBuildGhost = () => {
+  if (buildGhost && buildGhostEdges) return
+  const geometry = new THREE.BoxGeometry(1, 1, 1)
+  const materials = buildVoxelFaceMaterials(0xfabd2f).map((material) => {
+    material.transparent = true
+    material.opacity = 0.45
+    material.depthTest = false
+    material.depthWrite = false
+    return material
+  })
+  buildGhost = new THREE.Mesh(geometry, materials)
+  buildGhost.renderOrder = 999
+  buildGhost.visible = false
+  previewGroup.add(buildGhost)
+
+  const edgeGeometry = new THREE.EdgesGeometry(geometry)
+  buildGhostEdges = new THREE.LineSegments(
+    edgeGeometry,
+    new THREE.LineBasicMaterial({
+      color: 0xfbf1c7,
+      transparent: true,
+      opacity: 0.95,
+      depthTest: false,
+    }),
+  )
+  buildGhostEdges.renderOrder = 1000
+  buildGhostEdges.visible = false
+  previewGroup.add(buildGhostEdges)
+}
+
+const disposeBuildGhost = () => {
+  if (buildGhost) {
+    disposeObject3D(buildGhost)
+    buildGhost = null
+  }
+  if (buildGhostEdges) {
+    disposeObject3D(buildGhostEdges)
+    buildGhostEdges = null
+  }
+}
+
+const hideBuildGhost = () => {
+  if (buildGhost) buildGhost.visible = false
+  if (buildGhostEdges) buildGhostEdges.visible = false
+}
+
+const currentBuildBaseColor = () => {
+  if (props.buildColor) {
+    const parsed = parseHexColor(props.buildColor)
+    if (parsed !== null) return parsed
+  }
+  return getMaterialDef(props.buildMaterial).baseColor
+}
+
 const ensurePreviewObjects = () => {
   if (!selectedPokemon.value) {
     return
@@ -839,6 +1085,7 @@ const updatePreviewAtAnchor = (anchor: GridAnchor | null) => {
     [],
     props.dimensions,
     selected.id,
+    voxelOccupancy.value,
   )
   const reachable = Boolean(path)
   const center = getAnchorCenter(anchor, selected.base)
@@ -888,15 +1135,15 @@ const updatePreviewAtAnchor = (anchor: GridAnchor | null) => {
   emit('preview-change', { ...activePreview })
 }
 
-const setPointerFromEvent = (event: MouseEvent | PointerEvent) => {
+const setPointerFromCoords = (coords: { clientX: number; clientY: number }) => {
   if (!renderer || !camera) {
     return null
   }
 
   const bounds = renderer.domElement.getBoundingClientRect()
   const pointer = new THREE.Vector2(
-    ((event.clientX - bounds.left) / bounds.width) * 2 - 1,
-    -((event.clientY - bounds.top) / bounds.height) * 2 + 1,
+    ((coords.clientX - bounds.left) / bounds.width) * 2 - 1,
+    -((coords.clientY - bounds.top) / bounds.height) * 2 + 1,
   )
 
   raycaster.setFromCamera(pointer, camera)
@@ -908,7 +1155,7 @@ const pickPokemonId = (event: MouseEvent | PointerEvent) => {
     return null
   }
 
-  setPointerFromEvent(event)
+  setPointerFromCoords(event)
   const proxies = Array.from(renderObjects.values(), (renderObject) => renderObject.proxy)
   const intersections = raycaster.intersectObjects(proxies, false)
   const hit = intersections[0]?.object
@@ -921,7 +1168,7 @@ const getMoveGridIntersection = (event: MouseEvent | PointerEvent, yLevel: numbe
     return null
   }
 
-  setPointerFromEvent(event)
+  setPointerFromCoords(event)
   const point = new THREE.Vector3()
   const hit = raycaster.ray.intersectPlane(
     new THREE.Plane(new THREE.Vector3(0, 1, 0), -yLevel),
@@ -971,6 +1218,140 @@ const updatePreviewFromPointer = (event: MouseEvent | PointerEvent) => {
   }
 
   updatePreviewAtAnchor(anchor)
+}
+
+const pickBuildTarget = (
+  event: MouseEvent | PointerEvent,
+  tool: BuildTool,
+): BuildTarget | null => {
+  if (!renderer || !camera) return null
+  setPointerFromCoords(event)
+
+  const targets: THREE.Object3D[] = []
+  if (floorPlane) targets.push(floorPlane)
+  for (const group of voxelGroups.values()) targets.push(group.mesh)
+
+  const intersections = raycaster.intersectObjects(targets, false)
+  const hit = intersections[0]
+  if (!hit) return null
+
+  let voxel: GridVoxel | null = null
+  if (hit.object !== floorPlane) {
+    const mesh = hit.object as THREE.InstancedMesh
+    const voxels = mesh.userData.voxels as GridVoxel[] | undefined
+    if (voxels && hit.instanceId !== undefined) {
+      voxel = voxels[hit.instanceId] ?? null
+    }
+  }
+
+  if (tool === 'eraser') {
+    if (!voxel) return null
+    return {
+      action: 'remove',
+      cell: { x: voxel.x, y: voxel.y, z: voxel.z },
+      valid: true,
+    }
+  }
+
+  let cell: { x: number; y: number; z: number }
+  if (voxel && hit.face) {
+    const normal = hit.face.normal
+    cell = {
+      x: voxel.x + Math.round(normal.x),
+      y: voxel.y + Math.round(normal.y),
+      z: voxel.z + Math.round(normal.z),
+    }
+  } else {
+    cell = {
+      x: Math.floor(hit.point.x),
+      y: 0,
+      z: Math.floor(hit.point.z),
+    }
+  }
+
+  const inBounds =
+    cell.x >= 0 &&
+    cell.x < props.dimensions.x &&
+    cell.y >= 0 &&
+    cell.y < props.dimensions.y &&
+    cell.z >= 0 &&
+    cell.z < props.dimensions.z
+  const occupiedByVoxel = voxelOccupancy.value.has(voxelKey(cell.x, cell.y, cell.z))
+  const insidePokemon = cellInsidePokemonFootprint(cell.x, cell.y, cell.z, props.pokemons)
+
+  return {
+    action: 'place',
+    cell,
+    valid: inBounds && !occupiedByVoxel && !insidePokemon,
+  }
+}
+
+const updateBuildGhost = (target: BuildTarget | null) => {
+  if (!props.buildMode) {
+    hideBuildGhost()
+    return
+  }
+
+  ensureBuildGhost()
+  if (!buildGhost || !buildGhostEdges) return
+
+  if (!target) {
+    hideBuildGhost()
+    return
+  }
+
+  buildGhost.position.set(target.cell.x + 0.5, target.cell.y + 0.5, target.cell.z + 0.5)
+  buildGhostEdges.position.copy(buildGhost.position)
+  buildGhost.visible = true
+  buildGhostEdges.visible = true
+
+  const edgeMaterial = buildGhostEdges.material as THREE.LineBasicMaterial
+  if (target.action === 'remove') {
+    paintBuildGhostMaterials(buildGhost.material, 0xfb4934, 0.42)
+    edgeMaterial.color.setHex(0xfb4934)
+  } else if (!target.valid) {
+    paintBuildGhostMaterials(buildGhost.material, 0xfb4934, 0.32)
+    edgeMaterial.color.setHex(0xfb4934)
+  } else {
+    paintBuildGhostMaterials(buildGhost.material, currentBuildBaseColor(), 0.55)
+    edgeMaterial.color.setHex(0xfbf1c7)
+  }
+}
+
+const updateBuildPreviewFromPointer = (event: MouseEvent | PointerEvent) => {
+  if (!props.buildMode) {
+    hideBuildGhost()
+    return
+  }
+  const target = pickBuildTarget(event, props.buildTool)
+  updateBuildGhost(target)
+}
+
+const replayBuildPreview = () => {
+  if (!props.buildMode || !lastPointerCoords) return
+  const synthetic = {
+    clientX: lastPointerCoords.clientX,
+    clientY: lastPointerCoords.clientY,
+  } as MouseEvent
+  updateBuildPreviewFromPointer(synthetic)
+}
+
+const performBuildAction = (event: MouseEvent | PointerEvent, tool: BuildTool) => {
+  const target = pickBuildTarget(event, tool)
+  if (!target) return
+  if (target.action === 'remove') {
+    emit('remove-voxel', target.cell)
+    return
+  }
+  if (!target.valid) return
+  const voxel: GridVoxel = {
+    x: target.cell.x,
+    y: target.cell.y,
+    z: target.cell.z,
+    material: props.buildMaterial,
+  }
+  if (props.buildColor) voxel.color = props.buildColor
+  emit('place-voxel', voxel)
 }
 
 const closeContextMenu = () => {
@@ -1037,6 +1418,14 @@ const handleLeftClick = (event: PointerEvent) => {
 
 const handleRightClick = (event: MouseEvent) => {
   event.preventDefault()
+
+  if (props.buildMode) {
+    if (pointerTravel <= 6) {
+      performBuildAction(event, 'eraser')
+    }
+    return
+  }
+
   const hitId = pickPokemonId(event)
 
   if (!hitId) {
@@ -1058,6 +1447,12 @@ const handlePointerMove = (event: PointerEvent) => {
     pointerTravel,
     Math.hypot(event.clientX - pointerDown.x, event.clientY - pointerDown.y),
   )
+  lastPointerCoords = { clientX: event.clientX, clientY: event.clientY }
+
+  if (props.buildMode) {
+    updateBuildPreviewFromPointer(event)
+    return
+  }
 
   if (selectedPokemon.value) {
     updatePreviewFromPointer(event)
@@ -1097,7 +1492,19 @@ const handlePointerUp = (event: PointerEvent) => {
     return
   }
 
+  if (props.buildMode) {
+    performBuildAction(event, props.buildTool)
+    return
+  }
+
   handleLeftClick(event)
+}
+
+const handlePointerLeave = () => {
+  lastPointerCoords = null
+  if (props.buildMode) {
+    hideBuildGhost()
+  }
 }
 
 const handleEscape = (event: KeyboardEvent) => {
@@ -1202,13 +1609,16 @@ onMounted(() => {
   syncRendererSize()
   buildGrid()
   syncPokemonObjects()
+  syncVoxelMeshes()
   ensurePreviewObjects()
+  if (props.buildMode) ensureBuildGhost()
   alignCameraToGrid(true)
   refreshPokemonStyles()
 
   renderer.domElement.addEventListener('pointerdown', handlePointerDown)
   renderer.domElement.addEventListener('pointermove', handlePointerMove)
   renderer.domElement.addEventListener('pointerup', handlePointerUp)
+  renderer.domElement.addEventListener('pointerleave', handlePointerLeave)
   renderer.domElement.addEventListener('contextmenu', handleRightClick)
   renderer.domElement.addEventListener('wheel', handleWheel, { passive: false })
   window.addEventListener('keydown', handleEscape)
@@ -1229,6 +1639,7 @@ onBeforeUnmount(() => {
     renderer.domElement.removeEventListener('pointerdown', handlePointerDown)
     renderer.domElement.removeEventListener('pointermove', handlePointerMove)
     renderer.domElement.removeEventListener('pointerup', handlePointerUp)
+    renderer.domElement.removeEventListener('pointerleave', handlePointerLeave)
     renderer.domElement.removeEventListener('contextmenu', handleRightClick)
     renderer.domElement.removeEventListener('wheel', handleWheel)
   }
@@ -1242,6 +1653,12 @@ onBeforeUnmount(() => {
   disposeObject3D(previewVolume)
   disposeObject3D(previewEdges)
   disposeObject3D(previewPathLine)
+  disposeBuildGhost()
+  disposeAllVoxelGroups()
+  if (topFaceGridTexture) {
+    topFaceGridTexture.dispose()
+    topFaceGridTexture = null
+  }
 
   for (const renderObject of renderObjects.values()) {
     disposeObject3D(renderObject.sprite)
@@ -1275,6 +1692,27 @@ watch(
     } else if (!selectedPokemon.value) {
       clearPreviewVisuals()
     }
+
+    replayBuildPreview()
+  },
+  { deep: true },
+)
+
+watch(
+  () => props.voxels,
+  () => {
+    if (!renderer) {
+      return
+    }
+
+    syncVoxelMeshes()
+
+    if (selectedPokemon.value && activePreviewAnchor) {
+      // Voxels affect pathfinding — refresh the move preview.
+      updatePreviewAtAnchor(activePreviewAnchor)
+    }
+
+    replayBuildPreview()
   },
   { deep: true },
 )
@@ -1316,6 +1754,32 @@ watch(
 )
 
 watch(
+  () => props.buildMode,
+  (active) => {
+    if (!renderer) return
+
+    updateGridVisibility()
+
+    if (active) {
+      closeContextMenu()
+      clearPreviewVisuals()
+      ensureBuildGhost()
+      replayBuildPreview()
+    } else {
+      hideBuildGhost()
+    }
+  },
+)
+
+watch(
+  () => [props.buildTool, props.buildMaterial, props.buildColor] as const,
+  () => {
+    if (!renderer || !props.buildMode) return
+    replayBuildPreview()
+  },
+)
+
+watch(
   () => [props.dimensions.x, props.dimensions.y, props.dimensions.z] as const,
   () => {
     if (!renderer) {
@@ -1331,6 +1795,10 @@ watch(
       updatePreviewAtAnchor(activePreviewAnchor)
     } else if (!selectedPokemon.value) {
       clearPreviewVisuals()
+    }
+
+    if (props.buildMode) {
+      hideBuildGhost()
     }
   },
 )

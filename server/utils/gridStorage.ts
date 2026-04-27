@@ -57,7 +57,11 @@ export const folderFromPath = (filePath: string): string => {
 export const readGridFile = (filePath: string): Grid => {
   const raw = readFileSync(filePath, 'utf8')
   const json = JSON.parse(raw) as Grid
-  return { ...json, folder: json.folder ?? folderFromPath(filePath) }
+  return {
+    ...json,
+    folder: json.folder ?? folderFromPath(filePath),
+    voxels: Array.isArray(json.voxels) ? json.voxels : [],
+  }
 }
 
 export const writeGridFile = (filePath: string, grid: Grid): void => {
