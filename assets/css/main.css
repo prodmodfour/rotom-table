@@ -121,7 +121,6 @@ a {
   justify-content: center;
   transform-origin: center center;
   pointer-events: none;
-  filter: drop-shadow(0 0 16px rgba(250, 189, 47, 0.18));
 }
 
 .pokemon-sprite img {

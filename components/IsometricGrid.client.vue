@@ -337,6 +337,18 @@ const SPRITE_LIFT_AMOUNT = 0.08
 const SHADOW_LIFT_SCALE = 1.3
 const SHADOW_LIFT_OPACITY = 0.55
 
+// Slight ellipse along the cage's shadow axis (±X). Mimics how shadows
+// fall away from a light source instead of reading as a perfect circle.
+const SHADOW_X_STRETCH = 1.15
+
+// Directional halo: replaces the wrapper's static yellow halo with one
+// that breathes with camera angle — brighter when the sprite faces the
+// implied light, dimmer (not zero) when backlit. Same gruvbox yellow
+// the wrapper used to have, just responsive now. One halo that means
+// something instead of two halos compounding.
+const SPRITE_HALO_MIN_ALPHA = 0.1
+const SPRITE_HALO_MAX_ALPHA = 0.28
+
 const EMPTY_PREVIEW: PreviewState = {
   position: null,
   reachable: false,
@@ -349,6 +361,58 @@ const selectedPokemon = computed(
   () => props.pokemons.find((pokemon) => pokemon.id === props.selectedId) ?? null,
 )
 const voxelOccupancy = computed(() => buildVoxelOccupancy(props.voxels))
+
+// Voxel y-values bucketed by ``x,z`` column key. Lets a shadow-cast
+// raycast stay O(footprint) instead of O(voxels) — most cells have 0
+// or 1 voxels above ground, so the sorted-array scan is trivial.
+const voxelColumnsByXZ = computed(() => {
+  const columns = new Map<string, number[]>()
+  for (const v of props.voxels) {
+    const key = `${v.x},${v.z}`
+    const list = columns.get(key)
+    if (list) list.push(v.y)
+    else columns.set(key, [v.y])
+  }
+  return columns
+})
+
+/**
+ * Shadow surface Y for a pokemon's footprint. Walks every (x, z) cell
+ * the cage covers, picks the highest voxel top that's at or below the
+ * sprite's foot, and returns the max across all cells. Falls back to
+ * the floor (y = 0) when nothing's below.
+ *
+ * Without this, a flying mon's shadow stays glued to its foot —
+ * floating in mid-air over voxels, missing the surface entirely.
+ */
+const getShadowSurfaceY = (
+  centerX: number,
+  centerZ: number,
+  base: number,
+  footY: number,
+): number => {
+  const columns = voxelColumnsByXZ.value
+  if (columns.size === 0) return 0
+
+  const minX = Math.floor(centerX - base / 2)
+  const minZ = Math.floor(centerZ - base / 2)
+  // Tiny epsilon: treat a voxel top exactly at footY as "below" so a
+  // mon standing flush on a voxel still gets a shadow on that voxel.
+  const ceiling = footY + 0.001
+
+  let surface = 0
+  for (let dx = 0; dx < base; dx += 1) {
+    for (let dz = 0; dz < base; dz += 1) {
+      const column = columns.get(`${minX + dx},${minZ + dz}`)
+      if (!column) continue
+      for (const y of column) {
+        const top = y + 1
+        if (top <= ceiling && top > surface) surface = top
+      }
+    }
+  }
+  return surface
+}
 
 const scene = new THREE.Scene()
 const raycaster = new THREE.Raycaster()
@@ -514,7 +578,10 @@ const buildHpBar = () => {
 const buildContactShadow = (
   pokemon: SpawnedPokemon,
 ): THREE.Mesh<THREE.CircleGeometry, THREE.MeshBasicMaterial> => {
-  const radius = Math.max(pokemon.base, 0.5) * 0.6
+  // Scale by clearance so a Wailord doesn't share Cutiefly's shadow.
+  // Base term keeps small/wide mons grounded; clearance term grows the
+  // disc as the cage gets taller without making it absurdly wide.
+  const radius = Math.max(pokemon.base, 0.5) * 0.55 + pokemon.clearance * 0.06
   const geometry = new THREE.CircleGeometry(radius, 32)
   const material = new THREE.MeshBasicMaterial({
     map: getContactShadowTexture(),
@@ -864,12 +931,19 @@ const applyRenderObjectPosition = (renderObject: PokemonRenderObject) => {
     renderObject.currentCenter.y + Math.max(renderObject.height, renderObject.clearance) / 2,
     renderObject.currentCenter.z,
   )
-  // Tiny y-offset keeps the shadow above the floor plane / voxel top
-  // it sits on, avoiding z-fighting without lifting it visibly off
-  // the surface.
+  // Voxel-aware projection: shadow drops to whatever surface is
+  // beneath the sprite (floor or highest voxel top in the footprint),
+  // not glued to the sprite's foot. Tiny y-offset dodges z-fighting
+  // with the floor plane / voxel top.
+  const surfaceY = getShadowSurfaceY(
+    renderObject.currentCenter.x,
+    renderObject.currentCenter.z,
+    renderObject.base,
+    renderObject.currentCenter.y,
+  )
   renderObject.shadow.position.set(
     renderObject.currentCenter.x,
-    renderObject.currentCenter.y + 0.005,
+    surfaceY + 0.005,
     renderObject.currentCenter.z,
   )
   updateElevationBadge(
@@ -1656,12 +1730,24 @@ const animate = () => {
   const lightAlignment = cameraXZ.lengthSq() > 0
     ? cameraXZ.normalize().dot(DEFAULT_FACING_DIRECTION)
     : 1
+  const lightAlignment01 = (lightAlignment + 1) / 2
   const spriteBrightness = THREE.MathUtils.lerp(
     SPRITE_BRIGHTNESS_SHADOW,
     SPRITE_BRIGHTNESS_LIT,
-    (lightAlignment + 1) / 2,
+    lightAlignment01,
   )
-  const spriteFilter = `brightness(${spriteBrightness.toFixed(3)})`
+  // Directional halo: same gruvbox yellow glow the wrapper used to
+  // paint statically, now lerped between min/max alpha by camera
+  // alignment so the sprite picks up "light" as it rotates into the
+  // lit quadrant. Single halo, native palette, responsive.
+  const haloAlpha = THREE.MathUtils.lerp(
+    SPRITE_HALO_MIN_ALPHA,
+    SPRITE_HALO_MAX_ALPHA,
+    lightAlignment01,
+  ).toFixed(3)
+  const spriteFilter =
+    `brightness(${spriteBrightness.toFixed(3)}) ` +
+    `drop-shadow(0 0 16px rgba(250, 189, 47, ${haloAlpha}))`
 
   for (const renderObject of renderObjects.values()) {
     updateSpriteFacing(
@@ -1697,8 +1783,11 @@ const animate = () => {
       }
     }
 
+    // Non-uniform: lift grows the disc, X-stretch elongates it along
+    // the cage's shadow axis so it reads as an ellipse falling away
+    // from the implied light, not a perfect circle.
     const shadowScale = THREE.MathUtils.lerp(1, SHADOW_LIFT_SCALE, renderObject.liftFactor)
-    renderObject.shadow.scale.setScalar(shadowScale)
+    renderObject.shadow.scale.set(shadowScale * SHADOW_X_STRETCH, shadowScale, 1)
     renderObject.shadow.material.opacity = THREE.MathUtils.lerp(
       1,
       SHADOW_LIFT_OPACITY,
