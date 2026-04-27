@@ -67,6 +67,8 @@ interface PokemonRenderObject {
   turned: boolean
   currentHp: number
   maxHp: number
+  /** Cached <img> reference for per-frame directional brightness tinting. */
+  spriteImage: HTMLImageElement | null
 }
 
 interface VoxelGroup {
@@ -318,6 +320,13 @@ const DEFAULT_FACING_DIRECTION = new THREE.Vector2(
   Math.cos(ISO_AZIMUTH_ANGLE),
   Math.sin(ISO_AZIMUTH_ANGLE),
 )
+
+// Subtle directional tint matching the cage's implied light: lit
+// quadrant is full brightness, shadowed quadrant dims to 0.92.
+// Applied to the sprite via CSS brightness().
+const SPRITE_BRIGHTNESS_LIT = 1.0
+const SPRITE_BRIGHTNESS_SHADOW = 0.92
+
 const EMPTY_PREVIEW: PreviewState = {
   position: null,
   reachable: false,
@@ -356,6 +365,7 @@ let floorGridLines: THREE.LineSegments | null = null
 let moveGridLines: THREE.LineSegments | null = null
 let floorPlane: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial> | null = null
 let ghostSprite: CSS3DSprite | null = null
+let ghostSpriteImage: HTMLImageElement | null = null
 let previewElevationBadge: CSS3DSprite | null = null
 let previewVolume: THREE.Mesh<THREE.BoxGeometry, THREE.MeshBasicMaterial[]> | null = null
 let previewEdges: THREE.LineSegments | null = null
@@ -755,6 +765,7 @@ const updateHpBar = (
 
 const buildRenderObject = (pokemon: SpawnedPokemon): PokemonRenderObject => {
   const sprite = buildSprite(pokemon)
+  const spriteImage = getSpriteImageElement(sprite)
   const elevationBadge = buildElevationBadge()
   const hpBar = buildHpBar()
   const shadow = buildContactShadow(pokemon)
@@ -820,6 +831,7 @@ const buildRenderObject = (pokemon: SpawnedPokemon): PokemonRenderObject => {
     turned: Boolean(pokemon.turned),
     currentHp: pokemon.currentHp,
     maxHp: pokemon.maxHp,
+    spriteImage,
   }
 }
 
@@ -1061,6 +1073,7 @@ const ensurePreviewObjects = () => {
   disposeObject3D(previewVolume)
   disposeObject3D(previewEdges)
   ghostSprite = null
+  ghostSpriteImage = null
   previewElevationBadge = null
   previewVolume = null
   previewEdges = null
@@ -1068,6 +1081,7 @@ const ensurePreviewObjects = () => {
   const selected = selectedPokemon.value
   previewOwnerId = selected.id
   ghostSprite = buildSprite(selected, true)
+  ghostSpriteImage = getSpriteImageElement(ghostSprite)
   ghostSprite.visible = false
   scene.add(ghostSprite)
 
@@ -1616,6 +1630,24 @@ const animate = () => {
 
   controls.update()
 
+  // Light alignment: camera's XZ offset dotted against the cage's
+  // implied light direction. +1 = lit quadrant, -1 = shadowed.
+  // Lerps to a CSS brightness() filter shared across every sprite
+  // this frame (ortho camera → all sprites see the same direction).
+  const cameraXZ = new THREE.Vector2(
+    camera.position.x - controls.target.x,
+    camera.position.z - controls.target.z,
+  )
+  const lightAlignment = cameraXZ.lengthSq() > 0
+    ? cameraXZ.normalize().dot(DEFAULT_FACING_DIRECTION)
+    : 1
+  const spriteBrightness = THREE.MathUtils.lerp(
+    SPRITE_BRIGHTNESS_SHADOW,
+    SPRITE_BRIGHTNESS_LIT,
+    (lightAlignment + 1) / 2,
+  )
+  const spriteFilter = `brightness(${spriteBrightness.toFixed(3)})`
+
   for (const renderObject of renderObjects.values()) {
     updateSpriteFacing(
       renderObject.sprite,
@@ -1624,6 +1656,10 @@ const animate = () => {
       renderObject.backSpriteUrl,
       renderObject.turned,
     )
+
+    if (renderObject.spriteImage) {
+      renderObject.spriteImage.style.filter = spriteFilter
+    }
   }
 
   if (ghostSprite && selectedPokemon.value) {
@@ -1639,6 +1675,11 @@ const animate = () => {
       selectedPokemon.value.backSpriteUrl,
       Boolean(selectedPokemon.value.turned),
     )
+    // Ghost gets the directional tint too so it previews how the
+    // pokemon will be lit at the destination.
+    if (ghostSpriteImage) {
+      ghostSpriteImage.style.filter = spriteFilter
+    }
   }
 
   renderer.render(scene, camera)
@@ -1815,6 +1856,7 @@ watch(
       disposeObject3D(previewVolume)
       disposeObject3D(previewEdges)
       ghostSprite = null
+      ghostSpriteImage = null
       previewElevationBadge = null
       previewVolume = null
       previewEdges = null
