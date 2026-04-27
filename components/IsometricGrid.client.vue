@@ -69,6 +69,9 @@ interface PokemonRenderObject {
   maxHp: number
   /** Cached <img> reference for per-frame directional brightness tinting. */
   spriteImage: HTMLImageElement | null
+  /** Eased 0→1 selection-lift factor; target flips on selection state. */
+  liftFactor: number
+  liftTarget: number
 }
 
 interface VoxelGroup {
@@ -326,6 +329,13 @@ const DEFAULT_FACING_DIRECTION = new THREE.Vector2(
 // Applied to the sprite via CSS brightness().
 const SPRITE_BRIGHTNESS_LIT = 1.0
 const SPRITE_BRIGHTNESS_SHADOW = 0.92
+
+// Selection lift: selected pokemon pops up while the shadow stays
+// anchored and grows more diffuse. Visible separation between sprite
+// and shadow is the strongest "this thing is in 3D" cue available.
+const SPRITE_LIFT_AMOUNT = 0.08
+const SHADOW_LIFT_SCALE = 1.3
+const SHADOW_LIFT_OPACITY = 0.55
 
 const EMPTY_PREVIEW: PreviewState = {
   position: null,
@@ -832,6 +842,8 @@ const buildRenderObject = (pokemon: SpawnedPokemon): PokemonRenderObject => {
     currentHp: pokemon.currentHp,
     maxHp: pokemon.maxHp,
     spriteImage,
+    liftFactor: 0,
+    liftTarget: 0,
   }
 }
 
@@ -892,7 +904,10 @@ const refreshPokemonStyles = () => {
       selected ? 0.32 : 0.28,
     )
     ;(renderObject.edges.material as THREE.LineBasicMaterial).color.set(selected ? 0xfbf1c7 : 0xa89984)
-    ;(renderObject.edges.material as THREE.LineBasicMaterial).opacity = selected ? 0.95 : 0.55
+    // Idle edges fade so the cage reads via faces; selection sharpens
+    // them back up so the active token has a clear hard outline.
+    ;(renderObject.edges.material as THREE.LineBasicMaterial).opacity = selected ? 0.95 : 0.35
+    renderObject.liftTarget = selected ? 1 : 0
   }
 }
 
@@ -1660,6 +1675,35 @@ const animate = () => {
     if (renderObject.spriteImage) {
       renderObject.spriteImage.style.filter = spriteFilter
     }
+
+    // Selection lift: sprite + HP bar pop up, cage stays anchored,
+    // shadow scales up and fades so it reads as a more diffuse blob
+    // — the visible detachment is the "off the ground" cue.
+    if (Math.abs(renderObject.liftFactor - renderObject.liftTarget) < 0.001) {
+      renderObject.liftFactor = renderObject.liftTarget
+    } else {
+      renderObject.liftFactor = THREE.MathUtils.lerp(
+        renderObject.liftFactor,
+        renderObject.liftTarget,
+        damping,
+      )
+    }
+
+    if (renderObject.liftFactor > 0) {
+      const lift = renderObject.liftFactor * SPRITE_LIFT_AMOUNT
+      renderObject.sprite.position.y += lift
+      if (renderObject.hpBar.visible) {
+        renderObject.hpBar.position.y += lift
+      }
+    }
+
+    const shadowScale = THREE.MathUtils.lerp(1, SHADOW_LIFT_SCALE, renderObject.liftFactor)
+    renderObject.shadow.scale.setScalar(shadowScale)
+    renderObject.shadow.material.opacity = THREE.MathUtils.lerp(
+      1,
+      SHADOW_LIFT_OPACITY,
+      renderObject.liftFactor,
+    )
   }
 
   if (ghostSprite && selectedPokemon.value) {
