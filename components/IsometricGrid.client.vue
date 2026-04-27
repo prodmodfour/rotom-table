@@ -53,6 +53,8 @@ interface PokemonRenderObject {
   volume: THREE.Mesh<THREE.BoxGeometry, THREE.MeshBasicMaterial[]>
   edges: THREE.LineSegments
   proxy: THREE.Mesh<THREE.BoxGeometry, THREE.MeshBasicMaterial>
+  /** Soft radial-gradient disc on the floor; the "planted on the ground" cue. */
+  shadow: THREE.Mesh<THREE.CircleGeometry, THREE.MeshBasicMaterial>
   currentCenter: THREE.Vector3
   targetCenter: THREE.Vector3
   width: number
@@ -95,10 +97,16 @@ interface BuildTarget {
  */
 const TERRAIN_PALETTE = {
   idle: {
-    top:    0x665c54, // bg3 — 100% (lit top)
-    side:   0x504945, // bg2 — 80%  (Z-perp visible side)
-    shadow: 0x3c3836, // bg1 — 60%  (X-perp shadowed side)
-    bottom: 0x282828, // bg0 — floor of the cage (rarely seen)
+    // fg-band rather than bg-band so the cage sits visually above the
+    // terrain's brightness range. Terrain pulls from gruvbox bg/mid,
+    // sprites pull from bright accents — the cage takes the fg/grey
+    // band in between, giving each layer its own zone instead of the
+    // cage merging with the grid underneath it.
+    top:    0xbdae93, // fg3 — lit top
+    side:   0xa89984, // fg4 — Z-perp visible side
+    shadow: 0x7c6f64, // bg4 — X-perp shadowed side (sharpened ramp so
+                      //       top↔shadow contrast reads across the table)
+    bottom: 0x665c54, // bg3 — floor of the cage (rarely seen)
   },
   selected: {
     top:    0xfabd2f, // yellow bright
@@ -216,6 +224,41 @@ const getTopFaceGridTexture = (): THREE.CanvasTexture => {
   texture.minFilter = THREE.NearestFilter
   texture.colorSpace = THREE.SRGBColorSpace
   topFaceGridTexture = texture
+  return texture
+}
+
+/**
+ * Lazily-built radial-gradient texture for sprite contact shadows. A
+ * soft dark blob laid flat on the floor under each pokemon — the
+ * "this thing is sitting on the world" cue the cage alone can't give.
+ * Tinted ``bg0_h`` (warm near-black, same as floor seam lines) so the
+ * shadow blends into the gruvbox palette instead of reading as a hard
+ * black decal.
+ */
+let contactShadowTexture: THREE.CanvasTexture | null = null
+
+const getContactShadowTexture = (): THREE.CanvasTexture => {
+  if (contactShadowTexture) return contactShadowTexture
+  const canvas = document.createElement('canvas')
+  const size = 128
+  canvas.width = size
+  canvas.height = size
+  const ctx = canvas.getContext('2d')
+  if (!ctx) throw new Error('2d canvas context unavailable')
+  const center = size / 2
+  // Radial fade from opaque core to fully-transparent rim. The 0.85
+  // stop ensures the geometry's edge sits in transparent territory so
+  // the disc has no visible boundary.
+  const gradient = ctx.createRadialGradient(center, center, 0, center, center, center)
+  gradient.addColorStop(0,    'rgba(29, 32, 33, 0.78)') // bg0_h core
+  gradient.addColorStop(0.55, 'rgba(29, 32, 33, 0.42)')
+  gradient.addColorStop(0.85, 'rgba(29, 32, 33, 0)')
+  gradient.addColorStop(1,    'rgba(29, 32, 33, 0)')
+  ctx.fillStyle = gradient
+  ctx.fillRect(0, 0, size, size)
+  const texture = new THREE.CanvasTexture(canvas)
+  texture.colorSpace = THREE.SRGBColorSpace
+  contactShadowTexture = texture
   return texture
 }
 
@@ -441,6 +484,27 @@ const buildHpBar = () => {
   bar.scale.setScalar(1 / HP_BAR_PIXELS_PER_METRE)
   bar.visible = false
   return bar
+}
+
+/**
+ * Flat circular contact shadow under a pokemon sprite. Slightly larger
+ * than the cage footprint so the soft alpha rim spills past the cage
+ * edges, anchoring the billboarded sprite to the ground.
+ */
+const buildContactShadow = (
+  pokemon: SpawnedPokemon,
+): THREE.Mesh<THREE.CircleGeometry, THREE.MeshBasicMaterial> => {
+  const radius = Math.max(pokemon.base, 0.5) * 0.6
+  const geometry = new THREE.CircleGeometry(radius, 32)
+  const material = new THREE.MeshBasicMaterial({
+    map: getContactShadowTexture(),
+    transparent: true,
+    depthWrite: false,
+  })
+  const mesh = new THREE.Mesh(geometry, material)
+  // Lay flat on the XZ plane so the disc reads as ground shadow.
+  mesh.rotation.x = -Math.PI / 2
+  return mesh
 }
 
 const shouldUseFrontSprite = (center: THREE.Vector3, turned = false) => {
@@ -693,13 +757,14 @@ const buildRenderObject = (pokemon: SpawnedPokemon): PokemonRenderObject => {
   const sprite = buildSprite(pokemon)
   const elevationBadge = buildElevationBadge()
   const hpBar = buildHpBar()
+  const shadow = buildContactShadow(pokemon)
   const volumeGeometry = new THREE.BoxGeometry(pokemon.base, pokemon.clearance, pokemon.base)
-  // Per-face gruvbox shading: top=bg3, Z-sides=bg2, X-sides=bg1.
-  // Opacity is bumped slightly vs. the old single-material box so the
-  // brightness ramp is actually visible without hiding the sprite.
+  // Per-face gruvbox shading: top=fg3, Z-sides=fg4, X-sides=gray.
+  // Sits in the foreground brightness band so the cage reads above
+  // the bg-band terrain instead of merging with it.
   const volume = new THREE.Mesh(
     volumeGeometry,
-    buildVolumeMaterials('idle', 0.18),
+    buildVolumeMaterials('idle', 0.28),
   )
 
   const edges = new THREE.LineSegments(
@@ -727,6 +792,7 @@ const buildRenderObject = (pokemon: SpawnedPokemon): PokemonRenderObject => {
   const currentCenter = new THREE.Vector3(center.x, center.y, center.z)
   const targetCenter = currentCenter.clone()
 
+  worldGroup.add(shadow)
   worldGroup.add(volume)
   worldGroup.add(edges)
   worldGroup.add(proxy)
@@ -741,6 +807,7 @@ const buildRenderObject = (pokemon: SpawnedPokemon): PokemonRenderObject => {
     volume,
     edges,
     proxy,
+    shadow,
     currentCenter,
     targetCenter,
     width: pokemon.width,
@@ -773,6 +840,14 @@ const applyRenderObjectPosition = (renderObject: PokemonRenderObject) => {
     renderObject.currentCenter.y + Math.max(renderObject.height, renderObject.clearance) / 2,
     renderObject.currentCenter.z,
   )
+  // Tiny y-offset keeps the shadow above the floor plane / voxel top
+  // it sits on, avoiding z-fighting without lifting it visibly off
+  // the surface.
+  renderObject.shadow.position.set(
+    renderObject.currentCenter.x,
+    renderObject.currentCenter.y + 0.005,
+    renderObject.currentCenter.z,
+  )
   updateElevationBadge(
     renderObject.elevationBadge,
     renderObject.currentCenter,
@@ -802,7 +877,7 @@ const refreshPokemonStyles = () => {
     paintVolumeMaterials(
       renderObject.volume.material,
       selected ? 'selected' : 'idle',
-      selected ? 0.32 : 0.18,
+      selected ? 0.32 : 0.28,
     )
     ;(renderObject.edges.material as THREE.LineBasicMaterial).color.set(selected ? 0xfbf1c7 : 0xa89984)
     ;(renderObject.edges.material as THREE.LineBasicMaterial).opacity = selected ? 0.95 : 0.55
@@ -823,6 +898,7 @@ const syncPokemonObjects = () => {
     disposeObject3D(renderObject.volume)
     disposeObject3D(renderObject.edges)
     disposeObject3D(renderObject.proxy)
+    disposeObject3D(renderObject.shadow)
     renderObjects.delete(id)
   }
 
