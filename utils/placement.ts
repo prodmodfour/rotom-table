@@ -46,6 +46,7 @@ export const placementToSpawned = (
       maxHp: hp.maxHp,
       def: hp.def,
       sdef: hp.sdef,
+      defenderTypes: hp.defenderTypes,
     }
   }
   const sheet = sheets.trainer.get(placement.sheetSlug)
@@ -65,6 +66,7 @@ export const placementToSpawned = (
     maxHp: hp.maxHp,
     def: hp.def,
     sdef: hp.sdef,
+    defenderTypes: hp.defenderTypes,
   }
 }
 

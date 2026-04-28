@@ -10,7 +10,7 @@
  *   3. A *HP snapshot* at spawn time. PTU formulas are layered through
  *      `resolveStats` / `computeMaxHp` (Pokémon) and the trainer equivalents.
  */
-import { computeMaxHp, resolveStats } from '~/data/characterSheets'
+import { computeMaxHp, getPokedexEntry, resolveStats } from '~/data/characterSheets'
 import { computeTrainerMaxHp, resolveTrainerStats } from '~/data/trainerSheets'
 import { pokemonCatalog, pokemonCatalogBySpecies } from '~/data/pokemonCatalog'
 import { trainerCatalog } from '~/data/trainerCatalog'
@@ -50,29 +50,43 @@ export const catalogEntryForTrainerSheet = (
   return trainerCatalog[0] ?? null
 }
 
-/** Pokémon HP + defense snapshot — sheet override > computed max HP. */
+/** Pokémon HP + defense + types snapshot — sheet override > species default. */
 export const pokemonHpSnapshot = (
   sheet: CharacterSheet,
-): { currentHp: number; maxHp: number; def: number; sdef: number } => {
+): {
+  currentHp: number
+  maxHp: number
+  def: number
+  sdef: number
+  defenderTypes: string[]
+} => {
   const stats = resolveStats(sheet)
   const hpTotal = stats.find((row) => row.key === 'hp')?.total ?? 0
   const maxHp = computeMaxHp(sheet, hpTotal)
   const currentHp = sheet.combat?.currentHp ?? maxHp
   const def = stats.find((row) => row.key === 'def')?.total ?? 0
   const sdef = stats.find((row) => row.key === 'sdef')?.total ?? 0
-  return { currentHp, maxHp, def, sdef }
+  const species = getPokedexEntry(sheet.species)
+  const defenderTypes = sheet.types ?? species?.types ?? []
+  return { currentHp, maxHp, def, sdef, defenderTypes }
 }
 
-/** Trainer HP + defense snapshot — sheet override > computed max HP. */
+/** Trainer HP + defense snapshot — trainers have no defending types. */
 export const trainerHpSnapshot = (
   sheet: TrainerSheet,
-): { currentHp: number; maxHp: number; def: number; sdef: number } => {
+): {
+  currentHp: number
+  maxHp: number
+  def: number
+  sdef: number
+  defenderTypes: string[]
+} => {
   const maxHp = computeTrainerMaxHp(sheet)
   const currentHp = sheet.currentHp ?? maxHp
   const stats = resolveTrainerStats(sheet)
   const def = stats.find((row) => row.key === 'def')?.total ?? 0
   const sdef = stats.find((row) => row.key === 'sdef')?.total ?? 0
-  return { currentHp, maxHp, def, sdef }
+  return { currentHp, maxHp, def, sdef, defenderTypes: [] }
 }
 
 // Re-export so callers don't have to import the catalog directly.

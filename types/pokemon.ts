@@ -181,4 +181,6 @@ export interface SpawnedPokemon extends PokemonCatalogEntry {
   def: number
   /** Resolved Special Defense stat. */
   sdef: number
+  /** Defender's types (sheet override > species default; empty for trainers). */
+  defenderTypes: string[]
 }

@@ -17,6 +17,7 @@ import {
   voxelGroupKey,
   voxelKey,
 } from '~/utils/voxels'
+import { POKEMON_TYPES, computeMultiplier, formatMultiplier } from '~/utils/typeChart'
 
 export type BuildTool = 'pencil' | 'eraser'
 
@@ -391,7 +392,9 @@ interface DamageDialogState {
   maxHp: number
   def: number
   sdef: number
+  defenderTypes: string[]
   mode: 'physical' | 'special'
+  attackType: string
   amount: string
 }
 
@@ -412,16 +415,37 @@ const damageDialogDefense = computed(() => {
     : damageDialog.value.sdef
 })
 
+const damageDialogMultiplier = computed(() => {
+  if (!damageDialog.value) return 1
+  return computeMultiplier(damageDialog.value.attackType, damageDialog.value.defenderTypes)
+})
+
 const damageDialogHpLoss = computed(() => {
   if (damageDialogRawAmount.value === 0) return 0
+  // Immunity short-circuits before the 1-floor — a 0× hit deals 0.
+  if (damageDialogMultiplier.value === 0) return 0
+  const afterDefense = damageDialogRawAmount.value - damageDialogDefense.value
+  const scaled = Math.floor(afterDefense * damageDialogMultiplier.value)
   // PTU floor: any successful hit deals at least 1 HP regardless of defense.
-  return Math.max(1, damageDialogRawAmount.value - damageDialogDefense.value)
+  return Math.max(1, scaled)
 })
 
 const damageDialogPreview = computed(() => {
   if (!damageDialog.value) return 0
   return Math.max(0, damageDialog.value.currentHp - damageDialogHpLoss.value)
 })
+
+const damageDialogMultiplierTone = computed(() => {
+  const m = damageDialogMultiplier.value
+  if (m === 0) return 'is-immune'
+  if (m < 1) return 'is-resist'
+  if (m > 1) return 'is-weak'
+  return null
+})
+
+const damageDialogMultiplierLabel = computed(() =>
+  formatMultiplier(damageDialogMultiplier.value),
+)
 const selectedPokemon = computed(
   () => props.pokemons.find((pokemon) => pokemon.id === props.selectedId) ?? null,
 )
@@ -1695,7 +1719,9 @@ const handleContextDealDamage = () => {
     maxHp: target.maxHp,
     def: target.def,
     sdef: target.sdef,
+    defenderTypes: [...target.defenderTypes],
     mode: 'physical',
+    attackType: 'Normal',
     amount: '',
   }
   closeContextMenu()
@@ -2125,6 +2151,7 @@ watch(
         damageDialog.value.species = live.species
         damageDialog.value.def = live.def
         damageDialog.value.sdef = live.sdef
+        damageDialog.value.defenderTypes = [...live.defenderTypes]
       }
     }
 
@@ -2370,7 +2397,12 @@ watch(
       >
         <header class="hp-dialog__header">
           <h3>Deal damage</h3>
-          <p class="hp-dialog__species">{{ damageDialog.species }}</p>
+          <p class="hp-dialog__species">
+            {{ damageDialog.species }}
+            <span v-if="damageDialog.defenderTypes.length" class="hp-dialog__types">
+              · {{ damageDialog.defenderTypes.join(' / ') }}
+            </span>
+          </p>
         </header>
 
         <div class="hp-dialog__readout">
@@ -2380,9 +2412,14 @@ watch(
             class="hp-dialog__preview"
             :class="{ 'is-damage': damageDialogHpLoss > 0 }"
           >{{ damageDialogPreview }} / {{ damageDialog.maxHp }}</span>
+          <span
+            v-if="damageDialogMultiplierTone"
+            class="hp-dialog__multiplier"
+            :class="damageDialogMultiplierTone"
+          >×{{ damageDialogMultiplierLabel }}</span>
         </div>
 
-        <div class="hp-dialog__mode" role="group" aria-label="Damage type">
+        <div class="hp-dialog__mode" role="group" aria-label="Damage category">
           <button
             type="button"
             class="hp-dialog__mode-button"
@@ -2404,6 +2441,13 @@ watch(
         </div>
 
         <label class="hp-dialog__field">
+          <span>Attack type</span>
+          <select v-model="damageDialog.attackType">
+            <option v-for="type in POKEMON_TYPES" :key="type" :value="type">{{ type }}</option>
+          </select>
+        </label>
+
+        <label class="hp-dialog__field">
           <span>Damage</span>
           <input
             ref="damageAmountInput"
@@ -2416,10 +2460,18 @@ watch(
           />
         </label>
 
-        <p class="hp-dialog__breakdown">
-          <span>{{ damageDialogRawAmount }} damage</span>
+        <p
+          v-if="damageDialogMultiplier === 0 && damageDialogRawAmount > 0"
+          class="hp-dialog__breakdown is-immune"
+        >
+          <strong>Immune to {{ damageDialog.attackType }} — 0 HP lost</strong>
+        </p>
+        <p v-else class="hp-dialog__breakdown">
+          <span>{{ damageDialogRawAmount }} dmg</span>
           <span aria-hidden="true">−</span>
           <span>{{ damageDialogDefense }} {{ damageDialog.mode === 'physical' ? 'Def' : 'Sp.Def' }}</span>
+          <span aria-hidden="true">×</span>
+          <span>{{ damageDialogMultiplierLabel }}</span>
           <span aria-hidden="true">=</span>
           <strong>{{ damageDialogHpLoss }} HP lost</strong>
         </p>
@@ -2533,11 +2585,16 @@ watch(
   letter-spacing: 0.02em;
 }
 
+.hp-dialog__types {
+  color: var(--ink);
+}
+
 .hp-dialog__readout {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
+  flex-wrap: wrap;
   font-variant-numeric: tabular-nums;
   font-size: 0.95rem;
   color: var(--ink);
@@ -2553,6 +2610,32 @@ watch(
 
 .hp-dialog__preview.is-heal {
   color: #b8bb26;
+}
+
+.hp-dialog__multiplier {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.12rem 0.55rem;
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+  border: 1px solid currentColor;
+}
+
+.hp-dialog__multiplier.is-weak {
+  color: #fb4934;
+  background: rgba(251, 73, 52, 0.12);
+}
+
+.hp-dialog__multiplier.is-resist {
+  color: #b8bb26;
+  background: rgba(184, 187, 38, 0.12);
+}
+
+.hp-dialog__multiplier.is-immune {
+  color: var(--ink-muted);
+  background: var(--paper);
 }
 
 .hp-dialog__mode {
@@ -2609,9 +2692,22 @@ watch(
   font-variant-numeric: tabular-nums;
 }
 
-.hp-dialog__field input:focus {
+.hp-dialog__field input:focus,
+.hp-dialog__field select:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 2px rgba(250, 189, 47, 0.18);
+}
+
+.hp-dialog__field select {
+  width: 100%;
+  border: 1px solid var(--rule-soft);
+  border-radius: 10px;
+  background: var(--paper);
+  color: var(--ink);
+  padding: 0.6rem 0.8rem;
+  outline: none;
+  font: inherit;
+  cursor: pointer;
 }
 
 .hp-dialog__breakdown {
@@ -2628,6 +2724,11 @@ watch(
   font-size: 0.85rem;
   font-variant-numeric: tabular-nums;
   color: var(--ink-muted);
+}
+
+.hp-dialog__breakdown.is-immune {
+  color: var(--ink-muted);
+  border-style: dashed;
 }
 
 .hp-dialog__breakdown strong {
