@@ -3,6 +3,7 @@ import { computed, nextTick, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   PhArrowsOutCardinal,
+  PhCaretDown,
   PhCaretRight,
   PhFolder,
   PhFolderOpen,
@@ -449,6 +450,42 @@ const onDrop = async (e: DragEvent, targetPath: string) => {
 const createError = ref<string | null>(null)
 const creating = ref(false)
 
+const sheetMenuOpen = ref(false)
+const creatingSheet = ref(false)
+const sheetCreateError = ref<string | null>(null)
+
+const toggleSheetMenu = () => {
+  sheetMenuOpen.value = !sheetMenuOpen.value
+}
+
+const closeSheetMenu = () => {
+  sheetMenuOpen.value = false
+}
+
+/** Create a fresh Pokémon or trainer sheet inside the current folder.
+ *  We hard-navigate to the new sheet's edit page so Vite re-evaluates the
+ *  `characterSheets` / `trainerSheets` globs with the new file in place — a
+ *  client-side `router.push` would race the HMR and land on "Sheet not found". */
+const createSheet = async (kind: 'pokemon' | 'trainer') => {
+  if (creatingSheet.value) return
+  closeSheetMenu()
+  creatingSheet.value = true
+  sheetCreateError.value = null
+  try {
+    const res = await $fetch<{ ok: true; kind: 'pokemon' | 'trainer'; slug: string }>(
+      '/api/sheets/create',
+      { method: 'POST', body: { kind, folder: currentPath.value } },
+    )
+    const dest = res.kind === 'pokemon'
+      ? `/sheets/${res.slug}`
+      : `/sheets/trainers/${res.slug}`
+    window.location.href = dest
+  } catch (err: any) {
+    sheetCreateError.value = err?.statusMessage ?? err?.data?.statusMessage ?? err?.message ?? String(err)
+    creatingSheet.value = false
+  }
+}
+
 const nextFolderName = (): string => {
   const base = 'new_folder'
   const prefix = currentPath.value ? `${currentPath.value}/` : ''
@@ -679,9 +716,12 @@ onMounted(async () => {
   } catch (err) {
     console.warn('[sheets] failed to load existing folders', err)
   }
-  // Close the context menu on Escape (anywhere on the page).
+  // Close the context menu / sheet menu on Escape (anywhere on the page).
   window.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') closeContext()
+    if (e.key === 'Escape') {
+      closeContext()
+      closeSheetMenu()
+    }
   })
 })
 </script>
@@ -722,6 +762,40 @@ onMounted(async () => {
           </label>
 
           <div v-if="canDrag" class="folder-actions">
+            <div class="sheet-menu-wrap">
+              <button
+                type="button"
+                class="new-folder-btn new-sheet-btn"
+                :disabled="creatingSheet"
+                :aria-expanded="sheetMenuOpen"
+                aria-haspopup="menu"
+                @click="toggleSheetMenu"
+              >
+                <PhPlus :size="16" weight="bold" />
+                New sheet
+                <PhCaretDown :size="12" weight="bold" aria-hidden="true" />
+              </button>
+              <div v-if="sheetMenuOpen" class="sheet-menu" role="menu">
+                <button
+                  type="button"
+                  class="sheet-menu__item"
+                  role="menuitem"
+                  :disabled="creatingSheet"
+                  @click="createSheet('pokemon')"
+                >
+                  Pokémon
+                </button>
+                <button
+                  type="button"
+                  class="sheet-menu__item"
+                  role="menuitem"
+                  :disabled="creatingSheet"
+                  @click="createSheet('trainer')"
+                >
+                  Trainer
+                </button>
+              </div>
+            </div>
             <button
               type="button"
               class="new-folder-btn"
@@ -734,6 +808,7 @@ onMounted(async () => {
         </div>
 
         <p v-if="createError" class="move-error" role="alert">{{ createError }}</p>
+        <p v-if="sheetCreateError" class="move-error" role="alert">{{ sheetCreateError }}</p>
         <p v-if="moveError" class="move-error" role="alert">Move failed: {{ moveError }}</p>
       </section>
 
@@ -869,6 +944,14 @@ onMounted(async () => {
         <strong>+ New folder</strong> to add a subfolder.
       </p>
     </section>
+
+    <!-- ============ New-sheet menu backdrop ============ -->
+    <div
+      v-if="sheetMenuOpen"
+      class="sheet-menu-backdrop"
+      @click="closeSheetMenu"
+      @contextmenu.prevent="closeSheetMenu"
+    ></div>
 
     <!-- ============ Right-click context menu ============ -->
     <template v-if="ctx">
@@ -1080,6 +1163,7 @@ input:focus {
   flex: 0 0 auto;
   display: flex;
   align-items: stretch;
+  gap: 0.4rem;
 }
 
 .new-folder-btn {
@@ -1111,6 +1195,63 @@ input:focus {
 .new-folder-btn:disabled {
   opacity: 0.6;
   cursor: progress;
+}
+
+.sheet-menu-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.new-sheet-btn {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.new-sheet-btn:hover:not(:disabled) {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.sheet-menu {
+  position: absolute;
+  top: calc(100% + 0.3rem);
+  left: 0;
+  z-index: 50;
+  min-width: 160px;
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  background: var(--paper-soft);
+  box-shadow: var(--shadow-card), 0 8px 24px rgba(0, 0, 0, 0.35);
+  padding: 0.3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.sheet-menu__item {
+  display: flex;
+  align-items: center;
+  padding: 0.45rem 0.7rem;
+  border: none;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  border-radius: 7px;
+  cursor: pointer;
+}
+
+.sheet-menu__item:hover:not(:disabled),
+.sheet-menu__item:focus-visible {
+  background: var(--paper-hover);
+  color: var(--ink-bright);
+  outline: none;
+}
+
+.sheet-menu__item:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .move-error {
@@ -1447,6 +1588,13 @@ input:focus {
 }
 
 /* ---- Right-click context menu ---- */
+
+.sheet-menu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: transparent;
+}
 
 .ctx-backdrop {
   position: fixed;
