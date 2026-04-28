@@ -357,6 +357,58 @@ const EMPTY_PREVIEW: PreviewState = {
   pathLength: 0,
 }
 
+interface DamageBaseDef {
+  db: number
+  count: number
+  sides: number
+  mod: number
+}
+
+// PTU PHB Damage Base table. Mods are always positive in this table; the
+// formatter assumes that and skips a +0 suffix only because no entry has it.
+const DAMAGE_BASE_TABLE: DamageBaseDef[] = [
+  { db: 1,  count: 1, sides: 6,  mod: 1 },
+  { db: 2,  count: 1, sides: 6,  mod: 3 },
+  { db: 3,  count: 1, sides: 6,  mod: 5 },
+  { db: 4,  count: 1, sides: 6,  mod: 7 },
+  { db: 5,  count: 1, sides: 8,  mod: 8 },
+  { db: 6,  count: 2, sides: 6,  mod: 8 },
+  { db: 7,  count: 2, sides: 6,  mod: 10 },
+  { db: 8,  count: 2, sides: 8,  mod: 10 },
+  { db: 9,  count: 2, sides: 10, mod: 10 },
+  { db: 10, count: 3, sides: 8,  mod: 10 },
+  { db: 11, count: 3, sides: 10, mod: 10 },
+  { db: 12, count: 3, sides: 12, mod: 10 },
+  { db: 13, count: 4, sides: 10, mod: 10 },
+  { db: 14, count: 4, sides: 10, mod: 15 },
+  { db: 15, count: 4, sides: 10, mod: 20 },
+  { db: 16, count: 5, sides: 10, mod: 20 },
+  { db: 17, count: 5, sides: 12, mod: 25 },
+  { db: 18, count: 6, sides: 12, mod: 25 },
+  { db: 19, count: 6, sides: 12, mod: 30 },
+  { db: 20, count: 6, sides: 12, mod: 35 },
+  { db: 21, count: 6, sides: 12, mod: 40 },
+  { db: 22, count: 6, sides: 12, mod: 45 },
+  { db: 23, count: 6, sides: 12, mod: 50 },
+  { db: 24, count: 7, sides: 12, mod: 50 },
+  { db: 25, count: 8, sides: 12, mod: 50 },
+  { db: 26, count: 8, sides: 12, mod: 55 },
+  { db: 27, count: 8, sides: 12, mod: 60 },
+  { db: 28, count: 8, sides: 12, mod: 65 },
+]
+
+const formatDbFormula = (def: DamageBaseDef): string =>
+  `${def.count}d${def.sides}+${def.mod}`
+
+const rollDamageBase = (def: DamageBaseDef): { rolls: number[]; total: number } => {
+  const rolls: number[] = []
+  for (let i = 0; i < def.count; i += 1) {
+    rolls.push(1 + Math.floor(Math.random() * def.sides))
+  }
+  const total = rolls.reduce((sum, n) => sum + n, 0) + def.mod
+  return { rolls, total }
+}
+
 const container = ref<HTMLDivElement | null>(null)
 const contextMenu = ref<{ x: number; y: number; id: string; canTurn: boolean } | null>(null)
 
@@ -385,6 +437,14 @@ const hpDialogPreview = computed(() => {
   return Math.max(0, Math.min(hpDialog.value.maxHp, next))
 })
 
+interface DamageRollResult {
+  db: number
+  formula: string
+  rolls: number[]
+  mod: number
+  total: number
+}
+
 interface DamageDialogState {
   id: string
   species: string
@@ -395,14 +455,25 @@ interface DamageDialogState {
   defenderTypes: string[]
   mode: 'physical' | 'special'
   attackType: string
+  source: 'flat' | 'db'
   amount: string
+  db: number
+  roll: DamageRollResult | null
 }
 
 const damageDialog = ref<DamageDialogState | null>(null)
 const damageAmountInput = ref<HTMLInputElement | null>(null)
 
+const damageDialogDbDef = computed(() => {
+  if (!damageDialog.value) return null
+  return DAMAGE_BASE_TABLE.find((entry) => entry.db === damageDialog.value!.db) ?? null
+})
+
 const damageDialogRawAmount = computed(() => {
   if (!damageDialog.value) return 0
+  if (damageDialog.value.source === 'db') {
+    return damageDialog.value.roll?.total ?? 0
+  }
   const parsed = Number.parseInt(damageDialog.value.amount, 10)
   if (!Number.isFinite(parsed) || parsed <= 0) return 0
   return parsed
@@ -1722,13 +1793,36 @@ const handleContextDealDamage = () => {
     defenderTypes: [...target.defenderTypes],
     mode: 'physical',
     attackType: 'Normal',
+    source: 'flat',
     amount: '',
+    db: 1,
+    roll: null,
   }
   closeContextMenu()
   void nextTick(() => {
     damageAmountInput.value?.focus()
     damageAmountInput.value?.select()
   })
+}
+
+const handleDamageDialogDbChange = () => {
+  // Stale rolls confuse the breakdown — clear so the user re-rolls the
+  // formula they actually selected.
+  if (damageDialog.value) damageDialog.value.roll = null
+}
+
+const handleDamageDialogRoll = () => {
+  if (!damageDialog.value) return
+  const def = damageDialogDbDef.value
+  if (!def) return
+  const { rolls, total } = rollDamageBase(def)
+  damageDialog.value.roll = {
+    db: def.db,
+    formula: formatDbFormula(def),
+    rolls,
+    mod: def.mod,
+    total,
+  }
 }
 
 const handleDamageDialogSubmit = () => {
@@ -2447,7 +2541,28 @@ watch(
           </select>
         </label>
 
-        <label class="hp-dialog__field">
+        <div class="hp-dialog__mode" role="group" aria-label="Damage source">
+          <button
+            type="button"
+            class="hp-dialog__mode-button"
+            :class="{ 'is-active': damageDialog.source === 'flat' }"
+            :aria-pressed="damageDialog.source === 'flat'"
+            @click="damageDialog.source = 'flat'"
+          >
+            Set damage
+          </button>
+          <button
+            type="button"
+            class="hp-dialog__mode-button"
+            :class="{ 'is-active': damageDialog.source === 'db' }"
+            :aria-pressed="damageDialog.source === 'db'"
+            @click="damageDialog.source = 'db'"
+          >
+            Damage Base
+          </button>
+        </div>
+
+        <label v-if="damageDialog.source === 'flat'" class="hp-dialog__field">
           <span>Damage</span>
           <input
             ref="damageAmountInput"
@@ -2459,6 +2574,35 @@ watch(
             placeholder="0"
           />
         </label>
+
+        <template v-else>
+          <label class="hp-dialog__field">
+            <span>Damage Base</span>
+            <select v-model.number="damageDialog.db" @change="handleDamageDialogDbChange">
+              <option
+                v-for="entry in DAMAGE_BASE_TABLE"
+                :key="entry.db"
+                :value="entry.db"
+              >DB {{ entry.db }} · {{ formatDbFormula(entry) }}</option>
+            </select>
+          </label>
+
+          <div class="hp-dialog__roll">
+            <button
+              type="button"
+              class="hp-dialog__button hp-dialog__button--ghost"
+              @click="handleDamageDialogRoll"
+            >{{ damageDialog.roll ? 'Re-roll' : 'Roll' }}</button>
+            <p v-if="damageDialog.roll" class="hp-dialog__roll-result">
+              <span>[{{ damageDialog.roll.rolls.join(', ') }}]</span>
+              <span aria-hidden="true">+</span>
+              <span>{{ damageDialog.roll.mod }}</span>
+              <span aria-hidden="true">=</span>
+              <strong>{{ damageDialog.roll.total }}</strong>
+            </p>
+            <p v-else class="hp-dialog__roll-empty">No roll yet</p>
+          </div>
+        </template>
 
         <p
           v-if="damageDialogMultiplier === 0 && damageDialogRawAmount > 0"
@@ -2708,6 +2852,39 @@ watch(
   outline: none;
   font: inherit;
   cursor: pointer;
+}
+
+.hp-dialog__roll {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.hp-dialog__roll .hp-dialog__button {
+  flex: 0 0 auto;
+}
+
+.hp-dialog__roll-result {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  margin: 0;
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+.hp-dialog__roll-result strong {
+  color: var(--ink-bright);
+  font-weight: 600;
+}
+
+.hp-dialog__roll-empty {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--ink-muted);
+  font-style: italic;
 }
 
 .hp-dialog__breakdown {
