@@ -11,7 +11,7 @@
  *      `resolveStats` / `computeMaxHp` (Pokémon) and the trainer equivalents.
  */
 import { computeMaxHp, resolveStats } from '~/data/characterSheets'
-import { computeTrainerMaxHp } from '~/data/trainerSheets'
+import { computeTrainerMaxHp, resolveTrainerStats } from '~/data/trainerSheets'
 import { pokemonCatalog, pokemonCatalogBySpecies } from '~/data/pokemonCatalog'
 import { trainerCatalog } from '~/data/trainerCatalog'
 import type { CharacterSheet } from '~/types/characterSheet'
@@ -50,24 +50,29 @@ export const catalogEntryForTrainerSheet = (
   return trainerCatalog[0] ?? null
 }
 
-/** Pokémon current HP — sheet override > computed max HP. */
+/** Pokémon HP + defense snapshot — sheet override > computed max HP. */
 export const pokemonHpSnapshot = (
   sheet: CharacterSheet,
-): { currentHp: number; maxHp: number } => {
+): { currentHp: number; maxHp: number; def: number; sdef: number } => {
   const stats = resolveStats(sheet)
   const hpTotal = stats.find((row) => row.key === 'hp')?.total ?? 0
   const maxHp = computeMaxHp(sheet, hpTotal)
   const currentHp = sheet.combat?.currentHp ?? maxHp
-  return { currentHp, maxHp }
+  const def = stats.find((row) => row.key === 'def')?.total ?? 0
+  const sdef = stats.find((row) => row.key === 'sdef')?.total ?? 0
+  return { currentHp, maxHp, def, sdef }
 }
 
-/** Trainer current HP — sheet override > computed max HP. */
+/** Trainer HP + defense snapshot — sheet override > computed max HP. */
 export const trainerHpSnapshot = (
   sheet: TrainerSheet,
-): { currentHp: number; maxHp: number } => {
+): { currentHp: number; maxHp: number; def: number; sdef: number } => {
   const maxHp = computeTrainerMaxHp(sheet)
   const currentHp = sheet.currentHp ?? maxHp
-  return { currentHp, maxHp }
+  const stats = resolveTrainerStats(sheet)
+  const def = stats.find((row) => row.key === 'def')?.total ?? 0
+  const sdef = stats.find((row) => row.key === 'sdef')?.total ?? 0
+  return { currentHp, maxHp, def, sdef }
 }
 
 // Re-export so callers don't have to import the catalog directly.

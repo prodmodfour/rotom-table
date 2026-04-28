@@ -44,7 +44,7 @@
   },
   "combat": {
     "maxHp": 61,
-    "currentHp": 46,
+    "currentHp": 36,
     "tick": 6,
     "evasion": {
       "vsAtk": 2,

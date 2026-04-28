@@ -383,6 +383,43 @@ const hpDialogPreview = computed(() => {
   const next = hpDialog.value.currentHp + hpDialogDelta.value
   return Math.max(0, Math.min(hpDialog.value.maxHp, next))
 })
+
+interface DamageDialogState {
+  id: string
+  species: string
+  currentHp: number
+  maxHp: number
+  def: number
+  sdef: number
+  mode: 'physical' | 'special'
+  amount: string
+}
+
+const damageDialog = ref<DamageDialogState | null>(null)
+const damageAmountInput = ref<HTMLInputElement | null>(null)
+
+const damageDialogRawAmount = computed(() => {
+  if (!damageDialog.value) return 0
+  const parsed = Number.parseInt(damageDialog.value.amount, 10)
+  if (!Number.isFinite(parsed) || parsed <= 0) return 0
+  return parsed
+})
+
+const damageDialogDefense = computed(() => {
+  if (!damageDialog.value) return 0
+  return damageDialog.value.mode === 'physical'
+    ? damageDialog.value.def
+    : damageDialog.value.sdef
+})
+
+const damageDialogHpLoss = computed(() =>
+  Math.max(0, damageDialogRawAmount.value - damageDialogDefense.value),
+)
+
+const damageDialogPreview = computed(() => {
+  if (!damageDialog.value) return 0
+  return Math.max(0, damageDialog.value.currentHp - damageDialogHpLoss.value)
+})
 const selectedPokemon = computed(
   () => props.pokemons.find((pokemon) => pokemon.id === props.selectedId) ?? null,
 )
@@ -1572,7 +1609,7 @@ const openContextMenu = (event: MouseEvent, id: string) => {
   const canTurn = Boolean(target?.entityKind === 'pokemon' && target.backSpriteUrl)
   const bounds = container.value.getBoundingClientRect()
   const menuWidth = 180
-  const menuHeight = canTurn ? 144 : 100
+  const menuHeight = canTurn ? 188 : 144
   const padding = 12
 
   contextMenu.value = {
@@ -1632,6 +1669,50 @@ const handleHpDialogSubmit = () => {
 
   emit('modify-hp', { id: hpDialog.value.id, currentHp: hpDialogPreview.value })
   closeHpDialog()
+}
+
+const closeDamageDialog = () => {
+  damageDialog.value = null
+}
+
+const handleContextDealDamage = () => {
+  if (!contextMenu.value) {
+    return
+  }
+
+  const target = props.pokemons.find((pokemon) => pokemon.id === contextMenu.value!.id)
+  if (!target) {
+    closeContextMenu()
+    return
+  }
+
+  damageDialog.value = {
+    id: target.id,
+    species: target.species,
+    currentHp: target.currentHp,
+    maxHp: target.maxHp,
+    def: target.def,
+    sdef: target.sdef,
+    mode: 'physical',
+    amount: '',
+  }
+  closeContextMenu()
+  void nextTick(() => {
+    damageAmountInput.value?.focus()
+    damageAmountInput.value?.select()
+  })
+}
+
+const handleDamageDialogSubmit = () => {
+  if (!damageDialog.value) return
+  if (damageDialogRawAmount.value === 0) return
+  if (damageDialogPreview.value === damageDialog.value.currentHp) {
+    closeDamageDialog()
+    return
+  }
+
+  emit('modify-hp', { id: damageDialog.value.id, currentHp: damageDialogPreview.value })
+  closeDamageDialog()
 }
 
 const handleContextDelete = () => {
@@ -1756,6 +1837,11 @@ const handlePointerLeave = () => {
 
 const handleEscape = (event: KeyboardEvent) => {
   if (event.key === 'Escape') {
+    if (damageDialog.value) {
+      closeDamageDialog()
+      return
+    }
+
     if (hpDialog.value) {
       closeHpDialog()
       return
@@ -2027,6 +2113,19 @@ watch(
       }
     }
 
+    if (damageDialog.value) {
+      const live = props.pokemons.find((pokemon) => pokemon.id === damageDialog.value!.id)
+      if (!live) {
+        closeDamageDialog()
+      } else {
+        damageDialog.value.currentHp = live.currentHp
+        damageDialog.value.maxHp = live.maxHp
+        damageDialog.value.species = live.species
+        damageDialog.value.def = live.def
+        damageDialog.value.sdef = live.sdef
+      }
+    }
+
     replayBuildPreview()
   },
   { deep: true },
@@ -2163,6 +2262,13 @@ watch(
       >
         Modify HP
       </button>
+      <button
+        type="button"
+        class="context-menu__button"
+        @click.stop="handleContextDealDamage"
+      >
+        Deal damage
+      </button>
       <button type="button" class="context-menu__button" @click.stop="handleContextDelete">
         Delete
       </button>
@@ -2242,6 +2348,92 @@ watch(
             type="submit"
             class="hp-dialog__button hp-dialog__button--primary"
             :disabled="hpDialogDelta === 0 || hpDialogPreview === hpDialog.currentHp"
+          >
+            Apply
+          </button>
+        </footer>
+      </form>
+    </div>
+
+    <div
+      v-if="damageDialog"
+      class="hp-dialog-backdrop"
+      @pointerdown.self="closeDamageDialog"
+      @contextmenu.prevent
+    >
+      <form
+        class="hp-dialog"
+        @submit.prevent="handleDamageDialogSubmit"
+        @pointerdown.stop
+      >
+        <header class="hp-dialog__header">
+          <h3>Deal damage</h3>
+          <p class="hp-dialog__species">{{ damageDialog.species }}</p>
+        </header>
+
+        <div class="hp-dialog__readout">
+          <span class="hp-dialog__current">{{ damageDialog.currentHp }} / {{ damageDialog.maxHp }}</span>
+          <span class="hp-dialog__arrow" aria-hidden="true">→</span>
+          <span
+            class="hp-dialog__preview"
+            :class="{ 'is-damage': damageDialogHpLoss > 0 }"
+          >{{ damageDialogPreview }} / {{ damageDialog.maxHp }}</span>
+        </div>
+
+        <div class="hp-dialog__mode" role="group" aria-label="Damage type">
+          <button
+            type="button"
+            class="hp-dialog__mode-button"
+            :class="{ 'is-active': damageDialog.mode === 'physical' }"
+            :aria-pressed="damageDialog.mode === 'physical'"
+            @click="damageDialog.mode = 'physical'"
+          >
+            Physical · Def {{ damageDialog.def }}
+          </button>
+          <button
+            type="button"
+            class="hp-dialog__mode-button"
+            :class="{ 'is-active': damageDialog.mode === 'special' }"
+            :aria-pressed="damageDialog.mode === 'special'"
+            @click="damageDialog.mode = 'special'"
+          >
+            Special · Sp.Def {{ damageDialog.sdef }}
+          </button>
+        </div>
+
+        <label class="hp-dialog__field">
+          <span>Damage</span>
+          <input
+            ref="damageAmountInput"
+            v-model="damageDialog.amount"
+            type="number"
+            min="0"
+            step="1"
+            inputmode="numeric"
+            placeholder="0"
+          />
+        </label>
+
+        <p class="hp-dialog__breakdown">
+          <span>{{ damageDialogRawAmount }} damage</span>
+          <span aria-hidden="true">−</span>
+          <span>{{ damageDialogDefense }} {{ damageDialog.mode === 'physical' ? 'Def' : 'Sp.Def' }}</span>
+          <span aria-hidden="true">=</span>
+          <strong>{{ damageDialogHpLoss }} HP lost</strong>
+        </p>
+
+        <footer class="hp-dialog__footer">
+          <button
+            type="button"
+            class="hp-dialog__button hp-dialog__button--ghost"
+            @click="closeDamageDialog"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            class="hp-dialog__button hp-dialog__button--primary"
+            :disabled="damageDialogRawAmount === 0 || damageDialogPreview === damageDialog.currentHp"
           >
             Apply
           </button>
@@ -2418,6 +2610,27 @@ watch(
 .hp-dialog__field input:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 2px rgba(250, 189, 47, 0.18);
+}
+
+.hp-dialog__breakdown {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--rule-soft);
+  border-radius: 10px;
+  background: var(--paper);
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-muted);
+}
+
+.hp-dialog__breakdown strong {
+  color: var(--ink-bright);
+  font-weight: 600;
 }
 
 .hp-dialog__footer {

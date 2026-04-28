@@ -44,6 +44,8 @@ export const placementToSpawned = (
       sheetSlug: sheet.slug,
       currentHp: hp.currentHp,
       maxHp: hp.maxHp,
+      def: hp.def,
+      sdef: hp.sdef,
     }
   }
   const sheet = sheets.trainer.get(placement.sheetSlug)
@@ -61,6 +63,8 @@ export const placementToSpawned = (
     sheetSlug: sheet.slug,
     currentHp: hp.currentHp,
     maxHp: hp.maxHp,
+    def: hp.def,
+    sdef: hp.sdef,
   }
 }
 

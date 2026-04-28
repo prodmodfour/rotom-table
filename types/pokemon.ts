@@ -177,4 +177,8 @@ export interface SpawnedPokemon extends PokemonCatalogEntry {
   currentHp: number
   /** Snapshot of the sheet's computed max HP at spawn time. */
   maxHp: number
+  /** Resolved Defense stat (for damage-after-defense calculations). */
+  def: number
+  /** Resolved Special Defense stat. */
+  sdef: number
 }
