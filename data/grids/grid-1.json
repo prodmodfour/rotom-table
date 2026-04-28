@@ -8,17 +8,6 @@
   },
   "placements": [
     {
-      "id": "pkm-mogcu239-acxfi3",
-      "sheetKind": "trainer",
-      "sheetSlug": "marigold-spruce",
-      "position": {
-        "x": 5,
-        "y": 1,
-        "z": 16
-      },
-      "turned": false
-    },
-    {
       "id": "pkm-moge7hw1-pfv1fp",
       "sheetKind": "pokemon",
       "sheetSlug": "bolt-pikachu",
@@ -45,9 +34,9 @@
       "sheetKind": "pokemon",
       "sheetSlug": "iggy-magnemite",
       "position": {
-        "x": 8,
-        "y": 2,
-        "z": 3
+        "x": 2,
+        "y": 1,
+        "z": 8
       },
       "turned": false
     },
@@ -67,8 +56,8 @@
       "sheetKind": "pokemon",
       "sheetSlug": "wild-grasslands-3-doduo-lv18-1",
       "position": {
-        "x": 6,
-        "y": 4,
+        "x": 5,
+        "y": 1,
         "z": 4
       },
       "turned": false
@@ -119,7 +108,7 @@
     }
   ],
   "createdAt": 1777242994202,
-  "updatedAt": 1777316738605,
+  "updatedAt": 1777382175987,
   "voxels": [
     {
       "x": 0,

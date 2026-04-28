@@ -301,5 +301,6 @@
     "accessory": "Pressed-flower hairclip"
   },
   "maneuvers": [],
-  "portraitUrl": "/trainer-sprites/showdown/trainers/beni-ninja.png"
+  "portraitUrl": "/trainer-sprites/showdown/trainers/beni-ninja.png",
+  "currentHp": 33
 }

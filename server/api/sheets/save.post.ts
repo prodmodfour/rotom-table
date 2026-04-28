@@ -3,9 +3,11 @@
  *
  * Persists a full sheet JSON to disk, replacing the existing file in-place.
  * The sheet's on-disk path is located by walking the appropriate root
- * (`data/sheets/` for Pokémon, `data/trainers/` for trainers) for the
- * file `${slug}.json`. The slug must match `body.sheet.slug` so we can't
- * accidentally rewrite the wrong file.
+ * (`data/sheets/` for Pokémon, `data/trainers/` for trainers). We first
+ * try a fast match on filename (`${slug}.json`); if that misses we fall
+ * back to scanning JSON files for one whose `slug` field matches —
+ * encounter-generated sheets use snake_case filenames while their slugs
+ * are kebab-case, so the filename pattern alone isn't enough.
  *
  * Request body:
  *   {
@@ -18,7 +20,7 @@
  *
  * Local dev tool only: refuses to run when `NODE_ENV === 'production'`.
  */
-import { readdirSync, writeFileSync } from 'node:fs'
+import { readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import { resolve as resolvePath, join as joinPath } from 'node:path'
 import { defineEventHandler, readBody, createError } from 'h3'
 import { publishRealtime } from '../../utils/realtime'
@@ -49,6 +51,39 @@ const findFile = (root: string, fileName: string): string | null => {
       const full = joinPath(dir, entry.name)
       if (entry.isDirectory()) stack.push(full)
       else if (entry.isFile() && entry.name === fileName) return full
+    }
+  }
+  return null
+}
+
+/** Walk `root` recursively and return the first JSON file whose top-level
+ *  `slug` field equals `slug`. Used as a fallback when the filename
+ *  pattern ``${slug}.json`` doesn't match (encounter-generated sheets
+ *  store slugs in kebab-case but use snake_case filenames). */
+const findFileBySlug = (root: string, slug: string): string | null => {
+  const stack: string[] = [root]
+  while (stack.length) {
+    const dir = stack.pop()!
+    let entries
+    try {
+      entries = readdirSync(dir, { withFileTypes: true })
+    } catch {
+      continue
+    }
+    for (const entry of entries) {
+      if (entry.name.startsWith('.')) continue
+      const full = joinPath(dir, entry.name)
+      if (entry.isDirectory()) {
+        stack.push(full)
+        continue
+      }
+      if (!entry.isFile() || !entry.name.endsWith('.json')) continue
+      try {
+        const parsed = JSON.parse(readFileSync(full, 'utf8'))
+        if (parsed && typeof parsed === 'object' && parsed.slug === slug) return full
+      } catch {
+        // ignore malformed files and keep walking
+      }
     }
   }
   return null
@@ -85,7 +120,7 @@ export default defineEventHandler(async (event) => {
     PROJECT_ROOT,
     body.kind === 'pokemon' ? 'data/sheets' : 'data/trainers',
   )
-  const path = findFile(root, `${slug}.json`)
+  const path = findFile(root, `${slug}.json`) ?? findFileBySlug(root, slug)
   if (!path) {
     throw createError({ statusCode: 404, statusMessage: `Sheet ${slug}.json not found` })
   }

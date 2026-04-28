@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { CSS3DRenderer, CSS3DSprite } from 'three/examples/jsm/renderers/CSS3DRenderer.js'
@@ -36,6 +36,7 @@ const emit = defineEmits<{
   (event: 'move-pokemon', payload: { id: string; position: GridAnchor }): void
   (event: 'turn-pokemon', id: string): void
   (event: 'delete-pokemon', id: string): void
+  (event: 'modify-hp', payload: { id: string; currentHp: number }): void
   (event: 'preview-change', preview: PreviewState): void
   (event: 'place-voxel', voxel: GridVoxel): void
   (event: 'remove-voxel', cell: { x: number; y: number; z: number }): void
@@ -357,6 +358,31 @@ const EMPTY_PREVIEW: PreviewState = {
 
 const container = ref<HTMLDivElement | null>(null)
 const contextMenu = ref<{ x: number; y: number; id: string; canTurn: boolean } | null>(null)
+
+interface HpDialogState {
+  id: string
+  species: string
+  currentHp: number
+  maxHp: number
+  mode: 'damage' | 'heal'
+  amount: string
+}
+
+const hpDialog = ref<HpDialogState | null>(null)
+const hpAmountInput = ref<HTMLInputElement | null>(null)
+
+const hpDialogDelta = computed(() => {
+  if (!hpDialog.value) return 0
+  const parsed = Number.parseInt(hpDialog.value.amount, 10)
+  if (!Number.isFinite(parsed) || parsed <= 0) return 0
+  return hpDialog.value.mode === 'damage' ? -parsed : parsed
+})
+
+const hpDialogPreview = computed(() => {
+  if (!hpDialog.value) return 0
+  const next = hpDialog.value.currentHp + hpDialogDelta.value
+  return Math.max(0, Math.min(hpDialog.value.maxHp, next))
+})
 const selectedPokemon = computed(
   () => props.pokemons.find((pokemon) => pokemon.id === props.selectedId) ?? null,
 )
@@ -1546,7 +1572,7 @@ const openContextMenu = (event: MouseEvent, id: string) => {
   const canTurn = Boolean(target?.entityKind === 'pokemon' && target.backSpriteUrl)
   const bounds = container.value.getBoundingClientRect()
   const menuWidth = 180
-  const menuHeight = canTurn ? 96 : 52
+  const menuHeight = canTurn ? 144 : 100
   const padding = 12
 
   contextMenu.value = {
@@ -1564,6 +1590,48 @@ const handleContextTurn = () => {
 
   emit('turn-pokemon', contextMenu.value.id)
   closeContextMenu()
+}
+
+const closeHpDialog = () => {
+  hpDialog.value = null
+}
+
+const handleContextModifyHp = () => {
+  if (!contextMenu.value) {
+    return
+  }
+
+  const target = props.pokemons.find((pokemon) => pokemon.id === contextMenu.value!.id)
+  if (!target) {
+    closeContextMenu()
+    return
+  }
+
+  hpDialog.value = {
+    id: target.id,
+    species: target.species,
+    currentHp: target.currentHp,
+    maxHp: target.maxHp,
+    mode: 'damage',
+    amount: '',
+  }
+  closeContextMenu()
+  void nextTick(() => {
+    hpAmountInput.value?.focus()
+    hpAmountInput.value?.select()
+  })
+}
+
+const handleHpDialogSubmit = () => {
+  if (!hpDialog.value) return
+  if (hpDialogDelta.value === 0) return
+  if (hpDialogPreview.value === hpDialog.value.currentHp) {
+    closeHpDialog()
+    return
+  }
+
+  emit('modify-hp', { id: hpDialog.value.id, currentHp: hpDialogPreview.value })
+  closeHpDialog()
 }
 
 const handleContextDelete = () => {
@@ -1688,6 +1756,11 @@ const handlePointerLeave = () => {
 
 const handleEscape = (event: KeyboardEvent) => {
   if (event.key === 'Escape') {
+    if (hpDialog.value) {
+      closeHpDialog()
+      return
+    }
+
     if (contextMenu.value) {
       closeContextMenu()
       return
@@ -1943,6 +2016,17 @@ watch(
       clearPreviewVisuals()
     }
 
+    if (hpDialog.value) {
+      const live = props.pokemons.find((pokemon) => pokemon.id === hpDialog.value!.id)
+      if (!live) {
+        closeHpDialog()
+      } else {
+        hpDialog.value.currentHp = live.currentHp
+        hpDialog.value.maxHp = live.maxHp
+        hpDialog.value.species = live.species
+      }
+    }
+
     replayBuildPreview()
   },
   { deep: true },
@@ -2072,9 +2156,97 @@ watch(
       >
         Turn sprite
       </button>
+      <button
+        type="button"
+        class="context-menu__button"
+        @click.stop="handleContextModifyHp"
+      >
+        Modify HP
+      </button>
       <button type="button" class="context-menu__button" @click.stop="handleContextDelete">
         Delete
       </button>
+    </div>
+
+    <div
+      v-if="hpDialog"
+      class="hp-dialog-backdrop"
+      @pointerdown.self="closeHpDialog"
+      @contextmenu.prevent
+    >
+      <form
+        class="hp-dialog"
+        @submit.prevent="handleHpDialogSubmit"
+        @pointerdown.stop
+      >
+        <header class="hp-dialog__header">
+          <h3>Modify HP</h3>
+          <p class="hp-dialog__species">{{ hpDialog.species }}</p>
+        </header>
+
+        <div class="hp-dialog__readout">
+          <span class="hp-dialog__current">{{ hpDialog.currentHp }} / {{ hpDialog.maxHp }}</span>
+          <span class="hp-dialog__arrow" aria-hidden="true">→</span>
+          <span
+            class="hp-dialog__preview"
+            :class="{
+              'is-damage': hpDialogDelta < 0,
+              'is-heal': hpDialogDelta > 0,
+            }"
+          >{{ hpDialogPreview }} / {{ hpDialog.maxHp }}</span>
+        </div>
+
+        <div class="hp-dialog__mode" role="group" aria-label="Operation">
+          <button
+            type="button"
+            class="hp-dialog__mode-button"
+            :class="{ 'is-active': hpDialog.mode === 'damage' }"
+            :aria-pressed="hpDialog.mode === 'damage'"
+            @click="hpDialog.mode = 'damage'"
+          >
+            − Lose
+          </button>
+          <button
+            type="button"
+            class="hp-dialog__mode-button"
+            :class="{ 'is-active': hpDialog.mode === 'heal' }"
+            :aria-pressed="hpDialog.mode === 'heal'"
+            @click="hpDialog.mode = 'heal'"
+          >
+            + Gain
+          </button>
+        </div>
+
+        <label class="hp-dialog__field">
+          <span>Amount</span>
+          <input
+            ref="hpAmountInput"
+            v-model="hpDialog.amount"
+            type="number"
+            min="0"
+            step="1"
+            inputmode="numeric"
+            placeholder="0"
+          />
+        </label>
+
+        <footer class="hp-dialog__footer">
+          <button
+            type="button"
+            class="hp-dialog__button hp-dialog__button--ghost"
+            @click="closeHpDialog"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            class="hp-dialog__button hp-dialog__button--primary"
+            :disabled="hpDialogDelta === 0 || hpDialogPreview === hpDialog.currentHp"
+          >
+            Apply
+          </button>
+        </footer>
+      </form>
     </div>
   </div>
 </template>
@@ -2121,5 +2293,172 @@ watch(
   border-color: var(--rule-strong);
   background: var(--paper-hover);
   color: var(--ink-bright);
+}
+
+.hp-dialog-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 9;
+  display: grid;
+  place-items: center;
+  background: rgba(29, 32, 33, 0.45);
+  backdrop-filter: blur(2px);
+}
+
+.hp-dialog {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  width: min(320px, 90vw);
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--rule-soft);
+  border-radius: 14px;
+  background: var(--paper-soft);
+  box-shadow: var(--shadow-card);
+}
+
+.hp-dialog__header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.hp-dialog__header h3 {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--ink-bright);
+}
+
+.hp-dialog__species {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--ink-muted);
+  letter-spacing: 0.02em;
+}
+
+.hp-dialog__readout {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.95rem;
+  color: var(--ink);
+}
+
+.hp-dialog__arrow {
+  color: var(--ink-muted);
+}
+
+.hp-dialog__preview.is-damage {
+  color: #fb4934;
+}
+
+.hp-dialog__preview.is-heal {
+  color: #b8bb26;
+}
+
+.hp-dialog__mode {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.4rem;
+}
+
+.hp-dialog__mode-button {
+  border: 1px solid var(--rule-soft);
+  border-radius: 10px;
+  background: var(--paper);
+  color: var(--ink);
+  padding: 0.55rem 0.7rem;
+  cursor: pointer;
+  font: inherit;
+  letter-spacing: 0.04em;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.hp-dialog__mode-button:hover {
+  border-color: var(--rule-strong);
+  background: var(--paper-hover);
+}
+
+.hp-dialog__mode-button.is-active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.hp-dialog__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.hp-dialog__field span {
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.hp-dialog__field input {
+  width: 100%;
+  border: 1px solid var(--rule-soft);
+  border-radius: 10px;
+  background: var(--paper);
+  color: var(--ink);
+  padding: 0.65rem 0.8rem;
+  outline: none;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+}
+
+.hp-dialog__field input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(250, 189, 47, 0.18);
+}
+
+.hp-dialog__footer {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.4rem;
+}
+
+.hp-dialog__button {
+  border: 1px solid var(--rule-soft);
+  border-radius: 10px;
+  padding: 0.55rem 0.8rem;
+  cursor: pointer;
+  font: inherit;
+  letter-spacing: 0.04em;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.hp-dialog__button--ghost {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.hp-dialog__button--ghost:hover {
+  border-color: var(--rule-strong);
+  background: var(--paper-hover);
+}
+
+.hp-dialog__button--primary {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.hp-dialog__button--primary:hover:not(:disabled) {
+  background: var(--accent);
+  color: var(--paper);
+}
+
+.hp-dialog__button--primary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 </style>
