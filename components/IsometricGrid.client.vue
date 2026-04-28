@@ -412,9 +412,11 @@ const damageDialogDefense = computed(() => {
     : damageDialog.value.sdef
 })
 
-const damageDialogHpLoss = computed(() =>
-  Math.max(0, damageDialogRawAmount.value - damageDialogDefense.value),
-)
+const damageDialogHpLoss = computed(() => {
+  if (damageDialogRawAmount.value === 0) return 0
+  // PTU floor: any successful hit deals at least 1 HP regardless of defense.
+  return Math.max(1, damageDialogRawAmount.value - damageDialogDefense.value)
+})
 
 const damageDialogPreview = computed(() => {
   if (!damageDialog.value) return 0
