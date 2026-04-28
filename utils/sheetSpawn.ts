@@ -50,12 +50,14 @@ export const catalogEntryForTrainerSheet = (
   return trainerCatalog[0] ?? null
 }
 
-/** Pokémon HP + defense + types snapshot — sheet override > species default. */
+/** Pokémon HP + offence/defence + types snapshot — sheet override > species default. */
 export const pokemonHpSnapshot = (
   sheet: CharacterSheet,
 ): {
   currentHp: number
   maxHp: number
+  atk: number
+  satk: number
   def: number
   sdef: number
   defenderTypes: string[]
@@ -64,19 +66,23 @@ export const pokemonHpSnapshot = (
   const hpTotal = stats.find((row) => row.key === 'hp')?.total ?? 0
   const maxHp = computeMaxHp(sheet, hpTotal)
   const currentHp = sheet.combat?.currentHp ?? maxHp
+  const atk = stats.find((row) => row.key === 'atk')?.total ?? 0
+  const satk = stats.find((row) => row.key === 'satk')?.total ?? 0
   const def = stats.find((row) => row.key === 'def')?.total ?? 0
   const sdef = stats.find((row) => row.key === 'sdef')?.total ?? 0
   const species = getPokedexEntry(sheet.species)
   const defenderTypes = sheet.types ?? species?.types ?? []
-  return { currentHp, maxHp, def, sdef, defenderTypes }
+  return { currentHp, maxHp, atk, satk, def, sdef, defenderTypes }
 }
 
-/** Trainer HP + defense snapshot — trainers have no defending types. */
+/** Trainer HP + offence/defence snapshot — trainers have no defending types. */
 export const trainerHpSnapshot = (
   sheet: TrainerSheet,
 ): {
   currentHp: number
   maxHp: number
+  atk: number
+  satk: number
   def: number
   sdef: number
   defenderTypes: string[]
@@ -84,9 +90,11 @@ export const trainerHpSnapshot = (
   const maxHp = computeTrainerMaxHp(sheet)
   const currentHp = sheet.currentHp ?? maxHp
   const stats = resolveTrainerStats(sheet)
+  const atk = stats.find((row) => row.key === 'atk')?.total ?? 0
+  const satk = stats.find((row) => row.key === 'satk')?.total ?? 0
   const def = stats.find((row) => row.key === 'def')?.total ?? 0
   const sdef = stats.find((row) => row.key === 'sdef')?.total ?? 0
-  return { currentHp, maxHp, def, sdef, defenderTypes: [] }
+  return { currentHp, maxHp, atk, satk, def, sdef, defenderTypes: [] }
 }
 
 // Re-export so callers don't have to import the catalog directly.

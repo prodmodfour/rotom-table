@@ -459,6 +459,7 @@ interface DamageDialogState {
   amount: string
   db: number
   roll: DamageRollResult | null
+  attackerId: string | null
 }
 
 const damageDialog = ref<DamageDialogState | null>(null)
@@ -486,6 +487,26 @@ const damageDialogDefense = computed(() => {
     : damageDialog.value.sdef
 })
 
+// Tokens on the grid the user can pick as the attacker, sorted by
+// display name so the dropdown reads alphabetically.
+const damageDialogAttackerOptions = computed(() =>
+  [...props.pokemons].sort((a, b) => a.species.localeCompare(b.species)),
+)
+
+const damageDialogAttacker = computed(() => {
+  if (!damageDialog.value?.attackerId) return null
+  return props.pokemons.find((p) => p.id === damageDialog.value!.attackerId) ?? null
+})
+
+// Atk / Sp.Atk added to the rolled total. Only applied in DB mode —
+// flat damage assumes the user already baked the offence stat in.
+const damageDialogAttackBonus = computed(() => {
+  if (!damageDialog.value || damageDialog.value.source !== 'db') return 0
+  const attacker = damageDialogAttacker.value
+  if (!attacker) return 0
+  return damageDialog.value.mode === 'physical' ? attacker.atk : attacker.satk
+})
+
 const damageDialogMultiplier = computed(() => {
   if (!damageDialog.value) return 1
   return computeMultiplier(damageDialog.value.attackType, damageDialog.value.defenderTypes)
@@ -495,7 +516,8 @@ const damageDialogHpLoss = computed(() => {
   if (damageDialogRawAmount.value === 0) return 0
   // Immunity short-circuits before the 1-floor — a 0× hit deals 0.
   if (damageDialogMultiplier.value === 0) return 0
-  const afterDefense = damageDialogRawAmount.value - damageDialogDefense.value
+  const beforeDefense = damageDialogRawAmount.value + damageDialogAttackBonus.value
+  const afterDefense = beforeDefense - damageDialogDefense.value
   const scaled = Math.floor(afterDefense * damageDialogMultiplier.value)
   // PTU floor: any successful hit deals at least 1 HP regardless of defense.
   return Math.max(1, scaled)
@@ -1797,6 +1819,7 @@ const handleContextDealDamage = () => {
     amount: '',
     db: 1,
     roll: null,
+    attackerId: null,
   }
   closeContextMenu()
   void nextTick(() => {
@@ -2246,6 +2269,12 @@ watch(
         damageDialog.value.def = live.def
         damageDialog.value.sdef = live.sdef
         damageDialog.value.defenderTypes = [...live.defenderTypes]
+        if (
+          damageDialog.value.attackerId &&
+          !props.pokemons.some((p) => p.id === damageDialog.value!.attackerId)
+        ) {
+          damageDialog.value.attackerId = null
+        }
       }
     }
 
@@ -2577,6 +2606,18 @@ watch(
 
         <template v-else>
           <label class="hp-dialog__field">
+            <span>Attacker</span>
+            <select v-model="damageDialog.attackerId">
+              <option :value="null">None</option>
+              <option
+                v-for="attacker in damageDialogAttackerOptions"
+                :key="attacker.id"
+                :value="attacker.id"
+              >{{ attacker.species }} · Atk {{ attacker.atk }} / Sp.Atk {{ attacker.satk }}</option>
+            </select>
+          </label>
+
+          <label class="hp-dialog__field">
             <span>Damage Base</span>
             <select v-model.number="damageDialog.db" @change="handleDamageDialogDbChange">
               <option
@@ -2586,6 +2627,10 @@ watch(
               >DB {{ entry.db }} · {{ formatDbFormula(entry) }}</option>
             </select>
           </label>
+
+          <p class="hp-dialog__note">
+            DB is taken as final — STAB and other DB modifiers aren't applied.
+          </p>
 
           <div class="hp-dialog__roll">
             <button
@@ -2612,6 +2657,10 @@ watch(
         </p>
         <p v-else class="hp-dialog__breakdown">
           <span>{{ damageDialogRawAmount }} dmg</span>
+          <template v-if="damageDialogAttackBonus > 0">
+            <span aria-hidden="true">+</span>
+            <span>{{ damageDialogAttackBonus }} {{ damageDialog.mode === 'physical' ? 'Atk' : 'Sp.Atk' }}</span>
+          </template>
           <span aria-hidden="true">−</span>
           <span>{{ damageDialogDefense }} {{ damageDialog.mode === 'physical' ? 'Def' : 'Sp.Def' }}</span>
           <span aria-hidden="true">×</span>
@@ -2885,6 +2934,14 @@ watch(
   font-size: 0.82rem;
   color: var(--ink-muted);
   font-style: italic;
+}
+
+.hp-dialog__note {
+  margin: -0.25rem 0 0;
+  font-size: 0.78rem;
+  color: var(--ink-muted);
+  letter-spacing: 0.01em;
+  line-height: 1.4;
 }
 
 .hp-dialog__breakdown {
