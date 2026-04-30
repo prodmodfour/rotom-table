@@ -161,14 +161,14 @@ const buildPokedexSearchText = (entry: PokedexRecord & { slug: string; nationalD
   if (entry.types?.length) {
     addSearchValues(values, ...entry.types, `type ${entry.types.join(' ')}`, `types ${entry.types.join(' ')}`)
     for (const type of entry.types) {
-      addSearchValue(values, `type ${type}`)
+      addSearchValues(values, `type ${type}`, `${type} type`)
     }
   }
 
   if (entry.habitat?.length) {
     addSearchValues(values, ...entry.habitat, `habitat ${entry.habitat.join(' ')}`, `habitats ${entry.habitat.join(' ')}`)
     for (const habitat of entry.habitat) {
-      addSearchValue(values, `habitat ${habitat}`)
+      addSearchValues(values, `habitat ${habitat}`, `${habitat} habitat`)
     }
   }
 
@@ -181,7 +181,14 @@ const buildPokedexSearchText = (entry: PokedexRecord & { slug: string; nationalD
 
     for (const [label, abilities] of abilityGroups) {
       for (const ability of abilities ?? []) {
-        addSearchValues(values, ability, `ability ${ability}`, `abilities ${ability}`, `${label} ${ability}`)
+        addSearchValues(
+          values,
+          ability,
+          `ability ${ability}`,
+          `abilities ${ability}`,
+          `${ability} ability`,
+          `${label} ${ability}`,
+        )
       }
     }
   }
@@ -198,6 +205,8 @@ const buildPokedexSearchText = (entry: PokedexRecord & { slug: string; nationalD
         `caps ${label}`,
         `capability ${label}`,
         `capabilities ${label}`,
+        `${label} cap`,
+        `${label} capability`,
         `${label} ${value}`,
         `cap ${label} ${value}`,
         `capability ${label} ${value}`,
@@ -215,8 +224,12 @@ const buildPokedexSearchText = (entry: PokedexRecord & { slug: string; nationalD
         `cap ${capability}`,
         `capability ${capability}`,
         `capabilities ${capability}`,
+        `${capability} cap`,
+        `${capability} capability`,
         baseCapability ? `cap ${baseCapability}` : null,
         baseCapability ? `capability ${baseCapability}` : null,
+        baseCapability ? `${baseCapability} cap` : null,
+        baseCapability ? `${baseCapability} capability` : null,
       )
     }
   }
@@ -227,6 +240,7 @@ const buildPokedexSearchText = (entry: PokedexRecord & { slug: string; nationalD
       move.name,
       `move ${move.name}`,
       `moves ${move.name}`,
+      `${move.name} move`,
       `level up ${move.name}`,
       `level ${move.level} ${move.name}`,
     )
@@ -239,6 +253,7 @@ const buildPokedexSearchText = (entry: PokedexRecord & { slug: string; nationalD
       move.name,
       `move ${move.name}`,
       `moves ${move.name}`,
+      `${move.name} move`,
       `${move.kind} ${move.number}`,
       machine,
       `${move.kind} ${move.number} ${move.name}`,
@@ -247,11 +262,11 @@ const buildPokedexSearchText = (entry: PokedexRecord & { slug: string; nationalD
   }
 
   for (const moveName of entry.egg_moves ?? []) {
-    addSearchValues(values, moveName, `move ${moveName}`, `moves ${moveName}`, `egg move ${moveName}`)
+    addSearchValues(values, moveName, `move ${moveName}`, `moves ${moveName}`, `${moveName} move`, `egg move ${moveName}`)
   }
 
   for (const move of entry.tutor_moves ?? []) {
-    addSearchValues(values, move.name, `move ${move.name}`, `moves ${move.name}`, `tutor move ${move.name}`)
+    addSearchValues(values, move.name, `move ${move.name}`, `moves ${move.name}`, `${move.name} move`, `tutor move ${move.name}`)
     if (move.heart_scale) {
       addSearchValue(values, `heart scale move ${move.name}`)
     }
@@ -300,19 +315,141 @@ const pokemonRouteSlug = computed(() => {
 
 const searchTerm = ref('')
 
-const filteredEntries = computed(() => {
-  const query = normalizeText(searchTerm.value)
+interface SearchCriterion {
+  kind: 'criterion'
+  query: string
+  compactQuery: string
+}
 
-  if (!query) {
+interface SearchBooleanExpression {
+  kind: 'and' | 'or'
+  left: SearchExpression
+  right: SearchExpression
+}
+
+type SearchExpression = SearchCriterion | SearchBooleanExpression
+
+type SearchToken =
+  | { kind: 'term'; value: string }
+  | { kind: 'and' | 'or' | 'open' | 'close' }
+
+const normalizeSearchQuery = (value: string) => value
+  .normalize('NFKD')
+  .replace(/[\u0300-\u036f]/g, '')
+  .toLowerCase()
+  .replace(/['\u2019]/g, '')
+  .replace(/[^a-z0-9#()]+/g, ' ')
+  .replace(/\s+/g, ' ')
+  .trim()
+
+const toSearchCriterion = (value: string): SearchCriterion | null => {
+  const query = normalizeText(value)
+  if (!query) return null
+
+  return {
+    kind: 'criterion',
+    query,
+    compactQuery: query.replace(/\s+/g, ''),
+  }
+}
+
+const tokenizeSearchQuery = (value: string): SearchToken[] => {
+  const normalized = normalizeSearchQuery(value)
+  if (!normalized) return []
+
+  return normalized
+    .split(/(\(|\)|\band\b|\bor\b)/g)
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .map((part): SearchToken => {
+      if (part === '(') return { kind: 'open' }
+      if (part === ')') return { kind: 'close' }
+      if (part === 'and' || part === 'or') return { kind: part }
+      return { kind: 'term', value: part }
+    })
+}
+
+const parseSearchExpression = (value: string): SearchExpression | null => {
+  const tokens = tokenizeSearchQuery(value)
+  let index = 0
+
+  const peek = () => tokens[index] ?? null
+
+  const parsePrimary = (): SearchExpression | null => {
+    const token = peek()
+    if (!token) return null
+
+    if (token.kind === 'term') {
+      index += 1
+      return toSearchCriterion(token.value)
+    }
+
+    if (token.kind === 'open') {
+      index += 1
+      const expression = parseOr()
+      if (peek()?.kind === 'close') {
+        index += 1
+      }
+      return expression
+    }
+
+    return null
+  }
+
+  const parseAnd = (): SearchExpression | null => {
+    let expression = parsePrimary()
+
+    while (peek()?.kind === 'and') {
+      index += 1
+      const right = parsePrimary()
+      if (!right) break
+      expression = expression ? { kind: 'and', left: expression, right } : right
+    }
+
+    return expression
+  }
+
+  const parseOr = (): SearchExpression | null => {
+    let expression = parseAnd()
+
+    while (peek()?.kind === 'or') {
+      index += 1
+      const right = parseAnd()
+      if (!right) break
+      expression = expression ? { kind: 'or', left: expression, right } : right
+    }
+
+    return expression
+  }
+
+  return parseOr()
+}
+
+const matchesSearchCriterion = (entry: DisplayPokedexEntry, criterion: SearchCriterion): boolean => (
+  entry.searchText.includes(criterion.query)
+  || (criterion.compactQuery !== criterion.query && entry.searchText.includes(criterion.compactQuery))
+)
+
+const matchesSearchExpression = (entry: DisplayPokedexEntry, expression: SearchExpression): boolean => {
+  if (expression.kind === 'criterion') {
+    return matchesSearchCriterion(entry, expression)
+  }
+
+  if (expression.kind === 'and') {
+    return matchesSearchExpression(entry, expression.left) && matchesSearchExpression(entry, expression.right)
+  }
+
+  return matchesSearchExpression(entry, expression.left) || matchesSearchExpression(entry, expression.right)
+}
+
+const filteredEntries = computed(() => {
+  const expression = parseSearchExpression(searchTerm.value)
+
+  if (!expression) {
     return allEntries
   }
 
-  const compactQuery = query.replace(/\s+/g, '')
-
-  return allEntries.filter((entry) => (
-    entry.searchText.includes(query)
-    || (compactQuery !== query && entry.searchText.includes(compactQuery))
-  ))
+  return allEntries.filter((entry) => matchesSearchExpression(entry, expression))
 })
 
 const routedEntry = computed(() => (
