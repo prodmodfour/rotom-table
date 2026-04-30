@@ -4,6 +4,7 @@ import { onBeforeRouteUpdate } from 'vue-router'
 import pokedexData from '~/ptu-data/data/pokedex.json'
 import { pokemonCatalogBySpecies } from '~/data/pokemonCatalog'
 import { compareByNationalDex, getNationalDexNumber } from '~/utils/nationalDex'
+import { POKEMON_TYPES, isPokemonType, singleTypeMultiplier, type PokemonType } from '~/utils/typeChart'
 import type { PokedexCapabilities, PokedexRecord } from '~/types/pokemon'
 
 definePageMeta({
@@ -867,6 +868,79 @@ const habitatSummary = computed(() => {
   return habitat.join(', ')
 })
 
+type TypeMatchupGroupKey = 'weaknesses' | 'resistances' | 'immunities'
+
+interface TypeMatchupItem {
+  type: PokemonType
+  multiplier: number
+  label: string
+}
+
+interface TypeMatchupGroup {
+  key: TypeMatchupGroupKey
+  label: string
+  items: TypeMatchupItem[]
+}
+
+const TYPE_MATCHUP_ORDER = new Map<PokemonType, number>(
+  POKEMON_TYPES.map((type, index) => [type, index] as const),
+)
+
+const compareTypeMatchupOrder = (a: TypeMatchupItem, b: TypeMatchupItem) => (
+  (TYPE_MATCHUP_ORDER.get(a.type) ?? 0) - (TYPE_MATCHUP_ORDER.get(b.type) ?? 0)
+)
+
+const computePtuTypeMultiplier = (attacker: PokemonType, defenders: PokemonType[]): number => {
+  let effectivenessSteps = 0
+
+  for (const defender of defenders) {
+    const singleTypeMatchup = singleTypeMultiplier(attacker, defender)
+
+    if (singleTypeMatchup === 0) return 0
+    if (singleTypeMatchup > 1) effectivenessSteps += 1
+    if (singleTypeMatchup < 1) effectivenessSteps -= 1
+  }
+
+  if (effectivenessSteps < 0) return 1 / (2 ** Math.abs(effectivenessSteps))
+  if (effectivenessSteps === 1) return 1.5
+  if (effectivenessSteps >= 2) return effectivenessSteps
+  return 1
+}
+
+const formatPtuMultiplier = (multiplier: number): string => {
+  if (multiplier === 0) return '0'
+  if (multiplier < 1) return multiplier.toString().replace(/^0/, '')
+  return multiplier.toString()
+}
+
+const typeMatchupGroups = computed<TypeMatchupGroup[]>(() => {
+  const defendingTypes = (selectedEntry.value?.types ?? []).filter(isPokemonType)
+  if (defendingTypes.length === 0) return []
+
+  const matchups = POKEMON_TYPES.map((type): TypeMatchupItem => {
+    const multiplier = computePtuTypeMultiplier(type, defendingTypes)
+    return {
+      type,
+      multiplier,
+      label: formatPtuMultiplier(multiplier),
+    }
+  })
+
+  const weaknesses = matchups
+    .filter((matchup) => matchup.multiplier > 1)
+    .sort((a, b) => (b.multiplier - a.multiplier) || compareTypeMatchupOrder(a, b))
+  const resistances = matchups
+    .filter((matchup) => matchup.multiplier > 0 && matchup.multiplier < 1)
+    .sort((a, b) => (a.multiplier - b.multiplier) || compareTypeMatchupOrder(a, b))
+  const immunities = matchups.filter((matchup) => matchup.multiplier === 0)
+
+  return [
+    { key: 'weaknesses', label: 'Weaknesses', items: weaknesses },
+    { key: 'resistances', label: 'Resistances', items: resistances },
+    { key: 'immunities', label: 'Immunities', items: immunities },
+  ].filter((group) => group.items.length > 0)
+})
+
 </script>
 
 <template>
@@ -1123,6 +1197,28 @@ const habitatSummary = computed(() => {
             <section v-if="skillPhrase" class="book-section">
               <h3 class="book-section__title">Skill List</h3>
               <p class="paragraph">{{ skillPhrase }}</p>
+            </section>
+
+            <section v-if="typeMatchupGroups.length" class="book-section book-section--matchups">
+              <h3 class="book-section__title">Weaknesses &amp; Resistances</h3>
+              <div class="type-matchups">
+                <div
+                  v-for="group in typeMatchupGroups"
+                  :key="group.key"
+                  class="type-matchup-group"
+                >
+                  <p class="matchup-label">{{ group.label }}</p>
+                  <ul class="type-effect-list">
+                    <li
+                      v-for="item in group.items"
+                      :key="`${group.key}-${item.type}`"
+                    >
+                      <TypeBadge :type="item.type" size="xs" />
+                      <span class="type-effect-mult">×{{ item.label }}</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
             </section>
 
             <section
@@ -1649,6 +1745,56 @@ code {
 .paragraph--indent {
   /* mirrors the leading tab indent the printed book uses for run-on lists */
   text-indent: 1.6rem;
+}
+
+/* ---- Defensive type matchups ------------------------------------- */
+
+.book-section--matchups {
+  break-inside: avoid;
+}
+
+.type-matchups {
+  display: grid;
+  gap: 0.32rem;
+}
+
+.type-matchup-group {
+  display: grid;
+  grid-template-columns: 5.6rem minmax(0, 1fr);
+  gap: 0.45rem;
+  align-items: start;
+}
+
+.matchup-label {
+  margin: 0.06rem 0 0;
+  color: var(--ink-bright);
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.type-effect-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.18rem 0.45rem;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.type-effect-list li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.12rem;
+  white-space: nowrap;
+  line-height: 1;
+}
+
+.type-effect-mult {
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  line-height: 1;
 }
 
 /* ---- Stat list (label : value, value right-aligned) -------------- */
