@@ -95,6 +95,20 @@ const selectedEntry = computed(() => {
 
 const selectedId = computed(() => selectedEntry.value?.id ?? null)
 
+const resolvePokedexSpecies = (species: string): DisplayPokedexEntry | null => (
+  entryBySlug.get(toPokedexSlug(species)) ?? null
+)
+
+const displayedEvolutions = computed(() => (
+  (selectedEntry.value?.evolutions ?? []).map((evolution) => {
+    const entry = resolvePokedexSpecies(evolution.species)
+    return {
+      ...evolution,
+      href: entry && entry.id !== selectedId.value ? pokedexEntryPath(entry) : null,
+    }
+  })
+))
+
 const requestedPokemonName = computed(() => {
   if (!pokemonRouteSlug.value || selectedEntry.value) return null
   const raw = route.params.pokemon_name
@@ -403,14 +417,20 @@ const habitatSummary = computed(() => {
               </template>
             </section>
 
-            <section v-if="selectedEntry.evolutions?.length" class="book-section">
+            <section v-if="displayedEvolutions.length" class="book-section">
               <h3 class="book-section__title">Evolution:</h3>
               <p
-                v-for="evolution in selectedEntry.evolutions"
+                v-for="evolution in displayedEvolutions"
                 :key="`${evolution.stage}-${evolution.species}`"
                 class="info-line"
               >
-                {{ evolution.stage }} - {{ evolution.species }}<template v-if="evolution.min_level && evolution.min_level > 0"> Minimum {{ evolution.min_level }}</template>
+                {{ evolution.stage }} -
+                <NuxtLink
+                  v-if="evolution.href"
+                  :to="evolution.href"
+                  class="evolution-link"
+                  prefetch-on="interaction"
+                >{{ evolution.species }}</NuxtLink><span v-else>{{ evolution.species }}</span><template v-if="evolution.min_level && evolution.min_level > 0"> Minimum {{ evolution.min_level }}</template>
               </p>
             </section>
 
@@ -859,6 +879,16 @@ code {
 .paragraph {
   margin: 0.05rem 0;
   color: var(--ink);
+}
+
+.evolution-link {
+  color: var(--accent);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.16em;
+}
+
+.evolution-link:hover {
+  color: var(--ink-bright);
 }
 
 .info-line--types {
