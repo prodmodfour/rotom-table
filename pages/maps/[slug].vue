@@ -873,7 +873,7 @@ watch(
               </label>
             </div>
             <span class="badge">
-              {{ initiativeRows.length }} actor{{ initiativeRows.length === 1 ? '' : 's' }}
+              {{ initiativeRows.length }} character{{ initiativeRows.length === 1 ? '' : 's' }}
             </span>
           </div>
 
