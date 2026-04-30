@@ -1,5 +1,5 @@
 /**
- * Helpers for spawning a sheet (Pokémon or trainer) onto the tabletop grid.
+ * Helpers for spawning a sheet (Pokémon or trainer) onto a tabletop map.
  *
  * A spawned token bundles three things:
  *   1. The *catalog entry* (sprite URL + footprint dimensions). Pokémon are

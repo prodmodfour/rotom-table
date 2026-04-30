@@ -1,8 +1,8 @@
 /**
- * POST /api/grids/move
+ * POST /api/maps/move
  *
- * Moves a grid file into a different folder under ``data/grids/``.
- * Empty `folder` moves the grid back to the root.
+ * Moves a map file into a different folder under ``data/maps/``.
+ * Empty `folder` moves the map back to the root.
  *
  * Request body: `{ slug: string, folder: string, clientId?: string }`
  * Response:     `{ ok: true, moved: boolean, path: string }`
@@ -12,15 +12,15 @@ import { join, sep } from 'node:path'
 import { createError, defineEventHandler, readBody } from 'h3'
 import { publishRealtime } from '../../utils/realtime'
 import {
-  GRIDS_ROOT,
+  MAPS_ROOT,
   PROJECT_ROOT,
   SLUG_RE,
-  findGridFile,
+  findMapFile,
   pruneEmptyParents,
-  readGridFile,
+  readMapFile,
   sanitizeFolderPath,
-  writeGridFile,
-} from '../../utils/gridStorage'
+  writeMapFile,
+} from '../../utils/mapStorage'
 
 interface MoveBody {
   slug?: string
@@ -41,13 +41,13 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: (err as Error).message })
   }
 
-  const currentPath = findGridFile(slug)
+  const currentPath = findMapFile(slug)
   if (!currentPath) {
-    throw createError({ statusCode: 404, statusMessage: `Grid ${slug}.json not found` })
+    throw createError({ statusCode: 404, statusMessage: `Map ${slug}.json not found` })
   }
 
-  const destDir = folder ? join(GRIDS_ROOT, folder) : GRIDS_ROOT
-  if (destDir !== GRIDS_ROOT && !destDir.startsWith(GRIDS_ROOT + sep)) {
+  const destDir = folder ? join(MAPS_ROOT, folder) : MAPS_ROOT
+  if (destDir !== MAPS_ROOT && !destDir.startsWith(MAPS_ROOT + sep)) {
     throw createError({ statusCode: 400, statusMessage: 'Invalid destination' })
   }
   const destPath = join(destDir, `${slug}.json`)
@@ -57,7 +57,7 @@ export default defineEventHandler(async (event) => {
     if (existsSync(destPath)) {
       throw createError({
         statusCode: 409,
-        statusMessage: 'A grid with that name already exists in the target folder',
+        statusMessage: 'A map with that name already exists in the target folder',
       })
     }
     mkdirSync(destDir, { recursive: true })
@@ -68,27 +68,27 @@ export default defineEventHandler(async (event) => {
 
   // Re-read so `folder` is correctly derived from the new path; bump
   // updatedAt for consistency with save/rename.
-  const grid = readGridFile(destPath)
-  grid.updatedAt = Date.now()
-  writeGridFile(destPath, grid)
+  const map = readMapFile(destPath)
+  map.updatedAt = Date.now()
+  writeMapFile(destPath, map)
 
   publishRealtime({
-    channel: `grid:${slug}`,
+    channel: `map:${slug}`,
     type: 'updated',
     clientId: body?.clientId,
-    data: grid,
+    data: map,
   })
   publishRealtime({
-    channel: 'grids',
+    channel: 'maps',
     type: 'moved',
     clientId: body?.clientId,
     data: {
-      slug: grid.slug,
-      name: grid.name,
-      folder: grid.folder ?? '',
-      dimensions: grid.dimensions,
-      placementCount: grid.placements?.length ?? 0,
-      updatedAt: grid.updatedAt,
+      slug: map.slug,
+      name: map.name,
+      folder: map.folder ?? '',
+      dimensions: map.dimensions,
+      placementCount: map.placements?.length ?? 0,
+      updatedAt: map.updatedAt,
     },
   })
 

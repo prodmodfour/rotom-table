@@ -1,27 +1,27 @@
 /**
- * POST /api/grids/save
+ * POST /api/maps/save
  *
- * Persists a full grid JSON in place. The grid's on-disk path is
- * located by walking ``data/grids/`` for ``<slug>.json``. The slug must
- * match ``body.grid.slug``.
+ * Persists a full map JSON in place. The map's on-disk path is
+ * located by walking ``data/maps/`` for ``<slug>.json``. The slug must
+ * match ``body.map.slug``.
  *
- * Request body: `{ slug: string, grid: Grid, clientId?: string }`
- * Response:     `{ ok: true, path: string, grid: Grid }`
+ * Request body: `{ slug: string, map: TabletopMap, clientId?: string }`
+ * Response:     `{ ok: true, path: string, map: TabletopMap }`
  */
 import { createError, defineEventHandler, readBody } from 'h3'
 import { publishRealtime } from '../../utils/realtime'
 import {
   PROJECT_ROOT,
   SLUG_RE,
-  findGridFile,
+  findMapFile,
   folderFromPath,
-  writeGridFile,
-} from '../../utils/gridStorage'
-import type { Grid } from '~/types/grid'
+  writeMapFile,
+} from '../../utils/mapStorage'
+import type { TabletopMap } from '~/types/map'
 
 interface SaveBody {
   slug?: string
-  grid?: Grid
+  map?: TabletopMap
   clientId?: string
 }
 
@@ -31,38 +31,38 @@ export default defineEventHandler(async (event) => {
   if (!SLUG_RE.test(slug)) {
     throw createError({ statusCode: 400, statusMessage: 'slug must match /^[a-z0-9-]+$/' })
   }
-  const grid = body?.grid
-  if (!grid || typeof grid !== 'object') {
-    throw createError({ statusCode: 400, statusMessage: 'grid must be an object' })
+  const map = body?.map
+  if (!map || typeof map !== 'object') {
+    throw createError({ statusCode: 400, statusMessage: 'map must be an object' })
   }
-  if (grid.slug !== slug) {
+  if (map.slug !== slug) {
     throw createError({
       statusCode: 400,
-      statusMessage: `grid.slug "${grid.slug}" must match request slug "${slug}"`,
+      statusMessage: `map.slug "${map.slug}" must match request slug "${slug}"`,
     })
   }
 
-  const path = findGridFile(slug)
+  const path = findMapFile(slug)
   if (!path) {
-    throw createError({ statusCode: 404, statusMessage: `Grid ${slug}.json not found` })
+    throw createError({ statusCode: 404, statusMessage: `Map ${slug}.json not found` })
   }
 
-  const persisted: Grid = {
-    ...grid,
+  const persisted: TabletopMap = {
+    ...map,
     folder: folderFromPath(path),
-    voxels: Array.isArray(grid.voxels) ? grid.voxels : [],
+    voxels: Array.isArray(map.voxels) ? map.voxels : [],
     updatedAt: Date.now(),
   }
-  writeGridFile(path, persisted)
+  writeMapFile(path, persisted)
 
   publishRealtime({
-    channel: `grid:${slug}`,
+    channel: `map:${slug}`,
     type: 'updated',
     clientId: body?.clientId,
     data: persisted,
   })
   publishRealtime({
-    channel: 'grids',
+    channel: 'maps',
     type: 'updated',
     clientId: body?.clientId,
     data: {
@@ -78,6 +78,6 @@ export default defineEventHandler(async (event) => {
   return {
     ok: true as const,
     path: path.slice(PROJECT_ROOT.length + 1),
-    grid: persisted,
+    map: persisted,
   }
 })

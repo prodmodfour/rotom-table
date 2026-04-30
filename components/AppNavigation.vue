@@ -2,8 +2,8 @@
 const route = useRoute()
 
 const isActive = (path: string) => {
-  if (path === '/grids') {
-    return route.path === '/' || route.path.startsWith('/grids')
+  if (path === '/maps') {
+    return route.path === '/' || route.path.startsWith('/maps') || route.path.startsWith('/grids')
   }
 
   if (path === '/') {
@@ -16,8 +16,8 @@ const isActive = (path: string) => {
 
 <template>
   <nav class="app-navigation" aria-label="Primary">
-    <NuxtLink :class="['nav-link', { active: isActive('/grids') }]" to="/grids">
-      Tabletop
+    <NuxtLink :class="['nav-link', { active: isActive('/maps') }]" to="/maps">
+      Maps
     </NuxtLink>
     <NuxtLink :class="['nav-link', { active: isActive('/pokedex') }]" to="/pokedex">
       Pokédex

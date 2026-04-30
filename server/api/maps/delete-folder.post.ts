@@ -1,7 +1,7 @@
 /**
- * POST /api/grids/delete-folder
+ * POST /api/maps/delete-folder
  *
- * Recursively removes a folder under ``data/grids/`` and every grid
+ * Recursively removes a folder under ``data/maps/`` and every map
  * inside it. Empty parents are pruned.
  *
  * Request body: `{ folder: string, clientId?: string }`
@@ -11,11 +11,11 @@ import { join, sep } from 'node:path'
 import { createError, defineEventHandler, readBody } from 'h3'
 import { publishRealtime } from '../../utils/realtime'
 import {
-  GRIDS_ROOT,
+  MAPS_ROOT,
   PROJECT_ROOT,
   pruneEmptyParents,
   sanitizeFolderPath,
-} from '../../utils/gridStorage'
+} from '../../utils/mapStorage'
 
 interface DeleteFolderBody {
   folder?: string
@@ -31,8 +31,8 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: (err as Error).message })
   }
 
-  const dir = join(GRIDS_ROOT, folder)
-  if (dir !== GRIDS_ROOT && !dir.startsWith(GRIDS_ROOT + sep)) {
+  const dir = join(MAPS_ROOT, folder)
+  if (dir !== MAPS_ROOT && !dir.startsWith(MAPS_ROOT + sep)) {
     throw createError({ statusCode: 400, statusMessage: 'Invalid folder path' })
   }
   if (!existsSync(dir)) {
@@ -45,7 +45,7 @@ export default defineEventHandler(async (event) => {
   pruneEmptyParents(dir)
 
   publishRealtime({
-    channel: 'grids',
+    channel: 'maps',
     type: 'folder-deleted',
     clientId: body?.clientId,
     data: { folder },

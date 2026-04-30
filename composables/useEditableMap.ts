@@ -1,18 +1,18 @@
 /**
- * useEditableGrid — reactive wrapper around a saved grid document.
+ * useEditableMap — reactive wrapper around a saved map document.
  *
- * Loads the grid from `/api/grids/load`, debounces saves through
- * `/api/grids/save`, and syncs with other tabs/devices via the
+ * Loads the map from `/api/maps/load`, debounces saves through
+ * `/api/maps/save`, and syncs with other tabs/devices via the
  * `/api/events` SSE stream:
  *
  *   • Edits in *this* tab mutate the reactive ref → deep watcher
  *     debounces a save → the server broadcasts the post-save state
- *     back to every subscriber on `grid:<slug>`. Echoes from this
+ *     back to every subscriber on `map:<slug>`. Echoes from this
  *     same tab (matched by `clientId`) are dropped.
  *   • Edits in *other* tabs/devices arrive as SSE events; we replace
  *     the local ref's contents and update our "last server snapshot"
  *     so the watcher doesn't trigger a redundant save.
- *   • If another tab renames the grid (so the slug changes on disk),
+ *   • If another tab renames the map (so the slug changes on disk),
  *     we set `renamedTo` so the page can navigate to the new URL.
  *
  * Conflict resolution is last-writer-wins: simultaneous edits in two
@@ -22,15 +22,15 @@
 import { onBeforeUnmount, ref, watch, type Ref } from 'vue'
 import { getClientId } from '~/utils/clientId'
 import { useRealtimeChannel } from './useRealtime'
-import type { Grid } from '~/types/grid'
+import type { TabletopMap } from '~/types/map'
 
-export type GridSaveStatus = 'idle' | 'loading' | 'saving' | 'saved' | 'error' | 'not-found'
+export type MapSaveStatus = 'idle' | 'loading' | 'saving' | 'saved' | 'error' | 'not-found'
 
-export interface UseEditableGridReturn {
-  grid: Ref<Grid | null>
-  status: Ref<GridSaveStatus>
+export interface UseEditableMapReturn {
+  map: Ref<TabletopMap | null>
+  status: Ref<MapSaveStatus>
   error: Ref<string | null>
-  /** Set to the new slug when this grid was renamed in another tab. */
+  /** Set to the new slug when this map was renamed in another tab. */
   renamedTo: Ref<string | null>
   saveNow: () => Promise<void>
   reload: () => Promise<void>
@@ -38,9 +38,9 @@ export interface UseEditableGridReturn {
 
 const stableJson = (value: unknown): string => JSON.stringify(value)
 
-export const useEditableGrid = (slug: string, debounceMs = 200): UseEditableGridReturn => {
-  const grid = ref<Grid | null>(null)
-  const status = ref<GridSaveStatus>('loading')
+export const useEditableMap = (slug: string, debounceMs = 200): UseEditableMapReturn => {
+  const map = ref<TabletopMap | null>(null)
+  const status = ref<MapSaveStatus>('loading')
   const error = ref<string | null>(null)
   const renamedTo = ref<string | null>(null)
 
@@ -58,29 +58,29 @@ export const useEditableGrid = (slug: string, debounceMs = 200): UseEditableGrid
 
   const performSave = async () => {
     cancelPending()
-    if (!grid.value) return
+    if (!map.value) return
     const seq = ++saveSeq
-    const snapshot: Grid = JSON.parse(JSON.stringify(grid.value))
+    const snapshot: TabletopMap = JSON.parse(JSON.stringify(map.value))
     status.value = 'saving'
     error.value = null
     try {
-      const result = await $fetch<{ grid: Grid }>('/api/grids/save', {
+      const result = await $fetch<{ map: TabletopMap }>('/api/maps/save', {
         method: 'POST',
-        body: { slug, grid: snapshot, clientId },
+        body: { slug, map: snapshot, clientId },
       })
       if (seq !== saveSeq) return
       // Adopt the persisted version (server stamps `updatedAt`).
-      lastServerJson = stableJson(result.grid)
+      lastServerJson = stableJson(result.map)
       // Splice in the new updatedAt without disturbing other fields the
       // user may have edited mid-flight.
-      if (grid.value) grid.value.updatedAt = result.grid.updatedAt
+      if (map.value) map.value.updatedAt = result.map.updatedAt
       status.value = 'saved'
     } catch (err: unknown) {
       if (seq !== saveSeq) return
       status.value = 'error'
       const e = err as { statusMessage?: string; data?: { statusMessage?: string }; message?: string }
       error.value = e?.statusMessage ?? e?.data?.statusMessage ?? e?.message ?? String(err)
-      console.error('[useEditableGrid] save failed', err)
+      console.error('[useEditableMap] save failed', err)
     }
   }
 
@@ -93,25 +93,25 @@ export const useEditableGrid = (slug: string, debounceMs = 200): UseEditableGrid
     status.value = 'loading'
     error.value = null
     try {
-      const data = await $fetch<{ grid: Grid }>('/api/grids/load', { params: { slug } })
-      lastServerJson = stableJson(data.grid)
-      grid.value = data.grid
+      const data = await $fetch<{ map: TabletopMap }>('/api/maps/load', { params: { slug } })
+      lastServerJson = stableJson(data.map)
+      map.value = data.map
       status.value = 'idle'
     } catch (err: unknown) {
       const e = err as { statusCode?: number; statusMessage?: string; message?: string }
       if (e?.statusCode === 404) {
         status.value = 'not-found'
-        grid.value = null
+        map.value = null
         return
       }
       status.value = 'error'
       error.value = e?.statusMessage ?? e?.message ?? String(err)
-      console.error('[useEditableGrid] load failed', err)
+      console.error('[useEditableMap] load failed', err)
     }
   }
 
   watch(
-    grid,
+    map,
     (current) => {
       if (!current) return
       const json = stableJson(current)
@@ -126,25 +126,25 @@ export const useEditableGrid = (slug: string, debounceMs = 200): UseEditableGrid
     { deep: true },
   )
 
-  useRealtimeChannel(`grid:${slug}`, (event) => {
+  useRealtimeChannel(`map:${slug}`, (event) => {
     if (event.clientId === clientId) return
     if (event.type === 'updated' && event.data) {
-      const incoming = event.data as Grid
+      const incoming = event.data as TabletopMap
       lastServerJson = stableJson(incoming)
-      grid.value = incoming
+      map.value = incoming
       status.value = 'idle'
     } else if (event.type === 'deleted') {
       status.value = 'not-found'
-      grid.value = null
+      map.value = null
     } else if (event.type === 'renamed' && event.data) {
-      const payload = event.data as { newSlug?: string; grid?: Grid }
+      const payload = event.data as { newSlug?: string; map?: TabletopMap }
       if (!payload.newSlug) return
       // The file moved on disk — drop any pending save (its slug is
       // gone) and let the page navigate to the new URL.
       cancelPending()
-      if (payload.grid) {
-        lastServerJson = stableJson(payload.grid)
-        grid.value = payload.grid
+      if (payload.map) {
+        lastServerJson = stableJson(payload.map)
+        map.value = payload.map
       }
       status.value = 'idle'
       renamedTo.value = payload.newSlug
@@ -162,5 +162,5 @@ export const useEditableGrid = (slug: string, debounceMs = 200): UseEditableGrid
 
   void reload()
 
-  return { grid, status, error, renamedTo, saveNow, reload }
+  return { map, status, error, renamedTo, saveNow, reload }
 }

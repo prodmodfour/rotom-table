@@ -1,5 +1,5 @@
 import type { GridAnchor, GridDimensions, SpawnedPokemon } from '~/types/pokemon'
-import type { GridVoxel } from '~/types/grid'
+import type { GridVoxel } from '~/types/map'
 import { buildVoxelOccupancy, footprintOverlapsVoxels } from './voxels'
 
 interface PokemonFootprint {

@@ -1,7 +1,7 @@
 /**
- * Filesystem helpers for grid documents.
+ * Filesystem helpers for map documents.
  *
- * Grids live as JSON files under ``data/grids/`` (recursively). The
+ * Maps live as JSON files under ``data/maps/`` (recursively). The
  * directory layout mirrors the sheet system so the same folder /
  * drag-drop UX can be reused.
  */
@@ -14,21 +14,21 @@ import {
   writeFileSync,
 } from 'node:fs'
 import { dirname, join, resolve, sep } from 'node:path'
-import type { Grid, GridSummary } from '~/types/grid'
+import type { MapSummary, TabletopMap } from '~/types/map'
 
 export const PROJECT_ROOT = resolve(process.cwd())
-export const GRIDS_ROOT = resolve(PROJECT_ROOT, 'data/grids')
+export const MAPS_ROOT = resolve(PROJECT_ROOT, 'data/maps')
 export const SLUG_RE = /^[a-z0-9-]+$/
 export const SAFE_SEGMENT = /^[a-zA-Z0-9_-]+$/
 
-export const ensureGridsRoot = (): void => {
-  if (!existsSync(GRIDS_ROOT)) mkdirSync(GRIDS_ROOT, { recursive: true })
+export const ensureMapsRoot = (): void => {
+  if (!existsSync(MAPS_ROOT)) mkdirSync(MAPS_ROOT, { recursive: true })
 }
 
-/** Walk `data/grids/` recursively, return the first `<slug>.json` match. */
-export const findGridFile = (slug: string): string | null => {
-  if (!existsSync(GRIDS_ROOT)) return null
-  const stack: string[] = [GRIDS_ROOT]
+/** Walk `data/maps/` recursively, return the first `<slug>.json` match. */
+export const findMapFile = (slug: string): string | null => {
+  if (!existsSync(MAPS_ROOT)) return null
+  const stack: string[] = [MAPS_ROOT]
   while (stack.length) {
     const dir = stack.pop()!
     let entries
@@ -48,15 +48,15 @@ export const findGridFile = (slug: string): string | null => {
 }
 
 export const folderFromPath = (filePath: string): string => {
-  const rel = filePath.slice(GRIDS_ROOT.length + 1).split(sep).join('/')
+  const rel = filePath.slice(MAPS_ROOT.length + 1).split(sep).join('/')
   const lastSlash = rel.lastIndexOf('/')
   if (lastSlash === -1) return ''
   return rel.slice(0, lastSlash)
 }
 
-export const readGridFile = (filePath: string): Grid => {
+export const readMapFile = (filePath: string): TabletopMap => {
   const raw = readFileSync(filePath, 'utf8')
-  const json = JSON.parse(raw) as Grid
+  const json = JSON.parse(raw) as TabletopMap
   return {
     ...json,
     folder: json.folder ?? folderFromPath(filePath),
@@ -64,18 +64,18 @@ export const readGridFile = (filePath: string): Grid => {
   }
 }
 
-export const writeGridFile = (filePath: string, grid: Grid): void => {
+export const writeMapFile = (filePath: string, map: TabletopMap): void => {
   mkdirSync(dirname(filePath), { recursive: true })
   // Folder is re-derived from the path on read, so don't persist it.
-  const out: Record<string, unknown> = { ...(grid as unknown as Record<string, unknown>) }
+  const out: Record<string, unknown> = { ...(map as unknown as Record<string, unknown>) }
   delete out.folder
   writeFileSync(filePath, JSON.stringify(out, null, 2) + '\n', 'utf8')
 }
 
-export const listGrids = (): GridSummary[] => {
-  if (!existsSync(GRIDS_ROOT)) return []
-  const out: GridSummary[] = []
-  const stack: Array<{ abs: string; rel: string }> = [{ abs: GRIDS_ROOT, rel: '' }]
+export const listMaps = (): MapSummary[] => {
+  if (!existsSync(MAPS_ROOT)) return []
+  const out: MapSummary[] = []
+  const stack: Array<{ abs: string; rel: string }> = [{ abs: MAPS_ROOT, rel: '' }]
   while (stack.length) {
     const { abs, rel } = stack.pop()!
     let entries
@@ -92,17 +92,17 @@ export const listGrids = (): GridSummary[] => {
         stack.push({ abs: full, rel: childRel })
       } else if (entry.isFile() && entry.name.endsWith('.json')) {
         try {
-          const grid = JSON.parse(readFileSync(full, 'utf8')) as Grid
+          const map = JSON.parse(readFileSync(full, 'utf8')) as TabletopMap
           out.push({
-            slug: grid.slug,
-            name: grid.name,
-            folder: grid.folder ?? rel,
-            dimensions: grid.dimensions,
-            placementCount: grid.placements?.length ?? 0,
-            updatedAt: grid.updatedAt,
+            slug: map.slug,
+            name: map.name,
+            folder: map.folder ?? rel,
+            dimensions: map.dimensions,
+            placementCount: map.placements?.length ?? 0,
+            updatedAt: map.updatedAt,
           })
         } catch (err) {
-          console.warn('[grids] failed to read', full, err)
+          console.warn('[maps] failed to read', full, err)
         }
       }
     }
@@ -114,10 +114,10 @@ export const listGrids = (): GridSummary[] => {
   })
 }
 
-export const listGridFolders = (): string[] => {
-  if (!existsSync(GRIDS_ROOT)) return []
+export const listMapFolders = (): string[] => {
+  if (!existsSync(MAPS_ROOT)) return []
   const out = new Set<string>()
-  const stack: Array<{ abs: string; rel: string }> = [{ abs: GRIDS_ROOT, rel: '' }]
+  const stack: Array<{ abs: string; rel: string }> = [{ abs: MAPS_ROOT, rel: '' }]
   while (stack.length) {
     const { abs, rel } = stack.pop()!
     let entries
@@ -137,10 +137,10 @@ export const listGridFolders = (): string[] => {
   return Array.from(out).sort((a, b) => a.localeCompare(b))
 }
 
-/** Walk up from `path`, removing empty directories until we leave `GRIDS_ROOT`. */
+/** Walk up from `path`, removing empty directories until we leave `MAPS_ROOT`. */
 export const pruneEmptyParents = (path: string): void => {
   let parent = dirname(path)
-  while (parent.startsWith(GRIDS_ROOT + sep) && parent !== GRIDS_ROOT) {
+  while (parent.startsWith(MAPS_ROOT + sep) && parent !== MAPS_ROOT) {
     try {
       if (readdirSync(parent).length > 0) break
       rmdirSync(parent)
@@ -173,11 +173,11 @@ export const slugify = (input: string): string =>
     .replace(/^-|-$/g, '')
 
 export const allocateSlug = (base: string): string => {
-  const root = slugify(base) || 'untitled-grid'
-  if (!findGridFile(root)) return root
+  const root = slugify(base) || 'untitled-map'
+  if (!findMapFile(root)) return root
   for (let i = 1; i < 10000; i += 1) {
     const candidate = `${root}-${i}`
-    if (!findGridFile(candidate)) return candidate
+    if (!findMapFile(candidate)) return candidate
   }
   throw new Error('could not allocate slug')
 }

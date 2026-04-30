@@ -2,8 +2,8 @@
  * Client-side multiplexer for the `/api/events` SSE stream.
  *
  * One ``EventSource`` per page (across the whole app), with channel-
- * scoped subscribe/unsubscribe so a grid editor can listen on multiple
- * channels (its own grid + several sheets) without opening multiple
+ * scoped subscribe/unsubscribe so a map editor can listen on multiple
+ * channels (its own map + several sheets) without opening multiple
  * HTTP connections.
  *
  * Disconnects auto-reconnect after a short backoff. Subscribers don't

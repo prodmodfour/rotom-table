@@ -15,7 +15,7 @@
  *     place a voxel inside a mon).
  */
 import type { GridAnchor } from '~/types/pokemon'
-import type { GridVoxel, VoxelMaterial } from '~/types/grid'
+import type { GridVoxel, VoxelMaterial } from '~/types/map'
 
 export interface VoxelMaterialDef {
   material: VoxelMaterial

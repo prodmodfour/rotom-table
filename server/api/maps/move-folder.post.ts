@@ -1,7 +1,7 @@
 /**
- * POST /api/grids/move-folder
+ * POST /api/maps/move-folder
  *
- * Renames or relocates a folder under ``data/grids/``.
+ * Renames or relocates a folder under ``data/maps/``.
  *
  * Request body: `{ from: string, to: string, clientId?: string }`
  */
@@ -10,10 +10,10 @@ import { dirname, join, sep } from 'node:path'
 import { createError, defineEventHandler, readBody } from 'h3'
 import { publishRealtime } from '../../utils/realtime'
 import {
-  GRIDS_ROOT,
+  MAPS_ROOT,
   pruneEmptyParents,
   sanitizeFolderPath,
-} from '../../utils/gridStorage'
+} from '../../utils/mapStorage'
 
 interface MoveFolderBody {
   from?: string
@@ -39,9 +39,9 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const src = join(GRIDS_ROOT, from)
-  const dst = join(GRIDS_ROOT, to)
-  if (!src.startsWith(GRIDS_ROOT + sep) || !dst.startsWith(GRIDS_ROOT + sep)) {
+  const src = join(MAPS_ROOT, from)
+  const dst = join(MAPS_ROOT, to)
+  if (!src.startsWith(MAPS_ROOT + sep) || !dst.startsWith(MAPS_ROOT + sep)) {
     throw createError({ statusCode: 400, statusMessage: 'Invalid path' })
   }
   if (!existsSync(src) || !statSync(src).isDirectory()) {
@@ -59,7 +59,7 @@ export default defineEventHandler(async (event) => {
   pruneEmptyParents(src)
 
   publishRealtime({
-    channel: 'grids',
+    channel: 'maps',
     type: 'folder-moved',
     clientId: body?.clientId,
     data: { from, to },

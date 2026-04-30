@@ -1,8 +1,7 @@
 <script setup lang="ts">
-// Tabletop landing now lives at /grids — the file browser for saved
-// grids. Redirect any deep links to the old in-memory page there.
+// Tabletop landing now lives at /maps — the file browser for saved maps.
 definePageMeta({
-  middleware: () => navigateTo('/grids', { replace: true }),
+  middleware: () => navigateTo('/maps', { replace: true }),
 })
 </script>
 

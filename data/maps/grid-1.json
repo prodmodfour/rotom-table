@@ -8,24 +8,13 @@
   },
   "placements": [
     {
-      "id": "pkm-moge7hw1-pfv1fp",
-      "sheetKind": "pokemon",
-      "sheetSlug": "bolt-pikachu",
-      "position": {
-        "x": 10,
-        "y": 1,
-        "z": 7
-      },
-      "turned": false
-    },
-    {
       "id": "pkm-mogfvu9g-9he229",
       "sheetKind": "pokemon",
       "sheetSlug": "specs-chikorita",
       "position": {
-        "x": 13,
+        "x": 14,
         "y": 1,
-        "z": 4
+        "z": 6
       },
       "turned": false
     },
@@ -34,9 +23,9 @@
       "sheetKind": "pokemon",
       "sheetSlug": "iggy-magnemite",
       "position": {
-        "x": 2,
-        "y": 1,
-        "z": 8
+        "x": 4,
+        "y": 2,
+        "z": 16
       },
       "turned": false
     },
@@ -45,20 +34,9 @@
       "sheetKind": "pokemon",
       "sheetSlug": "wild-grasslands-3-miltank-lv15-2",
       "position": {
-        "x": 13,
+        "x": 12,
         "y": 1,
-        "z": 11
-      },
-      "turned": false
-    },
-    {
-      "id": "pkm-mogixda5-rucug8",
-      "sheetKind": "pokemon",
-      "sheetSlug": "wild-grasslands-3-doduo-lv18-1",
-      "position": {
-        "x": 5,
-        "y": 1,
-        "z": 4
+        "z": 13
       },
       "turned": false
     },
@@ -67,9 +45,9 @@
       "sheetKind": "pokemon",
       "sheetSlug": "bolt-pikachu",
       "position": {
-        "x": 9,
-        "y": 0,
-        "z": 9
+        "x": 10,
+        "y": 10,
+        "z": 10
       },
       "turned": false
     },
@@ -90,25 +68,14 @@
       "sheetSlug": "wild-grasslands-3-doduo-lv18-1",
       "position": {
         "x": 10,
-        "y": 0,
-        "z": 9
-      },
-      "turned": false
-    },
-    {
-      "id": "pkm-mohkgc54-1tld0m",
-      "sheetKind": "pokemon",
-      "sheetSlug": "specs-chikorita",
-      "position": {
-        "x": 6,
         "y": 1,
-        "z": 7
+        "z": 12
       },
       "turned": false
     }
   ],
   "createdAt": 1777242994202,
-  "updatedAt": 1777382175987,
+  "updatedAt": 1777582334416,
   "voxels": [
     {
       "x": 0,
@@ -2376,6 +2343,42 @@
       "x": 0,
       "y": 1,
       "z": 14,
+      "material": "grass"
+    },
+    {
+      "x": 10,
+      "y": 4,
+      "z": 10,
+      "material": "grass"
+    },
+    {
+      "x": 10,
+      "y": 5,
+      "z": 10,
+      "material": "grass"
+    },
+    {
+      "x": 10,
+      "y": 6,
+      "z": 10,
+      "material": "grass"
+    },
+    {
+      "x": 10,
+      "y": 7,
+      "z": 10,
+      "material": "grass"
+    },
+    {
+      "x": 10,
+      "y": 8,
+      "z": 10,
+      "material": "grass"
+    },
+    {
+      "x": 10,
+      "y": 9,
+      "z": 10,
       "material": "grass"
     }
   ]

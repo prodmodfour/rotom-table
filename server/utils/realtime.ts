@@ -13,7 +13,7 @@
  */
 
 export interface RealtimeEvent {
-  /** Channel name, e.g. ``"grid:foo"`` or ``"sheets"``. */
+  /** Channel name, e.g. ``"map:foo"`` or ``"sheets"``. */
   channel: string
   /** Operation type, e.g. ``"updated"``, ``"deleted"``. */
   type: string

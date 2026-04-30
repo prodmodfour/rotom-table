@@ -1,7 +1,7 @@
 /**
- * POST /api/grids/delete
+ * POST /api/maps/delete
  *
- * Removes a grid file. Empty parent directories are pruned.
+ * Removes a map file. Empty parent directories are pruned.
  *
  * Request body: `{ slug: string, clientId?: string }`
  * Response:     `{ ok: true, path: string }`
@@ -12,9 +12,9 @@ import { publishRealtime } from '../../utils/realtime'
 import {
   PROJECT_ROOT,
   SLUG_RE,
-  findGridFile,
+  findMapFile,
   pruneEmptyParents,
-} from '../../utils/gridStorage'
+} from '../../utils/mapStorage'
 
 interface DeleteBody {
   slug?: string
@@ -27,21 +27,21 @@ export default defineEventHandler(async (event) => {
   if (!SLUG_RE.test(slug)) {
     throw createError({ statusCode: 400, statusMessage: 'slug must match /^[a-z0-9-]+$/' })
   }
-  const path = findGridFile(slug)
+  const path = findMapFile(slug)
   if (!path) {
-    throw createError({ statusCode: 404, statusMessage: `Grid ${slug}.json not found` })
+    throw createError({ statusCode: 404, statusMessage: `Map ${slug}.json not found` })
   }
   unlinkSync(path)
   pruneEmptyParents(path)
 
   publishRealtime({
-    channel: `grid:${slug}`,
+    channel: `map:${slug}`,
     type: 'deleted',
     clientId: body?.clientId,
     data: { slug },
   })
   publishRealtime({
-    channel: 'grids',
+    channel: 'maps',
     type: 'deleted',
     clientId: body?.clientId,
     data: { slug },

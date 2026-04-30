@@ -1,11 +1,11 @@
 /**
- * Helpers for turning a `GridPlacement` (which only stores a sheet
- * reference + grid-local data) into a fully-populated `SpawnedPokemon`
+ * Helpers for turning a `MapPlacement` (which only stores a sheet
+ * reference + map-local data) into a fully-populated `SpawnedPokemon`
  * the renderer can consume.
  *
  * The conversion pulls the sprite, footprint, name, and HP from the
  * referenced sheet at render time, so any sheet edit (HP loss, sprite
- * change, etc.) automatically propagates to every grid showing that
+ * change, etc.) automatically propagates to every map showing that
  * sheet.
  */
 import {
@@ -15,7 +15,7 @@ import {
   trainerHpSnapshot,
 } from '~/utils/sheetSpawn'
 import type { CharacterSheet } from '~/types/characterSheet'
-import type { Grid, GridPlacement } from '~/types/grid'
+import type { MapPlacement, TabletopMap } from '~/types/map'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import type { TrainerSheet } from '~/types/trainerSheet'
 
@@ -25,7 +25,7 @@ export interface SheetLookup {
 }
 
 export const placementToSpawned = (
-  placement: GridPlacement,
+  placement: MapPlacement,
   sheets: SheetLookup,
 ): SpawnedPokemon | null => {
   if (placement.sheetKind === 'pokemon') {
@@ -77,12 +77,12 @@ export const placementToSpawned = (
 }
 
 export const placementsToSpawned = (
-  grid: Grid | null,
+  map: TabletopMap | null,
   sheets: SheetLookup,
 ): SpawnedPokemon[] => {
-  if (!grid) return []
+  if (!map) return []
   const out: SpawnedPokemon[] = []
-  for (const placement of grid.placements) {
+  for (const placement of map.placements) {
     const spawned = placementToSpawned(placement, sheets)
     if (spawned) out.push(spawned)
   }

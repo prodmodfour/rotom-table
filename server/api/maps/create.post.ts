@@ -1,7 +1,7 @@
 /**
- * POST /api/grids/create
+ * POST /api/maps/create
  *
- * Creates a new empty grid. Slug is auto-allocated from the supplied
+ * Creates a new empty map. Slug is auto-allocated from the supplied
  * name (or a default), with numeric suffixes if the base slug is
  * taken. Default dimensions match `DEFAULT_GRID_DIMENSIONS` in the
  * client utils so the editor renders something sensible immediately.
@@ -9,19 +9,19 @@
  * Request body (all optional):
  *   { name?: string, folder?: string, dimensions?: GridDimensions, clientId?: string }
  *
- * Response: `{ grid: Grid }`
+ * Response: `{ map: TabletopMap }`
  */
 import { createError, defineEventHandler, readBody } from 'h3'
 import { join } from 'node:path'
 import { publishRealtime } from '../../utils/realtime'
 import {
-  GRIDS_ROOT,
+  MAPS_ROOT,
   allocateSlug,
-  ensureGridsRoot,
+  ensureMapsRoot,
   sanitizeFolderPath,
-  writeGridFile,
-} from '../../utils/gridStorage'
-import type { Grid, GridDimensions } from '~/types/grid'
+  writeMapFile,
+} from '../../utils/mapStorage'
+import type { GridDimensions, TabletopMap } from '~/types/map'
 
 interface CreateBody {
   name?: string
@@ -40,7 +40,7 @@ const clamp = (value: unknown, fallback: number) => {
 
 export default defineEventHandler(async (event) => {
   const body = await readBody<CreateBody>(event)
-  const name = String(body?.name ?? '').trim() || 'Untitled Grid'
+  const name = String(body?.name ?? '').trim() || 'Untitled Map'
   if (name.length > 80) {
     throw createError({ statusCode: 400, statusMessage: 'name too long (max 80 chars)' })
   }
@@ -59,10 +59,10 @@ export default defineEventHandler(async (event) => {
     z: clamp(dims.z, DEFAULT_DIMENSIONS.z),
   }
 
-  ensureGridsRoot()
+  ensureMapsRoot()
   const slug = allocateSlug(name)
   const now = Date.now()
-  const grid: Grid = {
+  const map: TabletopMap = {
     slug,
     name,
     folder,
@@ -74,23 +74,23 @@ export default defineEventHandler(async (event) => {
   }
 
   const path = folder
-    ? join(GRIDS_ROOT, folder, `${slug}.json`)
-    : join(GRIDS_ROOT, `${slug}.json`)
-  writeGridFile(path, grid)
+    ? join(MAPS_ROOT, folder, `${slug}.json`)
+    : join(MAPS_ROOT, `${slug}.json`)
+  writeMapFile(path, map)
 
   publishRealtime({
-    channel: 'grids',
+    channel: 'maps',
     type: 'created',
     clientId: body?.clientId,
     data: {
-      slug: grid.slug,
-      name: grid.name,
-      folder: grid.folder ?? '',
-      dimensions: grid.dimensions,
+      slug: map.slug,
+      name: map.name,
+      folder: map.folder ?? '',
+      dimensions: map.dimensions,
       placementCount: 0,
-      updatedAt: grid.updatedAt,
+      updatedAt: map.updatedAt,
     },
   })
 
-  return { grid }
+  return { map }
 })

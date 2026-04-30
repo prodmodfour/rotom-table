@@ -4,7 +4,7 @@
  *
  * Bootstrapped from the static `import.meta.glob` data so the first
  * paint has full info; thereafter, save / rename / move / delete events
- * mutate the store so any component reading from it (grid editor, sheet
+ * mutate the store so any component reading from it (map editor, sheet
  * list, etc.) stays current with cross-tab edits.
  *
  * Returned refs are reactive — placements can simply read

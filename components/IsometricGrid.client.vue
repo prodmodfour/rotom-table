@@ -4,7 +4,7 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { CSS3DRenderer, CSS3DSprite } from 'three/examples/jsm/renderers/CSS3DRenderer.js'
 import type { GridAnchor, GridDimensions, SpawnedPokemon, SpriteAnimation, SpriteCrop } from '~/types/pokemon'
-import type { GridVoxel, VoxelMaterial } from '~/types/grid'
+import type { GridVoxel, VoxelMaterial } from '~/types/map'
 import type { PreviewState } from '~/utils/grid'
 import { findPathForPokemon, getAnchorCenter, getPokemonCenter } from '~/utils/grid'
 import {
