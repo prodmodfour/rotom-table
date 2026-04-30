@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue'
 import pokedexData from '~/ptu-data/data/pokedex.json'
 import { pokemonCatalogBySpecies } from '~/data/pokemonCatalog'
+import { compareByNationalDex, getNationalDexNumber } from '~/utils/nationalDex'
 import type { PokedexCapabilities, PokedexRecord } from '~/types/pokemon'
 
 definePageMeta({
@@ -15,11 +16,16 @@ definePageMeta({
 type DisplayPokedexEntry = PokedexRecord & {
   id: string
   slug: string
+  nationalDexNumber: number | null
 }
 
 const route = useRoute()
 
 const normalizeText = (value: string) => value.trim().toLowerCase()
+
+const formatNationalDexNumber = (number: number | null | undefined): string | null => (
+  number == null ? null : `#${number.toString().padStart(3, '0')}`
+)
 
 const toPokedexSlug = (value: string): string => value
   .normalize('NFKD')
@@ -31,13 +37,14 @@ const toPokedexSlug = (value: string): string => value
 
 const allEntries: DisplayPokedexEntry[] = [...(pokedexData as PokedexRecord[])]
   .filter((entry): entry is PokedexRecord => Boolean(entry?.species))
-  .sort((left, right) => left.species.localeCompare(right.species))
+  .sort(compareByNationalDex)
   .map((entry, index) => {
     const slug = toPokedexSlug(entry.species)
     return {
       ...entry,
       id: `${index}-${slug || 'entry'}`,
       slug,
+      nationalDexNumber: getNationalDexNumber(entry.species),
     }
   })
 
@@ -73,6 +80,9 @@ const filteredEntries = computed(() => {
   return allEntries.filter((entry) => {
     const haystacks = [
       entry.species,
+      ...(entry.nationalDexNumber
+        ? [String(entry.nationalDexNumber), formatNationalDexNumber(entry.nationalDexNumber) ?? '']
+        : []),
       ...(entry.types ?? []),
       entry.source_gen ?? '',
     ]
@@ -318,6 +328,9 @@ const habitatSummary = computed(() => {
           >
             <span class="entry-name">{{ entry.species }}</span>
             <span class="entry-meta">
+              <template v-if="entry.nationalDexNumber">
+                {{ formatNationalDexNumber(entry.nationalDexNumber) }} ·
+              </template>
               <span v-if="entry.types?.length" class="entry-type-badges">
                 <TypeBadge
                   v-for="type in entry.types"
@@ -343,6 +356,9 @@ const habitatSummary = computed(() => {
         <header class="book-page__header">
           <h2 class="species-name">{{ selectedEntry.species.toUpperCase() }}</h2>
           <div class="header-badges">
+            <span v-if="selectedEntry.nationalDexNumber" class="badge">
+              {{ formatNationalDexNumber(selectedEntry.nationalDexNumber) }}
+            </span>
             <span v-if="selectedEntry.source_gen" class="badge">{{ selectedEntry.source_gen }}</span>
             <span v-if="isPlacementOnly" class="badge warn">Placement only</span>
           </div>
