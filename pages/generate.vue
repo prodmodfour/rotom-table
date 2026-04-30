@@ -362,7 +362,7 @@ watch([region, tableKey], () => {
 
 .intro-heading h1 {
   margin: 0;
-  font-family: var(--serif);
+  font-family: var(--font-book);
   font-size: 1.5rem;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -387,7 +387,7 @@ watch([region, tableKey], () => {
 }
 
 code {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: 0.88em;
   color: var(--accent);
 }
@@ -406,7 +406,7 @@ code {
 
 .panel-title {
   margin: 0 0 0.85rem;
-  font-family: var(--serif);
+  font-family: var(--font-book);
   font-size: 1.1rem;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -424,7 +424,7 @@ code {
   font-weight: 400;
   letter-spacing: 0.02em;
   text-transform: none;
-  font-family: Inter, sans-serif;
+  font-family: var(--font-ui);
 }
 
 .panel-subtle.warn {
@@ -609,7 +609,7 @@ input:disabled {
 }
 
 .rolled-species {
-  font-family: var(--serif);
+  font-family: var(--font-book);
   font-size: 1.02rem;
   color: var(--ink-bright);
   letter-spacing: 0.02em;
@@ -631,7 +631,7 @@ input:disabled {
 .error-message {
   margin: 0;
   color: var(--bad);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: 0.9rem;
   white-space: pre-wrap;
 }
@@ -715,7 +715,7 @@ button.result-file__head:hover {
 }
 
 .result-file__name {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: 0.88rem;
   color: var(--ink-bright);
 }
@@ -728,7 +728,7 @@ button.result-file__head:hover {
   margin: 0;
   padding: 0 0.75rem 0.55rem 1.85rem;
   color: var(--bad);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: 0.82rem;
   white-space: pre-wrap;
 }
@@ -739,7 +739,7 @@ button.result-file__head:hover {
   border-top: 1px solid var(--rule);
   background: var(--paper-inset);
   color: var(--ink-soft);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: 0.82rem;
   line-height: 1.45;
   overflow-x: auto;

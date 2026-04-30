@@ -928,7 +928,7 @@ const setInheritedMove = (level: string, value: string | undefined) => {
 
 .panel-title {
   margin: 0 0 0.6rem;
-  font-family: var(--serif);
+  font-family: var(--font-book);
   font-size: 1.1rem;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -945,7 +945,7 @@ const setInheritedMove = (level: string, value: string | undefined) => {
   font-weight: 400;
   letter-spacing: 0.02em;
   text-transform: none;
-  font-family: Inter, sans-serif;
+  font-family: var(--font-ui);
 }
 
 .row {
@@ -1006,7 +1006,7 @@ const setInheritedMove = (level: string, value: string | undefined) => {
 
 .identity__heading h1 {
   margin: 0;
-  font-family: var(--serif);
+  font-family: var(--font-book);
   font-size: 1.7rem;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -1171,7 +1171,7 @@ const setInheritedMove = (level: string, value: string | undefined) => {
   color: var(--ink-bright);
 }
 
-.cell-value--big { font-size: 1.5rem; font-family: var(--serif); }
+.cell-value--big { font-size: 1.5rem; font-family: var(--font-book); }
 .cell-sub { font-weight: 400; color: var(--ink-muted); font-size: 0.95rem; }
 
 .evasion-row {
@@ -1279,7 +1279,7 @@ const setInheritedMove = (level: string, value: string | undefined) => {
 .bg-desc {
   margin: 0 0 0.55rem;
   color: var(--ink);
-  font-family: var(--serif);
+  font-family: var(--font-book);
   font-style: italic;
 }
 
@@ -1485,7 +1485,7 @@ const setInheritedMove = (level: string, value: string | undefined) => {
 }
 
 code {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: 0.9em;
   color: var(--accent);
 }

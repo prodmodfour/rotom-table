@@ -5,7 +5,19 @@ const isDev = process.env.NODE_ENV !== 'production'
 export default defineNuxtConfig({
   compatibilityDate: '2026-04-22',
   buildDir: isDev ? '.nuxt-dev' : '.nuxt-build',
-  css: ['~/assets/css/main.css', '~/assets/css/ref.css'],
+  css: [
+    '@fontsource/atkinson-hyperlegible/latin-400.css',
+    '@fontsource/atkinson-hyperlegible/latin-400-italic.css',
+    '@fontsource/atkinson-hyperlegible/latin-700.css',
+    '@fontsource/eb-garamond/latin-400.css',
+    '@fontsource/eb-garamond/latin-400-italic.css',
+    '@fontsource/eb-garamond/latin-600.css',
+    '@fontsource/eb-garamond/latin-700.css',
+    '@fontsource/jetbrains-mono/latin-400.css',
+    '@fontsource/jetbrains-mono/latin-700.css',
+    '~/assets/css/main.css',
+    '~/assets/css/ref.css',
+  ],
   experimental: {
     appManifest: false,
   },

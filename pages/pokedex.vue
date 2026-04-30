@@ -504,7 +504,7 @@ const habitatSummary = computed(() => {
 
 .sidebar-heading h1 {
   margin: 0;
-  font-family: var(--serif);
+  font-family: var(--font-book);
   font-size: 1.4rem;
   letter-spacing: 0.04em;
   color: var(--ink-bright);
@@ -608,7 +608,7 @@ input:focus {
 }
 
 code {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: 0.9em;
   color: var(--accent);
 }
@@ -637,7 +637,7 @@ code {
     0 0 0 1px var(--rule),
     0 30px 60px rgba(0, 0, 0, 0.55);
   color: var(--ink);
-  font-family: var(--serif);
+  font-family: var(--font-book);
   font-size: 1.02rem;
   line-height: 1.55;
 }

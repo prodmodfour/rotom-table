@@ -828,7 +828,7 @@ if (typeof window !== 'undefined') {
 
 .intro-heading h1 {
   margin: 0;
-  font-family: var(--serif);
+  font-family: var(--font-book);
   font-size: 1.5rem;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -850,7 +850,7 @@ if (typeof window !== 'undefined') {
 }
 
 code {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: 0.9em;
   color: var(--accent);
 }
@@ -1053,7 +1053,7 @@ select:focus {
 }
 
 .folder-tile__label {
-  font-family: var(--serif);
+  font-family: var(--font-book);
   font-size: 1.05rem;
   font-weight: 700;
   letter-spacing: 0.02em;
@@ -1103,7 +1103,7 @@ select:focus {
 
 .grid-card__body h3 {
   margin: 0 0 0.2rem;
-  font-family: var(--serif);
+  font-family: var(--font-book);
   font-size: 1.05rem;
   font-weight: 700;
   letter-spacing: 0.02em;
@@ -1179,7 +1179,7 @@ select:focus {
 }
 
 .ctx-target {
-  font-family: var(--serif);
+  font-family: var(--font-book);
   font-size: 0.95rem;
   font-weight: 700;
   color: var(--ink-bright);

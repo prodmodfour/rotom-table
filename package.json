@@ -9,6 +9,9 @@
     "postinstall": "nuxt prepare"
   },
   "dependencies": {
+    "@fontsource/atkinson-hyperlegible": "^5.2.8",
+    "@fontsource/eb-garamond": "^5.2.7",
+    "@fontsource/jetbrains-mono": "^5.2.8",
     "@phosphor-icons/vue": "^2.2.1",
     "nuxt": "^3.17.0",
     "three": "^0.176.0"

@@ -39,7 +39,7 @@
 
 .ref-heading h1 {
   margin: 0;
-  font-family: var(--serif);
+  font-family: var(--font-book);
   font-size: 1.5rem;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -54,7 +54,7 @@
 
 .ref-index code,
 .ref-detail code {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: 0.9em;
   color: var(--accent);
 }
@@ -128,7 +128,7 @@
 
 .ref-row__heading h2 {
   margin: 0;
-  font-family: var(--serif);
+  font-family: var(--font-book);
   font-size: 1.1rem;
   font-weight: 700;
   letter-spacing: 0.02em;
@@ -215,7 +215,7 @@
 
 .ref-detail .detail-heading h1 {
   margin: 0;
-  font-family: var(--serif);
+  font-family: var(--font-book);
   font-size: 1.7rem;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -275,7 +275,7 @@
   color: var(--ink);
   line-height: 1.6;
   white-space: pre-wrap;
-  font-family: var(--serif);
+  font-family: var(--font-book);
   font-size: 1.02rem;
 }
 

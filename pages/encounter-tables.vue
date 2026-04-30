@@ -223,7 +223,7 @@ const filteredCount = computed(() =>
 
 .sidebar-heading h1 {
   margin: 0;
-  font-family: var(--serif);
+  font-family: var(--font-book);
   font-size: 1.4rem;
   letter-spacing: 0.04em;
   color: var(--ink-bright);
@@ -266,7 +266,7 @@ const filteredCount = computed(() =>
 }
 
 code {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: 0.88em;
   color: var(--accent);
 }
@@ -308,7 +308,7 @@ input:focus {
 
 .region-title {
   margin: 0;
-  font-family: var(--serif);
+  font-family: var(--font-book);
   font-size: 0.85rem;
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -395,7 +395,7 @@ input:focus {
 
 .detail-title {
   margin: 0;
-  font-family: var(--serif);
+  font-family: var(--font-book);
   font-size: 1.5rem;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -471,7 +471,7 @@ input:focus {
 
 .entry-species {
   color: var(--ink);
-  font-family: var(--serif);
+  font-family: var(--font-book);
   font-size: 1.02rem;
   letter-spacing: 0.02em;
 }

@@ -1475,7 +1475,7 @@ const clearPortrait = () => {
 
 .identity-info h1 {
   margin: 0 0 0.25rem;
-  font-family: var(--serif);
+  font-family: var(--font-book);
   font-size: 1.7rem;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -1585,7 +1585,7 @@ const clearPortrait = () => {
 
 .block-title {
   margin: 0 0 0.5rem;
-  font-family: var(--serif);
+  font-family: var(--font-book);
   font-size: 1rem;
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -1710,7 +1710,7 @@ const clearPortrait = () => {
 
 /* Background card */
 .bg-card { display: flex; flex-direction: column; gap: 0.4rem; }
-.bg-name { font-family: var(--serif); font-size: 1.1rem; font-weight: 700; letter-spacing: 0.04em; color: var(--accent); }
+.bg-name { font-family: var(--font-book); font-size: 1.1rem; font-weight: 700; letter-spacing: 0.04em; color: var(--accent); }
 .bg-desc { margin: 0; color: var(--ink-soft); font-style: italic; font-size: 0.88rem; }
 
 .bg-list {
@@ -1807,7 +1807,7 @@ const clearPortrait = () => {
   font-size: 1.15rem;
   color: var(--ink-bright);
   font-variant-numeric: tabular-nums;
-  font-family: var(--serif);
+  font-family: var(--font-book);
 }
 
 /* Capabilities */
@@ -1870,7 +1870,7 @@ const clearPortrait = () => {
 
 .narrative h3 {
   margin: 0 0 0.35rem;
-  font-family: var(--serif);
+  font-family: var(--font-book);
   font-size: 0.95rem;
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -1882,7 +1882,7 @@ const clearPortrait = () => {
   margin: 0;
   line-height: 1.55;
   color: var(--ink);
-  font-family: var(--serif);
+  font-family: var(--font-book);
   font-size: 0.95rem;
 }
 
@@ -1933,7 +1933,7 @@ const clearPortrait = () => {
 
 .portrait-picker__header h2 {
   margin: 0;
-  font-family: var(--serif);
+  font-family: var(--font-book);
   font-size: 1rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;

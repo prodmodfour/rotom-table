@@ -3553,7 +3553,7 @@ watch(
 
 .hp-dialog__header h3 {
   margin: 0;
-  font-family: var(--serif);
+  font-family: var(--font-book);
   font-size: 1.05rem;
   font-weight: 700;
   letter-spacing: 0.04em;

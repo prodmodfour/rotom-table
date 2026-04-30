@@ -229,7 +229,7 @@ const selectItem = (item: SheetItem) => {
 
 .panel-heading h2 {
   margin: 0;
-  font-family: var(--serif);
+  font-family: var(--font-book);
   font-size: 1.15rem;
   font-weight: 700;
   letter-spacing: 0.04em;

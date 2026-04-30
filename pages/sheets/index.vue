@@ -1105,7 +1105,7 @@ onMounted(async () => {
 
 .intro-heading h1 {
   margin: 0;
-  font-family: var(--serif);
+  font-family: var(--font-book);
   font-size: 1.5rem;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -1127,7 +1127,7 @@ onMounted(async () => {
 }
 
 code {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: 0.9em;
   color: var(--accent);
 }
@@ -1428,7 +1428,7 @@ input:focus {
 }
 
 .folder-tile__label {
-  font-family: var(--serif);
+  font-family: var(--font-book);
   font-size: 1.05rem;
   font-weight: 700;
   letter-spacing: 0.02em;
@@ -1536,7 +1536,7 @@ input:focus {
 .sheet-card__heading h2,
 .sheet-card__heading h3 {
   margin: 0;
-  font-family: var(--serif);
+  font-family: var(--font-book);
   font-size: 1.1rem;
   font-weight: 700;
   letter-spacing: 0.02em;
@@ -1636,7 +1636,7 @@ input:focus {
 }
 
 .ctx-target {
-  font-family: var(--serif);
+  font-family: var(--font-book);
   font-size: 0.95rem;
   font-weight: 700;
   color: var(--ink-bright);
