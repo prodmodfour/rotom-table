@@ -1127,7 +1127,7 @@ const habitatSummary = computed(() => {
 
             <section
               v-if="selectedEntry.level_up_moves?.length || tmHmTokens.length || eggMoveTokens.length || tutorMoveTokens.length"
-              class="book-section"
+              class="book-section book-section--moves"
             >
               <h3 class="book-section__title">Move List</h3>
 
@@ -1614,6 +1614,10 @@ code {
   color: var(--ink-bright);
 }
 
+.book-section--moves .subsection-title {
+  text-align: center;
+}
+
 .info-line,
 .paragraph {
   margin: 0.05rem 0;
@@ -1679,10 +1683,10 @@ code {
   padding: 0;
   list-style: none;
   display: grid;
-  grid-template-columns: max-content max-content max-content 1fr;
+  grid-template-columns: max-content max-content max-content max-content;
+  justify-content: center;
   column-gap: 0.5rem;
   row-gap: 0.05rem;
-  padding-left: 1.6rem; /* matches the indent in the printed book */
 }
 
 .move-list > li {
