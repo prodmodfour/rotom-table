@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { onBeforeRouteUpdate } from 'vue-router'
 import pokedexData from '~/ptu-data/data/pokedex.json'
 import { pokemonCatalogBySpecies } from '~/data/pokemonCatalog'
@@ -19,6 +19,7 @@ type DisplayPokedexEntry = PokedexRecord & {
   slug: string
   nationalDexNumber: number | null
   searchText: string
+  searchTexts: PokedexSearchTexts
 }
 
 const route = useRoute()
@@ -89,7 +90,33 @@ const toPokedexSlug = (value: string): string => value
   .replace(/[^a-z0-9]+/g, '-')
   .replace(/^-+|-+$/g, '')
 
+const searchFieldConfigs = [
+  { key: 'any', label: 'All Together', placeholder: 'Filter species, move, ability, cap, type…' },
+  { key: 'identity', label: 'Species / Dex / Gen', placeholder: 'Pikachu, #025, gen 1…' },
+  { key: 'type', label: 'Type', placeholder: 'fire type or water…' },
+  { key: 'ability', label: 'Ability', placeholder: 'Intimidate or Magic Guard…' },
+  { key: 'capability', label: 'Capability', placeholder: 'mountable or darkvision…' },
+  { key: 'move', label: 'Move', placeholder: 'thunder punch or tm35…' },
+  { key: 'habitat', label: 'Habitat', placeholder: 'forest or urban…' },
+  { key: 'breeding', label: 'Breeding', placeholder: 'monster egg or genderless…' },
+  { key: 'diet', label: 'Diet', placeholder: 'herbivore or carnivore…' },
+  { key: 'skill', label: 'Skill', placeholder: '4d6 or acrobatics 4d6+2…' },
+  { key: 'stat', label: 'Base Stats', placeholder: 'attack 8 or hp 5…' },
+  { key: 'size', label: 'Size / Weight', placeholder: 'small or weight class 2…' },
+] as const
+
+type PokedexSearchTextKey = typeof searchFieldConfigs[number]['key']
+type FieldFilterKey = Exclude<PokedexSearchTextKey, 'any'>
+type PokedexSearchTexts = Record<PokedexSearchTextKey, string>
+type PokedexSearchTextBuckets = Record<PokedexSearchTextKey, string[]>
 type SearchValue = string | number | null | undefined
+type FilterMode = 'fields' | 'advanced'
+type FilterOperator = 'and' | 'or'
+
+const allTogetherFilterField = searchFieldConfigs[0]
+const filterFieldConfigs = searchFieldConfigs.filter(
+  (field): field is Extract<typeof searchFieldConfigs[number], { key: FieldFilterKey }> => field.key !== 'any',
+)
 type MovementCapabilityKey = Exclude<keyof PokedexCapabilities, 'other'>
 
 const CAPABILITY_SEARCH_FIELDS: Array<[MovementCapabilityKey, string]> = [
@@ -102,6 +129,19 @@ const CAPABILITY_SEARCH_FIELDS: Array<[MovementCapabilityKey, string]> = [
   ['power', 'Power'],
 ]
 
+const BASE_STAT_SEARCH_FIELDS = [
+  ['hp', 'HP', 'HP'],
+  ['atk', 'Attack', 'Atk'],
+  ['def', 'Defense', 'Def'],
+  ['spatk', 'Special Attack', 'SpAtk'],
+  ['spdef', 'Special Defense', 'SpDef'],
+  ['spd', 'Speed', 'Spd'],
+] as const
+
+const createSearchBuckets = (): PokedexSearchTextBuckets => Object.fromEntries(
+  searchFieldConfigs.map(({ key }) => [key, [] as string[]]),
+) as PokedexSearchTextBuckets
+
 const addSearchValue = (values: string[], value: SearchValue) => {
   if (value === undefined || value === null) return
 
@@ -113,6 +153,15 @@ const addSearchValues = (values: string[], ...rawValues: SearchValue[]) => {
   for (const value of rawValues) {
     addSearchValue(values, value)
   }
+}
+
+const addBucketSearchValues = (
+  buckets: PokedexSearchTextBuckets,
+  key: Exclude<PokedexSearchTextKey, 'any'>,
+  ...rawValues: SearchValue[]
+) => {
+  addSearchValues(buckets[key], ...rawValues)
+  addSearchValues(buckets.any, ...rawValues)
 }
 
 const hasCapabilityValue = (value: PokedexCapabilities[MovementCapabilityKey]) => {
@@ -145,30 +194,40 @@ const buildSearchText = (values: string[]): string => {
   return Array.from(normalizedValues).join(' ')
 }
 
-const buildPokedexSearchText = (entry: PokedexRecord & { slug: string; nationalDexNumber: number | null }): string => {
-  const values: string[] = []
+const buildPokedexSearchTexts = (entry: PokedexRecord & { slug: string; nationalDexNumber: number | null }): PokedexSearchTexts => {
+  const buckets = createSearchBuckets()
 
-  addSearchValues(values, entry.species, entry.slug.replace(/-/g, ' '), entry.source_gen)
+  addBucketSearchValues(buckets, 'identity', entry.species, entry.slug.replace(/-/g, ' '), entry.source_gen)
   if (entry.source_gen) {
-    addSearchValue(values, `gen ${entry.source_gen}`)
+    addBucketSearchValues(buckets, 'identity', `gen ${entry.source_gen}`, `source ${entry.source_gen}`)
   }
 
   if (entry.nationalDexNumber) {
     const paddedNumber = entry.nationalDexNumber.toString().padStart(3, '0')
-    addSearchValues(values, entry.nationalDexNumber, paddedNumber, `#${paddedNumber}`)
+    addBucketSearchValues(
+      buckets,
+      'identity',
+      entry.nationalDexNumber,
+      paddedNumber,
+      `#${paddedNumber}`,
+      `dex ${entry.nationalDexNumber}`,
+      `dex ${paddedNumber}`,
+      `national dex ${entry.nationalDexNumber}`,
+      formatNationalDexNumber(entry.nationalDexNumber),
+    )
   }
 
   if (entry.types?.length) {
-    addSearchValues(values, ...entry.types, `type ${entry.types.join(' ')}`, `types ${entry.types.join(' ')}`)
+    addBucketSearchValues(buckets, 'type', ...entry.types, `type ${entry.types.join(' ')}`, `types ${entry.types.join(' ')}`)
     for (const type of entry.types) {
-      addSearchValues(values, `type ${type}`, `${type} type`)
+      addBucketSearchValues(buckets, 'type', `type ${type}`, `${type} type`)
     }
   }
 
   if (entry.habitat?.length) {
-    addSearchValues(values, ...entry.habitat, `habitat ${entry.habitat.join(' ')}`, `habitats ${entry.habitat.join(' ')}`)
+    addBucketSearchValues(buckets, 'habitat', ...entry.habitat, `habitat ${entry.habitat.join(' ')}`, `habitats ${entry.habitat.join(' ')}`)
     for (const habitat of entry.habitat) {
-      addSearchValues(values, `habitat ${habitat}`, `${habitat} habitat`)
+      addBucketSearchValues(buckets, 'habitat', `habitat ${habitat}`, `${habitat} habitat`)
     }
   }
 
@@ -181,8 +240,9 @@ const buildPokedexSearchText = (entry: PokedexRecord & { slug: string; nationalD
 
     for (const [label, abilities] of abilityGroups) {
       for (const ability of abilities ?? []) {
-        addSearchValues(
-          values,
+        addBucketSearchValues(
+          buckets,
+          'ability',
           ability,
           `ability ${ability}`,
           `abilities ${ability}`,
@@ -198,8 +258,9 @@ const buildPokedexSearchText = (entry: PokedexRecord & { slug: string; nationalD
       const value = entry.capabilities[key]
       if (!hasCapabilityValue(value)) continue
 
-      addSearchValues(
-        values,
+      addBucketSearchValues(
+        buckets,
+        'capability',
         label,
         `cap ${label}`,
         `caps ${label}`,
@@ -217,8 +278,9 @@ const buildPokedexSearchText = (entry: PokedexRecord & { slug: string; nationalD
       if (!capability) continue
 
       const baseCapability = stripParenthetical(capability)
-      addSearchValues(
-        values,
+      addBucketSearchValues(
+        buckets,
+        'capability',
         capability,
         baseCapability,
         `cap ${capability}`,
@@ -235,8 +297,9 @@ const buildPokedexSearchText = (entry: PokedexRecord & { slug: string; nationalD
   }
 
   for (const move of entry.level_up_moves ?? []) {
-    addSearchValues(
-      values,
+    addBucketSearchValues(
+      buckets,
+      'move',
       move.name,
       `move ${move.name}`,
       `moves ${move.name}`,
@@ -248,8 +311,9 @@ const buildPokedexSearchText = (entry: PokedexRecord & { slug: string; nationalD
 
   for (const move of entry.tm_hm_moves ?? []) {
     const machine = `${move.kind}${move.number}`
-    addSearchValues(
-      values,
+    addBucketSearchValues(
+      buckets,
+      'move',
       move.name,
       `move ${move.name}`,
       `moves ${move.name}`,
@@ -262,17 +326,92 @@ const buildPokedexSearchText = (entry: PokedexRecord & { slug: string; nationalD
   }
 
   for (const moveName of entry.egg_moves ?? []) {
-    addSearchValues(values, moveName, `move ${moveName}`, `moves ${moveName}`, `${moveName} move`, `egg move ${moveName}`)
+    addBucketSearchValues(buckets, 'move', moveName, `move ${moveName}`, `moves ${moveName}`, `${moveName} move`, `egg move ${moveName}`)
   }
 
   for (const move of entry.tutor_moves ?? []) {
-    addSearchValues(values, move.name, `move ${move.name}`, `moves ${move.name}`, `${move.name} move`, `tutor move ${move.name}`)
+    addBucketSearchValues(buckets, 'move', move.name, `move ${move.name}`, `moves ${move.name}`, `${move.name} move`, `tutor move ${move.name}`)
     if (move.heart_scale) {
-      addSearchValue(values, `heart scale move ${move.name}`)
+      addBucketSearchValues(buckets, 'move', `heart scale move ${move.name}`)
     }
   }
 
-  return buildSearchText(values)
+  if (entry.egg_groups?.length) {
+    addBucketSearchValues(buckets, 'breeding', ...entry.egg_groups, `egg group ${entry.egg_groups.join(' ')}`)
+    for (const group of entry.egg_groups) {
+      addBucketSearchValues(buckets, 'breeding', `egg group ${group}`, `${group} egg group`)
+    }
+  }
+  if (entry.genderless) {
+    addBucketSearchValues(buckets, 'breeding', 'genderless')
+  }
+  if (entry.male_pct != null || entry.female_pct != null) {
+    addBucketSearchValues(
+      buckets,
+      'breeding',
+      `male ${entry.male_pct ?? 0}`,
+      `female ${entry.female_pct ?? 0}`,
+      `gender ratio ${entry.male_pct ?? 0} ${entry.female_pct ?? 0}`,
+    )
+  }
+  if (entry.hatch_rate) {
+    addBucketSearchValues(buckets, 'breeding', entry.hatch_rate, `hatch ${entry.hatch_rate}`, `hatch rate ${entry.hatch_rate}`)
+  }
+
+  if (entry.diet?.length) {
+    addBucketSearchValues(buckets, 'diet', ...entry.diet, `diet ${entry.diet.join(' ')}`)
+    for (const diet of entry.diet) {
+      addBucketSearchValues(buckets, 'diet', `diet ${diet}`, `${diet} diet`)
+    }
+  }
+
+  if (entry.skills) {
+    for (const [skill, value] of Object.entries(entry.skills)) {
+      addBucketSearchValues(
+        buckets,
+        'skill',
+        skill,
+        value,
+        `dice ${value}`,
+        `${value} dice`,
+        `skill ${skill}`,
+        `${skill} ${value}`,
+        `skill ${skill} ${value}`,
+      )
+    }
+  }
+
+  if (entry.base_stats) {
+    for (const [key, label, shortLabel] of BASE_STAT_SEARCH_FIELDS) {
+      const value = entry.base_stats[key]
+      addBucketSearchValues(
+        buckets,
+        'stat',
+        label,
+        shortLabel,
+        `stat ${label}`,
+        `${label} ${value}`,
+        `${shortLabel} ${value}`,
+        `base ${label} ${value}`,
+        `base stat ${label} ${value}`,
+      )
+    }
+  }
+
+  addBucketSearchValues(buckets, 'size', entry.size ? `size ${entry.size}` : null, entry.size)
+  if (entry.height != null) {
+    addBucketSearchValues(buckets, 'size', `height ${entry.height}`, `${entry.height}m`)
+  }
+  if (entry.weight != null) {
+    addBucketSearchValues(buckets, 'size', `weight ${entry.weight}`, `weight class ${entry.weight}`)
+  }
+  if (entry.width != null) {
+    addBucketSearchValues(buckets, 'size', `width ${entry.width}`)
+  }
+
+  return Object.fromEntries(
+    searchFieldConfigs.map(({ key }) => [key, buildSearchText(buckets[key])]),
+  ) as PokedexSearchTexts
 }
 
 const allEntries: DisplayPokedexEntry[] = [...(pokedexData as PokedexRecord[])]
@@ -287,9 +426,12 @@ const allEntries: DisplayPokedexEntry[] = [...(pokedexData as PokedexRecord[])]
       nationalDexNumber: getNationalDexNumber(entry.species),
     }
 
+    const searchTexts = buildPokedexSearchTexts(displayEntry)
+
     return {
       ...displayEntry,
-      searchText: buildPokedexSearchText(displayEntry),
+      searchText: searchTexts.any,
+      searchTexts,
     }
   })
 
@@ -313,7 +455,13 @@ const pokemonRouteSlug = computed(() => {
   return toPokedexSlug(value.replace(/_/g, ' ')) || null
 })
 
-const searchTerm = ref('')
+const filterMode = ref<FilterMode>('fields')
+const searchFilters = reactive<Record<PokedexSearchTextKey, string>>(
+  Object.fromEntries(searchFieldConfigs.map(({ key }) => [key, ''])) as Record<PokedexSearchTextKey, string>,
+)
+const filterOperators = reactive<Record<FieldFilterKey, FilterOperator>>(
+  Object.fromEntries(filterFieldConfigs.map(({ key }) => [key, 'and'])) as Record<FieldFilterKey, FilterOperator>,
+)
 
 interface SearchCriterion {
   kind: 'criterion'
@@ -425,31 +573,69 @@ const parseSearchExpression = (value: string): SearchExpression | null => {
   return parseOr()
 }
 
-const matchesSearchCriterion = (entry: DisplayPokedexEntry, criterion: SearchCriterion): boolean => (
-  entry.searchText.includes(criterion.query)
-  || (criterion.compactQuery !== criterion.query && entry.searchText.includes(criterion.compactQuery))
+const matchesSearchCriterion = (searchText: string, criterion: SearchCriterion): boolean => (
+  searchText.includes(criterion.query)
+  || (criterion.compactQuery !== criterion.query && searchText.includes(criterion.compactQuery))
 )
 
-const matchesSearchExpression = (entry: DisplayPokedexEntry, expression: SearchExpression): boolean => {
+const matchesSearchExpression = (searchText: string, expression: SearchExpression): boolean => {
   if (expression.kind === 'criterion') {
-    return matchesSearchCriterion(entry, expression)
+    return matchesSearchCriterion(searchText, expression)
   }
 
   if (expression.kind === 'and') {
-    return matchesSearchExpression(entry, expression.left) && matchesSearchExpression(entry, expression.right)
+    return matchesSearchExpression(searchText, expression.left) && matchesSearchExpression(searchText, expression.right)
   }
 
-  return matchesSearchExpression(entry, expression.left) || matchesSearchExpression(entry, expression.right)
+  return matchesSearchExpression(searchText, expression.left) || matchesSearchExpression(searchText, expression.right)
+}
+
+interface ActiveSearchFilter {
+  key: PokedexSearchTextKey
+  expression: SearchExpression
+  operator: FilterOperator
+}
+
+const activeSearchFilters = computed<ActiveSearchFilter[]>(() => {
+  if (filterMode.value === 'advanced') {
+    const expression = parseSearchExpression(searchFilters.any)
+    return expression ? [{ key: 'any', expression, operator: 'and' }] : []
+  }
+
+  const filters: ActiveSearchFilter[] = []
+
+  for (const { key } of filterFieldConfigs) {
+    const expression = parseSearchExpression(searchFilters[key])
+    if (expression) {
+      filters.push({ key, expression, operator: filterOperators[key] })
+    }
+  }
+
+  return filters
+})
+
+const matchesActiveSearchFilters = (entry: DisplayPokedexEntry, filters: ActiveSearchFilter[]): boolean => {
+  if (filters.length === 0) return true
+
+  let matches = matchesSearchExpression(entry.searchTexts[filters[0].key], filters[0].expression)
+
+  for (let index = 1; index < filters.length; index += 1) {
+    const filter = filters[index]
+    const currentMatches = matchesSearchExpression(entry.searchTexts[filter.key], filter.expression)
+    matches = filter.operator === 'and' ? matches && currentMatches : matches || currentMatches
+  }
+
+  return matches
 }
 
 const filteredEntries = computed(() => {
-  const expression = parseSearchExpression(searchTerm.value)
+  const filters = activeSearchFilters.value
 
-  if (!expression) {
+  if (filters.length === 0) {
     return allEntries
   }
 
-  return allEntries.filter((entry) => matchesSearchExpression(entry, expression))
+  return allEntries.filter((entry) => matchesActiveSearchFilters(entry, filters))
 })
 
 const routedEntry = computed(() => (
@@ -673,42 +859,99 @@ const habitatSummary = computed(() => {
           Browse every Pokémon entry from <code>ptu-data/data/pokedex.json</code>.
         </p>
 
-        <label class="search-field">
-          <span class="sr-only">Search the Pokédex</span>
-          <input v-model.trim="searchTerm" type="search" placeholder="Search species, move, ability, cap, type…" />
-        </label>
+        <div class="filter-browser">
+          <div class="filter-panel">
+            <div class="filter-mode" role="group" aria-label="Filter mode">
+              <button
+                type="button"
+                :class="['filter-mode__button', { active: filterMode === 'fields' }]"
+                @click="filterMode = 'fields'"
+              >
+                Field filters
+              </button>
+              <button
+                type="button"
+                :class="['filter-mode__button', { active: filterMode === 'advanced' }]"
+                @click="filterMode = 'advanced'"
+              >
+                All together
+              </button>
+            </div>
 
-        <div v-if="filteredEntries.length > 0" ref="entryListRef" class="entry-list" @scroll.passive="saveSidebarScroll">
-          <NuxtLink
-            v-for="entry in filteredEntries"
-            :key="entry.id"
-            :to="pokedexEntryPath(entry)"
-            :class="['entry-button', { active: entry.id === selectedId }]"
-            :aria-current="entry.id === selectedId ? 'page' : undefined"
-            prefetch-on="interaction"
-          >
-            <span class="entry-name">{{ entry.species }}</span>
-            <span class="entry-meta">
-              <template v-if="entry.nationalDexNumber">
-                {{ formatNationalDexNumber(entry.nationalDexNumber) }} ·
-              </template>
-              <span v-if="entry.types?.length" class="entry-type-badges">
-                <TypeBadge
-                  v-for="type in entry.types"
-                  :key="`${entry.id}-${type}`"
-                  :type="type"
-                  size="xs"
+            <div v-if="filterMode === 'advanced'" class="filter-fields" aria-label="All together filter">
+              <label class="filter-field">
+                <span class="filter-field__label">{{ allTogetherFilterField.label }}</span>
+                <input
+                  v-model.trim="searchFilters.any"
+                  type="search"
+                  :placeholder="allTogetherFilterField.placeholder"
                 />
-              </span>
-              <span v-else>Unknown type</span>
-              <template v-if="entry.source_gen"> · {{ entry.source_gen }}</template>
-            </span>
-          </NuxtLink>
-        </div>
+              </label>
+            </div>
 
-        <p v-else class="empty-state">
-          No Pokédex entries match that search.
-        </p>
+            <div v-else class="filter-fields" aria-label="Pokédex field filters">
+              <template v-for="(field, index) in filterFieldConfigs" :key="field.key">
+                <div v-if="index > 0" class="filter-operator">
+                  <span class="filter-operator__rule" />
+                  <select
+                    v-model="filterOperators[field.key]"
+                    class="filter-operator__select"
+                    :aria-label="`Combine ${field.label} filter with previous filled filter`"
+                  >
+                    <option value="and">and</option>
+                    <option value="or">or</option>
+                  </select>
+                  <span class="filter-operator__rule" />
+                </div>
+                <label class="filter-field">
+                  <span class="filter-field__label">{{ field.label }}</span>
+                  <input
+                    v-model.trim="searchFilters[field.key]"
+                    type="search"
+                    :placeholder="field.placeholder"
+                  />
+                </label>
+              </template>
+            </div>
+            <p class="filter-help">
+              Use <code>and</code>, <code>or</code>, and parentheses inside any filter. Field filters combine using the toggles.
+            </p>
+          </div>
+
+          <div class="entry-list-panel">
+            <div v-if="filteredEntries.length > 0" ref="entryListRef" class="entry-list" @scroll.passive="saveSidebarScroll">
+              <NuxtLink
+                v-for="entry in filteredEntries"
+                :key="entry.id"
+                :to="pokedexEntryPath(entry)"
+                :class="['entry-button', { active: entry.id === selectedId }]"
+                :aria-current="entry.id === selectedId ? 'page' : undefined"
+                prefetch-on="interaction"
+              >
+                <span class="entry-name">{{ entry.species }}</span>
+                <span class="entry-meta">
+                  <template v-if="entry.nationalDexNumber">
+                    {{ formatNationalDexNumber(entry.nationalDexNumber) }} ·
+                  </template>
+                  <span v-if="entry.types?.length" class="entry-type-badges">
+                    <TypeBadge
+                      v-for="type in entry.types"
+                      :key="`${entry.id}-${type}`"
+                      :type="type"
+                      size="xs"
+                    />
+                  </span>
+                  <span v-else>Unknown type</span>
+                  <template v-if="entry.source_gen"> · {{ entry.source_gen }}</template>
+                </span>
+              </NuxtLink>
+            </div>
+
+            <p v-else class="empty-state">
+              No Pokédex entries match those filters.
+            </p>
+          </div>
+        </div>
       </section>
     </aside>
 
@@ -930,7 +1173,7 @@ const habitatSummary = computed(() => {
 <style scoped>
 .pokedex-layout {
   display: grid;
-  grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
+  grid-template-columns: minmax(560px, 700px) minmax(0, 1fr);
   min-height: 100vh;
   background: var(--paper);
 }
@@ -947,7 +1190,7 @@ const habitatSummary = computed(() => {
   border-right: 1px solid var(--rule);
   background: var(--paper);
   max-height: 100vh;
-  overflow: auto;
+  overflow: hidden;
 }
 
 .sidebar-card {
@@ -1002,14 +1245,97 @@ const habitatSummary = computed(() => {
   font-size: 0.85rem;
 }
 
-.search-field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-  margin-bottom: 0.85rem;
+.filter-browser {
+  display: grid;
+  grid-template-columns: 340px minmax(190px, 1fr);
+  gap: 0.75rem;
+  min-height: 0;
+  flex: 1;
 }
 
-input {
+.filter-panel,
+.entry-list-panel {
+  min-height: 0;
+}
+
+.filter-panel {
+  overflow: auto;
+  padding-right: 0.25rem;
+}
+
+.entry-list-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.filter-mode {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.35rem;
+  margin-bottom: 0.65rem;
+}
+
+.filter-mode__button {
+  border: 1px solid var(--rule-soft);
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--ink-muted);
+  padding: 0.45rem 0.6rem;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.filter-mode__button:hover,
+.filter-mode__button.active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.filter-fields {
+  display: grid;
+  gap: 0.5rem;
+  margin-bottom: 0.7rem;
+}
+
+.filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.filter-field__label {
+  color: var(--ink-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.filter-operator {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 0.45rem;
+  margin: -0.1rem 0;
+}
+
+.filter-operator__rule {
+  height: 1px;
+  background: var(--rule-soft);
+}
+
+.filter-help {
+  margin: 0;
+  color: var(--ink-muted);
+  font-size: 0.75rem;
+  line-height: 1.45;
+}
+
+input,
+select {
   width: 100%;
   border: 1px solid var(--rule-soft);
   border-radius: 10px;
@@ -1019,17 +1345,28 @@ input {
   outline: none;
 }
 
-input:focus {
+input:focus,
+select:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 2px rgba(250, 189, 47, 0.18);
 }
 
+.filter-operator__select {
+  width: auto;
+  min-width: 4.8rem;
+  padding: 0.25rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+}
+
 .entry-list {
   display: flex;
+  flex: 1;
   flex-direction: column;
   gap: 0.5rem;
-  overflow: auto;
   min-height: 0;
+  overflow: auto;
 }
 
 .entry-button {
@@ -1385,6 +1722,7 @@ code {
 
   .pokedex-sidebar {
     max-height: none;
+    overflow: visible;
     border-right: 0;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   }
@@ -1400,6 +1738,20 @@ code {
 }
 
 @media (max-width: 760px) {
+  .filter-browser {
+    grid-template-columns: 1fr;
+  }
+
+  .filter-panel,
+  .entry-list-panel {
+    overflow: visible;
+  }
+
+  .entry-list {
+    max-height: 50vh;
+    overflow: auto;
+  }
+
   .book-columns {
     grid-template-columns: 1fr;
     column-gap: 0;
