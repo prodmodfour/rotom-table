@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { onBeforeRouteUpdate } from 'vue-router'
 import pokedexData from '~/ptu-data/data/pokedex.json'
 import { pokemonCatalogBySpecies } from '~/data/pokemonCatalog'
 import { compareByNationalDex, getNationalDexNumber } from '~/utils/nationalDex'
@@ -20,6 +21,51 @@ type DisplayPokedexEntry = PokedexRecord & {
 }
 
 const route = useRoute()
+
+const sidebarRef = ref<HTMLElement | null>(null)
+const entryListRef = ref<HTMLElement | null>(null)
+const sidebarScrollTop = useState('pokedex-sidebar-scroll-top', () => 0)
+const entryListScrollTop = useState('pokedex-entry-list-scroll-top', () => 0)
+
+const saveSidebarScroll = () => {
+  if (sidebarRef.value) {
+    sidebarScrollTop.value = sidebarRef.value.scrollTop
+  }
+
+  if (entryListRef.value) {
+    entryListScrollTop.value = entryListRef.value.scrollTop
+  }
+}
+
+const restoreSidebarScroll = async () => {
+  if (!import.meta.client) return
+
+  await nextTick()
+  window.requestAnimationFrame(() => {
+    if (sidebarRef.value) {
+      sidebarRef.value.scrollTop = sidebarScrollTop.value
+    }
+
+    if (entryListRef.value) {
+      entryListRef.value.scrollTop = entryListScrollTop.value
+    }
+  })
+}
+
+onMounted(restoreSidebarScroll)
+onBeforeUnmount(saveSidebarScroll)
+
+onBeforeRouteUpdate((to, from) => {
+  if (to.path.startsWith('/pokedex') && from.path.startsWith('/pokedex')) {
+    saveSidebarScroll()
+  }
+})
+
+watch(() => route.fullPath, (to, from) => {
+  if (typeof from === 'string' && to.startsWith('/pokedex') && from.startsWith('/pokedex')) {
+    restoreSidebarScroll()
+  }
+})
 
 const normalizeText = (value: string) => value.trim().toLowerCase()
 
@@ -299,7 +345,7 @@ const habitatSummary = computed(() => {
 
 <template>
   <div class="pokedex-layout">
-    <aside class="pokedex-sidebar">
+    <aside ref="sidebarRef" class="pokedex-sidebar" @scroll.passive="saveSidebarScroll">
       <AppNavigation />
 
       <section class="sidebar-card">
@@ -317,7 +363,7 @@ const habitatSummary = computed(() => {
           <input v-model.trim="searchTerm" type="search" placeholder="Search species, type, or gen…" />
         </label>
 
-        <div v-if="filteredEntries.length > 0" class="entry-list">
+        <div v-if="filteredEntries.length > 0" ref="entryListRef" class="entry-list" @scroll.passive="saveSidebarScroll">
           <NuxtLink
             v-for="entry in filteredEntries"
             :key="entry.id"
