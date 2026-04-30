@@ -54,6 +54,7 @@ useHead(() => ({
 
 const selectedId = ref<string | null>(null)
 const previewState = ref<PreviewState>({ position: null, reachable: false, pathLength: 0 })
+const sidebarCollapsed = ref(false)
 
 const buildMode = ref(false)
 const buildTool = ref<BuildTool>('pencil')
@@ -360,20 +361,40 @@ watch(
 </script>
 
 <template>
-  <div class="layout-shell">
-    <aside class="sidebar">
-      <AppNavigation />
-
-      <div class="header-row">
-        <NuxtLink to="/maps" class="back-link">← All maps</NuxtLink>
-        <SaveIndicator
-          v-if="saveIndicatorStatus"
-          :status="saveIndicatorStatus"
-          :error="error"
-        />
+  <div class="layout-shell" :class="{ 'layout-shell--sidebar-collapsed': sidebarCollapsed }">
+    <aside
+      class="sidebar"
+      :class="{ 'sidebar--collapsed': sidebarCollapsed }"
+      :aria-label="sidebarCollapsed ? 'Collapsed map sidebar' : 'Map sidebar'"
+    >
+      <div class="sidebar-toggle-row">
+        <button
+          type="button"
+          class="sidebar-toggle"
+          :aria-expanded="!sidebarCollapsed"
+          aria-controls="map-sidebar-content"
+          :aria-label="sidebarCollapsed ? 'Expand map sidebar' : 'Collapse map sidebar'"
+          :title="sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'"
+          @click="sidebarCollapsed = !sidebarCollapsed"
+        >
+          <span aria-hidden="true">{{ sidebarCollapsed ? '›' : '‹' }}</span>
+          <span class="sidebar-toggle__label">{{ sidebarCollapsed ? 'Expand' : 'Collapse' }}</span>
+        </button>
       </div>
 
-      <section v-if="map" class="panel-card">
+      <div id="map-sidebar-content" v-show="!sidebarCollapsed" class="sidebar-content">
+        <AppNavigation />
+
+        <div class="header-row">
+          <NuxtLink to="/maps" class="back-link">← All maps</NuxtLink>
+          <SaveIndicator
+            v-if="saveIndicatorStatus"
+            :status="saveIndicatorStatus"
+            :error="error"
+          />
+        </div>
+
+        <section v-if="map" class="panel-card">
         <div class="panel-heading">
           <h2>{{ map.name }}</h2>
           <span class="badge">
@@ -512,7 +533,8 @@ watch(
         </template>
       </section>
 
-      <SheetBrowser v-if="map" @select="spawnSheet" />
+        <SheetBrowser v-if="map" @select="spawnSheet" />
+      </div>
     </aside>
 
     <main class="scene-column">
@@ -561,17 +583,92 @@ watch(
   min-height: 100vh;
   gap: 0;
   background: var(--paper);
+  transition: grid-template-columns 0.2s ease;
+}
+
+.layout-shell--sidebar-collapsed {
+  grid-template-columns: 56px minmax(0, 1fr);
 }
 
 .sidebar {
   display: flex;
   flex-direction: column;
   gap: 0.85rem;
+  min-width: 0;
   padding: 0.85rem;
   border-right: 1px solid var(--rule);
   background: var(--paper);
   max-height: 100vh;
   overflow: auto;
+  transition: padding 0.2s ease;
+}
+
+.sidebar--collapsed {
+  align-items: center;
+  padding: 0.65rem 0.45rem;
+  overflow: hidden;
+}
+
+.sidebar-content {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 0.85rem;
+  min-width: 0;
+  min-height: 0;
+}
+
+.sidebar-toggle-row {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0 0.25rem;
+}
+
+.sidebar--collapsed .sidebar-toggle-row {
+  justify-content: center;
+  padding: 0;
+}
+
+.sidebar-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  border: 1px solid var(--rule-soft);
+  border-radius: 999px;
+  background: var(--paper-soft);
+  color: var(--ink-soft);
+  padding: 0.4rem 0.7rem;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.sidebar-toggle:hover,
+.sidebar-toggle:focus-visible {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+  outline: none;
+}
+
+.sidebar-toggle span[aria-hidden='true'] {
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 0.8;
+}
+
+.sidebar--collapsed .sidebar-toggle {
+  width: 38px;
+  height: 38px;
+  padding: 0;
+}
+
+.sidebar--collapsed .sidebar-toggle__label {
+  display: none;
 }
 
 .scene-column {
