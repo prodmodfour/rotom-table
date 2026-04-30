@@ -18,6 +18,7 @@ type DisplayPokedexEntry = PokedexRecord & {
   id: string
   slug: string
   nationalDexNumber: number | null
+  searchText: string
 }
 
 const route = useRoute()
@@ -67,7 +68,14 @@ watch(() => route.fullPath, (to, from) => {
   }
 })
 
-const normalizeText = (value: string) => value.trim().toLowerCase()
+const normalizeText = (value: string) => value
+  .normalize('NFKD')
+  .replace(/[\u0300-\u036f]/g, '')
+  .toLowerCase()
+  .replace(/['\u2019]/g, '')
+  .replace(/[^a-z0-9#]+/g, ' ')
+  .replace(/\s+/g, ' ')
+  .trim()
 
 const formatNationalDexNumber = (number: number | null | undefined): string | null => (
   number == null ? null : `#${number.toString().padStart(3, '0')}`
@@ -81,16 +89,185 @@ const toPokedexSlug = (value: string): string => value
   .replace(/[^a-z0-9]+/g, '-')
   .replace(/^-+|-+$/g, '')
 
+type SearchValue = string | number | null | undefined
+type MovementCapabilityKey = Exclude<keyof PokedexCapabilities, 'other'>
+
+const CAPABILITY_SEARCH_FIELDS: Array<[MovementCapabilityKey, string]> = [
+  ['overland', 'Overland'],
+  ['sky', 'Sky'],
+  ['swim', 'Swim'],
+  ['levitate', 'Levitate'],
+  ['burrow', 'Burrow'],
+  ['jump', 'Jump'],
+  ['power', 'Power'],
+]
+
+const addSearchValue = (values: string[], value: SearchValue) => {
+  if (value === undefined || value === null) return
+
+  const stringValue = String(value).trim()
+  if (stringValue) values.push(stringValue)
+}
+
+const addSearchValues = (values: string[], ...rawValues: SearchValue[]) => {
+  for (const value of rawValues) {
+    addSearchValue(values, value)
+  }
+}
+
+const hasCapabilityValue = (value: PokedexCapabilities[MovementCapabilityKey]) => {
+  if (value === undefined || value === null) return false
+  if (typeof value === 'number') return value !== 0
+
+  const normalized = normalizeText(value)
+  return normalized.length > 0 && normalized !== '0' && normalized !== '0 0'
+}
+
+const stripParenthetical = (value: string) => value.replace(/\s*\([^)]*\)/g, '').trim()
+
+const buildSearchText = (values: string[]): string => {
+  const normalizedValues = new Set<string>()
+
+  for (const value of values) {
+    const normalized = normalizeText(value)
+    if (!normalized) continue
+
+    normalizedValues.add(normalized)
+
+    // Also index a no-space version so "thunderpunch" and "tm35" work even
+    // when the source data says "Thunder Punch" or "TM 35".
+    const compact = normalized.replace(/\s+/g, '')
+    if (compact && compact !== normalized) {
+      normalizedValues.add(compact)
+    }
+  }
+
+  return Array.from(normalizedValues).join(' ')
+}
+
+const buildPokedexSearchText = (entry: PokedexRecord & { slug: string; nationalDexNumber: number | null }): string => {
+  const values: string[] = []
+
+  addSearchValues(values, entry.species, entry.slug.replace(/-/g, ' '), entry.source_gen)
+  if (entry.source_gen) {
+    addSearchValue(values, `gen ${entry.source_gen}`)
+  }
+
+  if (entry.nationalDexNumber) {
+    const paddedNumber = entry.nationalDexNumber.toString().padStart(3, '0')
+    addSearchValues(values, entry.nationalDexNumber, paddedNumber, `#${paddedNumber}`)
+  }
+
+  if (entry.types?.length) {
+    addSearchValues(values, ...entry.types, `type ${entry.types.join(' ')}`, `types ${entry.types.join(' ')}`)
+    for (const type of entry.types) {
+      addSearchValue(values, `type ${type}`)
+    }
+  }
+
+  if (entry.abilities) {
+    const abilityGroups = [
+      ['basic ability', entry.abilities.basic],
+      ['advanced ability', entry.abilities.advanced],
+      ['high ability', entry.abilities.high],
+    ] as const
+
+    for (const [label, abilities] of abilityGroups) {
+      for (const ability of abilities ?? []) {
+        addSearchValues(values, ability, `ability ${ability}`, `abilities ${ability}`, `${label} ${ability}`)
+      }
+    }
+  }
+
+  if (entry.capabilities) {
+    for (const [key, label] of CAPABILITY_SEARCH_FIELDS) {
+      const value = entry.capabilities[key]
+      if (!hasCapabilityValue(value)) continue
+
+      addSearchValues(
+        values,
+        label,
+        `cap ${label}`,
+        `caps ${label}`,
+        `capability ${label}`,
+        `capabilities ${label}`,
+        `${label} ${value}`,
+        `cap ${label} ${value}`,
+        `capability ${label} ${value}`,
+      )
+    }
+
+    for (const capability of entry.capabilities.other ?? []) {
+      if (!capability) continue
+
+      const baseCapability = stripParenthetical(capability)
+      addSearchValues(
+        values,
+        capability,
+        baseCapability,
+        `cap ${capability}`,
+        `capability ${capability}`,
+        `capabilities ${capability}`,
+        baseCapability ? `cap ${baseCapability}` : null,
+        baseCapability ? `capability ${baseCapability}` : null,
+      )
+    }
+  }
+
+  for (const move of entry.level_up_moves ?? []) {
+    addSearchValues(
+      values,
+      move.name,
+      `move ${move.name}`,
+      `moves ${move.name}`,
+      `level up ${move.name}`,
+      `level ${move.level} ${move.name}`,
+    )
+  }
+
+  for (const move of entry.tm_hm_moves ?? []) {
+    const machine = `${move.kind}${move.number}`
+    addSearchValues(
+      values,
+      move.name,
+      `move ${move.name}`,
+      `moves ${move.name}`,
+      `${move.kind} ${move.number}`,
+      machine,
+      `${move.kind} ${move.number} ${move.name}`,
+      `${machine} ${move.name}`,
+    )
+  }
+
+  for (const moveName of entry.egg_moves ?? []) {
+    addSearchValues(values, moveName, `move ${moveName}`, `moves ${moveName}`, `egg move ${moveName}`)
+  }
+
+  for (const move of entry.tutor_moves ?? []) {
+    addSearchValues(values, move.name, `move ${move.name}`, `moves ${move.name}`, `tutor move ${move.name}`)
+    if (move.heart_scale) {
+      addSearchValue(values, `heart scale move ${move.name}`)
+    }
+  }
+
+  return buildSearchText(values)
+}
+
 const allEntries: DisplayPokedexEntry[] = [...(pokedexData as PokedexRecord[])]
   .filter((entry): entry is PokedexRecord => Boolean(entry?.species))
   .sort(compareByNationalDex)
   .map((entry, index) => {
     const slug = toPokedexSlug(entry.species)
-    return {
+    const displayEntry = {
       ...entry,
       id: `${index}-${slug || 'entry'}`,
       slug,
       nationalDexNumber: getNationalDexNumber(entry.species),
+    }
+
+    return {
+      ...displayEntry,
+      searchText: buildPokedexSearchText(displayEntry),
     }
   })
 
@@ -123,18 +300,12 @@ const filteredEntries = computed(() => {
     return allEntries
   }
 
-  return allEntries.filter((entry) => {
-    const haystacks = [
-      entry.species,
-      ...(entry.nationalDexNumber
-        ? [String(entry.nationalDexNumber), formatNationalDexNumber(entry.nationalDexNumber) ?? '']
-        : []),
-      ...(entry.types ?? []),
-      entry.source_gen ?? '',
-    ]
+  const compactQuery = query.replace(/\s+/g, '')
 
-    return haystacks.some((value) => normalizeText(value).includes(query))
-  })
+  return allEntries.filter((entry) => (
+    entry.searchText.includes(query)
+    || (compactQuery !== query && entry.searchText.includes(compactQuery))
+  ))
 })
 
 const routedEntry = computed(() => (
@@ -360,7 +531,7 @@ const habitatSummary = computed(() => {
 
         <label class="search-field">
           <span class="sr-only">Search the Pokédex</span>
-          <input v-model.trim="searchTerm" type="search" placeholder="Search species, type, or gen…" />
+          <input v-model.trim="searchTerm" type="search" placeholder="Search species, move, ability, cap, type…" />
         </label>
 
         <div v-if="filteredEntries.length > 0" ref="entryListRef" class="entry-list" @scroll.passive="saveSidebarScroll">
