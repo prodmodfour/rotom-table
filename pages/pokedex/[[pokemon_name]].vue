@@ -1,29 +1,67 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, ref } from 'vue'
 import pokedexData from '~/ptu-data/data/pokedex.json'
 import { pokemonCatalogBySpecies } from '~/data/pokemonCatalog'
 import type { PokedexCapabilities, PokedexRecord } from '~/types/pokemon'
 
-useHead({
-  title: 'Pokédex · Rotom Table',
+definePageMeta({
+  // Keep the browser mounted between /pokedex and /pokedex/:pokemon_name so
+  // selecting a Pokémon updates the detail pane in-place instead of feeling
+  // like a whole new page load.
+  key: 'pokedex-browser',
+  scrollToTop: (to, from) => !(to.path.startsWith('/pokedex') && from.path.startsWith('/pokedex')),
 })
 
 type DisplayPokedexEntry = PokedexRecord & {
   id: string
+  slug: string
 }
 
+const route = useRoute()
+
 const normalizeText = (value: string) => value.trim().toLowerCase()
+
+const toPokedexSlug = (value: string): string => value
+  .normalize('NFKD')
+  .replace(/[\u0300-\u036f]/g, '')
+  .toLowerCase()
+  .replace(/['\u2019]/g, '')
+  .replace(/[^a-z0-9]+/g, '-')
+  .replace(/^-+|-+$/g, '')
 
 const allEntries: DisplayPokedexEntry[] = [...(pokedexData as PokedexRecord[])]
   .filter((entry): entry is PokedexRecord => Boolean(entry?.species))
   .sort((left, right) => left.species.localeCompare(right.species))
-  .map((entry, index) => ({
-    ...entry,
-    id: `${index}-${entry.species.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
-  }))
+  .map((entry, index) => {
+    const slug = toPokedexSlug(entry.species)
+    return {
+      ...entry,
+      id: `${index}-${slug || 'entry'}`,
+      slug,
+    }
+  })
+
+const entryBySlug = new Map<string, DisplayPokedexEntry>()
+for (const entry of allEntries) {
+  // A few upstream parser artifacts share the same bogus species label. Keep
+  // the first so every real Pokémon still resolves to a stable name URL.
+  if (!entry.slug || entryBySlug.has(entry.slug)) continue
+  entryBySlug.set(entry.slug, entry)
+}
+
+const pokedexEntryPath = (entry: DisplayPokedexEntry) => `/pokedex/${entry.slug}`
+
+const pokemonRouteSlug = computed(() => {
+  const raw = route.params.pokemon_name
+  const value = Array.isArray(raw) ? raw[0] : raw
+  if (typeof value !== 'string' || value.trim().length === 0) return null
+
+  // Accept copied URLs that use underscores, while links we generate use the
+  // canonical hyphenated slug.
+  return toPokedexSlug(value.replace(/_/g, ' ')) || null
+})
 
 const searchTerm = ref('')
-const selectedId = ref<string | null>(allEntries[0]?.id ?? null)
 
 const filteredEntries = computed(() => {
   const query = normalizeText(searchTerm.value)
@@ -43,26 +81,34 @@ const filteredEntries = computed(() => {
   })
 })
 
-watch(
-  filteredEntries,
-  (entries) => {
-    if (entries.length === 0) {
-      selectedId.value = null
-      return
-    }
+const routedEntry = computed(() => (
+  pokemonRouteSlug.value ? entryBySlug.get(pokemonRouteSlug.value) ?? null : null
+))
 
-    if (!selectedId.value || !entries.some((entry) => entry.id === selectedId.value)) {
-      selectedId.value = entries[0].id
-    }
-  },
-  { immediate: true },
-)
+const selectedEntry = computed(() => {
+  if (pokemonRouteSlug.value) {
+    return routedEntry.value
+  }
 
-const selectedEntry = computed(
-  () => filteredEntries.value.find((entry) => entry.id === selectedId.value)
-    ?? allEntries.find((entry) => entry.id === selectedId.value)
-    ?? null,
-)
+  return filteredEntries.value[0] ?? null
+})
+
+const selectedId = computed(() => selectedEntry.value?.id ?? null)
+
+const requestedPokemonName = computed(() => {
+  if (!pokemonRouteSlug.value || selectedEntry.value) return null
+  const raw = route.params.pokemon_name
+  const value = Array.isArray(raw) ? raw[0] : raw
+  return typeof value === 'string' ? value : pokemonRouteSlug.value
+})
+
+useHead(() => ({
+  title: pokemonRouteSlug.value
+    ? selectedEntry.value
+      ? `${selectedEntry.value.species} · Pokédex · Rotom Table`
+      : 'Pokémon not found · Pokédex · Rotom Table'
+    : 'Pokédex · Rotom Table',
+}))
 
 const selectedSprite = computed(() => {
   if (!selectedEntry.value) {
@@ -100,10 +146,13 @@ const genderSummary = computed(() => {
 
 // One-page index for the bottom-right page number.
 const pageNumber = computed(() => {
-  const list = filteredEntries.value
-  const index = list.findIndex((entry) => entry.id === selectedId.value)
-  if (index < 0) return null
-  return index + 1
+  if (!selectedId.value) return null
+
+  const filteredIndex = filteredEntries.value.findIndex((entry) => entry.id === selectedId.value)
+  if (filteredIndex >= 0) return filteredIndex + 1
+
+  const allIndex = allEntries.findIndex((entry) => entry.id === selectedId.value)
+  return allIndex >= 0 ? allIndex + 1 : null
 })
 
 // "Capability List" rendered as a sequence of items (mostly RefLinks). Each
@@ -245,12 +294,13 @@ const habitatSummary = computed(() => {
         </label>
 
         <div v-if="filteredEntries.length > 0" class="entry-list">
-          <button
+          <NuxtLink
             v-for="entry in filteredEntries"
             :key="entry.id"
+            :to="pokedexEntryPath(entry)"
             :class="['entry-button', { active: entry.id === selectedId }]"
-            type="button"
-            @click="selectedId = entry.id"
+            :aria-current="entry.id === selectedId ? 'page' : undefined"
+            prefetch-on="interaction"
           >
             <span class="entry-name">{{ entry.species }}</span>
             <span class="entry-meta">
@@ -265,7 +315,7 @@ const habitatSummary = computed(() => {
               <span v-else>Unknown type</span>
               <template v-if="entry.source_gen"> · {{ entry.source_gen }}</template>
             </span>
-          </button>
+          </NuxtLink>
         </div>
 
         <p v-else class="empty-state">
@@ -411,7 +461,7 @@ const habitatSummary = computed(() => {
             </section>
 
             <section
-              v-if="selectedEntry.level_up_moves?.length || tmHmPhrase || eggMovePhrase || tutorMovePhrase"
+              v-if="selectedEntry.level_up_moves?.length || tmHmTokens.length || eggMoveTokens.length || tutorMoveTokens.length"
               class="book-section"
             >
               <h3 class="book-section__title">Move List</h3>
@@ -470,8 +520,11 @@ const habitatSummary = computed(() => {
       </article>
 
       <section v-else class="book-page book-page--empty">
-        <h2>No entry selected</h2>
-        <p>Pick a Pokémon from the sidebar to inspect its PTU data.</p>
+        <h2>{{ requestedPokemonName ? 'Pokémon not found' : 'No entry selected' }}</h2>
+        <p v-if="requestedPokemonName">
+          No Pokédex entry exists for <code>{{ requestedPokemonName }}</code>.
+        </p>
+        <p v-else>Pick a Pokémon from the sidebar to inspect its PTU data.</p>
       </section>
     </main>
   </div>
@@ -594,6 +647,7 @@ input:focus {
   background: var(--paper);
   color: var(--ink);
   text-align: left;
+  text-decoration: none;
   cursor: pointer;
   transition:
     border-color 0.15s ease,
@@ -605,6 +659,11 @@ input:focus {
   border-color: var(--rule-strong);
   background: var(--paper-hover);
   color: var(--ink-bright);
+}
+
+.entry-button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .entry-button.active {
