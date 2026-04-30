@@ -68,6 +68,7 @@ export default defineEventHandler(async (event) => {
     folder,
     dimensions,
     placements: [],
+    initiative: { activeId: null, round: 1 },
     voxels: [],
     createdAt: now,
     updatedAt: now,

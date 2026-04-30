@@ -21,8 +21,17 @@ export interface MapPlacement {
   sheetKind: SheetKind
   sheetSlug: string
   position: GridAnchor
+  /** Map-local initiative value used by the encounter tracker. */
+  initiative?: number | null
   /** Whether the sprite is facing away from the camera. */
   turned?: boolean
+}
+
+export interface InitiativeTrackerState {
+  /** Placement id whose turn is currently active. */
+  activeId?: string | null
+  /** 1-based combat round counter. */
+  round?: number
 }
 
 export type VoxelMaterial =
@@ -56,6 +65,8 @@ export interface TabletopMap {
   folder?: string
   dimensions: GridDimensions
   placements: MapPlacement[]
+  /** Current turn + round state for the collapsible initiative tracker. */
+  initiative?: InitiativeTrackerState
   /** Sparse list of 1×1×1 terrain blocks. */
   voxels: GridVoxel[]
   createdAt?: number

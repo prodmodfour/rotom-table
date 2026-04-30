@@ -47,9 +47,13 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: `Map ${slug}.json not found` })
   }
 
+  const initiative = map.initiative && typeof map.initiative === 'object'
+    ? map.initiative
+    : { activeId: null, round: 1 }
   const persisted: TabletopMap = {
     ...map,
     folder: folderFromPath(path),
+    initiative,
     voxels: Array.isArray(map.voxels) ? map.voxels : [],
     updatedAt: Date.now(),
   }

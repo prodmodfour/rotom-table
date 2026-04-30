@@ -57,9 +57,13 @@ export const folderFromPath = (filePath: string): string => {
 export const readMapFile = (filePath: string): TabletopMap => {
   const raw = readFileSync(filePath, 'utf8')
   const json = JSON.parse(raw) as TabletopMap
+  const initiative = json.initiative && typeof json.initiative === 'object'
+    ? json.initiative
+    : { activeId: null, round: 1 }
   return {
     ...json,
     folder: json.folder ?? folderFromPath(filePath),
+    initiative,
     voxels: Array.isArray(json.voxels) ? json.voxels : [],
   }
 }

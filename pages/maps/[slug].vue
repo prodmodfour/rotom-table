@@ -26,10 +26,13 @@ import {
 } from '~/utils/voxels'
 import { getClientId } from '~/utils/clientId'
 import { COMBAT_STAGE_KEYS, COMBAT_STAT_STAGE_KEYS, clampCombatStage } from '~/utils/combatStages'
+import { resolveStats } from '~/data/characterSheets'
+import { resolveTrainerStats } from '~/data/trainerSheets'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { CombatStageMap } from '~/types/combatStages'
+import type { SpawnedPokemon } from '~/types/pokemon'
 import type { TrainerSheet } from '~/types/trainerSheet'
-import type { GridAnchor, GridVoxel, VoxelMaterial } from '~/types/map'
+import type { GridAnchor, GridVoxel, InitiativeTrackerState, VoxelMaterial } from '~/types/map'
 import type { PreviewState } from '~/utils/grid'
 import type { SaveStatus } from '~/composables/useEditableSheet'
 
@@ -55,6 +58,7 @@ useHead(() => ({
 const selectedId = ref<string | null>(null)
 const previewState = ref<PreviewState>({ position: null, reachable: false, pathLength: 0 })
 const sidebarCollapsed = ref(false)
+const initiativeCollapsed = ref(false)
 
 const buildMode = ref(false)
 const buildTool = ref<BuildTool>('pencil')
@@ -70,6 +74,130 @@ const spawnedPokemon = computed(() => placementsToSpawned(map.value, sheetLookup
 const mapVoxels = computed<GridVoxel[]>(() => map.value?.voxels ?? [])
 const voxelCount = computed(() => mapVoxels.value.length)
 
+type InitiativeKind = 'pokemon' | 'trainer'
+
+interface InitiativeSpritePreview {
+  url: string | null
+  isSpriteSheet: boolean
+  frameWidth: number
+  frameHeight: number
+  scale: number
+}
+
+interface InitiativeRow {
+  id: string
+  name: string
+  meta: string
+  sprite: InitiativeSpritePreview
+  currentHp: number
+  maxHp: number
+  initiative: number | null
+  speed: number
+}
+
+const normalizeInitiativeValue = (value: unknown): number | null => {
+  if (value === null || value === undefined || value === '') return null
+  const n = Number(value)
+  if (!Number.isFinite(n)) return null
+  return Math.trunc(n)
+}
+
+const speedForPlacement = (kind: InitiativeKind, sheetSlug: string): number => {
+  if (kind === 'pokemon') {
+    const sheet = pokemonBySlug.value?.get(sheetSlug)
+    if (!sheet) return 0
+    return resolveStats(sheet).find((row) => row.key === 'spd')?.total ?? 0
+  }
+  const sheet = trainerBySlug.value?.get(sheetSlug)
+  if (!sheet) return 0
+  return resolveTrainerStats(sheet).find((row) => row.key === 'spd')?.total ?? 0
+}
+
+const metaForPlacement = (kind: InitiativeKind, sheetSlug: string): string => {
+  if (kind === 'pokemon') {
+    const sheet = pokemonBySlug.value?.get(sheetSlug)
+    return sheet ? `${sheet.species} · Lv ${sheet.level}` : 'Pokémon'
+  }
+  const sheet = trainerBySlug.value?.get(sheetSlug)
+  const className = sheet?.classes?.[0]?.name
+  if (!sheet) return 'Trainer'
+  return className ? `Trainer · Lv ${sheet.level} · ${className}` : `Trainer · Lv ${sheet.level}`
+}
+
+const initiativeSpriteScale = (width: number, height: number): number =>
+  Math.min(1, 32 / Math.max(width, height, 1))
+
+const initiativeSpriteFor = (pokemon: SpawnedPokemon): InitiativeSpritePreview => {
+  const animation = pokemon.spriteAnimation
+  if (animation) {
+    return {
+      url: animation.url,
+      isSpriteSheet: true,
+      frameWidth: animation.frameWidth,
+      frameHeight: animation.frameHeight,
+      scale: initiativeSpriteScale(animation.frameWidth, animation.frameHeight),
+    }
+  }
+
+  return {
+    url: pokemon.spriteUrl ?? null,
+    isSpriteSheet: false,
+    frameWidth: 32,
+    frameHeight: 32,
+    scale: 1,
+  }
+}
+
+const initiativeSpriteFrameStyle = (entry: InitiativeRow): Record<string, string> => ({
+  backgroundImage: entry.sprite.url ? `url(${entry.sprite.url})` : 'none',
+  width: `${entry.sprite.frameWidth}px`,
+  height: `${entry.sprite.frameHeight}px`,
+  transform: `scale(${entry.sprite.scale})`,
+})
+
+const initiativeRows = computed<InitiativeRow[]>(() => {
+  const placements = new Map((map.value?.placements ?? []).map((placement) => [placement.id, placement]))
+  return spawnedPokemon.value.map((pokemon) => {
+    const placement = placements.get(pokemon.id)
+    return {
+      id: pokemon.id,
+      name: pokemon.species,
+      meta: metaForPlacement(pokemon.sheetKind, pokemon.sheetSlug),
+      sprite: initiativeSpriteFor(pokemon),
+      currentHp: Math.max(0, Math.floor(pokemon.currentHp)),
+      maxHp: Math.max(0, Math.floor(pokemon.maxHp)),
+      initiative: normalizeInitiativeValue(placement?.initiative),
+      speed: speedForPlacement(pokemon.sheetKind, pokemon.sheetSlug),
+    }
+  })
+})
+
+const sortedInitiativeRows = computed<InitiativeRow[]>(() =>
+  [...initiativeRows.value].sort((a, b) => {
+    const aHasInitiative = a.initiative !== null
+    const bHasInitiative = b.initiative !== null
+    if (aHasInitiative !== bHasInitiative) return aHasInitiative ? -1 : 1
+    if (a.initiative !== null && b.initiative !== null && a.initiative !== b.initiative) {
+      return b.initiative - a.initiative
+    }
+    if (a.speed !== b.speed) return b.speed - a.speed
+    return a.name.localeCompare(b.name)
+  }),
+)
+
+const validInitiativeIds = computed(() => new Set(initiativeRows.value.map((row) => row.id)))
+const activeInitiativeId = computed(() => {
+  const id = map.value?.initiative?.activeId ?? null
+  return id && validInitiativeIds.value.has(id) ? id : null
+})
+const initiativeRound = computed(() => {
+  const round = Math.floor(Number(map.value?.initiative?.round ?? 1))
+  return Number.isFinite(round) && round > 0 ? round : 1
+})
+const hasInitiativeValues = computed(() =>
+  (map.value?.placements ?? []).some((placement) => normalizeInitiativeValue(placement.initiative) !== null),
+)
+
 const activeMaterialDef = computed(() => getMaterialDef(buildMaterial.value))
 const colorPickerValue = computed(() =>
   buildColor.value ?? hexColorString(activeMaterialDef.value.baseColor),
@@ -81,6 +209,111 @@ const saveIndicatorStatus = computed<SaveStatus | null>(() => {
   if (status.value === 'error') return 'error'
   return null
 })
+
+const ensureInitiativeState = (): InitiativeTrackerState | null => {
+  if (!map.value) return null
+  if (!map.value.initiative || typeof map.value.initiative !== 'object') {
+    map.value.initiative = { activeId: null, round: 1 }
+  }
+  const round = Math.floor(Number(map.value.initiative.round ?? 1))
+  map.value.initiative.round = Number.isFinite(round) && round > 0 ? round : 1
+  return map.value.initiative
+}
+
+const placementById = (id: string) => map.value?.placements.find((placement) => placement.id === id) ?? null
+
+const hpPercent = (entry: InitiativeRow): string => {
+  if (entry.maxHp <= 0) return '0%'
+  const percent = Math.max(0, Math.min(100, (entry.currentHp / entry.maxHp) * 100))
+  return `${percent}%`
+}
+
+const selectInitiativeToken = (id: string) => {
+  if (buildMode.value) setMode('play')
+  selectedId.value = id
+  previewState.value = { position: null, reachable: false, pathLength: 0 }
+}
+
+const setActiveInitiative = (id: string) => {
+  const state = ensureInitiativeState()
+  if (!state) return
+  state.activeId = id
+}
+
+const setInitiativeInput = (id: string, event: Event) => {
+  const placement = placementById(id)
+  if (!placement) return
+  const raw = (event.target as HTMLInputElement).value.trim()
+  if (!raw) {
+    delete placement.initiative
+    return
+  }
+  const n = Number(raw)
+  if (!Number.isFinite(n)) return
+  placement.initiative = Math.max(-999, Math.min(999, Math.trunc(n)))
+}
+
+const setInitiativeRound = (event: Event) => {
+  const state = ensureInitiativeState()
+  if (!state) return
+  const raw = (event.target as HTMLInputElement).value.trim()
+  if (!raw) {
+    state.round = 1
+    return
+  }
+  const n = Number(raw)
+  state.round = Number.isFinite(n) ? Math.max(1, Math.floor(n)) : 1
+}
+
+const fillInitiativeFromSpeed = () => {
+  if (!map.value) return
+  const speeds = new Map(initiativeRows.value.map((entry) => [entry.id, entry.speed]))
+  for (const placement of map.value.placements) {
+    const speed = speeds.get(placement.id)
+    if (speed !== undefined) placement.initiative = speed
+  }
+}
+
+const clearInitiativeValues = () => {
+  if (!map.value) return
+  for (const placement of map.value.placements) delete placement.initiative
+  const state = ensureInitiativeState()
+  if (state) {
+    state.activeId = null
+    state.round = 1
+  }
+}
+
+const clearActiveInitiative = () => {
+  if (!map.value?.initiative) return
+  map.value.initiative.activeId = null
+}
+
+const nextInitiative = () => {
+  const order = sortedInitiativeRows.value
+  if (!order.length) return
+  const state = ensureInitiativeState()
+  if (!state) return
+
+  const ids = order.map((entry) => entry.id)
+  const currentIndex = state.activeId ? ids.indexOf(state.activeId) : -1
+  const nextIndex = currentIndex >= 0 && currentIndex < ids.length - 1 ? currentIndex + 1 : 0
+  if (currentIndex === ids.length - 1) state.round = initiativeRound.value + 1
+  state.activeId = ids[nextIndex]
+}
+
+const previousInitiative = () => {
+  const order = sortedInitiativeRows.value
+  if (!order.length) return
+  const state = ensureInitiativeState()
+  if (!state) return
+
+  const ids = order.map((entry) => entry.id)
+  const currentIndex = state.activeId ? ids.indexOf(state.activeId) : -1
+  const previousIndex = currentIndex > 0 ? currentIndex - 1 : ids.length - 1
+  if (currentIndex === 0) state.round = Math.max(1, initiativeRound.value - 1)
+  state.activeId = ids[previousIndex]
+}
 
 const spawnSheet = (selection: SheetSelection) => {
   if (!map.value) return
@@ -119,6 +352,7 @@ const selectPokemon = (id: string | null) => {
 const deletePokemon = (id: string) => {
   if (!map.value) return
   map.value.placements = map.value.placements.filter((p) => p.id !== id)
+  if (map.value.initiative?.activeId === id) map.value.initiative.activeId = null
   if (selectedId.value === id) selectPokemon(null)
 }
 
@@ -358,10 +592,24 @@ watch(
   },
   { deep: true },
 )
+
+watch(
+  () => [map.value?.initiative?.activeId ?? null, initiativeRows.value.map((row) => row.id).join('|')] as const,
+  ([activeId]) => {
+    if (!activeId || !map.value?.initiative) return
+    if (!validInitiativeIds.value.has(activeId)) map.value.initiative.activeId = null
+  },
+)
 </script>
 
 <template>
-  <div class="layout-shell" :class="{ 'layout-shell--sidebar-collapsed': sidebarCollapsed }">
+  <div
+    class="layout-shell"
+    :class="{
+      'layout-shell--sidebar-collapsed': sidebarCollapsed,
+      'layout-shell--initiative-collapsed': initiativeCollapsed,
+    }"
+  >
     <aside
       class="sidebar"
       :class="{ 'sidebar--collapsed': sidebarCollapsed }"
@@ -573,13 +821,184 @@ watch(
         </template>
       </ClientOnly>
     </main>
+
+    <aside
+      class="initiative-sidebar"
+      :class="{ 'initiative-sidebar--collapsed': initiativeCollapsed }"
+      :aria-label="initiativeCollapsed ? 'Collapsed initiative tracker' : 'Initiative tracker'"
+    >
+      <div class="initiative-toggle-row">
+        <button
+          type="button"
+          class="initiative-toggle"
+          :aria-expanded="!initiativeCollapsed"
+          aria-controls="initiative-tracker-content"
+          :aria-label="initiativeCollapsed ? 'Expand initiative tracker' : 'Collapse initiative tracker'"
+          :title="initiativeCollapsed ? 'Expand initiative' : 'Collapse initiative'"
+          @click="initiativeCollapsed = !initiativeCollapsed"
+        >
+          <span aria-hidden="true">{{ initiativeCollapsed ? '‹' : '›' }}</span>
+          <span class="initiative-toggle__label">{{ initiativeCollapsed ? 'Expand' : 'Collapse' }}</span>
+        </button>
+      </div>
+
+      <div
+        id="initiative-tracker-content"
+        v-show="!initiativeCollapsed"
+        class="initiative-content"
+      >
+        <section v-if="map" class="panel-card initiative-panel">
+          <div class="panel-heading initiative-heading">
+            <div class="initiative-title-block">
+              <h2>Initiative</h2>
+              <label class="round-field">
+                <span>Round</span>
+                <input
+                  type="number"
+                  min="1"
+                  :value="initiativeRound"
+                  aria-label="Initiative round"
+                  @input="setInitiativeRound"
+                />
+              </label>
+            </div>
+            <span class="badge">
+              {{ initiativeRows.length }} actor{{ initiativeRows.length === 1 ? '' : 's' }}
+            </span>
+          </div>
+
+          <div class="initiative-actions" role="group" aria-label="Turn controls">
+            <button
+              type="button"
+              class="initiative-action"
+              :disabled="!initiativeRows.length"
+              @click="previousInitiative"
+            >
+              Previous
+            </button>
+            <button
+              type="button"
+              class="initiative-action initiative-action--primary"
+              :disabled="!initiativeRows.length"
+              @click="nextInitiative"
+            >
+              {{ activeInitiativeId ? 'Next turn' : 'Start' }}
+            </button>
+          </div>
+
+          <div class="initiative-tools" role="group" aria-label="Initiative utilities">
+            <button
+              type="button"
+              class="initiative-tool"
+              :disabled="!initiativeRows.length"
+              @click="fillInitiativeFromSpeed"
+            >
+              Use Speed
+            </button>
+            <button
+              type="button"
+              class="initiative-tool"
+              :disabled="!activeInitiativeId"
+              @click="clearActiveInitiative"
+            >
+              Clear turn
+            </button>
+            <button
+              type="button"
+              class="initiative-tool initiative-tool--danger"
+              :disabled="!hasInitiativeValues && !activeInitiativeId"
+              @click="clearInitiativeValues"
+            >
+              Reset
+            </button>
+          </div>
+
+          <ol v-if="sortedInitiativeRows.length" class="initiative-list">
+            <li
+              v-for="(entry, index) in sortedInitiativeRows"
+              :key="entry.id"
+              class="initiative-row"
+              :class="{
+                'is-active': activeInitiativeId === entry.id,
+                'is-selected': selectedId === entry.id,
+                'is-fainted': entry.currentHp <= 0,
+              }"
+            >
+              <button
+                type="button"
+                class="initiative-row__turn"
+                :class="{ 'is-active': activeInitiativeId === entry.id }"
+                :aria-pressed="activeInitiativeId === entry.id"
+                :aria-label="`Set ${entry.name} as the current turn`"
+                @click="setActiveInitiative(entry.id)"
+              >
+                <span class="initiative-row__sprite" aria-hidden="true">
+                  <span
+                    v-if="entry.sprite.isSpriteSheet && entry.sprite.url"
+                    class="initiative-row__sprite-frame"
+                    :style="initiativeSpriteFrameStyle(entry)"
+                  />
+                  <img
+                    v-else-if="entry.sprite.url"
+                    :src="entry.sprite.url"
+                    alt=""
+                    draggable="false"
+                  />
+                  <span v-else class="initiative-row__sprite-fallback">
+                    {{ entry.name.slice(0, 1) }}
+                  </span>
+                </span>
+                <span class="sr-only">Turn order {{ index + 1 }}</span>
+              </button>
+
+              <button
+                type="button"
+                class="initiative-row__body"
+                :aria-label="`Select ${entry.name} on the map`"
+                @click="selectInitiativeToken(entry.id)"
+              >
+                <span class="initiative-row__main">
+                  <span class="initiative-row__name">{{ entry.name }}</span>
+                  <span class="initiative-row__meta">{{ entry.meta }} · SPD {{ entry.speed }}</span>
+                </span>
+                <span class="initiative-row__hp">
+                  <span>{{ entry.currentHp }}/{{ entry.maxHp }} HP</span>
+                  <span class="initiative-row__hp-track" aria-hidden="true">
+                    <span :style="{ width: hpPercent(entry) }" />
+                  </span>
+                </span>
+              </button>
+
+              <label class="initiative-row__score">
+                <span>Init</span>
+                <input
+                  type="number"
+                  inputmode="numeric"
+                  :value="entry.initiative ?? ''"
+                  placeholder="—"
+                  :aria-label="`${entry.name} initiative`"
+                  @input="setInitiativeInput(entry.id, $event)"
+                />
+              </label>
+            </li>
+          </ol>
+
+          <p v-else class="initiative-empty">
+            Spawn Pokémon or trainers onto the map to track turn order.
+          </p>
+        </section>
+      </div>
+    </aside>
   </div>
 </template>
 
 <style scoped>
 .layout-shell {
+  --map-sidebar-width: minmax(310px, 380px);
+  --initiative-sidebar-width: minmax(300px, 360px);
+
   display: grid;
-  grid-template-columns: minmax(310px, 380px) minmax(0, 1fr);
+  grid-template-columns: var(--map-sidebar-width) minmax(0, 1fr) var(--initiative-sidebar-width);
   min-height: 100vh;
   gap: 0;
   background: var(--paper);
@@ -587,7 +1006,11 @@ watch(
 }
 
 .layout-shell--sidebar-collapsed {
-  grid-template-columns: 56px minmax(0, 1fr);
+  --map-sidebar-width: 56px;
+}
+
+.layout-shell--initiative-collapsed {
+  --initiative-sidebar-width: 56px;
 }
 
 .sidebar {
@@ -675,6 +1098,87 @@ watch(
   min-width: 0;
   min-height: 100vh;
   background: var(--paper);
+}
+
+.initiative-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  min-width: 0;
+  padding: 0.85rem;
+  border-left: 1px solid var(--rule);
+  background: var(--paper);
+  max-height: 100vh;
+  overflow: auto;
+  transition: padding 0.2s ease;
+}
+
+.initiative-sidebar--collapsed {
+  align-items: center;
+  padding: 0.65rem 0.45rem;
+  overflow: hidden;
+}
+
+.initiative-content {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 0.85rem;
+  min-width: 0;
+  min-height: 0;
+}
+
+.initiative-toggle-row {
+  display: flex;
+  justify-content: flex-start;
+  padding: 0 0.25rem;
+}
+
+.initiative-sidebar--collapsed .initiative-toggle-row {
+  justify-content: center;
+  padding: 0;
+}
+
+.initiative-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  border: 1px solid var(--rule-soft);
+  border-radius: 999px;
+  background: var(--paper-soft);
+  color: var(--ink-soft);
+  padding: 0.4rem 0.7rem;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.initiative-toggle:hover,
+.initiative-toggle:focus-visible {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+  outline: none;
+}
+
+.initiative-toggle span[aria-hidden='true'] {
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 0.8;
+}
+
+.initiative-sidebar--collapsed .initiative-toggle {
+  width: 38px;
+  height: 38px;
+  padding: 0;
+}
+
+.initiative-sidebar--collapsed .initiative-toggle__label {
+  display: none;
 }
 
 .header-row {
@@ -977,6 +1481,306 @@ input:focus {
   background: rgba(251, 73, 52, 0.08);
 }
 
+.initiative-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.initiative-heading {
+  align-items: flex-start;
+  margin-bottom: 0;
+}
+
+.initiative-title-block {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.round-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--ink-muted);
+  font-size: 0.76rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.round-field input {
+  width: 72px;
+  padding: 0.42rem 0.55rem;
+  text-align: center;
+}
+
+.initiative-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.45rem;
+}
+
+.initiative-tools {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.4rem;
+}
+
+.initiative-action,
+.initiative-tool {
+  border: 1px solid var(--rule-soft);
+  border-radius: 10px;
+  background: var(--paper);
+  color: var(--ink);
+  padding: 0.5rem 0.65rem;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.initiative-action:hover:not(:disabled),
+.initiative-tool:hover:not(:disabled) {
+  border-color: var(--rule-strong);
+  background: var(--paper-hover);
+}
+
+.initiative-action:disabled,
+.initiative-tool:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.initiative-action--primary {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.initiative-tool--danger {
+  color: #fb4934;
+}
+
+.initiative-tool--danger:hover:not(:disabled) {
+  border-color: #fb4934;
+  background: rgba(251, 73, 52, 0.08);
+}
+
+.initiative-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.initiative-row {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) 64px;
+  align-items: stretch;
+  gap: 0.5rem;
+  border: 1px solid var(--rule-soft);
+  border-radius: 13px;
+  background: var(--paper);
+  padding: 0.5rem;
+  transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.initiative-row.is-active {
+  border-color: var(--accent);
+  background: linear-gradient(135deg, rgba(250, 189, 47, 0.15), rgba(40, 40, 40, 0.92));
+  box-shadow: 0 0 0 1px rgba(250, 189, 47, 0.15);
+}
+
+.initiative-row.is-selected:not(.is-active) {
+  border-color: var(--info);
+}
+
+.initiative-row.is-fainted {
+  opacity: 0.66;
+}
+
+.initiative-row__turn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  overflow: hidden;
+  border: 1px solid var(--rule-soft);
+  border-radius: 10px;
+  background: var(--paper-soft);
+  color: var(--ink-soft);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+  padding: 0;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.initiative-row__turn:hover,
+.initiative-row__turn:focus-visible {
+  border-color: var(--accent);
+  color: var(--accent);
+  outline: none;
+}
+
+.initiative-row__turn.is-active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.initiative-row__sprite {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  min-height: 40px;
+  overflow: hidden;
+  border-radius: 8px;
+}
+
+.initiative-row__sprite-frame {
+  display: block;
+  flex: 0 0 auto;
+  background-position: left top;
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+  transform-origin: center;
+}
+
+.initiative-row__sprite img {
+  display: block;
+  max-width: 34px;
+  max-height: 34px;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+.initiative-row__sprite-fallback {
+  color: var(--ink-bright);
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.initiative-row__body {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.35rem;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+}
+
+.initiative-row__body:focus-visible {
+  border-radius: 8px;
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.initiative-row__main {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.initiative-row__name {
+  overflow: hidden;
+  color: var(--ink-bright);
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.initiative-row__meta {
+  overflow: hidden;
+  color: var(--ink-muted);
+  font-size: 0.74rem;
+  letter-spacing: 0.03em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.initiative-row__hp {
+  display: flex;
+  flex-direction: column;
+  gap: 0.22rem;
+  color: var(--ink-soft);
+  font-size: 0.74rem;
+}
+
+.initiative-row__hp-track {
+  display: block;
+  height: 5px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--paper-inset);
+}
+
+.initiative-row__hp-track > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--good), var(--accent));
+}
+
+.initiative-row.is-fainted .initiative-row__hp-track > span {
+  background: var(--bad);
+}
+
+.initiative-row__score {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.28rem;
+  min-width: 0;
+}
+
+.initiative-row__score span {
+  color: var(--ink-muted);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.initiative-row__score input {
+  padding: 0.45rem 0.25rem;
+  text-align: center;
+}
+
+.initiative-empty {
+  margin: 0;
+  border: 1px dashed var(--rule-soft);
+  border-radius: 12px;
+  padding: 1rem;
+  color: var(--ink-muted);
+  font-size: 0.86rem;
+  line-height: 1.45;
+  text-align: center;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .scene-loading {
   display: grid;
   place-items: center;
@@ -989,7 +1793,9 @@ input:focus {
 }
 
 @media (max-width: 1100px) {
-  .layout-shell {
+  .layout-shell,
+  .layout-shell--sidebar-collapsed,
+  .layout-shell--initiative-collapsed {
     grid-template-columns: 1fr;
   }
 
@@ -998,11 +1804,23 @@ input:focus {
     border-right: 0;
     border-bottom: 1px solid var(--rule);
   }
+
+  .initiative-sidebar {
+    max-height: none;
+    border-left: 0;
+    border-top: 1px solid var(--rule);
+  }
 }
 
 @media (max-width: 640px) {
-  .dimension-grid {
+  .dimension-grid,
+  .initiative-tools,
+  .initiative-actions {
     grid-template-columns: 1fr;
+  }
+
+  .initiative-row {
+    grid-template-columns: 38px minmax(0, 1fr) 58px;
   }
 }
 </style>
