@@ -58,6 +58,7 @@ interface WorldSpriteState {
 }
 
 interface PokemonRenderObject {
+  id: string
   sprite: THREE.Sprite<THREE.SpriteMaterial>
   spriteState: WorldSpriteState
   elevationBadge: CSS3DSprite
@@ -1221,6 +1222,7 @@ let activePreviewAnchor: GridAnchor | null = null
 let pointerDown = { x: 0, y: 0 }
 let pointerTravel = 0
 let lastPointerCoords: { clientX: number; clientY: number } | null = null
+let hoveredPokemonId: string | null = null
 
 const getPreviewLayerY = () => activePreviewAnchor?.y ?? selectedPokemon.value?.position.y ?? 0
 
@@ -1733,8 +1735,9 @@ const updateElevationBadge = (
   center: THREE.Vector3,
   base: number,
   elevation: number,
+  show = true,
 ) => {
-  if (elevation <= 0) {
+  if (!show || elevation <= 0) {
     badge.visible = false
     return
   }
@@ -1743,6 +1746,33 @@ const updateElevationBadge = (
   badge.position.set(center.x + offset.x, center.y + 0.08, center.z + offset.z)
   badge.element.textContent = `${elevation} ↑`
   badge.visible = true
+}
+
+const setHoveredPokemonId = (id: string | null) => {
+  if (hoveredPokemonId === id) {
+    return
+  }
+
+  const previousId = hoveredPokemonId
+  hoveredPokemonId = id
+
+  if (previousId && previousId !== id) {
+    const previous = renderObjects.get(previousId)
+    if (previous) previous.elevationBadge.visible = false
+  }
+
+  if (id) {
+    const next = renderObjects.get(id)
+    if (next) {
+      updateElevationBadge(
+        next.elevationBadge,
+        next.currentCenter,
+        next.base,
+        next.elevation,
+        true,
+      )
+    }
+  }
 }
 
 const hpTierForRatio = (ratio: number): 'critical' | 'wounded' | 'healthy' => {
@@ -1832,6 +1862,7 @@ const buildRenderObject = (pokemon: SpawnedPokemon): PokemonRenderObject => {
   scene.add(hpBar)
 
   return {
+    id: pokemon.id,
     sprite,
     spriteState,
     elevationBadge,
@@ -1898,6 +1929,7 @@ const applyRenderObjectPosition = (renderObject: PokemonRenderObject) => {
     renderObject.currentCenter,
     renderObject.base,
     renderObject.elevation,
+    hoveredPokemonId === renderObject.id,
   )
   updateHpBar(
     renderObject.hpBar,
@@ -1938,6 +1970,10 @@ const syncPokemonObjects = () => {
   for (const [id, renderObject] of renderObjects.entries()) {
     if (nextIds.has(id)) {
       continue
+    }
+
+    if (hoveredPokemonId === id) {
+      setHoveredPokemonId(null)
     }
 
     disposeWorldSprite(renderObject.spriteState)
@@ -2292,6 +2328,18 @@ const pickPokemonId = (event: MouseEvent | PointerEvent) => {
   const hit = intersections[0]?.object
 
   return (hit?.userData.pokemonId as string | undefined) ?? null
+}
+
+const updateHoverFromPointer = (event: PointerEvent) => {
+  // Match normal link hover behaviour: touch/drag interactions don't leave a
+  // sticky hover state behind, while every mouse move immediately re-picks the
+  // token under the cursor (or clears the badge when there isn't one).
+  if (event.pointerType === 'touch') {
+    setHoveredPokemonId(null)
+    return
+  }
+
+  setHoveredPokemonId(pickPokemonId(event))
 }
 
 const getMoveGridIntersection = (event: MouseEvent | PointerEvent, yLevel: number) => {
@@ -2691,6 +2739,7 @@ const handlePointerMove = (event: PointerEvent) => {
     Math.hypot(event.clientX - pointerDown.x, event.clientY - pointerDown.y),
   )
   lastPointerCoords = { clientX: event.clientX, clientY: event.clientY }
+  updateHoverFromPointer(event)
 
   if (props.buildMode) {
     updateBuildPreviewFromPointer(event)
@@ -2745,6 +2794,7 @@ const handlePointerUp = (event: PointerEvent) => {
 
 const handlePointerLeave = () => {
   lastPointerCoords = null
+  setHoveredPokemonId(null)
   if (props.buildMode) {
     hideBuildGhost()
   }
