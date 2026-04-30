@@ -305,27 +305,94 @@ const putBlockPixel = (
   ctx.fillRect(x, y, 1, 1)
 }
 
+const SIDE_DEPTH_MAX_ALPHA: Record<BlockTextureRole, number> = {
+  top: 0,
+  side: 0.16,
+  shadow: 0.24,
+  bottom: 0.28,
+}
+
+const sideDepthOverlayScale = (style: VoxelRenderStyle, isCustom: boolean): number => {
+  if (isCustom) return 0.78
+
+  switch (style.material) {
+    case 'water':
+      return 0.55
+    case 'lava':
+      return 0.5
+    case 'snow':
+      return 0.68
+    case 'sand':
+      return 0.9
+    default:
+      return 1
+  }
+}
+
+const drawSideDepthOverlay = (
+  ctx: CanvasRenderingContext2D,
+  role: BlockTextureRole,
+  intensity = 1,
+) => {
+  if (role === 'top') return
+
+  const size = BLOCK_TEXTURE_SIZE
+  const maxAlpha = SIDE_DEPTH_MAX_ALPHA[role] * intensity
+  if (maxAlpha <= 0) return
+
+  ctx.save()
+  ctx.fillStyle = '#000000'
+  for (let y = 0; y < size; y += 1) {
+    const t = y / (size - 1)
+    ctx.globalAlpha = Math.pow(t, 1.35) * maxAlpha
+    ctx.fillRect(0, y, size, 1)
+  }
+  ctx.restore()
+
+  // A one-pixel contact seam at the bottom of vertical faces makes
+  // stacked blocks read as separate physical layers without adding UI.
+  ctx.save()
+  ctx.globalAlpha = (role === 'shadow' ? 0.34 : role === 'bottom' ? 0.3 : 0.26) * intensity
+  ctx.fillStyle = '#000000'
+  ctx.fillRect(0, size - 1, size, 1)
+  ctx.restore()
+
+  // Subtle cap lip: a restrained highlight just under the top face.
+  ctx.save()
+  ctx.globalAlpha = 0.06
+  ctx.fillStyle = '#ffffff'
+  ctx.fillRect(1, 0, size - 2, 1)
+  ctx.restore()
+}
+
 const drawBlockBorder = (ctx: CanvasRenderingContext2D, role: BlockTextureRole) => {
   const size = BLOCK_TEXTURE_SIZE
   ctx.save()
-  ctx.globalAlpha = role === 'top' ? 0.24 : 0.18
+
+  if (role === 'top') {
+    // Directional pixel rim instead of a uniform black box. This keeps
+    // flat fields calm while still giving lit/back edges and lower/front
+    // edges a subtle material cue.
+    ctx.globalAlpha = 0.1
+    ctx.fillStyle = '#ffffff'
+    ctx.fillRect(0, 0, size, 1)
+    ctx.fillRect(0, 0, 1, size)
+
+    ctx.globalAlpha = 0.12
+    ctx.fillStyle = '#000000'
+    ctx.fillRect(0, size - 1, size, 1)
+    ctx.fillRect(size - 1, 0, 1, size)
+    ctx.restore()
+    return
+  }
+
+  ctx.globalAlpha = role === 'side' ? 0.09 : role === 'shadow' ? 0.12 : 0.14
   ctx.fillStyle = '#000000'
-  ctx.fillRect(0, 0, size, 1)
-  ctx.fillRect(0, size - 1, size, 1)
   ctx.fillRect(0, 0, 1, size)
   ctx.fillRect(size - 1, 0, 1, size)
 
-  if (role === 'top') {
-    ctx.globalAlpha = 0.1
-    ctx.fillStyle = '#ffffff'
-    ctx.fillRect(1, 1, size - 2, 1)
-    ctx.fillRect(1, 1, 1, size - 2)
-  } else {
-    ctx.globalAlpha = 0.16
-    ctx.fillStyle = '#000000'
-    ctx.fillRect(0, size - 2, size, 1)
-    ctx.fillRect(size - 2, 0, 1, size)
-  }
+  ctx.globalAlpha = role === 'side' ? 0.16 : role === 'shadow' ? 0.2 : 0.22
+  ctx.fillRect(0, size - 1, size, 1)
   ctx.restore()
 }
 
@@ -607,6 +674,7 @@ const getBlockTexture = (style: VoxelRenderStyle, role: BlockTextureRole): THREE
         break
     }
   }
+  drawSideDepthOverlay(ctx, role, sideDepthOverlayScale(style, isCustom))
   drawBlockBorder(ctx, role)
 
   const texture = new THREE.CanvasTexture(canvas)
@@ -1199,6 +1267,7 @@ worldGroup.add(voxelContainer)
 
 const renderObjects = new Map<string, PokemonRenderObject>()
 const voxelGroups = new Map<string, VoxelGroup>()
+let terrainTopEdgeOverlay: THREE.Group | null = null
 let renderer: THREE.WebGLRenderer | null = null
 let cssRenderer: CSS3DRenderer | null = null
 let camera: THREE.OrthographicCamera | null = null
@@ -2025,6 +2094,128 @@ const disposeAllVoxelGroups = () => {
   voxelGroups.clear()
 }
 
+const appendTerrainTopEdgeLines = (
+  group: THREE.Group,
+  segments: number[],
+  material: THREE.LineBasicMaterial,
+) => {
+  if (segments.length === 0) {
+    material.dispose()
+    return
+  }
+
+  const geometry = new THREE.BufferGeometry()
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(segments, 3))
+  geometry.computeBoundingSphere()
+
+  const lines = new THREE.LineSegments(geometry, material)
+  // Transparent edge rims should be evaluated after opaque terrain, but
+  // still depth-test so they remain terrain silhouettes rather than UI.
+  lines.renderOrder = 1
+  group.add(lines)
+}
+
+const buildTerrainTopEdgeOverlay = (voxels: ReadonlyArray<GridVoxel>): THREE.Group => {
+  const group = new THREE.Group()
+  if (voxels.length === 0) return group
+
+  const occupied = buildVoxelOccupancy(voxels)
+  const lightSegments: number[] = []
+  const darkSegments: number[] = []
+  const eps = 0.002
+
+  const hasVoxel = (x: number, y: number, z: number) => occupied.has(voxelKey(x, y, z))
+  const addSegment = (
+    target: number[],
+    ax: number,
+    ay: number,
+    az: number,
+    bx: number,
+    by: number,
+    bz: number,
+  ) => {
+    target.push(ax, ay, az, bx, by, bz)
+  }
+
+  for (const voxel of voxels) {
+    // Hidden top faces do not need a rim; the voxel above owns the visible cap.
+    if (hasVoxel(voxel.x, voxel.y + 1, voxel.z)) continue
+
+    const topY = voxel.y + 1 + eps
+    const x0 = voxel.x
+    const x1 = voxel.x + 1
+    const z0 = voxel.z
+    const z1 = voxel.z + 1
+
+    // Match the existing isometric face ramp: back/left top edges catch
+    // the restrained highlight, front/right edges pick up the darker seam.
+    if (!hasVoxel(voxel.x, voxel.y, voxel.z - 1)) {
+      addSegment(lightSegments, x0, topY, z0, x1, topY, z0)
+    }
+    if (!hasVoxel(voxel.x - 1, voxel.y, voxel.z)) {
+      addSegment(lightSegments, x0, topY, z0, x0, topY, z1)
+    }
+    if (!hasVoxel(voxel.x, voxel.y, voxel.z + 1)) {
+      addSegment(darkSegments, x0, topY, z1, x1, topY, z1)
+    }
+    if (!hasVoxel(voxel.x + 1, voxel.y, voxel.z)) {
+      addSegment(darkSegments, x1, topY, z0, x1, topY, z1)
+    }
+  }
+
+  appendTerrainTopEdgeLines(
+    group,
+    lightSegments,
+    new THREE.LineBasicMaterial({
+      color: 0xfbf1c7,
+      transparent: true,
+      opacity: 0.24,
+      depthTest: true,
+      depthWrite: false,
+    }),
+  )
+  appendTerrainTopEdgeLines(
+    group,
+    darkSegments,
+    new THREE.LineBasicMaterial({
+      color: 0x1d2021,
+      transparent: true,
+      opacity: 0.32,
+      depthTest: true,
+      depthWrite: false,
+    }),
+  )
+
+  return group
+}
+
+const disposeTerrainTopEdgeOverlay = () => {
+  if (!terrainTopEdgeOverlay) return
+
+  terrainTopEdgeOverlay.parent?.remove(terrainTopEdgeOverlay)
+  for (const child of terrainTopEdgeOverlay.children) {
+    const lines = child as THREE.LineSegments
+    lines.geometry.dispose()
+    const material = lines.material as THREE.Material | THREE.Material[] | undefined
+    if (Array.isArray(material)) {
+      for (const item of material) item.dispose()
+    } else {
+      material?.dispose()
+    }
+  }
+  terrainTopEdgeOverlay.clear()
+  terrainTopEdgeOverlay = null
+}
+
+const syncTerrainTopEdgeOverlay = () => {
+  disposeTerrainTopEdgeOverlay()
+  const overlay = buildTerrainTopEdgeOverlay(props.voxels)
+  if (overlay.children.length === 0) return
+
+  terrainTopEdgeOverlay = overlay
+  voxelContainer.add(terrainTopEdgeOverlay)
+}
+
 const syncVoxelMeshes = () => {
   // Bucket voxels by group key so visually identical voxels share
   // an InstancedMesh.
@@ -2070,6 +2261,8 @@ const syncVoxelMeshes = () => {
     voxelContainer.add(mesh)
     voxelGroups.set(key, { key, geometry, materials, mesh, voxels })
   }
+
+  syncTerrainTopEdgeOverlay()
 }
 
 const ensureBuildGhost = () => {
@@ -3036,6 +3229,7 @@ onBeforeUnmount(() => {
   disposeObject3D(previewEdges)
   disposeObject3D(previewPathLine)
   disposeBuildGhost()
+  disposeTerrainTopEdgeOverlay()
   disposeAllVoxelGroups()
   disposeBlockTextureCache()
   if (contactShadowTexture) {
