@@ -4,8 +4,8 @@
  * Voxels are 1×1×1 cubes stored sparsely as ``GridVoxel`` records.
  * This module exposes:
  *
- *   • A fixed material palette (``VOXEL_MATERIALS``) with gruvbox-tinted
- *     base colors that match the rest of the isometric scene.
+ *   • A fixed material palette (``VOXEL_MATERIALS``) with blocky,
+ *     Minecraft-inspired base colors used by swatches and custom fills.
  *   • Per-face palette derivation (``buildFacePalette``) implementing
  *     the standard isometric brightness ramp (top 100 / sides 80 /
  *     shadow 62 / bottom 42 %).
@@ -25,15 +25,15 @@ export interface VoxelMaterialDef {
 }
 
 export const VOXEL_MATERIALS: ReadonlyArray<VoxelMaterialDef> = [
-  { material: 'grass', label: 'Grass', baseColor: 0x689d6a },
-  { material: 'dirt',  label: 'Dirt',  baseColor: 0x8a5a3b },
-  { material: 'stone', label: 'Stone', baseColor: 0x928374 },
-  { material: 'water', label: 'Water', baseColor: 0x458588 },
-  { material: 'sand',  label: 'Sand',  baseColor: 0xd8a657 },
-  { material: 'snow',  label: 'Snow',  baseColor: 0xebdbb2 },
-  { material: 'wood',  label: 'Wood',  baseColor: 0xb06a32 },
-  { material: 'lava',  label: 'Lava',  baseColor: 0xfe8019 },
-  { material: 'path',  label: 'Path',  baseColor: 0xa89984 },
+  { material: 'grass', label: 'Grass', baseColor: 0x5da130 },
+  { material: 'dirt',  label: 'Dirt',  baseColor: 0x8a5a32 },
+  { material: 'stone', label: 'Stone', baseColor: 0x7d7d7d },
+  { material: 'water', label: 'Water', baseColor: 0x2e77d0 },
+  { material: 'sand',  label: 'Sand',  baseColor: 0xd5c16b },
+  { material: 'snow',  label: 'Snow',  baseColor: 0xf4fbff },
+  { material: 'wood',  label: 'Wood',  baseColor: 0x9a5d2e },
+  { material: 'lava',  label: 'Lava',  baseColor: 0xff6d1a },
+  { material: 'path',  label: 'Path',  baseColor: 0x9b7653 },
 ]
 
 const MATERIAL_INDEX = new Map<VoxelMaterial, VoxelMaterialDef>(

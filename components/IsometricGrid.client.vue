@@ -8,12 +8,10 @@ import type { GridVoxel, VoxelMaterial } from '~/types/grid'
 import type { PreviewState } from '~/utils/grid'
 import { findPathForPokemon, getAnchorCenter, getPokemonCenter } from '~/utils/grid'
 import {
-  buildFacePalette,
   buildVoxelOccupancy,
   cellInsidePokemonFootprint,
   getMaterialDef,
   parseHexColor,
-  voxelBaseColor,
   voxelGroupKey,
   voxelKey,
 } from '~/utils/voxels'
@@ -216,45 +214,434 @@ const paintVolumeMaterials = (
 }
 
 /**
- * Lazily-built canvas texture used as ``.map`` on voxel top faces. We
- * draw a thin dark border on the edges so adjacent voxels' top faces
- * butt up to form a grid pattern — same role the floor's bg0_h seam
- * lines play for the bare tabletop, but only on +Y. Sides and shadows
- * stay solid (the elevation badge handles vertical counting).
+ * Minecraft-inspired terrain textures.
  *
- * Module-level lazy init so we only build the canvas after the
- * component mounts (the ``.client.vue`` suffix already gates this on
- * the browser, so ``document`` exists).
+ * We generate tiny 16×16 pixel-art maps at runtime instead of bundling
+ * or downloading Mojang's copyrighted files. The look is intentionally
+ * blocky/voxel-like: nearest-neighbour filtering, noisy pixel clusters,
+ * grass-over-dirt sides, bark rings, lava cracks, etc.
  */
-let topFaceGridTexture: THREE.CanvasTexture | null = null
+type BlockTextureRole = 'top' | 'side' | 'shadow' | 'bottom'
+type VoxelRenderStyle = Pick<GridVoxel, 'material' | 'color'>
 
-const getTopFaceGridTexture = (): THREE.CanvasTexture => {
-  if (topFaceGridTexture) return topFaceGridTexture
+const BLOCK_TEXTURE_SIZE = 16
+const BLOCK_FACE_ROLES: ReadonlyArray<BlockTextureRole> = [
+  'shadow', // +X
+  'shadow', // -X
+  'top',    // +Y
+  'bottom', // -Y
+  'side',   // +Z
+  'side',   // -Z
+]
+const BLOCK_ROLE_SHADING: Record<BlockTextureRole, number> = {
+  top: 1,
+  side: 0.82,
+  shadow: 0.62,
+  bottom: 0.5,
+}
+const blockTextureCache = new Map<string, THREE.CanvasTexture>()
+
+const blockHexCss = (hex: number): string => `#${hex.toString(16).padStart(6, '0')}`
+
+const clampColorByte = (value: number) => Math.min(255, Math.max(0, Math.round(value)))
+
+const scaleBlockColor = (hex: number, factor: number): number =>
+  (clampColorByte(((hex >> 16) & 0xff) * factor) << 16) |
+  (clampColorByte(((hex >> 8) & 0xff) * factor) << 8) |
+  clampColorByte((hex & 0xff) * factor)
+
+const shiftBlockColor = (hex: number, amount: number): number =>
+  (clampColorByte(((hex >> 16) & 0xff) + amount) << 16) |
+  (clampColorByte(((hex >> 8) & 0xff) + amount) << 8) |
+  clampColorByte((hex & 0xff) + amount)
+
+const mixBlockColor = (from: number, to: number, t: number): number => {
+  const inv = 1 - t
+  return (
+    clampColorByte(((from >> 16) & 0xff) * inv + ((to >> 16) & 0xff) * t) << 16
+  ) | (
+    clampColorByte(((from >> 8) & 0xff) * inv + ((to >> 8) & 0xff) * t) << 8
+  ) | clampColorByte((from & 0xff) * inv + (to & 0xff) * t)
+}
+
+const shadeBlockColor = (hex: number, role: BlockTextureRole): number =>
+  scaleBlockColor(hex, BLOCK_ROLE_SHADING[role])
+
+const hashString = (input: string): number => {
+  let hash = 2166136261
+  for (let i = 0; i < input.length; i += 1) {
+    hash ^= input.charCodeAt(i)
+    hash = Math.imul(hash, 16777619)
+  }
+  return hash >>> 0
+}
+
+const pixelNoise = (seed: number, x: number, y: number): number => {
+  let n = seed ^ Math.imul(x + 0x9e3779b9, 0x85ebca6b) ^ Math.imul(y + 0xc2b2ae35, 0x27d4eb2f)
+  n ^= n >>> 15
+  n = Math.imul(n, 0x2c1b3c6d)
+  n ^= n >>> 12
+  n = Math.imul(n, 0x297a2d39)
+  n ^= n >>> 15
+  return (n >>> 0) / 0xffffffff
+}
+
+const jitterBlockColor = (
+  hex: number,
+  seed: number,
+  x: number,
+  y: number,
+  spread: number,
+): number => shiftBlockColor(hex, Math.round((pixelNoise(seed, x, y) - 0.5) * spread * 2))
+
+const putBlockPixel = (
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  color: number,
+) => {
+  ctx.fillStyle = blockHexCss(color)
+  ctx.fillRect(x, y, 1, 1)
+}
+
+const drawBlockBorder = (ctx: CanvasRenderingContext2D, role: BlockTextureRole) => {
+  const size = BLOCK_TEXTURE_SIZE
+  ctx.save()
+  ctx.globalAlpha = role === 'top' ? 0.24 : 0.18
+  ctx.fillStyle = '#000000'
+  ctx.fillRect(0, 0, size, 1)
+  ctx.fillRect(0, size - 1, size, 1)
+  ctx.fillRect(0, 0, 1, size)
+  ctx.fillRect(size - 1, 0, 1, size)
+
+  if (role === 'top') {
+    ctx.globalAlpha = 0.1
+    ctx.fillStyle = '#ffffff'
+    ctx.fillRect(1, 1, size - 2, 1)
+    ctx.fillRect(1, 1, 1, size - 2)
+  } else {
+    ctx.globalAlpha = 0.16
+    ctx.fillStyle = '#000000'
+    ctx.fillRect(0, size - 2, size, 1)
+    ctx.fillRect(size - 2, 0, 1, size)
+  }
+  ctx.restore()
+}
+
+const paintDirtTexture = (
+  ctx: CanvasRenderingContext2D,
+  role: BlockTextureRole,
+  seed: number,
+  base = 0x8a5a32,
+) => {
+  const shaded = shadeBlockColor(base, role)
+  const darkPebble = shadeBlockColor(0x5c3822, role)
+  const warmPebble = shadeBlockColor(0xa46d3a, role)
+  for (let y = 0; y < BLOCK_TEXTURE_SIZE; y += 1) {
+    for (let x = 0; x < BLOCK_TEXTURE_SIZE; x += 1) {
+      const p = pixelNoise(seed ^ 0x4d3c2b1a, x, y)
+      let color = jitterBlockColor(shaded, seed, x, y, 18)
+      if (p > 0.91) color = jitterBlockColor(darkPebble, seed, x + 11, y, 8)
+      else if (p < 0.08) color = jitterBlockColor(warmPebble, seed, x, y + 13, 8)
+      putBlockPixel(ctx, x, y, color)
+    }
+  }
+}
+
+const paintGrassTopTexture = (ctx: CanvasRenderingContext2D, seed: number) => {
+  const colors = [0x4a8f24, 0x5da130, 0x6fb33f, 0x3e751d]
+  for (let y = 0; y < BLOCK_TEXTURE_SIZE; y += 1) {
+    for (let x = 0; x < BLOCK_TEXTURE_SIZE; x += 1) {
+      const n = pixelNoise(seed, x, y)
+      const idx = n > 0.82 ? 2 : n < 0.18 ? 3 : n > 0.55 ? 1 : 0
+      putBlockPixel(ctx, x, y, jitterBlockColor(colors[idx], seed ^ 0x77aa33, x, y, 10))
+    }
+  }
+}
+
+const paintGrassSideTexture = (
+  ctx: CanvasRenderingContext2D,
+  role: BlockTextureRole,
+  seed: number,
+) => {
+  paintDirtTexture(ctx, role, seed ^ 0x12345678)
+  const grassBase = shadeBlockColor(0x5da130, role)
+  const grassDark = shadeBlockColor(0x3f7d20, role)
+  for (let y = 0; y < 6; y += 1) {
+    for (let x = 0; x < BLOCK_TEXTURE_SIZE; x += 1) {
+      const droop = pixelNoise(seed ^ 0x55aa55aa, x, 0)
+      const edge = y < 3 || (y === 3 && droop > 0.28) || (y === 4 && droop > 0.72) || (y === 5 && droop > 0.9)
+      if (!edge) continue
+      const color = droop > 0.86 ? grassDark : grassBase
+      putBlockPixel(ctx, x, y, jitterBlockColor(color, seed, x, y, 12))
+    }
+  }
+}
+
+const paintStoneTexture = (
+  ctx: CanvasRenderingContext2D,
+  role: BlockTextureRole,
+  seed: number,
+) => {
+  const shaded = shadeBlockColor(0x7d7d7d, role)
+  for (let y = 0; y < BLOCK_TEXTURE_SIZE; y += 1) {
+    for (let x = 0; x < BLOCK_TEXTURE_SIZE; x += 1) {
+      const large = pixelNoise(seed ^ 0x90909090, Math.floor(x / 2), Math.floor(y / 2))
+      const fine = pixelNoise(seed, x, y)
+      let color = jitterBlockColor(shaded, seed, x, y, 22)
+      if (large > 0.78) color = shiftBlockColor(color, 22)
+      if (large < 0.2) color = shiftBlockColor(color, -20)
+      if (fine > 0.94) color = shiftBlockColor(color, -30)
+      putBlockPixel(ctx, x, y, color)
+    }
+  }
+}
+
+const paintWaterTexture = (
+  ctx: CanvasRenderingContext2D,
+  role: BlockTextureRole,
+  seed: number,
+) => {
+  const base = shadeBlockColor(0x2e77d0, role)
+  const light = shadeBlockColor(0x5aa7ff, role)
+  const deep = shadeBlockColor(0x194f9c, role)
+  for (let y = 0; y < BLOCK_TEXTURE_SIZE; y += 1) {
+    for (let x = 0; x < BLOCK_TEXTURE_SIZE; x += 1) {
+      const wave = (x * 3 + y * 2 + Math.floor(pixelNoise(seed, x, y) * 4)) % 9
+      const color = wave < 2 ? light : wave > 6 ? deep : jitterBlockColor(base, seed, x, y, 10)
+      putBlockPixel(ctx, x, y, color)
+    }
+  }
+}
+
+const paintSandTexture = (
+  ctx: CanvasRenderingContext2D,
+  role: BlockTextureRole,
+  seed: number,
+) => {
+  const shaded = shadeBlockColor(0xd5c16b, role)
+  const pale = shadeBlockColor(0xeadf9a, role)
+  const dark = shadeBlockColor(0xb99a4f, role)
+  for (let y = 0; y < BLOCK_TEXTURE_SIZE; y += 1) {
+    for (let x = 0; x < BLOCK_TEXTURE_SIZE; x += 1) {
+      const n = pixelNoise(seed, x, y)
+      let color = jitterBlockColor(shaded, seed, x, y, 12)
+      if (n > 0.9) color = dark
+      else if (n < 0.1) color = pale
+      putBlockPixel(ctx, x, y, color)
+    }
+  }
+}
+
+const paintSnowTexture = (
+  ctx: CanvasRenderingContext2D,
+  role: BlockTextureRole,
+  seed: number,
+) => {
+  const base = shadeBlockColor(role === 'top' ? 0xf4fbff : 0xdcebf4, role)
+  const blue = shadeBlockColor(0xc6d9e9, role)
+  const white = shadeBlockColor(0xffffff, role)
+  for (let y = 0; y < BLOCK_TEXTURE_SIZE; y += 1) {
+    for (let x = 0; x < BLOCK_TEXTURE_SIZE; x += 1) {
+      const n = pixelNoise(seed, x, y)
+      const color = n > 0.88 ? blue : n < 0.12 ? white : jitterBlockColor(base, seed, x, y, 8)
+      putBlockPixel(ctx, x, y, color)
+    }
+  }
+}
+
+const paintWoodTexture = (
+  ctx: CanvasRenderingContext2D,
+  role: BlockTextureRole,
+  seed: number,
+) => {
+  if (role === 'top' || role === 'bottom') {
+    const center = (BLOCK_TEXTURE_SIZE - 1) / 2
+    for (let y = 0; y < BLOCK_TEXTURE_SIZE; y += 1) {
+      for (let x = 0; x < BLOCK_TEXTURE_SIZE; x += 1) {
+        const dx = x - center
+        const dy = y - center
+        const dist = Math.sqrt(dx * dx + dy * dy)
+        const ring = Math.floor(dist * 1.65 + pixelNoise(seed, x, y) * 1.8) % 2
+        const base = ring ? 0xa76b32 : 0xc18645
+        putBlockPixel(ctx, x, y, jitterBlockColor(shadeBlockColor(base, role), seed, x, y, 10))
+      }
+    }
+    return
+  }
+
+  const base = shadeBlockColor(0x8f5529, role)
+  const dark = shadeBlockColor(0x5c321d, role)
+  const light = shadeBlockColor(0xb87835, role)
+  for (let y = 0; y < BLOCK_TEXTURE_SIZE; y += 1) {
+    for (let x = 0; x < BLOCK_TEXTURE_SIZE; x += 1) {
+      const stripe = (x + Math.floor(pixelNoise(seed ^ 0x40404040, x, 0) * 3)) % 5
+      const crack = pixelNoise(seed ^ 0x7f4a1d, x, Math.floor(y / 2)) > 0.88
+      const color = crack || stripe === 0 ? dark : stripe === 2 ? light : jitterBlockColor(base, seed, x, y, 12)
+      putBlockPixel(ctx, x, y, color)
+    }
+  }
+}
+
+const paintLavaTexture = (
+  ctx: CanvasRenderingContext2D,
+  role: BlockTextureRole,
+  seed: number,
+) => {
+  const red = shadeBlockColor(0xb73618, role)
+  const orange = shadeBlockColor(0xff6d1a, role)
+  const yellow = shadeBlockColor(0xffd35a, role)
+  const dark = shadeBlockColor(0x6f1d10, role)
+  for (let y = 0; y < BLOCK_TEXTURE_SIZE; y += 1) {
+    for (let x = 0; x < BLOCK_TEXTURE_SIZE; x += 1) {
+      const crack = (x + y + Math.floor(pixelNoise(seed, x, y) * 3)) % 7 === 0
+      const n = pixelNoise(seed ^ 0xff6600, x, y)
+      let color = n > 0.72 ? orange : n < 0.15 ? dark : red
+      if (crack || n > 0.9) color = yellow
+      putBlockPixel(ctx, x, y, jitterBlockColor(color, seed, x, y, 6))
+    }
+  }
+}
+
+const paintPathTexture = (
+  ctx: CanvasRenderingContext2D,
+  role: BlockTextureRole,
+  seed: number,
+) => {
+  if (role !== 'top') {
+    paintDirtTexture(ctx, role, seed ^ 0x22334455, 0x7a4f2f)
+    return
+  }
+
+  const base = 0x9b7653
+  const light = 0xb99568
+  const stone = 0x7d7365
+  const dark = 0x6e5138
+  for (let y = 0; y < BLOCK_TEXTURE_SIZE; y += 1) {
+    for (let x = 0; x < BLOCK_TEXTURE_SIZE; x += 1) {
+      const n = pixelNoise(seed, x, y)
+      let color = jitterBlockColor(base, seed, x, y, 16)
+      if (n > 0.9) color = stone
+      else if (n < 0.12) color = light
+      else if (n > 0.75) color = dark
+      putBlockPixel(ctx, x, y, color)
+    }
+  }
+}
+
+const paintCustomTexture = (
+  ctx: CanvasRenderingContext2D,
+  role: BlockTextureRole,
+  seed: number,
+  baseColor: number,
+) => {
+  const shaded = shadeBlockColor(baseColor, role)
+  const highlight = mixBlockColor(shaded, 0xffffff, 0.18)
+  const lowlight = mixBlockColor(shaded, 0x000000, 0.18)
+  for (let y = 0; y < BLOCK_TEXTURE_SIZE; y += 1) {
+    for (let x = 0; x < BLOCK_TEXTURE_SIZE; x += 1) {
+      const n = pixelNoise(seed, x, y)
+      let color = jitterBlockColor(shaded, seed, x, y, 14)
+      if (n > 0.9) color = lowlight
+      else if (n < 0.1) color = highlight
+      putBlockPixel(ctx, x, y, color)
+    }
+  }
+}
+
+const getBlockTexture = (style: VoxelRenderStyle, role: BlockTextureRole): THREE.CanvasTexture => {
+  const parsedCustomColor = style.color ? parseHexColor(style.color) : null
+  const isCustom = parsedCustomColor !== null
+  const baseColor = isCustom ? parsedCustomColor : getMaterialDef(style.material).baseColor
+  const styleKey = isCustom
+    ? `custom:${baseColor.toString(16).padStart(6, '0')}`
+    : style.material
+  const key = `${styleKey}:${role}`
+  const cached = blockTextureCache.get(key)
+  if (cached) return cached
+
   const canvas = document.createElement('canvas')
-  const size = 64
-  canvas.width = size
-  canvas.height = size
+  canvas.width = BLOCK_TEXTURE_SIZE
+  canvas.height = BLOCK_TEXTURE_SIZE
   const ctx = canvas.getContext('2d')
   if (!ctx) throw new Error('2d canvas context unavailable')
-  // White interior so the face's solid ``color`` shows through
-  // unchanged after the texture multiply.
-  ctx.fillStyle = '#ffffff'
-  ctx.fillRect(0, 0, size, size)
-  // Mid-gray border = ~0.45 multiplier on the face color, giving a
-  // darker-but-in-hue grout line (deep green seams on grass tops,
-  // deep brown on dirt, etc.) instead of pure-black tile lines.
-  ctx.fillStyle = '#737373'
-  const seam = 2
-  ctx.fillRect(0, 0, size, seam)
-  ctx.fillRect(0, size - seam, size, seam)
-  ctx.fillRect(0, 0, seam, size)
-  ctx.fillRect(size - seam, 0, seam, size)
+  ctx.imageSmoothingEnabled = false
+
+  const seed = hashString(`${key}:${baseColor.toString(16)}`)
+  if (isCustom) {
+    paintCustomTexture(ctx, role, seed, baseColor)
+  } else {
+    switch (style.material) {
+      case 'grass':
+        if (role === 'top') paintGrassTopTexture(ctx, seed)
+        else if (role === 'bottom') paintDirtTexture(ctx, role, seed)
+        else paintGrassSideTexture(ctx, role, seed)
+        break
+      case 'dirt':
+        paintDirtTexture(ctx, role, seed)
+        break
+      case 'stone':
+        paintStoneTexture(ctx, role, seed)
+        break
+      case 'water':
+        paintWaterTexture(ctx, role, seed)
+        break
+      case 'sand':
+        paintSandTexture(ctx, role, seed)
+        break
+      case 'snow':
+        paintSnowTexture(ctx, role, seed)
+        break
+      case 'wood':
+        paintWoodTexture(ctx, role, seed)
+        break
+      case 'lava':
+        paintLavaTexture(ctx, role, seed)
+        break
+      case 'path':
+        paintPathTexture(ctx, role, seed)
+        break
+      default:
+        paintCustomTexture(ctx, role, seed, baseColor)
+        break
+    }
+  }
+  drawBlockBorder(ctx, role)
+
   const texture = new THREE.CanvasTexture(canvas)
   texture.magFilter = THREE.NearestFilter
   texture.minFilter = THREE.NearestFilter
+  texture.generateMipmaps = false
   texture.colorSpace = THREE.SRGBColorSpace
-  topFaceGridTexture = texture
+  texture.needsUpdate = true
+  blockTextureCache.set(key, texture)
   return texture
+}
+
+const disposeBlockTextureCache = () => {
+  for (const texture of blockTextureCache.values()) texture.dispose()
+  blockTextureCache.clear()
+}
+
+const applyVoxelFaceMaterialStyle = (
+  materials: THREE.MeshBasicMaterial[],
+  style: VoxelRenderStyle,
+  opacity: number,
+  depthWrite: boolean,
+) => {
+  for (let i = 0; i < materials.length; i += 1) {
+    const material = materials[i]
+    const texture = getBlockTexture(style, BLOCK_FACE_ROLES[i])
+    if (material.map !== texture) {
+      material.map = texture
+      material.needsUpdate = true
+    }
+    material.color.setHex(0xffffff)
+    material.opacity = opacity
+    material.transparent = opacity < 1
+    material.depthTest = true
+    material.depthWrite = depthWrite
+  }
 }
 
 /**
@@ -482,58 +869,39 @@ const disposeSpriteTextureCaches = () => {
 }
 
 /**
- * Build a 6-material array for a solid voxel block from a single
- * base color, applying the same isometric brightness ramp used for
- * pokemon volume boxes. Only +Y gets the grid-line texture — sides
- * stay solid since lateral seams aren't needed for movement clarity.
+ * Build a 6-material array for a textured voxel block. BoxGeometry face
+ * groups are ordered ``+X, -X, +Y, -Y, +Z, -Z``; each face gets the
+ * matching Minecraft-style pixel texture from ``BLOCK_FACE_ROLES``.
  */
-const buildVoxelFaceMaterials = (baseColor: number): THREE.MeshBasicMaterial[] => {
-  const palette = buildFacePalette(baseColor)
-  const make = (color: number) => new THREE.MeshBasicMaterial({
-    color,
-    // Terrain voxels are the occluders for sprites/cages, so they must
-    // participate in the normal WebGL depth buffer.
+const buildVoxelFaceMaterials = (
+  style: VoxelRenderStyle,
+  opacity = 1,
+  depthWrite = true,
+): THREE.MeshBasicMaterial[] => {
+  const materials = BLOCK_FACE_ROLES.map(() => new THREE.MeshBasicMaterial({
+    color: 0xffffff,
+    transparent: opacity < 1,
+    opacity,
+    // Terrain voxels are the occluders for sprites/cages, so normal
+    // blocks write depth. Preview ghosts opt out via ``depthWrite``.
     depthTest: true,
-    depthWrite: true,
-  })
-  const top = make(palette.top)
-  top.map = getTopFaceGridTexture()
-  return [
-    make(palette.shadow), // +X
-    make(palette.shadow), // -X
-    top,                  // +Y — textured grid lines for cell-counting
-    make(palette.bottom), // -Y
-    make(palette.side),   // +Z
-    make(palette.side),   // -Z
-  ]
+    depthWrite,
+  }))
+  applyVoxelFaceMaterialStyle(materials, style, opacity, depthWrite)
+  return materials
 }
 
 /**
- * Re-tint a 6-material array using a base color + per-face palette.
- * Used by the build ghost preview which switches between the active
- * material color and a red "blocked / erase" tint.
+ * Re-skin the build ghost in place. This lets the preview switch
+ * between the active block texture and a red blocked/erase texture
+ * without recreating its mesh every pointer move.
  */
 const paintBuildGhostMaterials = (
   materials: THREE.MeshBasicMaterial[],
-  baseColor: number,
+  style: VoxelRenderStyle,
   opacity: number,
 ) => {
-  const palette = buildFacePalette(baseColor)
-  const colors: ReadonlyArray<number> = [
-    palette.shadow,
-    palette.shadow,
-    palette.top,
-    palette.bottom,
-    palette.side,
-    palette.side,
-  ]
-  for (let i = 0; i < materials.length; i += 1) {
-    materials[i].color.setHex(colors[i])
-    materials[i].opacity = opacity
-    materials[i].transparent = opacity < 1
-    materials[i].depthTest = true
-    materials[i].depthWrite = false
-  }
+  applyVoxelFaceMaterialStyle(materials, style, opacity, false)
 }
 
 const ELEVATION_BADGE_PIXELS_PER_METRE = 48
@@ -1653,9 +2021,8 @@ const syncVoxelMeshes = () => {
       disposeVoxelGroup(existing)
       voxelGroups.delete(key)
     }
-    const baseColor = voxelBaseColor(voxels[0])
     const geometry = new THREE.BoxGeometry(1, 1, 1)
-    const materials = buildVoxelFaceMaterials(baseColor)
+    const materials = buildVoxelFaceMaterials(voxels[0])
     const mesh = new THREE.InstancedMesh(geometry, materials, voxels.length)
     mesh.userData.voxels = voxels
     for (let i = 0; i < voxels.length; i += 1) {
@@ -1672,13 +2039,7 @@ const syncVoxelMeshes = () => {
 const ensureBuildGhost = () => {
   if (buildGhost && buildGhostEdges) return
   const geometry = new THREE.BoxGeometry(1, 1, 1)
-  const materials = buildVoxelFaceMaterials(0xfabd2f).map((material) => {
-    material.transparent = true
-    material.opacity = 0.45
-    material.depthTest = true
-    material.depthWrite = false
-    return material
-  })
+  const materials = buildVoxelFaceMaterials({ material: 'stone', color: '#fabd2f' }, 0.45, false)
   buildGhost = new THREE.Mesh(geometry, materials)
   buildGhost.visible = false
   previewGroup.add(buildGhost)
@@ -1714,12 +2075,15 @@ const hideBuildGhost = () => {
   if (buildGhostEdges) buildGhostEdges.visible = false
 }
 
-const currentBuildBaseColor = () => {
-  if (props.buildColor) {
-    const parsed = parseHexColor(props.buildColor)
-    if (parsed !== null) return parsed
-  }
-  return getMaterialDef(props.buildMaterial).baseColor
+const customVoxelStyle = (baseColor: number): VoxelRenderStyle => ({
+  material: 'stone',
+  color: blockHexCss(baseColor),
+})
+
+const currentBuildVoxelStyle = (): VoxelRenderStyle => {
+  const style: VoxelRenderStyle = { material: props.buildMaterial }
+  if (props.buildColor && parseHexColor(props.buildColor) !== null) style.color = props.buildColor
+  return style
 }
 
 const ensurePreviewObjects = () => {
@@ -2074,13 +2438,13 @@ const updateBuildGhost = (target: BuildTarget | null) => {
 
   const edgeMaterial = buildGhostEdges.material as THREE.LineBasicMaterial
   if (target.action === 'remove') {
-    paintBuildGhostMaterials(buildGhost.material, 0xfb4934, 0.42)
+    paintBuildGhostMaterials(buildGhost.material, customVoxelStyle(0xfb4934), 0.42)
     edgeMaterial.color.setHex(0xfb4934)
   } else if (!target.valid) {
-    paintBuildGhostMaterials(buildGhost.material, 0xfb4934, 0.32)
+    paintBuildGhostMaterials(buildGhost.material, customVoxelStyle(0xfb4934), 0.32)
     edgeMaterial.color.setHex(0xfb4934)
   } else {
-    paintBuildGhostMaterials(buildGhost.material, currentBuildBaseColor(), 0.55)
+    paintBuildGhostMaterials(buildGhost.material, currentBuildVoxelStyle(), 0.55)
     edgeMaterial.color.setHex(0xfbf1c7)
   }
 }
@@ -2623,10 +2987,7 @@ onBeforeUnmount(() => {
   disposeObject3D(previewPathLine)
   disposeBuildGhost()
   disposeAllVoxelGroups()
-  if (topFaceGridTexture) {
-    topFaceGridTexture.dispose()
-    topFaceGridTexture = null
-  }
+  disposeBlockTextureCache()
   if (contactShadowTexture) {
     contactShadowTexture.dispose()
     contactShadowTexture = null
