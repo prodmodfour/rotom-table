@@ -199,6 +199,8 @@ export interface SpawnedPokemon extends PokemonCatalogEntry {
   sheetKind: 'pokemon' | 'trainer'
   /** Slug of the source sheet (Pokémon nickname or trainer name keyed). */
   sheetSlug: string
+  /** Display level copied from the source sheet. */
+  level: number
   /** Snapshot of the sheet's current HP at spawn time. */
   currentHp: number
   /** Snapshot of the sheet's computed max HP at spawn time. */

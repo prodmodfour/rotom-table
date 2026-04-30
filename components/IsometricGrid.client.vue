@@ -86,6 +86,8 @@ interface PokemonRenderObject {
   backSpriteAnimation?: SpriteAnimation
   spriteCrop?: SpriteCrop
   turned: boolean
+  displayName: string
+  level: number
   currentHp: number
   maxHp: number
   /** Eased 0→1 selection-lift factor; target flips on selection state. */
@@ -974,7 +976,11 @@ const paintBuildGhostMaterials = (
 }
 
 const ELEVATION_BADGE_PIXELS_PER_METRE = 48
-const HP_BAR_PIXELS_PER_METRE = 48
+const TOKEN_STATUS_CSS_WIDTH_PX = 80
+const TOKEN_STATUS_CSS_HEIGHT_PX = 18
+// Matches the scaled size that Miltank landed on; every token now uses this
+// same tabletop marker size instead of resizing by sprite dimensions.
+const TOKEN_STATUS_WORLD_WIDTH = 1.05
 const ISO_POLAR_ANGLE = THREE.MathUtils.degToRad(54.735610317245346)
 const ISO_AZIMUTH_ANGLE = THREE.MathUtils.degToRad(45)
 const DEFAULT_FACING_DIRECTION = new THREE.Vector2(
@@ -1554,21 +1560,67 @@ const buildElevationBadge = (ghost = false) => {
   return badge
 }
 
-const buildHpBar = () => {
+const formatTokenLevel = (level: number): string => {
+  if (!Number.isFinite(level)) return '?'
+  return String(Math.max(1, Math.floor(level)))
+}
+
+const tokenStatusDisplayName = (displayName: string): string => {
+  const trimmed = displayName.trim()
+  return trimmed.split(/\s+/)[0] || 'Unknown'
+}
+
+const updateTokenStatusLabel = (
+  element: HTMLElement,
+  displayName: string,
+  level: number,
+) => {
+  const name = element.querySelector<HTMLElement>('.token-status__name')
+  const levelNode = element.querySelector<HTMLElement>('.token-status__level')
+  if (name) name.textContent = tokenStatusDisplayName(displayName)
+  if (levelNode) levelNode.textContent = `Lv ${formatTokenLevel(level)}`
+}
+
+const applyTokenStatusScale = (status: CSS3DSprite) => {
+  status.scale.setScalar(TOKEN_STATUS_WORLD_WIDTH / TOKEN_STATUS_CSS_WIDTH_PX)
+}
+
+const buildHpBar = (pokemon: SpawnedPokemon) => {
   const wrapper = document.createElement('div')
-  wrapper.className = 'hp-bar'
+  wrapper.className = 'token-status'
   wrapper.setAttribute('aria-hidden', 'true')
   wrapper.style.pointerEvents = 'none'
 
+  const label = document.createElement('div')
+  label.className = 'token-status__label'
+
+  const name = document.createElement('span')
+  name.className = 'token-status__name'
+
+  const separator = document.createElement('span')
+  separator.className = 'token-status__separator'
+  separator.textContent = ' · '
+
+  const level = document.createElement('span')
+  level.className = 'token-status__level'
+
+  label.append(name, separator, level)
+
+  const track = document.createElement('div')
+  track.className = 'hp-bar'
+
   const fill = document.createElement('div')
   fill.className = 'hp-bar__fill'
-  wrapper.appendChild(fill)
+  track.appendChild(fill)
 
-  // CSS3DSprite billboards to the camera so the bar reads as a flat ribbon
-  // floating above the sprite regardless of orbit angle.
+  wrapper.append(label, track)
+  updateTokenStatusLabel(wrapper, pokemon.species, pokemon.level)
+
+  // CSS3DSprite billboards to the camera so the status reads as a compact
+  // floating HUD regardless of orbit angle.
   const bar = new CSS3DSprite(wrapper)
   bar.element.style.pointerEvents = 'none'
-  bar.scale.setScalar(1 / HP_BAR_PIXELS_PER_METRE)
+  applyTokenStatusScale(bar)
   bar.visible = false
   return bar
 }
@@ -1854,27 +1906,38 @@ const updateHpBar = (
   bar: CSS3DSprite,
   center: THREE.Vector3,
   spriteHeight: number,
+  displayName: string,
+  level: number,
   currentHp: number,
   maxHp: number,
 ) => {
-  // Hidden at full HP (per spec) and when there's nothing meaningful to
-  // show (max ≤ 0).
-  if (maxHp <= 0 || currentHp >= maxHp) {
+  // Hide the whole token HUD when HP data is not meaningful. Otherwise the
+  // label and a valid HP bar remain visible even at full health.
+  if (maxHp <= 0) {
     bar.visible = false
     return
   }
 
   const ratio = Math.max(0, Math.min(1, currentHp / maxHp))
-  const fill = bar.element.firstElementChild as HTMLElement | null
+  const fill = bar.element.querySelector<HTMLElement>('.hp-bar__fill')
   if (fill) {
     fill.style.width = `${ratio * 100}%`
   }
-  bar.element.dataset.hpTier = hpTierForRatio(ratio)
+
+  const track = bar.element.querySelector<HTMLElement>('.hp-bar')
+  if (track) {
+    track.dataset.hpTier = hpTierForRatio(ratio)
+  }
+  updateTokenStatusLabel(bar.element, displayName, level)
 
   // Floats just above the sprite's head. WebGL world sprites are
   // bottom-anchored at ``center.y``, so the top edge is
-  // ``center.y + spriteHeight``.
-  bar.position.set(center.x, center.y + spriteHeight + 0.18, center.z)
+  // ``center.y + spriteHeight``. The offset accounts for the scaled DOM
+  // height so smaller sprites keep the HUD tucked close instead of floating
+  // as a detached nameplate.
+  const overlayHalfHeight = TOKEN_STATUS_CSS_HEIGHT_PX * bar.scale.y / 2
+  const headGap = THREE.MathUtils.clamp(spriteHeight * 0.06, 0.025, 0.08)
+  bar.position.set(center.x, center.y + spriteHeight + overlayHalfHeight + headGap, center.z)
   bar.visible = true
 }
 
@@ -1882,7 +1945,7 @@ const buildRenderObject = (pokemon: SpawnedPokemon): PokemonRenderObject => {
   const spriteState = buildWorldSprite(pokemon)
   const sprite = spriteState.sprite
   const elevationBadge = buildElevationBadge()
-  const hpBar = buildHpBar()
+  const hpBar = buildHpBar(pokemon)
   const shadow = buildContactShadow(pokemon)
   const volumeGeometry = new THREE.BoxGeometry(pokemon.base, pokemon.clearance, pokemon.base)
   // Per-face gruvbox shading: top=fg3, Z-sides=fg4, X-sides=gray.
@@ -1953,6 +2016,8 @@ const buildRenderObject = (pokemon: SpawnedPokemon): PokemonRenderObject => {
     backSpriteAnimation: pokemon.backSpriteAnimation,
     spriteCrop: pokemon.spriteCrop,
     turned: Boolean(pokemon.turned),
+    displayName: pokemon.species,
+    level: pokemon.level,
     currentHp: pokemon.currentHp,
     maxHp: pokemon.maxHp,
     liftFactor: 0,
@@ -2004,6 +2069,8 @@ const applyRenderObjectPosition = (renderObject: PokemonRenderObject) => {
     renderObject.hpBar,
     renderObject.currentCenter,
     renderObject.height,
+    renderObject.displayName,
+    renderObject.level,
     renderObject.currentHp,
     renderObject.maxHp,
   )
@@ -2073,6 +2140,8 @@ const syncPokemonObjects = () => {
     renderObject.backSpriteAnimation = pokemon.backSpriteAnimation
     renderObject.spriteCrop = pokemon.spriteCrop
     renderObject.turned = Boolean(pokemon.turned)
+    renderObject.displayName = pokemon.species
+    renderObject.level = pokemon.level
     renderObject.currentHp = pokemon.currentHp
     renderObject.maxHp = pokemon.maxHp
   }

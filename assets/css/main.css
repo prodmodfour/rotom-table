@@ -164,26 +164,82 @@ samp {
   color: var(--accent);
 }
 
-/* HP bar floating above each token's sprite. Hidden at full HP; the
-   colored fill scales horizontally with the current ratio. Tier colours
-   mirror the gruvbox semantic tokens: green when healthy, orange after
-   50%, red after 25%. */
+/* Compact token status HUD floating above each sprite. The text stays
+   readable with stroke/shadow instead of a filled nameplate, and the thin
+   HP track remains visible at full health. */
+.token-status {
+  width: 80px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  color: var(--ink-bright);
+  font-family: var(--font-ui);
+  line-height: 1;
+  text-align: center;
+  user-select: none;
+  pointer-events: none;
+}
+
+.token-status__label {
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  height: 11px;
+  color: var(--ink-bright);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0;
+  white-space: nowrap;
+  -webkit-text-stroke: 0.25px rgba(0, 0, 0, 0.78);
+  paint-order: stroke fill;
+  text-shadow:
+    0 1px 1px rgba(0, 0, 0, 0.95),
+    0 0 3px rgba(0, 0, 0, 0.82),
+    0 0 6px rgba(29, 32, 33, 0.55);
+}
+
+.token-status__name {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ink-bright);
+  text-overflow: ellipsis;
+}
+
+.token-status__separator {
+  flex: 0 0 auto;
+  color: var(--ink-soft);
+  opacity: 0.9;
+}
+
+.token-status__level {
+  flex: 0 0 auto;
+  color: var(--accent);
+}
+
 .hp-bar {
-  width: 42px;
-  height: 6px;
-  border: 1px solid rgba(0, 0, 0, 0.85);
-  border-radius: 3px;
-  background: rgba(15, 15, 15, 0.85);
+  width: 56px;
+  height: 5px;
+  border: 1px solid rgba(0, 0, 0, 0.72);
+  border-radius: 999px;
+  background: rgba(29, 32, 33, 0.52);
   overflow: hidden;
   user-select: none;
   pointer-events: none;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.55);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.7),
+    0 0 4px rgba(0, 0, 0, 0.42);
 }
 
 .hp-bar__fill {
   height: 100%;
   width: 100%;
+  border-radius: inherit;
   background: var(--good);
+  box-shadow: inset 0 0 2px rgba(251, 241, 199, 0.28);
   transition: width 0.18s ease, background-color 0.18s ease;
 }
 
