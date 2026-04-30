@@ -909,7 +909,9 @@ const computePtuTypeMultiplier = (attacker: PokemonType, defenders: PokemonType[
 
 const formatPtuMultiplier = (multiplier: number): string => {
   if (multiplier === 0) return '0'
-  if (multiplier < 1) return multiplier.toString().replace(/^0/, '')
+  if (multiplier === 0.125) return '1/8'
+  if (multiplier === 0.25) return '1/4'
+  if (multiplier === 0.5) return '1/2'
   return multiplier.toString()
 }
 
@@ -1213,8 +1215,10 @@ const typeMatchupGroups = computed<TypeMatchupGroup[]>(() => {
                       v-for="item in group.items"
                       :key="`${group.key}-${item.type}`"
                     >
-                      <TypeBadge :type="item.type" size="xs" />
-                      <span class="type-effect-mult">×{{ item.label }}</span>
+                      <span :class="['type-effect-chip', `type-effect-chip--${item.type.toLowerCase()}`]">
+                        <TypeBadge :type="item.type" size="xs" />
+                        <span class="type-effect-mult">{{ item.label }}</span>
+                      </span>
                     </li>
                   </ul>
                 </div>
@@ -1755,27 +1759,28 @@ code {
 
 .type-matchups {
   display: grid;
-  gap: 0.32rem;
+  gap: 0.42rem;
 }
 
 .type-matchup-group {
   display: grid;
-  grid-template-columns: 5.6rem minmax(0, 1fr);
-  gap: 0.45rem;
+  grid-template-columns: 6.2rem minmax(0, 1fr);
+  gap: 0.55rem;
   align-items: start;
 }
 
 .matchup-label {
-  margin: 0.06rem 0 0;
+  margin: 0.08rem 0 0;
   color: var(--ink-bright);
+  font-size: 1.08rem;
   font-weight: 600;
   line-height: 1.2;
 }
 
 .type-effect-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.18rem 0.45rem;
+  display: grid;
+  grid-template-columns: repeat(3, max-content);
+  gap: 0.24rem 0.4rem;
   min-width: 0;
   margin: 0;
   padding: 0;
@@ -1785,16 +1790,71 @@ code {
 .type-effect-list li {
   display: inline-flex;
   align-items: center;
-  gap: 0.12rem;
   white-space: nowrap;
   line-height: 1;
 }
 
-.type-effect-mult {
-  color: var(--ink-muted);
-  font-family: var(--font-mono);
-  font-size: 0.78rem;
+.type-effect-chip {
+  --type-effect-color: var(--ink-muted);
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  height: 1.32rem;
+  max-width: 100%;
+  padding-right: 1.5rem;
+  border-radius: 999px;
   line-height: 1;
+  vertical-align: middle;
+}
+
+.type-effect-chip :deep(.type-badge) {
+  display: block;
+  flex: 0 0 auto;
+  height: 1.32rem;
+}
+
+.type-effect-chip--normal { --type-effect-color: #90a0a0; }
+.type-effect-chip--fighting { --type-effect-color: #d04068; }
+.type-effect-chip--flying { --type-effect-color: #90a8e0; }
+.type-effect-chip--poison { --type-effect-color: #a868c8; }
+.type-effect-chip--ground { --type-effect-color: #d87848; }
+.type-effect-chip--rock { --type-effect-color: #c8b890; }
+.type-effect-chip--bug { --type-effect-color: #90c030; }
+.type-effect-chip--ghost { --type-effect-color: #5068b0; }
+.type-effect-chip--steel { --type-effect-color: #5890a0; }
+.type-effect-chip--fire { --type-effect-color: #ffa058; }
+.type-effect-chip--water { --type-effect-color: #5090d8; }
+.type-effect-chip--grass { --type-effect-color: #60c058; }
+.type-effect-chip--electric { --type-effect-color: #f0d040; }
+.type-effect-chip--psychic { --type-effect-color: #f87078; }
+.type-effect-chip--ice { --type-effect-color: #70d0c0; }
+.type-effect-chip--dragon { --type-effect-color: #0870c0; }
+.type-effect-chip--dark { --type-effect-color: #585068; }
+.type-effect-chip--fairy { --type-effect-color: #f090e8; }
+
+.type-effect-mult {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.14),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.65);
+  color: #1d2021;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 900;
+  letter-spacing: -0.06em;
+  line-height: 1;
+  pointer-events: none;
+  transform: translateY(-50%);
 }
 
 /* ---- Stat list (label : value, value right-aligned) -------------- */
