@@ -3,7 +3,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { CSS3DRenderer, CSS3DSprite } from 'three/examples/jsm/renderers/CSS3DRenderer.js'
-import type { GridAnchor, GridDimensions, SpawnedPokemon } from '~/types/pokemon'
+import type { GridAnchor, GridDimensions, SpawnedPokemon, SpriteAnimation, SpriteCrop } from '~/types/pokemon'
 import type { GridVoxel, VoxelMaterial } from '~/types/grid'
 import type { PreviewState } from '~/utils/grid'
 import { findPathForPokemon, getAnchorCenter, getPokemonCenter } from '~/utils/grid'
@@ -43,8 +43,25 @@ const emit = defineEmits<{
   (event: 'remove-voxel', cell: { x: number; y: number; z: number }): void
 }>()
 
+interface WorldSpriteState {
+  sprite: THREE.Sprite<THREE.SpriteMaterial>
+  material: THREE.SpriteMaterial
+  halo: THREE.Sprite<THREE.SpriteMaterial>
+  haloMaterial: THREE.SpriteMaterial
+  texture: THREE.Texture | null
+  releaseTexture: (() => void) | null
+  assetKey: string | null
+  loadToken: number
+  animationMeta: SpriteAnimation | null
+  animationStartedAtMs: number
+  currentFrame: number
+  ghost: boolean
+  invalid: boolean
+}
+
 interface PokemonRenderObject {
-  sprite: CSS3DSprite
+  sprite: THREE.Sprite<THREE.SpriteMaterial>
+  spriteState: WorldSpriteState
   elevationBadge: CSS3DSprite
   hpBar: CSS3DSprite
   /**
@@ -66,11 +83,12 @@ interface PokemonRenderObject {
   elevation: number
   spriteUrl: string
   backSpriteUrl?: string
+  spriteAnimation?: SpriteAnimation
+  backSpriteAnimation?: SpriteAnimation
+  spriteCrop?: SpriteCrop
   turned: boolean
   currentHp: number
   maxHp: number
-  /** Cached <img> reference for per-frame directional brightness tinting. */
-  spriteImage: HTMLImageElement | null
   /** Eased 0→1 selection-lift factor; target flips on selection state. */
   liftFactor: number
   liftTarget: number
@@ -153,6 +171,9 @@ const buildVolumeMaterials = (
       color,
       transparent: opacity < 1,
       opacity,
+      // Cages should disappear behind terrain, but their translucent
+      // faces must not reserve depth and hide sprites/voxels drawn later.
+      depthTest: true,
       depthWrite: false,
     })
 
@@ -189,6 +210,8 @@ const paintVolumeMaterials = (
     materials[i].color.setHex(colors[i])
     materials[i].opacity = opacity
     materials[i].transparent = opacity < 1
+    materials[i].depthTest = true
+    materials[i].depthWrite = false
   }
 }
 
@@ -269,6 +292,195 @@ const getContactShadowTexture = (): THREE.CanvasTexture => {
   return texture
 }
 
+/** Directional sprite glow that replaces the old CSS drop-shadow. */
+let spriteHaloTexture: THREE.CanvasTexture | null = null
+
+const getSpriteHaloTexture = (): THREE.CanvasTexture => {
+  if (spriteHaloTexture) return spriteHaloTexture
+  const canvas = document.createElement('canvas')
+  const size = 128
+  canvas.width = size
+  canvas.height = size
+  const ctx = canvas.getContext('2d')
+  if (!ctx) throw new Error('2d canvas context unavailable')
+  const center = size / 2
+  const gradient = ctx.createRadialGradient(center, center, 0, center, center, center)
+  gradient.addColorStop(0, 'rgba(250, 189, 47, 0.46)')
+  gradient.addColorStop(0.45, 'rgba(250, 189, 47, 0.22)')
+  gradient.addColorStop(0.82, 'rgba(250, 189, 47, 0.04)')
+  gradient.addColorStop(1, 'rgba(250, 189, 47, 0)')
+  ctx.fillStyle = gradient
+  ctx.fillRect(0, 0, size, size)
+  const texture = new THREE.CanvasTexture(canvas)
+  texture.colorSpace = THREE.SRGBColorSpace
+  spriteHaloTexture = texture
+  return texture
+}
+
+let transparentSpriteTexture: THREE.CanvasTexture | null = null
+
+const getTransparentSpriteTexture = (): THREE.CanvasTexture => {
+  if (transparentSpriteTexture) return transparentSpriteTexture
+  const canvas = document.createElement('canvas')
+  canvas.width = 1
+  canvas.height = 1
+  const texture = new THREE.CanvasTexture(canvas)
+  configureSpriteTexture(texture)
+  transparentSpriteTexture = texture
+  return texture
+}
+
+interface SpriteVisualAsset {
+  url: string
+  animation?: SpriteAnimation
+  crop?: SpriteCrop
+}
+
+interface TextureHandle {
+  promise: Promise<THREE.Texture>
+  release: () => void
+}
+
+interface CachedTextureRecord {
+  promise: Promise<THREE.Texture>
+  texture?: THREE.Texture
+}
+
+interface RefCountedTextureRecord extends CachedTextureRecord {
+  refs: number
+}
+
+const spriteTextureLoader = new THREE.TextureLoader()
+const baseSpriteTextureCache = new Map<string, CachedTextureRecord>()
+const croppedSpriteTextureCache = new Map<string, RefCountedTextureRecord>()
+
+const configureSpriteTexture = (texture: THREE.Texture) => {
+  texture.magFilter = THREE.NearestFilter
+  texture.minFilter = THREE.NearestFilter
+  texture.colorSpace = THREE.SRGBColorSpace
+  texture.needsUpdate = true
+}
+
+const loadBaseSpriteTexture = (url: string): Promise<THREE.Texture> => {
+  const cached = baseSpriteTextureCache.get(url)
+  if (cached) return cached.promise
+
+  const record: CachedTextureRecord = { promise: Promise.resolve(null as never) }
+  record.promise = new Promise<THREE.Texture>((resolve, reject) => {
+    spriteTextureLoader.load(
+      url,
+      (texture) => {
+        configureSpriteTexture(texture)
+        record.texture = texture
+        resolve(texture)
+      },
+      undefined,
+      (error) => {
+        baseSpriteTextureCache.delete(url)
+        reject(error)
+      },
+    )
+  })
+  baseSpriteTextureCache.set(url, record)
+  return record.promise
+}
+
+const cropCacheKey = (url: string, crop: SpriteCrop) => [
+  url,
+  crop.canvasWidth,
+  crop.canvasHeight,
+  crop.left,
+  crop.top,
+  crop.width,
+  crop.height,
+].join('|')
+
+const applyTextureCrop = (texture: THREE.Texture, crop: SpriteCrop) => {
+  texture.repeat.set(crop.width / crop.canvasWidth, crop.height / crop.canvasHeight)
+  texture.offset.set(
+    crop.left / crop.canvasWidth,
+    1 - (crop.top + crop.height) / crop.canvasHeight,
+  )
+  texture.needsUpdate = true
+}
+
+const acquireStaticSpriteTexture = (url: string, crop?: SpriteCrop): TextureHandle => {
+  if (!crop) {
+    return {
+      promise: loadBaseSpriteTexture(url),
+      release: () => {},
+    }
+  }
+
+  const key = cropCacheKey(url, crop)
+  let record = croppedSpriteTextureCache.get(key)
+  if (!record) {
+    const newRecord: RefCountedTextureRecord = {
+      refs: 0,
+      promise: Promise.resolve(null as never),
+    }
+    newRecord.promise = loadBaseSpriteTexture(url).then((baseTexture) => {
+      const texture = baseTexture.clone()
+      configureSpriteTexture(texture)
+      applyTextureCrop(texture, crop)
+      newRecord.texture = texture
+      if (newRecord.refs <= 0) {
+        texture.dispose()
+      }
+      return texture
+    })
+    record = newRecord
+    croppedSpriteTextureCache.set(key, record)
+  }
+
+  record.refs += 1
+  let released = false
+  return {
+    promise: record.promise,
+    release: () => {
+      if (released) return
+      released = true
+      record!.refs -= 1
+      if (record!.refs <= 0) {
+        croppedSpriteTextureCache.delete(key)
+        record!.promise.then((texture) => texture.dispose()).catch(() => {})
+      }
+    },
+  }
+}
+
+const acquireAnimatedSpriteTexture = (url: string): TextureHandle => {
+  let released = false
+  const promise = loadBaseSpriteTexture(url).then((baseTexture) => {
+    // Animation updates mutate texture.repeat/offset, so every token gets
+    // its own clone while sharing the decoded image source from the cache.
+    const texture = baseTexture.clone()
+    configureSpriteTexture(texture)
+    if (released) texture.dispose()
+    return texture
+  })
+
+  return {
+    promise,
+    release: () => {
+      if (released) return
+      released = true
+      promise.then((texture) => texture.dispose()).catch(() => {})
+    },
+  }
+}
+
+const disposeSpriteTextureCaches = () => {
+  for (const record of croppedSpriteTextureCache.values()) {
+    record.texture?.dispose()
+  }
+  croppedSpriteTextureCache.clear()
+  for (const record of baseSpriteTextureCache.values()) {
+    record.texture?.dispose()
+  }
+  baseSpriteTextureCache.clear()
+}
+
 /**
  * Build a 6-material array for a solid voxel block from a single
  * base color, applying the same isometric brightness ramp used for
@@ -277,7 +489,13 @@ const getContactShadowTexture = (): THREE.CanvasTexture => {
  */
 const buildVoxelFaceMaterials = (baseColor: number): THREE.MeshBasicMaterial[] => {
   const palette = buildFacePalette(baseColor)
-  const make = (color: number) => new THREE.MeshBasicMaterial({ color })
+  const make = (color: number) => new THREE.MeshBasicMaterial({
+    color,
+    // Terrain voxels are the occluders for sprites/cages, so they must
+    // participate in the normal WebGL depth buffer.
+    depthTest: true,
+    depthWrite: true,
+  })
   const top = make(palette.top)
   top.map = getTopFaceGridTexture()
   return [
@@ -313,10 +531,11 @@ const paintBuildGhostMaterials = (
     materials[i].color.setHex(colors[i])
     materials[i].opacity = opacity
     materials[i].transparent = opacity < 1
+    materials[i].depthTest = true
+    materials[i].depthWrite = false
   }
 }
 
-const SPRITE_PIXELS_PER_METRE = 128
 const ELEVATION_BADGE_PIXELS_PER_METRE = 48
 const HP_BAR_PIXELS_PER_METRE = 48
 const ISO_POLAR_ANGLE = THREE.MathUtils.degToRad(54.735610317245346)
@@ -328,7 +547,7 @@ const DEFAULT_FACING_DIRECTION = new THREE.Vector2(
 
 // Subtle directional tint matching the cage's implied light: lit
 // quadrant is full brightness, shadowed quadrant dims to 0.92.
-// Applied to the sprite via CSS brightness().
+// Applied to WebGL sprite material colors.
 const SPRITE_BRIGHTNESS_LIT = 1.0
 const SPRITE_BRIGHTNESS_SHADOW = 0.92
 
@@ -620,8 +839,8 @@ let animationFrame = 0
 let floorGridLines: THREE.LineSegments | null = null
 let moveGridLines: THREE.LineSegments | null = null
 let floorPlane: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial> | null = null
-let ghostSprite: CSS3DSprite | null = null
-let ghostSpriteImage: HTMLImageElement | null = null
+let ghostSprite: THREE.Sprite<THREE.SpriteMaterial> | null = null
+let ghostSpriteState: WorldSpriteState | null = null
 let previewElevationBadge: CSS3DSprite | null = null
 let previewVolume: THREE.Mesh<THREE.BoxGeometry, THREE.MeshBasicMaterial[]> | null = null
 let previewEdges: THREE.LineSegments | null = null
@@ -683,42 +902,205 @@ const buildMoveGridGeometry = (dimensions: GridDimensions) => {
   return geometry
 }
 
-const buildSprite = (pokemon: SpawnedPokemon, ghost = false) => {
-  const wrapper = document.createElement('div')
-  wrapper.className = `pokemon-sprite${ghost ? ' is-ghost' : ''}`
-  wrapper.setAttribute('aria-hidden', 'true')
-  wrapper.style.pointerEvents = 'none'
-  wrapper.style.width = `${Math.max(0.1, pokemon.width) * SPRITE_PIXELS_PER_METRE}px`
-  wrapper.style.height = `${Math.max(0.1, pokemon.height) * SPRITE_PIXELS_PER_METRE}px`
+const nowMs = () => (typeof performance === 'undefined' ? Date.now() : performance.now())
 
-  const image = document.createElement('img')
-  image.src = pokemon.spriteUrl
-  image.alt = pokemon.species
-  image.draggable = false
+const spriteAnimationFrameAt = (animation: SpriteAnimation, elapsedMs: number) => {
+  const fallbackDuration = animation.durationsMs.at(-1) ?? 100
+  const totalDuration = animation.totalDurationMs > 0
+    ? animation.totalDurationMs
+    : animation.durationsMs.reduce((sum, duration) => sum + duration, 0)
 
-  if (pokemon.spriteCrop) {
-    wrapper.style.position = 'relative'
-    wrapper.style.overflow = 'hidden'
+  if (animation.frames <= 1 || totalDuration <= 0) return 0
 
-    image.style.position = 'absolute'
-    image.style.width = `${(pokemon.spriteCrop.canvasWidth / pokemon.spriteCrop.width) * 100}%`
-    image.style.height = `${(pokemon.spriteCrop.canvasHeight / pokemon.spriteCrop.height) * 100}%`
-    image.style.left = `${-(pokemon.spriteCrop.left / pokemon.spriteCrop.width) * 100}%`
-    image.style.top = `${-(pokemon.spriteCrop.top / pokemon.spriteCrop.height) * 100}%`
-    image.style.objectFit = 'fill'
+  let remaining = ((elapsedMs % totalDuration) + totalDuration) % totalDuration
+  for (let i = 0; i < animation.frames; i += 1) {
+    const duration = animation.durationsMs[i] ?? fallbackDuration
+    if (remaining < duration) return i
+    remaining -= duration
   }
-
-  wrapper.appendChild(image)
-
-  const sprite = new CSS3DSprite(wrapper)
-  sprite.element.style.pointerEvents = 'none'
-  sprite.scale.setScalar(1 / SPRITE_PIXELS_PER_METRE)
-  sprite.visible = true
-  return sprite
+  return animation.frames - 1
 }
 
-const getSpriteImageElement = (sprite: CSS3DSprite) =>
-  sprite.element.querySelector('img') as HTMLImageElement | null
+const applyAnimationFrame = (state: WorldSpriteState, timestampMs: number) => {
+  const animation = state.animationMeta
+  const texture = state.texture
+  if (!animation || !texture) return
+
+  const frame = spriteAnimationFrameAt(animation, timestampMs - state.animationStartedAtMs)
+  if (frame === state.currentFrame) return
+
+  const columns = Math.max(1, animation.columns)
+  const rows = Math.max(1, animation.rows)
+  const column = frame % columns
+  const row = Math.floor(frame / columns)
+  texture.repeat.set(1 / columns, 1 / rows)
+  texture.offset.set(
+    column / columns,
+    1 - (row + 1) / rows,
+  )
+  texture.needsUpdate = true
+  state.currentFrame = frame
+}
+
+const spriteAssetKey = (asset: SpriteVisualAsset) => {
+  const crop = asset.crop
+    ? `${asset.crop.canvasWidth},${asset.crop.canvasHeight},${asset.crop.left},${asset.crop.top},${asset.crop.width},${asset.crop.height}`
+    : 'full'
+  return `${asset.animation?.url ?? asset.url}|${asset.animation ? 'animated' : 'static'}|${crop}`
+}
+
+const setWorldSpriteAsset = (state: WorldSpriteState, asset: SpriteVisualAsset) => {
+  const key = spriteAssetKey(asset)
+  if (state.assetKey === key) return
+
+  const token = state.loadToken + 1
+  state.loadToken = token
+  state.assetKey = key
+
+  const handle = asset.animation
+    ? acquireAnimatedSpriteTexture(asset.animation.url)
+    : acquireStaticSpriteTexture(asset.url, asset.crop)
+
+  handle.promise
+    .then((texture) => {
+      if (state.loadToken !== token || state.assetKey !== key) {
+        handle.release()
+        return
+      }
+
+      const previousRelease = state.releaseTexture
+      state.texture = texture
+      state.releaseTexture = handle.release
+      state.animationMeta = asset.animation ?? null
+      state.currentFrame = -1
+      if (state.animationMeta) {
+        applyAnimationFrame(state, nowMs())
+      }
+      state.material.map = texture
+      state.material.needsUpdate = true
+      previousRelease?.()
+    })
+    .catch((error) => {
+      handle.release()
+      if (state.loadToken === token && state.assetKey === key) {
+        state.assetKey = null
+        console.warn('Failed to load sprite texture', asset.animation?.url ?? asset.url, error)
+      }
+    })
+}
+
+const setWorldSpriteVisible = (state: WorldSpriteState | null, visible: boolean) => {
+  if (!state) return
+  state.sprite.visible = visible
+  state.halo.visible = visible
+}
+
+const setWorldSpriteInvalid = (state: WorldSpriteState | null, invalid: boolean) => {
+  if (!state) return
+  state.invalid = invalid
+}
+
+const updateWorldSpriteLighting = (
+  state: WorldSpriteState,
+  brightness: number,
+  haloAlpha: number,
+) => {
+  if (state.ghost) {
+    if (state.invalid) {
+      state.material.opacity = 0.28
+      state.material.color.setRGB(
+        Math.min(1.4, brightness * 1.05),
+        Math.min(1.0, brightness * 0.68),
+        Math.min(1.0, brightness * 0.62),
+      )
+      state.haloMaterial.color.setHex(0xfb4934)
+      state.haloMaterial.opacity = 0.16
+    } else {
+      state.material.opacity = 0.4
+      state.material.color.setScalar(Math.min(1.35, brightness * 1.2))
+      state.haloMaterial.color.setHex(0xd5c4a1)
+      state.haloMaterial.opacity = 0.18
+    }
+    return
+  }
+
+  state.material.color.setScalar(brightness)
+  state.haloMaterial.color.setHex(0xfabd2f)
+  state.haloMaterial.opacity = haloAlpha
+}
+
+const buildWorldSprite = (pokemon: SpawnedPokemon, ghost = false): WorldSpriteState => {
+  const material = new THREE.SpriteMaterial({
+    map: getTransparentSpriteTexture(),
+    alphaTest: 0.5,
+    transparent: ghost,
+    opacity: ghost ? 0.4 : 1,
+    depthTest: true,
+    depthWrite: !ghost,
+    toneMapped: false,
+  })
+  const sprite = new THREE.Sprite(material)
+  // Bottom-center anchoring keeps the feet planted at the token's
+  // ground/elevation Y while preserving the old visual footprint/height.
+  sprite.center.set(0.5, 0)
+  sprite.scale.set(Math.max(0.1, pokemon.width), Math.max(0.1, pokemon.height), 1)
+  sprite.visible = true
+
+  const haloMaterial = new THREE.SpriteMaterial({
+    map: getSpriteHaloTexture(),
+    color: ghost ? 0xd5c4a1 : 0xfabd2f,
+    transparent: true,
+    opacity: ghost ? 0.18 : SPRITE_HALO_MIN_ALPHA,
+    alphaTest: 0.02,
+    // Halo is transparent eye-candy: depth-test it against terrain and
+    // sprites, but never write depth or it would occlude real pixels.
+    depthTest: true,
+    depthWrite: false,
+    depthFunc: THREE.LessDepth,
+    toneMapped: false,
+  })
+  const halo = new THREE.Sprite(haloMaterial)
+  halo.center.set(0.5, 0)
+  halo.scale.set(Math.max(0.1, pokemon.width) * 1.25, Math.max(0.1, pokemon.height) * 1.15, 1)
+  halo.visible = true
+
+  const state: WorldSpriteState = {
+    sprite,
+    material,
+    halo,
+    haloMaterial,
+    texture: null,
+    releaseTexture: null,
+    assetKey: null,
+    loadToken: 0,
+    animationMeta: null,
+    animationStartedAtMs: nowMs(),
+    currentFrame: -1,
+    ghost,
+    invalid: false,
+  }
+
+  setWorldSpriteAsset(state, {
+    url: pokemon.spriteUrl,
+    animation: pokemon.spriteAnimation,
+    crop: pokemon.spriteCrop,
+  })
+
+  return state
+}
+
+const disposeWorldSprite = (state: WorldSpriteState | null) => {
+  if (!state) return
+  state.loadToken += 1
+  state.releaseTexture?.()
+  state.releaseTexture = null
+  state.texture = null
+  state.material.map = null
+  state.sprite.parent?.remove(state.sprite)
+  state.material.dispose()
+  state.halo.parent?.remove(state.halo)
+  state.haloMaterial.dispose()
+}
 
 const buildElevationBadge = (ghost = false) => {
   const wrapper = document.createElement('div')
@@ -768,6 +1150,7 @@ const buildContactShadow = (
   const material = new THREE.MeshBasicMaterial({
     map: getContactShadowTexture(),
     transparent: true,
+    depthTest: true,
     depthWrite: false,
   })
   const mesh = new THREE.Mesh(geometry, material)
@@ -794,24 +1177,26 @@ const shouldUseFrontSprite = (center: THREE.Vector3, turned = false) => {
 }
 
 const updateSpriteFacing = (
-  sprite: CSS3DSprite,
+  state: WorldSpriteState,
   center: THREE.Vector3,
   frontSpriteUrl: string,
+  frontSpriteAnimation?: SpriteAnimation,
   backSpriteUrl?: string,
+  backSpriteAnimation?: SpriteAnimation,
+  spriteCrop?: SpriteCrop,
   turned = false,
 ) => {
-  const image = getSpriteImageElement(sprite)
-
-  if (!image) {
-    return
-  }
-
-  const nextSrc = backSpriteUrl && !shouldUseFrontSprite(center, turned) ? backSpriteUrl : frontSpriteUrl
-
-  if (image.dataset.currentSrc !== nextSrc) {
-    image.src = nextSrc
-    image.dataset.currentSrc = nextSrc
-  }
+  const useBack = Boolean(backSpriteUrl && !shouldUseFrontSprite(center, turned))
+  setWorldSpriteAsset(state, useBack
+    ? {
+        url: backSpriteUrl!,
+        animation: backSpriteAnimation,
+      }
+    : {
+        url: frontSpriteUrl,
+        animation: frontSpriteAnimation,
+        crop: spriteCrop,
+      })
 }
 
 const disposeObject3D = (object: THREE.Object3D | null) => {
@@ -920,6 +1305,8 @@ const buildGrid = () => {
       color: 0x1d2021, // bg0_h
       transparent: true,
       opacity: 0.85,
+      depthTest: true,
+      depthWrite: false,
     }),
   )
   gridGroup.add(floorGridLines)
@@ -930,6 +1317,8 @@ const buildGrid = () => {
       color: 0x1d2021,
       transparent: true,
       opacity: 0.01,
+      depthTest: true,
+      depthWrite: false,
     }),
   )
   gridGroup.add(moveGridLines)
@@ -1015,16 +1404,16 @@ const updateHpBar = (
   }
   bar.element.dataset.hpTier = hpTierForRatio(ratio)
 
-  // Floats just above the sprite's head; the sprite is centered at
-  // ``center.y + spriteHeight / 2`` so its top edge sits at
+  // Floats just above the sprite's head. WebGL world sprites are
+  // bottom-anchored at ``center.y``, so the top edge is
   // ``center.y + spriteHeight``.
   bar.position.set(center.x, center.y + spriteHeight + 0.18, center.z)
   bar.visible = true
 }
 
 const buildRenderObject = (pokemon: SpawnedPokemon): PokemonRenderObject => {
-  const sprite = buildSprite(pokemon)
-  const spriteImage = getSpriteImageElement(sprite)
+  const spriteState = buildWorldSprite(pokemon)
+  const sprite = spriteState.sprite
   const elevationBadge = buildElevationBadge()
   const hpBar = buildHpBar()
   const shadow = buildContactShadow(pokemon)
@@ -1043,6 +1432,8 @@ const buildRenderObject = (pokemon: SpawnedPokemon): PokemonRenderObject => {
       color: 0xa89984, // fg4
       transparent: true,
       opacity: 0.55,
+      depthTest: true,
+      depthWrite: false,
     }),
   )
 
@@ -1054,6 +1445,7 @@ const buildRenderObject = (pokemon: SpawnedPokemon): PokemonRenderObject => {
       transparent: true,
       opacity: 0,
       depthWrite: false,
+      colorWrite: false,
     }),
   )
   proxy.userData.pokemonId = pokemon.id
@@ -1065,13 +1457,15 @@ const buildRenderObject = (pokemon: SpawnedPokemon): PokemonRenderObject => {
   worldGroup.add(shadow)
   worldGroup.add(volume)
   worldGroup.add(edges)
+  worldGroup.add(spriteState.halo)
+  worldGroup.add(sprite)
   worldGroup.add(proxy)
-  scene.add(sprite)
   scene.add(elevationBadge)
   scene.add(hpBar)
 
   return {
     sprite,
+    spriteState,
     elevationBadge,
     hpBar,
     volume,
@@ -1087,10 +1481,12 @@ const buildRenderObject = (pokemon: SpawnedPokemon): PokemonRenderObject => {
     elevation: pokemon.position.y,
     spriteUrl: pokemon.spriteUrl,
     backSpriteUrl: pokemon.backSpriteUrl,
+    spriteAnimation: pokemon.spriteAnimation,
+    backSpriteAnimation: pokemon.backSpriteAnimation,
+    spriteCrop: pokemon.spriteCrop,
     turned: Boolean(pokemon.turned),
     currentHp: pokemon.currentHp,
     maxHp: pokemon.maxHp,
-    spriteImage,
     liftFactor: 0,
     liftTarget: 0,
   }
@@ -1099,9 +1495,10 @@ const buildRenderObject = (pokemon: SpawnedPokemon): PokemonRenderObject => {
 const applyRenderObjectPosition = (renderObject: PokemonRenderObject) => {
   renderObject.sprite.position.set(
     renderObject.currentCenter.x,
-    renderObject.currentCenter.y + renderObject.height / 2,
+    renderObject.currentCenter.y,
     renderObject.currentCenter.z,
   )
+  renderObject.spriteState.halo.position.copy(renderObject.sprite.position)
   renderObject.volume.position.set(
     renderObject.currentCenter.x,
     renderObject.currentCenter.y + renderObject.clearance / 2,
@@ -1175,7 +1572,7 @@ const syncPokemonObjects = () => {
       continue
     }
 
-    disposeObject3D(renderObject.sprite)
+    disposeWorldSprite(renderObject.spriteState)
     disposeObject3D(renderObject.elevationBadge)
     disposeObject3D(renderObject.hpBar)
     disposeObject3D(renderObject.volume)
@@ -1199,6 +1596,9 @@ const syncPokemonObjects = () => {
     renderObject.elevation = pokemon.position.y
     renderObject.spriteUrl = pokemon.spriteUrl
     renderObject.backSpriteUrl = pokemon.backSpriteUrl
+    renderObject.spriteAnimation = pokemon.spriteAnimation
+    renderObject.backSpriteAnimation = pokemon.backSpriteAnimation
+    renderObject.spriteCrop = pokemon.spriteCrop
     renderObject.turned = Boolean(pokemon.turned)
     renderObject.currentHp = pokemon.currentHp
     renderObject.maxHp = pokemon.maxHp
@@ -1275,12 +1675,11 @@ const ensureBuildGhost = () => {
   const materials = buildVoxelFaceMaterials(0xfabd2f).map((material) => {
     material.transparent = true
     material.opacity = 0.45
-    material.depthTest = false
+    material.depthTest = true
     material.depthWrite = false
     return material
   })
   buildGhost = new THREE.Mesh(geometry, materials)
-  buildGhost.renderOrder = 999
   buildGhost.visible = false
   previewGroup.add(buildGhost)
 
@@ -1291,10 +1690,10 @@ const ensureBuildGhost = () => {
       color: 0xfbf1c7,
       transparent: true,
       opacity: 0.95,
-      depthTest: false,
+      depthTest: true,
+      depthWrite: false,
     }),
   )
-  buildGhostEdges.renderOrder = 1000
   buildGhostEdges.visible = false
   previewGroup.add(buildGhostEdges)
 }
@@ -1331,6 +1730,7 @@ const ensurePreviewObjects = () => {
   if (
     previewOwnerId === selectedPokemon.value.id &&
     ghostSprite &&
+    ghostSpriteState &&
     previewElevationBadge &&
     previewVolume &&
     previewEdges &&
@@ -1339,22 +1739,23 @@ const ensurePreviewObjects = () => {
     return
   }
 
-  disposeObject3D(ghostSprite)
+  disposeWorldSprite(ghostSpriteState)
   disposeObject3D(previewElevationBadge)
   disposeObject3D(previewVolume)
   disposeObject3D(previewEdges)
   ghostSprite = null
-  ghostSpriteImage = null
+  ghostSpriteState = null
   previewElevationBadge = null
   previewVolume = null
   previewEdges = null
 
   const selected = selectedPokemon.value
   previewOwnerId = selected.id
-  ghostSprite = buildSprite(selected, true)
-  ghostSpriteImage = getSpriteImageElement(ghostSprite)
-  ghostSprite.visible = false
-  scene.add(ghostSprite)
+  ghostSpriteState = buildWorldSprite(selected, true)
+  ghostSprite = ghostSpriteState.sprite
+  setWorldSpriteVisible(ghostSpriteState, false)
+  previewGroup.add(ghostSpriteState.halo)
+  previewGroup.add(ghostSprite)
 
   previewElevationBadge = buildElevationBadge(true)
   previewElevationBadge.visible = false
@@ -1376,6 +1777,8 @@ const ensurePreviewObjects = () => {
       color: 0xfbf1c7, // fg0 - bright cream highlight on the yellow box
       transparent: true,
       opacity: 0.92,
+      depthTest: true,
+      depthWrite: false,
     }),
   )
   previewEdges.visible = false
@@ -1388,6 +1791,8 @@ const ensurePreviewObjects = () => {
         color: 0xfabd2f, // gruvbox yellow path trail
         transparent: true,
         opacity: 0.95,
+        depthTest: true,
+        depthWrite: false,
       }),
     )
     previewPathLine.visible = false
@@ -1399,9 +1804,9 @@ const clearPreviewVisuals = () => {
   activePreview = { ...EMPTY_PREVIEW }
   activePreviewAnchor = null
 
-  if (ghostSprite) {
-    ghostSprite.visible = false
-    ghostSprite.element.classList.remove('is-invalid')
+  if (ghostSpriteState) {
+    setWorldSpriteVisible(ghostSpriteState, false)
+    setWorldSpriteInvalid(ghostSpriteState, false)
   }
 
   if (previewElevationBadge) {
@@ -1433,7 +1838,7 @@ const updatePreviewAtAnchor = (anchor: GridAnchor | null) => {
 
   ensurePreviewObjects()
 
-  if (!anchor || !ghostSprite || !previewElevationBadge || !previewVolume || !previewEdges) {
+  if (!anchor || !ghostSprite || !ghostSpriteState || !previewElevationBadge || !previewVolume || !previewEdges) {
     clearPreviewVisuals()
     return
   }
@@ -1451,9 +1856,10 @@ const updatePreviewAtAnchor = (anchor: GridAnchor | null) => {
   const reachable = Boolean(path)
   const center = getAnchorCenter(anchor, selected.base)
 
-  ghostSprite.position.set(center.x, anchor.y + selected.height / 2, center.z)
-  ghostSprite.visible = true
-  ghostSprite.element.classList.toggle('is-invalid', !reachable)
+  ghostSprite.position.set(center.x, anchor.y, center.z)
+  ghostSpriteState.halo.position.copy(ghostSprite.position)
+  setWorldSpriteVisible(ghostSpriteState, true)
+  setWorldSpriteInvalid(ghostSpriteState, !reachable)
 
   previewVolume.position.set(center.x, anchor.y + selected.clearance / 2, center.z)
   // Repaint all 6 faces with the appropriate brightness ramp.
@@ -2025,8 +2431,8 @@ const animate = () => {
 
   // Light alignment: camera's XZ offset dotted against the cage's
   // implied light direction. +1 = lit quadrant, -1 = shadowed.
-  // Lerps to a CSS brightness() filter shared across every sprite
-  // this frame (ortho camera → all sprites see the same direction).
+  // Lerps to a material color scalar shared across every sprite this
+  // frame (ortho camera → all sprites see the same direction).
   const cameraXZ = new THREE.Vector2(
     camera.position.x - controls.target.x,
     camera.position.z - controls.target.z,
@@ -2048,23 +2454,24 @@ const animate = () => {
     SPRITE_HALO_MIN_ALPHA,
     SPRITE_HALO_MAX_ALPHA,
     lightAlignment01,
-  ).toFixed(3)
-  const spriteFilter =
-    `brightness(${spriteBrightness.toFixed(3)}) ` +
-    `drop-shadow(0 0 16px rgba(250, 189, 47, ${haloAlpha}))`
+  )
+  const frameNowMs = nowMs()
 
   for (const renderObject of renderObjects.values()) {
     updateSpriteFacing(
-      renderObject.sprite,
+      renderObject.spriteState,
       renderObject.currentCenter,
       renderObject.spriteUrl,
+      renderObject.spriteAnimation,
       renderObject.backSpriteUrl,
+      renderObject.backSpriteAnimation,
+      renderObject.spriteCrop,
       renderObject.turned,
     )
-
-    if (renderObject.spriteImage) {
-      renderObject.spriteImage.style.filter = spriteFilter
+    if (renderObject.spriteState.animationMeta) {
+      applyAnimationFrame(renderObject.spriteState, frameNowMs)
     }
+    updateWorldSpriteLighting(renderObject.spriteState, spriteBrightness, haloAlpha)
 
     // Selection lift: sprite + HP bar pop up, cage stays anchored,
     // shadow scales up and fades so it reads as a more diffuse blob
@@ -2082,6 +2489,7 @@ const animate = () => {
     if (renderObject.liftFactor > 0) {
       const lift = renderObject.liftFactor * SPRITE_LIFT_AMOUNT
       renderObject.sprite.position.y += lift
+      renderObject.spriteState.halo.position.y += lift
       if (renderObject.hpBar.visible) {
         renderObject.hpBar.position.y += lift
       }
@@ -2099,24 +2507,28 @@ const animate = () => {
     )
   }
 
-  if (ghostSprite && selectedPokemon.value) {
+  if (ghostSprite && ghostSpriteState && selectedPokemon.value) {
     const ghostCenter = new THREE.Vector3(
       ghostSprite.position.x,
       activePreview.position?.y ?? selectedPokemon.value.position.y,
       ghostSprite.position.z,
     )
     updateSpriteFacing(
-      ghostSprite,
+      ghostSpriteState,
       ghostCenter,
       selectedPokemon.value.spriteUrl,
+      selectedPokemon.value.spriteAnimation,
       selectedPokemon.value.backSpriteUrl,
+      selectedPokemon.value.backSpriteAnimation,
+      selectedPokemon.value.spriteCrop,
       Boolean(selectedPokemon.value.turned),
     )
     // Ghost gets the directional tint too so it previews how the
     // pokemon will be lit at the destination.
-    if (ghostSpriteImage) {
-      ghostSpriteImage.style.filter = spriteFilter
+    if (ghostSpriteState.animationMeta) {
+      applyAnimationFrame(ghostSpriteState, frameNowMs)
     }
+    updateWorldSpriteLighting(ghostSpriteState, spriteBrightness, haloAlpha)
   }
 
   renderer.render(scene, camera)
@@ -2202,7 +2614,9 @@ onBeforeUnmount(() => {
   resizeObserver = null
 
   clearPreviewVisuals()
-  disposeObject3D(ghostSprite)
+  disposeWorldSprite(ghostSpriteState)
+  ghostSprite = null
+  ghostSpriteState = null
   disposeObject3D(previewElevationBadge)
   disposeObject3D(previewVolume)
   disposeObject3D(previewEdges)
@@ -2213,17 +2627,31 @@ onBeforeUnmount(() => {
     topFaceGridTexture.dispose()
     topFaceGridTexture = null
   }
+  if (contactShadowTexture) {
+    contactShadowTexture.dispose()
+    contactShadowTexture = null
+  }
+  if (spriteHaloTexture) {
+    spriteHaloTexture.dispose()
+    spriteHaloTexture = null
+  }
+  if (transparentSpriteTexture) {
+    transparentSpriteTexture.dispose()
+    transparentSpriteTexture = null
+  }
 
   for (const renderObject of renderObjects.values()) {
-    disposeObject3D(renderObject.sprite)
+    disposeWorldSprite(renderObject.spriteState)
     disposeObject3D(renderObject.elevationBadge)
     disposeObject3D(renderObject.hpBar)
     disposeObject3D(renderObject.volume)
     disposeObject3D(renderObject.edges)
     disposeObject3D(renderObject.proxy)
+    disposeObject3D(renderObject.shadow)
   }
 
   renderObjects.clear()
+  disposeSpriteTextureCaches()
   disposeObject3D(floorGridLines)
   disposeObject3D(moveGridLines)
   disposeObject3D(floorPlane)
@@ -2319,12 +2747,12 @@ watch(
     if (!selectedPokemon.value) {
       clearPreviewVisuals()
       closeContextMenu()
-      disposeObject3D(ghostSprite)
+      disposeWorldSprite(ghostSpriteState)
       disposeObject3D(previewElevationBadge)
       disposeObject3D(previewVolume)
       disposeObject3D(previewEdges)
       ghostSprite = null
-      ghostSpriteImage = null
+      ghostSpriteState = null
       previewElevationBadge = null
       previewVolume = null
       previewEdges = null

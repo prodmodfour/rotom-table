@@ -5,7 +5,9 @@ import type {
   BackSpriteManifestRecord,
   PokedexRecord,
   PokemonCatalogEntry,
+  SpriteAnimation,
   SpriteManifestRecord,
+  SpriteAnimationRecord,
 } from '~/types/pokemon'
 
 const manifestBySpecies = new Map(
@@ -14,6 +16,21 @@ const manifestBySpecies = new Map(
 
 const backManifestBySpecies = new Map(
   (backSpriteManifest as BackSpriteManifestRecord[]).map((entry) => [entry.species, entry]),
+)
+
+const toCatalogAnimation = (animation?: SpriteAnimationRecord): SpriteAnimation | undefined => (
+  animation
+    ? {
+        url: `/${animation.spritesheet_path}`,
+        frameWidth: animation.frame_width,
+        frameHeight: animation.frame_height,
+        frames: animation.frames,
+        columns: animation.columns,
+        rows: animation.rows,
+        durationsMs: animation.durations_ms,
+        totalDurationMs: animation.total_duration_ms,
+      }
+    : undefined
 )
 
 const hasPlacementData = (
@@ -58,6 +75,8 @@ export const pokemonCatalog: PokemonCatalogEntry[] = (pokedexData as PokedexReco
       backSpriteUrl: backSprite
         ? `/sprites/${backSprite.local_path.replace(/^sprites\//, '')}`
         : undefined,
+      spriteAnimation: toCatalogAnimation(sprite.animation),
+      backSpriteAnimation: toCatalogAnimation(backSprite?.animation),
       entityKind: 'pokemon',
     }
   })

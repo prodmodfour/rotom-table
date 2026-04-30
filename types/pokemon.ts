@@ -90,6 +90,28 @@ export interface PokedexRecord {
   [key: string]: unknown
 }
 
+export interface SpriteAnimationRecord {
+  spritesheet_path: string
+  frame_width: number
+  frame_height: number
+  frames: number
+  columns: number
+  rows: number
+  durations_ms: number[]
+  total_duration_ms: number
+}
+
+export interface SpriteAnimation {
+  url: string
+  frameWidth: number
+  frameHeight: number
+  frames: number
+  columns: number
+  rows: number
+  durationsMs: number[]
+  totalDurationMs: number
+}
+
 export interface SpriteManifestRecord {
   species: string
   slug: string
@@ -98,6 +120,7 @@ export interface SpriteManifestRecord {
   remote_url: string
   local_path: string
   bytes: number
+  animation?: SpriteAnimationRecord
 }
 
 export interface BackSpriteManifestRecord {
@@ -107,6 +130,7 @@ export interface BackSpriteManifestRecord {
   remote_url: string
   local_path: string
   bytes: number
+  animation?: SpriteAnimationRecord
 }
 
 export interface SpriteCrop {
@@ -122,6 +146,8 @@ export interface PokemonCatalogEntry extends PokemonSizeRecord {
   slug: string
   spriteUrl: string
   backSpriteUrl?: string
+  spriteAnimation?: SpriteAnimation
+  backSpriteAnimation?: SpriteAnimation
   entityKind: 'pokemon' | 'trainer'
   spriteCrop?: SpriteCrop
 }

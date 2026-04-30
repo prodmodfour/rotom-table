@@ -21,6 +21,7 @@ A manifest is written to data/pokemonSpriteManifest.json.
 
 from __future__ import annotations
 
+import argparse
 import json
 import re
 import shutil
@@ -31,6 +32,8 @@ from pathlib import Path
 from typing import Iterable
 
 import requests
+
+from gif_spritesheet import with_animation_metadata
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 REPO_ROOT = SCRIPT_DIR.parent
@@ -331,7 +334,7 @@ def download_one(species: str, slug: str, source_gen: str) -> dict:
                 local_path = SPRITE_ROOT / relative
                 local_path.parent.mkdir(parents=True, exist_ok=True)
                 local_path.write_bytes(response.content)
-                return {
+                return with_animation_metadata({
                     "species": species,
                     "slug": slug,
                     "source_gen": source_gen,
@@ -339,7 +342,7 @@ def download_one(species: str, slug: str, source_gen: str) -> dict:
                     "remote_url": url,
                     "local_path": local_path.relative_to(PUBLIC_ROOT).as_posix(),
                     "bytes": len(response.content),
-                }
+                }, PUBLIC_ROOT)
             last_error = f"{response.status_code} for {url}"
 
         for cand in pokemon_db_sprite_slug_candidates(slug):
@@ -350,7 +353,7 @@ def download_one(species: str, slug: str, source_gen: str) -> dict:
                 local_path = SPRITE_ROOT / relative
                 local_path.parent.mkdir(parents=True, exist_ok=True)
                 local_path.write_bytes(response.content)
-                return {
+                return with_animation_metadata({
                     "species": species,
                     "slug": slug,
                     "source_gen": source_gen,
@@ -358,7 +361,7 @@ def download_one(species: str, slug: str, source_gen: str) -> dict:
                     "remote_url": url,
                     "local_path": local_path.relative_to(PUBLIC_ROOT).as_posix(),
                     "bytes": len(response.content),
-                }
+                }, PUBLIC_ROOT)
             last_error = f"{response.status_code} for {url}"
 
         raise RuntimeError(f"Could not download sprite for {species} ({slug}, {source_gen}): {last_error}")
@@ -369,7 +372,7 @@ def download_one(species: str, slug: str, source_gen: str) -> dict:
     local_path = SPRITE_ROOT / local_relative
     local_path.parent.mkdir(parents=True, exist_ok=True)
     local_path.write_bytes(response.content)
-    return {
+    return with_animation_metadata({
         "species": species,
         "slug": slug,
         "source_gen": source_gen,
@@ -377,11 +380,32 @@ def download_one(species: str, slug: str, source_gen: str) -> dict:
         "remote_url": url,
         "local_path": local_path.relative_to(PUBLIC_ROOT).as_posix(),
         "bytes": len(response.content),
-    }
+    }, PUBLIC_ROOT)
+
+
+def convert_existing_manifest() -> None:
+    manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
+    updated = [with_animation_metadata(entry, PUBLIC_ROOT) for entry in manifest]
+    updated.sort(key=lambda item: item["species"])
+    MANIFEST_PATH.write_text(json.dumps(updated, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    converted = sum(1 for item in updated if item.get("animation"))
+    print(f"Converted {converted} existing front GIF spritesheets")
+    print(f"Wrote manifest: {MANIFEST_PATH}")
 
 
 def main() -> None:
     global SHOWDOWN_ANI_FILES, SHOWDOWN_AFD_FILES
+
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--convert-existing",
+        action="store_true",
+        help="only generate spritesheets/animation metadata for the current local manifest",
+    )
+    args = parser.parse_args()
+    if args.convert_existing:
+        convert_existing_manifest()
+        return
 
     current_entries = load_current_entries()
     species_map = build_species_map_from_markdown()

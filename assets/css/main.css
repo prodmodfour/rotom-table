@@ -110,38 +110,9 @@ a {
 }
 
 /* ------------------------------------------------------------------
- * Tabletop sprite + elevation badge styling.
- * Tinted with the Gruvbox yellow accent so they read as a deliberate
- * highlight on the warm dark backdrop.
+ * Elevation badge + HP overlay styling. World sprites are WebGL
+ * billboards so terrain can depth-test against individual pixels.
  * ------------------------------------------------------------------ */
-
-.pokemon-sprite {
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  transform-origin: center center;
-  pointer-events: none;
-}
-
-.pokemon-sprite img {
-  width: 100%;
-  height: 100%;
-  object-fit: fill;
-  image-rendering: pixelated;
-  user-select: none;
-  pointer-events: none;
-}
-
-.pokemon-sprite.is-ghost {
-  opacity: 0.4;
-  filter: saturate(0.75) brightness(1.2) drop-shadow(0 0 18px rgba(213, 196, 161, 0.5));
-}
-
-.pokemon-sprite.is-invalid {
-  opacity: 0.28;
-  filter: saturate(0.7) sepia(0.35) hue-rotate(-15deg) brightness(1.05)
-    drop-shadow(0 0 18px rgba(251, 73, 52, 0.45));
-}
 
 .elevation-badge {
   display: inline-flex;

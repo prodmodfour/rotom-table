@@ -3,12 +3,15 @@
 
 from __future__ import annotations
 
+import argparse
 import json
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any
 
 import requests
+
+from gif_spritesheet import with_animation_metadata
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 REPO_ROOT = SCRIPT_DIR.parent
@@ -64,17 +67,38 @@ def download_one(entry: dict[str, Any]) -> dict[str, Any]:
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_bytes(response.content)
 
-    return {
+    return with_animation_metadata({
         'species': entry['species'],
         'slug': entry['slug'],
         'asset_kind': asset_kind,
         'remote_url': remote_url,
         'local_path': local_path,
         'bytes': len(response.content),
-    }
+    }, PUBLIC_ROOT)
+
+
+def convert_existing_manifest() -> None:
+    manifest = json.loads(BACK_MANIFEST_PATH.read_text())
+    updated = [with_animation_metadata(entry, PUBLIC_ROOT) for entry in manifest]
+    updated.sort(key=lambda entry: entry['species'])
+    BACK_MANIFEST_PATH.write_text(json.dumps(updated, indent=2) + '\n')
+    converted = sum(1 for entry in updated if entry.get('animation'))
+    print(f'Converted {converted} existing back GIF spritesheets')
+    print(f'Wrote {BACK_MANIFEST_PATH}')
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        '--convert-existing',
+        action='store_true',
+        help='only generate spritesheets/animation metadata for the current local manifest',
+    )
+    args = parser.parse_args()
+    if args.convert_existing:
+        convert_existing_manifest()
+        return
+
     front_manifest = json.loads(FRONT_MANIFEST_PATH.read_text())
     back_manifest: list[dict[str, Any]] = []
 
