@@ -121,16 +121,8 @@ const tooltipStyle = computed(() => ({
   left: `${tooltipPosition.value.left}px`,
 }))
 
-let hideTimer: ReturnType<typeof setTimeout> | null = null
 let animationFrame: number | null = null
 let listenersAttached = false
-
-const clearTooltipHide = () => {
-  if (hideTimer !== null) {
-    clearTimeout(hideTimer)
-    hideTimer = null
-  }
-}
 
 const updateTooltipPosition = () => {
   if (typeof window === 'undefined' || !anchorEl.value || !tooltipEl.value || !isTooltipVisible.value) return
@@ -192,7 +184,6 @@ const cancelTooltipFrame = () => {
 
 const showTooltip = async () => {
   if (!tooltipDetail.value) return
-  clearTooltipHide()
   isTooltipVisible.value = true
   tooltipReady.value = false
   addTooltipListeners()
@@ -201,20 +192,10 @@ const showTooltip = async () => {
 }
 
 const hideTooltipNow = () => {
-  clearTooltipHide()
   cancelTooltipFrame()
   isTooltipVisible.value = false
   tooltipReady.value = false
   removeTooltipListeners()
-}
-
-const scheduleHideTooltip = () => {
-  if (typeof window === 'undefined') {
-    hideTooltipNow()
-    return
-  }
-  clearTooltipHide()
-  hideTimer = window.setTimeout(hideTooltipNow, 160)
 }
 
 onBeforeUnmount(() => {
@@ -230,7 +211,7 @@ onBeforeUnmount(() => {
     :class="{ 'ref-link-wrap--has-tooltip': tooltipDetail }"
     :data-kind="kind"
     @pointerenter="showTooltip"
-    @pointerleave="scheduleHideTooltip"
+    @pointerleave="hideTooltipNow"
     @focusin="showTooltip"
     @focusout="hideTooltipNow"
     @keydown.esc.stop.prevent="hideTooltipNow"
@@ -256,8 +237,6 @@ onBeforeUnmount(() => {
         ]"
         :style="tooltipStyle"
         role="tooltip"
-        @pointerenter="clearTooltipHide"
-        @pointerleave="scheduleHideTooltip"
       >
         <header class="ref-tooltip__header">
           <span class="ref-tooltip__kind">{{ tooltipDetail.kind }}</span>
@@ -360,7 +339,7 @@ onBeforeUnmount(() => {
   text-align: left;
   white-space: normal;
   opacity: 0;
-  pointer-events: auto;
+  pointer-events: none;
   transform: translateX(-50%) translateY(-0.2rem);
   transition: opacity 0.12s ease, transform 0.12s ease;
 }
