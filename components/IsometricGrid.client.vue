@@ -3312,7 +3312,13 @@ watch(
           <p class="hp-dialog__species">
             {{ damageDialog.species }}
             <span v-if="damageDialog.defenderTypes.length" class="hp-dialog__types">
-              · {{ damageDialog.defenderTypes.join(' / ') }}
+              <span aria-hidden="true">·</span>
+              <TypeBadge
+                v-for="type in damageDialog.defenderTypes"
+                :key="type"
+                :type="type"
+                size="xs"
+              />
             </span>
           </p>
         </header>
@@ -3339,7 +3345,8 @@ watch(
             :aria-pressed="damageDialog.mode === 'physical'"
             @click="damageDialog.mode = 'physical'"
           >
-            Physical · Def {{ damageDialog.def }}
+            <DamageClassBadge category="Physical" size="xs" />
+            <span class="hp-dialog__mode-stat">Def {{ damageDialog.def }}</span>
           </button>
           <button
             type="button"
@@ -3348,15 +3355,19 @@ watch(
             :aria-pressed="damageDialog.mode === 'special'"
             @click="damageDialog.mode = 'special'"
           >
-            Special · Sp.Def {{ damageDialog.sdef }}
+            <DamageClassBadge category="Special" size="xs" />
+            <span class="hp-dialog__mode-stat">Sp.Def {{ damageDialog.sdef }}</span>
           </button>
         </div>
 
         <label class="hp-dialog__field">
           <span>Attack type</span>
-          <select v-model="damageDialog.attackType">
-            <option v-for="type in POKEMON_TYPES" :key="type" :value="type">{{ type }}</option>
-          </select>
+          <div class="hp-dialog__select-row">
+            <TypeBadge :type="damageDialog.attackType" size="xs" />
+            <select v-model="damageDialog.attackType">
+              <option v-for="type in POKEMON_TYPES" :key="type" :value="type">{{ type }}</option>
+            </select>
+          </div>
         </label>
 
         <div class="hp-dialog__mode" role="group" aria-label="Damage source">
@@ -3442,7 +3453,11 @@ watch(
           v-if="damageDialogMultiplier === 0 && damageDialogRawAmount > 0"
           class="hp-dialog__breakdown is-immune"
         >
-          <strong>Immune to {{ damageDialog.attackType }} — 0 HP lost</strong>
+          <strong class="hp-dialog__immune-line">
+            <span>Immune to</span>
+            <TypeBadge :type="damageDialog.attackType" size="xs" />
+            <span>— 0 HP lost</span>
+          </strong>
         </p>
         <p v-else class="hp-dialog__breakdown">
           <span>{{ damageDialogRawAmount }} dmg</span>
@@ -3568,6 +3583,10 @@ watch(
 }
 
 .hp-dialog__types {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.25rem;
   color: var(--ink);
 }
 
@@ -3627,6 +3646,10 @@ watch(
 }
 
 .hp-dialog__mode-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
   border: 1px solid var(--rule-soft);
   border-radius: 10px;
   background: var(--paper);
@@ -3660,6 +3683,17 @@ watch(
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--ink-muted);
+}
+
+.hp-dialog__select-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.hp-dialog__mode-stat {
+  white-space: nowrap;
 }
 
 .hp-dialog__field input {
@@ -3757,6 +3791,14 @@ watch(
 .hp-dialog__breakdown strong {
   color: var(--ink-bright);
   font-weight: 600;
+}
+
+.hp-dialog__immune-line {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.3rem;
 }
 
 .hp-dialog__footer {

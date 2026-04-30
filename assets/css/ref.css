@@ -279,35 +279,5 @@
   font-size: 1.02rem;
 }
 
-/* ---- type pills (used on /moves/* and the move list rows) ---- */
-
-.type-pill {
-  display: inline-flex;
-  align-items: center;
-  border-radius: 999px;
-  padding: 0.18rem 0.6rem;
-  font-size: 0.72rem;
-  letter-spacing: 0.05em;
-  font-weight: 700;
-  background: rgba(148, 163, 184, 0.22);
-  color: #f1f5f9;
-}
-
-.type-pill[data-type="Normal"]   { background: #a8a878; color: #1a1a1a; }
-.type-pill[data-type="Fighting"] { background: #c03028; color: #fff; }
-.type-pill[data-type="Flying"]   { background: #a890f0; color: #1a1a1a; }
-.type-pill[data-type="Poison"]   { background: #a040a0; color: #fff; }
-.type-pill[data-type="Ground"]   { background: #e0c068; color: #1a1a1a; }
-.type-pill[data-type="Rock"]     { background: #b8a038; color: #1a1a1a; }
-.type-pill[data-type="Bug"]      { background: #a8b820; color: #1a1a1a; }
-.type-pill[data-type="Ghost"]    { background: #705898; color: #fff; }
-.type-pill[data-type="Steel"]    { background: #b8b8d0; color: #1a1a1a; }
-.type-pill[data-type="Fire"]     { background: #f08030; color: #fff; }
-.type-pill[data-type="Water"]    { background: #6890f0; color: #fff; }
-.type-pill[data-type="Grass"]    { background: #78c850; color: #1a1a1a; }
-.type-pill[data-type="Electric"] { background: #f8d030; color: #1a1a1a; }
-.type-pill[data-type="Psychic"]  { background: #f85888; color: #fff; }
-.type-pill[data-type="Ice"]      { background: #98d8d8; color: #1a1a1a; }
-.type-pill[data-type="Dragon"]   { background: #7038f8; color: #fff; }
-.type-pill[data-type="Dark"]     { background: #705848; color: #fff; }
-.type-pill[data-type="Fairy"]    { background: #ee99ac; color: #1a1a1a; }
+/* Type and damage-class badges are image components sourced from
+   public/badges/pokemon-badge-source.png. */

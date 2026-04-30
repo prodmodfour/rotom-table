@@ -252,6 +252,14 @@ const setInheritedMove = (level: string, value: string | undefined) => {
                   :placeholder="`Types (e.g. ${species?.types?.join(', ') ?? 'Electric, Steel'})`"
                 />
               </p>
+              <div v-if="sheetTypes.length" class="identity__type-badges">
+                <TypeBadge
+                  v-for="type in sheetTypes"
+                  :key="type"
+                  :type="type"
+                  size="sm"
+                />
+              </div>
             </div>
             <div class="identity__badges">
               <span class="badge">
@@ -639,7 +647,12 @@ const setInheritedMove = (level: string, value: string | undefined) => {
                     type="select"
                     :options="TYPE_OPTIONS"
                     placeholder="—"
-                  />
+                  >
+                    <template #display="slotProps">
+                      <TypeBadge v-if="!slotProps.empty" :type="String(slotProps.value)" size="xs" />
+                      <span v-else class="badge-empty">{{ slotProps.emptyLabel }}</span>
+                    </template>
+                  </EditableCell>
                 </td>
                 <td>
                   <EditableCell
@@ -647,7 +660,12 @@ const setInheritedMove = (level: string, value: string | undefined) => {
                     type="select"
                     :options="CATEGORY_OPTIONS"
                     placeholder="—"
-                  />
+                  >
+                    <template #display="slotProps">
+                      <DamageClassBadge v-if="!slotProps.empty" :category="String(slotProps.value)" size="xs" />
+                      <span v-else class="badge-empty">{{ slotProps.emptyLabel }}</span>
+                    </template>
+                  </EditableCell>
                 </td>
                 <td><EditableCell v-model="move.db" type="number" /></td>
                 <td><EditableCell v-model="move.damageRoll" placeholder="—" /></td>
@@ -680,7 +698,15 @@ const setInheritedMove = (level: string, value: string | undefined) => {
       <section v-if="typeEffectivenessRows.length" class="panel-card">
         <h2 class="panel-title">
           Type Effectiveness
-          <span class="panel-subtle">vs {{ sheetTypes.join(' / ') }}</span>
+          <span class="panel-subtle panel-subtle--types">
+            <span>vs</span>
+            <TypeBadge
+              v-for="type in sheetTypes"
+              :key="`effectiveness-${type}`"
+              :type="type"
+              size="xs"
+            />
+          </span>
         </h2>
         <div class="type-grid">
           <div
@@ -688,7 +714,7 @@ const setInheritedMove = (level: string, value: string | undefined) => {
             :key="row.type"
             :class="['type-cell', `type-cell--${row.tone}`]"
           >
-            <span class="type-name">{{ row.type }}</span>
+            <span class="type-name"><TypeBadge :type="row.type" size="xs" /></span>
             <span class="type-mult">×{{ row.label }}</span>
           </div>
         </div>
@@ -948,6 +974,13 @@ const setInheritedMove = (level: string, value: string | undefined) => {
   font-family: var(--font-ui);
 }
 
+.panel-subtle--types {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
 .row {
   display: grid;
   gap: 0.85rem;
@@ -1021,6 +1054,14 @@ const setInheritedMove = (level: string, value: string | undefined) => {
   display: inline-flex;
   flex-wrap: wrap;
   gap: 0.25rem;
+}
+
+.identity__type-badges {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.28rem;
+  margin-top: 0.45rem;
 }
 
 .identity__badges {

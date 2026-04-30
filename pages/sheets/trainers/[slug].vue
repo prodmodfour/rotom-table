@@ -887,7 +887,12 @@ const clearPortrait = () => {
                     type="select"
                     :options="TYPE_OPTIONS"
                     placeholder="—"
-                  />
+                  >
+                    <template #display="slotProps">
+                      <TypeBadge v-if="!slotProps.empty" :type="String(slotProps.value)" size="xs" />
+                      <span v-else class="badge-empty">{{ slotProps.emptyLabel }}</span>
+                    </template>
+                  </EditableCell>
                 </td>
                 <td>
                   <EditableCell
@@ -895,7 +900,12 @@ const clearPortrait = () => {
                     type="select"
                     :options="CATEGORY_OPTIONS"
                     placeholder="—"
-                  />
+                  >
+                    <template #display="slotProps">
+                      <DamageClassBadge v-if="!slotProps.empty" :category="String(slotProps.value)" size="xs" />
+                      <span v-else class="badge-empty">{{ slotProps.emptyLabel }}</span>
+                    </template>
+                  </EditableCell>
                 </td>
                 <td><EditableCell v-model="mv.db" type="number" /></td>
                 <td><EditableCell v-model="mv.damageRoll" placeholder="1d8+6" /></td>
@@ -962,7 +972,12 @@ const clearPortrait = () => {
                     type="select"
                     :options="CATEGORY_OPTIONS"
                     placeholder="—"
-                  />
+                  >
+                    <template #display="slotProps">
+                      <DamageClassBadge v-if="!slotProps.empty" :category="String(slotProps.value)" size="xs" />
+                      <span v-else class="badge-empty">{{ slotProps.emptyLabel }}</span>
+                    </template>
+                  </EditableCell>
                 </td>
                 <td><EditableCell v-model="m.ac" type="number" /></td>
                 <td><EditableCell v-model="m.range" placeholder="Melee" /></td>

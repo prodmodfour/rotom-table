@@ -27,8 +27,8 @@ useHead(() => ({
         <div class="detail-heading">
           <h1>{{ move.name }}</h1>
           <div class="detail-pills">
-            <span class="type-pill" :data-type="move.type">{{ move.type }}</span>
-            <span v-if="move.damage_class" class="badge">{{ move.damage_class }}</span>
+            <TypeBadge v-if="move.type" :type="move.type" size="md" />
+            <DamageClassBadge v-if="move.damage_class" :category="move.damage_class" size="md" />
             <span v-if="move.frequency" class="badge">{{ move.frequency }}</span>
           </div>
         </div>

@@ -900,7 +900,14 @@ onMounted(async () => {
               <ul class="sheet-card__meta">
                 <li v-if="item.sheet.nature">{{ item.sheet.nature }}</li>
                 <li v-if="item.sheet.gender">{{ item.sheet.gender }}</li>
-                <li v-if="item.types.length">{{ item.types.join(' / ') }}</li>
+                <li v-if="item.types.length" class="sheet-card__types">
+                  <TypeBadge
+                    v-for="type in item.types"
+                    :key="`${item.slug}-${type}`"
+                    :type="type"
+                    size="xs"
+                  />
+                </li>
               </ul>
             </div>
           </NuxtLink>
@@ -1566,6 +1573,16 @@ input:focus {
   border-radius: 999px;
   background: var(--paper-inset);
   border: 1px solid var(--rule);
+}
+
+.sheet-card__meta .sheet-card__types {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.22rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
 }
 
 .empty-state {

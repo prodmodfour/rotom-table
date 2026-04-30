@@ -178,10 +178,22 @@ const onInput = (e: Event) => {
     @click="!editing && beginEdit()"
   >
     <template v-if="!editing">
-      <span v-if="isEmpty(modelValue) && !displayValue" class="editable-cell__empty">
-        {{ placeholder || emptyText }}
-      </span>
-      <span v-else class="editable-cell__display">{{ displayValue }}</span>
+      <slot
+        name="display"
+        :value="modelValue"
+        :display-value="displayValue"
+        :displayValue="displayValue"
+        :empty="isEmpty(modelValue)"
+        :placeholder="placeholder"
+        :empty-text="emptyText"
+        :emptyText="emptyText"
+        :emptyLabel="placeholder || emptyText"
+      >
+        <span v-if="isEmpty(modelValue) && !displayValue" class="editable-cell__empty">
+          {{ placeholder || emptyText }}
+        </span>
+        <span v-else class="editable-cell__display">{{ displayValue }}</span>
+      </slot>
     </template>
 
     <template v-else>

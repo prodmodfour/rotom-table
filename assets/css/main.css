@@ -103,6 +103,11 @@ samp {
   color: var(--ink-bright);
 }
 
+.badge-empty {
+  color: var(--ink-faint);
+  font-style: italic;
+}
+
 /* Scrollbars — match the warm dark surface so they don't
    stand out as ice-blue strips on Chromium. */
 * {

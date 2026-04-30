@@ -62,10 +62,13 @@ const filtered = computed(() => {
               v-for="type in allTypes"
               :key="type"
               type="button"
-              :class="['type-pill', { active: typeFilter === type }]"
-              :data-type="type === 'All' ? undefined : type"
+              :class="['type-filter__button', { active: typeFilter === type, 'type-filter__button--all': type === 'All' }]"
+              :aria-pressed="typeFilter === type"
               @click="typeFilter = type"
-            >{{ type }}</button>
+            >
+              <span v-if="type === 'All'">All</span>
+              <TypeBadge v-else :type="type" size="sm" />
+            </button>
           </div>
         </div>
       </section>
@@ -80,11 +83,11 @@ const filtered = computed(() => {
       >
         <div class="ref-row__heading">
           <h2>{{ move.name }}</h2>
-          <span class="type-pill" :data-type="move.type">{{ move.type }}</span>
+          <TypeBadge v-if="move.type" :type="move.type" size="sm" />
           <span v-if="move.frequency" class="ref-row__freq">{{ move.frequency }}</span>
         </div>
         <div class="ref-row__pills">
-          <span v-if="move.damage_class" class="badge">{{ move.damage_class }}</span>
+          <DamageClassBadge v-if="move.damage_class" :category="move.damage_class" size="xs" />
           <span v-if="move.damage_base != null" class="badge">DB {{ move.damage_base }}</span>
           <span v-if="move.ac != null" class="badge">AC {{ move.ac }}</span>
           <span v-if="move.range" class="badge">{{ move.range }}</span>
@@ -109,24 +112,40 @@ const filtered = computed(() => {
   gap: 0.3rem;
 }
 
-.type-filter .type-pill {
-  cursor: pointer;
+.type-filter__button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 1.9rem;
+  padding: 0;
   border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  cursor: pointer;
 }
 
-.type-filter .type-pill.active {
+.type-filter__button.active {
   outline: 2px solid var(--ink-bright);
-  outline-offset: 1px;
+  outline-offset: 2px;
 }
 
-.type-filter .type-pill:not([data-type]) {
+.type-filter__button--all {
+  padding: 0.32rem 0.85rem;
   background: var(--paper);
   color: var(--ink);
   border-color: var(--rule-soft);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
-.type-filter .type-pill:not([data-type]):hover {
+.type-filter__button--all:hover {
   border-color: var(--rule-strong);
   background: var(--paper-hover);
+}
+
+.type-filter__button:not(.type-filter__button--all):hover {
+  filter: brightness(1.08);
 }
 </style>

@@ -98,8 +98,6 @@ const genderSummary = computed(() => {
   return null
 })
 
-const typeSummary = computed(() => selectedEntry.value?.types?.join(' / ') ?? 'Unknown type')
-
 // One-page index for the bottom-right page number.
 const pageNumber = computed(() => {
   const list = filteredEntries.value
@@ -256,7 +254,15 @@ const habitatSummary = computed(() => {
           >
             <span class="entry-name">{{ entry.species }}</span>
             <span class="entry-meta">
-              {{ entry.types?.join(' / ') || 'Unknown type' }}
+              <span v-if="entry.types?.length" class="entry-type-badges">
+                <TypeBadge
+                  v-for="type in entry.types"
+                  :key="`${entry.id}-${type}`"
+                  :type="type"
+                  size="xs"
+                />
+              </span>
+              <span v-else>Unknown type</span>
               <template v-if="entry.source_gen"> · {{ entry.source_gen }}</template>
             </span>
           </button>
@@ -310,7 +316,18 @@ const habitatSummary = computed(() => {
 
             <section class="book-section">
               <h3 class="book-section__title">Basic Information</h3>
-              <p class="info-line">Type : {{ typeSummary }}</p>
+              <p class="info-line info-line--types">
+                <span>Type :</span>
+                <span v-if="selectedEntry.types?.length" class="type-badge-row">
+                  <TypeBadge
+                    v-for="type in selectedEntry.types"
+                    :key="`selected-${type}`"
+                    :type="type"
+                    size="xs"
+                  />
+                </span>
+                <span v-else>Unknown type</span>
+              </p>
               <template v-if="selectedEntry.abilities">
                 <p
                   v-for="(ability, index) in selectedEntry.abilities.basic ?? []"
@@ -409,7 +426,7 @@ const habitatSummary = computed(() => {
                     <span class="move-level">{{ move.level }}</span>
                     <span class="move-name"><RefLink kind="move" :name="move.name" /></span>
                     <span class="move-sep">-</span>
-                    <span class="move-type">{{ move.type }}</span>
+                    <span class="move-type"><TypeBadge :type="move.type" size="xs" /></span>
                   </li>
                 </ul>
               </template>
@@ -607,6 +624,15 @@ input:focus {
   line-height: 1.3;
 }
 
+.entry-type-badges,
+.type-badge-row {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.22rem;
+  vertical-align: middle;
+}
+
 code {
   font-family: var(--font-mono);
   font-size: 0.9em;
@@ -774,6 +800,13 @@ code {
 .paragraph {
   margin: 0.05rem 0;
   color: var(--ink);
+}
+
+.info-line--types {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.35rem;
 }
 
 .paragraph {
