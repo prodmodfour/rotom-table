@@ -475,20 +475,29 @@ interface SearchBooleanExpression {
   right: SearchExpression
 }
 
-type SearchExpression = SearchCriterion | SearchBooleanExpression
+interface SearchNotExpression {
+  kind: 'not'
+  expression: SearchExpression
+}
+
+type SearchExpression = SearchCriterion | SearchBooleanExpression | SearchNotExpression
 
 type SearchToken =
   | { kind: 'term'; value: string }
-  | { kind: 'and' | 'or' | 'open' | 'close' }
+  | { kind: 'and' | 'or' | 'not' | 'open' | 'close' }
 
 const normalizeSearchQuery = (value: string) => value
   .normalize('NFKD')
   .replace(/[\u0300-\u036f]/g, '')
   .toLowerCase()
   .replace(/['\u2019]/g, '')
-  .replace(/[^a-z0-9#()]+/g, ' ')
+  .replace(/[^a-z0-9#()\-]+/g, ' ')
   .replace(/\s+/g, ' ')
   .trim()
+  // Treat a leading dash as an exclusion operator while preserving hyphenated
+  // names/phrases such as "jangmo-o" as normal search terms. Whitespace after
+  // the dash is optional, so both "-gen 1" and "- gen 1" work.
+  .replace(/(^|[(\s])-\s*(?=\S)/g, '$1not ')
 
 const toSearchCriterion = (value: string): SearchCriterion | null => {
   const query = normalizeText(value)
@@ -506,13 +515,13 @@ const tokenizeSearchQuery = (value: string): SearchToken[] => {
   if (!normalized) return []
 
   return normalized
-    .split(/(\(|\)|\band\b|\bor\b)/g)
+    .split(/(\(|\)|\band\b|\bor\b|\bnot\b)/g)
     .map((part) => part.trim())
     .filter(Boolean)
     .map((part): SearchToken => {
       if (part === '(') return { kind: 'open' }
       if (part === ')') return { kind: 'close' }
-      if (part === 'and' || part === 'or') return { kind: part }
+      if (part === 'and' || part === 'or' || part === 'not') return { kind: part }
       return { kind: 'term', value: part }
     })
 }
@@ -541,14 +550,26 @@ const parseSearchExpression = (value: string): SearchExpression | null => {
       return expression
     }
 
+    if (token.kind === 'not') {
+      index += 1
+      const expression = parsePrimary()
+      return expression ? { kind: 'not', expression } : null
+    }
+
     return null
   }
+
+  const startsPrimary = (token: SearchToken | null): boolean => (
+    token?.kind === 'term' || token?.kind === 'open' || token?.kind === 'not'
+  )
 
   const parseAnd = (): SearchExpression | null => {
     let expression = parsePrimary()
 
-    while (peek()?.kind === 'and') {
-      index += 1
+    while (peek()?.kind === 'and' || startsPrimary(peek())) {
+      if (peek()?.kind === 'and') {
+        index += 1
+      }
       const right = parsePrimary()
       if (!right) break
       expression = expression ? { kind: 'and', left: expression, right } : right
@@ -587,7 +608,11 @@ const matchesSearchExpression = (searchText: string, expression: SearchExpressio
     return matchesSearchExpression(searchText, expression.left) && matchesSearchExpression(searchText, expression.right)
   }
 
-  return matchesSearchExpression(searchText, expression.left) || matchesSearchExpression(searchText, expression.right)
+  if (expression.kind === 'or') {
+    return matchesSearchExpression(searchText, expression.left) || matchesSearchExpression(searchText, expression.right)
+  }
+
+  return !matchesSearchExpression(searchText, expression.expression)
 }
 
 interface ActiveSearchFilter {
@@ -914,7 +939,7 @@ const habitatSummary = computed(() => {
               </template>
             </div>
             <p class="filter-help">
-              Use <code>and</code>, <code>or</code>, and parentheses inside any filter. Field filters combine using the toggles.
+              Use <code>and</code>, <code>or</code>, parentheses, and <code>-term</code> exclusions inside any filter. Field filters combine using the toggles.
             </p>
           </div>
 
