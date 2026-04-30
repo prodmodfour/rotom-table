@@ -14,7 +14,7 @@ import { computeMaxHp, getPokedexEntry, resolveStats } from '~/data/characterShe
 import { computeTrainerMaxHp, resolveTrainerStats } from '~/data/trainerSheets'
 import { pokemonCatalog, pokemonCatalogBySpecies } from '~/data/pokemonCatalog'
 import { trainerCatalog } from '~/data/trainerCatalog'
-import { COMBAT_STAGE_KEYS, normalizeCombatStages } from '~/utils/combatStages'
+import { COMBAT_STAT_STAGE_KEYS, normalizeCombatStages } from '~/utils/combatStages'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { CombatStageMap } from '~/types/combatStages'
 import type { PokemonCatalogEntry } from '~/types/pokemon'
@@ -81,6 +81,7 @@ export const pokemonHpSnapshot = (
     satk: sheet.stats?.satk?.stage,
     sdef: sheet.stats?.sdef?.stage,
     spd: sheet.stats?.spd?.stage,
+    acc: sheet.combatStages?.acc,
   })
   return { currentHp, maxHp, atk, satk, def, sdef, defenderTypes, combatStages }
 }
@@ -106,9 +107,9 @@ export const trainerHpSnapshot = (
   const def = stats.find((row) => row.key === 'def')?.total ?? 0
   const sdef = stats.find((row) => row.key === 'sdef')?.total ?? 0
   const stageSource = Object.fromEntries(
-    COMBAT_STAGE_KEYS.map((key) => [key, sheet.stats?.[key]?.stage ?? sheet.combatStages?.[key]]),
+    COMBAT_STAT_STAGE_KEYS.map((key) => [key, sheet.stats?.[key]?.stage ?? sheet.combatStages?.[key]]),
   )
-  const combatStages = normalizeCombatStages(stageSource)
+  const combatStages = normalizeCombatStages({ ...stageSource, acc: sheet.combatStages?.acc })
   return { currentHp, maxHp, atk, satk, def, sdef, defenderTypes: [], combatStages }
 }
 

@@ -25,7 +25,7 @@ import {
   voxelKey,
 } from '~/utils/voxels'
 import { getClientId } from '~/utils/clientId'
-import { COMBAT_STAGE_KEYS, clampCombatStage } from '~/utils/combatStages'
+import { COMBAT_STAGE_KEYS, COMBAT_STAT_STAGE_KEYS, clampCombatStage } from '~/utils/combatStages'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { CombatStageMap } from '~/types/combatStages'
 import type { TrainerSheet } from '~/types/trainerSheet'
@@ -205,9 +205,10 @@ const modifyCombatStages = async (payload: { id: string; stages: CombatStageMap 
     if (!original) return
     const updated = JSON.parse(JSON.stringify(original)) as CharacterSheet
     updated.stats = { ...(updated.stats ?? {}) }
-    for (const key of COMBAT_STAGE_KEYS) {
+    for (const key of COMBAT_STAT_STAGE_KEYS) {
       updated.stats[key] = { ...(updated.stats[key] ?? {}), stage: stages[key] }
     }
+    updated.combatStages = { ...(updated.combatStages ?? {}), acc: stages.acc }
     sheets.set(placement.sheetSlug, updated)
 
     try {
@@ -230,9 +231,10 @@ const modifyCombatStages = async (payload: { id: string; stages: CombatStageMap 
   if (!original) return
   const updated = JSON.parse(JSON.stringify(original)) as TrainerSheet
   updated.stats = { ...(updated.stats ?? {}) }
-  for (const key of COMBAT_STAGE_KEYS) {
+  for (const key of COMBAT_STAT_STAGE_KEYS) {
     updated.stats[key] = { ...(updated.stats[key] ?? {}), stage: stages[key] }
   }
+  updated.combatStages = { ...(updated.combatStages ?? {}), acc: stages.acc }
   sheets.set(placement.sheetSlug, updated)
 
   try {

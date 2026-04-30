@@ -1,6 +1,8 @@
-import type { CombatStageKey, CombatStageMap } from '~/types/combatStages'
+import type { CombatStageKey, CombatStageMap, CombatStatStageKey } from '~/types/combatStages'
 
-export const COMBAT_STAGE_KEYS = ['atk', 'def', 'satk', 'sdef', 'spd'] as const satisfies readonly CombatStageKey[]
+export const COMBAT_STAT_STAGE_KEYS = ['atk', 'def', 'satk', 'sdef', 'spd'] as const satisfies readonly CombatStatStageKey[]
+
+export const COMBAT_STAGE_KEYS = [...COMBAT_STAT_STAGE_KEYS, 'acc'] as const satisfies readonly CombatStageKey[]
 
 export const COMBAT_STAGE_LABELS: Record<CombatStageKey, string> = {
   atk: 'Attack',
@@ -8,6 +10,16 @@ export const COMBAT_STAGE_LABELS: Record<CombatStageKey, string> = {
   satk: 'Sp. Atk',
   sdef: 'Sp. Def',
   spd: 'Speed',
+  acc: 'Accuracy',
+}
+
+export const COMBAT_STAGE_SHORT_LABELS: Record<CombatStageKey, string> = {
+  atk: 'Atk',
+  def: 'Def',
+  satk: 'SAtk',
+  sdef: 'SDef',
+  spd: 'Spd',
+  acc: 'Acc',
 }
 
 export const COMBAT_STAGE_ROWS = COMBAT_STAGE_KEYS.map((key) => ({
@@ -33,4 +45,5 @@ export const normalizeCombatStages = (
   satk: clampCombatStage(source?.satk),
   sdef: clampCombatStage(source?.sdef),
   spd: clampCombatStage(source?.spd),
+  acc: clampCombatStage(source?.acc),
 })

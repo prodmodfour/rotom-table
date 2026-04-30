@@ -1,3 +1,5 @@
+import type { CombatStageKey } from '~/types/combatStages'
+
 /**
  * Schema for a Pokémon character sheet, modelled on the PTU pokesheet
  * spreadsheet (`pokesheet.pdf`).
@@ -151,6 +153,8 @@ export interface CharacterSheet {
   eggGroups?: string[]
 
   stats?: Partial<Record<StatKey, CharacterSheetStat>>
+  /** Non-stat stage-like modifiers, such as Accuracy. Stat stages live in `stats.*.stage`. */
+  combatStages?: Partial<Record<CombatStageKey, number>>
 
   combat?: CharacterSheetCombat
   items?: CharacterSheetItems

@@ -19,6 +19,7 @@ import { POKEMON_TYPES, computeMultiplier, formatMultiplier } from '~/utils/type
 import {
   COMBAT_STAGE_KEYS,
   COMBAT_STAGE_ROWS,
+  COMBAT_STAGE_SHORT_LABELS,
   clampCombatStage,
   normalizeCombatStages,
 } from '~/utils/combatStages'
@@ -98,6 +99,7 @@ interface PokemonRenderObject {
   level: number
   currentHp: number
   maxHp: number
+  combatStages: CombatStageMap
   /** Eased 0→1 selection-lift factor; target flips on selection state. */
   liftFactor: number
   liftTarget: number
@@ -985,7 +987,8 @@ const paintBuildGhostMaterials = (
 
 const ELEVATION_BADGE_PIXELS_PER_METRE = 48
 const TOKEN_STATUS_CSS_WIDTH_PX = 80
-const TOKEN_STATUS_CSS_HEIGHT_PX = 18
+const TOKEN_STATUS_BASE_CSS_HEIGHT_PX = 18
+const TOKEN_STATUS_STAGE_ROW_CSS_HEIGHT_PX = 10
 // Matches the scaled size that Miltank landed on; every token now uses this
 // same tabletop marker size instead of resizing by sprite dimensions.
 const TOKEN_STATUS_WORLD_WIDTH = 1.05
@@ -1595,6 +1598,23 @@ const tokenStatusDisplayName = (displayName: string): string => {
   return trimmed.split(/\s+/)[0] || 'Unknown'
 }
 
+const activeCombatStageEntries = (stages: CombatStageMap) =>
+  COMBAT_STAGE_KEYS
+    .map((key) => ({ key, value: clampCombatStage(stages[key]) }))
+    .filter((entry) => entry.value !== 0)
+
+const formatCombatStage = (value: unknown): string => {
+  const normalized = clampCombatStage(value)
+  return normalized > 0 ? `+${normalized}` : String(normalized)
+}
+
+const tokenStatusCssHeight = (stages: CombatStageMap): number => {
+  const stageCount = activeCombatStageEntries(stages).length
+  if (stageCount === 0) return TOKEN_STATUS_BASE_CSS_HEIGHT_PX
+  const rows = Math.ceil(stageCount / 2)
+  return TOKEN_STATUS_BASE_CSS_HEIGHT_PX + 1 + rows * TOKEN_STATUS_STAGE_ROW_CSS_HEIGHT_PX
+}
+
 const updateTokenStatusLabel = (
   element: HTMLElement,
   displayName: string,
@@ -1604,6 +1624,22 @@ const updateTokenStatusLabel = (
   const levelNode = element.querySelector<HTMLElement>('.token-status__level')
   if (name) name.textContent = tokenStatusDisplayName(displayName)
   if (levelNode) levelNode.textContent = `Lv ${formatTokenLevel(level)}`
+}
+
+const updateTokenCombatStages = (element: HTMLElement, stages: CombatStageMap) => {
+  const strip = element.querySelector<HTMLElement>('.token-status__cs-strip')
+  if (!strip) return
+
+  const entries = activeCombatStageEntries(stages)
+  strip.replaceChildren()
+  strip.hidden = entries.length === 0
+
+  for (const { key, value } of entries) {
+    const chip = document.createElement('span')
+    chip.className = `token-status__cs-chip ${value > 0 ? 'is-positive' : 'is-negative'}`
+    chip.textContent = `${COMBAT_STAGE_SHORT_LABELS[key]} ${formatCombatStage(value)}`
+    strip.appendChild(chip)
+  }
 }
 
 const applyTokenStatusScale = (status: CSS3DSprite) => {
@@ -1631,6 +1667,10 @@ const buildHpBar = (pokemon: SpawnedPokemon) => {
 
   label.append(name, separator, level)
 
+  const combatStages = document.createElement('div')
+  combatStages.className = 'token-status__cs-strip'
+  combatStages.hidden = true
+
   const track = document.createElement('div')
   track.className = 'hp-bar'
 
@@ -1638,8 +1678,9 @@ const buildHpBar = (pokemon: SpawnedPokemon) => {
   fill.className = 'hp-bar__fill'
   track.appendChild(fill)
 
-  wrapper.append(label, track)
+  wrapper.append(combatStages, label, track)
   updateTokenStatusLabel(wrapper, pokemon.species, pokemon.level)
+  updateTokenCombatStages(wrapper, normalizeCombatStages(pokemon.combatStages))
 
   // CSS3DSprite billboards to the camera so the status reads as a compact
   // floating HUD regardless of orbit angle.
@@ -1935,6 +1976,7 @@ const updateHpBar = (
   level: number,
   currentHp: number,
   maxHp: number,
+  combatStages: CombatStageMap,
 ) => {
   // Hide the whole token HUD when HP data is not meaningful. Otherwise the
   // label and a valid HP bar remain visible even at full health.
@@ -1954,13 +1996,14 @@ const updateHpBar = (
     track.dataset.hpTier = hpTierForRatio(ratio)
   }
   updateTokenStatusLabel(bar.element, displayName, level)
+  updateTokenCombatStages(bar.element, combatStages)
 
   // Floats just above the sprite's head. WebGL world sprites are
   // bottom-anchored at ``center.y``, so the top edge is
   // ``center.y + spriteHeight``. The offset accounts for the scaled DOM
   // height so smaller sprites keep the HUD tucked close instead of floating
   // as a detached nameplate.
-  const overlayHalfHeight = TOKEN_STATUS_CSS_HEIGHT_PX * bar.scale.y / 2
+  const overlayHalfHeight = tokenStatusCssHeight(combatStages) * bar.scale.y / 2
   const headGap = THREE.MathUtils.clamp(spriteHeight * 0.06, 0.025, 0.08)
   bar.position.set(center.x, center.y + spriteHeight + overlayHalfHeight + headGap, center.z)
   bar.visible = true
@@ -2045,6 +2088,7 @@ const buildRenderObject = (pokemon: SpawnedPokemon): PokemonRenderObject => {
     level: pokemon.level,
     currentHp: pokemon.currentHp,
     maxHp: pokemon.maxHp,
+    combatStages: normalizeCombatStages(pokemon.combatStages),
     liftFactor: 0,
     liftTarget: 0,
   }
@@ -2098,6 +2142,7 @@ const applyRenderObjectPosition = (renderObject: PokemonRenderObject) => {
     renderObject.level,
     renderObject.currentHp,
     renderObject.maxHp,
+    renderObject.combatStages,
   )
 }
 
@@ -2169,6 +2214,7 @@ const syncPokemonObjects = () => {
     renderObject.level = pokemon.level
     renderObject.currentHp = pokemon.currentHp
     renderObject.maxHp = pokemon.maxHp
+    renderObject.combatStages = normalizeCombatStages(pokemon.combatStages)
   }
 
   refreshPokemonStyles()
@@ -2930,11 +2976,6 @@ const adjustCombatStage = (key: CombatStageKey, delta: number) => {
 const normalizeCombatStageInput = (key: CombatStageKey) => {
   if (!combatStagesDialog.value) return
   combatStagesDialog.value.stages[key] = clampCombatStage(combatStagesDialog.value.stages[key])
-}
-
-const formatCombatStage = (value: unknown): string => {
-  const normalized = clampCombatStage(value)
-  return normalized > 0 ? `+${normalized}` : String(normalized)
 }
 
 const handleCombatStagesDialogSubmit = () => {

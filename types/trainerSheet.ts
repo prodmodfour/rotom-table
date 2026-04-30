@@ -1,3 +1,5 @@
+import type { CombatStageKey } from '~/types/combatStages'
+
 /**
  * Schema for a Trainer character sheet, modelled on the PTU "Fancy" trainer
  * spreadsheet (5 tabs: Trainer, Combat, Inventory, Features, Edges).
@@ -260,7 +262,8 @@ export interface TrainerSheet {
   capabilities?: TrainerCapabilities
   damageReduction?: number
   evasion?: { speed?: number; physical?: number; special?: number }
-  combatStages?: Partial<Record<TrainerStatKey, number>>
+  /** Legacy stat stages and non-stat modifiers such as Accuracy. */
+  combatStages?: Partial<Record<CombatStageKey, number>>
   statusAfflictions?: string
   digestion?: string
 
