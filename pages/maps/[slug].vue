@@ -25,7 +25,9 @@ import {
   voxelKey,
 } from '~/utils/voxels'
 import { getClientId } from '~/utils/clientId'
+import { COMBAT_STAGE_KEYS, clampCombatStage } from '~/utils/combatStages'
 import type { CharacterSheet } from '~/types/characterSheet'
+import type { CombatStageMap } from '~/types/combatStages'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import type { GridAnchor, GridVoxel, VoxelMaterial } from '~/types/map'
 import type { PreviewState } from '~/utils/grid'
@@ -183,6 +185,66 @@ const modifyHp = async (payload: { id: string; currentHp: number }) => {
   } catch (err) {
     sheets.set(placement.sheetSlug, original)
     console.error('[modifyHp] save failed', err)
+  }
+}
+
+const modifyCombatStages = async (payload: { id: string; stages: CombatStageMap }) => {
+  if (!map.value) return
+  const placement = map.value.placements.find((p) => p.id === payload.id)
+  if (!placement) return
+
+  const clientId = getClientId()
+  const stages = Object.fromEntries(
+    COMBAT_STAGE_KEYS.map((key) => [key, clampCombatStage(payload.stages[key])]),
+  ) as CombatStageMap
+
+  if (placement.sheetKind === 'pokemon') {
+    const sheets = pokemonBySlug.value
+    if (!sheets) return
+    const original = sheets.get(placement.sheetSlug)
+    if (!original) return
+    const updated = JSON.parse(JSON.stringify(original)) as CharacterSheet
+    updated.stats = { ...(updated.stats ?? {}) }
+    for (const key of COMBAT_STAGE_KEYS) {
+      updated.stats[key] = { ...(updated.stats[key] ?? {}), stage: stages[key] }
+    }
+    sheets.set(placement.sheetSlug, updated)
+
+    try {
+      const payloadOut: Record<string, unknown> = { ...(updated as unknown as Record<string, unknown>) }
+      delete payloadOut.folder
+      await $fetch('/api/sheets/save', {
+        method: 'POST',
+        body: { kind: 'pokemon', slug: placement.sheetSlug, sheet: payloadOut, clientId },
+      })
+    } catch (err) {
+      sheets.set(placement.sheetSlug, original)
+      console.error('[modifyCombatStages] save failed', err)
+    }
+    return
+  }
+
+  const sheets = trainerBySlug.value
+  if (!sheets) return
+  const original = sheets.get(placement.sheetSlug)
+  if (!original) return
+  const updated = JSON.parse(JSON.stringify(original)) as TrainerSheet
+  updated.stats = { ...(updated.stats ?? {}) }
+  for (const key of COMBAT_STAGE_KEYS) {
+    updated.stats[key] = { ...(updated.stats[key] ?? {}), stage: stages[key] }
+  }
+  sheets.set(placement.sheetSlug, updated)
+
+  try {
+    const payloadOut: Record<string, unknown> = { ...(updated as unknown as Record<string, unknown>) }
+    delete payloadOut.folder
+    await $fetch('/api/sheets/save', {
+      method: 'POST',
+      body: { kind: 'trainer', slug: placement.sheetSlug, sheet: payloadOut, clientId },
+    })
+  } catch (err) {
+    sheets.set(placement.sheetSlug, original)
+    console.error('[modifyCombatStages] save failed', err)
   }
 }
 
@@ -468,6 +530,7 @@ watch(
           @turn-pokemon="turnPokemon"
           @delete-pokemon="deletePokemon"
           @modify-hp="modifyHp"
+          @modify-combat-stages="modifyCombatStages"
           @preview-change="updatePreview"
           @place-voxel="placeVoxel"
           @remove-voxel="removeVoxel"

@@ -1,3 +1,5 @@
+import type { CombatStageMap } from '~/types/combatStages'
+
 export interface PokemonSizeRecord {
   species: string
   size: string
@@ -215,4 +217,6 @@ export interface SpawnedPokemon extends PokemonCatalogEntry {
   sdef: number
   /** Defender's types (sheet override > species default; empty for trainers). */
   defenderTypes: string[]
+  /** Current combat stages copied from the source sheet. */
+  combatStages: CombatStageMap
 }

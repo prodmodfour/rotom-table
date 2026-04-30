@@ -14,7 +14,9 @@ import { computeMaxHp, getPokedexEntry, resolveStats } from '~/data/characterShe
 import { computeTrainerMaxHp, resolveTrainerStats } from '~/data/trainerSheets'
 import { pokemonCatalog, pokemonCatalogBySpecies } from '~/data/pokemonCatalog'
 import { trainerCatalog } from '~/data/trainerCatalog'
+import { COMBAT_STAGE_KEYS, normalizeCombatStages } from '~/utils/combatStages'
 import type { CharacterSheet } from '~/types/characterSheet'
+import type { CombatStageMap } from '~/types/combatStages'
 import type { PokemonCatalogEntry } from '~/types/pokemon'
 import type { TrainerSheet } from '~/types/trainerSheet'
 
@@ -61,6 +63,7 @@ export const pokemonHpSnapshot = (
   def: number
   sdef: number
   defenderTypes: string[]
+  combatStages: CombatStageMap
 } => {
   const stats = resolveStats(sheet)
   const hpTotal = stats.find((row) => row.key === 'hp')?.total ?? 0
@@ -72,7 +75,14 @@ export const pokemonHpSnapshot = (
   const sdef = stats.find((row) => row.key === 'sdef')?.total ?? 0
   const species = getPokedexEntry(sheet.species)
   const defenderTypes = sheet.types ?? species?.types ?? []
-  return { currentHp, maxHp, atk, satk, def, sdef, defenderTypes }
+  const combatStages = normalizeCombatStages({
+    atk: sheet.stats?.atk?.stage,
+    def: sheet.stats?.def?.stage,
+    satk: sheet.stats?.satk?.stage,
+    sdef: sheet.stats?.sdef?.stage,
+    spd: sheet.stats?.spd?.stage,
+  })
+  return { currentHp, maxHp, atk, satk, def, sdef, defenderTypes, combatStages }
 }
 
 /** Trainer HP + offence/defence snapshot — trainers have no defending types. */
@@ -86,6 +96,7 @@ export const trainerHpSnapshot = (
   def: number
   sdef: number
   defenderTypes: string[]
+  combatStages: CombatStageMap
 } => {
   const maxHp = computeTrainerMaxHp(sheet)
   const currentHp = sheet.currentHp ?? maxHp
@@ -94,7 +105,11 @@ export const trainerHpSnapshot = (
   const satk = stats.find((row) => row.key === 'satk')?.total ?? 0
   const def = stats.find((row) => row.key === 'def')?.total ?? 0
   const sdef = stats.find((row) => row.key === 'sdef')?.total ?? 0
-  return { currentHp, maxHp, atk, satk, def, sdef, defenderTypes: [] }
+  const stageSource = Object.fromEntries(
+    COMBAT_STAGE_KEYS.map((key) => [key, sheet.stats?.[key]?.stage ?? sheet.combatStages?.[key]]),
+  )
+  const combatStages = normalizeCombatStages(stageSource)
+  return { currentHp, maxHp, atk, satk, def, sdef, defenderTypes: [], combatStages }
 }
 
 // Re-export so callers don't have to import the catalog directly.

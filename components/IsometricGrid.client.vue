@@ -16,6 +16,13 @@ import {
   voxelKey,
 } from '~/utils/voxels'
 import { POKEMON_TYPES, computeMultiplier, formatMultiplier } from '~/utils/typeChart'
+import {
+  COMBAT_STAGE_KEYS,
+  COMBAT_STAGE_ROWS,
+  clampCombatStage,
+  normalizeCombatStages,
+} from '~/utils/combatStages'
+import type { CombatStageKey, CombatStageMap } from '~/types/combatStages'
 
 export type BuildTool = 'pencil' | 'eraser'
 
@@ -36,6 +43,7 @@ const emit = defineEmits<{
   (event: 'turn-pokemon', id: string): void
   (event: 'delete-pokemon', id: string): void
   (event: 'modify-hp', payload: { id: string; currentHp: number }): void
+  (event: 'modify-combat-stages', payload: { id: string; stages: CombatStageMap }): void
   (event: 'preview-change', preview: PreviewState): void
   (event: 'place-voxel', voxel: GridVoxel): void
   (event: 'remove-voxel', cell: { x: number; y: number; z: number }): void
@@ -1073,6 +1081,23 @@ const rollDamageBase = (def: DamageBaseDef): { rolls: number[]; total: number } 
 
 const container = ref<HTMLDivElement | null>(null)
 const contextMenu = ref<{ x: number; y: number; id: string; canTurn: boolean } | null>(null)
+
+interface CombatStagesDialogState {
+  id: string
+  species: string
+  originalStages: CombatStageMap
+  stages: CombatStageMap
+}
+
+const combatStagesDialog = ref<CombatStagesDialogState | null>(null)
+
+const combatStagesDialogChanged = computed(() => {
+  const dialog = combatStagesDialog.value
+  if (!dialog) return false
+  return COMBAT_STAGE_KEYS.some(
+    (key) => clampCombatStage(dialog.stages[key]) !== dialog.originalStages[key],
+  )
+})
 
 interface HpDialogState {
   id: string
@@ -2807,8 +2832,8 @@ const openContextMenu = (event: MouseEvent, id: string) => {
   const target = props.pokemons.find((pokemon) => pokemon.id === id)
   const canTurn = Boolean(target?.entityKind === 'pokemon' && target.backSpriteUrl)
   const bounds = container.value.getBoundingClientRect()
-  const menuWidth = 180
-  const menuHeight = canTurn ? 188 : 144
+  const menuWidth = 210
+  const menuHeight = canTurn ? 232 : 188
   const padding = 12
 
   contextMenu.value = {
@@ -2868,6 +2893,61 @@ const handleHpDialogSubmit = () => {
 
   emit('modify-hp', { id: hpDialog.value.id, currentHp: hpDialogPreview.value })
   closeHpDialog()
+}
+
+const closeCombatStagesDialog = () => {
+  combatStagesDialog.value = null
+}
+
+const handleContextModifyCombatStages = () => {
+  if (!contextMenu.value) {
+    return
+  }
+
+  const target = props.pokemons.find((pokemon) => pokemon.id === contextMenu.value!.id)
+  if (!target) {
+    closeContextMenu()
+    return
+  }
+
+  const stages = normalizeCombatStages(target.combatStages)
+  combatStagesDialog.value = {
+    id: target.id,
+    species: target.species,
+    originalStages: { ...stages },
+    stages: { ...stages },
+  }
+  closeContextMenu()
+}
+
+const adjustCombatStage = (key: CombatStageKey, delta: number) => {
+  if (!combatStagesDialog.value) return
+  combatStagesDialog.value.stages[key] = clampCombatStage(
+    clampCombatStage(combatStagesDialog.value.stages[key]) + delta,
+  )
+}
+
+const normalizeCombatStageInput = (key: CombatStageKey) => {
+  if (!combatStagesDialog.value) return
+  combatStagesDialog.value.stages[key] = clampCombatStage(combatStagesDialog.value.stages[key])
+}
+
+const formatCombatStage = (value: unknown): string => {
+  const normalized = clampCombatStage(value)
+  return normalized > 0 ? `+${normalized}` : String(normalized)
+}
+
+const handleCombatStagesDialogSubmit = () => {
+  if (!combatStagesDialog.value) return
+  const stages = normalizeCombatStages(combatStagesDialog.value.stages)
+  combatStagesDialog.value.stages = { ...stages }
+  if (!combatStagesDialogChanged.value) {
+    closeCombatStagesDialog()
+    return
+  }
+
+  emit('modify-combat-stages', { id: combatStagesDialog.value.id, stages })
+  closeCombatStagesDialog()
 }
 
 const closeDamageDialog = () => {
@@ -3519,6 +3599,13 @@ watch(
       <button
         type="button"
         class="context-menu__button"
+        @click.stop="handleContextModifyCombatStages"
+      >
+        Change combat stages
+      </button>
+      <button
+        type="button"
+        class="context-menu__button"
         @click.stop="handleContextDealDamage"
       >
         Deal damage
@@ -3602,6 +3689,85 @@ watch(
             type="submit"
             class="hp-dialog__button hp-dialog__button--primary"
             :disabled="hpDialogDelta === 0 || hpDialogPreview === hpDialog.currentHp"
+          >
+            Apply
+          </button>
+        </footer>
+      </form>
+    </div>
+
+    <div
+      v-if="combatStagesDialog"
+      class="hp-dialog-backdrop"
+      @pointerdown.self="closeCombatStagesDialog"
+      @contextmenu.prevent
+    >
+      <form
+        class="hp-dialog hp-dialog--wide"
+        @submit.prevent="handleCombatStagesDialogSubmit"
+        @pointerdown.stop
+      >
+        <header class="hp-dialog__header">
+          <h3>Change Combat Stages</h3>
+          <p class="hp-dialog__species">{{ combatStagesDialog.species }}</p>
+        </header>
+
+        <div class="combat-stage-dialog__rows">
+          <div
+            v-for="row in COMBAT_STAGE_ROWS"
+            :key="row.key"
+            class="combat-stage-dialog__row"
+          >
+            <span class="combat-stage-dialog__label">{{ row.label }}</span>
+            <button
+              type="button"
+              class="combat-stage-dialog__step"
+              :disabled="clampCombatStage(combatStagesDialog.stages[row.key]) <= -6"
+              :aria-label="`Lower ${row.label} combat stage`"
+              @click="adjustCombatStage(row.key, -1)"
+            >−</button>
+            <input
+              v-model.number="combatStagesDialog.stages[row.key]"
+              class="combat-stage-dialog__input"
+              type="number"
+              min="-6"
+              max="6"
+              step="1"
+              inputmode="numeric"
+              :aria-label="`${row.label} combat stage`"
+              @change="normalizeCombatStageInput(row.key)"
+            />
+            <button
+              type="button"
+              class="combat-stage-dialog__step"
+              :disabled="clampCombatStage(combatStagesDialog.stages[row.key]) >= 6"
+              :aria-label="`Raise ${row.label} combat stage`"
+              @click="adjustCombatStage(row.key, 1)"
+            >+</button>
+            <span
+              class="combat-stage-dialog__preview"
+              :class="{
+                'is-positive': clampCombatStage(combatStagesDialog.stages[row.key]) > 0,
+                'is-negative': clampCombatStage(combatStagesDialog.stages[row.key]) < 0,
+              }"
+            >{{ formatCombatStage(combatStagesDialog.stages[row.key]) }}</span>
+          </div>
+        </div>
+
+        <p class="hp-dialog__note">Combat stages are saved to the source character sheet and clamped from −6 to +6.</p>
+
+        <footer class="hp-dialog__footer">
+          <button
+            type="button"
+            class="hp-dialog__button hp-dialog__button--ghost"
+            @click="closeCombatStagesDialog"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            class="hp-dialog__button hp-dialog__button--primary"
+            :disabled="!combatStagesDialogChanged"
           >
             Apply
           </button>
@@ -3871,6 +4037,89 @@ watch(
   border-radius: 14px;
   background: var(--paper-soft);
   box-shadow: var(--shadow-card);
+}
+
+.hp-dialog--wide {
+  width: min(420px, 92vw);
+}
+
+.combat-stage-dialog__rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.combat-stage-dialog__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 4.25rem auto 3rem;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem;
+  border: 1px solid var(--rule-soft);
+  border-radius: 10px;
+  background: var(--paper);
+}
+
+.combat-stage-dialog__label {
+  color: var(--ink);
+  font-size: 0.88rem;
+  letter-spacing: 0.02em;
+}
+
+.combat-stage-dialog__step {
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid var(--rule-soft);
+  border-radius: 8px;
+  background: var(--paper-soft);
+  color: var(--ink-bright);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.combat-stage-dialog__step:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.combat-stage-dialog__step:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.combat-stage-dialog__input {
+  width: 100%;
+  border: 1px solid var(--rule-soft);
+  border-radius: 8px;
+  background: var(--paper-soft);
+  color: var(--ink);
+  padding: 0.45rem 0.55rem;
+  outline: none;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.combat-stage-dialog__input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(250, 189, 47, 0.18);
+}
+
+.combat-stage-dialog__preview {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-muted);
+  font-weight: 700;
+}
+
+.combat-stage-dialog__preview.is-positive {
+  color: #b8bb26;
+}
+
+.combat-stage-dialog__preview.is-negative {
+  color: #fb4934;
 }
 
 .hp-dialog__header {
