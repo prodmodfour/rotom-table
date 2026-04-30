@@ -31,6 +31,7 @@ const props = defineProps<{
   dimensions: GridDimensions
   pokemons: SpawnedPokemon[]
   selectedId: string | null
+  activeTurnId?: string | null
   voxels: GridVoxel[]
   buildMode: boolean
   buildTool: BuildTool
@@ -988,6 +989,7 @@ const paintBuildGhostMaterials = (
 const ELEVATION_BADGE_PIXELS_PER_METRE = 48
 const TOKEN_STATUS_CSS_WIDTH_PX = 80
 const TOKEN_STATUS_BASE_CSS_HEIGHT_PX = 18
+const TOKEN_STATUS_TURN_CHEVRON_CSS_HEIGHT_PX = 8
 const TOKEN_STATUS_STAGE_ROW_CSS_HEIGHT_PX = 10
 // Matches the scaled size that Miltank landed on; every token now uses this
 // same tabletop marker size instead of resizing by sprite dimensions.
@@ -1608,11 +1610,12 @@ const formatCombatStage = (value: unknown): string => {
   return normalized > 0 ? `+${normalized}` : String(normalized)
 }
 
-const tokenStatusCssHeight = (stages: CombatStageMap): number => {
+const tokenStatusCssHeight = (stages: CombatStageMap, activeTurn: boolean): number => {
   const stageCount = activeCombatStageEntries(stages).length
-  if (stageCount === 0) return TOKEN_STATUS_BASE_CSS_HEIGHT_PX
+  const turnHeight = activeTurn ? TOKEN_STATUS_TURN_CHEVRON_CSS_HEIGHT_PX : 0
+  if (stageCount === 0) return TOKEN_STATUS_BASE_CSS_HEIGHT_PX + turnHeight
   const rows = Math.ceil(stageCount / 2)
-  return TOKEN_STATUS_BASE_CSS_HEIGHT_PX + 1 + rows * TOKEN_STATUS_STAGE_ROW_CSS_HEIGHT_PX
+  return TOKEN_STATUS_BASE_CSS_HEIGHT_PX + turnHeight + 1 + rows * TOKEN_STATUS_STAGE_ROW_CSS_HEIGHT_PX
 }
 
 const updateTokenStatusLabel = (
@@ -1642,6 +1645,10 @@ const updateTokenCombatStages = (element: HTMLElement, stages: CombatStageMap) =
   }
 }
 
+const updateTokenActiveTurn = (element: HTMLElement, activeTurn: boolean) => {
+  element.classList.toggle('is-active-turn', activeTurn)
+}
+
 const applyTokenStatusScale = (status: CSS3DSprite) => {
   status.scale.setScalar(TOKEN_STATUS_WORLD_WIDTH / TOKEN_STATUS_CSS_WIDTH_PX)
 }
@@ -1651,6 +1658,10 @@ const buildHpBar = (pokemon: SpawnedPokemon) => {
   wrapper.className = 'token-status'
   wrapper.setAttribute('aria-hidden', 'true')
   wrapper.style.pointerEvents = 'none'
+
+  const turnChevron = document.createElement('div')
+  turnChevron.className = 'token-status__turn-chevron'
+  turnChevron.textContent = '⌄'
 
   const label = document.createElement('div')
   label.className = 'token-status__label'
@@ -1678,7 +1689,7 @@ const buildHpBar = (pokemon: SpawnedPokemon) => {
   fill.className = 'hp-bar__fill'
   track.appendChild(fill)
 
-  wrapper.append(combatStages, label, track)
+  wrapper.append(turnChevron, combatStages, label, track)
   updateTokenStatusLabel(wrapper, pokemon.species, pokemon.level)
   updateTokenCombatStages(wrapper, normalizeCombatStages(pokemon.combatStages))
 
@@ -1977,6 +1988,7 @@ const updateHpBar = (
   currentHp: number,
   maxHp: number,
   combatStages: CombatStageMap,
+  activeTurn: boolean,
 ) => {
   // Hide the whole token HUD when HP data is not meaningful. Otherwise the
   // label and a valid HP bar remain visible even at full health.
@@ -1997,13 +2009,14 @@ const updateHpBar = (
   }
   updateTokenStatusLabel(bar.element, displayName, level)
   updateTokenCombatStages(bar.element, combatStages)
+  updateTokenActiveTurn(bar.element, activeTurn)
 
   // Floats just above the sprite's head. WebGL world sprites are
   // bottom-anchored at ``center.y``, so the top edge is
   // ``center.y + spriteHeight``. The offset accounts for the scaled DOM
   // height so smaller sprites keep the HUD tucked close instead of floating
   // as a detached nameplate.
-  const overlayHalfHeight = tokenStatusCssHeight(combatStages) * bar.scale.y / 2
+  const overlayHalfHeight = tokenStatusCssHeight(combatStages, activeTurn) * bar.scale.y / 2
   const headGap = THREE.MathUtils.clamp(spriteHeight * 0.06, 0.025, 0.08)
   bar.position.set(center.x, center.y + spriteHeight + overlayHalfHeight + headGap, center.z)
   bar.visible = true
@@ -2143,6 +2156,7 @@ const applyRenderObjectPosition = (renderObject: PokemonRenderObject) => {
     renderObject.currentHp,
     renderObject.maxHp,
     renderObject.combatStages,
+    props.activeTurnId === renderObject.id,
   )
 }
 

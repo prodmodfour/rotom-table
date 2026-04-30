@@ -792,6 +792,7 @@ watch(
           :dimensions="map.dimensions"
           :pokemons="spawnedPokemon"
           :selected-id="selectedId"
+          :active-turn-id="activeInitiativeId"
           :voxels="mapVoxels"
           :build-mode="buildMode"
           :build-tool="buildTool"
