@@ -165,6 +165,13 @@ const buildPokedexSearchText = (entry: PokedexRecord & { slug: string; nationalD
     }
   }
 
+  if (entry.habitat?.length) {
+    addSearchValues(values, ...entry.habitat, `habitat ${entry.habitat.join(' ')}`, `habitats ${entry.habitat.join(' ')}`)
+    for (const habitat of entry.habitat) {
+      addSearchValue(values, `habitat ${habitat}`)
+    }
+  }
+
   if (entry.abilities) {
     const abilityGroups = [
       ['basic ability', entry.abilities.basic],
