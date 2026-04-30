@@ -228,10 +228,12 @@ const hpPercent = (entry: InitiativeRow): string => {
   return `${percent}%`
 }
 
-const selectInitiativeToken = (id: string) => {
-  if (buildMode.value) setMode('play')
-  selectedId.value = id
-  previewState.value = { position: null, reachable: false, pathLength: 0 }
+const hpTier = (entry: InitiativeRow): 'critical' | 'wounded' | 'healthy' => {
+  if (entry.maxHp <= 0) return 'critical'
+  const ratio = Math.max(0, Math.min(1, entry.currentHp / entry.maxHp))
+  if (ratio <= 0.25) return 'critical'
+  if (ratio <= 0.5) return 'wounded'
+  return 'healthy'
 }
 
 const setActiveInitiative = (id: string) => {
@@ -251,6 +253,13 @@ const setInitiativeInput = (id: string, event: Event) => {
   const n = Number(raw)
   if (!Number.isFinite(n)) return
   placement.initiative = Math.max(-999, Math.min(999, Math.trunc(n)))
+}
+
+const setInitiativeFromSpeed = (id: string, speed: number) => {
+  const placement = placementById(id)
+  if (!placement) return
+  if (!Number.isFinite(speed)) return
+  placement.initiative = Math.max(-999, Math.min(999, Math.trunc(speed)))
 }
 
 const setInitiativeRound = (event: Event) => {
@@ -894,7 +903,7 @@ watch(
               :disabled="!initiativeRows.length"
               @click="fillInitiativeFromSpeed"
             >
-              Use Speed
+              Use All Speed
             </button>
             <button
               type="button"
@@ -952,35 +961,41 @@ watch(
                 <span class="sr-only">Turn order {{ index + 1 }}</span>
               </button>
 
-              <button
-                type="button"
-                class="initiative-row__body"
-                :aria-label="`Select ${entry.name} on the map`"
-                @click="selectInitiativeToken(entry.id)"
-              >
+              <div class="initiative-row__body">
                 <span class="initiative-row__main">
                   <span class="initiative-row__name">{{ entry.name }}</span>
                   <span class="initiative-row__meta">{{ entry.meta }} · SPD {{ entry.speed }}</span>
                 </span>
-                <span class="initiative-row__hp">
+                <span class="initiative-row__hp" :data-hp-tier="hpTier(entry)">
                   <span>{{ entry.currentHp }}/{{ entry.maxHp }} HP</span>
-                  <span class="initiative-row__hp-track" aria-hidden="true">
+                  <span class="initiative-row__hp-track" :data-hp-tier="hpTier(entry)" aria-hidden="true">
                     <span :style="{ width: hpPercent(entry) }" />
                   </span>
                 </span>
-              </button>
+              </div>
 
-              <label class="initiative-row__score">
-                <span>Init</span>
-                <input
-                  type="number"
-                  inputmode="numeric"
-                  :value="entry.initiative ?? ''"
-                  placeholder="—"
-                  :aria-label="`${entry.name} initiative`"
-                  @input="setInitiativeInput(entry.id, $event)"
-                />
-              </label>
+              <div class="initiative-row__score">
+                <label>
+                  <span>Init</span>
+                  <input
+                    type="number"
+                    inputmode="numeric"
+                    :value="entry.initiative ?? ''"
+                    placeholder="—"
+                    :aria-label="`${entry.name} initiative`"
+                    @input="setInitiativeInput(entry.id, $event)"
+                  />
+                </label>
+                <button
+                  type="button"
+                  class="initiative-row__speed-button"
+                  :title="`Set initiative to Speed (${entry.speed})`"
+                  :aria-label="`Use ${entry.name}'s Speed (${entry.speed}) for initiative`"
+                  @click="setInitiativeFromSpeed(entry.id, entry.speed)"
+                >
+                  Use Speed
+                </button>
+              </div>
             </li>
           </ol>
 
@@ -1580,7 +1595,7 @@ input:focus {
 
 .initiative-row {
   display: grid;
-  grid-template-columns: 42px minmax(0, 1fr) 64px;
+  grid-template-columns: 42px minmax(0, 1fr) 78px;
   align-items: stretch;
   gap: 0.5rem;
   border: 1px solid var(--rule-soft);
@@ -1673,18 +1688,8 @@ input:focus {
   flex-direction: column;
   justify-content: center;
   gap: 0.35rem;
-  border: 0;
-  background: transparent;
   color: inherit;
-  padding: 0;
-  cursor: pointer;
   text-align: left;
-}
-
-.initiative-row__body:focus-visible {
-  border-radius: 8px;
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
 }
 
 .initiative-row__main {
@@ -1716,8 +1721,16 @@ input:focus {
   display: flex;
   flex-direction: column;
   gap: 0.22rem;
-  color: var(--ink-soft);
+  color: var(--good);
   font-size: 0.74rem;
+}
+
+.initiative-row__hp[data-hp-tier='wounded'] {
+  color: var(--warn);
+}
+
+.initiative-row__hp[data-hp-tier='critical'] {
+  color: var(--bad);
 }
 
 .initiative-row__hp-track {
@@ -1732,9 +1745,14 @@ input:focus {
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, var(--good), var(--accent));
+  background: var(--good);
 }
 
+.initiative-row__hp-track[data-hp-tier='wounded'] > span {
+  background: var(--warn);
+}
+
+.initiative-row__hp-track[data-hp-tier='critical'] > span,
 .initiative-row.is-fainted .initiative-row__hp-track > span {
   background: var(--bad);
 }
@@ -1743,6 +1761,13 @@ input:focus {
   display: flex;
   flex-direction: column;
   justify-content: center;
+  gap: 0.28rem;
+  min-width: 0;
+}
+
+.initiative-row__score label {
+  display: flex;
+  flex-direction: column;
   gap: 0.28rem;
   min-width: 0;
 }
@@ -1758,6 +1783,30 @@ input:focus {
 .initiative-row__score input {
   padding: 0.45rem 0.25rem;
   text-align: center;
+}
+
+.initiative-row__speed-button {
+  border: 1px solid var(--rule-soft);
+  border-radius: 8px;
+  background: var(--paper-soft);
+  color: var(--ink-soft);
+  padding: 0.28rem 0.25rem;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  white-space: nowrap;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.initiative-row__speed-button:hover,
+.initiative-row__speed-button:focus-visible {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+  outline: none;
 }
 
 .initiative-empty {
@@ -1821,7 +1870,7 @@ input:focus {
   }
 
   .initiative-row {
-    grid-template-columns: 38px minmax(0, 1fr) 58px;
+    grid-template-columns: 38px minmax(0, 1fr) 70px;
   }
 }
 </style>
