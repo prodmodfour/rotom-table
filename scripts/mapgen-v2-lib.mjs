@@ -110,6 +110,17 @@ export const paintRegion = (acc, region) => {
   }
 }
 
+export const clearVoxelRegion = (acc, region) => {
+  const b = region.bounds ?? region
+  const y1 = b.y1 ?? 0
+  const y2 = b.y2 ?? acc.dimensions.y
+  for (let x = b.x1; x < b.x2; x += 1) {
+    for (let y = y1; y < y2; y += 1) {
+      for (let z = b.z1; z < b.z2; z += 1) acc._voxelMap.delete(voxelKey(x, y, z))
+    }
+  }
+}
+
 const isEdgeCell = (x, z, b) => x === b.x1 || z === b.z1 || x === b.x2 - 1 || z === b.z2 - 1
 const insideInset = (x, z, b, inset) => x >= b.x1 + inset && z >= b.z1 + inset && x < b.x2 - inset && z < b.z2 - inset
 
@@ -195,8 +206,9 @@ export const paintBrushRegion = (acc, zonePlan, brush) => {
   }
 
   const occupiedScatter = new Set()
+  const scatterScale = Math.max(0, Number(zonePlan.scatterScale ?? 1))
   for (const scatter of brush.scatterProps ?? []) {
-    const density = Math.max(0, Number(scatter.density ?? 0))
+    const density = Math.max(0, Number(scatter.density ?? 0)) * scatterScale
     for (let x = b.x1; x < b.x2; x += 1) {
       for (let z = b.z1; z < b.z2; z += 1) {
         const key = `${x},${z}`
@@ -334,6 +346,87 @@ export const addGlassBarrier = (acc, barrier) => {
   }
 }
 
+const addSupportColumn = (acc, column) => {
+  const materialId = column.materialId ?? 'airship_wall_bulkhead'
+  const y1 = column.y1 ?? 1
+  const y2 = column.y2 ?? column.height ?? 4
+  for (let y = y1; y < y2; y += 1) addVoxel(acc, { x: column.x, y, z: column.z, materialId, blocksMovement: true, blocksSight: column.blocksSight ?? false, tags: ['generated-support-column'] })
+}
+
+const addSupportGrid = (acc, { bounds, y, supportEvery = 6, materialId = 'airship_wall_bulkhead', outerOnly = false }) => {
+  const positions = new Set()
+  const add = (x, z) => positions.add(`${x},${z}`)
+  const step = Math.max(1, clampInt(supportEvery))
+  for (let x = bounds.x1; x < bounds.x2; x += step) {
+    add(x, bounds.z1)
+    add(x, bounds.z2 - 1)
+    if (!outerOnly) {
+      for (let z = bounds.z1 + step; z < bounds.z2 - 1; z += step) add(x, z)
+    }
+  }
+  for (let z = bounds.z1; z < bounds.z2; z += step) {
+    add(bounds.x1, z)
+    add(bounds.x2 - 1, z)
+  }
+  add(bounds.x2 - 1, bounds.z1)
+  add(bounds.x2 - 1, bounds.z2 - 1)
+  for (const key of positions) {
+    const [x, z] = key.split(',').map(Number)
+    addSupportColumn(acc, { x, z, y1: 1, y2: y, materialId })
+  }
+}
+
+const addRailingProps = (acc, id, bounds, y, config = {}) => {
+  const propId = config.propId ?? 'railing'
+  const every = Math.max(1, clampInt(config.every ?? 6))
+  const blocksMovement = config.blocksMovement ?? true
+  const tags = ['generated-railing', id]
+  let i = 0
+  const add = (side, x, z, rotation, footprint) => pushIfInBounds(acc, 'props', {
+    id: `prop-${id}-rail-${side}-${i++}`,
+    propId,
+    position: { x, y, z },
+    rotation,
+    footprint,
+    blocksMovement,
+    tags,
+  })
+  for (let x = bounds.x1; x < bounds.x2 - 1; x += every) {
+    add('north', x, bounds.z1, 0, { x: 2, z: 1 })
+    add('south', x, bounds.z2 - 1, 0, { x: 2, z: 1 })
+  }
+  for (let z = bounds.z1; z < bounds.z2 - 1; z += every) {
+    add('west', bounds.x1, z, 90, { x: 1, z: 2 })
+    add('east', bounds.x2 - 1, z, 90, { x: 1, z: 2 })
+  }
+}
+
+const paintRaisedPlatform = (acc, platform) => {
+  const b = platform.bounds
+  const y = platform.y ?? 3
+  const materialId = platform.materialId ?? 'observation_wood'
+  for (let x = b.x1; x < b.x2; x += 1) {
+    for (let z = b.z1; z < b.z2; z += 1) addVoxel(acc, { x, y, z, materialId, tags: ['generated-raised-platform', platform.id].filter(Boolean) })
+  }
+  if (platform.supports !== false) addSupportGrid(acc, { bounds: b, y, supportEvery: platform.supportEvery ?? 6, materialId: platform.supportMaterialId, outerOnly: platform.supportOuterOnly ?? false })
+  if (platform.railing) addRailingProps(acc, platform.id ?? 'raised-platform', b, y + 1, platform.railing)
+}
+
+const paintRingWalkway = (acc, ring) => {
+  const b = ring.bounds
+  const y = ring.y ?? 3
+  const thickness = Math.max(1, clampInt(ring.thickness ?? 2))
+  const materialId = ring.materialId ?? 'observation_wood'
+  for (let x = b.x1; x < b.x2; x += 1) {
+    for (let z = b.z1; z < b.z2; z += 1) {
+      const inRing = x < b.x1 + thickness || x >= b.x2 - thickness || z < b.z1 + thickness || z >= b.z2 - thickness
+      if (inRing) addVoxel(acc, { x, y, z, materialId, tags: ['generated-ring-walkway', ring.id].filter(Boolean) })
+    }
+  }
+  if (ring.supports !== false) addSupportGrid(acc, { bounds: b, y, supportEvery: ring.supportEvery ?? 8, materialId: ring.supportMaterialId, outerOnly: true })
+  if (ring.railing) addRailingProps(acc, ring.id ?? 'ring-walkway', b, y + 1, ring.railing)
+}
+
 export const finalizeMap = (acc) => {
   acc.voxels = Array.from(acc._voxelMap.values()).sort((a, b) => a.y - b.y || a.z - b.z || a.x - b.x)
   delete acc._voxelMap
@@ -351,11 +444,15 @@ export const generateMapFromPlan = (plan, rootDir = process.cwd()) => {
 
   if (plan.shell !== false) addShell(acc, typeof plan.shell === 'object' ? plan.shell : {})
   for (const region of plan.baseRegions ?? []) paintRegion(acc, region)
+  for (const region of plan.clearRegions ?? []) clearVoxelRegion(acc, region)
   for (const zone of plan.zones ?? []) {
     const brush = brushes.get(zone.brush)
     if (!brush) throw new Error(`unknown brush "${zone.brush}" for zone ${zone.id}`)
     paintBrushRegion(acc, zone, brush)
   }
+  for (const column of plan.supportColumns ?? []) addSupportColumn(acc, column)
+  for (const platform of plan.raisedPlatforms ?? []) paintRaisedPlatform(acc, platform)
+  for (const ring of plan.ringWalkways ?? []) paintRingWalkway(acc, ring)
   for (const barrier of plan.glassBarriers ?? []) addGlassBarrier(acc, barrier)
   for (const prefabPlacement of plan.prefabs ?? []) {
     const prefab = prefabs.get(prefabPlacement.prefabId)

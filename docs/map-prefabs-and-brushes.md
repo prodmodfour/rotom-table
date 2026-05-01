@@ -46,7 +46,7 @@ Suggested brush IDs include:
 
 - `meadow`, `grove`, `wetland`, `deep-water-pool`
 - `cave`, `burrow`, `thermal`, `cryo`, `desert-scrub`
-- `electric-tech`, `poison-biosecure`, `nursery`, `medical`, `engineering`, `cargo-lift`, `observation-wood`, `airship-corridor`
+- `electric-tech`, `poison-biosecure`, `nursery`, `medical`, `engineering`, `cargo-lift`, `observation-wood`, `aviary`, `quiet-nook`, `airship-corridor`
 
 ## Plan zones
 
@@ -125,6 +125,16 @@ Plans can add simple transparent blockers without hand-authoring every voxel:
 ```
 
 These expand to `reinforced_glass` voxels at `y=1` and above. They are transparent but still block movement.
+
+## Campaign habitat source
+
+`data/map-plans/airship-habitat-atrium.plan.json` is the canonical source for the campaign-ready Airship Habitat Atrium map. Edit that plan first, then regenerate the checked-in map JSON with:
+
+```bash
+npm run generate:map-from-plan -- --plan data/map-plans/airship-habitat-atrium.plan.json --out data/maps/ranger_ark/airship-habitat-atrium.json
+```
+
+Do not hand-patch `data/maps/ranger_ark/airship-habitat-atrium.json` unless the change is also promoted back into the plan, a brush, a prefab, or a reusable generator helper. The campaign plan uses `scatterScale`, `clearRegions`, `ringWalkways`, and `raisedPlatforms` to keep the generated map readable without manually writing thousands of final voxels.
 
 ## AI authoring recommendations
 

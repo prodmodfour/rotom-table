@@ -224,6 +224,33 @@
       "floorWashOpacity": 0.055,
       "tags": ["airship", "observation"]
     },
+    "aviary": {
+      "displayName": "Aviary Shaft",
+      "materials": { "primary": "airship_floor_metal", "secondary": "observation_wood" },
+      "edgeDecals": ["observation_ring_mark"],
+      "thematicDecals": ["pawprints"],
+      "scatterProps": [
+        { "propId": "perch_pole", "density": 0.025 },
+        { "propId": "nest_box", "density": 0.014 }
+      ],
+      "icon": "nature_leaf",
+      "tint": "#8fd5ff",
+      "floorWashOpacity": 0.045,
+      "tags": ["habitat", "aviary", "vertical"]
+    },
+    "quiet-nook": {
+      "displayName": "Quiet Psychic/Ghost Nook",
+      "materials": { "primary": "airship_floor_plating", "secondary": "observation_wood" },
+      "edgeDecals": ["threshold_glow"],
+      "thematicDecals": ["quiet_moon"],
+      "scatterProps": [
+        { "propId": "wall_monitor", "density": 0.015 }
+      ],
+      "icon": "quiet_moon",
+      "tint": "#8a75c9",
+      "floorWashOpacity": 0.055,
+      "tags": ["habitat", "quiet", "psychic", "ghost"]
+    },
     "airship-corridor": {
       "displayName": "Airship Corridor",
       "materials": { "primary": "airship_floor_plating", "secondary": "airship_floor_metal" },

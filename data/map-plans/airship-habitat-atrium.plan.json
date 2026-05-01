@@ -1,0 +1,1832 @@
+{
+  "slug": "airship-habitat-atrium",
+  "name": "Airship Habitat Atrium",
+  "dimensions": {
+    "x": 72,
+    "y": 24,
+    "z": 52
+  },
+  "assetPacks": [
+    "airship",
+    "nature",
+    "facility"
+  ],
+  "shell": {
+    "floorMaterial": "airship_floor_plating",
+    "wallMaterial": "airship_wall_bulkhead",
+    "hullMaterial": "airship_hull_dark",
+    "wallHeight": 3
+  },
+  "baseRegions": [
+    {
+      "materialId": "airship_floor_metal",
+      "bounds": {
+        "x1": 1,
+        "z1": 1,
+        "x2": 71,
+        "z2": 5
+      }
+    },
+    {
+      "materialId": "airship_floor_metal",
+      "bounds": {
+        "x1": 1,
+        "z1": 47,
+        "x2": 71,
+        "z2": 51
+      }
+    },
+    {
+      "materialId": "airship_floor_metal",
+      "bounds": {
+        "x1": 1,
+        "z1": 1,
+        "x2": 4,
+        "z2": 51
+      }
+    },
+    {
+      "materialId": "airship_floor_metal",
+      "bounds": {
+        "x1": 68,
+        "z1": 1,
+        "x2": 71,
+        "z2": 51
+      }
+    },
+    {
+      "materialId": "airship_floor_plating",
+      "bounds": {
+        "x1": 18,
+        "z1": 5,
+        "x2": 23,
+        "z2": 43
+      }
+    },
+    {
+      "materialId": "airship_floor_plating",
+      "bounds": {
+        "x1": 49,
+        "z1": 5,
+        "x2": 54,
+        "z2": 43
+      }
+    },
+    {
+      "materialId": "airship_floor_plating",
+      "bounds": {
+        "x1": 18,
+        "z1": 13,
+        "x2": 54,
+        "z2": 16
+      }
+    },
+    {
+      "materialId": "airship_floor_plating",
+      "bounds": {
+        "x1": 18,
+        "z1": 34,
+        "x2": 54,
+        "z2": 43
+      }
+    },
+    {
+      "materialId": "airship_floor_metal",
+      "bounds": {
+        "x1": 23,
+        "z1": 1,
+        "x2": 49,
+        "z2": 7
+      }
+    },
+    {
+      "materialId": "airship_floor_metal",
+      "bounds": {
+        "x1": 28,
+        "z1": 0,
+        "x2": 44,
+        "z2": 5
+      }
+    },
+    {
+      "materialId": "engineering_floor",
+      "bounds": {
+        "x1": 0,
+        "z1": 10,
+        "x2": 4,
+        "z2": 22
+      }
+    },
+    {
+      "materialId": "medical_tile",
+      "bounds": {
+        "x1": 68,
+        "z1": 16,
+        "x2": 72,
+        "z2": 32
+      }
+    },
+    {
+      "materialId": "cargo_lift_floor",
+      "bounds": {
+        "x1": 26,
+        "z1": 47,
+        "x2": 47,
+        "z2": 52
+      }
+    }
+  ],
+  "clearRegions": [
+    {
+      "bounds": {
+        "x1": 30,
+        "y1": 1,
+        "z1": 0,
+        "x2": 43,
+        "y2": 4,
+        "z2": 1
+      }
+    },
+    {
+      "bounds": {
+        "x1": 0,
+        "y1": 1,
+        "z1": 12,
+        "x2": 1,
+        "y2": 4,
+        "z2": 22
+      }
+    },
+    {
+      "bounds": {
+        "x1": 71,
+        "y1": 1,
+        "z1": 18,
+        "x2": 72,
+        "y2": 4,
+        "z2": 31
+      }
+    },
+    {
+      "bounds": {
+        "x1": 26,
+        "y1": 1,
+        "z1": 51,
+        "x2": 47,
+        "y2": 4,
+        "z2": 52
+      }
+    }
+  ],
+  "zones": [
+    {
+      "id": "zone-command-residential",
+      "name": "Command / Residential Connector",
+      "brush": "airship-corridor",
+      "bounds": {
+        "x1": 29,
+        "z1": 1,
+        "x2": 43,
+        "z2": 5
+      },
+      "scatterScale": 0.18,
+      "icon": "arrow",
+      "tint": "#8fd5ff",
+      "floorWashOpacity": 0.05,
+      "tags": [
+        "connector",
+        "command",
+        "residential"
+      ]
+    },
+    {
+      "id": "zone-aviary-shaft",
+      "name": "Aviary Shaft",
+      "brush": "aviary",
+      "bounds": {
+        "x1": 20,
+        "y1": 0,
+        "z1": 5,
+        "x2": 52,
+        "y2": 18,
+        "z2": 15
+      },
+      "scatterScale": 0.16,
+      "borderStyle": "quiet",
+      "tags": [
+        "habitat",
+        "flying",
+        "vertical"
+      ]
+    },
+    {
+      "id": "zone-grove-canopy",
+      "name": "Grove / Canopy",
+      "brush": "grove",
+      "bounds": {
+        "x1": 4,
+        "z1": 5,
+        "x2": 18,
+        "z2": 16
+      },
+      "scatterScale": 0.45,
+      "tags": [
+        "habitat",
+        "grass",
+        "bug",
+        "flying"
+      ]
+    },
+    {
+      "id": "zone-engineering-connector",
+      "name": "Engineering Connector",
+      "brush": "engineering",
+      "bounds": {
+        "x1": 1,
+        "z1": 10,
+        "x2": 8,
+        "z2": 22
+      },
+      "scatterScale": 0.3,
+      "tags": [
+        "connector",
+        "engineering"
+      ]
+    },
+    {
+      "id": "zone-electric-tech",
+      "name": "Electric / Tech Alcove",
+      "brush": "electric-tech",
+      "bounds": {
+        "x1": 4,
+        "z1": 16,
+        "x2": 18,
+        "z2": 25
+      },
+      "scatterScale": 0.28,
+      "tags": [
+        "habitat",
+        "electric",
+        "voluntary-enrichment"
+      ]
+    },
+    {
+      "id": "zone-cave-burrow",
+      "name": "Cave / Burrow Pod",
+      "brush": "cave",
+      "bounds": {
+        "x1": 4,
+        "z1": 25,
+        "x2": 18,
+        "z2": 36
+      },
+      "scatterScale": 0.28,
+      "ambientLight": "#4f5058",
+      "tags": [
+        "habitat",
+        "cave",
+        "quiet"
+      ]
+    },
+    {
+      "id": "zone-burrow-run",
+      "name": "Burrow Dirt Run",
+      "brush": "burrow",
+      "bounds": {
+        "x1": 11,
+        "z1": 30,
+        "x2": 18,
+        "z2": 36
+      },
+      "scatterScale": 0.3,
+      "borderStyle": "quiet",
+      "tags": [
+        "habitat",
+        "burrow",
+        "ground"
+      ]
+    },
+    {
+      "id": "zone-wetland-lagoon",
+      "name": "Wetland / Lagoon",
+      "brush": "wetland",
+      "bounds": {
+        "x1": 4,
+        "z1": 36,
+        "x2": 18,
+        "z2": 51
+      },
+      "scatterScale": 0.2,
+      "tags": [
+        "habitat",
+        "water",
+        "marsh"
+      ]
+    },
+    {
+      "id": "zone-wetland-deep-pocket",
+      "name": "Lagoon Deep Water Pocket",
+      "brush": "deep-water-pool",
+      "bounds": {
+        "x1": 8,
+        "z1": 40,
+        "x2": 17,
+        "z2": 50
+      },
+      "scatterScale": 0.1,
+      "borderStyle": "quiet",
+      "tags": [
+        "habitat",
+        "water",
+        "deep"
+      ]
+    },
+    {
+      "id": "zone-meadow-commons",
+      "name": "Central Meadow Commons",
+      "brush": "meadow",
+      "bounds": {
+        "x1": 23,
+        "z1": 16,
+        "x2": 49,
+        "z2": 34
+      },
+      "scatterScale": 0.12,
+      "borderStyle": "quiet",
+      "tags": [
+        "habitat",
+        "commons",
+        "social",
+        "large-mon"
+      ]
+    },
+    {
+      "id": "zone-large-mon-exercise",
+      "name": "Large-Mon Paddock / Exercise Lane",
+      "brush": "airship-corridor",
+      "bounds": {
+        "x1": 23,
+        "z1": 34,
+        "x2": 54,
+        "z2": 43
+      },
+      "scatterScale": 0.02,
+      "icon": "pawprints",
+      "tint": "#aeb7c2",
+      "floorWashOpacity": 0.04,
+      "tags": [
+        "habitat",
+        "exercise",
+        "large-mon",
+        "reinforced"
+      ]
+    },
+    {
+      "id": "zone-sand-scrub",
+      "name": "Sand / Scrub Pod",
+      "brush": "desert-scrub",
+      "bounds": {
+        "x1": 18,
+        "z1": 43,
+        "x2": 29,
+        "z2": 51
+      },
+      "scatterScale": 0.3,
+      "tags": [
+        "habitat",
+        "sand",
+        "dryland"
+      ]
+    },
+    {
+      "id": "zone-hangar-cargo-lift",
+      "name": "Hangar Cargo Lift",
+      "brush": "cargo-lift",
+      "bounds": {
+        "x1": 29,
+        "z1": 43,
+        "x2": 46,
+        "z2": 51
+      },
+      "scatterScale": 0.05,
+      "tags": [
+        "connector",
+        "hangar",
+        "cargo",
+        "rescue-lift"
+      ]
+    },
+    {
+      "id": "zone-thermal-den",
+      "name": "Thermal Den",
+      "brush": "thermal",
+      "bounds": {
+        "x1": 46,
+        "z1": 43,
+        "x2": 58,
+        "z2": 51
+      },
+      "scatterScale": 0.28,
+      "tags": [
+        "habitat",
+        "thermal",
+        "fire-safe"
+      ]
+    },
+    {
+      "id": "zone-cryo-snow",
+      "name": "Cryo / Snow Pod",
+      "brush": "cryo",
+      "bounds": {
+        "x1": 54,
+        "z1": 5,
+        "x2": 68,
+        "z2": 16
+      },
+      "scatterScale": 0.28,
+      "tags": [
+        "habitat",
+        "ice",
+        "snow"
+      ]
+    },
+    {
+      "id": "zone-nursery-yard",
+      "name": "Nursery Yard",
+      "brush": "nursery",
+      "bounds": {
+        "x1": 54,
+        "z1": 16,
+        "x2": 62,
+        "z2": 28
+      },
+      "scatterScale": 0.2,
+      "tags": [
+        "habitat",
+        "nursery",
+        "egg",
+        "low-hazard"
+      ]
+    },
+    {
+      "id": "zone-medical-connector",
+      "name": "Medical Connector",
+      "brush": "medical",
+      "bounds": {
+        "x1": 62,
+        "z1": 16,
+        "x2": 71,
+        "z2": 32
+      },
+      "scatterScale": 0.15,
+      "tags": [
+        "connector",
+        "medical",
+        "decon"
+      ]
+    },
+    {
+      "id": "zone-quiet-nooks",
+      "name": "Quiet Psychic/Ghost Nooks",
+      "brush": "quiet-nook",
+      "bounds": {
+        "x1": 54,
+        "z1": 28,
+        "x2": 62,
+        "z2": 36
+      },
+      "scatterScale": 0.08,
+      "ambientLight": "#8a75c9",
+      "tags": [
+        "habitat",
+        "quiet",
+        "psychic",
+        "ghost"
+      ]
+    },
+    {
+      "id": "zone-poison-biosecure",
+      "name": "Poison Biosecure Pod",
+      "brush": "poison-biosecure",
+      "bounds": {
+        "x1": 58,
+        "z1": 36,
+        "x2": 68,
+        "z2": 51
+      },
+      "scatterScale": 0.28,
+      "tags": [
+        "habitat",
+        "poison",
+        "biosecure",
+        "quarantine"
+      ]
+    }
+  ],
+  "ringWalkways": [
+    {
+      "id": "observation-ring",
+      "bounds": {
+        "x1": 20,
+        "z1": 13,
+        "x2": 52,
+        "z2": 37
+      },
+      "y": 3,
+      "thickness": 2,
+      "materialId": "observation_wood",
+      "supportMaterialId": "airship_wall_bulkhead",
+      "supportEvery": 8,
+      "railing": {
+        "propId": "railing",
+        "every": 8,
+        "blocksMovement": true
+      }
+    }
+  ],
+  "raisedPlatforms": [
+    {
+      "id": "aviary-upper-catwalk",
+      "bounds": {
+        "x1": 26,
+        "z1": 7,
+        "x2": 47,
+        "z2": 10
+      },
+      "y": 4,
+      "materialId": "observation_wood",
+      "supportMaterialId": "airship_wall_bulkhead",
+      "supportEvery": 7,
+      "supportOuterOnly": true,
+      "railing": {
+        "propId": "railing",
+        "every": 7,
+        "blocksMovement": true
+      }
+    }
+  ],
+  "supportColumns": [
+    {
+      "x": 30,
+      "z": 11,
+      "y1": 1,
+      "y2": 5,
+      "materialId": "airship_wall_bulkhead",
+      "blocksSight": false
+    },
+    {
+      "x": 43,
+      "z": 11,
+      "y1": 1,
+      "y2": 5,
+      "materialId": "airship_wall_bulkhead",
+      "blocksSight": false
+    },
+    {
+      "x": 36,
+      "z": 8,
+      "y1": 1,
+      "y2": 5,
+      "materialId": "airship_wall_bulkhead",
+      "blocksSight": false
+    }
+  ],
+  "glassBarriers": [
+    {
+      "x1": 23,
+      "z1": 16,
+      "x2": 49,
+      "z2": 16,
+      "height": 2,
+      "openings": [
+        {
+          "x1": 34,
+          "z1": 16,
+          "x2": 38,
+          "z2": 16
+        }
+      ]
+    },
+    {
+      "x1": 23,
+      "z1": 34,
+      "x2": 49,
+      "z2": 34,
+      "height": 2,
+      "openings": [
+        {
+          "x1": 33,
+          "z1": 34,
+          "x2": 39,
+          "z2": 34
+        }
+      ]
+    },
+    {
+      "x1": 23,
+      "z1": 16,
+      "x2": 23,
+      "z2": 34,
+      "height": 2,
+      "openings": [
+        {
+          "x1": 23,
+          "z1": 23,
+          "x2": 23,
+          "z2": 28
+        }
+      ]
+    },
+    {
+      "x1": 49,
+      "z1": 16,
+      "x2": 49,
+      "z2": 34,
+      "height": 2,
+      "openings": [
+        {
+          "x1": 49,
+          "z1": 23,
+          "x2": 49,
+          "z2": 28
+        }
+      ]
+    },
+    {
+      "x1": 54,
+      "z1": 16,
+      "x2": 68,
+      "z2": 16,
+      "height": 2,
+      "openings": [
+        {
+          "x1": 60,
+          "z1": 16,
+          "x2": 62,
+          "z2": 16
+        }
+      ]
+    },
+    {
+      "x1": 46,
+      "z1": 43,
+      "x2": 58,
+      "z2": 43,
+      "height": 2,
+      "openings": [
+        {
+          "x1": 51,
+          "z1": 43,
+          "x2": 53,
+          "z2": 43
+        }
+      ]
+    },
+    {
+      "x1": 46,
+      "z1": 43,
+      "x2": 46,
+      "z2": 50,
+      "height": 2
+    },
+    {
+      "x1": 58,
+      "z1": 43,
+      "x2": 58,
+      "z2": 50,
+      "height": 2
+    },
+    {
+      "x1": 58,
+      "z1": 36,
+      "x2": 68,
+      "z2": 36,
+      "height": 2,
+      "openings": [
+        {
+          "x1": 61,
+          "z1": 36,
+          "x2": 63,
+          "z2": 36
+        }
+      ]
+    },
+    {
+      "x1": 58,
+      "z1": 36,
+      "x2": 58,
+      "z2": 50,
+      "height": 2
+    },
+    {
+      "x1": 68,
+      "z1": 36,
+      "x2": 68,
+      "z2": 50,
+      "height": 2
+    }
+  ],
+  "prefabs": [
+    {
+      "id": "prefab-electric-charge-north",
+      "prefabId": "electric-charging-station",
+      "position": {
+        "x": 7,
+        "y": 0,
+        "z": 19
+      },
+      "rotation": 0
+    },
+    {
+      "id": "prefab-wetland-shore-a",
+      "prefabId": "wetland-corner-4x4",
+      "position": {
+        "x": 4,
+        "y": 0,
+        "z": 37
+      },
+      "rotation": 0
+    },
+    {
+      "id": "prefab-wetland-shore-b",
+      "prefabId": "wetland-corner-4x4",
+      "position": {
+        "x": 12,
+        "y": 0,
+        "z": 45
+      },
+      "rotation": 180
+    },
+    {
+      "id": "prefab-aviary-perches-west",
+      "prefabId": "aviary-perch-cluster",
+      "position": {
+        "x": 24,
+        "y": 0,
+        "z": 10
+      },
+      "rotation": 0
+    },
+    {
+      "id": "prefab-aviary-perches-east",
+      "prefabId": "aviary-perch-cluster",
+      "position": {
+        "x": 43,
+        "y": 0,
+        "z": 10
+      },
+      "rotation": 180
+    },
+    {
+      "id": "prefab-medical-airlock-east",
+      "prefabId": "medical-airlock-3x2",
+      "position": {
+        "x": 64,
+        "y": 0,
+        "z": 23
+      },
+      "rotation": 90
+    },
+    {
+      "id": "prefab-poison-filtration",
+      "prefabId": "poison-filtration-corner",
+      "position": {
+        "x": 59,
+        "y": 0,
+        "z": 43
+      },
+      "rotation": 0
+    },
+    {
+      "id": "prefab-cargo-service-pad",
+      "prefabId": "cargo-lift-4x4",
+      "position": {
+        "x": 35,
+        "y": 0,
+        "z": 46
+      },
+      "rotation": 0
+    }
+  ],
+  "decals": [
+    {
+      "id": "decal-center-ranger-insignia",
+      "decalId": "ranger_insignia",
+      "surface": "floor",
+      "position": {
+        "x": 36,
+        "y": 0,
+        "z": 25
+      },
+      "scale": {
+        "x": 4.2,
+        "z": 4.2
+      },
+      "opacity": 0.5,
+      "renderOrder": 8
+    },
+    {
+      "id": "decal-command-wayfinding",
+      "decalId": "arrow",
+      "surface": "floor",
+      "position": {
+        "x": 36,
+        "y": 0,
+        "z": 3
+      },
+      "rotation": 180,
+      "scale": {
+        "x": 2.2,
+        "z": 1.2
+      },
+      "opacity": 0.58
+    },
+    {
+      "id": "decal-engineering-wayfinding",
+      "decalId": "engineering_wrench",
+      "surface": "floor",
+      "position": {
+        "x": 4,
+        "y": 0,
+        "z": 13
+      },
+      "scale": {
+        "x": 1.5,
+        "z": 1.5
+      },
+      "opacity": 0.62
+    },
+    {
+      "id": "decal-medical-chevrons",
+      "decalId": "decon_chevrons",
+      "surface": "floor",
+      "position": {
+        "x": 66,
+        "y": 0,
+        "z": 22
+      },
+      "rotation": 90,
+      "scale": {
+        "x": 3.2,
+        "z": 1
+      },
+      "opacity": 0.58
+    },
+    {
+      "id": "decal-medical-cross-large",
+      "decalId": "medical_cross",
+      "surface": "floor",
+      "position": {
+        "x": 67,
+        "y": 0,
+        "z": 27
+      },
+      "scale": {
+        "x": 1.7,
+        "z": 1.7
+      },
+      "opacity": 0.55
+    },
+    {
+      "id": "decal-hangar-cargo-outline",
+      "decalId": "cargo_lift_outline",
+      "surface": "floor",
+      "position": {
+        "x": 37.5,
+        "y": 0,
+        "z": 47
+      },
+      "scale": {
+        "x": 8.5,
+        "z": 5.2
+      },
+      "opacity": 0.6
+    },
+    {
+      "id": "decal-hangar-hazard-north",
+      "decalId": "hazard_stripes",
+      "surface": "floor",
+      "position": {
+        "x": 37.5,
+        "y": 0,
+        "z": 43.4
+      },
+      "scale": {
+        "x": 7.5,
+        "z": 0.8
+      },
+      "opacity": 0.72
+    },
+    {
+      "id": "decal-hangar-hazard-south",
+      "decalId": "hazard_stripes",
+      "surface": "floor",
+      "position": {
+        "x": 37.5,
+        "y": 0,
+        "z": 50.4
+      },
+      "scale": {
+        "x": 8.5,
+        "z": 0.8
+      },
+      "opacity": 0.68
+    },
+    {
+      "id": "decal-wetland-ripple-a",
+      "decalId": "water_ripple_soft",
+      "surface": "floor",
+      "position": {
+        "x": 10.5,
+        "y": 0,
+        "z": 43.5
+      },
+      "rotation": 20,
+      "scale": {
+        "x": 1.7,
+        "z": 1.7
+      },
+      "opacity": 0.5
+    },
+    {
+      "id": "decal-wetland-ripple-b",
+      "decalId": "water_ripple_soft",
+      "surface": "floor",
+      "position": {
+        "x": 15.2,
+        "y": 0,
+        "z": 47.5
+      },
+      "rotation": 110,
+      "scale": {
+        "x": 1.4,
+        "z": 1.4
+      },
+      "opacity": 0.46
+    },
+    {
+      "id": "decal-wetland-filtration",
+      "decalId": "decon_arrow",
+      "surface": "floor",
+      "position": {
+        "x": 17,
+        "y": 0,
+        "z": 45.5
+      },
+      "rotation": 90,
+      "scale": {
+        "x": 2,
+        "z": 0.8
+      },
+      "opacity": 0.52
+    },
+    {
+      "id": "decal-electric-charging",
+      "decalId": "lightning",
+      "surface": "floor",
+      "position": {
+        "x": 11.5,
+        "y": 0,
+        "z": 20.5
+      },
+      "scale": {
+        "x": 1.6,
+        "z": 1.6
+      },
+      "opacity": 0.62
+    },
+    {
+      "id": "decal-thermal-flame",
+      "decalId": "flame",
+      "surface": "floor",
+      "position": {
+        "x": 52.5,
+        "y": 0,
+        "z": 46.5
+      },
+      "scale": {
+        "x": 1.7,
+        "z": 1.7
+      },
+      "opacity": 0.62
+    },
+    {
+      "id": "decal-thermal-hazard-threshold",
+      "decalId": "hazard_stripes",
+      "surface": "floor",
+      "position": {
+        "x": 52,
+        "y": 0,
+        "z": 43.4
+      },
+      "scale": {
+        "x": 5.2,
+        "z": 0.8
+      },
+      "opacity": 0.75
+    },
+    {
+      "id": "decal-cryo-snowflake",
+      "decalId": "snowflake",
+      "surface": "floor",
+      "position": {
+        "x": 61,
+        "y": 0,
+        "z": 10.5
+      },
+      "scale": {
+        "x": 2,
+        "z": 2
+      },
+      "opacity": 0.48
+    },
+    {
+      "id": "decal-poison-quarantine",
+      "decalId": "quarantine_symbol",
+      "surface": "floor",
+      "position": {
+        "x": 62.5,
+        "y": 0,
+        "z": 40.5
+      },
+      "scale": {
+        "x": 2.1,
+        "z": 2.1
+      },
+      "opacity": 0.58
+    },
+    {
+      "id": "decal-poison-toxic",
+      "decalId": "toxic",
+      "surface": "floor",
+      "position": {
+        "x": 64.5,
+        "y": 0,
+        "z": 46.5
+      },
+      "scale": {
+        "x": 1.5,
+        "z": 1.5
+      },
+      "opacity": 0.5
+    },
+    {
+      "id": "decal-nursery-egg",
+      "decalId": "egg_icon",
+      "surface": "floor",
+      "position": {
+        "x": 58,
+        "y": 0,
+        "z": 21.5
+      },
+      "scale": {
+        "x": 1.5,
+        "z": 1.5
+      },
+      "opacity": 0.54
+    },
+    {
+      "id": "decal-nursery-food",
+      "decalId": "food_marker",
+      "surface": "floor",
+      "position": {
+        "x": 56,
+        "y": 0,
+        "z": 25.5
+      },
+      "scale": {
+        "x": 1.4,
+        "z": 1.4
+      },
+      "opacity": 0.5
+    },
+    {
+      "id": "decal-quiet-moon-west",
+      "decalId": "quiet_moon",
+      "surface": "floor",
+      "position": {
+        "x": 58,
+        "y": 0,
+        "z": 31.5
+      },
+      "scale": {
+        "x": 1.8,
+        "z": 1.8
+      },
+      "opacity": 0.45
+    },
+    {
+      "id": "decal-sand-paw",
+      "decalId": "pawprints",
+      "surface": "floor",
+      "position": {
+        "x": 23,
+        "y": 0,
+        "z": 47
+      },
+      "rotation": 25,
+      "scale": {
+        "x": 1.6,
+        "z": 1
+      },
+      "opacity": 0.42
+    },
+    {
+      "id": "decal-aviary-observation-mark",
+      "decalId": "observation_ring_mark",
+      "surface": "floor",
+      "position": {
+        "x": 36,
+        "y": 4,
+        "z": 8.4
+      },
+      "scale": {
+        "x": 3.2,
+        "z": 1.1
+      },
+      "opacity": 0.5
+    },
+    {
+      "id": "decal-large-mon-lane-arrow",
+      "decalId": "arrow",
+      "surface": "floor",
+      "position": {
+        "x": 38,
+        "y": 0,
+        "z": 39
+      },
+      "rotation": 0,
+      "scale": {
+        "x": 2.6,
+        "z": 1.2
+      },
+      "opacity": 0.45
+    },
+    {
+      "id": "decal-staff-medical",
+      "decalId": "staff_only",
+      "surface": "floor",
+      "position": {
+        "x": 66.5,
+        "y": 0,
+        "z": 18
+      },
+      "scale": {
+        "x": 2.4,
+        "z": 0.8
+      },
+      "opacity": 0.55
+    }
+  ],
+  "props": [
+    {
+      "id": "prop-meadow-low-bush-nw",
+      "propId": "berry_bush",
+      "variant": "blue",
+      "position": {
+        "x": 25,
+        "y": 1,
+        "z": 18
+      },
+      "blocksMovement": false
+    },
+    {
+      "id": "prop-meadow-low-bush-se",
+      "propId": "berry_bush",
+      "variant": "red",
+      "position": {
+        "x": 46,
+        "y": 1,
+        "z": 31
+      },
+      "blocksMovement": false
+    },
+    {
+      "id": "prop-meadow-trough-east",
+      "propId": "feeding_trough",
+      "position": {
+        "x": 47,
+        "y": 1,
+        "z": 25
+      },
+      "rotation": 90,
+      "blocksMovement": false
+    },
+    {
+      "id": "prop-grove-nest-box",
+      "propId": "nest_box",
+      "position": {
+        "x": 15,
+        "y": 1,
+        "z": 8
+      },
+      "blocksMovement": true
+    },
+    {
+      "id": "prop-grove-perch-pole",
+      "propId": "perch_pole",
+      "position": {
+        "x": 17,
+        "y": 1,
+        "z": 12
+      },
+      "blocksMovement": false
+    },
+    {
+      "id": "prop-aviary-elevated-nest-west",
+      "propId": "nest_box",
+      "position": {
+        "x": 29,
+        "y": 5,
+        "z": 8
+      },
+      "blocksMovement": true,
+      "tags": [
+        "elevated",
+        "aviary"
+      ]
+    },
+    {
+      "id": "prop-aviary-elevated-nest-east",
+      "propId": "nest_box",
+      "position": {
+        "x": 44,
+        "y": 5,
+        "z": 8
+      },
+      "blocksMovement": true,
+      "tags": [
+        "elevated",
+        "aviary"
+      ]
+    },
+    {
+      "id": "prop-aviary-perch-tower-center",
+      "propId": "perch_tower",
+      "position": {
+        "x": 36,
+        "y": 1,
+        "z": 12
+      },
+      "blocksMovement": true
+    },
+    {
+      "id": "prop-aviary-wall-monitor",
+      "propId": "wall_monitor",
+      "position": {
+        "x": 35,
+        "y": 5,
+        "z": 7
+      },
+      "blocksMovement": false,
+      "tags": [
+        "observation"
+      ]
+    },
+    {
+      "id": "prop-wetland-filtration-unit",
+      "propId": "filtration_unit",
+      "position": {
+        "x": 17,
+        "y": 1,
+        "z": 45
+      },
+      "blocksMovement": true
+    },
+    {
+      "id": "prop-wetland-hatch-frame",
+      "propId": "bulkhead_door_frame",
+      "position": {
+        "x": 17,
+        "y": 1,
+        "z": 47
+      },
+      "rotation": 90,
+      "blocksMovement": true
+    },
+    {
+      "id": "prop-cave-den-mouth",
+      "propId": "cave_den",
+      "position": {
+        "x": 6,
+        "y": 1,
+        "z": 27
+      },
+      "blocksMovement": true
+    },
+    {
+      "id": "prop-cave-rock-quiet",
+      "propId": "rock_pile",
+      "variant": "gray",
+      "position": {
+        "x": 15,
+        "y": 1,
+        "z": 26
+      },
+      "blocksMovement": true
+    },
+    {
+      "id": "prop-burrow-mouth-a",
+      "propId": "burrow_entrance",
+      "position": {
+        "x": 13,
+        "y": 1,
+        "z": 33
+      },
+      "blocksMovement": true
+    },
+    {
+      "id": "prop-electric-magnetic-coil",
+      "propId": "magnetic_coil",
+      "position": {
+        "x": 15,
+        "y": 1,
+        "z": 22
+      },
+      "blocksMovement": true
+    },
+    {
+      "id": "prop-electric-console",
+      "propId": "console",
+      "variant": "blue",
+      "position": {
+        "x": 5,
+        "y": 1,
+        "z": 17
+      },
+      "blocksMovement": true
+    },
+    {
+      "id": "prop-sand-scrub-a",
+      "propId": "sand_scrub",
+      "variant": "a",
+      "position": {
+        "x": 21,
+        "y": 1,
+        "z": 45
+      },
+      "blocksMovement": false
+    },
+    {
+      "id": "prop-sand-rock-pile",
+      "propId": "rock_pile",
+      "variant": "gray",
+      "position": {
+        "x": 27,
+        "y": 1,
+        "z": 49
+      },
+      "blocksMovement": true
+    },
+    {
+      "id": "prop-cargo-warning-beacon-west",
+      "propId": "warning_beacon",
+      "variant": "amber",
+      "position": {
+        "x": 29,
+        "y": 1,
+        "z": 43
+      },
+      "blocksMovement": false
+    },
+    {
+      "id": "prop-cargo-warning-beacon-east",
+      "propId": "warning_beacon",
+      "variant": "amber",
+      "position": {
+        "x": 45,
+        "y": 1,
+        "z": 43
+      },
+      "blocksMovement": false
+    },
+    {
+      "id": "prop-cargo-medical-crate",
+      "propId": "cargo_crate",
+      "variant": "medical",
+      "position": {
+        "x": 44,
+        "y": 1,
+        "z": 49
+      },
+      "blocksMovement": true
+    },
+    {
+      "id": "prop-exercise-lane-monitor",
+      "propId": "wall_monitor",
+      "position": {
+        "x": 25,
+        "y": 1,
+        "z": 35
+      },
+      "blocksMovement": false
+    },
+    {
+      "id": "prop-thermal-vent-control",
+      "propId": "console",
+      "variant": "orange",
+      "position": {
+        "x": 47,
+        "y": 1,
+        "z": 44
+      },
+      "blocksMovement": true
+    },
+    {
+      "id": "prop-thermal-beacon",
+      "propId": "warning_beacon",
+      "variant": "red",
+      "position": {
+        "x": 57,
+        "y": 1,
+        "z": 44
+      },
+      "blocksMovement": false
+    },
+    {
+      "id": "prop-thermal-heat-rock",
+      "propId": "heat_rock",
+      "position": {
+        "x": 53,
+        "y": 1,
+        "z": 49
+      },
+      "blocksMovement": true
+    },
+    {
+      "id": "prop-cryo-ice-crystal-a",
+      "propId": "ice_crystal",
+      "variant": "blue",
+      "position": {
+        "x": 65,
+        "y": 1,
+        "z": 8
+      },
+      "blocksMovement": true
+    },
+    {
+      "id": "prop-cryo-snow-mound",
+      "propId": "snow_mound",
+      "variant": "b",
+      "position": {
+        "x": 56,
+        "y": 1,
+        "z": 14
+      },
+      "blocksMovement": false
+    },
+    {
+      "id": "prop-nursery-sign",
+      "propId": "sign_nursery",
+      "position": {
+        "x": 61,
+        "y": 1,
+        "z": 17
+      },
+      "blocksMovement": false
+    },
+    {
+      "id": "prop-nursery-trough",
+      "propId": "feeding_trough",
+      "position": {
+        "x": 55,
+        "y": 1,
+        "z": 26
+      },
+      "blocksMovement": false
+    },
+    {
+      "id": "prop-nursery-warmer",
+      "propId": "egg_warmer",
+      "position": {
+        "x": 58,
+        "y": 1,
+        "z": 20
+      },
+      "blocksMovement": false
+    },
+    {
+      "id": "prop-medical-bed",
+      "propId": "medical_bed",
+      "variant": "clean",
+      "position": {
+        "x": 65,
+        "y": 1,
+        "z": 29
+      },
+      "rotation": 0,
+      "blocksMovement": true
+    },
+    {
+      "id": "prop-medical-decon-sprayer",
+      "propId": "decon_sprayer",
+      "position": {
+        "x": 63,
+        "y": 1,
+        "z": 19
+      },
+      "blocksMovement": true
+    },
+    {
+      "id": "prop-quiet-monitor",
+      "propId": "wall_monitor",
+      "position": {
+        "x": 61,
+        "y": 1,
+        "z": 29
+      },
+      "blocksMovement": false
+    },
+    {
+      "id": "prop-quiet-low-shrub",
+      "propId": "shrub",
+      "variant": "plain",
+      "position": {
+        "x": 55,
+        "y": 1,
+        "z": 34
+      },
+      "blocksMovement": false
+    },
+    {
+      "id": "prop-poison-filter-back",
+      "propId": "filtration_unit",
+      "position": {
+        "x": 66,
+        "y": 1,
+        "z": 47
+      },
+      "blocksMovement": true
+    },
+    {
+      "id": "prop-poison-decon-sprayer-door",
+      "propId": "decon_sprayer",
+      "position": {
+        "x": 61,
+        "y": 1,
+        "z": 37
+      },
+      "blocksMovement": true
+    },
+    {
+      "id": "prop-engineering-pipe-bundle",
+      "propId": "pipe_bundle",
+      "position": {
+        "x": 2,
+        "y": 1,
+        "z": 20
+      },
+      "blocksMovement": true
+    },
+    {
+      "id": "prop-engineering-console",
+      "propId": "console",
+      "variant": "orange",
+      "position": {
+        "x": 6,
+        "y": 1,
+        "z": 12
+      },
+      "blocksMovement": true
+    },
+    {
+      "id": "prop-command-monitor",
+      "propId": "wall_monitor",
+      "position": {
+        "x": 41,
+        "y": 1,
+        "z": 2
+      },
+      "blocksMovement": false
+    },
+    {
+      "id": "prop-command-console",
+      "propId": "console",
+      "variant": "green",
+      "position": {
+        "x": 30,
+        "y": 1,
+        "z": 2
+      },
+      "blocksMovement": true
+    }
+  ],
+  "doors": [
+    {
+      "id": "door-command-north",
+      "doorId": "sliding_bulkhead_door",
+      "position": {
+        "x": 33,
+        "y": 1,
+        "z": 0
+      },
+      "rotation": 0,
+      "width": 6,
+      "height": 2.4,
+      "state": "open",
+      "connectsTo": "command-residential-deck"
+    },
+    {
+      "id": "door-engineering-west",
+      "doorId": "engineering_hatch",
+      "position": {
+        "x": 0,
+        "y": 1,
+        "z": 15
+      },
+      "rotation": 90,
+      "width": 4,
+      "height": 2.4,
+      "state": "closed",
+      "connectsTo": "engineering"
+    },
+    {
+      "id": "door-medical-east",
+      "doorId": "medical_airlock",
+      "position": {
+        "x": 70,
+        "y": 1,
+        "z": 22
+      },
+      "rotation": 90,
+      "width": 5,
+      "height": 2.4,
+      "state": "closed",
+      "connectsTo": "labs-medical"
+    },
+    {
+      "id": "door-hangar-cargo-south",
+      "doorId": "cargo_lift_gate",
+      "position": {
+        "x": 33,
+        "y": 1,
+        "z": 50
+      },
+      "rotation": 0,
+      "width": 10,
+      "height": 2.4,
+      "state": "open",
+      "connectsTo": "hangar-rescue-bay"
+    },
+    {
+      "id": "door-cryo-glass-gate",
+      "doorId": "glass_habitat_gate",
+      "position": {
+        "x": 60,
+        "y": 1,
+        "z": 16
+      },
+      "rotation": 0,
+      "width": 2,
+      "height": 2.4,
+      "state": "closed",
+      "connectsTo": "cryo-snow-pod"
+    },
+    {
+      "id": "door-nursery-medical-gate",
+      "doorId": "habitat_gate",
+      "position": {
+        "x": 61,
+        "y": 1,
+        "z": 22
+      },
+      "rotation": 90,
+      "width": 2,
+      "height": 2.4,
+      "state": "open",
+      "connectsTo": "medical-connector"
+    },
+    {
+      "id": "door-electric-voluntary-gate",
+      "doorId": "glass_habitat_gate",
+      "position": {
+        "x": 18,
+        "y": 1,
+        "z": 20
+      },
+      "rotation": 90,
+      "width": 2,
+      "height": 2.4,
+      "state": "open",
+      "connectsTo": "electric-tech-alcove"
+    },
+    {
+      "id": "door-wetland-filtration-hatch",
+      "doorId": "sliding_bulkhead_door",
+      "position": {
+        "x": 17,
+        "y": 1,
+        "z": 45
+      },
+      "rotation": 90,
+      "width": 2,
+      "height": 2.4,
+      "state": "closed",
+      "connectsTo": "lagoon-filtration"
+    },
+    {
+      "id": "door-thermal-airlock",
+      "doorId": "habitat_gate",
+      "position": {
+        "x": 51,
+        "y": 1,
+        "z": 43
+      },
+      "rotation": 0,
+      "width": 3,
+      "height": 2.4,
+      "state": "closed",
+      "connectsTo": "thermal-den"
+    },
+    {
+      "id": "door-poison-biosecure-lock",
+      "doorId": "biosecure_quarantine_door",
+      "position": {
+        "x": 61,
+        "y": 1,
+        "z": 36
+      },
+      "rotation": 0,
+      "width": 3,
+      "height": 2.4,
+      "state": "locked",
+      "connectsTo": "poison-biosecure-pod"
+    }
+  ],
+  "placements": [],
+  "lights": [
+    {
+      "id": "light-ambient-atrium",
+      "kind": "ambient",
+      "color": "#dfe7ff",
+      "intensity": 0.42
+    },
+    {
+      "id": "light-meadow",
+      "kind": "zone",
+      "zoneId": "zone-meadow-commons",
+      "color": "#fff1c7",
+      "intensity": 0.3
+    },
+    {
+      "id": "light-aviary",
+      "kind": "zone",
+      "zoneId": "zone-aviary-shaft",
+      "color": "#b9e8ff",
+      "intensity": 0.25
+    },
+    {
+      "id": "light-wetland",
+      "kind": "zone",
+      "zoneId": "zone-wetland-lagoon",
+      "color": "#8fd5ff",
+      "intensity": 0.26
+    },
+    {
+      "id": "light-thermal",
+      "kind": "zone",
+      "zoneId": "zone-thermal-den",
+      "color": "#f3722c",
+      "intensity": 0.32
+    },
+    {
+      "id": "light-cryo",
+      "kind": "zone",
+      "zoneId": "zone-cryo-snow",
+      "color": "#a7e6ff",
+      "intensity": 0.24
+    },
+    {
+      "id": "light-electric",
+      "kind": "zone",
+      "zoneId": "zone-electric-tech",
+      "color": "#83a9ff",
+      "intensity": 0.28
+    },
+    {
+      "id": "light-poison",
+      "kind": "zone",
+      "zoneId": "zone-poison-biosecure",
+      "color": "#8fb06a",
+      "intensity": 0.22
+    },
+    {
+      "id": "light-nursery",
+      "kind": "zone",
+      "zoneId": "zone-nursery-yard",
+      "color": "#ffd6ee",
+      "intensity": 0.24
+    },
+    {
+      "id": "light-quiet",
+      "kind": "zone",
+      "zoneId": "zone-quiet-nooks",
+      "color": "#8a75c9",
+      "intensity": 0.18
+    }
+  ],
+  "metadata": {
+    "description": "Campaign-ready Ranger ark habitat atrium: a humane mobile ecological sanctuary with visible habitat pods, ship connectors, cargo access, and elevated observation paths.",
+    "aiAuthoringNotes": "Canonical source for data/maps/ranger_ark/airship-habitat-atrium.json. Regenerate with npm run generate:map-from-plan -- --plan data/map-plans/airship-habitat-atrium.plan.json --out data/maps/ranger_ark/airship-habitat-atrium.json after edits. Keep scatterScale modest so token feet remain readable."
+  }
+}
