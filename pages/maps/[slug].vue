@@ -69,22 +69,19 @@ const buildColor = ref<string | null>(null)
 
 const layerVisibility = ref({
   terrain: true,
-  decals: true,
-  props: true,
-  zones: true,
-  doors: true,
-  transparentObjects: true,
+  // Object layers are retired from the map view; keep these false so
+  // old map JSON is hidden if it reaches the renderer.
+  decals: false,
+  props: false,
+  zones: false,
+  doors: false,
+  transparentObjects: false,
   shadows: true,
   tokens: true,
   grid: true,
 })
 const layerOptions = [
   'terrain',
-  'decals',
-  'props',
-  'zones',
-  'doors',
-  'transparentObjects',
   'shadows',
   'tokens',
   'grid',
@@ -97,10 +94,6 @@ const sheetLookup = computed(() => ({
 
 const spawnedPokemon = computed(() => placementsToSpawned(map.value, sheetLookup.value))
 const mapVoxels = computed<GridVoxel[]>(() => map.value?.voxels ?? [])
-const mapDecals = computed(() => map.value?.decals ?? [])
-const mapProps = computed(() => map.value?.props ?? [])
-const mapZones = computed(() => map.value?.zones ?? [])
-const mapDoors = computed(() => map.value?.doors ?? [])
 const mapAssetPacks = computed(() => map.value?.assetPacks ?? [])
 const assetRegistryRevision = ref(getMapAssetRegistryRevision())
 const voxelCount = computed(() => mapVoxels.value.length)
@@ -239,6 +232,7 @@ const hasInitiativeValues = computed(() =>
   (map.value?.placements ?? []).some((placement) => normalizeInitiativeValue(placement.initiative) !== null),
 )
 
+const visibleVoxelMaterials = computed(() => VOXEL_MATERIALS.filter((material) => !material.transparent))
 const activeMaterialDef = computed(() => getMaterialDef(buildMaterial.value))
 const colorPickerValue = computed(() =>
   buildColor.value ?? hexColorString(activeMaterialDef.value.baseColor),
@@ -374,8 +368,7 @@ const spawnSheet = (selection: SheetSelection) => {
   if (!catalog) return
   const occupiedKeys = buildMapOccupancy({
     voxels: mapVoxels.value,
-    props: mapProps.value,
-    doors: mapDoors.value,
+    includeTransparent: false,
   })
   const position = findFirstAvailablePosition(
     catalog,
@@ -570,6 +563,7 @@ const setMode = (mode: 'play' | 'build') => {
 }
 
 const selectMaterial = (material: VoxelMaterial) => {
+  if (getMaterialDef(material).transparent) return
   buildMaterial.value = material
   buildColor.value = null
 }
@@ -593,8 +587,7 @@ const fillGround = () => {
   const voxelOccupancy = buildAllVoxelOccupancy(mapVoxels.value)
   const mapOccupancy = buildMapOccupancy({
     voxels: mapVoxels.value,
-    props: mapProps.value,
-    doors: mapDoors.value,
+    includeTransparent: false,
   })
   const additions: GridVoxel[] = []
   for (let z = 0; z < dims.z; z += 1) {
@@ -642,8 +635,7 @@ watch(
       trimmedVoxels,
       buildMapOccupancy({
         voxels: trimmedVoxels,
-        props: mapProps.value,
-        doors: mapDoors.value,
+        includeTransparent: false,
       }),
     )
     const byId = new Map(reconciliation.pokemons.map((p) => [p.id, p.position]))
@@ -783,7 +775,7 @@ watch(
 
           <div class="materials-grid" role="group" aria-label="Terrain material">
             <button
-              v-for="material in VOXEL_MATERIALS"
+              v-for="material in visibleVoxelMaterials"
               :key="material.material"
               type="button"
               class="material-swatch"
@@ -844,20 +836,20 @@ watch(
               Clear all
             </button>
           </div>
-        </template>
-      </section>
 
-      <section v-if="map" class="panel-card layer-panel">
-        <div class="panel-heading">
-          <h2>Layers</h2>
-          <span class="badge">visibility</span>
-        </div>
-        <div class="layer-grid">
-          <label v-for="layer in layerOptions" :key="layer" class="layer-toggle">
-            <input v-model="layerVisibility[layer]" type="checkbox" />
-            <span>{{ layer.replace(/([A-Z])/g, ' $1') }}</span>
-          </label>
-        </div>
+          <div class="build-section layer-panel">
+            <div class="panel-heading panel-heading--compact">
+              <h2>Layers</h2>
+              <span class="badge">visibility</span>
+            </div>
+            <div class="layer-grid">
+              <label v-for="layer in layerOptions" :key="layer" class="layer-toggle">
+                <input v-model="layerVisibility[layer]" type="checkbox" />
+                <span>{{ layer.replace(/([A-Z])/g, ' $1') }}</span>
+              </label>
+            </div>
+          </div>
+        </template>
       </section>
 
         <SheetBrowser v-if="map" @select="spawnSheet" />
@@ -873,10 +865,6 @@ watch(
           :selected-id="selectedId"
           :active-turn-id="activeInitiativeId"
           :voxels="mapVoxels"
-          :decals="mapDecals"
-          :map-props="mapProps"
-          :zones="mapZones"
-          :doors="mapDoors"
           :asset-packs="mapAssetPacks"
           :asset-registry-revision="assetRegistryRevision"
           :layer-visibility="layerVisibility"
@@ -1373,6 +1361,16 @@ input:focus {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+}
+
+.build-section {
+  border-top: 1px solid var(--rule-soft);
+  margin-top: 0.15rem;
+  padding-top: 0.85rem;
+}
+
+.panel-heading--compact {
+  margin-bottom: 0.6rem;
 }
 
 .mode-row {

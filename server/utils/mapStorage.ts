@@ -15,7 +15,7 @@ import {
 } from 'node:fs'
 import { dirname, join, resolve, sep } from 'node:path'
 import type { GridDimensions, MapSummary, MapVoxelV2, TabletopMap, TabletopMapV1, TabletopMapV2 } from '~/types/map'
-import { materialIdForLegacy, normalizeMaterialId } from '~/utils/mapMaterials'
+import { getVoxelMaterialDefinition, materialIdForLegacy, normalizeMaterialId } from '~/utils/mapMaterials'
 
 export const PROJECT_ROOT = resolve(process.cwd())
 export const MAPS_ROOT = resolve(PROJECT_ROOT, 'data/maps')
@@ -107,12 +107,20 @@ const normalizeMapDocument = (json: TabletopMapV1 | TabletopMapV2, filePath: str
     : { activeId: null, round: 1 }
 
   if (!Array.isArray(json.voxels)) invalidMapDocument(filePath, 'voxels must be an array')
-  const voxels = json.voxels.map((voxel, index) => normalizeVoxelForEditor(voxel, index, filePath))
+  const voxels = json.voxels
+    .map((voxel, index) => normalizeVoxelForEditor(voxel, index, filePath))
+    .filter((voxel) => !getVoxelMaterialDefinition(voxel).transparent)
 
   if ((json as TabletopMapV2).schemaVersion === 2) {
     const v2 = json as TabletopMapV2
+    const mapWithoutRetiredObjectLayers = { ...(v2 as unknown as Record<string, unknown>) }
+    delete mapWithoutRetiredObjectLayers.decals
+    delete mapWithoutRetiredObjectLayers.props
+    delete mapWithoutRetiredObjectLayers.zones
+    delete mapWithoutRetiredObjectLayers.doors
+
     return {
-      ...v2,
+      ...(mapWithoutRetiredObjectLayers as unknown as TabletopMapV2),
       schemaVersion: 2,
       folder: v2.folder ?? folderFromPath(filePath),
       dimensions,
@@ -120,10 +128,6 @@ const normalizeMapDocument = (json: TabletopMapV1 | TabletopMapV2, filePath: str
       assetPacks: Array.isArray(v2.assetPacks) ? v2.assetPacks : [],
       voxels,
       placements: Array.isArray(v2.placements) ? v2.placements : [],
-      decals: Array.isArray(v2.decals) ? v2.decals : [],
-      props: Array.isArray(v2.props) ? v2.props : [],
-      zones: Array.isArray(v2.zones) ? v2.zones : [],
-      doors: Array.isArray(v2.doors) ? v2.doors : [],
       lights: Array.isArray(v2.lights) ? v2.lights : [],
     }
   }
@@ -139,10 +143,6 @@ const normalizeMapDocument = (json: TabletopMapV1 | TabletopMapV2, filePath: str
     assetPacks: [],
     voxels,
     placements: Array.isArray(json.placements) ? json.placements : [],
-    decals: [],
-    props: [],
-    zones: [],
-    doors: [],
     lights: [],
     metadata: {
       ...((json as TabletopMapV2).metadata ?? {}),

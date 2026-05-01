@@ -17,6 +17,7 @@ import {
   folderFromPath,
   writeMapFile,
 } from '../../utils/mapStorage'
+import { getVoxelMaterialDefinition } from '~/utils/mapMaterials'
 import type { TabletopMap } from '~/types/map'
 
 interface SaveBody {
@@ -50,18 +51,22 @@ export default defineEventHandler(async (event) => {
   const initiative = map.initiative && typeof map.initiative === 'object'
     ? map.initiative
     : { activeId: null, round: 1 }
+  const mapWithoutRetiredObjectLayers = { ...(map as Record<string, unknown>) }
+  delete mapWithoutRetiredObjectLayers.decals
+  delete mapWithoutRetiredObjectLayers.props
+  delete mapWithoutRetiredObjectLayers.zones
+  delete mapWithoutRetiredObjectLayers.doors
+
   const persisted: TabletopMap = {
-    ...map,
+    ...(mapWithoutRetiredObjectLayers as unknown as TabletopMap),
     schemaVersion: 2,
     folder: folderFromPath(path),
     initiative,
     assetPacks: Array.isArray(map.assetPacks) ? map.assetPacks : [],
-    voxels: Array.isArray(map.voxels) ? map.voxels : [],
+    voxels: Array.isArray(map.voxels)
+      ? map.voxels.filter((voxel) => !getVoxelMaterialDefinition(voxel).transparent)
+      : [],
     placements: Array.isArray(map.placements) ? map.placements : [],
-    decals: Array.isArray(map.decals) ? map.decals : [],
-    props: Array.isArray(map.props) ? map.props : [],
-    zones: Array.isArray(map.zones) ? map.zones : [],
-    doors: Array.isArray(map.doors) ? map.doors : [],
     lights: Array.isArray(map.lights) ? map.lights : [],
     updatedAt: Date.now(),
   }

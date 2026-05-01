@@ -1160,11 +1160,11 @@ const SPRITE_HALO_MAX_ALPHA = 0.28
 
 const DEFAULT_LAYER_VISIBILITY: LayerVisibility = {
   terrain: true,
-  decals: true,
-  props: true,
-  zones: true,
-  doors: true,
-  transparentObjects: true,
+  decals: false,
+  props: false,
+  zones: false,
+  doors: false,
+  transparentObjects: false,
   shadows: true,
   tokens: true,
   grid: true,
@@ -1380,26 +1380,28 @@ const damageDialogMultiplierLabel = computed(() =>
 const selectedPokemon = computed(
   () => props.pokemons.find((pokemon) => pokemon.id === props.selectedId) ?? null,
 )
+const renderedTerrainVoxels = computed(() => {
+  void props.assetRegistryRevision
+  return props.voxels.filter((voxel) => !voxelMaterialDefinition(voxel).transparent)
+})
 const mapMovementOccupancy = computed(() => {
-  // Asset manifests can change prop/door blocking defaults without changing
-  // the map JSON, so touch the revision prop to invalidate pathfinding.
+  // Object layers (props/doors/transparent blockers) are retired from the map
+  // view, so pathfinding only considers opaque terrain voxels.
   void props.assetRegistryRevision
   return buildMapOccupancy({
-    voxels: props.voxels,
-    props: props.mapProps ?? [],
-    doors: props.doors ?? [],
-    includeTransparent: true,
+    voxels: renderedTerrainVoxels.value,
+    includeTransparent: false,
     includeOpenDoors: false,
   })
 })
-const allVoxelOccupancy = computed(() => buildAllVoxelOccupancy(props.voxels))
+const allVoxelOccupancy = computed(() => buildAllVoxelOccupancy(renderedTerrainVoxels.value))
 
 // Voxel y-values bucketed by ``x,z`` column key. Lets a shadow-cast
 // raycast stay O(footprint) instead of O(voxels) — most cells have 0
 // or 1 voxels above ground, so the sorted-array scan is trivial.
 const voxelColumnsByXZ = computed(() => {
   const columns = new Map<string, number[]>()
-  for (const v of props.voxels) {
+  for (const v of renderedTerrainVoxels.value) {
     const key = `${v.x},${v.z}`
     const list = columns.get(key)
     if (list) list.push(v.y)
@@ -2537,7 +2539,7 @@ const disposeTerrainTopEdgeOverlay = () => {
 
 const syncTerrainTopEdgeOverlay = () => {
   disposeTerrainTopEdgeOverlay()
-  const overlay = buildTerrainTopEdgeOverlay(props.voxels)
+  const overlay = buildTerrainTopEdgeOverlay(renderedTerrainVoxels.value)
   if (overlay.children.length === 0) return
 
   terrainTopEdgeOverlay = overlay
@@ -2548,7 +2550,7 @@ const syncVoxelMeshes = () => {
   // Bucket voxels by group key so visually identical voxels share
   // an InstancedMesh.
   const buckets = new Map<string, GridVoxel[]>()
-  for (const voxel of props.voxels) {
+  for (const voxel of renderedTerrainVoxels.value) {
     const key = voxelGroupKey(voxel)
     let arr = buckets.get(key)
     if (!arr) {
@@ -2981,7 +2983,7 @@ const applyLayerVisibility = () => {
   gridGroup.visible = layers.grid
   zoneContainer.visible = layers.zones
   decalContainer.visible = layers.decals
-  propContainer.visible = layers.props || layers.shadows
+  propContainer.visible = layers.props
   doorContainer.visible = layers.doors
   voxelContainer.visible = layers.terrain
 
@@ -2993,7 +2995,7 @@ const applyLayerVisibility = () => {
   for (const object of propObjects.values()) {
     object.sprite.visible = layers.props && (!object.transparent || layers.transparentObjects)
     object.cage.visible = layers.props
-    object.shadow.visible = layers.shadows
+    object.shadow.visible = layers.props && layers.shadows
   }
   for (const object of doorObjects.values()) {
     object.group.visible = layers.doors && (!object.transparent || layers.transparentObjects)

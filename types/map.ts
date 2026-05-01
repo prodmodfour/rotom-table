@@ -1,9 +1,10 @@
 /**
  * Tabletop map documents.
  *
- * Schema v2 keeps the existing 3D/token model but makes map visuals
- * explicit: voxels point at visual materials, and decals/props/zones/doors
- * describe the extra grammar needed for readable tactical environments.
+ * Schema v2 keeps the existing 3D/token model and makes terrain visuals
+ * explicit: voxels point at visual materials. Older object-layer fields
+ * (decals/props/zones/doors) may still exist in legacy JSON, but the runtime
+ * strips/ignores them.
  */
 import type { GridAnchor, GridDimensions } from './pokemon'
 
@@ -167,9 +168,13 @@ export interface TabletopMapV2 {
   assetPacks?: string[]
   voxels: MapVoxelV2[]
   placements: SheetPlacement[]
+  /** @deprecated Retired object layer; stripped/ignored by the map runtime. */
   decals?: DecalPlacement[]
+  /** @deprecated Retired object layer; stripped/ignored by the map runtime. */
   props?: PropPlacement[]
+  /** @deprecated Retired object layer; stripped/ignored by the map runtime. */
   zones?: ZoneDefinition[]
+  /** @deprecated Retired object layer; stripped/ignored by the map runtime. */
   doors?: DoorPlacement[]
   lights?: LightPlacement[]
   /** Current turn + round state for the collapsible initiative tracker. */
@@ -207,10 +212,15 @@ export interface MapSummary {
 
 export interface LayerVisibility {
   terrain: boolean
+  /** @deprecated Retired object layer; keep false. */
   decals: boolean
+  /** @deprecated Retired object layer; keep false. */
   props: boolean
+  /** @deprecated Retired object layer; keep false. */
   zones: boolean
+  /** @deprecated Retired object layer; keep false. */
   doors: boolean
+  /** @deprecated Retired object layer; keep false. */
   transparentObjects: boolean
   shadows: boolean
   tokens: boolean
