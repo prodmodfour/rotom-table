@@ -90891,7 +90891,19 @@
       "materialId": "observation_wood"
     }
   ],
-  "placements": [],
+  "placements": [
+    {
+      "id": "pkm-mon08pqf-nicnft",
+      "sheetKind": "pokemon",
+      "sheetSlug": "bolt-pikachu",
+      "position": {
+        "x": 59,
+        "y": 1,
+        "z": 40
+      },
+      "turned": false
+    }
+  ],
   "lights": [
     {
       "id": "light-ambient-atrium",
@@ -91215,5 +91227,11 @@
         ]
       }
     ]
-  }
+  },
+  "initiative": {
+    "activeId": "pkm-mon08pqf-nicnft",
+    "round": 1
+  },
+  "assetPacks": [],
+  "updatedAt": 1777645732377
 }
