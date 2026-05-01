@@ -12,33 +12,36 @@
       "sheetKind": "pokemon",
       "sheetSlug": "specs-chikorita",
       "position": {
-        "x": 14,
-        "y": 1,
-        "z": 6
+        "x": 8,
+        "y": 4,
+        "z": 15
       },
-      "turned": false
+      "turned": false,
+      "initiative": 6
     },
     {
       "id": "pkm-moghs3r2-4tws11",
       "sheetKind": "pokemon",
       "sheetSlug": "iggy-magnemite",
       "position": {
-        "x": 4,
+        "x": 16,
         "y": 2,
-        "z": 16
+        "z": 15
       },
-      "turned": false
+      "turned": false,
+      "initiative": 7
     },
     {
       "id": "pkm-mogidttj-vrfszw",
       "sheetKind": "pokemon",
       "sheetSlug": "wild-grasslands-3-miltank-lv15-2",
       "position": {
-        "x": 12,
+        "x": 5,
         "y": 1,
-        "z": 13
+        "z": 2
       },
-      "turned": false
+      "turned": false,
+      "initiative": 15
     },
     {
       "id": "pkm-mohjq7sr-wbgjm4",
@@ -49,7 +52,8 @@
         "y": 10,
         "z": 10
       },
-      "turned": false
+      "turned": false,
+      "initiative": 19
     },
     {
       "id": "pkm-mohjqn6v-tffw7g",
@@ -60,22 +64,24 @@
         "y": 1,
         "z": 7
       },
-      "turned": false
+      "turned": false,
+      "initiative": 5
     },
     {
       "id": "pkm-mohkg4kl-8nji6e",
       "sheetKind": "pokemon",
       "sheetSlug": "wild-grasslands-3-doduo-lv18-1",
       "position": {
-        "x": 10,
-        "y": 1,
-        "z": 12
+        "x": 11,
+        "y": 2,
+        "z": 17
       },
-      "turned": false
+      "turned": false,
+      "initiative": 14
     }
   ],
   "createdAt": 1777242994202,
-  "updatedAt": 1777582334416,
+  "updatedAt": 1777586698742,
   "voxels": [
     {
       "x": 0,
@@ -2380,6 +2386,124 @@
       "y": 9,
       "z": 10,
       "material": "grass"
+    },
+    {
+      "x": 8,
+      "y": 1,
+      "z": 17,
+      "material": "snow"
+    },
+    {
+      "x": 9,
+      "y": 0,
+      "z": 14,
+      "material": "lava"
+    },
+    {
+      "x": 7,
+      "y": 0,
+      "z": 13,
+      "material": "lava"
+    },
+    {
+      "x": 6,
+      "y": 0,
+      "z": 12,
+      "material": "lava"
+    },
+    {
+      "x": 7,
+      "y": 0,
+      "z": 12,
+      "material": "lava"
+    },
+    {
+      "x": 8,
+      "y": 0,
+      "z": 12,
+      "material": "lava"
+    },
+    {
+      "x": 8,
+      "y": 0,
+      "z": 11,
+      "material": "lava"
+    },
+    {
+      "x": 7,
+      "y": 0,
+      "z": 11,
+      "material": "lava"
+    },
+    {
+      "x": 13,
+      "y": 0,
+      "z": 12,
+      "material": "path"
+    },
+    {
+      "x": 13,
+      "y": 0,
+      "z": 11,
+      "material": "path"
+    },
+    {
+      "x": 13,
+      "y": 0,
+      "z": 10,
+      "material": "path"
+    },
+    {
+      "x": 12,
+      "y": 0,
+      "z": 11,
+      "material": "path"
+    },
+    {
+      "x": 12,
+      "y": 0,
+      "z": 10,
+      "material": "path"
+    },
+    {
+      "x": 17,
+      "y": 0,
+      "z": 8,
+      "material": "sand"
+    },
+    {
+      "x": 16,
+      "y": 0,
+      "z": 9,
+      "material": "stone"
+    },
+    {
+      "x": 15,
+      "y": 0,
+      "z": 10,
+      "material": "water"
+    },
+    {
+      "x": 18,
+      "y": 0,
+      "z": 11,
+      "material": "wood"
+    },
+    {
+      "x": 15,
+      "y": 0,
+      "z": 13,
+      "material": "dirt"
+    },
+    {
+      "x": 14,
+      "y": 0,
+      "z": 14,
+      "material": "snow"
     }
-  ]
+  ],
+  "initiative": {
+    "activeId": "pkm-mohjq7sr-wbgjm4",
+    "round": 2
+  }
 }
