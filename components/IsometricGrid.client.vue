@@ -1128,6 +1128,10 @@ const TOKEN_STATUS_STAGE_ROW_CSS_HEIGHT_PX = 10
 const TOKEN_STATUS_WORLD_WIDTH = 1.05
 const ISO_POLAR_ANGLE = THREE.MathUtils.degToRad(54.735610317245346)
 const ISO_AZIMUTH_ANGLE = THREE.MathUtils.degToRad(45)
+const FOCUS_CAMERA_TARGET_HEIGHT_FACTOR = 0.35
+const FOCUS_CAMERA_VISIBLE_UNITS_PER_SUBJECT = 4
+const FOCUS_CAMERA_MIN_VISIBLE_UNITS = 7
+const FOCUS_CAMERA_MAX_VISIBLE_UNITS = 14
 const DEFAULT_FACING_DIRECTION = new THREE.Vector2(
   Math.cos(ISO_AZIMUTH_ANGLE),
   Math.sin(ISO_AZIMUTH_ANGLE),
@@ -1963,6 +1967,16 @@ const disposeObject3D = (object: THREE.Object3D | null) => {
   object.clear()
 }
 
+const fallbackFrustumHeight = () =>
+  Math.max(props.dimensions.x, props.dimensions.y, props.dimensions.z) * 1.7
+
+const currentFrustumHeight = () => {
+  if (!camera) return fallbackFrustumHeight()
+  return Math.abs(camera.top - camera.bottom) || fallbackFrustumHeight()
+}
+
+const maxUsefulCameraZoom = () => Math.max(5, currentFrustumHeight() / FOCUS_CAMERA_MIN_VISIBLE_UNITS)
+
 const setOrthographicFrustum = () => {
   if (!camera || !container.value) {
     return
@@ -1970,7 +1984,7 @@ const setOrthographicFrustum = () => {
 
   const bounds = container.value.getBoundingClientRect()
   const aspect = bounds.width / Math.max(bounds.height, 1)
-  const frustumSize = Math.max(props.dimensions.x, props.dimensions.y, props.dimensions.z) * 1.7
+  const frustumSize = fallbackFrustumHeight()
 
   camera.left = (-frustumSize * aspect) / 2
   camera.right = (frustumSize * aspect) / 2
@@ -1979,6 +1993,7 @@ const setOrthographicFrustum = () => {
   camera.near = -frustumSize * 6
   camera.far = frustumSize * 6
   camera.updateProjectionMatrix()
+  if (controls) controls.maxZoom = maxUsefulCameraZoom()
 }
 
 const syncRendererSize = () => {
@@ -2015,6 +2030,72 @@ const alignCameraToGrid = (initial = false) => {
   controls.target.copy(nextTarget)
   controls.update()
 }
+
+const fallbackCameraOffset = () => {
+  const radius = Math.max(props.dimensions.x, props.dimensions.y, props.dimensions.z) * 2.1
+  return new THREE.Vector3(
+    radius * Math.sin(ISO_POLAR_ANGLE) * Math.cos(ISO_AZIMUTH_ANGLE),
+    radius * Math.cos(ISO_POLAR_ANGLE),
+    radius * Math.sin(ISO_POLAR_ANGLE) * Math.sin(ISO_AZIMUTH_ANGLE),
+  )
+}
+
+const focusZoomForPokemon = (pokemon: SpawnedPokemon) => {
+  if (!camera || !controls) return 1
+
+  const subjectSpan = Math.max(
+    pokemon.base,
+    pokemon.clearance,
+    pokemon.width,
+    pokemon.height,
+    1,
+  )
+  const desiredVisibleHeight = THREE.MathUtils.clamp(
+    subjectSpan * FOCUS_CAMERA_VISIBLE_UNITS_PER_SUBJECT,
+    FOCUS_CAMERA_MIN_VISIBLE_UNITS,
+    FOCUS_CAMERA_MAX_VISIBLE_UNITS,
+  )
+  const frustumHeight = currentFrustumHeight()
+  const minZoom = Number.isFinite(controls.minZoom) ? controls.minZoom : 0.1
+  const maxZoom = Math.max(
+    Number.isFinite(controls.maxZoom) ? controls.maxZoom : 0,
+    maxUsefulCameraZoom(),
+  )
+
+  return THREE.MathUtils.clamp(frustumHeight / desiredVisibleHeight, minZoom, maxZoom)
+}
+
+const focusPokemon = (id: string): boolean => {
+  if (!camera || !controls) return false
+
+  const pokemon = props.pokemons.find((entry) => entry.id === id)
+  if (!pokemon) return false
+
+  const renderObject = renderObjects.get(id)
+  const pokemonCenter = getPokemonCenter(pokemon)
+  const center = renderObject?.targetCenter ?? new THREE.Vector3(
+    pokemonCenter.x,
+    pokemonCenter.y,
+    pokemonCenter.z,
+  )
+  const targetHeight = Math.max(pokemon.clearance, pokemon.height, 1)
+  const nextTarget = new THREE.Vector3(
+    center.x,
+    center.y + targetHeight * FOCUS_CAMERA_TARGET_HEIGHT_FACTOR,
+    center.z,
+  )
+  const offset = camera.position.clone().sub(controls.target)
+  const nextOffset = offset.lengthSq() > 0.0001 ? offset : fallbackCameraOffset()
+
+  controls.target.copy(nextTarget)
+  camera.position.copy(nextTarget.clone().add(nextOffset))
+  camera.zoom = focusZoomForPokemon(pokemon)
+  camera.updateProjectionMatrix()
+  controls.update()
+  return true
+}
+
+defineExpose({ focusPokemon })
 
 const updateGridVisibility = () => {
   const isMovingPokemon = Boolean(selectedPokemon.value)
@@ -3990,7 +4071,7 @@ onMounted(() => {
   controls.minPolarAngle = ISO_POLAR_ANGLE
   controls.maxPolarAngle = ISO_POLAR_ANGLE
   controls.minZoom = 0.4
-  controls.maxZoom = 5
+  controls.maxZoom = maxUsefulCameraZoom()
   controls.zoomSpeed = 1.1
   controls.rotateSpeed = 0.8
 

@@ -57,7 +57,12 @@ useHead(() => ({
   title: map.value ? `${map.value.name} · Maps` : 'Maps · Rotom Table',
 }))
 
+interface IsometricGridHandle {
+  focusPokemon: (id: string) => boolean
+}
+
 const selectedId = ref<string | null>(null)
+const gridRef = ref<IsometricGridHandle | null>(null)
 const previewState = ref<PreviewState>({ position: null, reachable: false, pathLength: 0 })
 const sidebarCollapsed = ref(false)
 const initiativeCollapsed = ref(false)
@@ -271,10 +276,19 @@ const hpTier = (entry: InitiativeRow): 'critical' | 'wounded' | 'healthy' => {
   return 'healthy'
 }
 
+const focusInitiativeEntry = (id: string) => {
+  gridRef.value?.focusPokemon(id)
+}
+
 const setActiveInitiative = (id: string) => {
   const state = ensureInitiativeState()
   if (!state) return
   state.activeId = id
+}
+
+const setActiveInitiativeAndFocus = (id: string) => {
+  setActiveInitiative(id)
+  focusInitiativeEntry(id)
 }
 
 const setInitiativeInput = (id: string, event: Event) => {
@@ -860,6 +874,7 @@ watch(
       <ClientOnly>
         <IsometricGrid
           v-if="map"
+          ref="gridRef"
           :dimensions="map.dimensions"
           :pokemons="spawnedPokemon"
           :selected-id="selectedId"
@@ -1005,7 +1020,7 @@ watch(
                 :class="{ 'is-active': activeInitiativeId === entry.id }"
                 :aria-pressed="activeInitiativeId === entry.id"
                 :aria-label="`Set ${entry.name} as the current turn`"
-                @click="setActiveInitiative(entry.id)"
+                @click="setActiveInitiativeAndFocus(entry.id)"
               >
                 <span class="initiative-row__sprite" aria-hidden="true">
                   <span
@@ -1026,7 +1041,13 @@ watch(
                 <span class="sr-only">Turn order {{ index + 1 }}</span>
               </button>
 
-              <div class="initiative-row__body">
+              <button
+                type="button"
+                class="initiative-row__body"
+                :aria-label="`Center camera on ${entry.name}`"
+                :title="`Center camera on ${entry.name}`"
+                @click="focusInitiativeEntry(entry.id)"
+              >
                 <span class="initiative-row__main">
                   <span class="initiative-row__name">{{ entry.name }}</span>
                   <span class="initiative-row__meta">{{ entry.meta }} · SPD {{ entry.speed }}</span>
@@ -1037,7 +1058,7 @@ watch(
                     <span :style="{ width: hpPercent(entry) }" />
                   </span>
                 </span>
-              </div>
+              </button>
 
               <div class="initiative-row__score">
                 <label>
@@ -1793,8 +1814,24 @@ input:focus {
   flex-direction: column;
   justify-content: center;
   gap: 0.35rem;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
   color: inherit;
+  cursor: pointer;
+  font: inherit;
+  padding: 0;
   text-align: left;
+}
+
+.initiative-row__body:hover .initiative-row__name,
+.initiative-row__body:focus-visible .initiative-row__name {
+  color: var(--accent);
+}
+
+.initiative-row__body:focus-visible {
+  outline: 2px solid rgba(250, 189, 47, 0.35);
+  outline-offset: 3px;
 }
 
 .initiative-row__main {
