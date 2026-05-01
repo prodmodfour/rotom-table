@@ -14,7 +14,7 @@ import {
   writeFileSync,
 } from 'node:fs'
 import { dirname, join, resolve, sep } from 'node:path'
-import type { MapSummary, TabletopMap, TabletopMapV1, TabletopMapV2 } from '~/types/map'
+import type { GridDimensions, MapSummary, MapVoxelV2, TabletopMap, TabletopMapV1, TabletopMapV2 } from '~/types/map'
 import { materialIdForLegacy, normalizeMaterialId } from '~/utils/mapMaterials'
 
 export const PROJECT_ROOT = resolve(process.cwd())
@@ -55,22 +55,59 @@ export const folderFromPath = (filePath: string): string => {
   return rel.slice(0, lastSlash)
 }
 
+const mapPathLabel = (filePath: string): string =>
+  filePath.startsWith(PROJECT_ROOT + sep) ? filePath.slice(PROJECT_ROOT.length + 1) : filePath
+
+const invalidMapDocument = (filePath: string, message: string): never => {
+  throw new Error(`Map ${mapPathLabel(filePath)} is invalid: ${message}`)
+}
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  Boolean(value && typeof value === 'object' && !Array.isArray(value))
+
+const normalizeMapDimensionsForEditor = (value: unknown, filePath: string): GridDimensions => {
+  if (!isRecord(value)) invalidMapDocument(filePath, 'dimensions must be an object with integer x/y/z values')
+  const out = {} as GridDimensions
+  for (const axis of ['x', 'y', 'z'] as const) {
+    const n = value[axis]
+    if (typeof n !== 'number' || !Number.isInteger(n) || n < 1 || n > 200) {
+      invalidMapDocument(filePath, `dimensions.${axis} must be an integer 1..200`)
+    }
+    out[axis] = n
+  }
+  return out
+}
+
+const normalizeVoxelForEditor = (value: unknown, index: number, filePath: string): MapVoxelV2 => {
+  if (!isRecord(value)) invalidMapDocument(filePath, `voxels[${index}] must be an object`)
+  for (const axis of ['x', 'y', 'z'] as const) {
+    if (typeof value[axis] !== 'number' || !Number.isInteger(value[axis])) invalidMapDocument(filePath, `voxels[${index}].${axis} must be an integer`)
+  }
+  const rawMaterial = typeof value.materialId === 'string' && value.materialId
+    ? value.materialId
+    : materialIdForLegacy(typeof value.material === 'string' ? value.material : '')
+  const out: Record<string, unknown> = {
+    ...value,
+    materialId: normalizeMaterialId(rawMaterial),
+  }
+  // `material` is v1 compatibility input only. Loaded/saved maps should be
+  // unambiguous v2 documents keyed by `materialId`.
+  delete out.material
+  return out as unknown as MapVoxelV2
+}
+
 const normalizeMapDocument = (json: TabletopMapV1 | TabletopMapV2, filePath: string): TabletopMapV2 => {
+  if (!isRecord(json)) invalidMapDocument(filePath, 'root must be an object')
+  if (!SLUG_RE.test(String(json.slug ?? ''))) invalidMapDocument(filePath, 'slug must match /^[a-z0-9-]+$/')
+  if (typeof json.name !== 'string' || !json.name.trim()) invalidMapDocument(filePath, 'name must be a non-empty string')
+  const dimensions = normalizeMapDimensionsForEditor(json.dimensions, filePath)
+
   const initiative = json.initiative && typeof json.initiative === 'object'
     ? json.initiative
     : { activeId: null, round: 1 }
 
-  const voxels = Array.isArray(json.voxels)
-    ? json.voxels.map((voxel) => {
-        const rawMaterial = 'materialId' in voxel && voxel.materialId
-          ? voxel.materialId
-          : materialIdForLegacy(String((voxel as { material?: string }).material ?? ''))
-        return {
-          ...voxel,
-          materialId: normalizeMaterialId(rawMaterial),
-        }
-      })
-    : []
+  if (!Array.isArray(json.voxels)) invalidMapDocument(filePath, 'voxels must be an array')
+  const voxels = json.voxels.map((voxel, index) => normalizeVoxelForEditor(voxel, index, filePath))
 
   if ((json as TabletopMapV2).schemaVersion === 2) {
     const v2 = json as TabletopMapV2
@@ -78,6 +115,7 @@ const normalizeMapDocument = (json: TabletopMapV1 | TabletopMapV2, filePath: str
       ...v2,
       schemaVersion: 2,
       folder: v2.folder ?? folderFromPath(filePath),
+      dimensions,
       initiative,
       assetPacks: Array.isArray(v2.assetPacks) ? v2.assetPacks : [],
       voxels,
@@ -96,6 +134,7 @@ const normalizeMapDocument = (json: TabletopMapV1 | TabletopMapV2, filePath: str
     ...(json as TabletopMapV1),
     schemaVersion: 2,
     folder: json.folder ?? folderFromPath(filePath),
+    dimensions,
     initiative,
     assetPacks: [],
     voxels,
@@ -114,7 +153,12 @@ const normalizeMapDocument = (json: TabletopMapV1 | TabletopMapV2, filePath: str
 
 export const readMapFile = (filePath: string): TabletopMap => {
   const raw = readFileSync(filePath, 'utf8')
-  const json = JSON.parse(raw) as TabletopMapV1 | TabletopMapV2
+  let json: TabletopMapV1 | TabletopMapV2
+  try {
+    json = JSON.parse(raw) as TabletopMapV1 | TabletopMapV2
+  } catch (err) {
+    invalidMapDocument(filePath, `could not parse JSON: ${(err as Error).message}`)
+  }
   return normalizeMapDocument(json, filePath)
 }
 

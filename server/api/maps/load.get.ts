@@ -15,5 +15,12 @@ export default defineEventHandler((event) => {
   if (!path) {
     throw createError({ statusCode: 404, statusMessage: `Map ${slug}.json not found` })
   }
-  return { map: readMapFile(path) }
+  try {
+    return { map: readMapFile(path) }
+  } catch (err) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: (err as Error).message || `Map ${slug}.json is invalid`,
+    })
+  }
 })

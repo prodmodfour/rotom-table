@@ -17,13 +17,14 @@ import {
 import { createPlacementId, placementsToSpawned } from '~/utils/placement'
 import {
   VOXEL_MATERIALS,
-  buildVoxelOccupancy,
+  buildAllVoxelOccupancy,
   cellInsidePokemonFootprint,
   filterVoxelsInBounds,
   getMaterialDef,
   hexColorString,
   voxelKey,
 } from '~/utils/voxels'
+import { buildMapOccupancy } from '~/utils/mapOccupancy'
 import { getClientId } from '~/utils/clientId'
 import { COMBAT_STAGE_KEYS, COMBAT_STAT_STAGE_KEYS, clampCombatStage } from '~/utils/combatStages'
 import { resolveStats } from '~/data/characterSheets'
@@ -358,13 +359,17 @@ const spawnSheet = (selection: SheetSelection) => {
       ? catalogEntryForPokemonSheet(selection.sheet)
       : catalogEntryForTrainerSheet(selection.sheet)
   if (!catalog) return
-  const voxelKeys = buildVoxelOccupancy(mapVoxels.value)
+  const occupiedKeys = buildMapOccupancy({
+    voxels: mapVoxels.value,
+    props: mapProps.value,
+    doors: mapDoors.value,
+  })
   const position = findFirstAvailablePosition(
     catalog,
     spawnedPokemon.value,
     map.value.dimensions,
     null,
-    voxelKeys,
+    occupiedKeys,
   )
   if (!position) return
 
@@ -572,11 +577,18 @@ const clearCustomColor = () => {
 const fillGround = () => {
   if (!map.value) return
   const dims = map.value.dimensions
-  const occupancy = buildVoxelOccupancy(mapVoxels.value)
+  const voxelOccupancy = buildAllVoxelOccupancy(mapVoxels.value)
+  const mapOccupancy = buildMapOccupancy({
+    voxels: mapVoxels.value,
+    props: mapProps.value,
+    doors: mapDoors.value,
+  })
   const additions: GridVoxel[] = []
   for (let z = 0; z < dims.z; z += 1) {
     for (let x = 0; x < dims.x; x += 1) {
-      if (occupancy.has(voxelKey(x, 0, z))) continue
+      const key = voxelKey(x, 0, z)
+      if (voxelOccupancy.has(key)) continue
+      if (mapOccupancy.has(key)) continue
       if (cellInsidePokemonFootprint(x, 0, z, spawnedPokemon.value)) continue
       const voxel: GridVoxel = { x, y: 0, z, materialId: buildMaterial.value }
       if (buildColor.value) voxel.color = buildColor.value
@@ -615,6 +627,11 @@ watch(
       spawnedPokemon.value,
       normalized,
       trimmedVoxels,
+      buildMapOccupancy({
+        voxels: trimmedVoxels,
+        props: mapProps.value,
+        doors: mapDoors.value,
+      }),
     )
     const byId = new Map(reconciliation.pokemons.map((p) => [p.id, p.position]))
     map.value.placements = map.value.placements.flatMap((placement) => {

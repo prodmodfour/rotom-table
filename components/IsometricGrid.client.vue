@@ -16,7 +16,7 @@ import type {
 import type { PreviewState } from '~/utils/grid'
 import { findPathForPokemon, getAnchorCenter, getPokemonCenter } from '~/utils/grid'
 import {
-  buildVoxelOccupancy,
+  buildAllVoxelOccupancy,
   cellInsidePokemonFootprint,
   parseHexColor,
   voxelGroupKey,
@@ -24,6 +24,7 @@ import {
   voxelMaterialDefinition,
   voxelMaterialId,
 } from '~/utils/voxels'
+import { buildMapOccupancy } from '~/utils/mapOccupancy'
 import { getMaterialDefinition, materialColorNumber } from '~/utils/mapMaterials'
 import {
   doorStateTint,
@@ -1317,7 +1318,14 @@ const damageDialogMultiplierLabel = computed(() =>
 const selectedPokemon = computed(
   () => props.pokemons.find((pokemon) => pokemon.id === props.selectedId) ?? null,
 )
-const voxelOccupancy = computed(() => buildVoxelOccupancy(props.voxels))
+const mapMovementOccupancy = computed(() => buildMapOccupancy({
+  voxels: props.voxels,
+  props: props.mapProps ?? [],
+  doors: props.doors ?? [],
+  includeTransparent: true,
+  includeOpenDoors: false,
+}))
+const allVoxelOccupancy = computed(() => buildAllVoxelOccupancy(props.voxels))
 
 // Voxel y-values bucketed by ``x,z`` column key. Lets a shadow-cast
 // raycast stay O(footprint) instead of O(voxels) — most cells have 0
@@ -2063,7 +2071,7 @@ const setHoveredPokemonId = (id: string | null) => {
         next.currentCenter,
         next.base,
         next.elevation,
-        true,
+        visibleLayers().tokens,
       )
     }
   }
@@ -2085,10 +2093,12 @@ const updateHpBar = (
   maxHp: number,
   combatStages: CombatStageMap,
   activeTurn: boolean,
+  show = true,
 ) => {
-  // Hide the whole token HUD when HP data is not meaningful. Otherwise the
-  // label and a valid HP bar remain visible even at full health.
-  if (maxHp <= 0) {
+  // Hide the whole token HUD when the token layer is disabled or HP data is
+  // not meaningful. CSS3DRenderer rewrites DOM display from object.visible,
+  // so keep this on the CSS3D object instead of only touching element.style.
+  if (!show || maxHp <= 0) {
     bar.visible = false
     return
   }
@@ -2236,12 +2246,13 @@ const applyRenderObjectPosition = (renderObject: PokemonRenderObject) => {
     surfaceY + 0.005,
     renderObject.currentCenter.z,
   )
+  const layers = visibleLayers()
   updateElevationBadge(
     renderObject.elevationBadge,
     renderObject.currentCenter,
     renderObject.base,
     renderObject.elevation,
-    hoveredPokemonId === renderObject.id,
+    hoveredPokemonId === renderObject.id && layers.tokens,
   )
   updateHpBar(
     renderObject.hpBar,
@@ -2253,6 +2264,7 @@ const applyRenderObjectPosition = (renderObject: PokemonRenderObject) => {
     renderObject.maxHp,
     renderObject.combatStages,
     props.activeTurnId === renderObject.id,
+    layers.tokens,
   )
 }
 
@@ -2370,7 +2382,7 @@ const buildTerrainTopEdgeOverlay = (voxels: ReadonlyArray<GridVoxel>): THREE.Gro
   const group = new THREE.Group()
   if (voxels.length === 0) return group
 
-  const occupied = buildVoxelOccupancy(voxels)
+  const occupied = buildAllVoxelOccupancy(voxels)
   const lightSegments: number[] = []
   const darkSegments: number[] = []
   const eps = 0.002
@@ -2866,6 +2878,8 @@ const applyLayerVisibility = () => {
     renderObject.volume.visible = tokens
     renderObject.edges.visible = tokens
     renderObject.proxy.visible = tokens
+    renderObject.elevationBadge.visible = tokens && renderObject.elevationBadge.visible
+    renderObject.hpBar.visible = tokens && renderObject.hpBar.visible
     renderObject.elevationBadge.element.style.display = tokens ? '' : 'none'
     renderObject.hpBar.element.style.display = tokens ? '' : 'none'
     renderObject.shadow.visible = layers.shadows && tokens
@@ -3048,10 +3062,10 @@ const updatePreviewAtAnchor = (anchor: GridAnchor | null) => {
     selected,
     selected.position,
     anchor,
-    [],
+    props.pokemons,
     props.dimensions,
     selected.id,
-    voxelOccupancy.value,
+    mapMovementOccupancy.value,
   )
   const reachable = Boolean(path)
   const center = getAnchorCenter(anchor, selected.base)
@@ -3255,13 +3269,15 @@ const pickBuildTarget = (
     cell.y < props.dimensions.y &&
     cell.z >= 0 &&
     cell.z < props.dimensions.z
-  const occupiedByVoxel = voxelOccupancy.value.has(voxelKey(cell.x, cell.y, cell.z))
+  const key = voxelKey(cell.x, cell.y, cell.z)
+  const occupiedByVoxel = allVoxelOccupancy.value.has(key)
+  const occupiedByBlockingObject = mapMovementOccupancy.value.has(key)
   const insidePokemon = cellInsidePokemonFootprint(cell.x, cell.y, cell.z, props.pokemons)
 
   return {
     action: 'place',
     cell,
-    valid: inBounds && !occupiedByVoxel && !insidePokemon,
+    valid: inBounds && !occupiedByVoxel && !occupiedByBlockingObject && !insidePokemon,
   }
 }
 
@@ -4014,6 +4030,10 @@ watch(
   () => {
     if (!renderer) return
     syncPropObjects()
+    if (selectedPokemon.value && activePreviewAnchor) {
+      updatePreviewAtAnchor(activePreviewAnchor)
+    }
+    replayBuildPreview()
   },
   { deep: true },
 )
@@ -4023,6 +4043,10 @@ watch(
   () => {
     if (!renderer) return
     syncDoorObjects()
+    if (selectedPokemon.value && activePreviewAnchor) {
+      updatePreviewAtAnchor(activePreviewAnchor)
+    }
+    replayBuildPreview()
   },
   { deep: true },
 )

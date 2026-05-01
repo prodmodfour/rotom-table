@@ -116,6 +116,8 @@ Props are anchored map objects separate from voxels. They have a grid position, 
 
 Props receive contact shadows. If `position.y` is above the surface beneath them, their shadow stays on the lower surface and becomes softer/fainter.
 
+Movement occupancy uses the prop's `position.y`, footprint, height, and scale. `blocksMovement` on the placement wins; otherwise the prop definition's default is used. Decorative props like reeds may be non-blocking, while consoles, trees, crates, railings, and similar props generally block movement.
+
 ### Zones
 
 Zones are not just labels; they drive graphics. Each zone creates a subtle tinted floor fill, border, and optional icon decal.
@@ -149,6 +151,8 @@ Doors are visual objects with state:
 
 States: `open`, `closed`, `locked`.
 
+Closed and locked doors block token movement. Open doors do not. Transparent doors (for example `glass_habitat_gate`) still block movement while closed/locked; transparency only changes how the object renders.
+
 ## Sprites, cages, and shadows
 
 Pokémon/trainer placements still reference sheets. The sheet controls sprite size, footprint (`base`), and clearance. The renderer uses that cage to:
@@ -171,7 +175,14 @@ public/assets/map/airship/
   props/*.svg
 ```
 
-Runtime URLs use `/assets/map/airship/...`. Do not rely on remote URLs at runtime. Source/license metadata is in `manifest.json`.
+Runtime URLs use `/assets/map/airship/...`. Do not rely on remote URLs at runtime.
+
+For Phase 1, `public/assets/map/airship/manifest.json` is **source/license metadata only**. The runtime source of truth is still the TypeScript registry:
+
+- materials: `utils/mapMaterials.ts`
+- decals/props/doors: `utils/mapAssets.ts`
+
+AI-authored maps should still include `"assetPacks": ["airship"]` when using the current local decal/prop/door IDs so future manifest-driven loading can preserve intent.
 
 ## AI generation advice
 
@@ -184,5 +195,39 @@ Runtime URLs use `/assets/map/airship/...`. Do not rely on remote URLs at runtim
 7. Run validation before loading:
 
 ```bash
-node scripts/validate-map-v2.mjs data/maps/ranger_ark/airship-habitat-atrium-v2.json
+npm run validate:map -- data/maps/ranger_ark/airship-habitat-atrium-v2.json
+npm run validate:maps
+npm run smoke:map-v2
 ```
+
+## Troubleshooting
+
+### Validation
+
+Use `npm run validate:map -- <path/to/map.json>` for one map, or `npm run validate:maps` for the checked-in demo map. The validator catches the mistakes most likely to come from AI-authored JSON: unknown material/decal/prop/door IDs, duplicate voxel positions, duplicate object IDs, out-of-bounds positions, bad scales, bad zone bounds, missing asset packs, and lights pointing at missing zones.
+
+### Common coordinate mistakes
+
+- `x` and `z` are table coordinates; `y` is elevation.
+- A ground voxel at `y=0` has its top face at `y=1`, so tokens standing on normal ground usually use `position.y = 1`.
+- Voxel positions must be integers. Decals, props, doors, and lights may use numeric positions, but keep anchors inside dimensions.
+- Zone `x2`/`z2` are upper bounds; `x2` must be greater than `x1` and no larger than `dimensions.x`.
+
+### Why floor decals use `position.y + 1`
+
+A floor decal at `position.y = 0` is intended to sit on top of the voxel occupying `y=0`. The renderer lifts floor decals to `position.y + 1` plus a tiny epsilon so the decal does not z-fight with the floor top. If a decal appears one level too high or too low, check whether you authored the voxel cube's `y` or the top-surface `y`.
+
+### Prop grounding and movement footprint
+
+A prop's `position.y` is its base/feet height, not the bottom voxel's `y`. On ordinary floor voxels at `y=0`, most props should use `position.y = 1`. `footprint` covers grid cells in `x/z`; `height` covers cells upward from `position.y`; `scale` multiplies both. Blocking props reserve every grid cell touched by that footprint/height for movement/pathfinding.
+
+### Doors and blocking props
+
+Closed and locked doors block movement; open doors do not. Blocking props also affect spawning, movement preview/pathfinding, and build-mode placement checks. Transparent blockers still block if their material/object says they do — reinforced glass and closed glass gates should contain tokens without hiding them completely.
+
+### Keeping Pokémon sprites visually grounded
+
+- Keep token feet at the top surface: `position.y = floorVoxel.y + 1`.
+- Do not put a sprite inside a blocking voxel/prop/closed door footprint; the validator and movement occupancy are designed to prevent this.
+- Preserve the sheet's `base` and `clearance` values so the contact shadow, cage, HP bar, and sorting stay aligned.
+- Use transparent barriers for containment walls so sprites remain visible, and avoid stacking opaque props directly in front of important token feet.

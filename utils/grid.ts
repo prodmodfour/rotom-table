@@ -109,15 +109,15 @@ export const canPlacePokemon = (
   pokemons: PokemonFootprint[],
   dimensions: GridDimensions,
   exceptId?: string | null,
-  voxelKeys: ReadonlySet<string> = EMPTY_VOXEL_KEYS,
+  occupiedKeys: ReadonlySet<string> = EMPTY_VOXEL_KEYS,
 ) => {
   if (!isAnchorWithinBounds(position, pokemon, dimensions)) {
     return false
   }
 
   if (
-    voxelKeys.size > 0 &&
-    footprintOverlapsVoxels(position, pokemon.base, getClearanceValue(pokemon), voxelKeys)
+    occupiedKeys.size > 0 &&
+    footprintOverlapsVoxels(position, pokemon.base, getClearanceValue(pokemon), occupiedKeys)
   ) {
     return false
   }
@@ -188,14 +188,14 @@ export const findFirstAvailablePosition = (
   pokemons: PokemonFootprint[],
   dimensions: GridDimensions,
   exceptId?: string | null,
-  voxelKeys: ReadonlySet<string> = EMPTY_VOXEL_KEYS,
+  occupiedKeys: ReadonlySet<string> = EMPTY_VOXEL_KEYS,
 ) => {
   const anchors = buildCenterWeightedAnchors(pokemon, dimensions)
 
   for (const anchor of anchors) {
     const position = { x: anchor.x, y: anchor.y, z: anchor.z }
 
-    if (canPlacePokemon(pokemon, position, pokemons, dimensions, exceptId, voxelKeys)) {
+    if (canPlacePokemon(pokemon, position, pokemons, dimensions, exceptId, occupiedKeys)) {
       return position
     }
   }
@@ -210,13 +210,13 @@ export const findPathForPokemon = (
   pokemons: PokemonFootprint[],
   dimensions: GridDimensions,
   exceptId?: string | null,
-  voxelKeys: ReadonlySet<string> = EMPTY_VOXEL_KEYS,
+  occupiedKeys: ReadonlySet<string> = EMPTY_VOXEL_KEYS,
 ) => {
   if (!isAnchorWithinBounds(start, pokemon, dimensions)) {
     return null
   }
 
-  if (!canPlacePokemon(pokemon, goal, pokemons, dimensions, exceptId, voxelKeys)) {
+  if (!canPlacePokemon(pokemon, goal, pokemons, dimensions, exceptId, occupiedKeys)) {
     return null
   }
 
@@ -243,7 +243,7 @@ export const findPathForPokemon = (
         continue
       }
 
-      if (!canPlacePokemon(pokemon, next, pokemons, dimensions, exceptId, voxelKeys)) {
+      if (!canPlacePokemon(pokemon, next, pokemons, dimensions, exceptId, occupiedKeys)) {
         continue
       }
 
@@ -272,8 +272,8 @@ export const reconcilePokemonPositions = (
   pokemons: SpawnedPokemon[],
   dimensions: GridDimensions,
   voxels: ReadonlyArray<GridVoxel> = [],
+  occupiedKeys: ReadonlySet<string> = buildVoxelOccupancy(voxels),
 ) => {
-  const voxelKeys = buildVoxelOccupancy(voxels)
   const nextPokemons: SpawnedPokemon[] = []
   const removedIds: string[] = []
 
@@ -284,14 +284,14 @@ export const reconcilePokemonPositions = (
       nextPokemons,
       dimensions,
       undefined,
-      voxelKeys,
+      occupiedKeys,
     )
       ? pokemon.position
       : null
 
     const fallbackPosition =
       currentPosition ??
-      findFirstAvailablePosition(pokemon, nextPokemons, dimensions, null, voxelKeys)
+      findFirstAvailablePosition(pokemon, nextPokemons, dimensions, null, occupiedKeys)
 
     if (!fallbackPosition) {
       removedIds.push(pokemon.id)

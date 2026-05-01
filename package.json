@@ -6,6 +6,9 @@
     "dev": "nuxt dev",
     "build": "nuxt build",
     "preview": "nuxt preview",
+    "validate:map": "node scripts/validate-map-v2.mjs",
+    "validate:maps": "node scripts/validate-map-v2.mjs data/maps/ranger_ark/airship-habitat-atrium-v2.json",
+    "smoke:map-v2": "node scripts/smoke-map-v2.mjs",
     "postinstall": "nuxt prepare"
   },
   "dependencies": {

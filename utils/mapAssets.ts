@@ -1,5 +1,12 @@
 import type { DoorState } from '~/types/map'
 
+/**
+ * Runtime registry for the starter local map assets. The matching
+ * public/assets/map/airship/manifest.json is source/license metadata only in
+ * Phase 1; keep this TypeScript file as the source of truth until the Phase 2
+ * external/manifest-driven asset pass.
+ */
+
 export interface DecalDefinition {
   id: string
   displayName: string
