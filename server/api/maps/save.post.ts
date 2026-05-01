@@ -51,23 +51,21 @@ export default defineEventHandler(async (event) => {
   const initiative = map.initiative && typeof map.initiative === 'object'
     ? map.initiative
     : { activeId: null, round: 1 }
-  const mapWithoutRetiredObjectLayers = { ...(map as Record<string, unknown>) }
-  delete mapWithoutRetiredObjectLayers.decals
-  delete mapWithoutRetiredObjectLayers.props
-  delete mapWithoutRetiredObjectLayers.zones
-  delete mapWithoutRetiredObjectLayers.doors
 
   const persisted: TabletopMap = {
-    ...(mapWithoutRetiredObjectLayers as unknown as TabletopMap),
     schemaVersion: 2,
+    slug: map.slug,
+    name: map.name,
     folder: folderFromPath(path),
-    initiative,
-    assetPacks: Array.isArray(map.assetPacks) ? map.assetPacks : [],
+    dimensions: map.dimensions,
     voxels: Array.isArray(map.voxels)
       ? map.voxels.filter((voxel) => !getVoxelMaterialDefinition(voxel).transparent)
       : [],
     placements: Array.isArray(map.placements) ? map.placements : [],
     lights: Array.isArray(map.lights) ? map.lights : [],
+    initiative,
+    metadata: map.metadata,
+    createdAt: map.createdAt,
     updatedAt: Date.now(),
   }
   writeMapFile(path, persisted)

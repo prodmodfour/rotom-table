@@ -90996,6 +90996,10 @@
       "radius": 10
     }
   ],
+  "initiative": {
+    "activeId": "pkm-mon08pqf-nicnft",
+    "round": 1
+  },
   "metadata": {
     "generatedBy": "scripts/generate-airship-habitat-atrium.mjs",
     "intendedPath": "data/maps/ranger_ark/airship-habitat-atrium.json",
@@ -91228,10 +91232,5 @@
       }
     ]
   },
-  "initiative": {
-    "activeId": "pkm-mon08pqf-nicnft",
-    "round": 1
-  },
-  "assetPacks": [],
-  "updatedAt": 1777645732377
+  "updatedAt": 1777651321236
 }

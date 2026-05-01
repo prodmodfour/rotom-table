@@ -1,5 +1,5 @@
 import type { GridAnchor, GridDimensions, SpawnedPokemon } from '~/types/pokemon'
-import type { GridVoxel } from '~/types/map'
+import type { MapVoxelV2 } from '~/types/map'
 import { buildVoxelOccupancy, footprintOverlapsVoxels } from './voxels'
 
 interface PokemonFootprint {
@@ -271,7 +271,7 @@ export const findPathForPokemon = (
 export const reconcilePokemonPositions = (
   pokemons: SpawnedPokemon[],
   dimensions: GridDimensions,
-  voxels: ReadonlyArray<GridVoxel> = [],
+  voxels: ReadonlyArray<MapVoxelV2> = [],
   occupiedKeys: ReadonlySet<string> = buildVoxelOccupancy(voxels),
 ) => {
   const nextPokemons: SpawnedPokemon[] = []

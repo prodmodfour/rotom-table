@@ -1,4 +1,4 @@
-import type { LegacyVoxelMaterial, MapMaterialId, MapVoxelV2, MaterialDefinition } from '~/types/map'
+import type { MapVoxelV2, MaterialDefinition } from '~/types/map'
 
 const mat = (
   id: string,
@@ -12,10 +12,7 @@ const mat = (
  * Visual-first material registry. Mechanical defaults live here only when the
  * material clearly implies them; individual voxels may still override flags.
  *
- * Phase 2 keeps these definitions as the offline/fallback palette, while
- * public/assets/map/<pack>/manifest.json can register richer material records
- * at runtime. Unknown IDs are preserved rather than normalized away so a map
- * loaded by the server can still be resolved after the client loads manifests.
+ * These definitions are the material palette used by map voxels.
  */
 export const MATERIAL_DEFINITIONS: readonly MaterialDefinition[] = [
   mat('airship_hull_dark', 'Airship Hull Dark', '#2f3542', ['airship', 'metal', 'hull'], { blocksMovementDefault: true, blocksSightDefault: true }),
@@ -55,69 +52,27 @@ export const MATERIAL_DEFINITIONS: readonly MaterialDefinition[] = [
   mat('cargo_lift_floor', 'Cargo Lift Floor', '#5b646e', ['airship', 'cargo', 'lift', 'metal']),
   mat('hazard_stripe_floor', 'Hazard Stripe Floor', '#c9912c', ['airship', 'hazard', 'stripe', 'warning']),
 
-  // Legacy aliases kept so old maps and build habits do not crash.
-  mat('grass', 'Grass (legacy)', '#5da130', ['legacy', 'grass', 'organic']),
-  mat('dirt', 'Dirt (legacy)', '#8a5a32', ['legacy', 'dirt']),
-  mat('stone', 'Stone (legacy)', '#7d7d7d', ['legacy', 'stone'], { blocksMovementDefault: true, blocksSightDefault: true }),
-  mat('water', 'Water (legacy)', '#2e77d0', ['legacy', 'water', 'transparent'], { transparent: true, opacity: 0.68 }),
-  mat('wood', 'Wood (legacy)', '#9a5d2e', ['legacy', 'wood']),
-  mat('lava', 'Lava (legacy)', '#ff6d1a', ['legacy', 'thermal', 'lava', 'emissive'], { emissive: '#ff6d1a' }),
-  mat('path', 'Path (legacy)', '#9b7653', ['legacy', 'path']),
 ] as const
 
 export const MATERIAL_BY_ID = new Map<string, MaterialDefinition>(
   MATERIAL_DEFINITIONS.map((definition) => [definition.id, definition]),
 )
 
-export const LEGACY_MATERIAL_MAP: Record<LegacyVoxelMaterial, MapMaterialId> = {
-  grass: 'meadow_grass',
-  dirt: 'burrow_dirt',
-  stone: 'airship_wall_bulkhead',
-  water: 'shallow_water',
-  sand: 'sand',
-  snow: 'snow',
-  wood: 'observation_wood',
-  lava: 'thermal_warning_floor',
-  path: 'airship_floor_metal',
-}
-
 export const DEFAULT_MATERIAL_ID = 'airship_floor_metal'
-
-export const registerMaterialDefinitions = (definitions: readonly MaterialDefinition[]) => {
-  for (const definition of definitions) {
-    if (!definition?.id) continue
-    const existing = MATERIAL_BY_ID.get(definition.id)
-    MATERIAL_BY_ID.set(definition.id, {
-      ...(existing ?? {}),
-      ...definition,
-      id: definition.id,
-      displayName: definition.displayName ?? existing?.displayName ?? definition.id,
-      tags: definition.tags ?? existing?.tags,
-    })
-  }
-}
-
-export const materialIdForLegacy = (material: string | undefined): string => {
-  if (!material) return DEFAULT_MATERIAL_ID
-  return LEGACY_MATERIAL_MAP[material as LegacyVoxelMaterial] ?? material
-}
 
 export const normalizeMaterialId = (id: string | undefined): string => {
   if (!id) return DEFAULT_MATERIAL_ID
   if (MATERIAL_BY_ID.has(id)) return id
-  if (id in LEGACY_MATERIAL_MAP) return LEGACY_MATERIAL_MAP[id as LegacyVoxelMaterial]
-  // Preserve unknown manifest-provided IDs. Rendering falls back visually until
-  // the matching pack manifest is loaded, but the authored material survives.
   return id
 }
 
-export const materialIdForVoxel = (voxel: Pick<MapVoxelV2, 'materialId' | 'material'>): string =>
-  normalizeMaterialId(voxel.materialId ?? voxel.material)
+export const materialIdForVoxel = (voxel: Pick<MapVoxelV2, 'materialId'>): string =>
+  normalizeMaterialId(voxel.materialId)
 
 export const getMaterialDefinition = (id: string | undefined): MaterialDefinition =>
   MATERIAL_BY_ID.get(normalizeMaterialId(id)) ?? MATERIAL_BY_ID.get(DEFAULT_MATERIAL_ID)!
 
-export const getVoxelMaterialDefinition = (voxel: Pick<MapVoxelV2, 'materialId' | 'material'>): MaterialDefinition =>
+export const getVoxelMaterialDefinition = (voxel: Pick<MapVoxelV2, 'materialId'>): MaterialDefinition =>
   getMaterialDefinition(materialIdForVoxel(voxel))
 
 export const materialColorNumber = (definition: MaterialDefinition): number =>
@@ -133,7 +88,6 @@ export interface MaterialPaletteEntry {
 }
 
 export const getMapMaterialPalette = (): MaterialPaletteEntry[] => Array.from(MATERIAL_BY_ID.values())
-  .filter((definition) => !definition.tags?.includes('legacy'))
   .map((definition) => ({
     material: definition.id,
     label: definition.displayName,

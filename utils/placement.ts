@@ -1,5 +1,5 @@
 /**
- * Helpers for turning a `MapPlacement` (which only stores a sheet
+ * Helpers for turning a `SheetPlacement` (which only stores a sheet
  * reference + map-local data) into a fully-populated `SpawnedPokemon`
  * the renderer can consume.
  *
@@ -15,7 +15,7 @@ import {
   trainerHpSnapshot,
 } from '~/utils/sheetSpawn'
 import type { CharacterSheet } from '~/types/characterSheet'
-import type { MapPlacement, TabletopMap } from '~/types/map'
+import type { SheetPlacement, TabletopMap } from '~/types/map'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import type { TrainerSheet } from '~/types/trainerSheet'
 
@@ -25,7 +25,7 @@ export interface SheetLookup {
 }
 
 export const placementToSpawned = (
-  placement: MapPlacement,
+  placement: SheetPlacement,
   sheets: SheetLookup,
 ): SpawnedPokemon | null => {
   if (placement.sheetKind === 'pokemon') {

@@ -1,9 +1,7 @@
 /**
  * Voxel terrain helpers.
  *
- * Voxels are 1×1×1 cubes stored sparsely as `MapVoxelV2` records. This
- * module keeps the older helper names so build-mode/editor code can evolve
- * without losing the sprite pathfinding/collision behaviour.
+ * Voxels are 1×1×1 cubes stored sparsely as `MapVoxelV2` records.
  */
 import type { GridAnchor } from '~/types/pokemon'
 import type { MapVoxelV2, VoxelMaterial } from '~/types/map'

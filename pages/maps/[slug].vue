@@ -26,7 +26,6 @@ import {
 } from '~/utils/voxels'
 import { buildMapOccupancy } from '~/utils/mapOccupancy'
 import { getClientId } from '~/utils/clientId'
-import { getMapAssetRegistryRevision, loadMapAssetPacks } from '~/utils/mapAssets'
 import { COMBAT_STAGE_KEYS, COMBAT_STAT_STAGE_KEYS, clampCombatStage } from '~/utils/combatStages'
 import { resolveStats } from '~/data/characterSheets'
 import { resolveTrainerStats } from '~/data/trainerSheets'
@@ -34,7 +33,7 @@ import type { CharacterSheet } from '~/types/characterSheet'
 import type { CombatStageMap } from '~/types/combatStages'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import type { TrainerSheet } from '~/types/trainerSheet'
-import type { GridAnchor, GridVoxel, InitiativeTrackerState, VoxelMaterial } from '~/types/map'
+import type { GridAnchor, InitiativeTrackerState, MapVoxelV2, VoxelMaterial } from '~/types/map'
 import type { PreviewState } from '~/utils/grid'
 import type { SaveStatus } from '~/composables/useEditableSheet'
 
@@ -74,13 +73,6 @@ const buildColor = ref<string | null>(null)
 
 const layerVisibility = ref({
   terrain: true,
-  // Object layers are retired from the map view; keep these false so
-  // old map JSON is hidden if it reaches the renderer.
-  decals: false,
-  props: false,
-  zones: false,
-  doors: false,
-  transparentObjects: false,
   shadows: true,
   tokens: true,
   grid: true,
@@ -98,20 +90,8 @@ const sheetLookup = computed(() => ({
 }))
 
 const spawnedPokemon = computed(() => placementsToSpawned(map.value, sheetLookup.value))
-const mapVoxels = computed<GridVoxel[]>(() => map.value?.voxels ?? [])
-const mapAssetPacks = computed(() => map.value?.assetPacks ?? [])
-const assetRegistryRevision = ref(getMapAssetRegistryRevision())
+const mapVoxels = computed<MapVoxelV2[]>(() => map.value?.voxels ?? [])
 const voxelCount = computed(() => mapVoxels.value.length)
-
-watch(
-  () => mapAssetPacks.value.join('|'),
-  async () => {
-    if (!import.meta.client) return
-    await loadMapAssetPacks(mapAssetPacks.value)
-    assetRegistryRevision.value = getMapAssetRegistryRevision()
-  },
-  { immediate: true },
-)
 
 type InitiativeKind = 'pokemon' | 'trainer'
 
@@ -550,7 +530,7 @@ const updatePreview = (next: PreviewState) => {
   previewState.value = next
 }
 
-const placeVoxel = (voxel: GridVoxel) => {
+const placeVoxel = (voxel: MapVoxelV2) => {
   if (!map.value) return
   const next = map.value.voxels.filter(
     (v) => !(v.x === voxel.x && v.y === voxel.y && v.z === voxel.z),
@@ -603,14 +583,14 @@ const fillGround = () => {
     voxels: mapVoxels.value,
     includeTransparent: false,
   })
-  const additions: GridVoxel[] = []
+  const additions: MapVoxelV2[] = []
   for (let z = 0; z < dims.z; z += 1) {
     for (let x = 0; x < dims.x; x += 1) {
       const key = voxelKey(x, 0, z)
       if (voxelOccupancy.has(key)) continue
       if (mapOccupancy.has(key)) continue
       if (cellInsidePokemonFootprint(x, 0, z, spawnedPokemon.value)) continue
-      const voxel: GridVoxel = { x, y: 0, z, materialId: buildMaterial.value }
+      const voxel: MapVoxelV2 = { x, y: 0, z, materialId: buildMaterial.value }
       if (buildColor.value) voxel.color = buildColor.value
       additions.push(voxel)
     }
@@ -880,8 +860,6 @@ watch(
           :selected-id="selectedId"
           :active-turn-id="activeInitiativeId"
           :voxels="mapVoxels"
-          :asset-packs="mapAssetPacks"
-          :asset-registry-revision="assetRegistryRevision"
           :layer-visibility="layerVisibility"
           :build-mode="buildMode"
           :build-tool="buildTool"

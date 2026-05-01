@@ -1,10 +1,7 @@
 /**
  * Tabletop map documents.
  *
- * Schema v2 keeps the existing 3D/token model and makes terrain visuals
- * explicit: voxels point at visual materials. Older object-layer fields
- * (decals/props/zones/doors) may still exist in legacy JSON, but the runtime
- * strips/ignores them.
+ * Maps store sparse terrain voxels, sheet placements, and lighting state.
  */
 import type { GridAnchor, GridDimensions } from './pokemon'
 
@@ -32,22 +29,6 @@ export interface InitiativeTrackerState {
 }
 
 export type MapMaterialId = string
-
-/**
- * Legacy terrain names remain accepted by the best-effort loader/build UI;
- * new maps should use `materialId` from the material registry.
- */
-export type LegacyVoxelMaterial =
-  | 'grass'
-  | 'dirt'
-  | 'stone'
-  | 'water'
-  | 'sand'
-  | 'snow'
-  | 'wood'
-  | 'lava'
-  | 'path'
-
 export type VoxelMaterial = MapMaterialId
 
 export interface MapVoxelV2 {
@@ -59,77 +40,6 @@ export interface MapVoxelV2 {
   color?: string
   blocksMovement?: boolean
   blocksSight?: boolean
-  tags?: string[]
-  /** @deprecated v1 compatibility only. */
-  material?: LegacyVoxelMaterial | string
-}
-
-export type DecalSurface = 'floor' | 'ceiling' | 'north' | 'south' | 'east' | 'west'
-
-export interface DecalPlacement {
-  id: string
-  decalId: string
-  surface: DecalSurface
-  position: GridAnchor
-  rotation?: number
-  scale?: { x: number; y?: number; z: number }
-  tint?: string
-  opacity?: number
-  renderOrder?: number
-  tags?: string[]
-}
-
-export interface PropPlacement {
-  id: string
-  propId: string
-  /** Optional exact variant id. Omit to let the renderer/generator pick deterministically from the prop definition. */
-  variant?: string
-  position: GridAnchor
-  rotation?: number
-  scale?: number | { x: number; y: number; z: number }
-  footprint?: { x: number; z: number }
-  height?: number
-  anchor?: 'center' | 'bottom-center' | 'grid-cell'
-  blocksMovement?: boolean
-  blocksSight?: boolean
-  interactable?: boolean
-  tags?: string[]
-}
-
-export interface ZoneDefinition {
-  id: string
-  name: string
-  bounds: {
-    x1: number
-    y1?: number
-    z1: number
-    x2: number
-    y2?: number
-    z2: number
-  }
-  theme?: string
-  icon?: string
-  tint?: string
-  borderStyle?: string
-  /** Optional low-opacity floor wash; defaults to the renderer's subtle zone value. */
-  floorWashOpacity?: number
-  /** Optional themed corner marker decal id. Defaults to icon when omitted. */
-  cornerMarker?: string
-  ambientLight?: string
-  tags?: string[]
-}
-
-export type DoorState = 'open' | 'closed' | 'locked'
-
-export interface DoorPlacement {
-  id: string
-  doorId: string
-  position: GridAnchor
-  rotation?: number
-  width?: number
-  height?: number
-  state?: DoorState
-  connectsTo?: string
   tags?: string[]
 }
 
@@ -165,35 +75,12 @@ export interface TabletopMapV2 {
   /** Optional folder label, derived from `data/maps/` when omitted. */
   folder?: string
   dimensions: GridDimensions
-  assetPacks?: string[]
   voxels: MapVoxelV2[]
   placements: SheetPlacement[]
-  /** @deprecated Retired object layer; stripped/ignored by the map runtime. */
-  decals?: DecalPlacement[]
-  /** @deprecated Retired object layer; stripped/ignored by the map runtime. */
-  props?: PropPlacement[]
-  /** @deprecated Retired object layer; stripped/ignored by the map runtime. */
-  zones?: ZoneDefinition[]
-  /** @deprecated Retired object layer; stripped/ignored by the map runtime. */
-  doors?: DoorPlacement[]
   lights?: LightPlacement[]
   /** Current turn + round state for the collapsible initiative tracker. */
   initiative?: InitiativeTrackerState
   metadata?: Record<string, unknown>
-  createdAt?: number
-  updatedAt?: number
-}
-
-/** v1 on-disk compatibility shape. */
-export interface TabletopMapV1 {
-  schemaVersion?: 1
-  slug: string
-  name: string
-  folder?: string
-  dimensions: GridDimensions
-  placements: SheetPlacement[]
-  initiative?: InitiativeTrackerState
-  voxels: Array<Omit<MapVoxelV2, 'materialId'> & { material: LegacyVoxelMaterial | string }>
   createdAt?: number
   updatedAt?: number
 }
@@ -212,26 +99,7 @@ export interface MapSummary {
 
 export interface LayerVisibility {
   terrain: boolean
-  /** @deprecated Retired object layer; keep false. */
-  decals: boolean
-  /** @deprecated Retired object layer; keep false. */
-  props: boolean
-  /** @deprecated Retired object layer; keep false. */
-  zones: boolean
-  /** @deprecated Retired object layer; keep false. */
-  doors: boolean
-  /** @deprecated Retired object layer; keep false. */
-  transparentObjects: boolean
   shadows: boolean
   tokens: boolean
   grid: boolean
 }
-
-/** @deprecated Use SheetPlacement. */
-export type MapPlacement = SheetPlacement
-/** @deprecated Use MapVoxelV2. */
-export type GridVoxel = MapVoxelV2
-/** @deprecated Use TabletopMapV2. */
-export type Grid = TabletopMapV2
-/** @deprecated Use MapSummary. */
-export type GridSummary = MapSummary

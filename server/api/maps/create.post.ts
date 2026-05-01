@@ -68,7 +68,6 @@ export default defineEventHandler(async (event) => {
     name,
     folder,
     dimensions,
-    assetPacks: [],
     placements: [],
     initiative: { activeId: null, round: 1 },
     voxels: [],

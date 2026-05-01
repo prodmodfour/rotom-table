@@ -1,13 +1,10 @@
 export type {
   GridAnchor,
   GridDimensions,
-  GridVoxel,
+  MapVoxelV2,
   VoxelMaterial,
   SheetKind,
-  MapPlacement,
+  SheetPlacement,
   TabletopMap,
   MapSummary,
-  GridPlacement,
-  Grid,
-  GridSummary,
 } from './map'
