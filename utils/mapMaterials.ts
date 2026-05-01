@@ -8,6 +8,12 @@ const mat = (
   options: Partial<MaterialDefinition> = {},
 ): MaterialDefinition => ({ id, displayName, color, tags, ...options })
 
+// The Clear Water 4.0 pack in temp/ provides clear-water fog/wave/caustic
+// settings but no explicit block opacity, so water voxels use the requested
+// 50% opacity fallback.
+const CLEAR_WATER_TEXTURE_PACK = 'clear-water-4.0'
+const CLEAR_WATER_OPACITY = 0.5
+
 /**
  * Visual-first material registry. Mechanical defaults live here only when the
  * material clearly implies them; individual voxels may still override flags.
@@ -27,8 +33,8 @@ export const MATERIAL_DEFINITIONS: readonly MaterialDefinition[] = [
   mat('soft_nursery_mat', 'Soft Nursery Mat', '#d9a7c7', ['habitat', 'nursery', 'soft']),
   mat('mud', 'Mud', '#70503b', ['habitat', 'mud', 'wet']),
   mat('shoreline_pebbles', 'Shoreline Pebbles', '#8a876d', ['habitat', 'shoreline', 'pebble', 'wetland']),
-  mat('shallow_water', 'Shallow Water', '#46a9d8', ['habitat', 'water', 'transparent'], { transparent: true, opacity: 0.62, blocksMovementDefault: false, blocksSightDefault: false }),
-  mat('deep_water', 'Deep Water', '#1f5f9f', ['habitat', 'water', 'deep', 'transparent'], { transparent: true, opacity: 0.72, blocksMovementDefault: true, blocksSightDefault: false }),
+  mat('shallow_water', 'Shallow Water', '#46a9d8', ['habitat', 'water', 'transparent'], { texture: CLEAR_WATER_TEXTURE_PACK, transparent: true, opacity: CLEAR_WATER_OPACITY, blocksMovementDefault: false, blocksSightDefault: false }),
+  mat('deep_water', 'Deep Water', '#1f5f9f', ['habitat', 'water', 'deep', 'transparent'], { texture: CLEAR_WATER_TEXTURE_PACK, transparent: true, opacity: CLEAR_WATER_OPACITY, blocksMovementDefault: true, blocksSightDefault: false }),
   mat('wetland_bank', 'Wetland Bank', '#7f8f4f', ['habitat', 'wetland', 'bank']),
   mat('cave_stone', 'Cave Stone', '#64656b', ['habitat', 'stone', 'cave'], { blocksMovementDefault: true, blocksSightDefault: true }),
   mat('cave_shadow_stone', 'Cave Shadow Stone', '#4f5058', ['habitat', 'stone', 'cave', 'shadow'], { blocksMovementDefault: true, blocksSightDefault: true }),

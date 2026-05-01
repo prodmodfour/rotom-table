@@ -15,7 +15,7 @@ import {
 } from 'node:fs'
 import { dirname, join, resolve, sep } from 'node:path'
 import type { GridDimensions, MapSummary, MapVoxelV2, TabletopMap, TabletopMapV2 } from '~/types/map'
-import { getVoxelMaterialDefinition, normalizeMaterialId } from '~/utils/mapMaterials'
+import { normalizeMaterialId } from '~/utils/mapMaterials'
 
 export const PROJECT_ROOT = resolve(process.cwd())
 export const MAPS_ROOT = resolve(PROJECT_ROOT, 'data/maps')
@@ -113,7 +113,6 @@ const normalizeMapDocument = (json: TabletopMapV2, filePath: string): TabletopMa
   if (!Array.isArray(json.voxels)) invalidMapDocument(filePath, 'voxels must be an array')
   const voxels = json.voxels
     .map((voxel, index) => normalizeVoxelForEditor(voxel, index, filePath))
-    .filter((voxel) => !getVoxelMaterialDefinition(voxel).transparent)
 
   return {
     schemaVersion: 2,

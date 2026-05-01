@@ -217,7 +217,10 @@ const hasInitiativeValues = computed(() =>
   (map.value?.placements ?? []).some((placement) => normalizeInitiativeValue(placement.initiative) !== null),
 )
 
-const visibleVoxelMaterials = computed(() => VOXEL_MATERIALS.filter((material) => !material.transparent))
+const materialCanBeBuilt = (material: { transparent?: boolean; tags?: readonly string[] }) =>
+  !material.transparent || (material.tags ?? []).includes('water')
+
+const visibleVoxelMaterials = computed(() => VOXEL_MATERIALS.filter(materialCanBeBuilt))
 const activeMaterialDef = computed(() => getMaterialDef(buildMaterial.value))
 const colorPickerValue = computed(() =>
   buildColor.value ?? hexColorString(activeMaterialDef.value.baseColor),
@@ -362,7 +365,6 @@ const spawnSheet = (selection: SheetSelection) => {
   if (!catalog) return
   const occupiedKeys = buildMapOccupancy({
     voxels: mapVoxels.value,
-    includeTransparent: false,
   })
   const position = findFirstAvailablePosition(
     catalog,
@@ -557,7 +559,7 @@ const setMode = (mode: 'play' | 'build') => {
 }
 
 const selectMaterial = (material: VoxelMaterial) => {
-  if (getMaterialDef(material).transparent) return
+  if (!materialCanBeBuilt(getMaterialDef(material))) return
   buildMaterial.value = material
   buildColor.value = null
 }
@@ -581,7 +583,6 @@ const fillGround = () => {
   const voxelOccupancy = buildAllVoxelOccupancy(mapVoxels.value)
   const mapOccupancy = buildMapOccupancy({
     voxels: mapVoxels.value,
-    includeTransparent: false,
   })
   const additions: MapVoxelV2[] = []
   for (let z = 0; z < dims.z; z += 1) {
@@ -629,7 +630,6 @@ watch(
       trimmedVoxels,
       buildMapOccupancy({
         voxels: trimmedVoxels,
-        includeTransparent: false,
       }),
     )
     const byId = new Map(reconciliation.pokemons.map((p) => [p.id, p.position]))

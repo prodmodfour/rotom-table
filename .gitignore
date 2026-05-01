@@ -8,6 +8,7 @@ node_modules
 .playwright-cli
 __pycache__/
 *.pyc
+temp/
 .DS_Store
 .env
 .env.*

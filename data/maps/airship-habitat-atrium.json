@@ -19878,8 +19878,7 @@
       "x": 22,
       "y": 0,
       "z": 29,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
@@ -20545,104 +20544,91 @@
       "x": 16,
       "y": 0,
       "z": 30,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 17,
       "y": 0,
       "z": 30,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 18,
       "y": 0,
       "z": 30,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 19,
       "y": 0,
       "z": 30,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 20,
       "y": 0,
       "z": 30,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 21,
       "y": 0,
       "z": 30,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 22,
       "y": 0,
       "z": 30,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 23,
       "y": 0,
       "z": 30,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 24,
       "y": 0,
       "z": 30,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 25,
       "y": 0,
       "z": 30,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 26,
       "y": 0,
       "z": 30,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 27,
       "y": 0,
       "z": 30,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 28,
       "y": 0,
       "z": 30,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
@@ -21260,136 +21246,119 @@
       "x": 14,
       "y": 0,
       "z": 31,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 15,
       "y": 0,
       "z": 31,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 16,
       "y": 0,
       "z": 31,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 17,
       "y": 0,
       "z": 31,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 18,
       "y": 0,
       "z": 31,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 19,
       "y": 0,
       "z": 31,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 20,
       "y": 0,
       "z": 31,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 21,
       "y": 0,
       "z": 31,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 22,
       "y": 0,
       "z": 31,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 23,
       "y": 0,
       "z": 31,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 24,
       "y": 0,
       "z": 31,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 25,
       "y": 0,
       "z": 31,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 26,
       "y": 0,
       "z": 31,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 27,
       "y": 0,
       "z": 31,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 28,
       "y": 0,
       "z": 31,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 29,
       "y": 0,
       "z": 31,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 30,
       "y": 0,
       "z": 31,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
@@ -21989,152 +21958,133 @@
       "x": 13,
       "y": 0,
       "z": 32,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 14,
       "y": 0,
       "z": 32,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 15,
       "y": 0,
       "z": 32,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 16,
       "y": 0,
       "z": 32,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 17,
       "y": 0,
       "z": 32,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 18,
       "y": 0,
       "z": 32,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 19,
       "y": 0,
       "z": 32,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 20,
       "y": 0,
       "z": 32,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 21,
       "y": 0,
       "z": 32,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 22,
       "y": 0,
       "z": 32,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 23,
       "y": 0,
       "z": 32,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 24,
       "y": 0,
       "z": 32,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 25,
       "y": 0,
       "z": 32,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 26,
       "y": 0,
       "z": 32,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 27,
       "y": 0,
       "z": 32,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 28,
       "y": 0,
       "z": 32,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 29,
       "y": 0,
       "z": 32,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 30,
       "y": 0,
       "z": 32,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 31,
       "y": 0,
       "z": 32,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
@@ -22716,184 +22666,161 @@
       "x": 11,
       "y": 0,
       "z": 33,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 12,
       "y": 0,
       "z": 33,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 13,
       "y": 0,
       "z": 33,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 14,
       "y": 0,
       "z": 33,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 15,
       "y": 0,
       "z": 33,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 16,
       "y": 0,
       "z": 33,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 17,
       "y": 0,
       "z": 33,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 18,
       "y": 0,
       "z": 33,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 19,
       "y": 0,
       "z": 33,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 20,
       "y": 0,
       "z": 33,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 21,
       "y": 0,
       "z": 33,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 22,
       "y": 0,
       "z": 33,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 23,
       "y": 0,
       "z": 33,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 24,
       "y": 0,
       "z": 33,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 25,
       "y": 0,
       "z": 33,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 26,
       "y": 0,
       "z": 33,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 27,
       "y": 0,
       "z": 33,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 28,
       "y": 0,
       "z": 33,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 29,
       "y": 0,
       "z": 33,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 30,
       "y": 0,
       "z": 33,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 31,
       "y": 0,
       "z": 33,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 32,
       "y": 0,
       "z": 33,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 33,
       "y": 0,
       "z": 33,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
@@ -23457,200 +23384,175 @@
       "x": 10,
       "y": 0,
       "z": 34,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 11,
       "y": 0,
       "z": 34,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 12,
       "y": 0,
       "z": 34,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 13,
       "y": 0,
       "z": 34,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 14,
       "y": 0,
       "z": 34,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 15,
       "y": 0,
       "z": 34,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 16,
       "y": 0,
       "z": 34,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 17,
       "y": 0,
       "z": 34,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 18,
       "y": 0,
       "z": 34,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 19,
       "y": 0,
       "z": 34,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 20,
       "y": 0,
       "z": 34,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 21,
       "y": 0,
       "z": 34,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 22,
       "y": 0,
       "z": 34,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 23,
       "y": 0,
       "z": 34,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 24,
       "y": 0,
       "z": 34,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 25,
       "y": 0,
       "z": 34,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 26,
       "y": 0,
       "z": 34,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 27,
       "y": 0,
       "z": 34,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 28,
       "y": 0,
       "z": 34,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 29,
       "y": 0,
       "z": 34,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 30,
       "y": 0,
       "z": 34,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 31,
       "y": 0,
       "z": 34,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 32,
       "y": 0,
       "z": 34,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 33,
       "y": 0,
       "z": 34,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 34,
       "y": 0,
       "z": 34,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
@@ -24229,200 +24131,175 @@
       "x": 10,
       "y": 0,
       "z": 35,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 11,
       "y": 0,
       "z": 35,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 12,
       "y": 0,
       "z": 35,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 13,
       "y": 0,
       "z": 35,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 14,
       "y": 0,
       "z": 35,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 15,
       "y": 0,
       "z": 35,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 16,
       "y": 0,
       "z": 35,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 17,
       "y": 0,
       "z": 35,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 18,
       "y": 0,
       "z": 35,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 19,
       "y": 0,
       "z": 35,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 20,
       "y": 0,
       "z": 35,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 21,
       "y": 0,
       "z": 35,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 22,
       "y": 0,
       "z": 35,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 23,
       "y": 0,
       "z": 35,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 24,
       "y": 0,
       "z": 35,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 25,
       "y": 0,
       "z": 35,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 26,
       "y": 0,
       "z": 35,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 27,
       "y": 0,
       "z": 35,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 28,
       "y": 0,
       "z": 35,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 29,
       "y": 0,
       "z": 35,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 30,
       "y": 0,
       "z": 35,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 31,
       "y": 0,
       "z": 35,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 32,
       "y": 0,
       "z": 35,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 33,
       "y": 0,
       "z": 35,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 34,
       "y": 0,
       "z": 35,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
@@ -24995,208 +24872,154 @@
       "x": 9,
       "y": 0,
       "z": 36,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 10,
       "y": 0,
       "z": 36,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 11,
       "y": 0,
       "z": 36,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 12,
       "y": 0,
       "z": 36,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 13,
       "y": 0,
       "z": 36,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 14,
       "y": 0,
       "z": 36,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 15,
       "y": 0,
       "z": 36,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 16,
       "y": 0,
       "z": 36,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 17,
       "y": 0,
       "z": 36,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 18,
       "y": 0,
       "z": 36,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 19,
       "y": 0,
       "z": 36,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 20,
       "y": 0,
       "z": 36,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 21,
       "y": 0,
       "z": 36,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 22,
       "y": 0,
       "z": 36,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 23,
       "y": 0,
       "z": 36,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 24,
       "y": 0,
       "z": 36,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
-      "blocksMovement": false
-    },
-    {
-      "x": 25,
-      "y": 0,
-      "z": 36,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
-      "blocksMovement": false
-    },
-    {
-      "x": 26,
-      "y": 0,
-      "z": 36,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
-      "blocksMovement": false
-    },
-    {
-      "x": 27,
-      "y": 0,
-      "z": 36,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
-      "blocksMovement": false
-    },
-    {
-      "x": 28,
-      "y": 0,
-      "z": 36,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 29,
       "y": 0,
       "z": 36,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 30,
       "y": 0,
       "z": 36,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 31,
       "y": 0,
       "z": 36,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 32,
       "y": 0,
       "z": 36,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 33,
       "y": 0,
       "z": 36,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 34,
       "y": 0,
       "z": 36,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
@@ -25727,15 +25550,13 @@
       "x": 2,
       "y": 0,
       "z": 37,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8"
+      "materialId": "shallow_water"
     },
     {
       "x": 3,
       "y": 0,
       "z": 37,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8"
+      "materialId": "shallow_water"
     },
     {
       "x": 4,
@@ -25759,8 +25580,7 @@
       "x": 7,
       "y": 0,
       "z": 37,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8"
+      "materialId": "shallow_water"
     },
     {
       "x": 8,
@@ -25772,208 +25592,119 @@
       "x": 9,
       "y": 0,
       "z": 37,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 10,
       "y": 0,
       "z": 37,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 11,
       "y": 0,
       "z": 37,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 12,
       "y": 0,
       "z": 37,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 13,
       "y": 0,
       "z": 37,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 14,
       "y": 0,
       "z": 37,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 15,
       "y": 0,
       "z": 37,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 16,
       "y": 0,
       "z": 37,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 17,
       "y": 0,
       "z": 37,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 18,
       "y": 0,
       "z": 37,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 19,
       "y": 0,
       "z": 37,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 20,
       "y": 0,
       "z": 37,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 21,
       "y": 0,
       "z": 37,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 22,
       "y": 0,
       "z": 37,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 23,
       "y": 0,
       "z": 37,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 24,
       "y": 0,
       "z": 37,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
-      "blocksMovement": false
-    },
-    {
-      "x": 25,
-      "y": 0,
-      "z": 37,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
-      "blocksMovement": false
-    },
-    {
-      "x": 26,
-      "y": 0,
-      "z": 37,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
-      "blocksMovement": false
-    },
-    {
-      "x": 27,
-      "y": 0,
-      "z": 37,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
-      "blocksMovement": false
-    },
-    {
-      "x": 28,
-      "y": 0,
-      "z": 37,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
-      "blocksMovement": false
-    },
-    {
-      "x": 29,
-      "y": 0,
-      "z": 37,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
-      "blocksMovement": false
-    },
-    {
-      "x": 30,
-      "y": 0,
-      "z": 37,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
-      "blocksMovement": false
-    },
-    {
-      "x": 31,
-      "y": 0,
-      "z": 37,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
-      "blocksMovement": false
-    },
-    {
-      "x": 32,
-      "y": 0,
-      "z": 37,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
-      "blocksMovement": false
-    },
-    {
-      "x": 33,
-      "y": 0,
-      "z": 37,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 34,
       "y": 0,
       "z": 37,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
@@ -26504,15 +26235,13 @@
       "x": 2,
       "y": 0,
       "z": 38,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8"
+      "materialId": "shallow_water"
     },
     {
       "x": 3,
       "y": 0,
       "z": 38,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8"
+      "materialId": "shallow_water"
     },
     {
       "x": 4,
@@ -26536,8 +26265,7 @@
       "x": 7,
       "y": 0,
       "z": 38,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8"
+      "materialId": "shallow_water"
     },
     {
       "x": 8,
@@ -26579,168 +26307,147 @@
       "x": 14,
       "y": 0,
       "z": 38,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 15,
       "y": 0,
       "z": 38,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 16,
       "y": 0,
       "z": 38,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 17,
       "y": 0,
       "z": 38,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 18,
       "y": 0,
       "z": 38,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 19,
       "y": 0,
       "z": 38,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 20,
       "y": 0,
       "z": 38,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 21,
       "y": 0,
       "z": 38,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 22,
       "y": 0,
       "z": 38,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 23,
       "y": 0,
       "z": 38,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 24,
       "y": 0,
       "z": 38,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 25,
       "y": 0,
       "z": 38,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 26,
       "y": 0,
       "z": 38,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 27,
       "y": 0,
       "z": 38,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 28,
       "y": 0,
       "z": 38,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 29,
       "y": 0,
       "z": 38,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 30,
       "y": 0,
       "z": 38,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 31,
       "y": 0,
       "z": 38,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 32,
       "y": 0,
       "z": 38,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 33,
       "y": 0,
       "z": 38,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 34,
       "y": 0,
       "z": 38,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
@@ -27251,50 +26958,43 @@
       "x": 2,
       "y": 0,
       "z": 39,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f"
+      "materialId": "deep_water"
     },
     {
       "x": 3,
       "y": 0,
       "z": 39,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f"
+      "materialId": "deep_water"
     },
     {
       "x": 4,
       "y": 0,
       "z": 39,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f"
+      "materialId": "deep_water"
     },
     {
       "x": 5,
       "y": 0,
       "z": 39,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f"
+      "materialId": "deep_water"
     },
     {
       "x": 6,
       "y": 0,
       "z": 39,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f"
+      "materialId": "deep_water"
     },
     {
       "x": 7,
       "y": 0,
       "z": 39,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f"
+      "materialId": "deep_water"
     },
     {
       "x": 8,
       "y": 0,
       "z": 39,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f"
+      "materialId": "deep_water"
     },
     {
       "x": 9,
@@ -27330,168 +27030,147 @@
       "x": 14,
       "y": 0,
       "z": 39,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 15,
       "y": 0,
       "z": 39,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 16,
       "y": 0,
       "z": 39,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 17,
       "y": 0,
       "z": 39,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 18,
       "y": 0,
       "z": 39,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 19,
       "y": 0,
       "z": 39,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 20,
       "y": 0,
       "z": 39,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 21,
       "y": 0,
       "z": 39,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 22,
       "y": 0,
       "z": 39,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 23,
       "y": 0,
       "z": 39,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 24,
       "y": 0,
       "z": 39,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 25,
       "y": 0,
       "z": 39,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 26,
       "y": 0,
       "z": 39,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 27,
       "y": 0,
       "z": 39,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 28,
       "y": 0,
       "z": 39,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 29,
       "y": 0,
       "z": 39,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 30,
       "y": 0,
       "z": 39,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 31,
       "y": 0,
       "z": 39,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 32,
       "y": 0,
       "z": 39,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 33,
       "y": 0,
       "z": 39,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 34,
       "y": 0,
       "z": 39,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
@@ -28004,50 +27683,43 @@
       "x": 2,
       "y": 0,
       "z": 40,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f"
+      "materialId": "deep_water"
     },
     {
       "x": 3,
       "y": 0,
       "z": 40,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f"
+      "materialId": "deep_water"
     },
     {
       "x": 4,
       "y": 0,
       "z": 40,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f"
+      "materialId": "deep_water"
     },
     {
       "x": 5,
       "y": 0,
       "z": 40,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f"
+      "materialId": "deep_water"
     },
     {
       "x": 6,
       "y": 0,
       "z": 40,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f"
+      "materialId": "deep_water"
     },
     {
       "x": 7,
       "y": 0,
       "z": 40,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f"
+      "materialId": "deep_water"
     },
     {
       "x": 8,
       "y": 0,
       "z": 40,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f"
+      "materialId": "deep_water"
     },
     {
       "x": 9,
@@ -28083,168 +27755,147 @@
       "x": 14,
       "y": 0,
       "z": 40,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 15,
       "y": 0,
       "z": 40,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 16,
       "y": 0,
       "z": 40,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 17,
       "y": 0,
       "z": 40,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 18,
       "y": 0,
       "z": 40,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 19,
       "y": 0,
       "z": 40,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 20,
       "y": 0,
       "z": 40,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 21,
       "y": 0,
       "z": 40,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 22,
       "y": 0,
       "z": 40,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 23,
       "y": 0,
       "z": 40,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 24,
       "y": 0,
       "z": 40,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 25,
       "y": 0,
       "z": 40,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 26,
       "y": 0,
       "z": 40,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 27,
       "y": 0,
       "z": 40,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 28,
       "y": 0,
       "z": 40,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 29,
       "y": 0,
       "z": 40,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 30,
       "y": 0,
       "z": 40,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 31,
       "y": 0,
       "z": 40,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 32,
       "y": 0,
       "z": 40,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 33,
       "y": 0,
       "z": 40,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 34,
       "y": 0,
       "z": 40,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
@@ -28768,50 +28419,43 @@
       "x": 2,
       "y": 0,
       "z": 41,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f"
+      "materialId": "deep_water"
     },
     {
       "x": 3,
       "y": 0,
       "z": 41,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f"
+      "materialId": "deep_water"
     },
     {
       "x": 4,
       "y": 0,
       "z": 41,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f"
+      "materialId": "deep_water"
     },
     {
       "x": 5,
       "y": 0,
       "z": 41,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f"
+      "materialId": "deep_water"
     },
     {
       "x": 6,
       "y": 0,
       "z": 41,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f"
+      "materialId": "deep_water"
     },
     {
       "x": 7,
       "y": 0,
       "z": 41,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f"
+      "materialId": "deep_water"
     },
     {
       "x": 8,
       "y": 0,
       "z": 41,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f"
+      "materialId": "deep_water"
     },
     {
       "x": 9,
@@ -28847,168 +28491,147 @@
       "x": 14,
       "y": 0,
       "z": 41,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 15,
       "y": 0,
       "z": 41,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 16,
       "y": 0,
       "z": 41,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 17,
       "y": 0,
       "z": 41,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 18,
       "y": 0,
       "z": 41,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 19,
       "y": 0,
       "z": 41,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 20,
       "y": 0,
       "z": 41,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 21,
       "y": 0,
       "z": 41,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 22,
       "y": 0,
       "z": 41,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 23,
       "y": 0,
       "z": 41,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 24,
       "y": 0,
       "z": 41,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 25,
       "y": 0,
       "z": 41,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 26,
       "y": 0,
       "z": 41,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 27,
       "y": 0,
       "z": 41,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 28,
       "y": 0,
       "z": 41,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 29,
       "y": 0,
       "z": 41,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 30,
       "y": 0,
       "z": 41,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 31,
       "y": 0,
       "z": 41,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 32,
       "y": 0,
       "z": 41,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 33,
       "y": 0,
       "z": 41,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 34,
       "y": 0,
       "z": 41,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
@@ -29521,50 +29144,43 @@
       "x": 2,
       "y": 0,
       "z": 42,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f"
+      "materialId": "deep_water"
     },
     {
       "x": 3,
       "y": 0,
       "z": 42,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f"
+      "materialId": "deep_water"
     },
     {
       "x": 4,
       "y": 0,
       "z": 42,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f"
+      "materialId": "deep_water"
     },
     {
       "x": 5,
       "y": 0,
       "z": 42,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f"
+      "materialId": "deep_water"
     },
     {
       "x": 6,
       "y": 0,
       "z": 42,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f"
+      "materialId": "deep_water"
     },
     {
       "x": 7,
       "y": 0,
       "z": 42,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f"
+      "materialId": "deep_water"
     },
     {
       "x": 8,
       "y": 0,
       "z": 42,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f"
+      "materialId": "deep_water"
     },
     {
       "x": 9,
@@ -29600,168 +29216,147 @@
       "x": 14,
       "y": 0,
       "z": 42,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 15,
       "y": 0,
       "z": 42,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 16,
       "y": 0,
       "z": 42,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 17,
       "y": 0,
       "z": 42,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 18,
       "y": 0,
       "z": 42,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 19,
       "y": 0,
       "z": 42,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 20,
       "y": 0,
       "z": 42,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 21,
       "y": 0,
       "z": 42,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 22,
       "y": 0,
       "z": 42,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 23,
       "y": 0,
       "z": 42,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 24,
       "y": 0,
       "z": 42,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 25,
       "y": 0,
       "z": 42,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 26,
       "y": 0,
       "z": 42,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 27,
       "y": 0,
       "z": 42,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 28,
       "y": 0,
       "z": 42,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 29,
       "y": 0,
       "z": 42,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 30,
       "y": 0,
       "z": 42,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 31,
       "y": 0,
       "z": 42,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 32,
       "y": 0,
       "z": 42,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 33,
       "y": 0,
       "z": 42,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 34,
       "y": 0,
       "z": 42,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
@@ -30272,50 +29867,43 @@
       "x": 2,
       "y": 0,
       "z": 43,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f"
+      "materialId": "deep_water"
     },
     {
       "x": 3,
       "y": 0,
       "z": 43,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f"
+      "materialId": "deep_water"
     },
     {
       "x": 4,
       "y": 0,
       "z": 43,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f"
+      "materialId": "deep_water"
     },
     {
       "x": 5,
       "y": 0,
       "z": 43,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f"
+      "materialId": "deep_water"
     },
     {
       "x": 6,
       "y": 0,
       "z": 43,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f"
+      "materialId": "deep_water"
     },
     {
       "x": 7,
       "y": 0,
       "z": 43,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f"
+      "materialId": "deep_water"
     },
     {
       "x": 8,
       "y": 0,
       "z": 43,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f"
+      "materialId": "deep_water"
     },
     {
       "x": 9,
@@ -30351,168 +29939,147 @@
       "x": 14,
       "y": 0,
       "z": 43,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 15,
       "y": 0,
       "z": 43,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 16,
       "y": 0,
       "z": 43,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 17,
       "y": 0,
       "z": 43,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 18,
       "y": 0,
       "z": 43,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 19,
       "y": 0,
       "z": 43,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 20,
       "y": 0,
       "z": 43,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 21,
       "y": 0,
       "z": 43,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 22,
       "y": 0,
       "z": 43,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 23,
       "y": 0,
       "z": 43,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 24,
       "y": 0,
       "z": 43,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 25,
       "y": 0,
       "z": 43,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 26,
       "y": 0,
       "z": 43,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 27,
       "y": 0,
       "z": 43,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 28,
       "y": 0,
       "z": 43,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 29,
       "y": 0,
       "z": 43,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 30,
       "y": 0,
       "z": 43,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 31,
       "y": 0,
       "z": 43,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 32,
       "y": 0,
       "z": 43,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 33,
       "y": 0,
       "z": 43,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 34,
       "y": 0,
       "z": 43,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
@@ -31023,15 +30590,13 @@
       "x": 2,
       "y": 0,
       "z": 44,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8"
+      "materialId": "shallow_water"
     },
     {
       "x": 3,
       "y": 0,
       "z": 44,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8"
+      "materialId": "shallow_water"
     },
     {
       "x": 4,
@@ -31055,8 +30620,7 @@
       "x": 7,
       "y": 0,
       "z": 44,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8"
+      "materialId": "shallow_water"
     },
     {
       "x": 8,
@@ -31074,200 +30638,175 @@
       "x": 10,
       "y": 0,
       "z": 44,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 11,
       "y": 0,
       "z": 44,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 12,
       "y": 0,
       "z": 44,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 13,
       "y": 0,
       "z": 44,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 14,
       "y": 0,
       "z": 44,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 15,
       "y": 0,
       "z": 44,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 16,
       "y": 0,
       "z": 44,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 17,
       "y": 0,
       "z": 44,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 18,
       "y": 0,
       "z": 44,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 19,
       "y": 0,
       "z": 44,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 20,
       "y": 0,
       "z": 44,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 21,
       "y": 0,
       "z": 44,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 22,
       "y": 0,
       "z": 44,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 23,
       "y": 0,
       "z": 44,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 24,
       "y": 0,
       "z": 44,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 25,
       "y": 0,
       "z": 44,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 26,
       "y": 0,
       "z": 44,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 27,
       "y": 0,
       "z": 44,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 28,
       "y": 0,
       "z": 44,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 29,
       "y": 0,
       "z": 44,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 30,
       "y": 0,
       "z": 44,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 31,
       "y": 0,
       "z": 44,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 32,
       "y": 0,
       "z": 44,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 33,
       "y": 0,
       "z": 44,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 34,
       "y": 0,
       "z": 44,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
@@ -31778,15 +31317,13 @@
       "x": 2,
       "y": 0,
       "z": 45,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8"
+      "materialId": "shallow_water"
     },
     {
       "x": 3,
       "y": 0,
       "z": 45,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8"
+      "materialId": "shallow_water"
     },
     {
       "x": 4,
@@ -31810,8 +31347,7 @@
       "x": 7,
       "y": 0,
       "z": 45,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8"
+      "materialId": "shallow_water"
     },
     {
       "x": 8,
@@ -31835,184 +31371,161 @@
       "x": 11,
       "y": 0,
       "z": 45,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 12,
       "y": 0,
       "z": 45,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 13,
       "y": 0,
       "z": 45,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 14,
       "y": 0,
       "z": 45,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 15,
       "y": 0,
       "z": 45,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 16,
       "y": 0,
       "z": 45,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 17,
       "y": 0,
       "z": 45,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 18,
       "y": 0,
       "z": 45,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 19,
       "y": 0,
       "z": 45,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 20,
       "y": 0,
       "z": 45,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 21,
       "y": 0,
       "z": 45,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 22,
       "y": 0,
       "z": 45,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 23,
       "y": 0,
       "z": 45,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 24,
       "y": 0,
       "z": 45,
-      "materialId": "airship_floor_plating",
-      "color": "#1f5f9f",
+      "materialId": "deep_water",
       "blocksMovement": false
     },
     {
       "x": 25,
       "y": 0,
       "z": 45,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 26,
       "y": 0,
       "z": 45,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 27,
       "y": 0,
       "z": 45,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 28,
       "y": 0,
       "z": 45,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 29,
       "y": 0,
       "z": 45,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 30,
       "y": 0,
       "z": 45,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 31,
       "y": 0,
       "z": 45,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 32,
       "y": 0,
       "z": 45,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 33,
       "y": 0,
       "z": 45,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
@@ -32524,15 +32037,13 @@
       "x": 2,
       "y": 0,
       "z": 46,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8"
+      "materialId": "shallow_water"
     },
     {
       "x": 3,
       "y": 0,
       "z": 46,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8"
+      "materialId": "shallow_water"
     },
     {
       "x": 4,
@@ -32556,8 +32067,7 @@
       "x": 7,
       "y": 0,
       "z": 46,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8"
+      "materialId": "shallow_water"
     },
     {
       "x": 8,
@@ -32593,152 +32103,133 @@
       "x": 13,
       "y": 0,
       "z": 46,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 14,
       "y": 0,
       "z": 46,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 15,
       "y": 0,
       "z": 46,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 16,
       "y": 0,
       "z": 46,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 17,
       "y": 0,
       "z": 46,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 18,
       "y": 0,
       "z": 46,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 19,
       "y": 0,
       "z": 46,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 20,
       "y": 0,
       "z": 46,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 21,
       "y": 0,
       "z": 46,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 22,
       "y": 0,
       "z": 46,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 23,
       "y": 0,
       "z": 46,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 24,
       "y": 0,
       "z": 46,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 25,
       "y": 0,
       "z": 46,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 26,
       "y": 0,
       "z": 46,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 27,
       "y": 0,
       "z": 46,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 28,
       "y": 0,
       "z": 46,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 29,
       "y": 0,
       "z": 46,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 30,
       "y": 0,
       "z": 46,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 31,
       "y": 0,
       "z": 46,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
@@ -33334,136 +32825,119 @@
       "x": 14,
       "y": 0,
       "z": 47,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 15,
       "y": 0,
       "z": 47,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 16,
       "y": 0,
       "z": 47,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 17,
       "y": 0,
       "z": 47,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 18,
       "y": 0,
       "z": 47,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 19,
       "y": 0,
       "z": 47,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 20,
       "y": 0,
       "z": 47,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 21,
       "y": 0,
       "z": 47,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 22,
       "y": 0,
       "z": 47,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 23,
       "y": 0,
       "z": 47,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 24,
       "y": 0,
       "z": 47,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 25,
       "y": 0,
       "z": 47,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 26,
       "y": 0,
       "z": 47,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 27,
       "y": 0,
       "z": 47,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 28,
       "y": 0,
       "z": 47,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 29,
       "y": 0,
       "z": 47,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 30,
       "y": 0,
       "z": 47,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
@@ -34085,104 +33559,91 @@
       "x": 16,
       "y": 0,
       "z": 48,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 17,
       "y": 0,
       "z": 48,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 18,
       "y": 0,
       "z": 48,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 19,
       "y": 0,
       "z": 48,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 20,
       "y": 0,
       "z": 48,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 21,
       "y": 0,
       "z": 48,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 22,
       "y": 0,
       "z": 48,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 23,
       "y": 0,
       "z": 48,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 24,
       "y": 0,
       "z": 48,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 25,
       "y": 0,
       "z": 48,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 26,
       "y": 0,
       "z": 48,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 27,
       "y": 0,
       "z": 48,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
       "x": 28,
       "y": 0,
       "z": 48,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
@@ -34850,8 +34311,7 @@
       "x": 22,
       "y": 0,
       "z": 49,
-      "materialId": "airship_floor_plating",
-      "color": "#46a9d8",
+      "materialId": "shallow_water",
       "blocksMovement": false
     },
     {
@@ -61570,14 +61030,6 @@
       "z": 40,
       "materialId": "wetland_bank",
       "color": "#7c9b52"
-    },
-    {
-      "x": 33,
-      "y": 1,
-      "z": 40,
-      "materialId": "airship_wall_bulkhead",
-      "color": "#1f5f9f",
-      "blocksSight": false
     },
     {
       "x": 83,
@@ -72164,14 +71616,6 @@
       "blocksSight": false
     },
     {
-      "x": 33,
-      "y": 2,
-      "z": 40,
-      "materialId": "airship_wall_bulkhead",
-      "color": "#1f5f9f",
-      "blocksSight": false
-    },
-    {
       "x": 83,
       "y": 2,
       "z": 40,
@@ -77380,14 +76824,6 @@
       "materialId": "airship_hull_dark"
     },
     {
-      "x": 33,
-      "y": 3,
-      "z": 40,
-      "materialId": "airship_wall_bulkhead",
-      "color": "#1f5f9f",
-      "blocksSight": false
-    },
-    {
       "x": 103,
       "y": 3,
       "z": 40,
@@ -80231,14 +79667,6 @@
       "y": 4,
       "z": 39,
       "materialId": "airship_hull_dark"
-    },
-    {
-      "x": 33,
-      "y": 4,
-      "z": 40,
-      "materialId": "airship_wall_bulkhead",
-      "color": "#1f5f9f",
-      "blocksSight": false
     },
     {
       "x": 117,
@@ -90889,6 +90317,96 @@
       "y": 20,
       "z": 21,
       "materialId": "observation_wood"
+    },
+    {
+      "x": 26,
+      "y": 1,
+      "z": 45,
+      "materialId": "shallow_water"
+    },
+    {
+      "x": 26,
+      "y": 2,
+      "z": 45,
+      "materialId": "thermal_rock"
+    },
+    {
+      "x": 33,
+      "y": 0,
+      "z": 37,
+      "materialId": "deep_water"
+    },
+    {
+      "x": 32,
+      "y": 0,
+      "z": 37,
+      "materialId": "deep_water"
+    },
+    {
+      "x": 31,
+      "y": 0,
+      "z": 37,
+      "materialId": "deep_water"
+    },
+    {
+      "x": 30,
+      "y": 0,
+      "z": 37,
+      "materialId": "deep_water"
+    },
+    {
+      "x": 29,
+      "y": 0,
+      "z": 37,
+      "materialId": "deep_water"
+    },
+    {
+      "x": 28,
+      "y": 0,
+      "z": 37,
+      "materialId": "deep_water"
+    },
+    {
+      "x": 28,
+      "y": 0,
+      "z": 36,
+      "materialId": "deep_water"
+    },
+    {
+      "x": 27,
+      "y": 0,
+      "z": 36,
+      "materialId": "deep_water"
+    },
+    {
+      "x": 27,
+      "y": 0,
+      "z": 37,
+      "materialId": "deep_water"
+    },
+    {
+      "x": 26,
+      "y": 0,
+      "z": 36,
+      "materialId": "deep_water"
+    },
+    {
+      "x": 26,
+      "y": 0,
+      "z": 37,
+      "materialId": "deep_water"
+    },
+    {
+      "x": 25,
+      "y": 0,
+      "z": 36,
+      "materialId": "deep_water"
+    },
+    {
+      "x": 25,
+      "y": 0,
+      "z": 37,
+      "materialId": "deep_water"
     }
   ],
   "placements": [
@@ -91008,7 +90526,7 @@
     "rotomTableNotes": [
       "schemaVersion 2 map: sparse 1x1x1 terrain voxels plus empty placements.",
       "Tokens usually stand at y=1 on floor voxels at y=0; upper catwalk tokens stand at y=9.",
-      "The current server loader strips transparent voxel materials, so water/glass/ice-like features use opaque materials plus color overrides.",
+      "Transparent voxel materials are persisted; lagoon water uses shallow_water and deep_water materials.",
       "Decals, props, zones, and doors are not used because the current map runtime strips/ignores retired object layers."
     ],
     "connections": [
@@ -91116,7 +90634,7 @@
           "z2": 53
         },
         "features": [
-          "blue opaque water floors",
+          "clear shallow water",
           "deep pool",
           "shoreline",
           "reeds",
@@ -91232,5 +90750,5 @@
       }
     ]
   },
-  "updatedAt": 1777651321236
+  "updatedAt": 1777665263621
 }

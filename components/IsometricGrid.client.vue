@@ -261,7 +261,50 @@ const BLOCK_ROLE_SHADING: Record<BlockTextureRole, number> = {
   shadow: 0.62,
   bottom: 0.5,
 }
-const blockTextureCache = new Map<string, THREE.CanvasTexture>()
+const blockTextureCache = new Map<string, THREE.Texture>()
+const CLEAR_WATER_TEXTURE_PACK = 'clear-water-4.0'
+const CLEAR_WATER_TEXTURE_URL_BY_ROLE: Record<BlockTextureRole, string> = {
+  top: '/textures/clear-water-4.0/water-top.png',
+  side: '/textures/clear-water-4.0/water-side.png',
+  shadow: '/textures/clear-water-4.0/water-shadow.png',
+  bottom: '/textures/clear-water-4.0/water-bottom.png',
+}
+let blockTextureLoader: THREE.TextureLoader | null = null
+
+const configureBlockTexture = (texture: THREE.Texture, markNeedsUpdate = true): THREE.Texture => {
+  texture.magFilter = THREE.NearestFilter
+  texture.minFilter = THREE.NearestFilter
+  texture.generateMipmaps = false
+  texture.colorSpace = THREE.SRGBColorSpace
+  if (markNeedsUpdate) texture.needsUpdate = true
+  return texture
+}
+
+const getBlockTextureLoader = (): THREE.TextureLoader => {
+  if (!blockTextureLoader) blockTextureLoader = new THREE.TextureLoader()
+  return blockTextureLoader
+}
+
+const getClearWaterPackTexture = (role: BlockTextureRole): THREE.Texture => {
+  const key = `${CLEAR_WATER_TEXTURE_PACK}:${role}`
+  const cached = blockTextureCache.get(key)
+  if (cached) return cached
+
+  const url = CLEAR_WATER_TEXTURE_URL_BY_ROLE[role]
+  const texture = getBlockTextureLoader().load(
+    url,
+    (loaded) => {
+      configureBlockTexture(loaded)
+    },
+    undefined,
+    (error) => {
+      console.warn('Failed to load clear-water block texture', url, error)
+    },
+  )
+  configureBlockTexture(texture, false)
+  blockTextureCache.set(key, texture)
+  return texture
+}
 
 const blockHexCss = (hex: number): string => `#${hex.toString(16).padStart(6, '0')}`
 
@@ -634,11 +677,15 @@ const paintCustomTexture = (
   }
 }
 
-const getBlockTexture = (style: VoxelRenderStyle, role: BlockTextureRole): THREE.CanvasTexture => {
+const getBlockTexture = (style: VoxelRenderStyle, role: BlockTextureRole): THREE.Texture => {
   const parsedCustomColor = style.color ? parseHexColor(style.color) : null
   const isCustom = parsedCustomColor !== null
   const materialId = voxelMaterialId(style)
   const definition = getMaterialDefinition(materialId)
+  const tags = new Set(definition.tags ?? [])
+  if (!isCustom && tags.has('water') && definition.texture === CLEAR_WATER_TEXTURE_PACK) {
+    return getClearWaterPackTexture(role)
+  }
   const baseColor = isCustom ? parsedCustomColor : materialColorNumber(definition)
   const styleKey = isCustom
     ? `custom:${baseColor.toString(16).padStart(6, '0')}`
@@ -658,7 +705,6 @@ const getBlockTexture = (style: VoxelRenderStyle, role: BlockTextureRole): THREE
   if (isCustom) {
     paintCustomTexture(ctx, role, seed, baseColor)
   } else {
-    const tags = new Set(definition.tags ?? [])
     if (tags.has('grass') || materialId === 'meadow_grass') {
       if (role === 'top') paintGrassTopTexture(ctx, seed)
       else if (role === 'bottom') paintDirtTexture(ctx, role, seed)
@@ -710,12 +756,7 @@ const getBlockTexture = (style: VoxelRenderStyle, role: BlockTextureRole): THREE
   drawSideDepthOverlay(ctx, role, sideDepthOverlayScale(style, isCustom))
   drawBlockBorder(ctx, role)
 
-  const texture = new THREE.CanvasTexture(canvas)
-  texture.magFilter = THREE.NearestFilter
-  texture.minFilter = THREE.NearestFilter
-  texture.generateMipmaps = false
-  texture.colorSpace = THREE.SRGBColorSpace
-  texture.needsUpdate = true
+  const texture = configureBlockTexture(new THREE.CanvasTexture(canvas))
   blockTextureCache.set(key, texture)
   return texture
 }
@@ -731,6 +772,15 @@ const applyVoxelFaceMaterialStyle = (
   opacity: number,
   depthWrite: boolean,
 ) => {
+  const definition = getMaterialDefinition(voxelMaterialId(style))
+  const tags = new Set(definition.tags ?? [])
+  const tint = !style.color && definition.texture === CLEAR_WATER_TEXTURE_PACK
+    // The pack enables strong biome water-color contribution; keep the
+    // same clear-water texture, but tint deep water much harder so the
+    // lagoon's dark-blue sections remain visually distinct.
+    ? mixBlockColor(0xffffff, materialColorNumber(definition), tags.has('deep') ? 0.7 : 0.22)
+    : 0xffffff
+
   for (let i = 0; i < materials.length; i += 1) {
     const material = materials[i]
     const texture = getBlockTexture(style, BLOCK_FACE_ROLES[i])
@@ -738,7 +788,7 @@ const applyVoxelFaceMaterialStyle = (
       material.map = texture
       material.needsUpdate = true
     }
-    material.color.setHex(0xffffff)
+    material.color.setHex(tint)
     material.opacity = opacity
     material.transparent = opacity < 1
     material.depthTest = true
@@ -1266,13 +1316,10 @@ const damageDialogMultiplierLabel = computed(() =>
 const selectedPokemon = computed(
   () => props.pokemons.find((pokemon) => pokemon.id === props.selectedId) ?? null,
 )
-const renderedTerrainVoxels = computed(() =>
-  props.voxels.filter((voxel) => !voxelMaterialDefinition(voxel).transparent),
-)
+const renderedTerrainVoxels = computed(() => props.voxels)
 const mapMovementOccupancy = computed(() =>
   buildMapOccupancy({
     voxels: renderedTerrainVoxels.value,
-    includeTransparent: false,
   }),
 )
 const allVoxelOccupancy = computed(() => buildAllVoxelOccupancy(renderedTerrainVoxels.value))

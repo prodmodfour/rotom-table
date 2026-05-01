@@ -18,7 +18,7 @@ Each voxel is a 1×1×1 cube with integer `x`, `y`, and `z` coordinates and a `m
 - `blocksSight`: override material sight blocking
 - `tags`: map-local labels
 
-The renderer still generates the same voxel block textures and face shading from material definitions.
+The renderer still generates the same voxel block textures and face shading from material definitions. Transparent terrain materials (such as water) are persisted and rendered with their material opacity.
 
 ## Visibility layers
 
