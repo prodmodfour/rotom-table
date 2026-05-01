@@ -14,7 +14,6 @@ import {
 } from '@phosphor-icons/vue'
 import { characterSheets, getPokedexEntry, getSpriteUrl } from '~/data/characterSheets'
 import { trainerSheets } from '~/data/trainerSheets'
-import { formatFolderLabel } from '~/utils/sheetFolders'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { TrainerSheet } from '~/types/trainerSheet'
 
@@ -201,7 +200,7 @@ const breadcrumbs = computed(() => {
   let acc = ''
   for (const seg of currentPath.value.split('/')) {
     acc = acc ? `${acc}/${seg}` : seg
-    out.push({ label: formatFolderLabel(seg), path: acc })
+    out.push({ label: seg, path: acc })
   }
   return out
 })
@@ -253,7 +252,7 @@ const visibleSheets = computed<SheetItem[]>(() => {
 interface FolderTile {
   /** Full path under the sheet root, e.g. ``"npcs/wild"``. */
   path: string
-  /** Display label of the leaf segment, e.g. ``"Wild"``. */
+  /** Display label of the raw leaf segment, e.g. ``"wild"``. */
   label: string
   /** Total number of sheets contained anywhere under this folder. */
   count: number
@@ -283,7 +282,7 @@ const visibleFolders = computed<FolderTile[]>(() => {
         if (item.folder === path || item.folder.startsWith(subPrefix)) count++
       }
       const leaf = path.split('/').pop() ?? path
-      return { path, label: formatFolderLabel(leaf), count }
+      return { path, label: leaf, count }
     })
 })
 
@@ -583,7 +582,7 @@ const ctxMoveDestinations = computed<Array<{ value: string; label: string }>>(()
       const parent = slash >= 0 ? selfPath.slice(0, slash) : ''
       if (path === parent) continue
     }
-    dests.push({ value: path, label: path ? formatFolderLabel(path) : 'Home (root)' })
+    dests.push({ value: path, label: path || 'Home (root)' })
   }
   return dests
 })
@@ -742,7 +741,7 @@ onMounted(async () => {
           new JSON file into <code>data/sheets/</code> for a Pokémon, or
           <code>data/trainers/</code> for a trainer. Use subdirectories
           (e.g. <code>data/sheets/team-alpha/</code>) to group sheets into
-          folders — the directory name becomes the folder label.
+          folders — the directory name is shown exactly as the folder string.
           <span v-if="canDrag" class="drag-hint">
             Tip: click a folder to open it. Drag a card or folder onto
             another folder (or breadcrumb) to move it. Right-click anything

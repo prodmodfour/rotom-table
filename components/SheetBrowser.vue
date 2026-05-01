@@ -3,7 +3,6 @@ import { computed, ref } from 'vue'
 import { PhFolder, PhHouse } from '@phosphor-icons/vue'
 import { characterSheets, getSpriteUrl } from '~/data/characterSheets'
 import { trainerSheets } from '~/data/trainerSheets'
-import { formatFolderLabel } from '~/utils/sheetFolders'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { TrainerSheet } from '~/types/trainerSheet'
 
@@ -69,7 +68,7 @@ const breadcrumbs = computed(() => {
   let acc = ''
   for (const seg of currentPath.value.split('/')) {
     acc = acc ? `${acc}/${seg}` : seg
-    out.push({ label: formatFolderLabel(seg), path: acc })
+    out.push({ label: seg, path: acc })
   }
   return out
 })
@@ -124,7 +123,7 @@ const visibleFolders = computed<FolderTile[]>(() => {
         if (item.folder === path || item.folder.startsWith(subPrefix)) count++
       }
       const leaf = path.split('/').pop() ?? path
-      return { path, label: formatFolderLabel(leaf), count }
+      return { path, label: leaf, count }
     })
 })
 
