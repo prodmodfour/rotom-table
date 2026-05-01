@@ -80,6 +80,7 @@ export default defineEventHandler(async (event) => {
     folder: map.folder ?? '',
     dimensions: map.dimensions,
     placementCount: map.placements?.length ?? 0,
+    schemaVersion: map.schemaVersion,
     updatedAt: map.updatedAt,
   }
 

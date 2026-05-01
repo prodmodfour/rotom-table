@@ -52,9 +52,17 @@ export default defineEventHandler(async (event) => {
     : { activeId: null, round: 1 }
   const persisted: TabletopMap = {
     ...map,
+    schemaVersion: 2,
     folder: folderFromPath(path),
     initiative,
+    assetPacks: Array.isArray(map.assetPacks) ? map.assetPacks : [],
     voxels: Array.isArray(map.voxels) ? map.voxels : [],
+    placements: Array.isArray(map.placements) ? map.placements : [],
+    decals: Array.isArray(map.decals) ? map.decals : [],
+    props: Array.isArray(map.props) ? map.props : [],
+    zones: Array.isArray(map.zones) ? map.zones : [],
+    doors: Array.isArray(map.doors) ? map.doors : [],
+    lights: Array.isArray(map.lights) ? map.lights : [],
     updatedAt: Date.now(),
   }
   writeMapFile(path, persisted)
@@ -75,6 +83,7 @@ export default defineEventHandler(async (event) => {
       folder: persisted.folder ?? '',
       dimensions: persisted.dimensions,
       placementCount: persisted.placements?.length ?? 0,
+      schemaVersion: persisted.schemaVersion,
       updatedAt: persisted.updatedAt,
     },
   })

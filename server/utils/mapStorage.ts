@@ -14,7 +14,8 @@ import {
   writeFileSync,
 } from 'node:fs'
 import { dirname, join, resolve, sep } from 'node:path'
-import type { MapSummary, TabletopMap } from '~/types/map'
+import type { MapSummary, TabletopMap, TabletopMapV1, TabletopMapV2 } from '~/types/map'
+import { materialIdForLegacy, normalizeMaterialId } from '~/utils/mapMaterials'
 
 export const PROJECT_ROOT = resolve(process.cwd())
 export const MAPS_ROOT = resolve(PROJECT_ROOT, 'data/maps')
@@ -54,18 +55,67 @@ export const folderFromPath = (filePath: string): string => {
   return rel.slice(0, lastSlash)
 }
 
-export const readMapFile = (filePath: string): TabletopMap => {
-  const raw = readFileSync(filePath, 'utf8')
-  const json = JSON.parse(raw) as TabletopMap
+const normalizeMapDocument = (json: TabletopMapV1 | TabletopMapV2, filePath: string): TabletopMapV2 => {
   const initiative = json.initiative && typeof json.initiative === 'object'
     ? json.initiative
     : { activeId: null, round: 1 }
+
+  const voxels = Array.isArray(json.voxels)
+    ? json.voxels.map((voxel) => {
+        const rawMaterial = 'materialId' in voxel && voxel.materialId
+          ? voxel.materialId
+          : materialIdForLegacy(String((voxel as { material?: string }).material ?? ''))
+        return {
+          ...voxel,
+          materialId: normalizeMaterialId(rawMaterial),
+        }
+      })
+    : []
+
+  if ((json as TabletopMapV2).schemaVersion === 2) {
+    const v2 = json as TabletopMapV2
+    return {
+      ...v2,
+      schemaVersion: 2,
+      folder: v2.folder ?? folderFromPath(filePath),
+      initiative,
+      assetPacks: Array.isArray(v2.assetPacks) ? v2.assetPacks : [],
+      voxels,
+      placements: Array.isArray(v2.placements) ? v2.placements : [],
+      decals: Array.isArray(v2.decals) ? v2.decals : [],
+      props: Array.isArray(v2.props) ? v2.props : [],
+      zones: Array.isArray(v2.zones) ? v2.zones : [],
+      doors: Array.isArray(v2.doors) ? v2.doors : [],
+      lights: Array.isArray(v2.lights) ? v2.lights : [],
+    }
+  }
+
+  // Best-effort legacy conversion: keep the map usable and make the schema
+  // transition explicit in the loaded document. Saving will persist v2.
   return {
-    ...json,
+    ...(json as TabletopMapV1),
+    schemaVersion: 2,
     folder: json.folder ?? folderFromPath(filePath),
     initiative,
-    voxels: Array.isArray(json.voxels) ? json.voxels : [],
+    assetPacks: [],
+    voxels,
+    placements: Array.isArray(json.placements) ? json.placements : [],
+    decals: [],
+    props: [],
+    zones: [],
+    doors: [],
+    lights: [],
+    metadata: {
+      ...((json as TabletopMapV2).metadata ?? {}),
+      legacySchemaConverted: true,
+    },
   }
+}
+
+export const readMapFile = (filePath: string): TabletopMap => {
+  const raw = readFileSync(filePath, 'utf8')
+  const json = JSON.parse(raw) as TabletopMapV1 | TabletopMapV2
+  return normalizeMapDocument(json, filePath)
 }
 
 export const writeMapFile = (filePath: string, map: TabletopMap): void => {
@@ -96,13 +146,15 @@ export const listMaps = (): MapSummary[] => {
         stack.push({ abs: full, rel: childRel })
       } else if (entry.isFile() && entry.name.endsWith('.json')) {
         try {
-          const map = JSON.parse(readFileSync(full, 'utf8')) as TabletopMap
+          const raw = JSON.parse(readFileSync(full, 'utf8')) as TabletopMapV1 | TabletopMapV2
+          const map = normalizeMapDocument(raw, full)
           out.push({
             slug: map.slug,
             name: map.name,
             folder: map.folder ?? rel,
             dimensions: map.dimensions,
             placementCount: map.placements?.length ?? 0,
+            schemaVersion: map.schemaVersion,
             updatedAt: map.updatedAt,
           })
         } catch (err) {

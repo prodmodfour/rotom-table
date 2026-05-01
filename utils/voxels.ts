@@ -1,47 +1,37 @@
 /**
  * Voxel terrain helpers.
  *
- * Voxels are 1×1×1 cubes stored sparsely as ``GridVoxel`` records.
- * This module exposes:
- *
- *   • A fixed material palette (``VOXEL_MATERIALS``) with blocky,
- *     Minecraft-inspired base colors used by swatches and custom fills.
- *   • Per-face palette derivation (``buildFacePalette``) implementing
- *     the standard isometric brightness ramp (top 100 / sides 80 /
- *     shadow 62 / bottom 42 %).
- *   • Hex-color helpers for the custom-color picker.
- *   • Occupancy / collision helpers used by both pathfinding (mons
- *     can't walk through voxels) and build-mode placement (can't
- *     place a voxel inside a mon).
+ * Voxels are 1×1×1 cubes stored sparsely as `MapVoxelV2` records. This
+ * module keeps the older helper names so build-mode/editor code can evolve
+ * without losing the sprite pathfinding/collision behaviour.
  */
 import type { GridAnchor } from '~/types/pokemon'
-import type { GridVoxel, VoxelMaterial } from '~/types/map'
+import type { MapVoxelV2, VoxelMaterial } from '~/types/map'
+import {
+  MAP_MATERIAL_PALETTE,
+  getMaterialDefinition,
+  getVoxelMaterialDefinition,
+  materialColorNumber,
+  materialIdForVoxel,
+  normalizeMaterialId,
+  type MaterialPaletteEntry,
+} from '~/utils/mapMaterials'
 
-export interface VoxelMaterialDef {
-  material: VoxelMaterial
-  label: string
-  /** Top-face hex; sides/shadow/bottom are derived. */
-  baseColor: number
+export type VoxelMaterialDef = MaterialPaletteEntry
+
+export const VOXEL_MATERIALS: readonly VoxelMaterialDef[] = MAP_MATERIAL_PALETTE
+
+export const getMaterialDef = (material: VoxelMaterial): VoxelMaterialDef => {
+  const definition = getMaterialDefinition(material)
+  return {
+    material: definition.id,
+    label: definition.displayName,
+    baseColor: materialColorNumber(definition),
+    transparent: definition.transparent,
+    opacity: definition.opacity,
+    tags: definition.tags,
+  }
 }
-
-export const VOXEL_MATERIALS: ReadonlyArray<VoxelMaterialDef> = [
-  { material: 'grass', label: 'Grass', baseColor: 0x5da130 },
-  { material: 'dirt',  label: 'Dirt',  baseColor: 0x8a5a32 },
-  { material: 'stone', label: 'Stone', baseColor: 0x7d7d7d },
-  { material: 'water', label: 'Water', baseColor: 0x2e77d0 },
-  { material: 'sand',  label: 'Sand',  baseColor: 0xd5c16b },
-  { material: 'snow',  label: 'Snow',  baseColor: 0xf4fbff },
-  { material: 'wood',  label: 'Wood',  baseColor: 0x9a5d2e },
-  { material: 'lava',  label: 'Lava',  baseColor: 0xff6d1a },
-  { material: 'path',  label: 'Path',  baseColor: 0x9b7653 },
-]
-
-const MATERIAL_INDEX = new Map<VoxelMaterial, VoxelMaterialDef>(
-  VOXEL_MATERIALS.map((def) => [def.material, def]),
-)
-
-export const getMaterialDef = (material: VoxelMaterial): VoxelMaterialDef =>
-  MATERIAL_INDEX.get(material) ?? VOXEL_MATERIALS[0]
 
 export interface VoxelFacePalette {
   top: number
@@ -74,35 +64,48 @@ export const parseHexColor = (input: string): number | null => {
 export const hexColorString = (hex: number): string =>
   `#${hex.toString(16).padStart(6, '0')}`
 
-export const voxelBaseColor = (voxel: GridVoxel): number => {
+export const voxelMaterialId = materialIdForVoxel
+export const normalizeVoxelMaterialId = normalizeMaterialId
+export const voxelMaterialDefinition = getVoxelMaterialDefinition
+
+export const voxelBaseColor = (voxel: MapVoxelV2): number => {
   if (voxel.color) {
     const parsed = parseHexColor(voxel.color)
     if (parsed !== null) return parsed
   }
-  return getMaterialDef(voxel.material).baseColor
+  return materialColorNumber(getVoxelMaterialDefinition(voxel))
 }
 
-export const voxelFacePalette = (voxel: GridVoxel): VoxelFacePalette =>
+export const voxelFacePalette = (voxel: MapVoxelV2): VoxelFacePalette =>
   buildFacePalette(voxelBaseColor(voxel))
 
 /**
- * Bucket key for sharing an ``InstancedMesh`` across visually identical
- * voxels. Custom-colored voxels group by color; preset voxels group by
- * material name.
+ * Bucket key for sharing an `InstancedMesh` across visually identical voxels.
+ * Custom-colored voxels group by color; preset voxels group by material id.
  */
-export const voxelGroupKey = (voxel: GridVoxel): string => {
+export const voxelGroupKey = (voxel: MapVoxelV2): string => {
   if (voxel.color) {
     const parsed = parseHexColor(voxel.color)
     if (parsed !== null) return `c:${parsed.toString(16).padStart(6, '0')}`
   }
-  return `m:${voxel.material}`
+  return `m:${materialIdForVoxel(voxel)}`
 }
 
 export const voxelKey = (x: number, y: number, z: number): string => `${x},${y},${z}`
 
-export const voxelKeyOf = (voxel: GridVoxel): string => voxelKey(voxel.x, voxel.y, voxel.z)
+export const voxelKeyOf = (voxel: MapVoxelV2): string => voxelKey(voxel.x, voxel.y, voxel.z)
 
-export const buildVoxelOccupancy = (voxels: ReadonlyArray<GridVoxel>): Set<string> => {
+export const buildVoxelOccupancy = (voxels: ReadonlyArray<MapVoxelV2>): Set<string> => {
+  const set = new Set<string>()
+  for (const v of voxels) {
+    const material = getVoxelMaterialDefinition(v)
+    const blocks = v.blocksMovement ?? material.blocksMovementDefault ?? true
+    if (blocks) set.add(voxelKey(v.x, v.y, v.z))
+  }
+  return set
+}
+
+export const buildAllVoxelOccupancy = (voxels: ReadonlyArray<MapVoxelV2>): Set<string> => {
   const set = new Set<string>()
   for (const v of voxels) set.add(voxelKey(v.x, v.y, v.z))
   return set
@@ -155,9 +158,9 @@ export const cellInsidePokemonFootprint = (
 }
 
 export const filterVoxelsInBounds = (
-  voxels: ReadonlyArray<GridVoxel>,
+  voxels: ReadonlyArray<MapVoxelV2>,
   dimensions: { x: number; y: number; z: number },
-): GridVoxel[] =>
+): MapVoxelV2[] =>
   voxels.filter(
     (v) =>
       v.x >= 0 &&

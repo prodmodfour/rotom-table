@@ -63,13 +63,20 @@ export default defineEventHandler(async (event) => {
   const slug = allocateSlug(name)
   const now = Date.now()
   const map: TabletopMap = {
+    schemaVersion: 2,
     slug,
     name,
     folder,
     dimensions,
+    assetPacks: [],
     placements: [],
     initiative: { activeId: null, round: 1 },
     voxels: [],
+    decals: [],
+    props: [],
+    zones: [],
+    doors: [],
+    lights: [],
     createdAt: now,
     updatedAt: now,
   }
@@ -89,6 +96,7 @@ export default defineEventHandler(async (event) => {
       folder: map.folder ?? '',
       dimensions: map.dimensions,
       placementCount: 0,
+      schemaVersion: map.schemaVersion,
       updatedAt: map.updatedAt,
     },
   })

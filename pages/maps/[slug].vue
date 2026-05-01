@@ -62,8 +62,31 @@ const initiativeCollapsed = ref(false)
 
 const buildMode = ref(false)
 const buildTool = ref<BuildTool>('pencil')
-const buildMaterial = ref<VoxelMaterial>('grass')
+const buildMaterial = ref<VoxelMaterial>('airship_floor_metal')
 const buildColor = ref<string | null>(null)
+
+const layerVisibility = ref({
+  terrain: true,
+  decals: true,
+  props: true,
+  zones: true,
+  doors: true,
+  transparentObjects: true,
+  shadows: true,
+  tokens: true,
+  grid: true,
+})
+const layerOptions = [
+  'terrain',
+  'decals',
+  'props',
+  'zones',
+  'doors',
+  'transparentObjects',
+  'shadows',
+  'tokens',
+  'grid',
+] as const
 
 const sheetLookup = computed(() => ({
   pokemon: pokemonBySlug.value!,
@@ -72,6 +95,10 @@ const sheetLookup = computed(() => ({
 
 const spawnedPokemon = computed(() => placementsToSpawned(map.value, sheetLookup.value))
 const mapVoxels = computed<GridVoxel[]>(() => map.value?.voxels ?? [])
+const mapDecals = computed(() => map.value?.decals ?? [])
+const mapProps = computed(() => map.value?.props ?? [])
+const mapZones = computed(() => map.value?.zones ?? [])
+const mapDoors = computed(() => map.value?.doors ?? [])
 const voxelCount = computed(() => mapVoxels.value.length)
 
 type InitiativeKind = 'pokemon' | 'trainer'
@@ -551,7 +578,7 @@ const fillGround = () => {
     for (let x = 0; x < dims.x; x += 1) {
       if (occupancy.has(voxelKey(x, 0, z))) continue
       if (cellInsidePokemonFootprint(x, 0, z, spawnedPokemon.value)) continue
-      const voxel: GridVoxel = { x, y: 0, z, material: buildMaterial.value }
+      const voxel: GridVoxel = { x, y: 0, z, materialId: buildMaterial.value }
       if (buildColor.value) voxel.color = buildColor.value
       additions.push(voxel)
     }
@@ -790,6 +817,19 @@ watch(
         </template>
       </section>
 
+      <section v-if="map" class="panel-card layer-panel">
+        <div class="panel-heading">
+          <h2>Layers</h2>
+          <span class="badge">visibility</span>
+        </div>
+        <div class="layer-grid">
+          <label v-for="layer in layerOptions" :key="layer" class="layer-toggle">
+            <input v-model="layerVisibility[layer]" type="checkbox" />
+            <span>{{ layer.replace(/([A-Z])/g, ' $1') }}</span>
+          </label>
+        </div>
+      </section>
+
         <SheetBrowser v-if="map" @select="spawnSheet" />
       </div>
     </aside>
@@ -803,6 +843,11 @@ watch(
           :selected-id="selectedId"
           :active-turn-id="activeInitiativeId"
           :voxels="mapVoxels"
+          :decals="mapDecals"
+          :map-props="mapProps"
+          :zones="mapZones"
+          :doors="mapDoors"
+          :layer-visibility="layerVisibility"
           :build-mode="buildMode"
           :build-tool="buildTool"
           :build-material="buildMaterial"
@@ -1402,6 +1447,36 @@ input:focus {
 
 .material-swatch.is-active .swatch-label {
   color: var(--accent);
+}
+
+.layer-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.layer-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+.layer-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  border: 1px solid var(--rule-soft);
+  border-radius: 10px;
+  background: var(--paper);
+  padding: 0.45rem 0.55rem;
+  color: var(--ink);
+  font-size: 0.8rem;
+  text-transform: capitalize;
+}
+
+.layer-toggle input {
+  width: auto;
+  accent-color: var(--accent);
 }
 
 .color-row {

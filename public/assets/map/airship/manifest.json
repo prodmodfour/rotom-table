@@ -1,0 +1,285 @@
+{
+  "id": "airship",
+  "displayName": "Ranger Airship Map Assets",
+  "sources": [
+    {
+      "name": "Procedural Rotom Table starter SVGs",
+      "url": "local://public/assets/map/airship",
+      "license": "CC0-equivalent project generated"
+    }
+  ],
+  "materials": {
+    "airship_hull_dark": {
+      "proceduralTexture": true,
+      "registry": "utils/mapMaterials.ts"
+    },
+    "airship_floor_metal": {
+      "proceduralTexture": true,
+      "registry": "utils/mapMaterials.ts"
+    },
+    "airship_wall_bulkhead": {
+      "proceduralTexture": true,
+      "registry": "utils/mapMaterials.ts"
+    },
+    "reinforced_glass": {
+      "proceduralTexture": true,
+      "registry": "utils/mapMaterials.ts"
+    },
+    "observation_wood": {
+      "proceduralTexture": true,
+      "registry": "utils/mapMaterials.ts"
+    },
+    "meadow_grass": {
+      "proceduralTexture": true,
+      "registry": "utils/mapMaterials.ts"
+    },
+    "soft_nursery_mat": {
+      "proceduralTexture": true,
+      "registry": "utils/mapMaterials.ts"
+    },
+    "mud": {
+      "proceduralTexture": true,
+      "registry": "utils/mapMaterials.ts"
+    },
+    "shallow_water": {
+      "proceduralTexture": true,
+      "registry": "utils/mapMaterials.ts"
+    },
+    "deep_water": {
+      "proceduralTexture": true,
+      "registry": "utils/mapMaterials.ts"
+    },
+    "wetland_bank": {
+      "proceduralTexture": true,
+      "registry": "utils/mapMaterials.ts"
+    },
+    "cave_stone": {
+      "proceduralTexture": true,
+      "registry": "utils/mapMaterials.ts"
+    },
+    "burrow_dirt": {
+      "proceduralTexture": true,
+      "registry": "utils/mapMaterials.ts"
+    },
+    "thermal_rock": {
+      "proceduralTexture": true,
+      "registry": "utils/mapMaterials.ts"
+    },
+    "thermal_warning_floor": {
+      "proceduralTexture": true,
+      "registry": "utils/mapMaterials.ts"
+    },
+    "snow": {
+      "proceduralTexture": true,
+      "registry": "utils/mapMaterials.ts"
+    },
+    "ice": {
+      "proceduralTexture": true,
+      "registry": "utils/mapMaterials.ts"
+    },
+    "sand": {
+      "proceduralTexture": true,
+      "registry": "utils/mapMaterials.ts"
+    },
+    "scrub_dirt": {
+      "proceduralTexture": true,
+      "registry": "utils/mapMaterials.ts"
+    },
+    "electric_insulated_floor": {
+      "proceduralTexture": true,
+      "registry": "utils/mapMaterials.ts"
+    },
+    "biosecure_poison_floor": {
+      "proceduralTexture": true,
+      "registry": "utils/mapMaterials.ts"
+    },
+    "medical_tile": {
+      "proceduralTexture": true,
+      "registry": "utils/mapMaterials.ts"
+    },
+    "engineering_floor": {
+      "proceduralTexture": true,
+      "registry": "utils/mapMaterials.ts"
+    },
+    "cargo_lift_floor": {
+      "proceduralTexture": true,
+      "registry": "utils/mapMaterials.ts"
+    },
+    "hazard_stripe_floor": {
+      "proceduralTexture": true,
+      "registry": "utils/mapMaterials.ts"
+    }
+  },
+  "decals": {
+    "arrow": {
+      "path": "decals/arrow.svg"
+    },
+    "hazard_stripes": {
+      "path": "decals/hazard_stripes.svg"
+    },
+    "medical_cross": {
+      "path": "decals/medical_cross.svg"
+    },
+    "snowflake": {
+      "path": "decals/snowflake.svg"
+    },
+    "flame": {
+      "path": "decals/flame.svg"
+    },
+    "lightning": {
+      "path": "decals/lightning.svg"
+    },
+    "toxic": {
+      "path": "decals/toxic.svg"
+    },
+    "water_ripple": {
+      "path": "decals/water_ripple.svg"
+    },
+    "shoreline_trim": {
+      "path": "decals/shoreline_trim.svg"
+    },
+    "ranger_insignia": {
+      "path": "decals/ranger_insignia.svg"
+    },
+    "cargo_lift_outline": {
+      "path": "decals/cargo_lift_outline.svg"
+    },
+    "decon_chevrons": {
+      "path": "decals/decon_chevrons.svg"
+    },
+    "staff_only": {
+      "path": "decals/staff_only.svg"
+    },
+    "pawprints": {
+      "path": "decals/pawprints.svg"
+    },
+    "egg_icon": {
+      "path": "decals/egg_icon.svg"
+    },
+    "quiet_moon": {
+      "path": "decals/quiet_moon.svg"
+    },
+    "observation_ring_mark": {
+      "path": "decals/observation_ring_mark.svg"
+    }
+  },
+  "props": {
+    "berry_bush": {
+      "path": "props/berry_bush.svg"
+    },
+    "small_tree": {
+      "path": "props/small_tree.svg"
+    },
+    "large_tree_cluster": {
+      "path": "props/large_tree_cluster.svg"
+    },
+    "reed_patch": {
+      "path": "props/reed_patch.svg"
+    },
+    "lily_pad": {
+      "path": "props/lily_pad.svg"
+    },
+    "rock_pile": {
+      "path": "props/rock_pile.svg"
+    },
+    "burrow_entrance": {
+      "path": "props/burrow_entrance.svg"
+    },
+    "cave_den": {
+      "path": "props/cave_den.svg"
+    },
+    "perch_pole": {
+      "path": "props/perch_pole.svg"
+    },
+    "perch_tower": {
+      "path": "props/perch_tower.svg"
+    },
+    "nest_box": {
+      "path": "props/nest_box.svg"
+    },
+    "feeding_trough": {
+      "path": "props/feeding_trough.svg"
+    },
+    "egg_warmer": {
+      "path": "props/egg_warmer.svg"
+    },
+    "ice_crystal": {
+      "path": "props/ice_crystal.svg"
+    },
+    "snow_mound": {
+      "path": "props/snow_mound.svg"
+    },
+    "sand_scrub": {
+      "path": "props/sand_scrub.svg"
+    },
+    "thermal_vent": {
+      "path": "props/thermal_vent.svg"
+    },
+    "heat_rock": {
+      "path": "props/heat_rock.svg"
+    },
+    "charging_pylon": {
+      "path": "props/charging_pylon.svg"
+    },
+    "magnetic_coil": {
+      "path": "props/magnetic_coil.svg"
+    },
+    "poison_scrubber": {
+      "path": "props/poison_scrubber.svg"
+    },
+    "console": {
+      "path": "props/console.svg"
+    },
+    "wall_monitor": {
+      "path": "props/wall_monitor.svg"
+    },
+    "pipe_bundle": {
+      "path": "props/pipe_bundle.svg"
+    },
+    "vent_grille": {
+      "path": "props/vent_grille.svg"
+    },
+    "cargo_crate": {
+      "path": "props/cargo_crate.svg"
+    },
+    "railing": {
+      "path": "props/railing.svg"
+    },
+    "bulkhead_door_frame": {
+      "path": "props/bulkhead_door_frame.svg"
+    },
+    "medical_bed": {
+      "path": "props/medical_bed.svg"
+    },
+    "decon_sprayer": {
+      "path": "props/decon_sprayer.svg"
+    },
+    "warning_beacon": {
+      "path": "props/warning_beacon.svg"
+    }
+  },
+  "icons": {},
+  "doors": {
+    "sliding_bulkhead_door": {
+      "procedural": "three-box"
+    },
+    "habitat_gate": {
+      "procedural": "three-box"
+    },
+    "medical_airlock": {
+      "procedural": "three-box"
+    },
+    "engineering_hatch": {
+      "procedural": "three-box"
+    },
+    "cargo_lift_gate": {
+      "procedural": "three-box"
+    },
+    "glass_habitat_gate": {
+      "procedural": "three-box"
+    },
+    "biosecure_quarantine_door": {
+      "procedural": "three-box"
+    }
+  }
+}

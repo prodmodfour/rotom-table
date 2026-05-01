@@ -4,17 +4,35 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { CSS3DRenderer, CSS3DSprite } from 'three/examples/jsm/renderers/CSS3DRenderer.js'
 import type { GridAnchor, GridDimensions, SpawnedPokemon, SpriteAnimation, SpriteCrop } from '~/types/pokemon'
-import type { GridVoxel, VoxelMaterial } from '~/types/map'
+import type {
+  DecalPlacement,
+  DoorPlacement,
+  GridVoxel,
+  LayerVisibility,
+  PropPlacement,
+  VoxelMaterial,
+  ZoneDefinition,
+} from '~/types/map'
 import type { PreviewState } from '~/utils/grid'
 import { findPathForPokemon, getAnchorCenter, getPokemonCenter } from '~/utils/grid'
 import {
   buildVoxelOccupancy,
   cellInsidePokemonFootprint,
-  getMaterialDef,
   parseHexColor,
   voxelGroupKey,
   voxelKey,
+  voxelMaterialDefinition,
+  voxelMaterialId,
 } from '~/utils/voxels'
+import { getMaterialDefinition, materialColorNumber } from '~/utils/mapMaterials'
+import {
+  doorStateTint,
+  getDecalDefinition,
+  getDoorDefinition,
+  getPropDefinition,
+  type DoorDefinition,
+  type PropDefinition,
+} from '~/utils/mapAssets'
 import { POKEMON_TYPES, computeMultiplier, formatMultiplier } from '~/utils/typeChart'
 import {
   COMBAT_STAGE_KEYS,
@@ -33,6 +51,11 @@ const props = defineProps<{
   selectedId: string | null
   activeTurnId?: string | null
   voxels: GridVoxel[]
+  decals?: DecalPlacement[]
+  mapProps?: PropPlacement[]
+  doors?: DoorPlacement[]
+  zones?: ZoneDefinition[]
+  layerVisibility?: LayerVisibility
   buildMode: boolean
   buildTool: BuildTool
   buildMaterial: VoxelMaterial
@@ -112,6 +135,40 @@ interface VoxelGroup {
   materials: THREE.MeshBasicMaterial[]
   mesh: THREE.InstancedMesh
   voxels: GridVoxel[]
+  transparent: boolean
+}
+
+interface DecalRenderObject {
+  id: string
+  mesh: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>
+  texture: THREE.Texture | null
+}
+
+interface PropRenderObject {
+  id: string
+  definition: PropDefinition
+  sprite: THREE.Sprite<THREE.SpriteMaterial>
+  material: THREE.SpriteMaterial
+  texture: THREE.Texture | null
+  shadow: THREE.Mesh<THREE.CircleGeometry, THREE.MeshBasicMaterial>
+  cage: THREE.Mesh<THREE.BoxGeometry, THREE.MeshBasicMaterial[]>
+  footprint: { x: number; z: number }
+  height: number
+  elevatedBy: number
+  transparent: boolean
+}
+
+interface DoorRenderObject {
+  id: string
+  group: THREE.Group
+  definition: DoorDefinition
+  state: string
+  transparent: boolean
+}
+
+interface ZoneRenderObject {
+  id: string
+  group: THREE.Group
 }
 
 interface BuildTarget {
@@ -236,7 +293,7 @@ const paintVolumeMaterials = (
  * grass-over-dirt sides, bark rings, lava cracks, etc.
  */
 type BlockTextureRole = 'top' | 'side' | 'shadow' | 'bottom'
-type VoxelRenderStyle = Pick<GridVoxel, 'material' | 'color'>
+type VoxelRenderStyle = Pick<GridVoxel, 'materialId' | 'material' | 'color'>
 
 const BLOCK_TEXTURE_SIZE = 16
 const BLOCK_FACE_ROLES: ReadonlyArray<BlockTextureRole> = [
@@ -327,19 +384,15 @@ const SIDE_DEPTH_MAX_ALPHA: Record<BlockTextureRole, number> = {
 
 const sideDepthOverlayScale = (style: VoxelRenderStyle, isCustom: boolean): number => {
   if (isCustom) return 0.78
+  const definition = voxelMaterialDefinition(style)
+  const tags = new Set(definition.tags ?? [])
 
-  switch (style.material) {
-    case 'water':
-      return 0.55
-    case 'lava':
-      return 0.5
-    case 'snow':
-      return 0.68
-    case 'sand':
-      return 0.9
-    default:
-      return 1
-  }
+  if (tags.has('water') || tags.has('glass') || definition.transparent) return 0.5
+  if (tags.has('thermal') || tags.has('emissive')) return 0.52
+  if (tags.has('snow') || tags.has('ice')) return 0.66
+  if (tags.has('sand')) return 0.9
+  if (tags.has('metal')) return 1.08
+  return 1
 }
 
 const drawSideDepthOverlay = (
@@ -633,10 +686,12 @@ const paintCustomTexture = (
 const getBlockTexture = (style: VoxelRenderStyle, role: BlockTextureRole): THREE.CanvasTexture => {
   const parsedCustomColor = style.color ? parseHexColor(style.color) : null
   const isCustom = parsedCustomColor !== null
-  const baseColor = isCustom ? parsedCustomColor : getMaterialDef(style.material).baseColor
+  const materialId = voxelMaterialId(style)
+  const definition = getMaterialDefinition(materialId)
+  const baseColor = isCustom ? parsedCustomColor : materialColorNumber(definition)
   const styleKey = isCustom
     ? `custom:${baseColor.toString(16).padStart(6, '0')}`
-    : style.material
+    : materialId
   const key = `${styleKey}:${role}`
   const cached = blockTextureCache.get(key)
   if (cached) return cached
@@ -652,39 +707,53 @@ const getBlockTexture = (style: VoxelRenderStyle, role: BlockTextureRole): THREE
   if (isCustom) {
     paintCustomTexture(ctx, role, seed, baseColor)
   } else {
-    switch (style.material) {
-      case 'grass':
-        if (role === 'top') paintGrassTopTexture(ctx, seed)
-        else if (role === 'bottom') paintDirtTexture(ctx, role, seed)
-        else paintGrassSideTexture(ctx, role, seed)
-        break
-      case 'dirt':
-        paintDirtTexture(ctx, role, seed)
-        break
-      case 'stone':
-        paintStoneTexture(ctx, role, seed)
-        break
-      case 'water':
-        paintWaterTexture(ctx, role, seed)
-        break
-      case 'sand':
-        paintSandTexture(ctx, role, seed)
-        break
-      case 'snow':
-        paintSnowTexture(ctx, role, seed)
-        break
-      case 'wood':
-        paintWoodTexture(ctx, role, seed)
-        break
-      case 'lava':
-        paintLavaTexture(ctx, role, seed)
-        break
-      case 'path':
-        paintPathTexture(ctx, role, seed)
-        break
-      default:
-        paintCustomTexture(ctx, role, seed, baseColor)
-        break
+    const tags = new Set(definition.tags ?? [])
+    if (tags.has('grass') || materialId === 'meadow_grass') {
+      if (role === 'top') paintGrassTopTexture(ctx, seed)
+      else if (role === 'bottom') paintDirtTexture(ctx, role, seed)
+      else paintGrassSideTexture(ctx, role, seed)
+    } else if (tags.has('dirt') || tags.has('mud') || tags.has('wetland')) {
+      paintDirtTexture(ctx, role, seed, baseColor)
+    } else if (tags.has('stone') || tags.has('cave')) {
+      paintStoneTexture(ctx, role, seed)
+    } else if (tags.has('water')) {
+      paintWaterTexture(ctx, role, seed)
+    } else if (tags.has('snow') || tags.has('ice')) {
+      paintSnowTexture(ctx, role, seed)
+    } else if (tags.has('sand')) {
+      paintSandTexture(ctx, role, seed)
+    } else if (tags.has('wood')) {
+      paintWoodTexture(ctx, role, seed)
+    } else if (tags.has('thermal') || tags.has('emissive')) {
+      paintLavaTexture(ctx, role, seed)
+    } else if (tags.has('hazard') || materialId === 'hazard_stripe_floor') {
+      paintPathTexture(ctx, role, seed)
+      if (role === 'top') {
+        ctx.save()
+        ctx.globalAlpha = 0.9
+        for (let x = -BLOCK_TEXTURE_SIZE; x < BLOCK_TEXTURE_SIZE * 2; x += 6) {
+          ctx.fillStyle = '#1d2021'
+          ctx.fillRect(x, 0, 3, BLOCK_TEXTURE_SIZE)
+        }
+        ctx.restore()
+      }
+    } else if (tags.has('metal') || tags.has('tile') || tags.has('medical') || tags.has('electric') || tags.has('poison')) {
+      paintCustomTexture(ctx, role, seed, baseColor)
+      if (role === 'top') {
+        ctx.save()
+        ctx.globalAlpha = tags.has('medical') ? 0.16 : 0.22
+        ctx.strokeStyle = tags.has('electric') ? '#83a9ff' : tags.has('poison') ? '#b8f48a' : '#ffffff'
+        ctx.lineWidth = 1
+        ctx.beginPath()
+        ctx.moveTo(0, 8)
+        ctx.lineTo(16, 8)
+        ctx.moveTo(8, 0)
+        ctx.lineTo(8, 16)
+        ctx.stroke()
+        ctx.restore()
+      }
+    } else {
+      paintCustomTexture(ctx, role, seed, baseColor)
     }
   }
   drawSideDepthOverlay(ctx, role, sideDepthOverlayScale(style, isCustom))
@@ -1026,6 +1095,20 @@ const SHADOW_X_STRETCH = 1.15
 const SPRITE_HALO_MIN_ALPHA = 0.1
 const SPRITE_HALO_MAX_ALPHA = 0.28
 
+const DEFAULT_LAYER_VISIBILITY: LayerVisibility = {
+  terrain: true,
+  decals: true,
+  props: true,
+  zones: true,
+  doors: true,
+  transparentObjects: true,
+  shadows: true,
+  tokens: true,
+  grid: true,
+}
+
+const visibleLayers = () => ({ ...DEFAULT_LAYER_VISIBILITY, ...(props.layerVisibility ?? {}) })
+
 const EMPTY_PREVIEW: PreviewState = {
   position: null,
   reachable: false,
@@ -1293,16 +1376,28 @@ const raycaster = new THREE.Raycaster()
 const gridGroup = new THREE.Group()
 const worldGroup = new THREE.Group()
 const previewGroup = new THREE.Group()
+const zoneContainer = new THREE.Group()
 const voxelContainer = new THREE.Group()
+const decalContainer = new THREE.Group()
+const propContainer = new THREE.Group()
+const doorContainer = new THREE.Group()
 const clock = new THREE.Clock()
 
 scene.add(gridGroup)
 scene.add(worldGroup)
 scene.add(previewGroup)
+worldGroup.add(zoneContainer)
 worldGroup.add(voxelContainer)
+worldGroup.add(decalContainer)
+worldGroup.add(propContainer)
+worldGroup.add(doorContainer)
 
 const renderObjects = new Map<string, PokemonRenderObject>()
 const voxelGroups = new Map<string, VoxelGroup>()
+const decalObjects = new Map<string, DecalRenderObject>()
+const propObjects = new Map<string, PropRenderObject>()
+const doorObjects = new Map<string, DoorRenderObject>()
+const zoneObjects = new Map<string, ZoneRenderObject>()
 let terrainTopEdgeOverlay: THREE.Group | null = null
 let renderer: THREE.WebGLRenderer | null = null
 let cssRenderer: CSS3DRenderer | null = null
@@ -1848,13 +1943,14 @@ const alignCameraToGrid = (initial = false) => {
 
 const updateGridVisibility = () => {
   const isMovingPokemon = Boolean(selectedPokemon.value)
+  const layers = visibleLayers()
 
   if (floorGridLines) {
-    floorGridLines.visible = true
+    floorGridLines.visible = layers.grid
   }
 
   if (moveGridLines) {
-    moveGridLines.visible = isMovingPokemon || props.buildMode
+    moveGridLines.visible = layers.grid && (isMovingPokemon || props.buildMode)
   }
 }
 
@@ -2182,6 +2278,7 @@ const refreshPokemonStyles = () => {
     ;(renderObject.edges.material as THREE.LineBasicMaterial).opacity = selected ? 0.95 : 0.35
     renderObject.liftTarget = selected ? 1 : 0
   }
+  applyLayerVisibility()
 }
 
 const syncPokemonObjects = () => {
@@ -2402,10 +2499,15 @@ const syncVoxelMeshes = () => {
       disposeVoxelGroup(existing)
       voxelGroups.delete(key)
     }
+    const definition = voxelMaterialDefinition(voxels[0])
+    const opacity = definition.transparent ? (definition.opacity ?? 0.5) : 1
+    const depthWrite = !definition.transparent
     const geometry = new THREE.BoxGeometry(1, 1, 1)
-    const materials = buildVoxelFaceMaterials(voxels[0])
+    const materials = buildVoxelFaceMaterials(voxels[0], opacity, depthWrite)
     const mesh = new THREE.InstancedMesh(geometry, materials, voxels.length)
     mesh.userData.voxels = voxels
+    mesh.userData.transparent = Boolean(definition.transparent)
+    mesh.renderOrder = definition.transparent ? 8 : 0
     for (let i = 0; i < voxels.length; i += 1) {
       const v = voxels[i]
       matrix.makeTranslation(v.x + 0.5, v.y + 0.5, v.z + 0.5)
@@ -2413,16 +2515,367 @@ const syncVoxelMeshes = () => {
     }
     mesh.instanceMatrix.needsUpdate = true
     voxelContainer.add(mesh)
-    voxelGroups.set(key, { key, geometry, materials, mesh, voxels })
+    voxelGroups.set(key, { key, geometry, materials, mesh, voxels, transparent: Boolean(definition.transparent) })
   }
 
   syncTerrainTopEdgeOverlay()
+  applyLayerVisibility()
+}
+
+const loadMapTextureInto = (
+  url: string,
+  material: THREE.SpriteMaterial | THREE.MeshBasicMaterial,
+  onTexture?: (texture: THREE.Texture) => void,
+) => {
+  loadBaseSpriteTexture(url)
+    .then((texture) => {
+      material.map = texture
+      material.needsUpdate = true
+      onTexture?.(texture)
+    })
+    .catch((error) => console.warn('[map-assets] failed to load texture', url, error))
+}
+
+const disposeDecalObjects = () => {
+  for (const object of decalObjects.values()) disposeObject3D(object.mesh)
+  decalObjects.clear()
+}
+
+const decalScale = (decal: DecalPlacement) => {
+  const definition = getDecalDefinition(decal.decalId)
+  return decal.scale ?? definition?.defaultScale ?? { x: 1, z: 1 }
+}
+
+const syncDecalObjects = () => {
+  disposeDecalObjects()
+  const decals = [...(props.decals ?? [])].sort((a, b) => (a.renderOrder ?? 0) - (b.renderOrder ?? 0))
+  for (const decal of decals) {
+    const definition = getDecalDefinition(decal.decalId)
+    if (!definition) continue
+    const scale = decalScale(decal)
+    const width = Math.max(0.05, scale.x)
+    const depthOrHeight = Math.max(0.05, scale.y ?? scale.z)
+    const geometry = new THREE.PlaneGeometry(width, depthOrHeight)
+    const material = new THREE.MeshBasicMaterial({
+      color: decal.tint ? parseHexColor(decal.tint) ?? 0xffffff : 0xffffff,
+      transparent: true,
+      opacity: THREE.MathUtils.clamp(decal.opacity ?? 1, 0, 1),
+      alphaTest: 0.02,
+      depthTest: true,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+      toneMapped: false,
+    })
+    loadMapTextureInto(definition.texture, material)
+    const mesh = new THREE.Mesh(geometry, material)
+    mesh.renderOrder = 20 + (decal.renderOrder ?? 0)
+    const p = decal.position
+    const angle = THREE.MathUtils.degToRad(decal.rotation ?? 0)
+    const eps = 0.014 + (decal.renderOrder ?? 0) * 0.001
+    switch (decal.surface) {
+      case 'floor':
+        mesh.rotation.set(-Math.PI / 2, 0, angle)
+        mesh.position.set(p.x, p.y + 1 + eps, p.z)
+        break
+      case 'ceiling':
+        mesh.rotation.set(Math.PI / 2, 0, angle)
+        mesh.position.set(p.x, p.y - eps, p.z)
+        break
+      case 'north':
+        mesh.rotation.set(0, Math.PI, angle)
+        mesh.position.set(p.x, p.y, p.z - eps)
+        break
+      case 'south':
+        mesh.rotation.set(0, 0, angle)
+        mesh.position.set(p.x, p.y, p.z + eps)
+        break
+      case 'east':
+        mesh.rotation.set(0, Math.PI / 2, angle)
+        mesh.position.set(p.x + eps, p.y, p.z)
+        break
+      case 'west':
+        mesh.rotation.set(0, -Math.PI / 2, angle)
+        mesh.position.set(p.x - eps, p.y, p.z)
+        break
+    }
+    decalContainer.add(mesh)
+    decalObjects.set(decal.id, { id: decal.id, mesh, texture: null })
+  }
+  applyLayerVisibility()
+}
+
+const disposePropObjects = () => {
+  for (const object of propObjects.values()) {
+    disposeObject3D(object.sprite)
+    disposeObject3D(object.shadow)
+    disposeObject3D(object.cage)
+  }
+  propObjects.clear()
+}
+
+const propFootprint = (placement: PropPlacement, definition: PropDefinition) =>
+  placement.footprint ?? definition.footprint
+
+const propHeight = (placement: PropPlacement, definition: PropDefinition) =>
+  placement.height ?? definition.height
+
+const propScaleVector = (placement: PropPlacement) => {
+  if (typeof placement.scale === 'number') {
+    return { x: placement.scale, y: placement.scale, z: placement.scale }
+  }
+  return placement.scale ?? { x: 1, y: 1, z: 1 }
+}
+
+const syncPropObjects = () => {
+  disposePropObjects()
+  for (const placement of props.mapProps ?? []) {
+    const definition = getPropDefinition(placement.propId)
+    if (!definition) continue
+    const baseFootprint = propFootprint(placement, definition)
+    const scale = propScaleVector(placement)
+    const footprint = { x: baseFootprint.x * scale.x, z: baseFootprint.z * scale.z }
+    const height = Math.max(0.1, propHeight(placement, definition) * scale.y)
+    const width = Math.max(0.1, (definition.width ?? Math.max(baseFootprint.x, baseFootprint.z)) * Math.max(scale.x, scale.z))
+    const transparent = Boolean(definition.transparent)
+    const material = new THREE.SpriteMaterial({
+      map: getTransparentSpriteTexture(),
+      color: 0xffffff,
+      transparent: true,
+      opacity: transparent ? 0.82 : 1,
+      alphaTest: 0.05,
+      depthTest: true,
+      depthWrite: !transparent,
+      toneMapped: false,
+    })
+    loadMapTextureInto(definition.texture, material)
+    const sprite = new THREE.Sprite(material)
+    sprite.center.set(0.5, 0)
+    sprite.scale.set(width, height, 1)
+    sprite.rotation.z = THREE.MathUtils.degToRad(placement.rotation ?? 0)
+    sprite.renderOrder = transparent ? 12 : 0
+
+    const centerX = placement.anchor === 'center'
+      ? placement.position.x
+      : placement.position.x + footprint.x / 2
+    const centerZ = placement.anchor === 'center'
+      ? placement.position.z
+      : placement.position.z + footprint.z / 2
+    const footY = placement.position.y
+    sprite.position.set(centerX, footY, centerZ)
+
+    const shadowRadius = Math.max(footprint.x, footprint.z, 0.5) * 0.52
+    const shadow = new THREE.Mesh(
+      new THREE.CircleGeometry(shadowRadius, 32),
+      new THREE.MeshBasicMaterial({
+        map: getContactShadowTexture(),
+        transparent: true,
+        opacity: 0.72,
+        depthTest: true,
+        depthWrite: false,
+      }),
+    )
+    shadow.rotation.x = -Math.PI / 2
+    const surfaceY = getShadowSurfaceY(centerX, centerZ, Math.max(1, Math.ceil(Math.max(footprint.x, footprint.z))), footY)
+    const elevatedBy = Math.max(0, footY - surfaceY)
+    shadow.position.set(centerX, surfaceY + 0.006, centerZ)
+    shadow.scale.setScalar(1 + elevatedBy * 0.12)
+    shadow.material.opacity = Math.max(0.22, 0.72 - elevatedBy * 0.12)
+
+    const cage = new THREE.Mesh(
+      new THREE.BoxGeometry(Math.max(0.1, footprint.x), height, Math.max(0.1, footprint.z)),
+      buildVolumeMaterials('idle', 0.08),
+    )
+    cage.position.set(centerX, footY + height / 2, centerZ)
+    cage.renderOrder = 1
+
+    propContainer.add(shadow)
+    propContainer.add(cage)
+    propContainer.add(sprite)
+    propObjects.set(placement.id, {
+      id: placement.id,
+      definition,
+      sprite,
+      material,
+      texture: null,
+      shadow,
+      cage,
+      footprint,
+      height,
+      elevatedBy,
+      transparent,
+    })
+  }
+  applyLayerVisibility()
+}
+
+const disposeDoorObjects = () => {
+  for (const object of doorObjects.values()) disposeObject3D(object.group)
+  doorObjects.clear()
+}
+
+const addDoorBox = (
+  group: THREE.Group,
+  size: THREE.Vector3,
+  position: THREE.Vector3,
+  color: number,
+  opacity = 1,
+) => {
+  const material = new THREE.MeshBasicMaterial({
+    color,
+    transparent: opacity < 1,
+    opacity,
+    depthTest: true,
+    depthWrite: opacity >= 1,
+  })
+  const mesh = new THREE.Mesh(new THREE.BoxGeometry(size.x, size.y, size.z), material)
+  mesh.position.copy(position)
+  if (opacity < 1) mesh.renderOrder = 11
+  group.add(mesh)
+  return mesh
+}
+
+const syncDoorObjects = () => {
+  disposeDoorObjects()
+  for (const placement of props.doors ?? []) {
+    const definition = getDoorDefinition(placement.doorId)
+    if (!definition) continue
+    const width = placement.width ?? definition.defaultWidth
+    const height = placement.height ?? definition.defaultHeight
+    const state = placement.state ?? 'closed'
+    const color = parseHexColor(definition.color) ?? 0x4f5b66
+    const accent = parseHexColor(definition.accent ?? '') ?? doorStateTint(state)
+    const transparent = Boolean(definition.transparent)
+    const opacity = transparent ? (definition.opacity ?? 0.4) : 1
+    const group = new THREE.Group()
+    group.position.set(placement.position.x + width / 2, placement.position.y, placement.position.z + 0.5)
+    group.rotation.y = THREE.MathUtils.degToRad(placement.rotation ?? 0)
+    addDoorBox(group, new THREE.Vector3(width + 0.2, 0.16, 0.18), new THREE.Vector3(0, height + 0.08, 0), color)
+    addDoorBox(group, new THREE.Vector3(0.16, height, 0.18), new THREE.Vector3(-width / 2, height / 2, 0), color)
+    addDoorBox(group, new THREE.Vector3(0.16, height, 0.18), new THREE.Vector3(width / 2, height / 2, 0), color)
+    const panelWidth = state === 'open' ? Math.max(0.18, width * 0.18) : width * 0.86
+    const panelX = state === 'open' ? -width * 0.38 : 0
+    addDoorBox(group, new THREE.Vector3(panelWidth, height * 0.82, 0.08), new THREE.Vector3(panelX, height * 0.45, 0), color, opacity)
+    addDoorBox(group, new THREE.Vector3(width * 0.7, 0.08, 0.1), new THREE.Vector3(0, height * 0.54, 0.06), accent, state === 'locked' ? 1 : 0.78)
+    group.userData.transparent = transparent
+    doorContainer.add(group)
+    doorObjects.set(placement.id, { id: placement.id, group, definition, state, transparent })
+  }
+  applyLayerVisibility()
+}
+
+const disposeZoneObjects = () => {
+  for (const object of zoneObjects.values()) disposeObject3D(object.group)
+  zoneObjects.clear()
+}
+
+const buildZoneBorder = (width: number, depth: number, y: number, color: number): THREE.LineSegments => {
+  const x0 = -width / 2
+  const x1 = width / 2
+  const z0 = -depth / 2
+  const z1 = depth / 2
+  const geometry = new THREE.BufferGeometry()
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute([
+    x0, y, z0, x1, y, z0,
+    x1, y, z0, x1, y, z1,
+    x1, y, z1, x0, y, z1,
+    x0, y, z1, x0, y, z0,
+  ], 3))
+  return new THREE.LineSegments(geometry, new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.78, depthWrite: false }))
+}
+
+const syncZoneObjects = () => {
+  disposeZoneObjects()
+  for (const zone of props.zones ?? []) {
+    const width = Math.max(0.1, zone.bounds.x2 - zone.bounds.x1)
+    const depth = Math.max(0.1, zone.bounds.z2 - zone.bounds.z1)
+    const y = (zone.bounds.y1 ?? 0) + 1.006
+    const color = parseHexColor(zone.tint ?? '') ?? 0xfabd2f
+    const group = new THREE.Group()
+    group.position.set(zone.bounds.x1 + width / 2, 0, zone.bounds.z1 + depth / 2)
+    const fill = new THREE.Mesh(
+      new THREE.PlaneGeometry(width, depth),
+      new THREE.MeshBasicMaterial({
+        color,
+        transparent: true,
+        opacity: 0.13,
+        depthTest: true,
+        depthWrite: false,
+        side: THREE.DoubleSide,
+      }),
+    )
+    fill.rotation.x = -Math.PI / 2
+    fill.position.y = y
+    fill.renderOrder = 2
+    group.add(fill)
+    const border = buildZoneBorder(width, depth, y + 0.003, color)
+    group.add(border)
+
+    if (zone.icon) {
+      const definition = getDecalDefinition(zone.icon)
+      if (definition) {
+        const material = new THREE.MeshBasicMaterial({
+          color,
+          transparent: true,
+          opacity: 0.72,
+          alphaTest: 0.02,
+          depthTest: true,
+          depthWrite: false,
+          side: THREE.DoubleSide,
+        })
+        loadMapTextureInto(definition.texture, material)
+        const icon = new THREE.Mesh(new THREE.PlaneGeometry(Math.min(1.4, width), Math.min(1.4, depth)), material)
+        icon.rotation.x = -Math.PI / 2
+        icon.position.set(0, y + 0.006, -depth / 2 + Math.min(1.1, depth / 2))
+        icon.renderOrder = 4
+        group.add(icon)
+      }
+    }
+
+    zoneContainer.add(group)
+    zoneObjects.set(zone.id, { id: zone.id, group })
+  }
+  applyLayerVisibility()
+}
+
+const applyLayerVisibility = () => {
+  const layers = visibleLayers()
+  gridGroup.visible = layers.grid
+  zoneContainer.visible = layers.zones
+  decalContainer.visible = layers.decals
+  propContainer.visible = layers.props || layers.shadows
+  doorContainer.visible = layers.doors
+  voxelContainer.visible = layers.terrain
+
+  for (const group of voxelGroups.values()) {
+    group.mesh.visible = layers.terrain && (!group.transparent || layers.transparentObjects)
+  }
+  if (terrainTopEdgeOverlay) terrainTopEdgeOverlay.visible = layers.terrain
+
+  for (const object of propObjects.values()) {
+    object.sprite.visible = layers.props && (!object.transparent || layers.transparentObjects)
+    object.cage.visible = layers.props
+    object.shadow.visible = layers.shadows
+  }
+  for (const object of doorObjects.values()) {
+    object.group.visible = layers.doors && (!object.transparent || layers.transparentObjects)
+  }
+  for (const renderObject of renderObjects.values()) {
+    const tokens = layers.tokens
+    renderObject.sprite.visible = tokens
+    renderObject.spriteState.halo.visible = tokens
+    renderObject.volume.visible = tokens
+    renderObject.edges.visible = tokens
+    renderObject.proxy.visible = tokens
+    renderObject.elevationBadge.element.style.display = tokens ? '' : 'none'
+    renderObject.hpBar.element.style.display = tokens ? '' : 'none'
+    renderObject.shadow.visible = layers.shadows && tokens
+  }
 }
 
 const ensureBuildGhost = () => {
   if (buildGhost && buildGhostEdges) return
   const geometry = new THREE.BoxGeometry(1, 1, 1)
-  const materials = buildVoxelFaceMaterials({ material: 'stone', color: '#fabd2f' }, 0.45, false)
+  const materials = buildVoxelFaceMaterials({ materialId: 'airship_floor_metal', color: '#fabd2f' }, 0.45, false)
   buildGhost = new THREE.Mesh(geometry, materials)
   buildGhost.visible = false
   previewGroup.add(buildGhost)
@@ -2459,12 +2912,12 @@ const hideBuildGhost = () => {
 }
 
 const customVoxelStyle = (baseColor: number): VoxelRenderStyle => ({
-  material: 'stone',
+  materialId: 'airship_floor_metal',
   color: blockHexCss(baseColor),
 })
 
 const currentBuildVoxelStyle = (): VoxelRenderStyle => {
-  const style: VoxelRenderStyle = { material: props.buildMaterial }
+  const style: VoxelRenderStyle = { materialId: props.buildMaterial }
   if (props.buildColor && parseHexColor(props.buildColor) !== null) style.color = props.buildColor
   return style
 }
@@ -2874,7 +3327,7 @@ const performBuildAction = (event: MouseEvent | PointerEvent, tool: BuildTool) =
     x: target.cell.x,
     y: target.cell.y,
     z: target.cell.z,
-    material: props.buildMaterial,
+    materialId: props.buildMaterial,
   }
   if (props.buildColor) voxel.color = props.buildColor
   emit('place-voxel', voxel)
@@ -3386,7 +3839,11 @@ onMounted(() => {
   syncRendererSize()
   buildGrid()
   syncPokemonObjects()
+  syncZoneObjects()
   syncVoxelMeshes()
+  syncDecalObjects()
+  syncPropObjects()
+  syncDoorObjects()
   ensurePreviewObjects()
   if (props.buildMode) ensureBuildGhost()
   alignCameraToGrid(true)
@@ -3433,6 +3890,10 @@ onBeforeUnmount(() => {
   disposeObject3D(previewEdges)
   disposeObject3D(previewPathLine)
   disposeBuildGhost()
+  disposeDecalObjects()
+  disposePropObjects()
+  disposeDoorObjects()
+  disposeZoneObjects()
   disposeTerrainTopEdgeOverlay()
   disposeAllVoxelGroups()
   disposeBlockTextureCache()
@@ -3535,6 +3996,52 @@ watch(
     }
 
     replayBuildPreview()
+  },
+  { deep: true },
+)
+
+watch(
+  () => props.decals,
+  () => {
+    if (!renderer) return
+    syncDecalObjects()
+  },
+  { deep: true },
+)
+
+watch(
+  () => props.mapProps,
+  () => {
+    if (!renderer) return
+    syncPropObjects()
+  },
+  { deep: true },
+)
+
+watch(
+  () => props.doors,
+  () => {
+    if (!renderer) return
+    syncDoorObjects()
+  },
+  { deep: true },
+)
+
+watch(
+  () => props.zones,
+  () => {
+    if (!renderer) return
+    syncZoneObjects()
+  },
+  { deep: true },
+)
+
+watch(
+  () => props.layerVisibility,
+  () => {
+    if (!renderer) return
+    updateGridVisibility()
+    applyLayerVisibility()
   },
   { deep: true },
 )
