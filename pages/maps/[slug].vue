@@ -26,6 +26,7 @@ import {
 } from '~/utils/voxels'
 import { buildMapOccupancy } from '~/utils/mapOccupancy'
 import { getClientId } from '~/utils/clientId'
+import { getMapAssetRegistryRevision, loadMapAssetPacks } from '~/utils/mapAssets'
 import { COMBAT_STAGE_KEYS, COMBAT_STAT_STAGE_KEYS, clampCombatStage } from '~/utils/combatStages'
 import { resolveStats } from '~/data/characterSheets'
 import { resolveTrainerStats } from '~/data/trainerSheets'
@@ -100,7 +101,19 @@ const mapDecals = computed(() => map.value?.decals ?? [])
 const mapProps = computed(() => map.value?.props ?? [])
 const mapZones = computed(() => map.value?.zones ?? [])
 const mapDoors = computed(() => map.value?.doors ?? [])
+const mapAssetPacks = computed(() => map.value?.assetPacks ?? [])
+const assetRegistryRevision = ref(getMapAssetRegistryRevision())
 const voxelCount = computed(() => mapVoxels.value.length)
+
+watch(
+  () => mapAssetPacks.value.join('|'),
+  async () => {
+    if (!import.meta.client) return
+    await loadMapAssetPacks(mapAssetPacks.value)
+    assetRegistryRevision.value = getMapAssetRegistryRevision()
+  },
+  { immediate: true },
+)
 
 type InitiativeKind = 'pokemon' | 'trainer'
 
@@ -864,6 +877,8 @@ watch(
           :map-props="mapProps"
           :zones="mapZones"
           :doors="mapDoors"
+          :asset-packs="mapAssetPacks"
+          :asset-registry-revision="assetRegistryRevision"
           :layer-visibility="layerVisibility"
           :build-mode="buildMode"
           :build-tool="buildTool"

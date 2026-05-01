@@ -1,0 +1,81 @@
+{
+  "slug": "airship-habitat-atrium-phase2-demo",
+  "name": "Airship Habitat Atrium Phase 2 Demo",
+  "dimensions": { "x": 64, "y": 18, "z": 44 },
+  "assetPacks": ["airship", "nature", "facility"],
+  "shell": {
+    "floorMaterial": "airship_floor_plating",
+    "wallMaterial": "airship_wall_bulkhead",
+    "hullMaterial": "airship_hull_dark",
+    "wallHeight": 2
+  },
+  "baseRegions": [
+    { "materialId": "observation_wood", "bounds": { "x1": 18, "z1": 11, "x2": 46, "z2": 13 } },
+    { "materialId": "observation_wood", "bounds": { "x1": 18, "z1": 30, "x2": 46, "z2": 32 } },
+    { "materialId": "observation_wood", "bounds": { "x1": 18, "z1": 13, "x2": 20, "z2": 30 } },
+    { "materialId": "observation_wood", "bounds": { "x1": 44, "z1": 13, "x2": 46, "z2": 30 } },
+    { "materialId": "airship_floor_metal", "bounds": { "x1": 1, "z1": 1, "x2": 63, "z2": 4 } },
+    { "materialId": "airship_floor_metal", "bounds": { "x1": 1, "z1": 40, "x2": 63, "z2": 43 } },
+    { "materialId": "airship_floor_metal", "bounds": { "x1": 1, "z1": 1, "x2": 4, "z2": 43 } },
+    { "materialId": "airship_floor_metal", "bounds": { "x1": 60, "z1": 1, "x2": 63, "z2": 43 } }
+  ],
+  "zones": [
+    { "id": "zone-meadow", "name": "Central Meadow Commons", "brush": "meadow", "bounds": { "x1": 20, "z1": 13, "x2": 44, "z2": 30 }, "borderStyle": "quiet" },
+    { "id": "zone-grove", "name": "Grove Roost", "brush": "grove", "bounds": { "x1": 8, "z1": 6, "x2": 20, "z2": 19 } },
+    { "id": "zone-wetland", "name": "Wetland Corner", "brush": "wetland", "bounds": { "x1": 8, "z1": 24, "x2": 22, "z2": 39 } },
+    { "id": "zone-cryo", "name": "Cryo Snow Pod", "brush": "cryo", "bounds": { "x1": 46, "z1": 6, "x2": 59, "z2": 17 } },
+    { "id": "zone-thermal", "name": "Thermal Vent Den", "brush": "thermal", "bounds": { "x1": 47, "z1": 27, "x2": 60, "z2": 39 } },
+    { "id": "zone-electric", "name": "Electric Charging Bay", "brush": "electric-tech", "bounds": { "x1": 4, "z1": 7, "x2": 14, "z2": 18 } },
+    { "id": "zone-poison", "name": "Biosecure Filtration", "brush": "poison-biosecure", "bounds": { "x1": 4, "z1": 27, "x2": 14, "z2": 39 } },
+    { "id": "zone-medical", "name": "Medical Airlock", "brush": "medical", "bounds": { "x1": 52, "z1": 18, "x2": 62, "z2": 27 } },
+    { "id": "zone-nursery", "name": "Nursery Feeding Corner", "brush": "nursery", "bounds": { "x1": 24, "z1": 32, "x2": 41, "z2": 41 } },
+    { "id": "zone-cargo", "name": "Cargo Lift Test Pad", "brush": "cargo-lift", "bounds": { "x1": 26, "z1": 3, "x2": 40, "z2": 10 } }
+  ],
+  "glassBarriers": [
+    { "x1": 19, "z1": 12, "x2": 44, "z2": 12, "height": 2, "openings": [{ "x1": 30, "z1": 12, "x2": 33, "z2": 12 }] },
+    { "x1": 19, "z1": 30, "x2": 44, "z2": 30, "height": 2, "openings": [{ "x1": 30, "z1": 30, "x2": 33, "z2": 30 }] },
+    { "x1": 19, "z1": 12, "x2": 19, "z2": 30, "height": 2, "openings": [{ "x1": 19, "z1": 20, "x2": 19, "z2": 22 }] },
+    { "x1": 44, "z1": 12, "x2": 44, "z2": 30, "height": 2, "openings": [{ "x1": 44, "z1": 20, "x2": 44, "z2": 22 }] }
+  ],
+  "prefabs": [
+    { "id": "prefab-meadow-north-gate", "prefabId": "habitat-glass-gate-2x1", "position": { "x": 30, "y": 0, "z": 12 }, "rotation": 0 },
+    { "id": "prefab-meadow-south-gate", "prefabId": "habitat-glass-gate-2x1", "position": { "x": 30, "y": 0, "z": 30 }, "rotation": 180 },
+    { "id": "prefab-meadow-west-gate", "prefabId": "habitat-glass-gate-2x1", "position": { "x": 19, "y": 0, "z": 20 }, "rotation": 90 },
+    { "id": "prefab-wetland-corner", "prefabId": "wetland-corner-4x4", "position": { "x": 8, "y": 0, "z": 35 }, "rotation": 270 },
+    { "id": "prefab-aviary-perches", "prefabId": "aviary-perch-cluster", "position": { "x": 14, "y": 0, "z": 9 }, "rotation": 0 },
+    { "id": "prefab-medical-airlock", "prefabId": "medical-airlock-3x2", "position": { "x": 58, "y": 0, "z": 21 }, "rotation": 90 },
+    { "id": "prefab-electric-charge", "prefabId": "electric-charging-station", "position": { "x": 5, "y": 0, "z": 11 }, "rotation": 0 },
+    { "id": "prefab-poison-filter", "prefabId": "poison-filtration-corner", "position": { "x": 4, "y": 0, "z": 34 }, "rotation": 270 },
+    { "id": "prefab-cargo-lift", "prefabId": "cargo-lift-4x4", "position": { "x": 31, "y": 0, "z": 4 }, "rotation": 0 }
+  ],
+  "decals": [
+    { "id": "decal-center-ranger", "decalId": "ranger_insignia", "surface": "floor", "position": { "x": 32, "y": 0, "z": 21.5 }, "scale": { "x": 3, "z": 3 }, "opacity": 0.5, "renderOrder": 8 },
+    { "id": "decal-north-arrow", "decalId": "arrow", "surface": "floor", "position": { "x": 32, "y": 0, "z": 5 }, "rotation": 180, "scale": { "x": 1.4, "z": 1.4 }, "opacity": 0.55 },
+    { "id": "decal-staff-med", "decalId": "staff_only", "surface": "floor", "position": { "x": 57, "y": 0, "z": 18 }, "scale": { "x": 2.2, "z": 0.8 }, "opacity": 0.55 }
+  ],
+  "props": [
+    { "id": "prop-ring-rail-nw", "propId": "railing", "position": { "x": 18, "y": 1, "z": 11 }, "rotation": 0 },
+    { "id": "prop-ring-rail-ne", "propId": "railing", "position": { "x": 43, "y": 1, "z": 11 }, "rotation": 0 },
+    { "id": "prop-ring-rail-sw", "propId": "railing", "position": { "x": 18, "y": 1, "z": 31 }, "rotation": 0 },
+    { "id": "prop-ring-rail-se", "propId": "railing", "position": { "x": 43, "y": 1, "z": 31 }, "rotation": 0 },
+    { "id": "prop-overlook-monitor", "propId": "wall_monitor", "position": { "x": 32, "y": 1, "z": 11 }, "blocksMovement": false },
+    { "id": "prop-nursery-sign", "propId": "sign_nursery", "position": { "x": 24, "y": 1, "z": 32 }, "blocksMovement": false }
+  ],
+  "doors": [
+    { "id": "door-east-bulkhead", "doorId": "sliding_bulkhead_door", "position": { "x": 60, "y": 1, "z": 20 }, "rotation": 90, "width": 2, "height": 2.4, "state": "closed" },
+    { "id": "door-west-biosecure", "doorId": "biosecure_quarantine_door", "position": { "x": 3, "y": 1, "z": 31 }, "rotation": 90, "width": 2, "height": 2.4, "state": "locked" }
+  ],
+  "placements": [
+    { "id": "pkm-phase2-bolt", "sheetKind": "pokemon", "sheetSlug": "bolt-pikachu", "position": { "x": 31, "y": 1, "z": 20 }, "turned": false },
+    { "id": "pkm-phase2-iggy", "sheetKind": "pokemon", "sheetSlug": "iggy-magnemite", "position": { "x": 12, "y": 1, "z": 32 }, "turned": false }
+  ],
+  "lights": [
+    { "id": "light-zone-meadow", "kind": "zone", "zoneId": "zone-meadow", "color": "#fff1c7", "intensity": 0.3 },
+    { "id": "light-zone-wetland", "kind": "zone", "zoneId": "zone-wetland", "color": "#8fd5ff", "intensity": 0.35 },
+    { "id": "light-zone-thermal", "kind": "zone", "zoneId": "zone-thermal", "color": "#f3722c", "intensity": 0.35 }
+  ],
+  "metadata": {
+    "description": "Phase 2 visual-system demo generated from brushes and prefabs. Not the final full airship map.",
+    "aiAuthoringNotes": "Use this as a vocabulary demo: broad brush-painted habitat zones, a few prefab landmarks, deterministic prop variants, subtle zone identity, and transparent glass containment."
+  }
+}

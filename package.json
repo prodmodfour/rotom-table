@@ -7,8 +7,11 @@
     "build": "nuxt build",
     "preview": "nuxt preview",
     "validate:map": "node scripts/validate-map-v2.mjs",
-    "validate:maps": "node scripts/validate-map-v2.mjs data/maps/ranger_ark/airship-habitat-atrium-v2.json",
+    "validate:maps": "node scripts/validate-map-v2.mjs data/maps/ranger_ark/airship-habitat-atrium-v2.json data/maps/ranger_ark/airship-habitat-atrium-phase2-demo.json",
     "smoke:map-v2": "node scripts/smoke-map-v2.mjs",
+    "import:map-assets": "node scripts/import-map-assets.mjs",
+    "generate:airship-demo": "node scripts/generate-airship-demo-v2.mjs",
+    "generate:map-from-plan": "node scripts/generate-map-from-plan.mjs",
     "postinstall": "nuxt prepare"
   },
   "dependencies": {

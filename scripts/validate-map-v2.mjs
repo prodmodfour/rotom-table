@@ -14,33 +14,107 @@ const readIds = (rootDir, file, regex) => {
   return ids
 }
 
-const readLocalAssetPackIds = (rootDir) => {
-  const packs = new Set()
+const addToMapSet = (map, id, pack) => {
+  if (!id || !pack) return
+  let set = map.get(id)
+  if (!set) {
+    set = new Set()
+    map.set(id, set)
+  }
+  set.add(pack)
+}
+
+const readLocalAssetRegistry = (rootDir) => {
+  const registry = {
+    materialIds: new Set(),
+    decalIds: new Set(),
+    propIds: new Set(),
+    doorIds: new Set(),
+    iconIds: new Set(),
+    propVariants: new Map(),
+    assetPacksByKind: {
+      materials: new Map(),
+      decals: new Map(),
+      props: new Map(),
+      doors: new Map(),
+      icons: new Map(),
+    },
+    localAssetPackIds: new Set(),
+    manifestErrors: [],
+  }
+
+  // Offline fallback definitions remain valid when a manifest is missing.
+  for (const id of readIds(rootDir, 'utils/mapMaterials.ts', /mat\('([^']+)'/g)) {
+    registry.materialIds.add(id)
+    addToMapSet(registry.assetPacksByKind.materials, id, 'airship')
+  }
+  for (const id of readIds(rootDir, 'utils/mapAssets.ts', /decal\('([^']+)'/g)) {
+    registry.decalIds.add(id)
+    addToMapSet(registry.assetPacksByKind.decals, id, 'airship')
+  }
+  for (const id of readIds(rootDir, 'utils/mapAssets.ts', /prop\('([^']+)'/g)) {
+    registry.propIds.add(id)
+    addToMapSet(registry.assetPacksByKind.props, id, 'airship')
+  }
+  for (const id of readIds(rootDir, 'utils/mapAssets.ts', /door\('([^']+)'/g)) {
+    registry.doorIds.add(id)
+    addToMapSet(registry.assetPacksByKind.doors, id, 'airship')
+  }
+
   const assetRoot = resolve(rootDir, 'public/assets/map')
-  if (!existsSync(assetRoot)) return packs
+  if (!existsSync(assetRoot)) return registry
+
   for (const entry of readdirSync(assetRoot, { withFileTypes: true })) {
     if (!entry.isDirectory() || entry.name.startsWith('.')) continue
-    packs.add(entry.name)
-    const manifestPath = resolve(assetRoot, entry.name, 'manifest.json')
+    const dirPack = entry.name
+    registry.localAssetPackIds.add(dirPack)
+    const manifestPath = resolve(assetRoot, dirPack, 'manifest.json')
     if (!existsSync(manifestPath)) continue
     try {
       const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'))
-      if (typeof manifest.id === 'string' && manifest.id.trim()) packs.add(manifest.id)
-    } catch {
-      // The manifest itself is metadata-only for now; malformed manifests are
-      // not map JSON errors. Keep the directory name as the known pack id.
+      const packId = typeof manifest.id === 'string' && manifest.id.trim() ? manifest.id.trim() : dirPack
+      registry.localAssetPackIds.add(packId)
+
+      for (const id of Object.keys(manifest.materials ?? {})) {
+        registry.materialIds.add(id)
+        addToMapSet(registry.assetPacksByKind.materials, id, packId)
+        addToMapSet(registry.assetPacksByKind.materials, id, dirPack)
+      }
+      for (const id of Object.keys(manifest.decals ?? {})) {
+        registry.decalIds.add(id)
+        addToMapSet(registry.assetPacksByKind.decals, id, packId)
+        addToMapSet(registry.assetPacksByKind.decals, id, dirPack)
+      }
+      for (const id of Object.keys(manifest.icons ?? {})) {
+        registry.iconIds.add(id)
+        registry.decalIds.add(id)
+        addToMapSet(registry.assetPacksByKind.icons, id, packId)
+        addToMapSet(registry.assetPacksByKind.icons, id, dirPack)
+        addToMapSet(registry.assetPacksByKind.decals, id, packId)
+        addToMapSet(registry.assetPacksByKind.decals, id, dirPack)
+      }
+      for (const [id, prop] of Object.entries(manifest.props ?? {})) {
+        registry.propIds.add(id)
+        addToMapSet(registry.assetPacksByKind.props, id, packId)
+        addToMapSet(registry.assetPacksByKind.props, id, dirPack)
+        if (Array.isArray(prop?.variants)) {
+          const variants = new Set(prop.variants.map((variant) => variant?.id).filter((value) => typeof value === 'string' && value.trim()))
+          if (variants.size) registry.propVariants.set(id, variants)
+        }
+      }
+      for (const id of Object.keys(manifest.doors ?? {})) {
+        registry.doorIds.add(id)
+        addToMapSet(registry.assetPacksByKind.doors, id, packId)
+        addToMapSet(registry.assetPacksByKind.doors, id, dirPack)
+      }
+    } catch (err) {
+      registry.manifestErrors.push(`${manifestPath}: could not parse manifest JSON: ${err.message}`)
     }
   }
-  return packs
+  return registry
 }
 
-export const createRegistry = (rootDir = root) => ({
-  materialIds: readIds(rootDir, 'utils/mapMaterials.ts', /mat\('([^']+)'/g),
-  decalIds: readIds(rootDir, 'utils/mapAssets.ts', /decal\('([^']+)'/g),
-  propIds: readIds(rootDir, 'utils/mapAssets.ts', /prop\('([^']+)'/g),
-  doorIds: readIds(rootDir, 'utils/mapAssets.ts', /door\('([^']+)'/g),
-  localAssetPackIds: readLocalAssetPackIds(rootDir),
-})
+export const createRegistry = (rootDir = root) => readLocalAssetRegistry(rootDir)
 
 const defaultRegistry = createRegistry(root)
 
@@ -80,12 +154,12 @@ const validateAssetPacks = (errors, map, file, registry) => {
     (Array.isArray(map.doors) && map.doors.length > 0)
 
   if (map.assetPacks == null) {
-    if (usesRuntimeAssets) errors.push('assetPacks is required when decals/props/doors are used; use ["airship"] for the current local registry')
+    if (usesRuntimeAssets) errors.push('assetPacks is required when decals/props/doors are used; use local manifest pack ids such as ["airship", "nature", "facility"]')
     return []
   }
 
   if (!Array.isArray(map.assetPacks)) {
-    errors.push('assetPacks must be an array of local pack ids, e.g. ["airship"]')
+    errors.push('assetPacks must be an array of local pack ids, e.g. ["airship", "nature"]')
     return []
   }
 
@@ -99,9 +173,6 @@ const validateAssetPacks = (errors, map, file, registry) => {
     }
   })
 
-  if (usesRuntimeAssets && registry.localAssetPackIds.has('airship') && !map.assetPacks.includes('airship')) {
-    errors.push('assetPacks must include "airship" when using the current TypeScript decal/prop/door registry')
-  }
   if (file.includes('airship-habitat-atrium-v2') && !map.assetPacks.includes('airship')) {
     errors.push('demo map airship-habitat-atrium-v2 must include assetPacks: ["airship"]')
   }
@@ -109,9 +180,22 @@ const validateAssetPacks = (errors, map, file, registry) => {
   return map.assetPacks
 }
 
+const selectedPackAllows = (registry, kind, assetId, selectedPacks) => {
+  if (!selectedPacks?.length) return true
+  const packs = registry.assetPacksByKind[kind]?.get(assetId)
+  if (!packs || packs.size === 0) return true
+  return selectedPacks.some((pack) => packs.has(pack))
+}
+
+const selectedPackError = (registry, kind, assetId, selectedPacks) => {
+  const packs = registry.assetPacksByKind[kind]?.get(assetId)
+  return `${kind.slice(0, -1)} "${assetId}" is provided by pack(s) ${knownList(packs ?? new Set())}, but map assetPacks is ${JSON.stringify(selectedPacks)}`
+}
+
 export const validateMap = (map, file = '<memory>', registry = defaultRegistry) => {
   const errors = []
   if (!isObj(map)) return [`${file}: root must be an object`]
+  for (const err of registry.manifestErrors ?? []) errors.push(err)
 
   if (map.schemaVersion !== 2) errors.push('schemaVersion must be 2 (the app can normalize v1 at load time, but this validator checks authored v2 JSON)')
   if (!/^[a-z0-9-]+$/.test(String(map.slug ?? ''))) errors.push('slug is required and must match /^[a-z0-9-]+$/')
@@ -132,7 +216,7 @@ export const validateMap = (map, file = '<memory>', registry = defaultRegistry) 
   }
   const safeDims = dimsOk ? dims : { x: 1, y: 1, z: 1 }
 
-  validateAssetPacks(errors, map, file, registry)
+  const selectedPacks = validateAssetPacks(errors, map, file, registry)
 
   const seenIds = new Map()
   const checkUniqueId = (label, item) => {
@@ -153,7 +237,8 @@ export const validateMap = (map, file = '<memory>', registry = defaultRegistry) 
         seenVoxels.add(key)
       }
       if (!id(v.materialId)) errors.push(`voxels[${i}].materialId is required`)
-      else if (!registry.materialIds.has(v.materialId)) errors.push(`voxels[${i}].materialId "${v.materialId}" is unknown; choose a material from utils/mapMaterials.ts`)
+      else if (!registry.materialIds.has(v.materialId)) errors.push(`voxels[${i}].materialId "${v.materialId}" is unknown; choose a material from local asset pack manifests`)
+      else if (!selectedPackAllows(registry, 'materials', v.materialId, selectedPacks)) errors.push(`voxels[${i}].materialId ${selectedPackError(registry, 'materials', v.materialId, selectedPacks)}`)
       if (!hex(v.color)) errors.push(`voxels[${i}].color must be #rrggbb`)
     })
   }
@@ -167,14 +252,15 @@ export const validateMap = (map, file = '<memory>', registry = defaultRegistry) 
     validateAnchor(errors, `placements[${i}].position`, p.position, safeDims, true, dimsOk)
   })
 
-  for (const [field, registrySet, foreignKey] of [['decals', registry.decalIds, 'decalId'], ['props', registry.propIds, 'propId'], ['doors', registry.doorIds, 'doorId']]) {
+  for (const [field, registrySet, foreignKey, packKind] of [['decals', registry.decalIds, 'decalId', 'decals'], ['props', registry.propIds, 'propId', 'props'], ['doors', registry.doorIds, 'doorId', 'doors']]) {
     if (map[field] == null) continue
     if (!Array.isArray(map[field])) { errors.push(`${field} must be an array`); continue }
     map[field].forEach((item, i) => {
       if (!isObj(item)) return errors.push(`${field}[${i}] must be an object`)
       checkUniqueId(`${field}[${i}]`, item)
       if (!id(item[foreignKey])) errors.push(`${field}[${i}].${foreignKey} is required`)
-      else if (!registrySet.has(item[foreignKey])) errors.push(`${field}[${i}].${foreignKey} "${item[foreignKey]}" is unknown; choose one from utils/mapAssets.ts`)
+      else if (!registrySet.has(item[foreignKey])) errors.push(`${field}[${i}].${foreignKey} "${item[foreignKey]}" is unknown; choose one from local asset pack manifests`)
+      else if (!selectedPackAllows(registry, packKind, item[foreignKey], selectedPacks)) errors.push(`${field}[${i}].${foreignKey} ${selectedPackError(registry, packKind, item[foreignKey], selectedPacks)}`)
       validateAnchor(errors, `${field}[${i}].position`, item.position, safeDims, false, dimsOk)
 
       if (field === 'decals') {
@@ -185,6 +271,13 @@ export const validateMap = (map, file = '<memory>', registry = defaultRegistry) 
       }
 
       if (field === 'props') {
+        if (item.variant != null) {
+          if (!id(item.variant)) errors.push(`props[${i}].variant must be a non-empty string`)
+          else {
+            const variants = registry.propVariants.get(item.propId)
+            if (!variants?.has(item.variant)) errors.push(`props[${i}].variant "${item.variant}" is not defined for propId "${item.propId}"`)
+          }
+        }
         if (item.scale != null) {
           if (typeof item.scale === 'number') checkPositive(errors, `props[${i}].scale`, item.scale)
           else validateScaleObject(errors, `props[${i}].scale`, item.scale, ['x', 'y', 'z'])
@@ -227,10 +320,14 @@ export const validateMap = (map, file = '<memory>', registry = defaultRegistry) 
           if (isNum(b.y2) && (b.y2 < 0 || b.y2 > safeDims.y)) errors.push(`zones[${i}].bounds.y2=${b.y2} outside dimensions.y 0..${safeDims.y}`)
         }
       }
-      if (z.icon != null) {
-        if (!id(z.icon)) errors.push(`zones[${i}].icon must be a decal id string`)
-        else if (!registry.decalIds.has(z.icon)) errors.push(`zones[${i}].icon "${z.icon}" is not a known decal id`)
+      for (const key of ['icon', 'cornerMarker']) {
+        if (z[key] != null) {
+          if (!id(z[key])) errors.push(`zones[${i}].${key} must be a decal id string`)
+          else if (!registry.decalIds.has(z[key])) errors.push(`zones[${i}].${key} "${z[key]}" is not a known decal id`)
+          else if (!selectedPackAllows(registry, 'decals', z[key], selectedPacks)) errors.push(`zones[${i}].${key} ${selectedPackError(registry, 'decals', z[key], selectedPacks)}`)
+        }
       }
+      if (z.floorWashOpacity != null && (!isNum(z.floorWashOpacity) || z.floorWashOpacity < 0 || z.floorWashOpacity > 1)) errors.push(`zones[${i}].floorWashOpacity must be 0..1`)
       if (!hex(z.tint)) errors.push(`zones[${i}].tint must be #rrggbb`)
       if (!hex(z.ambientLight)) errors.push(`zones[${i}].ambientLight must be #rrggbb`)
     })
@@ -275,8 +372,9 @@ const runCli = () => {
   }
 
   let failed = false
+  const registry = createRegistry(root)
   for (const file of args) {
-    const result = validateMapFile(file)
+    const result = validateMapFile(file, registry)
     if (!result.ok) {
       failed = true
       for (const e of result.errors) console.error(e)

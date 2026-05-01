@@ -106,6 +106,7 @@
       "properties": {
         "id": { "type": "string" },
         "propId": { "type": "string" },
+        "variant": { "type": "string" },
         "position": { "$ref": "#/$defs/anchor" },
         "rotation": { "type": "number" },
         "scale": {
@@ -135,6 +136,8 @@
         "icon": { "type": "string" },
         "tint": { "type": "string", "pattern": "^#?[0-9a-fA-F]{6}$" },
         "borderStyle": { "type": "string" },
+        "floorWashOpacity": { "type": "number", "minimum": 0, "maximum": 1 },
+        "cornerMarker": { "type": "string" },
         "ambientLight": { "type": "string" },
         "tags": { "type": "array", "items": { "type": "string" } }
       }

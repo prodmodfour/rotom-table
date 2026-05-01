@@ -1,0 +1,534 @@
+{
+  "id": "facility",
+  "displayName": "Ranger Facility",
+  "version": 1,
+  "sources": [
+    {
+      "name": "Rotom Table generated stylized SVG asset vocabulary",
+      "url": "local://scripts/phase2-generated-svg",
+      "license": "Project-generated; private non-commercial use; may be treated as CC0 within this repo",
+      "notes": "Procedural SVGs authored for Phase 2 to avoid remote runtime dependencies."
+    }
+  ],
+  "materials": {
+    "facility_clean_tile": {
+      "displayName": "Facility Clean Tile",
+      "color": "#cfe6e8",
+      "texture": "materials/facility_clean_tile.svg",
+      "tags": [
+        "facility",
+        "medical",
+        "tile",
+        "clean"
+      ]
+    },
+    "quarantine_tile": {
+      "displayName": "Quarantine Tile",
+      "color": "#8fb06a",
+      "texture": "materials/quarantine_tile.svg",
+      "tags": [
+        "facility",
+        "poison",
+        "biosecure",
+        "quarantine",
+        "tile"
+      ]
+    },
+    "decon_grate": {
+      "displayName": "Decon Grate",
+      "color": "#8aa0a6",
+      "texture": "materials/decon_grate.svg",
+      "tags": [
+        "facility",
+        "medical",
+        "decon",
+        "metal"
+      ]
+    },
+    "nursery_soft_pad": {
+      "displayName": "Nursery Soft Pad",
+      "color": "#e6b6d8",
+      "texture": "materials/nursery_soft_pad.svg",
+      "tags": [
+        "facility",
+        "nursery",
+        "soft",
+        "egg"
+      ]
+    },
+    "medical_tile": {
+      "displayName": "Medical Tile",
+      "color": "#d9f1f2",
+      "texture": "materials/medical_tile.svg",
+      "tags": [
+        "airship",
+        "medical",
+        "tile"
+      ]
+    },
+    "electric_insulated_floor": {
+      "displayName": "Electric Insulated Floor",
+      "color": "#3e5f8a",
+      "texture": "materials/electric_insulated_floor.svg",
+      "tags": [
+        "airship",
+        "electric",
+        "tech",
+        "floor"
+      ]
+    },
+    "biosecure_poison_floor": {
+      "displayName": "Biosecure Poison Floor",
+      "color": "#5f7d42",
+      "texture": "materials/biosecure_poison_floor.svg",
+      "tags": [
+        "airship",
+        "poison",
+        "biosecure",
+        "floor"
+      ]
+    },
+    "engineering_floor": {
+      "displayName": "Engineering Floor",
+      "color": "#5e6570",
+      "texture": "materials/engineering_floor.svg",
+      "tags": [
+        "airship",
+        "engineering",
+        "metal"
+      ]
+    }
+  },
+  "decals": {
+    "quarantine_symbol": {
+      "displayName": "Quarantine Symbol",
+      "texture": "decals/quarantine_symbol.svg",
+      "defaultScale": {
+        "x": 1.2,
+        "z": 1.2
+      },
+      "tags": [
+        "quarantine",
+        "symbol"
+      ]
+    },
+    "decon_arrow": {
+      "displayName": "Decon Arrow",
+      "texture": "decals/decon_arrow.svg",
+      "defaultScale": {
+        "x": 1.2,
+        "z": 1.2
+      },
+      "tags": [
+        "decon",
+        "arrow"
+      ]
+    },
+    "medical_cross": {
+      "displayName": "Medical Cross",
+      "texture": "decals/medical_cross.svg",
+      "defaultScale": {
+        "x": 1.2,
+        "z": 1.2
+      },
+      "tags": [
+        "medical",
+        "cross"
+      ]
+    },
+    "nursery_egg_mark": {
+      "displayName": "Nursery Egg Mark",
+      "texture": "decals/nursery_egg_mark.svg",
+      "defaultScale": {
+        "x": 1.2,
+        "z": 1.2
+      },
+      "tags": [
+        "nursery",
+        "egg",
+        "mark"
+      ]
+    },
+    "charging_mark": {
+      "displayName": "Charging Mark",
+      "texture": "decals/charging_mark.svg",
+      "defaultScale": {
+        "x": 1.2,
+        "z": 1.2
+      },
+      "tags": [
+        "charging",
+        "mark"
+      ]
+    },
+    "engineering_wrench": {
+      "displayName": "Engineering Wrench",
+      "texture": "decals/engineering_wrench.svg",
+      "defaultScale": {
+        "x": 1.2,
+        "z": 1.2
+      },
+      "tags": [
+        "engineering",
+        "wrench"
+      ]
+    },
+    "food_marker": {
+      "displayName": "Food Marker",
+      "texture": "decals/food_marker.svg",
+      "defaultScale": {
+        "x": 1.2,
+        "z": 1.2
+      },
+      "tags": [
+        "food",
+        "marker"
+      ]
+    }
+  },
+  "props": {
+    "medical_bed": {
+      "displayName": "Medical Bed",
+      "texture": "props/medical_bed_clean.svg",
+      "footprint": {
+        "x": 2,
+        "z": 1
+      },
+      "height": 0.9,
+      "width": 2,
+      "anchor": "bottom-center",
+      "blocksMovementDefault": true,
+      "blocksSightDefault": false,
+      "tags": [
+        "airship",
+        "medical"
+      ],
+      "variants": [
+        {
+          "id": "clean",
+          "texture": "props/medical_bed_clean.svg",
+          "weight": 3
+        },
+        {
+          "id": "emergency",
+          "texture": "props/medical_bed_emergency.svg",
+          "weight": 1
+        }
+      ]
+    },
+    "decon_sprayer": {
+      "displayName": "Decon Sprayer",
+      "texture": "props/decon_sprayer_wall.svg",
+      "footprint": {
+        "x": 1,
+        "z": 1
+      },
+      "height": 1.9,
+      "width": 1,
+      "anchor": "bottom-center",
+      "blocksMovementDefault": true,
+      "blocksSightDefault": false,
+      "tags": [
+        "airship",
+        "medical",
+        "biosecure"
+      ]
+    },
+    "feeding_trough": {
+      "displayName": "Feeding Trough",
+      "texture": "props/feeding_trough_clean.svg",
+      "footprint": {
+        "x": 2,
+        "z": 1
+      },
+      "height": 0.8,
+      "width": 2,
+      "anchor": "bottom-center",
+      "blocksMovementDefault": false,
+      "blocksSightDefault": false,
+      "tags": [
+        "habitat",
+        "food"
+      ]
+    },
+    "egg_warmer": {
+      "displayName": "Egg Warmer",
+      "texture": "props/egg_warmer_pink.svg",
+      "footprint": {
+        "x": 1,
+        "z": 1
+      },
+      "height": 0.7,
+      "width": 1,
+      "anchor": "bottom-center",
+      "blocksMovementDefault": false,
+      "blocksSightDefault": false,
+      "tags": [
+        "habitat",
+        "nursery",
+        "egg"
+      ]
+    },
+    "nursery_egg_cluster": {
+      "displayName": "Nursery Egg Cluster",
+      "texture": "props/nursery_egg_cluster.svg",
+      "footprint": {
+        "x": 1,
+        "z": 1
+      },
+      "height": 0.9,
+      "width": 1,
+      "blocksMovementDefault": false,
+      "interactableDefault": true,
+      "tags": [
+        "facility",
+        "nursery",
+        "egg"
+      ]
+    },
+    "charging_pylon": {
+      "displayName": "Charging Pylon",
+      "texture": "props/charging_pylon_blue.svg",
+      "footprint": {
+        "x": 1,
+        "z": 1
+      },
+      "height": 2.5,
+      "width": 1,
+      "anchor": "bottom-center",
+      "blocksMovementDefault": true,
+      "blocksSightDefault": false,
+      "tags": [
+        "airship",
+        "electric",
+        "tech"
+      ],
+      "variants": [
+        {
+          "id": "blue",
+          "texture": "props/charging_pylon_blue.svg",
+          "weight": 2
+        },
+        {
+          "id": "yellow",
+          "texture": "props/charging_pylon_yellow.svg",
+          "weight": 1
+        }
+      ]
+    },
+    "filtration_unit": {
+      "displayName": "Filtration Unit",
+      "texture": "props/filtration_unit_green.svg",
+      "footprint": {
+        "x": 1,
+        "z": 1
+      },
+      "height": 1.8,
+      "width": 1,
+      "blocksMovementDefault": true,
+      "interactableDefault": true,
+      "tags": [
+        "facility",
+        "filtration",
+        "poison",
+        "biosecure"
+      ]
+    },
+    "poison_scrubber": {
+      "displayName": "Poison Scrubber",
+      "texture": "props/poison_scrubber_green.svg",
+      "footprint": {
+        "x": 1,
+        "z": 1
+      },
+      "height": 1.8,
+      "width": 1,
+      "anchor": "bottom-center",
+      "blocksMovementDefault": true,
+      "blocksSightDefault": false,
+      "tags": [
+        "airship",
+        "poison",
+        "biosecure"
+      ]
+    },
+    "habitat_door_console": {
+      "displayName": "Habitat Door Console",
+      "texture": "props/habitat_door_console.svg",
+      "footprint": {
+        "x": 1,
+        "z": 1
+      },
+      "height": 1.4,
+      "width": 1,
+      "blocksMovementDefault": false,
+      "interactableDefault": true,
+      "tags": [
+        "facility",
+        "door",
+        "console"
+      ]
+    },
+    "sign_medical": {
+      "displayName": "Sign Medical",
+      "texture": "props/sign_medical.svg",
+      "footprint": {
+        "x": 1,
+        "z": 1
+      },
+      "height": 1.2,
+      "width": 1,
+      "blocksMovementDefault": false,
+      "tags": [
+        "facility",
+        "signage"
+      ]
+    },
+    "sign_engineering": {
+      "displayName": "Sign Engineering",
+      "texture": "props/sign_engineering.svg",
+      "footprint": {
+        "x": 1,
+        "z": 1
+      },
+      "height": 1.2,
+      "width": 1,
+      "blocksMovementDefault": false,
+      "tags": [
+        "facility",
+        "signage"
+      ]
+    },
+    "sign_nursery": {
+      "displayName": "Sign Nursery",
+      "texture": "props/sign_nursery.svg",
+      "footprint": {
+        "x": 1,
+        "z": 1
+      },
+      "height": 1.2,
+      "width": 1,
+      "blocksMovementDefault": false,
+      "tags": [
+        "facility",
+        "signage"
+      ]
+    }
+  },
+  "doors": {
+    "habitat_door": {
+      "displayName": "Habitat Door",
+      "style": "procedural-door",
+      "color": "#4a7c59",
+      "accent": "#b7efc5",
+      "defaultWidth": 2,
+      "defaultHeight": 2.4,
+      "tags": [
+        "facility",
+        "habitat",
+        "door"
+      ]
+    }
+  },
+  "icons": {
+    "quarantine_symbol": {
+      "displayName": "Quarantine Symbol",
+      "texture": "icons/quarantine_symbol.svg",
+      "defaultScale": {
+        "x": 1,
+        "z": 1
+      },
+      "tags": [
+        "facility",
+        "icon",
+        "quarantine",
+        "symbol"
+      ]
+    },
+    "decon_arrow": {
+      "displayName": "Decon Arrow",
+      "texture": "icons/decon_arrow.svg",
+      "defaultScale": {
+        "x": 1,
+        "z": 1
+      },
+      "tags": [
+        "facility",
+        "icon",
+        "decon",
+        "arrow"
+      ]
+    },
+    "medical_cross": {
+      "displayName": "Medical Cross",
+      "texture": "icons/medical_cross.svg",
+      "defaultScale": {
+        "x": 1,
+        "z": 1
+      },
+      "tags": [
+        "facility",
+        "icon",
+        "medical",
+        "cross"
+      ]
+    },
+    "nursery_egg_mark": {
+      "displayName": "Nursery Egg Mark",
+      "texture": "icons/nursery_egg_mark.svg",
+      "defaultScale": {
+        "x": 1,
+        "z": 1
+      },
+      "tags": [
+        "facility",
+        "icon",
+        "nursery",
+        "egg",
+        "mark"
+      ]
+    },
+    "charging_mark": {
+      "displayName": "Charging Mark",
+      "texture": "icons/charging_mark.svg",
+      "defaultScale": {
+        "x": 1,
+        "z": 1
+      },
+      "tags": [
+        "facility",
+        "icon",
+        "charging",
+        "mark"
+      ]
+    },
+    "engineering_wrench": {
+      "displayName": "Engineering Wrench",
+      "texture": "icons/engineering_wrench.svg",
+      "defaultScale": {
+        "x": 1,
+        "z": 1
+      },
+      "tags": [
+        "facility",
+        "icon",
+        "engineering",
+        "wrench"
+      ]
+    },
+    "food_marker": {
+      "displayName": "Food Marker",
+      "texture": "icons/food_marker.svg",
+      "defaultScale": {
+        "x": 1,
+        "z": 1
+      },
+      "tags": [
+        "facility",
+        "icon",
+        "food",
+        "marker"
+      ]
+    }
+  }
+}

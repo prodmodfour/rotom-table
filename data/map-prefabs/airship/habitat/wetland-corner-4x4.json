@@ -1,0 +1,33 @@
+{
+  "id": "wetland-corner-4x4",
+  "displayName": "Wetland Corner 4x4",
+  "dimensions": { "x": 4, "y": 2, "z": 4 },
+  "tags": ["habitat", "wetland", "water"],
+  "voxels": [
+    { "x": 0, "y": 0, "z": 0, "materialId": "wetland_bank" },
+    { "x": 1, "y": 0, "z": 0, "materialId": "wetland_bank" },
+    { "x": 2, "y": 0, "z": 0, "materialId": "mud" },
+    { "x": 3, "y": 0, "z": 0, "materialId": "shallow_water", "blocksMovement": false },
+    { "x": 0, "y": 0, "z": 1, "materialId": "wetland_bank" },
+    { "x": 1, "y": 0, "z": 1, "materialId": "mud" },
+    { "x": 2, "y": 0, "z": 1, "materialId": "shallow_water", "blocksMovement": false },
+    { "x": 3, "y": 0, "z": 1, "materialId": "shallow_water", "blocksMovement": false },
+    { "x": 0, "y": 0, "z": 2, "materialId": "mud" },
+    { "x": 1, "y": 0, "z": 2, "materialId": "shallow_water", "blocksMovement": false },
+    { "x": 2, "y": 0, "z": 2, "materialId": "deep_water" },
+    { "x": 3, "y": 0, "z": 2, "materialId": "deep_water" },
+    { "x": 0, "y": 0, "z": 3, "materialId": "shallow_water", "blocksMovement": false },
+    { "x": 1, "y": 0, "z": 3, "materialId": "shallow_water", "blocksMovement": false },
+    { "x": 2, "y": 0, "z": 3, "materialId": "deep_water" },
+    { "x": 3, "y": 0, "z": 3, "materialId": "deep_water" }
+  ],
+  "decals": [
+    { "id": "shore-a", "decalId": "shoreline_trim_soft", "surface": "floor", "position": { "x": 1.8, "y": 0, "z": 1.4 }, "rotation": 35, "scale": { "x": 2.6, "z": 0.6 }, "opacity": 0.65 },
+    { "id": "ripple", "decalId": "water_ripple_soft", "surface": "floor", "position": { "x": 2.7, "y": 0, "z": 2.7 }, "scale": { "x": 1.3, "z": 1.3 }, "opacity": 0.48 }
+  ],
+  "props": [
+    { "id": "reeds-a", "propId": "reed_patch", "position": { "x": 0, "y": 1, "z": 1 }, "blocksMovement": false },
+    { "id": "reeds-b", "propId": "reed_patch", "position": { "x": 1, "y": 1, "z": 0 }, "blocksMovement": false },
+    { "id": "lily", "propId": "lily_pad", "position": { "x": 2, "y": 1, "z": 2 }, "blocksMovement": false }
+  ]
+}

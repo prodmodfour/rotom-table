@@ -81,6 +81,8 @@ export interface DecalPlacement {
 export interface PropPlacement {
   id: string
   propId: string
+  /** Optional exact variant id. Omit to let the renderer/generator pick deterministically from the prop definition. */
+  variant?: string
   position: GridAnchor
   rotation?: number
   scale?: number | { x: number; y: number; z: number }
@@ -108,6 +110,10 @@ export interface ZoneDefinition {
   icon?: string
   tint?: string
   borderStyle?: string
+  /** Optional low-opacity floor wash; defaults to the renderer's subtle zone value. */
+  floorWashOpacity?: number
+  /** Optional themed corner marker decal id. Defaults to icon when omitted. */
+  cornerMarker?: string
   ambientLight?: string
   tags?: string[]
 }

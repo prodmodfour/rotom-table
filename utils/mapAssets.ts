@@ -1,22 +1,48 @@
-import type { DoorState } from '~/types/map'
+import type { DoorState, MaterialDefinition, PropPlacement } from '~/types/map'
+import { MATERIAL_BY_ID, registerMaterialDefinitions } from './mapMaterials'
 
-/**
- * Runtime registry for the starter local map assets. The matching
- * public/assets/map/airship/manifest.json is source/license metadata only in
- * Phase 1; keep this TypeScript file as the source of truth until the Phase 2
- * external/manifest-driven asset pass.
- */
+export interface AssetPackSource {
+  name: string
+  url: string
+  license: string
+  notes?: string
+}
+
+export interface TextureAtlasRegion {
+  texture: string
+  x: number
+  y: number
+  width: number
+  height: number
+}
+
+export interface AssetVariantDefinition {
+  id: string
+  displayName?: string
+  texture?: string
+  path?: string
+  weight?: number
+  width?: number
+  height?: number
+  tags?: string[]
+  atlas?: TextureAtlasRegion
+}
 
 export interface DecalDefinition {
   id: string
+  packId?: string
   displayName: string
   texture: string
   defaultScale?: { x: number; z: number }
   tags?: string[]
+  variants?: AssetVariantDefinition[]
+  atlas?: TextureAtlasRegion
+  sources?: AssetPackSource[]
 }
 
 export interface PropDefinition {
   id: string
+  packId?: string
   displayName: string
   texture: string
   footprint: { x: number; z: number }
@@ -28,26 +54,75 @@ export interface PropDefinition {
   interactableDefault?: boolean
   transparent?: boolean
   tags?: string[]
+  variants?: AssetVariantDefinition[]
+  atlas?: TextureAtlasRegion
+  sources?: AssetPackSource[]
 }
 
 export interface DoorDefinition {
   id: string
+  packId?: string
   displayName: string
+  style?: string
   color: string
   accent?: string
   transparent?: boolean
   opacity?: number
   defaultWidth: number
   defaultHeight: number
+  blocksMovementDefault?: boolean
   tags?: string[]
+  sources?: AssetPackSource[]
 }
 
-const asset = (path: string) => `/assets/map/airship/${path}`
+export interface IconDefinition extends DecalDefinition {}
+
+export interface AssetPackManifest {
+  id: string
+  displayName?: string
+  version?: number
+  sources?: AssetPackSource[]
+  materials?: Record<string, Partial<MaterialDefinition> & { path?: string; proceduralTexture?: boolean }>
+  decals?: Record<string, Partial<DecalDefinition> & { path?: string }>
+  props?: Record<string, Partial<PropDefinition> & { path?: string }>
+  doors?: Record<string, Partial<DoorDefinition> & { procedural?: string }>
+  icons?: Record<string, Partial<IconDefinition> & { path?: string }>
+}
+
+export interface RegisteredAssetPack {
+  id: string
+  displayName: string
+  version: number
+  baseUrl: string
+  sources: AssetPackSource[]
+  manifest: AssetPackManifest
+}
+
+export interface MapAssetRegistrySnapshot {
+  packs: ReadonlyMap<string, RegisteredAssetPack>
+  materials: ReadonlyMap<string, MaterialDefinition>
+  decals: ReadonlyMap<string, DecalDefinition>
+  props: ReadonlyMap<string, PropDefinition>
+  doors: ReadonlyMap<string, DoorDefinition>
+  icons: ReadonlyMap<string, IconDefinition>
+  revision: number
+}
+
+const publicAsset = (pack: string, path: string) => `/assets/map/${pack}/${path}`
+const airshipAsset = (path: string) => publicAsset('airship', path)
+
+const titleCaseId = (id: string): string =>
+  id
+    .split(/[-_\s]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ')
 
 const decal = (id: string, displayName: string, tags: string[] = [], scale = { x: 1, z: 1 }): DecalDefinition => ({
   id,
+  packId: 'airship',
   displayName,
-  texture: asset(`decals/${id}.svg`),
+  texture: airshipAsset(`decals/${id}.svg`),
   defaultScale: scale,
   tags,
 })
@@ -61,8 +136,9 @@ const prop = (
   options: Partial<Omit<PropDefinition, 'id' | 'displayName' | 'texture' | 'footprint' | 'height' | 'tags'>> = {},
 ): PropDefinition => ({
   id,
+  packId: 'airship',
   displayName,
-  texture: asset(`props/${id}.svg`),
+  texture: airshipAsset(`props/${id}.svg`),
   footprint,
   height,
   width: Math.max(footprint.x, footprint.z),
@@ -82,11 +158,14 @@ const door = (
   options: Partial<Omit<DoorDefinition, 'id' | 'displayName' | 'color' | 'accent' | 'tags'>> = {},
 ): DoorDefinition => ({
   id,
+  packId: 'airship',
   displayName,
+  style: 'procedural-door',
   color,
   accent,
   defaultWidth: 2,
   defaultHeight: 2.4,
+  blocksMovementDefault: true,
   tags,
   ...options,
 })
@@ -155,13 +234,283 @@ export const DOOR_DEFINITIONS: readonly DoorDefinition[] = [
   door('biosecure_quarantine_door', 'Biosecure Quarantine Door', '#5f7d42', '#b5e48c', ['poison', 'biosecure', 'quarantine']),
 ] as const
 
-export const DECAL_BY_ID = new Map(DECAL_DEFINITIONS.map((definition) => [definition.id, definition]))
-export const PROP_BY_ID = new Map(PROP_DEFINITIONS.map((definition) => [definition.id, definition]))
-export const DOOR_BY_ID = new Map(DOOR_DEFINITIONS.map((definition) => [definition.id, definition]))
+const manifestPacks = new Map<string, RegisteredAssetPack>()
+export const DECAL_BY_ID = new Map<string, DecalDefinition>(DECAL_DEFINITIONS.map((definition) => [definition.id, definition]))
+export const PROP_BY_ID = new Map<string, PropDefinition>(PROP_DEFINITIONS.map((definition) => [definition.id, definition]))
+export const DOOR_BY_ID = new Map<string, DoorDefinition>(DOOR_DEFINITIONS.map((definition) => [definition.id, definition]))
+export const ICON_BY_ID = new Map<string, IconDefinition>()
+const manifestLoadPromises = new Map<string, Promise<AssetPackManifest | null>>()
+let registryRevision = 0
+
+const isAbsoluteAssetUrl = (path: string) =>
+  /^(?:https?:|data:|blob:|\/)/i.test(path)
+
+const joinAssetPath = (baseUrl: string, path: string) => {
+  if (isAbsoluteAssetUrl(path)) return path
+  return `${baseUrl.replace(/\/$/, '')}/${path.replace(/^\.\//, '').replace(/^\/+/, '')}`
+}
+
+const normalizeSources = (sources: unknown): AssetPackSource[] => {
+  if (!Array.isArray(sources)) return []
+  return sources
+    .filter((source): source is AssetPackSource => Boolean(source && typeof source === 'object'))
+    .map((source) => ({
+      name: String((source as AssetPackSource).name ?? 'Unknown source'),
+      url: String((source as AssetPackSource).url ?? 'local://unknown'),
+      license: String((source as AssetPackSource).license ?? 'unspecified'),
+      notes: (source as AssetPackSource).notes,
+    }))
+}
+
+const normalizeVariant = (
+  variant: AssetVariantDefinition,
+  baseUrl: string,
+): AssetVariantDefinition => {
+  const texture = variant.texture ?? variant.path
+  return {
+    ...variant,
+    texture: texture ? joinAssetPath(baseUrl, texture) : undefined,
+    weight: Number.isFinite(variant.weight) && Number(variant.weight) > 0 ? Number(variant.weight) : 1,
+  }
+}
+
+const normalizeVariants = (
+  variants: unknown,
+  baseUrl: string,
+): AssetVariantDefinition[] | undefined => {
+  if (!Array.isArray(variants)) return undefined
+  const out = variants
+    .filter((variant): variant is AssetVariantDefinition => Boolean(variant && typeof variant === 'object' && typeof (variant as AssetVariantDefinition).id === 'string'))
+    .map((variant) => normalizeVariant(variant, baseUrl))
+  return out.length ? out : undefined
+}
+
+const normalizeMaterialDefinitions = (
+  packId: string,
+  baseUrl: string,
+  rawMaterials: AssetPackManifest['materials'],
+): MaterialDefinition[] => {
+  if (!rawMaterials) return []
+  const out: MaterialDefinition[] = []
+  for (const [id, raw] of Object.entries(rawMaterials)) {
+    const texture = raw.texture ?? raw.path
+    out.push({
+      ...raw,
+      id,
+      displayName: raw.displayName ?? titleCaseId(id),
+      texture: texture ? joinAssetPath(baseUrl, texture) : raw.texture,
+      tags: raw.tags ?? [packId],
+    })
+  }
+  return out
+}
+
+const mergeDecalDefinition = (
+  id: string,
+  packId: string,
+  baseUrl: string,
+  raw: Partial<DecalDefinition> & { path?: string },
+  sources: AssetPackSource[],
+): DecalDefinition => {
+  const existing = DECAL_BY_ID.get(id)
+  const texture = raw.texture ?? raw.path ?? existing?.texture ?? `decals/${id}.svg`
+  return {
+    ...(existing ?? {}),
+    ...raw,
+    id,
+    packId,
+    displayName: raw.displayName ?? existing?.displayName ?? titleCaseId(id),
+    texture: joinAssetPath(baseUrl, texture),
+    defaultScale: raw.defaultScale ?? existing?.defaultScale ?? { x: 1, z: 1 },
+    tags: raw.tags ?? existing?.tags ?? [packId],
+    variants: normalizeVariants(raw.variants, baseUrl) ?? existing?.variants,
+    sources,
+  }
+}
+
+const mergePropDefinition = (
+  id: string,
+  packId: string,
+  baseUrl: string,
+  raw: Partial<PropDefinition> & { path?: string },
+  sources: AssetPackSource[],
+): PropDefinition => {
+  const existing = PROP_BY_ID.get(id)
+  const texture = raw.texture ?? raw.path ?? existing?.texture ?? `props/${id}.svg`
+  const footprint = raw.footprint ?? existing?.footprint ?? { x: 1, z: 1 }
+  return {
+    ...(existing ?? {}),
+    ...raw,
+    id,
+    packId,
+    displayName: raw.displayName ?? existing?.displayName ?? titleCaseId(id),
+    texture: joinAssetPath(baseUrl, texture),
+    footprint,
+    height: raw.height ?? existing?.height ?? 1,
+    width: raw.width ?? existing?.width ?? Math.max(footprint.x, footprint.z),
+    anchor: raw.anchor ?? existing?.anchor ?? 'bottom-center',
+    blocksMovementDefault: raw.blocksMovementDefault ?? existing?.blocksMovementDefault ?? false,
+    blocksSightDefault: raw.blocksSightDefault ?? existing?.blocksSightDefault ?? false,
+    interactableDefault: raw.interactableDefault ?? existing?.interactableDefault ?? false,
+    tags: raw.tags ?? existing?.tags ?? [packId],
+    variants: normalizeVariants(raw.variants, baseUrl) ?? existing?.variants,
+    sources,
+  }
+}
+
+const mergeDoorDefinition = (
+  id: string,
+  packId: string,
+  raw: Partial<DoorDefinition> & { procedural?: string },
+  sources: AssetPackSource[],
+): DoorDefinition => {
+  const existing = DOOR_BY_ID.get(id)
+  return {
+    ...(existing ?? {}),
+    ...raw,
+    id,
+    packId,
+    displayName: raw.displayName ?? existing?.displayName ?? titleCaseId(id),
+    style: raw.style ?? raw.procedural ?? existing?.style ?? 'procedural-door',
+    color: raw.color ?? existing?.color ?? '#4f5b66',
+    accent: raw.accent ?? existing?.accent,
+    defaultWidth: raw.defaultWidth ?? existing?.defaultWidth ?? 1,
+    defaultHeight: raw.defaultHeight ?? existing?.defaultHeight ?? 2,
+    blocksMovementDefault: raw.blocksMovementDefault ?? existing?.blocksMovementDefault ?? true,
+    tags: raw.tags ?? existing?.tags ?? [packId],
+    sources,
+  }
+}
+
+export const registerAssetPackManifest = (
+  manifest: AssetPackManifest,
+  baseUrl = `/assets/map/${manifest.id}`,
+): RegisteredAssetPack | null => {
+  if (!manifest || typeof manifest.id !== 'string' || !manifest.id.trim()) return null
+  const id = manifest.id.trim()
+  const sources = normalizeSources(manifest.sources)
+  const pack: RegisteredAssetPack = {
+    id,
+    displayName: manifest.displayName ?? titleCaseId(id),
+    version: manifest.version ?? 1,
+    baseUrl,
+    sources,
+    manifest,
+  }
+  manifestPacks.set(id, pack)
+
+  const materials = normalizeMaterialDefinitions(id, baseUrl, manifest.materials)
+  registerMaterialDefinitions(materials)
+
+  for (const [assetId, raw] of Object.entries(manifest.decals ?? {})) {
+    DECAL_BY_ID.set(assetId, mergeDecalDefinition(assetId, id, baseUrl, raw, sources))
+  }
+  for (const [assetId, raw] of Object.entries(manifest.icons ?? {})) {
+    const icon = mergeDecalDefinition(assetId, id, baseUrl, raw, sources)
+    ICON_BY_ID.set(assetId, icon)
+    // Icons can also be used as subtle zone/floor decals.
+    if (!DECAL_BY_ID.has(assetId)) DECAL_BY_ID.set(assetId, icon)
+  }
+  for (const [assetId, raw] of Object.entries(manifest.props ?? {})) {
+    PROP_BY_ID.set(assetId, mergePropDefinition(assetId, id, baseUrl, raw, sources))
+  }
+  for (const [assetId, raw] of Object.entries(manifest.doors ?? {})) {
+    DOOR_BY_ID.set(assetId, mergeDoorDefinition(assetId, id, raw, sources))
+  }
+
+  registryRevision += 1
+  return pack
+}
+
+export const getMapAssetRegistryRevision = () => registryRevision
+
+export const getMapAssetRegistry = (): MapAssetRegistrySnapshot => ({
+  packs: manifestPacks,
+  materials: MATERIAL_BY_ID,
+  decals: DECAL_BY_ID,
+  props: PROP_BY_ID,
+  doors: DOOR_BY_ID,
+  icons: ICON_BY_ID,
+  revision: registryRevision,
+})
+
+export const loadAssetPackManifest = async (packId: string): Promise<AssetPackManifest | null> => {
+  const normalized = packId.trim()
+  if (!normalized) return null
+  const cached = manifestLoadPromises.get(normalized)
+  if (cached) return cached
+
+  const promise = (async () => {
+    if (typeof window === 'undefined' || typeof fetch === 'undefined') return null
+    const url = `/assets/map/${encodeURIComponent(normalized)}/manifest.json`
+    try {
+      const response = await fetch(url, { cache: 'force-cache' })
+      if (!response.ok) {
+        console.warn(`[map-assets] asset pack manifest ${normalized} returned ${response.status}`)
+        return null
+      }
+      const manifest = await response.json() as AssetPackManifest
+      registerAssetPackManifest(manifest, `/assets/map/${normalized}`)
+      return manifest
+    } catch (error) {
+      console.warn(`[map-assets] failed to load asset pack manifest ${normalized}`, error)
+      return null
+    }
+  })()
+
+  manifestLoadPromises.set(normalized, promise)
+  return promise
+}
+
+export const loadMapAssetPacks = async (packIds: readonly string[] | undefined): Promise<void> => {
+  const ids = Array.from(new Set((packIds?.length ? packIds : ['airship']).filter(Boolean)))
+  await Promise.all(ids.map((id) => loadAssetPackManifest(id)))
+}
 
 export const getDecalDefinition = (id: string): DecalDefinition | null => DECAL_BY_ID.get(id) ?? null
 export const getPropDefinition = (id: string): PropDefinition | null => PROP_BY_ID.get(id) ?? null
 export const getDoorDefinition = (id: string): DoorDefinition | null => DOOR_BY_ID.get(id) ?? null
+export const getIconDefinition = (id: string): IconDefinition | null => ICON_BY_ID.get(id) ?? null
+
+const hashString = (input: string): number => {
+  let hash = 2166136261
+  for (let i = 0; i < input.length; i += 1) {
+    hash ^= input.charCodeAt(i)
+    hash = Math.imul(hash, 16777619)
+  }
+  return hash >>> 0
+}
+
+export const selectPropVariant = (
+  definition: PropDefinition,
+  placement?: Pick<PropPlacement, 'id' | 'propId' | 'variant'>,
+): AssetVariantDefinition | null => {
+  const variants = definition.variants ?? []
+  if (!variants.length) return null
+
+  if (placement?.variant) {
+    return variants.find((variant) => variant.id === placement.variant) ?? null
+  }
+
+  const total = variants.reduce((sum, variant) => sum + Math.max(0, variant.weight ?? 1), 0)
+  if (total <= 0) return variants[0] ?? null
+
+  const seed = placement ? `${placement.id}:${placement.propId}` : definition.id
+  let pick = (hashString(seed) / 0xffffffff) * total
+  for (const variant of variants) {
+    pick -= Math.max(0, variant.weight ?? 1)
+    if (pick <= 0) return variant
+  }
+  return variants[variants.length - 1] ?? null
+}
+
+export const getPropTexture = (
+  definition: PropDefinition,
+  placement?: Pick<PropPlacement, 'id' | 'propId' | 'variant'>,
+): string => selectPropVariant(definition, placement)?.texture ?? definition.texture
+
+export const propHasVariant = (definition: PropDefinition, variantId: string): boolean =>
+  Boolean(definition.variants?.some((variant) => variant.id === variantId))
 
 export const doorStateTint = (state: DoorState | undefined): number => {
   switch (state) {

@@ -1,0 +1,20 @@
+{
+  "id": "habitat-glass-gate-2x1",
+  "displayName": "Habitat Glass Gate 2x1",
+  "dimensions": { "x": 3, "y": 3, "z": 2 },
+  "tags": ["airship", "habitat", "glass", "gate"],
+  "voxels": [
+    { "x": 0, "y": 0, "z": 0, "materialId": "airship_floor_plating" },
+    { "x": 1, "y": 0, "z": 0, "materialId": "airship_floor_plating" },
+    { "x": 2, "y": 0, "z": 0, "materialId": "airship_floor_plating" }
+  ],
+  "decals": [
+    { "id": "threshold", "decalId": "threshold_glow", "surface": "floor", "position": { "x": 1.5, "y": 0, "z": 0.5 }, "scale": { "x": 2.4, "z": 0.45 }, "opacity": 0.55 }
+  ],
+  "props": [
+    { "id": "console", "propId": "habitat_door_console", "position": { "x": 0, "y": 1, "z": 1 }, "blocksMovement": false }
+  ],
+  "doors": [
+    { "id": "gate", "doorId": "glass_habitat_gate", "position": { "x": 0.5, "y": 1, "z": 0 }, "width": 2, "height": 2.4, "state": "closed" }
+  ]
+}

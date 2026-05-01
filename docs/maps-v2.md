@@ -71,13 +71,13 @@ Map v2 makes map visuals explicit and AI-writable. Terrain is still a sparse lis
 
 ### Materials
 
-Use `materialId` from `utils/mapMaterials.ts`. Starter IDs include:
+Use `materialId` from the loaded asset-pack manifests (with `utils/mapMaterials.ts` as the offline fallback palette). Starter IDs include:
 
-- airship: `airship_hull_dark`, `airship_floor_metal`, `airship_wall_bulkhead`, `reinforced_glass`, `engineering_floor`, `cargo_lift_floor`, `hazard_stripe_floor`
-- habitat: `meadow_grass`, `wetland_bank`, `mud`, `shallow_water`, `deep_water`, `cave_stone`, `burrow_dirt`, `thermal_rock`, `snow`, `ice`, `sand`, `scrub_dirt`
-- special pods: `electric_insulated_floor`, `biosecure_poison_floor`, `medical_tile`, `soft_nursery_mat`, `observation_wood`
+- airship: `airship_hull_dark`, `airship_floor_metal`, `airship_floor_plating`, `airship_wall_bulkhead`, `reinforced_glass`, `engineering_floor`, `cargo_lift_floor`, `hazard_stripe_floor`
+- habitat: `meadow_grass`, `meadow_flower_grass`, `grove_leaf_litter`, `wetland_bank`, `mud`, `shoreline_pebbles`, `shallow_water`, `deep_water`, `cave_stone`, `burrow_dirt`, `thermal_rock`, `snow`, `cryo_snowpack`, `ice`, `sand`, `desert_scrub_sand`, `scrub_dirt`
+- facility pods: `electric_insulated_floor`, `biosecure_poison_floor`, `medical_tile`, `facility_clean_tile`, `quarantine_tile`, `decon_grate`, `nursery_soft_pad`, `soft_nursery_mat`, `observation_wood`
 
-Transparent materials (`reinforced_glass`, water, ice) have opacity and render after opaque terrain so sprites behind them remain visible.
+Transparent materials (`reinforced_glass`, water, ice) have opacity and render after opaque terrain so sprites behind them remain visible. Unknown manifest material IDs are preserved by the server and resolved when the client loads the relevant pack manifest.
 
 ### Decals
 
@@ -114,13 +114,25 @@ Props are anchored map objects separate from voxels. They have a grid position, 
 }
 ```
 
+Props may also request an exact texture variant. If `variant` is omitted and the prop definition has weighted variants, the renderer/generator picks one deterministically from the placement id, so the same map JSON looks the same on every load:
+
+```json
+{
+  "id": "prop-berry-07",
+  "propId": "berry_bush",
+  "variant": "blue",
+  "position": { "x": 18, "y": 1, "z": 23 },
+  "blocksMovement": false
+}
+```
+
 Props receive contact shadows. If `position.y` is above the surface beneath them, their shadow stays on the lower surface and becomes softer/fainter.
 
 Movement occupancy uses the prop's `position.y`, footprint, height, and scale. `blocksMovement` on the placement wins; otherwise the prop definition's default is used. Decorative props like reeds may be non-blocking, while consoles, trees, crates, railings, and similar props generally block movement.
 
 ### Zones
 
-Zones are not just labels; they drive graphics. Each zone creates a subtle tinted floor fill, border, and optional icon decal.
+Zones are not just labels; they drive graphics. Each zone creates a subtle tinted floor wash, border, optional icon decal, and optional low-opacity corner markers. Keep these quiet; zones should read as environmental identity, not a UI overlay.
 
 ```json
 {
@@ -128,8 +140,10 @@ Zones are not just labels; they drive graphics. Each zone creates a subtle tinte
   "name": "Snow / Ice Pod",
   "bounds": { "x1": 41, "z1": 3, "x2": 51, "z2": 12 },
   "theme": "ice",
-  "icon": "snowflake",
+  "icon": "nature_snowflake",
+  "cornerMarker": "nature_snowflake",
   "tint": "#a7e6ff",
+  "floorWashOpacity": 0.08,
   "ambientLight": "#a7e6ff"
 }
 ```
@@ -166,23 +180,18 @@ Map v2 extends the same idea to props. Use prop `footprint` and `height` generou
 
 ## Asset packs
 
-Local map assets live under:
+Local map assets are manifest-driven in Phase 2:
 
 ```text
-public/assets/map/airship/
-  manifest.json
-  decals/*.svg
-  props/*.svg
+public/assets/map/
+  airship/manifest.json
+  nature/manifest.json
+  facility/manifest.json
 ```
 
-Runtime URLs use `/assets/map/airship/...`. Do not rely on remote URLs at runtime.
+Runtime URLs use `/assets/map/<pack>/...`. Do not rely on remote URLs at runtime. Manifests define materials, decals, props, doors, icons, variants, and source/license metadata. The TypeScript registries remain as an offline fallback only.
 
-For Phase 1, `public/assets/map/airship/manifest.json` is **source/license metadata only**. The runtime source of truth is still the TypeScript registry:
-
-- materials: `utils/mapMaterials.ts`
-- decals/props/doors: `utils/mapAssets.ts`
-
-AI-authored maps should still include `"assetPacks": ["airship"]` when using the current local decal/prop/door IDs so future manifest-driven loading can preserve intent.
+For details, see [map asset packs](./map-asset-packs.md). For higher-level AI generation, see [map prefabs and brushes](./map-prefabs-and-brushes.md).
 
 ## AI generation advice
 
@@ -192,10 +201,12 @@ AI-authored maps should still include `"assetPacks": ["airship"]` when using the
 4. Use props in clusters of 2–5 per zone: trees for grove, reeds/ripples for wetland, pylons/coils for electric, scrubbers for poison, beds/crosses for medical.
 5. Keep token feet at `y=1` on ordinary ground (`y=0` voxels). Use higher `y` only for raised platforms/perches.
 6. Prefer stable IDs: `zone-wetland`, `prop-wetland-reeds-01`, `door-medical-airlock`.
-7. Run validation before loading:
+7. Prefer brush plans and prefabs over hand-placing thousands of objects. Use `npm run generate:airship-demo` as a concrete workflow example.
+8. Run validation before loading:
 
 ```bash
-npm run validate:map -- data/maps/ranger_ark/airship-habitat-atrium-v2.json
+npm run generate:airship-demo
+npm run validate:map -- data/maps/ranger_ark/airship-habitat-atrium-phase2-demo.json
 npm run validate:maps
 npm run smoke:map-v2
 ```

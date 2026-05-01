@@ -1,0 +1,792 @@
+{
+  "id": "nature",
+  "displayName": "Habitat Nature",
+  "version": 1,
+  "sources": [
+    {
+      "name": "Rotom Table generated stylized SVG asset vocabulary",
+      "url": "local://scripts/phase2-generated-svg",
+      "license": "Project-generated; private non-commercial use; may be treated as CC0 within this repo",
+      "notes": "Procedural SVGs authored for Phase 2 to avoid remote runtime dependencies."
+    }
+  ],
+  "materials": {
+    "meadow_grass": {
+      "displayName": "Meadow Grass",
+      "color": "#5da130",
+      "texture": "materials/meadow_grass.svg",
+      "tags": [
+        "habitat",
+        "grass",
+        "organic"
+      ]
+    },
+    "meadow_flower_grass": {
+      "displayName": "Meadow Flower Grass",
+      "color": "#68ad3d",
+      "texture": "materials/meadow_flower_grass.svg",
+      "tags": [
+        "habitat",
+        "grass",
+        "meadow",
+        "flowers",
+        "organic"
+      ]
+    },
+    "grove_leaf_litter": {
+      "displayName": "Grove Leaf Litter",
+      "color": "#58713a",
+      "texture": "materials/grove_leaf_litter.svg",
+      "tags": [
+        "habitat",
+        "grove",
+        "leaf",
+        "organic"
+      ]
+    },
+    "mud": {
+      "displayName": "Mud",
+      "color": "#70503b",
+      "texture": "materials/mud.svg",
+      "tags": [
+        "habitat",
+        "mud",
+        "wet"
+      ]
+    },
+    "shoreline_pebbles": {
+      "displayName": "Shoreline Pebbles",
+      "color": "#8a876d",
+      "texture": "materials/shoreline_pebbles.svg",
+      "tags": [
+        "habitat",
+        "shoreline",
+        "pebble",
+        "wetland"
+      ]
+    },
+    "shallow_water": {
+      "displayName": "Shallow Water",
+      "color": "#46a9d8",
+      "texture": "materials/shallow_water.svg",
+      "tags": [
+        "habitat",
+        "water",
+        "transparent"
+      ],
+      "transparent": true,
+      "opacity": 0.62,
+      "blocksMovementDefault": false,
+      "blocksSightDefault": false
+    },
+    "deep_water": {
+      "displayName": "Deep Water",
+      "color": "#1f5f9f",
+      "texture": "materials/deep_water.svg",
+      "tags": [
+        "habitat",
+        "water",
+        "deep",
+        "transparent"
+      ],
+      "transparent": true,
+      "opacity": 0.72,
+      "blocksMovementDefault": true,
+      "blocksSightDefault": false
+    },
+    "wetland_bank": {
+      "displayName": "Wetland Bank",
+      "color": "#7f8f4f",
+      "texture": "materials/wetland_bank.svg",
+      "tags": [
+        "habitat",
+        "wetland",
+        "bank"
+      ]
+    },
+    "cave_stone": {
+      "displayName": "Cave Stone",
+      "color": "#64656b",
+      "texture": "materials/cave_stone.svg",
+      "tags": [
+        "habitat",
+        "stone",
+        "cave"
+      ],
+      "blocksMovementDefault": true,
+      "blocksSightDefault": true
+    },
+    "cave_shadow_stone": {
+      "displayName": "Cave Shadow Stone",
+      "color": "#4f5058",
+      "texture": "materials/cave_shadow_stone.svg",
+      "tags": [
+        "habitat",
+        "stone",
+        "cave",
+        "shadow"
+      ],
+      "blocksMovementDefault": true,
+      "blocksSightDefault": true
+    },
+    "burrow_dirt": {
+      "displayName": "Burrow Dirt",
+      "color": "#8b5a34",
+      "texture": "materials/burrow_dirt.svg",
+      "tags": [
+        "habitat",
+        "dirt",
+        "burrow"
+      ]
+    },
+    "thermal_rock": {
+      "displayName": "Thermal Rock",
+      "color": "#6f4c45",
+      "texture": "materials/thermal_rock.svg",
+      "tags": [
+        "habitat",
+        "thermal",
+        "stone"
+      ]
+    },
+    "thermal_warning_floor": {
+      "displayName": "Thermal Warning Floor",
+      "color": "#b86b2b",
+      "texture": "materials/thermal_warning_floor.svg",
+      "tags": [
+        "habitat",
+        "thermal",
+        "warning",
+        "hazard"
+      ]
+    },
+    "snow": {
+      "displayName": "Snow",
+      "color": "#eef8ff",
+      "texture": "materials/snow.svg",
+      "tags": [
+        "habitat",
+        "snow",
+        "ice"
+      ]
+    },
+    "cryo_snowpack": {
+      "displayName": "Cryo Snowpack",
+      "color": "#dbeefa",
+      "texture": "materials/cryo_snowpack.svg",
+      "tags": [
+        "habitat",
+        "snow",
+        "ice",
+        "cryo"
+      ]
+    },
+    "ice": {
+      "displayName": "Ice",
+      "color": "#a7e6ff",
+      "texture": "materials/ice.svg",
+      "tags": [
+        "habitat",
+        "ice",
+        "transparent"
+      ],
+      "transparent": true,
+      "opacity": 0.58
+    },
+    "sand": {
+      "displayName": "Sand",
+      "color": "#d5c16b",
+      "texture": "materials/sand.svg",
+      "tags": [
+        "habitat",
+        "sand",
+        "scrub"
+      ]
+    },
+    "desert_scrub_sand": {
+      "displayName": "Desert Scrub Sand",
+      "color": "#c9aa62",
+      "texture": "materials/desert_scrub_sand.svg",
+      "tags": [
+        "habitat",
+        "sand",
+        "scrub",
+        "desert"
+      ]
+    },
+    "scrub_dirt": {
+      "displayName": "Scrub Dirt",
+      "color": "#a77c4c",
+      "texture": "materials/scrub_dirt.svg",
+      "tags": [
+        "habitat",
+        "dirt",
+        "scrub"
+      ]
+    }
+  },
+  "decals": {
+    "water_ripple_soft": {
+      "displayName": "Water Ripple Soft",
+      "texture": "decals/water_ripple_soft.svg",
+      "defaultScale": {
+        "x": 1.4,
+        "z": 1.4
+      },
+      "tags": [
+        "water",
+        "ripple",
+        "soft"
+      ]
+    },
+    "shoreline_trim_soft": {
+      "displayName": "Shoreline Trim Soft",
+      "texture": "decals/shoreline_trim_soft.svg",
+      "defaultScale": {
+        "x": 1.8,
+        "z": 0.7
+      },
+      "tags": [
+        "shoreline",
+        "trim",
+        "soft"
+      ]
+    },
+    "leaf_litter": {
+      "displayName": "Leaf Litter",
+      "texture": "decals/leaf_litter.svg",
+      "defaultScale": {
+        "x": 1.8,
+        "z": 1
+      },
+      "tags": [
+        "leaf",
+        "litter"
+      ]
+    },
+    "flower_scatter": {
+      "displayName": "Flower Scatter",
+      "texture": "decals/flower_scatter.svg",
+      "defaultScale": {
+        "x": 1.8,
+        "z": 1
+      },
+      "tags": [
+        "flower",
+        "scatter"
+      ]
+    },
+    "mud_splash": {
+      "displayName": "Mud Splash",
+      "texture": "decals/mud_splash.svg",
+      "defaultScale": {
+        "x": 1.8,
+        "z": 1
+      },
+      "tags": [
+        "mud",
+        "splash"
+      ]
+    },
+    "cave_cracks": {
+      "displayName": "Cave Cracks",
+      "texture": "decals/cave_cracks.svg",
+      "defaultScale": {
+        "x": 1.8,
+        "z": 1
+      },
+      "tags": [
+        "cave",
+        "cracks"
+      ]
+    },
+    "snow_drift": {
+      "displayName": "Snow Drift",
+      "texture": "decals/snow_drift.svg",
+      "defaultScale": {
+        "x": 1.8,
+        "z": 1
+      },
+      "tags": [
+        "snow",
+        "drift"
+      ]
+    },
+    "scorch_ring": {
+      "displayName": "Scorch Ring",
+      "texture": "decals/scorch_ring.svg",
+      "defaultScale": {
+        "x": 1.8,
+        "z": 1
+      },
+      "tags": [
+        "scorch",
+        "ring"
+      ]
+    }
+  },
+  "props": {
+    "grass_tuft": {
+      "displayName": "Grass Tuft",
+      "texture": "props/grass_tuft_a.svg",
+      "footprint": {
+        "x": 1,
+        "z": 1
+      },
+      "height": 0.65,
+      "width": 1,
+      "blocksMovementDefault": false,
+      "tags": [
+        "grass",
+        "meadow",
+        "scatter"
+      ],
+      "variants": [
+        {
+          "id": "a",
+          "texture": "props/grass_tuft_a.svg",
+          "weight": 3
+        },
+        {
+          "id": "b",
+          "texture": "props/grass_tuft_b.svg",
+          "weight": 2
+        }
+      ]
+    },
+    "shrub": {
+      "displayName": "Shrub",
+      "texture": "props/shrub_a.svg",
+      "footprint": {
+        "x": 1,
+        "z": 1
+      },
+      "height": 1.1,
+      "width": 1,
+      "blocksMovementDefault": false,
+      "tags": [
+        "plant",
+        "shrub"
+      ],
+      "variants": [
+        {
+          "id": "plain",
+          "texture": "props/shrub_a.svg",
+          "weight": 3
+        },
+        {
+          "id": "flower",
+          "texture": "props/shrub_flower.svg",
+          "weight": 1
+        }
+      ]
+    },
+    "berry_bush": {
+      "displayName": "Berry Bush",
+      "texture": "props/berry_bush_red.svg",
+      "footprint": {
+        "x": 1,
+        "z": 1
+      },
+      "height": 1.2,
+      "width": 1,
+      "anchor": "bottom-center",
+      "blocksMovementDefault": false,
+      "blocksSightDefault": false,
+      "tags": [
+        "habitat",
+        "plant"
+      ],
+      "variants": [
+        {
+          "id": "red",
+          "texture": "props/berry_bush_red.svg",
+          "weight": 3
+        },
+        {
+          "id": "blue",
+          "texture": "props/berry_bush_blue.svg",
+          "weight": 2
+        },
+        {
+          "id": "yellow",
+          "texture": "props/berry_bush_yellow.svg",
+          "weight": 1
+        }
+      ]
+    },
+    "small_tree": {
+      "displayName": "Small Tree",
+      "texture": "props/small_tree_oak.svg",
+      "footprint": {
+        "x": 1,
+        "z": 1
+      },
+      "height": 2.4,
+      "width": 1,
+      "anchor": "bottom-center",
+      "blocksMovementDefault": true,
+      "blocksSightDefault": false,
+      "tags": [
+        "habitat",
+        "plant",
+        "tree"
+      ],
+      "variants": [
+        {
+          "id": "oak",
+          "texture": "props/small_tree_oak.svg",
+          "weight": 3
+        },
+        {
+          "id": "pine",
+          "texture": "props/small_tree_pine.svg",
+          "weight": 1
+        }
+      ]
+    },
+    "large_tree_cluster": {
+      "displayName": "Large Tree Cluster",
+      "texture": "props/large_tree_cluster_oak.svg",
+      "footprint": {
+        "x": 2,
+        "z": 2
+      },
+      "height": 3.8,
+      "width": 2,
+      "anchor": "bottom-center",
+      "blocksMovementDefault": true,
+      "blocksSightDefault": false,
+      "tags": [
+        "habitat",
+        "plant",
+        "tree"
+      ],
+      "variants": [
+        {
+          "id": "oak",
+          "texture": "props/large_tree_cluster_oak.svg",
+          "weight": 2
+        },
+        {
+          "id": "pine",
+          "texture": "props/large_tree_cluster_pine.svg",
+          "weight": 1
+        }
+      ]
+    },
+    "reed_patch": {
+      "displayName": "Reed Patch",
+      "texture": "props/reed_patch_a.svg",
+      "footprint": {
+        "x": 1,
+        "z": 1
+      },
+      "height": 1.6,
+      "width": 1,
+      "anchor": "bottom-center",
+      "blocksMovementDefault": false,
+      "blocksSightDefault": false,
+      "tags": [
+        "habitat",
+        "wetland",
+        "plant"
+      ],
+      "variants": [
+        {
+          "id": "a",
+          "texture": "props/reed_patch_a.svg",
+          "weight": 2
+        },
+        {
+          "id": "b",
+          "texture": "props/reed_patch_b.svg",
+          "weight": 1
+        }
+      ]
+    },
+    "lily_pad": {
+      "displayName": "Lily Pad",
+      "texture": "props/lily_pad_green.svg",
+      "footprint": {
+        "x": 1,
+        "z": 1
+      },
+      "height": 0.25,
+      "width": 1,
+      "anchor": "bottom-center",
+      "blocksMovementDefault": false,
+      "blocksSightDefault": false,
+      "tags": [
+        "habitat",
+        "water"
+      ],
+      "variants": [
+        {
+          "id": "green",
+          "texture": "props/lily_pad_green.svg",
+          "weight": 4
+        },
+        {
+          "id": "flower",
+          "texture": "props/lily_pad_flower.svg",
+          "weight": 1
+        }
+      ]
+    },
+    "rock_pile": {
+      "displayName": "Rock Pile",
+      "texture": "props/rock_pile_gray.svg",
+      "footprint": {
+        "x": 1,
+        "z": 1
+      },
+      "height": 0.9,
+      "width": 1,
+      "anchor": "bottom-center",
+      "blocksMovementDefault": true,
+      "blocksSightDefault": false,
+      "tags": [
+        "habitat",
+        "stone"
+      ],
+      "variants": [
+        {
+          "id": "gray",
+          "texture": "props/rock_pile_gray.svg",
+          "weight": 2
+        },
+        {
+          "id": "moss",
+          "texture": "props/rock_pile_moss.svg",
+          "weight": 1
+        }
+      ]
+    },
+    "cave_den": {
+      "displayName": "Cave Den",
+      "texture": "props/cave_den_dark.svg",
+      "footprint": {
+        "x": 2,
+        "z": 1
+      },
+      "height": 1.7,
+      "width": 2,
+      "anchor": "bottom-center",
+      "blocksMovementDefault": true,
+      "blocksSightDefault": false,
+      "tags": [
+        "habitat",
+        "cave"
+      ]
+    },
+    "burrow_entrance": {
+      "displayName": "Burrow Entrance",
+      "texture": "props/burrow_entrance_round.svg",
+      "footprint": {
+        "x": 1,
+        "z": 1
+      },
+      "height": 0.9,
+      "width": 1,
+      "anchor": "bottom-center",
+      "blocksMovementDefault": true,
+      "blocksSightDefault": false,
+      "tags": [
+        "habitat",
+        "burrow"
+      ]
+    },
+    "thermal_vent": {
+      "displayName": "Thermal Vent",
+      "texture": "props/thermal_vent_steam.svg",
+      "footprint": {
+        "x": 1,
+        "z": 1
+      },
+      "height": 1.1,
+      "width": 1,
+      "anchor": "bottom-center",
+      "blocksMovementDefault": false,
+      "blocksSightDefault": false,
+      "tags": [
+        "habitat",
+        "thermal"
+      ]
+    },
+    "heat_rock": {
+      "displayName": "Heat Rock",
+      "texture": "props/heat_rock_glow.svg",
+      "footprint": {
+        "x": 1,
+        "z": 1
+      },
+      "height": 0.8,
+      "width": 1,
+      "anchor": "bottom-center",
+      "blocksMovementDefault": true,
+      "blocksSightDefault": false,
+      "tags": [
+        "habitat",
+        "thermal"
+      ]
+    },
+    "ice_crystal": {
+      "displayName": "Ice Crystal",
+      "texture": "props/ice_crystal_blue.svg",
+      "footprint": {
+        "x": 1,
+        "z": 1
+      },
+      "height": 1.8,
+      "width": 1,
+      "anchor": "bottom-center",
+      "blocksMovementDefault": true,
+      "blocksSightDefault": false,
+      "tags": [
+        "habitat",
+        "ice"
+      ],
+      "transparent": true,
+      "variants": [
+        {
+          "id": "blue",
+          "texture": "props/ice_crystal_blue.svg",
+          "weight": 3
+        },
+        {
+          "id": "violet",
+          "texture": "props/ice_crystal_violet.svg",
+          "weight": 1
+        }
+      ]
+    },
+    "snow_mound": {
+      "displayName": "Snow Mound",
+      "texture": "props/snow_mound_a.svg",
+      "footprint": {
+        "x": 1,
+        "z": 1
+      },
+      "height": 0.7,
+      "width": 1,
+      "anchor": "bottom-center",
+      "blocksMovementDefault": false,
+      "blocksSightDefault": false,
+      "tags": [
+        "habitat",
+        "snow"
+      ],
+      "variants": [
+        {
+          "id": "a",
+          "texture": "props/snow_mound_a.svg",
+          "weight": 2
+        },
+        {
+          "id": "b",
+          "texture": "props/snow_mound_b.svg",
+          "weight": 2
+        }
+      ]
+    },
+    "sand_scrub": {
+      "displayName": "Sand Scrub",
+      "texture": "props/sand_scrub_a.svg",
+      "footprint": {
+        "x": 1,
+        "z": 1
+      },
+      "height": 1.1,
+      "width": 1,
+      "anchor": "bottom-center",
+      "blocksMovementDefault": false,
+      "blocksSightDefault": false,
+      "tags": [
+        "habitat",
+        "sand",
+        "scrub"
+      ],
+      "variants": [
+        {
+          "id": "a",
+          "texture": "props/sand_scrub_a.svg",
+          "weight": 2
+        },
+        {
+          "id": "b",
+          "texture": "props/sand_scrub_b.svg",
+          "weight": 1
+        }
+      ]
+    }
+  },
+  "doors": {},
+  "icons": {
+    "nature_water_ripple": {
+      "displayName": "Nature water_ripple",
+      "texture": "icons/water_ripple.svg",
+      "defaultScale": {
+        "x": 1,
+        "z": 1
+      },
+      "tags": [
+        "nature",
+        "icon",
+        "water_ripple"
+      ]
+    },
+    "nature_leaf": {
+      "displayName": "Nature leaf",
+      "texture": "icons/leaf.svg",
+      "defaultScale": {
+        "x": 1,
+        "z": 1
+      },
+      "tags": [
+        "nature",
+        "icon",
+        "leaf"
+      ]
+    },
+    "nature_paw": {
+      "displayName": "Nature paw",
+      "texture": "icons/paw.svg",
+      "defaultScale": {
+        "x": 1,
+        "z": 1
+      },
+      "tags": [
+        "nature",
+        "icon",
+        "paw"
+      ]
+    },
+    "nature_snowflake": {
+      "displayName": "Nature snowflake",
+      "texture": "icons/snowflake.svg",
+      "defaultScale": {
+        "x": 1,
+        "z": 1
+      },
+      "tags": [
+        "nature",
+        "icon",
+        "snowflake"
+      ]
+    },
+    "nature_flame": {
+      "displayName": "Nature flame",
+      "texture": "icons/flame.svg",
+      "defaultScale": {
+        "x": 1,
+        "z": 1
+      },
+      "tags": [
+        "nature",
+        "icon",
+        "flame"
+      ]
+    }
+  }
+}

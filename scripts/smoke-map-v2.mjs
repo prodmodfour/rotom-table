@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs'
 import { createRegistry, validateMap } from './validate-map-v2.mjs'
 
 const demoPath = 'data/maps/ranger_ark/airship-habitat-atrium-v2.json'
+const phase2DemoPath = 'data/maps/ranger_ark/airship-habitat-atrium-phase2-demo.json'
 const registry = createRegistry(process.cwd())
 const failures = []
 
@@ -40,7 +41,7 @@ const baseMap = {
     { id: 'decal-smoke', decalId: 'ranger_insignia', surface: 'floor', position: { x: 2, y: 0, z: 2 }, scale: { x: 1, z: 1 } },
   ],
   props: [
-    { id: 'prop-smoke', propId: 'console', position: { x: 3, y: 1, z: 3 }, scale: 1 },
+    { id: 'prop-smoke', propId: 'console', variant: 'blue', position: { x: 3, y: 1, z: 3 }, scale: 1 },
   ],
   doors: [
     { id: 'door-smoke', doorId: 'glass_habitat_gate', position: { x: 4, y: 1, z: 2 }, state: 'closed', width: 1, height: 2 },
@@ -92,6 +93,12 @@ assert(errorsFor(baseMap, 'base').length === 0, 'baseline smoke map passes valid
   const map = clone(baseMap)
   map.doors[0].doorId = 'not_a_door'
   assert(hasError(map, 'unknown-door', 'doorId "not_a_door" is unknown'), 'unknown door IDs are rejected')
+}
+
+{
+  const map = clone(baseMap)
+  map.props[0].variant = 'red'
+  assert(hasError(map, 'bad-prop-variant', 'variant "red" is not defined for propId "console"'), 'unknown prop variants are rejected')
 }
 
 {
@@ -157,6 +164,16 @@ assert(errorsFor(baseMap, 'base').length === 0, 'baseline smoke map passes valid
 if (demo) {
   const demoErrors = errorsFor(demo, demoPath)
   assert(demoErrors.length === 0, `demo map passes validation (${demoErrors.join('; ')})`)
+}
+
+try {
+  const phase2Demo = JSON.parse(readFileSync(phase2DemoPath, 'utf8'))
+  const phase2Errors = errorsFor(phase2Demo, phase2DemoPath)
+  assert(phase2Errors.length === 0, `phase2 demo map passes validation (${phase2Errors.join('; ')})`)
+  assert(phase2Demo.assetPacks?.includes('nature') && phase2Demo.assetPacks?.includes('facility'), 'phase2 demo declares nature and facility asset packs')
+  assert(phase2Demo.props?.some((prop) => prop.variant), 'phase2 demo contains exact prop variants')
+} catch (err) {
+  failures.push(`phase2 demo map parses: ${err.message}`)
 }
 
 if (failures.length) {

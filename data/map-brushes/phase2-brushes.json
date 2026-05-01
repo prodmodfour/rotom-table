@@ -1,0 +1,241 @@
+{
+  "version": 1,
+  "description": "AI-friendly biome and facility brushes for generated map v2 habitat regions.",
+  "brushes": {
+    "meadow": {
+      "displayName": "Meadow Commons",
+      "materials": { "primary": "meadow_flower_grass", "secondary": "meadow_grass" },
+      "edgeDecals": ["flower_scatter"],
+      "scatterProps": [
+        { "propId": "grass_tuft", "density": 0.1 },
+        { "propId": "berry_bush", "density": 0.035 },
+        { "propId": "shrub", "density": 0.035 }
+      ],
+      "icon": "nature_leaf",
+      "tint": "#6fb33f",
+      "floorWashOpacity": 0.075,
+      "tags": ["habitat", "grass", "commons"]
+    },
+    "grove": {
+      "displayName": "Grove",
+      "materials": { "primary": "grove_leaf_litter", "secondary": "meadow_grass" },
+      "edgeDecals": ["leaf_litter"],
+      "scatterProps": [
+        { "propId": "small_tree", "density": 0.055 },
+        { "propId": "large_tree_cluster", "density": 0.018 },
+        { "propId": "shrub", "density": 0.055 }
+      ],
+      "icon": "nature_leaf",
+      "tint": "#58713a",
+      "floorWashOpacity": 0.085,
+      "tags": ["habitat", "grove", "plant"]
+    },
+    "wetland": {
+      "displayName": "Wetland",
+      "materials": { "primary": "wetland_bank", "secondary": "mud", "water": "shallow_water" },
+      "waterInset": 2,
+      "edgeDecals": ["shoreline_trim_soft"],
+      "thematicDecals": ["water_ripple_soft"],
+      "scatterProps": [
+        { "propId": "reed_patch", "density": 0.1 },
+        { "propId": "lily_pad", "density": 0.055 },
+        { "propId": "rock_pile", "density": 0.025 }
+      ],
+      "icon": "nature_water_ripple",
+      "tint": "#46a9d8",
+      "floorWashOpacity": 0.08,
+      "tags": ["habitat", "wetland", "water"]
+    },
+    "deep-water-pool": {
+      "displayName": "Deep Water Pool",
+      "materials": { "primary": "shallow_water", "secondary": "shoreline_pebbles", "water": "deep_water" },
+      "waterInset": 1,
+      "edgeDecals": ["shoreline_trim_soft"],
+      "thematicDecals": ["water_ripple_soft"],
+      "scatterProps": [
+        { "propId": "lily_pad", "density": 0.045 },
+        { "propId": "reed_patch", "density": 0.055 }
+      ],
+      "icon": "nature_water_ripple",
+      "tint": "#1f5f9f",
+      "floorWashOpacity": 0.095,
+      "tags": ["habitat", "water", "deep"]
+    },
+    "cave": {
+      "displayName": "Cave Pocket",
+      "materials": { "primary": "cave_stone", "secondary": "cave_shadow_stone" },
+      "edgeDecals": ["cave_cracks"],
+      "scatterProps": [
+        { "propId": "rock_pile", "density": 0.075 },
+        { "propId": "cave_den", "density": 0.018 }
+      ],
+      "icon": "nature_paw",
+      "tint": "#64656b",
+      "floorWashOpacity": 0.07,
+      "tags": ["habitat", "cave", "stone"]
+    },
+    "burrow": {
+      "displayName": "Burrow Run",
+      "materials": { "primary": "burrow_dirt", "secondary": "scrub_dirt" },
+      "edgeDecals": ["mud_splash"],
+      "scatterProps": [
+        { "propId": "burrow_entrance", "density": 0.025 },
+        { "propId": "rock_pile", "density": 0.035 }
+      ],
+      "icon": "nature_paw",
+      "tint": "#8b5a34",
+      "floorWashOpacity": 0.065,
+      "tags": ["habitat", "burrow", "ground"]
+    },
+    "thermal": {
+      "displayName": "Thermal Vent",
+      "materials": { "primary": "thermal_rock", "secondary": "thermal_warning_floor" },
+      "edgeDecals": ["scorch_ring"],
+      "scatterProps": [
+        { "propId": "thermal_vent", "density": 0.045 },
+        { "propId": "heat_rock", "density": 0.04 },
+        { "propId": "warning_beacon", "density": 0.018, "variant": "amber" }
+      ],
+      "icon": "nature_flame",
+      "tint": "#f3722c",
+      "floorWashOpacity": 0.075,
+      "tags": ["habitat", "thermal", "fire"]
+    },
+    "cryo": {
+      "displayName": "Cryo Snow",
+      "materials": { "primary": "cryo_snowpack", "secondary": "ice" },
+      "edgeDecals": ["snow_drift"],
+      "scatterProps": [
+        { "propId": "ice_crystal", "density": 0.045 },
+        { "propId": "snow_mound", "density": 0.08 }
+      ],
+      "icon": "nature_snowflake",
+      "tint": "#8fd5ff",
+      "floorWashOpacity": 0.08,
+      "tags": ["habitat", "snow", "ice"]
+    },
+    "desert-scrub": {
+      "displayName": "Desert Scrub",
+      "materials": { "primary": "desert_scrub_sand", "secondary": "sand" },
+      "edgeDecals": ["flower_scatter"],
+      "scatterProps": [
+        { "propId": "sand_scrub", "density": 0.09 },
+        { "propId": "rock_pile", "density": 0.035 }
+      ],
+      "icon": "nature_paw",
+      "tint": "#d5c16b",
+      "floorWashOpacity": 0.06,
+      "tags": ["habitat", "sand", "scrub"]
+    },
+    "electric-tech": {
+      "displayName": "Electric Tech",
+      "materials": { "primary": "electric_insulated_floor", "secondary": "airship_floor_plating" },
+      "edgeDecals": ["charging_mark"],
+      "scatterProps": [
+        { "propId": "charging_pylon", "density": 0.045 },
+        { "propId": "magnetic_coil", "density": 0.035 },
+        { "propId": "console", "density": 0.025, "variant": "blue" }
+      ],
+      "icon": "charging_mark",
+      "tint": "#83a9ff",
+      "floorWashOpacity": 0.07,
+      "tags": ["facility", "electric", "tech"]
+    },
+    "poison-biosecure": {
+      "displayName": "Poison Biosecure",
+      "materials": { "primary": "quarantine_tile", "secondary": "biosecure_poison_floor" },
+      "edgeDecals": ["quarantine_symbol"],
+      "scatterProps": [
+        { "propId": "filtration_unit", "density": 0.045 },
+        { "propId": "poison_scrubber", "density": 0.04 },
+        { "propId": "decon_sprayer", "density": 0.025 }
+      ],
+      "icon": "quarantine_symbol",
+      "tint": "#8fb06a",
+      "floorWashOpacity": 0.08,
+      "tags": ["facility", "poison", "biosecure"]
+    },
+    "nursery": {
+      "displayName": "Nursery",
+      "materials": { "primary": "nursery_soft_pad", "secondary": "soft_nursery_mat" },
+      "edgeDecals": ["nursery_egg_mark"],
+      "scatterProps": [
+        { "propId": "egg_warmer", "density": 0.045 },
+        { "propId": "nursery_egg_cluster", "density": 0.035 },
+        { "propId": "feeding_trough", "density": 0.03 }
+      ],
+      "icon": "nursery_egg_mark",
+      "tint": "#e6b6d8",
+      "floorWashOpacity": 0.08,
+      "tags": ["facility", "nursery", "egg"]
+    },
+    "medical": {
+      "displayName": "Medical",
+      "materials": { "primary": "facility_clean_tile", "secondary": "medical_tile" },
+      "edgeDecals": ["medical_cross", "decon_arrow"],
+      "scatterProps": [
+        { "propId": "medical_bed", "density": 0.035 },
+        { "propId": "decon_sprayer", "density": 0.025 },
+        { "propId": "sign_medical", "density": 0.018 }
+      ],
+      "icon": "medical_cross",
+      "tint": "#3aa6b9",
+      "floorWashOpacity": 0.075,
+      "tags": ["facility", "medical"]
+    },
+    "engineering": {
+      "displayName": "Engineering",
+      "materials": { "primary": "engineering_floor", "secondary": "airship_floor_plating" },
+      "edgeDecals": ["hazard_stripes"],
+      "scatterProps": [
+        { "propId": "pipe_bundle", "density": 0.04 },
+        { "propId": "vent_grille", "density": 0.055 },
+        { "propId": "console", "density": 0.03, "variant": "orange" },
+        { "propId": "sign_engineering", "density": 0.018 }
+      ],
+      "icon": "engineering_wrench",
+      "tint": "#f3722c",
+      "floorWashOpacity": 0.06,
+      "tags": ["airship", "engineering"]
+    },
+    "cargo-lift": {
+      "displayName": "Cargo Lift",
+      "materials": { "primary": "cargo_lift_floor", "secondary": "hazard_stripe_floor" },
+      "edgeDecals": ["hazard_stripes", "cargo_lift_outline"],
+      "scatterProps": [
+        { "propId": "cargo_crate", "density": 0.07 },
+        { "propId": "warning_beacon", "density": 0.025, "variant": "amber" }
+      ],
+      "icon": "cargo_lift_outline",
+      "tint": "#fabd2f",
+      "floorWashOpacity": 0.055,
+      "tags": ["airship", "cargo", "lift"]
+    },
+    "observation-wood": {
+      "displayName": "Observation Wood",
+      "materials": { "primary": "observation_wood", "secondary": "airship_floor_metal" },
+      "edgeDecals": ["observation_ring_mark"],
+      "scatterProps": [
+        { "propId": "railing", "density": 0.025 },
+        { "propId": "wall_monitor", "density": 0.02 }
+      ],
+      "icon": "observation_ring_mark",
+      "tint": "#a47543",
+      "floorWashOpacity": 0.055,
+      "tags": ["airship", "observation"]
+    },
+    "airship-corridor": {
+      "displayName": "Airship Corridor",
+      "materials": { "primary": "airship_floor_plating", "secondary": "airship_floor_metal" },
+      "edgeDecals": ["threshold_glow", "arrow"],
+      "scatterProps": [
+        { "propId": "vent_grille", "density": 0.035 },
+        { "propId": "wall_monitor", "density": 0.018 }
+      ],
+      "icon": "arrow",
+      "tint": "#8fd5ff",
+      "floorWashOpacity": 0.045,
+      "tags": ["airship", "corridor"]
+    }
+  }
+}

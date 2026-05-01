@@ -31,6 +31,8 @@ import {
   getDecalDefinition,
   getDoorDefinition,
   getPropDefinition,
+  getPropTexture,
+  loadMapAssetPacks,
   type DoorDefinition,
   type PropDefinition,
 } from '~/utils/mapAssets'
@@ -56,6 +58,8 @@ const props = defineProps<{
   mapProps?: PropPlacement[]
   doors?: DoorPlacement[]
   zones?: ZoneDefinition[]
+  assetPacks?: string[]
+  assetRegistryRevision?: number
   layerVisibility?: LayerVisibility
   buildMode: boolean
   buildTool: BuildTool
@@ -142,7 +146,7 @@ interface VoxelGroup {
 interface DecalRenderObject {
   id: string
   mesh: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>
-  texture: THREE.Texture | null
+  releaseTexture: (() => void) | null
 }
 
 interface PropRenderObject {
@@ -150,7 +154,7 @@ interface PropRenderObject {
   definition: PropDefinition
   sprite: THREE.Sprite<THREE.SpriteMaterial>
   material: THREE.SpriteMaterial
-  texture: THREE.Texture | null
+  releaseTexture: (() => void) | null
   shadow: THREE.Mesh<THREE.CircleGeometry, THREE.MeshBasicMaterial>
   cage: THREE.Mesh<THREE.BoxGeometry, THREE.MeshBasicMaterial[]>
   footprint: { x: number; z: number }
@@ -170,6 +174,7 @@ interface DoorRenderObject {
 interface ZoneRenderObject {
   id: string
   group: THREE.Group
+  releaseTextures: Array<() => void>
 }
 
 interface BuildTarget {
@@ -892,6 +897,63 @@ interface RefCountedTextureRecord extends CachedTextureRecord {
 const spriteTextureLoader = new THREE.TextureLoader()
 const baseSpriteTextureCache = new Map<string, CachedTextureRecord>()
 const croppedSpriteTextureCache = new Map<string, RefCountedTextureRecord>()
+const mapTextureLoader = new THREE.TextureLoader()
+const mapTextureCache = new Map<string, RefCountedTextureRecord>()
+
+const configureMapAssetTexture = (texture: THREE.Texture) => {
+  texture.magFilter = THREE.LinearFilter
+  texture.minFilter = THREE.LinearFilter
+  texture.colorSpace = THREE.SRGBColorSpace
+  texture.needsUpdate = true
+}
+
+const acquireMapTexture = (url: string): TextureHandle => {
+  let record = mapTextureCache.get(url)
+  if (!record) {
+    const newRecord: RefCountedTextureRecord = {
+      refs: 0,
+      promise: Promise.resolve(null as never),
+    }
+    newRecord.promise = new Promise<THREE.Texture>((resolve, reject) => {
+      mapTextureLoader.load(
+        url,
+        (texture) => {
+          configureMapAssetTexture(texture)
+          newRecord.texture = texture
+          if (newRecord.refs <= 0) texture.dispose()
+          resolve(texture)
+        },
+        undefined,
+        (error) => {
+          mapTextureCache.delete(url)
+          reject(error)
+        },
+      )
+    })
+    record = newRecord
+    mapTextureCache.set(url, record)
+  }
+
+  record.refs += 1
+  let released = false
+  return {
+    promise: record.promise,
+    release: () => {
+      if (released) return
+      released = true
+      record!.refs -= 1
+      if (record!.refs <= 0) {
+        mapTextureCache.delete(url)
+        record!.promise.then((texture) => texture.dispose()).catch(() => {})
+      }
+    },
+  }
+}
+
+const disposeMapTextureCache = () => {
+  for (const record of mapTextureCache.values()) record.texture?.dispose()
+  mapTextureCache.clear()
+}
 
 const configureSpriteTexture = (texture: THREE.Texture) => {
   texture.magFilter = THREE.NearestFilter
@@ -1318,13 +1380,18 @@ const damageDialogMultiplierLabel = computed(() =>
 const selectedPokemon = computed(
   () => props.pokemons.find((pokemon) => pokemon.id === props.selectedId) ?? null,
 )
-const mapMovementOccupancy = computed(() => buildMapOccupancy({
-  voxels: props.voxels,
-  props: props.mapProps ?? [],
-  doors: props.doors ?? [],
-  includeTransparent: true,
-  includeOpenDoors: false,
-}))
+const mapMovementOccupancy = computed(() => {
+  // Asset manifests can change prop/door blocking defaults without changing
+  // the map JSON, so touch the revision prop to invalidate pathfinding.
+  void props.assetRegistryRevision
+  return buildMapOccupancy({
+    voxels: props.voxels,
+    props: props.mapProps ?? [],
+    doors: props.doors ?? [],
+    includeTransparent: true,
+    includeOpenDoors: false,
+  })
+})
 const allVoxelOccupancy = computed(() => buildAllVoxelOccupancy(props.voxels))
 
 // Voxel y-values bucketed by ``x,z`` column key. Lets a shadow-cast
@@ -1871,29 +1938,27 @@ const updateSpriteFacing = (
 }
 
 const disposeObject3D = (object: THREE.Object3D | null) => {
-  if (!object) {
-    return
-  }
+  if (!object) return
 
   object.parent?.remove(object)
+  object.traverse((child) => {
+    const mesh = child as THREE.Mesh
+    const geometry = mesh.geometry as THREE.BufferGeometry | undefined
+    const material = mesh.material as THREE.Material | THREE.Material[] | undefined
 
-  const mesh = object as THREE.Mesh
-  const geometry = mesh.geometry as THREE.BufferGeometry | undefined
-  const material = mesh.material as THREE.Material | THREE.Material[] | undefined
+    geometry?.dispose?.()
 
-  geometry?.dispose?.()
-
-  if (Array.isArray(material)) {
-    for (const item of material) {
-      item.dispose()
+    if (Array.isArray(material)) {
+      for (const item of material) item.dispose()
+    } else {
+      material?.dispose?.()
     }
-  } else {
-    material?.dispose?.()
-  }
 
-  if ('element' in object && object.element instanceof HTMLElement) {
-    object.element.remove()
-  }
+    if ('element' in child && child.element instanceof HTMLElement) {
+      child.element.remove()
+    }
+  })
+  object.clear()
 }
 
 const setOrthographicFrustum = () => {
@@ -2538,18 +2603,33 @@ const loadMapTextureInto = (
   url: string,
   material: THREE.SpriteMaterial | THREE.MeshBasicMaterial,
   onTexture?: (texture: THREE.Texture) => void,
-) => {
-  loadBaseSpriteTexture(url)
+): (() => void) => {
+  const handle = acquireMapTexture(url)
+  let active = true
+  handle.promise
     .then((texture) => {
+      if (!active) return
       material.map = texture
       material.needsUpdate = true
       onTexture?.(texture)
     })
     .catch((error) => console.warn('[map-assets] failed to load texture', url, error))
+
+  return () => {
+    active = false
+    if (material.map) {
+      material.map = null
+      material.needsUpdate = true
+    }
+    handle.release()
+  }
 }
 
 const disposeDecalObjects = () => {
-  for (const object of decalObjects.values()) disposeObject3D(object.mesh)
+  for (const object of decalObjects.values()) {
+    object.releaseTexture?.()
+    disposeObject3D(object.mesh)
+  }
   decalObjects.clear()
 }
 
@@ -2578,7 +2658,7 @@ const syncDecalObjects = () => {
       side: THREE.DoubleSide,
       toneMapped: false,
     })
-    loadMapTextureInto(definition.texture, material)
+    const releaseTexture = loadMapTextureInto(definition.texture, material)
     const mesh = new THREE.Mesh(geometry, material)
     mesh.renderOrder = 20 + (decal.renderOrder ?? 0)
     const p = decal.position
@@ -2611,13 +2691,14 @@ const syncDecalObjects = () => {
         break
     }
     decalContainer.add(mesh)
-    decalObjects.set(decal.id, { id: decal.id, mesh, texture: null })
+    decalObjects.set(decal.id, { id: decal.id, mesh, releaseTexture })
   }
   applyLayerVisibility()
 }
 
 const disposePropObjects = () => {
   for (const object of propObjects.values()) {
+    object.releaseTexture?.()
     disposeObject3D(object.sprite)
     disposeObject3D(object.shadow)
     disposeObject3D(object.cage)
@@ -2659,7 +2740,7 @@ const syncPropObjects = () => {
       depthWrite: !transparent,
       toneMapped: false,
     })
-    loadMapTextureInto(definition.texture, material)
+    const releaseTexture = loadMapTextureInto(getPropTexture(definition, placement), material)
     const sprite = new THREE.Sprite(material)
     sprite.center.set(0.5, 0)
     sprite.scale.set(width, height, 1)
@@ -2708,7 +2789,7 @@ const syncPropObjects = () => {
       definition,
       sprite,
       material,
-      texture: null,
+      releaseTexture,
       shadow,
       cage,
       footprint,
@@ -2776,11 +2857,14 @@ const syncDoorObjects = () => {
 }
 
 const disposeZoneObjects = () => {
-  for (const object of zoneObjects.values()) disposeObject3D(object.group)
+  for (const object of zoneObjects.values()) {
+    for (const release of object.releaseTextures) release()
+    disposeObject3D(object.group)
+  }
   zoneObjects.clear()
 }
 
-const buildZoneBorder = (width: number, depth: number, y: number, color: number): THREE.LineSegments => {
+const buildZoneBorder = (width: number, depth: number, y: number, color: number, opacity = 0.62): THREE.LineSegments => {
   const x0 = -width / 2
   const x1 = width / 2
   const z0 = -depth / 2
@@ -2792,7 +2876,37 @@ const buildZoneBorder = (width: number, depth: number, y: number, color: number)
     x1, y, z1, x0, y, z1,
     x0, y, z1, x0, y, z0,
   ], 3))
-  return new THREE.LineSegments(geometry, new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.78, depthWrite: false }))
+  return new THREE.LineSegments(geometry, new THREE.LineBasicMaterial({ color, transparent: true, opacity, depthWrite: false }))
+}
+
+const addZoneMarker = (
+  group: THREE.Group,
+  releaseTextures: Array<() => void>,
+  decalId: string,
+  color: number,
+  x: number,
+  y: number,
+  z: number,
+  rotation = 0,
+  size = 0.62,
+) => {
+  const definition = getDecalDefinition(decalId)
+  if (!definition) return
+  const material = new THREE.MeshBasicMaterial({
+    color,
+    transparent: true,
+    opacity: 0.42,
+    alphaTest: 0.02,
+    depthTest: true,
+    depthWrite: false,
+    side: THREE.DoubleSide,
+  })
+  releaseTextures.push(loadMapTextureInto(definition.texture, material))
+  const marker = new THREE.Mesh(new THREE.PlaneGeometry(size, size), material)
+  marker.rotation.set(-Math.PI / 2, 0, rotation)
+  marker.position.set(x, y, z)
+  marker.renderOrder = 5
+  group.add(marker)
 }
 
 const syncZoneObjects = () => {
@@ -2803,13 +2917,14 @@ const syncZoneObjects = () => {
     const y = (zone.bounds.y1 ?? 0) + 1.006
     const color = parseHexColor(zone.tint ?? '') ?? 0xfabd2f
     const group = new THREE.Group()
+    const releaseTextures: Array<() => void> = []
     group.position.set(zone.bounds.x1 + width / 2, 0, zone.bounds.z1 + depth / 2)
     const fill = new THREE.Mesh(
       new THREE.PlaneGeometry(width, depth),
       new THREE.MeshBasicMaterial({
         color,
         transparent: true,
-        opacity: 0.13,
+        opacity: THREE.MathUtils.clamp(zone.floorWashOpacity ?? 0.1, 0, 0.28),
         depthTest: true,
         depthWrite: false,
         side: THREE.DoubleSide,
@@ -2819,7 +2934,9 @@ const syncZoneObjects = () => {
     fill.position.y = y
     fill.renderOrder = 2
     group.add(fill)
-    const border = buildZoneBorder(width, depth, y + 0.003, color)
+
+    const borderOpacity = zone.borderStyle === 'quiet' ? 0.32 : zone.borderStyle === 'threshold' ? 0.74 : 0.54
+    const border = buildZoneBorder(width, depth, y + 0.003, color, borderOpacity)
     group.add(border)
 
     if (zone.icon) {
@@ -2828,23 +2945,33 @@ const syncZoneObjects = () => {
         const material = new THREE.MeshBasicMaterial({
           color,
           transparent: true,
-          opacity: 0.72,
+          opacity: 0.6,
           alphaTest: 0.02,
           depthTest: true,
           depthWrite: false,
           side: THREE.DoubleSide,
         })
-        loadMapTextureInto(definition.texture, material)
-        const icon = new THREE.Mesh(new THREE.PlaneGeometry(Math.min(1.4, width), Math.min(1.4, depth)), material)
+        releaseTextures.push(loadMapTextureInto(definition.texture, material))
+        const icon = new THREE.Mesh(new THREE.PlaneGeometry(Math.min(1.3, width), Math.min(1.3, depth)), material)
         icon.rotation.x = -Math.PI / 2
-        icon.position.set(0, y + 0.006, -depth / 2 + Math.min(1.1, depth / 2))
+        icon.position.set(0, y + 0.006, -depth / 2 + Math.min(1.05, depth / 2))
         icon.renderOrder = 4
         group.add(icon)
       }
     }
 
+    const cornerMarker = zone.cornerMarker ?? zone.icon
+    if (cornerMarker && Math.min(width, depth) >= 2) {
+      const inset = 0.48
+      const markerY = y + 0.009
+      addZoneMarker(group, releaseTextures, cornerMarker, color, -width / 2 + inset, markerY, -depth / 2 + inset, 0, 0.52)
+      addZoneMarker(group, releaseTextures, cornerMarker, color, width / 2 - inset, markerY, -depth / 2 + inset, Math.PI / 2, 0.52)
+      addZoneMarker(group, releaseTextures, cornerMarker, color, width / 2 - inset, markerY, depth / 2 - inset, Math.PI, 0.52)
+      addZoneMarker(group, releaseTextures, cornerMarker, color, -width / 2 + inset, markerY, depth / 2 - inset, -Math.PI / 2, 0.52)
+    }
+
     zoneContainer.add(group)
-    zoneObjects.set(zone.id, { id: zone.id, group })
+    zoneObjects.set(zone.id, { id: zone.id, group, releaseTextures })
   }
   applyLayerVisibility()
 }
@@ -3815,6 +3942,20 @@ const animate = () => {
   cssRenderer.render(scene, camera)
 }
 
+const reloadManifestDrivenAssets = async () => {
+  await loadMapAssetPacks(props.assetPacks)
+  if (!renderer) return
+  // Manifests can replace material, decal, prop, door, and variant definitions.
+  // Rebuild all v2 visual layers while keeping token/cage state intact.
+  syncVoxelMeshes()
+  syncZoneObjects()
+  syncDecalObjects()
+  syncPropObjects()
+  syncDoorObjects()
+  if (selectedPokemon.value && activePreviewAnchor) updatePreviewAtAnchor(activePreviewAnchor)
+  replayBuildPreview()
+}
+
 onMounted(() => {
   if (!container.value) {
     return
@@ -3864,6 +4005,7 @@ onMounted(() => {
   if (props.buildMode) ensureBuildGhost()
   alignCameraToGrid(true)
   refreshPokemonStyles()
+  void reloadManifestDrivenAssets()
 
   renderer.domElement.addEventListener('pointerdown', handlePointerDown)
   renderer.domElement.addEventListener('pointermove', handlePointerMove)
@@ -3937,6 +4079,7 @@ onBeforeUnmount(() => {
   }
 
   renderObjects.clear()
+  disposeMapTextureCache()
   disposeSpriteTextureCaches()
   disposeObject3D(floorGridLines)
   disposeObject3D(moveGridLines)
@@ -3944,6 +4087,10 @@ onBeforeUnmount(() => {
   controls?.dispose()
   renderer?.dispose()
   cssRenderer?.domElement.remove()
+  controls = null
+  renderer = null
+  cssRenderer = null
+  camera = null
 })
 
 watch(
@@ -4068,6 +4215,14 @@ watch(
     applyLayerVisibility()
   },
   { deep: true },
+)
+
+watch(
+  () => [props.assetPacks?.join('|') ?? '', props.assetRegistryRevision ?? 0] as const,
+  () => {
+    if (!renderer) return
+    void reloadManifestDrivenAssets()
+  },
 )
 
 watch(
