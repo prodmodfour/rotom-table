@@ -175,6 +175,144 @@ const hasCapabilityValue = (value: PokedexCapabilities[MovementCapabilityKey]) =
 
 const stripParenthetical = (value: string) => value.replace(/\s*\([^)]*\)/g, '').trim()
 
+const minimumIntegerSearchValues = (value: number | null | undefined): number[] => {
+  if (value == null || !Number.isFinite(value)) return []
+
+  const maximum = Math.floor(value)
+  if (maximum < 1) return []
+
+  return Array.from({ length: maximum }, (_, index) => index + 1)
+}
+
+const maximumNumericComponent = (value: string | number | null | undefined): number | null => {
+  if (value == null) return null
+  if (typeof value === 'number') return Number.isFinite(value) ? value : null
+
+  const numbers = value
+    .match(/\d+(?:\.\d+)?/g)
+    ?.map((number) => Number(number))
+    .filter((number) => Number.isFinite(number)) ?? []
+
+  return numbers.length > 0 ? Math.max(...numbers) : null
+}
+
+const addMinimumCapabilitySearchValues = (
+  buckets: PokedexSearchTextBuckets,
+  label: string,
+  value: PokedexCapabilities[MovementCapabilityKey],
+) => {
+  for (const minimum of minimumIntegerSearchValues(maximumNumericComponent(value))) {
+    addBucketSearchValues(
+      buckets,
+      'capability',
+      `${label} ${minimum}`,
+      `cap ${label} ${minimum}`,
+      `caps ${label} ${minimum}`,
+      `capability ${label} ${minimum}`,
+      `capabilities ${label} ${minimum}`,
+    )
+  }
+}
+
+const addMinimumLabelledCapabilitySearchValues = (buckets: PokedexSearchTextBuckets, capability: string) => {
+  const match = stripParenthetical(capability).replace(/\s+/g, ' ').trim().match(/^(.+?)\s+(\d+(?:\.\d+)?)$/)
+  if (!match) return
+
+  const [, label, rawValue] = match
+  const maximum = Number(rawValue)
+  if (!label || !Number.isFinite(maximum)) return
+
+  for (const minimum of minimumIntegerSearchValues(maximum)) {
+    addBucketSearchValues(
+      buckets,
+      'capability',
+      `${label} ${minimum}`,
+      `cap ${label} ${minimum}`,
+      `capability ${label} ${minimum}`,
+      `capabilities ${label} ${minimum}`,
+    )
+  }
+}
+
+type ParsedSkillDiceValue = {
+  dice: number
+  modifier: number
+}
+
+const parseSkillDiceValue = (value: string): ParsedSkillDiceValue | null => {
+  const match = value.trim().toLowerCase().match(/^(\d+)\s*d\s*6\s*([+-]\s*(\d+)?)?$/)
+  if (!match) return null
+
+  const dice = Number(match[1])
+  if (!Number.isFinite(dice) || dice < 1) return null
+
+  const sign = match[2]?.trim().charAt(0) ?? ''
+  const modifierValue = match[3] ? Number(match[3]) : 0
+  const modifier = sign === '-' ? -modifierValue : modifierValue
+
+  return { dice: Math.floor(dice), modifier }
+}
+
+const formatSkillDiceSearchValue = (dice: number, modifier = 0): string => {
+  if (modifier > 0) return `${dice}d6+${modifier}`
+  if (modifier < 0) return `${dice}d6${modifier}`
+  return `${dice}d6`
+}
+
+const minimumSkillDiceSearchValues = (value: string): string[] => {
+  const parsed = parseSkillDiceValue(value)
+  if (!parsed) return []
+
+  const values: string[] = []
+  for (let dice = 1; dice <= parsed.dice; dice += 1) {
+    values.push(formatSkillDiceSearchValue(dice))
+  }
+
+  if (parsed.modifier > 0) {
+    for (let modifier = 1; modifier <= parsed.modifier; modifier += 1) {
+      values.push(formatSkillDiceSearchValue(parsed.dice, modifier))
+    }
+  }
+
+  return values
+}
+
+const addMinimumSkillSearchValues = (buckets: PokedexSearchTextBuckets, skill: string, value: string) => {
+  for (const minimumValue of minimumSkillDiceSearchValues(value)) {
+    addBucketSearchValues(
+      buckets,
+      'skill',
+      minimumValue,
+      `dice ${minimumValue}`,
+      `${minimumValue} dice`,
+      `skill ${minimumValue}`,
+      `skills ${minimumValue}`,
+      `${skill} ${minimumValue}`,
+      `skill ${skill} ${minimumValue}`,
+    )
+  }
+}
+
+const addMinimumBaseStatSearchValues = (
+  buckets: PokedexSearchTextBuckets,
+  label: string,
+  shortLabel: string,
+  value: number,
+) => {
+  for (const minimum of minimumIntegerSearchValues(value)) {
+    addBucketSearchValues(
+      buckets,
+      'stat',
+      `${label} ${minimum}`,
+      `${shortLabel} ${minimum}`,
+      `stat ${label} ${minimum}`,
+      `stat ${shortLabel} ${minimum}`,
+      `base ${label} ${minimum}`,
+      `base stat ${label} ${minimum}`,
+    )
+  }
+}
+
 const buildSearchText = (values: string[]): string => {
   const normalizedValues = new Set<string>()
 
@@ -273,6 +411,7 @@ const buildPokedexSearchTexts = (entry: PokedexRecord & { slug: string; national
         `cap ${label} ${value}`,
         `capability ${label} ${value}`,
       )
+      addMinimumCapabilitySearchValues(buckets, label, value)
     }
 
     for (const capability of entry.capabilities.other ?? []) {
@@ -294,6 +433,7 @@ const buildPokedexSearchTexts = (entry: PokedexRecord & { slug: string; national
         baseCapability ? `${baseCapability} cap` : null,
         baseCapability ? `${baseCapability} capability` : null,
       )
+      addMinimumLabelledCapabilitySearchValues(buckets, capability)
     }
   }
 
@@ -379,6 +519,7 @@ const buildPokedexSearchTexts = (entry: PokedexRecord & { slug: string; national
         `${skill} ${value}`,
         `skill ${skill} ${value}`,
       )
+      addMinimumSkillSearchValues(buckets, skill, value)
     }
   }
 
@@ -396,6 +537,7 @@ const buildPokedexSearchTexts = (entry: PokedexRecord & { slug: string; national
         `base ${label} ${value}`,
         `base stat ${label} ${value}`,
       )
+      addMinimumBaseStatSearchValues(buckets, label, shortLabel, value)
     }
   }
 
@@ -456,12 +598,18 @@ const pokemonRouteSlug = computed(() => {
   return toPokedexSlug(value.replace(/_/g, ' ')) || null
 })
 
-const filterMode = ref<FilterMode>('fields')
+const filterMode = useState<FilterMode>('pokedex-filter-mode', () => 'fields')
 const searchFilters = reactive<Record<PokedexSearchTextKey, string>>(
-  Object.fromEntries(searchFieldConfigs.map(({ key }) => [key, ''])) as Record<PokedexSearchTextKey, string>,
+  useState<Record<PokedexSearchTextKey, string>>(
+    'pokedex-search-filters',
+    () => Object.fromEntries(searchFieldConfigs.map(({ key }) => [key, ''])) as Record<PokedexSearchTextKey, string>,
+  ).value,
 )
 const filterOperators = reactive<Record<FieldFilterKey, FilterOperator>>(
-  Object.fromEntries(filterFieldConfigs.map(({ key }) => [key, 'and'])) as Record<FieldFilterKey, FilterOperator>,
+  useState<Record<FieldFilterKey, FilterOperator>>(
+    'pokedex-filter-operators',
+    () => Object.fromEntries(filterFieldConfigs.map(({ key }) => [key, 'and'])) as Record<FieldFilterKey, FilterOperator>,
+  ).value,
 )
 
 interface SearchCriterion {
@@ -1015,7 +1163,7 @@ const typeMatchupGroups = computed<TypeMatchupGroup[]>(() => {
               </template>
             </div>
             <p class="filter-help">
-              Use <code>and</code>, <code>or</code>, parentheses, and <code>-term</code> exclusions inside any filter. Field filters combine using the toggles.
+              Use <code>and</code>, <code>or</code>, parentheses, and <code>-term</code> exclusions inside any filter. Numeric/dice terms are minimums (for example, <code>sky 5</code> matches Sky 5+ and <code>3d6</code> matches 3d6+). Field filters combine using the toggles.
             </p>
           </div>
 
