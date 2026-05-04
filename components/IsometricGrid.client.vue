@@ -1089,9 +1089,11 @@ const paintBuildGhostMaterials = (
 const ELEVATION_BADGE_PIXELS_PER_METRE = 48
 const TOKEN_STATUS_CSS_WIDTH_PX = 80
 const TOKEN_STATUS_BASE_CSS_HEIGHT_PX = 18
+const TOKEN_STATUS_LABEL_LINE_CSS_HEIGHT_PX = 11
 const TOKEN_STATUS_TURN_CHEVRON_CSS_HEIGHT_PX = 8
 const TOKEN_STATUS_STAGE_ROW_CSS_HEIGHT_PX = 10
 const TOKEN_STATUS_CONDITION_ROW_CSS_HEIGHT_PX = 15
+const TOKEN_STATUS_HEAD_GAP_EXTRA = 0.3
 // Matches the scaled size that Miltank landed on; every token now uses this
 // same tabletop marker size instead of resizing by sprite dimensions.
 const TOKEN_STATUS_WORLD_WIDTH = 1.05
@@ -1791,9 +1793,14 @@ const formatTokenLevel = (level: number): string => {
   return String(Math.max(1, Math.floor(level)))
 }
 
-const tokenStatusDisplayName = (displayName: string): string => {
-  const trimmed = displayName.trim()
-  return trimmed.split(/\s+/)[0] || 'Unknown'
+const tokenStatusNameWords = (displayName: string): string[] => {
+  const words = displayName.trim().split(/\s+/).filter(Boolean)
+  return words.length ? words : ['Unknown']
+}
+
+const tokenStatusLabelLineCount = (displayName: string): number => {
+  const nameLines = tokenStatusNameWords(displayName).length
+  return nameLines > 1 ? nameLines + 1 : 1
 }
 
 const activeCombatStageEntries = (stages: CombatStageMap) =>
@@ -1807,6 +1814,7 @@ const formatCombatStage = (value: unknown): string => {
 }
 
 const tokenStatusCssHeight = (
+  displayName: string,
   stages: CombatStageMap,
   conditions: readonly string[],
   activeTurn: boolean,
@@ -1816,7 +1824,9 @@ const tokenStatusCssHeight = (
   const turnHeight = activeTurn ? TOKEN_STATUS_TURN_CHEVRON_CSS_HEIGHT_PX : 0
   const stageRows = stageCount === 0 ? 0 : Math.ceil(stageCount / 2)
   const conditionRows = conditionCount === 0 ? 0 : Math.ceil(conditionCount / 2)
+  const labelExtraHeight = (tokenStatusLabelLineCount(displayName) - 1) * TOKEN_STATUS_LABEL_LINE_CSS_HEIGHT_PX
   return TOKEN_STATUS_BASE_CSS_HEIGHT_PX
+    + labelExtraHeight
     + turnHeight
     + (stageRows ? 1 + stageRows * TOKEN_STATUS_STAGE_ROW_CSS_HEIGHT_PX : 0)
     + (conditionRows ? 1 + conditionRows * TOKEN_STATUS_CONDITION_ROW_CSS_HEIGHT_PX : 0)
@@ -1827,10 +1837,34 @@ const updateTokenStatusLabel = (
   displayName: string,
   level: number,
 ) => {
+  const label = element.querySelector<HTMLElement>('.token-status__label')
   const name = element.querySelector<HTMLElement>('.token-status__name')
+  const separator = element.querySelector<HTMLElement>('.token-status__separator')
   const levelNode = element.querySelector<HTMLElement>('.token-status__level')
-  if (name) name.textContent = tokenStatusDisplayName(displayName)
-  if (levelNode) levelNode.textContent = `Lv ${formatTokenLevel(level)}`
+  const words = tokenStatusNameWords(displayName)
+  const stacked = words.length > 1
+
+  label?.classList.toggle('is-stacked-name', stacked)
+  if (separator) separator.hidden = stacked
+
+  if (name) {
+    const nameKey = words.join('\n')
+    if (name.dataset.displayName !== nameKey) {
+      name.replaceChildren()
+      for (const word of words) {
+        const wordNode = document.createElement('span')
+        wordNode.className = 'token-status__name-word'
+        wordNode.textContent = word
+        name.appendChild(wordNode)
+      }
+      name.dataset.displayName = nameKey
+    }
+  }
+
+  if (levelNode) {
+    const levelText = `Lv ${formatTokenLevel(level)}`
+    if (levelNode.textContent !== levelText) levelNode.textContent = levelText
+  }
 }
 
 const updateTokenCombatStages = (element: HTMLElement, stages: CombatStageMap) => {
@@ -2322,8 +2356,8 @@ const updateHpBar = (
   // ``center.y + spriteHeight``. The offset accounts for the scaled DOM
   // height so smaller sprites keep the HUD tucked close instead of floating
   // as a detached nameplate.
-  const overlayHalfHeight = tokenStatusCssHeight(combatStages, conditions, activeTurn) * bar.scale.y / 2
-  const headGap = THREE.MathUtils.clamp(spriteHeight * 0.06, 0.025, 0.08)
+  const overlayHalfHeight = tokenStatusCssHeight(displayName, combatStages, conditions, activeTurn) * bar.scale.y / 2
+  const headGap = THREE.MathUtils.clamp(spriteHeight * 0.06, 0.025, 0.08) + TOKEN_STATUS_HEAD_GAP_EXTRA
   bar.position.set(center.x, center.y + spriteHeight + overlayHalfHeight + headGap, center.z)
   bar.visible = true
 }
