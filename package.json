@@ -6,7 +6,8 @@
     "dev": "nuxt dev",
     "build": "nuxt build",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare"
+    "postinstall": "nuxt prepare",
+    "check:move-automation": "python3 scripts/check_move_automation_coverage.py"
   },
   "dependencies": {
     "@fontsource/atkinson-hyperlegible": "^5.2.8",

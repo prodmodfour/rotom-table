@@ -74,6 +74,7 @@ const emit = defineEmits<{
   (event: 'modify-hp', payload: { id: string; currentHp: number }): void
   (event: 'modify-combat-stages', payload: { id: string; stages: CombatStageMap }): void
   (event: 'modify-conditions', payload: { id: string; conditions: string[] }): void
+  (event: 'use-move', id: string): void
   (event: 'preview-change', preview: PreviewState): void
   (event: 'place-voxel', voxel: MapVoxelV2): void
   (event: 'remove-voxel', cell: { x: number; y: number; z: number }): void
@@ -3765,7 +3766,7 @@ const openContextMenu = (event: MouseEvent, id: string) => {
   const canTurn = Boolean(target?.entityKind === 'pokemon' && target.backSpriteUrl)
   const bounds = container.value.getBoundingClientRect()
   const menuWidth = 230
-  const menuHeight = canTurn ? 276 : 232
+  const menuHeight = canTurn ? 320 : 276
   const padding = 12
 
   contextMenu.value = {
@@ -3899,6 +3900,15 @@ const handleContextApplyRemoveConditions = () => {
     originalConditions: [...conditions],
     conditions: [...conditions],
   }
+  closeContextMenu()
+}
+
+const handleContextUseMove = () => {
+  if (!contextMenu.value || !canControlPokemon(contextMenu.value.id)) {
+    return
+  }
+
+  emit('use-move', contextMenu.value.id)
   closeContextMenu()
 }
 
@@ -4715,6 +4725,13 @@ watch(
         @click.stop="handleContextApplyRemoveConditions"
       >
         Apply/Remove Conditions
+      </button>
+      <button
+        type="button"
+        class="context-menu__button"
+        @click.stop="handleContextUseMove"
+      >
+        Use Move
       </button>
       <button
         type="button"

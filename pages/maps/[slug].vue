@@ -53,6 +53,7 @@ import type { CharacterSheet } from '~/types/characterSheet'
 import type { CombatStageMap } from '~/types/combatStages'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import type { TrainerSheet } from '~/types/trainerSheet'
+import type { MoveAutomationTransaction } from '~/types/moveAutomation'
 import type {
   GridAnchor,
   InitiativeTrackerState,
@@ -93,6 +94,7 @@ interface IsometricGridHandle {
 }
 
 const selectedId = ref<string | null>(null)
+const moveAutomationId = ref<string | null>(null)
 const gridRef = ref<IsometricGridHandle | null>(null)
 const previewState = ref<PreviewState>({ position: null, reachable: false, pathLength: 0 })
 const sidebarCollapsed = ref(false)
@@ -146,6 +148,20 @@ const sheetLookup = computed(() => ({
 }))
 
 const spawnedPokemon = computed(() => placementsToSpawned(map.value, sheetLookup.value))
+const moveAutomationUser = computed(() =>
+  moveAutomationId.value
+    ? spawnedPokemon.value.find((pokemon) => pokemon.id === moveAutomationId.value) ?? null
+    : null,
+)
+const moveAutomationMoves = computed(() => {
+  if (!map.value || !moveAutomationId.value) return []
+  const placement = map.value.placements.find((item) => item.id === moveAutomationId.value)
+  if (!placement) return []
+  if (placement.sheetKind === 'pokemon') {
+    return pokemonBySlug.value?.get(placement.sheetSlug)?.movelist ?? []
+  }
+  return trainerBySlug.value?.get(placement.sheetSlug)?.movelist ?? []
+})
 const mapVoxels = computed<MapVoxelV2[]>(() => map.value?.voxels ?? [])
 const mapHazards = computed<MapHazardV2[]>(() => map.value?.hazards ?? [])
 const mapFieldEffects = computed<MapFieldEffects>(() => ({
@@ -240,6 +256,7 @@ watch(isGm, (gm) => {
   hazardMode.value = false
   adminPanelOpen.value = false
   if (selectedId.value && !canControlPlacement(selectedId.value)) selectPokemon(null)
+  if (moveAutomationId.value && !canControlPlacement(moveAutomationId.value)) closeMoveAutomation()
 })
 
 type InitiativeKind = 'pokemon' | 'trainer'
@@ -573,8 +590,11 @@ const movePokemon = (payload: { id: string; position: GridAnchor }) => {
   selectPokemon(null)
 }
 
-const modifyHp = async (payload: { id: string; currentHp: number }) => {
-  if (!map.value || !canControlPlacement(payload.id)) return
+const modifyHp = async (
+  payload: { id: string; currentHp: number },
+  options: { allowAnyTarget?: boolean } = {},
+) => {
+  if (!map.value || (!options.allowAnyTarget && !canControlPlacement(payload.id))) return
   const placement = map.value.placements.find((p) => p.id === payload.id)
   if (!placement) return
 
@@ -625,8 +645,11 @@ const modifyHp = async (payload: { id: string; currentHp: number }) => {
   }
 }
 
-const modifyCombatStages = async (payload: { id: string; stages: CombatStageMap }) => {
-  if (!map.value || !canControlPlacement(payload.id)) return
+const modifyCombatStages = async (
+  payload: { id: string; stages: CombatStageMap },
+  options: { allowAnyTarget?: boolean } = {},
+) => {
+  if (!map.value || (!options.allowAnyTarget && !canControlPlacement(payload.id))) return
   const placement = map.value.placements.find((p) => p.id === payload.id)
   if (!placement) return
 
@@ -687,8 +710,11 @@ const modifyCombatStages = async (payload: { id: string; stages: CombatStageMap 
   }
 }
 
-const modifyConditions = async (payload: { id: string; conditions: string[] }) => {
-  if (!map.value || !canControlPlacement(payload.id)) return
+const modifyConditions = async (
+  payload: { id: string; conditions: string[] },
+  options: { allowAnyTarget?: boolean } = {},
+) => {
+  if (!map.value || (!options.allowAnyTarget && !canControlPlacement(payload.id))) return
   const placement = map.value.placements.find((p) => p.id === payload.id)
   if (!placement) return
 
@@ -739,6 +765,71 @@ const modifyConditions = async (payload: { id: string; conditions: string[] }) =
   }
 }
 
+const openMoveAutomation = (id: string) => {
+  if (!canControlPlacement(id)) return
+  moveAutomationId.value = id
+}
+
+const closeMoveAutomation = () => {
+  moveAutomationId.value = null
+}
+
+const appendMoveAutomationLog = (transaction: MoveAutomationTransaction) => {
+  if (!map.value) return
+  const metadata = { ...(map.value.metadata ?? {}) }
+  const previous = Array.isArray(metadata.moveLog) ? metadata.moveLog : []
+  metadata.moveLog = [
+    ...previous,
+    {
+      at: Date.now(),
+      userId: transaction.userId,
+      userName: transaction.userName,
+      moveName: transaction.moveName,
+      scriptKind: transaction.scriptKind,
+      scriptVersion: transaction.scriptVersion,
+      lines: transaction.logLines,
+    },
+  ].slice(-100)
+  map.value.metadata = metadata
+}
+
+const applyMoveFieldEffect = (effect: MoveAutomationTransaction['fieldEffectsToApply'][number]) => {
+  if (!canEditMap.value) return
+  const state = ensureFieldEffectsState()
+  if (!state) return
+  const source = effect.source ?? 'Move automation'
+  if (effect.kind === 'weather' && MAP_WEATHER_KINDS.includes(effect.value as MapWeatherKind)) {
+    const weather = createMapWeatherEffect(effect.value as MapWeatherKind)
+    weather.source = source
+    state.weather = [weather]
+    return
+  }
+  if (effect.kind === 'terrain' && MAP_TERRAIN_KINDS.includes(effect.value as MapTerrainKind)) {
+    const terrain = createMapTerrainEffect(effect.value as MapTerrainKind)
+    terrain.source = source
+    state.terrains = [...state.terrains.filter((item) => item.kind !== terrain.kind), terrain]
+    return
+  }
+  if (effect.kind === 'room' && MAP_ROOM_KINDS.includes(effect.value as MapRoomKind)) {
+    const room = createMapRoomEffect(effect.value as MapRoomKind)
+    room.source = source
+    state.rooms = [...state.rooms.filter((item) => item.kind !== room.kind), room]
+  }
+}
+
+const applyMoveAutomation = async (transaction: MoveAutomationTransaction) => {
+  if (!map.value || !canControlPlacement(transaction.userId)) return
+  for (const update of transaction.hpUpdates) await modifyHp(update, { allowAnyTarget: true })
+  for (const update of transaction.combatStageUpdates) await modifyCombatStages(update, { allowAnyTarget: true })
+  for (const update of transaction.conditionUpdates) await modifyConditions(update, { allowAnyTarget: true })
+  if (canEditMap.value) {
+    for (const effect of transaction.fieldEffectsToApply) applyMoveFieldEffect(effect)
+    for (const hazard of transaction.hazardsToAdd) placeHazard(hazard)
+  }
+  appendMoveAutomationLog(transaction)
+  closeMoveAutomation()
+}
+
 const updatePreview = (next: PreviewState) => {
   previewState.value = next
 }
@@ -769,6 +860,7 @@ const placeHazard = (hazard: MapHazardV2) => {
   }
   const layer = normalizeMapHazardLayer(normalized.kind, hazard.layer)
   if (layer !== undefined) normalized.layer = layer
+  if (typeof hazard.owner === 'string' && hazard.owner.trim()) normalized.owner = hazard.owner.trim()
 
   const key = mapHazardKey(normalized)
   let found = false
@@ -1657,6 +1749,7 @@ watch(
           @modify-hp="modifyHp"
           @modify-combat-stages="modifyCombatStages"
           @modify-conditions="modifyConditions"
+          @use-move="openMoveAutomation"
           @preview-change="updatePreview"
           @place-voxel="placeVoxel"
           @remove-voxel="removeVoxel"
@@ -1671,6 +1764,17 @@ watch(
         <div v-else class="scene-loading">
           <p>{{ error ?? 'Could not load map.' }}</p>
         </div>
+
+        <MoveAutomationDialog
+          v-if="moveAutomationUser"
+          :user="moveAutomationUser"
+          :moves="moveAutomationMoves"
+          :all-tokens="spawnedPokemon"
+          :field-effects="mapFieldEffects"
+          :can-apply-map-effects="canEditMap"
+          @close="closeMoveAutomation"
+          @apply="applyMoveAutomation"
+        />
 
         <template #fallback>
           <div class="scene-loading">Loading the three.js tabletop…</div>
