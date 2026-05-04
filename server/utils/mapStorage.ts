@@ -14,8 +14,9 @@ import {
   writeFileSync,
 } from 'node:fs'
 import { dirname, join, resolve, sep } from 'node:path'
-import type { GridDimensions, MapSummary, MapVoxelV2, TabletopMap, TabletopMapV2 } from '~/types/map'
+import type { GridDimensions, MapHazardV2, MapSummary, MapVoxelV2, TabletopMap, TabletopMapV2 } from '~/types/map'
 import { normalizeMaterialId } from '~/utils/mapMaterials'
+import { normalizeMapHazard } from '~/utils/mapHazards'
 
 export const PROJECT_ROOT = resolve(process.cwd())
 export const MAPS_ROOT = resolve(PROJECT_ROOT, 'data/maps')
@@ -107,6 +108,12 @@ const normalizeVoxelForEditor = (value: unknown, index: number, filePath: string
   return out
 }
 
+const normalizeHazardForEditor = (value: unknown, index: number, filePath: string): MapHazardV2 => {
+  const hazard = normalizeMapHazard(value)
+  if (!hazard) invalidMapDocument(filePath, `hazards[${index}] must be an object with integer x/y/z and valid kind`)
+  return hazard
+}
+
 const normalizeMapDocument = (json: TabletopMapV2, filePath: string): TabletopMapV2 => {
   if (!isRecord(json)) invalidMapDocument(filePath, 'root must be an object')
   if (json.schemaVersion !== 2) invalidMapDocument(filePath, 'schemaVersion must be 2')
@@ -121,6 +128,9 @@ const normalizeMapDocument = (json: TabletopMapV2, filePath: string): TabletopMa
   if (!Array.isArray(json.voxels)) invalidMapDocument(filePath, 'voxels must be an array')
   const voxels = json.voxels
     .map((voxel, index) => normalizeVoxelForEditor(voxel, index, filePath))
+  const hazards = Array.isArray(json.hazards)
+    ? json.hazards.map((hazard, index) => normalizeHazardForEditor(hazard, index, filePath))
+    : []
 
   return {
     schemaVersion: 2,
@@ -131,6 +141,7 @@ const normalizeMapDocument = (json: TabletopMapV2, filePath: string): TabletopMa
     groundLevelY: normalizeMapGroundLevelY(json.groundLevelY, dimensions.y),
     playerVisible: json.playerVisible === true,
     voxels,
+    hazards,
     placements: Array.isArray(json.placements) ? json.placements : [],
     lights: Array.isArray(json.lights) ? json.lights : [],
     initiative,

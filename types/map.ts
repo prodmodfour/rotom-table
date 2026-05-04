@@ -31,6 +31,19 @@ export interface InitiativeTrackerState {
 export type MapMaterialId = string
 export type VoxelMaterial = MapMaterialId
 
+export type MapHazardKind = 'spikes' | 'toxic-spikes' | 'sticky-web' | 'stealth-rock' | 'fire'
+
+export interface MapHazardV2 {
+  kind: MapHazardKind
+  x: number
+  y: number
+  z: number
+  /** Toxic Spikes supports 2 layers. Other hazards ignore this field. */
+  layer?: number
+  /** Optional free-form side/owner label for future move automation. */
+  owner?: string
+}
+
 export interface MapVoxelV2 {
   x: number
   y: number
@@ -80,6 +93,8 @@ export interface TabletopMapV2 {
   voxels: MapVoxelV2[]
   /** Whether the map is visible to the shared player login. */
   playerVisible?: boolean
+  /** Sparse battlefield hazards placed on map squares. */
+  hazards?: MapHazardV2[]
   placements: SheetPlacement[]
   lights?: LightPlacement[]
   /** Current turn + round state for the collapsible initiative tracker. */
@@ -107,4 +122,5 @@ export interface LayerVisibility {
   shadows: boolean
   tokens: boolean
   grid: boolean
+  hazards: boolean
 }

@@ -14,6 +14,13 @@ import {
   normalizeDimensions,
   reconcilePokemonPositions,
 } from '~/utils/grid'
+import {
+  MAIN_MAP_HAZARD_KINDS,
+  MAP_HAZARD_DEFINITIONS,
+  filterMapHazardsInBounds,
+  mapHazardKey,
+  normalizeMapHazardLayer,
+} from '~/utils/mapHazards'
 import { createPlacementId, placementsToSpawned } from '~/utils/placement'
 import {
   VOXEL_MATERIALS,
@@ -34,7 +41,7 @@ import type { CharacterSheet } from '~/types/characterSheet'
 import type { CombatStageMap } from '~/types/combatStages'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import type { TrainerSheet } from '~/types/trainerSheet'
-import type { GridAnchor, InitiativeTrackerState, MapVoxelV2, VoxelMaterial } from '~/types/map'
+import type { GridAnchor, InitiativeTrackerState, MapHazardKind, MapHazardV2, MapVoxelV2, VoxelMaterial } from '~/types/map'
 import type { PreviewState } from '~/utils/grid'
 import type { SaveStatus } from '~/composables/useEditableSheet'
 
@@ -70,24 +77,29 @@ const initiativeCollapsed = ref(false)
 const adminPanelOpen = ref(false)
 
 const buildMode = ref(false)
+const hazardMode = ref(false)
 const canEditMap = computed(() => isGm.value)
 const canManageInitiative = computed(() => isGm.value)
 const canSpawnTokens = computed(() => isGm.value)
 const buildTool = ref<BuildTool>('pencil')
 const buildMaterial = ref<VoxelMaterial>('airship_floor_metal')
 const buildColor = ref<string | null>(null)
+const hazardTool = ref<BuildTool>('pencil')
+const hazardKind = ref<MapHazardKind>('spikes')
 
 const layerVisibility = ref({
   terrain: true,
   shadows: true,
   tokens: true,
   grid: true,
+  hazards: true,
 })
 const layerOptions = [
   'terrain',
   'shadows',
   'tokens',
   'grid',
+  'hazards',
 ] as const
 
 const sheetLookup = computed(() => ({
@@ -97,6 +109,7 @@ const sheetLookup = computed(() => ({
 
 const spawnedPokemon = computed(() => placementsToSpawned(map.value, sheetLookup.value))
 const mapVoxels = computed<MapVoxelV2[]>(() => map.value?.voxels ?? [])
+const mapHazards = computed<MapHazardV2[]>(() => map.value?.hazards ?? [])
 const canViewMap = computed(() => !map.value || !isPlayer.value || map.value.playerVisible === true)
 const controllablePlacementIds = computed(() => {
   if (!map.value) return []
@@ -111,6 +124,9 @@ const controllablePlacementIds = computed(() => {
 const controllablePlacementIdSet = computed(() => new Set(controllablePlacementIds.value))
 const canControlPlacement = (id: string): boolean => controllablePlacementIdSet.value.has(id)
 const voxelCount = computed(() => mapVoxels.value.length)
+const hazardCount = computed(() => mapHazards.value.length)
+const activeHazardDef = computed(() => MAP_HAZARD_DEFINITIONS[hazardKind.value])
+const hazardPalette = MAIN_MAP_HAZARD_KINDS.map((kind) => MAP_HAZARD_DEFINITIONS[kind])
 
 const clampGroundLevelY = (value: unknown, height: number): number => {
   const h = Number(height)
@@ -171,6 +187,7 @@ watch(
 watch(isGm, (gm) => {
   if (gm) return
   buildMode.value = false
+  hazardMode.value = false
   adminPanelOpen.value = false
   if (selectedId.value && !canControlPlacement(selectedId.value)) selectPokemon(null)
 })
@@ -692,12 +709,58 @@ const removeVoxel = (cell: { x: number; y: number; z: number }) => {
   )
 }
 
-const setMode = (mode: 'play' | 'build') => {
-  if (mode === 'build' && !canEditMap.value) return
-  const next = mode === 'build'
-  if (buildMode.value === next) return
-  buildMode.value = next
-  if (next) {
+const placeHazard = (hazard: MapHazardV2) => {
+  if (!map.value || !canEditMap.value) return
+  const normalized: MapHazardV2 = {
+    kind: hazard.kind,
+    x: Math.round(hazard.x),
+    y: Math.round(hazard.y),
+    z: Math.round(hazard.z),
+  }
+  const layer = normalizeMapHazardLayer(normalized.kind, hazard.layer)
+  if (layer !== undefined) normalized.layer = layer
+
+  const key = mapHazardKey(normalized)
+  let found = false
+  const next = mapHazards.value.map((existing) => {
+    if (mapHazardKey(existing) !== key) return existing
+    found = true
+    if (normalized.kind !== 'toxic-spikes') return existing
+    return {
+      ...existing,
+      layer: Math.min(2, Math.max(existing.layer ?? 1, normalized.layer ?? 1) + 1),
+    }
+  })
+  if (!found) next.push(normalized)
+  map.value.hazards = next
+}
+
+const removeHazard = (cell: { x: number; y: number; z: number; kind?: MapHazardKind }) => {
+  if (!map.value || !canEditMap.value) return
+  map.value.hazards = mapHazards.value.filter((hazard) => {
+    const sameCell = hazard.x === cell.x && hazard.y === cell.y && hazard.z === cell.z
+    if (!sameCell) return true
+    return cell.kind ? hazard.kind !== cell.kind : false
+  })
+}
+
+const clearAllHazards = () => {
+  if (!map.value || !canEditMap.value || !mapHazards.value.length) return
+  const ok = window.confirm(
+    `Remove all ${mapHazards.value.length} hazard square${mapHazards.value.length === 1 ? '' : 's'}?`,
+  )
+  if (!ok) return
+  map.value.hazards = []
+}
+
+const setMode = (mode: 'play' | 'build' | 'hazards') => {
+  if (mode !== 'play' && !canEditMap.value) return
+  const nextBuild = mode === 'build'
+  const nextHazards = mode === 'hazards'
+  if (buildMode.value === nextBuild && hazardMode.value === nextHazards) return
+  buildMode.value = nextBuild
+  hazardMode.value = nextHazards
+  if (nextBuild || nextHazards) {
     selectedId.value = null
     previewState.value = { position: null, reachable: false, pathLength: 0 }
   }
@@ -712,6 +775,16 @@ const selectMaterial = (material: VoxelMaterial) => {
 const setTool = (tool: BuildTool) => {
   if (!canEditMap.value) return
   buildTool.value = tool
+}
+
+const setHazardTool = (tool: BuildTool) => {
+  if (!canEditMap.value) return
+  hazardTool.value = tool
+}
+
+const selectHazardKind = (kind: MapHazardKind) => {
+  if (!canEditMap.value) return
+  hazardKind.value = kind
 }
 
 const handleColorInput = (event: Event) => {
@@ -778,6 +851,11 @@ watch(
     const trimmedVoxels = filterVoxelsInBounds(map.value.voxels, normalized)
     if (trimmedVoxels.length !== map.value.voxels.length) {
       map.value.voxels = trimmedVoxels
+    }
+
+    const trimmedHazards = filterMapHazardsInBounds(mapHazards.value, normalized)
+    if (trimmedHazards.length !== mapHazards.value.length) {
+      map.value.hazards = trimmedHazards
     }
 
     const reconciliation = reconcilePokemonPositions(
@@ -893,15 +971,17 @@ watch(
       <section v-if="map && canViewMap" class="panel-card terrain-panel">
         <div class="panel-heading">
           <h2>Terrain</h2>
-          <span class="badge">{{ voxelCount }} block{{ voxelCount === 1 ? '' : 's' }}</span>
+          <span class="badge">
+            {{ voxelCount }} block{{ voxelCount === 1 ? '' : 's' }} · {{ hazardCount }} hazard{{ hazardCount === 1 ? '' : 's' }}
+          </span>
         </div>
 
         <div v-if="canEditMap" class="mode-row" role="group" aria-label="Editor mode">
           <button
             type="button"
             class="mode-button"
-            :class="{ 'is-active': !buildMode }"
-            :aria-pressed="!buildMode"
+            :class="{ 'is-active': !buildMode && !hazardMode }"
+            :aria-pressed="!buildMode && !hazardMode"
             @click="setMode('play')"
           >
             Play
@@ -914,6 +994,15 @@ watch(
             @click="setMode('build')"
           >
             Build
+          </button>
+          <button
+            type="button"
+            class="mode-button"
+            :class="{ 'is-active': hazardMode }"
+            :aria-pressed="hazardMode"
+            @click="setMode('hazards')"
+          >
+            Hazards
           </button>
         </div>
         <p v-else class="permission-note">
@@ -1019,6 +1108,65 @@ watch(
             </div>
           </div>
         </template>
+
+        <template v-if="hazardMode && canEditMap">
+          <div class="tool-row" role="group" aria-label="Hazard tool">
+            <button
+              type="button"
+              class="tool-button"
+              :class="{ 'is-active': hazardTool === 'pencil' }"
+              :aria-pressed="hazardTool === 'pencil'"
+              @click="setHazardTool('pencil')"
+            >
+              Place
+            </button>
+            <button
+              type="button"
+              class="tool-button"
+              :class="{ 'is-active': hazardTool === 'eraser' }"
+              :aria-pressed="hazardTool === 'eraser'"
+              @click="setHazardTool('eraser')"
+            >
+              Erase
+            </button>
+          </div>
+
+          <div class="hazards-grid" role="group" aria-label="Hazard type">
+            <button
+              v-for="hazard in hazardPalette"
+              :key="hazard.kind"
+              type="button"
+              class="hazard-swatch"
+              :class="{ 'is-active': hazardKind === hazard.kind }"
+              :aria-pressed="hazardKind === hazard.kind"
+              :title="hazard.description"
+              @click="selectHazardKind(hazard.kind)"
+            >
+              <span
+                class="hazard-swatch__icon"
+                :style="{ '--hazard-color': hazard.color }"
+                aria-hidden="true"
+              >{{ hazard.shortLabel }}</span>
+              <span class="hazard-swatch__label">{{ hazard.label }}</span>
+            </button>
+          </div>
+
+          <p class="hint">
+            Left click to {{ hazardTool === 'pencil' ? `place ${activeHazardDef.label}` : 'erase hazards' }}.
+            Right click erases all hazards on a square. Toxic Spikes stacks to 2 layers.
+          </p>
+
+          <div class="bulk-row">
+            <button
+              type="button"
+              class="bulk-button bulk-button--danger"
+              :disabled="!hazardCount"
+              @click="clearAllHazards"
+            >
+              Clear hazards
+            </button>
+          </div>
+        </template>
       </section>
 
         <SheetBrowser v-if="map && canSpawnTokens" @select="spawnSheet" />
@@ -1036,12 +1184,16 @@ watch(
           :controllable-ids="controllablePlacementIds"
           :active-turn-id="activeInitiativeId"
           :voxels="mapVoxels"
+          :hazards="mapHazards"
           :ground-level-y="mapGroundLevelY"
           :layer-visibility="layerVisibility"
           :build-mode="buildMode && canEditMap"
           :build-tool="buildTool"
           :build-material="buildMaterial"
           :build-color="buildColor"
+          :hazard-mode="hazardMode && canEditMap"
+          :hazard-tool="hazardTool"
+          :hazard-kind="hazardKind"
           :can-delete-tokens="isGm"
           @select-pokemon="selectPokemon"
           @move-pokemon="movePokemon"
@@ -1053,6 +1205,8 @@ watch(
           @preview-change="updatePreview"
           @place-voxel="placeVoxel"
           @remove-voxel="removeVoxel"
+          @place-hazard="placeHazard"
+          @remove-hazard="removeHazard"
         />
         <div v-else-if="status === 'loading'" class="scene-loading">Loading map…</div>
         <div v-else-if="status === 'not-found'" class="scene-loading">
@@ -1664,7 +1818,7 @@ input:disabled {
 
 .mode-row {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.4rem;
 }
 
@@ -1765,6 +1919,65 @@ input:disabled {
 }
 
 .material-swatch.is-active .swatch-label {
+  color: var(--accent);
+}
+
+.hazards-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.4rem;
+}
+
+.hazard-swatch {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.45rem;
+  border: 1px solid var(--rule-soft);
+  border-radius: 10px;
+  background: var(--paper);
+  color: var(--ink);
+  padding: 0.45rem;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.hazard-swatch:hover {
+  border-color: var(--rule-strong);
+  background: var(--paper-hover);
+}
+
+.hazard-swatch.is-active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.hazard-swatch__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.45rem;
+  min-height: 1.9rem;
+  border: 1px solid color-mix(in srgb, var(--hazard-color) 65%, #1d2021);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--hazard-color) 24%, transparent);
+  color: color-mix(in srgb, var(--hazard-color) 78%, #fbf1c7);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.hazard-swatch__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+}
+
+.hazard-swatch.is-active .hazard-swatch__label {
   color: var(--accent);
 }
 

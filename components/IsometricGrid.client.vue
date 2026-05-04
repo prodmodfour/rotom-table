@@ -6,6 +6,8 @@ import { CSS3DRenderer, CSS3DSprite } from 'three/examples/jsm/renderers/CSS3DRe
 import type { GridAnchor, GridDimensions, SpawnedPokemon, SpriteAnimation, SpriteCrop } from '~/types/pokemon'
 import type {
   LayerVisibility,
+  MapHazardKind,
+  MapHazardV2,
   MapVoxelV2,
   VoxelMaterial,
 } from '~/types/map'
@@ -22,6 +24,7 @@ import {
 } from '~/utils/voxels'
 import { buildMapOccupancy } from '~/utils/mapOccupancy'
 import { getMaterialDefinition, materialColorNumber } from '~/utils/mapMaterials'
+import { MAP_HAZARD_DEFINITIONS, normalizeMapHazardLayer } from '~/utils/mapHazards'
 import { POKEMON_TYPES, computeMultiplier, formatMultiplier } from '~/utils/typeChart'
 import {
   COMBAT_STAGE_KEYS,
@@ -42,12 +45,16 @@ const props = defineProps<{
   controllableIds?: string[]
   activeTurnId?: string | null
   voxels: MapVoxelV2[]
+  hazards?: MapHazardV2[]
   groundLevelY?: number
   layerVisibility?: LayerVisibility
   buildMode: boolean
   buildTool: BuildTool
   buildMaterial: VoxelMaterial
   buildColor: string | null
+  hazardMode?: boolean
+  hazardTool?: BuildTool
+  hazardKind?: MapHazardKind
   canDeleteTokens?: boolean
 }>()
 
@@ -62,6 +69,8 @@ const emit = defineEmits<{
   (event: 'preview-change', preview: PreviewState): void
   (event: 'place-voxel', voxel: MapVoxelV2): void
   (event: 'remove-voxel', cell: { x: number; y: number; z: number }): void
+  (event: 'place-hazard', hazard: MapHazardV2): void
+  (event: 'remove-hazard', cell: { x: number; y: number; z: number; kind?: MapHazardKind }): void
 }>()
 
 interface WorldSpriteState {
@@ -131,6 +140,13 @@ interface VoxelGroup {
 interface BuildTarget {
   action: 'place' | 'remove'
   cell: { x: number; y: number; z: number }
+  valid: boolean
+}
+
+interface HazardTarget {
+  action: 'place' | 'remove'
+  cell: { x: number; y: number; z: number }
+  kind?: MapHazardKind
   valid: boolean
 }
 
@@ -1111,6 +1127,7 @@ const DEFAULT_LAYER_VISIBILITY: LayerVisibility = {
   shadows: true,
   tokens: true,
   grid: true,
+  hazards: true,
 }
 
 const visibleLayers = () => ({ ...DEFAULT_LAYER_VISIBILITY, ...(props.layerVisibility ?? {}) })
@@ -1360,6 +1377,19 @@ const selectedPokemon = computed(
   () => props.pokemons.find((pokemon) => pokemon.id === props.selectedId) ?? null,
 )
 const renderedTerrainVoxels = computed(() => props.voxels)
+const renderedHazards = computed(() => props.hazards ?? [])
+const hazardRevision = computed(() =>
+  renderedHazards.value
+    .map((hazard) => [
+      hazard.kind,
+      hazard.x,
+      hazard.y,
+      hazard.z,
+      hazard.layer ?? '',
+      hazard.owner ?? '',
+    ].join('\u001e'))
+    .join('\u001d'),
+)
 const terrainVoxelRevision = computed(() =>
   renderedTerrainVoxels.value
     .map((voxel) => [
@@ -1439,15 +1469,18 @@ const gridGroup = new THREE.Group()
 const worldGroup = new THREE.Group()
 const previewGroup = new THREE.Group()
 const voxelContainer = new THREE.Group()
+const hazardContainer = new THREE.Group()
 const clock = new THREE.Clock()
 
 scene.add(gridGroup)
 scene.add(worldGroup)
 scene.add(previewGroup)
 worldGroup.add(voxelContainer)
+worldGroup.add(hazardContainer)
 
 const renderObjects = new Map<string, PokemonRenderObject>()
 const voxelGroups = new Map<string, VoxelGroup>()
+const hazardMeshes: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>[] = []
 let terrainTopEdgeOverlay: THREE.Group | null = null
 let renderer: THREE.WebGLRenderer | null = null
 let cssRenderer: CSS3DRenderer | null = null
@@ -1467,6 +1500,8 @@ let previewPathLine: THREE.Line | null = null
 let previewOwnerId: string | null = null
 let buildGhost: THREE.Mesh<THREE.BoxGeometry, THREE.MeshBasicMaterial[]> | null = null
 let buildGhostEdges: THREE.LineSegments | null = null
+let hazardGhost: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial> | null = null
+let hazardGhostEdges: THREE.LineSegments | null = null
 let activePreview: PreviewState = { ...EMPTY_PREVIEW }
 let activePreviewCanPlace = false
 let activePreviewAnchor: GridAnchor | null = null
@@ -2105,7 +2140,7 @@ const updateGridVisibility = () => {
   }
 
   if (moveGridLines) {
-    moveGridLines.visible = layers.grid && (isMovingPokemon || props.buildMode)
+    moveGridLines.visible = layers.grid && (isMovingPokemon || props.buildMode || props.hazardMode)
   }
 }
 
@@ -2686,15 +2721,67 @@ const syncVoxelMeshes = () => {
   applyLayerVisibility()
 }
 
+const disposeHazardMeshes = () => {
+  for (const mesh of hazardMeshes.splice(0)) disposeObject3D(mesh)
+}
+
+const hazardLayerOffset = (hazard: MapHazardV2, index: number): number => {
+  const kindOffset = {
+    'spikes': 0,
+    'toxic-spikes': 0.008,
+    'sticky-web': 0.016,
+    'stealth-rock': 0.024,
+    'fire': 0.032,
+  } satisfies Record<MapHazardKind, number>
+  return HAZARD_Y_OFFSET + kindOffset[hazard.kind] + index * 0.001
+}
+
+const syncHazardMeshes = () => {
+  disposeHazardMeshes()
+
+  const perCellCount = new Map<string, number>()
+  for (const hazard of renderedHazards.value) {
+    const cellKey = `${hazard.x},${hazard.y},${hazard.z}`
+    const index = perCellCount.get(cellKey) ?? 0
+    perCellCount.set(cellKey, index + 1)
+
+    const geometry = new THREE.PlaneGeometry(0.92, 0.92)
+    const material = new THREE.MeshBasicMaterial({
+      map: getHazardTexture(hazard.kind, hazard.layer),
+      color: 0xffffff,
+      transparent: true,
+      opacity: 0.94,
+      depthTest: true,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+    })
+    const mesh = new THREE.Mesh(geometry, material)
+    mesh.rotation.x = -Math.PI / 2
+    mesh.position.set(
+      hazard.x + 0.5,
+      hazard.y + hazardLayerOffset(hazard, index),
+      hazard.z + 0.5,
+    )
+    mesh.renderOrder = 12
+    mesh.userData.hazard = hazard
+    hazardContainer.add(mesh)
+    hazardMeshes.push(mesh)
+  }
+
+  applyLayerVisibility()
+}
+
 const applyLayerVisibility = () => {
   const layers = visibleLayers()
   gridGroup.visible = layers.grid
   voxelContainer.visible = layers.terrain
+  hazardContainer.visible = layers.hazards
 
   for (const group of voxelGroups.values()) {
     group.mesh.visible = layers.terrain
   }
   if (terrainTopEdgeOverlay) terrainTopEdgeOverlay.visible = layers.terrain
+  for (const mesh of hazardMeshes) mesh.visible = layers.hazards
 
   for (const renderObject of renderObjects.values()) {
     const tokens = layers.tokens
@@ -2750,6 +2837,56 @@ const hideBuildGhost = () => {
   if (buildGhostEdges) buildGhostEdges.visible = false
 }
 
+const ensureHazardGhost = () => {
+  if (hazardGhost && hazardGhostEdges) return
+  const geometry = new THREE.PlaneGeometry(0.92, 0.92)
+  hazardGhost = new THREE.Mesh(
+    geometry,
+    new THREE.MeshBasicMaterial({
+      map: getHazardTexture(props.hazardKind ?? 'spikes'),
+      transparent: true,
+      opacity: 0.68,
+      depthTest: true,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+    }),
+  )
+  hazardGhost.rotation.x = -Math.PI / 2
+  hazardGhost.renderOrder = 30
+  hazardGhost.visible = false
+  previewGroup.add(hazardGhost)
+
+  hazardGhostEdges = new THREE.LineSegments(
+    new THREE.EdgesGeometry(geometry),
+    new THREE.LineBasicMaterial({
+      color: 0xfbf1c7,
+      transparent: true,
+      opacity: 0.95,
+      depthTest: true,
+      depthWrite: false,
+    }),
+  )
+  hazardGhostEdges.rotation.x = -Math.PI / 2
+  hazardGhostEdges.visible = false
+  previewGroup.add(hazardGhostEdges)
+}
+
+const disposeHazardGhost = () => {
+  if (hazardGhost) {
+    disposeObject3D(hazardGhost)
+    hazardGhost = null
+  }
+  if (hazardGhostEdges) {
+    disposeObject3D(hazardGhostEdges)
+    hazardGhostEdges = null
+  }
+}
+
+const hideHazardGhost = () => {
+  if (hazardGhost) hazardGhost.visible = false
+  if (hazardGhostEdges) hazardGhostEdges.visible = false
+}
+
 const customVoxelStyle = (baseColor: number): VoxelRenderStyle => ({
   materialId: 'airship_floor_metal',
   color: blockHexCss(baseColor),
@@ -2759,6 +2896,172 @@ const currentBuildVoxelStyle = (): VoxelRenderStyle => {
   const style: VoxelRenderStyle = { materialId: props.buildMaterial }
   if (props.buildColor && parseHexColor(props.buildColor) !== null) style.color = props.buildColor
   return style
+}
+
+const HAZARD_DECAL_SIZE = 128
+const HAZARD_Y_OFFSET = 0.035
+const hazardTextureCache = new Map<string, THREE.CanvasTexture>()
+
+const hazardColorNumber = (kind: MapHazardKind): number =>
+  parseHexColor(MAP_HAZARD_DEFINITIONS[kind].color) ?? 0xfabd2f
+
+const hazardCanvasColor = (kind: MapHazardKind, alpha = 1): string => {
+  const hex = MAP_HAZARD_DEFINITIONS[kind].color.replace('#', '')
+  const r = Number.parseInt(hex.slice(0, 2), 16)
+  const g = Number.parseInt(hex.slice(2, 4), 16)
+  const b = Number.parseInt(hex.slice(4, 6), 16)
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`
+}
+
+const drawHazardTriangle = (
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  radius: number,
+  fill: string,
+  stroke = 'rgba(29, 32, 33, 0.85)',
+) => {
+  ctx.beginPath()
+  ctx.moveTo(x, y - radius)
+  ctx.lineTo(x + radius * 0.82, y + radius * 0.72)
+  ctx.lineTo(x - radius * 0.82, y + radius * 0.72)
+  ctx.closePath()
+  ctx.fillStyle = fill
+  ctx.fill()
+  ctx.strokeStyle = stroke
+  ctx.lineWidth = Math.max(3, radius * 0.16)
+  ctx.stroke()
+}
+
+const drawHazardTexture = (
+  kind: MapHazardKind,
+  layer: number | undefined,
+): HTMLCanvasElement => {
+  const canvas = document.createElement('canvas')
+  canvas.width = HAZARD_DECAL_SIZE
+  canvas.height = HAZARD_DECAL_SIZE
+  const ctx = canvas.getContext('2d')!
+  const cx = HAZARD_DECAL_SIZE / 2
+  const cy = HAZARD_DECAL_SIZE / 2
+  const color = hazardCanvasColor(kind)
+  const faint = hazardCanvasColor(kind, 0.18)
+  const mid = hazardCanvasColor(kind, 0.55)
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height)
+  ctx.fillStyle = 'rgba(29, 32, 33, 0.48)'
+  ctx.beginPath()
+  ctx.roundRect(7, 7, 114, 114, 18)
+  ctx.fill()
+  ctx.strokeStyle = mid
+  ctx.lineWidth = 4
+  ctx.stroke()
+
+  if (kind === 'spikes') {
+    ctx.fillStyle = faint
+    ctx.beginPath()
+    ctx.arc(cx, cy, 42, 0, Math.PI * 2)
+    ctx.fill()
+    drawHazardTriangle(ctx, 42, 72, 25, color)
+    drawHazardTriangle(ctx, 70, 50, 31, '#fbf1c7')
+    drawHazardTriangle(ctx, 88, 78, 23, color)
+  } else if (kind === 'toxic-spikes') {
+    ctx.fillStyle = faint
+    ctx.beginPath()
+    ctx.arc(cx, cy, 43, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.strokeStyle = color
+    ctx.lineWidth = 10
+    ctx.lineCap = 'round'
+    for (const angle of [0, Math.PI / 2, Math.PI, (Math.PI * 3) / 2]) {
+      ctx.beginPath()
+      ctx.moveTo(cx, cy)
+      ctx.lineTo(cx + Math.cos(angle) * 39, cy + Math.sin(angle) * 39)
+      ctx.stroke()
+    }
+    ctx.fillStyle = '#fbf1c7'
+    ctx.beginPath()
+    ctx.arc(cx, cy, 15, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.fillStyle = color
+    ctx.font = '900 30px Arial, sans-serif'
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    ctx.fillText(String(layer ?? 1), 101, 29)
+  } else if (kind === 'sticky-web') {
+    ctx.strokeStyle = 'rgba(251, 241, 199, 0.9)'
+    ctx.lineWidth = 4
+    for (let i = 0; i < 8; i += 1) {
+      const angle = (i / 8) * Math.PI * 2
+      ctx.beginPath()
+      ctx.moveTo(cx, cy)
+      ctx.lineTo(cx + Math.cos(angle) * 50, cy + Math.sin(angle) * 50)
+      ctx.stroke()
+    }
+    for (const radius of [18, 32, 48]) {
+      ctx.beginPath()
+      ctx.arc(cx, cy, radius, 0, Math.PI * 2)
+      ctx.stroke()
+    }
+    ctx.strokeStyle = color
+    ctx.lineWidth = 5
+    ctx.beginPath()
+    ctx.arc(cx, cy, 52, 0, Math.PI * 2)
+    ctx.stroke()
+  } else if (kind === 'stealth-rock') {
+    const rocks: Array<[number, number, number, string]> = [
+      [45, 68, 28, color],
+      [72, 51, 32, '#d5c4a1'],
+      [86, 78, 24, '#928374'],
+      [58, 89, 18, '#a89984'],
+    ]
+    for (const [x, y, r, fill] of rocks) drawHazardTriangle(ctx, x, y, r, fill)
+  } else {
+    const gradient = ctx.createRadialGradient(cx, cy + 18, 8, cx, cy, 52)
+    gradient.addColorStop(0, 'rgba(250, 189, 47, 0.98)')
+    gradient.addColorStop(0.42, color)
+    gradient.addColorStop(1, 'rgba(204, 36, 29, 0.1)')
+    ctx.fillStyle = gradient
+    ctx.beginPath()
+    ctx.moveTo(cx, 20)
+    ctx.bezierCurveTo(88, 50, 102, 77, 79, 103)
+    ctx.bezierCurveTo(66, 118, 38, 107, 34, 83)
+    ctx.bezierCurveTo(31, 63, 45, 49, 48, 31)
+    ctx.bezierCurveTo(56, 43, 62, 49, 70, 54)
+    ctx.bezierCurveTo(75, 42, 72, 31, cx, 20)
+    ctx.closePath()
+    ctx.fill()
+    ctx.strokeStyle = 'rgba(29, 32, 33, 0.72)'
+    ctx.lineWidth = 4
+    ctx.stroke()
+  }
+
+  ctx.fillStyle = 'rgba(251, 241, 199, 0.92)'
+  ctx.font = '900 13px Arial, sans-serif'
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.fillText(MAP_HAZARD_DEFINITIONS[kind].shortLabel, cx, 111)
+
+  return canvas
+}
+
+const getHazardTexture = (kind: MapHazardKind, layer?: number): THREE.CanvasTexture => {
+  const normalizedLayer = normalizeMapHazardLayer(kind, layer)
+  const key = `${kind}:${normalizedLayer ?? 0}`
+  const cached = hazardTextureCache.get(key)
+  if (cached) return cached
+
+  const texture = new THREE.CanvasTexture(drawHazardTexture(kind, normalizedLayer))
+  texture.colorSpace = THREE.SRGBColorSpace
+  texture.magFilter = THREE.NearestFilter
+  texture.minFilter = THREE.LinearMipMapLinearFilter
+  texture.generateMipmaps = true
+  hazardTextureCache.set(key, texture)
+  return texture
+}
+
+const disposeHazardTextureCache = () => {
+  for (const texture of hazardTextureCache.values()) texture.dispose()
+  hazardTextureCache.clear()
 }
 
 const ensurePreviewObjects = () => {
@@ -3188,6 +3491,140 @@ const performBuildAction = (event: MouseEvent | PointerEvent, tool: BuildTool) =
   emit('place-voxel', voxel)
 }
 
+const hazardTargetFromHit = (hit: THREE.Intersection): { x: number; y: number; z: number; kind?: MapHazardKind } | null => {
+  const hazard = hit.object.userData.hazard as MapHazardV2 | undefined
+  if (hazard) return { x: hazard.x, y: hazard.y, z: hazard.z, kind: hazard.kind }
+
+  const mesh = hit.object as THREE.InstancedMesh
+  const voxels = mesh.userData.voxels as MapVoxelV2[] | undefined
+  const voxel = voxels && hit.instanceId !== undefined ? voxels[hit.instanceId] : null
+  if (voxel) return { x: voxel.x, y: voxel.y + 1, z: voxel.z }
+
+  return null
+}
+
+const hazardTargetFromGroundPlane = (): { x: number; y: number; z: number } | null => {
+  const point = new THREE.Vector3()
+  const y = normalizedGroundLevelY()
+  const hit = raycaster.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 1, 0), -y), point)
+  if (!hit) return null
+  return { x: Math.floor(point.x), y, z: Math.floor(point.z) }
+}
+
+const pickHazardTarget = (
+  event: MouseEvent | PointerEvent,
+  tool: BuildTool,
+): HazardTarget | null => {
+  if (!renderer || !camera) return null
+  setPointerFromCoords(event)
+
+  const targets: THREE.Object3D[] = []
+  for (const mesh of hazardMeshes) targets.push(mesh)
+  for (const group of voxelGroups.values()) targets.push(group.mesh)
+
+  const intersections = raycaster.intersectObjects(targets, false)
+  const target = intersections[0]
+    ? hazardTargetFromHit(intersections[0])
+    : hazardTargetFromGroundPlane()
+  if (!target) return null
+
+  const cell = { x: target.x, y: target.y, z: target.z }
+  const inBounds =
+    cell.x >= 0 &&
+    cell.x < props.dimensions.x &&
+    cell.y >= 0 &&
+    cell.y < props.dimensions.y &&
+    cell.z >= 0 &&
+    cell.z < props.dimensions.z
+
+  if (tool === 'eraser') {
+    const hasHazard = renderedHazards.value.some(
+      (hazard) => hazard.x === cell.x && hazard.y === cell.y && hazard.z === cell.z,
+    )
+    return {
+      action: 'remove',
+      cell,
+      kind: target.kind,
+      valid: inBounds && hasHazard,
+    }
+  }
+
+  return {
+    action: 'place',
+    cell,
+    valid: inBounds,
+  }
+}
+
+const updateHazardGhost = (target: HazardTarget | null) => {
+  if (!props.hazardMode) {
+    hideHazardGhost()
+    return
+  }
+
+  ensureHazardGhost()
+  if (!hazardGhost || !hazardGhostEdges) return
+
+  if (!target) {
+    hideHazardGhost()
+    return
+  }
+
+  const kind = props.hazardKind ?? 'spikes'
+  const material = hazardGhost.material as THREE.MeshBasicMaterial
+  material.map = getHazardTexture(kind)
+  material.color.setHex(target.valid ? 0xffffff : 0xfb4934)
+  material.opacity = target.action === 'remove' ? 0.42 : 0.68
+  material.needsUpdate = true
+
+  const color = target.action === 'remove' || !target.valid
+    ? 0xfb4934
+    : hazardColorNumber(kind)
+  ;(hazardGhostEdges.material as THREE.LineBasicMaterial).color.setHex(color)
+
+  hazardGhost.position.set(target.cell.x + 0.5, target.cell.y + HAZARD_Y_OFFSET + 0.07, target.cell.z + 0.5)
+  hazardGhostEdges.position.copy(hazardGhost.position)
+  hazardGhost.visible = true
+  hazardGhostEdges.visible = true
+}
+
+const updateHazardPreviewFromPointer = (event: MouseEvent | PointerEvent) => {
+  if (!props.hazardMode) {
+    hideHazardGhost()
+    return
+  }
+  const target = pickHazardTarget(event, props.hazardTool ?? 'pencil')
+  updateHazardGhost(target)
+}
+
+const replayHazardPreview = () => {
+  if (!props.hazardMode || !lastPointerCoords) return
+  const synthetic = {
+    clientX: lastPointerCoords.clientX,
+    clientY: lastPointerCoords.clientY,
+  } as MouseEvent
+  updateHazardPreviewFromPointer(synthetic)
+}
+
+const performHazardAction = (event: MouseEvent | PointerEvent, tool: BuildTool) => {
+  const target = pickHazardTarget(event, tool)
+  if (!target || !target.valid) return
+  if (target.action === 'remove') {
+    emit('remove-hazard', target.cell)
+    return
+  }
+  const kind = props.hazardKind ?? 'spikes'
+  const hazard: MapHazardV2 = {
+    kind,
+    x: target.cell.x,
+    y: target.cell.y,
+    z: target.cell.z,
+  }
+  const layer = normalizeMapHazardLayer(kind, undefined)
+  if (layer !== undefined) hazard.layer = layer
+  emit('place-hazard', hazard)
+}
+
 const closeContextMenu = () => {
   contextMenu.value = null
 }
@@ -3465,6 +3902,13 @@ const handleRightClick = (event: MouseEvent) => {
     return
   }
 
+  if (props.hazardMode) {
+    if (pointerTravel <= 6) {
+      performHazardAction(event, 'eraser')
+    }
+    return
+  }
+
   const hitId = pickPokemonId(event)
 
   if (!canControlPokemon(hitId)) {
@@ -3491,6 +3935,11 @@ const handlePointerMove = (event: PointerEvent) => {
 
   if (props.buildMode) {
     updateBuildPreviewFromPointer(event)
+    return
+  }
+
+  if (props.hazardMode) {
+    updateHazardPreviewFromPointer(event)
     return
   }
 
@@ -3537,6 +3986,11 @@ const handlePointerUp = (event: PointerEvent) => {
     return
   }
 
+  if (props.hazardMode) {
+    performHazardAction(event, props.hazardTool ?? 'pencil')
+    return
+  }
+
   handleLeftClick(event)
 }
 
@@ -3545,6 +3999,9 @@ const handlePointerLeave = () => {
   setHoveredPokemonId(null)
   if (props.buildMode) {
     hideBuildGhost()
+  }
+  if (props.hazardMode) {
+    hideHazardGhost()
   }
 }
 
@@ -3748,8 +4205,10 @@ onMounted(() => {
   buildGrid()
   syncPokemonObjects()
   syncVoxelMeshes()
+  syncHazardMeshes()
   ensurePreviewObjects()
   if (props.buildMode) ensureBuildGhost()
+  if (props.hazardMode) ensureHazardGhost()
   alignCameraToGrid(true)
   refreshPokemonStyles()
 
@@ -3794,8 +4253,11 @@ onBeforeUnmount(() => {
   disposeObject3D(previewEdges)
   disposeObject3D(previewPathLine)
   disposeBuildGhost()
+  disposeHazardGhost()
+  disposeHazardMeshes()
   disposeTerrainTopEdgeOverlay()
   disposeAllVoxelGroups()
+  disposeHazardTextureCache()
   disposeBlockTextureCache()
   if (contactShadowTexture) {
     contactShadowTexture.dispose()
@@ -3910,6 +4372,16 @@ watch(
     }
 
     replayBuildPreview()
+    replayHazardPreview()
+  },
+)
+
+watch(
+  hazardRevision,
+  () => {
+    if (!renderer) return
+    syncHazardMeshes()
+    replayHazardPreview()
   },
 )
 
@@ -3968,6 +4440,16 @@ watch(
 )
 
 watch(
+  () => props.layerVisibility,
+  () => {
+    if (!renderer) return
+    updateGridVisibility()
+    applyLayerVisibility()
+  },
+  { deep: true },
+)
+
+watch(
   () => props.buildMode,
   (active) => {
     if (!renderer) return
@@ -3977,6 +4459,7 @@ watch(
     if (active) {
       closeContextMenu()
       clearPreviewVisuals()
+      hideHazardGhost()
       ensureBuildGhost()
       replayBuildPreview()
     } else {
@@ -3986,10 +4469,37 @@ watch(
 )
 
 watch(
+  () => props.hazardMode,
+  (active) => {
+    if (!renderer) return
+
+    updateGridVisibility()
+
+    if (active) {
+      closeContextMenu()
+      clearPreviewVisuals()
+      hideBuildGhost()
+      ensureHazardGhost()
+      replayHazardPreview()
+    } else {
+      hideHazardGhost()
+    }
+  },
+)
+
+watch(
   () => [props.buildTool, props.buildMaterial, props.buildColor] as const,
   () => {
     if (!renderer || !props.buildMode) return
     replayBuildPreview()
+  },
+)
+
+watch(
+  () => [props.hazardTool, props.hazardKind] as const,
+  () => {
+    if (!renderer || !props.hazardMode) return
+    replayHazardPreview()
   },
 )
 
@@ -4021,6 +4531,9 @@ watch(
 
     if (props.buildMode) {
       hideBuildGhost()
+    }
+    if (props.hazardMode) {
+      hideHazardGhost()
     }
   },
 )

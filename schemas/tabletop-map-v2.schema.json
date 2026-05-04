@@ -11,7 +11,10 @@
     "name": { "type": "string", "minLength": 1 },
     "folder": { "type": "string" },
     "dimensions": { "$ref": "#/$defs/dimensions" },
+    "groundLevelY": { "type": "integer", "minimum": 0 },
+    "playerVisible": { "type": "boolean" },
     "voxels": { "type": "array", "items": { "$ref": "#/$defs/voxel" } },
+    "hazards": { "type": "array", "items": { "$ref": "#/$defs/hazard" } },
     "placements": { "type": "array", "items": { "$ref": "#/$defs/placement" } },
     "lights": { "type": "array", "items": { "$ref": "#/$defs/light" } },
     "initiative": { "$ref": "#/$defs/initiative" },
@@ -53,6 +56,19 @@
         "blocksMovement": { "type": "boolean" },
         "blocksSight": { "type": "boolean" },
         "tags": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "hazard": {
+      "type": "object",
+      "required": ["kind", "x", "y", "z"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "enum": ["spikes", "toxic-spikes", "sticky-web", "stealth-rock", "fire"] },
+        "x": { "type": "integer" },
+        "y": { "type": "integer" },
+        "z": { "type": "integer" },
+        "layer": { "type": "integer", "minimum": 1, "maximum": 2 },
+        "owner": { "type": "string" }
       }
     },
     "placement": {

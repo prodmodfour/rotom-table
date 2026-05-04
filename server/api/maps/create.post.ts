@@ -75,6 +75,7 @@ export default defineEventHandler(async (event) => {
     placements: [],
     initiative: { activeId: null, round: 1 },
     voxels: [],
+    hazards: [],
     lights: [],
     createdAt: now,
     updatedAt: now,

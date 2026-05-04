@@ -179,6 +179,7 @@ export default defineEventHandler(async (event) => {
     groundLevelY: normalizeMapGroundLevelY(source.groundLevelY, source.dimensions?.y ?? 1),
     playerVisible: source.playerVisible === true,
     voxels: Array.isArray(source.voxels) ? source.voxels : [],
+    hazards: Array.isArray(source.hazards) ? source.hazards : [],
     placements: Array.isArray(source.placements) ? source.placements : [],
     lights: Array.isArray(source.lights) ? source.lights : [],
     initiative,
