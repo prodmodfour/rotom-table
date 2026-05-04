@@ -129,6 +129,7 @@ const normalizeMapDocument = (json: TabletopMapV2, filePath: string): TabletopMa
     folder: json.folder ?? folderFromPath(filePath),
     dimensions,
     groundLevelY: normalizeMapGroundLevelY(json.groundLevelY, dimensions.y),
+    playerVisible: json.playerVisible === true,
     voxels,
     placements: Array.isArray(json.placements) ? json.placements : [],
     lights: Array.isArray(json.lights) ? json.lights : [],
@@ -158,6 +159,17 @@ export const writeMapFile = (filePath: string, map: TabletopMap): void => {
   writeFileSync(filePath, JSON.stringify(out, null, 2) + '\n', 'utf8')
 }
 
+export const summarizeMap = (map: TabletopMap): MapSummary => ({
+  slug: map.slug,
+  name: map.name,
+  folder: map.folder ?? '',
+  dimensions: map.dimensions,
+  placementCount: map.placements?.length ?? 0,
+  playerVisible: map.playerVisible === true,
+  schemaVersion: map.schemaVersion,
+  updatedAt: map.updatedAt,
+})
+
 export const listMaps = (): MapSummary[] => {
   if (!existsSync(MAPS_ROOT)) return []
   const out: MapSummary[] = []
@@ -180,15 +192,7 @@ export const listMaps = (): MapSummary[] => {
         try {
           const raw = JSON.parse(readFileSync(full, 'utf8')) as TabletopMapV2
           const map = normalizeMapDocument(raw, full)
-          out.push({
-            slug: map.slug,
-            name: map.name,
-            folder: map.folder ?? rel,
-            dimensions: map.dimensions,
-            placementCount: map.placements?.length ?? 0,
-            schemaVersion: map.schemaVersion,
-            updatedAt: map.updatedAt,
-          })
+          out.push(summarizeMap({ ...map, folder: map.folder ?? rel }))
         } catch (err) {
           console.warn('[maps] failed to read', full, err)
         }

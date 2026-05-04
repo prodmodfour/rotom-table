@@ -46,6 +46,7 @@ import {
 import { tmpdir } from 'node:os'
 import { resolve as resolvePath, join as joinPath, sep } from 'node:path'
 import { defineEventHandler, readBody, createError } from 'h3'
+import { requireGm } from '../../utils/auth'
 
 import type { EncounterTable, RolledEncounter } from '~/types/encounterTable'
 
@@ -175,6 +176,7 @@ const runPokegen = (
   })
 
 export default defineEventHandler(async (event) => {
+  requireGm(event)
   const body = await readBody<GenerateBody>(event)
 
   const region = sanitizeNameComponent(String(body?.region ?? ''), 'region')

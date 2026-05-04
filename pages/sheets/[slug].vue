@@ -35,10 +35,12 @@ definePageMeta({
 })
 
 const route = useRoute()
+const { isGm, isPlayer } = useAuth()
 const slug = String(route.params.slug ?? '')
 const baseSheet = characterSheetsBySlug.get(slug) ?? null
+const canAccessBaseSheet = computed(() => Boolean(baseSheet && (!isPlayer.value || baseSheet.player === true)))
 
-const initialClone: CharacterSheet | null = baseSheet
+const initialClone: CharacterSheet | null = canAccessBaseSheet.value && baseSheet
   ? normalizeCharacterSheet(JSON.parse(JSON.stringify(baseSheet)) as CharacterSheet)
   : null
 
@@ -265,9 +267,10 @@ const setInheritedMove = (level: string, value: string | undefined) => {
               <span class="badge">
                 Lv <EditableCell v-model="sheet.level" type="number" :min="1" />
               </span>
-              <label class="badge player-toggle" :class="{ player: sheet.player }" title="Player">
+              <label v-if="isGm" class="badge player-toggle" :class="{ player: sheet.player }" title="Player">
                 <input v-model="sheet.player" type="checkbox" /> Player
               </label>
+              <span v-else-if="sheet.player" class="badge player-toggle player">Player</span>
               <label class="badge shiny-toggle" :class="{ shiny: sheet.shiny }" title="Shiny">
                 <input v-model="sheet.shiny" type="checkbox" /> ★ Shiny
               </label>

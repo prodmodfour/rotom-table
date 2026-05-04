@@ -5,6 +5,10 @@
  * empty folders on the map browser, mirroring `/api/sheets/folders`.
  */
 import { defineEventHandler } from 'h3'
+import { requireAuthRole } from '../../utils/auth'
 import { listMapFolders } from '../../utils/mapStorage'
 
-export default defineEventHandler(() => ({ folders: listMapFolders() }))
+export default defineEventHandler((event) => {
+  const role = requireAuthRole(event)
+  return { folders: role === 'player' ? [] : listMapFolders() }
+})

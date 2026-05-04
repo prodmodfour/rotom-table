@@ -22,6 +22,7 @@ useHead({ title: 'Maps · Rotom Table' })
 const route = useRoute()
 const router = useRouter()
 const clientId = getClientId()
+const { isGm, isPlayer } = useAuth()
 
 const maps = reactive<Map<string, MapSummary>>(new Map())
 const extraFolders = reactive(new Set<string>())
@@ -102,7 +103,10 @@ useRealtimeChannel('maps', (event) => {
   }
 })
 
-const items = computed(() => Array.from(maps.values()))
+const items = computed(() => {
+  const all = Array.from(maps.values())
+  return isPlayer.value ? all.filter((map) => map.playerVisible === true) : all
+})
 
 const allFolders = computed(() => {
   const set = new Set<string>()
@@ -206,6 +210,10 @@ const drag = ref<DragPayload | null>(null)
 const hoverTarget = ref<string | null>(null)
 
 const onMapDragStart = (e: DragEvent, item: MapSummary) => {
+  if (!isGm.value) {
+    e.preventDefault()
+    return
+  }
   drag.value = { type: 'map', slug: item.slug, from: item.folder }
   if (e.dataTransfer) {
     e.dataTransfer.effectAllowed = 'move'
@@ -214,7 +222,7 @@ const onMapDragStart = (e: DragEvent, item: MapSummary) => {
 }
 
 const onFolderDragStart = (e: DragEvent, path: string) => {
-  if (!path) {
+  if (!isGm.value || !path) {
     e.preventDefault()
     return
   }
@@ -242,7 +250,7 @@ const canDropPayloadOn = (d: DragPayload, targetPath: string): boolean => {
 }
 
 const canDropOn = (targetPath: string) =>
-  drag.value ? canDropPayloadOn(drag.value, targetPath) : false
+  isGm.value && drag.value ? canDropPayloadOn(drag.value, targetPath) : false
 
 const onDropEnter = (e: DragEvent, targetPath: string) => {
   if (!drag.value || !canDropOn(targetPath)) return
@@ -293,6 +301,7 @@ const performMove = async (d: DragPayload, targetPath: string) => {
 }
 
 const onDrop = async (e: DragEvent, targetPath: string) => {
+  if (!isGm.value) return
   e.preventDefault()
   e.stopPropagation()
   const d = drag.value
@@ -326,7 +335,7 @@ const nextFolderName = () => {
 }
 
 const createNewFolder = async () => {
-  if (creating.value) return
+  if (!isGm.value || creating.value) return
   const leaf = nextFolderName()
   const fullPath = currentPath.value ? `${currentPath.value}/${leaf}` : leaf
   creating.value = true
@@ -346,7 +355,7 @@ const createNewFolder = async () => {
 }
 
 const createNewMap = async () => {
-  if (creating.value) return
+  if (!isGm.value || creating.value) return
   creating.value = true
   createError.value = null
   try {
@@ -360,6 +369,7 @@ const createNewMap = async () => {
       folder: result.map.folder ?? '',
       dimensions: result.map.dimensions,
       placementCount: 0,
+      playerVisible: result.map.playerVisible === true,
       updatedAt: result.map.updatedAt,
     })
     router.push(`/maps/${result.map.slug}`)
@@ -388,6 +398,7 @@ const ctx = ref<CtxState | null>(null)
 const ctxInput = ref<HTMLInputElement | HTMLSelectElement | null>(null)
 
 const openContext = (e: MouseEvent, target: CtxTarget) => {
+  if (!isGm.value) return
   e.preventDefault()
   ctx.value = { x: e.clientX, y: e.clientY, target, mode: 'menu', input: '', busy: false, error: null }
 }
@@ -560,10 +571,13 @@ if (typeof window !== 'undefined') {
           separately under <code>/sheets</code> — maps only reference them, so
           a token's HP, sprite, or class shows up live on every map that
           has it placed.
-          <span class="drag-hint">
+          <span v-if="isGm" class="drag-hint">
             Click a map to open it. Drag cards or folders to organise them.
             Right-click anything for Move / Rename / Delete. Multiple tabs and
             devices stay in sync as you edit.
+          </span>
+          <span v-else class="drag-hint">
+            You are seeing only maps the GM has marked as player visible.
           </span>
         </p>
 
@@ -573,7 +587,7 @@ if (typeof window !== 'undefined') {
             <input v-model.trim="searchTerm" type="search" placeholder="Search map name…" />
           </label>
 
-          <div class="folder-actions">
+          <div v-if="isGm" class="folder-actions">
             <button
               type="button"
               class="action-btn"
@@ -634,7 +648,7 @@ if (typeof window !== 'undefined') {
             'drop-target': hoverTarget === folder.path,
             'drop-disabled': drag !== null && !canDropOn(folder.path),
           }"
-          draggable="true"
+          :draggable="isGm"
           @click="goToFolder(folder.path)"
           @contextmenu="openContext($event, { type: 'folder', tile: folder })"
           @dragstart="onFolderDragStart($event, folder.path)"
@@ -666,7 +680,7 @@ if (typeof window !== 'undefined') {
           :key="`map-${item.slug}`"
           :to="`/maps/${item.slug}`"
           class="map-card"
-          draggable="true"
+          :draggable="isGm"
           @contextmenu="openContext($event, { type: 'map', item })"
           @dragstart="onMapDragStart($event, item)"
           @dragend="onDragEnd"
@@ -680,6 +694,7 @@ if (typeof window !== 'undefined') {
               {{ item.dimensions.x }} × {{ item.dimensions.y }} × {{ item.dimensions.z }}
               · {{ item.placementCount }} token{{ item.placementCount === 1 ? '' : 's' }}
             </p>
+            <span v-if="isGm && item.playerVisible" class="map-card__badge">Player visible</span>
           </div>
         </NuxtLink>
       </div>
@@ -687,7 +702,12 @@ if (typeof window !== 'undefined') {
       <p v-else-if="loading" class="empty-state">Loading…</p>
       <p v-else-if="searchTerm" class="empty-state">Nothing matches that search.</p>
       <p v-else class="empty-state">
-        No maps yet. Click <strong>+ New map</strong> to start a tabletop.
+        <template v-if="isGm">
+          No maps yet. Click <strong>+ New map</strong> to start a tabletop.
+        </template>
+        <template v-else>
+          No player-visible maps yet.
+        </template>
       </p>
     </section>
 
@@ -1118,6 +1138,20 @@ select:focus {
   color: var(--ink-muted);
   font-size: 0.8rem;
   letter-spacing: 0.04em;
+}
+
+.map-card__badge {
+  display: inline-flex;
+  width: fit-content;
+  margin-top: 0.45rem;
+  border-radius: 999px;
+  padding: 0.18rem 0.55rem;
+  background: rgba(184, 187, 38, 0.12);
+  color: var(--good);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .empty-state {

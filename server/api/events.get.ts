@@ -10,9 +10,11 @@
  * proxies don't time it out.
  */
 import { defineEventHandler } from 'h3'
+import { requireAuthRole } from '../utils/auth'
 import { subscribeRealtime } from '../utils/realtime'
 
 export default defineEventHandler(async (event) => {
+  requireAuthRole(event)
   const res = event.node.res
   const req = event.node.req
 

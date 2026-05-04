@@ -43,6 +43,7 @@ definePageMeta({
 
 const route = useRoute()
 const router = useRouter()
+const { isGm, isPlayer } = useAuth()
 const slug = String(route.params.slug ?? '')
 
 const { map, status, error, renamedTo } = useEditableMap(slug)
@@ -68,6 +69,9 @@ const initiativeCollapsed = ref(false)
 const adminPanelOpen = ref(false)
 
 const buildMode = ref(false)
+const canEditMap = computed(() => isGm.value)
+const canManageInitiative = computed(() => isGm.value)
+const canSpawnTokens = computed(() => isGm.value)
 const buildTool = ref<BuildTool>('pencil')
 const buildMaterial = ref<VoxelMaterial>('airship_floor_metal')
 const buildColor = ref<string | null>(null)
@@ -92,6 +96,19 @@ const sheetLookup = computed(() => ({
 
 const spawnedPokemon = computed(() => placementsToSpawned(map.value, sheetLookup.value))
 const mapVoxels = computed<MapVoxelV2[]>(() => map.value?.voxels ?? [])
+const canViewMap = computed(() => !map.value || !isPlayer.value || map.value.playerVisible === true)
+const controllablePlacementIds = computed(() => {
+  if (!map.value) return []
+  if (isGm.value) return map.value.placements.map((placement) => placement.id)
+  return map.value.placements
+    .filter((placement) => {
+      const sheets = placement.sheetKind === 'pokemon' ? pokemonBySlug.value : trainerBySlug.value
+      return sheets?.get(placement.sheetSlug)?.player === true
+    })
+    .map((placement) => placement.id)
+})
+const controllablePlacementIdSet = computed(() => new Set(controllablePlacementIds.value))
+const canControlPlacement = (id: string): boolean => controllablePlacementIdSet.value.has(id)
 const voxelCount = computed(() => mapVoxels.value.length)
 
 const clampGroundLevelY = (value: unknown, height: number): number => {
@@ -112,7 +129,7 @@ const mapSpecificYMax = computed(() =>
 )
 
 const setGroundLevelY = (event: Event) => {
-  if (!map.value) return
+  if (!map.value || !canEditMap.value) return
   map.value.groundLevelY = clampGroundLevelY(
     (event.target as HTMLInputElement).value,
     map.value.dimensions.y,
@@ -120,6 +137,7 @@ const setGroundLevelY = (event: Event) => {
 }
 
 const handleAdminShortcut = (event: KeyboardEvent) => {
+  if (!isGm.value) return
   if (event.ctrlKey && event.shiftKey && event.key.toLowerCase() === 'a') {
     event.preventDefault()
     adminPanelOpen.value = !adminPanelOpen.value
@@ -137,6 +155,23 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', handleAdminShortcut)
+})
+
+watch(
+  [() => map.value?.slug, isPlayer],
+  () => {
+    if (map.value && isPlayer.value && map.value.playerVisible !== true) {
+      void router.replace('/maps')
+    }
+  },
+  { immediate: true },
+)
+
+watch(isGm, (gm) => {
+  if (gm) return
+  buildMode.value = false
+  adminPanelOpen.value = false
+  if (selectedId.value && !canControlPlacement(selectedId.value)) selectPokemon(null)
 })
 
 type InitiativeKind = 'pokemon' | 'trainer'
@@ -310,6 +345,7 @@ const focusInitiativeEntry = (id: string) => {
 }
 
 const setActiveInitiative = (id: string) => {
+  if (!canManageInitiative.value) return
   const state = ensureInitiativeState()
   if (!state) return
   state.activeId = id
@@ -321,6 +357,7 @@ const setActiveInitiativeAndFocus = (id: string) => {
 }
 
 const setInitiativeInput = (id: string, event: Event) => {
+  if (!canManageInitiative.value) return
   const placement = placementById(id)
   if (!placement) return
   const raw = (event.target as HTMLInputElement).value.trim()
@@ -334,6 +371,7 @@ const setInitiativeInput = (id: string, event: Event) => {
 }
 
 const setInitiativeFromSpeed = (id: string, speed: number) => {
+  if (!canManageInitiative.value) return
   const placement = placementById(id)
   if (!placement) return
   if (!Number.isFinite(speed)) return
@@ -341,6 +379,7 @@ const setInitiativeFromSpeed = (id: string, speed: number) => {
 }
 
 const setInitiativeRound = (event: Event) => {
+  if (!canManageInitiative.value) return
   const state = ensureInitiativeState()
   if (!state) return
   const raw = (event.target as HTMLInputElement).value.trim()
@@ -353,7 +392,7 @@ const setInitiativeRound = (event: Event) => {
 }
 
 const fillInitiativeFromSpeed = () => {
-  if (!map.value) return
+  if (!map.value || !canManageInitiative.value) return
   const speeds = new Map(initiativeRows.value.map((entry) => [entry.id, entry.speed]))
   for (const placement of map.value.placements) {
     const speed = speeds.get(placement.id)
@@ -362,7 +401,7 @@ const fillInitiativeFromSpeed = () => {
 }
 
 const clearInitiativeValues = () => {
-  if (!map.value) return
+  if (!map.value || !canManageInitiative.value) return
   for (const placement of map.value.placements) delete placement.initiative
   const state = ensureInitiativeState()
   if (state) {
@@ -372,11 +411,12 @@ const clearInitiativeValues = () => {
 }
 
 const clearActiveInitiative = () => {
-  if (!map.value?.initiative) return
+  if (!map.value?.initiative || !canManageInitiative.value) return
   map.value.initiative.activeId = null
 }
 
 const nextInitiative = () => {
+  if (!canManageInitiative.value) return
   const order = sortedInitiativeRows.value
   if (!order.length) return
   const state = ensureInitiativeState()
@@ -390,6 +430,7 @@ const nextInitiative = () => {
 }
 
 const previousInitiative = () => {
+  if (!canManageInitiative.value) return
   const order = sortedInitiativeRows.value
   if (!order.length) return
   const state = ensureInitiativeState()
@@ -403,7 +444,7 @@ const previousInitiative = () => {
 }
 
 const spawnSheet = (selection: SheetSelection) => {
-  if (!map.value) return
+  if (!map.value || !canSpawnTokens.value) return
   const catalog =
     selection.kind === 'pokemon'
       ? catalogEntryForPokemonSheet(selection.sheet)
@@ -435,26 +476,27 @@ const spawnSheet = (selection: SheetSelection) => {
 
 const selectPokemon = (id: string | null) => {
   if (buildMode.value) return
+  if (id && !canControlPlacement(id)) return
   selectedId.value = id
   if (!id) previewState.value = { position: null, reachable: false, pathLength: 0 }
 }
 
 const deletePokemon = (id: string) => {
-  if (!map.value) return
+  if (!map.value || !isGm.value || !canControlPlacement(id)) return
   map.value.placements = map.value.placements.filter((p) => p.id !== id)
   if (map.value.initiative?.activeId === id) map.value.initiative.activeId = null
   if (selectedId.value === id) selectPokemon(null)
 }
 
 const turnPokemon = (id: string) => {
-  if (!map.value) return
+  if (!map.value || !canControlPlacement(id)) return
   const placement = map.value.placements.find((p) => p.id === id)
   if (!placement) return
   placement.turned = !placement.turned
 }
 
 const movePokemon = (payload: { id: string; position: GridAnchor }) => {
-  if (!map.value) return
+  if (!map.value || !canControlPlacement(payload.id)) return
   const placement = map.value.placements.find((p) => p.id === payload.id)
   if (!placement) return
   placement.position = payload.position
@@ -462,7 +504,7 @@ const movePokemon = (payload: { id: string; position: GridAnchor }) => {
 }
 
 const modifyHp = async (payload: { id: string; currentHp: number }) => {
-  if (!map.value) return
+  if (!map.value || !canControlPlacement(payload.id)) return
   const placement = map.value.placements.find((p) => p.id === payload.id)
   if (!placement) return
 
@@ -514,7 +556,7 @@ const modifyHp = async (payload: { id: string; currentHp: number }) => {
 }
 
 const modifyCombatStages = async (payload: { id: string; stages: CombatStageMap }) => {
-  if (!map.value) return
+  if (!map.value || !canControlPlacement(payload.id)) return
   const placement = map.value.placements.find((p) => p.id === payload.id)
   if (!placement) return
 
@@ -580,7 +622,7 @@ const updatePreview = (next: PreviewState) => {
 }
 
 const placeVoxel = (voxel: MapVoxelV2) => {
-  if (!map.value) return
+  if (!map.value || !canEditMap.value) return
   const next = map.value.voxels.filter(
     (v) => !(v.x === voxel.x && v.y === voxel.y && v.z === voxel.z),
   )
@@ -589,13 +631,14 @@ const placeVoxel = (voxel: MapVoxelV2) => {
 }
 
 const removeVoxel = (cell: { x: number; y: number; z: number }) => {
-  if (!map.value) return
+  if (!map.value || !canEditMap.value) return
   map.value.voxels = map.value.voxels.filter(
     (v) => !(v.x === cell.x && v.y === cell.y && v.z === cell.z),
   )
 }
 
 const setMode = (mode: 'play' | 'build') => {
+  if (mode === 'build' && !canEditMap.value) return
   const next = mode === 'build'
   if (buildMode.value === next) return
   buildMode.value = next
@@ -606,26 +649,29 @@ const setMode = (mode: 'play' | 'build') => {
 }
 
 const selectMaterial = (material: VoxelMaterial) => {
-  if (!materialCanBeBuilt(getMaterialDef(material))) return
+  if (!canEditMap.value || !materialCanBeBuilt(getMaterialDef(material))) return
   buildMaterial.value = material
   buildColor.value = null
 }
 
 const setTool = (tool: BuildTool) => {
+  if (!canEditMap.value) return
   buildTool.value = tool
 }
 
 const handleColorInput = (event: Event) => {
+  if (!canEditMap.value) return
   const value = (event.target as HTMLInputElement).value
   buildColor.value = value
 }
 
 const clearCustomColor = () => {
+  if (!canEditMap.value) return
   buildColor.value = null
 }
 
 const fillGround = () => {
-  if (!map.value) return
+  if (!map.value || !canEditMap.value) return
   const dims = map.value.dimensions
   const voxelOccupancy = buildAllVoxelOccupancy(mapVoxels.value)
   const mapOccupancy = buildMapOccupancy({
@@ -649,7 +695,7 @@ const fillGround = () => {
 }
 
 const clearAllVoxels = () => {
-  if (!map.value) return
+  if (!map.value || !canEditMap.value) return
   if (!map.value.voxels.length) return
   const ok = window.confirm(
     `Remove all ${map.value.voxels.length} terrain blocks? This cannot be undone.`,
@@ -708,6 +754,13 @@ watch(
     if (!validInitiativeIds.value.has(activeId)) map.value.initiative.activeId = null
   },
 )
+
+watch(
+  () => [selectedId.value, controllablePlacementIds.value.join('|')] as const,
+  ([id]) => {
+    if (id && !canControlPlacement(id)) selectPokemon(null)
+  },
+)
 </script>
 
 <template>
@@ -750,7 +803,7 @@ watch(
           />
         </div>
 
-        <section v-if="map" class="panel-card">
+        <section v-if="map && canViewMap" class="panel-card">
         <div class="panel-heading">
           <h2>{{ map.name }}</h2>
           <span class="badge">
@@ -758,29 +811,37 @@ watch(
           </span>
         </div>
 
+        <label v-if="isGm" class="visibility-toggle" :class="{ active: map.playerVisible }">
+          <input v-model="map.playerVisible" type="checkbox" />
+          Player visible
+        </label>
+        <p v-else class="permission-note">
+          Player view: this map is visible, but GM-only map settings are locked.
+        </p>
+
         <div class="dimension-grid">
           <label>
             <span>Width (X)</span>
-            <input v-model.number="map.dimensions.x" type="number" min="1" max="200" />
+            <input v-model.number="map.dimensions.x" type="number" min="1" max="200" :disabled="!canEditMap" />
           </label>
           <label>
             <span>Height (Y)</span>
-            <input v-model.number="map.dimensions.y" type="number" min="1" max="200" />
+            <input v-model.number="map.dimensions.y" type="number" min="1" max="200" :disabled="!canEditMap" />
           </label>
           <label>
             <span>Depth (Z)</span>
-            <input v-model.number="map.dimensions.z" type="number" min="1" max="200" />
+            <input v-model.number="map.dimensions.z" type="number" min="1" max="200" :disabled="!canEditMap" />
           </label>
         </div>
       </section>
 
-      <section v-if="map" class="panel-card terrain-panel">
+      <section v-if="map && canViewMap" class="panel-card terrain-panel">
         <div class="panel-heading">
           <h2>Terrain</h2>
           <span class="badge">{{ voxelCount }} block{{ voxelCount === 1 ? '' : 's' }}</span>
         </div>
 
-        <div class="mode-row" role="group" aria-label="Editor mode">
+        <div v-if="canEditMap" class="mode-row" role="group" aria-label="Editor mode">
           <button
             type="button"
             class="mode-button"
@@ -800,8 +861,11 @@ watch(
             Build
           </button>
         </div>
+        <p v-else class="permission-note">
+          Terrain editing is GM-only.
+        </p>
 
-        <template v-if="buildMode">
+        <template v-if="buildMode && canEditMap">
           <div class="tool-row" role="group" aria-label="Build tool">
             <button
               type="button"
@@ -902,26 +966,28 @@ watch(
         </template>
       </section>
 
-        <SheetBrowser v-if="map" @select="spawnSheet" />
+        <SheetBrowser v-if="map && canSpawnTokens" @select="spawnSheet" />
       </div>
     </aside>
 
     <main class="scene-column">
       <ClientOnly>
         <IsometricGrid
-          v-if="map"
+          v-if="map && canViewMap"
           ref="gridRef"
           :dimensions="map.dimensions"
           :pokemons="spawnedPokemon"
           :selected-id="selectedId"
+          :controllable-ids="controllablePlacementIds"
           :active-turn-id="activeInitiativeId"
           :voxels="mapVoxels"
           :ground-level-y="mapGroundLevelY"
           :layer-visibility="layerVisibility"
-          :build-mode="buildMode"
+          :build-mode="buildMode && canEditMap"
           :build-tool="buildTool"
           :build-material="buildMaterial"
           :build-color="buildColor"
+          :can-delete-tokens="isGm"
           @select-pokemon="selectPokemon"
           @move-pokemon="movePokemon"
           @turn-pokemon="turnPokemon"
@@ -972,7 +1038,7 @@ watch(
         v-show="!initiativeCollapsed"
         class="initiative-content"
       >
-        <section v-if="map" class="panel-card initiative-panel">
+        <section v-if="map && canViewMap" class="panel-card initiative-panel">
           <div class="panel-heading initiative-heading">
             <div class="initiative-title-block">
               <h2>Initiative</h2>
@@ -983,6 +1049,7 @@ watch(
                   min="1"
                   :value="initiativeRound"
                   aria-label="Initiative round"
+                  :disabled="!canManageInitiative"
                   @input="setInitiativeRound"
                 />
               </label>
@@ -996,7 +1063,7 @@ watch(
             <button
               type="button"
               class="initiative-action"
-              :disabled="!initiativeRows.length"
+              :disabled="!initiativeRows.length || !canManageInitiative"
               @click="previousInitiative"
             >
               Previous
@@ -1004,7 +1071,7 @@ watch(
             <button
               type="button"
               class="initiative-action initiative-action--primary"
-              :disabled="!initiativeRows.length"
+              :disabled="!initiativeRows.length || !canManageInitiative"
               @click="nextInitiative"
             >
               {{ activeInitiativeId ? 'Next turn' : 'Start' }}
@@ -1015,7 +1082,7 @@ watch(
             <button
               type="button"
               class="initiative-tool"
-              :disabled="!initiativeRows.length"
+              :disabled="!initiativeRows.length || !canManageInitiative"
               @click="fillInitiativeFromSpeed"
             >
               Use All Speed
@@ -1023,7 +1090,7 @@ watch(
             <button
               type="button"
               class="initiative-tool"
-              :disabled="!activeInitiativeId"
+              :disabled="!activeInitiativeId || !canManageInitiative"
               @click="clearActiveInitiative"
             >
               Clear turn
@@ -1031,7 +1098,7 @@ watch(
             <button
               type="button"
               class="initiative-tool initiative-tool--danger"
-              :disabled="!hasInitiativeValues && !activeInitiativeId"
+              :disabled="(!hasInitiativeValues && !activeInitiativeId) || !canManageInitiative"
               @click="clearInitiativeValues"
             >
               Reset
@@ -1055,6 +1122,7 @@ watch(
                 :class="{ 'is-active': activeInitiativeId === entry.id }"
                 :aria-pressed="activeInitiativeId === entry.id"
                 :aria-label="`Set ${entry.name} as the current turn`"
+                :disabled="!canManageInitiative"
                 @click="setActiveInitiativeAndFocus(entry.id)"
               >
                 <span class="initiative-row__sprite" aria-hidden="true">
@@ -1104,6 +1172,7 @@ watch(
                     :value="entry.initiative ?? ''"
                     placeholder="—"
                     :aria-label="`${entry.name} initiative`"
+                    :disabled="!canManageInitiative"
                     @input="setInitiativeInput(entry.id, $event)"
                   />
                 </label>
@@ -1112,6 +1181,7 @@ watch(
                   class="initiative-row__speed-button"
                   :title="`Set initiative to Speed (${entry.speed})`"
                   :aria-label="`Use ${entry.name}'s Speed (${entry.speed}) for initiative`"
+                  :disabled="!canManageInitiative"
                   @click="setInitiativeFromSpeed(entry.id, entry.speed)"
                 >
                   Use Speed
@@ -1128,7 +1198,7 @@ watch(
     </aside>
 
     <div
-      v-if="map && adminPanelOpen"
+      v-if="map && isGm && adminPanelOpen"
       class="admin-panel-backdrop"
       role="presentation"
       @pointerdown.self="adminPanelOpen = false"
@@ -1438,6 +1508,41 @@ watch(
   white-space: nowrap;
 }
 
+.visibility-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  width: fit-content;
+  margin: 0 0 0.85rem;
+  border: 1px solid var(--rule-soft);
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--ink-soft);
+  padding: 0.35rem 0.7rem;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.visibility-toggle.active {
+  border-color: rgba(184, 187, 38, 0.55);
+  background: rgba(184, 187, 38, 0.12);
+  color: var(--good);
+}
+
+.visibility-toggle input {
+  width: auto;
+}
+
+.permission-note {
+  margin: 0;
+  color: var(--ink-muted);
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
 .dimension-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1470,6 +1575,11 @@ input {
 input:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 2px rgba(250, 189, 47, 0.18);
+}
+
+input:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
 }
 
 .terrain-panel {

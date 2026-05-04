@@ -9,6 +9,7 @@
 import { unlinkSync } from 'node:fs'
 import { createError, defineEventHandler, readBody } from 'h3'
 import { publishRealtime } from '../../utils/realtime'
+import { requireGm } from '../../utils/auth'
 import {
   PROJECT_ROOT,
   SLUG_RE,
@@ -22,6 +23,7 @@ interface DeleteBody {
 }
 
 export default defineEventHandler(async (event) => {
+  requireGm(event)
   const body = await readBody<DeleteBody>(event)
   const slug = String(body?.slug ?? '')
   if (!SLUG_RE.test(slug)) {

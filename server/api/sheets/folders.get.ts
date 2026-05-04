@@ -14,6 +14,7 @@
 import { existsSync, readdirSync } from 'node:fs'
 import { resolve as resolvePath, join as joinPath } from 'node:path'
 import { defineEventHandler, createError } from 'h3'
+import { requireAuthRole } from '../../utils/auth'
 
 const PROJECT_ROOT = resolvePath(process.cwd())
 const ROOTS = [
@@ -45,7 +46,10 @@ const walkDirs = (root: string): string[] => {
   return out
 }
 
-export default defineEventHandler(() => {
+export default defineEventHandler((event) => {
+  const role = requireAuthRole(event)
+  if (role === 'player') return { folders: [] }
+
   if (process.env.NODE_ENV === 'production') {
     throw createError({ statusCode: 403, statusMessage: 'Disabled in production' })
   }

@@ -10,6 +10,7 @@ import { existsSync, mkdirSync } from 'node:fs'
 import { join, sep } from 'node:path'
 import { createError, defineEventHandler, readBody } from 'h3'
 import { publishRealtime } from '../../utils/realtime'
+import { requireGm } from '../../utils/auth'
 import { MAPS_ROOT, PROJECT_ROOT, sanitizeFolderPath } from '../../utils/mapStorage'
 
 interface CreateFolderBody {
@@ -18,6 +19,7 @@ interface CreateFolderBody {
 }
 
 export default defineEventHandler(async (event) => {
+  requireGm(event)
   const body = await readBody<CreateFolderBody>(event)
   let folder = ''
   try {

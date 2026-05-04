@@ -26,6 +26,7 @@ import {
 } from 'node:fs'
 import { resolve as resolvePath, join as joinPath, dirname, sep } from 'node:path'
 import { defineEventHandler, readBody, createError } from 'h3'
+import { requireGm } from '../../utils/auth'
 
 interface MoveFolderBody {
   from?: string
@@ -69,6 +70,7 @@ const pruneEmptyParents = (path: string, root: string) => {
 }
 
 export default defineEventHandler(async (event) => {
+  requireGm(event)
   if (process.env.NODE_ENV === 'production') {
     throw createError({ statusCode: 403, statusMessage: 'Disabled in production' })
   }

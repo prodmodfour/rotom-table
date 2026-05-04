@@ -58,10 +58,12 @@ definePageMeta({
 })
 
 const route = useRoute()
+const { isGm, isPlayer } = useAuth()
 const slug = String(route.params.slug ?? '')
 const baseSheet = trainerSheetsBySlug.get(slug) ?? null
+const canAccessBaseSheet = computed(() => Boolean(baseSheet && (!isPlayer.value || baseSheet.player === true)))
 
-const initialClone: TrainerSheet | null = baseSheet
+const initialClone: TrainerSheet | null = canAccessBaseSheet.value && baseSheet
   ? normalizeTrainerSheet(JSON.parse(JSON.stringify(baseSheet)) as TrainerSheet)
   : null
 
@@ -391,9 +393,10 @@ const clearPortrait = () => {
             Played by
             <strong><EditableCell v-model="sheet.playedBy" placeholder="—" /></strong>
           </p>
-          <label class="player-toggle" :class="{ active: sheet.player }" title="Player">
+          <label v-if="isGm" class="player-toggle" :class="{ active: sheet.player }" title="Player">
             <input v-model="sheet.player" type="checkbox" /> Player
           </label>
+          <span v-else-if="sheet.player" class="player-toggle active">Player</span>
         </div>
         <div class="identity-vitals">
           <div class="vital">

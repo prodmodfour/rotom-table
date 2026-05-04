@@ -14,6 +14,7 @@
 import { createError, defineEventHandler, readBody } from 'h3'
 import { join } from 'node:path'
 import { publishRealtime } from '../../utils/realtime'
+import { requireGm } from '../../utils/auth'
 import {
   MAPS_ROOT,
   allocateSlug,
@@ -39,6 +40,7 @@ const clamp = (value: unknown, fallback: number) => {
 }
 
 export default defineEventHandler(async (event) => {
+  requireGm(event)
   const body = await readBody<CreateBody>(event)
   const name = String(body?.name ?? '').trim() || 'Untitled Map'
   if (name.length > 80) {
@@ -69,6 +71,7 @@ export default defineEventHandler(async (event) => {
     folder,
     dimensions,
     groundLevelY: 0,
+    playerVisible: false,
     placements: [],
     initiative: { activeId: null, round: 1 },
     voxels: [],
@@ -92,6 +95,7 @@ export default defineEventHandler(async (event) => {
       folder: map.folder ?? '',
       dimensions: map.dimensions,
       placementCount: 0,
+      playerVisible: map.playerVisible === true,
       schemaVersion: map.schemaVersion,
       updatedAt: map.updatedAt,
     },

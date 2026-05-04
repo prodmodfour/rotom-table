@@ -21,6 +21,8 @@ useHead({
   title: 'Sheets · Rotom Table',
 })
 
+const { isGm, isPlayer } = useAuth()
+
 // ---------------------------------------------------------------------------
 // Item model
 // ---------------------------------------------------------------------------
@@ -116,6 +118,7 @@ const isInsideDeletedFolder = (folder: string): boolean => {
 const items = computed<SheetItem[]>(() => {
   const out: SheetItem[] = []
   for (const item of baseItems.value) {
+    if (isPlayer.value && item.sheet.player !== true) continue
     if (isDeletedSheet(item.kind, item.slug)) continue
     const folder = resolveFolder(item)
     if (isInsideDeletedFolder(folder)) continue
@@ -164,9 +167,11 @@ const resolvedExtras = computed(() => {
 const allFolders = computed(() => {
   const set = new Set<string>()
   for (const item of items.value) if (item.folder) set.add(item.folder)
-  for (const path of resolvedExtras.value) {
-    if (isInsideDeletedFolder(path)) continue
-    set.add(path)
+  if (isGm.value) {
+    for (const path of resolvedExtras.value) {
+      if (isInsideDeletedFolder(path)) continue
+      set.add(path)
+    }
   }
   for (const deleted of deletedFolders) {
     set.delete(deleted)
@@ -287,7 +292,7 @@ const visibleFolders = computed<FolderTile[]>(() => {
 })
 
 // Counts shown in the intro badge.
-const totalCount = computed(() => baseItems.value.length)
+const totalCount = computed(() => items.value.length)
 const filteredCount = computed(() => {
   const query = normalize(searchTerm.value)
   if (!query) return totalCount.value
@@ -304,7 +309,7 @@ const hasAnything = computed(
 // via `/api/sheets/move(-folder)` which write to disk.
 // ---------------------------------------------------------------------------
 
-const canDrag = import.meta.dev
+const canDrag = computed(() => import.meta.dev && isGm.value)
 
 interface DragSheet {
   type: 'sheet'
@@ -332,7 +337,7 @@ const isDraggingFolder = (path: string): boolean =>
   drag.value?.type === 'folder' && drag.value.path === path
 
 const onSheetDragStart = (e: DragEvent, item: SheetItem) => {
-  if (!canDrag) return
+  if (!canDrag.value) return
   drag.value = { type: 'sheet', kind: item.kind, slug: item.slug, from: item.folder }
   if (e.dataTransfer) {
     e.dataTransfer.effectAllowed = 'move'
@@ -342,7 +347,7 @@ const onSheetDragStart = (e: DragEvent, item: SheetItem) => {
 }
 
 const onFolderDragStart = (e: DragEvent, path: string) => {
-  if (!canDrag || !path) {
+  if (!canDrag.value || !path) {
     e.preventDefault()
     return
   }
@@ -376,7 +381,7 @@ const canDropPayloadOn = (d: DragPayload, targetPath: string): boolean => {
 
 const canDropOn = (targetPath: string): boolean => {
   const d = drag.value
-  return d ? canDropPayloadOn(d, targetPath) : false
+  return canDrag.value && d ? canDropPayloadOn(d, targetPath) : false
 }
 
 const onDropEnter = (e: DragEvent, targetPath: string) => {
@@ -415,6 +420,7 @@ const performMove = async (d: DragPayload, targetPath: string) => {
 }
 
 const onDrop = async (e: DragEvent, targetPath: string) => {
+  if (!canDrag.value) return
   e.preventDefault()
   e.stopPropagation()
   const d = drag.value
@@ -454,6 +460,7 @@ const creatingSheet = ref(false)
 const sheetCreateError = ref<string | null>(null)
 
 const toggleSheetMenu = () => {
+  if (!canDrag.value) return
   sheetMenuOpen.value = !sheetMenuOpen.value
 }
 
@@ -466,7 +473,7 @@ const closeSheetMenu = () => {
  *  `characterSheets` / `trainerSheets` globs with the new file in place — a
  *  client-side `router.push` would race the HMR and land on "Sheet not found". */
 const createSheet = async (kind: 'pokemon' | 'trainer') => {
-  if (creatingSheet.value) return
+  if (!canDrag.value || creatingSheet.value) return
   closeSheetMenu()
   creatingSheet.value = true
   sheetCreateError.value = null
@@ -496,7 +503,7 @@ const nextFolderName = (): string => {
 }
 
 const createNewFolder = async () => {
-  if (creating.value) return
+  if (!canDrag.value || creating.value) return
   const leaf = nextFolderName()
   const fullPath = currentPath.value ? `${currentPath.value}/${leaf}` : leaf
   creating.value = true
@@ -538,7 +545,7 @@ const ctx = ref<CtxState | null>(null)
 const ctxInput = ref<HTMLInputElement | HTMLSelectElement | null>(null)
 
 const openContext = (e: MouseEvent, target: CtxTarget) => {
-  if (!canDrag) return
+  if (!canDrag.value) return
   e.preventDefault()
   ctx.value = {
     x: e.clientX,
@@ -708,7 +715,7 @@ const submitContext = async () => {
 // On mount (client only) seed extraFolders from on-disk dirs so empty
 // folders persist across reloads.
 onMounted(async () => {
-  if (!canDrag) return
+  if (!canDrag.value) return
   try {
     const data = await $fetch<{ folders: string[] }>('/api/sheets/folders')
     for (const f of data.folders) extraFolders.add(f)
@@ -747,6 +754,9 @@ onMounted(async () => {
             another folder (or breadcrumb) to move it. Right-click anything
             for Move / Rename / Delete — changes are written straight back
             to disk.
+          </span>
+          <span v-else class="drag-hint">
+            You are seeing only sheets marked as player accessible.
           </span>
         </p>
 
@@ -946,8 +956,13 @@ onMounted(async () => {
         Nothing matches that search.
       </p>
       <p v-else class="empty-state">
-        This folder is empty. Drag a sheet here from another folder or use
-        <strong>+ New folder</strong> to add a subfolder.
+        <template v-if="canDrag">
+          This folder is empty. Drag a sheet here from another folder or use
+          <strong>+ New folder</strong> to add a subfolder.
+        </template>
+        <template v-else>
+          No player-accessible sheets in this folder.
+        </template>
       </p>
     </section>
 

@@ -16,6 +16,7 @@ import { existsSync, renameSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { createError, defineEventHandler, readBody } from 'h3'
 import { publishRealtime } from '../../utils/realtime'
+import { requireGm } from '../../utils/auth'
 import {
   PROJECT_ROOT,
   SLUG_RE,
@@ -23,6 +24,7 @@ import {
   findMapFile,
   readMapFile,
   slugify,
+  summarizeMap,
   writeMapFile,
 } from '../../utils/mapStorage'
 
@@ -33,6 +35,7 @@ interface RenameBody {
 }
 
 export default defineEventHandler(async (event) => {
+  requireGm(event)
   const body = await readBody<RenameBody>(event)
   const slug = String(body?.slug ?? '')
   if (!SLUG_RE.test(slug)) {
@@ -74,15 +77,7 @@ export default defineEventHandler(async (event) => {
   map.updatedAt = Date.now()
   writeMapFile(newPath, map)
 
-  const summary = {
-    slug: map.slug,
-    name: map.name,
-    folder: map.folder ?? '',
-    dimensions: map.dimensions,
-    placementCount: map.placements?.length ?? 0,
-    schemaVersion: map.schemaVersion,
-    updatedAt: map.updatedAt,
-  }
+  const summary = summarizeMap(map)
 
   if (newSlug !== slug) {
     publishRealtime({

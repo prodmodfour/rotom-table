@@ -114,6 +114,9 @@ export const useEditableMap = (slug: string, debounceMs = 200): UseEditableMapRe
     if (next.groundLevelY === undefined) delete target.groundLevelY
     else target.groundLevelY = next.groundLevelY
 
+    if (next.playerVisible === undefined) delete target.playerVisible
+    else target.playerVisible = next.playerVisible
+
     assignIfChanged(target, 'voxels', next.voxels)
     assignIfChanged(target, 'placements', next.placements)
     assignIfChanged(target, 'lights', next.lights)

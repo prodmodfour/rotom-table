@@ -38,6 +38,7 @@ const props = defineProps<{
   dimensions: GridDimensions
   pokemons: SpawnedPokemon[]
   selectedId: string | null
+  controllableIds?: string[]
   activeTurnId?: string | null
   voxels: MapVoxelV2[]
   groundLevelY?: number
@@ -46,6 +47,7 @@ const props = defineProps<{
   buildTool: BuildTool
   buildMaterial: VoxelMaterial
   buildColor: string | null
+  canDeleteTokens?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -1327,6 +1329,11 @@ const damageDialogMultiplierTone = computed(() => {
 const damageDialogMultiplierLabel = computed(() =>
   formatMultiplier(damageDialogMultiplier.value),
 )
+
+const controllableIdSet = computed(() => new Set(props.controllableIds ?? props.pokemons.map((pokemon) => pokemon.id)))
+const canControlPokemon = (id: string | null | undefined): id is string =>
+  Boolean(id && controllableIdSet.value.has(id))
+
 const selectedPokemon = computed(
   () => props.pokemons.find((pokemon) => pokemon.id === props.selectedId) ?? null,
 )
@@ -3130,7 +3137,7 @@ const closeContextMenu = () => {
 }
 
 const openContextMenu = (event: MouseEvent, id: string) => {
-  if (!container.value) {
+  if (!canControlPokemon(id) || !container.value) {
     return
   }
 
@@ -3150,7 +3157,7 @@ const openContextMenu = (event: MouseEvent, id: string) => {
 }
 
 const handleContextTurn = () => {
-  if (!contextMenu.value) {
+  if (!contextMenu.value || !canControlPokemon(contextMenu.value.id)) {
     return
   }
 
@@ -3163,7 +3170,7 @@ const closeHpDialog = () => {
 }
 
 const handleContextModifyHp = () => {
-  if (!contextMenu.value) {
+  if (!contextMenu.value || !canControlPokemon(contextMenu.value.id)) {
     return
   }
 
@@ -3189,7 +3196,7 @@ const handleContextModifyHp = () => {
 }
 
 const handleHpDialogSubmit = () => {
-  if (!hpDialog.value) return
+  if (!hpDialog.value || !canControlPokemon(hpDialog.value.id)) return
   if (hpDialogDelta.value === 0) return
   if (hpDialogPreview.value === hpDialog.value.currentHp) {
     closeHpDialog()
@@ -3205,7 +3212,7 @@ const closeCombatStagesDialog = () => {
 }
 
 const handleContextModifyCombatStages = () => {
-  if (!contextMenu.value) {
+  if (!contextMenu.value || !canControlPokemon(contextMenu.value.id)) {
     return
   }
 
@@ -3238,7 +3245,7 @@ const normalizeCombatStageInput = (key: CombatStageKey) => {
 }
 
 const handleCombatStagesDialogSubmit = () => {
-  if (!combatStagesDialog.value) return
+  if (!combatStagesDialog.value || !canControlPokemon(combatStagesDialog.value.id)) return
   const stages = normalizeCombatStages(combatStagesDialog.value.stages)
   combatStagesDialog.value.stages = { ...stages }
   if (!combatStagesDialogChanged.value) {
@@ -3255,7 +3262,7 @@ const closeDamageDialog = () => {
 }
 
 const handleContextDealDamage = () => {
-  if (!contextMenu.value) {
+  if (!contextMenu.value || !canControlPokemon(contextMenu.value.id)) {
     return
   }
 
@@ -3309,7 +3316,7 @@ const handleDamageDialogRoll = () => {
 }
 
 const handleDamageDialogSubmit = () => {
-  if (!damageDialog.value) return
+  if (!damageDialog.value || !canControlPokemon(damageDialog.value.id)) return
   if (damageDialogRawAmount.value === 0) return
   if (damageDialogPreview.value === damageDialog.value.currentHp) {
     closeDamageDialog()
@@ -3321,7 +3328,7 @@ const handleDamageDialogSubmit = () => {
 }
 
 const handleContextDelete = () => {
-  if (!contextMenu.value) {
+  if (!props.canDeleteTokens || !contextMenu.value || !canControlPokemon(contextMenu.value.id)) {
     return
   }
 
@@ -3334,10 +3341,15 @@ const handleLeftClick = (event: PointerEvent) => {
   const hitId = pickPokemonId(event)
 
   if (!props.selectedId) {
-    if (hitId) {
+    if (canControlPokemon(hitId)) {
       emit('select-pokemon', hitId)
     }
 
+    return
+  }
+
+  if (!canControlPokemon(props.selectedId)) {
+    emit('select-pokemon', null)
     return
   }
 
@@ -3361,7 +3373,7 @@ const handleRightClick = (event: MouseEvent) => {
 
   const hitId = pickPokemonId(event)
 
-  if (!hitId) {
+  if (!canControlPokemon(hitId)) {
     closeContextMenu()
     return
   }
@@ -3388,13 +3400,13 @@ const handlePointerMove = (event: PointerEvent) => {
     return
   }
 
-  if (selectedPokemon.value) {
+  if (selectedPokemon.value && canControlPokemon(selectedPokemon.value.id)) {
     updatePreviewFromPointer(event)
   }
 }
 
 const handleWheel = (event: WheelEvent) => {
-  if (!selectedPokemon.value) {
+  if (!selectedPokemon.value || !canControlPokemon(selectedPokemon.value.id)) {
     return
   }
 
@@ -3790,6 +3802,11 @@ watch(
 watch(
   () => props.selectedId,
   () => {
+    if (props.selectedId && !canControlPokemon(props.selectedId)) {
+      emit('select-pokemon', null)
+      return
+    }
+
     if (!renderer) {
       return
     }
@@ -3821,6 +3838,17 @@ watch(
     activePreview = { ...EMPTY_PREVIEW }
     ensurePreviewObjects()
     emit('preview-change', { ...EMPTY_PREVIEW })
+  },
+)
+
+watch(
+  () => props.controllableIds?.join('|') ?? '',
+  () => {
+    if (props.selectedId && !canControlPokemon(props.selectedId)) emit('select-pokemon', null)
+    if (contextMenu.value && !canControlPokemon(contextMenu.value.id)) closeContextMenu()
+    if (hpDialog.value && !canControlPokemon(hpDialog.value.id)) closeHpDialog()
+    if (combatStagesDialog.value && !canControlPokemon(combatStagesDialog.value.id)) closeCombatStagesDialog()
+    if (damageDialog.value && !canControlPokemon(damageDialog.value.id)) closeDamageDialog()
   },
 )
 
@@ -3921,7 +3949,12 @@ watch(
       >
         Deal damage
       </button>
-      <button type="button" class="context-menu__button" @click.stop="handleContextDelete">
+      <button
+        v-if="props.canDeleteTokens"
+        type="button"
+        class="context-menu__button"
+        @click.stop="handleContextDelete"
+      >
         Delete
       </button>
     </div>

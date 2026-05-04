@@ -23,6 +23,7 @@ import { mkdirSync, readdirSync, writeFileSync } from 'node:fs'
 import { resolve as resolvePath, join as joinPath, sep } from 'node:path'
 import { defineEventHandler, readBody, createError } from 'h3'
 import { publishRealtime } from '../../utils/realtime'
+import { requireGm } from '../../utils/auth'
 
 interface CreateSheetBody {
   kind?: 'pokemon' | 'trainer'
@@ -95,6 +96,7 @@ const buildTrainerSheet = (slug: string) => ({
 })
 
 export default defineEventHandler(async (event) => {
+  requireGm(event)
   if (process.env.NODE_ENV === 'production') {
     throw createError({ statusCode: 403, statusMessage: 'Disabled in production' })
   }

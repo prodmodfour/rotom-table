@@ -9,6 +9,7 @@ import { existsSync, mkdirSync, renameSync, statSync } from 'node:fs'
 import { dirname, join, sep } from 'node:path'
 import { createError, defineEventHandler, readBody } from 'h3'
 import { publishRealtime } from '../../utils/realtime'
+import { requireGm } from '../../utils/auth'
 import {
   MAPS_ROOT,
   pruneEmptyParents,
@@ -22,6 +23,7 @@ interface MoveFolderBody {
 }
 
 export default defineEventHandler(async (event) => {
+  requireGm(event)
   const body = await readBody<MoveFolderBody>(event)
   let from = ''
   let to = ''

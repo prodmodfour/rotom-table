@@ -11,6 +11,7 @@ import { existsSync, mkdirSync, renameSync } from 'node:fs'
 import { join, sep } from 'node:path'
 import { createError, defineEventHandler, readBody } from 'h3'
 import { publishRealtime } from '../../utils/realtime'
+import { requireGm } from '../../utils/auth'
 import {
   MAPS_ROOT,
   PROJECT_ROOT,
@@ -19,6 +20,7 @@ import {
   pruneEmptyParents,
   readMapFile,
   sanitizeFolderPath,
+  summarizeMap,
   writeMapFile,
 } from '../../utils/mapStorage'
 
@@ -29,6 +31,7 @@ interface MoveBody {
 }
 
 export default defineEventHandler(async (event) => {
+  requireGm(event)
   const body = await readBody<MoveBody>(event)
   const slug = String(body?.slug ?? '')
   if (!SLUG_RE.test(slug)) {
@@ -82,15 +85,7 @@ export default defineEventHandler(async (event) => {
     channel: 'maps',
     type: 'moved',
     clientId: body?.clientId,
-    data: {
-      slug: map.slug,
-      name: map.name,
-      folder: map.folder ?? '',
-      dimensions: map.dimensions,
-      placementCount: map.placements?.length ?? 0,
-      schemaVersion: map.schemaVersion,
-      updatedAt: map.updatedAt,
-    },
+    data: summarizeMap(map),
   })
 
   return {

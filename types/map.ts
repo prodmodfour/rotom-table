@@ -78,6 +78,8 @@ export interface TabletopMapV2 {
   /** Absolute Y coordinate that is displayed as map-specific/ground Y=0. */
   groundLevelY?: number
   voxels: MapVoxelV2[]
+  /** Whether the map is visible to the shared player login. */
+  playerVisible?: boolean
   placements: SheetPlacement[]
   lights?: LightPlacement[]
   /** Current turn + round state for the collapsible initiative tracker. */
@@ -95,6 +97,7 @@ export interface MapSummary {
   folder: string
   dimensions: GridDimensions
   placementCount: number
+  playerVisible?: boolean
   schemaVersion?: number
   updatedAt?: number
 }

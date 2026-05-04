@@ -24,6 +24,7 @@ import { readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import { resolve as resolvePath, join as joinPath } from 'node:path'
 import { defineEventHandler, readBody, createError } from 'h3'
 import { publishRealtime } from '../../utils/realtime'
+import { requireAuthRole } from '../../utils/auth'
 
 interface SaveBody {
   kind?: 'pokemon' | 'trainer'
@@ -90,6 +91,7 @@ const findFileBySlug = (root: string, slug: string): string | null => {
 }
 
 export default defineEventHandler(async (event) => {
+  const role = requireAuthRole(event)
   if (process.env.NODE_ENV === 'production') {
     throw createError({ statusCode: 403, statusMessage: 'Disabled in production' })
   }
@@ -125,11 +127,19 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: `Sheet ${slug}.json not found` })
   }
 
+  if (role === 'player') {
+    const existing = JSON.parse(readFileSync(path, 'utf8')) as { player?: unknown }
+    if (existing.player !== true) {
+      throw createError({ statusCode: 403, statusMessage: 'Sheet is not marked as player accessible' })
+    }
+  }
+
   // Strip the `folder` field if present — it gets re-derived from the path
   // by the loader, and storing it would just create an ongoing source of
   // drift. (Same convention as `move.post.ts`.)
   const out: Record<string, unknown> = { ...(sheet as Record<string, unknown>) }
   if ('folder' in out) delete out.folder
+  if (role === 'player') out.player = true
 
   writeFileSync(path, JSON.stringify(out, null, 2) + '\n', 'utf8')
 

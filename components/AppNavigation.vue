@@ -1,5 +1,7 @@
 <script setup lang="ts">
 const route = useRoute()
+const router = useRouter()
+const { isGm, roleLabel, logout } = useAuth()
 
 const isActive = (path: string) => {
   if (path === '/maps') {
@@ -11,6 +13,11 @@ const isActive = (path: string) => {
   }
 
   return route.path.startsWith(path)
+}
+
+const handleLogout = async () => {
+  logout()
+  await router.push('/login')
 }
 </script>
 
@@ -25,7 +32,7 @@ const isActive = (path: string) => {
     <NuxtLink :class="['nav-link', { active: isActive('/sheets') }]" to="/sheets">
       Sheets
     </NuxtLink>
-    <NuxtLink :class="['nav-link', { active: isActive('/generate') }]" to="/generate">
+    <NuxtLink v-if="isGm" :class="['nav-link', { active: isActive('/generate') }]" to="/generate">
       Generate
     </NuxtLink>
     <span class="nav-divider" aria-hidden="true" />
@@ -44,9 +51,14 @@ const isActive = (path: string) => {
     <NuxtLink :class="['nav-link', { active: isActive('/edges') }]" to="/edges">
       Edges
     </NuxtLink>
-    <NuxtLink :class="['nav-link', { active: isActive('/encounter-tables') }]" to="/encounter-tables">
+    <NuxtLink v-if="isGm" :class="['nav-link', { active: isActive('/encounter-tables') }]" to="/encounter-tables">
       Encounter Tables
     </NuxtLink>
+    <span class="nav-spacer" aria-hidden="true" />
+    <span class="role-badge">{{ roleLabel }}</span>
+    <button type="button" class="nav-link nav-link--button" @click="handleLogout">
+      Logout
+    </button>
   </nav>
 </template>
 
@@ -68,6 +80,26 @@ const isActive = (path: string) => {
   height: 1.4rem;
   background: var(--rule-soft);
   display: inline-block;
+}
+
+.nav-spacer {
+  flex: 1 1 auto;
+  min-width: 0.5rem;
+}
+
+.role-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.42rem 0.7rem;
+  border: 1px solid var(--rule-soft);
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .nav-link {
@@ -101,5 +133,9 @@ const isActive = (path: string) => {
   border-color: var(--accent);
   background: var(--paper-active);
   color: var(--accent);
+}
+
+.nav-link--button {
+  cursor: pointer;
 }
 </style>
