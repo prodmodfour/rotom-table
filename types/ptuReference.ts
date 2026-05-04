@@ -30,6 +30,14 @@ export interface PtuCapability {
   source?: string
 }
 
+export interface PtuCondition {
+  name: string
+  category: string
+  effect?: string
+  aliases?: string[]
+  source?: string
+}
+
 /**
  * A trainer Feature parsed from ``core/03-skills-edges-and-features.md`` and
  * ``core/04-trainer-classes.md`` (plus errata patches). Class Features are

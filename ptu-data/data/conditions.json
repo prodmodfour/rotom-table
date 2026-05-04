@@ -1,4 +1,57 @@
 {
+  "Paralysis": {
+    "name": "Paralysis",
+    "category": "Persistent Affliction",
+    "effect": "A paralyzed user’s Initiative is halved. Make a Save Check that succeeds on 11+ at start of the user’s turn. On a succesful check the user may act normally, but on a failed check the following effects occur: - The user can only take a Standard OR Shift Action that round, but not both - The user is Vulnerable for 1 full round - The user cannot take attacks of opportunity for 1 full round",
+    "aliases": [
+      "Paralyzed",
+      "Paralyze"
+    ],
+    "source": "errata-3.md"
+  },
+  "Flinch": {
+    "name": "Flinch",
+    "category": "Volatile Affliction",
+    "effect": "Upon becoming Flinched, the user lowers their Initiative by 5 for the rest of the Scene and is Vulnerable for 1 full round. Multiple of instances of Flinch may stack; being switched out removes the Initiative-lowering effect. (Also yes, you can now Flinch people of a higher Initiative than yourself)",
+    "aliases": [
+      "Flinched"
+    ],
+    "source": "errata-3.md"
+  },
+  "Infatuation": {
+    "name": "Infatuation",
+    "category": "Volatile Affliction",
+    "effect": "Infatuated users take a -5 penalty on all Damage Rolls that do not include their Crush as a target. For determining Damage Rolls that do include their Crush as a target, the Infatuated target’s Attack and Special Attack are halved. The user is cured of Infatuation with a Save Check of 16+ made at end of turn.",
+    "aliases": [
+      "Infatuated"
+    ],
+    "source": "errata-3.md"
+  },
+  "Confused": {
+    "name": "Confused",
+    "category": "Volatile Affliction",
+    "effect": "Confused users cannot take Attacks of Opportunity. If a Confused user makes an Attack (even at tacks without rolls), roll 1d2. On 1, after the attack is resolved, the user loses Hit Points equal to half their Attack Stat if the Move was Physical, half or their Special Attack Stat if the Move was Special, or two Ticks of Hit Poitns if the Move was a Status Move. The user is cured of Confusion with a Save of 16+ made at end of turn.",
+    "aliases": [
+      "Confusion"
+    ],
+    "source": "errata-3.md"
+  },
+  "Suppressed": {
+    "name": "Suppressed",
+    "category": "Volatile Affliction",
+    "effect": "Suppressed users cannot use Moves with any Frequency other than “At-Will”. Suppression always lasts 1 full round.",
+    "aliases": [
+      "Suppression"
+    ],
+    "source": "errata-3.md"
+  },
+  "Vulnerable": {
+    "name": "Vulnerable",
+    "category": "Other Affliction",
+    "effect": "A Vulnerable Pokémon or Trainer cannot apply Evasion of any sort against attacks. Blinded, Sleeping, Fainted, Frozen, and Tripped targets are always considered Vulnerable.",
+    "aliases": [],
+    "source": "errata-3.md"
+  },
   "Burned": {
     "name": "Burned",
     "category": "Persistent Affliction",
@@ -14,16 +67,6 @@
     "effect": "The target may not act on their turn and receives no bonuses from Evasion. At the end of each turn, the target may make a DC 16 Save Check to become cured. This DC is lowered to 11 for Fire-Type Pokémon, and Ice-Type Pokémon are immune to becoming Frozen. If a Frozen Target is hit by a Damaging Fire, Fighting, Rock, or Steel Attack, they are cured of the Frozen Condition. Save Checks to cure this condition receive a +4 Bonus in Sunny Weather, and a -2 Penalty in Hail.",
     "aliases": [
       "Freeze"
-    ],
-    "source": "07-combat.md"
-  },
-  "Paralysis": {
-    "name": "Paralysis",
-    "category": "Persistent Affliction",
-    "effect": "The Target’s Speed Stat is lowered by 4 Combat Stages. At the beginning of each turn the target is paralyzed, they must roll a DC 5 Save Check. If they succeed, they may act normally; if they do not, they cannot take any Standard, Shift, or Swift Actions. Electric Type Pokémon are immune to Paralysis.",
-    "aliases": [
-      "Paralyzed",
-      "Paralyze"
     ],
     "source": "07-combat.md"
   },
@@ -50,13 +93,6 @@
     "aliases": [],
     "source": "07-combat.md"
   },
-  "Confused": {
-    "name": "Confused",
-    "category": "Volatile Affliction",
-    "effect": "At the beginning of their turn, a confused target must roll a Save Check. • On a roll of 1-8, the confused target hits itself using a Typeless Physical Struggle Attack as a Standard Action and may take no other actions this turn. This attack automatically hits, and deals damage as if it’s resisted 1 Step. • On a roll of 9-15, the target may act normally. • On a roll of 16 or higher, the target is cured of confusion.",
-    "aliases": [],
-    "source": "07-combat.md"
-  },
   "Cursed": {
     "name": "Cursed",
     "category": "Volatile Affliction",
@@ -80,35 +116,10 @@
     ],
     "source": "07-combat.md"
   },
-  "Flinch": {
-    "name": "Flinch",
-    "category": "Volatile Affliction",
-    "effect": "You may not take actions during your next turn that round. The Flinched Status does not carry over onto the next round.",
-    "aliases": [
-      "Flinched"
-    ],
-    "source": "07-combat.md"
-  },
-  "Infatuation": {
-    "name": "Infatuation",
-    "category": "Volatile Affliction",
-    "effect": "At the beginning of each turn you are infatuated, roll a Save Check. • On a result of 1-10, you may not target the Pokémon or Trainer that you are Infatuated towards with a Move or Attack, but may otherwise Shift and use actions normally. • On 11-18 you may use a Move and Shift without restriction. • On a roll of 19 or higher, you are cured of the Infatuation.",
-    "aliases": [
-      "Infatuated"
-    ],
-    "source": "07-combat.md"
-  },
   "Sleep": {
     "name": "Sleep",
     "category": "Volatile Affliction",
     "effect": "Sleeping Trainers and Pokémon receive no bonuses from Evasion, and cannot take actions except for Free and Swift Actions that would cure Sleep (ex: activating the Shed Skin Ability). At the end of the sleeper’s turns, they may make a DC 16 Save Check to wake up. Whenever a Sleeping Pokémon takes Damage or loses life from an Attack, they wake up. This does not include loss of life from passive sources such as Poison or Burns, but active attacks and effects that cause Hit Point loss (such as being hit by the Press Feature, or Super Fang) would wake up their target. Sleeping targets cannot make Save Checks to be cured of Rage, Infatuation, or Confusion, but they also cannot hurt themselves in Confusion. Pokémon and Trainers may wake an adjacent ally as a Standard Action.",
-    "aliases": [],
-    "source": "07-combat.md"
-  },
-  "Suppressed": {
-    "name": "Suppressed",
-    "category": "Volatile Affliction",
-    "effect": "While Suppressed, Pokémon and Trainers cannot benefit from PP Ups, and have the frequency of their Moves lowered; At-Will Moves become EOT, and EOT and Scene x2 Moves become Scene. Temporary Hit Points: Some effects grant Temporary Hit Points. Temporary Hit Points are not “healed” away by effects that cure Status Conditions, but it is lost if the user is recalled in a Poké Ball, and disappears on its own after 5 minutes while outside of combat. Temporary Hit Points are “bonus” health that stacks on top of “real” Hit Points - so you can benefit from gaining it even if you are already at full health. However, Temporary Hit Points are always lost first from damage or any other effects. Damage carries over directly to real Hit Points once the Temporary Hit Points are lost. Furthermore, Temporary Hit Points do not stack with other Temporary Hit Points – only the highest value applies. For example, if you have 10 Temporary Hit Points, and then gain 8 Temporary Hit Points - nothing happens. If the next turn you were then to gain 15 Temporary Hit Points, your Temporary Hit Points would go up to 15 since that is the highest value. Temporary Hit Points also do not stack with “Real” Hit Points for the purposes of determining percentages of Hit Points. If a Pokémon has exactly 1 real Hit Point and has 50 Temporary Hit Points, they would use the Moves and effects as if they have 1 Hit Point, not 51.",
     "aliases": [],
     "source": "07-combat.md"
   },
@@ -158,13 +169,6 @@
     "name": "Tripped",
     "category": "Other Affliction",
     "effect": "A Pokémon or Trainer has been Tripped needs to spend a Shift Action getting up before they can take further actions.",
-    "aliases": [],
-    "source": "07-combat.md"
-  },
-  "Vulnerable": {
-    "name": "Vulnerable",
-    "category": "Other Affliction",
-    "effect": "A Vulnerable Pokémon or Trainer cannot apply Evasion of any sort against attacks.",
     "aliases": [],
     "source": "07-combat.md"
   }

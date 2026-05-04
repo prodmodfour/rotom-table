@@ -64,6 +64,9 @@ export interface CharacterSheetCombat {
   tick?: number
   evasion?: { vsAtk?: number; vsSatk?: number; vsAny?: number }
   dr?: number
+  /** Canonical PTU condition names (for example, "Burned" or "Tripped"). */
+  conditions?: string[]
+  /** Legacy/free-form status notes that do not map to a canonical condition. */
   statusAfflictions?: string
   vitamins?: string
   notes?: string

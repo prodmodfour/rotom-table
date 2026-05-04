@@ -4,11 +4,12 @@ import {
   describeRef,
   findAbility,
   findCapability,
+  findCondition,
   findMove,
   type RefKind,
 } from '~/data/ptuReference'
 
-type TooltipKind = Extract<RefKind, 'move' | 'ability' | 'capability'>
+type TooltipKind = Extract<RefKind, 'move' | 'ability' | 'capability' | 'condition'>
 
 interface TooltipMeta {
   label: string
@@ -46,6 +47,7 @@ const targetPath = computed(() => {
     case 'move':       return `/moves/${slug}`
     case 'ability':    return `/abilities/${slug}`
     case 'capability': return `/capabilities/${slug}`
+    case 'condition':  return `/conditions/${slug}`
     case 'feature':    return `/features/${slug}`
     case 'edge':       return `/edges/${slug}`
   }
@@ -99,6 +101,20 @@ const tooltipDetail = computed<TooltipDetail | null>(() => {
         name: capability.name,
         meta: present(capability.source) ? [{ label: 'Source', value: capability.source }] : [],
         sections: present(capability.effect) ? [{ heading: 'Effect', body: capability.effect }] : [],
+      }
+    }
+
+    case 'condition': {
+      const condition = findCondition(props.name)
+      if (!condition) return null
+      const meta: TooltipMeta[] = []
+      if (present(condition.category)) meta.push({ label: 'Category', value: condition.category })
+      if (present(condition.source)) meta.push({ label: 'Source', value: condition.source })
+      return {
+        kind: 'condition',
+        name: condition.name,
+        meta,
+        sections: present(condition.effect) ? [{ heading: 'Effect', body: condition.effect }] : [],
       }
     }
 

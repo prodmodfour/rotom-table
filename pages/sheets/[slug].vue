@@ -470,9 +470,13 @@ const setInheritedMove = (level: string, value: string | undefined) => {
             </ul>
           </div>
 
+          <div class="combat-line condition-block">
+            <strong>Conditions:</strong>
+            <ConditionPicker v-model="sheet.combat!.conditions" />
+          </div>
           <p class="combat-line">
-            <strong>Status:</strong>
-            <EditableCell v-model="sheet.combat!.statusAfflictions" placeholder="None" />
+            <strong>Status notes:</strong>
+            <EditableCell v-model="sheet.combat!.statusAfflictions" placeholder="Optional notes" />
           </p>
           <p class="combat-line">
             <strong>Vitamins:</strong>
@@ -1256,6 +1260,15 @@ const setInheritedMove = (level: string, value: string | undefined) => {
   margin: 0.55rem 0 0;
   font-size: 0.9rem;
   color: var(--ink);
+}
+
+.condition-block {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.condition-block > strong {
+  color: var(--ink-bright);
 }
 
 .combat-line.notes {

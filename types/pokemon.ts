@@ -219,4 +219,6 @@ export interface SpawnedPokemon extends PokemonCatalogEntry {
   defenderTypes: string[]
   /** Current combat stages copied from the source sheet. */
   combatStages: CombatStageMap
+  /** Canonical PTU conditions copied from the source sheet. */
+  conditions: string[]
 }

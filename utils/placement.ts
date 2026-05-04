@@ -51,6 +51,7 @@ export const placementToSpawned = (
       sdef: hp.sdef,
       defenderTypes: hp.defenderTypes,
       combatStages: hp.combatStages,
+      conditions: hp.conditions,
     }
   }
   const sheet = sheets.trainer.get(placement.sheetSlug)
@@ -75,6 +76,7 @@ export const placementToSpawned = (
     sdef: hp.sdef,
     defenderTypes: hp.defenderTypes,
     combatStages: hp.combatStages,
+    conditions: hp.conditions,
   }
 }
 

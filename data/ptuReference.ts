@@ -1,10 +1,11 @@
 import abilitiesJson from '~/ptu-data/data/abilities.json'
 import movesJson from '~/ptu-data/data/moves.json'
 import capabilitiesJson from '~/ptu-data/data/capabilities.json'
+import conditionsJson from '~/ptu-data/data/conditions.json'
 import featuresJson from '~/ptu-data/data/features.json'
 import edgesJson from '~/ptu-data/data/edges.json'
 import type {
-  PtuAbility, PtuCapability, PtuEdge, PtuFeature, PtuMove,
+  PtuAbility, PtuCapability, PtuCondition, PtuEdge, PtuFeature, PtuMove,
 } from '~/types/ptuReference'
 
 // ---------------------------------------------------------------------------
@@ -37,6 +38,7 @@ export const toSlug = (name: string): string =>
 const abilitiesDict     = abilitiesJson     as Record<string, PtuAbility>
 const movesDict         = movesJson         as Record<string, PtuMove>
 const capabilitiesDict  = capabilitiesJson  as Record<string, PtuCapability>
+const conditionsDict    = conditionsJson    as Record<string, PtuCondition>
 const featuresDict      = featuresJson      as Record<string, PtuFeature>
 const edgesDict         = edgesJson         as Record<string, PtuEdge>
 
@@ -55,6 +57,7 @@ const VALID_MOVE_TYPES = new Set<string>([
 export const abilities    = sortedByName(abilitiesDict)
 export const moves        = sortedByName(movesDict).filter((m) => VALID_MOVE_TYPES.has(m.type))
 export const capabilities = sortedByName(capabilitiesDict)
+export const conditions   = sortedByName(conditionsDict)
 export const features     = sortedByName(featuresDict)
 export const edges        = sortedByName(edgesDict)
 
@@ -72,6 +75,7 @@ const buildSlugMap = <T extends { name: string }>(items: T[]): Map<string, T> =>
 export const abilityBySlug    = buildSlugMap(abilities)
 export const moveBySlug       = buildSlugMap(moves)
 export const capabilityBySlug = buildSlugMap(capabilities)
+export const conditionBySlug  = buildSlugMap(conditions)
 export const featureBySlug    = buildSlugMap(features)
 export const edgeBySlug       = buildSlugMap(edges)
 
@@ -88,6 +92,7 @@ const exactByName = <T extends { name: string }>(items: T[]): Map<string, T> => 
 const abilityByName    = exactByName(abilities)
 const moveByName       = exactByName(moves)
 const capabilityByName = exactByName(capabilities)
+const conditionByName  = exactByName(conditions)
 const featureByName    = exactByName(features)
 const edgeByName       = exactByName(edges)
 
@@ -195,11 +200,14 @@ export const findCapability = (raw: string): PtuCapability | null => {
   return resolveByExactOrSlug(aliased, capabilityByName, capabilityBySlug)
 }
 
+export const findCondition = (name: string): PtuCondition | null =>
+  resolveByExactOrSlug(name, conditionByName, conditionBySlug)
+
 // ---------------------------------------------------------------------------
 // Convenience: a "ref descriptor" for templates that want to maybe-link.
 // ---------------------------------------------------------------------------
 
-export type RefKind = 'move' | 'ability' | 'capability' | 'feature' | 'edge'
+export type RefKind = 'move' | 'ability' | 'capability' | 'condition' | 'feature' | 'edge'
 
 export interface RefDescriptor {
   kind: RefKind
@@ -215,6 +223,7 @@ const KIND_FINDERS: Record<RefKind, (name: string) => { name: string } | null> =
   move:       findMove,
   ability:    findAbility,
   capability: findCapability,
+  condition:  findCondition,
   feature:    findFeature,
   edge:       findEdge,
 }

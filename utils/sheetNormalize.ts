@@ -9,6 +9,7 @@
  */
 import type { CharacterSheet, StatKey } from '~/types/characterSheet'
 import type { TrainerSheet, TrainerStatKey } from '~/types/trainerSheet'
+import { mergeLegacyConditions } from '~/utils/statusConditions'
 
 const STAT_KEYS: StatKey[] = ['hp', 'atk', 'def', 'satk', 'sdef', 'spd']
 const TRAINER_STAT_KEYS: TrainerStatKey[] = ['hp', 'atk', 'def', 'satk', 'sdef', 'spd']
@@ -41,6 +42,7 @@ export const normalizeCharacterSheet = (sheet: CharacterSheet): CharacterSheet =
 
   const combat = ensureObj<NonNullable<CharacterSheet['combat']>>(sheet, 'combat')
   ensureObj<NonNullable<NonNullable<CharacterSheet['combat']>['evasion']>>(combat, 'evasion')
+  combat.conditions = mergeLegacyConditions(combat.conditions, combat.statusAfflictions)
 
   ensureObj<NonNullable<CharacterSheet['items']>>(sheet, 'items')
   ensureArr<string>(sheet.items as Record<string, unknown>, 'extraItems')
@@ -79,6 +81,7 @@ export const normalizeTrainerSheet = (sheet: TrainerSheet): TrainerSheet => {
 
   ensureObj<NonNullable<TrainerSheet['ap']>>(sheet, 'ap')
   ensureObj<NonNullable<TrainerSheet['evasion']>>(sheet, 'evasion')
+  sheet.conditions = mergeLegacyConditions(sheet.conditions, sheet.statusAfflictions)
   ensureObj<NonNullable<TrainerSheet['capabilities']>>(sheet, 'capabilities')
   ensureArr<string>(sheet.capabilities as Record<string, unknown>, 'other')
 

@@ -252,6 +252,34 @@ samp {
   display: none;
 }
 
+.token-status__condition-strip {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 1px 2px;
+  min-height: 0;
+}
+
+.token-status__condition-strip[hidden] {
+  display: none;
+}
+
+.token-status__condition-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+  filter:
+    drop-shadow(0 1px 1px rgba(0, 0, 0, 0.82))
+    drop-shadow(0 0 2px rgba(0, 0, 0, 0.58));
+}
+
+.token-status__condition-chip svg {
+  display: block;
+}
+
 .token-status__cs-chip {
   display: inline-flex;
   align-items: center;

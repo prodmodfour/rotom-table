@@ -30,6 +30,7 @@ import {
   clampCombatStage,
   normalizeCombatStages,
 } from '~/utils/combatStages'
+import { conditionTagSvg, normalizeConditionNames } from '~/utils/statusConditions'
 import type { CombatStageKey, CombatStageMap } from '~/types/combatStages'
 
 export type BuildTool = 'pencil' | 'eraser'
@@ -57,6 +58,7 @@ const emit = defineEmits<{
   (event: 'delete-pokemon', id: string): void
   (event: 'modify-hp', payload: { id: string; currentHp: number }): void
   (event: 'modify-combat-stages', payload: { id: string; stages: CombatStageMap }): void
+  (event: 'modify-conditions', payload: { id: string; conditions: string[] }): void
   (event: 'preview-change', preview: PreviewState): void
   (event: 'place-voxel', voxel: MapVoxelV2): void
   (event: 'remove-voxel', cell: { x: number; y: number; z: number }): void
@@ -112,6 +114,7 @@ interface PokemonRenderObject {
   currentHp: number
   maxHp: number
   combatStages: CombatStageMap
+  conditions: string[]
   /** Eased 0→1 selection-lift factor; target flips on selection state. */
   liftFactor: number
   liftTarget: number
@@ -1063,6 +1066,7 @@ const TOKEN_STATUS_CSS_WIDTH_PX = 80
 const TOKEN_STATUS_BASE_CSS_HEIGHT_PX = 18
 const TOKEN_STATUS_TURN_CHEVRON_CSS_HEIGHT_PX = 8
 const TOKEN_STATUS_STAGE_ROW_CSS_HEIGHT_PX = 10
+const TOKEN_STATUS_CONDITION_ROW_CSS_HEIGHT_PX = 15
 // Matches the scaled size that Miltank landed on; every token now uses this
 // same tabletop marker size instead of resizing by sprite dimensions.
 const TOKEN_STATUS_WORLD_WIDTH = 1.05
@@ -1200,6 +1204,24 @@ const combatStagesDialogChanged = computed(() => {
   return COMBAT_STAGE_KEYS.some(
     (key) => clampCombatStage(dialog.stages[key]) !== dialog.originalStages[key],
   )
+})
+
+interface ConditionsDialogState {
+  id: string
+  species: string
+  originalConditions: string[]
+  conditions: string[]
+}
+
+const conditionsDialog = ref<ConditionsDialogState | null>(null)
+
+const conditionsDialogChanged = computed(() => {
+  const dialog = conditionsDialog.value
+  if (!dialog) return false
+  const current = normalizeConditionNames(dialog.conditions)
+  const original = normalizeConditionNames(dialog.originalConditions)
+  if (current.length !== original.length) return true
+  return current.some((name, index) => name !== original[index])
 })
 
 interface HpDialogState {
@@ -1734,12 +1756,20 @@ const formatCombatStage = (value: unknown): string => {
   return normalized > 0 ? `+${normalized}` : String(normalized)
 }
 
-const tokenStatusCssHeight = (stages: CombatStageMap, activeTurn: boolean): number => {
+const tokenStatusCssHeight = (
+  stages: CombatStageMap,
+  conditions: readonly string[],
+  activeTurn: boolean,
+): number => {
   const stageCount = activeCombatStageEntries(stages).length
+  const conditionCount = normalizeConditionNames(conditions).length
   const turnHeight = activeTurn ? TOKEN_STATUS_TURN_CHEVRON_CSS_HEIGHT_PX : 0
-  if (stageCount === 0) return TOKEN_STATUS_BASE_CSS_HEIGHT_PX + turnHeight
-  const rows = Math.ceil(stageCount / 2)
-  return TOKEN_STATUS_BASE_CSS_HEIGHT_PX + turnHeight + 1 + rows * TOKEN_STATUS_STAGE_ROW_CSS_HEIGHT_PX
+  const stageRows = stageCount === 0 ? 0 : Math.ceil(stageCount / 2)
+  const conditionRows = conditionCount === 0 ? 0 : Math.ceil(conditionCount / 2)
+  return TOKEN_STATUS_BASE_CSS_HEIGHT_PX
+    + turnHeight
+    + (stageRows ? 1 + stageRows * TOKEN_STATUS_STAGE_ROW_CSS_HEIGHT_PX : 0)
+    + (conditionRows ? 1 + conditionRows * TOKEN_STATUS_CONDITION_ROW_CSS_HEIGHT_PX : 0)
 }
 
 const updateTokenStatusLabel = (
@@ -1765,6 +1795,22 @@ const updateTokenCombatStages = (element: HTMLElement, stages: CombatStageMap) =
     const chip = document.createElement('span')
     chip.className = `token-status__cs-chip ${value > 0 ? 'is-positive' : 'is-negative'}`
     chip.textContent = `${COMBAT_STAGE_SHORT_LABELS[key]} ${formatCombatStage(value)}`
+    strip.appendChild(chip)
+  }
+}
+
+const updateTokenConditions = (element: HTMLElement, conditions: readonly string[]) => {
+  const strip = element.querySelector<HTMLElement>('.token-status__condition-strip')
+  if (!strip) return
+
+  const entries = normalizeConditionNames(conditions)
+  strip.replaceChildren()
+  strip.hidden = entries.length === 0
+
+  for (const condition of entries) {
+    const chip = document.createElement('span')
+    chip.className = 'token-status__condition-chip'
+    chip.innerHTML = conditionTagSvg(condition, 'xs')
     strip.appendChild(chip)
   }
 }
@@ -1806,6 +1852,10 @@ const buildHpBar = (pokemon: SpawnedPokemon) => {
   combatStages.className = 'token-status__cs-strip'
   combatStages.hidden = true
 
+  const conditions = document.createElement('div')
+  conditions.className = 'token-status__condition-strip'
+  conditions.hidden = true
+
   const track = document.createElement('div')
   track.className = 'hp-bar'
 
@@ -1813,9 +1863,10 @@ const buildHpBar = (pokemon: SpawnedPokemon) => {
   fill.className = 'hp-bar__fill'
   track.appendChild(fill)
 
-  wrapper.append(turnChevron, combatStages, label, track)
+  wrapper.append(turnChevron, combatStages, conditions, label, track)
   updateTokenStatusLabel(wrapper, pokemon.species, pokemon.level)
   updateTokenCombatStages(wrapper, normalizeCombatStages(pokemon.combatStages))
+  updateTokenConditions(wrapper, pokemon.conditions)
 
   // CSS3DSprite billboards to the camera so the status reads as a compact
   // floating HUD regardless of orbit angle.
@@ -2189,6 +2240,7 @@ const updateHpBar = (
   currentHp: number,
   maxHp: number,
   combatStages: CombatStageMap,
+  conditions: readonly string[],
   activeTurn: boolean,
   show = true,
 ) => {
@@ -2212,6 +2264,7 @@ const updateHpBar = (
   }
   updateTokenStatusLabel(bar.element, displayName, level)
   updateTokenCombatStages(bar.element, combatStages)
+  updateTokenConditions(bar.element, conditions)
   updateTokenActiveTurn(bar.element, activeTurn)
 
   // Floats just above the sprite's head. WebGL world sprites are
@@ -2219,7 +2272,7 @@ const updateHpBar = (
   // ``center.y + spriteHeight``. The offset accounts for the scaled DOM
   // height so smaller sprites keep the HUD tucked close instead of floating
   // as a detached nameplate.
-  const overlayHalfHeight = tokenStatusCssHeight(combatStages, activeTurn) * bar.scale.y / 2
+  const overlayHalfHeight = tokenStatusCssHeight(combatStages, conditions, activeTurn) * bar.scale.y / 2
   const headGap = THREE.MathUtils.clamp(spriteHeight * 0.06, 0.025, 0.08)
   bar.position.set(center.x, center.y + spriteHeight + overlayHalfHeight + headGap, center.z)
   bar.visible = true
@@ -2305,6 +2358,7 @@ const buildRenderObject = (pokemon: SpawnedPokemon): PokemonRenderObject => {
     currentHp: pokemon.currentHp,
     maxHp: pokemon.maxHp,
     combatStages: normalizeCombatStages(pokemon.combatStages),
+    conditions: normalizeConditionNames(pokemon.conditions),
     liftFactor: 0,
     liftTarget: 0,
   }
@@ -2360,6 +2414,7 @@ const applyRenderObjectPosition = (renderObject: PokemonRenderObject) => {
     renderObject.currentHp,
     renderObject.maxHp,
     renderObject.combatStages,
+    renderObject.conditions,
     props.activeTurnId === renderObject.id,
     layers.tokens,
   )
@@ -2435,6 +2490,7 @@ const syncPokemonObjects = () => {
     renderObject.currentHp = pokemon.currentHp
     renderObject.maxHp = pokemon.maxHp
     renderObject.combatStages = normalizeCombatStages(pokemon.combatStages)
+    renderObject.conditions = normalizeConditionNames(pokemon.conditions)
   }
 
   refreshPokemonStyles()
@@ -3144,8 +3200,8 @@ const openContextMenu = (event: MouseEvent, id: string) => {
   const target = props.pokemons.find((pokemon) => pokemon.id === id)
   const canTurn = Boolean(target?.entityKind === 'pokemon' && target.backSpriteUrl)
   const bounds = container.value.getBoundingClientRect()
-  const menuWidth = 210
-  const menuHeight = canTurn ? 232 : 188
+  const menuWidth = 230
+  const menuHeight = canTurn ? 276 : 232
   const padding = 12
 
   contextMenu.value = {
@@ -3255,6 +3311,44 @@ const handleCombatStagesDialogSubmit = () => {
 
   emit('modify-combat-stages', { id: combatStagesDialog.value.id, stages })
   closeCombatStagesDialog()
+}
+
+const closeConditionsDialog = () => {
+  conditionsDialog.value = null
+}
+
+const handleContextApplyRemoveConditions = () => {
+  if (!contextMenu.value || !canControlPokemon(contextMenu.value.id)) {
+    return
+  }
+
+  const target = props.pokemons.find((pokemon) => pokemon.id === contextMenu.value!.id)
+  if (!target) {
+    closeContextMenu()
+    return
+  }
+
+  const conditions = normalizeConditionNames(target.conditions)
+  conditionsDialog.value = {
+    id: target.id,
+    species: target.species,
+    originalConditions: [...conditions],
+    conditions: [...conditions],
+  }
+  closeContextMenu()
+}
+
+const handleConditionsDialogSubmit = () => {
+  if (!conditionsDialog.value || !canControlPokemon(conditionsDialog.value.id)) return
+  const conditions = normalizeConditionNames(conditionsDialog.value.conditions)
+  conditionsDialog.value.conditions = [...conditions]
+  if (!conditionsDialogChanged.value) {
+    closeConditionsDialog()
+    return
+  }
+
+  emit('modify-conditions', { id: conditionsDialog.value.id, conditions })
+  closeConditionsDialog()
 }
 
 const closeDamageDialog = () => {
@@ -3463,6 +3557,16 @@ const handleEscape = (event: KeyboardEvent) => {
 
     if (hpDialog.value) {
       closeHpDialog()
+      return
+    }
+
+    if (conditionsDialog.value) {
+      closeConditionsDialog()
+      return
+    }
+
+    if (combatStagesDialog.value) {
+      closeCombatStagesDialog()
       return
     }
 
@@ -3776,6 +3880,16 @@ watch(
       }
     }
 
+    if (conditionsDialog.value) {
+      const live = props.pokemons.find((pokemon) => pokemon.id === conditionsDialog.value!.id)
+      if (!live) {
+        closeConditionsDialog()
+      } else {
+        conditionsDialog.value.species = live.species
+        conditionsDialog.value.originalConditions = normalizeConditionNames(live.conditions)
+      }
+    }
+
     replayBuildPreview()
   },
   { deep: true },
@@ -3848,6 +3962,7 @@ watch(
     if (contextMenu.value && !canControlPokemon(contextMenu.value.id)) closeContextMenu()
     if (hpDialog.value && !canControlPokemon(hpDialog.value.id)) closeHpDialog()
     if (combatStagesDialog.value && !canControlPokemon(combatStagesDialog.value.id)) closeCombatStagesDialog()
+    if (conditionsDialog.value && !canControlPokemon(conditionsDialog.value.id)) closeConditionsDialog()
     if (damageDialog.value && !canControlPokemon(damageDialog.value.id)) closeDamageDialog()
   },
 )
@@ -3941,6 +4056,13 @@ watch(
         @click.stop="handleContextModifyCombatStages"
       >
         Change combat stages
+      </button>
+      <button
+        type="button"
+        class="context-menu__button"
+        @click.stop="handleContextApplyRemoveConditions"
+      >
+        Apply/Remove Conditions
       </button>
       <button
         type="button"
@@ -4112,6 +4234,50 @@ watch(
             type="submit"
             class="hp-dialog__button hp-dialog__button--primary"
             :disabled="!combatStagesDialogChanged"
+          >
+            Apply
+          </button>
+        </footer>
+      </form>
+    </div>
+
+    <div
+      v-if="conditionsDialog"
+      class="hp-dialog-backdrop"
+      @pointerdown.self="closeConditionsDialog"
+      @contextmenu.prevent
+    >
+      <form
+        class="hp-dialog hp-dialog--wide"
+        @submit.prevent="handleConditionsDialogSubmit"
+        @pointerdown.stop
+      >
+        <header class="hp-dialog__header">
+          <h3>Apply/Remove Conditions</h3>
+          <p class="hp-dialog__species">{{ conditionsDialog.species }}</p>
+        </header>
+
+        <ConditionPicker
+          v-model="conditionsDialog.conditions"
+          class="conditions-dialog__picker"
+          compact
+          tag-size="sm"
+        />
+
+        <p class="hp-dialog__note">Conditions are saved to the source character sheet and shown on every map token for that sheet.</p>
+
+        <footer class="hp-dialog__footer">
+          <button
+            type="button"
+            class="hp-dialog__button hp-dialog__button--ghost"
+            @click="closeConditionsDialog"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            class="hp-dialog__button hp-dialog__button--primary"
+            :disabled="!conditionsDialogChanged"
           >
             Apply
           </button>
@@ -4464,6 +4630,12 @@ watch(
 
 .combat-stage-dialog__preview.is-negative {
   color: #fb4934;
+}
+
+.conditions-dialog__picker {
+  max-height: min(48vh, 420px);
+  overflow: auto;
+  padding-right: 0.2rem;
 }
 
 .hp-dialog__header {

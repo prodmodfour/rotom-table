@@ -15,6 +15,7 @@ import { computeTrainerMaxHp, resolveTrainerStats } from '~/data/trainerSheets'
 import { pokemonCatalog, pokemonCatalogBySpecies } from '~/data/pokemonCatalog'
 import { trainerCatalog } from '~/data/trainerCatalog'
 import { COMBAT_STAT_STAGE_KEYS, normalizeCombatStages } from '~/utils/combatStages'
+import { mergeLegacyConditions } from '~/utils/statusConditions'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { CombatStageMap } from '~/types/combatStages'
 import type { PokemonCatalogEntry } from '~/types/pokemon'
@@ -64,6 +65,7 @@ export const pokemonHpSnapshot = (
   sdef: number
   defenderTypes: string[]
   combatStages: CombatStageMap
+  conditions: string[]
 } => {
   const stats = resolveStats(sheet)
   const hpTotal = stats.find((row) => row.key === 'hp')?.total ?? 0
@@ -83,7 +85,8 @@ export const pokemonHpSnapshot = (
     spd: sheet.stats?.spd?.stage,
     acc: sheet.combatStages?.acc,
   })
-  return { currentHp, maxHp, atk, satk, def, sdef, defenderTypes, combatStages }
+  const conditions = mergeLegacyConditions(sheet.combat?.conditions, sheet.combat?.statusAfflictions)
+  return { currentHp, maxHp, atk, satk, def, sdef, defenderTypes, combatStages, conditions }
 }
 
 /** Trainer HP + offence/defence snapshot — trainers have no defending types. */
@@ -98,6 +101,7 @@ export const trainerHpSnapshot = (
   sdef: number
   defenderTypes: string[]
   combatStages: CombatStageMap
+  conditions: string[]
 } => {
   const maxHp = computeTrainerMaxHp(sheet)
   const currentHp = sheet.currentHp ?? maxHp
@@ -110,7 +114,8 @@ export const trainerHpSnapshot = (
     COMBAT_STAT_STAGE_KEYS.map((key) => [key, sheet.stats?.[key]?.stage ?? sheet.combatStages?.[key]]),
   )
   const combatStages = normalizeCombatStages({ ...stageSource, acc: sheet.combatStages?.acc })
-  return { currentHp, maxHp, atk, satk, def, sdef, defenderTypes: [], combatStages }
+  const conditions = mergeLegacyConditions(sheet.conditions, sheet.statusAfflictions)
+  return { currentHp, maxHp, atk, satk, def, sdef, defenderTypes: [], combatStages, conditions }
 }
 
 // Re-export so callers don't have to import the catalog directly.

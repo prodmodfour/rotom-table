@@ -22,9 +22,36 @@ ALIASES = {
     "Frozen": ["Freeze"],
     "Poisoned": ["Poison"],
     "Paralysis": ["Paralyzed", "Paralyze"],
+    "Confused": ["Confusion"],
     "Rage": ["Enraged"],
     "Infatuation": ["Infatuated"],
     "Flinch": ["Flinched"],
+    "Suppressed": ["Suppression"],
+}
+
+CORE_CATEGORY_BY_NAME = {
+    "Burned": "Persistent Affliction",
+    "Frozen": "Persistent Affliction",
+    "Paralysis": "Persistent Affliction",
+    "Poisoned": "Persistent Affliction",
+    "Badly Poisoned": "Persistent Affliction",
+    "Bad Sleep": "Volatile Affliction",
+    "Confused": "Volatile Affliction",
+    "Cursed": "Volatile Affliction",
+    "Disabled": "Volatile Affliction",
+    "Rage": "Volatile Affliction",
+    "Flinch": "Volatile Affliction",
+    "Infatuation": "Volatile Affliction",
+    "Sleep": "Volatile Affliction",
+    "Suppressed": "Volatile Affliction",
+    "Fainted": "Other Affliction",
+    "Blindness": "Other Affliction",
+    "Total Blindness": "Other Affliction",
+    "Slowed": "Other Affliction",
+    "Stuck": "Other Affliction",
+    "Trapped": "Other Affliction",
+    "Tripped": "Other Affliction",
+    "Vulnerable": "Other Affliction",
 }
 
 
@@ -125,8 +152,53 @@ def _parse_core_conditions(text: str) -> dict[str, dict]:
     return conditions
 
 
+def _parse_errata3_conditions(text: str) -> dict[str, dict]:
+    start = text.find("Status Conditions")
+    page_end = text.find("## Page 3", start)
+    altered_end = text.find("Altered Abilities", start)
+    end_candidates = [index for index in (page_end, altered_end) if index != -1]
+    if start == -1 or not end_candidates:
+        return {}
+
+    section = text[start:min(end_candidates)]
+    errata_names = [
+        "Paralysis",
+        "Flinch",
+        "Infatuation",
+        "Confusion",
+        "Suppression",
+        "Vulnerable",
+    ]
+    canonical = {
+        "Confusion": "Confused",
+        "Suppression": "Suppressed",
+    }
+    blocks = _extract_named_blocks(section, errata_names)
+    conditions: dict[str, dict] = {}
+    for source_name, effect in blocks.items():
+        name = canonical.get(source_name, source_name)
+        if name == "Vulnerable":
+            # The errata says "same but" and then adds the note below; keep
+            # the core mechanical sentence while still letting errata-3 shadow
+            # the core entry in the priority pass.
+            effect = (
+                "A Vulnerable Pokémon or Trainer cannot apply Evasion of any sort against attacks. "
+                "Blinded, Sleeping, Fainted, Frozen, and Tripped targets are always considered Vulnerable."
+            )
+        conditions[name] = {
+            "name": name,
+            "category": CORE_CATEGORY_BY_NAME[name],
+            "effect": effect,
+            "aliases": ALIASES.get(name, []),
+        }
+    return conditions
+
+
 def _parse_from_source(path: str, text: str) -> dict[str, dict]:
-    if os.path.basename(path) == "07-combat.md":
+    basename = os.path.basename(path)
+    if basename == "errata-3.md":
+        return _parse_errata3_conditions(text)
+    if basename == "07-combat.md":
         return _parse_core_conditions(text)
     return {}
 

@@ -21,6 +21,20 @@ export default defineNuxtConfig({
   experimental: {
     appManifest: false,
   },
+  vite: {
+    server: {
+      watch: {
+        // Sheet and map JSON is edited by the app itself. Let the realtime
+        // channels update UI state instead of letting Vite HMR full-reload
+        // every open tabletop when a token HP/condition change is persisted.
+        ignored: [
+          '**/data/sheets/**',
+          '**/data/trainers/**',
+          '**/data/maps/**',
+        ],
+      },
+    },
+  },
   nitro: {
     publicAssets: [
       {

@@ -266,6 +266,9 @@ export interface TrainerSheet {
   evasion?: { speed?: number; physical?: number; special?: number }
   /** Legacy stat stages and non-stat modifiers such as Accuracy. */
   combatStages?: Partial<Record<CombatStageKey, number>>
+  /** Canonical PTU condition names (for example, "Burned" or "Tripped"). */
+  conditions?: string[]
+  /** Legacy/free-form status notes that do not map to a canonical condition. */
   statusAfflictions?: string
   digestion?: string
 

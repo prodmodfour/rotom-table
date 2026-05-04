@@ -27,6 +27,7 @@ import {
 import { buildMapOccupancy } from '~/utils/mapOccupancy'
 import { getClientId } from '~/utils/clientId'
 import { COMBAT_STAGE_KEYS, COMBAT_STAT_STAGE_KEYS, clampCombatStage } from '~/utils/combatStages'
+import { normalizeConditionNames } from '~/utils/statusConditions'
 import { resolveStats } from '~/data/characterSheets'
 import { resolveTrainerStats } from '~/data/trainerSheets'
 import type { CharacterSheet } from '~/types/characterSheet'
@@ -191,6 +192,7 @@ interface InitiativeRow {
   sprite: InitiativeSpritePreview
   currentHp: number
   maxHp: number
+  conditions: string[]
   initiative: number | null
   speed: number
 }
@@ -266,6 +268,7 @@ const initiativeRows = computed<InitiativeRow[]>(() => {
       sprite: initiativeSpriteFor(pokemon),
       currentHp: Math.max(0, Math.floor(pokemon.currentHp)),
       maxHp: Math.max(0, Math.floor(pokemon.maxHp)),
+      conditions: pokemon.conditions,
       initiative: normalizeInitiativeValue(placement?.initiative),
       speed: speedForPlacement(pokemon.sheetKind, pokemon.sheetSlug),
     }
@@ -614,6 +617,58 @@ const modifyCombatStages = async (payload: { id: string; stages: CombatStageMap 
   } catch (err) {
     sheets.set(placement.sheetSlug, original)
     console.error('[modifyCombatStages] save failed', err)
+  }
+}
+
+const modifyConditions = async (payload: { id: string; conditions: string[] }) => {
+  if (!map.value || !canControlPlacement(payload.id)) return
+  const placement = map.value.placements.find((p) => p.id === payload.id)
+  if (!placement) return
+
+  const clientId = getClientId()
+  const conditions = normalizeConditionNames(payload.conditions)
+
+  if (placement.sheetKind === 'pokemon') {
+    const sheets = pokemonBySlug.value
+    if (!sheets) return
+    const original = sheets.get(placement.sheetSlug)
+    if (!original) return
+    const updated = JSON.parse(JSON.stringify(original)) as CharacterSheet
+    updated.combat = { ...(updated.combat ?? {}), conditions }
+    sheets.set(placement.sheetSlug, updated)
+
+    try {
+      const payloadOut: Record<string, unknown> = { ...(updated as unknown as Record<string, unknown>) }
+      delete payloadOut.folder
+      await $fetch('/api/sheets/save', {
+        method: 'POST',
+        body: { kind: 'pokemon', slug: placement.sheetSlug, sheet: payloadOut, clientId },
+      })
+    } catch (err) {
+      sheets.set(placement.sheetSlug, original)
+      console.error('[modifyConditions] save failed', err)
+    }
+    return
+  }
+
+  const sheets = trainerBySlug.value
+  if (!sheets) return
+  const original = sheets.get(placement.sheetSlug)
+  if (!original) return
+  const updated = JSON.parse(JSON.stringify(original)) as TrainerSheet
+  updated.conditions = conditions
+  sheets.set(placement.sheetSlug, updated)
+
+  try {
+    const payloadOut: Record<string, unknown> = { ...(updated as unknown as Record<string, unknown>) }
+    delete payloadOut.folder
+    await $fetch('/api/sheets/save', {
+      method: 'POST',
+      body: { kind: 'trainer', slug: placement.sheetSlug, sheet: payloadOut, clientId },
+    })
+  } catch (err) {
+    sheets.set(placement.sheetSlug, original)
+    console.error('[modifyConditions] save failed', err)
   }
 }
 
@@ -994,6 +1049,7 @@ watch(
           @delete-pokemon="deletePokemon"
           @modify-hp="modifyHp"
           @modify-combat-stages="modifyCombatStages"
+          @modify-conditions="modifyConditions"
           @preview-change="updatePreview"
           @place-voxel="placeVoxel"
           @remove-voxel="removeVoxel"
@@ -1160,6 +1216,14 @@ watch(
                   <span class="initiative-row__hp-track" :data-hp-tier="hpTier(entry)" aria-hidden="true">
                     <span :style="{ width: hpPercent(entry) }" />
                   </span>
+                </span>
+                <span v-if="entry.conditions.length" class="initiative-row__conditions" aria-label="Conditions">
+                  <ConditionTag
+                    v-for="condition in entry.conditions"
+                    :key="condition"
+                    :name="condition"
+                    size="xs"
+                  />
                 </span>
               </button>
 
@@ -2101,6 +2165,12 @@ input:disabled {
 .initiative-row__hp-track[data-hp-tier='critical'] > span,
 .initiative-row.is-fainted .initiative-row__hp-track > span {
   background: var(--bad);
+}
+
+.initiative-row__conditions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem;
 }
 
 .initiative-row__score {

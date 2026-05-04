@@ -787,9 +787,13 @@ const clearPortrait = () => {
                 <strong><EditableCell v-model="sheet.evasion!.special"  type="number" :min="0" /></strong>
               </li>
             </ul>
+            <div class="muted condition-block">
+              <strong>Conditions:</strong>
+              <ConditionPicker v-model="sheet.conditions" />
+            </div>
             <p class="muted">
-              <strong>Status:</strong>
-              <EditableCell v-model="sheet.statusAfflictions" placeholder="None" />
+              <strong>Status notes:</strong>
+              <EditableCell v-model="sheet.statusAfflictions" placeholder="Optional notes" />
             </p>
             <p class="muted">
               <strong>Digestion:</strong>
@@ -1646,6 +1650,12 @@ const clearPortrait = () => {
 .block-title--spaced { margin-top: 0.85rem; }
 
 .muted { color: var(--ink-muted); font-size: 0.85rem; }
+.condition-block {
+  display: grid;
+  gap: 0.45rem;
+  margin: 0.55rem 0;
+}
+.condition-block > strong { color: var(--ink-bright); }
 .muted-help { color: var(--ink-muted); font-size: 0.78rem; margin: 0 0 0.4rem; }
 
 /* ===== Tables ===== */
