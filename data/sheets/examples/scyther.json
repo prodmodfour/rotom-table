@@ -1,0 +1,148 @@
+{
+  "slug": "examples-scyther",
+  "nickname": "Scyther",
+  "species": "Scyther",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Jolly",
+  "types": [
+    "Bug",
+    "Flying"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "satk": {
+      "base": -1,
+      "added": 5,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    },
+    "spd": {
+      "base": 1,
+      "added": 4,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 63,
+    "currentHp": 63,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 3,
+      "vsAny": 3
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Focus Energy",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "Self",
+      "effect": "The user becomes Pumped. While Pumped, the user’s Critical Range is extended by 2, or 18+ if the Critical Range is not otherwise extended. Being switched will cause this effect to end."
+    },
+    {
+      "name": "Pursuit",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "If the foe is fleeing or being switched out, Pursuit may be used as an Interrupt, targeting the triggering foe. When used as an Interrupt, Pursuit grants the user a +5 bonus to all Movement Speeds, and has a Damage Base of 8 (2d8+10 / 19)."
+    },
+    {
+      "name": "Agility",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Speed 2 Combat Stages."
+    },
+    {
+      "name": "Quick Attack",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Priority",
+      "effect": "None."
+    },
+    {
+      "name": "False Swipe",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, Pass",
+      "effect": "False Swipe’s damage cannot bring a target lower than 1 Hit Point."
+    },
+    {
+      "name": "Leer",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Cone 2, Friendly, Social",
+      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Vanguard",
+      "frequency": "Static",
+      "effect": "The user gains a +5 Bonus to all Damage Rolls against targets with an initiative lower than itself that have not yet acted that round (having Ante’d up your Action via an Interrupt or similar on a previous round does not count as having acted that round)."
+    },
+    {
+      "name": "Swarm",
+      "frequency": "Static",
+      "effect": "The user gains Last Chance with Bug."
+    }
+  ],
+  "natureMod": {
+    "plus": "spd",
+    "minus": "satk"
+  },
+  "capabilities": {
+    "overland": 8,
+    "sky": 8,
+    "swim": 4,
+    "jump": "2/3",
+    "power": 6,
+    "weight": 4,
+    "size": "Medium",
+    "other": [
+      "Naturewalk (Grassland, Forest)"
+    ]
+  }
+}

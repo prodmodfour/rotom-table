@@ -1,0 +1,146 @@
+{
+  "slug": "examples-altaria",
+  "nickname": "Altaria",
+  "species": "Altaria",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Modest",
+  "types": [
+    "Dragon",
+    "Flying"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "atk": {
+      "base": -1,
+      "added": 5,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "satk": {
+      "base": 1,
+      "added": 6,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 66,
+    "currentHp": 66,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 3,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Mist",
+      "type": "Ice",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "range": "Blessing",
+      "effect": "Blessing – Any user affected by Mist may activate it when having Combat Stages lowered by any effect; if they do, those Combat Stages are instead not lowered. Mist may be activated 3 times, and then disappears."
+    },
+    {
+      "name": "Disarming Voice",
+      "type": "Fairy",
+      "category": "Special",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "range": "Burst 1",
+      "effect": "Disarming Voice cannot miss."
+    },
+    {
+      "name": "Fury Attack",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 2,
+      "damageRoll": "1d6+3 / 7",
+      "frequency": "At-Will",
+      "ac": 4,
+      "range": "Melee, 1 Target, Five Strike",
+      "effect": "None"
+    },
+    {
+      "name": "Sing",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "ac": 10,
+      "range": "Burst 2, Friendly, Sonic",
+      "effect": "All legal Targets fall Asleep. On a miss, Sing instead causes targets to become Slowed and suffer a -2 penalty to their Evasion until the end of the user’s next turn."
+    },
+    {
+      "name": "Natural Gift",
+      "type": "Normal",
+      "category": "Physical",
+      "frequency": "Scene",
+      "ac": 2,
+      "range": "6, 1 Target, Berry",
+      "effect": "Refer to the Move Keywords Berry list. Natural Gift deals damage according to the Berry list and Natural Gift’s Type is also defined there. The Berry’s Digestion Buff is nullified and is not used."
+    },
+    {
+      "name": "Round",
+      "type": "Normal",
+      "category": "Special",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Burst 1, Sonic",
+      "effect": "Round’s Damage Base is equal to 6, plus +2 more for each previous use of Round by any Trainer or Pokémon this round, up to a maximum of DB12."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Natural Cure",
+      "frequency": "Scene – Free Action",
+      "effect": "Whenever the user is returned to its Poké Ball or Takes A Breather, it may activate Natural Cure to cure itself of all Persistent Status Afflictions."
+    },
+    {
+      "name": "Confidence",
+      "frequency": "Scene – Standard Action",
+      "effect": "Choose a Combat Stat. All allies within 5 meters of the user gain +1 CS in the Chosen Stat."
+    }
+  ],
+  "natureMod": {
+    "plus": "satk",
+    "minus": "atk"
+  },
+  "capabilities": {
+    "overland": 3,
+    "sky": 6,
+    "swim": 2,
+    "jump": "2/2",
+    "power": 4,
+    "weight": 2,
+    "size": "Medium",
+    "other": [
+      "Guster"
+    ]
+  }
+}

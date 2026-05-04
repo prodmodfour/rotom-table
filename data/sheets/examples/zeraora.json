@@ -1,0 +1,155 @@
+{
+  "slug": "examples-zeraora",
+  "nickname": "Zeraora",
+  "species": "Zeraora",
+  "level": 20,
+  "gender": "No Gender",
+  "shiny": false,
+  "nature": "Mild",
+  "types": [
+    "Electric"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "def": {
+      "base": -1,
+      "added": 5,
+      "stage": 0
+    },
+    "satk": {
+      "base": 1,
+      "added": 4,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 8,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 72,
+    "currentHp": 72,
+    "tick": 7,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 2,
+      "vsAny": 4
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Spark",
+      "type": "Electric",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash",
+      "effect": "Spark Paralyzes the target on 15+."
+    },
+    {
+      "name": "Quick Attack",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Priority",
+      "effect": "None."
+    },
+    {
+      "name": "Volt Switch",
+      "type": "Electric",
+      "category": "Special",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "5, 1 Target",
+      "effect": "If Volt Switch successfully hits its target, the user deals damage and then immediately is returned to its Poké Ball in the same turn. A New Pokémon may immediately be sent out. Using Volt Switch lets a Trapped user be recalled."
+    },
+    {
+      "name": "Fury Swipes",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 3,
+      "damageRoll": "1d6+5 / 9",
+      "frequency": "EOT",
+      "ac": 5,
+      "range": "Melee, 1 Target, Five Strike",
+      "effect": "None"
+    },
+    {
+      "name": "Scratch",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, Pass",
+      "effect": "None"
+    },
+    {
+      "name": "Snarl",
+      "type": "Dark",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "EOT",
+      "ac": 3,
+      "range": "Cone 2, Sonic",
+      "effect": "All Legal Targets have their Special Attack lowered 1 Combat Stage."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Volt Absorb",
+      "frequency": "Static",
+      "effect": "The user is immune to the damage and effects of Electric-Type attacks, and whenever they are hit with an Electric Type attack, they gain Hit Points equal to a Tick of Hit Points. Defensive."
+    },
+    {
+      "name": "Vicious",
+      "frequency": "Scene – Special",
+      "effect": "Connection – Hone Claws. When this Ability is activated, choose one effect; the user gains another Standard Action this round; or the user increase their Critical Hit Range on all attacks by +2 for the remainder of the encounter."
+    }
+  ],
+  "natureMod": {
+    "plus": "satk",
+    "minus": "def"
+  },
+  "capabilities": {
+    "overland": 7,
+    "swim": 4,
+    "jump": "2/2",
+    "power": 7,
+    "weight": 3,
+    "size": "Medium",
+    "other": [
+      "Naturewalk  (Forest)",
+      "Zapper"
+    ]
+  }
+}

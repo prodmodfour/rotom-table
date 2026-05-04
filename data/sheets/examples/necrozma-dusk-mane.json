@@ -1,0 +1,147 @@
+{
+  "slug": "examples-necrozma-dusk-mane",
+  "nickname": "Necrozma Dusk Mane",
+  "species": "Necrozma Dusk Mane",
+  "level": 20,
+  "gender": "No Gender",
+  "shiny": false,
+  "nature": "Lonely",
+  "types": [
+    "Psychic",
+    "Steel"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 1,
+      "stage": 0
+    },
+    "atk": {
+      "base": 1,
+      "added": 6,
+      "stage": 0
+    },
+    "def": {
+      "base": -1,
+      "added": 8,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 2,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 63,
+    "currentHp": 63,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 3,
+      "vsSatk": 3,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Confusion",
+      "type": "Psychic",
+      "category": "Special",
+      "db": 7,
+      "damageRoll": "2d6+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Confusion Confuses the target on 19+."
+    },
+    {
+      "name": "Slash",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, Pass",
+      "effect": "Slash is a Critical Hit on 18+."
+    },
+    {
+      "name": "Stored Power",
+      "type": "Psychic",
+      "category": "Special",
+      "db": 4,
+      "damageRoll": "1d8+6",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "10, 1 Target",
+      "effect": "For every Combat Stage the user has above 0, add +2 to Stored Power’s Damage Base, up to a maximum of Damage Base 20."
+    },
+    {
+      "name": "Rock Blast",
+      "type": "Rock",
+      "category": "Physical",
+      "db": 3,
+      "damageRoll": "1d6+5 / 9",
+      "frequency": "EOT",
+      "ac": 5,
+      "range": "6, 1 Target, Five Strike",
+      "effect": "None"
+    },
+    {
+      "name": "Metal Claw",
+      "type": "Steel",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10",
+      "frequency": "At-Will",
+      "ac": 3,
+      "range": "Melee, 1 Target, Spirit Surge",
+      "effect": "Raise the user’s Attack 1 Combat Stage on 18+."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Prism Armor",
+      "frequency": "Static",
+      "effect": "The user gains +5 Damage Reduction against Super Effective-Damage. Defensive."
+    },
+    {
+      "name": "Starlight",
+      "frequency": "Daily – Swift Action",
+      "effect": "The user may activate Starlight while exposed to moonlight or starlight to become Luminous. As a Swift Action, the user may expend the Luminous condition to gain +2 Special Defense CS and +2 Evasion for the rest of the Scene."
+    }
+  ],
+  "natureMod": {
+    "plus": "atk",
+    "minus": "def"
+  },
+  "capabilities": {
+    "overland": 10,
+    "swim": 5,
+    "jump": "3/3",
+    "power": 14,
+    "weight": 6,
+    "size": "Huge",
+    "other": [
+      "Darkvision",
+      "Dead Silent",
+      "Mindlock",
+      "Viral Fusion"
+    ]
+  }
+}

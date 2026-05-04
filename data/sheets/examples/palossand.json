@@ -1,0 +1,135 @@
+{
+  "slug": "examples-palossand",
+  "nickname": "Palossand",
+  "species": "Palossand",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Modest",
+  "types": [
+    "Ghost",
+    "Ground"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "atk": {
+      "base": -1,
+      "added": 3,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 8,
+      "stage": 0
+    },
+    "satk": {
+      "base": 1,
+      "added": 8,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 2,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 72,
+    "currentHp": 72,
+    "tick": 7,
+    "evasion": {
+      "vsAtk": 3,
+      "vsSatk": 2,
+      "vsAny": 1
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Sand Attack",
+      "type": "Ground",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "2, 1 Target",
+      "effect": "The target is Blinded until the end of their next turn."
+    },
+    {
+      "name": "Sand Tomb",
+      "type": "Ground",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "Scene x2",
+      "ac": 4,
+      "range": "5, 1 Target",
+      "effect": "The target is put in a Vortex."
+    },
+    {
+      "name": "Astonish",
+      "type": "Ghost",
+      "category": "Physical",
+      "db": 5,
+      "damageRoll": "1d8+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Astonish Flinches the target on 15+. Once per scene, if the target is unaware of the user’s presence, Astonish automatically Flinches the target."
+    },
+    {
+      "name": "Mega Drain",
+      "type": "Grass",
+      "category": "Special",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "After the target takes damage, the user gains Hit Points equal to half of the damage they dealt to the target."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Water Compaction",
+      "effect": "The user gains a +2d6+4 bonus on damage rolls against foes that were released from a Pokéball or entered the encounter since the user's last turn."
+    },
+    {
+      "name": "Sand Stream",
+      "frequency": "Scene x3 – Swift Action",
+      "effect": "The Weather changes to a Sandstorm for 1 full round."
+    }
+  ],
+  "natureMod": {
+    "plus": "satk",
+    "minus": "atk"
+  },
+  "capabilities": {
+    "overland": 5,
+    "swim": 2,
+    "burrow": 3,
+    "jump": "0/0",
+    "power": 4,
+    "weight": 6,
+    "size": "Medium",
+    "other": [
+      "Amorphous",
+      "Darkvision",
+      "Dead Silent",
+      "Groundshaper",
+      "Naturewalk (Desert)"
+    ]
+  }
+}

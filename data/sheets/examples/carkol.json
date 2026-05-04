@@ -1,0 +1,136 @@
+{
+  "slug": "examples-carkol",
+  "nickname": "Carkol",
+  "species": "Carkol",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Rash",
+  "types": [
+    "Rock",
+    "Fire"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 12,
+      "stage": 0
+    },
+    "satk": {
+      "base": 1,
+      "added": 4,
+      "stage": 0
+    },
+    "sdef": {
+      "base": -1,
+      "added": 3,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 69,
+    "currentHp": 69,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 4,
+      "vsSatk": 1,
+      "vsAny": 1
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Ancient Power",
+      "type": "Rock",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "6, 1 Target, Spirit Surge",
+      "effect": "On 19+, the user has each of its stats raised by +1 Combat Stage."
+    },
+    {
+      "name": "Smack Down",
+      "type": "Rock",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "8, 1 Target",
+      "effect": "The target is knocked down to ground level, and loses all Sky or Levitate Speeds for 3 turns. During this time, they may be hit by Ground-Type Moves even if normally immune."
+    },
+    {
+      "name": "Rapid Spin",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 5,
+      "damageRoll": "1d8+8 / 13",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Spirit Surge",
+      "effect": "Rapid Spin destroys all Hazards within 5 meters, removes Leech Seeds, and removes the user’s Trapped or Stuck status. If Rapid Spin hits, the user’s speed raises 1 CS."
+    },
+    {
+      "name": "Rock Polish",
+      "type": "Rock",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Speed 2 Combat Stages."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Flash Fire",
+      "frequency": "Static",
+      "effect": "The user is immune to the damage and effects of Fire-Type attacks. If the user is hit by a Fire-Type attack, they gain +1 CS in their choice of Attack or Special Attack. Defensive."
+    },
+    {
+      "name": "Steam Engine",
+      "frequency": "Scene x2 – Swift Action, Reaction",
+      "effect": "Connection – Smokescreen. The user may use Smokescreen as a Free Action, ignoring frequency, centered on the user."
+    }
+  ],
+  "natureMod": {
+    "plus": "satk",
+    "minus": "sdef"
+  },
+  "capabilities": {
+    "overland": 6,
+    "swim": 3,
+    "jump": "0/1",
+    "power": 5,
+    "weight": 4,
+    "size": "Medium",
+    "other": [
+      "Darkvision",
+      "Firestarter",
+      "Glow",
+      "Heater",
+      "Materializer",
+      "Naturewalk  (Cave)",
+      "Underdog"
+    ]
+  }
+}

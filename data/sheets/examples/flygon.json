@@ -1,0 +1,149 @@
+{
+  "slug": "examples-flygon",
+  "nickname": "Flygon",
+  "species": "Flygon",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Naughty",
+  "types": [
+    "Ground",
+    "Dragon"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "atk": {
+      "base": 1,
+      "added": 11,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "sdef": {
+      "base": -1,
+      "added": 4,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 66,
+    "currentHp": 66,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 2,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Bide",
+      "type": "Normal",
+      "category": "Physical",
+      "frequency": "Scene",
+      "range": "Burst 1, Friendly",
+      "effect": "The user may use Bide as a Reaction Move upon being Hit by a Damaging Move. During their next available turn, the user may Shift and then use Bide, causing all Adjacent foes to lose X HP, where X is the amount of Damage taken since declaring use of Bide (Loss of life through effects such as Poison is not ‘Damage’)."
+    },
+    {
+      "name": "Mud-Slap",
+      "type": "Ground",
+      "category": "Special",
+      "db": 4,
+      "damageRoll": "1d8+6",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "3, 1 Target",
+      "effect": "The target’s Accuracy is lowered by -1."
+    },
+    {
+      "name": "Sonic Boom",
+      "type": "Normal",
+      "category": "Special",
+      "frequency": "EOT",
+      "ac": 6,
+      "range": "8, 1 Target",
+      "effect": "Sonic Boom causes the target to lose 15 Hit Points. Sonic Boom is Special and interacts with other moves and effects as such ( Special Evasion may be applied to avoid it, Mirror Coat can reflect it, etc. )"
+    },
+    {
+      "name": "Feint Attack",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "EOT",
+      "range": "Melee, 1 Target",
+      "effect": "Feint Attack cannot miss."
+    },
+    {
+      "name": "Sand Tomb",
+      "type": "Ground",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "Scene x2",
+      "ac": 4,
+      "range": "5, 1 Target",
+      "effect": "The target is put in a Vortex."
+    },
+    {
+      "name": "Sand Attack",
+      "type": "Ground",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "2, 1 Target",
+      "effect": "The target is Blinded until the end of their next turn."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Levitate",
+      "frequency": "Static",
+      "effect": "The Pokémon is immune to the damage and effects of Ground Type Moves, and gains a Levitate Speed of 4, or has existing Levitate Speeds increased by +2. Defensive."
+    },
+    {
+      "name": "Flutter",
+      "frequency": "At-Will – Shift Action",
+      "effect": "The user gains +3 Evasion until the end of their next turn, and cannot be Flanked."
+    }
+  ],
+  "natureMod": {
+    "plus": "atk",
+    "minus": "sdef"
+  },
+  "capabilities": {
+    "overland": 6,
+    "sky": 7,
+    "swim": 4,
+    "jump": "3/3",
+    "power": 7,
+    "weight": 4,
+    "size": "Large",
+    "other": [
+      "Naturewalk (Desert)",
+      "Mountable 1"
+    ]
+  }
+}

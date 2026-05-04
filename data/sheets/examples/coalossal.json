@@ -1,0 +1,135 @@
+{
+  "slug": "examples-coalossal",
+  "nickname": "Coalossal",
+  "species": "Coalossal",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Brave",
+  "types": [
+    "Rock",
+    "Fire"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "atk": {
+      "base": 1,
+      "added": 3,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 12,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 2,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "spd": {
+      "base": -1,
+      "added": 6,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 75,
+    "currentHp": 75,
+    "tick": 7,
+    "evasion": {
+      "vsAtk": 4,
+      "vsSatk": 2,
+      "vsAny": 1
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Smack Down",
+      "type": "Rock",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "8, 1 Target",
+      "effect": "The target is knocked down to ground level, and loses all Sky or Levitate Speeds for 3 turns. During this time, they may be hit by Ground-Type Moves even if normally immune."
+    },
+    {
+      "name": "Rapid Spin",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 5,
+      "damageRoll": "1d8+8 / 13",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Spirit Surge",
+      "effect": "Rapid Spin destroys all Hazards within 5 meters, removes Leech Seeds, and removes the user’s Trapped or Stuck status. If Rapid Spin hits, the user’s speed raises 1 CS."
+    },
+    {
+      "name": "Rock Polish",
+      "type": "Rock",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Speed 2 Combat Stages."
+    },
+    {
+      "name": "Ancient Power",
+      "type": "Rock",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "6, 1 Target, Spirit Surge",
+      "effect": "On 19+, the user has each of its stats raised by +1 Combat Stage."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Steam Engine",
+      "frequency": "Scene x2 – Swift Action, Reaction",
+      "effect": "Connection – Smokescreen. The user may use Smokescreen as a Free Action, ignoring frequency, centered on the user."
+    },
+    {
+      "name": "Fiery Crash",
+      "frequency": "Static",
+      "effect": "Whenever the user uses a Move with the Dash keyword, they may either increase that Move’s Damage Base by +2, or change the Move to be Fire-Type if it was not already. All Moves with the Dash keyword performed as Fire-Typed burn their target on 19+, or increase the effect range by +2 if they could already inflict Burn."
+    }
+  ],
+  "natureMod": {
+    "plus": "atk",
+    "minus": "spd"
+  },
+  "capabilities": {
+    "overland": 8,
+    "swim": 4,
+    "jump": "1/1",
+    "power": 10,
+    "weight": 6,
+    "size": "Huge",
+    "other": [
+      "Darkvision",
+      "Firestarter",
+      "Glow",
+      "Heater",
+      "Materializer",
+      "Naturewalk  (Cave)"
+    ]
+  }
+}

@@ -1,0 +1,145 @@
+{
+  "slug": "examples-gallade",
+  "nickname": "Gallade",
+  "species": "Gallade",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Desperate",
+  "types": [
+    "Psychic",
+    "Fighting"
+  ],
+  "stats": {
+    "hp": {
+      "base": -1,
+      "added": 4,
+      "stage": 0
+    },
+    "atk": {
+      "base": 1,
+      "added": 5,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 60,
+    "currentHp": 60,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 3,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Confusion",
+      "type": "Psychic",
+      "category": "Special",
+      "db": 7,
+      "damageRoll": "2d6+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Confusion Confuses the target on 19+."
+    },
+    {
+      "name": "Quick Guard",
+      "type": "Fighting",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Melee, Interrupt, Shield, Trigger",
+      "effect": "If the user or an adjacent ally is targeted by a Priority or Interrupt Attack, Quick Guard may be declared as an Interrupt, causing the triggering attack to have no effect."
+    },
+    {
+      "name": "Slash",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, Pass",
+      "effect": "Slash is a Critical Hit on 18+."
+    },
+    {
+      "name": "Heal Pulse",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "Daily x2",
+      "range": "6, 1 Target, Aura",
+      "effect": "Restores 50% of the target’s max Hit Points. Heal Pulse’s user may not target itself with Heal Pulse."
+    },
+    {
+      "name": "Double Team",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Self, Illusion, Coat",
+      "effect": "The user gains 3 activations of Double Team. The user may either activate Double Team when being targeted by an attack to increase their Evasion by +2 against that attack; or when making an attack to increase their Accuracy by +2 for that attack."
+    },
+    {
+      "name": "Teleport",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Self, Interrupt",
+      "effect": "The user Teleports up to X meters, where X is its Teleporter Capability. Teleport can be used as an Interrupt at any time. Moves that targeted Teleport’s user continue through the desired target’s space if the Move allows for it as if the user hadn’t been there; single target moves simply miss."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Synchronize",
+      "frequency": "Scene – Free Action",
+      "effect": "The foe which caused the Status Condition is given the same Status they inflicted."
+    },
+    {
+      "name": "Justified",
+      "frequency": "At-Will - Free Action",
+      "effect": "The user may raise its Attack by +1 Combat Stage."
+    }
+  ],
+  "natureMod": {
+    "plus": "atk",
+    "minus": "hp"
+  },
+  "capabilities": {
+    "overland": 7,
+    "swim": 4,
+    "jump": "2/2",
+    "power": 7,
+    "weight": 4,
+    "size": "Medium",
+    "other": [
+      "Naturewalk  (Forest, Urban)",
+      "Telekinetic",
+      "Telepath"
+    ]
+  }
+}

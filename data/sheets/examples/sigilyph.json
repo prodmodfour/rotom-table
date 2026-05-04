@@ -1,0 +1,143 @@
+{
+  "slug": "examples-sigilyph",
+  "nickname": "Sigilyph",
+  "species": "Sigilyph",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Docile",
+  "types": [
+    "Psychic",
+    "Flying"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 10,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 63,
+    "currentHp": 63,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 2,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Miracle Eye",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "range": "Self, Swift Action",
+      "effect": "Miracle Eye may be activated as a Swift Action on the user’s turn. For the rest of the turn, the user’s Psychic-Type Moves can hit and affect Dark-Type targets, and the user can see through the Illusion Ability, Moves with the Illusion keyword, and effects created by the Illusionist Capability, ignoring all effects from those."
+    },
+    {
+      "name": "Psybeam",
+      "type": "Psychic",
+      "category": "Special",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Psybeam Confuses the target on 19+."
+    },
+    {
+      "name": "Tailwind",
+      "type": "Flying",
+      "category": "Status",
+      "frequency": "Scene",
+      "effect": "For the remainder of the encounter, all allied trainers and Pokémon gain +5 to their Initiative. Multiple instances of Tailwind cannot stack."
+    },
+    {
+      "name": "Whirlwind",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "Line 6",
+      "effect": "All targets are pushed X meters, where X is 8 minus their weight class. If the Line targets into a Smokescreen, the smoke is dispersed. All hazards in the Whirlwind are destroyed."
+    },
+    {
+      "name": "Hypnosis",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 6,
+      "range": "4, 1 Target",
+      "effect": "The target falls Asleep."
+    },
+    {
+      "name": "Gust",
+      "type": "Flying",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "If the target is airborne as a result of Fly or Sky Drop, Gust can hit them, ignoring Range and has a Damage Base of 8 instead."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Magic Guard",
+      "frequency": "Static",
+      "effect": "The user is immune to damage and Hit Point loss from Hazards, Weather, Status Afflictions, Vortexes, Recoil, Hay Fever, Iron Barbs, Rough Skin, and Leech Seed. Defensive."
+    },
+    {
+      "name": "Tinted Lens",
+      "frequency": "Static",
+      "effect": "The user’s Resisted Moves are instead Neutral. The user’s Doubly Resisted Moves are instead Resisted. The user’s Triply Resisted Moves are instead Double Resisted."
+    }
+  ],
+  "capabilities": {
+    "overland": 1,
+    "sky": 7,
+    "swim": 1,
+    "jump": "1/2",
+    "power": 3,
+    "weight": 2,
+    "size": "Medium",
+    "other": [
+      "Telekinetic",
+      "Invisibility",
+      "Guster"
+    ]
+  }
+}

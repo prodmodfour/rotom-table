@@ -1,0 +1,131 @@
+{
+  "slug": "examples-bisharp",
+  "nickname": "Bisharp",
+  "species": "Bisharp",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Decisive",
+  "types": [
+    "Dark",
+    "Steel"
+  ],
+  "stats": {
+    "hp": {
+      "base": 1,
+      "added": 8,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 9,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 2,
+      "stage": 0
+    },
+    "sdef": {
+      "base": -1,
+      "added": 2,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 2,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 78,
+    "currentHp": 78,
+    "tick": 7,
+    "evasion": {
+      "vsAtk": 3,
+      "vsSatk": 1,
+      "vsAny": 1
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Fury Cutter",
+      "type": "Bug",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 3,
+      "range": "Melee, 1 Target",
+      "effect": "If Fury Cutter is used successfully and consecutively on the same target, the Damage Base is increased by +4 to a maximum of 16. For example, the first hit would have a DB of 4; the second hit a DB of 8; the third hit a DB of 12; the fourth and further hits a DB of 16. If Fury Cuter misses or fails to damage its target, its Damage Base resets."
+    },
+    {
+      "name": "Leer",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Cone 2, Friendly, Social",
+      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
+    },
+    {
+      "name": "Torment",
+      "type": "Dark",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "10, 1 Target, Social",
+      "effect": "The target becomes Suppressed."
+    },
+    {
+      "name": "Feint Attack",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "range": "Melee, 1 Target",
+      "effect": "Feint Attack cannot miss."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Inner Focus",
+      "frequency": "Static",
+      "effect": "The user cannot be Flinched, and their Initiative cannot be unwillingly lowered by any effects."
+    },
+    {
+      "name": "Rally",
+      "frequency": "Scene – Swift Action",
+      "effect": "The user and all allies within 10 meters may immediately Disengage 1 Meter as a free Action. Rally does not work on sleeping, paralyzed, stuck, fainted, or otherwise incapacitated allies."
+    }
+  ],
+  "natureMod": {
+    "plus": "hp",
+    "minus": "sdef"
+  },
+  "capabilities": {
+    "overland": 7,
+    "swim": 4,
+    "jump": "1/2",
+    "power": 7,
+    "weight": 4,
+    "size": "Medium",
+    "other": [
+      "Darkvision",
+      "Tracker",
+      "Stealth",
+      "Pack Mon"
+    ]
+  }
+}

@@ -1,0 +1,153 @@
+{
+  "slug": "examples-moltres-galar",
+  "nickname": "Moltres Galar",
+  "species": "Moltres Galar",
+  "level": 20,
+  "gender": "No Gender",
+  "shiny": false,
+  "nature": "Gentle",
+  "types": [
+    "Dark",
+    "Flying"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "def": {
+      "base": -1,
+      "added": 5,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 1,
+      "added": 5,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 72,
+    "currentHp": 72,
+    "tick": 7,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 4,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Safeguard",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Blessing",
+      "effect": "Blessing – Any user affected by Safeguard may activate it when receiving a Status Affliction to ignore the effects of that Status Affliction on their next turn. Safeguard may be activated 3 times, and then disappears."
+    },
+    {
+      "name": "Gust",
+      "type": "Flying",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "If the target is airborne as a result of Fly or Sky Drop, Gust can hit them, ignoring Range and has a Damage Base of 8 instead."
+    },
+    {
+      "name": "Agility",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Speed 2 Combat Stages."
+    },
+    {
+      "name": "Payback",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "If the target hit the user with a Damaging Move on the previous turn, Payback has a Damage Base of 10 (3d8+10 / 24) instead."
+    },
+    {
+      "name": "Wing Attack",
+      "type": "Flying",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "None."
+    },
+    {
+      "name": "Leer",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Cone 2, Friendly, Social",
+      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Berserk",
+      "frequency": "At-Will – Free Action",
+      "effect": "The user receives +1 Special Attack Combat Stage."
+    },
+    {
+      "name": "Type Aura",
+      "frequency": "Static",
+      "effect": "The user and all allies within 3 meters gain a +5 Bonus to Damage Rolls with Moves matching the user’s Primary Type."
+    }
+  ],
+  "natureMod": {
+    "plus": "sdef",
+    "minus": "def"
+  },
+  "capabilities": {
+    "overland": 5,
+    "sky": 10,
+    "swim": 5,
+    "jump": "2/3",
+    "power": 7,
+    "weight": 4,
+    "size": "Large",
+    "other": [
+      "Chilled",
+      "Darkvision",
+      "Glow",
+      "Guster",
+      "Mountable 1",
+      "Stealth"
+    ]
+  }
+}

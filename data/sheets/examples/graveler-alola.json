@@ -1,0 +1,154 @@
+{
+  "slug": "examples-graveler-alola",
+  "nickname": "Graveler Alola",
+  "species": "Graveler Alola",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Brave",
+  "types": [
+    "Rock",
+    "Electric"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    },
+    "atk": {
+      "base": 1,
+      "added": 4,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "spd": {
+      "base": -1,
+      "added": 3,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 69,
+    "currentHp": 69,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 3,
+      "vsSatk": 1,
+      "vsAny": 1
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Smack Down",
+      "type": "Rock",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "8, 1 Target",
+      "effect": "The target is knocked down to ground level, and loses all Sky or Levitate Speeds for 3 turns. During this time, they may be hit by Ground-Type Moves even if normally immune."
+    },
+    {
+      "name": "Rollout",
+      "type": "Rock",
+      "category": "Physical",
+      "db": 5,
+      "damageRoll": "1d8+8",
+      "frequency": "At-Will",
+      "ac": 4,
+      "range": "Melee, 1 Target, Pass",
+      "effect": "The user continues to use Rollout on each of its turns until they miss any target with Rollout, or are not able to hit any target with Rollout during their turn.  Each successive use of Rollout increases Rollout’s Damage Base by +4 to a maximum of DB 15."
+    },
+    {
+      "name": "Charge",
+      "type": "Electric",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "If the user performs an Electric Move on their next turn that deals damage, add its Damage Dice Roll an extra time to the damage. Raise the user’s Special Defense 1 Combat Stage."
+    },
+    {
+      "name": "Spark",
+      "type": "Electric",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash",
+      "effect": "Spark Paralyzes the target on 15+."
+    },
+    {
+      "name": "Rock Throw",
+      "type": "Rock",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10",
+      "frequency": "At-Will",
+      "ac": 4,
+      "range": "6, 1 Target",
+      "effect": "None"
+    },
+    {
+      "name": "Rock Polish",
+      "type": "Rock",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Speed 2 Combat Stages."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Rock Head",
+      "frequency": "Static",
+      "effect": "The user ignores the Recoil keyword when attacking. If the user moves at least 4 meters in a straight line towards a foe before attacking that foe with a physical attack, they may add a +2d6 Bonus to the Damage Roll against that foe."
+    },
+    {
+      "name": "Galvanize",
+      "frequency": "At-Will – Free Action",
+      "effect": "The Move is changed to be Electric-Type."
+    }
+  ],
+  "natureMod": {
+    "plus": "atk",
+    "minus": "spd"
+  },
+  "capabilities": {
+    "overland": 5,
+    "swim": 3,
+    "burrow": 3,
+    "jump": "0/1",
+    "power": 8,
+    "weight": 5,
+    "size": "Medium",
+    "other": [
+      "Magnetic",
+      "Naturewalk (Cave, Mountain)",
+      "Underdog",
+      "Volatile Bomb",
+      "Zapper"
+    ]
+  }
+}

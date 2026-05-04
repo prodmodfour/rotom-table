@@ -1,0 +1,135 @@
+{
+  "slug": "examples-octillery",
+  "nickname": "Octillery",
+  "species": "Octillery",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Rash",
+  "types": [
+    "Water"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "satk": {
+      "base": 1,
+      "added": 6,
+      "stage": 0
+    },
+    "sdef": {
+      "base": -1,
+      "added": 5,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 72,
+    "currentHp": 72,
+    "tick": 7,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 2,
+      "vsAny": 1
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Bubble Beam",
+      "type": "Water",
+      "category": "Special",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "Bubble Beam lowers the target’s Speed on 18+."
+    },
+    {
+      "name": "Constrict",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 1,
+      "damageRoll": "1d6+1 / 4",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Constrict lowers the target’s Speed 1 Combat Stage. Constrict may be used as a Swift Action against targets the user is Grappling, and automatically hits when performed this way."
+    },
+    {
+      "name": "Aurora Beam",
+      "type": "Ice",
+      "category": "Special",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Aurora Beam lowers the target’s Attack 1 Combat Stage on 18+."
+    },
+    {
+      "name": "Psybeam",
+      "type": "Psychic",
+      "category": "Special",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Psybeam Confuses the target on 19+."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Sniper",
+      "frequency": "Static",
+      "effect": "When the user gets a Critical Hit, the attack deals +3d10 additional damage."
+    },
+    {
+      "name": "Suction Cups",
+      "frequency": "At-Will - Shift Action",
+      "effect": "The user gains +5 Damage Reduction for 1 full round."
+    }
+  ],
+  "natureMod": {
+    "plus": "satk",
+    "minus": "sdef"
+  },
+  "capabilities": {
+    "overland": 3,
+    "swim": 6,
+    "jump": "1/1",
+    "power": 4,
+    "weight": 3,
+    "size": "Small",
+    "other": [
+      "Amorphous",
+      "Naturewalk (Ocean)",
+      "Fountain",
+      "Gilled"
+    ]
+  }
+}

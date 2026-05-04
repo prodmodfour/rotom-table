@@ -1,0 +1,148 @@
+{
+  "slug": "examples-articuno-galar",
+  "nickname": "Articuno Galar",
+  "species": "Articuno Galar",
+  "level": 20,
+  "gender": "No Gender",
+  "shiny": false,
+  "nature": "Lax",
+  "types": [
+    "Psychic",
+    "Flying"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "def": {
+      "base": 1,
+      "added": 6,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 9,
+      "stage": 0
+    },
+    "sdef": {
+      "base": -1,
+      "added": 2,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 66,
+    "currentHp": 66,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 3,
+      "vsSatk": 2,
+      "vsAny": 3
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Agility",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Speed 2 Combat Stages."
+    },
+    {
+      "name": "Reflect",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Blessing",
+      "effect": "Blessing – Any user affected by Reflect may activate it when receiving Physical Damage to resist the Damage one step. Reflect may be activated 2 times, and then disappears."
+    },
+    {
+      "name": "Psycho Shift",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Melee, 1 Target",
+      "effect": "The user is cured of a Status ailment and the target is given that Status ailment. Psycho Shift cannot miss. Psycho Shift can only be used if the user has a Status ailment and the target does not have the status ailment that is being transferred."
+    },
+    {
+      "name": "Confusion",
+      "type": "Psychic",
+      "category": "Special",
+      "db": 7,
+      "damageRoll": "2d6+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Confusion Confuses the target on 19+."
+    },
+    {
+      "name": "Gust",
+      "type": "Flying",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "If the target is airborne as a result of Fly or Sky Drop, Gust can hit them, ignoring Range and has a Damage Base of 8 instead."
+    },
+    {
+      "name": "Hypnosis",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 6,
+      "range": "4, 1 Target",
+      "effect": "The target falls Asleep."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Keen Eye",
+      "frequency": "Static",
+      "effect": "The user’s Accuracy cannot be lowered, their attacks cannot have Accuracy Penalties (such as from Illuminate), the user is immune to the Blind condition (but not Total Blindness), and the user ignores any Evasion not directly derived from Stats (such as from the Instinct Ability, or from moves like Minimize)."
+    },
+    {
+      "name": "Competitive",
+      "frequency": "Static",
+      "effect": "Whenever the user has its Combat Stages lowered, by something other than its own Moves or Abilities, the user’s Special Attack is raised 2 Combat Stages."
+    }
+  ],
+  "natureMod": {
+    "plus": "def",
+    "minus": "sdef"
+  },
+  "capabilities": {
+    "overland": 5,
+    "sky": 10,
+    "swim": 5,
+    "jump": "2/3",
+    "power": 7,
+    "weight": 4,
+    "size": "Large",
+    "other": [
+      "Glow",
+      "Guster",
+      "Mountable 1",
+      "Telekinetic"
+    ]
+  }
+}

@@ -1,0 +1,137 @@
+{
+  "slug": "examples-duraludon",
+  "nickname": "Duraludon",
+  "species": "Duraludon",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Stark",
+  "types": [
+    "Steel",
+    "Dragon"
+  ],
+  "stats": {
+    "hp": {
+      "base": -1,
+      "added": 3,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "def": {
+      "base": 1,
+      "added": 10,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 2,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 2,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 57,
+    "currentHp": 57,
+    "tick": 5,
+    "evasion": {
+      "vsAtk": 4,
+      "vsSatk": 1,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Metal Sound",
+      "type": "Steel",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 4,
+      "range": "Burst 2, Friendly, Sonic",
+      "effect": "All Legal Targets have their Special Defense lowered 2 Combat Stages."
+    },
+    {
+      "name": "Rock Smash",
+      "type": "Fighting",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Rock Smash lowers the target’s Defense 1 Combat Stage on 17+."
+    },
+    {
+      "name": "Hone Claws",
+      "type": "Dark",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "Self",
+      "effect": "The user’s Accuracy is raised by +1, and the user gains +1 Attack Combat Stage."
+    },
+    {
+      "name": "Metal Claw",
+      "type": "Steel",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10",
+      "frequency": "At-Will",
+      "ac": 3,
+      "range": "Melee, 1 Target, Spirit Surge",
+      "effect": "Raise the user’s Attack 1 Combat Stage on 18+."
+    },
+    {
+      "name": "Leer",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Cone 2, Friendly, Social",
+      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Light Metal",
+      "frequency": "Static",
+      "effect": "The user’s Weight Class is decreased by 2. Their Speed Base Stat is increased by +2, but their Defense Base Stat is decreased by 2."
+    },
+    {
+      "name": "Heavy Metal",
+      "frequency": "Static",
+      "effect": "The user’s Weight Class is increased by +2. Their Defense Base Stat is increased by +2, but their Speed Base Stat is decreased by 2."
+    }
+  ],
+  "natureMod": {
+    "plus": "def",
+    "minus": "hp"
+  },
+  "capabilities": {
+    "overland": 7,
+    "swim": 3,
+    "jump": "2/3",
+    "power": 8,
+    "weight": 2,
+    "size": "Medium",
+    "other": [
+      "Naturewalk  (Mountain)"
+    ]
+  }
+}

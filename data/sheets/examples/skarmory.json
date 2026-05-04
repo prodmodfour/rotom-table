@@ -1,0 +1,151 @@
+{
+  "slug": "examples-skarmory",
+  "nickname": "Skarmory",
+  "species": "Skarmory",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Proud",
+  "types": [
+    "Steel",
+    "Flying"
+  ],
+  "stats": {
+    "hp": {
+      "base": 1,
+      "added": 6,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "satk": {
+      "base": -1,
+      "added": 6,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 72,
+    "currentHp": 72,
+    "tick": 7,
+    "evasion": {
+      "vsAtk": 3,
+      "vsSatk": 2,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Feint",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Trigger",
+      "effect": "If a foe uses a Move with the Shield Keyword in response to one of your actions, you may activate Feint to cause the triggering Move to Fail. Feint is activated as a Free Action."
+    },
+    {
+      "name": "Fury Attack",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 2,
+      "damageRoll": "1d6+3 / 7",
+      "frequency": "At-Will",
+      "ac": 4,
+      "range": "Melee, 1 Target, Five Strike",
+      "effect": "None"
+    },
+    {
+      "name": "Air Cutter",
+      "type": "Flying",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Cone 2",
+      "effect": "Air Cutter is a Critical Hit on 18+."
+    },
+    {
+      "name": "Metal Claw",
+      "type": "Steel",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10",
+      "frequency": "At-Will",
+      "ac": 3,
+      "range": "Melee, 1 Target, Spirit Surge",
+      "effect": "Raise the user’s Attack 1 Combat Stage on 18+."
+    },
+    {
+      "name": "Leer",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Cone 2, Friendly, Social",
+      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
+    },
+    {
+      "name": "Peck",
+      "type": "Flying",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "None"
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Keen Eye",
+      "frequency": "Static",
+      "effect": "The user’s Accuracy cannot be lowered, their attacks cannot have Accuracy Penalties (such as from Illuminate), the user is immune to the Blind condition (but not Total Blindness), and the user ignores any Evasion not directly derived from Stats (such as from the Instinct Ability, or from moves like Minimize)."
+    },
+    {
+      "name": "Intimidate",
+      "frequency": "At-Will – Swift Action",
+      "effect": "Lower the target’s Attack 1 Combat Stage. You may target a specific foe only once per Scene with Intimidate."
+    }
+  ],
+  "natureMod": {
+    "plus": "hp",
+    "minus": "satk"
+  },
+  "capabilities": {
+    "overland": 4,
+    "sky": 9,
+    "swim": 3,
+    "jump": "1/2",
+    "power": 5,
+    "weight": 4,
+    "size": "Large",
+    "other": [
+      "Mountable 1"
+    ]
+  }
+}

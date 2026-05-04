@@ -1,0 +1,153 @@
+{
+  "slug": "examples-whimsicott",
+  "nickname": "Whimsicott",
+  "species": "Whimsicott",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Sassy",
+  "types": [
+    "Grass",
+    "Fairy"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 1,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 1,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 1,
+      "added": 10,
+      "stage": 0
+    },
+    "spd": {
+      "base": -1,
+      "added": 7,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 51,
+    "currentHp": 51,
+    "tick": 5,
+    "evasion": {
+      "vsAtk": 3,
+      "vsSatk": 4,
+      "vsAny": 3
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Mega Drain",
+      "type": "Grass",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "After the target takes damage, the user gains Hit Points equal to half of the damage they dealt to the target."
+    },
+    {
+      "name": "Razor Leaf",
+      "type": "Grass",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 4,
+      "range": "Cone 2",
+      "effect": "Razor Leaf is a Critical Hit on 18+."
+    },
+    {
+      "name": "Growth",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Attack 1 Combat Stage and raise the user’s Special Attack 1 Combat Stage. If it is Sunny, double the amount of Combat Stages gained."
+    },
+    {
+      "name": "Gust",
+      "type": "Flying",
+      "category": "Special",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "If the target is airborne as a result of Fly or Sky Drop, Gust can hit them, ignoring Range and has a Damage Base of 8 instead."
+    },
+    {
+      "name": "Fairy Wind",
+      "type": "Fairy",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "None"
+    },
+    {
+      "name": "Cotton Spore",
+      "type": "Grass",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Burst 1, Powder",
+      "effect": "All Legal Targets have their Speed lowered 2 Combat Stages."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Infiltrator",
+      "frequency": "Static",
+      "effect": "The user gains a +2 Bonus to Stealth Checks, does not trigger Hazards, Blessings cannot be activated in response to its actions, and the user may bypass the effects of the move Substitute."
+    },
+    {
+      "name": "Chlorophyll",
+      "frequency": "Static",
+      "effect": "While in Sunny Weather or under 50% Max Hit Points, the user’s Initiative is doubled."
+    }
+  ],
+  "natureMod": {
+    "plus": "sdef",
+    "minus": "spd"
+  },
+  "capabilities": {
+    "overland": 6,
+    "sky": 7,
+    "swim": 2,
+    "jump": "6/6",
+    "power": 2,
+    "weight": 1,
+    "size": "Small",
+    "other": [
+      "(onlyinstrongwinds)",
+      "Shrinkable",
+      "Inflatable"
+    ]
+  }
+}

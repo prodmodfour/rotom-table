@@ -1,0 +1,143 @@
+{
+  "slug": "examples-golduck",
+  "nickname": "Golduck",
+  "species": "Golduck",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Quiet",
+  "types": [
+    "Water"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 0,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 9,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    },
+    "satk": {
+      "base": 1,
+      "added": 10,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "spd": {
+      "base": -1,
+      "added": 0,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 54,
+    "currentHp": 54,
+    "tick": 5,
+    "evasion": {
+      "vsAtk": 3,
+      "vsSatk": 2,
+      "vsAny": 1
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Tail Whip",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Burst 1, Friendly",
+      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
+    },
+    {
+      "name": "Fury Swipes",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 3,
+      "damageRoll": "1d6+5 / 9",
+      "frequency": "EOT",
+      "ac": 5,
+      "range": "Melee, 1 Target, Five Strike",
+      "effect": "None"
+    },
+    {
+      "name": "Water Gun",
+      "type": "Water",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "None"
+    },
+    {
+      "name": "Confusion",
+      "type": "Psychic",
+      "category": "Special",
+      "db": 5,
+      "damageRoll": "1d8+8 / 13",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Confusion Confuses the target on 19+."
+    },
+    {
+      "name": "Water Pulse",
+      "type": "Water",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "8, 1 Target, Aura",
+      "effect": "Water Pulse Confuses the target on 17+."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Damp",
+      "frequency": "Static",
+      "effect": "Whenever anyone within 10 meters would use the Moves Self-Destruct or Explosion or activate the Aftermath Ability, those effects fail and instead do nothing."
+    },
+    {
+      "name": "Hydration",
+      "frequency": "Scene - Swift Action",
+      "effect": "The user is cured of one Status Affliction. Hydration’s Frequency is ignored if used during Rainy Weather."
+    }
+  ],
+  "natureMod": {
+    "plus": "satk",
+    "minus": "spd"
+  },
+  "capabilities": {
+    "overland": 5,
+    "swim": 6,
+    "jump": "2/2",
+    "power": 5,
+    "weight": 4,
+    "size": "Medium",
+    "other": [
+      "Telepath",
+      "Telekinetic",
+      "Naturewalk (Wetlands)"
+    ]
+  }
+}

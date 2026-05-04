@@ -1,0 +1,153 @@
+{
+  "slug": "examples-tropius",
+  "nickname": "Tropius",
+  "species": "Tropius",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Sassy",
+  "types": [
+    "Grass",
+    "Flying"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 1,
+      "added": 7,
+      "stage": 0
+    },
+    "spd": {
+      "base": -1,
+      "added": 5,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 81,
+    "currentHp": 81,
+    "tick": 8,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 3,
+      "vsAny": 1
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Sweet Scent",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "ac": 2,
+      "range": "Burst 2, Friendly",
+      "effect": "Targets hit by Sweet Scent gain a -2 Penalty to Evasion. (Total Evasion may not be lowered to a negative value. )"
+    },
+    {
+      "name": "Magical Leaf",
+      "type": "Grass",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "range": "8, 1 Target",
+      "effect": "Magical Leaf cannot miss."
+    },
+    {
+      "name": "Stomp",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Stomp Flinches the target on 15+. If the target is at least one size category smaller than the user, Stomp deals an additional 10 damage."
+    },
+    {
+      "name": "Growth",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Attack 1 Combat Stage and raise the user’s Special Attack 1 Combat Stage. If it is Sunny, double the amount of Combat Stages gained."
+    },
+    {
+      "name": "Razor Leaf",
+      "type": "Grass",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 4,
+      "range": "Cone 2",
+      "effect": "Razor Leaf is a Critical Hit on 18+."
+    },
+    {
+      "name": "Gust",
+      "type": "Flying",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "If the target is airborne as a result of Fly or Sky Drop, Gust can hit them, ignoring Range and has a Damage Base of 8 instead."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Harvest",
+      "frequency": "At-Will – Free Action",
+      "effect": "Whenever the user trades in a Digestion Buff from a Berry, flip a coin. On heads, the user gains all the benefits of the Digestion Buff, but the Buff is not used up. On tails, the Buff is consumed normally. While in Sunny Weather, the Buff is never consumed. The user may trade in a Digestion Buff up to once per turn during an encounter, but only until they flip “Tails”."
+    },
+    {
+      "name": "Solar Power",
+      "frequency": "Scene x2- Swift Action",
+      "effect": "The user loses a Tick of Hit Points, and gains a bonus to the triggering damage roll equal to 5 + their Tick Value. Solar Power may be activated ignoring Frequency while in Sunny Weather."
+    }
+  ],
+  "natureMod": {
+    "plus": "sdef",
+    "minus": "spd"
+  },
+  "capabilities": {
+    "overland": 6,
+    "sky": 4,
+    "swim": 2,
+    "jump": "3/4",
+    "power": 8,
+    "weight": 5,
+    "size": "Large",
+    "other": [
+      "Guster",
+      "Naturewalk (Grassland, Forest)",
+      "Planter (Berries)",
+      "Mountable 2"
+    ]
+  }
+}

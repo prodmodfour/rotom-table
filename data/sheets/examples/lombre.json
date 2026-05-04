@@ -1,0 +1,152 @@
+{
+  "slug": "examples-lombre",
+  "nickname": "Lombre",
+  "species": "Lombre",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Proud",
+  "types": [
+    "Water",
+    "Grass"
+  ],
+  "stats": {
+    "hp": {
+      "base": 1,
+      "added": 4,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "satk": {
+      "base": -1,
+      "added": 4,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 9,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 63,
+    "currentHp": 63,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 1,
+      "vsSatk": 3,
+      "vsAny": 1
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Bubble",
+      "type": "Water",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Burst 1",
+      "effect": "Bubble lowers the target’s Speed on 16+."
+    },
+    {
+      "name": "Growl",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Burst 1, Friendly, Sonic, Social",
+      "effect": "Growl lowers all Legal Targets Attack 1 Combat Stage."
+    },
+    {
+      "name": "Fury Swipes",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 3,
+      "damageRoll": "1d6+5 / 9",
+      "frequency": "EOT",
+      "ac": 5,
+      "range": "Melee, 1 Target, Five Strike",
+      "effect": "None"
+    },
+    {
+      "name": "Fake Out",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Priority",
+      "effect": "You may only use Fake Out with Priority upon joining an encounter; if you do, Fake Out Flinches the target. Switching out resets the requirement of joining an encounter."
+    },
+    {
+      "name": "Absorb",
+      "type": "Grass",
+      "category": "Special",
+      "db": 4,
+      "damageRoll": "1d8+6",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "After the target takes damage, the user gains Hit Points equal to half of the damage they dealt to the target."
+    },
+    {
+      "name": "Water Sport",
+      "type": "Water",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Burst 2, Coat",
+      "effect": "All targets in the burst, including the user, gain a Coat which grants them 1 Step of Resistance to Fire Type Moves. After a target has been hit by a damaging Fire Type Move, the coat is removed."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Rain Dish",
+      "frequency": "Daily x5 - Swift Action",
+      "effect": "The user gains a Tick of Hit Points. Rain Dish may only be used while the user is under 50% Hit Points or in Rainy Weather."
+    },
+    {
+      "name": "Hydration",
+      "frequency": "Scene - Swift Action",
+      "effect": "The user is cured of one Status Affliction. Hydration’s Frequency is ignored if used during Rainy Weather."
+    }
+  ],
+  "natureMod": {
+    "plus": "hp",
+    "minus": "satk"
+  },
+  "capabilities": {
+    "overland": 4,
+    "swim": 5,
+    "jump": "1/2",
+    "power": 3,
+    "weight": 3,
+    "size": "Medium",
+    "other": [
+      "Fountain",
+      "Naturewalk (Grassland, Forest)",
+      "Underdog"
+    ]
+  }
+}

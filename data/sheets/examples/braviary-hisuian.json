@@ -1,0 +1,133 @@
+{
+  "slug": "examples-braviary-hisuian",
+  "nickname": "Braviary Hisuian",
+  "species": "Braviary Hisuian",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Naive",
+  "types": [
+    "Psychic",
+    "Flying"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 11,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "sdef": {
+      "base": -1,
+      "added": 1,
+      "stage": 0
+    },
+    "spd": {
+      "base": 1,
+      "added": 5,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 96,
+    "currentHp": 96,
+    "tick": 9,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 1,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Slash",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, Pass",
+      "effect": "Slash is a Critical Hit on 18+."
+    },
+    {
+      "name": "Aerial Ace",
+      "type": "Flying",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "range": "Melee, 1 Target",
+      "effect": "Aerial Ace cannot miss."
+    },
+    {
+      "name": "Twister",
+      "type": "Dragon",
+      "category": "Special",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, Ranged Blast 3",
+      "effect": "Small or Medium targets in the central square of the blast are not hit. Twister Flinches the target on 18-20 during Accuracy Check. Any Pokémon Airborne as a result of Fly or Sky Drop above the Blast are hit, ignoring range, and Twister has a Damage Base of 8 against those targets instead."
+    },
+    {
+      "name": "Air Slash",
+      "type": "Flying",
+      "category": "Special",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "EOT",
+      "ac": 3,
+      "range": "6, 1 Target",
+      "effect": "Air Slash Flinches the target on 15+."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Keen Eye",
+      "frequency": "Static",
+      "effect": "The user’s Accuracy cannot be lowered, their attacks cannot have Accuracy Penalties (such as from Illuminate), the user is immune to the Blind condition (but not Total Blindness), and the user ignores any Evasion not directly derived from Stats (such as from the Instinct Ability, or from moves like Minimize)."
+    },
+    {
+      "name": "Sheer Force",
+      "frequency": "Static",
+      "effect": "Moves with an Effect Range gain a +10 Bonus to Damage, but Effect Ranges can never be triggered."
+    }
+  ],
+  "natureMod": {
+    "plus": "spd",
+    "minus": "sdef"
+  },
+  "capabilities": {
+    "overland": 4,
+    "sky": 8,
+    "swim": 2,
+    "jump": "3/3",
+    "power": 6,
+    "weight": 3,
+    "size": "Medium",
+    "other": [
+      "Telekinetic"
+    ]
+  }
+}

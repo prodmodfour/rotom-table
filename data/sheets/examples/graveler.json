@@ -1,0 +1,150 @@
+{
+  "slug": "examples-graveler",
+  "nickname": "Graveler",
+  "species": "Graveler",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Hasty",
+  "types": [
+    "Rock",
+    "Ground"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 8,
+      "stage": 0
+    },
+    "def": {
+      "base": -1,
+      "added": 7,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "spd": {
+      "base": 1,
+      "added": 6,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 57,
+    "currentHp": 57,
+    "tick": 5,
+    "evasion": {
+      "vsAtk": 3,
+      "vsSatk": 1,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Rock Throw",
+      "type": "Rock",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10",
+      "frequency": "At-Will",
+      "ac": 4,
+      "range": "6, 1 Target",
+      "effect": "None"
+    },
+    {
+      "name": "Rollout",
+      "type": "Rock",
+      "category": "Physical",
+      "db": 5,
+      "damageRoll": "1d8+8",
+      "frequency": "At-Will",
+      "ac": 4,
+      "range": "Melee, 1 Target, Pass",
+      "effect": "The user continues to use Rollout on each of its turns until they miss any target with Rollout, or are not able to hit any target with Rollout during their turn.  Each successive use of Rollout increases Rollout’s Damage Base by +4 to a maximum of DB 15."
+    },
+    {
+      "name": "Rock Polish",
+      "type": "Rock",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Speed 2 Combat Stages."
+    },
+    {
+      "name": "Mud Sport",
+      "type": "Ground",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Burst 2",
+      "effect": "All targets in the burst, including the user, gain a Coat which grants them 1 Step of Resistance to Electric Type Moves. After a target has been hit by a damaging Electric Type Move, the coat is removed."
+    },
+    {
+      "name": "Smack Down",
+      "type": "Rock",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "8, 1 Target",
+      "effect": "The target is knocked down to ground level, and loses all Sky or Levitate Speeds for 3 turns. During this time, they may be hit by Ground-Type Moves even if normally immune."
+    },
+    {
+      "name": "Magnitude",
+      "type": "Ground",
+      "category": "Physical",
+      "frequency": "EOT",
+      "range": "Burst 2, Groundsource",
+      "effect": "When you use Magnitude, roll 1d6.  Magnitude’s Damage Base is equal to 5+X, where X is the value of the d6. Magnitude can hit targets that are underground, including those using the Move Dig."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Rock Head",
+      "frequency": "Static",
+      "effect": "The user ignores the Recoil keyword when attacking. If the user moves at least 4 meters in a straight line towards a foe before attacking that foe with a physical attack, they may add a +2d6 Bonus to the Damage Roll against that foe."
+    },
+    {
+      "name": "Sturdy",
+      "frequency": "Static",
+      "effect": "The user is immune to Moves with the Execute Keyword. If a single source of Damage or Hit Point Loss would cause the user to lose more than X Hit Points, the damage or Hit Point loss is instead reduced to X. X is equal to 50% of their Max Hit Points. Defensive."
+    }
+  ],
+  "natureMod": {
+    "plus": "spd",
+    "minus": "def"
+  },
+  "capabilities": {
+    "overland": 5,
+    "swim": 3,
+    "burrow": 3,
+    "jump": "0/1",
+    "power": 8,
+    "weight": 5,
+    "size": "Medium",
+    "other": [
+      "Groundshaper",
+      "Naturewalk (Cave, Mountain)",
+      "Underdog",
+      "Volatile Bomb"
+    ]
+  }
+}

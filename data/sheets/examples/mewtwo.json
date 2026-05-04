@@ -1,0 +1,140 @@
+{
+  "slug": "examples-mewtwo",
+  "nickname": "Mewtwo",
+  "species": "Mewtwo",
+  "level": 20,
+  "gender": "No Gender",
+  "shiny": false,
+  "nature": "Naughty",
+  "types": [
+    "Psychic"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "atk": {
+      "base": 1,
+      "added": 6,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    },
+    "sdef": {
+      "base": -1,
+      "added": 5,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 75,
+    "currentHp": 75,
+    "tick": 7,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 2,
+      "vsAny": 3
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Confusion",
+      "type": "Psychic",
+      "category": "Special",
+      "db": 7,
+      "damageRoll": "2d6+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Confusion Confuses the target on 19+."
+    },
+    {
+      "name": "Disable",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "1 Target, Trigger",
+      "effect": "Disable may be used as a Free Action that does not take up a Command whenever the user is hit by a Move. That Move becomes Disabled for the attacker."
+    },
+    {
+      "name": "Future Sight",
+      "type": "Psychic",
+      "category": "Special",
+      "db": 14,
+      "damageRoll": "4d10+15",
+      "frequency": "Scene x2",
+      "range": "10, 1 Target",
+      "effect": "Future Sight does nothing on the turn it is used. At the end of the user’s next turn, Future Sight hits, even if the user is no longer on the field. Future Sight cannot miss."
+    },
+    {
+      "name": "Barrier",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "range": "Hazard",
+      "effect": "The user creates a Barrier of psychic energy. The user places up to 4 segments of Barrier; each segment must be continuous with another segment, and at least one must be adjacent to the user. These barriers count as blocking terrain and last until the end of the encounter or until they are destroyed. Each Barrier segment is 2 meters tall, 1 meter wide, and 2 centimeters thick.  Each segment has 20 Hit Points, 15 Damage Reduction, and takes damage as if it was Psychic Typed."
+    },
+    {
+      "name": "Swift",
+      "type": "Normal",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "EOT",
+      "range": "8, Ranged Blast 2, Friendly",
+      "effect": "Swift cannot Miss."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Unnerve",
+      "frequency": "At-Will - Swift Action",
+      "effect": "The target cannot gain positive Combat Stages or trade in Digestion Buffs for 1 full round."
+    },
+    {
+      "name": "Frighten",
+      "frequency": "Scene – Swift Action",
+      "effect": "Lower the target’s Speed 2 Combat Stages."
+    }
+  ],
+  "natureMod": {
+    "plus": "atk",
+    "minus": "sdef"
+  },
+  "capabilities": {
+    "overland": 8,
+    "sky": 8,
+    "swim": 6,
+    "jump": "3/3",
+    "power": 7,
+    "weight": 5,
+    "size": "Large",
+    "other": [
+      "Aura  Reader",
+      "Glow",
+      "Invisibility",
+      "Telekinetic",
+      "Telepath"
+    ]
+  }
+}

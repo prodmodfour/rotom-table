@@ -1,0 +1,153 @@
+{
+  "slug": "examples-golbat",
+  "nickname": "Golbat",
+  "species": "Golbat",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Jolly",
+  "types": [
+    "Poison",
+    "Flying"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 2,
+      "stage": 0
+    },
+    "satk": {
+      "base": -1,
+      "added": 2,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 8,
+      "stage": 0
+    },
+    "spd": {
+      "base": 1,
+      "added": 6,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 75,
+    "currentHp": 75,
+    "tick": 7,
+    "evasion": {
+      "vsAtk": 1,
+      "vsSatk": 3,
+      "vsAny": 3
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Confuse Ray",
+      "type": "Ghost",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "The target is Confused."
+    },
+    {
+      "name": "Wing Attack",
+      "type": "Flying",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "None."
+    },
+    {
+      "name": "Supersonic",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 6,
+      "range": "4, 1 Target, Sonic",
+      "effect": "The target becomes Confused. On miss, the target suffers a -2 penalty to Accuracy Rolls for one full round."
+    },
+    {
+      "name": "Astonish",
+      "type": "Ghost",
+      "category": "Physical",
+      "db": 3,
+      "damageRoll": "1d6+5 / 9",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Astonish Flinches the target on 15+. Once per scene, if the target is unaware of the user’s presence, Astonish automatically Flinches the target."
+    },
+    {
+      "name": "Bite",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Bite Flinches the target on 15+."
+    },
+    {
+      "name": "Air Cutter",
+      "type": "Flying",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Cone 2",
+      "effect": "Air Cutter is a Critical Hit on 18+."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Inner Focus",
+      "frequency": "Static",
+      "effect": "The user cannot be Flinched, and their Initiative cannot be unwillingly lowered by any effects."
+    },
+    {
+      "name": "Insomnia",
+      "frequency": "Static",
+      "effect": "The user is immune to the Sleep condition, and cannot use the move Rest. Defensive."
+    }
+  ],
+  "natureMod": {
+    "plus": "spd",
+    "minus": "satk"
+  },
+  "capabilities": {
+    "overland": 3,
+    "sky": 5,
+    "swim": 2,
+    "jump": "1/1",
+    "power": 3,
+    "weight": 4,
+    "size": "Medium",
+    "other": [
+      "Darkvision",
+      "Tracker"
+    ]
+  }
+}

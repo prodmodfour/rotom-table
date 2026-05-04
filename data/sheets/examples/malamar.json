@@ -1,0 +1,154 @@
+{
+  "slug": "examples-malamar",
+  "nickname": "Malamar",
+  "species": "Malamar",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Naughty",
+  "types": [
+    "Dark",
+    "Psychic"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "atk": {
+      "base": 1,
+      "added": 8,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "sdef": {
+      "base": -1,
+      "added": 4,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 72,
+    "currentHp": 72,
+    "tick": 7,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 2,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Topsy-Turvy",
+      "type": "Dark",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 4,
+      "range": "6, 1 Target",
+      "effect": "The target’s Combat Stages are inverted; +1 Stage becomes -1 Stage, -3 Stages becomes +3 Stages, etc."
+    },
+    {
+      "name": "Foul Play",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 12,
+      "damageRoll": "3d12+10",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "The target reveals its Attack stat. When calculating damage, add the target’s Attack stat instead of the user’s Attack stat."
+    },
+    {
+      "name": "Peck",
+      "type": "Flying",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "None"
+    },
+    {
+      "name": "Tackle",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash, Push",
+      "effect": "The target is pushed 2 Meters."
+    },
+    {
+      "name": "Swagger",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 5,
+      "range": "6, 1 Target, Social",
+      "effect": "The target’s Attack is raised 2 Combat Stages. Swagger Confuses the target."
+    },
+    {
+      "name": "Hypnosis",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 6,
+      "range": "4, 1 Target",
+      "effect": "The target falls Asleep."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Suction Cups",
+      "frequency": "At-Will - Shift Action",
+      "effect": "The user gains +5 Damage Reduction for 1 full round."
+    },
+    {
+      "name": "Hypnotic",
+      "frequency": "Static",
+      "effect": "Connection - Hypnosis. When used by the user, Hypnosis cannot miss."
+    }
+  ],
+  "natureMod": {
+    "plus": "atk",
+    "minus": "sdef"
+  },
+  "capabilities": {
+    "overland": 1,
+    "swim": 5,
+    "levitate": 6,
+    "jump": "0/1",
+    "power": 1,
+    "weight": 3,
+    "size": "Medium",
+    "other": [
+      "Gilled",
+      "Glow",
+      "Mindlock",
+      "Telekinetic",
+      "Telepath"
+    ]
+  }
+}

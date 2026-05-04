@@ -1,0 +1,156 @@
+{
+  "slug": "examples-drilbur",
+  "nickname": "Drilbur",
+  "species": "Drilbur",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Jolly",
+  "types": [
+    "Ground"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "satk": {
+      "base": -1,
+      "added": 6,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "spd": {
+      "base": 1,
+      "added": 6,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 60,
+    "currentHp": 60,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 1,
+      "vsSatk": 1,
+      "vsAny": 3
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Mud-Slap",
+      "type": "Ground",
+      "category": "Special",
+      "db": 4,
+      "damageRoll": "1d8+6",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "3, 1 Target",
+      "effect": "The target’s Accuracy is lowered by -1."
+    },
+    {
+      "name": "Rapid Spin",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 5,
+      "damageRoll": "1d8+8 / 13",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Spirit Surge",
+      "effect": "Rapid Spin destroys all Hazards within 5 meters, removes Leech Seeds, and removes the user’s Trapped or Stuck status. If Rapid Spin hits, the user’s speed raises 1 CS."
+    },
+    {
+      "name": "Scratch",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, Pass",
+      "effect": "None"
+    },
+    {
+      "name": "Fury Swipes",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 3,
+      "damageRoll": "1d6+5 / 9",
+      "frequency": "EOT",
+      "ac": 5,
+      "range": "Melee, 1 Target, Five Strike",
+      "effect": "None"
+    },
+    {
+      "name": "Metal Claw",
+      "type": "Steel",
+      "category": "Physical",
+      "db": 5,
+      "damageRoll": "1d8+8 / 13",
+      "frequency": "At-Will",
+      "ac": 3,
+      "range": "Melee, 1 Target, Spirit Surge",
+      "effect": "Raise the user’s Attack 1 Combat Stage on 18+."
+    },
+    {
+      "name": "Dig",
+      "type": "Ground",
+      "category": "Physical",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Burst 1, Set-Up, Full Action, Groundsource"
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Sand Force",
+      "frequency": "Static",
+      "effect": "While on sandy terrain or in Sandstorms, the user’s Ground, Rock, and Steel-Typed damaging moves deal +5 Damage."
+    },
+    {
+      "name": "Mold Breaker",
+      "frequency": "Static",
+      "effect": "The user ignores the effect of enemies’ Defensive Abilities."
+    }
+  ],
+  "natureMod": {
+    "plus": "spd",
+    "minus": "satk"
+  },
+  "capabilities": {
+    "overland": 4,
+    "swim": 2,
+    "burrow": 6,
+    "jump": "1/1",
+    "power": 2,
+    "weight": 1,
+    "size": "Small",
+    "other": [
+      "Tremorsense",
+      "Naturewalk (Cave, Mountain)",
+      "Underdog"
+    ]
+  }
+}

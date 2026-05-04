@@ -1,0 +1,152 @@
+{
+  "slug": "examples-vanillish",
+  "nickname": "Vanillish",
+  "species": "Vanillish",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Gentle",
+  "types": [
+    "Ice"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "def": {
+      "base": -1,
+      "added": 3,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 1,
+      "added": 6,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 57,
+    "currentHp": 57,
+    "tick": 5,
+    "evasion": {
+      "vsAtk": 1,
+      "vsSatk": 3,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Avalanche",
+      "type": "Ice",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "When declaring Avalanche, the user does nothing and may not Shift. At the end of the round, the user Shifts and uses Avalanche on any legal target. If the target damaged the user this round, Avalanche has a Damage Base of 12 (4d10+15 / 40) instead."
+    },
+    {
+      "name": "Uproar",
+      "type": "Normal",
+      "category": "Special",
+      "db": 5,
+      "damageRoll": "1d8+8 / 13",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Burst 1, Spirit Surge, Sonic",
+      "effect": "All Pokémon and Trainers within 5 meters of the user are cured of sleep."
+    },
+    {
+      "name": "Astonish",
+      "type": "Ghost",
+      "category": "Physical",
+      "db": 3,
+      "damageRoll": "1d6+5 / 9",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Astonish Flinches the target on 15+. Once per scene, if the target is unaware of the user’s presence, Astonish automatically Flinches the target."
+    },
+    {
+      "name": "Mist",
+      "type": "Ice",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "range": "Blessing",
+      "effect": "Blessing – Any user affected by Mist may activate it when having Combat Stages lowered by any effect; if they do, those Combat Stages are instead not lowered. Mist may be activated 3 times, and then disappears."
+    },
+    {
+      "name": "Harden",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "Self",
+      "effect": "Raise the user’s Defense 1 Combat Stage."
+    },
+    {
+      "name": "Icy Wind",
+      "type": "Ice",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "ac": 3,
+      "range": "Cone 2",
+      "effect": "All Legal Targets have their Speed lowered 1 Combat Stage."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Ice Body",
+      "frequency": "Daily x5 - Swift Action",
+      "effect": "The user gains a Tick of Hit Points. Ice Body may only be used while the user is under 50% Hit Points or in Hailing Weather."
+    },
+    {
+      "name": "Winter’s Kiss",
+      "frequency": "Static",
+      "effect": "The user does not take damage from Ice-Type Moves. Whenever the user uses or is hit by an Ice- Type Move, the user is healed by a Tick of Hit Points. Defensive."
+    }
+  ],
+  "natureMod": {
+    "plus": "sdef",
+    "minus": "def"
+  },
+  "capabilities": {
+    "overland": 3,
+    "swim": 2,
+    "levitate": 5,
+    "jump": "1/1",
+    "power": 2,
+    "weight": 3,
+    "size": "Medium",
+    "other": [
+      "Chilled",
+      "Freezer",
+      "Naturewalk (Tundra)",
+      "Underdog"
+    ]
+  }
+}

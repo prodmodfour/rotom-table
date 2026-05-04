@@ -1,0 +1,130 @@
+{
+  "slug": "examples-dusknoir",
+  "nickname": "Dusknoir",
+  "species": "Dusknoir",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Bold",
+  "types": [
+    "Ghost"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "atk": {
+      "base": -1,
+      "added": 8,
+      "stage": 0
+    },
+    "def": {
+      "base": 1,
+      "added": 4,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 60,
+    "currentHp": 60,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 4,
+      "vsSatk": 3,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Foresight",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "range": "Self, Swift Action",
+      "effect": "Foresight may be activated as a Swift Action on the user’s turn. For the rest of the turn, the user’s Normal-Type and Fighting-Type Moves can hit and affect Ghost-Type targets, and the user can see through the Illusion Ability, Moves with the Illusion keyword, and effects created by the Illusionist Capability, ignoring all effects from those."
+    },
+    {
+      "name": "Shadow Sneak",
+      "type": "Ghost",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Priority",
+      "effect": "None."
+    },
+    {
+      "name": "Disable",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "1 Target, Trigger",
+      "effect": "Disable may be used as a Free Action that does not take up a Command whenever the user is hit by a Move. That Move becomes Disabled for the attacker."
+    },
+    {
+      "name": "Astonish",
+      "type": "Ghost",
+      "category": "Physical",
+      "db": 5,
+      "damageRoll": "1d8+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Astonish Flinches the target on 15+. Once per scene, if the target is unaware of the user’s presence, Astonish automatically Flinches the target."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Shackle",
+      "frequency": "Scene – Swift Action",
+      "effect": "Shackle creates a Burst 3. All foes in the burst have their movement capabilities halved until the end of their next turn."
+    },
+    {
+      "name": "Frighten",
+      "frequency": "Scene – Swift Action",
+      "effect": "Lower the target’s Speed 2 Combat Stages."
+    }
+  ],
+  "natureMod": {
+    "plus": "def",
+    "minus": "atk"
+  },
+  "capabilities": {
+    "overland": 4,
+    "swim": 3,
+    "levitate": 6,
+    "jump": "1/2",
+    "power": 5,
+    "weight": 5,
+    "size": "Medium",
+    "other": [
+      "Darkvision",
+      "Dead Silent",
+      "Invisibility",
+      "Phasing"
+    ]
+  }
+}

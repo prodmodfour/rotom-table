@@ -1,0 +1,148 @@
+{
+  "slug": "examples-goodra",
+  "nickname": "Goodra",
+  "species": "Goodra",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Adamant",
+  "types": [
+    "Dragon"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "atk": {
+      "base": 1,
+      "added": 10,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 1,
+      "stage": 0
+    },
+    "satk": {
+      "base": -1,
+      "added": 3,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 9,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 1,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 75,
+    "currentHp": 75,
+    "tick": 7,
+    "evasion": {
+      "vsAtk": 1,
+      "vsSatk": 4,
+      "vsAny": 1
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Dragon Breath",
+      "type": "Dragon",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Dragon Breath Paralyzes the Target on 15+."
+    },
+    {
+      "name": "Protect",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Self, Interrupt, Shield, Trigger",
+      "effect": "If the user is hit by a Move, the user may use Protect. The user is instead not hit by the Move. You do not take any damage nor are you affected by any of the Move’s effects."
+    },
+    {
+      "name": "Tackle",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash, Push",
+      "effect": "The target is pushed 2 Meters."
+    },
+    {
+      "name": "Bubble",
+      "type": "Water",
+      "category": "Special",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Burst 1",
+      "effect": "Bubble lowers the target’s Speed on 16+."
+    },
+    {
+      "name": "Bide",
+      "type": "Normal",
+      "category": "Physical",
+      "frequency": "Scene",
+      "range": "Burst 1, Friendly",
+      "effect": "The user may use Bide as a Reaction Move upon being Hit by a Damaging Move. During their next available turn, the user may Shift and then use Bide, causing all Adjacent foes to lose X HP, where X is the amount of Damage taken since declaring use of Bide (Loss of life through effects such as Poison is not ‘Damage’)."
+    },
+    {
+      "name": "Absorb",
+      "type": "Grass",
+      "category": "Special",
+      "db": 2,
+      "damageRoll": "1d6+3 / 7",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "After the target takes damage, the user gains Hit Points equal to half of the damage they dealt to the target."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Dry Skin",
+      "frequency": "Static",
+      "effect": "Whenever the user is hit by a damaging Fire- Type Move or ends their turn in Sunny Weather, they lose a Tick of Hit Points. The user is immune to the damage and effects of Water-Type Moves, and whenever the user is hit by a damaging Water-Type Move or ends their turn in Rainy Weather, they gain a Tick of Hit Points."
+    },
+    {
+      "name": "Sap Sipper",
+      "frequency": "Scene",
+      "effect": "The user is immune to the damage and effects of Grass-Type attacks. If the user is hit by a Grass-Type attack, they gain +1 CS in their choice of Attack or Special Attack. Defensive."
+    }
+  ],
+  "natureMod": {
+    "plus": "atk",
+    "minus": "satk"
+  },
+  "capabilities": {
+    "overland": 7,
+    "swim": 4,
+    "jump": "2/2",
+    "power": 8,
+    "weight": 5,
+    "size": "Large",
+    "other": [
+      "Amorphous"
+    ]
+  }
+}

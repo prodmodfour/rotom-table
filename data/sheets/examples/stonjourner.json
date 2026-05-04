@@ -1,0 +1,138 @@
+{
+  "slug": "examples-stonjourner",
+  "nickname": "Stonjourner",
+  "species": "Stonjourner",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Careful",
+  "types": [
+    "Rock"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "satk": {
+      "base": -1,
+      "added": 7,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 1,
+      "added": 6,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 72,
+    "currentHp": 72,
+    "tick": 7,
+    "evasion": {
+      "vsAtk": 3,
+      "vsSatk": 2,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Rock Throw",
+      "type": "Rock",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10",
+      "frequency": "At-Will",
+      "ac": 4,
+      "range": "6, 1 Target",
+      "effect": "None"
+    },
+    {
+      "name": "Rock Tomb",
+      "type": "Rock",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 5,
+      "range": "6, 1 Target",
+      "effect": "Rock Tomb lowers the target’s Speed by -1 Combat Stage."
+    },
+    {
+      "name": "Gravity",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "Daily x2",
+      "range": "Field",
+      "effect": "For 5 rounds, the area is considered Warped. While Warped, Moves that involve the user being airborne may not be used. Pokémon cannot use Sky or Levitate Capabilities to end their turn at an altitude higher than 1 meter. Flying-Types and Pokémon with the Ability Levitate are no longer immune to Ground- Type Moves. All Accuracy Rolls receive a +2 Bonus."
+    },
+    {
+      "name": "Block",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "The target is Stuck and Trapped until the beginning of your next turn."
+    },
+    {
+      "name": "Rock Polish",
+      "type": "Rock",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Speed 2 Combat Stages."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Power Spot",
+      "frequency": "Static",
+      "effect": "Allies within 2m of the user gain a +5 bonus to damage rolls."
+    },
+    {
+      "name": "Sturdy",
+      "frequency": "Static",
+      "effect": "The user is immune to Moves with the Execute Keyword. If a single source of Damage or Hit Point Loss would cause the user to lose more than X Hit Points, the damage or Hit Point loss is instead reduced to X. X is equal to 50% of their Max Hit Points. Defensive."
+    }
+  ],
+  "natureMod": {
+    "plus": "sdef",
+    "minus": "satk"
+  },
+  "capabilities": {
+    "overland": 8,
+    "swim": 3,
+    "jump": "2/2",
+    "power": 9,
+    "weight": 5,
+    "size": "Large",
+    "other": [
+      "Groundshaper",
+      "Materializer",
+      "Naturewalk (Mountain)",
+      "Telekinetic"
+    ]
+  }
+}

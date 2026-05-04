@@ -1,0 +1,148 @@
+{
+  "slug": "examples-diglett",
+  "nickname": "Diglett",
+  "species": "Diglett",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Careful",
+  "types": [
+    "Ground"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 2,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    },
+    "satk": {
+      "base": -1,
+      "added": 2,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 1,
+      "added": 6,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 39,
+    "currentHp": 39,
+    "tick": 3,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 2,
+      "vsAny": 3
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Sand Attack",
+      "type": "Ground",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "2, 1 Target",
+      "effect": "The target is Blinded until the end of their next turn."
+    },
+    {
+      "name": "Mud-Slap",
+      "type": "Ground",
+      "category": "Special",
+      "db": 4,
+      "damageRoll": "1d8+6",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "3, 1 Target",
+      "effect": "The target’s Accuracy is lowered by -1."
+    },
+    {
+      "name": "Scratch",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, Pass",
+      "effect": "None"
+    },
+    {
+      "name": "Magnitude",
+      "type": "Ground",
+      "category": "Physical",
+      "frequency": "EOT",
+      "range": "Burst 2, Groundsource",
+      "effect": "When you use Magnitude, roll 1d6.  Magnitude’s Damage Base is equal to 5+X, where X is the value of the d6. Magnitude can hit targets that are underground, including those using the Move Dig."
+    },
+    {
+      "name": "Bulldoze",
+      "type": "Ground",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Burst 1",
+      "effect": "All Legal Targets are lowered 1 Speed Combat Stage."
+    },
+    {
+      "name": "Growl",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Burst 1, Friendly, Sonic, Social",
+      "effect": "Growl lowers all Legal Targets Attack 1 Combat Stage."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Arena Trap",
+      "frequency": "Scene – Free Action",
+      "effect": "Once Arena Trap is activated, all foes within 5 meters of the user are considered Slowed and Trapped. This does not affect targets of the Flying Type, or with a Levitate, Sky, or Burrow Speed of 4 or higher. The user may end the effect as a Free Action, and the effect ends if the user is Fainted or returned to a Poké Ball."
+    },
+    {
+      "name": "Celebrate",
+      "frequency": "At-Will – Swift Action",
+      "effect": "The user may immediately Disengage as a Free Action."
+    }
+  ],
+  "natureMod": {
+    "plus": "sdef",
+    "minus": "satk"
+  },
+  "capabilities": {
+    "overland": 1,
+    "burrow": 7,
+    "jump": "0/0",
+    "power": 1,
+    "weight": 1,
+    "size": "Small",
+    "other": [
+      "Tremorsense",
+      "Underdog"
+    ]
+  }
+}

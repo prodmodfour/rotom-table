@@ -1,0 +1,154 @@
+{
+  "slug": "examples-victini",
+  "nickname": "Victini",
+  "species": "Victini",
+  "level": 20,
+  "gender": "No Gender",
+  "shiny": false,
+  "nature": "Desperate",
+  "types": [
+    "Psychic",
+    "Fire"
+  ],
+  "stats": {
+    "hp": {
+      "base": -1,
+      "added": 3,
+      "stage": 0
+    },
+    "atk": {
+      "base": 1,
+      "added": 7,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 66,
+    "currentHp": 66,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 3,
+      "vsSatk": 2,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Focus Energy",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "Self",
+      "effect": "The user becomes Pumped. While Pumped, the user’s Critical Range is extended by 2, or 18+ if the Critical Range is not otherwise extended. Being switched will cause this effect to end."
+    },
+    {
+      "name": "Incinerate",
+      "type": "Fire",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Line 3",
+      "effect": "If a target is holding a Held Item or Main or Off- Hand item, they must either drop it immediately or lose a Tick of Hit Points. This may only cause a target to lose at most one Tick of Hit Points, no matter how many items they were holding."
+    },
+    {
+      "name": "Headbutt",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Headbutt Flinches the target on 15+."
+    },
+    {
+      "name": "Confusion",
+      "type": "Psychic",
+      "category": "Special",
+      "db": 7,
+      "damageRoll": "2d6+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Confusion Confuses the target on 19+."
+    },
+    {
+      "name": "Endure",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Daily",
+      "range": "Self, Reaction, Trigger",
+      "effect": "If the user is hit by a damaging Move, you may use Endure as a Free Action. If the Move would bring Endure’s user down to 0 Hit Points or less, Endure’s user instead is set to 1 Hit Point."
+    },
+    {
+      "name": "Quick Attack",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Priority",
+      "effect": "None."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Victory Star",
+      "frequency": "Static",
+      "effect": "Any allied Pokémon in the encounter gain a +2 Bonus to Accuracy Rolls."
+    },
+    {
+      "name": "Gluttony",
+      "frequency": "Static",
+      "effect": "The user may have up to three Food Buffs at once, use up to three Food Buffs per Scene, and may eat two refreshments per half hour."
+    }
+  ],
+  "natureMod": {
+    "plus": "atk",
+    "minus": "hp"
+  },
+  "capabilities": {
+    "overland": 7,
+    "sky": 6,
+    "swim": 4,
+    "jump": "2/3",
+    "power": 3,
+    "weight": 1,
+    "size": "Small",
+    "other": [
+      "Aura  Reader",
+      "Glow",
+      "Heater",
+      "Telekinetic",
+      "Telepath"
+    ]
+  }
+}

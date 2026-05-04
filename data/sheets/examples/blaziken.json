@@ -1,0 +1,143 @@
+{
+  "slug": "examples-blaziken",
+  "nickname": "Blaziken",
+  "species": "Blaziken",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Careful",
+  "types": [
+    "Fire",
+    "Fighting"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "satk": {
+      "base": -1,
+      "added": 6,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 1,
+      "added": 6,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 63,
+    "currentHp": 63,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 3,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Double Kick",
+      "type": "Fighting",
+      "category": "Physical",
+      "db": 5,
+      "damageRoll": "1d8+8",
+      "frequency": "At-Will",
+      "ac": 3,
+      "range": "Melee, 1 Target, Double Strike",
+      "effect": "None"
+    },
+    {
+      "name": "Flame Charge",
+      "type": "Fire",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash",
+      "effect": "Raise the user’s Speed 1 Combat Stage."
+    },
+    {
+      "name": "Peck",
+      "type": "Flying",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "None"
+    },
+    {
+      "name": "Sand Attack",
+      "type": "Ground",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "2, 1 Target",
+      "effect": "The target is Blinded until the end of their next turn."
+    },
+    {
+      "name": "Ember",
+      "type": "Fire",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "Ember Burns the target on 18+."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Klutz",
+      "effect": "Choose one of the target’s Held Items or Accessory Slot Items. It is knocked to the ground."
+    },
+    {
+      "name": "Speed Boost",
+      "frequency": "Static",
+      "effect": "The Pokémon’s Speed is raised 1 Combat Stage at the end of each of its turns. Speed Boost has no effect while out of combat."
+    }
+  ],
+  "natureMod": {
+    "plus": "sdef",
+    "minus": "satk"
+  },
+  "capabilities": {
+    "overland": 10,
+    "swim": 4,
+    "jump": "3/4",
+    "power": 7,
+    "weight": 4,
+    "size": "Medium",
+    "other": [
+      "Firestarter",
+      "Naturewalk (Grasslands)",
+      "Heater"
+    ]
+  }
+}

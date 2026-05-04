@@ -1,0 +1,151 @@
+{
+  "slug": "examples-quilladin",
+  "nickname": "Quilladin",
+  "species": "Quilladin",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Quiet",
+  "types": [
+    "Grass"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 2,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 14,
+      "stage": 0
+    },
+    "satk": {
+      "base": 1,
+      "added": 6,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "spd": {
+      "base": -1,
+      "added": 2,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 57,
+    "currentHp": 57,
+    "tick": 5,
+    "evasion": {
+      "vsAtk": 4,
+      "vsSatk": 1,
+      "vsAny": 1
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Leech Seed",
+      "type": "Grass",
+      "category": "Status",
+      "frequency": "Daily x2",
+      "ac": 4,
+      "range": "6, 1 Target",
+      "effect": "At the beginning of each of the target’s turns, Leech Seed’s target loses a Tick of Hit Points. Leech Seed’s user then gains Hit Points equal to the amount the target lost. Leech Seed lasts until the target faints or is returned to a Poké Ball. Grass Types and targets immune to Grass Attacks are immune to Leech Seed."
+    },
+    {
+      "name": "Tackle",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash, Push",
+      "effect": "The target is pushed 2 Meters."
+    },
+    {
+      "name": "Growl",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Burst 1, Friendly, Sonic, Social",
+      "effect": "Growl lowers all Legal Targets Attack 1 Combat Stage."
+    },
+    {
+      "name": "Vine Whip",
+      "type": "Grass",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "None"
+    },
+    {
+      "name": "Pin Missile",
+      "type": "Bug",
+      "category": "Physical",
+      "db": 3,
+      "damageRoll": "1d6+5 / 9",
+      "frequency": "EOT",
+      "ac": 4,
+      "range": "6, 1 Target, Five Strike",
+      "effect": "None"
+    },
+    {
+      "name": "Rollout",
+      "type": "Rock",
+      "category": "Physical",
+      "db": 3,
+      "damageRoll": "1d6+5 / 9",
+      "frequency": "At-Will",
+      "ac": 4,
+      "range": "Melee, 1 Target, Pass",
+      "effect": "The user continues to use Rollout on each of its turns until they miss any target with Rollout, or are not able to hit any target with Rollout during their turn.  Each successive use of Rollout increases Rollout’s Damage Base by +4 to a maximum of DB 15."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Overgrow",
+      "frequency": "Static",
+      "effect": "The user gains Last Chance with Grass."
+    },
+    {
+      "name": "Bulletproof",
+      "frequency": "Static",
+      "effect": "The user resists all X target ranged attacks one step further. This refers to attacks and Moves that simply hit one target or specify hitting multiple targets, such as Razor Wind hitting three targets. It has no effect on Moves that are capable of hitting multiple targets through areas of effect, such as Bursts or Cones. Defensive."
+    }
+  ],
+  "natureMod": {
+    "plus": "satk",
+    "minus": "spd"
+  },
+  "capabilities": {
+    "overland": 5,
+    "swim": 3,
+    "jump": "1/2",
+    "power": 3,
+    "weight": 3,
+    "size": "Small",
+    "other": [
+      "Naturewalk  (Grassland, Forest)",
+      "Underdog"
+    ]
+  }
+}

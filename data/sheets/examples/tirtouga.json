@@ -1,0 +1,151 @@
+{
+  "slug": "examples-tirtouga",
+  "nickname": "Tirtouga",
+  "species": "Tirtouga",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Patient",
+  "types": [
+    "Water",
+    "Rock"
+  ],
+  "stats": {
+    "hp": {
+      "base": 1,
+      "added": 4,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "spd": {
+      "base": -1,
+      "added": 7,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 63,
+    "currentHp": 63,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 3,
+      "vsSatk": 2,
+      "vsAny": 1
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Ancient Power",
+      "type": "Rock",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "6, 1 Target, Spirit Surge",
+      "effect": "On 19+, the user has each of its stats raised by +1 Combat Stage."
+    },
+    {
+      "name": "Bite",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Bite Flinches the target on 15+."
+    },
+    {
+      "name": "Aqua Jet",
+      "type": "Water",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Priority",
+      "effect": "None"
+    },
+    {
+      "name": "Rollout",
+      "type": "Rock",
+      "category": "Physical",
+      "db": 5,
+      "damageRoll": "1d8+8",
+      "frequency": "At-Will",
+      "ac": 4,
+      "range": "Melee, 1 Target, Pass",
+      "effect": "The user continues to use Rollout on each of its turns until they miss any target with Rollout, or are not able to hit any target with Rollout during their turn.  Each successive use of Rollout increases Rollout’s Damage Base by +4 to a maximum of DB 15."
+    },
+    {
+      "name": "Protect",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Self, Interrupt, Shield, Trigger",
+      "effect": "If the user is hit by a Move, the user may use Protect. The user is instead not hit by the Move. You do not take any damage nor are you affected by any of the Move’s effects."
+    },
+    {
+      "name": "Withdraw",
+      "type": "Water",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "Self",
+      "effect": "The user’s Defense is raised 1 Combat Stage."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Sturdy",
+      "frequency": "Static",
+      "effect": "The user is immune to Moves with the Execute Keyword. If a single source of Damage or Hit Point Loss would cause the user to lose more than X Hit Points, the damage or Hit Point loss is instead reduced to X. X is equal to 50% of their Max Hit Points. Defensive."
+    },
+    {
+      "name": "Shell Armor",
+      "frequency": "Static",
+      "effect": "The user is immune to Critical Hits; they are instead normal hits. Defensive."
+    }
+  ],
+  "natureMod": {
+    "plus": "hp",
+    "minus": "spd"
+  },
+  "capabilities": {
+    "overland": 3,
+    "swim": 5,
+    "jump": "2/2",
+    "power": 4,
+    "weight": 2,
+    "size": "Small",
+    "other": [
+      "Fountain",
+      "Naturewalk (Ocean)",
+      "Underdog"
+    ]
+  }
+}

@@ -1,0 +1,150 @@
+{
+  "slug": "examples-zapdos-galar",
+  "nickname": "Zapdos Galar",
+  "species": "Zapdos Galar",
+  "level": 20,
+  "gender": "No Gender",
+  "shiny": false,
+  "nature": "Decisive",
+  "types": [
+    "Fighting",
+    "Flying"
+  ],
+  "stats": {
+    "hp": {
+      "base": 1,
+      "added": 6,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 8,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 2,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "sdef": {
+      "base": -1,
+      "added": 3,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 78,
+    "currentHp": 78,
+    "tick": 7,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 2,
+      "vsAny": 3
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Peck",
+      "type": "Flying",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "None"
+    },
+    {
+      "name": "Pluck",
+      "type": "Flying",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Pluck takes the target’s Held Item or Accessory Slot Item and attaches it to Pluck’s user, if the user is not holding anything."
+    },
+    {
+      "name": "Focus Energy",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "Self",
+      "effect": "The user becomes Pumped. While Pumped, the user’s Critical Range is extended by 2, or 18+ if the Critical Range is not otherwise extended. Being switched will cause this effect to end."
+    },
+    {
+      "name": "Agility",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Speed 2 Combat Stages."
+    },
+    {
+      "name": "Reflect",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Blessing",
+      "effect": "Blessing – Any user affected by Reflect may activate it when receiving Physical Damage to resist the Damage one step. Reflect may be activated 2 times, and then disappears."
+    },
+    {
+      "name": "Rock Smash",
+      "type": "Fighting",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Rock Smash lowers the target’s Defense 1 Combat Stage on 17+."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Defiant",
+      "frequency": "Static",
+      "effect": "Whenever the user has its Combat Stages lowered, by something other than its own Moves or Abilities, the user’s Attack is raised 2 Combat Stages."
+    },
+    {
+      "name": "Scrappy",
+      "frequency": "Static",
+      "effect": "Ghost Types are not immune to the user’s Normal and Fighting-Type Moves."
+    }
+  ],
+  "natureMod": {
+    "plus": "hp",
+    "minus": "sdef"
+  },
+  "capabilities": {
+    "overland": 10,
+    "sky": 5,
+    "swim": 5,
+    "jump": "4/5",
+    "power": 9,
+    "weight": 4,
+    "size": "Large",
+    "other": [
+      "Glow",
+      "Guster",
+      "Mountable 1",
+      "Naturewalk (Mountain)"
+    ]
+  }
+}

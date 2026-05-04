@@ -1,0 +1,154 @@
+{
+  "slug": "examples-rowlet",
+  "nickname": "Rowlet",
+  "species": "Rowlet",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Bold",
+  "types": [
+    "Grass",
+    "Flying"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "atk": {
+      "base": -1,
+      "added": 3,
+      "stage": 0
+    },
+    "def": {
+      "base": 1,
+      "added": 9,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 69,
+    "currentHp": 69,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 3,
+      "vsSatk": 1,
+      "vsAny": 1
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Tackle",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash, Push",
+      "effect": "The target is pushed 2 Meters."
+    },
+    {
+      "name": "Peck",
+      "type": "Flying",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "None"
+    },
+    {
+      "name": "Leafage",
+      "type": "Grass",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target"
+    },
+    {
+      "name": "Foresight",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "range": "Self, Swift Action",
+      "effect": "Foresight may be activated as a Swift Action on the user’s turn. For the rest of the turn, the user’s Normal-Type and Fighting-Type Moves can hit and affect Ghost-Type targets, and the user can see through the Illusion Ability, Moves with the Illusion keyword, and effects created by the Illusionist Capability, ignoring all effects from those."
+    },
+    {
+      "name": "Ominous Wind",
+      "type": "Ghost",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "6, 1 Target, Spirit Surge",
+      "effect": "On 19+, the user has each of its stats raised by +1 Combat Stage."
+    },
+    {
+      "name": "Razor Leaf",
+      "type": "Grass",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 4,
+      "range": "Cone 2",
+      "effect": "Razor Leaf is a Critical Hit on 18+."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Keen Eye",
+      "frequency": "Static",
+      "effect": "The user’s Accuracy cannot be lowered, their attacks cannot have Accuracy Penalties (such as from Illuminate), the user is immune to the Blind condition (but not Total Blindness), and the user ignores any Evasion not directly derived from Stats (such as from the Instinct Ability, or from moves like Minimize)."
+    },
+    {
+      "name": "Long Reach",
+      "frequency": "Static",
+      "effect": "The user may use damaging attacks as if they had a range of \"8, 1 Target\" instead of their usual range."
+    }
+  ],
+  "natureMod": {
+    "plus": "def",
+    "minus": "atk"
+  },
+  "capabilities": {
+    "overland": 2,
+    "sky": 4,
+    "swim": 2,
+    "jump": "1/1",
+    "power": 1,
+    "weight": 1,
+    "size": "Small",
+    "other": [
+      "Darkvision",
+      "Stealth",
+      "Underdog"
+    ]
+  }
+}

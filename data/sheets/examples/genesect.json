@@ -1,0 +1,148 @@
+{
+  "slug": "examples-genesect",
+  "nickname": "Genesect",
+  "species": "Genesect",
+  "level": 20,
+  "gender": "No Gender",
+  "shiny": false,
+  "nature": "Decisive",
+  "types": [
+    "Bug",
+    "Steel"
+  ],
+  "stats": {
+    "hp": {
+      "base": 1,
+      "added": 3,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 10,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 2,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    },
+    "sdef": {
+      "base": -1,
+      "added": 3,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 63,
+    "currentHp": 63,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 2,
+      "vsAny": 3
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Lock-On",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "10, 1 Target",
+      "effect": "The target is Locked-On. The next Move that the user uses against the Target that requires an Accuracy Check cannot miss. Lock-On’s effect, on both the User and Target, is passed on by Baton Pass."
+    },
+    {
+      "name": "Fell Stinger",
+      "type": "Bug",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "If the user successfully knocks out a target with Fell Stinger, raise their Attack by 2 Combat Stages."
+    },
+    {
+      "name": "Techno Blast",
+      "type": "Normal",
+      "category": "Special",
+      "db": 12,
+      "damageRoll": "3d12+10 / 30",
+      "frequency": "Scene",
+      "ac": 2,
+      "range": "6, Ranged Blast 2",
+      "effect": "Techno Blast’s Type can be any Type while holding the appropriate Drive item or Plate item."
+    },
+    {
+      "name": "Quick Attack",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Priority",
+      "effect": "None."
+    },
+    {
+      "name": "Screech",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 4,
+      "range": "Burst 2, Friendly, Sonic",
+      "effect": "All Legal Targets have their Defense lowered 2 Combat Stages."
+    },
+    {
+      "name": "Flame Charge",
+      "type": "Fire",
+      "category": "Physical",
+      "db": 5,
+      "damageRoll": "1d8+8 / 13",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash",
+      "effect": "Raise the user’s Speed 1 Combat Stage."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Download",
+      "frequency": "Scene – Swift Action",
+      "effect": "The target must reveal whether its Defense or Special Defense Stats are lower. If the Defense Stat is lower, the user gains a +1 Attack CS.  If the Special Defense Stat is lower, the user instead gains +1 Special Attack CS. If both are tied, the user gains +1 CS to any Stat of their choice."
+    },
+    {
+      "name": "Pressure",
+      "frequency": "Scene - Swift Action",
+      "effect": "All foes within 3 meters are Suppressed for 1 full round."
+    }
+  ],
+  "natureMod": {
+    "plus": "hp",
+    "minus": "sdef"
+  },
+  "capabilities": {
+    "overland": 7,
+    "sky": 7,
+    "swim": 5,
+    "jump": "2/2",
+    "power": 8,
+    "weight": 4,
+    "size": "Large"
+  }
+}

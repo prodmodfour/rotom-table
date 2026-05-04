@@ -1,0 +1,151 @@
+{
+  "slug": "examples-staryu",
+  "nickname": "Staryu",
+  "species": "Staryu",
+  "level": 20,
+  "gender": "No Gender",
+  "shiny": false,
+  "nature": "Desperate",
+  "types": [
+    "Water"
+  ],
+  "stats": {
+    "hp": {
+      "base": -1,
+      "added": 4,
+      "stage": 0
+    },
+    "atk": {
+      "base": 1,
+      "added": 6,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 8,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 48,
+    "currentHp": 48,
+    "tick": 4,
+    "evasion": {
+      "vsAtk": 1,
+      "vsSatk": 1,
+      "vsAny": 3
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Tackle",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash, Push",
+      "effect": "The target is pushed 2 Meters."
+    },
+    {
+      "name": "Bubble Beam",
+      "type": "Water",
+      "category": "Special",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "Bubble Beam lowers the target’s Speed on 18+."
+    },
+    {
+      "name": "Psywave",
+      "type": "Psychic",
+      "category": "Special",
+      "frequency": "Scene",
+      "ac": 5,
+      "range": "6, 1 Target",
+      "effect": "Roll 1d4; on 1 the target loses Hit Points equal to half the user’s Level; on 2 the target loses Hit Points equal to the user’s Level; on 3 the target loses Hit Points equal to 1.5x the user’s level; on 4 the target loses Hit Points equal to the user’s Level doubled. Do not apply weakness or resistance, and do not apply Stats. Do apply Immunity."
+    },
+    {
+      "name": "Swift",
+      "type": "Normal",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "EOT",
+      "range": "8, Ranged Blast 2, Friendly",
+      "effect": "Swift cannot Miss."
+    },
+    {
+      "name": "Rapid Spin",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 5,
+      "damageRoll": "1d8+8 / 13",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Spirit Surge",
+      "effect": "Rapid Spin destroys all Hazards within 5 meters, removes Leech Seeds, and removes the user’s Trapped or Stuck status. If Rapid Spin hits, the user’s speed raises 1 CS."
+    },
+    {
+      "name": "Recover",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Daily x2",
+      "range": "Self",
+      "effect": "The user regains Hit Points equal to half of its full Hit Point value."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Natural Cure",
+      "frequency": "Scene – Free Action",
+      "effect": "Whenever the user is returned to its Poké Ball or Takes A Breather, it may activate Natural Cure to cure itself of all Persistent Status Afflictions."
+    },
+    {
+      "name": "Starswirl",
+      "frequency": "Scene – Swift Action",
+      "effect": "Connection – Rapid Spin. The user may activate this Ability to user Rapid Spin as a Swift Action."
+    }
+  ],
+  "natureMod": {
+    "plus": "atk",
+    "minus": "hp"
+  },
+  "capabilities": {
+    "overland": 1,
+    "sky": 4,
+    "swim": 3,
+    "jump": "2/4",
+    "power": 2,
+    "weight": 3,
+    "size": "Small",
+    "other": [
+      "Fountain",
+      "Gilled",
+      "Underdog"
+    ]
+  }
+}

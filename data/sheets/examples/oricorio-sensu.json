@@ -1,0 +1,89 @@
+{
+  "slug": "examples-oricorio-sensu",
+  "nickname": "Oricorio Sensu",
+  "species": "Oricorio Sensu",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Jolly",
+  "types": [
+    "Ghost",
+    "Flying"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "satk": {
+      "base": -1,
+      "added": 5,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "spd": {
+      "base": 1,
+      "added": 7,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 75,
+    "currentHp": 75,
+    "tick": 7,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 2,
+      "vsAny": 3
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [],
+  "abilities": [
+    {
+      "name": "Dancer",
+      "frequency": "Scene x2 – Free Action",
+      "effect": "The user may immediately use the triggering Move as a Free Action."
+    },
+    {
+      "name": "Adaptability",
+      "frequency": "Static",
+      "effect": "The user gains a +1d10 Bonus to Damage Rolls with Moves with which they apply STAB."
+    }
+  ],
+  "natureMod": {
+    "plus": "spd",
+    "minus": "satk"
+  },
+  "capabilities": {
+    "overland": 5,
+    "sky": 6,
+    "swim": 3,
+    "jump": "3/3",
+    "power": 2,
+    "weight": 1,
+    "size": "Small",
+    "other": [
+      "Forme Change"
+    ]
+  }
+}

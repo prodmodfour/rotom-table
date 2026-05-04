@@ -1,0 +1,145 @@
+{
+  "slug": "examples-makuhita",
+  "nickname": "Makuhita",
+  "species": "Makuhita",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Hardy",
+  "types": [
+    "Fighting"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 9,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 78,
+    "currentHp": 78,
+    "tick": 7,
+    "evasion": {
+      "vsAtk": 1,
+      "vsSatk": 1,
+      "vsAny": 1
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Knock Off",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
+      "frequency": "Scene",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Choose one of the target’s Held Items or Accessory Slot Items. It is knocked to the ground."
+    },
+    {
+      "name": "Focus Energy",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "Self",
+      "effect": "The user becomes Pumped. While Pumped, the user’s Critical Range is extended by 2, or 18+ if the Critical Range is not otherwise extended. Being switched will cause this effect to end."
+    },
+    {
+      "name": "Force Palm",
+      "type": "Fighting",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Aura",
+      "effect": "Force Palm Paralyzes the target on 18+."
+    },
+    {
+      "name": "Whirlwind",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "Line 6",
+      "effect": "All targets are pushed X meters, where X is 8 minus their weight class. If the Line targets into a Smokescreen, the smoke is dispersed. All hazards in the Whirlwind are destroyed."
+    },
+    {
+      "name": "Arm Thrust",
+      "type": "Fighting",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6",
+      "frequency": "EOT",
+      "ac": 4,
+      "range": "Melee, 1 Target, Five Strike",
+      "effect": "None"
+    },
+    {
+      "name": "Tackle",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash, Push",
+      "effect": "The target is pushed 2 Meters."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Sumo Stance",
+      "frequency": "At-Will - Shift Action",
+      "effect": "The triggering foe is Pushed 1 meter away from the user and the user is immune to Push Effects for 1 full round."
+    },
+    {
+      "name": "Thick Fat",
+      "frequency": "Static",
+      "effect": "The user resists Fire-Type and Ice-Type attacks one step further. Defensive."
+    }
+  ],
+  "capabilities": {
+    "overland": 4,
+    "swim": 2,
+    "jump": "1/1",
+    "power": 6,
+    "weight": 4,
+    "size": "Medium",
+    "other": [
+      "Underdog"
+    ]
+  }
+}

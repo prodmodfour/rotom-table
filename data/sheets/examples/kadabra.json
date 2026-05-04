@@ -1,0 +1,111 @@
+{
+  "slug": "examples-kadabra",
+  "nickname": "Kadabra",
+  "species": "Kadabra",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Sassy",
+  "types": [
+    "Psychic"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 1,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 1,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 9,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 1,
+      "added": 8,
+      "stage": 0
+    },
+    "spd": {
+      "base": -1,
+      "added": 6,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 45,
+    "currentHp": 45,
+    "tick": 4,
+    "evasion": {
+      "vsAtk": 0,
+      "vsSatk": 3,
+      "vsAny": 3
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Confusion",
+      "type": "Psychic",
+      "category": "Special",
+      "db": 7,
+      "damageRoll": "2d6+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Confusion Confuses the target on 19+."
+    },
+    {
+      "name": "Disable",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "1 Target, Trigger",
+      "effect": "Disable may be used as a Free Action that does not take up a Command whenever the user is hit by a Move. That Move becomes Disabled for the attacker."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Inner Focus",
+      "frequency": "Static",
+      "effect": "The user cannot be Flinched, and their Initiative cannot be unwillingly lowered by any effects."
+    },
+    {
+      "name": "Synchronize",
+      "frequency": "Scene – Free Action",
+      "effect": "The foe which caused the Status Condition is given the same Status they inflicted."
+    }
+  ],
+  "natureMod": {
+    "plus": "sdef",
+    "minus": "spd"
+  },
+  "capabilities": {
+    "overland": 5,
+    "swim": 2,
+    "jump": "2/1",
+    "power": 3,
+    "weight": 4,
+    "size": "Medium",
+    "other": [
+      "Teleporter 2",
+      "Naturewalk (Forest, Urban)",
+      "Telekinetic",
+      "Telepath",
+      "Underdog"
+    ]
+  }
+}

@@ -1,0 +1,131 @@
+{
+  "slug": "examples-raikou",
+  "nickname": "Raikou",
+  "species": "Raikou",
+  "level": 20,
+  "gender": "No Gender",
+  "shiny": false,
+  "nature": "Timid",
+  "types": [
+    "Electric"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "atk": {
+      "base": -1,
+      "added": 3,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "spd": {
+      "base": 1,
+      "added": 6,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 75,
+    "currentHp": 75,
+    "tick": 7,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 3,
+      "vsAny": 4
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Leer",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Cone 2, Friendly, Social",
+      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
+    },
+    {
+      "name": "Bite",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Bite Flinches the target on 15+."
+    },
+    {
+      "name": "Thunder Shock",
+      "type": "Electric",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "Thunder Shock Paralyzes the target on 17+."
+    },
+    {
+      "name": "Roar",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "ac": 2,
+      "range": "Burst 1, Sonic, Social",
+      "effect": "When declaring Roar, the user does nothing and may not Shift. At the end of the round, the user Shifts and uses Roar.  Targets hit by Roar immediately Shift away from the target using their highest usable movement capability, and towards their Trainer if possible. If the target is an owned Pokémon and ends this shift within 6 meters of their Poké Ball, they are immediately recalled to their Poké Ball. If that Trainer sends out a replacement, they do not lose their Pokémon turn."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Volt Absorb",
+      "frequency": "Static",
+      "effect": "The user is immune to the damage and effects of Electric-Type attacks, and whenever they are hit with an Electric Type attack, they gain Hit Points equal to a Tick of Hit Points. Defensive."
+    },
+    {
+      "name": "Pressure",
+      "frequency": "Scene - Swift Action",
+      "effect": "All foes within 3 meters are Suppressed for 1 full round."
+    }
+  ],
+  "natureMod": {
+    "plus": "spd",
+    "minus": "atk"
+  },
+  "capabilities": {
+    "overland": 13,
+    "swim": 6,
+    "jump": "3/3",
+    "power": 8,
+    "weight": 5,
+    "size": "Large",
+    "other": [
+      "Tracker",
+      "Zapper",
+      "Naturewalk (Grassland)",
+      "Mountable 2"
+    ]
+  }
+}

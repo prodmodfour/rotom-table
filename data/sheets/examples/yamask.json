@@ -1,0 +1,142 @@
+{
+  "slug": "examples-yamask",
+  "nickname": "Yamask",
+  "species": "Yamask",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Docile",
+  "types": [
+    "Ghost"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 12,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 54,
+    "currentHp": 54,
+    "tick": 5,
+    "evasion": {
+      "vsAtk": 4,
+      "vsSatk": 2,
+      "vsAny": 1
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Protect",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Self, Interrupt, Shield, Trigger",
+      "effect": "If the user is hit by a Move, the user may use Protect. The user is instead not hit by the Move. You do not take any damage nor are you affected by any of the Move’s effects."
+    },
+    {
+      "name": "Night Shade",
+      "type": "Ghost",
+      "category": "Special",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "8, 1 Target",
+      "effect": "The target loses Hit Points equal to the level of Night Shade’s user. Do not apply weakness or resistance. Do not apply stats."
+    },
+    {
+      "name": "Astonish",
+      "type": "Ghost",
+      "category": "Physical",
+      "db": 5,
+      "damageRoll": "1d8+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Astonish Flinches the target on 15+. Once per scene, if the target is unaware of the user’s presence, Astonish automatically Flinches the target."
+    },
+    {
+      "name": "Haze",
+      "type": "Ice",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "range": "Field",
+      "effect": "The Combat Stages of the user and all Pokémon and Trainers in the encounter are set to their default state (usually 0)."
+    },
+    {
+      "name": "Hex",
+      "type": "Ghost",
+      "category": "Special",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Once a Scene, if Hex’s target has a Status Affliction, you may have Hex’s Damage Base be 13 instead (4d10+10 / 35)."
+    },
+    {
+      "name": "Disable",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "1 Target, Trigger",
+      "effect": "Disable may be used as a Free Action that does not take up a Command whenever the user is hit by a Move. That Move becomes Disabled for the attacker."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Mummy",
+      "frequency": "At-Will – Free Action",
+      "effect": "Disable one of the user’s Abilities for the rest of the Scene or until they are switched out."
+    },
+    {
+      "name": "Stall",
+      "frequency": "Static",
+      "effect": "In a round’s queue, a Pokémon with Stall is always last. If a Pokémon goes to the end of the queue, the Pokémon with Stall is still the last to move. The user’s actions taken on their Initiative Count (not Priority or Interrupt) cannot be Interrupted."
+    }
+  ],
+  "capabilities": {
+    "overland": 5,
+    "swim": 2,
+    "levitate": 5,
+    "jump": "2/2",
+    "power": 2,
+    "weight": 1,
+    "size": "Small",
+    "other": [
+      "Phasing",
+      "Invisibility",
+      "Underdog"
+    ]
+  }
+}

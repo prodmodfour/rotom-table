@@ -1,0 +1,134 @@
+{
+  "slug": "examples-golisopod",
+  "nickname": "Golisopod",
+  "species": "Golisopod",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Docile",
+  "types": [
+    "Bug",
+    "Water"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 63,
+    "currentHp": 63,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 4,
+      "vsSatk": 3,
+      "vsAny": 1
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Spite",
+      "type": "Ghost",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "1 Target, Trigger",
+      "effect": "Spite may be used as a Free Action that does not take up a Command whenever the user is hit by a Move. That Move becomes Disabled for the attacker."
+    },
+    {
+      "name": "Rock Smash",
+      "type": "Fighting",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Rock Smash lowers the target’s Defense 1 Combat Stage on 17+."
+    },
+    {
+      "name": "Fury Cutter",
+      "type": "Bug",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 3,
+      "range": "Melee, 1 Target",
+      "effect": "If Fury Cutter is used successfully and consecutively on the same target, the Damage Base is increased by +4 to a maximum of 16. For example, the first hit would have a DB of 4; the second hit a DB of 8; the third hit a DB of 12; the fourth and further hits a DB of 16. If Fury Cuter misses or fails to damage its target, its Damage Base resets."
+    },
+    {
+      "name": "Swords Dance",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "The user’s Attack is raised 2 Combat Stages."
+    },
+    {
+      "name": "Bug Bite",
+      "type": "Bug",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "If the target has a stored Digestion Buff or has traded in a Digestion Buff this Scene, the user may gain the effects of the Digestion Buff. This does not count towards the usual limit on the user’s Digestion Buffs."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Emergency Exit",
+      "frequency": "Scene – Free Action",
+      "effect": "When the user’s Hit Points drop below half their maximum, their trainer may immediately recall the user and send out another Pokémon as a Free Action. If the user hasn’t taken their turn yet, their replacement may act this round. Defensive."
+    },
+    {
+      "name": "Damp",
+      "frequency": "Static",
+      "effect": "Whenever anyone within 10 meters would use the Moves Self-Destruct or Explosion or activate the Aftermath Ability, those effects fail and instead do nothing."
+    }
+  ],
+  "capabilities": {
+    "overland": 7,
+    "swim": 7,
+    "jump": "2/2",
+    "power": 8,
+    "weight": 5,
+    "size": "Large",
+    "other": [
+      "Gilled"
+    ]
+  }
+}

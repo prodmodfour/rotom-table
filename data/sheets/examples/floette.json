@@ -1,0 +1,151 @@
+{
+  "slug": "examples-floette",
+  "nickname": "Floette",
+  "species": "Floette",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Curious",
+  "types": [
+    "Fairy"
+  ],
+  "stats": {
+    "hp": {
+      "base": -1,
+      "added": 0,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 0,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "satk": {
+      "base": 1,
+      "added": 10,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 9,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 42,
+    "currentHp": 42,
+    "tick": 4,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 3,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Wish",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Daily x2",
+      "range": "15, 1 Target",
+      "effect": "At the end of the user’s next turn, the target regains Hit Points equal to half of its full Hit Point value. If the user targets themselves and are replaced in battle, the replacement is healed."
+    },
+    {
+      "name": "Razor Leaf",
+      "type": "Grass",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "At-Will",
+      "ac": 4,
+      "range": "Cone 2",
+      "effect": "Razor Leaf is a Critical Hit on 18+."
+    },
+    {
+      "name": "Lucky Chant",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Blessing",
+      "effect": "Blessing – Any user affected by Lucky Chant may activate it when receiving a Critical Hit to cause the attack to instead deal damage as if it was not a Critical Hit. Lucky Chant may be activated 3 times, and then disappears."
+    },
+    {
+      "name": "Tackle",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash, Push",
+      "effect": "The target is pushed 2 Meters."
+    },
+    {
+      "name": "Fairy Wind",
+      "type": "Fairy",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "None"
+    },
+    {
+      "name": "Vine Whip",
+      "type": "Grass",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "None"
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Flower Power",
+      "frequency": "Static",
+      "effect": "The user may perform damaging Grass Type Moves as if they were their choice of either Physical or Special."
+    },
+    {
+      "name": "Perception",
+      "frequency": "Static",
+      "effect": "The user gains +1 Evasion. Whenever an Ally uses a damaging area-of-effect attack that would hit you, you may Disengage as a Free Action before the attack resolves."
+    }
+  ],
+  "natureMod": {
+    "plus": "satk",
+    "minus": "hp"
+  },
+  "capabilities": {
+    "overland": 2,
+    "swim": 2,
+    "levitate": 6,
+    "jump": "0/1",
+    "power": 1,
+    "weight": 1,
+    "size": "Small",
+    "other": [
+      "Alluring",
+      "Naturewalk (Grassland, Forest)",
+      "Underdog"
+    ]
+  }
+}

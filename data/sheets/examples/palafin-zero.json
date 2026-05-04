@@ -1,0 +1,146 @@
+{
+  "slug": "examples-palafin-zero",
+  "nickname": "Palafin Zero",
+  "species": "Palafin Zero",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Curious",
+  "types": [
+    "Water"
+  ],
+  "stats": {
+    "hp": {
+      "base": -1,
+      "added": 5,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "satk": {
+      "base": 1,
+      "added": 5,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 8,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 72,
+    "currentHp": 72,
+    "tick": 7,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 1,
+      "vsAny": 3
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Supersonic",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 6,
+      "range": "4, 1 Target, Sonic",
+      "effect": "The target becomes Confused. On miss, the target suffers a -2 penalty to Accuracy Rolls for one full round."
+    },
+    {
+      "name": "Water Gun",
+      "type": "Water",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "None"
+    },
+    {
+      "name": "Pound",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "None"
+    },
+    {
+      "name": "Focus Energy",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "Self",
+      "effect": "The user becomes Pumped. While Pumped, the user’s Critical Range is extended by 2, or 18+ if the Critical Range is not otherwise extended. Being switched will cause this effect to end."
+    },
+    {
+      "name": "Jet Punch",
+      "type": "Water",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target"
+    },
+    {
+      "name": "Work Up",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Attack 1 Combat Stage and raise the user’s Special Attack 1 Combat Stage."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Water Veil",
+      "frequency": "Static",
+      "effect": "The user is immune to Burns. Defensive."
+    },
+    {
+      "name": "Friend Guard",
+      "frequency": "Scene – Free Action",
+      "effect": "The damage is resisted one step further. Defensive."
+    }
+  ],
+  "natureMod": {
+    "plus": "satk",
+    "minus": "hp"
+  },
+  "capabilities": {
+    "overland": 3,
+    "swim": 9,
+    "jump": "3/3",
+    "power": 5,
+    "weight": 4,
+    "size": "Medium",
+    "other": [
+      "Forme Change",
+      "Fountain",
+      "Naturewalk (Ocean)",
+      "Mountable 1"
+    ]
+  }
+}

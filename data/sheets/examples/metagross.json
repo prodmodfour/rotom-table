@@ -1,0 +1,113 @@
+{
+  "slug": "examples-metagross",
+  "nickname": "Metagross",
+  "species": "Metagross",
+  "level": 20,
+  "gender": "No Gender",
+  "shiny": false,
+  "nature": "Rash",
+  "types": [
+    "Steel",
+    "Psychic"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "satk": {
+      "base": 1,
+      "added": 3,
+      "stage": 0
+    },
+    "sdef": {
+      "base": -1,
+      "added": 6,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 72,
+    "currentHp": 72,
+    "tick": 7,
+    "evasion": {
+      "vsAtk": 3,
+      "vsSatk": 2,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Confusion",
+      "type": "Psychic",
+      "category": "Special",
+      "db": 7,
+      "damageRoll": "2d6+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Confusion Confuses the target on 19+."
+    },
+    {
+      "name": "Metal Claw",
+      "type": "Steel",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10",
+      "frequency": "At-Will",
+      "ac": 3,
+      "range": "Melee, 1 Target, Spirit Surge",
+      "effect": "Raise the user’s Attack 1 Combat Stage on 18+."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Clear Body",
+      "frequency": "Static",
+      "effect": "The user’s Combat Stages may not be lowered by the effect of foes’ Feautres, Abilities, or Moves. Status Affictions may still alter their Combat Stages. Defensive."
+    },
+    {
+      "name": "Keen Eye",
+      "frequency": "Static",
+      "effect": "The user’s Accuracy cannot be lowered, their attacks cannot have Accuracy Penalties (such as from Illuminate), the user is immune to the Blind condition (but not Total Blindness), and the user ignores any Evasion not directly derived from Stats (such as from the Instinct Ability, or from moves like Minimize)."
+    }
+  ],
+  "natureMod": {
+    "plus": "satk",
+    "minus": "sdef"
+  },
+  "capabilities": {
+    "overland": 6,
+    "swim": 3,
+    "levitate": 6,
+    "jump": "1/1",
+    "power": 14,
+    "weight": 6,
+    "size": "Large",
+    "other": [
+      "Magnetic",
+      "Mountable 2"
+    ]
+  }
+}

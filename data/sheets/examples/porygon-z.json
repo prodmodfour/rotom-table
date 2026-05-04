@@ -1,0 +1,116 @@
+{
+  "slug": "examples-porygon-z",
+  "nickname": "Porygon-Z",
+  "species": "Porygon-Z",
+  "level": 20,
+  "gender": "No Gender",
+  "shiny": false,
+  "nature": "Desperate",
+  "types": [
+    "Normal"
+  ],
+  "stats": {
+    "hp": {
+      "base": -1,
+      "added": 3,
+      "stage": 0
+    },
+    "atk": {
+      "base": 1,
+      "added": 10,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 1,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 9,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 63,
+    "currentHp": 63,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 1,
+      "vsSatk": 2,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Agility",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Speed 2 Combat Stages."
+    },
+    {
+      "name": "Psybeam",
+      "type": "Psychic",
+      "category": "Special",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Psybeam Confuses the target on 19+."
+    },
+    {
+      "name": "Recover",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Daily x2",
+      "range": "Self",
+      "effect": "The user regains Hit Points equal to half of its full Hit Point value."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Download",
+      "frequency": "Scene – Swift Action",
+      "effect": "The target must reveal whether its Defense or Special Defense Stats are lower. If the Defense Stat is lower, the user gains a +1 Attack CS.  If the Special Defense Stat is lower, the user instead gains +1 Special Attack CS. If both are tied, the user gains +1 CS to any Stat of their choice."
+    },
+    {
+      "name": "Tolerance",
+      "frequency": "Static",
+      "effect": "Any Types resisted by the user are resisted one step further. Defensive."
+    }
+  ],
+  "natureMod": {
+    "plus": "atk",
+    "minus": "hp"
+  },
+  "capabilities": {
+    "overland": 2,
+    "swim": 2,
+    "levitate": 7,
+    "jump": "1/1",
+    "power": 2,
+    "weight": 3,
+    "size": "Small",
+    "other": [
+      "Wired"
+    ]
+  }
+}

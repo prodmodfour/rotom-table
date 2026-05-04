@@ -1,0 +1,143 @@
+{
+  "slug": "examples-plusle",
+  "nickname": "Plusle",
+  "species": "Plusle",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Quirky",
+  "types": [
+    "Electric"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 10,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 60,
+    "currentHp": 60,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 1,
+      "vsSatk": 2,
+      "vsAny": 4
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Bestow",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": "--",
+      "range": "Melee, 1 Target",
+      "effect": "The user gives its held item to the target, unless the target is already holding an item. Using Bestow is a Swift Action."
+    },
+    {
+      "name": "Swift",
+      "type": "Normal",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "EOT",
+      "range": "8, Ranged Blast 2, Friendly",
+      "effect": "Swift cannot Miss."
+    },
+    {
+      "name": "Growl",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Burst 1, Friendly, Sonic, Social",
+      "effect": "Growl lowers all Legal Targets Attack 1 Combat Stage."
+    },
+    {
+      "name": "Thunder Wave",
+      "type": "Electric",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 4,
+      "range": "6, 1 Target",
+      "effect": "Thunder Wave Paralyzes the target. Targets immune to Electric Attacks are immune to Thunder Wave’s effects."
+    },
+    {
+      "name": "Quick Attack",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Priority",
+      "effect": "None."
+    },
+    {
+      "name": "Encore",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "4, 1 Target, Social",
+      "effect": "Roll 1d6. On a result of 1 or 2, the target becomes Confused; on a result of 3 or 4 the target becomes Suppressed; on a result of 5 or 6 the target becomes Enraged."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Plus",
+      "frequency": "Scene x2 – Free Action, Reaction",
+      "effect": "The target gains an additional Combat Stage in one stat raised by the triggering effect."
+    },
+    {
+      "name": "Static",
+      "frequency": "Scene – Free Action",
+      "effect": "The attacking foe becomes Paralyzed."
+    }
+  ],
+  "capabilities": {
+    "overland": 5,
+    "swim": 3,
+    "jump": "2/3",
+    "power": 1,
+    "weight": 1,
+    "size": "Small",
+    "other": [
+      "Zapper",
+      "Naturewalk (Grassland, Forest)",
+      "Underdog"
+    ]
+  }
+}

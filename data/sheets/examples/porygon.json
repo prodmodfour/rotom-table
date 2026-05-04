@@ -1,0 +1,144 @@
+{
+  "slug": "examples-porygon",
+  "nickname": "Porygon",
+  "species": "Porygon",
+  "level": 20,
+  "gender": "No Gender",
+  "shiny": false,
+  "nature": "Lax",
+  "types": [
+    "Normal"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "def": {
+      "base": 1,
+      "added": 8,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "sdef": {
+      "base": -1,
+      "added": 4,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 69,
+    "currentHp": 69,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 3,
+      "vsSatk": 2,
+      "vsAny": 1
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Sharpen",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "Self",
+      "effect": "Raise the user’s Attack 1 Combat Stage."
+    },
+    {
+      "name": "Psybeam",
+      "type": "Psychic",
+      "category": "Special",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Psybeam Confuses the target on 19+."
+    },
+    {
+      "name": "Recover",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Daily x2",
+      "range": "Self",
+      "effect": "The user regains Hit Points equal to half of its full Hit Point value."
+    },
+    {
+      "name": "Tackle",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash, Push",
+      "effect": "The target is pushed 2 Meters."
+    },
+    {
+      "name": "Conversion2",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "Self",
+      "effect": "The user becomes the elemental Type of their choice as long as the Type resists the elemental Type of the Move it last took damage from until the end of the encounter. Replace all other Types."
+    },
+    {
+      "name": "Conversion",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "Self",
+      "effect": "The user becomes the elemental Type of their choice as long as they have a Move that is the same elemental Type until the end of the encounter. Replace all other Types."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Trace",
+      "frequency": "Scene – Free Action",
+      "effect": "The Pokémon gains an Ability known by the Target for the remainder of the encounter, or until it is Fainted."
+    },
+    {
+      "name": "Tolerance",
+      "frequency": "Static",
+      "effect": "Any Types resisted by the user are resisted one step further. Defensive."
+    }
+  ],
+  "natureMod": {
+    "plus": "def",
+    "minus": "sdef"
+  },
+  "capabilities": {
+    "overland": 2,
+    "swim": 1,
+    "levitate": 4,
+    "jump": "1/1",
+    "power": 2,
+    "weight": 3,
+    "size": "Small",
+    "other": [
+      "Wired",
+      "Underdog"
+    ]
+  }
+}

@@ -1,0 +1,120 @@
+{
+  "slug": "examples-bewear",
+  "nickname": "Bewear",
+  "species": "Bewear",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Hardy",
+  "types": [
+    "Normal",
+    "Fighting"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 2,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 78,
+    "currentHp": 78,
+    "tick": 7,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 1,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Flail",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "For each Injury the user has, Flail’s Damage Base is increased by +1."
+    },
+    {
+      "name": "Baby-Doll Eyes",
+      "type": "Fairy",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "4, 1 Target, Priority, Social",
+      "effect": "The target’s Attack is lowered 1 Combat Stage."
+    },
+    {
+      "name": "Bide",
+      "type": "Normal",
+      "category": "Physical",
+      "frequency": "Scene",
+      "range": "Burst 1, Friendly",
+      "effect": "The user may use Bide as a Reaction Move upon being Hit by a Damaging Move. During their next available turn, the user may Shift and then use Bide, causing all Adjacent foes to lose X HP, where X is the amount of Damage taken since declaring use of Bide (Loss of life through effects such as Poison is not ‘Damage’)."
+    },
+    {
+      "name": "Brutal Swing",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Burst 1"
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Fluffy",
+      "frequency": "Static",
+      "effect": "The user resists damaging Melee attacks one step further, but resists Fire-Type attacks one step less. Defensive."
+    },
+    {
+      "name": "Unnerve",
+      "frequency": "At-Will - Swift Action",
+      "effect": "The target cannot gain positive Combat Stages or trade in Digestion Buffs for 1 full round."
+    }
+  ],
+  "capabilities": {
+    "overland": 6,
+    "swim": 4,
+    "jump": "1/2",
+    "power": 11,
+    "weight": 5,
+    "size": "Large"
+  }
+}

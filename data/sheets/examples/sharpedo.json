@@ -1,0 +1,142 @@
+{
+  "slug": "examples-sharpedo",
+  "nickname": "Sharpedo",
+  "species": "Sharpedo",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Patient",
+  "types": [
+    "Water",
+    "Dark"
+  ],
+  "stats": {
+    "hp": {
+      "base": 1,
+      "added": 4,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "spd": {
+      "base": -1,
+      "added": 5,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 66,
+    "currentHp": 66,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 1,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Focus Energy",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "Self",
+      "effect": "The user becomes Pumped. While Pumped, the user’s Critical Range is extended by 2, or 18+ if the Critical Range is not otherwise extended. Being switched will cause this effect to end."
+    },
+    {
+      "name": "Screech",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 4,
+      "range": "Burst 2, Friendly, Sonic",
+      "effect": "All Legal Targets have their Defense lowered 2 Combat Stages."
+    },
+    {
+      "name": "Rage",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 2,
+      "damageRoll": "1d6+3 / 7",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Spirit Surge",
+      "effect": "The user becomes Enraged. Until the end of the user’s next turn, if the user is Enraged, the user gains +1 Attack Combat Stage whenever they are damaged by an Damaging Move or Attack."
+    },
+    {
+      "name": "Aqua Jet",
+      "type": "Water",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Priority",
+      "effect": "None"
+    },
+    {
+      "name": "Assurance",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "When you hit with Assurance, if Assurance’s target has already been damaged by a Move on the same round Assurance is being used, Assurance has a Damage Base of 12 (3d12+10 / 30) instead. This effect may trigger only once per Scene per Target."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Rough Skin",
+      "frequency": "At-Will - Free Action, Reaction",
+      "effect": "The attacker loses a tick of Hit Points."
+    },
+    {
+      "name": "Aqua Bullet",
+      "frequency": "Static",
+      "effect": "Connection - Aqua Jet. The user may use Water- Type Moves as a Full Action to gain Sky 10 and shift in a straight line before attempting to use their Move. When shifting this way, the user does not provoke attacks of opportunity."
+    }
+  ],
+  "natureMod": {
+    "plus": "hp",
+    "minus": "spd"
+  },
+  "capabilities": {
+    "overland": 2,
+    "swim": 9,
+    "jump": "4/4",
+    "power": 5,
+    "weight": 4,
+    "size": "Medium",
+    "other": [
+      "Darkvision",
+      "Fountain",
+      "Naturewalk (Ocean)",
+      "Gilled"
+    ]
+  }
+}

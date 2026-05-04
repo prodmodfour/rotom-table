@@ -1,0 +1,142 @@
+{
+  "slug": "examples-mr-mime-galar",
+  "nickname": "Mr. Mime Galar",
+  "species": "Mr. Mime Galar",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Calm",
+  "types": [
+    "Ice",
+    "Psychic"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 2,
+      "stage": 0
+    },
+    "atk": {
+      "base": -1,
+      "added": 3,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 1,
+      "added": 10,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 8,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 51,
+    "currentHp": 51,
+    "tick": 5,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 4,
+      "vsAny": 3
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Ally Switch",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "6, 1 Target, Interrupt",
+      "effect": "Ally Switch may be declared during a foe’s turn as an Interrupt. The user chooses one willing ally within 6 meters; the target and the user switch places. If the ally was a target of a Move, the user is now the target; If the user was a target of a Move, the ally is now the target."
+    },
+    {
+      "name": "Baton Pass",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "Self",
+      "effect": "The user is replaced with another Pokémon from their trainer’s roster. All Combat Stage, Coats, and [Stratagems] on Baton Pass’ user are transferred to the replacement. Baton Pass may be used to switch even if the user is Trapped."
+    },
+    {
+      "name": "Icy Wind",
+      "type": "Ice",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "ac": 3,
+      "range": "Cone 2",
+      "effect": "All Legal Targets have their Speed lowered 1 Combat Stage."
+    },
+    {
+      "name": "Confusion",
+      "type": "Psychic",
+      "category": "Special",
+      "db": 7,
+      "damageRoll": "2d6+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Confusion Confuses the target on 19+."
+    },
+    {
+      "name": "Ice Shard",
+      "type": "Ice",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target, Priority",
+      "effect": "None"
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Filter",
+      "frequency": "Static",
+      "effect": "The user gains +5 Damage Reduction against Super- Effective damage. Defensive."
+    },
+    {
+      "name": "Ice Body",
+      "frequency": "Daily x5 - Swift Action",
+      "effect": "The user gains a Tick of Hit Points. Ice Body may only be used while the user is under 50% Hit Points or in Hailing Weather."
+    }
+  ],
+  "natureMod": {
+    "plus": "sdef",
+    "minus": "atk"
+  },
+  "capabilities": {
+    "overland": 6,
+    "swim": 3,
+    "jump": "1/1",
+    "power": 5,
+    "weight": 4,
+    "size": "Medium",
+    "other": [
+      "Chilled",
+      "Freezer",
+      "Naturewalk (Tundra)",
+      "Telekinetic",
+      "Telepath"
+    ]
+  }
+}

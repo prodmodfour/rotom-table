@@ -1,0 +1,116 @@
+{
+  "slug": "examples-dragonite",
+  "nickname": "Dragonite",
+  "species": "Dragonite",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Bashful",
+  "types": [
+    "Dragon",
+    "Flying"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 69,
+    "currentHp": 69,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 3,
+      "vsSatk": 2,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Dragon Rage",
+      "type": "Dragon",
+      "category": "Special",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "If it hits, Dragon Rage causes the target to lose 15 Hit Points. Dragon Rage is Special and interacts with other moves and effects as such (Special Evasion may be applied to avoid it, Mirror Coat can reflect it, etc.)."
+    },
+    {
+      "name": "Thunder Wave",
+      "type": "Electric",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 4,
+      "range": "6, 1 Target",
+      "effect": "Thunder Wave Paralyzes the target. Targets immune to Electric Attacks are immune to Thunder Wave’s effects."
+    },
+    {
+      "name": "Twister",
+      "type": "Dragon",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, Ranged Blast 3",
+      "effect": "Small or Medium targets in the central square of the blast are not hit. Twister Flinches the target on 18-20 during Accuracy Check. Any Pokémon Airborne as a result of Fly or Sky Drop above the Blast are hit, ignoring range, and Twister has a Damage Base of 8 against those targets instead."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Inner Focus",
+      "frequency": "Static",
+      "effect": "The user cannot be Flinched, and their Initiative cannot be unwillingly lowered by any effects."
+    },
+    {
+      "name": "Courage",
+      "frequency": "Static",
+      "effect": "While at or under 1/3rd of its Max Hit Point value, the user gains a +5 Damage Bonus to all Damage Rolls, and 5 Damage Reduction. Defensive."
+    }
+  ],
+  "capabilities": {
+    "overland": 6,
+    "sky": 8,
+    "swim": 6,
+    "jump": "3/4",
+    "power": 8,
+    "weight": 6,
+    "size": "Large",
+    "other": [
+      "Aura  Reader",
+      "Mountable 1"
+    ]
+  }
+}

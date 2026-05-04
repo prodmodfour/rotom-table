@@ -1,0 +1,148 @@
+{
+  "slug": "examples-morpeko",
+  "nickname": "Morpeko",
+  "species": "Morpeko",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Hardy",
+  "types": [
+    "Electric",
+    "Dark"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 2,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 9,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 54,
+    "currentHp": 54,
+    "tick": 5,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 2,
+      "vsAny": 3
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Quick Attack",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Priority",
+      "effect": "None."
+    },
+    {
+      "name": "Thunder Shock",
+      "type": "Electric",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "Thunder Shock Paralyzes the target on 17+."
+    },
+    {
+      "name": "Tail Whip",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Burst 1, Friendly",
+      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
+    },
+    {
+      "name": "Power Trip",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "This Move gains +2 to its Damage Base for every positive Combat Stage held by the user, to a maximum of DB 20."
+    },
+    {
+      "name": "Leer",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Cone 2, Friendly, Social",
+      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
+    },
+    {
+      "name": "Flatter",
+      "type": "Dark",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target, Social",
+      "effect": "The target’s Special Attack is raised by +1 Combat Stage. Flatter Confuses the target."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Hunger Switch",
+      "frequency": "Static",
+      "effect": "At the beginning of each of the user’s turns, the user must choose whether it’s in Full Belly Mode or Hangry Mode until the beginning of its next turn. In Full Belly Mode, it gains a +2 bonus to Accuracy. In Hangry Mode, it gains a +5 Bonus to Damage Rolls."
+    },
+    {
+      "name": "Static",
+      "frequency": "Scene – Free Action",
+      "effect": "The attacking foe becomes Paralyzed."
+    }
+  ],
+  "capabilities": {
+    "overland": 7,
+    "swim": 4,
+    "jump": "1/1",
+    "power": 4,
+    "weight": 1,
+    "size": "Small",
+    "other": [
+      "Darkvision",
+      "Naturewalk (Forest)",
+      "Underdog",
+      "Zapper"
+    ]
+  }
+}

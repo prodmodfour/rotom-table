@@ -1,0 +1,153 @@
+{
+  "slug": "examples-sandile",
+  "nickname": "Sandile",
+  "species": "Sandile",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Naive",
+  "types": [
+    "Ground",
+    "Dark"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "sdef": {
+      "base": -1,
+      "added": 3,
+      "stage": 0
+    },
+    "spd": {
+      "base": 1,
+      "added": 12,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 57,
+    "currentHp": 57,
+    "tick": 5,
+    "evasion": {
+      "vsAtk": 1,
+      "vsSatk": 1,
+      "vsAny": 4
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Sand Attack",
+      "type": "Ground",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "2, 1 Target",
+      "effect": "The target is Blinded until the end of their next turn."
+    },
+    {
+      "name": "Torment",
+      "type": "Dark",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "10, 1 Target, Social",
+      "effect": "The target becomes Suppressed."
+    },
+    {
+      "name": "Bite",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Bite Flinches the target on 15+."
+    },
+    {
+      "name": "Mud-Slap",
+      "type": "Ground",
+      "category": "Special",
+      "db": 4,
+      "damageRoll": "1d8+6",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "3, 1 Target",
+      "effect": "The target’s Accuracy is lowered by -1."
+    },
+    {
+      "name": "Leer",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Cone 2, Friendly, Social",
+      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
+    },
+    {
+      "name": "Rage",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 2,
+      "damageRoll": "1d6+3 / 7",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Spirit Surge",
+      "effect": "The user becomes Enraged. Until the end of the user’s next turn, if the user is Enraged, the user gains +1 Attack Combat Stage whenever they are damaged by an Damaging Move or Attack."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Moxie",
+      "frequency": "Static",
+      "effect": "Whenever the user’s Move causes a target to faint, it may raise its Attack Combat Stage by +1. You may only trigger Moxie once per Move, even if the Move causes multiple targets to faint."
+    },
+    {
+      "name": "Deep Sleep",
+      "frequency": "Static",
+      "effect": "When asleep, this Pokémon restores a Tick of Hit Points at the end of each turn."
+    }
+  ],
+  "natureMod": {
+    "plus": "spd",
+    "minus": "sdef"
+  },
+  "capabilities": {
+    "overland": 4,
+    "swim": 3,
+    "burrow": 2,
+    "jump": "1/1",
+    "power": 3,
+    "weight": 2,
+    "size": "Small",
+    "other": [
+      "Naturewalk (Desert)",
+      "Darkvision",
+      "Stealth",
+      "Underdog"
+    ]
+  }
+}

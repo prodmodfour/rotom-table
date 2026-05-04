@@ -1,0 +1,141 @@
+{
+  "slug": "examples-finneon",
+  "nickname": "Finneon",
+  "species": "Finneon",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Relaxed",
+  "types": [
+    "Water"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "def": {
+      "base": 1,
+      "added": 12,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "spd": {
+      "base": -1,
+      "added": 3,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 57,
+    "currentHp": 57,
+    "tick": 5,
+    "evasion": {
+      "vsAtk": 4,
+      "vsSatk": 2,
+      "vsAny": 1
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Attract",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "3, 1 Target, Social",
+      "effect": "Attract Infatuates the target if its gender is the opposite of the user’s. Attract fails when used by or against Genderless targets."
+    },
+    {
+      "name": "Water Gun",
+      "type": "Water",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "None"
+    },
+    {
+      "name": "Pound",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "None"
+    },
+    {
+      "name": "Gust",
+      "type": "Flying",
+      "category": "Special",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "If the target is airborne as a result of Fly or Sky Drop, Gust can hit them, ignoring Range and has a Damage Base of 8 instead."
+    },
+    {
+      "name": "Rain Dance",
+      "type": "Water",
+      "category": "Status",
+      "frequency": "Daily x2",
+      "range": "Field, Weather",
+      "effect": "The weather becomes Rainy for 5 rounds. While Rainy, Water-Type Attacks gain a +5 bonus to Damage Rolls, and Fire-Type Attacks suffer a -5 Damage penalty."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Swift Swim",
+      "frequency": "Static",
+      "effect": "While in Rainy Weather or under 50% Max Hit Points, the user’s Initiative is doubled."
+    },
+    {
+      "name": "Storm Drain",
+      "frequency": "Scene – Free Action",
+      "effect": "The Move is turned into a 1-Target Move and is re-directed at the user without fail, and cannot miss. This negates Lock-On or Mind Reader.  the user’s Special Attack is then raised by +1 Combat Stage."
+    }
+  ],
+  "natureMod": {
+    "plus": "def",
+    "minus": "spd"
+  },
+  "capabilities": {
+    "overland": 1,
+    "swim": 5,
+    "jump": "2/4",
+    "power": 1,
+    "weight": 1,
+    "size": "Small",
+    "other": [
+      "Gilled",
+      "Fountain",
+      "Naturewalk (Ocean)",
+      "Underdog"
+    ]
+  }
+}

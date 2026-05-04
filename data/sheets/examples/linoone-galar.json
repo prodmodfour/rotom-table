@@ -1,0 +1,153 @@
+{
+  "slug": "examples-linoone-galar",
+  "nickname": "Linoone Galar",
+  "species": "Linoone Galar",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Dreamy",
+  "types": [
+    "Dark",
+    "Normal"
+  ],
+  "stats": {
+    "hp": {
+      "base": -1,
+      "added": 6,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 2,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 1,
+      "added": 7,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 69,
+    "currentHp": 69,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 1,
+      "vsSatk": 3,
+      "vsAny": 3
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Lick",
+      "type": "Ghost",
+      "category": "Physical",
+      "db": 3,
+      "damageRoll": "1d6+5 / 9",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Lick Paralyzes the target on 15+ during Accuracy Check."
+    },
+    {
+      "name": "Fury Swipes",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 5,
+      "damageRoll": "1d8+8",
+      "frequency": "EOT",
+      "ac": 5,
+      "range": "Melee, 1 Target, Five Strike",
+      "effect": "None"
+    },
+    {
+      "name": "Hone Claws",
+      "type": "Dark",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "Self",
+      "effect": "The user’s Accuracy is raised by +1, and the user gains +1 Attack Combat Stage."
+    },
+    {
+      "name": "Snarl",
+      "type": "Dark",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "ac": 3,
+      "range": "Cone 2, Sonic",
+      "effect": "All Legal Targets have their Special Attack lowered 1 Combat Stage."
+    },
+    {
+      "name": "Headbutt",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Headbutt Flinches the target on 15+."
+    },
+    {
+      "name": "Sand Attack",
+      "type": "Ground",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "2, 1 Target",
+      "effect": "The target is Blinded until the end of their next turn."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Pickup",
+      "frequency": "Daily – Extended Action",
+      "effect": "You may use Pickup as an Extended Action that requires at least 5 minutes. Roll 1d20, consult the Pickup keyword to figure out what you find!"
+    },
+    {
+      "name": "Quick Feet",
+      "frequency": "Static",
+      "effect": "When Poisoned, Burned, Paralyzed, Frozen or put to Sleep, the user’s Speed is raised 2 Combat Stages. The user’s Initiative is not halved by Paralysis. If the user is healed all Status Conditions, their Speed is lowered appropriately."
+    }
+  ],
+  "natureMod": {
+    "plus": "sdef",
+    "minus": "hp"
+  },
+  "capabilities": {
+    "overland": 7,
+    "swim": 4,
+    "jump": "2/3",
+    "power": 3,
+    "weight": 3,
+    "size": "Small",
+    "other": [
+      "Darkvision",
+      "Naturewalk (Forest, Grassland)",
+      "Tracker",
+      "Underdog"
+    ]
+  }
+}

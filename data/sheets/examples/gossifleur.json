@@ -1,0 +1,149 @@
+{
+  "slug": "examples-gossifleur",
+  "nickname": "Gossifleur",
+  "species": "Gossifleur",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Cuddly",
+  "types": [
+    "Grass"
+  ],
+  "stats": {
+    "hp": {
+      "base": 1,
+      "added": 6,
+      "stage": 0
+    },
+    "atk": {
+      "base": -1,
+      "added": 4,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 2,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 63,
+    "currentHp": 63,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 2,
+      "vsAny": 0
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Leaf Tornado",
+      "type": "Grass",
+      "category": "Special",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "EOT",
+      "ac": 4,
+      "range": "6, Ranged Blast 3",
+      "effect": "Small or Medium targets in the central square of the blast are not hit. On 15+, all legal targets have their Accuracy lowered by -1."
+    },
+    {
+      "name": "Leafage",
+      "type": "Grass",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target"
+    },
+    {
+      "name": "Sing",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "ac": 10,
+      "range": "Burst 2, Friendly, Sonic",
+      "effect": "All legal Targets fall Asleep. On a miss, Sing instead causes targets to become Slowed and suffer a -2 penalty to their Evasion until the end of the user’s next turn."
+    },
+    {
+      "name": "Round",
+      "type": "Normal",
+      "category": "Special",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Burst 1, Sonic",
+      "effect": "Round’s Damage Base is equal to 6, plus +2 more for each previous use of Round by any Trainer or Pokémon this round, up to a maximum of DB12."
+    },
+    {
+      "name": "Sweet Scent",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "ac": 2,
+      "range": "Burst 2, Friendly",
+      "effect": "Targets hit by Sweet Scent gain a -2 Penalty to Evasion. (Total Evasion may not be lowered to a negative value. )"
+    },
+    {
+      "name": "Rapid Spin",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 5,
+      "damageRoll": "1d8+8 / 13",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Spirit Surge",
+      "effect": "Rapid Spin destroys all Hazards within 5 meters, removes Leech Seeds, and removes the user’s Trapped or Stuck status. If Rapid Spin hits, the user’s speed raises 1 CS."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Effect Spore",
+      "frequency": "Scene – Free Action",
+      "effect": "Roll 1d6. On a result of 1 or 2, the attacker is Poisoned. On a result of 3 or 4, the attacker is Paralyzed. On a result of 5 or 6, the attacker falls Asleep."
+    },
+    {
+      "name": "Lullaby",
+      "frequency": "Scene – Free Action",
+      "effect": "Connection - Sing. Whenever the user uses the Move “Sing”, they may activate this Feature. The user then picks a Pokémon or Trainer being targeted by Sing; Sing automatically hits that target."
+    }
+  ],
+  "natureMod": {
+    "plus": "hp",
+    "minus": "atk"
+  },
+  "capabilities": {
+    "overland": 2,
+    "swim": 2,
+    "levitate": 4,
+    "jump": "1/1",
+    "power": 1,
+    "weight": 1,
+    "size": "Small",
+    "other": [
+      "Alluring",
+      "Underdog"
+    ]
+  }
+}

@@ -1,0 +1,143 @@
+{
+  "slug": "examples-meditite",
+  "nickname": "Meditite",
+  "species": "Meditite",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Proud",
+  "types": [
+    "Fighting",
+    "Psychic"
+  ],
+  "stats": {
+    "hp": {
+      "base": 1,
+      "added": 4,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "satk": {
+      "base": -1,
+      "added": 3,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 11,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 54,
+    "currentHp": 54,
+    "tick": 5,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 3,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Feint",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Trigger",
+      "effect": "If a foe uses a Move with the Shield Keyword in response to one of your actions, you may activate Feint to cause the triggering Move to Fail. Feint is activated as a Free Action."
+    },
+    {
+      "name": "Force Palm",
+      "type": "Fighting",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Aura",
+      "effect": "Force Palm Paralyzes the target on 18+."
+    },
+    {
+      "name": "Meditate",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "Self",
+      "effect": "Raise the user’s Attack 1 Combat Stage."
+    },
+    {
+      "name": "Detect",
+      "type": "Fighting",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Self, Interrupt, Shield, Trigger",
+      "effect": "If the user is hit by a Move, the user may use Detect. The user is instead not hit by the Move. You do not take any damage nor are you affected by any of the Move’s effects."
+    },
+    {
+      "name": "Confusion",
+      "type": "Psychic",
+      "category": "Special",
+      "db": 7,
+      "damageRoll": "2d6+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Confusion Confuses the target on 19+."
+    },
+    {
+      "name": "Bide",
+      "type": "Normal",
+      "category": "Physical",
+      "frequency": "Scene",
+      "range": "Burst 1, Friendly",
+      "effect": "The user may use Bide as a Reaction Move upon being Hit by a Damaging Move. During their next available turn, the user may Shift and then use Bide, causing all Adjacent foes to lose X HP, where X is the amount of Damage taken since declaring use of Bide (Loss of life through effects such as Poison is not ‘Damage’)."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Pure Power",
+      "frequency": "Static",
+      "effect": "The Pokémon’s base attack stat is doubled. This may double any bonuses from Nature or Vitamins, but not bonuses from Features. Ability List: Q–U"
+    },
+    {
+      "name": "Inner Focus",
+      "frequency": "Static",
+      "effect": "The user cannot be Flinched, and their Initiative cannot be unwillingly lowered by any effects."
+    }
+  ],
+  "natureMod": {
+    "plus": "hp",
+    "minus": "satk"
+  },
+  "capabilities": {
+    "overland": 5,
+    "swim": 2,
+    "jump": "1/2",
+    "power": 4,
+    "weight": 1,
+    "size": "Small",
+    "other": [
+      "Underdog"
+    ]
+  }
+}

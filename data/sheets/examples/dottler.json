@@ -1,0 +1,93 @@
+{
+  "slug": "examples-dottler",
+  "nickname": "Dottler",
+  "species": "Dottler",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Careful",
+  "types": [
+    "Bug",
+    "Psychic"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "satk": {
+      "base": -1,
+      "added": 3,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 1,
+      "added": 6,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 60,
+    "currentHp": 60,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 3,
+      "vsAny": 1
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [],
+  "abilities": [
+    {
+      "name": "Swarm",
+      "frequency": "Static",
+      "effect": "The user gains Last Chance with Bug."
+    },
+    {
+      "name": "Telepathy",
+      "frequency": "Static",
+      "effect": "The user gains +1 Evasion. Whenever an Ally uses a damaging area-of-effect attack that would hit you, you may Disengage as a Free Action before the attack resolves."
+    }
+  ],
+  "natureMod": {
+    "plus": "sdef",
+    "minus": "satk"
+  },
+  "capabilities": {
+    "overland": 4,
+    "swim": 2,
+    "jump": "1/1",
+    "power": 1,
+    "weight": 2,
+    "size": "Small",
+    "other": [
+      "Glow",
+      "Naturewalk (Grassland)",
+      "Telepathy",
+      "Threaded",
+      "Wallclimber",
+      "Underdog"
+    ]
+  }
+}

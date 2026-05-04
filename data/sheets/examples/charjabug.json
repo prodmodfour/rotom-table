@@ -1,0 +1,157 @@
+{
+  "slug": "examples-charjabug",
+  "nickname": "Charjabug",
+  "species": "Charjabug",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Quiet",
+  "types": [
+    "Bug",
+    "Electric"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 2,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 2,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 10,
+      "stage": 0
+    },
+    "satk": {
+      "base": 1,
+      "added": 4,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    },
+    "spd": {
+      "base": -1,
+      "added": 5,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 54,
+    "currentHp": 54,
+    "tick": 5,
+    "evasion": {
+      "vsAtk": 4,
+      "vsSatk": 3,
+      "vsAny": 1
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "String Shot",
+      "type": "Bug",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 3,
+      "range": "Cone 2",
+      "effect": "Targets have their Speed CS lowered by -1. If this lowers their Speed CS to -6, or if their Speed CS was already at -6, the target is instead Stuck."
+    },
+    {
+      "name": "Spark",
+      "type": "Electric",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash",
+      "effect": "Spark Paralyzes the target on 15+."
+    },
+    {
+      "name": "Acrobatics",
+      "type": "Flying",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, Dash, 1 Target",
+      "effect": "If the user is not holding an item, Acrobatics instead has a Damage Base of 11 (3d10+10 / 27)."
+    },
+    {
+      "name": "Mud-Slap",
+      "type": "Ground",
+      "category": "Special",
+      "db": 2,
+      "damageRoll": "1d6+3 / 7",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "3, 1 Target",
+      "effect": "The target’s Accuracy is lowered by -1."
+    },
+    {
+      "name": "Bite",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Bite Flinches the target on 15+."
+    },
+    {
+      "name": "Bug Bite",
+      "type": "Bug",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "If the target has a stored Digestion Buff or has traded in a Digestion Buff this Scene, the user may gain the effects of the Digestion Buff. This does not count towards the usual limit on the user’s Digestion Buffs."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Battery",
+      "frequency": "Scene x2 – Swift Action",
+      "effect": "The target's next Special Attack deals +2d6+4 damage. If that attack is Electric-Typed, it deals +3d6+6 more damage instead."
+    },
+    {
+      "name": "Swarm",
+      "frequency": "Static",
+      "effect": "The user gains Last Chance with Bug."
+    }
+  ],
+  "natureMod": {
+    "plus": "satk",
+    "minus": "spd"
+  },
+  "capabilities": {
+    "overland": 4,
+    "swim": 1,
+    "burrow": 3,
+    "jump": "1/1",
+    "power": 1,
+    "weight": 1,
+    "size": "Small",
+    "other": [
+      "Naturewalk (Forest)",
+      "Threaded",
+      "Underdog",
+      "Wallclimber"
+    ]
+  }
+}

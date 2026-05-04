@@ -1,0 +1,133 @@
+{
+  "slug": "examples-qwilfish-hisuian",
+  "nickname": "Qwilfish Hisuian",
+  "species": "Qwilfish Hisuian",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Quiet",
+  "types": [
+    "Dark",
+    "Poison"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 9,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 8,
+      "stage": 0
+    },
+    "satk": {
+      "base": 1,
+      "added": 4,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 2,
+      "stage": 0
+    },
+    "spd": {
+      "base": -1,
+      "added": 3,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 63,
+    "currentHp": 63,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 3,
+      "vsSatk": 1,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Spikes",
+      "type": "Ground",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "6, Hazard",
+      "effect": "Set 8 square meters of Spikes within your range, all 8 meters must be adjacent with at least one other space of Spikes. Spikes cause terrain to count as Slow Terrain, and a grounded foe that runs into the hazards will lose a Tick of Hit Points and become Slowed until the end of their next turn."
+    },
+    {
+      "name": "Barb Barrage",
+      "type": "Poison",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "6, 1 Target, Five Strike",
+      "effect": "The target is Poisoned on a 17+. Once a Scene, if Barb Barrage’s target has a Status Condition, you may choose to not roll for Five Strike. Instead, treat Barb Barrage as though it automatically rolled an 8 for Five Strike."
+    },
+    {
+      "name": "Pin Missile",
+      "type": "Bug",
+      "category": "Physical",
+      "db": 3,
+      "damageRoll": "1d6+5 / 9",
+      "frequency": "EOT",
+      "ac": 4,
+      "range": "6, 1 Target, Five Strike",
+      "effect": "None"
+    },
+    {
+      "name": "Poison Sting",
+      "type": "Poison",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Poison Sting Poisons the target on 17+."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Poison Point",
+      "frequency": "Scene – Free Action",
+      "effect": "The attacking foe is Poisoned."
+    },
+    {
+      "name": "Swift Swim",
+      "frequency": "Static",
+      "effect": "While in Rainy Weather or under 50% Max Hit Points, the user’s Initiative is doubled."
+    }
+  ],
+  "natureMod": {
+    "plus": "satk",
+    "minus": "spd"
+  },
+  "capabilities": {
+    "overland": 2,
+    "swim": 7,
+    "jump": "1/1",
+    "power": 2,
+    "weight": 1,
+    "size": "Small",
+    "other": [
+      "Darkvision",
+      "Gilled",
+      "Inflatable",
+      "Naturewalk (Ocean)"
+    ]
+  }
+}

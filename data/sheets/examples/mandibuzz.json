@@ -1,0 +1,130 @@
+{
+  "slug": "examples-mandibuzz",
+  "nickname": "Mandibuzz",
+  "species": "Mandibuzz",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Impish",
+  "types": [
+    "Dark",
+    "Flying"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "def": {
+      "base": 1,
+      "added": 9,
+      "stage": 0
+    },
+    "satk": {
+      "base": -1,
+      "added": 4,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 84,
+    "currentHp": 84,
+    "tick": 8,
+    "evasion": {
+      "vsAtk": 4,
+      "vsSatk": 2,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Pluck",
+      "type": "Flying",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Pluck takes the target’s Held Item or Accessory Slot Item and attaches it to Pluck’s user, if the user is not holding anything."
+    },
+    {
+      "name": "Flatter",
+      "type": "Dark",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target, Social",
+      "effect": "The target’s Special Attack is raised by +1 Combat Stage. Flatter Confuses the target."
+    },
+    {
+      "name": "Nasty Plot",
+      "type": "Dark",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Special Attack 2 Combat Stages."
+    },
+    {
+      "name": "Fury Attack",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 2,
+      "damageRoll": "1d6+3 / 7",
+      "frequency": "At-Will",
+      "ac": 4,
+      "range": "Melee, 1 Target, Five Strike",
+      "effect": "None"
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Cruelty",
+      "frequency": "Scene – Swift Action",
+      "effect": "After Damage is Resolved, the foe gains an Injury. The user is then informed of the total number of Injuries currently on the target, and may use that number to “purchase” the effects listed below. »» 1 Injury: The target loses 2 Hit Points. May be “pur- chased” multiple times. »» 1 Injury: The target is Slowed. »» 2 Injuries: Until the end of the encounter, the target may not gain Hit Points or Temporary Hit Points from any source. This effect ends if the target is switched out or Takes a Breather."
+    },
+    {
+      "name": "Overcoat",
+      "frequency": "Static",
+      "effect": "The user is immune to Moves with the Powder Keyword, and does not take damage from any Weather that would normally cause it to take damage. Defensive."
+    }
+  ],
+  "natureMod": {
+    "plus": "def",
+    "minus": "satk"
+  },
+  "capabilities": {
+    "overland": 4,
+    "sky": 7,
+    "swim": 2,
+    "jump": "1/2",
+    "power": 3,
+    "weight": 3,
+    "size": "Medium",
+    "other": [
+      "Darkvision",
+      "Guster"
+    ]
+  }
+}

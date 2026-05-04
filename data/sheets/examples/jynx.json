@@ -1,0 +1,145 @@
+{
+  "slug": "examples-jynx",
+  "nickname": "Jynx",
+  "species": "Jynx",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Hasty",
+  "types": [
+    "Ice",
+    "Psychic"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "def": {
+      "base": -1,
+      "added": 7,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 2,
+      "stage": 0
+    },
+    "spd": {
+      "base": 1,
+      "added": 9,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 63,
+    "currentHp": 63,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 1,
+      "vsSatk": 2,
+      "vsAny": 4
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Powder Snow",
+      "type": "Ice",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Line 4",
+      "effect": "Powder Snow Freezes all Legal Targets on 19+."
+    },
+    {
+      "name": "Ice Punch",
+      "type": "Ice",
+      "category": "Physical",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Ice Punch Freezes the target on 19+ during Accuracy Check."
+    },
+    {
+      "name": "Lick",
+      "type": "Ghost",
+      "category": "Physical",
+      "db": 3,
+      "damageRoll": "1d6+5 / 9",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Lick Paralyzes the target on 15+ during Accuracy Check."
+    },
+    {
+      "name": "Lovely Kiss",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 6,
+      "range": "6, 1 Target, Social",
+      "effect": "The target falls Asleep."
+    },
+    {
+      "name": "Double Slap",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 2,
+      "damageRoll": "1d6+3 / 7",
+      "frequency": "At-Will",
+      "ac": 4,
+      "range": "Melee, 1 Target, Five Strike",
+      "effect": "None"
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Oblivious",
+      "frequency": "Static",
+      "effect": "The user is immune to the Enraged and Infatuated conditions. Defensive."
+    },
+    {
+      "name": "Weird Power",
+      "frequency": "Static",
+      "effect": "If the user’s Attack is higher than its Special Attack, the user may add its Attack Stat to its Special Damage Rolls. If their Special Attack is higher, they user may add its Special Attack Stat to its Physical Damage Rolls. This does not stack with Mixed Power."
+    }
+  ],
+  "natureMod": {
+    "plus": "spd",
+    "minus": "def"
+  },
+  "capabilities": {
+    "overland": 5,
+    "swim": 3,
+    "jump": "1/2",
+    "power": 4,
+    "weight": 3,
+    "size": "Medium",
+    "other": [
+      "Freezer",
+      "Naturewalk (Tundra)",
+      "Telekinetic",
+      "Telepath"
+    ]
+  }
+}

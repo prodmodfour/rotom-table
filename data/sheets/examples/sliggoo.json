@@ -1,0 +1,146 @@
+{
+  "slug": "examples-sliggoo",
+  "nickname": "Sliggoo",
+  "species": "Sliggoo",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Bashful",
+  "types": [
+    "Dragon"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 1,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 63,
+    "currentHp": 63,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 1,
+      "vsSatk": 3,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Dragon Breath",
+      "type": "Dragon",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Dragon Breath Paralyzes the Target on 15+."
+    },
+    {
+      "name": "Protect",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Self, Interrupt, Shield, Trigger",
+      "effect": "If the user is hit by a Move, the user may use Protect. The user is instead not hit by the Move. You do not take any damage nor are you affected by any of the Move’s effects."
+    },
+    {
+      "name": "Absorb",
+      "type": "Grass",
+      "category": "Special",
+      "db": 2,
+      "damageRoll": "1d6+3 / 7",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "After the target takes damage, the user gains Hit Points equal to half of the damage they dealt to the target."
+    },
+    {
+      "name": "Bubble",
+      "type": "Water",
+      "category": "Special",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Burst 1",
+      "effect": "Bubble lowers the target’s Speed on 16+."
+    },
+    {
+      "name": "Tackle",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash, Push",
+      "effect": "The target is pushed 2 Meters."
+    },
+    {
+      "name": "Bide",
+      "type": "Normal",
+      "category": "Physical",
+      "frequency": "Scene",
+      "range": "Burst 1, Friendly",
+      "effect": "The user may use Bide as a Reaction Move upon being Hit by a Damaging Move. During their next available turn, the user may Shift and then use Bide, causing all Adjacent foes to lose X HP, where X is the amount of Damage taken since declaring use of Bide (Loss of life through effects such as Poison is not ‘Damage’)."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Sap Sipper",
+      "frequency": "Scene",
+      "effect": "The user is immune to the damage and effects of Grass-Type attacks. If the user is hit by a Grass-Type attack, they gain +1 CS in their choice of Attack or Special Attack. Defensive."
+    },
+    {
+      "name": "Gooey",
+      "frequency": "At-Will – Free Action",
+      "effect": "The triggering attacker has their Speed lowered by 1 Combat Stage."
+    }
+  ],
+  "capabilities": {
+    "overland": 5,
+    "swim": 3,
+    "jump": "0/1",
+    "power": 2,
+    "weight": 2,
+    "size": "Small",
+    "other": [
+      "Amorphous",
+      "Blindsense",
+      "Underdog"
+    ]
+  }
+}

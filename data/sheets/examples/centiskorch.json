@@ -1,0 +1,134 @@
+{
+  "slug": "examples-centiskorch",
+  "nickname": "Centiskorch",
+  "species": "Centiskorch",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Patient",
+  "types": [
+    "Fire",
+    "Bug"
+  ],
+  "stats": {
+    "hp": {
+      "base": 1,
+      "added": 5,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 9,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "spd": {
+      "base": -1,
+      "added": 4,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 78,
+    "currentHp": 78,
+    "tick": 7,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 2,
+      "vsAny": 1
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Bug Bite",
+      "type": "Bug",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "If the target has a stored Digestion Buff or has traded in a Digestion Buff this Scene, the user may gain the effects of the Digestion Buff. This does not count towards the usual limit on the user’s Digestion Buffs."
+    },
+    {
+      "name": "Wrap",
+      "type": "Normal",
+      "category": "Static",
+      "frequency": "Static",
+      "effect": "The user gains a +1 Bonus to Accuracy Rolls made to initiate Grapple Maneuvers, and +2 to Skill Checks made to initiate Grapple Maneuvers or gain Dominance. Whenever the user gains Dominance in a Grapple, the target of the Grapple loses a Tick of Hit Points."
+    },
+    {
+      "name": "Bite",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Bite Flinches the target on 15+."
+    },
+    {
+      "name": "Flame Wheel",
+      "type": "Fire",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash",
+      "effect": "Flame Wheel Burns the target on 19+."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Magma Armor",
+      "frequency": "Static",
+      "effect": "Whenever a foe hits you with a Melee Attack or ends their turn grappling you, they lose a tick of Hit Points. Foes immune to Burn do not suffer this effect."
+    },
+    {
+      "name": "White Smoke",
+      "frequency": "Static",
+      "effect": "The user’s Combat Stages, Evasion, or Accuracy may not be lowered except by the user’s own Moves and effects. Defensive."
+    }
+  ],
+  "natureMod": {
+    "plus": "hp",
+    "minus": "spd"
+  },
+  "capabilities": {
+    "overland": 8,
+    "swim": 4,
+    "jump": "2/2",
+    "power": 7,
+    "weight": 5,
+    "size": "Huge",
+    "other": [
+      "Egg  Warmer",
+      "Firestarter",
+      "Heater",
+      "Mountable 2",
+      "Naturewalk (Forest)",
+      "Wallclimber"
+    ]
+  }
+}

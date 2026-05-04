@@ -1,0 +1,132 @@
+{
+  "slug": "examples-luxray",
+  "nickname": "Luxray",
+  "species": "Luxray",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Quiet",
+  "types": [
+    "Electric"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "satk": {
+      "base": 1,
+      "added": 4,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "spd": {
+      "base": -1,
+      "added": 5,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 75,
+    "currentHp": 75,
+    "tick": 7,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 2,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Charge",
+      "type": "Electric",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "If the user performs an Electric Move on their next turn that deals damage, add its Damage Dice Roll an extra time to the damage. Raise the user’s Special Defense 1 Combat Stage."
+    },
+    {
+      "name": "Leer",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Cone 2, Friendly, Social",
+      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
+    },
+    {
+      "name": "Spark",
+      "type": "Electric",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash",
+      "effect": "Spark Paralyzes the target on 15+."
+    },
+    {
+      "name": "Bite",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Bite Flinches the target on 15+."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Keen Eye",
+      "frequency": "Static",
+      "effect": "The user’s Accuracy cannot be lowered, their attacks cannot have Accuracy Penalties (such as from Illuminate), the user is immune to the Blind condition (but not Total Blindness), and the user ignores any Evasion not directly derived from Stats (such as from the Instinct Ability, or from moves like Minimize)."
+    },
+    {
+      "name": "Intimidate",
+      "frequency": "At-Will – Swift Action",
+      "effect": "Lower the target’s Attack 1 Combat Stage. You may target a specific foe only once per Scene with Intimidate."
+    }
+  ],
+  "natureMod": {
+    "plus": "satk",
+    "minus": "spd"
+  },
+  "capabilities": {
+    "overland": 8,
+    "swim": 5,
+    "jump": "1/2",
+    "power": 5,
+    "weight": 3,
+    "size": "Medium",
+    "other": [
+      "Pack Mon",
+      "Tracker",
+      "Zapper",
+      "Naturewalk (Grassland, Cave)",
+      "X- Ray Vision",
+      "Mountable 1"
+    ]
+  }
+}

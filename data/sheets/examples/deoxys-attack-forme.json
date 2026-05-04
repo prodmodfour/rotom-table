@@ -1,0 +1,133 @@
+{
+  "slug": "examples-deoxys-attack-forme",
+  "nickname": "Deoxys Attack Forme",
+  "species": "Deoxys Attack Forme",
+  "level": 20,
+  "gender": "No Gender",
+  "shiny": false,
+  "nature": "Impish",
+  "types": [
+    "Psychic"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "def": {
+      "base": 1,
+      "added": 7,
+      "stage": 0
+    },
+    "satk": {
+      "base": -1,
+      "added": 5,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 2,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 66,
+    "currentHp": 66,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 1,
+      "vsAny": 3
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Wrap",
+      "type": "Normal",
+      "category": "Static",
+      "frequency": "Static",
+      "effect": "The user gains a +1 Bonus to Accuracy Rolls made to initiate Grapple Maneuvers, and +2 to Skill Checks made to initiate Grapple Maneuvers or gain Dominance. Whenever the user gains Dominance in a Grapple, the target of the Grapple loses a Tick of Hit Points."
+    },
+    {
+      "name": "Teleport",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Self, Interrupt",
+      "effect": "The user Teleports up to X meters, where X is its Teleporter Capability. Teleport can be used as an Interrupt at any time. Moves that targeted Teleport’s user continue through the desired target’s space if the Move allows for it as if the user hadn’t been there; single target moves simply miss."
+    },
+    {
+      "name": "Leer",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Cone 2, Friendly, Social",
+      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
+    },
+    {
+      "name": "Night Shade",
+      "type": "Ghost",
+      "category": "Special",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "8, 1 Target",
+      "effect": "The target loses Hit Points equal to the level of Night Shade’s user. Do not apply weakness or resistance. Do not apply stats."
+    },
+    {
+      "name": "Taunt",
+      "type": "Dark",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 3,
+      "range": "6, 1 Target, Social",
+      "effect": "The target becomes Enraged."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Weird Power",
+      "frequency": "Static",
+      "effect": "If the user’s Attack is higher than its Special Attack, the user may add its Attack Stat to its Special Damage Rolls. If their Special Attack is higher, they user may add its Special Attack Stat to its Physical Damage Rolls. This does not stack with Mixed Power."
+    },
+    {
+      "name": "Perception",
+      "frequency": "Static",
+      "effect": "The user gains +1 Evasion. Whenever an Ally uses a damaging area-of-effect attack that would hit you, you may Disengage as a Free Action before the attack resolves."
+    }
+  ],
+  "natureMod": {
+    "plus": "def",
+    "minus": "satk"
+  },
+  "capabilities": {
+    "overland": 8,
+    "sky": 7,
+    "swim": 5,
+    "jump": "2/2",
+    "power": 8,
+    "weight": 4,
+    "size": "Medium",
+    "other": [
+      "Multiform*",
+      "Telekinetic",
+      "Telepath"
+    ]
+  }
+}

@@ -1,0 +1,150 @@
+{
+  "slug": "examples-swanna",
+  "nickname": "Swanna",
+  "species": "Swanna",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Patient",
+  "types": [
+    "Water",
+    "Flying"
+  ],
+  "stats": {
+    "hp": {
+      "base": 1,
+      "added": 7,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 9,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 2,
+      "stage": 0
+    },
+    "spd": {
+      "base": -1,
+      "added": 2,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 78,
+    "currentHp": 78,
+    "tick": 7,
+    "evasion": {
+      "vsAtk": 1,
+      "vsSatk": 1,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Defog",
+      "type": "Flying",
+      "category": "Status",
+      "frequency": "Daily x2",
+      "range": "Field, Weather",
+      "effect": "The Weather becomes Clear, and all Blessings, Coats, and Hazards are destroyed. Clear Weather is the default weather, conferring no innate bonuses or penalties of any sort."
+    },
+    {
+      "name": "Water Pulse",
+      "type": "Water",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "8, 1 Target, Aura",
+      "effect": "Water Pulse Confuses the target on 17+."
+    },
+    {
+      "name": "Bubble Beam",
+      "type": "Water",
+      "category": "Special",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "Bubble Beam lowers the target’s Speed on 18+."
+    },
+    {
+      "name": "Wing Attack",
+      "type": "Flying",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "None."
+    },
+    {
+      "name": "Water Sport",
+      "type": "Water",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Burst 2, Coat",
+      "effect": "All targets in the burst, including the user, gain a Coat which grants them 1 Step of Resistance to Fire Type Moves. After a target has been hit by a damaging Fire Type Move, the coat is removed."
+    },
+    {
+      "name": "Aerial Ace",
+      "type": "Flying",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "range": "Melee, 1 Target",
+      "effect": "Aerial Ace cannot miss."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Big Pecks",
+      "frequency": "Static",
+      "effect": "The user cannot have its Defense Stat lowered. The user cannot have its Defense Combat Stages lowered. Defensive."
+    },
+    {
+      "name": "Hydration",
+      "frequency": "Scene - Swift Action",
+      "effect": "The user is cured of one Status Affliction. Hydration’s Frequency is ignored if used during Rainy Weather."
+    }
+  ],
+  "natureMod": {
+    "plus": "hp",
+    "minus": "spd"
+  },
+  "capabilities": {
+    "overland": 4,
+    "sky": 7,
+    "swim": 5,
+    "jump": "2/3",
+    "power": 2,
+    "weight": 2,
+    "size": "Medium",
+    "other": [
+      "Fountain",
+      "Guster"
+    ]
+  }
+}

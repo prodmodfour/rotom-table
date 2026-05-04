@@ -1,0 +1,151 @@
+{
+  "slug": "examples-gligar",
+  "nickname": "Gligar",
+  "species": "Gligar",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Decisive",
+  "types": [
+    "Ground",
+    "Flying"
+  ],
+  "stats": {
+    "hp": {
+      "base": 1,
+      "added": 4,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 9,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "sdef": {
+      "base": -1,
+      "added": 4,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 66,
+    "currentHp": 66,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 4,
+      "vsSatk": 1,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Knock Off",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
+      "frequency": "Scene",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Choose one of the target’s Held Items or Accessory Slot Items. It is knocked to the ground."
+    },
+    {
+      "name": "Feint Attack",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "EOT",
+      "range": "Melee, 1 Target",
+      "effect": "Feint Attack cannot miss."
+    },
+    {
+      "name": "Sand Attack",
+      "type": "Ground",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "2, 1 Target",
+      "effect": "The target is Blinded until the end of their next turn."
+    },
+    {
+      "name": "Quick Attack",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Priority",
+      "effect": "None."
+    },
+    {
+      "name": "Fury Cutter",
+      "type": "Bug",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 3,
+      "range": "Melee, 1 Target",
+      "effect": "If Fury Cutter is used successfully and consecutively on the same target, the Damage Base is increased by +4 to a maximum of 16. For example, the first hit would have a DB of 4; the second hit a DB of 8; the third hit a DB of 12; the fourth and further hits a DB of 16. If Fury Cuter misses or fails to damage its target, its Damage Base resets."
+    },
+    {
+      "name": "Poison Sting",
+      "type": "Poison",
+      "category": "Physical",
+      "db": 2,
+      "damageRoll": "1d6+3 / 7",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Poison Sting Poisons the target on 17+."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Sand Veil",
+      "frequency": "Static",
+      "effect": "The user gains +1 Evasion. This is increased to +2 Evasion while in a Sandstorm or sandy terrain. While in a Sandstorm, the user and adjacent allies do not lose Hit Points due to the Sandstorm."
+    },
+    {
+      "name": "Hyper Cutter",
+      "frequency": "Static",
+      "effect": "The user’s Attack Stat may not be lowered, and its Attack Combat Stages may not be lowered. Defensive."
+    }
+  ],
+  "natureMod": {
+    "plus": "hp",
+    "minus": "sdef"
+  },
+  "capabilities": {
+    "overland": 4,
+    "sky": 4,
+    "swim": 2,
+    "burrow": 3,
+    "jump": "2/2",
+    "power": 3,
+    "weight": 4,
+    "size": "Medium"
+  }
+}

@@ -1,0 +1,140 @@
+{
+  "slug": "examples-registeel",
+  "nickname": "Registeel",
+  "species": "Registeel",
+  "level": 20,
+  "gender": "No Gender",
+  "shiny": false,
+  "nature": "Quirky",
+  "types": [
+    "Steel"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 2,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 9,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 60,
+    "currentHp": 60,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 4,
+      "vsSatk": 3,
+      "vsAny": 1
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Bulldoze",
+      "type": "Ground",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Burst 1",
+      "effect": "All Legal Targets are lowered 1 Speed Combat Stage."
+    },
+    {
+      "name": "Stomp",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Stomp Flinches the target on 15+. If the target is at least one size category smaller than the user, Stomp deals an additional 10 damage."
+    },
+    {
+      "name": "Explosion",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 25,
+      "damageRoll": "6d12+60 / 100",
+      "frequency": "Daily",
+      "ac": 2,
+      "range": "Burst 2",
+      "effect": "The user’s Hit Points are set to -50% of their full Hit Point value. This Hit Point loss cannot be prevented or reduced in any way. The user’s loyalty toward its trainer may be lowered."
+    },
+    {
+      "name": "Charge Beam",
+      "type": "Electric",
+      "category": "Special",
+      "db": 5,
+      "damageRoll": "1d8+8 / 13",
+      "frequency": "At-Will",
+      "ac": 4,
+      "range": "6, 1 Target",
+      "effect": "If Charge Beam successfully hits a target, roll 1d20. On a roll of 7+,  the user’s Special Attack is raised by +1 Combat Stage."
+    },
+    {
+      "name": "Metal Claw",
+      "type": "Steel",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10",
+      "frequency": "At-Will",
+      "ac": 3,
+      "range": "Melee, 1 Target, Spirit Surge",
+      "effect": "Raise the user’s Attack 1 Combat Stage on 18+."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Clear Body",
+      "frequency": "Static",
+      "effect": "The user’s Combat Stages may not be lowered by the effect of foes’ Feautres, Abilities, or Moves. Status Affictions may still alter their Combat Stages. Defensive."
+    },
+    {
+      "name": "Battle Armor",
+      "frequency": "Static",
+      "effect": "The user is immune to Critical Hits; they are instead normal hits. Defensive."
+    }
+  ],
+  "capabilities": {
+    "overland": 5,
+    "burrow": 3,
+    "jump": "1/1",
+    "power": 11,
+    "weight": 6,
+    "size": "Huge",
+    "other": [
+      "Naturewalk (Urban)",
+      "Magnetic"
+    ]
+  }
+}

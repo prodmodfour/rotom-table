@@ -1,0 +1,130 @@
+{
+  "slug": "examples-dracozolt",
+  "nickname": "Dracozolt",
+  "species": "Dracozolt",
+  "level": 20,
+  "gender": "No Gender",
+  "shiny": false,
+  "nature": "Cuddly",
+  "types": [
+    "Electric",
+    "Dragon"
+  ],
+  "stats": {
+    "hp": {
+      "base": 1,
+      "added": 10,
+      "stage": 0
+    },
+    "atk": {
+      "base": -1,
+      "added": 5,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 2,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 90,
+    "currentHp": 90,
+    "tick": 9,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 1,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Charge",
+      "type": "Electric",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "If the user performs an Electric Move on their next turn that deals damage, add its Damage Dice Roll an extra time to the damage. Raise the user’s Special Defense 1 Combat Stage."
+    },
+    {
+      "name": "Thunder Shock",
+      "type": "Electric",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "Thunder Shock Paralyzes the target on 17+."
+    },
+    {
+      "name": "Tackle",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash, Push",
+      "effect": "The target is pushed 2 Meters."
+    },
+    {
+      "name": "Aerial Ace",
+      "type": "Flying",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "EOT",
+      "range": "Melee, 1 Target",
+      "effect": "Aerial Ace cannot miss."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Klutz",
+      "effect": "Choose one of the target’s Held Items or Accessory Slot Items. It is knocked to the ground."
+    },
+    {
+      "name": "Hustle",
+      "frequency": "Static",
+      "effect": "The user receives a -2 penalty to all Accuracy Rolls and gains a +10 Bonus to All Damage Rolls."
+    }
+  ],
+  "natureMod": {
+    "plus": "hp",
+    "minus": "atk"
+  },
+  "capabilities": {
+    "overland": 8,
+    "swim": 3,
+    "jump": "2/2",
+    "power": 7,
+    "weight": 5,
+    "size": "Medium",
+    "other": [
+      "Mountable  1",
+      "Naturewalk (Forest, Grassland)",
+      "Zapper"
+    ]
+  }
+}

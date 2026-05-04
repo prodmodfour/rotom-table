@@ -1,0 +1,104 @@
+{
+  "slug": "examples-gyarados",
+  "nickname": "Gyarados",
+  "species": "Gyarados",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Lax",
+  "types": [
+    "Water",
+    "Flying"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 8,
+      "stage": 0
+    },
+    "def": {
+      "base": 1,
+      "added": 4,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "sdef": {
+      "base": -1,
+      "added": 5,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 75,
+    "currentHp": 75,
+    "tick": 7,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 2,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Bite",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Bite Flinches the target on 15+."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Frighten",
+      "frequency": "Scene – Swift Action",
+      "effect": "Lower the target’s Speed 2 Combat Stages."
+    },
+    {
+      "name": "Swift Swim",
+      "frequency": "Static",
+      "effect": "While in Rainy Weather or under 50% Max Hit Points, the user’s Initiative is doubled."
+    }
+  ],
+  "natureMod": {
+    "plus": "def",
+    "minus": "sdef"
+  },
+  "capabilities": {
+    "overland": 5,
+    "swim": 6,
+    "jump": "4/4",
+    "power": 13,
+    "weight": 6,
+    "size": "Huge",
+    "other": [
+      "Gilled",
+      "Naturewalk (Ocean)",
+      "Fountain",
+      "Reach",
+      "Mountable 4"
+    ]
+  }
+}

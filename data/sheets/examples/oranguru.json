@@ -1,0 +1,145 @@
+{
+  "slug": "examples-oranguru",
+  "nickname": "Oranguru",
+  "species": "Oranguru",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Cuddly",
+  "types": [
+    "Normal",
+    "Psychic"
+  ],
+  "stats": {
+    "hp": {
+      "base": 1,
+      "added": 8,
+      "stage": 0
+    },
+    "atk": {
+      "base": -1,
+      "added": 4,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 8,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 84,
+    "currentHp": 84,
+    "tick": 8,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 3,
+      "vsAny": 1
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Psych Up",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "6, 1 Target",
+      "effect": "The user’s Combat Stages are changed to match the target’s Combat Stages. Psych Up cannot miss."
+    },
+    {
+      "name": "After You",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "range": "6, 1 Target",
+      "effect": "After You is a Swift Action. The target takes their turn for the round immediately after the user finishes their turn, ignoring Initiative. After You may only affect a target that has not yet acted that round and can only affect willing targets."
+    },
+    {
+      "name": "Stored Power",
+      "type": "Psychic",
+      "category": "Special",
+      "db": 4,
+      "damageRoll": "1d8+6",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "10, 1 Target",
+      "effect": "For every Combat Stage the user has above 0, add +2 to Stored Power’s Damage Base, up to a maximum of Damage Base 20."
+    },
+    {
+      "name": "Quash",
+      "type": "Dark",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "10, 1 Target, Social",
+      "effect": "Quash changes the target’s Initiative to 0 for the remainder of the round."
+    },
+    {
+      "name": "Confusion",
+      "type": "Psychic",
+      "category": "Special",
+      "db": 7,
+      "damageRoll": "2d6+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Confusion Confuses the target on 19+."
+    },
+    {
+      "name": "Taunt",
+      "type": "Dark",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 3,
+      "range": "6, 1 Target, Social",
+      "effect": "The target becomes Enraged."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Inner Focus",
+      "frequency": "Static",
+      "effect": "The user cannot be Flinched, and their Initiative cannot be unwillingly lowered by any effects."
+    },
+    {
+      "name": "Anticipation",
+      "frequency": "At-Will – Swift Action",
+      "effect": "The target reveals if they have any Moves that are Super-Effective against the Pokémon with Anticipation. You may not target a Pokémon or Trainer more than once per encounter with Anticipation. Anticipation only reveals whether the opponent does or does not have those moves, not the specific moves themselves."
+    }
+  ],
+  "natureMod": {
+    "plus": "hp",
+    "minus": "atk"
+  },
+  "capabilities": {
+    "overland": 6,
+    "swim": 4,
+    "jump": "2/2",
+    "power": 4,
+    "weight": 4,
+    "size": "Medium",
+    "other": [
+      "Naturewalk  (Forest)"
+    ]
+  }
+}

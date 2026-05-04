@@ -1,0 +1,135 @@
+{
+  "slug": "examples-camerupt",
+  "nickname": "Camerupt",
+  "species": "Camerupt",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Quirky",
+  "types": [
+    "Fire",
+    "Ground"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 9,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 63,
+    "currentHp": 63,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 2,
+      "vsAny": 1
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Focus Energy",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "Self",
+      "effect": "The user becomes Pumped. While Pumped, the user’s Critical Range is extended by 2, or 18+ if the Critical Range is not otherwise extended. Being switched will cause this effect to end."
+    },
+    {
+      "name": "Amnesia",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Special Defense 2 Combat Stages."
+    },
+    {
+      "name": "Magnitude",
+      "type": "Ground",
+      "category": "Physical",
+      "frequency": "EOT",
+      "range": "Burst 2, Groundsource",
+      "effect": "When you use Magnitude, roll 1d6.  Magnitude’s Damage Base is equal to 5+X, where X is the value of the d6. Magnitude can hit targets that are underground, including those using the Move Dig."
+    },
+    {
+      "name": "Ember",
+      "type": "Fire",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "Ember Burns the target on 18+."
+    },
+    {
+      "name": "Flame Burst",
+      "type": "Fire",
+      "category": "Special",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Any Trainers or Pokémon cardinally adjacent to the target lose 5 Hit Points."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "White Flame",
+      "frequency": "Static",
+      "effect": "The user may not make rolls to cure themselves from the Enraged condition. However, while Enraged, the user gains a +5 Bonus to all Damage Rolls."
+    },
+    {
+      "name": "Solid Rock",
+      "frequency": "Static",
+      "effect": "The user gains +5 Damage Reduction against Super- Effective damage. Defensive."
+    }
+  ],
+  "capabilities": {
+    "overland": 5,
+    "swim": 2,
+    "jump": "1/1",
+    "power": 10,
+    "weight": 6,
+    "size": "Large",
+    "other": [
+      "Egg  Warmer",
+      "Firestarter",
+      "Heater",
+      "Naturewalk (Desert,  Mountain)",
+      "Mountable 1"
+    ]
+  }
+}

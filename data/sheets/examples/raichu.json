@@ -1,0 +1,138 @@
+{
+  "slug": "examples-raichu",
+  "nickname": "Raichu",
+  "species": "Raichu",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Calm",
+  "types": [
+    "Electric"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "atk": {
+      "base": -1,
+      "added": 5,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 1,
+      "added": 7,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 8,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 57,
+    "currentHp": 57,
+    "tick": 5,
+    "evasion": {
+      "vsAtk": 1,
+      "vsSatk": 3,
+      "vsAny": 3
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Thunder Wave",
+      "type": "Electric",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 4,
+      "range": "6, 1 Target",
+      "effect": "Thunder Wave Paralyzes the target. Targets immune to Electric Attacks are immune to Thunder Wave’s effects."
+    },
+    {
+      "name": "Electro Ball",
+      "type": "Electric",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "10, 1 Target",
+      "effect": "The user adds their Speed Stat, including Combat Stages, in addition to their Special Attack when determining the damage dealt by Electro Ball. The Defender in turn subtracts both their Special Defense and Speed Stats from the damage dealt before applying Type Effectiveness."
+    },
+    {
+      "name": "Play Nice",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target, Social",
+      "effect": "Play Nice lowers the target’s Attack by 1 Combat Stage."
+    },
+    {
+      "name": "Quick Attack",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Priority",
+      "effect": "None."
+    },
+    {
+      "name": "Tail Whip",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Burst 1, Friendly",
+      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Motor Drive",
+      "frequency": "Static",
+      "effect": "The user is immune to the damage and effects of Electric Type attacks. Whenever an Electric Type attack hits the Pokémon, raise their Speed by +1 Combat Stage. Defensive."
+    },
+    {
+      "name": "Static",
+      "frequency": "Scene – Free Action",
+      "effect": "The attacking foe becomes Paralyzed."
+    }
+  ],
+  "natureMod": {
+    "plus": "sdef",
+    "minus": "atk"
+  },
+  "capabilities": {
+    "overland": 6,
+    "swim": 3,
+    "jump": "2/2",
+    "power": 4,
+    "weight": 3,
+    "size": "Small",
+    "other": [
+      "Naturewalk  (Forest, Urban)",
+      "Zapper"
+    ]
+  }
+}

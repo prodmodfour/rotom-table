@@ -1,0 +1,140 @@
+{
+  "slug": "examples-togepi",
+  "nickname": "Togepi",
+  "species": "Togepi",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Skittish",
+  "types": [
+    "Fairy"
+  ],
+  "stats": {
+    "hp": {
+      "base": -1,
+      "added": 3,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 0,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 9,
+      "stage": 0
+    },
+    "spd": {
+      "base": 1,
+      "added": 7,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 48,
+    "currentHp": 48,
+    "tick": 4,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 3,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Charm",
+      "type": "Fairy",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "6, 1 Target, Social",
+      "effect": "Charm lowers the target’s Attack 2 Combat Stages."
+    },
+    {
+      "name": "Growl",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Burst 1, Friendly, Sonic, Social",
+      "effect": "Growl lowers all Legal Targets Attack 1 Combat Stage."
+    },
+    {
+      "name": "Metronome",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "range": "Self",
+      "effect": "Metronome randomly uses any other Move except for After You, Assist, Bestow, Copycat, Counter, Covet, Crafty Shield, Destiny Bond, Detect, Endure, Feint, Focus Punch, Follow Me, Helping Hand, King’s Shield, Metronome, Me First, Mimic, Mirror Coat, Mirror Move, Protect, Quash, Quick Guard, Rage Powder, Sketch, Sleep Talk, Snatch, Snore, Spiky Shield, Switcheroo, Thief, Transform, Trick, and Wide Guard. The GM helps to pick the random Move."
+    },
+    {
+      "name": "Sweet Kiss",
+      "type": "Fairy",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 6,
+      "range": "6, 1 Target, Social",
+      "effect": "The target becomes Confused. On miss, the target suffers a -2 penalty to Accuracy Rolls for one full round."
+    },
+    {
+      "name": "Encore",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "4, 1 Target, Social",
+      "effect": "Roll 1d6. On a result of 1 or 2, the target becomes Confused; on a result of 3 or 4 the target becomes Suppressed; on a result of 5 or 6 the target becomes Enraged."
+    },
+    {
+      "name": "Yawn",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "range": "2, 1 Target, Social",
+      "effect": "The target falls Asleep at the end of their next turn. Yawn cannot miss."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Hustle",
+      "frequency": "Static",
+      "effect": "The user receives a -2 penalty to all Accuracy Rolls and gains a +10 Bonus to All Damage Rolls."
+    },
+    {
+      "name": "Gentle Vibe",
+      "frequency": "Scene – Standard Action",
+      "effect": "All targets in the burst, including the user, have their Combat Stages reset, and are cured of any Volatile Status ailments."
+    }
+  ],
+  "natureMod": {
+    "plus": "spd",
+    "minus": "hp"
+  },
+  "capabilities": {
+    "overland": 3,
+    "swim": 2,
+    "jump": "1/1",
+    "power": 1,
+    "weight": 1,
+    "size": "Small",
+    "other": [
+      "Underdog"
+    ]
+  }
+}

@@ -1,0 +1,149 @@
+{
+  "slug": "examples-larvitar",
+  "nickname": "Larvitar",
+  "species": "Larvitar",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Rash",
+  "types": [
+    "Rock",
+    "Ground"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "satk": {
+      "base": 1,
+      "added": 6,
+      "stage": 0
+    },
+    "sdef": {
+      "base": -1,
+      "added": 3,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 60,
+    "currentHp": 60,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 1,
+      "vsAny": 1
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Sandstorm",
+      "type": "Rock",
+      "category": "Status",
+      "frequency": "Daily x2",
+      "range": "Field, Weather",
+      "effect": "The weather changes to a Sandstorm for 5 rounds. While it is Sandstorming, all non-Ground, Rock, or Steel Type Pokémon lose a Tick of Hit Points at the beginning of their turn."
+    },
+    {
+      "name": "Leer",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Cone 2, Friendly, Social",
+      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
+    },
+    {
+      "name": "Bite",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Bite Flinches the target on 15+."
+    },
+    {
+      "name": "Screech",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 4,
+      "range": "Burst 2, Friendly, Sonic",
+      "effect": "All Legal Targets have their Defense lowered 2 Combat Stages."
+    },
+    {
+      "name": "Chip Away",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Ignore any Armor, Damage Reduction, or changes in the target’s Defense or Special Defense (such as from Combat Stages) when calculating damage."
+    },
+    {
+      "name": "Rock Slide",
+      "type": "Rock",
+      "category": "Physical",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "Scene x2",
+      "ac": 4,
+      "range": "6, Ranged Blast 3",
+      "effect": "Rock Slide Flinches all Legal Targets on 17+."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Guts",
+      "frequency": "Static",
+      "effect": "While suffering from Burn, Poison, Paralysis, Freezing, or while Asleep, the user’s Attack is raised 2 Combat Stages. If suffering from none of these conditions, the user loses any Combat Stages gained this way."
+    },
+    {
+      "name": "Battle Armor",
+      "frequency": "Static",
+      "effect": "The user is immune to Critical Hits; they are instead normal hits. Defensive."
+    }
+  ],
+  "natureMod": {
+    "plus": "satk",
+    "minus": "sdef"
+  },
+  "capabilities": {
+    "overland": 4,
+    "swim": 1,
+    "jump": "0/1",
+    "power": 7,
+    "weight": 4,
+    "size": "Small",
+    "other": [
+      "Naturewalk  (Mountain)",
+      "Underdog"
+    ]
+  }
+}

@@ -1,0 +1,146 @@
+{
+  "slug": "examples-bergmite",
+  "nickname": "Bergmite",
+  "species": "Bergmite",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Bashful",
+  "types": [
+    "Ice"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 1,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 69,
+    "currentHp": 69,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 3,
+      "vsSatk": 1,
+      "vsAny": 1
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Powder Snow",
+      "type": "Ice",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Line 4",
+      "effect": "Powder Snow Freezes all Legal Targets on 19+."
+    },
+    {
+      "name": "Bite",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Bite Flinches the target on 15+."
+    },
+    {
+      "name": "Take Down",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 9,
+      "damageRoll": "2d10+10 / 21",
+      "frequency": "EOT",
+      "ac": 5,
+      "range": "Melee, 1 Target, Dash, Recoil 1/3",
+      "effect": "You may perform a Trip Maneuver against the target as a Free Action."
+    },
+    {
+      "name": "Harden",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "Self",
+      "effect": "Raise the user’s Defense 1 Combat Stage."
+    },
+    {
+      "name": "Sharpen",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "Self",
+      "effect": "Raise the user’s Attack 1 Combat Stage."
+    },
+    {
+      "name": "Tackle",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash, Push",
+      "effect": "The target is pushed 2 Meters."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Permafrost",
+      "frequency": "Static",
+      "effect": "The user is immune to damage and Hit Point loss from Hazards, Weather, Status Afflictions, Vortexes, Recoil, Hay Fever, Iron Barbs, Rough Skin, and Leech Seed. Defensive."
+    },
+    {
+      "name": "Sturdy",
+      "frequency": "Static",
+      "effect": "The user is immune to Moves with the Execute Keyword. If a single source of Damage or Hit Point Loss would cause the user to lose more than X Hit Points, the damage or Hit Point loss is instead reduced to X. X is equal to 50% of their Max Hit Points. Defensive."
+    }
+  ],
+  "capabilities": {
+    "overland": 4,
+    "swim": 2,
+    "jump": "1/1",
+    "power": 3,
+    "weight": 4,
+    "size": "Small",
+    "other": [
+      "Freezer",
+      "Naturewalk (Tundra)",
+      "Underdog"
+    ]
+  }
+}

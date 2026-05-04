@@ -1,0 +1,145 @@
+{
+  "slug": "examples-terrakion",
+  "nickname": "Terrakion",
+  "species": "Terrakion",
+  "level": 20,
+  "gender": "No Gender",
+  "shiny": false,
+  "nature": "Lax",
+  "types": [
+    "Rock",
+    "Fighting"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 9,
+      "stage": 0
+    },
+    "def": {
+      "base": 1,
+      "added": 5,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "sdef": {
+      "base": -1,
+      "added": 2,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 69,
+    "currentHp": 69,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 3,
+      "vsSatk": 1,
+      "vsAny": 3
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Take Down",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 9,
+      "damageRoll": "2d10+10 / 21",
+      "frequency": "EOT",
+      "ac": 5,
+      "range": "Melee, 1 Target, Dash, Recoil 1/3",
+      "effect": "You may perform a Trip Maneuver against the target as a Free Action."
+    },
+    {
+      "name": "Double Kick",
+      "type": "Fighting",
+      "category": "Physical",
+      "db": 5,
+      "damageRoll": "1d8+8",
+      "frequency": "At-Will",
+      "ac": 3,
+      "range": "Melee, 1 Target, Double Strike",
+      "effect": "None"
+    },
+    {
+      "name": "Leer",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Cone 2, Friendly, Social",
+      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
+    },
+    {
+      "name": "Quick Attack",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Priority",
+      "effect": "None."
+    },
+    {
+      "name": "Smack Down",
+      "type": "Rock",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "8, 1 Target",
+      "effect": "The target is knocked down to ground level, and loses all Sky or Levitate Speeds for 3 turns. During this time, they may be hit by Ground-Type Moves even if normally immune."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Justified",
+      "frequency": "At-Will - Free Action",
+      "effect": "The user may raise its Attack by +1 Combat Stage."
+    },
+    {
+      "name": "Discipline",
+      "frequency": "Scene – Free Action",
+      "effect": "If the user gains initiative and is Confused, Enraged, Infatuated, or Flinched, they may activate Discipline to cure themselves of any of these conditions."
+    }
+  ],
+  "natureMod": {
+    "plus": "def",
+    "minus": "sdef"
+  },
+  "capabilities": {
+    "overland": 5,
+    "burrow": 7,
+    "jump": "2/2",
+    "power": 7,
+    "weight": 6,
+    "size": "Large",
+    "other": [
+      "Naturewalk (Mountain)",
+      "Groundshaper",
+      "Mountable  1",
+      "Tremorsense"
+    ]
+  }
+}

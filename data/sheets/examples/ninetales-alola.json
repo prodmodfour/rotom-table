@@ -1,0 +1,151 @@
+{
+  "slug": "examples-ninetales-alola",
+  "nickname": "Ninetales Alola",
+  "species": "Ninetales Alola",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Stark",
+  "types": [
+    "Ice",
+    "Fairy"
+  ],
+  "stats": {
+    "hp": {
+      "base": -1,
+      "added": 2,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "def": {
+      "base": 1,
+      "added": 4,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 10,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 54,
+    "currentHp": 54,
+    "tick": 5,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 3,
+      "vsAny": 4
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Roar",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "ac": 2,
+      "range": "Burst 1, Sonic, Social",
+      "effect": "When declaring Roar, the user does nothing and may not Shift. At the end of the round, the user Shifts and uses Roar.  Targets hit by Roar immediately Shift away from the target using their highest usable movement capability, and towards their Trainer if possible. If the target is an owned Pokémon and ends this shift within 6 meters of their Poké Ball, they are immediately recalled to their Poké Ball. If that Trainer sends out a replacement, they do not lose their Pokémon turn."
+    },
+    {
+      "name": "Icy Wind",
+      "type": "Ice",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "ac": 3,
+      "range": "Cone 2",
+      "effect": "All Legal Targets have their Speed lowered 1 Combat Stage."
+    },
+    {
+      "name": "Payback",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 5,
+      "damageRoll": "1d8+8 / 13",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "If the target hit the user with a Damaging Move on the previous turn, Payback has a Damage Base of 10 (3d8+10 / 24) instead."
+    },
+    {
+      "name": "Tail Whip",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Burst 1, Friendly",
+      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
+    },
+    {
+      "name": "Ice Shard",
+      "type": "Ice",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target, Priority",
+      "effect": "None"
+    },
+    {
+      "name": "Baby-Doll Eyes",
+      "type": "Fairy",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "4, 1 Target, Priority, Social",
+      "effect": "The target’s Attack is lowered 1 Combat Stage."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Snow Cloak",
+      "frequency": "Static",
+      "effect": "The user gains +1 Evasion. This is increased to +2 Evasion while in Hail or snowy terrain. While in Hail, the user and adjacent allies do not lose Hit Points due to the Hail."
+    },
+    {
+      "name": "Cute Charm",
+      "frequency": "Scene – Free Action",
+      "effect": "The foe becomes Infatuated."
+    }
+  ],
+  "natureMod": {
+    "plus": "def",
+    "minus": "hp"
+  },
+  "capabilities": {
+    "overland": 6,
+    "swim": 3,
+    "jump": "1/2",
+    "power": 4,
+    "weight": 2,
+    "size": "Medium",
+    "other": [
+      "Freezer",
+      "Naturewalk (Mountain, Tundra)",
+      "Tracker"
+    ]
+  }
+}

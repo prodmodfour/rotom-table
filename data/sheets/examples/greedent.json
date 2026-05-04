@@ -1,0 +1,140 @@
+{
+  "slug": "examples-greedent",
+  "nickname": "Greedent",
+  "species": "Greedent",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Naughty",
+  "types": [
+    "Normal"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "atk": {
+      "base": 1,
+      "added": 6,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "sdef": {
+      "base": -1,
+      "added": 5,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 84,
+    "currentHp": 84,
+    "tick": 8,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 2,
+      "vsAny": 1
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Stuff Cheeks",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Self",
+      "effect": "The user immediately consumes one of its Food Buffs, regardless of any conditions that need to be met, gaining its benefit if applicable. If a Buff is consumed, the user’s Defense CS is raised by 2."
+    },
+    {
+      "name": "Bite",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Bite Flinches the target on 15+."
+    },
+    {
+      "name": "Stockpile",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "The user adds 1 to their Stockpiled count to a maximum of 3. For each number a Stockpiled count is above 0, raise the user’s Defense 1 Combat Stage and raise the user’s Special Defense 1 Combat Stage. If a Stockpiled count is set to 0, the Combat Stages gained from the Stockpiled count are removed."
+    },
+    {
+      "name": "Spit Up",
+      "type": "Normal",
+      "category": "Special",
+      "frequency": "Scene",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "For each Stockpiled Count the user has, Spit Up’s Damage Base is increased by +8. If the user has no Stockpiled count, Spit Up cannot be used."
+    },
+    {
+      "name": "Body Slam",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 11,
+      "damageRoll": "3d10+10",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Body Slam Paralyzes the target on 15+."
+    },
+    {
+      "name": "Swallow",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Daily x2",
+      "range": "Self",
+      "effect": "If the user’s Stockpiled count is 1, they are healed 25% of their full Hit Point value; if their Stockpiled count is 2, they are healed half of their full Hit Point value; if their Stockpiled count is 3, they are healed back to full Hit Points. After using Swallow, the user’s Stockpiled count is set to 0. If the user has no Stockpiled count, Swallow does nothing."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Gluttony",
+      "frequency": "Static",
+      "effect": "The user may have up to three Food Buffs at once, use up to three Food Buffs per Scene, and may eat two refreshments per half hour."
+    },
+    {
+      "name": "Lunchbox",
+      "frequency": "Scene – Free Action",
+      "effect": "The user gains a Tick of Temporary Hit Points. These Temporary Hit Points stack with any Temporary Hit Points granted by the triggering Food Buff."
+    }
+  ],
+  "natureMod": {
+    "plus": "atk",
+    "minus": "sdef"
+  },
+  "capabilities": {
+    "overland": 6,
+    "swim": 3,
+    "jump": "2/2",
+    "power": 3,
+    "weight": 1,
+    "size": "Small"
+  }
+}

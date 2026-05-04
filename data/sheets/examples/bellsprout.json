@@ -1,0 +1,144 @@
+{
+  "slug": "examples-bellsprout",
+  "nickname": "Bellsprout",
+  "species": "Bellsprout",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Skittish",
+  "types": [
+    "Grass",
+    "Poison"
+  ],
+  "stats": {
+    "hp": {
+      "base": -1,
+      "added": 5,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 9,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 2,
+      "stage": 0
+    },
+    "spd": {
+      "base": 1,
+      "added": 4,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 57,
+    "currentHp": 57,
+    "tick": 5,
+    "evasion": {
+      "vsAtk": 1,
+      "vsSatk": 1,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Sleep Powder",
+      "type": "Grass",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 6,
+      "range": "4, 1 Target, Powder",
+      "effect": "The target falls asleep."
+    },
+    {
+      "name": "Poison Powder",
+      "type": "Poison",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 6,
+      "range": "4, 1 Target, Powder",
+      "effect": "The target is Poisoned."
+    },
+    {
+      "name": "Vine Whip",
+      "type": "Grass",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "None"
+    },
+    {
+      "name": "Wrap",
+      "type": "Normal",
+      "category": "Static",
+      "frequency": "Static",
+      "effect": "The user gains a +1 Bonus to Accuracy Rolls made to initiate Grapple Maneuvers, and +2 to Skill Checks made to initiate Grapple Maneuvers or gain Dominance. Whenever the user gains Dominance in a Grapple, the target of the Grapple loses a Tick of Hit Points."
+    },
+    {
+      "name": "Stun Spore",
+      "type": "Grass",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 6,
+      "range": "6, 1 Target, Powder",
+      "effect": "The target is Paralyzed."
+    },
+    {
+      "name": "Growth",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Attack 1 Combat Stage and raise the user’s Special Attack 1 Combat Stage. If it is Sunny, double the amount of Combat Stages gained."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Gluttony",
+      "frequency": "Static",
+      "effect": "The user may have up to three Food Buffs at once, use up to three Food Buffs per Scene, and may eat two refreshments per half hour."
+    },
+    {
+      "name": "Dodge",
+      "frequency": "Daily – Free Action",
+      "effect": "The triggering Move instead misses. Defensive."
+    }
+  ],
+  "natureMod": {
+    "plus": "spd",
+    "minus": "hp"
+  },
+  "capabilities": {
+    "overland": 4,
+    "swim": 3,
+    "burrow": 1,
+    "jump": "1/1",
+    "power": 1,
+    "weight": 1,
+    "size": "Small",
+    "other": [
+      "Naturewalk (Grassland, Forest)",
+      "Underdog"
+    ]
+  }
+}

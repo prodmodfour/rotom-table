@@ -1,0 +1,150 @@
+{
+  "slug": "examples-electrike",
+  "nickname": "Electrike",
+  "species": "Electrike",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Calm",
+  "types": [
+    "Electric"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "atk": {
+      "base": -1,
+      "added": 2,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 9,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 1,
+      "added": 3,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 9,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 54,
+    "currentHp": 54,
+    "tick": 5,
+    "evasion": {
+      "vsAtk": 1,
+      "vsSatk": 1,
+      "vsAny": 3
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Leer",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Cone 2, Friendly, Social",
+      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
+    },
+    {
+      "name": "Thunder Wave",
+      "type": "Electric",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 4,
+      "range": "6, 1 Target",
+      "effect": "Thunder Wave Paralyzes the target. Targets immune to Electric Attacks are immune to Thunder Wave’s effects."
+    },
+    {
+      "name": "Quick Attack",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Priority",
+      "effect": "None."
+    },
+    {
+      "name": "Tackle",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash, Push",
+      "effect": "The target is pushed 2 Meters."
+    },
+    {
+      "name": "Odor Sleuth",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "range": "Self, Swift Action",
+      "effect": "Odor Sleuth may be activated as a Swift Action on the user’s turn. For the rest of the turn, the user’s Normal-Type and Fighting-Type Moves can hit and affect Ghost-Type targets, and the user can see through the Illusion Ability, Moves with the Illusion keyword, and effects created by the Illusionist Capability, ignoring all effects from those."
+    },
+    {
+      "name": "Spark",
+      "type": "Electric",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash",
+      "effect": "Spark Paralyzes the target on 15+."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Electrodash",
+      "frequency": "Scene x2 – Swift Action",
+      "effect": "The user may make a Sprint Action as a Free Action."
+    },
+    {
+      "name": "Sprint",
+      "frequency": "Scene – Swift Action",
+      "effect": "The user gains +2 Speed Combat Stages."
+    }
+  ],
+  "natureMod": {
+    "plus": "sdef",
+    "minus": "atk"
+  },
+  "capabilities": {
+    "overland": 5,
+    "swim": 3,
+    "jump": "1/2",
+    "power": 2,
+    "weight": 2,
+    "size": "Small",
+    "other": [
+      "Tracker",
+      "Naturewalk (Grassland)",
+      "Underdog",
+      "Zapper"
+    ]
+  }
+}

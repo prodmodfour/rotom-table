@@ -1,0 +1,101 @@
+{
+  "slug": "examples-delibird",
+  "nickname": "Delibird",
+  "species": "Delibird",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Decisive",
+  "types": [
+    "Ice",
+    "Flying"
+  ],
+  "stats": {
+    "hp": {
+      "base": 1,
+      "added": 4,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 2,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "sdef": {
+      "base": -1,
+      "added": 2,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 14,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 60,
+    "currentHp": 60,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 1,
+      "vsSatk": 1,
+      "vsAny": 4
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Present",
+      "type": "Normal",
+      "category": "Physical",
+      "frequency": "EOT",
+      "ac": 3,
+      "range": "4, 1 Target",
+      "effect": "Roll 1d6; Present has a Damage Base equal to twice the result. On a result of 1, instead of taking damage, the target gains 20 Hit Points."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Giver",
+      "frequency": "Scene x2 - Swift Action",
+      "effect": "Connection - Present. After rolling to determine Present’s Damage Base, you may choose to ignore the roll and act as if you had rolled a 1 or a 5."
+    },
+    {
+      "name": "Vital Spirit",
+      "frequency": "Static",
+      "effect": "The user is immune to the Sleep condition, and cannot use the move Rest. Defensive."
+    }
+  ],
+  "natureMod": {
+    "plus": "hp",
+    "minus": "sdef"
+  },
+  "capabilities": {
+    "overland": 4,
+    "sky": 8,
+    "swim": 6,
+    "jump": "3/4",
+    "power": 4,
+    "weight": 2,
+    "size": "Medium",
+    "other": [
+      "Chilled",
+      "Naturewalk (Tundra)",
+      "Underdog"
+    ]
+  }
+}

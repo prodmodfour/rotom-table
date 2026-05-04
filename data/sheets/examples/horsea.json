@@ -1,0 +1,141 @@
+{
+  "slug": "examples-horsea",
+  "nickname": "Horsea",
+  "species": "Horsea",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Jolly",
+  "types": [
+    "Water"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "satk": {
+      "base": -1,
+      "added": 5,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "spd": {
+      "base": 1,
+      "added": 8,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 51,
+    "currentHp": 51,
+    "tick": 5,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 1,
+      "vsAny": 3
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Smokescreen",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "5, Ranged Blast 3",
+      "effect": "Smokescreen creates a blast of Smoke that covers the target area; the Smoke persists until the end of the encounter, or until Defog or Whirlwind are used. All targets attacking from or into the Smoke receive a -3 penalty to Accuracy."
+    },
+    {
+      "name": "Bubble",
+      "type": "Water",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Burst 1",
+      "effect": "Bubble lowers the target’s Speed on 16+."
+    },
+    {
+      "name": "Leer",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Cone 2, Friendly, Social",
+      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
+    },
+    {
+      "name": "Water Gun",
+      "type": "Water",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "None"
+    },
+    {
+      "name": "Twister",
+      "type": "Dragon",
+      "category": "Special",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, Ranged Blast 3",
+      "effect": "Small or Medium targets in the central square of the blast are not hit. Twister Flinches the target on 18-20 during Accuracy Check. Any Pokémon Airborne as a result of Fly or Sky Drop above the Blast are hit, ignoring range, and Twister has a Damage Base of 8 against those targets instead."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Sniper",
+      "frequency": "Static",
+      "effect": "When the user gets a Critical Hit, the attack deals +3d10 additional damage."
+    },
+    {
+      "name": "Damp",
+      "frequency": "Static",
+      "effect": "Whenever anyone within 10 meters would use the Moves Self-Destruct or Explosion or activate the Aftermath Ability, those effects fail and instead do nothing."
+    }
+  ],
+  "natureMod": {
+    "plus": "spd",
+    "minus": "satk"
+  },
+  "capabilities": {
+    "overland": 2,
+    "swim": 5,
+    "jump": "1/1",
+    "power": 1,
+    "weight": 1,
+    "size": "Small",
+    "other": [
+      "Fountain",
+      "Gilled",
+      "Naturewalk (Ocean)",
+      "Underdog"
+    ]
+  }
+}

@@ -1,0 +1,145 @@
+{
+  "slug": "examples-bonsly",
+  "nickname": "Bonsly",
+  "species": "Bonsly",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Docile",
+  "types": [
+    "Rock"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 63,
+    "currentHp": 63,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 3,
+      "vsSatk": 1,
+      "vsAny": 1
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Flail",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "For each Injury the user has, Flail’s Damage Base is increased by +1."
+    },
+    {
+      "name": "Rock Throw",
+      "type": "Rock",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10",
+      "frequency": "At-Will",
+      "ac": 4,
+      "range": "6, 1 Target",
+      "effect": "None"
+    },
+    {
+      "name": "Slam",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10 / 19",
+      "frequency": "At-Will",
+      "ac": 6,
+      "range": "Melee, 1 Target, Dash",
+      "effect": "Slam may be used as a Free Action at the end of a Sprint Maneuver taken as a Standard Action, as long as the user Shifted at least 3 meters in a straight line towards the target. When used this way, Slam gains the Smite keyword."
+    },
+    {
+      "name": "Copycat",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "range": "4, 1 Target",
+      "effect": "Use the Move the target has used on their last turn. You may choose new targets for the Move. Copycat cannot miss."
+    },
+    {
+      "name": "Feint Attack",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "EOT",
+      "range": "Melee, 1 Target",
+      "effect": "Feint Attack cannot miss."
+    },
+    {
+      "name": "Fake Tears",
+      "type": "Dark",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "8, 1 Target, Social",
+      "effect": "Lower the target’s Special Defense 2 Combat Stages."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Copy Master",
+      "frequency": "Static",
+      "effect": "Connection - Copycat. Whenever the user uses Copycat or Mimic, it gains +1 Combat Stage in a Stat of its choice after the Move is resolved."
+    },
+    {
+      "name": "Sturdy",
+      "frequency": "Static",
+      "effect": "The user is immune to Moves with the Execute Keyword. If a single source of Damage or Hit Point Loss would cause the user to lose more than X Hit Points, the damage or Hit Point loss is instead reduced to X. X is equal to 50% of their Max Hit Points. Defensive."
+    }
+  ],
+  "capabilities": {
+    "overland": 3,
+    "swim": 2,
+    "jump": "0/1",
+    "power": 1,
+    "weight": 2,
+    "size": "Small",
+    "other": [
+      "Naturewalk  (Forest)",
+      "Underdog"
+    ]
+  }
+}

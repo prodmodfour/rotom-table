@@ -1,0 +1,147 @@
+{
+  "slug": "examples-ledian",
+  "nickname": "Ledian",
+  "species": "Ledian",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Naive",
+  "types": [
+    "Bug",
+    "Flying"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "sdef": {
+      "base": -1,
+      "added": 4,
+      "stage": 0
+    },
+    "spd": {
+      "base": 1,
+      "added": 5,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 66,
+    "currentHp": 66,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 2,
+      "vsAny": 3
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Light Screen",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Blessing",
+      "effect": "Blessing – Any user affected by Light Screen may activate it when receiving Special Damage to resist the Damage one step. Light Screen may be activated 2 times, and then disappears."
+    },
+    {
+      "name": "Reflect",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Blessing",
+      "effect": "Blessing – Any user affected by Reflect may activate it when receiving Physical Damage to resist the Damage one step. Reflect may be activated 2 times, and then disappears."
+    },
+    {
+      "name": "Mach Punch",
+      "type": "Fighting",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Priority",
+      "effect": "None"
+    },
+    {
+      "name": "Safeguard",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Blessing",
+      "effect": "Blessing – Any user affected by Safeguard may activate it when receiving a Status Affliction to ignore the effects of that Status Affliction on their next turn. Safeguard may be activated 3 times, and then disappears."
+    },
+    {
+      "name": "Supersonic",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 6,
+      "range": "4, 1 Target, Sonic",
+      "effect": "The target becomes Confused. On miss, the target suffers a -2 penalty to Accuracy Rolls for one full round."
+    },
+    {
+      "name": "Comet Punch",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 2,
+      "damageRoll": "1d6+3 / 7",
+      "frequency": "At-Will",
+      "ac": 4,
+      "range": "Melee, 1 Target, Five Strike",
+      "effect": "None"
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Huge Power",
+      "frequency": "Static",
+      "effect": "The Pokémon’s Base Attack stat is doubled. This may double any bonuses from Nature or Vitamins, but not bonuses from Trainer Features."
+    },
+    {
+      "name": "Early Bird",
+      "frequency": "Static",
+      "effect": "The user gains a bonus to Initiative equal to half its Speed, and a +3 Bonus on Save Checks against Sleep."
+    }
+  ],
+  "natureMod": {
+    "plus": "spd",
+    "minus": "sdef"
+  },
+  "capabilities": {
+    "overland": 6,
+    "sky": 6,
+    "swim": 3,
+    "jump": "2/2",
+    "power": 4,
+    "weight": 3,
+    "size": "Medium",
+    "other": [
+      "Naturewalk (Grassland, Forest)",
+      "Wallclimber",
+      "Underdog"
+    ]
+  }
+}

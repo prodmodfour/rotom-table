@@ -1,0 +1,124 @@
+{
+  "slug": "examples-dragapult",
+  "nickname": "Dragapult",
+  "species": "Dragapult",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Impish",
+  "types": [
+    "Dragon",
+    "Ghost"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "def": {
+      "base": 1,
+      "added": 6,
+      "stage": 0
+    },
+    "satk": {
+      "base": -1,
+      "added": 2,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 2,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 10,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 69,
+    "currentHp": 69,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 3,
+      "vsSatk": 2,
+      "vsAny": 4
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Hex",
+      "type": "Ghost",
+      "category": "Special",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Once a Scene, if Hex’s target has a Status Affliction, you may have Hex’s Damage Base be 13 instead (4d10+10 / 35)."
+    },
+    {
+      "name": "Lock-On",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "10, 1 Target",
+      "effect": "The target is Locked-On. The next Move that the user uses against the Target that requires an Accuracy Check cannot miss. Lock-On’s effect, on both the User and Target, is passed on by Baton Pass."
+    },
+    {
+      "name": "Assurance",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "When you hit with Assurance, if Assurance’s target has already been damaged by a Move on the same round Assurance is being used, Assurance has a Damage Base of 12 (3d12+10 / 30) instead. This effect may trigger only once per Scene per Target."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Cursed Body",
+      "frequency": "Scene – Free Action",
+      "effect": "The Move becomes Disabled."
+    },
+    {
+      "name": "Infiltrator",
+      "frequency": "Static",
+      "effect": "The user gains a +2 Bonus to Stealth Checks, does not trigger Hazards, Blessings cannot be activated in response to its actions, and the user may bypass the effects of the move Substitute."
+    }
+  ],
+  "natureMod": {
+    "plus": "def",
+    "minus": "satk"
+  },
+  "capabilities": {
+    "overland": 3,
+    "sky": 8,
+    "swim": 8,
+    "jump": "3/3",
+    "power": 6,
+    "weight": 4,
+    "size": "Huge",
+    "other": [
+      "Darkvision",
+      "Dead Silent",
+      "Invisibility",
+      "Mountable 3",
+      "Phasing"
+    ]
+  }
+}

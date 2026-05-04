@@ -1,0 +1,147 @@
+{
+  "slug": "examples-swalot",
+  "nickname": "Swalot",
+  "species": "Swalot",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Adamant",
+  "types": [
+    "Poison"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    },
+    "atk": {
+      "base": 1,
+      "added": 5,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "satk": {
+      "base": -1,
+      "added": 2,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 81,
+    "currentHp": 81,
+    "tick": 8,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 2,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Amnesia",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Special Defense 2 Combat Stages."
+    },
+    {
+      "name": "Encore",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "4, 1 Target, Social",
+      "effect": "Roll 1d6. On a result of 1 or 2, the target becomes Confused; on a result of 3 or 4 the target becomes Suppressed; on a result of 5 or 6 the target becomes Enraged."
+    },
+    {
+      "name": "Poison Gas",
+      "type": "Poison",
+      "category": "Status",
+      "frequency": "Scene",
+      "ac": 6,
+      "range": "Burst 1 or Cone 2",
+      "effect": "Poison Gas Poisons all Legal Targets."
+    },
+    {
+      "name": "Acid Spray",
+      "type": "Poison",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "Acid Spray lowers the target’s Special Defense 2 Combat Stages."
+    },
+    {
+      "name": "Yawn",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "range": "2, 1 Target, Social",
+      "effect": "The target falls Asleep at the end of their next turn. Yawn cannot miss."
+    },
+    {
+      "name": "Sludge",
+      "type": "Poison",
+      "category": "Special",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Sludge Poisons the target on 15+."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Liquid Ooze",
+      "frequency": "Static",
+      "effect": "This user resists Poison-Type Damage one step further. Additionally, when this user is damaged by Absorb, Drain Punch, Giga Drain, Horn Leech, Leech Life, or Mega Drain, that Move gains Recoil ½ and the Move’s user does not gain any HP. If the user is hit by Leech Seed, the user does not lose Hit Points from Leech Seed; instead Leech Seed’s user loses Hit Points equal to this user’s Tick Value."
+    },
+    {
+      "name": "Limber",
+      "frequency": "Static",
+      "effect": "The user is immune to Paralysis. Defensive."
+    }
+  ],
+  "natureMod": {
+    "plus": "atk",
+    "minus": "satk"
+  },
+  "capabilities": {
+    "overland": 5,
+    "swim": 2,
+    "jump": "1/1",
+    "power": 3,
+    "weight": 4,
+    "size": "Medium",
+    "other": [
+      "Amorphous",
+      "Inflatable",
+      "Wallclimber",
+      "Sticky Hold"
+    ]
+  }
+}

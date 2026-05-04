@@ -1,0 +1,160 @@
+{
+  "slug": "examples-giratina-altered-forme",
+  "nickname": "Giratina Altered Forme",
+  "species": "Giratina Altered Forme",
+  "level": 20,
+  "gender": "No Gender",
+  "shiny": false,
+  "nature": "Naive",
+  "types": [
+    "Ghost",
+    "Dragon"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 12,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "sdef": {
+      "base": -1,
+      "added": 3,
+      "stage": 0
+    },
+    "spd": {
+      "base": 1,
+      "added": 4,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 111,
+    "currentHp": 111,
+    "tick": 11,
+    "evasion": {
+      "vsAtk": 3,
+      "vsSatk": 2,
+      "vsAny": 3
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Ancient Power",
+      "type": "Rock",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "6, 1 Target, Spirit Surge",
+      "effect": "On 19+, the user has each of its stats raised by +1 Combat Stage."
+    },
+    {
+      "name": "Scary Face",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "4, 1 Target, Social",
+      "effect": "The target’s Speed is lowered 2 Combat Stages."
+    },
+    {
+      "name": "Shadow Sneak",
+      "type": "Ghost",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Priority",
+      "effect": "None."
+    },
+    {
+      "name": "Dragon Breath",
+      "type": "Dragon",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Dragon Breath Paralyzes the Target on 15+."
+    },
+    {
+      "name": "Slash",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, Pass",
+      "effect": "Slash is a Critical Hit on 18+."
+    },
+    {
+      "name": "Ominous Wind",
+      "type": "Ghost",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "6, 1 Target, Spirit Surge",
+      "effect": "On 19+, the user has each of its stats raised by +1 Combat Stage."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Pressure",
+      "frequency": "Scene - Swift Action",
+      "effect": "All foes within 3 meters are Suppressed for 1 full round."
+    },
+    {
+      "name": "Telepathy",
+      "frequency": "Static",
+      "effect": "The user gains +1 Evasion. Whenever an Ally uses a damaging area-of-effect attack that would hit you, you may Disengage as a Free Action before the attack resolves."
+    }
+  ],
+  "natureMod": {
+    "plus": "spd",
+    "minus": "sdef"
+  },
+  "capabilities": {
+    "overland": 7,
+    "sky": 10,
+    "swim": 7,
+    "burrow": 3,
+    "jump": "2/2",
+    "power": 14,
+    "weight": 6,
+    "size": "Gigantic",
+    "other": [
+      "Aura Reader",
+      "Darkvision",
+      "Telekinetic",
+      "Telepath",
+      "Origin Forme",
+      "Mountable 2"
+    ]
+  }
+}

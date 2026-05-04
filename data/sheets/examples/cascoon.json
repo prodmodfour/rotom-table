@@ -1,0 +1,98 @@
+{
+  "slug": "examples-cascoon",
+  "nickname": "Cascoon",
+  "species": "Cascoon",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Lax",
+  "types": [
+    "Bug"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "def": {
+      "base": 1,
+      "added": 6,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "sdef": {
+      "base": -1,
+      "added": 4,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 60,
+    "currentHp": 60,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 1,
+      "vsAny": 1
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Harden",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "Self",
+      "effect": "Raise the user’s Defense 1 Combat Stage."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Shed Skin",
+      "frequency": "Scene – Swift Action",
+      "effect": "The user is cured of one of Paralysis, Freezing, Burns, Poison, or Sleep."
+    },
+    {
+      "name": "Silk Threads",
+      "frequency": "Static",
+      "effect": "Connection - String Shot. Whenever the user uses String Shot, all targets hit become Slowed and Vulnerable for 1 full round."
+    }
+  ],
+  "natureMod": {
+    "plus": "def",
+    "minus": "sdef"
+  },
+  "capabilities": {
+    "overland": 1,
+    "swim": 2,
+    "jump": "1/1",
+    "power": 1,
+    "weight": 1,
+    "size": "Small",
+    "other": [
+      "Naturewalk  (Grassland, Forest)",
+      "Threaded",
+      "Underdog"
+    ]
+  }
+}

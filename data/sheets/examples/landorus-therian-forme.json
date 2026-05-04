@@ -1,0 +1,148 @@
+{
+  "slug": "examples-landorus-therian-forme",
+  "nickname": "Landorus Therian Forme",
+  "species": "Landorus Therian Forme",
+  "level": 20,
+  "gender": "No Gender",
+  "shiny": false,
+  "nature": "Docile",
+  "types": [
+    "Ground",
+    "Flying"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 10,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 2,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 72,
+    "currentHp": 72,
+    "tick": 7,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 2,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Bulldoze",
+      "type": "Ground",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Burst 1",
+      "effect": "All Legal Targets are lowered 1 Speed Combat Stage."
+    },
+    {
+      "name": "Rock Tomb",
+      "type": "Rock",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "At-Will",
+      "ac": 5,
+      "range": "6, 1 Target",
+      "effect": "Rock Tomb lowers the target’s Speed by -1 Combat Stage."
+    },
+    {
+      "name": "Imprison",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "range": "10, 1 Target",
+      "effect": "The target is Locked for the rest of the Scene. A Locked target may not use any Moves the user knows. Imprison cannot miss."
+    },
+    {
+      "name": "Mud Shot",
+      "type": "Ground",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 3,
+      "range": "3, 1 Target",
+      "effect": "The target’s Speed is lowed by -1 Combat Stage."
+    },
+    {
+      "name": "Block",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "The target is Stuck and Trapped until the beginning of your next turn."
+    },
+    {
+      "name": "Punishment",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Punishment’s Damage Base is raised by +1 for each positive Combat Stage the target has, to a maximum of DB 12."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Sand Force",
+      "frequency": "Static",
+      "effect": "While on sandy terrain or in Sandstorms, the user’s Ground, Rock, and Steel-Typed damaging moves deal +5 Damage."
+    },
+    {
+      "name": "Defiant",
+      "frequency": "Static",
+      "effect": "Whenever the user has its Combat Stages lowered, by something other than its own Moves or Abilities, the user’s Attack is raised 2 Combat Stages."
+    }
+  ],
+  "capabilities": {
+    "overland": 8,
+    "swim": 6,
+    "jump": "3/3",
+    "power": 8,
+    "weight": 4,
+    "size": "Large",
+    "other": [
+      "Groundshaper",
+      "Mountable 1",
+      "Tremorsense"
+    ]
+  }
+}

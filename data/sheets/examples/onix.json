@@ -1,0 +1,151 @@
+{
+  "slug": "examples-onix",
+  "nickname": "Onix",
+  "species": "Onix",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Jolly",
+  "types": [
+    "Rock",
+    "Ground"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 2,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "satk": {
+      "base": -1,
+      "added": 4,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "spd": {
+      "base": 1,
+      "added": 10,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 48,
+    "currentHp": 48,
+    "tick": 4,
+    "evasion": {
+      "vsAtk": 4,
+      "vsSatk": 1,
+      "vsAny": 3
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Rage",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 2,
+      "damageRoll": "1d6+3 / 7",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Spirit Surge",
+      "effect": "The user becomes Enraged. Until the end of the user’s next turn, if the user is Enraged, the user gains +1 Attack Combat Stage whenever they are damaged by an Damaging Move or Attack."
+    },
+    {
+      "name": "Rock Tomb",
+      "type": "Rock",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 5,
+      "range": "6, 1 Target",
+      "effect": "Rock Tomb lowers the target’s Speed by -1 Combat Stage."
+    },
+    {
+      "name": "Rock Polish",
+      "type": "Rock",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Speed 2 Combat Stages."
+    },
+    {
+      "name": "Curse",
+      "type": "Ghost",
+      "category": "Status",
+      "frequency": "See Text",
+      "range": "Self",
+      "effect": "If the user is not a Ghost Type, Curse has a Frequency of EOT, and when used the user lowers its Speed by -1 Combat Stage, but raises Attack and Defense by +1 Combat Stage each.  If the user is a Ghost Type, Curse has a Frequency of Scene, and when used the user loses 1/3rd of their Max Hit Points and a target Pokémon or Trainer within 8 meters of the user becomes Cursed. This Hit Point loss cannot be prevented in any way."
+    },
+    {
+      "name": "Stealth Rock",
+      "type": "Rock",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Field, Hazard",
+      "effect": "Set 4 square meters of Stealth Rock hazards within 6 meters. If a foe moves within 2 meters of a space occupied by Rocks, move at most one Rock to the offender, then destroy the Rock. When that happens, the Stealth Rock causes a foe to lose a Tick of Hit Points. Stealth Rock is considered to be dealing damage; Apply Weakness and Resistance. Do not apply stats. A Pokémon who has been hit by a Stealth Rock Hazard cannot get hit by another in the same encounter until it is returned to a Poké Ball and then sent back out."
+    },
+    {
+      "name": "Tackle",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash, Push",
+      "effect": "The target is pushed 2 Meters."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Weak Armor",
+      "frequency": "At-Will – Free Action",
+      "effect": "The user may lower its Defense by 1 Combat Stage, and gain +1 Speed Combat Stage. This is done after the triggering damage is resolved."
+    },
+    {
+      "name": "Frighten",
+      "frequency": "Scene – Swift Action",
+      "effect": "Lower the target’s Speed 2 Combat Stages."
+    }
+  ],
+  "natureMod": {
+    "plus": "spd",
+    "minus": "satk"
+  },
+  "capabilities": {
+    "overland": 7,
+    "swim": 4,
+    "burrow": 7,
+    "jump": "2/3",
+    "power": 10,
+    "weight": 6,
+    "size": "Huge",
+    "other": [
+      "Groundshaper",
+      "Reach 3",
+      "Mountable 5",
+      "Tremorsense",
+      "Underdog"
+    ]
+  }
+}

@@ -1,0 +1,146 @@
+{
+  "slug": "examples-magearna",
+  "nickname": "Magearna",
+  "species": "Magearna",
+  "level": 20,
+  "gender": "No Gender",
+  "shiny": false,
+  "nature": "Gentle",
+  "types": [
+    "Steel",
+    "Fairy"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "def": {
+      "base": -1,
+      "added": 5,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 1,
+      "added": 6,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 69,
+    "currentHp": 69,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 3,
+      "vsSatk": 4,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Sonic Boom",
+      "type": "Normal",
+      "category": "Special",
+      "frequency": "EOT",
+      "ac": 6,
+      "range": "8, 1 Target",
+      "effect": "Sonic Boom causes the target to lose 15 Hit Points. Sonic Boom is Special and interacts with other moves and effects as such ( Special Evasion may be applied to avoid it, Mirror Coat can reflect it, etc. )"
+    },
+    {
+      "name": "Defense Curl",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "Self",
+      "effect": "The user’s Defense is raised 1 Combat Stage and they become Curled Up until the end of the Scene or they are Recalled or Take a Breather. When using the Moves Rollout or Ice Ball while Curled Up, the user gains a +10 bonus to the damage rolls of those Moves."
+    },
+    {
+      "name": "Psybeam",
+      "type": "Psychic",
+      "category": "Special",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Psybeam Confuses the target on 19+."
+    },
+    {
+      "name": "Aurora Beam",
+      "type": "Ice",
+      "category": "Special",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Aurora Beam lowers the target’s Attack 1 Combat Stage on 18+."
+    },
+    {
+      "name": "Lucky Chant",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Blessing",
+      "effect": "Blessing – Any user affected by Lucky Chant may activate it when receiving a Critical Hit to cause the attack to instead deal damage as if it was not a Critical Hit. Lucky Chant may be activated 3 times, and then disappears."
+    },
+    {
+      "name": "Helping Hand",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "4, 1 Target, Priority",
+      "effect": "Helping Hand grants the target +2 on their next Accuracy Roll this round, and +10 to the next Damage Roll this round."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Soul Heart",
+      "frequency": "Scene x2 – Free Action",
+      "effect": "The user receives +2 Special Attack Combat Stages and gains a tick of Temporary Hit Points."
+    },
+    {
+      "name": "Quick Curl",
+      "frequency": "Scene – Free Action",
+      "effect": "Connection - Defense Curl. The user may activate this Ability to use Defense Curl as an Standard Action Interrupt and gain +10 Damage Reduction for 1 full round."
+    }
+  ],
+  "natureMod": {
+    "plus": "sdef",
+    "minus": "def"
+  },
+  "capabilities": {
+    "overland": 6,
+    "swim": 3,
+    "jump": "1/1",
+    "power": 6,
+    "weight": 4,
+    "size": "Medium",
+    "other": [
+      "Aura  Reader",
+      "Dead Silent",
+      "Telepathy"
+    ]
+  }
+}

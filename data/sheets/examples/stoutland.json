@@ -1,0 +1,135 @@
+{
+  "slug": "examples-stoutland",
+  "nickname": "Stoutland",
+  "species": "Stoutland",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Lax",
+  "types": [
+    "Normal"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "def": {
+      "base": 1,
+      "added": 8,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 2,
+      "stage": 0
+    },
+    "sdef": {
+      "base": -1,
+      "added": 4,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 72,
+    "currentHp": 72,
+    "tick": 7,
+    "evasion": {
+      "vsAtk": 3,
+      "vsSatk": 2,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Odor Sleuth",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "range": "Self, Swift Action",
+      "effect": "Odor Sleuth may be activated as a Swift Action on the user’s turn. For the rest of the turn, the user’s Normal-Type and Fighting-Type Moves can hit and affect Ghost-Type targets, and the user can see through the Illusion Ability, Moves with the Illusion keyword, and effects created by the Illusionist Capability, ignoring all effects from those."
+    },
+    {
+      "name": "Take Down",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 11,
+      "damageRoll": "3d10+10",
+      "frequency": "EOT",
+      "ac": 5,
+      "range": "Melee, 1 Target, Dash, Recoil 1/3",
+      "effect": "You may perform a Trip Maneuver against the target as a Free Action."
+    },
+    {
+      "name": "Bite",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Bite Flinches the target on 15+."
+    },
+    {
+      "name": "Helping Hand",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "4, 1 Target, Priority",
+      "effect": "Helping Hand grants the target +2 on their next Accuracy Roll this round, and +10 to the next Damage Roll this round."
+    },
+    {
+      "name": "Work Up",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Attack 1 Combat Stage and raise the user’s Special Attack 1 Combat Stage."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Vital Spirit",
+      "frequency": "Static",
+      "effect": "The user is immune to the Sleep condition, and cannot use the move Rest. Defensive."
+    },
+    {
+      "name": "Run Away",
+      "frequency": "Static",
+      "effect": "The user does not provoke Attacks of Opportunity by Shifting.  The user cannot be Trapped."
+    }
+  ],
+  "natureMod": {
+    "plus": "def",
+    "minus": "sdef"
+  },
+  "capabilities": {
+    "overland": 7,
+    "swim": 5,
+    "jump": "1/2",
+    "power": 5,
+    "weight": 4,
+    "size": "Medium",
+    "other": [
+      "Tracker",
+      "Naturewalk (Grassland, Urban)"
+    ]
+  }
+}

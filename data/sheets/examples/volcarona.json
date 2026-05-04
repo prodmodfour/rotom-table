@@ -1,0 +1,134 @@
+{
+  "slug": "examples-volcarona",
+  "nickname": "Volcarona",
+  "species": "Volcarona",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Proud",
+  "types": [
+    "Bug",
+    "Fire"
+  ],
+  "stats": {
+    "hp": {
+      "base": 1,
+      "added": 3,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "satk": {
+      "base": -1,
+      "added": 10,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 69,
+    "currentHp": 69,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 3,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Fire Spin",
+      "type": "Fire",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "Scene x2",
+      "ac": 4,
+      "range": "3, 1 Target",
+      "effect": "The target is put in a Vortex."
+    },
+    {
+      "name": "Leech Life",
+      "type": "Bug",
+      "category": "Physical",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "After the target takes damage, the user gains HP equal to half of the damage they dealt to the target."
+    },
+    {
+      "name": "Gust",
+      "type": "Flying",
+      "category": "Special",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "If the target is airborne as a result of Fly or Sky Drop, Gust can hit them, ignoring Range and has a Damage Base of 8 instead."
+    },
+    {
+      "name": "Whirlwind",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "Line 6",
+      "effect": "All targets are pushed X meters, where X is 8 minus their weight class. If the Line targets into a Smokescreen, the smoke is dispersed. All hazards in the Whirlwind are destroyed."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Flame Body",
+      "frequency": "Scene – Free Action",
+      "effect": "The attacking foe becomes Burned."
+    },
+    {
+      "name": "Swarm",
+      "frequency": "Static",
+      "effect": "The user gains Last Chance with Bug."
+    }
+  ],
+  "natureMod": {
+    "plus": "hp",
+    "minus": "satk"
+  },
+  "capabilities": {
+    "overland": 2,
+    "sky": 7,
+    "swim": 3,
+    "jump": "1/1",
+    "power": 3,
+    "weight": 3,
+    "size": "Large",
+    "other": [
+      "Firestarter",
+      "Heater",
+      "Egg Warmer"
+    ]
+  }
+}

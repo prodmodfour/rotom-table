@@ -1,0 +1,147 @@
+{
+  "slug": "examples-kirlia",
+  "nickname": "Kirlia",
+  "species": "Kirlia",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Jolly",
+  "types": [
+    "Psychic",
+    "Fairy"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 2,
+      "stage": 0
+    },
+    "satk": {
+      "base": -1,
+      "added": 6,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    },
+    "spd": {
+      "base": 1,
+      "added": 7,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 51,
+    "currentHp": 51,
+    "tick": 5,
+    "evasion": {
+      "vsAtk": 1,
+      "vsSatk": 2,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Lucky Chant",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Blessing",
+      "effect": "Blessing – Any user affected by Lucky Chant may activate it when receiving a Critical Hit to cause the attack to instead deal damage as if it was not a Critical Hit. Lucky Chant may be activated 3 times, and then disappears."
+    },
+    {
+      "name": "Disarming Voice",
+      "type": "Fairy",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "range": "Burst 1",
+      "effect": "Disarming Voice cannot miss."
+    },
+    {
+      "name": "Teleport",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Self, Interrupt",
+      "effect": "The user Teleports up to X meters, where X is its Teleporter Capability. Teleport can be used as an Interrupt at any time. Moves that targeted Teleport’s user continue through the desired target’s space if the Move allows for it as if the user hadn’t been there; single target moves simply miss."
+    },
+    {
+      "name": "Magical Leaf",
+      "type": "Grass",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "EOT",
+      "range": "8, 1 Target",
+      "effect": "Magical Leaf cannot miss."
+    },
+    {
+      "name": "Double Team",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Self, Illusion, Coat",
+      "effect": "The user gains 3 activations of Double Team. The user may either activate Double Team when being targeted by an attack to increase their Evasion by +2 against that attack; or when making an attack to increase their Accuracy by +2 for that attack."
+    },
+    {
+      "name": "Confusion",
+      "type": "Psychic",
+      "category": "Special",
+      "db": 7,
+      "damageRoll": "2d6+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Confusion Confuses the target on 19+."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Steadfast",
+      "frequency": "At-Will – Free Action",
+      "effect": "The user’s Speed is raised by +1 Combat Stage."
+    },
+    {
+      "name": "Synchronize",
+      "frequency": "Scene – Free Action",
+      "effect": "The foe which caused the Status Condition is given the same Status they inflicted."
+    }
+  ],
+  "natureMod": {
+    "plus": "spd",
+    "minus": "satk"
+  },
+  "capabilities": {
+    "overland": 5,
+    "swim": 3,
+    "jump": "1/1",
+    "power": 2,
+    "weight": 2,
+    "size": "Small",
+    "other": [
+      "Telekinetic",
+      "Telepath",
+      "Naturewalk (Forest, Urban)",
+      "Underdog"
+    ]
+  }
+}

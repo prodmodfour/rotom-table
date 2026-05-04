@@ -1,0 +1,157 @@
+{
+  "slug": "examples-palkia",
+  "nickname": "Palkia",
+  "species": "Palkia",
+  "level": 20,
+  "gender": "No Gender",
+  "shiny": false,
+  "nature": "Cuddly",
+  "types": [
+    "Water",
+    "Dragon"
+  ],
+  "stats": {
+    "hp": {
+      "base": 1,
+      "added": 6,
+      "stage": 0
+    },
+    "atk": {
+      "base": -1,
+      "added": 3,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 78,
+    "currentHp": 78,
+    "tick": 7,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 3,
+      "vsAny": 3
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Power Gem",
+      "type": "Rock",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10 / 19",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "None"
+    },
+    {
+      "name": "Scary Face",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "4, 1 Target, Social",
+      "effect": "The target’s Speed is lowered 2 Combat Stages."
+    },
+    {
+      "name": "Dragon Breath",
+      "type": "Dragon",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Dragon Breath Paralyzes the Target on 15+."
+    },
+    {
+      "name": "Ancient Power",
+      "type": "Rock",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "6, 1 Target, Spirit Surge",
+      "effect": "On 19+, the user has each of its stats raised by +1 Combat Stage."
+    },
+    {
+      "name": "Slash",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, Pass",
+      "effect": "Slash is a Critical Hit on 18+."
+    },
+    {
+      "name": "Water Pulse",
+      "type": "Water",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "8, 1 Target, Aura",
+      "effect": "Water Pulse Confuses the target on 17+."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Transporter",
+      "frequency": "Daily x3 – Free Action"
+    },
+    {
+      "name": "Telepathy",
+      "frequency": "Static",
+      "effect": "The user gains +1 Evasion. Whenever an Ally uses a damaging area-of-effect attack that would hit you, you may Disengage as a Free Action before the attack resolves."
+    }
+  ],
+  "natureMod": {
+    "plus": "hp",
+    "minus": "atk"
+  },
+  "capabilities": {
+    "overland": 7,
+    "sky": 7,
+    "swim": 7,
+    "jump": "4/4",
+    "power": 10,
+    "weight": 6,
+    "size": "Gigantic",
+    "other": [
+      "Teleporter 4",
+      "Aura Reader",
+      "Telekinetic",
+      "Telepath",
+      "Mountable 2"
+    ]
+  }
+}

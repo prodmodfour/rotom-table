@@ -1,0 +1,145 @@
+{
+  "slug": "examples-munna",
+  "nickname": "Munna",
+  "species": "Munna",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Proud",
+  "types": [
+    "Psychic"
+  ],
+  "stats": {
+    "hp": {
+      "base": 1,
+      "added": 9,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 2,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "satk": {
+      "base": -1,
+      "added": 5,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 2,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 84,
+    "currentHp": 84,
+    "tick": 8,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 2,
+      "vsAny": 0
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Defense Curl",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "Self",
+      "effect": "The user’s Defense is raised 1 Combat Stage and they become Curled Up until the end of the Scene or they are Recalled or Take a Breather. When using the Moves Rollout or Ice Ball while Curled Up, the user gains a +10 bonus to the damage rolls of those Moves."
+    },
+    {
+      "name": "Hypnosis",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 6,
+      "range": "4, 1 Target",
+      "effect": "The target falls Asleep."
+    },
+    {
+      "name": "Yawn",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "range": "2, 1 Target, Social",
+      "effect": "The target falls Asleep at the end of their next turn. Yawn cannot miss."
+    },
+    {
+      "name": "Imprison",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "range": "10, 1 Target",
+      "effect": "The target is Locked for the rest of the Scene. A Locked target may not use any Moves the user knows. Imprison cannot miss."
+    },
+    {
+      "name": "Psybeam",
+      "type": "Psychic",
+      "category": "Special",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Psybeam Confuses the target on 19+."
+    },
+    {
+      "name": "Psywave",
+      "type": "Psychic",
+      "category": "Special",
+      "frequency": "Scene",
+      "ac": 5,
+      "range": "6, 1 Target",
+      "effect": "Roll 1d4; on 1 the target loses Hit Points equal to half the user’s Level; on 2 the target loses Hit Points equal to the user’s Level; on 3 the target loses Hit Points equal to 1.5x the user’s level; on 4 the target loses Hit Points equal to the user’s Level doubled. Do not apply weakness or resistance, and do not apply Stats. Do apply Immunity."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Dream Smoke",
+      "frequency": "Scene – Free Action",
+      "effect": "The attacking foe falls Asleep."
+    },
+    {
+      "name": "Hypnotic",
+      "frequency": "Static",
+      "effect": "Connection - Hypnosis. When used by the user, Hypnosis cannot miss."
+    }
+  ],
+  "natureMod": {
+    "plus": "hp",
+    "minus": "satk"
+  },
+  "capabilities": {
+    "overland": 3,
+    "swim": 2,
+    "levitate": 4,
+    "jump": "1/1",
+    "power": 1,
+    "weight": 2,
+    "size": "Small",
+    "other": [
+      "Dream Mist",
+      "Dream Reader",
+      "Telekinetic",
+      "Underdog"
+    ]
+  }
+}

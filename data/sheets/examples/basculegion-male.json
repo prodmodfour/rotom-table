@@ -1,0 +1,138 @@
+{
+  "slug": "examples-basculegion-male",
+  "nickname": "Basculegion Male",
+  "species": "Basculegion Male",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Brave",
+  "types": [
+    "Water",
+    "Ghost"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "atk": {
+      "base": 1,
+      "added": 8,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "spd": {
+      "base": -1,
+      "added": 3,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 75,
+    "currentHp": 75,
+    "tick": 7,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 2,
+      "vsAny": 1
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Bite",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Bite Flinches the target on 15+."
+    },
+    {
+      "name": "Zen Headbutt",
+      "type": "Psychic",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10 / 19",
+      "frequency": "EOT",
+      "ac": 4,
+      "range": "Melee, 1 Target, Dash",
+      "effect": "Zen Headbutt Flinches the target on 15+."
+    },
+    {
+      "name": "Aqua Jet",
+      "type": "Water",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Priority",
+      "effect": "None"
+    },
+    {
+      "name": "Hex",
+      "type": "Ghost",
+      "category": "Special",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Once a Scene, if Hex’s target has a Status Affliction, you may have Hex’s Damage Base be 13 instead (4d10+10 / 35)."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Aqua Bullet",
+      "frequency": "Static",
+      "effect": "Connection - Aqua Jet. The user may use Water- Type Moves as a Full Action to gain Sky 10 and shift in a straight line before attempting to use their Move. When shifting this way, the user does not provoke attacks of opportunity."
+    },
+    {
+      "name": "Adaptability",
+      "frequency": "Static",
+      "effect": "The user gains a +1d10 Bonus to Damage Rolls with Moves with which they apply STAB."
+    }
+  ],
+  "natureMod": {
+    "plus": "atk",
+    "minus": "spd"
+  },
+  "capabilities": {
+    "overland": 1,
+    "swim": 8,
+    "jump": "3/3",
+    "power": 5,
+    "weight": 5,
+    "size": "Huge",
+    "other": [
+      "Darkvision",
+      "Dead Silent",
+      "Fountain",
+      "Gilled",
+      "Mountable 2",
+      "Naturewalk (Ocean)"
+    ]
+  }
+}

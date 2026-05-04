@@ -1,0 +1,145 @@
+{
+  "slug": "examples-oddish",
+  "nickname": "Oddish",
+  "species": "Oddish",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Bashful",
+  "types": [
+    "Grass",
+    "Poison"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 9,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 57,
+    "currentHp": 57,
+    "tick": 5,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 2,
+      "vsAny": 1
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Stun Spore",
+      "type": "Grass",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 6,
+      "range": "6, 1 Target, Powder",
+      "effect": "The target is Paralyzed."
+    },
+    {
+      "name": "Sleep Powder",
+      "type": "Grass",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 6,
+      "range": "4, 1 Target, Powder",
+      "effect": "The target falls asleep."
+    },
+    {
+      "name": "Poison Powder",
+      "type": "Poison",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 6,
+      "range": "4, 1 Target, Powder",
+      "effect": "The target is Poisoned."
+    },
+    {
+      "name": "Sweet Scent",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "ac": 2,
+      "range": "Burst 2, Friendly",
+      "effect": "Targets hit by Sweet Scent gain a -2 Penalty to Evasion. (Total Evasion may not be lowered to a negative value. )"
+    },
+    {
+      "name": "Absorb",
+      "type": "Grass",
+      "category": "Special",
+      "db": 4,
+      "damageRoll": "1d8+6",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "After the target takes damage, the user gains Hit Points equal to half of the damage they dealt to the target."
+    },
+    {
+      "name": "Acid",
+      "type": "Poison",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Cone 2",
+      "effect": "Acid lowers the target’s Special Defense 1 Combat Stage on 18+."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Run Away",
+      "frequency": "Static",
+      "effect": "The user does not provoke Attacks of Opportunity by Shifting.  The user cannot be Trapped."
+    },
+    {
+      "name": "Chlorophyll",
+      "frequency": "Static",
+      "effect": "While in Sunny Weather or under 50% Max Hit Points, the user’s Initiative is doubled."
+    }
+  ],
+  "capabilities": {
+    "overland": 4,
+    "swim": 2,
+    "burrow": 1,
+    "jump": "1/1",
+    "power": 1,
+    "weight": 1,
+    "size": "Small",
+    "other": [
+      "Naturewalk (Grassland, Forest)",
+      "Underdog"
+    ]
+  }
+}

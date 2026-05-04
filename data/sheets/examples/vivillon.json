@@ -1,0 +1,115 @@
+{
+  "slug": "examples-vivillon",
+  "nickname": "Vivillon",
+  "species": "Vivillon",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Distracted",
+  "types": [
+    "Bug",
+    "Flying"
+  ],
+  "stats": {
+    "hp": {
+      "base": 1,
+      "added": 4,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "def": {
+      "base": -1,
+      "added": 5,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 69,
+    "currentHp": 69,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 1,
+      "vsSatk": 2,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Psybeam",
+      "type": "Psychic",
+      "category": "Special",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Psybeam Confuses the target on 19+."
+    },
+    {
+      "name": "Struggle Bug",
+      "type": "Bug",
+      "category": "Special",
+      "db": 7,
+      "damageRoll": "2d6+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Cone 2",
+      "effect": "On hit, lowers the target’s Special Attack by -1 CS."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Compound Eyes",
+      "frequency": "Static",
+      "effect": "The user gains a +3 Bonus to all Accuracy Rolls."
+    },
+    {
+      "name": "Shield Dust",
+      "frequency": "Static",
+      "effect": "The user ignores the secondary effects that trigger during Accuracy Roll of damaging Moves that target the user. For example, Flamethrower can never inflict the Burn Condition. Defensive."
+    }
+  ],
+  "natureMod": {
+    "plus": "hp",
+    "minus": "def"
+  },
+  "capabilities": {
+    "overland": 3,
+    "sky": 8,
+    "swim": 1,
+    "jump": "1/2",
+    "power": 1,
+    "weight": 1,
+    "size": "Medium",
+    "other": [
+      "Naturewalk (Grassland, Forest)",
+      "Threaded",
+      "Wallclimber",
+      "Underdog"
+    ]
+  }
+}

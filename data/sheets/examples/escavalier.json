@@ -1,0 +1,140 @@
+{
+  "slug": "examples-escavalier",
+  "nickname": "Escavalier",
+  "species": "Escavalier",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Cuddly",
+  "types": [
+    "Bug",
+    "Steel"
+  ],
+  "stats": {
+    "hp": {
+      "base": 1,
+      "added": 5,
+      "stage": 0
+    },
+    "atk": {
+      "base": -1,
+      "added": 7,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 69,
+    "currentHp": 69,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 3,
+      "vsSatk": 2,
+      "vsAny": 1
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Leer",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Cone 2, Friendly, Social",
+      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
+    },
+    {
+      "name": "Fury Attack",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 2,
+      "damageRoll": "1d6+3 / 7",
+      "frequency": "At-Will",
+      "ac": 4,
+      "range": "Melee, 1 Target, Five Strike",
+      "effect": "None"
+    },
+    {
+      "name": "Headbutt",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Headbutt Flinches the target on 15+."
+    },
+    {
+      "name": "Quick Guard",
+      "type": "Fighting",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Melee, Interrupt, Shield, Trigger",
+      "effect": "If the user or an adjacent ally is targeted by a Priority or Interrupt Attack, Quick Guard may be declared as an Interrupt, causing the triggering attack to have no effect."
+    },
+    {
+      "name": "Twineedle",
+      "type": "Bug",
+      "category": "Physical",
+      "db": 5,
+      "damageRoll": "1d8+8",
+      "frequency": "At-Will",
+      "ac": 3,
+      "range": "Melee, 1 Target, Double Strike",
+      "effect": "Twineedle Poisons the target on an Accuracy Check of 18+"
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Shell Armor",
+      "frequency": "Static",
+      "effect": "The user is immune to Critical Hits; they are instead normal hits. Defensive."
+    },
+    {
+      "name": "Lancer",
+      "frequency": "Static",
+      "effect": "During their turn, if the user Shifts at least 3 meters, they gain a +3 Bonus to Critical Hit Range until the beginning of their next turn. If they do not Shift or Disengage at all, they gain +5 Damage Reduction until the beginning of their next turn."
+    }
+  ],
+  "natureMod": {
+    "plus": "hp",
+    "minus": "atk"
+  },
+  "capabilities": {
+    "overland": 5,
+    "sky": 7,
+    "swim": 3,
+    "jump": "1/1",
+    "power": 4,
+    "weight": 3,
+    "size": "Medium",
+    "other": [
+      "Naturewalk (Forest)"
+    ]
+  }
+}

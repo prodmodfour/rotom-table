@@ -1,0 +1,150 @@
+{
+  "slug": "examples-absol",
+  "nickname": "Absol",
+  "species": "Absol",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Quiet",
+  "types": [
+    "Dark"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "satk": {
+      "base": 1,
+      "added": 5,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "spd": {
+      "base": -1,
+      "added": 5,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 69,
+    "currentHp": 69,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 2,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Bite",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Bite Flinches the target on 15+."
+    },
+    {
+      "name": "Pursuit",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "If the foe is fleeing or being switched out, Pursuit may be used as an Interrupt, targeting the triggering foe. When used as an Interrupt, Pursuit grants the user a +5 bonus to all Movement Speeds, and has a Damage Base of 8 (2d8+10 / 19)."
+    },
+    {
+      "name": "Feint",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Trigger",
+      "effect": "If a foe uses a Move with the Shield Keyword in response to one of your actions, you may activate Feint to cause the triggering Move to Fail. Feint is activated as a Free Action."
+    },
+    {
+      "name": "Double Team",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Self, Illusion, Coat",
+      "effect": "The user gains 3 activations of Double Team. The user may either activate Double Team when being targeted by an attack to increase their Evasion by +2 against that attack; or when making an attack to increase their Accuracy by +2 for that attack."
+    },
+    {
+      "name": "Taunt",
+      "type": "Dark",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 3,
+      "range": "6, 1 Target, Social",
+      "effect": "The target becomes Enraged."
+    },
+    {
+      "name": "Quick Attack",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Priority",
+      "effect": "None."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Super Luck",
+      "frequency": "Static",
+      "effect": "The Pokémon’s Moves are Critical Hits on 18-20. If a Move already has an extended Critical Hit range, Super Luck extends that range by 2."
+    },
+    {
+      "name": "Forewarn",
+      "frequency": "Scene – Free Action",
+      "effect": "The Move with the highest Damage Dice Roll known by the targeted foe is revealed. If there is a tie, all tied Moves are revealed. The Moves revealed gain a -2 Penalty during Accuracy Checks when used by the target for the rest of the encounter."
+    }
+  ],
+  "natureMod": {
+    "plus": "satk",
+    "minus": "spd"
+  },
+  "capabilities": {
+    "overland": 7,
+    "swim": 4,
+    "jump": "2/2",
+    "power": 3,
+    "weight": 3,
+    "size": "Medium",
+    "other": [
+      "Darkvision",
+      "Stealth",
+      "Tracker",
+      "Naturewalk (Grassland,  Forest)",
+      "Premonition"
+    ]
+  }
+}

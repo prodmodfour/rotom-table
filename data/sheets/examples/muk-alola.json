@@ -1,0 +1,142 @@
+{
+  "slug": "examples-muk-alola",
+  "nickname": "Muk Alola",
+  "species": "Muk Alola",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Gentle",
+  "types": [
+    "Poison",
+    "Dark"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "def": {
+      "base": -1,
+      "added": 3,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 1,
+      "added": 11,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 81,
+    "currentHp": 81,
+    "tick": 8,
+    "evasion": {
+      "vsAtk": 1,
+      "vsSatk": 4,
+      "vsAny": 1
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Poison Fang",
+      "type": "Poison",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Poison Fang Badly Poisons the target on 17+."
+    },
+    {
+      "name": "Acid Spray",
+      "type": "Poison",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "Acid Spray lowers the target’s Special Defense 2 Combat Stages."
+    },
+    {
+      "name": "Disable",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "1 Target, Trigger",
+      "effect": "Disable may be used as a Free Action that does not take up a Command whenever the user is hit by a Move. That Move becomes Disabled for the attacker."
+    },
+    {
+      "name": "Bite",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Bite Flinches the target on 15+."
+    },
+    {
+      "name": "Harden",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "Self",
+      "effect": "Raise the user’s Defense 1 Combat Stage."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Gluttony",
+      "frequency": "Static",
+      "effect": "The user may have up to three Food Buffs at once, use up to three Food Buffs per Scene, and may eat two refreshments per half hour."
+    },
+    {
+      "name": "Defy Death",
+      "frequency": "At-Will – Swift Action",
+      "effect": "The user instantly removes up to three injuries, and gains a Tick of Hit Points for each injury removed this way. Defy Death may be used to cure up to three Injuries per day. Injuries removed this way do not count towards the total number of injuries that can be healed per day."
+    }
+  ],
+  "natureMod": {
+    "plus": "sdef",
+    "minus": "def"
+  },
+  "capabilities": {
+    "overland": 5,
+    "swim": 4,
+    "jump": "1/1",
+    "power": 6,
+    "weight": 4,
+    "size": "Medium",
+    "other": [
+      "Amorphous",
+      "Darkvision",
+      "Dead Silent",
+      "Sticky Hold",
+      "Wallclimber"
+    ]
+  }
+}

@@ -1,0 +1,126 @@
+{
+  "slug": "examples-heatran",
+  "nickname": "Heatran",
+  "species": "Heatran",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Modest",
+  "types": [
+    "Fire",
+    "Steel"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "atk": {
+      "base": -1,
+      "added": 3,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "satk": {
+      "base": 1,
+      "added": 6,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 72,
+    "currentHp": 72,
+    "tick": 7,
+    "evasion": {
+      "vsAtk": 3,
+      "vsSatk": 3,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Leer",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Cone 2, Friendly, Social",
+      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
+    },
+    {
+      "name": "Fire Fang",
+      "type": "Fire",
+      "category": "Physical",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "At-Will",
+      "ac": 3,
+      "range": "Melee, 1 Target",
+      "effect": "Fire Fang Burns or Flinches on 18-19 during Accuracy Check; flip a coin to determine whether the foe gets Burned or Flinches. On 20 during Accuracy Check, the foe is Burned and Flinches."
+    },
+    {
+      "name": "Ancient Power",
+      "type": "Rock",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "6, 1 Target, Spirit Surge",
+      "effect": "On 19+, the user has each of its stats raised by +1 Combat Stage."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Flash Fire",
+      "frequency": "Static",
+      "effect": "The user is immune to the damage and effects of Fire-Type attacks. If the user is hit by a Fire-Type attack, they gain +1 CS in their choice of Attack or Special Attack. Defensive."
+    },
+    {
+      "name": "Flame Body",
+      "frequency": "Scene – Free Action",
+      "effect": "The attacking foe becomes Burned."
+    }
+  ],
+  "natureMod": {
+    "plus": "satk",
+    "minus": "atk"
+  },
+  "capabilities": {
+    "overland": 8,
+    "swim": 5,
+    "burrow": 8,
+    "jump": "2/2",
+    "power": 10,
+    "weight": 6,
+    "size": "Huge",
+    "other": [
+      "Firestarter",
+      "Glow",
+      "Heater",
+      "Tremorsense",
+      "Naturewalk  (Cave, Mountain)",
+      "Mountable 1"
+    ]
+  }
+}

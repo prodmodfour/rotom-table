@@ -1,0 +1,134 @@
+{
+  "slug": "examples-parasect",
+  "nickname": "Parasect",
+  "species": "Parasect",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Timid",
+  "types": [
+    "Bug",
+    "Grass"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "atk": {
+      "base": -1,
+      "added": 8,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 8,
+      "stage": 0
+    },
+    "spd": {
+      "base": 1,
+      "added": 3,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 60,
+    "currentHp": 60,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 3,
+      "vsAny": 1
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Fury Cutter",
+      "type": "Bug",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 3,
+      "range": "Melee, 1 Target",
+      "effect": "If Fury Cutter is used successfully and consecutively on the same target, the Damage Base is increased by +4 to a maximum of 16. For example, the first hit would have a DB of 4; the second hit a DB of 8; the third hit a DB of 12; the fourth and further hits a DB of 16. If Fury Cuter misses or fails to damage its target, its Damage Base resets."
+    },
+    {
+      "name": "Poison Powder",
+      "type": "Poison",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 6,
+      "range": "4, 1 Target, Powder",
+      "effect": "The target is Poisoned."
+    },
+    {
+      "name": "Stun Spore",
+      "type": "Grass",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 6,
+      "range": "6, 1 Target, Powder",
+      "effect": "The target is Paralyzed."
+    },
+    {
+      "name": "Leech Life",
+      "type": "Bug",
+      "category": "Physical",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "After the target takes damage, the user gains HP equal to half of the damage they dealt to the target."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Tochukaso",
+      "frequency": "Static",
+      "effect": "The user resists Bug-Type and Poison-Type attacks one step further. Defensive."
+    },
+    {
+      "name": "Dire Spore",
+      "frequency": "Static",
+      "effect": "Connection - Spore. Whenever the user hits a target with Spore, that target is also Poisoned."
+    }
+  ],
+  "natureMod": {
+    "plus": "spd",
+    "minus": "atk"
+  },
+  "capabilities": {
+    "overland": 6,
+    "swim": 2,
+    "burrow": 3,
+    "jump": "1/1",
+    "power": 3,
+    "weight": 3,
+    "size": "Medium",
+    "other": [
+      "Darkvision",
+      "Mushroom Harvest",
+      "Naturewalk (Grassland, Forest)",
+      "Planter (Herbs)",
+      "Underdog"
+    ]
+  }
+}

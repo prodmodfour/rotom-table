@@ -1,0 +1,154 @@
+{
+  "slug": "examples-greninja",
+  "nickname": "Greninja",
+  "species": "Greninja",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Distracted",
+  "types": [
+    "Water",
+    "Dark"
+  ],
+  "stats": {
+    "hp": {
+      "base": 1,
+      "added": 4,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "def": {
+      "base": -1,
+      "added": 3,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 2,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 9,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 66,
+    "currentHp": 66,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 1,
+      "vsSatk": 1,
+      "vsAny": 4
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Bubble",
+      "type": "Water",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Burst 1",
+      "effect": "Bubble lowers the target’s Speed on 16+."
+    },
+    {
+      "name": "Smokescreen",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "5, Ranged Blast 3",
+      "effect": "Smokescreen creates a blast of Smoke that covers the target area; the Smoke persists until the end of the encounter, or until Defog or Whirlwind are used. All targets attacking from or into the Smoke receive a -3 penalty to Accuracy."
+    },
+    {
+      "name": "Pound",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "None"
+    },
+    {
+      "name": "Water Pulse",
+      "type": "Water",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "8, 1 Target, Aura",
+      "effect": "Water Pulse Confuses the target on 17+."
+    },
+    {
+      "name": "Growl",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Burst 1, Friendly, Sonic, Social",
+      "effect": "Growl lowers all Legal Targets Attack 1 Combat Stage."
+    },
+    {
+      "name": "Quick Attack",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Priority",
+      "effect": "None."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Mud Dweller",
+      "frequency": "Static",
+      "effect": "The user resists Ground-Type and Water-Type attacks one step further."
+    },
+    {
+      "name": "Protean",
+      "frequency": "At-Will – Swift Action",
+      "effect": "The user’s Type changes to match the Type of the triggering Move. This Ability resolves before the Move is resolved (And thus you may apply STAB, and trigger other Features and Abilities appropriately)."
+    }
+  ],
+  "natureMod": {
+    "plus": "hp",
+    "minus": "def"
+  },
+  "capabilities": {
+    "overland": 8,
+    "swim": 8,
+    "jump": "3/3",
+    "power": 3,
+    "weight": 3,
+    "size": "Medium",
+    "other": [
+      "Fountain",
+      "Gilled",
+      "Stealth",
+      "Wallclimber",
+      "Naturewalk (Wetlands)"
+    ]
+  }
+}

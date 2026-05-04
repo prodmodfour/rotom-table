@@ -1,0 +1,136 @@
+{
+  "slug": "examples-ambipom",
+  "nickname": "Ambipom",
+  "species": "Ambipom",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Relaxed",
+  "types": [
+    "Normal"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 9,
+      "stage": 0
+    },
+    "def": {
+      "base": 1,
+      "added": 5,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 1,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 1,
+      "stage": 0
+    },
+    "spd": {
+      "base": -1,
+      "added": 9,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 69,
+    "currentHp": 69,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 1,
+      "vsAny": 3
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Astonish",
+      "type": "Ghost",
+      "category": "Physical",
+      "db": 3,
+      "damageRoll": "1d6+5 / 9",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Astonish Flinches the target on 15+. Once per scene, if the target is unaware of the user’s presence, Astonish automatically Flinches the target."
+    },
+    {
+      "name": "Baton Pass",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "Self",
+      "effect": "The user is replaced with another Pokémon from their trainer’s roster. All Combat Stage, Coats, and [Stratagems] on Baton Pass’ user are transferred to the replacement. Baton Pass may be used to switch even if the user is Trapped."
+    },
+    {
+      "name": "Fury Swipes",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 5,
+      "damageRoll": "1d8+8",
+      "frequency": "EOT",
+      "ac": 5,
+      "range": "Melee, 1 Target, Five Strike",
+      "effect": "None"
+    },
+    {
+      "name": "Sand Attack",
+      "type": "Ground",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "2, 1 Target",
+      "effect": "The target is Blinded until the end of their next turn."
+    },
+    {
+      "name": "Tickle",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Lower the target’s Attack 1 Combat Stage and lower the target’s Defense 1 Combat Stage."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Pickup",
+      "frequency": "Daily – Extended Action",
+      "effect": "You may use Pickup as an Extended Action that requires at least 5 minutes. Roll 1d20, consult the Pickup keyword to figure out what you find!"
+    },
+    {
+      "name": "Pickpocket",
+      "frequency": "Scene – Free Action",
+      "effect": "If the opponent has a Held Item and the user does not, the user takes the Held Item the opponent is holding."
+    }
+  ],
+  "natureMod": {
+    "plus": "def",
+    "minus": "spd"
+  },
+  "capabilities": {
+    "overland": 7,
+    "swim": 4,
+    "jump": "3/4",
+    "power": 4,
+    "weight": 2,
+    "size": "Medium",
+    "other": [
+      "Naturewalk  (Forest)"
+    ]
+  }
+}

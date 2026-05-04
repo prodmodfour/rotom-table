@@ -1,0 +1,149 @@
+{
+  "slug": "examples-geodude",
+  "nickname": "Geodude",
+  "species": "Geodude",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Sassy",
+  "types": [
+    "Rock",
+    "Ground"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 1,
+      "added": 6,
+      "stage": 0
+    },
+    "spd": {
+      "base": -1,
+      "added": 4,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 57,
+    "currentHp": 57,
+    "tick": 5,
+    "evasion": {
+      "vsAtk": 3,
+      "vsSatk": 2,
+      "vsAny": 1
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Smack Down",
+      "type": "Rock",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "8, 1 Target",
+      "effect": "The target is knocked down to ground level, and loses all Sky or Levitate Speeds for 3 turns. During this time, they may be hit by Ground-Type Moves even if normally immune."
+    },
+    {
+      "name": "Rock Polish",
+      "type": "Rock",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Speed 2 Combat Stages."
+    },
+    {
+      "name": "Magnitude",
+      "type": "Ground",
+      "category": "Physical",
+      "frequency": "EOT",
+      "range": "Burst 2, Groundsource",
+      "effect": "When you use Magnitude, roll 1d6.  Magnitude’s Damage Base is equal to 5+X, where X is the value of the d6. Magnitude can hit targets that are underground, including those using the Move Dig."
+    },
+    {
+      "name": "Rock Throw",
+      "type": "Rock",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10",
+      "frequency": "At-Will",
+      "ac": 4,
+      "range": "6, 1 Target",
+      "effect": "None"
+    },
+    {
+      "name": "Mud Sport",
+      "type": "Ground",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Burst 2",
+      "effect": "All targets in the burst, including the user, gain a Coat which grants them 1 Step of Resistance to Electric Type Moves. After a target has been hit by a damaging Electric Type Move, the coat is removed."
+    },
+    {
+      "name": "Tackle",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash, Push",
+      "effect": "The target is pushed 2 Meters."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Levitate",
+      "frequency": "Static",
+      "effect": "The Pokémon is immune to the damage and effects of Ground Type Moves, and gains a Levitate Speed of 4, or has existing Levitate Speeds increased by +2. Defensive."
+    },
+    {
+      "name": "Sturdy",
+      "frequency": "Static",
+      "effect": "The user is immune to Moves with the Execute Keyword. If a single source of Damage or Hit Point Loss would cause the user to lose more than X Hit Points, the damage or Hit Point loss is instead reduced to X. X is equal to 50% of their Max Hit Points. Defensive."
+    }
+  ],
+  "natureMod": {
+    "plus": "sdef",
+    "minus": "spd"
+  },
+  "capabilities": {
+    "overland": 4,
+    "swim": 2,
+    "levitate": 3,
+    "burrow": 3,
+    "jump": "0/1",
+    "power": 3,
+    "weight": 2,
+    "size": "Small",
+    "other": [
+      "Underdog",
+      "Volatile Bomb"
+    ]
+  }
+}

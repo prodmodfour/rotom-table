@@ -1,0 +1,127 @@
+{
+  "slug": "examples-thievul",
+  "nickname": "Thievul",
+  "species": "Thievul",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Rash",
+  "types": [
+    "Dark"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "satk": {
+      "base": 1,
+      "added": 8,
+      "stage": 0
+    },
+    "sdef": {
+      "base": -1,
+      "added": 5,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 63,
+    "currentHp": 63,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 1,
+      "vsSatk": 2,
+      "vsAny": 3
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Snarl",
+      "type": "Dark",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "ac": 3,
+      "range": "Cone 2, Sonic",
+      "effect": "All Legal Targets have their Special Attack lowered 1 Combat Stage."
+    },
+    {
+      "name": "Assurance",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "When you hit with Assurance, if Assurance’s target has already been damaged by a Move on the same round Assurance is being used, Assurance has a Damage Base of 12 (3d12+10 / 30) instead. This effect may trigger only once per Scene per Target."
+    },
+    {
+      "name": "Beat Up",
+      "type": "Dark",
+      "category": "Physical",
+      "frequency": "EOT",
+      "range": "Melee, 1 Target",
+      "effect": "The user and up to two allies adjacent to the target may each make a Struggle Attack against the target. These Struggle Attacks hit for Dark-Type Damage instead of their usual Type. Beat Up may trigger Pack Hunt only once, no matter the number of attacks."
+    },
+    {
+      "name": "Hone Claws",
+      "type": "Dark",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "Self",
+      "effect": "The user’s Accuracy is raised by +1, and the user gains +1 Attack Combat Stage."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Stakeout"
+    },
+    {
+      "name": "Weird Power",
+      "frequency": "Static",
+      "effect": "If the user’s Attack is higher than its Special Attack, the user may add its Attack Stat to its Special Damage Rolls. If their Special Attack is higher, they user may add its Special Attack Stat to its Physical Damage Rolls. This does not stack with Mixed Power."
+    }
+  ],
+  "natureMod": {
+    "plus": "satk",
+    "minus": "sdef"
+  },
+  "capabilities": {
+    "overland": 7,
+    "swim": 4,
+    "jump": "2/2",
+    "power": 5,
+    "weight": 2,
+    "size": "Medium",
+    "other": [
+      "Darkvision",
+      "Naturewalk (Forest, Urban)",
+      "Stealth",
+      "Tracker"
+    ]
+  }
+}

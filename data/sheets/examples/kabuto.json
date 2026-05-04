@@ -1,0 +1,142 @@
+{
+  "slug": "examples-kabuto",
+  "nickname": "Kabuto",
+  "species": "Kabuto",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Cuddly",
+  "types": [
+    "Rock",
+    "Water"
+  ],
+  "stats": {
+    "hp": {
+      "base": 1,
+      "added": 3,
+      "stage": 0
+    },
+    "atk": {
+      "base": -1,
+      "added": 8,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 51,
+    "currentHp": 51,
+    "tick": 5,
+    "evasion": {
+      "vsAtk": 3,
+      "vsSatk": 1,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Leer",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Cone 2, Friendly, Social",
+      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
+    },
+    {
+      "name": "Mud Shot",
+      "type": "Ground",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "At-Will",
+      "ac": 3,
+      "range": "3, 1 Target",
+      "effect": "The target’s Speed is lowed by -1 Combat Stage."
+    },
+    {
+      "name": "Harden",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "Self",
+      "effect": "Raise the user’s Defense 1 Combat Stage."
+    },
+    {
+      "name": "Scratch",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, Pass",
+      "effect": "None"
+    },
+    {
+      "name": "Absorb",
+      "type": "Grass",
+      "category": "Special",
+      "db": 2,
+      "damageRoll": "1d6+3 / 7",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "After the target takes damage, the user gains Hit Points equal to half of the damage they dealt to the target."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Sturdy",
+      "frequency": "Static",
+      "effect": "The user is immune to Moves with the Execute Keyword. If a single source of Damage or Hit Point Loss would cause the user to lose more than X Hit Points, the damage or Hit Point loss is instead reduced to X. X is equal to 50% of their Max Hit Points. Defensive."
+    },
+    {
+      "name": "Unnerve",
+      "frequency": "At-Will - Swift Action",
+      "effect": "The target cannot gain positive Combat Stages or trade in Digestion Buffs for 1 full round."
+    }
+  ],
+  "natureMod": {
+    "plus": "hp",
+    "minus": "atk"
+  },
+  "capabilities": {
+    "overland": 4,
+    "swim": 4,
+    "burrow": 2,
+    "jump": "0/1",
+    "power": 2,
+    "weight": 2,
+    "size": "Small",
+    "other": [
+      "Gilled",
+      "Naturewalk (Ocean, Cave)",
+      "Underdog"
+    ]
+  }
+}

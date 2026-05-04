@@ -1,0 +1,152 @@
+{
+  "slug": "examples-meowth-galar",
+  "nickname": "Meowth Galar",
+  "species": "Meowth Galar",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Careful",
+  "types": [
+    "Steel"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 10,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "satk": {
+      "base": -1,
+      "added": 3,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 1,
+      "added": 5,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 54,
+    "currentHp": 54,
+    "tick": 5,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 2,
+      "vsAny": 1
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Fake Out",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Priority",
+      "effect": "You may only use Fake Out with Priority upon joining an encounter; if you do, Fake Out Flinches the target. Switching out resets the requirement of joining an encounter."
+    },
+    {
+      "name": "Pay Day",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "Daily",
+      "ac": 2,
+      "range": "Cone 2",
+      "effect": "Pay Day scatters metal coins equal in value to 1d8 times the user’s level. If it is a trainer battle, the winner of the battle gets to pick up the coins."
+    },
+    {
+      "name": "Taunt",
+      "type": "Dark",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 3,
+      "range": "6, 1 Target, Social",
+      "effect": "The target becomes Enraged."
+    },
+    {
+      "name": "Hone Claws",
+      "type": "Dark",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "Self",
+      "effect": "The user’s Accuracy is raised by +1, and the user gains +1 Attack Combat Stage."
+    },
+    {
+      "name": "Metal Claw",
+      "type": "Steel",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10",
+      "frequency": "At-Will",
+      "ac": 3,
+      "range": "Melee, 1 Target, Spirit Surge",
+      "effect": "Raise the user’s Attack 1 Combat Stage on 18+."
+    },
+    {
+      "name": "Scratch",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, Pass",
+      "effect": "None"
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Limber",
+      "frequency": "Static",
+      "effect": "The user is immune to Paralysis. Defensive."
+    },
+    {
+      "name": "Pickup",
+      "frequency": "Daily – Extended Action",
+      "effect": "You may use Pickup as an Extended Action that requires at least 5 minutes. Roll 1d20, consult the Pickup keyword to figure out what you find!"
+    }
+  ],
+  "natureMod": {
+    "plus": "sdef",
+    "minus": "satk"
+  },
+  "capabilities": {
+    "overland": 5,
+    "swim": 2,
+    "jump": "1/1",
+    "power": 2,
+    "weight": 1,
+    "size": "Small",
+    "other": [
+      "Fortune",
+      "Naturewalk (Forest)",
+      "Tracker",
+      "Underdog"
+    ]
+  }
+}

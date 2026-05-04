@@ -1,0 +1,149 @@
+{
+  "slug": "examples-deino",
+  "nickname": "Deino",
+  "species": "Deino",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Distracted",
+  "types": [
+    "Dark",
+    "Dragon"
+  ],
+  "stats": {
+    "hp": {
+      "base": 1,
+      "added": 7,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 11,
+      "stage": 0
+    },
+    "def": {
+      "base": -1,
+      "added": 1,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 2,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 69,
+    "currentHp": 69,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 0,
+      "vsSatk": 1,
+      "vsAny": 1
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Headbutt",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Headbutt Flinches the target on 15+."
+    },
+    {
+      "name": "Dragon Rage",
+      "type": "Dragon",
+      "category": "Special",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "If it hits, Dragon Rage causes the target to lose 15 Hit Points. Dragon Rage is Special and interacts with other moves and effects as such (Special Evasion may be applied to avoid it, Mirror Coat can reflect it, etc.)."
+    },
+    {
+      "name": "Roar",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "ac": 2,
+      "range": "Burst 1, Sonic, Social",
+      "effect": "When declaring Roar, the user does nothing and may not Shift. At the end of the round, the user Shifts and uses Roar.  Targets hit by Roar immediately Shift away from the target using their highest usable movement capability, and towards their Trainer if possible. If the target is an owned Pokémon and ends this shift within 6 meters of their Poké Ball, they are immediately recalled to their Poké Ball. If that Trainer sends out a replacement, they do not lose their Pokémon turn."
+    },
+    {
+      "name": "Dragon Breath",
+      "type": "Dragon",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Dragon Breath Paralyzes the Target on 15+."
+    },
+    {
+      "name": "Tackle",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash, Push",
+      "effect": "The target is pushed 2 Meters."
+    },
+    {
+      "name": "Focus Energy",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "Self",
+      "effect": "The user becomes Pumped. While Pumped, the user’s Critical Range is extended by 2, or 18+ if the Critical Range is not otherwise extended. Being switched will cause this effect to end."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Hustle",
+      "frequency": "Static",
+      "effect": "The user receives a -2 penalty to all Accuracy Rolls and gains a +10 Bonus to All Damage Rolls."
+    },
+    {
+      "name": "Guts",
+      "frequency": "Static",
+      "effect": "While suffering from Burn, Poison, Paralysis, Freezing, or while Asleep, the user’s Attack is raised 2 Combat Stages. If suffering from none of these conditions, the user loses any Combat Stages gained this way."
+    }
+  ],
+  "natureMod": {
+    "plus": "hp",
+    "minus": "def"
+  },
+  "capabilities": {
+    "overland": 5,
+    "swim": 2,
+    "jump": "1/1",
+    "power": 3,
+    "weight": 2,
+    "size": "Small",
+    "other": [
+      "Blindsense",
+      "Underdog"
+    ]
+  }
+}

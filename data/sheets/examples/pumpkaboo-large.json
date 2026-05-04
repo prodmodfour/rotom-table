@@ -1,0 +1,93 @@
+{
+  "slug": "examples-pumpkaboo-large",
+  "nickname": "Pumpkaboo Large",
+  "species": "Pumpkaboo Large",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Quiet",
+  "types": [
+    "Ghost",
+    "Grass"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 8,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    },
+    "satk": {
+      "base": 1,
+      "added": 4,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "spd": {
+      "base": -1,
+      "added": 3,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 57,
+    "currentHp": 57,
+    "tick": 5,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 2,
+      "vsAny": 1
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [],
+  "abilities": [
+    {
+      "name": "Pickup",
+      "frequency": "Daily – Extended Action",
+      "effect": "You may use Pickup as an Extended Action that requires at least 5 minutes. Roll 1d20, consult the Pickup keyword to figure out what you find!"
+    },
+    {
+      "name": "Life Force",
+      "frequency": "Daily x5 – Swift Action",
+      "effect": "The user gains a Tick of Hit Points."
+    }
+  ],
+  "natureMod": {
+    "plus": "satk",
+    "minus": "spd"
+  },
+  "capabilities": {
+    "overland": 2,
+    "swim": 2,
+    "levitate": 5,
+    "jump": "0/1",
+    "power": 1,
+    "weight": 1,
+    "size": "Small",
+    "other": [
+      "Naturewalk (Grassland, Forest)",
+      "Phasing",
+      "Invisibility",
+      "Dead Silent",
+      "Underdog"
+    ]
+  }
+}

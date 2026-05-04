@@ -1,0 +1,149 @@
+{
+  "slug": "examples-joltik",
+  "nickname": "Joltik",
+  "species": "Joltik",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Bashful",
+  "types": [
+    "Bug",
+    "Electric"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 12,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 54,
+    "currentHp": 54,
+    "tick": 5,
+    "evasion": {
+      "vsAtk": 1,
+      "vsSatk": 1,
+      "vsAny": 3
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Screech",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 4,
+      "range": "Burst 2, Friendly, Sonic",
+      "effect": "All Legal Targets have their Defense lowered 2 Combat Stages."
+    },
+    {
+      "name": "Thunder Wave",
+      "type": "Electric",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 4,
+      "range": "6, 1 Target",
+      "effect": "Thunder Wave Paralyzes the target. Targets immune to Electric Attacks are immune to Thunder Wave’s effects."
+    },
+    {
+      "name": "Bug Bite",
+      "type": "Bug",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "If the target has a stored Digestion Buff or has traded in a Digestion Buff this Scene, the user may gain the effects of the Digestion Buff. This does not count towards the usual limit on the user’s Digestion Buffs."
+    },
+    {
+      "name": "String Shot",
+      "type": "Bug",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 3,
+      "range": "Cone 2",
+      "effect": "Targets have their Speed CS lowered by -1. If this lowers their Speed CS to -6, or if their Speed CS was already at -6, the target is instead Stuck."
+    },
+    {
+      "name": "Fury Cutter",
+      "type": "Bug",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 3,
+      "range": "Melee, 1 Target",
+      "effect": "If Fury Cutter is used successfully and consecutively on the same target, the Damage Base is increased by +4 to a maximum of 16. For example, the first hit would have a DB of 4; the second hit a DB of 8; the third hit a DB of 12; the fourth and further hits a DB of 16. If Fury Cuter misses or fails to damage its target, its Damage Base resets."
+    },
+    {
+      "name": "Leech Life",
+      "type": "Bug",
+      "category": "Physical",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "After the target takes damage, the user gains HP equal to half of the damage they dealt to the target."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Unnerve",
+      "frequency": "At-Will - Swift Action",
+      "effect": "The target cannot gain positive Combat Stages or trade in Digestion Buffs for 1 full round."
+    },
+    {
+      "name": "Swarm",
+      "frequency": "Static",
+      "effect": "The user gains Last Chance with Bug."
+    }
+  ],
+  "capabilities": {
+    "overland": 4,
+    "swim": 2,
+    "jump": "1/1",
+    "power": 1,
+    "weight": 1,
+    "size": "Small",
+    "other": [
+      "Naturewalk  (Grassland, Forest)",
+      "Zapper",
+      "Threaded",
+      "Wallclimber",
+      "Underdog"
+    ]
+  }
+}

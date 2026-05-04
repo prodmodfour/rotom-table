@@ -1,0 +1,133 @@
+{
+  "slug": "examples-zoroark",
+  "nickname": "Zoroark",
+  "species": "Zoroark",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Naughty",
+  "types": [
+    "Dark"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "atk": {
+      "base": 1,
+      "added": 7,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "sdef": {
+      "base": -1,
+      "added": 4,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 60,
+    "currentHp": 60,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 1,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Feint Attack",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "range": "Melee, 1 Target",
+      "effect": "Feint Attack cannot miss."
+    },
+    {
+      "name": "Fury Swipes",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 3,
+      "damageRoll": "1d6+5 / 9",
+      "frequency": "EOT",
+      "ac": 5,
+      "range": "Melee, 1 Target, Five Strike",
+      "effect": "None"
+    },
+    {
+      "name": "Hone Claws",
+      "type": "Dark",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "Self",
+      "effect": "The user’s Accuracy is raised by +1, and the user gains +1 Attack Combat Stage."
+    },
+    {
+      "name": "Pursuit",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "If the foe is fleeing or being switched out, Pursuit may be used as an Interrupt, targeting the triggering foe. When used as an Interrupt, Pursuit grants the user a +5 bonus to all Movement Speeds, and has a Damage Base of 8 (2d8+10 / 19)."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Illusion",
+      "effect": "As a Standard Action, the user may mark an object, Pokémon, or Trainer. The user may have a number of targets marked equal to their Focus Rank; to mark a new target, an old mark must be forfeited. Once per round as a Free Action, the user may use illusory powers to make itself look exactly like a marked target. This may be done as the user is being released from a Poké Ball. This change is aesthetic and does not affect typing or Moves. The illusion allows the user to vaguely mimic sounds made by its marked target, but it is not capable of intelligible speech. Whenever the user is hit by a damaging Move, the Illusion is destroyed. The user may also dismiss the Illusion as a Free Action."
+    },
+    {
+      "name": "Pickpocket",
+      "frequency": "Scene – Free Action",
+      "effect": "If the opponent has a Held Item and the user does not, the user takes the Held Item the opponent is holding."
+    }
+  ],
+  "natureMod": {
+    "plus": "atk",
+    "minus": "sdef"
+  },
+  "capabilities": {
+    "overland": 7,
+    "swim": 4,
+    "jump": "2/2",
+    "power": 4,
+    "weight": 4,
+    "size": "Medium",
+    "other": [
+      "Darkvision",
+      "Stealth",
+      "Tracker",
+      "Pack Mon",
+      "Illusionist",
+      "Illusory  Disguise",
+      "Naturewalk (Forest, Grassland)"
+    ]
+  }
+}

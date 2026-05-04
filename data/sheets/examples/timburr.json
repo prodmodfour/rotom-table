@@ -1,0 +1,149 @@
+{
+  "slug": "examples-timburr",
+  "nickname": "Timburr",
+  "species": "Timburr",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Relaxed",
+  "types": [
+    "Fighting"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 10,
+      "stage": 0
+    },
+    "def": {
+      "base": 1,
+      "added": 3,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "spd": {
+      "base": -1,
+      "added": 4,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 69,
+    "currentHp": 69,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 1,
+      "vsAny": 1
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Low Kick",
+      "type": "Fighting",
+      "category": "Physical",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target, Weight Class",
+      "effect": "Low Kick’s Damage Base is equal to twice the target’s Weight Class."
+    },
+    {
+      "name": "Wake-Up Slap",
+      "type": "Fighting",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "If the target is Asleep, Wake-Up Slap has a Damage Base of 10 (3d8+10 / 24) instead, and cures the target of Sleep."
+    },
+    {
+      "name": "Rock Throw",
+      "type": "Rock",
+      "category": "Physical",
+      "db": 5,
+      "damageRoll": "1d8+8 / 13",
+      "frequency": "At-Will",
+      "ac": 4,
+      "range": "6, 1 Target",
+      "effect": "None"
+    },
+    {
+      "name": "Bide",
+      "type": "Normal",
+      "category": "Physical",
+      "frequency": "Scene",
+      "range": "Burst 1, Friendly",
+      "effect": "The user may use Bide as a Reaction Move upon being Hit by a Damaging Move. During their next available turn, the user may Shift and then use Bide, causing all Adjacent foes to lose X HP, where X is the amount of Damage taken since declaring use of Bide (Loss of life through effects such as Poison is not ‘Damage’)."
+    },
+    {
+      "name": "Leer",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Cone 2, Friendly, Social",
+      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
+    },
+    {
+      "name": "Pound",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "None"
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Sheer Force",
+      "frequency": "Static",
+      "effect": "Moves with an Effect Range gain a +10 Bonus to Damage, but Effect Ranges can never be triggered."
+    },
+    {
+      "name": "Huge Power",
+      "frequency": "Static",
+      "effect": "The Pokémon’s Base Attack stat is doubled. This may double any bonuses from Nature or Vitamins, but not bonuses from Trainer Features."
+    }
+  ],
+  "natureMod": {
+    "plus": "def",
+    "minus": "spd"
+  },
+  "capabilities": {
+    "overland": 3,
+    "swim": 2,
+    "jump": "1/1",
+    "power": 4,
+    "weight": 2,
+    "size": "Small",
+    "other": [
+      "Naturewalk  (Mountain, Urban)",
+      "Underdog",
+      "Wielder"
+    ]
+  }
+}

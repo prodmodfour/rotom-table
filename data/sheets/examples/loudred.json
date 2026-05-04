@@ -1,0 +1,148 @@
+{
+  "slug": "examples-loudred",
+  "nickname": "Loudred",
+  "species": "Loudred",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Brave",
+  "types": [
+    "Normal"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "atk": {
+      "base": 1,
+      "added": 8,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "spd": {
+      "base": -1,
+      "added": 3,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 69,
+    "currentHp": 69,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 1,
+      "vsSatk": 1,
+      "vsAny": 1
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Bite",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Bite Flinches the target on 15+."
+    },
+    {
+      "name": "Echoed Voice",
+      "type": "Normal",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "3, 1 Target, Sonic",
+      "effect": "If Echoed Voice was used by any Pokémon or Trainer in the Encounter on the previous round, increase its Damage Base by +4. If Echoed Voice was used by any Pokémon or Trainers during both the previous two rounds, increase its Damage Base by +8."
+    },
+    {
+      "name": "Astonish",
+      "type": "Ghost",
+      "category": "Physical",
+      "db": 3,
+      "damageRoll": "1d6+5 / 9",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Astonish Flinches the target on 15+. Once per scene, if the target is unaware of the user’s presence, Astonish automatically Flinches the target."
+    },
+    {
+      "name": "Supersonic",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 6,
+      "range": "4, 1 Target, Sonic",
+      "effect": "The target becomes Confused. On miss, the target suffers a -2 penalty to Accuracy Rolls for one full round."
+    },
+    {
+      "name": "Screech",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 4,
+      "range": "Burst 2, Friendly, Sonic",
+      "effect": "All Legal Targets have their Defense lowered 2 Combat Stages."
+    },
+    {
+      "name": "Howl",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Burst 1",
+      "effect": "The user and all allies in the Burst have their Attack CS raised by 1."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Soundproof",
+      "frequency": "Static",
+      "effect": "The Pokémon is immune to Moves with the Sonic Keyword. Defensive."
+    },
+    {
+      "name": "Intimidate",
+      "frequency": "At-Will – Swift Action",
+      "effect": "Lower the target’s Attack 1 Combat Stage. You may target a specific foe only once per Scene with Intimidate."
+    }
+  ],
+  "natureMod": {
+    "plus": "atk",
+    "minus": "spd"
+  },
+  "capabilities": {
+    "overland": 5,
+    "swim": 2,
+    "jump": "1/2",
+    "power": 4,
+    "weight": 3,
+    "size": "Medium",
+    "other": [
+      "Naturewalk  (Cave)",
+      "Underdog"
+    ]
+  }
+}

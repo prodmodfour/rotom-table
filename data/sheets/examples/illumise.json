@@ -1,0 +1,144 @@
+{
+  "slug": "examples-illumise",
+  "nickname": "Illumise",
+  "species": "Illumise",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Composed",
+  "types": [
+    "Bug"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 2,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 13,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 63,
+    "currentHp": 63,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 1,
+      "vsSatk": 2,
+      "vsAny": 4
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Charm",
+      "type": "Fairy",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "6, 1 Target, Social",
+      "effect": "Charm lowers the target’s Attack 2 Combat Stages."
+    },
+    {
+      "name": "Tackle",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash, Push",
+      "effect": "The target is pushed 2 Meters."
+    },
+    {
+      "name": "Struggle Bug",
+      "type": "Bug",
+      "category": "Special",
+      "db": 7,
+      "damageRoll": "2d6+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Cone 2",
+      "effect": "On hit, lowers the target’s Special Attack by -1 CS."
+    },
+    {
+      "name": "Sweet Scent",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "ac": 2,
+      "range": "Burst 2, Friendly",
+      "effect": "Targets hit by Sweet Scent gain a -2 Penalty to Evasion. (Total Evasion may not be lowered to a negative value. )"
+    },
+    {
+      "name": "Play Nice",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target, Social",
+      "effect": "Play Nice lowers the target’s Attack by 1 Combat Stage."
+    },
+    {
+      "name": "Moonlight",
+      "type": "Fairy",
+      "category": "Status",
+      "frequency": "Daily x2",
+      "range": "Self",
+      "effect": "The user regains Hit Points equal to half of its full Hit Point value. If it is Sunny, the user gains 2/3 of its full Hit Point value. If it is Rainy, Sand Storming or Hailing the user gains 1/4 of their full Hit Point value."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Oblivious",
+      "frequency": "Static",
+      "effect": "The user is immune to the Enraged and Infatuated conditions. Defensive."
+    },
+    {
+      "name": "Aroma Veil",
+      "frequency": "Static",
+      "effect": "The user and all adjacent Pokémon and Trainers cannot become Confused, Enraged, or Suppressed. Defensive."
+    }
+  ],
+  "capabilities": {
+    "overland": 3,
+    "sky": 5,
+    "swim": 3,
+    "jump": "2/2",
+    "power": 2,
+    "weight": 2,
+    "size": "Small",
+    "other": [
+      "Glow",
+      "Wallclimber",
+      "Underdog"
+    ]
+  }
+}

@@ -1,0 +1,140 @@
+{
+  "slug": "examples-lugia",
+  "nickname": "Lugia",
+  "species": "Lugia",
+  "level": 20,
+  "gender": "No Gender",
+  "shiny": false,
+  "nature": "Brave",
+  "types": [
+    "Psychic",
+    "Flying"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "atk": {
+      "base": 1,
+      "added": 3,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 8,
+      "stage": 0
+    },
+    "spd": {
+      "base": -1,
+      "added": 4,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 81,
+    "currentHp": 81,
+    "tick": 8,
+    "evasion": {
+      "vsAtk": 3,
+      "vsSatk": 4,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Weather Ball",
+      "type": "Normal",
+      "category": "Special",
+      "db": 5,
+      "damageRoll": "1d8+8 / 13",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "8, 1 Target",
+      "effect": "If it is Sunny, Weather Ball is Fire-Type. If it is Rainy, Weather Ball is Water-Type. If it is Hailing, Weather Ball is Ice-Type. If it is Sandstorming, Weather Ball is Rock-Type. When a weather effect is on the field, Weather Ball has a Damage Base of 10 (3d8+10 / 24). If there are multiple Weather Effects on the field, choose one type for Weather Ball to be that corresponds with an existing Weather Effect."
+    },
+    {
+      "name": "Whirlwind",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "Line 6",
+      "effect": "All targets are pushed X meters, where X is 8 minus their weight class. If the Line targets into a Smokescreen, the smoke is dispersed. All hazards in the Whirlwind are destroyed."
+    },
+    {
+      "name": "Gust",
+      "type": "Flying",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "If the target is airborne as a result of Fly or Sky Drop, Gust can hit them, ignoring Range and has a Damage Base of 8 instead."
+    },
+    {
+      "name": "Dragon Rush",
+      "type": "Dragon",
+      "category": "Physical",
+      "db": 10,
+      "damageRoll": "3d8+10 / 24",
+      "frequency": "Scene x2",
+      "ac": 4,
+      "range": "Melee, 1 Target, Dash, Push, Smite",
+      "effect": "The target is Pushed 3 meters. Dragon Rush Flinches the target on 17+."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Pressure",
+      "frequency": "Scene - Swift Action",
+      "effect": "All foes within 3 meters are Suppressed for 1 full round."
+    },
+    {
+      "name": "Multiscale",
+      "frequency": "Static",
+      "effect": "While at full Hit Points, all damage taken is resisted one step further. Defensive."
+    }
+  ],
+  "natureMod": {
+    "plus": "atk",
+    "minus": "spd"
+  },
+  "capabilities": {
+    "overland": 5,
+    "sky": 8,
+    "swim": 8,
+    "jump": "3/3",
+    "power": 7,
+    "weight": 6,
+    "size": "Huge",
+    "other": [
+      "Aura  Reader",
+      "Fountain",
+      "Gilled",
+      "Glow",
+      "Guster",
+      "Naturewalk  (Ocean)",
+      "Telekinetic",
+      "Telepath",
+      "Mountable 3"
+    ]
+  }
+}

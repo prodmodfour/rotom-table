@@ -1,0 +1,151 @@
+{
+  "slug": "examples-litleo",
+  "nickname": "Litleo",
+  "species": "Litleo",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Gentle",
+  "types": [
+    "Fire",
+    "Normal"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 0,
+      "stage": 0
+    },
+    "def": {
+      "base": -1,
+      "added": 0,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 1,
+      "added": 8,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 14,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 60,
+    "currentHp": 60,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 0,
+      "vsSatk": 3,
+      "vsAny": 4
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Noble Roar",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Burst 1, Sonic, Friendly, Social",
+      "effect": "Noble Roar lowers all targets’ Attack and Special Attack by 1 Combat Stage."
+    },
+    {
+      "name": "Take Down",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 11,
+      "damageRoll": "3d10+10",
+      "frequency": "EOT",
+      "ac": 5,
+      "range": "Melee, 1 Target, Dash, Recoil 1/3",
+      "effect": "You may perform a Trip Maneuver against the target as a Free Action."
+    },
+    {
+      "name": "Headbutt",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Headbutt Flinches the target on 15+."
+    },
+    {
+      "name": "Tackle",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash, Push",
+      "effect": "The target is pushed 2 Meters."
+    },
+    {
+      "name": "Work Up",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Attack 1 Combat Stage and raise the user’s Special Attack 1 Combat Stage."
+    },
+    {
+      "name": "Leer",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Cone 2, Friendly, Social",
+      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Rivalry",
+      "frequency": "Static",
+      "effect": "Whenever the user deals direct damage to a target of the same gender, increase the Damage dealt by +5."
+    },
+    {
+      "name": "Unnerve",
+      "frequency": "At-Will - Swift Action",
+      "effect": "The target cannot gain positive Combat Stages or trade in Digestion Buffs for 1 full round."
+    }
+  ],
+  "natureMod": {
+    "plus": "sdef",
+    "minus": "def"
+  },
+  "capabilities": {
+    "overland": 5,
+    "swim": 2,
+    "jump": "1/2",
+    "power": 2,
+    "weight": 1,
+    "size": "Small",
+    "other": [
+      "Firestarter",
+      "Tracker",
+      "Naturewalk (Grassland)",
+      "Underdog"
+    ]
+  }
+}

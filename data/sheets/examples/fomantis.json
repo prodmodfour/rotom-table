@@ -1,0 +1,138 @@
+{
+  "slug": "examples-fomantis",
+  "nickname": "Fomantis",
+  "species": "Fomantis",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Mild",
+  "types": [
+    "Grass"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 2,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    },
+    "def": {
+      "base": -1,
+      "added": 3,
+      "stage": 0
+    },
+    "satk": {
+      "base": 1,
+      "added": 9,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 48,
+    "currentHp": 48,
+    "tick": 4,
+    "evasion": {
+      "vsAtk": 1,
+      "vsSatk": 1,
+      "vsAny": 1
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Growth",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Attack 1 Combat Stage and raise the user’s Special Attack 1 Combat Stage. If it is Sunny, double the amount of Combat Stages gained."
+    },
+    {
+      "name": "Leafage",
+      "type": "Grass",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target"
+    },
+    {
+      "name": "Ingrain",
+      "type": "Grass",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Self, Coat",
+      "effect": "Ingrain applies a Coat to the user, which has the following effect; the user cannot be pushed or pulled, and cannot be switched out.  At the beginning of each of the user’s turn, the user gains a Tick of Hit Points."
+    },
+    {
+      "name": "Razor Leaf",
+      "type": "Grass",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 4,
+      "range": "Cone 2",
+      "effect": "Razor Leaf is a Critical Hit on 18+."
+    },
+    {
+      "name": "Fury Cutter",
+      "type": "Bug",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 3,
+      "range": "Melee, 1 Target",
+      "effect": "If Fury Cutter is used successfully and consecutively on the same target, the Damage Base is increased by +4 to a maximum of 16. For example, the first hit would have a DB of 4; the second hit a DB of 8; the third hit a DB of 12; the fourth and further hits a DB of 16. If Fury Cuter misses or fails to damage its target, its Damage Base resets."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Tinted Lens",
+      "frequency": "Static",
+      "effect": "The user’s Resisted Moves are instead Neutral. The user’s Doubly Resisted Moves are instead Resisted. The user’s Triply Resisted Moves are instead Double Resisted."
+    },
+    {
+      "name": "Compound Eyes",
+      "frequency": "Static",
+      "effect": "The user gains a +3 Bonus to all Accuracy Rolls."
+    }
+  ],
+  "natureMod": {
+    "plus": "satk",
+    "minus": "def"
+  },
+  "capabilities": {
+    "overland": 4,
+    "swim": 2,
+    "jump": "1/1",
+    "power": 2,
+    "weight": 1,
+    "size": "Small",
+    "other": [
+      "Alluring",
+      "Naturewalk (Forest)",
+      "Underdog"
+    ]
+  }
+}

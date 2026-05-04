@@ -1,0 +1,140 @@
+{
+  "slug": "examples-pelipper",
+  "nickname": "Pelipper",
+  "species": "Pelipper",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Lax",
+  "types": [
+    "Water",
+    "Flying"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 2,
+      "stage": 0
+    },
+    "def": {
+      "base": 1,
+      "added": 10,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 8,
+      "stage": 0
+    },
+    "sdef": {
+      "base": -1,
+      "added": 2,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 57,
+    "currentHp": 57,
+    "tick": 5,
+    "evasion": {
+      "vsAtk": 4,
+      "vsSatk": 1,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Supersonic",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 6,
+      "range": "4, 1 Target, Sonic",
+      "effect": "The target becomes Confused. On miss, the target suffers a -2 penalty to Accuracy Rolls for one full round."
+    },
+    {
+      "name": "Mist",
+      "type": "Ice",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "range": "Blessing",
+      "effect": "Blessing – Any user affected by Mist may activate it when having Combat Stages lowered by any effect; if they do, those Combat Stages are instead not lowered. Mist may be activated 3 times, and then disappears."
+    },
+    {
+      "name": "Payback",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 5,
+      "damageRoll": "1d8+8 / 13",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "If the target hit the user with a Damaging Move on the previous turn, Payback has a Damage Base of 10 (3d8+10 / 24) instead."
+    },
+    {
+      "name": "Wing Attack",
+      "type": "Flying",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "None."
+    },
+    {
+      "name": "Water Pulse",
+      "type": "Water",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "8, 1 Target, Aura",
+      "effect": "Water Pulse Confuses the target on 17+."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Keen Eye",
+      "frequency": "Static",
+      "effect": "The user’s Accuracy cannot be lowered, their attacks cannot have Accuracy Penalties (such as from Illuminate), the user is immune to the Blind condition (but not Total Blindness), and the user ignores any Evasion not directly derived from Stats (such as from the Instinct Ability, or from moves like Minimize)."
+    },
+    {
+      "name": "Rain Dish",
+      "frequency": "Daily x5 - Swift Action",
+      "effect": "The user gains a Tick of Hit Points. Rain Dish may only be used while the user is under 50% Hit Points or in Rainy Weather."
+    }
+  ],
+  "natureMod": {
+    "plus": "def",
+    "minus": "sdef"
+  },
+  "capabilities": {
+    "overland": 5,
+    "sky": 6,
+    "swim": 5,
+    "jump": "2/2",
+    "power": 3,
+    "weight": 3,
+    "size": "Medium",
+    "other": [
+      "Underdog"
+    ]
+  }
+}

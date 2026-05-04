@@ -1,0 +1,119 @@
+{
+  "slug": "examples-shaymin-sky-forme",
+  "nickname": "Shaymin Sky Forme",
+  "species": "Shaymin Sky Forme",
+  "level": 20,
+  "gender": "No Gender",
+  "shiny": false,
+  "nature": "Patient",
+  "types": [
+    "Grass",
+    "Flying"
+  ],
+  "stats": {
+    "hp": {
+      "base": 1,
+      "added": 7,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 10,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "spd": {
+      "base": -1,
+      "added": 3,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 84,
+    "currentHp": 84,
+    "tick": 8,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 2,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Magical Leaf",
+      "type": "Grass",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "range": "8, 1 Target",
+      "effect": "Magical Leaf cannot miss."
+    },
+    {
+      "name": "Growth",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Attack 1 Combat Stage and raise the user’s Special Attack 1 Combat Stage. If it is Sunny, double the amount of Combat Stages gained."
+    },
+    {
+      "name": "Leech Seed",
+      "type": "Grass",
+      "category": "Status",
+      "frequency": "Daily x2",
+      "ac": 4,
+      "range": "6, 1 Target",
+      "effect": "At the beginning of each of the target’s turns, Leech Seed’s target loses a Tick of Hit Points. Leech Seed’s user then gains Hit Points equal to the amount the target lost. Leech Seed lasts until the target faints or is returned to a Poké Ball. Grass Types and targets immune to Grass Attacks are immune to Leech Seed."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Serene Grace",
+      "frequency": "Static",
+      "effect": "The user’s Effect Range is increased by +2."
+    },
+    {
+      "name": "Rocket",
+      "frequency": "Scene – Free Action",
+      "effect": "The user may take their turn at the top of the round. Priority, Interrupt, or Reaction Moves or Abilities cannot be declared in response to the user’s turn."
+    }
+  ],
+  "natureMod": {
+    "plus": "hp",
+    "minus": "spd"
+  },
+  "capabilities": {
+    "overland": 7,
+    "sky": 10,
+    "swim": 5,
+    "jump": "3/3",
+    "power": 2,
+    "weight": 1,
+    "size": "Small",
+    "other": [
+      "Naturewalk (Grassland, Forest)",
+      "Sprouter",
+      "Telepath"
+    ]
+  }
+}

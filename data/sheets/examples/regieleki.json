@@ -1,0 +1,143 @@
+{
+  "slug": "examples-regieleki",
+  "nickname": "Regieleki",
+  "species": "Regieleki",
+  "level": 20,
+  "gender": "No Gender",
+  "shiny": false,
+  "nature": "Timid",
+  "types": [
+    "Electric"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "atk": {
+      "base": -1,
+      "added": 3,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "spd": {
+      "base": 1,
+      "added": 8,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 69,
+    "currentHp": 69,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 2,
+      "vsAny": 6
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Shock Wave",
+      "type": "Electric",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "range": "6, 1 Target",
+      "effect": "Shock Wave cannot miss."
+    },
+    {
+      "name": "Thunder Shock",
+      "type": "Electric",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "Thunder Shock Paralyzes the target on 17+."
+    },
+    {
+      "name": "Ancient Power",
+      "type": "Rock",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "6, 1 Target, Spirit Surge",
+      "effect": "On 19+, the user has each of its stats raised by +1 Combat Stage."
+    },
+    {
+      "name": "Electroweb",
+      "type": "Electric",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "ac": 3,
+      "range": "4, Ranged Blast 2",
+      "effect": "All Legal Targets are lowered 1 Speed Combat Stage."
+    },
+    {
+      "name": "Rapid Spin",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 5,
+      "damageRoll": "1d8+8 / 13",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Spirit Surge",
+      "effect": "Rapid Spin destroys all Hazards within 5 meters, removes Leech Seeds, and removes the user’s Trapped or Stuck status. If Rapid Spin hits, the user’s speed raises 1 CS."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Transistor"
+    },
+    {
+      "name": "Absorb Force",
+      "frequency": "Scene – Free Action",
+      "effect": "The user takes damage as if the attack was resisted one step further."
+    }
+  ],
+  "natureMod": {
+    "plus": "spd",
+    "minus": "atk"
+  },
+  "capabilities": {
+    "overland": 5,
+    "swim": 1,
+    "burrow": 3,
+    "jump": "1/1",
+    "power": 11,
+    "weight": 5,
+    "size": "Medium",
+    "other": [
+      "Glow",
+      "Naturewalk (Urban)",
+      "Zapper"
+    ]
+  }
+}

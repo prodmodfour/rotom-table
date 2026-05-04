@@ -1,0 +1,159 @@
+{
+  "slug": "examples-farfetchd-galar",
+  "nickname": "Farfetch’d Galar",
+  "species": "Farfetch’d Galar",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Lonely",
+  "types": [
+    "Fighting"
+  ],
+  "stats": {
+    "hp": {
+      "base": 5,
+      "added": 1,
+      "stage": 0
+    },
+    "atk": {
+      "base": 11,
+      "added": 6,
+      "stage": 0
+    },
+    "def": {
+      "base": 5,
+      "added": 1,
+      "stage": 0
+    },
+    "satk": {
+      "base": 6,
+      "added": 7,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 6,
+      "added": 8,
+      "stage": 0
+    },
+    "spd": {
+      "base": 6,
+      "added": 7,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 48,
+    "currentHp": 48,
+    "tick": 4,
+    "evasion": {
+      "vsAtk": 1,
+      "vsSatk": 2,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Rock Smash",
+      "type": "Fighting",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Rock Smash lowers the target’s Defense 1 Combat Stage on 17+."
+    },
+    {
+      "name": "Fury Cutter",
+      "type": "Bug",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 3,
+      "range": "Melee, 1 Target",
+      "effect": "If Fury Cutter is used successfully and consecutively on the same target, the Damage Base is increased by +4 to a maximum of 16. For example, the first hit would have a DB of 4; the second hit a DB of 8; the third hit a DB of 12; the fourth and further hits a DB of 16. If Fury Cuter misses or fails to damage its target, its Damage Base resets."
+    },
+    {
+      "name": "Leer",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Cone 2, Friendly, Social",
+      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
+    },
+    {
+      "name": "Peck",
+      "type": "Flying",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "None"
+    },
+    {
+      "name": "Sand Attack",
+      "type": "Ground",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "2, 1 Target",
+      "effect": "The target is Blinded until the end of their next turn."
+    },
+    {
+      "name": "Brutal Swing",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Burst 1"
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Steadfast",
+      "frequency": "At-Will – Free Action",
+      "effect": "The user’s Speed is raised by +1 Combat Stage."
+    },
+    {
+      "name": "Scrappy",
+      "frequency": "Static",
+      "effect": "Ghost Types are not immune to the user’s Normal and Fighting-Type Moves."
+    }
+  ],
+  "natureMod": {
+    "plus": "atk",
+    "minus": "def"
+  },
+  "capabilities": {
+    "overland": 6,
+    "sky": 2,
+    "swim": 2,
+    "jump": "2/2",
+    "power": 5,
+    "weight": 3,
+    "size": "Huge",
+    "other": [
+      "Underdog",
+      "Wielder"
+    ]
+  },
+  "skills": {
+    "athletics": "4d6+1",
+    "acrobatics": "3d6",
+    "combat": "4d6+2",
+    "stealth": "4d6+2",
+    "perception": "4d6",
+    "focus": "4d6+2"
+  }
+}

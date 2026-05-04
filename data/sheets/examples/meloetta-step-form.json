@@ -1,0 +1,126 @@
+{
+  "slug": "examples-meloetta-step-form",
+  "nickname": "Meloetta Step Form",
+  "species": "Meloetta Step Form",
+  "level": 20,
+  "gender": "No Gender",
+  "shiny": false,
+  "nature": "Careful",
+  "types": [
+    "Normal",
+    "Fighting"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 9,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "satk": {
+      "base": -1,
+      "added": 3,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 1,
+      "added": 4,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 78,
+    "currentHp": 78,
+    "tick": 7,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 2,
+      "vsAny": 3
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Quick Attack",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Priority",
+      "effect": "None."
+    },
+    {
+      "name": "Round",
+      "type": "Normal",
+      "category": "Special",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Burst 1, Sonic",
+      "effect": "Round’s Damage Base is equal to 6, plus +2 more for each previous use of Round by any Trainer or Pokémon this round, up to a maximum of DB12."
+    },
+    {
+      "name": "Sing",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "ac": 10,
+      "range": "Burst 2, Friendly, Sonic",
+      "effect": "All legal Targets fall Asleep. On a miss, Sing instead causes targets to become Slowed and suffer a -2 penalty to their Evasion until the end of the user’s next turn."
+    },
+    {
+      "name": "Confusion",
+      "type": "Psychic",
+      "category": "Special",
+      "db": 5,
+      "damageRoll": "1d8+8 / 13",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Confusion Confuses the target on 19+."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Serene Grace",
+      "frequency": "Static",
+      "effect": "The user’s Effect Range is increased by +2."
+    },
+    {
+      "name": "Own Tempo",
+      "frequency": "Static",
+      "effect": "The user is immune to Confusion. Defensive."
+    }
+  ],
+  "natureMod": {
+    "plus": "sdef",
+    "minus": "satk"
+  },
+  "capabilities": {
+    "overland": 7,
+    "swim": 4,
+    "jump": "3/3",
+    "power": 3,
+    "weight": 1,
+    "size": "Small"
+  }
+}

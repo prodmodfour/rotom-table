@@ -1,0 +1,131 @@
+{
+  "slug": "examples-burmy",
+  "nickname": "Burmy",
+  "species": "Burmy",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Calm",
+  "types": [
+    "Bug"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "atk": {
+      "base": -1,
+      "added": 3,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 1,
+      "added": 6,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 54,
+    "currentHp": 54,
+    "tick": 5,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 2,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Tackle",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash, Push",
+      "effect": "The target is pushed 2 Meters."
+    },
+    {
+      "name": "Hidden Power",
+      "type": "Normal",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Burst 1",
+      "effect": "When a Pokémon first obtains the Move Hidden Power, roll 1d20. Hidden Power’s Elemental Type will be changed from Normal to Bug on a result of 1; Dark on 2; Dragon on 3; Electric on 4; Fairy on 5; Fighting on 6; Fire on 7; Flying on 8; Ghost on 9; Grass on 10; Ground on 11; Ice on 12; Normal on 13; Poison on 14; Psychic on 15; Rock on 16; Steel on 17; Water on 18; and on 19 or 20, reroll until you roll another number. This effect is permanent –if Hidden Power is forgotten and relearned, the chosen Type remains the same."
+    },
+    {
+      "name": "Bug Bite",
+      "type": "Bug",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "If the target has a stored Digestion Buff or has traded in a Digestion Buff this Scene, the user may gain the effects of the Digestion Buff. This does not count towards the usual limit on the user’s Digestion Buffs."
+    },
+    {
+      "name": "Protect",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Self, Interrupt, Shield, Trigger",
+      "effect": "If the user is hit by a Move, the user may use Protect. The user is instead not hit by the Move. You do not take any damage nor are you affected by any of the Move’s effects."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Quick Cloak",
+      "frequency": "At-Will – Standard Action",
+      "effect": "Burmy quickly builds a cloak out of nearby materials; using leaves and twigs will give it a Grass Plant Cloak, using sand and rocks will give it a Ground Sandy Cloak, and using trash or scrap will give it a Steel Trash Cloak. While in a Cloak, Burmy gains the Type associated with the Cloak as a secondary Typing, which will become permanent upon evolution into Wormadam. Cloaks are destroyed if Burmy is hit for Super-Effective Damage, or if Burmy makes a new Cloak."
+    },
+    {
+      "name": "Shed Skin",
+      "frequency": "Scene – Swift Action",
+      "effect": "The user is cured of one of Paralysis, Freezing, Burns, Poison, or Sleep."
+    }
+  ],
+  "natureMod": {
+    "plus": "sdef",
+    "minus": "atk"
+  },
+  "capabilities": {
+    "overland": 3,
+    "swim": 1,
+    "jump": "1/1",
+    "power": 1,
+    "weight": 1,
+    "size": "Small",
+    "other": [
+      "Naturewalk  (Grassland, Forest)",
+      "Threaded",
+      "Underdog"
+    ]
+  }
+}

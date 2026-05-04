@@ -1,0 +1,131 @@
+{
+  "slug": "examples-abomasnow",
+  "nickname": "Abomasnow",
+  "species": "Abomasnow",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Brave",
+  "types": [
+    "Grass",
+    "Ice"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "atk": {
+      "base": 1,
+      "added": 6,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "spd": {
+      "base": -1,
+      "added": 4,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 75,
+    "currentHp": 75,
+    "tick": 7,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 2,
+      "vsAny": 1
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Swagger",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 5,
+      "range": "6, 1 Target, Social",
+      "effect": "The target’s Attack is raised 2 Combat Stages. Swagger Confuses the target."
+    },
+    {
+      "name": "Razor Leaf",
+      "type": "Grass",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 4,
+      "range": "Cone 2",
+      "effect": "Razor Leaf is a Critical Hit on 18+."
+    },
+    {
+      "name": "Grass Whistle",
+      "type": "Grass",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 6,
+      "range": "6, 1 Target, Sonic",
+      "effect": "The target falls Asleep."
+    },
+    {
+      "name": "Icy Wind",
+      "type": "Ice",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "ac": 3,
+      "range": "Cone 2",
+      "effect": "All Legal Targets have their Speed lowered 1 Combat Stage."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Soundproof",
+      "frequency": "Static",
+      "effect": "The Pokémon is immune to Moves with the Sonic Keyword. Defensive."
+    },
+    {
+      "name": "Full Guard",
+      "frequency": "Scene - Swift Action",
+      "effect": "You resist the triggering Damage one step further."
+    }
+  ],
+  "natureMod": {
+    "plus": "atk",
+    "minus": "spd"
+  },
+  "capabilities": {
+    "overland": 5,
+    "swim": 3,
+    "jump": "1/1",
+    "power": 6,
+    "weight": 5,
+    "size": "Large",
+    "other": [
+      "Chilled",
+      "Freezer",
+      "Naturewalk (Grassland, Forest, Tundra)"
+    ]
+  }
+}

@@ -1,0 +1,149 @@
+{
+  "slug": "examples-golett",
+  "nickname": "Golett",
+  "species": "Golett",
+  "level": 20,
+  "gender": "No Gender",
+  "shiny": false,
+  "nature": "Lonely",
+  "types": [
+    "Ground",
+    "Ghost"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 9,
+      "stage": 0
+    },
+    "atk": {
+      "base": 1,
+      "added": 9,
+      "stage": 0
+    },
+    "def": {
+      "base": -1,
+      "added": 1,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 75,
+    "currentHp": 75,
+    "tick": 7,
+    "evasion": {
+      "vsAtk": 0,
+      "vsSatk": 2,
+      "vsAny": 1
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Rollout",
+      "type": "Rock",
+      "category": "Physical",
+      "db": 3,
+      "damageRoll": "1d6+5 / 9",
+      "frequency": "At-Will",
+      "ac": 4,
+      "range": "Melee, 1 Target, Pass",
+      "effect": "The user continues to use Rollout on each of its turns until they miss any target with Rollout, or are not able to hit any target with Rollout during their turn.  Each successive use of Rollout increases Rollout’s Damage Base by +4 to a maximum of DB 15."
+    },
+    {
+      "name": "Shadow Punch",
+      "type": "Ghost",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "range": "6, 1 Target",
+      "effect": "Shadow Punch cannot miss."
+    },
+    {
+      "name": "Defense Curl",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "Self",
+      "effect": "The user’s Defense is raised 1 Combat Stage and they become Curled Up until the end of the Scene or they are Recalled or Take a Breather. When using the Moves Rollout or Ice Ball while Curled Up, the user gains a +10 bonus to the damage rolls of those Moves."
+    },
+    {
+      "name": "Iron Defense",
+      "type": "Steel",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Defense 2 Combat Stages."
+    },
+    {
+      "name": "Astonish",
+      "type": "Ghost",
+      "category": "Physical",
+      "db": 5,
+      "damageRoll": "1d8+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Astonish Flinches the target on 15+. Once per scene, if the target is unaware of the user’s presence, Astonish automatically Flinches the target."
+    },
+    {
+      "name": "Pound",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "None"
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Iron Fist",
+      "frequency": "Static",
+      "effect": "The user increases the Damage Base of the following Moves by +2; Bullet Punch, Comet Punch, Dizzy Punch, Drain Punch, Dynamic Punch, Fire Punch, Meteor Mash, Shadow Punch, Ice Punch, Mach Punch, Mega Punch, Sky Uppercut, Thunder Punch, Focus Punch, Hammer Arm, and Power-Up Punch."
+    },
+    {
+      "name": "Hustle",
+      "frequency": "Static",
+      "effect": "The user receives a -2 penalty to all Accuracy Rolls and gains a +10 Bonus to All Damage Rolls."
+    }
+  ],
+  "natureMod": {
+    "plus": "atk",
+    "minus": "def"
+  },
+  "capabilities": {
+    "overland": 5,
+    "swim": 2,
+    "jump": "1/1",
+    "power": 7,
+    "weight": 4,
+    "size": "Medium",
+    "other": [
+      "Darkvision",
+      "Underdog"
+    ]
+  }
+}

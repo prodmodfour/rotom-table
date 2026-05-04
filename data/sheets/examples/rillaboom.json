@@ -1,0 +1,128 @@
+{
+  "slug": "examples-rillaboom",
+  "nickname": "Rillaboom",
+  "species": "Rillaboom",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Distracted",
+  "types": [
+    "Grass"
+  ],
+  "stats": {
+    "hp": {
+      "base": 1,
+      "added": 4,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "def": {
+      "base": -1,
+      "added": 6,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 75,
+    "currentHp": 75,
+    "tick": 7,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 2,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Razor Leaf",
+      "type": "Grass",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 4,
+      "range": "Cone 2",
+      "effect": "Razor Leaf is a Critical Hit on 18+."
+    },
+    {
+      "name": "Taunt",
+      "type": "Dark",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 3,
+      "range": "6, 1 Target, Social",
+      "effect": "The target becomes Enraged."
+    },
+    {
+      "name": "Branch Poke",
+      "type": "Grass",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "2, 1 Target"
+    },
+    {
+      "name": "Screech",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 4,
+      "range": "Burst 2, Friendly, Sonic",
+      "effect": "All Legal Targets have their Defense lowered 2 Combat Stages."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Overgrow",
+      "frequency": "Static",
+      "effect": "The user gains Last Chance with Grass."
+    },
+    {
+      "name": "Vital Spirit",
+      "frequency": "Static",
+      "effect": "The user is immune to the Sleep condition, and cannot use the move Rest. Defensive."
+    }
+  ],
+  "natureMod": {
+    "plus": "hp",
+    "minus": "def"
+  },
+  "capabilities": {
+    "overland": 8,
+    "swim": 5,
+    "jump": "3/3",
+    "power": 8,
+    "weight": 4,
+    "size": "Large",
+    "other": [
+      "Naturewalk  (Forest)",
+      "Pack Mon"
+    ]
+  }
+}

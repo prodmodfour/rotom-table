@@ -1,0 +1,129 @@
+{
+  "slug": "examples-leafeon",
+  "nickname": "Leafeon",
+  "species": "Leafeon",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Calm",
+  "types": [
+    "Grass"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "atk": {
+      "base": -1,
+      "added": 4,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 13,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 1,
+      "added": 2,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 60,
+    "currentHp": 60,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 5,
+      "vsSatk": 2,
+      "vsAny": 3
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Grass Whistle",
+      "type": "Grass",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 6,
+      "range": "6, 1 Target, Sonic",
+      "effect": "The target falls Asleep."
+    },
+    {
+      "name": "Sand Attack",
+      "type": "Ground",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "2, 1 Target",
+      "effect": "The target is Blinded until the end of their next turn."
+    },
+    {
+      "name": "Quick Attack",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Priority",
+      "effect": "None."
+    },
+    {
+      "name": "Razor Leaf",
+      "type": "Grass",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 4,
+      "range": "Cone 2",
+      "effect": "Razor Leaf is a Critical Hit on 18+."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Leaf Guard",
+      "frequency": "Scene - Swift Action",
+      "effect": "The user is cured of one Status Affliction. Leaf Guard’s Frequency is ignored if used during Sunny Weather."
+    },
+    {
+      "name": "Chlorophyll",
+      "frequency": "Static",
+      "effect": "While in Sunny Weather or under 50% Max Hit Points, the user’s Initiative is doubled."
+    }
+  ],
+  "natureMod": {
+    "plus": "sdef",
+    "minus": "atk"
+  },
+  "capabilities": {
+    "overland": 7,
+    "swim": 4,
+    "jump": "1/2",
+    "power": 3,
+    "weight": 3,
+    "size": "Medium",
+    "other": [
+      "Naturewalk  (Grassland, Forest)",
+      "Tracker"
+    ]
+  }
+}

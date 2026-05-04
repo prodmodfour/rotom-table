@@ -1,0 +1,123 @@
+{
+  "slug": "examples-overqwil",
+  "nickname": "Overqwil",
+  "species": "Overqwil",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Rash",
+  "types": [
+    "Dark",
+    "Poison"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "satk": {
+      "base": 1,
+      "added": 5,
+      "stage": 0
+    },
+    "sdef": {
+      "base": -1,
+      "added": 6,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 72,
+    "currentHp": 72,
+    "tick": 7,
+    "evasion": {
+      "vsAtk": 3,
+      "vsSatk": 2,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Pin Missile",
+      "type": "Bug",
+      "category": "Physical",
+      "db": 3,
+      "damageRoll": "1d6+5 / 9",
+      "frequency": "EOT",
+      "ac": 4,
+      "range": "6, 1 Target, Five Strike",
+      "effect": "None"
+    },
+    {
+      "name": "Barb Barrage",
+      "type": "Poison",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "6, 1 Target, Five Strike",
+      "effect": "The target is Poisoned on a 17+. Once a Scene, if Barb Barrage’s target has a Status Condition, you may choose to not roll for Five Strike. Instead, treat Barb Barrage as though it automatically rolled an 8 for Five Strike."
+    },
+    {
+      "name": "Spikes",
+      "type": "Ground",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "6, Hazard",
+      "effect": "Set 8 square meters of Spikes within your range, all 8 meters must be adjacent with at least one other space of Spikes. Spikes cause terrain to count as Slow Terrain, and a grounded foe that runs into the hazards will lose a Tick of Hit Points and become Slowed until the end of their next turn."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Swift Swim",
+      "frequency": "Static",
+      "effect": "While in Rainy Weather or under 50% Max Hit Points, the user’s Initiative is doubled."
+    },
+    {
+      "name": "Intimidate",
+      "frequency": "At-Will – Swift Action",
+      "effect": "Lower the target’s Attack 1 Combat Stage. You may target a specific foe only once per Scene with Intimidate."
+    }
+  ],
+  "natureMod": {
+    "plus": "satk",
+    "minus": "sdef"
+  },
+  "capabilities": {
+    "overland": 2,
+    "swim": 8,
+    "jump": "2/2",
+    "power": 4,
+    "weight": 4,
+    "size": "Large",
+    "other": [
+      "Darkvision",
+      "Gilled",
+      "Inflatable",
+      "Mountable 1",
+      "Naturewalk (Ocean)"
+    ]
+  }
+}

@@ -1,0 +1,154 @@
+{
+  "slug": "examples-pyroar",
+  "nickname": "Pyroar",
+  "species": "Pyroar",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Desperate",
+  "types": [
+    "Fire",
+    "Normal"
+  ],
+  "stats": {
+    "hp": {
+      "base": -1,
+      "added": 5,
+      "stage": 0
+    },
+    "atk": {
+      "base": 1,
+      "added": 5,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 9,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 69,
+    "currentHp": 69,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 2,
+      "vsAny": 3
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Leer",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Cone 2, Friendly, Social",
+      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
+    },
+    {
+      "name": "Headbutt",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Headbutt Flinches the target on 15+."
+    },
+    {
+      "name": "Take Down",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 11,
+      "damageRoll": "3d10+10",
+      "frequency": "EOT",
+      "ac": 5,
+      "range": "Melee, 1 Target, Dash, Recoil 1/3",
+      "effect": "You may perform a Trip Maneuver against the target as a Free Action."
+    },
+    {
+      "name": "Tackle",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash, Push",
+      "effect": "The target is pushed 2 Meters."
+    },
+    {
+      "name": "Ember",
+      "type": "Fire",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "Ember Burns the target on 18+."
+    },
+    {
+      "name": "Work Up",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Attack 1 Combat Stage and raise the user’s Special Attack 1 Combat Stage."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Moxie",
+      "frequency": "Static",
+      "effect": "Whenever the user’s Move causes a target to faint, it may raise its Attack Combat Stage by +1. You may only trigger Moxie once per Move, even if the Move causes multiple targets to faint."
+    },
+    {
+      "name": "Huge Power",
+      "frequency": "Static",
+      "effect": "The Pokémon’s Base Attack stat is doubled. This may double any bonuses from Nature or Vitamins, but not bonuses from Trainer Features."
+    }
+  ],
+  "natureMod": {
+    "plus": "atk",
+    "minus": "hp"
+  },
+  "capabilities": {
+    "overland": 7,
+    "swim": 4,
+    "jump": "2/2",
+    "power": 6,
+    "weight": 4,
+    "size": "Medium",
+    "other": [
+      "Firestarter",
+      "Pack Mon",
+      "Naturewalk (Grassland)",
+      "Tracker",
+      "Mountable 1"
+    ]
+  }
+}

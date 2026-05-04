@@ -1,0 +1,133 @@
+{
+  "slug": "examples-bronzong",
+  "nickname": "Bronzong",
+  "species": "Bronzong",
+  "level": 20,
+  "gender": "No Gender",
+  "shiny": false,
+  "nature": "Timid",
+  "types": [
+    "Steel",
+    "Psychic"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "atk": {
+      "base": -1,
+      "added": 3,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 9,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 8,
+      "stage": 0
+    },
+    "spd": {
+      "base": 1,
+      "added": 4,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 60,
+    "currentHp": 60,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 4,
+      "vsSatk": 4,
+      "vsAny": 1
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Hypnosis",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 6,
+      "range": "4, 1 Target",
+      "effect": "The target falls Asleep."
+    },
+    {
+      "name": "Imprison",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "range": "10, 1 Target",
+      "effect": "The target is Locked for the rest of the Scene. A Locked target may not use any Moves the user knows. Imprison cannot miss."
+    },
+    {
+      "name": "Confuse Ray",
+      "type": "Ghost",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "The target is Confused."
+    },
+    {
+      "name": "Iron Defense",
+      "type": "Steel",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Defense 2 Combat Stages."
+    },
+    {
+      "name": "Psywave",
+      "type": "Psychic",
+      "category": "Special",
+      "frequency": "Scene",
+      "ac": 5,
+      "range": "6, 1 Target",
+      "effect": "Roll 1d4; on 1 the target loses Hit Points equal to half the user’s Level; on 2 the target loses Hit Points equal to the user’s Level; on 3 the target loses Hit Points equal to 1.5x the user’s level; on 4 the target loses Hit Points equal to the user’s Level doubled. Do not apply weakness or resistance, and do not apply Stats. Do apply Immunity."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Heatproof",
+      "frequency": "Static",
+      "effect": "The user resists Fire Type movesf one step further, and does not lose Hit Points from the Burn Condition."
+    },
+    {
+      "name": "Heavy Metal",
+      "frequency": "Static",
+      "effect": "The user’s Weight Class is increased by +2. Their Defense Base Stat is increased by +2, but their Speed Base Stat is decreased by 2."
+    }
+  ],
+  "natureMod": {
+    "plus": "spd",
+    "minus": "atk"
+  },
+  "capabilities": {
+    "overland": 1,
+    "swim": 3,
+    "levitate": 4,
+    "jump": "1/1",
+    "power": 8,
+    "weight": 5,
+    "size": "Medium",
+    "other": [
+      "Dead Silent"
+    ]
+  }
+}

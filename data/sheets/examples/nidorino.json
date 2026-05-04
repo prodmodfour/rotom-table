@@ -1,0 +1,131 @@
+{
+  "slug": "examples-nidorino",
+  "nickname": "Nidorino",
+  "species": "Nidorino",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Careful",
+  "types": [
+    "Poison"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "satk": {
+      "base": -1,
+      "added": 4,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 1,
+      "added": 7,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 57,
+    "currentHp": 57,
+    "tick": 5,
+    "evasion": {
+      "vsAtk": 1,
+      "vsSatk": 3,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Fury Attack",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 2,
+      "damageRoll": "1d6+3 / 7",
+      "frequency": "At-Will",
+      "ac": 4,
+      "range": "Melee, 1 Target, Five Strike",
+      "effect": "None"
+    },
+    {
+      "name": "Focus Energy",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "Self",
+      "effect": "The user becomes Pumped. While Pumped, the user’s Critical Range is extended by 2, or 18+ if the Critical Range is not otherwise extended. Being switched will cause this effect to end."
+    },
+    {
+      "name": "Poison Sting",
+      "type": "Poison",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Poison Sting Poisons the target on 17+."
+    },
+    {
+      "name": "Double Kick",
+      "type": "Fighting",
+      "category": "Physical",
+      "db": 3,
+      "damageRoll": "1d6+5 / 9",
+      "frequency": "At-Will",
+      "ac": 3,
+      "range": "Melee, 1 Target, Double Strike",
+      "effect": "None"
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Rivalry",
+      "frequency": "Static",
+      "effect": "Whenever the user deals direct damage to a target of the same gender, increase the Damage dealt by +5."
+    },
+    {
+      "name": "Hustle",
+      "frequency": "Static",
+      "effect": "The user receives a -2 penalty to all Accuracy Rolls and gains a +10 Bonus to All Damage Rolls."
+    }
+  ],
+  "natureMod": {
+    "plus": "sdef",
+    "minus": "satk"
+  },
+  "capabilities": {
+    "overland": 6,
+    "swim": 4,
+    "burrow": 3,
+    "jump": "1/2",
+    "power": 5,
+    "weight": 2,
+    "size": "Small",
+    "other": [
+      "Naturewalk (Grassland)",
+      "Underdog"
+    ]
+  }
+}

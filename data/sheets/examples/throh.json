@@ -1,0 +1,136 @@
+{
+  "slug": "examples-throh",
+  "nickname": "Throh",
+  "species": "Throh",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Careful",
+  "types": [
+    "Fighting"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 8,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "satk": {
+      "base": -1,
+      "added": 5,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 1,
+      "added": 5,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 90,
+    "currentHp": 90,
+    "tick": 9,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 3,
+      "vsAny": 1
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Seismic Toss",
+      "type": "Fighting",
+      "category": "Physical",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "The target loses Hit Points equal to the level of Seismic Toss’ user."
+    },
+    {
+      "name": "Focus Energy",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "Self",
+      "effect": "The user becomes Pumped. While Pumped, the user’s Critical Range is extended by 2, or 18+ if the Critical Range is not otherwise extended. Being switched will cause this effect to end."
+    },
+    {
+      "name": "Bide",
+      "type": "Normal",
+      "category": "Physical",
+      "frequency": "Scene",
+      "range": "Burst 1, Friendly",
+      "effect": "The user may use Bide as a Reaction Move upon being Hit by a Damaging Move. During their next available turn, the user may Shift and then use Bide, causing all Adjacent foes to lose X HP, where X is the amount of Damage taken since declaring use of Bide (Loss of life through effects such as Poison is not ‘Damage’)."
+    },
+    {
+      "name": "Leer",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Cone 2, Friendly, Social",
+      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
+    },
+    {
+      "name": "Bind",
+      "type": "Normal",
+      "category": "Static",
+      "frequency": "Static",
+      "effect": "The user gains a +1 Bonus to Accuracy Rolls made to initiate Grapple Maneuvers, and +2 to Skill Checks made to initiate Grapple Maneuvers or gain Dominance. Whenever the user gains Dominance in a Grapple, the target of the Grapple loses a Tick of Hit Points."
+    },
+    {
+      "name": "Vital Throw",
+      "type": "Fighting",
+      "category": "Physical",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "EOT",
+      "range": "Melee, 1 Target, Push, Reaction",
+      "effect": "If the user is targeted by a Melee attack and has not yet taken a turn this round, the user may declare Vital Throw. After the triggering attack is resolved, the user may use Vital Throw against the triggering foe as a Reaction. Vital Throw cannot miss."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Guts",
+      "frequency": "Static",
+      "effect": "While suffering from Burn, Poison, Paralysis, Freezing, or while Asleep, the user’s Attack is raised 2 Combat Stages. If suffering from none of these conditions, the user loses any Combat Stages gained this way."
+    },
+    {
+      "name": "Discipline",
+      "frequency": "Scene – Free Action",
+      "effect": "If the user gains initiative and is Confused, Enraged, Infatuated, or Flinched, they may activate Discipline to cure themselves of any of these conditions."
+    }
+  ],
+  "natureMod": {
+    "plus": "sdef",
+    "minus": "satk"
+  },
+  "capabilities": {
+    "overland": 5,
+    "swim": 3,
+    "jump": "1/1",
+    "power": 7,
+    "weight": 4,
+    "size": "Medium"
+  }
+}

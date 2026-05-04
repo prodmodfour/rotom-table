@@ -1,0 +1,148 @@
+{
+  "slug": "examples-tauros",
+  "nickname": "Tauros",
+  "species": "Tauros",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Distracted",
+  "types": [
+    "Normal"
+  ],
+  "stats": {
+    "hp": {
+      "base": 1,
+      "added": 8,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 9,
+      "stage": 0
+    },
+    "def": {
+      "base": -1,
+      "added": 1,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 2,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 0,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 10,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 81,
+    "currentHp": 81,
+    "tick": 8,
+    "evasion": {
+      "vsAtk": 1,
+      "vsSatk": 1,
+      "vsAny": 4
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Pursuit",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "If the foe is fleeing or being switched out, Pursuit may be used as an Interrupt, targeting the triggering foe. When used as an Interrupt, Pursuit grants the user a +5 bonus to all Movement Speeds, and has a Damage Base of 8 (2d8+10 / 19)."
+    },
+    {
+      "name": "Horn Attack",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash",
+      "effect": "None"
+    },
+    {
+      "name": "Rest",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Self",
+      "effect": "The user is set to their full Hit Point value. The user is cured of any Status ailments. Then, the user falls Asleep. The user cannot make Sleep Checks at the beginning of their turn. They are cured of the Sleep at the end of their turn in 2 rounds."
+    },
+    {
+      "name": "Tail Whip",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Burst 1, Friendly",
+      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
+    },
+    {
+      "name": "Rage",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Spirit Surge",
+      "effect": "The user becomes Enraged. Until the end of the user’s next turn, if the user is Enraged, the user gains +1 Attack Combat Stage whenever they are damaged by an Damaging Move or Attack."
+    },
+    {
+      "name": "Scary Face",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "4, 1 Target, Social",
+      "effect": "The target’s Speed is lowered 2 Combat Stages."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Anger Point",
+      "frequency": "At-Will – Free Action",
+      "effect": "When the Pokémon receives a Critical Hit, they become Enraged and gain +6 Attack Combat Stages."
+    },
+    {
+      "name": "Gore",
+      "frequency": "Scene x2 - Swift Action",
+      "effect": "Connection - Horn Attack. Horn Attack gains the Double Strike keyword, and pushes its target 2 meters."
+    }
+  ],
+  "natureMod": {
+    "plus": "hp",
+    "minus": "def"
+  },
+  "capabilities": {
+    "overland": 8,
+    "swim": 4,
+    "jump": "1/2",
+    "power": 8,
+    "weight": 4,
+    "size": "Medium",
+    "other": [
+      "Mountable  1",
+      "Pack Mon"
+    ]
+  }
+}

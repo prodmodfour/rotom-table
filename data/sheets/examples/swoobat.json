@@ -1,0 +1,138 @@
+{
+  "slug": "examples-swoobat",
+  "nickname": "Swoobat",
+  "species": "Swoobat",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Quirky",
+  "types": [
+    "Psychic",
+    "Flying"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 9,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 8,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 63,
+    "currentHp": 63,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 1,
+      "vsSatk": 1,
+      "vsAny": 3
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Imprison",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "range": "10, 1 Target",
+      "effect": "The target is Locked for the rest of the Scene. A Locked target may not use any Moves the user knows. Imprison cannot miss."
+    },
+    {
+      "name": "Assurance",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "When you hit with Assurance, if Assurance’s target has already been damaged by a Move on the same round Assurance is being used, Assurance has a Damage Base of 12 (3d12+10 / 30) instead. This effect may trigger only once per Scene per Target."
+    },
+    {
+      "name": "Odor Sleuth",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "range": "Self, Swift Action",
+      "effect": "Odor Sleuth may be activated as a Swift Action on the user’s turn. For the rest of the turn, the user’s Normal-Type and Fighting-Type Moves can hit and affect Ghost-Type targets, and the user can see through the Illusion Ability, Moves with the Illusion keyword, and effects created by the Illusionist Capability, ignoring all effects from those."
+    },
+    {
+      "name": "Heart Stamp",
+      "type": "Psychic",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Heart Stamp Flinches the target on 15+."
+    },
+    {
+      "name": "Gust",
+      "type": "Flying",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "If the target is airborne as a result of Fly or Sky Drop, Gust can hit them, ignoring Range and has a Damage Base of 8 instead."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Snuggle",
+      "frequency": "Scene - Standard Action",
+      "effect": "The user and the target each gain two ticks of Temporary Hit Points."
+    },
+    {
+      "name": "Simple",
+      "frequency": "Static",
+      "effect": "When the Pokémon’s Combat Stages are altered, double the amount of Combat Stages they are raised or lowered."
+    }
+  ],
+  "capabilities": {
+    "overland": 1,
+    "sky": 6,
+    "swim": 3,
+    "jump": "2/2",
+    "power": 3,
+    "weight": 1,
+    "size": "Medium",
+    "other": [
+      "Darkvision",
+      "Tracker",
+      "Telekinetic",
+      "Underdog"
+    ]
+  }
+}

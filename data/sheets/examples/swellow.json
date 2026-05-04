@@ -1,0 +1,128 @@
+{
+  "slug": "examples-swellow",
+  "nickname": "Swellow",
+  "species": "Swellow",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Lonely",
+  "types": [
+    "Normal",
+    "Flying"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 8,
+      "stage": 0
+    },
+    "atk": {
+      "base": 1,
+      "added": 6,
+      "stage": 0
+    },
+    "def": {
+      "base": -1,
+      "added": 2,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 72,
+    "currentHp": 72,
+    "tick": 7,
+    "evasion": {
+      "vsAtk": 1,
+      "vsSatk": 1,
+      "vsAny": 4
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Wing Attack",
+      "type": "Flying",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "None."
+    },
+    {
+      "name": "Double Team",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Self, Illusion, Coat",
+      "effect": "The user gains 3 activations of Double Team. The user may either activate Double Team when being targeted by an attack to increase their Evasion by +2 against that attack; or when making an attack to increase their Accuracy by +2 for that attack."
+    },
+    {
+      "name": "Quick Attack",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Priority",
+      "effect": "None."
+    },
+    {
+      "name": "Focus Energy",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "Self",
+      "effect": "The user becomes Pumped. While Pumped, the user’s Critical Range is extended by 2, or 18+ if the Critical Range is not otherwise extended. Being switched will cause this effect to end."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Guts",
+      "frequency": "Static",
+      "effect": "While suffering from Burn, Poison, Paralysis, Freezing, or while Asleep, the user’s Attack is raised 2 Combat Stages. If suffering from none of these conditions, the user loses any Combat Stages gained this way."
+    },
+    {
+      "name": "Scrappy",
+      "frequency": "Static",
+      "effect": "Ghost Types are not immune to the user’s Normal and Fighting-Type Moves."
+    }
+  ],
+  "natureMod": {
+    "plus": "atk",
+    "minus": "def"
+  },
+  "capabilities": {
+    "overland": 4,
+    "sky": 7,
+    "swim": 2,
+    "jump": "3/3",
+    "power": 1,
+    "weight": 2,
+    "size": "Medium",
+    "other": [
+      "Underdog"
+    ]
+  }
+}

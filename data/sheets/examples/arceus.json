@@ -1,0 +1,150 @@
+{
+  "slug": "examples-arceus",
+  "nickname": "Arceus",
+  "species": "Arceus",
+  "level": 20,
+  "gender": "No Gender",
+  "shiny": false,
+  "nature": "Curious",
+  "types": [
+    "Normal"
+  ],
+  "stats": {
+    "hp": {
+      "base": -1,
+      "added": 3,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "satk": {
+      "base": 1,
+      "added": 9,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 72,
+    "currentHp": 72,
+    "tick": 7,
+    "evasion": {
+      "vsAtk": 3,
+      "vsSatk": 3,
+      "vsAny": 3
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Punishment",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Punishment’s Damage Base is raised by +1 for each positive Combat Stage the target has, to a maximum of DB 12."
+    },
+    {
+      "name": "Seismic Toss",
+      "type": "Fighting",
+      "category": "Physical",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "The target loses Hit Points equal to the level of Seismic Toss’ user."
+    },
+    {
+      "name": "Earth Power",
+      "type": "Ground",
+      "category": "Special",
+      "db": 9,
+      "damageRoll": "2d10+10 / 21",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "6, 1 Target, Groundsource",
+      "effect": "Earth Power lowers the Special Defense of all Legal Targets 1 Combat Stage on 16+."
+    },
+    {
+      "name": "Natural Gift",
+      "type": "Normal",
+      "category": "Physical",
+      "frequency": "Scene",
+      "ac": 2,
+      "range": "6, 1 Target, Berry",
+      "effect": "Refer to the Move Keywords Berry list. Natural Gift deals damage according to the Berry list and Natural Gift’s Type is also defined there. The Berry’s Digestion Buff is nullified and is not used."
+    },
+    {
+      "name": "Gravity",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "Daily x2",
+      "range": "Field",
+      "effect": "For 5 rounds, the area is considered Warped. While Warped, Moves that involve the user being airborne may not be used. Pokémon cannot use Sky or Levitate Capabilities to end their turn at an altitude higher than 1 meter. Flying-Types and Pokémon with the Ability Levitate are no longer immune to Ground- Type Moves. All Accuracy Rolls receive a +2 Bonus."
+    },
+    {
+      "name": "Cosmic Power",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Defense 1 Combat Stage and raise the user’s Special Defense 1 Combat Stage."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Multitype",
+      "effect": "The user changes its Elemental Type to any of the Elemental Types. Multitype cannot be copied or disabled."
+    },
+    {
+      "name": "Regenerator",
+      "frequency": "Daily x2 – Free Action",
+      "effect": "The user gains Hit Points equal to 1/3rd of its maximum Hit Points. Regenerator may be activated only once per Scene."
+    }
+  ],
+  "natureMod": {
+    "plus": "satk",
+    "minus": "hp"
+  },
+  "capabilities": {
+    "overland": 9,
+    "sky": 4,
+    "swim": 5,
+    "jump": "2/2",
+    "power": 10,
+    "weight": 6,
+    "size": "Gigantic",
+    "other": [
+      "Aura Reader",
+      "Darkvision",
+      "Glow",
+      "Invisibility",
+      "Telekinetic",
+      "Telepath",
+      "Mountable 2"
+    ]
+  }
+}

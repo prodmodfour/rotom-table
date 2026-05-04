@@ -1,0 +1,99 @@
+{
+  "slug": "examples-ditto",
+  "nickname": "Ditto",
+  "species": "Ditto",
+  "level": 20,
+  "gender": "No Gender",
+  "shiny": false,
+  "nature": "Jolly",
+  "types": [
+    "Normal"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "satk": {
+      "base": -1,
+      "added": 5,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "spd": {
+      "base": 1,
+      "added": 5,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 60,
+    "currentHp": 60,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 1,
+      "vsSatk": 2,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Transform",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "10, 1 Target",
+      "effect": "The user targets a Pokémon within 10 meters, and assumes the form of the target.  It gains all of the user’s Moves, gains its Abilities, copies its weight and height and Capabilities. Transform lasts until the user is switched out, KO’d or until the end of the encounter. The user may choose to end the Transformation on its turn as a free action, regaining its previous Move List. The user’s Stats do not change from using Transform. Transform cannot miss."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Imposter",
+      "frequency": "Static",
+      "effect": "If the user is not Transformed, they may use Transform as a Free-Action Interrupt."
+    },
+    {
+      "name": "Limber",
+      "frequency": "Static",
+      "effect": "The user is immune to Paralysis. Defensive."
+    }
+  ],
+  "natureMod": {
+    "plus": "spd",
+    "minus": "satk"
+  },
+  "capabilities": {
+    "overland": 4,
+    "swim": 4,
+    "jump": "1/1",
+    "power": 1,
+    "weight": 1,
+    "size": "Small",
+    "other": [
+      "Amorphous",
+      "Wallclimber",
+      "Shapeshifter",
+      "Underdog"
+    ]
+  }
+}

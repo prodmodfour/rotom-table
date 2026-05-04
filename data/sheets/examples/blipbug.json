@@ -1,0 +1,102 @@
+{
+  "slug": "examples-blipbug",
+  "nickname": "Blipbug",
+  "species": "Blipbug",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Mild",
+  "types": [
+    "Bug"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "def": {
+      "base": -1,
+      "added": 3,
+      "stage": 0
+    },
+    "satk": {
+      "base": 1,
+      "added": 6,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 9,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 48,
+    "currentHp": 48,
+    "tick": 4,
+    "evasion": {
+      "vsAtk": 0,
+      "vsSatk": 2,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Struggle Bug",
+      "type": "Bug",
+      "category": "Special",
+      "db": 7,
+      "damageRoll": "2d6+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Cone 2",
+      "effect": "On hit, lowers the target’s Special Attack by -1 CS."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Swarm",
+      "frequency": "Static",
+      "effect": "The user gains Last Chance with Bug."
+    },
+    {
+      "name": "Compound Eyes",
+      "frequency": "Static",
+      "effect": "The user gains a +3 Bonus to all Accuracy Rolls."
+    }
+  ],
+  "natureMod": {
+    "plus": "satk",
+    "minus": "def"
+  },
+  "capabilities": {
+    "overland": 4,
+    "swim": 2,
+    "jump": "1/1",
+    "power": 1,
+    "weight": 1,
+    "size": "Small",
+    "other": [
+      "Naturewalk  (Grassland)",
+      "Threaded",
+      "Wallclimber",
+      "Underdog"
+    ]
+  }
+}

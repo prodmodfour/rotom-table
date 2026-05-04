@@ -1,0 +1,148 @@
+{
+  "slug": "examples-dhelmise",
+  "nickname": "Dhelmise",
+  "species": "Dhelmise",
+  "level": 20,
+  "gender": "No Gender",
+  "shiny": false,
+  "nature": "Bold",
+  "types": [
+    "Ghost",
+    "Grass"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "atk": {
+      "base": -1,
+      "added": 5,
+      "stage": 0
+    },
+    "def": {
+      "base": 1,
+      "added": 7,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 66,
+    "currentHp": 66,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 3,
+      "vsSatk": 2,
+      "vsAny": 1
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Wrap",
+      "type": "Normal",
+      "category": "Static",
+      "frequency": "Static",
+      "effect": "The user gains a +1 Bonus to Accuracy Rolls made to initiate Grapple Maneuvers, and +2 to Skill Checks made to initiate Grapple Maneuvers or gain Dominance. Whenever the user gains Dominance in a Grapple, the target of the Grapple loses a Tick of Hit Points."
+    },
+    {
+      "name": "Astonish",
+      "type": "Ghost",
+      "category": "Physical",
+      "db": 5,
+      "damageRoll": "1d8+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Astonish Flinches the target on 15+. Once per scene, if the target is unaware of the user’s presence, Astonish automatically Flinches the target."
+    },
+    {
+      "name": "Metal Sound",
+      "type": "Steel",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 4,
+      "range": "Burst 2, Friendly, Sonic",
+      "effect": "All Legal Targets have their Special Defense lowered 2 Combat Stages."
+    },
+    {
+      "name": "Absorb",
+      "type": "Grass",
+      "category": "Special",
+      "db": 4,
+      "damageRoll": "1d8+6",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "After the target takes damage, the user gains Hit Points equal to half of the damage they dealt to the target."
+    },
+    {
+      "name": "Growth",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Attack 1 Combat Stage and raise the user’s Special Attack 1 Combat Stage. If it is Sunny, double the amount of Combat Stages gained."
+    },
+    {
+      "name": "Gyro Ball",
+      "type": "Steel",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "The target reveals their Speed Stat (including Combat Stages). If it is higher than the user’s (again, including Combat Stages), subtract the user’s Speed Stat from the target’s, and apply the difference as Bonus Damage."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Anchored",
+      "effect": "Dhelmise has an Anchor token on the field, which occupies one square as if it is Medium sized but is otherwise ignored for cover and targeting. Dhelmise cannot move or be moved more than 3 meters away from its Anchor, willingly or otherwise. The Anchor token itself cannot be pushed, pulled, or moved against Dhelmise's will in any way. Dhelmise may shift their Anchor Token as a Swift Action, moving it to any open space within 3 meters of itself."
+    },
+    {
+      "name": "Steelworker",
+      "frequency": "Scene – Free Action",
+      "effect": "The user calculates damage as if it was only Steel-Typed."
+    }
+  ],
+  "natureMod": {
+    "plus": "def",
+    "minus": "atk"
+  },
+  "capabilities": {
+    "overland": 1,
+    "swim": 5,
+    "levitate": 4,
+    "jump": "1/0",
+    "power": 7,
+    "weight": 6,
+    "size": "Huge",
+    "other": [
+      "Darkvision",
+      "Dead Silent",
+      "Gilled"
+    ]
+  }
+}

@@ -1,0 +1,140 @@
+{
+  "slug": "examples-shiinotic",
+  "nickname": "Shiinotic",
+  "species": "Shiinotic",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Patient",
+  "types": [
+    "Grass",
+    "Fairy"
+  ],
+  "stats": {
+    "hp": {
+      "base": 1,
+      "added": 2,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 2,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 10,
+      "stage": 0
+    },
+    "spd": {
+      "base": -1,
+      "added": 6,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 57,
+    "currentHp": 57,
+    "tick": 5,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 4,
+      "vsAny": 1
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Sleep Powder",
+      "type": "Grass",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 6,
+      "range": "4, 1 Target, Powder",
+      "effect": "The target falls asleep."
+    },
+    {
+      "name": "Moonlight",
+      "type": "Fairy",
+      "category": "Status",
+      "frequency": "Daily x2",
+      "range": "Self",
+      "effect": "The user regains Hit Points equal to half of its full Hit Point value. If it is Sunny, the user gains 2/3 of its full Hit Point value. If it is Rainy, Sand Storming or Hailing the user gains 1/4 of their full Hit Point value."
+    },
+    {
+      "name": "Mega Drain",
+      "type": "Grass",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "After the target takes damage, the user gains Hit Points equal to half of the damage they dealt to the target."
+    },
+    {
+      "name": "Flash",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Cone 2",
+      "effect": "The Accuracy of all Legal Targets is lowered by -1."
+    },
+    {
+      "name": "Astonish",
+      "type": "Ghost",
+      "category": "Physical",
+      "db": 3,
+      "damageRoll": "1d6+5 / 9",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Astonish Flinches the target on 15+. Once per scene, if the target is unaware of the user’s presence, Astonish automatically Flinches the target."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Illuminate",
+      "frequency": "Static",
+      "effect": "Attacks that target the user have a -2 Accuracy Penalty against the user. Does not affect attackers with the Blindsense Capability. Defensive."
+    },
+    {
+      "name": "Effect Spore",
+      "frequency": "Scene – Free Action",
+      "effect": "Roll 1d6. On a result of 1 or 2, the attacker is Poisoned. On a result of 3 or 4, the attacker is Paralyzed. On a result of 5 or 6, the attacker falls Asleep."
+    }
+  ],
+  "natureMod": {
+    "plus": "hp",
+    "minus": "spd"
+  },
+  "capabilities": {
+    "overland": 5,
+    "swim": 1,
+    "jump": "1/1",
+    "power": 3,
+    "weight": 2,
+    "size": "Medium",
+    "other": [
+      "Glow",
+      "Mushroom Harvest",
+      "Naturewalk (Forest)",
+      "Underdog"
+    ]
+  }
+}

@@ -1,0 +1,139 @@
+{
+  "slug": "examples-kingler",
+  "nickname": "Kingler",
+  "species": "Kingler",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Dreamy",
+  "types": [
+    "Water"
+  ],
+  "stats": {
+    "hp": {
+      "base": -1,
+      "added": 2,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 1,
+      "added": 7,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 8,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 51,
+    "currentHp": 51,
+    "tick": 5,
+    "evasion": {
+      "vsAtk": 3,
+      "vsSatk": 2,
+      "vsAny": 3
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Harden",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "Self",
+      "effect": "Raise the user’s Defense 1 Combat Stage."
+    },
+    {
+      "name": "Leer",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Cone 2, Friendly, Social",
+      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
+    },
+    {
+      "name": "Vice Grip",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "None"
+    },
+    {
+      "name": "Bubble Beam",
+      "type": "Water",
+      "category": "Special",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "Bubble Beam lowers the target’s Speed on 18+."
+    },
+    {
+      "name": "Mud Shot",
+      "type": "Ground",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "At-Will",
+      "ac": 3,
+      "range": "3, 1 Target",
+      "effect": "The target’s Speed is lowed by -1 Combat Stage."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Shell Armor",
+      "frequency": "Static",
+      "effect": "The user is immune to Critical Hits; they are instead normal hits. Defensive."
+    },
+    {
+      "name": "Parry",
+      "frequency": "Scene – Free Action",
+      "effect": "The attack instead misses. Defensive."
+    }
+  ],
+  "natureMod": {
+    "plus": "sdef",
+    "minus": "hp"
+  },
+  "capabilities": {
+    "overland": 6,
+    "swim": 4,
+    "burrow": 1,
+    "jump": "1/1",
+    "power": 6,
+    "weight": 4,
+    "size": "Medium",
+    "other": [
+      "Gilled"
+    ]
+  }
+}

@@ -1,0 +1,132 @@
+{
+  "slug": "examples-espeon",
+  "nickname": "Espeon",
+  "species": "Espeon",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Cuddly",
+  "types": [
+    "Psychic"
+  ],
+  "stats": {
+    "hp": {
+      "base": 1,
+      "added": 5,
+      "stage": 0
+    },
+    "atk": {
+      "base": -1,
+      "added": 5,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 69,
+    "currentHp": 69,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 3,
+      "vsAny": 3
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Confusion",
+      "type": "Psychic",
+      "category": "Special",
+      "db": 7,
+      "damageRoll": "2d6+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Confusion Confuses the target on 19+."
+    },
+    {
+      "name": "Quick Attack",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Priority",
+      "effect": "None."
+    },
+    {
+      "name": "Swift",
+      "type": "Normal",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "EOT",
+      "range": "8, Ranged Blast 2, Friendly",
+      "effect": "Swift cannot Miss."
+    },
+    {
+      "name": "Sand Attack",
+      "type": "Ground",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "2, 1 Target",
+      "effect": "The target is Blinded until the end of their next turn."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Synchronize",
+      "frequency": "Scene – Free Action",
+      "effect": "The foe which caused the Status Condition is given the same Status they inflicted."
+    },
+    {
+      "name": "Trace",
+      "frequency": "Scene – Free Action",
+      "effect": "The Pokémon gains an Ability known by the Target for the remainder of the encounter, or until it is Fainted."
+    }
+  ],
+  "natureMod": {
+    "plus": "hp",
+    "minus": "atk"
+  },
+  "capabilities": {
+    "overland": 6,
+    "swim": 4,
+    "jump": "1/2",
+    "power": 3,
+    "weight": 3,
+    "size": "Medium",
+    "other": [
+      "Telepath",
+      "Telekinetic",
+      "Tracker",
+      "Premonition"
+    ]
+  }
+}

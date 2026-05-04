@@ -1,0 +1,147 @@
+{
+  "slug": "examples-tyrunt",
+  "nickname": "Tyrunt",
+  "species": "Tyrunt",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Lonely",
+  "types": [
+    "Rock",
+    "Dragon"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    },
+    "atk": {
+      "base": 1,
+      "added": 6,
+      "stage": 0
+    },
+    "def": {
+      "base": -1,
+      "added": 6,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 2,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 69,
+    "currentHp": 69,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 1,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Charm",
+      "type": "Fairy",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "6, 1 Target, Social",
+      "effect": "Charm lowers the target’s Attack 2 Combat Stages."
+    },
+    {
+      "name": "Tackle",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash, Push",
+      "effect": "The target is pushed 2 Meters."
+    },
+    {
+      "name": "Roar",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "ac": 2,
+      "range": "Burst 1, Sonic, Social",
+      "effect": "When declaring Roar, the user does nothing and may not Shift. At the end of the round, the user Shifts and uses Roar.  Targets hit by Roar immediately Shift away from the target using their highest usable movement capability, and towards their Trainer if possible. If the target is an owned Pokémon and ends this shift within 6 meters of their Poké Ball, they are immediately recalled to their Poké Ball. If that Trainer sends out a replacement, they do not lose their Pokémon turn."
+    },
+    {
+      "name": "Tail Whip",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Burst 1, Friendly",
+      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
+    },
+    {
+      "name": "Bite",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Bite Flinches the target on 15+."
+    },
+    {
+      "name": "Bide",
+      "type": "Normal",
+      "category": "Physical",
+      "frequency": "Scene",
+      "range": "Burst 1, Friendly",
+      "effect": "The user may use Bide as a Reaction Move upon being Hit by a Damaging Move. During their next available turn, the user may Shift and then use Bide, causing all Adjacent foes to lose X HP, where X is the amount of Damage taken since declaring use of Bide (Loss of life through effects such as Poison is not ‘Damage’)."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Sprint",
+      "frequency": "Scene – Swift Action",
+      "effect": "The user gains +2 Speed Combat Stages."
+    },
+    {
+      "name": "Hyper Cutter",
+      "frequency": "Static",
+      "effect": "The user’s Attack Stat may not be lowered, and its Attack Combat Stages may not be lowered. Defensive."
+    }
+  ],
+  "natureMod": {
+    "plus": "atk",
+    "minus": "def"
+  },
+  "capabilities": {
+    "overland": 4,
+    "swim": 3,
+    "jump": "1/1",
+    "power": 3,
+    "weight": 1,
+    "size": "Small",
+    "other": [
+      "Naturewalk  (Mountain)",
+      "Underdog"
+    ]
+  }
+}

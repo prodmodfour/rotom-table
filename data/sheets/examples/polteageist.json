@@ -1,0 +1,119 @@
+{
+  "slug": "examples-polteageist",
+  "nickname": "Polteageist",
+  "species": "Polteageist",
+  "level": 20,
+  "gender": "No Gender",
+  "shiny": false,
+  "nature": "Timid",
+  "types": [
+    "Ghost"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 1,
+      "stage": 0
+    },
+    "atk": {
+      "base": -1,
+      "added": 1,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    },
+    "spd": {
+      "base": 1,
+      "added": 7,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 51,
+    "currentHp": 51,
+    "tick": 5,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 3,
+      "vsAny": 3
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Protect",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Self, Interrupt, Shield, Trigger",
+      "effect": "If the user is hit by a Move, the user may use Protect. The user is instead not hit by the Move. You do not take any damage nor are you affected by any of the Move’s effects."
+    },
+    {
+      "name": "Aromatic Mist",
+      "type": "Fairy",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Burst 1",
+      "effect": "All allies in Aromatic Mist’s area of effect have their Special Defense raised 1 Combat Stage."
+    },
+    {
+      "name": "Mega Drain",
+      "type": "Grass",
+      "category": "Special",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "After the target takes damage, the user gains Hit Points equal to half of the damage they dealt to the target."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Cursed Body",
+      "frequency": "Scene – Free Action",
+      "effect": "The Move becomes Disabled."
+    },
+    {
+      "name": "Weak Armor",
+      "frequency": "At-Will – Free Action",
+      "effect": "The user may lower its Defense by 1 Combat Stage, and gain +1 Speed Combat Stage. This is done after the triggering damage is resolved."
+    }
+  ],
+  "natureMod": {
+    "plus": "spd",
+    "minus": "atk"
+  },
+  "capabilities": {
+    "overland": 2,
+    "swim": 1,
+    "levitate": 6,
+    "jump": "0/1",
+    "power": 1,
+    "weight": 1,
+    "size": "Small",
+    "other": [
+      "Darkvision",
+      "Dead Silent",
+      "Fountain",
+      "Phasing"
+    ]
+  }
+}

@@ -1,0 +1,144 @@
+{
+  "slug": "examples-indeedee-female",
+  "nickname": "Indeedee Female",
+  "species": "Indeedee Female",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Bashful",
+  "types": [
+    "Psychic",
+    "Normal"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 2,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 12,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 60,
+    "currentHp": 60,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 4,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Psybeam",
+      "type": "Psychic",
+      "category": "Special",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Psybeam Confuses the target on 19+."
+    },
+    {
+      "name": "Helping Hand",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "4, 1 Target, Priority",
+      "effect": "Helping Hand grants the target +2 on their next Accuracy Roll this round, and +10 to the next Damage Roll this round."
+    },
+    {
+      "name": "Baton Pass",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "Self",
+      "effect": "The user is replaced with another Pokémon from their trainer’s roster. All Combat Stage, Coats, and [Stratagems] on Baton Pass’ user are transferred to the replacement. Baton Pass may be used to switch even if the user is Trapped."
+    },
+    {
+      "name": "Disarming Voice",
+      "type": "Fairy",
+      "category": "Special",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "range": "Burst 1",
+      "effect": "Disarming Voice cannot miss."
+    },
+    {
+      "name": "Stored Power",
+      "type": "Psychic",
+      "category": "Special",
+      "db": 4,
+      "damageRoll": "1d8+6",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "10, 1 Target",
+      "effect": "For every Combat Stage the user has above 0, add +2 to Stored Power’s Damage Base, up to a maximum of Damage Base 20."
+    },
+    {
+      "name": "Play Nice",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target, Social",
+      "effect": "Play Nice lowers the target’s Attack by 1 Combat Stage."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Own Tempo",
+      "frequency": "Static",
+      "effect": "The user is immune to Confusion. Defensive."
+    },
+    {
+      "name": "Friend Guard",
+      "frequency": "Scene – Free Action",
+      "effect": "The damage is resisted one step further. Defensive."
+    }
+  ],
+  "capabilities": {
+    "overland": 6,
+    "swim": 3,
+    "jump": "1/1",
+    "power": 3,
+    "weight": 3,
+    "size": "Small",
+    "other": [
+      "Naturewalk  (Forest)",
+      "Telekinetic",
+      "Telepath"
+    ]
+  }
+}

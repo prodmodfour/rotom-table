@@ -1,0 +1,148 @@
+{
+  "slug": "examples-trevenant",
+  "nickname": "Trevenant",
+  "species": "Trevenant",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Modest",
+  "types": [
+    "Ghost",
+    "Grass"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "atk": {
+      "base": -1,
+      "added": 8,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 2,
+      "stage": 0
+    },
+    "satk": {
+      "base": 1,
+      "added": 10,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 69,
+    "currentHp": 69,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 2,
+      "vsAny": 1
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Ingrain",
+      "type": "Grass",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Self, Coat",
+      "effect": "Ingrain applies a Coat to the user, which has the following effect; the user cannot be pushed or pulled, and cannot be switched out.  At the beginning of each of the user’s turn, the user gains a Tick of Hit Points."
+    },
+    {
+      "name": "Astonish",
+      "type": "Ghost",
+      "category": "Physical",
+      "db": 5,
+      "damageRoll": "1d8+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Astonish Flinches the target on 15+. Once per scene, if the target is unaware of the user’s presence, Astonish automatically Flinches the target."
+    },
+    {
+      "name": "Growth",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Attack 1 Combat Stage and raise the user’s Special Attack 1 Combat Stage. If it is Sunny, double the amount of Combat Stages gained."
+    },
+    {
+      "name": "Confuse Ray",
+      "type": "Ghost",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "The target is Confused."
+    },
+    {
+      "name": "Tackle",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash, Push",
+      "effect": "The target is pushed 2 Meters."
+    },
+    {
+      "name": "Feint Attack",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "EOT",
+      "range": "Melee, 1 Target",
+      "effect": "Feint Attack cannot miss."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Natural Cure",
+      "frequency": "Scene – Free Action",
+      "effect": "Whenever the user is returned to its Poké Ball or Takes A Breather, it may activate Natural Cure to cure itself of all Persistent Status Afflictions."
+    },
+    {
+      "name": "Forest Lord",
+      "frequency": "Scene x2 – Shift Action",
+      "effect": "This turn, the user may originate a Grass or Ghost-Typed Move from any fully grown tree within 10 meters. Moves performed this way gain a +2 Bonus on their Accuracy Roll."
+    }
+  ],
+  "natureMod": {
+    "plus": "satk",
+    "minus": "atk"
+  },
+  "capabilities": {
+    "overland": 6,
+    "swim": 3,
+    "jump": "1/2",
+    "power": 6,
+    "weight": 4,
+    "size": "Large",
+    "other": [
+      "Naturewalk  (Grassland, Forest)",
+      "Phasing",
+      "Invisibility"
+    ]
+  }
+}

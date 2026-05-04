@@ -1,0 +1,149 @@
+{
+  "slug": "examples-mightyena",
+  "nickname": "Mightyena",
+  "species": "Mightyena",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Impish",
+  "types": [
+    "Dark"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 8,
+      "stage": 0
+    },
+    "def": {
+      "base": 1,
+      "added": 7,
+      "stage": 0
+    },
+    "satk": {
+      "base": -1,
+      "added": 3,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 2,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 72,
+    "currentHp": 72,
+    "tick": 7,
+    "evasion": {
+      "vsAtk": 3,
+      "vsSatk": 1,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Bite",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Bite Flinches the target on 15+."
+    },
+    {
+      "name": "Snarl",
+      "type": "Dark",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "ac": 3,
+      "range": "Cone 2, Sonic",
+      "effect": "All Legal Targets have their Special Attack lowered 1 Combat Stage."
+    },
+    {
+      "name": "Odor Sleuth",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "range": "Self, Swift Action",
+      "effect": "Odor Sleuth may be activated as a Swift Action on the user’s turn. For the rest of the turn, the user’s Normal-Type and Fighting-Type Moves can hit and affect Ghost-Type targets, and the user can see through the Illusion Ability, Moves with the Illusion keyword, and effects created by the Illusionist Capability, ignoring all effects from those."
+    },
+    {
+      "name": "Swagger",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 5,
+      "range": "6, 1 Target, Social",
+      "effect": "The target’s Attack is raised 2 Combat Stages. Swagger Confuses the target."
+    },
+    {
+      "name": "Roar",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "ac": 2,
+      "range": "Burst 1, Sonic, Social",
+      "effect": "When declaring Roar, the user does nothing and may not Shift. At the end of the round, the user Shifts and uses Roar.  Targets hit by Roar immediately Shift away from the target using their highest usable movement capability, and towards their Trainer if possible. If the target is an owned Pokémon and ends this shift within 6 meters of their Poké Ball, they are immediately recalled to their Poké Ball. If that Trainer sends out a replacement, they do not lose their Pokémon turn."
+    },
+    {
+      "name": "Sand Attack",
+      "type": "Ground",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "2, 1 Target",
+      "effect": "The target is Blinded until the end of their next turn."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Teamwork",
+      "frequency": "Static",
+      "effect": "While you are adjacent to an opponent, allies using Melee attacks against that opponent receive a +2 bonus to Accuracy Checks."
+    },
+    {
+      "name": "Moxie",
+      "frequency": "Static",
+      "effect": "Whenever the user’s Move causes a target to faint, it may raise its Attack Combat Stage by +1. You may only trigger Moxie once per Move, even if the Move causes multiple targets to faint."
+    }
+  ],
+  "natureMod": {
+    "plus": "def",
+    "minus": "satk"
+  },
+  "capabilities": {
+    "overland": 6,
+    "swim": 4,
+    "jump": "1/2",
+    "power": 6,
+    "weight": 3,
+    "size": "Medium",
+    "other": [
+      "Darkvision",
+      "Pack Mon",
+      "Tracker",
+      "Naturewalk (Grassland, Forest)",
+      "Underdog"
+    ]
+  }
+}

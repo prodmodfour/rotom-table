@@ -1,0 +1,89 @@
+{
+  "slug": "examples-hoopa-unbound",
+  "nickname": "Hoopa Unbound",
+  "species": "Hoopa Unbound",
+  "level": 20,
+  "gender": "No Gender",
+  "shiny": false,
+  "nature": "Lonely",
+  "types": [
+    "Psychic",
+    "Dark"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    },
+    "atk": {
+      "base": 1,
+      "added": 4,
+      "stage": 0
+    },
+    "def": {
+      "base": -1,
+      "added": 4,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 75,
+    "currentHp": 75,
+    "tick": 7,
+    "evasion": {
+      "vsAtk": 1,
+      "vsSatk": 3,
+      "vsAny": 3
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [],
+  "abilities": [
+    {
+      "name": "Magician",
+      "frequency": "Scene – Free Action",
+      "effect": "The user takes the target’s Held Item. This Ability may not be triggered if the user is already holding a Held Item."
+    },
+    {
+      "name": "Enduring Rage",
+      "frequency": "Static",
+      "effect": "The user may not make rolls to cure themselves from the Enraged condition. However, while Enraged, the user gains 5 Damage Reduction."
+    }
+  ],
+  "natureMod": {
+    "plus": "atk",
+    "minus": "def"
+  },
+  "capabilities": {
+    "overland": 10,
+    "swim": 5,
+    "jump": "4/4",
+    "power": 9,
+    "weight": 6,
+    "size": "Gigantic",
+    "other": [
+      "Teleporter 8",
+      "Darkvision"
+    ]
+  }
+}

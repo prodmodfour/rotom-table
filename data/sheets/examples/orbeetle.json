@@ -1,0 +1,140 @@
+{
+  "slug": "examples-orbeetle",
+  "nickname": "Orbeetle",
+  "species": "Orbeetle",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Naive",
+  "types": [
+    "Bug",
+    "Psychic"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "sdef": {
+      "base": -1,
+      "added": 3,
+      "stage": 0
+    },
+    "spd": {
+      "base": 1,
+      "added": 10,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 60,
+    "currentHp": 60,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 3,
+      "vsSatk": 2,
+      "vsAny": 4
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Magic Coat",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "Daily",
+      "range": "4, Interrupt, Trigger",
+      "effect": "If the user is about to get a hit by a Move that does not have a Damage Dice Roll, they may use Magic Coat as an Interrupt. The Interrupted Move’s user is treated as if they were the target of their own Move, with the user of Magic Coat as the user."
+    },
+    {
+      "name": "Psybeam",
+      "type": "Psychic",
+      "category": "Special",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Psybeam Confuses the target on 19+."
+    },
+    {
+      "name": "Hypnosis",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 6,
+      "range": "4, 1 Target",
+      "effect": "The target falls Asleep."
+    },
+    {
+      "name": "Agility",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Speed 2 Combat Stages."
+    },
+    {
+      "name": "Confuse Ray",
+      "type": "Ghost",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "The target is Confused."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Forewarn",
+      "frequency": "Scene – Free Action",
+      "effect": "The Move with the highest Damage Dice Roll known by the targeted foe is revealed. If there is a tie, all tied Moves are revealed. The Moves revealed gain a -2 Penalty during Accuracy Checks when used by the target for the rest of the encounter."
+    },
+    {
+      "name": "Compound Eyes",
+      "frequency": "Static",
+      "effect": "The user gains a +3 Bonus to all Accuracy Rolls."
+    }
+  ],
+  "natureMod": {
+    "plus": "spd",
+    "minus": "sdef"
+  },
+  "capabilities": {
+    "overland": 5,
+    "sky": 7,
+    "swim": 2,
+    "jump": "2/2",
+    "power": 3,
+    "weight": 3,
+    "size": "Small",
+    "other": [
+      "Glow",
+      "Naturewalk (Grassland)",
+      "Telekinesis",
+      "Telepathy",
+      "Threaded",
+      "Wallclimber"
+    ]
+  }
+}

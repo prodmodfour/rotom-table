@@ -1,0 +1,139 @@
+{
+  "slug": "examples-palpitoad",
+  "nickname": "Palpitoad",
+  "species": "Palpitoad",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Rash",
+  "types": [
+    "Water",
+    "Ground"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "satk": {
+      "base": 1,
+      "added": 8,
+      "stage": 0
+    },
+    "sdef": {
+      "base": -1,
+      "added": 3,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 72,
+    "currentHp": 72,
+    "tick": 7,
+    "evasion": {
+      "vsAtk": 1,
+      "vsSatk": 1,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Mud Shot",
+      "type": "Ground",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 3,
+      "range": "3, 1 Target",
+      "effect": "The target’s Speed is lowed by -1 Combat Stage."
+    },
+    {
+      "name": "Supersonic",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 6,
+      "range": "4, 1 Target, Sonic",
+      "effect": "The target becomes Confused. On miss, the target suffers a -2 penalty to Accuracy Rolls for one full round."
+    },
+    {
+      "name": "Round",
+      "type": "Normal",
+      "category": "Special",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Burst 1, Sonic",
+      "effect": "Round’s Damage Base is equal to 6, plus +2 more for each previous use of Round by any Trainer or Pokémon this round, up to a maximum of DB12."
+    },
+    {
+      "name": "Aqua Ring",
+      "type": "Water",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Self, Coat",
+      "effect": "Aqua Ring covers the user in a Coat that heals the user at the beginning of their turn. The user is healed a Tick of Hit Points each turn."
+    },
+    {
+      "name": "Bubble Beam",
+      "type": "Water",
+      "category": "Special",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "Bubble Beam lowers the target’s Speed on 18+."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Water Absorb",
+      "frequency": "Static",
+      "effect": "The user is immune to the damage and effects of  Water-Type attacks, and whenever they are hit with a Water Type attack, they gain a Tick of Hit Points. Defensive."
+    },
+    {
+      "name": "Mud Dweller",
+      "frequency": "Static",
+      "effect": "The user resists Ground-Type and Water-Type attacks one step further."
+    }
+  ],
+  "natureMod": {
+    "plus": "satk",
+    "minus": "sdef"
+  },
+  "capabilities": {
+    "overland": 4,
+    "swim": 4,
+    "jump": "2/2",
+    "power": 3,
+    "weight": 2,
+    "size": "Small",
+    "other": [
+      "Fountain",
+      "Naturewalk (Wetlands)",
+      "Underdog"
+    ]
+  }
+}

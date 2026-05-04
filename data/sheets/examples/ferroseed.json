@@ -1,0 +1,150 @@
+{
+  "slug": "examples-ferroseed",
+  "nickname": "Ferroseed",
+  "species": "Ferroseed",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Proud",
+  "types": [
+    "Grass",
+    "Steel"
+  ],
+  "stats": {
+    "hp": {
+      "base": 1,
+      "added": 3,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 8,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    },
+    "satk": {
+      "base": -1,
+      "added": 2,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 54,
+    "currentHp": 54,
+    "tick": 5,
+    "evasion": {
+      "vsAtk": 3,
+      "vsSatk": 3,
+      "vsAny": 1
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Rollout",
+      "type": "Rock",
+      "category": "Physical",
+      "db": 3,
+      "damageRoll": "1d6+5 / 9",
+      "frequency": "At-Will",
+      "ac": 4,
+      "range": "Melee, 1 Target, Pass",
+      "effect": "The user continues to use Rollout on each of its turns until they miss any target with Rollout, or are not able to hit any target with Rollout during their turn.  Each successive use of Rollout increases Rollout’s Damage Base by +4 to a maximum of DB 15."
+    },
+    {
+      "name": "Harden",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "Self",
+      "effect": "Raise the user’s Defense 1 Combat Stage."
+    },
+    {
+      "name": "Tackle",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash, Push",
+      "effect": "The target is pushed 2 Meters."
+    },
+    {
+      "name": "Pin Missile",
+      "type": "Bug",
+      "category": "Physical",
+      "db": 3,
+      "damageRoll": "1d6+5 / 9",
+      "frequency": "EOT",
+      "ac": 4,
+      "range": "6, 1 Target, Five Strike",
+      "effect": "None"
+    },
+    {
+      "name": "Curse",
+      "type": "Ghost",
+      "category": "Status",
+      "frequency": "See Text",
+      "range": "Self",
+      "effect": "If the user is not a Ghost Type, Curse has a Frequency of EOT, and when used the user lowers its Speed by -1 Combat Stage, but raises Attack and Defense by +1 Combat Stage each.  If the user is a Ghost Type, Curse has a Frequency of Scene, and when used the user loses 1/3rd of their Max Hit Points and a target Pokémon or Trainer within 8 meters of the user becomes Cursed. This Hit Point loss cannot be prevented in any way."
+    },
+    {
+      "name": "Metal Claw",
+      "type": "Steel",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10",
+      "frequency": "At-Will",
+      "ac": 3,
+      "range": "Melee, 1 Target, Spirit Surge",
+      "effect": "Raise the user’s Attack 1 Combat Stage on 18+."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Iron Barbs",
+      "frequency": "At-Will - Free Action, Reaction",
+      "effect": "The attacker loses Hit Points equal to  Tick of Hit Points."
+    },
+    {
+      "name": "Anticipation",
+      "frequency": "At-Will – Swift Action",
+      "effect": "The target reveals if they have any Moves that are Super-Effective against the Pokémon with Anticipation. You may not target a Pokémon or Trainer more than once per encounter with Anticipation. Anticipation only reveals whether the opponent does or does not have those moves, not the specific moves themselves."
+    }
+  ],
+  "natureMod": {
+    "plus": "hp",
+    "minus": "satk"
+  },
+  "capabilities": {
+    "overland": 3,
+    "swim": 1,
+    "jump": "1/1",
+    "power": 4,
+    "weight": 2,
+    "size": "Small",
+    "other": [
+      "Naturewalk  (Grassland, Forest)",
+      "Underdog"
+    ]
+  }
+}

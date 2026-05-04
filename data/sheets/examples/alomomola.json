@@ -1,0 +1,146 @@
+{
+  "slug": "examples-alomomola",
+  "nickname": "Alomomola",
+  "species": "Alomomola",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Careful",
+  "types": [
+    "Water"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 10,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 8,
+      "stage": 0
+    },
+    "satk": {
+      "base": -1,
+      "added": 3,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 1,
+      "added": 0,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 96,
+    "currentHp": 96,
+    "tick": 9,
+    "evasion": {
+      "vsAtk": 3,
+      "vsSatk": 1,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Pound",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "None"
+    },
+    {
+      "name": "Aqua Ring",
+      "type": "Water",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Self, Coat",
+      "effect": "Aqua Ring covers the user in a Coat that heals the user at the beginning of their turn. The user is healed a Tick of Hit Points each turn."
+    },
+    {
+      "name": "Water Sport",
+      "type": "Water",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Burst 2, Coat",
+      "effect": "All targets in the burst, including the user, gain a Coat which grants them 1 Step of Resistance to Fire Type Moves. After a target has been hit by a damaging Fire Type Move, the coat is removed."
+    },
+    {
+      "name": "Double Slap",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 2,
+      "damageRoll": "1d6+3 / 7",
+      "frequency": "At-Will",
+      "ac": 4,
+      "range": "Melee, 1 Target, Five Strike",
+      "effect": "None"
+    },
+    {
+      "name": "Aqua Jet",
+      "type": "Water",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Priority",
+      "effect": "None"
+    },
+    {
+      "name": "Heal Pulse",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "Daily x2",
+      "range": "6, 1 Target, Aura",
+      "effect": "Restores 50% of the target’s max Hit Points. Heal Pulse’s user may not target itself with Heal Pulse."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Healer",
+      "frequency": "Scene – Free Action",
+      "effect": "The target is cured of all Status conditions."
+    },
+    {
+      "name": "Life Force",
+      "frequency": "Daily x5 – Swift Action",
+      "effect": "The user gains a Tick of Hit Points."
+    }
+  ],
+  "natureMod": {
+    "plus": "sdef",
+    "minus": "satk"
+  },
+  "capabilities": {
+    "overland": 1,
+    "swim": 6,
+    "jump": "2/3",
+    "power": 5,
+    "weight": 3,
+    "size": "Medium",
+    "other": [
+      "Naturewalk  (Ocean)",
+      "Fountain"
+    ]
+  }
+}

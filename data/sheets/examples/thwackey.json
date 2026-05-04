@@ -1,0 +1,125 @@
+{
+  "slug": "examples-thwackey",
+  "nickname": "Thwackey",
+  "species": "Thwackey",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Serious",
+  "types": [
+    "Grass"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 9,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 66,
+    "currentHp": 66,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 1,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Branch Poke",
+      "type": "Grass",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "2, 1 Target"
+    },
+    {
+      "name": "Razor Leaf",
+      "type": "Grass",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 4,
+      "range": "Cone 2",
+      "effect": "Razor Leaf is a Critical Hit on 18+."
+    },
+    {
+      "name": "Taunt",
+      "type": "Dark",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 3,
+      "range": "6, 1 Target, Social",
+      "effect": "The target becomes Enraged."
+    },
+    {
+      "name": "Screech",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 4,
+      "range": "Burst 2, Friendly, Sonic",
+      "effect": "All Legal Targets have their Defense lowered 2 Combat Stages."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Overgrow",
+      "frequency": "Static",
+      "effect": "The user gains Last Chance with Grass."
+    },
+    {
+      "name": "Drown Out",
+      "frequency": "Scene x2 – Free Action",
+      "effect": "The triggering Move fails and has no effect."
+    }
+  ],
+  "capabilities": {
+    "overland": 7,
+    "swim": 4,
+    "jump": "3/3",
+    "power": 3,
+    "weight": 2,
+    "size": "Small",
+    "other": [
+      "Naturewalk  (Forest)",
+      "Pack Mon",
+      "Underdog"
+    ]
+  }
+}

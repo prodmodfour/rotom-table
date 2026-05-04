@@ -1,0 +1,152 @@
+{
+  "slug": "examples-shellos",
+  "nickname": "Shellos",
+  "species": "Shellos",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Cuddly",
+  "types": [
+    "Water"
+  ],
+  "stats": {
+    "hp": {
+      "base": 1,
+      "added": 8,
+      "stage": 0
+    },
+    "atk": {
+      "base": -1,
+      "added": 3,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 81,
+    "currentHp": 81,
+    "tick": 8,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 2,
+      "vsAny": 1
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Hidden Power",
+      "type": "Normal",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Burst 1",
+      "effect": "When a Pokémon first obtains the Move Hidden Power, roll 1d20. Hidden Power’s Elemental Type will be changed from Normal to Bug on a result of 1; Dark on 2; Dragon on 3; Electric on 4; Fairy on 5; Fighting on 6; Fire on 7; Flying on 8; Ghost on 9; Grass on 10; Ground on 11; Ice on 12; Normal on 13; Poison on 14; Psychic on 15; Rock on 16; Steel on 17; Water on 18; and on 19 or 20, reroll until you roll another number. This effect is permanent –if Hidden Power is forgotten and relearned, the chosen Type remains the same."
+    },
+    {
+      "name": "Water Pulse",
+      "type": "Water",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "8, 1 Target, Aura",
+      "effect": "Water Pulse Confuses the target on 17+."
+    },
+    {
+      "name": "Mud Bomb",
+      "type": "Ground",
+      "category": "Special",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
+      "frequency": "At-Will",
+      "ac": 4,
+      "range": "6, 1 Target",
+      "effect": "The target’s Accuracy is lowered by -1 on 16+."
+    },
+    {
+      "name": "Mud-Slap",
+      "type": "Ground",
+      "category": "Special",
+      "db": 2,
+      "damageRoll": "1d6+3 / 7",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "3, 1 Target",
+      "effect": "The target’s Accuracy is lowered by -1."
+    },
+    {
+      "name": "Harden",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "Self",
+      "effect": "Raise the user’s Defense 1 Combat Stage."
+    },
+    {
+      "name": "Mud Sport",
+      "type": "Ground",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Burst 2",
+      "effect": "All targets in the burst, including the user, gain a Coat which grants them 1 Step of Resistance to Electric Type Moves. After a target has been hit by a damaging Electric Type Move, the coat is removed."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Storm Drain",
+      "frequency": "Scene – Free Action",
+      "effect": "The Move is turned into a 1-Target Move and is re-directed at the user without fail, and cannot miss. This negates Lock-On or Mind Reader.  the user’s Special Attack is then raised by +1 Combat Stage."
+    },
+    {
+      "name": "Sticky Hold",
+      "frequency": "Static",
+      "effect": "The Pokémon’s held items cannot be stolen, switched, destroyed or dropped."
+    }
+  ],
+  "natureMod": {
+    "plus": "hp",
+    "minus": "atk"
+  },
+  "capabilities": {
+    "overland": 2,
+    "swim": 4,
+    "jump": "1/0",
+    "power": 1,
+    "weight": 1,
+    "size": "Small",
+    "other": [
+      "Amorphous",
+      "Gilled",
+      "Wallclimber",
+      "Naturewalk (Wetlands)",
+      "Underdog"
+    ]
+  }
+}

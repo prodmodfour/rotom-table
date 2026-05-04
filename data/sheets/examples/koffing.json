@@ -1,0 +1,151 @@
+{
+  "slug": "examples-koffing",
+  "nickname": "Koffing",
+  "species": "Koffing",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Modest",
+  "types": [
+    "Poison"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "atk": {
+      "base": -1,
+      "added": 5,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    },
+    "satk": {
+      "base": 1,
+      "added": 7,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 51,
+    "currentHp": 51,
+    "tick": 5,
+    "evasion": {
+      "vsAtk": 3,
+      "vsSatk": 1,
+      "vsAny": 1
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Assurance",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "When you hit with Assurance, if Assurance’s target has already been damaged by a Move on the same round Assurance is being used, Assurance has a Damage Base of 12 (3d12+10 / 30) instead. This effect may trigger only once per Scene per Target."
+    },
+    {
+      "name": "Tackle",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash, Push",
+      "effect": "The target is pushed 2 Meters."
+    },
+    {
+      "name": "Sludge",
+      "type": "Poison",
+      "category": "Special",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Sludge Poisons the target on 15+."
+    },
+    {
+      "name": "Smokescreen",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "5, Ranged Blast 3",
+      "effect": "Smokescreen creates a blast of Smoke that covers the target area; the Smoke persists until the end of the encounter, or until Defog or Whirlwind are used. All targets attacking from or into the Smoke receive a -3 penalty to Accuracy."
+    },
+    {
+      "name": "Smog",
+      "type": "Poison",
+      "category": "Special",
+      "db": 5,
+      "damageRoll": "1d8+8",
+      "frequency": "At-Will",
+      "ac": 7,
+      "range": "Line 2",
+      "effect": "Smog Poisons the target on an Even-Numbered Roll."
+    },
+    {
+      "name": "Poison Gas",
+      "type": "Poison",
+      "category": "Status",
+      "frequency": "Scene",
+      "ac": 6,
+      "range": "Burst 1 or Cone 2",
+      "effect": "Poison Gas Poisons all Legal Targets."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Levitate",
+      "frequency": "Static",
+      "effect": "The Pokémon is immune to the damage and effects of Ground Type Moves, and gains a Levitate Speed of 4, or has existing Levitate Speeds increased by +2. Defensive."
+    },
+    {
+      "name": "Sticky Smoke",
+      "frequency": "Scene – Free Action",
+      "effect": "Connection - Smokescreen. All targets that begin or end their turn in the target’s Smokescreen have their Accuracy lowered by -1. This penalty may occur multiple times. This stacks with the usual penalties from Smokescreen."
+    }
+  ],
+  "natureMod": {
+    "plus": "satk",
+    "minus": "atk"
+  },
+  "capabilities": {
+    "overland": 3,
+    "swim": 1,
+    "levitate": 3,
+    "jump": "1/1",
+    "power": 2,
+    "weight": 1,
+    "size": "Small",
+    "other": [
+      "Volatile Bomb",
+      "Underdog"
+    ]
+  }
+}

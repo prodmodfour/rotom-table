@@ -1,0 +1,134 @@
+{
+  "slug": "examples-arctovish",
+  "nickname": "Arctovish",
+  "species": "Arctovish",
+  "level": 20,
+  "gender": "No Gender",
+  "shiny": false,
+  "nature": "Proud",
+  "types": [
+    "Water",
+    "Ice"
+  ],
+  "stats": {
+    "hp": {
+      "base": 1,
+      "added": 8,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    },
+    "satk": {
+      "base": -1,
+      "added": 4,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 2,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 84,
+    "currentHp": 84,
+    "tick": 8,
+    "evasion": {
+      "vsAtk": 3,
+      "vsSatk": 2,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Water Gun",
+      "type": "Water",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "None"
+    },
+    {
+      "name": "Protect",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Self, Interrupt, Shield, Trigger",
+      "effect": "If the user is hit by a Move, the user may use Protect. The user is instead not hit by the Move. You do not take any damage nor are you affected by any of the Move’s effects."
+    },
+    {
+      "name": "Powder Snow",
+      "type": "Ice",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Line 4",
+      "effect": "Powder Snow Freezes all Legal Targets on 19+."
+    },
+    {
+      "name": "Icy Wind",
+      "type": "Ice",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "ac": 3,
+      "range": "Cone 2",
+      "effect": "All Legal Targets have their Speed lowered 1 Combat Stage."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Water Absorb",
+      "frequency": "Static",
+      "effect": "The user is immune to the damage and effects of  Water-Type attacks, and whenever they are hit with a Water Type attack, they gain a Tick of Hit Points. Defensive."
+    },
+    {
+      "name": "Slush Rush",
+      "frequency": "Static",
+      "effect": "While in Hailing Weather or under half maximum Hit Points, the user’s Initiative is doubled."
+    }
+  ],
+  "natureMod": {
+    "plus": "hp",
+    "minus": "satk"
+  },
+  "capabilities": {
+    "overland": 4,
+    "swim": 7,
+    "jump": "3/3",
+    "power": 7,
+    "weight": 5,
+    "size": "Large",
+    "other": [
+      "Chilled",
+      "Freezer",
+      "Gilled",
+      "Mountable 2",
+      "Naturewalk (Tundra)"
+    ]
+  }
+}

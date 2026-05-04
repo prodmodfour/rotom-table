@@ -1,0 +1,150 @@
+{
+  "slug": "examples-grimer",
+  "nickname": "Grimer",
+  "species": "Grimer",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Skittish",
+  "types": [
+    "Poison"
+  ],
+  "stats": {
+    "hp": {
+      "base": -1,
+      "added": 6,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 11,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 1,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "spd": {
+      "base": 1,
+      "added": 1,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 69,
+    "currentHp": 69,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 2,
+      "vsAny": 1
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Disable",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "1 Target, Trigger",
+      "effect": "Disable may be used as a Free Action that does not take up a Command whenever the user is hit by a Move. That Move becomes Disabled for the attacker."
+    },
+    {
+      "name": "Sludge",
+      "type": "Poison",
+      "category": "Special",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Sludge Poisons the target on 15+."
+    },
+    {
+      "name": "Pound",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "None"
+    },
+    {
+      "name": "Harden",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "Self",
+      "effect": "Raise the user’s Defense 1 Combat Stage."
+    },
+    {
+      "name": "Mud-Slap",
+      "type": "Ground",
+      "category": "Special",
+      "db": 2,
+      "damageRoll": "1d6+3 / 7",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "3, 1 Target",
+      "effect": "The target’s Accuracy is lowered by -1."
+    },
+    {
+      "name": "Poison Gas",
+      "type": "Poison",
+      "category": "Status",
+      "frequency": "Scene",
+      "ac": 6,
+      "range": "Burst 1 or Cone 2",
+      "effect": "Poison Gas Poisons all Legal Targets."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Weird Power",
+      "frequency": "Static",
+      "effect": "If the user’s Attack is higher than its Special Attack, the user may add its Attack Stat to its Special Damage Rolls. If their Special Attack is higher, they user may add its Special Attack Stat to its Physical Damage Rolls. This does not stack with Mixed Power."
+    },
+    {
+      "name": "Stench",
+      "frequency": "Static",
+      "effect": "The Pokémon’s Moves Flinch Targets on a roll of 18+. If a move already has a chance of Flinching foes, the Effect Range is increased by +3 instead. Whenever the user Flinches a foe with an attack, that foe gains a -2 penalty to Accuracy Rolls for 1 full round."
+    }
+  ],
+  "natureMod": {
+    "plus": "spd",
+    "minus": "hp"
+  },
+  "capabilities": {
+    "overland": 4,
+    "swim": 3,
+    "jump": "1/1",
+    "power": 2,
+    "weight": 3,
+    "size": "Small",
+    "other": [
+      "Amorphous",
+      "Dead Silent",
+      "Wallclimber",
+      "Underdog",
+      "Sticky  Hold"
+    ]
+  }
+}

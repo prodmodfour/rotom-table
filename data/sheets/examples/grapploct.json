@@ -1,0 +1,122 @@
+{
+  "slug": "examples-grapploct",
+  "nickname": "Grapploct",
+  "species": "Grapploct",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Rash",
+  "types": [
+    "Fighting"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "satk": {
+      "base": 1,
+      "added": 7,
+      "stage": 0
+    },
+    "sdef": {
+      "base": -1,
+      "added": 4,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 66,
+    "currentHp": 66,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 2,
+      "vsAny": 1
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Detect",
+      "type": "Fighting",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Self, Interrupt, Shield, Trigger",
+      "effect": "If the user is hit by a Move, the user may use Detect. The user is instead not hit by the Move. You do not take any damage nor are you affected by any of the Move’s effects."
+    },
+    {
+      "name": "Brick Break",
+      "type": "Fighting",
+      "category": "Physical",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Light Screen and Reflect may not be activated in response to Brick Break."
+    },
+    {
+      "name": "Feint",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Trigger",
+      "effect": "If a foe uses a Move with the Shield Keyword in response to one of your actions, you may activate Feint to cause the triggering Move to Fail. Feint is activated as a Free Action."
+    },
+    {
+      "name": "Bind",
+      "type": "Normal",
+      "category": "Static",
+      "frequency": "Static",
+      "effect": "The user gains a +1 Bonus to Accuracy Rolls made to initiate Grapple Maneuvers, and +2 to Skill Checks made to initiate Grapple Maneuvers or gain Dominance. Whenever the user gains Dominance in a Grapple, the target of the Grapple loses a Tick of Hit Points."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Limber",
+      "frequency": "Static",
+      "effect": "The user is immune to Paralysis. Defensive."
+    },
+    {
+      "name": "Technician",
+      "frequency": "Static",
+      "effect": "Moves with a Damage Base of 6 or lower have their Damage Base increased by +2. This bonus always applies to Moves with the Double Strike or Fivestrike Keywords."
+    }
+  ],
+  "natureMod": {
+    "plus": "satk",
+    "minus": "sdef"
+  },
+  "capabilities": {
+    "overland": 6,
+    "swim": 7,
+    "jump": "2/2",
+    "power": 7,
+    "weight": 3,
+    "size": "Medium",
+    "other": [
+      "Gilled"
+    ]
+  }
+}

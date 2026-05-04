@@ -1,0 +1,149 @@
+{
+  "slug": "examples-banette",
+  "nickname": "Banette",
+  "species": "Banette",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Curious",
+  "types": [
+    "Ghost"
+  ],
+  "stats": {
+    "hp": {
+      "base": -1,
+      "added": 3,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "satk": {
+      "base": 1,
+      "added": 4,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 54,
+    "currentHp": 54,
+    "tick": 5,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 2,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Night Shade",
+      "type": "Ghost",
+      "category": "Special",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "8, 1 Target",
+      "effect": "The target loses Hit Points equal to the level of Night Shade’s user. Do not apply weakness or resistance. Do not apply stats."
+    },
+    {
+      "name": "Screech",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 4,
+      "range": "Burst 2, Friendly, Sonic",
+      "effect": "All Legal Targets have their Defense lowered 2 Combat Stages."
+    },
+    {
+      "name": "Shadow Sneak",
+      "type": "Ghost",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Priority",
+      "effect": "None."
+    },
+    {
+      "name": "Spite",
+      "type": "Ghost",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "1 Target, Trigger",
+      "effect": "Spite may be used as a Free Action that does not take up a Command whenever the user is hit by a Move. That Move becomes Disabled for the attacker."
+    },
+    {
+      "name": "Knock Off",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
+      "frequency": "Scene",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Choose one of the target’s Held Items or Accessory Slot Items. It is knocked to the ground."
+    },
+    {
+      "name": "Will-O-Wisp",
+      "type": "Fire",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 5,
+      "range": "6, 1 Target",
+      "effect": "The target is Burned."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Insomnia",
+      "frequency": "Static",
+      "effect": "The user is immune to the Sleep condition, and cannot use the move Rest. Defensive."
+    },
+    {
+      "name": "Cursed Body",
+      "frequency": "Scene – Free Action",
+      "effect": "The Move becomes Disabled."
+    }
+  ],
+  "natureMod": {
+    "plus": "satk",
+    "minus": "hp"
+  },
+  "capabilities": {
+    "overland": 5,
+    "levitate": 6,
+    "jump": "1/2",
+    "power": 2,
+    "weight": 2,
+    "size": "Medium",
+    "other": [
+      "Darkvision",
+      "Dead Silent",
+      "Invisibility",
+      "Phasing",
+      "Stealth"
+    ]
+  }
+}

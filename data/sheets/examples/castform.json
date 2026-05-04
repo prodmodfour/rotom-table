@@ -1,0 +1,147 @@
+{
+  "slug": "examples-castform",
+  "nickname": "Castform",
+  "species": "Castform",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Quiet",
+  "types": [
+    "Normal"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "satk": {
+      "base": 1,
+      "added": 6,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "spd": {
+      "base": -1,
+      "added": 3,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 69,
+    "currentHp": 69,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 2,
+      "vsAny": 1
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Water Gun",
+      "type": "Water",
+      "category": "Special",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "None"
+    },
+    {
+      "name": "Sunny Day",
+      "type": "Fire",
+      "category": "Status",
+      "frequency": "Daily x2",
+      "range": "Field, Weather",
+      "effect": "The weather becomes Sunny for 5 rounds. While Sunny, Fire-Type Attacks gain a +5 bonus to Damage Rolls, and Water-Type Attacks suffer a -5 Damage penalty."
+    },
+    {
+      "name": "Hail",
+      "type": "Ice",
+      "category": "Status",
+      "frequency": "Daily x2",
+      "range": "Field, Weather",
+      "effect": "The weather changes to Hail for 5 rounds. While it is Hailing, all non-Ice Type Pokémon lose a Tick of Hit Points at the beginning of their turn."
+    },
+    {
+      "name": "Rain Dance",
+      "type": "Water",
+      "category": "Status",
+      "frequency": "Daily x2",
+      "range": "Field, Weather",
+      "effect": "The weather becomes Rainy for 5 rounds. While Rainy, Water-Type Attacks gain a +5 bonus to Damage Rolls, and Fire-Type Attacks suffer a -5 Damage penalty."
+    },
+    {
+      "name": "Powder Snow",
+      "type": "Ice",
+      "category": "Special",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Line 4",
+      "effect": "Powder Snow Freezes all Legal Targets on 19+."
+    },
+    {
+      "name": "Ember",
+      "type": "Fire",
+      "category": "Special",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "Ember Burns the target on 18+."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Forecast",
+      "frequency": "Static",
+      "effect": "The user’s Type changes depending on the weather. It changes to Fire Type if it is Sunny, Ice Type if it is Hailing, Water Type if it is Rainy, and Rock Type if there is a Sandstorm. It returns to Normal Type if it is in normal weather or foggy weather. If there are multiple Weather Effects on the field, choose one type for the user to be that corresponds with an existing Weather Effect."
+    },
+    {
+      "name": "Drizzle",
+      "frequency": "Scene x3 – Swift Action",
+      "effect": "The Weather changes to be Rainy for 1 full round."
+    }
+  ],
+  "natureMod": {
+    "plus": "satk",
+    "minus": "spd"
+  },
+  "capabilities": {
+    "sky": 4,
+    "swim": 2,
+    "jump": "2/2",
+    "power": 1,
+    "weight": 1,
+    "size": "Small",
+    "other": [
+      "Guster",
+      "Weathershape",
+      "Underdog"
+    ]
+  }
+}

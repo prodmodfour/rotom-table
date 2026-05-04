@@ -1,0 +1,155 @@
+{
+  "slug": "examples-tornadus-incarnate-forme",
+  "nickname": "Tornadus Incarnate Forme",
+  "species": "Tornadus Incarnate Forme",
+  "level": 20,
+  "gender": "No Gender",
+  "shiny": false,
+  "nature": "Impish",
+  "types": [
+    "Flying"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 2,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 8,
+      "stage": 0
+    },
+    "def": {
+      "base": 1,
+      "added": 5,
+      "stage": 0
+    },
+    "satk": {
+      "base": -1,
+      "added": 5,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 60,
+    "currentHp": 60,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 2,
+      "vsAny": 3
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Bite",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Bite Flinches the target on 15+."
+    },
+    {
+      "name": "Astonish",
+      "type": "Ghost",
+      "category": "Physical",
+      "db": 3,
+      "damageRoll": "1d6+5 / 9",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Astonish Flinches the target on 15+. Once per scene, if the target is unaware of the user’s presence, Astonish automatically Flinches the target."
+    },
+    {
+      "name": "Uproar",
+      "type": "Normal",
+      "category": "Special",
+      "db": 5,
+      "damageRoll": "1d8+8 / 13",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Burst 1, Spirit Surge, Sonic",
+      "effect": "All Pokémon and Trainers within 5 meters of the user are cured of sleep."
+    },
+    {
+      "name": "Gust",
+      "type": "Flying",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "If the target is airborne as a result of Fly or Sky Drop, Gust can hit them, ignoring Range and has a Damage Base of 8 instead."
+    },
+    {
+      "name": "Revenge",
+      "type": "Fighting",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target, Priority (Limited)",
+      "effect": "When declaring Revenge, the user does nothing and may not Shift. At the end of the round, the user may shift and use Revenge. If the target has damaged the user this round, Revenge has a Damage Base of 12 (3d12+10 / 30)."
+    },
+    {
+      "name": "Swagger",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 5,
+      "range": "6, 1 Target, Social",
+      "effect": "The target’s Attack is raised 2 Combat Stages. Swagger Confuses the target."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Prankster",
+      "frequency": "Static",
+      "effect": "The user may use Status Moves as Priority (Advanced)."
+    },
+    {
+      "name": "Frisk",
+      "frequency": "Static",
+      "effect": "The user gains a +2 Bonus to all Accuracy Rolls against adjacent targets."
+    }
+  ],
+  "natureMod": {
+    "plus": "def",
+    "minus": "satk"
+  },
+  "capabilities": {
+    "overland": 5,
+    "sky": 8,
+    "swim": 5,
+    "jump": "2/2",
+    "power": 6,
+    "weight": 4,
+    "size": "Large",
+    "other": [
+      "Guster",
+      "Zapper",
+      "Therian Forme*"
+    ]
+  }
+}

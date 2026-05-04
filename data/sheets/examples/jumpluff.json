@@ -1,0 +1,145 @@
+{
+  "slug": "examples-jumpluff",
+  "nickname": "Jumpluff",
+  "species": "Jumpluff",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Jolly",
+  "types": [
+    "Grass",
+    "Flying"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "satk": {
+      "base": -1,
+      "added": 4,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "spd": {
+      "base": 1,
+      "added": 4,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 72,
+    "currentHp": 72,
+    "tick": 7,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 3,
+      "vsAny": 3
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Tail Whip",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Burst 1, Friendly",
+      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
+    },
+    {
+      "name": "Tackle",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash, Push",
+      "effect": "The target is pushed 2 Meters."
+    },
+    {
+      "name": "Stun Spore",
+      "type": "Grass",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 6,
+      "range": "6, 1 Target, Powder",
+      "effect": "The target is Paralyzed."
+    },
+    {
+      "name": "Sleep Powder",
+      "type": "Grass",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 6,
+      "range": "4, 1 Target, Powder",
+      "effect": "The target falls asleep."
+    },
+    {
+      "name": "Poison Powder",
+      "type": "Poison",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 6,
+      "range": "4, 1 Target, Powder",
+      "effect": "The target is Poisoned."
+    },
+    {
+      "name": "Synthesis",
+      "type": "Grass",
+      "category": "Status",
+      "frequency": "Daily x2",
+      "range": "Self",
+      "effect": "The user regains Hit Points equal to half of its full Hit Point value. If it is Sunny, the user gains 2/3 of its full Hit Point value instead. If it is Rainy, Sand Storming or Hailing the user gains 1/4 of their full Hit Point value instead."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Windveiled",
+      "frequency": "Static",
+      "effect": "The user is immune to the damage and effects of Flying-Type attacks. If the user is hit by a Flying-Type attack, the user gains +1 Speed CS. Defensive."
+    },
+    {
+      "name": "Infiltrator",
+      "frequency": "Static",
+      "effect": "The user gains a +2 Bonus to Stealth Checks, does not trigger Hazards, Blessings cannot be activated in response to its actions, and the user may bypass the effects of the move Substitute."
+    }
+  ],
+  "natureMod": {
+    "plus": "spd",
+    "minus": "satk"
+  },
+  "capabilities": {
+    "overland": 4,
+    "sky": 8,
+    "swim": 4,
+    "jump": "3/4",
+    "power": 2,
+    "weight": 1,
+    "size": "Small",
+    "other": [
+      "Naturewalk (Grassland, Forest)"
+    ]
+  }
+}

@@ -1,0 +1,133 @@
+{
+  "slug": "examples-kyurem-reshiram-fusion-forme",
+  "nickname": "Kyurem Reshiram Fusion Forme",
+  "species": "Kyurem Reshiram Fusion Forme",
+  "level": 20,
+  "gender": "No Gender",
+  "shiny": false,
+  "nature": "Bold",
+  "types": [
+    "Dragon",
+    "Ice"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "atk": {
+      "base": -1,
+      "added": 5,
+      "stage": 0
+    },
+    "def": {
+      "base": 1,
+      "added": 5,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 84,
+    "currentHp": 84,
+    "tick": 8,
+    "evasion": {
+      "vsAtk": 3,
+      "vsSatk": 2,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Icy Wind",
+      "type": "Ice",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "ac": 3,
+      "range": "Cone 2",
+      "effect": "All Legal Targets have their Speed lowered 1 Combat Stage."
+    },
+    {
+      "name": "Imprison",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "range": "10, 1 Target",
+      "effect": "The target is Locked for the rest of the Scene. A Locked target may not use any Moves the user knows. Imprison cannot miss."
+    },
+    {
+      "name": "Dragon Rage",
+      "type": "Dragon",
+      "category": "Special",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "If it hits, Dragon Rage causes the target to lose 15 Hit Points. Dragon Rage is Special and interacts with other moves and effects as such (Special Evasion may be applied to avoid it, Mirror Coat can reflect it, etc.)."
+    },
+    {
+      "name": "Ancient Power",
+      "type": "Rock",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "6, 1 Target, Spirit Surge",
+      "effect": "On 19+, the user has each of its stats raised by +1 Combat Stage."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Turboblaze",
+      "frequency": "Static",
+      "effect": "The user’s Fire-Type Attacks ignore the effect of enemies’ Defensive Abilities, and if they would be resisted they deal neutral damage instead."
+    },
+    {
+      "name": "Flash Fire",
+      "frequency": "Static",
+      "effect": "The user is immune to the damage and effects of Fire-Type attacks. If the user is hit by a Fire-Type attack, they gain +1 CS in their choice of Attack or Special Attack. Defensive."
+    }
+  ],
+  "natureMod": {
+    "plus": "def",
+    "minus": "atk"
+  },
+  "capabilities": {
+    "overland": 6,
+    "sky": 6,
+    "swim": 6,
+    "jump": "2/2",
+    "power": 10,
+    "weight": 6,
+    "size": "Gigantic",
+    "other": [
+      "Aura Reader",
+      "Chilled",
+      "Freezer",
+      "Telepath",
+      "Mountable 1"
+    ]
+  }
+}

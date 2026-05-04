@@ -1,0 +1,141 @@
+{
+  "slug": "examples-mew",
+  "nickname": "Mew",
+  "species": "Mew",
+  "level": 20,
+  "gender": "No Gender",
+  "shiny": false,
+  "nature": "Lax",
+  "types": [
+    "Psychic"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "def": {
+      "base": 1,
+      "added": 8,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "sdef": {
+      "base": -1,
+      "added": 3,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 78,
+    "currentHp": 78,
+    "tick": 7,
+    "evasion": {
+      "vsAtk": 4,
+      "vsSatk": 2,
+      "vsAny": 3
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Mega Punch",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10 / 19",
+      "frequency": "At-Will",
+      "ac": 4,
+      "range": "Melee, 1 Target",
+      "effect": "None"
+    },
+    {
+      "name": "Metronome",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "range": "Self",
+      "effect": "Metronome randomly uses any other Move except for After You, Assist, Bestow, Copycat, Counter, Covet, Crafty Shield, Destiny Bond, Detect, Endure, Feint, Focus Punch, Follow Me, Helping Hand, King’s Shield, Metronome, Me First, Mimic, Mirror Coat, Mirror Move, Protect, Quash, Quick Guard, Rage Powder, Sketch, Sleep Talk, Snatch, Snore, Spiky Shield, Switcheroo, Thief, Transform, Trick, and Wide Guard. The GM helps to pick the random Move."
+    },
+    {
+      "name": "Reflect Type",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Reflect Type changes one of the user’s Types into one Type of your choice that the target has for the rest of the scene."
+    },
+    {
+      "name": "Transform",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "10, 1 Target",
+      "effect": "The user targets a Pokémon within 10 meters, and assumes the form of the target.  It gains all of the user’s Moves, gains its Abilities, copies its weight and height and Capabilities. Transform lasts until the user is switched out, KO’d or until the end of the encounter. The user may choose to end the Transformation on its turn as a free action, regaining its previous Move List. The user’s Stats do not change from using Transform. Transform cannot miss."
+    },
+    {
+      "name": "Pound",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "None"
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Serene Grace",
+      "frequency": "Static",
+      "effect": "The user’s Effect Range is increased by +2."
+    },
+    {
+      "name": "Magic Guard",
+      "frequency": "Static",
+      "effect": "The user is immune to damage and Hit Point loss from Hazards, Weather, Status Afflictions, Vortexes, Recoil, Hay Fever, Iron Barbs, Rough Skin, and Leech Seed. Defensive."
+    }
+  ],
+  "natureMod": {
+    "plus": "def",
+    "minus": "sdef"
+  },
+  "capabilities": {
+    "overland": 7,
+    "sky": 6,
+    "swim": 4,
+    "jump": "2/2",
+    "power": 3,
+    "weight": 1,
+    "size": "Small",
+    "other": [
+      "Aura  Reader",
+      "Glow",
+      "Invisibility",
+      "Telekinetic",
+      "Telepath",
+      "Shapeshifter"
+    ]
+  }
+}

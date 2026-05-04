@@ -1,0 +1,92 @@
+{
+  "slug": "examples-gourgeist-large",
+  "nickname": "Gourgeist Large",
+  "species": "Gourgeist Large",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Gentle",
+  "types": [
+    "Ghost",
+    "Grass"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "def": {
+      "base": -1,
+      "added": 8,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 1,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 1,
+      "added": 11,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 1,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 69,
+    "currentHp": 69,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 3,
+      "vsSatk": 4,
+      "vsAny": 1
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [],
+  "abilities": [
+    {
+      "name": "Frisk",
+      "frequency": "Static",
+      "effect": "The user gains a +2 Bonus to all Accuracy Rolls against adjacent targets."
+    },
+    {
+      "name": "Pumpkingrab",
+      "frequency": "Scene - Standard Action",
+      "effect": "The user automatically Grapples an adjacent foe and gains dominance."
+    }
+  ],
+  "natureMod": {
+    "plus": "sdef",
+    "minus": "def"
+  },
+  "capabilities": {
+    "overland": 3,
+    "swim": 3,
+    "levitate": 6,
+    "jump": "2/2",
+    "power": 3,
+    "weight": 2,
+    "size": "Medium",
+    "other": [
+      "Naturewalk (Grassland, Forest)",
+      "Phasing",
+      "Invisibility",
+      "Dead Silent"
+    ]
+  }
+}

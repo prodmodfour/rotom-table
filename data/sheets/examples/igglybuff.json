@@ -1,0 +1,145 @@
+{
+  "slug": "examples-igglybuff",
+  "nickname": "Igglybuff",
+  "species": "Igglybuff",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Brave",
+  "types": [
+    "Normal",
+    "Fairy"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "atk": {
+      "base": 1,
+      "added": 7,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "spd": {
+      "base": -1,
+      "added": 4,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 75,
+    "currentHp": 75,
+    "tick": 7,
+    "evasion": {
+      "vsAtk": 1,
+      "vsSatk": 1,
+      "vsAny": 1
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Charm",
+      "type": "Fairy",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "6, 1 Target, Social",
+      "effect": "Charm lowers the target’s Attack 2 Combat Stages."
+    },
+    {
+      "name": "Sweet Kiss",
+      "type": "Fairy",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 6,
+      "range": "6, 1 Target, Social",
+      "effect": "The target becomes Confused. On miss, the target suffers a -2 penalty to Accuracy Rolls for one full round."
+    },
+    {
+      "name": "Pound",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "None"
+    },
+    {
+      "name": "Defense Curl",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "Self",
+      "effect": "The user’s Defense is raised 1 Combat Stage and they become Curled Up until the end of the Scene or they are Recalled or Take a Breather. When using the Moves Rollout or Ice Ball while Curled Up, the user gains a +10 bonus to the damage rolls of those Moves."
+    },
+    {
+      "name": "Sing",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "ac": 10,
+      "range": "Burst 2, Friendly, Sonic",
+      "effect": "All legal Targets fall Asleep. On a miss, Sing instead causes targets to become Slowed and suffer a -2 penalty to their Evasion until the end of the user’s next turn."
+    },
+    {
+      "name": "Copycat",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "range": "4, 1 Target",
+      "effect": "Use the Move the target has used on their last turn. You may choose new targets for the Move. Copycat cannot miss."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Cute Charm",
+      "frequency": "Scene – Free Action",
+      "effect": "The foe becomes Infatuated."
+    },
+    {
+      "name": "Oblivious",
+      "frequency": "Static",
+      "effect": "The user is immune to the Enraged and Infatuated conditions. Defensive."
+    }
+  ],
+  "natureMod": {
+    "plus": "atk",
+    "minus": "spd"
+  },
+  "capabilities": {
+    "overland": 3,
+    "swim": 2,
+    "jump": "1/1",
+    "power": 1,
+    "weight": 1,
+    "size": "Small",
+    "other": [
+      "Inflatable",
+      "Naturewalk (Grassland, Urban)",
+      "Underdog"
+    ]
+  }
+}

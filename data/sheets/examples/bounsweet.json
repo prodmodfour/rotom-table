@@ -1,0 +1,138 @@
+{
+  "slug": "examples-bounsweet",
+  "nickname": "Bounsweet",
+  "species": "Bounsweet",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Cuddly",
+  "types": [
+    "Grass"
+  ],
+  "stats": {
+    "hp": {
+      "base": 1,
+      "added": 9,
+      "stage": 0
+    },
+    "atk": {
+      "base": -1,
+      "added": 4,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 72,
+    "currentHp": 72,
+    "tick": 7,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 1,
+      "vsAny": 1
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Sweet Scent",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "ac": 2,
+      "range": "Burst 2, Friendly",
+      "effect": "Targets hit by Sweet Scent gain a -2 Penalty to Evasion. (Total Evasion may not be lowered to a negative value. )"
+    },
+    {
+      "name": "Play Nice",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target, Social",
+      "effect": "Play Nice lowers the target’s Attack by 1 Combat Stage."
+    },
+    {
+      "name": "Rapid Spin",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 5,
+      "damageRoll": "1d8+8 / 13",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Spirit Surge",
+      "effect": "Rapid Spin destroys all Hazards within 5 meters, removes Leech Seeds, and removes the user’s Trapped or Stuck status. If Rapid Spin hits, the user’s speed raises 1 CS."
+    },
+    {
+      "name": "Razor Leaf",
+      "type": "Grass",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 4,
+      "range": "Cone 2",
+      "effect": "Razor Leaf is a Critical Hit on 18+."
+    },
+    {
+      "name": "Splash",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "Self",
+      "effect": "Shift Action - The user may make a single Jump, adding +1 to their Long Jump and High Jump values, and gains +2 Evasion until the end of their next turn."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Oblivious",
+      "frequency": "Static",
+      "effect": "The user is immune to the Enraged and Infatuated conditions. Defensive."
+    },
+    {
+      "name": "Run Away",
+      "frequency": "Static",
+      "effect": "The user does not provoke Attacks of Opportunity by Shifting.  The user cannot be Trapped."
+    }
+  ],
+  "natureMod": {
+    "plus": "hp",
+    "minus": "atk"
+  },
+  "capabilities": {
+    "overland": 3,
+    "swim": 1,
+    "jump": "2/2",
+    "power": 1,
+    "weight": 1,
+    "size": "Small",
+    "other": [
+      "Alluring",
+      "Naturewalk (Forest)",
+      "Underdog"
+    ]
+  }
+}

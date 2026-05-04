@@ -1,0 +1,140 @@
+{
+  "slug": "examples-komala",
+  "nickname": "Komala",
+  "species": "Komala",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Hasty",
+  "types": [
+    "Normal"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 9,
+      "stage": 0
+    },
+    "def": {
+      "base": -1,
+      "added": 2,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "spd": {
+      "base": 1,
+      "added": 5,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 63,
+    "currentHp": 63,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 1,
+      "vsSatk": 3,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Stockpile",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "The user adds 1 to their Stockpiled count to a maximum of 3. For each number a Stockpiled count is above 0, raise the user’s Defense 1 Combat Stage and raise the user’s Special Defense 1 Combat Stage. If a Stockpiled count is set to 0, the Combat Stages gained from the Stockpiled count are removed."
+    },
+    {
+      "name": "Defense Curl",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "Self",
+      "effect": "The user’s Defense is raised 1 Combat Stage and they become Curled Up until the end of the Scene or they are Recalled or Take a Breather. When using the Moves Rollout or Ice Ball while Curled Up, the user gains a +10 bonus to the damage rolls of those Moves."
+    },
+    {
+      "name": "Spit Up",
+      "type": "Normal",
+      "category": "Special",
+      "frequency": "Scene",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "For each Stockpiled Count the user has, Spit Up’s Damage Base is increased by +8. If the user has no Stockpiled count, Spit Up cannot be used."
+    },
+    {
+      "name": "Rapid Spin",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Spirit Surge",
+      "effect": "Rapid Spin destroys all Hazards within 5 meters, removes Leech Seeds, and removes the user’s Trapped or Stuck status. If Rapid Spin hits, the user’s speed raises 1 CS."
+    },
+    {
+      "name": "Yawn",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "range": "2, 1 Target, Social",
+      "effect": "The target falls Asleep at the end of their next turn. Yawn cannot miss."
+    },
+    {
+      "name": "Swallow",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Daily x2",
+      "range": "Self",
+      "effect": "If the user’s Stockpiled count is 1, they are healed 25% of their full Hit Point value; if their Stockpiled count is 2, they are healed half of their full Hit Point value; if their Stockpiled count is 3, they are healed back to full Hit Points. After using Swallow, the user’s Stockpiled count is set to 0. If the user has no Stockpiled count, Swallow does nothing."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Comatose",
+      "frequency": "At-Will – Move Action",
+      "effect": "The user falls Asleep, and regains a Tick of Hit Points."
+    },
+    {
+      "name": "Immunity",
+      "frequency": "Static",
+      "effect": "The user cannot be Poisoned or Badly Poisoned. Defensive."
+    }
+  ],
+  "natureMod": {
+    "plus": "spd",
+    "minus": "def"
+  },
+  "capabilities": {
+    "overland": 5,
+    "swim": 3,
+    "jump": "1/1",
+    "power": 4,
+    "weight": 2,
+    "size": "Small",
+    "other": [
+      "Naturewalk  (Forest)"
+    ]
+  }
+}

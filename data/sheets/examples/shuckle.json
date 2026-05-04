@@ -1,0 +1,141 @@
+{
+  "slug": "examples-shuckle",
+  "nickname": "Shuckle",
+  "species": "Shuckle",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Dreamy",
+  "types": [
+    "Bug",
+    "Rock"
+  ],
+  "stats": {
+    "hp": {
+      "base": -1,
+      "added": 2,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 8,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 1,
+      "added": 6,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 39,
+    "currentHp": 39,
+    "tick": 3,
+    "evasion": {
+      "vsAtk": 6,
+      "vsSatk": 6,
+      "vsAny": 1
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Encore",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "4, 1 Target, Social",
+      "effect": "Roll 1d6. On a result of 1 or 2, the target becomes Confused; on a result of 3 or 4 the target becomes Suppressed; on a result of 5 or 6 the target becomes Enraged."
+    },
+    {
+      "name": "Struggle Bug",
+      "type": "Bug",
+      "category": "Special",
+      "db": 7,
+      "damageRoll": "2d6+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Cone 2",
+      "effect": "On hit, lowers the target’s Special Attack by -1 CS."
+    },
+    {
+      "name": "Withdraw",
+      "type": "Water",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "Self",
+      "effect": "The user’s Defense is raised 1 Combat Stage."
+    },
+    {
+      "name": "Rest",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Self",
+      "effect": "The user is set to their full Hit Point value. The user is cured of any Status ailments. Then, the user falls Asleep. The user cannot make Sleep Checks at the beginning of their turn. They are cured of the Sleep at the end of their turn in 2 rounds."
+    },
+    {
+      "name": "Safeguard",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Blessing",
+      "effect": "Blessing – Any user affected by Safeguard may activate it when receiving a Status Affliction to ignore the effects of that Status Affliction on their next turn. Safeguard may be activated 3 times, and then disappears."
+    },
+    {
+      "name": "Bide",
+      "type": "Normal",
+      "category": "Physical",
+      "frequency": "Scene",
+      "range": "Burst 1, Friendly",
+      "effect": "The user may use Bide as a Reaction Move upon being Hit by a Damaging Move. During their next available turn, the user may Shift and then use Bide, causing all Adjacent foes to lose X HP, where X is the amount of Damage taken since declaring use of Bide (Loss of life through effects such as Poison is not ‘Damage’)."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Gluttony",
+      "frequency": "Static",
+      "effect": "The user may have up to three Food Buffs at once, use up to three Food Buffs per Scene, and may eat two refreshments per half hour."
+    },
+    {
+      "name": "Sturdy",
+      "frequency": "Static",
+      "effect": "The user is immune to Moves with the Execute Keyword. If a single source of Damage or Hit Point Loss would cause the user to lose more than X Hit Points, the damage or Hit Point loss is instead reduced to X. X is equal to 50% of their Max Hit Points. Defensive."
+    }
+  ],
+  "natureMod": {
+    "plus": "sdef",
+    "minus": "hp"
+  },
+  "capabilities": {
+    "overland": 3,
+    "swim": 1,
+    "jump": "0/0",
+    "power": 4,
+    "weight": 2,
+    "size": "Small",
+    "other": [
+      "Juicer"
+    ]
+  }
+}

@@ -1,0 +1,145 @@
+{
+  "slug": "examples-snivy",
+  "nickname": "Snivy",
+  "species": "Snivy",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Timid",
+  "types": [
+    "Grass"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "atk": {
+      "base": -1,
+      "added": 1,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 1,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "spd": {
+      "base": 1,
+      "added": 9,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 63,
+    "currentHp": 63,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 2,
+      "vsAny": 3
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Leaf Tornado",
+      "type": "Grass",
+      "category": "Special",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "EOT",
+      "ac": 4,
+      "range": "6, Ranged Blast 3",
+      "effect": "Small or Medium targets in the central square of the blast are not hit. On 15+, all legal targets have their Accuracy lowered by -1."
+    },
+    {
+      "name": "Tackle",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash, Push",
+      "effect": "The target is pushed 2 Meters."
+    },
+    {
+      "name": "Growth",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Attack 1 Combat Stage and raise the user’s Special Attack 1 Combat Stage. If it is Sunny, double the amount of Combat Stages gained."
+    },
+    {
+      "name": "Wrap",
+      "type": "Normal",
+      "category": "Static",
+      "frequency": "Static",
+      "effect": "The user gains a +1 Bonus to Accuracy Rolls made to initiate Grapple Maneuvers, and +2 to Skill Checks made to initiate Grapple Maneuvers or gain Dominance. Whenever the user gains Dominance in a Grapple, the target of the Grapple loses a Tick of Hit Points."
+    },
+    {
+      "name": "Leech Seed",
+      "type": "Grass",
+      "category": "Status",
+      "frequency": "Daily x2",
+      "ac": 4,
+      "range": "6, 1 Target",
+      "effect": "At the beginning of each of the target’s turns, Leech Seed’s target loses a Tick of Hit Points. Leech Seed’s user then gains Hit Points equal to the amount the target lost. Leech Seed lasts until the target faints or is returned to a Poké Ball. Grass Types and targets immune to Grass Attacks are immune to Leech Seed."
+    },
+    {
+      "name": "Leer",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Cone 2, Friendly, Social",
+      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Sol Veil",
+      "frequency": "Static",
+      "effect": "The user gains +1 Evasion. This is increased to +2 Evasion while in Sunny Weather or on grassy terrain. While in Sunny Weather, the user gains +5 Damage Reduction."
+    },
+    {
+      "name": "Contrary",
+      "frequency": "Static",
+      "effect": "If something would raise the user’s Combat Stages, it instead lowers the user’s Combat Stages by the same amount. If something would lower the user’s Combat Stages, it instead raises the user’s Combat Stages by the same amount."
+    }
+  ],
+  "natureMod": {
+    "plus": "spd",
+    "minus": "atk"
+  },
+  "capabilities": {
+    "overland": 5,
+    "swim": 3,
+    "jump": "1/2",
+    "power": 2,
+    "weight": 1,
+    "size": "Small",
+    "other": [
+      "Naturewalk  (Grassland, Forest)",
+      "Stealth",
+      "Underdog"
+    ]
+  }
+}

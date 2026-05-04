@@ -1,0 +1,155 @@
+{
+  "slug": "examples-zygarde-50-forme",
+  "nickname": "Zygarde 50% Forme",
+  "species": "Zygarde 50% Forme",
+  "level": 20,
+  "gender": "No Gender",
+  "shiny": false,
+  "nature": "Serious",
+  "types": [
+    "Dragon",
+    "Ground"
+  ],
+  "stats": {
+    "hp": {
+      "base": 11,
+      "added": 5,
+      "stage": 0
+    },
+    "atk": {
+      "base": 10,
+      "added": 5,
+      "stage": 0
+    },
+    "def": {
+      "base": 12,
+      "added": 9,
+      "stage": 0
+    },
+    "satk": {
+      "base": 8,
+      "added": 3,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 10,
+      "added": 3,
+      "stage": 0
+    },
+    "spd": {
+      "base": 10,
+      "added": 5,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 78,
+    "currentHp": 78,
+    "tick": 7,
+    "evasion": {
+      "vsAtk": 4,
+      "vsSatk": 2,
+      "vsAny": 3
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Glare",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "4, 1 Target, Social",
+      "effect": "Glare Paralyzes the target."
+    },
+    {
+      "name": "Safeguard",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Blessing",
+      "effect": "Blessing – Any user affected by Safeguard may activate it when receiving a Status Affliction to ignore the effects of that Status Affliction on their next turn. Safeguard may be activated 3 times, and then disappears."
+    },
+    {
+      "name": "Bulldoze",
+      "type": "Ground",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Burst 1",
+      "effect": "All Legal Targets are lowered 1 Speed Combat Stage."
+    },
+    {
+      "name": "Bind",
+      "type": "Normal",
+      "category": "Static",
+      "frequency": "Static",
+      "effect": "The user gains a +1 Bonus to Accuracy Rolls made to initiate Grapple Maneuvers, and +2 to Skill Checks made to initiate Grapple Maneuvers or gain Dominance. Whenever the user gains Dominance in a Grapple, the target of the Grapple loses a Tick of Hit Points."
+    },
+    {
+      "name": "Dig",
+      "type": "Ground",
+      "category": "Physical",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Burst 1, Set-Up, Full Action, Groundsource"
+    },
+    {
+      "name": "Dragon Breath",
+      "type": "Dragon",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Dragon Breath Paralyzes the Target on 15+."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Aura Break",
+      "frequency": "Scene - Swift Action",
+      "effect": "The foe reveals its abilities. Pick one ability; any Damage Bonuses (either Damage Base increases or Damage Roll bonuses) granted by the ability instead become Damage Penalties of the same value."
+    },
+    {
+      "name": "Interference",
+      "frequency": "Scene - Swift Action",
+      "effect": "The accuracy of all foes within 3 meters is reduced by -2 for 1 full round."
+    }
+  ],
+  "capabilities": {
+    "overland": 7,
+    "swim": 5,
+    "burrow": 9,
+    "jump": "2/2",
+    "power": 9,
+    "weight": 6,
+    "size": "Huge",
+    "other": [
+      "Darkvision",
+      "Forme Change",
+      "Groundshaper",
+      "Mountable 4",
+      "Tremorsense",
+      "Zygarde Cells"
+    ]
+  },
+  "skills": {
+    "athletics": "4d6+2",
+    "acrobatics": "3d6",
+    "combat": "4d6",
+    "stealth": "4d6+2",
+    "perception": "6d6+2",
+    "focus": "5d6"
+  }
+}

@@ -1,0 +1,157 @@
+{
+  "slug": "examples-rotom-normal-form",
+  "nickname": "Rotom Normal Form",
+  "species": "Rotom Normal Form",
+  "level": 20,
+  "gender": "No Gender",
+  "shiny": false,
+  "nature": "Relaxed",
+  "types": [
+    "Electric",
+    "Ghost"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 2,
+      "stage": 0
+    },
+    "def": {
+      "base": 1,
+      "added": 8,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "spd": {
+      "base": -1,
+      "added": 5,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 54,
+    "currentHp": 54,
+    "tick": 5,
+    "evasion": {
+      "vsAtk": 3,
+      "vsSatk": 2,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Astonish",
+      "type": "Ghost",
+      "category": "Physical",
+      "db": 5,
+      "damageRoll": "1d8+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Astonish Flinches the target on 15+. Once per scene, if the target is unaware of the user’s presence, Astonish automatically Flinches the target."
+    },
+    {
+      "name": "Thunder Shock",
+      "type": "Electric",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "Thunder Shock Paralyzes the target on 17+."
+    },
+    {
+      "name": "Confuse Ray",
+      "type": "Ghost",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "The target is Confused."
+    },
+    {
+      "name": "Double Team",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Self, Illusion, Coat",
+      "effect": "The user gains 3 activations of Double Team. The user may either activate Double Team when being targeted by an attack to increase their Evasion by +2 against that attack; or when making an attack to increase their Accuracy by +2 for that attack."
+    },
+    {
+      "name": "Uproar",
+      "type": "Normal",
+      "category": "Special",
+      "db": 5,
+      "damageRoll": "1d8+8 / 13",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Burst 1, Spirit Surge, Sonic",
+      "effect": "All Pokémon and Trainers within 5 meters of the user are cured of sleep."
+    },
+    {
+      "name": "Thunder Wave",
+      "type": "Electric",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 4,
+      "range": "6, 1 Target",
+      "effect": "Thunder Wave Paralyzes the target. Targets immune to Electric Attacks are immune to Thunder Wave’s effects."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Poltergeist",
+      "frequency": "Static",
+      "effect": "Rotom gains an Ability depending on what Form it has taken. If Rotom is level 40 or higher, it also may use a Move based on its Forme as if it that Move was on their Move List. Ability Move Standard Rotom:   Levitate None Heat Rotom:           Flash Fire Overheat Wash Rotom:\t      Water Absorb Hydro Pump Frost Rotom: Winter’s Kiss Blizzard Fan Rotom: Windveiled Hurricane Mow Rotom:          Sap Sipper Leaf Storm"
+    },
+    {
+      "name": "Volt Absorb",
+      "frequency": "Static",
+      "effect": "The user is immune to the damage and effects of Electric-Type attacks, and whenever they are hit with an Electric Type attack, they gain Hit Points equal to a Tick of Hit Points. Defensive."
+    }
+  ],
+  "natureMod": {
+    "plus": "def",
+    "minus": "spd"
+  },
+  "capabilities": {
+    "overland": 2,
+    "swim": 2,
+    "levitate": 4,
+    "jump": "1/1",
+    "power": 1,
+    "weight": 1,
+    "size": "Small",
+    "other": [
+      "Darkvision",
+      "Dead Silent",
+      "Glow",
+      "Invisibility",
+      "Phasing",
+      "Underdog",
+      "Wired",
+      "Zapper",
+      "Forme Change*"
+    ]
+  }
+}

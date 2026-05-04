@@ -1,0 +1,148 @@
+{
+  "slug": "examples-klefki",
+  "nickname": "Klefki",
+  "species": "Klefki",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Decisive",
+  "types": [
+    "Steel",
+    "Fairy"
+  ],
+  "stats": {
+    "hp": {
+      "base": 1,
+      "added": 3,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 11,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "sdef": {
+      "base": -1,
+      "added": 3,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 60,
+    "currentHp": 60,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 4,
+      "vsSatk": 2,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Spikes",
+      "type": "Ground",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "6, Hazard",
+      "effect": "Set 8 square meters of Spikes within your range, all 8 meters must be adjacent with at least one other space of Spikes. Spikes cause terrain to count as Slow Terrain, and a grounded foe that runs into the hazards will lose a Tick of Hit Points and become Slowed until the end of their next turn."
+    },
+    {
+      "name": "Fairy Wind",
+      "type": "Fairy",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "None"
+    },
+    {
+      "name": "Metal Sound",
+      "type": "Steel",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 4,
+      "range": "Burst 2, Friendly, Sonic",
+      "effect": "All Legal Targets have their Special Defense lowered 2 Combat Stages."
+    },
+    {
+      "name": "Draining Kiss",
+      "type": "Fairy",
+      "category": "Special",
+      "db": 7,
+      "damageRoll": "2d6+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "After the target takes damage, the user gains Hit Points equal to half of the damage they dealt to the target."
+    },
+    {
+      "name": "Fairy Lock",
+      "type": "Fairy",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Burst 3, Friendly",
+      "effect": "All legal targets become Trapped and Slowed while the user remains in the encounter. This effect ends if the user switches or is Fainted."
+    },
+    {
+      "name": "Astonish",
+      "type": "Ghost",
+      "category": "Physical",
+      "db": 3,
+      "damageRoll": "1d6+5 / 9",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Astonish Flinches the target on 15+. Once per scene, if the target is unaware of the user’s presence, Astonish automatically Flinches the target."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Prankster",
+      "frequency": "Static",
+      "effect": "The user may use Status Moves as Priority (Advanced)."
+    },
+    {
+      "name": "Magician",
+      "frequency": "Scene – Free Action",
+      "effect": "The user takes the target’s Held Item. This Ability may not be triggered if the user is already holding a Held Item."
+    }
+  ],
+  "natureMod": {
+    "plus": "hp",
+    "minus": "sdef"
+  },
+  "capabilities": {
+    "overland": 1,
+    "swim": 1,
+    "levitate": 6,
+    "jump": "0/1",
+    "power": 1,
+    "weight": 1,
+    "size": "Small",
+    "other": [
+      "Dead Silent"
+    ]
+  }
+}

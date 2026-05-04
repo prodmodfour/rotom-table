@@ -1,0 +1,146 @@
+{
+  "slug": "examples-bulbasaur",
+  "nickname": "Bulbasaur",
+  "species": "Bulbasaur",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Docile",
+  "types": [
+    "Grass",
+    "Poison"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 8,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 60,
+    "currentHp": 60,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 2,
+      "vsAny": 1
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Tackle",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash, Push",
+      "effect": "The target is pushed 2 Meters."
+    },
+    {
+      "name": "Sleep Powder",
+      "type": "Grass",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 6,
+      "range": "4, 1 Target, Powder",
+      "effect": "The target falls asleep."
+    },
+    {
+      "name": "Razor Leaf",
+      "type": "Grass",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 4,
+      "range": "Cone 2",
+      "effect": "Razor Leaf is a Critical Hit on 18+."
+    },
+    {
+      "name": "Take Down",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 9,
+      "damageRoll": "2d10+10 / 21",
+      "frequency": "EOT",
+      "ac": 5,
+      "range": "Melee, 1 Target, Dash, Recoil 1/3",
+      "effect": "You may perform a Trip Maneuver against the target as a Free Action."
+    },
+    {
+      "name": "Leech Seed",
+      "type": "Grass",
+      "category": "Status",
+      "frequency": "Daily x2",
+      "ac": 4,
+      "range": "6, 1 Target",
+      "effect": "At the beginning of each of the target’s turns, Leech Seed’s target loses a Tick of Hit Points. Leech Seed’s user then gains Hit Points equal to the amount the target lost. Leech Seed lasts until the target faints or is returned to a Poké Ball. Grass Types and targets immune to Grass Attacks are immune to Leech Seed."
+    },
+    {
+      "name": "Poison Powder",
+      "type": "Poison",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 6,
+      "range": "4, 1 Target, Powder",
+      "effect": "The target is Poisoned."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Chlorophyll",
+      "frequency": "Static",
+      "effect": "While in Sunny Weather or under 50% Max Hit Points, the user’s Initiative is doubled."
+    },
+    {
+      "name": "Overgrow",
+      "frequency": "Static",
+      "effect": "The user gains Last Chance with Grass."
+    }
+  ],
+  "capabilities": {
+    "overland": 5,
+    "swim": 3,
+    "jump": "0/2",
+    "power": 2,
+    "weight": 1,
+    "size": "Small",
+    "other": [
+      "Naturewalk (Grassland, Forest)",
+      "Underdog"
+    ]
+  }
+}

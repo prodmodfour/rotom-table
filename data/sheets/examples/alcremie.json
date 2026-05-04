@@ -1,0 +1,128 @@
+{
+  "slug": "examples-alcremie",
+  "nickname": "Alcremie",
+  "species": "Alcremie",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Jolly",
+  "types": [
+    "Fairy"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 2,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "satk": {
+      "base": -1,
+      "added": 7,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 8,
+      "stage": 0
+    },
+    "spd": {
+      "base": 1,
+      "added": 4,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 60,
+    "currentHp": 60,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 4,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Sweet Scent",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "ac": 2,
+      "range": "Burst 2, Friendly",
+      "effect": "Targets hit by Sweet Scent gain a -2 Penalty to Evasion. (Total Evasion may not be lowered to a negative value. )"
+    },
+    {
+      "name": "Sweet Kiss",
+      "type": "Fairy",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 6,
+      "range": "6, 1 Target, Social",
+      "effect": "The target becomes Confused. On miss, the target suffers a -2 penalty to Accuracy Rolls for one full round."
+    },
+    {
+      "name": "Draining Kiss",
+      "type": "Fairy",
+      "category": "Special",
+      "db": 7,
+      "damageRoll": "2d6+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "After the target takes damage, the user gains Hit Points equal to half of the damage they dealt to the target."
+    },
+    {
+      "name": "Aromatherapy",
+      "type": "Grass",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Burst 1",
+      "effect": "All allies in the burst are cured of one status condition of their choice."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Sweet Veil",
+      "frequency": "Static",
+      "effect": "The user and allies within 3 meters are immune to Sleep. Defensive."
+    },
+    {
+      "name": "Cherry Power",
+      "frequency": "Daily – Swift Action",
+      "effect": "The user gains 15 Temporary Hit Points, and is cured of all Persistent Status Afflictions."
+    }
+  ],
+  "natureMod": {
+    "plus": "spd",
+    "minus": "satk"
+  },
+  "capabilities": {
+    "overland": 2,
+    "swim": 2,
+    "levitate": 6,
+    "jump": "2/2",
+    "power": 2,
+    "weight": 1,
+    "size": "Small",
+    "other": [
+      "Alluring",
+      "Amorphous",
+      "Sticky Hold"
+    ]
+  }
+}

@@ -1,0 +1,146 @@
+{
+  "slug": "examples-tangela",
+  "nickname": "Tangela",
+  "species": "Tangela",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Distracted",
+  "types": [
+    "Grass"
+  ],
+  "stats": {
+    "hp": {
+      "base": 1,
+      "added": 5,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "def": {
+      "base": -1,
+      "added": 7,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 69,
+    "currentHp": 69,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 3,
+      "vsSatk": 1,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Sleep Powder",
+      "type": "Grass",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 6,
+      "range": "4, 1 Target, Powder",
+      "effect": "The target falls asleep."
+    },
+    {
+      "name": "Growth",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Attack 1 Combat Stage and raise the user’s Special Attack 1 Combat Stage. If it is Sunny, double the amount of Combat Stages gained."
+    },
+    {
+      "name": "Absorb",
+      "type": "Grass",
+      "category": "Special",
+      "db": 4,
+      "damageRoll": "1d8+6",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "After the target takes damage, the user gains Hit Points equal to half of the damage they dealt to the target."
+    },
+    {
+      "name": "Constrict",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 1,
+      "damageRoll": "1d6+1 / 4",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Constrict lowers the target’s Speed 1 Combat Stage. Constrict may be used as a Swift Action against targets the user is Grappling, and automatically hits when performed this way."
+    },
+    {
+      "name": "Ingrain",
+      "type": "Grass",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Self, Coat",
+      "effect": "Ingrain applies a Coat to the user, which has the following effect; the user cannot be pushed or pulled, and cannot be switched out.  At the beginning of each of the user’s turn, the user gains a Tick of Hit Points."
+    },
+    {
+      "name": "Poison Powder",
+      "type": "Poison",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 6,
+      "range": "4, 1 Target, Powder",
+      "effect": "The target is Poisoned."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Life Force",
+      "frequency": "Daily x5 – Swift Action",
+      "effect": "The user gains a Tick of Hit Points."
+    },
+    {
+      "name": "Grass Pelt",
+      "frequency": "Scene - Swift Action",
+      "effect": "The user gains two ticks worth of Temporary Hit Points."
+    }
+  ],
+  "natureMod": {
+    "plus": "hp",
+    "minus": "def"
+  },
+  "capabilities": {
+    "overland": 4,
+    "swim": 1,
+    "jump": "1/1",
+    "power": 4,
+    "weight": 3,
+    "size": "Medium",
+    "other": [
+      "Naturewalk  (Grassland, Forest)",
+      "Reach 2",
+      "Underdog"
+    ]
+  }
+}

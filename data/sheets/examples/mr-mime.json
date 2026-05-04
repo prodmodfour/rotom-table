@@ -1,0 +1,143 @@
+{
+  "slug": "examples-mr-mime",
+  "nickname": "Mr. Mime",
+  "species": "Mr. Mime",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Naive",
+  "types": [
+    "Psychic",
+    "Fairy"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 2,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "sdef": {
+      "base": -1,
+      "added": 5,
+      "stage": 0
+    },
+    "spd": {
+      "base": 1,
+      "added": 9,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 48,
+    "currentHp": 48,
+    "tick": 4,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 3,
+      "vsAny": 4
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Psywave",
+      "type": "Psychic",
+      "category": "Special",
+      "frequency": "Scene",
+      "ac": 5,
+      "range": "6, 1 Target",
+      "effect": "Roll 1d4; on 1 the target loses Hit Points equal to half the user’s Level; on 2 the target loses Hit Points equal to the user’s Level; on 3 the target loses Hit Points equal to 1.5x the user’s level; on 4 the target loses Hit Points equal to the user’s Level doubled. Do not apply weakness or resistance, and do not apply Stats. Do apply Immunity."
+    },
+    {
+      "name": "Copycat",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "range": "4, 1 Target",
+      "effect": "Use the Move the target has used on their last turn. You may choose new targets for the Move. Copycat cannot miss."
+    },
+    {
+      "name": "Mimic",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "6, 1 Target",
+      "effect": "Choose a Move that the target has used during the encounter. For the remainder of the encounter, that Move replaces Mimic on the user’s Move List. Mimic cannot miss."
+    },
+    {
+      "name": "Encore",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "4, 1 Target, Social",
+      "effect": "Roll 1d6. On a result of 1 or 2, the target becomes Confused; on a result of 3 or 4 the target becomes Suppressed; on a result of 5 or 6 the target becomes Enraged."
+    },
+    {
+      "name": "Double Slap",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 2,
+      "damageRoll": "1d6+3 / 7",
+      "frequency": "At-Will",
+      "ac": 4,
+      "range": "Melee, 1 Target, Five Strike",
+      "effect": "None"
+    },
+    {
+      "name": "Meditate",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "Self",
+      "effect": "Raise the user’s Attack 1 Combat Stage."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Soundproof",
+      "frequency": "Static",
+      "effect": "The Pokémon is immune to Moves with the Sonic Keyword. Defensive."
+    },
+    {
+      "name": "Filter",
+      "frequency": "Static",
+      "effect": "The user gains +5 Damage Reduction against Super- Effective damage. Defensive."
+    }
+  ],
+  "natureMod": {
+    "plus": "spd",
+    "minus": "sdef"
+  },
+  "capabilities": {
+    "overland": 5,
+    "swim": 3,
+    "jump": "1/1",
+    "power": 5,
+    "weight": 4,
+    "size": "Medium",
+    "other": [
+      "Telekinetic",
+      "Telepath"
+    ]
+  }
+}

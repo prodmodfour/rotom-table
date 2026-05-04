@@ -1,0 +1,91 @@
+{
+  "slug": "examples-darmanitan",
+  "nickname": "Darmanitan",
+  "species": "Darmanitan",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Stark",
+  "types": [
+    "Fire"
+  ],
+  "stats": {
+    "hp": {
+      "base": -1,
+      "added": 6,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "def": {
+      "base": 1,
+      "added": 3,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 78,
+    "currentHp": 78,
+    "tick": 7,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 2,
+      "vsAny": 3
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [],
+  "abilities": [
+    {
+      "name": "Flame Body",
+      "frequency": "Scene – Free Action",
+      "effect": "The attacking foe becomes Burned."
+    },
+    {
+      "name": "Inner Focus",
+      "frequency": "Static",
+      "effect": "The user cannot be Flinched, and their Initiative cannot be unwillingly lowered by any effects."
+    }
+  ],
+  "natureMod": {
+    "plus": "def",
+    "minus": "hp"
+  },
+  "capabilities": {
+    "overland": 7,
+    "swim": 3,
+    "jump": "1/2",
+    "power": 8,
+    "weight": 4,
+    "size": "Medium",
+    "other": [
+      "Naturewalk  (Desert, Mountain)",
+      "Heater",
+      "Firestarter",
+      "Egg Warmer",
+      "Forme Change*"
+    ]
+  }
+}

@@ -1,0 +1,132 @@
+{
+  "slug": "examples-glalie",
+  "nickname": "Glalie",
+  "species": "Glalie",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Stark",
+  "types": [
+    "Ice"
+  ],
+  "stats": {
+    "hp": {
+      "base": -1,
+      "added": 0,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "def": {
+      "base": 1,
+      "added": 10,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 8,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 51,
+    "currentHp": 51,
+    "tick": 5,
+    "evasion": {
+      "vsAtk": 4,
+      "vsSatk": 3,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Ice Shard",
+      "type": "Ice",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target, Priority",
+      "effect": "None"
+    },
+    {
+      "name": "Bite",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Bite Flinches the target on 15+."
+    },
+    {
+      "name": "Double Team",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Self, Illusion, Coat",
+      "effect": "The user gains 3 activations of Double Team. The user may either activate Double Team when being targeted by an attack to increase their Evasion by +2 against that attack; or when making an attack to increase their Accuracy by +2 for that attack."
+    },
+    {
+      "name": "Icy Wind",
+      "type": "Ice",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "ac": 3,
+      "range": "Cone 2",
+      "effect": "All Legal Targets have their Speed lowered 1 Combat Stage."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Inner Focus",
+      "frequency": "Static",
+      "effect": "The user cannot be Flinched, and their Initiative cannot be unwillingly lowered by any effects."
+    },
+    {
+      "name": "Winter’s Kiss",
+      "frequency": "Static",
+      "effect": "The user does not take damage from Ice-Type Moves. Whenever the user uses or is hit by an Ice- Type Move, the user is healed by a Tick of Hit Points. Defensive."
+    }
+  ],
+  "natureMod": {
+    "plus": "def",
+    "minus": "hp"
+  },
+  "capabilities": {
+    "overland": 5,
+    "swim": 2,
+    "levitate": 5,
+    "jump": "2/2",
+    "power": 5,
+    "weight": 6,
+    "size": "Medium",
+    "other": [
+      "Chilled",
+      "Dead Silent",
+      "Freezer"
+    ]
+  }
+}

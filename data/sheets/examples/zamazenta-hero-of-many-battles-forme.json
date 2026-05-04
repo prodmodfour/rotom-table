@@ -1,0 +1,151 @@
+{
+  "slug": "examples-zamazenta-hero-of-many-battles-forme",
+  "nickname": "Zamazenta Hero Of Many Battles Forme",
+  "species": "Zamazenta Hero Of Many Battles Forme",
+  "level": 20,
+  "gender": "No Gender",
+  "shiny": false,
+  "nature": "Dreamy",
+  "types": [
+    "Fighting"
+  ],
+  "stats": {
+    "hp": {
+      "base": 8,
+      "added": 5,
+      "stage": 0
+    },
+    "atk": {
+      "base": 13,
+      "added": 5,
+      "stage": 0
+    },
+    "def": {
+      "base": 12,
+      "added": 2,
+      "stage": 0
+    },
+    "satk": {
+      "base": 8,
+      "added": 5,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 13,
+      "added": 8,
+      "stage": 0
+    },
+    "spd": {
+      "base": 14,
+      "added": 5,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 69,
+    "currentHp": 69,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 4,
+      "vsAny": 3
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Slash",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, Pass",
+      "effect": "Slash is a Critical Hit on 18+."
+    },
+    {
+      "name": "Quick Attack",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Priority",
+      "effect": "None."
+    },
+    {
+      "name": "Metal Claw",
+      "type": "Steel",
+      "category": "Physical",
+      "db": 5,
+      "damageRoll": "1d8+8 / 13",
+      "frequency": "At-Will",
+      "ac": 3,
+      "range": "Melee, 1 Target, Spirit Surge",
+      "effect": "Raise the user’s Attack 1 Combat Stage on 18+."
+    },
+    {
+      "name": "Howl",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Burst 1",
+      "effect": "The user and all allies in the Burst have their Attack CS raised by 1."
+    },
+    {
+      "name": "Bite",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Bite Flinches the target on 15+."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Dauntless Shield",
+      "frequency": "Static",
+      "effect": "The user’s default Defense Combat Stages are increased by +1."
+    },
+    {
+      "name": "Stamina"
+    }
+  ],
+  "natureMod": {
+    "plus": "sdef",
+    "minus": "hp"
+  },
+  "capabilities": {
+    "overland": 9,
+    "swim": 5,
+    "jump": "3/3",
+    "power": 9,
+    "weight": 6,
+    "size": "Huge",
+    "other": [
+      "Aura  Reader",
+      "Forme Change",
+      "Invisibility",
+      "Mountable 2",
+      "Phasing",
+      "Weapon Bond"
+    ]
+  },
+  "skills": {
+    "athletics": "5d6+2",
+    "acrobatics": "4d6",
+    "combat": "5d6",
+    "stealth": "5d6",
+    "perception": "4d6",
+    "focus": "4d6+2"
+  }
+}

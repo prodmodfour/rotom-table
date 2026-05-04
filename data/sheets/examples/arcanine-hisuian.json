@@ -1,0 +1,125 @@
+{
+  "slug": "examples-arcanine-hisuian",
+  "nickname": "Arcanine Hisuian",
+  "species": "Arcanine Hisuian",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Impish",
+  "types": [
+    "Fire",
+    "Rock"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 13,
+      "stage": 0
+    },
+    "def": {
+      "base": 1,
+      "added": 4,
+      "stage": 0
+    },
+    "satk": {
+      "base": -1,
+      "added": 2,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 2,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 2,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 81,
+    "currentHp": 81,
+    "tick": 8,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 2,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Ember",
+      "type": "Fire",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "Ember Burns the target on 18+."
+    },
+    {
+      "name": "Bite",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Bite Flinches the target on 15+."
+    },
+    {
+      "name": "Fire Fang",
+      "type": "Fire",
+      "category": "Physical",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "At-Will",
+      "ac": 3,
+      "range": "Melee, 1 Target",
+      "effect": "Fire Fang Burns or Flinches on 18-19 during Accuracy Check; flip a coin to determine whether the foe gets Burned or Flinches. On 20 during Accuracy Check, the foe is Burned and Flinches."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Flash Fire",
+      "frequency": "Static",
+      "effect": "The user is immune to the damage and effects of Fire-Type attacks. If the user is hit by a Fire-Type attack, they gain +1 CS in their choice of Attack or Special Attack. Defensive."
+    },
+    {
+      "name": "Justified",
+      "frequency": "At-Will - Free Action",
+      "effect": "The user may raise its Attack by +1 Combat Stage."
+    }
+  ],
+  "natureMod": {
+    "plus": "def",
+    "minus": "satk"
+  },
+  "capabilities": {
+    "overland": 8,
+    "swim": 4,
+    "jump": "2/3",
+    "power": 8,
+    "weight": 5,
+    "size": "Large",
+    "other": [
+      "Firestarter",
+      "Mountable 1",
+      "Naturewalk (Grassland, Mountain)",
+      "Tracker"
+    ]
+  }
+}

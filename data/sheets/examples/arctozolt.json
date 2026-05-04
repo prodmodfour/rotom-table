@@ -1,0 +1,133 @@
+{
+  "slug": "examples-arctozolt",
+  "nickname": "Arctozolt",
+  "species": "Arctozolt",
+  "level": 20,
+  "gender": "No Gender",
+  "shiny": false,
+  "nature": "Brave",
+  "types": [
+    "Electric",
+    "Ice"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "atk": {
+      "base": 1,
+      "added": 5,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "spd": {
+      "base": -1,
+      "added": 6,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 75,
+    "currentHp": 75,
+    "tick": 7,
+    "evasion": {
+      "vsAtk": 3,
+      "vsSatk": 2,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Powder Snow",
+      "type": "Ice",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Line 4",
+      "effect": "Powder Snow Freezes all Legal Targets on 19+."
+    },
+    {
+      "name": "Charge",
+      "type": "Electric",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "If the user performs an Electric Move on their next turn that deals damage, add its Damage Dice Roll an extra time to the damage. Raise the user’s Special Defense 1 Combat Stage."
+    },
+    {
+      "name": "Echoed Voice",
+      "type": "Normal",
+      "category": "Special",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "3, 1 Target, Sonic",
+      "effect": "If Echoed Voice was used by any Pokémon or Trainer in the Encounter on the previous round, increase its Damage Base by +4. If Echoed Voice was used by any Pokémon or Trainers during both the previous two rounds, increase its Damage Base by +8."
+    },
+    {
+      "name": "Thunder Shock",
+      "type": "Electric",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "Thunder Shock Paralyzes the target on 17+."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Klutz",
+      "effect": "Choose one of the target’s Held Items or Accessory Slot Items. It is knocked to the ground."
+    },
+    {
+      "name": "Slush Rush",
+      "frequency": "Static",
+      "effect": "While in Hailing Weather or under half maximum Hit Points, the user’s Initiative is doubled."
+    }
+  ],
+  "natureMod": {
+    "plus": "atk",
+    "minus": "spd"
+  },
+  "capabilities": {
+    "overland": 6,
+    "swim": 6,
+    "jump": "2/2",
+    "power": 6,
+    "weight": 5,
+    "size": "Large",
+    "other": [
+      "Chilled",
+      "Freezer",
+      "Mountable 1",
+      "Naturewalk (Tundra)",
+      "Zapper"
+    ]
+  }
+}

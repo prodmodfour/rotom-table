@@ -1,0 +1,146 @@
+{
+  "slug": "examples-magnezone",
+  "nickname": "Magnezone",
+  "species": "Magnezone",
+  "level": 20,
+  "gender": "No Gender",
+  "shiny": false,
+  "nature": "Quirky",
+  "types": [
+    "Electric",
+    "Steel"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 66,
+    "currentHp": 66,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 3,
+      "vsSatk": 2,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Supersonic",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 6,
+      "range": "4, 1 Target, Sonic",
+      "effect": "The target becomes Confused. On miss, the target suffers a -2 penalty to Accuracy Rolls for one full round."
+    },
+    {
+      "name": "Thunder Shock",
+      "type": "Electric",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "Thunder Shock Paralyzes the target on 17+."
+    },
+    {
+      "name": "Thunder Wave",
+      "type": "Electric",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 4,
+      "range": "6, 1 Target",
+      "effect": "Thunder Wave Paralyzes the target. Targets immune to Electric Attacks are immune to Thunder Wave’s effects."
+    },
+    {
+      "name": "Sonic Boom",
+      "type": "Normal",
+      "category": "Special",
+      "frequency": "EOT",
+      "ac": 6,
+      "range": "8, 1 Target",
+      "effect": "Sonic Boom causes the target to lose 15 Hit Points. Sonic Boom is Special and interacts with other moves and effects as such ( Special Evasion may be applied to avoid it, Mirror Coat can reflect it, etc. )"
+    },
+    {
+      "name": "Spark",
+      "type": "Electric",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash",
+      "effect": "Spark Paralyzes the target on 15+."
+    },
+    {
+      "name": "Magnet Bomb",
+      "type": "Steel",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "range": "8, 1 target",
+      "effect": "Magnet Bomb cannot miss."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Sturdy",
+      "frequency": "Static",
+      "effect": "The user is immune to Moves with the Execute Keyword. If a single source of Damage or Hit Point Loss would cause the user to lose more than X Hit Points, the damage or Hit Point loss is instead reduced to X. X is equal to 50% of their Max Hit Points. Defensive."
+    },
+    {
+      "name": "Magnet Pull",
+      "frequency": "Scene x3 – Swift Action",
+      "effect": "Pick Two Effects; - The target is pushed or pulled X meters directly away or towards the user. X is up to 6 meters minus the target’s Weight Class. - Until the end of the user’s next turn, the target may not move more then 6 meters away from the user . - Until the end of the user’s next turn, the target may not move closer than 3 meters ot the user."
+    }
+  ],
+  "capabilities": {
+    "overland": 3,
+    "swim": 5,
+    "levitate": 6,
+    "jump": "1/1",
+    "power": 6,
+    "weight": 5,
+    "size": "Medium",
+    "other": [
+      "Magnetic",
+      "Mountable 1"
+    ]
+  }
+}

@@ -1,0 +1,122 @@
+{
+  "slug": "examples-honchkrow",
+  "nickname": "Honchkrow",
+  "species": "Honchkrow",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Impish",
+  "types": [
+    "Dark",
+    "Flying"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 9,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    },
+    "def": {
+      "base": 1,
+      "added": 5,
+      "stage": 0
+    },
+    "satk": {
+      "base": -1,
+      "added": 4,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 2,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 87,
+    "currentHp": 87,
+    "tick": 8,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 1,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Wing Attack",
+      "type": "Flying",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "None."
+    },
+    {
+      "name": "Haze",
+      "type": "Ice",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "range": "Field",
+      "effect": "The Combat Stages of the user and all Pokémon and Trainers in the encounter are set to their default state (usually 0)."
+    },
+    {
+      "name": "Pursuit",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "If the foe is fleeing or being switched out, Pursuit may be used as an Interrupt, targeting the triggering foe. When used as an Interrupt, Pursuit grants the user a +5 bonus to all Movement Speeds, and has a Damage Base of 8 (2d8+10 / 19)."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Super Luck",
+      "frequency": "Static",
+      "effect": "The Pokémon’s Moves are Critical Hits on 18-20. If a Move already has an extended Critical Hit range, Super Luck extends that range by 2."
+    },
+    {
+      "name": "Confidence",
+      "frequency": "Scene – Standard Action",
+      "effect": "Choose a Combat Stat. All allies within 5 meters of the user gain +1 CS in the Chosen Stat."
+    }
+  ],
+  "natureMod": {
+    "plus": "def",
+    "minus": "satk"
+  },
+  "capabilities": {
+    "overland": 4,
+    "sky": 8,
+    "swim": 2,
+    "jump": "2/2",
+    "power": 4,
+    "weight": 3,
+    "size": "Medium",
+    "other": [
+      "Darkvision",
+      "Guster",
+      "Pack Mon"
+    ]
+  }
+}

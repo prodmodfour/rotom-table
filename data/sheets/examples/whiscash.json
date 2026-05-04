@@ -1,0 +1,147 @@
+{
+  "slug": "examples-whiscash",
+  "nickname": "Whiscash",
+  "species": "Whiscash",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Naive",
+  "types": [
+    "Water",
+    "Ground"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 2,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "sdef": {
+      "base": -1,
+      "added": 3,
+      "stage": 0
+    },
+    "spd": {
+      "base": 1,
+      "added": 6,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 81,
+    "currentHp": 81,
+    "tick": 8,
+    "evasion": {
+      "vsAtk": 1,
+      "vsSatk": 1,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Water Sport",
+      "type": "Water",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Burst 2, Coat",
+      "effect": "All targets in the burst, including the user, gain a Coat which grants them 1 Step of Resistance to Fire Type Moves. After a target has been hit by a damaging Fire Type Move, the coat is removed."
+    },
+    {
+      "name": "Mud Sport",
+      "type": "Ground",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Burst 2",
+      "effect": "All targets in the burst, including the user, gain a Coat which grants them 1 Step of Resistance to Electric Type Moves. After a target has been hit by a damaging Electric Type Move, the coat is removed."
+    },
+    {
+      "name": "Water Gun",
+      "type": "Water",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "None"
+    },
+    {
+      "name": "Amnesia",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Special Defense 2 Combat Stages."
+    },
+    {
+      "name": "Magnitude",
+      "type": "Ground",
+      "category": "Physical",
+      "frequency": "EOT",
+      "range": "Burst 2, Groundsource",
+      "effect": "When you use Magnitude, roll 1d6.  Magnitude’s Damage Base is equal to 5+X, where X is the value of the d6. Magnitude can hit targets that are underground, including those using the Move Dig."
+    },
+    {
+      "name": "Mud Bomb",
+      "type": "Ground",
+      "category": "Special",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "At-Will",
+      "ac": 4,
+      "range": "6, 1 Target",
+      "effect": "The target’s Accuracy is lowered by -1 on 16+."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Oblivious",
+      "frequency": "Static",
+      "effect": "The user is immune to the Enraged and Infatuated conditions. Defensive."
+    },
+    {
+      "name": "Mud Dweller",
+      "frequency": "Static",
+      "effect": "The user resists Ground-Type and Water-Type attacks one step further."
+    }
+  ],
+  "natureMod": {
+    "plus": "spd",
+    "minus": "sdef"
+  },
+  "capabilities": {
+    "overland": 3,
+    "swim": 5,
+    "burrow": 2,
+    "jump": "3/3",
+    "power": 3,
+    "weight": 2,
+    "size": "Medium",
+    "other": [
+      "Tremorsense",
+      "Gilled",
+      "Fountain",
+      "Naturewalk (Wetlands)"
+    ]
+  }
+}

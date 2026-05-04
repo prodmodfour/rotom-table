@@ -1,0 +1,133 @@
+{
+  "slug": "examples-spinda",
+  "nickname": "Spinda",
+  "species": "Spinda",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Bashful",
+  "types": [
+    "Normal"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 1,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 69,
+    "currentHp": 69,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 1,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Feint Attack",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "EOT",
+      "range": "Melee, 1 Target",
+      "effect": "Feint Attack cannot miss."
+    },
+    {
+      "name": "Tackle",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash, Push",
+      "effect": "The target is pushed 2 Meters."
+    },
+    {
+      "name": "Hypnosis",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 6,
+      "range": "4, 1 Target",
+      "effect": "The target falls Asleep."
+    },
+    {
+      "name": "Psybeam",
+      "type": "Psychic",
+      "category": "Special",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Psybeam Confuses the target on 19+."
+    },
+    {
+      "name": "Copycat",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "range": "4, 1 Target",
+      "effect": "Use the Move the target has used on their last turn. You may choose new targets for the Move. Copycat cannot miss."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Tangled Feet",
+      "frequency": "Static",
+      "effect": "While Confused or Slowed, the user gains +3 Evasion. The user is immune to the Vulnerable Condition."
+    },
+    {
+      "name": "Strange Tempo",
+      "frequency": "At-Will - Special",
+      "effect": "While Confused, the user may choose either to 1) As a Free Action, not to roll for Confusion, instead acting normally or 2) As a Standard Action, cure themselves of Confusion and gain +2 Combat Stages to the Stat of their choice."
+    }
+  ],
+  "capabilities": {
+    "overland": 5,
+    "swim": 2,
+    "jump": "1/2",
+    "power": 1,
+    "weight": 1,
+    "size": "Medium",
+    "other": [
+      "Underdog"
+    ]
+  }
+}

@@ -1,0 +1,136 @@
+{
+  "slug": "examples-haunter",
+  "nickname": "Haunter",
+  "species": "Haunter",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Lax",
+  "types": [
+    "Ghost",
+    "Poison"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "def": {
+      "base": 1,
+      "added": 7,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "sdef": {
+      "base": -1,
+      "added": 3,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 54,
+    "currentHp": 54,
+    "tick": 5,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 1,
+      "vsAny": 3
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Mean Look",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "6, 1 Target, Social",
+      "effect": "The user casts a foul spell on the target, causing it to become Trapped and Slowed for the remainder of the encounter."
+    },
+    {
+      "name": "Confuse Ray",
+      "type": "Ghost",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "The target is Confused."
+    },
+    {
+      "name": "Curse",
+      "type": "Ghost",
+      "category": "Status",
+      "frequency": "See Text",
+      "range": "Self",
+      "effect": "If the user is not a Ghost Type, Curse has a Frequency of EOT, and when used the user lowers its Speed by -1 Combat Stage, but raises Attack and Defense by +1 Combat Stage each.  If the user is a Ghost Type, Curse has a Frequency of Scene, and when used the user loses 1/3rd of their Max Hit Points and a target Pokémon or Trainer within 8 meters of the user becomes Cursed. This Hit Point loss cannot be prevented in any way."
+    },
+    {
+      "name": "Spite",
+      "type": "Ghost",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "1 Target, Trigger",
+      "effect": "Spite may be used as a Free Action that does not take up a Command whenever the user is hit by a Move. That Move becomes Disabled for the attacker."
+    },
+    {
+      "name": "Night Shade",
+      "type": "Ghost",
+      "category": "Special",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "8, 1 Target",
+      "effect": "The target loses Hit Points equal to the level of Night Shade’s user. Do not apply weakness or resistance. Do not apply stats."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Levitate",
+      "frequency": "Static",
+      "effect": "The Pokémon is immune to the damage and effects of Ground Type Moves, and gains a Levitate Speed of 4, or has existing Levitate Speeds increased by +2. Defensive."
+    },
+    {
+      "name": "Frighten",
+      "frequency": "Scene – Swift Action",
+      "effect": "Lower the target’s Speed 2 Combat Stages."
+    }
+  ],
+  "natureMod": {
+    "plus": "def",
+    "minus": "sdef"
+  },
+  "capabilities": {
+    "overland": 2,
+    "swim": 2,
+    "levitate": 4,
+    "jump": "1/2",
+    "power": 3,
+    "weight": 1,
+    "size": "Medium",
+    "other": [
+      "Darkvision",
+      "Dead Silent",
+      "Invisibility",
+      "Phasing",
+      "Underdog"
+    ]
+  }
+}

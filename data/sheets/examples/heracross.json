@@ -1,0 +1,141 @@
+{
+  "slug": "examples-heracross",
+  "nickname": "Heracross",
+  "species": "Heracross",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Composed",
+  "types": [
+    "Bug",
+    "Fighting"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 63,
+    "currentHp": 63,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 3,
+      "vsAny": 3
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Feint",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Trigger",
+      "effect": "If a foe uses a Move with the Shield Keyword in response to one of your actions, you may activate Feint to cause the triggering Move to Fail. Feint is activated as a Free Action."
+    },
+    {
+      "name": "Horn Attack",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash",
+      "effect": "None"
+    },
+    {
+      "name": "Chip Away",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Ignore any Armor, Damage Reduction, or changes in the target’s Defense or Special Defense (such as from Combat Stages) when calculating damage."
+    },
+    {
+      "name": "Tackle",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash, Push",
+      "effect": "The target is pushed 2 Meters."
+    },
+    {
+      "name": "Leer",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Cone 2, Friendly, Social",
+      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
+    },
+    {
+      "name": "Counter",
+      "type": "Fighting",
+      "category": "Physical",
+      "frequency": "Scene x2",
+      "range": "Melee, 1 Target, Reaction, Trigger",
+      "effect": "Counter may be used as a Reaction when the user is hit by a damaging Physical Attack. Resolve the Triggering Attack, with Counter’s user resisting the attack one step further. After the attack is resolved, if Counter’s user was not Fainted, the triggering foe then loses Hit Points equal to twice the amount of Hit Points lost by the user from the triggering attack. Note that Counter is Physical, and while it cannot miss, it cannot hit targets immune to Fighting-Type Moves."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Swarm",
+      "frequency": "Static",
+      "effect": "The user gains Last Chance with Bug."
+    },
+    {
+      "name": "Moxie",
+      "frequency": "Static",
+      "effect": "Whenever the user’s Move causes a target to faint, it may raise its Attack Combat Stage by +1. You may only trigger Moxie once per Move, even if the Move causes multiple targets to faint."
+    }
+  ],
+  "capabilities": {
+    "overland": 5,
+    "sky": 4,
+    "swim": 3,
+    "jump": "1/1",
+    "power": 8,
+    "weight": 4,
+    "size": "Medium"
+  }
+}

@@ -1,0 +1,144 @@
+{
+  "slug": "examples-gastly",
+  "nickname": "Gastly",
+  "species": "Gastly",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Hardy",
+  "types": [
+    "Ghost",
+    "Poison"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 8,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 51,
+    "currentHp": 51,
+    "tick": 5,
+    "evasion": {
+      "vsAtk": 1,
+      "vsSatk": 2,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Night Shade",
+      "type": "Ghost",
+      "category": "Special",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "8, 1 Target",
+      "effect": "The target loses Hit Points equal to the level of Night Shade’s user. Do not apply weakness or resistance. Do not apply stats."
+    },
+    {
+      "name": "Spite",
+      "type": "Ghost",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "1 Target, Trigger",
+      "effect": "Spite may be used as a Free Action that does not take up a Command whenever the user is hit by a Move. That Move becomes Disabled for the attacker."
+    },
+    {
+      "name": "Hypnosis",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 6,
+      "range": "4, 1 Target",
+      "effect": "The target falls Asleep."
+    },
+    {
+      "name": "Lick",
+      "type": "Ghost",
+      "category": "Physical",
+      "db": 5,
+      "damageRoll": "1d8+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Lick Paralyzes the target on 15+ during Accuracy Check."
+    },
+    {
+      "name": "Confuse Ray",
+      "type": "Ghost",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "The target is Confused."
+    },
+    {
+      "name": "Mean Look",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "6, 1 Target, Social",
+      "effect": "The user casts a foul spell on the target, causing it to become Trapped and Slowed for the remainder of the encounter."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Levitate",
+      "frequency": "Static",
+      "effect": "The Pokémon is immune to the damage and effects of Ground Type Moves, and gains a Levitate Speed of 4, or has existing Levitate Speeds increased by +2. Defensive."
+    },
+    {
+      "name": "Frighten",
+      "frequency": "Scene – Swift Action",
+      "effect": "Lower the target’s Speed 2 Combat Stages."
+    }
+  ],
+  "capabilities": {
+    "overland": 1,
+    "swim": 2,
+    "levitate": 4,
+    "jump": "1/1",
+    "power": 1,
+    "weight": 1,
+    "size": "Medium",
+    "other": [
+      "Darkvision",
+      "Dead Silent",
+      "Invisibility",
+      "Phasing",
+      "Underdog"
+    ]
+  }
+}

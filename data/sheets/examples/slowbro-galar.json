@@ -1,0 +1,149 @@
+{
+  "slug": "examples-slowbro-galar",
+  "nickname": "Slowbro Galar",
+  "species": "Slowbro Galar",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Distracted",
+  "types": [
+    "Poison",
+    "Psychic"
+  ],
+  "stats": {
+    "hp": {
+      "base": 1,
+      "added": 8,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "def": {
+      "base": -1,
+      "added": 4,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 87,
+    "currentHp": 87,
+    "tick": 8,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 2,
+      "vsAny": 1
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Yawn",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "range": "2, 1 Target, Social",
+      "effect": "The target falls Asleep at the end of their next turn. Yawn cannot miss."
+    },
+    {
+      "name": "Growl",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Burst 1, Friendly, Sonic, Social",
+      "effect": "Growl lowers all Legal Targets Attack 1 Combat Stage."
+    },
+    {
+      "name": "Confusion",
+      "type": "Psychic",
+      "category": "Special",
+      "db": 7,
+      "damageRoll": "2d6+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Confusion Confuses the target on 19+."
+    },
+    {
+      "name": "Disable",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "1 Target, Trigger",
+      "effect": "Disable may be used as a Free Action that does not take up a Command whenever the user is hit by a Move. That Move becomes Disabled for the attacker."
+    },
+    {
+      "name": "Water Pulse",
+      "type": "Water",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "8, 1 Target, Aura",
+      "effect": "Water Pulse Confuses the target on 17+."
+    },
+    {
+      "name": "Acid",
+      "type": "Poison",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Cone 2",
+      "effect": "Acid lowers the target’s Special Defense 1 Combat Stage on 18+."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Own Tempo",
+      "frequency": "Static",
+      "effect": "The user is immune to Confusion. Defensive."
+    },
+    {
+      "name": "Poison Touch",
+      "frequency": "Static",
+      "effect": "The Pokémon’s Moves which deal damage Poison Legal Targets on 19+. If a move already has a chance of Poisoning foes, Poison Touch increases the effect range by +2."
+    }
+  ],
+  "natureMod": {
+    "plus": "hp",
+    "minus": "def"
+  },
+  "capabilities": {
+    "overland": 3,
+    "swim": 4,
+    "jump": "1/1",
+    "power": 7,
+    "weight": 4,
+    "size": "Medium",
+    "other": [
+      "Fountain",
+      "Naturewalk (Wetlands)",
+      "Telekinetic"
+    ]
+  }
+}

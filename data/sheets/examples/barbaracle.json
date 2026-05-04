@@ -1,0 +1,166 @@
+{
+  "slug": "examples-barbaracle",
+  "nickname": "Barbaracle",
+  "species": "Barbaracle",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Gentle",
+  "types": [
+    "Rock",
+    "Water"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "def": {
+      "base": -1,
+      "added": 4,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 1,
+      "added": 6,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 66,
+    "currentHp": 66,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 3,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Withdraw",
+      "type": "Water",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "Self",
+      "effect": "The user’s Defense is raised 1 Combat Stage."
+    },
+    {
+      "name": "Fury Swipes",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 3,
+      "damageRoll": "1d6+5 / 9",
+      "frequency": "EOT",
+      "ac": 5,
+      "range": "Melee, 1 Target, Five Strike",
+      "effect": "None"
+    },
+    {
+      "name": "Sand Attack",
+      "type": "Ground",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "2, 1 Target",
+      "effect": "The target is Blinded until the end of their next turn."
+    },
+    {
+      "name": "Scratch",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, Pass",
+      "effect": "None"
+    },
+    {
+      "name": "Shell Smash",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Self",
+      "effect": "Raise the user’s Attack 2 Combat Stages, raise the user’s Special Attack 2 Combat Stages and raise the user’s Speed 2 Combat Stages. Lower the user’s Defense 1 Combat Stage and lower the user’s Special Defense 1 Combat Stage."
+    },
+    {
+      "name": "Clamp",
+      "type": "Water",
+      "category": "Static",
+      "frequency": "Static",
+      "effect": "The user gains a +1 Bonus to Accuracy Rolls made to initiate Grapple Maneuvers, and +2 to Skill Checks made to initiate Grapple Maneuvers or gain Dominance. Whenever the user gains Dominance in a Grapple, the target of the Grapple loses a Tick of Hit Points."
+    },
+    {
+      "name": "Water Gun",
+      "type": "Water",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "None"
+    },
+    {
+      "name": "Mud-Slap",
+      "type": "Ground",
+      "category": "Special",
+      "db": 2,
+      "damageRoll": "1d6+3 / 7",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "3, 1 Target",
+      "effect": "The target’s Accuracy is lowered by -1."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Sniper",
+      "frequency": "Static",
+      "effect": "When the user gets a Critical Hit, the attack deals +3d10 additional damage."
+    },
+    {
+      "name": "Cluster Mind",
+      "frequency": "Static",
+      "effect": "The user’s Move Pool limit is increased by +2."
+    }
+  ],
+  "natureMod": {
+    "plus": "sdef",
+    "minus": "def"
+  },
+  "capabilities": {
+    "overland": 5,
+    "swim": 5,
+    "jump": "2/2",
+    "power": 6,
+    "weight": 4,
+    "size": "Medium",
+    "other": [
+      "Gilled",
+      "Fountain"
+    ]
+  }
+}

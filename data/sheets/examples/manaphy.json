@@ -1,0 +1,137 @@
+{
+  "slug": "examples-manaphy",
+  "nickname": "Manaphy",
+  "species": "Manaphy",
+  "level": 20,
+  "gender": "No Gender",
+  "shiny": false,
+  "nature": "Cuddly",
+  "types": [
+    "Water"
+  ],
+  "stats": {
+    "hp": {
+      "base": 1,
+      "added": 7,
+      "stage": 0
+    },
+    "atk": {
+      "base": -1,
+      "added": 4,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 84,
+    "currentHp": 84,
+    "tick": 8,
+    "evasion": {
+      "vsAtk": 3,
+      "vsSatk": 2,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Bubble",
+      "type": "Water",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Burst 1",
+      "effect": "Bubble lowers the target’s Speed on 16+."
+    },
+    {
+      "name": "Supersonic",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 6,
+      "range": "4, 1 Target, Sonic",
+      "effect": "The target becomes Confused. On miss, the target suffers a -2 penalty to Accuracy Rolls for one full round."
+    },
+    {
+      "name": "Tail Glow",
+      "type": "Bug",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Self",
+      "effect": "Raise the user’s Special Attack 3 Combat Stages."
+    },
+    {
+      "name": "Charm",
+      "type": "Fairy",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "6, 1 Target, Social",
+      "effect": "Charm lowers the target’s Attack 2 Combat Stages."
+    },
+    {
+      "name": "Water Sport",
+      "type": "Water",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Burst 2, Coat",
+      "effect": "All targets in the burst, including the user, gain a Coat which grants them 1 Step of Resistance to Fire Type Moves. After a target has been hit by a damaging Fire Type Move, the coat is removed."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Hydration",
+      "frequency": "Scene - Swift Action",
+      "effect": "The user is cured of one Status Affliction. Hydration’s Frequency is ignored if used during Rainy Weather."
+    },
+    {
+      "name": "Swift Swim",
+      "frequency": "Static",
+      "effect": "While in Rainy Weather or under 50% Max Hit Points, the user’s Initiative is doubled."
+    }
+  ],
+  "natureMod": {
+    "plus": "hp",
+    "minus": "atk"
+  },
+  "capabilities": {
+    "overland": 5,
+    "swim": 8,
+    "jump": "2/2",
+    "power": 2,
+    "weight": 1,
+    "size": "Small",
+    "other": [
+      "Naturewalk  (Ocean)",
+      "Amorphous",
+      "Fountain",
+      "Gilled",
+      "Telepath"
+    ]
+  }
+}

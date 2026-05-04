@@ -1,0 +1,143 @@
+{
+  "slug": "examples-buzzwole",
+  "nickname": "Buzzwole",
+  "species": "Buzzwole",
+  "level": 20,
+  "gender": "No Gender",
+  "shiny": false,
+  "nature": "Proud",
+  "types": [
+    "Bug",
+    "Fighting"
+  ],
+  "stats": {
+    "hp": {
+      "base": 1,
+      "added": 5,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 9,
+      "stage": 0
+    },
+    "satk": {
+      "base": -1,
+      "added": 4,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 81,
+    "currentHp": 81,
+    "tick": 8,
+    "evasion": {
+      "vsAtk": 4,
+      "vsSatk": 1,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Power-Up Punch",
+      "type": "Fighting",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "If Power-Up Punch successfully hits a target, the user’s Attack is raised by +1 Combat Stage"
+    },
+    {
+      "name": "Comet Punch",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 2,
+      "damageRoll": "1d6+3 / 7",
+      "frequency": "At-Will",
+      "ac": 4,
+      "range": "Melee, 1 Target, Five Strike",
+      "effect": "None"
+    },
+    {
+      "name": "Harden",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "Self",
+      "effect": "Raise the user’s Defense 1 Combat Stage."
+    },
+    {
+      "name": "Bulk Up",
+      "type": "Fighting",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Attack 1 Combat Stage and raise the user’s Defense 1 Combat Stage."
+    },
+    {
+      "name": "Focus Energy",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "Self",
+      "effect": "The user becomes Pumped. While Pumped, the user’s Critical Range is extended by 2, or 18+ if the Critical Range is not otherwise extended. Being switched will cause this effect to end."
+    },
+    {
+      "name": "Vital Throw",
+      "type": "Fighting",
+      "category": "Physical",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "EOT",
+      "range": "Melee, 1 Target, Push, Reaction",
+      "effect": "If the user is targeted by a Melee attack and has not yet taken a turn this round, the user may declare Vital Throw. After the triggering attack is resolved, the user may use Vital Throw against the triggering foe as a Reaction. Vital Throw cannot miss."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Beast Boost",
+      "frequency": "At-Will – Free Action",
+      "effect": "The user receives +1 Combat Stage in their highest non-HP stat."
+    },
+    {
+      "name": "Scrappy",
+      "frequency": "Static",
+      "effect": "Ghost Types are not immune to the user’s Normal and Fighting-Type Moves."
+    }
+  ],
+  "natureMod": {
+    "plus": "hp",
+    "minus": "satk"
+  },
+  "capabilities": {
+    "overland": 7,
+    "sky": 5,
+    "swim": 3,
+    "jump": "2/2",
+    "power": 12,
+    "weight": 6,
+    "size": "Large"
+  }
+}

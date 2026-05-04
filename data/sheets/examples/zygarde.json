@@ -1,0 +1,153 @@
+{
+  "slug": "examples-zygarde",
+  "nickname": "Zygarde",
+  "species": "Zygarde",
+  "level": 20,
+  "gender": "No Gender",
+  "shiny": false,
+  "nature": "Desperate",
+  "types": [
+    "Dragon",
+    "Ground"
+  ],
+  "stats": {
+    "hp": {
+      "base": -1,
+      "added": 2,
+      "stage": 0
+    },
+    "atk": {
+      "base": 1,
+      "added": 9,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 8,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 2,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 66,
+    "currentHp": 66,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 4,
+      "vsSatk": 2,
+      "vsAny": 3
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Safeguard",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Blessing",
+      "effect": "Blessing – Any user affected by Safeguard may activate it when receiving a Status Affliction to ignore the effects of that Status Affliction on their next turn. Safeguard may be activated 3 times, and then disappears."
+    },
+    {
+      "name": "Bite",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Bite Flinches the target on 15+."
+    },
+    {
+      "name": "Dragon Breath",
+      "type": "Dragon",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Dragon Breath Paralyzes the Target on 15+."
+    },
+    {
+      "name": "Glare",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "4, 1 Target, Social",
+      "effect": "Glare Paralyzes the target."
+    },
+    {
+      "name": "Dig",
+      "type": "Ground",
+      "category": "Physical",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Burst 1, Set-Up, Full Action, Groundsource"
+    },
+    {
+      "name": "Bulldoze",
+      "type": "Ground",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Burst 1",
+      "effect": "All Legal Targets are lowered 1 Speed Combat Stage."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Aura Break",
+      "frequency": "Scene - Swift Action",
+      "effect": "The foe reveals its abilities. Pick one ability; any Damage Bonuses (either Damage Base increases or Damage Roll bonuses) granted by the ability instead become Damage Penalties of the same value."
+    },
+    {
+      "name": "Filter",
+      "frequency": "Static",
+      "effect": "The user gains +5 Damage Reduction against Super- Effective damage. Defensive."
+    }
+  ],
+  "natureMod": {
+    "plus": "atk",
+    "minus": "hp"
+  },
+  "capabilities": {
+    "overland": 7,
+    "swim": 5,
+    "burrow": 9,
+    "jump": "2/2",
+    "power": 9,
+    "weight": 6,
+    "size": "Huge",
+    "other": [
+      "Darkvision",
+      "Groundshaper",
+      "Tremorsense",
+      "Mountable  4"
+    ]
+  }
+}

@@ -1,0 +1,148 @@
+{
+  "slug": "examples-roselia",
+  "nickname": "Roselia",
+  "species": "Roselia",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Decisive",
+  "types": [
+    "Grass",
+    "Poison"
+  ],
+  "stats": {
+    "hp": {
+      "base": 1,
+      "added": 6,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 2,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "sdef": {
+      "base": -1,
+      "added": 6,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 66,
+    "currentHp": 66,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 1,
+      "vsSatk": 2,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Leech Seed",
+      "type": "Grass",
+      "category": "Status",
+      "frequency": "Daily x2",
+      "ac": 4,
+      "range": "6, 1 Target",
+      "effect": "At the beginning of each of the target’s turns, Leech Seed’s target loses a Tick of Hit Points. Leech Seed’s user then gains Hit Points equal to the amount the target lost. Leech Seed lasts until the target faints or is returned to a Poké Ball. Grass Types and targets immune to Grass Attacks are immune to Leech Seed."
+    },
+    {
+      "name": "Poison Sting",
+      "type": "Poison",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Poison Sting Poisons the target on 17+."
+    },
+    {
+      "name": "Magical Leaf",
+      "type": "Grass",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "range": "8, 1 Target",
+      "effect": "Magical Leaf cannot miss."
+    },
+    {
+      "name": "Growth",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Attack 1 Combat Stage and raise the user’s Special Attack 1 Combat Stage. If it is Sunny, double the amount of Combat Stages gained."
+    },
+    {
+      "name": "Mega Drain",
+      "type": "Grass",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "After the target takes damage, the user gains Hit Points equal to half of the damage they dealt to the target."
+    },
+    {
+      "name": "Stun Spore",
+      "type": "Grass",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 6,
+      "range": "6, 1 Target, Powder",
+      "effect": "The target is Paralyzed."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Poison Point",
+      "frequency": "Scene – Free Action",
+      "effect": "The attacking foe is Poisoned."
+    },
+    {
+      "name": "Natural Cure",
+      "frequency": "Scene – Free Action",
+      "effect": "Whenever the user is returned to its Poké Ball or Takes A Breather, it may activate Natural Cure to cure itself of all Persistent Status Afflictions."
+    }
+  ],
+  "natureMod": {
+    "plus": "hp",
+    "minus": "sdef"
+  },
+  "capabilities": {
+    "overland": 5,
+    "swim": 3,
+    "jump": "1/2",
+    "power": 2,
+    "weight": 1,
+    "size": "Small",
+    "other": [
+      "Naturewalk  (Grassland, Forest)",
+      "Underdog"
+    ]
+  }
+}

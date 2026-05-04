@@ -1,0 +1,144 @@
+{
+  "slug": "examples-marowak-alola",
+  "nickname": "Marowak Alola",
+  "species": "Marowak Alola",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Proud",
+  "types": [
+    "Fire",
+    "Ghost"
+  ],
+  "stats": {
+    "hp": {
+      "base": 1,
+      "added": 2,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    },
+    "satk": {
+      "base": -1,
+      "added": 4,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 8,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 57,
+    "currentHp": 57,
+    "tick": 5,
+    "evasion": {
+      "vsAtk": 3,
+      "vsSatk": 3,
+      "vsAny": 1
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Hex",
+      "type": "Ghost",
+      "category": "Special",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Once a Scene, if Hex’s target has a Status Affliction, you may have Hex’s Damage Base be 13 instead (4d10+10 / 35)."
+    },
+    {
+      "name": "Leer",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Cone 2, Friendly, Social",
+      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
+    },
+    {
+      "name": "Flame Wheel",
+      "type": "Fire",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash",
+      "effect": "Flame Wheel Burns the target on 19+."
+    },
+    {
+      "name": "Tail Whip",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Burst 1, Friendly",
+      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
+    },
+    {
+      "name": "Bone Club",
+      "type": "Ground",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
+      "frequency": "At-Will",
+      "ac": 5,
+      "range": "Melee, 1 Target",
+      "effect": "Bone Club Flinches the target on 18+."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Bone Wielder",
+      "frequency": "Static",
+      "effect": "The user’s Bone Club, Bonemerang, and Bone Rush Moves ignore immunity against Ground-Type Moves."
+    },
+    {
+      "name": "Cursed Body",
+      "frequency": "Scene – Free Action",
+      "effect": "The Move becomes Disabled."
+    }
+  ],
+  "natureMod": {
+    "plus": "hp",
+    "minus": "satk"
+  },
+  "capabilities": {
+    "overland": 6,
+    "swim": 3,
+    "jump": "1/2",
+    "power": 4,
+    "weight": 3,
+    "size": "Medium",
+    "other": [
+      "Darkvision",
+      "Glow",
+      "Naturewalk (Cave, Mountain)",
+      "Underdog",
+      "Wielder"
+    ]
+  }
+}

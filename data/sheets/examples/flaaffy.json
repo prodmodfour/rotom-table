@@ -1,0 +1,138 @@
+{
+  "slug": "examples-flaaffy",
+  "nickname": "Flaaffy",
+  "species": "Flaaffy",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Adamant",
+  "types": [
+    "Electric"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    },
+    "atk": {
+      "base": 1,
+      "added": 9,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "satk": {
+      "base": -1,
+      "added": 3,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 2,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 72,
+    "currentHp": 72,
+    "tick": 7,
+    "evasion": {
+      "vsAtk": 1,
+      "vsSatk": 2,
+      "vsAny": 1
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Thunder Wave",
+      "type": "Electric",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 4,
+      "range": "6, 1 Target",
+      "effect": "Thunder Wave Paralyzes the target. Targets immune to Electric Attacks are immune to Thunder Wave’s effects."
+    },
+    {
+      "name": "Take Down",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 9,
+      "damageRoll": "2d10+10 / 21",
+      "frequency": "EOT",
+      "ac": 5,
+      "range": "Melee, 1 Target, Dash, Recoil 1/3",
+      "effect": "You may perform a Trip Maneuver against the target as a Free Action."
+    },
+    {
+      "name": "Cotton Spore",
+      "type": "Grass",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Burst 1, Powder",
+      "effect": "All Legal Targets have their Speed lowered 2 Combat Stages."
+    },
+    {
+      "name": "Charge",
+      "type": "Electric",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "If the user performs an Electric Move on their next turn that deals damage, add its Damage Dice Roll an extra time to the damage. Raise the user’s Special Defense 1 Combat Stage."
+    },
+    {
+      "name": "Thunder Shock",
+      "type": "Electric",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "Thunder Shock Paralyzes the target on 17+."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Static",
+      "frequency": "Scene – Free Action",
+      "effect": "The attacking foe becomes Paralyzed."
+    },
+    {
+      "name": "Fluffy Charge",
+      "frequency": "Static",
+      "effect": "Connection – Charge. Whenever the user uses Charge, they gain +1 CS to Defense."
+    }
+  ],
+  "natureMod": {
+    "plus": "atk",
+    "minus": "satk"
+  },
+  "capabilities": {
+    "overland": 6,
+    "jump": "1/2",
+    "power": 3,
+    "weight": 2,
+    "size": "Small",
+    "other": [
+      "Glow",
+      "Zapper",
+      "Naturewalk (Grassland)",
+      "Underdog"
+    ]
+  }
+}

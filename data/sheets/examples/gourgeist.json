@@ -1,0 +1,151 @@
+{
+  "slug": "examples-gourgeist",
+  "nickname": "Gourgeist",
+  "species": "Gourgeist",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Curious",
+  "types": [
+    "Ghost",
+    "Grass"
+  ],
+  "stats": {
+    "hp": {
+      "base": -1,
+      "added": 4,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 8,
+      "stage": 0
+    },
+    "satk": {
+      "base": 1,
+      "added": 5,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 60,
+    "currentHp": 60,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 4,
+      "vsSatk": 2,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Leech Seed",
+      "type": "Grass",
+      "category": "Status",
+      "frequency": "Daily x2",
+      "ac": 4,
+      "range": "6, 1 Target",
+      "effect": "At the beginning of each of the target’s turns, Leech Seed’s target loses a Tick of Hit Points. Leech Seed’s user then gains Hit Points equal to the amount the target lost. Leech Seed lasts until the target faints or is returned to a Poké Ball. Grass Types and targets immune to Grass Attacks are immune to Leech Seed."
+    },
+    {
+      "name": "Astonish",
+      "type": "Ghost",
+      "category": "Physical",
+      "db": 5,
+      "damageRoll": "1d8+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Astonish Flinches the target on 15+. Once per scene, if the target is unaware of the user’s presence, Astonish automatically Flinches the target."
+    },
+    {
+      "name": "Trick",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "Scene",
+      "ac": 2,
+      "range": "5, 2 Targets",
+      "effect": "Both targets must be hit for Trick to succeed. The user may target itself or willing allies with Trick; you do not need to roll for Accuracy Check in these cases. Both targets lose their Held Item or Accessory Slot Item, and gain the other target’s Held Item or Accessory Slot Item. If a target has no Item, it still can gain the other target’s Item."
+    },
+    {
+      "name": "Razor Leaf",
+      "type": "Grass",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 4,
+      "range": "Cone 2",
+      "effect": "Razor Leaf is a Critical Hit on 18+."
+    },
+    {
+      "name": "Worry Seed",
+      "type": "Grass",
+      "category": "Status",
+      "frequency": "Scene",
+      "ac": 2,
+      "range": "8, 1 Target",
+      "effect": "You choose one of the target’s Abilities. Worry Seed changes that Ability to Insomnia for the remainder of the encounter."
+    },
+    {
+      "name": "Trick-or-Treat",
+      "type": "Ghost",
+      "category": "Status",
+      "frequency": "Daily",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "The target gains the Ghost Type in addition to its other Types for 5 turns."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Regenerator",
+      "frequency": "Daily x2 – Free Action",
+      "effect": "The user gains Hit Points equal to 1/3rd of its maximum Hit Points. Regenerator may be activated only once per Scene."
+    },
+    {
+      "name": "Pumpkingrab",
+      "frequency": "Scene - Standard Action",
+      "effect": "The user automatically Grapples an adjacent foe and gains dominance."
+    }
+  ],
+  "natureMod": {
+    "plus": "satk",
+    "minus": "hp"
+  },
+  "capabilities": {
+    "overland": 3,
+    "swim": 3,
+    "levitate": 6,
+    "jump": "2/2",
+    "power": 3,
+    "weight": 1,
+    "size": "Small",
+    "other": [
+      "Naturewalk (Grassland, Forest)",
+      "Phasing",
+      "Invisibility",
+      "Dead Silent"
+    ]
+  }
+}

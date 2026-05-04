@@ -1,0 +1,142 @@
+{
+  "slug": "examples-spoink",
+  "nickname": "Spoink",
+  "species": "Spoink",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Timid",
+  "types": [
+    "Psychic"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "atk": {
+      "base": -1,
+      "added": 4,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 2,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 11,
+      "stage": 0
+    },
+    "spd": {
+      "base": 1,
+      "added": 6,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 57,
+    "currentHp": 57,
+    "tick": 5,
+    "evasion": {
+      "vsAtk": 1,
+      "vsSatk": 3,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Psych Up",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "6, 1 Target",
+      "effect": "The user’s Combat Stages are changed to match the target’s Combat Stages. Psych Up cannot miss."
+    },
+    {
+      "name": "Psywave",
+      "type": "Psychic",
+      "category": "Special",
+      "frequency": "Scene",
+      "ac": 5,
+      "range": "6, 1 Target",
+      "effect": "Roll 1d4; on 1 the target loses Hit Points equal to half the user’s Level; on 2 the target loses Hit Points equal to the user’s Level; on 3 the target loses Hit Points equal to 1.5x the user’s level; on 4 the target loses Hit Points equal to the user’s Level doubled. Do not apply weakness or resistance, and do not apply Stats. Do apply Immunity."
+    },
+    {
+      "name": "Confuse Ray",
+      "type": "Ghost",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "The target is Confused."
+    },
+    {
+      "name": "Splash",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "Self",
+      "effect": "Shift Action - The user may make a single Jump, adding +1 to their Long Jump and High Jump values, and gains +2 Evasion until the end of their next turn."
+    },
+    {
+      "name": "Psybeam",
+      "type": "Psychic",
+      "category": "Special",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Psybeam Confuses the target on 19+."
+    },
+    {
+      "name": "Odor Sleuth",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "range": "Self, Swift Action",
+      "effect": "Odor Sleuth may be activated as a Swift Action on the user’s turn. For the rest of the turn, the user’s Normal-Type and Fighting-Type Moves can hit and affect Ghost-Type targets, and the user can see through the Illusion Ability, Moves with the Illusion keyword, and effects created by the Illusionist Capability, ignoring all effects from those."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Thick Fat",
+      "frequency": "Static",
+      "effect": "The user resists Fire-Type and Ice-Type attacks one step further. Defensive."
+    },
+    {
+      "name": "Run Away",
+      "frequency": "Static",
+      "effect": "The user does not provoke Attacks of Opportunity by Shifting.  The user cannot be Trapped."
+    }
+  ],
+  "natureMod": {
+    "plus": "spd",
+    "minus": "atk"
+  },
+  "capabilities": {
+    "overland": 4,
+    "swim": 1,
+    "jump": "3/3",
+    "power": 1,
+    "weight": 3,
+    "size": "Small",
+    "other": [
+      "Telepath",
+      "Underdog"
+    ]
+  }
+}

@@ -1,0 +1,129 @@
+{
+  "slug": "examples-walrein",
+  "nickname": "Walrein",
+  "species": "Walrein",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Bashful",
+  "types": [
+    "Ice",
+    "Water"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 8,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 2,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 87,
+    "currentHp": 87,
+    "tick": 8,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 3,
+      "vsAny": 1
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Ice Ball",
+      "type": "Ice",
+      "category": "Physical",
+      "db": 5,
+      "damageRoll": "1d8+8",
+      "frequency": "At-Will",
+      "ac": 4,
+      "range": "Melee, 1 Target",
+      "effect": "The user continues to use Ice Ball on each of its turns until they miss any target with Ice Ball, or are not able to hit any target with Ice Ball during their turn.  Each successive use of Ice Ball increases Ice Ball’s Damage Base by +3 to a maximum of DB 15."
+    },
+    {
+      "name": "Brine",
+      "type": "Water",
+      "category": "Special",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "If the target’s Hit Points are under 50%, Brine’s Damage Base is increased to Damage Base 13 (4d10+10 / 35)."
+    },
+    {
+      "name": "Rollout",
+      "type": "Rock",
+      "category": "Physical",
+      "db": 3,
+      "damageRoll": "1d6+5 / 9",
+      "frequency": "At-Will",
+      "ac": 4,
+      "range": "Melee, 1 Target, Pass",
+      "effect": "The user continues to use Rollout on each of its turns until they miss any target with Rollout, or are not able to hit any target with Rollout during their turn.  Each successive use of Rollout increases Rollout’s Damage Base by +4 to a maximum of DB 15."
+    },
+    {
+      "name": "Encore",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "4, 1 Target, Social",
+      "effect": "Roll 1d6. On a result of 1 or 2, the target becomes Confused; on a result of 3 or 4 the target becomes Suppressed; on a result of 5 or 6 the target becomes Enraged."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Thick Fat",
+      "frequency": "Static",
+      "effect": "The user resists Fire-Type and Ice-Type attacks one step further. Defensive."
+    },
+    {
+      "name": "Ice Body",
+      "frequency": "Daily x5 - Swift Action",
+      "effect": "The user gains a Tick of Hit Points. Ice Body may only be used while the user is under 50% Hit Points or in Hailing Weather."
+    }
+  ],
+  "capabilities": {
+    "overland": 4,
+    "swim": 7,
+    "jump": "1/1",
+    "power": 7,
+    "weight": 5,
+    "size": "Large",
+    "other": [
+      "Freezer",
+      "Naturewalk (Tundra)",
+      "Mountable 1"
+    ]
+  }
+}

@@ -1,0 +1,132 @@
+{
+  "slug": "examples-zekrom",
+  "nickname": "Zekrom",
+  "species": "Zekrom",
+  "level": 20,
+  "gender": "No Gender",
+  "shiny": false,
+  "nature": "Gentle",
+  "types": [
+    "Dragon",
+    "Electric"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "def": {
+      "base": -1,
+      "added": 6,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 1,
+      "added": 6,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 75,
+    "currentHp": 75,
+    "tick": 7,
+    "evasion": {
+      "vsAtk": 3,
+      "vsSatk": 3,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Dragon Rage",
+      "type": "Dragon",
+      "category": "Special",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "If it hits, Dragon Rage causes the target to lose 15 Hit Points. Dragon Rage is Special and interacts with other moves and effects as such (Special Evasion may be applied to avoid it, Mirror Coat can reflect it, etc.)."
+    },
+    {
+      "name": "Thunder Fang",
+      "type": "Electric",
+      "category": "Physical",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "At-Will",
+      "ac": 3,
+      "range": "Melee, 1 Target",
+      "effect": "Thunder Fang Paralyzes or Flinches on 18- 19 during Accuracy Check; flip a coin to determine whether the foe gets Paralyzed or Flinches. On 20 during Accuracy Check, the foe is Paralyzed and Flinched."
+    },
+    {
+      "name": "Ancient Power",
+      "type": "Rock",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "6, 1 Target, Spirit Surge",
+      "effect": "On 19+, the user has each of its stats raised by +1 Combat Stage."
+    },
+    {
+      "name": "Imprison",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "range": "10, 1 Target",
+      "effect": "The target is Locked for the rest of the Scene. A Locked target may not use any Moves the user knows. Imprison cannot miss."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Teravolt",
+      "frequency": "Static",
+      "effect": "The user’s Electric-Type Attacks ignore the effect of enemies’ Defensive Abilities, and if they would be resisted they deal neutral damage instead."
+    },
+    {
+      "name": "Discipline",
+      "frequency": "Scene – Free Action",
+      "effect": "If the user gains initiative and is Confused, Enraged, Infatuated, or Flinched, they may activate Discipline to cure themselves of any of these conditions."
+    }
+  ],
+  "natureMod": {
+    "plus": "sdef",
+    "minus": "def"
+  },
+  "capabilities": {
+    "overland": 8,
+    "sky": 7,
+    "swim": 6,
+    "jump": "2/2",
+    "power": 12,
+    "weight": 6,
+    "size": "Gigantic",
+    "other": [
+      "Glow",
+      "Zapper",
+      "Telepath",
+      "Mountable 1"
+    ]
+  }
+}

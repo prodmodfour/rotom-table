@@ -1,0 +1,119 @@
+{
+  "slug": "examples-samurott-hisuian",
+  "nickname": "Samurott Hisuian",
+  "species": "Samurott Hisuian",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Docile",
+  "types": [
+    "Water",
+    "Dark"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 9,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 72,
+    "currentHp": 72,
+    "tick": 7,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 2,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Swords Dance",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "The user’s Attack is raised 2 Combat Stages."
+    },
+    {
+      "name": "Water Pulse",
+      "type": "Water",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "8, 1 Target, Aura",
+      "effect": "Water Pulse Confuses the target on 17+."
+    },
+    {
+      "name": "Aqua Jet",
+      "type": "Water",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Priority",
+      "effect": "None"
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Intimidate",
+      "frequency": "At-Will – Swift Action",
+      "effect": "Lower the target’s Attack 1 Combat Stage. You may target a specific foe only once per Scene with Intimidate."
+    },
+    {
+      "name": "Torrent",
+      "frequency": "Static",
+      "effect": "The user gains Last Chance with Water."
+    }
+  ],
+  "capabilities": {
+    "overland": 5,
+    "swim": 8,
+    "jump": "2/3",
+    "power": 7,
+    "weight": 4,
+    "size": "Medium",
+    "other": [
+      "Darkvision",
+      "Fountain",
+      "Naturewalk (Ocean)",
+      "Stealth",
+      "Wielder"
+    ]
+  }
+}

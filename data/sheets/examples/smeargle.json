@@ -1,0 +1,94 @@
+{
+  "slug": "examples-smeargle",
+  "nickname": "Smeargle",
+  "species": "Smeargle",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Composed",
+  "types": [
+    "Normal"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 8,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 63,
+    "currentHp": 63,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 1,
+      "vsSatk": 2,
+      "vsAny": 3
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Sketch",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Daily",
+      "range": "15, 1 Target",
+      "effect": "Sketch cannot miss. Once Sketch has been used, remove Sketch from the user’s Move list. The last Move that the target used is added to the user’s Move list permanently. Sketch may not be Interrupted or Intercepted."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Color Theory",
+      "frequency": "Static",
+      "effect": "Upon gaining this ability at Birth, the user rolls 1d12 to determine the color of their tail secretions. 1 = Red; 2 = Red-Orange; 3 = Orange; 4 = Yellow- Orange; 5 = Yellow; 6 = Yellow-Green; 7 = Green; 8 = Blue-Green; 9 = Blue; 10 = Blue-Violet; 11 = Violet; 12 = Red-Violet. Red is tied to Attack, Orange is tied to Defense, Yellow is tied to Special Attack, Green is tied to Special Defense, Blue is tied to Speed, Violet is tied to HP. Users with a “Pure” Color (Red, Orange, Yellow, etc) gain a +6 Bonus to the Base Stat tied to their color. Users with a “Mixed” Color (Red-Orange, Yellow-Orange, etc) gain a +3 Bonus to each Stat tied to the color."
+    },
+    {
+      "name": "Moody",
+      "frequency": "Static",
+      "effect": "At the end of the user’s turn, roll 1d6 to determine a Stat to be raised by +2 Combat Stages, then roll 1d6 to determine a Stat to be lowered by 1 Combat Stage. 1 is Attack, 2 is Defense, 3 is Special Attack, 4 is Special Defense, 5 is Speed, and 6 is Accuracy."
+    }
+  ],
+  "capabilities": {
+    "overland": 5,
+    "swim": 3,
+    "jump": "1/1",
+    "power": 3,
+    "weight": 4,
+    "size": "Medium",
+    "other": [
+      "Tracker",
+      "Naturewalk (Forest, Urban)",
+      "Underdog"
+    ]
+  }
+}

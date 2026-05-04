@@ -1,0 +1,152 @@
+{
+  "slug": "examples-nihilego",
+  "nickname": "Nihilego",
+  "species": "Nihilego",
+  "level": 20,
+  "gender": "No Gender",
+  "shiny": false,
+  "nature": "Careful",
+  "types": [
+    "Rock",
+    "Poison"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "satk": {
+      "base": -1,
+      "added": 4,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 1,
+      "added": 8,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 78,
+    "currentHp": 78,
+    "tick": 7,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 4,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Constrict",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 1,
+      "damageRoll": "1d6+1 / 4",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Constrict lowers the target’s Speed 1 Combat Stage. Constrict may be used as a Swift Action against targets the user is Grappling, and automatically hits when performed this way."
+    },
+    {
+      "name": "Clear Smog",
+      "type": "Poison",
+      "category": "Special",
+      "db": 7,
+      "damageRoll": "2d6+10",
+      "frequency": "Scene x2",
+      "range": "6, 1 Target",
+      "effect": "The target’s Combat Stages are reset to their default, and all Coats on the target are destroyed. Clear Smog cannot miss."
+    },
+    {
+      "name": "Pound",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "None"
+    },
+    {
+      "name": "Headbutt",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Headbutt Flinches the target on 15+."
+    },
+    {
+      "name": "Tickle",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Lower the target’s Attack 1 Combat Stage and lower the target’s Defense 1 Combat Stage."
+    },
+    {
+      "name": "Psywave",
+      "type": "Psychic",
+      "category": "Special",
+      "frequency": "Scene",
+      "ac": 5,
+      "range": "6, 1 Target",
+      "effect": "Roll 1d4; on 1 the target loses Hit Points equal to half the user’s Level; on 2 the target loses Hit Points equal to the user’s Level; on 3 the target loses Hit Points equal to 1.5x the user’s level; on 4 the target loses Hit Points equal to the user’s Level doubled. Do not apply weakness or resistance, and do not apply Stats. Do apply Immunity."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Beast Boost",
+      "frequency": "At-Will – Free Action",
+      "effect": "The user receives +1 Combat Stage in their highest non-HP stat."
+    },
+    {
+      "name": "Levitate",
+      "frequency": "Static",
+      "effect": "The Pokémon is immune to the damage and effects of Ground Type Moves, and gains a Levitate Speed of 4, or has existing Levitate Speeds increased by +2. Defensive."
+    }
+  ],
+  "natureMod": {
+    "plus": "sdef",
+    "minus": "satk"
+  },
+  "capabilities": {
+    "overland": 3,
+    "swim": 5,
+    "levitate": 6,
+    "jump": "1/1",
+    "power": 2,
+    "weight": 3,
+    "size": "Medium",
+    "other": [
+      "Dead Silent",
+      "Chilled"
+    ]
+  }
+}

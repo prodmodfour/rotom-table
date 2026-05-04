@@ -1,0 +1,158 @@
+{
+  "slug": "examples-farfetchd",
+  "nickname": "Farfetch’d",
+  "species": "Farfetch’d",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Serious",
+  "types": [
+    "Normal",
+    "Flying"
+  ],
+  "stats": {
+    "hp": {
+      "base": 5,
+      "added": 3,
+      "stage": 0
+    },
+    "atk": {
+      "base": 7,
+      "added": 10,
+      "stage": 0
+    },
+    "def": {
+      "base": 6,
+      "added": 4,
+      "stage": 0
+    },
+    "satk": {
+      "base": 6,
+      "added": 5,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 6,
+      "added": 3,
+      "stage": 0
+    },
+    "spd": {
+      "base": 6,
+      "added": 5,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 54,
+    "currentHp": 54,
+    "tick": 5,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 1,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Leer",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Cone 2, Friendly, Social",
+      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
+    },
+    {
+      "name": "Aerial Ace",
+      "type": "Flying",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "range": "Melee, 1 Target",
+      "effect": "Aerial Ace cannot miss."
+    },
+    {
+      "name": "Slash",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, Pass",
+      "effect": "Slash is a Critical Hit on 18+."
+    },
+    {
+      "name": "Peck",
+      "type": "Flying",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "None"
+    },
+    {
+      "name": "Knock Off",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
+      "frequency": "Scene",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Choose one of the target’s Held Items or Accessory Slot Items. It is knocked to the ground."
+    },
+    {
+      "name": "Fury Attack",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6",
+      "frequency": "At-Will",
+      "ac": 4,
+      "range": "Melee, 1 Target, Five Strike",
+      "effect": "None"
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Keen Eye",
+      "frequency": "Static",
+      "effect": "The user’s Accuracy cannot be lowered, their attacks cannot have Accuracy Penalties (such as from Illuminate), the user is immune to the Blind condition (but not Total Blindness), and the user ignores any Evasion not directly derived from Stats (such as from the Instinct Ability, or from moves like Minimize)."
+    },
+    {
+      "name": "Defiant",
+      "frequency": "Static",
+      "effect": "Whenever the user has its Combat Stages lowered, by something other than its own Moves or Abilities, the user’s Attack is raised 2 Combat Stages."
+    }
+  ],
+  "capabilities": {
+    "overland": 3,
+    "sky": 7,
+    "swim": 2,
+    "jump": "2/2",
+    "power": 3,
+    "weight": 2,
+    "size": "Huge",
+    "other": [
+      "Underdog",
+      "Wielder"
+    ]
+  },
+  "skills": {
+    "athletics": "4d6+1",
+    "acrobatics": "4d6+2",
+    "combat": "4d6",
+    "stealth": "4d6+2",
+    "perception": "4d6+2",
+    "focus": "3d6+2"
+  }
+}

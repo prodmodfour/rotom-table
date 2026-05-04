@@ -1,0 +1,94 @@
+{
+  "slug": "examples-rotom-wash",
+  "nickname": "Rotom Wash",
+  "species": "Rotom Wash",
+  "level": 20,
+  "gender": "No Gender",
+  "shiny": false,
+  "nature": "Patient",
+  "types": [
+    "Electric",
+    "Water"
+  ],
+  "stats": {
+    "hp": {
+      "base": 1,
+      "added": 3,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 8,
+      "stage": 0
+    },
+    "spd": {
+      "base": -1,
+      "added": 6,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 57,
+    "currentHp": 57,
+    "tick": 5,
+    "evasion": {
+      "vsAtk": 3,
+      "vsSatk": 3,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [],
+  "abilities": [
+    {
+      "name": "Poltergeist",
+      "frequency": "Static",
+      "effect": "Rotom gains an Ability depending on what Form it has taken. If Rotom is level 40 or higher, it also may use a Move based on its Forme as if it that Move was on their Move List. Ability Move Standard Rotom:   Levitate None Heat Rotom:           Flash Fire Overheat Wash Rotom:\t      Water Absorb Hydro Pump Frost Rotom: Winter’s Kiss Blizzard Fan Rotom: Windveiled Hurricane Mow Rotom:          Sap Sipper Leaf Storm"
+    },
+    {
+      "name": "Motor Drive",
+      "frequency": "Static",
+      "effect": "The user is immune to the damage and effects of Electric Type attacks. Whenever an Electric Type attack hits the Pokémon, raise their Speed by +1 Combat Stage. Defensive."
+    }
+  ],
+  "natureMod": {
+    "plus": "hp",
+    "minus": "spd"
+  },
+  "capabilities": {
+    "overland": 1,
+    "swim": 6,
+    "levitate": 4,
+    "jump": "1/1",
+    "power": 3,
+    "weight": 3,
+    "size": "Medium",
+    "other": [
+      "Glow",
+      "Invisibility",
+      "Phasing",
+      "Wired",
+      "Zapper",
+      "Fountain"
+    ]
+  }
+}

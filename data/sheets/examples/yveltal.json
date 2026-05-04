@@ -1,0 +1,150 @@
+{
+  "slug": "examples-yveltal",
+  "nickname": "Yveltal",
+  "species": "Yveltal",
+  "level": 20,
+  "gender": "No Gender",
+  "shiny": false,
+  "nature": "Modest",
+  "types": [
+    "Dark",
+    "Flying"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "atk": {
+      "base": -1,
+      "added": 5,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "satk": {
+      "base": 1,
+      "added": 8,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 2,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 87,
+    "currentHp": 87,
+    "tick": 8,
+    "evasion": {
+      "vsAtk": 3,
+      "vsSatk": 2,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Razor Wind",
+      "type": "Normal",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10 / 19",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "10, 3 Targets, Set-Up"
+    },
+    {
+      "name": "Taunt",
+      "type": "Dark",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 3,
+      "range": "6, 1 Target, Social",
+      "effect": "The target becomes Enraged."
+    },
+    {
+      "name": "Double Team",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Self, Illusion, Coat",
+      "effect": "The user gains 3 activations of Double Team. The user may either activate Double Team when being targeted by an attack to increase their Evasion by +2 against that attack; or when making an attack to increase their Accuracy by +2 for that attack."
+    },
+    {
+      "name": "Hurricane",
+      "type": "Flying",
+      "category": "Special",
+      "db": 13,
+      "damageRoll": "4d10+10",
+      "frequency": "Scene x2",
+      "ac": 7,
+      "range": "Burst 1, Smite",
+      "effect": "Hurricane Confuses its target on 15+. If the target is in Sunny Weather, Hurricane’s Accuracy Check is 11. If the target is in Rainy Weather, Hurricane cannot miss. If the target is airborne as a result of Fly or Sky Drop, Hurricane cannot miss."
+    },
+    {
+      "name": "Roost",
+      "type": "Flying",
+      "category": "Status",
+      "frequency": "Daily x2",
+      "range": "Self",
+      "effect": "The user regains Hit Points equal to half of its full Hit Points. If the user is a Flying Type, it loses the Flying Type until the start of their next turn."
+    },
+    {
+      "name": "Air Slash",
+      "type": "Flying",
+      "category": "Special",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "EOT",
+      "ac": 3,
+      "range": "6, 1 Target",
+      "effect": "Air Slash Flinches the target on 15+."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Type Aura",
+      "frequency": "Static",
+      "effect": "The user and all allies within 3 meters gain a +5 Bonus to Damage Rolls with Moves matching the user’s Primary Type."
+    },
+    {
+      "name": "Pressure",
+      "frequency": "Scene - Swift Action",
+      "effect": "All foes within 3 meters are Suppressed for 1 full round."
+    }
+  ],
+  "natureMod": {
+    "plus": "satk",
+    "minus": "atk"
+  },
+  "capabilities": {
+    "overland": 5,
+    "sky": 8,
+    "swim": 5,
+    "jump": "2/2",
+    "power": 8,
+    "weight": 6,
+    "size": "Huge",
+    "other": [
+      "Guster",
+      "Darkvision",
+      "Mindlock",
+      "Mountable 2"
+    ]
+  }
+}

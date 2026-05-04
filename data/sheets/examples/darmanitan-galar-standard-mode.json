@@ -1,0 +1,149 @@
+{
+  "slug": "examples-darmanitan-galar-standard-mode",
+  "nickname": "Darmanitan Galar Standard Mode",
+  "species": "Darmanitan Galar Standard Mode",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Dreamy",
+  "types": [
+    "Ice"
+  ],
+  "stats": {
+    "hp": {
+      "base": 10,
+      "added": 7,
+      "stage": 0
+    },
+    "atk": {
+      "base": 14,
+      "added": 8,
+      "stage": 0
+    },
+    "def": {
+      "base": 6,
+      "added": 3,
+      "stage": 0
+    },
+    "satk": {
+      "base": 3,
+      "added": 3,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 7,
+      "added": 4,
+      "stage": 0
+    },
+    "spd": {
+      "base": 10,
+      "added": 5,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 81,
+    "currentHp": 81,
+    "tick": 8,
+    "evasion": {
+      "vsAtk": 1,
+      "vsSatk": 2,
+      "vsAny": 3
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Taunt",
+      "type": "Dark",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 3,
+      "range": "6, 1 Target, Social",
+      "effect": "The target becomes Enraged."
+    },
+    {
+      "name": "Bite",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Bite Flinches the target on 15+."
+    },
+    {
+      "name": "Avalanche",
+      "type": "Ice",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "When declaring Avalanche, the user does nothing and may not Shift. At the end of the round, the user Shifts and uses Avalanche on any legal target. If the target damaged the user this round, Avalanche has a Damage Base of 12 (4d10+15 / 40) instead."
+    },
+    {
+      "name": "Ice Fang",
+      "type": "Ice",
+      "category": "Physical",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "At-Will",
+      "ac": 3,
+      "range": "Melee, 1 Target",
+      "effect": "Ice Fang Freezes or Flinches on 18+ during Accuracy Check; flip a coin to determine whether the foe gets Frozen or Flinches. On 20 during Accuracy Check, the foe is Frozen and Flinches."
+    },
+    {
+      "name": "Work Up",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Attack 1 Combat Stage and raise the user’s Special Attack 1 Combat Stage."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Ice Body",
+      "frequency": "Daily x5 - Swift Action",
+      "effect": "The user gains a Tick of Hit Points. Ice Body may only be used while the user is under 50% Hit Points or in Hailing Weather."
+    },
+    {
+      "name": "Winter’s Kiss",
+      "frequency": "Static",
+      "effect": "The user does not take damage from Ice-Type Moves. Whenever the user uses or is hit by an Ice- Type Move, the user is healed by a Tick of Hit Points. Defensive."
+    }
+  ],
+  "natureMod": {
+    "plus": "sdef",
+    "minus": "hp"
+  },
+  "capabilities": {
+    "overland": 7,
+    "swim": 3,
+    "jump": "1/2",
+    "power": 8,
+    "weight": 5,
+    "size": "Huge",
+    "other": [
+      "Chilled",
+      "Forme Change",
+      "Freezer",
+      "Naturewalk (Tundra,  Mountain)"
+    ]
+  },
+  "skills": {
+    "athletics": "5d6+2",
+    "acrobatics": "3d6+1",
+    "combat": "4d6",
+    "stealth": "3d6+2",
+    "perception": "3d6",
+    "focus": "4d6+1"
+  }
+}

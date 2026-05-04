@@ -1,0 +1,140 @@
+{
+  "slug": "examples-grimmsnarl",
+  "nickname": "Grimmsnarl",
+  "species": "Grimmsnarl",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Dreamy",
+  "types": [
+    "Dark",
+    "Fairy"
+  ],
+  "stats": {
+    "hp": {
+      "base": -1,
+      "added": 4,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 9,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 8,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 1,
+      "added": 4,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 2,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 69,
+    "currentHp": 69,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 2,
+      "vsAny": 1
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Swagger",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 5,
+      "range": "6, 1 Target, Social",
+      "effect": "The target’s Attack is raised 2 Combat Stages. Swagger Confuses the target."
+    },
+    {
+      "name": "Flatter",
+      "type": "Dark",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target, Social",
+      "effect": "The target’s Special Attack is raised by +1 Combat Stage. Flatter Confuses the target."
+    },
+    {
+      "name": "Fake Tears",
+      "type": "Dark",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "8, 1 Target, Social",
+      "effect": "Lower the target’s Special Defense 2 Combat Stages."
+    },
+    {
+      "name": "Assurance",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "When you hit with Assurance, if Assurance’s target has already been damaged by a Move on the same round Assurance is being used, Assurance has a Damage Base of 12 (3d12+10 / 30) instead. This effect may trigger only once per Scene per Target."
+    },
+    {
+      "name": "Bite",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Bite Flinches the target on 15+."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Frisk",
+      "frequency": "Static",
+      "effect": "The user gains a +2 Bonus to all Accuracy Rolls against adjacent targets."
+    },
+    {
+      "name": "Defiant",
+      "frequency": "Static",
+      "effect": "Whenever the user has its Combat Stages lowered, by something other than its own Moves or Abilities, the user’s Attack is raised 2 Combat Stages."
+    }
+  ],
+  "natureMod": {
+    "plus": "sdef",
+    "minus": "hp"
+  },
+  "capabilities": {
+    "overland": 8,
+    "swim": 5,
+    "jump": "3/3",
+    "power": 8,
+    "weight": 4,
+    "size": "Medium",
+    "other": [
+      "Darkvision",
+      "Naturewalk (Forest)",
+      "Stealth"
+    ]
+  }
+}

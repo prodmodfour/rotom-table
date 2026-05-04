@@ -1,0 +1,124 @@
+{
+  "slug": "examples-cofagrigus",
+  "nickname": "Cofagrigus",
+  "species": "Cofagrigus",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Bashful",
+  "types": [
+    "Ghost"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 2,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 10,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 8,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 57,
+    "currentHp": 57,
+    "tick": 5,
+    "evasion": {
+      "vsAtk": 5,
+      "vsSatk": 3,
+      "vsAny": 1
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Haze",
+      "type": "Ice",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "range": "Field",
+      "effect": "The Combat Stages of the user and all Pokémon and Trainers in the encounter are set to their default state (usually 0)."
+    },
+    {
+      "name": "Night Shade",
+      "type": "Ghost",
+      "category": "Special",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "8, 1 Target",
+      "effect": "The target loses Hit Points equal to the level of Night Shade’s user. Do not apply weakness or resistance. Do not apply stats."
+    },
+    {
+      "name": "Hex",
+      "type": "Ghost",
+      "category": "Special",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Once a Scene, if Hex’s target has a Status Affliction, you may have Hex’s Damage Base be 13 instead (4d10+10 / 35)."
+    },
+    {
+      "name": "Disable",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "1 Target, Trigger",
+      "effect": "Disable may be used as a Free Action that does not take up a Command whenever the user is hit by a Move. That Move becomes Disabled for the attacker."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Mummy",
+      "frequency": "At-Will – Free Action",
+      "effect": "Disable one of the user’s Abilities for the rest of the Scene or until they are switched out."
+    },
+    {
+      "name": "Stall",
+      "frequency": "Static",
+      "effect": "In a round’s queue, a Pokémon with Stall is always last. If a Pokémon goes to the end of the queue, the Pokémon with Stall is still the last to move. The user’s actions taken on their Initiative Count (not Priority or Interrupt) cannot be Interrupted."
+    }
+  ],
+  "capabilities": {
+    "overland": 3,
+    "swim": 2,
+    "levitate": 5,
+    "jump": "1/1",
+    "power": 7,
+    "weight": 4,
+    "size": "Medium",
+    "other": [
+      "Darkvision",
+      "Dead Silent",
+      "Phasing",
+      "Invisibility"
+    ]
+  }
+}

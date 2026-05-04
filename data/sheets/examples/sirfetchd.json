@@ -1,0 +1,134 @@
+{
+  "slug": "examples-sirfetchd",
+  "nickname": "Sirfetch’d",
+  "species": "Sirfetch’d",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Hardy",
+  "types": [
+    "Fighting"
+  ],
+  "stats": {
+    "hp": {
+      "base": 6,
+      "added": 3,
+      "stage": 0
+    },
+    "atk": {
+      "base": 14,
+      "added": 6,
+      "stage": 0
+    },
+    "def": {
+      "base": 10,
+      "added": 6,
+      "stage": 0
+    },
+    "satk": {
+      "base": 7,
+      "added": 4,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 8,
+      "added": 6,
+      "stage": 0
+    },
+    "spd": {
+      "base": 7,
+      "added": 5,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 57,
+    "currentHp": 57,
+    "tick": 5,
+    "evasion": {
+      "vsAtk": 3,
+      "vsSatk": 2,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Brutal Swing",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Burst 1"
+    },
+    {
+      "name": "Rock Smash",
+      "type": "Fighting",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Rock Smash lowers the target’s Defense 1 Combat Stage on 17+."
+    },
+    {
+      "name": "Leer",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Cone 2, Friendly, Social",
+      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
+    },
+    {
+      "name": "Fury Cutter",
+      "type": "Bug",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 3,
+      "range": "Melee, 1 Target",
+      "effect": "If Fury Cutter is used successfully and consecutively on the same target, the Damage Base is increased by +4 to a maximum of 16. For example, the first hit would have a DB of 4; the second hit a DB of 8; the third hit a DB of 12; the fourth and further hits a DB of 16. If Fury Cuter misses or fails to damage its target, its Damage Base resets."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Steadfast",
+      "frequency": "At-Will – Free Action",
+      "effect": "The user’s Speed is raised by +1 Combat Stage."
+    },
+    {
+      "name": "Super Luck",
+      "frequency": "Static",
+      "effect": "The Pokémon’s Moves are Critical Hits on 18-20. If a Move already has an extended Critical Hit range, Super Luck extends that range by 2."
+    }
+  ],
+  "capabilities": {
+    "overland": 8,
+    "sky": 2,
+    "swim": 3,
+    "jump": "3/3",
+    "power": 7,
+    "weight": 5,
+    "size": "Huge",
+    "other": [
+      "Wielder"
+    ]
+  },
+  "skills": {
+    "athletics": "5d6+1",
+    "acrobatics": "3d6",
+    "combat": "6d6+1",
+    "stealth": "4d6",
+    "perception": "5d6",
+    "focus": "5d6+2"
+  }
+}

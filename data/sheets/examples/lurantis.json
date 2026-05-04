@@ -1,0 +1,126 @@
+{
+  "slug": "examples-lurantis",
+  "nickname": "Lurantis",
+  "species": "Lurantis",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Sassy",
+  "types": [
+    "Grass"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 1,
+      "added": 8,
+      "stage": 0
+    },
+    "spd": {
+      "base": -1,
+      "added": 6,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 60,
+    "currentHp": 60,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 3,
+      "vsAny": 1
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Leafage",
+      "type": "Grass",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target"
+    },
+    {
+      "name": "Growth",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Attack 1 Combat Stage and raise the user’s Special Attack 1 Combat Stage. If it is Sunny, double the amount of Combat Stages gained."
+    },
+    {
+      "name": "Razor Leaf",
+      "type": "Grass",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 4,
+      "range": "Cone 2",
+      "effect": "Razor Leaf is a Critical Hit on 18+."
+    },
+    {
+      "name": "Ingrain",
+      "type": "Grass",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Self, Coat",
+      "effect": "Ingrain applies a Coat to the user, which has the following effect; the user cannot be pushed or pulled, and cannot be switched out.  At the beginning of each of the user’s turn, the user gains a Tick of Hit Points."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Compound Eyes",
+      "frequency": "Static",
+      "effect": "The user gains a +3 Bonus to all Accuracy Rolls."
+    },
+    {
+      "name": "Leaf Guard",
+      "frequency": "Scene - Swift Action",
+      "effect": "The user is cured of one Status Affliction. Leaf Guard’s Frequency is ignored if used during Sunny Weather."
+    }
+  ],
+  "natureMod": {
+    "plus": "sdef",
+    "minus": "spd"
+  },
+  "capabilities": {
+    "overland": 7,
+    "swim": 3,
+    "jump": "2/2",
+    "power": 4,
+    "weight": 2,
+    "size": "Small",
+    "other": [
+      "Alluring",
+      "Naturewalk (Forest)"
+    ]
+  }
+}

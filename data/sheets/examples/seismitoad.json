@@ -1,0 +1,139 @@
+{
+  "slug": "examples-seismitoad",
+  "nickname": "Seismitoad",
+  "species": "Seismitoad",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Calm",
+  "types": [
+    "Water",
+    "Ground"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 12,
+      "stage": 0
+    },
+    "atk": {
+      "base": -1,
+      "added": 2,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 1,
+      "added": 8,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 2,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 99,
+    "currentHp": 99,
+    "tick": 9,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 3,
+      "vsAny": 1
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Aqua Ring",
+      "type": "Water",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Self, Coat",
+      "effect": "Aqua Ring covers the user in a Coat that heals the user at the beginning of their turn. The user is healed a Tick of Hit Points each turn."
+    },
+    {
+      "name": "Round",
+      "type": "Normal",
+      "category": "Special",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Burst 1, Sonic",
+      "effect": "Round’s Damage Base is equal to 6, plus +2 more for each previous use of Round by any Trainer or Pokémon this round, up to a maximum of DB12."
+    },
+    {
+      "name": "Supersonic",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 6,
+      "range": "4, 1 Target, Sonic",
+      "effect": "The target becomes Confused. On miss, the target suffers a -2 penalty to Accuracy Rolls for one full round."
+    },
+    {
+      "name": "Mud Shot",
+      "type": "Ground",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 3,
+      "range": "3, 1 Target",
+      "effect": "The target’s Speed is lowed by -1 Combat Stage."
+    },
+    {
+      "name": "Bubble Beam",
+      "type": "Water",
+      "category": "Special",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "Bubble Beam lowers the target’s Speed on 18+."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Mud Dweller",
+      "frequency": "Static",
+      "effect": "The user resists Ground-Type and Water-Type attacks one step further."
+    },
+    {
+      "name": "Poison Touch",
+      "frequency": "Static",
+      "effect": "The Pokémon’s Moves which deal damage Poison Legal Targets on 19+. If a move already has a chance of Poisoning foes, Poison Touch increases the effect range by +2."
+    }
+  ],
+  "natureMod": {
+    "plus": "sdef",
+    "minus": "atk"
+  },
+  "capabilities": {
+    "overland": 6,
+    "swim": 5,
+    "jump": "2/3",
+    "power": 6,
+    "weight": 4,
+    "size": "Medium",
+    "other": [
+      "Fountain",
+      "Naturewalk (Wetlands)",
+      "Groundshaper"
+    ]
+  }
+}

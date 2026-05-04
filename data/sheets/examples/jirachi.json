@@ -1,0 +1,149 @@
+{
+  "slug": "examples-jirachi",
+  "nickname": "Jirachi",
+  "species": "Jirachi",
+  "level": 20,
+  "gender": "No Gender",
+  "shiny": false,
+  "nature": "Timid",
+  "types": [
+    "Steel",
+    "Psychic"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "atk": {
+      "base": -1,
+      "added": 4,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    },
+    "spd": {
+      "base": 1,
+      "added": 7,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 72,
+    "currentHp": 72,
+    "tick": 7,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 3,
+      "vsAny": 3
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Confusion",
+      "type": "Psychic",
+      "category": "Special",
+      "db": 7,
+      "damageRoll": "2d6+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Confusion Confuses the target on 19+."
+    },
+    {
+      "name": "Wish",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Daily x2",
+      "range": "15, 1 Target",
+      "effect": "At the end of the user’s next turn, the target regains Hit Points equal to half of its full Hit Point value. If the user targets themselves and are replaced in battle, the replacement is healed."
+    },
+    {
+      "name": "Helping Hand",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "4, 1 Target, Priority",
+      "effect": "Helping Hand grants the target +2 on their next Accuracy Roll this round, and +10 to the next Damage Roll this round."
+    },
+    {
+      "name": "Psychic",
+      "type": "Psychic",
+      "category": "Special",
+      "db": 11,
+      "damageRoll": "3d10+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "5, 1 Target, Push",
+      "effect": "The target is Pushed 1 meter in any direction. Psychic lowers the target’s Special Defense 1 Combat Stage on 17+."
+    },
+    {
+      "name": "Rest",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Self",
+      "effect": "The user is set to their full Hit Point value. The user is cured of any Status ailments. Then, the user falls Asleep. The user cannot make Sleep Checks at the beginning of their turn. They are cured of the Sleep at the end of their turn in 2 rounds."
+    },
+    {
+      "name": "Swift",
+      "type": "Normal",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "EOT",
+      "range": "8, Ranged Blast 2, Friendly",
+      "effect": "Swift cannot Miss."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Serene Grace",
+      "frequency": "Static",
+      "effect": "The user’s Effect Range is increased by +2."
+    },
+    {
+      "name": "Wishmaster",
+      "frequency": "Static",
+      "effect": "Connection – Wish. Whenever the user uses Wish, the user may pick one of the following effects: the target is healed instantly instead of the following round; or the target gains +2 CS to the Stat of their choice upon being healed; or the target is cured of any Status Affliction."
+    }
+  ],
+  "natureMod": {
+    "plus": "spd",
+    "minus": "atk"
+  },
+  "capabilities": {
+    "overland": 6,
+    "sky": 7,
+    "swim": 4,
+    "jump": "2/2",
+    "power": 2,
+    "weight": 1,
+    "size": "Small",
+    "other": [
+      "Aura  Reader",
+      "Glow",
+      "Telekinetic",
+      "Telepath"
+    ]
+  }
+}

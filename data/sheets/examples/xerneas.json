@@ -1,0 +1,145 @@
+{
+  "slug": "examples-xerneas",
+  "nickname": "Xerneas",
+  "species": "Xerneas",
+  "level": 20,
+  "gender": "No Gender",
+  "shiny": false,
+  "nature": "Brave",
+  "types": [
+    "Fairy"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "atk": {
+      "base": 1,
+      "added": 7,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "spd": {
+      "base": -1,
+      "added": 3,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 81,
+    "currentHp": 81,
+    "tick": 8,
+    "evasion": {
+      "vsAtk": 3,
+      "vsSatk": 3,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Aromatherapy",
+      "type": "Grass",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Burst 1",
+      "effect": "All allies in the burst are cured of one status condition of their choice."
+    },
+    {
+      "name": "Heal Pulse",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "Daily x2",
+      "range": "6, 1 Target, Aura",
+      "effect": "Restores 50% of the target’s max Hit Points. Heal Pulse’s user may not target itself with Heal Pulse."
+    },
+    {
+      "name": "Take Down",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 9,
+      "damageRoll": "2d10+10 / 21",
+      "frequency": "EOT",
+      "ac": 5,
+      "range": "Melee, 1 Target, Dash, Recoil 1/3",
+      "effect": "You may perform a Trip Maneuver against the target as a Free Action."
+    },
+    {
+      "name": "Aurora Beam",
+      "type": "Ice",
+      "category": "Special",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Aurora Beam lowers the target’s Attack 1 Combat Stage on 18+."
+    },
+    {
+      "name": "Light Screen",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Blessing",
+      "effect": "Blessing – Any user affected by Light Screen may activate it when receiving Special Damage to resist the Damage one step. Light Screen may be activated 2 times, and then disappears."
+    },
+    {
+      "name": "Ingrain",
+      "type": "Grass",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Self, Coat",
+      "effect": "Ingrain applies a Coat to the user, which has the following effect; the user cannot be pushed or pulled, and cannot be switched out.  At the beginning of each of the user’s turn, the user gains a Tick of Hit Points."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Type Aura",
+      "frequency": "Static",
+      "effect": "The user and all allies within 3 meters gain a +5 Bonus to Damage Rolls with Moves matching the user’s Primary Type."
+    },
+    {
+      "name": "Magic Guard",
+      "frequency": "Static",
+      "effect": "The user is immune to damage and Hit Point loss from Hazards, Weather, Status Afflictions, Vortexes, Recoil, Hay Fever, Iron Barbs, Rough Skin, and Leech Seed. Defensive."
+    }
+  ],
+  "natureMod": {
+    "plus": "atk",
+    "minus": "spd"
+  },
+  "capabilities": {
+    "overland": 8,
+    "swim": 5,
+    "jump": "3/4",
+    "power": 9,
+    "weight": 6,
+    "size": "Huge",
+    "other": [
+      "Naturewalk  (Grassland, Forest)",
+      "Sprouter",
+      "Telepath",
+      "Mountable 2"
+    ]
+  }
+}

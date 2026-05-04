@@ -1,0 +1,97 @@
+{
+  "slug": "examples-swadloon",
+  "nickname": "Swadloon",
+  "species": "Swadloon",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Serious",
+  "types": [
+    "Bug",
+    "Grass"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 63,
+    "currentHp": 63,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 3,
+      "vsSatk": 2,
+      "vsAny": 1
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Protect",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Self, Interrupt, Shield, Trigger",
+      "effect": "If the user is hit by a Move, the user may use Protect. The user is instead not hit by the Move. You do not take any damage nor are you affected by any of the Move’s effects."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Designer",
+      "frequency": "At-Will – Extended Action",
+      "effect": "The user is adept at crafting clothes for itself out of common leaves. When activating this ability to create a leaf suit, the user may choose two Types; the user resists the chosen types one step further while wearing that suit. The user may only have one leaf suit at a time, and creating a new suit destroys the old one."
+    },
+    {
+      "name": "Full Guard",
+      "frequency": "Scene - Swift Action",
+      "effect": "You resist the triggering Damage one step further."
+    }
+  ],
+  "capabilities": {
+    "overland": 3,
+    "swim": 2,
+    "jump": "1/1",
+    "power": 2,
+    "weight": 1,
+    "size": "Small",
+    "other": [
+      "Naturewalk (Grassland, Forest)",
+      "Threaded",
+      "Wallclimber",
+      "Underdog",
+      "Leaf Crafter"
+    ]
+  }
+}

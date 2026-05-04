@@ -1,0 +1,151 @@
+{
+  "slug": "examples-gothorita",
+  "nickname": "Gothorita",
+  "species": "Gothorita",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Curious",
+  "types": [
+    "Psychic"
+  ],
+  "stats": {
+    "hp": {
+      "base": -1,
+      "added": 4,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 2,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "satk": {
+      "base": 1,
+      "added": 9,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 57,
+    "currentHp": 57,
+    "tick": 5,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 2,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Confusion",
+      "type": "Psychic",
+      "category": "Special",
+      "db": 7,
+      "damageRoll": "2d6+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Confusion Confuses the target on 19+."
+    },
+    {
+      "name": "Embargo",
+      "type": "Dark",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "The target cannot use or benefit from held items for the remainder of the encounter. Embargo may only affect one target at a time; if Embargo is used on a new target, the previous target is freed from the effect."
+    },
+    {
+      "name": "Tickle",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Lower the target’s Attack 1 Combat Stage and lower the target’s Defense 1 Combat Stage."
+    },
+    {
+      "name": "Psybeam",
+      "type": "Psychic",
+      "category": "Special",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Psybeam Confuses the target on 19+."
+    },
+    {
+      "name": "Double Slap",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 2,
+      "damageRoll": "1d6+3 / 7",
+      "frequency": "At-Will",
+      "ac": 4,
+      "range": "Melee, 1 Target, Five Strike",
+      "effect": "None"
+    },
+    {
+      "name": "Fake Tears",
+      "type": "Dark",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "8, 1 Target, Social",
+      "effect": "Lower the target’s Special Defense 2 Combat Stages."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Frisk",
+      "frequency": "Static",
+      "effect": "The user gains a +2 Bonus to all Accuracy Rolls against adjacent targets."
+    },
+    {
+      "name": "Cute Tears",
+      "frequency": "Scene – Free Action",
+      "effect": "The attacking foe loses 2 Combat Stages in the Attack Stat used by the triggering Move."
+    }
+  ],
+  "natureMod": {
+    "plus": "satk",
+    "minus": "hp"
+  },
+  "capabilities": {
+    "overland": 5,
+    "swim": 2,
+    "jump": "2/2",
+    "power": 3,
+    "weight": 2,
+    "size": "Small",
+    "other": [
+      "Naturewalk  (Forest, Urban)",
+      "Telekinetic",
+      "Telepath",
+      "Underdog"
+    ]
+  }
+}

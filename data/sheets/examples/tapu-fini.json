@@ -1,0 +1,148 @@
+{
+  "slug": "examples-tapu-fini",
+  "nickname": "Tapu Fini",
+  "species": "Tapu Fini",
+  "level": 20,
+  "gender": "No Gender",
+  "shiny": false,
+  "nature": "Sassy",
+  "types": [
+    "Water",
+    "Fairy"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 9,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 1,
+      "added": 7,
+      "stage": 0
+    },
+    "spd": {
+      "base": -1,
+      "added": 3,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 60,
+    "currentHp": 60,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 4,
+      "vsSatk": 4,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Water Gun",
+      "type": "Water",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "None"
+    },
+    {
+      "name": "Whirlpool",
+      "type": "Water",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "Scene x2",
+      "ac": 4,
+      "range": "3, 1 Target",
+      "effect": "The target is put in a Vortex."
+    },
+    {
+      "name": "Haze",
+      "type": "Ice",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "range": "Field",
+      "effect": "The Combat Stages of the user and all Pokémon and Trainers in the encounter are set to their default state (usually 0)."
+    },
+    {
+      "name": "Water Pulse",
+      "type": "Water",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "8, 1 Target, Aura",
+      "effect": "Water Pulse Confuses the target on 17+."
+    },
+    {
+      "name": "Soak",
+      "type": "Water",
+      "category": "Status",
+      "frequency": "Daily",
+      "ac": 2,
+      "range": "5, 1 Target",
+      "effect": "The target gains the Water Type in addition to its other Types for 5 turns."
+    },
+    {
+      "name": "Withdraw",
+      "type": "Water",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "Self",
+      "effect": "The user’s Defense is raised 1 Combat Stage."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Misty Surge",
+      "effect": "The user may hold two Held Items at once. Whenever an Ability or Move affects the user’s Held Items, you may choose which one is affected."
+    },
+    {
+      "name": "Telepathy",
+      "frequency": "Static",
+      "effect": "The user gains +1 Evasion. Whenever an Ally uses a damaging area-of-effect attack that would hit you, you may Disengage as a Free Action before the attack resolves."
+    }
+  ],
+  "natureMod": {
+    "plus": "sdef",
+    "minus": "spd"
+  },
+  "capabilities": {
+    "overland": 4,
+    "sky": 8,
+    "swim": 8,
+    "jump": "1/1",
+    "power": 4,
+    "weight": 2,
+    "size": "Medium",
+    "other": [
+      "Aura  Reader",
+      "Fountain"
+    ]
+  }
+}

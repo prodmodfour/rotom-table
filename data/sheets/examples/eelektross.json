@@ -1,0 +1,103 @@
+{
+  "slug": "examples-eelektross",
+  "nickname": "Eelektross",
+  "species": "Eelektross",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Proud",
+  "types": [
+    "Electric"
+  ],
+  "stats": {
+    "hp": {
+      "base": 1,
+      "added": 8,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 8,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 2,
+      "stage": 0
+    },
+    "satk": {
+      "base": -1,
+      "added": 4,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 84,
+    "currentHp": 84,
+    "tick": 8,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 2,
+      "vsAny": 1
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Acid",
+      "type": "Poison",
+      "category": "Special",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Cone 2",
+      "effect": "Acid lowers the target’s Special Defense 1 Combat Stage on 18+."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Levitate",
+      "frequency": "Static",
+      "effect": "The Pokémon is immune to the damage and effects of Ground Type Moves, and gains a Levitate Speed of 4, or has existing Levitate Speeds increased by +2. Defensive."
+    },
+    {
+      "name": "Sequence",
+      "frequency": "At-Will – Free Action",
+      "effect": "For every Electric-Type Pokémon adjacent to the user, the triggering Attack deals an additional +3 Damage."
+    }
+  ],
+  "natureMod": {
+    "plus": "hp",
+    "minus": "satk"
+  },
+  "capabilities": {
+    "overland": 5,
+    "swim": 5,
+    "levitate": 5,
+    "jump": "1/1",
+    "power": 6,
+    "weight": 4,
+    "size": "Large",
+    "other": [
+      "Zapper",
+      "Glow",
+      "Gilled",
+      "Mountable 1"
+    ]
+  }
+}

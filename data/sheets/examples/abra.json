@@ -1,0 +1,99 @@
+{
+  "slug": "examples-abra",
+  "nickname": "Abra",
+  "species": "Abra",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Impish",
+  "types": [
+    "Psychic"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "def": {
+      "base": 1,
+      "added": 5,
+      "stage": 0
+    },
+    "satk": {
+      "base": -1,
+      "added": 5,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 54,
+    "currentHp": 54,
+    "tick": 5,
+    "evasion": {
+      "vsAtk": 1,
+      "vsSatk": 2,
+      "vsAny": 3
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Teleport",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Self, Interrupt",
+      "effect": "The user Teleports up to X meters, where X is its Teleporter Capability. Teleport can be used as an Interrupt at any time. Moves that targeted Teleport’s user continue through the desired target’s space if the Move allows for it as if the user hadn’t been there; single target moves simply miss."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Inner Focus",
+      "frequency": "Static",
+      "effect": "The user cannot be Flinched, and their Initiative cannot be unwillingly lowered by any effects."
+    },
+    {
+      "name": "Transporter",
+      "frequency": "Daily x3 – Free Action"
+    }
+  ],
+  "natureMod": {
+    "plus": "def",
+    "minus": "satk"
+  },
+  "capabilities": {
+    "overland": 3,
+    "swim": 1,
+    "jump": "1/1",
+    "power": 1,
+    "weight": 2,
+    "size": "Small",
+    "other": [
+      "Teleporter 2",
+      "Naturewalk (Forest, Urban)",
+      "Telekinetic",
+      "Telepath",
+      "Underdog"
+    ]
+  }
+}

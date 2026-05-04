@@ -1,0 +1,119 @@
+{
+  "slug": "examples-wyrdeer",
+  "nickname": "Wyrdeer",
+  "species": "Wyrdeer",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Mild",
+  "types": [
+    "Normal",
+    "Psychic"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 7,
+      "stage": 0
+    },
+    "def": {
+      "base": -1,
+      "added": 3,
+      "stage": 0
+    },
+    "satk": {
+      "base": 1,
+      "added": 10,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 2,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 75,
+    "currentHp": 75,
+    "tick": 7,
+    "evasion": {
+      "vsAtk": 1,
+      "vsSatk": 2,
+      "vsAny": 1
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Hypnosis",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 6,
+      "range": "4, 1 Target",
+      "effect": "The target falls Asleep."
+    },
+    {
+      "name": "Confusion",
+      "type": "Psychic",
+      "category": "Special",
+      "db": 7,
+      "damageRoll": "2d6+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Confusion Confuses the target on 19+."
+    },
+    {
+      "name": "Calm Mind",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Special Attack 1 Combat Stage and raise the user’s Special Defense 1 Combat Stage."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Hypnotic",
+      "frequency": "Static",
+      "effect": "Connection - Hypnosis. When used by the user, Hypnosis cannot miss."
+    },
+    {
+      "name": "Probability Control",
+      "frequency": "Scene – Free Action",
+      "effect": "The user may reroll any roll, or have any ally reroll any roll that has been made. This leaves discoverable Psychic residue."
+    }
+  ],
+  "natureMod": {
+    "plus": "satk",
+    "minus": "def"
+  },
+  "capabilities": {
+    "overland": 8,
+    "swim": 3,
+    "jump": "2/2",
+    "power": 5,
+    "weight": 4,
+    "size": "Medium",
+    "other": [
+      "Mountable  1",
+      "Telekinetic",
+      "Tracker"
+    ]
+  }
+}

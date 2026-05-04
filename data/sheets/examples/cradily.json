@@ -1,0 +1,129 @@
+{
+  "slug": "examples-cradily",
+  "nickname": "Cradily",
+  "species": "Cradily",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Hasty",
+  "types": [
+    "Rock",
+    "Grass"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "def": {
+      "base": -1,
+      "added": 4,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 11,
+      "stage": 0
+    },
+    "spd": {
+      "base": 1,
+      "added": 2,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 72,
+    "currentHp": 72,
+    "tick": 7,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 4,
+      "vsAny": 1
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Ancient Power",
+      "type": "Rock",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "6, 1 Target, Spirit Surge",
+      "effect": "On 19+, the user has each of its stats raised by +1 Combat Stage."
+    },
+    {
+      "name": "Ingrain",
+      "type": "Grass",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Self, Coat",
+      "effect": "Ingrain applies a Coat to the user, which has the following effect; the user cannot be pushed or pulled, and cannot be switched out.  At the beginning of each of the user’s turn, the user gains a Tick of Hit Points."
+    },
+    {
+      "name": "Confuse Ray",
+      "type": "Ghost",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "The target is Confused."
+    },
+    {
+      "name": "Acid",
+      "type": "Poison",
+      "category": "Special",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Cone 2",
+      "effect": "Acid lowers the target’s Special Defense 1 Combat Stage on 18+."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Suction Cups",
+      "frequency": "At-Will - Shift Action",
+      "effect": "The user gains +5 Damage Reduction for 1 full round."
+    },
+    {
+      "name": "Storm Drain",
+      "frequency": "Scene – Free Action",
+      "effect": "The Move is turned into a 1-Target Move and is re-directed at the user without fail, and cannot miss. This negates Lock-On or Mind Reader.  the user’s Special Attack is then raised by +1 Combat Stage."
+    }
+  ],
+  "natureMod": {
+    "plus": "spd",
+    "minus": "def"
+  },
+  "capabilities": {
+    "overland": 3,
+    "swim": 1,
+    "jump": "0/0",
+    "power": 8,
+    "weight": 4,
+    "size": "Medium",
+    "other": [
+      "Gilled",
+      "Sticky Hold"
+    ]
+  }
+}

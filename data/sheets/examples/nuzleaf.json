@@ -1,0 +1,146 @@
+{
+  "slug": "examples-nuzleaf",
+  "nickname": "Nuzleaf",
+  "species": "Nuzleaf",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Decisive",
+  "types": [
+    "Grass",
+    "Dark"
+  ],
+  "stats": {
+    "hp": {
+      "base": 1,
+      "added": 9,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 8,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "sdef": {
+      "base": -1,
+      "added": 3,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 81,
+    "currentHp": 81,
+    "tick": 8,
+    "evasion": {
+      "vsAtk": 1,
+      "vsSatk": 1,
+      "vsAny": 1
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Razor Wind",
+      "type": "Normal",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10 / 19",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "10, 3 Targets, Set-Up"
+    },
+    {
+      "name": "Harden",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "Self",
+      "effect": "Raise the user’s Defense 1 Combat Stage."
+    },
+    {
+      "name": "Growth",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Attack 1 Combat Stage and raise the user’s Special Attack 1 Combat Stage. If it is Sunny, double the amount of Combat Stages gained."
+    },
+    {
+      "name": "Nature Power",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": "See Effect",
+      "range": "See Effect",
+      "effect": "Nature Power uses a Move defined by the Environ keyword."
+    },
+    {
+      "name": "Razor Leaf",
+      "type": "Grass",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 4,
+      "range": "Cone 2",
+      "effect": "Razor Leaf is a Critical Hit on 18+."
+    },
+    {
+      "name": "Torment",
+      "type": "Dark",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "10, 1 Target, Social",
+      "effect": "The target becomes Suppressed."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Early Bird",
+      "frequency": "Static",
+      "effect": "The user gains a bonus to Initiative equal to half its Speed, and a +3 Bonus on Save Checks against Sleep."
+    },
+    {
+      "name": "Pickpocket",
+      "frequency": "Scene – Free Action",
+      "effect": "If the opponent has a Held Item and the user does not, the user takes the Held Item the opponent is holding."
+    }
+  ],
+  "natureMod": {
+    "plus": "hp",
+    "minus": "sdef"
+  },
+  "capabilities": {
+    "overland": 5,
+    "swim": 3,
+    "jump": "1/2",
+    "power": 4,
+    "weight": 3,
+    "size": "Medium",
+    "other": [
+      "Darkvision",
+      "Naturewalk (Grassland, Forest)",
+      "Underdog"
+    ]
+  }
+}

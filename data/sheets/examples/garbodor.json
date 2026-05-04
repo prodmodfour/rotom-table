@@ -1,0 +1,138 @@
+{
+  "slug": "examples-garbodor",
+  "nickname": "Garbodor",
+  "species": "Garbodor",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Calm",
+  "types": [
+    "Poison"
+  ],
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "atk": {
+      "base": -1,
+      "added": 3,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 1,
+      "added": 7,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 66,
+    "currentHp": 66,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 3,
+      "vsAny": 2
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Double Slap",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 2,
+      "damageRoll": "1d6+3 / 7",
+      "frequency": "At-Will",
+      "ac": 4,
+      "range": "Melee, 1 Target, Five Strike",
+      "effect": "None"
+    },
+    {
+      "name": "Toxic Spikes",
+      "type": "Poison",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "6, Hazard",
+      "effect": "Set 8 square meters of Toxic Spikes, all 8 meters must be adjacent with at least one other space of Toxic Spikes next to each other. Toxic Spikes cause Terrain to become Slow Terrain, and a grounded foe that runs into the hazard becomes Poisoned, and Slowed until the end of their next turn. If there are 2 Layers of Toxic Spikes on the same space, it Deadly Poisons the foes instead. Poison-Type Pokémon may move over Toxic Spikes harmlessly, destroying the Hazards as they do so."
+    },
+    {
+      "name": "Acid Spray",
+      "type": "Poison",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "Acid Spray lowers the target’s Special Defense 2 Combat Stages."
+    },
+    {
+      "name": "Sludge",
+      "type": "Poison",
+      "category": "Special",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Sludge Poisons the target on 15+."
+    },
+    {
+      "name": "Recycle",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Self",
+      "effect": "The effect of a consumable item used earlier in the encounter is used again as if it had not been destroyed. The item is still gone."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Absorb Force",
+      "frequency": "Scene – Free Action",
+      "effect": "The user takes damage as if the attack was resisted one step further."
+    },
+    {
+      "name": "Weird Power",
+      "frequency": "Static",
+      "effect": "If the user’s Attack is higher than its Special Attack, the user may add its Attack Stat to its Special Damage Rolls. If their Special Attack is higher, they user may add its Special Attack Stat to its Physical Damage Rolls. This does not stack with Mixed Power."
+    }
+  ],
+  "natureMod": {
+    "plus": "sdef",
+    "minus": "atk"
+  },
+  "capabilities": {
+    "overland": 5,
+    "swim": 2,
+    "jump": "1/1",
+    "power": 6,
+    "weight": 5,
+    "size": "Large",
+    "other": [
+      "Inflatable",
+      "Naturewalk (Urban)"
+    ]
+  }
+}

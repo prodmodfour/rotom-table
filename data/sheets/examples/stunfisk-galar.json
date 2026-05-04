@@ -1,0 +1,154 @@
+{
+  "slug": "examples-stunfisk-galar",
+  "nickname": "Stunfisk Galar",
+  "species": "Stunfisk Galar",
+  "level": 20,
+  "gender": "Male",
+  "shiny": false,
+  "nature": "Desperate",
+  "types": [
+    "Ground",
+    "Steel"
+  ],
+  "stats": {
+    "hp": {
+      "base": -1,
+      "added": 10,
+      "stage": 0
+    },
+    "atk": {
+      "base": 1,
+      "added": 3,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 90,
+    "currentHp": 90,
+    "tick": 9,
+    "evasion": {
+      "vsAtk": 3,
+      "vsSatk": 2,
+      "vsAny": 1
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Metal Claw",
+      "type": "Steel",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10",
+      "frequency": "At-Will",
+      "ac": 3,
+      "range": "Melee, 1 Target, Spirit Surge",
+      "effect": "Raise the user’s Attack 1 Combat Stage on 18+."
+    },
+    {
+      "name": "Water Gun",
+      "type": "Water",
+      "category": "Special",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "None"
+    },
+    {
+      "name": "Tackle",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash, Push",
+      "effect": "The target is pushed 2 Meters."
+    },
+    {
+      "name": "Metal Sound",
+      "type": "Steel",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 4,
+      "range": "Burst 2, Friendly, Sonic",
+      "effect": "All Legal Targets have their Special Defense lowered 2 Combat Stages."
+    },
+    {
+      "name": "Mud Shot",
+      "type": "Ground",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 3,
+      "range": "3, 1 Target",
+      "effect": "The target’s Speed is lowed by -1 Combat Stage."
+    },
+    {
+      "name": "Mud-Slap",
+      "type": "Ground",
+      "category": "Special",
+      "db": 4,
+      "damageRoll": "1d8+6",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "3, 1 Target",
+      "effect": "The target’s Accuracy is lowered by -1."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Mimicry",
+      "frequency": "Scene – Free Action",
+      "effect": "The user changes their Type to match the field. Pick one type from the following table. If two or more rows are relevant (such as because of Weather), pick one. Field/Weather Type Beach Ground or Water Cave Rock or Dark Desert Ground or Rock Forest Grass Fresh Water / Ocean Water Grassland Normal or Grass Marsh Water or Poison Mountain Rock or Ground Rainforest Grass or Poison Taiga Ice or Grass Tundra Ice Urban Normal or Steel Sunny Fire Rainy Water Hailing Ice Sandstorming Rock Your GM may provide additional options should they choose (for instance, an Ethereal Forest may provide Psychic and Fairy options.) Note: This table may be used for Camouflage, too."
+    },
+    {
+      "name": "Decoy",
+      "frequency": "Scene – Full Action",
+      "effect": "The user uses the Move “Follow Me” as if it was on their Move List, and their Evasion is raised by +2 until the end of their next turn."
+    }
+  ],
+  "natureMod": {
+    "plus": "atk",
+    "minus": "hp"
+  },
+  "capabilities": {
+    "overland": 4,
+    "swim": 3,
+    "burrow": 3,
+    "jump": "1/1",
+    "power": 5,
+    "weight": 2,
+    "size": "Small",
+    "other": [
+      "Tremorsense"
+    ]
+  }
+}

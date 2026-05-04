@@ -1,0 +1,119 @@
+{
+  "slug": "examples-primeape",
+  "nickname": "Primeape",
+  "species": "Primeape",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Dreamy",
+  "types": [
+    "Fighting"
+  ],
+  "stats": {
+    "hp": {
+      "base": -1,
+      "added": 3,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 10,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 1,
+      "added": 3,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 6,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 57,
+    "currentHp": 57,
+    "tick": 5,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 2,
+      "vsAny": 3
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Fury Swipes",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 3,
+      "damageRoll": "1d6+5 / 9",
+      "frequency": "EOT",
+      "ac": 5,
+      "range": "Melee, 1 Target, Five Strike",
+      "effect": "None"
+    },
+    {
+      "name": "Seismic Toss",
+      "type": "Fighting",
+      "category": "Physical",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "The target loses Hit Points equal to the level of Seismic Toss’ user."
+    },
+    {
+      "name": "Karate Chop",
+      "type": "Fighting",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Karate Chop is a Critical Hit on 17+."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Vital Spirit",
+      "frequency": "Static",
+      "effect": "The user is immune to the Sleep condition, and cannot use the move Rest. Defensive."
+    },
+    {
+      "name": "Prime Fury",
+      "frequency": "Scene – Swift Action",
+      "effect": "The user becomes Enraged, and gains +1 Combat Stage in each of Attack and Special Attack."
+    }
+  ],
+  "natureMod": {
+    "plus": "sdef",
+    "minus": "hp"
+  },
+  "capabilities": {
+    "overland": 7,
+    "swim": 3,
+    "jump": "3/4",
+    "power": 6,
+    "weight": 3,
+    "size": "Medium",
+    "other": [
+      "Naturewalk  (Forest, Mountain)"
+    ]
+  }
+}

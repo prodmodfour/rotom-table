@@ -1,0 +1,160 @@
+{
+  "slug": "examples-nidoran-f",
+  "nickname": "Nidoran (F)",
+  "species": "Nidoran (F)",
+  "level": 20,
+  "gender": "Female",
+  "shiny": false,
+  "nature": "Proud",
+  "types": [
+    "Poison"
+  ],
+  "stats": {
+    "hp": {
+      "base": 7,
+      "added": 6,
+      "stage": 0
+    },
+    "atk": {
+      "base": 5,
+      "added": 5,
+      "stage": 0
+    },
+    "def": {
+      "base": 5,
+      "added": 7,
+      "stage": 0
+    },
+    "satk": {
+      "base": 3,
+      "added": 3,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 4,
+      "added": 5,
+      "stage": 0
+    },
+    "spd": {
+      "base": 4,
+      "added": 4,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 69,
+    "currentHp": 69,
+    "tick": 6,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 1,
+      "vsAny": 1
+    },
+    "dr": 0
+  },
+  "tutorPoints": {
+    "earned": 5,
+    "spent": 0
+  },
+  "movelist": [
+    {
+      "name": "Scratch",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, Pass",
+      "effect": "None"
+    },
+    {
+      "name": "Poison Sting",
+      "type": "Poison",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Poison Sting Poisons the target on 17+."
+    },
+    {
+      "name": "Fury Swipes",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 3,
+      "damageRoll": "1d6+5 / 9",
+      "frequency": "EOT",
+      "ac": 5,
+      "range": "Melee, 1 Target, Five Strike",
+      "effect": "None"
+    },
+    {
+      "name": "Growl",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Burst 1, Friendly, Sonic, Social",
+      "effect": "Growl lowers all Legal Targets Attack 1 Combat Stage."
+    },
+    {
+      "name": "Tail Whip",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Burst 1, Friendly",
+      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
+    },
+    {
+      "name": "Double Kick",
+      "type": "Fighting",
+      "category": "Physical",
+      "db": 3,
+      "damageRoll": "1d6+5 / 9",
+      "frequency": "At-Will",
+      "ac": 3,
+      "range": "Melee, 1 Target, Double Strike",
+      "effect": "None"
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Poison Point",
+      "frequency": "Scene – Free Action",
+      "effect": "The attacking foe is Poisoned."
+    },
+    {
+      "name": "Rivalry",
+      "frequency": "Static",
+      "effect": "Whenever the user deals direct damage to a target of the same gender, increase the Damage dealt by +5."
+    }
+  ],
+  "natureMod": {
+    "plus": "hp",
+    "minus": "satk"
+  },
+  "capabilities": {
+    "overland": 5,
+    "swim": 3,
+    "burrow": 2,
+    "jump": "1/1",
+    "power": 2,
+    "weight": 1,
+    "size": "Huge",
+    "other": [
+      "Naturewalk (Grassland)",
+      "Underdog"
+    ]
+  },
+  "skills": {
+    "athletics": "2d6+1",
+    "acrobatics": "2d6",
+    "combat": "3d6",
+    "stealth": "3d6+1",
+    "perception": "2d6",
+    "focus": "2d6"
+  }
+}
