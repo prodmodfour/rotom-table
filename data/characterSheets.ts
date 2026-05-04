@@ -85,7 +85,7 @@ export interface ResolvedStat {
   species: number
   /** Effective Nature modifier after PTU's stat-specific delta and minimum-1 floor. */
   mod: number
-  /** Personal "Base" points spent. */
+  /** Nature-adjusted Base Stat (Species + Mod). */
   base: number
   /** Stat points earned on level-up. */
   added: number
@@ -128,7 +128,7 @@ export const resolveStats = (sheet: CharacterSheet): ResolvedStat[] => {
     const personal = sheet.stats?.[key] ?? {}
     const speciesValue = speciesValueFor(key)
     const mod = adjustedNatureModForStat(speciesValue, key, plus, minus)
-    const base  = personal.base  ?? 0
+    const base = speciesValue + mod
     const added = personal.added ?? 0
     const stage = personal.stage ?? 0
     return {
@@ -139,7 +139,7 @@ export const resolveStats = (sheet: CharacterSheet): ResolvedStat[] => {
       base,
       added,
       stage,
-      total: speciesValue + mod + base + added,
+      total: base + added,
     }
   })
 }

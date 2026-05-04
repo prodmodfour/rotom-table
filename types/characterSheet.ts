@@ -12,7 +12,7 @@ import type { CombatStageKey } from '~/types/combatStages'
 export type StatKey = 'hp' | 'atk' | 'def' | 'satk' | 'sdef' | 'spd'
 
 export interface CharacterSheetStat {
-  /** Personal "Base" points spent on this stat. */
+  /** Legacy/manual Base override. Ignored by the sheet renderer; Base is Species + Nature Mod. */
   base?: number
   /** Stat points added on level-up. */
   added?: number

@@ -231,7 +231,7 @@ const removeEdge = (i: number) => {
   sheet.value?.edges?.splice(i, 1)
 }
 
-const setStat = (key: StatKey, field: 'base' | 'added' | 'stage', value: number | undefined) => {
+const setStat = (key: StatKey, field: 'added' | 'stage', value: number | undefined) => {
   if (!sheet.value?.stats) return
   const row = sheet.value.stats[key] ?? {}
   row[field] = typeof value === 'number' ? value : 0
@@ -406,14 +406,7 @@ const setInheritedMove = (level: string, value: string | undefined) => {
                   <td :class="['mod', { plus: row.mod > 0, minus: row.mod < 0 }]">
                     {{ row.mod > 0 ? `+${row.mod}` : row.mod }}
                   </td>
-                  <td>
-                    <EditableCell
-                      :model-value="row.base"
-                      type="number"
-                      :min="0"
-                      @update:model-value="(v) => setStat(row.key, 'base', v as number)"
-                    />
-                  </td>
+                  <td class="base">{{ row.base || '—' }}</td>
                   <td>
                     <EditableCell
                       :model-value="row.added"
