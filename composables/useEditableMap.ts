@@ -9,8 +9,8 @@
  *     debounces a save → the server broadcasts the post-save state
  *     back to every subscriber on `map:<slug>`. Echoes from this
  *     same tab (matched by `clientId`) are dropped.
- *   • Edits in *other* tabs/devices arrive as SSE events; we replace
- *     the local ref's contents and update our "last server snapshot"
+ *   • Edits in *other* tabs/devices arrive as SSE events; we patch
+ *     the local reactive map in place and update our "last server snapshot"
  *     so the watcher doesn't trigger a redundant save.
  *   • If another tab renames the map (so the slug changes on disk),
  *     we set `renamedTo` so the page can navigate to the new URL.
@@ -36,7 +36,21 @@ export interface UseEditableMapReturn {
   reload: () => Promise<void>
 }
 
-const stableJson = (value: unknown): string => JSON.stringify(value)
+const deepClone = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T
+
+const stableJson = (value: unknown): string =>
+  JSON.stringify(value, (_key, item: unknown) => {
+    if (!item || typeof item !== 'object' || Array.isArray(item)) return item
+    return Object.keys(item as Record<string, unknown>)
+      .sort()
+      .reduce((out, key) => {
+        const current = (item as Record<string, unknown>)[key]
+        if (current !== undefined) out[key] = current
+        return out
+      }, {} as Record<string, unknown>)
+  }) ?? 'undefined'
+
+const sameJson = (a: unknown, b: unknown): boolean => stableJson(a) === stableJson(b)
 
 export const useEditableMap = (slug: string, debounceMs = 200): UseEditableMapReturn => {
   const map = ref<TabletopMap | null>(null)
@@ -54,6 +68,59 @@ export const useEditableMap = (slug: string, debounceMs = 200): UseEditableMapRe
       clearTimeout(pendingTimer)
       pendingTimer = null
     }
+  }
+
+  const assignIfChanged = <K extends keyof TabletopMap>(
+    target: TabletopMap,
+    key: K,
+    value: TabletopMap[K],
+  ) => {
+    if (sameJson(target[key], value)) return
+    const targetRecord = target as Record<string, unknown>
+    if (value === undefined) {
+      delete targetRecord[key as string]
+      return
+    }
+    targetRecord[key as string] = value
+  }
+
+  const applyServerMap = (incoming: TabletopMap) => {
+    const next = deepClone(incoming)
+    if (!map.value) {
+      map.value = next
+      return
+    }
+
+    // Keep the root map object stable so realtime updates feel like live
+    // edits instead of a component-level reload. Assign the heavyweight
+    // arrays only when their semantic contents changed; token movement
+    // events should not force the terrain renderer to rebuild thousands
+    // of voxel instances.
+    const target = map.value
+    target.schemaVersion = next.schemaVersion
+    target.slug = next.slug
+    target.name = next.name
+    if (next.folder === undefined) delete target.folder
+    else target.folder = next.folder
+
+    if (!target.dimensions) {
+      target.dimensions = next.dimensions
+    } else {
+      if (target.dimensions.x !== next.dimensions.x) target.dimensions.x = next.dimensions.x
+      if (target.dimensions.y !== next.dimensions.y) target.dimensions.y = next.dimensions.y
+      if (target.dimensions.z !== next.dimensions.z) target.dimensions.z = next.dimensions.z
+    }
+
+    if (next.groundLevelY === undefined) delete target.groundLevelY
+    else target.groundLevelY = next.groundLevelY
+
+    assignIfChanged(target, 'voxels', next.voxels)
+    assignIfChanged(target, 'placements', next.placements)
+    assignIfChanged(target, 'lights', next.lights)
+    assignIfChanged(target, 'initiative', next.initiative)
+    assignIfChanged(target, 'metadata', next.metadata)
+    assignIfChanged(target, 'createdAt', next.createdAt)
+    assignIfChanged(target, 'updatedAt', next.updatedAt)
   }
 
   const performSave = async () => {
@@ -95,7 +162,7 @@ export const useEditableMap = (slug: string, debounceMs = 200): UseEditableMapRe
     try {
       const data = await $fetch<{ map: TabletopMap }>('/api/maps/load', { params: { slug } })
       lastServerJson = stableJson(data.map)
-      map.value = data.map
+      applyServerMap(data.map)
       status.value = 'idle'
     } catch (err: unknown) {
       const e = err as { statusCode?: number; statusMessage?: string; message?: string }
@@ -131,7 +198,7 @@ export const useEditableMap = (slug: string, debounceMs = 200): UseEditableMapRe
     if (event.type === 'updated' && event.data) {
       const incoming = event.data as TabletopMap
       lastServerJson = stableJson(incoming)
-      map.value = incoming
+      applyServerMap(incoming)
       status.value = 'idle'
     } else if (event.type === 'deleted') {
       status.value = 'not-found'
@@ -144,7 +211,7 @@ export const useEditableMap = (slug: string, debounceMs = 200): UseEditableMapRe
       cancelPending()
       if (payload.map) {
         lastServerJson = stableJson(payload.map)
-        map.value = payload.map
+        applyServerMap(payload.map)
       }
       status.value = 'idle'
       renamedTo.value = payload.newSlug

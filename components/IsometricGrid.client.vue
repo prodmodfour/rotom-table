@@ -1331,6 +1331,20 @@ const selectedPokemon = computed(
   () => props.pokemons.find((pokemon) => pokemon.id === props.selectedId) ?? null,
 )
 const renderedTerrainVoxels = computed(() => props.voxels)
+const terrainVoxelRevision = computed(() =>
+  renderedTerrainVoxels.value
+    .map((voxel) => [
+      voxel.x,
+      voxel.y,
+      voxel.z,
+      voxelMaterialId(voxel),
+      voxel.color ?? '',
+      voxel.blocksMovement ?? '',
+      voxel.blocksSight ?? '',
+      (voxel.tags ?? []).join('\u001f'),
+    ].join('\u001e'))
+    .join('\u001d'),
+)
 const mapMovementOccupancy = computed(() =>
   buildMapOccupancy({
     voxels: renderedTerrainVoxels.value,
@@ -3756,7 +3770,7 @@ watch(
 )
 
 watch(
-  () => props.voxels,
+  terrainVoxelRevision,
   () => {
     if (!renderer) {
       return
@@ -3771,7 +3785,6 @@ watch(
 
     replayBuildPreview()
   },
-  { deep: true },
 )
 
 watch(
