@@ -18,11 +18,13 @@ import { canPlacePokemon, findPathForPokemon, getAnchorCenter, getPokemonCenter 
 import {
   buildAllVoxelOccupancy,
   cellInsidePokemonFootprint,
+  defaultBuilderVoxelColor,
   parseHexColor,
   voxelGroupKey,
   voxelKey,
   voxelMaterialDefinition,
   voxelMaterialId,
+  withDefaultBuilderVoxelColor,
 } from '~/utils/voxels'
 import { buildMapOccupancy } from '~/utils/mapOccupancy'
 import { getMaterialDefinition, materialColorNumber } from '~/utils/mapMaterials'
@@ -3575,9 +3577,14 @@ const customVoxelStyle = (baseColor: number): VoxelRenderStyle => ({
   color: blockHexCss(baseColor),
 })
 
-const currentBuildVoxelStyle = (): VoxelRenderStyle => {
+const currentBuildVoxelStyle = (cell?: { x: number; y: number; z: number }): VoxelRenderStyle => {
   const style: VoxelRenderStyle = { materialId: props.buildMaterial }
-  if (props.buildColor && parseHexColor(props.buildColor) !== null) style.color = props.buildColor
+  if (props.buildColor && parseHexColor(props.buildColor) !== null) {
+    style.color = props.buildColor
+  } else if (cell) {
+    const color = defaultBuilderVoxelColor({ ...cell, materialId: props.buildMaterial })
+    if (color) style.color = color
+  }
   return style
 }
 
@@ -4133,7 +4140,7 @@ const updateBuildGhost = (target: BuildTarget | null) => {
     paintBuildGhostMaterials(buildGhost.material, customVoxelStyle(0xfb4934), 0.32)
     edgeMaterial.color.setHex(0xfb4934)
   } else {
-    paintBuildGhostMaterials(buildGhost.material, currentBuildVoxelStyle(), 0.55)
+    paintBuildGhostMaterials(buildGhost.material, currentBuildVoxelStyle(target.cell), 0.55)
     edgeMaterial.color.setHex(0xfbf1c7)
   }
 }
@@ -4164,13 +4171,13 @@ const performBuildAction = (event: MouseEvent | PointerEvent, tool: BuildTool) =
     return
   }
   if (!target.valid) return
-  const voxel: MapVoxelV2 = {
+  const voxel: MapVoxelV2 = withDefaultBuilderVoxelColor({
     x: target.cell.x,
     y: target.cell.y,
     z: target.cell.z,
     materialId: props.buildMaterial,
-  }
-  if (props.buildColor) voxel.color = props.buildColor
+    ...(props.buildColor ? { color: props.buildColor } : {}),
+  })
   emit('place-voxel', voxel)
 }
 

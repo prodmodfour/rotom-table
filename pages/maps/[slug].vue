@@ -42,6 +42,7 @@ import {
   getMaterialDef,
   hexColorString,
   voxelKey,
+  withDefaultBuilderVoxelColor,
 } from '~/utils/voxels'
 import { buildMapOccupancy } from '~/utils/mapOccupancy'
 import { getClientId } from '~/utils/clientId'
@@ -846,10 +847,11 @@ const updatePreview = (next: PreviewState) => {
 
 const placeVoxel = (voxel: MapVoxelV2) => {
   if (!map.value || !canEditMap.value) return
+  const styledVoxel = withDefaultBuilderVoxelColor(voxel)
   const next = map.value.voxels.filter(
-    (v) => !(v.x === voxel.x && v.y === voxel.y && v.z === voxel.z),
+    (v) => !(v.x === styledVoxel.x && v.y === styledVoxel.y && v.z === styledVoxel.z),
   )
-  next.push(voxel)
+  next.push(styledVoxel)
   map.value.voxels = next
 }
 
@@ -1115,8 +1117,13 @@ const fillGround = () => {
       if (voxelOccupancy.has(key)) continue
       if (mapOccupancy.has(key)) continue
       if (cellInsidePokemonFootprint(x, groundY, z, spawnedPokemon.value)) continue
-      const voxel: MapVoxelV2 = { x, y: groundY, z, materialId: buildMaterial.value }
-      if (buildColor.value) voxel.color = buildColor.value
+      const voxel: MapVoxelV2 = withDefaultBuilderVoxelColor({
+        x,
+        y: groundY,
+        z,
+        materialId: buildMaterial.value,
+        ...(buildColor.value ? { color: buildColor.value } : {}),
+      })
       additions.push(voxel)
     }
   }

@@ -19879,6 +19879,7 @@
       "y": 0,
       "z": 29,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -20545,6 +20546,7 @@
       "y": 0,
       "z": 30,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -20552,6 +20554,7 @@
       "y": 0,
       "z": 30,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -20559,6 +20562,7 @@
       "y": 0,
       "z": 30,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -20566,6 +20570,7 @@
       "y": 0,
       "z": 30,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -20573,6 +20578,7 @@
       "y": 0,
       "z": 30,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -20580,6 +20586,7 @@
       "y": 0,
       "z": 30,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -20587,6 +20594,7 @@
       "y": 0,
       "z": 30,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -20594,6 +20602,7 @@
       "y": 0,
       "z": 30,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -20601,6 +20610,7 @@
       "y": 0,
       "z": 30,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -20608,6 +20618,7 @@
       "y": 0,
       "z": 30,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -20615,6 +20626,7 @@
       "y": 0,
       "z": 30,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -20622,6 +20634,7 @@
       "y": 0,
       "z": 30,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -20629,6 +20642,7 @@
       "y": 0,
       "z": 30,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -21247,6 +21261,7 @@
       "y": 0,
       "z": 31,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -21254,6 +21269,7 @@
       "y": 0,
       "z": 31,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -21261,6 +21277,7 @@
       "y": 0,
       "z": 31,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -21268,6 +21285,7 @@
       "y": 0,
       "z": 31,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -21275,6 +21293,7 @@
       "y": 0,
       "z": 31,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -21282,6 +21301,7 @@
       "y": 0,
       "z": 31,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -21289,6 +21309,7 @@
       "y": 0,
       "z": 31,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -21296,6 +21317,7 @@
       "y": 0,
       "z": 31,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -21303,6 +21325,7 @@
       "y": 0,
       "z": 31,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -21310,6 +21333,7 @@
       "y": 0,
       "z": 31,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -21317,6 +21341,7 @@
       "y": 0,
       "z": 31,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -21324,6 +21349,7 @@
       "y": 0,
       "z": 31,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -21331,6 +21357,7 @@
       "y": 0,
       "z": 31,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -21338,6 +21365,7 @@
       "y": 0,
       "z": 31,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -21345,6 +21373,7 @@
       "y": 0,
       "z": 31,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -21352,6 +21381,7 @@
       "y": 0,
       "z": 31,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -21359,6 +21389,7 @@
       "y": 0,
       "z": 31,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -21959,6 +21990,7 @@
       "y": 0,
       "z": 32,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -21966,6 +21998,7 @@
       "y": 0,
       "z": 32,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -21973,6 +22006,7 @@
       "y": 0,
       "z": 32,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -21980,6 +22014,7 @@
       "y": 0,
       "z": 32,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -21987,6 +22022,7 @@
       "y": 0,
       "z": 32,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -21994,6 +22030,7 @@
       "y": 0,
       "z": 32,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -22001,6 +22038,7 @@
       "y": 0,
       "z": 32,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -22008,6 +22046,7 @@
       "y": 0,
       "z": 32,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -22015,6 +22054,7 @@
       "y": 0,
       "z": 32,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -22022,6 +22062,7 @@
       "y": 0,
       "z": 32,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -22029,6 +22070,7 @@
       "y": 0,
       "z": 32,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -22036,6 +22078,7 @@
       "y": 0,
       "z": 32,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -22043,6 +22086,7 @@
       "y": 0,
       "z": 32,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -22050,6 +22094,7 @@
       "y": 0,
       "z": 32,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -22057,6 +22102,7 @@
       "y": 0,
       "z": 32,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -22064,6 +22110,7 @@
       "y": 0,
       "z": 32,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -22071,6 +22118,7 @@
       "y": 0,
       "z": 32,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -22078,6 +22126,7 @@
       "y": 0,
       "z": 32,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -22085,6 +22134,7 @@
       "y": 0,
       "z": 32,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -22667,6 +22717,7 @@
       "y": 0,
       "z": 33,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -22674,6 +22725,7 @@
       "y": 0,
       "z": 33,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -22681,6 +22733,7 @@
       "y": 0,
       "z": 33,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -22688,6 +22741,7 @@
       "y": 0,
       "z": 33,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -22695,6 +22749,7 @@
       "y": 0,
       "z": 33,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -22702,6 +22757,7 @@
       "y": 0,
       "z": 33,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -22709,6 +22765,7 @@
       "y": 0,
       "z": 33,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -22716,6 +22773,7 @@
       "y": 0,
       "z": 33,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -22723,6 +22781,7 @@
       "y": 0,
       "z": 33,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -22730,6 +22789,7 @@
       "y": 0,
       "z": 33,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -22737,6 +22797,7 @@
       "y": 0,
       "z": 33,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -22744,6 +22805,7 @@
       "y": 0,
       "z": 33,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -22751,6 +22813,7 @@
       "y": 0,
       "z": 33,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -22758,6 +22821,7 @@
       "y": 0,
       "z": 33,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -22765,6 +22829,7 @@
       "y": 0,
       "z": 33,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -22772,6 +22837,7 @@
       "y": 0,
       "z": 33,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -22779,6 +22845,7 @@
       "y": 0,
       "z": 33,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -22786,6 +22853,7 @@
       "y": 0,
       "z": 33,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -22793,6 +22861,7 @@
       "y": 0,
       "z": 33,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -22800,6 +22869,7 @@
       "y": 0,
       "z": 33,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -22807,6 +22877,7 @@
       "y": 0,
       "z": 33,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -22814,6 +22885,7 @@
       "y": 0,
       "z": 33,
       "materialId": "shallow_water",
+      "color": "#86d7ee",
       "blocksMovement": false
     },
     {
@@ -22821,6 +22893,7 @@
       "y": 0,
       "z": 33,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -23385,6 +23458,7 @@
       "y": 0,
       "z": 34,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -23392,6 +23466,7 @@
       "y": 0,
       "z": 34,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -23399,6 +23474,7 @@
       "y": 0,
       "z": 34,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -23406,6 +23482,7 @@
       "y": 0,
       "z": 34,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -23413,6 +23490,7 @@
       "y": 0,
       "z": 34,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -23420,6 +23498,7 @@
       "y": 0,
       "z": 34,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -23427,6 +23506,7 @@
       "y": 0,
       "z": 34,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -23434,6 +23514,7 @@
       "y": 0,
       "z": 34,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -23441,6 +23522,7 @@
       "y": 0,
       "z": 34,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -23448,6 +23530,7 @@
       "y": 0,
       "z": 34,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -23455,6 +23538,7 @@
       "y": 0,
       "z": 34,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -23462,6 +23546,7 @@
       "y": 0,
       "z": 34,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -23469,6 +23554,7 @@
       "y": 0,
       "z": 34,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -23476,6 +23562,7 @@
       "y": 0,
       "z": 34,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -23483,6 +23570,7 @@
       "y": 0,
       "z": 34,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -23490,6 +23578,7 @@
       "y": 0,
       "z": 34,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -23497,6 +23586,7 @@
       "y": 0,
       "z": 34,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -23504,6 +23594,7 @@
       "y": 0,
       "z": 34,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -23511,6 +23602,7 @@
       "y": 0,
       "z": 34,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -23518,6 +23610,7 @@
       "y": 0,
       "z": 34,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -23525,6 +23618,7 @@
       "y": 0,
       "z": 34,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -23532,6 +23626,7 @@
       "y": 0,
       "z": 34,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -23539,6 +23634,7 @@
       "y": 0,
       "z": 34,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -23546,6 +23642,7 @@
       "y": 0,
       "z": 34,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -23553,6 +23650,7 @@
       "y": 0,
       "z": 34,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -24132,6 +24230,7 @@
       "y": 0,
       "z": 35,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -24139,6 +24238,7 @@
       "y": 0,
       "z": 35,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -24146,6 +24246,7 @@
       "y": 0,
       "z": 35,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -24153,6 +24254,7 @@
       "y": 0,
       "z": 35,
       "materialId": "shallow_water",
+      "color": "#86d7ee",
       "blocksMovement": false
     },
     {
@@ -24160,6 +24262,7 @@
       "y": 0,
       "z": 35,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -24167,6 +24270,7 @@
       "y": 0,
       "z": 35,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -24174,6 +24278,7 @@
       "y": 0,
       "z": 35,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -24181,6 +24286,7 @@
       "y": 0,
       "z": 35,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -24188,6 +24294,7 @@
       "y": 0,
       "z": 35,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -24195,6 +24302,7 @@
       "y": 0,
       "z": 35,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -24202,6 +24310,7 @@
       "y": 0,
       "z": 35,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -24209,6 +24318,7 @@
       "y": 0,
       "z": 35,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -24216,6 +24326,7 @@
       "y": 0,
       "z": 35,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -24223,6 +24334,7 @@
       "y": 0,
       "z": 35,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -24230,6 +24342,7 @@
       "y": 0,
       "z": 35,
       "materialId": "deep_water",
+      "color": "#1d6594",
       "blocksMovement": false
     },
     {
@@ -24237,6 +24350,7 @@
       "y": 0,
       "z": 35,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -24244,6 +24358,7 @@
       "y": 0,
       "z": 35,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -24251,6 +24366,7 @@
       "y": 0,
       "z": 35,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -24258,6 +24374,7 @@
       "y": 0,
       "z": 35,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -24265,6 +24382,7 @@
       "y": 0,
       "z": 35,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -24272,6 +24390,7 @@
       "y": 0,
       "z": 35,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -24279,6 +24398,7 @@
       "y": 0,
       "z": 35,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -24286,6 +24406,7 @@
       "y": 0,
       "z": 35,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -24293,6 +24414,7 @@
       "y": 0,
       "z": 35,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -24300,6 +24422,7 @@
       "y": 0,
       "z": 35,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -24873,6 +24996,7 @@
       "y": 0,
       "z": 36,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -24880,6 +25004,7 @@
       "y": 0,
       "z": 36,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -24887,6 +25012,7 @@
       "y": 0,
       "z": 36,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -24894,6 +25020,7 @@
       "y": 0,
       "z": 36,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -24901,6 +25028,7 @@
       "y": 0,
       "z": 36,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -24908,6 +25036,7 @@
       "y": 0,
       "z": 36,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -24915,6 +25044,7 @@
       "y": 0,
       "z": 36,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -24922,6 +25052,7 @@
       "y": 0,
       "z": 36,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -24929,6 +25060,7 @@
       "y": 0,
       "z": 36,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -24936,6 +25068,7 @@
       "y": 0,
       "z": 36,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -24943,6 +25076,7 @@
       "y": 0,
       "z": 36,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -24950,6 +25084,7 @@
       "y": 0,
       "z": 36,
       "materialId": "deep_water",
+      "color": "#2376a8",
       "blocksMovement": false
     },
     {
@@ -24957,6 +25092,7 @@
       "y": 0,
       "z": 36,
       "materialId": "deep_water",
+      "color": "#1d6594",
       "blocksMovement": false
     },
     {
@@ -24964,6 +25100,7 @@
       "y": 0,
       "z": 36,
       "materialId": "deep_water",
+      "color": "#17527c",
       "blocksMovement": false
     },
     {
@@ -24971,6 +25108,7 @@
       "y": 0,
       "z": 36,
       "materialId": "deep_water",
+      "color": "#1d6594",
       "blocksMovement": false
     },
     {
@@ -24978,6 +25116,7 @@
       "y": 0,
       "z": 36,
       "materialId": "deep_water",
+      "color": "#17527c",
       "blocksMovement": false
     },
     {
@@ -24985,6 +25124,7 @@
       "y": 0,
       "z": 36,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -24992,6 +25132,7 @@
       "y": 0,
       "z": 36,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -24999,6 +25140,7 @@
       "y": 0,
       "z": 36,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -25006,6 +25148,7 @@
       "y": 0,
       "z": 36,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -25013,6 +25156,7 @@
       "y": 0,
       "z": 36,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -25020,6 +25164,7 @@
       "y": 0,
       "z": 36,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -25550,13 +25695,15 @@
       "x": 2,
       "y": 0,
       "z": 37,
-      "materialId": "shallow_water"
+      "materialId": "shallow_water",
+      "color": "#3f98c8"
     },
     {
       "x": 3,
       "y": 0,
       "z": 37,
-      "materialId": "shallow_water"
+      "materialId": "shallow_water",
+      "color": "#48a9d6"
     },
     {
       "x": 4,
@@ -25580,7 +25727,8 @@
       "x": 7,
       "y": 0,
       "z": 37,
-      "materialId": "shallow_water"
+      "materialId": "shallow_water",
+      "color": "#58b7df"
     },
     {
       "x": 8,
@@ -25593,6 +25741,7 @@
       "y": 0,
       "z": 37,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -25600,6 +25749,7 @@
       "y": 0,
       "z": 37,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -25607,6 +25757,7 @@
       "y": 0,
       "z": 37,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -25614,6 +25765,7 @@
       "y": 0,
       "z": 37,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -25621,6 +25773,7 @@
       "y": 0,
       "z": 37,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -25628,6 +25781,7 @@
       "y": 0,
       "z": 37,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -25635,6 +25789,7 @@
       "y": 0,
       "z": 37,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -25642,6 +25797,7 @@
       "y": 0,
       "z": 37,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -25649,6 +25805,7 @@
       "y": 0,
       "z": 37,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -25656,6 +25813,7 @@
       "y": 0,
       "z": 37,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -25663,6 +25821,7 @@
       "y": 0,
       "z": 37,
       "materialId": "deep_water",
+      "color": "#17527c",
       "blocksMovement": false
     },
     {
@@ -25670,6 +25829,7 @@
       "y": 0,
       "z": 37,
       "materialId": "deep_water",
+      "color": "#2376a8",
       "blocksMovement": false
     },
     {
@@ -25677,6 +25837,7 @@
       "y": 0,
       "z": 37,
       "materialId": "deep_water",
+      "color": "#1d6594",
       "blocksMovement": false
     },
     {
@@ -25684,6 +25845,7 @@
       "y": 0,
       "z": 37,
       "materialId": "deep_water",
+      "color": "#2376a8",
       "blocksMovement": false
     },
     {
@@ -25691,6 +25853,7 @@
       "y": 0,
       "z": 37,
       "materialId": "deep_water",
+      "color": "#1d6594",
       "blocksMovement": false
     },
     {
@@ -25698,6 +25861,7 @@
       "y": 0,
       "z": 37,
       "materialId": "deep_water",
+      "color": "#2376a8",
       "blocksMovement": false
     },
     {
@@ -25705,6 +25869,7 @@
       "y": 0,
       "z": 37,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -26235,13 +26400,15 @@
       "x": 2,
       "y": 0,
       "z": 38,
-      "materialId": "shallow_water"
+      "materialId": "shallow_water",
+      "color": "#48a9d6"
     },
     {
       "x": 3,
       "y": 0,
       "z": 38,
-      "materialId": "shallow_water"
+      "materialId": "shallow_water",
+      "color": "#3f98c8"
     },
     {
       "x": 4,
@@ -26265,7 +26432,8 @@
       "x": 7,
       "y": 0,
       "z": 38,
-      "materialId": "shallow_water"
+      "materialId": "shallow_water",
+      "color": "#58b7df"
     },
     {
       "x": 8,
@@ -26308,6 +26476,7 @@
       "y": 0,
       "z": 38,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -26315,6 +26484,7 @@
       "y": 0,
       "z": 38,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -26322,6 +26492,7 @@
       "y": 0,
       "z": 38,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -26329,6 +26500,7 @@
       "y": 0,
       "z": 38,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -26336,6 +26508,7 @@
       "y": 0,
       "z": 38,
       "materialId": "deep_water",
+      "color": "#2376a8",
       "blocksMovement": false
     },
     {
@@ -26343,6 +26516,7 @@
       "y": 0,
       "z": 38,
       "materialId": "deep_water",
+      "color": "#17527c",
       "blocksMovement": false
     },
     {
@@ -26350,6 +26524,7 @@
       "y": 0,
       "z": 38,
       "materialId": "deep_water",
+      "color": "#2376a8",
       "blocksMovement": false
     },
     {
@@ -26357,6 +26532,7 @@
       "y": 0,
       "z": 38,
       "materialId": "deep_water",
+      "color": "#17527c",
       "blocksMovement": false
     },
     {
@@ -26364,6 +26540,7 @@
       "y": 0,
       "z": 38,
       "materialId": "deep_water",
+      "color": "#1d6594",
       "blocksMovement": false
     },
     {
@@ -26371,6 +26548,7 @@
       "y": 0,
       "z": 38,
       "materialId": "deep_water",
+      "color": "#17527c",
       "blocksMovement": false
     },
     {
@@ -26378,6 +26556,7 @@
       "y": 0,
       "z": 38,
       "materialId": "deep_water",
+      "color": "#1d6594",
       "blocksMovement": false
     },
     {
@@ -26385,6 +26564,7 @@
       "y": 0,
       "z": 38,
       "materialId": "deep_water",
+      "color": "#17527c",
       "blocksMovement": false
     },
     {
@@ -26392,6 +26572,7 @@
       "y": 0,
       "z": 38,
       "materialId": "deep_water",
+      "color": "#1d6594",
       "blocksMovement": false
     },
     {
@@ -26399,6 +26580,7 @@
       "y": 0,
       "z": 38,
       "materialId": "deep_water",
+      "color": "#17527c",
       "blocksMovement": false
     },
     {
@@ -26406,6 +26588,7 @@
       "y": 0,
       "z": 38,
       "materialId": "deep_water",
+      "color": "#1d6594",
       "blocksMovement": false
     },
     {
@@ -26413,6 +26596,7 @@
       "y": 0,
       "z": 38,
       "materialId": "deep_water",
+      "color": "#17527c",
       "blocksMovement": false
     },
     {
@@ -26420,6 +26604,7 @@
       "y": 0,
       "z": 38,
       "materialId": "deep_water",
+      "color": "#1d6594",
       "blocksMovement": false
     },
     {
@@ -26427,6 +26612,7 @@
       "y": 0,
       "z": 38,
       "materialId": "deep_water",
+      "color": "#17527c",
       "blocksMovement": false
     },
     {
@@ -26434,6 +26620,7 @@
       "y": 0,
       "z": 38,
       "materialId": "deep_water",
+      "color": "#1d6594",
       "blocksMovement": false
     },
     {
@@ -26441,6 +26628,7 @@
       "y": 0,
       "z": 38,
       "materialId": "deep_water",
+      "color": "#17527c",
       "blocksMovement": false
     },
     {
@@ -26448,6 +26636,7 @@
       "y": 0,
       "z": 38,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -26958,43 +27147,50 @@
       "x": 2,
       "y": 0,
       "z": 39,
-      "materialId": "deep_water"
+      "materialId": "deep_water",
+      "color": "#17527c"
     },
     {
       "x": 3,
       "y": 0,
       "z": 39,
-      "materialId": "deep_water"
+      "materialId": "deep_water",
+      "color": "#2376a8"
     },
     {
       "x": 4,
       "y": 0,
       "z": 39,
-      "materialId": "deep_water"
+      "materialId": "deep_water",
+      "color": "#17527c"
     },
     {
       "x": 5,
       "y": 0,
       "z": 39,
-      "materialId": "deep_water"
+      "materialId": "deep_water",
+      "color": "#1d6594"
     },
     {
       "x": 6,
       "y": 0,
       "z": 39,
-      "materialId": "deep_water"
+      "materialId": "deep_water",
+      "color": "#17527c"
     },
     {
       "x": 7,
       "y": 0,
       "z": 39,
-      "materialId": "deep_water"
+      "materialId": "deep_water",
+      "color": "#1d6594"
     },
     {
       "x": 8,
       "y": 0,
       "z": 39,
-      "materialId": "deep_water"
+      "materialId": "deep_water",
+      "color": "#17527c"
     },
     {
       "x": 9,
@@ -27031,6 +27227,7 @@
       "y": 0,
       "z": 39,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -27038,6 +27235,7 @@
       "y": 0,
       "z": 39,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -27045,6 +27243,7 @@
       "y": 0,
       "z": 39,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -27052,6 +27251,7 @@
       "y": 0,
       "z": 39,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -27059,6 +27259,7 @@
       "y": 0,
       "z": 39,
       "materialId": "deep_water",
+      "color": "#1d6594",
       "blocksMovement": false
     },
     {
@@ -27066,6 +27267,7 @@
       "y": 0,
       "z": 39,
       "materialId": "deep_water",
+      "color": "#17527c",
       "blocksMovement": false
     },
     {
@@ -27073,6 +27275,7 @@
       "y": 0,
       "z": 39,
       "materialId": "deep_water",
+      "color": "#1d6594",
       "blocksMovement": false
     },
     {
@@ -27080,6 +27283,7 @@
       "y": 0,
       "z": 39,
       "materialId": "deep_water",
+      "color": "#2376a8",
       "blocksMovement": false
     },
     {
@@ -27087,6 +27291,7 @@
       "y": 0,
       "z": 39,
       "materialId": "deep_water",
+      "color": "#1d6594",
       "blocksMovement": false
     },
     {
@@ -27094,6 +27299,7 @@
       "y": 0,
       "z": 39,
       "materialId": "deep_water",
+      "color": "#2376a8",
       "blocksMovement": false
     },
     {
@@ -27101,6 +27307,7 @@
       "y": 0,
       "z": 39,
       "materialId": "deep_water",
+      "color": "#1d6594",
       "blocksMovement": false
     },
     {
@@ -27108,6 +27315,7 @@
       "y": 0,
       "z": 39,
       "materialId": "deep_water",
+      "color": "#2376a8",
       "blocksMovement": false
     },
     {
@@ -27115,6 +27323,7 @@
       "y": 0,
       "z": 39,
       "materialId": "deep_water",
+      "color": "#17527c",
       "blocksMovement": false
     },
     {
@@ -27122,6 +27331,7 @@
       "y": 0,
       "z": 39,
       "materialId": "deep_water",
+      "color": "#2376a8",
       "blocksMovement": false
     },
     {
@@ -27129,6 +27339,7 @@
       "y": 0,
       "z": 39,
       "materialId": "deep_water",
+      "color": "#17527c",
       "blocksMovement": false
     },
     {
@@ -27136,6 +27347,7 @@
       "y": 0,
       "z": 39,
       "materialId": "deep_water",
+      "color": "#2376a8",
       "blocksMovement": false
     },
     {
@@ -27143,6 +27355,7 @@
       "y": 0,
       "z": 39,
       "materialId": "deep_water",
+      "color": "#17527c",
       "blocksMovement": false
     },
     {
@@ -27150,6 +27363,7 @@
       "y": 0,
       "z": 39,
       "materialId": "deep_water",
+      "color": "#1d6594",
       "blocksMovement": false
     },
     {
@@ -27157,6 +27371,7 @@
       "y": 0,
       "z": 39,
       "materialId": "deep_water",
+      "color": "#17527c",
       "blocksMovement": false
     },
     {
@@ -27164,6 +27379,7 @@
       "y": 0,
       "z": 39,
       "materialId": "deep_water",
+      "color": "#1d6594",
       "blocksMovement": false
     },
     {
@@ -27171,6 +27387,7 @@
       "y": 0,
       "z": 39,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -27683,43 +27900,50 @@
       "x": 2,
       "y": 0,
       "z": 40,
-      "materialId": "deep_water"
+      "materialId": "deep_water",
+      "color": "#2376a8"
     },
     {
       "x": 3,
       "y": 0,
       "z": 40,
-      "materialId": "deep_water"
+      "materialId": "deep_water",
+      "color": "#17527c"
     },
     {
       "x": 4,
       "y": 0,
       "z": 40,
-      "materialId": "deep_water"
+      "materialId": "deep_water",
+      "color": "#1d6594"
     },
     {
       "x": 5,
       "y": 0,
       "z": 40,
-      "materialId": "deep_water"
+      "materialId": "deep_water",
+      "color": "#2376a8"
     },
     {
       "x": 6,
       "y": 0,
       "z": 40,
-      "materialId": "deep_water"
+      "materialId": "deep_water",
+      "color": "#1d6594"
     },
     {
       "x": 7,
       "y": 0,
       "z": 40,
-      "materialId": "deep_water"
+      "materialId": "deep_water",
+      "color": "#2376a8"
     },
     {
       "x": 8,
       "y": 0,
       "z": 40,
-      "materialId": "deep_water"
+      "materialId": "deep_water",
+      "color": "#17527c"
     },
     {
       "x": 9,
@@ -27756,6 +27980,7 @@
       "y": 0,
       "z": 40,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -27763,6 +27988,7 @@
       "y": 0,
       "z": 40,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -27770,6 +27996,7 @@
       "y": 0,
       "z": 40,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -27777,6 +28004,7 @@
       "y": 0,
       "z": 40,
       "materialId": "deep_water",
+      "color": "#17527c",
       "blocksMovement": false
     },
     {
@@ -27784,6 +28012,7 @@
       "y": 0,
       "z": 40,
       "materialId": "deep_water",
+      "color": "#1d6594",
       "blocksMovement": false
     },
     {
@@ -27791,6 +28020,7 @@
       "y": 0,
       "z": 40,
       "materialId": "deep_water",
+      "color": "#2376a8",
       "blocksMovement": false
     },
     {
@@ -27798,6 +28028,7 @@
       "y": 0,
       "z": 40,
       "materialId": "deep_water",
+      "color": "#1d6594",
       "blocksMovement": false
     },
     {
@@ -27805,6 +28036,7 @@
       "y": 0,
       "z": 40,
       "materialId": "deep_water",
+      "color": "#2376a8",
       "blocksMovement": false
     },
     {
@@ -27812,6 +28044,7 @@
       "y": 0,
       "z": 40,
       "materialId": "deep_water",
+      "color": "#17527c",
       "blocksMovement": false
     },
     {
@@ -27819,6 +28052,7 @@
       "y": 0,
       "z": 40,
       "materialId": "deep_water",
+      "color": "#2376a8",
       "blocksMovement": false
     },
     {
@@ -27826,6 +28060,7 @@
       "y": 0,
       "z": 40,
       "materialId": "deep_water",
+      "color": "#17527c",
       "blocksMovement": false
     },
     {
@@ -27833,6 +28068,7 @@
       "y": 0,
       "z": 40,
       "materialId": "deep_water",
+      "color": "#1d6594",
       "blocksMovement": false
     },
     {
@@ -27840,6 +28076,7 @@
       "y": 0,
       "z": 40,
       "materialId": "deep_water",
+      "color": "#2376a8",
       "blocksMovement": false
     },
     {
@@ -27847,6 +28084,7 @@
       "y": 0,
       "z": 40,
       "materialId": "deep_water",
+      "color": "#1d6594",
       "blocksMovement": false
     },
     {
@@ -27854,6 +28092,7 @@
       "y": 0,
       "z": 40,
       "materialId": "deep_water",
+      "color": "#2376a8",
       "blocksMovement": false
     },
     {
@@ -27861,6 +28100,7 @@
       "y": 0,
       "z": 40,
       "materialId": "deep_water",
+      "color": "#17527c",
       "blocksMovement": false
     },
     {
@@ -27868,6 +28108,7 @@
       "y": 0,
       "z": 40,
       "materialId": "deep_water",
+      "color": "#2376a8",
       "blocksMovement": false
     },
     {
@@ -27875,6 +28116,7 @@
       "y": 0,
       "z": 40,
       "materialId": "deep_water",
+      "color": "#17527c",
       "blocksMovement": false
     },
     {
@@ -27882,6 +28124,7 @@
       "y": 0,
       "z": 40,
       "materialId": "deep_water",
+      "color": "#1d6594",
       "blocksMovement": false
     },
     {
@@ -27889,6 +28132,7 @@
       "y": 0,
       "z": 40,
       "materialId": "deep_water",
+      "color": "#2376a8",
       "blocksMovement": false
     },
     {
@@ -27896,6 +28140,7 @@
       "y": 0,
       "z": 40,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -28419,43 +28664,50 @@
       "x": 2,
       "y": 0,
       "z": 41,
-      "materialId": "deep_water"
+      "materialId": "deep_water",
+      "color": "#17527c"
     },
     {
       "x": 3,
       "y": 0,
       "z": 41,
-      "materialId": "deep_water"
+      "materialId": "deep_water",
+      "color": "#1d6594"
     },
     {
       "x": 4,
       "y": 0,
       "z": 41,
-      "materialId": "deep_water"
+      "materialId": "deep_water",
+      "color": "#2376a8"
     },
     {
       "x": 5,
       "y": 0,
       "z": 41,
-      "materialId": "deep_water"
+      "materialId": "deep_water",
+      "color": "#17527c"
     },
     {
       "x": 6,
       "y": 0,
       "z": 41,
-      "materialId": "deep_water"
+      "materialId": "deep_water",
+      "color": "#2376a8"
     },
     {
       "x": 7,
       "y": 0,
       "z": 41,
-      "materialId": "deep_water"
+      "materialId": "deep_water",
+      "color": "#17527c"
     },
     {
       "x": 8,
       "y": 0,
       "z": 41,
-      "materialId": "deep_water"
+      "materialId": "deep_water",
+      "color": "#1d6594"
     },
     {
       "x": 9,
@@ -28492,6 +28744,7 @@
       "y": 0,
       "z": 41,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -28499,6 +28752,7 @@
       "y": 0,
       "z": 41,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -28506,6 +28760,7 @@
       "y": 0,
       "z": 41,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -28513,6 +28768,7 @@
       "y": 0,
       "z": 41,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -28520,6 +28776,7 @@
       "y": 0,
       "z": 41,
       "materialId": "deep_water",
+      "color": "#1d6594",
       "blocksMovement": false
     },
     {
@@ -28527,6 +28784,7 @@
       "y": 0,
       "z": 41,
       "materialId": "deep_water",
+      "color": "#2376a8",
       "blocksMovement": false
     },
     {
@@ -28534,6 +28792,7 @@
       "y": 0,
       "z": 41,
       "materialId": "deep_water",
+      "color": "#17527c",
       "blocksMovement": false
     },
     {
@@ -28541,6 +28800,7 @@
       "y": 0,
       "z": 41,
       "materialId": "deep_water",
+      "color": "#2376a8",
       "blocksMovement": false
     },
     {
@@ -28548,6 +28808,7 @@
       "y": 0,
       "z": 41,
       "materialId": "deep_water",
+      "color": "#17527c",
       "blocksMovement": false
     },
     {
@@ -28555,6 +28816,7 @@
       "y": 0,
       "z": 41,
       "materialId": "deep_water",
+      "color": "#1d6594",
       "blocksMovement": false
     },
     {
@@ -28562,6 +28824,7 @@
       "y": 0,
       "z": 41,
       "materialId": "deep_water",
+      "color": "#2376a8",
       "blocksMovement": false
     },
     {
@@ -28569,6 +28832,7 @@
       "y": 0,
       "z": 41,
       "materialId": "deep_water",
+      "color": "#17527c",
       "blocksMovement": false
     },
     {
@@ -28576,6 +28840,7 @@
       "y": 0,
       "z": 41,
       "materialId": "deep_water",
+      "color": "#2376a8",
       "blocksMovement": false
     },
     {
@@ -28583,6 +28848,7 @@
       "y": 0,
       "z": 41,
       "materialId": "deep_water",
+      "color": "#17527c",
       "blocksMovement": false
     },
     {
@@ -28590,6 +28856,7 @@
       "y": 0,
       "z": 41,
       "materialId": "deep_water",
+      "color": "#1d6594",
       "blocksMovement": false
     },
     {
@@ -28597,6 +28864,7 @@
       "y": 0,
       "z": 41,
       "materialId": "deep_water",
+      "color": "#2376a8",
       "blocksMovement": false
     },
     {
@@ -28604,6 +28872,7 @@
       "y": 0,
       "z": 41,
       "materialId": "deep_water",
+      "color": "#17527c",
       "blocksMovement": false
     },
     {
@@ -28611,6 +28880,7 @@
       "y": 0,
       "z": 41,
       "materialId": "deep_water",
+      "color": "#2376a8",
       "blocksMovement": false
     },
     {
@@ -28618,6 +28888,7 @@
       "y": 0,
       "z": 41,
       "materialId": "deep_water",
+      "color": "#17527c",
       "blocksMovement": false
     },
     {
@@ -28625,6 +28896,7 @@
       "y": 0,
       "z": 41,
       "materialId": "deep_water",
+      "color": "#1d6594",
       "blocksMovement": false
     },
     {
@@ -28632,6 +28904,7 @@
       "y": 0,
       "z": 41,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -29144,43 +29417,50 @@
       "x": 2,
       "y": 0,
       "z": 42,
-      "materialId": "deep_water"
+      "materialId": "deep_water",
+      "color": "#1d6594"
     },
     {
       "x": 3,
       "y": 0,
       "z": 42,
-      "materialId": "deep_water"
+      "materialId": "deep_water",
+      "color": "#2376a8"
     },
     {
       "x": 4,
       "y": 0,
       "z": 42,
-      "materialId": "deep_water"
+      "materialId": "deep_water",
+      "color": "#17527c"
     },
     {
       "x": 5,
       "y": 0,
       "z": 42,
-      "materialId": "deep_water"
+      "materialId": "deep_water",
+      "color": "#1d6594"
     },
     {
       "x": 6,
       "y": 0,
       "z": 42,
-      "materialId": "deep_water"
+      "materialId": "deep_water",
+      "color": "#2376a8"
     },
     {
       "x": 7,
       "y": 0,
       "z": 42,
-      "materialId": "deep_water"
+      "materialId": "deep_water",
+      "color": "#1d6594"
     },
     {
       "x": 8,
       "y": 0,
       "z": 42,
-      "materialId": "deep_water"
+      "materialId": "deep_water",
+      "color": "#2376a8"
     },
     {
       "x": 9,
@@ -29217,6 +29497,7 @@
       "y": 0,
       "z": 42,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -29224,6 +29505,7 @@
       "y": 0,
       "z": 42,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -29231,6 +29513,7 @@
       "y": 0,
       "z": 42,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -29238,6 +29521,7 @@
       "y": 0,
       "z": 42,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -29245,6 +29529,7 @@
       "y": 0,
       "z": 42,
       "materialId": "deep_water",
+      "color": "#1d6594",
       "blocksMovement": false
     },
     {
@@ -29252,6 +29537,7 @@
       "y": 0,
       "z": 42,
       "materialId": "deep_water",
+      "color": "#2376a8",
       "blocksMovement": false
     },
     {
@@ -29259,6 +29545,7 @@
       "y": 0,
       "z": 42,
       "materialId": "deep_water",
+      "color": "#17527c",
       "blocksMovement": false
     },
     {
@@ -29266,6 +29553,7 @@
       "y": 0,
       "z": 42,
       "materialId": "deep_water",
+      "color": "#1d6594",
       "blocksMovement": false
     },
     {
@@ -29273,6 +29561,7 @@
       "y": 0,
       "z": 42,
       "materialId": "deep_water",
+      "color": "#2376a8",
       "blocksMovement": false
     },
     {
@@ -29280,6 +29569,7 @@
       "y": 0,
       "z": 42,
       "materialId": "deep_water",
+      "color": "#17527c",
       "blocksMovement": false
     },
     {
@@ -29287,6 +29577,7 @@
       "y": 0,
       "z": 42,
       "materialId": "deep_water",
+      "color": "#1d6594",
       "blocksMovement": false
     },
     {
@@ -29294,6 +29585,7 @@
       "y": 0,
       "z": 42,
       "materialId": "deep_water",
+      "color": "#2376a8",
       "blocksMovement": false
     },
     {
@@ -29301,6 +29593,7 @@
       "y": 0,
       "z": 42,
       "materialId": "deep_water",
+      "color": "#1d6594",
       "blocksMovement": false
     },
     {
@@ -29308,6 +29601,7 @@
       "y": 0,
       "z": 42,
       "materialId": "deep_water",
+      "color": "#2376a8",
       "blocksMovement": false
     },
     {
@@ -29315,6 +29609,7 @@
       "y": 0,
       "z": 42,
       "materialId": "deep_water",
+      "color": "#17527c",
       "blocksMovement": false
     },
     {
@@ -29322,6 +29617,7 @@
       "y": 0,
       "z": 42,
       "materialId": "deep_water",
+      "color": "#1d6594",
       "blocksMovement": false
     },
     {
@@ -29329,6 +29625,7 @@
       "y": 0,
       "z": 42,
       "materialId": "deep_water",
+      "color": "#2376a8",
       "blocksMovement": false
     },
     {
@@ -29336,6 +29633,7 @@
       "y": 0,
       "z": 42,
       "materialId": "deep_water",
+      "color": "#17527c",
       "blocksMovement": false
     },
     {
@@ -29343,6 +29641,7 @@
       "y": 0,
       "z": 42,
       "materialId": "deep_water",
+      "color": "#1d6594",
       "blocksMovement": false
     },
     {
@@ -29350,6 +29649,7 @@
       "y": 0,
       "z": 42,
       "materialId": "deep_water",
+      "color": "#2376a8",
       "blocksMovement": false
     },
     {
@@ -29357,6 +29657,7 @@
       "y": 0,
       "z": 42,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -29867,43 +30168,50 @@
       "x": 2,
       "y": 0,
       "z": 43,
-      "materialId": "deep_water"
+      "materialId": "deep_water",
+      "color": "#2376a8"
     },
     {
       "x": 3,
       "y": 0,
       "z": 43,
-      "materialId": "deep_water"
+      "materialId": "deep_water",
+      "color": "#17527c"
     },
     {
       "x": 4,
       "y": 0,
       "z": 43,
-      "materialId": "deep_water"
+      "materialId": "deep_water",
+      "color": "#1d6594"
     },
     {
       "x": 5,
       "y": 0,
       "z": 43,
-      "materialId": "deep_water"
+      "materialId": "deep_water",
+      "color": "#2376a8"
     },
     {
       "x": 6,
       "y": 0,
       "z": 43,
-      "materialId": "deep_water"
+      "materialId": "deep_water",
+      "color": "#17527c"
     },
     {
       "x": 7,
       "y": 0,
       "z": 43,
-      "materialId": "deep_water"
+      "materialId": "deep_water",
+      "color": "#1d6594"
     },
     {
       "x": 8,
       "y": 0,
       "z": 43,
-      "materialId": "deep_water"
+      "materialId": "deep_water",
+      "color": "#2376a8"
     },
     {
       "x": 9,
@@ -29940,6 +30248,7 @@
       "y": 0,
       "z": 43,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -29947,6 +30256,7 @@
       "y": 0,
       "z": 43,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -29954,6 +30264,7 @@
       "y": 0,
       "z": 43,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -29961,6 +30272,7 @@
       "y": 0,
       "z": 43,
       "materialId": "shallow_water",
+      "color": "#86d7ee",
       "blocksMovement": false
     },
     {
@@ -29968,6 +30280,7 @@
       "y": 0,
       "z": 43,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -29975,6 +30288,7 @@
       "y": 0,
       "z": 43,
       "materialId": "deep_water",
+      "color": "#2376a8",
       "blocksMovement": false
     },
     {
@@ -29982,6 +30296,7 @@
       "y": 0,
       "z": 43,
       "materialId": "deep_water",
+      "color": "#17527c",
       "blocksMovement": false
     },
     {
@@ -29989,6 +30304,7 @@
       "y": 0,
       "z": 43,
       "materialId": "deep_water",
+      "color": "#1d6594",
       "blocksMovement": false
     },
     {
@@ -29996,6 +30312,7 @@
       "y": 0,
       "z": 43,
       "materialId": "deep_water",
+      "color": "#2376a8",
       "blocksMovement": false
     },
     {
@@ -30003,6 +30320,7 @@
       "y": 0,
       "z": 43,
       "materialId": "deep_water",
+      "color": "#17527c",
       "blocksMovement": false
     },
     {
@@ -30010,6 +30328,7 @@
       "y": 0,
       "z": 43,
       "materialId": "deep_water",
+      "color": "#1d6594",
       "blocksMovement": false
     },
     {
@@ -30017,6 +30336,7 @@
       "y": 0,
       "z": 43,
       "materialId": "deep_water",
+      "color": "#2376a8",
       "blocksMovement": false
     },
     {
@@ -30024,6 +30344,7 @@
       "y": 0,
       "z": 43,
       "materialId": "deep_water",
+      "color": "#17527c",
       "blocksMovement": false
     },
     {
@@ -30031,6 +30352,7 @@
       "y": 0,
       "z": 43,
       "materialId": "deep_water",
+      "color": "#1d6594",
       "blocksMovement": false
     },
     {
@@ -30038,6 +30360,7 @@
       "y": 0,
       "z": 43,
       "materialId": "deep_water",
+      "color": "#2376a8",
       "blocksMovement": false
     },
     {
@@ -30045,6 +30368,7 @@
       "y": 0,
       "z": 43,
       "materialId": "deep_water",
+      "color": "#17527c",
       "blocksMovement": false
     },
     {
@@ -30052,6 +30376,7 @@
       "y": 0,
       "z": 43,
       "materialId": "deep_water",
+      "color": "#1d6594",
       "blocksMovement": false
     },
     {
@@ -30059,6 +30384,7 @@
       "y": 0,
       "z": 43,
       "materialId": "deep_water",
+      "color": "#2376a8",
       "blocksMovement": false
     },
     {
@@ -30066,6 +30392,7 @@
       "y": 0,
       "z": 43,
       "materialId": "deep_water",
+      "color": "#17527c",
       "blocksMovement": false
     },
     {
@@ -30073,6 +30400,7 @@
       "y": 0,
       "z": 43,
       "materialId": "deep_water",
+      "color": "#1d6594",
       "blocksMovement": false
     },
     {
@@ -30080,6 +30408,7 @@
       "y": 0,
       "z": 43,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -30590,13 +30919,15 @@
       "x": 2,
       "y": 0,
       "z": 44,
-      "materialId": "shallow_water"
+      "materialId": "shallow_water",
+      "color": "#58b7df"
     },
     {
       "x": 3,
       "y": 0,
       "z": 44,
-      "materialId": "shallow_water"
+      "materialId": "shallow_water",
+      "color": "#3f98c8"
     },
     {
       "x": 4,
@@ -30620,7 +30951,8 @@
       "x": 7,
       "y": 0,
       "z": 44,
-      "materialId": "shallow_water"
+      "materialId": "shallow_water",
+      "color": "#48a9d6"
     },
     {
       "x": 8,
@@ -30639,6 +30971,7 @@
       "y": 0,
       "z": 44,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -30646,6 +30979,7 @@
       "y": 0,
       "z": 44,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -30653,6 +30987,7 @@
       "y": 0,
       "z": 44,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -30660,6 +30995,7 @@
       "y": 0,
       "z": 44,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -30667,6 +31003,7 @@
       "y": 0,
       "z": 44,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -30674,6 +31011,7 @@
       "y": 0,
       "z": 44,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -30681,6 +31019,7 @@
       "y": 0,
       "z": 44,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -30688,6 +31027,7 @@
       "y": 0,
       "z": 44,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -30695,6 +31035,7 @@
       "y": 0,
       "z": 44,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -30702,6 +31043,7 @@
       "y": 0,
       "z": 44,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -30709,6 +31051,7 @@
       "y": 0,
       "z": 44,
       "materialId": "deep_water",
+      "color": "#2376a8",
       "blocksMovement": false
     },
     {
@@ -30716,6 +31059,7 @@
       "y": 0,
       "z": 44,
       "materialId": "deep_water",
+      "color": "#17527c",
       "blocksMovement": false
     },
     {
@@ -30723,6 +31067,7 @@
       "y": 0,
       "z": 44,
       "materialId": "deep_water",
+      "color": "#1d6594",
       "blocksMovement": false
     },
     {
@@ -30730,6 +31075,7 @@
       "y": 0,
       "z": 44,
       "materialId": "deep_water",
+      "color": "#2376a8",
       "blocksMovement": false
     },
     {
@@ -30737,6 +31083,7 @@
       "y": 0,
       "z": 44,
       "materialId": "deep_water",
+      "color": "#17527c",
       "blocksMovement": false
     },
     {
@@ -30744,6 +31091,7 @@
       "y": 0,
       "z": 44,
       "materialId": "deep_water",
+      "color": "#1d6594",
       "blocksMovement": false
     },
     {
@@ -30751,6 +31099,7 @@
       "y": 0,
       "z": 44,
       "materialId": "deep_water",
+      "color": "#2376a8",
       "blocksMovement": false
     },
     {
@@ -30758,6 +31107,7 @@
       "y": 0,
       "z": 44,
       "materialId": "deep_water",
+      "color": "#17527c",
       "blocksMovement": false
     },
     {
@@ -30765,6 +31115,7 @@
       "y": 0,
       "z": 44,
       "materialId": "deep_water",
+      "color": "#1d6594",
       "blocksMovement": false
     },
     {
@@ -30772,6 +31123,7 @@
       "y": 0,
       "z": 44,
       "materialId": "deep_water",
+      "color": "#2376a8",
       "blocksMovement": false
     },
     {
@@ -30779,6 +31131,7 @@
       "y": 0,
       "z": 44,
       "materialId": "deep_water",
+      "color": "#2376a8",
       "blocksMovement": false
     },
     {
@@ -30786,6 +31139,7 @@
       "y": 0,
       "z": 44,
       "materialId": "deep_water",
+      "color": "#17527c",
       "blocksMovement": false
     },
     {
@@ -30793,6 +31147,7 @@
       "y": 0,
       "z": 44,
       "materialId": "deep_water",
+      "color": "#1d6594",
       "blocksMovement": false
     },
     {
@@ -30800,6 +31155,7 @@
       "y": 0,
       "z": 44,
       "materialId": "deep_water",
+      "color": "#2376a8",
       "blocksMovement": false
     },
     {
@@ -30807,6 +31163,7 @@
       "y": 0,
       "z": 44,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -31317,13 +31674,15 @@
       "x": 2,
       "y": 0,
       "z": 45,
-      "materialId": "shallow_water"
+      "materialId": "shallow_water",
+      "color": "#48a9d6"
     },
     {
       "x": 3,
       "y": 0,
       "z": 45,
-      "materialId": "shallow_water"
+      "materialId": "shallow_water",
+      "color": "#86d7ee"
     },
     {
       "x": 4,
@@ -31347,7 +31706,8 @@
       "x": 7,
       "y": 0,
       "z": 45,
-      "materialId": "shallow_water"
+      "materialId": "shallow_water",
+      "color": "#58b7df"
     },
     {
       "x": 8,
@@ -31372,6 +31732,7 @@
       "y": 0,
       "z": 45,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -31379,6 +31740,7 @@
       "y": 0,
       "z": 45,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -31386,6 +31748,7 @@
       "y": 0,
       "z": 45,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -31393,6 +31756,7 @@
       "y": 0,
       "z": 45,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -31400,6 +31764,7 @@
       "y": 0,
       "z": 45,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -31407,6 +31772,7 @@
       "y": 0,
       "z": 45,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -31414,6 +31780,7 @@
       "y": 0,
       "z": 45,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -31421,6 +31788,7 @@
       "y": 0,
       "z": 45,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -31428,6 +31796,7 @@
       "y": 0,
       "z": 45,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -31435,6 +31804,7 @@
       "y": 0,
       "z": 45,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -31442,6 +31812,7 @@
       "y": 0,
       "z": 45,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -31449,6 +31820,7 @@
       "y": 0,
       "z": 45,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -31456,6 +31828,7 @@
       "y": 0,
       "z": 45,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -31463,6 +31836,7 @@
       "y": 0,
       "z": 45,
       "materialId": "deep_water",
+      "color": "#2376a8",
       "blocksMovement": false
     },
     {
@@ -31470,6 +31844,7 @@
       "y": 0,
       "z": 45,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -31477,6 +31852,7 @@
       "y": 0,
       "z": 45,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -31484,6 +31860,7 @@
       "y": 0,
       "z": 45,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -31491,6 +31868,7 @@
       "y": 0,
       "z": 45,
       "materialId": "shallow_water",
+      "color": "#86d7ee",
       "blocksMovement": false
     },
     {
@@ -31498,6 +31876,7 @@
       "y": 0,
       "z": 45,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -31505,6 +31884,7 @@
       "y": 0,
       "z": 45,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -31512,6 +31892,7 @@
       "y": 0,
       "z": 45,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -31519,6 +31900,7 @@
       "y": 0,
       "z": 45,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -31526,6 +31908,7 @@
       "y": 0,
       "z": 45,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -32037,13 +32420,15 @@
       "x": 2,
       "y": 0,
       "z": 46,
-      "materialId": "shallow_water"
+      "materialId": "shallow_water",
+      "color": "#58b7df"
     },
     {
       "x": 3,
       "y": 0,
       "z": 46,
-      "materialId": "shallow_water"
+      "materialId": "shallow_water",
+      "color": "#3f98c8"
     },
     {
       "x": 4,
@@ -32067,7 +32452,8 @@
       "x": 7,
       "y": 0,
       "z": 46,
-      "materialId": "shallow_water"
+      "materialId": "shallow_water",
+      "color": "#3f98c8"
     },
     {
       "x": 8,
@@ -32104,6 +32490,7 @@
       "y": 0,
       "z": 46,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -32111,6 +32498,7 @@
       "y": 0,
       "z": 46,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -32118,6 +32506,7 @@
       "y": 0,
       "z": 46,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -32125,6 +32514,7 @@
       "y": 0,
       "z": 46,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -32132,6 +32522,7 @@
       "y": 0,
       "z": 46,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -32139,6 +32530,7 @@
       "y": 0,
       "z": 46,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -32146,6 +32538,7 @@
       "y": 0,
       "z": 46,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -32153,6 +32546,7 @@
       "y": 0,
       "z": 46,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -32160,6 +32554,7 @@
       "y": 0,
       "z": 46,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -32167,6 +32562,7 @@
       "y": 0,
       "z": 46,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -32174,6 +32570,7 @@
       "y": 0,
       "z": 46,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -32181,6 +32578,7 @@
       "y": 0,
       "z": 46,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -32188,6 +32586,7 @@
       "y": 0,
       "z": 46,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -32195,6 +32594,7 @@
       "y": 0,
       "z": 46,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -32202,6 +32602,7 @@
       "y": 0,
       "z": 46,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -32209,6 +32610,7 @@
       "y": 0,
       "z": 46,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -32216,6 +32618,7 @@
       "y": 0,
       "z": 46,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -32223,6 +32626,7 @@
       "y": 0,
       "z": 46,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -32230,6 +32634,7 @@
       "y": 0,
       "z": 46,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -32826,6 +33231,7 @@
       "y": 0,
       "z": 47,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -32833,6 +33239,7 @@
       "y": 0,
       "z": 47,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -32840,6 +33247,7 @@
       "y": 0,
       "z": 47,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -32847,6 +33255,7 @@
       "y": 0,
       "z": 47,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -32854,6 +33263,7 @@
       "y": 0,
       "z": 47,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -32861,6 +33271,7 @@
       "y": 0,
       "z": 47,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -32868,6 +33279,7 @@
       "y": 0,
       "z": 47,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -32875,6 +33287,7 @@
       "y": 0,
       "z": 47,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -32882,6 +33295,7 @@
       "y": 0,
       "z": 47,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -32889,6 +33303,7 @@
       "y": 0,
       "z": 47,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -32896,6 +33311,7 @@
       "y": 0,
       "z": 47,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -32903,6 +33319,7 @@
       "y": 0,
       "z": 47,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -32910,6 +33327,7 @@
       "y": 0,
       "z": 47,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -32917,6 +33335,7 @@
       "y": 0,
       "z": 47,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -32924,6 +33343,7 @@
       "y": 0,
       "z": 47,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -32931,6 +33351,7 @@
       "y": 0,
       "z": 47,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -32938,6 +33359,7 @@
       "y": 0,
       "z": 47,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -33560,6 +33982,7 @@
       "y": 0,
       "z": 48,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -33567,6 +33990,7 @@
       "y": 0,
       "z": 48,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -33574,6 +33998,7 @@
       "y": 0,
       "z": 48,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -33581,6 +34006,7 @@
       "y": 0,
       "z": 48,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -33588,6 +34014,7 @@
       "y": 0,
       "z": 48,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -33595,6 +34022,7 @@
       "y": 0,
       "z": 48,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -33602,6 +34030,7 @@
       "y": 0,
       "z": 48,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -33609,6 +34038,7 @@
       "y": 0,
       "z": 48,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -33616,6 +34046,7 @@
       "y": 0,
       "z": 48,
       "materialId": "shallow_water",
+      "color": "#58b7df",
       "blocksMovement": false
     },
     {
@@ -33623,6 +34054,7 @@
       "y": 0,
       "z": 48,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -33630,6 +34062,7 @@
       "y": 0,
       "z": 48,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -33637,6 +34070,7 @@
       "y": 0,
       "z": 48,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -33644,6 +34078,7 @@
       "y": 0,
       "z": 48,
       "materialId": "shallow_water",
+      "color": "#48a9d6",
       "blocksMovement": false
     },
     {
@@ -34312,6 +34747,7 @@
       "y": 0,
       "z": 49,
       "materialId": "shallow_water",
+      "color": "#3f98c8",
       "blocksMovement": false
     },
     {
@@ -90322,7 +90758,8 @@
       "x": 26,
       "y": 1,
       "z": 45,
-      "materialId": "shallow_water"
+      "materialId": "shallow_water",
+      "color": "#58b7df"
     },
     {
       "x": 26,
@@ -90334,79 +90771,92 @@
       "x": 33,
       "y": 0,
       "z": 37,
-      "materialId": "deep_water"
+      "materialId": "deep_water",
+      "color": "#1d6594"
     },
     {
       "x": 32,
       "y": 0,
       "z": 37,
-      "materialId": "deep_water"
+      "materialId": "deep_water",
+      "color": "#17527c"
     },
     {
       "x": 31,
       "y": 0,
       "z": 37,
-      "materialId": "deep_water"
+      "materialId": "deep_water",
+      "color": "#1d6594"
     },
     {
       "x": 30,
       "y": 0,
       "z": 37,
-      "materialId": "deep_water"
+      "materialId": "deep_water",
+      "color": "#2376a8"
     },
     {
       "x": 29,
       "y": 0,
       "z": 37,
-      "materialId": "deep_water"
+      "materialId": "deep_water",
+      "color": "#1d6594"
     },
     {
       "x": 28,
       "y": 0,
       "z": 37,
-      "materialId": "deep_water"
+      "materialId": "deep_water",
+      "color": "#2376a8"
     },
     {
       "x": 28,
       "y": 0,
       "z": 36,
-      "materialId": "deep_water"
+      "materialId": "deep_water",
+      "color": "#1d6594"
     },
     {
       "x": 27,
       "y": 0,
       "z": 36,
-      "materialId": "deep_water"
+      "materialId": "deep_water",
+      "color": "#2376a8"
     },
     {
       "x": 27,
       "y": 0,
       "z": 37,
-      "materialId": "deep_water"
+      "materialId": "deep_water",
+      "color": "#1d6594"
     },
     {
       "x": 26,
       "y": 0,
       "z": 36,
-      "materialId": "deep_water"
+      "materialId": "deep_water",
+      "color": "#17527c"
     },
     {
       "x": 26,
       "y": 0,
       "z": 37,
-      "materialId": "deep_water"
+      "materialId": "deep_water",
+      "color": "#2376a8"
     },
     {
       "x": 25,
       "y": 0,
       "z": 36,
-      "materialId": "deep_water"
+      "materialId": "deep_water",
+      "color": "#2376a8"
     },
     {
       "x": 25,
       "y": 0,
       "z": 37,
-      "materialId": "deep_water"
+      "materialId": "deep_water",
+      "color": "#1d6594"
     }
   ],
   "placements": [

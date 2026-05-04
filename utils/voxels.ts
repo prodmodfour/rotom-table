@@ -77,6 +77,47 @@ export const voxelBaseColor = (voxel: MapVoxelV2): number => {
 export const voxelFacePalette = (voxel: MapVoxelV2): VoxelFacePalette =>
   buildFacePalette(voxelBaseColor(voxel))
 
+const CLEAN_WATER_BUILD_PALETTES: Record<string, readonly string[]> = {
+  shallow_water: ['#48a9d6', '#3f98c8', '#58b7df', '#86d7ee'],
+  deep_water: ['#2376a8', '#1d6594', '#17527c'],
+}
+
+const waterBuildPaletteIndex = (
+  materialId: string,
+  x: number,
+  y: number,
+  z: number,
+): number => {
+  const h = (x * 37 + y * 17 + z * 53 + x * z * 3) % 100
+  if (materialId === 'shallow_water') {
+    if (h < 2) return 3
+    if (h < 38) return 0
+    if (h < 70) return 1
+    return 2
+  }
+  if (h < 36) return 0
+  if (h < 70) return 1
+  return 2
+}
+
+/**
+ * Default terrain-builder color overrides for materials whose placed block
+ * style should differ from their registry color. Water uses the clean-blue,
+ * greywater-style custom block texture while keeping the material opacity.
+ */
+export const defaultBuilderVoxelColor = (voxel: Pick<MapVoxelV2, 'x' | 'y' | 'z' | 'materialId'>): string | null => {
+  const materialId = normalizeMaterialId(voxel.materialId)
+  const palette = CLEAN_WATER_BUILD_PALETTES[materialId]
+  if (!palette) return null
+  return palette[waterBuildPaletteIndex(materialId, voxel.x, voxel.y, voxel.z)] ?? palette[0] ?? null
+}
+
+export const withDefaultBuilderVoxelColor = (voxel: MapVoxelV2): MapVoxelV2 => {
+  if (voxel.color && parseHexColor(voxel.color) !== null) return voxel
+  const color = defaultBuilderVoxelColor(voxel)
+  return color ? { ...voxel, color } : voxel
+}
+
 /**
  * Bucket key for sharing an `InstancedMesh` across visually identical voxels.
  * Custom-colored voxels group by color; preset voxels group by material id.
