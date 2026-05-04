@@ -683,9 +683,10 @@ watch(
       spawnedPokemon.value,
       normalized,
       trimmedVoxels,
-      buildMapOccupancy({
-        voxels: trimmedVoxels,
-      }),
+      // Manual token placement is allowed to overlap terrain. Dimension
+      // reconciliation should only fix out-of-bounds/token-overlap issues,
+      // not eject characters a GM intentionally tucked into terrain blocks.
+      new Set<string>(),
     )
     const byId = new Map(reconciliation.pokemons.map((p) => [p.id, p.position]))
     map.value.placements = map.value.placements.flatMap((placement) => {

@@ -10,7 +10,7 @@ import type {
   VoxelMaterial,
 } from '~/types/map'
 import type { PreviewState } from '~/utils/grid'
-import { findPathForPokemon, getAnchorCenter, getPokemonCenter } from '~/utils/grid'
+import { canPlacePokemon, findPathForPokemon, getAnchorCenter, getPokemonCenter } from '~/utils/grid'
 import {
   buildAllVoxelOccupancy,
   cellInsidePokemonFootprint,
@@ -1425,6 +1425,7 @@ let previewOwnerId: string | null = null
 let buildGhost: THREE.Mesh<THREE.BoxGeometry, THREE.MeshBasicMaterial[]> | null = null
 let buildGhostEdges: THREE.LineSegments | null = null
 let activePreview: PreviewState = { ...EMPTY_PREVIEW }
+let activePreviewCanPlace = false
 let activePreviewAnchor: GridAnchor | null = null
 let pointerDown = { x: 0, y: 0 }
 let pointerTravel = 0
@@ -2763,6 +2764,7 @@ const ensurePreviewObjects = () => {
 
 const clearPreviewVisuals = () => {
   activePreview = { ...EMPTY_PREVIEW }
+  activePreviewCanPlace = false
   activePreviewAnchor = null
 
   if (ghostSpriteState) {
@@ -2805,22 +2807,34 @@ const updatePreviewAtAnchor = (anchor: GridAnchor | null) => {
   }
 
   const selected = selectedPokemon.value
-  const path = findPathForPokemon(
+  // Destination placement ignores terrain occupancy so the table can be used
+  // as a free-positioning tool, but pathfinding below still treats terrain as
+  // blocking and therefore won't show a legal route through/into blocks.
+  const canForcePlace = canPlacePokemon(
     selected,
-    selected.position,
     anchor,
     props.pokemons,
     props.dimensions,
     selected.id,
-    mapMovementOccupancy.value,
   )
+  const path = canForcePlace
+    ? findPathForPokemon(
+        selected,
+        selected.position,
+        anchor,
+        props.pokemons,
+        props.dimensions,
+        selected.id,
+        mapMovementOccupancy.value,
+      )
+    : null
   const reachable = Boolean(path)
   const center = getAnchorCenter(anchor, selected.base)
 
   ghostSprite.position.set(center.x, anchor.y, center.z)
   ghostSpriteState.halo.position.copy(ghostSprite.position)
   setWorldSpriteVisible(ghostSpriteState, true)
-  setWorldSpriteInvalid(ghostSpriteState, !reachable)
+  setWorldSpriteInvalid(ghostSpriteState, !canForcePlace)
 
   previewVolume.position.set(center.x, anchor.y + selected.clearance / 2, center.z)
   // Repaint all 6 faces with the appropriate brightness ramp.
@@ -2855,6 +2869,7 @@ const updatePreviewAtAnchor = (anchor: GridAnchor | null) => {
   }
 
   activePreviewAnchor = anchor
+  activePreviewCanPlace = canForcePlace
   activePreview = {
     position: anchor,
     reachable,
@@ -3312,7 +3327,7 @@ const handleLeftClick = (event: PointerEvent) => {
     return
   }
 
-  if (activePreview.position && activePreview.reachable) {
+  if (activePreview.position && activePreviewCanPlace) {
     emit('move-pokemon', {
       id: props.selectedId,
       position: activePreview.position,
