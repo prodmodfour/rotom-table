@@ -75,6 +75,8 @@ export interface TabletopMapV2 {
   /** Optional folder label, derived from `data/maps/` when omitted. */
   folder?: string
   dimensions: GridDimensions
+  /** Absolute Y coordinate that is displayed as map-specific/ground Y=0. */
+  groundLevelY?: number
   voxels: MapVoxelV2[]
   placements: SheetPlacement[]
   lights?: LightPlacement[]

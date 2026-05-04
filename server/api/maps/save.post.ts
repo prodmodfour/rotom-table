@@ -15,6 +15,7 @@ import {
   SLUG_RE,
   findMapFile,
   folderFromPath,
+  normalizeMapGroundLevelY,
   writeMapFile,
 } from '../../utils/mapStorage'
 import type { TabletopMap } from '~/types/map'
@@ -57,6 +58,7 @@ export default defineEventHandler(async (event) => {
     name: map.name,
     folder: folderFromPath(path),
     dimensions: map.dimensions,
+    groundLevelY: normalizeMapGroundLevelY(map.groundLevelY, map.dimensions?.y ?? 1),
     voxels: Array.isArray(map.voxels) ? map.voxels : [],
     placements: Array.isArray(map.placements) ? map.placements : [],
     lights: Array.isArray(map.lights) ? map.lights : [],

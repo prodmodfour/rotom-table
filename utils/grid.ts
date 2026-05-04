@@ -138,7 +138,11 @@ export const canPlacePokemon = (
   })
 }
 
-const buildCenterWeightedAnchors = (pokemon: FootprintPokemon, dimensions: GridDimensions) => {
+const buildCenterWeightedAnchors = (
+  pokemon: FootprintPokemon,
+  dimensions: GridDimensions,
+  preferredY?: number | null,
+) => {
   const maxX = dimensions.x - pokemon.base
   const maxY = dimensions.y - getClearanceValue(pokemon)
   const maxZ = dimensions.z - pokemon.base
@@ -147,7 +151,10 @@ const buildCenterWeightedAnchors = (pokemon: FootprintPokemon, dimensions: GridD
     return []
   }
 
-  const anchors: Array<{ x: number; y: number; z: number; distance: number }> = []
+  const preferredLayer = preferredY == null
+    ? null
+    : Math.min(maxY, Math.max(0, Math.round(preferredY)))
+  const anchors: Array<{ x: number; y: number; z: number; distance: number; yDistance: number }> = []
   const centerX = maxX / 2
   const centerZ = maxZ / 2
 
@@ -159,12 +166,17 @@ const buildCenterWeightedAnchors = (pokemon: FootprintPokemon, dimensions: GridD
           y,
           z,
           distance: Math.abs(x - centerX) + Math.abs(z - centerZ),
+          yDistance: preferredLayer == null ? y : Math.abs(y - preferredLayer),
         })
       }
     }
   }
 
   anchors.sort((left, right) => {
+    if (left.yDistance !== right.yDistance) {
+      return left.yDistance - right.yDistance
+    }
+
     if (left.y !== right.y) {
       return left.y - right.y
     }
@@ -189,8 +201,9 @@ export const findFirstAvailablePosition = (
   dimensions: GridDimensions,
   exceptId?: string | null,
   occupiedKeys: ReadonlySet<string> = EMPTY_VOXEL_KEYS,
+  preferredY?: number | null,
 ) => {
-  const anchors = buildCenterWeightedAnchors(pokemon, dimensions)
+  const anchors = buildCenterWeightedAnchors(pokemon, dimensions, preferredY)
 
   for (const anchor of anchors) {
     const position = { x: anchor.x, y: anchor.y, z: anchor.z }

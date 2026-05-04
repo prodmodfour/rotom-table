@@ -40,6 +40,7 @@ const props = defineProps<{
   selectedId: string | null
   activeTurnId?: string | null
   voxels: MapVoxelV2[]
+  groundLevelY?: number
   layerVisibility?: LayerVisibility
   buildMode: boolean
   buildTool: BuildTool
@@ -1108,6 +1109,19 @@ const DEFAULT_LAYER_VISIBILITY: LayerVisibility = {
 
 const visibleLayers = () => ({ ...DEFAULT_LAYER_VISIBILITY, ...(props.layerVisibility ?? {}) })
 
+const normalizedGroundLevelY = () => {
+  const height = Number(props.dimensions.y)
+  const max = Number.isFinite(height) ? Math.max(0, Math.floor(height) - 1) : 0
+  const n = Number(props.groundLevelY ?? 0)
+  if (!Number.isFinite(n)) return 0
+  return Math.min(max, Math.max(0, Math.round(n)))
+}
+
+const mapSpecificY = (absoluteY: number) => Math.round(absoluteY) - normalizedGroundLevelY()
+
+const formatElevationDelta = (localY: number): string =>
+  localY > 0 ? `+${localY} ↑` : `${localY} ↓`
+
 const EMPTY_PREVIEW: PreviewState = {
   position: null,
   reachable: false,
@@ -2099,14 +2113,15 @@ const updateElevationBadge = (
   elevation: number,
   show = true,
 ) => {
-  if (!show || elevation <= 0) {
+  const localY = mapSpecificY(elevation)
+  if (!show || localY === 0) {
     badge.visible = false
     return
   }
 
   const offset = getElevationBadgeOffset(center, base)
   badge.position.set(center.x + offset.x, center.y + 0.08, center.z + offset.z)
-  badge.element.textContent = `${elevation} ↑`
+  badge.element.textContent = formatElevationDelta(localY)
   badge.visible = true
 }
 
@@ -3804,6 +3819,14 @@ watch(
   () => {
     if (!renderer || !props.buildMode) return
     replayBuildPreview()
+  },
+)
+
+watch(
+  () => props.groundLevelY,
+  () => {
+    if (!renderer) return
+    if (selectedPokemon.value && activePreviewAnchor) updatePreviewAtAnchor(activePreviewAnchor)
   },
 )
 

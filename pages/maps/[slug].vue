@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import IsometricGrid, { type BuildTool } from '~/components/IsometricGrid.client.vue'
 import SheetBrowser, { type SheetSelection } from '~/components/SheetBrowser.vue'
 import SaveIndicator from '~/components/SaveIndicator.vue'
@@ -65,6 +65,7 @@ const gridRef = ref<IsometricGridHandle | null>(null)
 const previewState = ref<PreviewState>({ position: null, reachable: false, pathLength: 0 })
 const sidebarCollapsed = ref(false)
 const initiativeCollapsed = ref(false)
+const adminPanelOpen = ref(false)
 
 const buildMode = ref(false)
 const buildTool = ref<BuildTool>('pencil')
@@ -92,6 +93,51 @@ const sheetLookup = computed(() => ({
 const spawnedPokemon = computed(() => placementsToSpawned(map.value, sheetLookup.value))
 const mapVoxels = computed<MapVoxelV2[]>(() => map.value?.voxels ?? [])
 const voxelCount = computed(() => mapVoxels.value.length)
+
+const clampGroundLevelY = (value: unknown, height: number): number => {
+  const h = Number(height)
+  const max = Number.isFinite(h) ? Math.max(0, Math.floor(h) - 1) : 0
+  const n = Number(value)
+  if (!Number.isFinite(n)) return 0
+  return Math.min(max, Math.max(0, Math.round(n)))
+}
+
+const groundLevelYMax = computed(() => Math.max(0, (map.value?.dimensions.y ?? 1) - 1))
+const mapGroundLevelY = computed(() =>
+  clampGroundLevelY(map.value?.groundLevelY ?? 0, map.value?.dimensions.y ?? 1),
+)
+const mapSpecificYMin = computed(() => -mapGroundLevelY.value)
+const mapSpecificYMax = computed(() =>
+  map.value ? map.value.dimensions.y - 1 - mapGroundLevelY.value : 0,
+)
+
+const setGroundLevelY = (event: Event) => {
+  if (!map.value) return
+  map.value.groundLevelY = clampGroundLevelY(
+    (event.target as HTMLInputElement).value,
+    map.value.dimensions.y,
+  )
+}
+
+const handleAdminShortcut = (event: KeyboardEvent) => {
+  if (event.ctrlKey && event.shiftKey && event.key.toLowerCase() === 'a') {
+    event.preventDefault()
+    adminPanelOpen.value = !adminPanelOpen.value
+    return
+  }
+
+  if (event.key === 'Escape' && adminPanelOpen.value) {
+    adminPanelOpen.value = false
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('keydown', handleAdminShortcut)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', handleAdminShortcut)
+})
 
 type InitiativeKind = 'pokemon' | 'trainer'
 
@@ -372,6 +418,7 @@ const spawnSheet = (selection: SheetSelection) => {
     map.value.dimensions,
     null,
     occupiedKeys,
+    mapGroundLevelY.value,
   )
   if (!position) return
 
@@ -585,13 +632,14 @@ const fillGround = () => {
     voxels: mapVoxels.value,
   })
   const additions: MapVoxelV2[] = []
+  const groundY = mapGroundLevelY.value
   for (let z = 0; z < dims.z; z += 1) {
     for (let x = 0; x < dims.x; x += 1) {
-      const key = voxelKey(x, 0, z)
+      const key = voxelKey(x, groundY, z)
       if (voxelOccupancy.has(key)) continue
       if (mapOccupancy.has(key)) continue
-      if (cellInsidePokemonFootprint(x, 0, z, spawnedPokemon.value)) continue
-      const voxel: MapVoxelV2 = { x, y: 0, z, materialId: buildMaterial.value }
+      if (cellInsidePokemonFootprint(x, groundY, z, spawnedPokemon.value)) continue
+      const voxel: MapVoxelV2 = { x, y: groundY, z, materialId: buildMaterial.value }
       if (buildColor.value) voxel.color = buildColor.value
       additions.push(voxel)
     }
@@ -618,6 +666,13 @@ watch(
     if (normalized.x !== dims.x) map.value.dimensions.x = normalized.x
     if (normalized.y !== dims.y) map.value.dimensions.y = normalized.y
     if (normalized.z !== dims.z) map.value.dimensions.z = normalized.z
+
+    if (map.value.groundLevelY !== undefined) {
+      const normalizedGroundLevelY = clampGroundLevelY(map.value.groundLevelY, normalized.y)
+      if (normalizedGroundLevelY !== map.value.groundLevelY) {
+        map.value.groundLevelY = normalizedGroundLevelY
+      }
+    }
 
     const trimmedVoxels = filterVoxelsInBounds(map.value.voxels, normalized)
     if (trimmedVoxels.length !== map.value.voxels.length) {
@@ -860,6 +915,7 @@ watch(
           :selected-id="selectedId"
           :active-turn-id="activeInitiativeId"
           :voxels="mapVoxels"
+          :ground-level-y="mapGroundLevelY"
           :layer-visibility="layerVisibility"
           :build-mode="buildMode"
           :build-tool="buildTool"
@@ -1069,6 +1125,65 @@ watch(
         </section>
       </div>
     </aside>
+
+    <div
+      v-if="map && adminPanelOpen"
+      class="admin-panel-backdrop"
+      role="presentation"
+      @pointerdown.self="adminPanelOpen = false"
+    >
+      <section
+        class="admin-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="admin-panel-title"
+        @pointerdown.stop
+      >
+        <div class="admin-panel__header">
+          <div>
+            <p class="admin-panel__eyebrow">Admin · Ctrl+Shift+A</p>
+            <h2 id="admin-panel-title">Map control panel</h2>
+          </div>
+          <button
+            type="button"
+            class="admin-panel__close"
+            aria-label="Close admin control panel"
+            @click="adminPanelOpen = false"
+          >
+            ×
+          </button>
+        </div>
+
+        <div class="admin-field">
+          <label for="admin-ground-level-y">
+            <span>Map-specific Y=0 / ground level</span>
+            <input
+              id="admin-ground-level-y"
+              type="number"
+              min="0"
+              :max="groundLevelYMax"
+              :value="mapGroundLevelY"
+              @input="setGroundLevelY"
+            />
+          </label>
+          <p class="admin-field__hint">
+            Set the absolute Y layer that should be shown as ground Y=0.
+            Absolute Y=0 remains the lowest layer of the map.
+          </p>
+        </div>
+
+        <dl class="admin-y-summary">
+          <div>
+            <dt>Absolute ground layer</dt>
+            <dd>{{ mapGroundLevelY }}</dd>
+          </div>
+          <div>
+            <dt>Map-specific Y range</dt>
+            <dd>{{ mapSpecificYMin }} … {{ mapSpecificYMax }}</dd>
+          </div>
+        </dl>
+      </section>
+    </div>
   </div>
 </template>
 
@@ -1938,6 +2053,125 @@ input:focus {
   font-size: 0.86rem;
   line-height: 1.45;
   text-align: center;
+}
+
+.admin-panel-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgba(29, 32, 33, 0.58);
+  backdrop-filter: blur(2px);
+}
+
+.admin-panel {
+  width: min(440px, 100%);
+  border: 1px solid var(--rule-strong);
+  border-radius: 18px;
+  background: var(--paper);
+  box-shadow: var(--shadow-card);
+  padding: 1rem;
+}
+
+.admin-panel__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.admin-panel__eyebrow {
+  margin: 0 0 0.2rem;
+  color: var(--ink-muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.admin-panel h2 {
+  margin: 0;
+  font-family: var(--font-book);
+  color: var(--ink-bright);
+}
+
+.admin-panel__close {
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--rule-soft);
+  border-radius: 999px;
+  background: var(--paper-soft);
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+.admin-panel__close:hover,
+.admin-panel__close:focus-visible {
+  border-color: var(--accent);
+  color: var(--accent);
+  outline: none;
+}
+
+.admin-field label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.admin-field label span {
+  color: var(--ink-muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.admin-field__hint {
+  margin: 0.55rem 0 0;
+  color: var(--ink-soft);
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
+.admin-y-summary {
+  display: grid;
+  gap: 0.55rem;
+  margin: 1rem 0 0;
+}
+
+.admin-y-summary div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border: 1px solid var(--rule-soft);
+  border-radius: 12px;
+  background: var(--paper-soft);
+  padding: 0.65rem 0.75rem;
+}
+
+.admin-y-summary dt,
+.admin-y-summary dd {
+  margin: 0;
+}
+
+.admin-y-summary dt {
+  color: var(--ink-muted);
+  font-size: 0.78rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.admin-y-summary dd {
+  color: var(--accent);
+  font-weight: 800;
+  white-space: nowrap;
 }
 
 .sr-only {

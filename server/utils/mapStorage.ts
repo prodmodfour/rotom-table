@@ -78,6 +78,14 @@ const normalizeMapDimensionsForEditor = (value: unknown, filePath: string): Grid
   return out
 }
 
+export const normalizeMapGroundLevelY = (value: unknown, height: number): number => {
+  const h = Number(height)
+  const max = Number.isFinite(h) ? Math.max(0, Math.floor(h) - 1) : 0
+  const n = Number(value)
+  if (!Number.isFinite(n)) return 0
+  return Math.min(max, Math.max(0, Math.round(n)))
+}
+
 const normalizeVoxelForEditor = (value: unknown, index: number, filePath: string): MapVoxelV2 => {
   if (!isRecord(value)) invalidMapDocument(filePath, `voxels[${index}] must be an object`)
   for (const axis of ['x', 'y', 'z'] as const) {
@@ -120,6 +128,7 @@ const normalizeMapDocument = (json: TabletopMapV2, filePath: string): TabletopMa
     name: json.name,
     folder: json.folder ?? folderFromPath(filePath),
     dimensions,
+    groundLevelY: normalizeMapGroundLevelY(json.groundLevelY, dimensions.y),
     voxels,
     placements: Array.isArray(json.placements) ? json.placements : [],
     lights: Array.isArray(json.lights) ? json.lights : [],
