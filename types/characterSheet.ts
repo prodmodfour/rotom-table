@@ -149,8 +149,8 @@ export interface CharacterSheet {
 
   /** PTU nature name, e.g. ``"Hardy"``, ``"Modest"``. */
   nature?: string
-  /** Nature stat modifiers (``+1`` and ``-1`` from the spreadsheet's ``+2`` /
-   *  ``-2``). Use stat keys (``"atk"``, ``"satk"``\u2026) for both fields. */
+  /** Nature stat choices from the PTU Nature Chart. HP shifts by ±1; every
+   *  other stat shifts by ±2, with the adjusted species Base Stat floored at 1. */
   natureMod?: { plus?: StatKey; minus?: StatKey }
 
   /** Optional override of types and egg groups. Defaults come from species. */

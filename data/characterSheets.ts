@@ -3,6 +3,7 @@ import type { CharacterSheet, StatKey } from '~/types/characterSheet'
 import type { PokedexRecord } from '~/types/pokemon'
 import { pokemonCatalogBySpecies } from '~/data/pokemonCatalog'
 import { folderFromGlobKey } from '~/utils/sheetFolders'
+import { adjustedNatureModForStat, isStatKey, resolveNatureMod } from '~/utils/ptuNatures'
 
 // ---------------------------------------------------------------------------
 // Auto-discover every JSON sheet under ``data/sheets`` (recursively). Drop a
@@ -82,7 +83,7 @@ export interface ResolvedStat {
   label: string
   /** Base stat from the species. */
   species: number
-  /** Nature modifier (+1 / -1 / 0). */
+  /** Effective Nature modifier after PTU's stat-specific delta and minimum-1 floor. */
   mod: number
   /** Personal "Base" points spent. */
   base: number
@@ -103,8 +104,6 @@ const STAT_LABELS: Record<StatKey, string> = {
   spd: 'Speed',
 }
 
-const NATURE_DELTA = 1
-
 export const resolveStats = (sheet: CharacterSheet): ResolvedStat[] => {
   const species = getPokedexEntry(sheet.species)
   const baseStats = species?.base_stats
@@ -121,15 +120,14 @@ export const resolveStats = (sheet: CharacterSheet): ResolvedStat[] => {
     }
   }
 
-  const plus  = sheet.natureMod?.plus
-  const minus = sheet.natureMod?.minus
+  const chartNatureMod = resolveNatureMod(sheet.nature)
+  const plus  = isStatKey(sheet.natureMod?.plus) ? sheet.natureMod?.plus : chartNatureMod?.plus
+  const minus = isStatKey(sheet.natureMod?.minus) ? sheet.natureMod?.minus : chartNatureMod?.minus
 
   return STAT_KEYS.map((key) => {
     const personal = sheet.stats?.[key] ?? {}
     const speciesValue = speciesValueFor(key)
-    const mod = key === 'hp'
-      ? 0
-      : (plus === key ? NATURE_DELTA : 0) + (minus === key ? -NATURE_DELTA : 0)
+    const mod = adjustedNatureModForStat(speciesValue, key, plus, minus)
     const base  = personal.base  ?? 0
     const added = personal.added ?? 0
     const stage = personal.stage ?? 0
@@ -147,14 +145,15 @@ export const resolveStats = (sheet: CharacterSheet): ResolvedStat[] => {
 }
 
 /**
- * PTU Max HP formula (PHB p. 25):
- *   Max HP = (HP base × Level / 5) + HP base + Level + 10  (rounded down)
- * ``HP base`` here is the resolved Total HP stat from the sheet.
+ * PTU Pokémon Max HP formula (Core, Pokémon chapter p.198):
+ *   Max HP = Level + (HP × 3) + 10
+ * ``HP`` here is the resolved Total HP stat from the sheet. Sheets may still
+ * set ``combat.maxHp`` to lock/override the computed value.
  */
 export const computeMaxHp = (sheet: CharacterSheet, hpTotal: number): number => {
   if (sheet.combat?.maxHp != null) return sheet.combat.maxHp
   const level = sheet.level ?? 1
-  return Math.floor((hpTotal * level) / 5) + hpTotal + level + 10
+  return level + (hpTotal * 3) + 10
 }
 
 /** Resolved skill row (label + value). Mixes species defaults and overrides. */

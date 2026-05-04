@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 import { PhPlus, PhX } from '@phosphor-icons/vue'
 import {
   characterSheetsBySlug,
@@ -12,6 +12,7 @@ import {
 } from '~/data/characterSheets'
 import { POKEMON_TYPES, computeMultiplier, formatMultiplier } from '~/utils/typeChart'
 import { normalizeCharacterSheet } from '~/utils/sheetNormalize'
+import { PTU_NATURE_OPTIONS, resolveNatureMod } from '~/utils/ptuNatures'
 import { useEditableSheet, type SaveStatus } from '~/composables/useEditableSheet'
 import type {
   CharacterSheet,
@@ -34,6 +35,20 @@ definePageMeta({
   key: (route) => `sheet-${route.params.slug}`,
 })
 
+const syncNatureModForSheet = (target: CharacterSheet, nature = target.nature) => {
+  const natureText = typeof nature === 'string' ? nature.trim() : ''
+  if (!target.natureMod) target.natureMod = {}
+  if (!natureText) {
+    target.natureMod.plus = undefined
+    target.natureMod.minus = undefined
+    return
+  }
+  const mod = resolveNatureMod(natureText)
+  if (!mod) return
+  target.natureMod.plus = mod.plus
+  target.natureMod.minus = mod.minus
+}
+
 const route = useRoute()
 const { isGm, isPlayer } = useAuth()
 const slug = String(route.params.slug ?? '')
@@ -43,6 +58,8 @@ const canAccessBaseSheet = computed(() => Boolean(baseSheet && (!isPlayer.value 
 const initialClone: CharacterSheet | null = canAccessBaseSheet.value && baseSheet
   ? normalizeCharacterSheet(JSON.parse(JSON.stringify(baseSheet)) as CharacterSheet)
   : null
+
+if (initialClone) syncNatureModForSheet(initialClone)
 
 const editor = initialClone ? useEditableSheet(initialClone, 'pokemon') : null
 const sheet = computed<CharacterSheet | null>(() => editor?.sheet.value ?? null)
@@ -106,13 +123,22 @@ const typeEffectivenessRows = computed(() => {
   })
 })
 
+watch(
+  () => sheet.value?.nature,
+  (nature) => {
+    if (sheet.value) syncNatureModForSheet(sheet.value, nature)
+  },
+)
+
 // ---------------------------------------------------------------------------
 // Editing helpers — these mutate the reactive sheet, which in turn fires the
 // deep watcher inside useEditableSheet to persist the change.
 // ---------------------------------------------------------------------------
 
+const NATURE_OPTIONS = PTU_NATURE_OPTIONS
+
 const NATURE_STAT_OPTIONS = [
-  { value: '',     label: '—' },
+  { value: 'hp',   label: 'HP' },
   { value: 'atk',  label: 'ATK' },
   { value: 'def',  label: 'DEF' },
   { value: 'satk', label: 'SATK' },
@@ -300,7 +326,12 @@ const setInheritedMove = (level: string, value: string | undefined) => {
             <div>
               <dt>Nature</dt>
               <dd>
-                <EditableCell v-model="sheet.nature" placeholder="Hardy / Modest / …" />
+                <EditableCell
+                  v-model="sheet.nature"
+                  type="select"
+                  :options="NATURE_OPTIONS"
+                  placeholder="Hardy / Modest / …"
+                />
               </dd>
             </div>
             <div>
