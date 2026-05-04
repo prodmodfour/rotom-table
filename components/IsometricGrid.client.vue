@@ -75,6 +75,7 @@ const emit = defineEmits<{
   (event: 'modify-combat-stages', payload: { id: string; stages: CombatStageMap }): void
   (event: 'modify-conditions', payload: { id: string; conditions: string[] }): void
   (event: 'use-move', id: string): void
+  (event: 'view-sheet', id: string): void
   (event: 'preview-change', preview: PreviewState): void
   (event: 'place-voxel', voxel: MapVoxelV2): void
   (event: 'remove-voxel', cell: { x: number; y: number; z: number }): void
@@ -3800,7 +3801,8 @@ const openContextMenu = (event: MouseEvent, id: string) => {
   const canTurn = Boolean(target?.entityKind === 'pokemon' && target.backSpriteUrl)
   const bounds = container.value.getBoundingClientRect()
   const menuWidth = 230
-  const menuHeight = canTurn ? 320 : 276
+  const menuButtonCount = 6 + (canTurn ? 1 : 0) + (props.canDeleteTokens ? 1 : 0)
+  const menuHeight = 13 + menuButtonCount * 40 + Math.max(0, menuButtonCount - 1) * 5
   const padding = 12
 
   contextMenu.value = {
@@ -3943,6 +3945,15 @@ const handleContextUseMove = () => {
   }
 
   emit('use-move', contextMenu.value.id)
+  closeContextMenu()
+}
+
+const handleContextViewSheet = () => {
+  if (!contextMenu.value || !canControlPokemon(contextMenu.value.id)) {
+    return
+  }
+
+  emit('view-sheet', contextMenu.value.id)
   closeContextMenu()
 }
 
@@ -4731,6 +4742,13 @@ watch(
       @contextmenu.prevent
       @pointerdown.stop
     >
+      <button
+        type="button"
+        class="context-menu__button"
+        @click.stop="handleContextViewSheet"
+      >
+        View Sheet
+      </button>
       <button
         v-if="contextMenu.canTurn"
         type="button"

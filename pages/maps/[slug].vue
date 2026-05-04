@@ -770,6 +770,16 @@ const openMoveAutomation = (id: string) => {
   moveAutomationId.value = id
 }
 
+const viewSheet = (id: string) => {
+  if (!map.value || !canControlPlacement(id)) return
+  const placement = placementById(id)
+  if (!placement) return
+  const slug = encodeURIComponent(placement.sheetSlug)
+  const path = placement.sheetKind === 'trainer' ? `/sheets/trainers/${slug}` : `/sheets/${slug}`
+  const target = router.resolve(path).href
+  window.open(target, '_blank', 'noopener')
+}
+
 const closeMoveAutomation = () => {
   moveAutomationId.value = null
 }
@@ -1750,6 +1760,7 @@ watch(
           @modify-combat-stages="modifyCombatStages"
           @modify-conditions="modifyConditions"
           @use-move="openMoveAutomation"
+          @view-sheet="viewSheet"
           @preview-change="updatePreview"
           @place-voxel="placeVoxel"
           @remove-voxel="removeVoxel"
