@@ -6,6 +6,7 @@ Map v2 stores only the data the runtime renders or uses:
 - optional `hazards[]` for PTU battlefield hazards on map squares
 - `placements[]` for Pokémon/trainer sheets on the map
 - optional `lights[]` for the lighting system
+- optional `fieldEffects` for PTU Weather, Terrain field effects, and Rooms
 - optional `initiative` state
 
 Object layers such as decals, props, zones, doors, asset packs, and transparent-object toggles have been removed from the runtime and schema. Hazards are the exception: they are rules-state overlays, not decorative object layers.
@@ -33,6 +34,16 @@ Hazards are sparse square overlays with integer `x`, `y`, `z` coordinates and a 
 
 The editor renders hazards as floor decals and persists them in `hazards[]`. They do not block token placement or pathfinding by themselves.
 
+## Field effects
+
+`fieldEffects` stores rules-state overlays for PTU battlefield-wide effects:
+
+- `weather[]`: `sunny`, `rainy`, `hail`, `sandstorm`; normally one entry, but two can be kept for Climate Control.
+- `terrains[]`: `electric`, `grassy`, `misty`, `psychic` field terrain effects.
+- `rooms[]`: `magic`, `trick`, `wonder` psychic Rooms.
+
+Each entry may track `rounds`; `null` means the duration is sustained or managed manually. These are visual/rules reminders only and do not currently automate damage rolls, initiative order, or end-of-turn ticks.
+
 ## Visibility layers
 
 The editor supports only the active render layers:
@@ -42,3 +53,4 @@ The editor supports only the active render layers:
 - tokens
 - grid
 - hazards
+- fieldEffects

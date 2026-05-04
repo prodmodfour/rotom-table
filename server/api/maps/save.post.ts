@@ -23,6 +23,7 @@ import {
   summarizeMap,
   writeMapFile,
 } from '../../utils/mapStorage'
+import { normalizeMapFieldEffects } from '~/utils/mapFieldEffects'
 import type { GridAnchor, SheetPlacement, TabletopMap } from '~/types/map'
 
 interface SaveBody {
@@ -180,6 +181,7 @@ export default defineEventHandler(async (event) => {
     playerVisible: source.playerVisible === true,
     voxels: Array.isArray(source.voxels) ? source.voxels : [],
     hazards: Array.isArray(source.hazards) ? source.hazards : [],
+    fieldEffects: normalizeMapFieldEffects(source.fieldEffects),
     placements: Array.isArray(source.placements) ? source.placements : [],
     lights: Array.isArray(source.lights) ? source.lights : [],
     initiative,

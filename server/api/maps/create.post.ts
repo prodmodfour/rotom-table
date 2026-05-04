@@ -76,6 +76,7 @@ export default defineEventHandler(async (event) => {
     initiative: { activeId: null, round: 1 },
     voxels: [],
     hazards: [],
+    fieldEffects: { weather: [], terrains: [], rooms: [] },
     lights: [],
     createdAt: now,
     updatedAt: now,

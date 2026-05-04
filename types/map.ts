@@ -33,6 +33,42 @@ export type VoxelMaterial = MapMaterialId
 
 export type MapHazardKind = 'spikes' | 'toxic-spikes' | 'sticky-web' | 'stealth-rock' | 'fire'
 
+export type MapWeatherKind = 'sunny' | 'rainy' | 'hail' | 'sandstorm'
+export type MapTerrainKind = 'electric' | 'grassy' | 'misty' | 'psychic'
+export type MapRoomKind = 'magic' | 'trick' | 'wonder'
+
+export interface MapWeatherEffect {
+  kind: MapWeatherKind
+  /** Remaining duration. `null` means untracked / sustained manually. */
+  rounds?: number | null
+  source?: string
+}
+
+export interface MapTerrainEffect {
+  kind: MapTerrainKind
+  /** Field-wide by default. `area` is reserved for move-created local terrain. */
+  scope?: 'field' | 'area'
+  rounds?: number | null
+  source?: string
+}
+
+export interface MapRoomEffect {
+  kind: MapRoomKind
+  rounds?: number | null
+  /** Trick Room takes effect at the beginning of the next round. */
+  startsNextRound?: boolean
+  source?: string
+}
+
+export interface MapFieldEffects {
+  /** PTU weather is one-at-a-time by default, but Climate Control can allow two. */
+  weather?: MapWeatherEffect[]
+  /** PTU terrain field effects. Multiple/local terrains are possible in later supplements. */
+  terrains?: MapTerrainEffect[]
+  /** Psychic Rooms are independent field effects. */
+  rooms?: MapRoomEffect[]
+}
+
 export interface MapHazardV2 {
   kind: MapHazardKind
   x: number
@@ -95,6 +131,8 @@ export interface TabletopMapV2 {
   playerVisible?: boolean
   /** Sparse battlefield hazards placed on map squares. */
   hazards?: MapHazardV2[]
+  /** Active PTU Weather, Terrain field effects, and Rooms. */
+  fieldEffects?: MapFieldEffects
   placements: SheetPlacement[]
   lights?: LightPlacement[]
   /** Current turn + round state for the collapsible initiative tracker. */
@@ -123,4 +161,5 @@ export interface LayerVisibility {
   tokens: boolean
   grid: boolean
   hazards: boolean
+  fieldEffects: boolean
 }

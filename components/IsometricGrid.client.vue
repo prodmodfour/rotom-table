@@ -6,6 +6,7 @@ import { CSS3DRenderer, CSS3DSprite } from 'three/examples/jsm/renderers/CSS3DRe
 import type { GridAnchor, GridDimensions, SpawnedPokemon, SpriteAnimation, SpriteCrop } from '~/types/pokemon'
 import type {
   LayerVisibility,
+  MapFieldEffects,
   MapHazardKind,
   MapHazardV2,
   MapVoxelV2,
@@ -25,6 +26,12 @@ import {
 import { buildMapOccupancy } from '~/utils/mapOccupancy'
 import { getMaterialDefinition, materialColorNumber } from '~/utils/mapMaterials'
 import { MAP_HAZARD_DEFINITIONS, normalizeMapHazardLayer } from '~/utils/mapHazards'
+import {
+  MAP_ROOM_DEFINITIONS,
+  MAP_TERRAIN_DEFINITIONS,
+  MAP_WEATHER_DEFINITIONS,
+  normalizeMapFieldEffects,
+} from '~/utils/mapFieldEffects'
 import { POKEMON_TYPES, computeMultiplier, formatMultiplier } from '~/utils/typeChart'
 import {
   COMBAT_STAGE_KEYS,
@@ -46,6 +53,7 @@ const props = defineProps<{
   activeTurnId?: string | null
   voxels: MapVoxelV2[]
   hazards?: MapHazardV2[]
+  fieldEffects?: MapFieldEffects
   groundLevelY?: number
   layerVisibility?: LayerVisibility
   buildMode: boolean
@@ -1128,6 +1136,7 @@ const DEFAULT_LAYER_VISIBILITY: LayerVisibility = {
   tokens: true,
   grid: true,
   hazards: true,
+  fieldEffects: true,
 }
 
 const visibleLayers = () => ({ ...DEFAULT_LAYER_VISIBILITY, ...(props.layerVisibility ?? {}) })
@@ -1378,6 +1387,8 @@ const selectedPokemon = computed(
 )
 const renderedTerrainVoxels = computed(() => props.voxels)
 const renderedHazards = computed(() => props.hazards ?? [])
+const renderedFieldEffects = computed(() => normalizeMapFieldEffects(props.fieldEffects))
+const fieldEffectsRevision = computed(() => JSON.stringify(renderedFieldEffects.value))
 const hazardRevision = computed(() =>
   renderedHazards.value
     .map((hazard) => [
@@ -1469,17 +1480,20 @@ const gridGroup = new THREE.Group()
 const worldGroup = new THREE.Group()
 const previewGroup = new THREE.Group()
 const voxelContainer = new THREE.Group()
+const fieldEffectContainer = new THREE.Group()
 const hazardContainer = new THREE.Group()
 const clock = new THREE.Clock()
 
 scene.add(gridGroup)
 scene.add(worldGroup)
 scene.add(previewGroup)
+worldGroup.add(fieldEffectContainer)
 worldGroup.add(voxelContainer)
 worldGroup.add(hazardContainer)
 
 const renderObjects = new Map<string, PokemonRenderObject>()
 const voxelGroups = new Map<string, VoxelGroup>()
+const fieldEffectObjects: THREE.Object3D[] = []
 const hazardMeshes: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>[] = []
 let terrainTopEdgeOverlay: THREE.Group | null = null
 let renderer: THREE.WebGLRenderer | null = null
@@ -2721,6 +2735,117 @@ const syncVoxelMeshes = () => {
   applyLayerVisibility()
 }
 
+const disposeFieldEffectObjects = () => {
+  for (const object of fieldEffectObjects.splice(0)) disposeObject3D(object)
+}
+
+const fieldEffectColor = (color: string, fallback = 0xfabd2f): number =>
+  parseHexColor(color) ?? fallback
+
+const makeSurfaceFieldEffectMesh = (
+  color: string,
+  opacity: number,
+  yOffset: number,
+  inset: number,
+  renderOrder: number,
+): THREE.InstancedMesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial> => {
+  const count = Math.max(1, props.dimensions.x * props.dimensions.z)
+  const mesh = new THREE.InstancedMesh(
+    new THREE.PlaneGeometry(Math.max(0.2, 1 - inset), Math.max(0.2, 1 - inset)),
+    new THREE.MeshBasicMaterial({
+      color: fieldEffectColor(color),
+      transparent: true,
+      opacity,
+      depthTest: true,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+    }),
+    count,
+  )
+
+  const groundY = normalizedGroundLevelY()
+  const columnTop = new Map<string, number>()
+  for (const voxel of renderedTerrainVoxels.value) {
+    const key = `${voxel.x},${voxel.z}`
+    columnTop.set(key, Math.max(columnTop.get(key) ?? groundY, voxel.y + 1))
+  }
+
+  const rotation = new THREE.Matrix4().makeRotationX(-Math.PI / 2)
+  const translation = new THREE.Matrix4()
+  const matrix = new THREE.Matrix4()
+  let index = 0
+  for (let z = 0; z < props.dimensions.z; z += 1) {
+    for (let x = 0; x < props.dimensions.x; x += 1) {
+      const y = Math.max(groundY, columnTop.get(`${x},${z}`) ?? groundY) + yOffset
+      translation.makeTranslation(x + 0.5, y, z + 0.5)
+      matrix.multiplyMatrices(translation, rotation)
+      mesh.setMatrixAt(index, matrix)
+      index += 1
+    }
+  }
+  mesh.count = index
+  mesh.instanceMatrix.needsUpdate = true
+  mesh.renderOrder = renderOrder
+  return mesh
+}
+
+const makeRoomBoundary = (
+  color: string,
+  opacity: number,
+  y: number,
+  inset: number,
+): THREE.LineSegments<THREE.EdgesGeometry, THREE.LineBasicMaterial> => {
+  const width = Math.max(0.2, props.dimensions.x - inset * 2)
+  const depth = Math.max(0.2, props.dimensions.z - inset * 2)
+  const height = Math.max(1, props.dimensions.y - y)
+  const geometry = new THREE.BoxGeometry(width, height, depth)
+  const edges = new THREE.EdgesGeometry(geometry)
+  geometry.dispose()
+  const lines = new THREE.LineSegments(
+    edges,
+    new THREE.LineBasicMaterial({
+      color: fieldEffectColor(color),
+      transparent: true,
+      opacity,
+      depthTest: true,
+      depthWrite: false,
+    }),
+  )
+  lines.position.set(props.dimensions.x / 2, y + height / 2, props.dimensions.z / 2)
+  lines.renderOrder = 18
+  return lines
+}
+
+const syncFieldEffectMeshes = () => {
+  disposeFieldEffectObjects()
+
+  const effects = renderedFieldEffects.value
+  const groundY = normalizedGroundLevelY()
+
+  effects.weather?.forEach((effect, index) => {
+    const def = MAP_WEATHER_DEFINITIONS[effect.kind]
+    const surface = makeSurfaceFieldEffectMesh(def.color, effects.weather!.length > 1 ? 0.08 : 0.11, 0.012 + index * 0.002, index * 0.12, 4 + index)
+    fieldEffectContainer.add(surface)
+    fieldEffectObjects.push(surface)
+  })
+
+  effects.terrains?.forEach((effect, index) => {
+    const def = MAP_TERRAIN_DEFINITIONS[effect.kind]
+    const surface = makeSurfaceFieldEffectMesh(def.color, effects.terrains!.length > 1 ? 0.16 : 0.22, 0.022 + index * 0.003, index * 0.18, 9 + index)
+    fieldEffectContainer.add(surface)
+    fieldEffectObjects.push(surface)
+  })
+
+  effects.rooms?.forEach((effect, index) => {
+    const def = MAP_ROOM_DEFINITIONS[effect.kind]
+    const boundary = makeRoomBoundary(def.color, effects.rooms!.length > 1 ? 0.42 : 0.62, groundY + 0.02, index * 0.18)
+    fieldEffectContainer.add(boundary)
+    fieldEffectObjects.push(boundary)
+  })
+
+  applyLayerVisibility()
+}
+
 const disposeHazardMeshes = () => {
   for (const mesh of hazardMeshes.splice(0)) disposeObject3D(mesh)
 }
@@ -2775,8 +2900,10 @@ const applyLayerVisibility = () => {
   const layers = visibleLayers()
   gridGroup.visible = layers.grid
   voxelContainer.visible = layers.terrain
+  fieldEffectContainer.visible = layers.fieldEffects
   hazardContainer.visible = layers.hazards
 
+  for (const object of fieldEffectObjects) object.visible = layers.fieldEffects
   for (const group of voxelGroups.values()) {
     group.mesh.visible = layers.terrain
   }
@@ -4205,6 +4332,7 @@ onMounted(() => {
   buildGrid()
   syncPokemonObjects()
   syncVoxelMeshes()
+  syncFieldEffectMeshes()
   syncHazardMeshes()
   ensurePreviewObjects()
   if (props.buildMode) ensureBuildGhost()
@@ -4255,6 +4383,7 @@ onBeforeUnmount(() => {
   disposeBuildGhost()
   disposeHazardGhost()
   disposeHazardMeshes()
+  disposeFieldEffectObjects()
   disposeTerrainTopEdgeOverlay()
   disposeAllVoxelGroups()
   disposeHazardTextureCache()
@@ -4386,6 +4515,14 @@ watch(
 )
 
 watch(
+  fieldEffectsRevision,
+  () => {
+    if (!renderer) return
+    syncFieldEffectMeshes()
+  },
+)
+
+watch(
   () => props.selectedId,
   () => {
     if (props.selectedId && !canControlPokemon(props.selectedId)) {
@@ -4507,6 +4644,7 @@ watch(
   () => props.groundLevelY,
   () => {
     if (!renderer) return
+    syncFieldEffectMeshes()
     if (selectedPokemon.value && activePreviewAnchor) updatePreviewAtAnchor(activePreviewAnchor)
   },
 )
@@ -4519,6 +4657,7 @@ watch(
     }
 
     buildGrid()
+    syncFieldEffectMeshes()
     updateGridVisibility()
     alignCameraToGrid(false)
     syncRendererSize()

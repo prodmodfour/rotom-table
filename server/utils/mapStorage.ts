@@ -17,6 +17,7 @@ import { dirname, join, resolve, sep } from 'node:path'
 import type { GridDimensions, MapHazardV2, MapSummary, MapVoxelV2, TabletopMap, TabletopMapV2 } from '~/types/map'
 import { normalizeMaterialId } from '~/utils/mapMaterials'
 import { normalizeMapHazard } from '~/utils/mapHazards'
+import { normalizeMapFieldEffects } from '~/utils/mapFieldEffects'
 
 export const PROJECT_ROOT = resolve(process.cwd())
 export const MAPS_ROOT = resolve(PROJECT_ROOT, 'data/maps')
@@ -142,6 +143,7 @@ const normalizeMapDocument = (json: TabletopMapV2, filePath: string): TabletopMa
     playerVisible: json.playerVisible === true,
     voxels,
     hazards,
+    fieldEffects: normalizeMapFieldEffects(json.fieldEffects),
     placements: Array.isArray(json.placements) ? json.placements : [],
     lights: Array.isArray(json.lights) ? json.lights : [],
     initiative,

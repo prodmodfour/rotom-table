@@ -15,6 +15,7 @@
     "playerVisible": { "type": "boolean" },
     "voxels": { "type": "array", "items": { "$ref": "#/$defs/voxel" } },
     "hazards": { "type": "array", "items": { "$ref": "#/$defs/hazard" } },
+    "fieldEffects": { "$ref": "#/$defs/fieldEffects" },
     "placements": { "type": "array", "items": { "$ref": "#/$defs/placement" } },
     "lights": { "type": "array", "items": { "$ref": "#/$defs/light" } },
     "initiative": { "$ref": "#/$defs/initiative" },
@@ -69,6 +70,47 @@
         "z": { "type": "integer" },
         "layer": { "type": "integer", "minimum": 1, "maximum": 2 },
         "owner": { "type": "string" }
+      }
+    },
+    "fieldEffects": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "weather": { "type": "array", "items": { "$ref": "#/$defs/weatherEffect" } },
+        "terrains": { "type": "array", "items": { "$ref": "#/$defs/terrainEffect" } },
+        "rooms": { "type": "array", "items": { "$ref": "#/$defs/roomEffect" } }
+      }
+    },
+    "weatherEffect": {
+      "type": "object",
+      "required": ["kind"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "enum": ["sunny", "rainy", "hail", "sandstorm"] },
+        "rounds": { "type": ["integer", "null"], "minimum": 0 },
+        "source": { "type": "string" }
+      }
+    },
+    "terrainEffect": {
+      "type": "object",
+      "required": ["kind"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "enum": ["electric", "grassy", "misty", "psychic"] },
+        "scope": { "enum": ["field", "area"] },
+        "rounds": { "type": ["integer", "null"], "minimum": 0 },
+        "source": { "type": "string" }
+      }
+    },
+    "roomEffect": {
+      "type": "object",
+      "required": ["kind"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "enum": ["magic", "trick", "wonder"] },
+        "rounds": { "type": ["integer", "null"], "minimum": 0 },
+        "startsNextRound": { "type": "boolean" },
+        "source": { "type": "string" }
       }
     },
     "placement": {

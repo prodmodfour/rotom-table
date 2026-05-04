@@ -21,6 +21,18 @@ import {
   mapHazardKey,
   normalizeMapHazardLayer,
 } from '~/utils/mapHazards'
+import {
+  MAP_ROOM_DEFINITIONS,
+  MAP_ROOM_KINDS,
+  MAP_TERRAIN_DEFINITIONS,
+  MAP_TERRAIN_KINDS,
+  MAP_WEATHER_DEFINITIONS,
+  MAP_WEATHER_KINDS,
+  createMapRoomEffect,
+  createMapTerrainEffect,
+  createMapWeatherEffect,
+  mapFieldEffectCount,
+} from '~/utils/mapFieldEffects'
 import { createPlacementId, placementsToSpawned } from '~/utils/placement'
 import {
   VOXEL_MATERIALS,
@@ -41,7 +53,18 @@ import type { CharacterSheet } from '~/types/characterSheet'
 import type { CombatStageMap } from '~/types/combatStages'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import type { TrainerSheet } from '~/types/trainerSheet'
-import type { GridAnchor, InitiativeTrackerState, MapHazardKind, MapHazardV2, MapVoxelV2, VoxelMaterial } from '~/types/map'
+import type {
+  GridAnchor,
+  InitiativeTrackerState,
+  MapFieldEffects,
+  MapHazardKind,
+  MapHazardV2,
+  MapRoomKind,
+  MapTerrainKind,
+  MapVoxelV2,
+  MapWeatherKind,
+  VoxelMaterial,
+} from '~/types/map'
 import type { PreviewState } from '~/utils/grid'
 import type { SaveStatus } from '~/composables/useEditableSheet'
 
@@ -76,6 +99,18 @@ const sidebarCollapsed = ref(false)
 const initiativeCollapsed = ref(false)
 const adminPanelOpen = ref(false)
 
+type LeftSidebarSectionKey = 'details' | 'terrain' | 'fieldEffects'
+const leftSidebarSectionsCollapsed = ref<Record<LeftSidebarSectionKey, boolean>>({
+  details: false,
+  terrain: false,
+  fieldEffects: false,
+})
+const leftSectionCollapsed = (section: LeftSidebarSectionKey): boolean =>
+  leftSidebarSectionsCollapsed.value[section]
+const toggleLeftSection = (section: LeftSidebarSectionKey) => {
+  leftSidebarSectionsCollapsed.value[section] = !leftSidebarSectionsCollapsed.value[section]
+}
+
 const buildMode = ref(false)
 const hazardMode = ref(false)
 const canEditMap = computed(() => isGm.value)
@@ -86,6 +121,7 @@ const buildMaterial = ref<VoxelMaterial>('airship_floor_metal')
 const buildColor = ref<string | null>(null)
 const hazardTool = ref<BuildTool>('pencil')
 const hazardKind = ref<MapHazardKind>('spikes')
+const weatherCoexistNext = ref(false)
 
 const layerVisibility = ref({
   terrain: true,
@@ -93,6 +129,7 @@ const layerVisibility = ref({
   tokens: true,
   grid: true,
   hazards: true,
+  fieldEffects: true,
 })
 const layerOptions = [
   'terrain',
@@ -100,6 +137,7 @@ const layerOptions = [
   'tokens',
   'grid',
   'hazards',
+  'fieldEffects',
 ] as const
 
 const sheetLookup = computed(() => ({
@@ -110,6 +148,15 @@ const sheetLookup = computed(() => ({
 const spawnedPokemon = computed(() => placementsToSpawned(map.value, sheetLookup.value))
 const mapVoxels = computed<MapVoxelV2[]>(() => map.value?.voxels ?? [])
 const mapHazards = computed<MapHazardV2[]>(() => map.value?.hazards ?? [])
+const mapFieldEffects = computed<MapFieldEffects>(() => ({
+  weather: map.value?.fieldEffects?.weather ?? [],
+  terrains: map.value?.fieldEffects?.terrains ?? [],
+  rooms: map.value?.fieldEffects?.rooms ?? [],
+}))
+const activeWeatherEffects = computed(() => mapFieldEffects.value.weather ?? [])
+const activeTerrainEffects = computed(() => mapFieldEffects.value.terrains ?? [])
+const activeRoomEffects = computed(() => mapFieldEffects.value.rooms ?? [])
+const fieldEffectCount = computed(() => mapFieldEffectCount(mapFieldEffects.value))
 const canViewMap = computed(() => !map.value || !isPlayer.value || map.value.playerVisible === true)
 const controllablePlacementIds = computed(() => {
   if (!map.value) return []
@@ -127,6 +174,9 @@ const voxelCount = computed(() => mapVoxels.value.length)
 const hazardCount = computed(() => mapHazards.value.length)
 const activeHazardDef = computed(() => MAP_HAZARD_DEFINITIONS[hazardKind.value])
 const hazardPalette = MAIN_MAP_HAZARD_KINDS.map((kind) => MAP_HAZARD_DEFINITIONS[kind])
+const weatherPalette = MAP_WEATHER_KINDS.map((kind) => MAP_WEATHER_DEFINITIONS[kind])
+const terrainPalette = MAP_TERRAIN_KINDS.map((kind) => MAP_TERRAIN_DEFINITIONS[kind])
+const roomPalette = MAP_ROOM_KINDS.map((kind) => MAP_ROOM_DEFINITIONS[kind])
 
 const clampGroundLevelY = (value: unknown, height: number): number => {
   const h = Number(height)
@@ -753,6 +803,156 @@ const clearAllHazards = () => {
   map.value.hazards = []
 }
 
+const ensureFieldEffectsState = (): Required<MapFieldEffects> | null => {
+  if (!map.value || !canEditMap.value) return null
+  if (!map.value.fieldEffects || typeof map.value.fieldEffects !== 'object') {
+    map.value.fieldEffects = { weather: [], terrains: [], rooms: [] }
+  }
+  const state = map.value.fieldEffects
+  if (!Array.isArray(state.weather)) state.weather = []
+  if (!Array.isArray(state.terrains)) state.terrains = []
+  if (!Array.isArray(state.rooms)) state.rooms = []
+  return state as Required<MapFieldEffects>
+}
+
+const weatherDefinition = (kind: MapWeatherKind) => MAP_WEATHER_DEFINITIONS[kind]
+const terrainDefinition = (kind: MapTerrainKind) => MAP_TERRAIN_DEFINITIONS[kind]
+const roomDefinition = (kind: MapRoomKind) => MAP_ROOM_DEFINITIONS[kind]
+
+const weatherIsActive = (kind: MapWeatherKind) =>
+  activeWeatherEffects.value.some((effect) => effect.kind === kind)
+
+const terrainIsActive = (kind: MapTerrainKind) =>
+  activeTerrainEffects.value.some((effect) => effect.kind === kind)
+
+const roomIsActive = (kind: MapRoomKind) =>
+  activeRoomEffects.value.some((effect) => effect.kind === kind)
+
+const setWeather = (kind: MapWeatherKind) => {
+  const state = ensureFieldEffectsState()
+  if (!state) return
+  const effect = createMapWeatherEffect(kind)
+  if (weatherCoexistNext.value && state.weather.length > 0) {
+    const next = state.weather.filter((item) => item.kind !== kind)
+    next.push(effect)
+    state.weather = next.slice(-2)
+    weatherCoexistNext.value = false
+    return
+  }
+  state.weather = [effect]
+}
+
+const removeWeather = (kind: MapWeatherKind) => {
+  const state = ensureFieldEffectsState()
+  if (!state) return
+  state.weather = state.weather.filter((effect) => effect.kind !== kind)
+  if (!state.weather.length) weatherCoexistNext.value = false
+}
+
+const clearWeather = () => {
+  const state = ensureFieldEffectsState()
+  if (!state) return
+  state.weather = []
+  weatherCoexistNext.value = false
+}
+
+const toggleTerrain = (kind: MapTerrainKind) => {
+  const state = ensureFieldEffectsState()
+  if (!state) return
+  if (state.terrains.some((effect) => effect.kind === kind)) {
+    state.terrains = state.terrains.filter((effect) => effect.kind !== kind)
+  } else {
+    state.terrains = [...state.terrains, createMapTerrainEffect(kind)]
+  }
+}
+
+const removeTerrain = (kind: MapTerrainKind) => {
+  const state = ensureFieldEffectsState()
+  if (!state) return
+  state.terrains = state.terrains.filter((effect) => effect.kind !== kind)
+}
+
+const toggleRoom = (kind: MapRoomKind) => {
+  const state = ensureFieldEffectsState()
+  if (!state) return
+  if (state.rooms.some((effect) => effect.kind === kind)) {
+    state.rooms = state.rooms.filter((effect) => effect.kind !== kind)
+  } else {
+    state.rooms = [...state.rooms, createMapRoomEffect(kind)]
+  }
+}
+
+const removeRoom = (kind: MapRoomKind) => {
+  const state = ensureFieldEffectsState()
+  if (!state) return
+  state.rooms = state.rooms.filter((effect) => effect.kind !== kind)
+}
+
+const parseRoundInput = (event: Event): number | null => {
+  const raw = (event.target as HTMLInputElement).value.trim()
+  if (!raw) return null
+  const n = Number(raw)
+  if (!Number.isFinite(n)) return null
+  return Math.max(0, Math.floor(n))
+}
+
+const setWeatherRounds = (kind: MapWeatherKind, event: Event) => {
+  const state = ensureFieldEffectsState()
+  if (!state) return
+  const effect = state.weather.find((item) => item.kind === kind)
+  if (!effect) return
+  effect.rounds = parseRoundInput(event)
+  if (effect.rounds === 0) removeWeather(kind)
+}
+
+const setTerrainRounds = (kind: MapTerrainKind, event: Event) => {
+  const state = ensureFieldEffectsState()
+  if (!state) return
+  const effect = state.terrains.find((item) => item.kind === kind)
+  if (!effect) return
+  effect.rounds = parseRoundInput(event)
+  if (effect.rounds === 0) removeTerrain(kind)
+}
+
+const setRoomRounds = (kind: MapRoomKind, event: Event) => {
+  const state = ensureFieldEffectsState()
+  if (!state) return
+  const effect = state.rooms.find((item) => item.kind === kind)
+  if (!effect) return
+  effect.rounds = parseRoundInput(event)
+  if (effect.rounds === 0) removeRoom(kind)
+}
+
+const durationLabel = (rounds: number | null | undefined): string =>
+  rounds === null || rounds === undefined ? '' : `${rounds}`
+
+const tickFieldEffectDurations = () => {
+  const state = ensureFieldEffectsState()
+  if (!state) return
+  const tick = <T extends { rounds?: number | null }>(effects: T[]): T[] =>
+    effects
+      .map((effect) => {
+        if (effect.rounds === null || effect.rounds === undefined) return effect
+        return { ...effect, rounds: Math.max(0, effect.rounds - 1) }
+      })
+      .filter((effect) => effect.rounds === null || effect.rounds === undefined || effect.rounds > 0)
+  state.weather = tick(state.weather)
+  state.terrains = tick(state.terrains)
+  state.rooms = tick(state.rooms)
+  if (!state.weather.length) weatherCoexistNext.value = false
+}
+
+const clearAllFieldEffects = () => {
+  const state = ensureFieldEffectsState()
+  if (!state || fieldEffectCount.value === 0) return
+  const ok = window.confirm('Clear all active Weather, Terrain, and Room effects?')
+  if (!ok) return
+  state.weather = []
+  state.terrains = []
+  state.rooms = []
+  weatherCoexistNext.value = false
+}
+
 const setMode = (mode: 'play' | 'build' | 'hazards') => {
   if (mode !== 'play' && !canEditMap.value) return
   const nextBuild = mode === 'build'
@@ -936,46 +1136,71 @@ watch(
           />
         </div>
 
-        <section v-if="map && canViewMap" class="panel-card">
-        <div class="panel-heading">
-          <h2>{{ map.name }}</h2>
-          <span class="badge">
-            {{ map.dimensions.x }} × {{ map.dimensions.y }} × {{ map.dimensions.z }}
-          </span>
-        </div>
+        <section v-if="map && canViewMap" class="panel-card map-details-panel">
+          <div class="panel-heading panel-heading--collapsible">
+            <button
+              type="button"
+              class="section-toggle-button"
+              :aria-expanded="!leftSectionCollapsed('details')"
+              aria-controls="map-details-section"
+              @click="toggleLeftSection('details')"
+            >
+              <span class="section-toggle-button__chevron" aria-hidden="true">
+                {{ leftSectionCollapsed('details') ? '›' : '⌄' }}
+              </span>
+              <span class="section-toggle-button__title">{{ map.name }}</span>
+            </button>
+            <span class="badge">
+              {{ map.dimensions.x }} × {{ map.dimensions.y }} × {{ map.dimensions.z }}
+            </span>
+          </div>
 
-        <label v-if="isGm" class="visibility-toggle" :class="{ active: map.playerVisible }">
-          <input v-model="map.playerVisible" type="checkbox" />
-          Player visible
-        </label>
-        <p v-else class="permission-note">
-          Player view: this map is visible, but GM-only map settings are locked.
-        </p>
+          <div id="map-details-section" v-show="!leftSectionCollapsed('details')" class="collapsible-section-body">
+            <label v-if="isGm" class="visibility-toggle" :class="{ active: map.playerVisible }">
+              <input v-model="map.playerVisible" type="checkbox" />
+              Player visible
+            </label>
+            <p v-else class="permission-note">
+              Player view: this map is visible, but GM-only map settings are locked.
+            </p>
 
-        <div class="dimension-grid">
-          <label>
-            <span>Width (X)</span>
-            <input v-model.number="map.dimensions.x" type="number" min="1" max="200" :disabled="!canEditMap" />
-          </label>
-          <label>
-            <span>Height (Y)</span>
-            <input v-model.number="map.dimensions.y" type="number" min="1" max="200" :disabled="!canEditMap" />
-          </label>
-          <label>
-            <span>Depth (Z)</span>
-            <input v-model.number="map.dimensions.z" type="number" min="1" max="200" :disabled="!canEditMap" />
-          </label>
-        </div>
-      </section>
+            <div class="dimension-grid">
+              <label>
+                <span>Width (X)</span>
+                <input v-model.number="map.dimensions.x" type="number" min="1" max="200" :disabled="!canEditMap" />
+              </label>
+              <label>
+                <span>Height (Y)</span>
+                <input v-model.number="map.dimensions.y" type="number" min="1" max="200" :disabled="!canEditMap" />
+              </label>
+              <label>
+                <span>Depth (Z)</span>
+                <input v-model.number="map.dimensions.z" type="number" min="1" max="200" :disabled="!canEditMap" />
+              </label>
+            </div>
+          </div>
+        </section>
 
       <section v-if="map && canViewMap" class="panel-card terrain-panel">
-        <div class="panel-heading">
-          <h2>Terrain</h2>
+        <div class="panel-heading panel-heading--collapsible">
+          <button
+            type="button"
+            class="section-toggle-button"
+            :aria-expanded="!leftSectionCollapsed('terrain')"
+            aria-controls="map-terrain-section"
+            @click="toggleLeftSection('terrain')"
+          >
+            <span class="section-toggle-button__chevron" aria-hidden="true">
+              {{ leftSectionCollapsed('terrain') ? '›' : '⌄' }}
+            </span>
+            <span class="section-toggle-button__title">Terrain</span>
+          </button>
           <span class="badge">
             {{ voxelCount }} block{{ voxelCount === 1 ? '' : 's' }} · {{ hazardCount }} hazard{{ hazardCount === 1 ? '' : 's' }}
           </span>
         </div>
 
+        <div id="map-terrain-section" v-show="!leftSectionCollapsed('terrain')" class="collapsible-section-body">
         <div v-if="canEditMap" class="mode-row" role="group" aria-label="Editor mode">
           <button
             type="button"
@@ -1167,9 +1392,238 @@ watch(
             </button>
           </div>
         </template>
+        </div>
       </section>
 
-        <SheetBrowser v-if="map && canSpawnTokens" @select="spawnSheet" />
+      <section v-if="map && canViewMap" class="panel-card field-effects-panel">
+        <div class="panel-heading panel-heading--collapsible">
+          <button
+            type="button"
+            class="section-toggle-button"
+            :aria-expanded="!leftSectionCollapsed('fieldEffects')"
+            aria-controls="map-field-effects-section"
+            @click="toggleLeftSection('fieldEffects')"
+          >
+            <span class="section-toggle-button__chevron" aria-hidden="true">
+              {{ leftSectionCollapsed('fieldEffects') ? '›' : '⌄' }}
+            </span>
+            <span class="section-toggle-button__title">Field effects</span>
+          </button>
+          <span class="badge">
+            {{ fieldEffectCount }} active
+          </span>
+        </div>
+
+        <div id="map-field-effects-section" v-show="!leftSectionCollapsed('fieldEffects')" class="collapsible-section-body">
+        <div class="field-effect-group">
+          <div class="field-effect-header">
+            <h3>Weather</h3>
+            <button
+              v-if="canEditMap"
+              type="button"
+              class="mini-action"
+              :disabled="!activeWeatherEffects.length"
+              @click="clearWeather"
+            >
+              Clear
+            </button>
+          </div>
+          <div class="effect-swatch-grid effect-swatch-grid--weather" role="group" aria-label="Weather">
+            <button
+              v-for="weather in weatherPalette"
+              :key="weather.kind"
+              type="button"
+              class="effect-swatch"
+              :class="{ 'is-active': weatherIsActive(weather.kind) }"
+              :aria-pressed="weatherIsActive(weather.kind)"
+              :disabled="!canEditMap"
+              :title="weather.rules"
+              :style="{ '--effect-color': weather.color }"
+              @click="setWeather(weather.kind)"
+            >
+              <span class="effect-swatch__icon">{{ weather.shortLabel }}</span>
+              <span class="effect-swatch__label">{{ weather.label }}</span>
+            </button>
+          </div>
+          <label v-if="canEditMap" class="coexist-toggle" :class="{ active: weatherCoexistNext }">
+            <input v-model="weatherCoexistNext" type="checkbox" :disabled="!activeWeatherEffects.length" />
+            Add next weather alongside current one (Climate Control)
+          </label>
+          <div v-if="activeWeatherEffects.length" class="effect-chip-list">
+            <article
+              v-for="effect in activeWeatherEffects"
+              :key="effect.kind"
+              class="effect-chip"
+              :style="{ '--effect-color': weatherDefinition(effect.kind).color }"
+            >
+              <div class="effect-chip__main">
+                <strong>{{ weatherDefinition(effect.kind).label }}</strong>
+                <span>{{ weatherDefinition(effect.kind).description }}</span>
+              </div>
+              <label class="duration-field">
+                <span>Duration</span>
+                <input
+                  type="number"
+                  min="0"
+                  :value="durationLabel(effect.rounds)"
+                  :disabled="!canEditMap"
+                  placeholder="∞"
+                  @input="setWeatherRounds(effect.kind, $event)"
+                />
+              </label>
+              <button
+                v-if="canEditMap"
+                type="button"
+                class="chip-remove"
+                :aria-label="`Remove ${weatherDefinition(effect.kind).label}`"
+                @click="removeWeather(effect.kind)"
+              >
+                ×
+              </button>
+            </article>
+          </div>
+          <p v-else class="field-effect-empty">Clear / normal weather.</p>
+        </div>
+
+        <div class="field-effect-group">
+          <div class="field-effect-header">
+            <h3>Terrain</h3>
+            <span class="field-effect-note">Field-wide toggles</span>
+          </div>
+          <div class="effect-swatch-grid" role="group" aria-label="Terrain effects">
+            <button
+              v-for="terrain in terrainPalette"
+              :key="terrain.kind"
+              type="button"
+              class="effect-swatch"
+              :class="{ 'is-active': terrainIsActive(terrain.kind) }"
+              :aria-pressed="terrainIsActive(terrain.kind)"
+              :disabled="!canEditMap"
+              :title="terrain.rules"
+              :style="{ '--effect-color': terrain.color }"
+              @click="toggleTerrain(terrain.kind)"
+            >
+              <span class="effect-swatch__icon">{{ terrain.shortLabel }}</span>
+              <span class="effect-swatch__label">{{ terrain.label }}</span>
+            </button>
+          </div>
+          <div v-if="activeTerrainEffects.length" class="effect-chip-list">
+            <article
+              v-for="effect in activeTerrainEffects"
+              :key="effect.kind"
+              class="effect-chip"
+              :style="{ '--effect-color': terrainDefinition(effect.kind).color }"
+            >
+              <div class="effect-chip__main">
+                <strong>{{ terrainDefinition(effect.kind).label }}</strong>
+                <span>{{ terrainDefinition(effect.kind).description }}</span>
+              </div>
+              <label class="duration-field">
+                <span>Duration</span>
+                <input
+                  type="number"
+                  min="0"
+                  :value="durationLabel(effect.rounds)"
+                  :disabled="!canEditMap"
+                  placeholder="∞"
+                  @input="setTerrainRounds(effect.kind, $event)"
+                />
+              </label>
+              <button
+                v-if="canEditMap"
+                type="button"
+                class="chip-remove"
+                :aria-label="`Remove ${terrainDefinition(effect.kind).label}`"
+                @click="removeTerrain(effect.kind)"
+              >
+                ×
+              </button>
+            </article>
+          </div>
+          <p v-else class="field-effect-empty">No active terrain field effect.</p>
+        </div>
+
+        <div class="field-effect-group">
+          <div class="field-effect-header">
+            <h3>Rooms</h3>
+            <span class="field-effect-note">Independent</span>
+          </div>
+          <div class="effect-swatch-grid" role="group" aria-label="Room effects">
+            <button
+              v-for="room in roomPalette"
+              :key="room.kind"
+              type="button"
+              class="effect-swatch"
+              :class="{ 'is-active': roomIsActive(room.kind) }"
+              :aria-pressed="roomIsActive(room.kind)"
+              :disabled="!canEditMap"
+              :title="room.rules"
+              :style="{ '--effect-color': room.color }"
+              @click="toggleRoom(room.kind)"
+            >
+              <span class="effect-swatch__icon">{{ room.shortLabel }}</span>
+              <span class="effect-swatch__label">{{ room.label }}</span>
+            </button>
+          </div>
+          <div v-if="activeRoomEffects.length" class="effect-chip-list">
+            <article
+              v-for="effect in activeRoomEffects"
+              :key="effect.kind"
+              class="effect-chip"
+              :style="{ '--effect-color': roomDefinition(effect.kind).color }"
+            >
+              <div class="effect-chip__main">
+                <strong>{{ roomDefinition(effect.kind).label }}</strong>
+                <span>{{ roomDefinition(effect.kind).description }}</span>
+                <em v-if="effect.startsNextRound">starts next round</em>
+              </div>
+              <label class="duration-field">
+                <span>Duration</span>
+                <input
+                  type="number"
+                  min="0"
+                  :value="durationLabel(effect.rounds)"
+                  :disabled="!canEditMap"
+                  placeholder="∞"
+                  @input="setRoomRounds(effect.kind, $event)"
+                />
+              </label>
+              <button
+                v-if="canEditMap"
+                type="button"
+                class="chip-remove"
+                :aria-label="`Remove ${roomDefinition(effect.kind).label}`"
+                @click="removeRoom(effect.kind)"
+              >
+                ×
+              </button>
+            </article>
+          </div>
+          <p v-else class="field-effect-empty">No active room.</p>
+        </div>
+
+        <div v-if="canEditMap" class="field-effect-actions">
+          <button
+            type="button"
+            class="bulk-button"
+            :disabled="!fieldEffectCount"
+            @click="tickFieldEffectDurations"
+          >
+            Advance durations
+          </button>
+          <button
+            type="button"
+            class="bulk-button bulk-button--danger"
+            :disabled="!fieldEffectCount"
+            @click="clearAllFieldEffects"
+          >
+            Clear effects
+          </button>
+        </div>
+        </div>
+      </section>
+
+      <SheetBrowser v-if="map && canSpawnTokens" @select="spawnSheet" />
       </div>
     </aside>
 
@@ -1185,6 +1639,7 @@ watch(
           :active-turn-id="activeInitiativeId"
           :voxels="mapVoxels"
           :hazards="mapHazards"
+          :field-effects="mapFieldEffects"
           :ground-level-y="mapGroundLevelY"
           :layer-visibility="layerVisibility"
           :build-mode="buildMode && canEditMap"
@@ -1714,6 +2169,68 @@ watch(
   white-space: nowrap;
 }
 
+.panel-heading--collapsible {
+  margin-bottom: 0;
+}
+
+.section-toggle-button {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  border: 0;
+  background: transparent;
+  color: var(--ink-bright);
+  padding: 0;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.section-toggle-button:hover,
+.section-toggle-button:focus-visible {
+  color: var(--accent);
+}
+
+.section-toggle-button:focus-visible {
+  outline: 2px solid rgba(250, 189, 47, 0.35);
+  outline-offset: 3px;
+  border-radius: 8px;
+}
+
+.section-toggle-button__chevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.15rem;
+  height: 1.15rem;
+  border: 1px solid var(--rule-soft);
+  border-radius: 999px;
+  color: var(--accent);
+  font-size: 0.9rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.section-toggle-button__title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-book);
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.map-details-panel,
+.collapsible-section-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
 .badge {
   display: inline-flex;
   align-items: center;
@@ -1979,6 +2496,237 @@ input:disabled {
 
 .hazard-swatch.is-active .hazard-swatch__label {
   color: var(--accent);
+}
+
+.field-effects-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.field-effect-group {
+  border-top: 1px solid var(--rule-soft);
+  padding-top: 0.8rem;
+}
+
+.field-effects-panel .collapsible-section-body > .field-effect-group:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.field-effect-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.7rem;
+  margin-bottom: 0.55rem;
+}
+
+.field-effect-header h3 {
+  margin: 0;
+  color: var(--ink-bright);
+  font-size: 0.86rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.field-effect-note,
+.field-effect-empty {
+  color: var(--ink-muted);
+  font-size: 0.74rem;
+  letter-spacing: 0.04em;
+}
+
+.field-effect-empty {
+  margin: 0.5rem 0 0;
+  line-height: 1.35;
+}
+
+.effect-swatch-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.4rem;
+}
+
+.effect-swatch-grid--weather {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.effect-swatch {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.45rem;
+  border: 1px solid var(--rule-soft);
+  border-radius: 10px;
+  background: var(--paper);
+  color: var(--ink);
+  padding: 0.45rem;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.effect-swatch:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--effect-color) 55%, var(--rule-strong));
+  background: var(--paper-hover);
+}
+
+.effect-swatch:disabled {
+  cursor: default;
+  opacity: 0.8;
+}
+
+.effect-swatch.is-active {
+  border-color: color-mix(in srgb, var(--effect-color) 72%, var(--accent));
+  background: color-mix(in srgb, var(--effect-color) 16%, var(--paper));
+}
+
+.effect-swatch__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.65rem;
+  min-height: 1.9rem;
+  border: 1px solid color-mix(in srgb, var(--effect-color) 65%, #1d2021);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--effect-color) 20%, transparent);
+  color: color-mix(in srgb, var(--effect-color) 78%, #fbf1c7);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.effect-swatch__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.76rem;
+  letter-spacing: 0.03em;
+}
+
+.effect-chip-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  margin-top: 0.6rem;
+}
+
+.effect-chip {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 4.4rem auto;
+  align-items: center;
+  gap: 0.55rem;
+  border: 1px solid color-mix(in srgb, var(--effect-color) 40%, var(--rule-soft));
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--effect-color) 9%, var(--paper));
+  padding: 0.55rem;
+}
+
+.effect-chip__main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.18rem;
+}
+
+.effect-chip__main strong {
+  color: color-mix(in srgb, var(--effect-color) 70%, var(--ink-bright));
+  font-size: 0.82rem;
+}
+
+.effect-chip__main span,
+.effect-chip__main em {
+  color: var(--ink-muted);
+  font-size: 0.72rem;
+  line-height: 1.25;
+}
+
+.duration-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.duration-field span {
+  color: var(--ink-muted);
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.duration-field input {
+  padding: 0.4rem 0.45rem;
+  text-align: center;
+}
+
+.chip-remove,
+.mini-action {
+  border: 1px solid var(--rule-soft);
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--ink-soft);
+  cursor: pointer;
+  font: inherit;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.chip-remove {
+  width: 1.9rem;
+  height: 1.9rem;
+  padding: 0;
+  font-size: 1.05rem;
+  line-height: 1;
+}
+
+.mini-action {
+  padding: 0.25rem 0.6rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.chip-remove:hover:not(:disabled),
+.mini-action:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.chip-remove:disabled,
+.mini-action:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.coexist-toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.45rem;
+  margin-top: 0.55rem;
+  color: var(--ink-muted);
+  font-size: 0.75rem;
+  line-height: 1.35;
+}
+
+.coexist-toggle.active {
+  color: var(--accent);
+}
+
+.coexist-toggle input {
+  width: auto;
+  margin-top: 0.15rem;
+  accent-color: var(--accent);
+}
+
+.field-effect-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+  border-top: 1px solid var(--rule-soft);
+  padding-top: 0.85rem;
 }
 
 .layer-panel {

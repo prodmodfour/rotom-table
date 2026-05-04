@@ -119,6 +119,7 @@ export const useEditableMap = (slug: string, debounceMs = 200): UseEditableMapRe
 
     assignIfChanged(target, 'voxels', next.voxels)
     assignIfChanged(target, 'hazards', next.hazards)
+    assignIfChanged(target, 'fieldEffects', next.fieldEffects)
     assignIfChanged(target, 'placements', next.placements)
     assignIfChanged(target, 'lights', next.lights)
     assignIfChanged(target, 'initiative', next.initiative)
