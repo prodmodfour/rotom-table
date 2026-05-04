@@ -84,12 +84,14 @@ const buildPokemonSheet = (slug: string) => ({
   nickname: 'New Pokémon',
   species: 'Bulbasaur',
   level: 1,
+  player: false,
 })
 
 const buildTrainerSheet = (slug: string) => ({
   slug,
   name: 'New Trainer',
   level: 1,
+  player: false,
 })
 
 export default defineEventHandler(async (event) => {

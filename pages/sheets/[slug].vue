@@ -265,6 +265,9 @@ const setInheritedMove = (level: string, value: string | undefined) => {
               <span class="badge">
                 Lv <EditableCell v-model="sheet.level" type="number" :min="1" />
               </span>
+              <label class="badge player-toggle" :class="{ player: sheet.player }" title="Player">
+                <input v-model="sheet.player" type="checkbox" /> Player
+              </label>
               <label class="badge shiny-toggle" :class="{ shiny: sheet.shiny }" title="Shiny">
                 <input v-model="sheet.shiny" type="checkbox" /> ★ Shiny
               </label>
@@ -1085,6 +1088,7 @@ const setInheritedMove = (level: string, value: string | undefined) => {
   white-space: nowrap;
 }
 
+.badge.player-toggle,
 .badge.shiny-toggle {
   background: rgba(221, 210, 176, 0.16);
   color: var(--ink-bright);
@@ -1092,10 +1096,12 @@ const setInheritedMove = (level: string, value: string | undefined) => {
   user-select: none;
 }
 
+.badge.player-toggle.player,
 .badge.shiny-toggle.shiny {
   background: rgba(221, 210, 176, 0.28);
 }
 
+.badge.player-toggle input,
 .badge.shiny-toggle input {
   width: 0.85em;
   height: 0.85em;

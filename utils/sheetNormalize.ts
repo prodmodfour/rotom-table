@@ -26,6 +26,8 @@ const ensureArr = <T>(host: any, key: string): T[] => {
 }
 
 export const normalizeCharacterSheet = (sheet: CharacterSheet): CharacterSheet => {
+  if (typeof sheet.player !== 'boolean') sheet.player = false
+
   // Headline stats — give every key an entry so the stats table is editable.
   const stats = ensureObj<NonNullable<CharacterSheet['stats']>>(sheet, 'stats')
   for (const key of STAT_KEYS) {
@@ -63,6 +65,8 @@ export const normalizeCharacterSheet = (sheet: CharacterSheet): CharacterSheet =
 }
 
 export const normalizeTrainerSheet = (sheet: TrainerSheet): TrainerSheet => {
+  if (typeof sheet.player !== 'boolean') sheet.player = false
+
   const stats = ensureObj<NonNullable<TrainerSheet['stats']>>(sheet, 'stats')
   for (const key of TRAINER_STAT_KEYS) {
     const row = ensureObj<Record<string, number>>(stats, key)

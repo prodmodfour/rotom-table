@@ -239,6 +239,8 @@ export interface TrainerSheet {
    */
   folder?: string
   name: string
+  /** Marks this sheet as a player-controlled character. */
+  player?: boolean
   /** Player handle / portrait alt. */
   playedBy?: string
   age?: string | number

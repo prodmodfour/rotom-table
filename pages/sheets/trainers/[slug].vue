@@ -391,6 +391,9 @@ const clearPortrait = () => {
             Played by
             <strong><EditableCell v-model="sheet.playedBy" placeholder="—" /></strong>
           </p>
+          <label class="player-toggle" :class="{ active: sheet.player }" title="Player">
+            <input v-model="sheet.player" type="checkbox" /> Player
+          </label>
         </div>
         <div class="identity-vitals">
           <div class="vital">
@@ -1507,6 +1510,32 @@ const clearPortrait = () => {
   margin: 0.25rem 0 0;
   color: var(--ink-muted);
   font-size: 0.85rem;
+}
+
+.player-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.45rem;
+  border: 1px solid var(--rule-soft);
+  border-radius: 999px;
+  padding: 0.22rem 0.65rem;
+  background: rgba(221, 210, 176, 0.16);
+  color: var(--ink-bright);
+  font-size: 0.74rem;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  user-select: none;
+}
+
+.player-toggle.active {
+  background: rgba(221, 210, 176, 0.28);
+}
+
+.player-toggle input {
+  width: 0.85em;
+  height: 0.85em;
+  margin: 0;
 }
 
 .identity-vitals {

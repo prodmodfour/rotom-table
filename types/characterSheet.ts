@@ -141,6 +141,8 @@ export interface CharacterSheet {
   toNextLevel?: number
   gender?: 'Male' | 'Female' | 'Genderless' | string
   shiny?: boolean
+  /** Marks this sheet as a player-controlled character. */
+  player?: boolean
 
   /** PTU nature name, e.g. ``"Hardy"``, ``"Modest"``. */
   nature?: string
