@@ -18,6 +18,7 @@ import { makeAbilityLookupRows, setLookupAbilityName } from '~/utils/sheetAbilit
 import { formatLookupValue, makeMoveLookupRows, setLookupMoveName, type MoveLookupRow } from '~/utils/sheetMoveLookup'
 import { makeAutomaticStruggleMoves } from '~/utils/struggleMoves'
 import { clampHpValue, computeHpThresholds, computeTickValue } from '~/utils/ptuHp'
+import { computePokemonLevelUpStatPointBudget } from '~/utils/statPointBudgets'
 import {
   EVASION_BONUS_MAX,
   EVASION_BONUS_MIN,
@@ -123,6 +124,12 @@ watch(
 )
 
 const hpThresholds = computed(() => computeHpThresholds(fullMaxHp.value))
+
+const statPointsSpent = computed(() =>
+  stats.value.reduce((sum, row) => sum + (Number.isFinite(row.added) ? row.added : 0), 0),
+)
+const statPointsBudget = computed(() => computePokemonLevelUpStatPointBudget(sheet.value?.level ?? 1))
+const statPointsLeft = computed(() => statPointsBudget.value - statPointsSpent.value)
 
 const totalForStat = (key: StatKey): number =>
   stats.value.find((row) => row.key === key)?.total ?? 0
@@ -524,6 +531,20 @@ const setInheritedMove = (level: string, value: string | undefined) => {
                   </td>
                 </tr>
               </tbody>
+              <tfoot>
+                <tr
+                  class="stat-points-row"
+                  title="Pokémon added Stat Points = Level + 10 (PTU Core, Pokémon p.198)."
+                >
+                  <th colspan="4" scope="row">Total points to spend</th>
+                  <td :class="['stat-points-row__value', { negative: statPointsLeft < 0 }]">
+                    {{ statPointsLeft }}
+                  </td>
+                  <td colspan="2" class="stat-points-row__meta">
+                    {{ statPointsSpent }} / {{ statPointsBudget }} used
+                  </td>
+                </tr>
+              </tfoot>
             </table>
           </div>
         </section>
@@ -1355,6 +1376,35 @@ const setInheritedMove = (level: string, value: string | undefined) => {
 
 .stats-table .mod.plus  { color: var(--good); }
 .stats-table .mod.minus { color: var(--bad); }
+
+.stats-table tfoot th,
+.stats-table tfoot td {
+  padding-top: 0.55rem;
+  border-bottom: 0;
+}
+
+.stat-points-row th {
+  text-align: right;
+  color: var(--ink-muted);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.stat-points-row__value {
+  font-weight: 800;
+  color: var(--good);
+}
+
+.stat-points-row__value.negative {
+  color: var(--bad);
+}
+
+.stat-points-row__meta {
+  color: var(--ink-muted);
+  font-size: 0.72rem;
+  text-align: left;
+}
 
 /* ---- Combat ---- */
 

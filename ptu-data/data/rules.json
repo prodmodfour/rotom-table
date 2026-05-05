@@ -298,5 +298,42 @@
       "HM"
     ],
     "source": "books/markdown/core/09-gear-and-items.md"
+  },
+  "Stat Point Advancement": {
+    "name": "Stat Point Advancement",
+    "category": "Advancement Rule",
+    "text": "Pokémon: When managing a Pokémon, add +X Stat Points where X is the Pokémon's Level plus 10. When a Pokémon Levels up, it gains +1 Stat Point; Pokémon have a maximum Level of 100.\nTrainers: After Character Creation, every Level you gain a Stat Point; Trainers don't follow Base Relations. Starting Trainers distribute 10 additional points during Character Creation, so the level-up stat-point budget shown in the Trainer sheet's Lvl-Up column is Level - 1. The Trainer progression chart's baseline Total Stats is Level + 9 and does not include special Level 5/10/20/30/40 bonus choices.",
+    "aliases": [
+      "Stat Points",
+      "Level-Up Stat Points",
+      "Pokemon Stat Points",
+      "Pokémon Stat Points",
+      "Trainer Stat Points",
+      "Trainer Level-Up Stat Points"
+    ],
+    "source": "books/markdown/core/05-pokemon.md; books/markdown/core/02-character-creation.md",
+    "statPointFormulas": {
+      "pokemonAdded": {
+        "kind": "levelOffset",
+        "offset": 10,
+        "min": 0,
+        "minLevel": 1,
+        "maxLevel": 100
+      },
+      "trainerLevelUp": {
+        "kind": "levelOffset",
+        "offset": -1,
+        "min": 0,
+        "minLevel": 1,
+        "maxLevel": 50
+      },
+      "trainerTotalAtLevel": {
+        "kind": "levelOffset",
+        "offset": 9,
+        "min": 0,
+        "minLevel": 1,
+        "maxLevel": 50
+      }
+    }
   }
 }

@@ -17,6 +17,7 @@ import { trainerCatalog } from '~/data/trainerCatalog'
 import { normalizeTrainerSheet } from '~/utils/sheetNormalize'
 import { makeAbilityLookupRows, setLookupAbilityName } from '~/utils/sheetAbilityLookup'
 import { clampHpValue, computeHpThresholds, computeTickValue } from '~/utils/ptuHp'
+import { computeTrainerLevelUpStatPointBudget } from '~/utils/statPointBudgets'
 import { formatLookupValue, makeMoveLookupRows, setLookupMoveName } from '~/utils/sheetMoveLookup'
 import {
   EVASION_BONUS_MAX,
@@ -171,6 +172,12 @@ const trainerEvasion = computed(() => {
 
 const tickValue = computed(() => computeTickValue(fullMaxHp.value))
 const hpThresholds = computed(() => computeHpThresholds(fullMaxHp.value))
+
+const statPointsSpent = computed(() =>
+  stats.value.reduce((sum, row) => sum + (Number.isFinite(row.levelUp) ? row.levelUp : 0), 0),
+)
+const statPointsBudget = computed(() => computeTrainerLevelUpStatPointBudget(sheet.value?.level ?? 1))
+const statPointsLeft = computed(() => statPointsBudget.value - statPointsSpent.value)
 
 // ---------------------------------------------------------------------------
 // CSV-backed v-models (arrays exposed as comma-separated input)
@@ -580,6 +587,20 @@ const clearPortrait = () => {
                   <td><strong>{{ s.total }}</strong></td>
                 </tr>
               </tbody>
+              <tfoot>
+                <tr
+                  class="stat-points-row"
+                  title="Trainer Lvl-Up Stat Points = Level - 1; the 10 character-creation points live in Base (PTU Core, Character Advancement p.19)."
+                >
+                  <th colspan="4" scope="row">Total points to spend</th>
+                  <td :class="['stat-points-row__value', { negative: statPointsLeft < 0 }]">
+                    {{ statPointsLeft }}
+                  </td>
+                  <td class="stat-points-row__meta">
+                    {{ statPointsSpent }} / {{ statPointsBudget }} used
+                  </td>
+                </tr>
+              </tfoot>
             </table>
           </div>
 
@@ -1844,6 +1865,34 @@ const clearPortrait = () => {
 }
 
 .stats-table tbody th { color: var(--accent); letter-spacing: 0.04em; }
+
+.data-table tfoot th,
+.data-table tfoot td {
+  padding-top: 0.55rem;
+  border-bottom: 0;
+}
+
+.stat-points-row th {
+  text-align: right;
+  color: var(--ink-muted);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.stat-points-row__value {
+  font-weight: 800;
+  color: var(--good);
+}
+
+.stat-points-row__value.negative {
+  color: var(--bad);
+}
+
+.stat-points-row__meta {
+  color: var(--ink-muted);
+  font-size: 0.72rem;
+}
 
 /* Row controls */
 .row-add {

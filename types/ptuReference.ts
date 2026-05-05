@@ -38,12 +38,23 @@ export interface PtuCondition {
   source?: string
 }
 
+export type PtuStatPointFormulaKey = 'pokemonAdded' | 'trainerLevelUp' | 'trainerTotalAtLevel'
+
+export interface PtuLevelOffsetFormula {
+  kind: 'levelOffset'
+  offset: number
+  min?: number
+  minLevel?: number
+  maxLevel?: number
+}
+
 export interface PtuRule {
   name: string
   category: string
   text?: string
   aliases?: string[]
   source?: string
+  statPointFormulas?: Partial<Record<PtuStatPointFormulaKey, PtuLevelOffsetFormula>>
 }
 
 /**
