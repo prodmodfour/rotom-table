@@ -14,7 +14,8 @@ import { POKEMON_TYPES, computeMultiplier, formatMultiplier } from '~/utils/type
 import { normalizeCharacterSheet } from '~/utils/sheetNormalize'
 import { PTU_NATURE_OPTIONS, resolveNatureMod } from '~/utils/ptuNatures'
 import { makeAbilityLookupRows, setLookupAbilityName } from '~/utils/sheetAbilityLookup'
-import { formatLookupValue, makeMoveLookupRows, setLookupMoveName } from '~/utils/sheetMoveLookup'
+import { formatLookupValue, makeMoveLookupRows, setLookupMoveName, type MoveLookupRow } from '~/utils/sheetMoveLookup'
+import { makeAutomaticStruggleMoves } from '~/utils/struggleMoves'
 import { useEditableSheet, type SaveStatus } from '~/composables/useEditableSheet'
 import type {
   CharacterSheet,
@@ -23,6 +24,11 @@ import type {
   CharacterSheetEdge,
   StatKey,
 } from '~/types/characterSheet'
+
+type SheetMoveLookupRow = MoveLookupRow<CharacterSheetMove> & {
+  automatic: boolean
+  sheetIndex: number | null
+}
 
 // ---------------------------------------------------------------------------
 // Resolve the static sheet for this URL, then deep-clone + normalize it into
@@ -110,11 +116,27 @@ const tutorPointsLeft = computed(() => {
 const attackTotal = computed(() => stats.value.find((row) => row.key === 'atk')?.total ?? 0)
 const specialAttackTotal = computed(() => stats.value.find((row) => row.key === 'satk')?.total ?? 0)
 
-const moveRows = computed(() => makeMoveLookupRows(sheet.value?.movelist, {
-  stabTypes: sheetTypes.value,
-  physicalAttack: attackTotal.value,
-  specialAttack: specialAttackTotal.value,
-}))
+const struggleCapabilityNames = computed(() => [
+  ...(species.value?.capabilities?.other ?? []),
+  ...(sheet.value?.capabilities?.other ?? []),
+])
+
+const automaticStruggleMoves = computed(() =>
+  makeAutomaticStruggleMoves(struggleCapabilityNames.value, sheet.value?.movelist),
+)
+
+const moveRows = computed<SheetMoveLookupRow[]>(() => {
+  const options = {
+    stabTypes: sheetTypes.value,
+    physicalAttack: attackTotal.value,
+    specialAttack: specialAttackTotal.value,
+  }
+  const manualRows = makeMoveLookupRows(sheet.value?.movelist, options)
+    .map((row, i) => ({ ...row, automatic: false, sheetIndex: i }))
+  const automaticRows = makeMoveLookupRows(automaticStruggleMoves.value, options)
+    .map((row) => ({ ...row, automatic: true, sheetIndex: null }))
+  return [...manualRows, ...automaticRows]
+})
 
 const abilityRows = computed(() => makeAbilityLookupRows(sheet.value?.abilities))
 
@@ -222,7 +244,8 @@ const skillBgLoweredCsv = computed<string>({
 const addMove = () => {
   sheet.value?.movelist?.push({ name: '' } as CharacterSheetMove)
 }
-const removeMove = (i: number) => {
+const removeMove = (i: number | null) => {
+  if (i == null) return
   sheet.value?.movelist?.splice(i, 1)
 }
 
@@ -661,7 +684,7 @@ const setInheritedMove = (level: string, value: string | undefined) => {
       <section class="panel-card">
         <h2 class="panel-title">
           Movelist
-          <span class="panel-subtle">name editable · details from moves.json</span>
+          <span class="panel-subtle">name editable · details from moves.json · Struggle auto-added</span>
           <button type="button" class="row-add" @click="addMove">
             <PhPlus :size="14" weight="bold" /> Add row
           </button>
@@ -683,13 +706,19 @@ const setInheritedMove = (level: string, value: string | undefined) => {
               </tr>
             </thead>
             <tbody>
-              <tr v-for="(row, i) in moveRows" :key="i">
+              <tr
+                v-for="(row, i) in moveRows"
+                :key="`${row.automatic ? 'auto' : 'sheet'}-${row.move.name}-${i}`"
+                :class="{ 'move-row--automatic': row.automatic }"
+              >
                 <td class="move-name">
                   <EditableCell
                     :model-value="row.move.name"
                     placeholder="Move"
+                    :readonly="row.automatic"
                     @update:model-value="(v) => setLookupMoveName(row.move, v)"
                   />
+                  <span v-if="row.automatic" class="move-auto-badge" title="Auto-added from Struggle rules and capabilities">auto</span>
                 </td>
                 <td>
                   <TypeBadge v-if="row.reference?.type" :type="row.reference.type" size="xs" />
@@ -713,13 +742,15 @@ const setInheritedMove = (level: string, value: string | undefined) => {
                 </td>
                 <td class="row-actions">
                   <button
+                    v-if="!row.automatic"
                     type="button"
                     class="row-remove"
                     title="Remove move"
-                    @click="removeMove(i)"
+                    @click="removeMove(row.sheetIndex)"
                   >
                     <PhX :size="14" weight="bold" />
                   </button>
+                  <span v-else class="row-auto-note" title="Auto-added from Struggle rules and capabilities">Auto</span>
                 </td>
               </tr>
               <tr v-if="!moveRows.length">
@@ -1422,6 +1453,27 @@ const setInheritedMove = (level: string, value: string | undefined) => {
   font-weight: 700;
   letter-spacing: 0.08em;
   vertical-align: middle;
+}
+
+.move-row--automatic {
+  background: rgba(184, 187, 38, 0.06);
+}
+
+.move-auto-badge,
+.row-auto-note {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 0.35rem;
+  color: var(--ink-muted);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+
+.row-auto-note {
+  margin-left: 0;
 }
 
 .empty-cell {

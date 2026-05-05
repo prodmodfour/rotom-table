@@ -127,8 +127,16 @@ export const findAbility = (name: string): PtuAbility | null => {
   return null
 }
 
-export const findMove = (name: string): PtuMove | null =>
-  resolveByExactOrSlug(name, moveByName, moveBySlug)
+const MOVE_ALIASES: Record<string, string> = {
+  'struggle-materialiser': 'Struggle (Materializer)',
+}
+
+export const findMove = (name: string): PtuMove | null => {
+  const direct = resolveByExactOrSlug(name, moveByName, moveBySlug)
+  if (direct) return direct
+  const alias = MOVE_ALIASES[toSlug(name)]
+  return alias ? resolveByExactOrSlug(alias, moveByName, moveBySlug) : null
+}
 
 /**
  * Strip a trailing parenthetical specialisation off a feature/edge label.
@@ -190,6 +198,8 @@ export const stripCapabilityParams = (raw: string): string => {
 const CAPABILITY_ALIASES: Record<string, string> = {
   Mountable: 'Mountable X',
   Teleporter: 'Teleporter X',
+  Materialiser: 'Materializer',
+  materialiser: 'Materializer',
   // Fix common upstream typo where two spaces appear between words.
   'Aura  Reader': 'Aura Reader',
 }

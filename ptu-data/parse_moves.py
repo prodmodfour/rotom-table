@@ -21,6 +21,74 @@ SOURCE_FILES = [
 ]
 CACHE_DIR = os.path.join(os.path.dirname(__file__), "data")
 
+STRUGGLE_EXPERT_NOTE = (
+    "Struggle Attacks do not count as Moves; never apply STAB. "
+    "If the user has Combat Skill Rank Expert or higher, use AC 3 and Damage Base 5 instead."
+)
+
+
+def _struggle_variant(
+    name: str,
+    type_: str,
+    capability: str,
+    *,
+    range_: str = "Melee, 1 Target",
+    capability_clause: str | None = None,
+) -> dict:
+    clause = capability_clause or f"The user's Struggle Attacks may be {type_}-Typed."
+    return {
+        "name": name,
+        "type": type_,
+        "frequency": "At-Will",
+        "ac": 4,
+        "damage_base": 4,
+        "damage_roll": "1d8+6 / 11",
+        "damage_class": "Special",
+        "range": range_,
+        "effect": (
+            f"Requires {capability}. {clause} "
+            "The user may add Special Attack instead of Attack and deal Special Damage. "
+            f"{STRUGGLE_EXPERT_NOTE}"
+        ),
+    }
+
+
+# Struggle Attacks live in the Combat chapter rather than the move reference,
+# but the app's sheets resolve attack details through moves.json. Keep these
+# manual records here so regenerating the cache does not drop them.
+MANUAL_MOVE_PATCHES = {
+    "Struggle": {
+        "name": "Struggle",
+        "type": "Normal",
+        "frequency": "At-Will",
+        "ac": 4,
+        "damage_base": 4,
+        "damage_roll": "1d8+6 / 11",
+        "damage_class": "Physical",
+        "range": "Melee, 1 Target",
+        "effect": (
+            "A Standard Action Struggle Attack: Melee, Physical, Normal-Type. "
+            f"{STRUGGLE_EXPERT_NOTE}"
+        ),
+    },
+    "Struggle (Firestarter)": _struggle_variant("Struggle (Firestarter)", "Fire", "Firestarter"),
+    "Struggle (Fountain)": _struggle_variant("Struggle (Fountain)", "Water", "Fountain"),
+    "Struggle (Freezer)": _struggle_variant("Struggle (Freezer)", "Ice", "Freezer"),
+    "Struggle (Guster)": _struggle_variant("Struggle (Guster)", "Flying", "Guster"),
+    "Struggle (Materializer)": _struggle_variant("Struggle (Materializer)", "Rock", "Materializer"),
+    "Struggle (Telekinetic)": _struggle_variant(
+        "Struggle (Telekinetic)",
+        "Normal",
+        "Telekinetic",
+        range_="Focus Rank, 1 Target",
+        capability_clause=(
+            "The user may make Struggle Attacks at a range equal to their Focus Rank. "
+            "These attacks deal Normal-Type Damage as usual."
+        ),
+    ),
+    "Struggle (Zapper)": _struggle_variant("Struggle (Zapper)", "Electric", "Zapper"),
+}
+
 
 def _parse_blocks(text: str) -> dict[str, dict]:
     moves: dict[str, dict] = {}
@@ -115,6 +183,9 @@ def parse_moves(verbose: bool = False) -> dict[str, dict]:
                 if verbose:
                     print(f"  [shadowed] {name}: kept {provenance[name]}, dropped {label}")
         print(f"  {label}: +{added} new, {shadowed} shadowed by higher-priority source")
+
+    for name, move in MANUAL_MOVE_PATCHES.items():
+        moves[name] = dict(move)
 
     return moves
 

@@ -83,8 +83,13 @@ const normalizeKey = (value: string | null | undefined): string =>
 const formatSignedMod = (value: number): string =>
   value >= 0 ? `+${value}` : String(value)
 
+const isStruggleAttackEntry = (move: PtuMove): boolean =>
+  /^struggle(?:\s*\(|$)/i.test(move.name.trim())
+
 const hasSameTypeAttackBonus = (move: PtuMove, stabTypes: readonly string[] | undefined): boolean => {
-  if (move.damage_base == null || !stabTypes?.length) return false
+  // PTU explicitly says STAB is never applied to Struggle Attacks. Keep
+  // Struggle Bug unaffected by only matching "Struggle" and "Struggle (...)".
+  if (move.damage_base == null || !stabTypes?.length || isStruggleAttackEntry(move)) return false
   const type = normalizeKey(move.type)
   return Boolean(type && stabTypes.some((stabType) => normalizeKey(stabType) === type))
 }

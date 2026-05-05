@@ -8047,5 +8047,93 @@
     "damage_class": "Special",
     "range": "3, 1 Target",
     "effect": "The target is put in a Vortex."
+  },
+  "Struggle": {
+    "name": "Struggle",
+    "type": "Normal",
+    "frequency": "At-Will",
+    "ac": 4,
+    "damage_base": 4,
+    "damage_roll": "1d8+6 / 11",
+    "damage_class": "Physical",
+    "range": "Melee, 1 Target",
+    "effect": "A Standard Action Struggle Attack: Melee, Physical, Normal-Type. Struggle Attacks do not count as Moves; never apply STAB. If the user has Combat Skill Rank Expert or higher, use AC 3 and Damage Base 5 instead."
+  },
+  "Struggle (Firestarter)": {
+    "name": "Struggle (Firestarter)",
+    "type": "Fire",
+    "frequency": "At-Will",
+    "ac": 4,
+    "damage_base": 4,
+    "damage_roll": "1d8+6 / 11",
+    "damage_class": "Special",
+    "range": "Melee, 1 Target",
+    "effect": "Requires Firestarter. The user's Struggle Attacks may be Fire-Typed. The user may add Special Attack instead of Attack and deal Special Damage. Struggle Attacks do not count as Moves; never apply STAB. If the user has Combat Skill Rank Expert or higher, use AC 3 and Damage Base 5 instead."
+  },
+  "Struggle (Fountain)": {
+    "name": "Struggle (Fountain)",
+    "type": "Water",
+    "frequency": "At-Will",
+    "ac": 4,
+    "damage_base": 4,
+    "damage_roll": "1d8+6 / 11",
+    "damage_class": "Special",
+    "range": "Melee, 1 Target",
+    "effect": "Requires Fountain. The user's Struggle Attacks may be Water-Typed. The user may add Special Attack instead of Attack and deal Special Damage. Struggle Attacks do not count as Moves; never apply STAB. If the user has Combat Skill Rank Expert or higher, use AC 3 and Damage Base 5 instead."
+  },
+  "Struggle (Freezer)": {
+    "name": "Struggle (Freezer)",
+    "type": "Ice",
+    "frequency": "At-Will",
+    "ac": 4,
+    "damage_base": 4,
+    "damage_roll": "1d8+6 / 11",
+    "damage_class": "Special",
+    "range": "Melee, 1 Target",
+    "effect": "Requires Freezer. The user's Struggle Attacks may be Ice-Typed. The user may add Special Attack instead of Attack and deal Special Damage. Struggle Attacks do not count as Moves; never apply STAB. If the user has Combat Skill Rank Expert or higher, use AC 3 and Damage Base 5 instead."
+  },
+  "Struggle (Guster)": {
+    "name": "Struggle (Guster)",
+    "type": "Flying",
+    "frequency": "At-Will",
+    "ac": 4,
+    "damage_base": 4,
+    "damage_roll": "1d8+6 / 11",
+    "damage_class": "Special",
+    "range": "Melee, 1 Target",
+    "effect": "Requires Guster. The user's Struggle Attacks may be Flying-Typed. The user may add Special Attack instead of Attack and deal Special Damage. Struggle Attacks do not count as Moves; never apply STAB. If the user has Combat Skill Rank Expert or higher, use AC 3 and Damage Base 5 instead."
+  },
+  "Struggle (Materializer)": {
+    "name": "Struggle (Materializer)",
+    "type": "Rock",
+    "frequency": "At-Will",
+    "ac": 4,
+    "damage_base": 4,
+    "damage_roll": "1d8+6 / 11",
+    "damage_class": "Special",
+    "range": "Melee, 1 Target",
+    "effect": "Requires Materializer. The user's Struggle Attacks may be Rock-Typed. The user may add Special Attack instead of Attack and deal Special Damage. Struggle Attacks do not count as Moves; never apply STAB. If the user has Combat Skill Rank Expert or higher, use AC 3 and Damage Base 5 instead."
+  },
+  "Struggle (Telekinetic)": {
+    "name": "Struggle (Telekinetic)",
+    "type": "Normal",
+    "frequency": "At-Will",
+    "ac": 4,
+    "damage_base": 4,
+    "damage_roll": "1d8+6 / 11",
+    "damage_class": "Special",
+    "range": "Focus Rank, 1 Target",
+    "effect": "Requires Telekinetic. The user may make Struggle Attacks at a range equal to their Focus Rank. These attacks deal Normal-Type Damage as usual. The user may add Special Attack instead of Attack and deal Special Damage. Struggle Attacks do not count as Moves; never apply STAB. If the user has Combat Skill Rank Expert or higher, use AC 3 and Damage Base 5 instead."
+  },
+  "Struggle (Zapper)": {
+    "name": "Struggle (Zapper)",
+    "type": "Electric",
+    "frequency": "At-Will",
+    "ac": 4,
+    "damage_base": 4,
+    "damage_roll": "1d8+6 / 11",
+    "damage_class": "Special",
+    "range": "Melee, 1 Target",
+    "effect": "Requires Zapper. The user's Struggle Attacks may be Electric-Typed. The user may add Special Attack instead of Attack and deal Special Damage. Struggle Attacks do not count as Moves; never apply STAB. If the user has Combat Skill Rank Expert or higher, use AC 3 and Damage Base 5 instead."
   }
 }
