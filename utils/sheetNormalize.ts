@@ -41,7 +41,10 @@ export const normalizeCharacterSheet = (sheet: CharacterSheet): CharacterSheet =
   ensureObj<NonNullable<CharacterSheet['natureMod']>>(sheet, 'natureMod')
 
   const combat = ensureObj<NonNullable<CharacterSheet['combat']>>(sheet, 'combat')
-  ensureObj<NonNullable<NonNullable<CharacterSheet['combat']>['evasion']>>(combat, 'evasion')
+  const evasion = ensureObj<NonNullable<NonNullable<CharacterSheet['combat']>['evasion']>>(combat, 'evasion')
+  if (typeof evasion.vsAtkBonus  !== 'number') evasion.vsAtkBonus  = 0
+  if (typeof evasion.vsSatkBonus !== 'number') evasion.vsSatkBonus = 0
+  if (typeof evasion.vsAnyBonus  !== 'number') evasion.vsAnyBonus  = 0
   combat.conditions = mergeLegacyConditions(combat.conditions, combat.statusAfflictions)
 
   ensureObj<NonNullable<CharacterSheet['items']>>(sheet, 'items')
@@ -80,7 +83,10 @@ export const normalizeTrainerSheet = (sheet: TrainerSheet): TrainerSheet => {
   }
 
   ensureObj<NonNullable<TrainerSheet['ap']>>(sheet, 'ap')
-  ensureObj<NonNullable<TrainerSheet['evasion']>>(sheet, 'evasion')
+  const evasion = ensureObj<NonNullable<TrainerSheet['evasion']>>(sheet, 'evasion')
+  if (typeof evasion.speedBonus    !== 'number') evasion.speedBonus    = 0
+  if (typeof evasion.physicalBonus !== 'number') evasion.physicalBonus = 0
+  if (typeof evasion.specialBonus  !== 'number') evasion.specialBonus  = 0
   sheet.conditions = mergeLegacyConditions(sheet.conditions, sheet.statusAfflictions)
   ensureObj<NonNullable<TrainerSheet['capabilities']>>(sheet, 'capabilities')
   ensureArr<string>(sheet.capabilities as Record<string, unknown>, 'other')

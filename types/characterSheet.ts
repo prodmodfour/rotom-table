@@ -55,6 +55,17 @@ export interface CharacterSheetWeapon {
   description?: string
 }
 
+export interface CharacterSheetEvasion {
+  /** Legacy/manual total fields. Kept for old JSON; renderer now derives totals from stats. */
+  vsAtk?: number
+  vsSatk?: number
+  vsAny?: number
+  /** Editable modifier stacked on top of stat-derived evasion. */
+  vsAtkBonus?: number
+  vsSatkBonus?: number
+  vsAnyBonus?: number
+}
+
 export interface CharacterSheetCombat {
   /** Override Max HP if you want to lock it instead of computing. */
   maxHp?: number
@@ -62,7 +73,7 @@ export interface CharacterSheetCombat {
   injuries?: number
   injuredHp?: number
   tick?: number
-  evasion?: { vsAtk?: number; vsSatk?: number; vsAny?: number }
+  evasion?: CharacterSheetEvasion
   dr?: number
   /** Canonical PTU condition names (for example, "Burned" or "Tripped"). */
   conditions?: string[]

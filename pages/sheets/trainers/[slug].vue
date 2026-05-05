@@ -16,6 +16,14 @@ import { trainerCatalog } from '~/data/trainerCatalog'
 import { normalizeTrainerSheet } from '~/utils/sheetNormalize'
 import { makeAbilityLookupRows, setLookupAbilityName } from '~/utils/sheetAbilityLookup'
 import { formatLookupValue, makeMoveLookupRows, setLookupMoveName } from '~/utils/sheetMoveLookup'
+import {
+  EVASION_BONUS_MAX,
+  EVASION_BONUS_MIN,
+  coerceEvasionBonus,
+  computeEvasionTotal,
+  computeStatEvasion,
+  formatSignedModifier,
+} from '~/utils/evasion'
 import { useEditableSheet, type SaveStatus } from '~/composables/useEditableSheet'
 import type {
   InventoryEntry,
@@ -24,6 +32,7 @@ import type {
   TrainerAdvancementRow,
   TrainerClassEntry,
   TrainerEdgeEntry,
+  TrainerEvasion,
   TrainerFeatureEntry,
   TrainerManeuver,
   TrainerMove,
@@ -113,6 +122,34 @@ const abilityRows = computed(() => makeAbilityLookupRows(sheet.value?.abilities)
 
 const totalRow = (key: TrainerStatKey) =>
   stats.value.find((s) => s.key === key)?.total ?? 0
+
+const trainerEvasion = computed(() => {
+  const evasion = sheet.value?.evasion
+  const speedBase = computeStatEvasion(totalRow('spd'))
+  const physicalBase = computeStatEvasion(totalRow('def'))
+  const specialBase = computeStatEvasion(totalRow('sdef'))
+  const speedBonus = evasion?.speedBonus ?? 0
+  const physicalBonus = evasion?.physicalBonus ?? 0
+  const specialBonus = evasion?.specialBonus ?? 0
+
+  return {
+    speed: {
+      total: computeEvasionTotal(speedBase, speedBonus),
+      base: speedBase,
+      bonus: speedBonus,
+    },
+    physical: {
+      total: computeEvasionTotal(physicalBase, physicalBonus),
+      base: physicalBase,
+      bonus: physicalBonus,
+    },
+    special: {
+      total: computeEvasionTotal(specialBase, specialBonus),
+      base: specialBase,
+      bonus: specialBonus,
+    },
+  }
+})
 
 const injuries = computed(() => sheet.value?.currentInjuries ?? 0)
 const injuredHp = computed(() =>
@@ -283,6 +320,14 @@ const setStatField = (
   const row = sheet.value.stats[key] ?? {}
   row[field] = typeof value === 'number' ? value : 0
   sheet.value.stats[key] = row
+}
+
+type TrainerEvasionBonusKey = Extract<keyof TrainerEvasion, 'speedBonus' | 'physicalBonus' | 'specialBonus'>
+
+const setEvasionBonus = (key: TrainerEvasionBonusKey, value: number | undefined) => {
+  const evasion = sheet.value?.evasion
+  if (!evasion) return
+  evasion[key] = coerceEvasionBonus(value)
 }
 
 /** Update a skill's rank/modifier override. */
@@ -785,15 +830,57 @@ const clearPortrait = () => {
 
           <div class="block">
             <h2 class="block-title">Evasion</h2>
-            <ul class="kv-list">
-              <li><span>Speed Evasion</span>
-                <strong><EditableCell v-model="sheet.evasion!.speed"    type="number" :min="0" /></strong>
+            <ul class="kv-list evasion-list">
+              <li title="Stat evasion = floor(Speed Total / 5), capped at +6 from stats.">
+                <span class="evasion-list__label">Speed Evasion <small>stat {{ trainerEvasion.speed.base }}</small></span>
+                <span class="evasion-list__value">
+                  <strong>{{ trainerEvasion.speed.total }}</strong>
+                  <span class="evasion-list__bonus">
+                    bonus
+                    <EditableCell
+                      :model-value="trainerEvasion.speed.bonus"
+                      type="number"
+                      :min="EVASION_BONUS_MIN"
+                      :max="EVASION_BONUS_MAX"
+                      :format="formatSignedModifier"
+                      @update:model-value="(v) => setEvasionBonus('speedBonus', v as number | undefined)"
+                    />
+                  </span>
+                </span>
               </li>
-              <li><span>Physical Evasion</span>
-                <strong><EditableCell v-model="sheet.evasion!.physical" type="number" :min="0" /></strong>
+              <li title="Stat evasion = floor(Defense Total / 5), capped at +6 from stats.">
+                <span class="evasion-list__label">Physical Evasion <small>stat {{ trainerEvasion.physical.base }}</small></span>
+                <span class="evasion-list__value">
+                  <strong>{{ trainerEvasion.physical.total }}</strong>
+                  <span class="evasion-list__bonus">
+                    bonus
+                    <EditableCell
+                      :model-value="trainerEvasion.physical.bonus"
+                      type="number"
+                      :min="EVASION_BONUS_MIN"
+                      :max="EVASION_BONUS_MAX"
+                      :format="formatSignedModifier"
+                      @update:model-value="(v) => setEvasionBonus('physicalBonus', v as number | undefined)"
+                    />
+                  </span>
+                </span>
               </li>
-              <li><span>Special Evasion</span>
-                <strong><EditableCell v-model="sheet.evasion!.special"  type="number" :min="0" /></strong>
+              <li title="Stat evasion = floor(Special Defense Total / 5), capped at +6 from stats.">
+                <span class="evasion-list__label">Special Evasion <small>stat {{ trainerEvasion.special.base }}</small></span>
+                <span class="evasion-list__value">
+                  <strong>{{ trainerEvasion.special.total }}</strong>
+                  <span class="evasion-list__bonus">
+                    bonus
+                    <EditableCell
+                      :model-value="trainerEvasion.special.bonus"
+                      type="number"
+                      :min="EVASION_BONUS_MIN"
+                      :max="EVASION_BONUS_MAX"
+                      :format="formatSignedModifier"
+                      @update:model-value="(v) => setEvasionBonus('specialBonus', v as number | undefined)"
+                    />
+                  </span>
+                </span>
               </li>
             </ul>
             <div class="muted condition-block">
@@ -1835,6 +1922,34 @@ const clearPortrait = () => {
 }
 
 .kv-list li:last-child { border-bottom: 0; }
+
+.evasion-list li {
+  align-items: flex-start;
+}
+
+.evasion-list__label {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 0.08rem;
+}
+
+.evasion-list__label small,
+.evasion-list__bonus {
+  color: var(--ink-muted);
+  font-size: 0.72rem;
+  font-weight: 400;
+}
+
+.evasion-list__value {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.45rem;
+}
+
+.evasion-list__value strong {
+  color: var(--ink-bright);
+  font-variant-numeric: tabular-nums;
+}
 
 .ref-list-vertical {
   list-style: none;

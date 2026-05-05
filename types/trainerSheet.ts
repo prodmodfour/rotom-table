@@ -154,6 +154,17 @@ export interface TrainerCapabilities {
   other?: string[]
 }
 
+export interface TrainerEvasion {
+  /** Legacy/manual total fields. Kept for old JSON; renderer now derives totals from stats. */
+  speed?: number
+  physical?: number
+  special?: number
+  /** Editable modifier stacked on top of stat-derived evasion. */
+  speedBonus?: number
+  physicalBonus?: number
+  specialBonus?: number
+}
+
 export interface TrainerMove {
   name: string
   type?: string
@@ -263,7 +274,7 @@ export interface TrainerSheet {
   ap?: TrainerApPool
   capabilities?: TrainerCapabilities
   damageReduction?: number
-  evasion?: { speed?: number; physical?: number; special?: number }
+  evasion?: TrainerEvasion
   /** Legacy stat stages and non-stat modifiers such as Accuracy. */
   combatStages?: Partial<Record<CombatStageKey, number>>
   /** Canonical PTU condition names (for example, "Burned" or "Tripped"). */

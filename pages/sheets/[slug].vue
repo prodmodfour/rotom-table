@@ -16,12 +16,21 @@ import { PTU_NATURE_OPTIONS, resolveNatureMod } from '~/utils/ptuNatures'
 import { makeAbilityLookupRows, setLookupAbilityName } from '~/utils/sheetAbilityLookup'
 import { formatLookupValue, makeMoveLookupRows, setLookupMoveName, type MoveLookupRow } from '~/utils/sheetMoveLookup'
 import { makeAutomaticStruggleMoves } from '~/utils/struggleMoves'
+import {
+  EVASION_BONUS_MAX,
+  EVASION_BONUS_MIN,
+  coerceEvasionBonus,
+  computeEvasionTotal,
+  computeStatEvasion,
+  formatSignedModifier,
+} from '~/utils/evasion'
 import { useEditableSheet, type SaveStatus } from '~/composables/useEditableSheet'
 import type {
   CharacterSheet,
   CharacterSheetMove,
   CharacterSheetAbility,
   CharacterSheetEdge,
+  CharacterSheetEvasion,
   StatKey,
 } from '~/types/characterSheet'
 
@@ -106,6 +115,37 @@ const hpThresholds = computed(() => ({
   third:   Math.floor(maxHp.value / 3),
   quarter: Math.floor(maxHp.value / 4),
 }))
+
+const totalForStat = (key: StatKey): number =>
+  stats.value.find((row) => row.key === key)?.total ?? 0
+
+const pokemonEvasion = computed(() => {
+  const evasion = sheet.value?.combat?.evasion
+  const vsAtkBase = computeStatEvasion(totalForStat('def'))
+  const vsSatkBase = computeStatEvasion(totalForStat('sdef'))
+  const vsAnyBase = computeStatEvasion(totalForStat('spd'))
+  const vsAtkBonus = evasion?.vsAtkBonus ?? 0
+  const vsSatkBonus = evasion?.vsSatkBonus ?? 0
+  const vsAnyBonus = evasion?.vsAnyBonus ?? 0
+
+  return {
+    vsAtk: {
+      total: computeEvasionTotal(vsAtkBase, vsAtkBonus),
+      base: vsAtkBase,
+      bonus: vsAtkBonus,
+    },
+    vsSatk: {
+      total: computeEvasionTotal(vsSatkBase, vsSatkBonus),
+      base: vsSatkBase,
+      bonus: vsSatkBonus,
+    },
+    vsAny: {
+      total: computeEvasionTotal(vsAnyBase, vsAnyBonus),
+      base: vsAnyBase,
+      bonus: vsAnyBonus,
+    },
+  }
+})
 
 const tutorPointsLeft = computed(() => {
   const tp = sheet.value?.tutorPoints
@@ -268,6 +308,14 @@ const setStat = (key: StatKey, field: 'added' | 'stage', value: number | undefin
   const row = sheet.value.stats[key] ?? {}
   row[field] = typeof value === 'number' ? value : 0
   sheet.value.stats[key] = row
+}
+
+type PokemonEvasionBonusKey = Extract<keyof CharacterSheetEvasion, 'vsAtkBonus' | 'vsSatkBonus' | 'vsAnyBonus'>
+
+const setEvasionBonus = (key: PokemonEvasionBonusKey, value: number | undefined) => {
+  const evasion = sheet.value?.combat?.evasion
+  if (!evasion) return
+  evasion[key] = coerceEvasionBonus(value)
 }
 
 const setInheritedMove = (level: string, value: string | undefined) => {
@@ -514,14 +562,53 @@ const setInheritedMove = (level: string, value: string | undefined) => {
           <div class="evasion-row">
             <span class="cell-label">Evasion</span>
             <ul>
-              <li>vs ATK
-                <strong><EditableCell v-model="sheet.combat!.evasion!.vsAtk" type="number" :min="0" /></strong>
+              <li title="Stat evasion = floor(Defense Total / 5), capped at +6 from stats.">
+                <span class="evasion-label">vs ATK</span>
+                <strong>{{ pokemonEvasion.vsAtk.total }}</strong>
+                <small>stat {{ pokemonEvasion.vsAtk.base }}</small>
+                <span class="evasion-bonus">
+                  bonus
+                  <EditableCell
+                    :model-value="pokemonEvasion.vsAtk.bonus"
+                    type="number"
+                    :min="EVASION_BONUS_MIN"
+                    :max="EVASION_BONUS_MAX"
+                    :format="formatSignedModifier"
+                    @update:model-value="(v) => setEvasionBonus('vsAtkBonus', v as number | undefined)"
+                  />
+                </span>
               </li>
-              <li>vs SATK
-                <strong><EditableCell v-model="sheet.combat!.evasion!.vsSatk" type="number" :min="0" /></strong>
+              <li title="Stat evasion = floor(Special Defense Total / 5), capped at +6 from stats.">
+                <span class="evasion-label">vs SATK</span>
+                <strong>{{ pokemonEvasion.vsSatk.total }}</strong>
+                <small>stat {{ pokemonEvasion.vsSatk.base }}</small>
+                <span class="evasion-bonus">
+                  bonus
+                  <EditableCell
+                    :model-value="pokemonEvasion.vsSatk.bonus"
+                    type="number"
+                    :min="EVASION_BONUS_MIN"
+                    :max="EVASION_BONUS_MAX"
+                    :format="formatSignedModifier"
+                    @update:model-value="(v) => setEvasionBonus('vsSatkBonus', v as number | undefined)"
+                  />
+                </span>
               </li>
-              <li>vs Any
-                <strong><EditableCell v-model="sheet.combat!.evasion!.vsAny" type="number" :min="0" /></strong>
+              <li title="Stat evasion = floor(Speed Total / 5), capped at +6 from stats.">
+                <span class="evasion-label">vs Any</span>
+                <strong>{{ pokemonEvasion.vsAny.total }}</strong>
+                <small>stat {{ pokemonEvasion.vsAny.base }}</small>
+                <span class="evasion-bonus">
+                  bonus
+                  <EditableCell
+                    :model-value="pokemonEvasion.vsAny.bonus"
+                    type="number"
+                    :min="EVASION_BONUS_MIN"
+                    :max="EVASION_BONUS_MAX"
+                    :format="formatSignedModifier"
+                    @update:model-value="(v) => setEvasionBonus('vsAnyBonus', v as number | undefined)"
+                  />
+                </span>
               </li>
             </ul>
           </div>
@@ -1306,12 +1393,32 @@ const setInheritedMove = (level: string, value: string | undefined) => {
 }
 
 .evasion-row li {
+  display: inline-grid;
+  grid-template-columns: auto auto;
+  align-items: baseline;
+  column-gap: 0.35rem;
+  row-gap: 0.15rem;
   font-size: 0.85rem;
   color: var(--ink);
 }
 
 .evasion-row li strong {
   color: var(--ink-bright);
+  font-size: 1rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.evasion-label { font-weight: 700; }
+
+.evasion-row small {
+  color: var(--ink-muted);
+  font-size: 0.72rem;
+}
+
+.evasion-bonus {
+  grid-column: 1 / -1;
+  color: var(--ink-muted);
+  font-size: 0.76rem;
 }
 
 .combat-line {
