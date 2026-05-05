@@ -10,6 +10,7 @@ import {
   resolveCapabilities,
   resolveSkills,
   resolveStats,
+  validateBaseRelations,
 } from '~/data/characterSheets'
 import { POKEMON_TYPES, computeMultiplier, formatMultiplier } from '~/utils/typeChart'
 import { normalizeCharacterSheet } from '~/utils/sheetNormalize'
@@ -130,6 +131,11 @@ const statPointsSpent = computed(() =>
 )
 const statPointsBudget = computed(() => computePokemonLevelUpStatPointBudget(sheet.value?.level ?? 1))
 const statPointsLeft = computed(() => statPointsBudget.value - statPointsSpent.value)
+const baseRelationViolations = computed(() => validateBaseRelations(stats.value))
+const visibleBaseRelationViolations = computed(() => baseRelationViolations.value.slice(0, 6))
+const remainingBaseRelationViolationCount = computed(() =>
+  Math.max(0, baseRelationViolations.value.length - visibleBaseRelationViolations.value.length),
+)
 
 const totalForStat = (key: StatKey): number =>
   stats.value.find((row) => row.key === key)?.total ?? 0
@@ -546,6 +552,52 @@ const setInheritedMove = (level: string, value: string | undefined) => {
                 </tr>
               </tfoot>
             </table>
+          </div>
+
+          <div
+            :class="[
+              'stat-validation',
+              baseRelationViolations.length ? 'stat-validation--error' : 'stat-validation--ok',
+            ]"
+            :role="baseRelationViolations.length ? 'alert' : 'status'"
+          >
+            <div class="stat-validation__heading">
+              <strong><RefLink kind="rule" name="Base Relations" /></strong>
+              <span v-if="baseRelationViolations.length" class="stat-validation__badge">
+                {{ baseRelationViolations.length }} issue{{ baseRelationViolations.length === 1 ? '' : 's' }}
+              </span>
+              <span v-else class="stat-validation__badge">valid</span>
+            </div>
+
+            <p v-if="!baseRelationViolations.length" class="stat-validation__copy">
+              Added Stat Points preserve the nature-adjusted Base Stat order.
+            </p>
+            <template v-else>
+              <p class="stat-validation__copy">
+                Higher Base Stats must stay higher than lower Base Stats after Added points.
+              </p>
+              <ul>
+                <li
+                  v-for="violation in visibleBaseRelationViolations"
+                  :key="`${violation.higher.key}-${violation.lower.key}`"
+                >
+                  {{ violation.higher.label }}
+                  <span class="stat-validation__meta">
+                    Base {{ violation.higher.base }}, Total {{ violation.higher.total }}
+                  </span>
+                  must stay above {{ violation.lower.label }}
+                  <span class="stat-validation__meta">
+                    Base {{ violation.lower.base }}, Total {{ violation.lower.total }}
+                  </span>.
+                </li>
+                <li v-if="remainingBaseRelationViolationCount" class="stat-validation__more">
+                  +{{ remainingBaseRelationViolationCount }} more
+                </li>
+              </ul>
+              <p class="stat-validation__note">
+                Features or Poké Edges may waive specific relations; document those exceptions if applicable.
+              </p>
+            </template>
           </div>
         </section>
 
@@ -1404,6 +1456,72 @@ const setInheritedMove = (level: string, value: string | undefined) => {
   color: var(--ink-muted);
   font-size: 0.72rem;
   text-align: left;
+}
+
+.stat-validation {
+  margin-top: 0.75rem;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--rule-soft);
+  border-radius: 10px;
+  background: var(--paper-inset);
+  color: var(--ink-soft);
+  font-size: 0.78rem;
+}
+
+.stat-validation--ok {
+  border-color: rgba(88, 148, 96, 0.55);
+}
+
+.stat-validation--error {
+  border-color: rgba(184, 80, 80, 0.7);
+  background: rgba(184, 80, 80, 0.08);
+}
+
+.stat-validation__heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--ink-bright);
+}
+
+.stat-validation__badge {
+  margin-left: auto;
+  padding: 0.1rem 0.45rem;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  color: inherit;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.stat-validation--ok .stat-validation__badge {
+  color: var(--good);
+}
+
+.stat-validation--error .stat-validation__badge {
+  color: var(--bad);
+}
+
+.stat-validation__copy,
+.stat-validation__note {
+  margin: 0.3rem 0 0;
+}
+
+.stat-validation ul {
+  margin: 0.4rem 0 0;
+  padding-left: 1.1rem;
+}
+
+.stat-validation li + li {
+  margin-top: 0.2rem;
+}
+
+.stat-validation__meta,
+.stat-validation__note,
+.stat-validation__more {
+  color: var(--ink-muted);
 }
 
 /* ---- Combat ---- */

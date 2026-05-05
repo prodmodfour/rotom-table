@@ -96,6 +96,13 @@ export interface ResolvedStat {
   total: number
 }
 
+export interface BaseRelationViolation {
+  /** The stat that starts higher in the nature-adjusted Base order. */
+  higher: ResolvedStat
+  /** The stat that starts lower in the nature-adjusted Base order. */
+  lower: ResolvedStat
+}
+
 const STAT_LABELS: Record<StatKey, string> = {
   hp: 'HP',
   atk: 'Attack',
@@ -103,6 +110,27 @@ const STAT_LABELS: Record<StatKey, string> = {
   satk: 'Sp. Atk',
   sdef: 'Sp. Def',
   spd: 'Speed',
+}
+
+export const validateBaseRelations = (stats: ResolvedStat[]): BaseRelationViolation[] => {
+  const violations: BaseRelationViolation[] = []
+  const knownStats = stats.filter((row) => row.base > 0)
+
+  for (const higher of knownStats) {
+    for (const lower of knownStats) {
+      if (higher.key === lower.key) continue
+      if (higher.base <= lower.base) continue
+      if (higher.total > lower.total) continue
+      violations.push({ higher, lower })
+    }
+  }
+
+  return violations.sort(
+    (a, b) =>
+      (b.higher.base - b.lower.base) - (a.higher.base - a.lower.base)
+      || a.higher.label.localeCompare(b.higher.label)
+      || a.lower.label.localeCompare(b.lower.label),
+  )
 }
 
 export const resolveStats = (sheet: CharacterSheet): ResolvedStat[] => {

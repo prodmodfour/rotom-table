@@ -335,5 +335,17 @@
         "maxLevel": 50
       }
     }
+  },
+  "Base Relations": {
+    "name": "Base Relations",
+    "category": "Advancement Rule",
+    "text": "After applying Nature to a Pokémon's Base Stats, add Stat Points equal to the Pokémon's Level plus 10. When adding Stat Points, maintain the order of the Pokémon's nature-adjusted Base Stats from highest to lowest: if one Base Stat is higher than another, its final Total Stat must remain higher after Added points. Stats with equal Base Stats do not need to remain equal to each other, but they must still stay below any stats whose Base Stats are higher. When a Pokémon levels up or evolves and is re-statted, added Stat Points must continue to follow Base Relations. Some Features and Poké Edges can explicitly break or ignore specific relations; violations caused by those exceptions do not need to be corrected.",
+    "aliases": [
+      "Base Relations Rule",
+      "Base Relation",
+      "Base Stat Relations",
+      "Stat Relations"
+    ],
+    "source": "books/markdown/core/05-pokemon.md"
   }
 }
