@@ -51,6 +51,7 @@ const targetPath = computed(() => {
     case 'rule':       return `/rules/${slug}`
     case 'feature':    return `/features/${slug}`
     case 'edge':       return `/edges/${slug}`
+    case 'item':       return `/items/${slug}`
   }
 })
 

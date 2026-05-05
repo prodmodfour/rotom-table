@@ -5,8 +5,9 @@ import conditionsJson from '~/ptu-data/data/conditions.json'
 import rulesJson from '~/ptu-data/data/rules.json'
 import featuresJson from '~/ptu-data/data/features.json'
 import edgesJson from '~/ptu-data/data/edges.json'
+import itemsJson from '~/ptu-data/data/items.json'
 import type {
-  PtuAbility, PtuCapability, PtuCondition, PtuEdge, PtuFeature, PtuMove, PtuRule,
+  PtuAbility, PtuCapability, PtuCondition, PtuEdge, PtuFeature, PtuItem, PtuMove, PtuRule,
 } from '~/types/ptuReference'
 
 // ---------------------------------------------------------------------------
@@ -43,6 +44,7 @@ const conditionsDict    = conditionsJson    as Record<string, PtuCondition>
 const rulesDict         = rulesJson         as Record<string, PtuRule>
 const featuresDict      = featuresJson      as Record<string, PtuFeature>
 const edgesDict         = edgesJson         as Record<string, PtuEdge>
+const itemsDict         = itemsJson         as Record<string, PtuItem>
 
 const sortedByName = <T extends { name: string }>(dict: Record<string, T>): T[] =>
   Object.values(dict).sort((a, b) => a.name.localeCompare(b.name))
@@ -63,6 +65,7 @@ export const conditions   = sortedByName(conditionsDict)
 export const rules        = sortedByName(rulesDict)
 export const features     = sortedByName(featuresDict)
 export const edges        = sortedByName(edgesDict)
+export const items        = sortedByName(itemsDict)
 
 /** Trainer Class Features (the ``[Class]``-tagged ones from features.json). */
 export const trainerClasses: PtuFeature[] = features.filter(
@@ -82,6 +85,7 @@ export const conditionBySlug  = buildSlugMap(conditions)
 export const ruleBySlug       = buildSlugMap(rules)
 export const featureBySlug    = buildSlugMap(features)
 export const edgeBySlug       = buildSlugMap(edges)
+export const itemBySlug       = buildSlugMap(items)
 
 // ---------------------------------------------------------------------------
 // Name \u2192 entry resolution (handles loose input from pokedex / sheet data)
@@ -100,6 +104,16 @@ const conditionByName  = exactByName(conditions)
 const ruleByName       = exactByName(rules)
 const featureByName    = exactByName(features)
 const edgeByName       = exactByName(edges)
+const itemByName       = exactByName(items)
+const itemByAliasName  = new Map<string, PtuItem>()
+const itemByAliasSlug  = new Map<string, PtuItem>()
+for (const item of items) {
+  for (const alias of item.aliases) {
+    if (!itemByAliasName.has(alias)) itemByAliasName.set(alias, item)
+    const slug = toSlug(alias)
+    if (!itemByAliasSlug.has(slug)) itemByAliasSlug.set(slug, item)
+  }
+}
 
 const resolveByExactOrSlug = <T extends { name: string }>(
   raw: string,
@@ -171,6 +185,14 @@ export const findEdge = (name: string): PtuEdge | null => {
   return null
 }
 
+export const findItem = (name: string): PtuItem | null => {
+  const direct = resolveByExactOrSlug(name, itemByName, itemBySlug)
+  if (direct) return direct
+  const trimmed = name.trim()
+  if (!trimmed) return null
+  return itemByAliasName.get(trimmed) ?? itemByAliasSlug.get(toSlug(trimmed)) ?? null
+}
+
 // ---------------------------------------------------------------------------
 // Capability resolution — needs to handle parameterised input from the pokedex
 // ---------------------------------------------------------------------------
@@ -225,7 +247,7 @@ export const findRule = (name: string): PtuRule | null =>
 // Convenience: a "ref descriptor" for templates that want to maybe-link.
 // ---------------------------------------------------------------------------
 
-export type RefKind = 'move' | 'ability' | 'capability' | 'condition' | 'rule' | 'feature' | 'edge'
+export type RefKind = 'move' | 'ability' | 'capability' | 'condition' | 'rule' | 'feature' | 'edge' | 'item'
 
 export interface RefDescriptor {
   kind: RefKind
@@ -245,6 +267,7 @@ const KIND_FINDERS: Record<RefKind, (name: string) => { name: string } | null> =
   rule:       findRule,
   feature:    findFeature,
   edge:       findEdge,
+  item:       findItem,
 }
 
 export const describeRef = (kind: RefKind, name: string): RefDescriptor => {

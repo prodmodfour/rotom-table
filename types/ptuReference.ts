@@ -30,6 +30,17 @@ export interface PtuCapability {
   source?: string
 }
 
+export interface PtuItem {
+  name: string
+  categories: string[]
+  effects: string[]
+  costs: string[]
+  sections: string[]
+  aliases: string[]
+  notes: string[]
+  source: string
+}
+
 export interface PtuCondition {
   name: string
   category: string

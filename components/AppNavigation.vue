@@ -51,6 +51,9 @@ const handleLogout = async () => {
     <NuxtLink :class="['nav-link', { active: isActive('/rules') }]" to="/rules">
       Rules
     </NuxtLink>
+    <NuxtLink :class="['nav-link', { active: isActive('/items') }]" to="/items">
+      Items
+    </NuxtLink>
     <NuxtLink :class="['nav-link', { active: isActive('/features') }]" to="/features">
       Features
     </NuxtLink>

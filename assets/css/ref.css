@@ -1,5 +1,5 @@
 /* Shared styles for the PTU reference indexes & detail pages
-   (/abilities, /moves, /capabilities, /edges, /features).
+   (/abilities, /moves, /capabilities, /conditions, /rules, /items, /edges, /features).
    Loaded globally via nuxt.config.ts. Uses the parchment-on-dark
    tokens from main.css so everything matches the Pokédex book. */
 
