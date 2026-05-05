@@ -13,8 +13,8 @@ import {
   TRAINER_SKILL_ORDER,
 } from '~/data/trainerSheets'
 import { trainerCatalog } from '~/data/trainerCatalog'
-import { POKEMON_TYPES } from '~/utils/typeChart'
 import { normalizeTrainerSheet } from '~/utils/sheetNormalize'
+import { formatLookupValue, makeMoveLookupRows, setLookupMoveName } from '~/utils/sheetMoveLookup'
 import { useEditableSheet, type SaveStatus } from '~/composables/useEditableSheet'
 import type {
   InventoryEntry,
@@ -44,8 +44,6 @@ const SKILL_OPTIONS = TRAINER_SKILL_ORDER.map(([value, label]) => ({ value, labe
 const RANK_OPTIONS: SkillRank[] = ['Pathetic', 'Untrained', 'Novice', 'Adept', 'Expert', 'Master']
 
 const CATEGORY_OPTIONS = ['Physical', 'Special', 'Status']
-
-const TYPE_OPTIONS = POKEMON_TYPES.map((t) => ({ value: t, label: t }))
 
 // ---------------------------------------------------------------------------
 // Editable sheet wiring
@@ -101,6 +99,8 @@ const maxHp     = computed(() => sheet.value ? computeTrainerMaxHp(sheet.value) 
 const maxAp     = computed(() => sheet.value ? computeTrainerMaxAp(sheet.value) : 0)
 const currentHp = computed(() => sheet.value?.currentHp ?? maxHp.value)
 const apLeft    = computed(() => sheet.value?.ap?.left ?? maxAp.value)
+
+const moveRows = computed(() => makeMoveLookupRows(sheet.value?.movelist))
 
 const totalRow = (key: TrainerStatKey) =>
   stats.value.find((s) => s.key === key)?.total ?? 0
@@ -194,7 +194,7 @@ const removeClass = (i: number) =>
   sheet.value?.classes?.splice(i, 1)
 
 const addMove = () =>
-  sheet.value?.movelist?.push({ name: 'New Move' } as TrainerMove)
+  sheet.value?.movelist?.push({ name: '' } as TrainerMove)
 const removeMove = (i: number) =>
   sheet.value?.movelist?.splice(i, 1)
 
@@ -869,6 +869,7 @@ const clearPortrait = () => {
         <div class="block">
           <h2 class="block-title">
             Movelist
+            <span class="move-lookup-note">name editable · details from moves.json</span>
             <button type="button" class="row-add" @click="addMove">
               <PhPlus :size="14" weight="bold" /> Add row
             </button>
@@ -889,41 +890,30 @@ const clearPortrait = () => {
               </tr>
             </thead>
             <tbody>
-              <tr v-for="(mv, i) in sheet.movelist" :key="i">
-                <th><EditableCell v-model="mv.name" placeholder="Move" /></th>
-                <td>
+              <tr v-for="(row, i) in moveRows" :key="i">
+                <th>
                   <EditableCell
-                    v-model="mv.type"
-                    type="select"
-                    :options="TYPE_OPTIONS"
-                    placeholder="—"
-                  >
-                    <template #display="slotProps">
-                      <TypeBadge v-if="!slotProps.empty" :type="String(slotProps.value)" size="xs" />
-                      <span v-else class="badge-empty">{{ slotProps.emptyLabel }}</span>
-                    </template>
-                  </EditableCell>
+                    :model-value="row.move.name"
+                    placeholder="Move"
+                    @update:model-value="(v) => setLookupMoveName(row.move, v)"
+                  />
+                </th>
+                <td>
+                  <TypeBadge v-if="row.reference?.type" :type="row.reference.type" size="xs" />
+                  <span v-else class="badge-empty">—</span>
                 </td>
                 <td>
-                  <EditableCell
-                    v-model="mv.category"
-                    type="select"
-                    :options="CATEGORY_OPTIONS"
-                    placeholder="—"
-                  >
-                    <template #display="slotProps">
-                      <DamageClassBadge v-if="!slotProps.empty" :category="String(slotProps.value)" size="xs" />
-                      <span v-else class="badge-empty">{{ slotProps.emptyLabel }}</span>
-                    </template>
-                  </EditableCell>
+                  <DamageClassBadge v-if="row.reference?.damage_class" :category="row.reference.damage_class" size="xs" />
+                  <span v-else class="badge-empty">—</span>
                 </td>
-                <td><EditableCell v-model="mv.db" type="number" /></td>
-                <td><EditableCell v-model="mv.damageRoll" placeholder="1d8+6" /></td>
-                <td><EditableCell v-model="mv.frequency" placeholder="At-Will" /></td>
-                <td><EditableCell v-model="mv.ac" type="number" /></td>
-                <td><EditableCell v-model="mv.range" placeholder="Melee" /></td>
+                <td>{{ formatLookupValue(row.reference?.damage_base) }}</td>
+                <td>{{ formatLookupValue(row.reference?.damage_roll) }}</td>
+                <td>{{ formatLookupValue(row.reference?.frequency) }}</td>
+                <td>{{ formatLookupValue(row.reference?.ac) }}</td>
+                <td>{{ formatLookupValue(row.reference?.range) }}</td>
                 <td class="effect-col">
-                  <EditableCell v-model="mv.effect" type="textarea" placeholder="—" multiline />
+                  <span v-if="row.reference?.effect">{{ row.reference.effect }}</span>
+                  <span v-else class="badge-empty">{{ row.move.name.trim() ? 'No matching move in moves.json' : '—' }}</span>
                 </td>
                 <td class="row-actions">
                   <button type="button" class="row-remove" title="Remove move" @click="removeMove(i)">
@@ -931,7 +921,7 @@ const clearPortrait = () => {
                   </button>
                 </td>
               </tr>
-              <tr v-if="!sheet.movelist?.length">
+              <tr v-if="!moveRows.length">
                 <td colspan="10" class="muted">No moves yet — click "Add row" to start.</td>
               </tr>
             </tbody>
@@ -1650,6 +1640,14 @@ const clearPortrait = () => {
 .block-title--spaced { margin-top: 0.85rem; }
 
 .muted { color: var(--ink-muted); font-size: 0.85rem; }
+.move-lookup-note {
+  color: var(--ink-muted);
+  font-family: var(--font-ui);
+  font-size: 0.72rem;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
 .condition-block {
   display: grid;
   gap: 0.45rem;

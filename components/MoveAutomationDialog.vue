@@ -68,20 +68,9 @@ const manualNote = ref('')
 const overlayTitleId = 'move-automation-title'
 
 const mergeMoveLike = (sheetMove: CharacterSheetMove | TrainerMove): MoveAutomationMoveLike => {
-  const fromSheet = sheetMoveToMoveLike(sheetMove)
   const canonical = findMove(sheetMove.name)
-  if (!canonical) return fromSheet
-  return {
-    ...canonical,
-    type: fromSheet.type ?? canonical.type,
-    frequency: fromSheet.frequency ?? canonical.frequency,
-    ac: fromSheet.ac ?? canonical.ac,
-    damage_base: fromSheet.damage_base ?? canonical.damage_base,
-    damage_roll: fromSheet.damage_roll ?? canonical.damage_roll,
-    damage_class: fromSheet.damage_class ?? canonical.damage_class,
-    range: fromSheet.range ?? canonical.range,
-    effect: fromSheet.effect ?? canonical.effect,
-  }
+  if (canonical) return canonical
+  return sheetMoveToMoveLike(sheetMove)
 }
 
 const moveEntries = computed<MoveEntry[]>(() =>

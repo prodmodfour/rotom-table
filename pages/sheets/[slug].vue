@@ -13,6 +13,7 @@ import {
 import { POKEMON_TYPES, computeMultiplier, formatMultiplier } from '~/utils/typeChart'
 import { normalizeCharacterSheet } from '~/utils/sheetNormalize'
 import { PTU_NATURE_OPTIONS, resolveNatureMod } from '~/utils/ptuNatures'
+import { formatLookupValue, makeMoveLookupRows, setLookupMoveName } from '~/utils/sheetMoveLookup'
 import { useEditableSheet, type SaveStatus } from '~/composables/useEditableSheet'
 import type {
   CharacterSheet,
@@ -105,6 +106,8 @@ const tutorPointsLeft = computed(() => {
   return (tp.earned ?? 0) - (tp.spent ?? 0)
 })
 
+const moveRows = computed(() => makeMoveLookupRows(sheet.value?.movelist))
+
 const typeEffectivenessRows = computed(() => {
   const defenders = sheetTypes.value
   if (defenders.length === 0) return []
@@ -147,10 +150,6 @@ const NATURE_STAT_OPTIONS = [
 ]
 
 const GENDER_OPTIONS = ['Male', 'Female', 'Genderless']
-
-const CATEGORY_OPTIONS = ['Physical', 'Special', 'Status']
-
-const TYPE_OPTIONS = POKEMON_TYPES.map((t) => ({ value: t, label: t }))
 
 const INHERITED_LEVELS = ['20', '30', '40', '50', '60', '70', '80', '90']
 
@@ -211,7 +210,7 @@ const skillBgLoweredCsv = computed<string>({
 })
 
 const addMove = () => {
-  sheet.value?.movelist?.push({ name: 'New Move' } as CharacterSheetMove)
+  sheet.value?.movelist?.push({ name: '' } as CharacterSheetMove)
 }
 const removeMove = (i: number) => {
   sheet.value?.movelist?.splice(i, 1)
@@ -652,6 +651,7 @@ const setInheritedMove = (level: string, value: string | undefined) => {
       <section class="panel-card">
         <h2 class="panel-title">
           Movelist
+          <span class="panel-subtle">name editable · details from moves.json</span>
           <button type="button" class="row-add" @click="addMove">
             <PhPlus :size="14" weight="bold" /> Add row
           </button>
@@ -673,41 +673,30 @@ const setInheritedMove = (level: string, value: string | undefined) => {
               </tr>
             </thead>
             <tbody>
-              <tr v-for="(move, i) in sheet.movelist" :key="i">
-                <td class="move-name"><EditableCell v-model="move.name" placeholder="Move" /></td>
-                <td>
+              <tr v-for="(row, i) in moveRows" :key="i">
+                <td class="move-name">
                   <EditableCell
-                    v-model="move.type"
-                    type="select"
-                    :options="TYPE_OPTIONS"
-                    placeholder="—"
-                  >
-                    <template #display="slotProps">
-                      <TypeBadge v-if="!slotProps.empty" :type="String(slotProps.value)" size="xs" />
-                      <span v-else class="badge-empty">{{ slotProps.emptyLabel }}</span>
-                    </template>
-                  </EditableCell>
+                    :model-value="row.move.name"
+                    placeholder="Move"
+                    @update:model-value="(v) => setLookupMoveName(row.move, v)"
+                  />
                 </td>
                 <td>
-                  <EditableCell
-                    v-model="move.category"
-                    type="select"
-                    :options="CATEGORY_OPTIONS"
-                    placeholder="—"
-                  >
-                    <template #display="slotProps">
-                      <DamageClassBadge v-if="!slotProps.empty" :category="String(slotProps.value)" size="xs" />
-                      <span v-else class="badge-empty">{{ slotProps.emptyLabel }}</span>
-                    </template>
-                  </EditableCell>
+                  <TypeBadge v-if="row.reference?.type" :type="row.reference.type" size="xs" />
+                  <span v-else class="badge-empty">—</span>
                 </td>
-                <td><EditableCell v-model="move.db" type="number" /></td>
-                <td><EditableCell v-model="move.damageRoll" placeholder="—" /></td>
-                <td><EditableCell v-model="move.frequency" placeholder="At-Will" /></td>
-                <td><EditableCell v-model="move.ac" type="number" /></td>
-                <td><EditableCell v-model="move.range" placeholder="Melee" /></td>
+                <td>
+                  <DamageClassBadge v-if="row.reference?.damage_class" :category="row.reference.damage_class" size="xs" />
+                  <span v-else class="badge-empty">—</span>
+                </td>
+                <td>{{ formatLookupValue(row.reference?.damage_base) }}</td>
+                <td>{{ formatLookupValue(row.reference?.damage_roll) }}</td>
+                <td>{{ formatLookupValue(row.reference?.frequency) }}</td>
+                <td>{{ formatLookupValue(row.reference?.ac) }}</td>
+                <td>{{ formatLookupValue(row.reference?.range) }}</td>
                 <td class="move-effect">
-                  <EditableCell v-model="move.effect" type="textarea" placeholder="—" multiline />
+                  <span v-if="row.reference?.effect">{{ row.reference.effect }}</span>
+                  <span v-else class="badge-empty">{{ row.move.name.trim() ? 'No matching move in moves.json' : '—' }}</span>
                 </td>
                 <td class="row-actions">
                   <button
@@ -720,7 +709,7 @@ const setInheritedMove = (level: string, value: string | undefined) => {
                   </button>
                 </td>
               </tr>
-              <tr v-if="!sheet.movelist?.length">
+              <tr v-if="!moveRows.length">
                 <td colspan="10" class="empty-cell">No moves yet — click "Add row" to start.</td>
               </tr>
             </tbody>
