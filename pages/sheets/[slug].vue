@@ -106,7 +106,14 @@ const tutorPointsLeft = computed(() => {
   return (tp.earned ?? 0) - (tp.spent ?? 0)
 })
 
-const moveRows = computed(() => makeMoveLookupRows(sheet.value?.movelist))
+const attackTotal = computed(() => stats.value.find((row) => row.key === 'atk')?.total ?? 0)
+const specialAttackTotal = computed(() => stats.value.find((row) => row.key === 'satk')?.total ?? 0)
+
+const moveRows = computed(() => makeMoveLookupRows(sheet.value?.movelist, {
+  stabTypes: sheetTypes.value,
+  physicalAttack: attackTotal.value,
+  specialAttack: specialAttackTotal.value,
+}))
 
 const typeEffectivenessRows = computed(() => {
   const defenders = sheetTypes.value
@@ -689,8 +696,11 @@ const setInheritedMove = (level: string, value: string | undefined) => {
                   <DamageClassBadge v-if="row.reference?.damage_class" :category="row.reference.damage_class" size="xs" />
                   <span v-else class="badge-empty">—</span>
                 </td>
-                <td>{{ formatLookupValue(row.reference?.damage_base) }}</td>
-                <td>{{ formatLookupValue(row.reference?.damage_roll) }}</td>
+                <td>
+                  {{ formatLookupValue(row.damageBase) }}
+                  <span v-if="row.hasStab" class="move-stab" title="Same-type attack bonus included">STAB</span>
+                </td>
+                <td>{{ formatLookupValue(row.damageFormula) }}</td>
                 <td>{{ formatLookupValue(row.reference?.frequency) }}</td>
                 <td>{{ formatLookupValue(row.reference?.ac) }}</td>
                 <td>{{ formatLookupValue(row.reference?.range) }}</td>
@@ -1398,6 +1408,16 @@ const setInheritedMove = (level: string, value: string | undefined) => {
 .move-effect {
   color: var(--ink-soft);
   font-size: 0.88rem;
+}
+
+.move-stab {
+  display: inline-flex;
+  margin-left: 0.25rem;
+  color: var(--accent);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  vertical-align: middle;
 }
 
 .empty-cell {

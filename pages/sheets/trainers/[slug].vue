@@ -100,7 +100,13 @@ const maxAp     = computed(() => sheet.value ? computeTrainerMaxAp(sheet.value) 
 const currentHp = computed(() => sheet.value?.currentHp ?? maxHp.value)
 const apLeft    = computed(() => sheet.value?.ap?.left ?? maxAp.value)
 
-const moveRows = computed(() => makeMoveLookupRows(sheet.value?.movelist))
+const attackTotal = computed(() => stats.value.find((row) => row.key === 'atk')?.total ?? 0)
+const specialAttackTotal = computed(() => stats.value.find((row) => row.key === 'satk')?.total ?? 0)
+
+const moveRows = computed(() => makeMoveLookupRows(sheet.value?.movelist, {
+  physicalAttack: attackTotal.value,
+  specialAttack: specialAttackTotal.value,
+}))
 
 const totalRow = (key: TrainerStatKey) =>
   stats.value.find((s) => s.key === key)?.total ?? 0
@@ -906,8 +912,8 @@ const clearPortrait = () => {
                   <DamageClassBadge v-if="row.reference?.damage_class" :category="row.reference.damage_class" size="xs" />
                   <span v-else class="badge-empty">—</span>
                 </td>
-                <td>{{ formatLookupValue(row.reference?.damage_base) }}</td>
-                <td>{{ formatLookupValue(row.reference?.damage_roll) }}</td>
+                <td>{{ formatLookupValue(row.damageBase) }}</td>
+                <td>{{ formatLookupValue(row.damageFormula) }}</td>
                 <td>{{ formatLookupValue(row.reference?.frequency) }}</td>
                 <td>{{ formatLookupValue(row.reference?.ac) }}</td>
                 <td>{{ formatLookupValue(row.reference?.range) }}</td>
