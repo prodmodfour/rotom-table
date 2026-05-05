@@ -184,6 +184,7 @@ export interface TrainerMove {
 export interface TrainerAbilityEntry {
   name: string
   frequency?: string
+  trigger?: string
   effect?: string
 }
 

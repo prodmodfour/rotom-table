@@ -12,6 +12,7 @@ export interface AbilityLookupRow<T extends SheetAbilityLike> {
 
 const LOOKUP_BACKED_ABILITY_KEYS = [
   'frequency',
+  'trigger',
   'effect',
 ] as const
 

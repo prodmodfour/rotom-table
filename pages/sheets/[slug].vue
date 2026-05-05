@@ -963,7 +963,7 @@ const setInheritedMove = (level: string, value: string | undefined) => {
           </h2>
           <table class="kv-table">
             <thead>
-              <tr><th>Name</th><th>Frequency</th><th>Effect</th><th aria-label="Row actions"></th></tr>
+              <tr><th>Name</th><th>Frequency</th><th>Trigger</th><th>Effect</th><th aria-label="Row actions"></th></tr>
             </thead>
             <tbody>
               <tr v-for="(row, i) in abilityRows" :key="i">
@@ -975,6 +975,7 @@ const setInheritedMove = (level: string, value: string | undefined) => {
                   />
                 </td>
                 <td>{{ formatLookupValue(row.reference?.frequency) }}</td>
+                <td class="move-effect">{{ formatLookupValue(row.reference?.trigger) }}</td>
                 <td class="move-effect">
                   <span v-if="row.reference?.effect">{{ row.reference.effect }}</span>
                   <span v-else class="badge-empty">{{ row.reference ? '—' : row.ability.name.trim() ? 'No matching ability in abilities.json' : '—' }}</span>
@@ -991,7 +992,7 @@ const setInheritedMove = (level: string, value: string | undefined) => {
                 </td>
               </tr>
               <tr v-if="!abilityRows.length">
-                <td colspan="4" class="empty-cell">No abilities yet.</td>
+                <td colspan="5" class="empty-cell">No abilities yet.</td>
               </tr>
             </tbody>
           </table>

@@ -39,6 +39,7 @@ export interface CharacterSheetMove {
 export interface CharacterSheetAbility {
   name: string
   frequency?: string
+  trigger?: string
   effect?: string
 }
 
