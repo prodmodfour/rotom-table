@@ -13,6 +13,7 @@ import {
 import { POKEMON_TYPES, computeMultiplier, formatMultiplier } from '~/utils/typeChart'
 import { normalizeCharacterSheet } from '~/utils/sheetNormalize'
 import { PTU_NATURE_OPTIONS, resolveNatureMod } from '~/utils/ptuNatures'
+import { makeAbilityLookupRows, setLookupAbilityName } from '~/utils/sheetAbilityLookup'
 import { formatLookupValue, makeMoveLookupRows, setLookupMoveName } from '~/utils/sheetMoveLookup'
 import { useEditableSheet, type SaveStatus } from '~/composables/useEditableSheet'
 import type {
@@ -114,6 +115,8 @@ const moveRows = computed(() => makeMoveLookupRows(sheet.value?.movelist, {
   physicalAttack: attackTotal.value,
   specialAttack: specialAttackTotal.value,
 }))
+
+const abilityRows = computed(() => makeAbilityLookupRows(sheet.value?.abilities))
 
 const typeEffectivenessRows = computed(() => {
   const defenders = sheetTypes.value
@@ -224,7 +227,7 @@ const removeMove = (i: number) => {
 }
 
 const addAbility = () => {
-  sheet.value?.abilities?.push({ name: 'New Ability' } as CharacterSheetAbility)
+  sheet.value?.abilities?.push({ name: '' } as CharacterSheetAbility)
 }
 const removeAbility = (i: number) => {
   sheet.value?.abilities?.splice(i, 1)
@@ -809,6 +812,7 @@ const setInheritedMove = (level: string, value: string | undefined) => {
         <section class="panel-card">
           <h2 class="panel-title">
             Abilities
+            <span class="panel-subtle">name editable · details from abilities.json</span>
             <button type="button" class="row-add" @click="addAbility">
               <PhPlus :size="14" weight="bold" /> Add row
             </button>
@@ -818,18 +822,18 @@ const setInheritedMove = (level: string, value: string | undefined) => {
               <tr><th>Name</th><th>Frequency</th><th>Effect</th><th aria-label="Row actions"></th></tr>
             </thead>
             <tbody>
-              <tr v-for="(ability, i) in sheet.abilities" :key="i">
+              <tr v-for="(row, i) in abilityRows" :key="i">
                 <td class="kv-name">
-                  <EditableCell v-model="ability.name" placeholder="Ability" />
-                </td>
-                <td><EditableCell v-model="ability.frequency" placeholder="Static" /></td>
-                <td>
                   <EditableCell
-                    v-model="ability.effect"
-                    type="textarea"
-                    placeholder="—"
-                    multiline
+                    :model-value="row.ability.name"
+                    placeholder="Ability"
+                    @update:model-value="(v) => setLookupAbilityName(row.ability, v)"
                   />
+                </td>
+                <td>{{ formatLookupValue(row.reference?.frequency) }}</td>
+                <td class="move-effect">
+                  <span v-if="row.reference?.effect">{{ row.reference.effect }}</span>
+                  <span v-else class="badge-empty">{{ row.reference ? '—' : row.ability.name.trim() ? 'No matching ability in abilities.json' : '—' }}</span>
                 </td>
                 <td class="row-actions">
                   <button
@@ -842,7 +846,7 @@ const setInheritedMove = (level: string, value: string | undefined) => {
                   </button>
                 </td>
               </tr>
-              <tr v-if="!sheet.abilities?.length">
+              <tr v-if="!abilityRows.length">
                 <td colspan="4" class="empty-cell">No abilities yet.</td>
               </tr>
             </tbody>

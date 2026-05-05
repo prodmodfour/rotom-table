@@ -14,6 +14,7 @@ import {
 } from '~/data/trainerSheets'
 import { trainerCatalog } from '~/data/trainerCatalog'
 import { normalizeTrainerSheet } from '~/utils/sheetNormalize'
+import { makeAbilityLookupRows, setLookupAbilityName } from '~/utils/sheetAbilityLookup'
 import { formatLookupValue, makeMoveLookupRows, setLookupMoveName } from '~/utils/sheetMoveLookup'
 import { useEditableSheet, type SaveStatus } from '~/composables/useEditableSheet'
 import type {
@@ -107,6 +108,8 @@ const moveRows = computed(() => makeMoveLookupRows(sheet.value?.movelist, {
   physicalAttack: attackTotal.value,
   specialAttack: specialAttackTotal.value,
 }))
+
+const abilityRows = computed(() => makeAbilityLookupRows(sheet.value?.abilities))
 
 const totalRow = (key: TrainerStatKey) =>
   stats.value.find((s) => s.key === key)?.total ?? 0
@@ -205,7 +208,7 @@ const removeMove = (i: number) =>
   sheet.value?.movelist?.splice(i, 1)
 
 const addAbility = () =>
-  sheet.value?.abilities?.push({ name: 'New Ability' } as TrainerAbilityEntry)
+  sheet.value?.abilities?.push({ name: '' } as TrainerAbilityEntry)
 const removeAbility = (i: number) =>
   sheet.value?.abilities?.splice(i, 1)
 
@@ -937,25 +940,31 @@ const clearPortrait = () => {
         <div class="block">
           <h2 class="block-title">
             Abilities
+            <span class="move-lookup-note">name editable · details from abilities.json</span>
             <button type="button" class="row-add" @click="addAbility">
               <PhPlus :size="14" weight="bold" /> Add row
             </button>
           </h2>
           <ul class="kv-list">
-            <li v-for="(a, i) in sheet.abilities" :key="i">
+            <li v-for="(row, i) in abilityRows" :key="i">
               <span>
-                <EditableCell v-model="a.name" placeholder="Ability" />
+                <EditableCell
+                  :model-value="row.ability.name"
+                  placeholder="Ability"
+                  @update:model-value="(v) => setLookupAbilityName(row.ability, v)"
+                />
                 <span class="muted"> · </span>
-                <EditableCell v-model="a.frequency" placeholder="Static" />
+                <span>{{ formatLookupValue(row.reference?.frequency) }}</span>
               </span>
               <span class="effect-col">
-                <EditableCell v-model="a.effect" type="textarea" placeholder="—" multiline />
+                <span v-if="row.reference?.effect">{{ row.reference.effect }}</span>
+                <span v-else class="badge-empty">{{ row.reference ? '—' : row.ability.name.trim() ? 'No matching ability in abilities.json' : '—' }}</span>
               </span>
               <button type="button" class="row-remove" title="Remove ability" @click="removeAbility(i)">
                 <PhX :size="14" weight="bold" />
               </button>
             </li>
-            <li v-if="!sheet.abilities?.length" class="muted">No abilities yet.</li>
+            <li v-if="!abilityRows.length" class="muted">No abilities yet.</li>
           </ul>
         </div>
 
