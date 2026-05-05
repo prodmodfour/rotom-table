@@ -7,9 +7,10 @@
  *   <EditableCell v-model="move.effect" type="textarea" />
  *   <EditableCell v-model="sheet.gender" type="select" :options="['Male', 'Female']" />
  *
- * Click the value → swap to an inline editor. Commit on Enter or blur,
- * cancel on Escape. The component holds local draft state so a half-typed
- * value doesn't flood the parent watcher (and the auto-save with it).
+ * Click the value → swap to an inline editor. Edits are pushed to the
+ * parent as the user types (debounced by the sheet auto-save layer), then
+ * finalized on Enter or blur. Escape restores the value from when editing
+ * began.
  *
  * For ``type="number"`` empty input commits as ``undefined`` so the field
  * is dropped from the JSON, mirroring how the renderer handles missing
@@ -35,7 +36,7 @@ interface Props {
   /** Min/max for numeric inputs. */
   min?: number
   max?: number
-  /** Force commit on every keystroke (for sliders / ranges). Default false. */
+  /** Push updates to the parent on every keystroke. Disable to only commit on blur/Enter. */
   commitOnInput?: boolean
   /** Allow displayed value to wrap onto multiple lines. */
   multiline?: boolean
@@ -50,7 +51,7 @@ const props = withDefaults(defineProps<Props>(), {
   emptyText: '—',
   min: undefined,
   max: undefined,
-  commitOnInput: false,
+  commitOnInput: true,
   multiline: false,
 })
 
@@ -61,6 +62,7 @@ const emit = defineEmits<{
 
 const editing = ref(false)
 const draft = ref<string>('')
+const sessionStartValue = ref<CellValue>(undefined)
 // Guards against the blur handler re-firing commit after Enter has already
 // committed and the input is being torn down. Without this, an empty draft
 // from the watcher reset would clobber the value we just emitted.
@@ -84,6 +86,7 @@ const optionsResolved = computed(() =>
 
 const beginEdit = async () => {
   if (props.readonly) return
+  sessionStartValue.value = props.modelValue
   draft.value = isEmpty(props.modelValue) ? '' : String(props.modelValue)
   committedThisSession = false
   editing.value = true
@@ -111,22 +114,27 @@ const parseDraft = (raw: string): CellValue => {
   return raw
 }
 
+const applyDraft = (emitCommit = false) => {
+  const next = parseDraft(draft.value)
+  if (next !== props.modelValue) emit('update:modelValue', next)
+  if (emitCommit) emit('commit', next)
+}
+
 const commit = () => {
   if (committedThisSession) {
     editing.value = false
     return
   }
   committedThisSession = true
-  const next = parseDraft(draft.value)
-  if (next !== props.modelValue) {
-    emit('update:modelValue', next)
-    emit('commit', next)
-  }
+  applyDraft(true)
   editing.value = false
 }
 
 const cancel = () => {
   committedThisSession = true
+  if (props.commitOnInput && props.modelValue !== sessionStartValue.value) {
+    emit('update:modelValue', sessionStartValue.value)
+  }
   editing.value = false
 }
 
@@ -157,7 +165,7 @@ const onSelectChange = (e: Event) => {
 const onInput = (e: Event) => {
   const target = e.target as HTMLInputElement | HTMLTextAreaElement
   draft.value = target.value
-  if (props.commitOnInput) commit()
+  if (props.commitOnInput) applyDraft()
 }
 
 // External modelValue changes during display are picked up automatically by

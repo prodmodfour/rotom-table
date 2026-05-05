@@ -59,17 +59,22 @@ export function useEditableSheet<T extends { slug: string }>(
   const saveError = ref<string | null>(null)
   const clientId = getClientId()
 
+  const toPersistedPayload = (value: T): Record<string, unknown> => {
+    const payload: Record<string, unknown> = { ...(value as unknown as Record<string, unknown>) }
+    delete payload.folder
+    return payload
+  }
+
+  const jsonFor = (value: T): string => stableJson(toPersistedPayload(value))
+  const hasUnsavedChanges = (): boolean => jsonFor(sheet.value) !== lastServerJson
+
   // Track the latest "intended" payload so a save that races with a newer
   // edit always wins (the older save returns into a stale state).
   let saveSeq = 0
   let pendingTimer: ReturnType<typeof setTimeout> | null = null
   // Mirrors what's persisted on disk; used by the deep watcher to skip
   // saves when the only change came from an SSE update.
-  let lastServerJson = (() => {
-    const probe: Record<string, unknown> = { ...(initial as unknown as Record<string, unknown>) }
-    delete probe.folder
-    return stableJson(probe)
-  })()
+  let lastServerJson = jsonFor(initial)
 
   const cancelPendingSave = () => {
     if (pendingTimer != null) {
@@ -80,17 +85,22 @@ export function useEditableSheet<T extends { slug: string }>(
 
   const performSave = async () => {
     cancelPendingSave()
+    const payload = toPersistedPayload(sheet.value)
+    const payloadJson = stableJson(payload)
+    if (payloadJson === lastServerJson) {
+      if (saveStatus.value === 'saving') saveStatus.value = 'saved'
+      return
+    }
+
     const seq = ++saveSeq
     saveStatus.value = 'saving'
     saveError.value = null
     try {
-      const payload: Record<string, unknown> = { ...(sheet.value as Record<string, unknown>) }
-      delete payload.folder
       await $fetch('/api/sheets/save', {
         method: 'POST',
         body: { kind, slug: sheet.value.slug, sheet: payload, clientId },
       })
-      lastServerJson = stableJson(payload)
+      lastServerJson = payloadJson
       if (seq === saveSeq) saveStatus.value = 'saved'
     } catch (err: unknown) {
       if (seq !== saveSeq) return
@@ -109,9 +119,7 @@ export function useEditableSheet<T extends { slug: string }>(
   watch(
     sheet,
     (current) => {
-      const probe: Record<string, unknown> = { ...(current as unknown as Record<string, unknown>) }
-      delete probe.folder
-      if (stableJson(probe) === lastServerJson) return
+      if (jsonFor(current) === lastServerJson) return
       cancelPendingSave()
       saveStatus.value = 'saving'
       pendingTimer = setTimeout(() => {
@@ -133,23 +141,70 @@ export function useEditableSheet<T extends { slug: string }>(
         | undefined
       if (event.type === 'updated' && payload?.sheet) {
         const incoming = deepClone(payload.sheet)
-        const probe: Record<string, unknown> = { ...(incoming as unknown as Record<string, unknown>) }
-        delete probe.folder
-        lastServerJson = stableJson(probe)
+        lastServerJson = jsonFor(incoming)
         sheet.value = incoming
         saveStatus.value = 'saved'
       }
     })
   }
 
+  const flushWithBeacon = () => {
+    if (!hasUnsavedChanges()) return
+    cancelPendingSave()
+
+    const payload = toPersistedPayload(sheet.value)
+    const payloadJson = stableJson(payload)
+    const body = JSON.stringify({ kind, slug: sheet.value.slug, sheet: payload, clientId })
+    let queued = false
+
+    try {
+      if (typeof navigator !== 'undefined' && typeof navigator.sendBeacon === 'function') {
+        queued = navigator.sendBeacon(
+          '/api/sheets/save',
+          new Blob([body], { type: 'application/json' }),
+        )
+      }
+    } catch {
+      queued = false
+    }
+
+    if (!queued) {
+      try {
+        void fetch('/api/sheets/save', {
+          method: 'POST',
+          body,
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          keepalive: true,
+        })
+      } catch {
+        // The page is unloading; there is nowhere useful to surface this.
+      }
+    }
+
+    // If the browser accepted the unload request, treat this tab as clean so
+    // `beforeunload` + `pagehide` don't queue duplicate writes.
+    lastServerJson = payloadJson
+    saveStatus.value = 'saved'
+  }
+
+  let removeUnloadFlushers: (() => void) | null = null
+  if (typeof window !== 'undefined') {
+    window.addEventListener('pagehide', flushWithBeacon)
+    window.addEventListener('beforeunload', flushWithBeacon)
+    removeUnloadFlushers = () => {
+      window.removeEventListener('pagehide', flushWithBeacon)
+      window.removeEventListener('beforeunload', flushWithBeacon)
+    }
+  }
+
   if (getCurrentInstance()) {
     onBeforeUnmount(() => {
-      if (pendingTimer != null) {
-        cancelPendingSave()
-        void performSave()
-      }
+      if (hasUnsavedChanges()) void performSave()
       unsubscribe?.()
       unsubscribe = null
+      removeUnloadFlushers?.()
+      removeUnloadFlushers = null
     })
   }
 
