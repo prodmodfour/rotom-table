@@ -1,5 +1,5 @@
 /**
- * PTU reference-data shapes mirrored from `ptu-data/data/{abilities,moves,capabilities}.json`.
+ * PTU reference-data shapes mirrored from `ptu-data/data/*.json`.
  *
  * Each JSON file is a dict keyed by name; we expose them as both the canonical
  * dict and a sorted array of records via ``data/ptuReference.ts``.
@@ -34,6 +34,14 @@ export interface PtuCondition {
   name: string
   category: string
   effect?: string
+  aliases?: string[]
+  source?: string
+}
+
+export interface PtuRule {
+  name: string
+  category: string
+  text?: string
   aliases?: string[]
   source?: string
 }

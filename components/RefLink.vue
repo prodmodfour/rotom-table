@@ -48,6 +48,7 @@ const targetPath = computed(() => {
     case 'ability':    return `/abilities/${slug}`
     case 'capability': return `/capabilities/${slug}`
     case 'condition':  return `/conditions/${slug}`
+    case 'rule':       return `/rules/${slug}`
     case 'feature':    return `/features/${slug}`
     case 'edge':       return `/edges/${slug}`
   }
