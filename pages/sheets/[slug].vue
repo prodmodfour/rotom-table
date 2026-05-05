@@ -3,6 +3,7 @@ import { computed, watch } from 'vue'
 import { PhPlus, PhX } from '@phosphor-icons/vue'
 import {
   characterSheetsBySlug,
+  computeFullMaxHp,
   computeMaxHp,
   getPokedexEntry,
   getSpriteUrl,
@@ -16,6 +17,7 @@ import { PTU_NATURE_OPTIONS, resolveNatureMod } from '~/utils/ptuNatures'
 import { makeAbilityLookupRows, setLookupAbilityName } from '~/utils/sheetAbilityLookup'
 import { formatLookupValue, makeMoveLookupRows, setLookupMoveName, type MoveLookupRow } from '~/utils/sheetMoveLookup'
 import { makeAutomaticStruggleMoves } from '~/utils/struggleMoves'
+import { clampHpValue, computeHpThresholds, computeTickValue } from '~/utils/ptuHp'
 import {
   EVASION_BONUS_MAX,
   EVASION_BONUS_MIN,
@@ -100,14 +102,27 @@ const sheetTypes = computed(() => sheet.value?.types ?? species.value?.types ?? 
 const eggGroups = computed(() => sheet.value?.eggGroups ?? species.value?.egg_groups ?? [])
 
 const hpTotal = computed(() => stats.value.find((row) => row.key === 'hp')?.total ?? 0)
+const fullMaxHp = computed(() => (sheet.value ? computeFullMaxHp(sheet.value, hpTotal.value) : 0))
 const maxHp = computed(() => (sheet.value ? computeMaxHp(sheet.value, hpTotal.value) : 0))
-const currentHp = computed(() => sheet.value?.combat?.currentHp ?? maxHp.value)
+const currentHp = computed(() => clampHpValue(sheet.value?.combat?.currentHp ?? maxHp.value, maxHp.value))
+const tickValue = computed(() => computeTickValue(fullMaxHp.value))
 
-const hpThresholds = computed(() => ({
-  half:    Math.floor(maxHp.value / 2),
-  third:   Math.floor(maxHp.value / 3),
-  quarter: Math.floor(maxHp.value / 4),
-}))
+const setCurrentHp = (value: unknown) => {
+  if (!sheet.value) return
+  sheet.value.combat!.currentHp = clampHpValue(value, maxHp.value)
+}
+
+watch(
+  () => [sheet.value?.combat?.currentHp, maxHp.value] as const,
+  ([rawCurrentHp]) => {
+    if (!sheet.value || rawCurrentHp == null) return
+    const clamped = clampHpValue(rawCurrentHp, maxHp.value)
+    if (rawCurrentHp !== clamped) sheet.value.combat!.currentHp = clamped
+  },
+  { immediate: true },
+)
+
+const hpThresholds = computed(() => computeHpThresholds(fullMaxHp.value))
 
 const totalForStat = (key: StatKey): number =>
   stats.value.find((row) => row.key === key)?.total ?? 0
@@ -517,10 +532,25 @@ const setInheritedMove = (level: string, value: string | undefined) => {
           <h2 class="panel-title">Combat</h2>
           <div class="combat-grid">
             <div class="combat-cell hp-cell">
-              <span class="cell-label">HP</span>
+              <span class="cell-label">Current HP</span>
               <span class="cell-value cell-value--big">
-                <EditableCell v-model="sheet.combat!.currentHp" type="number" :min="0" />
-                <span class="cell-sub"> / {{ maxHp }}</span>
+                <EditableCell
+                  :model-value="currentHp"
+                  type="number"
+                  :min="0"
+                  :max="maxHp"
+                  @update:model-value="setCurrentHp"
+                />
+              </span>
+            </div>
+            <div
+              class="combat-cell hp-cell hp-cell--max"
+              title="Formula Max HP = Level + (HP × 3) + 10. Injuries reduce the effective Max HP by 1/10 each."
+            >
+              <span class="cell-label">Max HP</span>
+              <span class="cell-value cell-value--big">
+                {{ maxHp }}
+                <span v-if="maxHp !== fullMaxHp" class="cell-sub">full {{ fullMaxHp }}</span>
               </span>
             </div>
             <div class="combat-cell">
@@ -529,11 +559,9 @@ const setInheritedMove = (level: string, value: string | undefined) => {
                 <EditableCell v-model="sheet.combat!.injuries" type="number" :min="0" :max="10" />
               </span>
             </div>
-            <div class="combat-cell">
+            <div class="combat-cell" title="A Tick is 1/10th of full maximum Hit Points, rounded down.">
               <span class="cell-label">Tick</span>
-              <span class="cell-value">
-                <EditableCell v-model="sheet.combat!.tick" type="number" :min="0" />
-              </span>
+              <span class="cell-value">{{ tickValue }}</span>
             </div>
             <div class="combat-cell">
               <span class="cell-label">DR</span>
@@ -541,15 +569,15 @@ const setInheritedMove = (level: string, value: string | undefined) => {
                 <EditableCell v-model="sheet.combat!.dr" type="number" :min="0" />
               </span>
             </div>
-            <div class="combat-cell">
+            <div class="combat-cell" title="Fractional HP values use full Max HP before the injury cap.">
               <span class="cell-label">½ HP</span>
               <span class="cell-value">{{ hpThresholds.half }}</span>
             </div>
-            <div class="combat-cell">
+            <div class="combat-cell" title="Fractional HP values use full Max HP before the injury cap.">
               <span class="cell-label">⅓ HP</span>
               <span class="cell-value">{{ hpThresholds.third }}</span>
             </div>
-            <div class="combat-cell">
+            <div class="combat-cell" title="Fractional HP values use full Max HP before the injury cap.">
               <span class="cell-label">¼ HP</span>
               <span class="cell-value">{{ hpThresholds.quarter }}</span>
             </div>
@@ -1373,7 +1401,14 @@ const setInheritedMove = (level: string, value: string | undefined) => {
 }
 
 .cell-value--big { font-size: 1.5rem; font-family: var(--font-book); }
-.cell-sub { font-weight: 400; color: var(--ink-muted); font-size: 0.95rem; }
+.cell-sub {
+  margin-left: 0.35rem;
+  font-weight: 400;
+  color: var(--ink-muted);
+  font-size: 0.82rem;
+  font-family: var(--font-ui);
+  letter-spacing: 0.04em;
+}
 
 .evasion-row {
   margin-top: 0.6rem;

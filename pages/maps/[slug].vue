@@ -8,6 +8,8 @@ import { useLiveSheets } from '~/composables/useLiveSheets'
 import {
   catalogEntryForPokemonSheet,
   catalogEntryForTrainerSheet,
+  pokemonHpSnapshot,
+  trainerHpSnapshot,
 } from '~/utils/sheetSpawn'
 import {
   findFirstAvailablePosition,
@@ -46,6 +48,7 @@ import {
 } from '~/utils/voxels'
 import { buildMapOccupancy } from '~/utils/mapOccupancy'
 import { getClientId } from '~/utils/clientId'
+import { clampHpValue } from '~/utils/ptuHp'
 import { COMBAT_STAGE_KEYS, COMBAT_STAT_STAGE_KEYS, clampCombatStage } from '~/utils/combatStages'
 import { normalizeConditionNames } from '~/utils/statusConditions'
 import { resolveStats } from '~/data/characterSheets'
@@ -608,13 +611,13 @@ const modifyHp = async (
   if (!placement) return
 
   const clientId = getClientId()
-  const clamped = Math.max(0, Math.floor(payload.currentHp))
 
   if (placement.sheetKind === 'pokemon') {
     const sheets = pokemonBySlug.value
     if (!sheets) return
     const original = sheets.get(placement.sheetSlug)
     if (!original) return
+    const clamped = clampHpValue(payload.currentHp, pokemonHpSnapshot(original).maxHp)
     const updated = JSON.parse(JSON.stringify(original)) as CharacterSheet
     updated.combat = { ...(updated.combat ?? {}), currentHp: clamped }
     sheets.set(placement.sheetSlug, updated)
@@ -637,6 +640,7 @@ const modifyHp = async (
   if (!sheets) return
   const original = sheets.get(placement.sheetSlug)
   if (!original) return
+  const clamped = clampHpValue(payload.currentHp, trainerHpSnapshot(original).maxHp)
   const updated = JSON.parse(JSON.stringify(original)) as TrainerSheet
   updated.currentHp = clamped
   sheets.set(placement.sheetSlug, updated)

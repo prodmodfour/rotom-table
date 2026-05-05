@@ -4,6 +4,7 @@ import type { PokedexRecord } from '~/types/pokemon'
 import { pokemonCatalogBySpecies } from '~/data/pokemonCatalog'
 import { folderFromGlobKey } from '~/utils/sheetFolders'
 import { adjustedNatureModForStat, resolveNatureMod } from '~/utils/ptuNatures'
+import { computeInjuryAdjustedMaxHp, computePokemonFormulaMaxHp } from '~/utils/ptuHp'
 
 // ---------------------------------------------------------------------------
 // Auto-discover every JSON sheet under ``data/sheets`` (recursively). Drop a
@@ -145,16 +146,17 @@ export const resolveStats = (sheet: CharacterSheet): ResolvedStat[] => {
 }
 
 /**
- * PTU Pokémon Max HP formula (Core, Pokémon chapter p.198):
+ * PTU Pokémon real/formula Max HP (Core, Pokémon chapter p.198):
  *   Max HP = Level + (HP × 3) + 10
- * ``HP`` here is the resolved Total HP stat from the sheet. Sheets may still
- * set ``combat.maxHp`` to lock/override the computed value.
+ * ``HP`` here is the resolved Total HP stat from the sheet. Legacy
+ * ``combat.maxHp`` values are ignored so the sheet always derives HP.
  */
-export const computeMaxHp = (sheet: CharacterSheet, hpTotal: number): number => {
-  if (sheet.combat?.maxHp != null) return sheet.combat.maxHp
-  const level = sheet.level ?? 1
-  return level + (hpTotal * 3) + 10
-}
+export const computeFullMaxHp = (sheet: CharacterSheet, hpTotal: number): number =>
+  computePokemonFormulaMaxHp(sheet.level ?? 1, hpTotal)
+
+/** Effective Max HP / healing cap after Injuries (Core Combat p.250). */
+export const computeMaxHp = (sheet: CharacterSheet, hpTotal: number): number =>
+  computeInjuryAdjustedMaxHp(computeFullMaxHp(sheet, hpTotal), sheet.combat?.injuries)
 
 /** Resolved skill row (label + value). Mixes species defaults and overrides. */
 export interface ResolvedSkill {

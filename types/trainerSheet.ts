@@ -267,7 +267,7 @@ export interface TrainerSheet {
   portraitUrl?: string
 
   stats?: Partial<Record<TrainerStatKey, TrainerStatRow>>
-  /** Override Max HP if you've already computed it elsewhere. */
+  /** Legacy/manual Max HP. Renderer ignores this and derives Max HP from PTU formulas. */
   maxHp?: number
   currentHp?: number
 

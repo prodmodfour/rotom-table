@@ -67,11 +67,13 @@ export interface CharacterSheetEvasion {
 }
 
 export interface CharacterSheetCombat {
-  /** Override Max HP if you want to lock it instead of computing. */
+  /** Legacy/manual Max HP. Renderer ignores this and derives Max HP from PTU formulas. */
   maxHp?: number
   currentHp?: number
   injuries?: number
+  /** Legacy/manual injured HP. Renderer derives the injury-adjusted Max HP. */
   injuredHp?: number
+  /** Legacy/manual Tick. Renderer derives Tick from formula Max HP. */
   tick?: number
   evasion?: CharacterSheetEvasion
   dr?: number

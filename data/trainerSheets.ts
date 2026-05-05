@@ -6,6 +6,7 @@ import type {
   SkillRank,
 } from '~/types/trainerSheet'
 import { folderFromGlobKey } from '~/utils/sheetFolders'
+import { computeInjuryAdjustedMaxHp, computeTrainerFormulaMaxHp } from '~/utils/ptuHp'
 
 // ---------------------------------------------------------------------------
 // Auto-discover trainer sheet JSONs under ``data/trainers`` (recursively).
@@ -90,14 +91,16 @@ export const resolveTrainerStats = (sheet: TrainerSheet): ResolvedTrainerStat[] 
     }
   })
 
-/** PTU Trainer Max HP = base HP × Lv/5 + base HP + Lv + 10  (per PTU 1.05). */
-export const computeTrainerMaxHp = (sheet: TrainerSheet): number => {
-  if (sheet.maxHp != null) return sheet.maxHp
+/** PTU Trainer real/formula Max HP = Level × 2 + (HP × 3) + 10 (Core Character Creation p.16). */
+export const computeTrainerFullMaxHp = (sheet: TrainerSheet): number => {
   const stats = resolveTrainerStats(sheet)
   const hpTotal = stats.find((s) => s.key === 'hp')!.total
-  const lvl = sheet.level ?? 1
-  return Math.floor((hpTotal * lvl) / 5) + hpTotal + lvl + 10
+  return computeTrainerFormulaMaxHp(sheet.level ?? 1, hpTotal)
 }
+
+/** Effective Max HP / healing cap after Injuries (Core Combat p.250). */
+export const computeTrainerMaxHp = (sheet: TrainerSheet): number =>
+  computeInjuryAdjustedMaxHp(computeTrainerFullMaxHp(sheet), sheet.currentInjuries)
 
 /** PTU Trainer Max AP = 5 + floor(Lv / 5) (per PTU 1.05). */
 export const computeTrainerMaxAp = (sheet: TrainerSheet): number => {

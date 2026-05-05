@@ -16,6 +16,7 @@ import { pokemonCatalog, pokemonCatalogBySpecies } from '~/data/pokemonCatalog'
 import { trainerCatalog } from '~/data/trainerCatalog'
 import { COMBAT_STAT_STAGE_KEYS, normalizeCombatStages } from '~/utils/combatStages'
 import { mergeLegacyConditions } from '~/utils/statusConditions'
+import { clampHpValue } from '~/utils/ptuHp'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { CombatStageMap } from '~/types/combatStages'
 import type { PokemonCatalogEntry } from '~/types/pokemon'
@@ -53,7 +54,7 @@ export const catalogEntryForTrainerSheet = (
   return trainerCatalog[0] ?? null
 }
 
-/** Pokémon HP + offence/defence + types snapshot — sheet override > species default. */
+/** Pokémon HP + offence/defence + types snapshot. Max HP is derived and injury-adjusted. */
 export const pokemonHpSnapshot = (
   sheet: CharacterSheet,
 ): {
@@ -70,7 +71,7 @@ export const pokemonHpSnapshot = (
   const stats = resolveStats(sheet)
   const hpTotal = stats.find((row) => row.key === 'hp')?.total ?? 0
   const maxHp = computeMaxHp(sheet, hpTotal)
-  const currentHp = sheet.combat?.currentHp ?? maxHp
+  const currentHp = clampHpValue(sheet.combat?.currentHp ?? maxHp, maxHp)
   const atk = stats.find((row) => row.key === 'atk')?.total ?? 0
   const satk = stats.find((row) => row.key === 'satk')?.total ?? 0
   const def = stats.find((row) => row.key === 'def')?.total ?? 0
@@ -89,7 +90,7 @@ export const pokemonHpSnapshot = (
   return { currentHp, maxHp, atk, satk, def, sdef, defenderTypes, combatStages, conditions }
 }
 
-/** Trainer HP + offence/defence snapshot — trainers have no defending types. */
+/** Trainer HP + offence/defence snapshot. Max HP is derived and injury-adjusted; trainers have no defending types. */
 export const trainerHpSnapshot = (
   sheet: TrainerSheet,
 ): {
@@ -104,7 +105,7 @@ export const trainerHpSnapshot = (
   conditions: string[]
 } => {
   const maxHp = computeTrainerMaxHp(sheet)
-  const currentHp = sheet.currentHp ?? maxHp
+  const currentHp = clampHpValue(sheet.currentHp ?? maxHp, maxHp)
   const stats = resolveTrainerStats(sheet)
   const atk = stats.find((row) => row.key === 'atk')?.total ?? 0
   const satk = stats.find((row) => row.key === 'satk')?.total ?? 0

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { PhPlus, PhX } from '@phosphor-icons/vue'
 import RefLink from '~/components/RefLink.vue'
 import {
@@ -8,6 +8,7 @@ import {
   resolveTrainerSkills,
   resolveTrainerCapabilities,
   resolveAdvancement,
+  computeTrainerFullMaxHp,
   computeTrainerMaxHp,
   computeTrainerMaxAp,
   TRAINER_SKILL_ORDER,
@@ -15,6 +16,7 @@ import {
 import { trainerCatalog } from '~/data/trainerCatalog'
 import { normalizeTrainerSheet } from '~/utils/sheetNormalize'
 import { makeAbilityLookupRows, setLookupAbilityName } from '~/utils/sheetAbilityLookup'
+import { clampHpValue, computeHpThresholds, computeTickValue } from '~/utils/ptuHp'
 import { formatLookupValue, makeMoveLookupRows, setLookupMoveName } from '~/utils/sheetMoveLookup'
 import {
   EVASION_BONUS_MAX,
@@ -105,10 +107,26 @@ const skills    = computed(() => sheet.value ? resolveTrainerSkills(sheet.value)
 const capRes    = computed(() => sheet.value ? resolveTrainerCapabilities(sheet.value) : { rows: [], other: [] })
 const adv       = computed(() => sheet.value ? resolveAdvancement(sheet.value) : [])
 
+const fullMaxHp = computed(() => sheet.value ? computeTrainerFullMaxHp(sheet.value) : 0)
 const maxHp     = computed(() => sheet.value ? computeTrainerMaxHp(sheet.value) : 0)
 const maxAp     = computed(() => sheet.value ? computeTrainerMaxAp(sheet.value) : 0)
-const currentHp = computed(() => sheet.value?.currentHp ?? maxHp.value)
+const currentHp = computed(() => clampHpValue(sheet.value?.currentHp ?? maxHp.value, maxHp.value))
 const apLeft    = computed(() => sheet.value?.ap?.left ?? maxAp.value)
+
+const setCurrentHp = (value: unknown) => {
+  if (!sheet.value) return
+  sheet.value.currentHp = clampHpValue(value, maxHp.value)
+}
+
+watch(
+  () => [sheet.value?.currentHp, maxHp.value] as const,
+  ([rawCurrentHp]) => {
+    if (!sheet.value || rawCurrentHp == null) return
+    const clamped = clampHpValue(rawCurrentHp, maxHp.value)
+    if (rawCurrentHp !== clamped) sheet.value.currentHp = clamped
+  },
+  { immediate: true },
+)
 
 const attackTotal = computed(() => stats.value.find((row) => row.key === 'atk')?.total ?? 0)
 const specialAttackTotal = computed(() => stats.value.find((row) => row.key === 'satk')?.total ?? 0)
@@ -151,11 +169,8 @@ const trainerEvasion = computed(() => {
   }
 })
 
-const injuries = computed(() => sheet.value?.currentInjuries ?? 0)
-const injuredHp = computed(() =>
-  Math.max(0, Math.floor(maxHp.value * (1 - 0.1 * injuries.value))),
-)
-const tickValue = computed(() => Math.max(1, Math.ceil(maxHp.value / 10)))
+const tickValue = computed(() => computeTickValue(fullMaxHp.value))
+const hpThresholds = computed(() => computeHpThresholds(fullMaxHp.value))
 
 // ---------------------------------------------------------------------------
 // CSV-backed v-models (arrays exposed as comma-separated input)
@@ -454,10 +469,25 @@ const clearPortrait = () => {
         </div>
         <div class="identity-vitals">
           <div class="vital">
-            <span class="vital-label">HP</span>
+            <span class="vital-label">Current HP</span>
             <span class="vital-value">
-              <EditableCell v-model="sheet.currentHp" type="number" :min="0" />
-              <span class="vital-divider">/</span> {{ maxHp }}
+              <EditableCell
+                :model-value="currentHp"
+                type="number"
+                :min="0"
+                :max="maxHp"
+                @update:model-value="setCurrentHp"
+              />
+            </span>
+          </div>
+          <div
+            class="vital"
+            title="Formula Max HP = Level × 2 + (HP × 3) + 10. Injuries reduce the effective Max HP by 1/10 each."
+          >
+            <span class="vital-label">Max HP</span>
+            <span class="vital-value">
+              {{ maxHp }}
+              <span v-if="maxHp !== fullMaxHp" class="vital-sub">full {{ fullMaxHp }}</span>
             </span>
           </div>
           <div class="vital">
@@ -795,11 +825,24 @@ const clearPortrait = () => {
       <section v-if="activeTab === 'combat'" class="tab-panel">
         <div class="combat-strip">
           <div class="combat-cell"><span>Current HP</span>
-            <strong><EditableCell v-model="sheet.currentHp" type="number" :min="0" /></strong>
+            <strong>
+              <EditableCell
+                :model-value="currentHp"
+                type="number"
+                :min="0"
+                :max="maxHp"
+                @update:model-value="setCurrentHp"
+              />
+            </strong>
           </div>
-          <div class="combat-cell"><span>Max HP</span><strong>{{ maxHp }}</strong></div>
-          <div class="combat-cell"><span>Injured HP</span><strong>{{ injuredHp }}</strong></div>
-          <div class="combat-cell"><span>Tick</span><strong>{{ tickValue }}</strong></div>
+          <div
+            class="combat-cell"
+            title="Formula Max HP = Level × 2 + (HP × 3) + 10. Injuries reduce the effective Max HP by 1/10 each."
+          ><span>Max HP</span><strong>{{ maxHp }}<small v-if="maxHp !== fullMaxHp">full {{ fullMaxHp }}</small></strong></div>
+          <div class="combat-cell" title="A Tick is 1/10th of full maximum Hit Points, rounded down."><span>Tick</span><strong>{{ tickValue }}</strong></div>
+          <div class="combat-cell" title="Fractional HP values use full Max HP before the injury cap."><span>½ HP</span><strong>{{ hpThresholds.half }}</strong></div>
+          <div class="combat-cell" title="Fractional HP values use full Max HP before the injury cap."><span>⅓ HP</span><strong>{{ hpThresholds.third }}</strong></div>
+          <div class="combat-cell" title="Fractional HP values use full Max HP before the injury cap."><span>¼ HP</span><strong>{{ hpThresholds.quarter }}</strong></div>
           <div class="combat-cell"><span>DR</span>
             <strong><EditableCell v-model="sheet.damageReduction" type="number" :min="0" /></strong>
           </div>
@@ -1674,6 +1717,14 @@ const clearPortrait = () => {
   margin: 0 0.18rem;
 }
 
+.vital-sub {
+  margin-left: 0.35rem;
+  color: var(--ink-muted);
+  font-size: 0.76rem;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+}
+
 /* ===== Tabs ===== */
 .tab-nav {
   display: flex;
@@ -1993,6 +2044,16 @@ const clearPortrait = () => {
   color: var(--ink-bright);
   font-variant-numeric: tabular-nums;
   font-family: var(--font-book);
+}
+
+.combat-cell small {
+  display: block;
+  margin-top: 0.08rem;
+  color: var(--ink-muted);
+  font-family: var(--font-ui);
+  font-size: 0.68rem;
+  font-weight: 400;
+  letter-spacing: 0.04em;
 }
 
 /* Capabilities */
