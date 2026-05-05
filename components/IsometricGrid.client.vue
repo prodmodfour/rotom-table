@@ -78,6 +78,7 @@ const emit = defineEmits<{
   (event: 'modify-conditions', payload: { id: string; conditions: string[] }): void
   (event: 'use-move', id: string): void
   (event: 'view-sheet', id: string): void
+  (event: 'view-pokedex', id: string): void
   (event: 'preview-change', preview: PreviewState): void
   (event: 'place-voxel', voxel: MapVoxelV2): void
   (event: 'remove-voxel', cell: { x: number; y: number; z: number }): void
@@ -1219,7 +1220,7 @@ const rollDamageBase = (def: DamageBaseDef): { rolls: number[]; total: number } 
 }
 
 const container = ref<HTMLDivElement | null>(null)
-const contextMenu = ref<{ x: number; y: number; id: string; canTurn: boolean } | null>(null)
+const contextMenu = ref<{ x: number; y: number; id: string; canTurn: boolean; canViewPokedex: boolean } | null>(null)
 
 interface CombatStagesDialogState {
   id: string
@@ -4326,15 +4327,17 @@ const openContextMenu = (event: MouseEvent, id: string) => {
 
   const target = props.pokemons.find((pokemon) => pokemon.id === id)
   const canTurn = Boolean(target?.entityKind === 'pokemon' && target.backSpriteUrl)
+  const canViewPokedex = target?.sheetKind === 'pokemon'
   const bounds = container.value.getBoundingClientRect()
   const menuWidth = 230
-  const menuButtonCount = 6 + (canTurn ? 1 : 0) + (props.canDeleteTokens ? 1 : 0)
+  const menuButtonCount = 6 + (canViewPokedex ? 1 : 0) + (canTurn ? 1 : 0) + (props.canDeleteTokens ? 1 : 0)
   const menuHeight = 13 + menuButtonCount * 40 + Math.max(0, menuButtonCount - 1) * 5
   const padding = 12
 
   contextMenu.value = {
     id,
     canTurn,
+    canViewPokedex,
     x: Math.min(bounds.width - menuWidth - padding, Math.max(padding, event.clientX - bounds.left)),
     y: Math.min(bounds.height - menuHeight - padding, Math.max(padding, event.clientY - bounds.top)),
   }
@@ -4481,6 +4484,15 @@ const handleContextViewSheet = () => {
   }
 
   emit('view-sheet', contextMenu.value.id)
+  closeContextMenu()
+}
+
+const handleContextViewPokedex = () => {
+  if (!contextMenu.value || !canControlPokemon(contextMenu.value.id)) {
+    return
+  }
+
+  emit('view-pokedex', contextMenu.value.id)
   closeContextMenu()
 }
 
@@ -5280,6 +5292,14 @@ watch(
         @click.stop="handleContextViewSheet"
       >
         View Sheet
+      </button>
+      <button
+        v-if="contextMenu.canViewPokedex"
+        type="button"
+        class="context-menu__button"
+        @click.stop="handleContextViewPokedex"
+      >
+        View in Pokédex
       </button>
       <button
         v-if="contextMenu.canTurn"

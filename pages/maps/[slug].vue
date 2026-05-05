@@ -414,6 +414,14 @@ const ensureInitiativeState = (): InitiativeTrackerState | null => {
 
 const placementById = (id: string) => map.value?.placements.find((placement) => placement.id === id) ?? null
 
+const toPokedexSlug = (value: string): string => value
+  .normalize('NFKD')
+  .replace(/[\u0300-\u036f]/g, '')
+  .toLowerCase()
+  .replace(/['\u2019]/g, '')
+  .replace(/[^a-z0-9]+/g, '-')
+  .replace(/^-+|-+$/g, '')
+
 const hpPercent = (entry: InitiativeRow): string => {
   if (entry.maxHp <= 0) return '0%'
   const percent = Math.max(0, Math.min(100, (entry.currentHp / entry.maxHp) * 100))
@@ -778,6 +786,18 @@ const viewSheet = (id: string) => {
   const slug = encodeURIComponent(placement.sheetSlug)
   const path = placement.sheetKind === 'trainer' ? `/sheets/trainers/${slug}` : `/sheets/${slug}`
   const target = router.resolve(path).href
+  window.open(target, '_blank', 'noopener')
+}
+
+const viewPokedex = (id: string) => {
+  if (!map.value || !canControlPlacement(id)) return
+  const placement = placementById(id)
+  if (!placement || placement.sheetKind !== 'pokemon') return
+  const species = pokemonBySlug.value?.get(placement.sheetSlug)?.species
+  if (!species) return
+  const slug = toPokedexSlug(species)
+  if (!slug) return
+  const target = router.resolve(`/pokedex/${encodeURIComponent(slug)}`).href
   window.open(target, '_blank', 'noopener')
 }
 
@@ -1768,6 +1788,7 @@ watch(
           @modify-conditions="modifyConditions"
           @use-move="openMoveAutomation"
           @view-sheet="viewSheet"
+          @view-pokedex="viewPokedex"
           @preview-change="updatePreview"
           @place-voxel="placeVoxel"
           @remove-voxel="removeVoxel"
