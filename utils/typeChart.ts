@@ -1,10 +1,12 @@
 /**
- * Standard Pokémon (Gen 6+) type effectiveness chart, used by the character
- * sheet's "Type Effectiveness" panel.
+ * Pokémon (Gen 6+) type effectiveness chart, used by sheets, maps, and move
+ * automation.
  *
  * The chart is keyed as ``effectiveness[attackingType][defendingType]``.
- * Anything not listed is the default ``1`` (neutral). PTU follows the
- * mainline games for all single-type matchups.
+ * Anything not listed is the default ``1`` (neutral). Single-type matchups
+ * follow the mainline games, then combined matchups are converted to PTU's
+ * stepped damage values: x1.5 for one weakness, x2 for two weaknesses, x3 for
+ * three, and halved for each resistance step.
  */
 
 export const POKEMON_TYPES = [
@@ -71,8 +73,8 @@ export const singleTypeMultiplier = (attacker: PokemonType, defender: PokemonTyp
   SUPER[attacker][defender] ?? 1
 
 /**
- * Effectiveness of an attacking type against a Pokémon with up to two
- * defending types. Unknown types are treated as neutral (``1``).
+ * PTU effectiveness of an attacking type against any number of defending
+ * types. Unknown types are treated as neutral (``1``).
  */
 export const computeMultiplier = (
   attacker: string,
@@ -80,21 +82,31 @@ export const computeMultiplier = (
 ): number => {
   if (!isPokemonType(attacker)) return 1
 
-  let total = 1
+  let effectivenessSteps = 0
   for (const defender of defenders) {
     if (!defender || !isPokemonType(defender)) continue
-    total *= singleTypeMultiplier(attacker, defender)
+
+    const singleTypeMatchup = singleTypeMultiplier(attacker, defender)
+    if (singleTypeMatchup === 0) return 0
+    if (singleTypeMatchup > 1) effectivenessSteps += 1
+    if (singleTypeMatchup < 1) effectivenessSteps -= 1
   }
-  return total
+
+  if (effectivenessSteps < 0) return 1 / (2 ** Math.abs(effectivenessSteps))
+  if (effectivenessSteps === 1) return 1.5
+  if (effectivenessSteps >= 2) return effectivenessSteps
+  return 1
 }
 
 /** Format a multiplier for display: ``0`` → ``"0"``, ``0.5`` → ``"½"`` etc. */
 export const formatMultiplier = (mult: number): string => {
   if (mult === 0) return '0'
+  if (mult === 0.125) return '⅛'
   if (mult === 0.25) return '¼'
   if (mult === 0.5) return '½'
   if (mult === 1) return '1'
+  if (mult === 1.5) return '1.5'
   if (mult === 2) return '2'
-  if (mult === 4) return '4'
+  if (mult === 3) return '3'
   return mult.toString()
 }
