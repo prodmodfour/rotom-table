@@ -3,7 +3,7 @@ import type { CharacterSheet, StatKey } from '~/types/characterSheet'
 import type { PokedexRecord } from '~/types/pokemon'
 import { pokemonCatalogBySpecies } from '~/data/pokemonCatalog'
 import { folderFromGlobKey } from '~/utils/sheetFolders'
-import { adjustedNatureModForStat, isStatKey, resolveNatureMod } from '~/utils/ptuNatures'
+import { adjustedNatureModForStat, resolveNatureMod } from '~/utils/ptuNatures'
 
 // ---------------------------------------------------------------------------
 // Auto-discover every JSON sheet under ``data/sheets`` (recursively). Drop a
@@ -121,8 +121,8 @@ export const resolveStats = (sheet: CharacterSheet): ResolvedStat[] => {
   }
 
   const chartNatureMod = resolveNatureMod(sheet.nature)
-  const plus  = isStatKey(sheet.natureMod?.plus) ? sheet.natureMod?.plus : chartNatureMod?.plus
-  const minus = isStatKey(sheet.natureMod?.minus) ? sheet.natureMod?.minus : chartNatureMod?.minus
+  const plus = chartNatureMod?.plus
+  const minus = chartNatureMod?.minus
 
   return STAT_KEYS.map((key) => {
     const personal = sheet.stats?.[key] ?? {}

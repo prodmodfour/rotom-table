@@ -53,17 +53,10 @@ definePageMeta({
 })
 
 const syncNatureModForSheet = (target: CharacterSheet, nature = target.nature) => {
-  const natureText = typeof nature === 'string' ? nature.trim() : ''
   if (!target.natureMod) target.natureMod = {}
-  if (!natureText) {
-    target.natureMod.plus = undefined
-    target.natureMod.minus = undefined
-    return
-  }
-  const mod = resolveNatureMod(natureText)
-  if (!mod) return
-  target.natureMod.plus = mod.plus
-  target.natureMod.minus = mod.minus
+  const mod = resolveNatureMod(nature)
+  target.natureMod.plus = mod?.plus
+  target.natureMod.minus = mod?.minus
 }
 
 const route = useRoute()
@@ -212,14 +205,25 @@ watch(
 
 const NATURE_OPTIONS = PTU_NATURE_OPTIONS
 
-const NATURE_STAT_OPTIONS = [
-  { value: 'hp',   label: 'HP' },
-  { value: 'atk',  label: 'ATK' },
-  { value: 'def',  label: 'DEF' },
-  { value: 'satk', label: 'SATK' },
-  { value: 'sdef', label: 'SDEF' },
-  { value: 'spd',  label: 'SPD' },
-]
+const NATURE_STAT_LABELS: Record<StatKey, string> = {
+  hp: 'HP',
+  atk: 'ATK',
+  def: 'DEF',
+  satk: 'SATK',
+  sdef: 'SDEF',
+  spd: 'SPD',
+}
+
+const natureStepForStat = (key: StatKey): number => key === 'hp' ? 1 : 2
+const formatNatureModDisplay = (key: StatKey | undefined, sign: 1 | -1): string | undefined => {
+  if (!key) return undefined
+  const delta = natureStepForStat(key) * sign
+  return `${NATURE_STAT_LABELS[key]} ${delta > 0 ? `+${delta}` : delta}`
+}
+
+const natureLookupMod = computed(() => resolveNatureMod(sheet.value?.nature))
+const naturePlusDisplay = computed(() => formatNatureModDisplay(natureLookupMod.value?.plus, 1))
+const natureMinusDisplay = computed(() => formatNatureModDisplay(natureLookupMod.value?.minus, -1))
 
 const GENDER_OPTIONS = ['Male', 'Female', 'Genderless']
 
@@ -418,9 +422,8 @@ const setInheritedMove = (level: string, value: string | undefined) => {
               <dt>Nat +</dt>
               <dd>
                 <EditableCell
-                  v-model="sheet.natureMod!.plus"
-                  type="select"
-                  :options="NATURE_STAT_OPTIONS"
+                  :model-value="naturePlusDisplay"
+                  readonly
                   placeholder="—"
                 />
               </dd>
@@ -429,9 +432,8 @@ const setInheritedMove = (level: string, value: string | undefined) => {
               <dt>Nat −</dt>
               <dd>
                 <EditableCell
-                  v-model="sheet.natureMod!.minus"
-                  type="select"
-                  :options="NATURE_STAT_OPTIONS"
+                  :model-value="natureMinusDisplay"
+                  readonly
                   placeholder="—"
                 />
               </dd>

@@ -160,8 +160,8 @@ export interface CharacterSheet {
 
   /** PTU nature name, e.g. ``"Hardy"``, ``"Modest"``. */
   nature?: string
-  /** Nature stat choices from the PTU Nature Chart. HP shifts by ±1; every
-   *  other stat shifts by ±2, with the adjusted species Base Stat floored at 1. */
+  /** Cached/legacy Nature stat choices from the PTU Nature Chart. The renderer
+   *  derives Nat +/- from `nature`, so these are not manually edited. */
   natureMod?: { plus?: StatKey; minus?: StatKey }
 
   /** Optional override of types and egg groups. Defaults come from species. */
