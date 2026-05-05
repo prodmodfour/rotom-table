@@ -648,10 +648,6 @@ const setInheritedMove = (level: string, value: string | undefined) => {
             <ConditionPicker v-model="sheet.combat!.conditions" />
           </div>
           <p class="combat-line">
-            <strong>Status notes:</strong>
-            <EditableCell v-model="sheet.combat!.statusAfflictions" placeholder="Optional notes" />
-          </p>
-          <p class="combat-line">
             <strong>Vitamins:</strong>
             <EditableCell v-model="sheet.combat!.vitamins" placeholder="—" />
           </p>

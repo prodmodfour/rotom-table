@@ -931,10 +931,6 @@ const clearPortrait = () => {
               <ConditionPicker v-model="sheet.conditions" />
             </div>
             <p class="muted">
-              <strong>Status notes:</strong>
-              <EditableCell v-model="sheet.statusAfflictions" placeholder="Optional notes" />
-            </p>
-            <p class="muted">
               <strong>Digestion:</strong>
               <EditableCell v-model="sheet.digestion" placeholder="—" />
             </p>
