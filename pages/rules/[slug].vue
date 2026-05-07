@@ -32,11 +32,6 @@ useHead(() => ({
           </div>
         </div>
 
-        <section v-if="rule.aliases?.length" class="field-block">
-          <h3>Aliases</h3>
-          <p>{{ rule.aliases.join(', ') }}</p>
-        </section>
-
         <section v-if="rule.text" class="field-block">
           <h3>Rule Text</h3>
           <p>{{ rule.text }}</p>

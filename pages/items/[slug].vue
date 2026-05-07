@@ -58,11 +58,6 @@ const relatedItems = computed(() => {
           </div>
         </dl>
 
-        <section v-if="item.aliases.length" class="field-block">
-          <h3>Aliases</h3>
-          <p>{{ item.aliases.join(', ') }}</p>
-        </section>
-
         <section v-if="item.effects.length" class="field-block">
           <h3>Effect</h3>
           <p v-if="item.effects.length === 1">{{ item.effects[0] }}</p>

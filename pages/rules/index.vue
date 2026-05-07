@@ -65,7 +65,7 @@ const toggleCategory = (category: string) => {
         </div>
         <p class="ref-copy">
           PTU rules and house rules from <code>ptu-data/data/rules.json</code>.
-          Pick a category to filter, or search by name, alias, source, or rule text.
+          Pick a category to filter, or search by name, source, or rule text.
         </p>
 
         <div class="category-row">
@@ -86,7 +86,7 @@ const toggleCategory = (category: string) => {
           <input
             v-model.trim="searchTerm"
             type="search"
-            placeholder="Search by name, alias, category, source, or text…"
+            placeholder="Search by name, category, source, or text…"
           />
         </label>
       </section>
@@ -109,9 +109,6 @@ const toggleCategory = (category: string) => {
             <h3>{{ rule.name }}</h3>
             <span v-if="rule.source" class="ref-row__freq">{{ rule.source }}</span>
           </div>
-          <p v-if="rule.aliases?.length" class="ref-row__trigger">
-            <span class="label">Aliases:</span> {{ rule.aliases.join(', ') }}
-          </p>
           <p v-if="rule.text" class="ref-row__effect">{{ rule.text }}</p>
         </NuxtLink>
       </section>

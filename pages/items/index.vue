@@ -74,7 +74,7 @@ const toggleCategory = (category: string) => {
         <p class="ref-copy">
           PTU gear, medicine, Poké Balls, TMs, Held Items, and equipment from
           <code>ptu-data/data/items.json</code>. Pick a category or section, or search by
-          name, alias, cost, source, or effect.
+          name, cost, source, or effect.
         </p>
 
         <div class="category-row">
@@ -96,7 +96,7 @@ const toggleCategory = (category: string) => {
             <input
               v-model.trim="searchTerm"
               type="search"
-              placeholder="Search by name, alias, cost, section, source, or effect…"
+              placeholder="Search by name, cost, section, source, or effect…"
             />
           </label>
 
@@ -153,9 +153,6 @@ const toggleCategory = (category: string) => {
           </div>
         </div>
 
-        <p v-if="item.aliases.length" class="ref-row__trigger">
-          <span class="label">Aliases:</span> {{ item.aliases.join(', ') }}
-        </p>
         <p v-if="item.effects.length" class="ref-row__effect">
           {{ item.effects.join(' ') }}
         </p>

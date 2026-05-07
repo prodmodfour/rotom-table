@@ -799,10 +799,6 @@ const setInheritedMove = (level: string, value: string | undefined) => {
                 </span>
               </dd>
             </div>
-            <div v-if="heldItemReference?.aliases.length">
-              <dt>Aliases</dt>
-              <dd>{{ formatLookupList(heldItemReference.aliases) }}</dd>
-            </div>
             <div v-if="heldItemReference?.notes.length">
               <dt>Notes</dt>
               <dd class="lookup-text">
