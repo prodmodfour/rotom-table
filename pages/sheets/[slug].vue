@@ -141,6 +141,15 @@ const remainingBaseRelationViolationCount = computed(() =>
 const totalForStat = (key: StatKey): number =>
   stats.value.find((row) => row.key === key)?.total ?? 0
 
+const BRIGHT_POWDER_SPEED_EVASION_BONUS = 2
+
+const heldItemSpeedEvasionBonus = (heldItem: string | null | undefined): number => {
+  if (!heldItem?.trim()) return 0
+  return findItem(heldItem)?.name === 'Bright Powder'
+    ? BRIGHT_POWDER_SPEED_EVASION_BONUS
+    : 0
+}
+
 const pokemonEvasion = computed(() => {
   const evasion = sheet.value?.combat?.evasion
   const vsAtkBase = computeStatEvasion(totalForStat('def'))
@@ -149,6 +158,8 @@ const pokemonEvasion = computed(() => {
   const vsAtkBonus = evasion?.vsAtkBonus ?? 0
   const vsSatkBonus = evasion?.vsSatkBonus ?? 0
   const vsAnyBonus = evasion?.vsAnyBonus ?? 0
+  const vsAnyItemBonus = heldItemSpeedEvasionBonus(sheet.value?.items?.held)
+  const vsAnyTotalBonus = vsAnyBonus + vsAnyItemBonus
 
   return {
     vsAtk: {
@@ -162,9 +173,10 @@ const pokemonEvasion = computed(() => {
       bonus: vsSatkBonus,
     },
     vsAny: {
-      total: computeEvasionTotal(vsAnyBase, vsAnyBonus),
+      total: computeEvasionTotal(vsAnyBase, vsAnyTotalBonus),
       base: vsAnyBase,
       bonus: vsAnyBonus,
+      itemBonus: vsAnyItemBonus,
     },
   }
 })
@@ -715,7 +727,7 @@ const setInheritedMove = (level: string, value: string | undefined) => {
                   />
                 </span>
               </li>
-              <li title="Stat evasion = floor(Speed Total / 5), capped at +6 from stats.">
+              <li title="Stat evasion = floor(Speed Total / 5), capped at +6 from stats. Bright Powder adds +2 to Speed Evasion while held; total evasion is capped at +9.">
                 <span class="evasion-label">vs Any</span>
                 <strong>{{ pokemonEvasion.vsAny.total }}</strong>
                 <small>stat {{ pokemonEvasion.vsAny.base }}</small>
@@ -729,6 +741,13 @@ const setInheritedMove = (level: string, value: string | undefined) => {
                     :format="formatSignedModifier"
                     @update:model-value="(v) => setEvasionBonus('vsAnyBonus', v as number | undefined)"
                   />
+                  <span
+                    v-if="pokemonEvasion.vsAny.itemBonus"
+                    class="evasion-bonus__item"
+                    title="Bright Powder held-item bonus"
+                  >
+                    Bright Powder {{ formatSignedModifier(pokemonEvasion.vsAny.itemBonus) }}
+                  </span>
                 </span>
               </li>
             </ul>
@@ -1637,6 +1656,11 @@ const setInheritedMove = (level: string, value: string | undefined) => {
   grid-column: 1 / -1;
   color: var(--ink-muted);
   font-size: 0.76rem;
+}
+
+.evasion-bonus__item {
+  color: var(--accent);
+  font-weight: 700;
 }
 
 .combat-line {
