@@ -16,6 +16,7 @@ import { POKEMON_TYPES, computeMultiplier, formatMultiplier } from '~/utils/type
 import { normalizeCharacterSheet } from '~/utils/sheetNormalize'
 import { PTU_NATURE_OPTIONS, resolveNatureMod } from '~/utils/ptuNatures'
 import { makeAbilityLookupRows, setLookupAbilityName } from '~/utils/sheetAbilityLookup'
+import { findItem } from '~/data/ptuReference'
 import { formatLookupValue, makeMoveLookupRows, setLookupMoveName, type MoveLookupRow } from '~/utils/sheetMoveLookup'
 import { makeAutomaticStruggleMoves } from '~/utils/struggleMoves'
 import { clampHpValue, computeHpThresholds, computeTickValue } from '~/utils/ptuHp'
@@ -201,6 +202,14 @@ const moveRows = computed<SheetMoveLookupRow[]>(() => {
 
 const abilityRows = computed(() => makeAbilityLookupRows(sheet.value?.abilities))
 
+const heldItemName = computed(() => sheet.value?.items?.held?.trim() ?? '')
+const heldItemReference = computed(() => (heldItemName.value ? findItem(heldItemName.value) : null))
+
+const formatLookupList = (values: readonly string[] | null | undefined): string => {
+  const presentValues = (values ?? []).filter(Boolean)
+  return presentValues.length ? presentValues.join(', ') : '—'
+}
+
 const typeEffectivenessRows = computed(() => {
   const defenders = sheetTypes.value
   if (defenders.length === 0) return []
@@ -287,13 +296,22 @@ const otherCapsCsv = computed<string>({
   },
 })
 
-const extraItemsCsv = computed<string>({
-  get: () => sheet.value?.items?.extraItems?.join(', ') ?? '',
-  set: (raw) => {
-    if (!sheet.value) return
-    sheet.value.items!.extraItems = splitCSV(raw)
-  },
-})
+const clearLookupBackedItemFields = () => {
+  if (!sheet.value?.items) return
+  delete sheet.value.items.itemDescription
+  delete sheet.value.items.digestionFood
+  delete sheet.value.items.extraItems
+  delete sheet.value.items.pointsLeft
+}
+
+const setHeldItemName = (value: unknown) => {
+  if (!sheet.value) return
+  const next = typeof value === 'string' ? value : value == null ? '' : String(value)
+  sheet.value.items!.held = next
+  // The sheet stores only the held item name; display details come from
+  // ptu-data/data/items.json via data/ptuReference.ts.
+  clearLookupBackedItemFields()
+}
 
 const skillBgRaisedCsv = computed<string>({
   get: () => sheet.value?.skillBackground?.raised?.join(', ') ?? '',
@@ -733,42 +751,40 @@ const setInheritedMove = (level: string, value: string | undefined) => {
       <!-- ============ Items / Weapon ============ -->
       <div class="row two-col">
         <section class="panel-card">
-          <h2 class="panel-title">Held Item & Inventory</h2>
+          <h2 class="panel-title">
+            Held Item
+            <span class="panel-subtle">name editable · details from items.json</span>
+          </h2>
           <dl class="kv-list">
             <div>
               <dt>Held Item</dt>
-              <dd><EditableCell v-model="sheet.items!.held" placeholder="None" /></dd>
-            </div>
-            <div>
-              <dt>Description</dt>
               <dd>
                 <EditableCell
-                  v-model="sheet.items!.itemDescription"
-                  type="textarea"
-                  placeholder="Item description"
-                  multiline
+                  :model-value="sheet.items!.held"
+                  placeholder="None"
+                  @update:model-value="setHeldItemName"
                 />
               </dd>
             </div>
             <div>
-              <dt>Digestion / Food</dt>
-              <dd>
-                <EditableCell
-                  v-model="sheet.items!.digestionFood"
-                  type="textarea"
-                  placeholder="—"
-                  multiline
-                />
+              <dt>Effect</dt>
+              <dd class="lookup-text">
+                <template v-if="heldItemReference?.effects.length">
+                  <p v-for="effect in heldItemReference.effects" :key="effect">{{ effect }}</p>
+                </template>
+                <span v-else class="badge-empty">
+                  {{ heldItemName ? 'No matching item in items.json' : '—' }}
+                </span>
               </dd>
             </div>
-            <div>
-              <dt>Pts Left</dt>
-              <dd><EditableCell v-model="sheet.items!.pointsLeft" type="number" /></dd>
+            <div v-if="heldItemReference?.aliases.length">
+              <dt>Aliases</dt>
+              <dd>{{ formatLookupList(heldItemReference.aliases) }}</dd>
             </div>
-            <div>
-              <dt>Extra Items</dt>
-              <dd>
-                <EditableCell v-model="extraItemsCsv" placeholder="Cell Battery, Magnet" />
+            <div v-if="heldItemReference?.notes.length">
+              <dt>Notes</dt>
+              <dd class="lookup-text">
+                <p v-for="note in heldItemReference.notes" :key="note">{{ note }}</p>
               </dd>
             </div>
           </dl>
@@ -1669,6 +1685,20 @@ const setInheritedMove = (level: string, value: string | undefined) => {
 .kv-list dd {
   margin: 0;
   color: var(--ink-bright);
+}
+
+.lookup-text {
+  color: var(--ink-soft);
+  font-size: 0.88rem;
+  white-space: pre-wrap;
+}
+
+.lookup-text p {
+  margin: 0;
+}
+
+.lookup-text p + p {
+  margin-top: 0.35rem;
 }
 
 /* ---- Inherited moves ---- */
