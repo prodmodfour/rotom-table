@@ -34,8 +34,11 @@ const relatedItems = computed(() => {
 
     <main>
       <article v-if="item" class="panel-card">
-        <div class="detail-heading">
-          <h1>{{ item.name }}</h1>
+        <div class="detail-heading item-detail-heading">
+          <div class="item-detail-title">
+            <ItemSprite :item="item" size="xl" :alt="`${item.name} sprite`" />
+            <h1>{{ item.name }}</h1>
+          </div>
           <div class="detail-pills">
             <span v-for="category in item.categories" :key="category" class="badge tag-badge">
               {{ category }}
@@ -79,8 +82,11 @@ const relatedItems = computed(() => {
           <h3>More {{ item.categories[0] }} items</h3>
           <ul class="related-list">
             <li v-for="related in relatedItems" :key="related.name">
-              <NuxtLink :to="`/items/${toSlug(related.name)}`">{{ related.name }}</NuxtLink>
-              <span v-if="related.costs.length" class="related-cost">{{ related.costs.join(', ') }}</span>
+              <ItemSprite :item="related" size="sm" />
+              <span class="related-main">
+                <NuxtLink :to="`/items/${toSlug(related.name)}`">{{ related.name }}</NuxtLink>
+                <span v-if="related.costs.length" class="related-cost">{{ related.costs.join(', ') }}</span>
+              </span>
             </li>
           </ul>
         </section>
@@ -96,6 +102,17 @@ const relatedItems = computed(() => {
 </template>
 
 <style scoped>
+.item-detail-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.item-detail-title h1 {
+  min-width: 0;
+}
+
 .tag-badge {
   background: var(--accent-soft);
   color: var(--accent);
@@ -137,12 +154,19 @@ const relatedItems = computed(() => {
 
 .related-list li {
   display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
+  align-items: center;
+  gap: 0.5rem;
   padding: 0.45rem 0.6rem;
   border: 1px solid var(--rule-soft);
   border-radius: 8px;
   background: var(--paper-inset);
+}
+
+.related-main {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.2rem;
 }
 
 .related-list a {

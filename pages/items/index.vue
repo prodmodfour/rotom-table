@@ -124,28 +124,33 @@ const toggleCategory = (category: string) => {
         :to="`/items/${toSlug(item.name)}`"
         class="ref-row"
       >
-        <div class="ref-row__heading">
-          <h2>{{ item.name }}</h2>
-          <div class="row-tags">
-            <span v-for="category in item.categories" :key="category" class="badge tag-badge">
-              {{ category }}
-            </span>
-          </div>
-        </div>
+        <div class="item-row__top">
+          <ItemSprite :item="item" size="lg" />
+          <div class="item-row__summary">
+            <div class="ref-row__heading">
+              <h2>{{ item.name }}</h2>
+              <div class="row-tags">
+                <span v-for="category in item.categories" :key="category" class="badge tag-badge">
+                  {{ category }}
+                </span>
+              </div>
+            </div>
 
-        <div class="ref-row__pills">
-          <span v-for="cost in item.costs.slice(0, 2)" :key="cost" class="badge cost-badge">
-            {{ cost }}
-          </span>
-          <span v-if="item.costs.length > 2" class="badge cost-badge">
-            +{{ item.costs.length - 2 }} costs
-          </span>
-          <span v-for="section in item.sections.slice(0, 2)" :key="section" class="badge section-badge">
-            {{ section }}
-          </span>
-          <span v-if="item.sections.length > 2" class="badge section-badge">
-            +{{ item.sections.length - 2 }} sections
-          </span>
+            <div class="ref-row__pills">
+              <span v-for="cost in item.costs.slice(0, 2)" :key="cost" class="badge cost-badge">
+                {{ cost }}
+              </span>
+              <span v-if="item.costs.length > 2" class="badge cost-badge">
+                +{{ item.costs.length - 2 }} costs
+              </span>
+              <span v-for="section in item.sections.slice(0, 2)" :key="section" class="badge section-badge">
+                {{ section }}
+              </span>
+              <span v-if="item.sections.length > 2" class="badge section-badge">
+                +{{ item.sections.length - 2 }} sections
+              </span>
+            </div>
+          </div>
         </div>
 
         <p v-if="item.aliases.length" class="ref-row__trigger">
@@ -235,6 +240,19 @@ const toggleCategory = (category: string) => {
 .select-field select:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 2px rgba(250, 189, 47, 0.18);
+}
+
+.item-row__top {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+}
+
+.item-row__summary {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
 }
 
 .row-tags {

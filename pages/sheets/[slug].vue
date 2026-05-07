@@ -778,11 +778,14 @@ const setInheritedMove = (level: string, value: string | undefined) => {
             <div>
               <dt>Held Item</dt>
               <dd>
-                <EditableCell
-                  :model-value="sheet.items!.held"
-                  placeholder="None"
-                  @update:model-value="setHeldItemName"
-                />
+                <span class="held-item-value">
+                  <ItemSprite :item="heldItemName" size="md" />
+                  <EditableCell
+                    :model-value="sheet.items!.held"
+                    placeholder="None"
+                    @update:model-value="setHeldItemName"
+                  />
+                </span>
               </dd>
             </div>
             <div>
@@ -1709,6 +1712,12 @@ const setInheritedMove = (level: string, value: string | undefined) => {
 .kv-list dd {
   margin: 0;
   color: var(--ink-bright);
+}
+
+.held-item-value {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
 }
 
 .lookup-text {

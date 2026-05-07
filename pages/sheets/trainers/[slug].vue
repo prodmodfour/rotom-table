@@ -1206,22 +1206,22 @@ const clearPortrait = () => {
           <h2 class="block-title">Equipped</h2>
           <ul class="kv-list">
             <li><span>Main Hand</span>
-              <strong><EditableCell v-model="sheet.equipmentSlots!.mainHand" placeholder="—" /></strong>
+              <strong class="equipped-item"><ItemSprite :item="sheet.equipmentSlots!.mainHand" size="sm" /><EditableCell v-model="sheet.equipmentSlots!.mainHand" placeholder="—" /></strong>
             </li>
             <li><span>Off Hand</span>
-              <strong><EditableCell v-model="sheet.equipmentSlots!.offHand"  placeholder="—" /></strong>
+              <strong class="equipped-item"><ItemSprite :item="sheet.equipmentSlots!.offHand" size="sm" /><EditableCell v-model="sheet.equipmentSlots!.offHand"  placeholder="—" /></strong>
             </li>
             <li><span>Head</span>
-              <strong><EditableCell v-model="sheet.equipmentSlots!.head"     placeholder="—" /></strong>
+              <strong class="equipped-item"><ItemSprite :item="sheet.equipmentSlots!.head" size="sm" /><EditableCell v-model="sheet.equipmentSlots!.head"     placeholder="—" /></strong>
             </li>
             <li><span>Body</span>
-              <strong><EditableCell v-model="sheet.equipmentSlots!.body"     placeholder="—" /></strong>
+              <strong class="equipped-item"><ItemSprite :item="sheet.equipmentSlots!.body" size="sm" /><EditableCell v-model="sheet.equipmentSlots!.body"     placeholder="—" /></strong>
             </li>
             <li><span>Feet</span>
-              <strong><EditableCell v-model="sheet.equipmentSlots!.feet"     placeholder="—" /></strong>
+              <strong class="equipped-item"><ItemSprite :item="sheet.equipmentSlots!.feet" size="sm" /><EditableCell v-model="sheet.equipmentSlots!.feet"     placeholder="—" /></strong>
             </li>
             <li><span>Accessory</span>
-              <strong><EditableCell v-model="sheet.equipmentSlots!.accessory" placeholder="—" /></strong>
+              <strong class="equipped-item"><ItemSprite :item="sheet.equipmentSlots!.accessory" size="sm" /><EditableCell v-model="sheet.equipmentSlots!.accessory" placeholder="—" /></strong>
             </li>
           </ul>
         </div>
@@ -1239,7 +1239,7 @@ const clearPortrait = () => {
               <thead><tr><th>Name</th><th>Qty</th><th>Cost</th><th>Description</th><th></th></tr></thead>
               <tbody>
                 <tr v-for="(it, i) in sheet.inventory!.keyItems" :key="i">
-                  <th><EditableCell v-model="it.name" placeholder="Item" /></th>
+                  <th><span class="inventory-item-name"><ItemSprite :item="it.name" size="sm" /><EditableCell v-model="it.name" placeholder="Item" /></span></th>
                   <td><EditableCell v-model="it.qty"  type="number" :min="0" /></td>
                   <td><EditableCell v-model="it.cost" type="number" :min="0" /></td>
                   <td class="effect-col"><EditableCell v-model="it.description" type="textarea" placeholder="—" multiline /></td>
@@ -1265,7 +1265,7 @@ const clearPortrait = () => {
               <thead><tr><th>Name</th><th>Qty</th><th>Cost</th><th>Description</th><th></th></tr></thead>
               <tbody>
                 <tr v-for="(it, i) in sheet.inventory!.pokemonItems" :key="i">
-                  <th><EditableCell v-model="it.name" placeholder="Item" /></th>
+                  <th><span class="inventory-item-name"><ItemSprite :item="it.name" size="sm" /><EditableCell v-model="it.name" placeholder="Item" /></span></th>
                   <td><EditableCell v-model="it.qty"  type="number" :min="0" /></td>
                   <td><EditableCell v-model="it.cost" type="number" :min="0" /></td>
                   <td class="effect-col"><EditableCell v-model="it.description" type="textarea" placeholder="—" multiline /></td>
@@ -1291,7 +1291,7 @@ const clearPortrait = () => {
               <thead><tr><th>Name</th><th>Qty</th><th>Cost</th><th>Description</th><th></th></tr></thead>
               <tbody>
                 <tr v-for="(it, i) in sheet.inventory!.medicalKit" :key="i">
-                  <th><EditableCell v-model="it.name" placeholder="Item" /></th>
+                  <th><span class="inventory-item-name"><ItemSprite :item="it.name" size="sm" /><EditableCell v-model="it.name" placeholder="Item" /></span></th>
                   <td><EditableCell v-model="it.qty"  type="number" :min="0" /></td>
                   <td><EditableCell v-model="it.cost" type="number" :min="0" /></td>
                   <td class="effect-col"><EditableCell v-model="it.description" type="textarea" placeholder="—" multiline /></td>
@@ -1317,7 +1317,7 @@ const clearPortrait = () => {
               <thead><tr><th>Name</th><th>Qty</th><th>Cost</th><th>Mod</th><th>Description</th><th></th></tr></thead>
               <tbody>
                 <tr v-for="(it, i) in sheet.inventory!.pokeBalls" :key="i">
-                  <th><EditableCell v-model="it.name" placeholder="Poké Ball" /></th>
+                  <th><span class="inventory-item-name"><ItemSprite :item="it.name" size="sm" /><EditableCell v-model="it.name" placeholder="Poké Ball" /></span></th>
                   <td><EditableCell v-model="it.qty"  type="number" :min="0" /></td>
                   <td><EditableCell v-model="it.cost" type="number" :min="0" /></td>
                   <td><EditableCell v-model="it.mod"  placeholder="x1" /></td>
@@ -1344,7 +1344,7 @@ const clearPortrait = () => {
               <thead><tr><th>Name</th><th>Qty</th><th>Cost</th><th>Description</th><th></th></tr></thead>
               <tbody>
                 <tr v-for="(it, i) in sheet.inventory!.foodStuff" :key="i">
-                  <th><EditableCell v-model="it.name" placeholder="Food" /></th>
+                  <th><span class="inventory-item-name"><ItemSprite :item="it.name" size="sm" /><EditableCell v-model="it.name" placeholder="Food" /></span></th>
                   <td><EditableCell v-model="it.qty"  type="number" :min="0" /></td>
                   <td><EditableCell v-model="it.cost" type="number" :min="0" /></td>
                   <td class="effect-col"><EditableCell v-model="it.description" type="textarea" placeholder="—" multiline /></td>
@@ -1370,7 +1370,7 @@ const clearPortrait = () => {
               <thead><tr><th>Name</th><th>Slot</th><th>Cost</th><th>Description</th><th></th></tr></thead>
               <tbody>
                 <tr v-for="(it, i) in sheet.inventory!.equipment" :key="i">
-                  <th><EditableCell v-model="it.name" placeholder="Equipment" /></th>
+                  <th><span class="inventory-item-name"><ItemSprite :item="it.name" size="sm" /><EditableCell v-model="it.name" placeholder="Equipment" /></span></th>
                   <td><EditableCell v-model="it.slot" placeholder="Body" /></td>
                   <td><EditableCell v-model="it.cost" type="number" :min="0" /></td>
                   <td class="effect-col"><EditableCell v-model="it.description" type="textarea" placeholder="—" multiline /></td>
@@ -1937,6 +1937,18 @@ const clearPortrait = () => {
 }
 
 .row-actions { width: 1.5rem; text-align: right; }
+
+.equipped-item,
+.inventory-item-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.inventory-item-name {
+  max-width: 100%;
+}
 
 /* Skills */
 .skills-grid {

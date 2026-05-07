@@ -7,7 +7,8 @@
     "build": "nuxt build",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
-    "check:move-automation": "python3 scripts/check_move_automation_coverage.py"
+    "check:move-automation": "python3 scripts/check_move_automation_coverage.py",
+    "sync:item-sprites": "node scripts/sync_item_sprites.mjs"
   },
   "dependencies": {
     "@fontsource/atkinson-hyperlegible": "^5.2.8",
