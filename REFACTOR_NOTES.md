@@ -112,3 +112,14 @@
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
   - `npm run typecheck` was not rerun in this pass; the known broader pre-existing typecheck backlog remains documented above.
+
+## Next phase update: initiative tracker component extraction
+
+- Extracted the initiative tracker template and scoped styles from `pages/maps/[slug].vue` into `components/map/InitiativeTracker.vue`.
+  - The component receives explicit rows/status props and emits focused turn, round, score, focus, and utility events.
+  - Pure initiative row helpers remain in `composables/map-editor/useInitiativeTracker.ts` and are reused by the component.
+- The map page now keeps only the route/sidebar shell wiring for the initiative sidebar.
+- Quality gates after this phase:
+  - `npm test` — passes: 12 test files / 37 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.

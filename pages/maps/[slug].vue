@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import IsometricGrid from '~/components/IsometricGrid.client.vue'
+import MapInitiativeTracker from '~/components/map/InitiativeTracker.vue'
 import SheetBrowser from '~/components/SheetBrowser.vue'
 import SaveIndicator from '~/components/SaveIndicator.vue'
 import { useEditableMap } from '~/composables/useEditableMap'
@@ -274,9 +275,6 @@ const {
   activeInitiativeId,
   initiativeRound,
   hasInitiativeValues,
-  initiativeSpriteFrameStyle,
-  hpPercent,
-  hpTier,
   focusInitiativeEntry,
   setActiveInitiativeAndFocus,
   setInitiativeInput,
@@ -1088,170 +1086,26 @@ watch(
         v-show="!initiativeCollapsed"
         class="initiative-content"
       >
-        <section v-if="map && canViewMap" class="panel-card initiative-panel">
-          <div class="panel-heading initiative-heading">
-            <div class="initiative-title-block">
-              <h2>Initiative</h2>
-              <label class="round-field">
-                <span>Round</span>
-                <input
-                  type="number"
-                  min="1"
-                  :value="initiativeRound"
-                  aria-label="Initiative round"
-                  :disabled="!canManageInitiative"
-                  @input="setInitiativeRound"
-                />
-              </label>
-            </div>
-            <span class="badge">
-              {{ initiativeRows.length }} character{{ initiativeRows.length === 1 ? '' : 's' }}
-            </span>
-          </div>
-
-          <div class="initiative-actions" role="group" aria-label="Turn controls">
-            <button
-              type="button"
-              class="initiative-action"
-              :disabled="!initiativeRows.length || !canManageInitiative"
-              @click="previousInitiative"
-            >
-              Previous
-            </button>
-            <button
-              type="button"
-              class="initiative-action initiative-action--primary"
-              :disabled="!initiativeRows.length || !canManageInitiative"
-              @click="nextInitiative"
-            >
-              {{ activeInitiativeId ? 'Next turn' : 'Start' }}
-            </button>
-          </div>
-
-          <div class="initiative-tools" role="group" aria-label="Initiative utilities">
-            <button
-              type="button"
-              class="initiative-tool"
-              :disabled="!initiativeRows.length || !canManageInitiative"
-              @click="fillInitiativeFromSpeed"
-            >
-              Use All Speed
-            </button>
-            <button
-              type="button"
-              class="initiative-tool"
-              :disabled="!activeInitiativeId || !canManageInitiative"
-              @click="clearActiveInitiative"
-            >
-              Clear turn
-            </button>
-            <button
-              type="button"
-              class="initiative-tool initiative-tool--danger"
-              :disabled="(!hasInitiativeValues && !activeInitiativeId) || !canManageInitiative"
-              @click="clearInitiativeValues"
-            >
-              Reset
-            </button>
-          </div>
-
-          <ol v-if="sortedInitiativeRows.length" class="initiative-list">
-            <li
-              v-for="(entry, index) in sortedInitiativeRows"
-              :key="entry.id"
-              class="initiative-row"
-              :class="{
-                'is-active': activeInitiativeId === entry.id,
-                'is-selected': selectedId === entry.id,
-                'is-fainted': entry.currentHp <= 0,
-              }"
-            >
-              <button
-                type="button"
-                class="initiative-row__turn"
-                :class="{ 'is-active': activeInitiativeId === entry.id }"
-                :aria-pressed="activeInitiativeId === entry.id"
-                :aria-label="`Set ${entry.name} as the current turn`"
-                :disabled="!canManageInitiative"
-                @click="setActiveInitiativeAndFocus(entry.id)"
-              >
-                <span class="initiative-row__sprite" aria-hidden="true">
-                  <span
-                    v-if="entry.sprite.isSpriteSheet && entry.sprite.url"
-                    class="initiative-row__sprite-frame"
-                    :style="initiativeSpriteFrameStyle(entry)"
-                  />
-                  <img
-                    v-else-if="entry.sprite.url"
-                    :src="entry.sprite.url"
-                    alt=""
-                    draggable="false"
-                  />
-                  <span v-else class="initiative-row__sprite-fallback">
-                    {{ entry.name.slice(0, 1) }}
-                  </span>
-                </span>
-                <span class="sr-only">Turn order {{ index + 1 }}</span>
-              </button>
-
-              <button
-                type="button"
-                class="initiative-row__body"
-                :aria-label="`Center camera on ${entry.name}`"
-                :title="`Center camera on ${entry.name}`"
-                @click="focusInitiativeEntry(entry.id)"
-              >
-                <span class="initiative-row__main">
-                  <span class="initiative-row__name">{{ entry.name }}</span>
-                  <span class="initiative-row__meta">{{ entry.meta }} · SPD {{ entry.speed }}</span>
-                </span>
-                <span class="initiative-row__hp" :data-hp-tier="hpTier(entry)">
-                  <span>{{ entry.currentHp }}/{{ entry.maxHp }} HP</span>
-                  <span class="initiative-row__hp-track" :data-hp-tier="hpTier(entry)" aria-hidden="true">
-                    <span :style="{ width: hpPercent(entry) }" />
-                  </span>
-                </span>
-                <span v-if="entry.conditions.length" class="initiative-row__conditions" aria-label="Conditions">
-                  <ConditionTag
-                    v-for="condition in entry.conditions"
-                    :key="condition"
-                    :name="condition"
-                    size="xs"
-                  />
-                </span>
-              </button>
-
-              <div class="initiative-row__score">
-                <label>
-                  <span>Init</span>
-                  <input
-                    type="number"
-                    inputmode="numeric"
-                    :value="entry.initiative ?? ''"
-                    placeholder="—"
-                    :aria-label="`${entry.name} initiative`"
-                    :disabled="!canManageInitiative"
-                    @input="setInitiativeInput(entry.id, $event)"
-                  />
-                </label>
-                <button
-                  type="button"
-                  class="initiative-row__speed-button"
-                  :title="`Set initiative to Speed (${entry.speed})`"
-                  :aria-label="`Use ${entry.name}'s Speed (${entry.speed}) for initiative`"
-                  :disabled="!canManageInitiative"
-                  @click="setInitiativeFromSpeed(entry.id, entry.speed)"
-                >
-                  Use Speed
-                </button>
-              </div>
-            </li>
-          </ol>
-
-          <p v-else class="initiative-empty">
-            Spawn Pokémon or trainers onto the map to track turn order.
-          </p>
-        </section>
+        <MapInitiativeTracker
+          v-if="map && canViewMap"
+          :rows="initiativeRows"
+          :sorted-rows="sortedInitiativeRows"
+          :active-id="activeInitiativeId"
+          :round="initiativeRound"
+          :selected-id="selectedId"
+          :can-manage="canManageInitiative"
+          :has-initiative-values="hasInitiativeValues"
+          @set-round="setInitiativeRound"
+          @previous="previousInitiative"
+          @next="nextInitiative"
+          @fill-from-speed="fillInitiativeFromSpeed"
+          @clear-active="clearActiveInitiative"
+          @clear-values="clearInitiativeValues"
+          @set-active-and-focus="setActiveInitiativeAndFocus"
+          @focus="focusInitiativeEntry"
+          @set-initiative-input="setInitiativeInput"
+          @set-initiative-from-speed="setInitiativeFromSpeed"
+        />
       </div>
     </aside>
 
@@ -2237,351 +2091,6 @@ input:disabled {
   background: rgba(251, 73, 52, 0.08);
 }
 
-.initiative-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.initiative-heading {
-  align-items: flex-start;
-  margin-bottom: 0;
-}
-
-.initiative-title-block {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  gap: 0.55rem;
-}
-
-.round-field {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-  color: var(--ink-muted);
-  font-size: 0.76rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.round-field input {
-  width: 72px;
-  padding: 0.42rem 0.55rem;
-  text-align: center;
-}
-
-.initiative-actions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.45rem;
-}
-
-.initiative-tools {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.4rem;
-}
-
-.initiative-action,
-.initiative-tool {
-  border: 1px solid var(--rule-soft);
-  border-radius: 10px;
-  background: var(--paper);
-  color: var(--ink);
-  padding: 0.5rem 0.65rem;
-  cursor: pointer;
-  font: inherit;
-  font-size: 0.78rem;
-  letter-spacing: 0.04em;
-  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
-}
-
-.initiative-action:hover:not(:disabled),
-.initiative-tool:hover:not(:disabled) {
-  border-color: var(--rule-strong);
-  background: var(--paper-hover);
-}
-
-.initiative-action:disabled,
-.initiative-tool:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.initiative-action--primary {
-  border-color: var(--accent);
-  background: var(--accent-soft);
-  color: var(--accent);
-}
-
-.initiative-tool--danger {
-  color: #fb4934;
-}
-
-.initiative-tool--danger:hover:not(:disabled) {
-  border-color: #fb4934;
-  background: rgba(251, 73, 52, 0.08);
-}
-
-.initiative-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.initiative-row {
-  display: grid;
-  grid-template-columns: 42px minmax(0, 1fr) 78px;
-  align-items: stretch;
-  gap: 0.5rem;
-  border: 1px solid var(--rule-soft);
-  border-radius: 13px;
-  background: var(--paper);
-  padding: 0.5rem;
-  transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
-}
-
-.initiative-row.is-active {
-  border-color: var(--accent);
-  background: linear-gradient(135deg, rgba(250, 189, 47, 0.15), rgba(40, 40, 40, 0.92));
-  box-shadow: 0 0 0 1px rgba(250, 189, 47, 0.15);
-}
-
-.initiative-row.is-selected:not(.is-active) {
-  border-color: var(--info);
-}
-
-.initiative-row.is-fainted {
-  opacity: 0.66;
-}
-
-.initiative-row__turn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 42px;
-  overflow: hidden;
-  border: 1px solid var(--rule-soft);
-  border-radius: 10px;
-  background: var(--paper-soft);
-  color: var(--ink-soft);
-  cursor: pointer;
-  font: inherit;
-  font-weight: 800;
-  padding: 0;
-  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
-}
-
-.initiative-row__turn:hover,
-.initiative-row__turn:focus-visible {
-  border-color: var(--accent);
-  color: var(--accent);
-  outline: none;
-}
-
-.initiative-row__turn.is-active {
-  border-color: var(--accent);
-  background: var(--accent-soft);
-  color: var(--accent);
-}
-
-.initiative-row__sprite {
-  display: grid;
-  place-items: center;
-  width: 100%;
-  height: 100%;
-  min-height: 40px;
-  overflow: hidden;
-  border-radius: 8px;
-}
-
-.initiative-row__sprite-frame {
-  display: block;
-  flex: 0 0 auto;
-  background-position: left top;
-  background-repeat: no-repeat;
-  image-rendering: pixelated;
-  transform-origin: center;
-}
-
-.initiative-row__sprite img {
-  display: block;
-  max-width: 34px;
-  max-height: 34px;
-  object-fit: contain;
-  image-rendering: pixelated;
-}
-
-.initiative-row__sprite-fallback {
-  color: var(--ink-bright);
-  font-weight: 800;
-  text-transform: uppercase;
-}
-
-.initiative-row__body {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  justify-content: center;
-  gap: 0.35rem;
-  border: 0;
-  border-radius: 8px;
-  background: transparent;
-  color: inherit;
-  cursor: pointer;
-  font: inherit;
-  padding: 0;
-  text-align: left;
-}
-
-.initiative-row__body:hover .initiative-row__name,
-.initiative-row__body:focus-visible .initiative-row__name {
-  color: var(--accent);
-}
-
-.initiative-row__body:focus-visible {
-  outline: 2px solid rgba(250, 189, 47, 0.35);
-  outline-offset: 3px;
-}
-
-.initiative-row__main {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  gap: 0.15rem;
-}
-
-.initiative-row__name {
-  overflow: hidden;
-  color: var(--ink-bright);
-  font-weight: 800;
-  letter-spacing: 0.02em;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.initiative-row__meta {
-  overflow: hidden;
-  color: var(--ink-muted);
-  font-size: 0.74rem;
-  letter-spacing: 0.03em;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.initiative-row__hp {
-  display: flex;
-  flex-direction: column;
-  gap: 0.22rem;
-  color: var(--good);
-  font-size: 0.74rem;
-}
-
-.initiative-row__hp[data-hp-tier='wounded'] {
-  color: var(--warn);
-}
-
-.initiative-row__hp[data-hp-tier='critical'] {
-  color: var(--bad);
-}
-
-.initiative-row__hp-track {
-  display: block;
-  height: 5px;
-  overflow: hidden;
-  border-radius: 999px;
-  background: var(--paper-inset);
-}
-
-.initiative-row__hp-track > span {
-  display: block;
-  height: 100%;
-  border-radius: inherit;
-  background: var(--good);
-}
-
-.initiative-row__hp-track[data-hp-tier='wounded'] > span {
-  background: var(--warn);
-}
-
-.initiative-row__hp-track[data-hp-tier='critical'] > span,
-.initiative-row.is-fainted .initiative-row__hp-track > span {
-  background: var(--bad);
-}
-
-.initiative-row__conditions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.2rem;
-}
-
-.initiative-row__score {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 0.28rem;
-  min-width: 0;
-}
-
-.initiative-row__score label {
-  display: flex;
-  flex-direction: column;
-  gap: 0.28rem;
-  min-width: 0;
-}
-
-.initiative-row__score span {
-  color: var(--ink-muted);
-  font-size: 0.68rem;
-  letter-spacing: 0.08em;
-  text-align: center;
-  text-transform: uppercase;
-}
-
-.initiative-row__score input {
-  padding: 0.45rem 0.25rem;
-  text-align: center;
-}
-
-.initiative-row__speed-button {
-  border: 1px solid var(--rule-soft);
-  border-radius: 8px;
-  background: var(--paper-soft);
-  color: var(--ink-soft);
-  padding: 0.28rem 0.25rem;
-  cursor: pointer;
-  font: inherit;
-  font-size: 0.62rem;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-  line-height: 1;
-  white-space: nowrap;
-  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
-}
-
-.initiative-row__speed-button:hover,
-.initiative-row__speed-button:focus-visible {
-  border-color: var(--accent);
-  background: var(--accent-soft);
-  color: var(--accent);
-  outline: none;
-}
-
-.initiative-empty {
-  margin: 0;
-  border: 1px dashed var(--rule-soft);
-  border-radius: 12px;
-  padding: 1rem;
-  color: var(--ink-muted);
-  font-size: 0.86rem;
-  line-height: 1.45;
-  text-align: center;
-}
-
 .admin-panel-backdrop {
   position: fixed;
   inset: 0;
@@ -2701,17 +2210,6 @@ input:disabled {
   white-space: nowrap;
 }
 
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
-
 .scene-loading {
   display: grid;
   place-items: center;
@@ -2744,14 +2242,8 @@ input:disabled {
 }
 
 @media (max-width: 640px) {
-  .dimension-grid,
-  .initiative-tools,
-  .initiative-actions {
+  .dimension-grid {
     grid-template-columns: 1fr;
-  }
-
-  .initiative-row {
-    grid-template-columns: 38px minmax(0, 1fr) 70px;
   }
 }
 </style>
