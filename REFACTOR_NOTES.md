@@ -134,3 +134,14 @@
   - `npm test` — passes: 12 test files / 37 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: terrain and hazards panel extraction
+
+- Extracted the terrain/hazard builder sidebar template and scoped styles from `pages/maps/[slug].vue` into `components/map/TerrainHazardsPanel.vue`.
+  - The component receives explicit terrain, hazard, material, layer-visibility, and count props and emits focused editor actions.
+  - Terrain/hazard business logic remains in `composables/map-editor/useTerrainBuilder.ts` and `composables/map-editor/useHazardBuilder.ts`; the map page now only wires those composables to the panel.
+- Preserved existing build/hazard mode behavior, terrain material selection, custom color input, layer visibility toggles, fill/clear actions, and hazard palette controls.
+- Quality gates after this phase:
+  - `npm test` — passes: 12 test files / 37 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
