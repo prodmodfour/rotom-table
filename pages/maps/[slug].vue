@@ -1,27 +1,26 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import IsometricGrid from '~/components/IsometricGrid.client.vue'
-import SheetBrowser, { type SheetSelection } from '~/components/SheetBrowser.vue'
+import SheetBrowser from '~/components/SheetBrowser.vue'
 import SaveIndicator from '~/components/SaveIndicator.vue'
 import { useEditableMap } from '~/composables/useEditableMap'
 import { useLiveSheets } from '~/composables/useLiveSheets'
 import { useFieldEffectsEditor } from '~/composables/map-editor/useFieldEffectsEditor'
 import { useHazardBuilder } from '~/composables/map-editor/useHazardBuilder'
 import { useInitiativeTracker } from '~/composables/map-editor/useInitiativeTracker'
+import { useMoveAutomationPanel } from '~/composables/map-editor/useMoveAutomationPanel'
 import { useTerrainBuilder } from '~/composables/map-editor/useTerrainBuilder'
 import {
-  catalogEntryForPokemonSheet,
-  catalogEntryForTrainerSheet,
-} from '~/utils/sheetSpawn'
+  pokedexPathForSpecies,
+  sheetPathForPlacement,
+  useTokenControls,
+} from '~/composables/map-editor/useTokenControls'
 import {
-  findFirstAvailablePosition,
   normalizeDimensions,
   reconcilePokemonPositions,
 } from '~/utils/grid'
 import { filterMapHazardsInBounds } from '~/utils/mapHazards'
-import { createPlacementId, placementsToSpawned } from '~/utils/placement'
 import { filterVoxelsInBounds, hexColorString } from '~/utils/voxels'
-import { buildMapOccupancy } from '~/utils/mapOccupancy'
 import { getClientId } from '~/utils/clientId'
 import {
   applyCombatStagesToSheet,
@@ -34,13 +33,10 @@ import {
   type PlacementSheetUpdater,
 } from '~/utils/sheetMutations'
 import type { CombatStageMap } from '~/types/combatStages'
-import type { MoveAutomationTransaction } from '~/types/moveAutomation'
 import type {
-  GridAnchor,
   MapHazardV2,
   MapVoxelV2,
 } from '~/types/map'
-import type { PreviewState } from '~/utils/grid'
 import type { SaveStatus } from '~/composables/useEditableSheet'
 
 definePageMeta({
@@ -67,10 +63,7 @@ interface IsometricGridHandle {
   focusPokemon: (id: string) => boolean
 }
 
-const selectedId = ref<string | null>(null)
-const moveAutomationId = ref<string | null>(null)
 const gridRef = ref<IsometricGridHandle | null>(null)
-const previewState = ref<PreviewState>({ position: null, reachable: false, pathLength: 0 })
 const sidebarCollapsed = ref(false)
 const initiativeCollapsed = ref(false)
 const adminPanelOpen = ref(false)
@@ -108,41 +101,61 @@ const layerOptions = [
   'fieldEffects',
 ] as const
 
-const sheetLookup = computed(() => ({
-  pokemon: pokemonBySlug.value!,
-  trainer: trainerBySlug.value!,
-}))
-
-const spawnedPokemon = computed(() => placementsToSpawned(map.value, sheetLookup.value))
-const moveAutomationUser = computed(() =>
-  moveAutomationId.value
-    ? spawnedPokemon.value.find((pokemon) => pokemon.id === moveAutomationId.value) ?? null
-    : null,
-)
-const moveAutomationMoves = computed(() => {
-  if (!map.value || !moveAutomationId.value) return []
-  const placement = map.value.placements.find((item) => item.id === moveAutomationId.value)
-  if (!placement) return []
-  if (placement.sheetKind === 'pokemon') {
-    return pokemonBySlug.value?.get(placement.sheetSlug)?.movelist ?? []
-  }
-  return trainerBySlug.value?.get(placement.sheetSlug)?.movelist ?? []
-})
 const mapVoxels = computed<MapVoxelV2[]>(() => map.value?.voxels ?? [])
 const mapHazards = computed<MapHazardV2[]>(() => map.value?.hazards ?? [])
 const canViewMap = computed(() => !map.value || !isPlayer.value || map.value.playerVisible === true)
-const controllablePlacementIds = computed(() => {
-  if (!map.value) return []
-  if (isGm.value) return map.value.placements.map((placement) => placement.id)
-  return map.value.placements
-    .filter((placement) => {
-      const sheets = placement.sheetKind === 'pokemon' ? pokemonBySlug.value : trainerBySlug.value
-      return sheets?.get(placement.sheetSlug)?.player === true
-    })
-    .map((placement) => placement.id)
+
+const clampGroundLevelY = (value: unknown, height: number): number => {
+  const h = Number(height)
+  const max = Number.isFinite(h) ? Math.max(0, Math.floor(h) - 1) : 0
+  const n = Number(value)
+  if (!Number.isFinite(n)) return 0
+  return Math.min(max, Math.max(0, Math.round(n)))
+}
+
+const groundLevelYMax = computed(() => Math.max(0, (map.value?.dimensions.y ?? 1) - 1))
+const mapGroundLevelY = computed(() =>
+  clampGroundLevelY(map.value?.groundLevelY ?? 0, map.value?.dimensions.y ?? 1),
+)
+const mapSpecificYMin = computed(() => -mapGroundLevelY.value)
+const mapSpecificYMax = computed(() =>
+  map.value ? map.value.dimensions.y - 1 - mapGroundLevelY.value : 0,
+)
+
+const {
+  selectedId,
+  previewState,
+  sheetLookup,
+  spawnedPokemon,
+  controllablePlacementIds,
+  canControlPlacement,
+  placementById,
+  clearSelection,
+  updatePreview,
+  spawnSheet,
+  selectPlacement,
+  deletePlacement,
+  turnPlacement,
+  movePlacement,
+} = useTokenControls({
+  map,
+  pokemonBySlug,
+  trainerBySlug,
+  mapVoxels,
+  mapGroundLevelY,
+  canSpawnTokens,
+  canControlAllTokens: isGm,
+  canDeleteTokens: isGm,
 })
-const controllablePlacementIdSet = computed(() => new Set(controllablePlacementIds.value))
-const canControlPlacement = (id: string): boolean => controllablePlacementIdSet.value.has(id)
+
+const selectPokemon = (id: string | null) => {
+  if (buildMode.value) return
+  selectPlacement(id)
+}
+const deletePokemon = deletePlacement
+const turnPokemon = turnPlacement
+const movePokemon = movePlacement
+
 const voxelCount = computed(() => mapVoxels.value.length)
 const hazardCount = computed(() => mapHazards.value.length)
 const {
@@ -189,23 +202,6 @@ const {
   clearAllFieldEffects,
   applyMoveFieldEffect,
 } = useFieldEffectsEditor({ map, canEditMap })
-
-const clampGroundLevelY = (value: unknown, height: number): number => {
-  const h = Number(height)
-  const max = Number.isFinite(h) ? Math.max(0, Math.floor(h) - 1) : 0
-  const n = Number(value)
-  if (!Number.isFinite(n)) return 0
-  return Math.min(max, Math.max(0, Math.round(n)))
-}
-
-const groundLevelYMax = computed(() => Math.max(0, (map.value?.dimensions.y ?? 1) - 1))
-const mapGroundLevelY = computed(() =>
-  clampGroundLevelY(map.value?.groundLevelY ?? 0, map.value?.dimensions.y ?? 1),
-)
-const mapSpecificYMin = computed(() => -mapGroundLevelY.value)
-const mapSpecificYMax = computed(() =>
-  map.value ? map.value.dimensions.y - 1 - mapGroundLevelY.value : 0,
-)
 
 const {
   buildMode,
@@ -309,76 +305,6 @@ const saveIndicatorStatus = computed<SaveStatus | null>(() => {
   return null
 })
 
-const placementById = (id: string) => map.value?.placements.find((placement) => placement.id === id) ?? null
-
-const toPokedexSlug = (value: string): string => value
-  .normalize('NFKD')
-  .replace(/[̀-ͯ]/g, '')
-  .toLowerCase()
-  .replace(/['’]/g, '')
-  .replace(/[^a-z0-9]+/g, '-')
-  .replace(/^-+|-+$/g, '')
-
-const spawnSheet = (selection: SheetSelection) => {
-  if (!map.value || !canSpawnTokens.value) return
-  const catalog =
-    selection.kind === 'pokemon'
-      ? catalogEntryForPokemonSheet(selection.sheet)
-      : catalogEntryForTrainerSheet(selection.sheet)
-  if (!catalog) return
-  const occupiedKeys = buildMapOccupancy({
-    voxels: mapVoxels.value,
-  })
-  const position = findFirstAvailablePosition(
-    catalog,
-    spawnedPokemon.value,
-    map.value.dimensions,
-    null,
-    occupiedKeys,
-    mapGroundLevelY.value,
-  )
-  if (!position) return
-
-  map.value.placements.push({
-    id: createPlacementId(),
-    sheetKind: selection.kind,
-    sheetSlug: selection.sheet.slug,
-    position,
-    turned: false,
-  })
-  selectedId.value = null
-  previewState.value = { position: null, reachable: false, pathLength: 0 }
-}
-
-const selectPokemon = (id: string | null) => {
-  if (buildMode.value) return
-  if (id && !canControlPlacement(id)) return
-  selectedId.value = id
-  if (!id) previewState.value = { position: null, reachable: false, pathLength: 0 }
-}
-
-const deletePokemon = (id: string) => {
-  if (!map.value || !isGm.value || !canControlPlacement(id)) return
-  map.value.placements = map.value.placements.filter((p) => p.id !== id)
-  if (map.value.initiative?.activeId === id) map.value.initiative.activeId = null
-  if (selectedId.value === id) selectPokemon(null)
-}
-
-const turnPokemon = (id: string) => {
-  if (!map.value || !canControlPlacement(id)) return
-  const placement = map.value.placements.find((p) => p.id === id)
-  if (!placement) return
-  placement.turned = !placement.turned
-}
-
-const movePokemon = (payload: { id: string; position: GridAnchor }) => {
-  if (!map.value || !canControlPlacement(payload.id)) return
-  const placement = map.value.placements.find((p) => p.id === payload.id)
-  if (!placement) return
-  placement.position = payload.position
-  selectPokemon(null)
-}
-
 const updatePlacedSheet = async (
   id: string,
   update: PlacementSheetUpdater,
@@ -391,7 +317,7 @@ const updatePlacedSheet = async (
 
   const context = createSheetUpdateForPlacement(
     placement,
-    { pokemon: pokemonBySlug.value!, trainer: trainerBySlug.value! },
+    sheetLookup.value,
     update,
   )
   if (!context) return
@@ -443,18 +369,32 @@ const modifyConditions = async (
   options,
 )
 
-const openMoveAutomation = (id: string) => {
-  if (!canControlPlacement(id)) return
-  moveAutomationId.value = id
-}
+const {
+  moveAutomationId,
+  moveAutomationUser,
+  moveAutomationMoves,
+  openMoveAutomation,
+  closeMoveAutomation,
+  applyMoveAutomation,
+} = useMoveAutomationPanel({
+  map,
+  spawnedPokemon,
+  pokemonBySlug,
+  trainerBySlug,
+  canEditMap,
+  canControlPlacement,
+  modifyHp,
+  modifyCombatStages,
+  modifyConditions,
+  applyMoveFieldEffect,
+  placeHazard,
+})
 
 const viewSheet = (id: string) => {
   if (!map.value || !canControlPlacement(id)) return
   const placement = placementById(id)
   if (!placement) return
-  const slug = encodeURIComponent(placement.sheetSlug)
-  const path = placement.sheetKind === 'trainer' ? `/sheets/trainers/${slug}` : `/sheets/${slug}`
-  const target = router.resolve(path).href
+  const target = router.resolve(sheetPathForPlacement(placement)).href
   window.open(target, '_blank', 'noopener')
 }
 
@@ -462,52 +402,10 @@ const viewPokedex = (id: string) => {
   if (!map.value || !canControlPlacement(id)) return
   const placement = placementById(id)
   if (!placement || placement.sheetKind !== 'pokemon') return
-  const species = pokemonBySlug.value?.get(placement.sheetSlug)?.species
-  if (!species) return
-  const slug = toPokedexSlug(species)
-  if (!slug) return
-  const target = router.resolve(`/pokedex/${encodeURIComponent(slug)}`).href
+  const targetPath = pokedexPathForSpecies(pokemonBySlug.value?.get(placement.sheetSlug)?.species)
+  if (!targetPath) return
+  const target = router.resolve(targetPath).href
   window.open(target, '_blank', 'noopener')
-}
-
-const closeMoveAutomation = () => {
-  moveAutomationId.value = null
-}
-
-const appendMoveAutomationLog = (transaction: MoveAutomationTransaction) => {
-  if (!map.value) return
-  const metadata = { ...(map.value.metadata ?? {}) }
-  const previous = Array.isArray(metadata.moveLog) ? metadata.moveLog : []
-  metadata.moveLog = [
-    ...previous,
-    {
-      at: Date.now(),
-      userId: transaction.userId,
-      userName: transaction.userName,
-      moveName: transaction.moveName,
-      scriptKind: transaction.scriptKind,
-      scriptVersion: transaction.scriptVersion,
-      lines: transaction.logLines,
-    },
-  ].slice(-100)
-  map.value.metadata = metadata
-}
-
-const applyMoveAutomation = async (transaction: MoveAutomationTransaction) => {
-  if (!map.value || !canControlPlacement(transaction.userId)) return
-  for (const update of transaction.hpUpdates) await modifyHp(update, { allowAnyTarget: true })
-  for (const update of transaction.combatStageUpdates) await modifyCombatStages(update, { allowAnyTarget: true })
-  for (const update of transaction.conditionUpdates) await modifyConditions(update, { allowAnyTarget: true })
-  if (canEditMap.value) {
-    for (const effect of transaction.fieldEffectsToApply) applyMoveFieldEffect(effect)
-    for (const hazard of transaction.hazardsToAdd) placeHazard(hazard)
-  }
-  appendMoveAutomationLog(transaction)
-  closeMoveAutomation()
-}
-
-const updatePreview = (next: PreviewState) => {
-  previewState.value = next
 }
 
 const setMode = (mode: 'play' | 'build' | 'hazards') => {
@@ -517,10 +415,7 @@ const setMode = (mode: 'play' | 'build' | 'hazards') => {
   if (buildMode.value === nextBuild && hazardMode.value === nextHazards) return
   buildMode.value = nextBuild
   hazardMode.value = nextHazards
-  if (nextBuild || nextHazards) {
-    selectedId.value = null
-    previewState.value = { position: null, reachable: false, pathLength: 0 }
-  }
+  if (nextBuild || nextHazards) clearSelection()
 }
 
 watch(
@@ -565,17 +460,10 @@ watch(
       return [{ ...placement, position: next }]
     })
     if (selectedId.value && !map.value.placements.some((p) => p.id === selectedId.value)) {
-      selectPokemon(null)
+      clearSelection()
     }
   },
   { deep: true },
-)
-
-watch(
-  () => [selectedId.value, controllablePlacementIds.value.join('|')] as const,
-  ([id]) => {
-    if (id && !canControlPlacement(id)) selectPokemon(null)
-  },
 )
 </script>
 
