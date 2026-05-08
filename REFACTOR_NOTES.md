@@ -171,3 +171,17 @@
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
   - `npm run typecheck` — still fails only on the documented pre-existing broader typecheck backlog; no errors are reported for `MapScenePanel.vue` or touched map page lines.
+
+## Next phase update: map sidebar shell extraction
+
+- Extracted the left map editor sidebar into `components/map/MapLeftSidebar.vue`.
+  - It owns the sidebar collapse control, app navigation/header/save indicator, map details panel, terrain/hazard panel, field-effects panel, and sheet browser wiring.
+- Extracted the right initiative sidebar shell into `components/map/MapInitiativeSidebar.vue`.
+  - The existing `components/map/InitiativeTracker.vue` remains the pure initiative panel; the new shell owns collapse/layout behavior.
+- Added shared map editor UI types in `shared/mapEditor.ts` for editor mode and left-sidebar section keys.
+- Reduced `pages/maps/[slug].vue` to a smaller route composition shell that wires composables to left sidebar, scene, right sidebar, and admin modal.
+- Quality gates after this phase:
+  - `npm test` — passes: 12 test files / 37 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+  - `npm run typecheck` — still fails only on the documented pre-existing broader typecheck backlog; no errors are reported for the new sidebar shell components, shared UI types, or touched map page lines.

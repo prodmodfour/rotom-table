@@ -1,13 +1,9 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import MapAdminPanel from '~/components/map/MapAdminPanel.vue'
-import MapDetailsPanel from '~/components/map/MapDetailsPanel.vue'
-import MapFieldEffectsPanel from '~/components/map/FieldEffectsPanel.vue'
-import MapInitiativeTracker from '~/components/map/InitiativeTracker.vue'
+import MapInitiativeSidebar from '~/components/map/MapInitiativeSidebar.vue'
+import MapLeftSidebar from '~/components/map/MapLeftSidebar.vue'
 import MapScenePanel from '~/components/map/MapScenePanel.vue'
-import MapTerrainHazardsPanel from '~/components/map/TerrainHazardsPanel.vue'
-import SheetBrowser from '~/components/SheetBrowser.vue'
-import SaveIndicator from '~/components/SaveIndicator.vue'
 import { useEditableMap } from '~/composables/useEditableMap'
 import { useLiveSheets } from '~/composables/useLiveSheets'
 import { useFieldEffectsEditor } from '~/composables/map-editor/useFieldEffectsEditor'
@@ -37,12 +33,13 @@ import {
   toPersistableSheetPayload,
   type PlacementSheetUpdater,
 } from '~/utils/sheetMutations'
+import type { SaveStatus } from '~/composables/useEditableSheet'
+import type { MapEditorMode, MapLeftSidebarSection } from '~/shared/mapEditor'
 import type { CombatStageMap } from '~/types/combatStages'
 import type {
   MapHazardV2,
   MapVoxelV2,
 } from '~/types/map'
-import type { SaveStatus } from '~/composables/useEditableSheet'
 
 definePageMeta({
   key: (route) => `map-${route.params.slug}`,
@@ -73,15 +70,12 @@ const sidebarCollapsed = ref(false)
 const initiativeCollapsed = ref(false)
 const adminPanelOpen = ref(false)
 
-type LeftSidebarSectionKey = 'details' | 'terrain' | 'fieldEffects'
-const leftSidebarSectionsCollapsed = ref<Record<LeftSidebarSectionKey, boolean>>({
+const leftSidebarSectionsCollapsed = ref<Record<MapLeftSidebarSection, boolean>>({
   details: false,
   terrain: false,
   fieldEffects: false,
 })
-const leftSectionCollapsed = (section: LeftSidebarSectionKey): boolean =>
-  leftSidebarSectionsCollapsed.value[section]
-const toggleLeftSection = (section: LeftSidebarSectionKey) => {
+const toggleLeftSection = (section: MapLeftSidebarSection) => {
   leftSidebarSectionsCollapsed.value[section] = !leftSidebarSectionsCollapsed.value[section]
 }
 
@@ -423,7 +417,7 @@ const viewPokedex = (id: string) => {
   window.open(target, '_blank', 'noopener')
 }
 
-const setMode = (mode: 'play' | 'build' | 'hazards') => {
+const setMode = (mode: MapEditorMode) => {
   if (mode !== 'play' && !canEditMap.value) return
   const nextBuild = mode === 'build'
   const nextHazards = mode === 'hazards'
@@ -494,122 +488,76 @@ watch(
       'layout-shell--initiative-collapsed': initiativeCollapsed,
     }"
   >
-    <aside
-      class="sidebar"
-      :class="{ 'sidebar--collapsed': sidebarCollapsed }"
-      :aria-label="sidebarCollapsed ? 'Collapsed map sidebar' : 'Map sidebar'"
-    >
-      <div class="sidebar-toggle-row">
-        <button
-          type="button"
-          class="sidebar-toggle"
-          :aria-expanded="!sidebarCollapsed"
-          aria-controls="map-sidebar-content"
-          :aria-label="sidebarCollapsed ? 'Expand map sidebar' : 'Collapse map sidebar'"
-          :title="sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'"
-          @click="sidebarCollapsed = !sidebarCollapsed"
-        >
-          <span aria-hidden="true">{{ sidebarCollapsed ? '›' : '‹' }}</span>
-          <span class="sidebar-toggle__label">{{ sidebarCollapsed ? 'Expand' : 'Collapse' }}</span>
-        </button>
-      </div>
-
-      <div id="map-sidebar-content" v-show="!sidebarCollapsed" class="sidebar-content">
-        <AppNavigation />
-
-        <div class="header-row">
-          <NuxtLink to="/maps" class="back-link">← All maps</NuxtLink>
-          <SaveIndicator
-            v-if="saveIndicatorStatus"
-            :status="saveIndicatorStatus"
-            :error="error"
-          />
-        </div>
-
-        <MapDetailsPanel
-          v-if="map && canViewMap"
-          :collapsed="leftSectionCollapsed('details')"
-          :name="map.name"
-          :dimensions="map.dimensions"
-          :player-visible="map.playerVisible"
-          :is-gm="isGm"
-          :can-edit-map="canEditMap"
-          @toggle-collapsed="toggleLeftSection('details')"
-          @update-player-visible="setMapPlayerVisible"
-          @update-dimension="setMapDimension"
-        />
-
-        <MapTerrainHazardsPanel
-          v-if="map && canViewMap"
-          :collapsed="leftSectionCollapsed('terrain')"
-          :can-edit-map="canEditMap"
-          :build-mode="buildMode"
-          :hazard-mode="hazardMode"
-          :build-tool="buildTool"
-          :build-material="buildMaterial"
-          :build-color="buildColor"
-          :visible-voxel-materials="visibleVoxelMaterials"
-          :color-picker-value="colorPickerValue"
-          :voxel-count="voxelCount"
-          :hazard-count="hazardCount"
-          :hazard-tool="hazardTool"
-          :hazard-kind="hazardKind"
-          :active-hazard-def="activeHazardDef"
-          :hazard-palette="hazardPalette"
-          :layer-visibility="layerVisibility"
-          :layer-options="layerOptions"
-          @toggle-collapsed="toggleLeftSection('terrain')"
-          @set-mode="setMode"
-          @set-build-tool="setTool"
-          @select-material="selectMaterial"
-          @color-input="handleColorInput"
-          @clear-custom-color="clearCustomColor"
-          @fill-ground="fillGround"
-          @clear-all-voxels="clearAllVoxels"
-          @set-layer-visibility="setLayerVisibility"
-          @set-hazard-tool="setHazardTool"
-          @select-hazard-kind="selectHazardKind"
-          @clear-all-hazards="clearAllHazards"
-        />
-
-        <MapFieldEffectsPanel
-          v-if="map && canViewMap"
-          :collapsed="leftSectionCollapsed('fieldEffects')"
-          :can-edit-map="canEditMap"
-          :field-effect-count="fieldEffectCount"
-          :weather-coexist-next="weatherCoexistNext"
-          :active-weather-effects="activeWeatherEffects"
-          :active-terrain-effects="activeTerrainEffects"
-          :active-room-effects="activeRoomEffects"
-          :weather-palette="weatherPalette"
-          :terrain-palette="terrainPalette"
-          :room-palette="roomPalette"
-          :weather-definition="weatherDefinition"
-          :terrain-definition="terrainDefinition"
-          :room-definition="roomDefinition"
-          :weather-is-active="weatherIsActive"
-          :terrain-is-active="terrainIsActive"
-          :room-is-active="roomIsActive"
-          :duration-label="durationLabel"
-          @toggle-collapsed="toggleLeftSection('fieldEffects')"
-          @set-weather="setWeather"
-          @remove-weather="removeWeather"
-          @clear-weather="clearWeather"
-          @update-weather-coexist-next="setWeatherCoexistNext"
-          @toggle-terrain="toggleTerrain"
-          @remove-terrain="removeTerrain"
-          @toggle-room="toggleRoom"
-          @remove-room="removeRoom"
-          @set-weather-rounds="setWeatherRounds"
-          @set-terrain-rounds="setTerrainRounds"
-          @set-room-rounds="setRoomRounds"
-          @tick-durations="tickFieldEffectDurations"
-          @clear-all="clearAllFieldEffects"
-        />
-
-        <SheetBrowser v-if="map && canSpawnTokens" @select="spawnSheet" />
-      </div>
-    </aside>
+    <MapLeftSidebar
+      :collapsed="sidebarCollapsed"
+      :map="map"
+      :can-view-map="canViewMap"
+      :save-indicator-status="saveIndicatorStatus"
+      :error="error"
+      :section-collapsed="leftSidebarSectionsCollapsed"
+      :is-gm="isGm"
+      :can-edit-map="canEditMap"
+      :can-spawn-tokens="canSpawnTokens"
+      :build-mode="buildMode"
+      :hazard-mode="hazardMode"
+      :build-tool="buildTool"
+      :build-material="buildMaterial"
+      :build-color="buildColor"
+      :visible-voxel-materials="visibleVoxelMaterials"
+      :color-picker-value="colorPickerValue"
+      :voxel-count="voxelCount"
+      :hazard-count="hazardCount"
+      :hazard-tool="hazardTool"
+      :hazard-kind="hazardKind"
+      :active-hazard-def="activeHazardDef"
+      :hazard-palette="hazardPalette"
+      :layer-visibility="layerVisibility"
+      :layer-options="layerOptions"
+      :field-effect-count="fieldEffectCount"
+      :weather-coexist-next="weatherCoexistNext"
+      :active-weather-effects="activeWeatherEffects"
+      :active-terrain-effects="activeTerrainEffects"
+      :active-room-effects="activeRoomEffects"
+      :weather-palette="weatherPalette"
+      :terrain-palette="terrainPalette"
+      :room-palette="roomPalette"
+      :weather-definition="weatherDefinition"
+      :terrain-definition="terrainDefinition"
+      :room-definition="roomDefinition"
+      :weather-is-active="weatherIsActive"
+      :terrain-is-active="terrainIsActive"
+      :room-is-active="roomIsActive"
+      :duration-label="durationLabel"
+      @toggle-collapsed="sidebarCollapsed = !sidebarCollapsed"
+      @toggle-section="toggleLeftSection"
+      @update-player-visible="setMapPlayerVisible"
+      @update-dimension="setMapDimension"
+      @set-mode="setMode"
+      @set-build-tool="setTool"
+      @select-material="selectMaterial"
+      @color-input="handleColorInput"
+      @clear-custom-color="clearCustomColor"
+      @fill-ground="fillGround"
+      @clear-all-voxels="clearAllVoxels"
+      @set-layer-visibility="setLayerVisibility"
+      @set-hazard-tool="setHazardTool"
+      @select-hazard-kind="selectHazardKind"
+      @clear-all-hazards="clearAllHazards"
+      @set-weather="setWeather"
+      @remove-weather="removeWeather"
+      @clear-weather="clearWeather"
+      @update-weather-coexist-next="setWeatherCoexistNext"
+      @toggle-terrain="toggleTerrain"
+      @remove-terrain="removeTerrain"
+      @toggle-room="toggleRoom"
+      @remove-room="removeRoom"
+      @set-weather-rounds="setWeatherRounds"
+      @set-terrain-rounds="setTerrainRounds"
+      @set-room-rounds="setRoomRounds"
+      @tick-durations="tickFieldEffectDurations"
+      @clear-all-field-effects="clearAllFieldEffects"
+      @spawn-sheet="spawnSheet"
+    />
 
     <MapScenePanel
       ref="gridRef"
@@ -657,53 +605,28 @@ watch(
       @apply-move-automation="applyMoveAutomation"
     />
 
-    <aside
-      class="initiative-sidebar"
-      :class="{ 'initiative-sidebar--collapsed': initiativeCollapsed }"
-      :aria-label="initiativeCollapsed ? 'Collapsed initiative tracker' : 'Initiative tracker'"
-    >
-      <div class="initiative-toggle-row">
-        <button
-          type="button"
-          class="initiative-toggle"
-          :aria-expanded="!initiativeCollapsed"
-          aria-controls="initiative-tracker-content"
-          :aria-label="initiativeCollapsed ? 'Expand initiative tracker' : 'Collapse initiative tracker'"
-          :title="initiativeCollapsed ? 'Expand initiative' : 'Collapse initiative'"
-          @click="initiativeCollapsed = !initiativeCollapsed"
-        >
-          <span aria-hidden="true">{{ initiativeCollapsed ? '‹' : '›' }}</span>
-          <span class="initiative-toggle__label">{{ initiativeCollapsed ? 'Expand' : 'Collapse' }}</span>
-        </button>
-      </div>
-
-      <div
-        id="initiative-tracker-content"
-        v-show="!initiativeCollapsed"
-        class="initiative-content"
-      >
-        <MapInitiativeTracker
-          v-if="map && canViewMap"
-          :rows="initiativeRows"
-          :sorted-rows="sortedInitiativeRows"
-          :active-id="activeInitiativeId"
-          :round="initiativeRound"
-          :selected-id="selectedId"
-          :can-manage="canManageInitiative"
-          :has-initiative-values="hasInitiativeValues"
-          @set-round="setInitiativeRound"
-          @previous="previousInitiative"
-          @next="nextInitiative"
-          @fill-from-speed="fillInitiativeFromSpeed"
-          @clear-active="clearActiveInitiative"
-          @clear-values="clearInitiativeValues"
-          @set-active-and-focus="setActiveInitiativeAndFocus"
-          @focus="focusInitiativeEntry"
-          @set-initiative-input="setInitiativeInput"
-          @set-initiative-from-speed="setInitiativeFromSpeed"
-        />
-      </div>
-    </aside>
+    <MapInitiativeSidebar
+      :collapsed="initiativeCollapsed"
+      :show-tracker="Boolean(map && canViewMap)"
+      :rows="initiativeRows"
+      :sorted-rows="sortedInitiativeRows"
+      :active-id="activeInitiativeId"
+      :round="initiativeRound"
+      :selected-id="selectedId"
+      :can-manage="canManageInitiative"
+      :has-initiative-values="hasInitiativeValues"
+      @toggle-collapsed="initiativeCollapsed = !initiativeCollapsed"
+      @set-round="setInitiativeRound"
+      @previous="previousInitiative"
+      @next="nextInitiative"
+      @fill-from-speed="fillInitiativeFromSpeed"
+      @clear-active="clearActiveInitiative"
+      @clear-values="clearInitiativeValues"
+      @set-active-and-focus="setActiveInitiativeAndFocus"
+      @focus="focusInitiativeEntry"
+      @set-initiative-input="setInitiativeInput"
+      @set-initiative-from-speed="setInitiativeFromSpeed"
+    />
 
     <MapAdminPanel
       v-if="map && isGm && adminPanelOpen"
@@ -738,190 +661,6 @@ watch(
   --initiative-sidebar-width: 56px;
 }
 
-.sidebar {
-  display: flex;
-  flex-direction: column;
-  gap: 0.85rem;
-  min-width: 0;
-  padding: 0.85rem;
-  border-right: 1px solid var(--rule);
-  background: var(--paper);
-  max-height: 100vh;
-  overflow: auto;
-  transition: padding 0.2s ease;
-}
-
-.sidebar--collapsed {
-  align-items: center;
-  padding: 0.65rem 0.45rem;
-  overflow: hidden;
-}
-
-.sidebar-content {
-  display: flex;
-  flex: 1 1 auto;
-  flex-direction: column;
-  gap: 0.85rem;
-  min-width: 0;
-  min-height: 0;
-}
-
-.sidebar-toggle-row {
-  display: flex;
-  justify-content: flex-end;
-  padding: 0 0.25rem;
-}
-
-.sidebar--collapsed .sidebar-toggle-row {
-  justify-content: center;
-  padding: 0;
-}
-
-.sidebar-toggle {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.35rem;
-  border: 1px solid var(--rule-soft);
-  border-radius: 999px;
-  background: var(--paper-soft);
-  color: var(--ink-soft);
-  padding: 0.4rem 0.7rem;
-  cursor: pointer;
-  font: inherit;
-  font-size: 0.8rem;
-  letter-spacing: 0.04em;
-  line-height: 1;
-  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
-}
-
-.sidebar-toggle:hover,
-.sidebar-toggle:focus-visible {
-  border-color: var(--accent);
-  background: var(--accent-soft);
-  color: var(--accent);
-  outline: none;
-}
-
-.sidebar-toggle span[aria-hidden='true'] {
-  font-size: 1.15rem;
-  font-weight: 700;
-  line-height: 0.8;
-}
-
-.sidebar--collapsed .sidebar-toggle {
-  width: 38px;
-  height: 38px;
-  padding: 0;
-}
-
-.sidebar--collapsed .sidebar-toggle__label {
-  display: none;
-}
-
-.initiative-sidebar {
-  display: flex;
-  flex-direction: column;
-  gap: 0.85rem;
-  min-width: 0;
-  padding: 0.85rem;
-  border-left: 1px solid var(--rule);
-  background: var(--paper);
-  max-height: 100vh;
-  overflow: auto;
-  transition: padding 0.2s ease;
-}
-
-.initiative-sidebar--collapsed {
-  align-items: center;
-  padding: 0.65rem 0.45rem;
-  overflow: hidden;
-}
-
-.initiative-content {
-  display: flex;
-  flex: 1 1 auto;
-  flex-direction: column;
-  gap: 0.85rem;
-  min-width: 0;
-  min-height: 0;
-}
-
-.initiative-toggle-row {
-  display: flex;
-  justify-content: flex-start;
-  padding: 0 0.25rem;
-}
-
-.initiative-sidebar--collapsed .initiative-toggle-row {
-  justify-content: center;
-  padding: 0;
-}
-
-.initiative-toggle {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.35rem;
-  border: 1px solid var(--rule-soft);
-  border-radius: 999px;
-  background: var(--paper-soft);
-  color: var(--ink-soft);
-  padding: 0.4rem 0.7rem;
-  cursor: pointer;
-  font: inherit;
-  font-size: 0.8rem;
-  letter-spacing: 0.04em;
-  line-height: 1;
-  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
-}
-
-.initiative-toggle:hover,
-.initiative-toggle:focus-visible {
-  border-color: var(--accent);
-  background: var(--accent-soft);
-  color: var(--accent);
-  outline: none;
-}
-
-.initiative-toggle span[aria-hidden='true'] {
-  font-size: 1.15rem;
-  font-weight: 700;
-  line-height: 0.8;
-}
-
-.initiative-sidebar--collapsed .initiative-toggle {
-  width: 38px;
-  height: 38px;
-  padding: 0;
-}
-
-.initiative-sidebar--collapsed .initiative-toggle__label {
-  display: none;
-}
-
-.header-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.6rem;
-  padding: 0 0.25rem;
-}
-
-.back-link {
-  color: var(--ink-soft);
-  text-decoration: none;
-  font-size: 0.9rem;
-  letter-spacing: 0.02em;
-}
-
-.back-link:hover {
-  color: var(--ink-bright);
-  text-decoration: underline;
-  text-decoration-color: var(--rule-strong);
-}
-
-
 @media (max-width: 1100px) {
   .layout-shell,
   .layout-shell--sidebar-collapsed,
@@ -929,17 +668,6 @@ watch(
     grid-template-columns: 1fr;
   }
 
-  .sidebar {
-    max-height: none;
-    border-right: 0;
-    border-bottom: 1px solid var(--rule);
-  }
-
-  .initiative-sidebar {
-    max-height: none;
-    border-left: 0;
-    border-top: 1px solid var(--rule);
-  }
 }
 
 </style>
