@@ -158,3 +158,16 @@
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
   - `npm run typecheck` — still fails only on the documented pre-existing broader typecheck backlog; no errors are reported for the new map details/admin panel components or touched map page lines.
+
+## Next phase update: map scene panel extraction
+
+- Extracted the center tabletop scene column from `pages/maps/[slug].vue` into `components/map/MapScenePanel.vue`.
+  - The component owns the `ClientOnly` renderer shell, loading/not-found/error states, `IsometricGrid` event forwarding, and move automation dialog wiring.
+  - It exposes `focusPokemon(id)` so the initiative tracker can keep focusing tokens without depending on the raw `IsometricGrid` component.
+- The map route page no longer imports or renders `IsometricGrid` directly; it wires higher-level map editor state into the scene panel.
+- Preserved existing renderer props/events, move automation apply/close behavior, loading copy, and map-not-found link behavior.
+- Quality gates after this phase:
+  - `npm test` — passes: 12 test files / 37 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+  - `npm run typecheck` — still fails only on the documented pre-existing broader typecheck backlog; no errors are reported for `MapScenePanel.vue` or touched map page lines.

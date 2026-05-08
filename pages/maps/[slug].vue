@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import IsometricGrid from '~/components/IsometricGrid.client.vue'
 import MapAdminPanel from '~/components/map/MapAdminPanel.vue'
 import MapDetailsPanel from '~/components/map/MapDetailsPanel.vue'
 import MapFieldEffectsPanel from '~/components/map/FieldEffectsPanel.vue'
 import MapInitiativeTracker from '~/components/map/InitiativeTracker.vue'
+import MapScenePanel from '~/components/map/MapScenePanel.vue'
 import MapTerrainHazardsPanel from '~/components/map/TerrainHazardsPanel.vue'
 import SheetBrowser from '~/components/SheetBrowser.vue'
 import SaveIndicator from '~/components/SaveIndicator.vue'
@@ -64,11 +64,11 @@ useHead(() => ({
   title: map.value ? `${map.value.name} · Maps` : 'Maps · Rotom Table',
 }))
 
-interface IsometricGridHandle {
+interface MapScenePanelHandle {
   focusPokemon: (id: string) => boolean
 }
 
-const gridRef = ref<IsometricGridHandle | null>(null)
+const gridRef = ref<MapScenePanelHandle | null>(null)
 const sidebarCollapsed = ref(false)
 const initiativeCollapsed = ref(false)
 const adminPanelOpen = ref(false)
@@ -611,70 +611,51 @@ watch(
       </div>
     </aside>
 
-    <main class="scene-column">
-      <ClientOnly>
-        <IsometricGrid
-          v-if="map && canViewMap"
-          ref="gridRef"
-          :dimensions="map.dimensions"
-          :pokemons="spawnedPokemon"
-          :selected-id="selectedId"
-          :controllable-ids="controllablePlacementIds"
-          :active-turn-id="activeInitiativeId"
-          :voxels="mapVoxels"
-          :hazards="mapHazards"
-          :field-effects="mapFieldEffects"
-          :ground-level-y="mapGroundLevelY"
-          :layer-visibility="layerVisibility"
-          :build-mode="buildMode && canEditMap"
-          :build-tool="buildTool"
-          :build-material="buildMaterial"
-          :build-color="buildColor"
-          :hazard-mode="hazardMode && canEditMap"
-          :hazard-tool="hazardTool"
-          :hazard-kind="hazardKind"
-          :can-delete-tokens="isGm"
-          @select-pokemon="selectPokemon"
-          @move-pokemon="movePokemon"
-          @turn-pokemon="turnPokemon"
-          @delete-pokemon="deletePokemon"
-          @modify-hp="modifyHp"
-          @modify-combat-stages="modifyCombatStages"
-          @modify-conditions="modifyConditions"
-          @use-move="openMoveAutomation"
-          @view-sheet="viewSheet"
-          @view-pokedex="viewPokedex"
-          @preview-change="updatePreview"
-          @place-voxel="placeVoxel"
-          @remove-voxel="removeVoxel"
-          @place-hazard="placeHazard"
-          @remove-hazard="removeHazard"
-        />
-        <div v-else-if="status === 'loading'" class="scene-loading">Loading map…</div>
-        <div v-else-if="status === 'not-found'" class="scene-loading">
-          <p>Map <code>{{ slug }}</code> not found.</p>
-          <NuxtLink to="/maps" class="back-link">← Back to maps</NuxtLink>
-        </div>
-        <div v-else class="scene-loading">
-          <p>{{ error ?? 'Could not load map.' }}</p>
-        </div>
-
-        <MoveAutomationDialog
-          v-if="moveAutomationUser"
-          :user="moveAutomationUser"
-          :moves="moveAutomationMoves"
-          :all-tokens="spawnedPokemon"
-          :field-effects="mapFieldEffects"
-          :can-apply-map-effects="canEditMap"
-          @close="closeMoveAutomation"
-          @apply="applyMoveAutomation"
-        />
-
-        <template #fallback>
-          <div class="scene-loading">Loading the three.js tabletop…</div>
-        </template>
-      </ClientOnly>
-    </main>
+    <MapScenePanel
+      ref="gridRef"
+      :map="map"
+      :can-view-map="canViewMap"
+      :status="status"
+      :error="error"
+      :slug="slug"
+      :spawned-pokemon="spawnedPokemon"
+      :selected-id="selectedId"
+      :controllable-placement-ids="controllablePlacementIds"
+      :active-initiative-id="activeInitiativeId"
+      :map-voxels="mapVoxels"
+      :map-hazards="mapHazards"
+      :map-field-effects="mapFieldEffects"
+      :map-ground-level-y="mapGroundLevelY"
+      :layer-visibility="layerVisibility"
+      :build-mode="buildMode && canEditMap"
+      :build-tool="buildTool"
+      :build-material="buildMaterial"
+      :build-color="buildColor"
+      :hazard-mode="hazardMode && canEditMap"
+      :hazard-tool="hazardTool"
+      :hazard-kind="hazardKind"
+      :can-delete-tokens="isGm"
+      :move-automation-user="moveAutomationUser"
+      :move-automation-moves="moveAutomationMoves"
+      :can-apply-map-effects="canEditMap"
+      @select-pokemon="selectPokemon"
+      @move-pokemon="movePokemon"
+      @turn-pokemon="turnPokemon"
+      @delete-pokemon="deletePokemon"
+      @modify-hp="modifyHp"
+      @modify-combat-stages="modifyCombatStages"
+      @modify-conditions="modifyConditions"
+      @use-move="openMoveAutomation"
+      @view-sheet="viewSheet"
+      @view-pokedex="viewPokedex"
+      @preview-change="updatePreview"
+      @place-voxel="placeVoxel"
+      @remove-voxel="removeVoxel"
+      @place-hazard="placeHazard"
+      @remove-hazard="removeHazard"
+      @close-move-automation="closeMoveAutomation"
+      @apply-move-automation="applyMoveAutomation"
+    />
 
     <aside
       class="initiative-sidebar"
@@ -838,12 +819,6 @@ watch(
   display: none;
 }
 
-.scene-column {
-  min-width: 0;
-  min-height: 100vh;
-  background: var(--paper);
-}
-
 .initiative-sidebar {
   display: flex;
   flex-direction: column;
@@ -946,16 +921,6 @@ watch(
   text-decoration-color: var(--rule-strong);
 }
 
-.scene-loading {
-  display: grid;
-  place-items: center;
-  min-height: 100vh;
-  color: var(--ink-muted);
-  background: var(--paper);
-  font-style: italic;
-  gap: 0.6rem;
-  text-align: center;
-}
 
 @media (max-width: 1100px) {
   .layout-shell,
