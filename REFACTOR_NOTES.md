@@ -198,3 +198,19 @@
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
   - `npm run typecheck` — still fails only on the documented pre-existing broader typecheck backlog; no errors are reported for the new token sheet mutation composable, its tests, or touched map page lines.
+
+## Next phase update: isometric renderer material/texture extraction
+
+- Began Phase 6 renderer decomposition by extracting renderer internals from `components/IsometricGrid.client.vue` into focused `utils/isometric/` modules:
+  - `types.ts` for renderer object contracts and target types.
+  - `materials.ts` for volume/voxel material construction and repainting.
+  - `blockTextures.ts` for generated Minecraft-style voxel texture caching.
+  - `spriteTextures.ts` for sprite/contact-shadow/halo texture acquisition and cache disposal.
+  - `resourceDisposal.ts` for shared Three.js/CSS3D object cleanup.
+- Kept `IsometricGrid.client.vue` as the compatibility adapter with the same public props/events while reducing it by roughly 1,000 lines.
+- Tightened extracted Three.js sprite typings to match the current `three` event-map generic and kept the broader typecheck backlog unchanged.
+- Quality gates after this phase:
+  - `npm test` — passes: 13 test files / 40 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+  - `npm run typecheck` — still fails only on the documented pre-existing broader typecheck backlog; no errors are reported for `components/IsometricGrid.client.vue` or `utils/isometric/*`.
