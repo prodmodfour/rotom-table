@@ -10,16 +10,17 @@
 import { existsSync, mkdirSync, renameSync } from 'node:fs'
 import { join, sep } from 'node:path'
 import { createError, defineEventHandler, readBody } from 'h3'
+import { mapChannel, mapsChannel } from '~/shared/realtime'
 import { publishRealtime } from '../../utils/realtime'
 import { requireGm } from '../../utils/auth'
+import { PROJECT_ROOT } from '../../utils/fsPaths'
 import {
   MAPS_ROOT,
-  PROJECT_ROOT,
   SLUG_RE,
   findMapFile,
-  pruneEmptyParents,
+  pruneEmptyMapParents,
   readMapFile,
-  sanitizeFolderPath,
+  sanitizeMapFolderPath,
   summarizeMap,
   writeMapFile,
 } from '../../utils/mapStorage'
@@ -39,7 +40,7 @@ export default defineEventHandler(async (event) => {
   }
   let folder = ''
   try {
-    folder = sanitizeFolderPath(String(body?.folder ?? ''), true)
+    folder = sanitizeMapFolderPath(String(body?.folder ?? ''), true)
   } catch (err) {
     throw createError({ statusCode: 400, statusMessage: (err as Error).message })
   }
@@ -65,7 +66,7 @@ export default defineEventHandler(async (event) => {
     }
     mkdirSync(destDir, { recursive: true })
     renameSync(currentPath, destPath)
-    pruneEmptyParents(currentPath)
+    pruneEmptyMapParents(currentPath)
     moved = true
   }
 
@@ -76,13 +77,13 @@ export default defineEventHandler(async (event) => {
   writeMapFile(destPath, map)
 
   publishRealtime({
-    channel: `map:${slug}`,
+    channel: mapChannel(slug),
     type: 'updated',
     clientId: body?.clientId,
     data: map,
   })
   publishRealtime({
-    channel: 'maps',
+    channel: mapsChannel,
     type: 'moved',
     clientId: body?.clientId,
     data: summarizeMap(map),

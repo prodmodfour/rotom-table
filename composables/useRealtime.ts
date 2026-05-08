@@ -12,14 +12,9 @@
  * persisted state will broadcast in full).
  */
 import { onBeforeUnmount } from 'vue'
+import type { RealtimeEvent } from '~/shared/realtime'
 
-export interface RealtimeEvent {
-  channel: string
-  type: string
-  data?: unknown
-  clientId?: string
-  timestamp: number
-}
+export type { RealtimeEvent } from '~/shared/realtime'
 
 type Handler = (event: RealtimeEvent) => void
 

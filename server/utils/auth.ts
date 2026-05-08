@@ -1,11 +1,11 @@
 import { createError, getCookie, type H3Event } from 'h3'
+import { AUTH_ROLE_COOKIE, isAuthRole, type AuthRole } from '~/shared/auth'
 
-export const AUTH_ROLE_COOKIE = 'rotom-role'
-export type AuthRole = 'gm' | 'player'
+export { AUTH_ROLE_COOKIE, isAuthRole, type AuthRole } from '~/shared/auth'
 
 export const getAuthRole = (event: H3Event): AuthRole | null => {
   const role = getCookie(event, AUTH_ROLE_COOKIE)
-  return role === 'gm' || role === 'player' ? role : null
+  return isAuthRole(role) ? role : null
 }
 
 export const requireAuthRole = (event: H3Event): AuthRole => {

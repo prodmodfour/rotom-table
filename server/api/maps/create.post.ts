@@ -13,13 +13,14 @@
  */
 import { createError, defineEventHandler, readBody } from 'h3'
 import { join } from 'node:path'
+import { mapsChannel } from '~/shared/realtime'
 import { publishRealtime } from '../../utils/realtime'
 import { requireGm } from '../../utils/auth'
 import {
   MAPS_ROOT,
   allocateSlug,
   ensureMapsRoot,
-  sanitizeFolderPath,
+  sanitizeMapFolderPath,
   writeMapFile,
 } from '../../utils/mapStorage'
 import type { GridDimensions, TabletopMap } from '~/types/map'
@@ -49,7 +50,7 @@ export default defineEventHandler(async (event) => {
 
   let folder = ''
   try {
-    folder = sanitizeFolderPath(String(body?.folder ?? ''), true)
+    folder = sanitizeMapFolderPath(String(body?.folder ?? ''), true)
   } catch (err) {
     throw createError({ statusCode: 400, statusMessage: (err as Error).message })
   }
@@ -88,7 +89,7 @@ export default defineEventHandler(async (event) => {
   writeMapFile(path, map)
 
   publishRealtime({
-    channel: 'maps',
+    channel: mapsChannel,
     type: 'created',
     clientId: body?.clientId,
     data: {

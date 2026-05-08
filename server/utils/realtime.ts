@@ -12,18 +12,9 @@
  * for Redis pub/sub or similar.
  */
 
-export interface RealtimeEvent {
-  /** Channel name, e.g. ``"map:foo"`` or ``"sheets"``. */
-  channel: string
-  /** Operation type, e.g. ``"updated"``, ``"deleted"``. */
-  type: string
-  /** Optional structured payload. */
-  data?: unknown
-  /** Originating tab's client id, used for echo suppression. */
-  clientId?: string
-  /** Server timestamp (ms) so clients can ignore stale events. */
-  timestamp: number
-}
+import type { RealtimeEvent } from '~/shared/realtime'
+
+export type { RealtimeEvent } from '~/shared/realtime'
 
 type Subscriber = (event: RealtimeEvent) => void
 

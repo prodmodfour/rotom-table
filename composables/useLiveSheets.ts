@@ -16,6 +16,8 @@ import { characterSheets } from '~/data/characterSheets'
 import { trainerSheets } from '~/data/trainerSheets'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { TrainerSheet } from '~/types/trainerSheet'
+import { sheetsChannel } from '~/shared/realtime'
+import type { SheetKind } from '~/shared/sheets'
 import { subscribeChannel } from './useRealtime'
 
 interface LiveSheetsApi {
@@ -48,7 +50,7 @@ export const useLiveSheets = (): LiveSheetsApi => {
   if (typeof window !== 'undefined') {
     const handler = (event: { type: string; data?: unknown }) => {
       const payload = event.data as
-        | { kind?: 'pokemon' | 'trainer'; slug?: string; sheet?: CharacterSheet | TrainerSheet }
+        | { kind?: SheetKind; slug?: string; sheet?: CharacterSheet | TrainerSheet }
         | undefined
       if (!payload || !payload.kind || !payload.slug) return
       const map = payload.kind === 'pokemon' ? pokemonBySlug.value : trainerBySlug.value
@@ -60,7 +62,7 @@ export const useLiveSheets = (): LiveSheetsApi => {
         map.set(payload.slug, payload.sheet as CharacterSheet & TrainerSheet)
       }
     }
-    unsubscribe = subscribeChannel('sheets', handler)
+    unsubscribe = subscribeChannel(sheetsChannel, handler)
   }
 
   return cached

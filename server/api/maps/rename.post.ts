@@ -15,10 +15,11 @@
 import { existsSync, renameSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { createError, defineEventHandler, readBody } from 'h3'
+import { mapChannel, mapsChannel } from '~/shared/realtime'
 import { publishRealtime } from '../../utils/realtime'
 import { requireGm } from '../../utils/auth'
+import { PROJECT_ROOT } from '../../utils/fsPaths'
 import {
-  PROJECT_ROOT,
   SLUG_RE,
   allocateSlug,
   findMapFile,
@@ -81,32 +82,32 @@ export default defineEventHandler(async (event) => {
 
   if (newSlug !== slug) {
     publishRealtime({
-      channel: `map:${slug}`,
+      channel: mapChannel(slug),
       type: 'renamed',
       clientId: body?.clientId,
       data: { oldSlug: slug, newSlug, map },
     })
     publishRealtime({
-      channel: `map:${newSlug}`,
+      channel: mapChannel(newSlug),
       type: 'updated',
       clientId: body?.clientId,
       data: map,
     })
     publishRealtime({
-      channel: 'maps',
+      channel: mapsChannel,
       type: 'renamed',
       clientId: body?.clientId,
       data: { oldSlug: slug, summary },
     })
   } else {
     publishRealtime({
-      channel: `map:${slug}`,
+      channel: mapChannel(slug),
       type: 'updated',
       clientId: body?.clientId,
       data: map,
     })
     publishRealtime({
-      channel: 'maps',
+      channel: mapsChannel,
       type: 'updated',
       clientId: body?.clientId,
       data: summary,

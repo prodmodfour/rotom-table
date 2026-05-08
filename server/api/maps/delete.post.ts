@@ -8,13 +8,14 @@
  */
 import { unlinkSync } from 'node:fs'
 import { createError, defineEventHandler, readBody } from 'h3'
+import { mapChannel, mapsChannel } from '~/shared/realtime'
 import { publishRealtime } from '../../utils/realtime'
 import { requireGm } from '../../utils/auth'
+import { PROJECT_ROOT } from '../../utils/fsPaths'
 import {
-  PROJECT_ROOT,
   SLUG_RE,
   findMapFile,
-  pruneEmptyParents,
+  pruneEmptyMapParents,
 } from '../../utils/mapStorage'
 
 interface DeleteBody {
@@ -34,16 +35,16 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: `Map ${slug}.json not found` })
   }
   unlinkSync(path)
-  pruneEmptyParents(path)
+  pruneEmptyMapParents(path)
 
   publishRealtime({
-    channel: `map:${slug}`,
+    channel: mapChannel(slug),
     type: 'deleted',
     clientId: body?.clientId,
     data: { slug },
   })
   publishRealtime({
-    channel: 'maps',
+    channel: mapsChannel,
     type: 'deleted',
     clientId: body?.clientId,
     data: { slug },

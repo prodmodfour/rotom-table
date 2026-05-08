@@ -1,12 +1,13 @@
 import { computed } from 'vue'
+import {
+  AUTH_ROLE_COOKIE,
+  AUTH_ROLES,
+  authRoleLabel,
+  isAuthRole,
+  type AuthRole,
+} from '~/shared/auth'
 
-export const AUTH_ROLE_COOKIE = 'rotom-role'
-export const AUTH_ROLES = ['gm', 'player'] as const
-
-export type AuthRole = (typeof AUTH_ROLES)[number]
-
-export const isAuthRole = (value: unknown): value is AuthRole =>
-  value === 'gm' || value === 'player'
+export { AUTH_ROLE_COOKIE, AUTH_ROLES, authRoleLabel, isAuthRole, type AuthRole } from '~/shared/auth'
 
 export const useAuth = () => {
   const rawRole = useCookie<AuthRole | null>(AUTH_ROLE_COOKIE, {
@@ -28,7 +29,7 @@ export const useAuth = () => {
   const isLoggedIn = computed(() => role.value !== null)
   const isGm = computed(() => role.value === 'gm')
   const isPlayer = computed(() => role.value === 'player')
-  const roleLabel = computed(() => (role.value === 'gm' ? 'GM' : role.value === 'player' ? 'Player' : 'Guest'))
+  const roleLabel = computed(() => authRoleLabel(role.value))
 
   const loginAs = (next: AuthRole) => {
     role.value = next

@@ -7,6 +7,9 @@
     "build": "nuxt build",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
+    "typecheck": "nuxt typecheck",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "check:move-automation": "python3 scripts/check_move_automation_coverage.py",
     "sync:item-sprites": "node scripts/sync_item_sprites.mjs"
   },
@@ -19,6 +22,10 @@
     "three": "^0.176.0"
   },
   "devDependencies": {
-    "@types/three": "^0.176.0"
+    "@types/node": "^20.19.40",
+    "@types/three": "^0.176.0",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.5",
+    "vue-tsc": "^3.2.8"
   }
 }

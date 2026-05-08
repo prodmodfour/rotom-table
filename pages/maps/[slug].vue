@@ -5,11 +5,10 @@ import SheetBrowser, { type SheetSelection } from '~/components/SheetBrowser.vue
 import SaveIndicator from '~/components/SaveIndicator.vue'
 import { useEditableMap } from '~/composables/useEditableMap'
 import { useLiveSheets } from '~/composables/useLiveSheets'
+import { useInitiativeTracker } from '~/composables/map-editor/useInitiativeTracker'
 import {
   catalogEntryForPokemonSheet,
   catalogEntryForTrainerSheet,
-  pokemonHpSnapshot,
-  trainerHpSnapshot,
 } from '~/utils/sheetSpawn'
 import {
   findFirstAvailablePosition,
@@ -48,19 +47,20 @@ import {
 } from '~/utils/voxels'
 import { buildMapOccupancy } from '~/utils/mapOccupancy'
 import { getClientId } from '~/utils/clientId'
-import { clampHpValue } from '~/utils/ptuHp'
-import { COMBAT_STAGE_KEYS, COMBAT_STAT_STAGE_KEYS, clampCombatStage } from '~/utils/combatStages'
-import { normalizeConditionNames } from '~/utils/statusConditions'
-import { resolveStats } from '~/data/characterSheets'
-import { resolveTrainerStats } from '~/data/trainerSheets'
-import type { CharacterSheet } from '~/types/characterSheet'
+import {
+  applyCombatStagesToSheet,
+  applyConditionsToSheet,
+  applyHpToSheet,
+  commitSheetUpdate,
+  createSheetUpdateForPlacement,
+  rollbackSheetUpdate,
+  toPersistableSheetPayload,
+  type PlacementSheetUpdater,
+} from '~/utils/sheetMutations'
 import type { CombatStageMap } from '~/types/combatStages'
-import type { SpawnedPokemon } from '~/types/pokemon'
-import type { TrainerSheet } from '~/types/trainerSheet'
 import type { MoveAutomationTransaction } from '~/types/moveAutomation'
 import type {
   GridAnchor,
-  InitiativeTrackerState,
   MapFieldEffects,
   MapHazardKind,
   MapHazardV2,
@@ -263,131 +263,35 @@ watch(isGm, (gm) => {
   if (moveAutomationId.value && !canControlPlacement(moveAutomationId.value)) closeMoveAutomation()
 })
 
-type InitiativeKind = 'pokemon' | 'trainer'
-
-interface InitiativeSpritePreview {
-  url: string | null
-  isSpriteSheet: boolean
-  frameWidth: number
-  frameHeight: number
-  scale: number
-}
-
-interface InitiativeRow {
-  id: string
-  name: string
-  meta: string
-  sprite: InitiativeSpritePreview
-  currentHp: number
-  maxHp: number
-  conditions: string[]
-  initiative: number | null
-  speed: number
-}
-
-const normalizeInitiativeValue = (value: unknown): number | null => {
-  if (value === null || value === undefined || value === '') return null
-  const n = Number(value)
-  if (!Number.isFinite(n)) return null
-  return Math.trunc(n)
-}
-
-const speedForPlacement = (kind: InitiativeKind, sheetSlug: string): number => {
-  if (kind === 'pokemon') {
-    const sheet = pokemonBySlug.value?.get(sheetSlug)
-    if (!sheet) return 0
-    return resolveStats(sheet).find((row) => row.key === 'spd')?.total ?? 0
-  }
-  const sheet = trainerBySlug.value?.get(sheetSlug)
-  if (!sheet) return 0
-  return resolveTrainerStats(sheet).find((row) => row.key === 'spd')?.total ?? 0
-}
-
-const metaForPlacement = (kind: InitiativeKind, sheetSlug: string): string => {
-  if (kind === 'pokemon') {
-    const sheet = pokemonBySlug.value?.get(sheetSlug)
-    return sheet ? `${sheet.species} · Lv ${sheet.level}` : 'Pokémon'
-  }
-  const sheet = trainerBySlug.value?.get(sheetSlug)
-  const className = sheet?.classes?.[0]?.name
-  if (!sheet) return 'Trainer'
-  return className ? `Trainer · Lv ${sheet.level} · ${className}` : `Trainer · Lv ${sheet.level}`
-}
-
-const initiativeSpriteScale = (width: number, height: number): number =>
-  Math.min(1, 32 / Math.max(width, height, 1))
-
-const initiativeSpriteFor = (pokemon: SpawnedPokemon): InitiativeSpritePreview => {
-  const animation = pokemon.spriteAnimation
-  if (animation) {
-    return {
-      url: animation.url,
-      isSpriteSheet: true,
-      frameWidth: animation.frameWidth,
-      frameHeight: animation.frameHeight,
-      scale: initiativeSpriteScale(animation.frameWidth, animation.frameHeight),
-    }
-  }
-
-  return {
-    url: pokemon.spriteUrl ?? null,
-    isSpriteSheet: false,
-    frameWidth: 32,
-    frameHeight: 32,
-    scale: 1,
-  }
-}
-
-const initiativeSpriteFrameStyle = (entry: InitiativeRow): Record<string, string> => ({
-  backgroundImage: entry.sprite.url ? `url(${entry.sprite.url})` : 'none',
-  width: `${entry.sprite.frameWidth}px`,
-  height: `${entry.sprite.frameHeight}px`,
-  transform: `scale(${entry.sprite.scale})`,
+const {
+  initiativeRows,
+  sortedInitiativeRows,
+  activeInitiativeId,
+  initiativeRound,
+  hasInitiativeValues,
+  initiativeSpriteFrameStyle,
+  hpPercent,
+  hpTier,
+  focusInitiativeEntry,
+  setActiveInitiativeAndFocus,
+  setInitiativeInput,
+  setInitiativeFromSpeed,
+  setInitiativeRound,
+  fillInitiativeFromSpeed,
+  clearInitiativeValues,
+  clearActiveInitiative,
+  nextInitiative,
+  previousInitiative,
+} = useInitiativeTracker({
+  map,
+  spawnedPokemon,
+  pokemonBySlug,
+  trainerBySlug,
+  canManageInitiative,
+  focusEntry: (id) => {
+    gridRef.value?.focusPokemon(id)
+  },
 })
-
-const initiativeRows = computed<InitiativeRow[]>(() => {
-  const placements = new Map((map.value?.placements ?? []).map((placement) => [placement.id, placement]))
-  return spawnedPokemon.value.map((pokemon) => {
-    const placement = placements.get(pokemon.id)
-    return {
-      id: pokemon.id,
-      name: pokemon.species,
-      meta: metaForPlacement(pokemon.sheetKind, pokemon.sheetSlug),
-      sprite: initiativeSpriteFor(pokemon),
-      currentHp: Math.max(0, Math.floor(pokemon.currentHp)),
-      maxHp: Math.max(0, Math.floor(pokemon.maxHp)),
-      conditions: pokemon.conditions,
-      initiative: normalizeInitiativeValue(placement?.initiative),
-      speed: speedForPlacement(pokemon.sheetKind, pokemon.sheetSlug),
-    }
-  })
-})
-
-const sortedInitiativeRows = computed<InitiativeRow[]>(() =>
-  [...initiativeRows.value].sort((a, b) => {
-    const aHasInitiative = a.initiative !== null
-    const bHasInitiative = b.initiative !== null
-    if (aHasInitiative !== bHasInitiative) return aHasInitiative ? -1 : 1
-    if (a.initiative !== null && b.initiative !== null && a.initiative !== b.initiative) {
-      return b.initiative - a.initiative
-    }
-    if (a.speed !== b.speed) return b.speed - a.speed
-    return a.name.localeCompare(b.name)
-  }),
-)
-
-const validInitiativeIds = computed(() => new Set(initiativeRows.value.map((row) => row.id)))
-const activeInitiativeId = computed(() => {
-  const id = map.value?.initiative?.activeId ?? null
-  return id && validInitiativeIds.value.has(id) ? id : null
-})
-const initiativeRound = computed(() => {
-  const round = Math.floor(Number(map.value?.initiative?.round ?? 1))
-  return Number.isFinite(round) && round > 0 ? round : 1
-})
-const hasInitiativeValues = computed(() =>
-  (map.value?.placements ?? []).some((placement) => normalizeInitiativeValue(placement.initiative) !== null),
-)
 
 const materialCanBeBuilt = (material: { transparent?: boolean; tags?: readonly string[] }) =>
   !material.transparent || (material.tags ?? []).includes('water')
@@ -405,142 +309,15 @@ const saveIndicatorStatus = computed<SaveStatus | null>(() => {
   return null
 })
 
-const ensureInitiativeState = (): InitiativeTrackerState | null => {
-  if (!map.value) return null
-  if (!map.value.initiative || typeof map.value.initiative !== 'object') {
-    map.value.initiative = { activeId: null, round: 1 }
-  }
-  const round = Math.floor(Number(map.value.initiative.round ?? 1))
-  map.value.initiative.round = Number.isFinite(round) && round > 0 ? round : 1
-  return map.value.initiative
-}
-
 const placementById = (id: string) => map.value?.placements.find((placement) => placement.id === id) ?? null
 
 const toPokedexSlug = (value: string): string => value
   .normalize('NFKD')
-  .replace(/[\u0300-\u036f]/g, '')
+  .replace(/[̀-ͯ]/g, '')
   .toLowerCase()
-  .replace(/['\u2019]/g, '')
+  .replace(/['’]/g, '')
   .replace(/[^a-z0-9]+/g, '-')
   .replace(/^-+|-+$/g, '')
-
-const hpPercent = (entry: InitiativeRow): string => {
-  if (entry.maxHp <= 0) return '0%'
-  const percent = Math.max(0, Math.min(100, (entry.currentHp / entry.maxHp) * 100))
-  return `${percent}%`
-}
-
-const hpTier = (entry: InitiativeRow): 'critical' | 'wounded' | 'healthy' => {
-  if (entry.maxHp <= 0) return 'critical'
-  const ratio = Math.max(0, Math.min(1, entry.currentHp / entry.maxHp))
-  if (ratio <= 0.25) return 'critical'
-  if (ratio <= 0.5) return 'wounded'
-  return 'healthy'
-}
-
-const focusInitiativeEntry = (id: string) => {
-  gridRef.value?.focusPokemon(id)
-}
-
-const setActiveInitiative = (id: string) => {
-  if (!canManageInitiative.value) return
-  const state = ensureInitiativeState()
-  if (!state) return
-  state.activeId = id
-}
-
-const setActiveInitiativeAndFocus = (id: string) => {
-  setActiveInitiative(id)
-  focusInitiativeEntry(id)
-}
-
-const setInitiativeInput = (id: string, event: Event) => {
-  if (!canManageInitiative.value) return
-  const placement = placementById(id)
-  if (!placement) return
-  const raw = (event.target as HTMLInputElement).value.trim()
-  if (!raw) {
-    delete placement.initiative
-    return
-  }
-  const n = Number(raw)
-  if (!Number.isFinite(n)) return
-  placement.initiative = Math.max(-999, Math.min(999, Math.trunc(n)))
-}
-
-const setInitiativeFromSpeed = (id: string, speed: number) => {
-  if (!canManageInitiative.value) return
-  const placement = placementById(id)
-  if (!placement) return
-  if (!Number.isFinite(speed)) return
-  placement.initiative = Math.max(-999, Math.min(999, Math.trunc(speed)))
-}
-
-const setInitiativeRound = (event: Event) => {
-  if (!canManageInitiative.value) return
-  const state = ensureInitiativeState()
-  if (!state) return
-  const raw = (event.target as HTMLInputElement).value.trim()
-  if (!raw) {
-    state.round = 1
-    return
-  }
-  const n = Number(raw)
-  state.round = Number.isFinite(n) ? Math.max(1, Math.floor(n)) : 1
-}
-
-const fillInitiativeFromSpeed = () => {
-  if (!map.value || !canManageInitiative.value) return
-  const speeds = new Map(initiativeRows.value.map((entry) => [entry.id, entry.speed]))
-  for (const placement of map.value.placements) {
-    const speed = speeds.get(placement.id)
-    if (speed !== undefined) placement.initiative = speed
-  }
-}
-
-const clearInitiativeValues = () => {
-  if (!map.value || !canManageInitiative.value) return
-  for (const placement of map.value.placements) delete placement.initiative
-  const state = ensureInitiativeState()
-  if (state) {
-    state.activeId = null
-    state.round = 1
-  }
-}
-
-const clearActiveInitiative = () => {
-  if (!map.value?.initiative || !canManageInitiative.value) return
-  map.value.initiative.activeId = null
-}
-
-const nextInitiative = () => {
-  if (!canManageInitiative.value) return
-  const order = sortedInitiativeRows.value
-  if (!order.length) return
-  const state = ensureInitiativeState()
-  if (!state) return
-
-  const ids = order.map((entry) => entry.id)
-  const currentIndex = state.activeId ? ids.indexOf(state.activeId) : -1
-  const nextIndex = currentIndex >= 0 && currentIndex < ids.length - 1 ? currentIndex + 1 : 0
-  if (currentIndex === ids.length - 1) state.round = initiativeRound.value + 1
-  state.activeId = ids[nextIndex]
-}
-
-const previousInitiative = () => {
-  if (!canManageInitiative.value) return
-  const order = sortedInitiativeRows.value
-  if (!order.length) return
-  const state = ensureInitiativeState()
-  if (!state) return
-
-  const ids = order.map((entry) => entry.id)
-  const currentIndex = state.activeId ? ids.indexOf(state.activeId) : -1
-  const previousIndex = currentIndex > 0 ? currentIndex - 1 : ids.length - 1
-  if (currentIndex === 0) state.round = Math.max(1, initiativeRound.value - 1)
-  state.activeId = ids[previousIndex]
-}
 
 const spawnSheet = (selection: SheetSelection) => {
   if (!map.value || !canSpawnTokens.value) return
@@ -602,181 +379,69 @@ const movePokemon = (payload: { id: string; position: GridAnchor }) => {
   selectPokemon(null)
 }
 
+const updatePlacedSheet = async (
+  id: string,
+  update: PlacementSheetUpdater,
+  logLabel: string,
+  options: { allowAnyTarget?: boolean } = {},
+) => {
+  if (!map.value || (!options.allowAnyTarget && !canControlPlacement(id))) return
+  const placement = map.value.placements.find((p) => p.id === id)
+  if (!placement) return
+
+  const context = createSheetUpdateForPlacement(
+    placement,
+    { pokemon: pokemonBySlug.value!, trainer: trainerBySlug.value! },
+    update,
+  )
+  if (!context) return
+
+  commitSheetUpdate(context)
+  try {
+    await $fetch('/api/sheets/save', {
+      method: 'POST',
+      body: {
+        kind: context.kind,
+        slug: context.slug,
+        sheet: toPersistableSheetPayload(context.updated),
+        clientId: getClientId(),
+      },
+    })
+  } catch (err) {
+    rollbackSheetUpdate(context)
+    console.error(`[${logLabel}] save failed`, err)
+  }
+}
+
 const modifyHp = async (
   payload: { id: string; currentHp: number },
   options: { allowAnyTarget?: boolean } = {},
-) => {
-  if (!map.value || (!options.allowAnyTarget && !canControlPlacement(payload.id))) return
-  const placement = map.value.placements.find((p) => p.id === payload.id)
-  if (!placement) return
-
-  const clientId = getClientId()
-
-  if (placement.sheetKind === 'pokemon') {
-    const sheets = pokemonBySlug.value
-    if (!sheets) return
-    const original = sheets.get(placement.sheetSlug)
-    if (!original) return
-    const clamped = clampHpValue(payload.currentHp, pokemonHpSnapshot(original).maxHp)
-    const updated = JSON.parse(JSON.stringify(original)) as CharacterSheet
-    updated.combat = { ...(updated.combat ?? {}), currentHp: clamped }
-    sheets.set(placement.sheetSlug, updated)
-
-    try {
-      const payloadOut: Record<string, unknown> = { ...(updated as unknown as Record<string, unknown>) }
-      delete payloadOut.folder
-      await $fetch('/api/sheets/save', {
-        method: 'POST',
-        body: { kind: 'pokemon', slug: placement.sheetSlug, sheet: payloadOut, clientId },
-      })
-    } catch (err) {
-      sheets.set(placement.sheetSlug, original)
-      console.error('[modifyHp] save failed', err)
-    }
-    return
-  }
-
-  const sheets = trainerBySlug.value
-  if (!sheets) return
-  const original = sheets.get(placement.sheetSlug)
-  if (!original) return
-  const clamped = clampHpValue(payload.currentHp, trainerHpSnapshot(original).maxHp)
-  const updated = JSON.parse(JSON.stringify(original)) as TrainerSheet
-  updated.currentHp = clamped
-  sheets.set(placement.sheetSlug, updated)
-
-  try {
-    const payloadOut: Record<string, unknown> = { ...(updated as unknown as Record<string, unknown>) }
-    delete payloadOut.folder
-    await $fetch('/api/sheets/save', {
-      method: 'POST',
-      body: { kind: 'trainer', slug: placement.sheetSlug, sheet: payloadOut, clientId },
-    })
-  } catch (err) {
-    sheets.set(placement.sheetSlug, original)
-    console.error('[modifyHp] save failed', err)
-  }
-}
+) => updatePlacedSheet(
+  payload.id,
+  (kind, sheet) => applyHpToSheet(kind, sheet, payload.currentHp),
+  'modifyHp',
+  options,
+)
 
 const modifyCombatStages = async (
   payload: { id: string; stages: CombatStageMap },
   options: { allowAnyTarget?: boolean } = {},
-) => {
-  if (!map.value || (!options.allowAnyTarget && !canControlPlacement(payload.id))) return
-  const placement = map.value.placements.find((p) => p.id === payload.id)
-  if (!placement) return
-
-  const clientId = getClientId()
-  const stages = Object.fromEntries(
-    COMBAT_STAGE_KEYS.map((key) => [key, clampCombatStage(payload.stages[key])]),
-  ) as CombatStageMap
-
-  if (placement.sheetKind === 'pokemon') {
-    const sheets = pokemonBySlug.value
-    if (!sheets) return
-    const original = sheets.get(placement.sheetSlug)
-    if (!original) return
-    const updated = JSON.parse(JSON.stringify(original)) as CharacterSheet
-    updated.stats = { ...(updated.stats ?? {}) }
-    for (const key of COMBAT_STAT_STAGE_KEYS) {
-      updated.stats[key] = { ...(updated.stats[key] ?? {}), stage: stages[key] }
-    }
-    updated.combatStages = { ...(updated.combatStages ?? {}), acc: stages.acc }
-    sheets.set(placement.sheetSlug, updated)
-
-    try {
-      const payloadOut: Record<string, unknown> = { ...(updated as unknown as Record<string, unknown>) }
-      delete payloadOut.folder
-      await $fetch('/api/sheets/save', {
-        method: 'POST',
-        body: { kind: 'pokemon', slug: placement.sheetSlug, sheet: payloadOut, clientId },
-      })
-    } catch (err) {
-      sheets.set(placement.sheetSlug, original)
-      console.error('[modifyCombatStages] save failed', err)
-    }
-    return
-  }
-
-  const sheets = trainerBySlug.value
-  if (!sheets) return
-  const original = sheets.get(placement.sheetSlug)
-  if (!original) return
-  const updated = JSON.parse(JSON.stringify(original)) as TrainerSheet
-  updated.stats = { ...(updated.stats ?? {}) }
-  for (const key of COMBAT_STAT_STAGE_KEYS) {
-    updated.stats[key] = { ...(updated.stats[key] ?? {}), stage: stages[key] }
-  }
-  updated.combatStages = { ...(updated.combatStages ?? {}), acc: stages.acc }
-  sheets.set(placement.sheetSlug, updated)
-
-  try {
-    const payloadOut: Record<string, unknown> = { ...(updated as unknown as Record<string, unknown>) }
-    delete payloadOut.folder
-    await $fetch('/api/sheets/save', {
-      method: 'POST',
-      body: { kind: 'trainer', slug: placement.sheetSlug, sheet: payloadOut, clientId },
-    })
-  } catch (err) {
-    sheets.set(placement.sheetSlug, original)
-    console.error('[modifyCombatStages] save failed', err)
-  }
-}
+) => updatePlacedSheet(
+  payload.id,
+  (kind, sheet) => applyCombatStagesToSheet(kind, sheet, payload.stages),
+  'modifyCombatStages',
+  options,
+)
 
 const modifyConditions = async (
   payload: { id: string; conditions: string[] },
   options: { allowAnyTarget?: boolean } = {},
-) => {
-  if (!map.value || (!options.allowAnyTarget && !canControlPlacement(payload.id))) return
-  const placement = map.value.placements.find((p) => p.id === payload.id)
-  if (!placement) return
-
-  const clientId = getClientId()
-  const conditions = normalizeConditionNames(payload.conditions)
-
-  if (placement.sheetKind === 'pokemon') {
-    const sheets = pokemonBySlug.value
-    if (!sheets) return
-    const original = sheets.get(placement.sheetSlug)
-    if (!original) return
-    const updated = JSON.parse(JSON.stringify(original)) as CharacterSheet
-    updated.combat = { ...(updated.combat ?? {}), conditions }
-    sheets.set(placement.sheetSlug, updated)
-
-    try {
-      const payloadOut: Record<string, unknown> = { ...(updated as unknown as Record<string, unknown>) }
-      delete payloadOut.folder
-      await $fetch('/api/sheets/save', {
-        method: 'POST',
-        body: { kind: 'pokemon', slug: placement.sheetSlug, sheet: payloadOut, clientId },
-      })
-    } catch (err) {
-      sheets.set(placement.sheetSlug, original)
-      console.error('[modifyConditions] save failed', err)
-    }
-    return
-  }
-
-  const sheets = trainerBySlug.value
-  if (!sheets) return
-  const original = sheets.get(placement.sheetSlug)
-  if (!original) return
-  const updated = JSON.parse(JSON.stringify(original)) as TrainerSheet
-  updated.conditions = conditions
-  sheets.set(placement.sheetSlug, updated)
-
-  try {
-    const payloadOut: Record<string, unknown> = { ...(updated as unknown as Record<string, unknown>) }
-    delete payloadOut.folder
-    await $fetch('/api/sheets/save', {
-      method: 'POST',
-      body: { kind: 'trainer', slug: placement.sheetSlug, sheet: payloadOut, clientId },
-    })
-  } catch (err) {
-    sheets.set(placement.sheetSlug, original)
-    console.error('[modifyConditions] save failed', err)
-  }
-}
+) => updatePlacedSheet(
+  payload.id,
+  (kind, sheet) => applyConditionsToSheet(kind, sheet, payload.conditions),
+  'modifyConditions',
+  options,
+)
 
 const openMoveAutomation = (id: string) => {
   if (!canControlPlacement(id)) return
@@ -1211,14 +876,6 @@ watch(
     }
   },
   { deep: true },
-)
-
-watch(
-  () => [map.value?.initiative?.activeId ?? null, initiativeRows.value.map((row) => row.id).join('|')] as const,
-  ([activeId]) => {
-    if (!activeId || !map.value?.initiative) return
-    if (!validInitiativeIds.value.has(activeId)) map.value.initiative.activeId = null
-  },
 )
 
 watch(

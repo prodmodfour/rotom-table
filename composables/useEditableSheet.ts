@@ -18,9 +18,12 @@
  */
 import { getCurrentInstance, onBeforeUnmount, ref, watch, type Ref } from 'vue'
 import { getClientId } from '~/utils/clientId'
+import { sheetChannel } from '~/shared/realtime'
+import { deepCloneJson, stableJsonStringify } from '~/utils/serialization'
 import { subscribeChannel } from './useRealtime'
+import type { SheetKind } from '~/shared/sheets'
 
-export type SheetKind = 'pokemon' | 'trainer'
+export type { SheetKind } from '~/shared/sheets'
 export type SaveStatus = 'idle' | 'saving' | 'saved' | 'error'
 
 export interface UseEditableSheetOptions {
@@ -38,15 +41,6 @@ export interface UseEditableSheetReturn<T> {
   cancelPendingSave: () => void
 }
 
-/** Deep clone a JSON-shaped value so the reactive ref doesn't share refs
- *  with the static module-level data (Vite freezes glob imports). */
-const deepClone = <T>(value: T): T => {
-  if (value === null || typeof value !== 'object') return value
-  return JSON.parse(JSON.stringify(value))
-}
-
-const stableJson = (value: unknown): string => JSON.stringify(value)
-
 export function useEditableSheet<T extends { slug: string }>(
   initial: T,
   kind: SheetKind,
@@ -54,7 +48,7 @@ export function useEditableSheet<T extends { slug: string }>(
 ): UseEditableSheetReturn<T> {
   const { debounceMs = 200 } = options
 
-  const sheet = ref(deepClone(initial)) as Ref<T>
+  const sheet = ref(deepCloneJson(initial)) as Ref<T>
   const saveStatus = ref<SaveStatus>('idle')
   const saveError = ref<string | null>(null)
   const clientId = getClientId()
@@ -65,7 +59,7 @@ export function useEditableSheet<T extends { slug: string }>(
     return payload
   }
 
-  const jsonFor = (value: T): string => stableJson(toPersistedPayload(value))
+  const jsonFor = (value: T): string => stableJsonStringify(toPersistedPayload(value))
   const hasUnsavedChanges = (): boolean => jsonFor(sheet.value) !== lastServerJson
 
   // Track the latest "intended" payload so a save that races with a newer
@@ -86,7 +80,7 @@ export function useEditableSheet<T extends { slug: string }>(
   const performSave = async () => {
     cancelPendingSave()
     const payload = toPersistedPayload(sheet.value)
-    const payloadJson = stableJson(payload)
+    const payloadJson = stableJsonStringify(payload)
     if (payloadJson === lastServerJson) {
       if (saveStatus.value === 'saving') saveStatus.value = 'saved'
       return
@@ -134,13 +128,13 @@ export function useEditableSheet<T extends { slug: string }>(
   // the same sheet on disk.
   let unsubscribe: (() => void) | null = null
   if (typeof window !== 'undefined') {
-    unsubscribe = subscribeChannel(`sheet:${kind}:${initial.slug}`, (event) => {
+    unsubscribe = subscribeChannel(sheetChannel(kind, initial.slug), (event) => {
       if (event.clientId === clientId) return
       const payload = event.data as
         | { kind?: SheetKind; slug?: string; sheet?: T }
         | undefined
       if (event.type === 'updated' && payload?.sheet) {
-        const incoming = deepClone(payload.sheet)
+        const incoming = deepCloneJson(payload.sheet)
         lastServerJson = jsonFor(incoming)
         sheet.value = incoming
         saveStatus.value = 'saved'
@@ -153,7 +147,7 @@ export function useEditableSheet<T extends { slug: string }>(
     cancelPendingSave()
 
     const payload = toPersistedPayload(sheet.value)
-    const payloadJson = stableJson(payload)
+    const payloadJson = stableJsonStringify(payload)
     const body = JSON.stringify({ kind, slug: sheet.value.slug, sheet: payload, clientId })
     let queued = false
 

@@ -9,9 +9,11 @@
 import { existsSync, mkdirSync } from 'node:fs'
 import { join, sep } from 'node:path'
 import { createError, defineEventHandler, readBody } from 'h3'
+import { mapsChannel } from '~/shared/realtime'
 import { publishRealtime } from '../../utils/realtime'
 import { requireGm } from '../../utils/auth'
-import { MAPS_ROOT, PROJECT_ROOT, sanitizeFolderPath } from '../../utils/mapStorage'
+import { PROJECT_ROOT } from '../../utils/fsPaths'
+import { MAPS_ROOT, sanitizeMapFolderPath } from '../../utils/mapStorage'
 
 interface CreateFolderBody {
   folder?: string
@@ -23,7 +25,7 @@ export default defineEventHandler(async (event) => {
   const body = await readBody<CreateFolderBody>(event)
   let folder = ''
   try {
-    folder = sanitizeFolderPath(String(body?.folder ?? ''))
+    folder = sanitizeMapFolderPath(String(body?.folder ?? ''))
   } catch (err) {
     throw createError({ statusCode: 400, statusMessage: (err as Error).message })
   }
@@ -35,7 +37,7 @@ export default defineEventHandler(async (event) => {
   mkdirSync(dest, { recursive: true })
 
   publishRealtime({
-    channel: 'maps',
+    channel: mapsChannel,
     type: 'folder-created',
     clientId: body?.clientId,
     data: { folder },

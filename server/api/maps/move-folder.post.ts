@@ -8,12 +8,13 @@
 import { existsSync, mkdirSync, renameSync, statSync } from 'node:fs'
 import { dirname, join, sep } from 'node:path'
 import { createError, defineEventHandler, readBody } from 'h3'
+import { mapsChannel } from '~/shared/realtime'
 import { publishRealtime } from '../../utils/realtime'
 import { requireGm } from '../../utils/auth'
 import {
   MAPS_ROOT,
-  pruneEmptyParents,
-  sanitizeFolderPath,
+  pruneEmptyMapParents,
+  sanitizeMapFolderPath,
 } from '../../utils/mapStorage'
 
 interface MoveFolderBody {
@@ -28,8 +29,8 @@ export default defineEventHandler(async (event) => {
   let from = ''
   let to = ''
   try {
-    from = sanitizeFolderPath(String(body?.from ?? ''))
-    to = sanitizeFolderPath(String(body?.to ?? ''))
+    from = sanitizeMapFolderPath(String(body?.from ?? ''))
+    to = sanitizeMapFolderPath(String(body?.to ?? ''))
   } catch (err) {
     throw createError({ statusCode: 400, statusMessage: (err as Error).message })
   }
@@ -58,10 +59,10 @@ export default defineEventHandler(async (event) => {
 
   mkdirSync(dirname(dst), { recursive: true })
   renameSync(src, dst)
-  pruneEmptyParents(src)
+  pruneEmptyMapParents(src)
 
   publishRealtime({
-    channel: 'maps',
+    channel: mapsChannel,
     type: 'folder-moved',
     clientId: body?.clientId,
     data: { from, to },

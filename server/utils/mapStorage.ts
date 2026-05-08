@@ -10,19 +10,24 @@ import {
   mkdirSync,
   readFileSync,
   readdirSync,
-  rmdirSync,
   writeFileSync,
 } from 'node:fs'
 import { dirname, join, resolve, sep } from 'node:path'
 import type { GridDimensions, MapHazardV2, MapSummary, MapVoxelV2, TabletopMap, TabletopMapV2 } from '~/types/map'
+import {
+  SAFE_FOLDER_SEGMENT_RE,
+  SLUG_RE as SHARED_SLUG_RE,
+  sanitizeFolderPath as sanitizeSharedFolderPath,
+  slugify as sharedSlugify,
+} from '~/shared/paths'
 import { normalizeMaterialId } from '~/utils/mapMaterials'
 import { normalizeMapHazard } from '~/utils/mapHazards'
 import { normalizeMapFieldEffects } from '~/utils/mapFieldEffects'
+import { PROJECT_ROOT, pruneEmptyParents } from './fsPaths'
 
-export const PROJECT_ROOT = resolve(process.cwd())
 export const MAPS_ROOT = resolve(PROJECT_ROOT, 'data/maps')
-export const SLUG_RE = /^[a-z0-9-]+$/
-export const SAFE_SEGMENT = /^[a-zA-Z0-9_-]+$/
+export const SLUG_RE = SHARED_SLUG_RE
+export const SAFE_SEGMENT = SAFE_FOLDER_SEGMENT_RE
 
 export const ensureMapsRoot = (): void => {
   if (!existsSync(MAPS_ROOT)) mkdirSync(MAPS_ROOT, { recursive: true })
@@ -67,15 +72,20 @@ const invalidMapDocument = (filePath: string, message: string): never => {
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   Boolean(value && typeof value === 'object' && !Array.isArray(value))
 
+const expectRecord = (value: unknown, filePath: string, message: string): Record<string, unknown> => {
+  if (!isRecord(value)) invalidMapDocument(filePath, message)
+  return value as Record<string, unknown>
+}
+
 const normalizeMapDimensionsForEditor = (value: unknown, filePath: string): GridDimensions => {
-  if (!isRecord(value)) invalidMapDocument(filePath, 'dimensions must be an object with integer x/y/z values')
+  const record = expectRecord(value, filePath, 'dimensions must be an object with integer x/y/z values')
   const out = {} as GridDimensions
   for (const axis of ['x', 'y', 'z'] as const) {
-    const n = value[axis]
+    const n = record[axis]
     if (typeof n !== 'number' || !Number.isInteger(n) || n < 1 || n > 200) {
       invalidMapDocument(filePath, `dimensions.${axis} must be an integer 1..200`)
     }
-    out[axis] = n
+    out[axis] = n as number
   }
   return out
 }
@@ -89,79 +99,82 @@ export const normalizeMapGroundLevelY = (value: unknown, height: number): number
 }
 
 const normalizeVoxelForEditor = (value: unknown, index: number, filePath: string): MapVoxelV2 => {
-  if (!isRecord(value)) invalidMapDocument(filePath, `voxels[${index}] must be an object`)
+  const record = expectRecord(value, filePath, `voxels[${index}] must be an object`)
   for (const axis of ['x', 'y', 'z'] as const) {
-    if (typeof value[axis] !== 'number' || !Number.isInteger(value[axis])) invalidMapDocument(filePath, `voxels[${index}].${axis} must be an integer`)
+    if (typeof record[axis] !== 'number' || !Number.isInteger(record[axis])) invalidMapDocument(filePath, `voxels[${index}].${axis} must be an integer`)
   }
-  if (typeof value.materialId !== 'string' || !value.materialId.trim()) {
+  if (typeof record.materialId !== 'string' || !record.materialId.trim()) {
     invalidMapDocument(filePath, `voxels[${index}].materialId must be a non-empty string`)
   }
   const out: MapVoxelV2 = {
-    x: value.x as number,
-    y: value.y as number,
-    z: value.z as number,
-    materialId: normalizeMaterialId(value.materialId),
+    x: record.x as number,
+    y: record.y as number,
+    z: record.z as number,
+    materialId: normalizeMaterialId(record.materialId as string),
   }
-  if (typeof value.color === 'string') out.color = value.color
-  if (typeof value.blocksMovement === 'boolean') out.blocksMovement = value.blocksMovement
-  if (typeof value.blocksSight === 'boolean') out.blocksSight = value.blocksSight
-  if (Array.isArray(value.tags)) out.tags = value.tags.filter((tag): tag is string => typeof tag === 'string')
+  if (typeof record.color === 'string') out.color = record.color
+  if (typeof record.blocksMovement === 'boolean') out.blocksMovement = record.blocksMovement
+  if (typeof record.blocksSight === 'boolean') out.blocksSight = record.blocksSight
+  if (Array.isArray(record.tags)) out.tags = record.tags.filter((tag: unknown): tag is string => typeof tag === 'string')
   return out
 }
 
 const normalizeHazardForEditor = (value: unknown, index: number, filePath: string): MapHazardV2 => {
   const hazard = normalizeMapHazard(value)
   if (!hazard) invalidMapDocument(filePath, `hazards[${index}] must be an object with integer x/y/z and valid kind`)
-  return hazard
+  return hazard as MapHazardV2
 }
 
-const normalizeMapDocument = (json: TabletopMapV2, filePath: string): TabletopMapV2 => {
-  if (!isRecord(json)) invalidMapDocument(filePath, 'root must be an object')
-  if (json.schemaVersion !== 2) invalidMapDocument(filePath, 'schemaVersion must be 2')
-  if (!SLUG_RE.test(String(json.slug ?? ''))) invalidMapDocument(filePath, 'slug must match /^[a-z0-9-]+$/')
-  if (typeof json.name !== 'string' || !json.name.trim()) invalidMapDocument(filePath, 'name must be a non-empty string')
-  const dimensions = normalizeMapDimensionsForEditor(json.dimensions, filePath)
+const normalizeMapDocument = (json: unknown, filePath: string): TabletopMapV2 => {
+  const record = expectRecord(json, filePath, 'root must be an object')
+  if (record.schemaVersion !== 2) invalidMapDocument(filePath, 'schemaVersion must be 2')
+  if (!SLUG_RE.test(String(record.slug ?? ''))) invalidMapDocument(filePath, 'slug must match /^[a-z0-9-]+$/')
+  if (typeof record.name !== 'string' || !record.name.trim()) invalidMapDocument(filePath, 'name must be a non-empty string')
+  const dimensions = normalizeMapDimensionsForEditor(record.dimensions, filePath)
 
-  const initiative = json.initiative && typeof json.initiative === 'object'
-    ? json.initiative
+  const initiative = record.initiative && typeof record.initiative === 'object'
+    ? record.initiative as TabletopMapV2['initiative']
     : { activeId: null, round: 1 }
 
-  if (!Array.isArray(json.voxels)) invalidMapDocument(filePath, 'voxels must be an array')
-  const voxels = json.voxels
-    .map((voxel, index) => normalizeVoxelForEditor(voxel, index, filePath))
-  const hazards = Array.isArray(json.hazards)
-    ? json.hazards.map((hazard, index) => normalizeHazardForEditor(hazard, index, filePath))
+  const voxelValues = Array.isArray(record.voxels)
+    ? record.voxels as unknown[]
+    : invalidMapDocument(filePath, 'voxels must be an array')
+  const voxels = voxelValues
+    .map((voxel: unknown, index: number) => normalizeVoxelForEditor(voxel, index, filePath))
+  const hazards = Array.isArray(record.hazards)
+    ? (record.hazards as unknown[]).map((hazard: unknown, index: number) => normalizeHazardForEditor(hazard, index, filePath))
     : []
 
   return {
     schemaVersion: 2,
-    slug: json.slug,
-    name: json.name,
-    folder: json.folder ?? folderFromPath(filePath),
+    slug: record.slug as string,
+    name: record.name as string,
+    folder: typeof record.folder === 'string' ? record.folder : folderFromPath(filePath),
     dimensions,
-    groundLevelY: normalizeMapGroundLevelY(json.groundLevelY, dimensions.y),
-    playerVisible: json.playerVisible === true,
+    groundLevelY: normalizeMapGroundLevelY(record.groundLevelY, dimensions.y),
+    playerVisible: record.playerVisible === true,
     voxels,
     hazards,
-    fieldEffects: normalizeMapFieldEffects(json.fieldEffects),
-    placements: Array.isArray(json.placements) ? json.placements : [],
-    lights: Array.isArray(json.lights) ? json.lights : [],
+    fieldEffects: normalizeMapFieldEffects(record.fieldEffects),
+    placements: Array.isArray(record.placements) ? record.placements as TabletopMapV2['placements'] : [],
+    lights: Array.isArray(record.lights) ? record.lights as TabletopMapV2['lights'] : [],
     initiative,
-    metadata: json.metadata,
-    createdAt: json.createdAt,
-    updatedAt: json.updatedAt,
+    metadata: record.metadata as TabletopMapV2['metadata'],
+    createdAt: record.createdAt as TabletopMapV2['createdAt'],
+    updatedAt: record.updatedAt as TabletopMapV2['updatedAt'],
   }
 }
 
 export const readMapFile = (filePath: string): TabletopMap => {
   const raw = readFileSync(filePath, 'utf8')
-  let json: TabletopMapV2
-  try {
-    json = JSON.parse(raw) as TabletopMapV2
-  } catch (err) {
-    invalidMapDocument(filePath, `could not parse JSON: ${(err as Error).message}`)
-  }
-  return normalizeMapDocument(json, filePath)
+  const parsed = (() => {
+    try {
+      return JSON.parse(raw) as unknown
+    } catch (err) {
+      invalidMapDocument(filePath, `could not parse JSON: ${(err as Error).message}`)
+    }
+  })()
+  return normalizeMapDocument(parsed, filePath)
 }
 
 export const writeMapFile = (filePath: string, map: TabletopMap): void => {
@@ -242,40 +255,15 @@ export const listMapFolders = (): string[] => {
   return Array.from(out).sort((a, b) => a.localeCompare(b))
 }
 
-/** Walk up from `path`, removing empty directories until we leave `MAPS_ROOT`. */
-export const pruneEmptyParents = (path: string): void => {
-  let parent = dirname(path)
-  while (parent.startsWith(MAPS_ROOT + sep) && parent !== MAPS_ROOT) {
-    try {
-      if (readdirSync(parent).length > 0) break
-      rmdirSync(parent)
-    } catch {
-      break
-    }
-    parent = dirname(parent)
-  }
+/** Walk up from `path`, removing empty map directories until we leave `MAPS_ROOT`. */
+export const pruneEmptyMapParents = (path: string): void => {
+  pruneEmptyParents(path, MAPS_ROOT)
 }
 
-export const sanitizeFolderPath = (path: string, allowEmpty = false): string => {
-  const trimmed = path.replace(/^\/+|\/+$/g, '').trim()
-  if (!trimmed) {
-    if (allowEmpty) return ''
-    throw new Error('folder must not be empty')
-  }
-  for (const seg of trimmed.split('/')) {
-    if (!SAFE_SEGMENT.test(seg)) {
-      throw new Error(`folder segment "${seg}" must match /^[A-Za-z0-9_-]+$/`)
-    }
-  }
-  return trimmed
-}
+export const sanitizeMapFolderPath = (path: string, allowEmpty = false): string =>
+  sanitizeSharedFolderPath(path, { allowEmpty })
 
-export const slugify = (input: string): string =>
-  input
-    .toLowerCase()
-    .replace(/[^a-z0-9-]+/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '')
+export const slugify = sharedSlugify
 
 export const allocateSlug = (base: string): string => {
   const root = slugify(base) || 'untitled-map'

@@ -9,13 +9,14 @@
 import { existsSync, rmSync, statSync } from 'node:fs'
 import { join, sep } from 'node:path'
 import { createError, defineEventHandler, readBody } from 'h3'
+import { mapsChannel } from '~/shared/realtime'
 import { publishRealtime } from '../../utils/realtime'
 import { requireGm } from '../../utils/auth'
+import { PROJECT_ROOT } from '../../utils/fsPaths'
 import {
   MAPS_ROOT,
-  PROJECT_ROOT,
-  pruneEmptyParents,
-  sanitizeFolderPath,
+  pruneEmptyMapParents,
+  sanitizeMapFolderPath,
 } from '../../utils/mapStorage'
 
 interface DeleteFolderBody {
@@ -28,7 +29,7 @@ export default defineEventHandler(async (event) => {
   const body = await readBody<DeleteFolderBody>(event)
   let folder = ''
   try {
-    folder = sanitizeFolderPath(String(body?.folder ?? ''))
+    folder = sanitizeMapFolderPath(String(body?.folder ?? ''))
   } catch (err) {
     throw createError({ statusCode: 400, statusMessage: (err as Error).message })
   }
@@ -44,10 +45,10 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Not a directory' })
   }
   rmSync(dir, { recursive: true, force: true })
-  pruneEmptyParents(dir)
+  pruneEmptyMapParents(dir)
 
   publishRealtime({
-    channel: 'maps',
+    channel: mapsChannel,
     type: 'folder-deleted',
     clientId: body?.clientId,
     data: { folder },

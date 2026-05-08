@@ -21,6 +21,8 @@
  */
 import { onBeforeUnmount, ref, watch, type Ref } from 'vue'
 import { getClientId } from '~/utils/clientId'
+import { mapChannel } from '~/shared/realtime'
+import { deepCloneJson, sameJsonValue, stableJsonStringify } from '~/utils/serialization'
 import { useRealtimeChannel } from './useRealtime'
 import type { TabletopMap } from '~/types/map'
 
@@ -35,22 +37,6 @@ export interface UseEditableMapReturn {
   saveNow: () => Promise<void>
   reload: () => Promise<void>
 }
-
-const deepClone = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T
-
-const stableJson = (value: unknown): string =>
-  JSON.stringify(value, (_key, item: unknown) => {
-    if (!item || typeof item !== 'object' || Array.isArray(item)) return item
-    return Object.keys(item as Record<string, unknown>)
-      .sort()
-      .reduce((out, key) => {
-        const current = (item as Record<string, unknown>)[key]
-        if (current !== undefined) out[key] = current
-        return out
-      }, {} as Record<string, unknown>)
-  }) ?? 'undefined'
-
-const sameJson = (a: unknown, b: unknown): boolean => stableJson(a) === stableJson(b)
 
 export const useEditableMap = (slug: string, debounceMs = 200): UseEditableMapReturn => {
   const map = ref<TabletopMap | null>(null)
@@ -75,8 +61,8 @@ export const useEditableMap = (slug: string, debounceMs = 200): UseEditableMapRe
     key: K,
     value: TabletopMap[K],
   ) => {
-    if (sameJson(target[key], value)) return
-    const targetRecord = target as Record<string, unknown>
+    if (sameJsonValue(target[key], value)) return
+    const targetRecord = target as unknown as Record<string, unknown>
     if (value === undefined) {
       delete targetRecord[key as string]
       return
@@ -85,7 +71,7 @@ export const useEditableMap = (slug: string, debounceMs = 200): UseEditableMapRe
   }
 
   const applyServerMap = (incoming: TabletopMap) => {
-    const next = deepClone(incoming)
+    const next = deepCloneJson(incoming)
     if (!map.value) {
       map.value = next
       return
@@ -142,7 +128,7 @@ export const useEditableMap = (slug: string, debounceMs = 200): UseEditableMapRe
       })
       if (seq !== saveSeq) return
       // Adopt the persisted version (server stamps `updatedAt`).
-      lastServerJson = stableJson(result.map)
+      lastServerJson = stableJsonStringify(result.map)
       // Splice in the new updatedAt without disturbing other fields the
       // user may have edited mid-flight.
       if (map.value) map.value.updatedAt = result.map.updatedAt
@@ -166,7 +152,7 @@ export const useEditableMap = (slug: string, debounceMs = 200): UseEditableMapRe
     error.value = null
     try {
       const data = await $fetch<{ map: TabletopMap }>('/api/maps/load', { params: { slug } })
-      lastServerJson = stableJson(data.map)
+      lastServerJson = stableJsonStringify(data.map)
       applyServerMap(data.map)
       status.value = 'idle'
     } catch (err: unknown) {
@@ -186,7 +172,7 @@ export const useEditableMap = (slug: string, debounceMs = 200): UseEditableMapRe
     map,
     (current) => {
       if (!current) return
-      const json = stableJson(current)
+      const json = stableJsonStringify(current)
       if (json === lastServerJson) return
       cancelPending()
       status.value = 'saving'
@@ -198,11 +184,11 @@ export const useEditableMap = (slug: string, debounceMs = 200): UseEditableMapRe
     { deep: true },
   )
 
-  useRealtimeChannel(`map:${slug}`, (event) => {
+  useRealtimeChannel(mapChannel(slug), (event) => {
     if (event.clientId === clientId) return
     if (event.type === 'updated' && event.data) {
       const incoming = event.data as TabletopMap
-      lastServerJson = stableJson(incoming)
+      lastServerJson = stableJsonStringify(incoming)
       applyServerMap(incoming)
       status.value = 'idle'
     } else if (event.type === 'deleted') {
@@ -215,7 +201,7 @@ export const useEditableMap = (slug: string, debounceMs = 200): UseEditableMapRe
       // gone) and let the page navigate to the new URL.
       cancelPending()
       if (payload.map) {
-        lastServerJson = stableJson(payload.map)
+        lastServerJson = stableJsonStringify(payload.map)
         applyServerMap(payload.map)
       }
       status.value = 'idle'
