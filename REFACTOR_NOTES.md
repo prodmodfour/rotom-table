@@ -227,3 +227,16 @@
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
   - `npm run typecheck` — still fails only on the documented pre-existing broader typecheck backlog; no errors are reported for `components/IsometricGrid.client.vue` or `utils/isometric/*`.
+
+## Next phase update: isometric hazard renderer extraction
+
+- Continued Phase 6 by extracting hazard decal rendering from `components/IsometricGrid.client.vue` into `utils/isometric/hazardRenderer.ts`.
+  - The new renderer owns hazard texture generation/caching, hazard decal mesh creation/disposal, layer offsets, visibility syncing, and raycast mesh exposure.
+  - The Vue component now uses `hazardRenderer.sync/setVisible/meshes/dispose` while retaining hazard ghost previews and placement/erase interaction flow.
+- Preserved hazard visual behavior, texture labels/layer numbers, per-cell offset stacking, `userData.hazard` picking payloads, and public `place-hazard`/`remove-hazard` events.
+- Reduced `IsometricGrid.client.vue` by another ~200 lines while keeping public props/events unchanged.
+- Quality gates after this phase:
+  - `npm test` — passes: 13 test files / 40 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+  - `npm run typecheck` — still fails only on the documented pre-existing broader typecheck backlog; no errors are reported for `components/IsometricGrid.client.vue` or `utils/isometric/*`.
