@@ -11,6 +11,7 @@ import { useHazardBuilder } from '~/composables/map-editor/useHazardBuilder'
 import { useInitiativeTracker } from '~/composables/map-editor/useInitiativeTracker'
 import { useMoveAutomationPanel } from '~/composables/map-editor/useMoveAutomationPanel'
 import { useTerrainBuilder } from '~/composables/map-editor/useTerrainBuilder'
+import { useTokenSheetMutations } from '~/composables/map-editor/useTokenSheetMutations'
 import {
   pokedexPathForSpecies,
   sheetPathForPlacement,
@@ -22,20 +23,8 @@ import {
 } from '~/utils/grid'
 import { filterMapHazardsInBounds } from '~/utils/mapHazards'
 import { filterVoxelsInBounds } from '~/utils/voxels'
-import { getClientId } from '~/utils/clientId'
-import {
-  applyCombatStagesToSheet,
-  applyConditionsToSheet,
-  applyHpToSheet,
-  commitSheetUpdate,
-  createSheetUpdateForPlacement,
-  rollbackSheetUpdate,
-  toPersistableSheetPayload,
-  type PlacementSheetUpdater,
-} from '~/utils/sheetMutations'
 import type { SaveStatus } from '~/composables/useEditableSheet'
 import type { MapEditorMode, MapLeftSidebarSection } from '~/shared/mapEditor'
-import type { CombatStageMap } from '~/types/combatStages'
 import type {
   MapHazardV2,
   MapVoxelV2,
@@ -314,69 +303,15 @@ const saveIndicatorStatus = computed<SaveStatus | null>(() => {
   return null
 })
 
-const updatePlacedSheet = async (
-  id: string,
-  update: PlacementSheetUpdater,
-  logLabel: string,
-  options: { allowAnyTarget?: boolean } = {},
-) => {
-  if (!map.value || (!options.allowAnyTarget && !canControlPlacement(id))) return
-  const placement = map.value.placements.find((p) => p.id === id)
-  if (!placement) return
-
-  const context = createSheetUpdateForPlacement(
-    placement,
-    sheetLookup.value,
-    update,
-  )
-  if (!context) return
-
-  commitSheetUpdate(context)
-  try {
-    await $fetch('/api/sheets/save', {
-      method: 'POST',
-      body: {
-        kind: context.kind,
-        slug: context.slug,
-        sheet: toPersistableSheetPayload(context.updated),
-        clientId: getClientId(),
-      },
-    })
-  } catch (err) {
-    rollbackSheetUpdate(context)
-    console.error(`[${logLabel}] save failed`, err)
-  }
-}
-
-const modifyHp = async (
-  payload: { id: string; currentHp: number },
-  options: { allowAnyTarget?: boolean } = {},
-) => updatePlacedSheet(
-  payload.id,
-  (kind, sheet) => applyHpToSheet(kind, sheet, payload.currentHp),
-  'modifyHp',
-  options,
-)
-
-const modifyCombatStages = async (
-  payload: { id: string; stages: CombatStageMap },
-  options: { allowAnyTarget?: boolean } = {},
-) => updatePlacedSheet(
-  payload.id,
-  (kind, sheet) => applyCombatStagesToSheet(kind, sheet, payload.stages),
-  'modifyCombatStages',
-  options,
-)
-
-const modifyConditions = async (
-  payload: { id: string; conditions: string[] },
-  options: { allowAnyTarget?: boolean } = {},
-) => updatePlacedSheet(
-  payload.id,
-  (kind, sheet) => applyConditionsToSheet(kind, sheet, payload.conditions),
-  'modifyConditions',
-  options,
-)
+const {
+  modifyHp,
+  modifyCombatStages,
+  modifyConditions,
+} = useTokenSheetMutations({
+  map,
+  sheetLookup,
+  canControlPlacement,
+})
 
 const {
   moveAutomationId,

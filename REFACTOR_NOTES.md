@@ -185,3 +185,16 @@
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
   - `npm run typecheck` — still fails only on the documented pre-existing broader typecheck backlog; no errors are reported for the new sidebar shell components, shared UI types, or touched map page lines.
+
+## Next phase update: token sheet mutation composable extraction
+
+- Extracted placed-token sheet mutation orchestration from `pages/maps/[slug].vue` into `composables/map-editor/useTokenSheetMutations.ts`.
+  - The composable owns placement-to-sheet update lookup, optimistic local sheet commits, `/api/sheets/save` persistence payload construction, clientId inclusion, folder stripping, and rollback/logging on save failure.
+  - HP, combat-stage, and condition map actions now flow through this focused composable instead of direct route-page `$fetch` and sheet mutation helper wiring.
+- Added `tests/composables/map-editor/useTokenSheetMutations.test.ts` covering optimistic persistence payloads, rollback-on-save-failure, and control/`allowAnyTarget` behavior used by move automation.
+- Reduced the map route page imports and kept sheet persistence details outside the route shell.
+- Quality gates after this phase:
+  - `npm test` — passes: 13 test files / 40 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+  - `npm run typecheck` — still fails only on the documented pre-existing broader typecheck backlog; no errors are reported for the new token sheet mutation composable, its tests, or touched map page lines.
