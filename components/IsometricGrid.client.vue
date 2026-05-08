@@ -43,6 +43,7 @@ import {
   normalizeCombatStages,
 } from '~/utils/combatStages'
 import { conditionTagSvg, normalizeConditionNames } from '~/utils/statusConditions'
+import { itemSpriteUrl } from '~/utils/itemSprites'
 import type { CombatStageKey, CombatStageMap } from '~/types/combatStages'
 
 export type BuildTool = 'pencil' | 'eraser'
@@ -137,6 +138,7 @@ interface PokemonRenderObject {
   maxHp: number
   combatStages: CombatStageMap
   conditions: string[]
+  tokenItems: string[]
   /** Eased 0→1 selection-lift factor; target flips on selection state. */
   liftFactor: number
   liftTarget: number
@@ -1904,6 +1906,41 @@ const updateTokenConditions = (element: HTMLElement, conditions: readonly string
   }
 }
 
+const updateTokenItems = (element: HTMLElement, items: readonly string[]) => {
+  const stack = element.querySelector<HTMLElement>('.token-status__item-stack')
+  if (!stack) return
+
+  const entries = items.map((item) => item.trim()).filter(Boolean)
+  const key = entries.join('\u001f')
+  if (stack.dataset.itemNamesKey === key) return
+  stack.dataset.itemNamesKey = key
+
+  stack.replaceChildren()
+  let iconCount = 0
+
+  for (const item of entries) {
+    const src = itemSpriteUrl(item)
+    const icon = src ? document.createElement('img') : document.createElement('span')
+    icon.className = `token-status__item-icon${src ? '' : ' token-status__item-icon--fallback'}`
+    icon.title = item
+    icon.setAttribute('aria-hidden', 'true')
+
+    if (src && icon instanceof HTMLImageElement) {
+      icon.src = src
+      icon.alt = ''
+      icon.loading = 'lazy'
+      icon.decoding = 'async'
+    } else {
+      icon.textContent = item.charAt(0).toUpperCase() || '•'
+    }
+
+    stack.appendChild(icon)
+    iconCount += 1
+  }
+
+  stack.hidden = iconCount === 0
+}
+
 const updateTokenActiveTurn = (element: HTMLElement, activeTurn: boolean) => {
   element.classList.toggle('is-active-turn', activeTurn)
 }
@@ -1945,6 +1982,9 @@ const buildHpBar = (pokemon: SpawnedPokemon) => {
   conditions.className = 'token-status__condition-strip'
   conditions.hidden = true
 
+  const hpRow = document.createElement('div')
+  hpRow.className = 'token-status__hp-row'
+
   const track = document.createElement('div')
   track.className = 'hp-bar'
 
@@ -1952,10 +1992,16 @@ const buildHpBar = (pokemon: SpawnedPokemon) => {
   fill.className = 'hp-bar__fill'
   track.appendChild(fill)
 
-  wrapper.append(turnChevron, combatStages, conditions, label, track)
+  const itemStack = document.createElement('div')
+  itemStack.className = 'token-status__item-stack'
+  itemStack.hidden = true
+
+  hpRow.append(track, itemStack)
+  wrapper.append(turnChevron, combatStages, conditions, label, hpRow)
   updateTokenStatusLabel(wrapper, pokemon.species, pokemon.level)
   updateTokenCombatStages(wrapper, normalizeCombatStages(pokemon.combatStages))
   updateTokenConditions(wrapper, pokemon.conditions)
+  updateTokenItems(wrapper, pokemon.tokenItems)
 
   // CSS3DSprite billboards to the camera so the status reads as a compact
   // floating HUD regardless of orbit angle.
@@ -2330,6 +2376,7 @@ const updateHpBar = (
   maxHp: number,
   combatStages: CombatStageMap,
   conditions: readonly string[],
+  tokenItems: readonly string[],
   activeTurn: boolean,
   show = true,
 ) => {
@@ -2354,6 +2401,7 @@ const updateHpBar = (
   updateTokenStatusLabel(bar.element, displayName, level)
   updateTokenCombatStages(bar.element, combatStages)
   updateTokenConditions(bar.element, conditions)
+  updateTokenItems(bar.element, tokenItems)
   updateTokenActiveTurn(bar.element, activeTurn)
 
   // Floats just above the sprite's head. WebGL world sprites are
@@ -2448,6 +2496,7 @@ const buildRenderObject = (pokemon: SpawnedPokemon): PokemonRenderObject => {
     maxHp: pokemon.maxHp,
     combatStages: normalizeCombatStages(pokemon.combatStages),
     conditions: normalizeConditionNames(pokemon.conditions),
+    tokenItems: [...pokemon.tokenItems],
     liftFactor: 0,
     liftTarget: 0,
   }
@@ -2504,6 +2553,7 @@ const applyRenderObjectPosition = (renderObject: PokemonRenderObject) => {
     renderObject.maxHp,
     renderObject.combatStages,
     renderObject.conditions,
+    renderObject.tokenItems,
     props.activeTurnId === renderObject.id,
     layers.tokens,
   )
@@ -2580,6 +2630,7 @@ const syncPokemonObjects = () => {
     renderObject.maxHp = pokemon.maxHp
     renderObject.combatStages = normalizeCombatStages(pokemon.combatStages)
     renderObject.conditions = normalizeConditionNames(pokemon.conditions)
+    renderObject.tokenItems = [...pokemon.tokenItems]
   }
 
   refreshPokemonStyles()

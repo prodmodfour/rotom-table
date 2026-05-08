@@ -221,4 +221,6 @@ export interface SpawnedPokemon extends PokemonCatalogEntry {
   combatStages: CombatStageMap
   /** Canonical PTU conditions copied from the source sheet. */
   conditions: string[]
+  /** Equipped/held item names copied from the source sheet for map token icons. */
+  tokenItems: string[]
 }
