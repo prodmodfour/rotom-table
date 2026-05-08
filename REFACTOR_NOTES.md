@@ -240,3 +240,16 @@
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
   - `npm run typecheck` — still fails only on the documented pre-existing broader typecheck backlog; no errors are reported for `components/IsometricGrid.client.vue` or `utils/isometric/*`.
+
+## Next phase update: isometric field-effect renderer extraction
+
+- Continued Phase 6 by extracting weather/terrain/room field-effect rendering from `components/IsometricGrid.client.vue` into `utils/isometric/fieldEffectRenderer.ts`.
+  - The new renderer owns weather particle/texture generation, terrain surface overlays, room boundary overlays, animation updates, visibility syncing, and disposal.
+  - The Vue component now calls a narrow `fieldEffectRenderer.sync/update/setVisible/dispose` interface while continuing to pass normalized field effects, dimensions, terrain voxels, and ground level explicitly.
+- Preserved existing weather visuals, terrain/room overlay behavior, renderer animation timing, and public `IsometricGrid` props/events.
+- Reduced `IsometricGrid.client.vue` by another ~600 lines while keeping behavior unchanged.
+- Quality gates after this phase:
+  - `npm test` — passes: 13 test files / 40 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+  - `npm run typecheck` — still fails only on the documented pre-existing broader typecheck backlog; no errors are reported for `components/IsometricGrid.client.vue` or `utils/isometric/*`.
