@@ -101,7 +101,7 @@ const tooltipDetail = computed<TooltipDetail | null>(() => {
       return {
         kind: 'capability',
         name: capability.name,
-        meta: present(capability.source) ? [{ label: 'Source', value: capability.source }] : [],
+        meta: [],
         sections: present(capability.effect) ? [{ heading: 'Effect', body: capability.effect }] : [],
       }
     }
