@@ -123,3 +123,14 @@
   - `npm test` — passes: 12 test files / 37 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: field effects panel extraction
+
+- Extracted the Weather/Terrain/Room sidebar template and scoped styles from `pages/maps/[slug].vue` into `components/map/FieldEffectsPanel.vue`.
+  - The component receives explicit palette/effect props and emits focused field-effect actions for weather, terrain, rooms, duration updates, coexist toggling, and clear/tick utilities.
+  - Field-effect business logic remains in `composables/map-editor/useFieldEffectsEditor.ts`; the map page now only wires the composable to the panel.
+- Reduced the map route page further while preserving `IsometricGrid` field-effect props and move-automation field-effect behavior.
+- Quality gates after this phase:
+  - `npm test` — passes: 12 test files / 37 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
