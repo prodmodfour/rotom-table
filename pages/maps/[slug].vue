@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import IsometricGrid from '~/components/IsometricGrid.client.vue'
+import MapAdminPanel from '~/components/map/MapAdminPanel.vue'
+import MapDetailsPanel from '~/components/map/MapDetailsPanel.vue'
 import MapFieldEffectsPanel from '~/components/map/FieldEffectsPanel.vue'
 import MapInitiativeTracker from '~/components/map/InitiativeTracker.vue'
 import MapTerrainHazardsPanel from '~/components/map/TerrainHazardsPanel.vue'
@@ -125,6 +127,18 @@ const mapSpecificYMax = computed(() =>
   map.value ? map.value.dimensions.y - 1 - mapGroundLevelY.value : 0,
 )
 
+type MapDimensionAxis = 'x' | 'y' | 'z'
+
+const setMapPlayerVisible = (value: boolean) => {
+  if (!map.value || !isGm.value) return
+  map.value.playerVisible = value
+}
+
+const setMapDimension = (axis: MapDimensionAxis, value: number | string) => {
+  if (!map.value || !canEditMap.value) return
+  map.value.dimensions[axis] = value as number
+}
+
 const {
   selectedId,
   previewState,
@@ -227,12 +241,9 @@ const {
   clearAllVoxels,
 } = useTerrainBuilder({ map, mapVoxels, mapGroundLevelY, spawnedPokemon, canEditMap })
 
-const setGroundLevelY = (event: Event) => {
+const setGroundLevelY = (value: string) => {
   if (!map.value || !canEditMap.value) return
-  map.value.groundLevelY = clampGroundLevelY(
-    (event.target as HTMLInputElement).value,
-    map.value.dimensions.y,
-  )
+  map.value.groundLevelY = clampGroundLevelY(value, map.value.dimensions.y)
 }
 
 const handleAdminShortcut = (event: KeyboardEvent) => {
@@ -515,120 +526,88 @@ watch(
           />
         </div>
 
-        <section v-if="map && canViewMap" class="panel-card map-details-panel">
-          <div class="panel-heading panel-heading--collapsible">
-            <button
-              type="button"
-              class="section-toggle-button"
-              :aria-expanded="!leftSectionCollapsed('details')"
-              aria-controls="map-details-section"
-              @click="toggleLeftSection('details')"
-            >
-              <span class="section-toggle-button__chevron" aria-hidden="true">
-                {{ leftSectionCollapsed('details') ? '›' : '⌄' }}
-              </span>
-              <span class="section-toggle-button__title">{{ map.name }}</span>
-            </button>
-            <span class="badge">
-              {{ map.dimensions.x }} × {{ map.dimensions.y }} × {{ map.dimensions.z }}
-            </span>
-          </div>
+        <MapDetailsPanel
+          v-if="map && canViewMap"
+          :collapsed="leftSectionCollapsed('details')"
+          :name="map.name"
+          :dimensions="map.dimensions"
+          :player-visible="map.playerVisible"
+          :is-gm="isGm"
+          :can-edit-map="canEditMap"
+          @toggle-collapsed="toggleLeftSection('details')"
+          @update-player-visible="setMapPlayerVisible"
+          @update-dimension="setMapDimension"
+        />
 
-          <div id="map-details-section" v-show="!leftSectionCollapsed('details')" class="collapsible-section-body">
-            <label v-if="isGm" class="visibility-toggle" :class="{ active: map.playerVisible }">
-              <input v-model="map.playerVisible" type="checkbox" />
-              Player visible
-            </label>
-            <p v-else class="permission-note">
-              Player view: this map is visible, but GM-only map settings are locked.
-            </p>
+        <MapTerrainHazardsPanel
+          v-if="map && canViewMap"
+          :collapsed="leftSectionCollapsed('terrain')"
+          :can-edit-map="canEditMap"
+          :build-mode="buildMode"
+          :hazard-mode="hazardMode"
+          :build-tool="buildTool"
+          :build-material="buildMaterial"
+          :build-color="buildColor"
+          :visible-voxel-materials="visibleVoxelMaterials"
+          :color-picker-value="colorPickerValue"
+          :voxel-count="voxelCount"
+          :hazard-count="hazardCount"
+          :hazard-tool="hazardTool"
+          :hazard-kind="hazardKind"
+          :active-hazard-def="activeHazardDef"
+          :hazard-palette="hazardPalette"
+          :layer-visibility="layerVisibility"
+          :layer-options="layerOptions"
+          @toggle-collapsed="toggleLeftSection('terrain')"
+          @set-mode="setMode"
+          @set-build-tool="setTool"
+          @select-material="selectMaterial"
+          @color-input="handleColorInput"
+          @clear-custom-color="clearCustomColor"
+          @fill-ground="fillGround"
+          @clear-all-voxels="clearAllVoxels"
+          @set-layer-visibility="setLayerVisibility"
+          @set-hazard-tool="setHazardTool"
+          @select-hazard-kind="selectHazardKind"
+          @clear-all-hazards="clearAllHazards"
+        />
 
-            <div class="dimension-grid">
-              <label>
-                <span>Width (X)</span>
-                <input v-model.number="map.dimensions.x" type="number" min="1" max="200" :disabled="!canEditMap" />
-              </label>
-              <label>
-                <span>Height (Y)</span>
-                <input v-model.number="map.dimensions.y" type="number" min="1" max="200" :disabled="!canEditMap" />
-              </label>
-              <label>
-                <span>Depth (Z)</span>
-                <input v-model.number="map.dimensions.z" type="number" min="1" max="200" :disabled="!canEditMap" />
-              </label>
-            </div>
-          </div>
-        </section>
+        <MapFieldEffectsPanel
+          v-if="map && canViewMap"
+          :collapsed="leftSectionCollapsed('fieldEffects')"
+          :can-edit-map="canEditMap"
+          :field-effect-count="fieldEffectCount"
+          :weather-coexist-next="weatherCoexistNext"
+          :active-weather-effects="activeWeatherEffects"
+          :active-terrain-effects="activeTerrainEffects"
+          :active-room-effects="activeRoomEffects"
+          :weather-palette="weatherPalette"
+          :terrain-palette="terrainPalette"
+          :room-palette="roomPalette"
+          :weather-definition="weatherDefinition"
+          :terrain-definition="terrainDefinition"
+          :room-definition="roomDefinition"
+          :weather-is-active="weatherIsActive"
+          :terrain-is-active="terrainIsActive"
+          :room-is-active="roomIsActive"
+          :duration-label="durationLabel"
+          @toggle-collapsed="toggleLeftSection('fieldEffects')"
+          @set-weather="setWeather"
+          @remove-weather="removeWeather"
+          @clear-weather="clearWeather"
+          @update-weather-coexist-next="setWeatherCoexistNext"
+          @toggle-terrain="toggleTerrain"
+          @remove-terrain="removeTerrain"
+          @toggle-room="toggleRoom"
+          @remove-room="removeRoom"
+          @set-weather-rounds="setWeatherRounds"
+          @set-terrain-rounds="setTerrainRounds"
+          @set-room-rounds="setRoomRounds"
+          @tick-durations="tickFieldEffectDurations"
+          @clear-all="clearAllFieldEffects"
+        />
 
-      <MapTerrainHazardsPanel
-        v-if="map && canViewMap"
-        :collapsed="leftSectionCollapsed('terrain')"
-        :can-edit-map="canEditMap"
-        :build-mode="buildMode"
-        :hazard-mode="hazardMode"
-        :build-tool="buildTool"
-        :build-material="buildMaterial"
-        :build-color="buildColor"
-        :visible-voxel-materials="visibleVoxelMaterials"
-        :color-picker-value="colorPickerValue"
-        :voxel-count="voxelCount"
-        :hazard-count="hazardCount"
-        :hazard-tool="hazardTool"
-        :hazard-kind="hazardKind"
-        :active-hazard-def="activeHazardDef"
-        :hazard-palette="hazardPalette"
-        :layer-visibility="layerVisibility"
-        :layer-options="layerOptions"
-        @toggle-collapsed="toggleLeftSection('terrain')"
-        @set-mode="setMode"
-        @set-build-tool="setTool"
-        @select-material="selectMaterial"
-        @color-input="handleColorInput"
-        @clear-custom-color="clearCustomColor"
-        @fill-ground="fillGround"
-        @clear-all-voxels="clearAllVoxels"
-        @set-layer-visibility="setLayerVisibility"
-        @set-hazard-tool="setHazardTool"
-        @select-hazard-kind="selectHazardKind"
-        @clear-all-hazards="clearAllHazards"
-      />
-
-      <MapFieldEffectsPanel
-        v-if="map && canViewMap"
-        :collapsed="leftSectionCollapsed('fieldEffects')"
-        :can-edit-map="canEditMap"
-        :field-effect-count="fieldEffectCount"
-        :weather-coexist-next="weatherCoexistNext"
-        :active-weather-effects="activeWeatherEffects"
-        :active-terrain-effects="activeTerrainEffects"
-        :active-room-effects="activeRoomEffects"
-        :weather-palette="weatherPalette"
-        :terrain-palette="terrainPalette"
-        :room-palette="roomPalette"
-        :weather-definition="weatherDefinition"
-        :terrain-definition="terrainDefinition"
-        :room-definition="roomDefinition"
-        :weather-is-active="weatherIsActive"
-        :terrain-is-active="terrainIsActive"
-        :room-is-active="roomIsActive"
-        :duration-label="durationLabel"
-        @toggle-collapsed="toggleLeftSection('fieldEffects')"
-        @set-weather="setWeather"
-        @remove-weather="removeWeather"
-        @clear-weather="clearWeather"
-        @update-weather-coexist-next="setWeatherCoexistNext"
-        @toggle-terrain="toggleTerrain"
-        @remove-terrain="removeTerrain"
-        @toggle-room="toggleRoom"
-        @remove-room="removeRoom"
-        @set-weather-rounds="setWeatherRounds"
-        @set-terrain-rounds="setTerrainRounds"
-        @set-room-rounds="setRoomRounds"
-        @tick-durations="tickFieldEffectDurations"
-        @clear-all="clearAllFieldEffects"
-      />
-
-      <SheetBrowser v-if="map && canSpawnTokens" @select="spawnSheet" />
+        <SheetBrowser v-if="map && canSpawnTokens" @select="spawnSheet" />
       </div>
     </aside>
 
@@ -745,64 +724,15 @@ watch(
       </div>
     </aside>
 
-    <div
+    <MapAdminPanel
       v-if="map && isGm && adminPanelOpen"
-      class="admin-panel-backdrop"
-      role="presentation"
-      @pointerdown.self="adminPanelOpen = false"
-    >
-      <section
-        class="admin-panel"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="admin-panel-title"
-        @pointerdown.stop
-      >
-        <div class="admin-panel__header">
-          <div>
-            <p class="admin-panel__eyebrow">Admin · Ctrl+Shift+A</p>
-            <h2 id="admin-panel-title">Map control panel</h2>
-          </div>
-          <button
-            type="button"
-            class="admin-panel__close"
-            aria-label="Close admin control panel"
-            @click="adminPanelOpen = false"
-          >
-            ×
-          </button>
-        </div>
-
-        <div class="admin-field">
-          <label for="admin-ground-level-y">
-            <span>Map-specific Y=0 / ground level</span>
-            <input
-              id="admin-ground-level-y"
-              type="number"
-              min="0"
-              :max="groundLevelYMax"
-              :value="mapGroundLevelY"
-              @input="setGroundLevelY"
-            />
-          </label>
-          <p class="admin-field__hint">
-            Set the absolute Y layer that should be shown as ground Y=0.
-            Absolute Y=0 remains the lowest layer of the map.
-          </p>
-        </div>
-
-        <dl class="admin-y-summary">
-          <div>
-            <dt>Absolute ground layer</dt>
-            <dd>{{ mapGroundLevelY }}</dd>
-          </div>
-          <div>
-            <dt>Map-specific Y range</dt>
-            <dd>{{ mapSpecificYMin }} … {{ mapSpecificYMax }}</dd>
-          </div>
-        </dl>
-      </section>
-    </div>
+      :ground-level-y-max="groundLevelYMax"
+      :map-ground-level-y="mapGroundLevelY"
+      :map-specific-y-min="mapSpecificYMin"
+      :map-specific-y-max="mapSpecificYMax"
+      @close="adminPanelOpen = false"
+      @set-ground-level-y="setGroundLevelY"
+    />
   </div>
 </template>
 
@@ -1016,301 +946,6 @@ watch(
   text-decoration-color: var(--rule-strong);
 }
 
-.panel-card {
-  border: 1px solid var(--rule);
-  border-radius: 14px;
-  background: var(--paper-soft);
-  box-shadow: var(--shadow-card);
-  padding: 0.95rem;
-}
-
-.panel-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 0.85rem;
-}
-
-.panel-heading h2 {
-  margin: 0;
-  font-family: var(--font-book);
-  font-size: 1.15rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  color: var(--ink-bright);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.panel-heading--collapsible {
-  margin-bottom: 0;
-}
-
-.section-toggle-button {
-  flex: 1 1 auto;
-  min-width: 0;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-  border: 0;
-  background: transparent;
-  color: var(--ink-bright);
-  padding: 0;
-  cursor: pointer;
-  font: inherit;
-  text-align: left;
-}
-
-.section-toggle-button:hover,
-.section-toggle-button:focus-visible {
-  color: var(--accent);
-}
-
-.section-toggle-button:focus-visible {
-  outline: 2px solid rgba(250, 189, 47, 0.35);
-  outline-offset: 3px;
-  border-radius: 8px;
-}
-
-.section-toggle-button__chevron {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.15rem;
-  height: 1.15rem;
-  border: 1px solid var(--rule-soft);
-  border-radius: 999px;
-  color: var(--accent);
-  font-size: 0.9rem;
-  font-weight: 800;
-  line-height: 1;
-}
-
-.section-toggle-button__title {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-family: var(--font-book);
-  font-size: 1.15rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-}
-
-.map-details-panel,
-.collapsible-section-body {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.badge {
-  display: inline-flex;
-  align-items: center;
-  border-radius: 999px;
-  padding: 0.22rem 0.65rem;
-  background: var(--accent-soft);
-  color: var(--accent);
-  font-size: 0.74rem;
-  letter-spacing: 0.06em;
-  white-space: nowrap;
-}
-
-.visibility-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-  width: fit-content;
-  margin: 0 0 0.85rem;
-  border: 1px solid var(--rule-soft);
-  border-radius: 999px;
-  background: var(--paper);
-  color: var(--ink-soft);
-  padding: 0.35rem 0.7rem;
-  cursor: pointer;
-  font-size: 0.8rem;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-}
-
-.visibility-toggle.active {
-  border-color: rgba(184, 187, 38, 0.55);
-  background: rgba(184, 187, 38, 0.12);
-  color: var(--good);
-}
-
-.visibility-toggle input {
-  width: auto;
-}
-
-.permission-note {
-  margin: 0;
-  color: var(--ink-muted);
-  font-size: 0.86rem;
-  line-height: 1.45;
-}
-
-.dimension-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.75rem;
-}
-
-.dimension-grid label {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-}
-
-.dimension-grid span {
-  font-size: 0.78rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--ink-muted);
-}
-
-input {
-  width: 100%;
-  border: 1px solid var(--rule-soft);
-  border-radius: 10px;
-  background: var(--paper);
-  color: var(--ink);
-  padding: 0.65rem 0.8rem;
-  outline: none;
-}
-
-input:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px rgba(250, 189, 47, 0.18);
-}
-
-input:disabled {
-  cursor: not-allowed;
-  opacity: 0.65;
-}
-
-.admin-panel-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 40;
-  display: grid;
-  place-items: center;
-  padding: 1rem;
-  background: rgba(29, 32, 33, 0.58);
-  backdrop-filter: blur(2px);
-}
-
-.admin-panel {
-  width: min(440px, 100%);
-  border: 1px solid var(--rule-strong);
-  border-radius: 18px;
-  background: var(--paper);
-  box-shadow: var(--shadow-card);
-  padding: 1rem;
-}
-
-.admin-panel__header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 1rem;
-}
-
-.admin-panel__eyebrow {
-  margin: 0 0 0.2rem;
-  color: var(--ink-muted);
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-
-.admin-panel h2 {
-  margin: 0;
-  font-family: var(--font-book);
-  color: var(--ink-bright);
-}
-
-.admin-panel__close {
-  width: 34px;
-  height: 34px;
-  border: 1px solid var(--rule-soft);
-  border-radius: 999px;
-  background: var(--paper-soft);
-  color: var(--ink);
-  cursor: pointer;
-  font: inherit;
-  font-size: 1.4rem;
-  line-height: 1;
-}
-
-.admin-panel__close:hover,
-.admin-panel__close:focus-visible {
-  border-color: var(--accent);
-  color: var(--accent);
-  outline: none;
-}
-
-.admin-field label {
-  display: flex;
-  flex-direction: column;
-  gap: 0.45rem;
-}
-
-.admin-field label span {
-  color: var(--ink-muted);
-  font-size: 0.78rem;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.admin-field__hint {
-  margin: 0.55rem 0 0;
-  color: var(--ink-soft);
-  font-size: 0.86rem;
-  line-height: 1.45;
-}
-
-.admin-y-summary {
-  display: grid;
-  gap: 0.55rem;
-  margin: 1rem 0 0;
-}
-
-.admin-y-summary div {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  border: 1px solid var(--rule-soft);
-  border-radius: 12px;
-  background: var(--paper-soft);
-  padding: 0.65rem 0.75rem;
-}
-
-.admin-y-summary dt,
-.admin-y-summary dd {
-  margin: 0;
-}
-
-.admin-y-summary dt {
-  color: var(--ink-muted);
-  font-size: 0.78rem;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-}
-
-.admin-y-summary dd {
-  color: var(--accent);
-  font-weight: 800;
-  white-space: nowrap;
-}
-
 .scene-loading {
   display: grid;
   place-items: center;
@@ -1342,9 +977,4 @@ input:disabled {
   }
 }
 
-@media (max-width: 640px) {
-  .dimension-grid {
-    grid-template-columns: 1fr;
-  }
-}
 </style>

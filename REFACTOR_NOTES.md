@@ -145,3 +145,16 @@
   - `npm test` — passes: 12 test files / 37 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: map details and admin panel extraction
+
+- Extracted the map details/sidebar metadata editor from `pages/maps/[slug].vue` into `components/map/MapDetailsPanel.vue`.
+  - The component receives explicit map name/dimensions/visibility props and emits focused visibility/dimension updates instead of mutating route-page state internally.
+- Extracted the GM map control modal from the route page into `components/map/MapAdminPanel.vue`.
+  - The component owns the modal markup/styles and emits close/ground-level updates while preserving the existing Ctrl+Shift+A shortcut wiring in the route page.
+- Reduced `pages/maps/[slug].vue` below 1,000 lines and kept it focused on map loading, permissions, composable wiring, renderer events, and layout shell concerns.
+- Quality gates after this phase:
+  - `npm test` — passes: 12 test files / 37 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+  - `npm run typecheck` — still fails only on the documented pre-existing broader typecheck backlog; no errors are reported for the new map details/admin panel components or touched map page lines.
