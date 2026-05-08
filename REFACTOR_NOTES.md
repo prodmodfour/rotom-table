@@ -214,3 +214,16 @@
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
   - `npm run typecheck` — still fails only on the documented pre-existing broader typecheck backlog; no errors are reported for `components/IsometricGrid.client.vue` or `utils/isometric/*`.
+
+## Next phase update: isometric voxel renderer extraction
+
+- Continued Phase 6 by extracting terrain voxel instancing and top-edge overlay rendering from `components/IsometricGrid.client.vue` into `utils/isometric/voxelRenderer.ts`.
+  - The new renderer owns voxel bucket grouping, instanced mesh creation/disposal, terrain top-edge line overlay creation/disposal, visibility syncing, and raycast mesh exposure.
+  - The Vue component now calls a narrow `voxelRenderer.sync/setVisible/meshes/dispose` interface instead of directly managing voxel mesh maps and overlay resources.
+- Preserved build-mode and hazard-mode raycast behavior by keeping mesh `userData.voxels` payloads and exposing the same instanced mesh targets to existing picking logic.
+- Reduced `IsometricGrid.client.vue` by another ~200 lines while keeping public props/events unchanged.
+- Quality gates after this phase:
+  - `npm test` — passes: 13 test files / 40 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+  - `npm run typecheck` — still fails only on the documented pre-existing broader typecheck backlog; no errors are reported for `components/IsometricGrid.client.vue` or `utils/isometric/*`.

@@ -20,9 +20,7 @@ import {
   cellInsidePokemonFootprint,
   defaultBuilderVoxelColor,
   parseHexColor,
-  voxelGroupKey,
   voxelKey,
-  voxelMaterialDefinition,
   voxelMaterialId,
   withDefaultBuilderVoxelColor,
 } from '~/utils/voxels'
@@ -67,9 +65,9 @@ import type {
   BuildTarget,
   HazardTarget,
   PokemonRenderObject,
-  VoxelGroup,
   WorldSpriteState,
 } from '~/utils/isometric/types'
+import { createVoxelRenderer } from '~/utils/isometric/voxelRenderer'
 
 export type { BuildTool } from '~/shared/mapEditor'
 
@@ -521,11 +519,10 @@ worldGroup.add(voxelContainer)
 worldGroup.add(hazardContainer)
 
 const renderObjects = new Map<string, PokemonRenderObject>()
-const voxelGroups = new Map<string, VoxelGroup>()
+const voxelRenderer = createVoxelRenderer(voxelContainer)
 const fieldEffectObjects: THREE.Object3D[] = []
 const fieldEffectAnimators: Array<(delta: number, elapsed: number) => void> = []
 const hazardMeshes: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>[] = []
-let terrainTopEdgeOverlay: THREE.Group | null = null
 let renderer: THREE.WebGLRenderer | null = null
 let cssRenderer: CSS3DRenderer | null = null
 let camera: THREE.OrthographicCamera | null = null
@@ -1632,193 +1629,8 @@ const syncPokemonObjects = () => {
   refreshPokemonStyles()
 }
 
-const disposeVoxelGroup = (group: VoxelGroup) => {
-  voxelContainer.remove(group.mesh)
-  group.mesh.dispose()
-  group.geometry.dispose()
-  for (const material of group.materials) material.dispose()
-}
-
-const disposeAllVoxelGroups = () => {
-  for (const group of voxelGroups.values()) {
-    disposeVoxelGroup(group)
-  }
-  voxelGroups.clear()
-}
-
-const appendTerrainTopEdgeLines = (
-  group: THREE.Group,
-  segments: number[],
-  material: THREE.LineBasicMaterial,
-) => {
-  if (segments.length === 0) {
-    material.dispose()
-    return
-  }
-
-  const geometry = new THREE.BufferGeometry()
-  geometry.setAttribute('position', new THREE.Float32BufferAttribute(segments, 3))
-  geometry.computeBoundingSphere()
-
-  const lines = new THREE.LineSegments(geometry, material)
-  // Transparent edge rims should be evaluated after opaque terrain, but
-  // still depth-test so they remain terrain silhouettes rather than UI.
-  lines.renderOrder = 1
-  group.add(lines)
-}
-
-const buildTerrainTopEdgeOverlay = (voxels: ReadonlyArray<MapVoxelV2>): THREE.Group => {
-  const group = new THREE.Group()
-  if (voxels.length === 0) return group
-
-  const occupied = buildAllVoxelOccupancy(voxels)
-  const lightSegments: number[] = []
-  const darkSegments: number[] = []
-  const eps = 0.002
-
-  const hasVoxel = (x: number, y: number, z: number) => occupied.has(voxelKey(x, y, z))
-  const addSegment = (
-    target: number[],
-    ax: number,
-    ay: number,
-    az: number,
-    bx: number,
-    by: number,
-    bz: number,
-  ) => {
-    target.push(ax, ay, az, bx, by, bz)
-  }
-
-  for (const voxel of voxels) {
-    // Hidden top faces do not need a rim; the voxel above owns the visible cap.
-    if (hasVoxel(voxel.x, voxel.y + 1, voxel.z)) continue
-
-    const topY = voxel.y + 1 + eps
-    const x0 = voxel.x
-    const x1 = voxel.x + 1
-    const z0 = voxel.z
-    const z1 = voxel.z + 1
-
-    // Match the existing isometric face ramp: back/left top edges catch
-    // the restrained highlight, front/right edges pick up the darker seam.
-    if (!hasVoxel(voxel.x, voxel.y, voxel.z - 1)) {
-      addSegment(lightSegments, x0, topY, z0, x1, topY, z0)
-    }
-    if (!hasVoxel(voxel.x - 1, voxel.y, voxel.z)) {
-      addSegment(lightSegments, x0, topY, z0, x0, topY, z1)
-    }
-    if (!hasVoxel(voxel.x, voxel.y, voxel.z + 1)) {
-      addSegment(darkSegments, x0, topY, z1, x1, topY, z1)
-    }
-    if (!hasVoxel(voxel.x + 1, voxel.y, voxel.z)) {
-      addSegment(darkSegments, x1, topY, z0, x1, topY, z1)
-    }
-  }
-
-  appendTerrainTopEdgeLines(
-    group,
-    lightSegments,
-    new THREE.LineBasicMaterial({
-      color: 0xfbf1c7,
-      transparent: true,
-      opacity: 0.24,
-      depthTest: true,
-      depthWrite: false,
-    }),
-  )
-  appendTerrainTopEdgeLines(
-    group,
-    darkSegments,
-    new THREE.LineBasicMaterial({
-      color: 0x1d2021,
-      transparent: true,
-      opacity: 0.32,
-      depthTest: true,
-      depthWrite: false,
-    }),
-  )
-
-  return group
-}
-
-const disposeTerrainTopEdgeOverlay = () => {
-  if (!terrainTopEdgeOverlay) return
-
-  terrainTopEdgeOverlay.parent?.remove(terrainTopEdgeOverlay)
-  for (const child of terrainTopEdgeOverlay.children) {
-    const lines = child as THREE.LineSegments
-    lines.geometry.dispose()
-    const material = lines.material as THREE.Material | THREE.Material[] | undefined
-    if (Array.isArray(material)) {
-      for (const item of material) item.dispose()
-    } else {
-      material?.dispose()
-    }
-  }
-  terrainTopEdgeOverlay.clear()
-  terrainTopEdgeOverlay = null
-}
-
-const syncTerrainTopEdgeOverlay = () => {
-  disposeTerrainTopEdgeOverlay()
-  const overlay = buildTerrainTopEdgeOverlay(renderedTerrainVoxels.value)
-  if (overlay.children.length === 0) return
-
-  terrainTopEdgeOverlay = overlay
-  voxelContainer.add(terrainTopEdgeOverlay)
-}
-
 const syncVoxelMeshes = () => {
-  // Bucket voxels by group key so visually identical voxels share
-  // an InstancedMesh.
-  const buckets = new Map<string, MapVoxelV2[]>()
-  for (const voxel of renderedTerrainVoxels.value) {
-    const key = voxelGroupKey(voxel)
-    let arr = buckets.get(key)
-    if (!arr) {
-      arr = []
-      buckets.set(key, arr)
-    }
-    arr.push(voxel)
-  }
-
-  // Drop groups that no longer have any voxels.
-  for (const [key, group] of voxelGroups.entries()) {
-    if (!buckets.has(key)) {
-      disposeVoxelGroup(group)
-      voxelGroups.delete(key)
-    }
-  }
-
-  // Rebuild each bucket. We always rebuild rather than try to mutate
-  // ``InstancedMesh.count`` in place — voxel changes are debounced
-  // through the save layer so the cost is bounded.
-  const matrix = new THREE.Matrix4()
-  for (const [key, voxels] of buckets.entries()) {
-    const existing = voxelGroups.get(key)
-    if (existing) {
-      disposeVoxelGroup(existing)
-      voxelGroups.delete(key)
-    }
-    const definition = voxelMaterialDefinition(voxels[0])
-    const opacity = definition.transparent ? (definition.opacity ?? 0.5) : 1
-    const depthWrite = !definition.transparent
-    const geometry = new THREE.BoxGeometry(1, 1, 1)
-    const materials = buildVoxelFaceMaterials(voxels[0], opacity, depthWrite)
-    const mesh = new THREE.InstancedMesh(geometry, materials, voxels.length)
-    mesh.userData.voxels = voxels
-    mesh.renderOrder = definition.transparent ? 8 : 0
-    for (let i = 0; i < voxels.length; i += 1) {
-      const v = voxels[i]
-      matrix.makeTranslation(v.x + 0.5, v.y + 0.5, v.z + 0.5)
-      mesh.setMatrixAt(i, matrix)
-    }
-    mesh.instanceMatrix.needsUpdate = true
-    voxelContainer.add(mesh)
-    voxelGroups.set(key, { key, geometry, materials, mesh, voxels })
-  }
-
-  syncTerrainTopEdgeOverlay()
+  voxelRenderer.sync(renderedTerrainVoxels.value)
   applyLayerVisibility()
 }
 
@@ -2505,15 +2317,11 @@ const syncHazardMeshes = () => {
 const applyLayerVisibility = () => {
   const layers = visibleLayers()
   gridGroup.visible = layers.grid
-  voxelContainer.visible = layers.terrain
+  voxelRenderer.setVisible(layers.terrain)
   fieldEffectContainer.visible = layers.fieldEffects
   hazardContainer.visible = layers.hazards
 
   for (const object of fieldEffectObjects) object.visible = layers.fieldEffects
-  for (const group of voxelGroups.values()) {
-    group.mesh.visible = layers.terrain
-  }
-  if (terrainTopEdgeOverlay) terrainTopEdgeOverlay.visible = layers.terrain
   for (const mesh of hazardMeshes) mesh.visible = layers.hazards
 
   for (const renderObject of renderObjects.values()) {
@@ -3102,7 +2910,7 @@ const pickBuildTarget = (
 
   const targets: THREE.Object3D[] = []
   if (floorPlane) targets.push(floorPlane)
-  for (const group of voxelGroups.values()) targets.push(group.mesh)
+  targets.push(...voxelRenderer.meshes())
 
   const intersections = raycaster.intersectObjects(targets, false)
   const hit = intersections[0]
@@ -3258,7 +3066,7 @@ const pickHazardTarget = (
 
   const targets: THREE.Object3D[] = []
   for (const mesh of hazardMeshes) targets.push(mesh)
-  for (const group of voxelGroups.values()) targets.push(group.mesh)
+  targets.push(...voxelRenderer.meshes())
 
   const intersections = raycaster.intersectObjects(targets, false)
   const target = intersections[0]
@@ -4029,8 +3837,7 @@ onBeforeUnmount(() => {
   disposeHazardGhost()
   disposeHazardMeshes()
   disposeFieldEffectObjects()
-  disposeTerrainTopEdgeOverlay()
-  disposeAllVoxelGroups()
+  voxelRenderer.dispose()
   disposeHazardTextureCache()
   disposeBlockTextureCache()
   disposeSpriteSharedTextures()
