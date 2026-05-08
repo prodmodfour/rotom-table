@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import IsometricGrid, { type BuildTool } from '~/components/IsometricGrid.client.vue'
+import IsometricGrid from '~/components/IsometricGrid.client.vue'
 import SheetBrowser, { type SheetSelection } from '~/components/SheetBrowser.vue'
 import SaveIndicator from '~/components/SaveIndicator.vue'
 import { useEditableMap } from '~/composables/useEditableMap'
 import { useLiveSheets } from '~/composables/useLiveSheets'
 import { useFieldEffectsEditor } from '~/composables/map-editor/useFieldEffectsEditor'
+import { useHazardBuilder } from '~/composables/map-editor/useHazardBuilder'
 import { useInitiativeTracker } from '~/composables/map-editor/useInitiativeTracker'
+import { useTerrainBuilder } from '~/composables/map-editor/useTerrainBuilder'
 import {
   catalogEntryForPokemonSheet,
   catalogEntryForTrainerSheet,
@@ -16,24 +18,9 @@ import {
   normalizeDimensions,
   reconcilePokemonPositions,
 } from '~/utils/grid'
-import {
-  MAIN_MAP_HAZARD_KINDS,
-  MAP_HAZARD_DEFINITIONS,
-  filterMapHazardsInBounds,
-  mapHazardKey,
-  normalizeMapHazardLayer,
-} from '~/utils/mapHazards'
+import { filterMapHazardsInBounds } from '~/utils/mapHazards'
 import { createPlacementId, placementsToSpawned } from '~/utils/placement'
-import {
-  VOXEL_MATERIALS,
-  buildAllVoxelOccupancy,
-  cellInsidePokemonFootprint,
-  filterVoxelsInBounds,
-  getMaterialDef,
-  hexColorString,
-  voxelKey,
-  withDefaultBuilderVoxelColor,
-} from '~/utils/voxels'
+import { filterVoxelsInBounds, hexColorString } from '~/utils/voxels'
 import { buildMapOccupancy } from '~/utils/mapOccupancy'
 import { getClientId } from '~/utils/clientId'
 import {
@@ -50,10 +37,8 @@ import type { CombatStageMap } from '~/types/combatStages'
 import type { MoveAutomationTransaction } from '~/types/moveAutomation'
 import type {
   GridAnchor,
-  MapHazardKind,
   MapHazardV2,
   MapVoxelV2,
-  VoxelMaterial,
 } from '~/types/map'
 import type { PreviewState } from '~/utils/grid'
 import type { SaveStatus } from '~/composables/useEditableSheet'
@@ -102,16 +87,9 @@ const toggleLeftSection = (section: LeftSidebarSectionKey) => {
   leftSidebarSectionsCollapsed.value[section] = !leftSidebarSectionsCollapsed.value[section]
 }
 
-const buildMode = ref(false)
-const hazardMode = ref(false)
 const canEditMap = computed(() => isGm.value)
 const canManageInitiative = computed(() => isGm.value)
 const canSpawnTokens = computed(() => isGm.value)
-const buildTool = ref<BuildTool>('pencil')
-const buildMaterial = ref<VoxelMaterial>('airship_floor_metal')
-const buildColor = ref<string | null>(null)
-const hazardTool = ref<BuildTool>('pencil')
-const hazardKind = ref<MapHazardKind>('spikes')
 
 const layerVisibility = ref({
   terrain: true,
@@ -167,8 +145,18 @@ const controllablePlacementIdSet = computed(() => new Set(controllablePlacementI
 const canControlPlacement = (id: string): boolean => controllablePlacementIdSet.value.has(id)
 const voxelCount = computed(() => mapVoxels.value.length)
 const hazardCount = computed(() => mapHazards.value.length)
-const activeHazardDef = computed(() => MAP_HAZARD_DEFINITIONS[hazardKind.value])
-const hazardPalette = MAIN_MAP_HAZARD_KINDS.map((kind) => MAP_HAZARD_DEFINITIONS[kind])
+const {
+  hazardMode,
+  hazardTool,
+  hazardKind,
+  activeHazardDef,
+  hazardPalette,
+  placeHazard,
+  removeHazard,
+  clearAllHazards,
+  setHazardTool,
+  selectHazardKind,
+} = useHazardBuilder({ map, mapHazards, canEditMap })
 
 const {
   weatherCoexistNext,
@@ -218,6 +206,23 @@ const mapSpecificYMin = computed(() => -mapGroundLevelY.value)
 const mapSpecificYMax = computed(() =>
   map.value ? map.value.dimensions.y - 1 - mapGroundLevelY.value : 0,
 )
+
+const {
+  buildMode,
+  buildTool,
+  buildMaterial,
+  buildColor,
+  visibleVoxelMaterials,
+  colorPickerValue,
+  placeVoxel,
+  removeVoxel,
+  selectMaterial,
+  setTool,
+  handleColorInput,
+  clearCustomColor,
+  fillGround,
+  clearAllVoxels,
+} = useTerrainBuilder({ map, mapVoxels, mapGroundLevelY, spawnedPokemon, canEditMap })
 
 const setGroundLevelY = (event: Event) => {
   if (!map.value || !canEditMap.value) return
@@ -296,15 +301,6 @@ const {
     gridRef.value?.focusPokemon(id)
   },
 })
-
-const materialCanBeBuilt = (material: { transparent?: boolean; tags?: readonly string[] }) =>
-  !material.transparent || (material.tags ?? []).includes('water')
-
-const visibleVoxelMaterials = computed(() => VOXEL_MATERIALS.filter(materialCanBeBuilt))
-const activeMaterialDef = computed(() => getMaterialDef(buildMaterial.value))
-const colorPickerValue = computed(() =>
-  buildColor.value ?? hexColorString(activeMaterialDef.value.baseColor),
-)
 
 const saveIndicatorStatus = computed<SaveStatus | null>(() => {
   if (status.value === 'saving') return 'saving'
@@ -514,68 +510,6 @@ const updatePreview = (next: PreviewState) => {
   previewState.value = next
 }
 
-const placeVoxel = (voxel: MapVoxelV2) => {
-  if (!map.value || !canEditMap.value) return
-  const styledVoxel = withDefaultBuilderVoxelColor(voxel)
-  const next = map.value.voxels.filter(
-    (v) => !(v.x === styledVoxel.x && v.y === styledVoxel.y && v.z === styledVoxel.z),
-  )
-  next.push(styledVoxel)
-  map.value.voxels = next
-}
-
-const removeVoxel = (cell: { x: number; y: number; z: number }) => {
-  if (!map.value || !canEditMap.value) return
-  map.value.voxels = map.value.voxels.filter(
-    (v) => !(v.x === cell.x && v.y === cell.y && v.z === cell.z),
-  )
-}
-
-const placeHazard = (hazard: MapHazardV2) => {
-  if (!map.value || !canEditMap.value) return
-  const normalized: MapHazardV2 = {
-    kind: hazard.kind,
-    x: Math.round(hazard.x),
-    y: Math.round(hazard.y),
-    z: Math.round(hazard.z),
-  }
-  const layer = normalizeMapHazardLayer(normalized.kind, hazard.layer)
-  if (layer !== undefined) normalized.layer = layer
-  if (typeof hazard.owner === 'string' && hazard.owner.trim()) normalized.owner = hazard.owner.trim()
-
-  const key = mapHazardKey(normalized)
-  let found = false
-  const next = mapHazards.value.map((existing) => {
-    if (mapHazardKey(existing) !== key) return existing
-    found = true
-    if (normalized.kind !== 'toxic-spikes') return existing
-    return {
-      ...existing,
-      layer: Math.min(2, Math.max(existing.layer ?? 1, normalized.layer ?? 1) + 1),
-    }
-  })
-  if (!found) next.push(normalized)
-  map.value.hazards = next
-}
-
-const removeHazard = (cell: { x: number; y: number; z: number; kind?: MapHazardKind }) => {
-  if (!map.value || !canEditMap.value) return
-  map.value.hazards = mapHazards.value.filter((hazard) => {
-    const sameCell = hazard.x === cell.x && hazard.y === cell.y && hazard.z === cell.z
-    if (!sameCell) return true
-    return cell.kind ? hazard.kind !== cell.kind : false
-  })
-}
-
-const clearAllHazards = () => {
-  if (!map.value || !canEditMap.value || !mapHazards.value.length) return
-  const ok = window.confirm(
-    `Remove all ${mapHazards.value.length} hazard square${mapHazards.value.length === 1 ? '' : 's'}?`,
-  )
-  if (!ok) return
-  map.value.hazards = []
-}
-
 const setMode = (mode: 'play' | 'build' | 'hazards') => {
   if (mode !== 'play' && !canEditMap.value) return
   const nextBuild = mode === 'build'
@@ -587,77 +521,6 @@ const setMode = (mode: 'play' | 'build' | 'hazards') => {
     selectedId.value = null
     previewState.value = { position: null, reachable: false, pathLength: 0 }
   }
-}
-
-const selectMaterial = (material: VoxelMaterial) => {
-  if (!canEditMap.value || !materialCanBeBuilt(getMaterialDef(material))) return
-  buildMaterial.value = material
-  buildColor.value = null
-}
-
-const setTool = (tool: BuildTool) => {
-  if (!canEditMap.value) return
-  buildTool.value = tool
-}
-
-const setHazardTool = (tool: BuildTool) => {
-  if (!canEditMap.value) return
-  hazardTool.value = tool
-}
-
-const selectHazardKind = (kind: MapHazardKind) => {
-  if (!canEditMap.value) return
-  hazardKind.value = kind
-}
-
-const handleColorInput = (event: Event) => {
-  if (!canEditMap.value) return
-  const value = (event.target as HTMLInputElement).value
-  buildColor.value = value
-}
-
-const clearCustomColor = () => {
-  if (!canEditMap.value) return
-  buildColor.value = null
-}
-
-const fillGround = () => {
-  if (!map.value || !canEditMap.value) return
-  const dims = map.value.dimensions
-  const voxelOccupancy = buildAllVoxelOccupancy(mapVoxels.value)
-  const mapOccupancy = buildMapOccupancy({
-    voxels: mapVoxels.value,
-  })
-  const additions: MapVoxelV2[] = []
-  const groundY = mapGroundLevelY.value
-  for (let z = 0; z < dims.z; z += 1) {
-    for (let x = 0; x < dims.x; x += 1) {
-      const key = voxelKey(x, groundY, z)
-      if (voxelOccupancy.has(key)) continue
-      if (mapOccupancy.has(key)) continue
-      if (cellInsidePokemonFootprint(x, groundY, z, spawnedPokemon.value)) continue
-      const voxel: MapVoxelV2 = withDefaultBuilderVoxelColor({
-        x,
-        y: groundY,
-        z,
-        materialId: buildMaterial.value,
-        ...(buildColor.value ? { color: buildColor.value } : {}),
-      })
-      additions.push(voxel)
-    }
-  }
-  if (!additions.length) return
-  map.value.voxels = [...map.value.voxels, ...additions]
-}
-
-const clearAllVoxels = () => {
-  if (!map.value || !canEditMap.value) return
-  if (!map.value.voxels.length) return
-  const ok = window.confirm(
-    `Remove all ${map.value.voxels.length} terrain blocks? This cannot be undone.`,
-  )
-  if (!ok) return
-  map.value.voxels = []
 }
 
 watch(

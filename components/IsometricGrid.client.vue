@@ -45,8 +45,9 @@ import {
 import { conditionTagSvg, normalizeConditionNames } from '~/utils/statusConditions'
 import { itemSpriteUrl } from '~/utils/itemSprites'
 import type { CombatStageKey, CombatStageMap } from '~/types/combatStages'
+import type { BuildTool } from '~/shared/mapEditor'
 
-export type BuildTool = 'pencil' | 'eraser'
+export type { BuildTool } from '~/shared/mapEditor'
 
 const props = defineProps<{
   dimensions: GridDimensions
