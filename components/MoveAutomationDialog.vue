@@ -1,19 +1,24 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
-import { findMove } from '~/data/ptuReference'
 import {
-  buildManualMoveResolution,
-  explicitScriptForMove,
   rollDamageFormula,
-  sheetMoveToMoveLike,
   damageFormulaForMove,
-  type MoveAutomationMoveLike,
 } from '~/utils/moveAutomation'
 import { COMBAT_STAGE_KEYS, COMBAT_STAGE_SHORT_LABELS } from '~/utils/combatStages'
 import {
   parseHazardCellText,
   stageDeltaLabel,
 } from '~/utils/moveAutomationDialog'
+import {
+  buildMoveAutomationMoveEntries,
+  filterMoveAutomationMoveEntries,
+  moveAutomationRequiresTargets,
+  selectedMoveAutomationTargets,
+  selectMoveAutomationEntry,
+  sortMoveAutomationTargets,
+  toggleMoveAutomationTargetIds,
+  type MoveAutomationMoveEntry,
+} from '~/utils/moveAutomationMoves'
 import {
   buildMoveAutomationTransaction,
   moveAutomationMultiplierLabel,
@@ -27,7 +32,7 @@ import {
 import type { CharacterSheetMove } from '~/types/characterSheet'
 import type { CombatStageKey } from '~/types/combatStages'
 import type { MapFieldEffects } from '~/types/map'
-import type { MoveAutomationScript, MoveAutomationTransaction } from '~/types/moveAutomation'
+import type { MoveAutomationTransaction } from '~/types/moveAutomation'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import type { TrainerMove } from '~/types/trainerSheet'
 
@@ -43,14 +48,6 @@ const emit = defineEmits<{
   (event: 'close'): void
   (event: 'apply', transaction: MoveAutomationTransaction): void
 }>()
-
-interface MoveEntry {
-  label: string
-  sheetMove: CharacterSheetMove | TrainerMove
-  move: MoveAutomationMoveLike
-  script: MoveAutomationScript
-  hasExplicitScript: boolean
-}
 
 type TargetResolutionState = MoveAutomationTargetResolutionState
 
@@ -70,56 +67,13 @@ const manualNote = ref('')
 
 const overlayTitleId = 'move-automation-title'
 
-const mergeMoveLike = (sheetMove: CharacterSheetMove | TrainerMove): MoveAutomationMoveLike => {
-  const canonical = findMove(sheetMove.name)
-  if (canonical) return canonical
-  return sheetMoveToMoveLike(sheetMove)
-}
-
-const moveEntries = computed<MoveEntry[]>(() =>
-  props.moves
-    .filter((move) => move.name?.trim())
-    .map((sheetMove) => {
-      const move = mergeMoveLike(sheetMove)
-      const explicitScript = explicitScriptForMove(move.name)
-      return {
-        label: move.name,
-        sheetMove,
-        move,
-        script: explicitScript ?? buildManualMoveResolution(move),
-        hasExplicitScript: Boolean(explicitScript),
-      }
-    }),
-)
-
-const filteredMoveEntries = computed(() => {
-  const q = search.value.trim().toLowerCase()
-  if (!q) return moveEntries.value
-  return moveEntries.value.filter((entry) => {
-    const s = entry.script
-    return [s.moveName, s.type, s.damageClass ?? '', entry.move.frequency ?? '', s.range, s.effect]
-      .join(' ')
-      .toLowerCase()
-      .includes(q)
-  })
-})
-
-const selectedEntry = computed(() =>
-  moveEntries.value.find((entry) => entry.move.name === selectedMoveName.value) ?? moveEntries.value[0] ?? null,
-)
+const moveEntries = computed<MoveAutomationMoveEntry[]>(() => buildMoveAutomationMoveEntries(props.moves))
+const filteredMoveEntries = computed(() => filterMoveAutomationMoveEntries(moveEntries.value, search.value))
+const selectedEntry = computed(() => selectMoveAutomationEntry(moveEntries.value, selectedMoveName.value))
 const script = computed(() => selectedEntry.value?.script ?? null)
-const targetOptions = computed(() =>
-  [...props.allTokens].sort((a, b) => a.species.localeCompare(b.species)),
-)
-const selectedTargets = computed(() =>
-  targetIds.value
-    .map((id) => props.allTokens.find((token) => token.id === id))
-    .filter((token): token is SpawnedPokemon => Boolean(token)),
-)
-const requiresTargets = computed(() => {
-  const mode = script.value?.targetMode
-  return mode === 'one-target' || mode === 'multi-target'
-})
+const targetOptions = computed(() => sortMoveAutomationTargets(props.allTokens))
+const selectedTargets = computed(() => selectedMoveAutomationTargets(targetIds.value, props.allTokens))
+const requiresTargets = computed(() => moveAutomationRequiresTargets(script.value))
 const selectedMoveFormula = computed(() => selectedEntry.value ? damageFormulaForMove(selectedEntry.value.move) : null)
 
 watch(
@@ -203,19 +157,7 @@ watch(
 )
 
 const toggleTarget = (id: string) => {
-  const s = script.value
-  if (!s) return
-  if (s.targetCount === 1 || s.targetMode === 'one-target') {
-    targetIds.value = targetIds.value[0] === id ? [] : [id]
-    return
-  }
-  const next = new Set(targetIds.value)
-  if (next.has(id)) next.delete(id)
-  else {
-    if (s.targetCount != null && next.size >= s.targetCount) return
-    next.add(id)
-  }
-  targetIds.value = Array.from(next)
+  targetIds.value = toggleMoveAutomationTargetIds(targetIds.value, id, script.value)
 }
 
 const randomD20 = (): number => 1 + Math.floor(Math.random() * 20)

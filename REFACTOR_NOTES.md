@@ -1271,3 +1271,14 @@
   - `npm test` — passes: 66 test files / 238 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: move automation move/target helper extraction
+
+- Extracted move-list and target-selection derivations from `components/MoveAutomationDialog.vue` into `utils/moveAutomationMoves.ts`.
+  - The helper now owns sheet-move-to-move-entry construction, move search filtering, selected-entry fallback, target sorting/lookup, target-required detection, and target-id toggling rules.
+  - The dialog component now focuses more narrowly on wizard state, rolls, and UI event wiring.
+- Added `tests/utils/moveAutomationMoves.test.ts` covering move-entry construction/filtering, selected-entry fallback, target sorting/lookup, target-required checks, and target toggle limits.
+- Quality gates after this phase:
+  - `npm test` — passes: 67 test files / 244 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
