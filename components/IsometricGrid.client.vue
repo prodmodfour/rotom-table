@@ -14,7 +14,7 @@ import type {
   VoxelMaterial,
 } from '~/types/map'
 import type { PreviewState } from '~/utils/grid'
-import { canPlacePokemon, findPathForPokemon, getPokemonCenter } from '~/utils/grid'
+import { getPokemonCenter } from '~/utils/grid'
 import { buildAllVoxelOccupancy } from '~/utils/voxels'
 import { buildMapOccupancy } from '~/utils/mapOccupancy'
 import { normalizeMapFieldEffects } from '~/utils/mapFieldEffects'
@@ -57,11 +57,7 @@ import {
   getTerrainVoxelsRevisionKey,
   resolveIsometricLayerVisibility,
 } from '~/utils/isometric/sceneState'
-import {
-  EMPTY_MOVE_PREVIEW,
-  getMovePreviewAnchor,
-  getNextMovePreviewElevationAnchor,
-} from '~/utils/isometric/movementPreview'
+import { createIsometricTokenMovementInteractionController } from '~/utils/isometric/tokenMovementInteraction'
 import {
   applyPokemonRenderObjectPosition,
   createPokemonRenderObject,
@@ -258,14 +254,11 @@ let controls: ReturnType<typeof createIsometricOrbitControls> | null = null
 let cleanupRendererDomEvents: (() => void) | null = null
 let cleanupResizeObserver: (() => void) | null = null
 let animationFrame = 0
-let activePreview: PreviewState = { ...EMPTY_MOVE_PREVIEW }
-let activePreviewCanPlace = false
-let activePreviewAnchor: GridAnchor | null = null
 const pointerTracker = createPointerTravelTracker()
 let lastPointerCoords: { clientX: number; clientY: number } | null = null
 let hoveredPokemonId: string | null = null
 
-const getPreviewLayerY = () => activePreviewAnchor?.y ?? selectedPokemon.value?.position.y ?? 0
+const getPreviewLayerY = () => movementInteraction.activeAnchor()?.y ?? selectedPokemon.value?.position.y ?? 0
 
 const syncRendererSize = () => {
   if (!renderer || !cssRenderer || !camera || !container.value) {
@@ -466,81 +459,6 @@ const ensureHazardGhost = () => hazardGhostRenderer.ensure(props.hazardKind ?? '
 const disposeHazardGhost = () => hazardGhostRenderer.dispose()
 const hideHazardGhost = () => hazardGhostRenderer.hide()
 
-const ensurePreviewObjects = () => {
-  if (selectedPokemon.value) {
-    tokenMovePreviewRenderer.ensure(selectedPokemon.value)
-  }
-}
-
-const clearPreviewVisuals = () => {
-  activePreview = { ...EMPTY_MOVE_PREVIEW }
-  activePreviewCanPlace = false
-  activePreviewAnchor = null
-  tokenMovePreviewRenderer.clear()
-  emit('preview-change', { ...EMPTY_MOVE_PREVIEW })
-}
-
-const updatePreviewAtAnchor = (anchor: GridAnchor | null) => {
-  if (!selectedPokemon.value) {
-    clearPreviewVisuals()
-    return
-  }
-
-  ensurePreviewObjects()
-
-  if (!anchor) {
-    clearPreviewVisuals()
-    return
-  }
-
-  const selected = selectedPokemon.value
-  // Destination placement ignores terrain occupancy so the table can be used
-  // as a free-positioning tool, but pathfinding below still treats terrain as
-  // blocking and therefore won't show a legal route through/into blocks.
-  const canForcePlace = canPlacePokemon(
-    selected,
-    anchor,
-    props.pokemons,
-    props.dimensions,
-    selected.id,
-  )
-  const path = canForcePlace
-    ? findPathForPokemon(
-        selected,
-        selected.position,
-        anchor,
-        props.pokemons,
-        props.dimensions,
-        selected.id,
-        mapMovementOccupancy.value,
-      )
-    : null
-  const reachable = Boolean(path)
-  const previewUpdated = tokenMovePreviewRenderer.update({
-    pokemon: selected,
-    anchor,
-    canForcePlace,
-    reachable,
-    path,
-    groundLevelY: normalizedGroundLevelY(),
-    camera,
-  })
-
-  if (!previewUpdated) {
-    clearPreviewVisuals()
-    return
-  }
-
-  activePreviewAnchor = anchor
-  activePreviewCanPlace = canForcePlace
-  activePreview = {
-    position: anchor,
-    reachable,
-    pathLength: path ? Math.max(path.length - 1, 0) : 0,
-  }
-  emit('preview-change', { ...activePreview })
-}
-
 const pickPokemonId = (event: MouseEvent | PointerEvent) =>
   pickPokemonIdFromPointer({
     event,
@@ -571,29 +489,22 @@ const getMoveGridIntersection = (event: MouseEvent | PointerEvent, yLevel: numbe
     raycaster,
   })
 
-const updatePreviewFromPointer = (event: MouseEvent | PointerEvent) => {
-  if (!selectedPokemon.value) {
-    clearPreviewVisuals()
-    return
-  }
-
-  const previewLayerY = getPreviewLayerY()
-  const point = getMoveGridIntersection(event, previewLayerY)
-
-  const anchor = getMovePreviewAnchor({
-    point,
-    pokemon: selectedPokemon.value,
-    dimensions: props.dimensions,
-    yLevel: previewLayerY,
-  })
-
-  if (!anchor) {
-    clearPreviewVisuals()
-    return
-  }
-
-  updatePreviewAtAnchor(anchor)
-}
+const movementInteraction = createIsometricTokenMovementInteractionController({
+  getSelectedPokemon: () => selectedPokemon.value,
+  getPokemons: () => props.pokemons,
+  getDimensions: () => props.dimensions,
+  getMapMovementOccupancy: () => mapMovementOccupancy.value,
+  getPreviewLayerY,
+  getGroundLevelY: normalizedGroundLevelY,
+  getCamera: () => camera,
+  getMoveGridIntersection,
+  previewRenderer: tokenMovePreviewRenderer,
+  emitPreviewChange: (preview) => emit('preview-change', preview),
+  movePokemon: (payload) => emit('move-pokemon', payload),
+})
+const ensurePreviewObjects = movementInteraction.ensurePreviewObjects
+const clearPreviewVisuals = movementInteraction.clearPreviewVisuals
+const updatePreviewFromPointer = movementInteraction.updatePreviewFromPointer
 
 const pickBuildTarget = (
   event: MouseEvent | PointerEvent,
@@ -680,12 +591,7 @@ const handleLeftClick = (event: PointerEvent) => {
     return
   }
 
-  if (activePreview.position && activePreviewCanPlace) {
-    emit('move-pokemon', {
-      id: props.selectedId,
-      position: activePreview.position,
-    })
-  }
+  movementInteraction.performSelectedMove()
 }
 
 const handleRightClick = (event: MouseEvent) => {
@@ -748,16 +654,7 @@ const handleWheel = (event: WheelEvent) => {
   event.preventDefault()
   event.stopPropagation()
 
-  const nextAnchor = getNextMovePreviewElevationAnchor({
-    currentAnchor: activePreview.position ?? selectedPokemon.value.position,
-    pokemon: selectedPokemon.value,
-    dimensions: props.dimensions,
-    deltaY: event.deltaY,
-  })
-
-  if (!nextAnchor) return
-
-  updatePreviewAtAnchor(nextAnchor)
+  movementInteraction.stepPreviewElevation(event.deltaY)
 }
 
 const handlePointerUp = (event: PointerEvent) => {
@@ -812,7 +709,7 @@ const animate = () => {
     fieldEffectRenderer,
     tokenMovePreviewRenderer,
     selectedPokemon: selectedPokemon.value,
-    previewPositionY: activePreview.position?.y ?? selectedPokemon.value?.position.y ?? null,
+    previewPositionY: movementInteraction.previewPositionY(),
     camera,
     renderer,
     cssRenderer,
@@ -910,11 +807,7 @@ watch(
 
     syncPokemonObjects()
 
-    if (selectedPokemon.value && activePreviewAnchor) {
-      updatePreviewAtAnchor(activePreviewAnchor)
-    } else if (!selectedPokemon.value) {
-      clearPreviewVisuals()
-    }
+    movementInteraction.refreshAfterStateChange()
 
     syncDialogsFromPokemons()
 
@@ -932,10 +825,8 @@ watch(
 
     syncVoxelMeshes()
 
-    if (selectedPokemon.value && activePreviewAnchor) {
-      // Voxels affect pathfinding — refresh the move preview.
-      updatePreviewAtAnchor(activePreviewAnchor)
-    }
+    // Voxels affect pathfinding — refresh the move preview.
+    movementInteraction.refreshAfterStateChange()
 
     replayBuildPreview()
     replayHazardPreview()
@@ -981,14 +872,11 @@ watch(
     if (!selectedPokemon.value) {
       clearPreviewVisuals()
       closeContextMenu()
-      tokenMovePreviewRenderer.disposeOwner()
+      movementInteraction.disposeOwner()
       return
     }
 
-    activePreviewAnchor = null
-    activePreview = { ...EMPTY_MOVE_PREVIEW }
-    ensurePreviewObjects()
-    emit('preview-change', { ...EMPTY_MOVE_PREVIEW })
+    movementInteraction.resetForSelectionChange()
   },
 )
 
@@ -1069,7 +957,7 @@ watch(
   () => {
     if (!renderer) return
     syncFieldEffectMeshes()
-    if (selectedPokemon.value && activePreviewAnchor) updatePreviewAtAnchor(activePreviewAnchor)
+    movementInteraction.refreshAfterStateChange()
   },
 )
 
@@ -1086,11 +974,7 @@ watch(
     alignCameraToGrid(false)
     syncRendererSize()
 
-    if (selectedPokemon.value && activePreviewAnchor) {
-      updatePreviewAtAnchor(activePreviewAnchor)
-    } else if (!selectedPokemon.value) {
-      clearPreviewVisuals()
-    }
+    movementInteraction.refreshAfterStateChange()
 
     if (props.buildMode) {
       hideBuildGhost()

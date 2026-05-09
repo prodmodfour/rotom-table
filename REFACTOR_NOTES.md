@@ -624,3 +624,14 @@
   - `npm test` — passes: 33 test files / 107 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: isometric token movement interaction controller extraction
+
+- Continued Phase 6 by extracting selected-token movement preview state and commit orchestration from `components/IsometricGrid.client.vue` into `utils/isometric/tokenMovementInteraction.ts`.
+  - The controller owns active preview state, pointer-to-anchor preview updates, path/reachability calculation, elevation wheel stepping, preview reset/refresh behavior, and guarded `move-pokemon` commits through injected renderer/event callbacks.
+  - The grid component now delegates move-preview lifecycle decisions while retaining renderer raycast wiring and public `preview-change`/`move-pokemon` event boundaries.
+- Added `tests/utils/isometric/tokenMovementInteraction.test.ts` covering pointer preview updates, renderer rejection cleanup, blocked/invalid previews, guarded move commits, elevation stepping, and state refresh/reset behavior.
+- Quality gates after this phase:
+  - `npm test` — passes: 34 test files / 113 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
