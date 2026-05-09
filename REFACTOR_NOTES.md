@@ -1406,3 +1406,14 @@
   - `npm test` — passes: 71 test files / 265 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: move automation resolve-step component
+
+- Extracted the move resolution step from `components/MoveAutomationDialog.vue` into `components/move-automation/MoveAutomationResolveStep.vue`.
+  - The new component owns move summary, target selection, accuracy/damage rolls, condition/stage/HP/map-effect toggles, hazard-cell input, manual notes, and resolve-step styles through explicit props/models/emits.
+  - The dialog now coordinates wizard state and transaction assembly while delegating all three wizard step presentations to focused components.
+- Preserved target selection, roll actions, suggestion toggles, manual condition/stage inputs, map-effect GM gating, hazard-cell helpers, and transaction payload assembly.
+- Quality gates after this phase:
+  - `npm test` — passes: 71 test files / 265 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
