@@ -1620,3 +1620,14 @@
   - `npm test` — passes: 77 test files / 298 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: feature index filtering helpers
+
+- Extracted feature-index tag/search derivations from `pages/features/index.vue` into `utils/reference/featureIndex.ts`.
+  - The helper owns feature tag counts, normalized search haystacks, combined tag/search filtering, and tag-toggle state transitions.
+- Updated the Features route to consume focused helpers while preserving tag-chip ordering, search behavior, active tag toggling, and feature row output.
+- Added `tests/utils/reference/featureIndex.test.ts` covering tag count ordering, feature search fields, tag/search filtering, and active-tag toggling.
+- Quality gates after this phase:
+  - `npm test` — passes: 78 test files / 302 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

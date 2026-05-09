@@ -1,47 +1,27 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { features, toSlug } from '~/data/ptuReference'
+import {
+  buildFeatureTagCounts,
+  filterFeaturesForIndex,
+  toggledFeatureTag,
+} from '~/utils/reference/featureIndex'
 
 useHead({ title: 'Features · Rotom Table' })
 
 const searchTerm = ref('')
 const tagFilter = ref<string | null>(null)
 
-const normalize = (value: string) => value.trim().toLowerCase()
-
 /** All tags that appear on at least one feature, sorted by frequency desc. */
-const allTags = computed(() => {
-  const counts = new Map<string, number>()
-  for (const f of features) {
-    for (const tag of f.tags ?? []) {
-      counts.set(tag, (counts.get(tag) ?? 0) + 1)
-    }
-  }
-  return Array.from(counts.entries())
-    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-    .map(([tag, count]) => ({ tag, count }))
-})
+const allTags = computed(() => buildFeatureTagCounts(features))
 
-const filtered = computed(() => {
-  const query = normalize(searchTerm.value)
-  return features.filter((f) => {
-    if (tagFilter.value && !f.tags?.includes(tagFilter.value)) return false
-    if (!query) return true
-    const haystacks = [
-      f.name,
-      f.prerequisites ?? '',
-      f.frequency ?? '',
-      f.trigger ?? '',
-      f.target ?? '',
-      f.effect ?? '',
-      f.className ?? '',
-    ]
-    return haystacks.some((value) => normalize(value).includes(query))
-  })
-})
+const filtered = computed(() => filterFeaturesForIndex(features, {
+  searchTerm: searchTerm.value,
+  tag: tagFilter.value,
+}))
 
 const toggleTag = (tag: string) => {
-  tagFilter.value = tagFilter.value === tag ? null : tag
+  tagFilter.value = toggledFeatureTag(tagFilter.value, tag)
 }
 </script>
 
