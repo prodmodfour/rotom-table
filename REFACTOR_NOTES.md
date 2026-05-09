@@ -477,3 +477,14 @@
   - `npm test` — passes: 22 test files / 68 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: isometric combat-stage dialog component extraction
+
+- Continued token action dialog decomposition by extracting the combat-stage modal from `components/isometric/TokenActionDialogs.vue` into `components/isometric/TokenCombatStagesDialog.vue`.
+  - The new component owns combat-stage row rendering, increment/decrement controls, input clamping, and apply/cancel events.
+  - `TokenActionDialogs.vue` is now a smaller coordinator for HP, combat-stage, condition, and damage dialogs with combat-stage UI details isolated.
+- Preserved existing combat-stage copy, clamping behavior, changed-state apply gating, and `modify-combat-stages` submit flow.
+- Quality gates after this phase:
+  - `npm test` — passes: 22 test files / 68 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
