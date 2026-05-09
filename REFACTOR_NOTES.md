@@ -1543,3 +1543,13 @@
   - `npm test` — passes: 71 test files / 265 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: sheet library grid component
+
+- Extracted the sheets library folder/sheet grid and empty states into `components/library/SheetLibraryGrid.vue`.
+  - The component owns Pokémon/trainer sheet cards, type badges, shiny badge styles, folder tile composition, empty-state copy, and focused drag/context event forwarding.
+- Reduced `pages/sheets/index.vue` to sheet library state orchestration, route navigation, creation actions, and component composition.
+- Quality gates after this phase:
+  - `npm test` — passes: 71 test files / 265 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
