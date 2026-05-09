@@ -95,6 +95,7 @@ import {
   setPokemonRenderObjectLayerVisibility,
   updatePokemonRenderObjectFromSpawn,
 } from '~/utils/isometric/tokenRenderer'
+import { buildVoxelColumnsByXZ, getVoxelShadowSurfaceY } from '~/utils/isometric/shadows'
 
 export type { BuildTool } from '~/shared/mapEditor'
 
@@ -370,56 +371,22 @@ const mapMovementOccupancy = computed(() =>
 const allVoxelOccupancy = computed(() => buildAllVoxelOccupancy(renderedTerrainVoxels.value))
 
 // Voxel y-values bucketed by ``x,z`` column key. Lets a shadow-cast
-// raycast stay O(footprint) instead of O(voxels) — most cells have 0
-// or 1 voxels above ground, so the sorted-array scan is trivial.
-const voxelColumnsByXZ = computed(() => {
-  const columns = new Map<string, number[]>()
-  for (const v of renderedTerrainVoxels.value) {
-    const key = `${v.x},${v.z}`
-    const list = columns.get(key)
-    if (list) list.push(v.y)
-    else columns.set(key, [v.y])
-  }
-  return columns
-})
+// lookup stay O(footprint) instead of O(voxels) — most cells have 0
+// or 1 voxels above ground, so the scan is trivial.
+const voxelColumnsByXZ = computed(() => buildVoxelColumnsByXZ(renderedTerrainVoxels.value))
 
-/**
- * Shadow surface Y for a pokemon's footprint. Walks every (x, z) cell
- * the cage covers, picks the highest voxel top that's at or below the
- * sprite's foot, and returns the max across all cells. Falls back to
- * the floor (y = 0) when nothing's below.
- *
- * Without this, a flying mon's shadow stays glued to its foot —
- * floating in mid-air over voxels, missing the surface entirely.
- */
 const getShadowSurfaceY = (
   centerX: number,
   centerZ: number,
   base: number,
   footY: number,
-): number => {
-  const columns = voxelColumnsByXZ.value
-  if (columns.size === 0) return 0
-
-  const minX = Math.floor(centerX - base / 2)
-  const minZ = Math.floor(centerZ - base / 2)
-  // Tiny epsilon: treat a voxel top exactly at footY as "below" so a
-  // mon standing flush on a voxel still gets a shadow on that voxel.
-  const ceiling = footY + 0.001
-
-  let surface = 0
-  for (let dx = 0; dx < base; dx += 1) {
-    for (let dz = 0; dz < base; dz += 1) {
-      const column = columns.get(`${minX + dx},${minZ + dz}`)
-      if (!column) continue
-      for (const y of column) {
-        const top = y + 1
-        if (top <= ceiling && top > surface) surface = top
-      }
-    }
-  }
-  return surface
-}
+): number => getVoxelShadowSurfaceY({
+  columns: voxelColumnsByXZ.value,
+  centerX,
+  centerZ,
+  base,
+  footY,
+})
 
 const scene = new THREE.Scene()
 const raycaster = new THREE.Raycaster()

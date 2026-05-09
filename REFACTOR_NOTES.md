@@ -369,3 +369,15 @@
   - `npm test` — passes: 16 test files / 47 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+
+## Next phase update: isometric shadow-surface helper extraction
+
+- Continued renderer cleanup by extracting token shadow surface lookup from `components/IsometricGrid.client.vue` into `utils/isometric/shadows.ts`.
+  - The new helper owns voxel-column bucketing and selecting the highest voxel top below a token footprint.
+  - The Vue component now supplies rendered voxels and delegates shadow-surface math while preserving token shadow placement behavior.
+- Added `tests/utils/isometric/shadows.test.ts` covering column grouping, highest-below-foot selection, and ground fallback behavior.
+- Quality gates after this phase:
+  - `npm test` — passes: 17 test files / 50 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
