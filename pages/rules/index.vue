@@ -47,14 +47,11 @@ const toggleCategory = (category: string) => {
         @select="toggleCategory"
       />
 
-      <label class="search-field">
-        <span class="sr-only">Search rules</span>
-        <input
-          v-model.trim="searchTerm"
-          type="search"
-          placeholder="Search by name, category, source, or text…"
-        />
-      </label>
+      <ReferenceSearchField
+        v-model="searchTerm"
+        label="Search rules"
+        placeholder="Search by name, category, source, or text…"
+      />
     </ReferenceIndexHeader>
 
     <main class="ref-list rules-list">

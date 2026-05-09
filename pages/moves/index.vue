@@ -25,14 +25,11 @@ const filtered = computed(() => filterMovesForIndex(moves, {
       </p>
 
       <div class="moves-controls">
-        <label class="search-field">
-          <span class="sr-only">Search moves</span>
-          <input
-            v-model.trim="searchTerm"
-            type="search"
-            placeholder="Search by name, type, frequency, range, or effect…"
-          />
-        </label>
+        <ReferenceSearchField
+          v-model="searchTerm"
+          label="Search moves"
+          placeholder="Search by name, type, frequency, range, or effect…"
+        />
 
         <ReferenceTypeFilter
           v-model:active-type="typeFilter"

@@ -19,14 +19,11 @@ const filtered = computed(() => filterEdgesForIndex(edges, { searchTerm: searchT
         Effect — think Skill Edges, Crafting Edges, and Combat Edges.
       </p>
 
-      <label class="search-field">
-        <span class="sr-only">Search edges</span>
-        <input
-          v-model.trim="searchTerm"
-          type="search"
-          placeholder="Search by name, prereq, or effect…"
-        />
-      </label>
+      <ReferenceSearchField
+        v-model="searchTerm"
+        label="Search edges"
+        placeholder="Search by name, prereq, or effect…"
+      />
     </ReferenceIndexHeader>
 
     <main class="ref-list">

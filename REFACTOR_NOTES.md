@@ -1768,3 +1768,13 @@
   - `npm test` — passes: 84 test files / 322 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: shared reference search field
+
+- Extracted repeated reference-index search label/input markup into `components/reference/ReferenceSearchField.vue`.
+- Updated ability, edge, condition, rule, feature, move, and item index pages to bind search state through the shared component while preserving trimmed model updates, labels, placeholders, and global reference input styling.
+- Kept capabilities pages untouched because they still contain user-modified work outside this refactor cycle.
+- Quality gates after this phase:
+  - `npm test` — passes: 84 test files / 322 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

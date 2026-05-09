@@ -49,14 +49,11 @@ const toggleCategory = (category: string) => {
       />
 
       <div class="item-controls">
-        <label class="search-field">
-          <span class="sr-only">Search items</span>
-          <input
-            v-model.trim="searchTerm"
-            type="search"
-            placeholder="Search by name, cost, section, source, or effect…"
-          />
-        </label>
+        <ReferenceSearchField
+          v-model="searchTerm"
+          label="Search items"
+          placeholder="Search by name, cost, section, source, or effect…"
+        />
 
         <label class="select-field">
           <span>Section</span>

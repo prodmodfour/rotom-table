@@ -20,14 +20,11 @@ const filteredByCategory = computed(() => groupFilteredConditions(conditionGroup
         PTU status conditions and afflictions from
         <code>ptu-data/data/conditions.json</code>.
       </p>
-      <label class="search-field">
-        <span class="sr-only">Search conditions</span>
-        <input
-          v-model.trim="searchTerm"
-          type="search"
-          placeholder="Search by name, alias, category, source, or effect…"
-        />
-      </label>
+      <ReferenceSearchField
+        v-model="searchTerm"
+        label="Search conditions"
+        placeholder="Search by name, alias, category, source, or effect…"
+      />
     </ReferenceIndexHeader>
 
     <main class="ref-list condition-list">

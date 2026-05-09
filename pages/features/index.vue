@@ -46,14 +46,11 @@ const toggleTag = (tag: string) => {
         @select="toggleTag"
       />
 
-      <label class="search-field">
-        <span class="sr-only">Search features</span>
-        <input
-          v-model.trim="searchTerm"
-          type="search"
-          placeholder="Search by name, prereq, class, trigger, or effect…"
-        />
-      </label>
+      <ReferenceSearchField
+        v-model="searchTerm"
+        label="Search features"
+        placeholder="Search by name, prereq, class, trigger, or effect…"
+      />
     </ReferenceIndexHeader>
 
     <main class="ref-list">

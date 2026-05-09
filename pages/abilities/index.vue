@@ -17,14 +17,11 @@ const filtered = computed(() => filterAbilitiesForIndex(abilities, { searchTerm:
         PTU 1.05 ability list from
         <code>ptu-data/data/abilities.json</code>.
       </p>
-      <label class="search-field">
-        <span class="sr-only">Search abilities</span>
-        <input
-          v-model.trim="searchTerm"
-          type="search"
-          placeholder="Search by name, frequency, trigger, or effect…"
-        />
-      </label>
+      <ReferenceSearchField
+        v-model="searchTerm"
+        label="Search abilities"
+        placeholder="Search by name, frequency, trigger, or effect…"
+      />
     </ReferenceIndexHeader>
 
     <main class="ref-list">
