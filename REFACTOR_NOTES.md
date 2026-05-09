@@ -1461,3 +1461,14 @@
   - `npm test` — passes: 71 test files / 265 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: move automation HP/map effects panel
+
+- Extracted HP suggestions, field-effect suggestions, hazard suggestions, and hazard-cell entry UI into `components/move-automation/MoveAutomationHpMapEffectsPanel.vue`.
+  - The new panel owns HP override inputs, GM-gated map-effect toggles, hazard cell textarea, Add user cell action, and associated styles.
+  - `MoveAutomationEffectsPanel.vue` now composes status effects, HP/map effects, manual notes, and script notes without owning all effect-specific markup.
+- Preserved HP suggestion amount overrides, field/hazard enablement rules, GM-only disabled state, hazard-cell text model, and Add user cell event flow.
+- Quality gates after this phase:
+  - `npm test` — passes: 71 test files / 265 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
