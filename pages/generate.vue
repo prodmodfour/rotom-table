@@ -9,6 +9,17 @@ import {
   rollEncounters,
   tablesInRegion,
 } from '~/utils/encounterTables'
+import {
+  buildEncounterGenerateRequestBody,
+  clampEncounterGenerateCount,
+  coerceTableKeyForRegion,
+  DEFAULT_ENCOUNTER_COUNT,
+  DEFAULT_ENCOUNTER_OUT_ROOT,
+  errorMessageForEncounterGenerate,
+  initialEncounterGenerationSelection,
+  toggleOpenGenerateFile,
+  type EncounterGenerateResult,
+} from '~/utils/encounterGeneration'
 import type { RolledEncounter } from '~/types/encounterTable'
 
 useHead({
@@ -23,18 +34,16 @@ const router = useRouter()
 // ---------------------------------------------------------------------------
 
 const initialEntry = encounterTables[0] ?? null
-const region = ref<string>(String(route.query.region ?? initialEntry?.region ?? ''))
-const tableKey = ref<string>(String(route.query.table ?? initialEntry?.key ?? ''))
-const count = ref<number>(3)
-const outRoot = ref<string>('data/sheets/wild')
+const initialSelection = initialEncounterGenerationSelection(route.query, initialEntry)
+const region = ref<string>(initialSelection.region)
+const tableKey = ref<string>(initialSelection.tableKey)
+const count = ref<number>(DEFAULT_ENCOUNTER_COUNT)
+const outRoot = ref<string>(DEFAULT_ENCOUNTER_OUT_ROOT)
 const preview = ref<boolean>(false)
 
 // Keep the table dropdown in sync with the region.
 watch(region, (next) => {
-  const tables = tablesInRegion(next)
-  if (!tables.find((t) => t.key === tableKey.value)) {
-    tableKey.value = tables[0]?.key ?? ''
-  }
+  tableKey.value = coerceTableKeyForRegion(tableKey.value, tablesInRegion(next))
 })
 
 const tablesForRegion = computed(() => tablesInRegion(region.value))
@@ -48,12 +57,7 @@ const rolledPreview = ref<RolledEncounter[]>([])
 
 const rollPreview = () => {
   if (!selectedTable.value) return
-  rolledPreview.value = rollEncounters(selectedTable.value.table, clampCount(count.value))
-}
-
-const clampCount = (n: number): number => {
-  if (!Number.isFinite(n)) return 1
-  return Math.max(1, Math.min(30, Math.floor(n)))
+  rolledPreview.value = rollEncounters(selectedTable.value.table, clampEncounterGenerateCount(count.value))
 }
 
 // Auto-roll a fresh preview when the table or count changes, so the user
@@ -70,25 +74,9 @@ watch(
 // Generation (server route → pokegen.sh)
 // ---------------------------------------------------------------------------
 
-interface GenerateFile {
-  name: string
-  error?: string
-  content?: string
-}
-
-interface GenerateResult {
-  ok: true
-  dir: string
-  relDir: string
-  rolled: RolledEncounter[]
-  files: GenerateFile[]
-  failures: number
-  preview: boolean
-}
-
 const generating = ref(false)
 const error      = ref<string | null>(null)
-const result     = ref<GenerateResult | null>(null)
+const result     = ref<EncounterGenerateResult | null>(null)
 
 const generate = async () => {
   if (!selectedTable.value) return
@@ -96,22 +84,19 @@ const generate = async () => {
   error.value = null
   result.value = null
   try {
-    const data = await $fetch<GenerateResult>('/api/encounters/generate', {
+    const data = await $fetch<EncounterGenerateResult>('/api/encounters/generate', {
       method: 'POST',
-      body: {
-        region:   region.value,
-        table:    tableKey.value,
-        count:    clampCount(count.value),
-        outRoot:  outRoot.value,
-        preview:  preview.value,
-      },
+      body: buildEncounterGenerateRequestBody({
+        region: region.value,
+        tableKey: tableKey.value,
+        count: count.value,
+        outRoot: outRoot.value,
+        preview: preview.value,
+      }),
     })
     result.value = data
   } catch (err: unknown) {
-    const status = (err as { statusMessage?: string; message?: string })?.statusMessage
-      ?? (err as { message?: string })?.message
-      ?? 'Unknown error'
-    error.value = status
+    error.value = errorMessageForEncounterGenerate(err)
   } finally {
     generating.value = false
   }
@@ -120,8 +105,7 @@ const generate = async () => {
 // Open file content in a collapsible state per file.
 const openFiles = ref<Set<string>>(new Set())
 const toggleFile = (name: string) => {
-  if (openFiles.value.has(name)) openFiles.value.delete(name)
-  else openFiles.value.add(name)
+  openFiles.value = toggleOpenGenerateFile(openFiles.value, name)
 }
 const isOpen = (name: string) => openFiles.value.has(name)
 

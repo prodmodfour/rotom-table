@@ -1238,3 +1238,14 @@
   - `npm test` — passes: 63 test files / 222 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: encounter generation helpers
+
+- Extracted encounter generator form/request primitives into `utils/encounterGeneration.ts`.
+  - The helper now owns count clamping, default form constants, initial route-query selection, table-key coercion, `/api/encounters/generate` request-body construction, open-file toggling, response types, and error-message normalization.
+- Updated `pages/generate.vue` to consume those focused helpers while preserving URL-driven region/table defaults, preview roll count clamping, generated-file toggles, request shape, and error display behavior.
+- Added `tests/utils/encounterGeneration.test.ts` covering count bounds, fallback/query selection, table-key coercion, request body construction, open-file set toggling, and common fetch error shapes.
+- Quality gates after this phase:
+  - `npm test` — passes: 64 test files / 228 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
