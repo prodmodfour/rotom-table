@@ -1123,3 +1123,13 @@
   - `npm test` — passes: 58 test files / 197 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: Pokédex entry detail component extraction
+
+- Extracted the Pokédex detail article, empty-state presentation, and book-style detail CSS from `pages/pokedex/[[pokemon_name]].vue` into `components/pokedex/PokedexEntryDetail.vue` plus `components/pokedex/pokedexDetail.css`.
+- The route page is now a smaller browser shell that prepares route/filter/selected-entry state and passes explicit display props to the detail component.
+- Preserved existing selected-entry layout, not-found copy, sprite rendering, badges, moves, type matchups, evolutions, and responsive book layout.
+- Quality gates after this phase:
+  - `npm test` — passes: 58 test files / 197 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
