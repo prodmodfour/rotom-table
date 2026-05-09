@@ -1417,3 +1417,14 @@
   - `npm test` — passes: 71 test files / 265 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: move automation summary panel extraction
+
+- Extracted the resolve-step move summary/sidebar into `components/move-automation/MoveAutomationSummaryPanel.vue`.
+  - The summary panel now owns move badges, frequency/damage/range/crit stats, explicit-script/manual-fallback messaging, and summary-specific styles.
+  - `MoveAutomationResolveStep.vue` now focuses on interactive resolution sections and delegates static move metadata display.
+- Preserved move summary copy, badges, fallback warning, explicit script banner, and formula display.
+- Quality gates after this phase:
+  - `npm test` — passes: 71 test files / 265 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
