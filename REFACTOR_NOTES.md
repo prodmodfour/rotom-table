@@ -1758,3 +1758,13 @@
   - `npm test` — passes: 84 test files / 322 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: shared reference type filter
+
+- Extracted move-index type-filter radiogroup presentation into `components/reference/ReferenceTypeFilter.vue`.
+- Updated the Moves route to bind type state through a focused `v-model:active-type` interface while preserving All/type badge buttons, active styling, and ARIA pressed semantics.
+- Removed move-index-local type-filter CSS now owned by the shared reference filter component.
+- Quality gates after this phase:
+  - `npm test` — passes: 84 test files / 322 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
