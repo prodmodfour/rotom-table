@@ -657,3 +657,14 @@
   - `npm test` — passes: 36 test files / 119 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: isometric token selection style sync extraction
+
+- Continued Phase 6 by moving selected-token render-object repaint fan-out into `utils/isometric/tokenObjectSync.ts`.
+  - `components/IsometricGrid.client.vue` now delegates selection styling iteration to a focused helper and only applies layer visibility after the repaint pass.
+  - Missing render objects are skipped consistently with the existing behavior.
+- Expanded `tests/utils/isometric/tokenObjectSync.test.ts` to cover selection-state repainting and missing-object skips.
+- Quality gates after this phase:
+  - `npm test` — passes: 36 test files / 121 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.

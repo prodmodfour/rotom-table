@@ -84,7 +84,10 @@ import {
   createIsometricTokenHoverController,
   updateHoveredPokemonElevationBadge,
 } from '~/utils/isometric/tokenHover'
-import { syncPokemonRenderObjects } from '~/utils/isometric/tokenObjectSync'
+import {
+  syncPokemonRenderObjects,
+  syncPokemonRenderObjectSelectionStyles,
+} from '~/utils/isometric/tokenObjectSync'
 
 export type { BuildTool } from '~/shared/mapEditor'
 
@@ -358,15 +361,12 @@ const applyRenderObjectPosition = (renderObject: PokemonRenderObject) => {
 }
 
 const refreshPokemonStyles = () => {
-  for (const pokemon of props.pokemons) {
-    const renderObject = renderObjects.get(pokemon.id)
-
-    if (!renderObject) {
-      continue
-    }
-
-    paintPokemonRenderObjectStyle(renderObject, props.selectedId === pokemon.id)
-  }
+  syncPokemonRenderObjectSelectionStyles({
+    renderObjects,
+    pokemons: props.pokemons,
+    selectedId: props.selectedId,
+    paintRenderObjectStyle: (renderObject, selected) => paintPokemonRenderObjectStyle(renderObject, selected),
+  })
   applyLayerVisibility()
 }
 

@@ -10,6 +10,16 @@ export interface TokenObjectSyncOptions<TRenderObject> {
   clearHoverForToken?: (id: string) => void
 }
 
+export interface TokenObjectSelectionStyleSyncOptions<
+  TRenderObject,
+  TPokemon extends Pick<SpawnedPokemon, 'id'> = SpawnedPokemon,
+> {
+  renderObjects: ReadonlyMap<string, TRenderObject>
+  pokemons: TPokemon[]
+  selectedId: string | null | undefined
+  paintRenderObjectStyle: (renderObject: TRenderObject, selected: boolean, pokemon: TPokemon) => void
+}
+
 export const syncPokemonRenderObjects = <TRenderObject>({
   renderObjects,
   pokemons,
@@ -39,5 +49,25 @@ export const syncPokemonRenderObjects = <TRenderObject>({
     }
 
     updateRenderObject(renderObject, pokemon)
+  }
+}
+
+export const syncPokemonRenderObjectSelectionStyles = <
+  TRenderObject,
+  TPokemon extends Pick<SpawnedPokemon, 'id'> = SpawnedPokemon,
+>({
+  renderObjects,
+  pokemons,
+  selectedId,
+  paintRenderObjectStyle,
+}: TokenObjectSelectionStyleSyncOptions<TRenderObject, TPokemon>) => {
+  for (const pokemon of pokemons) {
+    const renderObject = renderObjects.get(pokemon.id)
+
+    if (!renderObject) {
+      continue
+    }
+
+    paintRenderObjectStyle(renderObject, selectedId === pokemon.id, pokemon)
   }
 }

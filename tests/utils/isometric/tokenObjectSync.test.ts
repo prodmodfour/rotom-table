@@ -1,5 +1,8 @@
 import { describe, expect, it, vi } from 'vitest'
-import { syncPokemonRenderObjects } from '~/utils/isometric/tokenObjectSync'
+import {
+  syncPokemonRenderObjects,
+  syncPokemonRenderObjectSelectionStyles,
+} from '~/utils/isometric/tokenObjectSync'
 import type { SpawnedPokemon } from '~/types/pokemon'
 
 const makePokemon = (id: string): SpawnedPokemon => ({
@@ -95,5 +98,35 @@ describe('isometric token object sync', () => {
     expect(disposeRenderObject).toHaveBeenCalledWith(stale, 'old')
     expect(renderObjects.has('old')).toBe(false)
     expect(renderObjects.get('kept')).toBe(kept)
+  })
+
+  it('syncs selection styling for existing render objects only', () => {
+    const selected = { id: 'selected' }
+    const other = { id: 'other' }
+    const paintRenderObjectStyle = vi.fn()
+
+    syncPokemonRenderObjectSelectionStyles({
+      renderObjects: new Map([
+        ['selected', selected],
+        ['other', other],
+      ]),
+      pokemons: [makePokemon('selected'), makePokemon('missing'), makePokemon('other')],
+      selectedId: 'selected',
+      paintRenderObjectStyle,
+    })
+
+    expect(paintRenderObjectStyle).toHaveBeenCalledTimes(2)
+    expect(paintRenderObjectStyle).toHaveBeenNthCalledWith(
+      1,
+      selected,
+      true,
+      expect.objectContaining({ id: 'selected' }),
+    )
+    expect(paintRenderObjectStyle).toHaveBeenNthCalledWith(
+      2,
+      other,
+      false,
+      expect.objectContaining({ id: 'other' }),
+    )
   })
 })
