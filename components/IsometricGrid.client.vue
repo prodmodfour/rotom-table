@@ -32,10 +32,8 @@ import {
   type PtuDamageRollResult,
 } from '~/utils/ptuDamage'
 import {
-  COMBAT_STAGE_KEYS,
   COMBAT_STAGE_ROWS,
   clampCombatStage,
-  normalizeCombatStages,
 } from '~/utils/combatStages'
 import { normalizeConditionNames } from '~/utils/statusConditions'
 import type { CombatStageKey, CombatStageMap } from '~/types/combatStages'
@@ -86,6 +84,18 @@ import {
   updateHpDialogFromPokemon,
   type HpDialogState,
 } from '~/utils/isometric/tokenHpDialog'
+import {
+  createCombatStagesDialogState,
+  createConditionsDialogState,
+  formatCombatStage,
+  getAdjustedCombatStage,
+  getNormalizedCombatDialogStages,
+  isCombatStagesDialogChanged,
+  isConditionsDialogChanged,
+  updateConditionsDialogFromPokemon,
+  type CombatStagesDialogState,
+  type ConditionsDialogState,
+} from '~/utils/isometric/tokenStatusDialogs'
 import {
   animatePokemonRenderObject,
   applyPokemonRenderObjectPosition,
@@ -181,40 +191,11 @@ const EMPTY_PREVIEW: PreviewState = {
 const container = ref<HTMLDivElement | null>(null)
 const contextMenu = ref<TokenContextMenuState | null>(null)
 
-interface CombatStagesDialogState {
-  id: string
-  species: string
-  originalStages: CombatStageMap
-  stages: CombatStageMap
-}
-
 const combatStagesDialog = ref<CombatStagesDialogState | null>(null)
-
-const combatStagesDialogChanged = computed(() => {
-  const dialog = combatStagesDialog.value
-  if (!dialog) return false
-  return COMBAT_STAGE_KEYS.some(
-    (key) => clampCombatStage(dialog.stages[key]) !== dialog.originalStages[key],
-  )
-})
-
-interface ConditionsDialogState {
-  id: string
-  species: string
-  originalConditions: string[]
-  conditions: string[]
-}
+const combatStagesDialogChanged = computed(() => isCombatStagesDialogChanged(combatStagesDialog.value))
 
 const conditionsDialog = ref<ConditionsDialogState | null>(null)
-
-const conditionsDialogChanged = computed(() => {
-  const dialog = conditionsDialog.value
-  if (!dialog) return false
-  const current = normalizeConditionNames(dialog.conditions)
-  const original = normalizeConditionNames(dialog.originalConditions)
-  if (current.length !== original.length) return true
-  return current.some((name, index) => name !== original[index])
-})
+const conditionsDialogChanged = computed(() => isConditionsDialogChanged(conditionsDialog.value))
 
 const hpDialog = ref<HpDialogState | null>(null)
 const hpAmountInput = ref<HTMLInputElement | null>(null)
@@ -968,20 +949,15 @@ const handleContextModifyCombatStages = () => {
     return
   }
 
-  const stages = normalizeCombatStages(target.combatStages)
-  combatStagesDialog.value = {
-    id: target.id,
-    species: target.species,
-    originalStages: { ...stages },
-    stages: { ...stages },
-  }
+  combatStagesDialog.value = createCombatStagesDialogState(target)
   closeContextMenu()
 }
 
 const adjustCombatStage = (key: CombatStageKey, delta: number) => {
   if (!combatStagesDialog.value) return
-  combatStagesDialog.value.stages[key] = clampCombatStage(
-    clampCombatStage(combatStagesDialog.value.stages[key]) + delta,
+  combatStagesDialog.value.stages[key] = getAdjustedCombatStage(
+    combatStagesDialog.value.stages[key],
+    delta,
   )
 }
 
@@ -992,7 +968,7 @@ const normalizeCombatStageInput = (key: CombatStageKey) => {
 
 const handleCombatStagesDialogSubmit = () => {
   if (!combatStagesDialog.value || !canControlPokemon(combatStagesDialog.value.id)) return
-  const stages = normalizeCombatStages(combatStagesDialog.value.stages)
+  const stages = getNormalizedCombatDialogStages(combatStagesDialog.value)
   combatStagesDialog.value.stages = { ...stages }
   if (!combatStagesDialogChanged.value) {
     closeCombatStagesDialog()
@@ -1018,13 +994,7 @@ const handleContextApplyRemoveConditions = () => {
     return
   }
 
-  const conditions = normalizeConditionNames(target.conditions)
-  conditionsDialog.value = {
-    id: target.id,
-    species: target.species,
-    originalConditions: [...conditions],
-    conditions: [...conditions],
-  }
+  conditionsDialog.value = createConditionsDialogState(target)
   closeContextMenu()
 }
 
@@ -1515,8 +1485,7 @@ watch(
       if (!live) {
         closeConditionsDialog()
       } else {
-        conditionsDialog.value.species = live.species
-        conditionsDialog.value.originalConditions = normalizeConditionNames(live.conditions)
+        conditionsDialog.value = updateConditionsDialogFromPokemon(conditionsDialog.value, live)
       }
     }
 

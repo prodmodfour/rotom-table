@@ -403,3 +403,14 @@
   - `npm test` — passes: 19 test files / 55 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: isometric status dialog helper extraction
+
+- Continued Phase 6 cleanup by extracting token combat-stage and condition dialog state helpers into `utils/isometric/tokenStatusDialogs.ts`.
+  - `components/IsometricGrid.client.vue` now delegates combat-stage normalization/change detection, stage formatting/adjustment, condition normalization/change detection, and live-condition metadata syncing to focused helpers.
+  - The combat-stage preview formatter is now an explicit import instead of an implicit template lookup.
+- Added `tests/utils/isometric/tokenStatusDialogs.test.ts` covering combat-stage clamping/formatting/change detection and condition normalization/sync behavior.
+- Quality gates after this phase:
+  - `npm test` — passes: 20 test files / 59 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
