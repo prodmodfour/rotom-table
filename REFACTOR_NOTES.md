@@ -1011,3 +1011,14 @@
   - `npm test` — passes: 51 test files / 177 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: Pokémon sheet editor component extraction
+
+- Extracted Pokémon sheet editor orchestration and panel composition into `components/sheets/PokemonSheetEditor.vue`.
+  - The editor component now owns Pokémon derived state, nature controls, CSV-backed fields, row-action wiring, and panel layout.
+- Reduced `pages/sheets/[slug].vue` to a route shell for slug lookup, editable-resource access, page metadata, shared sheet chrome, and not-found handling.
+- Preserved Pokémon sheet autosave/resource wiring, player-access behavior, panel props/events, and nature `natureMod` synchronization.
+- Quality gates after this phase:
+  - `npm test` — passes: 51 test files / 177 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
