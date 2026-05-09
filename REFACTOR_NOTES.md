@@ -1366,3 +1366,13 @@
   - `npm test` — passes: 71 test files / 265 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: encounter table sidebar extraction
+
+- Extracted the `/encounter-tables` sidebar, search input, grouped table list, and sidebar-specific styles into `components/encounters/EncounterTablesSidebar.vue`.
+  - The component receives explicit filtered groups/counts/selection props, exposes `v-model:searchTerm`, and emits table selection without owning browser state.
+  - The encounter-tables route now delegates sidebar presentation while preserving search filtering, active-table highlighting, and Generate-page navigation copy.
+- Quality gates after this phase:
+  - `npm test` — passes: 71 test files / 265 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
