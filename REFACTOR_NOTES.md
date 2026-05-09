@@ -333,3 +333,15 @@
   - `npm test` — passes: 13 test files / 40 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+
+## Next phase update: isometric interaction target extraction
+
+- Continued Phase 6 by extracting renderer pointer/raycast target resolution from `components/IsometricGrid.client.vue` into `utils/isometric/interactionTargets.ts`.
+  - The new module owns pointer-to-raycaster conversion, token proxy picking, movement-grid plane intersection, terrain build target selection/validation, and hazard target selection/validation.
+  - The Vue component now keeps only small wrappers that supply current renderer state, dimensions, occupancy sets, and emitted action handlers.
+- Preserved token hover/click picking, movement preview plane picking, terrain pencil/eraser validity rules, hazard ground/voxel/decal picking, and hazard eraser validation.
+- Quality gates after this phase:
+  - `npm test` — passes: 13 test files / 40 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.

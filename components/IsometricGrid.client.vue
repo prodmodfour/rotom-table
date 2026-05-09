@@ -14,10 +14,8 @@ import type { PreviewState } from '~/utils/grid'
 import { canPlacePokemon, findPathForPokemon, getPokemonCenter } from '~/utils/grid'
 import {
   buildAllVoxelOccupancy,
-  cellInsidePokemonFootprint,
   defaultBuilderVoxelColor,
   parseHexColor,
-  voxelKey,
   voxelMaterialId,
   withDefaultBuilderVoxelColor,
 } from '~/utils/voxels'
@@ -62,6 +60,12 @@ import {
 } from '~/utils/isometric/hazardRenderer'
 import { createFieldEffectRenderer } from '~/utils/isometric/fieldEffectRenderer'
 import { createGridRenderer } from '~/utils/isometric/gridRenderer'
+import {
+  getMoveGridIntersectionFromPointer,
+  pickBuildTargetFromPointer,
+  pickHazardTargetFromPointer,
+  pickPokemonIdFromPointer,
+} from '~/utils/isometric/interactionTargets'
 import { createBuildGhostRenderer, createHazardGhostRenderer } from '~/utils/isometric/previewGhosts'
 import { updateElevationBadge } from '~/utils/isometric/tokenHud'
 import {
@@ -792,33 +796,14 @@ const updatePreviewAtAnchor = (anchor: GridAnchor | null) => {
   emit('preview-change', { ...activePreview })
 }
 
-const setPointerFromCoords = (coords: { clientX: number; clientY: number }) => {
-  if (!renderer || !camera) {
-    return null
-  }
-
-  const bounds = renderer.domElement.getBoundingClientRect()
-  const pointer = new THREE.Vector2(
-    ((coords.clientX - bounds.left) / bounds.width) * 2 - 1,
-    -((coords.clientY - bounds.top) / bounds.height) * 2 + 1,
-  )
-
-  raycaster.setFromCamera(pointer, camera)
-  return pointer
-}
-
-const pickPokemonId = (event: MouseEvent | PointerEvent) => {
-  if (!camera) {
-    return null
-  }
-
-  setPointerFromCoords(event)
-  const proxies = Array.from(renderObjects.values(), (renderObject) => renderObject.proxy)
-  const intersections = raycaster.intersectObjects(proxies, false)
-  const hit = intersections[0]?.object
-
-  return (hit?.userData.pokemonId as string | undefined) ?? null
-}
+const pickPokemonId = (event: MouseEvent | PointerEvent) =>
+  pickPokemonIdFromPointer({
+    event,
+    renderer,
+    camera,
+    raycaster,
+    renderObjects: renderObjects.values(),
+  })
 
 const updateHoverFromPointer = (event: PointerEvent) => {
   // Match normal link hover behaviour: touch/drag interactions don't leave a
@@ -832,24 +817,14 @@ const updateHoverFromPointer = (event: PointerEvent) => {
   setHoveredPokemonId(pickPokemonId(event))
 }
 
-const getMoveGridIntersection = (event: MouseEvent | PointerEvent, yLevel: number) => {
-  if (!camera) {
-    return null
-  }
-
-  setPointerFromCoords(event)
-  const point = new THREE.Vector3()
-  const hit = raycaster.ray.intersectPlane(
-    new THREE.Plane(new THREE.Vector3(0, 1, 0), -yLevel),
-    point,
-  )
-
-  if (!hit) {
-    return null
-  }
-
-  return point
-}
+const getMoveGridIntersection = (event: MouseEvent | PointerEvent, yLevel: number) =>
+  getMoveGridIntersectionFromPointer({
+    event,
+    yLevel,
+    renderer,
+    camera,
+    raycaster,
+  })
 
 const updatePreviewFromPointer = (event: MouseEvent | PointerEvent) => {
   if (!selectedPokemon.value) {
@@ -892,71 +867,20 @@ const updatePreviewFromPointer = (event: MouseEvent | PointerEvent) => {
 const pickBuildTarget = (
   event: MouseEvent | PointerEvent,
   tool: BuildTool,
-): BuildTarget | null => {
-  if (!renderer || !camera) return null
-  setPointerFromCoords(event)
-
-  const floorPlane = gridRenderer.floorPlane()
-  const targets: THREE.Object3D[] = []
-  if (floorPlane) targets.push(floorPlane)
-  targets.push(...voxelRenderer.meshes())
-
-  const intersections = raycaster.intersectObjects(targets, false)
-  const hit = intersections[0]
-  if (!hit) return null
-
-  let voxel: MapVoxelV2 | null = null
-  if (hit.object !== floorPlane) {
-    const mesh = hit.object as THREE.InstancedMesh
-    const voxels = mesh.userData.voxels as MapVoxelV2[] | undefined
-    if (voxels && hit.instanceId !== undefined) {
-      voxel = voxels[hit.instanceId] ?? null
-    }
-  }
-
-  if (tool === 'eraser') {
-    if (!voxel) return null
-    return {
-      action: 'remove',
-      cell: { x: voxel.x, y: voxel.y, z: voxel.z },
-      valid: true,
-    }
-  }
-
-  let cell: { x: number; y: number; z: number }
-  if (voxel && hit.face) {
-    const normal = hit.face.normal
-    cell = {
-      x: voxel.x + Math.round(normal.x),
-      y: voxel.y + Math.round(normal.y),
-      z: voxel.z + Math.round(normal.z),
-    }
-  } else {
-    cell = {
-      x: Math.floor(hit.point.x),
-      y: 0,
-      z: Math.floor(hit.point.z),
-    }
-  }
-
-  const inBounds =
-    cell.x >= 0 &&
-    cell.x < props.dimensions.x &&
-    cell.y >= 0 &&
-    cell.y < props.dimensions.y &&
-    cell.z >= 0 &&
-    cell.z < props.dimensions.z
-  const key = voxelKey(cell.x, cell.y, cell.z)
-  const occupiedByVoxel = allVoxelOccupancy.value.has(key)
-  const occupiedByBlockingObject = mapMovementOccupancy.value.has(key)
-  const insidePokemon = cellInsidePokemonFootprint(cell.x, cell.y, cell.z, props.pokemons)
-
-  return {
-    action: 'place',
-    cell,
-    valid: inBounds && !occupiedByVoxel && !occupiedByBlockingObject && !insidePokemon,
-  }
-}
+): BuildTarget | null =>
+  pickBuildTargetFromPointer({
+    event,
+    tool,
+    renderer,
+    camera,
+    raycaster,
+    floorPlane: gridRenderer.floorPlane(),
+    voxelMeshes: voxelRenderer.meshes(),
+    dimensions: props.dimensions,
+    pokemons: props.pokemons,
+    allVoxelOccupancy: allVoxelOccupancy.value,
+    mapMovementOccupancy: mapMovementOccupancy.value,
+  })
 
 const updateBuildGhost = (target: BuildTarget | null) => {
   buildGhostRenderer.update(target, {
@@ -1001,70 +925,22 @@ const performBuildAction = (event: MouseEvent | PointerEvent, tool: BuildTool) =
   emit('place-voxel', voxel)
 }
 
-const hazardTargetFromHit = (hit: THREE.Intersection): { x: number; y: number; z: number; kind?: MapHazardKind } | null => {
-  const hazard = hit.object.userData.hazard as MapHazardV2 | undefined
-  if (hazard) return { x: hazard.x, y: hazard.y, z: hazard.z, kind: hazard.kind }
-
-  const mesh = hit.object as THREE.InstancedMesh
-  const voxels = mesh.userData.voxels as MapVoxelV2[] | undefined
-  const voxel = voxels && hit.instanceId !== undefined ? voxels[hit.instanceId] : null
-  if (voxel) return { x: voxel.x, y: voxel.y + 1, z: voxel.z }
-
-  return null
-}
-
-const hazardTargetFromGroundPlane = (): { x: number; y: number; z: number; kind?: MapHazardKind } | null => {
-  const point = new THREE.Vector3()
-  const y = normalizedGroundLevelY()
-  const hit = raycaster.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 1, 0), -y), point)
-  if (!hit) return null
-  return { x: Math.floor(point.x), y, z: Math.floor(point.z) }
-}
-
 const pickHazardTarget = (
   event: MouseEvent | PointerEvent,
   tool: BuildTool,
-): HazardTarget | null => {
-  if (!renderer || !camera) return null
-  setPointerFromCoords(event)
-
-  const targets: THREE.Object3D[] = []
-  targets.push(...hazardRenderer.meshes())
-  targets.push(...voxelRenderer.meshes())
-
-  const intersections = raycaster.intersectObjects(targets, false)
-  const target = intersections[0]
-    ? hazardTargetFromHit(intersections[0])
-    : hazardTargetFromGroundPlane()
-  if (!target) return null
-
-  const cell = { x: target.x, y: target.y, z: target.z }
-  const inBounds =
-    cell.x >= 0 &&
-    cell.x < props.dimensions.x &&
-    cell.y >= 0 &&
-    cell.y < props.dimensions.y &&
-    cell.z >= 0 &&
-    cell.z < props.dimensions.z
-
-  if (tool === 'eraser') {
-    const hasHazard = renderedHazards.value.some(
-      (hazard) => hazard.x === cell.x && hazard.y === cell.y && hazard.z === cell.z,
-    )
-    return {
-      action: 'remove',
-      cell,
-      kind: target.kind,
-      valid: inBounds && hasHazard,
-    }
-  }
-
-  return {
-    action: 'place',
-    cell,
-    valid: inBounds,
-  }
-}
+): HazardTarget | null =>
+  pickHazardTargetFromPointer({
+    event,
+    tool,
+    renderer,
+    camera,
+    raycaster,
+    hazardMeshes: hazardRenderer.meshes(),
+    voxelMeshes: voxelRenderer.meshes(),
+    hazards: renderedHazards.value,
+    dimensions: props.dimensions,
+    groundLevelY: normalizedGroundLevelY(),
+  })
 
 const updateHazardGhost = (target: HazardTarget | null) => {
   hazardGhostRenderer.update(target, {
