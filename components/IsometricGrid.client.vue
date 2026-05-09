@@ -2,7 +2,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
-import { CSS3DRenderer, CSS3DSprite } from 'three/examples/jsm/renderers/CSS3DRenderer.js'
+import { CSS3DRenderer } from 'three/examples/jsm/renderers/CSS3DRenderer.js'
 import type { GridAnchor, GridDimensions, SpawnedPokemon } from '~/types/pokemon'
 import type {
   LayerVisibility,
@@ -13,7 +13,7 @@ import type {
   VoxelMaterial,
 } from '~/types/map'
 import type { PreviewState } from '~/utils/grid'
-import { canPlacePokemon, findPathForPokemon, getAnchorCenter, getPokemonCenter } from '~/utils/grid'
+import { canPlacePokemon, findPathForPokemon, getPokemonCenter } from '~/utils/grid'
 import {
   buildAllVoxelOccupancy,
   cellInsidePokemonFootprint,
@@ -37,8 +37,6 @@ import { normalizeConditionNames } from '~/utils/statusConditions'
 import type { CombatStageKey, CombatStageMap } from '~/types/combatStages'
 import type { BuildTool } from '~/shared/mapEditor'
 import { disposeBlockTextureCache, type VoxelRenderStyle } from '~/utils/isometric/blockTextures'
-import { buildVolumeMaterials, paintVolumeMaterials } from '~/utils/isometric/materials'
-import { disposeObject3D } from '~/utils/isometric/resourceDisposal'
 import {
   disposeSpriteSharedTextures,
   disposeSpriteTextureCaches,
@@ -47,7 +45,6 @@ import type {
   BuildTarget,
   HazardTarget,
   PokemonRenderObject,
-  WorldSpriteState,
 } from '~/utils/isometric/types'
 import { createVoxelRenderer } from '~/utils/isometric/voxelRenderer'
 import {
@@ -57,19 +54,13 @@ import {
 import { createFieldEffectRenderer } from '~/utils/isometric/fieldEffectRenderer'
 import { createGridRenderer } from '~/utils/isometric/gridRenderer'
 import { createBuildGhostRenderer, createHazardGhostRenderer } from '~/utils/isometric/previewGhosts'
-import { buildElevationBadge, updateElevationBadge } from '~/utils/isometric/tokenHud'
+import { updateElevationBadge } from '~/utils/isometric/tokenHud'
 import {
   WORLD_SPRITE_HALO_MAX_ALPHA,
   WORLD_SPRITE_HALO_MIN_ALPHA,
-  applyAnimationFrame,
-  buildWorldSprite,
-  disposeWorldSprite,
   nowMs,
-  setWorldSpriteInvalid,
-  setWorldSpriteVisible,
-  updateSpriteFacing,
-  updateWorldSpriteLighting,
 } from '~/utils/isometric/worldSprites'
+import { createTokenMovePreviewRenderer } from '~/utils/isometric/tokenMovePreview'
 import {
   animatePokemonRenderObject,
   applyPokemonRenderObjectPosition,
@@ -504,19 +495,13 @@ const fieldEffectRenderer = createFieldEffectRenderer(fieldEffectContainer)
 const gridRenderer = createGridRenderer(gridGroup)
 const buildGhostRenderer = createBuildGhostRenderer(previewGroup)
 const hazardGhostRenderer = createHazardGhostRenderer(previewGroup)
+const tokenMovePreviewRenderer = createTokenMovePreviewRenderer({ scene, group: previewGroup })
 let renderer: THREE.WebGLRenderer | null = null
 let cssRenderer: CSS3DRenderer | null = null
 let camera: THREE.OrthographicCamera | null = null
 let controls: OrbitControls | null = null
 let resizeObserver: ResizeObserver | null = null
 let animationFrame = 0
-let ghostSprite: THREE.Sprite | null = null
-let ghostSpriteState: WorldSpriteState | null = null
-let previewElevationBadge: CSS3DSprite | null = null
-let previewVolume: THREE.Mesh<THREE.BoxGeometry, THREE.MeshBasicMaterial[]> | null = null
-let previewEdges: THREE.LineSegments | null = null
-let previewPathLine: THREE.Line | null = null
-let previewOwnerId: string | null = null
 let activePreview: PreviewState = { ...EMPTY_PREVIEW }
 let activePreviewCanPlace = false
 let activePreviewAnchor: GridAnchor | null = null
@@ -814,80 +799,8 @@ const currentBuildVoxelStyle = (cell?: { x: number; y: number; z: number }): Vox
 }
 
 const ensurePreviewObjects = () => {
-  if (!selectedPokemon.value) {
-    return
-  }
-
-  if (
-    previewOwnerId === selectedPokemon.value.id &&
-    ghostSprite &&
-    ghostSpriteState &&
-    previewElevationBadge &&
-    previewVolume &&
-    previewEdges &&
-    previewPathLine
-  ) {
-    return
-  }
-
-  disposeWorldSprite(ghostSpriteState)
-  disposeObject3D(previewElevationBadge)
-  disposeObject3D(previewVolume)
-  disposeObject3D(previewEdges)
-  ghostSprite = null
-  ghostSpriteState = null
-  previewElevationBadge = null
-  previewVolume = null
-  previewEdges = null
-
-  const selected = selectedPokemon.value
-  previewOwnerId = selected.id
-  ghostSpriteState = buildWorldSprite(selected, true)
-  ghostSprite = ghostSpriteState.sprite
-  setWorldSpriteVisible(ghostSpriteState, false)
-  previewGroup.add(ghostSpriteState.halo)
-  previewGroup.add(ghostSprite)
-
-  previewElevationBadge = buildElevationBadge(true)
-  previewElevationBadge.visible = false
-  scene.add(previewElevationBadge)
-
-  // Preview volume gets the same per-face shading as live pokemon
-  // boxes, but tinted with gruvbox yellow (reachable) or red
-  // (unreachable) instead of the warm gray ramp.
-  previewVolume = new THREE.Mesh(
-    new THREE.BoxGeometry(selected.base, selected.clearance, selected.base),
-    buildVolumeMaterials('reachable', 0.24),
-  )
-  previewVolume.visible = false
-  previewGroup.add(previewVolume)
-
-  previewEdges = new THREE.LineSegments(
-    new THREE.EdgesGeometry(new THREE.BoxGeometry(selected.base, selected.clearance, selected.base)),
-    new THREE.LineBasicMaterial({
-      color: 0xfbf1c7, // fg0 - bright cream highlight on the yellow box
-      transparent: true,
-      opacity: 0.92,
-      depthTest: true,
-      depthWrite: false,
-    }),
-  )
-  previewEdges.visible = false
-  previewGroup.add(previewEdges)
-
-  if (!previewPathLine) {
-    previewPathLine = new THREE.Line(
-      new THREE.BufferGeometry(),
-      new THREE.LineBasicMaterial({
-        color: 0xfabd2f, // gruvbox yellow path trail
-        transparent: true,
-        opacity: 0.95,
-        depthTest: true,
-        depthWrite: false,
-      }),
-    )
-    previewPathLine.visible = false
-    previewGroup.add(previewPathLine)
+  if (selectedPokemon.value) {
+    tokenMovePreviewRenderer.ensure(selectedPokemon.value)
   }
 }
 
@@ -895,30 +808,7 @@ const clearPreviewVisuals = () => {
   activePreview = { ...EMPTY_PREVIEW }
   activePreviewCanPlace = false
   activePreviewAnchor = null
-
-  if (ghostSpriteState) {
-    setWorldSpriteVisible(ghostSpriteState, false)
-    setWorldSpriteInvalid(ghostSpriteState, false)
-  }
-
-  if (previewElevationBadge) {
-    previewElevationBadge.visible = false
-  }
-
-  if (previewVolume) {
-    previewVolume.visible = false
-  }
-
-  if (previewEdges) {
-    previewEdges.visible = false
-  }
-
-  if (previewPathLine) {
-    previewPathLine.visible = false
-    previewPathLine.geometry.dispose()
-    previewPathLine.geometry = new THREE.BufferGeometry()
-  }
-
+  tokenMovePreviewRenderer.clear()
   emit('preview-change', { ...EMPTY_PREVIEW })
 }
 
@@ -930,7 +820,7 @@ const updatePreviewAtAnchor = (anchor: GridAnchor | null) => {
 
   ensurePreviewObjects()
 
-  if (!anchor || !ghostSprite || !ghostSpriteState || !previewElevationBadge || !previewVolume || !previewEdges) {
+  if (!anchor) {
     clearPreviewVisuals()
     return
   }
@@ -958,45 +848,19 @@ const updatePreviewAtAnchor = (anchor: GridAnchor | null) => {
       )
     : null
   const reachable = Boolean(path)
-  const center = getAnchorCenter(anchor, selected.base)
-
-  ghostSprite.position.set(center.x, anchor.y, center.z)
-  ghostSpriteState.halo.position.copy(ghostSprite.position)
-  setWorldSpriteVisible(ghostSpriteState, true)
-  setWorldSpriteInvalid(ghostSpriteState, !canForcePlace)
-
-  previewVolume.position.set(center.x, anchor.y + selected.clearance / 2, center.z)
-  // Repaint all 6 faces with the appropriate brightness ramp.
-  paintVolumeMaterials(
-    previewVolume.material,
-    reachable ? 'reachable' : 'unreachable',
-    reachable ? 0.24 : 0.22,
-  )
-  previewVolume.visible = true
-
-  ;(previewEdges.material as THREE.LineBasicMaterial).color.set(reachable ? 0xfbf1c7 : 0xfb4934)
-  previewEdges.position.copy(previewVolume.position)
-  previewEdges.visible = true
-
-  updateElevationBadge({
-    badge: previewElevationBadge,
-    center: new THREE.Vector3(center.x, anchor.y, center.z),
-    base: selected.base,
-    elevation: anchor.y,
+  const previewUpdated = tokenMovePreviewRenderer.update({
+    pokemon: selected,
+    anchor,
+    canForcePlace,
+    reachable,
+    path,
     groundLevelY: normalizedGroundLevelY(),
     camera,
   })
 
-  if (previewPathLine) {
-    const points =
-      path?.map((step) => {
-        const waypoint = getAnchorCenter(step, selected.base)
-        return new THREE.Vector3(waypoint.x, waypoint.y + selected.clearance / 2, waypoint.z)
-      }) ?? []
-
-    previewPathLine.geometry.dispose()
-    previewPathLine.geometry = new THREE.BufferGeometry().setFromPoints(points)
-    previewPathLine.visible = points.length >= 2
+  if (!previewUpdated) {
+    clearPreviewVisuals()
+    return
   }
 
   activePreviewAnchor = anchor
@@ -1831,30 +1695,15 @@ const animate = () => {
     })
   }
 
-  if (ghostSprite && ghostSpriteState && selectedPokemon.value) {
-    const ghostCenter = new THREE.Vector3(
-      ghostSprite.position.x,
-      activePreview.position?.y ?? selectedPokemon.value.position.y,
-      ghostSprite.position.z,
-    )
-    updateSpriteFacing(ghostSpriteState, {
-      camera,
-      center: ghostCenter,
-      facingDirection: DEFAULT_FACING_DIRECTION,
-      frontSpriteUrl: selectedPokemon.value.spriteUrl,
-      frontSpriteAnimation: selectedPokemon.value.spriteAnimation,
-      backSpriteUrl: selectedPokemon.value.backSpriteUrl,
-      backSpriteAnimation: selectedPokemon.value.backSpriteAnimation,
-      spriteCrop: selectedPokemon.value.spriteCrop,
-      turned: Boolean(selectedPokemon.value.turned),
-    })
-    // Ghost gets the directional tint too so it previews how the
-    // pokemon will be lit at the destination.
-    if (ghostSpriteState.animationMeta) {
-      applyAnimationFrame(ghostSpriteState, frameNowMs)
-    }
-    updateWorldSpriteLighting(ghostSpriteState, spriteBrightness, haloAlpha)
-  }
+  tokenMovePreviewRenderer.animate({
+    pokemon: selectedPokemon.value,
+    positionY: activePreview.position?.y ?? selectedPokemon.value?.position.y ?? null,
+    camera,
+    facingDirection: DEFAULT_FACING_DIRECTION,
+    frameNowMs,
+    spriteBrightness,
+    haloAlpha,
+  })
 
   renderer.render(scene, camera)
   cssRenderer.render(scene, camera)
@@ -1942,13 +1791,7 @@ onBeforeUnmount(() => {
   resizeObserver = null
 
   clearPreviewVisuals()
-  disposeWorldSprite(ghostSpriteState)
-  ghostSprite = null
-  ghostSpriteState = null
-  disposeObject3D(previewElevationBadge)
-  disposeObject3D(previewVolume)
-  disposeObject3D(previewEdges)
-  disposeObject3D(previewPathLine)
+  tokenMovePreviewRenderer.dispose()
   disposeBuildGhost()
   disposeHazardGhost()
   hazardRenderer.dispose()
@@ -2093,16 +1936,7 @@ watch(
     if (!selectedPokemon.value) {
       clearPreviewVisuals()
       closeContextMenu()
-      disposeWorldSprite(ghostSpriteState)
-      disposeObject3D(previewElevationBadge)
-      disposeObject3D(previewVolume)
-      disposeObject3D(previewEdges)
-      ghostSprite = null
-      ghostSpriteState = null
-      previewElevationBadge = null
-      previewVolume = null
-      previewEdges = null
-      previewOwnerId = null
+      tokenMovePreviewRenderer.disposeOwner()
       return
     }
 

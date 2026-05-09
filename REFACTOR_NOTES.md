@@ -309,3 +309,15 @@
   - `npm test` — passes: 13 test files / 40 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+
+## Next phase update: isometric token move preview extraction
+
+- Continued Phase 6 by extracting token movement preview ghost ownership from `components/IsometricGrid.client.vue` into `utils/isometric/tokenMovePreview.ts`.
+  - The new renderer owns ghost sprite/halo setup, preview cage and elevation badge, path-line updates, invalid/reachable tinting, animation-facing updates, and preview disposal.
+  - The Vue component keeps movement/pathfinding decisions and preview event emission while delegating preview rendering details.
+- Preserved movement preview reachability, forced-placement invalid tinting, elevation badge behavior, path trail rendering, and ghost sprite lighting/front-back selection.
+- Quality gates after this phase:
+  - `npm test` — passes: 13 test files / 40 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
