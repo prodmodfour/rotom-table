@@ -1133,3 +1133,13 @@
   - `npm test` — passes: 58 test files / 197 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: Pokédex profile column extraction
+
+- Extracted the left-side Pokédex profile column into `components/pokedex/PokedexProfileColumn.vue` with explicit entry, sprite, evolution, size, breeding, diet, and habitat props.
+- Added `components/pokedex/types.ts` for the displayed evolution DTO shared by Pokédex detail components.
+- `PokedexEntryDetail.vue` now delegates sprite/base-stat/basic-info/evolution/size/breeding sections to the focused profile column while preserving shared book styles.
+- Quality gates after this phase:
+  - `npm test` — passes: 58 test files / 197 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
