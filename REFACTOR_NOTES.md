@@ -1053,3 +1053,13 @@
   - `npm test` — passes: 52 test files / 180 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: Pokédex search-query helper extraction
+
+- Extracted advanced Pokédex boolean search parsing and field-filter matching into `utils/pokedex/searchQuery.ts`.
+- Kept the route page responsible only for Nuxt state/computed wiring while the parser now owns normalization, tokenization, implicit-AND behavior, NOT/dash exclusions, and multi-field operator matching.
+- Added `tests/utils/pokedex/searchQuery.test.ts` covering operator tokenization, dash exclusion normalization, compact-term matching, and field filter combination semantics.
+- Quality gates after this phase:
+  - `npm test` — passes: 53 test files / 184 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
