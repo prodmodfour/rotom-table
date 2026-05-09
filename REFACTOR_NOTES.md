@@ -981,3 +981,13 @@
   - `npm test` — passes: 49 test files / 171 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: shared sheet page shell
+
+- Extracted duplicated Pokémon/trainer sheet page chrome into `components/sheets/SheetPageShell.vue`.
+  - The shell owns app navigation, back link, save indicator placement, page spacing, and found/not-found slot layout.
+- Updated Pokémon and trainer sheet route pages to use the shared shell while preserving their existing editor panels, save status wiring, and not-found copy.
+- Quality gates after this phase:
+  - `npm test` — passes: 49 test files / 171 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.

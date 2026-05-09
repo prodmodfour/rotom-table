@@ -143,17 +143,12 @@ const {
 </script>
 
 <template>
-  <div class="sheet-page">
-    <header class="sheet-header">
-      <AppNavigation />
-
-      <div class="back-row">
-        <NuxtLink to="/sheets" class="back-link">← All sheets</NuxtLink>
-        <SaveIndicator v-if="sheet" :status="saveStatus" :error="saveError" />
-      </div>
-    </header>
-
-    <main v-if="sheet" class="sheet-body">
+  <SheetPageShell
+    :has-sheet="Boolean(sheet)"
+    :save-status="saveStatus"
+    :save-error="saveError"
+  >
+    <template v-if="sheet">
       <!-- ============ Identity strip ============ -->
       <PokemonIdentityPanel
         v-model:types-csv="typesAsCsv"
@@ -246,43 +241,19 @@ const {
         :sheet="sheet"
         :skills="skills"
       />
-    </main>
+    </template>
 
-    <main v-else class="sheet-empty">
+    <template #not-found>
       <section class="panel-card">
         <h1>Sheet not found</h1>
         <p>No sheet exists for slug <code>{{ route.params.slug }}</code>.</p>
         <NuxtLink to="/sheets" class="back-link">← Back to all sheets</NuxtLink>
       </section>
-    </main>
-  </div>
+    </template>
+  </SheetPageShell>
 </template>
 
 <style scoped>
-.sheet-page {
-  display: flex;
-  flex-direction: column;
-  gap: 0.85rem;
-  padding: 0.85rem;
-  min-height: 100vh;
-  background: var(--paper);
-  color: var(--ink);
-}
-
-.sheet-header {
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-}
-
-.back-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.6rem;
-  padding: 0 0.25rem;
-}
-
 .back-link {
   color: var(--ink-soft);
   text-decoration: none;
@@ -294,13 +265,6 @@ const {
   color: var(--ink-bright);
   text-decoration: underline;
   text-decoration-color: var(--rule-strong);
-}
-
-.sheet-body,
-.sheet-empty {
-  display: flex;
-  flex-direction: column;
-  gap: 0.85rem;
 }
 
 .panel-card {

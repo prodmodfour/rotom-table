@@ -155,15 +155,11 @@ const {
 </script>
 
 <template>
-  <div class="sheet-detail">
-    <header class="sheet-header">
-      <AppNavigation />
-      <div class="back-row">
-        <NuxtLink to="/sheets" class="back-link">← All sheets</NuxtLink>
-        <SaveIndicator v-if="sheet" :status="saveStatus" :error="saveError" />
-      </div>
-    </header>
-
+  <SheetPageShell
+    :has-sheet="Boolean(sheet)"
+    :save-status="saveStatus"
+    :save-error="saveError"
+  >
     <article v-if="sheet" class="sheet-card">
       <!-- ===== Identity strip ===== -->
       <TrainerIdentityPanel
@@ -277,11 +273,13 @@ const {
       />
     </article>
 
-    <article v-else class="sheet-card">
-      <h1>Trainer not found</h1>
-      <p>No trainer for slug <code>{{ slug }}</code>.</p>
-      <NuxtLink to="/sheets" class="back-link">← Back to all sheets</NuxtLink>
-    </article>
+    <template #not-found>
+      <article class="sheet-card">
+        <h1>Trainer not found</h1>
+        <p>No trainer for slug <code>{{ slug }}</code>.</p>
+        <NuxtLink to="/sheets" class="back-link">← Back to all sheets</NuxtLink>
+      </article>
+    </template>
 
     <TrainerPortraitPickerModal
       v-if="sheet && portraitPickerOpen"
@@ -291,33 +289,10 @@ const {
       @close="closePortraitPicker"
       @select="selectPortrait"
     />
-  </div>
+  </SheetPageShell>
 </template>
 
 <style scoped>
-.sheet-detail {
-  display: flex;
-  flex-direction: column;
-  gap: 0.85rem;
-  padding: 0.85rem;
-  min-height: 100vh;
-  background: var(--paper);
-  color: var(--ink);
-}
-
-.sheet-header {
-  display: flex;
-  flex-direction: column;
-  gap: 0.85rem;
-}
-
-.back-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.6rem;
-}
-
 .back-link {
   color: var(--ink-soft);
   text-decoration: underline;
@@ -336,5 +311,4 @@ const {
   box-shadow: var(--shadow-card);
   padding: 0.95rem;
 }
-
 </style>
