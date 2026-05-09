@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { PhPlus, PhX } from '@phosphor-icons/vue'
+import { PhX } from '@phosphor-icons/vue'
 import { trainerSheetsBySlug } from '~/data/trainerSheets'
 import { TRAINER_SKILL_ORDER } from '~/utils/sheets/trainerDerived'
 import { trainerCatalog } from '~/data/trainerCatalog'
@@ -278,86 +278,24 @@ const {
       <!-- =================================================================== -->
       <!-- FEATURES TAB                                                         -->
       <!-- =================================================================== -->
-      <section v-if="activeTab === 'features'" class="tab-panel">
-        <div class="block">
-          <h2 class="block-title">
-            Features ({{ sheet.features?.length ?? 0 }})
-            <button type="button" class="row-add" @click="addFeature">
-              <PhPlus :size="14" weight="bold" /> Add row
-            </button>
-          </h2>
-          <table class="data-table feat-table">
-            <thead>
-              <tr>
-                <th>Feature</th>
-                <th>Tags</th>
-                <th>Frequency / Action</th>
-                <th>Notes</th>
-                <th aria-label="Row actions"></th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="(f, i) in sheet.features" :key="i">
-                <th><EditableCell v-model="f.name" placeholder="Feature" /></th>
-                <td>
-                  <EditableCell
-                    :model-value="featureTagsCsv(f)"
-                    placeholder="Class"
-                    @update:model-value="(v) => setFeatureTags(f, (v as string) ?? '')"
-                  />
-                </td>
-                <td><EditableCell v-model="f.frequency" placeholder="—" /></td>
-                <td class="effect-col">
-                  <EditableCell v-model="f.notes" type="textarea" placeholder="—" multiline />
-                </td>
-                <td class="row-actions">
-                  <button type="button" class="row-remove" title="Remove feature" @click="removeFeature(i)">
-                    <PhX :size="14" weight="bold" />
-                  </button>
-                </td>
-              </tr>
-              <tr v-if="!sheet.features?.length">
-                <td colspan="5" class="muted">No features taken.</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
+      <TrainerFeaturesPanel
+        v-if="activeTab === 'features'"
+        :sheet="sheet"
+        :feature-tags-csv="featureTagsCsv"
+        @add-feature="addFeature"
+        @remove-feature="removeFeature"
+        @set-feature-tags="setFeatureTags"
+      />
 
       <!-- =================================================================== -->
       <!-- EDGES TAB                                                            -->
       <!-- =================================================================== -->
-      <section v-if="activeTab === 'edges'" class="tab-panel">
-        <div class="block">
-          <h2 class="block-title">
-            Edges ({{ sheet.edges?.length ?? 0 }})
-            <button type="button" class="row-add" @click="addEdge">
-              <PhPlus :size="14" weight="bold" /> Add row
-            </button>
-          </h2>
-          <table class="data-table feat-table">
-            <thead>
-              <tr><th>Edge</th><th>Notes</th><th aria-label="Row actions"></th></tr>
-            </thead>
-            <tbody>
-              <tr v-for="(e, i) in sheet.edges" :key="i">
-                <th><EditableCell v-model="e.name" placeholder="Edge" /></th>
-                <td class="effect-col">
-                  <EditableCell v-model="e.notes" type="textarea" placeholder="—" multiline />
-                </td>
-                <td class="row-actions">
-                  <button type="button" class="row-remove" title="Remove edge" @click="removeEdge(i)">
-                    <PhX :size="14" weight="bold" />
-                  </button>
-                </td>
-              </tr>
-              <tr v-if="!sheet.edges?.length">
-                <td colspan="3" class="muted">No edges taken.</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
+      <TrainerEdgesPanel
+        v-if="activeTab === 'edges'"
+        :sheet="sheet"
+        @add-edge="addEdge"
+        @remove-edge="removeEdge"
+      />
     </article>
 
     <article v-else class="sheet-card">

@@ -922,3 +922,12 @@
   - `npm test` — passes: 49 test files / 171 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: trainer feature and edge panel extraction
+
+- Continued Phase 7 trainer sheet page decomposition by extracting the remaining feature and edge tab tables into `components/sheets/TrainerFeaturesPanel.vue` and `components/sheets/TrainerEdgesPanel.vue`.
+- Updated `pages/sheets/trainers/[slug].vue` to wire focused add/remove/tag emits into those panels while preserving editable-cell behavior, feature tag CSV persistence, empty states, and row removal controls.
+- Quality gates after this phase:
+  - `npm test` — passes: 49 test files / 171 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
