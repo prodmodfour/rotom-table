@@ -15,12 +15,7 @@ import type {
 } from '~/types/map'
 import type { PreviewState } from '~/utils/grid'
 import { canPlacePokemon, findPathForPokemon, getPokemonCenter } from '~/utils/grid'
-import {
-  buildAllVoxelOccupancy,
-  defaultBuilderVoxelColor,
-  parseHexColor,
-  withDefaultBuilderVoxelColor,
-} from '~/utils/voxels'
+import { buildAllVoxelOccupancy } from '~/utils/voxels'
 import { buildMapOccupancy } from '~/utils/mapOccupancy'
 import { normalizeMapHazardLayer } from '~/utils/mapHazards'
 import { normalizeMapFieldEffects } from '~/utils/mapFieldEffects'
@@ -37,7 +32,10 @@ import {
   maxUsefulCameraZoom,
   syncIsometricRendererSize,
 } from '~/utils/isometric/cameraControls'
-import type { VoxelRenderStyle } from '~/utils/isometric/blockTextures'
+import {
+  createBuildVoxelPlacement,
+  resolveBuildVoxelRenderStyle,
+} from '~/utils/isometric/buildVoxels'
 import type {
   BuildTarget,
   HazardTarget,
@@ -479,16 +477,12 @@ const ensureHazardGhost = () => hazardGhostRenderer.ensure(props.hazardKind ?? '
 const disposeHazardGhost = () => hazardGhostRenderer.dispose()
 const hideHazardGhost = () => hazardGhostRenderer.hide()
 
-const currentBuildVoxelStyle = (cell?: { x: number; y: number; z: number }): VoxelRenderStyle => {
-  const style: VoxelRenderStyle = { materialId: props.buildMaterial }
-  if (props.buildColor && parseHexColor(props.buildColor) !== null) {
-    style.color = props.buildColor
-  } else if (cell) {
-    const color = defaultBuilderVoxelColor({ ...cell, materialId: props.buildMaterial })
-    if (color) style.color = color
-  }
-  return style
-}
+const currentBuildVoxelStyle = (cell?: { x: number; y: number; z: number }) =>
+  resolveBuildVoxelRenderStyle({
+    material: props.buildMaterial,
+    color: props.buildColor,
+    cell,
+  })
 
 const ensurePreviewObjects = () => {
   if (selectedPokemon.value) {
@@ -670,14 +664,11 @@ const performBuildAction = (event: MouseEvent | PointerEvent, tool: BuildTool) =
     return
   }
   if (!target.valid) return
-  const voxel: MapVoxelV2 = withDefaultBuilderVoxelColor({
-    x: target.cell.x,
-    y: target.cell.y,
-    z: target.cell.z,
-    materialId: props.buildMaterial,
-    ...(props.buildColor ? { color: props.buildColor } : {}),
-  })
-  emit('place-voxel', voxel)
+  emit('place-voxel', createBuildVoxelPlacement({
+    material: props.buildMaterial,
+    color: props.buildColor,
+    cell: target.cell,
+  }))
 }
 
 const pickHazardTarget = (

@@ -536,3 +536,14 @@
   - `npm test` — passes: 25 test files / 80 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: isometric build voxel helper extraction
+
+- Extracted terrain-builder voxel preview style and placement payload construction from `components/IsometricGrid.client.vue` into `utils/isometric/buildVoxels.ts`.
+  - The helper centralizes custom-color validation for previews while preserving the existing placement payload behavior for invalid custom colors and water default colors.
+- Added `tests/utils/isometric/buildVoxels.test.ts` covering explicit custom colors, invalid preview colors, and deterministic water builder defaults.
+- Preserved existing voxel placement events, material IDs, custom color handling, and default water block colors.
+- Quality gates after this phase:
+  - `npm test` — passes: 26 test files / 83 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
