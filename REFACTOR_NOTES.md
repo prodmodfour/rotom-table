@@ -1642,3 +1642,14 @@
   - `npm test` — passes: 79 test files / 304 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: edge index filtering helpers
+
+- Extracted edge-index search matching from `pages/edges/index.vue` into `utils/reference/edgeIndex.ts`.
+  - The helper owns normalized matching across name, prerequisites, and effect fields while preserving source ordering and empty-query behavior.
+- Updated the Edges route to consume the focused helper and remain a UI shell for search state and rendering.
+- Added `tests/utils/reference/edgeIndex.test.ts` covering haystack matching and filtered ordering.
+- Quality gates after this phase:
+  - `npm test` — passes: 80 test files / 306 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

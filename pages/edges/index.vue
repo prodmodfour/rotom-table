@@ -1,21 +1,13 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { edges, toSlug } from '~/data/ptuReference'
+import { filterEdgesForIndex } from '~/utils/reference/edgeIndex'
 
 useHead({ title: 'Edges · Rotom Table' })
 
 const searchTerm = ref('')
 
-const normalize = (value: string) => value.trim().toLowerCase()
-
-const filtered = computed(() => {
-  const query = normalize(searchTerm.value)
-  if (!query) return edges
-  return edges.filter((edge) => {
-    const haystacks = [edge.name, edge.prerequisites ?? '', edge.effect ?? '']
-    return haystacks.some((value) => normalize(value).includes(query))
-  })
-})
+const filtered = computed(() => filterEdgesForIndex(edges, { searchTerm: searchTerm.value }))
 </script>
 
 <template>
