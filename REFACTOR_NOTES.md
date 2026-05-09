@@ -723,3 +723,14 @@
   - `npm test` — passes: 40 test files / 141 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: shared editable sheet resource composable
+
+- Extracted duplicated Pokémon/trainer sheet page access and editable-resource wiring into `composables/sheets/useEditableSheetResource.ts`.
+  - The composable owns player-access gating, deep JSON cloning, normalization, optional initial preparation, `useEditableSheet` creation, and default save-status/error computed values.
+  - Pokémon and trainer sheet route pages now keep only slug/static-sheet lookup plus page-specific derived/editor logic.
+- Added `tests/composables/sheets/useEditableSheetResource.test.ts` covering accessible clone creation, player access denial for GM-only sheets, and player access acceptance.
+- Quality gates after this phase:
+  - `npm test` — passes: 41 test files / 144 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.

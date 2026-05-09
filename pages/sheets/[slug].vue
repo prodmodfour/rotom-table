@@ -27,7 +27,7 @@ import {
   computeStatEvasion,
   formatSignedModifier,
 } from '~/utils/evasion'
-import { useEditableSheet, type SaveStatus } from '~/composables/useEditableSheet'
+import { useEditableSheetResource } from '~/composables/sheets/useEditableSheetResource'
 import type {
   CharacterSheet,
   CharacterSheetMove,
@@ -66,18 +66,17 @@ const route = useRoute()
 const { isGm, isPlayer } = useAuth()
 const slug = String(route.params.slug ?? '')
 const baseSheet = characterSheetsBySlug.get(slug) ?? null
-const canAccessBaseSheet = computed(() => Boolean(baseSheet && (!isPlayer.value || baseSheet.player === true)))
-
-const initialClone: CharacterSheet | null = canAccessBaseSheet.value && baseSheet
-  ? normalizeCharacterSheet(JSON.parse(JSON.stringify(baseSheet)) as CharacterSheet)
-  : null
-
-if (initialClone) syncNatureModForSheet(initialClone)
-
-const editor = initialClone ? useEditableSheet(initialClone, 'pokemon') : null
-const sheet = computed<CharacterSheet | null>(() => editor?.sheet.value ?? null)
-const saveStatus = computed<SaveStatus>(() => editor?.saveStatus.value ?? 'idle')
-const saveError = computed<string | null>(() => editor?.saveError.value ?? null)
+const {
+  sheet,
+  saveStatus,
+  saveError,
+} = useEditableSheetResource<CharacterSheet>({
+  baseSheet,
+  kind: 'pokemon',
+  isPlayer,
+  normalize: normalizeCharacterSheet,
+  prepareInitial: syncNatureModForSheet,
+})
 
 useHead(() => ({
   title: sheet.value

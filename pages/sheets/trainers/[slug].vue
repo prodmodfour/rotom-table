@@ -27,7 +27,7 @@ import {
   computeStatEvasion,
   formatSignedModifier,
 } from '~/utils/evasion'
-import { useEditableSheet, type SaveStatus } from '~/composables/useEditableSheet'
+import { useEditableSheetResource } from '~/composables/sheets/useEditableSheetResource'
 import type {
   InventoryEntry,
   SkillRank,
@@ -72,16 +72,16 @@ const route = useRoute()
 const { isGm, isPlayer } = useAuth()
 const slug = String(route.params.slug ?? '')
 const baseSheet = trainerSheetsBySlug.get(slug) ?? null
-const canAccessBaseSheet = computed(() => Boolean(baseSheet && (!isPlayer.value || baseSheet.player === true)))
-
-const initialClone: TrainerSheet | null = canAccessBaseSheet.value && baseSheet
-  ? normalizeTrainerSheet(JSON.parse(JSON.stringify(baseSheet)) as TrainerSheet)
-  : null
-
-const editor = initialClone ? useEditableSheet(initialClone, 'trainer') : null
-const sheet = computed<TrainerSheet | null>(() => editor?.sheet.value ?? null)
-const saveStatus = computed<SaveStatus>(() => editor?.saveStatus.value ?? 'idle')
-const saveError = computed<string | null>(() => editor?.saveError.value ?? null)
+const {
+  sheet,
+  saveStatus,
+  saveError,
+} = useEditableSheetResource<TrainerSheet>({
+  baseSheet,
+  kind: 'trainer',
+  isPlayer,
+  normalize: normalizeTrainerSheet,
+})
 
 useHead(() => ({
   title: sheet.value ? `${sheet.value.name} · Trainer Sheet` : 'Trainer not found · Rotom Table',
