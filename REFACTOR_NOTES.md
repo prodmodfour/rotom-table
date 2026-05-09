@@ -547,3 +547,14 @@
   - `npm test` — passes: 26 test files / 83 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: isometric hazard placement helper extraction
+
+- Extracted hazard placement payload construction from `components/IsometricGrid.client.vue` into `utils/isometric/hazardPlacement.ts`.
+  - The helper owns the default hazard kind and toxic-spikes default layer behavior instead of keeping that event payload knowledge inline in the renderer component.
+- Added `tests/utils/isometric/hazardPlacement.test.ts` covering standard hazards, toxic-spikes layer defaults, and fallback hazard kind behavior.
+- Preserved existing `place-hazard` event payload shape and layer assignment semantics.
+- Quality gates after this phase:
+  - `npm test` — passes: 27 test files / 86 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.

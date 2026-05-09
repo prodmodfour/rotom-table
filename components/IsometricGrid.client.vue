@@ -17,7 +17,6 @@ import type { PreviewState } from '~/utils/grid'
 import { canPlacePokemon, findPathForPokemon, getPokemonCenter } from '~/utils/grid'
 import { buildAllVoxelOccupancy } from '~/utils/voxels'
 import { buildMapOccupancy } from '~/utils/mapOccupancy'
-import { normalizeMapHazardLayer } from '~/utils/mapHazards'
 import { normalizeMapFieldEffects } from '~/utils/mapFieldEffects'
 import type { CombatStageMap } from '~/types/combatStages'
 import type { BuildTool } from '~/shared/mapEditor'
@@ -36,6 +35,7 @@ import {
   createBuildVoxelPlacement,
   resolveBuildVoxelRenderStyle,
 } from '~/utils/isometric/buildVoxels'
+import { createHazardPlacement } from '~/utils/isometric/hazardPlacement'
 import type {
   BuildTarget,
   HazardTarget,
@@ -720,16 +720,10 @@ const performHazardAction = (event: MouseEvent | PointerEvent, tool: BuildTool) 
     emit('remove-hazard', target.cell)
     return
   }
-  const kind = props.hazardKind ?? 'spikes'
-  const hazard: MapHazardV2 = {
-    kind,
-    x: target.cell.x,
-    y: target.cell.y,
-    z: target.cell.z,
-  }
-  const layer = normalizeMapHazardLayer(kind, undefined)
-  if (layer !== undefined) hazard.layer = layer
-  emit('place-hazard', hazard)
+  emit('place-hazard', createHazardPlacement({
+    kind: props.hazardKind,
+    cell: target.cell,
+  }))
 }
 
 const handleLeftClick = (event: PointerEvent) => {
