@@ -1,6 +1,6 @@
 <script setup lang="ts">
+import type { DisplayedPokedexEvolution } from '~/utils/pokedex/entryDetails'
 import type { DisplayPokedexEntry } from '~/utils/pokedex/entryIndex'
-import type { DisplayedPokedexEvolution } from './types'
 
 defineProps<{
   dietSummary: string | null

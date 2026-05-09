@@ -1,32 +1,6 @@
 <script setup lang="ts">
-import { computed } from 'vue'
 import pokedexData from '~/ptu-data/data/pokedex.json'
-import { pokemonCatalogBySpecies } from '~/data/pokemonCatalog'
-import { usePokedexFilters } from '~/composables/pokedex/usePokedexFilters'
-import { toPokedexSlug } from '~/utils/pokedex/searchText'
-import {
-  capabilityTokensForEntry,
-  dietSummaryForEntry,
-  eggGroupSummaryForEntry,
-  eggMoveTokensForEntry,
-  genderSummaryForEntry,
-  habitatSummaryForEntry,
-  heightLabelForEntry,
-  isPlacementOnlyEntry,
-  pageNumberForSelectedEntry,
-  skillPhraseForEntry,
-  tmHmTokensForEntry,
-  tutorMoveTokensForEntry,
-  weightLabelForEntry,
-} from '~/utils/pokedex/entryDetails'
-import {
-  buildPokedexEntries,
-  buildPokedexEntryBySlug,
-  pokedexEntryPath,
-  routeParamToPokedexSlug,
-  type DisplayPokedexEntry,
-} from '~/utils/pokedex/entryIndex'
-import { buildTypeMatchupGroups } from '~/utils/pokedex/typeMatchups'
+import { usePokedexBrowser } from '~/composables/pokedex/usePokedexBrowser'
 import type { PokedexRecord } from '~/types/pokemon'
 
 definePageMeta({
@@ -37,81 +11,34 @@ definePageMeta({
   scrollToTop: (to, from) => !(to.path.startsWith('/pokedex') && from.path.startsWith('/pokedex')),
 })
 
-const route = useRoute()
+const {
+  capabilityTokens,
+  dietSummary,
+  displayedEvolutions,
+  eggGroupSummary,
+  eggMoveTokens,
+  filterMode,
+  filterOperators,
+  filteredEntries,
+  genderSummary,
+  habitatSummary,
+  heightLabel,
+  isPlacementOnly,
+  pageNumber,
+  pageTitle,
+  requestedPokemonName,
+  searchFilters,
+  selectedEntry,
+  selectedId,
+  selectedSprite,
+  skillPhrase,
+  tmHmTokens,
+  tutorMoveTokens,
+  typeMatchupGroups,
+  weightLabel,
+} = usePokedexBrowser(pokedexData as PokedexRecord[])
 
-const allEntries = buildPokedexEntries(pokedexData as PokedexRecord[])
-const entryBySlug = buildPokedexEntryBySlug(allEntries)
-const pokemonRouteSlug = computed(() => routeParamToPokedexSlug(route.params.pokemon_name))
-
-const { filteredEntries, filterMode, filterOperators, searchFilters } = usePokedexFilters(allEntries)
-
-const routedEntry = computed(() => (
-  pokemonRouteSlug.value ? entryBySlug.get(pokemonRouteSlug.value) ?? null : null
-))
-
-const selectedEntry = computed(() => {
-  if (pokemonRouteSlug.value) {
-    return routedEntry.value
-  }
-
-  return filteredEntries.value[0] ?? null
-})
-
-const selectedId = computed(() => selectedEntry.value?.id ?? null)
-
-const resolvePokedexSpecies = (species: string): DisplayPokedexEntry | null => (
-  entryBySlug.get(toPokedexSlug(species)) ?? null
-)
-
-const displayedEvolutions = computed(() => (
-  (selectedEntry.value?.evolutions ?? []).map((evolution) => {
-    const entry = resolvePokedexSpecies(evolution.species)
-    return {
-      ...evolution,
-      href: entry && entry.id !== selectedId.value ? pokedexEntryPath(entry) : null,
-    }
-  })
-))
-
-const requestedPokemonName = computed(() => {
-  if (!pokemonRouteSlug.value || selectedEntry.value) return null
-  const raw = route.params.pokemon_name
-  const value = Array.isArray(raw) ? raw[0] : raw
-  return typeof value === 'string' ? value : pokemonRouteSlug.value
-})
-
-useHead(() => ({
-  title: pokemonRouteSlug.value
-    ? selectedEntry.value
-      ? `${selectedEntry.value.species} · Pokédex · Rotom Table`
-      : 'Pokémon not found · Pokédex · Rotom Table'
-    : 'Pokédex · Rotom Table',
-}))
-
-const selectedSprite = computed(() => {
-  if (!selectedEntry.value) {
-    return null
-  }
-
-  return pokemonCatalogBySpecies.get(selectedEntry.value.species) ?? null
-})
-
-const isPlacementOnly = computed(() => isPlacementOnlyEntry(selectedEntry.value))
-const genderSummary = computed(() => genderSummaryForEntry(selectedEntry.value))
-const pageNumber = computed(() => pageNumberForSelectedEntry(selectedId.value, filteredEntries.value, allEntries))
-const capabilityTokens = computed(() => capabilityTokensForEntry(selectedEntry.value))
-const tmHmTokens = computed(() => tmHmTokensForEntry(selectedEntry.value))
-const eggMoveTokens = computed(() => eggMoveTokensForEntry(selectedEntry.value))
-const tutorMoveTokens = computed(() => tutorMoveTokensForEntry(selectedEntry.value))
-const skillPhrase = computed(() => skillPhraseForEntry(selectedEntry.value))
-const heightLabel = computed(() => heightLabelForEntry(selectedEntry.value))
-const weightLabel = computed(() => weightLabelForEntry(selectedEntry.value))
-const eggGroupSummary = computed(() => eggGroupSummaryForEntry(selectedEntry.value))
-const dietSummary = computed(() => dietSummaryForEntry(selectedEntry.value))
-const habitatSummary = computed(() => habitatSummaryForEntry(selectedEntry.value))
-
-const typeMatchupGroups = computed(() => buildTypeMatchupGroups(selectedEntry.value?.types))
-
+useHead(() => ({ title: pageTitle.value }))
 </script>
 
 <template>

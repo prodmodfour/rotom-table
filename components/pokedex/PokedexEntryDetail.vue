@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { formatNationalDexNumber } from '~/utils/pokedex/searchText'
-import type { CapabilityToken, MoveToken } from '~/utils/pokedex/entryDetails'
+import type { CapabilityToken, DisplayedPokedexEvolution, MoveToken } from '~/utils/pokedex/entryDetails'
 import type { DisplayPokedexEntry } from '~/utils/pokedex/entryIndex'
 import type { TypeMatchupGroup } from '~/utils/pokedex/typeMatchups'
-import type { DisplayedPokedexEvolution } from './types'
 
 defineProps<{
   capabilityTokens: CapabilityToken[]

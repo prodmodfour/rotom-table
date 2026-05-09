@@ -1,5 +1,5 @@
 import type { DisplayPokedexEntry } from '~/utils/pokedex/entryIndex'
-import type { PokedexCapabilities, PokedexRecord } from '~/types/pokemon'
+import type { PokedexCapabilities, PokedexEvolution, PokedexRecord } from '~/types/pokemon'
 
 // "Capability List" rendered as a sequence of items (mostly RefLinks). Each
 // entry has a ``ref`` name (the canonical capability for the link lookup) and
@@ -17,6 +17,10 @@ export interface CapabilityToken {
 export interface MoveToken {
   name: string
   display: string
+}
+
+export interface DisplayedPokedexEvolution extends PokedexEvolution {
+  href: string | null
 }
 
 // Skill abbreviations matching the printed book (Athl, Acro, Percep…).

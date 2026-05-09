@@ -1173,3 +1173,14 @@
   - `npm test` — passes: 58 test files / 197 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: Pokédex browser composable extraction
+
+- Extracted route selection, requested-name handling, page-title formatting, displayed-evolution DTO construction, filter wiring, selected sprite lookup, and selected-entry derivations into `composables/pokedex/usePokedexBrowser.ts`.
+- Moved the displayed evolution DTO type into `utils/pokedex/entryDetails.ts` so page/composable/components share it without component-to-component type coupling.
+- Reduced `pages/pokedex/[[pokemon_name]].vue` to a route shell that sets page metadata, calls the browser composable, and wires sidebar/detail components.
+- Added `tests/composables/pokedex/usePokedexBrowser.test.ts` covering routed selection, missing-route labels, displayed evolution links/self-link suppression, and page title formatting.
+- Quality gates after this phase:
+  - `npm test` — passes: 59 test files / 201 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
