@@ -16,6 +16,21 @@ import {
   type PokedexSearchTextKey,
 } from '~/utils/pokedex/searchText'
 import {
+  capabilityTokensForEntry,
+  dietSummaryForEntry,
+  eggGroupSummaryForEntry,
+  eggMoveTokensForEntry,
+  genderSummaryForEntry,
+  habitatSummaryForEntry,
+  heightLabelForEntry,
+  isPlacementOnlyEntry,
+  pageNumberForSelectedEntry,
+  skillPhraseForEntry,
+  tmHmTokensForEntry,
+  tutorMoveTokensForEntry,
+  weightLabelForEntry,
+} from '~/utils/pokedex/entryDetails'
+import {
   buildPokedexEntries,
   buildPokedexEntryBySlug,
   pokedexEntryPath,
@@ -23,7 +38,7 @@ import {
   type DisplayPokedexEntry,
 } from '~/utils/pokedex/entryIndex'
 import { matchesActiveSearchFilters, parseSearchExpression, type ActiveSearchFilter } from '~/utils/pokedex/searchQuery'
-import type { PokedexCapabilities, PokedexRecord } from '~/types/pokemon'
+import type { PokedexRecord } from '~/types/pokemon'
 
 definePageMeta({
   // Keep the browser mounted between /pokedex and /pokedex/:pokemon_name so
@@ -177,158 +192,19 @@ const selectedSprite = computed(() => {
   return pokemonCatalogBySpecies.get(selectedEntry.value.species) ?? null
 })
 
-const isPlacementOnly = computed(() => {
-  if (!selectedEntry.value) {
-    return false
-  }
-
-  return !selectedEntry.value.base_stats && !selectedEntry.value.abilities && !selectedEntry.value.level_up_moves
-})
-
-const genderSummary = computed(() => {
-  const entry = selectedEntry.value
-
-  if (!entry) {
-    return null
-  }
-
-  if (entry.genderless) {
-    return 'Genderless'
-  }
-
-  if (entry.male_pct != null || entry.female_pct != null) {
-    return `${entry.male_pct ?? 0}% M / ${entry.female_pct ?? 0}% F`
-  }
-
-  return null
-})
-
-// One-page index for the bottom-right page number.
-const pageNumber = computed(() => {
-  if (!selectedId.value) return null
-
-  const filteredIndex = filteredEntries.value.findIndex((entry) => entry.id === selectedId.value)
-  if (filteredIndex >= 0) return filteredIndex + 1
-
-  const allIndex = allEntries.findIndex((entry) => entry.id === selectedId.value)
-  return allIndex >= 0 ? allIndex + 1 : null
-})
-
-// "Capability List" rendered as a sequence of items (mostly RefLinks). Each
-// entry has a ``ref`` name (the canonical capability for the link lookup) and
-// a ``display`` string (which may include numbers or ``(args)``). Movement
-// keywords (Overland/Sky/Swim/...) have no link target — RefLink renders them
-// as plain text in that case.
-interface CapabilityToken {
-  display: string
-  /** Link lookup name, or null to render as plain text only. */
-  ref: string | null
-}
-const capabilityTokens = computed<CapabilityToken[]>(() => {
-  const capabilities = selectedEntry.value?.capabilities as PokedexCapabilities | undefined
-  if (!capabilities) return []
-
-  const numbered: Array<[string, number | string | undefined]> = [
-    ['Overland', capabilities.overland],
-    ['Sky', capabilities.sky],
-    ['Swim', capabilities.swim],
-    ['Levitate', capabilities.levitate],
-    ['Burrow', capabilities.burrow],
-    ['Jump', capabilities.jump],
-    ['Power', capabilities.power],
-  ]
-
-  const tokens: CapabilityToken[] = []
-  for (const [label, value] of numbered) {
-    if (value === undefined || value === null || value === 0 || value === '0') continue
-    // Movement caps: not in capabilities.json, render as plain text.
-    tokens.push({ display: `${label} ${value}`, ref: null })
-  }
-  for (const extra of capabilities.other ?? []) {
-    if (!extra) continue
-    // Use the raw label as both display and ref; RefLink will normalise the
-    // ref via stripCapabilityParams() / aliases.
-    tokens.push({ display: extra, ref: extra })
-  }
-  return tokens
-})
-
-// TM/HM, Egg, and Tutor moves rendered as arrays of link tokens so the
-// template can interleave commas between RefLinks.
-interface MoveToken { name: string; display: string }
-const tmHmTokens = computed<MoveToken[]>(() => {
-  const moves = selectedEntry.value?.tm_hm_moves
-  if (!moves || moves.length === 0) return []
-  return moves.map((move) => {
-    const prefix = move.kind === 'HM' ? 'H' : ''
-    return { name: move.name, display: `${prefix}${move.number} ${move.name}` }
-  })
-})
-const eggMoveTokens = computed<MoveToken[]>(
-  () => (selectedEntry.value?.egg_moves ?? []).map((name) => ({ name, display: name })),
-)
-const tutorMoveTokens = computed<MoveToken[]>(
-  () => (selectedEntry.value?.tutor_moves ?? []).map((move) => ({
-    name: move.name,
-    display: move.heart_scale ? `${move.name} (N)` : move.name,
-  })),
-)
-
-// Skill abbreviations matching the printed book (Athl, Acro, Percep…).
-const SKILL_ABBREVIATIONS: Record<string, string> = {
-  Athletics: 'Athl',
-  Acrobatics: 'Acro',
-  Combat: 'Combat',
-  Stealth: 'Stealth',
-  Perception: 'Percep',
-  Focus: 'Focus',
-}
-
-const skillPhrase = computed(() => {
-  const skills = selectedEntry.value?.skills
-  if (!skills) return ''
-
-  return Object.entries(skills)
-    .map(([skill, value]) => `${SKILL_ABBREVIATIONS[skill] ?? skill} ${value}`)
-    .join(', ')
-})
-
-const heightLabel = computed(() => {
-  const entry = selectedEntry.value
-  if (!entry || entry.height == null) return null
-
-  const meters = entry.height
-  const totalInches = meters / 0.0254
-  const feet = Math.floor(totalInches / 12)
-  const inches = Math.round(totalInches - feet * 12)
-  const sizeSuffix = entry.size ? ` (${entry.size})` : ''
-  return `${feet}' ${inches}" / ${meters.toFixed(1)}m${sizeSuffix}`
-})
-
-const weightLabel = computed(() => {
-  const entry = selectedEntry.value
-  if (!entry || entry.weight == null) return null
-  // PTU "weight class" is a small integer; we only know the class number.
-  return `Weight Class ${entry.weight}`
-})
-
-const eggGroupSummary = computed(() => {
-  const groups = selectedEntry.value?.egg_groups
-  if (!groups || groups.length === 0) return null
-  return groups.join(' / ')
-})
-
-const dietSummary = computed(() => {
-  const diet = selectedEntry.value?.diet
-  if (!diet || diet.length === 0) return null
-  return diet.join(', ')
-})
-
-const habitatSummary = computed(() => {
-  const habitat = selectedEntry.value?.habitat
-  if (!habitat || habitat.length === 0) return null
-  return habitat.join(', ')
-})
+const isPlacementOnly = computed(() => isPlacementOnlyEntry(selectedEntry.value))
+const genderSummary = computed(() => genderSummaryForEntry(selectedEntry.value))
+const pageNumber = computed(() => pageNumberForSelectedEntry(selectedId.value, filteredEntries.value, allEntries))
+const capabilityTokens = computed(() => capabilityTokensForEntry(selectedEntry.value))
+const tmHmTokens = computed(() => tmHmTokensForEntry(selectedEntry.value))
+const eggMoveTokens = computed(() => eggMoveTokensForEntry(selectedEntry.value))
+const tutorMoveTokens = computed(() => tutorMoveTokensForEntry(selectedEntry.value))
+const skillPhrase = computed(() => skillPhraseForEntry(selectedEntry.value))
+const heightLabel = computed(() => heightLabelForEntry(selectedEntry.value))
+const weightLabel = computed(() => weightLabelForEntry(selectedEntry.value))
+const eggGroupSummary = computed(() => eggGroupSummaryForEntry(selectedEntry.value))
+const dietSummary = computed(() => dietSummaryForEntry(selectedEntry.value))
+const habitatSummary = computed(() => habitatSummaryForEntry(selectedEntry.value))
 
 type TypeMatchupGroupKey = 'weaknesses' | 'resistances' | 'immunities'
 

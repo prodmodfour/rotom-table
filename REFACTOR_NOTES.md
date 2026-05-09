@@ -1073,3 +1073,13 @@
   - `npm test` — passes: 54 test files / 187 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: Pokédex entry detail helper extraction
+
+- Extracted selected-entry display derivations into `utils/pokedex/entryDetails.ts`, including placement-only detection, gender/vital summaries, capability tokens, move tokens, skill phrase formatting, list summaries, and page-number fallback behavior.
+- Updated the Pokédex route to keep only computed wiring around those pure helpers while preserving the existing template data shapes.
+- Added `tests/utils/pokedex/entryDetails.test.ts` covering identity/vital summaries, movement capability tokens, TM/HM/Egg/Tutor move tokens, skills, breeding/diet/habitat summaries, and page-number resolution.
+- Quality gates after this phase:
+  - `npm test` — passes: 55 test files / 190 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
