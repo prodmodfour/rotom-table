@@ -345,3 +345,15 @@
   - `npm test` — passes: 13 test files / 40 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+
+## Next phase update: PTU damage helper extraction
+
+- Continued the large-component cleanup by extracting the `IsometricGrid` manual damage dialog's PTU damage-base table, DB rolling, and final HP-loss formula into `utils/ptuDamage.ts`.
+  - Kept the manual dialog's existing damage-base values distinct from move automation's existing table to preserve current behavior.
+  - The grid component now imports narrow damage helpers instead of owning roll/math rules inline.
+- Added `tests/utils/ptuDamage.test.ts` covering deterministic DB rolls, formula formatting, defense/multiplier scaling, immunity, and PTU minimum-damage behavior.
+- Quality gates after this phase:
+  - `npm test` — passes: 15 test files / 44 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.

@@ -24,6 +24,14 @@ import { normalizeMapHazardLayer } from '~/utils/mapHazards'
 import { normalizeMapFieldEffects } from '~/utils/mapFieldEffects'
 import { POKEMON_TYPES, computeMultiplier, formatMultiplier } from '~/utils/typeChart'
 import {
+  MANUAL_DAMAGE_BASE_TABLE,
+  calculatePtuDamageLoss,
+  findManualDamageBase,
+  formatDamageBaseFormula,
+  rollDamageBase,
+  type PtuDamageRollResult,
+} from '~/utils/ptuDamage'
+import {
   COMBAT_STAGE_KEYS,
   COMBAT_STAGE_ROWS,
   clampCombatStage,
@@ -159,58 +167,6 @@ const EMPTY_PREVIEW: PreviewState = {
   pathLength: 0,
 }
 
-interface DamageBaseDef {
-  db: number
-  count: number
-  sides: number
-  mod: number
-}
-
-// PTU PHB Damage Base table. Mods are always positive in this table; the
-// formatter assumes that and skips a +0 suffix only because no entry has it.
-const DAMAGE_BASE_TABLE: DamageBaseDef[] = [
-  { db: 1,  count: 1, sides: 6,  mod: 1 },
-  { db: 2,  count: 1, sides: 6,  mod: 3 },
-  { db: 3,  count: 1, sides: 6,  mod: 5 },
-  { db: 4,  count: 1, sides: 6,  mod: 7 },
-  { db: 5,  count: 1, sides: 8,  mod: 8 },
-  { db: 6,  count: 2, sides: 6,  mod: 8 },
-  { db: 7,  count: 2, sides: 6,  mod: 10 },
-  { db: 8,  count: 2, sides: 8,  mod: 10 },
-  { db: 9,  count: 2, sides: 10, mod: 10 },
-  { db: 10, count: 3, sides: 8,  mod: 10 },
-  { db: 11, count: 3, sides: 10, mod: 10 },
-  { db: 12, count: 3, sides: 12, mod: 10 },
-  { db: 13, count: 4, sides: 10, mod: 10 },
-  { db: 14, count: 4, sides: 10, mod: 15 },
-  { db: 15, count: 4, sides: 10, mod: 20 },
-  { db: 16, count: 5, sides: 10, mod: 20 },
-  { db: 17, count: 5, sides: 12, mod: 25 },
-  { db: 18, count: 6, sides: 12, mod: 25 },
-  { db: 19, count: 6, sides: 12, mod: 30 },
-  { db: 20, count: 6, sides: 12, mod: 35 },
-  { db: 21, count: 6, sides: 12, mod: 40 },
-  { db: 22, count: 6, sides: 12, mod: 45 },
-  { db: 23, count: 6, sides: 12, mod: 50 },
-  { db: 24, count: 7, sides: 12, mod: 50 },
-  { db: 25, count: 8, sides: 12, mod: 50 },
-  { db: 26, count: 8, sides: 12, mod: 55 },
-  { db: 27, count: 8, sides: 12, mod: 60 },
-  { db: 28, count: 8, sides: 12, mod: 65 },
-]
-
-const formatDbFormula = (def: DamageBaseDef): string =>
-  `${def.count}d${def.sides}+${def.mod}`
-
-const rollDamageBase = (def: DamageBaseDef): { rolls: number[]; total: number } => {
-  const rolls: number[] = []
-  for (let i = 0; i < def.count; i += 1) {
-    rolls.push(1 + Math.floor(Math.random() * def.sides))
-  }
-  const total = rolls.reduce((sum, n) => sum + n, 0) + def.mod
-  return { rolls, total }
-}
-
 const container = ref<HTMLDivElement | null>(null)
 const contextMenu = ref<{ x: number; y: number; id: string; canTurn: boolean; canViewPokedex: boolean } | null>(null)
 
@@ -274,14 +230,6 @@ const hpDialogPreview = computed(() => {
   return Math.max(0, Math.min(hpDialog.value.maxHp, next))
 })
 
-interface DamageRollResult {
-  db: number
-  formula: string
-  rolls: number[]
-  mod: number
-  total: number
-}
-
 interface DamageDialogState {
   id: string
   species: string
@@ -295,7 +243,7 @@ interface DamageDialogState {
   source: 'flat' | 'db'
   amount: string
   db: number
-  roll: DamageRollResult | null
+  roll: PtuDamageRollResult | null
   attackerId: string | null
 }
 
@@ -304,7 +252,7 @@ const damageAmountInput = ref<HTMLInputElement | null>(null)
 
 const damageDialogDbDef = computed(() => {
   if (!damageDialog.value) return null
-  return DAMAGE_BASE_TABLE.find((entry) => entry.db === damageDialog.value!.db) ?? null
+  return findManualDamageBase(damageDialog.value.db)
 })
 
 const damageDialogRawAmount = computed(() => {
@@ -349,16 +297,12 @@ const damageDialogMultiplier = computed(() => {
   return computeMultiplier(damageDialog.value.attackType, damageDialog.value.defenderTypes)
 })
 
-const damageDialogHpLoss = computed(() => {
-  if (damageDialogRawAmount.value === 0) return 0
-  // Immunity short-circuits before the 1-floor — a 0× hit deals 0.
-  if (damageDialogMultiplier.value === 0) return 0
-  const beforeDefense = damageDialogRawAmount.value + damageDialogAttackBonus.value
-  const afterDefense = beforeDefense - damageDialogDefense.value
-  const scaled = Math.floor(afterDefense * damageDialogMultiplier.value)
-  // PTU floor: any successful hit deals at least 1 HP regardless of defense.
-  return Math.max(1, scaled)
-})
+const damageDialogHpLoss = computed(() => calculatePtuDamageLoss({
+  rawDamage: damageDialogRawAmount.value,
+  attackBonus: damageDialogAttackBonus.value,
+  defense: damageDialogDefense.value,
+  multiplier: damageDialogMultiplier.value,
+}))
 
 const damageDialogPreview = computed(() => {
   if (!damageDialog.value) return 0
@@ -1227,14 +1171,7 @@ const handleDamageDialogRoll = () => {
   if (!damageDialog.value) return
   const def = damageDialogDbDef.value
   if (!def) return
-  const { rolls, total } = rollDamageBase(def)
-  damageDialog.value.roll = {
-    db: def.db,
-    formula: formatDbFormula(def),
-    rolls,
-    mod: def.mod,
-    total,
-  }
+  damageDialog.value.roll = rollDamageBase(def)
 }
 
 const handleDamageDialogSubmit = () => {
@@ -2241,10 +2178,10 @@ watch(
             <span>Damage Base</span>
             <select v-model.number="damageDialog.db" @change="handleDamageDialogDbChange">
               <option
-                v-for="entry in DAMAGE_BASE_TABLE"
+                v-for="entry in MANUAL_DAMAGE_BASE_TABLE"
                 :key="entry.db"
                 :value="entry.db"
-              >DB {{ entry.db }} · {{ formatDbFormula(entry) }}</option>
+              >DB {{ entry.db }} · {{ formatDamageBaseFormula(entry) }}</option>
             </select>
           </label>
 
