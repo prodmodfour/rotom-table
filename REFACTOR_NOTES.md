@@ -1586,3 +1586,14 @@
   - `npm test` — passes: 74 test files / 283 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: anchored tooltip positioning helper
+
+- Extracted fixed-position tooltip placement math from `components/RefLink.vue` into `utils/anchoredTooltip.ts`.
+  - The helper owns viewport clamping, top/bottom placement selection, custom gap/margin options, and the center-left coordinate contract used by `translateX(-50%)` tooltips.
+- Updated `RefLink` to delegate only the geometry calculation while preserving tooltip show/hide lifecycle, listener cleanup, placement classes, and visual behavior.
+- Added `tests/utils/anchoredTooltip.test.ts` covering default placement, horizontal clamping, above-anchor flipping, constrained vertical clamping, and custom spacing.
+- Quality gates after this phase:
+  - `npm test` — passes: 75 test files / 289 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

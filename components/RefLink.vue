@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, ref, useId } from 'vue'
 import type { RefKind } from '~/data/ptuReference'
+import { computeAnchoredTooltipPosition, type TooltipPlacement } from '~/utils/anchoredTooltip'
 import { describeRefTarget, getRefTooltipDetail } from '~/utils/refLinks'
 
 const props = defineProps<{
@@ -27,7 +28,7 @@ const tooltipEl = ref<HTMLElement | null>(null)
 const tooltipId = useId()
 const isTooltipVisible = ref(false)
 const tooltipReady = ref(false)
-const tooltipPlacement = ref<'top' | 'bottom'>('bottom')
+const tooltipPlacement = ref<TooltipPlacement>('bottom')
 const tooltipPosition = ref({ top: -9999, left: -9999 })
 const tooltipStyle = computed(() => ({
   top: `${tooltipPosition.value.top}px`,
@@ -40,26 +41,11 @@ let listenersAttached = false
 const updateTooltipPosition = () => {
   if (typeof window === 'undefined' || !anchorEl.value || !tooltipEl.value || !isTooltipVisible.value) return
 
-  const margin = 12
-  const gap = 8
-  const anchorRect = anchorEl.value.getBoundingClientRect()
-  const tooltipRect = tooltipEl.value.getBoundingClientRect()
-  const viewportWidth = window.innerWidth
-  const viewportHeight = window.innerHeight
-  const halfWidth = tooltipRect.width / 2
-
-  let left = anchorRect.left + anchorRect.width / 2
-  left = Math.max(margin + halfWidth, Math.min(viewportWidth - margin - halfWidth, left))
-
-  let top = anchorRect.bottom + gap
-  let placement: 'top' | 'bottom' = 'bottom'
-
-  if (top + tooltipRect.height + margin > viewportHeight && anchorRect.top - gap - tooltipRect.height >= margin) {
-    top = anchorRect.top - gap - tooltipRect.height
-    placement = 'top'
-  } else if (top + tooltipRect.height + margin > viewportHeight) {
-    top = Math.max(margin, viewportHeight - margin - tooltipRect.height)
-  }
+  const { top, left, placement } = computeAnchoredTooltipPosition(
+    anchorEl.value.getBoundingClientRect(),
+    tooltipEl.value.getBoundingClientRect(),
+    { width: window.innerWidth, height: window.innerHeight },
+  )
 
   tooltipPosition.value = { top, left }
   tooltipPlacement.value = placement
