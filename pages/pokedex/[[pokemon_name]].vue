@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
-import { onBeforeRouteUpdate } from 'vue-router'
+import { computed, reactive } from 'vue'
 import pokedexData from '~/ptu-data/data/pokedex.json'
 import { pokemonCatalogBySpecies } from '~/data/pokemonCatalog'
+import { usePokedexSidebarScroll } from '~/composables/pokedex/usePokedexSidebarScroll'
 import {
   allTogetherFilterField,
   filterFieldConfigs,
@@ -49,51 +49,7 @@ definePageMeta({
 })
 
 const route = useRoute()
-
-const sidebarRef = ref<HTMLElement | null>(null)
-const entryListRef = ref<HTMLElement | null>(null)
-const sidebarScrollTop = useState('pokedex-sidebar-scroll-top', () => 0)
-const entryListScrollTop = useState('pokedex-entry-list-scroll-top', () => 0)
-
-const saveSidebarScroll = () => {
-  if (sidebarRef.value) {
-    sidebarScrollTop.value = sidebarRef.value.scrollTop
-  }
-
-  if (entryListRef.value) {
-    entryListScrollTop.value = entryListRef.value.scrollTop
-  }
-}
-
-const restoreSidebarScroll = async () => {
-  if (!import.meta.client) return
-
-  await nextTick()
-  window.requestAnimationFrame(() => {
-    if (sidebarRef.value) {
-      sidebarRef.value.scrollTop = sidebarScrollTop.value
-    }
-
-    if (entryListRef.value) {
-      entryListRef.value.scrollTop = entryListScrollTop.value
-    }
-  })
-}
-
-onMounted(restoreSidebarScroll)
-onBeforeUnmount(saveSidebarScroll)
-
-onBeforeRouteUpdate((to, from) => {
-  if (to.path.startsWith('/pokedex') && from.path.startsWith('/pokedex')) {
-    saveSidebarScroll()
-  }
-})
-
-watch(() => route.fullPath, (to, from) => {
-  if (typeof from === 'string' && to.startsWith('/pokedex') && from.startsWith('/pokedex')) {
-    restoreSidebarScroll()
-  }
-})
+const { entryListRef, saveSidebarScroll, sidebarRef } = usePokedexSidebarScroll()
 
 const allEntries = buildPokedexEntries(pokedexData as PokedexRecord[])
 const entryBySlug = buildPokedexEntryBySlug(allEntries)

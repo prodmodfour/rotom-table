@@ -1093,3 +1093,13 @@
   - `npm test` — passes: 56 test files / 193 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: Pokédex sidebar scroll composable extraction
+
+- Extracted Pokédex sidebar/list scroll persistence into `composables/pokedex/usePokedexSidebarScroll.ts`.
+- The route page now delegates Nuxt route-update, mount/unmount, and restore-after-navigation wiring to a focused composable while preserving existing scroll restoration behavior between `/pokedex` routes.
+- Added `tests/composables/pokedex/usePokedexSidebarScroll.test.ts` for the path predicate that gates Pokédex-only scroll preservation.
+- Quality gates after this phase:
+  - `npm test` — passes: 57 test files / 194 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
