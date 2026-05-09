@@ -38,11 +38,9 @@ import { conditionTagSvg, normalizeConditionNames } from '~/utils/statusConditio
 import { itemSpriteUrl } from '~/utils/itemSprites'
 import type { CombatStageKey, CombatStageMap } from '~/types/combatStages'
 import type { BuildTool } from '~/shared/mapEditor'
-import { blockHexCss, disposeBlockTextureCache, type VoxelRenderStyle } from '~/utils/isometric/blockTextures'
+import { disposeBlockTextureCache, type VoxelRenderStyle } from '~/utils/isometric/blockTextures'
 import {
   buildVolumeMaterials,
-  buildVoxelFaceMaterials,
-  paintBuildGhostMaterials,
   paintVolumeMaterials,
 } from '~/utils/isometric/materials'
 import { disposeObject3D } from '~/utils/isometric/resourceDisposal'
@@ -66,12 +64,10 @@ import { createVoxelRenderer } from '~/utils/isometric/voxelRenderer'
 import {
   createHazardRenderer,
   disposeHazardTextureCache,
-  getHazardTexture,
-  HAZARD_Y_OFFSET,
-  hazardColorNumber,
 } from '~/utils/isometric/hazardRenderer'
 import { createFieldEffectRenderer } from '~/utils/isometric/fieldEffectRenderer'
 import { createGridRenderer } from '~/utils/isometric/gridRenderer'
+import { createBuildGhostRenderer, createHazardGhostRenderer } from '~/utils/isometric/previewGhosts'
 
 export type { BuildTool } from '~/shared/mapEditor'
 
@@ -527,6 +523,8 @@ const voxelRenderer = createVoxelRenderer(voxelContainer)
 const hazardRenderer = createHazardRenderer(hazardContainer)
 const fieldEffectRenderer = createFieldEffectRenderer(fieldEffectContainer)
 const gridRenderer = createGridRenderer(gridGroup)
+const buildGhostRenderer = createBuildGhostRenderer(previewGroup)
+const hazardGhostRenderer = createHazardGhostRenderer(previewGroup)
 let renderer: THREE.WebGLRenderer | null = null
 let cssRenderer: CSS3DRenderer | null = null
 let camera: THREE.OrthographicCamera | null = null
@@ -540,10 +538,6 @@ let previewVolume: THREE.Mesh<THREE.BoxGeometry, THREE.MeshBasicMaterial[]> | nu
 let previewEdges: THREE.LineSegments | null = null
 let previewPathLine: THREE.Line | null = null
 let previewOwnerId: string | null = null
-let buildGhost: THREE.Mesh<THREE.BoxGeometry, THREE.MeshBasicMaterial[]> | null = null
-let buildGhostEdges: THREE.LineSegments | null = null
-let hazardGhost: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial> | null = null
-let hazardGhostEdges: THREE.LineSegments | null = null
 let activePreview: PreviewState = { ...EMPTY_PREVIEW }
 let activePreviewCanPlace = false
 let activePreviewAnchor: GridAnchor | null = null
@@ -1578,99 +1572,13 @@ const applyLayerVisibility = () => {
   }
 }
 
-const ensureBuildGhost = () => {
-  if (buildGhost && buildGhostEdges) return
-  const geometry = new THREE.BoxGeometry(1, 1, 1)
-  const materials = buildVoxelFaceMaterials({ materialId: 'airship_floor_metal', color: '#fabd2f' }, 0.45, false)
-  buildGhost = new THREE.Mesh(geometry, materials)
-  buildGhost.visible = false
-  previewGroup.add(buildGhost)
+const ensureBuildGhost = () => buildGhostRenderer.ensure()
+const disposeBuildGhost = () => buildGhostRenderer.dispose()
+const hideBuildGhost = () => buildGhostRenderer.hide()
 
-  const edgeGeometry = new THREE.EdgesGeometry(geometry)
-  buildGhostEdges = new THREE.LineSegments(
-    edgeGeometry,
-    new THREE.LineBasicMaterial({
-      color: 0xfbf1c7,
-      transparent: true,
-      opacity: 0.95,
-      depthTest: true,
-      depthWrite: false,
-    }),
-  )
-  buildGhostEdges.visible = false
-  previewGroup.add(buildGhostEdges)
-}
-
-const disposeBuildGhost = () => {
-  if (buildGhost) {
-    disposeObject3D(buildGhost)
-    buildGhost = null
-  }
-  if (buildGhostEdges) {
-    disposeObject3D(buildGhostEdges)
-    buildGhostEdges = null
-  }
-}
-
-const hideBuildGhost = () => {
-  if (buildGhost) buildGhost.visible = false
-  if (buildGhostEdges) buildGhostEdges.visible = false
-}
-
-const ensureHazardGhost = () => {
-  if (hazardGhost && hazardGhostEdges) return
-  const geometry = new THREE.PlaneGeometry(0.92, 0.92)
-  hazardGhost = new THREE.Mesh(
-    geometry,
-    new THREE.MeshBasicMaterial({
-      map: getHazardTexture(props.hazardKind ?? 'spikes'),
-      transparent: true,
-      opacity: 0.68,
-      depthTest: true,
-      depthWrite: false,
-      side: THREE.DoubleSide,
-    }),
-  )
-  hazardGhost.rotation.x = -Math.PI / 2
-  hazardGhost.renderOrder = 30
-  hazardGhost.visible = false
-  previewGroup.add(hazardGhost)
-
-  hazardGhostEdges = new THREE.LineSegments(
-    new THREE.EdgesGeometry(geometry),
-    new THREE.LineBasicMaterial({
-      color: 0xfbf1c7,
-      transparent: true,
-      opacity: 0.95,
-      depthTest: true,
-      depthWrite: false,
-    }),
-  )
-  hazardGhostEdges.rotation.x = -Math.PI / 2
-  hazardGhostEdges.visible = false
-  previewGroup.add(hazardGhostEdges)
-}
-
-const disposeHazardGhost = () => {
-  if (hazardGhost) {
-    disposeObject3D(hazardGhost)
-    hazardGhost = null
-  }
-  if (hazardGhostEdges) {
-    disposeObject3D(hazardGhostEdges)
-    hazardGhostEdges = null
-  }
-}
-
-const hideHazardGhost = () => {
-  if (hazardGhost) hazardGhost.visible = false
-  if (hazardGhostEdges) hazardGhostEdges.visible = false
-}
-
-const customVoxelStyle = (baseColor: number): VoxelRenderStyle => ({
-  materialId: 'airship_floor_metal',
-  color: blockHexCss(baseColor),
-})
+const ensureHazardGhost = () => hazardGhostRenderer.ensure(props.hazardKind ?? 'spikes')
+const disposeHazardGhost = () => hazardGhostRenderer.dispose()
+const hideHazardGhost = () => hazardGhostRenderer.hide()
 
 const currentBuildVoxelStyle = (cell?: { x: number; y: number; z: number }): VoxelRenderStyle => {
   const style: VoxelRenderStyle = { materialId: props.buildMaterial }
@@ -2044,35 +1952,10 @@ const pickBuildTarget = (
 }
 
 const updateBuildGhost = (target: BuildTarget | null) => {
-  if (!props.buildMode) {
-    hideBuildGhost()
-    return
-  }
-
-  ensureBuildGhost()
-  if (!buildGhost || !buildGhostEdges) return
-
-  if (!target) {
-    hideBuildGhost()
-    return
-  }
-
-  buildGhost.position.set(target.cell.x + 0.5, target.cell.y + 0.5, target.cell.z + 0.5)
-  buildGhostEdges.position.copy(buildGhost.position)
-  buildGhost.visible = true
-  buildGhostEdges.visible = true
-
-  const edgeMaterial = buildGhostEdges.material as THREE.LineBasicMaterial
-  if (target.action === 'remove') {
-    paintBuildGhostMaterials(buildGhost.material, customVoxelStyle(0xfb4934), 0.42)
-    edgeMaterial.color.setHex(0xfb4934)
-  } else if (!target.valid) {
-    paintBuildGhostMaterials(buildGhost.material, customVoxelStyle(0xfb4934), 0.32)
-    edgeMaterial.color.setHex(0xfb4934)
-  } else {
-    paintBuildGhostMaterials(buildGhost.material, currentBuildVoxelStyle(target.cell), 0.55)
-    edgeMaterial.color.setHex(0xfbf1c7)
-  }
+  buildGhostRenderer.update(target, {
+    buildMode: props.buildMode,
+    styleForCell: currentBuildVoxelStyle,
+  })
 }
 
 const updateBuildPreviewFromPointer = (event: MouseEvent | PointerEvent) => {
@@ -2177,35 +2060,10 @@ const pickHazardTarget = (
 }
 
 const updateHazardGhost = (target: HazardTarget | null) => {
-  if (!props.hazardMode) {
-    hideHazardGhost()
-    return
-  }
-
-  ensureHazardGhost()
-  if (!hazardGhost || !hazardGhostEdges) return
-
-  if (!target) {
-    hideHazardGhost()
-    return
-  }
-
-  const kind = props.hazardKind ?? 'spikes'
-  const material = hazardGhost.material as THREE.MeshBasicMaterial
-  material.map = getHazardTexture(kind)
-  material.color.setHex(target.valid ? 0xffffff : 0xfb4934)
-  material.opacity = target.action === 'remove' ? 0.42 : 0.68
-  material.needsUpdate = true
-
-  const color = target.action === 'remove' || !target.valid
-    ? 0xfb4934
-    : hazardColorNumber(kind)
-  ;(hazardGhostEdges.material as THREE.LineBasicMaterial).color.setHex(color)
-
-  hazardGhost.position.set(target.cell.x + 0.5, target.cell.y + HAZARD_Y_OFFSET + 0.07, target.cell.z + 0.5)
-  hazardGhostEdges.position.copy(hazardGhost.position)
-  hazardGhost.visible = true
-  hazardGhostEdges.visible = true
+  hazardGhostRenderer.update(target, {
+    hazardMode: Boolean(props.hazardMode),
+    kind: props.hazardKind ?? 'spikes',
+  })
 }
 
 const updateHazardPreviewFromPointer = (event: MouseEvent | PointerEvent) => {

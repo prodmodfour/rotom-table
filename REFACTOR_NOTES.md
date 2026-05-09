@@ -264,3 +264,14 @@
   - `npm test` — passes: 13 test files / 40 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: isometric build and hazard preview ghost extraction
+
+- Continued Phase 6 by extracting build-mode voxel ghost and hazard decal ghost ownership from `components/IsometricGrid.client.vue` into `utils/isometric/previewGhosts.ts`.
+  - The new preview ghost renderers own ghost mesh creation, material repainting, target updates, hide/show behavior, and disposal.
+  - The Vue component now supplies only editor mode flags, selected hazard kind, and current build voxel style when updating previews.
+- Preserved build/hazard preview colors, invalid/remove tinting, hazard texture swapping, placement offsets, and existing build/hazard pointer flows.
+- Quality gates after this phase:
+  - `npm test` — passes: 13 test files / 40 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
