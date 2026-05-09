@@ -55,40 +55,11 @@ useHead(() => ({
     />
 
     <template #not-found>
-      <section class="panel-card">
-        <h1>Sheet not found</h1>
-        <p>No sheet exists for slug <code>{{ route.params.slug }}</code>.</p>
-        <NuxtLink to="/sheets" class="back-link">← Back to all sheets</NuxtLink>
-      </section>
+      <SheetNotFoundCard
+        title="Sheet not found"
+        message="No sheet exists for slug"
+        :slug="slug"
+      />
     </template>
   </SheetPageShell>
 </template>
-
-<style scoped>
-.back-link {
-  color: var(--ink-soft);
-  text-decoration: none;
-  font-size: 0.9rem;
-  letter-spacing: 0.02em;
-}
-
-.back-link:hover {
-  color: var(--ink-bright);
-  text-decoration: underline;
-  text-decoration-color: var(--rule-strong);
-}
-
-.panel-card {
-  border: 1px solid var(--rule);
-  border-radius: 14px;
-  background: var(--paper-soft);
-  box-shadow: var(--shadow-card);
-  padding: 0.95rem;
-}
-
-code {
-  font-family: var(--font-mono);
-  font-size: 0.9em;
-  color: var(--accent);
-}
-</style>

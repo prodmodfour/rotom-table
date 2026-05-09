@@ -1033,3 +1033,13 @@
   - `npm test` — passes: 51 test files / 177 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: shared sheet not-found card
+
+- Extracted duplicated Pokémon/trainer missing-sheet presentation into `components/sheets/SheetNotFoundCard.vue`.
+- Updated both sheet route shells to use the shared not-found card and removed their remaining route-local presentation styles.
+- Preserved existing missing-sheet titles, slug display, and return-to-sheets navigation behavior.
+- Quality gates after this phase:
+  - `npm test` — passes: 51 test files / 177 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.

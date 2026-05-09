@@ -48,33 +48,11 @@ useHead(() => ({
     />
 
     <template #not-found>
-      <article class="sheet-card">
-        <h1>Trainer not found</h1>
-        <p>No trainer for slug <code>{{ slug }}</code>.</p>
-        <NuxtLink to="/sheets" class="back-link">← Back to all sheets</NuxtLink>
-      </article>
+      <SheetNotFoundCard
+        title="Trainer not found"
+        message="No trainer for slug"
+        :slug="slug"
+      />
     </template>
-
   </SheetPageShell>
 </template>
-
-<style scoped>
-.back-link {
-  color: var(--ink-soft);
-  text-decoration: underline;
-  text-decoration-color: var(--rule-strong);
-  text-underline-offset: 0.18em;
-}
-
-.back-link:hover {
-  color: var(--ink-bright);
-}
-
-.sheet-card {
-  border: 1px solid var(--rule);
-  border-radius: 14px;
-  background: var(--paper-soft);
-  box-shadow: var(--shadow-card);
-  padding: 0.95rem;
-}
-</style>
