@@ -275,3 +275,14 @@
   - `npm test` — passes: 13 test files / 40 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: isometric token HUD extraction
+
+- Continued Phase 6 by extracting token elevation badges and HP/status HUD DOM helpers from `components/IsometricGrid.client.vue` into `utils/isometric/tokenHud.ts`.
+  - The new module owns CSS3D elevation badge creation/update, HP bar construction, HP tiering, combat-stage chips, condition chips, held-item icons, active-turn state, and status-label sizing.
+  - The Vue component now passes renderer state (`camera`, ground level, token centers, HP/combat/condition data) to focused HUD helpers instead of owning DOM mutation details inline.
+- Preserved token HP/status/elevation visuals, active-turn chevrons, condition icons, held-item icons, and layer visibility behavior.
+- Quality gates after this phase:
+  - `npm test` — passes: 13 test files / 40 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
