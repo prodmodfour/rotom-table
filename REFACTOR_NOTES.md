@@ -1205,3 +1205,14 @@
   - `npm test` — passes: 60 test files / 208 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: map library realtime state helpers
+
+- Extracted maps-index list state transformations into `utils/mapLibrary.ts`.
+  - The helper now owns TabletopMap-to-summary conversion, local folder delete/move collection updates, and `maps` realtime event application with clientId echo suppression.
+- Updated `pages/maps/index.vue` to delegate realtime synchronization, local folder move/delete updates, and newly-created map summaries to the focused utility module.
+- Added `tests/utils/mapLibrary.test.ts` covering summary conversion, folder delete/move updates, realtime create/update/move/rename/delete/folder events, malformed payloads, wrong channels, and local echo suppression.
+- Quality gates after this phase:
+  - `npm test` — passes: 61 test files / 213 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

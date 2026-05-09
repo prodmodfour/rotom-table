@@ -23,11 +23,17 @@ import {
   movedFolderPath,
   nextAvailableFolderLeaf,
   normalizeSearchText,
-  renameFolderPrefix,
   type FolderTile,
 } from '~/utils/folderBrowser'
 import { getClientId } from '~/utils/clientId'
+import {
+  applyMapLibraryRealtimeEvent,
+  deleteMapFolderFromLibrary,
+  moveMapFolderInLibrary,
+  tabletopMapToSummary,
+} from '~/utils/mapLibrary'
 import { useRealtimeChannel } from '~/composables/useRealtime'
+import { mapsChannel } from '~/shared/realtime'
 import type { MapSummary, TabletopMap } from '~/types/map'
 
 useHead({ title: 'Maps · Rotom Table' })
@@ -70,45 +76,8 @@ onMounted(() => {
   void refresh()
 })
 
-useRealtimeChannel('maps', (event) => {
-  if (event.clientId === clientId) return
-  if (event.type === 'created' || event.type === 'updated' || event.type === 'moved') {
-    const summary = event.data as MapSummary
-    if (summary?.slug) maps.set(summary.slug, summary)
-  } else if (event.type === 'renamed') {
-    const payload = event.data as { oldSlug?: string; summary?: MapSummary } | undefined
-    if (!payload?.oldSlug || !payload?.summary) return
-    maps.delete(payload.oldSlug)
-    maps.set(payload.summary.slug, payload.summary)
-  } else if (event.type === 'deleted') {
-    const payload = event.data as { slug?: string } | undefined
-    if (payload?.slug) maps.delete(payload.slug)
-  } else if (event.type === 'folder-created') {
-    const payload = event.data as { folder?: string } | undefined
-    if (payload?.folder) extraFolders.add(payload.folder)
-  } else if (event.type === 'folder-deleted') {
-    const payload = event.data as { folder?: string } | undefined
-    if (!payload?.folder) return
-    extraFolders.delete(payload.folder)
-    for (const f of [...extraFolders]) {
-      if (f.startsWith(payload.folder + '/')) extraFolders.delete(f)
-    }
-    for (const [slug, g] of maps) {
-      if (g.folder === payload.folder || g.folder.startsWith(payload.folder + '/')) {
-        maps.delete(slug)
-      }
-    }
-  } else if (event.type === 'folder-moved') {
-    const payload = event.data as { from?: string; to?: string } | undefined
-    if (!payload?.from || !payload?.to) return
-    const next = new Set<string>()
-    for (const f of extraFolders) next.add(renameFolderPrefix(f, payload.from, payload.to))
-    extraFolders.clear()
-    for (const f of next) extraFolders.add(f)
-    for (const [slug, g] of maps) {
-      maps.set(slug, { ...g, folder: renameFolderPrefix(g.folder, payload.from, payload.to) })
-    }
-  }
+useRealtimeChannel(mapsChannel, (event) => {
+  applyMapLibraryRealtimeEvent({ maps, extraFolders }, event, clientId)
 })
 
 const items = computed(() => {
@@ -246,13 +215,7 @@ const performMove = async (d: DragPayload, targetPath: string) => {
       method: 'POST',
       body: { from: d.path, to: newPath, clientId },
     })
-    const nextFolders = new Set<string>()
-    for (const f of extraFolders) nextFolders.add(renameFolderPrefix(f, d.path, newPath))
-    extraFolders.clear()
-    for (const f of nextFolders) extraFolders.add(f)
-    for (const [slug, g] of maps) {
-      maps.set(slug, { ...g, folder: renameFolderPrefix(g.folder, d.path, newPath) })
-    }
+    moveMapFolderInLibrary({ maps, extraFolders }, d.path, newPath)
   }
 }
 
@@ -311,15 +274,7 @@ const createNewMap = async () => {
       method: 'POST',
       body: { folder: currentPath.value, clientId },
     })
-    maps.set(result.map.slug, {
-      slug: result.map.slug,
-      name: result.map.name,
-      folder: result.map.folder ?? '',
-      dimensions: result.map.dimensions,
-      placementCount: 0,
-      playerVisible: result.map.playerVisible === true,
-      updatedAt: result.map.updatedAt,
-    })
+    maps.set(result.map.slug, tabletopMapToSummary(result.map))
     router.push(`/maps/${result.map.slug}`)
   } catch (err: unknown) {
     const e = err as { statusMessage?: string; message?: string }
@@ -465,13 +420,7 @@ const submitContext = async () => {
           method: 'POST',
           body: { folder: path, clientId },
         })
-        extraFolders.delete(path)
-        for (const f of [...extraFolders]) {
-          if (f.startsWith(path + '/')) extraFolders.delete(f)
-        }
-        for (const [slug, g] of maps) {
-          if (g.folder === path || g.folder.startsWith(path + '/')) maps.delete(slug)
-        }
+        deleteMapFolderFromLibrary({ maps, extraFolders }, path)
         if (currentPath.value === path || currentPath.value.startsWith(path + '/')) {
           const slash = path.lastIndexOf('/')
           goToFolder(slash >= 0 ? path.slice(0, slash) : '')
