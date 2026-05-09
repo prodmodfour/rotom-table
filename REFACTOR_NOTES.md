@@ -844,3 +844,13 @@
   - `npm test` — passes: 49 test files / 171 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: Pokémon equipment and training panel extraction
+
+- Continued Phase 7 Pokémon sheet page decomposition by extracting held-item lookup details and weapon editing into `components/sheets/PokemonEquipmentPanel.vue`.
+- Extracted tutor points, skill-background CSV fields, and inherited move editing into `components/sheets/PokemonTrainingPanel.vue`.
+- Updated `pages/sheets/[slug].vue` to wire focused `v-model`s and emits into those panels while preserving item lookup display, held-item persistence cleanup, weapon editing, tutor-point totals, and inherited-move clearing behavior.
+- Quality gates after this phase:
+  - `npm test` — passes: 49 test files / 171 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
