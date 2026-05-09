@@ -28,6 +28,7 @@ import {
   formatSignedModifier,
 } from '~/utils/evasion'
 import { useEditableSheetResource } from '~/composables/sheets/useEditableSheetResource'
+import { usePokemonSheetCsvFields } from '~/composables/sheets/usePokemonSheetCsvFields'
 import type {
   CharacterSheet,
   CharacterSheetMove,
@@ -275,35 +276,13 @@ const GENDER_OPTIONS = ['Male', 'Female', 'Genderless']
 
 const INHERITED_LEVELS = ['20', '30', '40', '50', '60', '70', '80', '90']
 
-/** Coerce ``"Electric, Steel"`` into ``["Electric", "Steel"]`` (drops blanks). */
-const splitCSV = (raw: string): string[] =>
-  raw.split(',').map((s) => s.trim()).filter(Boolean)
-
-const typesAsCsv = computed<string>({
-  get: () => sheetTypes.value.join(', '),
-  set: (raw) => {
-    if (!sheet.value) return
-    const next = splitCSV(raw)
-    sheet.value.types = next.length ? next : undefined
-  },
-})
-
-const eggGroupsAsCsv = computed<string>({
-  get: () => eggGroups.value.join(', '),
-  set: (raw) => {
-    if (!sheet.value) return
-    const next = splitCSV(raw)
-    sheet.value.eggGroups = next.length ? next : undefined
-  },
-})
-
-const otherCapsCsv = computed<string>({
-  get: () => sheet.value?.capabilities?.other?.join(', ') ?? '',
-  set: (raw) => {
-    if (!sheet.value) return
-    sheet.value.capabilities!.other = splitCSV(raw)
-  },
-})
+const {
+  typesAsCsv,
+  eggGroupsAsCsv,
+  otherCapsCsv,
+  skillBgRaisedCsv,
+  skillBgLoweredCsv,
+} = usePokemonSheetCsvFields({ sheet, sheetTypes, eggGroups })
 
 const clearLookupBackedItemFields = () => {
   if (!sheet.value?.items) return
@@ -321,24 +300,6 @@ const setHeldItemName = (value: unknown) => {
   // ptu-data/data/items.json via data/ptuReference.ts.
   clearLookupBackedItemFields()
 }
-
-const skillBgRaisedCsv = computed<string>({
-  get: () => sheet.value?.skillBackground?.raised?.join(', ') ?? '',
-  set: (raw) => {
-    if (!sheet.value) return
-    const next = splitCSV(raw)
-    sheet.value.skillBackground!.raised = next.length ? next : undefined
-  },
-})
-
-const skillBgLoweredCsv = computed<string>({
-  get: () => sheet.value?.skillBackground?.lowered?.join(', ') ?? '',
-  set: (raw) => {
-    if (!sheet.value) return
-    const next = splitCSV(raw)
-    sheet.value.skillBackground!.lowered = next.length ? next : undefined
-  },
-})
 
 const addMove = () => {
   sheet.value?.movelist?.push({ name: '' } as CharacterSheetMove)

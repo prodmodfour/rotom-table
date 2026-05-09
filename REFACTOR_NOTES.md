@@ -748,3 +748,14 @@
   - `npm test` — passes: 43 test files / 150 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: Pokémon sheet CSV field extraction
+
+- Continued Phase 7 sheet editor cleanup by extracting Pokémon CSV-backed field handling into `composables/sheets/usePokemonSheetCsvFields.ts`.
+  - The composable owns type, egg group, other capability, and skill-background comma-separated v-models while preserving species-derived display fallbacks for type and egg group fields.
+- Updated the Pokémon sheet route page to consume the composable instead of owning CSV parsing/setter branching inline.
+- Added `tests/composables/sheets/usePokemonSheetCsvFields.test.ts` covering derived fallback display, list updates, optional-field clearing, and null-sheet no-op behavior.
+- Quality gates after this phase:
+  - `npm test` — passes: 44 test files / 153 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
