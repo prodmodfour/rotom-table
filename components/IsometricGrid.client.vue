@@ -22,14 +22,11 @@ import {
 import { buildMapOccupancy } from '~/utils/mapOccupancy'
 import { normalizeMapHazardLayer } from '~/utils/mapHazards'
 import { normalizeMapFieldEffects } from '~/utils/mapFieldEffects'
-import { POKEMON_TYPES, computeMultiplier, formatMultiplier } from '~/utils/typeChart'
+import { POKEMON_TYPES } from '~/utils/typeChart'
 import {
   MANUAL_DAMAGE_BASE_TABLE,
-  calculatePtuDamageLoss,
-  findManualDamageBase,
   formatDamageBaseFormula,
   rollDamageBase,
-  type PtuDamageRollResult,
 } from '~/utils/ptuDamage'
 import {
   COMBAT_STAGE_ROWS,
@@ -96,6 +93,22 @@ import {
   type CombatStagesDialogState,
   type ConditionsDialogState,
 } from '~/utils/isometric/tokenStatusDialogs'
+import {
+  createDamageDialogState,
+  getDamageDialogAttackBonus,
+  getDamageDialogAttacker,
+  getDamageDialogAttackerOptions,
+  getDamageDialogDbDefinition,
+  getDamageDialogDefense,
+  getDamageDialogHpLoss,
+  getDamageDialogMultiplier,
+  getDamageDialogMultiplierLabel,
+  getDamageDialogMultiplierTone,
+  getDamageDialogPreview,
+  getDamageDialogRawAmount,
+  updateDamageDialogFromPokemon,
+  type DamageDialogState,
+} from '~/utils/isometric/tokenDamageDialog'
 import {
   animatePokemonRenderObject,
   applyPokemonRenderObjectPosition,
@@ -202,96 +215,30 @@ const hpAmountInput = ref<HTMLInputElement | null>(null)
 const hpDialogDelta = computed(() => getHpDialogDelta(hpDialog.value))
 const hpDialogPreview = computed(() => getHpDialogPreview(hpDialog.value))
 
-interface DamageDialogState {
-  id: string
-  species: string
-  currentHp: number
-  maxHp: number
-  def: number
-  sdef: number
-  defenderTypes: string[]
-  mode: 'physical' | 'special'
-  attackType: string
-  source: 'flat' | 'db'
-  amount: string
-  db: number
-  roll: PtuDamageRollResult | null
-  attackerId: string | null
-}
-
 const damageDialog = ref<DamageDialogState | null>(null)
 const damageAmountInput = ref<HTMLInputElement | null>(null)
-
-const damageDialogDbDef = computed(() => {
-  if (!damageDialog.value) return null
-  return findManualDamageBase(damageDialog.value.db)
-})
-
-const damageDialogRawAmount = computed(() => {
-  if (!damageDialog.value) return 0
-  if (damageDialog.value.source === 'db') {
-    return damageDialog.value.roll?.total ?? 0
-  }
-  const parsed = Number.parseInt(damageDialog.value.amount, 10)
-  if (!Number.isFinite(parsed) || parsed <= 0) return 0
-  return parsed
-})
-
-const damageDialogDefense = computed(() => {
-  if (!damageDialog.value) return 0
-  return damageDialog.value.mode === 'physical'
-    ? damageDialog.value.def
-    : damageDialog.value.sdef
-})
-
-// Tokens on the grid the user can pick as the attacker, sorted by
-// display name so the dropdown reads alphabetically.
-const damageDialogAttackerOptions = computed(() =>
-  [...props.pokemons].sort((a, b) => a.species.localeCompare(b.species)),
-)
-
-const damageDialogAttacker = computed(() => {
-  if (!damageDialog.value?.attackerId) return null
-  return props.pokemons.find((p) => p.id === damageDialog.value!.attackerId) ?? null
-})
-
-// Atk / Sp.Atk added to the rolled total. Only applied in DB mode —
-// flat damage assumes the user already baked the offence stat in.
-const damageDialogAttackBonus = computed(() => {
-  if (!damageDialog.value || damageDialog.value.source !== 'db') return 0
-  const attacker = damageDialogAttacker.value
-  if (!attacker) return 0
-  return damageDialog.value.mode === 'physical' ? attacker.atk : attacker.satk
-})
-
-const damageDialogMultiplier = computed(() => {
-  if (!damageDialog.value) return 1
-  return computeMultiplier(damageDialog.value.attackType, damageDialog.value.defenderTypes)
-})
-
-const damageDialogHpLoss = computed(() => calculatePtuDamageLoss({
-  rawDamage: damageDialogRawAmount.value,
-  attackBonus: damageDialogAttackBonus.value,
-  defense: damageDialogDefense.value,
-  multiplier: damageDialogMultiplier.value,
-}))
-
-const damageDialogPreview = computed(() => {
-  if (!damageDialog.value) return 0
-  return Math.max(0, damageDialog.value.currentHp - damageDialogHpLoss.value)
-})
-
-const damageDialogMultiplierTone = computed(() => {
-  const m = damageDialogMultiplier.value
-  if (m === 0) return 'is-immune'
-  if (m < 1) return 'is-resist'
-  if (m > 1) return 'is-weak'
-  return null
-})
-
-const damageDialogMultiplierLabel = computed(() =>
-  formatMultiplier(damageDialogMultiplier.value),
-)
+const damageDialogDbDef = computed(() => getDamageDialogDbDefinition(damageDialog.value))
+const damageDialogRawAmount = computed(() => getDamageDialogRawAmount(damageDialog.value))
+const damageDialogDefense = computed(() => getDamageDialogDefense(damageDialog.value))
+// Tokens on the grid the user can pick as the attacker, sorted by display name.
+const damageDialogAttackerOptions = computed(() => getDamageDialogAttackerOptions(props.pokemons))
+const damageDialogAttacker = computed(() => getDamageDialogAttacker(damageDialog.value, props.pokemons))
+// Atk / Sp.Atk added to DB rolls only; flat damage already includes offence.
+const damageDialogAttackBonus = computed(() => getDamageDialogAttackBonus(
+  damageDialog.value,
+  damageDialogAttacker.value,
+))
+const damageDialogMultiplier = computed(() => getDamageDialogMultiplier(damageDialog.value))
+const damageDialogHpLoss = computed(() => getDamageDialogHpLoss(
+  damageDialog.value,
+  damageDialogAttacker.value,
+))
+const damageDialogPreview = computed(() => getDamageDialogPreview(
+  damageDialog.value,
+  damageDialogAttacker.value,
+))
+const damageDialogMultiplierTone = computed(() => getDamageDialogMultiplierTone(damageDialogMultiplier.value))
+const damageDialogMultiplierLabel = computed(() => getDamageDialogMultiplierLabel(damageDialogMultiplier.value))
 
 const controllableIdSet = computed(() => new Set(props.controllableIds ?? props.pokemons.map((pokemon) => pokemon.id)))
 const canControlPokemon = (id: string | null | undefined): id is string =>
@@ -1053,22 +1000,7 @@ const handleContextDealDamage = () => {
     return
   }
 
-  damageDialog.value = {
-    id: target.id,
-    species: target.species,
-    currentHp: target.currentHp,
-    maxHp: target.maxHp,
-    def: target.def,
-    sdef: target.sdef,
-    defenderTypes: [...target.defenderTypes],
-    mode: 'physical',
-    attackType: 'Normal',
-    source: 'flat',
-    amount: '',
-    db: 1,
-    roll: null,
-    attackerId: null,
-  }
+  damageDialog.value = createDamageDialogState(target)
   closeContextMenu()
   void nextTick(() => {
     damageAmountInput.value?.focus()
@@ -1465,18 +1397,11 @@ watch(
       if (!live) {
         closeDamageDialog()
       } else {
-        damageDialog.value.currentHp = live.currentHp
-        damageDialog.value.maxHp = live.maxHp
-        damageDialog.value.species = live.species
-        damageDialog.value.def = live.def
-        damageDialog.value.sdef = live.sdef
-        damageDialog.value.defenderTypes = [...live.defenderTypes]
-        if (
-          damageDialog.value.attackerId &&
-          !props.pokemons.some((p) => p.id === damageDialog.value!.attackerId)
-        ) {
-          damageDialog.value.attackerId = null
-        }
+        damageDialog.value = updateDamageDialogFromPokemon(
+          damageDialog.value,
+          live,
+          props.pokemons,
+        )
       }
     }
 

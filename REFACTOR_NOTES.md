@@ -414,3 +414,13 @@
   - `npm test` — passes: 20 test files / 59 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: isometric damage dialog helper extraction
+
+- Continued Phase 6 cleanup by extracting manual damage dialog state, attacker lookup/sorting, raw damage parsing, defense/attack bonus selection, type multiplier presentation, HP-loss preview calculation, DB lookup, and live-token metadata syncing into `utils/isometric/tokenDamageDialog.ts`.
+  - `components/IsometricGrid.client.vue` now delegates damage math and dialog derivations to focused helpers while preserving the existing deal-damage modal UI and `modify-hp` event payload.
+- Added `tests/utils/isometric/tokenDamageDialog.test.ts` covering default state, flat vs DB damage, attacker sorting/bonus lookup, type multiplier presentation, HP-loss preview, DB lookup, and live-token sync behavior.
+- Quality gates after this phase:
+  - `npm test` — passes: 21 test files / 64 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
