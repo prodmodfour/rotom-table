@@ -635,3 +635,14 @@
   - `npm test` — passes: 34 test files / 113 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: isometric token hover controller extraction
+
+- Continued Phase 6 by extracting hovered-token badge state from `components/IsometricGrid.client.vue` into `utils/isometric/tokenHover.ts`.
+  - The controller owns hovered-id tracking, stale-token cleanup, repeated-hover suppression, and previous badge hiding through injected render-object lookup/update callbacks.
+  - The module also exposes a focused hovered elevation-badge updater so the grid component no longer owns the badge DOM update details inline.
+- Added `tests/utils/isometric/tokenHover.test.ts` covering hover tracking, active badge updates, previous badge hiding, repeated-id suppression, and stale-token clearing.
+- Quality gates after this phase:
+  - `npm test` — passes: 35 test files / 116 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.

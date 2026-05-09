@@ -48,7 +48,6 @@ import {
   pickPokemonIdFromPointer,
 } from '~/utils/isometric/interactionTargets'
 import { createBuildGhostRenderer, createHazardGhostRenderer } from '~/utils/isometric/previewGhosts'
-import { updateElevationBadge } from '~/utils/isometric/tokenHud'
 import { createTokenMovePreviewRenderer } from '~/utils/isometric/tokenMovePreview'
 import {
   clampIsometricGroundLevelY,
@@ -81,6 +80,10 @@ import {
 } from '~/utils/isometric/layerVisibility'
 import { createIsometricBuildInteractionController } from '~/utils/isometric/buildInteraction'
 import { createIsometricHazardInteractionController } from '~/utils/isometric/hazardInteraction'
+import {
+  createIsometricTokenHoverController,
+  updateHoveredPokemonElevationBadge,
+} from '~/utils/isometric/tokenHover'
 
 export type { BuildTool } from '~/shared/mapEditor'
 
@@ -256,7 +259,6 @@ let cleanupResizeObserver: (() => void) | null = null
 let animationFrame = 0
 const pointerTracker = createPointerTravelTracker()
 let lastPointerCoords: { clientX: number; clientY: number } | null = null
-let hoveredPokemonId: string | null = null
 
 const getPreviewLayerY = () => movementInteraction.activeAnchor()?.y ?? selectedPokemon.value?.position.y ?? 0
 
@@ -329,34 +331,16 @@ const buildGrid = () => {
   updateGridVisibility()
 }
 
-const setHoveredPokemonId = (id: string | null) => {
-  if (hoveredPokemonId === id) {
-    return
-  }
+const hoverController = createIsometricTokenHoverController({
+  getRenderObject: (id) => renderObjects.get(id),
+  updateHoveredRenderObject: (renderObject) => updateHoveredPokemonElevationBadge(renderObject, {
+    groundLevelY: normalizedGroundLevelY(),
+    camera,
+    show: visibleLayers().tokens,
+  }),
+})
 
-  const previousId = hoveredPokemonId
-  hoveredPokemonId = id
-
-  if (previousId && previousId !== id) {
-    const previous = renderObjects.get(previousId)
-    if (previous) previous.elevationBadge.visible = false
-  }
-
-  if (id) {
-    const next = renderObjects.get(id)
-    if (next) {
-      updateElevationBadge({
-        badge: next.elevationBadge,
-        center: next.currentCenter,
-        base: next.base,
-        elevation: next.elevation,
-        groundLevelY: normalizedGroundLevelY(),
-        camera,
-        show: visibleLayers().tokens,
-      })
-    }
-  }
-}
+const setHoveredPokemonId = hoverController.set
 
 const buildRenderObject = (pokemon: SpawnedPokemon): PokemonRenderObject =>
   createPokemonRenderObject(pokemon, { scene, worldGroup })
@@ -366,7 +350,7 @@ const applyRenderObjectPosition = (renderObject: PokemonRenderObject) => {
     camera,
     activeTurnId: props.activeTurnId,
     groundLevelY: normalizedGroundLevelY(),
-    hoveredPokemonId,
+    hoveredPokemonId: hoverController.id(),
     layers: visibleLayers(),
     getShadowSurfaceY,
   })
@@ -393,9 +377,7 @@ const syncPokemonObjects = () => {
       continue
     }
 
-    if (hoveredPokemonId === id) {
-      setHoveredPokemonId(null)
-    }
+    hoverController.clearIfHovered(id)
 
     disposePokemonRenderObject(renderObject)
     renderObjects.delete(id)
