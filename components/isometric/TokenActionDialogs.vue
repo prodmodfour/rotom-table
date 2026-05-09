@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import TokenCombatStagesDialog from '~/components/isometric/TokenCombatStagesDialog.vue'
+import TokenConditionsDialog from '~/components/isometric/TokenConditionsDialog.vue'
 import TokenDamageDialog from '~/components/isometric/TokenDamageDialog.vue'
 import TokenHpDialog from '~/components/isometric/TokenHpDialog.vue'
-import ConditionPicker from '~/components/ConditionPicker.vue'
 import type { DamageBaseDef } from '~/utils/ptuDamage'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import type {
@@ -83,49 +83,13 @@ defineExpose({ focusHpAmount, focusDamageAmount })
     @submit="emit('submit-combat-stages')"
   />
 
-  <div
+  <TokenConditionsDialog
     v-if="props.conditionsDialog"
-    class="hp-dialog-backdrop"
-    @pointerdown.self="emit('close-conditions')"
-    @contextmenu.prevent
-  >
-    <form
-      class="hp-dialog hp-dialog--wide"
-      @submit.prevent="emit('submit-conditions')"
-      @pointerdown.stop
-    >
-      <header class="hp-dialog__header">
-        <h3>Apply/Remove Conditions</h3>
-        <p class="hp-dialog__species">{{ props.conditionsDialog.species }}</p>
-      </header>
-
-      <ConditionPicker
-        v-model="props.conditionsDialog.conditions"
-        class="conditions-dialog__picker"
-        compact
-        tag-size="sm"
-      />
-
-      <p class="hp-dialog__note">Conditions are saved to the source character sheet and shown on every map token for that sheet.</p>
-
-      <footer class="hp-dialog__footer">
-        <button
-          type="button"
-          class="hp-dialog__button hp-dialog__button--ghost"
-          @click="emit('close-conditions')"
-        >
-          Cancel
-        </button>
-        <button
-          type="submit"
-          class="hp-dialog__button hp-dialog__button--primary"
-          :disabled="!props.conditionsDialogChanged"
-        >
-          Apply
-        </button>
-      </footer>
-    </form>
-  </div>
+    :dialog="props.conditionsDialog"
+    :changed="props.conditionsDialogChanged"
+    @close="emit('close-conditions')"
+    @submit="emit('submit-conditions')"
+  />
 
   <TokenDamageDialog
     v-if="props.damageDialog"

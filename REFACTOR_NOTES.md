@@ -488,3 +488,14 @@
   - `npm test` — passes: 22 test files / 68 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: isometric conditions dialog component extraction
+
+- Continued token action dialog decomposition by extracting the condition picker modal from `components/isometric/TokenActionDialogs.vue` into `components/isometric/TokenConditionsDialog.vue`.
+  - The new component owns condition picker presentation, condition dialog copy, changed-state apply gating, and apply/cancel events.
+  - `TokenActionDialogs.vue` now coordinates four focused dialog components instead of embedding action-specific modal markup.
+- Preserved existing condition normalization/persistence flow in `IsometricGrid`, condition picker compact/tag sizing, and `modify-conditions` submit flow.
+- Quality gates after this phase:
+  - `npm test` — passes: 22 test files / 68 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
