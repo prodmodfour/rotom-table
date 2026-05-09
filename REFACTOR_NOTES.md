@@ -434,3 +434,13 @@
   - `npm test` — passes: 22 test files / 68 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: isometric token context menu component extraction
+
+- Continued Phase 6 cleanup by extracting the token right-click action menu from `components/IsometricGrid.client.vue` into `components/isometric/TokenContextMenu.vue`.
+  - The new component owns menu markup, styling, and focused action emits while the grid component keeps permission checks and token action orchestration.
+- Preserved existing context-menu position state, action availability, delete gating, and action event flow.
+- Quality gates after this phase:
+  - `npm test` — passes: 22 test files / 68 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.

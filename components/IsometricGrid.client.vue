@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import * as THREE from 'three'
+import TokenContextMenu from '~/components/isometric/TokenContextMenu.vue'
 import type { GridAnchor, GridDimensions, SpawnedPokemon } from '~/types/pokemon'
 import type {
   LayerVisibility,
@@ -1581,80 +1582,20 @@ watch(
 
 <template>
   <div ref="container" class="scene-root">
-    <div
+    <TokenContextMenu
       v-if="contextMenu"
-      class="context-menu"
-      :style="{ left: `${contextMenu.x}px`, top: `${contextMenu.y}px` }"
-      @contextmenu.prevent
-      @pointerdown.stop
-    >
-      <button
-        type="button"
-        class="context-menu__button"
-        @click.stop="handleContextViewSheet"
-      >
-        View Sheet
-      </button>
-      <button
-        v-if="contextMenu.canViewPokedex"
-        type="button"
-        class="context-menu__button"
-        @click.stop="handleContextViewPokedex"
-      >
-        View in Pokédex
-      </button>
-      <button
-        v-if="contextMenu.canTurn"
-        type="button"
-        class="context-menu__button"
-        @click.stop="handleContextTurn"
-      >
-        Turn sprite
-      </button>
-      <button
-        type="button"
-        class="context-menu__button"
-        @click.stop="handleContextModifyHp"
-      >
-        Modify HP
-      </button>
-      <button
-        type="button"
-        class="context-menu__button"
-        @click.stop="handleContextModifyCombatStages"
-      >
-        Change combat stages
-      </button>
-      <button
-        type="button"
-        class="context-menu__button"
-        @click.stop="handleContextApplyRemoveConditions"
-      >
-        Apply/Remove Conditions
-      </button>
-      <button
-        type="button"
-        class="context-menu__button"
-        @click.stop="handleContextUseMove"
-      >
-        Use Move
-      </button>
-      <button
-        type="button"
-        class="context-menu__button"
-        @click.stop="handleContextDealDamage"
-      >
-        Deal damage
-      </button>
-      <button
-        v-if="props.canDeleteTokens"
-        type="button"
-        class="context-menu__button"
-        @click.stop="handleContextDelete"
-      >
-        Delete
-      </button>
-    </div>
+      :menu="contextMenu"
+      :can-delete-tokens="props.canDeleteTokens"
+      @view-sheet="handleContextViewSheet"
+      @view-pokedex="handleContextViewPokedex"
+      @turn="handleContextTurn"
+      @modify-hp="handleContextModifyHp"
+      @modify-combat-stages="handleContextModifyCombatStages"
+      @apply-remove-conditions="handleContextApplyRemoveConditions"
+      @use-move="handleContextUseMove"
+      @deal-damage="handleContextDealDamage"
+      @delete="handleContextDelete"
+    />
 
     <div
       v-if="hpDialog"
@@ -2065,41 +2006,6 @@ watch(
   min-height: 100vh;
   overflow: hidden;
   background: var(--paper);
-}
-
-.context-menu {
-  position: absolute;
-  z-index: 8;
-  min-width: 160px;
-  padding: 0.4rem;
-  border: 1px solid var(--rule-soft);
-  border-radius: 12px;
-  background: var(--paper-soft);
-  box-shadow: var(--shadow-card);
-  backdrop-filter: blur(8px);
-}
-
-.context-menu__button {
-  width: 100%;
-  border: 1px solid var(--rule-soft);
-  border-radius: 8px;
-  background: var(--paper);
-  color: var(--ink);
-  padding: 0.6rem 0.8rem;
-  text-align: left;
-  cursor: pointer;
-  letter-spacing: 0.02em;
-  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
-}
-
-.context-menu__button + .context-menu__button {
-  margin-top: 0.3rem;
-}
-
-.context-menu__button:hover {
-  border-color: var(--rule-strong);
-  background: var(--paper-hover);
-  color: var(--ink-bright);
 }
 
 .hp-dialog-backdrop {
