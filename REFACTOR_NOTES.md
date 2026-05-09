@@ -1326,3 +1326,13 @@
   - `npm test` — passes: 71 test files / 265 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: encounter generate result card extraction
+
+- Extracted the generated/preview result presentation from `pages/generate.vue` into `components/encounters/EncounterGenerateResultCard.vue`.
+  - The component owns result heading badges, generated-folder hint, generated file list, preview file expansion controls, error rows, and result-specific styles.
+  - The generate route now wires result state/open-file state through explicit props and emits while preserving file expansion behavior and generated result copy.
+- Quality gates after this phase:
+  - `npm test` — passes: 71 test files / 265 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
