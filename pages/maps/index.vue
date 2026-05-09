@@ -1,13 +1,10 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
-  PhArrowsOutCardinal,
   PhFolder,
-  PhPencilSimple,
   PhPlus,
   PhSquaresFour,
-  PhTrash,
 } from '@phosphor-icons/vue'
 import { formatFolderLabel } from '~/utils/sheetFolders'
 import {
@@ -295,7 +292,6 @@ interface CtxState {
 }
 
 const ctx = ref<CtxState | null>(null)
-const ctxInput = ref<HTMLInputElement | HTMLSelectElement | null>(null)
 
 const openContext = (e: MouseEvent, target: CtxTarget) => {
   if (!isGm.value) return
@@ -325,16 +321,14 @@ const ctxMoveDestinations = computed<Array<{ value: string; label: string }>>(()
   })
 })
 
-const enterMove = async () => {
+const enterMove = () => {
   if (!ctx.value) return
   ctx.value.mode = 'move'
   ctx.value.error = null
   ctx.value.input = ctxMoveDestinations.value[0]?.value ?? ''
-  await nextTick()
-  ctxInput.value?.focus()
 }
 
-const enterRename = async () => {
+const enterRename = () => {
   if (!ctx.value) return
   ctx.value.mode = 'rename'
   ctx.value.error = null
@@ -345,9 +339,6 @@ const enterRename = async () => {
     const slash = path.lastIndexOf('/')
     ctx.value.input = slash >= 0 ? path.slice(slash + 1) : path
   }
-  await nextTick()
-  ctxInput.value?.focus()
-  if (ctxInput.value && 'select' in ctxInput.value) (ctxInput.value as HTMLInputElement).select()
 }
 
 const enterDelete = () => {
@@ -568,105 +559,26 @@ if (typeof window !== 'undefined') {
       </p>
     </section>
 
-    <template v-if="ctx">
-      <div class="ctx-backdrop" @click="closeContext" @contextmenu.prevent="closeContext"></div>
-      <div
-        class="ctx-menu"
-        role="menu"
-        :style="{ left: `${ctx.x}px`, top: `${ctx.y}px` }"
-        @click.stop
-        @contextmenu.prevent
-      >
-        <header class="ctx-header">
-          <span class="ctx-kind">{{ ctx.target.type === 'map' ? 'Map' : 'Folder' }}</span>
-          <span class="ctx-target">{{ ctxTargetLabel }}</span>
-        </header>
-
-        <template v-if="ctx.mode === 'menu'">
-          <button type="button" class="ctx-item" role="menuitem" @click="enterMove">
-            <PhArrowsOutCardinal :size="16" weight="bold" />
-            <span>Move…</span>
-          </button>
-          <button type="button" class="ctx-item" role="menuitem" @click="enterRename">
-            <PhPencilSimple :size="16" weight="bold" />
-            <span>Rename…</span>
-          </button>
-          <button type="button" class="ctx-item ctx-item--danger" role="menuitem" @click="enterDelete">
-            <PhTrash :size="16" weight="bold" />
-            <span>Delete</span>
-          </button>
-        </template>
-
-        <form v-else-if="ctx.mode === 'rename'" class="ctx-form" @submit.prevent="submitContext">
-          <label class="ctx-label">
-            New name
-            <input
-              ref="ctxInput"
-              v-model="ctx.input"
-              type="text"
-              class="ctx-input"
-              :disabled="ctx.busy"
-              @keydown.escape.prevent="closeContext"
-            />
-          </label>
-          <p v-if="ctx.error" class="ctx-error" role="alert">{{ ctx.error }}</p>
-          <div class="ctx-actions">
-            <button type="button" class="ctx-btn" :disabled="ctx.busy" @click="closeContext">Cancel</button>
-            <button type="submit" class="ctx-btn ctx-btn--primary" :disabled="ctx.busy">Rename</button>
-          </div>
-        </form>
-
-        <form v-else-if="ctx.mode === 'move'" class="ctx-form" @submit.prevent="submitContext">
-          <label class="ctx-label">
-            Move to
-            <select
-              ref="ctxInput"
-              v-model="ctx.input"
-              class="ctx-input"
-              :disabled="ctx.busy || ctxMoveDestinations.length === 0"
-              @keydown.escape.prevent="closeContext"
-            >
-              <option v-if="ctxMoveDestinations.length === 0" value="" disabled>
-                No other destinations
-              </option>
-              <option v-for="d in ctxMoveDestinations" :key="`d-${d.value}`" :value="d.value">
-                {{ d.label }}
-              </option>
-            </select>
-          </label>
-          <p v-if="ctx.error" class="ctx-error" role="alert">{{ ctx.error }}</p>
-          <div class="ctx-actions">
-            <button type="button" class="ctx-btn" :disabled="ctx.busy" @click="closeContext">Cancel</button>
-            <button
-              type="submit"
-              class="ctx-btn ctx-btn--primary"
-              :disabled="ctx.busy || ctxMoveDestinations.length === 0"
-            >
-              Move
-            </button>
-          </div>
-        </form>
-
-        <div v-else-if="ctx.mode === 'delete'" class="ctx-form">
-          <p class="ctx-confirm">
-            <template v-if="ctx.target.type === 'folder'">
-              Delete folder <strong>{{ ctxTargetLabel }}</strong> and every map inside?
-              This cannot be undone.
-            </template>
-            <template v-else>
-              Delete map <strong>{{ ctxTargetLabel }}</strong>? The JSON file will be removed from disk.
-            </template>
-          </p>
-          <p v-if="ctx.error" class="ctx-error" role="alert">{{ ctx.error }}</p>
-          <div class="ctx-actions">
-            <button type="button" class="ctx-btn" :disabled="ctx.busy" @click="closeContext">Cancel</button>
-            <button type="button" class="ctx-btn ctx-btn--danger" :disabled="ctx.busy" @click="submitContext">
-              Delete
-            </button>
-          </div>
-        </div>
-      </div>
-    </template>
+    <LibraryContextMenu
+      v-if="ctx"
+      v-model:input="ctx.input"
+      :x="ctx.x"
+      :y="ctx.y"
+      :target-kind="ctx.target.type === 'map' ? 'Map' : 'Folder'"
+      :target-label="ctxTargetLabel"
+      :is-folder-target="ctx.target.type === 'folder'"
+      :mode="ctx.mode"
+      :busy="ctx.busy"
+      :error="ctx.error"
+      :move-destinations="ctxMoveDestinations"
+      delete-folder-suffix="and every map inside? This cannot be undone."
+      delete-item-suffix="? The JSON file will be removed from disk."
+      @close="closeContext"
+      @enter-move="enterMove"
+      @enter-rename="enterRename"
+      @enter-delete="enterDelete"
+      @submit="submitContext"
+    />
   </div>
 </template>
 
@@ -922,173 +834,4 @@ select:focus {
   border: 0;
 }
 
-.ctx-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 40;
-  background: transparent;
-}
-
-.ctx-menu {
-  position: fixed;
-  z-index: 50;
-  min-width: 220px;
-  max-width: min(320px, 90vw);
-  border: 1px solid var(--rule);
-  border-radius: 10px;
-  background: var(--paper-soft);
-  color: var(--ink);
-  box-shadow: var(--shadow-card), 0 8px 24px rgba(0, 0, 0, 0.35);
-  padding: 0.4rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-}
-
-.ctx-header {
-  display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
-  padding: 0.4rem 0.55rem 0.55rem;
-  border-bottom: 1px solid var(--rule-soft);
-  margin-bottom: 0.25rem;
-}
-
-.ctx-kind {
-  font-size: 0.7rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--ink-muted);
-}
-
-.ctx-target {
-  font-family: var(--font-book);
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: var(--ink-bright);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.ctx-item {
-  display: flex;
-  align-items: center;
-  gap: 0.55rem;
-  padding: 0.45rem 0.6rem;
-  border: none;
-  background: transparent;
-  color: var(--ink);
-  font: inherit;
-  text-align: left;
-  border-radius: 7px;
-  cursor: pointer;
-}
-
-.ctx-item:hover,
-.ctx-item:focus-visible {
-  background: var(--paper-hover);
-  color: var(--ink-bright);
-  outline: none;
-}
-
-.ctx-item--danger {
-  color: #d36464;
-}
-
-.ctx-item--danger:hover,
-.ctx-item--danger:focus-visible {
-  background: rgba(220, 80, 80, 0.16);
-  color: #f08585;
-}
-
-.ctx-form {
-  display: flex;
-  flex-direction: column;
-  gap: 0.55rem;
-  padding: 0.35rem 0.55rem 0.55rem;
-}
-
-.ctx-label {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-  font-size: 0.75rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--ink-muted);
-}
-
-.ctx-input {
-  font: inherit;
-  width: 100%;
-  border: 1px solid var(--rule-soft);
-  border-radius: 8px;
-  background: var(--paper);
-  color: var(--ink);
-  padding: 0.5rem 0.65rem;
-  outline: none;
-}
-
-.ctx-input:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px rgba(250, 189, 47, 0.18);
-}
-
-.ctx-confirm {
-  margin: 0;
-  color: var(--ink-soft);
-  line-height: 1.4;
-  font-size: 0.9rem;
-}
-
-.ctx-error {
-  margin: 0;
-  color: #d36464;
-  font-size: 0.82rem;
-}
-
-.ctx-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.4rem;
-}
-
-.ctx-btn {
-  border: 1px solid var(--rule);
-  border-radius: 8px;
-  background: var(--paper-soft);
-  color: var(--ink);
-  padding: 0.45rem 0.85rem;
-  font: inherit;
-  cursor: pointer;
-  letter-spacing: 0.04em;
-  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
-}
-
-.ctx-btn:hover:not(:disabled) {
-  border-color: var(--rule-strong);
-  background: var(--paper-hover);
-  color: var(--ink-bright);
-}
-
-.ctx-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.ctx-btn--primary {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-
-.ctx-btn--danger {
-  border-color: rgba(220, 80, 80, 0.6);
-  color: #d36464;
-}
-
-.ctx-btn--danger:hover:not(:disabled) {
-  background: rgba(220, 80, 80, 0.16);
-  color: #f08585;
-}
 </style>

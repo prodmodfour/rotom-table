@@ -1503,3 +1503,13 @@
   - `npm test` — passes: 71 test files / 265 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: shared library context menu
+
+- Extracted the duplicated Move/Rename/Delete context-menu presentation from maps/sheets library pages into `components/library/LibraryContextMenu.vue`.
+  - The shared component owns menu/dialog markup, Phosphor action icons, input focus/select behavior, move-destination controls, delete confirmation copy slots via suffix props, and scoped context-menu styles.
+- Updated `pages/maps/index.vue` and `pages/sheets/index.vue` to keep only context state/actions while preserving move, rename, delete, Escape close, and busy/error behavior.
+- Quality gates after this phase:
+  - `npm test` — passes: 71 test files / 265 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
