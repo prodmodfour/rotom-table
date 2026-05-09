@@ -1356,3 +1356,13 @@
   - `npm test` — passes: 71 test files / 265 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: encounter generate intro/error cards
+
+- Extracted generate-page intro copy and generation-error presentation into `components/encounters/EncounterGenerateIntroCard.vue` and `components/encounters/EncounterGenerateErrorCard.vue`.
+  - The intro card receives only the table count; the error card receives only the normalized error message.
+  - `pages/generate.vue` is now a compact route shell for metadata, URL-backed generation state, and card composition.
+- Quality gates after this phase:
+  - `npm test` — passes: 71 test files / 265 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
