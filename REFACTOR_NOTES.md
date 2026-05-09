@@ -1439,3 +1439,14 @@
   - `npm test` — passes: 71 test files / 265 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: move automation effects panel extraction
+
+- Extracted condition, combat-stage, HP, map-effect, hazard-cell, manual-note, and script-note sections into `components/move-automation/MoveAutomationEffectsPanel.vue`.
+  - The effects panel owns the remaining resolve-step suggestion/manual-effect presentation with explicit models and emits.
+  - `MoveAutomationResolveStep.vue` is now a compact composition shell for summary, target resolution, and effect-resolution panels.
+- Preserved suggestion toggles, manual condition picker state, combat-stage delta inputs, HP suggestion overrides, GM-gated map effects, hazard-cell text editing, and script-note display.
+- Quality gates after this phase:
+  - `npm test` — passes: 71 test files / 265 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
