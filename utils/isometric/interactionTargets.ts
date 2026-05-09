@@ -32,7 +32,12 @@ export const pickPokemonIdFromPointer = (options: {
   raycaster: THREE.Raycaster
   renderObjects: Iterable<PokemonRenderObject>
 }) => {
-  if (!setRaycasterFromPointer(options)) return null
+  if (!setRaycasterFromPointer({
+    coords: options.event,
+    renderer: options.renderer,
+    camera: options.camera,
+    raycaster: options.raycaster,
+  })) return null
 
   const proxies = Array.from(options.renderObjects, (renderObject) => renderObject.proxy)
   const intersections = options.raycaster.intersectObjects(proxies, false)
@@ -79,7 +84,12 @@ export const pickBuildTargetFromPointer = (options: {
   allVoxelOccupancy: ReadonlySet<string>
   mapMovementOccupancy: ReadonlySet<string>
 }): BuildTarget | null => {
-  if (!setRaycasterFromPointer(options)) return null
+  if (!setRaycasterFromPointer({
+    coords: options.event,
+    renderer: options.renderer,
+    camera: options.camera,
+    raycaster: options.raycaster,
+  })) return null
 
   const targets: THREE.Object3D[] = []
   if (options.floorPlane) targets.push(options.floorPlane)
@@ -181,7 +191,12 @@ export const pickHazardTargetFromPointer = (options: {
   dimensions: GridDimensions
   groundLevelY: number
 }): HazardTarget | null => {
-  if (!setRaycasterFromPointer(options)) return null
+  if (!setRaycasterFromPointer({
+    coords: options.event,
+    renderer: options.renderer,
+    camera: options.camera,
+    raycaster: options.raycaster,
+  })) return null
 
   const targets: THREE.Object3D[] = []
   targets.push(...options.hazardMeshes)
