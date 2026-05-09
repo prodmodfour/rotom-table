@@ -1022,3 +1022,14 @@
   - `npm test` — passes: 51 test files / 177 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: trainer sheet editor component extraction
+
+- Extracted trainer sheet editor orchestration and tab/panel composition into `components/sheets/TrainerSheetEditor.vue`.
+  - The editor component now owns trainer derived state, tab state, CSV-backed fields, row-action wiring, and portrait picker behavior.
+- Reduced `pages/sheets/trainers/[slug].vue` to a route shell for trainer lookup, editable-resource access, page metadata, shared sheet chrome, and not-found handling.
+- Preserved trainer sheet autosave/resource wiring, player-access behavior, portrait picker behavior, tab keys, and all panel props/events.
+- Quality gates after this phase:
+  - `npm test` — passes: 51 test files / 177 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
