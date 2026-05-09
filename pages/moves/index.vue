@@ -1,36 +1,19 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { moves, toSlug } from '~/data/ptuReference'
+import { ALL_MOVE_TYPES_OPTION, buildMoveTypeOptions, filterMovesForIndex } from '~/utils/reference/moveIndex'
 
 useHead({ title: 'Moves · Rotom Table' })
 
 const searchTerm = ref('')
-const typeFilter = ref<string>('All')
+const typeFilter = ref<string>(ALL_MOVE_TYPES_OPTION)
 
-const normalize = (value: string) => value.trim().toLowerCase()
+const allTypes = computed(() => buildMoveTypeOptions(moves))
 
-const allTypes = computed(() => {
-  const set = new Set<string>()
-  for (const move of moves) if (move.type) set.add(move.type)
-  return ['All', ...Array.from(set).sort()]
-})
-
-const filtered = computed(() => {
-  const query = normalize(searchTerm.value)
-  return moves.filter((move) => {
-    if (typeFilter.value !== 'All' && move.type !== typeFilter.value) return false
-    if (!query) return true
-    const haystacks = [
-      move.name,
-      move.type ?? '',
-      move.frequency ?? '',
-      move.damage_class ?? '',
-      move.range ?? '',
-      move.effect ?? '',
-    ]
-    return haystacks.some((value) => normalize(value).includes(query))
-  })
-})
+const filtered = computed(() => filterMovesForIndex(moves, {
+  searchTerm: searchTerm.value,
+  type: typeFilter.value,
+}))
 </script>
 
 <template>
@@ -62,11 +45,11 @@ const filtered = computed(() => {
               v-for="type in allTypes"
               :key="type"
               type="button"
-              :class="['type-filter__button', { active: typeFilter === type, 'type-filter__button--all': type === 'All' }]"
+              :class="['type-filter__button', { active: typeFilter === type, 'type-filter__button--all': type === ALL_MOVE_TYPES_OPTION }]"
               :aria-pressed="typeFilter === type"
               @click="typeFilter = type"
             >
-              <span v-if="type === 'All'">All</span>
+              <span v-if="type === ALL_MOVE_TYPES_OPTION">All</span>
               <TypeBadge v-else :type="type" size="sm" />
             </button>
           </div>

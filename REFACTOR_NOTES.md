@@ -1608,3 +1608,15 @@
   - `npm test` — passes: 76 test files / 294 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: move index filtering helpers
+
+- Extracted move-index type/search derivations from `pages/moves/index.vue` into `utils/reference/moveIndex.ts`.
+  - The helper owns the `All` move-type option, sorted type option building, normalized move search haystacks, and combined type/search filtering.
+- Added shared reference search primitives in `utils/reference/search.ts` and updated item-index helpers to use them without changing item page behavior.
+- Updated the Moves route to consume focused helpers while preserving the type chip UI, search behavior, and move card output.
+- Added `tests/utils/reference/moveIndex.test.ts` covering type option ordering, haystack matching, type/search filtering, and default All behavior.
+- Quality gates after this phase:
+  - `npm test` — passes: 77 test files / 298 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

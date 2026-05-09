@@ -1,4 +1,7 @@
 import type { PtuItem } from '~/types/ptuReference'
+import { matchesReferenceSearch, normalizeReferenceSearch } from '~/utils/reference/search'
+
+export { normalizeReferenceSearch } from '~/utils/reference/search'
 
 export interface ItemCategoryCount {
   category: string
@@ -15,8 +18,6 @@ export interface ItemFilterOptions {
   category?: string | null
   section?: string | null
 }
-
-export const normalizeReferenceSearch = (value: string): string => value.trim().toLowerCase()
 
 const sortedCounts = <TKey extends string>(
   counts: Map<string, number>,
@@ -60,7 +61,7 @@ export const itemMatchesSearch = (item: PtuItem, normalizedQuery: string): boole
     ...item.aliases,
     ...item.notes,
   ]
-  return haystacks.some((value) => normalizeReferenceSearch(value).includes(normalizedQuery))
+  return matchesReferenceSearch(haystacks, normalizedQuery)
 }
 
 export const filterItemsForIndex = (
