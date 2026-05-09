@@ -1686,3 +1686,14 @@
   - `npm test` — passes: 83 test files / 318 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: feature detail sibling helper
+
+- Extracted trainer-class sibling feature derivation from `pages/features/[slug].vue` into `utils/reference/featureDetails.ts`.
+  - The helper owns class-name matching, current-feature exclusion, and sibling limiting while preserving source ordering.
+- Updated the Feature detail route to consume the focused helper and keep route state separate from sibling derivation.
+- Added `tests/utils/reference/featureDetails.test.ts` covering class siblings, current-name exclusion, limits, and empty inputs.
+- Quality gates after this phase:
+  - `npm test` — passes: 84 test files / 322 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

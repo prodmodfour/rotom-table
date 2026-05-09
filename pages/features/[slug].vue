@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { featureBySlug, features, toSlug } from '~/data/ptuReference'
+import { siblingFeaturesInClass } from '~/utils/reference/featureDetails'
 
 const route = useRoute()
 
@@ -13,13 +14,7 @@ useHead(() => ({
 }))
 
 /** Sibling features in the same Trainer Class (if this is a class feature). */
-const siblings = computed(() => {
-  const f = feat.value
-  if (!f?.className) return []
-  return features
-    .filter((x) => x.className === f.className && x.name !== f.name)
-    .slice(0, 30)
-})
+const siblings = computed(() => siblingFeaturesInClass(feat.value, features))
 </script>
 
 <template>
