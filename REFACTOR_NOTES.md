@@ -1143,3 +1143,13 @@
   - `npm test` — passes: 58 test files / 197 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: Pokédex move list panel extraction
+
+- Extracted the Pokédex move-list section into `components/pokedex/PokedexMoveListPanel.vue` with explicit level-up, TM/HM, Egg, and Tutor move token props.
+- `PokedexEntryDetail.vue` now delegates all move rendering to the focused panel while preserving shared book CSS and existing RefLink/TypeBadge output.
+- Preserved level-up move rows, comma-separated TM/HM/Egg/Tutor lists, empty-section gating, and move link display text.
+- Quality gates after this phase:
+  - `npm test` — passes: 58 test files / 197 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
