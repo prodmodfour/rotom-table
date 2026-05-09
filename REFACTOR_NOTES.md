@@ -1513,3 +1513,13 @@
   - `npm test` — passes: 71 test files / 265 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: map library intro panel
+
+- Extracted the maps library intro/search/create controls into `components/library/MapLibraryIntroPanel.vue`.
+  - The component owns map-library explanatory copy, count badge, GM/player hint copy, search model, create-map/create-folder buttons, and intro-card styles.
+- Updated `pages/maps/index.vue` to compose the intro panel while keeping map loading, filtering, and create actions in the route shell.
+- Quality gates after this phase:
+  - `npm test` — passes: 71 test files / 265 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
