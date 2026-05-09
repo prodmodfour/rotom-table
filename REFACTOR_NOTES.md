@@ -1163,3 +1163,13 @@
   - `npm test` — passes: 58 test files / 197 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: Pokédex capabilities and skills panel extraction
+
+- Extracted the Capability List and Skill List sections into `components/pokedex/PokedexCapabilitiesSkillsPanel.vue` with narrow capability-token and skill-phrase props.
+- `PokedexEntryDetail.vue` now composes profile, capabilities/skills, type matchups, and move list panels inside the book layout.
+- Preserved capability RefLink fallback behavior, comma separation, skill phrase display, and empty-section gating.
+- Quality gates after this phase:
+  - `npm test` — passes: 58 test files / 197 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.

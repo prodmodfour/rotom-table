@@ -56,25 +56,10 @@ defineProps<{
 
         <!-- RIGHT COLUMN -->
         <section class="book-column book-column--right">
-          <section v-if="capabilityTokens.length" class="book-section">
-            <h3 class="book-section__title">Capability List</h3>
-            <p class="paragraph">
-              <template v-for="(token, i) in capabilityTokens" :key="`cap-${i}`"
-                ><span v-if="i > 0">, </span
-                ><RefLink
-                  v-if="token.ref"
-                  kind="capability"
-                  :name="token.ref"
-                  :display="token.display"
-                /><span v-else>{{ token.display }}</span
-              ></template>
-            </p>
-          </section>
-
-          <section v-if="skillPhrase" class="book-section">
-            <h3 class="book-section__title">Skill List</h3>
-            <p class="paragraph">{{ skillPhrase }}</p>
-          </section>
+          <PokedexCapabilitiesSkillsPanel
+            :capability-tokens="capabilityTokens"
+            :skill-phrase="skillPhrase"
+          />
 
           <PokedexTypeMatchupsPanel :groups="typeMatchupGroups" />
 
