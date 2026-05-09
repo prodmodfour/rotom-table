@@ -668,3 +668,14 @@
   - `npm test` — passes: 36 test files / 121 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: isometric pointer interaction controller extraction
+
+- Continued Phase 6 by extracting renderer pointer, wheel, right-click, hover-preview, and Escape-key routing from `components/IsometricGrid.client.vue` into `utils/isometric/pointerInteraction.ts`.
+  - The new controller owns click-vs-drag gating, build/hazard eraser routing, token selection/menu routing, preview coordinate retention for replay, wheel elevation stepping, leave cleanup, and overlay-close priority.
+  - The grid component now wires renderer-specific picking/actions into the controller through narrow callbacks while preserving public `select-pokemon`, `move-pokemon`, terrain, and hazard events.
+- Added `tests/utils/isometric/pointerInteraction.test.ts` covering token selection/movement, build/hazard click routing, context-menu routing, pointer-move preview routing, wheel elevation, leave cleanup, and Escape handling.
+- Quality gates after this phase:
+  - `npm test` — passes: 37 test files / 126 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.

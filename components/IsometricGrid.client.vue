@@ -32,6 +32,7 @@ import {
   syncIsometricRendererSize,
 } from '~/utils/isometric/cameraControls'
 import { createPointerTravelTracker } from '~/utils/isometric/pointerTracker'
+import { createIsometricPointerInteractionController } from '~/utils/isometric/pointerInteraction'
 import type {
   BuildTarget,
   HazardTarget,
@@ -262,7 +263,6 @@ let cleanupRendererDomEvents: (() => void) | null = null
 let cleanupResizeObserver: (() => void) | null = null
 let animationFrame = 0
 const pointerTracker = createPointerTravelTracker()
-let lastPointerCoords: { clientX: number; clientY: number } | null = null
 
 const getPreviewLayerY = () => movementInteraction.activeAnchor()?.y ?? selectedPokemon.value?.position.y ?? 0
 
@@ -506,7 +506,6 @@ const buildInteraction = createIsometricBuildInteractionController({
   removeVoxel: (cell) => emit('remove-voxel', cell),
 })
 const updateBuildPreviewFromPointer = buildInteraction.updatePreviewFromPointer
-const replayBuildPreview = () => buildInteraction.replayPreview(lastPointerCoords)
 const performBuildAction = buildInteraction.performAction
 
 const pickHazardTarget = (
@@ -539,128 +538,46 @@ const hazardInteraction = createIsometricHazardInteractionController({
   removeHazard: (cell) => emit('remove-hazard', cell),
 })
 const updateHazardPreviewFromPointer = hazardInteraction.updatePreviewFromPointer
-const replayHazardPreview = () => hazardInteraction.replayPreview(lastPointerCoords)
 const performHazardAction = hazardInteraction.performAction
 
-const handleLeftClick = (event: PointerEvent) => {
-  closeContextMenu()
-  const hitId = pickPokemonId(event)
+const pointerInteraction = createIsometricPointerInteractionController({
+  pointerTracker,
+  getSelectedId: () => props.selectedId,
+  getSelectedPokemon: () => selectedPokemon.value,
+  getBuildMode: () => props.buildMode,
+  getBuildTool: () => props.buildTool,
+  getHazardMode: () => props.hazardMode,
+  getHazardTool: () => props.hazardTool,
+  canControlPokemon,
+  pickPokemonId,
+  selectPokemon: (id) => emit('select-pokemon', id),
+  closeContextMenu,
+  openContextMenu,
+  updateHoverFromPointer,
+  clearHoveredPokemon: () => setHoveredPokemonId(null),
+  updateBuildPreviewFromPointer,
+  updateHazardPreviewFromPointer,
+  updateMovePreviewFromPointer: updatePreviewFromPointer,
+  performSelectedMove: movementInteraction.performSelectedMove,
+  stepPreviewElevation: movementInteraction.stepPreviewElevation,
+  performBuildAction,
+  performHazardAction,
+  hideBuildGhost,
+  hideHazardGhost,
+  closeTopmostOverlay,
+})
+const replayBuildPreview = () => buildInteraction.replayPreview(pointerInteraction.lastPointerCoords())
+const replayHazardPreview = () => hazardInteraction.replayPreview(pointerInteraction.lastPointerCoords())
 
-  if (!props.selectedId) {
-    if (canControlPokemon(hitId)) {
-      emit('select-pokemon', hitId)
-    }
-
-    return
-  }
-
-  if (!canControlPokemon(props.selectedId)) {
-    emit('select-pokemon', null)
-    return
-  }
-
-  movementInteraction.performSelectedMove()
-}
-
-const handleRightClick = (event: MouseEvent) => {
-  event.preventDefault()
-
-  if (props.buildMode) {
-    if (pointerTracker.isClick()) {
-      performBuildAction(event, 'eraser')
-    }
-    return
-  }
-
-  if (props.hazardMode) {
-    if (pointerTracker.isClick()) {
-      performHazardAction(event, 'eraser')
-    }
-    return
-  }
-
-  const hitId = pickPokemonId(event)
-
-  if (!canControlPokemon(hitId)) {
-    closeContextMenu()
-    return
-  }
-
-  openContextMenu(event, hitId)
-}
-
-const handlePointerDown = (event: PointerEvent) => {
-  closeContextMenu()
-  pointerTracker.start(event)
-}
-
-const handlePointerMove = (event: PointerEvent) => {
-  pointerTracker.move(event)
-  lastPointerCoords = { clientX: event.clientX, clientY: event.clientY }
-  updateHoverFromPointer(event)
-
-  if (props.buildMode) {
-    updateBuildPreviewFromPointer(event)
-    return
-  }
-
-  if (props.hazardMode) {
-    updateHazardPreviewFromPointer(event)
-    return
-  }
-
-  if (selectedPokemon.value && canControlPokemon(selectedPokemon.value.id)) {
-    updatePreviewFromPointer(event)
-  }
-}
-
-const handleWheel = (event: WheelEvent) => {
-  if (!selectedPokemon.value || !canControlPokemon(selectedPokemon.value.id)) {
-    return
-  }
-
-  event.preventDefault()
-  event.stopPropagation()
-
-  movementInteraction.stepPreviewElevation(event.deltaY)
-}
-
-const handlePointerUp = (event: PointerEvent) => {
-  if (!pointerTracker.isClick() || event.button !== 0) {
-    return
-  }
-
-  if (props.buildMode) {
-    performBuildAction(event, props.buildTool)
-    return
-  }
-
-  if (props.hazardMode) {
-    performHazardAction(event, props.hazardTool ?? 'pencil')
-    return
-  }
-
-  handleLeftClick(event)
-}
-
-const handlePointerLeave = () => {
-  lastPointerCoords = null
-  setHoveredPokemonId(null)
-  if (props.buildMode) {
-    hideBuildGhost()
-  }
-  if (props.hazardMode) {
-    hideHazardGhost()
-  }
-}
-
-const handleEscape = (event: KeyboardEvent) => {
-  if (event.key === 'Escape') {
-    if (closeTopmostOverlay()) return
-
-    emit('select-pokemon', null)
-  }
-}
+const {
+  handleRightClick,
+  handlePointerDown,
+  handlePointerMove,
+  handleWheel,
+  handlePointerUp,
+  handlePointerLeave,
+  handleEscape,
+} = pointerInteraction
 
 const animate = () => {
   animationFrame = window.requestAnimationFrame(animate)
