@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import {
+  countEncounterRegionTables,
   describeEntries,
   encounterRegions,
   encounterTables,
+  filterEncounterTablesByRegion,
+  findEncounterTableInEntries,
+  firstEncounterTable,
   formatRegionLabel,
   formatTableLabel,
-  tablesInRegion,
 } from '~/utils/encounterTables'
 
 useHead({
@@ -15,35 +18,20 @@ useHead({
 
 const searchTerm = ref('')
 
-const normalize = (value: string) => value.trim().toLowerCase()
-
 /**
  * Filter visible region/table tree by the search box. A region is shown if
  * its name matches; otherwise individual tables show if the table name or
  * any species inside it matches.
  */
-const filteredByRegion = computed(() => {
-  const query = normalize(searchTerm.value)
-  return encounterRegions
-    .map((region) => {
-      const allTables = tablesInRegion(region)
-      const regionMatches = !query || normalize(region).includes(query) || normalize(formatRegionLabel(region)).includes(query)
-      const visibleTables = regionMatches
-        ? allTables
-        : allTables.filter((entry) => {
-            const haystacks = [
-              entry.key,
-              entry.table.name,
-              ...entry.table.entries.map(([, species]) => species),
-            ]
-            return haystacks.some((value) => normalize(value).includes(query))
-          })
-      return { region, tables: visibleTables }
-    })
-    .filter(({ tables }) => tables.length > 0)
-})
+const filteredByRegion = computed(() =>
+  filterEncounterTablesByRegion({
+    entries: encounterTables,
+    regions: encounterRegions,
+    query: searchTerm.value,
+  }),
+)
 
-const initialEntry = encounterTables[0] ?? null
+const initialEntry = firstEncounterTable(encounterTables)
 const selectedRegion = ref<string | null>(initialEntry?.region ?? null)
 const selectedKey    = ref<string | null>(initialEntry?.key ?? null)
 
@@ -52,23 +40,16 @@ const selectEntry = (region: string, key: string) => {
   selectedKey.value = key
 }
 
-const selectedEntry = computed(() => {
-  if (!selectedRegion.value || !selectedKey.value) return null
-  return (
-    encounterTables.find(
-      (entry) => entry.region === selectedRegion.value && entry.key === selectedKey.value,
-    ) ?? null
-  )
-})
+const selectedEntry = computed(() =>
+  findEncounterTableInEntries(encounterTables, selectedRegion.value, selectedKey.value),
+)
 
 const selectedRows = computed(() =>
   selectedEntry.value ? describeEntries(selectedEntry.value.table) : [],
 )
 
 const totalCount = encounterTables.length
-const filteredCount = computed(() =>
-  filteredByRegion.value.reduce((sum, group) => sum + group.tables.length, 0),
-)
+const filteredCount = computed(() => countEncounterRegionTables(filteredByRegion.value))
 </script>
 
 <template>

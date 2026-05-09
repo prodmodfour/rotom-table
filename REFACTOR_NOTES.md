@@ -1227,3 +1227,14 @@
   - `npm test` — passes: 62 test files / 219 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: encounter table browser helpers
+
+- Extracted encounter-table sidebar filtering and selection primitives into `utils/encounterTables.ts`.
+  - The utility now owns normalized search, region grouping, field/species matching, selected-entry lookup, first-entry selection, and filtered-count aggregation.
+- Updated `pages/encounter-tables.vue` to use those pure helpers while preserving region/table/species search behavior, selected-table routing links, and displayed entry rows.
+- Added `tests/utils/encounterTables.test.ts` covering search normalization, selection helpers, region grouping, formatted region label matching, table key/name matching, species matching, and filtered counts.
+- Quality gates after this phase:
+  - `npm test` — passes: 63 test files / 222 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

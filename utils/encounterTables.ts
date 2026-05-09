@@ -133,3 +133,60 @@ export const describeEntries = (
 }
 
 const pad = (n: number): string => String(n).padStart(2, '0')
+
+/* ------------------------------------------------------------------ */
+/* Browser filtering/selection helpers                                */
+/* ------------------------------------------------------------------ */
+
+export interface EncounterRegionGroup {
+  region: string
+  tables: EncounterTableEntry[]
+}
+
+export const normalizeEncounterSearch = (value: string): string => value.trim().toLowerCase()
+
+export const findEncounterTableInEntries = (
+  entries: ReadonlyArray<EncounterTableEntry>,
+  region: string | null | undefined,
+  key: string | null | undefined,
+): EncounterTableEntry | null => {
+  if (!region || !key) return null
+  return entries.find((entry) => entry.region === region && entry.key === key) ?? null
+}
+
+export const firstEncounterTable = (
+  entries: ReadonlyArray<EncounterTableEntry>,
+): EncounterTableEntry | null => entries[0] ?? null
+
+export const filterEncounterTablesByRegion = (
+  options: {
+    entries: ReadonlyArray<EncounterTableEntry>
+    regions: ReadonlyArray<string>
+    query: string
+  },
+): EncounterRegionGroup[] => {
+  const query = normalizeEncounterSearch(options.query)
+  return options.regions
+    .map((region) => {
+      const allTables = options.entries.filter((entry) => entry.region === region)
+      const regionMatches = !query
+        || normalizeEncounterSearch(region).includes(query)
+        || normalizeEncounterSearch(formatRegionLabel(region)).includes(query)
+      const visibleTables = regionMatches
+        ? allTables
+        : allTables.filter((entry) => {
+            const haystacks = [
+              entry.key,
+              entry.table.name,
+              ...entry.table.entries.map(([, species]) => species),
+            ]
+            return haystacks.some((value) => normalizeEncounterSearch(value).includes(query))
+          })
+      return { region, tables: visibleTables }
+    })
+    .filter(({ tables }) => tables.length > 0)
+}
+
+export const countEncounterRegionTables = (
+  groups: ReadonlyArray<EncounterRegionGroup>,
+): number => groups.reduce((sum, group) => sum + group.tables.length, 0)
