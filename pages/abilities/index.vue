@@ -1,20 +1,13 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { abilities, toSlug } from '~/data/ptuReference'
+import { filterAbilitiesForIndex } from '~/utils/reference/abilityIndex'
 
 useHead({ title: 'Abilities · Rotom Table' })
 
 const searchTerm = ref('')
-const normalize = (value: string) => value.trim().toLowerCase()
 
-const filtered = computed(() => {
-  const query = normalize(searchTerm.value)
-  if (!query) return abilities
-  return abilities.filter((ability) => {
-    const haystacks = [ability.name, ability.frequency ?? '', ability.trigger ?? '', ability.effect ?? '']
-    return haystacks.some((value) => normalize(value).includes(query))
-  })
-})
+const filtered = computed(() => filterAbilitiesForIndex(abilities, { searchTerm: searchTerm.value }))
 </script>
 
 <template>

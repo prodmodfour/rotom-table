@@ -1631,3 +1631,14 @@
   - `npm test` — passes: 78 test files / 302 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: ability index filtering helpers
+
+- Extracted ability-index search matching from `pages/abilities/index.vue` into `utils/reference/abilityIndex.ts`.
+  - The helper owns normalized matching across name, frequency, trigger, and effect fields while preserving source ordering and empty-query behavior.
+- Updated the Abilities route to consume the focused helper and remain a UI shell for search state and rendering.
+- Added `tests/utils/reference/abilityIndex.test.ts` covering haystack matching and filtered ordering.
+- Quality gates after this phase:
+  - `npm test` — passes: 79 test files / 304 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
