@@ -1304,3 +1304,14 @@
   - `npm test` — passes: 69 test files / 255 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: encounter table browser composable extraction
+
+- Extracted `/encounter-tables` browser state into `composables/encounters/useEncounterTableBrowser.ts`.
+  - The composable owns search term state, region/table filtering, selected entry state/actions, selected row derivation, and count summaries.
+  - `pages/encounter-tables.vue` now focuses on metadata and presentation while preserving table selection, search behavior, generated-link URLs, and displayed roll rows.
+- Added `tests/composables/encounters/useEncounterTableBrowser.test.ts` covering initial selection, search filtering by species/region, selection updates, row formatting, and empty collection behavior.
+- Quality gates after this phase:
+  - `npm test` — passes: 70 test files / 259 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

@@ -1,13 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
 import {
-  countEncounterRegionTables,
-  describeEntries,
-  encounterRegions,
-  encounterTables,
-  filterEncounterTablesByRegion,
-  findEncounterTableInEntries,
-  firstEncounterTable,
   formatRegionLabel,
   formatTableLabel,
 } from '~/utils/encounterTables'
@@ -16,40 +8,17 @@ useHead({
   title: 'Encounter Tables · Rotom Table',
 })
 
-const searchTerm = ref('')
-
-/**
- * Filter visible region/table tree by the search box. A region is shown if
- * its name matches; otherwise individual tables show if the table name or
- * any species inside it matches.
- */
-const filteredByRegion = computed(() =>
-  filterEncounterTablesByRegion({
-    entries: encounterTables,
-    regions: encounterRegions,
-    query: searchTerm.value,
-  }),
-)
-
-const initialEntry = firstEncounterTable(encounterTables)
-const selectedRegion = ref<string | null>(initialEntry?.region ?? null)
-const selectedKey    = ref<string | null>(initialEntry?.key ?? null)
-
-const selectEntry = (region: string, key: string) => {
-  selectedRegion.value = region
-  selectedKey.value = key
-}
-
-const selectedEntry = computed(() =>
-  findEncounterTableInEntries(encounterTables, selectedRegion.value, selectedKey.value),
-)
-
-const selectedRows = computed(() =>
-  selectedEntry.value ? describeEntries(selectedEntry.value.table) : [],
-)
-
-const totalCount = encounterTables.length
-const filteredCount = computed(() => countEncounterRegionTables(filteredByRegion.value))
+const {
+  searchTerm,
+  filteredByRegion,
+  selectedRegion,
+  selectedKey,
+  selectEntry,
+  selectedEntry,
+  selectedRows,
+  totalCount,
+  filteredCount,
+} = useEncounterTableBrowser()
 </script>
 
 <template>
