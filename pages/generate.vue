@@ -68,21 +68,10 @@ const {
         @generate="generate"
       />
 
-      <!-- ============ Roll preview ============ -->
-      <section v-if="rolledPreview.length" class="panel-card preview-card">
-        <h2 class="panel-title">
-          Rolled encounters
-          <span class="panel-subtle">browser-side preview · click <em>Generate folder</em> to stat</span>
-        </h2>
-        <ol class="rolled-list">
-          <li v-for="(enc, index) in rolledPreview" :key="`${enc.species}-${index}-${enc.roll}`" class="rolled-row">
-            <span class="rolled-num">{{ index + 1 }}.</span>
-            <span class="rolled-roll">[{{ enc.roll }}]</span>
-            <span class="rolled-species">{{ enc.species }}</span>
-            <span class="rolled-level">Lv {{ enc.level }}</span>
-          </li>
-        </ol>
-      </section>
+      <EncounterRolledPreviewCard
+        v-if="rolledPreview.length"
+        :encounters="rolledPreview"
+      />
 
       <!-- ============ Result ============ -->
       <section v-if="error" class="panel-card error-card">
@@ -197,68 +186,6 @@ code {
   align-items: baseline;
   gap: 0.6rem;
   flex-wrap: wrap;
-}
-
-.panel-subtle {
-  font-size: 0.74rem;
-  color: var(--ink-muted);
-  font-weight: 400;
-  letter-spacing: 0.02em;
-  text-transform: none;
-  font-family: var(--font-ui);
-}
-
-.panel-subtle.warn {
-  color: var(--warn);
-}
-
-/* ---- Roll preview ---- */
-
-.rolled-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-  font-variant-numeric: tabular-nums;
-}
-
-.rolled-row {
-  display: grid;
-  grid-template-columns: 2.5rem 4rem minmax(0, 1fr) 5rem;
-  align-items: baseline;
-  gap: 0.6rem;
-  padding: 0.4rem 0.65rem;
-  border-radius: 8px;
-}
-
-.rolled-row:nth-child(odd) {
-  background: var(--paper-inset);
-}
-
-.rolled-num {
-  color: var(--ink-muted);
-  font-size: 0.85rem;
-}
-
-.rolled-roll {
-  color: var(--accent);
-  font-weight: 700;
-  font-size: 0.85rem;
-}
-
-.rolled-species {
-  font-family: var(--font-book);
-  font-size: 1.02rem;
-  color: var(--ink-bright);
-  letter-spacing: 0.02em;
-}
-
-.rolled-level {
-  text-align: right;
-  color: var(--ink);
-  font-weight: 600;
 }
 
 /* ---- Result ---- */

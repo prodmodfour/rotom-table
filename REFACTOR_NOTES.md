@@ -1346,3 +1346,13 @@
   - `npm test` — passes: 71 test files / 265 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: encounter generate preview card extraction
+
+- Extracted the browser-side rolled-encounters preview from `pages/generate.vue` into `components/encounters/EncounterRolledPreviewCard.vue`.
+  - The component owns preview-list markup and styles while receiving a narrow `RolledEncounter[]` prop.
+  - The generate route now focuses on encounter-generation state orchestration and composing setup, preview, error, and result cards.
+- Quality gates after this phase:
+  - `npm test` — passes: 71 test files / 265 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
