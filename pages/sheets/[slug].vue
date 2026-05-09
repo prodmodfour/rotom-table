@@ -1,17 +1,15 @@
 <script setup lang="ts">
 import { computed, watch } from 'vue'
 import { PhPlus, PhX } from '@phosphor-icons/vue'
+import { characterSheetsBySlug, getPokedexEntry, getSpriteUrl } from '~/data/characterSheets'
 import {
-  characterSheetsBySlug,
   computeFullMaxHp,
   computeMaxHp,
-  getPokedexEntry,
-  getSpriteUrl,
   resolveCapabilities,
   resolveSkills,
   resolveStats,
   validateBaseRelations,
-} from '~/data/characterSheets'
+} from '~/utils/sheets/pokemonDerived'
 import { POKEMON_TYPES, computeMultiplier, formatMultiplier } from '~/utils/typeChart'
 import { normalizeCharacterSheet } from '~/utils/sheetNormalize'
 import { PTU_NATURE_OPTIONS, resolveNatureMod } from '~/utils/ptuNatures'

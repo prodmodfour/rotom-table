@@ -1,5 +1,5 @@
 import { computed, watch, type ComputedRef, type Ref } from 'vue'
-import { resolveStats } from '~/data/characterSheets'
+import { resolveStats } from '~/utils/sheets/pokemonDerived'
 import { resolveTrainerStats } from '~/data/trainerSheets'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { SpawnedPokemon } from '~/types/pokemon'

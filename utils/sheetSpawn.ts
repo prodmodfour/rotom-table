@@ -10,7 +10,8 @@
  *   3. A *HP snapshot* at spawn time. PTU formulas are layered through
  *      `resolveStats` / `computeMaxHp` (Pokémon) and the trainer equivalents.
  */
-import { computeMaxHp, getPokedexEntry, resolveStats } from '~/data/characterSheets'
+import { getPokedexEntry } from '~/data/characterSheets'
+import { computeMaxHp, resolveStats } from '~/utils/sheets/pokemonDerived'
 import { computeTrainerMaxHp, resolveTrainerStats } from '~/data/trainerSheets'
 import { pokemonCatalog, pokemonCatalogBySpecies } from '~/data/pokemonCatalog'
 import { trainerCatalog } from '~/data/trainerCatalog'

@@ -701,3 +701,14 @@
   - `npm test` — passes: 38 test files / 132 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: Pokémon sheet derived helper extraction
+
+- Began Phase 7/14 sheet-editor decomposition by moving Pokémon sheet derivation logic out of `data/characterSheets.ts` into `utils/sheets/pokemonDerived.ts`.
+  - `data/characterSheets.ts` now focuses on static sheet discovery plus species/sprite catalog lookups.
+  - Pokémon sheet pages, initiative speed derivation, and sheet spawning import stat/skill/capability/HP derivations from the focused utility module.
+- Added `tests/utils/sheets/pokemonDerived.test.ts` covering stat resolution, HP formulas, base-relation validation, skill overrides/species defaults, and capability layering.
+- Quality gates after this phase:
+  - `npm test` — passes: 39 test files / 136 tests. (`npm test -- --runInBand` was attempted first and rejected by Vitest because that Jest flag is unsupported.)
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
