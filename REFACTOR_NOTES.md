@@ -1386,3 +1386,13 @@
   - `npm test` — passes: 71 test files / 265 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: move automation pick-step component
+
+- Extracted the move-picking step from `components/MoveAutomationDialog.vue` into `components/move-automation/MoveAutomationPickStep.vue`.
+  - The new component owns move-list search, move cards, explicit/manual badges, and pick-step styles with a narrow search model plus select-move emit.
+  - The dialog now delegates pick-step presentation while keeping wizard state, move selection, resolution, and transaction assembly unchanged.
+- Quality gates after this phase:
+  - `npm test` — passes: 71 test files / 265 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
