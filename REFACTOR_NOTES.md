@@ -854,3 +854,18 @@
   - `npm test` — passes: 49 test files / 171 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: remaining Pokémon sheet panels extraction
+
+- Completed the main Pokémon sheet route-page decomposition by extracting the remaining body sections into focused components:
+  - `components/sheets/PokemonMovesPanel.vue`
+  - `components/sheets/PokemonTypeEffectivenessPanel.vue`
+  - `components/sheets/PokemonCapabilitiesPanel.vue`
+  - `components/sheets/PokemonAbilitiesEdgesPanel.vue`
+  - `components/sheets/PokemonSkillsPanel.vue`
+- Updated `pages/sheets/[slug].vue` to act as a composition shell for Pokémon sheet access, derived state, row-action wiring, and panel rendering.
+- Preserved lookup-backed move/ability name cleanup, automatic Struggle display, type-effectiveness rows, capabilities CSV editing, edge row actions, and species-given skill override behavior.
+- Quality gates after this phase:
+  - `npm test` — passes: 49 test files / 171 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
