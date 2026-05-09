@@ -1083,3 +1083,13 @@
   - `npm test` — passes: 55 test files / 190 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: Pokédex type matchup helper extraction
+
+- Extracted PTU type multiplier calculation, multiplier label formatting, and weakness/resistance/immunity grouping into `utils/pokedex/typeMatchups.ts`.
+- The Pokédex route now delegates type-chart math to a pure utility and only computes matchup groups for the selected entry.
+- Added `tests/utils/pokedex/typeMatchups.test.ts` covering PTU effectiveness-step scaling, label formatting, grouping/sorting basics, immunities, and invalid type filtering.
+- Quality gates after this phase:
+  - `npm test` — passes: 56 test files / 193 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
