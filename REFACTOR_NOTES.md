@@ -455,3 +455,14 @@
   - `npm test` — passes: 22 test files / 68 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: isometric HP dialog component extraction
+
+- Continued token action dialog decomposition by extracting the modify-HP modal from `components/isometric/TokenActionDialogs.vue` into `components/isometric/TokenHpDialog.vue`.
+  - Moved the shared token dialog CSS to `components/isometric/tokenActionDialog.css` so wrapper and child dialogs can share stable dialog styling without duplicating it.
+  - `TokenActionDialogs.vue` now delegates HP input focus to the focused HP dialog component while retaining the same public expose API for `IsometricGrid`.
+- Preserved existing HP dialog amount editing, damage/heal mode toggles, preview clamping display, cancel/apply events, and focus/select behavior.
+- Quality gates after this phase:
+  - `npm test` — passes: 22 test files / 68 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
