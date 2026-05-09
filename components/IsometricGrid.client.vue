@@ -31,7 +31,6 @@ import {
   maxUsefulCameraZoom,
   syncIsometricRendererSize,
 } from '~/utils/isometric/cameraControls'
-import { createHazardPlacement } from '~/utils/isometric/hazardPlacement'
 import { createPointerTravelTracker } from '~/utils/isometric/pointerTracker'
 import type {
   BuildTarget,
@@ -85,6 +84,7 @@ import {
   setIsometricGridVisibility,
 } from '~/utils/isometric/layerVisibility'
 import { createIsometricBuildInteractionController } from '~/utils/isometric/buildInteraction'
+import { createIsometricHazardInteractionController } from '~/utils/isometric/hazardInteraction'
 
 export type { BuildTool } from '~/shared/mapEditor'
 
@@ -647,43 +647,21 @@ const pickHazardTarget = (
     groundLevelY: normalizedGroundLevelY(),
   })
 
-const updateHazardGhost = (target: HazardTarget | null) => {
-  hazardGhostRenderer.update(target, {
+const hazardInteraction = createIsometricHazardInteractionController({
+  getState: () => ({
     hazardMode: Boolean(props.hazardMode),
-    kind: props.hazardKind ?? 'spikes',
-  })
-}
-
-const updateHazardPreviewFromPointer = (event: MouseEvent | PointerEvent) => {
-  if (!props.hazardMode) {
-    hideHazardGhost()
-    return
-  }
-  const target = pickHazardTarget(event, props.hazardTool ?? 'pencil')
-  updateHazardGhost(target)
-}
-
-const replayHazardPreview = () => {
-  if (!props.hazardMode || !lastPointerCoords) return
-  const synthetic = {
-    clientX: lastPointerCoords.clientX,
-    clientY: lastPointerCoords.clientY,
-  } as MouseEvent
-  updateHazardPreviewFromPointer(synthetic)
-}
-
-const performHazardAction = (event: MouseEvent | PointerEvent, tool: BuildTool) => {
-  const target = pickHazardTarget(event, tool)
-  if (!target || !target.valid) return
-  if (target.action === 'remove') {
-    emit('remove-hazard', target.cell)
-    return
-  }
-  emit('place-hazard', createHazardPlacement({
-    kind: props.hazardKind,
-    cell: target.cell,
-  }))
-}
+    hazardTool: props.hazardTool ?? 'pencil',
+    hazardKind: props.hazardKind,
+  }),
+  pickTarget: pickHazardTarget,
+  updateGhost: (target, options) => hazardGhostRenderer.update(target, options),
+  hideGhost: hideHazardGhost,
+  placeHazard: (hazard) => emit('place-hazard', hazard),
+  removeHazard: (cell) => emit('remove-hazard', cell),
+})
+const updateHazardPreviewFromPointer = hazardInteraction.updatePreviewFromPointer
+const replayHazardPreview = () => hazardInteraction.replayPreview(lastPointerCoords)
+const performHazardAction = hazardInteraction.performAction
 
 const handleLeftClick = (event: PointerEvent) => {
   closeContextMenu()

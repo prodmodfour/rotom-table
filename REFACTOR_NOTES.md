@@ -613,3 +613,14 @@
   - `npm test` — passes: 32 test files / 102 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: isometric hazard interaction controller extraction
+
+- Continued Phase 6 by extracting hazard-mode pointer orchestration from `components/IsometricGrid.client.vue` into `utils/isometric/hazardInteraction.ts`.
+  - The controller owns hazard ghost preview replay, active tool/kind lookup, valid placement payload construction, eraser removal routing, default-kind fallback, and inactive-mode ghost hiding through injected renderer/event callbacks.
+  - The grid component now delegates hazard interactions while retaining raycast target resolution and public `place-hazard`/`remove-hazard` event boundaries.
+- Added `tests/utils/isometric/hazardInteraction.test.ts` covering inactive ghost hiding, preview target updates, valid hazard placement payloads, removal actions, invalid placement suppression, default-kind fallback, and replay gating.
+- Quality gates after this phase:
+  - `npm test` — passes: 33 test files / 107 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
