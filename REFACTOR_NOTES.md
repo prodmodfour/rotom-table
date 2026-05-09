@@ -781,3 +781,14 @@
   - `npm test` — passes: 46 test files / 161 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: Pokémon sheet row action composable
+
+- Continued Phase 7 Pokémon sheet cleanup by extracting row/action mutation helpers into `composables/sheets/usePokemonSheetRowActions.ts`.
+  - The composable owns held-item name persistence cleanup, move/ability/edge row actions, stat edits, evasion bonus coercion, and inherited-move updates.
+- Updated the Pokémon sheet route page to wire the composable instead of owning row mutation implementation details inline.
+- Added `tests/composables/sheets/usePokemonSheetRowActions.test.ts` covering row add/remove flows, held-item lookup-field stripping, stat/evasion edits, inherited moves, and null-sheet no-op behavior.
+- Quality gates after this phase:
+  - `npm test` — passes: 47 test files / 165 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
