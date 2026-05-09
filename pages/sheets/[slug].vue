@@ -1,13 +1,15 @@
 <script setup lang="ts">
-import { computed, watch } from 'vue'
 import { characterSheetsBySlug } from '~/data/characterSheets'
 import { normalizeCharacterSheet } from '~/utils/sheetNormalize'
-import { PTU_NATURE_OPTIONS, resolveNatureMod } from '~/utils/ptuNatures'
 import { useEditableSheetResource } from '~/composables/sheets/useEditableSheetResource'
 import { usePokemonSheetDerived } from '~/composables/sheets/usePokemonSheetDerived'
 import { usePokemonSheetCsvFields } from '~/composables/sheets/usePokemonSheetCsvFields'
 import { usePokemonSheetRowActions } from '~/composables/sheets/usePokemonSheetRowActions'
-import type { CharacterSheet, StatKey } from '~/types/characterSheet'
+import {
+  syncNatureModForSheet,
+  usePokemonNatureControls,
+} from '~/composables/sheets/usePokemonNatureControls'
+import type { CharacterSheet } from '~/types/characterSheet'
 
 // ---------------------------------------------------------------------------
 // Resolve the static sheet for this URL, then deep-clone + normalize it into
@@ -21,13 +23,6 @@ import type { CharacterSheet, StatKey } from '~/types/characterSheet'
 definePageMeta({
   key: (route) => `sheet-${route.params.slug}`,
 })
-
-const syncNatureModForSheet = (target: CharacterSheet, nature = target.nature) => {
-  if (!target.natureMod) target.natureMod = {}
-  const mod = resolveNatureMod(nature)
-  target.natureMod.plus = mod?.plus
-  target.natureMod.minus = mod?.minus
-}
 
 const route = useRoute()
 const { isGm, isPlayer } = useAuth()
@@ -84,41 +79,17 @@ const {
   typeEffectivenessRows,
 } = usePokemonSheetDerived(sheet)
 
-watch(
-  () => sheet.value?.nature,
-  (nature) => {
-    if (sheet.value) syncNatureModForSheet(sheet.value, nature)
-  },
-)
-
 // ---------------------------------------------------------------------------
 // Editing helpers — these mutate the reactive sheet, which in turn fires the
 // deep watcher inside useEditableSheet to persist the change.
 // ---------------------------------------------------------------------------
 
-const NATURE_OPTIONS = PTU_NATURE_OPTIONS
-
-const NATURE_STAT_LABELS: Record<StatKey, string> = {
-  hp: 'HP',
-  atk: 'ATK',
-  def: 'DEF',
-  satk: 'SATK',
-  sdef: 'SDEF',
-  spd: 'SPD',
-}
-
-const natureStepForStat = (key: StatKey): number => key === 'hp' ? 1 : 2
-const formatNatureModDisplay = (key: StatKey | undefined, sign: 1 | -1): string | undefined => {
-  if (!key) return undefined
-  const delta = natureStepForStat(key) * sign
-  return `${NATURE_STAT_LABELS[key]} ${delta > 0 ? `+${delta}` : delta}`
-}
-
-const natureLookupMod = computed(() => resolveNatureMod(sheet.value?.nature))
-const naturePlusDisplay = computed(() => formatNatureModDisplay(natureLookupMod.value?.plus, 1))
-const natureMinusDisplay = computed(() => formatNatureModDisplay(natureLookupMod.value?.minus, -1))
-
-const GENDER_OPTIONS = ['Male', 'Female', 'Genderless']
+const {
+  genderOptions,
+  natureOptions,
+  naturePlusDisplay,
+  natureMinusDisplay,
+} = usePokemonNatureControls(sheet)
 
 const {
   typesAsCsv,
@@ -157,8 +128,8 @@ const {
         :sprite-url="spriteUrl"
         :species="species"
         :sheet-types="sheetTypes"
-        :gender-options="GENDER_OPTIONS"
-        :nature-options="NATURE_OPTIONS"
+        :gender-options="genderOptions"
+        :nature-options="natureOptions"
         :nature-plus-display="naturePlusDisplay"
         :nature-minus-display="natureMinusDisplay"
         :is-gm="isGm"

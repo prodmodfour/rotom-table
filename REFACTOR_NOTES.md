@@ -991,3 +991,13 @@
   - `npm test` — passes: 49 test files / 171 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: Pokémon nature control composable
+
+- Extracted Pokémon nature/gender option wiring, nature display formatting, and `natureMod` synchronization into `composables/sheets/usePokemonNatureControls.ts`.
+- Updated the Pokémon sheet route page to consume the focused composable instead of owning nature lookup, formatting, and watcher details inline.
+- Added `tests/composables/sheets/usePokemonNatureControls.test.ts` for nature step sizes, display labels, persisted `natureMod` syncing, and reactive option/display behavior.
+- Quality gates after this phase:
+  - `npm test` — passes: 50 test files / 174 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
