@@ -17,15 +17,7 @@ const relatedItems = computed(() => relatedItemsByPrimaryCategory(item.value, it
 </script>
 
 <template>
-  <div class="ref-detail">
-    <header class="ref-header">
-      <AppNavigation />
-      <div class="back-row">
-        <NuxtLink to="/items" class="back-link">← All items</NuxtLink>
-      </div>
-    </header>
-
-    <main>
+  <ReferenceDetailShell back-to="/items" back-label="← All items">
       <article v-if="item" class="panel-card">
         <div class="detail-heading item-detail-heading">
           <div class="item-detail-title">
@@ -87,8 +79,7 @@ const relatedItems = computed(() => relatedItemsByPrimaryCategory(item.value, it
         back-to="/items"
         back-label="← Back to all items"
       />
-    </main>
-  </div>
+  </ReferenceDetailShell>
 </template>
 
 <style scoped>

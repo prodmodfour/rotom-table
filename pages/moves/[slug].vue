@@ -14,15 +14,7 @@ useHead(() => ({
 </script>
 
 <template>
-  <div class="ref-detail">
-    <header class="ref-header">
-      <AppNavigation />
-      <div class="back-row">
-        <NuxtLink to="/moves" class="back-link">← All moves</NuxtLink>
-      </div>
-    </header>
-
-    <main>
+  <ReferenceDetailShell back-to="/moves" back-label="← All moves">
       <article v-if="move" class="panel-card">
         <div class="detail-heading">
           <h1>{{ move.name }}</h1>
@@ -53,6 +45,5 @@ useHead(() => ({
         back-to="/moves"
         back-label="← Back to all moves"
       />
-    </main>
-  </div>
+  </ReferenceDetailShell>
 </template>

@@ -18,15 +18,7 @@ const siblings = computed(() => siblingFeaturesInClass(feat.value, features))
 </script>
 
 <template>
-  <div class="ref-detail">
-    <header class="ref-header">
-      <AppNavigation />
-      <div class="back-row">
-        <NuxtLink to="/features" class="back-link">← All features</NuxtLink>
-      </div>
-    </header>
-
-    <main>
+  <ReferenceDetailShell back-to="/features" back-label="← All features">
       <article v-if="feat" class="panel-card">
         <div class="detail-heading">
           <h1>{{ feat.name }}</h1>
@@ -91,8 +83,7 @@ const siblings = computed(() => siblingFeaturesInClass(feat.value, features))
         back-to="/features"
         back-label="← Back to all features"
       />
-    </main>
-  </div>
+  </ReferenceDetailShell>
 </template>
 
 <style scoped>

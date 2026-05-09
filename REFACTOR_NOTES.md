@@ -1728,3 +1728,13 @@
   - `npm test` — passes: 84 test files / 322 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: shared reference detail shell
+
+- Extracted duplicated reference-detail app-navigation, back-link, and main-content shell into `components/reference/ReferenceDetailShell.vue`.
+- Updated ability, move, edge, rule, condition, item, and feature detail routes to use the shared shell while preserving their article content and not-found cards.
+- Left the currently user-modified capabilities detail/index pages untouched to avoid mixing unrelated in-progress changes.
+- Quality gates after this phase:
+  - `npm test` — passes: 84 test files / 322 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
