@@ -1260,3 +1260,14 @@
   - `npm test` — passes: 65 test files / 234 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: move automation transaction builder extraction
+
+- Extracted move-automation transaction assembly from `components/MoveAutomationDialog.vue` into `utils/moveAutomationTransaction.ts`.
+  - The helper owns suggestion keys, default target-resolution state, damage loss/multiplier derivation, HP suggestion amounts, condition/stage merging, hazards, field effects, and log-line construction.
+  - `MoveAutomationDialog` now keeps wizard UI state and delegates transaction/domain calculations through narrow helper calls.
+- Added `tests/utils/moveAutomationTransaction.test.ts` covering suggestion keys, resolution defaults, damage overrides/type immunities, HP suggestion amounts, multiplier labels, and full transaction assembly.
+- Quality gates after this phase:
+  - `npm test` — passes: 66 test files / 238 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

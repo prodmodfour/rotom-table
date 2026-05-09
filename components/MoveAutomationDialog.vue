@@ -4,28 +4,30 @@ import { findMove } from '~/data/ptuReference'
 import {
   buildManualMoveResolution,
   explicitScriptForMove,
-  fieldEffectDamageBonus,
   rollDamageFormula,
   sheetMoveToMoveLike,
   damageFormulaForMove,
-  type DamageRollResult,
   type MoveAutomationMoveLike,
 } from '~/utils/moveAutomation'
-import { COMBAT_STAGE_KEYS, COMBAT_STAGE_SHORT_LABELS, normalizeCombatStages } from '~/utils/combatStages'
+import { COMBAT_STAGE_KEYS, COMBAT_STAGE_SHORT_LABELS } from '~/utils/combatStages'
 import {
-  addCombatStageDeltas,
-  applyHpSuggestion,
-  nonZeroStageDeltas,
   parseHazardCellText,
-  parsePositiveInt,
   stageDeltaLabel,
 } from '~/utils/moveAutomationDialog'
-import { normalizeConditionNames } from '~/utils/statusConditions'
-import { computeMultiplier, formatMultiplier } from '~/utils/typeChart'
+import {
+  buildMoveAutomationTransaction,
+  moveAutomationMultiplierLabel,
+  moveAutomationSuggestionKey,
+  resolveHpSuggestionAmount,
+  resolveMoveAutomationTargetDamageLoss,
+  suggestionIsEnabled,
+  type MoveAutomationTargetResolutionState,
+  type MoveAutomationSuggestionKind,
+} from '~/utils/moveAutomationTransaction'
 import type { CharacterSheetMove } from '~/types/characterSheet'
-import type { CombatStageKey, CombatStageMap } from '~/types/combatStages'
-import type { MapFieldEffects, MapHazardV2 } from '~/types/map'
-import type { MoveAutomationConditionSuggestion, MoveAutomationScript, MoveAutomationTransaction } from '~/types/moveAutomation'
+import type { CombatStageKey } from '~/types/combatStages'
+import type { MapFieldEffects } from '~/types/map'
+import type { MoveAutomationScript, MoveAutomationTransaction } from '~/types/moveAutomation'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import type { TrainerMove } from '~/types/trainerSheet'
 
@@ -50,14 +52,7 @@ interface MoveEntry {
   hasExplicitScript: boolean
 }
 
-interface TargetResolutionState {
-  accuracyRoll: string
-  hit: boolean
-  crit: boolean
-  damageRoll: DamageRollResult | null
-  manualHpLoss: string
-  applyDamage: boolean
-}
+type TargetResolutionState = MoveAutomationTargetResolutionState
 
 const search = ref('')
 const selectedMoveName = ref<string | null>(null)
@@ -141,7 +136,7 @@ watch(
   { immediate: true },
 )
 
-const suggestionKey = (kind: string, index: number): string => `${script.value?.moveName ?? 'move'}:${kind}:${index}`
+const suggestionKey = (kind: MoveAutomationSuggestionKind, index: number): string => moveAutomationSuggestionKey(script.value, kind, index)
 
 const resetResolutionState = () => {
   step.value = 0
@@ -249,78 +244,19 @@ const rollAll = () => {
   }
 }
 
-const targetDamageMultiplier = (target: SpawnedPokemon): number =>
-  computeMultiplier(script.value?.type ?? 'Normal', target.defenderTypes)
+const targetDamageLoss = (target: SpawnedPokemon): number =>
+  resolveMoveAutomationTargetDamageLoss(script.value, props.user, target, ensureTargetResolution(target.id), props.fieldEffects)
 
-const targetDamageLoss = (target: SpawnedPokemon): number => {
-  const s = script.value
-  if (!s?.damaging) return 0
-  const state = ensureTargetResolution(target.id)
-  if (!state.applyDamage || !state.hit) return 0
-  const manual = parsePositiveInt(state.manualHpLoss)
-  if (manual != null) return manual
-  const raw = state.damageRoll?.total ?? 0
-  if (raw <= 0) return 0
-  const physical = s.damageClass === 'Physical'
-  const offense = physical ? props.user.atk : props.user.satk
-  const defense = physical ? target.def : target.sdef
-  const fieldBonus = fieldEffectDamageBonus(s.type, props.fieldEffects)
-  const multiplier = targetDamageMultiplier(target)
-  if (multiplier === 0) return 0
-  const afterDefense = raw + offense + fieldBonus - defense
-  return Math.max(1, Math.floor(afterDefense * multiplier))
-}
+const multiplierLabel = (target: SpawnedPokemon): string => moveAutomationMultiplierLabel(script.value, target)
 
-const multiplierLabel = (target: SpawnedPokemon): string => formatMultiplier(targetDamageMultiplier(target))
-
-const suggestionEnabled = (kind: string, index: number): boolean => Boolean(enabledSuggestions[suggestionKey(kind, index)])
-const setSuggestionEnabled = (kind: string, index: number, value: boolean) => {
+const suggestionEnabled = (kind: MoveAutomationSuggestionKind, index: number): boolean =>
+  suggestionIsEnabled(script.value, enabledSuggestions, kind, index)
+const setSuggestionEnabled = (kind: MoveAutomationSuggestionKind, index: number, value: boolean) => {
   enabledSuggestions[suggestionKey(kind, index)] = value
 }
 
-const hpSuggestionAmount = (index: number, token: SpawnedPokemon): number => {
-  const item = script.value?.hpSuggestions[index]
-  if (!item) return 0
-  const override = parsePositiveInt(hpSuggestionAmounts[suggestionKey('hp', index)] ?? '')
-  if (override != null) return override
-  if (item.mode === 'fixed-loss') return item.amount ?? 0
-  if (item.mode === 'set-zero') return token.currentHp
-  if (!item.percent) return 0
-  const base = item.mode === 'lose-percent-current' ? token.currentHp : token.maxHp
-  return Math.max(0, Math.round(base * item.percent / 100))
-}
-
-const conditionSetForToken = (updates: Map<string, Set<string>>, token: SpawnedPokemon): Set<string> => {
-  const existing = updates.get(token.id)
-  if (existing) return existing
-  const set = new Set(normalizeConditionNames(token.conditions))
-  updates.set(token.id, set)
-  return set
-}
-
-const mergeConditionUpdate = (updates: Map<string, Set<string>>, token: SpawnedPokemon, conditions: readonly string[]) => {
-  const normalized = normalizeConditionNames(conditions)
-  if (!normalized.length) return
-  const set = conditionSetForToken(updates, token)
-  for (const condition of normalized) set.add(condition)
-}
-
-const applyConditionSuggestion = (
-  updates: Map<string, Set<string>>,
-  token: SpawnedPokemon,
-  item: MoveAutomationConditionSuggestion,
-) => {
-  const set = conditionSetForToken(updates, token)
-  if (item.action === 'clear') {
-    set.clear()
-    return
-  }
-  const normalized = normalizeConditionNames([item.condition])
-  for (const condition of normalized) {
-    if (item.action === 'remove') set.delete(condition)
-    else set.add(condition)
-  }
-}
+const hpSuggestionAmount = (index: number, token: SpawnedPokemon): number =>
+  resolveHpSuggestionAmount(script.value, hpSuggestionAmounts, index, token)
 
 const parseHazardCells = () => parseHazardCellText(hazardCellsText.value, props.user.position.y)
 
@@ -329,116 +265,21 @@ const addUserCellToHazardText = () => {
   hazardCellsText.value = hazardCellsText.value.trim() ? `${hazardCellsText.value.trim()}\n${line}` : line
 }
 
-const buildTransaction = (): MoveAutomationTransaction => {
-  const s = script.value
-  if (!s) {
-    return {
-      userId: props.user.id,
-      userName: props.user.species,
-      moveName: 'Unknown Move',
-      scriptKind: 'manual-fallback',
-      scriptVersion: 0,
-      hpUpdates: [],
-      conditionUpdates: [],
-      combatStageUpdates: [],
-      hazardsToAdd: [],
-      fieldEffectsToApply: [],
-      logLines: [],
-    }
-  }
-
-  const hpById = new Map<string, { token: SpawnedPokemon; currentHp: number }>()
-  const getHp = (token: SpawnedPokemon) => hpById.get(token.id)?.currentHp ?? token.currentHp
-  const setHp = (token: SpawnedPokemon, currentHp: number) => {
-    hpById.set(token.id, { token, currentHp: Math.max(0, Math.min(token.maxHp, Math.floor(currentHp))) })
-  }
-
-  const conditionById = new Map<string, Set<string>>()
-  const stagesById = new Map<string, CombatStageMap>()
-  const logLines: string[] = [
-    `${props.user.species} used ${s.moveName}.`,
-    s.kind === 'manual-fallback'
-      ? 'Manual fallback resolver used: no explicit reviewed automation script exists for this move.'
-      : `Explicit move script v${s.version} used.`,
-  ]
-
-  for (const target of selectedTargets.value) {
-    const loss = targetDamageLoss(target)
-    if (loss > 0) {
-      setHp(target, getHp(target) - loss)
-      logLines.push(`${target.species}: ${loss} HP damage${ensureTargetResolution(target.id).crit ? ' (critical flagged)' : ''}.`)
-    }
-  }
-
-  s.hpSuggestions.forEach((item, index) => {
-    if (!suggestionEnabled('hp', index)) return
-    const recipients = item.recipient === 'user' ? [props.user] : selectedTargets.value
-    for (const token of recipients) {
-      const amount = hpSuggestionAmount(index, token)
-      if (amount <= 0 && item.mode !== 'set-zero') continue
-      const next = applyHpSuggestion(getHp(token), token.maxHp, amount, item.mode)
-      setHp(token, next)
-      logLines.push(`${token.species}: ${item.label}${amount > 0 ? ` (${amount} HP)` : ''}.`)
-    }
-  })
-
-  s.conditionSuggestions.forEach((item, index) => {
-    if (!suggestionEnabled('condition', index)) return
-    const recipients = item.recipient === 'user' ? [props.user] : selectedTargets.value
-    for (const token of recipients) applyConditionSuggestion(conditionById, token, item)
-    if (recipients.length) logLines.push(`${item.label} ${item.action === 'remove' ? 'removed from' : 'applied to'} ${recipients.map((token) => token.species).join(', ')}.`)
-  })
-  mergeConditionUpdate(conditionById, props.user, manualUserConditions.value)
-  for (const target of selectedTargets.value) mergeConditionUpdate(conditionById, target, manualTargetConditions.value)
-
-  const addStageDelta = (token: SpawnedPokemon, delta: Partial<Record<CombatStageKey, number>>) => {
-    stagesById.set(token.id, addCombatStageDeltas(stagesById.get(token.id) ?? normalizeCombatStages(token.combatStages), delta))
-  }
-  s.stageSuggestions.forEach((item, index) => {
-    if (!suggestionEnabled('stage', index)) return
-    const recipients = item.recipient === 'user' ? [props.user] : selectedTargets.value
-    for (const token of recipients) addStageDelta(token, { [item.key]: item.delta })
-    if (recipients.length) logLines.push(`${item.label} on ${recipients.map((token) => token.species).join(', ')}.`)
-  })
-  const userManualStages = nonZeroStageDeltas(manualUserStageDeltas)
-  const targetManualStages = nonZeroStageDeltas(manualTargetStageDeltas)
-  if (Object.keys(userManualStages).length) addStageDelta(props.user, userManualStages)
-  if (Object.keys(targetManualStages).length) for (const target of selectedTargets.value) addStageDelta(target, targetManualStages)
-
-  const hazardsToAdd: MapHazardV2[] = []
-  const cells = parseHazardCells()
-  s.hazardSuggestions.forEach((item, index) => {
-    if (!suggestionEnabled('hazard', index)) return
-    for (const cell of cells.slice(0, item.squares || cells.length)) {
-      hazardsToAdd.push({ kind: item.kind, ...cell, layer: item.kind === 'toxic-spikes' ? 1 : undefined, owner: props.user.species })
-    }
-    if (cells.length) logLines.push(`${item.label}: ${Math.min(cells.length, item.squares || cells.length)} square(s).`)
-  })
-
-  const fieldEffectsToApply = s.fieldSuggestions
-    .filter((_item, index) => suggestionEnabled('field', index))
-    .map((item) => ({ kind: item.kind, value: item.value, source: s.moveName }))
-  for (const item of fieldEffectsToApply) logLines.push(`Field effect: ${item.source} applies ${item.value}.`)
-
-  if (manualNote.value.trim()) logLines.push(`Manual note: ${manualNote.value.trim()}`)
-  if (s.automationNotes.length) logLines.push(...s.automationNotes.map((note) => `Note: ${note}`))
-
-  return {
-    userId: props.user.id,
-    userName: props.user.species,
-    moveName: s.moveName,
-    scriptKind: s.kind,
-    scriptVersion: s.version,
-    hpUpdates: Array.from(hpById.entries())
-      .filter(([_id, entry]) => entry.currentHp !== entry.token.currentHp)
-      .map(([id, entry]) => ({ id, currentHp: entry.currentHp })),
-    conditionUpdates: Array.from(conditionById.entries()).map(([id, set]) => ({ id, conditions: normalizeConditionNames(Array.from(set)) })),
-    combatStageUpdates: Array.from(stagesById.entries()).map(([id, stages]) => ({ id, stages })),
-    hazardsToAdd,
-    fieldEffectsToApply,
-    logLines,
-  }
-}
+const buildTransaction = (): MoveAutomationTransaction => buildMoveAutomationTransaction({
+  script: script.value,
+  user: props.user,
+  selectedTargets: selectedTargets.value,
+  targetResolutions,
+  enabledSuggestions,
+  hpSuggestionAmounts,
+  manualUserConditions: manualUserConditions.value,
+  manualTargetConditions: manualTargetConditions.value,
+  manualUserStageDeltas,
+  manualTargetStageDeltas,
+  hazardCells: parseHazardCells(),
+  manualNote: manualNote.value,
+  fieldEffects: props.fieldEffects,
+})
 
 const transaction = computed(buildTransaction)
 
