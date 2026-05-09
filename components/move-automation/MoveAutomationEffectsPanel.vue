@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { COMBAT_STAGE_KEYS, COMBAT_STAGE_SHORT_LABELS } from '~/utils/combatStages'
 import type { CombatStageKey } from '~/types/combatStages'
 import type { MoveAutomationScript } from '~/types/moveAutomation'
 import type { MoveAutomationSuggestionKind } from '~/utils/moveAutomationTransaction'
@@ -29,73 +28,20 @@ const emit = defineEmits<{
 
 const checkboxValue = (event: Event): boolean => (event.target as HTMLInputElement).checked
 const inputValue = (event: Event): string => (event.target as HTMLInputElement | HTMLTextAreaElement).value
-const numericValue = (event: Event): number => {
-  const value = Number(inputValue(event))
-  return Number.isFinite(value) ? value : 0
-}
 </script>
 
 <template>
-  <section class="move-resolution__section">
-    <header class="move-resolution__section-header"><h3>Conditions</h3></header>
-    <label
-      v-for="(item, index) in script.conditionSuggestions"
-      :key="`condition-${index}`"
-      class="effect-toggle"
-    >
-      <input :checked="suggestionEnabled('condition', index)" type="checkbox" @change="emit('set-suggestion-enabled', 'condition', index, checkboxValue($event))" />
-      <span>
-        {{ item.recipient === 'user' ? 'User' : 'Target' }}:
-        {{ item.action === 'remove' ? 'Remove ' : '' }}{{ item.label }}
-      </span>
-      <small v-if="item.threshold">{{ item.threshold }}</small>
-    </label>
-    <details class="manual-details">
-      <summary>Manual condition additions</summary>
-      <div class="manual-condition-grid">
-        <div>
-          <h4>User</h4>
-          <ConditionPicker v-model="manualUserConditions" compact tag-size="xs" />
-        </div>
-        <div>
-          <h4>Selected target(s)</h4>
-          <ConditionPicker v-model="manualTargetConditions" compact tag-size="xs" />
-        </div>
-      </div>
-    </details>
-  </section>
-
-  <section class="move-resolution__section">
-    <header class="move-resolution__section-header"><h3>Combat stages</h3></header>
-    <label
-      v-for="(item, index) in script.stageSuggestions"
-      :key="`stage-${index}`"
-      class="effect-toggle"
-    >
-      <input :checked="suggestionEnabled('stage', index)" type="checkbox" @change="emit('set-suggestion-enabled', 'stage', index, checkboxValue($event))" />
-      <span>{{ item.recipient === 'user' ? 'User' : 'Target' }}: {{ item.label }}</span>
-      <small v-if="item.threshold">{{ item.threshold }}</small>
-    </label>
-    <details class="manual-details">
-      <summary>Manual stage deltas</summary>
-      <div class="stage-delta-grid">
-        <div>
-          <h4>User</h4>
-          <label v-for="key in COMBAT_STAGE_KEYS" :key="`user-${key}`">
-            <span>{{ COMBAT_STAGE_SHORT_LABELS[key] }}</span>
-            <input :value="manualUserStageDeltas[key]" type="number" min="-6" max="6" @input="emit('set-user-stage-delta', key, numericValue($event))" />
-          </label>
-        </div>
-        <div>
-          <h4>Selected target(s)</h4>
-          <label v-for="key in COMBAT_STAGE_KEYS" :key="`target-${key}`">
-            <span>{{ COMBAT_STAGE_SHORT_LABELS[key] }}</span>
-            <input :value="manualTargetStageDeltas[key]" type="number" min="-6" max="6" @input="emit('set-target-stage-delta', key, numericValue($event))" />
-          </label>
-        </div>
-      </div>
-    </details>
-  </section>
+  <MoveAutomationStatusEffectsPanel
+    v-model:manual-user-conditions="manualUserConditions"
+    v-model:manual-target-conditions="manualTargetConditions"
+    :script="script"
+    :manual-user-stage-deltas="manualUserStageDeltas"
+    :manual-target-stage-deltas="manualTargetStageDeltas"
+    :suggestion-enabled="suggestionEnabled"
+    @set-suggestion-enabled="(kind, index, value) => emit('set-suggestion-enabled', kind, index, value)"
+    @set-user-stage-delta="(key, value) => emit('set-user-stage-delta', key, value)"
+    @set-target-stage-delta="(key, value) => emit('set-target-stage-delta', key, value)"
+  />
 
   <section v-if="script.hpSuggestions.length" class="move-resolution__section">
     <header class="move-resolution__section-header"><h3>HP effects</h3></header>
@@ -186,8 +132,7 @@ const numericValue = (event: Event): number => {
   font-weight: 700;
 }
 
-.effect-toggle,
-.stage-delta-grid label {
+.effect-toggle {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
@@ -209,35 +154,6 @@ const numericValue = (event: Event): number => {
   margin-left: auto;
 }
 
-.manual-details {
-  margin-top: 0.6rem;
-  border-top: 1px solid var(--rule-soft);
-  padding-top: 0.6rem;
-}
-
-.manual-details summary {
-  cursor: pointer;
-  color: var(--ink-bright);
-  font-weight: 800;
-}
-
-.manual-condition-grid,
-.stage-delta-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.8rem;
-  margin-top: 0.65rem;
-}
-
-.stage-delta-grid label {
-  justify-content: space-between;
-  margin-top: 0.3rem;
-}
-
-.stage-delta-grid input {
-  max-width: 5rem;
-}
-
 .hazard-cell-input {
   margin-top: 0.6rem;
 }
@@ -251,10 +167,4 @@ const numericValue = (event: Event): number => {
   padding-left: 1.1rem;
 }
 
-@media (max-width: 760px) {
-  .manual-condition-grid,
-  .stage-delta-grid {
-    grid-template-columns: 1fr;
-  }
-}
 </style>

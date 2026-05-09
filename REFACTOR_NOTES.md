@@ -1450,3 +1450,14 @@
   - `npm test` — passes: 71 test files / 265 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: move automation status effects panel
+
+- Extracted condition suggestions/manual condition pickers and combat-stage suggestions/manual deltas into `components/move-automation/MoveAutomationStatusEffectsPanel.vue`.
+  - The status panel owns condition/stage-specific constants, inputs, picker layout, and responsive styles.
+  - `MoveAutomationEffectsPanel.vue` now focuses on composing status effects with HP/map/manual-note effect sections.
+- Preserved condition toggles, remove-label copy, condition picker bindings, stage suggestion toggles, stage delta inputs, and combat-stage label display.
+- Quality gates after this phase:
+  - `npm test` — passes: 71 test files / 265 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
