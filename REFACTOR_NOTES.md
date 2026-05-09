@@ -824,3 +824,13 @@
   - `npm test` — passes: 49 test files / 171 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: trainer identity panel component
+
+- Continued Phase 7 trainer sheet page decomposition by extracting the identity/vitals strip into `components/sheets/TrainerIdentityPanel.vue`.
+  - The component owns portrait tile interactions, trainer identity fields, player toggle, HP/AP/injury/money vitals, and the moved scoped styles with explicit props and emits.
+- Updated `pages/sheets/trainers/[slug].vue` to wire portrait-picker and current-HP actions through the component instead of embedding identity markup inline.
+- Quality gates after this phase:
+  - `npm test` — passes: 49 test files / 171 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
