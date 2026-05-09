@@ -1,13 +1,10 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { PhPlus, PhX } from '@phosphor-icons/vue'
-import RefLink from '~/components/RefLink.vue'
 import { trainerSheetsBySlug } from '~/data/trainerSheets'
 import { TRAINER_SKILL_ORDER } from '~/utils/sheets/trainerDerived'
 import { trainerCatalog } from '~/data/trainerCatalog'
 import { normalizeTrainerSheet } from '~/utils/sheetNormalize'
-import { setLookupAbilityName } from '~/utils/sheetAbilityLookup'
-import { formatLookupValue, setLookupMoveName } from '~/utils/sheetMoveLookup'
 import { useEditableSheetResource } from '~/composables/sheets/useEditableSheetResource'
 import { useTrainerSheetDerived } from '~/composables/sheets/useTrainerSheetDerived'
 import { useTrainerPortraitPicker } from '~/composables/sheets/useTrainerPortraitPicker'
@@ -22,8 +19,6 @@ import type {
 const SKILL_KEYS: TrainerSkillKey[] = TRAINER_SKILL_ORDER.map(([k]) => k)
 
 const RANK_OPTIONS: SkillRank[] = ['Pathetic', 'Untrained', 'Novice', 'Adept', 'Expert', 'Master']
-
-const CATEGORY_OPTIONS = ['Physical', 'Special', 'Status']
 
 // ---------------------------------------------------------------------------
 // Editable sheet wiring
@@ -252,180 +247,21 @@ const {
           @set-evasion-bonus="setEvasionBonus"
         />
 
-        <div class="block">
-          <h2 class="block-title">
-            Movelist
-            <span class="move-lookup-note">name editable · details from moves.json</span>
-            <button type="button" class="row-add" @click="addMove">
-              <PhPlus :size="14" weight="bold" /> Add row
-            </button>
-          </h2>
-          <table class="data-table movelist-table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Type</th>
-                <th>Cat.</th>
-                <th>DB</th>
-                <th>Damage Roll</th>
-                <th>Frequency</th>
-                <th>AC</th>
-                <th>Range</th>
-                <th>Effect</th>
-                <th aria-label="Row actions"></th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="(row, i) in moveRows" :key="i">
-                <th>
-                  <EditableCell
-                    :model-value="row.move.name"
-                    placeholder="Move"
-                    @update:model-value="(v) => setLookupMoveName(row.move, v)"
-                  />
-                </th>
-                <td>
-                  <TypeBadge v-if="row.reference?.type" :type="row.reference.type" size="xs" />
-                  <span v-else class="badge-empty">—</span>
-                </td>
-                <td>
-                  <DamageClassBadge v-if="row.reference?.damage_class" :category="row.reference.damage_class" size="xs" />
-                  <span v-else class="badge-empty">—</span>
-                </td>
-                <td>{{ formatLookupValue(row.damageBase) }}</td>
-                <td>{{ formatLookupValue(row.damageFormula) }}</td>
-                <td>{{ formatLookupValue(row.reference?.frequency) }}</td>
-                <td>{{ formatLookupValue(row.reference?.ac) }}</td>
-                <td>{{ formatLookupValue(row.reference?.range) }}</td>
-                <td class="effect-col">
-                  <span v-if="row.reference?.effect">{{ row.reference.effect }}</span>
-                  <span v-else class="badge-empty">{{ row.move.name.trim() ? 'No matching move in moves.json' : '—' }}</span>
-                </td>
-                <td class="row-actions">
-                  <button type="button" class="row-remove" title="Remove move" @click="removeMove(i)">
-                    <PhX :size="14" weight="bold" />
-                  </button>
-                </td>
-              </tr>
-              <tr v-if="!moveRows.length">
-                <td colspan="10" class="muted">No moves yet — click "Add row" to start.</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div class="block">
-          <h2 class="block-title">
-            Abilities
-            <span class="move-lookup-note">name editable · details from abilities.json</span>
-            <button type="button" class="row-add" @click="addAbility">
-              <PhPlus :size="14" weight="bold" /> Add row
-            </button>
-          </h2>
-          <table class="data-table ability-table">
-            <thead>
-              <tr><th>Name</th><th>Frequency</th><th>Trigger</th><th>Effect</th><th aria-label="Row actions"></th></tr>
-            </thead>
-            <tbody>
-              <tr v-for="(row, i) in abilityRows" :key="i">
-                <th>
-                  <EditableCell
-                    :model-value="row.ability.name"
-                    placeholder="Ability"
-                    @update:model-value="(v) => setLookupAbilityName(row.ability, v)"
-                  />
-                </th>
-                <td>{{ formatLookupValue(row.reference?.frequency) }}</td>
-                <td class="effect-col">{{ formatLookupValue(row.reference?.trigger) }}</td>
-                <td class="effect-col">
-                  <span v-if="row.reference?.effect">{{ row.reference.effect }}</span>
-                  <span v-else class="badge-empty">{{ row.reference ? '—' : row.ability.name.trim() ? 'No matching ability in abilities.json' : '—' }}</span>
-                </td>
-                <td>
-                  <button type="button" class="row-remove" title="Remove ability" @click="removeAbility(i)">
-                    <PhX :size="14" weight="bold" />
-                  </button>
-                </td>
-              </tr>
-              <tr v-if="!abilityRows.length">
-                <td colspan="5" class="muted">No abilities yet.</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div class="block">
-          <h2 class="block-title">
-            Maneuvers
-            <button type="button" class="row-add" @click="addManeuver">
-              <PhPlus :size="14" weight="bold" /> Add row
-            </button>
-          </h2>
-          <table class="data-table">
-            <thead><tr><th>Name</th><th>Action</th><th>Cat.</th><th>AC</th><th>Range</th><th>Effect</th><th aria-label="Row actions"></th></tr></thead>
-            <tbody>
-              <tr v-for="(m, i) in sheet.maneuvers" :key="i">
-                <th><EditableCell v-model="m.name" placeholder="Maneuver" /></th>
-                <td><EditableCell v-model="m.action" placeholder="Standard" /></td>
-                <td>
-                  <EditableCell
-                    v-model="m.category"
-                    type="select"
-                    :options="CATEGORY_OPTIONS"
-                    placeholder="—"
-                  >
-                    <template #display="slotProps">
-                      <DamageClassBadge v-if="!slotProps.empty" :category="String(slotProps.value)" size="xs" />
-                      <span v-else class="badge-empty">{{ slotProps.emptyLabel }}</span>
-                    </template>
-                  </EditableCell>
-                </td>
-                <td><EditableCell v-model="m.ac" type="number" /></td>
-                <td><EditableCell v-model="m.range" placeholder="Melee" /></td>
-                <td class="effect-col">
-                  <EditableCell v-model="m.effect" type="textarea" placeholder="—" multiline />
-                </td>
-                <td class="row-actions">
-                  <button type="button" class="row-remove" title="Remove maneuver" @click="removeManeuver(i)">
-                    <PhX :size="14" weight="bold" />
-                  </button>
-                </td>
-              </tr>
-              <tr v-if="!sheet.maneuvers?.length">
-                <td colspan="7" class="muted">No maneuvers yet.</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div class="block">
-          <h2 class="block-title">
-            Pokémon Training &amp; Orders
-            <button type="button" class="row-add" @click="addOrder">
-              <PhPlus :size="14" weight="bold" /> Add row
-            </button>
-          </h2>
-          <ul class="kv-list">
-            <li v-for="(o, i) in sheet.orders" :key="i">
-              <span>
-                <strong><EditableCell v-model="o.name" placeholder="Order" /></strong>
-                <span class="muted"> · </span>
-                <EditableCell
-                  :model-value="orderTagsCsv(o)"
-                  placeholder="Orders"
-                  @update:model-value="(v) => setOrderTags(o, (v as string) ?? '')"
-                />
-              </span>
-              <span class="effect-col">
-                <EditableCell v-model="o.effect" type="textarea" placeholder="—" multiline />
-              </span>
-              <button type="button" class="row-remove" title="Remove order" @click="removeOrder(i)">
-                <PhX :size="14" weight="bold" />
-              </button>
-            </li>
-            <li v-if="!sheet.orders?.length" class="muted">No orders yet.</li>
-          </ul>
-        </div>
+        <TrainerCombatActionsPanel
+          :sheet="sheet"
+          :move-rows="moveRows"
+          :ability-rows="abilityRows"
+          :order-tags-csv="orderTagsCsv"
+          @add-move="addMove"
+          @remove-move="removeMove"
+          @add-ability="addAbility"
+          @remove-ability="removeAbility"
+          @add-maneuver="addManeuver"
+          @remove-maneuver="removeManeuver"
+          @add-order="addOrder"
+          @remove-order="removeOrder"
+          @set-order-tags="setOrderTags"
+        />
       </section>
 
       <!-- =================================================================== -->
@@ -874,14 +710,6 @@ const {
 }
 
 .muted { color: var(--ink-muted); font-size: 0.85rem; }
-.move-lookup-note {
-  color: var(--ink-muted);
-  font-family: var(--font-ui);
-  font-size: 0.72rem;
-  font-weight: 400;
-  letter-spacing: 0.02em;
-  text-transform: none;
-}
 .muted-help { color: var(--ink-muted); font-size: 0.78rem; margin: 0 0 0.4rem; }
 
 /* ===== Tables ===== */
@@ -991,9 +819,6 @@ const {
 
 .kv-list li:last-child { border-bottom: 0; }
 
-/* Movelist columns */
-.movelist-table th,
-.movelist-table td { vertical-align: top; }
 .effect-col { color: var(--ink-soft); white-space: pre-wrap; max-width: 22rem; }
 /* Tag badges */
 .tag-badge {

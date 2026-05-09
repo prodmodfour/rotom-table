@@ -902,3 +902,13 @@
   - `npm test` — passes: 49 test files / 171 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: trainer combat actions panel extraction
+
+- Continued Phase 7 trainer sheet page decomposition by extracting movelist, abilities, maneuvers, and Pokémon Training/Orders into `components/sheets/TrainerCombatActionsPanel.vue`.
+- Updated `pages/sheets/trainers/[slug].vue` to wire move/ability lookup rows and row-action emits through the new panel while preserving lookup-backed name cleanup, damage/type display, maneuver category selection, and order tag CSV editing.
+- Removed now-dead route-page imports/constants/styles for the extracted combat action sections.
+- Quality gates after this phase:
+  - `npm test` — passes: 49 test files / 171 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
