@@ -214,40 +214,35 @@ const {
       <!-- =================================================================== -->
       <!-- COMBAT TAB                                                           -->
       <!-- =================================================================== -->
-      <section v-if="activeTab === 'combat'" class="tab-panel">
-        <TrainerCombatOverviewPanel
-          v-model:other-caps-csv="otherCapsCsv"
-          :sheet="sheet"
-          :current-hp="currentHp"
-          :max-hp="maxHp"
-          :full-max-hp="fullMaxHp"
-          :max-ap="maxAp"
-          :tick-value="tickValue"
-          :hp-thresholds="hpThresholds"
-          :attack-total="totalRow('atk')"
-          :special-attack-total="totalRow('satk')"
-          :speed-total="totalRow('spd')"
-          :trainer-evasion="trainerEvasion"
-          @set-current-hp="setCurrentHp"
-          @set-evasion-bonus="setEvasionBonus"
-        />
-
-        <TrainerCombatActionsPanel
-          :sheet="sheet"
-          :move-rows="moveRows"
-          :ability-rows="abilityRows"
-          :order-tags-csv="orderTagsCsv"
-          @add-move="addMove"
-          @remove-move="removeMove"
-          @add-ability="addAbility"
-          @remove-ability="removeAbility"
-          @add-maneuver="addManeuver"
-          @remove-maneuver="removeManeuver"
-          @add-order="addOrder"
-          @remove-order="removeOrder"
-          @set-order-tags="setOrderTags"
-        />
-      </section>
+      <TrainerCombatTabPanel
+        v-if="activeTab === 'combat'"
+        v-model:other-caps-csv="otherCapsCsv"
+        :sheet="sheet"
+        :current-hp="currentHp"
+        :max-hp="maxHp"
+        :full-max-hp="fullMaxHp"
+        :max-ap="maxAp"
+        :tick-value="tickValue"
+        :hp-thresholds="hpThresholds"
+        :attack-total="totalRow('atk')"
+        :special-attack-total="totalRow('satk')"
+        :speed-total="totalRow('spd')"
+        :trainer-evasion="trainerEvasion"
+        :move-rows="moveRows"
+        :ability-rows="abilityRows"
+        :order-tags-csv="orderTagsCsv"
+        @set-current-hp="setCurrentHp"
+        @set-evasion-bonus="setEvasionBonus"
+        @add-move="addMove"
+        @remove-move="removeMove"
+        @add-ability="addAbility"
+        @remove-ability="removeAbility"
+        @add-maneuver="addManeuver"
+        @remove-maneuver="removeManeuver"
+        @add-order="addOrder"
+        @remove-order="removeOrder"
+        @set-order-tags="setOrderTags"
+      />
 
       <!-- =================================================================== -->
       <!-- INVENTORY TAB                                                        -->

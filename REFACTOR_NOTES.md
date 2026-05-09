@@ -961,3 +961,13 @@
   - `npm test` — passes: 49 test files / 171 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: trainer combat tab extraction
+
+- Continued Phase 7 trainer sheet page decomposition by extracting the Combat tab composition into `components/sheets/TrainerCombatTabPanel.vue`.
+- The new tab panel coordinates combat overview vitals, capabilities, move/ability/maneuver/order tables, order tag CSV edits, and combat row actions through explicit props, `v-model`, and emits.
+- Updated `pages/sheets/trainers/[slug].vue` to wire combat derived values and row actions into the focused tab component while preserving current HP, evasion bonus, move lookup, ability lookup, maneuver, and order editing behavior.
+- Quality gates after this phase:
+  - `npm test` — passes: 49 test files / 171 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
