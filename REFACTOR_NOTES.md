@@ -1708,3 +1708,13 @@
   - `npm test` — passes: 84 test files / 322 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: shared reference filter chips
+
+- Extracted duplicated reference-index category/tag chip presentation into `components/reference/ReferenceFilterChips.vue`.
+- Updated item, rule, and feature index routes to pass focused chip DTOs while preserving active filter toggles, counts, ARIA pressed state, and existing styling.
+- Removed duplicated filter-chip CSS from the route pages so chip presentation lives in one component.
+- Quality gates after this phase:
+  - `npm test` — passes: 84 test files / 322 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

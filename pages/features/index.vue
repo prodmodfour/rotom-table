@@ -14,6 +14,11 @@ const tagFilter = ref<string | null>(null)
 
 /** All tags that appear on at least one feature, sorted by frequency desc. */
 const allTags = computed(() => buildFeatureTagCounts(features))
+const tagChips = computed(() => allTags.value.map(({ tag, count }) => ({
+  key: tag,
+  label: tag,
+  count,
+})))
 
 const filtered = computed(() => filterFeaturesForIndex(features, {
   searchTerm: searchTerm.value,
@@ -40,18 +45,12 @@ const toggleTag = (tag: string) => {
           Class Features are tagged <code>Class</code>; pick a tag below to filter.
         </p>
 
-        <div class="tag-row">
-          <button
-            v-for="{ tag, count } in allTags"
-            :key="tag"
-            type="button"
-            class="tag-chip"
-            :class="{ active: tagFilter === tag }"
-            @click="toggleTag(tag)"
-          >
-            {{ tag }} <span class="tag-count">{{ count }}</span>
-          </button>
-        </div>
+        <ReferenceFilterChips
+          :chips="tagChips"
+          :active-key="tagFilter"
+          aria-label="Filter features by tag"
+          @select="toggleTag"
+        />
 
         <label class="search-field">
           <span class="sr-only">Search features</span>
@@ -89,46 +88,6 @@ const toggleTag = (tag: string) => {
 </template>
 
 <style scoped>
-.tag-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.3rem 0.4rem;
-  margin: 0.45rem 0 0.7rem;
-}
-
-.tag-chip {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 0.3rem;
-  padding: 0.18rem 0.6rem;
-  border-radius: 999px;
-  border: 1px solid var(--rule-soft);
-  background: var(--paper);
-  color: var(--ink-soft);
-  font-size: 0.76rem;
-  letter-spacing: 0.04em;
-  cursor: pointer;
-  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
-}
-
-.tag-chip:hover {
-  border-color: var(--rule-strong);
-  background: var(--paper-hover);
-  color: var(--ink-bright);
-}
-
-.tag-chip.active {
-  background: var(--paper-active);
-  border-color: var(--rule-active);
-  color: var(--ink-bright);
-}
-
-.tag-count {
-  opacity: 0.6;
-  font-size: 0.7rem;
-  font-variant-numeric: tabular-nums;
-}
-
 .row-tags {
   display: flex;
   flex-wrap: wrap;

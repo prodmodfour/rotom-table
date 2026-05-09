@@ -14,6 +14,11 @@ const searchTerm = ref('')
 const categoryFilter = ref<string | null>(null)
 
 const categoryCounts = computed(() => buildRuleCategoryCounts(rules))
+const categoryChips = computed(() => categoryCounts.value.map(({ category, count }) => ({
+  key: category,
+  label: category,
+  count,
+})))
 
 const filtered = computed(() => filterRulesForIndex(rules, {
   category: categoryFilter.value,
@@ -41,18 +46,12 @@ const toggleCategory = (category: string) => {
           Pick a category to filter, or search by name, source, or rule text.
         </p>
 
-        <div class="category-row">
-          <button
-            v-for="{ category, count } in categoryCounts"
-            :key="category"
-            type="button"
-            class="category-chip"
-            :class="{ active: categoryFilter === category }"
-            @click="toggleCategory(category)"
-          >
-            {{ category }} <span class="category-count">{{ count }}</span>
-          </button>
-        </div>
+        <ReferenceFilterChips
+          :chips="categoryChips"
+          :active-key="categoryFilter"
+          aria-label="Filter rules by category"
+          @select="toggleCategory"
+        />
 
         <label class="search-field">
           <span class="sr-only">Search rules</span>
@@ -91,46 +90,6 @@ const toggleCategory = (category: string) => {
 </template>
 
 <style scoped>
-.category-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.3rem 0.4rem;
-  margin: 0.45rem 0 0.7rem;
-}
-
-.category-chip {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 0.3rem;
-  padding: 0.18rem 0.6rem;
-  border-radius: 999px;
-  border: 1px solid var(--rule-soft);
-  background: var(--paper);
-  color: var(--ink-soft);
-  font-size: 0.76rem;
-  letter-spacing: 0.04em;
-  cursor: pointer;
-  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
-}
-
-.category-chip:hover {
-  border-color: var(--rule-strong);
-  background: var(--paper-hover);
-  color: var(--ink-bright);
-}
-
-.category-chip.active {
-  background: var(--paper-active);
-  border-color: var(--rule-active);
-  color: var(--ink-bright);
-}
-
-.category-count {
-  opacity: 0.6;
-  font-size: 0.7rem;
-  font-variant-numeric: tabular-nums;
-}
-
 .rules-list {
   display: grid;
   gap: 1rem;

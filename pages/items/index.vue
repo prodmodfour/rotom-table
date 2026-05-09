@@ -15,6 +15,11 @@ const sectionFilter = ref<string | null>(null)
 
 const categoryCounts = computed(() => buildItemCategoryCounts(items))
 const sectionCounts = computed(() => buildItemSectionCounts(items))
+const categoryChips = computed(() => categoryCounts.value.map(({ category, count }) => ({
+  key: category,
+  label: category,
+  count,
+})))
 
 const filtered = computed(() => filterItemsForIndex(items, {
   searchTerm: searchTerm.value,
@@ -42,18 +47,12 @@ const toggleCategory = (category: string) => {
           name, cost, source, or effect.
         </p>
 
-        <div class="category-row">
-          <button
-            v-for="{ category, count } in categoryCounts"
-            :key="category"
-            type="button"
-            class="category-chip"
-            :class="{ active: categoryFilter === category }"
-            @click="toggleCategory(category)"
-          >
-            {{ category }} <span class="category-count">{{ count }}</span>
-          </button>
-        </div>
+        <ReferenceFilterChips
+          :chips="categoryChips"
+          :active-key="categoryFilter"
+          aria-label="Filter items by category"
+          @select="toggleCategory"
+        />
 
         <div class="item-controls">
           <label class="search-field">
@@ -128,46 +127,6 @@ const toggleCategory = (category: string) => {
 </template>
 
 <style scoped>
-.category-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.3rem 0.4rem;
-  margin: 0.45rem 0 0.7rem;
-}
-
-.category-chip {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 0.3rem;
-  padding: 0.18rem 0.6rem;
-  border-radius: 999px;
-  border: 1px solid var(--rule-soft);
-  background: var(--paper);
-  color: var(--ink-soft);
-  font-size: 0.76rem;
-  letter-spacing: 0.04em;
-  cursor: pointer;
-  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
-}
-
-.category-chip:hover {
-  border-color: var(--rule-strong);
-  background: var(--paper-hover);
-  color: var(--ink-bright);
-}
-
-.category-chip.active {
-  background: var(--paper-active);
-  border-color: var(--rule-active);
-  color: var(--ink-bright);
-}
-
-.category-count {
-  opacity: 0.6;
-  font-size: 0.7rem;
-  font-variant-numeric: tabular-nums;
-}
-
 .item-controls {
   display: grid;
   grid-template-columns: minmax(240px, 1fr) minmax(220px, 320px);
