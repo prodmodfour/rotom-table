@@ -1,14 +1,18 @@
 import { describe, expect, it } from 'vitest'
 import {
   buildFolderBreadcrumbs,
+  buildFolderMoveDestinations,
   buildVisibleFolderTiles,
   canMoveFolderTo,
   childFolderPaths,
+  folderMoveDestinationPaths,
   folderPathFromQuery,
   isInsideFolder,
   movedFolderPath,
   nextAvailableFolderLeaf,
   normalizeSearchText,
+  parentFolderPath,
+  renameFolderPrefix,
 } from '~/utils/folderBrowser'
 
 describe('folderBrowser helpers', () => {
@@ -70,11 +74,42 @@ describe('folderBrowser helpers', () => {
 
   it('validates folder moves without allowing self, descendants, or conflicts', () => {
     const existing = new Set(['npcs', 'npcs/wild', 'archive/wild'])
+    expect(parentFolderPath('npcs/wild')).toBe('npcs')
+    expect(parentFolderPath('npcs')).toBe('')
     expect(movedFolderPath('npcs/wild', '')).toBe('wild')
     expect(movedFolderPath('npcs/wild', 'archive')).toBe('archive/wild')
     expect(canMoveFolderTo('npcs/wild', 'npcs/wild/cave', existing)).toBe(false)
     expect(canMoveFolderTo('npcs/wild', 'npcs', existing)).toBe(false)
     expect(canMoveFolderTo('npcs/wild', 'archive', existing)).toBe(false)
     expect(canMoveFolderTo('npcs/wild', '', existing)).toBe(true)
+  })
+
+  it('renames folder prefixes and builds valid move destinations', () => {
+    const folders = new Set(['archive', 'npcs', 'npcs/wild', 'npcs/wild/cave', 'players'])
+    expect(renameFolderPrefix('npcs/wild/cave', 'npcs/wild', 'archive/wild')).toBe('archive/wild/cave')
+    expect(renameFolderPrefix('npcs', 'npcs/wild', 'archive/wild')).toBe('npcs')
+
+    expect(folderMoveDestinationPaths(folders, { type: 'item', folder: 'npcs' })).toEqual([
+      '',
+      'archive',
+      'npcs/wild',
+      'npcs/wild/cave',
+      'players',
+    ])
+    expect(folderMoveDestinationPaths(folders, { type: 'folder', path: 'npcs/wild' })).toEqual([
+      '',
+      'archive',
+      'players',
+    ])
+
+    expect(buildFolderMoveDestinations({
+      folderPaths: folders,
+      target: { type: 'folder', path: 'npcs/wild' },
+      formatLabel: (path) => path.toUpperCase(),
+    })).toEqual([
+      { value: '', label: 'Home (root)' },
+      { value: 'archive', label: 'ARCHIVE' },
+      { value: 'players', label: 'PLAYERS' },
+    ])
   })
 })

@@ -15,6 +15,7 @@ import {
 import { formatFolderLabel } from '~/utils/sheetFolders'
 import {
   buildFolderBreadcrumbs,
+  buildFolderMoveDestinations,
   buildVisibleFolderTiles,
   canMoveFolderTo,
   folderPathFromQuery,
@@ -22,6 +23,7 @@ import {
   movedFolderPath,
   nextAvailableFolderLeaf,
   normalizeSearchText,
+  renameFolderPrefix,
   type FolderTile,
 } from '~/utils/folderBrowser'
 import { getClientId } from '~/utils/clientId'
@@ -99,17 +101,12 @@ useRealtimeChannel('maps', (event) => {
   } else if (event.type === 'folder-moved') {
     const payload = event.data as { from?: string; to?: string } | undefined
     if (!payload?.from || !payload?.to) return
-    const renamePath = (path: string) => {
-      if (path === payload.from) return payload.to!
-      if (path.startsWith(payload.from + '/')) return payload.to + path.slice(payload.from!.length)
-      return path
-    }
     const next = new Set<string>()
-    for (const f of extraFolders) next.add(renamePath(f))
+    for (const f of extraFolders) next.add(renameFolderPrefix(f, payload.from, payload.to))
     extraFolders.clear()
     for (const f of next) extraFolders.add(f)
     for (const [slug, g] of maps) {
-      maps.set(slug, { ...g, folder: renamePath(g.folder) })
+      maps.set(slug, { ...g, folder: renameFolderPrefix(g.folder, payload.from, payload.to) })
     }
   }
 })
@@ -249,18 +246,12 @@ const performMove = async (d: DragPayload, targetPath: string) => {
       method: 'POST',
       body: { from: d.path, to: newPath, clientId },
     })
-    const renamePath = (path: string) =>
-      path === d.path
-        ? newPath
-        : path.startsWith(d.path + '/')
-          ? newPath + path.slice(d.path.length)
-          : path
     const nextFolders = new Set<string>()
-    for (const f of extraFolders) nextFolders.add(renamePath(f))
+    for (const f of extraFolders) nextFolders.add(renameFolderPrefix(f, d.path, newPath))
     extraFolders.clear()
     for (const f of nextFolders) extraFolders.add(f)
     for (const [slug, g] of maps) {
-      maps.set(slug, { ...g, folder: renamePath(g.folder) })
+      maps.set(slug, { ...g, folder: renameFolderPrefix(g.folder, d.path, newPath) })
     }
   }
 }
@@ -373,22 +364,13 @@ const ctxTargetLabel = computed(() => {
 const ctxMoveDestinations = computed<Array<{ value: string; label: string }>>(() => {
   const c = ctx.value
   if (!c) return []
-  const dests: Array<{ value: string; label: string }> = []
-  const candidates = ['', ...Array.from(allFolders.value).sort((a, b) => a.localeCompare(b))]
-  for (const path of candidates) {
-    if (c.target.type === 'map') {
-      if (path === c.target.item.folder) continue
-    } else {
-      const selfPath = c.target.tile.path
-      if (path === selfPath) continue
-      if (path.startsWith(selfPath + '/')) continue
-      const slash = selfPath.lastIndexOf('/')
-      const parent = slash >= 0 ? selfPath.slice(0, slash) : ''
-      if (path === parent) continue
-    }
-    dests.push({ value: path, label: path ? formatFolderLabel(path) : 'Home (root)' })
-  }
-  return dests
+  return buildFolderMoveDestinations({
+    folderPaths: allFolders.value,
+    target: c.target.type === 'map'
+      ? { type: 'item', folder: c.target.item.folder }
+      : { type: 'folder', path: c.target.tile.path },
+    formatLabel: formatFolderLabel,
+  })
 })
 
 const enterMove = async () => {

@@ -1195,3 +1195,13 @@
   - `npm test` — passes: 60 test files / 207 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: shared folder move destination helpers
+
+- Extended `utils/folderBrowser.ts` with focused folder path primitives for parent lookup, prefix renaming, context-menu move destination filtering, and destination label creation.
+- Updated the maps and sheets library pages to use the shared destination/prefix helpers for drag/drop follow-up state, realtime folder-move handling, folder rename navigation, and Move context-menu options.
+- Expanded `tests/utils/folderBrowser.test.ts` to cover prefix renames, parent no-op filtering, item move destinations, and formatted destination labels.
+- Quality gates after this phase:
+  - `npm test` — passes: 60 test files / 208 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

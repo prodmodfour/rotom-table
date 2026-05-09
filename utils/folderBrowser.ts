@@ -9,6 +9,15 @@ export interface FolderTile {
   count: number
 }
 
+export interface FolderMoveDestination {
+  value: string
+  label: string
+}
+
+export type FolderMoveTarget =
+  | { type: 'item'; folder: string }
+  | { type: 'folder'; path: string }
+
 export interface FolderedItem {
   folder: string
 }
@@ -28,6 +37,17 @@ export const isInsideFolder = (folder: string, currentPath: string): boolean => 
 export const isSameOrDescendantFolder = (path: string, parentPath: string): boolean => {
   if (!parentPath) return Boolean(path)
   return path === parentPath || path.startsWith(parentPath + '/')
+}
+
+export const parentFolderPath = (path: string): string => {
+  const slash = path.lastIndexOf('/')
+  return slash >= 0 ? path.slice(0, slash) : ''
+}
+
+export const renameFolderPrefix = (path: string, from: string, to: string): string => {
+  if (path === from) return to
+  if (path.startsWith(from + '/')) return to + path.slice(from.length)
+  return path
 }
 
 export const childFolderPaths = (
@@ -134,4 +154,41 @@ export const canMoveFolderTo = (
   const folderSet = existingFolders instanceof Set ? existingFolders : new Set(existingFolders)
   if (folderSet.has(newPath)) return false
   return true
+}
+
+export const folderMoveDestinationPaths = (
+  folderPaths: Iterable<string>,
+  target: FolderMoveTarget,
+): string[] => {
+  const candidates = ['', ...Array.from(folderPaths).sort((a, b) => a.localeCompare(b))]
+  return candidates.filter((path) => {
+    if (target.type === 'item') return path !== target.folder
+
+    const selfPath = target.path
+    if (path === selfPath) return false
+    if (path.startsWith(selfPath + '/')) return false
+    if (path === parentFolderPath(selfPath)) return false
+    return true
+  })
+}
+
+export const buildFolderMoveDestinations = (
+  options: {
+    folderPaths: Iterable<string>
+    target: FolderMoveTarget
+    rootLabel?: string
+    formatLabel?: (path: string) => string
+  },
+): FolderMoveDestination[] => {
+  const {
+    folderPaths,
+    target,
+    rootLabel = 'Home (root)',
+    formatLabel = (path: string) => path,
+  } = options
+
+  return folderMoveDestinationPaths(folderPaths, target).map((path) => ({
+    value: path,
+    label: path ? formatLabel(path) : rootLabel,
+  }))
 }

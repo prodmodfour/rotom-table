@@ -16,6 +16,7 @@ import { characterSheets, getPokedexEntry, getSpriteUrl } from '~/data/character
 import { trainerSheets } from '~/data/trainerSheets'
 import {
   buildFolderBreadcrumbs,
+  buildFolderMoveDestinations,
   buildVisibleFolderTiles,
   canMoveFolderTo,
   folderPathFromQuery,
@@ -23,6 +24,7 @@ import {
   movedFolderPath,
   nextAvailableFolderLeaf,
   normalizeSearchText,
+  renameFolderPrefix,
   type FolderTile,
 } from '~/utils/folderBrowser'
 import type { CharacterSheet } from '~/types/characterSheet'
@@ -79,8 +81,7 @@ const deletedFolders = reactive(new Set<string>())
 const applyFolderRenames = (path: string): string => {
   let result = path
   for (const { from, to } of folderRenames.value) {
-    if (result === from) result = to
-    else if (result.startsWith(from + '/')) result = to + result.slice(from.length)
+    result = renameFolderPrefix(result, from, to)
   }
   return result
 }
@@ -526,23 +527,12 @@ const ctxTargetLabel = computed(() => {
 const ctxMoveDestinations = computed<Array<{ value: string; label: string }>>(() => {
   const c = ctx.value
   if (!c) return []
-  const dests: Array<{ value: string; label: string }> = []
-  const candidates = ['', ...Array.from(allFolders.value).sort((a, b) => a.localeCompare(b))]
-  for (const path of candidates) {
-    if (c.target.type === 'sheet') {
-      if (path === c.target.item.folder) continue
-    } else {
-      const selfPath = c.target.tile.path
-      if (path === selfPath) continue
-      if (path.startsWith(selfPath + '/')) continue
-      // Drop into current parent is a no-op too.
-      const slash = selfPath.lastIndexOf('/')
-      const parent = slash >= 0 ? selfPath.slice(0, slash) : ''
-      if (path === parent) continue
-    }
-    dests.push({ value: path, label: path || 'Home (root)' })
-  }
-  return dests
+  return buildFolderMoveDestinations({
+    folderPaths: allFolders.value,
+    target: c.target.type === 'sheet'
+      ? { type: 'item', folder: c.target.item.folder }
+      : { type: 'folder', path: c.target.tile.path },
+  })
 })
 
 const enterMove = async () => {
@@ -597,7 +587,7 @@ const applyRenameFolder = async (oldPath: string, newLeaf: string) => {
   folderRenames.value = [...folderRenames.value, { from: oldPath, to: newPath }]
   // If we were inside the renamed folder, follow it.
   if (currentPath.value === oldPath || currentPath.value.startsWith(oldPath + '/')) {
-    goToFolder(newPath + currentPath.value.slice(oldPath.length))
+    goToFolder(renameFolderPrefix(currentPath.value, oldPath, newPath))
   }
 }
 
