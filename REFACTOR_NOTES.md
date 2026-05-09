@@ -1249,3 +1249,14 @@
   - `npm test` — passes: 64 test files / 228 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: move automation dialog helper extraction
+
+- Extracted pure move-automation dialog calculations into `utils/moveAutomationDialog.ts`.
+  - The helper now owns non-negative integer parsing, HP suggestion application, combat-stage delta clamping/filtering, hazard cell text parsing, and compact stage delta labels.
+- Updated `components/MoveAutomationDialog.vue` to import those focused helpers while preserving manual HP-loss overrides, scripted HP suggestions, combat-stage transaction output, hazard placement parsing, and UI stage labels.
+- Added `tests/utils/moveAutomationDialog.test.ts` covering parsing, HP heal/loss bounds, combat-stage clamping, non-zero stage delta extraction, hazard coordinate parsing with fallback Y, and stage label formatting.
+- Quality gates after this phase:
+  - `npm test` — passes: 65 test files / 234 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

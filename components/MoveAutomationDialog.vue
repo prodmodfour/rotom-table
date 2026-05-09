@@ -11,7 +11,15 @@ import {
   type DamageRollResult,
   type MoveAutomationMoveLike,
 } from '~/utils/moveAutomation'
-import { COMBAT_STAGE_KEYS, COMBAT_STAGE_SHORT_LABELS, clampCombatStage, normalizeCombatStages } from '~/utils/combatStages'
+import { COMBAT_STAGE_KEYS, COMBAT_STAGE_SHORT_LABELS, normalizeCombatStages } from '~/utils/combatStages'
+import {
+  addCombatStageDeltas,
+  applyHpSuggestion,
+  nonZeroStageDeltas,
+  parseHazardCellText,
+  parsePositiveInt,
+  stageDeltaLabel,
+} from '~/utils/moveAutomationDialog'
 import { normalizeConditionNames } from '~/utils/statusConditions'
 import { computeMultiplier, formatMultiplier } from '~/utils/typeChart'
 import type { CharacterSheetMove } from '~/types/characterSheet'
@@ -241,12 +249,6 @@ const rollAll = () => {
   }
 }
 
-const parsePositiveInt = (value: string): number | null => {
-  const n = Number.parseInt(value, 10)
-  if (!Number.isFinite(n) || n < 0) return null
-  return n
-}
-
 const targetDamageMultiplier = (target: SpawnedPokemon): number =>
   computeMultiplier(script.value?.type ?? 'Normal', target.defenderTypes)
 
@@ -288,26 +290,6 @@ const hpSuggestionAmount = (index: number, token: SpawnedPokemon): number => {
   return Math.max(0, Math.round(base * item.percent / 100))
 }
 
-const applyHpSuggestion = (current: number, max: number, amount: number, mode: string): number => {
-  if (mode.startsWith('heal')) return Math.min(max, current + amount)
-  return Math.max(0, current - amount)
-}
-
-const addStages = (base: CombatStageMap, delta: Partial<Record<CombatStageKey, number>>): CombatStageMap => {
-  const next = { ...base }
-  for (const key of COMBAT_STAGE_KEYS) next[key] = clampCombatStage((next[key] ?? 0) + (delta[key] ?? 0))
-  return next
-}
-
-const nonZeroStageDeltas = (source: Record<CombatStageKey, number>): Partial<Record<CombatStageKey, number>> => {
-  const out: Partial<Record<CombatStageKey, number>> = {}
-  for (const key of COMBAT_STAGE_KEYS) {
-    const delta = Number(source[key])
-    if (Number.isFinite(delta) && delta !== 0) out[key] = Math.trunc(delta)
-  }
-  return out
-}
-
 const conditionSetForToken = (updates: Map<string, Set<string>>, token: SpawnedPokemon): Set<string> => {
   const existing = updates.get(token.id)
   if (existing) return existing
@@ -340,20 +322,7 @@ const applyConditionSuggestion = (
   }
 }
 
-const parseHazardCells = (): Array<{ x: number; y: number; z: number }> => {
-  const cells: Array<{ x: number; y: number; z: number }> = []
-  for (const line of hazardCellsText.value.split(/\n+/)) {
-    const trimmed = line.trim()
-    if (!trimmed) continue
-    const parts = trimmed.split(/[\s,]+/).map((part) => Number(part))
-    if (parts.length >= 3 && parts.slice(0, 3).every(Number.isFinite)) {
-      cells.push({ x: Math.round(parts[0]), y: Math.round(parts[1]), z: Math.round(parts[2]) })
-    } else if (parts.length >= 2 && parts.slice(0, 2).every(Number.isFinite)) {
-      cells.push({ x: Math.round(parts[0]), y: props.user.position.y, z: Math.round(parts[1]) })
-    }
-  }
-  return cells
-}
+const parseHazardCells = () => parseHazardCellText(hazardCellsText.value, props.user.position.y)
 
 const addUserCellToHazardText = () => {
   const line = `${props.user.position.x}, ${props.user.position.y}, ${props.user.position.z}`
@@ -423,7 +392,7 @@ const buildTransaction = (): MoveAutomationTransaction => {
   for (const target of selectedTargets.value) mergeConditionUpdate(conditionById, target, manualTargetConditions.value)
 
   const addStageDelta = (token: SpawnedPokemon, delta: Partial<Record<CombatStageKey, number>>) => {
-    stagesById.set(token.id, addStages(stagesById.get(token.id) ?? normalizeCombatStages(token.combatStages), delta))
+    stagesById.set(token.id, addCombatStageDeltas(stagesById.get(token.id) ?? normalizeCombatStages(token.combatStages), delta))
   }
   s.stageSuggestions.forEach((item, index) => {
     if (!suggestionEnabled('stage', index)) return
@@ -492,7 +461,6 @@ const selectMove = (name: string) => {
 }
 const apply = () => emit('apply', transaction.value)
 
-const stageDeltaLabel = (delta: number): string => delta > 0 ? `+${delta}` : String(delta)
 </script>
 
 <template>
