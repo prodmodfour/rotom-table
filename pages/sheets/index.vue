@@ -24,6 +24,7 @@ import {
   matchesSheetLibraryQuery,
   type SheetLibraryItem,
 } from '~/utils/sheetLibrary'
+import { useLibraryDragDrop } from '~/composables/library/useLibraryDragDrop'
 
 useHead({
   title: 'Sheets · Rotom Table',
@@ -173,45 +174,8 @@ interface DragFolder {
 }
 type DragPayload = DragSheet | DragFolder
 
-const drag = ref<DragPayload | null>(null)
-const hoverTarget = ref<string | null>(null)
 const moving = ref(false)
 const moveError = ref<string | null>(null)
-
-const isDraggingSheet = (item: SheetItem): boolean =>
-  drag.value?.type === 'sheet'
-  && drag.value.kind === item.kind
-  && drag.value.slug === item.slug
-
-const isDraggingFolder = (path: string): boolean =>
-  drag.value?.type === 'folder' && drag.value.path === path
-
-const onSheetDragStart = (e: DragEvent, item: SheetItem) => {
-  if (!canDrag.value) return
-  drag.value = { type: 'sheet', kind: item.kind, slug: item.slug, from: item.folder }
-  if (e.dataTransfer) {
-    e.dataTransfer.effectAllowed = 'move'
-    // Required for Firefox to actually start the drag.
-    e.dataTransfer.setData('application/x-rotom-sheet', `${item.kind}:${item.slug}`)
-  }
-}
-
-const onFolderDragStart = (e: DragEvent, path: string) => {
-  if (!canDrag.value || !path) {
-    e.preventDefault()
-    return
-  }
-  drag.value = { type: 'folder', path }
-  if (e.dataTransfer) {
-    e.dataTransfer.effectAllowed = 'move'
-    e.dataTransfer.setData('application/x-rotom-folder', path)
-  }
-}
-
-const onDragEnd = () => {
-  drag.value = null
-  hoverTarget.value = null
-}
 
 /** Drop validity check that takes an explicit payload, so it stays correct
  *  even after `drag.value` has been cleared (which `onDrop` does
@@ -223,26 +187,46 @@ const canDropPayloadOn = (d: DragPayload, targetPath: string): boolean => {
   return canMoveFolderTo(d.path, targetPath, allFolders.value)
 }
 
-const canDropOn = (targetPath: string): boolean => {
-  const d = drag.value
-  return canDrag.value && d ? canDropPayloadOn(d, targetPath) : false
+const {
+  drag,
+  hoverTarget,
+  startDrag,
+  canDropOn,
+  onDragEnd,
+  onDropEnter,
+  onDropOver,
+  onDropLeave,
+  takeDropPayload,
+} = useLibraryDragDrop<DragPayload>({
+  canDrag,
+  canDropPayloadOn,
+})
+
+const isDraggingSheet = (item: SheetItem): boolean =>
+  drag.value?.type === 'sheet'
+  && drag.value.kind === item.kind
+  && drag.value.slug === item.slug
+
+const isDraggingFolder = (path: string): boolean =>
+  drag.value?.type === 'folder' && drag.value.path === path
+
+const onSheetDragStart = (e: DragEvent, item: SheetItem) => {
+  startDrag(e, { type: 'sheet', kind: item.kind, slug: item.slug, from: item.folder }, {
+    mimeType: 'application/x-rotom-sheet',
+    // Required for Firefox to actually start the drag.
+    value: `${item.kind}:${item.slug}`,
+  })
 }
 
-const onDropEnter = (e: DragEvent, targetPath: string) => {
-  if (!drag.value || !canDropOn(targetPath)) return
-  e.preventDefault()
-  hoverTarget.value = targetPath
-}
-
-const onDropOver = (e: DragEvent, targetPath: string) => {
-  if (!drag.value || !canDropOn(targetPath)) return
-  e.preventDefault()
-  if (e.dataTransfer) e.dataTransfer.dropEffect = 'move'
-  hoverTarget.value = targetPath
-}
-
-const onDropLeave = (targetPath: string) => {
-  if (hoverTarget.value === targetPath) hoverTarget.value = null
+const onFolderDragStart = (e: DragEvent, path: string) => {
+  if (!path) {
+    e.preventDefault()
+    return
+  }
+  startDrag(e, { type: 'folder', path }, {
+    mimeType: 'application/x-rotom-folder',
+    value: path,
+  })
 }
 
 const performMove = async (d: DragPayload, targetPath: string) => {
@@ -263,19 +247,8 @@ const performMove = async (d: DragPayload, targetPath: string) => {
 }
 
 const onDrop = async (e: DragEvent, targetPath: string) => {
-  if (!canDrag.value) return
-  e.preventDefault()
-  e.stopPropagation()
-  const d = drag.value
-  // Validate against the captured payload before clearing `drag.value` —
-  // `canDropOn` reads `drag.value` and would falsely reject otherwise.
-  if (!d || !canDropPayloadOn(d, targetPath)) {
-    drag.value = null
-    hoverTarget.value = null
-    return
-  }
-  drag.value = null
-  hoverTarget.value = null
+  const d = takeDropPayload(e, targetPath)
+  if (!d) return
 
   moving.value = true
   moveError.value = null

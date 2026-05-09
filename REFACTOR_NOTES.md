@@ -1553,3 +1553,14 @@
   - `npm test` — passes: 71 test files / 265 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: shared library drag/drop composable
+
+- Extracted maps/sheets library drag-and-drop bookkeeping into `composables/library/useLibraryDragDrop.ts`.
+  - The composable owns active payload state, hover target state, transfer metadata setup, drop-target validation, hover updates, and validated payload capture before persistence.
+- Updated `pages/maps/index.vue` and `pages/sheets/index.vue` to delegate generic drag/drop mechanics while keeping map/sheet/folder move persistence in the route shells.
+- Added `tests/composables/library/useLibraryDragDrop.test.ts` covering allowed/blocked drag starts, hover gating, valid drop capture, and invalid drop cleanup.
+- Quality gates after this phase:
+  - `npm test` — passes: 72 test files / 270 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

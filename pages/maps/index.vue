@@ -22,6 +22,7 @@ import {
   tabletopMapToSummary,
 } from '~/utils/mapLibrary'
 import { useRealtimeChannel } from '~/composables/useRealtime'
+import { useLibraryDragDrop } from '~/composables/library/useLibraryDragDrop'
 import { mapsChannel } from '~/shared/realtime'
 import type { MapSummary, TabletopMap } from '~/types/map'
 
@@ -133,61 +134,42 @@ interface DragFolder {
 }
 type DragPayload = DragMap | DragFolder
 
-const drag = ref<DragPayload | null>(null)
-const hoverTarget = ref<string | null>(null)
-
-const onMapDragStart = (e: DragEvent, item: MapSummary) => {
-  if (!isGm.value) {
-    e.preventDefault()
-    return
-  }
-  drag.value = { type: 'map', slug: item.slug, from: item.folder }
-  if (e.dataTransfer) {
-    e.dataTransfer.effectAllowed = 'move'
-    e.dataTransfer.setData('application/x-rotom-map', item.slug)
-  }
-}
-
-const onFolderDragStart = (e: DragEvent, path: string) => {
-  if (!isGm.value || !path) {
-    e.preventDefault()
-    return
-  }
-  drag.value = { type: 'folder', path }
-  if (e.dataTransfer) {
-    e.dataTransfer.effectAllowed = 'move'
-    e.dataTransfer.setData('application/x-rotom-map-folder', path)
-  }
-}
-
-const onDragEnd = () => {
-  drag.value = null
-  hoverTarget.value = null
-}
-
 const canDropPayloadOn = (d: DragPayload, targetPath: string): boolean => {
   if (d.type === 'map') return d.from !== targetPath
   return canMoveFolderTo(d.path, targetPath, allFolders.value)
 }
 
-const canDropOn = (targetPath: string) =>
-  isGm.value && drag.value ? canDropPayloadOn(drag.value, targetPath) : false
+const {
+  drag,
+  hoverTarget,
+  startDrag,
+  canDropOn,
+  onDragEnd,
+  onDropEnter,
+  onDropOver,
+  onDropLeave,
+  takeDropPayload,
+} = useLibraryDragDrop<DragPayload>({
+  canDrag: isGm,
+  canDropPayloadOn,
+})
 
-const onDropEnter = (e: DragEvent, targetPath: string) => {
-  if (!drag.value || !canDropOn(targetPath)) return
-  e.preventDefault()
-  hoverTarget.value = targetPath
+const onMapDragStart = (e: DragEvent, item: MapSummary) => {
+  startDrag(e, { type: 'map', slug: item.slug, from: item.folder }, {
+    mimeType: 'application/x-rotom-map',
+    value: item.slug,
+  })
 }
 
-const onDropOver = (e: DragEvent, targetPath: string) => {
-  if (!drag.value || !canDropOn(targetPath)) return
-  e.preventDefault()
-  if (e.dataTransfer) e.dataTransfer.dropEffect = 'move'
-  hoverTarget.value = targetPath
-}
-
-const onDropLeave = (targetPath: string) => {
-  if (hoverTarget.value === targetPath) hoverTarget.value = null
+const onFolderDragStart = (e: DragEvent, path: string) => {
+  if (!path) {
+    e.preventDefault()
+    return
+  }
+  startDrag(e, { type: 'folder', path }, {
+    mimeType: 'application/x-rotom-map-folder',
+    value: path,
+  })
 }
 
 const performMove = async (d: DragPayload, targetPath: string) => {
@@ -209,17 +191,8 @@ const performMove = async (d: DragPayload, targetPath: string) => {
 }
 
 const onDrop = async (e: DragEvent, targetPath: string) => {
-  if (!isGm.value) return
-  e.preventDefault()
-  e.stopPropagation()
-  const d = drag.value
-  if (!d || !canDropPayloadOn(d, targetPath)) {
-    drag.value = null
-    hoverTarget.value = null
-    return
-  }
-  drag.value = null
-  hoverTarget.value = null
+  const d = takeDropPayload(e, targetPath)
+  if (!d) return
   moving.value = true
   moveError.value = null
   try {
