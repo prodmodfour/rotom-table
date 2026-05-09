@@ -123,7 +123,6 @@ const {
   removeFeature,
   addEdge,
   removeEdge,
-  addAdvancement,
   setAdv,
   addInvItem,
   removeInvItem,
@@ -188,43 +187,29 @@ const {
       <!-- =================================================================== -->
       <!-- TRAINER TAB                                                          -->
       <!-- =================================================================== -->
-      <section v-if="activeTab === 'trainer'" class="tab-panel">
-        <div class="grid-two">
-          <TrainerStatsPanel
-            :stats="stats"
-            :stat-points-left="statPointsLeft"
-            :stat-points-spent="statPointsSpent"
-            :stat-points-budget="statPointsBudget"
-            @set-stat-field="setStatField"
-          />
-
-          <TrainerSkillBackgroundPanel
-            v-model:adept-csv="adeptCsv"
-            v-model:novice-csv="noviceCsv"
-            v-model:pathetic-csv="patheticCsv"
-            :sheet="sheet"
-          />
-        </div>
-
-        <!-- Skills grid -->
-        <TrainerSkillsPanel
-          :skills="skills"
-          :rank-options="RANK_OPTIONS"
-          :skill-modifier="skillModifier"
-          @set-skill-rank="setSkillRank"
-          @set-skill-modifier="setSkillModifier"
-        />
-
-        <TrainerProgressPanel
-          v-model:current-team-csv="currentTeamCsv"
-          v-model:wishlist-csv="wishlistCsv"
-          :sheet="sheet"
-          :advancement-rows="adv"
-          @add-class="addClass"
-          @remove-class="removeClass"
-          @set-advancement="setAdv"
-        />
-      </section>
+      <TrainerMainTabPanel
+        v-if="activeTab === 'trainer'"
+        v-model:adept-csv="adeptCsv"
+        v-model:novice-csv="noviceCsv"
+        v-model:pathetic-csv="patheticCsv"
+        v-model:current-team-csv="currentTeamCsv"
+        v-model:wishlist-csv="wishlistCsv"
+        :sheet="sheet"
+        :stats="stats"
+        :skills="skills"
+        :advancement-rows="adv"
+        :rank-options="RANK_OPTIONS"
+        :stat-points-left="statPointsLeft"
+        :stat-points-spent="statPointsSpent"
+        :stat-points-budget="statPointsBudget"
+        :skill-modifier="skillModifier"
+        @set-stat-field="setStatField"
+        @set-skill-rank="setSkillRank"
+        @set-skill-modifier="setSkillModifier"
+        @add-class="addClass"
+        @remove-class="removeClass"
+        @set-advancement="setAdv"
+      />
 
       <!-- =================================================================== -->
       <!-- COMBAT TAB                                                           -->
@@ -361,13 +346,6 @@ const {
 .tab-panel {
   display: flex;
   flex-direction: column;
-  gap: 0.85rem;
-}
-
-/* ===== Generic blocks ===== */
-.grid-two {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: 0.85rem;
 }
 

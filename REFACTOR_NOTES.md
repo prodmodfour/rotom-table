@@ -951,3 +951,13 @@
   - `npm test` — passes: 49 test files / 171 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: trainer overview tab extraction
+
+- Continued Phase 7 trainer sheet page decomposition by extracting the Trainer tab composition into `components/sheets/TrainerMainTabPanel.vue`.
+- The new tab panel coordinates stats, skill-background CSV fields, skills, classes, advancement, team, wishlist, and narrative subpanels through explicit props, `v-model`s, and emits.
+- Updated `pages/sheets/trainers/[slug].vue` to wire the focused tab component and removed a dead `addAdvancement` route-page binding plus unused grid styles.
+- Quality gates after this phase:
+  - `npm test` — passes: 49 test files / 171 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
