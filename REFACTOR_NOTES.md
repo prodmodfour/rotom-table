@@ -834,3 +834,13 @@
   - `npm test` — passes: 49 test files / 171 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: Pokémon stats and combat panel extraction
+
+- Continued Phase 7 Pokémon sheet page decomposition by extracting the stats table/base-relation validation into `components/sheets/PokemonStatsPanel.vue`.
+- Extracted Pokémon combat, HP thresholds, evasion bonuses, conditions, vitamins, and combat notes into `components/sheets/PokemonCombatPanel.vue`.
+- Updated `pages/sheets/[slug].vue` to wire focused props/emits into those panels while preserving editable-cell mutations, HP clamping, evasion bonus coercion, and condition picker behavior.
+- Quality gates after this phase:
+  - `npm test` — passes: 49 test files / 171 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
