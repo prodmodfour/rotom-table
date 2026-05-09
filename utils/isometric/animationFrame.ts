@@ -46,8 +46,9 @@ export const stepIsometricAnimationFrame = (
 ): IsometricAnimationFrameResult => {
   const delta = Math.min(options.clock.getDelta(), 0.1)
   const damping = 1 - Math.exp(-delta * 12)
+  const renderObjects = Array.from(options.renderObjects)
 
-  for (const renderObject of options.renderObjects) {
+  for (const renderObject of renderObjects) {
     if (renderObject.currentCenter.distanceToSquared(renderObject.targetCenter) < 0.000001) {
       renderObject.currentCenter.copy(renderObject.targetCenter)
     } else {
@@ -68,7 +69,7 @@ export const stepIsometricAnimationFrame = (
   const frameNowMs = options.frameNowMs ?? nowMs()
   const animateRenderObject = options.animateRenderObject ?? animatePokemonRenderObject
 
-  for (const renderObject of options.renderObjects) {
+  for (const renderObject of renderObjects) {
     animateRenderObject(renderObject, {
       camera: options.camera,
       facingDirection: options.facingDirection,

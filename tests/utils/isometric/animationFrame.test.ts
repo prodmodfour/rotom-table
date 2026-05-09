@@ -58,6 +58,38 @@ describe('isometric animation frame', () => {
     expect(cssRenderer.render).toHaveBeenCalledWith(scene, camera)
   })
 
+  it('animates render objects when passed a one-shot map iterator', () => {
+    const camera = new THREE.OrthographicCamera()
+    camera.position.set(5, 6, 5)
+    const scene = new THREE.Scene()
+    const renderObject = {
+      currentCenter: new THREE.Vector3(0, 0, 0),
+      targetCenter: new THREE.Vector3(1, 0, 0),
+    } as PokemonRenderObject
+    const renderObjects = new Map([['token-a', renderObject]])
+    const animateRenderObject = vi.fn()
+
+    stepIsometricAnimationFrame({
+      clock: { getDelta: () => 0.016, elapsedTime: 1 },
+      renderObjects: renderObjects.values(),
+      applyRenderObjectPosition: vi.fn(),
+      controls: { target: new THREE.Vector3(), update: vi.fn() },
+      fieldEffectRenderer: { update: vi.fn() },
+      tokenMovePreviewRenderer: { animate: vi.fn() },
+      selectedPokemon: null,
+      previewPositionY: null,
+      camera,
+      renderer: { render: vi.fn() },
+      cssRenderer: { render: vi.fn() },
+      scene,
+      facingDirection: new THREE.Vector2(1, 0),
+      frameNowMs: 1,
+      animateRenderObject,
+    })
+
+    expect(animateRenderObject).toHaveBeenCalledWith(renderObject, expect.objectContaining({ frameNowMs: 1 }))
+  })
+
   it('snaps render objects already at their target', () => {
     const center = new THREE.Vector3(1, 2, 3)
     const target = new THREE.Vector3(1.0000001, 2, 3)
