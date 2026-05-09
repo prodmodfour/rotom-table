@@ -803,3 +803,14 @@
   - `npm test` — passes: 48 test files / 168 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: trainer sheet derived composable
+
+- Continued Phase 7 sheet editor cleanup by extracting trainer sheet derived UI state into `composables/sheets/useTrainerSheetDerived.ts`.
+  - The composable owns trainer stat/skill/capability/advancement rows, HP/AP summaries, current-HP clamping, move/ability lookup rows, evasion totals, HP thresholds, and stat-point summaries.
+- Updated `pages/sheets/trainers/[slug].vue` to consume the derived composable instead of owning those calculations inline.
+- Added `tests/composables/sheets/useTrainerSheetDerived.test.ts` covering trainer row derivation, vitals, HP clamping, lookup rows, evasion, and stat-point totals.
+- Quality gates after this phase:
+  - `npm test` — passes: 49 test files / 171 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.

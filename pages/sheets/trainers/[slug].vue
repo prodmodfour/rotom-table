@@ -1,32 +1,20 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { ref } from 'vue'
 import { PhPlus, PhX } from '@phosphor-icons/vue'
 import RefLink from '~/components/RefLink.vue'
 import { trainerSheetsBySlug } from '~/data/trainerSheets'
-import {
-  computeTrainerFullMaxHp,
-  computeTrainerMaxAp,
-  computeTrainerMaxHp,
-  resolveAdvancement,
-  resolveTrainerCapabilities,
-  resolveTrainerSkills,
-  resolveTrainerStats,
-  TRAINER_SKILL_ORDER,
-} from '~/utils/sheets/trainerDerived'
+import { TRAINER_SKILL_ORDER } from '~/utils/sheets/trainerDerived'
 import { trainerCatalog } from '~/data/trainerCatalog'
 import { normalizeTrainerSheet } from '~/utils/sheetNormalize'
-import { makeAbilityLookupRows, setLookupAbilityName } from '~/utils/sheetAbilityLookup'
-import { clampHpValue, computeHpThresholds, computeTickValue } from '~/utils/ptuHp'
-import { computeTrainerLevelUpStatPointBudget } from '~/utils/statPointBudgets'
-import { formatLookupValue, makeMoveLookupRows, setLookupMoveName } from '~/utils/sheetMoveLookup'
+import { setLookupAbilityName } from '~/utils/sheetAbilityLookup'
+import { formatLookupValue, setLookupMoveName } from '~/utils/sheetMoveLookup'
 import {
   EVASION_BONUS_MAX,
   EVASION_BONUS_MIN,
-  computeEvasionTotal,
-  computeStatEvasion,
   formatSignedModifier,
 } from '~/utils/evasion'
 import { useEditableSheetResource } from '~/composables/sheets/useEditableSheetResource'
+import { useTrainerSheetDerived } from '~/composables/sheets/useTrainerSheetDerived'
 import { useTrainerPortraitPicker } from '~/composables/sheets/useTrainerPortraitPicker'
 import { useTrainerSheetCsvFields } from '~/composables/sheets/useTrainerSheetCsvFields'
 import { useTrainerSheetRowActions } from '~/composables/sheets/useTrainerSheetRowActions'
@@ -34,7 +22,6 @@ import type {
   SkillRank,
   TrainerSheet,
   TrainerSkillKey,
-  TrainerStatKey,
 } from '~/types/trainerSheet'
 
 /** Map a skill key (``medicineEd``) back to its display label (``Medicine Ed``). */
@@ -95,81 +82,27 @@ const activeTab = ref<TabKey>('trainer')
 // Derived data — re-evaluated whenever the reactive sheet changes
 // ---------------------------------------------------------------------------
 
-const stats     = computed(() => sheet.value ? resolveTrainerStats(sheet.value) : [])
-const skills    = computed(() => sheet.value ? resolveTrainerSkills(sheet.value) : [])
-const capRes    = computed(() => sheet.value ? resolveTrainerCapabilities(sheet.value) : { rows: [], other: [] })
-const adv       = computed(() => sheet.value ? resolveAdvancement(sheet.value) : [])
-
-const fullMaxHp = computed(() => sheet.value ? computeTrainerFullMaxHp(sheet.value) : 0)
-const maxHp     = computed(() => sheet.value ? computeTrainerMaxHp(sheet.value) : 0)
-const maxAp     = computed(() => sheet.value ? computeTrainerMaxAp(sheet.value) : 0)
-const currentHp = computed(() => clampHpValue(sheet.value?.currentHp ?? maxHp.value, maxHp.value))
-const apLeft    = computed(() => sheet.value?.ap?.left ?? maxAp.value)
-
-const setCurrentHp = (value: unknown) => {
-  if (!sheet.value) return
-  sheet.value.currentHp = clampHpValue(value, maxHp.value)
-}
-
-watch(
-  () => [sheet.value?.currentHp, maxHp.value] as const,
-  ([rawCurrentHp]) => {
-    if (!sheet.value || rawCurrentHp == null) return
-    const clamped = clampHpValue(rawCurrentHp, maxHp.value)
-    if (rawCurrentHp !== clamped) sheet.value.currentHp = clamped
-  },
-  { immediate: true },
-)
-
-const attackTotal = computed(() => stats.value.find((row) => row.key === 'atk')?.total ?? 0)
-const specialAttackTotal = computed(() => stats.value.find((row) => row.key === 'satk')?.total ?? 0)
-
-const moveRows = computed(() => makeMoveLookupRows(sheet.value?.movelist, {
-  physicalAttack: attackTotal.value,
-  specialAttack: specialAttackTotal.value,
-}))
-
-const abilityRows = computed(() => makeAbilityLookupRows(sheet.value?.abilities))
-
-const totalRow = (key: TrainerStatKey) =>
-  stats.value.find((s) => s.key === key)?.total ?? 0
-
-const trainerEvasion = computed(() => {
-  const evasion = sheet.value?.evasion
-  const speedBase = computeStatEvasion(totalRow('spd'))
-  const physicalBase = computeStatEvasion(totalRow('def'))
-  const specialBase = computeStatEvasion(totalRow('sdef'))
-  const speedBonus = evasion?.speedBonus ?? 0
-  const physicalBonus = evasion?.physicalBonus ?? 0
-  const specialBonus = evasion?.specialBonus ?? 0
-
-  return {
-    speed: {
-      total: computeEvasionTotal(speedBase, speedBonus),
-      base: speedBase,
-      bonus: speedBonus,
-    },
-    physical: {
-      total: computeEvasionTotal(physicalBase, physicalBonus),
-      base: physicalBase,
-      bonus: physicalBonus,
-    },
-    special: {
-      total: computeEvasionTotal(specialBase, specialBonus),
-      base: specialBase,
-      bonus: specialBonus,
-    },
-  }
-})
-
-const tickValue = computed(() => computeTickValue(fullMaxHp.value))
-const hpThresholds = computed(() => computeHpThresholds(fullMaxHp.value))
-
-const statPointsSpent = computed(() =>
-  stats.value.reduce((sum, row) => sum + (Number.isFinite(row.levelUp) ? row.levelUp : 0), 0),
-)
-const statPointsBudget = computed(() => computeTrainerLevelUpStatPointBudget(sheet.value?.level ?? 1))
-const statPointsLeft = computed(() => statPointsBudget.value - statPointsSpent.value)
+const {
+  stats,
+  skills,
+  capRes,
+  adv,
+  fullMaxHp,
+  maxHp,
+  maxAp,
+  currentHp,
+  apLeft,
+  setCurrentHp,
+  totalRow,
+  moveRows,
+  abilityRows,
+  trainerEvasion,
+  tickValue,
+  hpThresholds,
+  statPointsSpent,
+  statPointsBudget,
+  statPointsLeft,
+} = useTrainerSheetDerived(sheet)
 
 // ---------------------------------------------------------------------------
 // CSV-backed v-models (arrays exposed as comma-separated input)
