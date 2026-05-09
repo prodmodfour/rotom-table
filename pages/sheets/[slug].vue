@@ -1,44 +1,21 @@
 <script setup lang="ts">
 import { computed, watch } from 'vue'
 import { PhPlus, PhX } from '@phosphor-icons/vue'
-import { characterSheetsBySlug, getPokedexEntry, getSpriteUrl } from '~/data/characterSheets'
-import {
-  computeFullMaxHp,
-  computeMaxHp,
-  resolveCapabilities,
-  resolveSkills,
-  resolveStats,
-  validateBaseRelations,
-} from '~/utils/sheets/pokemonDerived'
-import { POKEMON_TYPES, computeMultiplier, formatMultiplier } from '~/utils/typeChart'
+import { characterSheetsBySlug } from '~/data/characterSheets'
 import { normalizeCharacterSheet } from '~/utils/sheetNormalize'
 import { PTU_NATURE_OPTIONS, resolveNatureMod } from '~/utils/ptuNatures'
-import { makeAbilityLookupRows, setLookupAbilityName } from '~/utils/sheetAbilityLookup'
-import { findItem } from '~/data/ptuReference'
-import { formatLookupValue, makeMoveLookupRows, setLookupMoveName, type MoveLookupRow } from '~/utils/sheetMoveLookup'
-import { makeAutomaticStruggleMoves } from '~/utils/struggleMoves'
-import { clampHpValue, computeHpThresholds, computeTickValue } from '~/utils/ptuHp'
-import { computePokemonLevelUpStatPointBudget } from '~/utils/statPointBudgets'
+import { setLookupAbilityName } from '~/utils/sheetAbilityLookup'
+import { formatLookupValue, setLookupMoveName } from '~/utils/sheetMoveLookup'
 import {
   EVASION_BONUS_MAX,
   EVASION_BONUS_MIN,
-  computeEvasionTotal,
-  computeStatEvasion,
   formatSignedModifier,
 } from '~/utils/evasion'
 import { useEditableSheetResource } from '~/composables/sheets/useEditableSheetResource'
+import { formatLookupList, usePokemonSheetDerived } from '~/composables/sheets/usePokemonSheetDerived'
 import { usePokemonSheetCsvFields } from '~/composables/sheets/usePokemonSheetCsvFields'
 import { usePokemonSheetRowActions } from '~/composables/sheets/usePokemonSheetRowActions'
-import type {
-  CharacterSheet,
-  CharacterSheetMove,
-  StatKey,
-} from '~/types/characterSheet'
-
-type SheetMoveLookupRow = MoveLookupRow<CharacterSheetMove> & {
-  automatic: boolean
-  sheetIndex: number | null
-}
+import type { CharacterSheet, StatKey } from '~/types/characterSheet'
 
 // ---------------------------------------------------------------------------
 // Resolve the static sheet for this URL, then deep-clone + normalize it into
@@ -87,153 +64,34 @@ useHead(() => ({
 // the table totals, max-HP, skills grid, etc., automatically.
 // ---------------------------------------------------------------------------
 
-const species = computed(() => (sheet.value ? getPokedexEntry(sheet.value.species) : null))
-const spriteUrl = computed(() => (sheet.value ? getSpriteUrl(sheet.value.species) : null))
-
-const stats = computed(() => (sheet.value ? resolveStats(sheet.value) : []))
-const skills = computed(() => (sheet.value ? resolveSkills(sheet.value) : []))
-const capabilities = computed(() =>
-  sheet.value ? resolveCapabilities(sheet.value) : { rows: [], naturewalk: undefined, other: [] },
-)
-
-const sheetTypes = computed(() => sheet.value?.types ?? species.value?.types ?? [])
-const eggGroups = computed(() => sheet.value?.eggGroups ?? species.value?.egg_groups ?? [])
-
-const hpTotal = computed(() => stats.value.find((row) => row.key === 'hp')?.total ?? 0)
-const fullMaxHp = computed(() => (sheet.value ? computeFullMaxHp(sheet.value, hpTotal.value) : 0))
-const maxHp = computed(() => (sheet.value ? computeMaxHp(sheet.value, hpTotal.value) : 0))
-const currentHp = computed(() => clampHpValue(sheet.value?.combat?.currentHp ?? maxHp.value, maxHp.value))
-const tickValue = computed(() => computeTickValue(fullMaxHp.value))
-
-const setCurrentHp = (value: unknown) => {
-  if (!sheet.value) return
-  sheet.value.combat!.currentHp = clampHpValue(value, maxHp.value)
-}
-
-watch(
-  () => [sheet.value?.combat?.currentHp, maxHp.value] as const,
-  ([rawCurrentHp]) => {
-    if (!sheet.value || rawCurrentHp == null) return
-    const clamped = clampHpValue(rawCurrentHp, maxHp.value)
-    if (rawCurrentHp !== clamped) sheet.value.combat!.currentHp = clamped
-  },
-  { immediate: true },
-)
-
-const hpThresholds = computed(() => computeHpThresholds(fullMaxHp.value))
-
-const statPointsSpent = computed(() =>
-  stats.value.reduce((sum, row) => sum + (Number.isFinite(row.added) ? row.added : 0), 0),
-)
-const statPointsBudget = computed(() => computePokemonLevelUpStatPointBudget(sheet.value?.level ?? 1))
-const statPointsLeft = computed(() => statPointsBudget.value - statPointsSpent.value)
-const baseRelationViolations = computed(() => validateBaseRelations(stats.value))
-const visibleBaseRelationViolations = computed(() => baseRelationViolations.value.slice(0, 6))
-const remainingBaseRelationViolationCount = computed(() =>
-  Math.max(0, baseRelationViolations.value.length - visibleBaseRelationViolations.value.length),
-)
-
-const totalForStat = (key: StatKey): number =>
-  stats.value.find((row) => row.key === key)?.total ?? 0
-
-const BRIGHT_POWDER_SPEED_EVASION_BONUS = 2
-
-const heldItemSpeedEvasionBonus = (heldItem: string | null | undefined): number => {
-  if (!heldItem?.trim()) return 0
-  return findItem(heldItem)?.name === 'Bright Powder'
-    ? BRIGHT_POWDER_SPEED_EVASION_BONUS
-    : 0
-}
-
-const pokemonEvasion = computed(() => {
-  const evasion = sheet.value?.combat?.evasion
-  const vsAtkBase = computeStatEvasion(totalForStat('def'))
-  const vsSatkBase = computeStatEvasion(totalForStat('sdef'))
-  const vsAnyBase = computeStatEvasion(totalForStat('spd'))
-  const vsAtkBonus = evasion?.vsAtkBonus ?? 0
-  const vsSatkBonus = evasion?.vsSatkBonus ?? 0
-  const vsAnyBonus = evasion?.vsAnyBonus ?? 0
-  const vsAnyItemBonus = heldItemSpeedEvasionBonus(sheet.value?.items?.held)
-  const vsAnyTotalBonus = vsAnyBonus + vsAnyItemBonus
-
-  return {
-    vsAtk: {
-      total: computeEvasionTotal(vsAtkBase, vsAtkBonus),
-      base: vsAtkBase,
-      bonus: vsAtkBonus,
-    },
-    vsSatk: {
-      total: computeEvasionTotal(vsSatkBase, vsSatkBonus),
-      base: vsSatkBase,
-      bonus: vsSatkBonus,
-    },
-    vsAny: {
-      total: computeEvasionTotal(vsAnyBase, vsAnyTotalBonus),
-      base: vsAnyBase,
-      bonus: vsAnyBonus,
-      itemBonus: vsAnyItemBonus,
-    },
-  }
-})
-
-const tutorPointsLeft = computed(() => {
-  const tp = sheet.value?.tutorPoints
-  if (!tp) return null
-  return (tp.earned ?? 0) - (tp.spent ?? 0)
-})
-
-const attackTotal = computed(() => stats.value.find((row) => row.key === 'atk')?.total ?? 0)
-const specialAttackTotal = computed(() => stats.value.find((row) => row.key === 'satk')?.total ?? 0)
-
-const struggleCapabilityNames = computed(() => [
-  ...(species.value?.capabilities?.other ?? []),
-  ...(sheet.value?.capabilities?.other ?? []),
-])
-
-const automaticStruggleMoves = computed(() =>
-  makeAutomaticStruggleMoves(struggleCapabilityNames.value, sheet.value?.movelist),
-)
-
-const moveRows = computed<SheetMoveLookupRow[]>(() => {
-  const options = {
-    stabTypes: sheetTypes.value,
-    physicalAttack: attackTotal.value,
-    specialAttack: specialAttackTotal.value,
-  }
-  const manualRows = makeMoveLookupRows(sheet.value?.movelist, options)
-    .map((row, i) => ({ ...row, automatic: false, sheetIndex: i }))
-  const automaticRows = makeMoveLookupRows(automaticStruggleMoves.value, options)
-    .map((row) => ({ ...row, automatic: true, sheetIndex: null }))
-  return [...manualRows, ...automaticRows]
-})
-
-const abilityRows = computed(() => makeAbilityLookupRows(sheet.value?.abilities))
-
-const heldItemName = computed(() => sheet.value?.items?.held?.trim() ?? '')
-const heldItemReference = computed(() => (heldItemName.value ? findItem(heldItemName.value) : null))
-
-const formatLookupList = (values: readonly string[] | null | undefined): string => {
-  const presentValues = (values ?? []).filter(Boolean)
-  return presentValues.length ? presentValues.join(', ') : '—'
-}
-
-const typeEffectivenessRows = computed(() => {
-  const defenders = sheetTypes.value
-  if (defenders.length === 0) return []
-  return POKEMON_TYPES.map((attacker) => {
-    const mult = computeMultiplier(attacker, defenders)
-    return {
-      type: attacker,
-      mult,
-      label: formatMultiplier(mult),
-      tone:
-        mult === 0 ? 'immune'
-        : mult > 1 ? 'weak'
-        : mult < 1 ? 'resist'
-        : 'neutral',
-    }
-  })
-})
+const {
+  species,
+  spriteUrl,
+  stats,
+  skills,
+  capabilities,
+  sheetTypes,
+  eggGroups,
+  fullMaxHp,
+  maxHp,
+  currentHp,
+  setCurrentHp,
+  tickValue,
+  hpThresholds,
+  statPointsSpent,
+  statPointsBudget,
+  statPointsLeft,
+  baseRelationViolations,
+  visibleBaseRelationViolations,
+  remainingBaseRelationViolationCount,
+  pokemonEvasion,
+  tutorPointsLeft,
+  moveRows,
+  abilityRows,
+  heldItemName,
+  heldItemReference,
+  typeEffectivenessRows,
+} = usePokemonSheetDerived(sheet)
 
 watch(
   () => sheet.value?.nature,

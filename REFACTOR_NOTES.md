@@ -792,3 +792,14 @@
   - `npm test` — passes: 47 test files / 165 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: Pokémon sheet derived composable
+
+- Continued Phase 7 sheet editor cleanup by extracting Pokémon sheet derived UI state into `composables/sheets/usePokemonSheetDerived.ts`.
+  - The composable now owns species/sprite fallbacks, stat/skill/capability rows, HP clamping, evasion/item bonuses, move/ability lookup rows, type effectiveness rows, tutor points, and base-relation summary state.
+- Updated `pages/sheets/[slug].vue` to consume the derived composable instead of owning those calculations inline.
+- Added `tests/composables/sheets/usePokemonSheetDerived.test.ts` covering species fallbacks, HP clamping, Bright Powder evasion, lookup rows, type effectiveness, and lookup-list formatting.
+- Quality gates after this phase:
+  - `npm test` — passes: 48 test files / 168 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
