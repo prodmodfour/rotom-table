@@ -1376,3 +1376,13 @@
   - `npm test` — passes: 71 test files / 265 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: encounter table detail panel extraction
+
+- Extracted the selected encounter-table detail pane into `components/encounters/EncounterTableDetailPanel.vue`.
+  - The component owns table heading, roll-range rows, empty-state copy, Generate link, and detail-specific responsive styles with narrow selected-entry/row props.
+  - `pages/encounter-tables.vue` is now a route shell that wires the encounter-table browser composable into sidebar and detail components.
+- Quality gates after this phase:
+  - `npm test` — passes: 71 test files / 265 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
