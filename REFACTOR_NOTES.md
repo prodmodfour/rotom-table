@@ -734,3 +734,17 @@
   - `npm test` — passes: 41 test files / 144 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: trainer sheet CSV field extraction
+
+- Continued Phase 7 sheet editor cleanup by extracting trainer CSV-backed field handling into focused modules:
+  - `utils/sheets/csvFields.ts` for reusable parse/format/filter/single-or-list helpers.
+  - `composables/sheets/useTrainerSheetCsvFields.ts` for trainer skill-background, capability, team, and wishlist CSV v-models.
+- Updated the trainer sheet route page to use the composable instead of owning CSV parsing and setter branching inline.
+- Added tests:
+  - `tests/utils/sheets/csvFields.test.ts`
+  - `tests/composables/sheets/useTrainerSheetCsvFields.test.ts`
+- Quality gates after this phase:
+  - `npm test` — passes: 43 test files / 150 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.

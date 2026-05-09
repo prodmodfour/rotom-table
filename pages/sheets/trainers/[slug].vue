@@ -28,6 +28,7 @@ import {
   formatSignedModifier,
 } from '~/utils/evasion'
 import { useEditableSheetResource } from '~/composables/sheets/useEditableSheetResource'
+import { useTrainerSheetCsvFields } from '~/composables/sheets/useTrainerSheetCsvFields'
 import type {
   InventoryEntry,
   SkillRank,
@@ -183,73 +184,14 @@ const statPointsLeft = computed(() => statPointsBudget.value - statPointsSpent.v
 // CSV-backed v-models (arrays exposed as comma-separated input)
 // ---------------------------------------------------------------------------
 
-const splitCSV = (raw: string): string[] =>
-  raw.split(',').map((s) => s.trim()).filter(Boolean)
-
-const splitSkillCSV = (raw: string): TrainerSkillKey[] =>
-  splitCSV(raw).filter((v): v is TrainerSkillKey => (SKILL_KEYS as string[]).includes(v))
-
-const adeptCsv = computed<string>({
-  get: () => {
-    const v = sheet.value?.skillBackground?.adept
-    if (!v) return ''
-    return Array.isArray(v) ? v.join(', ') : v
-  },
-  set: (raw) => {
-    if (!sheet.value) return
-    const next = splitSkillCSV(raw)
-    sheet.value.skillBackground!.adept = next.length === 0
-      ? undefined
-      : next.length === 1 ? next[0] : next
-  },
-})
-
-const noviceCsv = computed<string>({
-  get: () => {
-    const v = sheet.value?.skillBackground?.novice
-    if (!v) return ''
-    return Array.isArray(v) ? v.join(', ') : v
-  },
-  set: (raw) => {
-    if (!sheet.value) return
-    const next = splitSkillCSV(raw)
-    sheet.value.skillBackground!.novice = next.length === 0
-      ? undefined
-      : next.length === 1 ? next[0] : next
-  },
-})
-
-const patheticCsv = computed<string>({
-  get: () => sheet.value?.skillBackground?.pathetic?.join(', ') ?? '',
-  set: (raw) => {
-    if (!sheet.value) return
-    sheet.value.skillBackground!.pathetic = splitSkillCSV(raw)
-  },
-})
-
-const otherCapsCsv = computed<string>({
-  get: () => sheet.value?.capabilities?.other?.join(', ') ?? '',
-  set: (raw) => {
-    if (!sheet.value) return
-    sheet.value.capabilities!.other = splitCSV(raw)
-  },
-})
-
-const currentTeamCsv = computed<string>({
-  get: () => sheet.value?.currentTeam?.join(', ') ?? '',
-  set: (raw) => {
-    if (!sheet.value) return
-    sheet.value.currentTeam = splitCSV(raw)
-  },
-})
-
-const wishlistCsv = computed<string>({
-  get: () => sheet.value?.wishlist?.join(', ') ?? '',
-  set: (raw) => {
-    if (!sheet.value) return
-    sheet.value.wishlist = splitCSV(raw)
-  },
-})
+const {
+  adeptCsv,
+  noviceCsv,
+  patheticCsv,
+  otherCapsCsv,
+  currentTeamCsv,
+  wishlistCsv,
+} = useTrainerSheetCsvFields(sheet, SKILL_KEYS)
 
 // ---------------------------------------------------------------------------
 // Row mutation helpers — each mutation flows through the deep watcher into a
