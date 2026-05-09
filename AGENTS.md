@@ -11,3 +11,13 @@ This is a Nuxt 3 and three.js project.
 - `ptu-data/data/moves.json`
 - `ptu-data/data/pokedex.json`
 - `ptu-data/data/rules.json`
+
+## Software Practices
+When writing software, we explicitly always adhere to the following principles:
+  - Single Responsibility Principle
+  - Open/Closed Principle
+  - Liskov Substitution Principle
+  - Interface Segregation Principle
+  - Dependency Inversion Principle
+  - DRY principle
+  - Law of Demeter

@@ -297,3 +297,15 @@
   - `npm test` — passes: 13 test files / 40 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+
+## Next phase update: isometric token renderer extraction
+
+- Continued Phase 6 by extracting live token render-object ownership from `components/IsometricGrid.client.vue` into `utils/isometric/tokenRenderer.ts`.
+  - The new module owns token render-object construction, sync from `SpawnedPokemon`, per-frame positioning/HUD updates, selection styling, layer visibility, animation lighting/lift, and disposal.
+  - The Vue component now keeps the render-object map and interaction wiring, but delegates token rendering lifecycle details to focused helpers.
+- Preserved token sprite/front-back selection, HP/status/elevation HUD positioning, selection lift, contact-shadow scaling, proxy picking objects, and public `IsometricGrid` props/events.
+- Quality gates after this phase:
+  - `npm test` — passes: 13 test files / 40 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
