@@ -1523,3 +1523,13 @@
   - `npm test` — passes: 71 test files / 265 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: map library grid component
+
+- Extracted the maps library folder/map grid and empty/loading states into `components/library/MapLibraryGrid.vue`.
+  - The component owns map cards, folder tile composition, map visibility badges, map-grid styles, and focused drag/context event forwarding.
+- Reduced `pages/maps/index.vue` to map library state orchestration, route navigation, realtime updates, and component composition.
+- Quality gates after this phase:
+  - `npm test` — passes: 71 test files / 265 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
