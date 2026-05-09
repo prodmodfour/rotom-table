@@ -69,8 +69,7 @@ import {
 import { buildVoxelColumnsByXZ, getVoxelShadowSurfaceY } from '~/utils/isometric/shadows'
 import {
   bindIsometricRendererDomEvents,
-  disposeIsometricSharedCaches,
-  disposeIsometricSpriteTextureCaches,
+  disposeIsometricRendererResources,
   observeIsometricResize,
 } from '~/utils/isometric/lifecycle'
 import { createIsometricSceneGraph } from '~/utils/isometric/sceneGraph'
@@ -658,25 +657,21 @@ onBeforeUnmount(() => {
   cleanupResizeObserver?.()
   cleanupResizeObserver = null
 
-  clearPreviewVisuals()
-  tokenMovePreviewRenderer.dispose()
-  disposeBuildGhost()
-  disposeHazardGhost()
-  hazardRenderer.dispose()
-  fieldEffectRenderer.dispose()
-  voxelRenderer.dispose()
-  disposeIsometricSharedCaches()
-
-  for (const renderObject of renderObjects.values()) {
-    disposePokemonRenderObject(renderObject)
-  }
-
-  renderObjects.clear()
-  disposeIsometricSpriteTextureCaches()
-  gridRenderer.dispose()
-  controls?.dispose()
-  renderer?.dispose()
-  cssRenderer?.domElement.remove()
+  disposeIsometricRendererResources({
+    clearPreviewVisuals,
+    tokenMovePreviewRenderer,
+    disposeBuildGhost,
+    disposeHazardGhost,
+    hazardRenderer,
+    fieldEffectRenderer,
+    voxelRenderer,
+    renderObjects,
+    disposeRenderObject: disposePokemonRenderObject,
+    gridRenderer,
+    controls,
+    renderer,
+    cssRenderer,
+  })
   controls = null
   renderer = null
   cssRenderer = null

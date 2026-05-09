@@ -1,5 +1,8 @@
 import { describe, expect, it, vi } from 'vitest'
-import { bindIsometricRendererDomEvents } from '~/utils/isometric/lifecycle'
+import {
+  bindIsometricRendererDomEvents,
+  disposeIsometricRendererResources,
+} from '~/utils/isometric/lifecycle'
 
 describe('isometric lifecycle helpers', () => {
   it('binds and cleans up renderer DOM event handlers', () => {
@@ -32,5 +35,59 @@ describe('isometric lifecycle helpers', () => {
     expect(removeEventListener).toHaveBeenCalledWith('pointerleave', handlers.pointerleave)
     expect(removeEventListener).toHaveBeenCalledWith('contextmenu', handlers.contextmenu)
     expect(removeEventListener).toHaveBeenCalledWith('wheel', handlers.wheel)
+  })
+
+  it('disposes renderer-owned resources and clears token render objects', () => {
+    const calls: string[] = []
+    const disposable = (name: string) => ({ dispose: vi.fn(() => calls.push(name)) })
+    const renderObjectA = { id: 'a' }
+    const renderObjectB = { id: 'b' }
+    const renderObjects = new Map([
+      ['a', renderObjectA],
+      ['b', renderObjectB],
+    ])
+    const disposeRenderObject = vi.fn((renderObject: { id: string }) => {
+      calls.push(`token:${renderObject.id}`)
+    })
+    const cssRenderer = {
+      domElement: { remove: vi.fn(() => calls.push('css-remove')) },
+    }
+
+    disposeIsometricRendererResources({
+      clearPreviewVisuals: vi.fn(() => calls.push('clear-preview')),
+      tokenMovePreviewRenderer: disposable('move-preview'),
+      disposeBuildGhost: vi.fn(() => calls.push('build-ghost')),
+      disposeHazardGhost: vi.fn(() => calls.push('hazard-ghost')),
+      hazardRenderer: disposable('hazards'),
+      fieldEffectRenderer: disposable('field-effects'),
+      voxelRenderer: disposable('voxels'),
+      renderObjects,
+      disposeRenderObject,
+      gridRenderer: disposable('grid'),
+      controls: disposable('controls'),
+      renderer: disposable('webgl'),
+      cssRenderer,
+    })
+
+    expect(disposeRenderObject).toHaveBeenCalledTimes(2)
+    expect(disposeRenderObject).toHaveBeenNthCalledWith(1, renderObjectA)
+    expect(disposeRenderObject).toHaveBeenNthCalledWith(2, renderObjectB)
+    expect(renderObjects.size).toBe(0)
+    expect(cssRenderer.domElement.remove).toHaveBeenCalledTimes(1)
+    expect(calls).toEqual([
+      'clear-preview',
+      'move-preview',
+      'build-ghost',
+      'hazard-ghost',
+      'hazards',
+      'field-effects',
+      'voxels',
+      'token:a',
+      'token:b',
+      'grid',
+      'controls',
+      'webgl',
+      'css-remove',
+    ])
   })
 })

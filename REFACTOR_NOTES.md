@@ -679,3 +679,14 @@
   - `npm test` — passes: 37 test files / 126 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: isometric renderer resource disposal extraction
+
+- Continued Phase 6 by centralizing renderer-owned teardown sequencing in `disposeIsometricRendererResources` inside `utils/isometric/lifecycle.ts`.
+  - The helper owns preview cleanup, subsystem disposal, shared cache disposal, token render-object disposal/clear, sprite texture cache disposal, grid/control/WebGL disposal, and CSS renderer DOM removal.
+  - `components/IsometricGrid.client.vue` now delegates unmount resource teardown to one lifecycle helper while keeping window/listener cleanup in the Vue adapter.
+- Expanded `tests/utils/isometric/lifecycle.test.ts` to cover renderer resource disposal and token render-object map clearing.
+- Quality gates after this phase:
+  - `npm test` — passes: 37 test files / 127 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.

@@ -55,3 +55,65 @@ export const disposeIsometricSharedCaches = () => {
 export const disposeIsometricSpriteTextureCaches = () => {
   disposeSpriteTextureCaches()
 }
+
+export interface DisposableResourceLike {
+  dispose(): void
+}
+
+export interface CssRendererResourceLike {
+  domElement: {
+    remove(): void
+  }
+}
+
+export interface IsometricRendererResourceDisposalOptions<TRenderObject> {
+  clearPreviewVisuals: CleanupFn
+  tokenMovePreviewRenderer: DisposableResourceLike
+  disposeBuildGhost: CleanupFn
+  disposeHazardGhost: CleanupFn
+  hazardRenderer: DisposableResourceLike
+  fieldEffectRenderer: DisposableResourceLike
+  voxelRenderer: DisposableResourceLike
+  renderObjects: Map<string, TRenderObject>
+  disposeRenderObject: (renderObject: TRenderObject) => void
+  gridRenderer: DisposableResourceLike
+  controls?: DisposableResourceLike | null
+  renderer?: DisposableResourceLike | null
+  cssRenderer?: CssRendererResourceLike | null
+}
+
+export const disposeIsometricRendererResources = <TRenderObject>({
+  clearPreviewVisuals,
+  tokenMovePreviewRenderer,
+  disposeBuildGhost,
+  disposeHazardGhost,
+  hazardRenderer,
+  fieldEffectRenderer,
+  voxelRenderer,
+  renderObjects,
+  disposeRenderObject,
+  gridRenderer,
+  controls,
+  renderer,
+  cssRenderer,
+}: IsometricRendererResourceDisposalOptions<TRenderObject>) => {
+  clearPreviewVisuals()
+  tokenMovePreviewRenderer.dispose()
+  disposeBuildGhost()
+  disposeHazardGhost()
+  hazardRenderer.dispose()
+  fieldEffectRenderer.dispose()
+  voxelRenderer.dispose()
+  disposeIsometricSharedCaches()
+
+  for (const renderObject of renderObjects.values()) {
+    disposeRenderObject(renderObject)
+  }
+
+  renderObjects.clear()
+  disposeIsometricSpriteTextureCaches()
+  gridRenderer.dispose()
+  controls?.dispose()
+  renderer?.dispose()
+  cssRenderer?.domElement.remove()
+}
