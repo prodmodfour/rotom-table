@@ -3,10 +3,8 @@ import { computed, nextTick, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   PhArrowsOutCardinal,
-  PhCaretRight,
   PhFolder,
   PhFolderOpen,
-  PhHouse,
   PhPencilSimple,
   PhPlus,
   PhSquaresFour,
@@ -500,29 +498,18 @@ if (typeof window !== 'undefined') {
         <p v-if="moveError" class="move-error" role="alert">Move failed: {{ moveError }}</p>
       </section>
 
-      <nav class="breadcrumbs panel-card" aria-label="Folder path">
-        <template v-for="(crumb, i) in breadcrumbs" :key="`crumb-${crumb.path}`">
-          <PhCaretRight v-if="i > 0" :size="14" weight="bold" class="crumb-sep" aria-hidden="true" />
-          <button
-            type="button"
-            class="crumb"
-            :class="{
-              'crumb--current': crumb.path === currentPath,
-              'drop-target': hoverTarget === crumb.path,
-              'drop-disabled': drag !== null && !canDropOn(crumb.path),
-            }"
-            :aria-current="crumb.path === currentPath ? 'page' : undefined"
-            @click="goToFolder(crumb.path)"
-            @dragenter="onDropEnter($event, crumb.path)"
-            @dragover="onDropOver($event, crumb.path)"
-            @dragleave="onDropLeave(crumb.path)"
-            @drop="onDrop($event, crumb.path)"
-          >
-            <PhHouse v-if="crumb.path === ''" :size="14" weight="bold" aria-hidden="true" />
-            <span>{{ crumb.label }}</span>
-          </button>
-        </template>
-      </nav>
+      <FolderBreadcrumbNav
+        :breadcrumbs="breadcrumbs"
+        :current-path="currentPath"
+        :hover-target="hoverTarget"
+        :is-dragging="drag !== null"
+        :can-drop-on="canDropOn"
+        @navigate="goToFolder"
+        @dragenter="onDropEnter"
+        @dragover="onDropOver"
+        @dragleave="onDropLeave"
+        @drop="onDrop"
+      />
     </header>
 
     <section class="map-section">
@@ -853,52 +840,6 @@ select:focus {
   font-size: 0.74rem;
   letter-spacing: 0.06em;
   white-space: nowrap;
-}
-
-.breadcrumbs {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.25rem 0.35rem;
-  padding: 0.45rem 0.65rem;
-}
-
-.crumb {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  padding: 0.3rem 0.55rem;
-  border: 1px solid transparent;
-  border-radius: 8px;
-  background: transparent;
-  color: var(--ink-soft);
-  font: inherit;
-  cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
-}
-
-.crumb:hover {
-  background: var(--paper-hover);
-  color: var(--ink-bright);
-}
-
-.crumb--current {
-  color: var(--ink-bright);
-  font-weight: 600;
-}
-
-.crumb.drop-target {
-  background: var(--accent-soft);
-  border-color: var(--accent);
-  color: var(--accent);
-}
-
-.crumb.drop-disabled {
-  opacity: 0.4;
-}
-
-.crumb-sep {
-  color: var(--ink-faint);
 }
 
 .map-section {

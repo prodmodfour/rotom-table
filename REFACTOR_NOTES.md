@@ -1483,3 +1483,13 @@
   - `npm test` — passes: 71 test files / 265 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: shared library breadcrumb nav
+
+- Extracted the duplicated maps/sheets folder breadcrumb drop target into `components/library/FolderBreadcrumbNav.vue`.
+  - The component owns breadcrumb/home icons, drop-target classes, current-folder ARIA state, and drag/drop event forwarding through explicit props/emits.
+- Updated `pages/maps/index.vue` and `pages/sheets/index.vue` to use the shared breadcrumb component while preserving folder navigation and drag/drop behavior.
+- Quality gates after this phase:
+  - `npm test` — passes: 71 test files / 265 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
