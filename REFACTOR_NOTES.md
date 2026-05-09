@@ -1575,3 +1575,14 @@
   - `npm test` — passes: 73 test files / 275 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: RefLink tooltip detail extraction
+
+- Extracted reference-link target path and rich tooltip detail construction from `components/RefLink.vue` into `utils/refLinks.ts`.
+  - The utility now owns ref-kind URL path mapping, descriptor/target pairing, present-value checks, and move/ability/capability/condition tooltip DTO construction.
+- Updated `RefLink` to act as a smaller presentation/positioning adapter while preserving existing link paths, tooltip metadata, title fallback behavior, and badge rendering.
+- Added `tests/utils/refLinks.test.ts` covering target paths, resolved/missing descriptors, move/ability/capability/condition tooltip payloads, unsupported tooltip kinds, and present-value semantics.
+- Quality gates after this phase:
+  - `npm test` — passes: 74 test files / 283 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

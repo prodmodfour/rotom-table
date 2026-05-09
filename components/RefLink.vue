@@ -1,33 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, ref, useId } from 'vue'
-import {
-  describeRef,
-  findAbility,
-  findCapability,
-  findCondition,
-  findMove,
-  type RefKind,
-} from '~/data/ptuReference'
-
-type TooltipKind = Extract<RefKind, 'move' | 'ability' | 'capability' | 'condition'>
-
-interface TooltipMeta {
-  label: string
-  value: string | number
-  badge?: 'type' | 'damage-class'
-}
-
-interface TooltipSection {
-  heading: string
-  body: string
-}
-
-interface TooltipDetail {
-  kind: TooltipKind
-  name: string
-  meta: TooltipMeta[]
-  sections: TooltipSection[]
-}
+import type { RefKind } from '~/data/ptuReference'
+import { describeRefTarget, getRefTooltipDetail } from '~/utils/refLinks'
 
 const props = defineProps<{
   /** Which reference index to look the entry up in. */
@@ -38,92 +12,13 @@ const props = defineProps<{
   display?: string
 }>()
 
-const descriptor = computed(() => describeRef(props.kind, props.name))
-
-const targetPath = computed(() => {
-  const slug = descriptor.value.slug
-  if (!slug) return null
-  switch (props.kind) {
-    case 'move':       return `/moves/${slug}`
-    case 'ability':    return `/abilities/${slug}`
-    case 'capability': return `/capabilities/${slug}`
-    case 'condition':  return `/conditions/${slug}`
-    case 'rule':       return `/rules/${slug}`
-    case 'feature':    return `/features/${slug}`
-    case 'edge':       return `/edges/${slug}`
-    case 'item':       return `/items/${slug}`
-  }
-})
+const refTarget = computed(() => describeRefTarget(props.kind, props.name))
+const descriptor = computed(() => refTarget.value.descriptor)
+const targetPath = computed(() => refTarget.value.targetPath)
 
 const labelText = computed(() => props.display ?? props.name)
 
-const present = <T extends string | number | null | undefined>(value: T): value is Exclude<T, null | undefined | ''> =>
-  value !== null && value !== undefined && value !== ''
-
-const tooltipDetail = computed<TooltipDetail | null>(() => {
-  switch (props.kind) {
-    case 'move': {
-      const move = findMove(props.name)
-      if (!move) return null
-      const meta: TooltipMeta[] = []
-      if (present(move.type)) meta.push({ label: 'Type', value: move.type, badge: 'type' })
-      if (present(move.damage_class)) meta.push({ label: 'Class', value: move.damage_class, badge: 'damage-class' })
-      if (present(move.frequency)) meta.push({ label: 'Freq', value: move.frequency })
-      if (move.damage_base !== null && move.damage_base !== undefined) meta.push({ label: 'DB', value: move.damage_base })
-      if (present(move.damage_roll)) meta.push({ label: 'Roll', value: move.damage_roll })
-      if (move.ac !== null && move.ac !== undefined) meta.push({ label: 'AC', value: move.ac })
-      if (present(move.range)) meta.push({ label: 'Range', value: move.range })
-      return {
-        kind: 'move',
-        name: move.name,
-        meta,
-        sections: present(move.effect) ? [{ heading: 'Effect', body: move.effect }] : [],
-      }
-    }
-
-    case 'ability': {
-      const ability = findAbility(props.name)
-      if (!ability) return null
-      return {
-        kind: 'ability',
-        name: ability.name,
-        meta: present(ability.frequency) ? [{ label: 'Freq', value: ability.frequency }] : [],
-        sections: [
-          ...(present(ability.trigger) ? [{ heading: 'Trigger', body: ability.trigger }] : []),
-          ...(present(ability.effect) ? [{ heading: 'Effect', body: ability.effect }] : []),
-        ],
-      }
-    }
-
-    case 'capability': {
-      const capability = findCapability(props.name)
-      if (!capability) return null
-      return {
-        kind: 'capability',
-        name: capability.name,
-        meta: [],
-        sections: present(capability.effect) ? [{ heading: 'Effect', body: capability.effect }] : [],
-      }
-    }
-
-    case 'condition': {
-      const condition = findCondition(props.name)
-      if (!condition) return null
-      const meta: TooltipMeta[] = []
-      if (present(condition.category)) meta.push({ label: 'Category', value: condition.category })
-      if (present(condition.source)) meta.push({ label: 'Source', value: condition.source })
-      return {
-        kind: 'condition',
-        name: condition.name,
-        meta,
-        sections: present(condition.effect) ? [{ heading: 'Effect', body: condition.effect }] : [],
-      }
-    }
-
-    default:
-      return null
-  }
-})
+const tooltipDetail = computed(() => getRefTooltipDetail(props.kind, props.name))
 
 const linkTitle = computed(() => tooltipDetail.value ? undefined : (descriptor.value.canonical ?? props.name))
 
