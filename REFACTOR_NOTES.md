@@ -770,3 +770,14 @@
   - `npm test` — passes: 45 test files / 156 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: trainer sheet row action composable
+
+- Continued Phase 7 trainer sheet cleanup by extracting row/action mutation helpers into `composables/sheets/useTrainerSheetRowActions.ts`.
+  - The composable owns add/remove actions for classes, moves, abilities, maneuvers, orders, features, edges, inventory rows, advancement rows, tag CSV setters, stat/evasion edits, and skill override updates.
+- Updated the trainer sheet route page to wire the composable instead of owning row mutation implementation details inline.
+- Added `tests/composables/sheets/useTrainerSheetRowActions.test.ts` covering row add/remove flows, advancement upserts, tag parsing, stat/evasion edits, skill override cleanup, and null-sheet no-op behavior.
+- Quality gates after this phase:
+  - `npm test` — passes: 46 test files / 161 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
