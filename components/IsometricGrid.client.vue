@@ -75,6 +75,11 @@ import {
   type TokenContextMenuState,
 } from '~/utils/isometric/contextMenu'
 import {
+  EMPTY_MOVE_PREVIEW,
+  getMovePreviewAnchor,
+  getNextMovePreviewElevationAnchor,
+} from '~/utils/isometric/movementPreview'
+import {
   createHpDialogState,
   getHpDialogDelta,
   getHpDialogPreview,
@@ -193,12 +198,6 @@ const normalizedGroundLevelY = () => {
   const n = Number(props.groundLevelY ?? 0)
   if (!Number.isFinite(n)) return 0
   return Math.min(max, Math.max(0, Math.round(n)))
-}
-
-const EMPTY_PREVIEW: PreviewState = {
-  position: null,
-  reachable: false,
-  pathLength: 0,
 }
 
 const container = ref<HTMLDivElement | null>(null)
@@ -334,7 +333,7 @@ let controls: ReturnType<typeof createIsometricOrbitControls> | null = null
 let cleanupRendererDomEvents: (() => void) | null = null
 let cleanupResizeObserver: (() => void) | null = null
 let animationFrame = 0
-let activePreview: PreviewState = { ...EMPTY_PREVIEW }
+let activePreview: PreviewState = { ...EMPTY_MOVE_PREVIEW }
 let activePreviewCanPlace = false
 let activePreviewAnchor: GridAnchor | null = null
 let pointerDown = { x: 0, y: 0 }
@@ -558,11 +557,11 @@ const ensurePreviewObjects = () => {
 }
 
 const clearPreviewVisuals = () => {
-  activePreview = { ...EMPTY_PREVIEW }
+  activePreview = { ...EMPTY_MOVE_PREVIEW }
   activePreviewCanPlace = false
   activePreviewAnchor = null
   tokenMovePreviewRenderer.clear()
-  emit('preview-change', { ...EMPTY_PREVIEW })
+  emit('preview-change', { ...EMPTY_MOVE_PREVIEW })
 }
 
 const updatePreviewAtAnchor = (anchor: GridAnchor | null) => {
@@ -665,30 +664,16 @@ const updatePreviewFromPointer = (event: MouseEvent | PointerEvent) => {
   const previewLayerY = getPreviewLayerY()
   const point = getMoveGridIntersection(event, previewLayerY)
 
-  if (
-    !point ||
-    point.x < 0 ||
-    point.x > props.dimensions.x ||
-    point.z < 0 ||
-    point.z > props.dimensions.z
-  ) {
+  const anchor = getMovePreviewAnchor({
+    point,
+    pokemon: selectedPokemon.value,
+    dimensions: props.dimensions,
+    yLevel: previewLayerY,
+  })
+
+  if (!anchor) {
     clearPreviewVisuals()
     return
-  }
-
-  const maxX = props.dimensions.x - selectedPokemon.value.base
-  const maxY = props.dimensions.y - selectedPokemon.value.clearance
-  const maxZ = props.dimensions.z - selectedPokemon.value.base
-
-  if (maxX < 0 || maxY < 0 || maxZ < 0) {
-    clearPreviewVisuals()
-    return
-  }
-
-  const anchor = {
-    x: Math.min(maxX, Math.max(0, Math.round(point.x - selectedPokemon.value.base / 2))),
-    y: Math.min(maxY, Math.max(0, previewLayerY)),
-    z: Math.min(maxZ, Math.max(0, Math.round(point.z - selectedPokemon.value.base / 2))),
   }
 
   updatePreviewAtAnchor(anchor)
@@ -1131,24 +1116,16 @@ const handleWheel = (event: WheelEvent) => {
   event.preventDefault()
   event.stopPropagation()
 
-  const maxY = props.dimensions.y - selectedPokemon.value.clearance
-
-  if (maxY < 0) {
-    return
-  }
-
-  const currentAnchor = activePreview.position ?? selectedPokemon.value.position
-  const direction = event.deltaY < 0 ? 1 : -1
-  const nextY = Math.min(maxY, Math.max(0, currentAnchor.y + direction))
-
-  if (nextY === currentAnchor.y) {
-    return
-  }
-
-  updatePreviewAtAnchor({
-    ...currentAnchor,
-    y: nextY,
+  const nextAnchor = getNextMovePreviewElevationAnchor({
+    currentAnchor: activePreview.position ?? selectedPokemon.value.position,
+    pokemon: selectedPokemon.value,
+    dimensions: props.dimensions,
+    deltaY: event.deltaY,
   })
+
+  if (!nextAnchor) return
+
+  updatePreviewAtAnchor(nextAnchor)
 }
 
 const handlePointerUp = (event: PointerEvent) => {
@@ -1482,9 +1459,9 @@ watch(
     }
 
     activePreviewAnchor = null
-    activePreview = { ...EMPTY_PREVIEW }
+    activePreview = { ...EMPTY_MOVE_PREVIEW }
     ensurePreviewObjects()
-    emit('preview-change', { ...EMPTY_PREVIEW })
+    emit('preview-change', { ...EMPTY_MOVE_PREVIEW })
   },
 )
 

@@ -424,3 +424,13 @@
   - `npm test` — passes: 21 test files / 64 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: isometric movement preview helper extraction
+
+- Continued Phase 6 cleanup by extracting token movement preview anchor/elevation calculations and the empty preview value into `utils/isometric/movementPreview.ts`.
+  - `components/IsometricGrid.client.vue` now delegates grid-intersection-to-token-anchor clamping and mouse-wheel elevation stepping to focused pure helpers while preserving movement preview and forced-placement behavior.
+- Added `tests/utils/isometric/movementPreview.test.ts` covering empty preview state, anchor clamping, out-of-bounds/oversized-token rejection, and elevation stepping at bounds.
+- Quality gates after this phase:
+  - `npm test` — passes: 22 test files / 68 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
