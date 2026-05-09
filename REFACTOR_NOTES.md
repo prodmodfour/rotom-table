@@ -1043,3 +1043,13 @@
   - `npm test` — passes: 51 test files / 177 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: Pokédex search-text helper extraction
+
+- Began the next cleanup pass on the remaining large Pokédex route by extracting field configuration, text normalization, slug formatting, and search-index bucket construction into `utils/pokedex/searchText.ts`.
+- Updated `pages/pokedex/[[pokemon_name]].vue` to import the focused search helpers while preserving existing route URLs, filtering fields, and display formatting.
+- Added `tests/utils/pokedex/searchText.test.ts` covering normalization, compact aliases, national-dex labels, and representative field-specific search buckets.
+- Quality gates after this phase:
+  - `npm test` — passes: 52 test files / 180 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
