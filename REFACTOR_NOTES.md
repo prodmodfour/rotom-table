@@ -1184,3 +1184,14 @@
   - `npm test` — passes: 59 test files / 201 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: shared folder browser helpers
+
+- Extracted repeated maps/sheets folder-browser primitives into `utils/folderBrowser.ts`.
+  - The helper now owns route-query folder normalization, breadcrumbs, child-folder tile derivation/counting, search normalization, folder move validation/path calculation, and `new_folder` leaf allocation.
+- Updated `pages/maps/index.vue` and `pages/sheets/index.vue` to consume the shared helpers while preserving route query behavior, folder tiles, search filtering, drag/drop no-op checks, and default folder naming.
+- Added `tests/utils/folderBrowser.test.ts` covering query/search normalization, breadcrumbs, child folder counting, folder allocation, and move validation.
+- Quality gates after this phase:
+  - `npm test` — passes: 60 test files / 207 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

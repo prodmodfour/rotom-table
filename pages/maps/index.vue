@@ -13,6 +13,17 @@ import {
   PhTrash,
 } from '@phosphor-icons/vue'
 import { formatFolderLabel } from '~/utils/sheetFolders'
+import {
+  buildFolderBreadcrumbs,
+  buildVisibleFolderTiles,
+  canMoveFolderTo,
+  folderPathFromQuery,
+  isInsideFolder,
+  movedFolderPath,
+  nextAvailableFolderLeaf,
+  normalizeSearchText,
+  type FolderTile,
+} from '~/utils/folderBrowser'
 import { getClientId } from '~/utils/clientId'
 import { useRealtimeChannel } from '~/composables/useRealtime'
 import type { MapSummary, TabletopMap } from '~/types/map'
@@ -115,41 +126,24 @@ const allFolders = computed(() => {
   return set
 })
 
-const currentPath = computed(() => {
-  const raw = route.query.folder
-  if (typeof raw !== 'string') return ''
-  return raw.replace(/^\/+|\/+$/g, '')
-})
+const currentPath = computed(() => folderPathFromQuery(route.query.folder))
 
 const goToFolder = (path: string) => {
   router.push({ path: '/maps', query: path ? { folder: path } : {} })
 }
 
-const breadcrumbs = computed(() => {
-  const out: Array<{ label: string; path: string }> = [{ label: 'Home', path: '' }]
-  if (!currentPath.value) return out
-  let acc = ''
-  for (const seg of currentPath.value.split('/')) {
-    acc = acc ? `${acc}/${seg}` : seg
-    out.push({ label: formatFolderLabel(seg), path: acc })
-  }
-  return out
-})
+const breadcrumbs = computed(() =>
+  buildFolderBreadcrumbs(currentPath.value, { formatSegment: formatFolderLabel }),
+)
 
 const searchTerm = ref('')
-const normalize = (value: string) => value.trim().toLowerCase()
 
 const matches = (item: MapSummary, query: string) =>
-  [item.name, item.folder].some((value) => normalize(value).includes(query))
-
-const isInsideCurrent = (folder: string) => {
-  if (!currentPath.value) return true
-  return folder === currentPath.value || folder.startsWith(currentPath.value + '/')
-}
+  [item.name, item.folder].some((value) => normalizeSearchText(value).includes(query))
 
 const visibleMaps = computed(() => {
-  const query = normalize(searchTerm.value)
-  const pool = items.value.filter((item) => isInsideCurrent(item.folder))
+  const query = normalizeSearchText(searchTerm.value)
+  const pool = items.value.filter((item) => isInsideFolder(item.folder, currentPath.value))
   const matched = query ? pool.filter((item) => matches(item, query)) : pool
   if (!query) {
     return matched
@@ -159,36 +153,14 @@ const visibleMaps = computed(() => {
   return [...matched].sort((a, b) => a.name.localeCompare(b.name))
 })
 
-interface FolderTile {
-  path: string
-  label: string
-  count: number
-}
-
 const visibleFolders = computed<FolderTile[]>(() => {
   if (searchTerm.value) return []
-  const prefix = currentPath.value ? currentPath.value + '/' : ''
-  const childPaths = new Set<string>()
-  for (const path of allFolders.value) {
-    if (currentPath.value && !path.startsWith(prefix)) continue
-    if (path === currentPath.value) continue
-    const rest = currentPath.value ? path.slice(prefix.length) : path
-    if (!rest) continue
-    const slash = rest.indexOf('/')
-    const childSeg = slash >= 0 ? rest.slice(0, slash) : rest
-    childPaths.add(currentPath.value ? `${currentPath.value}/${childSeg}` : childSeg)
-  }
-  return Array.from(childPaths)
-    .sort((a, b) => a.localeCompare(b))
-    .map((path) => {
-      const subPrefix = path + '/'
-      let count = 0
-      for (const item of items.value) {
-        if (item.folder === path || item.folder.startsWith(subPrefix)) count++
-      }
-      const leaf = path.split('/').pop() ?? path
-      return { path, label: formatFolderLabel(leaf), count }
-    })
+  return buildVisibleFolderTiles({
+    folderPaths: allFolders.value,
+    currentPath: currentPath.value,
+    items: items.value,
+    formatLabel: formatFolderLabel,
+  })
 })
 
 const hasAnything = computed(
@@ -240,13 +212,7 @@ const onDragEnd = () => {
 
 const canDropPayloadOn = (d: DragPayload, targetPath: string): boolean => {
   if (d.type === 'map') return d.from !== targetPath
-  if (d.path === targetPath) return false
-  if (targetPath === d.path || targetPath.startsWith(d.path + '/')) return false
-  const leaf = d.path.split('/').pop()!
-  const newPath = targetPath ? `${targetPath}/${leaf}` : leaf
-  if (newPath === d.path) return false
-  if (allFolders.value.has(newPath)) return false
-  return true
+  return canMoveFolderTo(d.path, targetPath, allFolders.value)
 }
 
 const canDropOn = (targetPath: string) =>
@@ -278,8 +244,7 @@ const performMove = async (d: DragPayload, targetPath: string) => {
     const existing = maps.get(d.slug)
     if (existing) maps.set(d.slug, { ...existing, folder: targetPath })
   } else {
-    const leaf = d.path.split('/').pop()!
-    const newPath = targetPath ? `${targetPath}/${leaf}` : leaf
+    const newPath = movedFolderPath(d.path, targetPath)
     await $fetch('/api/maps/move-folder', {
       method: 'POST',
       body: { from: d.path, to: newPath, clientId },
@@ -324,15 +289,7 @@ const onDrop = async (e: DragEvent, targetPath: string) => {
   }
 }
 
-const nextFolderName = () => {
-  const base = 'new_folder'
-  const prefix = currentPath.value ? `${currentPath.value}/` : ''
-  const exists = (name: string) => allFolders.value.has(prefix + name)
-  if (!exists(base)) return base
-  let n = 1
-  while (exists(`${base}_${n}`)) n++
-  return `${base}_${n}`
-}
+const nextFolderName = () => nextAvailableFolderLeaf(allFolders.value, currentPath.value)
 
 const createNewFolder = async () => {
   if (!isGm.value || creating.value) return

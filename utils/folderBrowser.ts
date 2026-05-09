@@ -1,0 +1,137 @@
+export interface FolderBreadcrumb {
+  label: string
+  path: string
+}
+
+export interface FolderTile {
+  path: string
+  label: string
+  count: number
+}
+
+export interface FolderedItem {
+  folder: string
+}
+
+export const normalizeSearchText = (value: string): string => value.trim().toLowerCase()
+
+export const folderPathFromQuery = (value: unknown): string => {
+  if (typeof value !== 'string') return ''
+  return value.replace(/^\/+|\/+$/g, '')
+}
+
+export const isInsideFolder = (folder: string, currentPath: string): boolean => {
+  if (!currentPath) return true
+  return folder === currentPath || folder.startsWith(currentPath + '/')
+}
+
+export const isSameOrDescendantFolder = (path: string, parentPath: string): boolean => {
+  if (!parentPath) return Boolean(path)
+  return path === parentPath || path.startsWith(parentPath + '/')
+}
+
+export const childFolderPaths = (
+  folderPaths: Iterable<string>,
+  currentPath: string,
+): string[] => {
+  const prefix = currentPath ? currentPath + '/' : ''
+  const childPaths = new Set<string>()
+
+  for (const path of folderPaths) {
+    if (currentPath && !path.startsWith(prefix)) continue
+    if (path === currentPath) continue
+
+    const rest = currentPath ? path.slice(prefix.length) : path
+    if (!rest) continue
+
+    const slash = rest.indexOf('/')
+    const childSeg = slash >= 0 ? rest.slice(0, slash) : rest
+    childPaths.add(currentPath ? `${currentPath}/${childSeg}` : childSeg)
+  }
+
+  return Array.from(childPaths).sort((a, b) => a.localeCompare(b))
+}
+
+export const buildFolderBreadcrumbs = (
+  currentPath: string,
+  options: {
+    homeLabel?: string
+    formatSegment?: (segment: string) => string
+  } = {},
+): FolderBreadcrumb[] => {
+  const { homeLabel = 'Home', formatSegment = (segment: string) => segment } = options
+  const out: FolderBreadcrumb[] = [{ label: homeLabel, path: '' }]
+  if (!currentPath) return out
+
+  let acc = ''
+  for (const seg of currentPath.split('/').filter(Boolean)) {
+    acc = acc ? `${acc}/${seg}` : seg
+    out.push({ label: formatSegment(seg), path: acc })
+  }
+  return out
+}
+
+export const buildVisibleFolderTiles = <T>(
+  options: {
+    folderPaths: Iterable<string>
+    currentPath: string
+    items: ReadonlyArray<T>
+    folderOf?: (item: T) => string
+    formatLabel?: (leaf: string) => string
+  },
+): FolderTile[] => {
+  const {
+    folderPaths,
+    currentPath,
+    items,
+    folderOf = (item: T) => (item as FolderedItem).folder,
+    formatLabel = (leaf: string) => leaf,
+  } = options
+
+  return childFolderPaths(folderPaths, currentPath).map((path) => {
+    const subPrefix = path + '/'
+    let count = 0
+    for (const item of items) {
+      const folder = folderOf(item)
+      if (folder === path || folder.startsWith(subPrefix)) count++
+    }
+    const leaf = path.split('/').pop() ?? path
+    return { path, label: formatLabel(leaf), count }
+  })
+}
+
+export const nextAvailableFolderLeaf = (
+  folderPaths: ReadonlySet<string> | Iterable<string>,
+  currentPath: string,
+  base = 'new_folder',
+): string => {
+  const folderSet = folderPaths instanceof Set ? folderPaths : new Set(folderPaths)
+  const prefix = currentPath ? `${currentPath}/` : ''
+  const exists = (name: string) => folderSet.has(prefix + name)
+  if (!exists(base)) return base
+
+  let n = 1
+  while (exists(`${base}_${n}`)) n++
+  return `${base}_${n}`
+}
+
+export const movedFolderPath = (sourcePath: string, targetPath: string): string => {
+  const leaf = sourcePath.split('/').pop() ?? sourcePath
+  return targetPath ? `${targetPath}/${leaf}` : leaf
+}
+
+export const canMoveFolderTo = (
+  sourcePath: string,
+  targetPath: string,
+  existingFolders: ReadonlySet<string> | Iterable<string>,
+): boolean => {
+  if (sourcePath === targetPath) return false
+  if (targetPath === sourcePath || targetPath.startsWith(sourcePath + '/')) return false
+
+  const newPath = movedFolderPath(sourcePath, targetPath)
+  if (newPath === sourcePath) return false
+
+  const folderSet = existingFolders instanceof Set ? existingFolders : new Set(existingFolders)
+  if (folderSet.has(newPath)) return false
+  return true
+}

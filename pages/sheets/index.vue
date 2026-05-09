@@ -14,6 +14,17 @@ import {
 } from '@phosphor-icons/vue'
 import { characterSheets, getPokedexEntry, getSpriteUrl } from '~/data/characterSheets'
 import { trainerSheets } from '~/data/trainerSheets'
+import {
+  buildFolderBreadcrumbs,
+  buildVisibleFolderTiles,
+  canMoveFolderTo,
+  folderPathFromQuery,
+  isInsideFolder,
+  movedFolderPath,
+  nextAvailableFolderLeaf,
+  normalizeSearchText,
+  type FolderTile,
+} from '~/utils/folderBrowser'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { TrainerSheet } from '~/types/trainerSheet'
 
@@ -189,39 +200,25 @@ const allFolders = computed(() => {
 const route = useRoute()
 const router = useRouter()
 
-const currentPath = computed(() => {
-  const raw = route.query.folder
-  if (typeof raw !== 'string') return ''
-  return raw.replace(/^\/+|\/+$/g, '')
-})
+const currentPath = computed(() => folderPathFromQuery(route.query.folder))
 
 const goToFolder = (path: string) => {
   router.push({ path: '/sheets', query: path ? { folder: path } : {} })
 }
 
-const breadcrumbs = computed(() => {
-  const out: Array<{ label: string; path: string }> = [{ label: 'Home', path: '' }]
-  if (!currentPath.value) return out
-  let acc = ''
-  for (const seg of currentPath.value.split('/')) {
-    acc = acc ? `${acc}/${seg}` : seg
-    out.push({ label: seg, path: acc })
-  }
-  return out
-})
+const breadcrumbs = computed(() => buildFolderBreadcrumbs(currentPath.value))
 
 // ---------------------------------------------------------------------------
 // Search and filtering
 // ---------------------------------------------------------------------------
 
 const searchTerm = ref('')
-const normalize = (value: string) => value.trim().toLowerCase()
 
 const matchesQuery = (item: SheetItem, query: string): boolean => {
   if (item.kind === 'pokemon') {
     const { sheet, types, folder } = item
     const haystacks = [sheet.nickname, sheet.species, sheet.nature ?? '', folder, ...types]
-    return haystacks.some((value) => normalize(value).includes(query))
+    return haystacks.some((value) => normalizeSearchText(value).includes(query))
   }
   const { sheet, folder } = item
   const haystacks = [
@@ -231,20 +228,15 @@ const matchesQuery = (item: SheetItem, query: string): boolean => {
     folder,
     ...(sheet.classes?.map((c) => c.name) ?? []),
   ]
-  return haystacks.some((value) => normalize(value).includes(query))
-}
-
-const isInsideCurrent = (folder: string): boolean => {
-  if (!currentPath.value) return true
-  return folder === currentPath.value || folder.startsWith(currentPath.value + '/')
+  return haystacks.some((value) => normalizeSearchText(value).includes(query))
 }
 
 /** Sheets shown in the main grid. While searching, we flatten the entire
  *  subtree under the current folder; otherwise we show only sheets that live
  *  *directly* in the current folder. */
 const visibleSheets = computed<SheetItem[]>(() => {
-  const query = normalize(searchTerm.value)
-  const pool = items.value.filter((item) => isInsideCurrent(item.folder))
+  const query = normalizeSearchText(searchTerm.value)
+  const pool = items.value.filter((item) => isInsideFolder(item.folder, currentPath.value))
   const matched = query ? pool.filter((item) => matchesQuery(item, query)) : pool
   if (!query) {
     return matched
@@ -254,47 +246,21 @@ const visibleSheets = computed<SheetItem[]>(() => {
   return [...matched].sort((a, b) => a.sortKey.localeCompare(b.sortKey))
 })
 
-interface FolderTile {
-  /** Full path under the sheet root, e.g. ``"npcs/wild"``. */
-  path: string
-  /** Display label of the raw leaf segment, e.g. ``"wild"``. */
-  label: string
-  /** Total number of sheets contained anywhere under this folder. */
-  count: number
-}
-
 /** Folder tiles shown alongside the sheet cards — direct subfolders of
  *  ``currentPath``. Hidden during search to avoid noise. */
 const visibleFolders = computed<FolderTile[]>(() => {
   if (searchTerm.value) return []
-  const prefix = currentPath.value ? currentPath.value + '/' : ''
-  const childPaths = new Set<string>()
-  for (const path of allFolders.value) {
-    if (currentPath.value && !path.startsWith(prefix)) continue
-    if (path === currentPath.value) continue
-    const rest = currentPath.value ? path.slice(prefix.length) : path
-    if (!rest) continue
-    const slash = rest.indexOf('/')
-    const childSeg = slash >= 0 ? rest.slice(0, slash) : rest
-    childPaths.add(currentPath.value ? `${currentPath.value}/${childSeg}` : childSeg)
-  }
-  return Array.from(childPaths)
-    .sort((a, b) => a.localeCompare(b))
-    .map((path) => {
-      const subPrefix = path + '/'
-      let count = 0
-      for (const item of items.value) {
-        if (item.folder === path || item.folder.startsWith(subPrefix)) count++
-      }
-      const leaf = path.split('/').pop() ?? path
-      return { path, label: leaf, count }
-    })
+  return buildVisibleFolderTiles({
+    folderPaths: allFolders.value,
+    currentPath: currentPath.value,
+    items: items.value,
+  })
 })
 
 // Counts shown in the intro badge.
 const totalCount = computed(() => items.value.length)
 const filteredCount = computed(() => {
-  const query = normalize(searchTerm.value)
+  const query = normalizeSearchText(searchTerm.value)
   if (!query) return totalCount.value
   return items.value.filter((item) => matchesQuery(item, query)).length
 })
@@ -370,13 +336,7 @@ const canDropPayloadOn = (d: DragPayload, targetPath: string): boolean => {
   if (d.type === 'sheet') {
     return d.from !== targetPath
   }
-  if (d.path === targetPath) return false
-  if (targetPath === d.path || targetPath.startsWith(d.path + '/')) return false
-  const leaf = d.path.split('/').pop()!
-  const newPath = targetPath ? `${targetPath}/${leaf}` : leaf
-  if (newPath === d.path) return false
-  if (allFolders.value.has(newPath)) return false
-  return true
+  return canMoveFolderTo(d.path, targetPath, allFolders.value)
 }
 
 const canDropOn = (targetPath: string): boolean => {
@@ -409,8 +369,7 @@ const performMove = async (d: DragPayload, targetPath: string) => {
     })
     sheetOverrides[`${d.kind}:${d.slug}`] = targetPath
   } else {
-    const leaf = d.path.split('/').pop()!
-    const newPath = targetPath ? `${targetPath}/${leaf}` : leaf
+    const newPath = movedFolderPath(d.path, targetPath)
     await $fetch('/api/sheets/move-folder', {
       method: 'POST',
       body: { from: d.path, to: newPath },
@@ -492,15 +451,7 @@ const createSheet = async (kind: 'pokemon' | 'trainer') => {
   }
 }
 
-const nextFolderName = (): string => {
-  const base = 'new_folder'
-  const prefix = currentPath.value ? `${currentPath.value}/` : ''
-  const exists = (name: string) => allFolders.value.has(prefix + name)
-  if (!exists(base)) return base
-  let n = 1
-  while (exists(`${base}_${n}`)) n++
-  return `${base}_${n}`
-}
+const nextFolderName = (): string => nextAvailableFolderLeaf(allFolders.value, currentPath.value)
 
 const createNewFolder = async () => {
   if (!canDrag.value || creating.value) return
