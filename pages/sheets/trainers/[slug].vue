@@ -227,151 +227,15 @@ const {
           @set-skill-modifier="setSkillModifier"
         />
 
-        <!-- Classes -->
-        <div class="block">
-          <h2 class="block-title">
-            Trainer Classes
-            <button type="button" class="row-add" @click="addClass">
-              <PhPlus :size="14" weight="bold" /> Add row
-            </button>
-          </h2>
-          <ul class="ref-list-vertical">
-            <li v-for="(cls, i) in sheet.classes" :key="i" class="cls-row">
-              <EditableCell v-model="cls.name" placeholder="Class name" />
-              <span v-if="cls.specialisation || cls.name" class="cls-spec">
-                (<EditableCell v-model="cls.specialisation" placeholder="—" />)
-              </span>
-              <span class="cls-notes">
-                — <EditableCell v-model="cls.notes" placeholder="notes" />
-              </span>
-              <button type="button" class="row-remove" title="Remove class" @click="removeClass(i)">
-                <PhX :size="14" weight="bold" />
-              </button>
-            </li>
-            <li v-if="!sheet.classes?.length" class="muted">No classes yet.</li>
-          </ul>
-        </div>
-
-        <!-- Training feature -->
-        <div class="block">
-          <h2 class="block-title">Training Feature</h2>
-          <p>
-            <EditableCell v-model="sheet.trainingFeature" placeholder="Inspired Training" />
-          </p>
-        </div>
-
-        <!-- Advancement -->
-        <div class="block">
-          <h2 class="block-title">Trainer Advancement</h2>
-          <table class="data-table adv-table">
-            <thead>
-              <tr><th>Level</th><th>Stats</th><th>Att</th><th>Sp.Att</th><th>Notes</th></tr>
-            </thead>
-            <tbody>
-              <tr v-for="row in adv" :key="row.level">
-                <th>Lv {{ row.level }}</th>
-                <td>
-                  <EditableCell
-                    :model-value="row.stats"
-                    type="number"
-                    :min="0"
-                    @update:model-value="(v) => setAdv(row.level, 'stats', v as number)"
-                  />
-                </td>
-                <td>
-                  <EditableCell
-                    :model-value="row.attack"
-                    type="number"
-                    :min="0"
-                    @update:model-value="(v) => setAdv(row.level, 'attack', v as number)"
-                  />
-                </td>
-                <td>
-                  <EditableCell
-                    :model-value="row.spAttack"
-                    type="number"
-                    :min="0"
-                    @update:model-value="(v) => setAdv(row.level, 'spAttack', v as number)"
-                  />
-                </td>
-                <td class="notes-col">
-                  <EditableCell
-                    :model-value="row.notes"
-                    placeholder="—"
-                    @update:model-value="(v) => setAdv(row.level, 'notes', v as string)"
-                  />
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <!-- Team / wishlist -->
-        <div class="grid-two">
-          <div class="block">
-            <h2 class="block-title">Current Team</h2>
-            <p class="muted-help">Comma-separated Pokémon sheet slugs (e.g. <code>specs-chikorita</code>).</p>
-            <EditableCell v-model="currentTeamCsv" placeholder="specs-chikorita" />
-            <ul v-if="sheet.currentTeam?.length" class="ref-list-vertical" style="margin-top: 0.55rem">
-              <li v-for="memberSlug in sheet.currentTeam" :key="memberSlug">
-                <NuxtLink :to="`/sheets/${memberSlug}`">{{ memberSlug }}</NuxtLink>
-              </li>
-            </ul>
-          </div>
-          <div class="block">
-            <h2 class="block-title">Pokémon Wishlist</h2>
-            <p class="muted-help">Comma-separated species names.</p>
-            <EditableCell v-model="wishlistCsv" placeholder="Cherubi, Bounsweet" />
-          </div>
-        </div>
-
-        <!-- Narrative blocks -->
-        <div class="narrative-grid">
-          <div class="narrative narrative--red">
-            <h3>Physical Description</h3>
-            <p>
-              <EditableCell
-                v-model="sheet.physicalDescription"
-                type="textarea"
-                placeholder="Physical description"
-                multiline
-              />
-            </p>
-          </div>
-          <div class="narrative narrative--yellow">
-            <h3>Background</h3>
-            <p>
-              <EditableCell
-                v-model="sheet.background"
-                type="textarea"
-                placeholder="Background"
-                multiline
-              />
-            </p>
-          </div>
-          <div class="narrative narrative--purple">
-            <h3>Personality</h3>
-            <p>
-              <EditableCell
-                v-model="sheet.personality"
-                type="textarea"
-                placeholder="Personality"
-                multiline
-              />
-            </p>
-          </div>
-          <div class="narrative narrative--green">
-            <h3>Goals / Dreams / Obsessions</h3>
-            <p>
-              <EditableCell
-                v-model="sheet.goalsAndDreams"
-                type="textarea"
-                placeholder="Goals & dreams"
-                multiline
-              />
-            </p>
-          </div>
-        </div>
+        <TrainerProgressPanel
+          v-model:current-team-csv="currentTeamCsv"
+          v-model:wishlist-csv="wishlistCsv"
+          :sheet="sheet"
+          :advancement-rows="adv"
+          @add-class="addClass"
+          @remove-class="removeClass"
+          @set-advancement="setAdv"
+        />
       </section>
 
       <!-- =================================================================== -->
@@ -1177,8 +1041,6 @@ const {
   gap: 0.6rem;
 }
 
-.block-title--spaced { margin-top: 0.85rem; }
-
 .muted { color: var(--ink-muted); font-size: 0.85rem; }
 .move-lookup-note {
   color: var(--ink-muted);
@@ -1331,19 +1193,6 @@ const {
   font-variant-numeric: tabular-nums;
 }
 
-.ref-list-vertical {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.32rem;
-}
-
-.cls-row { display: inline-flex; align-items: baseline; gap: 0.35rem; flex-wrap: wrap; }
-.cls-spec  { color: var(--accent); font-style: italic; }
-.cls-notes { color: var(--ink-soft); }
-
 /* Combat strip */
 .combat-strip {
   display: grid;
@@ -1412,8 +1261,6 @@ const {
 .movelist-table th,
 .movelist-table td { vertical-align: top; }
 .effect-col { color: var(--ink-soft); white-space: pre-wrap; max-width: 22rem; }
-.notes-col { color: var(--ink-muted); }
-
 /* Tag badges */
 .tag-badge {
   display: inline-flex;
@@ -1427,51 +1274,6 @@ const {
   text-transform: uppercase;
   margin-right: 0.2rem;
 }
-
-/* Narrative panels */
-.narrative-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 0.6rem;
-}
-
-.narrative {
-  border-radius: 10px;
-  padding: 0.7rem 0.85rem 0.7rem 1rem;
-  border: 1px solid var(--rule-soft);
-  border-left: 3px solid var(--rule-strong);
-  background: var(--paper-inset);
-}
-
-.narrative h3 {
-  margin: 0 0 0.35rem;
-  font-family: var(--font-book);
-  font-size: 0.95rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--ink-bright);
-}
-
-.narrative p {
-  margin: 0;
-  line-height: 1.55;
-  color: var(--ink);
-  font-family: var(--font-book);
-  font-size: 0.95rem;
-}
-
-.narrative--red    { border-left-color: var(--bad); }
-.narrative--red h3 { color: var(--bad); }
-
-.narrative--yellow { border-left-color: var(--accent); }
-.narrative--yellow h3 { color: var(--accent); }
-
-.narrative--purple { border-left-color: var(--magic); }
-.narrative--purple h3 { color: var(--magic); }
-
-.narrative--green  { border-left-color: var(--good); }
-.narrative--green h3 { color: var(--good); }
 
 /* ===== Portrait picker modal ===== */
 .portrait-picker-backdrop {

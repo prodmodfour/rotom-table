@@ -882,3 +882,13 @@
   - `npm test` — passes: 49 test files / 171 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: trainer progress panel extraction
+
+- Continued Phase 7 trainer sheet page decomposition by extracting trainer classes, training feature, advancement, team/wishlist, and narrative blocks into `components/sheets/TrainerProgressPanel.vue`.
+- Updated `pages/sheets/trainers/[slug].vue` to wire the progress panel through explicit props, `v-model`s, and emits while preserving class row actions, advancement edits, team links, wishlist editing, and narrative textareas.
+- Removed now-dead route-page styles for the extracted class and narrative sections.
+- Quality gates after this phase:
+  - `npm test` — passes: 49 test files / 171 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
