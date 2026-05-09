@@ -1472,3 +1472,14 @@
   - `npm test` — passes: 71 test files / 265 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: move automation notes panel
+
+- Extracted manual resolver notes and automation script notes into `components/move-automation/MoveAutomationNotesPanel.vue`.
+  - The notes panel owns manual-note textarea, script-note list, warning styling, and note-specific section styles.
+  - `MoveAutomationEffectsPanel.vue` is now a pure composition component that wires status, HP/map, and notes panels with explicit models/emits.
+- Preserved manual note binding, script notes visibility, warning border styling, and note copy.
+- Quality gates after this phase:
+  - `npm test` — passes: 71 test files / 265 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
