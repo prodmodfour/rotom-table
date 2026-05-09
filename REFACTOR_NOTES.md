@@ -253,3 +253,14 @@
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
   - `npm run typecheck` — still fails only on the documented pre-existing broader typecheck backlog; no errors are reported for `components/IsometricGrid.client.vue` or `utils/isometric/*`.
+
+## Next phase update: isometric grid renderer extraction
+
+- Continued Phase 6 by extracting floor grid, movement grid, and tabletop floor-plane ownership from `components/IsometricGrid.client.vue` into `utils/isometric/gridRenderer.ts`.
+  - The new renderer owns grid geometry creation, visibility syncing, floor-plane access for build picking, and disposal.
+  - The Vue component now calls `gridRenderer.sync/setVisible/floorPlane/dispose` while preserving build-target raycasting against the same floor plane.
+- Preserved grid layer visibility, movement-grid visibility during token/build/hazard modes, floor-plane placement behavior, and public `IsometricGrid` props/events.
+- Quality gates after this phase:
+  - `npm test` — passes: 13 test files / 40 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.

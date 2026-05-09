@@ -71,6 +71,7 @@ import {
   hazardColorNumber,
 } from '~/utils/isometric/hazardRenderer'
 import { createFieldEffectRenderer } from '~/utils/isometric/fieldEffectRenderer'
+import { createGridRenderer } from '~/utils/isometric/gridRenderer'
 
 export type { BuildTool } from '~/shared/mapEditor'
 
@@ -525,15 +526,13 @@ const renderObjects = new Map<string, PokemonRenderObject>()
 const voxelRenderer = createVoxelRenderer(voxelContainer)
 const hazardRenderer = createHazardRenderer(hazardContainer)
 const fieldEffectRenderer = createFieldEffectRenderer(fieldEffectContainer)
+const gridRenderer = createGridRenderer(gridGroup)
 let renderer: THREE.WebGLRenderer | null = null
 let cssRenderer: CSS3DRenderer | null = null
 let camera: THREE.OrthographicCamera | null = null
 let controls: OrbitControls | null = null
 let resizeObserver: ResizeObserver | null = null
 let animationFrame = 0
-let floorGridLines: THREE.LineSegments | null = null
-let moveGridLines: THREE.LineSegments | null = null
-let floorPlane: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial> | null = null
 let ghostSprite: THREE.Sprite | null = null
 let ghostSpriteState: WorldSpriteState | null = null
 let previewElevationBadge: CSS3DSprite | null = null
@@ -557,49 +556,6 @@ const getPreviewLayerY = () => activePreviewAnchor?.y ?? selectedPokemon.value?.
 
 const getSceneTarget = () =>
   new THREE.Vector3(props.dimensions.x / 2, 0, props.dimensions.z / 2)
-
-const buildFloorGridGeometry = (dimensions: GridDimensions) => {
-  const points: number[] = []
-  const y = 0.02
-
-  for (let z = 0; z <= dimensions.z; z += 1) {
-    points.push(0, y, z, dimensions.x, y, z)
-  }
-
-  for (let x = 0; x <= dimensions.x; x += 1) {
-    points.push(x, y, 0, x, y, dimensions.z)
-  }
-
-  const geometry = new THREE.BufferGeometry()
-  geometry.setAttribute('position', new THREE.Float32BufferAttribute(points, 3))
-  return geometry
-}
-
-const buildMoveGridGeometry = (dimensions: GridDimensions) => {
-  const points: number[] = []
-
-  for (let y = 1; y <= dimensions.y; y += 1) {
-    for (let z = 0; z <= dimensions.z; z += 1) {
-      points.push(0, y, z, dimensions.x, y, z)
-    }
-  }
-
-  for (let x = 0; x <= dimensions.x; x += 1) {
-    for (let z = 0; z <= dimensions.z; z += 1) {
-      points.push(x, 0, z, x, dimensions.y, z)
-    }
-  }
-
-  for (let x = 0; x <= dimensions.x; x += 1) {
-    for (let y = 1; y <= dimensions.y; y += 1) {
-      points.push(x, y, 0, x, y, dimensions.z)
-    }
-  }
-
-  const geometry = new THREE.BufferGeometry()
-  geometry.setAttribute('position', new THREE.Float32BufferAttribute(points, 3))
-  return geometry
-}
 
 const nowMs = () => (typeof performance === 'undefined' ? Date.now() : performance.now())
 
@@ -1227,68 +1183,14 @@ const focusPokemon = (id: string): boolean => {
 defineExpose({ focusPokemon })
 
 const updateGridVisibility = () => {
-  const isMovingPokemon = Boolean(selectedPokemon.value)
-  const layers = visibleLayers()
-
-  if (floorGridLines) {
-    floorGridLines.visible = layers.grid
-  }
-
-  if (moveGridLines) {
-    moveGridLines.visible = layers.grid && (isMovingPokemon || props.buildMode || props.hazardMode)
-  }
+  gridRenderer.setVisible({
+    grid: visibleLayers().grid,
+    movement: Boolean(selectedPokemon.value) || props.buildMode || Boolean(props.hazardMode),
+  })
 }
 
 const buildGrid = () => {
-  disposeObject3D(floorGridLines)
-  disposeObject3D(moveGridLines)
-  disposeObject3D(floorPlane)
-
-  // Gruvbox terrain seam lines: bg0_h, the same warm near-black as the
-  // page background. Per the reference palette, seam lines should
-  // "keep the grid legible without harsh contrast" — they read as
-  // dark grout between lit tiles rather than a bright overlay.
-  floorGridLines = new THREE.LineSegments(
-    buildFloorGridGeometry(props.dimensions),
-    new THREE.LineBasicMaterial({
-      color: 0x1d2021, // bg0_h
-      transparent: true,
-      opacity: 0.85,
-      depthTest: true,
-      depthWrite: false,
-    }),
-  )
-  gridGroup.add(floorGridLines)
-
-  moveGridLines = new THREE.LineSegments(
-    buildMoveGridGeometry(props.dimensions),
-    new THREE.LineBasicMaterial({
-      color: 0x1d2021,
-      transparent: true,
-      opacity: 0.01,
-      depthTest: true,
-      depthWrite: false,
-    }),
-  )
-  gridGroup.add(moveGridLines)
-
-  // Floor plane = the lit "top" of the tabletop. bg2 is the classic
-  // gruvbox "left/mid face" tone but feels right for a horizontal
-  // surface that catches no direct sun in the per-face ramp — it
-  // sits just below the bg3 box-tops so anything placed on the grid
-  // visually pops upward.
-  floorPlane = new THREE.Mesh(
-    new THREE.PlaneGeometry(props.dimensions.x, props.dimensions.z),
-    new THREE.MeshBasicMaterial({
-      color: 0x504945, // bg2 — lit horizontal surface
-      side: THREE.DoubleSide,
-      depthWrite: false,
-    }),
-  )
-  floorPlane.rotation.x = -Math.PI / 2
-  floorPlane.position.set(props.dimensions.x / 2, 0, props.dimensions.z / 2)
-  gridGroup.add(floorPlane)
-
+  gridRenderer.sync(props.dimensions)
   updateGridVisibility()
 }
 
@@ -1653,7 +1555,10 @@ const syncHazardMeshes = () => {
 
 const applyLayerVisibility = () => {
   const layers = visibleLayers()
-  gridGroup.visible = layers.grid
+  gridRenderer.setVisible({
+    grid: layers.grid,
+    movement: Boolean(selectedPokemon.value) || props.buildMode || Boolean(props.hazardMode),
+  })
   voxelRenderer.setVisible(layers.terrain)
   fieldEffectRenderer.setVisible(layers.fieldEffects)
   hazardRenderer.setVisible(layers.hazards)
@@ -2076,6 +1981,7 @@ const pickBuildTarget = (
   if (!renderer || !camera) return null
   setPointerFromCoords(event)
 
+  const floorPlane = gridRenderer.floorPlane()
   const targets: THREE.Object3D[] = []
   if (floorPlane) targets.push(floorPlane)
   targets.push(...voxelRenderer.meshes())
@@ -3020,9 +2926,7 @@ onBeforeUnmount(() => {
 
   renderObjects.clear()
   disposeSpriteTextureCaches()
-  disposeObject3D(floorGridLines)
-  disposeObject3D(moveGridLines)
-  disposeObject3D(floorPlane)
+  gridRenderer.dispose()
   controls?.dispose()
   renderer?.dispose()
   cssRenderer?.domElement.remove()
