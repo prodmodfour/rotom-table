@@ -286,3 +286,14 @@
   - `npm test` — passes: 13 test files / 40 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: isometric world sprite extraction
+
+- Continued Phase 6 by extracting WebGL sprite primitives from `components/IsometricGrid.client.vue` into `utils/isometric/worldSprites.ts`.
+  - The new module owns sprite texture acquisition/cropping/animation, sprite asset swapping, ghost invalid-state tinting, directional halo lighting helpers, contact-shadow creation, sprite facing selection, and sprite disposal.
+  - The Vue component now wires camera/facing context into `updateSpriteFacing` and keeps animation-loop orchestration while sprite internals live in a focused renderer utility.
+- Preserved front/back sprite selection, animated sprite frame updates, ghost preview tinting, contact-shadow visuals, directional halo brightness, and sprite texture cache disposal behavior.
+- Quality gates after this phase:
+  - `npm test` — passes: 13 test files / 40 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
