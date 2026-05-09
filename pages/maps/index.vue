@@ -22,6 +22,7 @@ import {
   tabletopMapToSummary,
 } from '~/utils/mapLibrary'
 import { useRealtimeChannel } from '~/composables/useRealtime'
+import { useLibraryContextMenu } from '~/composables/library/useLibraryContextMenu'
 import { useLibraryDragDrop } from '~/composables/library/useLibraryDragDrop'
 import { mapsChannel } from '~/shared/realtime'
 import type { MapSummary, TabletopMap } from '~/types/map'
@@ -247,73 +248,33 @@ const createNewMap = async () => {
 }
 
 type CtxTarget = { type: 'map'; item: MapSummary } | { type: 'folder'; tile: FolderTile }
-type CtxMode = 'menu' | 'rename' | 'move' | 'delete'
 
-interface CtxState {
-  x: number
-  y: number
-  target: CtxTarget
-  mode: CtxMode
-  input: string
-  busy: boolean
-  error: string | null
-}
-
-const ctx = ref<CtxState | null>(null)
-
-const openContext = (e: MouseEvent, target: CtxTarget) => {
-  if (!isGm.value) return
-  e.preventDefault()
-  ctx.value = { x: e.clientX, y: e.clientY, target, mode: 'menu', input: '', busy: false, error: null }
-}
-
-const closeContext = () => {
-  ctx.value = null
-}
-
-const ctxTargetLabel = computed(() => {
-  const c = ctx.value
-  if (!c) return ''
-  return c.target.type === 'map' ? c.target.item.name : c.target.tile.label
-})
-
-const ctxMoveDestinations = computed<Array<{ value: string; label: string }>>(() => {
-  const c = ctx.value
-  if (!c) return []
-  return buildFolderMoveDestinations({
-    folderPaths: allFolders.value,
-    target: c.target.type === 'map'
-      ? { type: 'item', folder: c.target.item.folder }
-      : { type: 'folder', path: c.target.tile.path },
-    formatLabel: formatFolderLabel,
-  })
-})
-
-const enterMove = () => {
-  if (!ctx.value) return
-  ctx.value.mode = 'move'
-  ctx.value.error = null
-  ctx.value.input = ctxMoveDestinations.value[0]?.value ?? ''
-}
-
-const enterRename = () => {
-  if (!ctx.value) return
-  ctx.value.mode = 'rename'
-  ctx.value.error = null
-  if (ctx.value.target.type === 'map') {
-    ctx.value.input = ctx.value.target.item.name
-  } else {
-    const path = ctx.value.target.tile.path
+const {
+  ctx,
+  openContext,
+  closeContext,
+  ctxTargetLabel,
+  ctxMoveDestinations,
+  enterMove,
+  enterRename,
+  enterDelete,
+} = useLibraryContextMenu<CtxTarget>({
+  canOpen: isGm,
+  targetLabel: (target) => target.type === 'map' ? target.item.name : target.tile.label,
+  renameInputForTarget: (target) => {
+    if (target.type === 'map') return target.item.name
+    const path = target.tile.path
     const slash = path.lastIndexOf('/')
-    ctx.value.input = slash >= 0 ? path.slice(slash + 1) : path
-  }
-}
-
-const enterDelete = () => {
-  if (!ctx.value) return
-  ctx.value.mode = 'delete'
-  ctx.value.error = null
-}
+    return slash >= 0 ? path.slice(slash + 1) : path
+  },
+  moveDestinationsForTarget: (target) => buildFolderMoveDestinations({
+    folderPaths: allFolders.value,
+    target: target.type === 'map'
+      ? { type: 'item', folder: target.item.folder }
+      : { type: 'folder', path: target.tile.path },
+    formatLabel: formatFolderLabel,
+  }),
+})
 
 const submitContext = async () => {
   const c = ctx.value

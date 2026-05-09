@@ -1564,3 +1564,14 @@
   - `npm test` — passes: 72 test files / 270 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: shared library context-menu state
+
+- Extracted maps/sheets library right-click menu state into `composables/library/useLibraryContextMenu.ts`.
+  - The composable owns target opening, mode transitions, input initialization, target-label derivation, move-destination derivation, and close behavior.
+- Updated `pages/maps/index.vue` and `pages/sheets/index.vue` to inject target-specific labels, rename defaults, and move destinations while keeping persistence actions local to each route shell.
+- Added `tests/composables/library/useLibraryContextMenu.test.ts` covering open gating, menu state shape, move/rename/delete transitions, and close behavior.
+- Quality gates after this phase:
+  - `npm test` — passes: 73 test files / 275 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

@@ -24,6 +24,7 @@ import {
   matchesSheetLibraryQuery,
   type SheetLibraryItem,
 } from '~/utils/sheetLibrary'
+import { useLibraryContextMenu } from '~/composables/library/useLibraryContextMenu'
 import { useLibraryDragDrop } from '~/composables/library/useLibraryDragDrop'
 
 useHead({
@@ -337,84 +338,31 @@ type CtxTarget =
   | { type: 'sheet'; item: SheetItem }
   | { type: 'folder'; tile: FolderTile }
 
-type CtxMode = 'menu' | 'rename' | 'move' | 'delete'
-
-interface CtxState {
-  x: number
-  y: number
-  target: CtxTarget
-  mode: CtxMode
-  input: string
-  busy: boolean
-  error: string | null
-}
-
-const ctx = ref<CtxState | null>(null)
-
-const openContext = (e: MouseEvent, target: CtxTarget) => {
-  if (!canDrag.value) return
-  e.preventDefault()
-  ctx.value = {
-    x: e.clientX,
-    y: e.clientY,
-    target,
-    mode: 'menu',
-    input: '',
-    busy: false,
-    error: null,
-  }
-}
-
-const closeContext = () => {
-  ctx.value = null
-}
-
-const ctxTargetLabel = computed(() => {
-  const c = ctx.value
-  if (!c) return ''
-  if (c.target.type === 'sheet') return displayName(c.target.item)
-  return c.target.tile.label
-})
-
-/** Folder paths the user can pick as a Move destination. Excludes the
- *  selected folder itself, its descendants, and (for sheets) the current
- *  folder of the sheet. Always includes a “Home (root)” entry up top. */
-const ctxMoveDestinations = computed<Array<{ value: string; label: string }>>(() => {
-  const c = ctx.value
-  if (!c) return []
-  return buildFolderMoveDestinations({
-    folderPaths: allFolders.value,
-    target: c.target.type === 'sheet'
-      ? { type: 'item', folder: c.target.item.folder }
-      : { type: 'folder', path: c.target.tile.path },
-  })
-})
-
-const enterMove = () => {
-  if (!ctx.value) return
-  ctx.value.mode = 'move'
-  ctx.value.error = null
-  ctx.value.input = ctxMoveDestinations.value[0]?.value ?? ''
-}
-
-const enterRename = () => {
-  if (!ctx.value) return
-  ctx.value.mode = 'rename'
-  ctx.value.error = null
-  if (ctx.value.target.type === 'sheet') {
-    ctx.value.input = displayName(ctx.value.target.item)
-  } else {
-    const path = ctx.value.target.tile.path
+const {
+  ctx,
+  openContext,
+  closeContext,
+  ctxTargetLabel,
+  ctxMoveDestinations,
+  enterMove,
+  enterRename,
+  enterDelete,
+} = useLibraryContextMenu<CtxTarget>({
+  canOpen: canDrag,
+  targetLabel: (target) => target.type === 'sheet' ? displayName(target.item) : target.tile.label,
+  renameInputForTarget: (target) => {
+    if (target.type === 'sheet') return displayName(target.item)
+    const path = target.tile.path
     const slash = path.lastIndexOf('/')
-    ctx.value.input = slash >= 0 ? path.slice(slash + 1) : path
-  }
-}
-
-const enterDelete = () => {
-  if (!ctx.value) return
-  ctx.value.mode = 'delete'
-  ctx.value.error = null
-}
+    return slash >= 0 ? path.slice(slash + 1) : path
+  },
+  moveDestinationsForTarget: (target) => buildFolderMoveDestinations({
+    folderPaths: allFolders.value,
+    target: target.type === 'sheet'
+      ? { type: 'item', folder: target.item.folder }
+      : { type: 'folder', path: target.tile.path },
+  }),
+})
 
 /** Apply a rename + the local override / rename log update. */
 const applyRenameSheet = async (item: SheetItem, newName: string) => {
