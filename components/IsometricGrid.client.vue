@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import * as THREE from 'three'
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
-import { CSS3DRenderer } from 'three/examples/jsm/renderers/CSS3DRenderer.js'
 import type { GridAnchor, GridDimensions, SpawnedPokemon } from '~/types/pokemon'
 import type {
   LayerVisibility,
@@ -36,6 +34,17 @@ import {
 import { normalizeConditionNames } from '~/utils/statusConditions'
 import type { CombatStageKey, CombatStageMap } from '~/types/combatStages'
 import type { BuildTool } from '~/shared/mapEditor'
+import {
+  DEFAULT_FACING_DIRECTION,
+  alignCameraToGrid as alignIsometricCameraToGrid,
+  createIsometricCamera,
+  createIsometricCssRenderer,
+  createIsometricOrbitControls,
+  createIsometricWebGLRenderer,
+  focusCameraOnPokemon,
+  maxUsefulCameraZoom,
+  syncIsometricRendererSize,
+} from '~/utils/isometric/cameraControls'
 import { disposeBlockTextureCache, type VoxelRenderStyle } from '~/utils/isometric/blockTextures'
 import {
   disposeSpriteSharedTextures,
@@ -111,17 +120,6 @@ const emit = defineEmits<{
   (event: 'place-hazard', hazard: MapHazardV2): void
   (event: 'remove-hazard', cell: { x: number; y: number; z: number; kind?: MapHazardKind }): void
 }>()
-
-const ISO_POLAR_ANGLE = THREE.MathUtils.degToRad(54.735610317245346)
-const ISO_AZIMUTH_ANGLE = THREE.MathUtils.degToRad(45)
-const FOCUS_CAMERA_TARGET_HEIGHT_FACTOR = 0.35
-const FOCUS_CAMERA_VISIBLE_UNITS_PER_SUBJECT = 4
-const FOCUS_CAMERA_MIN_VISIBLE_UNITS = 7
-const FOCUS_CAMERA_MAX_VISIBLE_UNITS = 14
-const DEFAULT_FACING_DIRECTION = new THREE.Vector2(
-  Math.cos(ISO_AZIMUTH_ANGLE),
-  Math.sin(ISO_AZIMUTH_ANGLE),
-)
 
 // Subtle directional tint matching the cage's implied light: lit
 // quadrant is full brightness, shadowed quadrant dims to 0.92.
@@ -497,9 +495,9 @@ const buildGhostRenderer = createBuildGhostRenderer(previewGroup)
 const hazardGhostRenderer = createHazardGhostRenderer(previewGroup)
 const tokenMovePreviewRenderer = createTokenMovePreviewRenderer({ scene, group: previewGroup })
 let renderer: THREE.WebGLRenderer | null = null
-let cssRenderer: CSS3DRenderer | null = null
+let cssRenderer: ReturnType<typeof createIsometricCssRenderer> | null = null
 let camera: THREE.OrthographicCamera | null = null
-let controls: OrbitControls | null = null
+let controls: ReturnType<typeof createIsometricOrbitControls> | null = null
 let resizeObserver: ResizeObserver | null = null
 let animationFrame = 0
 let activePreview: PreviewState = { ...EMPTY_PREVIEW }
@@ -512,48 +510,19 @@ let hoveredPokemonId: string | null = null
 
 const getPreviewLayerY = () => activePreviewAnchor?.y ?? selectedPokemon.value?.position.y ?? 0
 
-const getSceneTarget = () =>
-  new THREE.Vector3(props.dimensions.x / 2, 0, props.dimensions.z / 2)
-
-const fallbackFrustumHeight = () =>
-  Math.max(props.dimensions.x, props.dimensions.y, props.dimensions.z) * 1.7
-
-const currentFrustumHeight = () => {
-  if (!camera) return fallbackFrustumHeight()
-  return Math.abs(camera.top - camera.bottom) || fallbackFrustumHeight()
-}
-
-const maxUsefulCameraZoom = () => Math.max(5, currentFrustumHeight() / FOCUS_CAMERA_MIN_VISIBLE_UNITS)
-
-const setOrthographicFrustum = () => {
-  if (!camera || !container.value) {
-    return
-  }
-
-  const bounds = container.value.getBoundingClientRect()
-  const aspect = bounds.width / Math.max(bounds.height, 1)
-  const frustumSize = fallbackFrustumHeight()
-
-  camera.left = (-frustumSize * aspect) / 2
-  camera.right = (frustumSize * aspect) / 2
-  camera.top = frustumSize / 2
-  camera.bottom = -frustumSize / 2
-  camera.near = -frustumSize * 6
-  camera.far = frustumSize * 6
-  camera.updateProjectionMatrix()
-  if (controls) controls.maxZoom = maxUsefulCameraZoom()
-}
-
 const syncRendererSize = () => {
-  if (!renderer || !cssRenderer || !container.value) {
+  if (!renderer || !cssRenderer || !camera || !container.value) {
     return
   }
 
-  const bounds = container.value.getBoundingClientRect()
-  renderer.setSize(bounds.width, bounds.height)
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
-  cssRenderer.setSize(bounds.width, bounds.height)
-  setOrthographicFrustum()
+  syncIsometricRendererSize({
+    renderer,
+    cssRenderer,
+    camera,
+    controls,
+    container: container.value,
+    dimensions: props.dimensions,
+  })
 }
 
 const alignCameraToGrid = (initial = false) => {
@@ -561,56 +530,12 @@ const alignCameraToGrid = (initial = false) => {
     return
   }
 
-  const nextTarget = getSceneTarget()
-
-  if (initial) {
-    const radius = Math.max(props.dimensions.x, props.dimensions.y, props.dimensions.z) * 2.1
-    camera.position.set(
-      nextTarget.x + radius * Math.sin(ISO_POLAR_ANGLE) * Math.cos(ISO_AZIMUTH_ANGLE),
-      nextTarget.y + radius * Math.cos(ISO_POLAR_ANGLE),
-      nextTarget.z + radius * Math.sin(ISO_POLAR_ANGLE) * Math.sin(ISO_AZIMUTH_ANGLE),
-    )
-  } else {
-    const offset = camera.position.clone().sub(controls.target)
-    camera.position.copy(nextTarget.clone().add(offset))
-  }
-
-  controls.target.copy(nextTarget)
-  controls.update()
-}
-
-const fallbackCameraOffset = () => {
-  const radius = Math.max(props.dimensions.x, props.dimensions.y, props.dimensions.z) * 2.1
-  return new THREE.Vector3(
-    radius * Math.sin(ISO_POLAR_ANGLE) * Math.cos(ISO_AZIMUTH_ANGLE),
-    radius * Math.cos(ISO_POLAR_ANGLE),
-    radius * Math.sin(ISO_POLAR_ANGLE) * Math.sin(ISO_AZIMUTH_ANGLE),
-  )
-}
-
-const focusZoomForPokemon = (pokemon: SpawnedPokemon) => {
-  if (!camera || !controls) return 1
-
-  const subjectSpan = Math.max(
-    pokemon.base,
-    pokemon.clearance,
-    pokemon.width,
-    pokemon.height,
-    1,
-  )
-  const desiredVisibleHeight = THREE.MathUtils.clamp(
-    subjectSpan * FOCUS_CAMERA_VISIBLE_UNITS_PER_SUBJECT,
-    FOCUS_CAMERA_MIN_VISIBLE_UNITS,
-    FOCUS_CAMERA_MAX_VISIBLE_UNITS,
-  )
-  const frustumHeight = currentFrustumHeight()
-  const minZoom = Number.isFinite(controls.minZoom) ? controls.minZoom : 0.1
-  const maxZoom = Math.max(
-    Number.isFinite(controls.maxZoom) ? controls.maxZoom : 0,
-    maxUsefulCameraZoom(),
-  )
-
-  return THREE.MathUtils.clamp(frustumHeight / desiredVisibleHeight, minZoom, maxZoom)
+  alignIsometricCameraToGrid({
+    camera,
+    controls,
+    dimensions: props.dimensions,
+    initial,
+  })
 }
 
 const focusPokemon = (id: string): boolean => {
@@ -626,20 +551,14 @@ const focusPokemon = (id: string): boolean => {
     pokemonCenter.y,
     pokemonCenter.z,
   )
-  const targetHeight = Math.max(pokemon.clearance, pokemon.height, 1)
-  const nextTarget = new THREE.Vector3(
-    center.x,
-    center.y + targetHeight * FOCUS_CAMERA_TARGET_HEIGHT_FACTOR,
-    center.z,
-  )
-  const offset = camera.position.clone().sub(controls.target)
-  const nextOffset = offset.lengthSq() > 0.0001 ? offset : fallbackCameraOffset()
 
-  controls.target.copy(nextTarget)
-  camera.position.copy(nextTarget.clone().add(nextOffset))
-  camera.zoom = focusZoomForPokemon(pokemon)
-  camera.updateProjectionMatrix()
-  controls.update()
+  focusCameraOnPokemon({
+    camera,
+    controls,
+    dimensions: props.dimensions,
+    pokemon,
+    center,
+  })
   return true
 }
 
@@ -1714,36 +1633,15 @@ onMounted(() => {
     return
   }
 
-  camera = new THREE.OrthographicCamera(-10, 10, 10, -10, -200, 200)
-  camera.up.set(0, 1, 0)
-  camera.zoom = 1.1
-
-  renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false })
-  renderer.setClearColor(0x1d2021, 1) // gruvbox bg0_h
-  renderer.outputColorSpace = THREE.SRGBColorSpace
-  renderer.domElement.style.display = 'block'
-  renderer.domElement.style.width = '100%'
-  renderer.domElement.style.height = '100%'
-  renderer.domElement.style.touchAction = 'none'
-
-  cssRenderer = new CSS3DRenderer()
-  cssRenderer.domElement.style.position = 'absolute'
-  cssRenderer.domElement.style.inset = '0'
-  cssRenderer.domElement.style.pointerEvents = 'none'
-  cssRenderer.domElement.style.overflow = 'hidden'
-
-  controls = new OrbitControls(camera, renderer.domElement)
-  controls.enablePan = false
-  controls.enableDamping = true
-  controls.screenSpacePanning = false
-  controls.zoomToCursor = true
+  camera = createIsometricCamera()
+  renderer = createIsometricWebGLRenderer()
+  cssRenderer = createIsometricCssRenderer()
+  controls = createIsometricOrbitControls(
+    camera,
+    renderer.domElement,
+    maxUsefulCameraZoom(camera, props.dimensions),
+  )
   controls.enableZoom = !selectedPokemon.value
-  controls.minPolarAngle = ISO_POLAR_ANGLE
-  controls.maxPolarAngle = ISO_POLAR_ANGLE
-  controls.minZoom = 0.4
-  controls.maxZoom = maxUsefulCameraZoom()
-  controls.zoomSpeed = 1.1
-  controls.rotateSpeed = 0.8
 
   container.value.append(renderer.domElement, cssRenderer.domElement)
   syncRendererSize()

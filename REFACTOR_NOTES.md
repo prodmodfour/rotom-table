@@ -321,3 +321,15 @@
   - `npm test` — passes: 13 test files / 40 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+
+## Next phase update: isometric camera controls extraction
+
+- Continued Phase 6 by extracting isometric camera/renderer setup from `components/IsometricGrid.client.vue` into `utils/isometric/cameraControls.ts`.
+  - The new module owns isometric angle constants, facing direction, camera/WebGL/CSS renderer creation, OrbitControls configuration, renderer resize/frustum syncing, grid alignment, max zoom calculation, and focus-on-token camera movement.
+  - The Vue component now keeps only small wrappers that pass current props/DOM refs into the camera-control helpers.
+- Preserved orthographic camera angle, zoom limits, renderer DOM styles, resize behavior, token focus behavior, and directional sprite-lighting facing vector.
+- Quality gates after this phase:
+  - `npm test` — passes: 13 test files / 40 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
