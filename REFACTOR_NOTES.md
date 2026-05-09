@@ -1533,3 +1533,13 @@
   - `npm test` — passes: 71 test files / 265 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: sheet library intro panel
+
+- Extracted the sheets library intro/search/new-sheet/new-folder controls into `components/library/SheetLibraryIntroPanel.vue`.
+  - The component owns sheet-library explanatory copy, filtered/total badge, GM/player hints, search model, new-sheet dropdown, create-folder action, backdrop handling, and intro/dropdown styles.
+- Updated `pages/sheets/index.vue` to compose the intro panel while keeping sheet filtering, create actions, and menu state in the route shell.
+- Quality gates after this phase:
+  - `npm test` — passes: 71 test files / 265 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
