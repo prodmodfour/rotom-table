@@ -51,21 +51,14 @@ import {
   maxUsefulCameraZoom,
   syncIsometricRendererSize,
 } from '~/utils/isometric/cameraControls'
-import { disposeBlockTextureCache, type VoxelRenderStyle } from '~/utils/isometric/blockTextures'
-import {
-  disposeSpriteSharedTextures,
-  disposeSpriteTextureCaches,
-} from '~/utils/isometric/spriteTextures'
+import type { VoxelRenderStyle } from '~/utils/isometric/blockTextures'
 import type {
   BuildTarget,
   HazardTarget,
   PokemonRenderObject,
 } from '~/utils/isometric/types'
 import { createVoxelRenderer } from '~/utils/isometric/voxelRenderer'
-import {
-  createHazardRenderer,
-  disposeHazardTextureCache,
-} from '~/utils/isometric/hazardRenderer'
+import { createHazardRenderer } from '~/utils/isometric/hazardRenderer'
 import { createFieldEffectRenderer } from '~/utils/isometric/fieldEffectRenderer'
 import { createGridRenderer } from '~/utils/isometric/gridRenderer'
 import {
@@ -96,6 +89,12 @@ import {
   updatePokemonRenderObjectFromSpawn,
 } from '~/utils/isometric/tokenRenderer'
 import { buildVoxelColumnsByXZ, getVoxelShadowSurfaceY } from '~/utils/isometric/shadows'
+import {
+  bindIsometricRendererDomEvents,
+  disposeIsometricSharedCaches,
+  disposeIsometricSpriteTextureCaches,
+  observeIsometricResize,
+} from '~/utils/isometric/lifecycle'
 
 export type { BuildTool } from '~/shared/mapEditor'
 
@@ -417,7 +416,8 @@ let renderer: THREE.WebGLRenderer | null = null
 let cssRenderer: ReturnType<typeof createIsometricCssRenderer> | null = null
 let camera: THREE.OrthographicCamera | null = null
 let controls: ReturnType<typeof createIsometricOrbitControls> | null = null
-let resizeObserver: ResizeObserver | null = null
+let cleanupRendererDomEvents: (() => void) | null = null
+let cleanupResizeObserver: (() => void) | null = null
 let animationFrame = 0
 let activePreview: PreviewState = { ...EMPTY_PREVIEW }
 let activePreviewCanPlace = false
@@ -1434,18 +1434,19 @@ onMounted(() => {
   alignCameraToGrid(true)
   refreshPokemonStyles()
 
-  renderer.domElement.addEventListener('pointerdown', handlePointerDown)
-  renderer.domElement.addEventListener('pointermove', handlePointerMove)
-  renderer.domElement.addEventListener('pointerup', handlePointerUp)
-  renderer.domElement.addEventListener('pointerleave', handlePointerLeave)
-  renderer.domElement.addEventListener('contextmenu', handleRightClick)
-  renderer.domElement.addEventListener('wheel', handleWheel, { passive: false })
+  cleanupRendererDomEvents = bindIsometricRendererDomEvents(renderer.domElement, {
+    pointerdown: handlePointerDown,
+    pointermove: handlePointerMove,
+    pointerup: handlePointerUp,
+    pointerleave: handlePointerLeave,
+    contextmenu: handleRightClick,
+    wheel: handleWheel,
+  })
   window.addEventListener('keydown', handleEscape)
 
-  resizeObserver = new ResizeObserver(() => {
+  cleanupResizeObserver = observeIsometricResize(container.value, () => {
     syncRendererSize()
   })
-  resizeObserver.observe(container.value)
 
   animate()
 })
@@ -1454,17 +1455,11 @@ onBeforeUnmount(() => {
   window.cancelAnimationFrame(animationFrame)
   window.removeEventListener('keydown', handleEscape)
 
-  if (renderer) {
-    renderer.domElement.removeEventListener('pointerdown', handlePointerDown)
-    renderer.domElement.removeEventListener('pointermove', handlePointerMove)
-    renderer.domElement.removeEventListener('pointerup', handlePointerUp)
-    renderer.domElement.removeEventListener('pointerleave', handlePointerLeave)
-    renderer.domElement.removeEventListener('contextmenu', handleRightClick)
-    renderer.domElement.removeEventListener('wheel', handleWheel)
-  }
+  cleanupRendererDomEvents?.()
+  cleanupRendererDomEvents = null
 
-  resizeObserver?.disconnect()
-  resizeObserver = null
+  cleanupResizeObserver?.()
+  cleanupResizeObserver = null
 
   clearPreviewVisuals()
   tokenMovePreviewRenderer.dispose()
@@ -1473,16 +1468,14 @@ onBeforeUnmount(() => {
   hazardRenderer.dispose()
   fieldEffectRenderer.dispose()
   voxelRenderer.dispose()
-  disposeHazardTextureCache()
-  disposeBlockTextureCache()
-  disposeSpriteSharedTextures()
+  disposeIsometricSharedCaches()
 
   for (const renderObject of renderObjects.values()) {
     disposePokemonRenderObject(renderObject)
   }
 
   renderObjects.clear()
-  disposeSpriteTextureCaches()
+  disposeIsometricSpriteTextureCaches()
   gridRenderer.dispose()
   controls?.dispose()
   renderer?.dispose()

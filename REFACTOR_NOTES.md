@@ -381,3 +381,15 @@
   - `npm test` — passes: 17 test files / 50 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+
+## Next phase update: isometric lifecycle helper extraction
+
+- Continued Phase 6 renderer decomposition by extracting DOM event binding, resize observer setup, and shared texture-cache disposal coordination into `utils/isometric/lifecycle.ts`.
+  - The Vue component now keeps renderer lifecycle sequencing but delegates repetitive listener setup/cleanup and cache disposal to focused helpers.
+  - Preserved pointer/context-menu/wheel handlers, non-passive wheel behavior, resize syncing, and the previous disposal order for sprite object resources vs. sprite texture caches.
+- Added `tests/utils/isometric/lifecycle.test.ts` covering renderer DOM listener binding and cleanup.
+- Quality gates after this phase:
+  - `npm test` — passes: 18 test files / 51 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
