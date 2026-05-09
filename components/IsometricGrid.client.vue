@@ -54,8 +54,6 @@ import {
 } from '~/utils/isometric/interactionTargets'
 import { createBuildGhostRenderer, createHazardGhostRenderer } from '~/utils/isometric/previewGhosts'
 import { updateElevationBadge } from '~/utils/isometric/tokenHud'
-import { nowMs } from '~/utils/isometric/worldSprites'
-import { getIsometricSpriteLighting } from '~/utils/isometric/spriteLighting'
 import { createTokenMovePreviewRenderer } from '~/utils/isometric/tokenMovePreview'
 import {
   clampIsometricGroundLevelY,
@@ -71,7 +69,6 @@ import {
   getNextMovePreviewElevationAnchor,
 } from '~/utils/isometric/movementPreview'
 import {
-  animatePokemonRenderObject,
   applyPokemonRenderObjectPosition,
   createPokemonRenderObject,
   disposePokemonRenderObject,
@@ -87,6 +84,7 @@ import {
   observeIsometricResize,
 } from '~/utils/isometric/lifecycle'
 import { createIsometricSceneGraph } from '~/utils/isometric/sceneGraph'
+import { stepIsometricAnimationFrame } from '~/utils/isometric/animationFrame'
 
 export type { BuildTool } from '~/shared/mapEditor'
 
@@ -863,53 +861,21 @@ const animate = () => {
     return
   }
 
-  const delta = Math.min(clock.getDelta(), 0.1)
-  const damping = 1 - Math.exp(-delta * 12)
-
-  for (const renderObject of renderObjects.values()) {
-    if (renderObject.currentCenter.distanceToSquared(renderObject.targetCenter) < 0.000001) {
-      renderObject.currentCenter.copy(renderObject.targetCenter)
-    } else {
-      renderObject.currentCenter.lerp(renderObject.targetCenter, damping)
-    }
-
-    applyRenderObjectPosition(renderObject)
-  }
-
-  controls.update()
-
-  fieldEffectRenderer.update(delta, clock.elapsedTime)
-
-  const { spriteBrightness, haloAlpha } = getIsometricSpriteLighting({
-    cameraPosition: camera.position,
-    target: controls.target,
-    facingDirection: DEFAULT_FACING_DIRECTION,
-  })
-  const frameNowMs = nowMs()
-
-  for (const renderObject of renderObjects.values()) {
-    animatePokemonRenderObject(renderObject, {
-      camera,
-      facingDirection: DEFAULT_FACING_DIRECTION,
-      damping,
-      frameNowMs,
-      spriteBrightness,
-      haloAlpha,
-    })
-  }
-
-  tokenMovePreviewRenderer.animate({
-    pokemon: selectedPokemon.value,
-    positionY: activePreview.position?.y ?? selectedPokemon.value?.position.y ?? null,
+  stepIsometricAnimationFrame({
+    clock,
+    renderObjects: renderObjects.values(),
+    applyRenderObjectPosition,
+    controls,
+    fieldEffectRenderer,
+    tokenMovePreviewRenderer,
+    selectedPokemon: selectedPokemon.value,
+    previewPositionY: activePreview.position?.y ?? selectedPokemon.value?.position.y ?? null,
     camera,
+    renderer,
+    cssRenderer,
+    scene,
     facingDirection: DEFAULT_FACING_DIRECTION,
-    frameNowMs,
-    spriteBrightness,
-    haloAlpha,
   })
-
-  renderer.render(scene, camera)
-  cssRenderer.render(scene, camera)
 }
 
 onMounted(() => {

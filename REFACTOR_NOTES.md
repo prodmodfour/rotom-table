@@ -580,3 +580,14 @@
   - `npm test` — passes: 29 test files / 93 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: isometric animation frame extraction
+
+- Continued Phase 6 by extracting per-frame renderer stepping from `components/IsometricGrid.client.vue` into `utils/isometric/animationFrame.ts`.
+  - The helper owns delta clamping, render-object interpolation, field-effect ticking, sprite-light calculation, token preview animation, and WebGL/CSS render calls.
+  - The grid component now keeps only the requestAnimationFrame scheduling guard and passes explicit renderer dependencies into the frame step.
+- Added `tests/utils/isometric/animationFrame.test.ts` covering delta clamping, token interpolation, field-effect updates, preview animation, renderer calls, and target snapping.
+- Quality gates after this phase:
+  - `npm test` — passes: 30 test files / 95 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
