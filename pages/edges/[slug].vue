@@ -16,9 +16,7 @@ useHead(() => ({
 <template>
   <ReferenceDetailShell back-to="/edges" back-label="← All edges">
       <article v-if="edge" class="panel-card">
-        <div class="detail-heading">
-          <h1>{{ edge.name }}</h1>
-        </div>
+        <ReferenceDetailHeading :title="edge.name" />
 
         <ReferenceFieldBlock v-if="edge.prerequisites" title="Prerequisites">
           <p>{{ edge.prerequisites }}</p>

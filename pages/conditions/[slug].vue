@@ -16,14 +16,13 @@ useHead(() => ({
 <template>
   <ReferenceDetailShell back-to="/conditions" back-label="← All conditions">
       <article v-if="condition" class="panel-card">
-        <div class="detail-heading">
-          <h1>{{ condition.name }}</h1>
-          <div class="detail-pills">
+        <ReferenceDetailHeading :title="condition.name">
+          <template #pills>
             <ConditionTag :name="condition.name" size="md" />
             <span class="badge">{{ condition.category }}</span>
             <span v-if="condition.source" class="badge">{{ condition.source }}</span>
-          </div>
-        </div>
+          </template>
+        </ReferenceDetailHeading>
 
         <ReferenceFieldBlock v-if="condition.aliases?.length" title="Aliases">
           <p>{{ condition.aliases.join(', ') }}</p>

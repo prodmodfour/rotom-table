@@ -20,12 +20,11 @@ const siblings = computed(() => siblingFeaturesInClass(feat.value, features))
 <template>
   <ReferenceDetailShell back-to="/features" back-label="← All features">
       <article v-if="feat" class="panel-card">
-        <div class="detail-heading">
-          <h1>{{ feat.name }}</h1>
-          <div class="detail-pills">
+        <ReferenceDetailHeading :title="feat.name">
+          <template #pills>
             <span v-for="tag in feat.tags" :key="tag" class="badge tag-badge">{{ tag }}</span>
-          </div>
-        </div>
+          </template>
+        </ReferenceDetailHeading>
 
         <p v-if="feat.className && feat.className !== feat.name" class="class-note">
           From the
@@ -80,12 +79,6 @@ const siblings = computed(() => siblingFeaturesInClass(feat.value, features))
 </template>
 
 <style scoped>
-.detail-pills {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.3rem;
-}
-
 .tag-badge {
   background: var(--accent-soft);
   color: var(--accent);

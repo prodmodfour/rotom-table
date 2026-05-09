@@ -16,13 +16,12 @@ useHead(() => ({
 <template>
   <ReferenceDetailShell back-to="/rules" back-label="← All rules">
       <article v-if="rule" class="panel-card">
-        <div class="detail-heading">
-          <h1>{{ rule.name }}</h1>
-          <div class="detail-pills">
+        <ReferenceDetailHeading :title="rule.name">
+          <template #pills>
             <span class="badge">{{ rule.category }}</span>
             <span v-if="rule.source" class="badge">{{ rule.source }}</span>
-          </div>
-        </div>
+          </template>
+        </ReferenceDetailHeading>
 
         <ReferenceFieldBlock v-if="rule.text" title="Rule Text">
           <p>{{ rule.text }}</p>

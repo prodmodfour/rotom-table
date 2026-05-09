@@ -1748,3 +1748,13 @@
   - `npm test` — passes: 84 test files / 322 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: shared reference detail heading
+
+- Extracted repeated reference-detail heading/title/pill markup into `components/reference/ReferenceDetailHeading.vue`.
+- Updated ability, move, edge, rule, condition, and feature detail pages to use the shared heading component while preserving badge/type/condition pill output.
+- Kept the item detail heading route-local because it has item-sprite-specific layout that differs from the standard detail heading.
+- Quality gates after this phase:
+  - `npm test` — passes: 84 test files / 322 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
