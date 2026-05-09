@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import * as THREE from 'three'
 import TokenActionDialogs from '~/components/isometric/TokenActionDialogs.vue'
 import TokenContextMenu from '~/components/isometric/TokenContextMenu.vue'
+import { useTokenActionController } from '~/composables/isometric/useTokenActionController'
 import type { GridAnchor, GridDimensions, SpawnedPokemon } from '~/types/pokemon'
 import type {
   LayerVisibility,
@@ -24,7 +25,6 @@ import {
 import { buildMapOccupancy } from '~/utils/mapOccupancy'
 import { normalizeMapHazardLayer } from '~/utils/mapHazards'
 import { normalizeMapFieldEffects } from '~/utils/mapFieldEffects'
-import { normalizeConditionNames } from '~/utils/statusConditions'
 import type { CombatStageMap } from '~/types/combatStages'
 import type { BuildTool } from '~/shared/mapEditor'
 import {
@@ -63,47 +63,10 @@ import {
 } from '~/utils/isometric/worldSprites'
 import { createTokenMovePreviewRenderer } from '~/utils/isometric/tokenMovePreview'
 import {
-  createTokenContextMenuState,
-  type TokenContextMenuState,
-} from '~/utils/isometric/contextMenu'
-import {
   EMPTY_MOVE_PREVIEW,
   getMovePreviewAnchor,
   getNextMovePreviewElevationAnchor,
 } from '~/utils/isometric/movementPreview'
-import {
-  createHpDialogState,
-  getHpDialogDelta,
-  getHpDialogPreview,
-  updateHpDialogFromPokemon,
-  type HpDialogState,
-} from '~/utils/isometric/tokenHpDialog'
-import {
-  createCombatStagesDialogState,
-  createConditionsDialogState,
-  getNormalizedCombatDialogStages,
-  isCombatStagesDialogChanged,
-  isConditionsDialogChanged,
-  updateConditionsDialogFromPokemon,
-  type CombatStagesDialogState,
-  type ConditionsDialogState,
-} from '~/utils/isometric/tokenStatusDialogs'
-import {
-  createDamageDialogState,
-  getDamageDialogAttackBonus,
-  getDamageDialogAttacker,
-  getDamageDialogAttackerOptions,
-  getDamageDialogDbDefinition,
-  getDamageDialogDefense,
-  getDamageDialogHpLoss,
-  getDamageDialogMultiplier,
-  getDamageDialogMultiplierLabel,
-  getDamageDialogMultiplierTone,
-  getDamageDialogPreview,
-  getDamageDialogRawAmount,
-  updateDamageDialogFromPokemon,
-  type DamageDialogState,
-} from '~/utils/isometric/tokenDamageDialog'
 import {
   animatePokemonRenderObject,
   applyPokemonRenderObjectPosition,
@@ -191,49 +154,70 @@ const normalizedGroundLevelY = () => {
 }
 
 const container = ref<HTMLDivElement | null>(null)
-const contextMenu = ref<TokenContextMenuState | null>(null)
-
-const combatStagesDialog = ref<CombatStagesDialogState | null>(null)
-const combatStagesDialogChanged = computed(() => isCombatStagesDialogChanged(combatStagesDialog.value))
-
-const conditionsDialog = ref<ConditionsDialogState | null>(null)
-const conditionsDialogChanged = computed(() => isConditionsDialogChanged(conditionsDialog.value))
-
-const hpDialog = ref<HpDialogState | null>(null)
-const actionDialogs = ref<{
-  focusHpAmount: () => void
-  focusDamageAmount: () => void
-} | null>(null)
-const hpDialogDelta = computed(() => getHpDialogDelta(hpDialog.value))
-const hpDialogPreview = computed(() => getHpDialogPreview(hpDialog.value))
-
-const damageDialog = ref<DamageDialogState | null>(null)
-const damageDialogDbDef = computed(() => getDamageDialogDbDefinition(damageDialog.value))
-const damageDialogRawAmount = computed(() => getDamageDialogRawAmount(damageDialog.value))
-const damageDialogDefense = computed(() => getDamageDialogDefense(damageDialog.value))
-// Tokens on the grid the user can pick as the attacker, sorted by display name.
-const damageDialogAttackerOptions = computed(() => getDamageDialogAttackerOptions(props.pokemons))
-const damageDialogAttacker = computed(() => getDamageDialogAttacker(damageDialog.value, props.pokemons))
-// Atk / Sp.Atk added to DB rolls only; flat damage already includes offence.
-const damageDialogAttackBonus = computed(() => getDamageDialogAttackBonus(
-  damageDialog.value,
-  damageDialogAttacker.value,
-))
-const damageDialogMultiplier = computed(() => getDamageDialogMultiplier(damageDialog.value))
-const damageDialogHpLoss = computed(() => getDamageDialogHpLoss(
-  damageDialog.value,
-  damageDialogAttacker.value,
-))
-const damageDialogPreview = computed(() => getDamageDialogPreview(
-  damageDialog.value,
-  damageDialogAttacker.value,
-))
-const damageDialogMultiplierTone = computed(() => getDamageDialogMultiplierTone(damageDialogMultiplier.value))
-const damageDialogMultiplierLabel = computed(() => getDamageDialogMultiplierLabel(damageDialogMultiplier.value))
 
 const controllableIdSet = computed(() => new Set(props.controllableIds ?? props.pokemons.map((pokemon) => pokemon.id)))
 const canControlPokemon = (id: string | null | undefined): id is string =>
   Boolean(id && controllableIdSet.value.has(id))
+
+const {
+  actionDialogs,
+  contextMenu,
+  hpDialog,
+  hpDialogDelta,
+  hpDialogPreview,
+  combatStagesDialog,
+  combatStagesDialogChanged,
+  conditionsDialog,
+  conditionsDialogChanged,
+  damageDialog,
+  damageDialogDbDef,
+  damageDialogRawAmount,
+  damageDialogDefense,
+  damageDialogAttackerOptions,
+  damageDialogAttackBonus,
+  damageDialogMultiplier,
+  damageDialogHpLoss,
+  damageDialogPreview,
+  damageDialogMultiplierTone,
+  damageDialogMultiplierLabel,
+  openContextMenu,
+  closeContextMenu,
+  handleContextTurn,
+  handleContextModifyHp,
+  closeHpDialog,
+  handleHpDialogSubmit,
+  handleContextModifyCombatStages,
+  closeCombatStagesDialog,
+  handleCombatStagesDialogSubmit,
+  handleContextApplyRemoveConditions,
+  closeConditionsDialog,
+  handleConditionsDialogSubmit,
+  handleContextUseMove,
+  handleContextViewSheet,
+  handleContextViewPokedex,
+  handleContextDealDamage,
+  closeDamageDialog,
+  handleDamageDialogSubmit,
+  handleContextDelete,
+  syncDialogsFromPokemons,
+  closeUnauthorizedActions,
+  closeTopmostOverlay,
+} = useTokenActionController({
+  container,
+  pokemons: () => props.pokemons,
+  canDeleteTokens: () => props.canDeleteTokens,
+  canControlPokemon,
+  emit: {
+    turnPokemon: (id) => emit('turn-pokemon', id),
+    deletePokemon: (id) => emit('delete-pokemon', id),
+    modifyHp: (payload) => emit('modify-hp', payload),
+    modifyCombatStages: (payload) => emit('modify-combat-stages', payload),
+    modifyConditions: (payload) => emit('modify-conditions', payload),
+    useMove: (id) => emit('use-move', id),
+    viewSheet: (id) => emit('view-sheet', id),
+    viewPokedex: (id) => emit('view-pokedex', id),
+  },
+})
 
 const selectedPokemon = computed(
   () => props.pokemons.find((pokemon) => pokemon.id === props.selectedId) ?? null,
@@ -793,204 +777,6 @@ const performHazardAction = (event: MouseEvent | PointerEvent, tool: BuildTool) 
   emit('place-hazard', hazard)
 }
 
-const closeContextMenu = () => {
-  contextMenu.value = null
-}
-
-const openContextMenu = (event: MouseEvent, id: string) => {
-  if (!canControlPokemon(id) || !container.value) {
-    return
-  }
-
-  const target = props.pokemons.find((pokemon) => pokemon.id === id)
-  if (!target) return
-
-  contextMenu.value = createTokenContextMenuState({
-    pokemon: target,
-    clientX: event.clientX,
-    clientY: event.clientY,
-    bounds: container.value.getBoundingClientRect(),
-    canDeleteTokens: props.canDeleteTokens,
-  })
-}
-
-const handleContextTurn = () => {
-  if (!contextMenu.value || !canControlPokemon(contextMenu.value.id)) {
-    return
-  }
-
-  emit('turn-pokemon', contextMenu.value.id)
-  closeContextMenu()
-}
-
-const closeHpDialog = () => {
-  hpDialog.value = null
-}
-
-const handleContextModifyHp = () => {
-  if (!contextMenu.value || !canControlPokemon(contextMenu.value.id)) {
-    return
-  }
-
-  const target = props.pokemons.find((pokemon) => pokemon.id === contextMenu.value!.id)
-  if (!target) {
-    closeContextMenu()
-    return
-  }
-
-  hpDialog.value = createHpDialogState(target)
-  closeContextMenu()
-  void nextTick(() => {
-    actionDialogs.value?.focusHpAmount()
-  })
-}
-
-const handleHpDialogSubmit = () => {
-  if (!hpDialog.value || !canControlPokemon(hpDialog.value.id)) return
-  if (hpDialogDelta.value === 0) return
-  if (hpDialogPreview.value === hpDialog.value.currentHp) {
-    closeHpDialog()
-    return
-  }
-
-  emit('modify-hp', { id: hpDialog.value.id, currentHp: hpDialogPreview.value })
-  closeHpDialog()
-}
-
-const closeCombatStagesDialog = () => {
-  combatStagesDialog.value = null
-}
-
-const handleContextModifyCombatStages = () => {
-  if (!contextMenu.value || !canControlPokemon(contextMenu.value.id)) {
-    return
-  }
-
-  const target = props.pokemons.find((pokemon) => pokemon.id === contextMenu.value!.id)
-  if (!target) {
-    closeContextMenu()
-    return
-  }
-
-  combatStagesDialog.value = createCombatStagesDialogState(target)
-  closeContextMenu()
-}
-
-const handleCombatStagesDialogSubmit = () => {
-  if (!combatStagesDialog.value || !canControlPokemon(combatStagesDialog.value.id)) return
-  const stages = getNormalizedCombatDialogStages(combatStagesDialog.value)
-  combatStagesDialog.value.stages = { ...stages }
-  if (!combatStagesDialogChanged.value) {
-    closeCombatStagesDialog()
-    return
-  }
-
-  emit('modify-combat-stages', { id: combatStagesDialog.value.id, stages })
-  closeCombatStagesDialog()
-}
-
-const closeConditionsDialog = () => {
-  conditionsDialog.value = null
-}
-
-const handleContextApplyRemoveConditions = () => {
-  if (!contextMenu.value || !canControlPokemon(contextMenu.value.id)) {
-    return
-  }
-
-  const target = props.pokemons.find((pokemon) => pokemon.id === contextMenu.value!.id)
-  if (!target) {
-    closeContextMenu()
-    return
-  }
-
-  conditionsDialog.value = createConditionsDialogState(target)
-  closeContextMenu()
-}
-
-const handleContextUseMove = () => {
-  if (!contextMenu.value || !canControlPokemon(contextMenu.value.id)) {
-    return
-  }
-
-  emit('use-move', contextMenu.value.id)
-  closeContextMenu()
-}
-
-const handleContextViewSheet = () => {
-  if (!contextMenu.value || !canControlPokemon(contextMenu.value.id)) {
-    return
-  }
-
-  emit('view-sheet', contextMenu.value.id)
-  closeContextMenu()
-}
-
-const handleContextViewPokedex = () => {
-  if (!contextMenu.value || !canControlPokemon(contextMenu.value.id)) {
-    return
-  }
-
-  emit('view-pokedex', contextMenu.value.id)
-  closeContextMenu()
-}
-
-const handleConditionsDialogSubmit = () => {
-  if (!conditionsDialog.value || !canControlPokemon(conditionsDialog.value.id)) return
-  const conditions = normalizeConditionNames(conditionsDialog.value.conditions)
-  conditionsDialog.value.conditions = [...conditions]
-  if (!conditionsDialogChanged.value) {
-    closeConditionsDialog()
-    return
-  }
-
-  emit('modify-conditions', { id: conditionsDialog.value.id, conditions })
-  closeConditionsDialog()
-}
-
-const closeDamageDialog = () => {
-  damageDialog.value = null
-}
-
-const handleContextDealDamage = () => {
-  if (!contextMenu.value || !canControlPokemon(contextMenu.value.id)) {
-    return
-  }
-
-  const target = props.pokemons.find((pokemon) => pokemon.id === contextMenu.value!.id)
-  if (!target) {
-    closeContextMenu()
-    return
-  }
-
-  damageDialog.value = createDamageDialogState(target)
-  closeContextMenu()
-  void nextTick(() => {
-    actionDialogs.value?.focusDamageAmount()
-  })
-}
-
-const handleDamageDialogSubmit = () => {
-  if (!damageDialog.value || !canControlPokemon(damageDialog.value.id)) return
-  if (damageDialogRawAmount.value === 0) return
-  if (damageDialogPreview.value === damageDialog.value.currentHp) {
-    closeDamageDialog()
-    return
-  }
-
-  emit('modify-hp', { id: damageDialog.value.id, currentHp: damageDialogPreview.value })
-  closeDamageDialog()
-}
-
-const handleContextDelete = () => {
-  if (!props.canDeleteTokens || !contextMenu.value || !canControlPokemon(contextMenu.value.id)) {
-    return
-  }
-
-  emit('delete-pokemon', contextMenu.value.id)
-  closeContextMenu()
-}
-
 const handleLeftClick = (event: PointerEvent) => {
   closeContextMenu()
   const hitId = pickPokemonId(event)
@@ -1123,30 +909,7 @@ const handlePointerLeave = () => {
 
 const handleEscape = (event: KeyboardEvent) => {
   if (event.key === 'Escape') {
-    if (damageDialog.value) {
-      closeDamageDialog()
-      return
-    }
-
-    if (hpDialog.value) {
-      closeHpDialog()
-      return
-    }
-
-    if (conditionsDialog.value) {
-      closeConditionsDialog()
-      return
-    }
-
-    if (combatStagesDialog.value) {
-      closeCombatStagesDialog()
-      return
-    }
-
-    if (contextMenu.value) {
-      closeContextMenu()
-      return
-    }
+    if (closeTopmostOverlay()) return
 
     emit('select-pokemon', null)
   }
@@ -1324,36 +1087,7 @@ watch(
       clearPreviewVisuals()
     }
 
-    if (hpDialog.value) {
-      const live = props.pokemons.find((pokemon) => pokemon.id === hpDialog.value!.id)
-      if (!live) {
-        closeHpDialog()
-      } else {
-        hpDialog.value = updateHpDialogFromPokemon(hpDialog.value, live)
-      }
-    }
-
-    if (damageDialog.value) {
-      const live = props.pokemons.find((pokemon) => pokemon.id === damageDialog.value!.id)
-      if (!live) {
-        closeDamageDialog()
-      } else {
-        damageDialog.value = updateDamageDialogFromPokemon(
-          damageDialog.value,
-          live,
-          props.pokemons,
-        )
-      }
-    }
-
-    if (conditionsDialog.value) {
-      const live = props.pokemons.find((pokemon) => pokemon.id === conditionsDialog.value!.id)
-      if (!live) {
-        closeConditionsDialog()
-      } else {
-        conditionsDialog.value = updateConditionsDialogFromPokemon(conditionsDialog.value, live)
-      }
-    }
+    syncDialogsFromPokemons()
 
     replayBuildPreview()
   },
@@ -1433,11 +1167,7 @@ watch(
   () => props.controllableIds?.join('|') ?? '',
   () => {
     if (props.selectedId && !canControlPokemon(props.selectedId)) emit('select-pokemon', null)
-    if (contextMenu.value && !canControlPokemon(contextMenu.value.id)) closeContextMenu()
-    if (hpDialog.value && !canControlPokemon(hpDialog.value.id)) closeHpDialog()
-    if (combatStagesDialog.value && !canControlPokemon(combatStagesDialog.value.id)) closeCombatStagesDialog()
-    if (conditionsDialog.value && !canControlPokemon(conditionsDialog.value.id)) closeConditionsDialog()
-    if (damageDialog.value && !canControlPokemon(damageDialog.value.id)) closeDamageDialog()
+    closeUnauthorizedActions()
   },
 )
 

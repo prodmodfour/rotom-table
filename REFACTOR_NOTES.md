@@ -499,3 +499,16 @@
   - `npm test` — passes: 22 test files / 68 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: isometric token action controller extraction
+
+- Extracted token context-menu and action-dialog orchestration from `components/IsometricGrid.client.vue` into `composables/isometric/useTokenActionController.ts`.
+  - The composable owns context-menu state, HP/combat-stage/condition/damage dialog refs, derived dialog values, submit flows, live token metadata syncing, unauthorized-action cleanup, and Escape/topmost-overlay closing.
+  - `IsometricGrid.client.vue` now wires renderer interactions to a focused controller instead of directly managing all token action state and persistence events inline.
+- Added `tests/composables/isometric/useTokenActionController.test.ts` covering context action routing, HP/combat-stage/condition submissions, live metadata sync, unauthorized cleanup, and topmost overlay closing.
+- Preserved existing public `IsometricGrid` events, context-menu action gating, dialog focus behavior, Escape close priority, and HP/stage/condition/damage submit payload shapes.
+- Quality gates after this phase:
+  - `npm test` — passes: 23 test files / 72 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run typecheck` — still fails only on the documented pre-existing broader typecheck backlog; no errors are reported for `IsometricGrid.client.vue`, the new token action controller, or the new test.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
