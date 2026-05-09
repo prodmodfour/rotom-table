@@ -814,3 +814,13 @@
   - `npm test` — passes: 49 test files / 171 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: Pokémon identity panel component
+
+- Continued Phase 7 Pokémon sheet page decomposition by extracting the identity strip into `components/sheets/PokemonIdentityPanel.vue`.
+  - The component owns sprite/name/species/type/nature/scene identity markup and scoped styles while receiving explicit sheet, option, and derived-display props.
+- Updated `pages/sheets/[slug].vue` to wire the identity panel with named `v-model`s for type and egg-group CSV fields.
+- Quality gates after this phase:
+  - `npm test` — passes: 49 test files / 171 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
