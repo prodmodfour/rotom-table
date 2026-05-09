@@ -1336,3 +1336,13 @@
   - `npm test` — passes: 71 test files / 265 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: encounter generate setup card extraction
+
+- Extracted the roll setup form from `pages/generate.vue` into `components/encounters/EncounterGenerateSetupCard.vue`.
+  - The component owns region/table/count/out-root/preview controls, selected-table metadata, and setup-specific styling with explicit `v-model` bindings and action emits.
+  - The generate route now wires page state into setup/result cards while preserving URL/query behavior, browser-side preview rerolls, and request generation flow.
+- Quality gates after this phase:
+  - `npm test` — passes: 71 test files / 265 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
