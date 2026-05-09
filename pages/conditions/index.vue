@@ -15,27 +15,20 @@ const filteredByCategory = computed(() => groupFilteredConditions(conditionGroup
 
 <template>
   <div class="ref-index">
-    <header class="ref-header">
-      <AppNavigation />
-      <section class="panel-card">
-        <div class="ref-heading">
-          <h1>Conditions</h1>
-          <span class="badge">{{ filtered.length }} of {{ conditions.length }}</span>
-        </div>
-        <p class="ref-copy">
-          PTU status conditions and afflictions from
-          <code>ptu-data/data/conditions.json</code>.
-        </p>
-        <label class="search-field">
-          <span class="sr-only">Search conditions</span>
-          <input
-            v-model.trim="searchTerm"
-            type="search"
-            placeholder="Search by name, alias, category, source, or effect…"
-          />
-        </label>
-      </section>
-    </header>
+    <ReferenceIndexHeader title="Conditions" :count="filtered.length" :total="conditions.length">
+      <p class="ref-copy">
+        PTU status conditions and afflictions from
+        <code>ptu-data/data/conditions.json</code>.
+      </p>
+      <label class="search-field">
+        <span class="sr-only">Search conditions</span>
+        <input
+          v-model.trim="searchTerm"
+          type="search"
+          placeholder="Search by name, alias, category, source, or effect…"
+        />
+      </label>
+    </ReferenceIndexHeader>
 
     <main class="ref-list condition-list">
       <section

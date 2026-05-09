@@ -32,36 +32,29 @@ const toggleTag = (tag: string) => {
 
 <template>
   <div class="ref-index">
-    <header class="ref-header">
-      <AppNavigation />
-      <section class="panel-card">
-        <div class="ref-heading">
-          <h1>Features</h1>
-          <span class="badge">{{ filtered.length }} of {{ features.length }}</span>
-        </div>
-        <p class="ref-copy">
-          Trainer Features parsed from <code>core/03-skills-edges-and-features.md</code>
-          and <code>core/04-trainer-classes.md</code> (errata-2 patches applied).
-          Class Features are tagged <code>Class</code>; pick a tag below to filter.
-        </p>
+    <ReferenceIndexHeader title="Features" :count="filtered.length" :total="features.length">
+      <p class="ref-copy">
+        Trainer Features parsed from <code>core/03-skills-edges-and-features.md</code>
+        and <code>core/04-trainer-classes.md</code> (errata-2 patches applied).
+        Class Features are tagged <code>Class</code>; pick a tag below to filter.
+      </p>
 
-        <ReferenceFilterChips
-          :chips="tagChips"
-          :active-key="tagFilter"
-          aria-label="Filter features by tag"
-          @select="toggleTag"
+      <ReferenceFilterChips
+        :chips="tagChips"
+        :active-key="tagFilter"
+        aria-label="Filter features by tag"
+        @select="toggleTag"
+      />
+
+      <label class="search-field">
+        <span class="sr-only">Search features</span>
+        <input
+          v-model.trim="searchTerm"
+          type="search"
+          placeholder="Search by name, prereq, class, trigger, or effect…"
         />
-
-        <label class="search-field">
-          <span class="sr-only">Search features</span>
-          <input
-            v-model.trim="searchTerm"
-            type="search"
-            placeholder="Search by name, prereq, class, trigger, or effect…"
-          />
-        </label>
-      </section>
-    </header>
+      </label>
+    </ReferenceIndexHeader>
 
     <main class="ref-list">
       <NuxtLink

@@ -34,35 +34,28 @@ const toggleCategory = (category: string) => {
 
 <template>
   <div class="ref-index">
-    <header class="ref-header">
-      <AppNavigation />
-      <section class="panel-card">
-        <div class="ref-heading">
-          <h1>Rules</h1>
-          <span class="badge">{{ filtered.length }} of {{ rules.length }}</span>
-        </div>
-        <p class="ref-copy">
-          PTU rules and house rules from <code>ptu-data/data/rules.json</code>.
-          Pick a category to filter, or search by name, source, or rule text.
-        </p>
+    <ReferenceIndexHeader title="Rules" :count="filtered.length" :total="rules.length">
+      <p class="ref-copy">
+        PTU rules and house rules from <code>ptu-data/data/rules.json</code>.
+        Pick a category to filter, or search by name, source, or rule text.
+      </p>
 
-        <ReferenceFilterChips
-          :chips="categoryChips"
-          :active-key="categoryFilter"
-          aria-label="Filter rules by category"
-          @select="toggleCategory"
+      <ReferenceFilterChips
+        :chips="categoryChips"
+        :active-key="categoryFilter"
+        aria-label="Filter rules by category"
+        @select="toggleCategory"
+      />
+
+      <label class="search-field">
+        <span class="sr-only">Search rules</span>
+        <input
+          v-model.trim="searchTerm"
+          type="search"
+          placeholder="Search by name, category, source, or text…"
         />
-
-        <label class="search-field">
-          <span class="sr-only">Search rules</span>
-          <input
-            v-model.trim="searchTerm"
-            type="search"
-            placeholder="Search by name, category, source, or text…"
-          />
-        </label>
-      </section>
-    </header>
+      </label>
+    </ReferenceIndexHeader>
 
     <main class="ref-list rules-list">
       <section

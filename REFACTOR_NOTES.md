@@ -1718,3 +1718,13 @@
   - `npm test` — passes: 84 test files / 322 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: shared reference index header
+
+- Extracted duplicated PTU reference index app-navigation, heading, count badge, and panel shell into `components/reference/ReferenceIndexHeader.vue`.
+- Updated ability, edge, move, item, feature, rule, and condition index routes to compose their existing copy/filter controls inside the shared header shell.
+- Preserved existing index route URLs, counts, search/filter inputs, and reference-page styling while reducing route-local presentation boilerplate.
+- Quality gates after this phase:
+  - `npm test` — passes: 84 test files / 322 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

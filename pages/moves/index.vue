@@ -18,44 +18,37 @@ const filtered = computed(() => filterMovesForIndex(moves, {
 
 <template>
   <div class="ref-index">
-    <header class="ref-header">
-      <AppNavigation />
-      <section class="panel-card">
-        <div class="ref-heading">
-          <h1>Moves</h1>
-          <span class="badge">{{ filtered.length }} of {{ moves.length }}</span>
-        </div>
-        <p class="ref-copy">
-          PTU 1.05 move list from
-          <code>ptu-data/data/moves.json</code>.
-        </p>
+    <ReferenceIndexHeader title="Moves" :count="filtered.length" :total="moves.length">
+      <p class="ref-copy">
+        PTU 1.05 move list from
+        <code>ptu-data/data/moves.json</code>.
+      </p>
 
-        <div class="moves-controls">
-          <label class="search-field">
-            <span class="sr-only">Search moves</span>
-            <input
-              v-model.trim="searchTerm"
-              type="search"
-              placeholder="Search by name, type, frequency, range, or effect…"
-            />
-          </label>
+      <div class="moves-controls">
+        <label class="search-field">
+          <span class="sr-only">Search moves</span>
+          <input
+            v-model.trim="searchTerm"
+            type="search"
+            placeholder="Search by name, type, frequency, range, or effect…"
+          />
+        </label>
 
-          <div class="type-filter" role="radiogroup" aria-label="Filter by type">
-            <button
-              v-for="type in allTypes"
-              :key="type"
-              type="button"
-              :class="['type-filter__button', { active: typeFilter === type, 'type-filter__button--all': type === ALL_MOVE_TYPES_OPTION }]"
-              :aria-pressed="typeFilter === type"
-              @click="typeFilter = type"
-            >
-              <span v-if="type === ALL_MOVE_TYPES_OPTION">All</span>
-              <TypeBadge v-else :type="type" size="sm" />
-            </button>
-          </div>
+        <div class="type-filter" role="radiogroup" aria-label="Filter by type">
+          <button
+            v-for="type in allTypes"
+            :key="type"
+            type="button"
+            :class="['type-filter__button', { active: typeFilter === type, 'type-filter__button--all': type === ALL_MOVE_TYPES_OPTION }]"
+            :aria-pressed="typeFilter === type"
+            @click="typeFilter = type"
+          >
+            <span v-if="type === ALL_MOVE_TYPES_OPTION">All</span>
+            <TypeBadge v-else :type="type" size="sm" />
+          </button>
         </div>
-      </section>
-    </header>
+      </div>
+    </ReferenceIndexHeader>
 
     <main class="ref-list">
       <NuxtLink

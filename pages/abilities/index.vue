@@ -12,27 +12,20 @@ const filtered = computed(() => filterAbilitiesForIndex(abilities, { searchTerm:
 
 <template>
   <div class="ref-index">
-    <header class="ref-header">
-      <AppNavigation />
-      <section class="panel-card">
-        <div class="ref-heading">
-          <h1>Abilities</h1>
-          <span class="badge">{{ filtered.length }} of {{ abilities.length }}</span>
-        </div>
-        <p class="ref-copy">
-          PTU 1.05 ability list from
-          <code>ptu-data/data/abilities.json</code>.
-        </p>
-        <label class="search-field">
-          <span class="sr-only">Search abilities</span>
-          <input
-            v-model.trim="searchTerm"
-            type="search"
-            placeholder="Search by name, frequency, trigger, or effect…"
-          />
-        </label>
-      </section>
-    </header>
+    <ReferenceIndexHeader title="Abilities" :count="filtered.length" :total="abilities.length">
+      <p class="ref-copy">
+        PTU 1.05 ability list from
+        <code>ptu-data/data/abilities.json</code>.
+      </p>
+      <label class="search-field">
+        <span class="sr-only">Search abilities</span>
+        <input
+          v-model.trim="searchTerm"
+          type="search"
+          placeholder="Search by name, frequency, trigger, or effect…"
+        />
+      </label>
+    </ReferenceIndexHeader>
 
     <main class="ref-list">
       <NuxtLink

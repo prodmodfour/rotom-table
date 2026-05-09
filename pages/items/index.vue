@@ -34,52 +34,45 @@ const toggleCategory = (category: string) => {
 
 <template>
   <div class="ref-index">
-    <header class="ref-header">
-      <AppNavigation />
-      <section class="panel-card">
-        <div class="ref-heading">
-          <h1>Items</h1>
-          <span class="badge">{{ filtered.length }} of {{ items.length }}</span>
-        </div>
-        <p class="ref-copy">
-          PTU gear, medicine, Poké Balls, TMs, Held Items, and equipment from
-          <code>ptu-data/data/items.json</code>. Pick a category or section, or search by
-          name, cost, source, or effect.
-        </p>
+    <ReferenceIndexHeader title="Items" :count="filtered.length" :total="items.length">
+      <p class="ref-copy">
+        PTU gear, medicine, Poké Balls, TMs, Held Items, and equipment from
+        <code>ptu-data/data/items.json</code>. Pick a category or section, or search by
+        name, cost, source, or effect.
+      </p>
 
-        <ReferenceFilterChips
-          :chips="categoryChips"
-          :active-key="categoryFilter"
-          aria-label="Filter items by category"
-          @select="toggleCategory"
-        />
+      <ReferenceFilterChips
+        :chips="categoryChips"
+        :active-key="categoryFilter"
+        aria-label="Filter items by category"
+        @select="toggleCategory"
+      />
 
-        <div class="item-controls">
-          <label class="search-field">
-            <span class="sr-only">Search items</span>
-            <input
-              v-model.trim="searchTerm"
-              type="search"
-              placeholder="Search by name, cost, section, source, or effect…"
-            />
-          </label>
+      <div class="item-controls">
+        <label class="search-field">
+          <span class="sr-only">Search items</span>
+          <input
+            v-model.trim="searchTerm"
+            type="search"
+            placeholder="Search by name, cost, section, source, or effect…"
+          />
+        </label>
 
-          <label class="select-field">
-            <span>Section</span>
-            <select v-model="sectionFilter">
-              <option :value="null">All sections</option>
-              <option
-                v-for="{ section, count } in sectionCounts"
-                :key="section"
-                :value="section"
-              >
-                {{ section }} ({{ count }})
-              </option>
-            </select>
-          </label>
-        </div>
-      </section>
-    </header>
+        <label class="select-field">
+          <span>Section</span>
+          <select v-model="sectionFilter">
+            <option :value="null">All sections</option>
+            <option
+              v-for="{ section, count } in sectionCounts"
+              :key="section"
+              :value="section"
+            >
+              {{ section }} ({{ count }})
+            </option>
+          </select>
+        </label>
+      </div>
+    </ReferenceIndexHeader>
 
     <main class="ref-list">
       <NuxtLink
