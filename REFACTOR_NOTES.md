@@ -892,3 +892,13 @@
   - `npm test` — passes: 49 test files / 171 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: trainer combat overview panel extraction
+
+- Continued Phase 7 trainer sheet page decomposition by extracting combat vitals, Action Points, evasion/conditions, digestion, and trainer capabilities into `components/sheets/TrainerCombatOverviewPanel.vue`.
+- Updated `pages/sheets/trainers/[slug].vue` to pass explicit derived combat totals and HP/evasion actions into the panel while preserving current HP clamping, AP edits, evasion bonus bounds, condition picker behavior, and capability CSV editing.
+- Removed now-dead route-page styles/imports for the extracted combat overview sections.
+- Quality gates after this phase:
+  - `npm test` — passes: 49 test files / 171 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.

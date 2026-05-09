@@ -8,11 +8,6 @@ import { trainerCatalog } from '~/data/trainerCatalog'
 import { normalizeTrainerSheet } from '~/utils/sheetNormalize'
 import { setLookupAbilityName } from '~/utils/sheetAbilityLookup'
 import { formatLookupValue, setLookupMoveName } from '~/utils/sheetMoveLookup'
-import {
-  EVASION_BONUS_MAX,
-  EVASION_BONUS_MIN,
-  formatSignedModifier,
-} from '~/utils/evasion'
 import { useEditableSheetResource } from '~/composables/sheets/useEditableSheetResource'
 import { useTrainerSheetDerived } from '~/composables/sheets/useTrainerSheetDerived'
 import { useTrainerPortraitPicker } from '~/composables/sheets/useTrainerPortraitPicker'
@@ -78,13 +73,11 @@ const activeTab = ref<TabKey>('trainer')
 const {
   stats,
   skills,
-  capRes,
   adv,
   fullMaxHp,
   maxHp,
   maxAp,
   currentHp,
-  apLeft,
   setCurrentHp,
   totalRow,
   moveRows,
@@ -242,183 +235,22 @@ const {
       <!-- COMBAT TAB                                                           -->
       <!-- =================================================================== -->
       <section v-if="activeTab === 'combat'" class="tab-panel">
-        <div class="combat-strip">
-          <div class="combat-cell"><span>Current HP</span>
-            <strong>
-              <EditableCell
-                :model-value="currentHp"
-                type="number"
-                :min="0"
-                :max="maxHp"
-                @update:model-value="setCurrentHp"
-              />
-            </strong>
-          </div>
-          <div
-            class="combat-cell"
-            title="Formula Max HP = Level × 2 + (HP × 3) + 10. Injuries reduce the effective Max HP by 1/10 each."
-          ><span>Max HP</span><strong>{{ maxHp }}<small v-if="maxHp !== fullMaxHp">full {{ fullMaxHp }}</small></strong></div>
-          <div class="combat-cell" title="A Tick is 1/10th of full maximum Hit Points, rounded down."><span>Tick</span><strong>{{ tickValue }}</strong></div>
-          <div class="combat-cell" title="Fractional HP values use full Max HP before the injury cap."><span>½ HP</span><strong>{{ hpThresholds.half }}</strong></div>
-          <div class="combat-cell" title="Fractional HP values use full Max HP before the injury cap."><span>⅓ HP</span><strong>{{ hpThresholds.third }}</strong></div>
-          <div class="combat-cell" title="Fractional HP values use full Max HP before the injury cap."><span>¼ HP</span><strong>{{ hpThresholds.quarter }}</strong></div>
-          <div class="combat-cell"><span>DR</span>
-            <strong><EditableCell v-model="sheet.damageReduction" type="number" :min="0" /></strong>
-          </div>
-          <div class="combat-cell"><span>Lv</span>
-            <strong><EditableCell v-model="sheet.level" type="number" :min="1" /></strong>
-          </div>
-          <div class="combat-cell"><span>CS Atk</span><strong>{{ totalRow('atk') }}</strong></div>
-          <div class="combat-cell"><span>CS SAtk</span><strong>{{ totalRow('satk') }}</strong></div>
-          <div class="combat-cell"><span>Speed</span><strong>{{ totalRow('spd') }}</strong></div>
-        </div>
-
-        <div class="grid-two">
-          <div class="block">
-            <h2 class="block-title">Action Points</h2>
-            <table class="data-table ap-table">
-              <thead><tr><th>Left</th><th>Spent</th><th>Bound</th><th>Drained</th><th>Max</th></tr></thead>
-              <tbody>
-                <tr>
-                  <td><EditableCell v-model="sheet.ap!.left"    type="number" :min="0" /></td>
-                  <td><EditableCell v-model="sheet.ap!.spent"   type="number" :min="0" /></td>
-                  <td><EditableCell v-model="sheet.ap!.bound"   type="number" :min="0" /></td>
-                  <td><EditableCell v-model="sheet.ap!.drained" type="number" :min="0" /></td>
-                  <td><strong>{{ maxAp }}</strong></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          <div class="block">
-            <h2 class="block-title">Evasion</h2>
-            <ul class="kv-list evasion-list">
-              <li title="Stat evasion = floor(Speed Total / 5), capped at +6 from stats.">
-                <span class="evasion-list__label">Speed Evasion <small>stat {{ trainerEvasion.speed.base }}</small></span>
-                <span class="evasion-list__value">
-                  <strong>{{ trainerEvasion.speed.total }}</strong>
-                  <span class="evasion-list__bonus">
-                    bonus
-                    <EditableCell
-                      :model-value="trainerEvasion.speed.bonus"
-                      type="number"
-                      :min="EVASION_BONUS_MIN"
-                      :max="EVASION_BONUS_MAX"
-                      :format="formatSignedModifier"
-                      @update:model-value="(v) => setEvasionBonus('speedBonus', v as number | undefined)"
-                    />
-                  </span>
-                </span>
-              </li>
-              <li title="Stat evasion = floor(Defense Total / 5), capped at +6 from stats.">
-                <span class="evasion-list__label">Physical Evasion <small>stat {{ trainerEvasion.physical.base }}</small></span>
-                <span class="evasion-list__value">
-                  <strong>{{ trainerEvasion.physical.total }}</strong>
-                  <span class="evasion-list__bonus">
-                    bonus
-                    <EditableCell
-                      :model-value="trainerEvasion.physical.bonus"
-                      type="number"
-                      :min="EVASION_BONUS_MIN"
-                      :max="EVASION_BONUS_MAX"
-                      :format="formatSignedModifier"
-                      @update:model-value="(v) => setEvasionBonus('physicalBonus', v as number | undefined)"
-                    />
-                  </span>
-                </span>
-              </li>
-              <li title="Stat evasion = floor(Special Defense Total / 5), capped at +6 from stats.">
-                <span class="evasion-list__label">Special Evasion <small>stat {{ trainerEvasion.special.base }}</small></span>
-                <span class="evasion-list__value">
-                  <strong>{{ trainerEvasion.special.total }}</strong>
-                  <span class="evasion-list__bonus">
-                    bonus
-                    <EditableCell
-                      :model-value="trainerEvasion.special.bonus"
-                      type="number"
-                      :min="EVASION_BONUS_MIN"
-                      :max="EVASION_BONUS_MAX"
-                      :format="formatSignedModifier"
-                      @update:model-value="(v) => setEvasionBonus('specialBonus', v as number | undefined)"
-                    />
-                  </span>
-                </span>
-              </li>
-            </ul>
-            <div class="muted condition-block">
-              <strong>Conditions:</strong>
-              <ConditionPicker v-model="sheet.conditions" />
-            </div>
-            <p class="muted">
-              <strong>Digestion:</strong>
-              <EditableCell v-model="sheet.digestion" placeholder="—" />
-            </p>
-          </div>
-        </div>
-
-        <div class="block">
-          <h2 class="block-title">Capabilities</h2>
-          <ul class="cap-grid">
-            <li>
-              <span class="cap-label">Overland</span>
-              <span class="cap-value">
-                <EditableCell v-model="sheet.capabilities!.overland" type="number" :min="0" />
-              </span>
-            </li>
-            <li>
-              <span class="cap-label">Throw Range</span>
-              <span class="cap-value">
-                <EditableCell v-model="sheet.capabilities!.throwingRange" type="number" :min="0" />
-              </span>
-            </li>
-            <li>
-              <span class="cap-label">High Jump</span>
-              <span class="cap-value">
-                <EditableCell v-model="sheet.capabilities!.highJump" type="number" :min="0" />
-              </span>
-            </li>
-            <li>
-              <span class="cap-label">Long Jump</span>
-              <span class="cap-value">
-                <EditableCell v-model="sheet.capabilities!.longJump" type="number" :min="0" />
-              </span>
-            </li>
-            <li>
-              <span class="cap-label">Swim</span>
-              <span class="cap-value">
-                <EditableCell v-model="sheet.capabilities!.swim" type="number" :min="0" />
-              </span>
-            </li>
-            <li>
-              <span class="cap-label">Power</span>
-              <span class="cap-value">
-                <EditableCell v-model="sheet.capabilities!.power" type="number" :min="0" />
-              </span>
-            </li>
-            <li>
-              <span class="cap-label">Sky</span>
-              <span class="cap-value">
-                <EditableCell v-model="sheet.capabilities!.sky" type="number" :min="0" />
-              </span>
-            </li>
-            <li>
-              <span class="cap-label">Levitate</span>
-              <span class="cap-value">
-                <EditableCell v-model="sheet.capabilities!.levitate" type="number" :min="0" />
-              </span>
-            </li>
-            <li>
-              <span class="cap-label">Burrow</span>
-              <span class="cap-value">
-                <EditableCell v-model="sheet.capabilities!.burrow" type="number" :min="0" />
-              </span>
-            </li>
-          </ul>
-          <p class="muted-help" style="margin-top: 0.6rem">
-            <strong>Other capabilities:</strong>
-            <EditableCell v-model="otherCapsCsv" placeholder="Telepath, Aura Reader" />
-          </p>
-        </div>
+        <TrainerCombatOverviewPanel
+          v-model:other-caps-csv="otherCapsCsv"
+          :sheet="sheet"
+          :current-hp="currentHp"
+          :max-hp="maxHp"
+          :full-max-hp="fullMaxHp"
+          :max-ap="maxAp"
+          :tick-value="tickValue"
+          :hp-thresholds="hpThresholds"
+          :attack-total="totalRow('atk')"
+          :special-attack-total="totalRow('satk')"
+          :speed-total="totalRow('spd')"
+          :trainer-evasion="trainerEvasion"
+          @set-current-hp="setCurrentHp"
+          @set-evasion-bonus="setEvasionBonus"
+        />
 
         <div class="block">
           <h2 class="block-title">
@@ -1050,12 +882,6 @@ const {
   letter-spacing: 0.02em;
   text-transform: none;
 }
-.condition-block {
-  display: grid;
-  gap: 0.45rem;
-  margin: 0.55rem 0;
-}
-.condition-block > strong { color: var(--ink-bright); }
 .muted-help { color: var(--ink-muted); font-size: 0.78rem; margin: 0 0 0.4rem; }
 
 /* ===== Tables ===== */
@@ -1164,98 +990,6 @@ const {
 }
 
 .kv-list li:last-child { border-bottom: 0; }
-
-.evasion-list li {
-  align-items: flex-start;
-}
-
-.evasion-list__label {
-  display: inline-flex;
-  flex-direction: column;
-  gap: 0.08rem;
-}
-
-.evasion-list__label small,
-.evasion-list__bonus {
-  color: var(--ink-muted);
-  font-size: 0.72rem;
-  font-weight: 400;
-}
-
-.evasion-list__value {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 0.45rem;
-}
-
-.evasion-list__value strong {
-  color: var(--ink-bright);
-  font-variant-numeric: tabular-nums;
-}
-
-/* Combat strip */
-.combat-strip {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-  gap: 0.4rem;
-}
-
-.combat-cell {
-  display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
-  padding: 0.45rem 0.5rem;
-  border: 1px solid var(--rule-soft);
-  border-radius: 10px;
-  background: var(--paper-inset);
-  text-align: center;
-}
-
-.combat-cell span {
-  font-size: 0.68rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--ink-muted);
-}
-.combat-cell strong {
-  font-size: 1.15rem;
-  color: var(--ink-bright);
-  font-variant-numeric: tabular-nums;
-  font-family: var(--font-book);
-}
-
-.combat-cell small {
-  display: block;
-  margin-top: 0.08rem;
-  color: var(--ink-muted);
-  font-family: var(--font-ui);
-  font-size: 0.68rem;
-  font-weight: 400;
-  letter-spacing: 0.04em;
-}
-
-/* Capabilities */
-.cap-grid {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 0.35rem;
-}
-
-.cap-grid li {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  padding: 0.3rem 0.55rem;
-  border: 1px solid var(--rule-soft);
-  border-radius: 8px;
-  background: var(--paper-inset);
-}
-
-.cap-label { color: var(--ink-soft); font-size: 0.82rem; }
-.cap-value { color: var(--ink-bright); font-weight: 700; font-size: 0.92rem; font-variant-numeric: tabular-nums; }
 
 /* Movelist columns */
 .movelist-table th,
