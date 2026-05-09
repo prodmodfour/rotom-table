@@ -1428,3 +1428,14 @@
   - `npm test` — passes: 71 test files / 265 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: move automation target resolution panel
+
+- Extracted target selection plus accuracy/damage resolution UI into `components/move-automation/MoveAutomationTargetResolutionPanel.vue`.
+  - The component owns target chips, roll-all controls, per-target accuracy/damage inputs, damage preview text, and target-resolution styles behind focused events.
+  - `MoveAutomationResolveStep.vue` now delegates target mechanics while keeping suggestion/manual-effect sections together.
+- Preserved target count behavior, self-target styling, roll buttons, hit/crit/apply-damage toggles, manual HP-loss override input, and damage multiplier preview.
+- Quality gates after this phase:
+  - `npm test` — passes: 71 test files / 265 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

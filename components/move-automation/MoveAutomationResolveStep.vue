@@ -63,66 +63,22 @@ const numericValue = (event: Event): number => {
     />
 
     <main class="move-resolution">
-      <section v-if="requiresTargets" class="move-resolution__section">
-        <header class="move-resolution__section-header">
-          <h3>Targets</h3>
-          <span v-if="script.targetCount">Choose {{ script.targetCount }}</span>
-          <span v-else>Choose all affected tokens</span>
-        </header>
-        <div class="target-grid">
-          <button
-            v-for="token in targetOptions"
-            :key="token.id"
-            type="button"
-            class="target-chip"
-            :class="{ 'is-selected': targetIds.includes(token.id), 'is-user': token.id === user.id }"
-            @click="emit('toggle-target', token.id)"
-          >
-            <strong>{{ token.species }}</strong>
-            <span>{{ token.currentHp }}/{{ token.maxHp }} HP</span>
-          </button>
-        </div>
-      </section>
-
-      <section v-if="script.requiresAccuracy || script.damaging" class="move-resolution__section">
-        <header class="move-resolution__section-header">
-          <h3>Accuracy & damage</h3>
-          <button type="button" class="mini-button" @click="emit('roll-all')">Roll all</button>
-        </header>
-        <p v-if="!selectedTargets.length && requiresTargets" class="move-resolution__hint">Choose targets first.</p>
-        <div v-for="target in selectedTargets" :key="target.id" class="target-resolution">
-          <header>
-            <strong>{{ target.species }}</strong>
-            <span>{{ target.currentHp }}/{{ target.maxHp }} HP</span>
-          </header>
-          <div v-if="script.requiresAccuracy" class="target-resolution__row">
-            <label>
-              <span>Accuracy d20</span>
-              <input v-model="ensureTargetResolution(target.id).accuracyRoll" type="number" min="1" max="20" />
-            </label>
-            <button type="button" class="mini-button" @click="emit('roll-accuracy', target.id)">Roll</button>
-            <label class="inline-check"><input v-model="ensureTargetResolution(target.id).hit" type="checkbox" /> Hit</label>
-            <label class="inline-check"><input v-model="ensureTargetResolution(target.id).crit" type="checkbox" /> Crit</label>
-          </div>
-          <div v-if="script.damaging" class="target-resolution__row">
-            <button type="button" class="mini-button" :disabled="!selectedMoveFormula" @click="emit('roll-damage', target.id)">Roll damage</button>
-            <span v-if="ensureTargetResolution(target.id).damageRoll" class="roll-readout">
-              [{{ ensureTargetResolution(target.id).damageRoll?.rolls.join(', ') }}] + {{ ensureTargetResolution(target.id).damageRoll?.mod }} =
-              <strong>{{ ensureTargetResolution(target.id).damageRoll?.total }}</strong>
-            </span>
-            <label class="inline-check"><input v-model="ensureTargetResolution(target.id).applyDamage" type="checkbox" /> Apply damage</label>
-          </div>
-          <div v-if="script.damaging" class="target-resolution__row">
-            <label>
-              <span>Final HP loss override</span>
-              <input v-model="ensureTargetResolution(target.id).manualHpLoss" type="number" min="0" placeholder="auto" />
-            </label>
-            <span class="damage-preview">
-              ×{{ multiplierLabel(target) }} → {{ targetDamageLoss(target) }} HP lost
-            </span>
-          </div>
-        </div>
-      </section>
+      <MoveAutomationTargetResolutionPanel
+        :user="user"
+        :script="script"
+        :target-options="targetOptions"
+        :selected-targets="selectedTargets"
+        :target-ids="targetIds"
+        :requires-targets="requiresTargets"
+        :selected-move-formula="selectedMoveFormula"
+        :ensure-target-resolution="ensureTargetResolution"
+        :target-damage-loss="targetDamageLoss"
+        :multiplier-label="multiplierLabel"
+        @toggle-target="emit('toggle-target', $event)"
+        @roll-all="emit('roll-all')"
+        @roll-accuracy="emit('roll-accuracy', $event)"
+        @roll-damage="emit('roll-damage', $event)"
+      />
 
       <section class="move-resolution__section">
         <header class="move-resolution__section-header"><h3>Conditions</h3></header>
@@ -251,31 +207,10 @@ const numericValue = (event: Event): number => {
   font: inherit;
 }
 
-.mini-button,
-.target-chip,
 .move-resolution__section {
   border: 1px solid var(--rule-soft);
   border-radius: 14px;
   background: var(--paper);
-}
-
-.mini-button {
-  padding: 0.55rem 0.85rem;
-  border-radius: 10px;
-  color: var(--ink);
-  cursor: pointer;
-  font: inherit;
-  font-weight: 700;
-}
-
-.mini-button:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-
-.target-chip.is-selected {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px rgba(250, 189, 47, 0.16);
 }
 
 .move-resolution__hint {
@@ -291,8 +226,7 @@ const numericValue = (event: Event): number => {
   margin: 0;
 }
 
-.move-resolution__section-header,
-.target-resolution header {
+.move-resolution__section-header {
   display: flex;
   justify-content: space-between;
   gap: 0.5rem;
@@ -306,36 +240,6 @@ const numericValue = (event: Event): number => {
   min-width: 0;
 }
 
-.target-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.45rem;
-  margin-top: 0.6rem;
-}
-
-.target-chip {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-  min-width: 9rem;
-  padding: 0.55rem 0.65rem;
-  color: var(--ink);
-  cursor: pointer;
-}
-
-.target-chip.is-user {
-  border-style: dashed;
-}
-
-.target-resolution {
-  display: grid;
-  gap: 0.5rem;
-  margin-top: 0.55rem;
-  padding-top: 0.55rem;
-  border-top: 1px solid var(--rule-soft);
-}
-
-.target-resolution__row,
 .effect-toggle,
 .stage-delta-grid label {
   display: flex;
@@ -344,29 +248,9 @@ const numericValue = (event: Event): number => {
   align-items: center;
 }
 
-.target-resolution__row label:not(.inline-check) {
-  display: grid;
-  gap: 0.15rem;
-  min-width: 8rem;
-}
-
-.target-resolution__row input[type='number'] {
-  max-width: 8rem;
-}
-
-.inline-check,
-.effect-toggle {
-  color: var(--ink);
-}
-
-.roll-readout,
-.damage-preview {
-  color: var(--ink-bright);
-  font-variant-numeric: tabular-nums;
-}
-
 .effect-toggle {
   padding: 0.35rem 0;
+  color: var(--ink);
 }
 
 .effect-toggle small {
