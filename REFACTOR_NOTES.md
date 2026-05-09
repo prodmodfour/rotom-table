@@ -931,3 +931,13 @@
   - `npm test` — passes: 49 test files / 171 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: trainer portrait picker modal extraction
+
+- Continued Phase 7 trainer sheet page decomposition by extracting the trainer portrait picker modal into `components/sheets/TrainerPortraitPickerModal.vue`.
+- Updated `pages/sheets/trainers/[slug].vue` to pass the picker query, filtered catalog options, selected portrait URL, and close/select actions through explicit props/emits.
+- Removed now-dead portrait picker and table-control styles from the route page, keeping portrait lookup/filter state in `useTrainerPortraitPicker` and presentation in the modal component.
+- Quality gates after this phase:
+  - `npm test` — passes: 49 test files / 171 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
