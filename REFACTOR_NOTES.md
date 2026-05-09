@@ -1675,3 +1675,14 @@
   - `npm test` — passes: 82 test files / 314 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: item detail related-item helper
+
+- Extracted item detail related-item selection from `pages/items/[slug].vue` into `utils/reference/itemDetails.ts`.
+  - The helper owns primary-category matching, current-item exclusion, and result limiting while preserving related item order.
+- Updated the Item detail route to consume the focused helper and keep route/page state separate from related-item derivation.
+- Added `tests/utils/reference/itemDetails.test.ts` covering primary-category matching, current-item exclusion, limits, and empty inputs.
+- Quality gates after this phase:
+  - `npm test` — passes: 83 test files / 318 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

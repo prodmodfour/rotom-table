@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { findItem, items, toSlug } from '~/data/ptuReference'
+import { relatedItemsByPrimaryCategory } from '~/utils/reference/itemDetails'
 
 const route = useRoute()
 
@@ -12,15 +13,7 @@ useHead(() => ({
     : 'Item not found · Rotom Table',
 }))
 
-const relatedItems = computed(() => {
-  const current = item.value
-  const primaryCategory = current?.categories[0]
-  if (!current || !primaryCategory) return []
-
-  return items
-    .filter((entry) => entry.name !== current.name && entry.categories.includes(primaryCategory))
-    .slice(0, 12)
-})
+const relatedItems = computed(() => relatedItemsByPrimaryCategory(item.value, items))
 </script>
 
 <template>
