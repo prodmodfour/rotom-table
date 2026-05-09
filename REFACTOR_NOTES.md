@@ -971,3 +971,13 @@
   - `npm test` — passes: 49 test files / 171 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: trainer inventory tab shell extraction
+
+- Finished the trainer tab-shell extraction by wrapping the Inventory tab in `components/sheets/TrainerInventoryTabPanel.vue`.
+- Updated `pages/sheets/trainers/[slug].vue` to use focused tab components for every trainer sheet tab and removed the final route-page tab-panel style.
+- Preserved existing inventory add/remove behavior and kept `TrainerInventoryPanel.vue` responsible for the detailed inventory/equipment table presentation.
+- Quality gates after this phase:
+  - `npm test` — passes: 49 test files / 171 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.

@@ -247,13 +247,12 @@ const {
       <!-- =================================================================== -->
       <!-- INVENTORY TAB                                                        -->
       <!-- =================================================================== -->
-      <section v-if="activeTab === 'inventory'" class="tab-panel">
-        <TrainerInventoryPanel
-          :sheet="sheet"
-          @add-item="addInvItem"
-          @remove-item="removeInvItem"
-        />
-      </section>
+      <TrainerInventoryTabPanel
+        v-if="activeTab === 'inventory'"
+        :sheet="sheet"
+        @add-item="addInvItem"
+        @remove-item="removeInvItem"
+      />
 
       <!-- =================================================================== -->
       <!-- FEATURES TAB                                                         -->
@@ -336,12 +335,6 @@ const {
   background: var(--paper-soft);
   box-shadow: var(--shadow-card);
   padding: 0.95rem;
-}
-
-.tab-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 0.85rem;
 }
 
 </style>
