@@ -4,8 +4,6 @@ import { useRoute, useRouter } from 'vue-router'
 import {
   PhArrowsOutCardinal,
   PhCaretDown,
-  PhFolder,
-  PhFolderOpen,
   PhPencilSimple,
   PhPlus,
   PhTrash,
@@ -670,40 +668,25 @@ onMounted(async () => {
 
     <section class="sheet-section">
       <div v-if="hasAnything" class="sheets-grid">
-        <button
+        <FolderTileButton
           v-for="folder in visibleFolders"
           :key="`folder-${folder.path}`"
-          type="button"
-          class="folder-tile"
-          :class="{
-            'drop-target': hoverTarget === folder.path,
-            'drop-disabled': drag !== null && !canDropOn(folder.path),
-            'is-dragging-self': isDraggingFolder(folder.path),
-          }"
+          :tile="folder"
+          :hover-target="hoverTarget"
+          :is-dragging="drag !== null"
           :draggable="canDrag"
-          @click="goToFolder(folder.path)"
-          @contextmenu="openContext($event, { type: 'folder', tile: folder })"
-          @dragstart="onFolderDragStart($event, folder.path)"
+          :is-dragging-self="isDraggingFolder(folder.path)"
+          item-label-singular="item"
+          :can-drop-on="canDropOn"
+          @open="goToFolder"
+          @contextmenu="(event, tile) => openContext(event, { type: 'folder', tile })"
+          @dragstart="onFolderDragStart"
           @dragend="onDragEnd"
-          @dragenter="onDropEnter($event, folder.path)"
-          @dragover="onDropOver($event, folder.path)"
-          @dragleave="onDropLeave(folder.path)"
-          @drop="onDrop($event, folder.path)"
-        >
-          <span class="folder-tile__icon">
-            <PhFolderOpen
-              v-if="hoverTarget === folder.path && canDropOn(folder.path)"
-              :size="48"
-              weight="duotone"
-              aria-hidden="true"
-            />
-            <PhFolder v-else :size="48" weight="duotone" aria-hidden="true" />
-          </span>
-          <div class="folder-tile__body">
-            <span class="folder-tile__label">{{ folder.label }}</span>
-            <span class="folder-tile__meta">{{ folder.count }} item{{ folder.count === 1 ? '' : 's' }}</span>
-          </div>
-        </button>
+          @dragenter="onDropEnter"
+          @dragover="onDropOver"
+          @dragleave="onDropLeave"
+          @drop="onDrop"
+        />
 
         <template v-for="item in visibleSheets" :key="`${item.kind}:${item.slug}`">
           <NuxtLink
@@ -1140,97 +1123,6 @@ input:focus {
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 0.7rem;
   align-items: stretch;
-}
-
-/* ---- Folder tiles ---- */
-
-.folder-tile {
-  display: flex;
-  align-items: center;
-  gap: 0.85rem;
-  padding: 0.85rem;
-  border: 1px solid var(--rule-soft);
-  border-radius: 12px;
-  background: var(--paper-soft);
-  color: var(--ink);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-  transition:
-    border-color 0.15s ease,
-    background 0.15s ease,
-    transform 0.1s ease,
-    opacity 0.15s ease;
-}
-
-.folder-tile:hover {
-  border-color: var(--rule-strong);
-  background: var(--paper-hover);
-}
-
-.folder-tile:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 1px;
-}
-
-.folder-tile[draggable='true']:active {
-  cursor: grabbing;
-  transform: scale(0.99);
-}
-
-.folder-tile.drop-target {
-  border-color: var(--accent);
-  background: var(--accent-soft);
-}
-
-.folder-tile.drop-disabled {
-  opacity: 0.45;
-}
-
-.folder-tile.is-dragging-self {
-  opacity: 0.4;
-}
-
-.folder-tile__icon {
-  flex: 0 0 auto;
-  width: 72px;
-  height: 72px;
-  display: grid;
-  place-items: center;
-  border: 1px solid var(--rule-soft);
-  border-radius: 10px;
-  background: var(--paper-inset);
-  color: var(--accent);
-}
-
-.folder-tile.drop-target .folder-tile__icon {
-  border-color: var(--accent);
-  color: var(--accent);
-  background: var(--paper-soft);
-}
-
-.folder-tile__body {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-  min-width: 0;
-}
-
-.folder-tile__label {
-  font-family: var(--font-book);
-  font-size: 1.05rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  color: var(--ink-bright);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.folder-tile__meta {
-  font-size: 0.78rem;
-  letter-spacing: 0.04em;
-  color: var(--ink-muted);
 }
 
 /* ---- Sheet cards ---- */

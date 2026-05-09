@@ -1493,3 +1493,13 @@
   - `npm test` — passes: 71 test files / 265 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: shared library folder tile
+
+- Extracted duplicated folder-tile presentation and drag/drop forwarding from the maps/sheets library pages into `components/library/FolderTileButton.vue`.
+  - The component owns folder icons, drop/drag visual states, count labels, and focused folder tile events.
+- Updated `pages/maps/index.vue` and `pages/sheets/index.vue` to use the shared folder tile while preserving folder navigation, context menus, and drag/drop behavior.
+- Quality gates after this phase:
+  - `npm test` — passes: 71 test files / 265 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
