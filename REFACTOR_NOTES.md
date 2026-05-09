@@ -1653,3 +1653,14 @@
   - `npm test` — passes: 80 test files / 306 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: condition index filtering helpers
+
+- Extracted condition-index search and category grouping from `pages/conditions/index.vue` into `utils/reference/conditionIndex.ts`.
+  - The helper owns normalized matching across name, alias, category, source, and effect fields plus filtered category regrouping.
+- Updated the Conditions route to consume focused helpers while preserving condition group order and empty-state behavior.
+- Added `tests/utils/reference/conditionIndex.test.ts` covering haystack matching, filtered ordering, and category regrouping.
+- Quality gates after this phase:
+  - `npm test` — passes: 81 test files / 309 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

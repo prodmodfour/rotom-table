@@ -2,35 +2,15 @@
 import { computed, ref } from 'vue'
 import { toSlug } from '~/data/ptuReference'
 import { conditionGroups, conditions } from '~/utils/statusConditions'
+import { filterConditionsForIndex, groupFilteredConditions } from '~/utils/reference/conditionIndex'
 
 useHead({ title: 'Conditions · Rotom Table' })
 
 const searchTerm = ref('')
-const normalize = (value: string) => value.trim().toLowerCase()
 
-const filtered = computed(() => {
-  const query = normalize(searchTerm.value)
-  if (!query) return conditions
-  return conditions.filter((condition) => {
-    const haystacks = [
-      condition.name,
-      condition.category,
-      condition.effect ?? '',
-      condition.source ?? '',
-      ...(condition.aliases ?? []),
-    ]
-    return haystacks.some((value) => normalize(value).includes(query))
-  })
-})
+const filtered = computed(() => filterConditionsForIndex(conditions, { searchTerm: searchTerm.value }))
 
-const filteredByCategory = computed(() =>
-  conditionGroups
-    .map((group) => ({
-      ...group,
-      conditions: group.conditions.filter((condition) => filtered.value.includes(condition)),
-    }))
-    .filter((group) => group.conditions.length > 0),
-)
+const filteredByCategory = computed(() => groupFilteredConditions(conditionGroups, filtered.value))
 </script>
 
 <template>
