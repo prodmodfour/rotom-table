@@ -1282,3 +1282,14 @@
   - `npm test` — passes: 67 test files / 244 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: move automation resolution state helper extraction
+
+- Extracted move-automation resolution-state primitives from `components/MoveAutomationDialog.vue` into `utils/moveAutomationResolution.ts`.
+  - The helper now owns resolution record clearing/syncing, default suggestion enablement, combat-stage delta reset, self-target reset behavior, d20/accuracy roll results, damage roll storage, and roll-all orchestration.
+  - The dialog component now delegates target-resolution lifecycle and rolling mechanics while retaining UI-specific refs and event handlers.
+- Added `tests/utils/moveAutomationResolution.test.ts` covering record reset, d20/accuracy behavior, target-resolution sync, default suggestion flags, self-target reset, and roll-all flows.
+- Quality gates after this phase:
+  - `npm test` — passes: 68 test files / 250 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

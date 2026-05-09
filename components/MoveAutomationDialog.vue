@@ -1,10 +1,7 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
-import {
-  rollDamageFormula,
-  damageFormulaForMove,
-} from '~/utils/moveAutomation'
-import { COMBAT_STAGE_KEYS, COMBAT_STAGE_SHORT_LABELS } from '~/utils/combatStages'
+import { damageFormulaForMove } from '~/utils/moveAutomation'
+import { COMBAT_STAGE_SHORT_LABELS } from '~/utils/combatStages'
 import {
   parseHazardCellText,
   stageDeltaLabel,
@@ -19,6 +16,14 @@ import {
   toggleMoveAutomationTargetIds,
   type MoveAutomationMoveEntry,
 } from '~/utils/moveAutomationMoves'
+import {
+  applyMoveAutomationAccuracyRoll,
+  applyMoveAutomationDamageRoll,
+  ensureMoveAutomationTargetResolution,
+  resetMoveAutomationResolutionState,
+  rollAllMoveAutomationTargets,
+  syncMoveAutomationTargetResolutions,
+} from '~/utils/moveAutomationResolution'
 import {
   buildMoveAutomationTransaction,
   moveAutomationMultiplierLabel,
@@ -94,65 +99,30 @@ const suggestionKey = (kind: MoveAutomationSuggestionKind, index: number): strin
 
 const resetResolutionState = () => {
   step.value = 0
-  targetIds.value = []
-  for (const key of Object.keys(targetResolutions)) delete targetResolutions[key]
-  for (const key of Object.keys(enabledSuggestions)) delete enabledSuggestions[key]
-  for (const key of Object.keys(hpSuggestionAmounts)) delete hpSuggestionAmounts[key]
+  targetIds.value = resetMoveAutomationResolutionState({
+    script: script.value,
+    userId: props.user.id,
+    targetResolutions,
+    enabledSuggestions,
+    hpSuggestionAmounts,
+    manualUserStageDeltas,
+    manualTargetStageDeltas,
+  })
   manualUserConditions.value = []
   manualTargetConditions.value = []
   hazardCellsText.value = ''
   manualNote.value = ''
-  for (const key of COMBAT_STAGE_KEYS) {
-    manualUserStageDeltas[key] = 0
-    manualTargetStageDeltas[key] = 0
-  }
-
-  const s = script.value
-  if (!s) return
-  if (s.targetMode === 'self') targetIds.value = [props.user.id]
-
-  s.conditionSuggestions.forEach((item, index) => {
-    enabledSuggestions[suggestionKey('condition', index)] = !item.optional
-  })
-  s.stageSuggestions.forEach((item, index) => {
-    enabledSuggestions[suggestionKey('stage', index)] = !item.optional
-  })
-  s.hpSuggestions.forEach((item, index) => {
-    enabledSuggestions[suggestionKey('hp', index)] = !item.optional
-  })
-  s.fieldSuggestions.forEach((item, index) => {
-    enabledSuggestions[suggestionKey('field', index)] = !item.optional
-  })
-  s.hazardSuggestions.forEach((item, index) => {
-    enabledSuggestions[suggestionKey('hazard', index)] = !item.optional
-  })
 }
 
 watch(() => selectedMoveName.value, resetResolutionState)
 watch(script, resetResolutionState)
 
-const ensureTargetResolution = (id: string): TargetResolutionState => {
-  if (!targetResolutions[id]) {
-    targetResolutions[id] = {
-      accuracyRoll: '',
-      hit: !script.value?.requiresAccuracy,
-      crit: false,
-      damageRoll: null,
-      manualHpLoss: '',
-      applyDamage: Boolean(script.value?.damaging),
-    }
-  }
-  return targetResolutions[id]
-}
+const ensureTargetResolution = (id: string): TargetResolutionState =>
+  ensureMoveAutomationTargetResolution(targetResolutions, id, script.value)
 
 watch(
   targetIds,
-  (ids) => {
-    for (const id of ids) ensureTargetResolution(id)
-    for (const id of Object.keys(targetResolutions)) {
-      if (!ids.includes(id)) delete targetResolutions[id]
-    }
-  },
+  (ids) => syncMoveAutomationTargetResolutions(targetResolutions, ids, script.value),
   { deep: true },
 )
 
@@ -160,30 +130,16 @@ const toggleTarget = (id: string) => {
   targetIds.value = toggleMoveAutomationTargetIds(targetIds.value, id, script.value)
 }
 
-const randomD20 = (): number => 1 + Math.floor(Math.random() * 20)
-
 const rollAccuracy = (id: string) => {
-  const state = ensureTargetResolution(id)
-  const roll = randomD20()
-  state.accuracyRoll = String(roll)
-  const ac = script.value?.ac
-  state.hit = ac == null ? true : roll >= ac
-  if (script.value?.criticalRange && roll >= script.value.criticalRange) state.crit = true
+  applyMoveAutomationAccuracyRoll(targetResolutions, id, script.value)
 }
 
 const rollDamage = (id: string) => {
-  const formula = selectedMoveFormula.value
-  if (!formula) return
-  const result = rollDamageFormula(formula)
-  if (!result) return
-  ensureTargetResolution(id).damageRoll = result
+  applyMoveAutomationDamageRoll(targetResolutions, id, script.value, selectedMoveFormula.value)
 }
 
 const rollAll = () => {
-  for (const id of targetIds.value) {
-    if (script.value?.requiresAccuracy) rollAccuracy(id)
-    if (script.value?.damaging) rollDamage(id)
-  }
+  rollAllMoveAutomationTargets(targetIds.value, script.value, targetResolutions, selectedMoveFormula.value)
 }
 
 const targetDamageLoss = (target: SpawnedPokemon): number =>
