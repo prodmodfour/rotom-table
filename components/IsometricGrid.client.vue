@@ -36,6 +36,7 @@ import {
   resolveBuildVoxelRenderStyle,
 } from '~/utils/isometric/buildVoxels'
 import { createHazardPlacement } from '~/utils/isometric/hazardPlacement'
+import { createPointerTravelTracker } from '~/utils/isometric/pointerTracker'
 import type {
   BuildTarget,
   HazardTarget,
@@ -266,8 +267,7 @@ let animationFrame = 0
 let activePreview: PreviewState = { ...EMPTY_MOVE_PREVIEW }
 let activePreviewCanPlace = false
 let activePreviewAnchor: GridAnchor | null = null
-let pointerDown = { x: 0, y: 0 }
-let pointerTravel = 0
+const pointerTracker = createPointerTravelTracker()
 let lastPointerCoords: { clientX: number; clientY: number } | null = null
 let hoveredPokemonId: string | null = null
 
@@ -755,14 +755,14 @@ const handleRightClick = (event: MouseEvent) => {
   event.preventDefault()
 
   if (props.buildMode) {
-    if (pointerTravel <= 6) {
+    if (pointerTracker.isClick()) {
       performBuildAction(event, 'eraser')
     }
     return
   }
 
   if (props.hazardMode) {
-    if (pointerTravel <= 6) {
+    if (pointerTracker.isClick()) {
       performHazardAction(event, 'eraser')
     }
     return
@@ -780,15 +780,11 @@ const handleRightClick = (event: MouseEvent) => {
 
 const handlePointerDown = (event: PointerEvent) => {
   closeContextMenu()
-  pointerDown = { x: event.clientX, y: event.clientY }
-  pointerTravel = 0
+  pointerTracker.start(event)
 }
 
 const handlePointerMove = (event: PointerEvent) => {
-  pointerTravel = Math.max(
-    pointerTravel,
-    Math.hypot(event.clientX - pointerDown.x, event.clientY - pointerDown.y),
-  )
+  pointerTracker.move(event)
   lastPointerCoords = { clientX: event.clientX, clientY: event.clientY }
   updateHoverFromPointer(event)
 
@@ -828,7 +824,7 @@ const handleWheel = (event: WheelEvent) => {
 }
 
 const handlePointerUp = (event: PointerEvent) => {
-  if (pointerTravel > 6 || event.button !== 0) {
+  if (!pointerTracker.isClick() || event.button !== 0) {
     return
   }
 

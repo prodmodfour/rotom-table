@@ -558,3 +558,14 @@
   - `npm test` — passes: 27 test files / 86 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: isometric pointer travel helper extraction
+
+- Extracted pointer-down/move travel tracking and click-threshold checks from `components/IsometricGrid.client.vue` into `utils/isometric/pointerTracker.ts`.
+  - The renderer component now asks a focused tracker whether a pointer interaction should count as a click instead of managing drag-distance state inline.
+- Added `tests/utils/isometric/pointerTracker.test.ts` covering travel accumulation, default threshold behavior, custom threshold behavior, and reset-on-new-pointer-start.
+- Preserved the existing 6px click/drag threshold for left-click, terrain eraser, and hazard eraser interactions.
+- Quality gates after this phase:
+  - `npm test` — passes: 28 test files / 90 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
