@@ -1597,3 +1597,14 @@
   - `npm test` — passes: 75 test files / 289 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: item index filtering helpers
+
+- Extracted item-library count/search/filter derivations from `pages/items/index.vue` into `utils/reference/itemIndex.ts`.
+  - The helper owns category counts, section counts, normalized item search haystacks, and combined category/section/search filtering.
+- Updated the Items route to remain a UI shell over focused item-index derivations while preserving category chips, section filter behavior, search fields, and item card output.
+- Added `tests/utils/reference/itemIndex.test.ts` covering search normalization, category/section count ordering, haystack matching, and combined filters.
+- Quality gates after this phase:
+  - `npm test` — passes: 76 test files / 294 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

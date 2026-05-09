@@ -1,6 +1,11 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { items, toSlug } from '~/data/ptuReference'
+import {
+  buildItemCategoryCounts,
+  buildItemSectionCounts,
+  filterItemsForIndex,
+} from '~/utils/reference/itemIndex'
 
 useHead({ title: 'Items · Rotom Table' })
 
@@ -8,54 +13,14 @@ const searchTerm = ref('')
 const categoryFilter = ref<string | null>(null)
 const sectionFilter = ref<string | null>(null)
 
-const normalize = (value: string) => value.trim().toLowerCase()
+const categoryCounts = computed(() => buildItemCategoryCounts(items))
+const sectionCounts = computed(() => buildItemSectionCounts(items))
 
-const categoryCounts = computed(() => {
-  const counts = new Map<string, number>()
-  for (const item of items) {
-    for (const category of item.categories) {
-      counts.set(category, (counts.get(category) ?? 0) + 1)
-    }
-  }
-
-  return Array.from(counts.entries())
-    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-    .map(([category, count]) => ({ category, count }))
-})
-
-const sectionCounts = computed(() => {
-  const counts = new Map<string, number>()
-  for (const item of items) {
-    for (const section of item.sections) {
-      counts.set(section, (counts.get(section) ?? 0) + 1)
-    }
-  }
-
-  return Array.from(counts.entries())
-    .sort((a, b) => a[0].localeCompare(b[0]))
-    .map(([section, count]) => ({ section, count }))
-})
-
-const filtered = computed(() => {
-  const query = normalize(searchTerm.value)
-  return items.filter((item) => {
-    if (categoryFilter.value && !item.categories.includes(categoryFilter.value)) return false
-    if (sectionFilter.value && !item.sections.includes(sectionFilter.value)) return false
-    if (!query) return true
-
-    const haystacks = [
-      item.name,
-      item.source,
-      ...item.categories,
-      ...item.sections,
-      ...item.costs,
-      ...item.effects,
-      ...item.aliases,
-      ...item.notes,
-    ]
-    return haystacks.some((value) => normalize(value).includes(query))
-  })
-})
+const filtered = computed(() => filterItemsForIndex(items, {
+  searchTerm: searchTerm.value,
+  category: categoryFilter.value,
+  section: sectionFilter.value,
+}))
 
 const toggleCategory = (category: string) => {
   categoryFilter.value = categoryFilter.value === category ? null : category
