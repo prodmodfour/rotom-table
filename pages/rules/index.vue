@@ -1,56 +1,29 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { rules, toSlug } from '~/data/ptuReference'
+import {
+  buildRuleCategoryCounts,
+  filterRulesForIndex,
+  groupRulesForIndex,
+  toggledRuleCategory,
+} from '~/utils/reference/ruleIndex'
 
 useHead({ title: 'Rules · Rotom Table' })
 
 const searchTerm = ref('')
 const categoryFilter = ref<string | null>(null)
-const normalize = (value: string) => value.trim().toLowerCase()
 
-const categoryCounts = computed(() => {
-  const counts = new Map<string, number>()
-  for (const rule of rules) {
-    counts.set(rule.category, (counts.get(rule.category) ?? 0) + 1)
-  }
+const categoryCounts = computed(() => buildRuleCategoryCounts(rules))
 
-  return Array.from(counts.entries())
-    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-    .map(([category, count]) => ({ category, count }))
-})
+const filtered = computed(() => filterRulesForIndex(rules, {
+  category: categoryFilter.value,
+  searchTerm: searchTerm.value,
+}))
 
-const filtered = computed(() => {
-  const query = normalize(searchTerm.value)
-  return rules.filter((rule) => {
-    if (categoryFilter.value && rule.category !== categoryFilter.value) return false
-    if (!query) return true
-
-    const haystacks = [
-      rule.name,
-      rule.category,
-      rule.text ?? '',
-      rule.source ?? '',
-      ...(rule.aliases ?? []),
-    ]
-    return haystacks.some((value) => normalize(value).includes(query))
-  })
-})
-
-const groupedRules = computed(() => {
-  const groups = new Map<string, typeof rules>()
-  for (const rule of filtered.value) {
-    const group = groups.get(rule.category) ?? []
-    group.push(rule)
-    groups.set(rule.category, group)
-  }
-
-  return Array.from(groups.entries())
-    .sort((a, b) => a[0].localeCompare(b[0]))
-    .map(([category, entries]) => ({ category, entries }))
-})
+const groupedRules = computed(() => groupRulesForIndex(filtered.value))
 
 const toggleCategory = (category: string) => {
-  categoryFilter.value = categoryFilter.value === category ? null : category
+  categoryFilter.value = toggledRuleCategory(categoryFilter.value, category)
 }
 </script>
 

@@ -1664,3 +1664,14 @@
   - `npm test` — passes: 81 test files / 309 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: rule index filtering helpers
+
+- Extracted rule-index category counts, search matching, category filtering, grouping, and category toggling from `pages/rules/index.vue` into `utils/reference/ruleIndex.ts`.
+  - The helper preserves category-count ordering, filtered rule order, and alphabetical group presentation.
+- Updated the Rules route to consume focused helpers while keeping the existing category chip/search UI behavior.
+- Added `tests/utils/reference/ruleIndex.test.ts` covering category counts, haystack matching, combined filters, grouping, and toggle behavior.
+- Quality gates after this phase:
+  - `npm test` — passes: 82 test files / 314 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
