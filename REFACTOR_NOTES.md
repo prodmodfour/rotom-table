@@ -912,3 +912,13 @@
   - `npm test` — passes: 49 test files / 171 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: trainer inventory panel extraction
+
+- Continued Phase 7 trainer sheet page decomposition by extracting equipped gear and all trainer inventory tables into `components/sheets/TrainerInventoryPanel.vue`.
+- Updated `pages/sheets/trainers/[slug].vue` to wire inventory add/remove actions through focused panel emits while preserving equipment slot sprite previews, inventory item sprite previews, quantity/cost/mod/slot edits, and empty-state rows.
+- Removed now-dead route-page styles for equipped gear, inventory item names, and key/value inventory lists.
+- Quality gates after this phase:
+  - `npm test` — passes: 49 test files / 171 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
