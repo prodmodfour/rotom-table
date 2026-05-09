@@ -80,11 +80,13 @@ const relatedItems = computed(() => relatedItemsByPrimaryCategory(item.value, it
         </section>
       </article>
 
-      <article v-else class="panel-card">
-        <h1>Item not found</h1>
-        <p>No entry for slug <code>{{ route.params.slug }}</code>.</p>
-        <NuxtLink to="/items" class="back-link">← Back to all items</NuxtLink>
-      </article>
+      <ReferenceNotFoundCard
+        v-else
+        title="Item not found"
+        :slug="route.params.slug"
+        back-to="/items"
+        back-label="← Back to all items"
+      />
     </main>
   </div>
 </template>

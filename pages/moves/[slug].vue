@@ -46,11 +46,13 @@ useHead(() => ({
         </section>
       </article>
 
-      <article v-else class="panel-card">
-        <h1>Move not found</h1>
-        <p>No entry for slug <code>{{ route.params.slug }}</code>.</p>
-        <NuxtLink to="/moves" class="back-link">← Back to all moves</NuxtLink>
-      </article>
+      <ReferenceNotFoundCard
+        v-else
+        title="Move not found"
+        :slug="route.params.slug"
+        back-to="/moves"
+        back-label="← Back to all moves"
+      />
     </main>
   </div>
 </template>

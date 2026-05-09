@@ -1697,3 +1697,14 @@
   - `npm test` — passes: 84 test files / 322 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: shared reference not-found card
+
+- Extracted duplicated reference-detail missing-entry markup into `components/reference/ReferenceNotFoundCard.vue`.
+  - The component owns the standard panel-card title, slug display, and return link while each route provides its own copy and destination.
+- Updated ability, move, edge, condition, rule, item, and feature detail routes to use the shared card while preserving existing not-found text and back links.
+- Left the currently user-modified capabilities detail page untouched to avoid mixing unrelated in-progress changes.
+- Quality gates after this phase:
+  - `npm test` — passes: 84 test files / 322 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

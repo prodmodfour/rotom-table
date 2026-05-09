@@ -38,11 +38,13 @@ useHead(() => ({
         </section>
       </article>
 
-      <article v-else class="panel-card">
-        <h1>Rule not found</h1>
-        <p>No entry for slug <code>{{ route.params.slug }}</code>.</p>
-        <NuxtLink to="/rules" class="back-link">← Back to all rules</NuxtLink>
-      </article>
+      <ReferenceNotFoundCard
+        v-else
+        title="Rule not found"
+        :slug="route.params.slug"
+        back-to="/rules"
+        back-label="← Back to all rules"
+      />
     </main>
   </div>
 </template>

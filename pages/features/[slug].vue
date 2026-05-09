@@ -84,11 +84,13 @@ const siblings = computed(() => siblingFeaturesInClass(feat.value, features))
         </section>
       </article>
 
-      <article v-else class="panel-card">
-        <h1>Feature not found</h1>
-        <p>No entry for slug <code>{{ route.params.slug }}</code>.</p>
-        <NuxtLink to="/features" class="back-link">← Back to all features</NuxtLink>
-      </article>
+      <ReferenceNotFoundCard
+        v-else
+        title="Feature not found"
+        :slug="route.params.slug"
+        back-to="/features"
+        back-label="← Back to all features"
+      />
     </main>
   </div>
 </template>
