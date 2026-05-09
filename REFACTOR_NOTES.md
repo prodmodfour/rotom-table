@@ -1216,3 +1216,14 @@
   - `npm test` — passes: 61 test files / 213 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: sheet library item derivation helpers
+
+- Extracted sheets-index item/domain derivation into `utils/sheetLibrary.ts`.
+  - The helper now owns Pokémon/trainer list-item construction, display names, local folder/name/deletion override application, deleted-folder filtering, folder-set derivation, and search matching.
+- Updated `pages/sheets/index.vue` to consume the sheet-library helpers while preserving player-only filtering, local drag/drop rename overrides, soft-deletes, folder tiles, and search behavior.
+- Added `tests/utils/sheetLibrary.test.ts` covering item construction, species type/sprite fallback wiring, override application, player/deleted filtering, folder-set construction, and Pokémon/trainer search fields.
+- Quality gates after this phase:
+  - `npm test` — passes: 62 test files / 219 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

@@ -27,8 +27,14 @@ import {
   renameFolderPrefix,
   type FolderTile,
 } from '~/utils/folderBrowser'
-import type { CharacterSheet } from '~/types/characterSheet'
-import type { TrainerSheet } from '~/types/trainerSheet'
+import {
+  applySheetLibraryOverrides,
+  buildSheetFolderSet,
+  buildSheetLibraryItems,
+  displaySheetLibraryName,
+  matchesSheetLibraryQuery,
+  type SheetLibraryItem,
+} from '~/utils/sheetLibrary'
 
 useHead({
   title: 'Sheets · Rotom Table',
@@ -36,29 +42,7 @@ useHead({
 
 const { isGm, isPlayer } = useAuth()
 
-// ---------------------------------------------------------------------------
-// Item model
-// ---------------------------------------------------------------------------
-
-interface PokemonItem {
-  kind: 'pokemon'
-  slug: string
-  folder: string
-  sheet: CharacterSheet
-  types: string[]
-  spriteUrl: string | null
-  sortKey: string
-}
-
-interface TrainerItem {
-  kind: 'trainer'
-  slug: string
-  folder: string
-  sheet: TrainerSheet
-  sortKey: string
-}
-
-type SheetItem = PokemonItem | TrainerItem
+type SheetItem = SheetLibraryItem
 
 // ---------------------------------------------------------------------------
 // Local override state. Drag-drop hits a server endpoint that moves the file
@@ -78,119 +62,44 @@ const nameOverrides = reactive<Record<string, string>>({})
 const deletedSheets = reactive(new Set<string>())
 const deletedFolders = reactive(new Set<string>())
 
-const applyFolderRenames = (path: string): string => {
-  let result = path
-  for (const { from, to } of folderRenames.value) {
-    result = renameFolderPrefix(result, from, to)
-  }
-  return result
-}
+const baseItems = computed<SheetItem[]>(() =>
+  buildSheetLibraryItems({
+    pokemonSheets: characterSheets,
+    trainerSheets,
+    speciesTypesFor: (species) => getPokedexEntry(species)?.types,
+    spriteUrlFor: getSpriteUrl,
+  }),
+)
 
-const resolveFolder = (item: { kind: 'pokemon' | 'trainer'; slug: string; folder: string }) => {
-  const key = `${item.kind}:${item.slug}`
-  const direct = Object.prototype.hasOwnProperty.call(sheetOverrides, key)
-    ? sheetOverrides[key]
-    : item.folder
-  return applyFolderRenames(direct ?? '')
-}
-
-const baseItems = computed<SheetItem[]>(() => {
-  const pokes: PokemonItem[] = characterSheets.map((sheet) => {
-    const species = getPokedexEntry(sheet.species)
-    return {
-      kind: 'pokemon',
-      slug: sheet.slug,
-      folder: sheet.folder ?? '',
-      sheet,
-      types: sheet.types ?? species?.types ?? [],
-      spriteUrl: getSpriteUrl(sheet.species),
-      sortKey: sheet.nickname.toLowerCase(),
-    }
-  })
-  const trainers: TrainerItem[] = trainerSheets.map((sheet) => ({
-    kind: 'trainer',
-    slug: sheet.slug,
-    folder: sheet.folder ?? '',
-    sheet,
-    sortKey: sheet.name.toLowerCase(),
-  }))
-  return [...pokes, ...trainers]
-})
-
-const isDeletedSheet = (kind: 'pokemon' | 'trainer', slug: string): boolean =>
-  deletedSheets.has(`${kind}:${slug}`)
-
-const isInsideDeletedFolder = (folder: string): boolean => {
-  for (const path of deletedFolders) {
-    if (folder === path || folder.startsWith(path + '/')) return true
-  }
-  return false
-}
-
-const items = computed<SheetItem[]>(() => {
-  const out: SheetItem[] = []
-  for (const item of baseItems.value) {
-    if (isPlayer.value && item.sheet.player !== true) continue
-    if (isDeletedSheet(item.kind, item.slug)) continue
-    const folder = resolveFolder(item)
-    if (isInsideDeletedFolder(folder)) continue
-    const overrideKey = `${item.kind}:${item.slug}`
-    const newName = nameOverrides[overrideKey]
-    if (item.kind === 'pokemon') {
-      const sheet = newName !== undefined ? { ...item.sheet, nickname: newName } : item.sheet
-      out.push({
-        ...item,
-        folder,
-        sheet,
-        sortKey: (newName ?? item.sheet.nickname).toLowerCase(),
-      })
-    } else {
-      const sheet = newName !== undefined ? { ...item.sheet, name: newName } : item.sheet
-      out.push({
-        ...item,
-        folder,
-        sheet,
-        sortKey: (newName ?? item.sheet.name).toLowerCase(),
-      })
-    }
-  }
-  return out
-})
+const items = computed<SheetItem[]>(() =>
+  applySheetLibraryOverrides(baseItems.value, {
+    playerOnly: isPlayer.value,
+    sheetOverrides,
+    folderRenames: folderRenames.value,
+    nameOverrides,
+    deletedSheets,
+    deletedFolders,
+  }),
+)
 
 /** Display name for a sheet item (honours local rename overrides). */
-const displayName = (item: SheetItem): string =>
-  item.kind === 'pokemon' ? item.sheet.nickname : item.sheet.name
+const displayName = displaySheetLibraryName
 
 // Folders explicitly created by the user (or that already exist on disk as
 // empty dirs). Seeded from `/api/sheets/folders` on mount.
 const extraFolders = reactive(new Set<string>())
 
-const resolvedExtras = computed(() => {
-  const out = new Set<string>()
-  for (const path of extraFolders) {
-    const renamed = applyFolderRenames(path)
-    if (renamed) out.add(renamed)
-  }
-  return out
-})
-
 /** Every folder path that exists, inferred + extras, minus locally-deleted
  *  folders (and any descendant of one). */
-const allFolders = computed(() => {
-  const set = new Set<string>()
-  for (const item of items.value) if (item.folder) set.add(item.folder)
-  if (isGm.value) {
-    for (const path of resolvedExtras.value) {
-      if (isInsideDeletedFolder(path)) continue
-      set.add(path)
-    }
-  }
-  for (const deleted of deletedFolders) {
-    set.delete(deleted)
-    for (const f of [...set]) if (f.startsWith(deleted + '/')) set.delete(f)
-  }
-  return set
-})
+const allFolders = computed(() =>
+  buildSheetFolderSet({
+    items: items.value,
+    extraFolders,
+    includeExtraFolders: isGm.value,
+    folderRenames: folderRenames.value,
+    deletedFolders,
+  }),
+)
 
 // ---------------------------------------------------------------------------
 // Folder navigation. The current folder lives in the URL as `?folder=foo/bar`
@@ -215,22 +124,7 @@ const breadcrumbs = computed(() => buildFolderBreadcrumbs(currentPath.value))
 
 const searchTerm = ref('')
 
-const matchesQuery = (item: SheetItem, query: string): boolean => {
-  if (item.kind === 'pokemon') {
-    const { sheet, types, folder } = item
-    const haystacks = [sheet.nickname, sheet.species, sheet.nature ?? '', folder, ...types]
-    return haystacks.some((value) => normalizeSearchText(value).includes(query))
-  }
-  const { sheet, folder } = item
-  const haystacks = [
-    sheet.name,
-    sheet.playedBy ?? '',
-    sheet.skillBackground?.name ?? '',
-    folder,
-    ...(sheet.classes?.map((c) => c.name) ?? []),
-  ]
-  return haystacks.some((value) => normalizeSearchText(value).includes(query))
-}
+const matchesQuery = matchesSheetLibraryQuery
 
 /** Sheets shown in the main grid. While searching, we flatten the entire
  *  subtree under the current folder; otherwise we show only sheets that live
