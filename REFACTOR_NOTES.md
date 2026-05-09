@@ -941,3 +941,13 @@
   - `npm test` — passes: 49 test files / 171 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: shared sheet tab nav extraction
+
+- Extracted the trainer sheet tab navigation into `components/sheets/SheetTabNav.vue` with explicit tab props and an `update:activeKey` emit.
+- Updated `pages/sheets/trainers/[slug].vue` to route tab changes through a small validated setter while preserving the existing tab keys, labels, active styling, and tab visibility behavior.
+- Removed now-dead tab button styles from the route page so tab presentation lives with the reusable nav component.
+- Quality gates after this phase:
+  - `npm test` — passes: 49 test files / 171 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.

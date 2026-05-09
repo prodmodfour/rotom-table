@@ -60,6 +60,12 @@ const tabs: Array<{ key: TabKey; label: string }> = [
 
 const activeTab = ref<TabKey>('trainer')
 
+const setActiveTab = (key: string) => {
+  if (tabs.some((tab) => tab.key === key)) {
+    activeTab.value = key as TabKey
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Derived data — re-evaluated whenever the reactive sheet changes
 // ---------------------------------------------------------------------------
@@ -173,16 +179,11 @@ const {
         @set-current-hp="setCurrentHp"
       />
 
-      <!-- ===== Tab nav ===== -->
-      <nav class="tab-nav" aria-label="Sheet tabs">
-        <button
-          v-for="tab in tabs"
-          :key="tab.key"
-          type="button"
-          :class="['tab-btn', { active: activeTab === tab.key }]"
-          @click="activeTab = tab.key"
-        >{{ tab.label }}</button>
-      </nav>
+      <SheetTabNav
+        :tabs="tabs"
+        :active-key="activeTab"
+        @update:active-key="setActiveTab"
+      />
 
       <!-- =================================================================== -->
       <!-- TRAINER TAB                                                          -->
@@ -355,38 +356,6 @@ const {
   background: var(--paper-soft);
   box-shadow: var(--shadow-card);
   padding: 0.95rem;
-}
-
-/* ===== Tabs ===== */
-.tab-nav {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-  margin: 0.85rem 0;
-}
-
-.tab-btn {
-  padding: 0.5rem 0.85rem;
-  border: 1px solid var(--rule-soft);
-  border-radius: 10px;
-  background: var(--paper);
-  color: var(--ink);
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  cursor: pointer;
-  transition: background 0.12s, border-color 0.12s, color 0.12s;
-}
-
-.tab-btn:hover {
-  border-color: var(--rule-strong);
-  background: var(--paper-hover);
-  color: var(--ink-bright);
-}
-
-.tab-btn.active {
-  background: var(--paper-active);
-  border-color: var(--rule-active);
-  color: var(--ink-bright);
 }
 
 .tab-panel {
