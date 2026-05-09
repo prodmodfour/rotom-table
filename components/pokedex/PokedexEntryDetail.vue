@@ -76,29 +76,7 @@ defineProps<{
             <p class="paragraph">{{ skillPhrase }}</p>
           </section>
 
-          <section v-if="typeMatchupGroups.length" class="book-section book-section--matchups">
-            <h3 class="book-section__title">Weaknesses &amp; Resistances</h3>
-            <div class="type-matchups">
-              <div
-                v-for="group in typeMatchupGroups"
-                :key="group.key"
-                class="type-matchup-group"
-              >
-                <p class="matchup-label">{{ group.label }}</p>
-                <ul class="type-effect-list">
-                  <li
-                    v-for="item in group.items"
-                    :key="`${group.key}-${item.type}`"
-                  >
-                    <span :class="['type-effect-chip', `type-effect-chip--${item.type.toLowerCase()}`]">
-                      <TypeBadge :type="item.type" size="xs" />
-                      <span class="type-effect-mult">{{ item.label }}</span>
-                    </span>
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </section>
+          <PokedexTypeMatchupsPanel :groups="typeMatchupGroups" />
 
           <PokedexMoveListPanel
             :egg-move-tokens="eggMoveTokens"

@@ -1153,3 +1153,13 @@
   - `npm test` — passes: 58 test files / 197 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: Pokédex type matchup panel extraction
+
+- Extracted the defensive type matchup section into `components/pokedex/PokedexTypeMatchupsPanel.vue` with a narrow `TypeMatchupGroup[]` prop.
+- `PokedexEntryDetail.vue` now delegates matchup chip rendering while keeping type-chart computation in the existing pure `utils/pokedex/typeMatchups.ts` helper.
+- Preserved matchup grouping, sorting output, type badges, multiplier chips, and empty-section gating.
+- Quality gates after this phase:
+  - `npm test` — passes: 58 test files / 197 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
