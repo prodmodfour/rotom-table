@@ -525,3 +525,14 @@
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run typecheck` — still fails only on the documented pre-existing broader typecheck backlog; no errors are reported for `IsometricGrid.client.vue` or the new scene-state helper/test.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: isometric sprite lighting helper extraction
+
+- Extracted camera-relative sprite brightness and directional halo-alpha calculations from `components/IsometricGrid.client.vue` into `utils/isometric/spriteLighting.ts`.
+  - The new helper keeps the cage-light alignment math pure and testable while the grid component only consumes the computed per-frame brightness/halo values.
+- Added `tests/utils/isometric/spriteLighting.test.ts` covering lit, shadowed, and zero-offset fallback alignment behavior.
+- Preserved existing sprite brightness range, halo alpha range, directional light facing, and token/move-preview animation inputs.
+- Quality gates after this phase:
+  - `npm test` — passes: 25 test files / 80 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.

@@ -55,11 +55,8 @@ import {
 } from '~/utils/isometric/interactionTargets'
 import { createBuildGhostRenderer, createHazardGhostRenderer } from '~/utils/isometric/previewGhosts'
 import { updateElevationBadge } from '~/utils/isometric/tokenHud'
-import {
-  WORLD_SPRITE_HALO_MAX_ALPHA,
-  WORLD_SPRITE_HALO_MIN_ALPHA,
-  nowMs,
-} from '~/utils/isometric/worldSprites'
+import { nowMs } from '~/utils/isometric/worldSprites'
+import { getIsometricSpriteLighting } from '~/utils/isometric/spriteLighting'
 import { createTokenMovePreviewRenderer } from '~/utils/isometric/tokenMovePreview'
 import {
   clampIsometricGroundLevelY,
@@ -131,12 +128,6 @@ const emit = defineEmits<{
   (event: 'place-hazard', hazard: MapHazardV2): void
   (event: 'remove-hazard', cell: { x: number; y: number; z: number; kind?: MapHazardKind }): void
 }>()
-
-// Subtle directional tint matching the cage's implied light: lit
-// quadrant is full brightness, shadowed quadrant dims to 0.92.
-// Applied to WebGL sprite material colors.
-const SPRITE_BRIGHTNESS_LIT = 1.0
-const SPRITE_BRIGHTNESS_SHADOW = 0.92
 
 const visibleLayers = () => resolveIsometricLayerVisibility(props.layerVisibility)
 
@@ -912,32 +903,11 @@ const animate = () => {
 
   fieldEffectRenderer.update(delta, clock.elapsedTime)
 
-  // Light alignment: camera's XZ offset dotted against the cage's
-  // implied light direction. +1 = lit quadrant, -1 = shadowed.
-  // Lerps to a material color scalar shared across every sprite this
-  // frame (ortho camera → all sprites see the same direction).
-  const cameraXZ = new THREE.Vector2(
-    camera.position.x - controls.target.x,
-    camera.position.z - controls.target.z,
-  )
-  const lightAlignment = cameraXZ.lengthSq() > 0
-    ? cameraXZ.normalize().dot(DEFAULT_FACING_DIRECTION)
-    : 1
-  const lightAlignment01 = (lightAlignment + 1) / 2
-  const spriteBrightness = THREE.MathUtils.lerp(
-    SPRITE_BRIGHTNESS_SHADOW,
-    SPRITE_BRIGHTNESS_LIT,
-    lightAlignment01,
-  )
-  // Directional halo: same gruvbox yellow glow the wrapper used to
-  // paint statically, now lerped between min/max alpha by camera
-  // alignment so the sprite picks up "light" as it rotates into the
-  // lit quadrant. Single halo, native palette, responsive.
-  const haloAlpha = THREE.MathUtils.lerp(
-    WORLD_SPRITE_HALO_MIN_ALPHA,
-    WORLD_SPRITE_HALO_MAX_ALPHA,
-    lightAlignment01,
-  )
+  const { spriteBrightness, haloAlpha } = getIsometricSpriteLighting({
+    cameraPosition: camera.position,
+    target: controls.target,
+    facingDirection: DEFAULT_FACING_DIRECTION,
+  })
   const frameNowMs = nowMs()
 
   for (const renderObject of renderObjects.values()) {
