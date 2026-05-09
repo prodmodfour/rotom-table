@@ -1,26 +1,10 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
 import {
   encounterRegions,
   encounterTables,
-  findEncounterTable,
   formatRegionLabel,
   formatTableLabel,
-  rollEncounters,
-  tablesInRegion,
 } from '~/utils/encounterTables'
-import {
-  buildEncounterGenerateRequestBody,
-  clampEncounterGenerateCount,
-  coerceTableKeyForRegion,
-  DEFAULT_ENCOUNTER_COUNT,
-  DEFAULT_ENCOUNTER_OUT_ROOT,
-  errorMessageForEncounterGenerate,
-  initialEncounterGenerationSelection,
-  toggleOpenGenerateFile,
-  type EncounterGenerateResult,
-} from '~/utils/encounterGeneration'
-import type { RolledEncounter } from '~/types/encounterTable'
 
 useHead({
   title: 'Generate · Rotom Table',
@@ -29,90 +13,25 @@ useHead({
 const route = useRoute()
 const router = useRouter()
 
-// ---------------------------------------------------------------------------
-// Form state
-// ---------------------------------------------------------------------------
-
-const initialEntry = encounterTables[0] ?? null
-const initialSelection = initialEncounterGenerationSelection(route.query, initialEntry)
-const region = ref<string>(initialSelection.region)
-const tableKey = ref<string>(initialSelection.tableKey)
-const count = ref<number>(DEFAULT_ENCOUNTER_COUNT)
-const outRoot = ref<string>(DEFAULT_ENCOUNTER_OUT_ROOT)
-const preview = ref<boolean>(false)
-
-// Keep the table dropdown in sync with the region.
-watch(region, (next) => {
-  tableKey.value = coerceTableKeyForRegion(tableKey.value, tablesInRegion(next))
-})
-
-const tablesForRegion = computed(() => tablesInRegion(region.value))
-const selectedTable = computed(() => findEncounterTable(region.value, tableKey.value))
-
-// ---------------------------------------------------------------------------
-// Roll preview (browser-only, no files written)
-// ---------------------------------------------------------------------------
-
-const rolledPreview = ref<RolledEncounter[]>([])
-
-const rollPreview = () => {
-  if (!selectedTable.value) return
-  rolledPreview.value = rollEncounters(selectedTable.value.table, clampEncounterGenerateCount(count.value))
-}
-
-// Auto-roll a fresh preview when the table or count changes, so the user
-// sees example output immediately.
-watch(
-  [selectedTable, count],
-  () => {
-    if (selectedTable.value) rollPreview()
-  },
-  { immediate: true },
-)
-
-// ---------------------------------------------------------------------------
-// Generation (server route → pokegen.sh)
-// ---------------------------------------------------------------------------
-
-const generating = ref(false)
-const error      = ref<string | null>(null)
-const result     = ref<EncounterGenerateResult | null>(null)
-
-const generate = async () => {
-  if (!selectedTable.value) return
-  generating.value = true
-  error.value = null
-  result.value = null
-  try {
-    const data = await $fetch<EncounterGenerateResult>('/api/encounters/generate', {
-      method: 'POST',
-      body: buildEncounterGenerateRequestBody({
-        region: region.value,
-        tableKey: tableKey.value,
-        count: count.value,
-        outRoot: outRoot.value,
-        preview: preview.value,
-      }),
-    })
-    result.value = data
-  } catch (err: unknown) {
-    error.value = errorMessageForEncounterGenerate(err)
-  } finally {
-    generating.value = false
-  }
-}
-
-// Open file content in a collapsible state per file.
-const openFiles = ref<Set<string>>(new Set())
-const toggleFile = (name: string) => {
-  openFiles.value = toggleOpenGenerateFile(openFiles.value, name)
-}
-const isOpen = (name: string) => openFiles.value.has(name)
-
-// Update the URL when region/table change so links from /encounter-tables
-// (and ordinary back/forward) work.
-watch([region, tableKey], () => {
-  router.replace({ query: { region: region.value, table: tableKey.value } })
+const {
+  region,
+  tableKey,
+  count,
+  outRoot,
+  preview,
+  tablesForRegion,
+  selectedTable,
+  rolledPreview,
+  rollPreview,
+  generating,
+  error,
+  result,
+  generate,
+  toggleFile,
+  isOpen,
+} = useEncounterGenerationPage({
+  query: route.query,
+  replaceQuery: (query) => router.replace({ query }),
 })
 </script>
 

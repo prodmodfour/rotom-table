@@ -1293,3 +1293,14 @@
   - `npm test` — passes: 68 test files / 250 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: encounter generation page composable extraction
+
+- Extracted `/generate` route state and orchestration into `composables/encounters/useEncounterGenerationPage.ts`.
+  - The composable owns URL/query initialization, region/table synchronization, preview rolling, generation request execution, error normalization, generated-file expansion state, and route-query updates through injected dependencies.
+  - `pages/generate.vue` now focuses on page metadata and template rendering while preserving existing form fields, URL behavior, preview rolling, and `/api/encounters/generate` request shape.
+- Added `tests/composables/encounters/useEncounterGenerationPage.test.ts` covering query initialization, automatic preview rolls, region/table coercion with route replacement, generation success/error handling, request count clamping, and file expansion toggles.
+- Quality gates after this phase:
+  - `npm test` — passes: 69 test files / 255 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
