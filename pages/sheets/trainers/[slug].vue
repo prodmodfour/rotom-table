@@ -28,6 +28,7 @@ import {
   formatSignedModifier,
 } from '~/utils/evasion'
 import { useEditableSheetResource } from '~/composables/sheets/useEditableSheetResource'
+import { useTrainerPortraitPicker } from '~/composables/sheets/useTrainerPortraitPicker'
 import { useTrainerSheetCsvFields } from '~/composables/sheets/useTrainerSheetCsvFields'
 import type {
   InventoryEntry,
@@ -322,38 +323,15 @@ const skillModifier = (key: TrainerSkillKey): number =>
 // `useEditableSheet` picks up the change and persists it via the auto-save.
 // ---------------------------------------------------------------------------
 
-const portraitPickerOpen = ref(false)
-const portraitQuery = ref('')
-
-const filteredPortraitOptions = computed(() => {
-  const q = portraitQuery.value.trim().toLowerCase()
-  if (!q) return trainerCatalog
-  return trainerCatalog.filter(
-    (t) =>
-      t.species.toLowerCase().includes(q) ||
-      (t.slug?.toLowerCase().includes(q) ?? false),
-  )
-})
-
-const openPortraitPicker = () => {
-  portraitQuery.value = ''
-  portraitPickerOpen.value = true
-}
-
-const closePortraitPicker = () => {
-  portraitPickerOpen.value = false
-}
-
-const selectPortrait = (url: string) => {
-  if (!sheet.value) return
-  sheet.value.portraitUrl = url
-  closePortraitPicker()
-}
-
-const clearPortrait = () => {
-  if (!sheet.value) return
-  sheet.value.portraitUrl = undefined
-}
+const {
+  portraitPickerOpen,
+  portraitQuery,
+  filteredPortraitOptions,
+  openPortraitPicker,
+  closePortraitPicker,
+  selectPortrait,
+  clearPortrait,
+} = useTrainerPortraitPicker(sheet, trainerCatalog)
 </script>
 
 <template>

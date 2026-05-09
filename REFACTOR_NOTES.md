@@ -759,3 +759,14 @@
   - `npm test` — passes: 44 test files / 153 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: trainer portrait picker composable
+
+- Continued Phase 7 trainer sheet cleanup by extracting trainer portrait picker state and actions into `composables/sheets/useTrainerPortraitPicker.ts`.
+  - The composable owns picker open/query state, catalog filtering by species/slug, portrait selection, and clearing while keeping the route page focused on wiring.
+- Updated the trainer sheet route page to consume the portrait picker composable with the existing `trainerCatalog` source and preserve the modal/template behavior.
+- Added `tests/composables/sheets/useTrainerPortraitPicker.test.ts` covering open/reset behavior, species/slug filtering, selection, clearing, and null-sheet no-op behavior.
+- Quality gates after this phase:
+  - `npm test` — passes: 45 test files / 156 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
