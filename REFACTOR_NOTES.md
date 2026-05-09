@@ -569,3 +569,14 @@
   - `npm test` — passes: 28 test files / 90 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: isometric scene graph extraction
+
+- Continued Phase 6 renderer decomposition by extracting the Three.js scene/group/raycaster/clock setup from `components/IsometricGrid.client.vue` into `utils/isometric/sceneGraph.ts`.
+  - The helper owns the stable scene hierarchy for grid, world, preview, field-effect, voxel, and hazard containers.
+  - The grid component now consumes a focused scene graph factory instead of constructing the render hierarchy inline.
+- Added `tests/utils/isometric/sceneGraph.test.ts` covering top-level groups, world container ordering, and shared raycaster/clock exposure.
+- Quality gates after this phase:
+  - `npm test` — passes: 29 test files / 93 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.

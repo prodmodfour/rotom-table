@@ -86,6 +86,7 @@ import {
   disposeIsometricSpriteTextureCaches,
   observeIsometricResize,
 } from '~/utils/isometric/lifecycle'
+import { createIsometricSceneGraph } from '~/utils/isometric/sceneGraph'
 
 export type { BuildTool } from '~/shared/mapEditor'
 
@@ -232,22 +233,17 @@ const getShadowSurfaceY = (
   footY,
 })
 
-const scene = new THREE.Scene()
-const raycaster = new THREE.Raycaster()
-const gridGroup = new THREE.Group()
-const worldGroup = new THREE.Group()
-const previewGroup = new THREE.Group()
-const voxelContainer = new THREE.Group()
-const fieldEffectContainer = new THREE.Group()
-const hazardContainer = new THREE.Group()
-const clock = new THREE.Clock()
-
-scene.add(gridGroup)
-scene.add(worldGroup)
-scene.add(previewGroup)
-worldGroup.add(fieldEffectContainer)
-worldGroup.add(voxelContainer)
-worldGroup.add(hazardContainer)
+const {
+  scene,
+  raycaster,
+  gridGroup,
+  worldGroup,
+  previewGroup,
+  voxelContainer,
+  fieldEffectContainer,
+  hazardContainer,
+  clock,
+} = createIsometricSceneGraph()
 
 const renderObjects = new Map<string, PokemonRenderObject>()
 const voxelRenderer = createVoxelRenderer(voxelContainer)
