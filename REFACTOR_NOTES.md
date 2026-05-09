@@ -466,3 +466,14 @@
   - `npm test` — passes: 22 test files / 68 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: isometric damage dialog component extraction
+
+- Continued token action dialog decomposition by extracting the manual damage modal from `components/isometric/TokenActionDialogs.vue` into `components/isometric/TokenDamageDialog.vue`.
+  - The damage component now owns damage-mode/source controls, type selection, attacker/DB roll UI, multiplier breakdown display, and damage input focus exposure.
+  - `TokenActionDialogs.vue` is now a smaller coordinator for HP, status/conditions, and damage dialogs with the same expose API used by `IsometricGrid`.
+- Preserved existing damage dialog copy, DB roll clearing/re-roll behavior, type multiplier display, attacker bonus breakdown, apply gating, and `modify-hp` submit flow.
+- Quality gates after this phase:
+  - `npm test` — passes: 22 test files / 68 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
