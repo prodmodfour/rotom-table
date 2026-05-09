@@ -1113,3 +1113,13 @@
   - `npm test` — passes: 58 test files / 197 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: Pokédex sidebar component extraction
+
+- Extracted the Pokédex filter controls, entry list, sidebar scroll refs, and sidebar-specific styles from `pages/pokedex/[[pokemon_name]].vue` into `components/pokedex/PokedexSidebar.vue`.
+- The route page now wires the filter composable into the sidebar through explicit props/`v-model` while the component owns scroll persistence via `usePokedexSidebarScroll`.
+- Preserved existing field/advanced filtering UI, entry active states, scroll restoration, routes, type badges, and empty-state copy.
+- Quality gates after this phase:
+  - `npm test` — passes: 58 test files / 197 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
