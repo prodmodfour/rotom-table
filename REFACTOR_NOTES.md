@@ -393,3 +393,13 @@
   - `npm test` — passes: 18 test files / 51 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: isometric HP dialog helper extraction
+
+- Continued Phase 6 cleanup by extracting token HP dialog state creation, amount parsing, preview clamping, and live-token metadata syncing into `utils/isometric/tokenHpDialog.ts`.
+  - `components/IsometricGrid.client.vue` now delegates HP dialog calculations to focused helpers while preserving the existing modify-HP modal UI and `modify-hp` event payload.
+- Added `tests/utils/isometric/tokenHpDialog.test.ts` covering default dialog state, damage/heal deltas, invalid amount handling, HP clamping, and live-token sync behavior.
+- Quality gates after this phase:
+  - `npm test` — passes: 19 test files / 55 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.

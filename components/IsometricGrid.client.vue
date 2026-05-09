@@ -80,6 +80,13 @@ import {
   type TokenContextMenuState,
 } from '~/utils/isometric/contextMenu'
 import {
+  createHpDialogState,
+  getHpDialogDelta,
+  getHpDialogPreview,
+  updateHpDialogFromPokemon,
+  type HpDialogState,
+} from '~/utils/isometric/tokenHpDialog'
+import {
   animatePokemonRenderObject,
   applyPokemonRenderObjectPosition,
   createPokemonRenderObject,
@@ -209,30 +216,10 @@ const conditionsDialogChanged = computed(() => {
   return current.some((name, index) => name !== original[index])
 })
 
-interface HpDialogState {
-  id: string
-  species: string
-  currentHp: number
-  maxHp: number
-  mode: 'damage' | 'heal'
-  amount: string
-}
-
 const hpDialog = ref<HpDialogState | null>(null)
 const hpAmountInput = ref<HTMLInputElement | null>(null)
-
-const hpDialogDelta = computed(() => {
-  if (!hpDialog.value) return 0
-  const parsed = Number.parseInt(hpDialog.value.amount, 10)
-  if (!Number.isFinite(parsed) || parsed <= 0) return 0
-  return hpDialog.value.mode === 'damage' ? -parsed : parsed
-})
-
-const hpDialogPreview = computed(() => {
-  if (!hpDialog.value) return 0
-  const next = hpDialog.value.currentHp + hpDialogDelta.value
-  return Math.max(0, Math.min(hpDialog.value.maxHp, next))
-})
+const hpDialogDelta = computed(() => getHpDialogDelta(hpDialog.value))
+const hpDialogPreview = computed(() => getHpDialogPreview(hpDialog.value))
 
 interface DamageDialogState {
   id: string
@@ -946,14 +933,7 @@ const handleContextModifyHp = () => {
     return
   }
 
-  hpDialog.value = {
-    id: target.id,
-    species: target.species,
-    currentHp: target.currentHp,
-    maxHp: target.maxHp,
-    mode: 'damage',
-    amount: '',
-  }
+  hpDialog.value = createHpDialogState(target)
   closeContextMenu()
   void nextTick(() => {
     hpAmountInput.value?.focus()
@@ -1506,9 +1486,7 @@ watch(
       if (!live) {
         closeHpDialog()
       } else {
-        hpDialog.value.currentHp = live.currentHp
-        hpDialog.value.maxHp = live.maxHp
-        hpDialog.value.species = live.species
+        hpDialog.value = updateHpDialogFromPokemon(hpDialog.value, live)
       }
     }
 
