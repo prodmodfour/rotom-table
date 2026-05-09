@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import * as THREE from 'three'
 import TokenActionDialogs from '~/components/isometric/TokenActionDialogs.vue'
 import TokenContextMenu from '~/components/isometric/TokenContextMenu.vue'
 import { useTokenActionController } from '~/composables/isometric/useTokenActionController'
+import { useIsometricSceneWatchers } from '~/composables/isometric/useIsometricSceneWatchers'
 import type { GridAnchor, GridDimensions, SpawnedPokemon } from '~/types/pokemon'
 import type {
   LayerVisibility,
@@ -678,192 +679,55 @@ onBeforeUnmount(() => {
   camera = null
 })
 
-watch(
-  () => props.pokemons,
-  () => {
-    if (!renderer) {
-      return
-    }
-
-    syncPokemonObjects()
-
-    movementInteraction.refreshAfterStateChange()
-
-    syncDialogsFromPokemons()
-
-    replayBuildPreview()
+useIsometricSceneWatchers({
+  sources: {
+    pokemons: () => props.pokemons,
+    terrainVoxelRevision,
+    hazardRevision,
+    fieldEffectsRevision,
+    selectedId: () => props.selectedId,
+    selectedPokemon: () => selectedPokemon.value,
+    controllableIdsKey: () => props.controllableIds?.join('|') ?? '',
+    canControlPokemon,
+    layerVisibility: () => props.layerVisibility,
+    buildMode: () => props.buildMode,
+    hazardMode: () => props.hazardMode,
+    buildSettings: () => [props.buildTool, props.buildMaterial, props.buildColor] as const,
+    hazardSettings: () => [props.hazardTool, props.hazardKind] as const,
+    groundLevelY: () => props.groundLevelY,
+    dimensionsKey: () => [props.dimensions.x, props.dimensions.y, props.dimensions.z] as const,
+    isRendererReady: () => Boolean(renderer),
   },
-  { deep: true },
-)
-
-watch(
-  terrainVoxelRevision,
-  () => {
-    if (!renderer) {
-      return
-    }
-
-    syncVoxelMeshes()
-
-    // Voxels affect pathfinding — refresh the move preview.
-    movementInteraction.refreshAfterStateChange()
-
-    replayBuildPreview()
-    replayHazardPreview()
+  actions: {
+    syncPokemonObjects,
+    refreshMovementAfterStateChange: movementInteraction.refreshAfterStateChange,
+    syncDialogsFromPokemons,
+    replayBuildPreview,
+    syncVoxelMeshes,
+    replayHazardPreview,
+    syncHazardMeshes,
+    syncFieldEffectMeshes,
+    selectPokemon: (id) => emit('select-pokemon', id),
+    refreshPokemonStyles,
+    updateGridVisibility,
+    setControlsZoomEnabled: (enabled) => {
+      if (controls) controls.enableZoom = enabled
+    },
+    clearPreviewVisuals,
+    closeContextMenu,
+    disposePreviewOwner: movementInteraction.disposeOwner,
+    resetMovementForSelectionChange: movementInteraction.resetForSelectionChange,
+    closeUnauthorizedActions,
+    applyLayerVisibility,
+    hideBuildGhost,
+    ensureBuildGhost,
+    hideHazardGhost,
+    ensureHazardGhost,
+    buildGrid,
+    alignCameraToGrid,
+    syncRendererSize,
   },
-)
-
-watch(
-  hazardRevision,
-  () => {
-    if (!renderer) return
-    syncHazardMeshes()
-    replayHazardPreview()
-  },
-)
-
-watch(
-  fieldEffectsRevision,
-  () => {
-    if (!renderer) return
-    syncFieldEffectMeshes()
-  },
-)
-
-watch(
-  () => props.selectedId,
-  () => {
-    if (props.selectedId && !canControlPokemon(props.selectedId)) {
-      emit('select-pokemon', null)
-      return
-    }
-
-    if (!renderer) {
-      return
-    }
-
-    refreshPokemonStyles()
-    updateGridVisibility()
-
-    if (controls) {
-      controls.enableZoom = !selectedPokemon.value
-    }
-
-    if (!selectedPokemon.value) {
-      clearPreviewVisuals()
-      closeContextMenu()
-      movementInteraction.disposeOwner()
-      return
-    }
-
-    movementInteraction.resetForSelectionChange()
-  },
-)
-
-watch(
-  () => props.controllableIds?.join('|') ?? '',
-  () => {
-    if (props.selectedId && !canControlPokemon(props.selectedId)) emit('select-pokemon', null)
-    closeUnauthorizedActions()
-  },
-)
-
-watch(
-  () => props.layerVisibility,
-  () => {
-    if (!renderer) return
-    updateGridVisibility()
-    applyLayerVisibility()
-  },
-  { deep: true },
-)
-
-watch(
-  () => props.buildMode,
-  (active) => {
-    if (!renderer) return
-
-    updateGridVisibility()
-
-    if (active) {
-      closeContextMenu()
-      clearPreviewVisuals()
-      hideHazardGhost()
-      ensureBuildGhost()
-      replayBuildPreview()
-    } else {
-      hideBuildGhost()
-    }
-  },
-)
-
-watch(
-  () => props.hazardMode,
-  (active) => {
-    if (!renderer) return
-
-    updateGridVisibility()
-
-    if (active) {
-      closeContextMenu()
-      clearPreviewVisuals()
-      hideBuildGhost()
-      ensureHazardGhost()
-      replayHazardPreview()
-    } else {
-      hideHazardGhost()
-    }
-  },
-)
-
-watch(
-  () => [props.buildTool, props.buildMaterial, props.buildColor] as const,
-  () => {
-    if (!renderer || !props.buildMode) return
-    replayBuildPreview()
-  },
-)
-
-watch(
-  () => [props.hazardTool, props.hazardKind] as const,
-  () => {
-    if (!renderer || !props.hazardMode) return
-    replayHazardPreview()
-  },
-)
-
-watch(
-  () => props.groundLevelY,
-  () => {
-    if (!renderer) return
-    syncFieldEffectMeshes()
-    movementInteraction.refreshAfterStateChange()
-  },
-)
-
-watch(
-  () => [props.dimensions.x, props.dimensions.y, props.dimensions.z] as const,
-  () => {
-    if (!renderer) {
-      return
-    }
-
-    buildGrid()
-    syncFieldEffectMeshes()
-    updateGridVisibility()
-    alignCameraToGrid(false)
-    syncRendererSize()
-
-    movementInteraction.refreshAfterStateChange()
-
-    if (props.buildMode) {
-      hideBuildGhost()
-    }
-    if (props.hazardMode) {
-      hideHazardGhost()
-    }
-  },
-)
+})
 </script>
 
 <template>

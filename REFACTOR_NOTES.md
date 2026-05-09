@@ -690,3 +690,14 @@
   - `npm test` — passes: 37 test files / 127 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: isometric scene watcher composable extraction
+
+- Continued Phase 6 by extracting `IsometricGrid` reactive renderer watcher orchestration into `composables/isometric/useIsometricSceneWatchers.ts`.
+  - The composable owns renderer-readiness gating, token/terrain/hazard/field-effect refresh fan-out, selection control cleanup, build/hazard mode transitions, settings replay, ground-level refreshes, and dimension resync sequencing.
+  - `components/IsometricGrid.client.vue` is now under 800 lines and focuses on renderer construction, subsystem wiring, event callbacks, and template adapters.
+- Added `tests/composables/isometric/useIsometricSceneWatchers.test.ts` covering selection guards, selection reset/cleanup behavior, build/hazard transitions, dimensions refresh, and readiness-gated token/terrain updates.
+- Quality gates after this phase:
+  - `npm test` — passes: 38 test files / 132 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
