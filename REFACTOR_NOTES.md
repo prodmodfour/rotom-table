@@ -869,3 +869,16 @@
   - `npm test` — passes: 49 test files / 171 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: trainer stats/background/skills panel extraction
+
+- Continued Phase 7 trainer sheet page decomposition by extracting focused trainer-tab panels:
+  - `components/sheets/TrainerStatsPanel.vue` for stat rows and trainer stat-point budget display.
+  - `components/sheets/TrainerSkillBackgroundPanel.vue` for skill-background CSV fields and milestone counters.
+  - `components/sheets/TrainerSkillsPanel.vue` for skill rank/modifier editing and raised/lowered styling.
+- Updated `pages/sheets/trainers/[slug].vue` to wire those panels through explicit props, `v-model`s, and emits, and removed now-dead inline style blocks for the extracted trainer sections.
+- Preserved stat mutation behavior, skill-background CSV persistence, skill rank/modifier cleanup, and displayed stat-point totals.
+- Quality gates after this phase:
+  - `npm test` — passes: 49 test files / 171 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.

@@ -24,14 +24,7 @@ import type {
   TrainerSkillKey,
 } from '~/types/trainerSheet'
 
-/** Map a skill key (``medicineEd``) back to its display label (``Medicine Ed``). */
-const SKILL_LABEL: Record<TrainerSkillKey, string> = Object.fromEntries(
-  TRAINER_SKILL_ORDER,
-) as Record<TrainerSkillKey, string>
-
 const SKILL_KEYS: TrainerSkillKey[] = TRAINER_SKILL_ORDER.map(([k]) => k)
-
-const SKILL_OPTIONS = TRAINER_SKILL_ORDER.map(([value, label]) => ({ value, label }))
 
 const RANK_OPTIONS: SkillRank[] = ['Pathetic', 'Untrained', 'Novice', 'Adept', 'Expert', 'Master']
 
@@ -209,163 +202,30 @@ const {
       <!-- =================================================================== -->
       <section v-if="activeTab === 'trainer'" class="tab-panel">
         <div class="grid-two">
-          <!-- Stats -->
-          <div class="block">
-            <h2 class="block-title">Stats</h2>
-            <table class="data-table stats-table">
-              <thead>
-                <tr>
-                  <th>Stat</th>
-                  <th>Base</th>
-                  <th>Feats</th>
-                  <th>Bonus</th>
-                  <th>Lvl-Up</th>
-                  <th>Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="s in stats" :key="s.key">
-                  <th>{{ s.label }}</th>
-                  <td>
-                    <EditableCell
-                      :model-value="s.base"
-                      type="number"
-                      :min="0"
-                      @update:model-value="(v) => setStatField(s.key, 'base', v as number)"
-                    />
-                  </td>
-                  <td>
-                    <EditableCell
-                      :model-value="s.feats"
-                      type="number"
-                      :min="0"
-                      @update:model-value="(v) => setStatField(s.key, 'feats', v as number)"
-                    />
-                  </td>
-                  <td>
-                    <EditableCell
-                      :model-value="s.bonus"
-                      type="number"
-                      :min="0"
-                      @update:model-value="(v) => setStatField(s.key, 'bonus', v as number)"
-                    />
-                  </td>
-                  <td>
-                    <EditableCell
-                      :model-value="s.levelUp"
-                      type="number"
-                      :min="0"
-                      @update:model-value="(v) => setStatField(s.key, 'levelUp', v as number)"
-                    />
-                  </td>
-                  <td><strong>{{ s.total }}</strong></td>
-                </tr>
-              </tbody>
-              <tfoot>
-                <tr
-                  class="stat-points-row"
-                  title="Trainer Lvl-Up Stat Points = Level - 1; the 10 character-creation points live in Base (PTU Core, Character Advancement p.19)."
-                >
-                  <th colspan="4" scope="row">Total points to spend</th>
-                  <td :class="['stat-points-row__value', { negative: statPointsLeft < 0 }]">
-                    {{ statPointsLeft }}
-                  </td>
-                  <td class="stat-points-row__meta">
-                    {{ statPointsSpent }} / {{ statPointsBudget }} used
-                  </td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
+          <TrainerStatsPanel
+            :stats="stats"
+            :stat-points-left="statPointsLeft"
+            :stat-points-spent="statPointsSpent"
+            :stat-points-budget="statPointsBudget"
+            @set-stat-field="setStatField"
+          />
 
-          <!-- Skill background + counts -->
-          <div class="block">
-            <h2 class="block-title">Skill Background</h2>
-            <div class="bg-card">
-              <div class="bg-name">
-                <EditableCell v-model="sheet.skillBackground!.name" placeholder="Background name" />
-              </div>
-              <p class="bg-desc">
-                <EditableCell
-                  v-model="sheet.skillBackground!.description"
-                  type="textarea"
-                  placeholder="Background description"
-                  multiline
-                />
-              </p>
-              <ul class="bg-list">
-                <li>
-                  <span class="bg-tag adept">Adept</span>
-                  <EditableCell v-model="adeptCsv" placeholder="survival" />
-                </li>
-                <li>
-                  <span class="bg-tag novice">Novice</span>
-                  <EditableCell v-model="noviceCsv" placeholder="medicineEd" />
-                </li>
-                <li>
-                  <span class="bg-tag pathetic">Pathetic</span>
-                  <EditableCell v-model="patheticCsv" placeholder="combat, intimidate" />
-                </li>
-              </ul>
-            </div>
-
-            <h2 class="block-title block-title--spaced">Milestones</h2>
-            <ul class="kv-list">
-              <li><span>Milestones</span>
-                <strong><EditableCell v-model="sheet.milestones" type="number" :min="0" /></strong>
-              </li>
-              <li><span>Dex EXP</span>
-                <strong><EditableCell v-model="sheet.dexExp" type="number" :min="0" /></strong>
-              </li>
-              <li><span>Misc EXP</span>
-                <strong><EditableCell v-model="sheet.miscExp" type="number" :min="0" /></strong>
-              </li>
-              <li><span>Bonus Skill Edges</span>
-                <strong><EditableCell v-model="sheet.bonusSkillEdges" type="number" :min="0" /></strong>
-              </li>
-              <li><span>Features remaining</span>
-                <strong><EditableCell v-model="sheet.remainingFeatures" type="number" :min="0" /></strong>
-              </li>
-              <li><span>Edges remaining</span>
-                <strong><EditableCell v-model="sheet.remainingEdges" type="number" :min="0" /></strong>
-              </li>
-            </ul>
-          </div>
+          <TrainerSkillBackgroundPanel
+            v-model:adept-csv="adeptCsv"
+            v-model:novice-csv="noviceCsv"
+            v-model:pathetic-csv="patheticCsv"
+            :sheet="sheet"
+          />
         </div>
 
         <!-- Skills grid -->
-        <div class="block">
-          <h2 class="block-title">Skills</h2>
-          <div class="skills-grid">
-            <div
-              v-for="s in skills"
-              :key="s.key"
-              :class="['skill-row', {
-                raised: s.raised,
-                lowered: s.lowered,
-              }]"
-            >
-              <span class="skill-label">{{ s.label }}</span>
-              <span class="skill-rank">
-                <EditableCell
-                  :model-value="s.rank"
-                  type="select"
-                  :options="RANK_OPTIONS"
-                  @update:model-value="(v) => setSkillRank(s.key, v as SkillRank | undefined)"
-                />
-              </span>
-              <span class="skill-dice">
-                {{ s.dice }}
-                <EditableCell
-                  :model-value="skillModifier(s.key)"
-                  type="number"
-                  :format="(v) => (typeof v === 'number' && v !== 0 ? (v > 0 ? `+${v}` : String(v)) : '+0')"
-                  @update:model-value="(v) => setSkillModifier(s.key, v as number | undefined)"
-                />
-              </span>
-            </div>
-          </div>
-        </div>
+        <TrainerSkillsPanel
+          :skills="skills"
+          :rank-options="RANK_OPTIONS"
+          :skill-modifier="skillModifier"
+          @set-skill-rank="setSkillRank"
+          @set-skill-modifier="setSkillModifier"
+        />
 
         <!-- Classes -->
         <div class="block">
@@ -1365,36 +1225,6 @@ const {
   font-weight: 600;
 }
 
-.stats-table tbody th { color: var(--accent); letter-spacing: 0.04em; }
-
-.data-table tfoot th,
-.data-table tfoot td {
-  padding-top: 0.55rem;
-  border-bottom: 0;
-}
-
-.stat-points-row th {
-  text-align: right;
-  color: var(--ink-muted);
-  font-size: 0.68rem;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-}
-
-.stat-points-row__value {
-  font-weight: 800;
-  color: var(--good);
-}
-
-.stat-points-row__value.negative {
-  color: var(--bad);
-}
-
-.stat-points-row__meta {
-  color: var(--ink-muted);
-  font-size: 0.72rem;
-}
-
 /* Row controls */
 .row-add {
   margin-left: auto;
@@ -1450,74 +1280,6 @@ const {
 .inventory-item-name {
   max-width: 100%;
 }
-
-/* Skills */
-.skills-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 0.3rem;
-}
-
-.skill-row {
-  display: grid;
-  grid-template-columns: 1fr auto auto;
-  align-items: baseline;
-  gap: 0.45rem;
-  padding: 0.32rem 0.5rem;
-  border: 1px solid var(--rule-soft);
-  border-radius: 8px;
-  background: var(--paper-inset);
-}
-
-.skill-row.raised {
-  border-color: rgba(184, 187, 38, 0.45);
-  background: rgba(184, 187, 38, 0.12);
-}
-
-.skill-row.lowered {
-  border-color: rgba(251, 73, 52, 0.45);
-  background: rgba(251, 73, 52, 0.12);
-}
-
-.skill-label { color: var(--ink); font-weight: 500; font-size: 0.86rem; }
-.skill-rank  { color: var(--ink-muted); font-size: 0.78rem; letter-spacing: 0.04em; }
-.skill-dice  { color: var(--accent); font-weight: 700; font-size: 0.82rem; display: inline-flex; gap: 0.25rem; align-items: baseline; }
-
-/* Background card */
-.bg-card { display: flex; flex-direction: column; gap: 0.4rem; }
-.bg-name { font-family: var(--font-book); font-size: 1.1rem; font-weight: 700; letter-spacing: 0.04em; color: var(--accent); }
-.bg-desc { margin: 0; color: var(--ink-soft); font-style: italic; font-size: 0.88rem; }
-
-.bg-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-}
-
-.bg-list li {
-  display: flex;
-  align-items: center;
-  gap: 0.45rem;
-  font-size: 0.85rem;
-}
-
-.bg-tag {
-  display: inline-flex;
-  padding: 0.12rem 0.55rem;
-  border-radius: 999px;
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  border: 1px solid transparent;
-}
-
-.bg-tag.adept    { background: rgba(184, 187, 38, 0.16); color: var(--good); border-color: rgba(184, 187, 38, 0.45); }
-.bg-tag.novice   { background: var(--accent-soft);       color: var(--accent); border-color: rgba(250, 189, 47, 0.4); }
-.bg-tag.pathetic { background: rgba(251, 73, 52, 0.16);  color: var(--bad);  border-color: rgba(251, 73, 52, 0.45); }
 
 /* Key/value lists */
 .kv-list {
