@@ -83,6 +83,10 @@ import {
 } from '~/utils/isometric/worldSprites'
 import { createTokenMovePreviewRenderer } from '~/utils/isometric/tokenMovePreview'
 import {
+  createTokenContextMenuState,
+  type TokenContextMenuState,
+} from '~/utils/isometric/contextMenu'
+import {
   animatePokemonRenderObject,
   applyPokemonRenderObjectPosition,
   createPokemonRenderObject,
@@ -168,7 +172,7 @@ const EMPTY_PREVIEW: PreviewState = {
 }
 
 const container = ref<HTMLDivElement | null>(null)
-const contextMenu = ref<{ x: number; y: number; id: string; canTurn: boolean; canViewPokedex: boolean } | null>(null)
+const contextMenu = ref<TokenContextMenuState | null>(null)
 
 interface CombatStagesDialogState {
   id: string
@@ -940,21 +944,15 @@ const openContextMenu = (event: MouseEvent, id: string) => {
   }
 
   const target = props.pokemons.find((pokemon) => pokemon.id === id)
-  const canTurn = Boolean(target?.entityKind === 'pokemon' && target.backSpriteUrl)
-  const canViewPokedex = target?.sheetKind === 'pokemon'
-  const bounds = container.value.getBoundingClientRect()
-  const menuWidth = 230
-  const menuButtonCount = 6 + (canViewPokedex ? 1 : 0) + (canTurn ? 1 : 0) + (props.canDeleteTokens ? 1 : 0)
-  const menuHeight = 13 + menuButtonCount * 40 + Math.max(0, menuButtonCount - 1) * 5
-  const padding = 12
+  if (!target) return
 
-  contextMenu.value = {
-    id,
-    canTurn,
-    canViewPokedex,
-    x: Math.min(bounds.width - menuWidth - padding, Math.max(padding, event.clientX - bounds.left)),
-    y: Math.min(bounds.height - menuHeight - padding, Math.max(padding, event.clientY - bounds.top)),
-  }
+  contextMenu.value = createTokenContextMenuState({
+    pokemon: target,
+    clientX: event.clientX,
+    clientY: event.clientY,
+    bounds: container.value.getBoundingClientRect(),
+    canDeleteTokens: props.canDeleteTokens,
+  })
 }
 
 const handleContextTurn = () => {

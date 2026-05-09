@@ -357,3 +357,15 @@
   - `npm test` — passes: 15 test files / 44 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+
+## Next phase update: isometric token context-menu helper extraction
+
+- Continued `IsometricGrid` cleanup by extracting token context-menu capability, button-count, height, and clamped position calculations into `utils/isometric/contextMenu.ts`.
+  - The Vue component now creates menu state through a focused helper instead of knowing layout constants and token action capability rules inline.
+  - Preserved existing menu actions, turn/Pokédex/delete button availability, and scene-bound clamping behavior.
+- Added `tests/utils/isometric/contextMenu.test.ts` covering capability derivation, optional button counting, clamped positioning, and produced menu state shape.
+- Quality gates after this phase:
+  - `npm test` — passes: 16 test files / 47 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
