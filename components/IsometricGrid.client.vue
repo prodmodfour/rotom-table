@@ -84,6 +84,7 @@ import {
   createIsometricTokenHoverController,
   updateHoveredPokemonElevationBadge,
 } from '~/utils/isometric/tokenHover'
+import { syncPokemonRenderObjects } from '~/utils/isometric/tokenObjectSync'
 
 export type { BuildTool } from '~/shared/mapEditor'
 
@@ -370,30 +371,15 @@ const refreshPokemonStyles = () => {
 }
 
 const syncPokemonObjects = () => {
-  const nextIds = new Set(props.pokemons.map((pokemon) => pokemon.id))
-
-  for (const [id, renderObject] of renderObjects.entries()) {
-    if (nextIds.has(id)) {
-      continue
-    }
-
-    hoverController.clearIfHovered(id)
-
-    disposePokemonRenderObject(renderObject)
-    renderObjects.delete(id)
-  }
-
-  for (const pokemon of props.pokemons) {
-    let renderObject = renderObjects.get(pokemon.id)
-
-    if (!renderObject) {
-      renderObject = buildRenderObject(pokemon)
-      renderObjects.set(pokemon.id, renderObject)
-      applyRenderObjectPosition(renderObject)
-    }
-
-    updatePokemonRenderObjectFromSpawn(renderObject, pokemon)
-  }
+  syncPokemonRenderObjects({
+    renderObjects,
+    pokemons: props.pokemons,
+    createRenderObject: buildRenderObject,
+    onCreateRenderObject: applyRenderObjectPosition,
+    updateRenderObject: updatePokemonRenderObjectFromSpawn,
+    disposeRenderObject: disposePokemonRenderObject,
+    clearHoverForToken: hoverController.clearIfHovered,
+  })
 
   refreshPokemonStyles()
 }

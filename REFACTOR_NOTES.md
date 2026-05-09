@@ -646,3 +646,14 @@
   - `npm test` — passes: 35 test files / 116 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: isometric token render-object sync extraction
+
+- Continued Phase 6 by extracting live token render-object collection reconciliation from `components/IsometricGrid.client.vue` into `utils/isometric/tokenObjectSync.ts`.
+  - The helper owns stale token disposal, hover cleanup before deletion, missing render-object creation, create-time positioning hooks, and per-token update fan-out through injected renderer lifecycle callbacks.
+  - The grid component now keeps only the high-level sync call plus style refresh, while token object reconciliation is isolated and unit-tested.
+- Added `tests/utils/isometric/tokenObjectSync.test.ts` covering creation/update order, existing-object reuse, stale disposal, hover cleanup, and map mutation behavior.
+- Quality gates after this phase:
+  - `npm test` — passes: 36 test files / 119 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
