@@ -444,3 +444,14 @@
   - `npm test` — passes: 22 test files / 68 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: isometric token action dialog component extraction
+
+- Continued Phase 6 cleanup by extracting token HP, combat-stage, condition, and manual-damage dialog markup/styles from `components/IsometricGrid.client.vue` into `components/isometric/TokenActionDialogs.vue`.
+  - The new component owns dialog presentation, input focus exposure, combat-stage UI adjustments, DB roll UI state, and focused submit/close emits.
+  - The grid component now keeps only token action permission checks and persistence/event orchestration for those dialogs.
+- Preserved existing dialog copy, controls, clamping, DB roll behavior, input focus/select behavior, and emitted `modify-hp`/stage/condition payloads.
+- Quality gates after this phase:
+  - `npm test` — passes: 22 test files / 68 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
