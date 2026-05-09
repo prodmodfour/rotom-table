@@ -1103,3 +1103,13 @@
   - `npm test` — passes: 57 test files / 194 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: Pokédex filter-state composable extraction
+
+- Extracted Pokédex filter mode/search text/operator state, active filter construction, and filtered-entry derivation into `composables/pokedex/usePokedexFilters.ts`.
+- The route page now wires the filter UI to a focused composable while pure helpers own default state creation, advanced-vs-field filter parsing, and entry filtering.
+- Added `tests/composables/pokedex/usePokedexFilters.test.ts` covering default state, active filter construction, no-filter identity preservation, and field filtering behavior.
+- Quality gates after this phase:
+  - `npm test` — passes: 58 test files / 197 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.

@@ -1,18 +1,14 @@
 <script setup lang="ts">
-import { computed, reactive } from 'vue'
+import { computed } from 'vue'
 import pokedexData from '~/ptu-data/data/pokedex.json'
 import { pokemonCatalogBySpecies } from '~/data/pokemonCatalog'
+import { usePokedexFilters } from '~/composables/pokedex/usePokedexFilters'
 import { usePokedexSidebarScroll } from '~/composables/pokedex/usePokedexSidebarScroll'
 import {
   allTogetherFilterField,
   filterFieldConfigs,
   formatNationalDexNumber,
-  searchFieldConfigs,
   toPokedexSlug,
-  type FieldFilterKey,
-  type FilterMode,
-  type FilterOperator,
-  type PokedexSearchTextKey,
 } from '~/utils/pokedex/searchText'
 import {
   capabilityTokensForEntry,
@@ -36,7 +32,6 @@ import {
   routeParamToPokedexSlug,
   type DisplayPokedexEntry,
 } from '~/utils/pokedex/entryIndex'
-import { matchesActiveSearchFilters, parseSearchExpression, type ActiveSearchFilter } from '~/utils/pokedex/searchQuery'
 import { buildTypeMatchupGroups } from '~/utils/pokedex/typeMatchups'
 import type { PokedexRecord } from '~/types/pokemon'
 
@@ -55,47 +50,7 @@ const allEntries = buildPokedexEntries(pokedexData as PokedexRecord[])
 const entryBySlug = buildPokedexEntryBySlug(allEntries)
 const pokemonRouteSlug = computed(() => routeParamToPokedexSlug(route.params.pokemon_name))
 
-const filterMode = useState<FilterMode>('pokedex-filter-mode', () => 'fields')
-const searchFilters = reactive<Record<PokedexSearchTextKey, string>>(
-  useState<Record<PokedexSearchTextKey, string>>(
-    'pokedex-search-filters',
-    () => Object.fromEntries(searchFieldConfigs.map(({ key }) => [key, ''])) as Record<PokedexSearchTextKey, string>,
-  ).value,
-)
-const filterOperators = reactive<Record<FieldFilterKey, FilterOperator>>(
-  useState<Record<FieldFilterKey, FilterOperator>>(
-    'pokedex-filter-operators',
-    () => Object.fromEntries(filterFieldConfigs.map(({ key }) => [key, 'and'])) as Record<FieldFilterKey, FilterOperator>,
-  ).value,
-)
-
-const activeSearchFilters = computed<ActiveSearchFilter[]>(() => {
-  if (filterMode.value === 'advanced') {
-    const expression = parseSearchExpression(searchFilters.any)
-    return expression ? [{ key: 'any', expression, operator: 'and' }] : []
-  }
-
-  const filters: ActiveSearchFilter[] = []
-
-  for (const { key } of filterFieldConfigs) {
-    const expression = parseSearchExpression(searchFilters[key])
-    if (expression) {
-      filters.push({ key, expression, operator: filterOperators[key] })
-    }
-  }
-
-  return filters
-})
-
-const filteredEntries = computed(() => {
-  const filters = activeSearchFilters.value
-
-  if (filters.length === 0) {
-    return allEntries
-  }
-
-  return allEntries.filter((entry) => matchesActiveSearchFilters(entry, filters))
-})
+const { filteredEntries, filterMode, filterOperators, searchFilters } = usePokedexFilters(allEntries)
 
 const routedEntry = computed(() => (
   pokemonRouteSlug.value ? entryBySlug.get(pokemonRouteSlug.value) ?? null : null
