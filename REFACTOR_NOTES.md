@@ -602,3 +602,14 @@
   - `npm test` — passes: 31 test files / 97 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: isometric build interaction controller extraction
+
+- Continued Phase 6 by extracting terrain build-mode pointer orchestration from `components/IsometricGrid.client.vue` into `utils/isometric/buildInteraction.ts`.
+  - The controller owns build ghost preview replay, active tool/material/color lookup, valid placement payload creation, eraser removal routing, and inactive-mode ghost hiding through injected renderer/event callbacks.
+  - The grid component now delegates terrain build interactions while retaining raycast target resolution and event emission boundaries.
+- Added `tests/utils/isometric/buildInteraction.test.ts` covering inactive ghost hiding, preview target updates, valid voxel placement payloads, removal actions, invalid placement suppression, and replay gating.
+- Quality gates after this phase:
+  - `npm test` — passes: 32 test files / 102 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.

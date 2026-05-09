@@ -31,10 +31,6 @@ import {
   maxUsefulCameraZoom,
   syncIsometricRendererSize,
 } from '~/utils/isometric/cameraControls'
-import {
-  createBuildVoxelPlacement,
-  resolveBuildVoxelRenderStyle,
-} from '~/utils/isometric/buildVoxels'
 import { createHazardPlacement } from '~/utils/isometric/hazardPlacement'
 import { createPointerTravelTracker } from '~/utils/isometric/pointerTracker'
 import type {
@@ -88,6 +84,7 @@ import {
   applyIsometricLayerVisibility,
   setIsometricGridVisibility,
 } from '~/utils/isometric/layerVisibility'
+import { createIsometricBuildInteractionController } from '~/utils/isometric/buildInteraction'
 
 export type { BuildTool } from '~/shared/mapEditor'
 
@@ -469,13 +466,6 @@ const ensureHazardGhost = () => hazardGhostRenderer.ensure(props.hazardKind ?? '
 const disposeHazardGhost = () => hazardGhostRenderer.dispose()
 const hideHazardGhost = () => hazardGhostRenderer.hide()
 
-const currentBuildVoxelStyle = (cell?: { x: number; y: number; z: number }) =>
-  resolveBuildVoxelRenderStyle({
-    material: props.buildMaterial,
-    color: props.buildColor,
-    cell,
-  })
-
 const ensurePreviewObjects = () => {
   if (selectedPokemon.value) {
     tokenMovePreviewRenderer.ensure(selectedPokemon.value)
@@ -623,45 +613,22 @@ const pickBuildTarget = (
     mapMovementOccupancy: mapMovementOccupancy.value,
   })
 
-const updateBuildGhost = (target: BuildTarget | null) => {
-  buildGhostRenderer.update(target, {
+const buildInteraction = createIsometricBuildInteractionController({
+  getState: () => ({
     buildMode: props.buildMode,
-    styleForCell: currentBuildVoxelStyle,
-  })
-}
-
-const updateBuildPreviewFromPointer = (event: MouseEvent | PointerEvent) => {
-  if (!props.buildMode) {
-    hideBuildGhost()
-    return
-  }
-  const target = pickBuildTarget(event, props.buildTool)
-  updateBuildGhost(target)
-}
-
-const replayBuildPreview = () => {
-  if (!props.buildMode || !lastPointerCoords) return
-  const synthetic = {
-    clientX: lastPointerCoords.clientX,
-    clientY: lastPointerCoords.clientY,
-  } as MouseEvent
-  updateBuildPreviewFromPointer(synthetic)
-}
-
-const performBuildAction = (event: MouseEvent | PointerEvent, tool: BuildTool) => {
-  const target = pickBuildTarget(event, tool)
-  if (!target) return
-  if (target.action === 'remove') {
-    emit('remove-voxel', target.cell)
-    return
-  }
-  if (!target.valid) return
-  emit('place-voxel', createBuildVoxelPlacement({
-    material: props.buildMaterial,
-    color: props.buildColor,
-    cell: target.cell,
-  }))
-}
+    buildTool: props.buildTool,
+    buildMaterial: props.buildMaterial,
+    buildColor: props.buildColor,
+  }),
+  pickTarget: pickBuildTarget,
+  updateGhost: (target, options) => buildGhostRenderer.update(target, options),
+  hideGhost: hideBuildGhost,
+  placeVoxel: (voxel) => emit('place-voxel', voxel),
+  removeVoxel: (cell) => emit('remove-voxel', cell),
+})
+const updateBuildPreviewFromPointer = buildInteraction.updatePreviewFromPointer
+const replayBuildPreview = () => buildInteraction.replayPreview(lastPointerCoords)
+const performBuildAction = buildInteraction.performAction
 
 const pickHazardTarget = (
   event: MouseEvent | PointerEvent,
