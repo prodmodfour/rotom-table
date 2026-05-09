@@ -1315,3 +1315,14 @@
   - `npm test` — passes: 70 test files / 259 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: server encounter generation helper extraction
+
+- Extracted server-side encounter generation request/path/roll primitives into `server/utils/encounterGeneration.ts`.
+  - The helper now owns region/table/outRoot sanitization, count validation, request normalization, safe table-path construction, project-root path assertions, slug-prefix formatting, table rolling, and unique output folder allocation.
+  - `server/api/encounters/generate.post.ts` now delegates validation and path/roll mechanics while preserving GM auth, pokegen execution order, preview cleanup behavior, and response shape.
+- Added `tests/server/encounterGeneration.test.ts` covering safe name/outRoot validation, count/request normalization, slug/path helpers, root containment checks, deterministic table rolling, and output folder allocation.
+- Quality gates after this phase:
+  - `npm test` — passes: 71 test files / 265 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

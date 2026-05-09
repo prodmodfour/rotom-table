@@ -44,73 +44,27 @@ import {
   rmSync,
 } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { resolve as resolvePath, join as joinPath, sep } from 'node:path'
+import { resolve as resolvePath, join as joinPath } from 'node:path'
 import { defineEventHandler, readBody, createError } from 'h3'
 import { requireGm } from '../../utils/auth'
+import {
+  assertEncounterPathInsideRoot,
+  readEncounterGenerateRequest,
+  rollEncounterTable,
+  safeEncounterTablePath,
+  slugifyEncounterOutputPath,
+  uniqueEncounterOutputDir,
+  type GenerateEncounterBody,
+} from '../../utils/encounterGeneration'
 
-import type { EncounterTable, RolledEncounter } from '~/types/encounterTable'
-
-interface GenerateBody {
-  region?: string
-  table?: string
-  count?: number
-  outRoot?: string
-  preview?: boolean
-}
+import type { EncounterTable } from '~/types/encounterTable'
 
 const PROJECT_ROOT = resolvePath(process.cwd())
 const ENCOUNTER_ROOT = resolvePath(PROJECT_ROOT, 'encounter_tables')
 const POKEGEN_SCRIPT = resolvePath(PROJECT_ROOT, 'scripts/pokegen.sh')
 
-/** Default destination — the Nuxt ``/sheets`` page reads this directory
- *  recursively, so generated encounters appear there automatically. */
-const DEFAULT_OUT_ROOT = 'data/sheets/wild'
-
-/** Reject anything that escapes a directory or contains shell metacharacters. */
-const SAFE_NAME = /^[a-zA-Z0-9_-]+$/
-
-const sanitizeNameComponent = (value: string, label: string): string => {
-  if (!SAFE_NAME.test(value)) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: `${label} must match /^[A-Za-z0-9_-]+$/`,
-    })
-  }
-  return value
-}
-
-/** Allow nested ``outRoot`` paths like ``data/sheets/wild`` so callers can
- *  drop generated mons anywhere under the project root. Each segment is
- *  validated against {@link SAFE_NAME} to keep shell + path-traversal
- *  attackers out. */
-const sanitizeOutRoot = (value: string): string => {
-  const normalized = value.replace(/\\/g, '/').replace(/\/+/g, '/').replace(/^\/+|\/+$/g, '')
-  if (!normalized) {
-    throw createError({ statusCode: 400, statusMessage: 'outRoot required' })
-  }
-  const segments = normalized.split('/')
-  for (const seg of segments) {
-    if (!seg || seg === '.' || seg === '..') {
-      throw createError({ statusCode: 400, statusMessage: 'Invalid outRoot segment' })
-    }
-    if (!SAFE_NAME.test(seg)) {
-      throw createError({
-        statusCode: 400,
-        statusMessage: `outRoot segment "${seg}" must match /^[A-Za-z0-9_-]+$/`,
-      })
-    }
-  }
-  return segments.join('/')
-}
-
-const slugify = (value: string): string =>
-  value.replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-+|-+$/g, '').toLowerCase() || 'sheet'
-
 const loadTable = (region: string, key: string): EncounterTable => {
-  const path = joinPath(ENCOUNTER_ROOT, region, `${key}.json`)
-  if (!path.startsWith(ENCOUNTER_ROOT + sep)) {
-    throw createError({ statusCode: 400, statusMessage: 'Invalid table path' })
-  }
+  const path = safeEncounterTablePath(ENCOUNTER_ROOT, region, key)
   if (!existsSync(path)) {
     throw createError({
       statusCode: 404,
@@ -118,29 +72,6 @@ const loadTable = (region: string, key: string): EncounterTable => {
     })
   }
   return JSON.parse(readFileSync(path, 'utf8')) as EncounterTable
-}
-
-const randInt = (min: number, max: number): number =>
-  Math.floor(Math.random() * (max - min + 1)) + min
-
-const rollEncounter = (table: EncounterTable): RolledEncounter => {
-  const r = randInt(1, 100)
-  const level = randInt(table.min_level, table.max_level)
-  for (const [ceiling, species] of table.entries) {
-    if (r <= ceiling) return { species, level, roll: r }
-  }
-  const last = table.entries[table.entries.length - 1]
-  return { species: last?.[1] ?? 'Magikarp', level, roll: r }
-}
-
-/** Pick a unique output folder so repeat runs don't clobber, exactly like
- *  the justfile recipe (``base``, ``base-2``, ``base-3``\u2026). */
-const uniqueDir = (parent: string, baseName: string): string => {
-  let dir = joinPath(parent, baseName)
-  if (!existsSync(dir)) return dir
-  let n = 2
-  while (existsSync(joinPath(parent, `${baseName}-${n}`))) n += 1
-  return joinPath(parent, `${baseName}-${n}`)
 }
 
 /** Run pokegen.sh once and resolve when it exits. */
@@ -177,23 +108,12 @@ const runPokegen = (
 
 export default defineEventHandler(async (event) => {
   requireGm(event)
-  const body = await readBody<GenerateBody>(event)
-
-  const region = sanitizeNameComponent(String(body?.region ?? ''), 'region')
-  const tableKey = sanitizeNameComponent(String(body?.table ?? ''), 'table')
-  const outRoot = sanitizeOutRoot(String(body?.outRoot ?? DEFAULT_OUT_ROOT))
-  const count = Number(body?.count ?? 0)
-  if (!Number.isInteger(count) || count < 1 || count > 30) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: 'count must be an integer between 1 and 30',
-    })
-  }
-  const preview = Boolean(body?.preview)
+  const body = await readBody<GenerateEncounterBody>(event)
+  const { region, tableKey, outRoot, count, preview } = readEncounterGenerateRequest(body)
 
   // Load + roll.
   const table = loadTable(region, tableKey)
-  const rolled = Array.from({ length: count }, () => rollEncounter(table))
+  const rolled = Array.from({ length: count }, () => rollEncounterTable(table))
 
   // Decide output directory.
   let dir: string
@@ -209,11 +129,9 @@ export default defineEventHandler(async (event) => {
     }
   } else {
     const parent = resolvePath(PROJECT_ROOT, outRoot)
-    if (!parent.startsWith(PROJECT_ROOT + sep)) {
-      throw createError({ statusCode: 400, statusMessage: 'Invalid outRoot' })
-    }
+    assertEncounterPathInsideRoot(PROJECT_ROOT, parent)
     mkdirSync(parent, { recursive: true })
-    dir = uniqueDir(parent, `${tableKey}_${count}`)
+    dir = uniqueEncounterOutputDir(parent, `${tableKey}_${count}`)
     mkdirSync(dir, { recursive: true })
   }
 
@@ -224,7 +142,7 @@ export default defineEventHandler(async (event) => {
   const relForSlug = preview
     ? joinPath('preview', tableKey, String(Date.now()))
     : dir.slice(PROJECT_ROOT.length + 1)
-  const slugPrefix = slugify(relForSlug.replace(/^data\/sheets\//, ''))
+  const slugPrefix = slugifyEncounterOutputPath(relForSlug.replace(/^data\/sheets\//, ''))
 
   // Snapshot what's already in dir before generating, so we can attribute
   // each new file to its rolled encounter.
