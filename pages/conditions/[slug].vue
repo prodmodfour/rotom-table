@@ -25,15 +25,13 @@ useHead(() => ({
           </div>
         </div>
 
-        <section v-if="condition.aliases?.length" class="field-block">
-          <h3>Aliases</h3>
+        <ReferenceFieldBlock v-if="condition.aliases?.length" title="Aliases">
           <p>{{ condition.aliases.join(', ') }}</p>
-        </section>
+        </ReferenceFieldBlock>
 
-        <section v-if="condition.effect" class="field-block">
-          <h3>Effect</h3>
+        <ReferenceFieldBlock v-if="condition.effect" title="Effect">
           <p>{{ condition.effect }}</p>
-        </section>
+        </ReferenceFieldBlock>
       </article>
 
       <ReferenceNotFoundCard

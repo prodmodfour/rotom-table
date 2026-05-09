@@ -33,38 +33,31 @@ const siblings = computed(() => siblingFeaturesInClass(feat.value, features))
           class.
         </p>
 
-        <section v-if="feat.prerequisites" class="field-block">
-          <h3>Prerequisites</h3>
+        <ReferenceFieldBlock v-if="feat.prerequisites" title="Prerequisites">
           <p>{{ feat.prerequisites }}</p>
-        </section>
+        </ReferenceFieldBlock>
 
-        <section v-if="feat.frequency" class="field-block">
-          <h3>Frequency &amp; Action</h3>
+        <ReferenceFieldBlock v-if="feat.frequency" title="Frequency &amp; Action">
           <p>{{ feat.frequency }}</p>
-        </section>
+        </ReferenceFieldBlock>
 
-        <section v-if="feat.trigger" class="field-block">
-          <h3>Trigger</h3>
+        <ReferenceFieldBlock v-if="feat.trigger" title="Trigger">
           <p>{{ feat.trigger }}</p>
-        </section>
+        </ReferenceFieldBlock>
 
-        <section v-if="feat.target" class="field-block">
-          <h3>Target</h3>
+        <ReferenceFieldBlock v-if="feat.target" title="Target">
           <p>{{ feat.target }}</p>
-        </section>
+        </ReferenceFieldBlock>
 
-        <section v-if="feat.condition" class="field-block">
-          <h3>Condition</h3>
+        <ReferenceFieldBlock v-if="feat.condition" title="Condition">
           <p>{{ feat.condition }}</p>
-        </section>
+        </ReferenceFieldBlock>
 
-        <section v-if="feat.effect" class="field-block">
-          <h3>Effect</h3>
+        <ReferenceFieldBlock v-if="feat.effect" title="Effect">
           <p>{{ feat.effect }}</p>
-        </section>
+        </ReferenceFieldBlock>
 
-        <section v-if="siblings.length" class="field-block">
-          <h3>Other features in {{ feat.className }}</h3>
+        <ReferenceFieldBlock v-if="siblings.length" :title="`Other features in ${feat.className}`">
           <ul class="sibling-list">
             <li v-for="s in siblings" :key="s.name">
               <NuxtLink :to="`/features/${toSlug(s.name)}`">{{ s.name }}</NuxtLink>
@@ -73,7 +66,7 @@ const siblings = computed(() => siblingFeaturesInClass(feat.value, features))
               </span>
             </li>
           </ul>
-        </section>
+        </ReferenceFieldBlock>
       </article>
 
       <ReferenceNotFoundCard

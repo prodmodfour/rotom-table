@@ -43,23 +43,20 @@ const relatedItems = computed(() => relatedItemsByPrimaryCategory(item.value, it
           </div>
         </dl>
 
-        <section v-if="item.effects.length" class="field-block">
-          <h3>Effect</h3>
+        <ReferenceFieldBlock v-if="item.effects.length" title="Effect">
           <p v-if="item.effects.length === 1">{{ item.effects[0] }}</p>
           <ul v-else class="detail-list">
             <li v-for="effect in item.effects" :key="effect">{{ effect }}</li>
           </ul>
-        </section>
+        </ReferenceFieldBlock>
 
-        <section v-if="item.notes.length" class="field-block">
-          <h3>Notes</h3>
+        <ReferenceFieldBlock v-if="item.notes.length" title="Notes">
           <ul class="detail-list">
             <li v-for="note in item.notes" :key="note">{{ note }}</li>
           </ul>
-        </section>
+        </ReferenceFieldBlock>
 
-        <section v-if="relatedItems.length" class="field-block">
-          <h3>More {{ item.categories[0] }} items</h3>
+        <ReferenceFieldBlock v-if="relatedItems.length" :title="`More ${item.categories[0]} items`">
           <ul class="related-list">
             <li v-for="related in relatedItems" :key="related.name">
               <ItemSprite :item="related" size="sm" />
@@ -69,7 +66,7 @@ const relatedItems = computed(() => relatedItemsByPrimaryCategory(item.value, it
               </span>
             </li>
           </ul>
-        </section>
+        </ReferenceFieldBlock>
       </article>
 
       <ReferenceNotFoundCard

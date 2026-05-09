@@ -32,10 +32,9 @@ useHead(() => ({
           <div v-if="move.range"><dt>Range</dt><dd>{{ move.range }}</dd></div>
         </dl>
 
-        <section v-if="move.effect" class="field-block">
-          <h3>Effect</h3>
+        <ReferenceFieldBlock v-if="move.effect" title="Effect">
           <p>{{ move.effect }}</p>
-        </section>
+        </ReferenceFieldBlock>
       </article>
 
       <ReferenceNotFoundCard

@@ -1738,3 +1738,13 @@
   - `npm test` — passes: 84 test files / 322 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: shared reference field block
+
+- Extracted repeated reference-detail field section markup into `components/reference/ReferenceFieldBlock.vue`.
+- Updated ability, move, edge, rule, condition, feature, and item detail pages to use the shared field block while preserving all text, list, sibling, and related-item content.
+- Kept page-specific detail styles local where they are still specific to item/feature related lists and tag displays.
+- Quality gates after this phase:
+  - `npm test` — passes: 84 test files / 322 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

@@ -24,10 +24,9 @@ useHead(() => ({
           </div>
         </div>
 
-        <section v-if="rule.text" class="field-block">
-          <h3>Rule Text</h3>
+        <ReferenceFieldBlock v-if="rule.text" title="Rule Text">
           <p>{{ rule.text }}</p>
-        </section>
+        </ReferenceFieldBlock>
       </article>
 
       <ReferenceNotFoundCard

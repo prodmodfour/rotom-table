@@ -23,15 +23,13 @@ useHead(() => ({
           </div>
         </div>
 
-        <section v-if="ability.trigger" class="field-block">
-          <h3>Trigger</h3>
+        <ReferenceFieldBlock v-if="ability.trigger" title="Trigger">
           <p>{{ ability.trigger }}</p>
-        </section>
+        </ReferenceFieldBlock>
 
-        <section v-if="ability.effect" class="field-block">
-          <h3>Effect</h3>
+        <ReferenceFieldBlock v-if="ability.effect" title="Effect">
           <p>{{ ability.effect }}</p>
-        </section>
+        </ReferenceFieldBlock>
       </article>
 
       <ReferenceNotFoundCard

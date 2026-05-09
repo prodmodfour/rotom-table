@@ -20,15 +20,13 @@ useHead(() => ({
           <h1>{{ edge.name }}</h1>
         </div>
 
-        <section v-if="edge.prerequisites" class="field-block">
-          <h3>Prerequisites</h3>
+        <ReferenceFieldBlock v-if="edge.prerequisites" title="Prerequisites">
           <p>{{ edge.prerequisites }}</p>
-        </section>
+        </ReferenceFieldBlock>
 
-        <section v-if="edge.effect" class="field-block">
-          <h3>Effect</h3>
+        <ReferenceFieldBlock v-if="edge.effect" title="Effect">
           <p>{{ edge.effect }}</p>
-        </section>
+        </ReferenceFieldBlock>
       </article>
 
       <ReferenceNotFoundCard
