@@ -512,3 +512,16 @@
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run typecheck` — still fails only on the documented pre-existing broader typecheck backlog; no errors are reported for `IsometricGrid.client.vue`, the new token action controller, or the new test.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: isometric scene state helper extraction
+
+- Extracted renderer scene-state helpers from `components/IsometricGrid.client.vue` into `utils/isometric/sceneState.ts`.
+  - The new module owns default layer visibility resolution, movement-grid visibility rules, ground-level clamping, and field-effect/hazard/voxel revision-key construction.
+  - `IsometricGrid.client.vue` now delegates renderer state normalization/revision logic to focused pure helpers while keeping renderer lifecycle wiring unchanged.
+- Added `tests/utils/isometric/sceneState.test.ts` covering layer defaults, movement-grid visibility triggers, ground-level clamping, and revision keys for field effects, hazards, and terrain voxels.
+- Preserved existing layer visibility behavior, movement-grid visibility during selection/build/hazard modes, ground-level bounds, and renderer sync revision semantics.
+- Quality gates after this phase:
+  - `npm test` — passes: 24 test files / 77 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run typecheck` — still fails only on the documented pre-existing broader typecheck backlog; no errors are reported for `IsometricGrid.client.vue` or the new scene-state helper/test.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.

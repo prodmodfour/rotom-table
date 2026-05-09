@@ -19,7 +19,6 @@ import {
   buildAllVoxelOccupancy,
   defaultBuilderVoxelColor,
   parseHexColor,
-  voxelMaterialId,
   withDefaultBuilderVoxelColor,
 } from '~/utils/voxels'
 import { buildMapOccupancy } from '~/utils/mapOccupancy'
@@ -62,6 +61,14 @@ import {
   nowMs,
 } from '~/utils/isometric/worldSprites'
 import { createTokenMovePreviewRenderer } from '~/utils/isometric/tokenMovePreview'
+import {
+  clampIsometricGroundLevelY,
+  getFieldEffectsRevisionKey,
+  getHazardsRevisionKey,
+  getTerrainVoxelsRevisionKey,
+  resolveIsometricLayerVisibility,
+  shouldShowMovementGrid,
+} from '~/utils/isometric/sceneState'
 import {
   EMPTY_MOVE_PREVIEW,
   getMovePreviewAnchor,
@@ -131,27 +138,9 @@ const emit = defineEmits<{
 const SPRITE_BRIGHTNESS_LIT = 1.0
 const SPRITE_BRIGHTNESS_SHADOW = 0.92
 
-// Directional halo: replaces the wrapper's static yellow halo with one
-// that breathes with camera angle — brighter when the sprite faces the
-// implied light, dimmer (not zero) when backlit.
-const DEFAULT_LAYER_VISIBILITY: LayerVisibility = {
-  terrain: true,
-  shadows: true,
-  tokens: true,
-  grid: true,
-  hazards: true,
-  fieldEffects: true,
-}
+const visibleLayers = () => resolveIsometricLayerVisibility(props.layerVisibility)
 
-const visibleLayers = () => ({ ...DEFAULT_LAYER_VISIBILITY, ...(props.layerVisibility ?? {}) })
-
-const normalizedGroundLevelY = () => {
-  const height = Number(props.dimensions.y)
-  const max = Number.isFinite(height) ? Math.max(0, Math.floor(height) - 1) : 0
-  const n = Number(props.groundLevelY ?? 0)
-  if (!Number.isFinite(n)) return 0
-  return Math.min(max, Math.max(0, Math.round(n)))
-}
+const normalizedGroundLevelY = () => clampIsometricGroundLevelY(props.dimensions, props.groundLevelY)
 
 const container = ref<HTMLDivElement | null>(null)
 
@@ -225,33 +214,9 @@ const selectedPokemon = computed(
 const renderedTerrainVoxels = computed(() => props.voxels)
 const renderedHazards = computed(() => props.hazards ?? [])
 const renderedFieldEffects = computed(() => normalizeMapFieldEffects(props.fieldEffects))
-const fieldEffectsRevision = computed(() => JSON.stringify(renderedFieldEffects.value))
-const hazardRevision = computed(() =>
-  renderedHazards.value
-    .map((hazard) => [
-      hazard.kind,
-      hazard.x,
-      hazard.y,
-      hazard.z,
-      hazard.layer ?? '',
-      hazard.owner ?? '',
-    ].join('\u001e'))
-    .join('\u001d'),
-)
-const terrainVoxelRevision = computed(() =>
-  renderedTerrainVoxels.value
-    .map((voxel) => [
-      voxel.x,
-      voxel.y,
-      voxel.z,
-      voxelMaterialId(voxel),
-      voxel.color ?? '',
-      voxel.blocksMovement ?? '',
-      voxel.blocksSight ?? '',
-      (voxel.tags ?? []).join('\u001f'),
-    ].join('\u001e'))
-    .join('\u001d'),
-)
+const fieldEffectsRevision = computed(() => getFieldEffectsRevisionKey(renderedFieldEffects.value))
+const hazardRevision = computed(() => getHazardsRevisionKey(renderedHazards.value))
+const terrainVoxelRevision = computed(() => getTerrainVoxelsRevisionKey(renderedTerrainVoxels.value))
 const mapMovementOccupancy = computed(() =>
   buildMapOccupancy({
     voxels: renderedTerrainVoxels.value,
@@ -376,7 +341,11 @@ defineExpose({ focusPokemon })
 const updateGridVisibility = () => {
   gridRenderer.setVisible({
     grid: visibleLayers().grid,
-    movement: Boolean(selectedPokemon.value) || props.buildMode || Boolean(props.hazardMode),
+    movement: shouldShowMovementGrid({
+      hasSelectedPokemon: Boolean(selectedPokemon.value),
+      buildMode: props.buildMode,
+      hazardMode: props.hazardMode,
+    }),
   })
 }
 
@@ -496,7 +465,11 @@ const applyLayerVisibility = () => {
   const layers = visibleLayers()
   gridRenderer.setVisible({
     grid: layers.grid,
-    movement: Boolean(selectedPokemon.value) || props.buildMode || Boolean(props.hazardMode),
+    movement: shouldShowMovementGrid({
+      hasSelectedPokemon: Boolean(selectedPokemon.value),
+      buildMode: props.buildMode,
+      hazardMode: props.hazardMode,
+    }),
   })
   voxelRenderer.setVisible(layers.terrain)
   fieldEffectRenderer.setVisible(layers.fieldEffects)
