@@ -12,7 +12,7 @@
  */
 import { getPokedexEntry } from '~/data/characterSheets'
 import { computeMaxHp, resolveStats } from '~/utils/sheets/pokemonDerived'
-import { computeTrainerMaxHp, resolveTrainerStats } from '~/data/trainerSheets'
+import { computeTrainerMaxHp, resolveTrainerStats } from '~/utils/sheets/trainerDerived'
 import { pokemonCatalog, pokemonCatalogBySpecies } from '~/data/pokemonCatalog'
 import { trainerCatalog } from '~/data/trainerCatalog'
 import { COMBAT_STAT_STAGE_KEYS, normalizeCombatStages } from '~/utils/combatStages'

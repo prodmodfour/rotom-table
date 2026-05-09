@@ -1,6 +1,6 @@
 import { computed, watch, type ComputedRef, type Ref } from 'vue'
 import { resolveStats } from '~/utils/sheets/pokemonDerived'
-import { resolveTrainerStats } from '~/data/trainerSheets'
+import { resolveTrainerStats } from '~/utils/sheets/trainerDerived'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import type { InitiativeTrackerState, TabletopMap } from '~/types/map'

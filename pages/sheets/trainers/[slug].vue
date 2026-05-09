@@ -2,17 +2,17 @@
 import { computed, ref, watch } from 'vue'
 import { PhPlus, PhX } from '@phosphor-icons/vue'
 import RefLink from '~/components/RefLink.vue'
+import { trainerSheetsBySlug } from '~/data/trainerSheets'
 import {
-  trainerSheetsBySlug,
-  resolveTrainerStats,
-  resolveTrainerSkills,
-  resolveTrainerCapabilities,
-  resolveAdvancement,
   computeTrainerFullMaxHp,
-  computeTrainerMaxHp,
   computeTrainerMaxAp,
+  computeTrainerMaxHp,
+  resolveAdvancement,
+  resolveTrainerCapabilities,
+  resolveTrainerSkills,
+  resolveTrainerStats,
   TRAINER_SKILL_ORDER,
-} from '~/data/trainerSheets'
+} from '~/utils/sheets/trainerDerived'
 import { trainerCatalog } from '~/data/trainerCatalog'
 import { normalizeTrainerSheet } from '~/utils/sheetNormalize'
 import { makeAbilityLookupRows, setLookupAbilityName } from '~/utils/sheetAbilityLookup'

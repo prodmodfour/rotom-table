@@ -712,3 +712,14 @@
   - `npm test` — passes: 39 test files / 136 tests. (`npm test -- --runInBand` was attempted first and rejected by Vitest because that Jest flag is unsupported.)
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: trainer sheet derived helper extraction
+
+- Continued Phase 7/14 sheet-editor decomposition by moving trainer derivation logic out of `data/trainerSheets.ts` into `utils/sheets/trainerDerived.ts`.
+  - `data/trainerSheets.ts` now focuses on static trainer JSON discovery and slug lookup.
+  - Trainer sheet pages, initiative speed derivation, and sheet spawning import stat/skill/capability/AP/HP derivations from the focused utility module.
+- Added `tests/utils/sheets/trainerDerived.test.ts` covering stat defaults/overrides, HP/AP formulas, skill background/overrides, capability defaults/options, and advancement row filling.
+- Quality gates after this phase:
+  - `npm test` — passes: 40 test files / 141 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
