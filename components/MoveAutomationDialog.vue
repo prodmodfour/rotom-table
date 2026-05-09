@@ -2,10 +2,7 @@
 import { computed, reactive, ref, watch } from 'vue'
 import { damageFormulaForMove } from '~/utils/moveAutomation'
 import { COMBAT_STAGE_SHORT_LABELS } from '~/utils/combatStages'
-import {
-  parseHazardCellText,
-  stageDeltaLabel,
-} from '~/utils/moveAutomationDialog'
+import { parseHazardCellText } from '~/utils/moveAutomationDialog'
 import {
   buildMoveAutomationMoveEntries,
   filterMoveAutomationMoveEntries,
@@ -426,59 +423,11 @@ const apply = () => emit('apply', transaction.value)
           </main>
         </div>
 
-        <div v-else-if="step === 2" class="move-automation__review">
-          <h3>Transaction preview</h3>
-          <div v-if="transaction.scriptKind === 'manual-fallback'" class="manual-fallback-warning manual-fallback-warning--review">
-            <strong>Manual fallback transaction.</strong>
-            <span>Review carefully; this was not produced by an explicit per-move script.</span>
-          </div>
-          <div class="review-grid">
-            <section>
-              <h4>HP</h4>
-              <p v-if="!transaction.hpUpdates.length" class="muted">No HP changes.</p>
-              <ul v-else>
-                <li v-for="update in transaction.hpUpdates" :key="`hp-${update.id}`">
-                  {{ allTokens.find((token) => token.id === update.id)?.species ?? update.id }} → {{ update.currentHp }} HP
-                </li>
-              </ul>
-            </section>
-            <section>
-              <h4>Conditions</h4>
-              <p v-if="!transaction.conditionUpdates.length" class="muted">No condition changes.</p>
-              <ul v-else>
-                <li v-for="update in transaction.conditionUpdates" :key="`cond-${update.id}`">
-                  {{ allTokens.find((token) => token.id === update.id)?.species ?? update.id }}: {{ update.conditions.join(', ') || 'none' }}
-                </li>
-              </ul>
-            </section>
-            <section>
-              <h4>Combat stages</h4>
-              <p v-if="!transaction.combatStageUpdates.length" class="muted">No combat stage changes.</p>
-              <ul v-else>
-                <li v-for="update in transaction.combatStageUpdates" :key="`stage-${update.id}`">
-                  {{ allTokens.find((token) => token.id === update.id)?.species ?? update.id }}:
-                  <span v-for="key in COMBAT_STAGE_KEYS" :key="key">
-                    {{ COMBAT_STAGE_SHORT_LABELS[key] }} {{ stageDeltaLabel(update.stages[key]) }}
-                  </span>
-                </li>
-              </ul>
-            </section>
-            <section>
-              <h4>Map</h4>
-              <p v-if="!transaction.hazardsToAdd.length && !transaction.fieldEffectsToApply.length" class="muted">No map effects.</p>
-              <ul v-else>
-                <li v-for="effect in transaction.fieldEffectsToApply" :key="`${effect.kind}-${effect.value}`">{{ effect.kind }}: {{ effect.value }}</li>
-                <li v-for="(hazard, index) in transaction.hazardsToAdd" :key="`hazard-${index}`">{{ hazard.kind }} at {{ hazard.x }},{{ hazard.y }},{{ hazard.z }}</li>
-              </ul>
-            </section>
-          </div>
-          <section class="review-log">
-            <h4>Log</h4>
-            <ul>
-              <li v-for="line in transaction.logLines" :key="line">{{ line }}</li>
-            </ul>
-          </section>
-        </div>
+        <MoveAutomationReviewStep
+          v-else-if="step === 2"
+          :transaction="transaction"
+          :all-tokens="allTokens"
+        />
       </template>
 
       <footer class="move-automation__footer">
@@ -549,10 +498,7 @@ const apply = () => emit('apply', transaction.value)
 
 .move-automation__header h2,
 .move-summary h3,
-.move-resolution__section h3,
-.move-automation__review h3,
-.review-grid h4,
-.review-log h4 {
+.move-resolution__section h3 {
   margin: 0;
 }
 
@@ -607,7 +553,6 @@ const apply = () => emit('apply', transaction.value)
 }
 
 .move-automation__resolve,
-.move-automation__review,
 .move-automation__empty {
   min-height: 0;
   overflow: auto;
@@ -628,9 +573,7 @@ const apply = () => emit('apply', transaction.value)
 
 .target-chip,
 .move-resolution__section,
-.move-summary,
-.review-grid section,
-.review-log {
+.move-summary {
   border: 1px solid var(--rule-soft);
   border-radius: 14px;
   background: var(--paper);
@@ -681,13 +624,8 @@ const apply = () => emit('apply', transaction.value)
   font-weight: 800;
 }
 
-.manual-fallback-warning--review {
-  margin-top: 0;
-}
-
 .move-summary__effect,
-.move-resolution__hint,
-.muted {
+.move-resolution__hint {
   color: var(--ink-muted);
   font-size: 0.84rem;
 }
@@ -699,9 +637,7 @@ const apply = () => emit('apply', transaction.value)
 }
 
 .move-summary,
-.move-resolution__section,
-.review-grid section,
-.review-log {
+.move-resolution__section {
   padding: 0.85rem;
 }
 
@@ -830,8 +766,7 @@ const apply = () => emit('apply', transaction.value)
 }
 
 .manual-condition-grid,
-.stage-delta-grid,
-.review-grid {
+.stage-delta-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.8rem;
@@ -855,12 +790,6 @@ const apply = () => emit('apply', transaction.value)
   border-color: color-mix(in srgb, var(--accent) 45%, var(--rule-soft));
 }
 
-.review-grid {
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-}
-
-.review-grid ul,
-.review-log ul,
 .is-warning ul {
   margin: 0.45rem 0 0;
   padding-left: 1.1rem;

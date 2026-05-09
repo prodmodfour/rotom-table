@@ -1396,3 +1396,13 @@
   - `npm test` — passes: 71 test files / 265 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: move automation review-step component
+
+- Extracted the transaction-review step from `components/MoveAutomationDialog.vue` into `components/move-automation/MoveAutomationReviewStep.vue`.
+  - The component owns HP/condition/combat-stage/map/log review sections, token-name lookup, manual-fallback warning, and review-specific styles.
+  - The dialog now coordinates the wizard and delegates both pick and review presentation, while transaction construction and apply payloads remain unchanged.
+- Quality gates after this phase:
+  - `npm test` — passes: 71 test files / 265 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
