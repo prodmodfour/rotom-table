@@ -3,11 +3,9 @@ import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } 
 import { onBeforeRouteUpdate } from 'vue-router'
 import pokedexData from '~/ptu-data/data/pokedex.json'
 import { pokemonCatalogBySpecies } from '~/data/pokemonCatalog'
-import { compareByNationalDex, getNationalDexNumber } from '~/utils/nationalDex'
 import { POKEMON_TYPES, isPokemonType, singleTypeMultiplier, type PokemonType } from '~/utils/typeChart'
 import {
   allTogetherFilterField,
-  buildPokedexSearchTexts,
   filterFieldConfigs,
   formatNationalDexNumber,
   searchFieldConfigs,
@@ -16,8 +14,14 @@ import {
   type FilterMode,
   type FilterOperator,
   type PokedexSearchTextKey,
-  type PokedexSearchTexts,
 } from '~/utils/pokedex/searchText'
+import {
+  buildPokedexEntries,
+  buildPokedexEntryBySlug,
+  pokedexEntryPath,
+  routeParamToPokedexSlug,
+  type DisplayPokedexEntry,
+} from '~/utils/pokedex/entryIndex'
 import { matchesActiveSearchFilters, parseSearchExpression, type ActiveSearchFilter } from '~/utils/pokedex/searchQuery'
 import type { PokedexCapabilities, PokedexRecord } from '~/types/pokemon'
 
@@ -28,14 +32,6 @@ definePageMeta({
   key: 'pokedex-browser',
   scrollToTop: (to, from) => !(to.path.startsWith('/pokedex') && from.path.startsWith('/pokedex')),
 })
-
-type DisplayPokedexEntry = PokedexRecord & {
-  id: string
-  slug: string
-  nationalDexNumber: number | null
-  searchText: string
-  searchTexts: PokedexSearchTexts
-}
 
 const route = useRoute()
 
@@ -84,46 +80,9 @@ watch(() => route.fullPath, (to, from) => {
   }
 })
 
-const allEntries: DisplayPokedexEntry[] = [...(pokedexData as PokedexRecord[])]
-  .filter((entry): entry is PokedexRecord => Boolean(entry?.species))
-  .sort(compareByNationalDex)
-  .map((entry, index) => {
-    const slug = toPokedexSlug(entry.species)
-    const displayEntry = {
-      ...entry,
-      id: `${index}-${slug || 'entry'}`,
-      slug,
-      nationalDexNumber: getNationalDexNumber(entry.species),
-    }
-
-    const searchTexts = buildPokedexSearchTexts(displayEntry)
-
-    return {
-      ...displayEntry,
-      searchText: searchTexts.any,
-      searchTexts,
-    }
-  })
-
-const entryBySlug = new Map<string, DisplayPokedexEntry>()
-for (const entry of allEntries) {
-  // A few upstream parser artifacts share the same bogus species label. Keep
-  // the first so every real Pokémon still resolves to a stable name URL.
-  if (!entry.slug || entryBySlug.has(entry.slug)) continue
-  entryBySlug.set(entry.slug, entry)
-}
-
-const pokedexEntryPath = (entry: DisplayPokedexEntry) => `/pokedex/${entry.slug}`
-
-const pokemonRouteSlug = computed(() => {
-  const raw = route.params.pokemon_name
-  const value = Array.isArray(raw) ? raw[0] : raw
-  if (typeof value !== 'string' || value.trim().length === 0) return null
-
-  // Accept copied URLs that use underscores, while links we generate use the
-  // canonical hyphenated slug.
-  return toPokedexSlug(value.replace(/_/g, ' ')) || null
-})
+const allEntries = buildPokedexEntries(pokedexData as PokedexRecord[])
+const entryBySlug = buildPokedexEntryBySlug(allEntries)
+const pokemonRouteSlug = computed(() => routeParamToPokedexSlug(route.params.pokemon_name))
 
 const filterMode = useState<FilterMode>('pokedex-filter-mode', () => 'fields')
 const searchFilters = reactive<Record<PokedexSearchTextKey, string>>(

@@ -1063,3 +1063,13 @@
   - `npm test` — passes: 53 test files / 184 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: Pokédex entry index extraction
+
+- Extracted Pokédex display-entry creation, slug lookup map construction, route-param slug normalization, and entry path formatting into `utils/pokedex/entryIndex.ts`.
+- The route page now consumes a prepared entry index instead of owning static data sorting, National Dex number lookup, duplicate-slug handling, and copied-URL underscore normalization inline.
+- Added `tests/utils/pokedex/entryIndex.test.ts` covering empty-record filtering, National Dex ordering, search text attachment, duplicate slug retention, and route/path formatting.
+- Quality gates after this phase:
+  - `npm test` — passes: 54 test files / 187 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
