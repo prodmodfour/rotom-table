@@ -1001,3 +1001,13 @@
   - `npm test` — passes: 50 test files / 174 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: trainer tab state composable
+
+- Extracted trainer sheet tab definitions, key validation, and active-tab state into `composables/sheets/useTrainerSheetTabs.ts`.
+- Updated the trainer sheet route page to consume the tab composable instead of owning tab constants and validation inline.
+- Added `tests/composables/sheets/useTrainerSheetTabs.test.ts` covering tab order, key validation, and guarded active-tab updates.
+- Quality gates after this phase:
+  - `npm test` — passes: 51 test files / 177 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.

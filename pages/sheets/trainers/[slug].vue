@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { ref } from 'vue'
 import { trainerSheetsBySlug } from '~/data/trainerSheets'
 import { TRAINER_SKILL_ORDER } from '~/utils/sheets/trainerDerived'
 import { trainerCatalog } from '~/data/trainerCatalog'
@@ -9,6 +8,7 @@ import { useTrainerSheetDerived } from '~/composables/sheets/useTrainerSheetDeri
 import { useTrainerPortraitPicker } from '~/composables/sheets/useTrainerPortraitPicker'
 import { useTrainerSheetCsvFields } from '~/composables/sheets/useTrainerSheetCsvFields'
 import { useTrainerSheetRowActions } from '~/composables/sheets/useTrainerSheetRowActions'
+import { useTrainerSheetTabs } from '~/composables/sheets/useTrainerSheetTabs'
 import type {
   SkillRank,
   TrainerSheet,
@@ -48,23 +48,7 @@ useHead(() => ({
   title: sheet.value ? `${sheet.value.name} · Trainer Sheet` : 'Trainer not found · Rotom Table',
 }))
 
-type TabKey = 'trainer' | 'combat' | 'inventory' | 'features' | 'edges'
-
-const tabs: Array<{ key: TabKey; label: string }> = [
-  { key: 'trainer',   label: 'Trainer' },
-  { key: 'combat',    label: 'Combat' },
-  { key: 'inventory', label: 'Inventory' },
-  { key: 'features',  label: 'Features' },
-  { key: 'edges',     label: 'Edges' },
-]
-
-const activeTab = ref<TabKey>('trainer')
-
-const setActiveTab = (key: string) => {
-  if (tabs.some((tab) => tab.key === key)) {
-    activeTab.value = key as TabKey
-  }
-}
+const { tabs, activeTab, setActiveTab } = useTrainerSheetTabs()
 
 // ---------------------------------------------------------------------------
 // Derived data — re-evaluated whenever the reactive sheet changes
