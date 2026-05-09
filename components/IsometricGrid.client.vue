@@ -61,7 +61,6 @@ import {
   getHazardsRevisionKey,
   getTerrainVoxelsRevisionKey,
   resolveIsometricLayerVisibility,
-  shouldShowMovementGrid,
 } from '~/utils/isometric/sceneState'
 import {
   EMPTY_MOVE_PREVIEW,
@@ -85,6 +84,10 @@ import {
 } from '~/utils/isometric/lifecycle'
 import { createIsometricSceneGraph } from '~/utils/isometric/sceneGraph'
 import { stepIsometricAnimationFrame } from '~/utils/isometric/animationFrame'
+import {
+  applyIsometricLayerVisibility,
+  setIsometricGridVisibility,
+} from '~/utils/isometric/layerVisibility'
 
 export type { BuildTool } from '~/shared/mapEditor'
 
@@ -322,13 +325,12 @@ const focusPokemon = (id: string): boolean => {
 defineExpose({ focusPokemon })
 
 const updateGridVisibility = () => {
-  gridRenderer.setVisible({
-    grid: visibleLayers().grid,
-    movement: shouldShowMovementGrid({
-      hasSelectedPokemon: Boolean(selectedPokemon.value),
-      buildMode: props.buildMode,
-      hazardMode: props.hazardMode,
-    }),
+  setIsometricGridVisibility({
+    layers: visibleLayers(),
+    hasSelectedPokemon: Boolean(selectedPokemon.value),
+    buildMode: props.buildMode,
+    hazardMode: props.hazardMode,
+    gridRenderer,
   })
 }
 
@@ -445,22 +447,18 @@ const syncHazardMeshes = () => {
 }
 
 const applyLayerVisibility = () => {
-  const layers = visibleLayers()
-  gridRenderer.setVisible({
-    grid: layers.grid,
-    movement: shouldShowMovementGrid({
-      hasSelectedPokemon: Boolean(selectedPokemon.value),
-      buildMode: props.buildMode,
-      hazardMode: props.hazardMode,
-    }),
+  applyIsometricLayerVisibility({
+    layers: visibleLayers(),
+    hasSelectedPokemon: Boolean(selectedPokemon.value),
+    buildMode: props.buildMode,
+    hazardMode: props.hazardMode,
+    gridRenderer,
+    voxelRenderer,
+    fieldEffectRenderer,
+    hazardRenderer,
+    renderObjects: renderObjects.values(),
+    setTokenLayerVisibility: setPokemonRenderObjectLayerVisibility,
   })
-  voxelRenderer.setVisible(layers.terrain)
-  fieldEffectRenderer.setVisible(layers.fieldEffects)
-  hazardRenderer.setVisible(layers.hazards)
-
-  for (const renderObject of renderObjects.values()) {
-    setPokemonRenderObjectLayerVisibility(renderObject, layers)
-  }
 }
 
 const ensureBuildGhost = () => buildGhostRenderer.ensure()

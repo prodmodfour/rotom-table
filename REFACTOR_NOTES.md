@@ -591,3 +591,14 @@
   - `npm test` — passes: 30 test files / 95 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
+
+## Next phase update: isometric layer visibility helper extraction
+
+- Continued Phase 6 by extracting renderer layer-visibility fan-out from `components/IsometricGrid.client.vue` into `utils/isometric/layerVisibility.ts`.
+  - The helper centralizes movement-grid visibility derivation and applies terrain, field-effect, hazard, grid, and token visibility through narrow renderer interfaces.
+  - The grid component now delegates subsystem visibility sync instead of repeating movement-grid conditions inline.
+- Added `tests/utils/isometric/layerVisibility.test.ts` covering movement-grid visibility and subsystem/token visibility fan-out.
+- Quality gates after this phase:
+  - `npm test` — passes: 31 test files / 97 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769`.
