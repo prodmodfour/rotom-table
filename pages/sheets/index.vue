@@ -1,5 +1,10 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
+import AppNavigation from '~/components/AppNavigation.vue'
+import FolderBreadcrumbNav from '~/components/library/FolderBreadcrumbNav.vue'
+import LibraryContextMenu from '~/components/library/LibraryContextMenu.vue'
+import SheetLibraryGrid from '~/components/library/SheetLibraryGrid.vue'
+import SheetLibraryIntroPanel from '~/components/library/SheetLibraryIntroPanel.vue'
 import { characterSheets, getPokedexEntry, getSpriteUrl } from '~/data/characterSheets'
 import { trainerSheets } from '~/data/trainerSheets'
 import {

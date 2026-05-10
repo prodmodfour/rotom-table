@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import FolderTileButton from '~/components/library/FolderTileButton.vue'
 import type { FolderTile } from '~/utils/folderBrowser'
 import { sheetLibraryKey, type SheetLibraryItem } from '~/utils/sheetLibrary'
 import { sheetEditorPath } from '~/utils/sheetRoutes'

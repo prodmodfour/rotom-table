@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { PhSquaresFour } from '@phosphor-icons/vue'
+import FolderTileButton from '~/components/library/FolderTileButton.vue'
 import { mapEditorPath } from '~/utils/mapRoutes'
 import type { FolderTile } from '~/utils/folderBrowser'
 import type { MapSummary } from '~/types/map'

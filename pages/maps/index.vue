@@ -1,6 +1,11 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import AppNavigation from '~/components/AppNavigation.vue'
+import FolderBreadcrumbNav from '~/components/library/FolderBreadcrumbNav.vue'
+import LibraryContextMenu from '~/components/library/LibraryContextMenu.vue'
+import MapLibraryGrid from '~/components/library/MapLibraryGrid.vue'
+import MapLibraryIntroPanel from '~/components/library/MapLibraryIntroPanel.vue'
 import { formatFolderLabel } from '~/utils/sheetFolders'
 import {
   buildFolderMoveDestinations,
