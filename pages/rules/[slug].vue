@@ -15,18 +15,7 @@ useHead(() => ({
 
 <template>
   <ReferenceDetailShell back-to="/rules" back-label="← All rules">
-      <article v-if="rule" class="panel-card">
-        <ReferenceDetailHeading :title="rule.name">
-          <template #pills>
-            <span class="badge">{{ rule.category }}</span>
-            <span v-if="rule.source" class="badge">{{ rule.source }}</span>
-          </template>
-        </ReferenceDetailHeading>
-
-        <ReferenceFieldBlock v-if="rule.text" title="Rule Text">
-          <p>{{ rule.text }}</p>
-        </ReferenceFieldBlock>
-      </article>
+      <RuleDetailArticle v-if="rule" :rule="rule" />
 
       <ReferenceNotFoundCard
         v-else
