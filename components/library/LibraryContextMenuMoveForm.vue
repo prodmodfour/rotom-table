@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { nextTick, onMounted, ref } from 'vue'
+import LibraryContextMenuError from '~/components/library/LibraryContextMenuError.vue'
+import LibraryContextMenuField from '~/components/library/LibraryContextMenuField.vue'
 import LibraryContextMenuFormActions from '~/components/library/LibraryContextMenuFormActions.vue'
+import LibraryContextMenuFormPanel from '~/components/library/LibraryContextMenuFormPanel.vue'
 import { textValueFromEvent } from '~/utils/domEvents'
 import type { FolderMoveDestination } from '~/utils/folderBrowser'
 
@@ -28,9 +31,8 @@ onMounted(async () => {
 </script>
 
 <template>
-  <form class="ctx-form" @submit.prevent="emit('submit')">
-    <label class="ctx-label">
-      Move to
+  <LibraryContextMenuFormPanel as="form" @submit="emit('submit')">
+    <LibraryContextMenuField label="Move to">
       <select
         ref="inputRef"
         :value="input"
@@ -46,8 +48,8 @@ onMounted(async () => {
           {{ destination.label }}
         </option>
       </select>
-    </label>
-    <p v-if="error" class="ctx-error" role="alert">{{ error }}</p>
+    </LibraryContextMenuField>
+    <LibraryContextMenuError :message="error" />
     <LibraryContextMenuFormActions
       :busy="busy"
       :submit-disabled="destinations.length === 0"
@@ -55,5 +57,5 @@ onMounted(async () => {
       @close="emit('close')"
       @submit="emit('submit')"
     />
-  </form>
+  </LibraryContextMenuFormPanel>
 </template>

@@ -7,7 +7,7 @@ import LibraryContextMenuRenameForm from '~/components/library/LibraryContextMen
 import type { LibraryContextMode } from '~/composables/library/useLibraryContextMenu'
 import type { FolderMoveDestination } from '~/utils/folderBrowser'
 
-const props = withDefaults(defineProps<{
+withDefaults(defineProps<{
   x: number
   y: number
   targetKind: string
@@ -110,52 +110,6 @@ const emit = defineEmits<{
   display: flex;
   flex-direction: column;
   gap: 0.2rem;
-}
-
-.ctx-menu :deep(.ctx-form) {
-  display: flex;
-  flex-direction: column;
-  gap: 0.55rem;
-  padding: 0.35rem 0.55rem 0.55rem;
-}
-
-.ctx-menu :deep(.ctx-label) {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-  font-size: 0.75rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--ink-muted);
-}
-
-.ctx-menu :deep(.ctx-input) {
-  font: inherit;
-  width: 100%;
-  border: 1px solid var(--rule-soft);
-  border-radius: 8px;
-  background: var(--paper);
-  color: var(--ink);
-  padding: 0.5rem 0.65rem;
-  outline: none;
-}
-
-.ctx-menu :deep(.ctx-input:focus) {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px rgba(250, 189, 47, 0.18);
-}
-
-.ctx-menu :deep(.ctx-confirm) {
-  margin: 0;
-  color: var(--ink-soft);
-  line-height: 1.4;
-  font-size: 0.9rem;
-}
-
-.ctx-menu :deep(.ctx-error) {
-  margin: 0;
-  color: #d36464;
-  font-size: 0.82rem;
 }
 
 </style>

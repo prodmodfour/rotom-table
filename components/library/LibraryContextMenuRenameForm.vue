@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { nextTick, onMounted, ref } from 'vue'
+import LibraryContextMenuError from '~/components/library/LibraryContextMenuError.vue'
+import LibraryContextMenuField from '~/components/library/LibraryContextMenuField.vue'
 import LibraryContextMenuFormActions from '~/components/library/LibraryContextMenuFormActions.vue'
+import LibraryContextMenuFormPanel from '~/components/library/LibraryContextMenuFormPanel.vue'
 import { textValueFromEvent } from '~/utils/domEvents'
 
 withDefaults(defineProps<{
@@ -27,9 +30,8 @@ onMounted(async () => {
 </script>
 
 <template>
-  <form class="ctx-form" @submit.prevent="emit('submit')">
-    <label class="ctx-label">
-      New name
+  <LibraryContextMenuFormPanel as="form" @submit="emit('submit')">
+    <LibraryContextMenuField label="New name">
       <input
         ref="inputRef"
         :value="input"
@@ -39,13 +41,13 @@ onMounted(async () => {
         @input="emit('update:input', textValueFromEvent($event))"
         @keydown.escape.prevent="emit('close')"
       />
-    </label>
-    <p v-if="error" class="ctx-error" role="alert">{{ error }}</p>
+    </LibraryContextMenuField>
+    <LibraryContextMenuError :message="error" />
     <LibraryContextMenuFormActions
       :busy="busy"
       submit-label="Rename"
       @close="emit('close')"
       @submit="emit('submit')"
     />
-  </form>
+  </LibraryContextMenuFormPanel>
 </template>

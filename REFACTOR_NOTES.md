@@ -1,5 +1,8 @@
 # Refactor notes
 
+AUTOMATION_STATUS: IN_PROGRESS
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; most major refactor targets are decomposed, but small UI/helper cleanup remains and the refactor is not marked complete.
+
 ## Phase 0 baseline audit
 
 - Repository: `prodmodfour/rotom-table` at `/home/ashraf/desktop/rotom-table`, branch `main`.
@@ -2679,6 +2682,21 @@
 - Updated the rename, move, and delete context-menu mode components to compose the shared actions with focused labels, disabled-state, and danger-variant props while preserving submit/close emits, rename input focus/select, move destination gating, and delete confirmation behavior.
 - Removed button/action deep styles from `components/library/LibraryContextMenu.vue` so action-button presentation lives with the focused form-actions component.
 - Next remaining phase: continue small library UI cleanup by extracting shared context-menu error/field primitives or another focused presentation component.
+- Quality gates after this phase:
+  - `npm test -- tests/composables/library/useLibraryContextMenu.test.ts` — passes: 1 test file / 5 tests.
+  - `npm test` — passes: 103 test files / 383 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: library context menu form primitives
+
+- Extracted shared context-menu form primitives into focused components:
+  - `components/library/LibraryContextMenuFormPanel.vue`
+  - `components/library/LibraryContextMenuField.vue`
+  - `components/library/LibraryContextMenuError.vue`
+- Updated the rename, move, and delete context-menu modes to compose the shared form panel, field, and error primitives while preserving input/select focus behavior, Escape close handling, submit events, error rendering, and delete confirmation copy.
+- Removed the remaining form/field/error deep styles from `components/library/LibraryContextMenu.vue`, leaving the parent as the context-menu shell and mode router.
+- Next remaining phase: continue small bounded cleanup by extracting another focused library/map/reference presentation component or helper; do not mark the full refactor complete yet.
 - Quality gates after this phase:
   - `npm test -- tests/composables/library/useLibraryContextMenu.test.ts` — passes: 1 test file / 5 tests.
   - `npm test` — passes: 103 test files / 383 tests.

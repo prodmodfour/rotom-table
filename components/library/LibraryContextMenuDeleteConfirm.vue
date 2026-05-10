@@ -1,5 +1,7 @@
 <script setup lang="ts">
+import LibraryContextMenuError from '~/components/library/LibraryContextMenuError.vue'
 import LibraryContextMenuFormActions from '~/components/library/LibraryContextMenuFormActions.vue'
+import LibraryContextMenuFormPanel from '~/components/library/LibraryContextMenuFormPanel.vue'
 
 defineProps<{
   targetKind: string
@@ -18,7 +20,7 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <div class="ctx-form">
+  <LibraryContextMenuFormPanel>
     <p class="ctx-confirm">
       <template v-if="isFolderTarget">
         Delete folder <strong>{{ targetLabel }}</strong> {{ deleteFolderSuffix }}
@@ -27,7 +29,7 @@ const emit = defineEmits<{
         Delete {{ targetKind.toLowerCase() }} <strong>{{ targetLabel }}</strong>{{ deleteItemSuffix }}
       </template>
     </p>
-    <p v-if="error" class="ctx-error" role="alert">{{ error }}</p>
+    <LibraryContextMenuError :message="error" />
     <LibraryContextMenuFormActions
       :busy="busy"
       submit-label="Delete"
@@ -35,5 +37,14 @@ const emit = defineEmits<{
       @close="emit('close')"
       @submit="emit('submit')"
     />
-  </div>
+  </LibraryContextMenuFormPanel>
 </template>
+
+<style scoped>
+.ctx-confirm {
+  margin: 0;
+  color: var(--ink-soft);
+  line-height: 1.4;
+  font-size: 0.9rem;
+}
+</style>
