@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { PhFolder, PhPlus } from '@phosphor-icons/vue'
+import LibraryIntroActionButton from '~/components/library/LibraryIntroActionButton.vue'
+import LibraryIntroActionRow from '~/components/library/LibraryIntroActionRow.vue'
 import LibraryIntroErrors from '~/components/library/LibraryIntroErrors.vue'
+import LibraryIntroPanelCard from '~/components/library/LibraryIntroPanelCard.vue'
 import LibraryIntroSearchField from '~/components/library/LibraryIntroSearchField.vue'
 
 defineProps<{
@@ -21,11 +24,10 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <section class="panel-card maps-intro">
-    <div class="intro-heading">
-      <h1>Tabletop Maps</h1>
-      <span class="badge">{{ mapCount }} map{{ mapCount === 1 ? '' : 's' }}</span>
-    </div>
+  <LibraryIntroPanelCard
+    title="Tabletop Maps"
+    :badge="`${mapCount} map${mapCount === 1 ? '' : 's'}`"
+  >
     <p class="intro-copy">
       Saved tabletop layouts. Each map stores its own dimensions and the
       set of trainer / Pokémon tokens placed on it. Sheets are managed
@@ -50,24 +52,21 @@ const emit = defineEmits<{
         @update:model-value="emit('update:searchTerm', $event)"
       />
 
-      <div v-if="isGm" class="folder-actions">
-        <button
-          type="button"
-          class="action-btn"
+      <LibraryIntroActionRow v-if="isGm">
+        <LibraryIntroActionButton
+          variant="primary"
           :disabled="creating"
           @click="emit('createMap')"
         >
           <PhPlus :size="16" weight="bold" /> New map
-        </button>
-        <button
-          type="button"
-          class="action-btn action-btn--secondary"
+        </LibraryIntroActionButton>
+        <LibraryIntroActionButton
           :disabled="creating"
           @click="emit('createFolder')"
         >
           <PhFolder :size="16" weight="bold" /> New folder
-        </button>
-      </div>
+        </LibraryIntroActionButton>
+      </LibraryIntroActionRow>
     </div>
 
     <LibraryIntroErrors
@@ -77,35 +76,10 @@ const emit = defineEmits<{
         { key: 'move', message: moveError, prefix: 'Move failed: ' },
       ]"
     />
-  </section>
+  </LibraryIntroPanelCard>
 </template>
 
 <style scoped>
-.panel-card {
-  border: 1px solid var(--rule);
-  border-radius: 14px;
-  background: var(--paper-soft);
-  box-shadow: var(--shadow-card);
-  padding: 0.95rem;
-}
-
-.intro-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  margin-bottom: 0.4rem;
-}
-
-.intro-heading h1 {
-  margin: 0;
-  font-family: var(--font-book);
-  font-size: 1.5rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  color: var(--ink-bright);
-}
-
 .intro-copy {
   margin: 0 0 0.85rem;
   color: var(--ink-soft);
@@ -131,62 +105,6 @@ code {
   flex-wrap: wrap;
   gap: 0.6rem;
   align-items: stretch;
-}
-
-.folder-actions {
-  flex: 0 0 auto;
-  display: flex;
-  align-items: stretch;
-  gap: 0.4rem;
-}
-
-.action-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  border: 1px solid var(--accent);
-  border-radius: 10px;
-  background: var(--paper-soft);
-  color: var(--accent);
-  padding: 0.55rem 0.85rem;
-  cursor: pointer;
-  font: inherit;
-  letter-spacing: 0.04em;
-  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
-}
-
-.action-btn--secondary {
-  border-color: var(--rule);
-  color: var(--ink);
-}
-
-.action-btn:hover:not(:disabled) {
-  background: var(--accent-soft);
-  border-color: var(--accent);
-  color: var(--accent);
-}
-
-.action-btn--secondary:hover:not(:disabled) {
-  border-color: var(--rule-strong);
-  background: var(--paper-hover);
-  color: var(--ink-bright);
-}
-
-.action-btn:disabled {
-  opacity: 0.6;
-  cursor: progress;
-}
-
-.badge {
-  display: inline-flex;
-  align-items: center;
-  border-radius: 999px;
-  padding: 0.22rem 0.65rem;
-  background: var(--accent-soft);
-  color: var(--accent);
-  font-size: 0.74rem;
-  letter-spacing: 0.06em;
-  white-space: nowrap;
 }
 
 </style>

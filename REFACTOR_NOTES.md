@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; library intro search/errors are now shared, but small UI/helper cleanup remains and the refactor is not marked complete.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; library intro panel chrome/actions are now shared, but small UI/helper cleanup remains and the refactor is not marked complete.
 
 ## Phase 0 baseline audit
 
@@ -2708,6 +2708,17 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; library intro search/erro
 - Extracted duplicated maps/sheets library intro search-field markup, trimmed input handling, focus styling, and screen-reader label into `components/library/LibraryIntroSearchField.vue`.
 - Extracted duplicated library intro alert/error rendering into `components/library/LibraryIntroErrors.vue` and wired map/sheet load/create/move errors through the shared component.
 - Reduced `MapLibraryIntroPanel` and `SheetLibraryIntroPanel` to route-specific copy/actions while preserving search placeholders, trimmed search updates, alert copy, and visual styling.
+- Next remaining phase: continue one small bounded cleanup pass on remaining library/map/reference presentation or helper duplication; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test` — passes: 103 test files / 383 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: shared library intro panel chrome and actions
+
+- Extracted shared maps/sheets library intro panel chrome into `components/library/LibraryIntroPanelCard.vue` for the card shell, title, and badge presentation.
+- Extracted shared intro action primitives into `components/library/LibraryIntroActionRow.vue` and `components/library/LibraryIntroActionButton.vue`.
+- Updated map and sheet library intro panels to compose the shared panel/action components while preserving copy, search fields, GM/player gating, new-map/new-folder/new-sheet actions, sheet dropdown behavior, and intro error rendering.
 - Next remaining phase: continue one small bounded cleanup pass on remaining library/map/reference presentation or helper duplication; do not mark the full refactor complete yet.
 - Quality gates after this phase:
   - `npm test` — passes: 103 test files / 383 tests.

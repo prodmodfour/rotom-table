@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { PhCaretDown, PhPlus } from '@phosphor-icons/vue'
+import LibraryIntroActionButton from '~/components/library/LibraryIntroActionButton.vue'
+import LibraryIntroActionRow from '~/components/library/LibraryIntroActionRow.vue'
 import LibraryIntroErrors from '~/components/library/LibraryIntroErrors.vue'
+import LibraryIntroPanelCard from '~/components/library/LibraryIntroPanelCard.vue'
 import LibraryIntroSearchField from '~/components/library/LibraryIntroSearchField.vue'
 import type { SheetLibraryKind } from '~/utils/sheetLibrary'
 
@@ -27,11 +30,10 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <section class="panel-card sheets-intro">
-    <div class="intro-heading">
-      <h1>Character Sheets</h1>
-      <span class="badge">{{ filteredCount }} of {{ totalCount }}</span>
-    </div>
+  <LibraryIntroPanelCard
+    title="Character Sheets"
+    :badge="`${filteredCount} of ${totalCount}`"
+  >
     <p class="intro-copy">
       Trainers and Pokémon character sheets, modelled on the PTU
       <code>pokesheet</code> / <code>trainer</code> spreadsheets. Drop a
@@ -58,11 +60,10 @@ const emit = defineEmits<{
         @update:model-value="emit('update:searchTerm', $event)"
       />
 
-      <div v-if="canDrag" class="folder-actions">
+      <LibraryIntroActionRow v-if="canDrag">
         <div class="sheet-menu-wrap">
-          <button
-            type="button"
-            class="new-folder-btn new-sheet-btn"
+          <LibraryIntroActionButton
+            variant="primary"
             :disabled="creatingSheet"
             :aria-expanded="sheetMenuOpen"
             aria-haspopup="menu"
@@ -71,7 +72,7 @@ const emit = defineEmits<{
             <PhPlus :size="16" weight="bold" />
             New sheet
             <PhCaretDown :size="12" weight="bold" aria-hidden="true" />
-          </button>
+          </LibraryIntroActionButton>
           <div v-if="sheetMenuOpen" class="sheet-menu" role="menu">
             <button
               type="button"
@@ -93,15 +94,13 @@ const emit = defineEmits<{
             </button>
           </div>
         </div>
-        <button
-          type="button"
-          class="new-folder-btn"
+        <LibraryIntroActionButton
           :disabled="creating"
           @click="emit('createFolder')"
         >
           <PhPlus :size="16" weight="bold" /> New folder
-        </button>
-      </div>
+        </LibraryIntroActionButton>
+      </LibraryIntroActionRow>
     </div>
 
     <LibraryIntroErrors
@@ -111,7 +110,7 @@ const emit = defineEmits<{
         { key: 'move', message: moveError, prefix: 'Move failed: ' },
       ]"
     />
-  </section>
+  </LibraryIntroPanelCard>
 
   <div
     v-if="sheetMenuOpen"
@@ -122,31 +121,6 @@ const emit = defineEmits<{
 </template>
 
 <style scoped>
-.panel-card {
-  border: 1px solid var(--rule);
-  border-radius: 14px;
-  background: var(--paper-soft);
-  box-shadow: var(--shadow-card);
-  padding: 0.95rem;
-}
-
-.intro-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  margin-bottom: 0.4rem;
-}
-
-.intro-heading h1 {
-  margin: 0;
-  font-family: var(--font-book);
-  font-size: 1.5rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  color: var(--ink-bright);
-}
-
 .intro-copy {
   margin: 0 0 0.85rem;
   color: var(--ink-soft);
@@ -174,58 +148,9 @@ code {
   align-items: stretch;
 }
 
-.folder-actions {
-  flex: 0 0 auto;
-  display: flex;
-  align-items: stretch;
-  gap: 0.4rem;
-}
-
-.new-folder-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  border: 1px solid var(--rule);
-  border-radius: 10px;
-  background: var(--paper-soft);
-  color: var(--ink);
-  padding: 0.55rem 0.85rem;
-  cursor: pointer;
-  font: inherit;
-  letter-spacing: 0.04em;
-  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
-}
-
-.new-folder-btn:hover:not(:disabled) {
-  border-color: var(--rule-strong);
-  background: var(--paper-hover);
-  color: var(--ink-bright);
-}
-
-.new-folder-btn:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 1px;
-}
-
-.new-folder-btn:disabled {
-  opacity: 0.6;
-  cursor: progress;
-}
-
 .sheet-menu-wrap {
   position: relative;
   display: inline-flex;
-}
-
-.new-sheet-btn {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-
-.new-sheet-btn:hover:not(:disabled) {
-  background: var(--accent-soft);
-  border-color: var(--accent);
-  color: var(--accent);
 }
 
 .sheet-menu {
@@ -267,18 +192,6 @@ code {
 .sheet-menu__item:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-}
-
-.badge {
-  display: inline-flex;
-  align-items: center;
-  border-radius: 999px;
-  padding: 0.22rem 0.65rem;
-  background: var(--accent-soft);
-  color: var(--accent);
-  font-size: 0.74rem;
-  letter-spacing: 0.06em;
-  white-space: nowrap;
 }
 
 .sheet-menu-backdrop {
