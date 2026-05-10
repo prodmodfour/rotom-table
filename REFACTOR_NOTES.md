@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; map layer visibility defaults/options are now centralized in shared helpers. Next candidates include another focused map-editor helper extraction, addressing the documented broader typecheck backlog, or another small UI/helper duplication cleanup; do not mark the full refactor complete yet.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; map access/GM-mode guards are now isolated in a focused composable. Next candidates include another focused map-editor helper extraction, addressing the documented broader typecheck backlog, or another small UI/helper duplication cleanup; do not mark the full refactor complete yet.
 
 ## Phase 0 baseline audit
 
@@ -3347,5 +3347,18 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; map layer visibility defa
 - Quality gates after this phase:
   - `npm test -- tests/utils/mapLayerVisibility.test.ts tests/utils/isometric/sceneState.test.ts` — passes: 2 test files / 9 tests.
   - `npm test` — passes: 134 test files / 525 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: map access composable extraction
+
+- Extracted map-editor access derivation and GM-mode cleanup watchers from `pages/maps/[slug].vue` into `composables/map-editor/useMapAccess.ts`.
+  - The composable now owns GM-derived map edit/spawn/initiative capabilities, player-visible map access checks, hidden-map player redirects, and clearing GM-only UI state when GM access is lost.
+- Updated the map editor route to consume the focused access/guard composables while preserving hidden-map redirects, build/hazard/admin reset behavior, selected-token cleanup, and move-automation cleanup for no-longer-controllable tokens.
+- Added `tests/composables/map-editor/useMapAccess.test.ts` covering player visibility rules, redirect trigger compatibility, GM capability derivation, and GM-access-loss cleanup behavior.
+- Next remaining phase: continue one bounded cleanup pass, with candidates including another focused map-editor helper extraction, addressing the documented broader typecheck backlog, or another small UI/helper duplication cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/composables/map-editor/useMapAccess.test.ts` — passes: 1 test file / 6 tests.
+  - `npm test` — passes: 135 test files / 531 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

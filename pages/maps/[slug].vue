@@ -11,6 +11,7 @@ import { useWindowKeydown } from '~/composables/useWindowKeydown'
 import { useFieldEffectsEditor } from '~/composables/map-editor/useFieldEffectsEditor'
 import { useHazardBuilder } from '~/composables/map-editor/useHazardBuilder'
 import { useInitiativeTracker } from '~/composables/map-editor/useInitiativeTracker'
+import { useMapAccess, useMapGmModeGuard } from '~/composables/map-editor/useMapAccess'
 import { useMoveAutomationPanel } from '~/composables/map-editor/useMoveAutomationPanel'
 import { useTerrainBuilder } from '~/composables/map-editor/useTerrainBuilder'
 import { useTokenSheetMutations } from '~/composables/map-editor/useTokenSheetMutations'
@@ -73,16 +74,23 @@ const toggleLeftSection = (section: MapLeftSidebarSection) => {
   leftSidebarSectionsCollapsed.value[section] = !leftSidebarSectionsCollapsed.value[section]
 }
 
-const canEditMap = computed(() => isGm.value)
-const canManageInitiative = computed(() => isGm.value)
-const canSpawnTokens = computed(() => isGm.value)
+const {
+  canEditMap,
+  canManageInitiative,
+  canSpawnTokens,
+  canViewMap,
+} = useMapAccess({
+  map,
+  isGm,
+  isPlayer,
+  redirectHiddenPlayerMap: () => router.replace(mapLibraryPath()),
+})
 
 const layerVisibility = ref(createDefaultMapLayerVisibility())
 const layerOptions = MAP_LAYER_OPTIONS
 
 const mapVoxels = computed<MapVoxelV2[]>(() => map.value?.voxels ?? [])
 const mapHazards = computed<MapHazardV2[]>(() => map.value?.hazards ?? [])
-const canViewMap = computed(() => !map.value || !isPlayer.value || map.value.playerVisible === true)
 
 const groundLevelYMax = computed(() => maxGroundLevelY(map.value?.dimensions.y ?? 1))
 const mapGroundLevelY = computed(() =>
@@ -228,25 +236,6 @@ const handleAdminShortcut = (event: KeyboardEvent) => {
 
 useWindowKeydown(handleAdminShortcut)
 
-watch(
-  [() => map.value?.slug, isPlayer],
-  () => {
-    if (map.value && isPlayer.value && map.value.playerVisible !== true) {
-      void router.replace(mapLibraryPath())
-    }
-  },
-  { immediate: true },
-)
-
-watch(isGm, (gm) => {
-  if (gm) return
-  buildMode.value = false
-  hazardMode.value = false
-  adminPanelOpen.value = false
-  if (selectedId.value && !canControlPlacement(selectedId.value)) selectPokemon(null)
-  if (moveAutomationId.value && !canControlPlacement(moveAutomationId.value)) closeMoveAutomation()
-})
-
 const {
   initiativeRows,
   sortedInitiativeRows,
@@ -310,6 +299,18 @@ const {
   modifyConditions,
   applyMoveFieldEffect,
   placeHazard,
+})
+
+useMapGmModeGuard({
+  isGm,
+  buildMode,
+  hazardMode,
+  adminPanelOpen,
+  selectedId,
+  moveAutomationId,
+  canControlPlacement,
+  clearSelection,
+  closeMoveAutomation,
 })
 
 const viewSheet = (id: string) => {
