@@ -1818,3 +1818,13 @@
   - `npm test` — passes: 84 test files / 322 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: rule grouped list component
+
+- Extracted the Rules index grouped result list into `components/reference/RuleIndexGroupedList.vue`.
+- Reduced `pages/rules/index.vue` to search/category state, category chip derivation, grouping, and reference shell composition.
+- Preserved category grouping, rule links, source badges, text previews, heading typography, and empty-state copy.
+- Quality gates after this phase:
+  - `npm test` — passes: 84 test files / 322 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
