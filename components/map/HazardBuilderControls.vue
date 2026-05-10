@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import BuilderBulkActionRow from '~/components/map/BuilderBulkActionRow.vue'
+import BuilderBulkButton from '~/components/map/BuilderBulkButton.vue'
 import BuildToolToggle from '~/components/map/BuildToolToggle.vue'
 import HazardPaletteGrid from '~/components/map/HazardPaletteGrid.vue'
 import type { BuildTool } from '~/shared/mapEditor'
@@ -40,16 +42,11 @@ const emit = defineEmits<{
     Right click erases all hazards on a square. Toxic Spikes stacks to 2 layers.
   </p>
 
-  <div class="bulk-row">
-    <button
-      type="button"
-      class="bulk-button bulk-button--danger"
-      :disabled="!hazardCount"
-      @click="emit('clear-all-hazards')"
-    >
+  <BuilderBulkActionRow>
+    <BuilderBulkButton variant="danger" :disabled="!hazardCount" @click="emit('clear-all-hazards')">
       Clear hazards
-    </button>
-  </div>
+    </BuilderBulkButton>
+  </BuilderBulkActionRow>
 </template>
 
 <style scoped>
@@ -61,40 +58,4 @@ const emit = defineEmits<{
   line-height: 1.4;
 }
 
-.bulk-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.4rem;
-}
-
-.bulk-button {
-  border: 1px solid var(--rule-soft);
-  border-radius: 10px;
-  background: var(--paper);
-  color: var(--ink);
-  padding: 0.5rem 0.7rem;
-  cursor: pointer;
-  font: inherit;
-  letter-spacing: 0.04em;
-  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
-}
-
-.bulk-button:hover:not(:disabled) {
-  border-color: var(--rule-strong);
-  background: var(--paper-hover);
-}
-
-.bulk-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.bulk-button--danger {
-  color: #fb4934;
-}
-
-.bulk-button--danger:hover:not(:disabled) {
-  border-color: #fb4934;
-  background: rgba(251, 73, 52, 0.08);
-}
 </style>

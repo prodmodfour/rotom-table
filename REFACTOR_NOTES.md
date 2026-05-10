@@ -2530,3 +2530,12 @@
   - `npm test` — passes: 102 test files / 381 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: shared terrain/hazard bulk action controls
+
+- Extracted duplicated terrain/hazard bulk-action row and button presentation into `components/map/BuilderBulkActionRow.vue` and `components/map/BuilderBulkButton.vue`.
+- Updated terrain and hazard builder controls to compose the shared bulk-action primitives while preserving fill-ground, clear-terrain, and clear-hazards disabled-state behavior and styling.
+- Quality gates after this phase:
+  - `npm test` — passes: 102 test files / 381 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
