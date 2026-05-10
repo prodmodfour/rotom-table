@@ -1,15 +1,9 @@
+import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { sheetChannel, sheetsChannel, type RealtimeEvent } from '~/shared/realtime'
 import type { SheetKind } from '~/shared/sheets'
 import { renameSheetFile, type RenameSheetFileResult } from '../utils/sheetStorage'
 
-export class RenameSheetUseCaseError extends Error {
-  constructor(
-    public readonly statusCode: 404 | 500,
-    message: string,
-  ) {
-    super(message)
-  }
-}
+export class RenameSheetUseCaseError extends UseCaseHttpError<404 | 500> {}
 
 export interface RenameSheetInput {
   kind: SheetKind

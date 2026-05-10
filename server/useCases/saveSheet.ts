@@ -1,3 +1,4 @@
+import { UseCaseHttpError } from '../utils/useCaseErrors'
 import type { AuthRole } from '~/shared/auth'
 import { sheetChannel, sheetsChannel, type RealtimeEvent } from '~/shared/realtime'
 import type { SheetKind } from '~/shared/sheets'
@@ -9,14 +10,7 @@ import {
   writeSheetFile,
 } from '../utils/sheetStorage'
 
-export class SaveSheetUseCaseError extends Error {
-  constructor(
-    public readonly statusCode: 400 | 403 | 404,
-    message: string,
-  ) {
-    super(message)
-  }
-}
+export class SaveSheetUseCaseError extends UseCaseHttpError<400 | 403 | 404> {}
 
 export interface SaveSheetInput {
   role: AuthRole

@@ -1,14 +1,8 @@
+import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { sanitizeFolderPath } from '~/shared/paths'
 import { moveSheetFolder, type MoveFolderResult } from '../utils/sheetStorage'
 
-export class MoveSheetFolderUseCaseError extends Error {
-  constructor(
-    public readonly statusCode: 400 | 404 | 409,
-    message: string,
-  ) {
-    super(message)
-  }
-}
+export class MoveSheetFolderUseCaseError extends UseCaseHttpError<400 | 404 | 409> {}
 
 export interface MoveSheetFolderInput {
   from?: unknown

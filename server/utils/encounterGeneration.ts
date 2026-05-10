@@ -2,6 +2,7 @@ import { existsSync } from 'node:fs'
 import { join as joinPath, sep } from 'node:path'
 import { DEFAULT_ENCOUNTER_OUT_ROOT } from '~/utils/encounterGeneration'
 import type { EncounterTable, RolledEncounter } from '~/types/encounterTable'
+import { UseCaseHttpError } from './useCaseErrors'
 
 export interface GenerateEncounterBody {
   region?: string
@@ -15,15 +16,7 @@ export const DEFAULT_ENCOUNTER_GENERATE_OUT_ROOT = DEFAULT_ENCOUNTER_OUT_ROOT
 
 const SAFE_NAME = /^[a-zA-Z0-9_-]+$/
 
-export class EncounterGenerationInputError extends Error {
-  constructor(
-    public readonly statusCode: number,
-    message: string,
-  ) {
-    super(message)
-    this.name = 'EncounterGenerationInputError'
-  }
-
+export class EncounterGenerationInputError extends UseCaseHttpError<number> {
   get statusMessage(): string {
     return this.message
   }

@@ -1,17 +1,11 @@
+import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { unlinkSync } from 'node:fs'
 import { sep } from 'node:path'
 import { mapChannel, mapsChannel, type RealtimeEvent } from '~/shared/realtime'
 import { relativeToProjectRoot } from '../utils/fsPaths'
 import { MAPS_ROOT, SLUG_RE, findMapFile, pruneEmptyMapParents } from '../utils/mapStorage'
 
-export class DeleteMapUseCaseError extends Error {
-  constructor(
-    public readonly statusCode: 400 | 404,
-    message: string,
-  ) {
-    super(message)
-  }
-}
+export class DeleteMapUseCaseError extends UseCaseHttpError<400 | 404> {}
 
 export interface DeleteMapInput {
   slug?: unknown

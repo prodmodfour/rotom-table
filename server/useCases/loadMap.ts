@@ -1,15 +1,9 @@
+import { UseCaseHttpError } from '../utils/useCaseErrors'
 import type { AuthRole } from '~/shared/auth'
 import type { TabletopMap } from '~/types/map'
 import { SLUG_RE, findMapFile, readMapFile } from '../utils/mapStorage'
 
-export class LoadMapUseCaseError extends Error {
-  constructor(
-    public readonly statusCode: 400 | 403 | 404,
-    message: string,
-  ) {
-    super(message)
-  }
-}
+export class LoadMapUseCaseError extends UseCaseHttpError<400 | 403 | 404> {}
 
 export interface LoadMapInput {
   slug?: unknown

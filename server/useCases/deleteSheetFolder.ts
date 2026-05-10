@@ -1,14 +1,8 @@
+import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { sanitizeFolderPath } from '~/shared/paths'
 import { deleteSheetFolder, type DeleteFolderResult } from '../utils/sheetStorage'
 
-export class DeleteSheetFolderUseCaseError extends Error {
-  constructor(
-    public readonly statusCode: 400 | 404,
-    message: string,
-  ) {
-    super(message)
-  }
-}
+export class DeleteSheetFolderUseCaseError extends UseCaseHttpError<400 | 404> {}
 
 export interface DeleteSheetFolderInput {
   folder?: unknown

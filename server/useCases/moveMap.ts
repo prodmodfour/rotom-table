@@ -1,3 +1,4 @@
+import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { existsSync, mkdirSync, renameSync } from 'node:fs'
 import { join, sep } from 'node:path'
 import { mapChannel, mapsChannel, type RealtimeEvent } from '~/shared/realtime'
@@ -14,14 +15,7 @@ import {
   writeMapFile,
 } from '../utils/mapStorage'
 
-export class MoveMapUseCaseError extends Error {
-  constructor(
-    public readonly statusCode: 400 | 404 | 409,
-    message: string,
-  ) {
-    super(message)
-  }
-}
+export class MoveMapUseCaseError extends UseCaseHttpError<400 | 404 | 409> {}
 
 export interface MoveMapInput {
   slug?: unknown

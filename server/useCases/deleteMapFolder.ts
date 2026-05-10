@@ -1,17 +1,11 @@
+import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { existsSync, rmSync, statSync } from 'node:fs'
 import { join, sep } from 'node:path'
 import { mapsChannel, type RealtimeEvent } from '~/shared/realtime'
 import { relativeToProjectRoot } from '../utils/fsPaths'
 import { MAPS_ROOT, pruneEmptyMapParents, sanitizeMapFolderPath } from '../utils/mapStorage'
 
-export class DeleteMapFolderUseCaseError extends Error {
-  constructor(
-    public readonly statusCode: 400 | 404,
-    message: string,
-  ) {
-    super(message)
-  }
-}
+export class DeleteMapFolderUseCaseError extends UseCaseHttpError<400 | 404> {}
 
 export interface DeleteMapFolderInput {
   folder?: unknown

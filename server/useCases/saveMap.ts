@@ -1,3 +1,4 @@
+import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { mapChannel, mapsChannel, type RealtimeEvent } from '~/shared/realtime'
 import { normalizeMapFieldEffects } from '~/utils/mapFieldEffects'
 import type { AuthRole } from '~/shared/auth'
@@ -18,14 +19,7 @@ import {
   type SheetAccessPredicate,
 } from '../policies/mapPolicy'
 
-export class SaveMapUseCaseError extends Error {
-  constructor(
-    public readonly statusCode: 400 | 403 | 404,
-    message: string,
-  ) {
-    super(message)
-  }
-}
+export class SaveMapUseCaseError extends UseCaseHttpError<400 | 403 | 404> {}
 
 export interface SaveMapInput {
   role: AuthRole

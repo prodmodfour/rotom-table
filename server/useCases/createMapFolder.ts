@@ -1,17 +1,11 @@
+import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { existsSync, mkdirSync } from 'node:fs'
 import { join, sep } from 'node:path'
 import { mapsChannel, type RealtimeEvent } from '~/shared/realtime'
 import { relativeToProjectRoot } from '../utils/fsPaths'
 import { MAPS_ROOT, sanitizeMapFolderPath } from '../utils/mapStorage'
 
-export class CreateMapFolderUseCaseError extends Error {
-  constructor(
-    public readonly statusCode: 400,
-    message: string,
-  ) {
-    super(message)
-  }
-}
+export class CreateMapFolderUseCaseError extends UseCaseHttpError<400> {}
 
 export interface CreateMapFolderInput {
   folder?: unknown

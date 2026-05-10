@@ -1,15 +1,9 @@
+import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { sheetChannel, sheetsChannel, type RealtimeEvent } from '~/shared/realtime'
 import type { SheetKind } from '~/shared/sheets'
 import { deleteSheetFile, type SheetFileResult } from '../utils/sheetStorage'
 
-export class DeleteSheetUseCaseError extends Error {
-  constructor(
-    public readonly statusCode: 404,
-    message: string,
-  ) {
-    super(message)
-  }
-}
+export class DeleteSheetUseCaseError extends UseCaseHttpError<404> {}
 
 export interface DeleteSheetInput {
   kind: SheetKind

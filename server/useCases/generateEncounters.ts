@@ -1,3 +1,4 @@
+import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { spawn } from 'node:child_process'
 import {
   existsSync,
@@ -21,14 +22,7 @@ import {
 } from '../utils/encounterGeneration'
 import type { EncounterTable, RolledEncounter } from '~/types/encounterTable'
 
-export class GenerateEncountersUseCaseError extends Error {
-  constructor(
-    public readonly statusCode: number,
-    message: string,
-  ) {
-    super(message)
-  }
-}
+export class GenerateEncountersUseCaseError extends UseCaseHttpError<number> {}
 
 export interface PokegenRunResult {
   ok: boolean

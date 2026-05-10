@@ -1,3 +1,4 @@
+import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { dirname, join } from 'node:path'
 import { existsSync, renameSync } from 'node:fs'
 import { mapChannel, mapsChannel, type RealtimeEvent } from '~/shared/realtime'
@@ -13,14 +14,7 @@ import {
   writeMapFile,
 } from '../utils/mapStorage'
 
-export class RenameMapUseCaseError extends Error {
-  constructor(
-    public readonly statusCode: 400 | 404 | 409,
-    message: string,
-  ) {
-    super(message)
-  }
-}
+export class RenameMapUseCaseError extends UseCaseHttpError<400 | 404 | 409> {}
 
 export interface RenameMapInput {
   slug?: unknown

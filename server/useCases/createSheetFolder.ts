@@ -1,14 +1,8 @@
+import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { sanitizeFolderPath } from '~/shared/paths'
 import { createSheetFolder } from '../utils/sheetStorage'
 
-export class CreateSheetFolderUseCaseError extends Error {
-  constructor(
-    public readonly statusCode: 400,
-    message: string,
-  ) {
-    super(message)
-  }
-}
+export class CreateSheetFolderUseCaseError extends UseCaseHttpError<400> {}
 
 export interface CreateSheetFolderInput {
   folder?: unknown

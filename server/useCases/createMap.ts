@@ -1,3 +1,4 @@
+import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { join } from 'node:path'
 import { mapsChannel, type RealtimeEvent } from '~/shared/realtime'
 import type { GridDimensions, TabletopMap } from '~/types/map'
@@ -10,14 +11,7 @@ import {
   writeMapFile,
 } from '../utils/mapStorage'
 
-export class CreateMapUseCaseError extends Error {
-  constructor(
-    public readonly statusCode: 400,
-    message: string,
-  ) {
-    super(message)
-  }
-}
+export class CreateMapUseCaseError extends UseCaseHttpError<400> {}
 
 export interface CreateMapInput {
   name?: unknown
