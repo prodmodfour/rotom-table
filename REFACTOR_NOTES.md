@@ -1798,3 +1798,13 @@
   - `npm test` — passes: 84 test files / 322 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: item detail article component
+
+- Extracted the item detail page article, item sprite heading, stats strip, effect/notes blocks, and related-item list into `components/reference/ItemDetailArticle.vue`.
+- Reduced `pages/items/[slug].vue` to route lookup, metadata, related-item derivation, shared shell, and not-found handling.
+- Preserved item detail heading layout, sprite alt text, costs/sections display, effect/notes rendering, related item links, and missing-item copy.
+- Quality gates after this phase:
+  - `npm test` — passes: 84 test files / 322 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
