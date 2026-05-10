@@ -2584,3 +2584,12 @@
   - `npm test` — passes: 102 test files / 381 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: map admin Y summary component
+
+- Extracted the map admin absolute/map-specific Y summary list into `components/map/MapAdminYSummary.vue`.
+- `MapAdminPanel` now composes focused ground-level input and summary components while preserving modal copy, values, and styling.
+- Quality gates after this phase:
+  - `npm test` — passes: 102 test files / 381 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
