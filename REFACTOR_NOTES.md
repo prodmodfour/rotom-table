@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; map create/rename/move/create-folder/move-folder/delete-folder are now tested use cases/thin routes, with map delete/list/load/folders still good candidates for further thinning.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; map create/rename/move/delete and map folder mutations are now tested use cases/thin routes, with map list/load/folders still good candidates for further thinning.
 
 ## Phase 0 baseline audit
 
@@ -3034,5 +3034,20 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; map create/rename/move/cr
 - Quality gates after this phase:
   - `npm test -- tests/server/deleteMapFolder.test.ts` — passes: 1 test file / 4 tests.
   - `npm test` — passes: 119 test files / 446 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+
+## Next phase update: map delete use-case extraction
+
+- Extracted `/api/maps/delete` orchestration into `server/useCases/deleteMap.ts`.
+  - The use case now owns slug validation, map lookup, maps-root path safety checks, filesystem deletion/pruning through injectable dependencies, response path formatting, and compatible map/maps channel delete events.
+- Reduced `server/api/maps/delete.post.ts` to a thin H3 adapter for GM auth, body reading, use-case invocation, realtime publish, and HTTP error translation.
+- Preserved existing delete-map behavior: invalid slugs keep the compatible bad-request message, missing maps still return `Map <slug>.json not found`, successful responses remain `{ ok, path }`, and realtime payloads remain `{ slug }` on `map:<slug>` and `maps`.
+- Added `tests/server/deleteMap.test.ts` covering successful deletion/pruning/events, invalid slugs, missing maps, and escaped/root path hardening before filesystem mutation.
+- Next remaining phase: continue map endpoint thinning, especially `server/api/maps/list.get.ts`, `server/api/maps/load.get.ts`, and `server/api/maps/folders.get.ts`; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/server/deleteMap.test.ts` — passes: 1 test file / 3 tests.
+  - `npm test` — passes: 120 test files / 449 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
