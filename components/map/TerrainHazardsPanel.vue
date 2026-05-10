@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import CollapsiblePanelHeading from '~/components/map/CollapsiblePanelHeading.vue'
 import HazardBuilderControls from '~/components/map/HazardBuilderControls.vue'
 import LayerVisibilityControls from '~/components/map/LayerVisibilityControls.vue'
 import MapEditorModeToggle from '~/components/map/MapEditorModeToggle.vue'
@@ -49,23 +50,13 @@ const emit = defineEmits<{
 
 <template>
   <section class="panel-card terrain-panel">
-    <div class="panel-heading panel-heading--collapsible">
-      <button
-        type="button"
-        class="section-toggle-button"
-        :aria-expanded="!collapsed"
-        aria-controls="map-terrain-section"
-        @click="emit('toggle-collapsed')"
-      >
-        <span class="section-toggle-button__chevron" aria-hidden="true">
-          {{ collapsed ? '›' : '⌄' }}
-        </span>
-        <span class="section-toggle-button__title">Terrain</span>
-      </button>
-      <span class="badge">
-        {{ voxelCount }} block{{ voxelCount === 1 ? '' : 's' }} · {{ hazardCount }} hazard{{ hazardCount === 1 ? '' : 's' }}
-      </span>
-    </div>
+    <CollapsiblePanelHeading
+      title="Terrain"
+      :badge="`${voxelCount} block${voxelCount === 1 ? '' : 's'} · ${hazardCount} hazard${hazardCount === 1 ? '' : 's'}`"
+      :collapsed="collapsed"
+      controls-id="map-terrain-section"
+      @toggle-collapsed="emit('toggle-collapsed')"
+    />
 
     <div id="map-terrain-section" v-show="!collapsed" class="collapsible-section-body">
       <MapEditorModeToggle
@@ -126,97 +117,10 @@ const emit = defineEmits<{
   padding: 0.95rem;
 }
 
-.panel-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 0.85rem;
-}
-
-.panel-heading h2 {
-  margin: 0;
-  font-family: var(--font-book);
-  font-size: 1.15rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  color: var(--ink-bright);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.panel-heading--collapsible {
-  margin-bottom: 0;
-}
-
-.section-toggle-button {
-  flex: 1 1 auto;
-  min-width: 0;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-  border: 0;
-  background: transparent;
-  color: var(--ink-bright);
-  padding: 0;
-  cursor: pointer;
-  font: inherit;
-  text-align: left;
-}
-
-.section-toggle-button:hover,
-.section-toggle-button:focus-visible {
-  color: var(--accent);
-}
-
-.section-toggle-button:focus-visible {
-  outline: 2px solid rgba(250, 189, 47, 0.35);
-  outline-offset: 3px;
-  border-radius: 8px;
-}
-
-.section-toggle-button__chevron {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.15rem;
-  height: 1.15rem;
-  border: 1px solid var(--rule-soft);
-  border-radius: 999px;
-  color: var(--accent);
-  font-size: 0.9rem;
-  font-weight: 800;
-  line-height: 1;
-}
-
-.section-toggle-button__title {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-family: var(--font-book);
-  font-size: 1.15rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-}
-
 .collapsible-section-body {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-}
-
-.badge {
-  display: inline-flex;
-  align-items: center;
-  border-radius: 999px;
-  padding: 0.22rem 0.65rem;
-  background: var(--accent-soft);
-  color: var(--accent);
-  font-size: 0.74rem;
-  letter-spacing: 0.06em;
-  white-space: nowrap;
 }
 
 .permission-note {

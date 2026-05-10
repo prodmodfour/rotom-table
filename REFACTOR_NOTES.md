@@ -2248,3 +2248,13 @@
   - `npm test` — passes: 99 test files / 370 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: shared collapsible map panel heading
+
+- Extracted duplicated collapsible sidebar panel heading markup/styles into `components/map/CollapsiblePanelHeading.vue`.
+- Updated terrain/hazard and field-effects panels to use the shared heading component with explicit title, badge, collapsed state, and controls-id props.
+- Preserved heading copy, badges, chevrons, ARIA expanded/controls wiring, and collapse event behavior while removing duplicated heading CSS from both panels.
+- Quality gates after this phase:
+  - `npm test` — passes: 99 test files / 370 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
