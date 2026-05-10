@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; sheet create/save/rename/move/delete now use typed H3-free use cases. Next candidates include extracting sheet folder use cases or another focused UI/helper duplication cleanup; do not mark the full refactor complete yet.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; sheet CRUD and folder endpoints now use typed H3-free use cases. Next candidates include decoupling another small server boundary or another focused UI/helper duplication cleanup; do not mark the full refactor complete yet.
 
 ## Phase 0 baseline audit
 
@@ -3189,3 +3189,20 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; sheet create/save/rename/
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
 
+
+## Next phase update: sheet folder use-case extraction
+
+- Extracted sheet folder create/move/delete/list orchestration into H3-free use cases:
+  - `server/useCases/createSheetFolder.ts`
+  - `server/useCases/moveSheetFolder.ts`
+  - `server/useCases/deleteSheetFolder.ts`
+  - `server/useCases/listSheetFolders.ts`
+- Reduced `/api/sheets/create-folder`, `/api/sheets/move-folder`, `/api/sheets/delete-folder`, and `/api/sheets/folders` to thin H3 adapters for auth, non-production gating, body reading, use-case invocation, and HTTP error translation.
+- Preserved existing sheet-folder behavior: create-folder still targets the Pokémon sheet root, move/delete still operate across Pokémon and trainer sheet roots, player folder listing still returns `[]` without invoking the non-production guard, response shapes remain compatible, and no new realtime folder events were introduced.
+- Added `tests/server/sheetFolders.test.ts` covering folder sanitization, create/move/delete/list success paths, missing-folder errors, conflict mapping, player folder hiding, and unexpected create-storage error bubbling.
+- Next remaining phase: continue one bounded cleanup pass, with remaining candidates including decoupling another small server boundary from H3-specific details or another focused UI/helper duplication cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/server/sheetFolders.test.ts` — passes: 1 test file / 7 tests.
+  - `npm test` — passes: 130 test files / 493 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

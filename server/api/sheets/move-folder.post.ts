@@ -1,14 +1,7 @@
-import { defineEventHandler } from 'h3'
+import { createError, defineEventHandler } from 'h3'
 import { requireGm } from '../../utils/auth'
-import {
-  badRequest,
-  conflict,
-  expectFolderPath,
-  notFound,
-  readObjectBody,
-  requireNonProduction,
-} from '../../utils/http'
-import { moveSheetFolder } from '../../utils/sheetStorage'
+import { readObjectBody, requireNonProduction } from '../../utils/http'
+import { MoveSheetFolderUseCaseError, moveSheetFolderUseCase } from '../../useCases/moveSheetFolder'
 
 interface MoveFolderBody {
   from?: unknown
@@ -20,18 +13,13 @@ export default defineEventHandler(async (event) => {
   requireNonProduction()
 
   const body = await readObjectBody<MoveFolderBody>(event)
-  const from = expectFolderPath(body.from ?? '', { label: 'from' })
-  const to = expectFolderPath(body.to ?? '', { label: 'to' })
 
-  let result: ReturnType<typeof moveSheetFolder> = null
   try {
-    result = moveSheetFolder(from, to)
+    return moveSheetFolderUseCase({ from: body.from, to: body.to })
   } catch (err) {
-    const message = (err as Error).message
-    if (message.includes('Destination already exists')) conflict(message)
-    badRequest(message)
+    if (err instanceof MoveSheetFolderUseCaseError) {
+      throw createError({ statusCode: err.statusCode, statusMessage: err.message })
+    }
+    throw err
   }
-
-  const moved = result ?? notFound(`Folder "${from}" not found`)
-  return { ok: true as const, moved: moved.moved, count: moved.count }
 })
