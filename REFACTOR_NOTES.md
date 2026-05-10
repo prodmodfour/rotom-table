@@ -2109,3 +2109,13 @@
   - `npm test` — passes: 95 test files / 356 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: capability detail article component
+
+- Extracted the Capability detail article into `components/reference/CapabilityDetailArticle.vue` with focused art, heading, and effect rendering.
+- Updated `pages/capabilities/[slug].vue` to use the shared reference detail shell, not-found card, route slug helper, and reference title formatter.
+- Preserved capability detail route URLs, art layout, effect copy, back links, and missing-capability copy.
+- Quality gates after this phase:
+  - `npm test` — passes: 95 test files / 356 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
