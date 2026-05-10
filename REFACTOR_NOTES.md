@@ -2450,3 +2450,13 @@
   - `npm test` — passes: 100 test files / 374 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: shared sidebar collapse toggle
+
+- Extracted shared sidebar collapse/expand button presentation into `components/map/SidebarCollapseToggle.vue`.
+- Updated the left map sidebar toggle and right initiative sidebar to use the shared toggle while preserving opposite arrow directions, ARIA controls/labels, titles, collapsed sizing, and alignment.
+- Removed duplicated initiative-toggle styles and kept sidebar-specific layout styles in their own shell components.
+- Quality gates after this phase:
+  - `npm test` — passes: 100 test files / 374 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
