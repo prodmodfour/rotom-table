@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; sheet library data/folder state is now extracted, but small UI/helper cleanup remains and the refactor is not marked complete.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; sheet library action orchestration is now extracted, but small UI/helper cleanup remains and the refactor is not marked complete.
 
 ## Phase 0 baseline audit
 
@@ -2913,3 +2913,16 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; sheet library data/folder
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
 
+
+## Next phase update: sheet library action orchestration composable
+
+- Extracted sheet-library drag/drop move, context-menu target labels/destinations, rename, and delete orchestration into `composables/library/useSheetLibraryActions.ts`.
+  - The composable owns injected sheet/folder persistence calls plus local optimistic overrides, folder rename logs, deleted-sheet/deleted-folder state, and current-folder follow-up navigation.
+- Updated `pages/sheets/index.vue` to delegate sheet/folder move, rename, delete, and context-menu helper logic to the focused composable while preserving dev/GM gating, sheet editor routes, folder breadcrumbs, drag/drop behavior, and local optimistic UI updates.
+- Added `tests/composables/library/useSheetLibraryActions.test.ts` covering drop validity, sheet/folder moves, context-menu labels/destinations, renames with follow-up navigation, and sheet/folder subtree deletion state.
+- Next remaining phase: continue one small bounded cleanup pass on remaining library/map/reference presentation or helper duplication; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/composables/library/useSheetLibraryActions.test.ts` — passes: 1 test file / 4 tests.
+  - `npm test` — passes: 111 test files / 415 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

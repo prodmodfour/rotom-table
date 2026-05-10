@@ -7,22 +7,12 @@ import LibraryPageLayout from '~/components/library/LibraryPageLayout.vue'
 import SheetLibraryGrid from '~/components/library/SheetLibraryGrid.vue'
 import SheetLibraryIntroPanel from '~/components/library/SheetLibraryIntroPanel.vue'
 import {
-  buildFolderMoveDestinations,
   buildVisibleFolderTiles,
-  canMoveFolderTo,
-  folderLeafName,
-  isSameOrDescendantFolder,
-  joinFolderPath,
-  movedFolderPath,
-  parentFolderPath,
-  renameFolderPrefix,
   type FolderTile,
 } from '~/utils/folderBrowser'
 import {
   countFilteredSheetLibraryItems,
-  displaySheetLibraryName,
   filterVisibleSheetLibraryItems,
-  sheetLibraryKey,
   type SheetLibraryItem,
 } from '~/utils/sheetLibrary'
 import { useLibraryContextMenu } from '~/composables/library/useLibraryContextMenu'
@@ -31,6 +21,11 @@ import { useLibraryDragDrop } from '~/composables/library/useLibraryDragDrop'
 import { useLibraryDropMove } from '~/composables/library/useLibraryDropMove'
 import { useLibraryFolderCreation } from '~/composables/library/useLibraryFolderCreation'
 import { useLibraryFolderNavigation } from '~/composables/library/useLibraryFolderNavigation'
+import {
+  useSheetLibraryActions,
+  type SheetLibraryContextTarget,
+  type SheetLibraryDragPayload,
+} from '~/composables/library/useSheetLibraryActions'
 import { useSheetLibraryCreation } from '~/composables/library/useSheetLibraryCreation'
 import { useSheetLibraryData } from '~/composables/library/useSheetLibraryData'
 import { useWindowKeydown } from '~/composables/useWindowKeydown'
@@ -61,9 +56,6 @@ const {
   isPlayer,
   canLoadFolders: canDrag,
 })
-
-/** Display name for a sheet item (honours local rename overrides). */
-const displayName = displaySheetLibraryName
 
 // ---------------------------------------------------------------------------
 // Folder navigation. The current folder lives in the URL as `?folder=foo/bar`
@@ -115,27 +107,40 @@ const hasAnything = computed(
 // via `/api/sheets/move(-folder)` which write to disk.
 // ---------------------------------------------------------------------------
 
-interface DragSheet {
-  type: 'sheet'
-  kind: 'pokemon' | 'trainer'
-  slug: string
-  from: string
-}
-interface DragFolder {
-  type: 'folder'
-  path: string
-}
-type DragPayload = DragSheet | DragFolder
+type DragPayload = SheetLibraryDragPayload
 
-/** Drop validity check that takes an explicit payload, so it stays correct
- *  even after `drag.value` has been cleared (which `onDrop` does
- *  optimistically before awaiting the server). */
-const canDropPayloadOn = (d: DragPayload, targetPath: string): boolean => {
-  if (d.type === 'sheet') {
-    return d.from !== targetPath
-  }
-  return canMoveFolderTo(d.path, targetPath, allFolders.value)
-}
+const sheetActions = useSheetLibraryActions({
+  currentPath,
+  allFolders,
+  items,
+  extraFolders,
+  sheetOverrides,
+  folderRenames,
+  nameOverrides,
+  deletedSheets,
+  deletedFolders,
+  goToFolder,
+  moveSheet: ({ kind, slug, folder }) => $fetch('/api/sheets/move', {
+    method: 'POST',
+    body: { kind, slug, folder },
+  }),
+  moveFolder: ({ from, to }) => $fetch('/api/sheets/move-folder', {
+    method: 'POST',
+    body: { from, to },
+  }),
+  renameSheet: ({ kind, slug, name }) => $fetch('/api/sheets/rename', {
+    method: 'POST',
+    body: { kind, slug, name },
+  }),
+  deleteSheet: ({ kind, slug }) => $fetch('/api/sheets/delete', {
+    method: 'POST',
+    body: { kind, slug },
+  }),
+  deleteFolder: ({ folder }) => $fetch('/api/sheets/delete-folder', {
+    method: 'POST',
+    body: { folder },
+  }),
+})
 
 const {
   drag,
@@ -149,7 +154,7 @@ const {
   takeDropPayload,
 } = useLibraryDragDrop<DragPayload>({
   canDrag,
-  canDropPayloadOn,
+  canDropPayloadOn: sheetActions.canDropPayloadOn,
 })
 
 const isDraggingSheet = (item: SheetItem): boolean =>
@@ -179,26 +184,9 @@ const onFolderDragStart = (e: DragEvent, path: string) => {
   })
 }
 
-const performMove = async (d: DragPayload, targetPath: string) => {
-  if (d.type === 'sheet') {
-    await $fetch('/api/sheets/move', {
-      method: 'POST',
-      body: { kind: d.kind, slug: d.slug, folder: targetPath },
-    })
-    sheetOverrides[sheetLibraryKey(d.kind, d.slug)] = targetPath
-  } else {
-    const newPath = movedFolderPath(d.path, targetPath)
-    await $fetch('/api/sheets/move-folder', {
-      method: 'POST',
-      body: { from: d.path, to: newPath },
-    })
-    folderRenames.value = [...folderRenames.value, { from: d.path, to: newPath }]
-  }
-}
-
 const { moving, moveError, onDrop } = useLibraryDropMove<DragPayload>({
   takeDropPayload,
-  movePayload: performMove,
+  movePayload: sheetActions.movePayload,
   onError: (error) => console.error('[sheets] move failed', error),
 })
 
@@ -242,9 +230,7 @@ const {
 // Right-click context menu (Move / Rename / Delete)
 // ---------------------------------------------------------------------------
 
-type CtxTarget =
-  | { type: 'sheet'; item: SheetItem }
-  | { type: 'folder'; tile: FolderTile }
+type CtxTarget = SheetLibraryContextTarget
 
 const {
   ctx,
@@ -257,95 +243,17 @@ const {
   enterDelete,
 } = useLibraryContextMenu<CtxTarget>({
   canOpen: canDrag,
-  targetLabel: (target) => target.type === 'sheet' ? displayName(target.item) : target.tile.label,
-  renameInputForTarget: (target) => {
-    if (target.type === 'sheet') return displayName(target.item)
-    return folderLeafName(target.tile.path)
-  },
-  moveDestinationsForTarget: (target) => buildFolderMoveDestinations({
-    folderPaths: allFolders.value,
-    target: target.type === 'sheet'
-      ? { type: 'item', folder: target.item.folder }
-      : { type: 'folder', path: target.tile.path },
-  }),
+  targetLabel: sheetActions.targetLabel,
+  renameInputForTarget: sheetActions.renameInputForTarget,
+  moveDestinationsForTarget: sheetActions.moveDestinationsForTarget,
 })
-
-/** Apply a rename + the local override / rename log update. */
-const applyRenameSheet = async (item: SheetItem, newName: string) => {
-  await $fetch('/api/sheets/rename', {
-    method: 'POST',
-    body: { kind: item.kind, slug: item.slug, name: newName },
-  })
-  nameOverrides[sheetLibraryKey(item.kind, item.slug)] = newName
-}
-
-const applyRenameFolder = async (oldPath: string, newLeaf: string) => {
-  const parent = parentFolderPath(oldPath)
-  const newPath = joinFolderPath(parent, newLeaf)
-  if (newPath === oldPath) return
-  await $fetch('/api/sheets/move-folder', {
-    method: 'POST',
-    body: { from: oldPath, to: newPath },
-  })
-  folderRenames.value = [...folderRenames.value, { from: oldPath, to: newPath }]
-  // If we were inside the renamed folder, follow it.
-  if (isSameOrDescendantFolder(currentPath.value, oldPath)) {
-    goToFolder(renameFolderPrefix(currentPath.value, oldPath, newPath))
-  }
-}
 
 const { submitContext } = useLibraryContextSubmit<CtxTarget>({
   ctx,
   closeContext,
-  onMove: async (target, destination) => {
-    if (target.type === 'sheet') {
-      await performMove({
-        type: 'sheet',
-        kind: target.item.kind,
-        slug: target.item.slug,
-        from: target.item.folder,
-      }, destination)
-    } else {
-      await performMove({ type: 'folder', path: target.tile.path }, destination)
-    }
-  },
-  onRename: async (target, name) => {
-    if (target.type === 'sheet') {
-      await applyRenameSheet(target.item, name)
-    } else {
-      await applyRenameFolder(target.tile.path, name)
-    }
-  },
-  onDelete: async (target) => {
-    if (target.type === 'sheet') {
-      await $fetch('/api/sheets/delete', {
-        method: 'POST',
-        body: { kind: target.item.kind, slug: target.item.slug },
-      })
-      deletedSheets.add(sheetLibraryKey(target.item.kind, target.item.slug))
-      return
-    }
-
-    const path = target.tile.path
-    await $fetch('/api/sheets/delete-folder', {
-      method: 'POST',
-      body: { folder: path },
-    })
-    deletedFolders.add(path)
-    // Mark contained sheets as deleted so they vanish from the UI immediately.
-    for (const item of items.value) {
-      if (isSameOrDescendantFolder(item.folder, path)) {
-        deletedSheets.add(sheetLibraryKey(item.kind, item.slug))
-      }
-    }
-    for (const folder of [...extraFolders]) {
-      if (isSameOrDescendantFolder(folder, path)) extraFolders.delete(folder)
-    }
-    // If we're inside the deleted subtree, navigate to its parent.
-    if (isSameOrDescendantFolder(currentPath.value, path)) {
-      goToFolder(parentFolderPath(path))
-    }
-  },
+  onMove: sheetActions.moveTarget,
+  onRename: sheetActions.renameTarget,
+  onDelete: sheetActions.deleteTarget,
 })
 
 useWindowKeydown((event) => {
