@@ -2297,3 +2297,13 @@
   - `npm test` — passes: 99 test files / 370 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: initiative controls component
+
+- Extracted initiative heading, round input, turn controls, and utility buttons into `components/map/InitiativeControls.vue`.
+- Kept `InitiativeTracker` responsible for list rendering while the new controls component owns initiative action presentation and responsive control styling.
+- Preserved round edits, previous/next/start behavior, speed-fill/reset actions, disabled-state rules, and character-count badge copy.
+- Quality gates after this phase:
+  - `npm test` — passes: 99 test files / 370 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
