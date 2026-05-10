@@ -11,7 +11,7 @@ const filtered = computed(() => {
   const query = normalize(searchTerm.value)
   if (!query) return capabilities
   return capabilities.filter((cap) => {
-    const haystacks = [cap.name, cap.effect ?? '', cap.source ?? '']
+    const haystacks = [cap.name, cap.effect ?? '']
     return haystacks.some((value) => normalize(value).includes(query))
   })
 })
@@ -36,7 +36,7 @@ const filtered = computed(() => {
           <input
             v-model.trim="searchTerm"
             type="search"
-            placeholder="Search by name, effect, or source…"
+            placeholder="Search by name or effect…"
           />
         </label>
       </section>
@@ -53,7 +53,6 @@ const filtered = computed(() => {
         <div class="capability-row__body">
           <div class="ref-row__heading">
             <h2>{{ cap.name }}</h2>
-            <span v-if="cap.source" class="ref-row__freq">{{ cap.source }}</span>
           </div>
           <p v-if="cap.effect" class="ref-row__effect">{{ cap.effect }}</p>
         </div>

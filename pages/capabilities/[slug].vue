@@ -29,9 +29,6 @@ useHead(() => ({
         <div class="capability-detail-card__copy">
           <div class="detail-heading">
             <h1>{{ cap.name }}</h1>
-            <div class="detail-pills">
-              <span v-if="cap.source" class="badge">{{ cap.source }}</span>
-            </div>
           </div>
 
           <section v-if="cap.effect" class="field-block">
