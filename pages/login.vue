@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import type { AuthRole } from '~/composables/useAuth'
+import type { AuthRole } from '~/shared/auth'
+import { resolveLoginRedirectTarget } from '~/utils/loginRedirect'
 
 useHead({ title: 'Login · Rotom Table' })
 
@@ -7,20 +8,8 @@ const route = useRoute()
 const router = useRouter()
 const { role, roleLabel, loginAs } = useAuth()
 
-const playerBlockedRoutes = ['/generate', '/encounter-tables']
-
-const isSafeInternalRedirect = (value: unknown): value is string =>
-  typeof value === 'string' && value.startsWith('/') && !value.startsWith('//')
-
-const isPlayerBlockedPath = (path: string) =>
-  playerBlockedRoutes.some((blocked) => path === blocked || path.startsWith(`${blocked}/`))
-
-const redirectTarget = (nextRole: AuthRole) => {
-  const raw = route.query.redirect
-  const target = isSafeInternalRedirect(raw) ? raw : '/maps'
-  if (nextRole === 'player' && isPlayerBlockedPath(target)) return '/maps'
-  return target
-}
+const redirectTarget = (nextRole: AuthRole) =>
+  resolveLoginRedirectTarget(route.query.redirect, nextRole)
 
 const chooseRole = async (nextRole: AuthRole) => {
   loginAs(nextRole)

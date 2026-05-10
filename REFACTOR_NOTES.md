@@ -1928,3 +1928,13 @@
   - `npm test` — passes: 84 test files / 322 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: login redirect helper extraction
+
+- Extracted login redirect validation and player-blocked route fallback logic from `pages/login.vue` into `utils/loginRedirect.ts`.
+- Updated the login route to delegate redirect target resolution while preserving `/maps` fallback behavior, unsafe external redirect rejection, and player restrictions for generate/encounter-table routes.
+- Added `tests/utils/loginRedirect.test.ts` for safe internal redirect checks, blocked player paths, unsafe fallback behavior, and GM-vs-player redirects.
+- Quality gates after this phase:
+  - `npm test` — passes: 85 test files / 326 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
