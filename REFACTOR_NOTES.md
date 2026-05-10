@@ -2258,3 +2258,12 @@
   - `npm test` — passes: 99 test files / 370 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: map details heading reuse
+
+- Reused the shared `CollapsiblePanelHeading` in `components/map/MapDetailsPanel.vue` instead of keeping a duplicate collapsible sidebar heading implementation.
+- Removed map-details-local heading/badge styles while preserving the map title, dimension badge, collapse control, and `aria-controls` behavior.
+- Quality gates after this phase:
+  - `npm test` — passes: 99 test files / 370 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
