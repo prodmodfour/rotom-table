@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; map load is now a tested use case/thin route, with map list/folders still good candidates for further thinning.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; map CRUD/list/folder endpoints are now tested thin routes/use cases. Next candidates include auditing remaining server adapters such as events/SSE or another small UI/helper cleanup.
 
 ## Phase 0 baseline audit
 
@@ -3063,5 +3063,19 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; map load is now a tested 
 - Quality gates after this phase:
   - `npm test -- tests/server/loadMap.test.ts` — passes: 1 test file / 4 tests.
   - `npm test` — passes: 121 test files / 453 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: map list/folders use-case extraction
+
+- Extracted `/api/maps/list` and `/api/maps/folders` role-aware listing orchestration into `server/useCases/listMapLibrary.ts`.
+  - The use case now owns GM-vs-player map summary visibility and player-hidden folder behavior behind injectable listing dependencies.
+- Reduced `server/api/maps/list.get.ts` and `server/api/maps/folders.get.ts` to thin H3 adapters for auth plus use-case invocation.
+- Preserved existing response shapes and behavior: GM map lists keep storage ordering/identity, players only receive `playerVisible` summaries, and players receive no map folders.
+- Added `tests/server/listMapLibrary.test.ts` covering GM/player summary filtering, folder visibility, and storage-call suppression for player folder requests.
+- Next remaining phase: continue one bounded cleanup pass, with remaining candidates including auditing `server/api/events.get.ts`/SSE adapter boundaries or another focused UI/helper duplication cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/server/listMapLibrary.test.ts` — passes: 1 test file / 4 tests.
+  - `npm test` — passes: 122 test files / 457 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

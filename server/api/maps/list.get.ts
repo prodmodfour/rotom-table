@@ -7,10 +7,9 @@
  */
 import { defineEventHandler } from 'h3'
 import { requireAuthRole } from '../../utils/auth'
-import { listMaps } from '../../utils/mapStorage'
+import { listMapSummariesUseCase } from '../../useCases/listMapLibrary'
 
 export default defineEventHandler((event) => {
   const role = requireAuthRole(event)
-  const maps = listMaps()
-  return { maps: role === 'player' ? maps.filter((map) => map.playerVisible === true) : maps }
+  return listMapSummariesUseCase({ role })
 })

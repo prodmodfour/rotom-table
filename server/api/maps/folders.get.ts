@@ -6,9 +6,9 @@
  */
 import { defineEventHandler } from 'h3'
 import { requireAuthRole } from '../../utils/auth'
-import { listMapFolders } from '../../utils/mapStorage'
+import { listMapFoldersUseCase } from '../../useCases/listMapLibrary'
 
 export default defineEventHandler((event) => {
   const role = requireAuthRole(event)
-  return { folders: role === 'player' ? [] : listMapFolders() }
+  return listMapFoldersUseCase({ role })
 })
