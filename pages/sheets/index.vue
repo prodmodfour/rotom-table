@@ -31,6 +31,7 @@ import {
   type SheetLibraryItem,
 } from '~/utils/sheetLibrary'
 import { useLibraryContextMenu } from '~/composables/library/useLibraryContextMenu'
+import { useLibraryContextSubmit } from '~/composables/library/useLibraryContextSubmit'
 import { useLibraryDragDrop } from '~/composables/library/useLibraryDragDrop'
 import { useLibraryDropMove } from '~/composables/library/useLibraryDropMove'
 import { useLibraryFolderCreation } from '~/composables/library/useLibraryFolderCreation'
@@ -349,66 +350,59 @@ const applyRenameFolder = async (oldPath: string, newLeaf: string) => {
   }
 }
 
-const submitContext = async () => {
-  const c = ctx.value
-  if (!c || c.busy) return
-  c.busy = true
-  c.error = null
-  try {
-    if (c.mode === 'move') {
-      const dest = c.input
-      if (c.target.type === 'sheet') {
-        await performMove({ type: 'sheet', kind: c.target.item.kind, slug: c.target.item.slug, from: c.target.item.folder }, dest)
-      } else {
-        await performMove({ type: 'folder', path: c.target.tile.path }, dest)
-      }
-    } else if (c.mode === 'rename') {
-      const value = c.input.trim()
-      if (!value) {
-        c.error = 'Name required.'
-        return
-      }
-      if (c.target.type === 'sheet') {
-        await applyRenameSheet(c.target.item, value)
-      } else {
-        await applyRenameFolder(c.target.tile.path, value)
-      }
-    } else if (c.mode === 'delete') {
-      if (c.target.type === 'sheet') {
-        await $fetch('/api/sheets/delete', {
-          method: 'POST',
-          body: { kind: c.target.item.kind, slug: c.target.item.slug },
-        })
-        deletedSheets.add(sheetLibraryKey(c.target.item.kind, c.target.item.slug))
-      } else {
-        const path = c.target.tile.path
-        await $fetch('/api/sheets/delete-folder', {
-          method: 'POST',
-          body: { folder: path },
-        })
-        deletedFolders.add(path)
-        // Mark contained sheets as deleted so they vanish from the UI immediately.
-        for (const item of items.value) {
-          if (isSameOrDescendantFolder(item.folder, path)) {
-            deletedSheets.add(sheetLibraryKey(item.kind, item.slug))
-          }
-        }
-        for (const f of [...extraFolders]) {
-          if (isSameOrDescendantFolder(f, path)) extraFolders.delete(f)
-        }
-        // If we're inside the deleted subtree, navigate to its parent.
-        if (isSameOrDescendantFolder(currentPath.value, path)) {
-          goToFolder(parentFolderPath(path))
-        }
+const { submitContext } = useLibraryContextSubmit<CtxTarget>({
+  ctx,
+  closeContext,
+  onMove: async (target, destination) => {
+    if (target.type === 'sheet') {
+      await performMove({
+        type: 'sheet',
+        kind: target.item.kind,
+        slug: target.item.slug,
+        from: target.item.folder,
+      }, destination)
+    } else {
+      await performMove({ type: 'folder', path: target.tile.path }, destination)
+    }
+  },
+  onRename: async (target, name) => {
+    if (target.type === 'sheet') {
+      await applyRenameSheet(target.item, name)
+    } else {
+      await applyRenameFolder(target.tile.path, name)
+    }
+  },
+  onDelete: async (target) => {
+    if (target.type === 'sheet') {
+      await $fetch('/api/sheets/delete', {
+        method: 'POST',
+        body: { kind: target.item.kind, slug: target.item.slug },
+      })
+      deletedSheets.add(sheetLibraryKey(target.item.kind, target.item.slug))
+      return
+    }
+
+    const path = target.tile.path
+    await $fetch('/api/sheets/delete-folder', {
+      method: 'POST',
+      body: { folder: path },
+    })
+    deletedFolders.add(path)
+    // Mark contained sheets as deleted so they vanish from the UI immediately.
+    for (const item of items.value) {
+      if (isSameOrDescendantFolder(item.folder, path)) {
+        deletedSheets.add(sheetLibraryKey(item.kind, item.slug))
       }
     }
-    closeContext()
-  } catch (err: unknown) {
-    c.error = getErrorMessage(err)
-  } finally {
-    if (ctx.value) ctx.value.busy = false
-  }
-}
+    for (const folder of [...extraFolders]) {
+      if (isSameOrDescendantFolder(folder, path)) extraFolders.delete(folder)
+    }
+    // If we're inside the deleted subtree, navigate to its parent.
+    if (isSameOrDescendantFolder(currentPath.value, path)) {
+      goToFolder(parentFolderPath(path))
+    }
+  },
+})
 
 // On mount (client only) seed extraFolders from on-disk dirs so empty
 // folders persist across reloads.

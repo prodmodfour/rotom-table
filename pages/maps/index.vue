@@ -32,6 +32,7 @@ import {
 } from '~/utils/mapLibrary'
 import { useRealtimeChannel } from '~/composables/useRealtime'
 import { useLibraryContextMenu } from '~/composables/library/useLibraryContextMenu'
+import { useLibraryContextSubmit } from '~/composables/library/useLibraryContextSubmit'
 import { useLibraryDragDrop } from '~/composables/library/useLibraryDragDrop'
 import { useLibraryDropMove } from '~/composables/library/useLibraryDropMove'
 import { useLibraryFolderCreation } from '~/composables/library/useLibraryFolderCreation'
@@ -242,79 +243,69 @@ const {
   }),
 })
 
-const submitContext = async () => {
-  const c = ctx.value
-  if (!c || c.busy) return
-  c.busy = true
-  c.error = null
-  try {
-    if (c.mode === 'move') {
-      if (c.target.type === 'map') {
-        await performMove({ type: 'map', slug: c.target.item.slug, from: c.target.item.folder }, c.input)
-      } else {
-        await performMove({ type: 'folder', path: c.target.tile.path }, c.input)
-      }
-    } else if (c.mode === 'rename') {
-      const value = c.input.trim()
-      if (!value) {
-        c.error = 'Name required.'
-        return
-      }
-      if (c.target.type === 'map') {
-        const result = await $fetch<{ slug: string; name: string }>('/api/maps/rename', {
-          method: 'POST',
-          body: { slug: c.target.item.slug, name: value, clientId },
-        })
-        const existing = maps.get(c.target.item.slug)
-        if (existing) {
-          if (result.slug === existing.slug) {
-            maps.set(existing.slug, { ...existing, name: result.name })
-          } else {
-            maps.delete(existing.slug)
-            maps.set(result.slug, { ...existing, slug: result.slug, name: result.name })
-          }
-        }
-      } else {
-        const oldPath = c.target.tile.path
-        const parent = parentFolderPath(oldPath)
-        const newPath = joinFolderPath(parent, value)
-        if (newPath !== oldPath) {
-          await $fetch('/api/maps/move-folder', {
-            method: 'POST',
-            body: { from: oldPath, to: newPath, clientId },
-          })
-          await refresh()
-          if (isSameOrDescendantFolder(currentPath.value, oldPath)) {
-            goToFolder(renameFolderPrefix(currentPath.value, oldPath, newPath))
-          }
-        }
-      }
-    } else if (c.mode === 'delete') {
-      if (c.target.type === 'map') {
-        await $fetch('/api/maps/delete', {
-          method: 'POST',
-          body: { slug: c.target.item.slug, clientId },
-        })
-        maps.delete(c.target.item.slug)
-      } else {
-        const path = c.target.tile.path
-        await $fetch('/api/maps/delete-folder', {
-          method: 'POST',
-          body: { folder: path, clientId },
-        })
-        deleteMapFolderFromLibrary({ maps, extraFolders }, path)
-        if (isSameOrDescendantFolder(currentPath.value, path)) {
-          goToFolder(parentFolderPath(path))
-        }
-      }
+const { submitContext } = useLibraryContextSubmit<CtxTarget>({
+  ctx,
+  closeContext,
+  onMove: async (target, destination) => {
+    if (target.type === 'map') {
+      await performMove({ type: 'map', slug: target.item.slug, from: target.item.folder }, destination)
+    } else {
+      await performMove({ type: 'folder', path: target.tile.path }, destination)
     }
-    closeContext()
-  } catch (err: unknown) {
-    c.error = getErrorMessage(err)
-  } finally {
-    if (ctx.value) ctx.value.busy = false
-  }
-}
+  },
+  onRename: async (target, name) => {
+    if (target.type === 'map') {
+      const result = await $fetch<{ slug: string; name: string }>('/api/maps/rename', {
+        method: 'POST',
+        body: { slug: target.item.slug, name, clientId },
+      })
+      const existing = maps.get(target.item.slug)
+      if (existing) {
+        if (result.slug === existing.slug) {
+          maps.set(existing.slug, { ...existing, name: result.name })
+        } else {
+          maps.delete(existing.slug)
+          maps.set(result.slug, { ...existing, slug: result.slug, name: result.name })
+        }
+      }
+      return
+    }
+
+    const oldPath = target.tile.path
+    const parent = parentFolderPath(oldPath)
+    const newPath = joinFolderPath(parent, name)
+    if (newPath === oldPath) return
+
+    await $fetch('/api/maps/move-folder', {
+      method: 'POST',
+      body: { from: oldPath, to: newPath, clientId },
+    })
+    await refresh()
+    if (isSameOrDescendantFolder(currentPath.value, oldPath)) {
+      goToFolder(renameFolderPrefix(currentPath.value, oldPath, newPath))
+    }
+  },
+  onDelete: async (target) => {
+    if (target.type === 'map') {
+      await $fetch('/api/maps/delete', {
+        method: 'POST',
+        body: { slug: target.item.slug, clientId },
+      })
+      maps.delete(target.item.slug)
+      return
+    }
+
+    const path = target.tile.path
+    await $fetch('/api/maps/delete-folder', {
+      method: 'POST',
+      body: { folder: path, clientId },
+    })
+    deleteMapFolderFromLibrary({ maps, extraFolders }, path)
+    if (isSameOrDescendantFolder(currentPath.value, path)) {
+      goToFolder(parentFolderPath(path))
+    }
+  },
+})
 
 useWindowKeydown((event) => {
   if (isEscapeKey(event)) closeContext()

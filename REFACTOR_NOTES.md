@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; shared library drop-move persistence is now isolated, but small UI/helper cleanup remains and the refactor is not marked complete.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; shared library context-menu submit flow is now isolated, but small UI/helper cleanup remains and the refactor is not marked complete.
 
 ## Phase 0 baseline audit
 
@@ -2836,5 +2836,17 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; shared library drop-move 
 - Quality gates after this phase:
   - `npm test -- tests/composables/library/useLibraryDropMove.test.ts tests/composables/library/useLibraryDragDrop.test.ts tests/composables/library/useLibraryFolderCreation.test.ts` — passes: 3 test files / 13 tests.
   - `npm test` — passes: 105 test files / 391 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: shared library context-menu submit flow
+
+- Extracted the duplicated maps/sheets library context-menu submit state machine into `composables/library/useLibraryContextSubmit.ts`.
+- Updated `pages/maps/index.vue` and `pages/sheets/index.vue` to inject route-specific move, rename, and delete persistence handlers while the shared composable owns busy/error lifecycle, rename validation, error normalization, and close-on-success behavior.
+- Added `tests/composables/library/useLibraryContextSubmit.test.ts` covering missing/busy guards, move/rename/delete submission, blank rename validation, and normalized handler errors.
+- Next remaining phase: continue one small bounded cleanup pass on remaining library/map/reference presentation or helper duplication; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/composables/library/useLibraryContextSubmit.test.ts tests/composables/library/useLibraryContextMenu.test.ts` — passes: 2 test files / 10 tests.
+  - `npm test` — passes: 106 test files / 396 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
