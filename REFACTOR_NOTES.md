@@ -2440,3 +2440,13 @@
   - `npm test` — passes: 100 test files / 374 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: map move automation overlay component
+
+- Extracted move-automation dialog presentation/wiring from `MapScenePanel` into `components/map/MapMoveAutomationOverlay.vue`.
+- The overlay now owns the `MoveAutomationDialog` null-user guard and forwards close/apply events through a narrow component contract.
+- Further reduced `MapScenePanel` to compose scene status, renderer, and overlay concerns without directly importing the automation dialog.
+- Quality gates after this phase:
+  - `npm test` — passes: 100 test files / 374 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

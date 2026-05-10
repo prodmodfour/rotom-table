@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import MapMoveAutomationOverlay from '~/components/map/MapMoveAutomationOverlay.vue'
 import MapSceneRenderer from '~/components/map/MapSceneRenderer.vue'
 import MapSceneStatus from '~/components/map/MapSceneStatus.vue'
-import MoveAutomationDialog from '~/components/MoveAutomationDialog.vue'
 import type { BuildTool } from '~/shared/mapEditor'
 import type { CharacterSheetMove } from '~/types/characterSheet'
 import type { CombatStageMap } from '~/types/combatStages'
@@ -123,8 +123,7 @@ defineExpose({ focusPokemon })
       />
       <MapSceneStatus v-else :status="status" :error="error" :slug="slug" />
 
-      <MoveAutomationDialog
-        v-if="moveAutomationUser"
+      <MapMoveAutomationOverlay
         :user="moveAutomationUser"
         :moves="moveAutomationMoves"
         :all-tokens="spawnedPokemon"
