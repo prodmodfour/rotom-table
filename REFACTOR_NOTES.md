@@ -1828,3 +1828,13 @@
   - `npm test` — passes: 84 test files / 322 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: condition grouped list component
+
+- Extracted the Conditions index grouped result list into `components/reference/ConditionIndexGroupedList.vue`.
+- Reduced `pages/conditions/index.vue` to search state, filtering/grouping derivation, and reference shell composition.
+- Preserved condition category headings, condition tag badges, source badges, effect previews, route links, and empty-state copy.
+- Quality gates after this phase:
+  - `npm test` — passes: 84 test files / 322 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
