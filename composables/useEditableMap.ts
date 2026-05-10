@@ -23,6 +23,7 @@ import { onBeforeUnmount, ref, watch, type Ref } from 'vue'
 import { getClientId } from '~/utils/clientId'
 import { mapChannel } from '~/shared/realtime'
 import { deepCloneJson, sameJsonValue, stableJsonStringify } from '~/utils/serialization'
+import { getErrorMessage } from '~/utils/errorMessages'
 import { useRealtimeChannel } from './useRealtime'
 import type { TabletopMap } from '~/types/map'
 
@@ -136,8 +137,7 @@ export const useEditableMap = (slug: string, debounceMs = 200): UseEditableMapRe
     } catch (err: unknown) {
       if (seq !== saveSeq) return
       status.value = 'error'
-      const e = err as { statusMessage?: string; data?: { statusMessage?: string }; message?: string }
-      error.value = e?.statusMessage ?? e?.data?.statusMessage ?? e?.message ?? String(err)
+      error.value = getErrorMessage(err)
       console.error('[useEditableMap] save failed', err)
     }
   }
@@ -163,7 +163,7 @@ export const useEditableMap = (slug: string, debounceMs = 200): UseEditableMapRe
         return
       }
       status.value = 'error'
-      error.value = e?.statusMessage ?? e?.message ?? String(err)
+      error.value = getErrorMessage(err)
       console.error('[useEditableMap] load failed', err)
     }
   }

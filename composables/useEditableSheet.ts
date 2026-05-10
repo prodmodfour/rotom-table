@@ -20,6 +20,7 @@ import { getCurrentInstance, onBeforeUnmount, ref, watch, type Ref } from 'vue'
 import { getClientId } from '~/utils/clientId'
 import { sheetChannel } from '~/shared/realtime'
 import { deepCloneJson, stableJsonStringify } from '~/utils/serialization'
+import { getErrorMessage } from '~/utils/errorMessages'
 import { subscribeChannel } from './useRealtime'
 import type { SheetKind } from '~/shared/sheets'
 
@@ -99,8 +100,7 @@ export function useEditableSheet<T extends { slug: string }>(
     } catch (err: unknown) {
       if (seq !== saveSeq) return
       saveStatus.value = 'error'
-      const e = err as { statusMessage?: string; data?: { statusMessage?: string }; message?: string }
-      saveError.value = e?.statusMessage ?? e?.data?.statusMessage ?? e?.message ?? String(err)
+      saveError.value = getErrorMessage(err)
       console.error('[useEditableSheet] save failed', err)
     }
   }

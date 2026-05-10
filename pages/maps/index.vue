@@ -15,6 +15,7 @@ import {
   type FolderTile,
 } from '~/utils/folderBrowser'
 import { getClientId } from '~/utils/clientId'
+import { getErrorMessage } from '~/utils/errorMessages'
 import {
   applyMapLibraryRealtimeEvent,
   deleteMapFolderFromLibrary,
@@ -56,8 +57,7 @@ const refresh = async () => {
     extraFolders.clear()
     for (const folder of folders.folders) extraFolders.add(folder)
   } catch (err: unknown) {
-    const e = err as { statusMessage?: string; message?: string }
-    loadError.value = e?.statusMessage ?? e?.message ?? String(err)
+    loadError.value = getErrorMessage(err)
   } finally {
     loading.value = false
   }
@@ -199,8 +199,7 @@ const onDrop = async (e: DragEvent, targetPath: string) => {
   try {
     await performMove(d, targetPath)
   } catch (err: unknown) {
-    const e2 = err as { statusMessage?: string; message?: string }
-    moveError.value = e2?.statusMessage ?? e2?.message ?? String(err)
+    moveError.value = getErrorMessage(err)
   } finally {
     moving.value = false
   }
@@ -221,8 +220,7 @@ const createNewFolder = async () => {
     })
     extraFolders.add(fullPath)
   } catch (err: unknown) {
-    const e = err as { statusMessage?: string; message?: string }
-    createError.value = e?.statusMessage ?? e?.message ?? String(err)
+    createError.value = getErrorMessage(err)
   } finally {
     creating.value = false
   }
@@ -240,8 +238,7 @@ const createNewMap = async () => {
     maps.set(result.map.slug, tabletopMapToSummary(result.map))
     router.push(`/maps/${result.map.slug}`)
   } catch (err: unknown) {
-    const e = err as { statusMessage?: string; message?: string }
-    createError.value = e?.statusMessage ?? e?.message ?? String(err)
+    createError.value = getErrorMessage(err)
   } finally {
     creating.value = false
   }
@@ -346,8 +343,7 @@ const submitContext = async () => {
     }
     closeContext()
   } catch (err: unknown) {
-    const e = err as { statusMessage?: string; message?: string }
-    c.error = e?.statusMessage ?? e?.message ?? String(err)
+    c.error = getErrorMessage(err)
   } finally {
     if (ctx.value) ctx.value.busy = false
   }

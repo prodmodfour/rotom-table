@@ -1988,3 +1988,13 @@
   - `npm test` — passes: 88 test files / 333 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: shared client error-message helper
+
+- Added `utils/errorMessages.ts` to normalize Nuxt `$fetch`, runtime `Error`, primitive string, and nullish error values into stable user-facing messages.
+- Updated editable map/sheet autosave and maps/sheets library pages to use the shared helper instead of repeating `statusMessage`/`data.statusMessage`/`message` fallback chains.
+- Added `tests/utils/errorMessages.test.ts` covering HTTP status messages, Nuxt fetch data messages, `Error.message`, primitive strings, and nullish fallbacks.
+- Quality gates after this phase:
+  - `npm test` — passes: 89 test files / 337 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

@@ -26,6 +26,7 @@ import {
 } from '~/utils/sheetLibrary'
 import { useLibraryContextMenu } from '~/composables/library/useLibraryContextMenu'
 import { useLibraryDragDrop } from '~/composables/library/useLibraryDragDrop'
+import { getErrorMessage } from '~/utils/errorMessages'
 
 useHead({
   title: 'Sheets · Rotom Table',
@@ -255,9 +256,8 @@ const onDrop = async (e: DragEvent, targetPath: string) => {
   moveError.value = null
   try {
     await performMove(d, targetPath)
-  } catch (err: any) {
-    const msg = err?.statusMessage ?? err?.data?.statusMessage ?? err?.message ?? String(err)
-    moveError.value = msg
+  } catch (err: unknown) {
+    moveError.value = getErrorMessage(err)
     console.error('[sheets] move failed', err)
   } finally {
     moving.value = false
@@ -303,8 +303,8 @@ const createSheet = async (kind: 'pokemon' | 'trainer') => {
       ? `/sheets/${res.slug}`
       : `/sheets/trainers/${res.slug}`
     window.location.href = dest
-  } catch (err: any) {
-    sheetCreateError.value = err?.statusMessage ?? err?.data?.statusMessage ?? err?.message ?? String(err)
+  } catch (err: unknown) {
+    sheetCreateError.value = getErrorMessage(err)
     creatingSheet.value = false
   }
 }
@@ -323,8 +323,8 @@ const createNewFolder = async () => {
       body: { folder: fullPath },
     })
     extraFolders.add(fullPath)
-  } catch (err: any) {
-    createError.value = err?.statusMessage ?? err?.data?.statusMessage ?? err?.message ?? String(err)
+  } catch (err: unknown) {
+    createError.value = getErrorMessage(err)
   } finally {
     creating.value = false
   }
@@ -444,8 +444,8 @@ const submitContext = async () => {
       }
     }
     closeContext()
-  } catch (err: any) {
-    c.error = err?.statusMessage ?? err?.data?.statusMessage ?? err?.message ?? String(err)
+  } catch (err: unknown) {
+    c.error = getErrorMessage(err)
   } finally {
     if (ctx.value) ctx.value.busy = false
   }
