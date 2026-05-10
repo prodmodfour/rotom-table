@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import CollapsiblePanelHeading from '~/components/map/CollapsiblePanelHeading.vue'
+import CollapsiblePanelCard from '~/components/map/CollapsiblePanelCard.vue'
 import FieldEffectBulkActions from '~/components/map/FieldEffectBulkActions.vue'
 import FieldEffectSection from '~/components/map/FieldEffectSection.vue'
 import FieldEffectWeatherOptions from '~/components/map/FieldEffectWeatherOptions.vue'
@@ -65,123 +65,78 @@ const setRoomRounds = (kind: string, value: Event) =>
 </script>
 
 <template>
-  <section class="panel-card field-effects-panel">
-    <CollapsiblePanelHeading
-      title="Field effects"
-      :badge="`${fieldEffectCount} active`"
-      :collapsed="collapsed"
-      controls-id="map-field-effects-section"
-      @toggle-collapsed="emit('toggle-collapsed')"
+  <CollapsiblePanelCard
+    class="field-effects-panel"
+    title="Field effects"
+    :badge="`${fieldEffectCount} active`"
+    :collapsed="collapsed"
+    controls-id="map-field-effects-section"
+    wide-gap
+    @toggle-collapsed="emit('toggle-collapsed')"
+  >
+    <FieldEffectSection
+      title="Weather"
+      aria-label="Weather"
+      :effects="weatherPalette"
+      :active-effects="activeWeatherEffects"
+      :can-edit-map="canEditMap"
+      :is-active="weatherIsActive"
+      :definition="weatherDefinition"
+      :duration-label="durationLabel"
+      :clear-disabled="!activeWeatherEffects.length"
+      clearable
+      flush-top
+      empty-text="Clear / normal weather."
+      @select="selectWeather"
+      @clear="emit('clear-weather')"
+      @set-rounds="setWeatherRounds"
+      @remove="removeWeather"
+    >
+      <FieldEffectWeatherOptions
+        :can-edit-map="canEditMap"
+        :active-weather-count="activeWeatherEffects.length"
+        :weather-coexist-next="weatherCoexistNext"
+        @update-weather-coexist-next="emit('update-weather-coexist-next', $event)"
+      />
+    </FieldEffectSection>
+
+    <FieldEffectSection
+      title="Terrain"
+      aria-label="Terrain effects"
+      note="Field-wide toggles"
+      :effects="terrainPalette"
+      :active-effects="activeTerrainEffects"
+      :can-edit-map="canEditMap"
+      :is-active="terrainIsActive"
+      :definition="terrainDefinition"
+      :duration-label="durationLabel"
+      empty-text="No active terrain field effect."
+      @select="toggleTerrain"
+      @set-rounds="setTerrainRounds"
+      @remove="removeTerrain"
     />
 
-    <div id="map-field-effects-section" v-show="!collapsed" class="collapsible-section-body">
-      <FieldEffectSection
-        title="Weather"
-        aria-label="Weather"
-        :effects="weatherPalette"
-        :active-effects="activeWeatherEffects"
-        :can-edit-map="canEditMap"
-        :is-active="weatherIsActive"
-        :definition="weatherDefinition"
-        :duration-label="durationLabel"
-        :clear-disabled="!activeWeatherEffects.length"
-        clearable
-        flush-top
-        empty-text="Clear / normal weather."
-        @select="selectWeather"
-        @clear="emit('clear-weather')"
-        @set-rounds="setWeatherRounds"
-        @remove="removeWeather"
-      >
-        <FieldEffectWeatherOptions
-          :can-edit-map="canEditMap"
-          :active-weather-count="activeWeatherEffects.length"
-          :weather-coexist-next="weatherCoexistNext"
-          @update-weather-coexist-next="emit('update-weather-coexist-next', $event)"
-        />
-      </FieldEffectSection>
+    <FieldEffectSection
+      title="Rooms"
+      aria-label="Room effects"
+      note="Independent"
+      :effects="roomPalette"
+      :active-effects="activeRoomEffects"
+      :can-edit-map="canEditMap"
+      :is-active="roomIsActive"
+      :definition="roomDefinition"
+      :duration-label="durationLabel"
+      empty-text="No active room."
+      @select="toggleRoom"
+      @set-rounds="setRoomRounds"
+      @remove="removeRoom"
+    />
 
-      <FieldEffectSection
-        title="Terrain"
-        aria-label="Terrain effects"
-        note="Field-wide toggles"
-        :effects="terrainPalette"
-        :active-effects="activeTerrainEffects"
-        :can-edit-map="canEditMap"
-        :is-active="terrainIsActive"
-        :definition="terrainDefinition"
-        :duration-label="durationLabel"
-        empty-text="No active terrain field effect."
-        @select="toggleTerrain"
-        @set-rounds="setTerrainRounds"
-        @remove="removeTerrain"
-      />
-
-      <FieldEffectSection
-        title="Rooms"
-        aria-label="Room effects"
-        note="Independent"
-        :effects="roomPalette"
-        :active-effects="activeRoomEffects"
-        :can-edit-map="canEditMap"
-        :is-active="roomIsActive"
-        :definition="roomDefinition"
-        :duration-label="durationLabel"
-        empty-text="No active room."
-        @select="toggleRoom"
-        @set-rounds="setRoomRounds"
-        @remove="removeRoom"
-      />
-
-      <FieldEffectBulkActions
-        :can-edit-map="canEditMap"
-        :field-effect-count="fieldEffectCount"
-        @tick-durations="emit('tick-durations')"
-        @clear-all="emit('clear-all')"
-      />
-    </div>
-  </section>
+    <FieldEffectBulkActions
+      :can-edit-map="canEditMap"
+      :field-effect-count="fieldEffectCount"
+      @tick-durations="emit('tick-durations')"
+      @clear-all="emit('clear-all')"
+    />
+  </CollapsiblePanelCard>
 </template>
-
-<style scoped>
-.panel-card {
-  border: 1px solid var(--rule);
-  border-radius: 14px;
-  background: var(--paper-soft);
-  box-shadow: var(--shadow-card);
-  padding: 0.95rem;
-}
-
-.collapsible-section-body {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-input {
-  width: 100%;
-  border: 1px solid var(--rule-soft);
-  border-radius: 10px;
-  background: var(--paper);
-  color: var(--ink);
-  padding: 0.65rem 0.8rem;
-  outline: none;
-}
-
-input:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px rgba(250, 189, 47, 0.18);
-}
-
-input:disabled {
-  cursor: not-allowed;
-  opacity: 0.65;
-}
-
-.field-effects-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 0.85rem;
-}
-
-</style>

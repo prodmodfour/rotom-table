@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import CollapsiblePanelHeading from '~/components/map/CollapsiblePanelHeading.vue'
+import CollapsiblePanelCard from '~/components/map/CollapsiblePanelCard.vue'
 import { checkedValueFromEvent, looseNumberFromEvent } from '~/utils/domEvents'
 import type { GridDimensions } from '~/types/map'
 
@@ -23,83 +23,65 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <section class="panel-card map-details-panel">
-    <CollapsiblePanelHeading
-      :title="name"
-      :badge="`${dimensions.x} × ${dimensions.y} × ${dimensions.z}`"
-      :collapsed="collapsed"
-      controls-id="map-details-section"
-      @toggle-collapsed="emit('toggle-collapsed')"
-    />
+  <CollapsiblePanelCard
+    class="map-details-panel"
+    :title="name"
+    :badge="`${dimensions.x} × ${dimensions.y} × ${dimensions.z}`"
+    :collapsed="collapsed"
+    controls-id="map-details-section"
+    @toggle-collapsed="emit('toggle-collapsed')"
+  >
+    <label v-if="isGm" class="visibility-toggle" :class="{ active: playerVisible }">
+      <input
+        :checked="playerVisible === true"
+        type="checkbox"
+        @change="emit('update-player-visible', checkedValueFromEvent($event))"
+      />
+      Player visible
+    </label>
+    <p v-else class="permission-note">
+      Player view: this map is visible, but GM-only map settings are locked.
+    </p>
 
-    <div id="map-details-section" v-show="!collapsed" class="collapsible-section-body">
-      <label v-if="isGm" class="visibility-toggle" :class="{ active: playerVisible }">
+    <div class="dimension-grid">
+      <label>
+        <span>Width (X)</span>
         <input
-          :checked="playerVisible === true"
-          type="checkbox"
-          @change="emit('update-player-visible', checkedValueFromEvent($event))"
+          :value="dimensions.x"
+          type="number"
+          min="1"
+          max="200"
+          :disabled="!canEditMap"
+          @input="emit('update-dimension', 'x', looseNumberFromEvent($event))"
         />
-        Player visible
       </label>
-      <p v-else class="permission-note">
-        Player view: this map is visible, but GM-only map settings are locked.
-      </p>
-
-      <div class="dimension-grid">
-        <label>
-          <span>Width (X)</span>
-          <input
-            :value="dimensions.x"
-            type="number"
-            min="1"
-            max="200"
-            :disabled="!canEditMap"
-            @input="emit('update-dimension', 'x', looseNumberFromEvent($event))"
-          />
-        </label>
-        <label>
-          <span>Height (Y)</span>
-          <input
-            :value="dimensions.y"
-            type="number"
-            min="1"
-            max="200"
-            :disabled="!canEditMap"
-            @input="emit('update-dimension', 'y', looseNumberFromEvent($event))"
-          />
-        </label>
-        <label>
-          <span>Depth (Z)</span>
-          <input
-            :value="dimensions.z"
-            type="number"
-            min="1"
-            max="200"
-            :disabled="!canEditMap"
-            @input="emit('update-dimension', 'z', looseNumberFromEvent($event))"
-          />
-        </label>
-      </div>
+      <label>
+        <span>Height (Y)</span>
+        <input
+          :value="dimensions.y"
+          type="number"
+          min="1"
+          max="200"
+          :disabled="!canEditMap"
+          @input="emit('update-dimension', 'y', looseNumberFromEvent($event))"
+        />
+      </label>
+      <label>
+        <span>Depth (Z)</span>
+        <input
+          :value="dimensions.z"
+          type="number"
+          min="1"
+          max="200"
+          :disabled="!canEditMap"
+          @input="emit('update-dimension', 'z', looseNumberFromEvent($event))"
+        />
+      </label>
     </div>
-  </section>
+  </CollapsiblePanelCard>
 </template>
 
 <style scoped>
-.panel-card {
-  border: 1px solid var(--rule);
-  border-radius: 14px;
-  background: var(--paper-soft);
-  box-shadow: var(--shadow-card);
-  padding: 0.95rem;
-}
-
-.map-details-panel,
-.collapsible-section-body {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
 .visibility-toggle {
   display: inline-flex;
   align-items: center;

@@ -2390,3 +2390,13 @@
   - `npm test` — passes: 99 test files / 370 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: collapsible map panel shell
+
+- Extracted shared collapsible map panel chrome into `components/map/CollapsiblePanelCard.vue`.
+- Updated map details, terrain/hazards, and field-effects panels to compose the shared card while preserving heading badges, collapse behavior, panel spacing, and existing emits.
+- Removed duplicated panel-card and collapsible-body styles from those focused panel components.
+- Quality gates after this phase:
+  - `npm test` — passes: 99 test files / 370 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
