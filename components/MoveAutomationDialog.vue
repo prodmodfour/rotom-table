@@ -2,6 +2,7 @@
 import { computed, reactive, ref, watch } from 'vue'
 import MoveAutomationDialogFooter from '~/components/move-automation/MoveAutomationDialogFooter.vue'
 import MoveAutomationDialogHeader from '~/components/move-automation/MoveAutomationDialogHeader.vue'
+import MoveAutomationDialogShell from '~/components/move-automation/MoveAutomationDialogShell.vue'
 import MoveAutomationStepIndicator from '~/components/move-automation/MoveAutomationStepIndicator.vue'
 import { damageFormulaForMove } from '~/utils/moveAutomation'
 import { parseHazardCellText } from '~/utils/moveAutomationDialog'
@@ -210,109 +211,81 @@ const apply = () => emit('apply', transaction.value)
 </script>
 
 <template>
-  <div class="move-automation-backdrop" @pointerdown.self="emit('close')" @contextmenu.prevent>
-    <section class="move-automation" role="dialog" aria-modal="true" :aria-labelledby="overlayTitleId" @pointerdown.stop>
-      <MoveAutomationDialogHeader
-        :title-id="overlayTitleId"
-        :user-species="user.species"
-        @close="emit('close')"
+  <MoveAutomationDialogShell :title-id="overlayTitleId" @close="emit('close')">
+    <MoveAutomationDialogHeader
+      :title-id="overlayTitleId"
+      :user-species="user.species"
+      @close="emit('close')"
+    />
+
+    <MoveAutomationStepIndicator :active-step="step" />
+
+    <div v-if="!moveEntries.length" class="move-automation__empty">
+      This sheet has no moves in its movelist.
+    </div>
+
+    <template v-else>
+      <MoveAutomationPickStep
+        v-if="step === 0"
+        v-model:search="search"
+        :entries="filteredMoveEntries"
+        :selected-move-name="selectedEntry?.move.name ?? null"
+        @select-move="selectMove"
       />
 
-      <MoveAutomationStepIndicator :active-step="step" />
-
-      <div v-if="!moveEntries.length" class="move-automation__empty">
-        This sheet has no moves in its movelist.
-      </div>
-
-      <template v-else>
-        <MoveAutomationPickStep
-          v-if="step === 0"
-          v-model:search="search"
-          :entries="filteredMoveEntries"
-          :selected-move-name="selectedEntry?.move.name ?? null"
-          @select-move="selectMove"
-        />
-
-        <MoveAutomationResolveStep
-          v-else-if="step === 1 && script"
-          v-model:manual-user-conditions="manualUserConditions"
-          v-model:manual-target-conditions="manualTargetConditions"
-          v-model:hazard-cells-text="hazardCellsText"
-          v-model:manual-note="manualNote"
-          :user="user"
-          :script="script"
-          :selected-entry="selectedEntry"
-          :selected-move-formula="selectedMoveFormula"
-          :target-options="targetOptions"
-          :selected-targets="selectedTargets"
-          :target-ids="targetIds"
-          :requires-targets="requiresTargets"
-          :can-apply-map-effects="canApplyMapEffects"
-          :hp-suggestion-amounts="hpSuggestionAmounts"
-          :manual-user-stage-deltas="manualUserStageDeltas"
-          :manual-target-stage-deltas="manualTargetStageDeltas"
-          :ensure-target-resolution="ensureTargetResolution"
-          :target-damage-loss="targetDamageLoss"
-          :multiplier-label="multiplierLabel"
-          :suggestion-enabled="suggestionEnabled"
-          :suggestion-key="suggestionKey"
-          @toggle-target="toggleTarget"
-          @roll-all="rollAll"
-          @roll-accuracy="rollAccuracy"
-          @roll-damage="rollDamage"
-          @set-suggestion-enabled="setSuggestionEnabled"
-          @set-hp-suggestion-amount="setHpSuggestionAmount"
-          @set-user-stage-delta="setUserStageDelta"
-          @set-target-stage-delta="setTargetStageDelta"
-          @add-user-cell-to-hazard-text="addUserCellToHazardText"
-        />
-
-        <MoveAutomationReviewStep
-          v-else-if="step === 2"
-          :transaction="transaction"
-          :all-tokens="allTokens"
-        />
-      </template>
-
-      <MoveAutomationDialogFooter
-        :step="step"
-        :can-continue="canContinue"
-        @close="emit('close')"
-        @back="previousStep"
-        @next="nextStep"
-        @apply="apply"
+      <MoveAutomationResolveStep
+        v-else-if="step === 1 && script"
+        v-model:manual-user-conditions="manualUserConditions"
+        v-model:manual-target-conditions="manualTargetConditions"
+        v-model:hazard-cells-text="hazardCellsText"
+        v-model:manual-note="manualNote"
+        :user="user"
+        :script="script"
+        :selected-entry="selectedEntry"
+        :selected-move-formula="selectedMoveFormula"
+        :target-options="targetOptions"
+        :selected-targets="selectedTargets"
+        :target-ids="targetIds"
+        :requires-targets="requiresTargets"
+        :can-apply-map-effects="canApplyMapEffects"
+        :hp-suggestion-amounts="hpSuggestionAmounts"
+        :manual-user-stage-deltas="manualUserStageDeltas"
+        :manual-target-stage-deltas="manualTargetStageDeltas"
+        :ensure-target-resolution="ensureTargetResolution"
+        :target-damage-loss="targetDamageLoss"
+        :multiplier-label="multiplierLabel"
+        :suggestion-enabled="suggestionEnabled"
+        :suggestion-key="suggestionKey"
+        @toggle-target="toggleTarget"
+        @roll-all="rollAll"
+        @roll-accuracy="rollAccuracy"
+        @roll-damage="rollDamage"
+        @set-suggestion-enabled="setSuggestionEnabled"
+        @set-hp-suggestion-amount="setHpSuggestionAmount"
+        @set-user-stage-delta="setUserStageDelta"
+        @set-target-stage-delta="setTargetStageDelta"
+        @add-user-cell-to-hazard-text="addUserCellToHazardText"
       />
-    </section>
-  </div>
+
+      <MoveAutomationReviewStep
+        v-else-if="step === 2"
+        :transaction="transaction"
+        :all-tokens="allTokens"
+      />
+    </template>
+
+    <MoveAutomationDialogFooter
+      :step="step"
+      :can-continue="canContinue"
+      @close="emit('close')"
+      @back="previousStep"
+      @next="nextStep"
+      @apply="apply"
+    />
+  </MoveAutomationDialogShell>
 </template>
 
 <style scoped>
-.move-automation-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 30;
-  display: grid;
-  place-items: center;
-  padding: 1rem;
-  background: rgba(29, 32, 33, 0.56);
-  backdrop-filter: blur(3px);
-}
-
-.move-automation {
-  display: flex;
-  flex-direction: column;
-  gap: 0.8rem;
-  width: min(1120px, 96vw);
-  max-height: min(92vh, 980px);
-  overflow: hidden;
-  border: 1px solid var(--rule-soft);
-  border-radius: 18px;
-  background: var(--paper-soft);
-  box-shadow: var(--shadow-card);
-  color: var(--ink);
-}
-
-
 .move-automation__empty {
   min-height: 0;
   overflow: auto;

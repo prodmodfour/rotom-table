@@ -2611,3 +2611,12 @@
   - `npm test` — passes: 102 test files / 381 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: move automation dialog shell
+
+- Extracted the move-automation backdrop/dialog chrome into `components/move-automation/MoveAutomationDialogShell.vue`.
+- `MoveAutomationDialog` now focuses on wizard state and step composition while preserving backdrop close behavior, context-menu suppression, ARIA labelling, sizing, and dialog styling.
+- Quality gates after this phase:
+  - `npm test` — passes: 102 test files / 381 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
