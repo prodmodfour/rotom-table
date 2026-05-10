@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; map create is now a tested use case/thin route, with map rename/move/folder endpoints still good candidates for further thinning.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; map create and map rename are now tested use cases/thin routes, with map move and map folder mutation endpoints still good candidates for further thinning.
 
 ## Phase 0 baseline audit
 
@@ -2963,5 +2963,19 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; map create is now a teste
 - Quality gates after this phase:
   - `npm test -- tests/server/createMap.test.ts` — passes: 1 test file / 5 tests.
   - `npm test` — passes: 114 test files / 426 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: map rename use-case extraction
+
+- Extracted `/api/maps/rename` orchestration into `server/useCases/renameMap.ts`.
+  - The use case now owns slug/name validation, current-map lookup, slug-change decisions, unique slug allocation fallback, filesystem rename/write calls behind injectable dependencies, response path formatting, and compatible realtime event construction.
+- Reduced `server/api/maps/rename.post.ts` to a thin H3 adapter for GM auth, body reading, use-case invocation, realtime publish, and HTTP error translation.
+- Preserved existing rename behavior: blank/long names and bad slugs keep compatible status messages, names that slugify to the current slug only update metadata, slug-changing renames emit old/new map events plus a `maps` rename event, and conflict/not-found responses remain compatible.
+- Added `tests/server/renameMap.test.ts` covering in-place display-name updates, slug-changing file renames, allocated slug fallback when the desired slug exists elsewhere, bad input, missing maps, and destination conflicts.
+- Next remaining phase: continue map endpoint thinning, especially `server/api/maps/move.post.ts` and map folder mutation endpoints; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/server/renameMap.test.ts` — passes: 1 test file / 4 tests.
+  - `npm test` — passes: 115 test files / 430 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

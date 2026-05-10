@@ -12,112 +12,38 @@
  * Request body: `{ slug: string, name: string, clientId?: string }`
  * Response:     `{ ok: true, slug: string, name: string, path: string }`
  */
-import { existsSync, renameSync } from 'node:fs'
-import { dirname, join } from 'node:path'
 import { createError, defineEventHandler, readBody } from 'h3'
-import { mapChannel, mapsChannel } from '~/shared/realtime'
 import { publishRealtime } from '../../utils/realtime'
 import { requireGm } from '../../utils/auth'
-import { PROJECT_ROOT } from '../../utils/fsPaths'
-import {
-  SLUG_RE,
-  allocateSlug,
-  findMapFile,
-  readMapFile,
-  slugify,
-  summarizeMap,
-  writeMapFile,
-} from '../../utils/mapStorage'
+import { renameMapUseCase, RenameMapUseCaseError } from '../../useCases/renameMap'
 
 interface RenameBody {
-  slug?: string
-  name?: string
-  clientId?: string
+  slug?: unknown
+  name?: unknown
+  clientId?: unknown
 }
 
 export default defineEventHandler(async (event) => {
   requireGm(event)
-  const body = await readBody<RenameBody>(event)
-  const slug = String(body?.slug ?? '')
-  if (!SLUG_RE.test(slug)) {
-    throw createError({ statusCode: 400, statusMessage: 'slug must match /^[a-z0-9-]+$/' })
-  }
-  const name = String(body?.name ?? '').trim()
-  if (!name) throw createError({ statusCode: 400, statusMessage: 'name is required' })
-  if (name.length > 80) {
-    throw createError({ statusCode: 400, statusMessage: 'name too long (max 80 chars)' })
-  }
+  const body = await readBody<RenameBody | null>(event)
 
-  const path = findMapFile(slug)
-  if (!path) {
-    throw createError({ statusCode: 404, statusMessage: `Map ${slug}.json not found` })
-  }
-
-  const map = readMapFile(path)
-
-  // Decide whether the slug also changes. Only re-slugify when the
-  // candidate is non-empty and differs from the current slug — that
-  // way a name like "!!!" (slugifies to '') leaves the slug alone.
-  const desired = slugify(name)
-  let newSlug = slug
-  let newPath = path
-  if (desired && desired !== slug) {
-    newSlug = findMapFile(desired) ? allocateSlug(name) : desired
-    newPath = join(dirname(path), `${newSlug}.json`)
-    if (existsSync(newPath)) {
-      throw createError({
-        statusCode: 409,
-        statusMessage: `Map ${newSlug}.json already exists`,
-      })
+  try {
+    const result = renameMapUseCase({
+      slug: body?.slug,
+      name: body?.name,
+      clientId: typeof body?.clientId === 'string' ? body.clientId : undefined,
+    })
+    for (const realtimeEvent of result.events) publishRealtime(realtimeEvent)
+    return {
+      ok: true as const,
+      slug: result.slug,
+      name: result.name,
+      path: result.path,
     }
-    renameSync(path, newPath)
-    map.slug = newSlug
-  }
-
-  map.name = name
-  map.updatedAt = Date.now()
-  writeMapFile(newPath, map)
-
-  const summary = summarizeMap(map)
-
-  if (newSlug !== slug) {
-    publishRealtime({
-      channel: mapChannel(slug),
-      type: 'renamed',
-      clientId: body?.clientId,
-      data: { oldSlug: slug, newSlug, map },
-    })
-    publishRealtime({
-      channel: mapChannel(newSlug),
-      type: 'updated',
-      clientId: body?.clientId,
-      data: map,
-    })
-    publishRealtime({
-      channel: mapsChannel,
-      type: 'renamed',
-      clientId: body?.clientId,
-      data: { oldSlug: slug, summary },
-    })
-  } else {
-    publishRealtime({
-      channel: mapChannel(slug),
-      type: 'updated',
-      clientId: body?.clientId,
-      data: map,
-    })
-    publishRealtime({
-      channel: mapsChannel,
-      type: 'updated',
-      clientId: body?.clientId,
-      data: summary,
-    })
-  }
-
-  return {
-    ok: true as const,
-    slug: newSlug,
-    name,
-    path: newPath.slice(PROJECT_ROOT.length + 1),
+  } catch (err) {
+    if (err instanceof RenameMapUseCaseError) {
+      throw createError({ statusCode: err.statusCode, statusMessage: err.message })
+    }
+    throw err
   }
 })
