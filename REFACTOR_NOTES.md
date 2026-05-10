@@ -1888,3 +1888,13 @@
   - `npm test` — passes: 84 test files / 322 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: move detail article component
+
+- Extracted the move detail article, heading badges, stat strip, and effect block into `components/reference/MoveDetailArticle.vue`.
+- Reduced `pages/moves/[slug].vue` to route lookup, metadata, shared detail shell, and not-found handling.
+- Preserved move type/damage-class/frequency badges, DB/AC/range stats, effect text, and missing-move copy.
+- Quality gates after this phase:
+  - `npm test` — passes: 84 test files / 322 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
