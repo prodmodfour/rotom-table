@@ -2079,3 +2079,13 @@
   - `npm test` — passes: 93 test files / 351 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: save indicator helper extraction
+
+- Extracted save-status label and error-title normalization into `utils/saveIndicator.ts`.
+- Updated `components/SaveIndicator.vue` to delegate status copy/title rules to the focused helper while keeping pill presentation and status styling local.
+- Added `tests/utils/saveIndicator.test.ts` covering idle/saving/saved/error labels and nullable title normalization.
+- Quality gates after this phase:
+  - `npm test` — passes: 94 test files / 353 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

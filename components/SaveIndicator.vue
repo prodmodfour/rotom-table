@@ -5,6 +5,7 @@
  * what they see.
  */
 import type { SaveStatus } from '~/composables/useEditableSheet'
+import { saveIndicatorLabel, saveIndicatorTitle } from '~/utils/saveIndicator'
 
 interface Props {
   status: SaveStatus
@@ -15,20 +16,12 @@ const props = withDefaults(defineProps<Props>(), {
   error: null,
 })
 
-const labelText = (status: SaveStatus): string => {
-  switch (status) {
-    case 'saving': return 'Saving…'
-    case 'saved':  return 'Saved'
-    case 'error':  return 'Save failed'
-    default:       return 'Edit any cell to save'
-  }
-}
 </script>
 
 <template>
-  <span class="save-pill" :data-status="props.status" :title="props.error ?? ''">
+  <span class="save-pill" :data-status="props.status" :title="saveIndicatorTitle(props.error)">
     <span class="save-pill__dot" aria-hidden="true"></span>
-    <span class="save-pill__text">{{ labelText(props.status) }}</span>
+    <span class="save-pill__text">{{ saveIndicatorLabel(props.status) }}</span>
   </span>
 </template>
 
