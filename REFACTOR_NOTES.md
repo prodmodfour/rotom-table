@@ -1808,3 +1808,13 @@
   - `npm test` — passes: 84 test files / 322 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: feature detail article component
+
+- Extracted the feature detail article, tag heading, class note, field blocks, and sibling-feature list into `components/reference/FeatureDetailArticle.vue`.
+- Reduced `pages/features/[slug].vue` to route lookup, metadata, sibling derivation, shared shell, and not-found handling.
+- Preserved feature tag pills, class links, all detail fields, sibling feature links/tags, and missing-feature copy.
+- Quality gates after this phase:
+  - `npm test` — passes: 84 test files / 322 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
