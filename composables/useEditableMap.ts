@@ -22,6 +22,7 @@
 import { onBeforeUnmount, ref, watch, type Ref } from 'vue'
 import { getClientId } from '~/utils/clientId'
 import { mapChannel } from '~/shared/realtime'
+import { createDebouncedAutosaveTask, createLatestSaveGuard } from '~/utils/autosave'
 import { deepCloneJson, sameJsonValue, stableJsonStringify } from '~/utils/serialization'
 import { getErrorMessage } from '~/utils/errorMessages'
 import { useRealtimeChannel } from './useRealtime'
@@ -46,16 +47,9 @@ export const useEditableMap = (slug: string, debounceMs = 200): UseEditableMapRe
   const renamedTo = ref<string | null>(null)
 
   let lastServerJson = ''
-  let pendingTimer: ReturnType<typeof setTimeout> | null = null
-  let saveSeq = 0
   const clientId = getClientId()
-
-  const cancelPending = () => {
-    if (pendingTimer != null) {
-      clearTimeout(pendingTimer)
-      pendingTimer = null
-    }
-  }
+  const saveGuard = createLatestSaveGuard()
+  const saveTask = createDebouncedAutosaveTask(() => performSave(), debounceMs)
 
   const assignIfChanged = <K extends keyof TabletopMap>(
     target: TabletopMap,
@@ -116,9 +110,8 @@ export const useEditableMap = (slug: string, debounceMs = 200): UseEditableMapRe
   }
 
   const performSave = async () => {
-    cancelPending()
     if (!map.value) return
-    const seq = ++saveSeq
+    const seq = saveGuard.begin()
     const snapshot: TabletopMap = JSON.parse(JSON.stringify(map.value))
     status.value = 'saving'
     error.value = null
@@ -127,7 +120,7 @@ export const useEditableMap = (slug: string, debounceMs = 200): UseEditableMapRe
         method: 'POST',
         body: { slug, map: snapshot, clientId },
       })
-      if (seq !== saveSeq) return
+      if (!saveGuard.isLatest(seq)) return
       // Adopt the persisted version (server stamps `updatedAt`).
       lastServerJson = stableJsonStringify(result.map)
       // Splice in the new updatedAt without disturbing other fields the
@@ -135,7 +128,7 @@ export const useEditableMap = (slug: string, debounceMs = 200): UseEditableMapRe
       if (map.value) map.value.updatedAt = result.map.updatedAt
       status.value = 'saved'
     } catch (err: unknown) {
-      if (seq !== saveSeq) return
+      if (!saveGuard.isLatest(seq)) return
       status.value = 'error'
       error.value = getErrorMessage(err)
       console.error('[useEditableMap] save failed', err)
@@ -143,8 +136,7 @@ export const useEditableMap = (slug: string, debounceMs = 200): UseEditableMapRe
   }
 
   const saveNow = async () => {
-    cancelPending()
-    await performSave()
+    await saveTask.runNow()
   }
 
   const reload = async () => {
@@ -174,12 +166,8 @@ export const useEditableMap = (slug: string, debounceMs = 200): UseEditableMapRe
       if (!current) return
       const json = stableJsonStringify(current)
       if (json === lastServerJson) return
-      cancelPending()
       status.value = 'saving'
-      pendingTimer = setTimeout(() => {
-        pendingTimer = null
-        void performSave()
-      }, debounceMs)
+      saveTask.schedule()
     },
     { deep: true },
   )
@@ -199,7 +187,7 @@ export const useEditableMap = (slug: string, debounceMs = 200): UseEditableMapRe
       if (!payload.newSlug) return
       // The file moved on disk — drop any pending save (its slug is
       // gone) and let the page navigate to the new URL.
-      cancelPending()
+      saveTask.cancel()
       if (payload.map) {
         lastServerJson = stableJsonStringify(payload.map)
         applyServerMap(payload.map)
@@ -210,12 +198,14 @@ export const useEditableMap = (slug: string, debounceMs = 200): UseEditableMapRe
   })
 
   onBeforeUnmount(() => {
-    if (pendingTimer != null) {
-      cancelPending()
-      // Skip flushing the pending save when the slug was renamed away
-      // from us — the old filename no longer exists on disk.
-      if (!renamedTo.value) void performSave()
+    if (!saveTask.hasPending()) return
+    // Skip flushing the pending save when the slug was renamed away
+    // from us — the old filename no longer exists on disk.
+    if (renamedTo.value) {
+      saveTask.cancel()
+      return
     }
+    void saveTask.flushPending()
   })
 
   void reload()

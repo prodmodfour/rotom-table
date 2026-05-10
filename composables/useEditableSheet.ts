@@ -19,6 +19,7 @@
 import { getCurrentInstance, onBeforeUnmount, ref, watch, type Ref } from 'vue'
 import { getClientId } from '~/utils/clientId'
 import { sheetChannel } from '~/shared/realtime'
+import { createDebouncedAutosaveTask, createLatestSaveGuard } from '~/utils/autosave'
 import { deepCloneJson, stableJsonStringify } from '~/utils/serialization'
 import { getErrorMessage } from '~/utils/errorMessages'
 import { subscribeChannel } from './useRealtime'
@@ -63,23 +64,17 @@ export function useEditableSheet<T extends { slug: string }>(
   const jsonFor = (value: T): string => stableJsonStringify(toPersistedPayload(value))
   const hasUnsavedChanges = (): boolean => jsonFor(sheet.value) !== lastServerJson
 
-  // Track the latest "intended" payload so a save that races with a newer
-  // edit always wins (the older save returns into a stale state).
-  let saveSeq = 0
-  let pendingTimer: ReturnType<typeof setTimeout> | null = null
   // Mirrors what's persisted on disk; used by the deep watcher to skip
   // saves when the only change came from an SSE update.
   let lastServerJson = jsonFor(initial)
+  const saveGuard = createLatestSaveGuard()
+  const saveTask = createDebouncedAutosaveTask(() => performSave(), debounceMs)
 
   const cancelPendingSave = () => {
-    if (pendingTimer != null) {
-      clearTimeout(pendingTimer)
-      pendingTimer = null
-    }
+    saveTask.cancel()
   }
 
   const performSave = async () => {
-    cancelPendingSave()
     const payload = toPersistedPayload(sheet.value)
     const payloadJson = stableJsonStringify(payload)
     if (payloadJson === lastServerJson) {
@@ -87,7 +82,7 @@ export function useEditableSheet<T extends { slug: string }>(
       return
     }
 
-    const seq = ++saveSeq
+    const seq = saveGuard.begin()
     saveStatus.value = 'saving'
     saveError.value = null
     try {
@@ -96,9 +91,9 @@ export function useEditableSheet<T extends { slug: string }>(
         body: { kind, slug: sheet.value.slug, sheet: payload, clientId },
       })
       lastServerJson = payloadJson
-      if (seq === saveSeq) saveStatus.value = 'saved'
+      if (saveGuard.isLatest(seq)) saveStatus.value = 'saved'
     } catch (err: unknown) {
-      if (seq !== saveSeq) return
+      if (!saveGuard.isLatest(seq)) return
       saveStatus.value = 'error'
       saveError.value = getErrorMessage(err)
       console.error('[useEditableSheet] save failed', err)
@@ -106,20 +101,15 @@ export function useEditableSheet<T extends { slug: string }>(
   }
 
   const saveNow = async () => {
-    cancelPendingSave()
-    await performSave()
+    await saveTask.runNow()
   }
 
   watch(
     sheet,
     (current) => {
       if (jsonFor(current) === lastServerJson) return
-      cancelPendingSave()
       saveStatus.value = 'saving'
-      pendingTimer = setTimeout(() => {
-        pendingTimer = null
-        void performSave()
-      }, debounceMs)
+      saveTask.schedule()
     },
     { deep: true },
   )
@@ -144,7 +134,7 @@ export function useEditableSheet<T extends { slug: string }>(
 
   const flushWithBeacon = () => {
     if (!hasUnsavedChanges()) return
-    cancelPendingSave()
+    saveTask.cancel()
 
     const payload = toPersistedPayload(sheet.value)
     const payloadJson = stableJsonStringify(payload)
@@ -194,7 +184,7 @@ export function useEditableSheet<T extends { slug: string }>(
 
   if (getCurrentInstance()) {
     onBeforeUnmount(() => {
-      if (hasUnsavedChanges()) void performSave()
+      if (hasUnsavedChanges()) void saveTask.runNow()
       unsubscribe?.()
       unsubscribe = null
       removeUnloadFlushers?.()
