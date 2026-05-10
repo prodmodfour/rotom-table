@@ -27,6 +27,24 @@ export interface DebouncedAutosaveTaskTimers {
   clearTimeout?: (handle: ReturnType<typeof setTimeout>) => void
 }
 
+export type JsonUnloadRequestTransport = 'beacon' | 'fetch' | 'none'
+
+export interface JsonUnloadRequestResult {
+  transport: JsonUnloadRequestTransport
+  queued: boolean
+}
+
+export interface JsonUnloadRequestTransports {
+  sendBeacon?: (url: string, data: BodyInit) => boolean
+  fetch?: (url: string, init: RequestInit) => unknown
+  createBlob?: (body: string, options: BlobPropertyBag) => BodyInit
+}
+
+export interface AutosaveUnloadEventTarget {
+  addEventListener: (type: 'pagehide' | 'beforeunload', listener: () => void) => void
+  removeEventListener: (type: 'pagehide' | 'beforeunload', listener: () => void) => void
+}
+
 /**
  * Coordinates one debounced async task without coupling the caller to timer
  * bookkeeping. The task is fire-and-forget when the debounce timer elapses;
@@ -125,5 +143,80 @@ export const createAutosaveSnapshotTracker = <T>(
     isClean: (value: T) => serialize(value) === lastCleanJson,
     isCleanJson: (json: string) => json === lastCleanJson,
     isDirty: (value: T) => serialize(value) !== lastCleanJson,
+  }
+}
+
+/**
+ * Best-effort JSON write for page-unload autosaves. Prefer sendBeacon when
+ * available because browsers are allowed to abort ordinary async work during
+ * unload; fall back to fetch(..., keepalive: true) for browsers/environments
+ * without beacon support.
+ */
+export const sendJsonWithUnloadFallback = (
+  url: string,
+  body: string,
+  transports: JsonUnloadRequestTransports = {},
+): JsonUnloadRequestResult => {
+  const sendBeacon =
+    transports.sendBeacon ??
+    (typeof navigator !== 'undefined' && typeof navigator.sendBeacon === 'function'
+      ? navigator.sendBeacon.bind(navigator)
+      : undefined)
+
+  if (sendBeacon) {
+    try {
+      const createBlob =
+        transports.createBlob ??
+        ((value: string, options: BlobPropertyBag): BodyInit => new Blob([value], options))
+      if (sendBeacon(url, createBlob(body, { type: 'application/json' }))) {
+        return { transport: 'beacon', queued: true }
+      }
+    } catch {
+      // Fall through to keepalive fetch below.
+    }
+  }
+
+  const fetcher =
+    transports.fetch ??
+    (typeof fetch === 'function' ? fetch.bind(globalThis) : undefined)
+
+  if (fetcher) {
+    try {
+      void fetcher(url, {
+        method: 'POST',
+        body,
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        keepalive: true,
+      })
+      return { transport: 'fetch', queued: true }
+    } catch {
+      // The page is unloading; there is nowhere useful to surface this.
+    }
+  }
+
+  return { transport: 'none', queued: false }
+}
+
+/**
+ * Binds the two browser lifecycle events used for unload autosave flushing and
+ * returns an idempotent remover. Tests can inject a minimal event target.
+ */
+export const bindAutosaveUnloadFlushers = (
+  flush: () => void,
+  target: AutosaveUnloadEventTarget | undefined =
+    typeof window !== 'undefined' ? window : undefined,
+): (() => void) | null => {
+  if (!target) return null
+
+  target.addEventListener('pagehide', flush)
+  target.addEventListener('beforeunload', flush)
+
+  let removed = false
+  return () => {
+    if (removed) return
+    removed = true
+    target.removeEventListener('pagehide', flush)
+    target.removeEventListener('beforeunload', flush)
   }
 }

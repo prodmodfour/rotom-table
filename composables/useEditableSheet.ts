@@ -20,9 +20,11 @@ import { getCurrentInstance, onBeforeUnmount, ref, watch, type Ref } from 'vue'
 import { getClientId } from '~/utils/clientId'
 import { sheetChannel } from '~/shared/realtime'
 import {
+  bindAutosaveUnloadFlushers,
   createAutosaveSnapshotTracker,
   createDebouncedAutosaveTask,
   createLatestSaveGuard,
+  sendJsonWithUnloadFallback,
 } from '~/utils/autosave'
 import { deepCloneJson, stableJsonStringify } from '~/utils/serialization'
 import { getErrorMessage } from '~/utils/errorMessages'
@@ -143,48 +145,16 @@ export function useEditableSheet<T extends { slug: string }>(
     const payload = toPersistedPayload(sheet.value)
     const payloadJson = stableJsonStringify(payload)
     const body = JSON.stringify({ kind, slug: sheet.value.slug, sheet: payload, clientId })
-    let queued = false
 
-    try {
-      if (typeof navigator !== 'undefined' && typeof navigator.sendBeacon === 'function') {
-        queued = navigator.sendBeacon(
-          '/api/sheets/save',
-          new Blob([body], { type: 'application/json' }),
-        )
-      }
-    } catch {
-      queued = false
-    }
+    sendJsonWithUnloadFallback('/api/sheets/save', body)
 
-    if (!queued) {
-      try {
-        void fetch('/api/sheets/save', {
-          method: 'POST',
-          body,
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'same-origin',
-          keepalive: true,
-        })
-      } catch {
-        // The page is unloading; there is nowhere useful to surface this.
-      }
-    }
-
-    // If the browser accepted the unload request, treat this tab as clean so
+    // Treat this tab as clean once the unload request was attempted so
     // `beforeunload` + `pagehide` don't queue duplicate writes.
     serverSnapshot.markCleanJson(payloadJson)
     saveStatus.value = 'saved'
   }
 
-  let removeUnloadFlushers: (() => void) | null = null
-  if (typeof window !== 'undefined') {
-    window.addEventListener('pagehide', flushWithBeacon)
-    window.addEventListener('beforeunload', flushWithBeacon)
-    removeUnloadFlushers = () => {
-      window.removeEventListener('pagehide', flushWithBeacon)
-      window.removeEventListener('beforeunload', flushWithBeacon)
-    }
-  }
+  let removeUnloadFlushers: (() => void) | null = bindAutosaveUnloadFlushers(flushWithBeacon)
 
   if (getCurrentInstance()) {
     onBeforeUnmount(() => {

@@ -1,8 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
+  bindAutosaveUnloadFlushers,
   createAutosaveSnapshotTracker,
   createDebouncedAutosaveTask,
   createLatestSaveGuard,
+  sendJsonWithUnloadFallback,
 } from '~/utils/autosave'
 
 describe('createDebouncedAutosaveTask', () => {
@@ -106,5 +108,89 @@ describe('createAutosaveSnapshotTracker', () => {
     expect(tracker.markCleanJson(nextJson)).toBe(nextJson)
     expect(tracker.isCleanJson(nextJson)).toBe(true)
     expect(tracker.isClean({ name: 'new' })).toBe(true)
+  })
+})
+
+describe('sendJsonWithUnloadFallback', () => {
+  const blobFactory = (body: string, options: BlobPropertyBag): BodyInit =>
+    ({ body, type: options.type }) as unknown as BodyInit
+
+  it('prefers sendBeacon with an application/json blob', () => {
+    const sendBeacon = vi.fn(() => true)
+    const fetcher = vi.fn()
+
+    const result = sendJsonWithUnloadFallback('/api/save', '{"ok":true}', {
+      sendBeacon,
+      fetch: fetcher,
+      createBlob: blobFactory,
+    })
+
+    expect(result).toEqual({ transport: 'beacon', queued: true })
+    expect(sendBeacon).toHaveBeenCalledWith('/api/save', { body: '{"ok":true}', type: 'application/json' })
+    expect(fetcher).not.toHaveBeenCalled()
+  })
+
+  it('falls back to keepalive fetch when beacon is unavailable or rejected', () => {
+    const sendBeacon = vi.fn(() => false)
+    const fetcher = vi.fn()
+
+    const result = sendJsonWithUnloadFallback('/api/save', '{"ok":true}', {
+      sendBeacon,
+      fetch: fetcher,
+      createBlob: blobFactory,
+    })
+
+    expect(result).toEqual({ transport: 'fetch', queued: true })
+    expect(fetcher).toHaveBeenCalledWith('/api/save', {
+      method: 'POST',
+      body: '{"ok":true}',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      keepalive: true,
+    })
+  })
+
+  it('reports no queued unload request when both transports fail', () => {
+    const result = sendJsonWithUnloadFallback('/api/save', '{}', {
+      sendBeacon: vi.fn(() => {
+        throw new Error('beacon failed')
+      }),
+      fetch: vi.fn(() => {
+        throw new Error('fetch failed')
+      }),
+      createBlob: blobFactory,
+    })
+
+    expect(result).toEqual({ transport: 'none', queued: false })
+  })
+})
+
+describe('bindAutosaveUnloadFlushers', () => {
+  it('binds and removes pagehide and beforeunload listeners once', () => {
+    const listeners = new Map<string, () => void>()
+    const target = {
+      addEventListener: vi.fn((type: 'pagehide' | 'beforeunload', listener: () => void) => {
+        listeners.set(type, listener)
+      }),
+      removeEventListener: vi.fn((type: 'pagehide' | 'beforeunload', listener: () => void) => {
+        if (listeners.get(type) === listener) listeners.delete(type)
+      }),
+    }
+    const flush = vi.fn()
+
+    const remove = bindAutosaveUnloadFlushers(flush, target)
+
+    expect(remove).toEqual(expect.any(Function))
+    expect(target.addEventListener).toHaveBeenCalledWith('pagehide', flush)
+    expect(target.addEventListener).toHaveBeenCalledWith('beforeunload', flush)
+    listeners.get('pagehide')?.()
+    listeners.get('beforeunload')?.()
+    expect(flush).toHaveBeenCalledTimes(2)
+
+    remove?.()
+    remove?.()
+
+    expect(target.removeEventListener).toHaveBeenCalledTimes(2)
+    expect(listeners.size).toBe(0)
   })
 })
