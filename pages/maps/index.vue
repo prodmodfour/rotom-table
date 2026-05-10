@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import AppNavigation from '~/components/AppNavigation.vue'
 import FolderBreadcrumbNav from '~/components/library/FolderBreadcrumbNav.vue'
@@ -8,10 +8,6 @@ import LibraryPageLayout from '~/components/library/LibraryPageLayout.vue'
 import MapLibraryGrid from '~/components/library/MapLibraryGrid.vue'
 import MapLibraryIntroPanel from '~/components/library/MapLibraryIntroPanel.vue'
 import { formatFolderLabel } from '~/utils/sheetFolders'
-import {
-  buildVisibleFolderTiles,
-  type FolderTile,
-} from '~/utils/folderBrowser'
 import { getClientId } from '~/utils/clientId'
 import {
   buildMapFolderSet,
@@ -30,6 +26,7 @@ import { useLibraryDragDrop } from '~/composables/library/useLibraryDragDrop'
 import { useLibraryDropMove } from '~/composables/library/useLibraryDropMove'
 import { useLibraryFolderCreation } from '~/composables/library/useLibraryFolderCreation'
 import { useLibraryFolderNavigation } from '~/composables/library/useLibraryFolderNavigation'
+import { useLibraryGridView } from '~/composables/library/useLibraryGridView'
 import { useMapLibraryCreation } from '~/composables/library/useMapLibraryCreation'
 import { useWindowKeydown } from '~/composables/useWindowKeydown'
 import { isEscapeKey } from '~/utils/keyboardShortcuts'
@@ -73,27 +70,19 @@ const { creating, createError, createNewFolder } = useLibraryFolderCreation({
   onCreated: (folder) => extraFolders.add(folder),
 })
 
-const searchTerm = ref('')
-
-const visibleMaps = computed(() => filterVisibleMaps({
-  items: items.value,
-  currentPath: currentPath.value,
-  searchTerm: searchTerm.value,
-}))
-
-const visibleFolders = computed<FolderTile[]>(() => {
-  if (searchTerm.value) return []
-  return buildVisibleFolderTiles({
-    folderPaths: allFolders.value,
-    currentPath: currentPath.value,
-    items: items.value,
-    formatLabel: formatFolderLabel,
-  })
+const {
+  searchTerm,
+  visibleItems: visibleMaps,
+  visibleFolders,
+  hasAnything,
+  totalCount: mapCount,
+} = useLibraryGridView<MapSummary>({
+  items,
+  folderPaths: allFolders,
+  currentPath,
+  filterVisibleItems: filterVisibleMaps,
+  formatFolderLabel,
 })
-
-const hasAnything = computed(
-  () => visibleMaps.value.length > 0 || visibleFolders.value.length > 0,
-)
 
 type DragPayload = MapLibraryDragPayload
 
@@ -217,7 +206,7 @@ useWindowKeydown((event) => {
 
       <MapLibraryIntroPanel
         v-model:search-term="searchTerm"
-        :map-count="items.length"
+        :map-count="mapCount"
         :is-gm="isGm"
         :creating="creating"
         :load-error="loadError"

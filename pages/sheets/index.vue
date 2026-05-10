@@ -1,15 +1,11 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import AppNavigation from '~/components/AppNavigation.vue'
 import FolderBreadcrumbNav from '~/components/library/FolderBreadcrumbNav.vue'
 import LibraryContextMenu from '~/components/library/LibraryContextMenu.vue'
 import LibraryPageLayout from '~/components/library/LibraryPageLayout.vue'
 import SheetLibraryGrid from '~/components/library/SheetLibraryGrid.vue'
 import SheetLibraryIntroPanel from '~/components/library/SheetLibraryIntroPanel.vue'
-import {
-  buildVisibleFolderTiles,
-  type FolderTile,
-} from '~/utils/folderBrowser'
 import {
   countFilteredSheetLibraryItems,
   filterVisibleSheetLibraryItems,
@@ -21,6 +17,7 @@ import { useLibraryDragDrop } from '~/composables/library/useLibraryDragDrop'
 import { useLibraryDropMove } from '~/composables/library/useLibraryDropMove'
 import { useLibraryFolderCreation } from '~/composables/library/useLibraryFolderCreation'
 import { useLibraryFolderNavigation } from '~/composables/library/useLibraryFolderNavigation'
+import { useLibraryGridView } from '~/composables/library/useLibraryGridView'
 import {
   useSheetLibraryActions,
   type SheetLibraryContextTarget,
@@ -67,39 +64,20 @@ const { currentPath, goToFolder, breadcrumbs } = useLibraryFolderNavigation({
   routePath: '/sheets',
 })
 
-// ---------------------------------------------------------------------------
-// Search and filtering
-// ---------------------------------------------------------------------------
-
-const searchTerm = ref('')
-
-/** Sheets shown in the main grid. While searching, we flatten the entire
- *  subtree under the current folder; otherwise we show only sheets that live
- *  *directly* in the current folder. */
-const visibleSheets = computed<SheetItem[]>(() => filterVisibleSheetLibraryItems({
-  items: items.value,
-  currentPath: currentPath.value,
-  searchTerm: searchTerm.value,
-}))
-
-/** Folder tiles shown alongside the sheet cards — direct subfolders of
- *  ``currentPath``. Hidden during search to avoid noise. */
-const visibleFolders = computed<FolderTile[]>(() => {
-  if (searchTerm.value) return []
-  return buildVisibleFolderTiles({
-    folderPaths: allFolders.value,
-    currentPath: currentPath.value,
-    items: items.value,
-  })
+const {
+  searchTerm,
+  visibleItems: visibleSheets,
+  visibleFolders,
+  hasAnything,
+  totalCount,
+  filteredCount,
+} = useLibraryGridView<SheetItem>({
+  items,
+  folderPaths: allFolders,
+  currentPath,
+  filterVisibleItems: filterVisibleSheetLibraryItems,
+  countFilteredItems: countFilteredSheetLibraryItems,
 })
-
-// Counts shown in the intro badge.
-const totalCount = computed(() => items.value.length)
-const filteredCount = computed(() => countFilteredSheetLibraryItems(items.value, searchTerm.value))
-
-const hasAnything = computed(
-  () => visibleSheets.value.length > 0 || visibleFolders.value.length > 0,
-)
 
 // ---------------------------------------------------------------------------
 // Drag and drop. Drop targets are folder tiles and breadcrumb items; the
