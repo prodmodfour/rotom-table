@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import IsometricGrid from '~/components/IsometricGrid.client.vue'
+import MapSceneRenderer from '~/components/map/MapSceneRenderer.vue'
 import MapSceneStatus from '~/components/map/MapSceneStatus.vue'
 import MoveAutomationDialog from '~/components/MoveAutomationDialog.vue'
 import type { BuildTool } from '~/shared/mapEditor'
@@ -22,7 +22,7 @@ import type { TrainerMove } from '~/types/trainerSheet'
 import type { MapSaveStatus } from '~/composables/useEditableMap'
 import type { PreviewState } from '~/utils/grid'
 
-interface IsometricGridHandle {
+interface MapSceneRendererHandle {
   focusPokemon: (id: string) => boolean
 }
 
@@ -74,9 +74,9 @@ const emit = defineEmits<{
   (event: 'apply-move-automation', transaction: MoveAutomationTransaction): void
 }>()
 
-const gridRef = ref<IsometricGridHandle | null>(null)
+const rendererRef = ref<MapSceneRendererHandle | null>(null)
 
-const focusPokemon = (id: string): boolean => gridRef.value?.focusPokemon(id) ?? false
+const focusPokemon = (id: string): boolean => rendererRef.value?.focusPokemon(id) ?? false
 
 defineExpose({ focusPokemon })
 </script>
@@ -84,18 +84,18 @@ defineExpose({ focusPokemon })
 <template>
   <main class="scene-column">
     <ClientOnly>
-      <IsometricGrid
+      <MapSceneRenderer
         v-if="props.map && canViewMap"
-        ref="gridRef"
-        :dimensions="props.map.dimensions"
-        :pokemons="spawnedPokemon"
+        ref="rendererRef"
+        :map="props.map"
+        :spawned-pokemon="spawnedPokemon"
         :selected-id="selectedId"
-        :controllable-ids="controllablePlacementIds"
-        :active-turn-id="activeInitiativeId"
-        :voxels="mapVoxels"
-        :hazards="mapHazards"
-        :field-effects="mapFieldEffects"
-        :ground-level-y="mapGroundLevelY"
+        :controllable-placement-ids="controllablePlacementIds"
+        :active-initiative-id="activeInitiativeId"
+        :map-voxels="mapVoxels"
+        :map-hazards="mapHazards"
+        :map-field-effects="mapFieldEffects"
+        :map-ground-level-y="mapGroundLevelY"
         :layer-visibility="layerVisibility"
         :build-mode="buildMode"
         :build-tool="buildTool"

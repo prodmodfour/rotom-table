@@ -2430,3 +2430,13 @@
   - `npm test` — passes: 100 test files / 374 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: map scene renderer adapter
+
+- Extracted `IsometricGrid` prop/event wiring from `MapScenePanel` into `components/map/MapSceneRenderer.vue`.
+- Kept renderer focus exposure through a narrow `focusPokemon(id)` adapter so initiative focusing remains unchanged while the scene panel becomes a higher-level composition shell.
+- Preserved all existing renderer props, token/map interaction emits, and public `MapScenePanel` focus API.
+- Quality gates after this phase:
+  - `npm test` — passes: 100 test files / 374 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
