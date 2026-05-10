@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; map library new-map creation state is now isolated, but small UI/helper cleanup remains and the refactor is not marked complete.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; shared library intro copy/control primitives are now extracted, but small UI/helper cleanup remains and the refactor is not marked complete.
 
 ## Phase 0 baseline audit
 
@@ -2873,6 +2873,18 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; map library new-map creat
 - Next remaining phase: continue one small bounded cleanup pass on remaining library/map/reference presentation or helper duplication; do not mark the full refactor complete yet.
 - Quality gates after this phase:
   - `npm test -- tests/composables/library/useMapLibraryCreation.test.ts tests/composables/library/useLibraryFolderCreation.test.ts` — passes: 2 test files / 8 tests.
+  - `npm test` — passes: 108 test files / 404 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: shared library intro copy and controls
+
+- Extracted duplicated maps/sheets library intro explanatory-copy styling into `components/library/LibraryIntroCopy.vue`.
+  - The shared component owns intro-copy spacing, hint styling, and slotted code formatting while each intro panel keeps route-specific copy.
+- Extracted duplicated intro search/action flex layout into `components/library/LibraryIntroControls.vue`.
+- Updated map and sheet library intro panels to compose the shared copy/control primitives while preserving map/sheet copy, GM/player hint text, search fields, and create actions.
+- Next remaining phase: continue one small bounded cleanup pass on remaining library/map/reference presentation or helper duplication; do not mark the full refactor complete yet.
+- Quality gates after this phase:
   - `npm test` — passes: 108 test files / 404 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

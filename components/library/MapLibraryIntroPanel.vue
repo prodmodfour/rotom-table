@@ -2,6 +2,8 @@
 import { PhFolder, PhPlus } from '@phosphor-icons/vue'
 import LibraryIntroActionButton from '~/components/library/LibraryIntroActionButton.vue'
 import LibraryIntroActionRow from '~/components/library/LibraryIntroActionRow.vue'
+import LibraryIntroControls from '~/components/library/LibraryIntroControls.vue'
+import LibraryIntroCopy from '~/components/library/LibraryIntroCopy.vue'
 import LibraryIntroErrors from '~/components/library/LibraryIntroErrors.vue'
 import LibraryIntroPanelCard from '~/components/library/LibraryIntroPanelCard.vue'
 import LibraryIntroSearchField from '~/components/library/LibraryIntroSearchField.vue'
@@ -28,23 +30,25 @@ const emit = defineEmits<{
     title="Tabletop Maps"
     :badge="`${mapCount} map${mapCount === 1 ? '' : 's'}`"
   >
-    <p class="intro-copy">
+    <LibraryIntroCopy>
       Saved tabletop layouts. Each map stores its own dimensions and the
       set of trainer / Pokémon tokens placed on it. Sheets are managed
       separately under <code>/sheets</code> — maps only reference them, so
       a token's HP, sprite, or class shows up live on every map that
       has it placed.
-      <span v-if="isGm" class="drag-hint">
-        Click a map to open it. Drag cards or folders to organise them.
-        Right-click anything for Move / Rename / Delete. Multiple tabs and
-        devices stay in sync as you edit.
-      </span>
-      <span v-else class="drag-hint">
-        You are seeing only maps the GM has marked as player visible.
-      </span>
-    </p>
+      <template #hint>
+        <template v-if="isGm">
+          Click a map to open it. Drag cards or folders to organise them.
+          Right-click anything for Move / Rename / Delete. Multiple tabs and
+          devices stay in sync as you edit.
+        </template>
+        <template v-else>
+          You are seeing only maps the GM has marked as player visible.
+        </template>
+      </template>
+    </LibraryIntroCopy>
 
-    <div class="intro-controls">
+    <LibraryIntroControls>
       <LibraryIntroSearchField
         :model-value="searchTerm"
         label="Search maps"
@@ -67,7 +71,7 @@ const emit = defineEmits<{
           <PhFolder :size="16" weight="bold" /> New folder
         </LibraryIntroActionButton>
       </LibraryIntroActionRow>
-    </div>
+    </LibraryIntroControls>
 
     <LibraryIntroErrors
       :errors="[
@@ -78,33 +82,3 @@ const emit = defineEmits<{
     />
   </LibraryIntroPanelCard>
 </template>
-
-<style scoped>
-.intro-copy {
-  margin: 0 0 0.85rem;
-  color: var(--ink-soft);
-  line-height: 1.5;
-}
-
-.drag-hint {
-  display: block;
-  margin-top: 0.45rem;
-  color: var(--ink-muted);
-  font-size: 0.85em;
-  font-style: italic;
-}
-
-code {
-  font-family: var(--font-mono);
-  font-size: 0.9em;
-  color: var(--accent);
-}
-
-.intro-controls {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.6rem;
-  align-items: stretch;
-}
-
-</style>

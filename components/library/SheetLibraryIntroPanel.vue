@@ -2,6 +2,8 @@
 import { PhPlus } from '@phosphor-icons/vue'
 import LibraryIntroActionButton from '~/components/library/LibraryIntroActionButton.vue'
 import LibraryIntroActionRow from '~/components/library/LibraryIntroActionRow.vue'
+import LibraryIntroControls from '~/components/library/LibraryIntroControls.vue'
+import LibraryIntroCopy from '~/components/library/LibraryIntroCopy.vue'
 import LibraryIntroErrors from '~/components/library/LibraryIntroErrors.vue'
 import LibraryIntroPanelCard from '~/components/library/LibraryIntroPanelCard.vue'
 import LibraryIntroSearchField from '~/components/library/LibraryIntroSearchField.vue'
@@ -35,25 +37,27 @@ const emit = defineEmits<{
     title="Character Sheets"
     :badge="`${filteredCount} of ${totalCount}`"
   >
-    <p class="intro-copy">
+    <LibraryIntroCopy>
       Trainers and Pokémon character sheets, modelled on the PTU
       <code>pokesheet</code> / <code>trainer</code> spreadsheets. Drop a
       new JSON file into <code>data/sheets/</code> for a Pokémon, or
       <code>data/trainers/</code> for a trainer. Use subdirectories
       (e.g. <code>data/sheets/team-alpha/</code>) to group sheets into
       folders — the directory name is shown exactly as the folder string.
-      <span v-if="canDrag" class="drag-hint">
-        Tip: click a folder to open it. Drag a card or folder onto
-        another folder (or breadcrumb) to move it. Right-click anything
-        for Move / Rename / Delete — changes are written straight back
-        to disk.
-      </span>
-      <span v-else class="drag-hint">
-        You are seeing only sheets marked as player accessible.
-      </span>
-    </p>
+      <template #hint>
+        <template v-if="canDrag">
+          Tip: click a folder to open it. Drag a card or folder onto
+          another folder (or breadcrumb) to move it. Right-click anything
+          for Move / Rename / Delete — changes are written straight back
+          to disk.
+        </template>
+        <template v-else>
+          You are seeing only sheets marked as player accessible.
+        </template>
+      </template>
+    </LibraryIntroCopy>
 
-    <div class="intro-controls">
+    <LibraryIntroControls>
       <LibraryIntroSearchField
         :model-value="searchTerm"
         label="Search sheets"
@@ -76,7 +80,7 @@ const emit = defineEmits<{
           <PhPlus :size="16" weight="bold" /> New folder
         </LibraryIntroActionButton>
       </LibraryIntroActionRow>
-    </div>
+    </LibraryIntroControls>
 
     <LibraryIntroErrors
       :errors="[
@@ -87,32 +91,3 @@ const emit = defineEmits<{
     />
   </LibraryIntroPanelCard>
 </template>
-
-<style scoped>
-.intro-copy {
-  margin: 0 0 0.85rem;
-  color: var(--ink-soft);
-  line-height: 1.5;
-}
-
-.drag-hint {
-  display: block;
-  margin-top: 0.45rem;
-  color: var(--ink-muted);
-  font-size: 0.85em;
-  font-style: italic;
-}
-
-code {
-  font-family: var(--font-mono);
-  font-size: 0.9em;
-  color: var(--accent);
-}
-
-.intro-controls {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.6rem;
-  align-items: stretch;
-}
-</style>
