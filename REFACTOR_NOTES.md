@@ -2228,3 +2228,13 @@
   - `npm test` — passes: 99 test files / 370 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: hazard builder controls component
+
+- Extracted hazard tool selection, hazard palette, hazard editing hint, and clear-hazards action from `TerrainHazardsPanel` into `components/map/HazardBuilderControls.vue`.
+- Removed now-dead hazard/tool/input styles from the parent panel so it primarily owns panel chrome and mode composition.
+- Preserved hazard place/erase tool behavior, active hazard selection, Toxic Spikes hint copy, and clear-all-hazards event wiring.
+- Quality gates after this phase:
+  - `npm test` — passes: 99 test files / 370 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
