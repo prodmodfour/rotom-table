@@ -3,47 +3,104 @@ set -euo pipefail
 
 usage() {
   cat <<'USAGE'
-Usage: scripts/refactor-loop.sh [cycles]
+Usage: scripts/refactor-loop.sh [options]
 
-Runs fresh pi print-mode refactor cycles until either:
-  - REFACTOR_NOTES.md contains a line: AUTOMATION_STATUS: DONE
-  - the requested cycle count is reached
-  - a safety check fails
+Runs fresh pi print-mode refactor cycles until REFACTOR_NOTES.md contains:
+  AUTOMATION_STATUS: DONE
 
-Default cycles: 7
+By default there is NO cycle limit. This is intended to run for hours/days inside
+`tmux`, `screen`, or `nohup`, stopping only when the whole refactor is marked
+done or when a safety check fails.
+
+Options:
+  --max-cycles N      Optional safety cap. Omit for unlimited cycles.
+  --once              Same as --max-cycles 1.
+  --sleep SECONDS     Pause between successful cycles. Default: 0.
+  -h, --help          Show this help.
+
+Backward compatibility:
+  scripts/refactor-loop.sh 7 is treated as --max-cycles 7.
 
 Optional environment variables:
-  PI_REFACTOR_MODEL       Passes --model to pi, e.g. anthropic/claude-sonnet-4-5
-  PI_REFACTOR_THINKING    Passes --thinking to pi, e.g. high
-  PI_REFACTOR_NO_PULL=1   Skip git pull --ff-only before each cycle
+  PI_REFACTOR_MODEL          Passes --model to pi, e.g. anthropic/claude-sonnet-4-5
+  PI_REFACTOR_THINKING       Passes --thinking to pi, e.g. high
+  PI_REFACTOR_MAX_CYCLES     Default max cycle cap if --max-cycles is not provided
+  PI_REFACTOR_SLEEP_SECONDS  Default sleep between successful cycles
+  PI_REFACTOR_NO_PULL=1      Skip git pull --ff-only before each cycle
 USAGE
 }
 
-if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
-  usage
-  exit 0
+MAX_CYCLES="${PI_REFACTOR_MAX_CYCLES:-}"
+SLEEP_SECONDS="${PI_REFACTOR_SLEEP_SECONDS:-0}"
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    --max-cycles)
+      if [[ $# -lt 2 ]]; then
+        echo "--max-cycles requires a value" >&2
+        exit 2
+      fi
+      MAX_CYCLES="$2"
+      shift 2
+      ;;
+    --once)
+      MAX_CYCLES=1
+      shift
+      ;;
+    --sleep)
+      if [[ $# -lt 2 ]]; then
+        echo "--sleep requires a value" >&2
+        exit 2
+      fi
+      SLEEP_SECONDS="$2"
+      shift 2
+      ;;
+    [0-9]*)
+      # Keep the old `npm run refactor:loop -- 7` form working, but do not make
+      # it the default behavior.
+      MAX_CYCLES="$1"
+      shift
+      ;;
+    *)
+      echo "Unknown argument: $1" >&2
+      usage >&2
+      exit 2
+      ;;
+  esac
+done
+
+if [[ -n "$MAX_CYCLES" ]] && { ! [[ "$MAX_CYCLES" =~ ^[0-9]+$ ]] || [[ "$MAX_CYCLES" -lt 1 ]]; }; then
+  echo "--max-cycles must be a positive integer" >&2
+  exit 2
 fi
 
-MAX_CYCLES="${1:-7}"
-if ! [[ "$MAX_CYCLES" =~ ^[0-9]+$ ]] || [[ "$MAX_CYCLES" -lt 1 ]]; then
-  echo "cycles must be a positive integer" >&2
-  usage >&2
+if ! [[ "$SLEEP_SECONDS" =~ ^[0-9]+$ ]]; then
+  echo "--sleep must be a non-negative integer number of seconds" >&2
   exit 2
 fi
 
 REQUIRED_FILES=(original_refactor_prompt.md REFACTOR_NOTES.md)
 DONE_RE='^AUTOMATION_STATUS:[[:space:]]*DONE[[:space:]]*$'
 LOG_DIR='.pi/logs/refactor-loop'
+LOCK_DIR='.pi/refactor-loop.lock'
 
 PROMPT=$(cat <<'PROMPT_EOF'
-Read original_refactor_prompt.md and REFACTOR_NOTES.md, then do exactly one next refactor phase.
+Read original_refactor_prompt.md and REFACTOR_NOTES.md, then continue the refactor automation.
 
-Automation rules:
-- Work in one bounded phase only. Do not attempt multiple phases in this run.
-- If no refactor phase remains, add or update a standalone line near the top of REFACTOR_NOTES.md to exactly:
+Your job in this run:
+- Determine whether the whole refactor described by original_refactor_prompt.md is completely finished, using REFACTOR_NOTES.md as the progress log.
+- If it is completely finished, add or update a standalone line near the top of REFACTOR_NOTES.md to exactly:
   AUTOMATION_STATUS: DONE
   Then commit and push that notes update if it changed, and stop.
-- Otherwise complete the next phase, update REFACTOR_NOTES.md with what was done, quality gates run, and the next remaining phase.
+- If any work remains, do exactly one bounded next phase. Do not attempt multiple phases in this run.
+
+Automation rules:
+- Update REFACTOR_NOTES.md with what was done, quality gates run, and what remains next.
+- Keep REFACTOR_NOTES.md useful for future fresh-context runs; maintain a concise current status/next-step summary near the top when appropriate.
 - Run the relevant tests/checks for the phase. Prefer targeted tests first, then broader checks when appropriate.
 - Commit the completed phase and push it.
 - Leave the working tree clean.
@@ -134,6 +191,20 @@ push_if_needed_after_cycle() {
   fi
 }
 
+acquire_lock() {
+  mkdir -p "$(dirname "$LOCK_DIR")" "$LOG_DIR"
+  if ! mkdir "$LOCK_DIR" 2>/dev/null; then
+    echo "Another refactor loop appears to be running: $LOCK_DIR" >&2
+    if [[ -f "$LOCK_DIR/pid" ]]; then
+      echo "Recorded PID: $(cat "$LOCK_DIR/pid")" >&2
+    fi
+    echo "If this is stale, remove $LOCK_DIR and retry." >&2
+    exit 1
+  fi
+  echo "$$" > "$LOCK_DIR/pid"
+  trap 'rm -rf "$LOCK_DIR"' EXIT
+}
+
 require_command git
 require_command pi
 
@@ -149,20 +220,32 @@ for file in "${REQUIRED_FILES[@]}"; do
   fi
 done
 
-mkdir -p "$LOG_DIR"
+acquire_lock
 
 if is_done; then
   echo "REFACTOR_NOTES.md is already marked done."
   exit 0
 fi
 
-for cycle in $(seq 1 "$MAX_CYCLES"); do
+cycle=0
+limit_label="until DONE"
+if [[ -n "$MAX_CYCLES" ]]; then
+  limit_label="$MAX_CYCLES"
+fi
+
+while true; do
   if is_done; then
     echo "Refactor is marked done."
     exit 0
   fi
 
-  echo "=== pi refactor cycle $cycle/$MAX_CYCLES ==="
+  if [[ -n "$MAX_CYCLES" ]] && (( cycle >= MAX_CYCLES )); then
+    echo "Reached max cycle cap ($MAX_CYCLES) without AUTOMATION_STATUS: DONE."
+    exit 1
+  fi
+
+  cycle=$((cycle + 1))
+  echo "=== pi refactor cycle $cycle/$limit_label ==="
   require_clean_tree
   require_synced_or_pull
 
@@ -178,7 +261,10 @@ for cycle in $(seq 1 "$MAX_CYCLES"); do
   fi
 
   echo "Logging to $log_file"
-  pi "${pi_args[@]}" @original_refactor_prompt.md @REFACTOR_NOTES.md "$PROMPT" 2>&1 | tee "$log_file"
+  if ! pi "${pi_args[@]}" @original_refactor_prompt.md @REFACTOR_NOTES.md "$PROMPT" 2>&1 | tee "$log_file"; then
+    echo "pi failed during cycle $cycle; stopping. See $log_file" >&2
+    exit 1
+  fi
 
   if [[ -n "$(git status --porcelain)" ]]; then
     echo "pi left a dirty working tree; stopping for manual review." >&2
@@ -190,16 +276,17 @@ for cycle in $(seq 1 "$MAX_CYCLES"); do
 
   after_head="$(git rev-parse HEAD)"
   if [[ "$after_head" == "$before_head" ]] && ! is_done; then
-    echo "Cycle completed without a new commit and without AUTOMATION_STATUS: DONE; stopping to avoid a loop." >&2
+    echo "Cycle completed without a new commit and without AUTOMATION_STATUS: DONE; stopping to avoid a stuck infinite loop." >&2
     exit 1
   fi
 
+  if is_done; then
+    echo "Refactor is marked done."
+    exit 0
+  fi
+
+  if (( SLEEP_SECONDS > 0 )); then
+    echo "Sleeping $SLEEP_SECONDS second(s) before next cycle."
+    sleep "$SLEEP_SECONDS"
+  fi
 done
-
-if is_done; then
-  echo "Refactor is marked done."
-  exit 0
-fi
-
-echo "Reached max cycles ($MAX_CYCLES) without AUTOMATION_STATUS: DONE."
-exit 1
