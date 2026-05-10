@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import CollapsiblePanelHeading from '~/components/map/CollapsiblePanelHeading.vue'
+import FieldEffectBulkActions from '~/components/map/FieldEffectBulkActions.vue'
 import FieldEffectSection from '~/components/map/FieldEffectSection.vue'
 import FieldEffectWeatherOptions from '~/components/map/FieldEffectWeatherOptions.vue'
 import type { MapEffectDefinition } from '~/utils/mapFieldEffects'
@@ -132,24 +133,12 @@ const setRoomRounds = (kind: string, value: Event) =>
         @remove="removeRoom"
       />
 
-      <div v-if="canEditMap" class="field-effect-actions">
-        <button
-          type="button"
-          class="bulk-button"
-          :disabled="!fieldEffectCount"
-          @click="emit('tick-durations')"
-        >
-          Advance durations
-        </button>
-        <button
-          type="button"
-          class="bulk-button bulk-button--danger"
-          :disabled="!fieldEffectCount"
-          @click="emit('clear-all')"
-        >
-          Clear effects
-        </button>
-      </div>
+      <FieldEffectBulkActions
+        :can-edit-map="canEditMap"
+        :field-effect-count="fieldEffectCount"
+        @tick-durations="emit('tick-durations')"
+        @clear-all="emit('clear-all')"
+      />
     </div>
   </section>
 </template>
@@ -195,42 +184,4 @@ input:disabled {
   gap: 0.85rem;
 }
 
-.field-effect-actions {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.5rem;
-  border-top: 1px solid var(--rule-soft);
-  padding-top: 0.85rem;
-}
-
-.bulk-button {
-  border: 1px solid var(--rule-soft);
-  border-radius: 10px;
-  background: var(--paper);
-  color: var(--ink);
-  padding: 0.5rem 0.7rem;
-  cursor: pointer;
-  font: inherit;
-  letter-spacing: 0.04em;
-  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
-}
-
-.bulk-button:hover:not(:disabled) {
-  border-color: var(--rule-strong);
-  background: var(--paper-hover);
-}
-
-.bulk-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.bulk-button--danger {
-  color: #fb4934;
-}
-
-.bulk-button--danger:hover:not(:disabled) {
-  border-color: #fb4934;
-  background: rgba(251, 73, 52, 0.08);
-}
 </style>

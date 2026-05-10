@@ -2381,3 +2381,12 @@
   - `npm test` — passes: 99 test files / 370 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: field-effect bulk actions component
+
+- Extracted field-effect duration advance/clear controls into `components/map/FieldEffectBulkActions.vue`.
+- Reduced `FieldEffectsPanel` to field-effect section composition and typed event adapters while preserving GM-only action visibility, disabled states, and clear/advance emits.
+- Quality gates after this phase:
+  - `npm test` — passes: 99 test files / 370 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
