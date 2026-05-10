@@ -5,17 +5,10 @@
  *
  * Request body: `{ from: string, to: string, clientId?: string }`
  */
-import { existsSync, mkdirSync, renameSync, statSync } from 'node:fs'
-import { dirname, join, sep } from 'node:path'
 import { createError, defineEventHandler, readBody } from 'h3'
-import { mapsChannel } from '~/shared/realtime'
 import { publishRealtime } from '../../utils/realtime'
 import { requireGm } from '../../utils/auth'
-import {
-  MAPS_ROOT,
-  pruneEmptyMapParents,
-  sanitizeMapFolderPath,
-} from '../../utils/mapStorage'
+import { moveMapFolderUseCase, MoveMapFolderUseCaseError } from '../../useCases/moveMapFolder'
 
 interface MoveFolderBody {
   from?: string
@@ -25,48 +18,23 @@ interface MoveFolderBody {
 
 export default defineEventHandler(async (event) => {
   requireGm(event)
-  const body = await readBody<MoveFolderBody>(event)
-  let from = ''
-  let to = ''
+  const body = await readBody<MoveFolderBody | null>(event)
+
   try {
-    from = sanitizeMapFolderPath(String(body?.from ?? ''))
-    to = sanitizeMapFolderPath(String(body?.to ?? ''))
+    const result = moveMapFolderUseCase({
+      from: body?.from,
+      to: body?.to,
+      clientId: body?.clientId,
+    })
+    for (const realtimeEvent of result.events) publishRealtime(realtimeEvent)
+    return {
+      ok: true as const,
+      moved: result.moved,
+    }
   } catch (err) {
-    throw createError({ statusCode: 400, statusMessage: (err as Error).message })
+    if (err instanceof MoveMapFolderUseCaseError) {
+      throw createError({ statusCode: err.statusCode, statusMessage: err.message })
+    }
+    throw err
   }
-  if (from === to) return { ok: true as const, moved: false }
-  if (to === from || to.startsWith(from + '/')) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: 'Cannot move a folder into itself or one of its descendants',
-    })
-  }
-
-  const src = join(MAPS_ROOT, from)
-  const dst = join(MAPS_ROOT, to)
-  if (!src.startsWith(MAPS_ROOT + sep) || !dst.startsWith(MAPS_ROOT + sep)) {
-    throw createError({ statusCode: 400, statusMessage: 'Invalid path' })
-  }
-  if (!existsSync(src) || !statSync(src).isDirectory()) {
-    throw createError({ statusCode: 404, statusMessage: `Folder "${from}" not found` })
-  }
-  if (existsSync(dst)) {
-    throw createError({
-      statusCode: 409,
-      statusMessage: 'Destination folder already exists',
-    })
-  }
-
-  mkdirSync(dirname(dst), { recursive: true })
-  renameSync(src, dst)
-  pruneEmptyMapParents(src)
-
-  publishRealtime({
-    channel: mapsChannel,
-    type: 'folder-moved',
-    clientId: body?.clientId,
-    data: { from, to },
-  })
-
-  return { ok: true as const, moved: true }
 })
