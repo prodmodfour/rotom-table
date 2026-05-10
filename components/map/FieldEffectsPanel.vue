@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import CollapsiblePanelHeading from '~/components/map/CollapsiblePanelHeading.vue'
-import FieldEffectChipList from '~/components/map/FieldEffectChipList.vue'
-import FieldEffectSwatchGrid from '~/components/map/FieldEffectSwatchGrid.vue'
+import FieldEffectSection from '~/components/map/FieldEffectSection.vue'
 import { checkedValueFromEvent } from '~/utils/domEvents'
 import type { MapEffectDefinition } from '~/utils/mapFieldEffects'
 import type {
@@ -75,26 +74,24 @@ const setRoomRounds = (kind: string, value: Event) =>
     />
 
     <div id="map-field-effects-section" v-show="!collapsed" class="collapsible-section-body">
-      <div class="field-effect-group">
-        <div class="field-effect-header">
-          <h3>Weather</h3>
-          <button
-            v-if="canEditMap"
-            type="button"
-            class="mini-action"
-            :disabled="!activeWeatherEffects.length"
-            @click="emit('clear-weather')"
-          >
-            Clear
-          </button>
-        </div>
-        <FieldEffectSwatchGrid
-          aria-label="Weather"
-          :effects="weatherPalette"
-          :is-active="weatherIsActive"
-          :disabled="!canEditMap"
-          @select="selectWeather"
-        />
+      <FieldEffectSection
+        title="Weather"
+        aria-label="Weather"
+        :effects="weatherPalette"
+        :active-effects="activeWeatherEffects"
+        :can-edit-map="canEditMap"
+        :is-active="weatherIsActive"
+        :definition="weatherDefinition"
+        :duration-label="durationLabel"
+        :clear-disabled="!activeWeatherEffects.length"
+        clearable
+        flush-top
+        empty-text="Clear / normal weather."
+        @select="selectWeather"
+        @clear="emit('clear-weather')"
+        @set-rounds="setWeatherRounds"
+        @remove="removeWeather"
+      >
         <label v-if="canEditMap" class="coexist-toggle" :class="{ active: weatherCoexistNext }">
           <input
             :checked="weatherCoexistNext"
@@ -104,62 +101,39 @@ const setRoomRounds = (kind: string, value: Event) =>
           />
           Add next weather alongside current one (Climate Control)
         </label>
-        <FieldEffectChipList
-          :effects="activeWeatherEffects"
-          :can-edit-map="canEditMap"
-          :definition="weatherDefinition"
-          :duration-label="durationLabel"
-          empty-text="Clear / normal weather."
-          @set-rounds="setWeatherRounds"
-          @remove="removeWeather"
-        />
-      </div>
+      </FieldEffectSection>
 
-      <div class="field-effect-group">
-        <div class="field-effect-header">
-          <h3>Terrain</h3>
-          <span class="field-effect-note">Field-wide toggles</span>
-        </div>
-        <FieldEffectSwatchGrid
-          aria-label="Terrain effects"
-          :effects="terrainPalette"
-          :is-active="terrainIsActive"
-          :disabled="!canEditMap"
-          @select="toggleTerrain"
-        />
-        <FieldEffectChipList
-          :effects="activeTerrainEffects"
-          :can-edit-map="canEditMap"
-          :definition="terrainDefinition"
-          :duration-label="durationLabel"
-          empty-text="No active terrain field effect."
-          @set-rounds="setTerrainRounds"
-          @remove="removeTerrain"
-        />
-      </div>
+      <FieldEffectSection
+        title="Terrain"
+        aria-label="Terrain effects"
+        note="Field-wide toggles"
+        :effects="terrainPalette"
+        :active-effects="activeTerrainEffects"
+        :can-edit-map="canEditMap"
+        :is-active="terrainIsActive"
+        :definition="terrainDefinition"
+        :duration-label="durationLabel"
+        empty-text="No active terrain field effect."
+        @select="toggleTerrain"
+        @set-rounds="setTerrainRounds"
+        @remove="removeTerrain"
+      />
 
-      <div class="field-effect-group">
-        <div class="field-effect-header">
-          <h3>Rooms</h3>
-          <span class="field-effect-note">Independent</span>
-        </div>
-        <FieldEffectSwatchGrid
-          aria-label="Room effects"
-          :effects="roomPalette"
-          :is-active="roomIsActive"
-          :disabled="!canEditMap"
-          @select="toggleRoom"
-        />
-        <FieldEffectChipList
-          :effects="activeRoomEffects"
-          :can-edit-map="canEditMap"
-          :definition="roomDefinition"
-          :duration-label="durationLabel"
-          empty-text="No active room."
-          @set-rounds="setRoomRounds"
-          @remove="removeRoom"
-        />
-      </div>
+      <FieldEffectSection
+        title="Rooms"
+        aria-label="Room effects"
+        note="Independent"
+        :effects="roomPalette"
+        :active-effects="activeRoomEffects"
+        :can-edit-map="canEditMap"
+        :is-active="roomIsActive"
+        :definition="roomDefinition"
+        :duration-label="durationLabel"
+        empty-text="No active room."
+        @select="toggleRoom"
+        @set-rounds="setRoomRounds"
+        @remove="removeRoom"
+      />
 
       <div v-if="canEditMap" class="field-effect-actions">
         <button
@@ -222,66 +196,6 @@ input:disabled {
   display: flex;
   flex-direction: column;
   gap: 0.85rem;
-}
-
-.field-effect-group {
-  border-top: 1px solid var(--rule-soft);
-  padding-top: 0.8rem;
-}
-
-.field-effects-panel .collapsible-section-body > .field-effect-group:first-child {
-  border-top: 0;
-  padding-top: 0;
-}
-
-.field-effect-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.7rem;
-  margin-bottom: 0.55rem;
-}
-
-.field-effect-header h3 {
-  margin: 0;
-  color: var(--ink-bright);
-  font-size: 0.86rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.field-effect-note {
-  color: var(--ink-muted);
-  font-size: 0.74rem;
-  letter-spacing: 0.04em;
-}
-
-.mini-action {
-  border: 1px solid var(--rule-soft);
-  border-radius: 999px;
-  background: var(--paper);
-  color: var(--ink-soft);
-  cursor: pointer;
-  font: inherit;
-  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
-}
-
-.mini-action {
-  padding: 0.25rem 0.6rem;
-  font-size: 0.72rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.mini-action:hover:not(:disabled) {
-  border-color: var(--accent);
-  background: var(--accent-soft);
-  color: var(--accent);
-}
-
-.mini-action:disabled {
-  cursor: not-allowed;
-  opacity: 0.55;
 }
 
 .coexist-toggle {

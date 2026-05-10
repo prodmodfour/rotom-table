@@ -2287,3 +2287,13 @@
   - `npm test` — passes: 99 test files / 370 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: field-effect section component
+
+- Extracted the repeated field-effect group shell into `components/map/FieldEffectSection.vue`, composing the shared swatch grid and chip list behind explicit section props/events.
+- Reduced `FieldEffectsPanel` to typed weather/terrain/room adapters plus top-level panel actions, with weather coexist controls kept as a section slot.
+- Preserved section headings/notes, Weather clear behavior, swatch selection, duration editing, remove actions, and section spacing.
+- Quality gates after this phase:
+  - `npm test` — passes: 99 test files / 370 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
