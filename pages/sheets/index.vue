@@ -9,10 +9,8 @@ import {
   buildVisibleFolderTiles,
   canMoveFolderTo,
   folderPathFromQuery,
-  isInsideFolder,
   movedFolderPath,
   nextAvailableFolderLeaf,
-  normalizeSearchText,
   renameFolderPrefix,
   type FolderTile,
 } from '~/utils/folderBrowser'
@@ -20,8 +18,9 @@ import {
   applySheetLibraryOverrides,
   buildSheetFolderSet,
   buildSheetLibraryItems,
+  countFilteredSheetLibraryItems,
   displaySheetLibraryName,
-  matchesSheetLibraryQuery,
+  filterVisibleSheetLibraryItems,
   sheetLibraryKey,
   type SheetLibraryItem,
 } from '~/utils/sheetLibrary'
@@ -118,22 +117,14 @@ const breadcrumbs = computed(() => buildFolderBreadcrumbs(currentPath.value))
 
 const searchTerm = ref('')
 
-const matchesQuery = matchesSheetLibraryQuery
-
 /** Sheets shown in the main grid. While searching, we flatten the entire
  *  subtree under the current folder; otherwise we show only sheets that live
  *  *directly* in the current folder. */
-const visibleSheets = computed<SheetItem[]>(() => {
-  const query = normalizeSearchText(searchTerm.value)
-  const pool = items.value.filter((item) => isInsideFolder(item.folder, currentPath.value))
-  const matched = query ? pool.filter((item) => matchesQuery(item, query)) : pool
-  if (!query) {
-    return matched
-      .filter((item) => item.folder === currentPath.value)
-      .sort((a, b) => a.sortKey.localeCompare(b.sortKey))
-  }
-  return [...matched].sort((a, b) => a.sortKey.localeCompare(b.sortKey))
-})
+const visibleSheets = computed<SheetItem[]>(() => filterVisibleSheetLibraryItems({
+  items: items.value,
+  currentPath: currentPath.value,
+  searchTerm: searchTerm.value,
+}))
 
 /** Folder tiles shown alongside the sheet cards — direct subfolders of
  *  ``currentPath``. Hidden during search to avoid noise. */
@@ -148,11 +139,7 @@ const visibleFolders = computed<FolderTile[]>(() => {
 
 // Counts shown in the intro badge.
 const totalCount = computed(() => items.value.length)
-const filteredCount = computed(() => {
-  const query = normalizeSearchText(searchTerm.value)
-  if (!query) return totalCount.value
-  return items.value.filter((item) => matchesQuery(item, query)).length
-})
+const filteredCount = computed(() => countFilteredSheetLibraryItems(items.value, searchTerm.value))
 
 const hasAnything = computed(
   () => visibleSheets.value.length > 0 || visibleFolders.value.length > 0,

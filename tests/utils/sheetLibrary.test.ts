@@ -4,7 +4,9 @@ import {
   applySheetLibraryOverrides,
   buildSheetFolderSet,
   buildSheetLibraryItems,
+  countFilteredSheetLibraryItems,
   displaySheetLibraryName,
+  filterVisibleSheetLibraryItems,
   isInsideDeletedSheetFolder,
   matchesSheetLibraryQuery,
   resolveSheetLibraryFolder,
@@ -132,6 +134,43 @@ describe('sheetLibrary helpers', () => {
       folderRenames: [],
       deletedFolders: new Set(),
     })].sort()).toEqual(['npcs/gm', 'team/alpha'])
+  })
+
+  it('filters visible sheets by current folder, subtree search, and sort keys', () => {
+    const items = buildSheetLibraryItems({
+      pokemonSheets: [
+        pokemon({ slug: 'root-b', nickname: 'B Root', folder: '' }),
+        pokemon({ slug: 'root-a', nickname: 'A Root', folder: '' }),
+        pokemon({ slug: 'child', nickname: 'Wild Child', folder: 'team/alpha' }),
+      ],
+      trainerSheets: [trainer({ slug: 'deep', name: 'Deep Trainer', folder: 'team/alpha/deep' })],
+      speciesTypesFor: () => ['Electric'],
+      spriteUrlFor: () => null,
+    })
+
+    expect(filterVisibleSheetLibraryItems({ items, currentPath: '', searchTerm: '' }).map((item) => item.slug)).toEqual([
+      'root-a',
+      'root-b',
+    ])
+    expect(filterVisibleSheetLibraryItems({ items, currentPath: 'team', searchTerm: 'trainer' }).map((item) => item.slug)).toEqual([
+      'deep',
+    ])
+    expect(filterVisibleSheetLibraryItems({ items, currentPath: 'team/alpha', searchTerm: '' }).map((item) => item.slug)).toEqual([
+      'child',
+    ])
+  })
+
+  it('counts filtered sheets across the full item collection', () => {
+    const items = buildSheetLibraryItems({
+      pokemonSheets: [pokemon({ nature: 'Jolly' })],
+      trainerSheets: [trainer({ playedBy: 'Ash' })],
+      speciesTypesFor: () => ['Electric'],
+      spriteUrlFor: () => null,
+    })
+
+    expect(countFilteredSheetLibraryItems(items, '')).toBe(2)
+    expect(countFilteredSheetLibraryItems(items, 'ash')).toBe(1)
+    expect(countFilteredSheetLibraryItems(items, 'electric')).toBe(1)
   })
 
   it('matches Pokémon and trainer search fields', () => {

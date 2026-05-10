@@ -2129,3 +2129,13 @@
   - `npm test` — passes: 95 test files / 359 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: sheet library visible-state helpers
+
+- Extended `utils/sheetLibrary.ts` with visible sheet filtering and filtered-count helpers that own current-folder/subtree search behavior and sort-key ordering.
+- Updated `pages/sheets/index.vue` to delegate visible sheet derivation and filtered count calculation while keeping sheet creation, drag/drop, context actions, and local overrides in the route shell.
+- Expanded `tests/utils/sheetLibrary.test.ts` to cover visible sheet filtering/sorting and full-collection filtered counts.
+- Quality gates after this phase:
+  - `npm test` — passes: 95 test files / 361 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

@@ -1,6 +1,11 @@
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { TrainerSheet } from '~/types/trainerSheet'
-import { isSameOrDescendantFolder, normalizeSearchText, renameFolderPrefix } from '~/utils/folderBrowser'
+import {
+  isInsideFolder,
+  isSameOrDescendantFolder,
+  normalizeSearchText,
+  renameFolderPrefix,
+} from '~/utils/folderBrowser'
 
 export type SheetLibraryKind = 'pokemon' | 'trainer'
 
@@ -182,4 +187,28 @@ export const matchesSheetLibraryQuery = (item: SheetLibraryItem, query: string):
     ...(sheet.classes?.map((c) => c.name) ?? []),
   ]
   return haystacks.some((value) => normalizeSearchText(value).includes(query))
+}
+
+export const filterVisibleSheetLibraryItems = ({
+  items,
+  currentPath,
+  searchTerm,
+}: {
+  items: ReadonlyArray<SheetLibraryItem>
+  currentPath: string
+  searchTerm: string
+}): SheetLibraryItem[] => {
+  const query = normalizeSearchText(searchTerm)
+  const pool = items.filter((item) => isInsideFolder(item.folder, currentPath))
+  const matched = query ? pool.filter((item) => matchesSheetLibraryQuery(item, query)) : pool
+  const scoped = query ? matched : matched.filter((item) => item.folder === currentPath)
+  return [...scoped].sort((a, b) => a.sortKey.localeCompare(b.sortKey))
+}
+
+export const countFilteredSheetLibraryItems = (
+  items: ReadonlyArray<SheetLibraryItem>,
+  searchTerm: string,
+): number => {
+  const query = normalizeSearchText(searchTerm)
+  return query ? items.filter((item) => matchesSheetLibraryQuery(item, query)).length : items.length
 }
