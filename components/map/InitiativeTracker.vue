@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import InitiativeControls from '~/components/map/InitiativeControls.vue'
-import InitiativeRowItem from '~/components/map/InitiativeRowItem.vue'
+import InitiativeList from '~/components/map/InitiativeList.vue'
 import type { InitiativeRow } from '~/composables/map-editor/useInitiativeTracker'
 
 defineProps<{
@@ -43,25 +43,16 @@ const emit = defineEmits<{
       @clear-values="emit('clear-values')"
     />
 
-    <ol v-if="sortedRows.length" class="initiative-list">
-      <InitiativeRowItem
-        v-for="(entry, index) in sortedRows"
-        :key="entry.id"
-        :entry="entry"
-        :index="index"
-        :active-id="activeId"
-        :selected-id="selectedId"
-        :can-manage="canManage"
-        @set-active-and-focus="emit('set-active-and-focus', $event)"
-        @focus="emit('focus', $event)"
-        @set-initiative-input="(id, value) => emit('set-initiative-input', id, value)"
-        @set-initiative-from-speed="(id, speed) => emit('set-initiative-from-speed', id, speed)"
-      />
-    </ol>
-
-    <p v-else class="initiative-empty">
-      Spawn Pokémon or trainers onto the map to track turn order.
-    </p>
+    <InitiativeList
+      :rows="sortedRows"
+      :active-id="activeId"
+      :selected-id="selectedId"
+      :can-manage="canManage"
+      @set-active-and-focus="emit('set-active-and-focus', $event)"
+      @focus="emit('focus', $event)"
+      @set-initiative-input="(id, value) => emit('set-initiative-input', id, value)"
+      @set-initiative-from-speed="(id, speed) => emit('set-initiative-from-speed', id, speed)"
+    />
   </section>
 </template>
 
@@ -78,26 +69,6 @@ const emit = defineEmits<{
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-}
-
-.initiative-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.initiative-empty {
-  margin: 0;
-  border: 1px dashed var(--rule-soft);
-  border-radius: 12px;
-  padding: 1rem;
-  color: var(--ink-muted);
-  font-size: 0.86rem;
-  line-height: 1.45;
-  text-align: center;
 }
 
 </style>

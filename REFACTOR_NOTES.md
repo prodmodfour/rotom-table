@@ -2317,3 +2317,13 @@
   - `npm test` — passes: 99 test files / 370 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: initiative list component
+
+- Extracted initiative list/empty-state composition into `components/map/InitiativeList.vue`.
+- `InitiativeTracker` is now a compact panel shell that composes initiative controls and the focused list while preserving all forwarded initiative events.
+- Preserved sorted row rendering, empty-state copy, list spacing, and row action payloads.
+- Quality gates after this phase:
+  - `npm test` — passes: 99 test files / 370 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
