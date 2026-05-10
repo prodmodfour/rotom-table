@@ -2500,3 +2500,13 @@
   - `npm test` — passes: 102 test files / 381 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: terrain material grid component
+
+- Extracted terrain material swatch rendering into `components/map/TerrainMaterialGrid.vue` with explicit active-material, custom-color, material-list props and a focused select emit.
+- Reduced `TerrainBuilderControls` so it composes the shared build-tool toggle and focused material grid while preserving swatch colors, active state, labels, and material-selection behavior.
+- Moved material-grid CSS out of the terrain controls component.
+- Quality gates after this phase:
+  - `npm test` — passes: 102 test files / 381 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
