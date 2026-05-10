@@ -2009,3 +2009,13 @@
   - `npm test` — passes: 90 test files / 339 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: sheet browser helper extraction
+
+- Extracted `SheetBrowser` item construction, folder tile derivation, subtree search filtering, and selection payload creation into `utils/sheetBrowser.ts`.
+- Updated `components/SheetBrowser.vue` to focus on panel state and presentation while reusing shared folder breadcrumb helpers and the new browser-specific utility functions.
+- Added `tests/utils/sheetBrowser.test.ts` covering Pokémon/trainer item DTOs, folder sets/tiles, direct-vs-search filtering, and selection payloads.
+- Quality gates after this phase:
+  - `npm test` — passes: 91 test files / 343 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

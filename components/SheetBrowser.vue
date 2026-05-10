@@ -3,23 +3,17 @@ import { computed, ref } from 'vue'
 import { PhFolder, PhHouse } from '@phosphor-icons/vue'
 import { characterSheets, getSpriteUrl } from '~/data/characterSheets'
 import { trainerSheets } from '~/data/trainerSheets'
-import type { CharacterSheet } from '~/types/characterSheet'
-import type { TrainerSheet } from '~/types/trainerSheet'
+import { buildFolderBreadcrumbs } from '~/utils/folderBrowser'
+import {
+  buildSheetBrowserFolderTiles,
+  buildSheetBrowserItems,
+  filterSheetBrowserItems,
+  sheetBrowserSelectionForItem,
+  type SheetBrowserItem,
+  type SheetBrowserSelection,
+} from '~/utils/sheetBrowser'
 
-export type SheetSelection =
-  | { kind: 'pokemon'; sheet: CharacterSheet }
-  | { kind: 'trainer'; sheet: TrainerSheet }
-
-interface SheetItem {
-  kind: 'pokemon' | 'trainer'
-  slug: string
-  folder: string
-  sheet: CharacterSheet | TrainerSheet
-  spriteUrl: string | null
-  displayName: string
-  meta: string
-  sortKey: string
-}
+export type SheetSelection = SheetBrowserSelection
 
 const emit = defineEmits<{ (event: 'select', selection: SheetSelection): void }>()
 
@@ -27,117 +21,28 @@ const currentPath = ref('')
 const searchTerm = ref('')
 const collapsed = ref(false)
 
-const items = computed<SheetItem[]>(() => {
-  const out: SheetItem[] = []
-  for (const sheet of characterSheets) {
-    out.push({
-      kind: 'pokemon',
-      slug: sheet.slug,
-      folder: sheet.folder ?? '',
-      sheet,
-      spriteUrl: getSpriteUrl(sheet.species),
-      displayName: sheet.nickname,
-      meta: `${sheet.species} · Lv ${sheet.level}`,
-      sortKey: sheet.nickname.toLowerCase(),
-    })
-  }
-  for (const sheet of trainerSheets) {
-    const cls = sheet.classes?.[0]?.name
-    out.push({
-      kind: 'trainer',
-      slug: sheet.slug,
-      folder: sheet.folder ?? '',
-      sheet,
-      spriteUrl: sheet.portraitUrl ?? null,
-      displayName: sheet.name,
-      meta: cls ? `Trainer · Lv ${sheet.level} · ${cls}` : `Trainer · Lv ${sheet.level}`,
-      sortKey: sheet.name.toLowerCase(),
-    })
-  }
-  return out
-})
+const items = computed<SheetBrowserItem[]>(() => buildSheetBrowserItems({
+  pokemonSheets: characterSheets,
+  trainerSheets,
+  spriteUrlForSpecies: getSpriteUrl,
+}))
 
-const allFolders = computed(() => {
-  const set = new Set<string>()
-  for (const item of items.value) if (item.folder) set.add(item.folder)
-  return set
-})
+const breadcrumbs = computed(() => buildFolderBreadcrumbs(currentPath.value))
 
-const breadcrumbs = computed(() => {
-  const out = [{ label: 'Home', path: '' }]
-  if (!currentPath.value) return out
-  let acc = ''
-  for (const seg of currentPath.value.split('/')) {
-    acc = acc ? `${acc}/${seg}` : seg
-    out.push({ label: seg, path: acc })
-  }
-  return out
-})
+const visibleSheets = computed<SheetBrowserItem[]>(() =>
+  filterSheetBrowserItems(items.value, currentPath.value, searchTerm.value),
+)
 
-const isInsideCurrent = (folder: string) => {
-  if (!currentPath.value) return true
-  return folder === currentPath.value || folder.startsWith(currentPath.value + '/')
-}
-
-const normalize = (value: string) => value.trim().toLowerCase()
-
-const matchesQuery = (item: SheetItem, query: string) =>
-  [item.displayName, item.meta, item.folder].some((value) => normalize(value).includes(query))
-
-const visibleSheets = computed<SheetItem[]>(() => {
-  const query = normalize(searchTerm.value)
-  const pool = items.value.filter((item) => isInsideCurrent(item.folder))
-  const matched = query ? pool.filter((item) => matchesQuery(item, query)) : pool
-  if (!query) {
-    return matched
-      .filter((item) => item.folder === currentPath.value)
-      .sort((a, b) => a.sortKey.localeCompare(b.sortKey))
-  }
-  return [...matched].sort((a, b) => a.sortKey.localeCompare(b.sortKey))
-})
-
-interface FolderTile {
-  path: string
-  label: string
-  count: number
-}
-
-const visibleFolders = computed<FolderTile[]>(() => {
-  if (searchTerm.value) return []
-  const prefix = currentPath.value ? currentPath.value + '/' : ''
-  const childPaths = new Set<string>()
-  for (const path of allFolders.value) {
-    if (currentPath.value && !path.startsWith(prefix)) continue
-    if (path === currentPath.value) continue
-    const rest = currentPath.value ? path.slice(prefix.length) : path
-    if (!rest) continue
-    const slash = rest.indexOf('/')
-    const childSeg = slash >= 0 ? rest.slice(0, slash) : rest
-    childPaths.add(currentPath.value ? `${currentPath.value}/${childSeg}` : childSeg)
-  }
-  return Array.from(childPaths)
-    .sort((a, b) => a.localeCompare(b))
-    .map((path) => {
-      const subPrefix = path + '/'
-      let count = 0
-      for (const item of items.value) {
-        if (item.folder === path || item.folder.startsWith(subPrefix)) count++
-      }
-      const leaf = path.split('/').pop() ?? path
-      return { path, label: leaf, count }
-    })
-})
+const visibleFolders = computed(() =>
+  buildSheetBrowserFolderTiles(items.value, currentPath.value, searchTerm.value),
+)
 
 const goToFolder = (path: string) => {
   currentPath.value = path
 }
 
-const selectItem = (item: SheetItem) => {
-  if (item.kind === 'pokemon') {
-    emit('select', { kind: 'pokemon', sheet: item.sheet as CharacterSheet })
-  } else {
-    emit('select', { kind: 'trainer', sheet: item.sheet as TrainerSheet })
-  }
+const selectItem = (item: SheetBrowserItem) => {
+  emit('select', sheetBrowserSelectionForItem(item))
 }
 </script>
 
