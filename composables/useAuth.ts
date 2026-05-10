@@ -1,4 +1,5 @@
 import { computed } from 'vue'
+import { HOME_PATH } from '~/utils/appRoutes'
 import {
   AUTH_ROLE_COOKIE,
   AUTH_ROLES,
@@ -13,7 +14,7 @@ export const useAuth = () => {
   const rawRole = useCookie<AuthRole | null>(AUTH_ROLE_COOKIE, {
     default: () => null,
     maxAge: 60 * 60 * 24 * 30,
-    path: '/',
+    path: HOME_PATH,
     sameSite: 'lax',
   })
 

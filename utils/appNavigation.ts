@@ -1,4 +1,6 @@
+import { HOME_PATH, isHomePath } from '~/utils/appRoutes'
 import { ENCOUNTER_GENERATOR_PATH, ENCOUNTER_TABLES_PATH } from '~/utils/encounterRoutes'
+import { isLegacyGridPath } from '~/utils/legacyGridRoutes'
 import { MAP_LIBRARY_PATH } from '~/utils/mapRoutes'
 import { POKEDEX_PATH } from '~/utils/pokedex/routes'
 import { referenceIndexPath } from '~/utils/reference/routes'
@@ -36,10 +38,14 @@ export const filterAppNavItems = (
 
 export const isAppNavItemActive = (currentPath: string, itemPath: string): boolean => {
   if (itemPath === MAP_LIBRARY_PATH) {
-    return currentPath === '/' || currentPath.startsWith(MAP_LIBRARY_PATH) || currentPath.startsWith('/grids')
+    return (
+      isHomePath(currentPath)
+      || currentPath.startsWith(MAP_LIBRARY_PATH)
+      || isLegacyGridPath(currentPath)
+    )
   }
 
-  if (itemPath === '/') return currentPath === '/'
+  if (itemPath === HOME_PATH) return isHomePath(currentPath)
 
   return currentPath.startsWith(itemPath)
 }

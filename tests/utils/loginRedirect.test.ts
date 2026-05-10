@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest'
+import { LOGIN_PATH } from '~/utils/appRoutes'
 import {
   ENCOUNTER_GENERATOR_PATH,
   ENCOUNTER_TABLES_PATH,
 } from '~/utils/encounterRoutes'
 import {
   DEFAULT_LOGIN_REDIRECT,
-  LOGIN_PATH,
   PLAYER_BLOCKED_REDIRECT_PREFIXES,
   isPlayerBlockedRedirectPath,
   isSafeInternalRedirect,

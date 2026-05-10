@@ -3474,3 +3474,18 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
   - `npm test` — passes: 141 test files / 552 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: shared app and legacy-grid route helpers
+
+- Added `utils/appRoutes.ts` for canonical home/login route constants plus focused helpers for home/login path generation and exact-home matching.
+- Moved app-navigation, auth middleware, logout navigation, cookie-path setup, and login-redirect tests to consume the shared app route constants instead of repeating `/` and `/login` boundaries inline.
+- Extended `utils/legacyGridRoutes.ts` with a canonical legacy `/grids` path and predicate, then reused it in app-navigation active-route matching instead of keeping the legacy prefix string in navigation code.
+- Preserved existing public routes, login redirect behavior, root-cookie path behavior, legacy `/grids` active-state behavior, and legacy grid redirect coercion semantics.
+- Added `tests/utils/appRoutes.test.ts` and expanded legacy-grid route-helper coverage.
+- Next remaining phase: continue one bounded cleanup pass, with candidates including another focused map-editor/helper extraction, remaining helper constant cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/utils/appRoutes.test.ts tests/utils/legacyGridRoutes.test.ts tests/utils/appNavigation.test.ts tests/utils/loginRedirect.test.ts` — passes: 4 test files / 13 tests.
+  - `npm run typecheck` — passes.
+  - `npm test` — passes: 142 test files / 555 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

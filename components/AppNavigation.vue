@@ -6,7 +6,7 @@ import {
   filterAppNavItems,
   isAppNavItemActive,
 } from '~/utils/appNavigation'
-import { LOGIN_PATH } from '~/utils/loginRedirect'
+import { LOGIN_PATH } from '~/utils/appRoutes'
 
 const route = useRoute()
 const router = useRouter()
