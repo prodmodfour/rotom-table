@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ENCOUNTER_TABLES_PATH } from '~/utils/encounterRoutes'
 import { SHEET_LIBRARY_PATH } from '~/utils/sheetRoutes'
 
 defineProps<{
@@ -20,7 +21,7 @@ defineProps<{
       <code>data/sheets/</code> (the default) and they show up immediately
       on the <NuxtLink class="inline-link" :to="SHEET_LIBRARY_PATH">Sheets</NuxtLink>
       page. Browse all available tables on the
-      <NuxtLink class="inline-link" to="/encounter-tables">Encounter Tables</NuxtLink>
+      <NuxtLink class="inline-link" :to="ENCOUNTER_TABLES_PATH">Encounter Tables</NuxtLink>
       page.
     </p>
   </section>

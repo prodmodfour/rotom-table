@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck` currently passes. Next candidates include another focused map-editor/helper extraction, remaining route/helper constant cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck` currently passes. Next candidates include remaining route/helper constant cleanup (for example Pokédex/reference paths), another focused map-editor/helper extraction, or small UI duplication cleanup; do not mark the full refactor complete yet.
 
 ## Phase 0 baseline audit
 
@@ -3443,5 +3443,19 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck` curre
   - `npm test -- tests/utils/sheetRoutes.test.ts tests/utils/appNavigation.test.ts` — passes: 2 test files / 6 tests.
   - `npm run typecheck` — passes.
   - `npm test` — passes: 138 test files / 543 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: encounter/login route constant cleanup
+
+- Added `utils/encounterRoutes.ts` for canonical encounter-generator and encounter-table route paths plus the GM-only encounter route prefix list.
+- Updated app navigation, login redirect policy, auth middleware, logout routing, and encounter-page cross-links to consume shared route constants instead of repeating `/generate`, `/encounter-tables`, `/login`, and default `/maps` strings.
+- Preserved existing route URLs, GM-only encounter-page gating, player redirect fallback behavior, logout navigation, and encounter-page link targets.
+- Added `tests/utils/encounterRoutes.test.ts` and expanded login/app-navigation route-helper tests.
+- Next remaining phase: continue one bounded cleanup pass, with candidates including remaining route/helper constant cleanup (for example Pokédex/reference paths), another focused map-editor/helper extraction, or small UI duplication cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/utils/encounterRoutes.test.ts tests/utils/loginRedirect.test.ts tests/utils/appNavigation.test.ts` — passes: 3 test files / 10 tests.
+  - `npm run typecheck` — passes.
+  - `npm test` — passes: 139 test files / 546 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

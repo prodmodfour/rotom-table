@@ -6,6 +6,7 @@ import {
   filterAppNavItems,
   isAppNavItemActive,
 } from '~/utils/appNavigation'
+import { LOGIN_PATH } from '~/utils/loginRedirect'
 
 const route = useRoute()
 const router = useRouter()
@@ -18,7 +19,7 @@ const isActive = (path: string) => isAppNavItemActive(route.path, path)
 
 const handleLogout = async () => {
   logout()
-  await router.push('/login')
+  await router.push(LOGIN_PATH)
 }
 </script>
 

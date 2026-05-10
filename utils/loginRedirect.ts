@@ -1,7 +1,10 @@
-import { MAP_LIBRARY_PATH } from '~/utils/mapRoutes'
 import type { AuthRole } from '~/shared/auth'
+import { ENCOUNTER_GM_ONLY_PATH_PREFIXES } from '~/utils/encounterRoutes'
+import { MAP_LIBRARY_PATH } from '~/utils/mapRoutes'
 
-export const PLAYER_BLOCKED_REDIRECT_PREFIXES = ['/generate', '/encounter-tables'] as const
+export const LOGIN_PATH = '/login'
+
+export const PLAYER_BLOCKED_REDIRECT_PREFIXES = ENCOUNTER_GM_ONLY_PATH_PREFIXES
 
 export const DEFAULT_LOGIN_REDIRECT = MAP_LIBRARY_PATH
 

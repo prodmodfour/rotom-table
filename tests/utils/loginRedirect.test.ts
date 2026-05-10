@@ -1,12 +1,26 @@
 import { describe, expect, it } from 'vitest'
 import {
+  ENCOUNTER_GENERATOR_PATH,
+  ENCOUNTER_TABLES_PATH,
+} from '~/utils/encounterRoutes'
+import {
   DEFAULT_LOGIN_REDIRECT,
+  LOGIN_PATH,
+  PLAYER_BLOCKED_REDIRECT_PREFIXES,
   isPlayerBlockedRedirectPath,
   isSafeInternalRedirect,
   resolveLoginRedirectTarget,
 } from '~/utils/loginRedirect'
 
 describe('loginRedirect', () => {
+  it('exposes canonical login and player-blocked route constants', () => {
+    expect(LOGIN_PATH).toBe('/login')
+    expect(PLAYER_BLOCKED_REDIRECT_PREFIXES).toEqual([
+      ENCOUNTER_GENERATOR_PATH,
+      ENCOUNTER_TABLES_PATH,
+    ])
+  })
+
   it('accepts only single-slash internal redirects', () => {
     expect(isSafeInternalRedirect('/maps/atrium')).toBe(true)
     expect(isSafeInternalRedirect('//evil.example/path')).toBe(false)
@@ -16,10 +30,10 @@ describe('loginRedirect', () => {
   })
 
   it('detects player-blocked paths and nested routes', () => {
-    expect(isPlayerBlockedRedirectPath('/generate')).toBe(true)
-    expect(isPlayerBlockedRedirectPath('/generate/history')).toBe(true)
-    expect(isPlayerBlockedRedirectPath('/encounter-tables')).toBe(true)
-    expect(isPlayerBlockedRedirectPath('/encounter-tables/kanto')).toBe(true)
+    expect(isPlayerBlockedRedirectPath(ENCOUNTER_GENERATOR_PATH)).toBe(true)
+    expect(isPlayerBlockedRedirectPath(`${ENCOUNTER_GENERATOR_PATH}/history`)).toBe(true)
+    expect(isPlayerBlockedRedirectPath(ENCOUNTER_TABLES_PATH)).toBe(true)
+    expect(isPlayerBlockedRedirectPath(`${ENCOUNTER_TABLES_PATH}/kanto`)).toBe(true)
     expect(isPlayerBlockedRedirectPath('/maps/generate')).toBe(false)
   })
 
@@ -29,9 +43,9 @@ describe('loginRedirect', () => {
   })
 
   it('blocks player redirects to GM-only routes while allowing GM redirects', () => {
-    expect(resolveLoginRedirectTarget('/generate', 'player')).toBe(DEFAULT_LOGIN_REDIRECT)
-    expect(resolveLoginRedirectTarget('/encounter-tables/kanto', 'player')).toBe(DEFAULT_LOGIN_REDIRECT)
-    expect(resolveLoginRedirectTarget('/generate', 'gm')).toBe('/generate')
+    expect(resolveLoginRedirectTarget(ENCOUNTER_GENERATOR_PATH, 'player')).toBe(DEFAULT_LOGIN_REDIRECT)
+    expect(resolveLoginRedirectTarget(`${ENCOUNTER_TABLES_PATH}/kanto`, 'player')).toBe(DEFAULT_LOGIN_REDIRECT)
+    expect(resolveLoginRedirectTarget(ENCOUNTER_GENERATOR_PATH, 'gm')).toBe(ENCOUNTER_GENERATOR_PATH)
     expect(resolveLoginRedirectTarget('/maps/atrium', 'player')).toBe('/maps/atrium')
   })
 })

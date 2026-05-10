@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ENCOUNTER_GENERATOR_PATH } from '~/utils/encounterRoutes'
 import { formatRegionLabel } from '~/utils/encounterTables'
 import type { EncounterRegionGroup } from '~/utils/encounterTables'
 
@@ -30,7 +31,7 @@ const emit = defineEmits<{
       <p class="sidebar-copy">
         Browse encounter tables from
         <code>encounter_tables/&lt;region&gt;/&lt;table&gt;.json</code>.
-        Use the <NuxtLink to="/generate" class="inline-link">Generate</NuxtLink>
+        Use the <NuxtLink :to="ENCOUNTER_GENERATOR_PATH" class="inline-link">Generate</NuxtLink>
         page to roll on a table and produce stat blocks.
       </p>
 

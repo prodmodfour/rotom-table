@@ -1,21 +1,18 @@
-const playerBlockedRoutes = ['/generate', '/encounter-tables']
-
-const isPlayerBlockedPath = (path: string) =>
-  playerBlockedRoutes.some((route) => path === route || path.startsWith(`${route}/`))
+import { DEFAULT_LOGIN_REDIRECT, LOGIN_PATH, isPlayerBlockedRedirectPath } from '~/utils/loginRedirect'
 
 export default defineNuxtRouteMiddleware((to) => {
-  if (to.path === '/login') return
+  if (to.path === LOGIN_PATH) return
 
   const { role, isPlayer } = useAuth()
 
   if (!role.value) {
     return navigateTo({
-      path: '/login',
-      query: { redirect: to.fullPath && to.fullPath !== '/' ? to.fullPath : '/maps' },
+      path: LOGIN_PATH,
+      query: { redirect: to.fullPath && to.fullPath !== '/' ? to.fullPath : DEFAULT_LOGIN_REDIRECT },
     })
   }
 
-  if (isPlayer.value && isPlayerBlockedPath(to.path)) {
-    return navigateTo('/maps')
+  if (isPlayer.value && isPlayerBlockedRedirectPath(to.path)) {
+    return navigateTo(DEFAULT_LOGIN_REDIRECT)
   }
 })

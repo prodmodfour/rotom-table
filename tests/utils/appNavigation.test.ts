@@ -5,6 +5,7 @@ import {
   filterAppNavItems,
   isAppNavItemActive,
 } from '~/utils/appNavigation'
+import { ENCOUNTER_TABLES_PATH } from '~/utils/encounterRoutes'
 
 describe('app navigation helpers', () => {
   it('filters GM-only nav items for player-visible navigation', () => {
@@ -13,8 +14,8 @@ describe('app navigation helpers', () => {
       '/pokedex',
       '/sheets',
     ])
-    expect(filterAppNavItems(REFERENCE_APP_NAV_ITEMS, false).some((item) => item.path === '/encounter-tables')).toBe(false)
-    expect(filterAppNavItems(REFERENCE_APP_NAV_ITEMS, true).some((item) => item.path === '/encounter-tables')).toBe(true)
+    expect(filterAppNavItems(REFERENCE_APP_NAV_ITEMS, false).some((item) => item.path === ENCOUNTER_TABLES_PATH)).toBe(false)
+    expect(filterAppNavItems(REFERENCE_APP_NAV_ITEMS, true).some((item) => item.path === ENCOUNTER_TABLES_PATH)).toBe(true)
   })
 
   it('keeps legacy map/grid routes active under the Maps nav item', () => {
