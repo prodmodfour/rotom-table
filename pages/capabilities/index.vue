@@ -1,46 +1,29 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { capabilities, toSlug } from '~/data/ptuReference'
+import { filterCapabilities } from '~/utils/reference/capabilityIndex'
+import { referenceIndexTitle } from '~/utils/reference/pageTitles'
 
-useHead({ title: 'Capabilities · Rotom Table' })
+useHead({ title: referenceIndexTitle('Capabilities') })
 
 const searchTerm = ref('')
-const normalize = (value: string) => value.trim().toLowerCase()
-
-const filtered = computed(() => {
-  const query = normalize(searchTerm.value)
-  if (!query) return capabilities
-  return capabilities.filter((cap) => {
-    const haystacks = [cap.name, cap.effect ?? '']
-    return haystacks.some((value) => normalize(value).includes(query))
-  })
-})
+const filtered = computed(() => filterCapabilities(capabilities, searchTerm.value))
 </script>
 
 <template>
   <div class="ref-index">
-    <header class="ref-header">
-      <AppNavigation />
-      <section class="panel-card">
-        <div class="ref-heading">
-          <h1>Capabilities</h1>
-          <span class="badge">{{ filtered.length }} of {{ capabilities.length }}</span>
-        </div>
-        <p class="ref-copy">
-          Named PTU capabilities from <code>ptu-data/data/capabilities.json</code>.
-          The numeric movement keywords (Overland, Sky, Swim, Levitate, Burrow,
-          Jump, Power) are core mechanics and live in the rulebook itself.
-        </p>
-        <label class="search-field">
-          <span class="sr-only">Search capabilities</span>
-          <input
-            v-model.trim="searchTerm"
-            type="search"
-            placeholder="Search by name or effect…"
-          />
-        </label>
-      </section>
-    </header>
+    <ReferenceIndexHeader title="Capabilities" :count="filtered.length" :total="capabilities.length">
+      <p class="ref-copy">
+        Named PTU capabilities from <code>ptu-data/data/capabilities.json</code>.
+        The numeric movement keywords (Overland, Sky, Swim, Levitate, Burrow,
+        Jump, Power) are core mechanics and live in the rulebook itself.
+      </p>
+      <ReferenceSearchField
+        v-model="searchTerm"
+        label="Search capabilities"
+        placeholder="Search by name or effect…"
+      />
+    </ReferenceIndexHeader>
 
     <main class="ref-list">
       <NuxtLink
@@ -57,7 +40,7 @@ const filtered = computed(() => {
           <p v-if="cap.effect" class="ref-row__effect">{{ cap.effect }}</p>
         </div>
       </NuxtLink>
-      <p v-if="filtered.length === 0" class="empty-state">No capabilities match.</p>
+      <ReferenceEmptyState v-if="filtered.length === 0">No capabilities match.</ReferenceEmptyState>
     </main>
   </div>
 </template>

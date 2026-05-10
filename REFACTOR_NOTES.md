@@ -2089,3 +2089,13 @@
   - `npm test` — passes: 94 test files / 353 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: capability index filtering helper
+
+- Extracted capability-index search haystack construction and filtering into `utils/reference/capabilityIndex.ts`.
+- Updated the Capabilities index route to use shared reference header/search/empty-state components while preserving capability links, art, search behavior, and explanatory copy.
+- Added `tests/utils/reference/capabilityIndex.test.ts` covering name/effect haystacks, normalized query matching, and stable filtered ordering.
+- Quality gates after this phase:
+  - `npm test` — passes: 95 test files / 356 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
