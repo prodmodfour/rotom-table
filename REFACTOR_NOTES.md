@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; map create/rename/move/delete and map folder mutations are now tested use cases/thin routes, with map list/load/folders still good candidates for further thinning.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; map load is now a tested use case/thin route, with map list/folders still good candidates for further thinning.
 
 ## Phase 0 baseline audit
 
@@ -3049,5 +3049,19 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; map create/rename/move/de
 - Quality gates after this phase:
   - `npm test -- tests/server/deleteMap.test.ts` — passes: 1 test file / 3 tests.
   - `npm test` — passes: 120 test files / 449 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: map load use-case extraction
+
+- Extracted `/api/maps/load` orchestration into `server/useCases/loadMap.ts`.
+  - The use case now owns slug validation, map lookup, map read/invalid-document error mapping, and player-visible access checks behind injectable dependencies.
+- Reduced `server/api/maps/load.get.ts` to a thin H3 adapter for auth, query extraction, use-case invocation, and HTTP error translation.
+- Preserved existing load-map behavior: invalid slugs keep the compatible bad-request message, missing maps still return `Map <slug>.json not found`, invalid map documents still surface as 400s with the underlying map-storage error when available, and players cannot load maps that are not player-visible.
+- Added `tests/server/loadMap.test.ts` covering GM/player loading, invalid slugs, missing maps, hidden-map player rejection, and invalid map read error mapping.
+- Next remaining phase: continue map endpoint thinning, especially `server/api/maps/list.get.ts` and `server/api/maps/folders.get.ts`; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/server/loadMap.test.ts` — passes: 1 test file / 4 tests.
+  - `npm test` — passes: 121 test files / 453 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
