@@ -2575,3 +2575,12 @@
   - `npm test` — passes: 102 test files / 381 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: map admin ground-level control component
+
+- Extracted the map admin ground-level input and explanatory copy into `components/map/MapAdminGroundLevelControl.vue`.
+- Reduced `MapAdminPanel` to modal chrome plus summary display while preserving DOM event parsing, numeric bounds, and `set-ground-level-y` payload behavior.
+- Quality gates after this phase:
+  - `npm test` — passes: 102 test files / 381 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
