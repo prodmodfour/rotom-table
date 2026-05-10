@@ -1,19 +1,20 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+import {
+  PRIMARY_APP_NAV_ITEMS,
+  REFERENCE_APP_NAV_ITEMS,
+  filterAppNavItems,
+  isAppNavItemActive,
+} from '~/utils/appNavigation'
+
 const route = useRoute()
 const router = useRouter()
 const { isGm, roleLabel, logout } = useAuth()
 
-const isActive = (path: string) => {
-  if (path === '/maps') {
-    return route.path === '/' || route.path.startsWith('/maps') || route.path.startsWith('/grids')
-  }
+const primaryItems = computed(() => filterAppNavItems(PRIMARY_APP_NAV_ITEMS, isGm.value))
+const referenceItems = computed(() => filterAppNavItems(REFERENCE_APP_NAV_ITEMS, isGm.value))
 
-  if (path === '/') {
-    return route.path === '/'
-  }
-
-  return route.path.startsWith(path)
-}
+const isActive = (path: string) => isAppNavItemActive(route.path, path)
 
 const handleLogout = async () => {
   logout()
@@ -23,45 +24,22 @@ const handleLogout = async () => {
 
 <template>
   <nav class="app-navigation" aria-label="Primary">
-    <NuxtLink :class="['nav-link', { active: isActive('/maps') }]" to="/maps">
-      Maps
-    </NuxtLink>
-    <NuxtLink :class="['nav-link', { active: isActive('/pokedex') }]" to="/pokedex">
-      Pokédex
-    </NuxtLink>
-    <NuxtLink :class="['nav-link', { active: isActive('/sheets') }]" to="/sheets">
-      Sheets
-    </NuxtLink>
-    <NuxtLink v-if="isGm" :class="['nav-link', { active: isActive('/generate') }]" to="/generate">
-      Generate
+    <NuxtLink
+      v-for="item in primaryItems"
+      :key="item.path"
+      :class="['nav-link', { active: isActive(item.path) }]"
+      :to="item.path"
+    >
+      {{ item.label }}
     </NuxtLink>
     <span class="nav-divider" aria-hidden="true" />
-    <NuxtLink :class="['nav-link', { active: isActive('/moves') }]" to="/moves">
-      Moves
-    </NuxtLink>
-    <NuxtLink :class="['nav-link', { active: isActive('/abilities') }]" to="/abilities">
-      Abilities
-    </NuxtLink>
-    <NuxtLink :class="['nav-link', { active: isActive('/capabilities') }]" to="/capabilities">
-      Capabilities
-    </NuxtLink>
-    <NuxtLink :class="['nav-link', { active: isActive('/conditions') }]" to="/conditions">
-      Conditions
-    </NuxtLink>
-    <NuxtLink :class="['nav-link', { active: isActive('/rules') }]" to="/rules">
-      Rules
-    </NuxtLink>
-    <NuxtLink :class="['nav-link', { active: isActive('/items') }]" to="/items">
-      Items
-    </NuxtLink>
-    <NuxtLink :class="['nav-link', { active: isActive('/features') }]" to="/features">
-      Features
-    </NuxtLink>
-    <NuxtLink :class="['nav-link', { active: isActive('/edges') }]" to="/edges">
-      Edges
-    </NuxtLink>
-    <NuxtLink v-if="isGm" :class="['nav-link', { active: isActive('/encounter-tables') }]" to="/encounter-tables">
-      Encounter Tables
+    <NuxtLink
+      v-for="item in referenceItems"
+      :key="item.path"
+      :class="['nav-link', { active: isActive(item.path) }]"
+      :to="item.path"
+    >
+      {{ item.label }}
     </NuxtLink>
     <span class="nav-spacer" aria-hidden="true" />
     <span class="role-badge">{{ roleLabel }}</span>

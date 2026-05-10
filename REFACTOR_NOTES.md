@@ -2069,3 +2069,13 @@
   - `npm test` — passes: 92 test files / 348 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: app navigation helper extraction
+
+- Extracted primary/reference navigation item definitions, GM-only filtering, and active-route matching into `utils/appNavigation.ts`.
+- Updated `components/AppNavigation.vue` to render navigation from the shared item configuration instead of duplicating one `NuxtLink` per route inline.
+- Added `tests/utils/appNavigation.test.ts` covering player-vs-GM visibility, `/maps` legacy `/grids` active-state behavior, exact home matching, and prefix matching for detail routes.
+- Quality gates after this phase:
+  - `npm test` — passes: 93 test files / 351 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
