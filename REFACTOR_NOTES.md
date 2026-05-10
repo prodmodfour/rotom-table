@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; realtime client-id normalization and echo suppression are now centralized in shared helpers. Next candidates include extracting another focused autosave helper, addressing the documented broader typecheck backlog, or another small UI/helper duplication cleanup; do not mark the full refactor complete yet.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; map layer visibility defaults/options are now centralized in shared helpers. Next candidates include another focused map-editor helper extraction, addressing the documented broader typecheck backlog, or another small UI/helper duplication cleanup; do not mark the full refactor complete yet.
 
 ## Phase 0 baseline audit
 
@@ -3334,5 +3334,18 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; realtime client-id normal
 - Quality gates after this phase:
   - `npm test -- tests/shared/realtime.test.ts tests/utils/mapLibrary.test.ts tests/composables/library/useMapLibraryData.test.ts` — passes: 3 test files / 14 tests.
   - `npm test` — passes: 134 test files / 522 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: shared map layer visibility helpers
+
+- Centralized map layer defaults, canonical layer-option ordering, and partial visibility resolution in `utils/mapLayerVisibility.ts`.
+- Updated the map editor route to initialize layer visibility from the shared helper instead of owning duplicated inline defaults/options.
+- Updated map layer UI components to share the exported `MapLayerVisibilityKey` type, and updated isometric scene-state resolution to reuse the same map-layer defaults.
+- Expanded `tests/utils/mapLayerVisibility.test.ts` to cover canonical layer ordering, independent default-state creation, and partial visibility resolution.
+- Next remaining phase: continue one bounded cleanup pass, with candidates including another focused map-editor helper extraction, addressing the documented broader typecheck backlog, or another small UI/helper duplication cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/utils/mapLayerVisibility.test.ts tests/utils/isometric/sceneState.test.ts` — passes: 2 test files / 9 tests.
+  - `npm test` — passes: 134 test files / 525 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

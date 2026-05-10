@@ -8,6 +8,7 @@ import MapSidebarToggle from '~/components/map/MapSidebarToggle.vue'
 import type { SaveStatus } from '~/composables/useEditableSheet'
 import type { MapTokenSheetSelection } from '~/composables/map-editor/useTokenControls'
 import type { BuildTool, MapEditorMode, MapLeftSidebarSection } from '~/shared/mapEditor'
+import type { MapLayerVisibilityKey } from '~/utils/mapLayerVisibility'
 import type {
   LayerVisibility,
   MapRoomEffect,
@@ -24,7 +25,6 @@ import type { MapEffectDefinition } from '~/utils/mapFieldEffects'
 import type { MapHazardDefinition } from '~/utils/mapHazards'
 import type { VoxelMaterialDef } from '~/utils/voxels'
 
-type LayerVisibilityKey = keyof LayerVisibility
 type DimensionAxis = 'x' | 'y' | 'z'
 
 defineProps<{
@@ -51,7 +51,7 @@ defineProps<{
   activeHazardDef: MapHazardDefinition
   hazardPalette: MapHazardDefinition[]
   layerVisibility: LayerVisibility
-  layerOptions: readonly LayerVisibilityKey[]
+  layerOptions: readonly MapLayerVisibilityKey[]
   fieldEffectCount: number
   weatherCoexistNext: boolean
   activeWeatherEffects: MapWeatherEffect[]
@@ -81,7 +81,7 @@ const emit = defineEmits<{
   (event: 'clear-custom-color'): void
   (event: 'fill-ground'): void
   (event: 'clear-all-voxels'): void
-  (event: 'set-layer-visibility', layer: LayerVisibilityKey, value: boolean): void
+  (event: 'set-layer-visibility', layer: MapLayerVisibilityKey, value: boolean): void
   (event: 'set-hazard-tool', tool: BuildTool): void
   (event: 'select-hazard-kind', kind: MapHazardKind): void
   (event: 'clear-all-hazards'): void

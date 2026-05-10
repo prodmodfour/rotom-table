@@ -1,17 +1,15 @@
 <script setup lang="ts">
 import { checkedValueFromEvent } from '~/utils/domEvents'
-import { formatLayerVisibilityLabel } from '~/utils/mapLayerVisibility'
+import { formatLayerVisibilityLabel, type MapLayerVisibilityKey } from '~/utils/mapLayerVisibility'
 import type { LayerVisibility } from '~/types/map'
-
-type LayerVisibilityKey = keyof LayerVisibility
 
 defineProps<{
   layerVisibility: LayerVisibility
-  layerOptions: readonly LayerVisibilityKey[]
+  layerOptions: readonly MapLayerVisibilityKey[]
 }>()
 
 const emit = defineEmits<{
-  (event: 'set-layer-visibility', layer: LayerVisibilityKey, value: boolean): void
+  (event: 'set-layer-visibility', layer: MapLayerVisibilityKey, value: boolean): void
 }>()
 </script>
 

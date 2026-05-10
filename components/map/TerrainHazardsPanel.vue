@@ -5,12 +5,11 @@ import LayerVisibilityControls from '~/components/map/LayerVisibilityControls.vu
 import MapEditorModeToggle from '~/components/map/MapEditorModeToggle.vue'
 import TerrainBuilderControls from '~/components/map/TerrainBuilderControls.vue'
 import { formatTerrainHazardBadge } from '~/utils/mapPanelBadges'
+import type { MapLayerVisibilityKey } from '~/utils/mapLayerVisibility'
 import type { VoxelMaterialDef } from '~/utils/voxels'
 import type { BuildTool } from '~/shared/mapEditor'
 import type { LayerVisibility, MapHazardKind, VoxelMaterial } from '~/types/map'
 import type { MapHazardDefinition } from '~/utils/mapHazards'
-
-type LayerVisibilityKey = keyof LayerVisibility
 
 defineProps<{
   collapsed: boolean
@@ -29,7 +28,7 @@ defineProps<{
   activeHazardDef: MapHazardDefinition
   hazardPalette: MapHazardDefinition[]
   layerVisibility: LayerVisibility
-  layerOptions: readonly LayerVisibilityKey[]
+  layerOptions: readonly MapLayerVisibilityKey[]
 }>()
 
 const emit = defineEmits<{
@@ -41,7 +40,7 @@ const emit = defineEmits<{
   (event: 'clear-custom-color'): void
   (event: 'fill-ground'): void
   (event: 'clear-all-voxels'): void
-  (event: 'set-layer-visibility', layer: LayerVisibilityKey, value: boolean): void
+  (event: 'set-layer-visibility', layer: MapLayerVisibilityKey, value: boolean): void
   (event: 'set-hazard-tool', tool: BuildTool): void
   (event: 'select-hazard-kind', kind: MapHazardKind): void
   (event: 'clear-all-hazards'): void

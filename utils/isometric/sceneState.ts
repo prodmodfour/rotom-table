@@ -1,23 +1,17 @@
 import type { GridDimensions } from '~/types/pokemon'
 import type { LayerVisibility, MapFieldEffects, MapHazardV2, MapVoxelV2 } from '~/types/map'
 import { clampMapGroundLevelY } from '~/utils/mapGroundLevel'
+import {
+  createDefaultMapLayerVisibility,
+  resolveMapLayerVisibility,
+} from '~/utils/mapLayerVisibility'
 import { voxelMaterialId } from '~/utils/voxels'
 
-export const DEFAULT_ISOMETRIC_LAYER_VISIBILITY: LayerVisibility = {
-  terrain: true,
-  shadows: true,
-  tokens: true,
-  grid: true,
-  hazards: true,
-  fieldEffects: true,
-}
+export const DEFAULT_ISOMETRIC_LAYER_VISIBILITY: LayerVisibility = createDefaultMapLayerVisibility()
 
 export const resolveIsometricLayerVisibility = (
   visibility: Partial<LayerVisibility> | null | undefined,
-): LayerVisibility => ({
-  ...DEFAULT_ISOMETRIC_LAYER_VISIBILITY,
-  ...(visibility ?? {}),
-})
+): LayerVisibility => resolveMapLayerVisibility(visibility)
 
 export const shouldShowMovementGrid = (options: {
   hasSelectedPokemon: boolean

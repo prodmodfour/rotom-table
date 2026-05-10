@@ -23,6 +23,11 @@ import { reconcileMapForDimensions } from '~/utils/mapDimensionReconciliation'
 import { isCtrlShiftLetter, isEscapeKey } from '~/utils/keyboardShortcuts'
 import { mapEditorPath, mapLibraryPath } from '~/utils/mapRoutes'
 import { clampMapGroundLevelY, mapSpecificYBounds, maxGroundLevelY } from '~/utils/mapGroundLevel'
+import {
+  createDefaultMapLayerVisibility,
+  MAP_LAYER_OPTIONS,
+  type MapLayerVisibilityKey,
+} from '~/utils/mapLayerVisibility'
 import type { SaveStatus } from '~/composables/useEditableSheet'
 import type { MapEditorMode, MapLeftSidebarSection } from '~/shared/mapEditor'
 import type {
@@ -72,22 +77,8 @@ const canEditMap = computed(() => isGm.value)
 const canManageInitiative = computed(() => isGm.value)
 const canSpawnTokens = computed(() => isGm.value)
 
-const layerVisibility = ref({
-  terrain: true,
-  shadows: true,
-  tokens: true,
-  grid: true,
-  hazards: true,
-  fieldEffects: true,
-})
-const layerOptions = [
-  'terrain',
-  'shadows',
-  'tokens',
-  'grid',
-  'hazards',
-  'fieldEffects',
-] as const
+const layerVisibility = ref(createDefaultMapLayerVisibility())
+const layerOptions = MAP_LAYER_OPTIONS
 
 const mapVoxels = computed<MapVoxelV2[]>(() => map.value?.voxels ?? [])
 const mapHazards = computed<MapHazardV2[]>(() => map.value?.hazards ?? [])
@@ -349,7 +340,7 @@ const setMode = (mode: MapEditorMode) => {
   if (nextBuild || nextHazards) clearSelection()
 }
 
-const setLayerVisibility = (layer: keyof typeof layerVisibility.value, value: boolean) => {
+const setLayerVisibility = (layer: MapLayerVisibilityKey, value: boolean) => {
   layerVisibility.value[layer] = value
 }
 
