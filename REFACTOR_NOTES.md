@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; autosave dirty scheduling is now shared across editable map and sheet watchers. Next candidates include extracting additional autosave resource helpers, addressing the documented broader typecheck backlog, or another focused UI/helper duplication cleanup; do not mark the full refactor complete yet.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; shared autosave resource controller now bundles editable map/sheet status, snapshot, guard, task, and dirty scheduling setup. Next candidates include extracting another focused autosave helper, addressing the documented broader typecheck backlog, or another small UI/helper duplication cleanup; do not mark the full refactor complete yet.
 
 ## Phase 0 baseline audit
 
@@ -3308,5 +3308,18 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; autosave dirty scheduling
 - Quality gates after this phase:
   - `npm test -- tests/utils/autosave.test.ts` — passes: 1 test file / 19 tests.
   - `npm test` — passes: 133 test files / 517 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: shared autosave resource controller
+
+- Added `createAutosaveResourceController` to `utils/autosave.ts` to bundle the common editable-resource setup for status control, clean-snapshot tracking, latest-save guards, debounced tasks, and dirty scheduling behind a narrow controller.
+- Updated `useEditableMap` and `useEditableSheet` to use the shared resource controller while keeping map/sheet-specific save payloads, realtime handling, unload flushing, and pending-status semantics local.
+- Preserved map autosave/reload/rename behavior, sheet persisted-payload comparisons, clientId echo suppression, sheet unload beacon behavior, stale-save guards, and public `saveNow`/cancel APIs.
+- Expanded `tests/utils/autosave.test.ts` to cover resource-controller bundling, dirty scheduling, debounce cancellation, immediate save wrappers, snapshot tracking, and save guard exposure.
+- Next remaining phase: continue one bounded cleanup pass, with candidates including extracting another focused autosave helper, addressing the documented broader typecheck backlog, or another UI/helper duplication cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/utils/autosave.test.ts` — passes: 1 test file / 21 tests.
+  - `npm test` — passes: 133 test files / 519 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

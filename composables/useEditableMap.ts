@@ -22,14 +22,7 @@
 import { onBeforeUnmount, ref, watch, type Ref } from 'vue'
 import { getClientId } from '~/utils/clientId'
 import { mapChannel } from '~/shared/realtime'
-import {
-  createAutosaveDirtyScheduler,
-  createAutosaveSnapshotTracker,
-  createAutosaveStatusController,
-  createDebouncedAutosaveTask,
-  createLatestSaveGuard,
-  runLatestAutosave,
-} from '~/utils/autosave'
+import { createAutosaveResourceController, runLatestAutosave } from '~/utils/autosave'
 import { deepCloneJson, sameJsonValue, stableJsonStringify } from '~/utils/serialization'
 import { useRealtimeChannel } from './useRealtime'
 import type { TabletopMap } from '~/types/map'
@@ -52,17 +45,13 @@ export const useEditableMap = (slug: string, debounceMs = 200): UseEditableMapRe
   const error = ref<string | null>(null)
   const renamedTo = ref<string | null>(null)
 
-  const autosaveStatus = createAutosaveStatusController<MapSaveStatus>(
-    { status, error },
-    { saving: 'saving', saved: 'saved', error: 'error' },
-  )
-  const serverSnapshot = createAutosaveSnapshotTracker<TabletopMap>(stableJsonStringify)
   const clientId = getClientId()
-  const saveGuard = createLatestSaveGuard()
-  const saveTask = createDebouncedAutosaveTask(() => performSave(), debounceMs)
-  const dirtyScheduler = createAutosaveDirtyScheduler<TabletopMap>({
-    snapshot: serverSnapshot,
-    task: saveTask,
+  const autosave = createAutosaveResourceController<TabletopMap, MapSaveStatus>({
+    refs: { status, error },
+    labels: { saving: 'saving', saved: 'saved', error: 'error' },
+    serialize: stableJsonStringify,
+    save: () => performSave(),
+    debounceMs,
     markPending: () => {
       status.value = 'saving'
     },
@@ -131,8 +120,8 @@ export const useEditableMap = (slug: string, debounceMs = 200): UseEditableMapRe
     const snapshot: TabletopMap = JSON.parse(JSON.stringify(map.value))
 
     await runLatestAutosave({
-      guard: saveGuard,
-      status: autosaveStatus,
+      guard: autosave.guard,
+      status: autosave.statusController,
       save: () =>
         $fetch<{ map: TabletopMap }>('/api/maps/save', {
           method: 'POST',
@@ -141,7 +130,7 @@ export const useEditableMap = (slug: string, debounceMs = 200): UseEditableMapRe
       onSuccess: (result, { latest }) => {
         if (!latest) return
         // Adopt the persisted version (server stamps `updatedAt`).
-        serverSnapshot.markClean(result.map)
+        autosave.snapshot.markClean(result.map)
         // Splice in the new updatedAt without disturbing other fields the
         // user may have edited mid-flight.
         if (map.value) map.value.updatedAt = result.map.updatedAt
@@ -151,7 +140,7 @@ export const useEditableMap = (slug: string, debounceMs = 200): UseEditableMapRe
   }
 
   const saveNow = async () => {
-    await saveTask.runNow()
+    await autosave.saveNow()
   }
 
   const reload = async () => {
@@ -159,7 +148,7 @@ export const useEditableMap = (slug: string, debounceMs = 200): UseEditableMapRe
     error.value = null
     try {
       const data = await $fetch<{ map: TabletopMap }>('/api/maps/load', { params: { slug } })
-      serverSnapshot.markClean(data.map)
+      autosave.snapshot.markClean(data.map)
       applyServerMap(data.map)
       status.value = 'idle'
     } catch (err: unknown) {
@@ -169,14 +158,14 @@ export const useEditableMap = (slug: string, debounceMs = 200): UseEditableMapRe
         map.value = null
         return
       }
-      autosaveStatus.markError(err, { logPrefix: '[useEditableMap] load failed' })
+      autosave.statusController.markError(err, { logPrefix: '[useEditableMap] load failed' })
     }
   }
 
   watch(
     map,
     (current) => {
-      dirtyScheduler.scheduleIfDirty(current)
+      autosave.scheduleIfDirty(current)
     },
     { deep: true },
   )
@@ -185,7 +174,7 @@ export const useEditableMap = (slug: string, debounceMs = 200): UseEditableMapRe
     if (event.clientId === clientId) return
     if (event.type === 'updated' && event.data) {
       const incoming = event.data as TabletopMap
-      serverSnapshot.markClean(incoming)
+      autosave.snapshot.markClean(incoming)
       applyServerMap(incoming)
       status.value = 'idle'
     } else if (event.type === 'deleted') {
@@ -196,9 +185,9 @@ export const useEditableMap = (slug: string, debounceMs = 200): UseEditableMapRe
       if (!payload.newSlug) return
       // The file moved on disk — drop any pending save (its slug is
       // gone) and let the page navigate to the new URL.
-      saveTask.cancel()
+      autosave.cancelPendingSave()
       if (payload.map) {
-        serverSnapshot.markClean(payload.map)
+        autosave.snapshot.markClean(payload.map)
         applyServerMap(payload.map)
       }
       status.value = 'idle'
@@ -207,14 +196,14 @@ export const useEditableMap = (slug: string, debounceMs = 200): UseEditableMapRe
   })
 
   onBeforeUnmount(() => {
-    if (!saveTask.hasPending()) return
+    if (!autosave.task.hasPending()) return
     // Skip flushing the pending save when the slug was renamed away
     // from us — the old filename no longer exists on disk.
     if (renamedTo.value) {
-      saveTask.cancel()
+      autosave.cancelPendingSave()
       return
     }
-    void saveTask.flushPending()
+    void autosave.task.flushPending()
   })
 
   void reload()

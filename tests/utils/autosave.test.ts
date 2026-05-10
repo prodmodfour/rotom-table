@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   bindAutosaveUnloadFlushers,
   createAutosaveDirtyScheduler,
+  createAutosaveResourceController,
   createAutosaveSnapshotTracker,
   createAutosaveStatusController,
   createDebouncedAutosaveTask,
@@ -306,6 +307,78 @@ describe('createAutosaveDirtyScheduler', () => {
     scheduler.scheduleIfDirty({ name: 'new' })
 
     expect(refs).toEqual({ status: 'saving', error: 'previous error' })
+  })
+})
+
+describe('createAutosaveResourceController', () => {
+  type TestStatus = 'idle' | 'saving' | 'saved' | 'error'
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('bundles status, snapshot, guard, dirty scheduling, and save task primitives', async () => {
+    vi.useFakeTimers()
+    const refs = {
+      status: { value: 'idle' as TestStatus },
+      error: { value: 'old error' as string | null },
+    }
+    const save = vi.fn()
+    const markPending = vi.fn(() => {
+      refs.status.value = 'saving'
+    })
+    const controller = createAutosaveResourceController({
+      refs,
+      labels: { saving: 'saving', saved: 'saved', error: 'error' },
+      serialize: (value: { name: string }) => JSON.stringify(value),
+      initialValue: { name: 'clean' },
+      save,
+      debounceMs: 25,
+      markPending,
+    })
+
+    expect(controller.snapshot.isClean({ name: 'clean' })).toBe(true)
+    expect(controller.scheduleIfDirty({ name: 'clean' })).toBe(false)
+    expect(controller.scheduleIfDirty({ name: 'dirty' })).toBe(true)
+    expect(markPending).toHaveBeenCalledTimes(1)
+    expect(controller.task.hasPending()).toBe(true)
+    expect(refs.status.value).toBe('saving')
+    expect(refs.error.value).toBe('old error')
+
+    await vi.advanceTimersByTimeAsync(25)
+    expect(save).toHaveBeenCalledTimes(1)
+
+    const first = controller.guard.begin()
+    const second = controller.guard.begin()
+    expect(controller.guard.isLatest(first)).toBe(false)
+    expect(controller.guard.isLatest(second)).toBe(true)
+
+    controller.statusController.markSaved()
+    expect(refs.status.value).toBe('saved')
+  })
+
+  it('exposes immediate save and cancellation wrappers around the debounced task', async () => {
+    vi.useFakeTimers()
+    const save = vi.fn()
+    const controller = createAutosaveResourceController({
+      refs: {
+        status: { value: 'idle' as TestStatus },
+        error: { value: null as string | null },
+      },
+      labels: { saving: 'saving', saved: 'saved', error: 'error' },
+      serialize: (value: { id: number }) => JSON.stringify(value),
+      save,
+      debounceMs: 50,
+      markPending: vi.fn(),
+    })
+
+    controller.scheduleIfDirty({ id: 1 })
+    expect(controller.cancelPendingSave()).toBe(true)
+    await vi.advanceTimersByTimeAsync(50)
+    expect(save).not.toHaveBeenCalled()
+
+    await controller.saveNow()
+    expect(save).toHaveBeenCalledTimes(1)
   })
 })
 

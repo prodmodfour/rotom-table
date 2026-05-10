@@ -21,11 +21,7 @@ import { getClientId } from '~/utils/clientId'
 import { sheetChannel } from '~/shared/realtime'
 import {
   bindAutosaveUnloadFlushers,
-  createAutosaveDirtyScheduler,
-  createAutosaveSnapshotTracker,
-  createAutosaveStatusController,
-  createDebouncedAutosaveTask,
-  createLatestSaveGuard,
+  createAutosaveResourceController,
   runLatestAutosave,
   sendJsonWithUnloadFallback,
 } from '~/utils/autosave'
@@ -63,11 +59,6 @@ export function useEditableSheet<T extends { slug: string }>(
   const saveError = ref<string | null>(null)
   const clientId = getClientId()
 
-  const autosaveStatus = createAutosaveStatusController<SaveStatus>(
-    { status: saveStatus, error: saveError },
-    { saving: 'saving', saved: 'saved', error: 'error' },
-  )
-
   const toPersistedPayload = (value: T): Record<string, unknown> => {
     const payload: Record<string, unknown> = { ...(value as unknown as Record<string, unknown>) }
     delete payload.folder
@@ -77,54 +68,54 @@ export function useEditableSheet<T extends { slug: string }>(
   const jsonFor = (value: T): string => stableJsonStringify(toPersistedPayload(value))
   // Mirrors what's persisted on disk; used by the deep watcher to skip
   // saves when the only change came from an SSE update.
-  const serverSnapshot = createAutosaveSnapshotTracker(jsonFor, initial)
-  const hasUnsavedChanges = (): boolean => serverSnapshot.isDirty(sheet.value)
-
-  const saveGuard = createLatestSaveGuard()
-  const saveTask = createDebouncedAutosaveTask(() => performSave(), debounceMs)
-  const dirtyScheduler = createAutosaveDirtyScheduler<T>({
-    snapshot: serverSnapshot,
-    task: saveTask,
+  const autosave = createAutosaveResourceController<T, SaveStatus>({
+    refs: { status: saveStatus, error: saveError },
+    labels: { saving: 'saving', saved: 'saved', error: 'error' },
+    serialize: jsonFor,
+    initialValue: initial,
+    save: () => performSave(),
+    debounceMs,
     markPending: () => {
       saveStatus.value = 'saving'
     },
   })
+  const hasUnsavedChanges = (): boolean => autosave.snapshot.isDirty(sheet.value)
 
   const cancelPendingSave = () => {
-    saveTask.cancel()
+    autosave.cancelPendingSave()
   }
 
   const performSave = async () => {
     const payload = toPersistedPayload(sheet.value)
     const payloadJson = stableJsonStringify(payload)
-    if (serverSnapshot.isCleanJson(payloadJson)) {
-      if (saveStatus.value === 'saving') autosaveStatus.markSaved()
+    if (autosave.snapshot.isCleanJson(payloadJson)) {
+      if (saveStatus.value === 'saving') autosave.statusController.markSaved()
       return
     }
 
     await runLatestAutosave({
-      guard: saveGuard,
-      status: autosaveStatus,
+      guard: autosave.guard,
+      status: autosave.statusController,
       save: () =>
         $fetch('/api/sheets/save', {
           method: 'POST',
           body: { kind, slug: sheet.value.slug, sheet: payload, clientId },
         }),
       onSuccess: () => {
-        serverSnapshot.markCleanJson(payloadJson)
+        autosave.snapshot.markCleanJson(payloadJson)
       },
       error: { logPrefix: '[useEditableSheet] save failed' },
     })
   }
 
   const saveNow = async () => {
-    await saveTask.runNow()
+    await autosave.saveNow()
   }
 
   watch(
     sheet,
     (current) => {
-      dirtyScheduler.scheduleIfDirty(current)
+      autosave.scheduleIfDirty(current)
     },
     { deep: true },
   )
@@ -140,7 +131,7 @@ export function useEditableSheet<T extends { slug: string }>(
         | undefined
       if (event.type === 'updated' && payload?.sheet) {
         const incoming = deepCloneJson(payload.sheet)
-        serverSnapshot.markClean(incoming)
+        autosave.snapshot.markClean(incoming)
         sheet.value = incoming
         saveStatus.value = 'saved'
       }
@@ -149,7 +140,7 @@ export function useEditableSheet<T extends { slug: string }>(
 
   const flushWithBeacon = () => {
     if (!hasUnsavedChanges()) return
-    saveTask.cancel()
+    autosave.cancelPendingSave()
 
     const payload = toPersistedPayload(sheet.value)
     const payloadJson = stableJsonStringify(payload)
@@ -159,7 +150,7 @@ export function useEditableSheet<T extends { slug: string }>(
 
     // Treat this tab as clean once the unload request was attempted so
     // `beforeunload` + `pagehide` don't queue duplicate writes.
-    serverSnapshot.markCleanJson(payloadJson)
+    autosave.snapshot.markCleanJson(payloadJson)
     saveStatus.value = 'saved'
   }
 
@@ -167,7 +158,7 @@ export function useEditableSheet<T extends { slug: string }>(
 
   if (getCurrentInstance()) {
     onBeforeUnmount(() => {
-      if (hasUnsavedChanges()) void saveTask.runNow()
+      if (hasUnsavedChanges()) void autosave.saveNow()
       unsubscribe?.()
       unsubscribe = null
       removeUnloadFlushers?.()
