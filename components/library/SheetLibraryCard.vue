@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import LibraryCardMedia from '~/components/library/LibraryCardMedia.vue'
 import LibraryCardShell from '~/components/library/LibraryCardShell.vue'
+import LibraryCardText from '~/components/library/LibraryCardText.vue'
 import type { SheetLibraryItem } from '~/utils/sheetLibrary'
 import { sheetEditorPath } from '~/utils/sheetRoutes'
 
@@ -33,14 +34,13 @@ const emit = defineEmits<{
         :image-alt="item.sheet.species"
         fallback-label="?"
       />
-      <div class="sheet-card__body">
-        <div class="sheet-card__heading">
-          <h3>{{ item.sheet.nickname }}</h3>
+      <LibraryCardText
+        :title="item.sheet.nickname"
+        :subtitle="`${item.sheet.species} · Lv ${item.sheet.level}`"
+      >
+        <template #title-extra>
           <span v-if="item.sheet.shiny" class="badge shiny" title="Shiny">★</span>
-        </div>
-        <p class="sheet-card__species">
-          {{ item.sheet.species }} · Lv {{ item.sheet.level }}
-        </p>
+        </template>
         <ul class="sheet-card__meta">
           <li v-if="item.sheet.nature">{{ item.sheet.nature }}</li>
           <li v-if="item.sheet.gender">{{ item.sheet.gender }}</li>
@@ -53,29 +53,26 @@ const emit = defineEmits<{
             />
           </li>
         </ul>
-      </div>
+      </LibraryCardText>
     </template>
 
     <template v-else>
       <LibraryCardMedia class="trainer-icon">
         <span aria-hidden="true">🎯</span>
       </LibraryCardMedia>
-      <div class="sheet-card__body">
-        <div class="sheet-card__heading">
-          <h3>{{ item.sheet.name }}</h3>
-        </div>
-        <p class="sheet-card__species">
-          Trainer · Lv {{ item.sheet.level }}
-          <span v-if="item.sheet.classes?.length">
-            · {{ item.sheet.classes.map((c) => c.name).join(', ') }}
-          </span>
-        </p>
+      <LibraryCardText
+        :title="item.sheet.name"
+        :subtitle="[
+          `Trainer · Lv ${item.sheet.level}`,
+          item.sheet.classes?.length ? item.sheet.classes.map((c) => c.name).join(', ') : '',
+        ].filter(Boolean).join(' · ')"
+      >
         <ul class="sheet-card__meta">
           <li v-if="item.sheet.skillBackground?.name">{{ item.sheet.skillBackground.name }}</li>
           <li v-if="item.sheet.sex">{{ item.sheet.sex }}</li>
           <li v-if="item.sheet.playedBy">PB: {{ item.sheet.playedBy }}</li>
         </ul>
-      </div>
+      </LibraryCardText>
     </template>
   </LibraryCardShell>
 </template>
@@ -83,35 +80,6 @@ const emit = defineEmits<{
 <style scoped>
 .trainer-icon {
   font-size: 1.8rem;
-}
-
-.sheet-card__body {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.sheet-card__heading {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.sheet-card__heading h2,
-.sheet-card__heading h3 {
-  margin: 0;
-  font-family: var(--font-book);
-  font-size: 1.1rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  color: var(--ink-bright);
-}
-
-.sheet-card__species {
-  margin: 0;
-  color: var(--ink-soft);
-  font-size: 0.88rem;
 }
 
 .sheet-card__meta {
