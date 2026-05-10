@@ -24,7 +24,8 @@ import { getClientId } from '~/utils/clientId'
 import { isRealtimeEcho, mapChannel } from '~/shared/realtime'
 import { createAutosaveResourceController, runLatestAutosave } from '~/utils/autosave'
 import { MAP_API_PATHS } from '~/utils/apiRoutes'
-import { deepCloneJson, sameJsonValue, stableJsonStringify } from '~/utils/serialization'
+import { deepCloneJson, sameJsonValue } from '~/utils/serialization'
+import { clonePersistableMapPayload, stablePersistableMapJson } from '~/utils/maps/persistence'
 import { useApiClient } from './useApiClient'
 import { useRealtimeChannel } from './useRealtime'
 import type { TabletopMap } from '~/types/map'
@@ -52,7 +53,7 @@ export const useEditableMap = (slug: string, debounceMs = 200): UseEditableMapRe
   const autosave = createAutosaveResourceController<TabletopMap, MapSaveStatus>({
     refs: { status, error },
     labels: { saving: 'saving', saved: 'saved', error: 'error' },
-    serialize: stableJsonStringify,
+    serialize: stablePersistableMapJson,
     save: () => performSave(),
     debounceMs,
     markPending: () => {
@@ -120,7 +121,7 @@ export const useEditableMap = (slug: string, debounceMs = 200): UseEditableMapRe
 
   const performSave = async () => {
     if (!map.value) return
-    const snapshot: TabletopMap = JSON.parse(JSON.stringify(map.value))
+    const snapshot = clonePersistableMapPayload(map.value)
 
     await runLatestAutosave({
       guard: autosave.guard,

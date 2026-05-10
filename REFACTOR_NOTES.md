@@ -55,7 +55,7 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
 ## Current quality gate results
 
 - `npm run typecheck` — passes.
-- `npm test` — passes: 145 test files / 565 tests.
+- `npm test` — passes: 147 test files / 572 tests.
 - `npm run build` — passes; existing large chunk warnings remain.
 - `npm run check:move-automation` — still fails with the same baseline `Explicit move automation coverage: 0/769` missing-script report.
 - `npm run sync:item-sprites -- --dry-run` was not run because the script does not implement a dry-run mode.
@@ -3542,5 +3542,19 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
   - `npm test -- tests/utils/sheets/persistence.test.ts tests/utils/sheetMutations.test.ts tests/server/sheetStorage.test.ts tests/utils/autosave.test.ts` — passes: 4 test files / 29 tests.
   - `npm run typecheck` — passes.
   - `npm test` — passes: 146 test files / 568 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: shared map persistence helper
+
+- Added `utils/maps/persistence.ts` to centralize map JSON persistence payload rules for client and server code.
+- Updated editable map autosave snapshots/save payloads and server map writes to use the shared helper instead of repeating derived `folder` removal inline.
+- Preserved map autosave request shape, server filesystem write formatting, folder-as-path-derived behavior, and stable autosave comparisons while ignoring folder-only changes.
+- Added `tests/utils/maps/persistence.test.ts` covering derived-folder stripping, non-mutating payload construction, stable persisted JSON, and deep-cloned save payloads.
+- Next remaining phase: continue one bounded cleanup pass, with candidates including another focused map-editor/helper extraction, remaining client helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/utils/maps/persistence.test.ts tests/utils/autosave.test.ts` — passes: 2 test files / 25 tests.
+  - `npm run typecheck` — passes.
+  - `npm test` — passes: 147 test files / 572 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

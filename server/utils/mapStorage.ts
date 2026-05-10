@@ -23,6 +23,7 @@ import {
 import { normalizeMaterialId } from '~/utils/mapMaterials'
 import { normalizeMapHazard } from '~/utils/mapHazards'
 import { normalizeMapFieldEffects } from '~/utils/mapFieldEffects'
+import { toPersistableMapPayload } from '~/utils/maps/persistence'
 import { PROJECT_ROOT, pruneEmptyParents } from './fsPaths'
 
 export const MAPS_ROOT = resolve(PROJECT_ROOT, 'data/maps')
@@ -179,10 +180,7 @@ export const readMapFile = (filePath: string): TabletopMap => {
 
 export const writeMapFile = (filePath: string, map: TabletopMap): void => {
   mkdirSync(dirname(filePath), { recursive: true })
-  // Folder is re-derived from the path on read, so don't persist it.
-  const out: Record<string, unknown> = { ...(map as unknown as Record<string, unknown>) }
-  delete out.folder
-  writeFileSync(filePath, JSON.stringify(out, null, 2) + '\n', 'utf8')
+  writeFileSync(filePath, JSON.stringify(toPersistableMapPayload(map), null, 2) + '\n', 'utf8')
 }
 
 export const summarizeMap = (map: TabletopMap): MapSummary => ({
