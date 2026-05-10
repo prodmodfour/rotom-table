@@ -2277,3 +2277,13 @@
   - `npm test` — passes: 99 test files / 370 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: field-effect chip list component
+
+- Extracted active field-effect chip rendering, duration inputs, remove buttons, and empty-state copy into `components/map/FieldEffectChipList.vue`.
+- Kept weather/terrain/room event typing in `FieldEffectsPanel` through narrow adapter functions while the new component owns generic chip presentation.
+- Preserved duration editing, room "starts next round" text, remove labels, disabled-map-edit behavior, and active-effect empty messages.
+- Quality gates after this phase:
+  - `npm test` — passes: 99 test files / 370 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

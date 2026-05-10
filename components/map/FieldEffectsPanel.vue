@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import CollapsiblePanelHeading from '~/components/map/CollapsiblePanelHeading.vue'
+import FieldEffectChipList from '~/components/map/FieldEffectChipList.vue'
 import FieldEffectSwatchGrid from '~/components/map/FieldEffectSwatchGrid.vue'
 import { checkedValueFromEvent } from '~/utils/domEvents'
 import type { MapEffectDefinition } from '~/utils/mapFieldEffects'
@@ -50,8 +51,17 @@ const emit = defineEmits<{
 }>()
 
 const selectWeather = (kind: string) => emit('set-weather', kind as MapWeatherKind)
+const removeWeather = (kind: string) => emit('remove-weather', kind as MapWeatherKind)
+const setWeatherRounds = (kind: string, value: Event) =>
+  emit('set-weather-rounds', kind as MapWeatherKind, value)
 const toggleTerrain = (kind: string) => emit('toggle-terrain', kind as MapTerrainKind)
+const removeTerrain = (kind: string) => emit('remove-terrain', kind as MapTerrainKind)
+const setTerrainRounds = (kind: string, value: Event) =>
+  emit('set-terrain-rounds', kind as MapTerrainKind, value)
 const toggleRoom = (kind: string) => emit('toggle-room', kind as MapRoomKind)
+const removeRoom = (kind: string) => emit('remove-room', kind as MapRoomKind)
+const setRoomRounds = (kind: string, value: Event) =>
+  emit('set-room-rounds', kind as MapRoomKind, value)
 </script>
 
 <template>
@@ -94,40 +104,15 @@ const toggleRoom = (kind: string) => emit('toggle-room', kind as MapRoomKind)
           />
           Add next weather alongside current one (Climate Control)
         </label>
-        <div v-if="activeWeatherEffects.length" class="effect-chip-list">
-          <article
-            v-for="effect in activeWeatherEffects"
-            :key="effect.kind"
-            class="effect-chip"
-            :style="{ '--effect-color': weatherDefinition(effect.kind).color }"
-          >
-            <div class="effect-chip__main">
-              <strong>{{ weatherDefinition(effect.kind).label }}</strong>
-              <span>{{ weatherDefinition(effect.kind).description }}</span>
-            </div>
-            <label class="duration-field">
-              <span>Duration</span>
-              <input
-                type="number"
-                min="0"
-                :value="durationLabel(effect.rounds)"
-                :disabled="!canEditMap"
-                placeholder="∞"
-                @input="emit('set-weather-rounds', effect.kind, $event)"
-              />
-            </label>
-            <button
-              v-if="canEditMap"
-              type="button"
-              class="chip-remove"
-              :aria-label="`Remove ${weatherDefinition(effect.kind).label}`"
-              @click="emit('remove-weather', effect.kind)"
-            >
-              ×
-            </button>
-          </article>
-        </div>
-        <p v-else class="field-effect-empty">Clear / normal weather.</p>
+        <FieldEffectChipList
+          :effects="activeWeatherEffects"
+          :can-edit-map="canEditMap"
+          :definition="weatherDefinition"
+          :duration-label="durationLabel"
+          empty-text="Clear / normal weather."
+          @set-rounds="setWeatherRounds"
+          @remove="removeWeather"
+        />
       </div>
 
       <div class="field-effect-group">
@@ -142,40 +127,15 @@ const toggleRoom = (kind: string) => emit('toggle-room', kind as MapRoomKind)
           :disabled="!canEditMap"
           @select="toggleTerrain"
         />
-        <div v-if="activeTerrainEffects.length" class="effect-chip-list">
-          <article
-            v-for="effect in activeTerrainEffects"
-            :key="effect.kind"
-            class="effect-chip"
-            :style="{ '--effect-color': terrainDefinition(effect.kind).color }"
-          >
-            <div class="effect-chip__main">
-              <strong>{{ terrainDefinition(effect.kind).label }}</strong>
-              <span>{{ terrainDefinition(effect.kind).description }}</span>
-            </div>
-            <label class="duration-field">
-              <span>Duration</span>
-              <input
-                type="number"
-                min="0"
-                :value="durationLabel(effect.rounds)"
-                :disabled="!canEditMap"
-                placeholder="∞"
-                @input="emit('set-terrain-rounds', effect.kind, $event)"
-              />
-            </label>
-            <button
-              v-if="canEditMap"
-              type="button"
-              class="chip-remove"
-              :aria-label="`Remove ${terrainDefinition(effect.kind).label}`"
-              @click="emit('remove-terrain', effect.kind)"
-            >
-              ×
-            </button>
-          </article>
-        </div>
-        <p v-else class="field-effect-empty">No active terrain field effect.</p>
+        <FieldEffectChipList
+          :effects="activeTerrainEffects"
+          :can-edit-map="canEditMap"
+          :definition="terrainDefinition"
+          :duration-label="durationLabel"
+          empty-text="No active terrain field effect."
+          @set-rounds="setTerrainRounds"
+          @remove="removeTerrain"
+        />
       </div>
 
       <div class="field-effect-group">
@@ -190,41 +150,15 @@ const toggleRoom = (kind: string) => emit('toggle-room', kind as MapRoomKind)
           :disabled="!canEditMap"
           @select="toggleRoom"
         />
-        <div v-if="activeRoomEffects.length" class="effect-chip-list">
-          <article
-            v-for="effect in activeRoomEffects"
-            :key="effect.kind"
-            class="effect-chip"
-            :style="{ '--effect-color': roomDefinition(effect.kind).color }"
-          >
-            <div class="effect-chip__main">
-              <strong>{{ roomDefinition(effect.kind).label }}</strong>
-              <span>{{ roomDefinition(effect.kind).description }}</span>
-              <em v-if="effect.startsNextRound">starts next round</em>
-            </div>
-            <label class="duration-field">
-              <span>Duration</span>
-              <input
-                type="number"
-                min="0"
-                :value="durationLabel(effect.rounds)"
-                :disabled="!canEditMap"
-                placeholder="∞"
-                @input="emit('set-room-rounds', effect.kind, $event)"
-              />
-            </label>
-            <button
-              v-if="canEditMap"
-              type="button"
-              class="chip-remove"
-              :aria-label="`Remove ${roomDefinition(effect.kind).label}`"
-              @click="emit('remove-room', effect.kind)"
-            >
-              ×
-            </button>
-          </article>
-        </div>
-        <p v-else class="field-effect-empty">No active room.</p>
+        <FieldEffectChipList
+          :effects="activeRoomEffects"
+          :can-edit-map="canEditMap"
+          :definition="roomDefinition"
+          :duration-label="durationLabel"
+          empty-text="No active room."
+          @set-rounds="setRoomRounds"
+          @remove="removeRoom"
+        />
       </div>
 
       <div v-if="canEditMap" class="field-effect-actions">
@@ -316,74 +250,12 @@ input:disabled {
   text-transform: uppercase;
 }
 
-.field-effect-note,
-.field-effect-empty {
+.field-effect-note {
   color: var(--ink-muted);
   font-size: 0.74rem;
   letter-spacing: 0.04em;
 }
 
-.field-effect-empty {
-  margin: 0.5rem 0 0;
-  line-height: 1.35;
-}
-
-.effect-chip-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.45rem;
-  margin-top: 0.6rem;
-}
-
-.effect-chip {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 4.4rem auto;
-  align-items: center;
-  gap: 0.55rem;
-  border: 1px solid color-mix(in srgb, var(--effect-color) 40%, var(--rule-soft));
-  border-radius: 12px;
-  background: color-mix(in srgb, var(--effect-color) 9%, var(--paper));
-  padding: 0.55rem;
-}
-
-.effect-chip__main {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.18rem;
-}
-
-.effect-chip__main strong {
-  color: color-mix(in srgb, var(--effect-color) 70%, var(--ink-bright));
-  font-size: 0.82rem;
-}
-
-.effect-chip__main span,
-.effect-chip__main em {
-  color: var(--ink-muted);
-  font-size: 0.72rem;
-  line-height: 1.25;
-}
-
-.duration-field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-}
-
-.duration-field span {
-  color: var(--ink-muted);
-  font-size: 0.62rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.duration-field input {
-  padding: 0.4rem 0.45rem;
-  text-align: center;
-}
-
-.chip-remove,
 .mini-action {
   border: 1px solid var(--rule-soft);
   border-radius: 999px;
@@ -394,14 +266,6 @@ input:disabled {
   transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
 }
 
-.chip-remove {
-  width: 1.9rem;
-  height: 1.9rem;
-  padding: 0;
-  font-size: 1.05rem;
-  line-height: 1;
-}
-
 .mini-action {
   padding: 0.25rem 0.6rem;
   font-size: 0.72rem;
@@ -409,14 +273,12 @@ input:disabled {
   text-transform: uppercase;
 }
 
-.chip-remove:hover:not(:disabled),
 .mini-action:hover:not(:disabled) {
   border-color: var(--accent);
   background: var(--accent-soft);
   color: var(--accent);
 }
 
-.chip-remove:disabled,
 .mini-action:disabled {
   cursor: not-allowed;
   opacity: 0.55;
