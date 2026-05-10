@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { PhX } from '@phosphor-icons/vue'
+import { textValueFromEvent } from '~/utils/domEvents'
 import type { PokemonCatalogEntry } from '~/types/pokemon'
 
 defineProps<{
@@ -15,7 +16,7 @@ const emit = defineEmits<{
 }>()
 
 const updateQuery = (event: Event) => {
-  emit('update:query', (event.target as HTMLInputElement | null)?.value ?? '')
+  emit('update:query', textValueFromEvent(event))
 }
 </script>
 

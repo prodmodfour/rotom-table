@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { nextTick, onMounted, ref, watch } from 'vue'
 import { PhArrowsOutCardinal, PhPencilSimple, PhTrash } from '@phosphor-icons/vue'
+import { textValueFromEvent } from '~/utils/domEvents'
 import type { FolderMoveDestination } from '~/utils/folderBrowser'
 
 type ContextMode = 'menu' | 'rename' | 'move' | 'delete'
@@ -89,7 +90,7 @@ onMounted(() => {
           type="text"
           class="ctx-input"
           :disabled="busy"
-          @input="emit('update:input', ($event.target as HTMLInputElement).value)"
+          @input="emit('update:input', textValueFromEvent($event))"
           @keydown.escape.prevent="emit('close')"
         />
       </label>
@@ -108,7 +109,7 @@ onMounted(() => {
           :value="input"
           class="ctx-input"
           :disabled="busy || moveDestinations.length === 0"
-          @change="emit('update:input', ($event.target as HTMLSelectElement).value)"
+          @change="emit('update:input', textValueFromEvent($event))"
           @keydown.escape.prevent="emit('close')"
         >
           <option v-if="moveDestinations.length === 0" value="" disabled>

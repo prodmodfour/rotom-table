@@ -2159,3 +2159,13 @@
   - `npm test` — passes: 96 test files / 365 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: DOM event helper adoption cleanup
+
+- Reused `utils/domEvents.ts` across the remaining library/search/modal inputs and map-editor composables that were still casting DOM event targets inline.
+- Updated `EditableCell` select/input handling, library intro/context-menu fields, map admin ground-level input, trainer portrait search, initiative inputs, field-effect duration parsing, and terrain color input to use shared event value extraction.
+- Verified no app component/composable outside `utils/domEvents.ts` still performs direct `HTMLInputElement`/`HTMLSelectElement` target casts for simple value extraction.
+- Quality gates after this phase:
+  - `npm test` — passes: 96 test files / 365 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { PhFolder, PhPlus } from '@phosphor-icons/vue'
+import { trimmedTextValueFromEvent } from '~/utils/domEvents'
 
 defineProps<{
   mapCount: number
@@ -47,7 +48,7 @@ const emit = defineEmits<{
           :value="searchTerm"
           type="search"
           placeholder="Search map name…"
-          @input="emit('update:searchTerm', ($event.target as HTMLInputElement).value.trim())"
+          @input="emit('update:searchTerm', trimmedTextValueFromEvent($event))"
         />
       </label>
 

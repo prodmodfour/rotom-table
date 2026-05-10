@@ -17,6 +17,7 @@
  * numeric values (em-dash / 0 fallback).
  */
 import { computed, nextTick, ref } from 'vue'
+import { textValueFromEvent } from '~/utils/domEvents'
 import {
   editableCellDraftFromValue,
   formatEditableCellDisplay,
@@ -154,14 +155,12 @@ const onKeydown = (e: KeyboardEvent) => {
 
 // For selects, the user picks an option — commit immediately (no blur dance).
 const onSelectChange = (e: Event) => {
-  const value = (e.target as HTMLSelectElement).value
-  draft.value = value
+  draft.value = textValueFromEvent(e)
   commit()
 }
 
 const onInput = (e: Event) => {
-  const target = e.target as HTMLInputElement | HTMLTextAreaElement
-  draft.value = target.value
+  draft.value = textValueFromEvent(e)
   if (props.commitOnInput) applyDraft()
 }
 

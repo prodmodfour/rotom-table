@@ -1,4 +1,5 @@
 import { computed, watch, type ComputedRef, type Ref } from 'vue'
+import { trimmedTextValueFromEvent } from '~/utils/domEvents'
 import { resolveStats } from '~/utils/sheets/pokemonDerived'
 import { resolveTrainerStats } from '~/utils/sheets/trainerDerived'
 import type { CharacterSheet } from '~/types/characterSheet'
@@ -197,7 +198,7 @@ export const useInitiativeTracker = ({
     if (!canManageInitiative.value) return
     const placement = placementById(id)
     if (!placement) return
-    const raw = (event.target as HTMLInputElement).value.trim()
+    const raw = trimmedTextValueFromEvent(event)
     if (!raw) {
       delete placement.initiative
       return
@@ -219,7 +220,7 @@ export const useInitiativeTracker = ({
     if (!canManageInitiative.value) return
     const state = ensureInitiativeState()
     if (!state) return
-    const raw = (event.target as HTMLInputElement).value.trim()
+    const raw = trimmedTextValueFromEvent(event)
     if (!raw) {
       state.round = 1
       return

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { textValueFromEvent } from '~/utils/domEvents'
+
 defineProps<{
   groundLevelYMax: number
   mapGroundLevelY: number
@@ -11,8 +13,6 @@ const emit = defineEmits<{
   (event: 'set-ground-level-y', value: string): void
 }>()
 
-const inputValue = (event: Event): string =>
-  (event.target as HTMLInputElement | null)?.value ?? ''
 </script>
 
 <template>
@@ -52,7 +52,7 @@ const inputValue = (event: Event): string =>
             min="0"
             :max="groundLevelYMax"
             :value="mapGroundLevelY"
-            @input="emit('set-ground-level-y', inputValue($event))"
+            @input="emit('set-ground-level-y', textValueFromEvent($event))"
           />
         </label>
         <p class="admin-field__hint">

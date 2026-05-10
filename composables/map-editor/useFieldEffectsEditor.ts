@@ -1,4 +1,5 @@
 import { computed, ref, type Ref } from 'vue'
+import { textValueFromEvent } from '~/utils/domEvents'
 import {
   MAP_ROOM_DEFINITIONS,
   MAP_ROOM_KINDS,
@@ -42,7 +43,7 @@ export const parseRoundInputValue = (value: unknown): number | null => {
 }
 
 const parseRoundInput = (event: Event): number | null =>
-  parseRoundInputValue((event.target as HTMLInputElement).value)
+  parseRoundInputValue(textValueFromEvent(event))
 
 export const useFieldEffectsEditor = ({
   map,

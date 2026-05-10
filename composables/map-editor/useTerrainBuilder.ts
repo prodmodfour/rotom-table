@@ -1,4 +1,5 @@
 import { computed, ref, type ComputedRef, type Ref } from 'vue'
+import { textValueFromEvent } from '~/utils/domEvents'
 import { buildMapOccupancy } from '~/utils/mapOccupancy'
 import {
   VOXEL_MATERIALS,
@@ -78,7 +79,7 @@ export const useTerrainBuilder = ({
 
   const handleColorInput = (event: Event) => {
     if (!canEditMap.value) return
-    buildColor.value = (event.target as HTMLInputElement).value
+    buildColor.value = textValueFromEvent(event)
   }
 
   const clearCustomColor = () => {

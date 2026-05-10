@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { PhCaretDown, PhPlus } from '@phosphor-icons/vue'
+import { trimmedTextValueFromEvent } from '~/utils/domEvents'
 import type { SheetLibraryKind } from '~/utils/sheetLibrary'
 
 defineProps<{
@@ -55,7 +56,7 @@ const emit = defineEmits<{
           :value="searchTerm"
           type="search"
           placeholder="Search name, species, class, type…"
-          @input="emit('update:searchTerm', ($event.target as HTMLInputElement).value.trim())"
+          @input="emit('update:searchTerm', trimmedTextValueFromEvent($event))"
         />
       </label>
 
