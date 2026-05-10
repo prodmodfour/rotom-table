@@ -23,6 +23,7 @@ import { onBeforeUnmount, ref, watch, type Ref } from 'vue'
 import { getClientId } from '~/utils/clientId'
 import { isRealtimeEcho, mapChannel } from '~/shared/realtime'
 import { createAutosaveResourceController, runLatestAutosave } from '~/utils/autosave'
+import { MAP_API_PATHS } from '~/utils/apiRoutes'
 import { deepCloneJson, sameJsonValue, stableJsonStringify } from '~/utils/serialization'
 import { useRealtimeChannel } from './useRealtime'
 import type { TabletopMap } from '~/types/map'
@@ -123,7 +124,7 @@ export const useEditableMap = (slug: string, debounceMs = 200): UseEditableMapRe
       guard: autosave.guard,
       status: autosave.statusController,
       save: () =>
-        $fetch<{ map: TabletopMap }>('/api/maps/save', {
+        $fetch<{ map: TabletopMap }>(MAP_API_PATHS.save, {
           method: 'POST',
           body: { slug, map: snapshot, clientId },
         }),
@@ -147,7 +148,7 @@ export const useEditableMap = (slug: string, debounceMs = 200): UseEditableMapRe
     status.value = 'loading'
     error.value = null
     try {
-      const data = await $fetch<{ map: TabletopMap }>('/api/maps/load', { params: { slug } })
+      const data = await $fetch<{ map: TabletopMap }>(MAP_API_PATHS.load, { params: { slug } })
       autosave.snapshot.markClean(data.map)
       applyServerMap(data.map)
       status.value = 'idle'

@@ -29,6 +29,7 @@ import { useLibraryFolderNavigation } from '~/composables/library/useLibraryFold
 import { useLibraryGridView } from '~/composables/library/useLibraryGridView'
 import { useMapLibraryCreation } from '~/composables/library/useMapLibraryCreation'
 import { useWindowKeydown } from '~/composables/useWindowKeydown'
+import { MAP_API_PATHS } from '~/utils/apiRoutes'
 import { isEscapeKey } from '~/utils/keyboardShortcuts'
 import { mapEditorPath, mapLibraryPath } from '~/utils/mapRoutes'
 import type { MapSummary, TabletopMap } from '~/types/map'
@@ -67,7 +68,7 @@ const { creating, createError, createNewFolder } = useLibraryFolderCreation({
   canCreate: isGm,
   currentPath,
   folderPaths: allFolders,
-  createFolder: (folder) => postJson('/api/maps/create-folder', {
+  createFolder: (folder) => postJson(MAP_API_PATHS.createFolder, {
     method: 'POST',
     body: { folder, clientId },
   }),
@@ -100,23 +101,23 @@ const mapActions = useMapLibraryActions({
   goToFolder,
   refresh,
   formatFolderLabel,
-  moveMap: ({ slug, folder }) => postJson('/api/maps/move', {
+  moveMap: ({ slug, folder }) => postJson(MAP_API_PATHS.move, {
     method: 'POST',
     body: { slug, folder, clientId },
   }),
-  moveFolder: ({ from, to }) => postJson('/api/maps/move-folder', {
+  moveFolder: ({ from, to }) => postJson(MAP_API_PATHS.moveFolder, {
     method: 'POST',
     body: { from, to, clientId },
   }),
-  renameMap: ({ slug, name }) => postJson<{ slug: string; name: string }>('/api/maps/rename', {
+  renameMap: ({ slug, name }) => postJson<{ slug: string; name: string }>(MAP_API_PATHS.rename, {
     method: 'POST',
     body: { slug, name, clientId },
   }),
-  deleteMap: ({ slug }) => postJson('/api/maps/delete', {
+  deleteMap: ({ slug }) => postJson(MAP_API_PATHS.deleteMap, {
     method: 'POST',
     body: { slug, clientId },
   }),
-  deleteFolder: ({ folder }) => postJson('/api/maps/delete-folder', {
+  deleteFolder: ({ folder }) => postJson(MAP_API_PATHS.deleteFolder, {
     method: 'POST',
     body: { folder, clientId },
   }),
@@ -164,7 +165,7 @@ const { createNewMap } = useMapLibraryCreation({
   canCreate: isGm,
   currentPath,
   state: { creating, createError },
-  createMap: (folder) => postJson<{ map: TabletopMap }>('/api/maps/create', {
+  createMap: (folder) => postJson<{ map: TabletopMap }>(MAP_API_PATHS.create, {
     method: 'POST',
     body: { folder, clientId },
   }),

@@ -1,6 +1,7 @@
 import { onMounted, reactive, ref } from 'vue'
 import { mapsChannel, type RealtimeEvent } from '~/shared/realtime'
 import type { MapSummary } from '~/types/map'
+import { MAP_API_PATHS } from '~/utils/apiRoutes'
 import { getErrorMessage } from '~/utils/errorMessages'
 import { applyMapLibraryRealtimeEvent } from '~/utils/mapLibrary'
 import { useRealtimeChannel } from '~/composables/useRealtime'
@@ -22,10 +23,10 @@ export interface UseMapLibraryDataOptions {
 }
 
 const defaultFetchMapList = (): Promise<MapLibraryDataFetchResult> =>
-  $fetch<MapLibraryDataFetchResult>('/api/maps/list')
+  $fetch<MapLibraryDataFetchResult>(MAP_API_PATHS.list)
 
 const defaultFetchMapFolders = (): Promise<MapLibraryFolderFetchResult> =>
-  $fetch<MapLibraryFolderFetchResult>('/api/maps/folders')
+  $fetch<MapLibraryFolderFetchResult>(MAP_API_PATHS.folders)
 
 export const useMapLibraryData = (options: UseMapLibraryDataOptions) => {
   const maps = reactive<Map<string, MapSummary>>(new Map())

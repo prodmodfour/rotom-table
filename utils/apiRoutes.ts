@@ -1,0 +1,31 @@
+export const API_EVENTS_PATH = '/api/events' as const
+
+export const MAP_API_PATHS = {
+  list: '/api/maps/list',
+  folders: '/api/maps/folders',
+  load: '/api/maps/load',
+  save: '/api/maps/save',
+  create: '/api/maps/create',
+  createFolder: '/api/maps/create-folder',
+  move: '/api/maps/move',
+  moveFolder: '/api/maps/move-folder',
+  rename: '/api/maps/rename',
+  deleteMap: '/api/maps/delete',
+  deleteFolder: '/api/maps/delete-folder',
+} as const
+
+export const SHEET_API_PATHS = {
+  folders: '/api/sheets/folders',
+  save: '/api/sheets/save',
+  create: '/api/sheets/create',
+  createFolder: '/api/sheets/create-folder',
+  move: '/api/sheets/move',
+  moveFolder: '/api/sheets/move-folder',
+  rename: '/api/sheets/rename',
+  deleteSheet: '/api/sheets/delete',
+  deleteFolder: '/api/sheets/delete-folder',
+} as const
+
+export const ENCOUNTER_API_PATHS = {
+  generate: '/api/encounters/generate',
+} as const

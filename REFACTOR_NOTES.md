@@ -55,7 +55,7 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
 ## Current quality gate results
 
 - `npm run typecheck` — passes.
-- `npm test` — passes: 138 test files / 542 tests.
+- `npm test` — passes: 143 test files / 559 tests.
 - `npm run build` — passes; existing large chunk warnings remain.
 - `npm run check:move-automation` — still fails with the same baseline `Explicit move automation coverage: 0/769` missing-script report.
 - `npm run sync:item-sprites -- --dry-run` was not run because the script does not implement a dry-run mode.
@@ -3487,5 +3487,19 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
   - `npm test -- tests/utils/appRoutes.test.ts tests/utils/legacyGridRoutes.test.ts tests/utils/appNavigation.test.ts tests/utils/loginRedirect.test.ts` — passes: 4 test files / 13 tests.
   - `npm run typecheck` — passes.
   - `npm test` — passes: 142 test files / 555 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: shared client API route constants
+
+- Added `utils/apiRoutes.ts` to centralize client-consumed API endpoint paths for realtime events, map CRUD/list endpoints, sheet CRUD/folder endpoints, and encounter generation.
+- Updated editable map/sheet autosave, realtime SSE setup, map/sheet library data/actions, map token sheet persistence, and encounter generation requests to use the shared API path constants instead of repeating string literals inline.
+- Preserved all existing API URLs, request bodies, clientId echo suppression, unload beacon sheet saves, library create/move/rename/delete behavior, and encounter generation behavior.
+- Added `tests/utils/apiRoutes.test.ts` covering the centralized API route constants.
+- Next remaining phase: continue one bounded cleanup pass, with candidates including another focused map-editor/helper extraction, remaining helper constant cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/utils/apiRoutes.test.ts tests/composables/library/useMapLibraryData.test.ts tests/composables/library/useSheetLibraryData.test.ts tests/composables/map-editor/useTokenSheetMutations.test.ts tests/composables/encounters/useEncounterGenerationPage.test.ts tests/utils/autosave.test.ts` — passes: 6 test files / 40 tests.
+  - `npm run typecheck` — passes.
+  - `npm test` — passes: 143 test files / 559 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

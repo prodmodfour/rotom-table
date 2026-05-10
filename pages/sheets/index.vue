@@ -26,6 +26,7 @@ import {
 import { useSheetLibraryCreation } from '~/composables/library/useSheetLibraryCreation'
 import { useSheetLibraryData } from '~/composables/library/useSheetLibraryData'
 import { useWindowKeydown } from '~/composables/useWindowKeydown'
+import { SHEET_API_PATHS } from '~/utils/apiRoutes'
 import { isEscapeKey } from '~/utils/keyboardShortcuts'
 import { sheetEditorPath, sheetLibraryPath } from '~/utils/sheetRoutes'
 
@@ -105,23 +106,23 @@ const sheetActions = useSheetLibraryActions({
   deletedSheets,
   deletedFolders,
   goToFolder,
-  moveSheet: ({ kind, slug, folder }) => postJson('/api/sheets/move', {
+  moveSheet: ({ kind, slug, folder }) => postJson(SHEET_API_PATHS.move, {
     method: 'POST',
     body: { kind, slug, folder },
   }),
-  moveFolder: ({ from, to }) => postJson('/api/sheets/move-folder', {
+  moveFolder: ({ from, to }) => postJson(SHEET_API_PATHS.moveFolder, {
     method: 'POST',
     body: { from, to },
   }),
-  renameSheet: ({ kind, slug, name }) => postJson('/api/sheets/rename', {
+  renameSheet: ({ kind, slug, name }) => postJson(SHEET_API_PATHS.rename, {
     method: 'POST',
     body: { kind, slug, name },
   }),
-  deleteSheet: ({ kind, slug }) => postJson('/api/sheets/delete', {
+  deleteSheet: ({ kind, slug }) => postJson(SHEET_API_PATHS.deleteSheet, {
     method: 'POST',
     body: { kind, slug },
   }),
-  deleteFolder: ({ folder }) => postJson('/api/sheets/delete-folder', {
+  deleteFolder: ({ folder }) => postJson(SHEET_API_PATHS.deleteFolder, {
     method: 'POST',
     body: { folder },
   }),
@@ -183,7 +184,7 @@ const { creating, createError, createNewFolder } = useLibraryFolderCreation({
   canCreate: canDrag,
   currentPath,
   folderPaths: allFolders,
-  createFolder: (folder) => postJson('/api/sheets/create-folder', {
+  createFolder: (folder) => postJson(SHEET_API_PATHS.createFolder, {
     method: 'POST',
     body: { folder },
   }),
@@ -201,7 +202,7 @@ const {
   canCreate: canDrag,
   currentPath,
   createSheet: (kind, folder) => postJson<{ ok: true; kind: 'pokemon' | 'trainer'; slug: string }>(
-    '/api/sheets/create',
+    SHEET_API_PATHS.create,
     { method: 'POST', body: { kind, folder } },
   ),
   // Hard-navigate so Vite re-evaluates the sheet data globs before the editor

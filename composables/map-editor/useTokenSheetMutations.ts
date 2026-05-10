@@ -1,4 +1,5 @@
 import type { ComputedRef, Ref } from 'vue'
+import { SHEET_API_PATHS } from '~/utils/apiRoutes'
 import { getClientId as defaultGetClientId } from '~/utils/clientId'
 import {
   applyCombatStagesToSheet,
@@ -41,7 +42,7 @@ export interface UseTokenSheetMutationsOptions {
 }
 
 export const savePlacedSheetWithFetch: SavePlacedSheet = async (request) => {
-  await $fetch('/api/sheets/save', {
+  await $fetch(SHEET_API_PATHS.save, {
     method: 'POST',
     body: request,
   })

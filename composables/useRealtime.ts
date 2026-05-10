@@ -12,6 +12,7 @@
  * persisted state will broadcast in full).
  */
 import { onBeforeUnmount } from 'vue'
+import { API_EVENTS_PATH } from '~/utils/apiRoutes'
 import type { RealtimeEvent } from '~/shared/realtime'
 
 export type { RealtimeEvent } from '~/shared/realtime'
@@ -51,7 +52,7 @@ const ensureSource = () => {
   if (source) return
   if (channels.size === 0) return
 
-  source = new EventSource('/api/events')
+  source = new EventSource(API_EVENTS_PATH)
   source.onopen = () => {
     reconnectAttempts = 0
   }

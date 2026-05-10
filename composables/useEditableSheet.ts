@@ -25,6 +25,7 @@ import {
   runLatestAutosave,
   sendJsonWithUnloadFallback,
 } from '~/utils/autosave'
+import { SHEET_API_PATHS } from '~/utils/apiRoutes'
 import { deepCloneJson, stableJsonStringify } from '~/utils/serialization'
 import { subscribeChannel } from './useRealtime'
 import type { SheetKind } from '~/shared/sheets'
@@ -101,7 +102,7 @@ export function useEditableSheet<T extends { slug: string }>(
           request: string,
           options: { method: 'POST'; body: unknown },
         ) => Promise<unknown>
-        return postJson('/api/sheets/save', {
+        return postJson(SHEET_API_PATHS.save, {
           method: 'POST',
           body: { kind, slug: sheet.value.slug, sheet: payload, clientId },
         })
@@ -151,7 +152,7 @@ export function useEditableSheet<T extends { slug: string }>(
     const payloadJson = stableJsonStringify(payload)
     const body = JSON.stringify({ kind, slug: sheet.value.slug, sheet: payload, clientId })
 
-    sendJsonWithUnloadFallback('/api/sheets/save', body)
+    sendJsonWithUnloadFallback(SHEET_API_PATHS.save, body)
 
     // Treat this tab as clean once the unload request was attempted so
     // `beforeunload` + `pagehide` don't queue duplicate writes.
