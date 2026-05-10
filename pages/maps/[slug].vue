@@ -21,6 +21,7 @@ import {
   normalizeDimensions,
   reconcilePokemonPositions,
 } from '~/utils/grid'
+import { isCtrlShiftLetter, isEscapeKey } from '~/utils/keyboardShortcuts'
 import { filterMapHazardsInBounds } from '~/utils/mapHazards'
 import { filterVoxelsInBounds } from '~/utils/voxels'
 import type { SaveStatus } from '~/composables/useEditableSheet'
@@ -231,13 +232,13 @@ const setGroundLevelY = (value: string) => {
 
 const handleAdminShortcut = (event: KeyboardEvent) => {
   if (!isGm.value) return
-  if (event.ctrlKey && event.shiftKey && event.key.toLowerCase() === 'a') {
+  if (isCtrlShiftLetter(event, 'a')) {
     event.preventDefault()
     adminPanelOpen.value = !adminPanelOpen.value
     return
   }
 
-  if (event.key === 'Escape' && adminPanelOpen.value) {
+  if (isEscapeKey(event) && adminPanelOpen.value) {
     adminPanelOpen.value = false
   }
 }

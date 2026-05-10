@@ -2169,3 +2169,13 @@
   - `npm test` — passes: 96 test files / 365 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: keyboard shortcut helpers and lifecycle cleanup
+
+- Added shared keyboard shortcut predicates for Escape and Ctrl+Shift+letter combinations.
+- Added `useWindowKeydown` to centralize mounted/unmounted window key listener registration.
+- Replaced ad hoc library-page Escape listeners with the lifecycle-safe composable and reused shortcut predicates in the map admin shortcut handler.
+- Quality gates after this phase:
+  - `npm test` — passes: 97 test files / 367 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

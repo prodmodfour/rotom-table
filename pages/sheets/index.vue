@@ -24,6 +24,8 @@ import {
 import { useLibraryContextMenu } from '~/composables/library/useLibraryContextMenu'
 import { useLibraryDragDrop } from '~/composables/library/useLibraryDragDrop'
 import { useLibraryFolderNavigation } from '~/composables/library/useLibraryFolderNavigation'
+import { useWindowKeydown } from '~/composables/useWindowKeydown'
+import { isEscapeKey } from '~/utils/keyboardShortcuts'
 import { getErrorMessage } from '~/utils/errorMessages'
 import { sheetEditorPath } from '~/utils/sheetRoutes'
 
@@ -438,13 +440,12 @@ onMounted(async () => {
   } catch (err) {
     console.warn('[sheets] failed to load existing folders', err)
   }
-  // Close the context menu / sheet menu on Escape (anywhere on the page).
-  window.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-      closeContext()
-      closeSheetMenu()
-    }
-  })
+})
+
+useWindowKeydown((event) => {
+  if (!isEscapeKey(event)) return
+  closeContext()
+  closeSheetMenu()
 })
 </script>
 

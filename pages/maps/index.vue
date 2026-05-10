@@ -24,6 +24,8 @@ import { useRealtimeChannel } from '~/composables/useRealtime'
 import { useLibraryContextMenu } from '~/composables/library/useLibraryContextMenu'
 import { useLibraryDragDrop } from '~/composables/library/useLibraryDragDrop'
 import { useLibraryFolderNavigation } from '~/composables/library/useLibraryFolderNavigation'
+import { useWindowKeydown } from '~/composables/useWindowKeydown'
+import { isEscapeKey } from '~/utils/keyboardShortcuts'
 import { mapsChannel } from '~/shared/realtime'
 import type { MapSummary, TabletopMap } from '~/types/map'
 
@@ -328,11 +330,9 @@ const submitContext = async () => {
   }
 }
 
-if (typeof window !== 'undefined') {
-  window.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') closeContext()
-  })
-}
+useWindowKeydown((event) => {
+  if (isEscapeKey(event)) closeContext()
+})
 </script>
 
 <template>
