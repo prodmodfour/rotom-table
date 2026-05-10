@@ -2657,3 +2657,18 @@
   - `npm test` — passes: 103 test files / 383 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: library context menu mode forms
+
+- Extracted the Rename, Move, and Delete context-menu modes into focused components:
+  - `components/library/LibraryContextMenuRenameForm.vue`
+  - `components/library/LibraryContextMenuMoveForm.vue`
+  - `components/library/LibraryContextMenuDeleteConfirm.vue`
+- Reduced `components/library/LibraryContextMenu.vue` to context-menu shell composition over header, action-list, and mode-specific components while preserving backdrop close behavior and menu positioning.
+- Preserved rename input focus/select behavior, move select focus, disabled no-destination handling, error display, cancel/submit emits, and delete confirmation copy.
+- Next remaining phase: continue small UI decomposition by extracting shared library context-menu form actions/styles or another focused library-page presentation component.
+- Quality gates after this phase:
+  - `npm test -- tests/composables/library/useLibraryContextMenu.test.ts` — passes: 1 test file / 5 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm test` — passes: 103 test files / 383 tests.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

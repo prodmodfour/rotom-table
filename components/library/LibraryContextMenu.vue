@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { nextTick, onMounted, ref, watch } from 'vue'
 import LibraryContextMenuActionList from '~/components/library/LibraryContextMenuActionList.vue'
+import LibraryContextMenuDeleteConfirm from '~/components/library/LibraryContextMenuDeleteConfirm.vue'
 import LibraryContextMenuHeader from '~/components/library/LibraryContextMenuHeader.vue'
-import { textValueFromEvent } from '~/utils/domEvents'
+import LibraryContextMenuMoveForm from '~/components/library/LibraryContextMenuMoveForm.vue'
+import LibraryContextMenuRenameForm from '~/components/library/LibraryContextMenuRenameForm.vue'
+import type { LibraryContextMode } from '~/composables/library/useLibraryContextMenu'
 import type { FolderMoveDestination } from '~/utils/folderBrowser'
-
-type ContextMode = 'menu' | 'rename' | 'move' | 'delete'
 
 const props = withDefaults(defineProps<{
   x: number
@@ -13,7 +13,7 @@ const props = withDefaults(defineProps<{
   targetKind: string
   targetLabel: string
   isFolderTarget: boolean
-  mode: ContextMode
+  mode: LibraryContextMode
   input: string
   busy: boolean
   error: string | null
@@ -32,25 +32,6 @@ const emit = defineEmits<{
   enterDelete: []
   submit: []
 }>()
-
-const inputRef = ref<HTMLInputElement | HTMLSelectElement | null>(null)
-
-const focusInput = async () => {
-  if (props.mode !== 'move' && props.mode !== 'rename') return
-  await nextTick()
-  inputRef.value?.focus()
-  if (props.mode === 'rename' && inputRef.value && 'select' in inputRef.value) {
-    inputRef.value.select()
-  }
-}
-
-watch(() => props.mode, () => {
-  void focusInput()
-})
-
-onMounted(() => {
-  void focusInput()
-})
 </script>
 
 <template>
@@ -71,75 +52,39 @@ onMounted(() => {
       @enter-delete="emit('enterDelete')"
     />
 
-    <form v-else-if="mode === 'rename'" class="ctx-form" @submit.prevent="emit('submit')">
-      <label class="ctx-label">
-        New name
-        <input
-          ref="inputRef"
-          :value="input"
-          type="text"
-          class="ctx-input"
-          :disabled="busy"
-          @input="emit('update:input', textValueFromEvent($event))"
-          @keydown.escape.prevent="emit('close')"
-        />
-      </label>
-      <p v-if="error" class="ctx-error" role="alert">{{ error }}</p>
-      <div class="ctx-actions">
-        <button type="button" class="ctx-btn" :disabled="busy" @click="emit('close')">Cancel</button>
-        <button type="submit" class="ctx-btn ctx-btn--primary" :disabled="busy">Rename</button>
-      </div>
-    </form>
+    <LibraryContextMenuRenameForm
+      v-else-if="mode === 'rename'"
+      :input="input"
+      :busy="busy"
+      :error="error"
+      @update:input="emit('update:input', $event)"
+      @close="emit('close')"
+      @submit="emit('submit')"
+    />
 
-    <form v-else-if="mode === 'move'" class="ctx-form" @submit.prevent="emit('submit')">
-      <label class="ctx-label">
-        Move to
-        <select
-          ref="inputRef"
-          :value="input"
-          class="ctx-input"
-          :disabled="busy || moveDestinations.length === 0"
-          @change="emit('update:input', textValueFromEvent($event))"
-          @keydown.escape.prevent="emit('close')"
-        >
-          <option v-if="moveDestinations.length === 0" value="" disabled>
-            No other destinations
-          </option>
-          <option v-for="d in moveDestinations" :key="`d-${d.value}`" :value="d.value">
-            {{ d.label }}
-          </option>
-        </select>
-      </label>
-      <p v-if="error" class="ctx-error" role="alert">{{ error }}</p>
-      <div class="ctx-actions">
-        <button type="button" class="ctx-btn" :disabled="busy" @click="emit('close')">Cancel</button>
-        <button
-          type="submit"
-          class="ctx-btn ctx-btn--primary"
-          :disabled="busy || moveDestinations.length === 0"
-        >
-          Move
-        </button>
-      </div>
-    </form>
+    <LibraryContextMenuMoveForm
+      v-else-if="mode === 'move'"
+      :input="input"
+      :busy="busy"
+      :error="error"
+      :destinations="moveDestinations"
+      @update:input="emit('update:input', $event)"
+      @close="emit('close')"
+      @submit="emit('submit')"
+    />
 
-    <div v-else-if="mode === 'delete'" class="ctx-form">
-      <p class="ctx-confirm">
-        <template v-if="isFolderTarget">
-          Delete folder <strong>{{ targetLabel }}</strong> {{ deleteFolderSuffix }}
-        </template>
-        <template v-else>
-          Delete {{ targetKind.toLowerCase() }} <strong>{{ targetLabel }}</strong>{{ deleteItemSuffix }}
-        </template>
-      </p>
-      <p v-if="error" class="ctx-error" role="alert">{{ error }}</p>
-      <div class="ctx-actions">
-        <button type="button" class="ctx-btn" :disabled="busy" @click="emit('close')">Cancel</button>
-        <button type="button" class="ctx-btn ctx-btn--danger" :disabled="busy" @click="emit('submit')">
-          Delete
-        </button>
-      </div>
-    </div>
+    <LibraryContextMenuDeleteConfirm
+      v-else-if="mode === 'delete'"
+      :target-kind="targetKind"
+      :target-label="targetLabel"
+      :is-folder-target="isFolderTarget"
+      :busy="busy"
+      :error="error"
+      :delete-folder-suffix="deleteFolderSuffix"
+      :delete-item-suffix="deleteItemSuffix"
+      @close="emit('close')"
+      @submit="emit('submit')"
+    />
   </div>
 </template>
 
@@ -167,14 +112,14 @@ onMounted(() => {
   gap: 0.2rem;
 }
 
-.ctx-form {
+.ctx-menu :deep(.ctx-form) {
   display: flex;
   flex-direction: column;
   gap: 0.55rem;
   padding: 0.35rem 0.55rem 0.55rem;
 }
 
-.ctx-label {
+.ctx-menu :deep(.ctx-label) {
   display: flex;
   flex-direction: column;
   gap: 0.3rem;
@@ -184,7 +129,7 @@ onMounted(() => {
   color: var(--ink-muted);
 }
 
-.ctx-input {
+.ctx-menu :deep(.ctx-input) {
   font: inherit;
   width: 100%;
   border: 1px solid var(--rule-soft);
@@ -195,31 +140,31 @@ onMounted(() => {
   outline: none;
 }
 
-.ctx-input:focus {
+.ctx-menu :deep(.ctx-input:focus) {
   border-color: var(--accent);
   box-shadow: 0 0 0 2px rgba(250, 189, 47, 0.18);
 }
 
-.ctx-confirm {
+.ctx-menu :deep(.ctx-confirm) {
   margin: 0;
   color: var(--ink-soft);
   line-height: 1.4;
   font-size: 0.9rem;
 }
 
-.ctx-error {
+.ctx-menu :deep(.ctx-error) {
   margin: 0;
   color: #d36464;
   font-size: 0.82rem;
 }
 
-.ctx-actions {
+.ctx-menu :deep(.ctx-actions) {
   display: flex;
   justify-content: flex-end;
   gap: 0.4rem;
 }
 
-.ctx-btn {
+.ctx-menu :deep(.ctx-btn) {
   border: 1px solid var(--rule);
   border-radius: 8px;
   background: var(--paper-soft);
@@ -231,28 +176,28 @@ onMounted(() => {
   transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
 }
 
-.ctx-btn:hover:not(:disabled) {
+.ctx-menu :deep(.ctx-btn:hover:not(:disabled)) {
   border-color: var(--rule-strong);
   background: var(--paper-hover);
   color: var(--ink-bright);
 }
 
-.ctx-btn:disabled {
+.ctx-menu :deep(.ctx-btn:disabled) {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.ctx-btn--primary {
+.ctx-menu :deep(.ctx-btn--primary) {
   border-color: var(--accent);
   color: var(--accent);
 }
 
-.ctx-btn--danger {
+.ctx-menu :deep(.ctx-btn--danger) {
   border-color: rgba(220, 80, 80, 0.6);
   color: #d36464;
 }
 
-.ctx-btn--danger:hover:not(:disabled) {
+.ctx-menu :deep(.ctx-btn--danger:hover:not(:disabled)) {
   background: rgba(220, 80, 80, 0.16);
   color: #f08585;
 }
