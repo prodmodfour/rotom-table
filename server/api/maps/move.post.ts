@@ -7,91 +7,37 @@
  * Request body: `{ slug: string, folder: string, clientId?: string }`
  * Response:     `{ ok: true, moved: boolean, path: string }`
  */
-import { existsSync, mkdirSync, renameSync } from 'node:fs'
-import { join, sep } from 'node:path'
 import { createError, defineEventHandler, readBody } from 'h3'
-import { mapChannel, mapsChannel } from '~/shared/realtime'
 import { publishRealtime } from '../../utils/realtime'
 import { requireGm } from '../../utils/auth'
-import { PROJECT_ROOT } from '../../utils/fsPaths'
-import {
-  MAPS_ROOT,
-  SLUG_RE,
-  findMapFile,
-  pruneEmptyMapParents,
-  readMapFile,
-  sanitizeMapFolderPath,
-  summarizeMap,
-  writeMapFile,
-} from '../../utils/mapStorage'
+import { moveMapUseCase, MoveMapUseCaseError } from '../../useCases/moveMap'
 
 interface MoveBody {
-  slug?: string
-  folder?: string
-  clientId?: string
+  slug?: unknown
+  folder?: unknown
+  clientId?: unknown
 }
 
 export default defineEventHandler(async (event) => {
   requireGm(event)
-  const body = await readBody<MoveBody>(event)
-  const slug = String(body?.slug ?? '')
-  if (!SLUG_RE.test(slug)) {
-    throw createError({ statusCode: 400, statusMessage: 'slug must match /^[a-z0-9-]+$/' })
-  }
-  let folder = ''
+  const body = await readBody<MoveBody | null>(event)
+
   try {
-    folder = sanitizeMapFolderPath(String(body?.folder ?? ''), true)
-  } catch (err) {
-    throw createError({ statusCode: 400, statusMessage: (err as Error).message })
-  }
-
-  const currentPath = findMapFile(slug)
-  if (!currentPath) {
-    throw createError({ statusCode: 404, statusMessage: `Map ${slug}.json not found` })
-  }
-
-  const destDir = folder ? join(MAPS_ROOT, folder) : MAPS_ROOT
-  if (destDir !== MAPS_ROOT && !destDir.startsWith(MAPS_ROOT + sep)) {
-    throw createError({ statusCode: 400, statusMessage: 'Invalid destination' })
-  }
-  const destPath = join(destDir, `${slug}.json`)
-
-  let moved = false
-  if (currentPath !== destPath) {
-    if (existsSync(destPath)) {
-      throw createError({
-        statusCode: 409,
-        statusMessage: 'A map with that name already exists in the target folder',
-      })
+    const result = moveMapUseCase({
+      slug: body?.slug,
+      folder: body?.folder,
+      clientId: typeof body?.clientId === 'string' ? body.clientId : undefined,
+    })
+    for (const realtimeEvent of result.events) publishRealtime(realtimeEvent)
+    return {
+      ok: true as const,
+      moved: result.moved,
+      path: result.path,
     }
-    mkdirSync(destDir, { recursive: true })
-    renameSync(currentPath, destPath)
-    pruneEmptyMapParents(currentPath)
-    moved = true
-  }
-
-  // Re-read so `folder` is correctly derived from the new path; bump
-  // updatedAt for consistency with save/rename.
-  const map = readMapFile(destPath)
-  map.updatedAt = Date.now()
-  writeMapFile(destPath, map)
-
-  publishRealtime({
-    channel: mapChannel(slug),
-    type: 'updated',
-    clientId: body?.clientId,
-    data: map,
-  })
-  publishRealtime({
-    channel: mapsChannel,
-    type: 'moved',
-    clientId: body?.clientId,
-    data: summarizeMap(map),
-  })
-
-  return {
-    ok: true as const,
-    moved,
-    path: destPath.slice(PROJECT_ROOT.length + 1),
+  } catch (err) {
+    if (err instanceof MoveMapUseCaseError) {
+      throw createError({ statusCode: err.statusCode, statusMessage: err.message })
+    }
+    throw err
   }
 })
