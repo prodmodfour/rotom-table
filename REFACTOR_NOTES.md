@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; encounter generation endpoint orchestration is now extracted/tested. Next candidates include another small server utility/use-case cleanup or focused UI/helper duplication cleanup; do not mark the full refactor complete yet.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; encounter generation helper validation now uses typed H3-free input errors. Next candidates include decoupling another remaining server adapter boundary or focused UI/helper duplication cleanup; do not mark the full refactor complete yet.
 
 ## Phase 0 baseline audit
 
@@ -3104,5 +3104,17 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; encounter generation endp
 - Quality gates after this phase:
   - `npm test -- tests/server/generateEncounters.test.ts tests/server/encounterGeneration.test.ts` — passes: 2 test files / 10 tests.
   - `npm test` — passes: 124 test files / 465 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: encounter generation typed input errors
+
+- Decoupled `server/utils/encounterGeneration.ts` from H3 by replacing direct `createError` usage with a typed `EncounterGenerationInputError` that carries HTTP-compatible `statusCode`/`statusMessage` metadata.
+- Updated `generateEncountersUseCase` error normalization to map the typed helper error into `GenerateEncountersUseCaseError` explicitly, keeping API response status/messages compatible while keeping validation helpers framework-agnostic.
+- Expanded encounter generation helper tests to assert typed input errors and preserve existing sanitizer/path/count behavior.
+- Next remaining phase: continue one bounded cleanup pass, with remaining candidates including decoupling another server boundary from H3-specific details where useful or a focused UI/helper duplication cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/server/encounterGeneration.test.ts tests/server/generateEncounters.test.ts` — passes: 2 test files / 11 tests.
+  - `npm test` — passes: 124 test files / 466 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

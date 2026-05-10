@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  EncounterGenerationInputError,
   assertEncounterPathInsideRoot,
   readEncounterGenerateRequest,
   rollEncounterTable,
@@ -12,13 +13,18 @@ import {
 } from '~/server/utils/encounterGeneration'
 import type { EncounterTable } from '~/types/encounterTable'
 
-const statusMessageFor = (fn: () => unknown): string | undefined => {
+const errorFor = (fn: () => unknown): unknown => {
   try {
     fn()
   } catch (error) {
-    return (error as { statusMessage?: string }).statusMessage
+    return error
   }
   return undefined
+}
+
+const statusMessageFor = (fn: () => unknown): string | undefined => {
+  const error = errorFor(fn) as { statusMessage?: string; message?: string } | undefined
+  return error?.statusMessage ?? error?.message
 }
 
 const table: EncounterTable = {
@@ -29,6 +35,16 @@ const table: EncounterTable = {
 }
 
 describe('server encounter generation helpers', () => {
+  it('throws typed input errors without depending on H3 errors', () => {
+    const error = errorFor(() => sanitizeEncounterNameComponent('../bad', 'region'))
+
+    expect(error).toBeInstanceOf(EncounterGenerationInputError)
+    expect(error).toMatchObject({
+      statusCode: 400,
+      statusMessage: 'region must match /^[A-Za-z0-9_-]+$/',
+    })
+  })
+
   it('sanitizes region/table names and out roots', () => {
     expect(sanitizeEncounterNameComponent('thickerby_vale-1', 'region')).toBe('thickerby_vale-1')
     expect(statusMessageFor(() => sanitizeEncounterNameComponent('../bad', 'region'))).toContain('region must match')

@@ -1,6 +1,5 @@
 import { existsSync } from 'node:fs'
 import { join as joinPath, sep } from 'node:path'
-import { createError } from 'h3'
 import { DEFAULT_ENCOUNTER_OUT_ROOT } from '~/utils/encounterGeneration'
 import type { EncounterTable, RolledEncounter } from '~/types/encounterTable'
 
@@ -16,12 +15,27 @@ export const DEFAULT_ENCOUNTER_GENERATE_OUT_ROOT = DEFAULT_ENCOUNTER_OUT_ROOT
 
 const SAFE_NAME = /^[a-zA-Z0-9_-]+$/
 
+export class EncounterGenerationInputError extends Error {
+  constructor(
+    public readonly statusCode: number,
+    message: string,
+  ) {
+    super(message)
+    this.name = 'EncounterGenerationInputError'
+  }
+
+  get statusMessage(): string {
+    return this.message
+  }
+}
+
+const badEncounterInput = (statusMessage: string): never => {
+  throw new EncounterGenerationInputError(400, statusMessage)
+}
+
 export const sanitizeEncounterNameComponent = (value: string, label: string): string => {
   if (!SAFE_NAME.test(value)) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: `${label} must match /^[A-Za-z0-9_-]+$/`,
-    })
+    badEncounterInput(`${label} must match /^[A-Za-z0-9_-]+$/`)
   }
   return value
 }
@@ -29,18 +43,15 @@ export const sanitizeEncounterNameComponent = (value: string, label: string): st
 export const sanitizeEncounterOutRoot = (value: string): string => {
   const normalized = value.replace(/\\/g, '/').replace(/\/+/g, '/').replace(/^\/+|\/+$/g, '')
   if (!normalized) {
-    throw createError({ statusCode: 400, statusMessage: 'outRoot required' })
+    badEncounterInput('outRoot required')
   }
   const segments = normalized.split('/')
   for (const seg of segments) {
     if (!seg || seg === '.' || seg === '..') {
-      throw createError({ statusCode: 400, statusMessage: 'Invalid outRoot segment' })
+      badEncounterInput('Invalid outRoot segment')
     }
     if (!SAFE_NAME.test(seg)) {
-      throw createError({
-        statusCode: 400,
-        statusMessage: `outRoot segment "${seg}" must match /^[A-Za-z0-9_-]+$/`,
-      })
+      badEncounterInput(`outRoot segment "${seg}" must match /^[A-Za-z0-9_-]+$/`)
     }
   }
   return segments.join('/')
@@ -49,10 +60,7 @@ export const sanitizeEncounterOutRoot = (value: string): string => {
 export const sanitizeEncounterCount = (value: unknown): number => {
   const count = Number(value ?? 0)
   if (!Number.isInteger(count) || count < 1 || count > 30) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: 'count must be an integer between 1 and 30',
-    })
+    badEncounterInput('count must be an integer between 1 and 30')
   }
   return count
 }
@@ -63,14 +71,14 @@ export const slugifyEncounterOutputPath = (value: string): string =>
 export const safeEncounterTablePath = (root: string, region: string, key: string): string => {
   const path = joinPath(root, region, `${key}.json`)
   if (!path.startsWith(root + sep)) {
-    throw createError({ statusCode: 400, statusMessage: 'Invalid table path' })
+    badEncounterInput('Invalid table path')
   }
   return path
 }
 
 export const assertEncounterPathInsideRoot = (projectRoot: string, path: string): void => {
   if (!path.startsWith(projectRoot + sep)) {
-    throw createError({ statusCode: 400, statusMessage: 'Invalid outRoot' })
+    badEncounterInput('Invalid outRoot')
   }
 }
 

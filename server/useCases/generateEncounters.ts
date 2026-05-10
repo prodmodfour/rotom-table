@@ -10,6 +10,7 @@ import {
 import { tmpdir } from 'node:os'
 import { join as joinPath, resolve as resolvePath } from 'node:path'
 import {
+  EncounterGenerationInputError,
   assertEncounterPathInsideRoot,
   readEncounterGenerateRequest,
   rollEncounterTable,
@@ -84,6 +85,9 @@ const isStatusLikeError = (error: unknown): error is {
 
 export const normalizeGenerateEncountersError = (error: unknown): unknown => {
   if (error instanceof GenerateEncountersUseCaseError) return error
+  if (error instanceof EncounterGenerationInputError) {
+    return new GenerateEncountersUseCaseError(error.statusCode, error.message)
+  }
   if (isStatusLikeError(error) && typeof error.statusCode === 'number') {
     return new GenerateEncountersUseCaseError(
       error.statusCode,
