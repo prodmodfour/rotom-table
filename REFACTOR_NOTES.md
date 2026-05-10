@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass. `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include another focused map-editor/helper extraction, remaining client helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass. `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include another focused map-editor/helper extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
 
 ## Phase 0 baseline audit
 
@@ -55,7 +55,7 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
 ## Current quality gate results
 
 - `npm run typecheck` — passes.
-- `npm test` — passes: 147 test files / 572 tests.
+- `npm test` — passes: 148 test files / 576 tests.
 - `npm run build` — passes; existing large chunk warnings remain.
 - `npm run check:move-automation` — still fails with the same baseline `Explicit move automation coverage: 0/769` missing-script report.
 - `npm run sync:item-sprites -- --dry-run` was not run because the script does not implement a dry-run mode.
@@ -3556,5 +3556,19 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
   - `npm test -- tests/utils/maps/persistence.test.ts tests/utils/autosave.test.ts` — passes: 2 test files / 25 tests.
   - `npm run typecheck` — passes.
   - `npm test` — passes: 147 test files / 572 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: map normalization split
+
+- Extracted map document validation/normalization from `server/utils/mapStorage.ts` into `server/utils/mapNormalization.ts` so map normalization is a focused, filesystem-agnostic unit with explicit source-label/folder inputs.
+- Updated map storage to delegate recursive file discovery and folder listing to shared JSON-file helpers, while keeping parse-error messages, write formatting, summaries, slug allocation, and map folder derivation compatible.
+- Storage now passes the path-derived folder into map normalization, so stale persisted `folder` fields remain ignored at the filesystem boundary as intended.
+- Added `tests/server/mapNormalization.test.ts` covering valid map normalization, path-derived folders, optional defaults, field effects, voxel/hazard normalization, validation errors, and ground-level clamping.
+- Next remaining phase: continue one bounded cleanup pass, with candidates including another focused map-editor/helper extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/server/mapNormalization.test.ts tests/server/loadMap.test.ts tests/server/createMap.test.ts` — passes: 3 test files / 13 tests.
+  - `npm run typecheck` — passes.
+  - `npm test` — passes: 148 test files / 576 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

@@ -7,11 +7,11 @@ import { relativeToProjectRoot } from '../utils/fsPaths'
 import {
   findMapFile,
   folderFromPath,
-  normalizeMapGroundLevelY,
   readMapFile,
   summarizeMap,
   writeMapFile,
 } from '../utils/mapStorage'
+import { normalizeMapGroundLevelY } from '../utils/mapNormalization'
 import { sheetIsPlayerAccessible } from '../utils/sheetStorage'
 import {
   applyPlayerMapSavePolicy,
