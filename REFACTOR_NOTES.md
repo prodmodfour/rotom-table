@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; SSE stream handling is now extracted/tested. Next candidates include another small server adapter/use-case cleanup or focused UI/helper duplication cleanup; do not mark the full refactor complete yet.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; encounter generation endpoint orchestration is now extracted/tested. Next candidates include another small server utility/use-case cleanup or focused UI/helper duplication cleanup; do not mark the full refactor complete yet.
 
 ## Phase 0 baseline audit
 
@@ -3090,5 +3090,19 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; SSE stream handling is no
 - Quality gates after this phase:
   - `npm test -- tests/server/sseStream.test.ts` — passes: 1 test file / 4 tests.
   - `npm test` — passes: 123 test files / 461 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: encounter generate use-case extraction
+
+- Extracted `/api/encounters/generate` orchestration into `server/useCases/generateEncounters.ts`.
+  - The use case now owns request normalization, encounter-table loading, deterministic roll injection for tests, output-directory/preview-temp selection, slug-prefix construction, sequential `pokegen.sh` execution, generated-file attribution, failure collection, preview cleanup, and HTTP-compatible error mapping behind injectable dependencies.
+- Reduced `server/api/encounters/generate.post.ts` to a thin H3 adapter for GM auth, body reading, use-case invocation, and HTTP error translation.
+- Preserved existing encounter generation behavior: response shape including `beforeCount`, persisted vs preview output handling, temp preview cleanup, sequential pokegen runs, generated sheet slug-prefix semantics, and validation/not-found status messages.
+- Added `tests/server/generateEncounters.test.ts` covering persisted generation, preview generation/content cleanup, pokegen failure/no-new-file handling, and validation/missing-table errors.
+- Next remaining phase: continue one bounded cleanup pass, with remaining candidates including decoupling remaining server utilities from H3-specific errors where useful or another focused UI/helper duplication cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/server/generateEncounters.test.ts tests/server/encounterGeneration.test.ts` — passes: 2 test files / 10 tests.
+  - `npm test` — passes: 124 test files / 465 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
