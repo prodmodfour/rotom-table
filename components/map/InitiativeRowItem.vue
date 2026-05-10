@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import ConditionTag from '~/components/ConditionTag.vue'
+import InitiativeTokenSprite from '~/components/map/InitiativeTokenSprite.vue'
 import {
   hpPercent,
   hpTier,
-  initiativeSpriteFrameStyle,
   type InitiativeRow,
 } from '~/composables/map-editor/useInitiativeTracker'
 
@@ -46,22 +46,7 @@ const isFainted = computed(() => props.entry.currentHp <= 0)
       :disabled="!canManage"
       @click="emit('set-active-and-focus', entry.id)"
     >
-      <span class="initiative-row__sprite" aria-hidden="true">
-        <span
-          v-if="entry.sprite.isSpriteSheet && entry.sprite.url"
-          class="initiative-row__sprite-frame"
-          :style="initiativeSpriteFrameStyle(entry)"
-        />
-        <img
-          v-else-if="entry.sprite.url"
-          :src="entry.sprite.url"
-          alt=""
-          draggable="false"
-        />
-        <span v-else class="initiative-row__sprite-fallback">
-          {{ entry.name.slice(0, 1) }}
-        </span>
-      </span>
+      <InitiativeTokenSprite :entry="entry" />
       <span class="sr-only">Turn order {{ index + 1 }}</span>
     </button>
 
@@ -174,39 +159,6 @@ const isFainted = computed(() => props.entry.currentHp <= 0)
   border-color: var(--accent);
   background: var(--accent-soft);
   color: var(--accent);
-}
-
-.initiative-row__sprite {
-  display: grid;
-  place-items: center;
-  width: 100%;
-  height: 100%;
-  min-height: 40px;
-  overflow: hidden;
-  border-radius: 8px;
-}
-
-.initiative-row__sprite-frame {
-  display: block;
-  flex: 0 0 auto;
-  background-position: left top;
-  background-repeat: no-repeat;
-  image-rendering: pixelated;
-  transform-origin: center;
-}
-
-.initiative-row__sprite img {
-  display: block;
-  max-width: 34px;
-  max-height: 34px;
-  object-fit: contain;
-  image-rendering: pixelated;
-}
-
-.initiative-row__sprite-fallback {
-  color: var(--ink-bright);
-  font-weight: 800;
-  text-transform: uppercase;
 }
 
 .initiative-row__body {
