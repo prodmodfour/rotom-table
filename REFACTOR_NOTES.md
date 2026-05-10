@@ -2620,3 +2620,13 @@
   - `npm test` — passes: 102 test files / 381 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: move automation wizard composable
+
+- Extracted move-automation wizard state, selection, target resolution, suggestions, hazard-cell helpers, transaction building, and apply orchestration into `composables/move-automation/useMoveAutomationWizard.ts`.
+- Reduced `MoveAutomationDialog` to a presentation/composition adapter over the focused wizard composable while preserving selected move defaults, target gating, roll actions, suggestion toggles, hazard text behavior, and transaction payloads.
+- Added `tests/composables/move-automation/useMoveAutomationWizard.test.ts` for stage-delta record creation and core wizard selection/target/apply behavior.
+- Quality gates after this phase:
+  - `npm test` — passes: 103 test files / 383 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
