@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
+import MoveAutomationStepIndicator from '~/components/move-automation/MoveAutomationStepIndicator.vue'
 import { damageFormulaForMove } from '~/utils/moveAutomation'
 import { parseHazardCellText } from '~/utils/moveAutomationDialog'
 import {
@@ -217,11 +218,7 @@ const apply = () => emit('apply', transaction.value)
         <button type="button" class="move-automation__close" aria-label="Close" @click="emit('close')">×</button>
       </header>
 
-      <div class="move-automation__steps" aria-label="Move wizard steps">
-        <span :class="['move-automation__step', { 'is-active': step === 0 }]">1. Pick</span>
-        <span :class="['move-automation__step', { 'is-active': step === 1 }]">2. Resolve</span>
-        <span :class="['move-automation__step', { 'is-active': step === 2 }]">3. Review</span>
-      </div>
+      <MoveAutomationStepIndicator :active-step="step" />
 
       <div v-if="!moveEntries.length" class="move-automation__empty">
         This sheet has no moves in its movelist.
@@ -314,8 +311,7 @@ const apply = () => emit('apply', transaction.value)
 }
 
 .move-automation__header,
-.move-automation__footer,
-.move-automation__steps {
+.move-automation__footer {
   flex: 0 0 auto;
   display: flex;
   align-items: center;
@@ -380,19 +376,6 @@ const apply = () => emit('apply', transaction.value)
   cursor: not-allowed;
 }
 
-.move-automation__step {
-  padding: 0.35rem 0.6rem;
-  border: 1px solid var(--rule-soft);
-  border-radius: 999px;
-  color: var(--ink-muted);
-  font-size: 0.78rem;
-  font-weight: 800;
-}
-
-.move-automation__step.is-active {
-  border-color: var(--accent);
-  color: var(--ink-bright);
-}
 
 .move-automation__empty {
   min-height: 0;

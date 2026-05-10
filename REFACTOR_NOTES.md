@@ -2548,3 +2548,12 @@
   - `npm test` — passes: 102 test files / 381 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: move automation step indicator component
+
+- Extracted the move-automation wizard step indicator from `components/MoveAutomationDialog.vue` into `components/move-automation/MoveAutomationStepIndicator.vue`.
+- Kept the dialog responsible for wizard state while the focused component owns step markup, active styling, and accessibility label.
+- Quality gates after this phase:
+  - `npm test` — passes: 102 test files / 381 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
