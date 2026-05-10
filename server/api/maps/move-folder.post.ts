@@ -5,10 +5,10 @@
  *
  * Request body: `{ from: string, to: string, clientId?: string }`
  */
-import { createError, defineEventHandler, readBody } from 'h3'
-import { publishRealtime } from '../../utils/realtime'
+import { defineEventHandler, readBody } from 'h3'
 import { requireGm } from '../../utils/auth'
-import { moveMapFolderUseCase, MoveMapFolderUseCaseError } from '../../useCases/moveMapFolder'
+import { publishUseCaseRealtimeEvents, throwUseCaseHttpError } from '../../utils/useCaseHttp'
+import { moveMapFolderUseCase } from '../../useCases/moveMapFolder'
 
 interface MoveFolderBody {
   from?: string
@@ -26,15 +26,12 @@ export default defineEventHandler(async (event) => {
       to: body?.to,
       clientId: body?.clientId,
     })
-    for (const realtimeEvent of result.events) publishRealtime(realtimeEvent)
+    publishUseCaseRealtimeEvents(result.events)
     return {
       ok: true as const,
       moved: result.moved,
     }
   } catch (err) {
-    if (err instanceof MoveMapFolderUseCaseError) {
-      throw createError({ statusCode: err.statusCode, statusMessage: err.message })
-    }
-    throw err
+    throwUseCaseHttpError(err)
   }
 })

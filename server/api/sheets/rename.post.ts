@@ -1,5 +1,6 @@
-import { createError, defineEventHandler } from 'h3'
+import { defineEventHandler } from 'h3'
 import { requireGm } from '../../utils/auth'
+import { publishUseCaseRealtimeEvents, throwUseCaseHttpError } from '../../utils/useCaseHttp'
 import {
   expectSheetKind,
   expectSlug,
@@ -7,8 +8,7 @@ import {
   readObjectBody,
   requireNonProduction,
 } from '../../utils/http'
-import { publishRealtime } from '../../utils/realtime'
-import { RenameSheetUseCaseError, renameSheetUseCase } from '../../useCases/renameSheet'
+import { renameSheetUseCase } from '../../useCases/renameSheet'
 
 interface RenameBody {
   kind?: unknown
@@ -33,12 +33,9 @@ export default defineEventHandler(async (event) => {
       name,
       clientId: typeof body.clientId === 'string' ? body.clientId : undefined,
     })
-    for (const realtimeEvent of result.events) publishRealtime(realtimeEvent)
+    publishUseCaseRealtimeEvents(result.events)
     return { ok: result.ok, name: result.name, path: result.path }
   } catch (err) {
-    if (err instanceof RenameSheetUseCaseError) {
-      throw createError({ statusCode: err.statusCode, statusMessage: err.message })
-    }
-    throw err
+    throwUseCaseHttpError(err)
   }
 })

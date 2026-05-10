@@ -1,7 +1,8 @@
-import { createError, defineEventHandler } from 'h3'
+import { defineEventHandler } from 'h3'
 import { requireGm } from '../../utils/auth'
+import { throwUseCaseHttpError } from '../../utils/useCaseHttp'
 import { readObjectBody, requireNonProduction } from '../../utils/http'
-import { MoveSheetFolderUseCaseError, moveSheetFolderUseCase } from '../../useCases/moveSheetFolder'
+import { moveSheetFolderUseCase } from '../../useCases/moveSheetFolder'
 
 interface MoveFolderBody {
   from?: unknown
@@ -17,9 +18,6 @@ export default defineEventHandler(async (event) => {
   try {
     return moveSheetFolderUseCase({ from: body.from, to: body.to })
   } catch (err) {
-    if (err instanceof MoveSheetFolderUseCaseError) {
-      throw createError({ statusCode: err.statusCode, statusMessage: err.message })
-    }
-    throw err
+    throwUseCaseHttpError(err)
   }
 })

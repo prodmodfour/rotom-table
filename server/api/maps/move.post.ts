@@ -7,10 +7,10 @@
  * Request body: `{ slug: string, folder: string, clientId?: string }`
  * Response:     `{ ok: true, moved: boolean, path: string }`
  */
-import { createError, defineEventHandler, readBody } from 'h3'
-import { publishRealtime } from '../../utils/realtime'
+import { defineEventHandler, readBody } from 'h3'
 import { requireGm } from '../../utils/auth'
-import { moveMapUseCase, MoveMapUseCaseError } from '../../useCases/moveMap'
+import { publishUseCaseRealtimeEvents, throwUseCaseHttpError } from '../../utils/useCaseHttp'
+import { moveMapUseCase } from '../../useCases/moveMap'
 
 interface MoveBody {
   slug?: unknown
@@ -28,16 +28,13 @@ export default defineEventHandler(async (event) => {
       folder: body?.folder,
       clientId: typeof body?.clientId === 'string' ? body.clientId : undefined,
     })
-    for (const realtimeEvent of result.events) publishRealtime(realtimeEvent)
+    publishUseCaseRealtimeEvents(result.events)
     return {
       ok: true as const,
       moved: result.moved,
       path: result.path,
     }
   } catch (err) {
-    if (err instanceof MoveMapUseCaseError) {
-      throw createError({ statusCode: err.statusCode, statusMessage: err.message })
-    }
-    throw err
+    throwUseCaseHttpError(err)
   }
 })

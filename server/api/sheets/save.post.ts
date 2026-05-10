@@ -1,5 +1,6 @@
-import { createError, defineEventHandler } from 'h3'
+import { defineEventHandler } from 'h3'
 import { requireAuthRole } from '../../utils/auth'
+import { publishUseCaseRealtimeEvents, throwUseCaseHttpError } from '../../utils/useCaseHttp'
 import {
   expectRecord,
   expectSheetKind,
@@ -7,8 +8,7 @@ import {
   readObjectBody,
   requireNonProduction,
 } from '../../utils/http'
-import { publishRealtime } from '../../utils/realtime'
-import { SaveSheetUseCaseError, saveSheetUseCase } from '../../useCases/saveSheet'
+import { saveSheetUseCase } from '../../useCases/saveSheet'
 
 interface SaveBody {
   kind?: unknown
@@ -34,12 +34,9 @@ export default defineEventHandler(async (event) => {
       sheet,
       clientId: typeof body.clientId === 'string' ? body.clientId : undefined,
     })
-    for (const realtimeEvent of result.events) publishRealtime(realtimeEvent)
+    publishUseCaseRealtimeEvents(result.events)
     return { ok: result.ok, path: result.path }
   } catch (err) {
-    if (err instanceof SaveSheetUseCaseError) {
-      throw createError({ statusCode: err.statusCode, statusMessage: err.message })
-    }
-    throw err
+    throwUseCaseHttpError(err)
   }
 })

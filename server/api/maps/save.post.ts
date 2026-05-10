@@ -1,8 +1,8 @@
-import { createError, defineEventHandler } from 'h3'
-import { publishRealtime } from '../../utils/realtime'
+import { defineEventHandler } from 'h3'
 import { requireAuthRole } from '../../utils/auth'
+import { publishUseCaseRealtimeEvents, throwUseCaseHttpError } from '../../utils/useCaseHttp'
 import { expectRecord, expectSlug, readObjectBody } from '../../utils/http'
-import { saveMapUseCase, SaveMapUseCaseError } from '../../useCases/saveMap'
+import { saveMapUseCase } from '../../useCases/saveMap'
 import type { TabletopMap } from '~/types/map'
 
 interface SaveBody {
@@ -24,12 +24,9 @@ export default defineEventHandler(async (event) => {
       map,
       clientId: typeof body.clientId === 'string' ? body.clientId : undefined,
     })
-    for (const realtimeEvent of result.events) publishRealtime(realtimeEvent)
+    publishUseCaseRealtimeEvents(result.events)
     return { ok: true as const, path: result.path, map: result.map }
   } catch (err) {
-    if (err instanceof SaveMapUseCaseError) {
-      throw createError({ statusCode: err.statusCode, statusMessage: err.message })
-    }
-    throw err
+    throwUseCaseHttpError(err)
   }
 })

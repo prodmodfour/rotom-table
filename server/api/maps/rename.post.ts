@@ -12,10 +12,10 @@
  * Request body: `{ slug: string, name: string, clientId?: string }`
  * Response:     `{ ok: true, slug: string, name: string, path: string }`
  */
-import { createError, defineEventHandler, readBody } from 'h3'
-import { publishRealtime } from '../../utils/realtime'
+import { defineEventHandler, readBody } from 'h3'
 import { requireGm } from '../../utils/auth'
-import { renameMapUseCase, RenameMapUseCaseError } from '../../useCases/renameMap'
+import { publishUseCaseRealtimeEvents, throwUseCaseHttpError } from '../../utils/useCaseHttp'
+import { renameMapUseCase } from '../../useCases/renameMap'
 
 interface RenameBody {
   slug?: unknown
@@ -33,7 +33,7 @@ export default defineEventHandler(async (event) => {
       name: body?.name,
       clientId: typeof body?.clientId === 'string' ? body.clientId : undefined,
     })
-    for (const realtimeEvent of result.events) publishRealtime(realtimeEvent)
+    publishUseCaseRealtimeEvents(result.events)
     return {
       ok: true as const,
       slug: result.slug,
@@ -41,9 +41,6 @@ export default defineEventHandler(async (event) => {
       path: result.path,
     }
   } catch (err) {
-    if (err instanceof RenameMapUseCaseError) {
-      throw createError({ statusCode: err.statusCode, statusMessage: err.message })
-    }
-    throw err
+    throwUseCaseHttpError(err)
   }
 })

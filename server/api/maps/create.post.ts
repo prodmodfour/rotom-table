@@ -11,10 +11,10 @@
  *
  * Response: `{ map: TabletopMap }`
  */
-import { createError, defineEventHandler, readBody } from 'h3'
-import { publishRealtime } from '../../utils/realtime'
+import { defineEventHandler, readBody } from 'h3'
 import { requireGm } from '../../utils/auth'
-import { createMapUseCase, CreateMapUseCaseError } from '../../useCases/createMap'
+import { publishUseCaseRealtimeEvents, throwUseCaseHttpError } from '../../utils/useCaseHttp'
+import { createMapUseCase } from '../../useCases/createMap'
 import type { GridDimensions } from '~/types/map'
 
 interface CreateBody {
@@ -30,12 +30,9 @@ export default defineEventHandler(async (event) => {
 
   try {
     const result = createMapUseCase(body ?? {})
-    for (const realtimeEvent of result.events) publishRealtime(realtimeEvent)
+    publishUseCaseRealtimeEvents(result.events)
     return { map: result.map }
   } catch (err) {
-    if (err instanceof CreateMapUseCaseError) {
-      throw createError({ statusCode: err.statusCode, statusMessage: err.message })
-    }
-    throw err
+    throwUseCaseHttpError(err)
   }
 })

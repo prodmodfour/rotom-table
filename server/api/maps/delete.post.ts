@@ -6,10 +6,10 @@
  * Request body: `{ slug: string, clientId?: string }`
  * Response:     `{ ok: true, path: string }`
  */
-import { createError, defineEventHandler, readBody } from 'h3'
-import { publishRealtime } from '../../utils/realtime'
+import { defineEventHandler, readBody } from 'h3'
 import { requireGm } from '../../utils/auth'
-import { deleteMapUseCase, DeleteMapUseCaseError } from '../../useCases/deleteMap'
+import { publishUseCaseRealtimeEvents, throwUseCaseHttpError } from '../../utils/useCaseHttp'
+import { deleteMapUseCase } from '../../useCases/deleteMap'
 
 interface DeleteBody {
   slug?: unknown
@@ -25,15 +25,12 @@ export default defineEventHandler(async (event) => {
       slug: body?.slug,
       clientId: typeof body?.clientId === 'string' ? body.clientId : undefined,
     })
-    for (const realtimeEvent of result.events) publishRealtime(realtimeEvent)
+    publishUseCaseRealtimeEvents(result.events)
     return {
       ok: true as const,
       path: result.path,
     }
   } catch (err) {
-    if (err instanceof DeleteMapUseCaseError) {
-      throw createError({ statusCode: err.statusCode, statusMessage: err.message })
-    }
-    throw err
+    throwUseCaseHttpError(err)
   }
 })

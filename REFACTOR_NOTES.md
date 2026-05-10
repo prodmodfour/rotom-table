@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; sheet CRUD and folder endpoints now use typed H3-free use cases. Next candidates include decoupling another small server boundary or another focused UI/helper duplication cleanup; do not mark the full refactor complete yet.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; server route adapters now share use-case HTTP/realtime adapter helpers. Next candidates include extracting shared use-case error base classes, autosave resource helpers, or another focused UI/helper duplication cleanup; do not mark the full refactor complete yet.
 
 ## Phase 0 baseline audit
 
@@ -3204,5 +3204,20 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; sheet CRUD and folder end
 - Quality gates after this phase:
   - `npm test -- tests/server/sheetFolders.test.ts` — passes: 1 test file / 7 tests.
   - `npm test` — passes: 130 test files / 493 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: server use-case HTTP adapter helper
+
+- Added `server/utils/useCaseHttp.ts` to centralize two H3 adapter concerns for thin route handlers:
+  - translating HTTP-compatible use-case errors into `createError` responses;
+  - publishing use-case realtime event arrays through the in-process realtime adapter.
+- Updated map, sheet, map-load, and encounter-generation route adapters to use the shared helper instead of importing individual use-case error classes or repeating realtime publish loops inline.
+- Preserved existing endpoint response shapes, status codes/status messages, realtime channels, and clientId echo-suppression payloads; use cases remain H3-free.
+- Added `tests/server/useCaseHttp.test.ts` covering HTTP-compatible error recognition/translation and realtime event fan-out.
+- Next remaining phase: continue one bounded cleanup pass, with candidates including extracting shared use-case error base classes, autosave resource helpers, or another focused UI/helper duplication cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/server/useCaseHttp.test.ts tests/server/createMap.test.ts tests/server/saveSheet.test.ts tests/server/generateEncounters.test.ts` — passes: 4 test files / 17 tests.
+  - `npm test` — passes: 131 test files / 496 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

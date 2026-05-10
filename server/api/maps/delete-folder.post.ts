@@ -6,10 +6,10 @@
  *
  * Request body: `{ folder: string, clientId?: string }`
  */
-import { createError, defineEventHandler, readBody } from 'h3'
-import { publishRealtime } from '../../utils/realtime'
+import { defineEventHandler, readBody } from 'h3'
 import { requireGm } from '../../utils/auth'
-import { deleteMapFolderUseCase, DeleteMapFolderUseCaseError } from '../../useCases/deleteMapFolder'
+import { publishUseCaseRealtimeEvents, throwUseCaseHttpError } from '../../utils/useCaseHttp'
+import { deleteMapFolderUseCase } from '../../useCases/deleteMapFolder'
 
 interface DeleteFolderBody {
   folder?: string
@@ -25,15 +25,12 @@ export default defineEventHandler(async (event) => {
       folder: body?.folder,
       clientId: body?.clientId,
     })
-    for (const realtimeEvent of result.events) publishRealtime(realtimeEvent)
+    publishUseCaseRealtimeEvents(result.events)
     return {
       ok: true as const,
       removed: result.removed,
     }
   } catch (err) {
-    if (err instanceof DeleteMapFolderUseCaseError) {
-      throw createError({ statusCode: err.statusCode, statusMessage: err.message })
-    }
-    throw err
+    throwUseCaseHttpError(err)
   }
 })

@@ -8,12 +8,10 @@
  *
  * Local dev tool only — spawns Python (``ptu-data/cli.py``) on the host.
  */
-import { createError, defineEventHandler, readBody } from 'h3'
+import { defineEventHandler, readBody } from 'h3'
 import { requireGm } from '../../utils/auth'
-import {
-  generateEncountersUseCase,
-  GenerateEncountersUseCaseError,
-} from '../../useCases/generateEncounters'
+import { throwUseCaseHttpError } from '../../utils/useCaseHttp'
+import { generateEncountersUseCase } from '../../useCases/generateEncounters'
 import type { GenerateEncounterBody } from '../../utils/encounterGeneration'
 
 export default defineEventHandler(async (event) => {
@@ -23,9 +21,6 @@ export default defineEventHandler(async (event) => {
   try {
     return await generateEncountersUseCase(body)
   } catch (err) {
-    if (err instanceof GenerateEncountersUseCaseError) {
-      throw createError({ statusCode: err.statusCode, statusMessage: err.message })
-    }
-    throw err
+    throwUseCaseHttpError(err)
   }
 })

@@ -1,5 +1,6 @@
-import { createError, defineEventHandler } from 'h3'
+import { defineEventHandler } from 'h3'
 import { requireGm } from '../../utils/auth'
+import { publishUseCaseRealtimeEvents, throwUseCaseHttpError } from '../../utils/useCaseHttp'
 import {
   expectFolderPath,
   expectSheetKind,
@@ -7,8 +8,7 @@ import {
   readObjectBody,
   requireNonProduction,
 } from '../../utils/http'
-import { publishRealtime } from '../../utils/realtime'
-import { MoveSheetUseCaseError, moveSheetUseCase } from '../../useCases/moveSheet'
+import { moveSheetUseCase } from '../../useCases/moveSheet'
 
 interface MoveSheetBody {
   kind?: unknown
@@ -33,12 +33,9 @@ export default defineEventHandler(async (event) => {
       folder,
       clientId: typeof body.clientId === 'string' ? body.clientId : undefined,
     })
-    for (const realtimeEvent of result.events) publishRealtime(realtimeEvent)
+    publishUseCaseRealtimeEvents(result.events)
     return { ok: result.ok, moved: result.moved, path: result.path }
   } catch (err) {
-    if (err instanceof MoveSheetUseCaseError) {
-      throw createError({ statusCode: err.statusCode, statusMessage: err.message })
-    }
-    throw err
+    throwUseCaseHttpError(err)
   }
 })

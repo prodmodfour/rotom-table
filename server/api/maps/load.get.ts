@@ -3,9 +3,10 @@
  *
  * Returns the full map document for the given slug. 404 if not found.
  */
-import { createError, defineEventHandler, getQuery } from 'h3'
+import { defineEventHandler, getQuery } from 'h3'
 import { requireAuthRole } from '../../utils/auth'
-import { loadMapUseCase, LoadMapUseCaseError } from '../../useCases/loadMap'
+import { throwUseCaseHttpError } from '../../utils/useCaseHttp'
+import { loadMapUseCase } from '../../useCases/loadMap'
 
 export default defineEventHandler((event) => {
   const role = requireAuthRole(event)
@@ -16,9 +17,6 @@ export default defineEventHandler((event) => {
       slug: getQuery(event).slug,
     })
   } catch (err) {
-    if (err instanceof LoadMapUseCaseError) {
-      throw createError({ statusCode: err.statusCode, statusMessage: err.message })
-    }
-    throw err
+    throwUseCaseHttpError(err)
   }
 })
