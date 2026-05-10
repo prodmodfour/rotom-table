@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { edges, toSlug } from '~/data/ptuReference'
+import { edges } from '~/data/ptuReference'
 import { filterEdgesForIndex } from '~/utils/reference/edgeIndex'
 
 useHead({ title: 'Edges · Rotom Table' })
@@ -26,22 +26,6 @@ const filtered = computed(() => filterEdgesForIndex(edges, { searchTerm: searchT
       />
     </ReferenceIndexHeader>
 
-    <main class="ref-list">
-      <NuxtLink
-        v-for="edge in filtered"
-        :key="edge.name"
-        :to="`/edges/${toSlug(edge.name)}`"
-        class="ref-row"
-      >
-        <div class="ref-row__heading">
-          <h2>{{ edge.name }}</h2>
-        </div>
-        <p v-if="edge.prerequisites" class="ref-row__trigger">
-          <span class="label">Prereq:</span> {{ edge.prerequisites }}
-        </p>
-        <p v-if="edge.effect" class="ref-row__effect">{{ edge.effect }}</p>
-      </NuxtLink>
-      <p v-if="filtered.length === 0" class="empty-state">No edges match.</p>
-    </main>
+    <EdgeIndexList :edges="filtered" />
   </div>
 </template>

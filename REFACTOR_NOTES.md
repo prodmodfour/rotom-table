@@ -1858,3 +1858,13 @@
   - `npm test` — passes: 84 test files / 322 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: edge index list component
+
+- Extracted the Edges index result-list markup into `components/reference/EdgeIndexList.vue`.
+- Reduced `pages/edges/index.vue` to search state, edge filtering, reference header composition, and the focused list component.
+- Preserved edge links, prerequisite/effect previews, and empty-state copy.
+- Quality gates after this phase:
+  - `npm test` — passes: 84 test files / 322 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
