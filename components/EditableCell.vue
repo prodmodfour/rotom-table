@@ -17,16 +17,26 @@
  * numeric values (em-dash / 0 fallback).
  */
 import { computed, nextTick, ref } from 'vue'
+import {
+  editableCellDraftFromValue,
+  formatEditableCellDisplay,
+  isEmptyEditableCellValue,
+  parseEditableCellDraft,
+  resolveEditableCellOptions,
+  type EditableCellOption,
+  type EditableCellType,
+  type EditableCellValue,
+} from '~/utils/editableCell'
 
-type CellValue = string | number | boolean | null | undefined
+type CellValue = EditableCellValue
 
 interface Props {
   modelValue: CellValue
-  type?: 'text' | 'number' | 'textarea' | 'select'
+  type?: EditableCellType
   /** Hint shown when the value is empty. */
   placeholder?: string
   /** For ``type="select"``. Empty string is treated as "no value". */
-  options?: Array<string | { value: string; label: string }>
+  options?: Array<string | EditableCellOption>
   /** Disable editing — render value as plain text. */
   readonly?: boolean
   /** Optional formatter applied to the displayed value (not the editor). */
@@ -69,25 +79,18 @@ const sessionStartValue = ref<CellValue>(undefined)
 let committedThisSession = false
 const inputEl = ref<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement | null>(null)
 
-const isEmpty = (v: CellValue): boolean =>
-  v === null || v === undefined || (typeof v === 'string' && v === '')
+const isEmpty = isEmptyEditableCellValue
 
-const displayValue = computed<string>(() => {
-  if (props.format) return props.format(props.modelValue)
-  if (isEmpty(props.modelValue)) return ''
-  return String(props.modelValue)
-})
-
-const optionsResolved = computed(() =>
-  props.options.map((o) =>
-    typeof o === 'string' ? { value: o, label: o } : o,
-  ),
+const displayValue = computed<string>(() =>
+  formatEditableCellDisplay(props.modelValue, props.format),
 )
+
+const optionsResolved = computed(() => resolveEditableCellOptions(props.options))
 
 const beginEdit = async () => {
   if (props.readonly) return
   sessionStartValue.value = props.modelValue
-  draft.value = isEmpty(props.modelValue) ? '' : String(props.modelValue)
+  draft.value = editableCellDraftFromValue(props.modelValue)
   committedThisSession = false
   editing.value = true
   await nextTick()
@@ -101,18 +104,12 @@ const beginEdit = async () => {
 }
 
 /** Convert the local draft string into the value we emit. */
-const parseDraft = (raw: string): CellValue => {
-  if (props.type === 'number') {
-    const trimmed = raw.trim()
-    if (trimmed === '') return undefined
-    const n = Number(trimmed)
-    if (!Number.isFinite(n)) return props.modelValue
-    if (props.min != null && n < props.min) return props.min
-    if (props.max != null && n > props.max) return props.max
-    return n
-  }
-  return raw
-}
+const parseDraft = (raw: string): CellValue => parseEditableCellDraft(raw, {
+  type: props.type,
+  currentValue: props.modelValue,
+  min: props.min,
+  max: props.max,
+})
 
 const applyDraft = (emitCommit = false) => {
   const next = parseDraft(draft.value)

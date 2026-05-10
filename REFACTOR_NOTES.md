@@ -2059,3 +2059,13 @@
   - `npm test` — passes: 91 test files / 343 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: editable cell helper extraction
+
+- Extracted `EditableCell` value emptiness, display formatting, draft initialization, select-option normalization, and numeric draft parsing/clamping into `utils/editableCell.ts`.
+- Updated `components/EditableCell.vue` to focus on edit-session state, DOM focus/keyboard handling, and event emission while pure value behavior lives in a tested utility.
+- Added `tests/utils/editableCell.test.ts` covering empty detection, display formatting, draft creation, option normalization, numeric parsing/clamping, invalid number fallback, and non-number draft preservation.
+- Quality gates after this phase:
+  - `npm test` — passes: 92 test files / 348 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
