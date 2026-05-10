@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; the shared library card shell is now isolated, but small UI/helper cleanup remains and the refactor is not marked complete.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; the shared library card media tile is now isolated, but small UI/helper cleanup remains and the refactor is not marked complete.
 
 ## Phase 0 baseline audit
 
@@ -2772,6 +2772,18 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; the shared library card s
 
 - Extracted the shared maps/sheets library card link, hover, draggable, dragging-self, and accented-card chrome into `components/library/LibraryCardShell.vue`.
 - Updated `MapLibraryCard` and `SheetLibraryCard` to compose the shared shell while preserving map editor/sheet editor routes, card metadata, trainer accent styling, drag/context-menu event payloads, and visual hover/drag behavior.
+- Next remaining phase: continue one small bounded cleanup pass on remaining library/map/reference presentation or helper duplication; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/utils/mapLibrary.test.ts tests/utils/sheetLibrary.test.ts` — passes: 2 test files / 16 tests.
+  - `npm test` — passes: 103 test files / 383 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: shared library card media tile
+
+- Extracted the shared maps/sheets library card media tile into `components/library/LibraryCardMedia.vue`.
+- Updated `MapLibraryCard` and `SheetLibraryCard` to compose the shared media component for map icons, Pokémon sprites/fallbacks, and trainer icons while preserving card routes, drag/context events, sprite rendering, icon sizing, and visual styling.
+- Removed duplicated media-tile image/fallback CSS from the map and sheet card components so the card components focus on domain-specific metadata.
 - Next remaining phase: continue one small bounded cleanup pass on remaining library/map/reference presentation or helper duplication; do not mark the full refactor complete yet.
 - Quality gates after this phase:
   - `npm test -- tests/utils/mapLibrary.test.ts tests/utils/sheetLibrary.test.ts` — passes: 2 test files / 16 tests.

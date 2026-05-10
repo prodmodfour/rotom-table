@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { PhSquaresFour } from '@phosphor-icons/vue'
+import LibraryCardMedia from '~/components/library/LibraryCardMedia.vue'
 import LibraryCardShell from '~/components/library/LibraryCardShell.vue'
 import { mapEditorPath } from '~/utils/mapRoutes'
 import type { MapSummary } from '~/types/map'
@@ -26,9 +27,9 @@ const emit = defineEmits<{
     @dragstart="emit('dragstart', $event, item)"
     @dragend="emit('dragend')"
   >
-    <div class="map-card__icon">
+    <LibraryCardMedia size="map" tone="accent">
       <PhSquaresFour :size="42" weight="duotone" aria-hidden="true" />
-    </div>
+    </LibraryCardMedia>
     <div class="map-card__body">
       <h3>{{ item.name }}</h3>
       <p class="map-card__meta">
@@ -43,18 +44,6 @@ const emit = defineEmits<{
 </template>
 
 <style scoped>
-.map-card__icon {
-  flex: 0 0 auto;
-  width: 64px;
-  height: 64px;
-  display: grid;
-  place-items: center;
-  border: 1px solid var(--rule-soft);
-  border-radius: 10px;
-  background: var(--paper-inset);
-  color: var(--accent);
-}
-
 .map-card__body {
   min-width: 0;
 }

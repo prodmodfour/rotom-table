@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import LibraryCardMedia from '~/components/library/LibraryCardMedia.vue'
 import LibraryCardShell from '~/components/library/LibraryCardShell.vue'
 import type { SheetLibraryItem } from '~/utils/sheetLibrary'
 import { sheetEditorPath } from '~/utils/sheetRoutes'
@@ -27,10 +28,11 @@ const emit = defineEmits<{
     @dragend="emit('dragend')"
   >
     <template v-if="item.kind === 'pokemon'">
-      <div class="sheet-card__sprite">
-        <img v-if="item.spriteUrl" :src="item.spriteUrl" :alt="item.sheet.species" />
-        <span v-else class="sprite-missing">?</span>
-      </div>
+      <LibraryCardMedia
+        :image-url="item.spriteUrl"
+        :image-alt="item.sheet.species"
+        fallback-label="?"
+      />
       <div class="sheet-card__body">
         <div class="sheet-card__heading">
           <h3>{{ item.sheet.nickname }}</h3>
@@ -55,9 +57,9 @@ const emit = defineEmits<{
     </template>
 
     <template v-else>
-      <div class="sheet-card__sprite trainer-icon">
+      <LibraryCardMedia class="trainer-icon">
         <span aria-hidden="true">🎯</span>
-      </div>
+      </LibraryCardMedia>
       <div class="sheet-card__body">
         <div class="sheet-card__heading">
           <h3>{{ item.sheet.name }}</h3>
@@ -81,33 +83,6 @@ const emit = defineEmits<{
 <style scoped>
 .trainer-icon {
   font-size: 1.8rem;
-  display: grid;
-  place-items: center;
-}
-
-.sheet-card__sprite {
-  flex: 0 0 auto;
-  width: 72px;
-  height: 72px;
-  display: grid;
-  place-items: center;
-  border: 1px solid var(--rule-soft);
-  border-radius: 10px;
-  background: var(--paper-inset);
-  padding: 0.3rem;
-}
-
-.sheet-card__sprite img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  image-rendering: pixelated;
-}
-
-.sprite-missing {
-  color: var(--ink-faint);
-  font-size: 1.4rem;
-  font-weight: 700;
 }
 
 .sheet-card__body {
