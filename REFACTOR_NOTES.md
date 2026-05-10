@@ -2354,3 +2354,12 @@
   - `npm test` — passes: 99 test files / 370 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: map sidebar toggle component
+
+- Extracted the map sidebar collapse/expand button and collapsed-state styles into `components/map/MapSidebarToggle.vue`.
+- Reduced `components/map/MapLeftSidebar.vue` so it delegates sidebar toggle presentation while preserving ARIA state, labels, and collapsed styling.
+- Quality gates after this phase:
+  - `npm test` — passes: 99 test files / 370 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
