@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { checkedValueFromEvent } from '~/utils/domEvents'
+import LayerVisibilityControls from '~/components/map/LayerVisibilityControls.vue'
 import { hexColorString, type VoxelMaterialDef } from '~/utils/voxels'
 import type { BuildTool } from '~/shared/mapEditor'
 import type { LayerVisibility, MapHazardKind, VoxelMaterial } from '~/types/map'
@@ -184,22 +184,11 @@ const emit = defineEmits<{
           </button>
         </div>
 
-        <div class="build-section layer-panel">
-          <div class="panel-heading panel-heading--compact">
-            <h2>Layers</h2>
-            <span class="badge">visibility</span>
-          </div>
-          <div class="layer-grid">
-            <label v-for="layer in layerOptions" :key="layer" class="layer-toggle">
-              <input
-                :checked="layerVisibility[layer]"
-                type="checkbox"
-                @change="emit('set-layer-visibility', layer, checkedValueFromEvent($event))"
-              />
-              <span>{{ layer.replace(/([A-Z])/g, ' $1') }}</span>
-            </label>
-          </div>
-        </div>
+        <LayerVisibilityControls
+          :layer-visibility="layerVisibility"
+          :layer-options="layerOptions"
+          @set-layer-visibility="(layer, value) => emit('set-layer-visibility', layer, value)"
+        />
       </template>
 
       <template v-if="hazardMode && canEditMap">
@@ -399,16 +388,6 @@ input:disabled {
   gap: 0.75rem;
 }
 
-.build-section {
-  border-top: 1px solid var(--rule-soft);
-  margin-top: 0.15rem;
-  padding-top: 0.85rem;
-}
-
-.panel-heading--compact {
-  margin-bottom: 0.6rem;
-}
-
 .mode-row {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -572,36 +551,6 @@ input:disabled {
 
 .hazard-swatch.is-active .hazard-swatch__label {
   color: var(--accent);
-}
-
-.layer-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 0.7rem;
-}
-
-.layer-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.45rem;
-}
-
-.layer-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-  border: 1px solid var(--rule-soft);
-  border-radius: 9px;
-  background: var(--paper);
-  padding: 0.45rem 0.55rem;
-  color: var(--ink);
-  font-size: 0.8rem;
-  text-transform: capitalize;
-}
-
-.layer-toggle input {
-  width: auto;
-  accent-color: var(--accent);
 }
 
 .color-row {

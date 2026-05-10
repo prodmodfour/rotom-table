@@ -2208,3 +2208,13 @@
   - `npm test` — passes: 98 test files / 369 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: layer visibility controls component
+
+- Extracted the map terrain/hazard panel's layer visibility controls into `components/map/LayerVisibilityControls.vue` with focused props and `set-layer-visibility` emits.
+- Added `utils/mapLayerVisibility.ts` to keep layer-label formatting out of templates and covered it with unit tests.
+- Reduced `TerrainHazardsPanel` by delegating layer checkbox presentation while preserving layer visibility behavior and styling.
+- Quality gates after this phase:
+  - `npm test` — passes: 99 test files / 370 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
