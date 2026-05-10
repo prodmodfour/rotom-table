@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { trimmedTextValueFromEvent } from '~/utils/domEvents'
+
 defineProps<{
   modelValue: string
   label: string
@@ -10,8 +12,7 @@ const emit = defineEmits<{
 }>()
 
 const updateValue = (event: Event) => {
-  const input = event.target as HTMLInputElement | null
-  emit('update:modelValue', input?.value.trim() ?? '')
+  emit('update:modelValue', trimmedTextValueFromEvent(event))
 }
 </script>
 

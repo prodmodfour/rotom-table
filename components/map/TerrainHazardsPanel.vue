@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { checkedValueFromEvent } from '~/utils/domEvents'
 import { hexColorString, type VoxelMaterialDef } from '~/utils/voxels'
 import type { BuildTool } from '~/shared/mapEditor'
 import type { LayerVisibility, MapHazardKind, VoxelMaterial } from '~/types/map'
@@ -41,8 +42,6 @@ const emit = defineEmits<{
   (event: 'clear-all-hazards'): void
 }>()
 
-const checkedFromEvent = (event: Event): boolean =>
-  (event.target as HTMLInputElement | null)?.checked ?? false
 </script>
 
 <template>
@@ -195,7 +194,7 @@ const checkedFromEvent = (event: Event): boolean =>
               <input
                 :checked="layerVisibility[layer]"
                 type="checkbox"
-                @change="emit('set-layer-visibility', layer, checkedFromEvent($event))"
+                @change="emit('set-layer-visibility', layer, checkedValueFromEvent($event))"
               />
               <span>{{ layer.replace(/([A-Z])/g, ' $1') }}</span>
             </label>

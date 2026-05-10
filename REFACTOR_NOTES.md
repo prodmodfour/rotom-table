@@ -2149,3 +2149,13 @@
   - `npm test` — passes: 95 test files / 361 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: shared DOM event value helpers
+
+- Added `utils/domEvents.ts` to centralize text, trimmed text, checkbox, loose number, and finite number extraction from DOM events.
+- Updated map details, terrain/hazard, field-effect, move-automation status/HP-map, and reference search controls to use the shared event helpers instead of repeated inline target casts.
+- Added `tests/utils/domEvents.test.ts` covering text extraction, checkbox fallback behavior, loose number parsing, and finite-number fallback behavior.
+- Quality gates after this phase:
+  - `npm test` — passes: 96 test files / 365 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

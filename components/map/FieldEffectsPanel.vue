@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { checkedValueFromEvent } from '~/utils/domEvents'
 import type { MapEffectDefinition } from '~/utils/mapFieldEffects'
 import type {
   MapRoomEffect,
@@ -46,8 +47,6 @@ const emit = defineEmits<{
   (event: 'clear-all'): void
 }>()
 
-const checkedFromEvent = (event: Event): boolean =>
-  (event.target as HTMLInputElement | null)?.checked ?? false
 </script>
 
 <template>
@@ -106,7 +105,7 @@ const checkedFromEvent = (event: Event): boolean =>
             :checked="weatherCoexistNext"
             type="checkbox"
             :disabled="!activeWeatherEffects.length"
-            @change="emit('update-weather-coexist-next', checkedFromEvent($event))"
+            @change="emit('update-weather-coexist-next', checkedValueFromEvent($event))"
           />
           Add next weather alongside current one (Climate Control)
         </label>

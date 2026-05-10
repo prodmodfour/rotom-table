@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { checkedValueFromEvent, textValueFromEvent } from '~/utils/domEvents'
 import type { MoveAutomationScript } from '~/types/moveAutomation'
 import type { MoveAutomationSuggestionKind } from '~/utils/moveAutomationTransaction'
 
@@ -18,17 +19,15 @@ const emit = defineEmits<{
   (event: 'add-user-cell-to-hazard-text'): void
 }>()
 
-const checkboxValue = (event: Event): boolean => (event.target as HTMLInputElement).checked
-const inputValue = (event: Event): string => (event.target as HTMLInputElement | HTMLTextAreaElement).value
 </script>
 
 <template>
   <section v-if="script.hpSuggestions.length" class="move-resolution__section">
     <header class="move-resolution__section-header"><h3>HP effects</h3></header>
     <label v-for="(item, index) in script.hpSuggestions" :key="`hp-${index}`" class="effect-toggle effect-toggle--with-input">
-      <input :checked="suggestionEnabled('hp', index)" type="checkbox" @change="emit('set-suggestion-enabled', 'hp', index, checkboxValue($event))" />
+      <input :checked="suggestionEnabled('hp', index)" type="checkbox" @change="emit('set-suggestion-enabled', 'hp', index, checkedValueFromEvent($event))" />
       <span>{{ item.recipient === 'user' ? 'User' : 'Target' }}: {{ item.label }}</span>
-      <input :value="hpSuggestionAmounts[suggestionKey('hp', index)] ?? ''" type="number" min="0" placeholder="auto" @input="emit('set-hp-suggestion-amount', index, inputValue($event))" />
+      <input :value="hpSuggestionAmounts[suggestionKey('hp', index)] ?? ''" type="number" min="0" placeholder="auto" @input="emit('set-hp-suggestion-amount', index, textValueFromEvent($event))" />
     </label>
   </section>
 
@@ -36,11 +35,11 @@ const inputValue = (event: Event): string => (event.target as HTMLInputElement |
     <header class="move-resolution__section-header"><h3>Map effects</h3></header>
     <p v-if="!canApplyMapEffects" class="move-resolution__hint">Only the GM can persist map-level field effects and hazards.</p>
     <label v-for="(item, index) in script.fieldSuggestions" :key="`field-${index}`" class="effect-toggle">
-      <input :checked="suggestionEnabled('field', index)" type="checkbox" :disabled="!canApplyMapEffects" @change="emit('set-suggestion-enabled', 'field', index, checkboxValue($event))" />
+      <input :checked="suggestionEnabled('field', index)" type="checkbox" :disabled="!canApplyMapEffects" @change="emit('set-suggestion-enabled', 'field', index, checkedValueFromEvent($event))" />
       <span>{{ item.label }}</span>
     </label>
     <label v-for="(item, index) in script.hazardSuggestions" :key="`hazard-${index}`" class="effect-toggle">
-      <input :checked="suggestionEnabled('hazard', index)" type="checkbox" :disabled="!canApplyMapEffects" @change="emit('set-suggestion-enabled', 'hazard', index, checkboxValue($event))" />
+      <input :checked="suggestionEnabled('hazard', index)" type="checkbox" :disabled="!canApplyMapEffects" @change="emit('set-suggestion-enabled', 'hazard', index, checkedValueFromEvent($event))" />
       <span>{{ item.label }}</span>
     </label>
     <div v-if="script.hazardSuggestions.length" class="hazard-cell-input">

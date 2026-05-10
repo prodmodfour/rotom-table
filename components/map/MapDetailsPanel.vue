@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { checkedValueFromEvent, looseNumberFromEvent } from '~/utils/domEvents'
 import type { GridDimensions } from '~/types/map'
 
 type DimensionAxis = keyof GridDimensions
@@ -18,16 +19,6 @@ const emit = defineEmits<{
   (event: 'update-dimension', axis: DimensionAxis, value: number | string): void
 }>()
 
-const looseNumber = (value: string): number | string => {
-  const parsed = Number.parseFloat(value)
-  return Number.isNaN(parsed) ? value : parsed
-}
-
-const numberInputValue = (event: Event): number | string =>
-  looseNumber((event.target as HTMLInputElement | null)?.value ?? '')
-
-const checkedFromEvent = (event: Event): boolean =>
-  (event.target as HTMLInputElement | null)?.checked ?? false
 </script>
 
 <template>
@@ -55,7 +46,7 @@ const checkedFromEvent = (event: Event): boolean =>
         <input
           :checked="playerVisible === true"
           type="checkbox"
-          @change="emit('update-player-visible', checkedFromEvent($event))"
+          @change="emit('update-player-visible', checkedValueFromEvent($event))"
         />
         Player visible
       </label>
@@ -72,7 +63,7 @@ const checkedFromEvent = (event: Event): boolean =>
             min="1"
             max="200"
             :disabled="!canEditMap"
-            @input="emit('update-dimension', 'x', numberInputValue($event))"
+            @input="emit('update-dimension', 'x', looseNumberFromEvent($event))"
           />
         </label>
         <label>
@@ -83,7 +74,7 @@ const checkedFromEvent = (event: Event): boolean =>
             min="1"
             max="200"
             :disabled="!canEditMap"
-            @input="emit('update-dimension', 'y', numberInputValue($event))"
+            @input="emit('update-dimension', 'y', looseNumberFromEvent($event))"
           />
         </label>
         <label>
@@ -94,7 +85,7 @@ const checkedFromEvent = (event: Event): boolean =>
             min="1"
             max="200"
             :disabled="!canEditMap"
-            @input="emit('update-dimension', 'z', numberInputValue($event))"
+            @input="emit('update-dimension', 'z', looseNumberFromEvent($event))"
           />
         </label>
       </div>

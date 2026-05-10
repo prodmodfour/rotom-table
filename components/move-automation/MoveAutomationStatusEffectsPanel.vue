@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { checkedValueFromEvent, finiteNumberFromEvent } from '~/utils/domEvents'
 import { COMBAT_STAGE_KEYS, COMBAT_STAGE_SHORT_LABELS } from '~/utils/combatStages'
 import type { CombatStageKey } from '~/types/combatStages'
 import type { MoveAutomationScript } from '~/types/moveAutomation'
@@ -20,11 +21,6 @@ const emit = defineEmits<{
   (event: 'set-target-stage-delta', key: CombatStageKey, value: number): void
 }>()
 
-const checkboxValue = (event: Event): boolean => (event.target as HTMLInputElement).checked
-const numericValue = (event: Event): number => {
-  const value = Number((event.target as HTMLInputElement).value)
-  return Number.isFinite(value) ? value : 0
-}
 </script>
 
 <template>
@@ -35,7 +31,7 @@ const numericValue = (event: Event): number => {
       :key="`condition-${index}`"
       class="effect-toggle"
     >
-      <input :checked="suggestionEnabled('condition', index)" type="checkbox" @change="emit('set-suggestion-enabled', 'condition', index, checkboxValue($event))" />
+      <input :checked="suggestionEnabled('condition', index)" type="checkbox" @change="emit('set-suggestion-enabled', 'condition', index, checkedValueFromEvent($event))" />
       <span>
         {{ item.recipient === 'user' ? 'User' : 'Target' }}:
         {{ item.action === 'remove' ? 'Remove ' : '' }}{{ item.label }}
@@ -64,7 +60,7 @@ const numericValue = (event: Event): number => {
       :key="`stage-${index}`"
       class="effect-toggle"
     >
-      <input :checked="suggestionEnabled('stage', index)" type="checkbox" @change="emit('set-suggestion-enabled', 'stage', index, checkboxValue($event))" />
+      <input :checked="suggestionEnabled('stage', index)" type="checkbox" @change="emit('set-suggestion-enabled', 'stage', index, checkedValueFromEvent($event))" />
       <span>{{ item.recipient === 'user' ? 'User' : 'Target' }}: {{ item.label }}</span>
       <small v-if="item.threshold">{{ item.threshold }}</small>
     </label>
@@ -75,14 +71,14 @@ const numericValue = (event: Event): number => {
           <h4>User</h4>
           <label v-for="key in COMBAT_STAGE_KEYS" :key="`user-${key}`">
             <span>{{ COMBAT_STAGE_SHORT_LABELS[key] }}</span>
-            <input :value="manualUserStageDeltas[key]" type="number" min="-6" max="6" @input="emit('set-user-stage-delta', key, numericValue($event))" />
+            <input :value="manualUserStageDeltas[key]" type="number" min="-6" max="6" @input="emit('set-user-stage-delta', key, finiteNumberFromEvent($event))" />
           </label>
         </div>
         <div>
           <h4>Selected target(s)</h4>
           <label v-for="key in COMBAT_STAGE_KEYS" :key="`target-${key}`">
             <span>{{ COMBAT_STAGE_SHORT_LABELS[key] }}</span>
-            <input :value="manualTargetStageDeltas[key]" type="number" min="-6" max="6" @input="emit('set-target-stage-delta', key, numericValue($event))" />
+            <input :value="manualTargetStageDeltas[key]" type="number" min="-6" max="6" @input="emit('set-target-stage-delta', key, finiteNumberFromEvent($event))" />
           </label>
         </div>
       </div>
