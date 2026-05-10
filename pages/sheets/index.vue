@@ -32,6 +32,7 @@ import {
 } from '~/utils/sheetLibrary'
 import { useLibraryContextMenu } from '~/composables/library/useLibraryContextMenu'
 import { useLibraryDragDrop } from '~/composables/library/useLibraryDragDrop'
+import { useLibraryDropMove } from '~/composables/library/useLibraryDropMove'
 import { useLibraryFolderCreation } from '~/composables/library/useLibraryFolderCreation'
 import { useLibraryFolderNavigation } from '~/composables/library/useLibraryFolderNavigation'
 import { useWindowKeydown } from '~/composables/useWindowKeydown'
@@ -168,9 +169,6 @@ interface DragFolder {
 }
 type DragPayload = DragSheet | DragFolder
 
-const moving = ref(false)
-const moveError = ref<string | null>(null)
-
 /** Drop validity check that takes an explicit payload, so it stays correct
  *  even after `drag.value` has been cleared (which `onDrop` does
  *  optimistically before awaiting the server). */
@@ -240,21 +238,11 @@ const performMove = async (d: DragPayload, targetPath: string) => {
   }
 }
 
-const onDrop = async (e: DragEvent, targetPath: string) => {
-  const d = takeDropPayload(e, targetPath)
-  if (!d) return
-
-  moving.value = true
-  moveError.value = null
-  try {
-    await performMove(d, targetPath)
-  } catch (err: unknown) {
-    moveError.value = getErrorMessage(err)
-    console.error('[sheets] move failed', err)
-  } finally {
-    moving.value = false
-  }
-}
+const { moving, moveError, onDrop } = useLibraryDropMove<DragPayload>({
+  takeDropPayload,
+  movePayload: performMove,
+  onError: (error) => console.error('[sheets] move failed', error),
+})
 
 // ---------------------------------------------------------------------------
 // New folder / sheet creation

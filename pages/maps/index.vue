@@ -33,6 +33,7 @@ import {
 import { useRealtimeChannel } from '~/composables/useRealtime'
 import { useLibraryContextMenu } from '~/composables/library/useLibraryContextMenu'
 import { useLibraryDragDrop } from '~/composables/library/useLibraryDragDrop'
+import { useLibraryDropMove } from '~/composables/library/useLibraryDropMove'
 import { useLibraryFolderCreation } from '~/composables/library/useLibraryFolderCreation'
 import { useLibraryFolderNavigation } from '~/composables/library/useLibraryFolderNavigation'
 import { useWindowKeydown } from '~/composables/useWindowKeydown'
@@ -51,8 +52,6 @@ const maps = reactive<Map<string, MapSummary>>(new Map())
 const extraFolders = reactive(new Set<string>())
 const loading = ref(true)
 const loadError = ref<string | null>(null)
-const moveError = ref<string | null>(null)
-const moving = ref(false)
 
 const refresh = async () => {
   loading.value = true
@@ -193,19 +192,10 @@ const performMove = async (d: DragPayload, targetPath: string) => {
   }
 }
 
-const onDrop = async (e: DragEvent, targetPath: string) => {
-  const d = takeDropPayload(e, targetPath)
-  if (!d) return
-  moving.value = true
-  moveError.value = null
-  try {
-    await performMove(d, targetPath)
-  } catch (err: unknown) {
-    moveError.value = getErrorMessage(err)
-  } finally {
-    moving.value = false
-  }
-}
+const { moving, moveError, onDrop } = useLibraryDropMove<DragPayload>({
+  takeDropPayload,
+  movePayload: performMove,
+})
 
 const createNewMap = async () => {
   if (!isGm.value || creating.value) return
