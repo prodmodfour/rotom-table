@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; map create/rename/move are now tested use cases/thin routes, with map folder mutation endpoints still good candidates for further thinning.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; map create/rename/move/create-folder are now tested use cases/thin routes, with map move-folder and delete-folder endpoints still good candidates for further thinning.
 
 ## Phase 0 baseline audit
 
@@ -2991,5 +2991,20 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; map create/rename/move ar
 - Quality gates after this phase:
   - `npm test -- tests/server/moveMap.test.ts` — passes: 1 test file / 4 tests.
   - `npm test` — passes: 116 test files / 434 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+
+## Next phase update: map create-folder use-case extraction
+
+- Extracted `/api/maps/create-folder` orchestration into `server/useCases/createMapFolder.ts`.
+  - The use case now owns folder sanitization, maps-root path containment checks, existing-folder detection, directory creation behind injectable dependencies, response path formatting, and compatible `maps` channel folder-created events.
+- Reduced `server/api/maps/create-folder.post.ts` to a thin H3 adapter for GM auth, body reading, use-case invocation, realtime publish, and HTTP error translation.
+- Preserved existing create-folder behavior: blank/invalid folder values still return bad-request messages from the sanitizer, existing folders return `created: false`, successful responses remain `{ ok, created, path }`, and realtime payloads remain `{ folder }`.
+- Added `tests/server/createMapFolder.test.ts` covering folder normalization, existing-folder reporting, sanitizer failures, escaped-path protection, response paths, and realtime events.
+- Next remaining phase: continue map folder endpoint thinning, especially `server/api/maps/move-folder.post.ts` and `server/api/maps/delete-folder.post.ts`; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/server/createMapFolder.test.ts` — passes: 1 test file / 4 tests.
+  - `npm test` — passes: 117 test files / 438 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

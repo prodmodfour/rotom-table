@@ -6,14 +6,10 @@
  *
  * Request body: `{ folder: string, clientId?: string }`
  */
-import { existsSync, mkdirSync } from 'node:fs'
-import { join, sep } from 'node:path'
 import { createError, defineEventHandler, readBody } from 'h3'
-import { mapsChannel } from '~/shared/realtime'
 import { publishRealtime } from '../../utils/realtime'
 import { requireGm } from '../../utils/auth'
-import { PROJECT_ROOT } from '../../utils/fsPaths'
-import { MAPS_ROOT, sanitizeMapFolderPath } from '../../utils/mapStorage'
+import { createMapFolderUseCase, CreateMapFolderUseCaseError } from '../../useCases/createMapFolder'
 
 interface CreateFolderBody {
   folder?: string
@@ -22,30 +18,23 @@ interface CreateFolderBody {
 
 export default defineEventHandler(async (event) => {
   requireGm(event)
-  const body = await readBody<CreateFolderBody>(event)
-  let folder = ''
+  const body = await readBody<CreateFolderBody | null>(event)
+
   try {
-    folder = sanitizeMapFolderPath(String(body?.folder ?? ''))
+    const result = createMapFolderUseCase({
+      folder: body?.folder,
+      clientId: body?.clientId,
+    })
+    for (const realtimeEvent of result.events) publishRealtime(realtimeEvent)
+    return {
+      ok: true as const,
+      created: result.created,
+      path: result.path,
+    }
   } catch (err) {
-    throw createError({ statusCode: 400, statusMessage: (err as Error).message })
-  }
-  const dest = join(MAPS_ROOT, folder)
-  if (!dest.startsWith(MAPS_ROOT + sep)) {
-    throw createError({ statusCode: 400, statusMessage: 'Invalid destination' })
-  }
-  const existed = existsSync(dest)
-  mkdirSync(dest, { recursive: true })
-
-  publishRealtime({
-    channel: mapsChannel,
-    type: 'folder-created',
-    clientId: body?.clientId,
-    data: { folder },
-  })
-
-  return {
-    ok: true as const,
-    created: !existed,
-    path: dest.slice(PROJECT_ROOT.length + 1),
+    if (err instanceof CreateMapFolderUseCaseError) {
+      throw createError({ statusCode: err.statusCode, statusMessage: err.message })
+    }
+    throw err
   }
 })
