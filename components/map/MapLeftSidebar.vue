@@ -5,6 +5,7 @@ import SheetBrowser from '~/components/SheetBrowser.vue'
 import MapDetailsPanel from '~/components/map/MapDetailsPanel.vue'
 import MapFieldEffectsPanel from '~/components/map/FieldEffectsPanel.vue'
 import MapTerrainHazardsPanel from '~/components/map/TerrainHazardsPanel.vue'
+import { mapLibraryPath } from '~/utils/mapRoutes'
 import type { SaveStatus } from '~/composables/useEditableSheet'
 import type { MapTokenSheetSelection } from '~/composables/map-editor/useTokenControls'
 import type { BuildTool, MapEditorMode, MapLeftSidebarSection } from '~/shared/mapEditor'
@@ -127,7 +128,7 @@ const emit = defineEmits<{
       <AppNavigation />
 
       <div class="header-row">
-        <NuxtLink to="/maps" class="back-link">← All maps</NuxtLink>
+        <NuxtLink :to="mapLibraryPath()" class="back-link">← All maps</NuxtLink>
         <SaveIndicator
           v-if="saveIndicatorStatus"
           :status="saveIndicatorStatus"

@@ -31,6 +31,7 @@ import { useLibraryDragDrop } from '~/composables/library/useLibraryDragDrop'
 import { useLibraryFolderNavigation } from '~/composables/library/useLibraryFolderNavigation'
 import { useWindowKeydown } from '~/composables/useWindowKeydown'
 import { isEscapeKey } from '~/utils/keyboardShortcuts'
+import { mapEditorPath, mapLibraryPath } from '~/utils/mapRoutes'
 import { mapsChannel } from '~/shared/realtime'
 import type { MapSummary, TabletopMap } from '~/types/map'
 
@@ -84,7 +85,7 @@ const items = computed(() => {
 const allFolders = computed(() => buildMapFolderSet(items.value, extraFolders))
 
 const { currentPath, goToFolder, breadcrumbs } = useLibraryFolderNavigation({
-  routePath: '/maps',
+  routePath: mapLibraryPath(),
   formatSegment: formatFolderLabel,
 })
 
@@ -222,7 +223,7 @@ const createNewMap = async () => {
       body: { folder: currentPath.value, clientId },
     })
     maps.set(result.map.slug, tabletopMapToSummary(result.map))
-    router.push(`/maps/${result.map.slug}`)
+    router.push(mapEditorPath(result.map.slug))
   } catch (err: unknown) {
     createError.value = getErrorMessage(err)
   } finally {

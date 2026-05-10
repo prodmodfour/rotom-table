@@ -2198,3 +2198,13 @@
   - `npm test` — passes: 97 test files / 367 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: shared map route helpers
+
+- Added `utils/mapRoutes.ts` for the canonical map library path and encoded map editor route construction.
+- Updated map route redirects, map library card links, map page rename redirects, app navigation, login fallback, and map sidebar/not-found links to use the shared helpers instead of repeating `/maps` string construction.
+- Added `tests/utils/mapRoutes.test.ts` covering the canonical library path and encoded editor paths.
+- Quality gates after this phase:
+  - `npm test` — passes: 98 test files / 369 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

@@ -1,8 +1,9 @@
+import { MAP_LIBRARY_PATH } from '~/utils/mapRoutes'
 import type { AuthRole } from '~/shared/auth'
 
 export const PLAYER_BLOCKED_REDIRECT_PREFIXES = ['/generate', '/encounter-tables'] as const
 
-export const DEFAULT_LOGIN_REDIRECT = '/maps'
+export const DEFAULT_LOGIN_REDIRECT = MAP_LIBRARY_PATH
 
 export const isSafeInternalRedirect = (value: unknown): value is string =>
   typeof value === 'string' && value.startsWith('/') && !value.startsWith('//')

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { PhSquaresFour } from '@phosphor-icons/vue'
+import { mapEditorPath } from '~/utils/mapRoutes'
 import type { FolderTile } from '~/utils/folderBrowser'
 import type { MapSummary } from '~/types/map'
 
@@ -54,7 +55,7 @@ const emit = defineEmits<{
       <NuxtLink
         v-for="item in maps"
         :key="`map-${item.slug}`"
-        :to="`/maps/${item.slug}`"
+        :to="mapEditorPath(item.slug)"
         class="map-card"
         :draggable="isGm"
         @contextmenu="emit('mapContext', $event, item)"

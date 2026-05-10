@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import IsometricGrid from '~/components/IsometricGrid.client.vue'
 import MoveAutomationDialog from '~/components/MoveAutomationDialog.vue'
+import { mapLibraryPath } from '~/utils/mapRoutes'
 import type { BuildTool } from '~/shared/mapEditor'
 import type { CharacterSheetMove } from '~/types/characterSheet'
 import type { CombatStageMap } from '~/types/combatStages'
@@ -123,7 +124,7 @@ defineExpose({ focusPokemon })
       <div v-else-if="status === 'loading'" class="scene-loading">Loading map…</div>
       <div v-else-if="status === 'not-found'" class="scene-loading">
         <p>Map <code>{{ slug }}</code> not found.</p>
-        <NuxtLink to="/maps" class="back-link">← Back to maps</NuxtLink>
+        <NuxtLink :to="mapLibraryPath()" class="back-link">← Back to maps</NuxtLink>
       </div>
       <div v-else class="scene-loading">
         <p>{{ error ?? 'Could not load map.' }}</p>

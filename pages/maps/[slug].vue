@@ -23,6 +23,7 @@ import {
   reconcilePokemonPositions,
 } from '~/utils/grid'
 import { isCtrlShiftLetter, isEscapeKey } from '~/utils/keyboardShortcuts'
+import { mapEditorPath, mapLibraryPath } from '~/utils/mapRoutes'
 import { filterMapHazardsInBounds } from '~/utils/mapHazards'
 import { filterVoxelsInBounds } from '~/utils/voxels'
 import type { SaveStatus } from '~/composables/useEditableSheet'
@@ -45,7 +46,7 @@ const { map, status, error, renamedTo } = useEditableMap(slug)
 const { pokemonBySlug, trainerBySlug } = useLiveSheets()
 
 watch(renamedTo, (newSlug) => {
-  if (newSlug) router.replace(`/maps/${newSlug}`)
+  if (newSlug) router.replace(mapEditorPath(newSlug))
 })
 
 useHead(() => ({
@@ -250,7 +251,7 @@ watch(
   [() => map.value?.slug, isPlayer],
   () => {
     if (map.value && isPlayer.value && map.value.playerVisible !== true) {
-      void router.replace('/maps')
+      void router.replace(mapLibraryPath())
     }
   },
   { immediate: true },

@@ -1,3 +1,5 @@
+import { MAP_LIBRARY_PATH } from '~/utils/mapRoutes'
+
 export interface AppNavItem {
   path: string
   label: string
@@ -5,7 +7,7 @@ export interface AppNavItem {
 }
 
 export const PRIMARY_APP_NAV_ITEMS: AppNavItem[] = [
-  { path: '/maps', label: 'Maps' },
+  { path: MAP_LIBRARY_PATH, label: 'Maps' },
   { path: '/pokedex', label: 'Pokédex' },
   { path: '/sheets', label: 'Sheets' },
   { path: '/generate', label: 'Generate', gmOnly: true },
@@ -29,8 +31,8 @@ export const filterAppNavItems = (
 ): AppNavItem[] => items.filter((item) => !item.gmOnly || isGm)
 
 export const isAppNavItemActive = (currentPath: string, itemPath: string): boolean => {
-  if (itemPath === '/maps') {
-    return currentPath === '/' || currentPath.startsWith('/maps') || currentPath.startsWith('/grids')
+  if (itemPath === MAP_LIBRARY_PATH) {
+    return currentPath === '/' || currentPath.startsWith(MAP_LIBRARY_PATH) || currentPath.startsWith('/grids')
   }
 
   if (itemPath === '/') return currentPath === '/'
