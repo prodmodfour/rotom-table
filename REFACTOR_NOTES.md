@@ -1918,3 +1918,13 @@
   - `npm test` — passes: 84 test files / 322 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: condition detail article component
+
+- Extracted the condition detail article markup into `components/reference/ConditionDetailArticle.vue`.
+- Reduced `pages/conditions/[slug].vue` to route lookup, metadata, shared detail shell, and not-found handling.
+- Preserved condition badges, aliases/effect field blocks, and missing-condition copy.
+- Quality gates after this phase:
+  - `npm test` — passes: 84 test files / 322 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
