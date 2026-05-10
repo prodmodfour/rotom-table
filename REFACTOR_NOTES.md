@@ -2345,3 +2345,12 @@
   - `npm test` — passes: 99 test files / 370 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: initiative score editor component
+
+- Extracted initiative value editing and per-row Use Speed action into `components/map/InitiativeScoreEditor.vue`.
+- Reduced `components/map/InitiativeRowItem.vue` to row state and layout while preserving initiative input events, disabled-state behavior, and speed-fill action payloads.
+- Quality gates after this phase:
+  - `npm test` — passes: 99 test files / 370 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
