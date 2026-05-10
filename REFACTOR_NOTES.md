@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; map dimension/ground-level controls and dimension reconciliation are now isolated in a focused composable. Next candidates include another focused map-editor helper extraction, addressing the documented broader typecheck backlog, or another small UI/helper duplication cleanup; do not mark the full refactor complete yet.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; map editor UI chrome state, mode switching, layer visibility, and admin shortcut handling are now isolated in a focused composable. Next candidates include another focused map-editor helper extraction, addressing the documented broader typecheck backlog, or another small UI/helper duplication cleanup; do not mark the full refactor complete yet.
 
 ## Phase 0 baseline audit
 
@@ -3373,5 +3373,18 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; map dimension/ground-leve
 - Quality gates after this phase:
   - `npm test -- tests/composables/map-editor/useMapDimensions.test.ts` — passes: 1 test file / 2 tests.
   - `npm test` — passes: 136 test files / 533 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: map editor UI state composable extraction
+
+- Extracted map-editor chrome/state orchestration from `pages/maps/[slug].vue` into `composables/map-editor/useMapEditorUiState.ts`.
+  - The composable now owns left/right sidebar collapse state, left-panel section collapse state, layer visibility state, editor mode switching, and Ctrl+Shift+A/Escape admin shortcut handling through an injectable keydown registration boundary.
+- Updated the map editor route to consume the focused UI-state composable while preserving build/hazard mode gating, token selection clearing when entering edit modes, layer visibility behavior, sidebar collapse behavior, and admin panel shortcut behavior.
+- Added `tests/composables/map-editor/useMapEditorUiState.test.ts` covering default section state, sidebar/layer toggles, mode transitions and edit gating, shortcut registration, admin shortcut handling, and non-GM shortcut suppression.
+- Next remaining phase: continue one bounded cleanup pass, with candidates including another focused map-editor helper extraction, addressing the documented broader typecheck backlog, or another small UI/helper duplication cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/composables/map-editor/useMapEditorUiState.test.ts` — passes: 1 test file / 6 tests.
+  - `npm test` — passes: 137 test files / 539 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

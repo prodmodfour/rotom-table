@@ -7,7 +7,6 @@ import MapLeftSidebar from '~/components/map/MapLeftSidebar.vue'
 import MapScenePanel from '~/components/map/MapScenePanel.vue'
 import { useEditableMap } from '~/composables/useEditableMap'
 import { useLiveSheets } from '~/composables/useLiveSheets'
-import { useWindowKeydown } from '~/composables/useWindowKeydown'
 import { useFieldEffectsEditor } from '~/composables/map-editor/useFieldEffectsEditor'
 import { useHazardBuilder } from '~/composables/map-editor/useHazardBuilder'
 import { useInitiativeTracker } from '~/composables/map-editor/useInitiativeTracker'
@@ -16,6 +15,7 @@ import {
   useMapDimensionControls,
   useMapDimensionReconciliation,
 } from '~/composables/map-editor/useMapDimensions'
+import { useMapEditorUiState } from '~/composables/map-editor/useMapEditorUiState'
 import { useMoveAutomationPanel } from '~/composables/map-editor/useMoveAutomationPanel'
 import { useTerrainBuilder } from '~/composables/map-editor/useTerrainBuilder'
 import { useTokenSheetMutations } from '~/composables/map-editor/useTokenSheetMutations'
@@ -24,15 +24,8 @@ import {
   sheetPathForPlacement,
   useTokenControls,
 } from '~/composables/map-editor/useTokenControls'
-import { isCtrlShiftLetter, isEscapeKey } from '~/utils/keyboardShortcuts'
 import { mapEditorPath, mapLibraryPath } from '~/utils/mapRoutes'
-import {
-  createDefaultMapLayerVisibility,
-  MAP_LAYER_OPTIONS,
-  type MapLayerVisibilityKey,
-} from '~/utils/mapLayerVisibility'
 import type { SaveStatus } from '~/composables/useEditableSheet'
-import type { MapEditorMode, MapLeftSidebarSection } from '~/shared/mapEditor'
 
 definePageMeta({
   key: (route) => `map-${route.params.slug}`,
@@ -59,18 +52,6 @@ interface MapScenePanelHandle {
 }
 
 const gridRef = ref<MapScenePanelHandle | null>(null)
-const sidebarCollapsed = ref(false)
-const initiativeCollapsed = ref(false)
-const adminPanelOpen = ref(false)
-
-const leftSidebarSectionsCollapsed = ref<Record<MapLeftSidebarSection, boolean>>({
-  details: false,
-  terrain: false,
-  fieldEffects: false,
-})
-const toggleLeftSection = (section: MapLeftSidebarSection) => {
-  leftSidebarSectionsCollapsed.value[section] = !leftSidebarSectionsCollapsed.value[section]
-}
 
 const {
   canEditMap,
@@ -83,9 +64,6 @@ const {
   isPlayer,
   redirectHiddenPlayerMap: () => router.replace(mapLibraryPath()),
 })
-
-const layerVisibility = ref(createDefaultMapLayerVisibility())
-const layerOptions = MAP_LAYER_OPTIONS
 
 const {
   mapVoxels,
@@ -201,20 +179,25 @@ const {
   clearAllVoxels,
 } = useTerrainBuilder({ map, mapVoxels, mapGroundLevelY, spawnedPokemon, canEditMap })
 
-const handleAdminShortcut = (event: KeyboardEvent) => {
-  if (!isGm.value) return
-  if (isCtrlShiftLetter(event, 'a')) {
-    event.preventDefault()
-    adminPanelOpen.value = !adminPanelOpen.value
-    return
-  }
-
-  if (isEscapeKey(event) && adminPanelOpen.value) {
-    adminPanelOpen.value = false
-  }
-}
-
-useWindowKeydown(handleAdminShortcut)
+const {
+  sidebarCollapsed,
+  initiativeCollapsed,
+  adminPanelOpen,
+  leftSidebarSectionsCollapsed,
+  layerVisibility,
+  layerOptions,
+  toggleSidebarCollapsed,
+  toggleInitiativeCollapsed,
+  toggleLeftSection,
+  setMode,
+  setLayerVisibility,
+} = useMapEditorUiState({
+  isGm,
+  canEditMap,
+  buildMode,
+  hazardMode,
+  clearSelection,
+})
 
 const {
   initiativeRows,
@@ -311,20 +294,6 @@ const viewPokedex = (id: string) => {
   window.open(target, '_blank', 'noopener')
 }
 
-const setMode = (mode: MapEditorMode) => {
-  if (mode !== 'play' && !canEditMap.value) return
-  const nextBuild = mode === 'build'
-  const nextHazards = mode === 'hazards'
-  if (buildMode.value === nextBuild && hazardMode.value === nextHazards) return
-  buildMode.value = nextBuild
-  hazardMode.value = nextHazards
-  if (nextBuild || nextHazards) clearSelection()
-}
-
-const setLayerVisibility = (layer: MapLayerVisibilityKey, value: boolean) => {
-  layerVisibility.value[layer] = value
-}
-
 useMapDimensionReconciliation({
   map,
   spawnedPokemon,
@@ -379,7 +348,7 @@ useMapDimensionReconciliation({
         :terrain-is-active="terrainIsActive"
         :room-is-active="roomIsActive"
         :duration-label="durationLabel"
-        @toggle-collapsed="sidebarCollapsed = !sidebarCollapsed"
+        @toggle-collapsed="toggleSidebarCollapsed"
         @toggle-section="toggleLeftSection"
         @update-player-visible="setMapPlayerVisible"
         @update-dimension="setMapDimension"
@@ -470,7 +439,7 @@ useMapDimensionReconciliation({
         :selected-id="selectedId"
         :can-manage="canManageInitiative"
         :has-initiative-values="hasInitiativeValues"
-        @toggle-collapsed="initiativeCollapsed = !initiativeCollapsed"
+        @toggle-collapsed="toggleInitiativeCollapsed"
         @set-round="setInitiativeRound"
         @previous="previousInitiative"
         @next="nextInitiative"
