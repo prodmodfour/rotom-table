@@ -2,10 +2,75 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   bindAutosaveUnloadFlushers,
   createAutosaveSnapshotTracker,
+  createAutosaveStatusController,
   createDebouncedAutosaveTask,
   createLatestSaveGuard,
   sendJsonWithUnloadFallback,
 } from '~/utils/autosave'
+
+describe('createAutosaveStatusController', () => {
+  type TestStatus = 'idle' | 'saving' | 'saved' | 'error'
+
+  const createRefs = (status: TestStatus = 'idle', error: string | null = null) => ({
+    status: { value: status },
+    error: { value: error },
+  })
+
+  it('owns common saving, saved, and clear-error transitions', () => {
+    const refs = createRefs('idle', 'old error')
+    const controller = createAutosaveStatusController<TestStatus>(refs, {
+      saving: 'saving',
+      saved: 'saved',
+      error: 'error',
+    })
+
+    controller.markSaving()
+    expect(refs.status.value).toBe('saving')
+    expect(refs.error.value).toBeNull()
+
+    controller.markSaved()
+    expect(refs.status.value).toBe('saved')
+
+    refs.error.value = 'transient'
+    controller.clearError()
+    expect(refs.error.value).toBeNull()
+
+    controller.setStatus('idle')
+    expect(refs.status.value).toBe('idle')
+  })
+
+  it('normalizes, stores, and optionally logs errors', () => {
+    const refs = createRefs()
+    const logError = vi.fn()
+    const error = { data: { statusMessage: 'Disk full' } }
+    const controller = createAutosaveStatusController<TestStatus>(
+      refs,
+      { saving: 'saving', saved: 'saved', error: 'error' },
+      { logError },
+    )
+
+    const message = controller.markError(error, { logPrefix: '[save failed]' })
+
+    expect(message).toBe('Disk full')
+    expect(refs.status.value).toBe('error')
+    expect(refs.error.value).toBe('Disk full')
+    expect(logError).toHaveBeenCalledWith('[save failed]', error)
+  })
+
+  it('supports injected error normalization and fallback messages', () => {
+    const refs = createRefs()
+    const getErrorMessage = vi.fn(() => 'Custom fallback')
+    const controller = createAutosaveStatusController<TestStatus>(
+      refs,
+      { saving: 'saving', saved: 'saved', error: 'error' },
+      { getErrorMessage },
+    )
+
+    expect(controller.markError(null, { fallback: 'Save failed' })).toBe('Custom fallback')
+    expect(getErrorMessage).toHaveBeenCalledWith(null, { fallback: 'Save failed' })
+    expect(refs.error.value).toBe('Custom fallback')
+  })
+})
 
 describe('createDebouncedAutosaveTask', () => {
   afterEach(() => {

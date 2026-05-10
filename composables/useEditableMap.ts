@@ -24,11 +24,11 @@ import { getClientId } from '~/utils/clientId'
 import { mapChannel } from '~/shared/realtime'
 import {
   createAutosaveSnapshotTracker,
+  createAutosaveStatusController,
   createDebouncedAutosaveTask,
   createLatestSaveGuard,
 } from '~/utils/autosave'
 import { deepCloneJson, sameJsonValue, stableJsonStringify } from '~/utils/serialization'
-import { getErrorMessage } from '~/utils/errorMessages'
 import { useRealtimeChannel } from './useRealtime'
 import type { TabletopMap } from '~/types/map'
 
@@ -50,6 +50,10 @@ export const useEditableMap = (slug: string, debounceMs = 200): UseEditableMapRe
   const error = ref<string | null>(null)
   const renamedTo = ref<string | null>(null)
 
+  const autosaveStatus = createAutosaveStatusController<MapSaveStatus>(
+    { status, error },
+    { saving: 'saving', saved: 'saved', error: 'error' },
+  )
   const serverSnapshot = createAutosaveSnapshotTracker<TabletopMap>(stableJsonStringify)
   const clientId = getClientId()
   const saveGuard = createLatestSaveGuard()
@@ -117,8 +121,7 @@ export const useEditableMap = (slug: string, debounceMs = 200): UseEditableMapRe
     if (!map.value) return
     const seq = saveGuard.begin()
     const snapshot: TabletopMap = JSON.parse(JSON.stringify(map.value))
-    status.value = 'saving'
-    error.value = null
+    autosaveStatus.markSaving()
     try {
       const result = await $fetch<{ map: TabletopMap }>('/api/maps/save', {
         method: 'POST',
@@ -130,12 +133,10 @@ export const useEditableMap = (slug: string, debounceMs = 200): UseEditableMapRe
       // Splice in the new updatedAt without disturbing other fields the
       // user may have edited mid-flight.
       if (map.value) map.value.updatedAt = result.map.updatedAt
-      status.value = 'saved'
+      autosaveStatus.markSaved()
     } catch (err: unknown) {
       if (!saveGuard.isLatest(seq)) return
-      status.value = 'error'
-      error.value = getErrorMessage(err)
-      console.error('[useEditableMap] save failed', err)
+      autosaveStatus.markError(err, { logPrefix: '[useEditableMap] save failed' })
     }
   }
 
@@ -158,9 +159,7 @@ export const useEditableMap = (slug: string, debounceMs = 200): UseEditableMapRe
         map.value = null
         return
       }
-      status.value = 'error'
-      error.value = getErrorMessage(err)
-      console.error('[useEditableMap] load failed', err)
+      autosaveStatus.markError(err, { logPrefix: '[useEditableMap] load failed' })
     }
   }
 

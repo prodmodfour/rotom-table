@@ -22,12 +22,12 @@ import { sheetChannel } from '~/shared/realtime'
 import {
   bindAutosaveUnloadFlushers,
   createAutosaveSnapshotTracker,
+  createAutosaveStatusController,
   createDebouncedAutosaveTask,
   createLatestSaveGuard,
   sendJsonWithUnloadFallback,
 } from '~/utils/autosave'
 import { deepCloneJson, stableJsonStringify } from '~/utils/serialization'
-import { getErrorMessage } from '~/utils/errorMessages'
 import { subscribeChannel } from './useRealtime'
 import type { SheetKind } from '~/shared/sheets'
 
@@ -61,6 +61,11 @@ export function useEditableSheet<T extends { slug: string }>(
   const saveError = ref<string | null>(null)
   const clientId = getClientId()
 
+  const autosaveStatus = createAutosaveStatusController<SaveStatus>(
+    { status: saveStatus, error: saveError },
+    { saving: 'saving', saved: 'saved', error: 'error' },
+  )
+
   const toPersistedPayload = (value: T): Record<string, unknown> => {
     const payload: Record<string, unknown> = { ...(value as unknown as Record<string, unknown>) }
     delete payload.folder
@@ -84,25 +89,22 @@ export function useEditableSheet<T extends { slug: string }>(
     const payload = toPersistedPayload(sheet.value)
     const payloadJson = stableJsonStringify(payload)
     if (serverSnapshot.isCleanJson(payloadJson)) {
-      if (saveStatus.value === 'saving') saveStatus.value = 'saved'
+      if (saveStatus.value === 'saving') autosaveStatus.markSaved()
       return
     }
 
     const seq = saveGuard.begin()
-    saveStatus.value = 'saving'
-    saveError.value = null
+    autosaveStatus.markSaving()
     try {
       await $fetch('/api/sheets/save', {
         method: 'POST',
         body: { kind, slug: sheet.value.slug, sheet: payload, clientId },
       })
       serverSnapshot.markCleanJson(payloadJson)
-      if (saveGuard.isLatest(seq)) saveStatus.value = 'saved'
+      if (saveGuard.isLatest(seq)) autosaveStatus.markSaved()
     } catch (err: unknown) {
       if (!saveGuard.isLatest(seq)) return
-      saveStatus.value = 'error'
-      saveError.value = getErrorMessage(err)
-      console.error('[useEditableSheet] save failed', err)
+      autosaveStatus.markError(err, { logPrefix: '[useEditableSheet] save failed' })
     }
   }
 

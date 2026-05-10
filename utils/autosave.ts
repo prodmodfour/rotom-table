@@ -1,3 +1,5 @@
+import { getErrorMessage as getDefaultErrorMessage } from './errorMessages'
+
 export interface DebouncedAutosaveTask {
   schedule: () => void
   cancel: () => boolean
@@ -43,6 +45,72 @@ export interface JsonUnloadRequestTransports {
 export interface AutosaveUnloadEventTarget {
   addEventListener: (type: 'pagehide' | 'beforeunload', listener: () => void) => void
   removeEventListener: (type: 'pagehide' | 'beforeunload', listener: () => void) => void
+}
+
+export interface AutosaveStatusRefs<TStatus extends string> {
+  status: { value: TStatus }
+  error: { value: string | null }
+}
+
+export interface AutosaveStatusLabels<TStatus extends string> {
+  saving: TStatus
+  saved: TStatus
+  error: TStatus
+}
+
+export interface AutosaveStatusErrorOptions {
+  logPrefix?: string
+  fallback?: string
+}
+
+export interface AutosaveStatusController<TStatus extends string> {
+  setStatus: (status: TStatus) => void
+  clearError: () => void
+  markSaving: () => void
+  markSaved: () => void
+  markError: (error: unknown, options?: AutosaveStatusErrorOptions) => string
+}
+
+export interface AutosaveStatusControllerOptions {
+  getErrorMessage?: (error: unknown, options?: { fallback?: string }) => string
+  logError?: (prefix: string, error: unknown) => void
+}
+
+/**
+ * Coordinates the common save status/error refs used by autosaved client
+ * resources. The caller decides which statuses exist in its wider state
+ * machine; this controller only owns the saving/saved/error transitions.
+ */
+export const createAutosaveStatusController = <TStatus extends string>(
+  refs: AutosaveStatusRefs<TStatus>,
+  labels: AutosaveStatusLabels<TStatus>,
+  options: AutosaveStatusControllerOptions = {},
+): AutosaveStatusController<TStatus> => {
+  const normalizeError = options.getErrorMessage ?? getDefaultErrorMessage
+  const logError = options.logError ?? ((prefix: string, error: unknown) => console.error(prefix, error))
+
+  return {
+    setStatus: (status) => {
+      refs.status.value = status
+    },
+    clearError: () => {
+      refs.error.value = null
+    },
+    markSaving: () => {
+      refs.status.value = labels.saving
+      refs.error.value = null
+    },
+    markSaved: () => {
+      refs.status.value = labels.saved
+    },
+    markError: (error, errorOptions = {}) => {
+      const message = normalizeError(error, { fallback: errorOptions.fallback })
+      refs.status.value = labels.error
+      refs.error.value = message
+      if (errorOptions.logPrefix) logError(errorOptions.logPrefix, error)
+      return message
+    },
+  }
 }
 
 /**
