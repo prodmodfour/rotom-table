@@ -1,13 +1,11 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRouter } from 'vue-router'
 import { formatFolderLabel } from '~/utils/sheetFolders'
 import {
-  buildFolderBreadcrumbs,
   buildFolderMoveDestinations,
   buildVisibleFolderTiles,
   canMoveFolderTo,
-  folderPathFromQuery,
   movedFolderPath,
   nextAvailableFolderLeaf,
   type FolderTile,
@@ -25,12 +23,12 @@ import {
 import { useRealtimeChannel } from '~/composables/useRealtime'
 import { useLibraryContextMenu } from '~/composables/library/useLibraryContextMenu'
 import { useLibraryDragDrop } from '~/composables/library/useLibraryDragDrop'
+import { useLibraryFolderNavigation } from '~/composables/library/useLibraryFolderNavigation'
 import { mapsChannel } from '~/shared/realtime'
 import type { MapSummary, TabletopMap } from '~/types/map'
 
 useHead({ title: 'Maps · Rotom Table' })
 
-const route = useRoute()
 const router = useRouter()
 const clientId = getClientId()
 const { isGm, isPlayer } = useAuth()
@@ -78,15 +76,10 @@ const items = computed(() => {
 
 const allFolders = computed(() => buildMapFolderSet(items.value, extraFolders))
 
-const currentPath = computed(() => folderPathFromQuery(route.query.folder))
-
-const goToFolder = (path: string) => {
-  router.push({ path: '/maps', query: path ? { folder: path } : {} })
-}
-
-const breadcrumbs = computed(() =>
-  buildFolderBreadcrumbs(currentPath.value, { formatSegment: formatFolderLabel }),
-)
+const { currentPath, goToFolder, breadcrumbs } = useLibraryFolderNavigation({
+  routePath: '/maps',
+  formatSegment: formatFolderLabel,
+})
 
 const searchTerm = ref('')
 

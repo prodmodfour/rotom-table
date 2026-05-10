@@ -2139,3 +2139,13 @@
   - `npm test` — passes: 95 test files / 361 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: shared library folder navigation composable
+
+- Extracted repeated maps/sheets library folder-route state into `composables/library/useLibraryFolderNavigation.ts`.
+- Updated map and sheet library routes to use the shared composable for `?folder=` normalization, breadcrumb derivation, and folder navigation while preserving route paths and formatted map-folder labels.
+- Kept route-specific create/navigation side effects in the route shells.
+- Quality gates after this phase:
+  - `npm test` — passes: 95 test files / 361 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

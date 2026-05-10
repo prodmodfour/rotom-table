@@ -1,14 +1,11 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
 import { characterSheets, getPokedexEntry, getSpriteUrl } from '~/data/characterSheets'
 import { trainerSheets } from '~/data/trainerSheets'
 import {
-  buildFolderBreadcrumbs,
   buildFolderMoveDestinations,
   buildVisibleFolderTiles,
   canMoveFolderTo,
-  folderPathFromQuery,
   movedFolderPath,
   nextAvailableFolderLeaf,
   renameFolderPrefix,
@@ -26,6 +23,7 @@ import {
 } from '~/utils/sheetLibrary'
 import { useLibraryContextMenu } from '~/composables/library/useLibraryContextMenu'
 import { useLibraryDragDrop } from '~/composables/library/useLibraryDragDrop'
+import { useLibraryFolderNavigation } from '~/composables/library/useLibraryFolderNavigation'
 import { getErrorMessage } from '~/utils/errorMessages'
 import { sheetEditorPath } from '~/utils/sheetRoutes'
 
@@ -100,16 +98,9 @@ const allFolders = computed(() =>
 // subfolder.
 // ---------------------------------------------------------------------------
 
-const route = useRoute()
-const router = useRouter()
-
-const currentPath = computed(() => folderPathFromQuery(route.query.folder))
-
-const goToFolder = (path: string) => {
-  router.push({ path: '/sheets', query: path ? { folder: path } : {} })
-}
-
-const breadcrumbs = computed(() => buildFolderBreadcrumbs(currentPath.value))
+const { currentPath, goToFolder, breadcrumbs } = useLibraryFolderNavigation({
+  routePath: '/sheets',
+})
 
 // ---------------------------------------------------------------------------
 // Search and filtering
