@@ -2400,3 +2400,13 @@
   - `npm test` — passes: 99 test files / 370 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: map details control components
+
+- Extracted the map player-visibility toggle into `components/map/MapVisibilityToggle.vue`.
+- Extracted the map dimension inputs into `components/map/MapDimensionControls.vue` with the existing DOM-event number parsing behavior.
+- Reduced `MapDetailsPanel` to a shell over the shared collapsible card plus focused visibility/dimension controls while preserving GM/player copy and update emits.
+- Quality gates after this phase:
+  - `npm test` — passes: 99 test files / 370 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
