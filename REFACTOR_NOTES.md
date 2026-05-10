@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; the sheet library new-sheet dropdown is now isolated, but small UI/helper cleanup remains and the refactor is not marked complete.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; the sheet library card presentation is now isolated, but small UI/helper cleanup remains and the refactor is not marked complete.
 
 ## Phase 0 baseline audit
 
@@ -2730,6 +2730,17 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; the sheet library new-she
 - Extracted the sheet library New sheet dropdown and transparent backdrop into `components/library/SheetLibraryNewSheetMenu.vue`.
 - Reduced `SheetLibraryIntroPanel` so it owns only sheet-library copy/search/action composition while the new component owns Pokémon/trainer menu presentation, disabled state, ARIA menu attributes, and close/toggle/create emits.
 - Preserved sheet creation choices, dropdown/backdrop behavior, GM-only action visibility, intro search, create-folder action, and intro error rendering.
+- Next remaining phase: continue one small bounded cleanup pass on remaining library/map/reference presentation or helper duplication; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test` — passes: 103 test files / 383 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: sheet library card component
+
+- Extracted Pokémon/trainer sheet card presentation from `components/library/SheetLibraryGrid.vue` into `components/library/SheetLibraryCard.vue`.
+- Reduced the sheet library grid so it owns folder/grid/empty-state composition while the new card component owns sheet route links, sprites, badges, metadata, drag state styling, and context/drag event forwarding.
+- Preserved Pokémon/trainer sheet card routes, shiny/type badges, trainer metadata, drag/drop behavior, context-menu event payloads, and empty-state copy.
 - Next remaining phase: continue one small bounded cleanup pass on remaining library/map/reference presentation or helper duplication; do not mark the full refactor complete yet.
 - Quality gates after this phase:
   - `npm test` — passes: 103 test files / 383 tests.
