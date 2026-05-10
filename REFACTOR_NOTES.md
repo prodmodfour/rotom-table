@@ -2218,3 +2218,13 @@
   - `npm test` — passes: 99 test files / 370 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: terrain builder controls component
+
+- Extracted terrain build tool, material swatches, custom-color controls, build hint, and terrain bulk actions from `TerrainHazardsPanel` into `components/map/TerrainBuilderControls.vue`.
+- Kept terrain-specific presentation and emits in the focused component while the parent panel now composes terrain controls, layer controls, and hazard controls separately.
+- Preserved build tool selection, material/custom color behavior, fill-ground, clear-all-terrain, and layer visibility wiring.
+- Quality gates after this phase:
+  - `npm test` — passes: 99 test files / 370 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
