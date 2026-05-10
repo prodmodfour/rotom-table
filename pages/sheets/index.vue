@@ -6,8 +6,12 @@ import {
   buildFolderMoveDestinations,
   buildVisibleFolderTiles,
   canMoveFolderTo,
+  folderLeafName,
+  isSameOrDescendantFolder,
+  joinFolderPath,
   movedFolderPath,
   nextAvailableFolderLeaf,
+  parentFolderPath,
   renameFolderPrefix,
   type FolderTile,
 } from '~/utils/folderBrowser'
@@ -293,7 +297,7 @@ const nextFolderName = (): string => nextAvailableFolderLeaf(allFolders.value, c
 const createNewFolder = async () => {
   if (!canDrag.value || creating.value) return
   const leaf = nextFolderName()
-  const fullPath = currentPath.value ? `${currentPath.value}/${leaf}` : leaf
+  const fullPath = joinFolderPath(currentPath.value, leaf)
   creating.value = true
   createError.value = null
   try {
@@ -331,9 +335,7 @@ const {
   targetLabel: (target) => target.type === 'sheet' ? displayName(target.item) : target.tile.label,
   renameInputForTarget: (target) => {
     if (target.type === 'sheet') return displayName(target.item)
-    const path = target.tile.path
-    const slash = path.lastIndexOf('/')
-    return slash >= 0 ? path.slice(slash + 1) : path
+    return folderLeafName(target.tile.path)
   },
   moveDestinationsForTarget: (target) => buildFolderMoveDestinations({
     folderPaths: allFolders.value,
@@ -353,9 +355,8 @@ const applyRenameSheet = async (item: SheetItem, newName: string) => {
 }
 
 const applyRenameFolder = async (oldPath: string, newLeaf: string) => {
-  const slash = oldPath.lastIndexOf('/')
-  const parent = slash >= 0 ? oldPath.slice(0, slash) : ''
-  const newPath = parent ? `${parent}/${newLeaf}` : newLeaf
+  const parent = parentFolderPath(oldPath)
+  const newPath = joinFolderPath(parent, newLeaf)
   if (newPath === oldPath) return
   await $fetch('/api/sheets/move-folder', {
     method: 'POST',
@@ -363,7 +364,7 @@ const applyRenameFolder = async (oldPath: string, newLeaf: string) => {
   })
   folderRenames.value = [...folderRenames.value, { from: oldPath, to: newPath }]
   // If we were inside the renamed folder, follow it.
-  if (currentPath.value === oldPath || currentPath.value.startsWith(oldPath + '/')) {
+  if (isSameOrDescendantFolder(currentPath.value, oldPath)) {
     goToFolder(renameFolderPrefix(currentPath.value, oldPath, newPath))
   }
 }
@@ -408,17 +409,16 @@ const submitContext = async () => {
         deletedFolders.add(path)
         // Mark contained sheets as deleted so they vanish from the UI immediately.
         for (const item of items.value) {
-          if (item.folder === path || item.folder.startsWith(path + '/')) {
+          if (isSameOrDescendantFolder(item.folder, path)) {
             deletedSheets.add(sheetLibraryKey(item.kind, item.slug))
           }
         }
         for (const f of [...extraFolders]) {
-          if (f === path || f.startsWith(path + '/')) extraFolders.delete(f)
+          if (isSameOrDescendantFolder(f, path)) extraFolders.delete(f)
         }
         // If we're inside the deleted subtree, navigate to its parent.
-        if (currentPath.value === path || currentPath.value.startsWith(path + '/')) {
-          const slash = path.lastIndexOf('/')
-          goToFolder(slash >= 0 ? path.slice(0, slash) : '')
+        if (isSameOrDescendantFolder(currentPath.value, path)) {
+          goToFolder(parentFolderPath(path))
         }
       }
     }

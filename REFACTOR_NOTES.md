@@ -2179,3 +2179,13 @@
   - `npm test` — passes: 97 test files / 367 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: folder path utility consolidation
+
+- Added reusable folder path helpers for leaf extraction and parent/leaf joining, then reused the existing descendant/prefix helpers in folder move validation.
+- Updated map and sheet library pages to use folder helpers for create, rename, delete, and current-folder follow-up navigation instead of repeating string slicing/prefix checks inline.
+- Expanded folder helper coverage for leaf names, joins, and descendant checks.
+- Quality gates after this phase:
+  - `npm test` — passes: 97 test files / 367 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

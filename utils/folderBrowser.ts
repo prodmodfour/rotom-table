@@ -39,10 +39,15 @@ export const isSameOrDescendantFolder = (path: string, parentPath: string): bool
   return path === parentPath || path.startsWith(parentPath + '/')
 }
 
+export const folderLeafName = (path: string): string => path.split('/').pop() ?? path
+
 export const parentFolderPath = (path: string): string => {
   const slash = path.lastIndexOf('/')
   return slash >= 0 ? path.slice(0, slash) : ''
 }
+
+export const joinFolderPath = (parentPath: string, leafName: string): string =>
+  parentPath ? `${parentPath}/${leafName}` : leafName
 
 export const renameFolderPrefix = (path: string, from: string, to: string): string => {
   if (path === from) return to
@@ -115,8 +120,7 @@ export const buildVisibleFolderTiles = <T>(
       const folder = folderOf(item)
       if (folder === path || folder.startsWith(subPrefix)) count++
     }
-    const leaf = path.split('/').pop() ?? path
-    return { path, label: formatLabel(leaf), count }
+    return { path, label: formatLabel(folderLeafName(path)), count }
   })
 }
 
@@ -135,10 +139,8 @@ export const nextAvailableFolderLeaf = (
   return `${base}_${n}`
 }
 
-export const movedFolderPath = (sourcePath: string, targetPath: string): string => {
-  const leaf = sourcePath.split('/').pop() ?? sourcePath
-  return targetPath ? `${targetPath}/${leaf}` : leaf
-}
+export const movedFolderPath = (sourcePath: string, targetPath: string): string =>
+  joinFolderPath(targetPath, folderLeafName(sourcePath))
 
 export const canMoveFolderTo = (
   sourcePath: string,
@@ -146,7 +148,7 @@ export const canMoveFolderTo = (
   existingFolders: ReadonlySet<string> | Iterable<string>,
 ): boolean => {
   if (sourcePath === targetPath) return false
-  if (targetPath === sourcePath || targetPath.startsWith(sourcePath + '/')) return false
+  if (isSameOrDescendantFolder(targetPath, sourcePath)) return false
 
   const newPath = movedFolderPath(sourcePath, targetPath)
   if (newPath === sourcePath) return false
@@ -165,8 +167,7 @@ export const folderMoveDestinationPaths = (
     if (target.type === 'item') return path !== target.folder
 
     const selfPath = target.path
-    if (path === selfPath) return false
-    if (path.startsWith(selfPath + '/')) return false
+    if (isSameOrDescendantFolder(path, selfPath)) return false
     if (path === parentFolderPath(selfPath)) return false
     return true
   })

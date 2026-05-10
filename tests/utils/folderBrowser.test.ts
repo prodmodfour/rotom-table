@@ -5,9 +5,12 @@ import {
   buildVisibleFolderTiles,
   canMoveFolderTo,
   childFolderPaths,
+  folderLeafName,
   folderMoveDestinationPaths,
   folderPathFromQuery,
   isInsideFolder,
+  isSameOrDescendantFolder,
+  joinFolderPath,
   movedFolderPath,
   nextAvailableFolderLeaf,
   normalizeSearchText,
@@ -74,8 +77,15 @@ describe('folderBrowser helpers', () => {
 
   it('validates folder moves without allowing self, descendants, or conflicts', () => {
     const existing = new Set(['npcs', 'npcs/wild', 'archive/wild'])
+    expect(folderLeafName('npcs/wild')).toBe('wild')
+    expect(folderLeafName('npcs')).toBe('npcs')
     expect(parentFolderPath('npcs/wild')).toBe('npcs')
     expect(parentFolderPath('npcs')).toBe('')
+    expect(joinFolderPath('archive', 'wild')).toBe('archive/wild')
+    expect(joinFolderPath('', 'wild')).toBe('wild')
+    expect(isSameOrDescendantFolder('npcs/wild/cave', 'npcs/wild')).toBe(true)
+    expect(isSameOrDescendantFolder('npcs/wild', 'npcs/wild')).toBe(true)
+    expect(isSameOrDescendantFolder('npcs/wildlife', 'npcs/wild')).toBe(false)
     expect(movedFolderPath('npcs/wild', '')).toBe('wild')
     expect(movedFolderPath('npcs/wild', 'archive')).toBe('archive/wild')
     expect(canMoveFolderTo('npcs/wild', 'npcs/wild/cave', existing)).toBe(false)

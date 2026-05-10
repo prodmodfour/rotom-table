@@ -6,8 +6,13 @@ import {
   buildFolderMoveDestinations,
   buildVisibleFolderTiles,
   canMoveFolderTo,
+  folderLeafName,
+  isSameOrDescendantFolder,
+  joinFolderPath,
   movedFolderPath,
   nextAvailableFolderLeaf,
+  parentFolderPath,
+  renameFolderPrefix,
   type FolderTile,
 } from '~/utils/folderBrowser'
 import { getClientId } from '~/utils/clientId'
@@ -191,7 +196,7 @@ const nextFolderName = () => nextAvailableFolderLeaf(allFolders.value, currentPa
 const createNewFolder = async () => {
   if (!isGm.value || creating.value) return
   const leaf = nextFolderName()
-  const fullPath = currentPath.value ? `${currentPath.value}/${leaf}` : leaf
+  const fullPath = joinFolderPath(currentPath.value, leaf)
   creating.value = true
   createError.value = null
   try {
@@ -241,9 +246,7 @@ const {
   targetLabel: (target) => target.type === 'map' ? target.item.name : target.tile.label,
   renameInputForTarget: (target) => {
     if (target.type === 'map') return target.item.name
-    const path = target.tile.path
-    const slash = path.lastIndexOf('/')
-    return slash >= 0 ? path.slice(slash + 1) : path
+    return folderLeafName(target.tile.path)
   },
   moveDestinationsForTarget: (target) => buildFolderMoveDestinations({
     folderPaths: allFolders.value,
@@ -288,17 +291,16 @@ const submitContext = async () => {
         }
       } else {
         const oldPath = c.target.tile.path
-        const slash = oldPath.lastIndexOf('/')
-        const parent = slash >= 0 ? oldPath.slice(0, slash) : ''
-        const newPath = parent ? `${parent}/${value}` : value
+        const parent = parentFolderPath(oldPath)
+        const newPath = joinFolderPath(parent, value)
         if (newPath !== oldPath) {
           await $fetch('/api/maps/move-folder', {
             method: 'POST',
             body: { from: oldPath, to: newPath, clientId },
           })
           await refresh()
-          if (currentPath.value === oldPath || currentPath.value.startsWith(oldPath + '/')) {
-            goToFolder(newPath + currentPath.value.slice(oldPath.length))
+          if (isSameOrDescendantFolder(currentPath.value, oldPath)) {
+            goToFolder(renameFolderPrefix(currentPath.value, oldPath, newPath))
           }
         }
       }
@@ -316,9 +318,8 @@ const submitContext = async () => {
           body: { folder: path, clientId },
         })
         deleteMapFolderFromLibrary({ maps, extraFolders }, path)
-        if (currentPath.value === path || currentPath.value.startsWith(path + '/')) {
-          const slash = path.lastIndexOf('/')
-          goToFolder(slash >= 0 ? path.slice(0, slash) : '')
+        if (isSameOrDescendantFolder(currentPath.value, path)) {
+          goToFolder(parentFolderPath(path))
         }
       }
     }
