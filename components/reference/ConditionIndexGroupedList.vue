@@ -32,7 +32,7 @@ defineProps<{
         </p>
       </NuxtLink>
     </section>
-    <p v-if="resultCount === 0" class="empty-state">No conditions match.</p>
+    <ReferenceEmptyState v-if="resultCount === 0" message="No conditions match." />
   </main>
 </template>
 

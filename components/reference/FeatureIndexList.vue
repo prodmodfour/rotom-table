@@ -27,7 +27,7 @@ defineProps<{
       </p>
       <p v-if="feature.effect" class="ref-row__effect">{{ feature.effect }}</p>
     </NuxtLink>
-    <p v-if="features.length === 0" class="empty-state">No features match.</p>
+    <ReferenceEmptyState v-if="features.length === 0" message="No features match." />
   </main>
 </template>
 

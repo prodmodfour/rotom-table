@@ -23,6 +23,6 @@ defineProps<{
       </p>
       <p v-if="edge.effect" class="ref-row__effect">{{ edge.effect }}</p>
     </NuxtLink>
-    <p v-if="edges.length === 0" class="empty-state">No edges match.</p>
+    <ReferenceEmptyState v-if="edges.length === 0" message="No edges match." />
   </main>
 </template>

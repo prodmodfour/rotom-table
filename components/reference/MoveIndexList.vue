@@ -28,6 +28,6 @@ defineProps<{
       </div>
       <p v-if="move.effect" class="ref-row__effect">{{ move.effect }}</p>
     </NuxtLink>
-    <p v-if="moves.length === 0" class="empty-state">No moves match.</p>
+    <ReferenceEmptyState v-if="moves.length === 0" message="No moves match." />
   </main>
 </template>

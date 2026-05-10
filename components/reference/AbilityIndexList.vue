@@ -26,6 +26,6 @@ defineProps<{
         {{ ability.effect }}
       </p>
     </NuxtLink>
-    <p v-if="abilities.length === 0" class="empty-state">No abilities match that search.</p>
+    <ReferenceEmptyState v-if="abilities.length === 0" message="No abilities match that search." />
   </main>
 </template>

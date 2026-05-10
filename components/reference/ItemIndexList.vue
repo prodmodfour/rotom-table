@@ -48,7 +48,7 @@ defineProps<{
         {{ item.effects.join(' ') }}
       </p>
     </NuxtLink>
-    <p v-if="items.length === 0" class="empty-state">No items match.</p>
+    <ReferenceEmptyState v-if="items.length === 0" message="No items match." />
   </main>
 </template>
 

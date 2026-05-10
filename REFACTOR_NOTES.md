@@ -1968,3 +1968,13 @@
   - `npm test` — passes: 87 test files / 331 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: shared reference empty state component
+
+- Extracted repeated reference-list empty-state markup into `components/reference/ReferenceEmptyState.vue`.
+- Updated ability, move, edge, rule, condition, item, and feature index list components to use the shared empty-state component while preserving copy and styling classes.
+- Left the currently user-modified capabilities index page untouched.
+- Quality gates after this phase:
+  - `npm test` — passes: 87 test files / 331 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

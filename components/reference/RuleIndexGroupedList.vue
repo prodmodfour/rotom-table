@@ -29,7 +29,7 @@ defineProps<{
         <p v-if="rule.text" class="ref-row__effect">{{ rule.text }}</p>
       </NuxtLink>
     </section>
-    <p v-if="resultCount === 0" class="empty-state">No rules match.</p>
+    <ReferenceEmptyState v-if="resultCount === 0" message="No rules match." />
   </main>
 </template>
 
