@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; shared library intro copy/control primitives are now extracted, but small UI/helper cleanup remains and the refactor is not marked complete.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; map library data loading/realtime state is now extracted, but small UI/helper cleanup remains and the refactor is not marked complete.
 
 ## Phase 0 baseline audit
 
@@ -2886,5 +2886,17 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; shared library intro copy
 - Next remaining phase: continue one small bounded cleanup pass on remaining library/map/reference presentation or helper duplication; do not mark the full refactor complete yet.
 - Quality gates after this phase:
   - `npm test` — passes: 108 test files / 404 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: map library data composable
+
+- Extracted map-library list/folder loading, loading/error state, refresh orchestration, and `maps` realtime event application into `composables/library/useMapLibraryData.ts`.
+- Updated `pages/maps/index.vue` to consume the focused data composable while preserving `/api/maps/list`, `/api/maps/folders`, `maps` channel realtime updates, clientId echo suppression, player-visible filtering, and existing map/folder context actions.
+- Added `tests/composables/library/useMapLibraryData.test.ts` covering injected refresh fetchers, normalized load errors that keep prior state intact, and realtime subscription/client echo suppression.
+- Next remaining phase: continue one small bounded cleanup pass on remaining library/map/reference presentation or helper duplication; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/composables/library/useMapLibraryData.test.ts tests/utils/mapLibrary.test.ts` — passes: 2 test files / 11 tests.
+  - `npm test` — passes: 109 test files / 407 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import AppNavigation from '~/components/AppNavigation.vue'
 import FolderBreadcrumbNav from '~/components/library/FolderBreadcrumbNav.vue'
@@ -21,16 +21,14 @@ import {
   type FolderTile,
 } from '~/utils/folderBrowser'
 import { getClientId } from '~/utils/clientId'
-import { getErrorMessage } from '~/utils/errorMessages'
 import {
-  applyMapLibraryRealtimeEvent,
   deleteMapFolderFromLibrary,
   moveMapFolderInLibrary,
   buildMapFolderSet,
   filterVisibleMaps,
   tabletopMapToSummary,
 } from '~/utils/mapLibrary'
-import { useRealtimeChannel } from '~/composables/useRealtime'
+import { useMapLibraryData } from '~/composables/library/useMapLibraryData'
 import { useLibraryContextMenu } from '~/composables/library/useLibraryContextMenu'
 import { useLibraryContextSubmit } from '~/composables/library/useLibraryContextSubmit'
 import { useLibraryDragDrop } from '~/composables/library/useLibraryDragDrop'
@@ -41,7 +39,6 @@ import { useMapLibraryCreation } from '~/composables/library/useMapLibraryCreati
 import { useWindowKeydown } from '~/composables/useWindowKeydown'
 import { isEscapeKey } from '~/utils/keyboardShortcuts'
 import { mapEditorPath, mapLibraryPath } from '~/utils/mapRoutes'
-import { mapsChannel } from '~/shared/realtime'
 import type { MapSummary, TabletopMap } from '~/types/map'
 
 useHead({ title: 'Maps · Rotom Table' })
@@ -50,37 +47,13 @@ const router = useRouter()
 const clientId = getClientId()
 const { isGm, isPlayer } = useAuth()
 
-const maps = reactive<Map<string, MapSummary>>(new Map())
-const extraFolders = reactive(new Set<string>())
-const loading = ref(true)
-const loadError = ref<string | null>(null)
-
-const refresh = async () => {
-  loading.value = true
-  loadError.value = null
-  try {
-    const [list, folders] = await Promise.all([
-      $fetch<{ maps: MapSummary[] }>('/api/maps/list'),
-      $fetch<{ folders: string[] }>('/api/maps/folders'),
-    ])
-    maps.clear()
-    for (const summary of list.maps) maps.set(summary.slug, summary)
-    extraFolders.clear()
-    for (const folder of folders.folders) extraFolders.add(folder)
-  } catch (err: unknown) {
-    loadError.value = getErrorMessage(err)
-  } finally {
-    loading.value = false
-  }
-}
-
-onMounted(() => {
-  void refresh()
-})
-
-useRealtimeChannel(mapsChannel, (event) => {
-  applyMapLibraryRealtimeEvent({ maps, extraFolders }, event, clientId)
-})
+const {
+  maps,
+  extraFolders,
+  loading,
+  loadError,
+  refresh,
+} = useMapLibraryData({ clientId })
 
 const items = computed(() => {
   const all = Array.from(maps.values())
