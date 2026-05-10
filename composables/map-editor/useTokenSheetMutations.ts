@@ -1,4 +1,5 @@
 import type { ComputedRef, Ref } from 'vue'
+import { useApiClient } from '~/composables/useApiClient'
 import { SHEET_API_PATHS } from '~/utils/apiRoutes'
 import { getClientId as defaultGetClientId } from '~/utils/clientId'
 import {
@@ -42,10 +43,7 @@ export interface UseTokenSheetMutationsOptions {
 }
 
 export const savePlacedSheetWithFetch: SavePlacedSheet = async (request) => {
-  await $fetch(SHEET_API_PATHS.save, {
-    method: 'POST',
-    body: request,
-  })
+  await useApiClient().postJson(SHEET_API_PATHS.save, request)
 }
 
 export const useTokenSheetMutations = ({

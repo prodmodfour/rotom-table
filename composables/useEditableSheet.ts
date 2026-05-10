@@ -27,6 +27,7 @@ import {
 } from '~/utils/autosave'
 import { SHEET_API_PATHS } from '~/utils/apiRoutes'
 import { deepCloneJson, stableJsonStringify } from '~/utils/serialization'
+import { useApiClient } from './useApiClient'
 import { subscribeChannel } from './useRealtime'
 import type { SheetKind } from '~/shared/sheets'
 
@@ -59,6 +60,7 @@ export function useEditableSheet<T extends { slug: string }>(
   const saveStatus = ref<SaveStatus>('idle')
   const saveError = ref<string | null>(null)
   const clientId = getClientId()
+  const { postJson } = useApiClient()
 
   const toPersistedPayload = (value: T): Record<string, unknown> => {
     const payload: Record<string, unknown> = { ...(value as unknown as Record<string, unknown>) }
@@ -97,16 +99,7 @@ export function useEditableSheet<T extends { slug: string }>(
     await runLatestAutosave({
       guard: autosave.guard,
       status: autosave.statusController,
-      save: () => {
-        const postJson = $fetch as unknown as (
-          request: string,
-          options: { method: 'POST'; body: unknown },
-        ) => Promise<unknown>
-        return postJson(SHEET_API_PATHS.save, {
-          method: 'POST',
-          body: { kind, slug: sheet.value.slug, sheet: payload, clientId },
-        })
-      },
+      save: () => postJson(SHEET_API_PATHS.save, { kind, slug: sheet.value.slug, sheet: payload, clientId }),
       onSuccess: () => {
         autosave.snapshot.markCleanJson(payloadJson)
       },

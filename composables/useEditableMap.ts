@@ -25,6 +25,7 @@ import { isRealtimeEcho, mapChannel } from '~/shared/realtime'
 import { createAutosaveResourceController, runLatestAutosave } from '~/utils/autosave'
 import { MAP_API_PATHS } from '~/utils/apiRoutes'
 import { deepCloneJson, sameJsonValue, stableJsonStringify } from '~/utils/serialization'
+import { useApiClient } from './useApiClient'
 import { useRealtimeChannel } from './useRealtime'
 import type { TabletopMap } from '~/types/map'
 
@@ -47,6 +48,7 @@ export const useEditableMap = (slug: string, debounceMs = 200): UseEditableMapRe
   const renamedTo = ref<string | null>(null)
 
   const clientId = getClientId()
+  const { getJson, postJson } = useApiClient()
   const autosave = createAutosaveResourceController<TabletopMap, MapSaveStatus>({
     refs: { status, error },
     labels: { saving: 'saving', saved: 'saved', error: 'error' },
@@ -123,11 +125,7 @@ export const useEditableMap = (slug: string, debounceMs = 200): UseEditableMapRe
     await runLatestAutosave({
       guard: autosave.guard,
       status: autosave.statusController,
-      save: () =>
-        $fetch<{ map: TabletopMap }>(MAP_API_PATHS.save, {
-          method: 'POST',
-          body: { slug, map: snapshot, clientId },
-        }),
+      save: () => postJson<{ map: TabletopMap }>(MAP_API_PATHS.save, { slug, map: snapshot, clientId }),
       onSuccess: (result, { latest }) => {
         if (!latest) return
         // Adopt the persisted version (server stamps `updatedAt`).
@@ -148,7 +146,7 @@ export const useEditableMap = (slug: string, debounceMs = 200): UseEditableMapRe
     status.value = 'loading'
     error.value = null
     try {
-      const data = await $fetch<{ map: TabletopMap }>(MAP_API_PATHS.load, { params: { slug } })
+      const data = await getJson<{ map: TabletopMap }>(MAP_API_PATHS.load, { params: { slug } })
       autosave.snapshot.markClean(data.map)
       applyServerMap(data.map)
       status.value = 'idle'

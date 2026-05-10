@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass. `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include another focused map-editor/helper extraction, remaining helper constant cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass. `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include another focused map-editor/helper extraction, remaining client helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
 
 ## Phase 0 baseline audit
 
@@ -3501,5 +3501,19 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
   - `npm test -- tests/utils/apiRoutes.test.ts tests/composables/library/useMapLibraryData.test.ts tests/composables/library/useSheetLibraryData.test.ts tests/composables/map-editor/useTokenSheetMutations.test.ts tests/composables/encounters/useEncounterGenerationPage.test.ts tests/utils/autosave.test.ts` — passes: 6 test files / 40 tests.
   - `npm run typecheck` — passes.
   - `npm test` — passes: 143 test files / 559 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: shared client API request helper
+
+- Added `utils/apiClient.ts` plus `composables/useApiClient.ts` to centralize Nuxt `$fetch` request adaptation behind narrow `getJson` and `postJson` helpers.
+- Updated editable map/sheet autosave, map/sheet library data/actions, token sheet persistence, and encounter generation requests to consume the shared API client instead of repeating `$fetch` casts or `{ method: 'POST', body }` request boilerplate.
+- Preserved all existing API endpoints, request bodies, query params, clientId echo suppression, unload beacon behavior, and injected fetcher seams used by tests.
+- Added `tests/utils/apiClient.test.ts` covering GET requests with/without params and POST JSON body forwarding.
+- Next remaining phase: continue one bounded cleanup pass, with candidates including another focused map-editor/helper extraction, remaining client helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/utils/apiClient.test.ts tests/composables/library/useMapLibraryData.test.ts tests/composables/library/useSheetLibraryData.test.ts tests/composables/map-editor/useTokenSheetMutations.test.ts tests/composables/encounters/useEncounterGenerationPage.test.ts tests/utils/autosave.test.ts` — passes: 6 test files / 39 tests.
+  - `npm run typecheck` — passes.
+  - `npm test` — passes: 144 test files / 562 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

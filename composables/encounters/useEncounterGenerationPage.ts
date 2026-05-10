@@ -1,4 +1,5 @@
 import { computed, ref, watch } from 'vue'
+import { useApiClient } from '~/composables/useApiClient'
 import { ENCOUNTER_API_PATHS } from '~/utils/apiRoutes'
 import {
   encounterTables,
@@ -29,7 +30,7 @@ export interface UseEncounterGenerationPageOptions {
 export const useEncounterGenerationPage = ({
   query,
   replaceQuery,
-  fetchGenerate = (body) => $fetch<EncounterGenerateResult>(ENCOUNTER_API_PATHS.generate, { method: 'POST', body }),
+  fetchGenerate = (body) => useApiClient().postJson<EncounterGenerateResult>(ENCOUNTER_API_PATHS.generate, body),
 }: UseEncounterGenerationPageOptions) => {
   const initialEntry = encounterTables[0] ?? null
   const initialSelection = initialEncounterGenerationSelection(query, initialEntry)

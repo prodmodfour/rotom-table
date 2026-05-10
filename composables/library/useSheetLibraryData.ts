@@ -3,6 +3,7 @@ import { characterSheets, getPokedexEntry, getSpriteUrl } from '~/data/character
 import { trainerSheets } from '~/data/trainerSheets'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { TrainerSheet } from '~/types/trainerSheet'
+import { useApiClient } from '~/composables/useApiClient'
 import { SHEET_API_PATHS } from '~/utils/apiRoutes'
 import { getErrorMessage } from '~/utils/errorMessages'
 import {
@@ -32,7 +33,7 @@ export interface UseSheetLibraryDataOptions {
 }
 
 const defaultFetchFolders = (): Promise<SheetLibraryFolderFetchResult> =>
-  $fetch<SheetLibraryFolderFetchResult>(SHEET_API_PATHS.folders)
+  useApiClient().getJson<SheetLibraryFolderFetchResult>(SHEET_API_PATHS.folders)
 
 export const useSheetLibraryData = (options: UseSheetLibraryDataOptions) => {
   const sheetOverrides = reactive<Record<string, string>>({})

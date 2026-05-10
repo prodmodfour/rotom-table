@@ -25,6 +25,7 @@ import {
 } from '~/composables/library/useSheetLibraryActions'
 import { useSheetLibraryCreation } from '~/composables/library/useSheetLibraryCreation'
 import { useSheetLibraryData } from '~/composables/library/useSheetLibraryData'
+import { useApiClient } from '~/composables/useApiClient'
 import { useWindowKeydown } from '~/composables/useWindowKeydown'
 import { SHEET_API_PATHS } from '~/utils/apiRoutes'
 import { isEscapeKey } from '~/utils/keyboardShortcuts'
@@ -34,10 +35,7 @@ useHead({
   title: 'Sheets · Rotom Table',
 })
 
-const postJson = $fetch as unknown as <T = unknown>(
-  request: string,
-  options: { method: 'POST'; body: unknown },
-) => Promise<T>
+const { postJson } = useApiClient()
 
 const { isGm: rawIsGm, isPlayer: rawIsPlayer } = useAuth()
 const isGm = computed<boolean>(() => rawIsGm.value === true)
@@ -106,26 +104,11 @@ const sheetActions = useSheetLibraryActions({
   deletedSheets,
   deletedFolders,
   goToFolder,
-  moveSheet: ({ kind, slug, folder }) => postJson(SHEET_API_PATHS.move, {
-    method: 'POST',
-    body: { kind, slug, folder },
-  }),
-  moveFolder: ({ from, to }) => postJson(SHEET_API_PATHS.moveFolder, {
-    method: 'POST',
-    body: { from, to },
-  }),
-  renameSheet: ({ kind, slug, name }) => postJson(SHEET_API_PATHS.rename, {
-    method: 'POST',
-    body: { kind, slug, name },
-  }),
-  deleteSheet: ({ kind, slug }) => postJson(SHEET_API_PATHS.deleteSheet, {
-    method: 'POST',
-    body: { kind, slug },
-  }),
-  deleteFolder: ({ folder }) => postJson(SHEET_API_PATHS.deleteFolder, {
-    method: 'POST',
-    body: { folder },
-  }),
+  moveSheet: ({ kind, slug, folder }) => postJson(SHEET_API_PATHS.move, { kind, slug, folder }),
+  moveFolder: ({ from, to }) => postJson(SHEET_API_PATHS.moveFolder, { from, to }),
+  renameSheet: ({ kind, slug, name }) => postJson(SHEET_API_PATHS.rename, { kind, slug, name }),
+  deleteSheet: ({ kind, slug }) => postJson(SHEET_API_PATHS.deleteSheet, { kind, slug }),
+  deleteFolder: ({ folder }) => postJson(SHEET_API_PATHS.deleteFolder, { folder }),
 })
 
 const {
@@ -184,10 +167,7 @@ const { creating, createError, createNewFolder } = useLibraryFolderCreation({
   canCreate: canDrag,
   currentPath,
   folderPaths: allFolders,
-  createFolder: (folder) => postJson(SHEET_API_PATHS.createFolder, {
-    method: 'POST',
-    body: { folder },
-  }),
+  createFolder: (folder) => postJson(SHEET_API_PATHS.createFolder, { folder }),
   onCreated: (folder) => extraFolders.add(folder),
 })
 
@@ -203,7 +183,7 @@ const {
   currentPath,
   createSheet: (kind, folder) => postJson<{ ok: true; kind: 'pokemon' | 'trainer'; slug: string }>(
     SHEET_API_PATHS.create,
-    { method: 'POST', body: { kind, folder } },
+    { kind, folder },
   ),
   // Hard-navigate so Vite re-evaluates the sheet data globs before the editor
   // route loads; a client-side router push can race HMR and show "not found".

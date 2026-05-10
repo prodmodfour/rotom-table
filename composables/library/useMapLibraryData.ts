@@ -4,6 +4,7 @@ import type { MapSummary } from '~/types/map'
 import { MAP_API_PATHS } from '~/utils/apiRoutes'
 import { getErrorMessage } from '~/utils/errorMessages'
 import { applyMapLibraryRealtimeEvent } from '~/utils/mapLibrary'
+import { useApiClient } from '~/composables/useApiClient'
 import { useRealtimeChannel } from '~/composables/useRealtime'
 
 export interface MapLibraryDataFetchResult {
@@ -23,10 +24,10 @@ export interface UseMapLibraryDataOptions {
 }
 
 const defaultFetchMapList = (): Promise<MapLibraryDataFetchResult> =>
-  $fetch<MapLibraryDataFetchResult>(MAP_API_PATHS.list)
+  useApiClient().getJson<MapLibraryDataFetchResult>(MAP_API_PATHS.list)
 
 const defaultFetchMapFolders = (): Promise<MapLibraryFolderFetchResult> =>
-  $fetch<MapLibraryFolderFetchResult>(MAP_API_PATHS.folders)
+  useApiClient().getJson<MapLibraryFolderFetchResult>(MAP_API_PATHS.folders)
 
 export const useMapLibraryData = (options: UseMapLibraryDataOptions) => {
   const maps = reactive<Map<string, MapSummary>>(new Map())

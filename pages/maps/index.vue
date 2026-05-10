@@ -28,6 +28,7 @@ import { useLibraryFolderCreation } from '~/composables/library/useLibraryFolder
 import { useLibraryFolderNavigation } from '~/composables/library/useLibraryFolderNavigation'
 import { useLibraryGridView } from '~/composables/library/useLibraryGridView'
 import { useMapLibraryCreation } from '~/composables/library/useMapLibraryCreation'
+import { useApiClient } from '~/composables/useApiClient'
 import { useWindowKeydown } from '~/composables/useWindowKeydown'
 import { MAP_API_PATHS } from '~/utils/apiRoutes'
 import { isEscapeKey } from '~/utils/keyboardShortcuts'
@@ -38,10 +39,7 @@ useHead({ title: 'Maps · Rotom Table' })
 
 const router = useRouter()
 const clientId = getClientId()
-const postJson = $fetch as unknown as <T = unknown>(
-  request: string,
-  options: { method: 'POST'; body: unknown },
-) => Promise<T>
+const { postJson } = useApiClient()
 const { isGm, isPlayer } = useAuth()
 
 const {
@@ -68,10 +66,7 @@ const { creating, createError, createNewFolder } = useLibraryFolderCreation({
   canCreate: isGm,
   currentPath,
   folderPaths: allFolders,
-  createFolder: (folder) => postJson(MAP_API_PATHS.createFolder, {
-    method: 'POST',
-    body: { folder, clientId },
-  }),
+  createFolder: (folder) => postJson(MAP_API_PATHS.createFolder, { folder, clientId }),
   onCreated: (folder) => extraFolders.add(folder),
 })
 
@@ -101,26 +96,11 @@ const mapActions = useMapLibraryActions({
   goToFolder,
   refresh,
   formatFolderLabel,
-  moveMap: ({ slug, folder }) => postJson(MAP_API_PATHS.move, {
-    method: 'POST',
-    body: { slug, folder, clientId },
-  }),
-  moveFolder: ({ from, to }) => postJson(MAP_API_PATHS.moveFolder, {
-    method: 'POST',
-    body: { from, to, clientId },
-  }),
-  renameMap: ({ slug, name }) => postJson<{ slug: string; name: string }>(MAP_API_PATHS.rename, {
-    method: 'POST',
-    body: { slug, name, clientId },
-  }),
-  deleteMap: ({ slug }) => postJson(MAP_API_PATHS.deleteMap, {
-    method: 'POST',
-    body: { slug, clientId },
-  }),
-  deleteFolder: ({ folder }) => postJson(MAP_API_PATHS.deleteFolder, {
-    method: 'POST',
-    body: { folder, clientId },
-  }),
+  moveMap: ({ slug, folder }) => postJson(MAP_API_PATHS.move, { slug, folder, clientId }),
+  moveFolder: ({ from, to }) => postJson(MAP_API_PATHS.moveFolder, { from, to, clientId }),
+  renameMap: ({ slug, name }) => postJson<{ slug: string; name: string }>(MAP_API_PATHS.rename, { slug, name, clientId }),
+  deleteMap: ({ slug }) => postJson(MAP_API_PATHS.deleteMap, { slug, clientId }),
+  deleteFolder: ({ folder }) => postJson(MAP_API_PATHS.deleteFolder, { folder, clientId }),
 })
 
 const {
@@ -165,10 +145,7 @@ const { createNewMap } = useMapLibraryCreation({
   canCreate: isGm,
   currentPath,
   state: { creating, createError },
-  createMap: (folder) => postJson<{ map: TabletopMap }>(MAP_API_PATHS.create, {
-    method: 'POST',
-    body: { folder, clientId },
-  }),
+  createMap: (folder) => postJson<{ map: TabletopMap }>(MAP_API_PATHS.create, { folder, clientId }),
   onCreated: (map) => maps.set(map.slug, tabletopMapToSummary(map)),
   navigateToMap: (slug) => {
     void router.push(mapEditorPath(slug))
