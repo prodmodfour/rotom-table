@@ -2049,3 +2049,13 @@
   - `npm test` — passes: 91 test files / 343 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: anchored tooltip composable extraction
+
+- Extracted shared anchored-tooltip visibility, ready state, resize/scroll listener, animation-frame scheduling, and position update lifecycle into `composables/reference/useAnchoredTooltip.ts`.
+- Updated `components/RefLink.vue` to consume the composable so the component now only wires reference lookup, label/title state, link events, and `ReferenceTooltip` presentation.
+- Preserved tooltip show/hide triggers, Escape handling, listener cleanup, viewport clamping, placement classes, and Teleport root measurement behavior.
+- Quality gates after this phase:
+  - `npm test` — passes: 91 test files / 343 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
