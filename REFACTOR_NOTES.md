@@ -2460,3 +2460,13 @@
   - `npm test` — passes: 100 test files / 374 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: shared map ground-level helpers
+
+- Added `utils/mapGroundLevel.ts` to centralize map ground-level clamping, maximum layer calculation, and map-specific Y-range derivation.
+- Updated the map editor page and isometric scene-state helper to reuse the shared ground-level rules instead of keeping separate clamp implementations.
+- Added `tests/utils/mapGroundLevel.test.ts` covering height bounds, finite integer clamping, and map-specific Y-range output.
+- Quality gates after this phase:
+  - `npm test` — passes: 101 test files / 377 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

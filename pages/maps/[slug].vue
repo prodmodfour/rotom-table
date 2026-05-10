@@ -24,6 +24,7 @@ import {
 } from '~/utils/grid'
 import { isCtrlShiftLetter, isEscapeKey } from '~/utils/keyboardShortcuts'
 import { mapEditorPath, mapLibraryPath } from '~/utils/mapRoutes'
+import { clampMapGroundLevelY, mapSpecificYBounds, maxGroundLevelY } from '~/utils/mapGroundLevel'
 import { filterMapHazardsInBounds } from '~/utils/mapHazards'
 import { filterVoxelsInBounds } from '~/utils/voxels'
 import type { SaveStatus } from '~/composables/useEditableSheet'
@@ -96,22 +97,15 @@ const mapVoxels = computed<MapVoxelV2[]>(() => map.value?.voxels ?? [])
 const mapHazards = computed<MapHazardV2[]>(() => map.value?.hazards ?? [])
 const canViewMap = computed(() => !map.value || !isPlayer.value || map.value.playerVisible === true)
 
-const clampGroundLevelY = (value: unknown, height: number): number => {
-  const h = Number(height)
-  const max = Number.isFinite(h) ? Math.max(0, Math.floor(h) - 1) : 0
-  const n = Number(value)
-  if (!Number.isFinite(n)) return 0
-  return Math.min(max, Math.max(0, Math.round(n)))
-}
-
-const groundLevelYMax = computed(() => Math.max(0, (map.value?.dimensions.y ?? 1) - 1))
+const groundLevelYMax = computed(() => maxGroundLevelY(map.value?.dimensions.y ?? 1))
 const mapGroundLevelY = computed(() =>
-  clampGroundLevelY(map.value?.groundLevelY ?? 0, map.value?.dimensions.y ?? 1),
+  clampMapGroundLevelY({ y: map.value?.dimensions.y ?? 1 }, map.value?.groundLevelY ?? 0),
 )
-const mapSpecificYMin = computed(() => -mapGroundLevelY.value)
-const mapSpecificYMax = computed(() =>
-  map.value ? map.value.dimensions.y - 1 - mapGroundLevelY.value : 0,
+const mapSpecificYRange = computed(() =>
+  mapSpecificYBounds({ y: map.value?.dimensions.y ?? 1 }, map.value?.groundLevelY ?? 0),
 )
+const mapSpecificYMin = computed(() => mapSpecificYRange.value.min)
+const mapSpecificYMax = computed(() => mapSpecificYRange.value.max)
 
 type MapDimensionAxis = 'x' | 'y' | 'z'
 
@@ -229,7 +223,7 @@ const {
 
 const setGroundLevelY = (value: string) => {
   if (!map.value || !canEditMap.value) return
-  map.value.groundLevelY = clampGroundLevelY(value, map.value.dimensions.y)
+  map.value.groundLevelY = clampMapGroundLevelY(map.value.dimensions, value)
 }
 
 const handleAdminShortcut = (event: KeyboardEvent) => {
@@ -373,7 +367,7 @@ watch(
     if (normalized.z !== dims.z) map.value.dimensions.z = normalized.z
 
     if (map.value.groundLevelY !== undefined) {
-      const normalizedGroundLevelY = clampGroundLevelY(map.value.groundLevelY, normalized.y)
+      const normalizedGroundLevelY = clampMapGroundLevelY(normalized, map.value.groundLevelY)
       if (normalizedGroundLevelY !== map.value.groundLevelY) {
         map.value.groundLevelY = normalizedGroundLevelY
       }

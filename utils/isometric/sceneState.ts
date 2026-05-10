@@ -1,5 +1,6 @@
 import type { GridDimensions } from '~/types/pokemon'
 import type { LayerVisibility, MapFieldEffects, MapHazardV2, MapVoxelV2 } from '~/types/map'
+import { clampMapGroundLevelY } from '~/utils/mapGroundLevel'
 import { voxelMaterialId } from '~/utils/voxels'
 
 export const DEFAULT_ISOMETRIC_LAYER_VISIBILITY: LayerVisibility = {
@@ -27,13 +28,7 @@ export const shouldShowMovementGrid = (options: {
 export const clampIsometricGroundLevelY = (
   dimensions: Pick<GridDimensions, 'y'>,
   groundLevelY: unknown,
-): number => {
-  const height = Number(dimensions.y)
-  const max = Number.isFinite(height) ? Math.max(0, Math.floor(height) - 1) : 0
-  const n = Number(groundLevelY ?? 0)
-  if (!Number.isFinite(n)) return 0
-  return Math.min(max, Math.max(0, Math.round(n)))
-}
+): number => clampMapGroundLevelY(dimensions, groundLevelY)
 
 export const getFieldEffectsRevisionKey = (fieldEffects: MapFieldEffects): string =>
   JSON.stringify(fieldEffects)
