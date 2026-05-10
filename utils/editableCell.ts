@@ -30,7 +30,7 @@ export const editableCellDraftFromValue = (value: EditableCellValue): string =>
   isEmptyEditableCellValue(value) ? '' : String(value)
 
 export const resolveEditableCellOptions = (
-  options: Array<string | EditableCellOption>,
+  options: readonly (string | EditableCellOption)[],
 ): EditableCellOption[] => options.map((option) => (
   typeof option === 'string' ? { value: option, label: option } : option
 ))

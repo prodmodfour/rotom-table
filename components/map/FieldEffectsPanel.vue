@@ -14,7 +14,7 @@ import type {
   MapWeatherKind,
 } from '~/types/map'
 
-defineProps<{
+const props = defineProps<{
   collapsed: boolean
   canEditMap: boolean
   fieldEffectCount: number
@@ -55,14 +55,22 @@ const selectWeather = (kind: string) => emit('set-weather', kind as MapWeatherKi
 const removeWeather = (kind: string) => emit('remove-weather', kind as MapWeatherKind)
 const setWeatherRounds = (kind: string, value: Event) =>
   emit('set-weather-rounds', kind as MapWeatherKind, value)
+const weatherIsActiveForSection = (kind: string) => props.weatherIsActive(kind as MapWeatherKind)
+const weatherDefinitionForSection = (kind: string) => props.weatherDefinition(kind as MapWeatherKind)
+
 const toggleTerrain = (kind: string) => emit('toggle-terrain', kind as MapTerrainKind)
 const removeTerrain = (kind: string) => emit('remove-terrain', kind as MapTerrainKind)
 const setTerrainRounds = (kind: string, value: Event) =>
   emit('set-terrain-rounds', kind as MapTerrainKind, value)
+const terrainIsActiveForSection = (kind: string) => props.terrainIsActive(kind as MapTerrainKind)
+const terrainDefinitionForSection = (kind: string) => props.terrainDefinition(kind as MapTerrainKind)
+
 const toggleRoom = (kind: string) => emit('toggle-room', kind as MapRoomKind)
 const removeRoom = (kind: string) => emit('remove-room', kind as MapRoomKind)
 const setRoomRounds = (kind: string, value: Event) =>
   emit('set-room-rounds', kind as MapRoomKind, value)
+const roomIsActiveForSection = (kind: string) => props.roomIsActive(kind as MapRoomKind)
+const roomDefinitionForSection = (kind: string) => props.roomDefinition(kind as MapRoomKind)
 </script>
 
 <template>
@@ -77,12 +85,12 @@ const setRoomRounds = (kind: string, value: Event) =>
   >
     <FieldEffectSection
       title="Weather"
-      aria-label="Weather"
+      ariaLabel="Weather"
       :effects="weatherPalette"
       :active-effects="activeWeatherEffects"
       :can-edit-map="canEditMap"
-      :is-active="weatherIsActive"
-      :definition="weatherDefinition"
+      :is-active="weatherIsActiveForSection"
+      :definition="weatherDefinitionForSection"
       :duration-label="durationLabel"
       :clear-disabled="!activeWeatherEffects.length"
       clearable
@@ -103,13 +111,13 @@ const setRoomRounds = (kind: string, value: Event) =>
 
     <FieldEffectSection
       title="Terrain"
-      aria-label="Terrain effects"
+      ariaLabel="Terrain effects"
       note="Field-wide toggles"
       :effects="terrainPalette"
       :active-effects="activeTerrainEffects"
       :can-edit-map="canEditMap"
-      :is-active="terrainIsActive"
-      :definition="terrainDefinition"
+      :is-active="terrainIsActiveForSection"
+      :definition="terrainDefinitionForSection"
       :duration-label="durationLabel"
       empty-text="No active terrain field effect."
       @select="toggleTerrain"
@@ -119,13 +127,13 @@ const setRoomRounds = (kind: string, value: Event) =>
 
     <FieldEffectSection
       title="Rooms"
-      aria-label="Room effects"
+      ariaLabel="Room effects"
       note="Independent"
       :effects="roomPalette"
       :active-effects="activeRoomEffects"
       :can-edit-map="canEditMap"
-      :is-active="roomIsActive"
-      :definition="roomDefinition"
+      :is-active="roomIsActiveForSection"
+      :definition="roomDefinitionForSection"
       :duration-label="durationLabel"
       empty-text="No active room."
       @select="toggleRoom"

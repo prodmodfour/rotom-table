@@ -30,7 +30,7 @@ export const makeAbilityLookupRows = <T extends SheetAbilityLike>(
   }))
 
 export const clearLookupBackedAbilityFields = (ability: SheetAbilityLike): void => {
-  const target = ability as Record<string, unknown>
+  const target = ability as unknown as Record<string, unknown>
   for (const key of LOOKUP_BACKED_ABILITY_KEYS) delete target[key]
 }
 

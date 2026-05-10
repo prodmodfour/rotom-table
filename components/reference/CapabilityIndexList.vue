@@ -23,9 +23,7 @@ defineProps<{
         <p v-if="cap.effect" class="ref-row__effect">{{ cap.effect }}</p>
       </div>
     </NuxtLink>
-    <ReferenceEmptyState v-if="capabilities.length === 0">
-      No capabilities match.
-    </ReferenceEmptyState>
+    <ReferenceEmptyState v-if="capabilities.length === 0" message="No capabilities match." />
   </main>
 </template>
 

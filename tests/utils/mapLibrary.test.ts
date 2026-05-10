@@ -46,6 +46,7 @@ describe('mapLibrary helpers', () => {
       slug: 'atrium',
       name: 'Atrium',
       dimensions: { x: 20, y: 5, z: 20 },
+      voxels: [],
       placements: [{ id: 'p1', sheetKind: 'pokemon', sheetSlug: 'bolt', position: { x: 1, y: 0, z: 2 } }],
       playerVisible: true,
       updatedAt: 456,

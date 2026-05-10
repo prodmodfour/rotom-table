@@ -8,7 +8,7 @@ const makeMap = (slug = 'new-map', folder = ''): TabletopMap => ({
   slug,
   name: 'New map',
   folder,
-  dimensions: { width: 10, height: 8 },
+  dimensions: { x: 10, y: 1, z: 8 },
   voxels: [],
   placements: [],
 })

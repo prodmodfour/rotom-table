@@ -33,9 +33,16 @@ useHead({
   title: 'Sheets · Rotom Table',
 })
 
-const { isGm, isPlayer } = useAuth()
+const postJson = $fetch as unknown as <T = unknown>(
+  request: string,
+  options: { method: 'POST'; body: unknown },
+) => Promise<T>
 
-const canDrag = computed(() => import.meta.dev && isGm.value)
+const { isGm: rawIsGm, isPlayer: rawIsPlayer } = useAuth()
+const isGm = computed<boolean>(() => rawIsGm.value === true)
+const isPlayer = computed<boolean>(() => rawIsPlayer.value === true)
+
+const canDrag = computed<boolean>(() => Boolean(import.meta.dev && isGm.value))
 
 type SheetItem = SheetLibraryItem
 
@@ -98,23 +105,23 @@ const sheetActions = useSheetLibraryActions({
   deletedSheets,
   deletedFolders,
   goToFolder,
-  moveSheet: ({ kind, slug, folder }) => $fetch('/api/sheets/move', {
+  moveSheet: ({ kind, slug, folder }) => postJson('/api/sheets/move', {
     method: 'POST',
     body: { kind, slug, folder },
   }),
-  moveFolder: ({ from, to }) => $fetch('/api/sheets/move-folder', {
+  moveFolder: ({ from, to }) => postJson('/api/sheets/move-folder', {
     method: 'POST',
     body: { from, to },
   }),
-  renameSheet: ({ kind, slug, name }) => $fetch('/api/sheets/rename', {
+  renameSheet: ({ kind, slug, name }) => postJson('/api/sheets/rename', {
     method: 'POST',
     body: { kind, slug, name },
   }),
-  deleteSheet: ({ kind, slug }) => $fetch('/api/sheets/delete', {
+  deleteSheet: ({ kind, slug }) => postJson('/api/sheets/delete', {
     method: 'POST',
     body: { kind, slug },
   }),
-  deleteFolder: ({ folder }) => $fetch('/api/sheets/delete-folder', {
+  deleteFolder: ({ folder }) => postJson('/api/sheets/delete-folder', {
     method: 'POST',
     body: { folder },
   }),
@@ -176,7 +183,7 @@ const { creating, createError, createNewFolder } = useLibraryFolderCreation({
   canCreate: canDrag,
   currentPath,
   folderPaths: allFolders,
-  createFolder: (folder) => $fetch('/api/sheets/create-folder', {
+  createFolder: (folder) => postJson('/api/sheets/create-folder', {
     method: 'POST',
     body: { folder },
   }),
@@ -193,7 +200,7 @@ const {
 } = useSheetLibraryCreation({
   canCreate: canDrag,
   currentPath,
-  createSheet: (kind, folder) => $fetch<{ ok: true; kind: 'pokemon' | 'trainer'; slug: string }>(
+  createSheet: (kind, folder) => postJson<{ ok: true; kind: 'pokemon' | 'trainer'; slug: string }>(
     '/api/sheets/create',
     { method: 'POST', body: { kind, folder } },
   ),

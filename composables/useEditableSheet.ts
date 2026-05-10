@@ -96,11 +96,16 @@ export function useEditableSheet<T extends { slug: string }>(
     await runLatestAutosave({
       guard: autosave.guard,
       status: autosave.statusController,
-      save: () =>
-        $fetch('/api/sheets/save', {
+      save: () => {
+        const postJson = $fetch as unknown as (
+          request: string,
+          options: { method: 'POST'; body: unknown },
+        ) => Promise<unknown>
+        return postJson('/api/sheets/save', {
           method: 'POST',
           body: { kind, slug: sheet.value.slug, sheet: payload, clientId },
-        }),
+        })
+      },
       onSuccess: () => {
         autosave.snapshot.markCleanJson(payloadJson)
       },

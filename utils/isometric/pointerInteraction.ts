@@ -107,7 +107,7 @@ export const createIsometricPointerInteractionController = ({
 
     const hitId = pickPokemonId(event)
 
-    if (!canControlPokemon(hitId)) {
+    if (!hitId || !canControlPokemon(hitId)) {
       closeContextMenu()
       return
     }

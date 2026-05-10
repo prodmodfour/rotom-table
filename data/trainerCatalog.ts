@@ -16,7 +16,7 @@ const featuredTrainerIndex = new Map(
 )
 
 export const trainerCatalog: PokemonCatalogEntry[] = (trainerData as TrainerSizeRecord[])
-  .map((entry) => {
+  .map((entry): PokemonCatalogEntry | null => {
     const sprite = manifestByTrainer.get(entry.trainer)
 
     if (!sprite) {

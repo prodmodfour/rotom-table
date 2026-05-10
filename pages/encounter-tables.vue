@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useEncounterTableBrowser } from '~/composables/encounters/useEncounterTableBrowser'
+
 useHead({
   title: 'Encounter Tables · Rotom Table',
 })

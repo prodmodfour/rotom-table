@@ -75,7 +75,7 @@ describe('useMapAccess', () => {
     useMapAccess({ map, isGm, isPlayer, redirectHiddenPlayerMap })
     expect(redirectHiddenPlayerMap).not.toHaveBeenCalled()
 
-    map.value.playerVisible = false
+    map.value!.playerVisible = false
     await nextTick()
     expect(redirectHiddenPlayerMap).not.toHaveBeenCalled()
 

@@ -68,9 +68,11 @@ export const buildTypeMatchupGroups = (rawDefendingTypes: readonly string[] | nu
     .sort((a, b) => (a.multiplier - b.multiplier) || compareTypeMatchupOrder(a, b))
   const immunities = matchups.filter((matchup) => matchup.multiplier === 0)
 
-  return [
+  const groups: TypeMatchupGroup[] = [
     { key: 'weaknesses', label: 'Weaknesses', items: weaknesses },
     { key: 'resistances', label: 'Resistances', items: resistances },
     { key: 'immunities', label: 'Immunities', items: immunities },
-  ].filter((group) => group.items.length > 0)
+  ]
+
+  return groups.filter((group) => group.items.length > 0)
 }

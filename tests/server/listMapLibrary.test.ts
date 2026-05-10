@@ -14,7 +14,7 @@ const publicSummary: MapSummary = {
   placementCount: 2,
   playerVisible: true,
   schemaVersion: 2,
-  updatedAt: '2026-01-01T00:00:00.000Z',
+  updatedAt: Date.parse('2026-01-01T00:00:00.000Z'),
 }
 
 const hiddenSummary: MapSummary = {

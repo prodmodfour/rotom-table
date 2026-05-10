@@ -16,7 +16,7 @@ export const formatCsvSingleOrList = <TValue extends string>(
   value: TValue | readonly TValue[] | null | undefined,
 ): string => {
   if (!value) return ''
-  return Array.isArray(value) ? value.join(', ') : value
+  return typeof value === 'string' ? value : value.join(', ')
 }
 
 export const toOptionalSingleOrList = <TValue extends string>(

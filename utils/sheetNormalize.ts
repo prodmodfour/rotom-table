@@ -14,7 +14,7 @@ import { mergeLegacyConditions } from '~/utils/statusConditions'
 const STAT_KEYS: StatKey[] = ['hp', 'atk', 'def', 'satk', 'sdef', 'spd']
 const TRAINER_STAT_KEYS: TrainerStatKey[] = ['hp', 'atk', 'def', 'satk', 'sdef', 'spd']
 
-const ensureObj = <T extends Record<string, unknown>>(host: any, key: string): T => {
+const ensureObj = <T extends object>(host: any, key: string): T => {
   if (!host[key] || typeof host[key] !== 'object' || Array.isArray(host[key])) {
     host[key] = {}
   }

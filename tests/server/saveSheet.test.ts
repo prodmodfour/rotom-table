@@ -7,7 +7,7 @@ const createDeps = () => {
   return {
     writes,
     deps: {
-      findSheetPath: vi.fn((_kind: SheetKind, slug: string) => `/repo/data/sheets/${slug}.json`),
+      findSheetPath: vi.fn((_kind: SheetKind, slug: string): string | null => `/repo/data/sheets/${slug}.json`),
       isPlayerAccessible: vi.fn(() => true),
       stripDerivedFields: vi.fn((sheet: Record<string, unknown>) => {
         const out = { ...sheet }

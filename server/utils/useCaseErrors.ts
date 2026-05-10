@@ -14,9 +14,10 @@ export class UseCaseHttpError<TStatusCode extends number = number>
   }
 }
 
-export const isUseCaseHttpErrorLike = (error: unknown): error is HttpUseCaseErrorLike => (
-  error instanceof Error
-  && typeof (error as { statusCode?: unknown }).statusCode === 'number'
-  && Number.isInteger((error as { statusCode: number }).statusCode)
-  && (error as { statusCode: number }).statusCode >= 400
-)
+export const isUseCaseHttpErrorLike = (error: unknown): error is HttpUseCaseErrorLike => {
+  if (!(error instanceof Error)) return false
+  const candidate = error as Error & { statusCode?: unknown }
+  return typeof candidate.statusCode === 'number'
+    && Number.isInteger(candidate.statusCode)
+    && candidate.statusCode >= 400
+}

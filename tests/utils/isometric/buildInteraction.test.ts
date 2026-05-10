@@ -1,14 +1,15 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createIsometricBuildInteractionController } from '~/utils/isometric/buildInteraction'
+import type { BuildInteractionState } from '~/utils/isometric/buildInteraction'
 import type { BuildTarget } from '~/utils/isometric/types'
 
 const pointer = { clientX: 10, clientY: 20 } as PointerEvent
 
 const makeController = (overrides: Partial<Parameters<typeof createIsometricBuildInteractionController>[0]> = {}) => {
-  const state = {
+  const state: BuildInteractionState = {
     buildMode: true,
-    buildTool: 'pencil' as const,
-    buildMaterial: 'grass' as const,
+    buildTool: 'pencil',
+    buildMaterial: 'grass',
     buildColor: null,
   }
   const pickTarget = vi.fn<(event: MouseEvent | PointerEvent, tool: 'pencil' | 'eraser') => BuildTarget | null>()

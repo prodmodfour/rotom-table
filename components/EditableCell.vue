@@ -37,7 +37,7 @@ interface Props {
   /** Hint shown when the value is empty. */
   placeholder?: string
   /** For ``type="select"``. Empty string is treated as "no value". */
-  options?: Array<string | EditableCellOption>
+  options?: readonly (string | EditableCellOption)[]
   /** Disable editing — render value as plain text. */
   readonly?: boolean
   /** Optional formatter applied to the displayed value (not the editor). */
@@ -186,12 +186,10 @@ const onInput = (e: Event) => {
         name="display"
         :value="modelValue"
         :display-value="displayValue"
-        :displayValue="displayValue"
         :empty="isEmpty(modelValue)"
         :placeholder="placeholder"
         :empty-text="emptyText"
-        :emptyText="emptyText"
-        :emptyLabel="placeholder || emptyText"
+        :empty-label="placeholder || emptyText"
       >
         <span v-if="isEmpty(modelValue) && !displayValue" class="editable-cell__empty">
           {{ placeholder || emptyText }}

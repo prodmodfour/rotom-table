@@ -38,7 +38,7 @@ export const toSlug = (name: string): string =>
 // ---------------------------------------------------------------------------
 
 const abilitiesDict     = abilitiesJson     as Record<string, PtuAbility>
-const movesDict         = movesJson         as Record<string, PtuMove>
+const movesDict         = movesJson         as unknown as Record<string, PtuMove>
 const capabilitiesDict  = capabilitiesJson  as Record<string, PtuCapability>
 const conditionsDict    = conditionsJson    as Record<string, PtuCondition>
 const rulesDict         = rulesJson         as Record<string, PtuRule>

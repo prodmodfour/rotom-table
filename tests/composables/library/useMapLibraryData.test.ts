@@ -61,7 +61,9 @@ describe('useMapLibraryData', () => {
   })
 
   it('subscribes to maps realtime events with client echo suppression', () => {
-    let handler: ((event: RealtimeEvent) => void) | null = null
+    let handler: (event: RealtimeEvent) => void = () => {
+      throw new Error('Realtime handler was not registered')
+    }
     const subscribeRealtime = vi.fn((next: (event: RealtimeEvent) => void) => {
       handler = next
     })
@@ -77,18 +79,20 @@ describe('useMapLibraryData', () => {
     expect(subscribeRealtime).toHaveBeenCalledTimes(1)
     expect(handler).toBeTruthy()
 
-    handler?.({
+    handler({
       channel: mapsChannel,
       type: 'created',
       clientId: 'other-client',
+      timestamp: 123,
       data: makeSummary('new-map', 'new-folder'),
     })
     expect(data.maps.get('new-map')?.folder).toBe('new-folder')
 
-    handler?.({
+    handler({
       channel: mapsChannel,
       type: 'deleted',
       clientId: 'client-a',
+      timestamp: 124,
       data: { slug: 'new-map' },
     })
     expect(data.maps.has('new-map')).toBe(true)

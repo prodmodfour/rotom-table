@@ -50,7 +50,7 @@ const hasPlacementData = (
 )
 
 export const pokemonCatalog: PokemonCatalogEntry[] = (pokedexData as PokedexRecord[])
-  .map((entry) => {
+  .map((entry): PokemonCatalogEntry | null => {
     if (!hasPlacementData(entry)) {
       return null
     }

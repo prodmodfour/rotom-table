@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; token sheet/Pokédex navigation is now isolated in a focused map-editor composable. Next candidates include another focused map-editor helper extraction, addressing the documented broader typecheck backlog, or another small UI/helper duplication cleanup; do not mark the full refactor complete yet.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; the documented broader typecheck backlog is now resolved and `npm run typecheck` passes. Next candidates include another focused map-editor/helper extraction or another small UI/helper duplication cleanup; do not mark the full refactor complete yet.
 
 ## Phase 0 baseline audit
 
@@ -54,10 +54,10 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; token sheet/Pokédex navi
 
 ## Current quality gate results
 
-- `npm test` — passes: 5 test files / 13 tests.
+- `npm run typecheck` — passes.
+- `npm test` — passes: 138 test files / 542 tests.
 - `npm run build` — passes; existing large chunk warnings remain.
 - `npm run check:move-automation` — still fails with the same baseline `Explicit move automation coverage: 0/769` missing-script report.
-- `npm run typecheck` — added but currently fails on pre-existing type issues in large untouched areas (`components/EditableCell.vue`, `components/IsometricGrid.client.vue`, catalog loaders, Pokédex page, sheet normalization helpers, etc.). The new/refactored sheet-route and storage files are not among the remaining reported errors.
 - `npm run sync:item-sprites -- --dry-run` was not run because the script does not implement a dry-run mode.
 
 ## Next phase update: map save policy/use case
@@ -3398,6 +3398,22 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; token sheet/Pokédex navi
 - Next remaining phase: continue one bounded cleanup pass, with candidates including another focused map-editor helper extraction, addressing the documented broader typecheck backlog, or another small UI/helper duplication cleanup; do not mark the full refactor complete yet.
 - Quality gates after this phase:
   - `npm test -- tests/composables/map-editor/useMapTokenNavigation.test.ts` — passes: 1 test file / 3 tests.
+  - `npm test` — passes: 138 test files / 542 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: TypeScript typecheck backlog cleanup
+
+- Resolved the documented broader `npm run typecheck` backlog without changing runtime data semantics.
+  - Fixed low-risk Vue prop/slot typing issues in shared editable/reference/map field-effect components.
+  - Added explicit imports for encounter-page composables that Nuxt typecheck did not auto-resolve.
+  - Avoided Nuxt typed-route stack-depth issues in library/editable-sheet POST helpers by using narrow injected `$fetch` adapter casts at the request boundary.
+  - Tightened catalog, sheet-normalization, sheet lookup, map/realtime helper, Pokédex, and move-automation test types so strict checking matches existing runtime shapes.
+- Preserved behavior while making the typecheck quality gate meaningful for future phases.
+- Next remaining phase: continue one bounded cleanup pass, with candidates including another focused map-editor/helper extraction or another small UI/helper duplication cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/composables/sheets/useEditableSheetResource.test.ts tests/utils/autosave.test.ts` — passes: 2 test files / 24 tests.
+  - `npm run typecheck` — passes.
   - `npm test` — passes: 138 test files / 542 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

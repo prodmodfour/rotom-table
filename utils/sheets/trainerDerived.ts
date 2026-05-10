@@ -47,7 +47,7 @@ export const resolveTrainerStats = (sheet: TrainerSheet): ResolvedTrainerStat[] 
     const feats   = row.feats   ?? 0
     const bonus   = row.bonus   ?? 0
     const levelUp = row.levelUp ?? 0
-    const stage   = row.stage   ?? sheet.combatStages?.[key] ?? 0
+    const stage   = row.stage   ?? (key === 'hp' ? 0 : sheet.combatStages?.[key] ?? 0)
     return {
       key,
       label: TRAINER_STAT_LABELS[key],

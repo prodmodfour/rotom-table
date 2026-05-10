@@ -132,7 +132,7 @@ export const formatLookupValue = (value: unknown): string =>
   value === null || value === undefined || value === '' ? '—' : String(value)
 
 export const clearLookupBackedMoveFields = (move: SheetMoveLike): void => {
-  const target = move as Record<string, unknown>
+  const target = move as unknown as Record<string, unknown>
   for (const key of LOOKUP_BACKED_MOVE_KEYS) delete target[key]
 }
 

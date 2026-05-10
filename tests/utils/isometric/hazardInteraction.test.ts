@@ -1,14 +1,15 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createIsometricHazardInteractionController } from '~/utils/isometric/hazardInteraction'
+import type { HazardInteractionState } from '~/utils/isometric/hazardInteraction'
 import type { HazardTarget } from '~/utils/isometric/types'
 
 const pointer = { clientX: 10, clientY: 20 } as PointerEvent
 
 const makeController = (overrides: Partial<Parameters<typeof createIsometricHazardInteractionController>[0]> = {}) => {
-  const state = {
+  const state: HazardInteractionState = {
     hazardMode: true,
-    hazardTool: 'pencil' as const,
-    hazardKind: 'spikes' as const,
+    hazardTool: 'pencil',
+    hazardKind: 'spikes',
   }
   const pickTarget = vi.fn<(event: MouseEvent | PointerEvent, tool: 'pencil' | 'eraser') => HazardTarget | null>()
   const updateGhost = vi.fn()

@@ -53,7 +53,9 @@ describe('SSE stream helpers', () => {
     const req = new EventEmitter()
     const { headers, writes, res } = createResponse()
     const unsubscribe = vi.fn()
-    let handler: ((event: RealtimeEvent) => void) | null = null
+    let handler: (event: RealtimeEvent) => void = () => {
+      throw new Error('Realtime handler was not registered')
+    }
 
     const stream = openSseEventStream<RealtimeEvent>({
       req,
@@ -68,7 +70,7 @@ describe('SSE stream helpers', () => {
     expect(headers.get('Content-Type')).toBe('text/event-stream; charset=utf-8')
     expect(writes).toEqual([': ok\n\n'])
 
-    handler?.({ channel: 'maps', type: 'updated', timestamp: 123 })
+    handler({ channel: 'maps', type: 'updated', timestamp: 123 })
     expect(writes.at(-1)).toBe('data: {"channel":"maps","type":"updated","timestamp":123}\n\n')
 
     await vi.advanceTimersByTimeAsync(25)
@@ -95,7 +97,9 @@ describe('SSE stream helpers', () => {
     }
     const logger = { error: vi.fn() }
     const unsubscribe = vi.fn()
-    let handler: ((event: RealtimeEvent) => void) | null = null
+    let handler: (event: RealtimeEvent) => void = () => {
+      throw new Error('Realtime handler was not registered')
+    }
 
     const stream = openSseEventStream<RealtimeEvent>({
       req,
@@ -108,7 +112,7 @@ describe('SSE stream helpers', () => {
       },
     })
 
-    handler?.({ channel: 'maps', type: 'updated', timestamp: 123 })
+    handler({ channel: 'maps', type: 'updated', timestamp: 123 })
     expect(logger.error).toHaveBeenCalledWith('[events] write failed', writeError)
 
     req.emit('close')

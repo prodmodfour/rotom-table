@@ -13,33 +13,36 @@ import type { SpawnedPokemon } from '~/types/pokemon'
 
 const stages: CombatStageMap = { atk: 0, def: 0, satk: 0, sdef: 0, spd: 0, acc: 0 }
 
-const token = (overrides: Partial<SpawnedPokemon> & Pick<SpawnedPokemon, 'id' | 'species'>): SpawnedPokemon => ({
-  id: overrides.id,
-  species: overrides.species,
-  slug: overrides.species.toLowerCase(),
-  size: 'Small',
-  width: 1,
-  height: 1,
-  base: 1,
-  clearance: 1,
-  spriteUrl: '/sprite.png',
-  entityKind: 'pokemon',
-  position: { x: 0, y: 0, z: 0 },
-  sheetKind: 'pokemon',
-  sheetSlug: overrides.species.toLowerCase(),
-  level: 10,
-  currentHp: 20,
-  maxHp: 40,
-  atk: 8,
-  satk: 7,
-  def: 5,
-  sdef: 4,
-  defenderTypes: ['Normal'],
-  combatStages: stages,
-  conditions: [],
-  tokenItems: [],
-  ...overrides,
-})
+const token = (overrides: Partial<SpawnedPokemon> & Pick<SpawnedPokemon, 'id' | 'species'>): SpawnedPokemon => {
+  const { id, species, ...rest } = overrides
+  return {
+    id,
+    species,
+    slug: species.toLowerCase(),
+    size: 'Small',
+    width: 1,
+    height: 1,
+    base: 1,
+    clearance: 1,
+    spriteUrl: '/sprite.png',
+    entityKind: 'pokemon',
+    position: { x: 0, y: 0, z: 0 },
+    sheetKind: 'pokemon',
+    sheetSlug: species.toLowerCase(),
+    level: 10,
+    currentHp: 20,
+    maxHp: 40,
+    atk: 8,
+    satk: 7,
+    def: 5,
+    sdef: 4,
+    defenderTypes: ['Normal'],
+    combatStages: stages,
+    conditions: [],
+    tokenItems: [],
+    ...rest,
+  }
+}
 
 const script = (overrides: Partial<MoveAutomationScript> = {}): MoveAutomationScript => ({
   kind: 'explicit',
@@ -83,7 +86,7 @@ describe('move automation transaction helpers', () => {
     expect(resolveMoveAutomationTargetDamageLoss(s, user, target, {
       ...defaultTargetResolutionState(s),
       hit: true,
-      damageRoll: { formula: '2d6+8', total: 20, rolls: [6, 6], modifier: 8 },
+      damageRoll: { formula: '2d6+8', count: 2, sides: 6, total: 20, rolls: [6, 6], mod: 8 },
     })).toBe(37)
 
     expect(resolveMoveAutomationTargetDamageLoss(s, user, target, {
@@ -95,7 +98,7 @@ describe('move automation transaction helpers', () => {
     expect(resolveMoveAutomationTargetDamageLoss(script({ type: 'Normal' }), user, token({ id: 'g', species: 'Ghost', defenderTypes: ['Ghost'] }), {
       ...defaultTargetResolutionState(s),
       hit: true,
-      damageRoll: { formula: 'flat', total: 20, rolls: [], modifier: 20 },
+      damageRoll: { formula: 'flat', count: 0, sides: 0, total: 20, rolls: [], mod: 20 },
     })).toBe(0)
   })
 
@@ -122,7 +125,7 @@ describe('move automation transaction helpers', () => {
       conditionSuggestions: [{ recipient: 'target', condition: 'Slowed', label: 'Slow target' }],
       stageSuggestions: [{ recipient: 'target', key: 'def', delta: -1, label: 'Lower Defense' }],
       hazardSuggestions: [{ kind: 'toxic-spikes', squares: 1, label: 'Lay spikes' }],
-      fieldSuggestions: [{ kind: 'weather', value: 'sun', label: 'Sun' }],
+      fieldSuggestions: [{ kind: 'weather', value: 'sunny', label: 'Sun' }],
       automationNotes: ['Check secondary effects.'],
     })
     const enabledSuggestions = {
@@ -142,7 +145,7 @@ describe('move automation transaction helpers', () => {
           ...defaultTargetResolutionState(s),
           hit: true,
           crit: true,
-          damageRoll: { formula: 'flat', total: 12, rolls: [], modifier: 12 },
+          damageRoll: { formula: 'flat', count: 0, sides: 0, total: 12, rolls: [], mod: 12 },
         },
       },
       enabledSuggestions,
@@ -168,7 +171,7 @@ describe('move automation transaction helpers', () => {
       { id: 't', stages: { ...stages, def: -1, spd: -2 } },
     ]))
     expect(transaction.hazardsToAdd).toEqual([{ kind: 'toxic-spikes', x: 1, y: 0, z: 2, layer: 1, owner: 'Caster' }])
-    expect(transaction.fieldEffectsToApply).toEqual([{ kind: 'weather', value: 'sun', source: 'Test Move' }])
+    expect(transaction.fieldEffectsToApply).toEqual([{ kind: 'weather', value: 'sunny', source: 'Test Move' }])
     expect(transaction.logLines).toEqual(expect.arrayContaining([
       'Caster used Test Move.',
       'Target: 15 HP damage (critical flagged).',

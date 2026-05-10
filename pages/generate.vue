@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useEncounterGenerationPage } from '~/composables/encounters/useEncounterGenerationPage'
 import { encounterTables } from '~/utils/encounterTables'
 
 useHead({
@@ -26,7 +27,9 @@ const {
   toggleFile,
 } = useEncounterGenerationPage({
   query: route.query,
-  replaceQuery: (query) => router.replace({ query }),
+  replaceQuery: async (query) => {
+    await router.replace({ query })
+  },
 })
 </script>
 

@@ -159,7 +159,11 @@ export const matchesSearchExpression = (searchText: string, expression: SearchEx
     return matchesSearchExpression(searchText, expression.left) || matchesSearchExpression(searchText, expression.right)
   }
 
-  return !matchesSearchExpression(searchText, expression.expression)
+  if (expression.kind === 'not') {
+    return !matchesSearchExpression(searchText, expression.expression)
+  }
+
+  return false
 }
 
 export const matchesActiveSearchFilters = <TEntry extends PokedexSearchCandidate>(

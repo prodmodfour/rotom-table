@@ -27,7 +27,7 @@ const makePokemon = (id: string): SpawnedPokemon => ({
   def: 1,
   sdef: 1,
   defenderTypes: [],
-  combatStages: {},
+  combatStages: { atk: 0, def: 0, satk: 0, sdef: 0, spd: 0, acc: 0 },
   conditions: [],
   tokenItems: [],
 })

@@ -24,7 +24,7 @@ const makePokemon = (overrides: Partial<SpawnedPokemon> = {}): SpawnedPokemon =>
   def: 5,
   sdef: 5,
   defenderTypes: [],
-  combatStages: {},
+  combatStages: { atk: 0, def: 0, satk: 0, sdef: 0, spd: 0, acc: 0 },
   conditions: [],
   tokenItems: [],
   ...overrides,

@@ -37,6 +37,10 @@ useHead({ title: 'Maps · Rotom Table' })
 
 const router = useRouter()
 const clientId = getClientId()
+const postJson = $fetch as unknown as <T = unknown>(
+  request: string,
+  options: { method: 'POST'; body: unknown },
+) => Promise<T>
 const { isGm, isPlayer } = useAuth()
 
 const {
@@ -63,7 +67,7 @@ const { creating, createError, createNewFolder } = useLibraryFolderCreation({
   canCreate: isGm,
   currentPath,
   folderPaths: allFolders,
-  createFolder: (folder) => $fetch('/api/maps/create-folder', {
+  createFolder: (folder) => postJson('/api/maps/create-folder', {
     method: 'POST',
     body: { folder, clientId },
   }),
@@ -96,23 +100,23 @@ const mapActions = useMapLibraryActions({
   goToFolder,
   refresh,
   formatFolderLabel,
-  moveMap: ({ slug, folder }) => $fetch('/api/maps/move', {
+  moveMap: ({ slug, folder }) => postJson('/api/maps/move', {
     method: 'POST',
     body: { slug, folder, clientId },
   }),
-  moveFolder: ({ from, to }) => $fetch('/api/maps/move-folder', {
+  moveFolder: ({ from, to }) => postJson('/api/maps/move-folder', {
     method: 'POST',
     body: { from, to, clientId },
   }),
-  renameMap: ({ slug, name }) => $fetch<{ slug: string; name: string }>('/api/maps/rename', {
+  renameMap: ({ slug, name }) => postJson<{ slug: string; name: string }>('/api/maps/rename', {
     method: 'POST',
     body: { slug, name, clientId },
   }),
-  deleteMap: ({ slug }) => $fetch('/api/maps/delete', {
+  deleteMap: ({ slug }) => postJson('/api/maps/delete', {
     method: 'POST',
     body: { slug, clientId },
   }),
-  deleteFolder: ({ folder }) => $fetch('/api/maps/delete-folder', {
+  deleteFolder: ({ folder }) => postJson('/api/maps/delete-folder', {
     method: 'POST',
     body: { folder, clientId },
   }),
@@ -160,7 +164,7 @@ const { createNewMap } = useMapLibraryCreation({
   canCreate: isGm,
   currentPath,
   state: { creating, createError },
-  createMap: (folder) => $fetch<{ map: TabletopMap }>('/api/maps/create', {
+  createMap: (folder) => postJson<{ map: TabletopMap }>('/api/maps/create', {
     method: 'POST',
     body: { folder, clientId },
   }),

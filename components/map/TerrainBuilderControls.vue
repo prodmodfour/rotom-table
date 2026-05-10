@@ -30,7 +30,7 @@ const emit = defineEmits<{
 
 <template>
   <BuildToolToggle
-    aria-label="Build tool"
+    ariaLabel="Build tool"
     :active-tool="buildTool"
     @set-tool="emit('set-build-tool', $event)"
   />

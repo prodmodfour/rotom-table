@@ -25,7 +25,7 @@ const emit = defineEmits<{
 
 <template>
   <BuildToolToggle
-    aria-label="Hazard tool"
+    ariaLabel="Hazard tool"
     :active-tool="hazardTool"
     pencil-label="Place"
     eraser-label="Erase"

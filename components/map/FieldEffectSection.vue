@@ -43,7 +43,7 @@ const emit = defineEmits<{
       <span v-else-if="note" class="field-effect-note">{{ note }}</span>
     </div>
     <FieldEffectSwatchGrid
-      :aria-label="ariaLabel"
+      :ariaLabel="ariaLabel"
       :effects="effects"
       :is-active="isActive"
       :disabled="!canEditMap"

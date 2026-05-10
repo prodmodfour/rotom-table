@@ -76,7 +76,7 @@ export function useTrainerSheetRowActions(sheet: Readonly<Ref<TrainerSheet | nul
       row = { level }
       list.push(row)
     }
-    ;(row as Record<string, unknown>)[field as string] = value
+    ;(row as unknown as Record<string, unknown>)[field as string] = value
   }
 
   const addInvItem = (key: keyof NonNullable<TrainerSheet['inventory']>) => {

@@ -9,6 +9,7 @@ import {
   resolveMoveAutomationAccuracyRoll,
   rollAllMoveAutomationTargets,
   syncMoveAutomationTargetResolutions,
+  type MoveAutomationResolutionRecord,
 } from '~/utils/moveAutomationResolution'
 import { moveAutomationSuggestionKey } from '~/utils/moveAutomationTransaction'
 import type { CombatStageMap } from '~/types/combatStages'
@@ -58,7 +59,7 @@ describe('move automation resolution helpers', () => {
 
   it('ensures and syncs target resolution records', () => {
     const s = script()
-    const resolutions = {
+    const resolutions: MoveAutomationResolutionRecord = {
       stale: { accuracyRoll: '1', hit: false, crit: false, damageRoll: null, manualHpLoss: '', applyDamage: true },
     }
 
@@ -79,7 +80,7 @@ describe('move automation resolution helpers', () => {
       ],
       stageSuggestions: [{ recipient: 'user', key: 'atk', delta: 1, label: 'Boost' }],
       hpSuggestions: [{ recipient: 'target', mode: 'fixed-loss', amount: 5, label: 'Chip', optional: true }],
-      fieldSuggestions: [{ kind: 'weather', value: 'rain', label: 'Rain' }],
+      fieldSuggestions: [{ kind: 'weather', value: 'rainy', label: 'Rain' }],
       hazardSuggestions: [{ kind: 'spikes', squares: 1, label: 'Spikes' }],
     })
     const enabled: Record<string, boolean | undefined> = {}

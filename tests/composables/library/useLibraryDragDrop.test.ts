@@ -2,7 +2,16 @@ import { ref } from 'vue'
 import { describe, expect, it, vi } from 'vitest'
 import { useLibraryDragDrop } from '~/composables/library/useLibraryDragDrop'
 
-const makeDragEvent = () => {
+type TestDragEvent = DragEvent & {
+  dataTransfer: NonNullable<DragEvent['dataTransfer']> & {
+    effectAllowed: string
+    dropEffect: string
+    setData: ReturnType<typeof vi.fn>
+  }
+  data: Map<string, string>
+}
+
+const makeDragEvent = (): TestDragEvent => {
   const data = new Map<string, string>()
   return {
     preventDefault: vi.fn(),
@@ -13,7 +22,7 @@ const makeDragEvent = () => {
       setData: vi.fn((type: string, value: string) => data.set(type, value)),
     },
     data,
-  } as unknown as DragEvent & { data: Map<string, string> }
+  } as unknown as TestDragEvent
 }
 
 describe('useLibraryDragDrop', () => {

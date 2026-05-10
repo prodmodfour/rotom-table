@@ -68,7 +68,7 @@ describe('move automation move helpers', () => {
     const entries = buildMoveAutomationMoveEntries([
       { name: 'Scratch' },
       { name: '  ' },
-      { name: 'Custom Move', type: 'Psychic', damageClass: 'Status', effect: 'Focus deeply' },
+      { name: 'Custom Move', type: 'Psychic', category: 'Status', effect: 'Focus deeply' },
     ])
 
     expect(entries.map((entry) => entry.move.name)).toEqual(['Scratch', 'Custom Move'])
@@ -80,7 +80,7 @@ describe('move automation move helpers', () => {
   it('filters entries by script and sheet move fields while preserving no-query order', () => {
     const entries = buildMoveAutomationMoveEntries([
       { name: 'Scratch', frequency: 'At-Will' },
-      { name: 'Custom Move', type: 'Psychic', damageClass: 'Status', effect: 'Focus deeply' },
+      { name: 'Custom Move', type: 'Psychic', category: 'Status', effect: 'Focus deeply' },
     ])
 
     expect(filterMoveAutomationMoveEntries(entries, '').map((entry) => entry.move.name)).toEqual(['Scratch', 'Custom Move'])
