@@ -1,13 +1,11 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, ref } from 'vue'
 import AppNavigation from '~/components/AppNavigation.vue'
 import FolderBreadcrumbNav from '~/components/library/FolderBreadcrumbNav.vue'
 import LibraryContextMenu from '~/components/library/LibraryContextMenu.vue'
 import LibraryPageLayout from '~/components/library/LibraryPageLayout.vue'
 import SheetLibraryGrid from '~/components/library/SheetLibraryGrid.vue'
 import SheetLibraryIntroPanel from '~/components/library/SheetLibraryIntroPanel.vue'
-import { characterSheets, getPokedexEntry, getSpriteUrl } from '~/data/characterSheets'
-import { trainerSheets } from '~/data/trainerSheets'
 import {
   buildFolderMoveDestinations,
   buildVisibleFolderTiles,
@@ -21,9 +19,6 @@ import {
   type FolderTile,
 } from '~/utils/folderBrowser'
 import {
-  applySheetLibraryOverrides,
-  buildSheetFolderSet,
-  buildSheetLibraryItems,
   countFilteredSheetLibraryItems,
   displaySheetLibraryName,
   filterVisibleSheetLibraryItems,
@@ -37,6 +32,7 @@ import { useLibraryDropMove } from '~/composables/library/useLibraryDropMove'
 import { useLibraryFolderCreation } from '~/composables/library/useLibraryFolderCreation'
 import { useLibraryFolderNavigation } from '~/composables/library/useLibraryFolderNavigation'
 import { useSheetLibraryCreation } from '~/composables/library/useSheetLibraryCreation'
+import { useSheetLibraryData } from '~/composables/library/useSheetLibraryData'
 import { useWindowKeydown } from '~/composables/useWindowKeydown'
 import { isEscapeKey } from '~/utils/keyboardShortcuts'
 import { sheetEditorPath } from '~/utils/sheetRoutes'
@@ -47,64 +43,27 @@ useHead({
 
 const { isGm, isPlayer } = useAuth()
 
+const canDrag = computed(() => import.meta.dev && isGm.value)
+
 type SheetItem = SheetLibraryItem
 
-// ---------------------------------------------------------------------------
-// Local override state. Drag-drop hits a server endpoint that moves the file
-// on disk, but we mirror the move locally so the UI updates instantly without
-// waiting for Vite HMR to re-import the data globs.
-// ---------------------------------------------------------------------------
-
-const sheetOverrides = reactive<Record<string, string>>({})
-const folderRenames = ref<Array<{ from: string; to: string }>>([])
-
-/** Display-name overrides keyed by ``"<kind>:<slug>"``. */
-const nameOverrides = reactive<Record<string, string>>({})
-
-/** Soft-deleted sheet keys (``"<kind>:<slug>"``) and folder paths. The server
- *  has already removed them on disk; these sets just keep the UI in sync
- *  until Vite HMR catches up. */
-const deletedSheets = reactive(new Set<string>())
-const deletedFolders = reactive(new Set<string>())
-
-const baseItems = computed<SheetItem[]>(() =>
-  buildSheetLibraryItems({
-    pokemonSheets: characterSheets,
-    trainerSheets,
-    speciesTypesFor: (species) => getPokedexEntry(species)?.types,
-    spriteUrlFor: getSpriteUrl,
-  }),
-)
-
-const items = computed<SheetItem[]>(() =>
-  applySheetLibraryOverrides(baseItems.value, {
-    playerOnly: isPlayer.value,
-    sheetOverrides,
-    folderRenames: folderRenames.value,
-    nameOverrides,
-    deletedSheets,
-    deletedFolders,
-  }),
-)
+const {
+  items,
+  allFolders,
+  extraFolders,
+  sheetOverrides,
+  folderRenames,
+  nameOverrides,
+  deletedSheets,
+  deletedFolders,
+} = useSheetLibraryData({
+  isGm,
+  isPlayer,
+  canLoadFolders: canDrag,
+})
 
 /** Display name for a sheet item (honours local rename overrides). */
 const displayName = displaySheetLibraryName
-
-// Folders explicitly created by the user (or that already exist on disk as
-// empty dirs). Seeded from `/api/sheets/folders` on mount.
-const extraFolders = reactive(new Set<string>())
-
-/** Every folder path that exists, inferred + extras, minus locally-deleted
- *  folders (and any descendant of one). */
-const allFolders = computed(() =>
-  buildSheetFolderSet({
-    items: items.value,
-    extraFolders,
-    includeExtraFolders: isGm.value,
-    folderRenames: folderRenames.value,
-    deletedFolders,
-  }),
-)
 
 // ---------------------------------------------------------------------------
 // Folder navigation. The current folder lives in the URL as `?folder=foo/bar`
@@ -155,8 +114,6 @@ const hasAnything = computed(
 // "Home" breadcrumb is the root drop target. Dev-only — moves are persisted
 // via `/api/sheets/move(-folder)` which write to disk.
 // ---------------------------------------------------------------------------
-
-const canDrag = computed(() => import.meta.dev && isGm.value)
 
 interface DragSheet {
   type: 'sheet'
@@ -389,18 +346,6 @@ const { submitContext } = useLibraryContextSubmit<CtxTarget>({
       goToFolder(parentFolderPath(path))
     }
   },
-})
-
-// On mount (client only) seed extraFolders from on-disk dirs so empty
-// folders persist across reloads.
-onMounted(async () => {
-  if (!canDrag.value) return
-  try {
-    const data = await $fetch<{ folders: string[] }>('/api/sheets/folders')
-    for (const f of data.folders) extraFolders.add(f)
-  } catch (err) {
-    console.warn('[sheets] failed to load existing folders', err)
-  }
 })
 
 useWindowKeydown((event) => {

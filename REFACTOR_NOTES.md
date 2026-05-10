@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; map library data loading/realtime state is now extracted, but small UI/helper cleanup remains and the refactor is not marked complete.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; sheet library data/folder state is now extracted, but small UI/helper cleanup remains and the refactor is not marked complete.
 
 ## Phase 0 baseline audit
 
@@ -2900,3 +2900,16 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; map library data loading/
   - `npm test` — passes: 109 test files / 407 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: sheet library data composable
+
+- Extracted sheet-library static item derivation, local override/delete state, folder-set derivation, and persisted empty-folder loading into `composables/library/useSheetLibraryData.ts`.
+- Updated `pages/sheets/index.vue` to consume the focused data composable while preserving player-only filtering, species type/sprite fallbacks, optimistic move/rename/delete overrides, GM/dev folder loading, and existing sheet/folder context actions.
+- Added `tests/composables/library/useSheetLibraryData.test.ts` covering injected folder fetchers, player filtering, optimistic override/delete state, disabled folder loading, and normalized folder-load errors.
+- Next remaining phase: continue one small bounded cleanup pass on remaining library/map/reference presentation or helper duplication; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/composables/library/useSheetLibraryData.test.ts tests/composables/library/useMapLibraryData.test.ts` — passes: 2 test files / 7 tests.
+  - `npm test` — passes: 110 test files / 411 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
