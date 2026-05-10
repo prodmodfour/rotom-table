@@ -55,7 +55,7 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
 ## Current quality gate results
 
 - `npm run typecheck` — passes.
-- `npm test` — passes: 143 test files / 559 tests.
+- `npm test` — passes: 145 test files / 565 tests.
 - `npm run build` — passes; existing large chunk warnings remain.
 - `npm run check:move-automation` — still fails with the same baseline `Explicit move automation coverage: 0/769` missing-script report.
 - `npm run sync:item-sprites -- --dry-run` was not run because the script does not implement a dry-run mode.
@@ -3515,5 +3515,18 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
   - `npm test -- tests/utils/apiClient.test.ts tests/composables/library/useMapLibraryData.test.ts tests/composables/library/useSheetLibraryData.test.ts tests/composables/map-editor/useTokenSheetMutations.test.ts tests/composables/encounters/useEncounterGenerationPage.test.ts tests/utils/autosave.test.ts` — passes: 6 test files / 39 tests.
   - `npm run typecheck` — passes.
   - `npm test` — passes: 144 test files / 562 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: shared client-id provider helper
+
+- Extracted client-id formatting and provider construction into `utils/clientId.ts` behind `formatClientId` and `createClientIdProvider`.
+- Preserved the default `getClientId()` behavior: SSR calls return the `ssr` sentinel without caching, browser calls create one per-runtime ID using the existing random/date base36 format, and subsequent calls reuse the same ID for realtime echo suppression.
+- Added `tests/utils/clientId.test.ts` covering deterministic formatting, SSR-to-browser transition behavior, and per-provider browser caching.
+- Next remaining phase: continue one bounded cleanup pass, with candidates including another focused map-editor/helper extraction, remaining client helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/utils/clientId.test.ts` — passes: 1 test file / 3 tests.
+  - `npm run typecheck` — passes.
+  - `npm test` — passes: 145 test files / 565 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

@@ -11,11 +11,29 @@
  * Surviving reloads isn't useful here either: a reload re-subscribes
  * to the SSE stream from scratch, so a fresh id is fine.
  */
-let cached: string | null = null
-
-export const getClientId = (): string => {
-  if (cached) return cached
-  if (typeof window === 'undefined') return 'ssr'
-  cached = `c-${Math.random().toString(36).slice(2, 10)}-${Date.now().toString(36)}`
-  return cached
+export interface ClientIdProviderOptions {
+  hasWindow?: () => boolean
+  random?: () => number
+  now?: () => number
 }
+
+export const formatClientId = (random: number, now: number): string =>
+  `c-${random.toString(36).slice(2, 10)}-${now.toString(36)}`
+
+export const createClientIdProvider = (options: ClientIdProviderOptions = {}): (() => string) => {
+  let cached: string | null = null
+
+  return () => {
+    if (cached) return cached
+
+    const hasWindow = options.hasWindow?.() ?? typeof window !== 'undefined'
+    if (!hasWindow) return 'ssr'
+
+    const random = options.random?.() ?? Math.random()
+    const now = options.now?.() ?? Date.now()
+    cached = formatClientId(random, now)
+    return cached
+  }
+}
+
+export const getClientId = createClientIdProvider()
