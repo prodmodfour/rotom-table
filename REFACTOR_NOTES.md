@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; the map and sheet library card presentation is now isolated, but small UI/helper cleanup remains and the refactor is not marked complete.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; the shared library grid shell is now isolated, but small UI/helper cleanup remains and the refactor is not marked complete.
 
 ## Phase 0 baseline audit
 
@@ -2752,6 +2752,16 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; the map and sheet library
 - Extracted map card presentation from `components/library/MapLibraryGrid.vue` into `components/library/MapLibraryCard.vue`.
 - Reduced the map library grid so it owns folder/grid/empty-state composition while the new card component owns map editor links, map metadata, visibility badge styling, and context/drag event forwarding.
 - Preserved map card routes, dimensions/token-count copy, GM-only Player visible badge display, drag/drop behavior, context-menu event payloads, and empty-state copy.
+- Next remaining phase: continue one small bounded cleanup pass on remaining library/map/reference presentation or helper duplication; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test` — passes: 103 test files / 383 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: shared library grid section shell
+
+- Extracted the duplicated maps/sheets library grid shell, responsive grid CSS, loading/search-empty/default-empty state handling, and empty-state styling into `components/library/LibraryGridSection.vue`.
+- Updated `MapLibraryGrid` and `SheetLibraryGrid` to compose the shared grid section while preserving folder tiles, map/sheet cards, loading copy, search-empty copy, GM/player empty-state copy, and drag/context event forwarding.
 - Next remaining phase: continue one small bounded cleanup pass on remaining library/map/reference presentation or helper duplication; do not mark the full refactor complete yet.
 - Quality gates after this phase:
   - `npm test` — passes: 103 test files / 383 tests.
