@@ -2420,3 +2420,13 @@
   - `npm test` — passes: 100 test files / 374 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: map scene status component
+
+- Extracted map loading, not-found, error, and ClientOnly fallback presentation into `components/map/MapSceneStatus.vue`.
+- Reduced `MapScenePanel` so scene state copy/links/styles are isolated from renderer and move-automation overlay wiring.
+- Preserved loading text, missing-map back link, error fallback copy, and map library route generation.
+- Quality gates after this phase:
+  - `npm test` — passes: 100 test files / 374 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import IsometricGrid from '~/components/IsometricGrid.client.vue'
+import MapSceneStatus from '~/components/map/MapSceneStatus.vue'
 import MoveAutomationDialog from '~/components/MoveAutomationDialog.vue'
-import { mapLibraryPath } from '~/utils/mapRoutes'
 import type { BuildTool } from '~/shared/mapEditor'
 import type { CharacterSheetMove } from '~/types/characterSheet'
 import type { CombatStageMap } from '~/types/combatStages'
@@ -121,14 +121,7 @@ defineExpose({ focusPokemon })
         @place-hazard="emit('place-hazard', $event)"
         @remove-hazard="emit('remove-hazard', $event)"
       />
-      <div v-else-if="status === 'loading'" class="scene-loading">Loading map…</div>
-      <div v-else-if="status === 'not-found'" class="scene-loading">
-        <p>Map <code>{{ slug }}</code> not found.</p>
-        <NuxtLink :to="mapLibraryPath()" class="back-link">← Back to maps</NuxtLink>
-      </div>
-      <div v-else class="scene-loading">
-        <p>{{ error ?? 'Could not load map.' }}</p>
-      </div>
+      <MapSceneStatus v-else :status="status" :error="error" :slug="slug" />
 
       <MoveAutomationDialog
         v-if="moveAutomationUser"
@@ -142,7 +135,12 @@ defineExpose({ focusPokemon })
       />
 
       <template #fallback>
-        <div class="scene-loading">Loading the three.js tabletop…</div>
+        <MapSceneStatus
+          status="loading"
+          :error="null"
+          slug=""
+          loading-text="Loading the three.js tabletop…"
+        />
       </template>
     </ClientOnly>
   </main>
@@ -153,29 +151,5 @@ defineExpose({ focusPokemon })
   min-width: 0;
   min-height: 100vh;
   background: var(--paper);
-}
-
-.scene-loading {
-  display: grid;
-  place-items: center;
-  min-height: 100vh;
-  color: var(--ink-muted);
-  background: var(--paper);
-  font-style: italic;
-  gap: 0.6rem;
-  text-align: center;
-}
-
-.back-link {
-  color: var(--ink-soft);
-  text-decoration: none;
-  font-size: 0.9rem;
-  letter-spacing: 0.02em;
-}
-
-.back-link:hover {
-  color: var(--ink-bright);
-  text-decoration: underline;
-  text-decoration-color: var(--rule-strong);
 }
 </style>
