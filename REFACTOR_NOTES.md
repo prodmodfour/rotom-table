@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; the shared library card text primitive is now isolated, but small UI/helper cleanup remains and the refactor is not marked complete.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; shared library card badge/meta primitives are now isolated, but small UI/helper cleanup remains and the refactor is not marked complete.
 
 ## Phase 0 baseline audit
 
@@ -2796,6 +2796,18 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; the shared library card t
 - Extracted shared library card title/subtitle/body typography into `components/library/LibraryCardText.vue`.
 - Updated map and sheet library cards to compose the shared text primitive while preserving map dimensions/token metadata, Player visible badges, Pokémon shiny/type metadata, trainer class metadata, routes, and drag/context event wiring.
 - Removed duplicated card heading/body/subtitle CSS from the map and sheet card components so domain cards now focus on their specific metadata and badges.
+- Next remaining phase: continue one small bounded cleanup pass on remaining library/map/reference presentation or helper duplication; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/utils/mapLibrary.test.ts tests/utils/sheetLibrary.test.ts` — passes: 2 test files / 16 tests.
+  - `npm test` — passes: 103 test files / 383 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: shared library card badge and meta primitives
+
+- Extracted reusable library-card badge styling into `components/library/LibraryCardBadge.vue` for map Player-visible and Pokémon shiny badges.
+- Extracted reusable sheet-card metadata chip layout into `components/library/LibraryCardMetaList.vue` so Pokémon/trainer card metadata uses one primitive instead of route-card-local list CSS.
+- Updated `MapLibraryCard` and `SheetLibraryCard` to compose those primitives while preserving map visibility badges, shiny badges, Pokémon type badges, trainer metadata, routes, and drag/context event wiring.
 - Next remaining phase: continue one small bounded cleanup pass on remaining library/map/reference presentation or helper duplication; do not mark the full refactor complete yet.
 - Quality gates after this phase:
   - `npm test -- tests/utils/mapLibrary.test.ts tests/utils/sheetLibrary.test.ts` — passes: 2 test files / 16 tests.
