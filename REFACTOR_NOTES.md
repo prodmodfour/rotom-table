@@ -2029,3 +2029,13 @@
   - `npm test` — passes: 91 test files / 343 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: sheet browser list component
+
+- Extracted the `SheetBrowser` folder/sheet result list into `components/sheets/SheetBrowserList.vue` with explicit folder/item props and focused open/select emits.
+- Moved folder row, sheet row, sprite fallback, and empty-state styles into the list component so the parent browser remains a small state/composition shell.
+- Preserved browser row ordering, folder counts, Pokémon/trainer styling, sprite display, and empty-folder copy.
+- Quality gates after this phase:
+  - `npm test` — passes: 91 test files / 343 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
