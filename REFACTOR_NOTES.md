@@ -2099,3 +2099,13 @@
   - `npm test` — passes: 95 test files / 356 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: capability index list component
+
+- Extracted the Capabilities index result-list/card markup into `components/reference/CapabilityIndexList.vue`.
+- Reduced `pages/capabilities/index.vue` to search/filter state plus shared reference header/list composition.
+- Preserved capability art, routes, effect previews, responsive row styling, and empty-state copy.
+- Quality gates after this phase:
+  - `npm test` — passes: 95 test files / 356 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
