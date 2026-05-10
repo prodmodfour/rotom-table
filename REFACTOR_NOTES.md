@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; shared library data/actions/view state are now extracted, but small UI/helper cleanup remains and the refactor is not marked complete.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; map create is now a tested use case/thin route, with map rename/move/folder endpoints still good candidates for further thinning.
 
 ## Phase 0 baseline audit
 
@@ -2949,5 +2949,19 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; shared library data/actio
 - Quality gates after this phase:
   - `npm test -- tests/composables/library/useLibraryGridView.test.ts tests/composables/library/useMapLibraryData.test.ts tests/composables/library/useSheetLibraryData.test.ts` — passes: 3 test files / 9 tests.
   - `npm test` — passes: 113 test files / 421 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: map create use-case extraction
+
+- Extracted `/api/maps/create` orchestration into `server/useCases/createMap.ts`.
+  - The use case now owns map-name normalization, folder sanitization, dimension clamping, slug allocation, default map document construction, persistence path selection, and `maps` channel create-event construction behind injectable dependencies.
+- Reduced `server/api/maps/create.post.ts` to a thin H3 adapter for GM auth, body reading, use-case invocation, realtime publish, and HTTP error translation.
+- Preserved existing create-map behavior: optional/absent request bodies still create an Untitled Map, dimensions clamp to 1..200 with defaults, folders are sanitized with empty root allowed, JSON persistence still uses `writeMapFile`, and the response remains `{ map }`.
+- Added `tests/server/createMap.test.ts` covering input normalization, default creation, bad long names, folder sanitizer failures, dimension clamping, write path selection, and realtime summary payloads.
+- Next remaining phase: continue map endpoint thinning, especially `server/api/maps/rename.post.ts`, `server/api/maps/move.post.ts`, and map folder mutation endpoints; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/server/createMap.test.ts` — passes: 1 test file / 5 tests.
+  - `npm test` — passes: 114 test files / 426 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

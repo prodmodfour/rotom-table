@@ -12,97 +12,30 @@
  * Response: `{ map: TabletopMap }`
  */
 import { createError, defineEventHandler, readBody } from 'h3'
-import { join } from 'node:path'
-import { mapsChannel } from '~/shared/realtime'
 import { publishRealtime } from '../../utils/realtime'
 import { requireGm } from '../../utils/auth'
-import {
-  MAPS_ROOT,
-  allocateSlug,
-  ensureMapsRoot,
-  sanitizeMapFolderPath,
-  writeMapFile,
-} from '../../utils/mapStorage'
-import type { GridDimensions, TabletopMap } from '~/types/map'
+import { createMapUseCase, CreateMapUseCaseError } from '../../useCases/createMap'
+import type { GridDimensions } from '~/types/map'
 
 interface CreateBody {
-  name?: string
-  folder?: string
+  name?: unknown
+  folder?: unknown
   dimensions?: GridDimensions
   clientId?: string
 }
 
-const DEFAULT_DIMENSIONS: GridDimensions = { x: 20, y: 12, z: 20 }
-
-const clamp = (value: unknown, fallback: number) => {
-  const n = Number(value)
-  if (!Number.isFinite(n)) return fallback
-  return Math.min(200, Math.max(1, Math.round(n)))
-}
-
 export default defineEventHandler(async (event) => {
   requireGm(event)
-  const body = await readBody<CreateBody>(event)
-  const name = String(body?.name ?? '').trim() || 'Untitled Map'
-  if (name.length > 80) {
-    throw createError({ statusCode: 400, statusMessage: 'name too long (max 80 chars)' })
-  }
+  const body = await readBody<CreateBody | null>(event)
 
-  let folder = ''
   try {
-    folder = sanitizeMapFolderPath(String(body?.folder ?? ''), true)
+    const result = createMapUseCase(body ?? {})
+    for (const realtimeEvent of result.events) publishRealtime(realtimeEvent)
+    return { map: result.map }
   } catch (err) {
-    throw createError({ statusCode: 400, statusMessage: (err as Error).message })
+    if (err instanceof CreateMapUseCaseError) {
+      throw createError({ statusCode: err.statusCode, statusMessage: err.message })
+    }
+    throw err
   }
-
-  const dims = body?.dimensions ?? DEFAULT_DIMENSIONS
-  const dimensions: GridDimensions = {
-    x: clamp(dims.x, DEFAULT_DIMENSIONS.x),
-    y: clamp(dims.y, DEFAULT_DIMENSIONS.y),
-    z: clamp(dims.z, DEFAULT_DIMENSIONS.z),
-  }
-
-  ensureMapsRoot()
-  const slug = allocateSlug(name)
-  const now = Date.now()
-  const map: TabletopMap = {
-    schemaVersion: 2,
-    slug,
-    name,
-    folder,
-    dimensions,
-    groundLevelY: 0,
-    playerVisible: false,
-    placements: [],
-    initiative: { activeId: null, round: 1 },
-    voxels: [],
-    hazards: [],
-    fieldEffects: { weather: [], terrains: [], rooms: [] },
-    lights: [],
-    createdAt: now,
-    updatedAt: now,
-  }
-
-  const path = folder
-    ? join(MAPS_ROOT, folder, `${slug}.json`)
-    : join(MAPS_ROOT, `${slug}.json`)
-  writeMapFile(path, map)
-
-  publishRealtime({
-    channel: mapsChannel,
-    type: 'created',
-    clientId: body?.clientId,
-    data: {
-      slug: map.slug,
-      name: map.name,
-      folder: map.folder ?? '',
-      dimensions: map.dimensions,
-      placementCount: 0,
-      playerVisible: map.playerVisible === true,
-      schemaVersion: map.schemaVersion,
-      updatedAt: map.updatedAt,
-    },
-  })
-
-  return { map }
 })
