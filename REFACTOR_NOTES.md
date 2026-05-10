@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; map access/GM-mode guards are now isolated in a focused composable. Next candidates include another focused map-editor helper extraction, addressing the documented broader typecheck backlog, or another small UI/helper duplication cleanup; do not mark the full refactor complete yet.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; map dimension/ground-level controls and dimension reconciliation are now isolated in a focused composable. Next candidates include another focused map-editor helper extraction, addressing the documented broader typecheck backlog, or another small UI/helper duplication cleanup; do not mark the full refactor complete yet.
 
 ## Phase 0 baseline audit
 
@@ -3360,5 +3360,18 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; map access/GM-mode guards
 - Quality gates after this phase:
   - `npm test -- tests/composables/map-editor/useMapAccess.test.ts` — passes: 1 test file / 6 tests.
   - `npm test` — passes: 135 test files / 531 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: map dimension controls composable extraction
+
+- Extracted map-editor geometry and dimension orchestration from `pages/maps/[slug].vue` into `composables/map-editor/useMapDimensions.ts`.
+  - The composable now owns derived map voxel/hazard collections, ground-level bounds, map-specific Y-range values, player-visibility updates, dimension edits, ground-level clamping, and dimension-change reconciliation.
+- Updated the map editor route to consume focused dimension controls while preserving map dimension inputs, admin ground-level editing, terrain/hazard filtering, selected-token cleanup, and token-placement reconciliation after dimension changes.
+- Added `tests/composables/map-editor/useMapDimensions.test.ts` covering edit gating, ground-level derivations/clamping, dimension normalization, terrain/hazard trimming, placement reconciliation, and selection cleanup.
+- Next remaining phase: continue one bounded cleanup pass, with candidates including another focused map-editor helper extraction, addressing the documented broader typecheck backlog, or another small UI/helper duplication cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/composables/map-editor/useMapDimensions.test.ts` — passes: 1 test file / 2 tests.
+  - `npm test` — passes: 136 test files / 533 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

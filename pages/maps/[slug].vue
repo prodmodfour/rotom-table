@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, ref } from 'vue'
 import MapAdminPanel from '~/components/map/MapAdminPanel.vue'
 import MapEditorLayout from '~/components/map/MapEditorLayout.vue'
 import MapInitiativeSidebar from '~/components/map/MapInitiativeSidebar.vue'
@@ -12,6 +12,10 @@ import { useFieldEffectsEditor } from '~/composables/map-editor/useFieldEffectsE
 import { useHazardBuilder } from '~/composables/map-editor/useHazardBuilder'
 import { useInitiativeTracker } from '~/composables/map-editor/useInitiativeTracker'
 import { useMapAccess, useMapGmModeGuard } from '~/composables/map-editor/useMapAccess'
+import {
+  useMapDimensionControls,
+  useMapDimensionReconciliation,
+} from '~/composables/map-editor/useMapDimensions'
 import { useMoveAutomationPanel } from '~/composables/map-editor/useMoveAutomationPanel'
 import { useTerrainBuilder } from '~/composables/map-editor/useTerrainBuilder'
 import { useTokenSheetMutations } from '~/composables/map-editor/useTokenSheetMutations'
@@ -20,10 +24,8 @@ import {
   sheetPathForPlacement,
   useTokenControls,
 } from '~/composables/map-editor/useTokenControls'
-import { reconcileMapForDimensions } from '~/utils/mapDimensionReconciliation'
 import { isCtrlShiftLetter, isEscapeKey } from '~/utils/keyboardShortcuts'
 import { mapEditorPath, mapLibraryPath } from '~/utils/mapRoutes'
-import { clampMapGroundLevelY, mapSpecificYBounds, maxGroundLevelY } from '~/utils/mapGroundLevel'
 import {
   createDefaultMapLayerVisibility,
   MAP_LAYER_OPTIONS,
@@ -31,10 +33,6 @@ import {
 } from '~/utils/mapLayerVisibility'
 import type { SaveStatus } from '~/composables/useEditableSheet'
 import type { MapEditorMode, MapLeftSidebarSection } from '~/shared/mapEditor'
-import type {
-  MapHazardV2,
-  MapVoxelV2,
-} from '~/types/map'
 
 definePageMeta({
   key: (route) => `map-${route.params.slug}`,
@@ -89,30 +87,17 @@ const {
 const layerVisibility = ref(createDefaultMapLayerVisibility())
 const layerOptions = MAP_LAYER_OPTIONS
 
-const mapVoxels = computed<MapVoxelV2[]>(() => map.value?.voxels ?? [])
-const mapHazards = computed<MapHazardV2[]>(() => map.value?.hazards ?? [])
-
-const groundLevelYMax = computed(() => maxGroundLevelY(map.value?.dimensions.y ?? 1))
-const mapGroundLevelY = computed(() =>
-  clampMapGroundLevelY({ y: map.value?.dimensions.y ?? 1 }, map.value?.groundLevelY ?? 0),
-)
-const mapSpecificYRange = computed(() =>
-  mapSpecificYBounds({ y: map.value?.dimensions.y ?? 1 }, map.value?.groundLevelY ?? 0),
-)
-const mapSpecificYMin = computed(() => mapSpecificYRange.value.min)
-const mapSpecificYMax = computed(() => mapSpecificYRange.value.max)
-
-type MapDimensionAxis = 'x' | 'y' | 'z'
-
-const setMapPlayerVisible = (value: boolean) => {
-  if (!map.value || !isGm.value) return
-  map.value.playerVisible = value
-}
-
-const setMapDimension = (axis: MapDimensionAxis, value: number | string) => {
-  if (!map.value || !canEditMap.value) return
-  map.value.dimensions[axis] = value as number
-}
+const {
+  mapVoxels,
+  mapHazards,
+  groundLevelYMax,
+  mapGroundLevelY,
+  mapSpecificYMin,
+  mapSpecificYMax,
+  setMapPlayerVisible,
+  setMapDimension,
+  setGroundLevelY,
+} = useMapDimensionControls({ map, canEditMap, isGm })
 
 const {
   selectedId,
@@ -215,11 +200,6 @@ const {
   fillGround,
   clearAllVoxels,
 } = useTerrainBuilder({ map, mapVoxels, mapGroundLevelY, spawnedPokemon, canEditMap })
-
-const setGroundLevelY = (value: string) => {
-  if (!map.value || !canEditMap.value) return
-  map.value.groundLevelY = clampMapGroundLevelY(map.value.dimensions, value)
-}
 
 const handleAdminShortcut = (event: KeyboardEvent) => {
   if (!isGm.value) return
@@ -345,37 +325,12 @@ const setLayerVisibility = (layer: MapLayerVisibilityKey, value: boolean) => {
   layerVisibility.value[layer] = value
 }
 
-watch(
-  () => map.value?.dimensions,
-  (dims) => {
-    if (!dims || !map.value) return
-    const reconciled = reconcileMapForDimensions({
-      map: map.value,
-      spawnedPokemon: spawnedPokemon.value,
-      selectedId: selectedId.value,
-    })
-
-    if (reconciled.dimensions.x !== dims.x) map.value.dimensions.x = reconciled.dimensions.x
-    if (reconciled.dimensions.y !== dims.y) map.value.dimensions.y = reconciled.dimensions.y
-    if (reconciled.dimensions.z !== dims.z) map.value.dimensions.z = reconciled.dimensions.z
-
-    if (reconciled.groundLevelY !== undefined && reconciled.groundLevelY !== map.value.groundLevelY) {
-      map.value.groundLevelY = reconciled.groundLevelY
-    }
-
-    if (reconciled.voxels.length !== map.value.voxels.length) {
-      map.value.voxels = reconciled.voxels
-    }
-
-    if (reconciled.hazards.length !== mapHazards.value.length) {
-      map.value.hazards = reconciled.hazards
-    }
-
-    map.value.placements = reconciled.placements
-    if (reconciled.selectedPlacementRemoved) clearSelection()
-  },
-  { deep: true },
-)
+useMapDimensionReconciliation({
+  map,
+  spawnedPokemon,
+  selectedId,
+  clearSelection,
+})
 </script>
 
 <template>
