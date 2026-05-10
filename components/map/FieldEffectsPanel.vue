@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import CollapsiblePanelHeading from '~/components/map/CollapsiblePanelHeading.vue'
+import FieldEffectSwatchGrid from '~/components/map/FieldEffectSwatchGrid.vue'
 import { checkedValueFromEvent } from '~/utils/domEvents'
 import type { MapEffectDefinition } from '~/utils/mapFieldEffects'
 import type {
@@ -48,6 +49,9 @@ const emit = defineEmits<{
   (event: 'clear-all'): void
 }>()
 
+const selectWeather = (kind: string) => emit('set-weather', kind as MapWeatherKind)
+const toggleTerrain = (kind: string) => emit('toggle-terrain', kind as MapTerrainKind)
+const toggleRoom = (kind: string) => emit('toggle-room', kind as MapRoomKind)
 </script>
 
 <template>
@@ -74,23 +78,13 @@ const emit = defineEmits<{
             Clear
           </button>
         </div>
-        <div class="effect-swatch-grid effect-swatch-grid--weather" role="group" aria-label="Weather">
-          <button
-            v-for="weather in weatherPalette"
-            :key="weather.kind"
-            type="button"
-            class="effect-swatch"
-            :class="{ 'is-active': weatherIsActive(weather.kind) }"
-            :aria-pressed="weatherIsActive(weather.kind)"
-            :disabled="!canEditMap"
-            :title="weather.rules"
-            :style="{ '--effect-color': weather.color }"
-            @click="emit('set-weather', weather.kind)"
-          >
-            <span class="effect-swatch__icon">{{ weather.shortLabel }}</span>
-            <span class="effect-swatch__label">{{ weather.label }}</span>
-          </button>
-        </div>
+        <FieldEffectSwatchGrid
+          aria-label="Weather"
+          :effects="weatherPalette"
+          :is-active="weatherIsActive"
+          :disabled="!canEditMap"
+          @select="selectWeather"
+        />
         <label v-if="canEditMap" class="coexist-toggle" :class="{ active: weatherCoexistNext }">
           <input
             :checked="weatherCoexistNext"
@@ -141,23 +135,13 @@ const emit = defineEmits<{
           <h3>Terrain</h3>
           <span class="field-effect-note">Field-wide toggles</span>
         </div>
-        <div class="effect-swatch-grid" role="group" aria-label="Terrain effects">
-          <button
-            v-for="terrain in terrainPalette"
-            :key="terrain.kind"
-            type="button"
-            class="effect-swatch"
-            :class="{ 'is-active': terrainIsActive(terrain.kind) }"
-            :aria-pressed="terrainIsActive(terrain.kind)"
-            :disabled="!canEditMap"
-            :title="terrain.rules"
-            :style="{ '--effect-color': terrain.color }"
-            @click="emit('toggle-terrain', terrain.kind)"
-          >
-            <span class="effect-swatch__icon">{{ terrain.shortLabel }}</span>
-            <span class="effect-swatch__label">{{ terrain.label }}</span>
-          </button>
-        </div>
+        <FieldEffectSwatchGrid
+          aria-label="Terrain effects"
+          :effects="terrainPalette"
+          :is-active="terrainIsActive"
+          :disabled="!canEditMap"
+          @select="toggleTerrain"
+        />
         <div v-if="activeTerrainEffects.length" class="effect-chip-list">
           <article
             v-for="effect in activeTerrainEffects"
@@ -199,23 +183,13 @@ const emit = defineEmits<{
           <h3>Rooms</h3>
           <span class="field-effect-note">Independent</span>
         </div>
-        <div class="effect-swatch-grid" role="group" aria-label="Room effects">
-          <button
-            v-for="room in roomPalette"
-            :key="room.kind"
-            type="button"
-            class="effect-swatch"
-            :class="{ 'is-active': roomIsActive(room.kind) }"
-            :aria-pressed="roomIsActive(room.kind)"
-            :disabled="!canEditMap"
-            :title="room.rules"
-            :style="{ '--effect-color': room.color }"
-            @click="emit('toggle-room', room.kind)"
-          >
-            <span class="effect-swatch__icon">{{ room.shortLabel }}</span>
-            <span class="effect-swatch__label">{{ room.label }}</span>
-          </button>
-        </div>
+        <FieldEffectSwatchGrid
+          aria-label="Room effects"
+          :effects="roomPalette"
+          :is-active="roomIsActive"
+          :disabled="!canEditMap"
+          @select="toggleRoom"
+        />
         <div v-if="activeRoomEffects.length" class="effect-chip-list">
           <article
             v-for="effect in activeRoomEffects"
@@ -352,71 +326,6 @@ input:disabled {
 .field-effect-empty {
   margin: 0.5rem 0 0;
   line-height: 1.35;
-}
-
-.effect-swatch-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.4rem;
-}
-
-.effect-swatch-grid--weather {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.effect-swatch {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: center;
-  gap: 0.45rem;
-  border: 1px solid var(--rule-soft);
-  border-radius: 10px;
-  background: var(--paper);
-  color: var(--ink);
-  padding: 0.45rem;
-  cursor: pointer;
-  font: inherit;
-  text-align: left;
-  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
-}
-
-.effect-swatch:hover:not(:disabled) {
-  border-color: color-mix(in srgb, var(--effect-color) 55%, var(--rule-strong));
-  background: var(--paper-hover);
-}
-
-.effect-swatch:disabled {
-  cursor: default;
-  opacity: 0.8;
-}
-
-.effect-swatch.is-active {
-  border-color: color-mix(in srgb, var(--effect-color) 72%, var(--accent));
-  background: color-mix(in srgb, var(--effect-color) 16%, var(--paper));
-}
-
-.effect-swatch__icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.65rem;
-  min-height: 1.9rem;
-  border: 1px solid color-mix(in srgb, var(--effect-color) 65%, #1d2021);
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--effect-color) 20%, transparent);
-  color: color-mix(in srgb, var(--effect-color) 78%, #fbf1c7);
-  font-size: 0.68rem;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.effect-swatch__label {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 0.76rem;
-  letter-spacing: 0.03em;
 }
 
 .effect-chip-list {

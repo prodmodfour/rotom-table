@@ -2267,3 +2267,13 @@
   - `npm test` — passes: 99 test files / 370 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: field-effect swatch grid component
+
+- Extracted repeated weather/terrain/room swatch-button markup and styles from `FieldEffectsPanel` into `components/map/FieldEffectSwatchGrid.vue`.
+- Kept `FieldEffectsPanel` responsible for typed map-effect event routing while the new component owns generic swatch presentation, active styling, tooltips, and ARIA group semantics.
+- Preserved weather set behavior, terrain/room toggle behavior, disabled map-edit gating, and effect-color styling.
+- Quality gates after this phase:
+  - `npm test` — passes: 99 test files / 370 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
