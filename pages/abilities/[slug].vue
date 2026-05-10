@@ -15,21 +15,7 @@ useHead(() => ({
 
 <template>
   <ReferenceDetailShell back-to="/abilities" back-label="← All abilities">
-      <article v-if="ability" class="panel-card">
-        <ReferenceDetailHeading :title="ability.name">
-          <template #pills>
-            <span v-if="ability.frequency" class="badge">{{ ability.frequency }}</span>
-          </template>
-        </ReferenceDetailHeading>
-
-        <ReferenceFieldBlock v-if="ability.trigger" title="Trigger">
-          <p>{{ ability.trigger }}</p>
-        </ReferenceFieldBlock>
-
-        <ReferenceFieldBlock v-if="ability.effect" title="Effect">
-          <p>{{ ability.effect }}</p>
-        </ReferenceFieldBlock>
-      </article>
+      <AbilityDetailArticle v-if="ability" :ability="ability" />
 
       <ReferenceNotFoundCard
         v-else
