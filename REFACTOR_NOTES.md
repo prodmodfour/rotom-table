@@ -2593,3 +2593,12 @@
   - `npm test` — passes: 102 test files / 381 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: map admin header component
+
+- Extracted the map admin modal heading and close button into `components/map/MapAdminHeader.vue`.
+- Reduced `MapAdminPanel` to modal orchestration plus ground-level controls while preserving the Ctrl+Shift+A copy, title ID, close action, and header styling.
+- Quality gates after this phase:
+  - `npm test` — passes: 102 test files / 381 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
