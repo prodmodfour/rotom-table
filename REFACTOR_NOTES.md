@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; sheet library new-sheet creation state is now isolated, but small UI/helper cleanup remains and the refactor is not marked complete.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; map library new-map creation state is now isolated, but small UI/helper cleanup remains and the refactor is not marked complete.
 
 ## Phase 0 baseline audit
 
@@ -2861,5 +2861,18 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; sheet library new-sheet c
 - Quality gates after this phase:
   - `npm test -- tests/composables/library/useSheetLibraryCreation.test.ts` — passes: 1 test file / 4 tests.
   - `npm test` — passes: 107 test files / 400 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: map library creation composable
+
+- Extracted map library new-map creation state into `composables/library/useMapLibraryCreation.ts`.
+  - The composable owns GM/busy gating, shared create busy/error refs, `/api/maps/create` lifecycle orchestration through injected callbacks, map-summary insertion, navigation callback boundaries, and normalized create errors.
+- Updated `pages/maps/index.vue` to inject the concrete map-create request, local summary update, and map-editor navigation while preserving current-folder placement, `clientId` payloads, shared New map/New folder disabled state, intro-panel error behavior, and map-card routes.
+- Added `tests/composables/library/useMapLibraryCreation.test.ts` covering successful create/navigation, injected shared busy/error state, blocked creation, and normalized creation errors.
+- Next remaining phase: continue one small bounded cleanup pass on remaining library/map/reference presentation or helper duplication; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/composables/library/useMapLibraryCreation.test.ts tests/composables/library/useLibraryFolderCreation.test.ts` — passes: 2 test files / 8 tests.
+  - `npm test` — passes: 108 test files / 404 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

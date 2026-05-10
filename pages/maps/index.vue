@@ -37,6 +37,7 @@ import { useLibraryDragDrop } from '~/composables/library/useLibraryDragDrop'
 import { useLibraryDropMove } from '~/composables/library/useLibraryDropMove'
 import { useLibraryFolderCreation } from '~/composables/library/useLibraryFolderCreation'
 import { useLibraryFolderNavigation } from '~/composables/library/useLibraryFolderNavigation'
+import { useMapLibraryCreation } from '~/composables/library/useMapLibraryCreation'
 import { useWindowKeydown } from '~/composables/useWindowKeydown'
 import { isEscapeKey } from '~/utils/keyboardShortcuts'
 import { mapEditorPath, mapLibraryPath } from '~/utils/mapRoutes'
@@ -198,23 +199,19 @@ const { moving, moveError, onDrop } = useLibraryDropMove<DragPayload>({
   movePayload: performMove,
 })
 
-const createNewMap = async () => {
-  if (!isGm.value || creating.value) return
-  creating.value = true
-  createError.value = null
-  try {
-    const result = await $fetch<{ map: TabletopMap }>('/api/maps/create', {
-      method: 'POST',
-      body: { folder: currentPath.value, clientId },
-    })
-    maps.set(result.map.slug, tabletopMapToSummary(result.map))
-    router.push(mapEditorPath(result.map.slug))
-  } catch (err: unknown) {
-    createError.value = getErrorMessage(err)
-  } finally {
-    creating.value = false
-  }
-}
+const { createNewMap } = useMapLibraryCreation({
+  canCreate: isGm,
+  currentPath,
+  state: { creating, createError },
+  createMap: (folder) => $fetch<{ map: TabletopMap }>('/api/maps/create', {
+    method: 'POST',
+    body: { folder, clientId },
+  }),
+  onCreated: (map) => maps.set(map.slug, tabletopMapToSummary(map)),
+  navigateToMap: (slug) => {
+    void router.push(mapEditorPath(slug))
+  },
+})
 
 type CtxTarget = { type: 'map'; item: MapSummary } | { type: 'folder'; tile: FolderTile }
 
