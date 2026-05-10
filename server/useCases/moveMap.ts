@@ -4,16 +4,9 @@ import { join, sep } from 'node:path'
 import { mapChannel, mapsChannel, type RealtimeEvent } from '~/shared/realtime'
 import type { TabletopMap } from '~/types/map'
 import { relativeToProjectRoot } from '../utils/fsPaths'
-import {
-  MAPS_ROOT,
-  SLUG_RE,
-  findMapFile,
-  pruneEmptyMapParents,
-  readMapFile,
-  sanitizeMapFolderPath,
-  summarizeMap,
-  writeMapFile,
-} from '../utils/mapStorage'
+import { findMapFile, readMapFile, writeMapFile } from '../utils/mapStorage'
+import { MAPS_ROOT, SLUG_RE, pruneEmptyMapParents, sanitizeMapFolderPath } from '../utils/mapPaths'
+import { summarizeMap } from '../utils/mapSummaries'
 
 export class MoveMapUseCaseError extends UseCaseHttpError<400 | 404 | 409> {}
 

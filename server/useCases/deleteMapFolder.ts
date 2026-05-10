@@ -3,7 +3,7 @@ import { existsSync, rmSync, statSync } from 'node:fs'
 import { join, sep } from 'node:path'
 import { mapsChannel, type RealtimeEvent } from '~/shared/realtime'
 import { relativeToProjectRoot } from '../utils/fsPaths'
-import { MAPS_ROOT, pruneEmptyMapParents, sanitizeMapFolderPath } from '../utils/mapStorage'
+import { MAPS_ROOT, pruneEmptyMapParents, sanitizeMapFolderPath } from '../utils/mapPaths'
 
 export class DeleteMapFolderUseCaseError extends UseCaseHttpError<400 | 404> {}
 

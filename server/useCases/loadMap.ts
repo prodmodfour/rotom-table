@@ -1,7 +1,8 @@
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 import type { AuthRole } from '~/shared/auth'
 import type { TabletopMap } from '~/types/map'
-import { SLUG_RE, findMapFile, readMapFile } from '../utils/mapStorage'
+import { findMapFile, readMapFile } from '../utils/mapStorage'
+import { SLUG_RE } from '../utils/mapPaths'
 
 export class LoadMapUseCaseError extends UseCaseHttpError<400 | 403 | 404> {}
 

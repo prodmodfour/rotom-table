@@ -4,15 +4,9 @@ import { existsSync, renameSync } from 'node:fs'
 import { mapChannel, mapsChannel, type RealtimeEvent } from '~/shared/realtime'
 import type { TabletopMap } from '~/types/map'
 import { relativeToProjectRoot } from '../utils/fsPaths'
-import {
-  SLUG_RE,
-  allocateSlug,
-  findMapFile,
-  readMapFile,
-  slugify,
-  summarizeMap,
-  writeMapFile,
-} from '../utils/mapStorage'
+import { allocateSlug, findMapFile, readMapFile, writeMapFile } from '../utils/mapStorage'
+import { SLUG_RE, slugify } from '../utils/mapPaths'
+import { summarizeMap } from '../utils/mapSummaries'
 
 export class RenameMapUseCaseError extends UseCaseHttpError<400 | 404 | 409> {}
 

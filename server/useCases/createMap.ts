@@ -2,14 +2,9 @@ import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { join } from 'node:path'
 import { mapsChannel, type RealtimeEvent } from '~/shared/realtime'
 import type { GridDimensions, TabletopMap } from '~/types/map'
-import {
-  MAPS_ROOT,
-  allocateSlug,
-  ensureMapsRoot,
-  sanitizeMapFolderPath,
-  summarizeMap,
-  writeMapFile,
-} from '../utils/mapStorage'
+import { allocateSlug, writeMapFile } from '../utils/mapStorage'
+import { MAPS_ROOT, ensureMapsRoot, sanitizeMapFolderPath } from '../utils/mapPaths'
+import { summarizeMap } from '../utils/mapSummaries'
 
 export class CreateMapUseCaseError extends UseCaseHttpError<400> {}
 

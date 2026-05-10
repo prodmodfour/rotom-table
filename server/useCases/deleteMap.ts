@@ -3,7 +3,8 @@ import { unlinkSync } from 'node:fs'
 import { sep } from 'node:path'
 import { mapChannel, mapsChannel, type RealtimeEvent } from '~/shared/realtime'
 import { relativeToProjectRoot } from '../utils/fsPaths'
-import { MAPS_ROOT, SLUG_RE, findMapFile, pruneEmptyMapParents } from '../utils/mapStorage'
+import { findMapFile } from '../utils/mapStorage'
+import { MAPS_ROOT, SLUG_RE, pruneEmptyMapParents } from '../utils/mapPaths'
 
 export class DeleteMapUseCaseError extends UseCaseHttpError<400 | 404> {}
 

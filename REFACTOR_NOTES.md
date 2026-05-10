@@ -3588,3 +3588,22 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
   - `npm test` — passes: 149 test files / 578 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: map storage path/summary split
+
+- Split map filesystem path concerns from `server/utils/mapStorage.ts` into `server/utils/mapPaths.ts`.
+  - `mapPaths` now owns the maps root, slug/folder validation exports, path-derived folder labels, path labels, root creation, pruning, and map slugification helpers.
+- Split map summary construction/sorting into `server/utils/mapSummaries.ts`.
+  - `mapStorage` now focuses on map-file discovery, JSON parse/read/write, recursive map listing, folder listing, and slug allocation.
+- Updated map use cases to depend on the focused path/summary helpers instead of importing those concerns through map storage.
+- Preserved existing map root, slug/folder validation behavior, path-derived `folder` semantics, list sorting by folder/name, summary response shape, and JSON write formatting.
+- Added tests:
+  - `tests/server/mapPaths.test.ts`
+  - `tests/server/mapSummaries.test.ts`
+- Next remaining phase: continue one bounded cleanup pass, with candidates including another focused storage split, map-editor/helper extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/server/mapPaths.test.ts tests/server/mapSummaries.test.ts tests/server/mapNormalization.test.ts tests/server/createMap.test.ts tests/server/loadMap.test.ts` — passes: 5 test files / 19 tests.
+  - `npm run typecheck` — passes.
+  - `npm test` — passes: 151 test files / 584 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

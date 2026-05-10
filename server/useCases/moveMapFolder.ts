@@ -2,7 +2,7 @@ import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { existsSync, mkdirSync, renameSync, statSync } from 'node:fs'
 import { dirname, join, sep } from 'node:path'
 import { mapsChannel, type RealtimeEvent } from '~/shared/realtime'
-import { MAPS_ROOT, pruneEmptyMapParents, sanitizeMapFolderPath } from '../utils/mapStorage'
+import { MAPS_ROOT, pruneEmptyMapParents, sanitizeMapFolderPath } from '../utils/mapPaths'
 
 export class MoveMapFolderUseCaseError extends UseCaseHttpError<400 | 404 | 409> {}
 

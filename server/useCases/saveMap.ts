@@ -4,13 +4,9 @@ import { normalizeMapFieldEffects } from '~/utils/mapFieldEffects'
 import type { AuthRole } from '~/shared/auth'
 import type { TabletopMap } from '~/types/map'
 import { relativeToProjectRoot } from '../utils/fsPaths'
-import {
-  findMapFile,
-  folderFromPath,
-  readMapFile,
-  summarizeMap,
-  writeMapFile,
-} from '../utils/mapStorage'
+import { findMapFile, readMapFile, writeMapFile } from '../utils/mapStorage'
+import { folderFromPath } from '../utils/mapPaths'
+import { summarizeMap } from '../utils/mapSummaries'
 import { normalizeMapGroundLevelY } from '../utils/mapNormalization'
 import { sheetIsPlayerAccessible } from '../utils/sheetStorage'
 import {
