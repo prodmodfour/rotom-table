@@ -19,7 +19,11 @@
 import { getCurrentInstance, onBeforeUnmount, ref, watch, type Ref } from 'vue'
 import { getClientId } from '~/utils/clientId'
 import { sheetChannel } from '~/shared/realtime'
-import { createDebouncedAutosaveTask, createLatestSaveGuard } from '~/utils/autosave'
+import {
+  createAutosaveSnapshotTracker,
+  createDebouncedAutosaveTask,
+  createLatestSaveGuard,
+} from '~/utils/autosave'
 import { deepCloneJson, stableJsonStringify } from '~/utils/serialization'
 import { getErrorMessage } from '~/utils/errorMessages'
 import { subscribeChannel } from './useRealtime'
@@ -62,11 +66,11 @@ export function useEditableSheet<T extends { slug: string }>(
   }
 
   const jsonFor = (value: T): string => stableJsonStringify(toPersistedPayload(value))
-  const hasUnsavedChanges = (): boolean => jsonFor(sheet.value) !== lastServerJson
-
   // Mirrors what's persisted on disk; used by the deep watcher to skip
   // saves when the only change came from an SSE update.
-  let lastServerJson = jsonFor(initial)
+  const serverSnapshot = createAutosaveSnapshotTracker(jsonFor, initial)
+  const hasUnsavedChanges = (): boolean => serverSnapshot.isDirty(sheet.value)
+
   const saveGuard = createLatestSaveGuard()
   const saveTask = createDebouncedAutosaveTask(() => performSave(), debounceMs)
 
@@ -77,7 +81,7 @@ export function useEditableSheet<T extends { slug: string }>(
   const performSave = async () => {
     const payload = toPersistedPayload(sheet.value)
     const payloadJson = stableJsonStringify(payload)
-    if (payloadJson === lastServerJson) {
+    if (serverSnapshot.isCleanJson(payloadJson)) {
       if (saveStatus.value === 'saving') saveStatus.value = 'saved'
       return
     }
@@ -90,7 +94,7 @@ export function useEditableSheet<T extends { slug: string }>(
         method: 'POST',
         body: { kind, slug: sheet.value.slug, sheet: payload, clientId },
       })
-      lastServerJson = payloadJson
+      serverSnapshot.markCleanJson(payloadJson)
       if (saveGuard.isLatest(seq)) saveStatus.value = 'saved'
     } catch (err: unknown) {
       if (!saveGuard.isLatest(seq)) return
@@ -107,7 +111,7 @@ export function useEditableSheet<T extends { slug: string }>(
   watch(
     sheet,
     (current) => {
-      if (jsonFor(current) === lastServerJson) return
+      if (serverSnapshot.isClean(current)) return
       saveStatus.value = 'saving'
       saveTask.schedule()
     },
@@ -125,7 +129,7 @@ export function useEditableSheet<T extends { slug: string }>(
         | undefined
       if (event.type === 'updated' && payload?.sheet) {
         const incoming = deepCloneJson(payload.sheet)
-        lastServerJson = jsonFor(incoming)
+        serverSnapshot.markClean(incoming)
         sheet.value = incoming
         saveStatus.value = 'saved'
       }
@@ -168,7 +172,7 @@ export function useEditableSheet<T extends { slug: string }>(
 
     // If the browser accepted the unload request, treat this tab as clean so
     // `beforeunload` + `pagehide` don't queue duplicate writes.
-    lastServerJson = payloadJson
+    serverSnapshot.markCleanJson(payloadJson)
     saveStatus.value = 'saved'
   }
 

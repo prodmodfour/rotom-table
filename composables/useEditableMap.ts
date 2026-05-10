@@ -22,7 +22,11 @@
 import { onBeforeUnmount, ref, watch, type Ref } from 'vue'
 import { getClientId } from '~/utils/clientId'
 import { mapChannel } from '~/shared/realtime'
-import { createDebouncedAutosaveTask, createLatestSaveGuard } from '~/utils/autosave'
+import {
+  createAutosaveSnapshotTracker,
+  createDebouncedAutosaveTask,
+  createLatestSaveGuard,
+} from '~/utils/autosave'
 import { deepCloneJson, sameJsonValue, stableJsonStringify } from '~/utils/serialization'
 import { getErrorMessage } from '~/utils/errorMessages'
 import { useRealtimeChannel } from './useRealtime'
@@ -46,7 +50,7 @@ export const useEditableMap = (slug: string, debounceMs = 200): UseEditableMapRe
   const error = ref<string | null>(null)
   const renamedTo = ref<string | null>(null)
 
-  let lastServerJson = ''
+  const serverSnapshot = createAutosaveSnapshotTracker<TabletopMap>(stableJsonStringify)
   const clientId = getClientId()
   const saveGuard = createLatestSaveGuard()
   const saveTask = createDebouncedAutosaveTask(() => performSave(), debounceMs)
@@ -122,7 +126,7 @@ export const useEditableMap = (slug: string, debounceMs = 200): UseEditableMapRe
       })
       if (!saveGuard.isLatest(seq)) return
       // Adopt the persisted version (server stamps `updatedAt`).
-      lastServerJson = stableJsonStringify(result.map)
+      serverSnapshot.markClean(result.map)
       // Splice in the new updatedAt without disturbing other fields the
       // user may have edited mid-flight.
       if (map.value) map.value.updatedAt = result.map.updatedAt
@@ -144,7 +148,7 @@ export const useEditableMap = (slug: string, debounceMs = 200): UseEditableMapRe
     error.value = null
     try {
       const data = await $fetch<{ map: TabletopMap }>('/api/maps/load', { params: { slug } })
-      lastServerJson = stableJsonStringify(data.map)
+      serverSnapshot.markClean(data.map)
       applyServerMap(data.map)
       status.value = 'idle'
     } catch (err: unknown) {
@@ -164,8 +168,7 @@ export const useEditableMap = (slug: string, debounceMs = 200): UseEditableMapRe
     map,
     (current) => {
       if (!current) return
-      const json = stableJsonStringify(current)
-      if (json === lastServerJson) return
+      if (serverSnapshot.isClean(current)) return
       status.value = 'saving'
       saveTask.schedule()
     },
@@ -176,7 +179,7 @@ export const useEditableMap = (slug: string, debounceMs = 200): UseEditableMapRe
     if (event.clientId === clientId) return
     if (event.type === 'updated' && event.data) {
       const incoming = event.data as TabletopMap
-      lastServerJson = stableJsonStringify(incoming)
+      serverSnapshot.markClean(incoming)
       applyServerMap(incoming)
       status.value = 'idle'
     } else if (event.type === 'deleted') {
@@ -189,7 +192,7 @@ export const useEditableMap = (slug: string, debounceMs = 200): UseEditableMapRe
       // gone) and let the page navigate to the new URL.
       saveTask.cancel()
       if (payload.map) {
-        lastServerJson = stableJsonStringify(payload.map)
+        serverSnapshot.markClean(payload.map)
         applyServerMap(payload.map)
       }
       status.value = 'idle'

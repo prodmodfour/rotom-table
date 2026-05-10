@@ -1,5 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { createDebouncedAutosaveTask, createLatestSaveGuard } from '~/utils/autosave'
+import {
+  createAutosaveSnapshotTracker,
+  createDebouncedAutosaveTask,
+  createLatestSaveGuard,
+} from '~/utils/autosave'
 
 describe('createDebouncedAutosaveTask', () => {
   afterEach(() => {
@@ -70,5 +74,37 @@ describe('createLatestSaveGuard', () => {
     expect(guard.current()).toBe(second)
     expect(guard.isLatest(first)).toBe(false)
     expect(guard.isLatest(second)).toBe(true)
+  })
+})
+
+describe('createAutosaveSnapshotTracker', () => {
+  const serialize = (value: { name: string; count?: number }) => JSON.stringify(value)
+
+  it('starts empty when no initial value is provided', () => {
+    const tracker = createAutosaveSnapshotTracker(serialize)
+
+    expect(tracker.currentJson()).toBe('')
+    expect(tracker.isDirty({ name: 'map' })).toBe(true)
+  })
+
+  it('tracks clean and dirty values through the provided serializer', () => {
+    const tracker = createAutosaveSnapshotTracker(serialize, { name: 'sheet', count: 1 })
+
+    expect(tracker.isClean({ name: 'sheet', count: 1 })).toBe(true)
+    expect(tracker.isDirty({ name: 'sheet', count: 2 })).toBe(true)
+
+    const json = tracker.markClean({ name: 'sheet', count: 2 })
+    expect(json).toBe('{"name":"sheet","count":2}')
+    expect(tracker.currentJson()).toBe(json)
+    expect(tracker.isClean({ name: 'sheet', count: 2 })).toBe(true)
+  })
+
+  it('can adopt a precomputed serialized payload', () => {
+    const tracker = createAutosaveSnapshotTracker(serialize, { name: 'old' })
+    const nextJson = '{"name":"new"}'
+
+    expect(tracker.markCleanJson(nextJson)).toBe(nextJson)
+    expect(tracker.isCleanJson(nextJson)).toBe(true)
+    expect(tracker.isClean({ name: 'new' })).toBe(true)
   })
 })
