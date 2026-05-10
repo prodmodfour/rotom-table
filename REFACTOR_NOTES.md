@@ -2039,3 +2039,13 @@
   - `npm test` — passes: 91 test files / 343 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: reference tooltip component extraction
+
+- Extracted rich reference-link tooltip markup and scoped styles from `components/RefLink.vue` into `components/reference/ReferenceTooltip.vue`.
+- Kept `RefLink` focused on reference target lookup, tooltip positioning lifecycle, and link fallback behavior while the new component owns tooltip presentation for move/ability/capability/condition metadata.
+- Preserved Teleport rendering, anchored tooltip positioning, type/damage-class badges, section copy, ready/placement classes, and accessibility role/id wiring.
+- Quality gates after this phase:
+  - `npm test` — passes: 91 test files / 343 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
