@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import BuildToolToggle from '~/components/map/BuildToolToggle.vue'
+import TerrainColorPicker from '~/components/map/TerrainColorPicker.vue'
 import TerrainMaterialGrid from '~/components/map/TerrainMaterialGrid.vue'
 import type { VoxelMaterialDef } from '~/utils/voxels'
 import type { BuildTool } from '~/shared/mapEditor'
@@ -38,24 +39,12 @@ const emit = defineEmits<{
     @select-material="emit('select-material', $event)"
   />
 
-  <div class="color-row">
-    <label class="color-picker">
-      <span>Custom color</span>
-      <input
-        type="color"
-        :value="colorPickerValue"
-        @input="emit('color-input', $event)"
-      />
-    </label>
-    <button
-      v-if="buildColor"
-      type="button"
-      class="ghost-button"
-      @click="emit('clear-custom-color')"
-    >
-      Reset
-    </button>
-  </div>
+  <TerrainColorPicker
+    :color-picker-value="colorPickerValue"
+    :has-custom-color="Boolean(buildColor)"
+    @color-input="emit('color-input', $event)"
+    @clear-custom-color="emit('clear-custom-color')"
+  />
 
   <p class="hint">
     Left click to {{ buildTool === 'pencil' ? 'place' : 'erase' }}, right click to
@@ -83,54 +72,6 @@ const emit = defineEmits<{
 </template>
 
 <style scoped>
-.color-row {
-  display: flex;
-  align-items: flex-end;
-  gap: 0.5rem;
-}
-
-.color-picker {
-  flex: 1 1 auto;
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-}
-
-.color-picker span {
-  font-size: 0.78rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--ink-muted);
-}
-
-.color-picker input[type='color'] {
-  width: 100%;
-  height: 38px;
-  padding: 0;
-  border: 1px solid var(--rule-soft);
-  border-radius: 10px;
-  background: var(--paper);
-  cursor: pointer;
-}
-
-.ghost-button {
-  border: 1px solid var(--rule-soft);
-  border-radius: 10px;
-  background: var(--paper);
-  color: var(--ink-soft);
-  padding: 0.5rem 0.7rem;
-  cursor: pointer;
-  font: inherit;
-  font-size: 0.78rem;
-  letter-spacing: 0.04em;
-  white-space: nowrap;
-}
-
-.ghost-button:hover {
-  border-color: var(--rule-strong);
-  color: var(--ink-bright);
-}
-
 .hint {
   margin: 0;
   color: var(--ink-muted);
