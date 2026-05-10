@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import HazardBuilderControls from '~/components/map/HazardBuilderControls.vue'
 import LayerVisibilityControls from '~/components/map/LayerVisibilityControls.vue'
+import MapEditorModeToggle from '~/components/map/MapEditorModeToggle.vue'
 import TerrainBuilderControls from '~/components/map/TerrainBuilderControls.vue'
 import type { VoxelMaterialDef } from '~/utils/voxels'
 import type { BuildTool } from '~/shared/mapEditor'
@@ -67,35 +68,12 @@ const emit = defineEmits<{
     </div>
 
     <div id="map-terrain-section" v-show="!collapsed" class="collapsible-section-body">
-      <div v-if="canEditMap" class="mode-row" role="group" aria-label="Editor mode">
-        <button
-          type="button"
-          class="mode-button"
-          :class="{ 'is-active': !buildMode && !hazardMode }"
-          :aria-pressed="!buildMode && !hazardMode"
-          @click="emit('set-mode', 'play')"
-        >
-          Play
-        </button>
-        <button
-          type="button"
-          class="mode-button"
-          :class="{ 'is-active': buildMode }"
-          :aria-pressed="buildMode"
-          @click="emit('set-mode', 'build')"
-        >
-          Build
-        </button>
-        <button
-          type="button"
-          class="mode-button"
-          :class="{ 'is-active': hazardMode }"
-          :aria-pressed="hazardMode"
-          @click="emit('set-mode', 'hazards')"
-        >
-          Hazards
-        </button>
-      </div>
+      <MapEditorModeToggle
+        v-if="canEditMap"
+        :build-mode="buildMode"
+        :hazard-mode="hazardMode"
+        @set-mode="emit('set-mode', $event)"
+      />
       <p v-else class="permission-note">
         Terrain editing is GM-only.
       </p>
@@ -252,35 +230,6 @@ const emit = defineEmits<{
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-}
-
-.mode-row {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.4rem;
-}
-
-.mode-button {
-  border: 1px solid var(--rule-soft);
-  border-radius: 10px;
-  background: var(--paper);
-  color: var(--ink);
-  padding: 0.55rem 0.8rem;
-  cursor: pointer;
-  font: inherit;
-  letter-spacing: 0.04em;
-  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
-}
-
-.mode-button:hover {
-  border-color: var(--rule-strong);
-  background: var(--paper-hover);
-}
-
-.mode-button.is-active {
-  border-color: var(--accent);
-  background: var(--accent-soft);
-  color: var(--accent);
 }
 
 </style>

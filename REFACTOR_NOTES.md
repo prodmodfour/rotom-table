@@ -2238,3 +2238,13 @@
   - `npm test` — passes: 99 test files / 370 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: map editor mode toggle component
+
+- Extracted the Terrain/Hazards panel's Play/Build/Hazards mode selector into `components/map/MapEditorModeToggle.vue` with a focused `set-mode` emit.
+- Removed mode-button styles from `TerrainHazardsPanel`, leaving it as a panel chrome/composition component over the mode toggle plus terrain, layer, and hazard controls.
+- Preserved active mode highlighting, ARIA pressed state, and editor mode event wiring.
+- Quality gates after this phase:
+  - `npm test` — passes: 99 test files / 370 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
