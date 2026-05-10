@@ -2639,3 +2639,12 @@
   - `npm test` — passes: 103 test files / 383 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: library context menu header
+
+- Extracted the reusable library context-menu target heading into `components/library/LibraryContextMenuHeader.vue`.
+- Reduced `LibraryContextMenu` to mode/focus orchestration and action/form rendering while preserving target-kind/label output, truncation, and header styling.
+- Quality gates after this phase:
+  - `npm test` — passes: 103 test files / 383 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
