@@ -25,6 +25,7 @@ import {
   createAutosaveStatusController,
   createDebouncedAutosaveTask,
   createLatestSaveGuard,
+  runLatestAutosave,
   sendJsonWithUnloadFallback,
 } from '~/utils/autosave'
 import { deepCloneJson, stableJsonStringify } from '~/utils/serialization'
@@ -93,19 +94,19 @@ export function useEditableSheet<T extends { slug: string }>(
       return
     }
 
-    const seq = saveGuard.begin()
-    autosaveStatus.markSaving()
-    try {
-      await $fetch('/api/sheets/save', {
-        method: 'POST',
-        body: { kind, slug: sheet.value.slug, sheet: payload, clientId },
-      })
-      serverSnapshot.markCleanJson(payloadJson)
-      if (saveGuard.isLatest(seq)) autosaveStatus.markSaved()
-    } catch (err: unknown) {
-      if (!saveGuard.isLatest(seq)) return
-      autosaveStatus.markError(err, { logPrefix: '[useEditableSheet] save failed' })
-    }
+    await runLatestAutosave({
+      guard: saveGuard,
+      status: autosaveStatus,
+      save: () =>
+        $fetch('/api/sheets/save', {
+          method: 'POST',
+          body: { kind, slug: sheet.value.slug, sheet: payload, clientId },
+        }),
+      onSuccess: () => {
+        serverSnapshot.markCleanJson(payloadJson)
+      },
+      error: { logPrefix: '[useEditableSheet] save failed' },
+    })
   }
 
   const saveNow = async () => {

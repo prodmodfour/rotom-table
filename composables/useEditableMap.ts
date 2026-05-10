@@ -27,6 +27,7 @@ import {
   createAutosaveStatusController,
   createDebouncedAutosaveTask,
   createLatestSaveGuard,
+  runLatestAutosave,
 } from '~/utils/autosave'
 import { deepCloneJson, sameJsonValue, stableJsonStringify } from '~/utils/serialization'
 import { useRealtimeChannel } from './useRealtime'
@@ -119,25 +120,26 @@ export const useEditableMap = (slug: string, debounceMs = 200): UseEditableMapRe
 
   const performSave = async () => {
     if (!map.value) return
-    const seq = saveGuard.begin()
     const snapshot: TabletopMap = JSON.parse(JSON.stringify(map.value))
-    autosaveStatus.markSaving()
-    try {
-      const result = await $fetch<{ map: TabletopMap }>('/api/maps/save', {
-        method: 'POST',
-        body: { slug, map: snapshot, clientId },
-      })
-      if (!saveGuard.isLatest(seq)) return
-      // Adopt the persisted version (server stamps `updatedAt`).
-      serverSnapshot.markClean(result.map)
-      // Splice in the new updatedAt without disturbing other fields the
-      // user may have edited mid-flight.
-      if (map.value) map.value.updatedAt = result.map.updatedAt
-      autosaveStatus.markSaved()
-    } catch (err: unknown) {
-      if (!saveGuard.isLatest(seq)) return
-      autosaveStatus.markError(err, { logPrefix: '[useEditableMap] save failed' })
-    }
+
+    await runLatestAutosave({
+      guard: saveGuard,
+      status: autosaveStatus,
+      save: () =>
+        $fetch<{ map: TabletopMap }>('/api/maps/save', {
+          method: 'POST',
+          body: { slug, map: snapshot, clientId },
+        }),
+      onSuccess: (result, { latest }) => {
+        if (!latest) return
+        // Adopt the persisted version (server stamps `updatedAt`).
+        serverSnapshot.markClean(result.map)
+        // Splice in the new updatedAt without disturbing other fields the
+        // user may have edited mid-flight.
+        if (map.value) map.value.updatedAt = result.map.updatedAt
+      },
+      error: { logPrefix: '[useEditableMap] save failed' },
+    })
   }
 
   const saveNow = async () => {

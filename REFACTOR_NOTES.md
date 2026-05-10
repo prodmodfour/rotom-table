@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; autosave status/error transitions are now shared across editable map and sheet saves. Next candidates include extracting additional autosave save-runner/resource helpers, addressing the documented broader typecheck backlog, or another focused UI/helper duplication cleanup; do not mark the full refactor complete yet.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; autosave save request sequencing/status/error transitions are now shared across editable map and sheet saves. Next candidates include extracting additional autosave resource helpers, addressing the documented broader typecheck backlog, or another focused UI/helper duplication cleanup; do not mark the full refactor complete yet.
 
 ## Phase 0 baseline audit
 
@@ -3283,5 +3283,17 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; autosave status/error tra
 - Quality gates after this phase:
   - `npm test -- tests/utils/autosave.test.ts` — passes: 1 test file / 14 tests.
   - `npm test` — passes: 133 test files / 512 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: shared autosave save runner
+
+- Added `runLatestAutosave` to `utils/autosave.ts` to centralize autosave request sequencing, saving/saved transitions, stale-save suppression, latest-error handling, and resource-specific success/error hooks.
+- Updated `useEditableMap` and `useEditableSheet` to delegate their common save-runner flow to the shared helper while preserving map updatedAt adoption, sheet persisted-payload snapshot marking, clientId echo suppression, debounce behavior, and existing save-error log prefixes.
+- Expanded `tests/utils/autosave.test.ts` to cover latest successful saves, stale-success status suppression, stale-error suppression, and latest-error normalization/logging.
+- Next remaining phase: continue one bounded cleanup pass, with candidates including extracting additional autosave resource helpers, addressing the documented broader typecheck backlog, or another focused UI/helper duplication cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/utils/autosave.test.ts` — passes: 1 test file / 17 tests.
+  - `npm test` — passes: 133 test files / 515 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

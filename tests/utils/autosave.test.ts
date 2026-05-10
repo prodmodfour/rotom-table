@@ -5,6 +5,7 @@ import {
   createAutosaveStatusController,
   createDebouncedAutosaveTask,
   createLatestSaveGuard,
+  runLatestAutosave,
   sendJsonWithUnloadFallback,
 } from '~/utils/autosave'
 
@@ -69,6 +70,125 @@ describe('createAutosaveStatusController', () => {
     expect(controller.markError(null, { fallback: 'Save failed' })).toBe('Custom fallback')
     expect(getErrorMessage).toHaveBeenCalledWith(null, { fallback: 'Save failed' })
     expect(refs.error.value).toBe('Custom fallback')
+  })
+})
+
+describe('runLatestAutosave', () => {
+  type TestStatus = 'idle' | 'saving' | 'saved' | 'error'
+
+  const createRefs = (status: TestStatus = 'idle', error: string | null = null) => ({
+    status: { value: status },
+    error: { value: error },
+  })
+
+  const createDeferred = <T>() => {
+    let resolve!: (value: T) => void
+    let reject!: (error: unknown) => void
+    const promise = new Promise<T>((resolvePromise, rejectPromise) => {
+      resolve = resolvePromise
+      reject = rejectPromise
+    })
+    return { promise, resolve, reject }
+  }
+
+  it('marks saving/saved around the latest successful save', async () => {
+    const refs = createRefs()
+    const controller = createAutosaveStatusController<TestStatus>(refs, {
+      saving: 'saving',
+      saved: 'saved',
+      error: 'error',
+    })
+    const guard = createLatestSaveGuard()
+    const onSuccess = vi.fn()
+
+    const result = await runLatestAutosave({
+      guard,
+      status: controller,
+      save: async () => ({ id: 1 }),
+      onSuccess,
+    })
+
+    expect(result).toMatchObject({ ok: true, result: { id: 1 }, latest: true })
+    expect(onSuccess).toHaveBeenCalledWith({ id: 1 }, { sequence: 1, latest: true })
+    expect(refs.status.value).toBe('saved')
+    expect(refs.error.value).toBeNull()
+  })
+
+  it('reports stale success contexts without overwriting latest status', async () => {
+    const refs = createRefs()
+    const controller = createAutosaveStatusController<TestStatus>(refs, {
+      saving: 'saving',
+      saved: 'saved',
+      error: 'error',
+    })
+    const guard = createLatestSaveGuard()
+    const first = createDeferred<string>()
+    const second = createDeferred<string>()
+    const save = vi.fn<() => Promise<string>>()
+      .mockReturnValueOnce(first.promise)
+      .mockReturnValueOnce(second.promise)
+    const onSuccess = vi.fn()
+
+    const firstRun = runLatestAutosave({ guard, status: controller, save, onSuccess })
+    const secondRun = runLatestAutosave({ guard, status: controller, save, onSuccess })
+
+    first.resolve('older')
+    await expect(firstRun).resolves.toMatchObject({ ok: true, result: 'older', latest: false })
+    expect(refs.status.value).toBe('saving')
+    expect(onSuccess).toHaveBeenLastCalledWith('older', { sequence: 1, latest: false })
+
+    second.resolve('newer')
+    await expect(secondRun).resolves.toMatchObject({ ok: true, result: 'newer', latest: true })
+    expect(refs.status.value).toBe('saved')
+    expect(onSuccess).toHaveBeenLastCalledWith('newer', { sequence: 2, latest: true })
+  })
+
+  it('normalizes only latest save failures into status errors', async () => {
+    const refs = createRefs()
+    const logError = vi.fn()
+    const controller = createAutosaveStatusController<TestStatus>(
+      refs,
+      { saving: 'saving', saved: 'saved', error: 'error' },
+      { logError },
+    )
+    const guard = createLatestSaveGuard()
+    const first = createDeferred<string>()
+    const second = createDeferred<string>()
+    const save = vi.fn<() => Promise<string>>()
+      .mockReturnValueOnce(first.promise)
+      .mockReturnValueOnce(second.promise)
+    const onError = vi.fn()
+    const staleError = new Error('stale failure')
+    const latestError = new Error('latest failure')
+
+    const firstRun = runLatestAutosave({
+      guard,
+      status: controller,
+      save,
+      onError,
+      error: { logPrefix: '[autosave failed]' },
+    })
+    const secondRun = runLatestAutosave({
+      guard,
+      status: controller,
+      save,
+      onError,
+      error: { logPrefix: '[autosave failed]' },
+    })
+
+    first.reject(staleError)
+    await expect(firstRun).resolves.toMatchObject({ ok: false, error: staleError, latest: false })
+    expect(refs.status.value).toBe('saving')
+    expect(refs.error.value).toBeNull()
+    expect(logError).not.toHaveBeenCalled()
+    expect(onError).toHaveBeenLastCalledWith(staleError, { sequence: 1, latest: false })
+
+    second.reject(latestError)
+    await expect(secondRun).resolves.toMatchObject({ ok: false, error: latestError, latest: true })
+    expect(refs.status.value).toBe('error')
+    expect(refs.error.value).toBe('latest failure')
+    expect(logError).toHaveBeenCalledWith('[autosave failed]', latestError)
+    expect(onError).toHaveBeenLastCalledWith(latestError, { sequence: 2, latest: true })
   })
 })
 
