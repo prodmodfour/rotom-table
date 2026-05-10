@@ -2336,3 +2336,12 @@
   - `npm test` — passes: 99 test files / 370 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: initiative vitals component
+
+- Extracted initiative row HP bar, HP tier styling, and condition tag presentation into `components/map/InitiativeVitals.vue`.
+- Reduced `components/map/InitiativeRowItem.vue` so it delegates token vitals to a focused component while preserving HP percentages, fainted styling, and condition badges.
+- Quality gates after this phase:
+  - `npm test` — passes: 99 test files / 370 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
