@@ -32,3 +32,11 @@ export const REALTIME_EVENT_TYPES = [
 ] as const
 
 export type RealtimeEventType = (typeof REALTIME_EVENT_TYPES)[number]
+
+export const normalizeRealtimeClientId = (value: unknown): string | undefined =>
+  typeof value === 'string' ? value : undefined
+
+export const isRealtimeEcho = (
+  event: Pick<RealtimeEvent, 'clientId'> | null | undefined,
+  clientId: string | null | undefined,
+): boolean => typeof clientId === 'string' && event?.clientId === clientId

@@ -18,7 +18,7 @@
  */
 import { getCurrentInstance, onBeforeUnmount, ref, watch, type Ref } from 'vue'
 import { getClientId } from '~/utils/clientId'
-import { sheetChannel } from '~/shared/realtime'
+import { isRealtimeEcho, sheetChannel } from '~/shared/realtime'
 import {
   bindAutosaveUnloadFlushers,
   createAutosaveResourceController,
@@ -125,7 +125,7 @@ export function useEditableSheet<T extends { slug: string }>(
   let unsubscribe: (() => void) | null = null
   if (typeof window !== 'undefined') {
     unsubscribe = subscribeChannel(sheetChannel(kind, initial.slug), (event) => {
-      if (event.clientId === clientId) return
+      if (isRealtimeEcho(event, clientId)) return
       const payload = event.data as
         | { kind?: SheetKind; slug?: string; sheet?: T }
         | undefined

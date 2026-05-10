@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; shared autosave resource controller now bundles editable map/sheet status, snapshot, guard, task, and dirty scheduling setup. Next candidates include extracting another focused autosave helper, addressing the documented broader typecheck backlog, or another small UI/helper duplication cleanup; do not mark the full refactor complete yet.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; realtime client-id normalization and echo suppression are now centralized in shared helpers. Next candidates include extracting another focused autosave helper, addressing the documented broader typecheck backlog, or another small UI/helper duplication cleanup; do not mark the full refactor complete yet.
 
 ## Phase 0 baseline audit
 
@@ -3321,5 +3321,18 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; shared autosave resource 
 - Quality gates after this phase:
   - `npm test -- tests/utils/autosave.test.ts` — passes: 1 test file / 21 tests.
   - `npm test` — passes: 133 test files / 519 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: shared realtime client-id helpers
+
+- Added `normalizeRealtimeClientId` and `isRealtimeEcho` to `shared/realtime.ts` so realtime request adapters and client subscribers share one client-id boundary/echo-suppression rule.
+- Updated editable map/sheet autosave subscribers and map-library realtime application to use the shared echo helper instead of direct `event.clientId === clientId` checks.
+- Updated map and sheet mutation/folder API adapters to normalize optional `clientId` values through the shared helper before passing them into H3-free use cases, preserving string client IDs and dropping non-string request values.
+- Added `tests/shared/realtime.test.ts` covering channel helpers, client-id normalization, and missing-client-id echo behavior.
+- Next remaining phase: continue one bounded cleanup pass, with candidates including extracting another focused autosave helper, addressing the documented broader typecheck backlog, or another UI/helper duplication cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/shared/realtime.test.ts tests/utils/mapLibrary.test.ts tests/composables/library/useMapLibraryData.test.ts` — passes: 3 test files / 14 tests.
+  - `npm test` — passes: 134 test files / 522 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

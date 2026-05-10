@@ -1,4 +1,4 @@
-import { mapsChannel, type RealtimeEvent } from '~/shared/realtime'
+import { isRealtimeEcho, mapsChannel, type RealtimeEvent } from '~/shared/realtime'
 import type { MapSummary, TabletopMap } from '~/types/map'
 import {
   isInsideFolder,
@@ -120,7 +120,7 @@ export const applyMapLibraryRealtimeEvent = (
   event: RealtimeEvent,
   clientId: string,
 ): boolean => {
-  if (event.clientId === clientId) return false
+  if (isRealtimeEcho(event, clientId)) return false
   if (event.channel && event.channel !== mapsChannel) return false
 
   if (event.type === 'created' || event.type === 'updated' || event.type === 'moved') {

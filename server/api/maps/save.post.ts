@@ -3,6 +3,7 @@ import { requireAuthRole } from '../../utils/auth'
 import { publishUseCaseRealtimeEvents, throwUseCaseHttpError } from '../../utils/useCaseHttp'
 import { expectRecord, expectSlug, readObjectBody } from '../../utils/http'
 import { saveMapUseCase } from '../../useCases/saveMap'
+import { normalizeRealtimeClientId } from '~/shared/realtime'
 import type { TabletopMap } from '~/types/map'
 
 interface SaveBody {
@@ -22,7 +23,7 @@ export default defineEventHandler(async (event) => {
       role,
       slug,
       map,
-      clientId: typeof body.clientId === 'string' ? body.clientId : undefined,
+      clientId: normalizeRealtimeClientId(body.clientId),
     })
     publishUseCaseRealtimeEvents(result.events)
     return { ok: true as const, path: result.path, map: result.map }

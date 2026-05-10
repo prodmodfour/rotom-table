@@ -3,11 +3,12 @@ import { requireGm } from '../../utils/auth'
 import { publishUseCaseRealtimeEvents } from '../../utils/useCaseHttp'
 import { expectFolderPath, expectSheetKind, readObjectBody, requireNonProduction } from '../../utils/http'
 import { createSheetUseCase } from '../../useCases/createSheet'
+import { normalizeRealtimeClientId } from '~/shared/realtime'
 
 interface CreateSheetBody {
   kind?: unknown
   folder?: unknown
-  clientId?: string
+  clientId?: unknown
 }
 
 export default defineEventHandler(async (event) => {
@@ -20,7 +21,7 @@ export default defineEventHandler(async (event) => {
   const result = createSheetUseCase({
     kind,
     folder,
-    clientId: typeof body.clientId === 'string' ? body.clientId : undefined,
+    clientId: normalizeRealtimeClientId(body.clientId),
   })
 
   publishUseCaseRealtimeEvents(result.events)

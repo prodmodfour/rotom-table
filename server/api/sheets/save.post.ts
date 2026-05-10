@@ -9,12 +9,13 @@ import {
   requireNonProduction,
 } from '../../utils/http'
 import { saveSheetUseCase } from '../../useCases/saveSheet'
+import { normalizeRealtimeClientId } from '~/shared/realtime'
 
 interface SaveBody {
   kind?: unknown
   slug?: unknown
   sheet?: unknown
-  clientId?: string
+  clientId?: unknown
 }
 
 export default defineEventHandler(async (event) => {
@@ -32,7 +33,7 @@ export default defineEventHandler(async (event) => {
       kind,
       slug,
       sheet,
-      clientId: typeof body.clientId === 'string' ? body.clientId : undefined,
+      clientId: normalizeRealtimeClientId(body.clientId),
     })
     publishUseCaseRealtimeEvents(result.events)
     return { ok: result.ok, path: result.path }

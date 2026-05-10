@@ -10,6 +10,7 @@ import { defineEventHandler, readBody } from 'h3'
 import { requireGm } from '../../utils/auth'
 import { publishUseCaseRealtimeEvents, throwUseCaseHttpError } from '../../utils/useCaseHttp'
 import { deleteMapUseCase } from '../../useCases/deleteMap'
+import { normalizeRealtimeClientId } from '~/shared/realtime'
 
 interface DeleteBody {
   slug?: unknown
@@ -23,7 +24,7 @@ export default defineEventHandler(async (event) => {
   try {
     const result = deleteMapUseCase({
       slug: body?.slug,
-      clientId: typeof body?.clientId === 'string' ? body.clientId : undefined,
+      clientId: normalizeRealtimeClientId(body?.clientId),
     })
     publishUseCaseRealtimeEvents(result.events)
     return {

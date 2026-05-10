@@ -9,12 +9,13 @@ import {
   requireNonProduction,
 } from '../../utils/http'
 import { renameSheetUseCase } from '../../useCases/renameSheet'
+import { normalizeRealtimeClientId } from '~/shared/realtime'
 
 interface RenameBody {
   kind?: unknown
   slug?: unknown
   name?: unknown
-  clientId?: string
+  clientId?: unknown
 }
 
 export default defineEventHandler(async (event) => {
@@ -31,7 +32,7 @@ export default defineEventHandler(async (event) => {
       kind,
       slug,
       name,
-      clientId: typeof body.clientId === 'string' ? body.clientId : undefined,
+      clientId: normalizeRealtimeClientId(body.clientId),
     })
     publishUseCaseRealtimeEvents(result.events)
     return { ok: result.ok, name: result.name, path: result.path }

@@ -21,7 +21,7 @@
  */
 import { onBeforeUnmount, ref, watch, type Ref } from 'vue'
 import { getClientId } from '~/utils/clientId'
-import { mapChannel } from '~/shared/realtime'
+import { isRealtimeEcho, mapChannel } from '~/shared/realtime'
 import { createAutosaveResourceController, runLatestAutosave } from '~/utils/autosave'
 import { deepCloneJson, sameJsonValue, stableJsonStringify } from '~/utils/serialization'
 import { useRealtimeChannel } from './useRealtime'
@@ -171,7 +171,7 @@ export const useEditableMap = (slug: string, debounceMs = 200): UseEditableMapRe
   )
 
   useRealtimeChannel(mapChannel(slug), (event) => {
-    if (event.clientId === clientId) return
+    if (isRealtimeEcho(event, clientId)) return
     if (event.type === 'updated' && event.data) {
       const incoming = event.data as TabletopMap
       autosave.snapshot.markClean(incoming)

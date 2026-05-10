@@ -15,13 +15,14 @@ import { defineEventHandler, readBody } from 'h3'
 import { requireGm } from '../../utils/auth'
 import { publishUseCaseRealtimeEvents, throwUseCaseHttpError } from '../../utils/useCaseHttp'
 import { createMapUseCase } from '../../useCases/createMap'
+import { normalizeRealtimeClientId } from '~/shared/realtime'
 import type { GridDimensions } from '~/types/map'
 
 interface CreateBody {
   name?: unknown
   folder?: unknown
   dimensions?: GridDimensions
-  clientId?: string
+  clientId?: unknown
 }
 
 export default defineEventHandler(async (event) => {
@@ -29,7 +30,10 @@ export default defineEventHandler(async (event) => {
   const body = await readBody<CreateBody | null>(event)
 
   try {
-    const result = createMapUseCase(body ?? {})
+    const result = createMapUseCase({
+      ...(body ?? {}),
+      clientId: normalizeRealtimeClientId(body?.clientId),
+    })
     publishUseCaseRealtimeEvents(result.events)
     return { map: result.map }
   } catch (err) {

@@ -3,11 +3,12 @@ import { requireGm } from '../../utils/auth'
 import { publishUseCaseRealtimeEvents, throwUseCaseHttpError } from '../../utils/useCaseHttp'
 import { expectSheetKind, expectSlug, readObjectBody, requireNonProduction } from '../../utils/http'
 import { deleteSheetUseCase } from '../../useCases/deleteSheet'
+import { normalizeRealtimeClientId } from '~/shared/realtime'
 
 interface DeleteBody {
   kind?: unknown
   slug?: unknown
-  clientId?: string
+  clientId?: unknown
 }
 
 export default defineEventHandler(async (event) => {
@@ -22,7 +23,7 @@ export default defineEventHandler(async (event) => {
     const result = deleteSheetUseCase({
       kind,
       slug,
-      clientId: typeof body.clientId === 'string' ? body.clientId : undefined,
+      clientId: normalizeRealtimeClientId(body.clientId),
     })
     publishUseCaseRealtimeEvents(result.events)
     return { ok: result.ok, path: result.path }

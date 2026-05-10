@@ -9,12 +9,13 @@ import {
   requireNonProduction,
 } from '../../utils/http'
 import { moveSheetUseCase } from '../../useCases/moveSheet'
+import { normalizeRealtimeClientId } from '~/shared/realtime'
 
 interface MoveSheetBody {
   kind?: unknown
   slug?: unknown
   folder?: unknown
-  clientId?: string
+  clientId?: unknown
 }
 
 export default defineEventHandler(async (event) => {
@@ -31,7 +32,7 @@ export default defineEventHandler(async (event) => {
       kind,
       slug,
       folder,
-      clientId: typeof body.clientId === 'string' ? body.clientId : undefined,
+      clientId: normalizeRealtimeClientId(body.clientId),
     })
     publishUseCaseRealtimeEvents(result.events)
     return { ok: result.ok, moved: result.moved, path: result.path }

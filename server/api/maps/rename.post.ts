@@ -16,6 +16,7 @@ import { defineEventHandler, readBody } from 'h3'
 import { requireGm } from '../../utils/auth'
 import { publishUseCaseRealtimeEvents, throwUseCaseHttpError } from '../../utils/useCaseHttp'
 import { renameMapUseCase } from '../../useCases/renameMap'
+import { normalizeRealtimeClientId } from '~/shared/realtime'
 
 interface RenameBody {
   slug?: unknown
@@ -31,7 +32,7 @@ export default defineEventHandler(async (event) => {
     const result = renameMapUseCase({
       slug: body?.slug,
       name: body?.name,
-      clientId: typeof body?.clientId === 'string' ? body.clientId : undefined,
+      clientId: normalizeRealtimeClientId(body?.clientId),
     })
     publishUseCaseRealtimeEvents(result.events)
     return {

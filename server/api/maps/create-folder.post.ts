@@ -10,10 +10,11 @@ import { defineEventHandler, readBody } from 'h3'
 import { requireGm } from '../../utils/auth'
 import { publishUseCaseRealtimeEvents, throwUseCaseHttpError } from '../../utils/useCaseHttp'
 import { createMapFolderUseCase } from '../../useCases/createMapFolder'
+import { normalizeRealtimeClientId } from '~/shared/realtime'
 
 interface CreateFolderBody {
   folder?: string
-  clientId?: string
+  clientId?: unknown
 }
 
 export default defineEventHandler(async (event) => {
@@ -23,7 +24,7 @@ export default defineEventHandler(async (event) => {
   try {
     const result = createMapFolderUseCase({
       folder: body?.folder,
-      clientId: body?.clientId,
+      clientId: normalizeRealtimeClientId(body?.clientId),
     })
     publishUseCaseRealtimeEvents(result.events)
     return {

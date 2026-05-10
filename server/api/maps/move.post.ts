@@ -11,6 +11,7 @@ import { defineEventHandler, readBody } from 'h3'
 import { requireGm } from '../../utils/auth'
 import { publishUseCaseRealtimeEvents, throwUseCaseHttpError } from '../../utils/useCaseHttp'
 import { moveMapUseCase } from '../../useCases/moveMap'
+import { normalizeRealtimeClientId } from '~/shared/realtime'
 
 interface MoveBody {
   slug?: unknown
@@ -26,7 +27,7 @@ export default defineEventHandler(async (event) => {
     const result = moveMapUseCase({
       slug: body?.slug,
       folder: body?.folder,
-      clientId: typeof body?.clientId === 'string' ? body.clientId : undefined,
+      clientId: normalizeRealtimeClientId(body?.clientId),
     })
     publishUseCaseRealtimeEvents(result.events)
     return {
