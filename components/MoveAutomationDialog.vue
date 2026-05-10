@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
+import MoveAutomationDialogFooter from '~/components/move-automation/MoveAutomationDialogFooter.vue'
 import MoveAutomationStepIndicator from '~/components/move-automation/MoveAutomationStepIndicator.vue'
 import { damageFormulaForMove } from '~/utils/moveAutomation'
 import { parseHazardCellText } from '~/utils/moveAutomationDialog'
@@ -274,12 +275,14 @@ const apply = () => emit('apply', transaction.value)
         />
       </template>
 
-      <footer class="move-automation__footer">
-        <button type="button" class="move-automation__button move-automation__button--ghost" @click="emit('close')">Cancel</button>
-        <button v-if="step > 0" type="button" class="move-automation__button move-automation__button--ghost" @click="previousStep">Back</button>
-        <button v-if="step < 2" type="button" class="move-automation__button move-automation__button--primary" :disabled="!canContinue" @click="nextStep">Next</button>
-        <button v-else type="button" class="move-automation__button move-automation__button--primary" @click="apply">Apply transaction</button>
-      </footer>
+      <MoveAutomationDialogFooter
+        :step="step"
+        :can-continue="canContinue"
+        @close="emit('close')"
+        @back="previousStep"
+        @next="nextStep"
+        @apply="apply"
+      />
     </section>
   </div>
 </template>
@@ -310,8 +313,7 @@ const apply = () => emit('apply', transaction.value)
   color: var(--ink);
 }
 
-.move-automation__header,
-.move-automation__footer {
+.move-automation__header {
   flex: 0 0 auto;
   display: flex;
   align-items: center;
@@ -322,12 +324,6 @@ const apply = () => emit('apply', transaction.value)
 
 .move-automation__header {
   justify-content: space-between;
-}
-
-.move-automation__footer {
-  justify-content: flex-end;
-  border-top: 1px solid var(--rule-soft);
-  border-bottom: 0;
 }
 
 .move-automation__eyebrow {
@@ -343,37 +339,17 @@ const apply = () => emit('apply', transaction.value)
   margin: 0;
 }
 
-.move-automation__close,
-.move-automation__button {
+.move-automation__close {
+  width: 2.1rem;
+  height: 2.1rem;
   border: 1px solid var(--rule-soft);
   border-radius: 10px;
   background: var(--paper);
   color: var(--ink);
   cursor: pointer;
   font: inherit;
-}
-
-.move-automation__close {
-  width: 2.1rem;
-  height: 2.1rem;
   font-size: 1.4rem;
   line-height: 1;
-}
-
-.move-automation__button {
-  padding: 0.55rem 0.85rem;
-  font-weight: 700;
-}
-
-.move-automation__button--primary {
-  border-color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 18%, var(--paper));
-  color: var(--ink-bright);
-}
-
-.move-automation__button:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
 }
 
 

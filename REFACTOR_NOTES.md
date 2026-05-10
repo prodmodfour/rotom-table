@@ -2557,3 +2557,12 @@
   - `npm test` — passes: 102 test files / 381 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: move automation footer component
+
+- Extracted the move-automation wizard footer controls into `components/move-automation/MoveAutomationDialogFooter.vue`.
+- The dialog now delegates Cancel/Back/Next/Apply button presentation through focused emits while preserving the existing step gating and transaction apply flow.
+- Quality gates after this phase:
+  - `npm test` — passes: 102 test files / 381 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
