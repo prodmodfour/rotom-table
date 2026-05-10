@@ -2363,3 +2363,12 @@
   - `npm test` — passes: 99 test files / 370 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: map sidebar header component
+
+- Extracted the map sidebar navigation, return link, and save indicator into `components/map/MapSidebarHeader.vue`.
+- Reduced `components/map/MapLeftSidebar.vue` so header chrome is isolated from map editor panel wiring while preserving the All maps link and save-status display.
+- Quality gates after this phase:
+  - `npm test` — passes: 99 test files / 370 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

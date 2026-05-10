@@ -1,12 +1,10 @@
 <script setup lang="ts">
-import AppNavigation from '~/components/AppNavigation.vue'
-import SaveIndicator from '~/components/SaveIndicator.vue'
 import SheetBrowser from '~/components/SheetBrowser.vue'
 import MapDetailsPanel from '~/components/map/MapDetailsPanel.vue'
 import MapFieldEffectsPanel from '~/components/map/FieldEffectsPanel.vue'
 import MapTerrainHazardsPanel from '~/components/map/TerrainHazardsPanel.vue'
+import MapSidebarHeader from '~/components/map/MapSidebarHeader.vue'
 import MapSidebarToggle from '~/components/map/MapSidebarToggle.vue'
-import { mapLibraryPath } from '~/utils/mapRoutes'
 import type { SaveStatus } from '~/composables/useEditableSheet'
 import type { MapTokenSheetSelection } from '~/composables/map-editor/useTokenControls'
 import type { BuildTool, MapEditorMode, MapLeftSidebarSection } from '~/shared/mapEditor'
@@ -113,16 +111,10 @@ const emit = defineEmits<{
     <MapSidebarToggle :collapsed="collapsed" @toggle="emit('toggle-collapsed')" />
 
     <div id="map-sidebar-content" v-show="!collapsed" class="sidebar-content">
-      <AppNavigation />
-
-      <div class="header-row">
-        <NuxtLink :to="mapLibraryPath()" class="back-link">← All maps</NuxtLink>
-        <SaveIndicator
-          v-if="saveIndicatorStatus"
-          :status="saveIndicatorStatus"
-          :error="error"
-        />
-      </div>
+      <MapSidebarHeader
+        :save-indicator-status="saveIndicatorStatus"
+        :error="error"
+      />
 
       <MapDetailsPanel
         v-if="map && canViewMap"
@@ -237,27 +229,6 @@ const emit = defineEmits<{
   gap: 0.85rem;
   min-width: 0;
   min-height: 0;
-}
-
-.header-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.6rem;
-  padding: 0 0.25rem;
-}
-
-.back-link {
-  color: var(--ink-soft);
-  text-decoration: none;
-  font-size: 0.9rem;
-  letter-spacing: 0.02em;
-}
-
-.back-link:hover {
-  color: var(--ink-bright);
-  text-decoration: underline;
-  text-decoration-color: var(--rule-strong);
 }
 
 @media (max-width: 1100px) {
