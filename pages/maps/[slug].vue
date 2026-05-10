@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import MapAdminPanel from '~/components/map/MapAdminPanel.vue'
 import MapInitiativeSidebar from '~/components/map/MapInitiativeSidebar.vue'
 import MapLeftSidebar from '~/components/map/MapLeftSidebar.vue'
 import MapScenePanel from '~/components/map/MapScenePanel.vue'
 import { useEditableMap } from '~/composables/useEditableMap'
 import { useLiveSheets } from '~/composables/useLiveSheets'
+import { useWindowKeydown } from '~/composables/useWindowKeydown'
 import { useFieldEffectsEditor } from '~/composables/map-editor/useFieldEffectsEditor'
 import { useHazardBuilder } from '~/composables/map-editor/useHazardBuilder'
 import { useInitiativeTracker } from '~/composables/map-editor/useInitiativeTracker'
@@ -243,13 +244,7 @@ const handleAdminShortcut = (event: KeyboardEvent) => {
   }
 }
 
-onMounted(() => {
-  window.addEventListener('keydown', handleAdminShortcut)
-})
-
-onBeforeUnmount(() => {
-  window.removeEventListener('keydown', handleAdminShortcut)
-})
+useWindowKeydown(handleAdminShortcut)
 
 watch(
   [() => map.value?.slug, isPlayer],

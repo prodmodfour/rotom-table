@@ -4,6 +4,7 @@ import * as THREE from 'three'
 import TokenActionDialogs from '~/components/isometric/TokenActionDialogs.vue'
 import TokenContextMenu from '~/components/isometric/TokenContextMenu.vue'
 import { useTokenActionController } from '~/composables/isometric/useTokenActionController'
+import { useWindowKeydown } from '~/composables/useWindowKeydown'
 import { useIsometricSceneWatchers } from '~/composables/isometric/useIsometricSceneWatchers'
 import type { GridAnchor, GridDimensions, SpawnedPokemon } from '~/types/pokemon'
 import type {
@@ -579,6 +580,8 @@ const {
   handleEscape,
 } = pointerInteraction
 
+useWindowKeydown(handleEscape)
+
 const animate = () => {
   animationFrame = window.requestAnimationFrame(animate)
 
@@ -639,8 +642,6 @@ onMounted(() => {
     contextmenu: handleRightClick,
     wheel: handleWheel,
   })
-  window.addEventListener('keydown', handleEscape)
-
   cleanupResizeObserver = observeIsometricResize(container.value, () => {
     syncRendererSize()
   })
@@ -650,7 +651,6 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   window.cancelAnimationFrame(animationFrame)
-  window.removeEventListener('keydown', handleEscape)
 
   cleanupRendererDomEvents?.()
   cleanupRendererDomEvents = null

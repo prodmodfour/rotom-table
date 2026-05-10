@@ -2189,3 +2189,12 @@
   - `npm test` — passes: 97 test files / 367 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: shared keydown lifecycle adoption
+
+- Reused `useWindowKeydown` for the map admin shortcut and `IsometricGrid` Escape handling instead of manually registering/removing window keydown listeners in component lifecycle hooks.
+- Preserved Ctrl+Shift+A admin panel behavior, Escape handling, and renderer teardown order while keeping keyboard listener ownership in the shared lifecycle composable.
+- Quality gates after this phase:
+  - `npm test` — passes: 97 test files / 367 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
