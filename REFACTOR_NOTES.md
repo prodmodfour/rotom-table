@@ -2648,3 +2648,12 @@
   - `npm test` — passes: 103 test files / 383 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: library context menu action list
+
+- Extracted the Move/Rename/Delete action list into `components/library/LibraryContextMenuActionList.vue`.
+- `LibraryContextMenu` now delegates icon/button presentation to the focused action component while preserving menuitem roles, Phosphor icons, hover/focus styling, and action emits.
+- Quality gates after this phase:
+  - `npm test` — passes: 103 test files / 383 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
