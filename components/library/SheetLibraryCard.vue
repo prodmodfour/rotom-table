@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import LibraryCardShell from '~/components/library/LibraryCardShell.vue'
 import type { SheetLibraryItem } from '~/utils/sheetLibrary'
 import { sheetEditorPath } from '~/utils/sheetRoutes'
 
@@ -16,14 +17,11 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <NuxtLink
+  <LibraryCardShell
     :to="sheetEditorPath(item.kind, item.slug)"
-    class="sheet-card"
-    :class="{
-      'is-dragging-self': isDraggingSelf,
-      'sheet-card--trainer': item.kind === 'trainer',
-    }"
-    :draggable="canDrag"
+    :can-drag="canDrag"
+    :is-dragging-self="isDraggingSelf"
+    :variant="item.kind === 'trainer' ? 'accented' : 'default'"
     @contextmenu="emit('contextmenu', $event, item)"
     @dragstart="emit('dragstart', $event, item)"
     @dragend="emit('dragend')"
@@ -77,53 +75,10 @@ const emit = defineEmits<{
         </ul>
       </div>
     </template>
-  </NuxtLink>
+  </LibraryCardShell>
 </template>
 
 <style scoped>
-.sheet-card {
-  display: flex;
-  gap: 0.85rem;
-  padding: 0.85rem;
-  border: 1px solid var(--rule-soft);
-  border-radius: 12px;
-  background: var(--paper-soft);
-  color: var(--ink);
-  text-decoration: none;
-  transition:
-    border-color 0.15s ease,
-    background 0.15s ease,
-    opacity 0.15s ease;
-}
-
-.sheet-card:hover {
-  border-color: var(--rule-strong);
-  background: var(--paper-hover);
-}
-
-.sheet-card[draggable='true'] {
-  cursor: grab;
-}
-
-.sheet-card[draggable='true']:active {
-  cursor: grabbing;
-}
-
-.sheet-card.is-dragging-self {
-  opacity: 0.4;
-}
-
-.sheet-card--trainer {
-  /* Trainer cards share the parchment look but get a slightly stronger left
-     edge so they read as a separate kind of entry. */
-  border-left: 2px solid var(--rule-strong);
-}
-
-.sheet-card--trainer:hover {
-  border-color: var(--rule-active);
-  border-left-color: var(--accent);
-}
-
 .trainer-icon {
   font-size: 1.8rem;
   display: grid;

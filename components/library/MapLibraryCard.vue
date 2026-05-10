@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { PhSquaresFour } from '@phosphor-icons/vue'
+import LibraryCardShell from '~/components/library/LibraryCardShell.vue'
 import { mapEditorPath } from '~/utils/mapRoutes'
 import type { MapSummary } from '~/types/map'
 
@@ -17,10 +18,10 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <NuxtLink
+  <LibraryCardShell
     :to="mapEditorPath(item.slug)"
-    class="map-card"
-    :draggable="canDrag"
+    :can-drag="canDrag"
+    align="center"
     @contextmenu="emit('contextmenu', $event, item)"
     @dragstart="emit('dragstart', $event, item)"
     @dragend="emit('dragend')"
@@ -38,37 +39,10 @@ const emit = defineEmits<{
         Player visible
       </span>
     </div>
-  </NuxtLink>
+  </LibraryCardShell>
 </template>
 
 <style scoped>
-.map-card {
-  display: flex;
-  align-items: center;
-  gap: 0.85rem;
-  padding: 0.85rem;
-  border: 1px solid var(--rule-soft);
-  border-radius: 12px;
-  background: var(--paper-soft);
-  color: var(--ink);
-  text-decoration: none;
-  cursor: pointer;
-  transition: border-color 0.15s ease, background 0.15s ease;
-}
-
-.map-card:hover {
-  border-color: var(--rule-strong);
-  background: var(--paper-hover);
-}
-
-.map-card[draggable='true'] {
-  cursor: grab;
-}
-
-.map-card[draggable='true']:active {
-  cursor: grabbing;
-}
-
 .map-card__icon {
   flex: 0 0 auto;
   width: 64px;
