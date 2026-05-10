@@ -2520,3 +2520,13 @@
   - `npm test` — passes: 102 test files / 381 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: hazard palette grid component
+
+- Extracted hazard swatch-grid rendering into `components/map/HazardPaletteGrid.vue` with explicit active-kind/hazard-list props and a focused selection emit.
+- Reduced `HazardBuilderControls` so it composes the shared build-tool toggle and focused hazard palette while preserving hazard colors, labels, tooltips, ARIA pressed state, and selection behavior.
+- Moved hazard swatch/grid CSS out of the hazard controls component.
+- Quality gates after this phase:
+  - `npm test` — passes: 102 test files / 381 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
