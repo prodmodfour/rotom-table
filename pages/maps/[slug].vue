@@ -16,14 +16,11 @@ import {
   useMapDimensionReconciliation,
 } from '~/composables/map-editor/useMapDimensions'
 import { useMapEditorUiState } from '~/composables/map-editor/useMapEditorUiState'
+import { useMapTokenNavigation } from '~/composables/map-editor/useMapTokenNavigation'
 import { useMoveAutomationPanel } from '~/composables/map-editor/useMoveAutomationPanel'
 import { useTerrainBuilder } from '~/composables/map-editor/useTerrainBuilder'
 import { useTokenSheetMutations } from '~/composables/map-editor/useTokenSheetMutations'
-import {
-  pokedexPathForSpecies,
-  sheetPathForPlacement,
-  useTokenControls,
-} from '~/composables/map-editor/useTokenControls'
+import { useTokenControls } from '~/composables/map-editor/useTokenControls'
 import { mapEditorPath, mapLibraryPath } from '~/utils/mapRoutes'
 import type { SaveStatus } from '~/composables/useEditableSheet'
 
@@ -276,23 +273,13 @@ useMapGmModeGuard({
   closeMoveAutomation,
 })
 
-const viewSheet = (id: string) => {
-  if (!map.value || !canControlPlacement(id)) return
-  const placement = placementById(id)
-  if (!placement) return
-  const target = router.resolve(sheetPathForPlacement(placement)).href
-  window.open(target, '_blank', 'noopener')
-}
-
-const viewPokedex = (id: string) => {
-  if (!map.value || !canControlPlacement(id)) return
-  const placement = placementById(id)
-  if (!placement || placement.sheetKind !== 'pokemon') return
-  const targetPath = pokedexPathForSpecies(pokemonBySlug.value?.get(placement.sheetSlug)?.species)
-  if (!targetPath) return
-  const target = router.resolve(targetPath).href
-  window.open(target, '_blank', 'noopener')
-}
+const { viewSheet, viewPokedex } = useMapTokenNavigation({
+  map,
+  pokemonBySlug,
+  canControlPlacement,
+  placementById,
+  resolvePath: (path) => router.resolve(path).href,
+})
 
 useMapDimensionReconciliation({
   map,

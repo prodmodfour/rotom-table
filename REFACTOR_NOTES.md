@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; map editor UI chrome state, mode switching, layer visibility, and admin shortcut handling are now isolated in a focused composable. Next candidates include another focused map-editor helper extraction, addressing the documented broader typecheck backlog, or another small UI/helper duplication cleanup; do not mark the full refactor complete yet.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; token sheet/Pokédex navigation is now isolated in a focused map-editor composable. Next candidates include another focused map-editor helper extraction, addressing the documented broader typecheck backlog, or another small UI/helper duplication cleanup; do not mark the full refactor complete yet.
 
 ## Phase 0 baseline audit
 
@@ -3386,5 +3386,18 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; map editor UI chrome stat
 - Quality gates after this phase:
   - `npm test -- tests/composables/map-editor/useMapEditorUiState.test.ts` — passes: 1 test file / 6 tests.
   - `npm test` — passes: 137 test files / 539 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: map token navigation composable extraction
+
+- Extracted map token sheet/Pokédex external-link orchestration from `pages/maps/[slug].vue` into `composables/map-editor/useMapTokenNavigation.ts`.
+  - The composable now owns controlled-token lookup, sheet/Pokédex href resolution through an injected route resolver, species lookup, browser-open boundary, and boolean success results for tests.
+- Updated the map editor route to consume the focused navigation composable while preserving right-click View sheet/View Pokédex behavior, permission gating, Pokémon-only Pokédex links, and new-tab `noopener` opening.
+- Added `tests/composables/map-editor/useMapTokenNavigation.test.ts` covering href resolution, controlled-token opening, and blocked/missing/non-Pokémon navigation.
+- Next remaining phase: continue one bounded cleanup pass, with candidates including another focused map-editor helper extraction, addressing the documented broader typecheck backlog, or another small UI/helper duplication cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/composables/map-editor/useMapTokenNavigation.test.ts` — passes: 1 test file / 3 tests.
+  - `npm test` — passes: 138 test files / 542 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
