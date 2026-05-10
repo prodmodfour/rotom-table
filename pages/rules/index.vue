@@ -7,8 +7,9 @@ import {
   groupRulesForIndex,
   toggledRuleCategory,
 } from '~/utils/reference/ruleIndex'
+import { referenceIndexTitle } from '~/utils/reference/pageTitles'
 
-useHead({ title: 'Rules · Rotom Table' })
+useHead({ title: referenceIndexTitle('Rules') })
 
 const searchTerm = ref('')
 const categoryFilter = ref<string | null>(null)

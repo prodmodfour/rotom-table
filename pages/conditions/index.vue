@@ -2,8 +2,9 @@
 import { computed, ref } from 'vue'
 import { conditionGroups, conditions } from '~/utils/statusConditions'
 import { filterConditionsForIndex, groupFilteredConditions } from '~/utils/reference/conditionIndex'
+import { referenceIndexTitle } from '~/utils/reference/pageTitles'
 
-useHead({ title: 'Conditions · Rotom Table' })
+useHead({ title: referenceIndexTitle('Conditions') })
 
 const searchTerm = ref('')
 

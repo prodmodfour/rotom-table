@@ -2,8 +2,9 @@
 import { computed, ref } from 'vue'
 import { moves } from '~/data/ptuReference'
 import { ALL_MOVE_TYPES_OPTION, buildMoveTypeOptions, filterMovesForIndex } from '~/utils/reference/moveIndex'
+import { referenceIndexTitle } from '~/utils/reference/pageTitles'
 
-useHead({ title: 'Moves · Rotom Table' })
+useHead({ title: referenceIndexTitle('Moves') })
 
 const searchTerm = ref('')
 const typeFilter = ref<string>(ALL_MOVE_TYPES_OPTION)

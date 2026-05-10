@@ -2,8 +2,9 @@
 import { computed, ref } from 'vue'
 import { abilities } from '~/data/ptuReference'
 import { filterAbilitiesForIndex } from '~/utils/reference/abilityIndex'
+import { referenceIndexTitle } from '~/utils/reference/pageTitles'
 
-useHead({ title: 'Abilities · Rotom Table' })
+useHead({ title: referenceIndexTitle('Abilities') })
 
 const searchTerm = ref('')
 

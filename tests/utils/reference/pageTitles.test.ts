@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { APP_TITLE, referenceDetailTitle } from '~/utils/reference/pageTitles'
+import { APP_TITLE, referenceDetailTitle, referenceIndexTitle } from '~/utils/reference/pageTitles'
 
 describe('reference page titles', () => {
+  it('formats reference index titles', () => {
+    expect(referenceIndexTitle('Moves')).toBe('Moves · Rotom Table')
+  })
+
   it('formats selected reference detail titles', () => {
     expect(referenceDetailTitle('Thunderbolt', 'Moves', 'Move not found')).toBe('Thunderbolt · Moves')
   })

@@ -6,8 +6,9 @@ import {
   buildItemSectionCounts,
   filterItemsForIndex,
 } from '~/utils/reference/itemIndex'
+import { referenceIndexTitle } from '~/utils/reference/pageTitles'
 
-useHead({ title: 'Items · Rotom Table' })
+useHead({ title: referenceIndexTitle('Items') })
 
 const searchTerm = ref('')
 const categoryFilter = ref<string | null>(null)

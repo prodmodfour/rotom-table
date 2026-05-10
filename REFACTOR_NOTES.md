@@ -1948,3 +1948,13 @@
   - `npm test` — passes: 86 test files / 328 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: reference index title helper
+
+- Extended `utils/reference/pageTitles.ts` with shared reference-index title formatting.
+- Updated ability, move, edge, rule, condition, item, and feature index routes to use the shared formatter while preserving existing document titles.
+- Expanded `tests/utils/reference/pageTitles.test.ts` to cover index titles.
+- Quality gates after this phase:
+  - `npm test` — passes: 86 test files / 329 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

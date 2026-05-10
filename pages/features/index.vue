@@ -6,8 +6,9 @@ import {
   filterFeaturesForIndex,
   toggledFeatureTag,
 } from '~/utils/reference/featureIndex'
+import { referenceIndexTitle } from '~/utils/reference/pageTitles'
 
-useHead({ title: 'Features · Rotom Table' })
+useHead({ title: referenceIndexTitle('Features') })
 
 const searchTerm = ref('')
 const tagFilter = ref<string | null>(null)

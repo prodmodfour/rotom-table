@@ -2,8 +2,9 @@
 import { computed, ref } from 'vue'
 import { edges } from '~/data/ptuReference'
 import { filterEdgesForIndex } from '~/utils/reference/edgeIndex'
+import { referenceIndexTitle } from '~/utils/reference/pageTitles'
 
-useHead({ title: 'Edges · Rotom Table' })
+useHead({ title: referenceIndexTitle('Edges') })
 
 const searchTerm = ref('')
 
