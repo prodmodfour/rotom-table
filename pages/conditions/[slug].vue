@@ -5,8 +5,9 @@ import { referenceDetailTitle } from '~/utils/reference/pageTitles'
 import { routeSlugParam } from '~/utils/routeParams'
 
 const route = useRoute()
+const slug = computed(() => routeSlugParam(route.params))
 
-const condition = computed(() => conditionBySlug.get(routeSlugParam(route.params)) ?? null)
+const condition = computed(() => conditionBySlug.get(slug.value) ?? null)
 
 useHead(() => ({
   title: referenceDetailTitle(condition.value?.name, 'Conditions', 'Condition not found'),
@@ -15,14 +16,14 @@ useHead(() => ({
 
 <template>
   <ReferenceDetailShell back-to="/conditions" back-label="← All conditions">
-      <ConditionDetailArticle v-if="condition" :condition="condition" />
+    <ConditionDetailArticle v-if="condition" :condition="condition" />
 
-      <ReferenceNotFoundCard
-        v-else
-        title="Condition not found"
-        :slug="route.params.slug"
-        back-to="/conditions"
-        back-label="← Back to all conditions"
-      />
+    <ReferenceNotFoundCard
+      v-else
+      title="Condition not found"
+      :slug="slug"
+      back-to="/conditions"
+      back-label="← Back to all conditions"
+    />
   </ReferenceDetailShell>
 </template>

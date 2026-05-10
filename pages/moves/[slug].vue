@@ -5,8 +5,9 @@ import { referenceDetailTitle } from '~/utils/reference/pageTitles'
 import { routeSlugParam } from '~/utils/routeParams'
 
 const route = useRoute()
+const slug = computed(() => routeSlugParam(route.params))
 
-const move = computed(() => moveBySlug.get(routeSlugParam(route.params)) ?? null)
+const move = computed(() => moveBySlug.get(slug.value) ?? null)
 
 useHead(() => ({
   title: referenceDetailTitle(move.value?.name, 'Moves', 'Move not found'),
@@ -15,14 +16,14 @@ useHead(() => ({
 
 <template>
   <ReferenceDetailShell back-to="/moves" back-label="← All moves">
-      <MoveDetailArticle v-if="move" :move="move" />
+    <MoveDetailArticle v-if="move" :move="move" />
 
-      <ReferenceNotFoundCard
-        v-else
-        title="Move not found"
-        :slug="route.params.slug"
-        back-to="/moves"
-        back-label="← Back to all moves"
-      />
+    <ReferenceNotFoundCard
+      v-else
+      title="Move not found"
+      :slug="slug"
+      back-to="/moves"
+      back-label="← Back to all moves"
+    />
   </ReferenceDetailShell>
 </template>

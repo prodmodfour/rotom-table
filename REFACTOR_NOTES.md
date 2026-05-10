@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; the documented broader typecheck backlog is now resolved and `npm run typecheck` passes. Next candidates include another focused map-editor/helper extraction or another small UI/helper duplication cleanup; do not mark the full refactor complete yet.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck` currently passes. Next candidates include another focused map-editor/helper extraction, remaining UI helper duplication cleanup, or further route-shell tightening; do not mark the full refactor complete yet.
 
 ## Phase 0 baseline audit
 
@@ -3413,6 +3413,20 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; the documented broader ty
 - Next remaining phase: continue one bounded cleanup pass, with candidates including another focused map-editor/helper extraction or another small UI/helper duplication cleanup; do not mark the full refactor complete yet.
 - Quality gates after this phase:
   - `npm test -- tests/composables/sheets/useEditableSheetResource.test.ts tests/utils/autosave.test.ts` — passes: 2 test files / 24 tests.
+  - `npm run typecheck` — passes.
+  - `npm test` — passes: 138 test files / 542 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: route slug boundary cleanup
+
+- Reused the shared `routeSlugParam` helper in map and sheet slug route shells for route keys and base slug resolution instead of repeating direct `route.params.slug` coercion.
+- Updated reference detail routes to compute a single normalized slug and pass it through to not-found cards, so templates no longer reach into raw route params.
+- Tightened `ReferenceNotFoundCard` to accept a string slug boundary now that all callers normalize route params before rendering.
+- Preserved existing slug string-coercion semantics, route keys, lookups, not-found copy, and public routes.
+- Next remaining phase: continue one bounded cleanup pass, with candidates including another focused map-editor/helper extraction, remaining UI helper duplication cleanup, or further route-shell tightening; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/utils/routeParams.test.ts` — passes: 1 test file / 2 tests.
   - `npm run typecheck` — passes.
   - `npm test` — passes: 138 test files / 542 tests.
   - `npm run build` — passes; existing large chunk warnings remain.

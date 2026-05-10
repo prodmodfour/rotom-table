@@ -22,16 +22,17 @@ import { useTerrainBuilder } from '~/composables/map-editor/useTerrainBuilder'
 import { useTokenSheetMutations } from '~/composables/map-editor/useTokenSheetMutations'
 import { useTokenControls } from '~/composables/map-editor/useTokenControls'
 import { mapEditorPath, mapLibraryPath } from '~/utils/mapRoutes'
+import { routeSlugParam } from '~/utils/routeParams'
 import type { SaveStatus } from '~/composables/useEditableSheet'
 
 definePageMeta({
-  key: (route) => `map-${route.params.slug}`,
+  key: (route) => `map-${routeSlugParam(route.params)}`,
 })
 
 const route = useRoute()
 const router = useRouter()
 const { isGm, isPlayer } = useAuth()
-const slug = String(route.params.slug ?? '')
+const slug = routeSlugParam(route.params)
 
 const { map, status, error, renamedTo } = useEditableMap(slug)
 const { pokemonBySlug, trainerBySlug } = useLiveSheets()

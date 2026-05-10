@@ -5,8 +5,9 @@ import { referenceDetailTitle } from '~/utils/reference/pageTitles'
 import { routeSlugParam } from '~/utils/routeParams'
 
 const route = useRoute()
+const slug = computed(() => routeSlugParam(route.params))
 
-const edge = computed(() => edgeBySlug.get(routeSlugParam(route.params)) ?? null)
+const edge = computed(() => edgeBySlug.get(slug.value) ?? null)
 
 useHead(() => ({
   title: referenceDetailTitle(edge.value?.name, 'Edges', 'Edge not found'),
@@ -15,14 +16,14 @@ useHead(() => ({
 
 <template>
   <ReferenceDetailShell back-to="/edges" back-label="← All edges">
-      <EdgeDetailArticle v-if="edge" :edge="edge" />
+    <EdgeDetailArticle v-if="edge" :edge="edge" />
 
-      <ReferenceNotFoundCard
-        v-else
-        title="Edge not found"
-        :slug="route.params.slug"
-        back-to="/edges"
-        back-label="← Back to all edges"
-      />
+    <ReferenceNotFoundCard
+      v-else
+      title="Edge not found"
+      :slug="slug"
+      back-to="/edges"
+      back-label="← Back to all edges"
+    />
   </ReferenceDetailShell>
 </template>

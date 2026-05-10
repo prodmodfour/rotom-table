@@ -20,7 +20,7 @@ useHead(() => ({
     <ReferenceNotFoundCard
       v-else
       title="Capability not found"
-      :slug="route.params.slug"
+      :slug="slug"
       back-to="/capabilities"
       back-label="← Back to all capabilities"
     />

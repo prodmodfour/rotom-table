@@ -3,6 +3,7 @@ import { characterSheetsBySlug } from '~/data/characterSheets'
 import { normalizeCharacterSheet } from '~/utils/sheetNormalize'
 import { useEditableSheetResource } from '~/composables/sheets/useEditableSheetResource'
 import { syncNatureModForSheet } from '~/composables/sheets/usePokemonNatureControls'
+import { routeSlugParam } from '~/utils/routeParams'
 import type { CharacterSheet } from '~/types/characterSheet'
 
 // ---------------------------------------------------------------------------
@@ -15,12 +16,12 @@ import type { CharacterSheet } from '~/types/characterSheet'
 // to another's forces a fresh component instance — otherwise Vue would
 // reuse this one and our editable copy would still point at the old slug.
 definePageMeta({
-  key: (route) => `sheet-${route.params.slug}`,
+  key: (route) => `sheet-${routeSlugParam(route.params)}`,
 })
 
 const route = useRoute()
 const { isGm, isPlayer } = useAuth()
-const slug = String(route.params.slug ?? '')
+const slug = routeSlugParam(route.params)
 const baseSheet = characterSheetsBySlug.get(slug) ?? null
 const {
   sheet,

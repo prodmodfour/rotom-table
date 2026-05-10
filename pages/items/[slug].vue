@@ -6,8 +6,9 @@ import { referenceDetailTitle } from '~/utils/reference/pageTitles'
 import { routeSlugParam } from '~/utils/routeParams'
 
 const route = useRoute()
+const slug = computed(() => routeSlugParam(route.params))
 
-const item = computed(() => findItem(routeSlugParam(route.params)))
+const item = computed(() => findItem(slug.value))
 
 useHead(() => ({
   title: referenceDetailTitle(item.value?.name, 'Items', 'Item not found'),
@@ -27,7 +28,7 @@ const relatedItems = computed(() => relatedItemsByPrimaryCategory(item.value, it
     <ReferenceNotFoundCard
       v-else
       title="Item not found"
-      :slug="route.params.slug"
+      :slug="slug"
       back-to="/items"
       back-label="← Back to all items"
     />

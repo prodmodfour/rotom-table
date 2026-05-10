@@ -6,8 +6,9 @@ import { referenceDetailTitle } from '~/utils/reference/pageTitles'
 import { routeSlugParam } from '~/utils/routeParams'
 
 const route = useRoute()
+const slug = computed(() => routeSlugParam(route.params))
 
-const feat = computed(() => featureBySlug.get(routeSlugParam(route.params)) ?? null)
+const feat = computed(() => featureBySlug.get(slug.value) ?? null)
 
 useHead(() => ({
   title: referenceDetailTitle(feat.value?.name, 'Features', 'Feature not found'),
@@ -28,7 +29,7 @@ const siblings = computed(() => siblingFeaturesInClass(feat.value, features))
     <ReferenceNotFoundCard
       v-else
       title="Feature not found"
-      :slug="route.params.slug"
+      :slug="slug"
       back-to="/features"
       back-label="← Back to all features"
     />

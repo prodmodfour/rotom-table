@@ -2,6 +2,7 @@
 import { trainerSheetsBySlug } from '~/data/trainerSheets'
 import { normalizeTrainerSheet } from '~/utils/sheetNormalize'
 import { useEditableSheetResource } from '~/composables/sheets/useEditableSheetResource'
+import { routeSlugParam } from '~/utils/routeParams'
 import type { TrainerSheet } from '~/types/trainerSheet'
 
 // ---------------------------------------------------------------------------
@@ -11,12 +12,12 @@ import type { TrainerSheet } from '~/types/trainerSheet'
 // Route the page key off the slug so navigating between trainer sheets
 // forces a fresh component instance and a clean editable state.
 definePageMeta({
-  key: (route) => `trainer-${route.params.slug}`,
+  key: (route) => `trainer-${routeSlugParam(route.params)}`,
 })
 
 const route = useRoute()
 const { isGm, isPlayer } = useAuth()
-const slug = String(route.params.slug ?? '')
+const slug = routeSlugParam(route.params)
 const baseSheet = trainerSheetsBySlug.get(slug) ?? null
 const {
   sheet,
