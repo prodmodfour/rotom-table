@@ -8,6 +8,7 @@
     "z": 36
   },
   "groundLevelY": 5,
+  "playerVisible": true,
   "voxels": [
     {
       "x": 0,
@@ -83347,18 +83348,6 @@
       ]
     },
     {
-      "x": 10,
-      "y": 6,
-      "z": 6,
-      "materialId": "grove_leaf_litter",
-      "blocksMovement": false,
-      "blocksSight": false,
-      "tags": [
-        "vine",
-        "overgrowth"
-      ]
-    },
-    {
       "x": 9,
       "y": 6,
       "z": 8,
@@ -83584,18 +83573,6 @@
         "ancient",
         "aqueduct",
         "weathered-stone"
-      ]
-    },
-    {
-      "x": 10,
-      "y": 6,
-      "z": 12,
-      "materialId": "grove_leaf_litter",
-      "blocksMovement": false,
-      "blocksSight": false,
-      "tags": [
-        "vine",
-        "overgrowth"
       ]
     },
     {
@@ -84335,30 +84312,6 @@
       ]
     },
     {
-      "x": 20,
-      "y": 6,
-      "z": 29,
-      "materialId": "grove_leaf_litter",
-      "blocksMovement": false,
-      "blocksSight": false,
-      "tags": [
-        "vine",
-        "overgrowth"
-      ]
-    },
-    {
-      "x": 10,
-      "y": 6,
-      "z": 30,
-      "materialId": "grove_leaf_litter",
-      "blocksMovement": false,
-      "blocksSight": false,
-      "tags": [
-        "vine",
-        "overgrowth"
-      ]
-    },
-    {
       "x": 10,
       "y": 6,
       "z": 31,
@@ -84805,18 +84758,6 @@
     {
       "x": 10,
       "y": 7,
-      "z": 6,
-      "materialId": "grove_leaf_litter",
-      "blocksMovement": false,
-      "blocksSight": false,
-      "tags": [
-        "vine",
-        "overgrowth"
-      ]
-    },
-    {
-      "x": 10,
-      "y": 7,
       "z": 8,
       "materialId": "cave_stone",
       "color": "#8a8b80",
@@ -85040,18 +84981,6 @@
         "ancient",
         "aqueduct",
         "weathered-stone"
-      ]
-    },
-    {
-      "x": 10,
-      "y": 7,
-      "z": 12,
-      "materialId": "grove_leaf_litter",
-      "blocksMovement": false,
-      "blocksSight": false,
-      "tags": [
-        "vine",
-        "overgrowth"
       ]
     },
     {
@@ -85623,18 +85552,6 @@
       ]
     },
     {
-      "x": 20,
-      "y": 7,
-      "z": 29,
-      "materialId": "grove_leaf_litter",
-      "blocksMovement": false,
-      "blocksSight": false,
-      "tags": [
-        "vine",
-        "overgrowth"
-      ]
-    },
-    {
       "x": 11,
       "y": 7,
       "z": 33,
@@ -86731,18 +86648,6 @@
       ]
     },
     {
-      "x": 20,
-      "y": 8,
-      "z": 29,
-      "materialId": "grove_leaf_litter",
-      "blocksMovement": false,
-      "blocksSight": false,
-      "tags": [
-        "vine",
-        "overgrowth"
-      ]
-    },
-    {
       "x": 11,
       "y": 8,
       "z": 33,
@@ -87427,18 +87332,6 @@
       ]
     },
     {
-      "x": 10,
-      "y": 9,
-      "z": 6,
-      "materialId": "grove_leaf_litter",
-      "blocksMovement": false,
-      "blocksSight": false,
-      "tags": [
-        "vine",
-        "overgrowth"
-      ]
-    },
-    {
       "x": 11,
       "y": 9,
       "z": 6,
@@ -88084,18 +87977,6 @@
         "ancient",
         "aqueduct",
         "weathered-stone"
-      ]
-    },
-    {
-      "x": 10,
-      "y": 9,
-      "z": 12,
-      "materialId": "grove_leaf_litter",
-      "blocksMovement": false,
-      "blocksSight": false,
-      "tags": [
-        "vine",
-        "overgrowth"
       ]
     },
     {
@@ -89903,18 +89784,6 @@
       ]
     },
     {
-      "x": 20,
-      "y": 9,
-      "z": 29,
-      "materialId": "grove_leaf_litter",
-      "blocksMovement": false,
-      "blocksSight": false,
-      "tags": [
-        "vine",
-        "overgrowth"
-      ]
-    },
-    {
       "x": 11,
       "y": 9,
       "z": 30,
@@ -90845,18 +90714,6 @@
       ]
     },
     {
-      "x": 17,
-      "y": 10,
-      "z": 7,
-      "materialId": "grove_leaf_litter",
-      "blocksMovement": false,
-      "blocksSight": false,
-      "tags": [
-        "moss",
-        "overgrowth"
-      ]
-    },
-    {
       "x": 19,
       "y": 10,
       "z": 7,
@@ -90920,18 +90777,6 @@
       ]
     },
     {
-      "x": 17,
-      "y": 10,
-      "z": 8,
-      "materialId": "grove_leaf_litter",
-      "blocksMovement": false,
-      "blocksSight": false,
-      "tags": [
-        "moss",
-        "overgrowth"
-      ]
-    },
-    {
       "x": 14,
       "y": 10,
       "z": 9,
@@ -90980,18 +90825,6 @@
         "ancient",
         "aqueduct",
         "weathered-stone"
-      ]
-    },
-    {
-      "x": 13,
-      "y": 10,
-      "z": 10,
-      "materialId": "grove_leaf_litter",
-      "blocksMovement": false,
-      "blocksSight": false,
-      "tags": [
-        "moss",
-        "overgrowth"
       ]
     },
     {
@@ -91286,18 +91119,6 @@
       ]
     },
     {
-      "x": 17,
-      "y": 10,
-      "z": 14,
-      "materialId": "grove_leaf_litter",
-      "blocksMovement": false,
-      "blocksSight": false,
-      "tags": [
-        "moss",
-        "overgrowth"
-      ]
-    },
-    {
       "x": 19,
       "y": 10,
       "z": 14,
@@ -91319,18 +91140,6 @@
         "ancient",
         "aqueduct",
         "weathered-stone"
-      ]
-    },
-    {
-      "x": 13,
-      "y": 10,
-      "z": 15,
-      "materialId": "grove_leaf_litter",
-      "blocksMovement": false,
-      "blocksSight": false,
-      "tags": [
-        "moss",
-        "overgrowth"
       ]
     },
     {
@@ -91559,18 +91368,6 @@
       ]
     },
     {
-      "x": 17,
-      "y": 10,
-      "z": 20,
-      "materialId": "grove_leaf_litter",
-      "blocksMovement": false,
-      "blocksSight": false,
-      "tags": [
-        "moss",
-        "overgrowth"
-      ]
-    },
-    {
       "x": 19,
       "y": 10,
       "z": 20,
@@ -91874,18 +91671,6 @@
       ]
     },
     {
-      "x": 13,
-      "y": 10,
-      "z": 26,
-      "materialId": "grove_leaf_litter",
-      "blocksMovement": false,
-      "blocksSight": false,
-      "tags": [
-        "moss",
-        "overgrowth"
-      ]
-    },
-    {
       "x": 14,
       "y": 10,
       "z": 26,
@@ -92048,18 +91833,6 @@
         "ancient",
         "aqueduct",
         "weathered-stone"
-      ]
-    },
-    {
-      "x": 13,
-      "y": 10,
-      "z": 29,
-      "materialId": "grove_leaf_litter",
-      "blocksMovement": false,
-      "blocksSight": false,
-      "tags": [
-        "moss",
-        "overgrowth"
       ]
     },
     {
@@ -92639,30 +92412,24 @@
         "ancient",
         "aqueduct",
         "weathered-stone"
-      ]
-    },
-    {
-      "x": 11,
-      "y": 12,
-      "z": 11,
-      "materialId": "meadow_grass",
-      "blocksMovement": false,
-      "blocksSight": false,
-      "tags": [
-        "moss",
-        "parapet-growth"
       ]
     }
   ],
+  "hazards": [],
+  "fieldEffects": {
+    "weather": [],
+    "terrains": [],
+    "rooms": []
+  },
   "placements": [
     {
       "id": "pkm-moncqt7s-nn3ifs",
       "sheetKind": "trainer",
       "sheetSlug": "new-trainer",
       "position": {
-        "x": 37,
+        "x": 40,
         "y": 5,
-        "z": 12
+        "z": 13
       },
       "turned": false,
       "initiative": 20
@@ -92672,12 +92439,24 @@
       "sheetKind": "pokemon",
       "sheetSlug": "lenora-vask-crockefeller",
       "position": {
-        "x": 38,
+        "x": 42,
         "y": 5,
         "z": 14
       },
       "turned": false,
-      "initiative": 14
+      "initiative": 17
+    },
+    {
+      "id": "pkm-morjuab3-8k2abs",
+      "sheetKind": "pokemon",
+      "sheetSlug": "lenora-vask-bayonce",
+      "position": {
+        "x": 36,
+        "y": 5,
+        "z": 14
+      },
+      "turned": false,
+      "initiative": 5
     }
   ],
   "lights": [
@@ -92797,8 +92576,33 @@
         ],
         "note": "Compacted clay hardpan at the bottom of the modeled sediment stack."
       }
+    ],
+    "moveLog": [
+      {
+        "at": 1777920145441,
+        "userId": "pkm-moncv9a8-oghilc",
+        "userName": "Crockefeller",
+        "moveName": "Struggle",
+        "scriptVersion": 1,
+        "lines": [
+          "Crockefeller used Struggle.",
+          "Lenora Vask: 34 HP damage.",
+          "Note: No secondary effect text in moves.json; resolve range keywords normally."
+        ]
+      },
+      {
+        "at": 1777920226782,
+        "userId": "pkm-moncv9a8-oghilc",
+        "userName": "Crockefeller",
+        "moveName": "Swagger",
+        "scriptVersion": 1,
+        "lines": [
+          "Crockefeller used Swagger.",
+          "target’s Attack is raised 2 Combat Stages: +2 Attack CS on Lenora Vask."
+        ]
+      }
     ]
   },
   "createdAt": 1777665906726,
-  "updatedAt": 1777855235653
+  "updatedAt": 1778302774934
 }

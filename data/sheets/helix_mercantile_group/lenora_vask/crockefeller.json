@@ -1,0 +1,200 @@
+{
+  "slug": "lenora-vask-crockefeller",
+  "nickname": "Crockefeller",
+  "species": "Krokorok",
+  "level": 30,
+  "shiny": false,
+  "nature": "Careful",
+  "natureMod": {
+    "plus": "sdef",
+    "minus": "satk"
+  },
+  "types": [
+    "Ground",
+    "Dark"
+  ],
+  "stats": {
+    "hp": {
+      "base": 8,
+      "added": 7,
+      "stage": 0
+    },
+    "atk": {
+      "base": 8,
+      "added": 10,
+      "stage": 0
+    },
+    "def": {
+      "base": 8,
+      "added": 5,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 0,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 8,
+      "added": 8,
+      "stage": 0
+    },
+    "spd": {
+      "base": 8,
+      "added": 10,
+      "stage": 0
+    }
+  },
+  "combat": {
+    "maxHp": 82,
+    "currentHp": 79,
+    "injuries": 0,
+    "tick": 8,
+    "evasion": {
+      "vsAtk": 2,
+      "vsSatk": 2,
+      "vsAny": 2,
+      "vsAtkBonus": 0,
+      "vsSatkBonus": 0,
+      "vsAnyBonus": 0
+    },
+    "dr": 0,
+    "conditions": []
+  },
+  "items": {
+    "held": "",
+    "itemDescription": "",
+    "extraItems": []
+  },
+  "tutorPoints": {
+    "earned": 7,
+    "spent": 0
+  },
+  "inheritedMoves": {},
+  "inheritedRemaining": 0,
+  "movelist": [
+    {
+      "name": "Struggle",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+22",
+      "frequency": "At-Will",
+      "ac": 4,
+      "range": "Melee, 1 Target"
+    },
+    {
+      "name": "Torment",
+      "type": "Dark",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "10, 1 Target, Social",
+      "effect": "The target becomes Suppressed."
+    },
+    {
+      "name": "Crunch",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 10,
+      "damageRoll": "3d8+26",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Crunch lowers the target’s Defense 1 Combat Stage on 17+"
+    },
+    {
+      "name": "Swagger",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 5,
+      "range": "6, 1 Target, Social",
+      "effect": "The target’s Attack is raised 2 Combat Stages. Swagger Confuses the target."
+    },
+    {
+      "name": "Sand Attack",
+      "type": "Ground",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "2, 1 Target",
+      "effect": "The target is Blinded until the end of their next turn."
+    },
+    {
+      "name": "Sand Tomb",
+      "type": "Ground",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+24",
+      "frequency": "Scene x2",
+      "ac": 4,
+      "range": "5, 1 Target",
+      "effect": "The target is put in a Vortex."
+    },
+    {
+      "name": "Rock Smash",
+      "type": "Fighting",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+22",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Rock Smash lowers the target’s Defense 1 Combat Stage on 17+."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Moxie",
+      "frequency": "Static",
+      "effect": "Whenever the user’s Move causes a target to faint, it may raise its Attack Combat Stage by +1. You may only trigger Moxie once per Move, even if the Move causes multiple targets to faint."
+    },
+    {
+      "name": "Intimidate",
+      "frequency": "At-Will – Swift Action",
+      "effect": "Lower the target’s Attack 1 Combat Stage. You may target a specific foe only once per Scene with Intimidate."
+    }
+  ],
+  "edges": [],
+  "capabilities": {
+    "overland": 5,
+    "sky": 0,
+    "swim": 4,
+    "levitate": 0,
+    "burrow": 2,
+    "jump": "1/1",
+    "power": 5,
+    "weight": 3,
+    "size": "Medium",
+    "naturewalk": "Desert",
+    "other": [
+      "Darkvision",
+      "Stealth",
+      "Underdog"
+    ]
+  },
+  "skills": {
+    "acrobatics": "2d6",
+    "athletics": "4d6+2",
+    "charm": "2d6",
+    "combat": "3d6",
+    "command": "2d6",
+    "generalEd": "1d6",
+    "medicineEd": "1d6",
+    "occultEd": "1d6",
+    "pokeEd": "1d6",
+    "techEd": "1d6",
+    "focus": "4d6+1",
+    "guile": "2d6",
+    "intimidate": "2d6",
+    "intuition": "2d6",
+    "perception": "3d6+1",
+    "stealth": "3d6+2",
+    "survival": "2d6"
+  },
+  "player": false,
+  "weapon": {},
+  "skillBackground": {},
+  "scene": {}
+}

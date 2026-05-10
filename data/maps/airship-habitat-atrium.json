@@ -7,6 +7,8 @@
     "y": 22,
     "z": 80
   },
+  "groundLevelY": 0,
+  "playerVisible": false,
   "voxels": [
     {
       "x": 14,
@@ -90755,19 +90757,6 @@
       "materialId": "observation_wood"
     },
     {
-      "x": 26,
-      "y": 1,
-      "z": 45,
-      "materialId": "shallow_water",
-      "color": "#58b7df"
-    },
-    {
-      "x": 26,
-      "y": 2,
-      "z": 45,
-      "materialId": "thermal_rock"
-    },
-    {
       "x": 33,
       "y": 0,
       "z": 37,
@@ -90859,13 +90848,19 @@
       "color": "#1d6594"
     }
   ],
+  "hazards": [],
+  "fieldEffects": {
+    "weather": [],
+    "terrains": [],
+    "rooms": []
+  },
   "placements": [
     {
       "id": "pkm-mon08pqf-nicnft",
       "sheetKind": "pokemon",
       "sheetSlug": "bolt-pikachu",
       "position": {
-        "x": 59,
+        "x": 62,
         "y": 1,
         "z": 40
       },
@@ -91200,5 +91195,5 @@
       }
     ]
   },
-  "updatedAt": 1777665263621
+  "updatedAt": 1777930045441
 }

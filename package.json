@@ -10,6 +10,7 @@
     "typecheck": "nuxt typecheck",
     "test": "vitest run",
     "test:watch": "vitest",
+    "refactor:loop": "bash scripts/refactor-loop.sh",
     "check:move-automation": "python3 scripts/check_move_automation_coverage.py",
     "sync:item-sprites": "node scripts/sync_item_sprites.mjs"
   },

@@ -6,6 +6,7 @@ node_modules
 .nitro
 .cache
 .playwright-cli
+.pi/logs/
 __pycache__/
 *.pyc
 temp/
