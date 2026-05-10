@@ -15,17 +15,7 @@ useHead(() => ({
 
 <template>
   <ReferenceDetailShell back-to="/edges" back-label="← All edges">
-      <article v-if="edge" class="panel-card">
-        <ReferenceDetailHeading :title="edge.name" />
-
-        <ReferenceFieldBlock v-if="edge.prerequisites" title="Prerequisites">
-          <p>{{ edge.prerequisites }}</p>
-        </ReferenceFieldBlock>
-
-        <ReferenceFieldBlock v-if="edge.effect" title="Effect">
-          <p>{{ edge.effect }}</p>
-        </ReferenceFieldBlock>
-      </article>
+      <EdgeDetailArticle v-if="edge" :edge="edge" />
 
       <ReferenceNotFoundCard
         v-else
