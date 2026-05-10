@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { SaveStatus } from '~/composables/useEditableSheet'
+import { SHEET_LIBRARY_PATH } from '~/utils/sheetRoutes'
 
 interface Props {
   hasSheet: boolean
@@ -12,7 +13,7 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   saveStatus: undefined,
   saveError: null,
-  backTo: '/sheets',
+  backTo: SHEET_LIBRARY_PATH,
   backLabel: '← All sheets',
 })
 </script>

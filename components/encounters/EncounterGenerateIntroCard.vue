@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { SHEET_LIBRARY_PATH } from '~/utils/sheetRoutes'
+
 defineProps<{
   tableCount: number
 }>()
@@ -16,7 +18,7 @@ defineProps<{
       Output lands in <code>&lt;outRoot&gt;/&lt;table&gt;_&lt;count&gt;/</code>
       as <code>CharacterSheet</code> JSON files — drop them under
       <code>data/sheets/</code> (the default) and they show up immediately
-      on the <NuxtLink class="inline-link" to="/sheets">Sheets</NuxtLink>
+      on the <NuxtLink class="inline-link" :to="SHEET_LIBRARY_PATH">Sheets</NuxtLink>
       page. Browse all available tables on the
       <NuxtLink class="inline-link" to="/encounter-tables">Encounter Tables</NuxtLink>
       page.

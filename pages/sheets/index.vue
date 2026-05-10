@@ -27,7 +27,7 @@ import { useSheetLibraryCreation } from '~/composables/library/useSheetLibraryCr
 import { useSheetLibraryData } from '~/composables/library/useSheetLibraryData'
 import { useWindowKeydown } from '~/composables/useWindowKeydown'
 import { isEscapeKey } from '~/utils/keyboardShortcuts'
-import { sheetEditorPath } from '~/utils/sheetRoutes'
+import { sheetEditorPath, sheetLibraryPath } from '~/utils/sheetRoutes'
 
 useHead({
   title: 'Sheets · Rotom Table',
@@ -68,7 +68,7 @@ const {
 // ---------------------------------------------------------------------------
 
 const { currentPath, goToFolder, breadcrumbs } = useLibraryFolderNavigation({
-  routePath: '/sheets',
+  routePath: sheetLibraryPath(),
 })
 
 const {

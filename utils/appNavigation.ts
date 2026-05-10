@@ -1,4 +1,5 @@
 import { MAP_LIBRARY_PATH } from '~/utils/mapRoutes'
+import { SHEET_LIBRARY_PATH } from '~/utils/sheetRoutes'
 
 export interface AppNavItem {
   path: string
@@ -9,7 +10,7 @@ export interface AppNavItem {
 export const PRIMARY_APP_NAV_ITEMS: AppNavItem[] = [
   { path: MAP_LIBRARY_PATH, label: 'Maps' },
   { path: '/pokedex', label: 'Pokédex' },
-  { path: '/sheets', label: 'Sheets' },
+  { path: SHEET_LIBRARY_PATH, label: 'Sheets' },
   { path: '/generate', label: 'Generate', gmOnly: true },
 ]
 

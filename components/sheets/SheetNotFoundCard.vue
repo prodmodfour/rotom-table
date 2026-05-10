@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { SHEET_LIBRARY_PATH } from '~/utils/sheetRoutes'
+
 interface Props {
   title: string
   message: string
@@ -8,7 +10,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  backTo: '/sheets',
+  backTo: SHEET_LIBRARY_PATH,
   backLabel: '← Back to all sheets',
 })
 </script>

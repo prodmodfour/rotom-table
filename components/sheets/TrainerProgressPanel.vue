@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { PhPlus, PhX } from '@phosphor-icons/vue'
 import type { TrainerAdvancementRow, TrainerSheet } from '~/types/trainerSheet'
+import { sheetEditorPath } from '~/utils/sheetRoutes'
 
 const currentTeamCsv = defineModel<string>('currentTeamCsv', { required: true })
 const wishlistCsv = defineModel<string>('wishlistCsv', { required: true })
@@ -102,7 +103,7 @@ const emit = defineEmits<{
         <EditableCell v-model="currentTeamCsv" placeholder="specs-chikorita" />
         <ul v-if="sheet.currentTeam?.length" class="ref-list-vertical team-list">
           <li v-for="memberSlug in sheet.currentTeam" :key="memberSlug">
-            <NuxtLink :to="`/sheets/${memberSlug}`">{{ memberSlug }}</NuxtLink>
+            <NuxtLink :to="sheetEditorPath('pokemon', memberSlug)">{{ memberSlug }}</NuxtLink>
           </li>
         </ul>
       </div>
