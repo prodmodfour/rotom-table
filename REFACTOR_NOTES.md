@@ -1788,3 +1788,13 @@
   - `npm test` — passes: 84 test files / 322 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: item index list component
+
+- Extracted the Items index result-list/card markup into `components/reference/ItemIndexList.vue`.
+- Reduced `pages/items/index.vue` to filter state, option derivation, and composition of shared reference controls plus the focused item list.
+- Preserved item links, sprites, category/cost/section badge truncation, effect previews, and empty-state copy.
+- Quality gates after this phase:
+  - `npm test` — passes: 84 test files / 322 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
