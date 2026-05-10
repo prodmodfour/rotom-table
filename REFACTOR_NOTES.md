@@ -2630,3 +2630,12 @@
   - `npm test` — passes: 103 test files / 383 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: shared library page layout
+
+- Extracted duplicated maps/sheets library page layout and header spacing into `components/library/LibraryPageLayout.vue`.
+- Updated map and sheet library routes to compose the shared layout while preserving app navigation, breadcrumbs, drag-state classing, grid/context-menu wiring, and page background/spacing styles.
+- Quality gates after this phase:
+  - `npm test` — passes: 103 test files / 383 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

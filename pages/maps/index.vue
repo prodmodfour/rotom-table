@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import AppNavigation from '~/components/AppNavigation.vue'
 import FolderBreadcrumbNav from '~/components/library/FolderBreadcrumbNav.vue'
 import LibraryContextMenu from '~/components/library/LibraryContextMenu.vue'
+import LibraryPageLayout from '~/components/library/LibraryPageLayout.vue'
 import MapLibraryGrid from '~/components/library/MapLibraryGrid.vue'
 import MapLibraryIntroPanel from '~/components/library/MapLibraryIntroPanel.vue'
 import { formatFolderLabel } from '~/utils/sheetFolders'
@@ -343,8 +344,8 @@ useWindowKeydown((event) => {
 </script>
 
 <template>
-  <div class="maps-layout" :class="{ 'is-dragging': drag !== null }">
-    <header class="maps-header">
+  <LibraryPageLayout :dragging="drag !== null">
+    <template #header>
       <AppNavigation />
 
       <MapLibraryIntroPanel
@@ -371,7 +372,7 @@ useWindowKeydown((event) => {
         @dragleave="onDropLeave"
         @drop="onDrop"
       />
-    </header>
+    </template>
 
     <MapLibraryGrid
       :folders="visibleFolders"
@@ -415,24 +416,5 @@ useWindowKeydown((event) => {
       @enter-delete="enterDelete"
       @submit="submitContext"
     />
-  </div>
+  </LibraryPageLayout>
 </template>
-
-<style scoped>
-.maps-layout {
-  display: flex;
-  flex-direction: column;
-  gap: 0.85rem;
-  padding: 0.85rem;
-  min-height: 100vh;
-  background: var(--paper);
-  color: var(--ink);
-}
-
-.maps-header {
-  display: flex;
-  flex-direction: column;
-  gap: 0.85rem;
-}
-
-</style>

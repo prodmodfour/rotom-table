@@ -3,6 +3,7 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import AppNavigation from '~/components/AppNavigation.vue'
 import FolderBreadcrumbNav from '~/components/library/FolderBreadcrumbNav.vue'
 import LibraryContextMenu from '~/components/library/LibraryContextMenu.vue'
+import LibraryPageLayout from '~/components/library/LibraryPageLayout.vue'
 import SheetLibraryGrid from '~/components/library/SheetLibraryGrid.vue'
 import SheetLibraryIntroPanel from '~/components/library/SheetLibraryIntroPanel.vue'
 import { characterSheets, getPokedexEntry, getSpriteUrl } from '~/data/characterSheets'
@@ -455,8 +456,8 @@ useWindowKeydown((event) => {
 </script>
 
 <template>
-  <div class="sheets-layout" :class="{ 'is-dragging': drag !== null }">
-    <header class="sheets-header">
+  <LibraryPageLayout :dragging="drag !== null">
+    <template #header>
       <AppNavigation />
 
       <SheetLibraryIntroPanel
@@ -488,7 +489,7 @@ useWindowKeydown((event) => {
         @dragleave="onDropLeave"
         @drop="onDrop"
       />
-    </header>
+    </template>
 
     <SheetLibraryGrid
       :folders="visibleFolders"
@@ -533,24 +534,5 @@ useWindowKeydown((event) => {
       @enter-delete="enterDelete"
       @submit="submitContext"
     />
-  </div>
+  </LibraryPageLayout>
 </template>
-
-<style scoped>
-.sheets-layout {
-  display: flex;
-  flex-direction: column;
-  gap: 0.85rem;
-  padding: 0.85rem;
-  min-height: 100vh;
-  background: var(--paper);
-  color: var(--ink);
-}
-
-.sheets-header {
-  display: flex;
-  flex-direction: column;
-  gap: 0.85rem;
-}
-
-</style>
