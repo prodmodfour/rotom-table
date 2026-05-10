@@ -2470,3 +2470,13 @@
   - `npm test` — passes: 101 test files / 377 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: map dimension reconciliation helper
+
+- Extracted map dimension normalization, ground-level clamping, terrain/hazard trimming, and token placement reconciliation into `utils/mapDimensionReconciliation.ts`.
+- Updated the map editor route to call the focused reconciliation helper from its dimensions watcher instead of owning grid/storage cleanup details inline.
+- Added `tests/utils/mapDimensionReconciliation.test.ts` covering dimension normalization, ground-level bounds, terrain/hazard filtering, token fallback/removal, selected-token cleanup, and absent ground metadata.
+- Quality gates after this phase:
+  - `npm test` — passes: 102 test files / 381 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

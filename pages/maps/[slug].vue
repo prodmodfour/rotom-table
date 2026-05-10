@@ -18,15 +18,10 @@ import {
   sheetPathForPlacement,
   useTokenControls,
 } from '~/composables/map-editor/useTokenControls'
-import {
-  normalizeDimensions,
-  reconcilePokemonPositions,
-} from '~/utils/grid'
+import { reconcileMapForDimensions } from '~/utils/mapDimensionReconciliation'
 import { isCtrlShiftLetter, isEscapeKey } from '~/utils/keyboardShortcuts'
 import { mapEditorPath, mapLibraryPath } from '~/utils/mapRoutes'
 import { clampMapGroundLevelY, mapSpecificYBounds, maxGroundLevelY } from '~/utils/mapGroundLevel'
-import { filterMapHazardsInBounds } from '~/utils/mapHazards'
-import { filterVoxelsInBounds } from '~/utils/voxels'
 import type { SaveStatus } from '~/composables/useEditableSheet'
 import type { MapEditorMode, MapLeftSidebarSection } from '~/shared/mapEditor'
 import type {
@@ -361,46 +356,30 @@ watch(
   () => map.value?.dimensions,
   (dims) => {
     if (!dims || !map.value) return
-    const normalized = normalizeDimensions(dims)
-    if (normalized.x !== dims.x) map.value.dimensions.x = normalized.x
-    if (normalized.y !== dims.y) map.value.dimensions.y = normalized.y
-    if (normalized.z !== dims.z) map.value.dimensions.z = normalized.z
-
-    if (map.value.groundLevelY !== undefined) {
-      const normalizedGroundLevelY = clampMapGroundLevelY(normalized, map.value.groundLevelY)
-      if (normalizedGroundLevelY !== map.value.groundLevelY) {
-        map.value.groundLevelY = normalizedGroundLevelY
-      }
-    }
-
-    const trimmedVoxels = filterVoxelsInBounds(map.value.voxels, normalized)
-    if (trimmedVoxels.length !== map.value.voxels.length) {
-      map.value.voxels = trimmedVoxels
-    }
-
-    const trimmedHazards = filterMapHazardsInBounds(mapHazards.value, normalized)
-    if (trimmedHazards.length !== mapHazards.value.length) {
-      map.value.hazards = trimmedHazards
-    }
-
-    const reconciliation = reconcilePokemonPositions(
-      spawnedPokemon.value,
-      normalized,
-      trimmedVoxels,
-      // Manual token placement is allowed to overlap terrain. Dimension
-      // reconciliation should only fix out-of-bounds/token-overlap issues,
-      // not eject characters a GM intentionally tucked into terrain blocks.
-      new Set<string>(),
-    )
-    const byId = new Map(reconciliation.pokemons.map((p) => [p.id, p.position]))
-    map.value.placements = map.value.placements.flatMap((placement) => {
-      const next = byId.get(placement.id)
-      if (!next) return []
-      return [{ ...placement, position: next }]
+    const reconciled = reconcileMapForDimensions({
+      map: map.value,
+      spawnedPokemon: spawnedPokemon.value,
+      selectedId: selectedId.value,
     })
-    if (selectedId.value && !map.value.placements.some((p) => p.id === selectedId.value)) {
-      clearSelection()
+
+    if (reconciled.dimensions.x !== dims.x) map.value.dimensions.x = reconciled.dimensions.x
+    if (reconciled.dimensions.y !== dims.y) map.value.dimensions.y = reconciled.dimensions.y
+    if (reconciled.dimensions.z !== dims.z) map.value.dimensions.z = reconciled.dimensions.z
+
+    if (reconciled.groundLevelY !== undefined && reconciled.groundLevelY !== map.value.groundLevelY) {
+      map.value.groundLevelY = reconciled.groundLevelY
     }
+
+    if (reconciled.voxels.length !== map.value.voxels.length) {
+      map.value.voxels = reconciled.voxels
+    }
+
+    if (reconciled.hazards.length !== mapHazards.value.length) {
+      map.value.hazards = reconciled.hazards
+    }
+
+    map.value.placements = reconciled.placements
+    if (reconciled.selectedPlacementRemoved) clearSelection()
   },
   { deep: true },
 )
