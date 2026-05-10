@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; encounter generation helper validation now uses typed H3-free input errors. Next candidates include decoupling another remaining server adapter boundary or focused UI/helper duplication cleanup; do not mark the full refactor complete yet.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; sheet save now uses a typed H3-free use case. Next candidates include extracting additional sheet mutation/folder use cases or another focused UI/helper duplication cleanup; do not mark the full refactor complete yet.
 
 ## Phase 0 baseline audit
 
@@ -3116,5 +3116,19 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; encounter generation help
 - Quality gates after this phase:
   - `npm test -- tests/server/encounterGeneration.test.ts tests/server/generateEncounters.test.ts` — passes: 2 test files / 11 tests.
   - `npm test` — passes: 124 test files / 466 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: sheet save use-case extraction
+
+- Extracted `/api/sheets/save` orchestration into `server/useCases/saveSheet.ts`.
+  - The use case now owns payload-slug validation, persisted-sheet lookup, player-access enforcement, derived `folder` stripping, player-access preservation for player saves, write persistence, response path formatting, and compatible sheet/sheets realtime update events behind injectable dependencies.
+- Reduced `server/api/sheets/save.post.ts` to a thin H3 adapter for auth, non-production gating, request validation, use-case invocation, realtime publishing, and HTTP error translation.
+- Preserved existing save-sheet behavior: request/response shape stays `{ ok, path }`, invalid slug mismatches keep the same status message, missing sheets remain 404s, player saves still require player-accessible sheets and force `player: true`, `folder` remains derived/not persisted, and realtime channels remain `sheet:<kind>:<slug>` plus `sheets` with clientId echo suppression support.
+- Added `tests/server/saveSheet.test.ts` covering GM saves, player-accessible saves, slug mismatch rejection, missing-sheet errors, inaccessible player saves, stripped derived fields, writes, response paths, and realtime event payloads.
+- Next remaining phase: continue one bounded cleanup pass, with remaining candidates including extracting additional sheet mutation/folder use cases or another focused UI/helper duplication cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/server/saveSheet.test.ts` — passes: 1 test file / 5 tests.
+  - `npm test` — passes: 125 test files / 471 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
