@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { nextTick, onMounted, ref } from 'vue'
+import LibraryContextMenuFormActions from '~/components/library/LibraryContextMenuFormActions.vue'
 import { textValueFromEvent } from '~/utils/domEvents'
 
 withDefaults(defineProps<{
@@ -40,9 +41,11 @@ onMounted(async () => {
       />
     </label>
     <p v-if="error" class="ctx-error" role="alert">{{ error }}</p>
-    <div class="ctx-actions">
-      <button type="button" class="ctx-btn" :disabled="busy" @click="emit('close')">Cancel</button>
-      <button type="submit" class="ctx-btn ctx-btn--primary" :disabled="busy">Rename</button>
-    </div>
+    <LibraryContextMenuFormActions
+      :busy="busy"
+      submit-label="Rename"
+      @close="emit('close')"
+      @submit="emit('submit')"
+    />
   </form>
 </template>

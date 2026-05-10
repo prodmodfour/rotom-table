@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { nextTick, onMounted, ref } from 'vue'
+import LibraryContextMenuFormActions from '~/components/library/LibraryContextMenuFormActions.vue'
 import { textValueFromEvent } from '~/utils/domEvents'
 import type { FolderMoveDestination } from '~/utils/folderBrowser'
 
@@ -47,15 +48,12 @@ onMounted(async () => {
       </select>
     </label>
     <p v-if="error" class="ctx-error" role="alert">{{ error }}</p>
-    <div class="ctx-actions">
-      <button type="button" class="ctx-btn" :disabled="busy" @click="emit('close')">Cancel</button>
-      <button
-        type="submit"
-        class="ctx-btn ctx-btn--primary"
-        :disabled="busy || destinations.length === 0"
-      >
-        Move
-      </button>
-    </div>
+    <LibraryContextMenuFormActions
+      :busy="busy"
+      :submit-disabled="destinations.length === 0"
+      submit-label="Move"
+      @close="emit('close')"
+      @submit="emit('submit')"
+    />
   </form>
 </template>

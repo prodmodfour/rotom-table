@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import LibraryContextMenuFormActions from '~/components/library/LibraryContextMenuFormActions.vue'
+
 defineProps<{
   targetKind: string
   targetLabel: string
@@ -26,11 +28,12 @@ const emit = defineEmits<{
       </template>
     </p>
     <p v-if="error" class="ctx-error" role="alert">{{ error }}</p>
-    <div class="ctx-actions">
-      <button type="button" class="ctx-btn" :disabled="busy" @click="emit('close')">Cancel</button>
-      <button type="button" class="ctx-btn ctx-btn--danger" :disabled="busy" @click="emit('submit')">
-        Delete
-      </button>
-    </div>
+    <LibraryContextMenuFormActions
+      :busy="busy"
+      submit-label="Delete"
+      submit-variant="danger"
+      @close="emit('close')"
+      @submit="emit('submit')"
+    />
   </div>
 </template>

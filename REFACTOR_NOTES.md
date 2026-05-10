@@ -2672,3 +2672,15 @@
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm test` — passes: 103 test files / 383 tests.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: library context menu form actions
+
+- Extracted the shared Cancel/submit action row and button styles into `components/library/LibraryContextMenuFormActions.vue`.
+- Updated the rename, move, and delete context-menu mode components to compose the shared actions with focused labels, disabled-state, and danger-variant props while preserving submit/close emits, rename input focus/select, move destination gating, and delete confirmation behavior.
+- Removed button/action deep styles from `components/library/LibraryContextMenu.vue` so action-button presentation lives with the focused form-actions component.
+- Next remaining phase: continue small library UI cleanup by extracting shared context-menu error/field primitives or another focused presentation component.
+- Quality gates after this phase:
+  - `npm test -- tests/composables/library/useLibraryContextMenu.test.ts` — passes: 1 test file / 5 tests.
+  - `npm test` — passes: 103 test files / 383 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
