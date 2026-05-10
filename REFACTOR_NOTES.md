@@ -2566,3 +2566,12 @@
   - `npm test` — passes: 102 test files / 381 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: move automation header component
+
+- Extracted the move-automation dialog header/close button into `components/move-automation/MoveAutomationDialogHeader.vue`.
+- Reduced `MoveAutomationDialog` to wizard state/composition and preserved the dialog title ID, species heading, close action, and header styling.
+- Quality gates after this phase:
+  - `npm test` — passes: 102 test files / 381 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
 import MoveAutomationDialogFooter from '~/components/move-automation/MoveAutomationDialogFooter.vue'
+import MoveAutomationDialogHeader from '~/components/move-automation/MoveAutomationDialogHeader.vue'
 import MoveAutomationStepIndicator from '~/components/move-automation/MoveAutomationStepIndicator.vue'
 import { damageFormulaForMove } from '~/utils/moveAutomation'
 import { parseHazardCellText } from '~/utils/moveAutomationDialog'
@@ -211,13 +212,11 @@ const apply = () => emit('apply', transaction.value)
 <template>
   <div class="move-automation-backdrop" @pointerdown.self="emit('close')" @contextmenu.prevent>
     <section class="move-automation" role="dialog" aria-modal="true" :aria-labelledby="overlayTitleId" @pointerdown.stop>
-      <header class="move-automation__header">
-        <div>
-          <p class="move-automation__eyebrow">Use Move</p>
-          <h2 :id="overlayTitleId">{{ user.species }}</h2>
-        </div>
-        <button type="button" class="move-automation__close" aria-label="Close" @click="emit('close')">×</button>
-      </header>
+      <MoveAutomationDialogHeader
+        :title-id="overlayTitleId"
+        :user-species="user.species"
+        @close="emit('close')"
+      />
 
       <MoveAutomationStepIndicator :active-step="step" />
 
@@ -311,45 +310,6 @@ const apply = () => emit('apply', transaction.value)
   background: var(--paper-soft);
   box-shadow: var(--shadow-card);
   color: var(--ink);
-}
-
-.move-automation__header {
-  flex: 0 0 auto;
-  display: flex;
-  align-items: center;
-  gap: 0.65rem;
-  padding: 0.85rem 1rem;
-  border-bottom: 1px solid var(--rule-soft);
-}
-
-.move-automation__header {
-  justify-content: space-between;
-}
-
-.move-automation__eyebrow {
-  margin: 0 0 0.1rem;
-  color: var(--ink-muted);
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.move-automation__header h2 {
-  margin: 0;
-}
-
-.move-automation__close {
-  width: 2.1rem;
-  height: 2.1rem;
-  border: 1px solid var(--rule-soft);
-  border-radius: 10px;
-  background: var(--paper);
-  color: var(--ink);
-  cursor: pointer;
-  font: inherit;
-  font-size: 1.4rem;
-  line-height: 1;
 }
 
 
