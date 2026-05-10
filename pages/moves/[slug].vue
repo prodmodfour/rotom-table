@@ -1,15 +1,14 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { moveBySlug } from '~/data/ptuReference'
+import { referenceDetailTitle } from '~/utils/reference/pageTitles'
 
 const route = useRoute()
 
 const move = computed(() => moveBySlug.get(String(route.params.slug ?? '')) ?? null)
 
 useHead(() => ({
-  title: move.value
-    ? `${move.value.name} · Moves`
-    : 'Move not found · Rotom Table',
+  title: referenceDetailTitle(move.value?.name, 'Moves', 'Move not found'),
 }))
 </script>
 

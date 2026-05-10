@@ -1,15 +1,14 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { conditionBySlug } from '~/data/ptuReference'
+import { referenceDetailTitle } from '~/utils/reference/pageTitles'
 
 const route = useRoute()
 
 const condition = computed(() => conditionBySlug.get(String(route.params.slug ?? '')) ?? null)
 
 useHead(() => ({
-  title: condition.value
-    ? `${condition.value.name} · Conditions`
-    : 'Condition not found · Rotom Table',
+  title: referenceDetailTitle(condition.value?.name, 'Conditions', 'Condition not found'),
 }))
 </script>
 

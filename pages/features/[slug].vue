@@ -2,15 +2,14 @@
 import { computed } from 'vue'
 import { featureBySlug, features } from '~/data/ptuReference'
 import { siblingFeaturesInClass } from '~/utils/reference/featureDetails'
+import { referenceDetailTitle } from '~/utils/reference/pageTitles'
 
 const route = useRoute()
 
 const feat = computed(() => featureBySlug.get(String(route.params.slug ?? '')) ?? null)
 
 useHead(() => ({
-  title: feat.value
-    ? `${feat.value.name} · Features`
-    : 'Feature not found · Rotom Table',
+  title: referenceDetailTitle(feat.value?.name, 'Features', 'Feature not found'),
 }))
 
 /** Sibling features in the same Trainer Class (if this is a class feature). */

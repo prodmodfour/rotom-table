@@ -2,15 +2,14 @@
 import { computed } from 'vue'
 import { findItem, items } from '~/data/ptuReference'
 import { relatedItemsByPrimaryCategory } from '~/utils/reference/itemDetails'
+import { referenceDetailTitle } from '~/utils/reference/pageTitles'
 
 const route = useRoute()
 
 const item = computed(() => findItem(String(route.params.slug ?? '')))
 
 useHead(() => ({
-  title: item.value
-    ? `${item.value.name} · Items`
-    : 'Item not found · Rotom Table',
+  title: referenceDetailTitle(item.value?.name, 'Items', 'Item not found'),
 }))
 
 const relatedItems = computed(() => relatedItemsByPrimaryCategory(item.value, items))

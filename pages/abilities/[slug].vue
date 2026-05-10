@@ -1,15 +1,14 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { abilityBySlug } from '~/data/ptuReference'
+import { referenceDetailTitle } from '~/utils/reference/pageTitles'
 
 const route = useRoute()
 
 const ability = computed(() => abilityBySlug.get(String(route.params.slug ?? '')) ?? null)
 
 useHead(() => ({
-  title: ability.value
-    ? `${ability.value.name} · Abilities`
-    : 'Ability not found · Rotom Table',
+  title: referenceDetailTitle(ability.value?.name, 'Abilities', 'Ability not found'),
 }))
 </script>
 

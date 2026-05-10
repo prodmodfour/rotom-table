@@ -1,15 +1,14 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { ruleBySlug } from '~/data/ptuReference'
+import { referenceDetailTitle } from '~/utils/reference/pageTitles'
 
 const route = useRoute()
 
 const rule = computed(() => ruleBySlug.get(String(route.params.slug ?? '')) ?? null)
 
 useHead(() => ({
-  title: rule.value
-    ? `${rule.value.name} · Rules`
-    : 'Rule not found · Rotom Table',
+  title: referenceDetailTitle(rule.value?.name, 'Rules', 'Rule not found'),
 }))
 </script>
 
