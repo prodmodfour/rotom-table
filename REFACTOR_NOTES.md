@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; sheet save, rename, move, and delete now use typed H3-free use cases. Next candidates include extracting sheet folder/create use cases or another focused UI/helper duplication cleanup; do not mark the full refactor complete yet.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; sheet create/save/rename/move/delete now use typed H3-free use cases. Next candidates include extracting sheet folder use cases or another focused UI/helper duplication cleanup; do not mark the full refactor complete yet.
 
 ## Phase 0 baseline audit
 
@@ -3174,3 +3174,18 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; sheet save, rename, move,
   - `npm test` — passes: 128 test files / 482 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: sheet create use-case extraction
+
+- Extracted `/api/sheets/create` orchestration into `server/useCases/createSheet.ts`.
+  - The use case now owns sheet creation persistence invocation, response path/slug formatting, and compatible `sheets` channel update events behind injectable dependencies.
+- Reduced `server/api/sheets/create.post.ts` to a thin H3 adapter for GM auth, non-production gating, request validation, use-case invocation, realtime publishing, and response formatting.
+- Preserved existing create-sheet behavior: request/response shape stays `{ ok, kind, slug, path }`, Pokémon/trainer default sheet creation still comes from `sheetStorage`, folder remains path-derived and included in the realtime sheet payload, and `clientId` echo suppression metadata remains on the `sheets` event.
+- Added `tests/server/createSheet.test.ts` covering Pokémon/trainer creation events, root-folder payloads, storage-derived folder payloads, and unexpected storage-failure bubbling.
+- Next remaining phase: continue one bounded cleanup pass, with remaining candidates including extracting sheet folder create/move/delete/list use cases or another focused UI/helper duplication cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/server/createSheet.test.ts` — passes: 1 test file / 4 tests.
+  - `npm test` — passes: 129 test files / 486 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
