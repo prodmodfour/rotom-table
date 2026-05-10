@@ -15,6 +15,13 @@ const sectionFilter = ref<string | null>(null)
 
 const categoryCounts = computed(() => buildItemCategoryCounts(items))
 const sectionCounts = computed(() => buildItemSectionCounts(items))
+const sectionOptions = computed(() => [
+  { value: null, label: 'All sections' },
+  ...sectionCounts.value.map(({ section, count }) => ({
+    value: section,
+    label: `${section} (${count})`,
+  })),
+])
 const categoryChips = computed(() => categoryCounts.value.map(({ category, count }) => ({
   key: category,
   label: category,
@@ -55,19 +62,11 @@ const toggleCategory = (category: string) => {
           placeholder="Search by name, cost, section, source, or effect…"
         />
 
-        <label class="select-field">
-          <span>Section</span>
-          <select v-model="sectionFilter">
-            <option :value="null">All sections</option>
-            <option
-              v-for="{ section, count } in sectionCounts"
-              :key="section"
-              :value="section"
-            >
-              {{ section }} ({{ count }})
-            </option>
-          </select>
-        </label>
+        <ReferenceSelectField
+          v-model="sectionFilter"
+          label="Section"
+          :options="sectionOptions"
+        />
       </div>
     </ReferenceIndexHeader>
 
@@ -122,35 +121,6 @@ const toggleCategory = (category: string) => {
   grid-template-columns: minmax(240px, 1fr) minmax(220px, 320px);
   gap: 0.55rem;
   align-items: end;
-}
-
-.select-field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.select-field span {
-  color: var(--ink-muted);
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-
-.select-field select {
-  width: 100%;
-  border: 1px solid var(--rule-soft);
-  border-radius: 10px;
-  background: var(--paper);
-  color: var(--ink);
-  padding: 0.7rem 0.85rem;
-  outline: none;
-}
-
-.select-field select:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px rgba(250, 189, 47, 0.18);
 }
 
 .item-row__top {
