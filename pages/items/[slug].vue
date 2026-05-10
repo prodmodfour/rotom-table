@@ -3,10 +3,11 @@ import { computed } from 'vue'
 import { findItem, items } from '~/data/ptuReference'
 import { relatedItemsByPrimaryCategory } from '~/utils/reference/itemDetails'
 import { referenceDetailTitle } from '~/utils/reference/pageTitles'
+import { routeSlugParam } from '~/utils/routeParams'
 
 const route = useRoute()
 
-const item = computed(() => findItem(String(route.params.slug ?? '')))
+const item = computed(() => findItem(routeSlugParam(route.params)))
 
 useHead(() => ({
   title: referenceDetailTitle(item.value?.name, 'Items', 'Item not found'),

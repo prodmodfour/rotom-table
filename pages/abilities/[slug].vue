@@ -2,10 +2,11 @@
 import { computed } from 'vue'
 import { abilityBySlug } from '~/data/ptuReference'
 import { referenceDetailTitle } from '~/utils/reference/pageTitles'
+import { routeSlugParam } from '~/utils/routeParams'
 
 const route = useRoute()
 
-const ability = computed(() => abilityBySlug.get(String(route.params.slug ?? '')) ?? null)
+const ability = computed(() => abilityBySlug.get(routeSlugParam(route.params)) ?? null)
 
 useHead(() => ({
   title: referenceDetailTitle(ability.value?.name, 'Abilities', 'Ability not found'),

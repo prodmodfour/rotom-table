@@ -3,10 +3,11 @@ import { computed } from 'vue'
 import { featureBySlug, features } from '~/data/ptuReference'
 import { siblingFeaturesInClass } from '~/utils/reference/featureDetails'
 import { referenceDetailTitle } from '~/utils/reference/pageTitles'
+import { routeSlugParam } from '~/utils/routeParams'
 
 const route = useRoute()
 
-const feat = computed(() => featureBySlug.get(String(route.params.slug ?? '')) ?? null)
+const feat = computed(() => featureBySlug.get(routeSlugParam(route.params)) ?? null)
 
 useHead(() => ({
   title: referenceDetailTitle(feat.value?.name, 'Features', 'Feature not found'),

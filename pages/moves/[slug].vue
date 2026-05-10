@@ -2,10 +2,11 @@
 import { computed } from 'vue'
 import { moveBySlug } from '~/data/ptuReference'
 import { referenceDetailTitle } from '~/utils/reference/pageTitles'
+import { routeSlugParam } from '~/utils/routeParams'
 
 const route = useRoute()
 
-const move = computed(() => moveBySlug.get(String(route.params.slug ?? '')) ?? null)
+const move = computed(() => moveBySlug.get(routeSlugParam(route.params)) ?? null)
 
 useHead(() => ({
   title: referenceDetailTitle(move.value?.name, 'Moves', 'Move not found'),

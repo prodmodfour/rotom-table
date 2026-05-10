@@ -2,10 +2,11 @@
 import { computed } from 'vue'
 import { ruleBySlug } from '~/data/ptuReference'
 import { referenceDetailTitle } from '~/utils/reference/pageTitles'
+import { routeSlugParam } from '~/utils/routeParams'
 
 const route = useRoute()
 
-const rule = computed(() => ruleBySlug.get(String(route.params.slug ?? '')) ?? null)
+const rule = computed(() => ruleBySlug.get(routeSlugParam(route.params)) ?? null)
 
 useHead(() => ({
   title: referenceDetailTitle(rule.value?.name, 'Rules', 'Rule not found'),

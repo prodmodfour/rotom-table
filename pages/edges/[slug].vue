@@ -2,10 +2,11 @@
 import { computed } from 'vue'
 import { edgeBySlug } from '~/data/ptuReference'
 import { referenceDetailTitle } from '~/utils/reference/pageTitles'
+import { routeSlugParam } from '~/utils/routeParams'
 
 const route = useRoute()
 
-const edge = computed(() => edgeBySlug.get(String(route.params.slug ?? '')) ?? null)
+const edge = computed(() => edgeBySlug.get(routeSlugParam(route.params)) ?? null)
 
 useHead(() => ({
   title: referenceDetailTitle(edge.value?.name, 'Edges', 'Edge not found'),

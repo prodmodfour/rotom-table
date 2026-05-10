@@ -1958,3 +1958,13 @@
   - `npm test` — passes: 86 test files / 329 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: route slug param helper
+
+- Added `utils/routeParams.ts` to centralize route-param-to-string normalization for slug routes.
+- Updated ability, move, edge, rule, condition, item, and feature detail routes to use the shared slug helper while preserving previous string coercion behavior.
+- Added `tests/utils/routeParams.test.ts` covering missing values and existing route-param coercion semantics.
+- Quality gates after this phase:
+  - `npm test` — passes: 87 test files / 331 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

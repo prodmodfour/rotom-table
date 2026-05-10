@@ -2,10 +2,11 @@
 import { computed } from 'vue'
 import { conditionBySlug } from '~/data/ptuReference'
 import { referenceDetailTitle } from '~/utils/reference/pageTitles'
+import { routeSlugParam } from '~/utils/routeParams'
 
 const route = useRoute()
 
-const condition = computed(() => conditionBySlug.get(String(route.params.slug ?? '')) ?? null)
+const condition = computed(() => conditionBySlug.get(routeSlugParam(route.params)) ?? null)
 
 useHead(() => ({
   title: referenceDetailTitle(condition.value?.name, 'Conditions', 'Condition not found'),
