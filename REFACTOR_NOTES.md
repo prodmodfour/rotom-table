@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; sheet library action orchestration is now extracted, but small UI/helper cleanup remains and the refactor is not marked complete.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; map and sheet library action orchestration are now extracted, but small UI/helper cleanup remains and the refactor is not marked complete.
 
 ## Phase 0 baseline audit
 
@@ -2924,5 +2924,18 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; sheet library action orch
 - Quality gates after this phase:
   - `npm test -- tests/composables/library/useSheetLibraryActions.test.ts` — passes: 1 test file / 4 tests.
   - `npm test` — passes: 111 test files / 415 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: map library action orchestration composable
+
+- Extracted map-library drag/drop move, context-menu target labels/destinations, rename, and delete orchestration into `composables/library/useMapLibraryActions.ts`.
+  - The composable owns injected map/folder persistence calls plus optimistic map/folder collection updates, folder rename refresh/follow-up navigation, and context-menu helper derivations.
+- Updated `pages/maps/index.vue` to delegate map/folder move, rename, delete, and context-menu helper logic to the focused composable while preserving GM gating, clientId payloads, map editor routes, folder breadcrumbs, drag/drop behavior, and local optimistic UI updates.
+- Added `tests/composables/library/useMapLibraryActions.test.ts` covering drop validity, map/folder moves, context-menu labels/destinations, map/folder renames with current-folder follow-up navigation, and map/folder subtree deletion state.
+- Next remaining phase: continue one small bounded cleanup pass on remaining library/map/reference presentation or helper duplication; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/composables/library/useMapLibraryActions.test.ts` — passes: 1 test file / 4 tests.
+  - `npm test` — passes: 112 test files / 419 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

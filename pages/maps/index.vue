@@ -9,25 +9,20 @@ import MapLibraryGrid from '~/components/library/MapLibraryGrid.vue'
 import MapLibraryIntroPanel from '~/components/library/MapLibraryIntroPanel.vue'
 import { formatFolderLabel } from '~/utils/sheetFolders'
 import {
-  buildFolderMoveDestinations,
   buildVisibleFolderTiles,
-  canMoveFolderTo,
-  folderLeafName,
-  isSameOrDescendantFolder,
-  joinFolderPath,
-  movedFolderPath,
-  parentFolderPath,
-  renameFolderPrefix,
   type FolderTile,
 } from '~/utils/folderBrowser'
 import { getClientId } from '~/utils/clientId'
 import {
-  deleteMapFolderFromLibrary,
-  moveMapFolderInLibrary,
   buildMapFolderSet,
   filterVisibleMaps,
   tabletopMapToSummary,
 } from '~/utils/mapLibrary'
+import {
+  useMapLibraryActions,
+  type MapLibraryContextTarget,
+  type MapLibraryDragPayload,
+} from '~/composables/library/useMapLibraryActions'
 import { useMapLibraryData } from '~/composables/library/useMapLibraryData'
 import { useLibraryContextMenu } from '~/composables/library/useLibraryContextMenu'
 import { useLibraryContextSubmit } from '~/composables/library/useLibraryContextSubmit'
@@ -100,21 +95,39 @@ const hasAnything = computed(
   () => visibleMaps.value.length > 0 || visibleFolders.value.length > 0,
 )
 
-interface DragMap {
-  type: 'map'
-  slug: string
-  from: string
-}
-interface DragFolder {
-  type: 'folder'
-  path: string
-}
-type DragPayload = DragMap | DragFolder
+type DragPayload = MapLibraryDragPayload
 
-const canDropPayloadOn = (d: DragPayload, targetPath: string): boolean => {
-  if (d.type === 'map') return d.from !== targetPath
-  return canMoveFolderTo(d.path, targetPath, allFolders.value)
-}
+type CtxTarget = MapLibraryContextTarget
+
+const mapActions = useMapLibraryActions({
+  currentPath,
+  allFolders,
+  maps,
+  extraFolders,
+  goToFolder,
+  refresh,
+  formatFolderLabel,
+  moveMap: ({ slug, folder }) => $fetch('/api/maps/move', {
+    method: 'POST',
+    body: { slug, folder, clientId },
+  }),
+  moveFolder: ({ from, to }) => $fetch('/api/maps/move-folder', {
+    method: 'POST',
+    body: { from, to, clientId },
+  }),
+  renameMap: ({ slug, name }) => $fetch<{ slug: string; name: string }>('/api/maps/rename', {
+    method: 'POST',
+    body: { slug, name, clientId },
+  }),
+  deleteMap: ({ slug }) => $fetch('/api/maps/delete', {
+    method: 'POST',
+    body: { slug, clientId },
+  }),
+  deleteFolder: ({ folder }) => $fetch('/api/maps/delete-folder', {
+    method: 'POST',
+    body: { folder, clientId },
+  }),
+})
 
 const {
   drag,
@@ -128,7 +141,7 @@ const {
   takeDropPayload,
 } = useLibraryDragDrop<DragPayload>({
   canDrag: isGm,
-  canDropPayloadOn,
+  canDropPayloadOn: mapActions.canDropPayloadOn,
 })
 
 const onMapDragStart = (e: DragEvent, item: MapSummary) => {
@@ -149,27 +162,9 @@ const onFolderDragStart = (e: DragEvent, path: string) => {
   })
 }
 
-const performMove = async (d: DragPayload, targetPath: string) => {
-  if (d.type === 'map') {
-    await $fetch('/api/maps/move', {
-      method: 'POST',
-      body: { slug: d.slug, folder: targetPath, clientId },
-    })
-    const existing = maps.get(d.slug)
-    if (existing) maps.set(d.slug, { ...existing, folder: targetPath })
-  } else {
-    const newPath = movedFolderPath(d.path, targetPath)
-    await $fetch('/api/maps/move-folder', {
-      method: 'POST',
-      body: { from: d.path, to: newPath, clientId },
-    })
-    moveMapFolderInLibrary({ maps, extraFolders }, d.path, newPath)
-  }
-}
-
 const { moving, moveError, onDrop } = useLibraryDropMove<DragPayload>({
   takeDropPayload,
-  movePayload: performMove,
+  movePayload: mapActions.movePayload,
 })
 
 const { createNewMap } = useMapLibraryCreation({
@@ -186,8 +181,6 @@ const { createNewMap } = useMapLibraryCreation({
   },
 })
 
-type CtxTarget = { type: 'map'; item: MapSummary } | { type: 'folder'; tile: FolderTile }
-
 const {
   ctx,
   openContext,
@@ -199,82 +192,17 @@ const {
   enterDelete,
 } = useLibraryContextMenu<CtxTarget>({
   canOpen: isGm,
-  targetLabel: (target) => target.type === 'map' ? target.item.name : target.tile.label,
-  renameInputForTarget: (target) => {
-    if (target.type === 'map') return target.item.name
-    return folderLeafName(target.tile.path)
-  },
-  moveDestinationsForTarget: (target) => buildFolderMoveDestinations({
-    folderPaths: allFolders.value,
-    target: target.type === 'map'
-      ? { type: 'item', folder: target.item.folder }
-      : { type: 'folder', path: target.tile.path },
-    formatLabel: formatFolderLabel,
-  }),
+  targetLabel: mapActions.targetLabel,
+  renameInputForTarget: mapActions.renameInputForTarget,
+  moveDestinationsForTarget: mapActions.moveDestinationsForTarget,
 })
 
 const { submitContext } = useLibraryContextSubmit<CtxTarget>({
   ctx,
   closeContext,
-  onMove: async (target, destination) => {
-    if (target.type === 'map') {
-      await performMove({ type: 'map', slug: target.item.slug, from: target.item.folder }, destination)
-    } else {
-      await performMove({ type: 'folder', path: target.tile.path }, destination)
-    }
-  },
-  onRename: async (target, name) => {
-    if (target.type === 'map') {
-      const result = await $fetch<{ slug: string; name: string }>('/api/maps/rename', {
-        method: 'POST',
-        body: { slug: target.item.slug, name, clientId },
-      })
-      const existing = maps.get(target.item.slug)
-      if (existing) {
-        if (result.slug === existing.slug) {
-          maps.set(existing.slug, { ...existing, name: result.name })
-        } else {
-          maps.delete(existing.slug)
-          maps.set(result.slug, { ...existing, slug: result.slug, name: result.name })
-        }
-      }
-      return
-    }
-
-    const oldPath = target.tile.path
-    const parent = parentFolderPath(oldPath)
-    const newPath = joinFolderPath(parent, name)
-    if (newPath === oldPath) return
-
-    await $fetch('/api/maps/move-folder', {
-      method: 'POST',
-      body: { from: oldPath, to: newPath, clientId },
-    })
-    await refresh()
-    if (isSameOrDescendantFolder(currentPath.value, oldPath)) {
-      goToFolder(renameFolderPrefix(currentPath.value, oldPath, newPath))
-    }
-  },
-  onDelete: async (target) => {
-    if (target.type === 'map') {
-      await $fetch('/api/maps/delete', {
-        method: 'POST',
-        body: { slug: target.item.slug, clientId },
-      })
-      maps.delete(target.item.slug)
-      return
-    }
-
-    const path = target.tile.path
-    await $fetch('/api/maps/delete-folder', {
-      method: 'POST',
-      body: { folder: path, clientId },
-    })
-    deleteMapFolderFromLibrary({ maps, extraFolders }, path)
-    if (isSameOrDescendantFolder(currentPath.value, path)) {
-      goToFolder(parentFolderPath(path))
-    }
-  },
+  onMove: mapActions.moveTarget,
+  onRename: mapActions.renameTarget,
+  onDelete: mapActions.deleteTarget,
 })
 
 useWindowKeydown((event) => {
