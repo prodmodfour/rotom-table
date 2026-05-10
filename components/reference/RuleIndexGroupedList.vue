@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { toSlug } from '~/data/ptuReference'
+import { referenceDetailPath } from '~/utils/reference/routes'
 import type { RuleGroup } from '~/utils/reference/ruleIndex'
 
 defineProps<{
@@ -19,7 +20,7 @@ defineProps<{
       <NuxtLink
         v-for="rule in group.entries"
         :key="rule.name"
-        :to="`/rules/${toSlug(rule.name)}`"
+        :to="referenceDetailPath('rule', toSlug(rule.name))"
         class="ref-row rule-row"
       >
         <div class="ref-row__heading">

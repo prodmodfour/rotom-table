@@ -1,6 +1,8 @@
 import { computed, ref, watch, type ComputedRef, type Ref } from 'vue'
 import { findFirstAvailablePosition, type PreviewState } from '~/utils/grid'
 import { buildMapOccupancy } from '~/utils/mapOccupancy'
+import { pokedexEntryPathForSpecies } from '~/utils/pokedex/routes'
+import { toPokedexSlug as normalizePokedexSlug } from '~/utils/pokedex/searchText'
 import {
   createPlacementId as defaultCreatePlacementId,
   placementsToSpawned,
@@ -48,22 +50,12 @@ export const emptyPreviewState = (): PreviewState => ({
   pathLength: 0,
 })
 
-export const toPokedexSlug = (value: string): string => value
-  .normalize('NFKD')
-  .replace(/[̀-ͯ]/g, '')
-  .toLowerCase()
-  .replace(/['’]/g, '')
-  .replace(/[^a-z0-9]+/g, '-')
-  .replace(/^-+|-+$/g, '')
+export const toPokedexSlug = normalizePokedexSlug
 
 export const sheetPathForPlacement = (placement: Pick<SheetPlacement, 'sheetKind' | 'sheetSlug'>): string =>
   sheetEditorPath(placement.sheetKind, placement.sheetSlug)
 
-export const pokedexPathForSpecies = (species: string | null | undefined): string | null => {
-  if (!species) return null
-  const slug = toPokedexSlug(species)
-  return slug ? `/pokedex/${encodeURIComponent(slug)}` : null
-}
+export const pokedexPathForSpecies = pokedexEntryPathForSpecies
 
 export const useTokenControls = ({
   map,

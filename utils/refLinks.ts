@@ -6,6 +6,7 @@ import {
   findMove,
   type RefKind,
 } from '~/data/ptuReference'
+import { referenceDetailPathOrNull } from '~/utils/reference/routes'
 
 export type RefTooltipKind = Extract<RefKind, 'move' | 'ability' | 'capability' | 'condition'>
 
@@ -27,19 +28,8 @@ export interface RefTooltipDetail {
   sections: RefTooltipSection[]
 }
 
-export const refTargetPath = (kind: RefKind, slug: string | null): string | null => {
-  if (!slug) return null
-  switch (kind) {
-    case 'move':       return `/moves/${slug}`
-    case 'ability':    return `/abilities/${slug}`
-    case 'capability': return `/capabilities/${slug}`
-    case 'condition':  return `/conditions/${slug}`
-    case 'rule':       return `/rules/${slug}`
-    case 'feature':    return `/features/${slug}`
-    case 'edge':       return `/edges/${slug}`
-    case 'item':       return `/items/${slug}`
-  }
-}
+export const refTargetPath = (kind: RefKind, slug: string | null): string | null =>
+  referenceDetailPathOrNull(kind, slug)
 
 export const describeRefTarget = (kind: RefKind, name: string) => {
   const descriptor = describeRef(kind, name)

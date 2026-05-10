@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { toSlug } from '~/data/ptuReference'
+import { referenceDetailPath } from '~/utils/reference/routes'
 import type { PtuItem } from '~/types/ptuReference'
 
 defineProps<{
@@ -52,7 +53,7 @@ defineProps<{
         <li v-for="related in relatedItems" :key="related.name">
           <ItemSprite :item="related" size="sm" />
           <span class="related-main">
-            <NuxtLink :to="`/items/${toSlug(related.name)}`">{{ related.name }}</NuxtLink>
+            <NuxtLink :to="referenceDetailPath('item', toSlug(related.name))">{{ related.name }}</NuxtLink>
             <span v-if="related.costs.length" class="related-cost">{{ related.costs.join(', ') }}</span>
           </span>
         </li>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { toSlug } from '~/data/ptuReference'
+import { referenceDetailPath } from '~/utils/reference/routes'
 import type { PtuItem } from '~/types/ptuReference'
 
 defineProps<{
@@ -12,7 +13,7 @@ defineProps<{
     <NuxtLink
       v-for="item in items"
       :key="item.name"
-      :to="`/items/${toSlug(item.name)}`"
+      :to="referenceDetailPath('item', toSlug(item.name))"
       class="ref-row"
     >
       <div class="item-row__top">

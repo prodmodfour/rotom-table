@@ -1,7 +1,8 @@
 import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { onBeforeRouteUpdate } from 'vue-router'
+import { isPokedexPath } from '~/utils/pokedex/routes'
 
-export const isPokedexPath = (path: string): boolean => path.startsWith('/pokedex')
+export { isPokedexPath } from '~/utils/pokedex/routes'
 
 export const usePokedexSidebarScroll = () => {
   const route = useRoute()

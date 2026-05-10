@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck` currently passes. Next candidates include remaining route/helper constant cleanup (for example Pokédex/reference paths), another focused map-editor/helper extraction, or small UI duplication cleanup; do not mark the full refactor complete yet.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass. `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include another focused map-editor/helper extraction, remaining helper constant cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
 
 ## Phase 0 baseline audit
 
@@ -3457,5 +3457,20 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck` curre
   - `npm test -- tests/utils/encounterRoutes.test.ts tests/utils/loginRedirect.test.ts tests/utils/appNavigation.test.ts` — passes: 3 test files / 10 tests.
   - `npm run typecheck` — passes.
   - `npm test` — passes: 139 test files / 546 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: Pokédex and reference route helper cleanup
+
+- Added `utils/pokedex/routes.ts` for the canonical Pokédex path, path recognition, encoded entry paths, and species-to-entry route generation.
+- Added `utils/reference/routes.ts` for canonical PTU reference index/detail paths and shared reference back-label formatting.
+- Updated Pokédex browser scroll/page code, map token Pokédex links, app navigation, `RefLink`, reference detail shells, and reference list/detail links to use the shared route helpers instead of repeating `/pokedex`, `/moves`, `/abilities`, `/capabilities`, `/conditions`, `/rules`, `/items`, `/features`, and `/edges` strings inline.
+- Preserved existing public routes, route encoding behavior, reference back-link copy, Pokédex scroll preservation, and token sheet/Pokédex context-menu behavior.
+- Added tests for the new Pokédex and reference route helpers and reused existing route/link tests to cover the migrated callers.
+- Next remaining phase: continue one bounded cleanup pass, with candidates including another focused map-editor/helper extraction, remaining helper constant cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/utils/pokedex/routes.test.ts tests/utils/reference/routes.test.ts tests/utils/refLinks.test.ts tests/utils/appNavigation.test.ts tests/composables/map-editor/useTokenControls.test.ts tests/composables/pokedex/usePokedexSidebarScroll.test.ts tests/utils/pokedex/entryIndex.test.ts tests/composables/pokedex/usePokedexBrowser.test.ts` — passes: 8 test files / 28 tests.
+  - `npm run typecheck` — passes.
+  - `npm test` — passes: 141 test files / 552 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

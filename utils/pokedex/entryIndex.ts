@@ -1,4 +1,5 @@
 import { compareByNationalDex, getNationalDexNumber } from '~/utils/nationalDex'
+import { pokedexEntryPathForSlug } from '~/utils/pokedex/routes'
 import { buildPokedexSearchTexts, toPokedexSlug, type PokedexSearchTexts } from '~/utils/pokedex/searchText'
 import type { PokedexRecord } from '~/types/pokemon'
 
@@ -44,7 +45,8 @@ export const buildPokedexEntryBySlug = (entries: DisplayPokedexEntry[]): Map<str
   return entryBySlug
 }
 
-export const pokedexEntryPath = (entry: Pick<DisplayPokedexEntry, 'slug'>): string => `/pokedex/${entry.slug}`
+export const pokedexEntryPath = (entry: Pick<DisplayPokedexEntry, 'slug'>): string =>
+  pokedexEntryPathForSlug(entry.slug)
 
 export const routeParamToPokedexSlug = (value: unknown): string | null => {
   const rawValue = Array.isArray(value) ? value[0] : value

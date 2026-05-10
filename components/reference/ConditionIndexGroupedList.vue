@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { toSlug } from '~/data/ptuReference'
+import { referenceDetailPath } from '~/utils/reference/routes'
 import type { ConditionGroupForIndex } from '~/utils/reference/conditionIndex'
 
 defineProps<{
@@ -19,7 +20,7 @@ defineProps<{
       <NuxtLink
         v-for="condition in group.conditions"
         :key="condition.name"
-        :to="`/conditions/${toSlug(condition.name)}`"
+        :to="referenceDetailPath('condition', toSlug(condition.name))"
         class="ref-row condition-row"
       >
         <div class="ref-row__heading">

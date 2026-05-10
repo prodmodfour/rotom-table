@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { toSlug } from '~/data/ptuReference'
+import { referenceDetailPath } from '~/utils/reference/routes'
 import type { PtuCapability } from '~/types/ptuReference'
 
 defineProps<{
@@ -12,7 +13,7 @@ defineProps<{
     <NuxtLink
       v-for="cap in capabilities"
       :key="cap.name"
-      :to="`/capabilities/${toSlug(cap.name)}`"
+      :to="referenceDetailPath('capability', toSlug(cap.name))"
       class="ref-row capability-row"
     >
       <CapabilityArt :name="cap.name" size="sm" class="capability-row__art" />

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { toSlug } from '~/data/ptuReference'
+import { referenceDetailPath } from '~/utils/reference/routes'
 import type { PtuEdge } from '~/types/ptuReference'
 
 defineProps<{
@@ -12,7 +13,7 @@ defineProps<{
     <NuxtLink
       v-for="edge in edges"
       :key="edge.name"
-      :to="`/edges/${toSlug(edge.name)}`"
+      :to="referenceDetailPath('edge', toSlug(edge.name))"
       class="ref-row"
     >
       <div class="ref-row__heading">

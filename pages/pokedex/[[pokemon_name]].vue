@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import pokedexData from '~/ptu-data/data/pokedex.json'
 import { usePokedexBrowser } from '~/composables/pokedex/usePokedexBrowser'
+import { isPokedexPath } from '~/utils/pokedex/routes'
 import type { PokedexRecord } from '~/types/pokemon'
 
 definePageMeta({
@@ -8,7 +9,7 @@ definePageMeta({
   // selecting a Pokémon updates the detail pane in-place instead of feeling
   // like a whole new page load.
   key: 'pokedex-browser',
-  scrollToTop: (to, from) => !(to.path.startsWith('/pokedex') && from.path.startsWith('/pokedex')),
+  scrollToTop: (to, from) => !(isPokedexPath(to.path) && isPokedexPath(from.path)),
 })
 
 const {

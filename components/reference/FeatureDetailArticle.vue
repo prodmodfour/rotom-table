@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { toSlug } from '~/data/ptuReference'
+import { referenceDetailPath } from '~/utils/reference/routes'
 import type { PtuFeature } from '~/types/ptuReference'
 
 defineProps<{
@@ -18,7 +19,7 @@ defineProps<{
 
     <p v-if="feature.className && feature.className !== feature.name" class="class-note">
       From the
-      <NuxtLink :to="`/features/${toSlug(feature.className)}`">{{ feature.className }}</NuxtLink>
+      <NuxtLink :to="referenceDetailPath('feature', toSlug(feature.className))">{{ feature.className }}</NuxtLink>
       class.
     </p>
 
@@ -49,7 +50,7 @@ defineProps<{
     <ReferenceFieldBlock v-if="siblings.length" :title="`Other features in ${feature.className}`">
       <ul class="sibling-list">
         <li v-for="sibling in siblings" :key="sibling.name">
-          <NuxtLink :to="`/features/${toSlug(sibling.name)}`">{{ sibling.name }}</NuxtLink>
+          <NuxtLink :to="referenceDetailPath('feature', toSlug(sibling.name))">{{ sibling.name }}</NuxtLink>
           <span v-if="sibling.tags?.length" class="sibling-tags">
             <span v-for="tag in sibling.tags" :key="tag" class="badge tag-badge">{{ tag }}</span>
           </span>
