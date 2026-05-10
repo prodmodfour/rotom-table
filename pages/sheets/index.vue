@@ -22,11 +22,13 @@ import {
   buildSheetLibraryItems,
   displaySheetLibraryName,
   matchesSheetLibraryQuery,
+  sheetLibraryKey,
   type SheetLibraryItem,
 } from '~/utils/sheetLibrary'
 import { useLibraryContextMenu } from '~/composables/library/useLibraryContextMenu'
 import { useLibraryDragDrop } from '~/composables/library/useLibraryDragDrop'
 import { getErrorMessage } from '~/utils/errorMessages'
+import { sheetEditorPath } from '~/utils/sheetRoutes'
 
 useHead({
   title: 'Sheets · Rotom Table',
@@ -237,7 +239,7 @@ const performMove = async (d: DragPayload, targetPath: string) => {
       method: 'POST',
       body: { kind: d.kind, slug: d.slug, folder: targetPath },
     })
-    sheetOverrides[`${d.kind}:${d.slug}`] = targetPath
+    sheetOverrides[sheetLibraryKey(d.kind, d.slug)] = targetPath
   } else {
     const newPath = movedFolderPath(d.path, targetPath)
     await $fetch('/api/sheets/move-folder', {
@@ -299,10 +301,7 @@ const createSheet = async (kind: 'pokemon' | 'trainer') => {
       '/api/sheets/create',
       { method: 'POST', body: { kind, folder: currentPath.value } },
     )
-    const dest = res.kind === 'pokemon'
-      ? `/sheets/${res.slug}`
-      : `/sheets/trainers/${res.slug}`
-    window.location.href = dest
+    window.location.href = sheetEditorPath(res.kind, res.slug)
   } catch (err: unknown) {
     sheetCreateError.value = getErrorMessage(err)
     creatingSheet.value = false
@@ -370,7 +369,7 @@ const applyRenameSheet = async (item: SheetItem, newName: string) => {
     method: 'POST',
     body: { kind: item.kind, slug: item.slug, name: newName },
   })
-  nameOverrides[`${item.kind}:${item.slug}`] = newName
+  nameOverrides[sheetLibraryKey(item.kind, item.slug)] = newName
 }
 
 const applyRenameFolder = async (oldPath: string, newLeaf: string) => {
@@ -419,7 +418,7 @@ const submitContext = async () => {
           method: 'POST',
           body: { kind: c.target.item.kind, slug: c.target.item.slug },
         })
-        deletedSheets.add(`${c.target.item.kind}:${c.target.item.slug}`)
+        deletedSheets.add(sheetLibraryKey(c.target.item.kind, c.target.item.slug))
       } else {
         const path = c.target.tile.path
         await $fetch('/api/sheets/delete-folder', {
@@ -430,7 +429,7 @@ const submitContext = async () => {
         // Mark contained sheets as deleted so they vanish from the UI immediately.
         for (const item of items.value) {
           if (item.folder === path || item.folder.startsWith(path + '/')) {
-            deletedSheets.add(`${item.kind}:${item.slug}`)
+            deletedSheets.add(sheetLibraryKey(item.kind, item.slug))
           }
         }
         for (const f of [...extraFolders]) {

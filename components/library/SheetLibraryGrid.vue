@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { FolderTile } from '~/utils/folderBrowser'
-import type { SheetLibraryItem } from '~/utils/sheetLibrary'
+import { sheetLibraryKey, type SheetLibraryItem } from '~/utils/sheetLibrary'
+import { sheetEditorPath } from '~/utils/sheetRoutes'
 
 defineProps<{
   folders: FolderTile[]
@@ -52,10 +53,10 @@ const emit = defineEmits<{
         @drop="(event, path) => emit('drop', event, path)"
       />
 
-      <template v-for="item in sheets" :key="`${item.kind}:${item.slug}`">
+      <template v-for="item in sheets" :key="sheetLibraryKey(item.kind, item.slug)">
         <NuxtLink
           v-if="item.kind === 'pokemon'"
-          :to="`/sheets/${item.slug}`"
+          :to="sheetEditorPath(item.kind, item.slug)"
           class="sheet-card"
           :class="{ 'is-dragging-self': isDraggingSheet(item) }"
           :draggable="canDrag"
@@ -92,7 +93,7 @@ const emit = defineEmits<{
 
         <NuxtLink
           v-else
-          :to="`/sheets/trainers/${item.slug}`"
+          :to="sheetEditorPath(item.kind, item.slug)"
           class="sheet-card sheet-card--trainer"
           :class="{ 'is-dragging-self': isDraggingSheet(item) }"
           :draggable="canDrag"

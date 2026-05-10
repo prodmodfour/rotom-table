@@ -10,6 +10,7 @@ import {
   catalogEntryForPokemonSheet,
   catalogEntryForTrainerSheet,
 } from '~/utils/sheetSpawn'
+import { sheetEditorPath } from '~/utils/sheetRoutes'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { GridAnchor, MapVoxelV2, SheetPlacement, TabletopMap } from '~/types/map'
 import type { SpawnedPokemon } from '~/types/pokemon'
@@ -55,10 +56,8 @@ export const toPokedexSlug = (value: string): string => value
   .replace(/[^a-z0-9]+/g, '-')
   .replace(/^-+|-+$/g, '')
 
-export const sheetPathForPlacement = (placement: Pick<SheetPlacement, 'sheetKind' | 'sheetSlug'>): string => {
-  const slug = encodeURIComponent(placement.sheetSlug)
-  return placement.sheetKind === 'trainer' ? `/sheets/trainers/${slug}` : `/sheets/${slug}`
-}
+export const sheetPathForPlacement = (placement: Pick<SheetPlacement, 'sheetKind' | 'sheetSlug'>): string =>
+  sheetEditorPath(placement.sheetKind, placement.sheetSlug)
 
 export const pokedexPathForSpecies = (species: string | null | undefined): string | null => {
   if (!species) return null

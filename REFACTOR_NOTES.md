@@ -1998,3 +1998,14 @@
   - `npm test` — passes: 89 test files / 337 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: shared sheet route helpers
+
+- Added `utils/sheetRoutes.ts` for encoded Pokémon/trainer sheet editor paths and user-facing sheet-kind labels.
+- Updated sheet creation redirects, sheet library card links, and map token sheet links to use the shared route helper instead of duplicating `/sheets` vs `/sheets/trainers` branching.
+- Reused the existing `sheetLibraryKey` helper for sheet library override/deletion keys while keeping route generation in the new focused module.
+- Added `tests/utils/sheetRoutes.test.ts` covering encoded editor paths and sheet-kind labels.
+- Quality gates after this phase:
+  - `npm test` — passes: 90 test files / 339 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
