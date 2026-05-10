@@ -2602,3 +2602,12 @@
   - `npm test` — passes: 102 test files / 381 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: map admin modal shell
+
+- Extracted the admin modal backdrop/dialog chrome into `components/map/MapAdminModalShell.vue`.
+- `MapAdminPanel` now composes a modal shell, header, ground-level input, and Y summary with explicit events while preserving backdrop close behavior, ARIA dialog labelling, and panel styling.
+- Quality gates after this phase:
+  - `npm test` — passes: 102 test files / 381 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

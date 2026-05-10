@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import MapAdminGroundLevelControl from '~/components/map/MapAdminGroundLevelControl.vue'
 import MapAdminHeader from '~/components/map/MapAdminHeader.vue'
+import MapAdminModalShell from '~/components/map/MapAdminModalShell.vue'
 import MapAdminYSummary from '~/components/map/MapAdminYSummary.vue'
 
 defineProps<{
@@ -18,54 +19,19 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <div
-    class="admin-panel-backdrop"
-    role="presentation"
-    @pointerdown.self="emit('close')"
-  >
-    <section
-      class="admin-panel"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="admin-panel-title"
-      @pointerdown.stop
-    >
-      <MapAdminHeader title-id="admin-panel-title" @close="emit('close')" />
+  <MapAdminModalShell title-id="admin-panel-title" @close="emit('close')">
+    <MapAdminHeader title-id="admin-panel-title" @close="emit('close')" />
 
-      <MapAdminGroundLevelControl
-        :ground-level-y-max="groundLevelYMax"
-        :map-ground-level-y="mapGroundLevelY"
-        @set-ground-level-y="emit('set-ground-level-y', $event)"
-      />
+    <MapAdminGroundLevelControl
+      :ground-level-y-max="groundLevelYMax"
+      :map-ground-level-y="mapGroundLevelY"
+      @set-ground-level-y="emit('set-ground-level-y', $event)"
+    />
 
-      <MapAdminYSummary
-        :map-ground-level-y="mapGroundLevelY"
-        :map-specific-y-min="mapSpecificYMin"
-        :map-specific-y-max="mapSpecificYMax"
-      />
-    </section>
-  </div>
+    <MapAdminYSummary
+      :map-ground-level-y="mapGroundLevelY"
+      :map-specific-y-min="mapSpecificYMin"
+      :map-specific-y-max="mapSpecificYMax"
+    />
+  </MapAdminModalShell>
 </template>
-
-<style scoped>
-.admin-panel-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 40;
-  display: grid;
-  place-items: center;
-  padding: 1rem;
-  background: rgba(29, 32, 33, 0.58);
-  backdrop-filter: blur(2px);
-}
-
-.admin-panel {
-  width: min(440px, 100%);
-  border: 1px solid var(--rule-strong);
-  border-radius: 18px;
-  background: var(--paper);
-  box-shadow: var(--shadow-card);
-  padding: 1rem;
-}
-
-</style>
