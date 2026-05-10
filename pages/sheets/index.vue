@@ -36,9 +36,9 @@ import { useLibraryDragDrop } from '~/composables/library/useLibraryDragDrop'
 import { useLibraryDropMove } from '~/composables/library/useLibraryDropMove'
 import { useLibraryFolderCreation } from '~/composables/library/useLibraryFolderCreation'
 import { useLibraryFolderNavigation } from '~/composables/library/useLibraryFolderNavigation'
+import { useSheetLibraryCreation } from '~/composables/library/useSheetLibraryCreation'
 import { useWindowKeydown } from '~/composables/useWindowKeydown'
 import { isEscapeKey } from '~/utils/keyboardShortcuts'
-import { getErrorMessage } from '~/utils/errorMessages'
 import { sheetEditorPath } from '~/utils/sheetRoutes'
 
 useHead({
@@ -260,39 +260,26 @@ const { creating, createError, createNewFolder } = useLibraryFolderCreation({
   onCreated: (folder) => extraFolders.add(folder),
 })
 
-const sheetMenuOpen = ref(false)
-const creatingSheet = ref(false)
-const sheetCreateError = ref<string | null>(null)
-
-const toggleSheetMenu = () => {
-  if (!canDrag.value) return
-  sheetMenuOpen.value = !sheetMenuOpen.value
-}
-
-const closeSheetMenu = () => {
-  sheetMenuOpen.value = false
-}
-
-/** Create a fresh Pokémon or trainer sheet inside the current folder.
- *  We hard-navigate to the new sheet's edit page so Vite re-evaluates the
- *  `characterSheets` / `trainerSheets` globs with the new file in place — a
- *  client-side `router.push` would race the HMR and land on "Sheet not found". */
-const createSheet = async (kind: 'pokemon' | 'trainer') => {
-  if (!canDrag.value || creatingSheet.value) return
-  closeSheetMenu()
-  creatingSheet.value = true
-  sheetCreateError.value = null
-  try {
-    const res = await $fetch<{ ok: true; kind: 'pokemon' | 'trainer'; slug: string }>(
-      '/api/sheets/create',
-      { method: 'POST', body: { kind, folder: currentPath.value } },
-    )
-    window.location.href = sheetEditorPath(res.kind, res.slug)
-  } catch (err: unknown) {
-    sheetCreateError.value = getErrorMessage(err)
-    creatingSheet.value = false
-  }
-}
+const {
+  sheetMenuOpen,
+  creatingSheet,
+  sheetCreateError,
+  toggleSheetMenu,
+  closeSheetMenu,
+  createSheet,
+} = useSheetLibraryCreation({
+  canCreate: canDrag,
+  currentPath,
+  createSheet: (kind, folder) => $fetch<{ ok: true; kind: 'pokemon' | 'trainer'; slug: string }>(
+    '/api/sheets/create',
+    { method: 'POST', body: { kind, folder } },
+  ),
+  // Hard-navigate so Vite re-evaluates the sheet data globs before the editor
+  // route loads; a client-side router push can race HMR and show "not found".
+  navigateToSheet: (kind, slug) => {
+    window.location.href = sheetEditorPath(kind, slug)
+  },
+})
 
 // ---------------------------------------------------------------------------
 // Right-click context menu (Move / Rename / Delete)
