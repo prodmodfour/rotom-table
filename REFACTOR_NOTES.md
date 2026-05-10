@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; map create/rename/move/create-folder/move-folder are now tested use cases/thin routes, with map delete-folder still a good candidate for further thinning.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; map create/rename/move/create-folder/move-folder/delete-folder are now tested use cases/thin routes, with map delete/list/load/folders still good candidates for further thinning.
 
 ## Phase 0 baseline audit
 
@@ -3020,5 +3020,19 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; map create/rename/move/cr
 - Quality gates after this phase:
   - `npm test -- tests/server/moveMapFolder.test.ts` — passes: 1 test file / 4 tests.
   - `npm test` — passes: 118 test files / 442 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: map delete-folder use-case extraction
+
+- Extracted `/api/maps/delete-folder` orchestration into `server/useCases/deleteMapFolder.ts`.
+  - The use case now owns folder sanitization, maps-root containment checks, folder existence/type checks, recursive removal/pruning calls behind injectable dependencies, response path formatting, and compatible `maps` channel folder-deleted events.
+- Reduced `server/api/maps/delete-folder.post.ts` to a thin H3 adapter for GM auth, body reading, use-case invocation, realtime publish, and HTTP error translation.
+- Preserved existing delete-folder behavior: blank/invalid folders still return sanitizer bad-request messages, missing folders return `Folder "..." not found`, non-directory targets return `Not a directory`, successful responses remain `{ ok, removed }`, and realtime payloads remain `{ folder }`. The use case also explicitly rejects a sanitized root target before filesystem mutation as a safe-path hardening.
+- Added `tests/server/deleteMapFolder.test.ts` covering folder normalization, recursive delete/prune calls, sanitizer failures, escaped/root target rejection, missing folders, non-directory targets, response paths, and realtime events.
+- Next remaining phase: continue map endpoint thinning, especially `server/api/maps/delete.post.ts`, `server/api/maps/list.get.ts`, `server/api/maps/load.get.ts`, and `server/api/maps/folders.get.ts`; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/server/deleteMapFolder.test.ts` — passes: 1 test file / 4 tests.
+  - `npm test` — passes: 119 test files / 446 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
