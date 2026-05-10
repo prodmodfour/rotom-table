@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { PhCaretDown, PhPlus } from '@phosphor-icons/vue'
-import { trimmedTextValueFromEvent } from '~/utils/domEvents'
+import LibraryIntroErrors from '~/components/library/LibraryIntroErrors.vue'
+import LibraryIntroSearchField from '~/components/library/LibraryIntroSearchField.vue'
 import type { SheetLibraryKind } from '~/utils/sheetLibrary'
 
 defineProps<{
@@ -50,15 +51,12 @@ const emit = defineEmits<{
     </p>
 
     <div class="intro-controls">
-      <label class="search-field">
-        <span class="sr-only">Search sheets</span>
-        <input
-          :value="searchTerm"
-          type="search"
-          placeholder="Search name, species, class, type…"
-          @input="emit('update:searchTerm', trimmedTextValueFromEvent($event))"
-        />
-      </label>
+      <LibraryIntroSearchField
+        :model-value="searchTerm"
+        label="Search sheets"
+        placeholder="Search name, species, class, type…"
+        @update:model-value="emit('update:searchTerm', $event)"
+      />
 
       <div v-if="canDrag" class="folder-actions">
         <div class="sheet-menu-wrap">
@@ -106,9 +104,13 @@ const emit = defineEmits<{
       </div>
     </div>
 
-    <p v-if="createError" class="move-error" role="alert">{{ createError }}</p>
-    <p v-if="sheetCreateError" class="move-error" role="alert">{{ sheetCreateError }}</p>
-    <p v-if="moveError" class="move-error" role="alert">Move failed: {{ moveError }}</p>
+    <LibraryIntroErrors
+      :errors="[
+        { key: 'folder-create', message: createError },
+        { key: 'sheet-create', message: sheetCreateError },
+        { key: 'move', message: moveError, prefix: 'Move failed: ' },
+      ]"
+    />
   </section>
 
   <div
@@ -170,26 +172,6 @@ code {
   flex-wrap: wrap;
   gap: 0.6rem;
   align-items: stretch;
-}
-
-.search-field {
-  flex: 1 1 240px;
-  display: block;
-}
-
-input {
-  width: 100%;
-  border: 1px solid var(--rule-soft);
-  border-radius: 10px;
-  background: var(--paper);
-  color: var(--ink);
-  padding: 0.65rem 0.8rem;
-  outline: none;
-}
-
-input:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px rgba(250, 189, 47, 0.18);
 }
 
 .folder-actions {
@@ -287,16 +269,6 @@ input:focus {
   cursor: not-allowed;
 }
 
-.move-error {
-  margin: 0.6rem 0 0;
-  padding: 0.45rem 0.65rem;
-  border-radius: 8px;
-  background: rgba(220, 80, 80, 0.12);
-  border: 1px solid rgba(220, 80, 80, 0.4);
-  color: #c44;
-  font-size: 0.85rem;
-}
-
 .badge {
   display: inline-flex;
   align-items: center;
@@ -307,18 +279,6 @@ input:focus {
   font-size: 0.74rem;
   letter-spacing: 0.06em;
   white-space: nowrap;
-}
-
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
 }
 
 .sheet-menu-backdrop {

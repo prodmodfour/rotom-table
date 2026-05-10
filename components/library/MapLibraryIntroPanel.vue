@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { PhFolder, PhPlus } from '@phosphor-icons/vue'
-import { trimmedTextValueFromEvent } from '~/utils/domEvents'
+import LibraryIntroErrors from '~/components/library/LibraryIntroErrors.vue'
+import LibraryIntroSearchField from '~/components/library/LibraryIntroSearchField.vue'
 
 defineProps<{
   mapCount: number
@@ -42,15 +43,12 @@ const emit = defineEmits<{
     </p>
 
     <div class="intro-controls">
-      <label class="search-field">
-        <span class="sr-only">Search maps</span>
-        <input
-          :value="searchTerm"
-          type="search"
-          placeholder="Search map name…"
-          @input="emit('update:searchTerm', trimmedTextValueFromEvent($event))"
-        />
-      </label>
+      <LibraryIntroSearchField
+        :model-value="searchTerm"
+        label="Search maps"
+        placeholder="Search map name…"
+        @update:model-value="emit('update:searchTerm', $event)"
+      />
 
       <div v-if="isGm" class="folder-actions">
         <button
@@ -72,9 +70,13 @@ const emit = defineEmits<{
       </div>
     </div>
 
-    <p v-if="loadError" class="move-error" role="alert">{{ loadError }}</p>
-    <p v-if="createError" class="move-error" role="alert">{{ createError }}</p>
-    <p v-if="moveError" class="move-error" role="alert">Move failed: {{ moveError }}</p>
+    <LibraryIntroErrors
+      :errors="[
+        { key: 'load', message: loadError },
+        { key: 'create', message: createError },
+        { key: 'move', message: moveError, prefix: 'Move failed: ' },
+      ]"
+    />
   </section>
 </template>
 
@@ -131,26 +133,6 @@ code {
   align-items: stretch;
 }
 
-.search-field {
-  flex: 1 1 240px;
-  display: block;
-}
-
-input {
-  width: 100%;
-  border: 1px solid var(--rule-soft);
-  border-radius: 10px;
-  background: var(--paper);
-  color: var(--ink);
-  padding: 0.65rem 0.8rem;
-  outline: none;
-}
-
-input:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px rgba(250, 189, 47, 0.18);
-}
-
 .folder-actions {
   flex: 0 0 auto;
   display: flex;
@@ -195,16 +177,6 @@ input:focus {
   cursor: progress;
 }
 
-.move-error {
-  margin: 0.6rem 0 0;
-  padding: 0.45rem 0.65rem;
-  border-radius: 8px;
-  background: rgba(220, 80, 80, 0.12);
-  border: 1px solid rgba(220, 80, 80, 0.4);
-  color: #c44;
-  font-size: 0.85rem;
-}
-
 .badge {
   display: inline-flex;
   align-items: center;
@@ -217,15 +189,4 @@ input:focus {
   white-space: nowrap;
 }
 
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
 </style>

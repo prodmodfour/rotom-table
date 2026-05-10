@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; most major refactor targets are decomposed, but small UI/helper cleanup remains and the refactor is not marked complete.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; library intro search/errors are now shared, but small UI/helper cleanup remains and the refactor is not marked complete.
 
 ## Phase 0 baseline audit
 
@@ -2699,6 +2699,17 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; most major refactor targe
 - Next remaining phase: continue small bounded cleanup by extracting another focused library/map/reference presentation component or helper; do not mark the full refactor complete yet.
 - Quality gates after this phase:
   - `npm test -- tests/composables/library/useLibraryContextMenu.test.ts` — passes: 1 test file / 5 tests.
+  - `npm test` — passes: 103 test files / 383 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: shared library intro search and errors
+
+- Extracted duplicated maps/sheets library intro search-field markup, trimmed input handling, focus styling, and screen-reader label into `components/library/LibraryIntroSearchField.vue`.
+- Extracted duplicated library intro alert/error rendering into `components/library/LibraryIntroErrors.vue` and wired map/sheet load/create/move errors through the shared component.
+- Reduced `MapLibraryIntroPanel` and `SheetLibraryIntroPanel` to route-specific copy/actions while preserving search placeholders, trimmed search updates, alert copy, and visual styling.
+- Next remaining phase: continue one small bounded cleanup pass on remaining library/map/reference presentation or helper duplication; do not mark the full refactor complete yet.
+- Quality gates after this phase:
   - `npm test` — passes: 103 test files / 383 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
