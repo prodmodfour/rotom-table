@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; shared library card badge/meta primitives are now isolated, but small UI/helper cleanup remains and the refactor is not marked complete.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; shared library folder creation state is now isolated, but small UI/helper cleanup remains and the refactor is not marked complete.
 
 ## Phase 0 baseline audit
 
@@ -2812,5 +2812,17 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; shared library card badge
 - Quality gates after this phase:
   - `npm test -- tests/utils/mapLibrary.test.ts tests/utils/sheetLibrary.test.ts` — passes: 2 test files / 16 tests.
   - `npm test` — passes: 103 test files / 383 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: shared library folder creation composable
+
+- Extracted duplicated maps/sheets library `new_folder`, `new_folder_1`, ... allocation, busy-state gating, create-error normalization, and post-create callbacks into `composables/library/useLibraryFolderCreation.ts`.
+- Updated `pages/maps/index.vue` and `pages/sheets/index.vue` to inject their route-specific create-folder API calls and local folder-set updates through the shared composable while preserving current-folder placement, GM/dev gating, map `clientId` payloads, and intro-panel button/error behavior.
+- Added `tests/composables/library/useLibraryFolderCreation.test.ts` covering next-name allocation, successful persistence callbacks, blocked/busy guards, and normalized error messages.
+- Next remaining phase: continue one small bounded cleanup pass on remaining library/map/reference presentation or helper duplication; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/composables/library/useLibraryFolderCreation.test.ts tests/composables/library/useLibraryDragDrop.test.ts tests/composables/library/useLibraryContextMenu.test.ts` — passes: 3 test files / 14 tests.
+  - `npm test` — passes: 104 test files / 387 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

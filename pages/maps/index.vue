@@ -16,7 +16,6 @@ import {
   isSameOrDescendantFolder,
   joinFolderPath,
   movedFolderPath,
-  nextAvailableFolderLeaf,
   parentFolderPath,
   renameFolderPrefix,
   type FolderTile,
@@ -34,6 +33,7 @@ import {
 import { useRealtimeChannel } from '~/composables/useRealtime'
 import { useLibraryContextMenu } from '~/composables/library/useLibraryContextMenu'
 import { useLibraryDragDrop } from '~/composables/library/useLibraryDragDrop'
+import { useLibraryFolderCreation } from '~/composables/library/useLibraryFolderCreation'
 import { useLibraryFolderNavigation } from '~/composables/library/useLibraryFolderNavigation'
 import { useWindowKeydown } from '~/composables/useWindowKeydown'
 import { isEscapeKey } from '~/utils/keyboardShortcuts'
@@ -53,8 +53,6 @@ const loading = ref(true)
 const loadError = ref<string | null>(null)
 const moveError = ref<string | null>(null)
 const moving = ref(false)
-const creating = ref(false)
-const createError = ref<string | null>(null)
 
 const refresh = async () => {
   loading.value = true
@@ -93,6 +91,17 @@ const allFolders = computed(() => buildMapFolderSet(items.value, extraFolders))
 const { currentPath, goToFolder, breadcrumbs } = useLibraryFolderNavigation({
   routePath: mapLibraryPath(),
   formatSegment: formatFolderLabel,
+})
+
+const { creating, createError, createNewFolder } = useLibraryFolderCreation({
+  canCreate: isGm,
+  currentPath,
+  folderPaths: allFolders,
+  createFolder: (folder) => $fetch('/api/maps/create-folder', {
+    method: 'POST',
+    body: { folder, clientId },
+  }),
+  onCreated: (folder) => extraFolders.add(folder),
 })
 
 const searchTerm = ref('')
@@ -195,27 +204,6 @@ const onDrop = async (e: DragEvent, targetPath: string) => {
     moveError.value = getErrorMessage(err)
   } finally {
     moving.value = false
-  }
-}
-
-const nextFolderName = () => nextAvailableFolderLeaf(allFolders.value, currentPath.value)
-
-const createNewFolder = async () => {
-  if (!isGm.value || creating.value) return
-  const leaf = nextFolderName()
-  const fullPath = joinFolderPath(currentPath.value, leaf)
-  creating.value = true
-  createError.value = null
-  try {
-    await $fetch('/api/maps/create-folder', {
-      method: 'POST',
-      body: { folder: fullPath, clientId },
-    })
-    extraFolders.add(fullPath)
-  } catch (err: unknown) {
-    createError.value = getErrorMessage(err)
-  } finally {
-    creating.value = false
   }
 }
 

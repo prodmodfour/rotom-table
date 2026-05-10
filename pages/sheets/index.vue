@@ -16,7 +16,6 @@ import {
   isSameOrDescendantFolder,
   joinFolderPath,
   movedFolderPath,
-  nextAvailableFolderLeaf,
   parentFolderPath,
   renameFolderPrefix,
   type FolderTile,
@@ -33,6 +32,7 @@ import {
 } from '~/utils/sheetLibrary'
 import { useLibraryContextMenu } from '~/composables/library/useLibraryContextMenu'
 import { useLibraryDragDrop } from '~/composables/library/useLibraryDragDrop'
+import { useLibraryFolderCreation } from '~/composables/library/useLibraryFolderCreation'
 import { useLibraryFolderNavigation } from '~/composables/library/useLibraryFolderNavigation'
 import { useWindowKeydown } from '~/composables/useWindowKeydown'
 import { isEscapeKey } from '~/utils/keyboardShortcuts'
@@ -257,12 +257,19 @@ const onDrop = async (e: DragEvent, targetPath: string) => {
 }
 
 // ---------------------------------------------------------------------------
-// New folder — single click creates `new_folder`, then `new_folder_1`, etc.
-// (auto-named so the user can rename afterwards via the context menu).
+// New folder / sheet creation
 // ---------------------------------------------------------------------------
 
-const createError = ref<string | null>(null)
-const creating = ref(false)
+const { creating, createError, createNewFolder } = useLibraryFolderCreation({
+  canCreate: canDrag,
+  currentPath,
+  folderPaths: allFolders,
+  createFolder: (folder) => $fetch('/api/sheets/create-folder', {
+    method: 'POST',
+    body: { folder },
+  }),
+  onCreated: (folder) => extraFolders.add(folder),
+})
 
 const sheetMenuOpen = ref(false)
 const creatingSheet = ref(false)
@@ -295,27 +302,6 @@ const createSheet = async (kind: 'pokemon' | 'trainer') => {
   } catch (err: unknown) {
     sheetCreateError.value = getErrorMessage(err)
     creatingSheet.value = false
-  }
-}
-
-const nextFolderName = (): string => nextAvailableFolderLeaf(allFolders.value, currentPath.value)
-
-const createNewFolder = async () => {
-  if (!canDrag.value || creating.value) return
-  const leaf = nextFolderName()
-  const fullPath = joinFolderPath(currentPath.value, leaf)
-  creating.value = true
-  createError.value = null
-  try {
-    await $fetch('/api/sheets/create-folder', {
-      method: 'POST',
-      body: { folder: fullPath },
-    })
-    extraFolders.add(fullPath)
-  } catch (err: unknown) {
-    createError.value = getErrorMessage(err)
-  } finally {
-    creating.value = false
   }
 }
 
