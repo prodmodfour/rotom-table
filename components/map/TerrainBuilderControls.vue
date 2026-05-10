@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import BuilderBulkActionRow from '~/components/map/BuilderBulkActionRow.vue'
 import BuilderBulkButton from '~/components/map/BuilderBulkButton.vue'
+import BuilderHintText from '~/components/map/BuilderHintText.vue'
 import BuildToolToggle from '~/components/map/BuildToolToggle.vue'
 import TerrainColorPicker from '~/components/map/TerrainColorPicker.vue'
 import TerrainMaterialGrid from '~/components/map/TerrainMaterialGrid.vue'
@@ -48,10 +49,10 @@ const emit = defineEmits<{
     @clear-custom-color="emit('clear-custom-color')"
   />
 
-  <p class="hint">
+  <BuilderHintText>
     Left click to {{ buildTool === 'pencil' ? 'place' : 'erase' }}, right click to
     erase. Click a voxel face to stack on top.
-  </p>
+  </BuilderHintText>
 
   <BuilderBulkActionRow>
     <BuilderBulkButton :disabled="buildTool === 'eraser'" @click="emit('fill-ground')">
@@ -63,13 +64,3 @@ const emit = defineEmits<{
   </BuilderBulkActionRow>
 </template>
 
-<style scoped>
-.hint {
-  margin: 0;
-  color: var(--ink-muted);
-  font-size: 0.78rem;
-  letter-spacing: 0.02em;
-  line-height: 1.4;
-}
-
-</style>

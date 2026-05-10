@@ -2539,3 +2539,12 @@
   - `npm test` — passes: 102 test files / 381 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: shared builder hint text
+
+- Extracted the repeated terrain/hazard builder instruction paragraph into `components/map/BuilderHintText.vue`.
+- Updated terrain and hazard builder controls to consume the shared hint component while preserving the existing click/erase guidance copy.
+- Quality gates after this phase:
+  - `npm test` — passes: 102 test files / 381 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import BuilderBulkActionRow from '~/components/map/BuilderBulkActionRow.vue'
 import BuilderBulkButton from '~/components/map/BuilderBulkButton.vue'
+import BuilderHintText from '~/components/map/BuilderHintText.vue'
 import BuildToolToggle from '~/components/map/BuildToolToggle.vue'
 import HazardPaletteGrid from '~/components/map/HazardPaletteGrid.vue'
 import type { BuildTool } from '~/shared/mapEditor'
@@ -37,10 +38,10 @@ const emit = defineEmits<{
     @select-hazard-kind="emit('select-hazard-kind', $event)"
   />
 
-  <p class="hint">
+  <BuilderHintText>
     Left click to {{ hazardTool === 'pencil' ? `place ${activeHazardDef.label}` : 'erase hazards' }}.
     Right click erases all hazards on a square. Toxic Spikes stacks to 2 layers.
-  </p>
+  </BuilderHintText>
 
   <BuilderBulkActionRow>
     <BuilderBulkButton variant="danger" :disabled="!hazardCount" @click="emit('clear-all-hazards')">
@@ -49,13 +50,3 @@ const emit = defineEmits<{
   </BuilderBulkActionRow>
 </template>
 
-<style scoped>
-.hint {
-  margin: 0;
-  color: var(--ink-muted);
-  font-size: 0.78rem;
-  letter-spacing: 0.02em;
-  line-height: 1.4;
-}
-
-</style>
