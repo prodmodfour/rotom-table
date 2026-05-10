@@ -8,10 +8,8 @@ import {
   buildVisibleFolderTiles,
   canMoveFolderTo,
   folderPathFromQuery,
-  isInsideFolder,
   movedFolderPath,
   nextAvailableFolderLeaf,
-  normalizeSearchText,
   type FolderTile,
 } from '~/utils/folderBrowser'
 import { getClientId } from '~/utils/clientId'
@@ -20,6 +18,8 @@ import {
   applyMapLibraryRealtimeEvent,
   deleteMapFolderFromLibrary,
   moveMapFolderInLibrary,
+  buildMapFolderSet,
+  filterVisibleMaps,
   tabletopMapToSummary,
 } from '~/utils/mapLibrary'
 import { useRealtimeChannel } from '~/composables/useRealtime'
@@ -76,12 +76,7 @@ const items = computed(() => {
   return isPlayer.value ? all.filter((map) => map.playerVisible === true) : all
 })
 
-const allFolders = computed(() => {
-  const set = new Set<string>()
-  for (const item of items.value) if (item.folder) set.add(item.folder)
-  for (const f of extraFolders) set.add(f)
-  return set
-})
+const allFolders = computed(() => buildMapFolderSet(items.value, extraFolders))
 
 const currentPath = computed(() => folderPathFromQuery(route.query.folder))
 
@@ -95,20 +90,11 @@ const breadcrumbs = computed(() =>
 
 const searchTerm = ref('')
 
-const matches = (item: MapSummary, query: string) =>
-  [item.name, item.folder].some((value) => normalizeSearchText(value).includes(query))
-
-const visibleMaps = computed(() => {
-  const query = normalizeSearchText(searchTerm.value)
-  const pool = items.value.filter((item) => isInsideFolder(item.folder, currentPath.value))
-  const matched = query ? pool.filter((item) => matches(item, query)) : pool
-  if (!query) {
-    return matched
-      .filter((item) => item.folder === currentPath.value)
-      .sort((a, b) => a.name.localeCompare(b.name))
-  }
-  return [...matched].sort((a, b) => a.name.localeCompare(b.name))
-})
+const visibleMaps = computed(() => filterVisibleMaps({
+  items: items.value,
+  currentPath: currentPath.value,
+  searchTerm: searchTerm.value,
+}))
 
 const visibleFolders = computed<FolderTile[]>(() => {
   if (searchTerm.value) return []

@@ -2,7 +2,10 @@ import { describe, expect, it } from 'vitest'
 import { mapsChannel, type RealtimeEvent } from '~/shared/realtime'
 import {
   applyMapLibraryRealtimeEvent,
+  buildMapFolderSet,
   deleteMapFolderFromLibrary,
+  filterVisibleMaps,
+  mapSummaryMatchesQuery,
   moveMapFolderInLibrary,
   tabletopMapToSummary,
   type MapLibraryCollections,
@@ -58,6 +61,46 @@ describe('mapLibrary helpers', () => {
       schemaVersion: 2,
       updatedAt: 456,
     })
+  })
+
+  it('matches map summaries by normalized name or folder query', () => {
+    const item = { ...summary('Greywater Aqueduct', 'helix/aqueduct'), name: 'Greywater Aqueduct' }
+
+    expect(mapSummaryMatchesQuery(item, 'greywater')).toBe(true)
+    expect(mapSummaryMatchesQuery(item, 'helix')).toBe(true)
+    expect(mapSummaryMatchesQuery(item, 'atrium')).toBe(false)
+  })
+
+  it('builds map folder sets from summaries and explicit folders', () => {
+    expect([...buildMapFolderSet([
+      summary('root'),
+      summary('wild', 'npcs/wild'),
+    ], ['npcs', 'npcs/wild/cave'])].sort()).toEqual([
+      'npcs',
+      'npcs/wild',
+      'npcs/wild/cave',
+    ])
+  })
+
+  it('filters visible maps by current folder, subtree search, and name sorting', () => {
+    const input = [
+      { ...summary('b-root'), name: 'B Root' },
+      { ...summary('a-root'), name: 'A Root' },
+      { ...summary('child', 'npcs/wild'), name: 'Wild Child' },
+      { ...summary('cave', 'npcs/wild/cave'), name: 'Cave Map' },
+      { ...summary('other', 'players'), name: 'Player Map' },
+    ]
+
+    expect(filterVisibleMaps({ items: input, currentPath: '', searchTerm: '' }).map((item) => item.slug)).toEqual([
+      'a-root',
+      'b-root',
+    ])
+    expect(filterVisibleMaps({ items: input, currentPath: 'npcs', searchTerm: 'map' }).map((item) => item.slug)).toEqual([
+      'cave',
+    ])
+    expect(filterVisibleMaps({ items: input, currentPath: 'npcs/wild', searchTerm: '' }).map((item) => item.slug)).toEqual([
+      'child',
+    ])
   })
 
   it('deletes map folders and descendant maps from local collections', () => {

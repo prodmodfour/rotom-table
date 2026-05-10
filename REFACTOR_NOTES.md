@@ -2119,3 +2119,13 @@
   - `npm test` — passes: 95 test files / 356 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: map library visible-state helpers
+
+- Extended `utils/mapLibrary.ts` with focused map-library search matching, folder-set derivation, and visible-map filtering helpers.
+- Updated `pages/maps/index.vue` to delegate map folder collection and search/current-folder filtering while keeping fetch, realtime, drag/drop, and persistence orchestration in the route shell.
+- Expanded `tests/utils/mapLibrary.test.ts` to cover map summary search matching, folder-set construction, and visible-map filtering/sorting behavior.
+- Quality gates after this phase:
+  - `npm test` — passes: 95 test files / 359 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

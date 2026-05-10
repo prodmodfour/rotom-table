@@ -1,6 +1,11 @@
 import { mapsChannel, type RealtimeEvent } from '~/shared/realtime'
 import type { MapSummary, TabletopMap } from '~/types/map'
-import { isSameOrDescendantFolder, renameFolderPrefix } from '~/utils/folderBrowser'
+import {
+  isInsideFolder,
+  isSameOrDescendantFolder,
+  normalizeSearchText,
+  renameFolderPrefix,
+} from '~/utils/folderBrowser'
 
 export interface MapLibraryCollections {
   maps: Map<string, MapSummary>
@@ -17,6 +22,38 @@ export const tabletopMapToSummary = (map: TabletopMap): MapSummary => ({
   schemaVersion: map.schemaVersion,
   updatedAt: map.updatedAt,
 })
+
+export const mapSummaryMatchesQuery = (
+  item: MapSummary,
+  normalizedQuery: string,
+): boolean => [item.name, item.folder]
+  .some((value) => normalizeSearchText(value).includes(normalizedQuery))
+
+export const buildMapFolderSet = (
+  items: readonly MapSummary[],
+  extraFolders: Iterable<string>,
+): Set<string> => {
+  const folders = new Set<string>()
+  for (const item of items) if (item.folder) folders.add(item.folder)
+  for (const folder of extraFolders) folders.add(folder)
+  return folders
+}
+
+export const filterVisibleMaps = ({
+  items,
+  currentPath,
+  searchTerm,
+}: {
+  items: readonly MapSummary[]
+  currentPath: string
+  searchTerm: string
+}): MapSummary[] => {
+  const query = normalizeSearchText(searchTerm)
+  const pool = items.filter((item) => isInsideFolder(item.folder, currentPath))
+  const matched = query ? pool.filter((item) => mapSummaryMatchesQuery(item, query)) : pool
+  const scoped = query ? matched : matched.filter((item) => item.folder === currentPath)
+  return [...scoped].sort((a, b) => a.name.localeCompare(b.name))
+}
 
 const eventSummary = (data: unknown): MapSummary | null => {
   const summary = data as Partial<MapSummary> | null | undefined
