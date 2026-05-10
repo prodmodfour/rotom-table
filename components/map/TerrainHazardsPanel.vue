@@ -4,6 +4,7 @@ import HazardBuilderControls from '~/components/map/HazardBuilderControls.vue'
 import LayerVisibilityControls from '~/components/map/LayerVisibilityControls.vue'
 import MapEditorModeToggle from '~/components/map/MapEditorModeToggle.vue'
 import TerrainBuilderControls from '~/components/map/TerrainBuilderControls.vue'
+import { formatTerrainHazardBadge } from '~/utils/mapPanelBadges'
 import type { VoxelMaterialDef } from '~/utils/voxels'
 import type { BuildTool } from '~/shared/mapEditor'
 import type { LayerVisibility, MapHazardKind, VoxelMaterial } from '~/types/map'
@@ -52,7 +53,7 @@ const emit = defineEmits<{
   <CollapsiblePanelCard
     class="terrain-panel"
     title="Terrain"
-    :badge="`${voxelCount} block${voxelCount === 1 ? '' : 's'} · ${hazardCount} hazard${hazardCount === 1 ? '' : 's'}`"
+    :badge="formatTerrainHazardBadge(voxelCount, hazardCount)"
     :collapsed="collapsed"
     controls-id="map-terrain-section"
     @toggle-collapsed="emit('toggle-collapsed')"

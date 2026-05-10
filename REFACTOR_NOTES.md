@@ -2410,3 +2410,13 @@
   - `npm test` — passes: 99 test files / 370 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: map panel badge helpers
+
+- Added `utils/mapPanelBadges.ts` for reusable map dimension, terrain/hazard count, field-effect count, and pluralized badge formatting.
+- Updated map details, terrain/hazards, and field-effects panels to use the shared badge helpers instead of inline template string/pluralization logic.
+- Added `tests/utils/mapPanelBadges.test.ts` to cover dimension badges, singular/plural count labels, terrain/hazard badges, and field-effect badges.
+- Quality gates after this phase:
+  - `npm test` — passes: 100 test files / 374 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

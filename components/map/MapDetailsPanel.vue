@@ -2,6 +2,7 @@
 import CollapsiblePanelCard from '~/components/map/CollapsiblePanelCard.vue'
 import MapDimensionControls from '~/components/map/MapDimensionControls.vue'
 import MapVisibilityToggle from '~/components/map/MapVisibilityToggle.vue'
+import { formatMapDimensionsBadge } from '~/utils/mapPanelBadges'
 import type { GridDimensions } from '~/types/map'
 
 type DimensionAxis = keyof GridDimensions
@@ -27,7 +28,7 @@ const emit = defineEmits<{
   <CollapsiblePanelCard
     class="map-details-panel"
     :title="name"
-    :badge="`${dimensions.x} × ${dimensions.y} × ${dimensions.z}`"
+    :badge="formatMapDimensionsBadge(dimensions)"
     :collapsed="collapsed"
     controls-id="map-details-section"
     @toggle-collapsed="emit('toggle-collapsed')"

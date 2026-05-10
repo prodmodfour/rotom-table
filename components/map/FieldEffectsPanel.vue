@@ -3,6 +3,7 @@ import CollapsiblePanelCard from '~/components/map/CollapsiblePanelCard.vue'
 import FieldEffectBulkActions from '~/components/map/FieldEffectBulkActions.vue'
 import FieldEffectSection from '~/components/map/FieldEffectSection.vue'
 import FieldEffectWeatherOptions from '~/components/map/FieldEffectWeatherOptions.vue'
+import { formatActiveFieldEffectsBadge } from '~/utils/mapPanelBadges'
 import type { MapEffectDefinition } from '~/utils/mapFieldEffects'
 import type {
   MapRoomEffect,
@@ -68,7 +69,7 @@ const setRoomRounds = (kind: string, value: Event) =>
   <CollapsiblePanelCard
     class="field-effects-panel"
     title="Field effects"
-    :badge="`${fieldEffectCount} active`"
+    :badge="formatActiveFieldEffectsBadge(fieldEffectCount)"
     :collapsed="collapsed"
     controls-id="map-field-effects-section"
     wide-gap
