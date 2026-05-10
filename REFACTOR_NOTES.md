@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; map CRUD/list/folder endpoints are now tested thin routes/use cases. Next candidates include auditing remaining server adapters such as events/SSE or another small UI/helper cleanup.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; SSE stream handling is now extracted/tested. Next candidates include another small server adapter/use-case cleanup or focused UI/helper duplication cleanup; do not mark the full refactor complete yet.
 
 ## Phase 0 baseline audit
 
@@ -3077,5 +3077,18 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; map CRUD/list/folder endp
 - Quality gates after this phase:
   - `npm test -- tests/server/listMapLibrary.test.ts` — passes: 1 test file / 4 tests.
   - `npm test` — passes: 122 test files / 457 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: SSE stream helper extraction
+
+- Extracted `/api/events` Server-Sent Events stream mechanics into `server/utils/sseStream.ts`.
+  - The helper owns SSE headers, initial flush comments, JSON data-frame formatting, keepalive comments, write-error logging, and idempotent close/error cleanup through narrow request/response/subscriber interfaces.
+- Reduced `server/api/events.get.ts` to a thin H3 adapter for auth plus realtime stream wiring while preserving the existing `/api/events` endpoint, headers, `: ok` initial comment, `: ping` keepalive cadence, `data: ...` event-frame format, and realtime subscription behavior.
+- Added `tests/server/sseStream.test.ts` covering SSE frame formatting, event-stream headers, subscribed event writes, keepalive pings, write-failure logging, and single cleanup on close/error.
+- Next remaining phase: continue one bounded cleanup pass, with remaining candidates including another small server adapter/use-case cleanup or focused UI/helper duplication cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/server/sseStream.test.ts` — passes: 1 test file / 4 tests.
+  - `npm test` — passes: 123 test files / 461 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
