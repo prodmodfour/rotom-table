@@ -21,6 +21,7 @@ import { getClientId } from '~/utils/clientId'
 import { sheetChannel } from '~/shared/realtime'
 import {
   bindAutosaveUnloadFlushers,
+  createAutosaveDirtyScheduler,
   createAutosaveSnapshotTracker,
   createAutosaveStatusController,
   createDebouncedAutosaveTask,
@@ -81,6 +82,13 @@ export function useEditableSheet<T extends { slug: string }>(
 
   const saveGuard = createLatestSaveGuard()
   const saveTask = createDebouncedAutosaveTask(() => performSave(), debounceMs)
+  const dirtyScheduler = createAutosaveDirtyScheduler<T>({
+    snapshot: serverSnapshot,
+    task: saveTask,
+    markPending: () => {
+      saveStatus.value = 'saving'
+    },
+  })
 
   const cancelPendingSave = () => {
     saveTask.cancel()
@@ -116,9 +124,7 @@ export function useEditableSheet<T extends { slug: string }>(
   watch(
     sheet,
     (current) => {
-      if (serverSnapshot.isClean(current)) return
-      saveStatus.value = 'saving'
-      saveTask.schedule()
+      dirtyScheduler.scheduleIfDirty(current)
     },
     { deep: true },
   )

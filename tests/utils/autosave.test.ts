@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   bindAutosaveUnloadFlushers,
+  createAutosaveDirtyScheduler,
   createAutosaveSnapshotTracker,
   createAutosaveStatusController,
   createDebouncedAutosaveTask,
@@ -261,6 +262,50 @@ describe('createLatestSaveGuard', () => {
     expect(guard.current()).toBe(second)
     expect(guard.isLatest(first)).toBe(false)
     expect(guard.isLatest(second)).toBe(true)
+  })
+})
+
+describe('createAutosaveDirtyScheduler', () => {
+  it('schedules and marks pending only for dirty non-null resources', () => {
+    const snapshot = createAutosaveSnapshotTracker(
+      (value: { name: string }) => JSON.stringify(value),
+      { name: 'clean' },
+    )
+    const schedule = vi.fn()
+    const markPending = vi.fn()
+    const scheduler = createAutosaveDirtyScheduler({
+      snapshot,
+      task: { schedule },
+      markPending,
+    })
+
+    expect(scheduler.scheduleIfDirty(null)).toBe(false)
+    expect(scheduler.scheduleIfDirty({ name: 'clean' })).toBe(false)
+    expect(schedule).not.toHaveBeenCalled()
+    expect(markPending).not.toHaveBeenCalled()
+
+    expect(scheduler.scheduleIfDirty({ name: 'dirty' })).toBe(true)
+    expect(markPending).toHaveBeenCalledTimes(1)
+    expect(schedule).toHaveBeenCalledTimes(1)
+  })
+
+  it('leaves error-clearing semantics to the caller-provided pending hook', () => {
+    const snapshot = createAutosaveSnapshotTracker(
+      (value: { name: string }) => JSON.stringify(value),
+      { name: 'old' },
+    )
+    const refs = { status: 'error', error: 'previous error' }
+    const scheduler = createAutosaveDirtyScheduler({
+      snapshot,
+      task: { schedule: vi.fn() },
+      markPending: () => {
+        refs.status = 'saving'
+      },
+    })
+
+    scheduler.scheduleIfDirty({ name: 'new' })
+
+    expect(refs).toEqual({ status: 'saving', error: 'previous error' })
   })
 })
 

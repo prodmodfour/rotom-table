@@ -23,6 +23,7 @@ import { onBeforeUnmount, ref, watch, type Ref } from 'vue'
 import { getClientId } from '~/utils/clientId'
 import { mapChannel } from '~/shared/realtime'
 import {
+  createAutosaveDirtyScheduler,
   createAutosaveSnapshotTracker,
   createAutosaveStatusController,
   createDebouncedAutosaveTask,
@@ -59,6 +60,13 @@ export const useEditableMap = (slug: string, debounceMs = 200): UseEditableMapRe
   const clientId = getClientId()
   const saveGuard = createLatestSaveGuard()
   const saveTask = createDebouncedAutosaveTask(() => performSave(), debounceMs)
+  const dirtyScheduler = createAutosaveDirtyScheduler<TabletopMap>({
+    snapshot: serverSnapshot,
+    task: saveTask,
+    markPending: () => {
+      status.value = 'saving'
+    },
+  })
 
   const assignIfChanged = <K extends keyof TabletopMap>(
     target: TabletopMap,
@@ -168,10 +176,7 @@ export const useEditableMap = (slug: string, debounceMs = 200): UseEditableMapRe
   watch(
     map,
     (current) => {
-      if (!current) return
-      if (serverSnapshot.isClean(current)) return
-      status.value = 'saving'
-      saveTask.schedule()
+      dirtyScheduler.scheduleIfDirty(current)
     },
     { deep: true },
   )

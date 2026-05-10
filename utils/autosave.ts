@@ -81,6 +81,16 @@ export interface AutosaveSaveRunContext {
   latest: boolean
 }
 
+export interface AutosaveDirtyScheduler<TValue> {
+  scheduleIfDirty: (value: TValue | null | undefined) => boolean
+}
+
+export interface AutosaveDirtySchedulerOptions<TValue> {
+  snapshot: Pick<AutosaveSnapshotTracker<TValue>, 'isClean'>
+  task: Pick<DebouncedAutosaveTask, 'schedule'>
+  markPending: () => void
+}
+
 export interface AutosaveSaveRunOptions<TStatus extends string, TResult> {
   guard: LatestSaveGuard
   status: AutosaveStatusController<TStatus>
@@ -94,6 +104,24 @@ export interface AutosaveSaveRunOptions<TStatus extends string, TResult> {
 export type AutosaveSaveRunResult<TResult> =
   | ({ ok: true; result: TResult } & AutosaveSaveRunContext)
   | ({ ok: false; error: unknown } & AutosaveSaveRunContext)
+
+/**
+ * Schedules a debounced autosave only when the current resource differs from
+ * the last clean server snapshot. UI-specific callers keep ownership of the
+ * pending/saving status transition through markPending so existing error-copy
+ * timing stays unchanged.
+ */
+export const createAutosaveDirtyScheduler = <TValue>(
+  options: AutosaveDirtySchedulerOptions<TValue>,
+): AutosaveDirtyScheduler<TValue> => ({
+  scheduleIfDirty: (value) => {
+    if (value == null) return false
+    if (options.snapshot.isClean(value)) return false
+    options.markPending()
+    options.task.schedule()
+    return true
+  },
+})
 
 /**
  * Coordinates the common save status/error refs used by autosaved client
