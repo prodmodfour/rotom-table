@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { PhCaretDown, PhPlus } from '@phosphor-icons/vue'
+import { PhPlus } from '@phosphor-icons/vue'
 import LibraryIntroActionButton from '~/components/library/LibraryIntroActionButton.vue'
 import LibraryIntroActionRow from '~/components/library/LibraryIntroActionRow.vue'
 import LibraryIntroErrors from '~/components/library/LibraryIntroErrors.vue'
 import LibraryIntroPanelCard from '~/components/library/LibraryIntroPanelCard.vue'
 import LibraryIntroSearchField from '~/components/library/LibraryIntroSearchField.vue'
+import SheetLibraryNewSheetMenu from '~/components/library/SheetLibraryNewSheetMenu.vue'
 import type { SheetLibraryKind } from '~/utils/sheetLibrary'
 
 defineProps<{
@@ -61,39 +62,13 @@ const emit = defineEmits<{
       />
 
       <LibraryIntroActionRow v-if="canDrag">
-        <div class="sheet-menu-wrap">
-          <LibraryIntroActionButton
-            variant="primary"
-            :disabled="creatingSheet"
-            :aria-expanded="sheetMenuOpen"
-            aria-haspopup="menu"
-            @click="emit('toggleSheetMenu')"
-          >
-            <PhPlus :size="16" weight="bold" />
-            New sheet
-            <PhCaretDown :size="12" weight="bold" aria-hidden="true" />
-          </LibraryIntroActionButton>
-          <div v-if="sheetMenuOpen" class="sheet-menu" role="menu">
-            <button
-              type="button"
-              class="sheet-menu__item"
-              role="menuitem"
-              :disabled="creatingSheet"
-              @click="emit('createSheet', 'pokemon')"
-            >
-              Pokémon
-            </button>
-            <button
-              type="button"
-              class="sheet-menu__item"
-              role="menuitem"
-              :disabled="creatingSheet"
-              @click="emit('createSheet', 'trainer')"
-            >
-              Trainer
-            </button>
-          </div>
-        </div>
+        <SheetLibraryNewSheetMenu
+          :open="sheetMenuOpen"
+          :disabled="creatingSheet"
+          @toggle="emit('toggleSheetMenu')"
+          @close="emit('closeSheetMenu')"
+          @create-sheet="emit('createSheet', $event)"
+        />
         <LibraryIntroActionButton
           :disabled="creating"
           @click="emit('createFolder')"
@@ -111,13 +86,6 @@ const emit = defineEmits<{
       ]"
     />
   </LibraryIntroPanelCard>
-
-  <div
-    v-if="sheetMenuOpen"
-    class="sheet-menu-backdrop"
-    @click="emit('closeSheetMenu')"
-    @contextmenu.prevent="emit('closeSheetMenu')"
-  ></div>
 </template>
 
 <style scoped>
@@ -146,58 +114,5 @@ code {
   flex-wrap: wrap;
   gap: 0.6rem;
   align-items: stretch;
-}
-
-.sheet-menu-wrap {
-  position: relative;
-  display: inline-flex;
-}
-
-.sheet-menu {
-  position: absolute;
-  top: calc(100% + 0.3rem);
-  left: 0;
-  z-index: 50;
-  min-width: 160px;
-  border: 1px solid var(--rule);
-  border-radius: 10px;
-  background: var(--paper-soft);
-  box-shadow: var(--shadow-card), 0 8px 24px rgba(0, 0, 0, 0.35);
-  padding: 0.3rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-}
-
-.sheet-menu__item {
-  display: flex;
-  align-items: center;
-  padding: 0.45rem 0.7rem;
-  border: none;
-  background: transparent;
-  color: var(--ink);
-  font: inherit;
-  text-align: left;
-  border-radius: 7px;
-  cursor: pointer;
-}
-
-.sheet-menu__item:hover:not(:disabled),
-.sheet-menu__item:focus-visible {
-  background: var(--paper-hover);
-  color: var(--ink-bright);
-  outline: none;
-}
-
-.sheet-menu__item:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.sheet-menu-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 40;
-  background: transparent;
 }
 </style>

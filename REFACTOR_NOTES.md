@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; library intro panel chrome/actions are now shared, but small UI/helper cleanup remains and the refactor is not marked complete.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; the sheet library new-sheet dropdown is now isolated, but small UI/helper cleanup remains and the refactor is not marked complete.
 
 ## Phase 0 baseline audit
 
@@ -2719,6 +2719,17 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; library intro panel chrom
 - Extracted shared maps/sheets library intro panel chrome into `components/library/LibraryIntroPanelCard.vue` for the card shell, title, and badge presentation.
 - Extracted shared intro action primitives into `components/library/LibraryIntroActionRow.vue` and `components/library/LibraryIntroActionButton.vue`.
 - Updated map and sheet library intro panels to compose the shared panel/action components while preserving copy, search fields, GM/player gating, new-map/new-folder/new-sheet actions, sheet dropdown behavior, and intro error rendering.
+- Next remaining phase: continue one small bounded cleanup pass on remaining library/map/reference presentation or helper duplication; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test` — passes: 103 test files / 383 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: sheet library new-sheet menu component
+
+- Extracted the sheet library New sheet dropdown and transparent backdrop into `components/library/SheetLibraryNewSheetMenu.vue`.
+- Reduced `SheetLibraryIntroPanel` so it owns only sheet-library copy/search/action composition while the new component owns Pokémon/trainer menu presentation, disabled state, ARIA menu attributes, and close/toggle/create emits.
+- Preserved sheet creation choices, dropdown/backdrop behavior, GM-only action visibility, intro search, create-folder action, and intro error rendering.
 - Next remaining phase: continue one small bounded cleanup pass on remaining library/map/reference presentation or helper duplication; do not mark the full refactor complete yet.
 - Quality gates after this phase:
   - `npm test` — passes: 103 test files / 383 tests.
