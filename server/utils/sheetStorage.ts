@@ -13,6 +13,7 @@ import {
   type SheetKind,
 } from '~/shared/sheets'
 import { sanitizeFolderPath, validateSlug } from '~/shared/paths'
+import { stripDerivedSheetFolder } from '~/utils/sheets/persistence'
 import {
   PROJECT_ROOT,
   joinSafeUnderRoot,
@@ -118,11 +119,7 @@ export const readSheetFile = <T extends Record<string, unknown>>(
   return { path, sheet: readJsonFile<T>(path) }
 }
 
-export const stripDerivedSheetFields = <T extends Record<string, unknown>>(sheet: T): Omit<T, 'folder'> => {
-  const out = { ...sheet }
-  delete (out as Record<string, unknown>).folder
-  return out as Omit<T, 'folder'>
-}
+export const stripDerivedSheetFields = stripDerivedSheetFolder
 
 export const writeSheetFile = (path: string, sheet: Record<string, unknown>): void => {
   writeJsonFile(path, stripDerivedSheetFields(sheet))

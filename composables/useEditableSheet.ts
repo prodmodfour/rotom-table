@@ -26,7 +26,8 @@ import {
   sendJsonWithUnloadFallback,
 } from '~/utils/autosave'
 import { SHEET_API_PATHS } from '~/utils/apiRoutes'
-import { deepCloneJson, stableJsonStringify } from '~/utils/serialization'
+import { deepCloneJson } from '~/utils/serialization'
+import { stablePersistableSheetJson, toPersistableSheetPayload } from '~/utils/sheets/persistence'
 import { useApiClient } from './useApiClient'
 import { subscribeChannel } from './useRealtime'
 import type { SheetKind } from '~/shared/sheets'
@@ -62,13 +63,9 @@ export function useEditableSheet<T extends { slug: string }>(
   const clientId = getClientId()
   const { postJson } = useApiClient()
 
-  const toPersistedPayload = (value: T): Record<string, unknown> => {
-    const payload: Record<string, unknown> = { ...(value as unknown as Record<string, unknown>) }
-    delete payload.folder
-    return payload
-  }
+  const toPersistedPayload = (value: T): Record<string, unknown> => toPersistableSheetPayload(value)
 
-  const jsonFor = (value: T): string => stableJsonStringify(toPersistedPayload(value))
+  const jsonFor = (value: T): string => stablePersistableSheetJson(value)
   // Mirrors what's persisted on disk; used by the deep watcher to skip
   // saves when the only change came from an SSE update.
   const autosave = createAutosaveResourceController<T, SaveStatus>({
@@ -90,7 +87,7 @@ export function useEditableSheet<T extends { slug: string }>(
 
   const performSave = async () => {
     const payload = toPersistedPayload(sheet.value)
-    const payloadJson = stableJsonStringify(payload)
+    const payloadJson = stablePersistableSheetJson(sheet.value)
     if (autosave.snapshot.isCleanJson(payloadJson)) {
       if (saveStatus.value === 'saving') autosave.statusController.markSaved()
       return
@@ -142,7 +139,7 @@ export function useEditableSheet<T extends { slug: string }>(
     autosave.cancelPendingSave()
 
     const payload = toPersistedPayload(sheet.value)
-    const payloadJson = stableJsonStringify(payload)
+    const payloadJson = stablePersistableSheetJson(sheet.value)
     const body = JSON.stringify({ kind, slug: sheet.value.slug, sheet: payload, clientId })
 
     sendJsonWithUnloadFallback(SHEET_API_PATHS.save, body)

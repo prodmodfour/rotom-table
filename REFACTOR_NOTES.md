@@ -3530,3 +3530,17 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
   - `npm test` — passes: 145 test files / 565 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: shared sheet persistence helper
+
+- Added `utils/sheets/persistence.ts` to centralize sheet JSON persistence payload rules for client and server code.
+- Updated editable sheet autosave, placed-token sheet mutation payloads, and server sheet storage stripping to use the shared helper instead of repeating `folder` removal and stable persisted JSON serialization inline.
+- Preserved sheet autosave payload shape, unload beacon payloads, server filesystem write formatting, and `folder` as a path-derived field that is not persisted.
+- Added `tests/utils/sheets/persistence.test.ts` covering derived-folder stripping, non-mutating payload construction, and stable persisted JSON that ignores folder changes.
+- Next remaining phase: continue one bounded cleanup pass, with candidates including another focused map-editor/helper extraction, remaining client helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/utils/sheets/persistence.test.ts tests/utils/sheetMutations.test.ts tests/server/sheetStorage.test.ts tests/utils/autosave.test.ts` — passes: 4 test files / 29 tests.
+  - `npm run typecheck` — passes.
+  - `npm test` — passes: 146 test files / 568 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

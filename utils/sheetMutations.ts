@@ -8,6 +8,8 @@ import type { CombatStageMap } from '~/types/combatStages'
 import type { SheetKind, SheetPlacement } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
 
+export { toPersistableSheetPayload } from './sheets/persistence'
+
 export type AnyLiveSheet = CharacterSheet | TrainerSheet
 
 export interface SheetLookupMaps {
@@ -130,10 +132,4 @@ export const applyConditionsToSheet = (
   const updated = deepCloneJson(sheet as TrainerSheet)
   updated.conditions = normalized
   return updated
-}
-
-export const toPersistableSheetPayload = (sheet: AnyLiveSheet): Record<string, unknown> => {
-  const payload: Record<string, unknown> = { ...(sheet as unknown as Record<string, unknown>) }
-  delete payload.folder
-  return payload
 }
