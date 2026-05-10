@@ -2480,3 +2480,13 @@
   - `npm test` — passes: 102 test files / 381 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: map editor layout shell component
+
+- Extracted the map editor grid layout, collapsed-column classes, and responsive layout CSS into `components/map/MapEditorLayout.vue`.
+- Updated `pages/maps/[slug].vue` to compose left sidebar, scene, initiative sidebar, and admin overlay through named layout slots while preserving all existing editor state wiring.
+- Removed route-local layout styles so the map route remains focused on editor orchestration instead of shell presentation.
+- Quality gates after this phase:
+  - `npm test` — passes: 102 test files / 381 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
