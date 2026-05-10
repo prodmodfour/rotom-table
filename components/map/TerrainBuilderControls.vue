@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import BuildToolToggle from '~/components/map/BuildToolToggle.vue'
 import { hexColorString, type VoxelMaterialDef } from '~/utils/voxels'
 import type { BuildTool } from '~/shared/mapEditor'
 import type { VoxelMaterial } from '~/types/map'
@@ -23,26 +24,11 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <div class="tool-row" role="group" aria-label="Build tool">
-    <button
-      type="button"
-      class="tool-button"
-      :class="{ 'is-active': buildTool === 'pencil' }"
-      :aria-pressed="buildTool === 'pencil'"
-      @click="emit('set-build-tool', 'pencil')"
-    >
-      Pencil
-    </button>
-    <button
-      type="button"
-      class="tool-button"
-      :class="{ 'is-active': buildTool === 'eraser' }"
-      :aria-pressed="buildTool === 'eraser'"
-      @click="emit('set-build-tool', 'eraser')"
-    >
-      Eraser
-    </button>
-  </div>
+  <BuildToolToggle
+    aria-label="Build tool"
+    :active-tool="buildTool"
+    @set-tool="emit('set-build-tool', $event)"
+  />
 
   <div class="materials-grid" role="group" aria-label="Terrain material">
     <button
@@ -110,35 +96,6 @@ const emit = defineEmits<{
 </template>
 
 <style scoped>
-.tool-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.4rem;
-}
-
-.tool-button {
-  border: 1px solid var(--rule-soft);
-  border-radius: 10px;
-  background: var(--paper);
-  color: var(--ink);
-  padding: 0.5rem 0.7rem;
-  cursor: pointer;
-  font: inherit;
-  letter-spacing: 0.04em;
-  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
-}
-
-.tool-button:hover {
-  border-color: var(--rule-strong);
-  background: var(--paper-hover);
-}
-
-.tool-button.is-active {
-  border-color: var(--accent);
-  background: var(--accent-soft);
-  color: var(--accent);
-}
-
 .materials-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

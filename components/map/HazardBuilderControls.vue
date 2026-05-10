@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import BuildToolToggle from '~/components/map/BuildToolToggle.vue'
 import type { BuildTool } from '~/shared/mapEditor'
 import type { MapHazardKind } from '~/types/map'
 import type { MapHazardDefinition } from '~/utils/mapHazards'
@@ -19,26 +20,13 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <div class="tool-row" role="group" aria-label="Hazard tool">
-    <button
-      type="button"
-      class="tool-button"
-      :class="{ 'is-active': hazardTool === 'pencil' }"
-      :aria-pressed="hazardTool === 'pencil'"
-      @click="emit('set-hazard-tool', 'pencil')"
-    >
-      Place
-    </button>
-    <button
-      type="button"
-      class="tool-button"
-      :class="{ 'is-active': hazardTool === 'eraser' }"
-      :aria-pressed="hazardTool === 'eraser'"
-      @click="emit('set-hazard-tool', 'eraser')"
-    >
-      Erase
-    </button>
-  </div>
+  <BuildToolToggle
+    aria-label="Hazard tool"
+    :active-tool="hazardTool"
+    pencil-label="Place"
+    eraser-label="Erase"
+    @set-tool="emit('set-hazard-tool', $event)"
+  />
 
   <div class="hazards-grid" role="group" aria-label="Hazard type">
     <button
@@ -78,35 +66,6 @@ const emit = defineEmits<{
 </template>
 
 <style scoped>
-.tool-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.4rem;
-}
-
-.tool-button {
-  border: 1px solid var(--rule-soft);
-  border-radius: 10px;
-  background: var(--paper);
-  color: var(--ink);
-  padding: 0.5rem 0.7rem;
-  cursor: pointer;
-  font: inherit;
-  letter-spacing: 0.04em;
-  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
-}
-
-.tool-button:hover {
-  border-color: var(--rule-strong);
-  background: var(--paper-hover);
-}
-
-.tool-button.is-active {
-  border-color: var(--accent);
-  background: var(--accent-soft);
-  color: var(--accent);
-}
-
 .hazards-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

@@ -2490,3 +2490,13 @@
   - `npm test` — passes: 102 test files / 381 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: shared build tool toggle component
+
+- Extracted the duplicated terrain/hazard pencil-vs-eraser control into `components/map/BuildToolToggle.vue` with configurable labels and a narrow `set-tool` emit.
+- Updated terrain and hazard builder controls to consume the shared toggle while preserving active styling, ARIA pressed state, labels, and tool-change events.
+- Removed duplicated tool-row/button CSS from the terrain and hazard controls.
+- Quality gates after this phase:
+  - `npm test` — passes: 102 test files / 381 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
