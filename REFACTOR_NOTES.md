@@ -1978,3 +1978,13 @@
   - `npm test` — passes: 87 test files / 331 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: legacy grid redirect helpers
+
+- Extracted legacy `/grids` redirect path construction into `utils/legacyGridRoutes.ts`.
+- Updated `/grids` and `/grids/[slug]` redirect pages to use the focused helper while preserving query passthrough and previous slug coercion behavior.
+- Added `tests/utils/legacyGridRoutes.test.ts` covering index redirects and slug detail redirect paths.
+- Quality gates after this phase:
+  - `npm test` — passes: 88 test files / 333 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
