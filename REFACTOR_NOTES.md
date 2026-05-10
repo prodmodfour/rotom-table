@@ -2307,3 +2307,13 @@
   - `npm test` — passes: 99 test files / 370 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: initiative row component
+
+- Extracted initiative row rendering into `components/map/InitiativeRowItem.vue`, including sprite display, HP bar, conditions, initiative input, and Use Speed action styling.
+- Reduced `InitiativeTracker` to a panel shell that composes controls and rows while forwarding the same focused events.
+- Preserved active/selected/fainted row styling, token focus action, active-turn selection, initiative edits, speed-fill per row, and responsive row layout.
+- Quality gates after this phase:
+  - `npm test` — passes: 99 test files / 370 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
