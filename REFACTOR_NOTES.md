@@ -1838,3 +1838,13 @@
   - `npm test` — passes: 84 test files / 322 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: move index list component
+
+- Extracted the Moves index result-list markup into `components/reference/MoveIndexList.vue`.
+- Reduced `pages/moves/index.vue` to search/type filter state, type option derivation, reference shell controls, and focused list composition.
+- Preserved move links, type badges, damage-class badges, DB/AC/range pills, effect previews, and empty-state copy.
+- Quality gates after this phase:
+  - `npm test` — passes: 84 test files / 322 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
