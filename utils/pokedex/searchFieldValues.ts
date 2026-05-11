@@ -7,6 +7,7 @@ import {
   buildMinimumSkillAliases,
   hasPokedexCapabilityValue,
 } from '~/utils/pokedex/searchAliases'
+import { buildEggGroupSearchValues } from '~/utils/pokedex/searchListValues'
 import { stripParenthetical } from '~/utils/pokedex/searchValueRanges'
 
 export type PokedexSearchableEntry = PokedexRecord & {
@@ -15,6 +16,7 @@ export type PokedexSearchableEntry = PokedexRecord & {
 }
 
 export type PokedexSearchFieldValue = SearchBucketValue
+export { buildDietSearchValues, buildHabitatSearchValues, buildTypeSearchValues } from '~/utils/pokedex/searchListValues'
 export { buildMoveSearchValues } from '~/utils/pokedex/searchMoveValues'
 
 type MovementCapabilityKey = Exclude<keyof PokedexCapabilities, 'other'>
@@ -68,40 +70,6 @@ export const buildIdentitySearchValues = (entry: PokedexSearchableEntry): Pokede
       `national dex ${entry.nationalDexNumber}`,
       formatNationalDexNumber(entry.nationalDexNumber),
     )
-  }
-
-  return values
-}
-
-export const buildTypeSearchValues = (entry: Pick<PokedexRecord, 'types'>): PokedexSearchFieldValue[] => {
-  if (!entry.types?.length) return []
-
-  const joinedTypes = entry.types.join(' ')
-  const values: PokedexSearchFieldValue[] = [
-    ...entry.types,
-    `type ${joinedTypes}`,
-    `types ${joinedTypes}`,
-  ]
-
-  for (const type of entry.types) {
-    values.push(`type ${type}`, `${type} type`)
-  }
-
-  return values
-}
-
-export const buildHabitatSearchValues = (entry: Pick<PokedexRecord, 'habitat'>): PokedexSearchFieldValue[] => {
-  if (!entry.habitat?.length) return []
-
-  const joinedHabitats = entry.habitat.join(' ')
-  const values: PokedexSearchFieldValue[] = [
-    ...entry.habitat,
-    `habitat ${joinedHabitats}`,
-    `habitats ${joinedHabitats}`,
-  ]
-
-  for (const habitat of entry.habitat) {
-    values.push(`habitat ${habitat}`, `${habitat} habitat`)
   }
 
   return values
@@ -184,12 +152,7 @@ export const buildBreedingSearchValues = (
 ): PokedexSearchFieldValue[] => {
   const values: PokedexSearchFieldValue[] = []
 
-  if (entry.egg_groups?.length) {
-    values.push(...entry.egg_groups, `egg group ${entry.egg_groups.join(' ')}`)
-    for (const group of entry.egg_groups) {
-      values.push(`egg group ${group}`, `${group} egg group`)
-    }
-  }
+  values.push(...buildEggGroupSearchValues(entry.egg_groups))
 
   if (entry.genderless) {
     values.push('genderless')
@@ -205,17 +168,6 @@ export const buildBreedingSearchValues = (
 
   if (entry.hatch_rate) {
     values.push(entry.hatch_rate, `hatch ${entry.hatch_rate}`, `hatch rate ${entry.hatch_rate}`)
-  }
-
-  return values
-}
-
-export const buildDietSearchValues = (entry: Pick<PokedexRecord, 'diet'>): PokedexSearchFieldValue[] => {
-  if (!entry.diet?.length) return []
-
-  const values: PokedexSearchFieldValue[] = [...entry.diet, `diet ${entry.diet.join(' ')}`]
-  for (const diet of entry.diet) {
-    values.push(`diet ${diet}`, `${diet} diet`)
   }
 
   return values
