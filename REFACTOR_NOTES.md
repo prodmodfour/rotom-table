@@ -3773,3 +3773,17 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
   - `npm test` — passes: 162 test files / 621 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: isometric sprite texture transform split
+
+- Extracted sprite texture configuration, crop cache-key construction, and crop repeat/offset application from `utils/isometric/spriteTextures.ts` into `utils/isometric/spriteTextureTransforms.ts`.
+- Kept `spriteTextures.ts` focused on shared DOM-generated textures, base/cropped/animated texture acquisition, ref-counting, cache lifetime, and disposal while preserving existing public texture handles.
+- Preserved sprite pixel-art filtering, sRGB color-space configuration, cropped sprite clone semantics, crop coordinate math, animated texture cloning, and shared texture-cache behavior.
+- Added `tests/utils/isometric/spriteTextureTransforms.test.ts` covering sprite texture configuration, deterministic crop cache keys, and canvas-space crop coordinate application.
+- Next remaining phase: continue one bounded cleanup pass, with candidates including another focused renderer/helper split, storage split, map-editor extraction, or small UI duplication cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/utils/isometric/spriteTextureTransforms.test.ts` — passes: 1 test file / 3 tests.
+  - `npm run typecheck` — passes.
+  - `npm test` — passes: 163 test files / 624 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

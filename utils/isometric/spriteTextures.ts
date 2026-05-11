@@ -1,5 +1,10 @@
 import * as THREE from 'three'
 import type { SpriteAnimation, SpriteCrop } from '~/types/pokemon'
+import {
+  applySpriteTextureCrop,
+  configureSpriteTexture,
+  spriteCropCacheKey,
+} from '~/utils/isometric/spriteTextureTransforms'
 
 /**
  * Lazily-built radial-gradient texture for sprite contact shadows. A
@@ -97,13 +102,6 @@ interface RefCountedTextureRecord extends CachedTextureRecord {
 const spriteTextureLoader = new THREE.TextureLoader()
 const baseSpriteTextureCache = new Map<string, CachedTextureRecord>()
 const croppedSpriteTextureCache = new Map<string, RefCountedTextureRecord>()
-const configureSpriteTexture = (texture: THREE.Texture) => {
-  texture.magFilter = THREE.NearestFilter
-  texture.minFilter = THREE.NearestFilter
-  texture.colorSpace = THREE.SRGBColorSpace
-  texture.needsUpdate = true
-}
-
 const loadBaseSpriteTexture = (url: string): Promise<THREE.Texture> => {
   const cached = baseSpriteTextureCache.get(url)
   if (cached) return cached.promise
@@ -128,25 +126,6 @@ const loadBaseSpriteTexture = (url: string): Promise<THREE.Texture> => {
   return record.promise
 }
 
-const cropCacheKey = (url: string, crop: SpriteCrop) => [
-  url,
-  crop.canvasWidth,
-  crop.canvasHeight,
-  crop.left,
-  crop.top,
-  crop.width,
-  crop.height,
-].join('|')
-
-const applyTextureCrop = (texture: THREE.Texture, crop: SpriteCrop) => {
-  texture.repeat.set(crop.width / crop.canvasWidth, crop.height / crop.canvasHeight)
-  texture.offset.set(
-    crop.left / crop.canvasWidth,
-    1 - (crop.top + crop.height) / crop.canvasHeight,
-  )
-  texture.needsUpdate = true
-}
-
 export const acquireStaticSpriteTexture = (url: string, crop?: SpriteCrop): TextureHandle => {
   if (!crop) {
     return {
@@ -155,7 +134,7 @@ export const acquireStaticSpriteTexture = (url: string, crop?: SpriteCrop): Text
     }
   }
 
-  const key = cropCacheKey(url, crop)
+  const key = spriteCropCacheKey(url, crop)
   let record = croppedSpriteTextureCache.get(key)
   if (!record) {
     const newRecord: RefCountedTextureRecord = {
@@ -165,7 +144,7 @@ export const acquireStaticSpriteTexture = (url: string, crop?: SpriteCrop): Text
     newRecord.promise = loadBaseSpriteTexture(url).then((baseTexture) => {
       const texture = baseTexture.clone()
       configureSpriteTexture(texture)
-      applyTextureCrop(texture, crop)
+      applySpriteTextureCrop(texture, crop)
       newRecord.texture = texture
       if (newRecord.refs <= 0) {
         texture.dispose()
