@@ -19,6 +19,7 @@ import type {
 import type { MoveAutomationTransaction } from '~/types/moveAutomation'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import type { TrainerMove } from '~/types/trainerSheet'
+import type { TokenMoveMenuOption } from '~/utils/mapTokenMoves'
 import type { MapSaveStatus } from '~/composables/useEditableMap'
 import type { PreviewState } from '~/utils/gridPreview'
 
@@ -51,6 +52,8 @@ const props = defineProps<{
   canDeleteTokens: boolean
   moveAutomationUser: SpawnedPokemon | null
   moveAutomationMoves: Array<CharacterSheetMove | TrainerMove>
+  moveAutomationInitialMoveName?: string | null
+  tokenMoveOptionsById?: Record<string, TokenMoveMenuOption[]>
   canApplyMapEffects: boolean
 }>()
 
@@ -62,7 +65,7 @@ const emit = defineEmits<{
   (event: 'modify-hp', payload: { id: string; currentHp: number }): void
   (event: 'modify-combat-stages', payload: { id: string; stages: CombatStageMap }): void
   (event: 'modify-conditions', payload: { id: string; conditions: string[] }): void
-  (event: 'use-move', id: string): void
+  (event: 'use-move', payload: { id: string; moveName?: string | null }): void
   (event: 'view-sheet', id: string): void
   (event: 'view-pokedex', id: string): void
   (event: 'preview-change', preview: PreviewState): void
@@ -105,6 +108,7 @@ defineExpose({ focusPokemon })
         :hazard-tool="hazardTool"
         :hazard-kind="hazardKind"
         :can-delete-tokens="canDeleteTokens"
+        :token-move-options-by-id="tokenMoveOptionsById"
         @select-pokemon="emit('select-pokemon', $event)"
         @move-pokemon="emit('move-pokemon', $event)"
         @turn-pokemon="emit('turn-pokemon', $event)"
@@ -129,6 +133,7 @@ defineExpose({ focusPokemon })
         :all-tokens="spawnedPokemon"
         :field-effects="mapFieldEffects"
         :can-apply-map-effects="canApplyMapEffects"
+        :initial-move-name="moveAutomationInitialMoveName"
         @close="emit('close-move-automation')"
         @apply="emit('apply-move-automation', $event)"
       />

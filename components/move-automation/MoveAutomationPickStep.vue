@@ -34,6 +34,7 @@ const emit = defineEmits<{
           <TypeBadge v-if="entry.script.type" :type="entry.script.type" size="xs" />
           <DamageClassBadge v-if="entry.script.damageClass" :category="entry.script.damageClass" size="xs" />
           <span v-if="entry.script.damageBase != null" class="move-card__badge">DB {{ entry.script.damageBase }}</span>
+          <span v-if="entry.hasStab" class="move-card__badge move-card__badge--stab">STAB</span>
           <span v-if="entry.script.ac != null" class="move-card__badge">AC {{ entry.script.ac }}</span>
           <span v-if="entry.move.frequency" class="move-card__badge">{{ entry.move.frequency }}</span>
           <span
@@ -112,6 +113,11 @@ const emit = defineEmits<{
   color: var(--ink-muted);
   font-size: 0.72rem;
   font-weight: 800;
+}
+
+.move-card__badge--stab {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--rule-soft));
+  color: var(--accent);
 }
 
 .move-card__badge--explicit {

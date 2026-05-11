@@ -1,4 +1,9 @@
 import { computed, ref, type ComputedRef, type Ref } from 'vue'
+import {
+  buildTokenMoveMenuOptions,
+  moveEntriesForPlacement,
+  type TokenSheetMoveEntry,
+} from '~/utils/mapTokenMoves'
 import type { CharacterSheet, CharacterSheetMove } from '~/types/characterSheet'
 import type { MapFieldEffects, MapHazardV2, TabletopMap } from '~/types/map'
 import type {
@@ -80,6 +85,7 @@ export const useMoveAutomationPanel = ({
   maxLogEntries = DEFAULT_MAX_LOG_ENTRIES,
 }: UseMoveAutomationPanelOptions) => {
   const moveAutomationId = ref<string | null>(null)
+  const moveAutomationInitialMoveName = ref<string | null>(null)
 
   const moveAutomationUser = computed(() =>
     moveAutomationId.value
@@ -87,23 +93,42 @@ export const useMoveAutomationPanel = ({
       : null,
   )
 
-  const moveAutomationMoves = computed<Array<CharacterSheetMove | TrainerMove>>(() => {
-    if (!map.value || !moveAutomationId.value) return []
-    const placement = map.value.placements.find((item) => item.id === moveAutomationId.value)
-    if (!placement) return []
-    if (placement.sheetKind === 'pokemon') {
-      return pokemonBySlug.value?.get(placement.sheetSlug)?.movelist ?? []
-    }
-    return trainerBySlug.value?.get(placement.sheetSlug)?.movelist ?? []
+  const sheetLookup = () => ({
+    pokemon: pokemonBySlug.value,
+    trainer: trainerBySlug.value,
   })
 
-  const openMoveAutomation = (id: string) => {
+  const moveEntriesForId = (id: string | null | undefined): TokenSheetMoveEntry[] => {
+    if (!map.value || !id) return []
+    return moveEntriesForPlacement(
+      map.value.placements.find((item) => item.id === id),
+      sheetLookup(),
+    )
+  }
+
+  const moveAutomationMoves = computed<Array<CharacterSheetMove | TrainerMove>>(() =>
+    moveEntriesForId(moveAutomationId.value).map((entry) => entry.move),
+  )
+
+  const tokenMoveOptionsById = computed(() => {
+    const out: Record<string, ReturnType<typeof buildTokenMoveMenuOptions>> = {}
+    if (!map.value) return out
+    for (const token of spawnedPokemon.value) {
+      out[token.id] = buildTokenMoveMenuOptions(token, moveEntriesForId(token.id))
+    }
+    return out
+  })
+
+  const openMoveAutomation = (input: string | { id: string; moveName?: string | null }) => {
+    const id = typeof input === 'string' ? input : input.id
     if (!canControlPlacement(id)) return
     moveAutomationId.value = id
+    moveAutomationInitialMoveName.value = typeof input === 'string' ? null : input.moveName?.trim() || null
   }
 
   const closeMoveAutomation = () => {
     moveAutomationId.value = null
+    moveAutomationInitialMoveName.value = null
   }
 
   const appendMoveAutomationLog = (transaction: MoveAutomationTransaction) => {
@@ -131,6 +156,8 @@ export const useMoveAutomationPanel = ({
     moveAutomationId,
     moveAutomationUser,
     moveAutomationMoves,
+    moveAutomationInitialMoveName,
+    tokenMoveOptionsById,
     openMoveAutomation,
     closeMoveAutomation,
     appendMoveAutomationLog,

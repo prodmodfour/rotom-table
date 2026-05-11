@@ -68,4 +68,17 @@ describe('useMoveAutomationWizard', () => {
     expect(applied).toHaveLength(1)
     expect(applied[0]).toMatchObject({ userId: 'user', moveName: 'Water Gun' })
   })
+
+  it('can start on the context-menu selected move', () => {
+    const user = token('user', 'Bolt')
+    const wizard = useMoveAutomationWizard({
+      user,
+      moves: sheetMoves(),
+      allTokens: [user],
+      initialMoveName: 'Water Gun',
+    }, () => undefined)
+
+    expect(wizard.step.value).toBe(1)
+    expect(wizard.selectedEntry.value?.move.name).toBe('Water Gun')
+  })
 })

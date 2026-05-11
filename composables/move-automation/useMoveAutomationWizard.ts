@@ -52,6 +52,7 @@ export interface MoveAutomationWizardProps {
   allTokens: readonly SpawnedPokemon[]
   fieldEffects?: MapFieldEffects
   canApplyMapEffects?: boolean
+  initialMoveName?: string | null
 }
 
 export const useMoveAutomationWizard = (
@@ -59,8 +60,8 @@ export const useMoveAutomationWizard = (
   emitApply: (transaction: MoveAutomationTransaction) => void,
 ) => {
   const search = ref('')
-  const selectedMoveName = ref<string | null>(null)
-  const step = ref(0)
+  const selectedMoveName = ref<string | null>(props.initialMoveName?.trim() || null)
+  const step = ref(selectedMoveName.value ? 1 : 0)
   const targetIds = ref<string[]>([])
   const targetResolutions = reactive<Record<string, MoveAutomationTargetResolutionState>>({})
   const enabledSuggestions = reactive<Record<string, boolean>>({})
@@ -72,7 +73,9 @@ export const useMoveAutomationWizard = (
   const hazardCellsText = ref('')
   const manualNote = ref('')
 
-  const moveEntries = computed(() => buildMoveAutomationMoveEntries(props.moves))
+  const moveEntries = computed(() => buildMoveAutomationMoveEntries(props.moves, {
+    stabTypes: props.user.sheetKind === 'pokemon' ? props.user.defenderTypes : [],
+  }))
   const filteredMoveEntries = computed(() => filterMoveAutomationMoveEntries(moveEntries.value, search.value))
   const selectedEntry = computed(() => selectMoveAutomationEntry(moveEntries.value, selectedMoveName.value))
   const script = computed(() => selectedEntry.value?.script ?? null)
@@ -93,6 +96,16 @@ export const useMoveAutomationWizard = (
       }
     },
     { immediate: true },
+  )
+
+  watch(
+    () => props.initialMoveName,
+    (name) => {
+      const next = name?.trim()
+      if (!next) return
+      selectedMoveName.value = next
+      step.value = 1
+    },
   )
 
   const suggestionKey = (kind: MoveAutomationSuggestionKind, index: number): string =>

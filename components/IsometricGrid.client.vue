@@ -22,6 +22,7 @@ import { buildMapOccupancy } from '~/utils/mapOccupancy'
 import { normalizeMapFieldEffects } from '~/utils/mapFieldEffects'
 import type { CombatStageMap } from '~/types/combatStages'
 import type { BuildTool } from '~/shared/mapEditor'
+import type { TokenMoveMenuOption } from '~/utils/mapTokenMoves'
 import {
   DEFAULT_FACING_DIRECTION,
   alignCameraToGrid as alignIsometricCameraToGrid,
@@ -112,6 +113,7 @@ const props = defineProps<{
   hazardTool?: BuildTool
   hazardKind?: MapHazardKind
   canDeleteTokens?: boolean
+  tokenMoveOptionsById?: Record<string, TokenMoveMenuOption[]>
 }>()
 
 const emit = defineEmits<{
@@ -122,7 +124,7 @@ const emit = defineEmits<{
   (event: 'modify-hp', payload: { id: string; currentHp: number }): void
   (event: 'modify-combat-stages', payload: { id: string; stages: CombatStageMap }): void
   (event: 'modify-conditions', payload: { id: string; conditions: string[] }): void
-  (event: 'use-move', id: string): void
+  (event: 'use-move', payload: { id: string; moveName?: string | null }): void
   (event: 'view-sheet', id: string): void
   (event: 'view-pokedex', id: string): void
   (event: 'preview-change', preview: PreviewState): void
@@ -196,7 +198,7 @@ const {
     modifyHp: (payload) => emit('modify-hp', payload),
     modifyCombatStages: (payload) => emit('modify-combat-stages', payload),
     modifyConditions: (payload) => emit('modify-conditions', payload),
-    useMove: (id) => emit('use-move', id),
+    useMove: (payload) => emit('use-move', payload),
     viewSheet: (id) => emit('view-sheet', id),
     viewPokedex: (id) => emit('view-pokedex', id),
   },
@@ -736,6 +738,7 @@ useIsometricSceneWatchers({
       v-if="contextMenu"
       :menu="contextMenu"
       :can-delete-tokens="props.canDeleteTokens"
+      :moves="props.tokenMoveOptionsById?.[contextMenu.id] ?? []"
       @view-sheet="handleContextViewSheet"
       @view-pokedex="handleContextViewPokedex"
       @turn="handleContextTurn"

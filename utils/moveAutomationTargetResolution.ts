@@ -1,3 +1,4 @@
+import { applyCombatStageToStat } from '~/utils/combatStageStats'
 import { fieldEffectDamageBonus, type DamageRollResult } from '~/utils/moveAutomation'
 import { parsePositiveInt } from '~/utils/moveAutomationDialog'
 import { computeMultiplier, formatMultiplier } from '~/utils/typeChart'
@@ -65,8 +66,12 @@ export const resolveMoveAutomationTargetDamageLoss = (
   const raw = state.damageRoll?.total ?? 0
   if (raw <= 0) return 0
   const physical = script.damageClass === 'Physical'
-  const offense = physical ? user.atk : user.satk
-  const defense = physical ? target.def : target.sdef
+  const offense = physical
+    ? applyCombatStageToStat(user.atk, user.combatStages.atk)
+    : applyCombatStageToStat(user.satk, user.combatStages.satk)
+  const defense = physical
+    ? applyCombatStageToStat(target.def, target.combatStages.def)
+    : applyCombatStageToStat(target.sdef, target.combatStages.sdef)
   const fieldBonus = fieldEffectDamageBonus(script.type, fieldEffects)
   const multiplier = moveAutomationTargetDamageMultiplier(script, target)
   if (multiplier === 0) return 0

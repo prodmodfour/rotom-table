@@ -118,6 +118,18 @@ describe('move automation target resolution helpers', () => {
     })).toBe(0)
   })
 
+  it('uses current Combat Stages for attacking and defending stats', () => {
+    const user = token({ id: 'u', species: 'User', atk: 10, combatStages: { ...stages, atk: 2 } })
+    const target = token({ id: 't', species: 'Target', def: 10, combatStages: { ...stages, def: -2 }, defenderTypes: [] })
+    const s = script({ type: 'Fire', damageClass: 'Physical' })
+
+    expect(resolveMoveAutomationTargetDamageLoss(s, user, target, {
+      ...defaultTargetResolutionState(s),
+      hit: true,
+      damageRoll: { formula: 'flat', count: 0, sides: 0, total: 20, rolls: [], mod: 20 },
+    })).toBe(26)
+  })
+
   it('resolves HP suggestion amounts and multiplier labels', () => {
     const s = script({
       hpSuggestions: [

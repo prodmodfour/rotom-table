@@ -53,7 +53,7 @@ export interface TokenActionControllerEmitters {
   modifyHp: (payload: { id: string; currentHp: number }) => void
   modifyCombatStages: (payload: { id: string; stages: CombatStageMap }) => void
   modifyConditions: (payload: { id: string; conditions: string[] }) => void
-  useMove: (id: string) => void
+  useMove: (payload: { id: string; moveName?: string | null }) => void
   viewSheet: (id: string) => void
   viewPokedex: (id: string) => void
 }
@@ -262,11 +262,11 @@ export const useTokenActionController = <TContainer extends BoundsProvider>(
     closeDamageDialog()
   }
 
-  const handleContextUseMove = () => {
+  const handleContextUseMove = (moveName?: string | null) => {
     const id = controllableContextId()
     if (!id) return
 
-    options.emit.useMove(id)
+    options.emit.useMove({ id, moveName })
     closeContextMenu()
   }
 

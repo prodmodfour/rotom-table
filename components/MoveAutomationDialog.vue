@@ -19,6 +19,7 @@ const props = defineProps<{
   allTokens: SpawnedPokemon[]
   fieldEffects?: MapFieldEffects
   canApplyMapEffects?: boolean
+  initialMoveName?: string | null
 }>()
 
 const emit = defineEmits<{

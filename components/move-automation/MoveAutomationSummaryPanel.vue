@@ -17,6 +17,7 @@ defineProps<{
         <TypeBadge :type="script.type" size="xs" />
         <DamageClassBadge v-if="script.damageClass" :category="script.damageClass" size="xs" />
         <span v-if="script.damageBase != null" class="move-card__badge">DB {{ script.damageBase }}</span>
+        <span v-if="selectedEntry?.hasStab" class="move-card__badge move-card__badge--stab">STAB</span>
         <span v-if="script.ac != null" class="move-card__badge">AC {{ script.ac }}</span>
       </div>
     </div>
@@ -75,6 +76,11 @@ defineProps<{
   color: var(--ink-muted);
   font-size: 0.72rem;
   font-weight: 800;
+}
+
+.move-card__badge--stab {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--rule-soft));
+  color: var(--accent);
 }
 
 .move-summary__stats {

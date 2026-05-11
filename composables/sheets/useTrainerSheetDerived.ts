@@ -60,6 +60,8 @@ export function useTrainerSheetDerived(sheet: TrainerSheetRef) {
   const moveRows = computed(() => makeMoveLookupRows(sheet.value?.movelist, {
     physicalAttack: attackTotal.value,
     specialAttack: specialAttackTotal.value,
+    physicalAttackStage: sheet.value?.stats?.atk?.stage ?? sheet.value?.combatStages?.atk ?? 0,
+    specialAttackStage: sheet.value?.stats?.satk?.stage ?? sheet.value?.combatStages?.satk ?? 0,
   }))
 
   const abilityRows = computed(() => makeAbilityLookupRows(sheet.value?.abilities))

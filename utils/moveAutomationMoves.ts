@@ -5,6 +5,7 @@ import {
   sheetMoveToMoveLike,
   type MoveAutomationMoveLike,
 } from '~/utils/moveAutomation'
+import { hasSameTypeAttackBonus } from '~/utils/sheetMoveLookup'
 import type { CharacterSheetMove } from '~/types/characterSheet'
 import type { MoveAutomationScript } from '~/types/moveAutomation'
 import type { SpawnedPokemon } from '~/types/pokemon'
@@ -18,27 +19,48 @@ export interface MoveAutomationMoveEntry {
   move: MoveAutomationMoveLike
   script: MoveAutomationScript
   hasExplicitScript: boolean
+  hasStab: boolean
 }
 
-export const moveLikeForSheetMove = (sheetMove: MoveAutomationSheetMove): MoveAutomationMoveLike => {
+export interface MoveAutomationMoveEntryOptions {
+  /** Types that grant STAB for this move user. Trainers normally leave this empty. */
+  stabTypes?: readonly string[]
+}
+
+export const moveLikeForSheetMove = (
+  sheetMove: MoveAutomationSheetMove,
+  options: MoveAutomationMoveEntryOptions = {},
+): MoveAutomationMoveLike => {
   const canonical = findMove(sheetMove.name)
-  if (canonical) return canonical
-  return sheetMoveToMoveLike(sheetMove)
+  const move = canonical ?? sheetMoveToMoveLike(sheetMove)
+  const hasStab = hasSameTypeAttackBonus(move, options.stabTypes)
+  if (!hasStab || move.damage_base == null) return move
+  return {
+    ...move,
+    damage_base: move.damage_base + 2,
+    damage_roll: null,
+  }
 }
 
 export const buildMoveAutomationMoveEntries = (
   moves: readonly MoveAutomationSheetMove[],
+  options: MoveAutomationMoveEntryOptions = {},
 ): MoveAutomationMoveEntry[] => moves
   .filter((move) => move.name?.trim())
   .map((sheetMove) => {
-    const move = moveLikeForSheetMove(sheetMove)
+    const move = moveLikeForSheetMove(sheetMove, options)
+    const hasStab = hasSameTypeAttackBonus(move, options.stabTypes)
     const explicitScript = explicitScriptForMove(move.name)
+    const script = explicitScript && hasStab && explicitScript.damageBase != null
+      ? { ...explicitScript, damageBase: explicitScript.damageBase + 2 }
+      : explicitScript ?? buildManualMoveResolution(move)
     return {
       label: move.name,
       sheetMove,
       move,
-      script: explicitScript ?? buildManualMoveResolution(move),
+      script,
       hasExplicitScript: Boolean(explicitScript),
+      hasStab,
     }
   })
 

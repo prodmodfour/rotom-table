@@ -15,6 +15,7 @@ import type {
 } from '~/types/map'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import type { PreviewState } from '~/utils/gridPreview'
+import type { TokenMoveMenuOption } from '~/utils/mapTokenMoves'
 
 interface IsometricGridHandle {
   focusPokemon: (id: string) => boolean
@@ -39,6 +40,7 @@ defineProps<{
   hazardTool: BuildTool
   hazardKind: MapHazardKind
   canDeleteTokens: boolean
+  tokenMoveOptionsById?: Record<string, TokenMoveMenuOption[]>
 }>()
 
 const emit = defineEmits<{
@@ -49,7 +51,7 @@ const emit = defineEmits<{
   (event: 'modify-hp', payload: { id: string; currentHp: number }): void
   (event: 'modify-combat-stages', payload: { id: string; stages: CombatStageMap }): void
   (event: 'modify-conditions', payload: { id: string; conditions: string[] }): void
-  (event: 'use-move', id: string): void
+  (event: 'use-move', payload: { id: string; moveName?: string | null }): void
   (event: 'view-sheet', id: string): void
   (event: 'view-pokedex', id: string): void
   (event: 'preview-change', preview: PreviewState): void
@@ -87,6 +89,7 @@ defineExpose({ focusPokemon })
     :hazard-tool="hazardTool"
     :hazard-kind="hazardKind"
     :can-delete-tokens="canDeleteTokens"
+    :token-move-options-by-id="tokenMoveOptionsById"
     @select-pokemon="emit('select-pokemon', $event)"
     @move-pokemon="emit('move-pokemon', $event)"
     @turn-pokemon="emit('turn-pokemon', $event)"

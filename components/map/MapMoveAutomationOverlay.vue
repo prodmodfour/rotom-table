@@ -12,6 +12,7 @@ defineProps<{
   allTokens: SpawnedPokemon[]
   fieldEffects?: MapFieldEffects
   canApplyMapEffects: boolean
+  initialMoveName?: string | null
 }>()
 
 const emit = defineEmits<{
@@ -28,6 +29,7 @@ const emit = defineEmits<{
     :all-tokens="allTokens"
     :field-effects="fieldEffects"
     :can-apply-map-effects="canApplyMapEffects"
+    :initial-move-name="initialMoveName"
     @close="emit('close')"
     @apply="emit('apply', $event)"
   />

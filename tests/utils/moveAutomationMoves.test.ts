@@ -77,6 +77,14 @@ describe('move automation move helpers', () => {
     expect(entries[1].script.effect).toContain('Focus deeply')
   })
 
+  it('applies STAB to canonical damaging move DB for automation', () => {
+    const [entry] = buildMoveAutomationMoveEntries([{ name: 'Tackle' }], { stabTypes: ['Normal'] })
+
+    expect(entry.hasStab).toBe(true)
+    expect(entry.script.damageBase).toBe(6)
+    expect(entry.move.damage_roll).toBeNull()
+  })
+
   it('filters entries by script and sheet move fields while preserving no-query order', () => {
     const entries = buildMoveAutomationMoveEntries([
       { name: 'Scratch', frequency: 'At-Will' },

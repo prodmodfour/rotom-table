@@ -245,6 +245,8 @@ const {
   moveAutomationId,
   moveAutomationUser,
   moveAutomationMoves,
+  moveAutomationInitialMoveName,
+  tokenMoveOptionsById,
   openMoveAutomation,
   closeMoveAutomation,
   applyMoveAutomation,
@@ -395,6 +397,8 @@ useMapDimensionReconciliation({
         :can-delete-tokens="isGm"
         :move-automation-user="moveAutomationUser"
         :move-automation-moves="moveAutomationMoves"
+        :move-automation-initial-move-name="moveAutomationInitialMoveName"
+        :token-move-options-by-id="tokenMoveOptionsById"
         :can-apply-map-effects="canEditMap"
         @select-pokemon="selectPokemon"
         @move-pokemon="movePokemon"
