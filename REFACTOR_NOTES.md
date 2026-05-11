@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass (latest full test run: 204 files / 784 tests). `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include another focused encounter component extraction, Pokédex/detail or sidebar extraction, sheet/map panel extraction, server/use-case helper split, move-automation helper split, renderer/helper split, storage split, map-editor extraction, or remaining client/helper cleanup; do not mark the full refactor complete yet.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass (latest full test run: 204 files / 785 tests). `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include another focused encounter component extraction, Pokédex/detail or sidebar extraction, sheet/map panel extraction, server/use-case helper split, move-automation helper split, renderer/helper split, storage split, map-editor extraction, or remaining client/helper cleanup; do not mark the full refactor complete yet.
 
 ## Phase 0 baseline audit
 
@@ -4702,5 +4702,19 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
   - `npm test -- tests/composables/encounters/useEncounterGenerationPage.test.ts tests/utils/encounterGeneration.test.ts` — passes: 2 test files / 11 tests.
   - `npm run typecheck` — passes.
   - `npm test` — passes: 204 test files / 784 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: encounter table detail subcomponent extraction
+
+- Extracted the selected encounter-table detail heading into `components/encounters/EncounterTableDetailHeader.vue` so table title, region/table path labels, and level/entry badges live in a focused presentation component.
+- Extracted encounter roll-range row rendering into `components/encounters/EncounterTableRollList.vue`, keeping row markup and table-specific styles out of the detail shell.
+- Added `encounterGeneratorTablePath(region, table)` to the shared encounter route helpers and updated the Roll-on-this-table link to use the centralized encoded route builder instead of an inline `/generate` string.
+- Reduced `EncounterTableDetailPanel.vue` to the panel shell, selected/empty state, row/header composition, and action link while preserving selected-table display, roll rows, empty-state copy, and generate-page navigation behavior.
+- Next remaining phase: continue one bounded cleanup pass, with candidates including another focused encounter component extraction, Pokédex/detail or sidebar extraction, sheet/map panel extraction, server/use-case helper split, move-automation helper split, renderer/helper split, storage split, map-editor extraction, or remaining client/helper cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/utils/encounterRoutes.test.ts tests/composables/encounters/useEncounterTableBrowser.test.ts tests/utils/encounterTables.test.ts` — passes: 3 test files / 10 tests.
+  - `npm run typecheck` — passes.
+  - `npm test` — passes: 204 test files / 785 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

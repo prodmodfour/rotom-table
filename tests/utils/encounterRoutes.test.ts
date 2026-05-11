@@ -4,6 +4,7 @@ import {
   ENCOUNTER_GM_ONLY_PATH_PREFIXES,
   ENCOUNTER_TABLES_PATH,
   encounterGeneratorPath,
+  encounterGeneratorTablePath,
   encounterTablesPath,
 } from '~/utils/encounterRoutes'
 
@@ -13,6 +14,11 @@ describe('encounter route helpers', () => {
     expect(encounterGeneratorPath()).toBe('/generate')
     expect(ENCOUNTER_TABLES_PATH).toBe('/encounter-tables')
     expect(encounterTablesPath()).toBe('/encounter-tables')
+  })
+
+  it('builds encoded generator links for selected tables', () => {
+    expect(encounterGeneratorTablePath('thickerby_vale', 'forest')).toBe('/generate?region=thickerby_vale&table=forest')
+    expect(encounterGeneratorTablePath('space port', 'rare/spawns')).toBe('/generate?region=space+port&table=rare%2Fspawns')
   })
 
   it('groups GM-only encounter prefixes in navigation order', () => {
