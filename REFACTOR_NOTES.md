@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass (latest full test run: 204 files / 784 tests). `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include another focused editable-cell/UI cleanup, Pokédex/detail or sidebar extraction, sheet/map panel extraction, server/use-case helper split, move-automation helper split, renderer/helper split, storage split, map-editor extraction, or remaining client/helper cleanup; do not mark the full refactor complete yet.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass (latest full test run: 204 files / 784 tests). `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include another focused Pokédex/detail or sidebar extraction, sheet/map panel extraction, server/use-case helper split, move-automation helper split, renderer/helper split, storage split, map-editor extraction, or remaining client/helper cleanup; do not mark the full refactor complete yet.
 
 ## Phase 0 baseline audit
 
@@ -4605,6 +4605,19 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
 - Quality gates after this phase:
   - `npm test -- tests/composables/editable-cell/useEditableCellSession.test.ts tests/utils/editableCell.test.ts` — passes: 2 test files / 10 tests.
   - `npm run typecheck` — passes.
+  - `npm test` — passes: 204 test files / 784 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: Pokédex entry detail header extraction
+
+- Extracted the Pokédex detail article header into `components/pokedex/PokedexEntryHeader.vue` so National Dex/source/placement badges and species heading live in a focused presentation component.
+- Extracted the no-selection/not-found state into `components/pokedex/PokedexEntryEmptyState.vue`, keeping missing-entry copy and code formatting outside the detail composition shell.
+- Reduced `components/pokedex/PokedexEntryDetail.vue` to composing the detail header, profile/detail panels, move/matchup sections, footer page number, and empty-state component while preserving public Pokédex routes and visual behavior.
+- Next remaining phase: continue one bounded cleanup pass, with candidates including another focused Pokédex/detail or sidebar extraction, sheet/map panel extraction, server/use-case helper split, move-automation helper split, renderer/helper split, storage split, map-editor extraction, or remaining client/helper cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm run typecheck` — passes.
+  - `npm test -- tests/composables/pokedex/usePokedexBrowser.test.ts tests/utils/pokedex/entryDetails.test.ts tests/utils/pokedex/entryIndex.test.ts` — passes: 3 test files / 10 tests.
   - `npm test` — passes: 204 test files / 784 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

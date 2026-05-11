@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { formatNationalDexNumber } from '~/utils/pokedex/searchText'
 import type { CapabilityToken, DisplayedPokedexEvolution, MoveToken } from '~/utils/pokedex/entryDetails'
 import type { DisplayPokedexEntry } from '~/utils/pokedex/entryIndex'
 import type { TypeMatchupGroup } from '~/utils/pokedex/typeMatchups'
@@ -29,16 +28,12 @@ defineProps<{
 <template>
   <main class="pokedex-detail">
     <article v-if="entry" class="book-page">
-      <header class="book-page__header">
-        <h2 class="species-name">{{ entry.species.toUpperCase() }}</h2>
-        <div class="header-badges">
-          <span v-if="entry.nationalDexNumber" class="badge">
-            {{ formatNationalDexNumber(entry.nationalDexNumber) }}
-          </span>
-          <span v-if="entry.source_gen" class="badge">{{ entry.source_gen }}</span>
-          <span v-if="isPlacementOnly" class="badge warn">Placement only</span>
-        </div>
-      </header>
+      <PokedexEntryHeader
+        :is-placement-only="isPlacementOnly"
+        :national-dex-number="entry.nationalDexNumber"
+        :source-gen="entry.source_gen"
+        :species="entry.species"
+      />
 
       <div class="book-columns">
         <PokedexProfileColumn
@@ -76,13 +71,10 @@ defineProps<{
       </footer>
     </article>
 
-    <section v-else class="book-page book-page--empty">
-      <h2>{{ requestedPokemonName ? 'Pokémon not found' : 'No entry selected' }}</h2>
-      <p v-if="requestedPokemonName">
-        No Pokédex entry exists for <code>{{ requestedPokemonName }}</code>.
-      </p>
-      <p v-else>Pick a Pokémon from the sidebar to inspect its PTU data.</p>
-    </section>
+    <PokedexEntryEmptyState
+      v-else
+      :requested-pokemon-name="requestedPokemonName"
+    />
   </main>
 </template>
 
