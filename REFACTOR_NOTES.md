@@ -55,7 +55,7 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
 ## Current quality gate results
 
 - `npm run typecheck` — passes.
-- `npm test` — passes: 162 test files / 621 tests.
+- `npm test` — passes: 165 test files / 633 tests.
 - `npm run build` — passes; existing large chunk warnings remain.
 - `npm run check:move-automation` — still fails with the same baseline `Explicit move automation coverage: 0/769` missing-script report.
 - `npm run sync:item-sprites -- --dry-run` was not run because the script does not implement a dry-run mode.
@@ -3799,5 +3799,20 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
   - `npm test -- tests/utils/isometric/tokenRenderState.test.ts` — passes: 1 test file / 5 tests.
   - `npm run typecheck` — passes.
   - `npm test` — passes: 164 test files / 629 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: isometric world sprite facing helper split
+
+- Extracted camera-relative front/back sprite selection from `utils/isometric/worldSprites.ts` into `utils/isometric/worldSpriteFacing.ts`.
+  - The new helper owns camera-to-token facing math, turned-token direction flipping, coincident-camera fallback behavior, and edge-on front-facing behavior without depending on Three.js object methods.
+- Reduced `worldSprites.ts` so it focuses on sprite construction, texture acquisition/release, contact shadows, lighting, and asset application while delegating pure facing decisions to the focused helper.
+- Preserved front/back sprite selection behavior, turned-token sprite flipping, missing-camera fallback, and existing `updateSpriteFacing` public behavior.
+- Added `tests/utils/isometric/worldSpriteFacing.test.ts` covering missing/coincident cameras, front/back camera positions, turned-token flipping, and diagonal/edge-on facing behavior.
+- Next remaining phase: continue one bounded cleanup pass, with candidates including another focused renderer/helper split, storage split, map-editor extraction, or small UI duplication cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/utils/isometric/worldSpriteFacing.test.ts` — passes: 1 test file / 4 tests.
+  - `npm run typecheck` — passes.
+  - `npm test` — passes: 165 test files / 633 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

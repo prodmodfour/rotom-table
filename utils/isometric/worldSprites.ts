@@ -13,6 +13,7 @@ import {
   applyWorldSpriteAnimationFrame,
   spriteVisualAssetKey,
 } from '~/utils/isometric/worldSpriteAssets'
+import { shouldUseFrontWorldSprite } from '~/utils/isometric/worldSpriteFacing'
 
 export const WORLD_SPRITE_HALO_MIN_ALPHA = 0.1
 export const WORLD_SPRITE_HALO_MAX_ALPHA = 0.28
@@ -199,33 +200,6 @@ export const buildContactShadow = (
   return mesh
 }
 
-const shouldUseFrontSprite = ({
-  camera,
-  center,
-  facingDirection,
-  turned = false,
-}: {
-  camera: THREE.Camera | null
-  center: THREE.Vector3
-  facingDirection: THREE.Vector2
-  turned?: boolean
-}) => {
-  if (!camera) {
-    return true
-  }
-
-  const toCamera = new THREE.Vector2(camera.position.x - center.x, camera.position.z - center.z)
-
-  if (toCamera.lengthSq() === 0) {
-    return true
-  }
-
-  toCamera.normalize()
-  const facing = facingDirection.clone().multiplyScalar(turned ? -1 : 1)
-
-  return facing.dot(toCamera) >= 0
-}
-
 export const updateSpriteFacing = (
   state: WorldSpriteState,
   options: {
@@ -240,7 +214,12 @@ export const updateSpriteFacing = (
     turned?: boolean
   },
 ) => {
-  const useBack = Boolean(options.backSpriteUrl && !shouldUseFrontSprite(options))
+  const useBack = Boolean(options.backSpriteUrl && !shouldUseFrontWorldSprite({
+    cameraPosition: options.camera?.position ?? null,
+    center: options.center,
+    facingDirection: options.facingDirection,
+    turned: options.turned,
+  }))
   setWorldSpriteAsset(state, useBack
     ? {
         url: options.backSpriteUrl!,
