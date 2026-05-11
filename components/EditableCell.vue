@@ -19,9 +19,8 @@
 import { computed, ref } from 'vue'
 import {
   editableCellDraftFromValue,
-  formatEditableCellDisplay,
-  isEmptyEditableCellValue,
   parseEditableCellDraft,
+  resolveEditableCellDisplay,
   type EditableCellOption,
   type EditableCellType,
   type EditableCellValue,
@@ -76,11 +75,11 @@ const sessionStartValue = ref<CellValue>(undefined)
 // committed and the input is being torn down. Without this, an empty draft
 // from the watcher reset would clobber the value we just emitted.
 let committedThisSession = false
-const isEmpty = isEmptyEditableCellValue
-
-const displayValue = computed<string>(() =>
-  formatEditableCellDisplay(props.modelValue, props.format),
-)
+const displayState = computed(() => resolveEditableCellDisplay(props.modelValue, {
+  formatter: props.format,
+  placeholder: props.placeholder,
+  emptyText: props.emptyText,
+}))
 
 const beginEdit = () => {
   if (props.readonly) return
@@ -138,27 +137,22 @@ const onEditorInput = () => {
     :class="{
       'editable-cell--editing': editing,
       'editable-cell--readonly': readonly,
-      'editable-cell--empty': isEmpty(modelValue),
+      'editable-cell--empty': displayState.empty,
       'editable-cell--multiline': multiline,
     }"
     @click="!editing && beginEdit()"
   >
-    <template v-if="!editing">
-      <slot
-        name="display"
-        :value="modelValue"
-        :display-value="displayValue"
-        :empty="isEmpty(modelValue)"
-        :placeholder="placeholder"
-        :empty-text="emptyText"
-        :empty-label="placeholder || emptyText"
-      >
-        <span v-if="isEmpty(modelValue) && !displayValue" class="editable-cell__empty">
-          {{ placeholder || emptyText }}
-        </span>
-        <span v-else class="editable-cell__display">{{ displayValue }}</span>
-      </slot>
-    </template>
+    <EditableCellDisplay
+      v-if="!editing"
+      :value="modelValue"
+      :state="displayState"
+      :placeholder="placeholder"
+      :empty-text="emptyText"
+    >
+      <template v-if="$slots.display" #display="slotProps">
+        <slot name="display" v-bind="slotProps" />
+      </template>
+    </EditableCellDisplay>
 
     <template v-else>
       <EditableCellEditor
@@ -213,14 +207,5 @@ const onEditorInput = () => {
 .editable-cell--readonly:hover {
   background: transparent;
   box-shadow: none;
-}
-
-.editable-cell__empty {
-  color: var(--ink-faint, #999);
-  font-style: italic;
-}
-
-.editable-cell__display {
-  color: inherit;
 }
 </style>

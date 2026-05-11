@@ -4,6 +4,7 @@ import {
   formatEditableCellDisplay,
   isEmptyEditableCellValue,
   parseEditableCellDraft,
+  resolveEditableCellDisplay,
   resolveEditableCellOptions,
 } from '~/utils/editableCell'
 
@@ -17,6 +18,36 @@ describe('editable cell helpers', () => {
     expect(formatEditableCellDisplay(undefined)).toBe('')
     expect(formatEditableCellDisplay(12)).toBe('12')
     expect(formatEditableCellDisplay('abc', (value) => `Value: ${value}`)).toBe('Value: abc')
+  })
+
+  it('resolves display state for fallback rendering', () => {
+    expect(resolveEditableCellDisplay(undefined, { placeholder: 'Nickname' })).toEqual({
+      empty: true,
+      displayValue: '',
+      emptyLabel: 'Nickname',
+      showEmptyFallback: true,
+    })
+    expect(resolveEditableCellDisplay('', { emptyText: 'Empty' })).toEqual({
+      empty: true,
+      displayValue: '',
+      emptyLabel: 'Empty',
+      showEmptyFallback: true,
+    })
+    expect(resolveEditableCellDisplay(0, { placeholder: 'Count' })).toEqual({
+      empty: false,
+      displayValue: '0',
+      emptyLabel: 'Count',
+      showEmptyFallback: false,
+    })
+    expect(resolveEditableCellDisplay(undefined, {
+      formatter: () => 'Formatted empty',
+      emptyText: '—',
+    })).toEqual({
+      empty: true,
+      displayValue: 'Formatted empty',
+      emptyLabel: '—',
+      showEmptyFallback: false,
+    })
   })
 
   it('creates edit drafts from current values', () => {

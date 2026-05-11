@@ -14,6 +14,19 @@ export interface ParseEditableCellDraftOptions {
   max?: number
 }
 
+export interface ResolveEditableCellDisplayOptions {
+  formatter?: (value: EditableCellValue) => string
+  placeholder?: string
+  emptyText?: string
+}
+
+export interface EditableCellDisplayState {
+  empty: boolean
+  displayValue: string
+  emptyLabel: string
+  showEmptyFallback: boolean
+}
+
 export const isEmptyEditableCellValue = (value: EditableCellValue): boolean =>
   value === null || value === undefined || (typeof value === 'string' && value === '')
 
@@ -24,6 +37,22 @@ export const formatEditableCellDisplay = (
   if (formatter) return formatter(value)
   if (isEmptyEditableCellValue(value)) return ''
   return String(value)
+}
+
+export const resolveEditableCellDisplay = (
+  value: EditableCellValue,
+  { formatter, placeholder = '', emptyText = '—' }: ResolveEditableCellDisplayOptions = {},
+): EditableCellDisplayState => {
+  const empty = isEmptyEditableCellValue(value)
+  const displayValue = formatEditableCellDisplay(value, formatter)
+  const emptyLabel = placeholder || emptyText
+
+  return {
+    empty,
+    displayValue,
+    emptyLabel,
+    showEmptyFallback: empty && !displayValue,
+  }
 }
 
 export const editableCellDraftFromValue = (value: EditableCellValue): string =>
