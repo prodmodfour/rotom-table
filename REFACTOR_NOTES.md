@@ -55,7 +55,7 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
 ## Current quality gate results
 
 - `npm run typecheck` — passes.
-- `npm test` — passes: 158 test files / 604 tests.
+- `npm test` — passes: 159 test files / 608 tests.
 - `npm run build` — passes; existing large chunk warnings remain.
 - `npm run check:move-automation` — still fails with the same baseline `Explicit move automation coverage: 0/769` missing-script report.
 - `npm run sync:item-sprites -- --dry-run` was not run because the script does not implement a dry-run mode.
@@ -3712,5 +3712,20 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
   - `npm test -- tests/utils/isometric/weatherVisualFactory.test.ts tests/utils/isometric/weatherEffects.test.ts tests/utils/isometric/weatherTextures.test.ts tests/utils/isometric/weatherVisualConfig.test.ts` — passes: 4 test files / 12 tests.
   - `npm run typecheck` — passes.
   - `npm test` — passes: 158 test files / 604 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: isometric field-effect overlay helper split
+
+- Extracted terrain surface overlay and room boundary construction from `utils/isometric/fieldEffectRenderer.ts` into `utils/isometric/fieldEffectOverlays.ts`.
+  - The new helper owns field-effect color parsing/fallbacks, voxel-column top calculation, terrain surface instanced-mesh placement, and room boundary line geometry.
+- Reduced `fieldEffectRenderer` so it focuses on field-effect lifecycle orchestration, weather visual factory wiring, visibility, animation updates, and disposal.
+- Preserved terrain/room field-effect visuals, render-order offsets, opacity rules for stacked effects, derived terrain heights over voxels, and weather rendering behavior.
+- Added `tests/utils/isometric/fieldEffectOverlays.test.ts` covering color fallback behavior, column-top derivation, terrain surface mesh placement, and room boundary positioning/materials.
+- Next remaining phase: continue one bounded cleanup pass, with candidates including another focused renderer/helper split, storage split, map-editor extraction, or small UI duplication cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/utils/isometric/fieldEffectOverlays.test.ts tests/utils/isometric/weatherVisualFactory.test.ts` — passes: 2 test files / 6 tests.
+  - `npm run typecheck` — passes.
+  - `npm test` — passes: 159 test files / 608 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
