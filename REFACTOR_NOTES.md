@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass. `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include another focused Pokédex/search helper split, renderer/helper split, storage split, map-editor extraction, or small UI duplication cleanup; do not mark the full refactor complete yet.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass (latest full test run: 170 files / 653 tests). `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include another focused Pokédex/search helper split, renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
 
 ## Phase 0 baseline audit
 
@@ -55,7 +55,7 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
 ## Current quality gate results
 
 - `npm run typecheck` — passes.
-- `npm test` — passes: 169 test files / 649 tests.
+- `npm test` — passes: 170 test files / 653 tests.
 - `npm run build` — passes; existing large chunk warnings remain.
 - `npm run check:move-automation` — still fails with the same baseline `Explicit move automation coverage: 0/769` missing-script report.
 - `npm run sync:item-sprites -- --dry-run` was not run because the script does not implement a dry-run mode.
@@ -3876,5 +3876,20 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
   - `npm test -- tests/utils/pokedex/searchBuckets.test.ts tests/utils/pokedex/searchText.test.ts` — passes: 2 test files / 6 tests.
   - `npm run typecheck` — passes.
   - `npm test` — passes: 169 test files / 649 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: Pokédex search alias helper split
+
+- Extracted Pokédex search minimum-alias construction from `utils/pokedex/searchText.ts` into `utils/pokedex/searchAliases.ts`.
+  - The new helper owns movement-capability presence checks, minimum movement-capability aliases, labelled other-capability aliases, skill-dice aliases, and base-stat aliases.
+- Reduced `searchText.ts` so it focuses on bucket population and field-specific indexing while delegating reusable alias generation to a focused pure helper.
+- Preserved existing Pokédex filtering behavior, including movement-capability minimum searches, other-capability labelled minimum searches, skill dice thresholds, base-stat threshold aliases, compact aliases, and public `searchText` exports.
+- Added `tests/utils/pokedex/searchAliases.test.ts` covering capability value detection plus capability, skill, and base-stat alias generation.
+- Next remaining phase: continue one bounded cleanup pass, with candidates including another focused Pokédex/search helper split, renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/utils/pokedex/searchAliases.test.ts tests/utils/pokedex/searchText.test.ts` — passes: 2 test files / 7 tests.
+  - `npm run typecheck` — passes.
+  - `npm test` — passes: 170 test files / 653 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

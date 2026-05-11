@@ -7,12 +7,14 @@ import {
   normalizeSearchText,
   type SearchBucketValue,
 } from '~/utils/pokedex/searchBuckets'
+import { stripParenthetical } from '~/utils/pokedex/searchValueRanges'
 import {
-  maximumNumericComponent,
-  minimumIntegerSearchValues,
-  minimumSkillDiceSearchValues,
-  stripParenthetical,
-} from '~/utils/pokedex/searchValueRanges'
+  buildMinimumBaseStatAliases,
+  buildMinimumCapabilityAliases,
+  buildMinimumLabelledCapabilityAliases,
+  buildMinimumSkillAliases,
+  hasPokedexCapabilityValue,
+} from '~/utils/pokedex/searchAliases'
 
 export const searchFieldConfigs = [
   { key: 'any', label: 'All Together', placeholder: 'Filter species, move, ability, cap, type…' },
@@ -94,88 +96,6 @@ const addBucketSearchValues = (
   addSearchValuesToBucket(buckets, key, 'any', ...rawValues)
 }
 
-const hasCapabilityValue = (value: PokedexCapabilities[MovementCapabilityKey]) => {
-  if (value === undefined || value === null) return false
-  if (typeof value === 'number') return value !== 0
-
-  const normalized = normalizeText(value)
-  return normalized.length > 0 && normalized !== '0' && normalized !== '0 0'
-}
-
-const addMinimumCapabilitySearchValues = (
-  buckets: PokedexSearchTextBuckets,
-  label: string,
-  value: PokedexCapabilities[MovementCapabilityKey],
-) => {
-  for (const minimum of minimumIntegerSearchValues(maximumNumericComponent(value))) {
-    addBucketSearchValues(
-      buckets,
-      'capability',
-      `${label} ${minimum}`,
-      `cap ${label} ${minimum}`,
-      `caps ${label} ${minimum}`,
-      `capability ${label} ${minimum}`,
-      `capabilities ${label} ${minimum}`,
-    )
-  }
-}
-
-const addMinimumLabelledCapabilitySearchValues = (buckets: PokedexSearchTextBuckets, capability: string) => {
-  const match = stripParenthetical(capability).replace(/\s+/g, ' ').trim().match(/^(.+?)\s+(\d+(?:\.\d+)?)$/)
-  if (!match) return
-
-  const [, label, rawValue] = match
-  const maximum = Number(rawValue)
-  if (!label || !Number.isFinite(maximum)) return
-
-  for (const minimum of minimumIntegerSearchValues(maximum)) {
-    addBucketSearchValues(
-      buckets,
-      'capability',
-      `${label} ${minimum}`,
-      `cap ${label} ${minimum}`,
-      `capability ${label} ${minimum}`,
-      `capabilities ${label} ${minimum}`,
-    )
-  }
-}
-
-const addMinimumSkillSearchValues = (buckets: PokedexSearchTextBuckets, skill: string, value: string) => {
-  for (const minimumValue of minimumSkillDiceSearchValues(value)) {
-    addBucketSearchValues(
-      buckets,
-      'skill',
-      minimumValue,
-      `dice ${minimumValue}`,
-      `${minimumValue} dice`,
-      `skill ${minimumValue}`,
-      `skills ${minimumValue}`,
-      `${skill} ${minimumValue}`,
-      `skill ${skill} ${minimumValue}`,
-    )
-  }
-}
-
-const addMinimumBaseStatSearchValues = (
-  buckets: PokedexSearchTextBuckets,
-  label: string,
-  shortLabel: string,
-  value: number,
-) => {
-  for (const minimum of minimumIntegerSearchValues(value)) {
-    addBucketSearchValues(
-      buckets,
-      'stat',
-      `${label} ${minimum}`,
-      `${shortLabel} ${minimum}`,
-      `stat ${label} ${minimum}`,
-      `stat ${shortLabel} ${minimum}`,
-      `base ${label} ${minimum}`,
-      `base stat ${label} ${minimum}`,
-    )
-  }
-}
-
 export { buildSearchText }
 
 export const buildPokedexSearchTexts = (entry: PokedexSearchableEntry): PokedexSearchTexts => {
@@ -240,7 +160,7 @@ export const buildPokedexSearchTexts = (entry: PokedexSearchableEntry): PokedexS
   if (entry.capabilities) {
     for (const [key, label] of CAPABILITY_SEARCH_FIELDS) {
       const value = entry.capabilities[key]
-      if (!hasCapabilityValue(value)) continue
+      if (!hasPokedexCapabilityValue(value)) continue
 
       addBucketSearchValues(
         buckets,
@@ -256,7 +176,7 @@ export const buildPokedexSearchTexts = (entry: PokedexSearchableEntry): PokedexS
         `cap ${label} ${value}`,
         `capability ${label} ${value}`,
       )
-      addMinimumCapabilitySearchValues(buckets, label, value)
+      addBucketSearchValues(buckets, 'capability', ...buildMinimumCapabilityAliases(label, value))
     }
 
     for (const capability of entry.capabilities.other ?? []) {
@@ -278,7 +198,7 @@ export const buildPokedexSearchTexts = (entry: PokedexSearchableEntry): PokedexS
         baseCapability ? `${baseCapability} cap` : null,
         baseCapability ? `${baseCapability} capability` : null,
       )
-      addMinimumLabelledCapabilitySearchValues(buckets, capability)
+      addBucketSearchValues(buckets, 'capability', ...buildMinimumLabelledCapabilityAliases(capability))
     }
   }
 
@@ -364,7 +284,7 @@ export const buildPokedexSearchTexts = (entry: PokedexSearchableEntry): PokedexS
         `${skill} ${value}`,
         `skill ${skill} ${value}`,
       )
-      addMinimumSkillSearchValues(buckets, skill, value)
+      addBucketSearchValues(buckets, 'skill', ...buildMinimumSkillAliases(skill, value))
     }
   }
 
@@ -382,7 +302,7 @@ export const buildPokedexSearchTexts = (entry: PokedexSearchableEntry): PokedexS
         `base ${label} ${value}`,
         `base stat ${label} ${value}`,
       )
-      addMinimumBaseStatSearchValues(buckets, label, shortLabel, value)
+      addBucketSearchValues(buckets, 'stat', ...buildMinimumBaseStatAliases(label, shortLabel, value))
     }
   }
 
