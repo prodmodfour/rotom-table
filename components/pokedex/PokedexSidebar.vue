@@ -1,13 +1,12 @@
 <script setup lang="ts">
 import { usePokedexSidebarScroll } from '~/composables/pokedex/usePokedexSidebarScroll'
 import {
-  formatNationalDexNumber,
   type FieldFilterKey,
   type FilterMode,
   type FilterOperator,
   type PokedexSearchTextKey,
 } from '~/utils/pokedex/searchText'
-import { pokedexEntryPath, type DisplayPokedexEntry } from '~/utils/pokedex/entryIndex'
+import { type DisplayPokedexEntry } from '~/utils/pokedex/entryIndex'
 
 const filterMode = defineModel<FilterMode>('filterMode', { required: true })
 
@@ -18,7 +17,7 @@ defineProps<{
   selectedId: string | null
 }>()
 
-const { entryListRef, saveSidebarScroll, sidebarRef } = usePokedexSidebarScroll()
+const { saveSidebarScroll, setEntryListRef, sidebarRef } = usePokedexSidebarScroll()
 </script>
 
 <template>
@@ -42,39 +41,12 @@ const { entryListRef, saveSidebarScroll, sidebarRef } = usePokedexSidebarScroll(
           :search-filters="searchFilters"
         />
 
-        <div class="entry-list-panel">
-          <div v-if="entries.length > 0" ref="entryListRef" class="entry-list" @scroll.passive="saveSidebarScroll">
-            <NuxtLink
-              v-for="entry in entries"
-              :key="entry.id"
-              :to="pokedexEntryPath(entry)"
-              :class="['entry-button', { active: entry.id === selectedId }]"
-              :aria-current="entry.id === selectedId ? 'page' : undefined"
-              prefetch-on="interaction"
-            >
-              <span class="entry-name">{{ entry.species }}</span>
-              <span class="entry-meta">
-                <template v-if="entry.nationalDexNumber">
-                  {{ formatNationalDexNumber(entry.nationalDexNumber) }} ·
-                </template>
-                <span v-if="entry.types?.length" class="entry-type-badges">
-                  <TypeBadge
-                    v-for="type in entry.types"
-                    :key="`${entry.id}-${type}`"
-                    :type="type"
-                    size="xs"
-                  />
-                </span>
-                <span v-else>Unknown type</span>
-                <template v-if="entry.source_gen"> · {{ entry.source_gen }}</template>
-              </span>
-            </NuxtLink>
-          </div>
-
-          <p v-else class="empty-state">
-            No Pokédex entries match those filters.
-          </p>
-        </div>
+        <PokedexEntryList
+          :entries="entries"
+          :selected-id="selectedId"
+          @entry-list-ref="setEntryListRef"
+          @scroll="saveSidebarScroll"
+        />
       </div>
     </section>
   </aside>
@@ -131,8 +103,7 @@ const { entryListRef, saveSidebarScroll, sidebarRef } = usePokedexSidebarScroll(
   white-space: nowrap;
 }
 
-.sidebar-copy,
-.empty-state {
+.sidebar-copy {
   margin: 0 0 0.9rem;
   color: var(--ink-muted);
   line-height: 1.5;
@@ -145,77 +116,6 @@ const { entryListRef, saveSidebarScroll, sidebarRef } = usePokedexSidebarScroll(
   gap: 0.75rem;
   min-height: 0;
   flex: 1;
-}
-
-.entry-list-panel {
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-}
-
-.entry-list {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  gap: 0.5rem;
-  min-height: 0;
-  overflow: auto;
-}
-
-.entry-button {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.25rem;
-  padding: 0.7rem 0.8rem;
-  border: 1px solid var(--rule-soft);
-  border-radius: 10px;
-  background: var(--paper);
-  color: var(--ink);
-  text-align: left;
-  text-decoration: none;
-  cursor: pointer;
-  transition:
-    border-color 0.15s ease,
-    background 0.15s ease,
-    color 0.15s ease;
-}
-
-.entry-button:hover {
-  border-color: var(--rule-strong);
-  background: var(--paper-hover);
-  color: var(--ink-bright);
-}
-
-.entry-button:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
-
-.entry-button.active {
-  border-color: var(--accent);
-  background: var(--paper-active);
-  color: var(--ink-bright);
-}
-
-.entry-name {
-  font-weight: 700;
-  letter-spacing: 0.02em;
-}
-
-.entry-meta {
-  color: var(--ink-muted);
-  font-size: 0.78rem;
-  line-height: 1.3;
-}
-
-.entry-type-badges {
-  display: inline-flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.22rem;
-  vertical-align: middle;
 }
 
 code {
@@ -236,15 +136,6 @@ code {
 @media (max-width: 760px) {
   .filter-browser {
     grid-template-columns: 1fr;
-  }
-
-  .entry-list-panel {
-    overflow: visible;
-  }
-
-  .entry-list {
-    max-height: 50vh;
-    overflow: auto;
   }
 }
 </style>

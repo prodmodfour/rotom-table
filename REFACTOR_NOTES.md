@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass (latest full test run: 203 files / 779 tests). `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include another focused Pokédex/sidebar component extraction, sheet/map panel extraction, server/use-case helper split, move-automation helper split, renderer/helper split, storage split, map-editor extraction, or remaining client/helper cleanup; do not mark the full refactor complete yet.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass (latest full test run: 203 files / 779 tests). `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include another focused Pokédex/detail or sidebar extraction, sheet/map panel extraction, server/use-case helper split, move-automation helper split, renderer/helper split, storage split, map-editor extraction, or remaining client/helper cleanup; do not mark the full refactor complete yet.
 
 ## Phase 0 baseline audit
 
@@ -4538,6 +4538,20 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
 - Quality gates after this phase:
   - `npm run typecheck` — passes.
   - `npm test -- tests/composables/pokedex/usePokedexFilters.test.ts tests/composables/pokedex/usePokedexBrowser.test.ts tests/utils/pokedex/searchQuery.test.ts tests/utils/pokedex/searchText.test.ts` — passes: 4 test files / 14 tests.
+  - `npm test` — passes: 203 test files / 779 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: Pokédex entry list component extraction
+
+- Extracted the Pokédex sidebar entry-list/result-card markup into `components/pokedex/PokedexEntryList.vue`.
+- Updated `components/pokedex/PokedexSidebar.vue` so it now focuses on sidebar chrome, filter/list composition, and scroll persistence while the new entry-list component owns entry routes, active-state styling, type badges, and empty-state presentation.
+- Extended `usePokedexSidebarScroll` with a narrow `setEntryListRef` registration boundary so the extracted list can preserve existing entry-list scroll save/restore behavior without exposing its internal DOM structure to the sidebar template.
+- Preserved Pokédex entry routes, selected-entry highlighting, National Dex/type/source metadata, sidebar and entry-list scroll restoration, empty-state copy, and responsive layout behavior.
+- Next remaining phase: continue one bounded cleanup pass, with candidates including another focused Pokédex/detail or sidebar extraction, sheet/map panel extraction, server/use-case helper split, move-automation helper split, renderer/helper split, storage split, map-editor extraction, or remaining client/helper cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm run typecheck` — passes.
+  - `npm test -- tests/composables/pokedex/usePokedexSidebarScroll.test.ts tests/composables/pokedex/usePokedexFilters.test.ts tests/composables/pokedex/usePokedexBrowser.test.ts tests/utils/pokedex/entryIndex.test.ts` — passes: 4 test files / 11 tests.
   - `npm test` — passes: 203 test files / 779 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

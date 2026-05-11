@@ -11,6 +11,10 @@ export const usePokedexSidebarScroll = () => {
   const sidebarScrollTop = useState('pokedex-sidebar-scroll-top', () => 0)
   const entryListScrollTop = useState('pokedex-entry-list-scroll-top', () => 0)
 
+  const setEntryListRef = (element: HTMLElement | null) => {
+    entryListRef.value = element
+  }
+
   const saveSidebarScroll = () => {
     if (sidebarRef.value) {
       sidebarScrollTop.value = sidebarRef.value.scrollTop
@@ -55,6 +59,7 @@ export const usePokedexSidebarScroll = () => {
     entryListRef,
     restoreSidebarScroll,
     saveSidebarScroll,
+    setEntryListRef,
     sidebarRef,
   }
 }
