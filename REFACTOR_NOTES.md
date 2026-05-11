@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass (latest full test run: 170 files / 653 tests). `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include another focused Pokédex/search helper split, renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass (latest full test run: 171 files / 657 tests). `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include another focused Pokédex/search helper split, renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
 
 ## Phase 0 baseline audit
 
@@ -3891,5 +3891,20 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
   - `npm test -- tests/utils/pokedex/searchAliases.test.ts tests/utils/pokedex/searchText.test.ts` — passes: 2 test files / 7 tests.
   - `npm run typecheck` — passes.
   - `npm test` — passes: 170 test files / 653 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: Pokédex search field-value helper split
+
+- Extracted Pokédex field-specific search-value construction from `utils/pokedex/searchText.ts` into `utils/pokedex/searchFieldValues.ts`.
+  - The new helper owns identity/dex aliases, slug formatting, type/habitat/ability/capability/move/breeding/diet/skill/stat/size raw search values while existing bucket/normalization helpers still own aggregation and compact aliases.
+- Reduced `searchText.ts` to search-field configuration, bucket creation, field-to-bucket wiring, and compatibility re-exports for `formatNationalDexNumber`, `toPokedexSlug`, `normalizeText`, and `buildSearchText`.
+- Preserved existing Pokédex filtering behavior, field-specific search text output, compact move aliases, capability/stat/skill threshold aliases, route/import compatibility, and public Pokédex URLs.
+- Added `tests/utils/pokedex/searchFieldValues.test.ts` covering identity/dex aliases, capability aliases, move-source aliases, breeding values, skill thresholds, and base-stat thresholds.
+- Next remaining phase: continue one bounded cleanup pass, with candidates including another focused Pokédex/search helper split, renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/utils/pokedex/searchFieldValues.test.ts tests/utils/pokedex/searchText.test.ts tests/utils/pokedex/searchAliases.test.ts tests/utils/pokedex/searchBuckets.test.ts` — passes: 4 test files / 14 tests.
+  - `npm run typecheck` — passes.
+  - `npm test` — passes: 171 test files / 657 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
