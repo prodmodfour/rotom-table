@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass (latest full test run: 184 files / 706 tests). `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include another focused move-automation helper split, renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass (latest full test run: 185 files / 709 tests). `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include another focused move-automation helper split, renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
 
 ## Phase 0 baseline audit
 
@@ -4123,5 +4123,19 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
   - `npm test -- tests/utils/moveAutomationTargetResolution.test.ts tests/utils/moveAutomationTransaction.test.ts tests/utils/moveAutomationResolution.test.ts tests/composables/move-automation/useMoveAutomationWizard.test.ts` — passes: 4 test files / 12 tests.
   - `npm run typecheck` — passes.
   - `npm test` — passes: 184 test files / 706 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: move automation targeting helper split
+
+- Extracted manual move-automation target-mode/count detection, range keyword filtering, and critical-range parsing from `utils/moveAutomationManual.ts` into `utils/moveAutomationTargeting.ts`.
+- Reduced the manual fallback script builder so it focuses on orchestration and suggestion aggregation while the focused targeting helper owns reusable target-shape parsing rules.
+- Preserved manual fallback script shapes, target-mode/count behavior, range keyword filtering, critical-range parsing, damage fallback routing, and existing public `utils/moveAutomation` compatibility exports.
+- Added `tests/utils/moveAutomationTargeting.test.ts` covering hazard/field/self/multi/one/none target detection, target counts, keyword filtering, and critical-range parsing.
+- Next remaining phase: continue one bounded cleanup pass, with candidates including another focused move-automation helper split, renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/utils/moveAutomationTargeting.test.ts tests/utils/moveAutomationManual.test.ts` — passes: 2 test files / 8 tests.
+  - `npm run typecheck` — passes.
+  - `npm test` — passes: 185 test files / 709 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
