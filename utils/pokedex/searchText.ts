@@ -1,8 +1,6 @@
 import {
-  addSearchValuesToBucket,
+  addSearchValues,
   buildSearchText,
-  buildSearchTextsFromBuckets,
-  createSearchBuckets as createSearchBucketsForKeys,
   normalizeSearchText,
   type SearchBucketValue,
 } from '~/utils/pokedex/searchBuckets'
@@ -54,31 +52,75 @@ export { buildSearchText }
 export { formatNationalDexNumber, toPokedexSlug } from '~/utils/pokedex/searchFieldValues'
 
 const POKEDEX_SEARCH_KEYS = searchFieldConfigs.map(({ key }) => key)
+const POKEDEX_FIELD_SEARCH_KEYS = filterFieldConfigs.map(({ key }) => key) as FieldFilterKey[]
 
-const createPokedexSearchBuckets = (): PokedexSearchTextBuckets => createSearchBucketsForKeys(POKEDEX_SEARCH_KEYS)
-
-const addBucketSearchValues = (
-  buckets: PokedexSearchTextBuckets,
-  key: Exclude<PokedexSearchTextKey, 'any'>,
-  ...rawValues: SearchValue[]
-) => {
-  addSearchValuesToBucket(buckets, key, 'any', ...rawValues)
+export const buildPokedexSearchValues = (
+  entry: PokedexSearchableEntry,
+  key: FieldFilterKey,
+): SearchValue[] => {
+  switch (key) {
+    case 'identity':
+      return buildIdentitySearchValues(entry)
+    case 'type':
+      return buildTypeSearchValues(entry)
+    case 'ability':
+      return buildAbilitySearchValues(entry)
+    case 'capability':
+      return buildCapabilitySearchValues(entry)
+    case 'move':
+      return buildMoveSearchValues(entry)
+    case 'habitat':
+      return buildHabitatSearchValues(entry)
+    case 'breeding':
+      return buildBreedingSearchValues(entry)
+    case 'diet':
+      return buildDietSearchValues(entry)
+    case 'skill':
+      return buildSkillSearchValues(entry)
+    case 'stat':
+      return buildBaseStatSearchValues(entry)
+    case 'size':
+      return buildSizeSearchValues(entry)
+  }
 }
 
-export const buildPokedexSearchTexts = (entry: PokedexSearchableEntry): PokedexSearchTexts => {
-  const buckets = createPokedexSearchBuckets()
+export const buildPokedexSearchText = (
+  entry: PokedexSearchableEntry,
+  key: PokedexSearchTextKey,
+): string => {
+  const values = key === 'any'
+    ? POKEDEX_FIELD_SEARCH_KEYS.flatMap((fieldKey) => buildPokedexSearchValues(entry, fieldKey))
+    : buildPokedexSearchValues(entry, key)
 
-  addBucketSearchValues(buckets, 'identity', ...buildIdentitySearchValues(entry))
-  addBucketSearchValues(buckets, 'type', ...buildTypeSearchValues(entry))
-  addBucketSearchValues(buckets, 'habitat', ...buildHabitatSearchValues(entry))
-  addBucketSearchValues(buckets, 'ability', ...buildAbilitySearchValues(entry))
-  addBucketSearchValues(buckets, 'capability', ...buildCapabilitySearchValues(entry))
-  addBucketSearchValues(buckets, 'move', ...buildMoveSearchValues(entry))
-  addBucketSearchValues(buckets, 'breeding', ...buildBreedingSearchValues(entry))
-  addBucketSearchValues(buckets, 'diet', ...buildDietSearchValues(entry))
-  addBucketSearchValues(buckets, 'skill', ...buildSkillSearchValues(entry))
-  addBucketSearchValues(buckets, 'stat', ...buildBaseStatSearchValues(entry))
-  addBucketSearchValues(buckets, 'size', ...buildSizeSearchValues(entry))
+  const stringValues: string[] = []
+  addSearchValues(stringValues, ...values)
 
-  return buildSearchTextsFromBuckets(POKEDEX_SEARCH_KEYS, buckets) as PokedexSearchTexts
+  return buildSearchText(stringValues)
 }
+
+export const createLazyPokedexSearchTexts = (entry: PokedexSearchableEntry): PokedexSearchTexts => {
+  const cache = new Map<PokedexSearchTextKey, string>()
+  const searchTexts = {} as PokedexSearchTexts
+
+  for (const key of POKEDEX_SEARCH_KEYS) {
+    Object.defineProperty(searchTexts, key, {
+      enumerable: true,
+      get: () => {
+        const cachedValue = cache.get(key)
+        if (cachedValue !== undefined) return cachedValue
+
+        const value = buildPokedexSearchText(entry, key)
+        cache.set(key, value)
+        return value
+      },
+    })
+  }
+
+  return searchTexts
+}
+
+export const buildPokedexSearchTexts = (entry: PokedexSearchableEntry): PokedexSearchTexts => (
+  Object.fromEntries(
+    POKEDEX_SEARCH_KEYS.map((key) => [key, buildPokedexSearchText(entry, key)]),
+  ) as PokedexSearchTexts
+)

@@ -1,6 +1,6 @@
 import { compareByNationalDex, getNationalDexNumber } from '~/utils/nationalDex'
 import { pokedexEntryPathForSlug } from '~/utils/pokedex/routes'
-import { buildPokedexSearchTexts, toPokedexSlug, type PokedexSearchTexts } from '~/utils/pokedex/searchText'
+import { createLazyPokedexSearchTexts, toPokedexSlug, type PokedexSearchTexts } from '~/utils/pokedex/searchText'
 import type { PokedexRecord } from '~/types/pokemon'
 
 export type DisplayPokedexEntry = PokedexRecord & {
@@ -22,14 +22,18 @@ export const buildPokedexEntries = (records: PokedexRecord[]): DisplayPokedexEnt
       slug,
       nationalDexNumber: getNationalDexNumber(entry.species),
     }
+    const searchTexts = createLazyPokedexSearchTexts(displayEntry)
 
-    const searchTexts = buildPokedexSearchTexts(displayEntry)
-
-    return {
-      ...displayEntry,
-      searchText: searchTexts.any,
-      searchTexts,
-    }
+    return Object.defineProperties(displayEntry, {
+      searchText: {
+        enumerable: false,
+        get: () => searchTexts.any,
+      },
+      searchTexts: {
+        enumerable: false,
+        value: searchTexts,
+      },
+    }) as DisplayPokedexEntry
   })
 
 export const buildPokedexEntryBySlug = (entries: DisplayPokedexEntry[]): Map<string, DisplayPokedexEntry> => {
