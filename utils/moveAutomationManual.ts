@@ -1,14 +1,12 @@
 import { formatMoveDamageBase } from '~/utils/moveDamageBase'
+import { parseMoveAutomationConditionSuggestions } from '~/utils/moveAutomationConditionSuggestions'
 import { coerceMoveAccuracy, coerceMoveDamageBase } from '~/utils/moveAutomationCoercion'
 import { parseMoveAutomationHpSuggestions } from '~/utils/moveAutomationHpSuggestions'
 import { parseMoveAutomationStageSuggestions } from '~/utils/moveAutomationStages'
 import {
-  effectThresholdNear,
-  normalizeMoveAutomationWhitespace as normalizeWhitespace,
   splitMoveRangeKeywords as splitRangeKeywords,
   textIncludes as has,
 } from '~/utils/moveAutomationText'
-import { conditionsFromText, normalizeConditionName } from '~/utils/statusConditions'
 import type {
   MapHazardKind,
   MapRoomKind,
@@ -16,7 +14,6 @@ import type {
   MapWeatherKind,
 } from '~/types/map'
 import type {
-  MoveAutomationConditionSuggestion,
   MoveAutomationFieldSuggestion,
   MoveAutomationHazardSuggestion,
   MoveAutomationScript,
@@ -46,42 +43,6 @@ const determineTargetCount = (move: MoveAutomationMoveLike, mode: MoveAutomation
   if (countMatch) return Number(countMatch[1])
   if (/Double Strike/i.test(range)) return 1
   return mode === 'one-target' ? 1 : null
-}
-
-const parseConditionSuggestions = (effect: string): MoveAutomationConditionSuggestion[] => {
-  const conditions = conditionsFromText(effect)
-  const out: MoveAutomationConditionSuggestion[] = []
-  if (/cures? (?:all of )?(?:its|the user.s|the target.s|their)?\s*(?:Persistent or Volatile )?Status|cured of (?:all |any |a )?Status|cured of all Permanent and Volatile Statuses|All targets are cured of any Persistent Status/i.test(effect)) {
-    const recipient = /target|All targets/i.test(effect) && !/user and any allies/i.test(effect) ? 'target' : 'user'
-    out.push({
-      recipient,
-      condition: '*',
-      action: 'clear',
-      label: recipient === 'user' ? 'Clear user conditions' : 'Clear target conditions',
-      optional: /choice|one status|may/i.test(effect),
-    })
-  }
-  for (const condition of conditions) {
-    const canonical = normalizeConditionName(condition) ?? condition
-    const index = effect.toLowerCase().indexOf(canonical.toLowerCase().split(' ')[0])
-    const threshold = index >= 0 ? effectThresholdNear(effect, index) : undefined
-    const before = index >= 0 ? effect.slice(Math.max(0, index - 80), index) : ''
-    const after = index >= 0 ? effect.slice(index, Math.min(effect.length, index + 100)) : ''
-    const window = index >= 0 ? effect.slice(Math.max(0, index - 90), Math.min(effect.length, index + 120)) : effect
-    const userish = /user|itself|the user/i.test(before) && !/target|foe/i.test(before.slice(-40))
-    const recipient = /Rest/i.test(effect) && canonical === 'Sleep' ? 'user' : userish && /falls|becomes|is|cured/i.test(after) ? 'user' : 'target'
-    const action = /cures?|cured|removes?/i.test(window) ? 'remove' : 'add'
-    const contextualMention = /\bif\b|\bwhile\b|already|has been|have been|afflicted with|affected by|immune to|cannot Sleep|ignore the first turn/i.test(window)
-    out.push({
-      recipient,
-      condition: canonical,
-      action,
-      label: threshold ? `${canonical} on ${threshold}` : canonical,
-      threshold,
-      optional: Boolean(threshold) || contextualMention || /may choose|may|can choose/i.test(window),
-    })
-  }
-  return out
 }
 
 const fieldSuggestion = (
@@ -137,7 +98,7 @@ export const createManualMoveAutomationScript = (move: MoveAutomationMoveLike): 
   const keywords = splitRangeKeywords(range).filter((keyword) => !/^\d+$/.test(keyword) && !/1 Target|Single Target/i.test(keyword))
   const damaging = damageBase != null && damageClass !== 'Status' && damageClass !== 'Static'
   const requiresAccuracy = coerceMoveAccuracy(move.ac) != null && (damaging || targetMode === 'one-target' || targetMode === 'multi-target')
-  const conditionSuggestions = parseConditionSuggestions(effect)
+  const conditionSuggestions = parseMoveAutomationConditionSuggestions(effect)
   const stageSuggestions = parseMoveAutomationStageSuggestions(effect)
   const hpSuggestions = parseMoveAutomationHpSuggestions(move)
   const fieldSuggestions = parseFieldSuggestions(move)
