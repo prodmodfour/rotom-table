@@ -1,30 +1,20 @@
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 import {
-  existsSync,
-  mkdirSync,
-  mkdtempSync,
-  readdirSync,
-  readFileSync,
-  rmSync,
-} from 'node:fs'
-import { tmpdir } from 'node:os'
-import { join as joinPath, resolve as resolvePath } from 'node:path'
-import {
   EncounterGenerationInputError,
   readEncounterGenerateRequest,
   rollEncounterTable,
   type GenerateEncounterBody,
 } from '../utils/encounterGeneration'
-import {
-  createEncounterOutputPlan,
-  type UniqueEncounterOutputDir,
-} from '../utils/encounterOutput'
+import { createEncounterOutputPlan } from '../utils/encounterOutput'
 import { readEncounterTableFile } from '../utils/encounterTableFiles'
 import {
   runPokegenForRolledEncounters,
   type EncounterGeneratedFileResult,
 } from '../utils/pokegenBatch'
-import { runPokegenScript, type RunPokegen } from '../utils/pokegenRunner'
+import {
+  resolveGenerateEncountersRuntime,
+  type GenerateEncountersRuntimeOverrides,
+} from '../utils/generateEncountersRuntime'
 import type { RolledEncounter } from '~/types/encounterTable'
 
 export { readEncounterTableFile } from '../utils/encounterTableFiles'
@@ -44,23 +34,7 @@ export interface GenerateEncountersResult {
   beforeCount: number
 }
 
-export interface GenerateEncountersDependencies {
-  projectRoot?: string
-  encounterRoot?: string
-  pokegenScript?: string
-  now?: () => number
-  random?: () => number
-  pathExists?: (path: string) => boolean
-  readTextFile?: (path: string) => string
-  listDirectory?: (path: string) => string[]
-  ensureDirectory?: (path: string) => void
-  makeTempDir?: (prefix: string) => string
-  cleanupDirectory?: (path: string) => void
-  uniqueOutputDir?: UniqueEncounterOutputDir
-  runPokegen?: RunPokegen
-}
-
-const DEFAULT_PROJECT_ROOT = resolvePath(process.cwd())
+export type GenerateEncountersDependencies = GenerateEncountersRuntimeOverrides
 
 const isStatusLikeError = (error: unknown): error is {
   statusCode?: unknown
@@ -86,40 +60,25 @@ export const generateEncountersUseCase = async (
   body: GenerateEncounterBody | null | undefined,
   dependencies: GenerateEncountersDependencies = {},
 ): Promise<GenerateEncountersResult> => {
-  const projectRoot = dependencies.projectRoot ?? DEFAULT_PROJECT_ROOT
-  const encounterRoot = dependencies.encounterRoot ?? resolvePath(projectRoot, 'encounter_tables')
-  const now = dependencies.now ?? Date.now
-  const random = dependencies.random ?? Math.random
-  const pathExists = dependencies.pathExists ?? existsSync
-  const readTextFile = dependencies.readTextFile ?? ((path: string) => readFileSync(path, 'utf8'))
-  const listDirectory = dependencies.listDirectory ?? readdirSync
-  const ensureDirectory = dependencies.ensureDirectory ?? ((path: string) => mkdirSync(path, { recursive: true }))
-  const makeTempDir = dependencies.makeTempDir ?? ((prefix: string) => mkdtempSync(joinPath(tmpdir(), prefix)))
-  const cleanupDirectory = dependencies.cleanupDirectory ?? ((path: string) => rmSync(path, { recursive: true, force: true }))
-  const runPokegen = dependencies.runPokegen
-    ?? ((species: string, level: number, outputDir: string, slugPrefix: string) =>
-      runPokegenScript(species, level, outputDir, slugPrefix, {
-        projectRoot,
-        pokegenScript: dependencies.pokegenScript,
-      }))
+  const runtime = resolveGenerateEncountersRuntime(dependencies)
 
   let cleanupDir: string | null = null
 
   try {
     const request = readEncounterGenerateRequest(body)
     const table = readEncounterTableFile(request.region, request.tableKey, {
-      encounterRoot,
-      pathExists,
-      readTextFile,
+      encounterRoot: runtime.encounterRoot,
+      pathExists: runtime.pathExists,
+      readTextFile: runtime.readTextFile,
     })
-    const rolled = Array.from({ length: request.count }, () => rollEncounterTable(table, random))
+    const rolled = Array.from({ length: request.count }, () => rollEncounterTable(table, runtime.random))
     const output = createEncounterOutputPlan(request, {
-      projectRoot,
-      pathExists,
-      ensureDirectory,
-      makeTempDir,
-      now,
-      ...(dependencies.uniqueOutputDir ? { uniqueOutputDir: dependencies.uniqueOutputDir } : {}),
+      projectRoot: runtime.projectRoot,
+      pathExists: runtime.pathExists,
+      ensureDirectory: runtime.ensureDirectory,
+      makeTempDir: runtime.makeTempDir,
+      now: runtime.now,
+      ...(runtime.uniqueOutputDir ? { uniqueOutputDir: runtime.uniqueOutputDir } : {}),
     })
     const dir = output.dir
     if (output.cleanup) cleanupDir = dir
@@ -129,10 +88,10 @@ export const generateEncountersUseCase = async (
       dir,
       slugPrefix: output.slugPrefix,
       preview: request.preview,
-      pathExists,
-      listDirectory,
-      readTextFile,
-      runPokegen,
+      pathExists: runtime.pathExists,
+      listDirectory: runtime.listDirectory,
+      readTextFile: runtime.readTextFile,
+      runPokegen: runtime.runPokegen,
     })
 
     return {
@@ -150,7 +109,7 @@ export const generateEncountersUseCase = async (
   } finally {
     if (cleanupDir) {
       try {
-        cleanupDirectory(cleanupDir)
+        runtime.cleanupDirectory(cleanupDir)
       } catch {
         /* best-effort preview cleanup */
       }
