@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass (latest full test run: 202 files / 776 tests). `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include another focused sheet-panel extraction, server/use-case helper split, move-automation helper split, renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass (latest full test run: 203 files / 779 tests). `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include another focused sheet-panel extraction, server/use-case helper split, move-automation helper split, renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
 
 ## Phase 0 baseline audit
 
@@ -4465,5 +4465,20 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
 - Quality gates after this phase:
   - `npm run typecheck` — passes.
   - `npm test` — passes: 202 test files / 776 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: trainer inventory subpanel extraction
+
+- Extracted trainer sheet inventory presentation from `components/sheets/TrainerInventoryPanel.vue` into focused child components:
+  - `components/sheets/TrainerEquippedGearPanel.vue`
+  - `components/sheets/TrainerInventoryItemTable.vue`
+- Added `utils/sheets/trainerInventorySections.ts` for trainer equipment slot order, inventory section metadata, and inventory table column counts, plus `components/sheets/trainerInventoryPanel.css` for shared inventory block/table/action styling.
+- Reduced `TrainerInventoryPanel` to a composition shell that forwards add/remove item events while preserving equipped gear editing, item sprite previews, key item/Pokémon item/medical kit/Poké Ball/food/equipment table behavior, empty rows, and sheet autosave behavior.
+- Next remaining phase: continue one bounded cleanup pass, with candidates including another focused sheet-panel extraction, server/use-case helper split, move-automation helper split, renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/utils/sheets/trainerInventorySections.test.ts` — passes: 1 test file / 3 tests.
+  - `npm run typecheck` — passes.
+  - `npm test` — passes: 203 test files / 779 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

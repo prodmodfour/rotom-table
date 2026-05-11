@@ -1,0 +1,139 @@
+.block {
+  border: 1px solid var(--rule-soft);
+  border-radius: 12px;
+  background: var(--paper-inset);
+  padding: 0.7rem 0.85rem;
+}
+
+.block-title {
+  margin: 0 0 0.5rem;
+  font-family: var(--font-book);
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-bright);
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+}
+
+.muted {
+  color: var(--ink-muted);
+  font-size: 0.85rem;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+.data-table th,
+.data-table td {
+  padding: 0.35rem 0.5rem;
+  text-align: left;
+  border-bottom: 1px solid var(--rule);
+  vertical-align: top;
+}
+
+.data-table th {
+  font-weight: 600;
+  color: var(--ink-bright);
+}
+
+.data-table thead th {
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  background: transparent;
+  font-weight: 600;
+}
+
+.row-add {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  border: 1px solid var(--rule-soft);
+  border-radius: 6px;
+  background: var(--paper);
+  color: var(--ink-soft);
+  padding: 0.2rem 0.45rem;
+  font: inherit;
+  font-size: 0.74rem;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  text-transform: none;
+}
+
+.row-add:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.row-remove {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink-soft);
+  padding: 0.2rem;
+  font: inherit;
+  cursor: pointer;
+  margin-left: 0.4rem;
+}
+
+.row-remove:hover {
+  color: #d36464;
+  border-color: rgba(220, 80, 80, 0.45);
+  background: rgba(220, 80, 80, 0.08);
+}
+
+.row-actions {
+  width: 1.5rem;
+  text-align: right;
+}
+
+.equipped-item,
+.inventory-item-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.inventory-item-name {
+  max-width: 100%;
+}
+
+.kv-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.kv-list li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.28rem 0;
+  border-bottom: 1px dashed var(--rule);
+  font-size: 0.88rem;
+}
+
+.kv-list li:last-child {
+  border-bottom: 0;
+}
+
+.effect-col {
+  color: var(--ink-soft);
+  white-space: pre-wrap;
+  max-width: 22rem;
+}
