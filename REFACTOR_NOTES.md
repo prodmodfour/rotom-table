@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass (latest full test run: 203 files / 779 tests). `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include another focused Pokédex/detail or sidebar extraction, sheet/map panel extraction, server/use-case helper split, move-automation helper split, renderer/helper split, storage split, map-editor extraction, or remaining client/helper cleanup; do not mark the full refactor complete yet.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass (latest full test run: 203 files / 779 tests). `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include another focused editable-cell/UI extraction, Pokédex/detail or sidebar extraction, sheet/map panel extraction, server/use-case helper split, move-automation helper split, renderer/helper split, storage split, map-editor extraction, or remaining client/helper cleanup; do not mark the full refactor complete yet.
 
 ## Phase 0 baseline audit
 
@@ -4565,6 +4565,19 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
 - Quality gates after this phase:
   - `npm test -- tests/composables/pokedex/usePokedexSidebarScroll.test.ts tests/composables/pokedex/usePokedexBrowser.test.ts tests/utils/pokedex/entryIndex.test.ts` — passes: 3 test files / 8 tests.
   - `npm run typecheck` — passes.
+  - `npm test` — passes: 203 test files / 779 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: editable cell editor component extraction
+
+- Extracted the inline select/textarea/input editor markup and focus/key handling from `components/EditableCell.vue` into `components/EditableCellEditor.vue`.
+- Reduced `EditableCell` so it now owns edit-session state, draft parsing, value commits/cancel rollback, display slots, and parent emits while the focused child component owns editor presentation, input draft updates, Enter/Escape handling, select-change commits, and mount-time focus/select behavior.
+- Preserved editable-cell behavior for text, number, textarea, and select cells, including commit-on-input updates, blur/Enter commit guards, Escape rollback, numeric min/max parsing, placeholder display, and existing sheet autosave integration.
+- Next remaining phase: continue one bounded cleanup pass, with candidates including another focused editable-cell/UI extraction, Pokédex/detail or sidebar extraction, sheet/map panel extraction, server/use-case helper split, move-automation helper split, renderer/helper split, storage split, map-editor extraction, or remaining client/helper cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm run typecheck` — passes.
+  - `npm test -- tests/utils/editableCell.test.ts` — passes: 1 test file / 5 tests.
   - `npm test` — passes: 203 test files / 779 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

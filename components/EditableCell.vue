@@ -16,14 +16,12 @@
  * is dropped from the JSON, mirroring how the renderer handles missing
  * numeric values (em-dash / 0 fallback).
  */
-import { computed, nextTick, ref } from 'vue'
-import { textValueFromEvent } from '~/utils/domEvents'
+import { computed, ref } from 'vue'
 import {
   editableCellDraftFromValue,
   formatEditableCellDisplay,
   isEmptyEditableCellValue,
   parseEditableCellDraft,
-  resolveEditableCellOptions,
   type EditableCellOption,
   type EditableCellType,
   type EditableCellValue,
@@ -78,30 +76,18 @@ const sessionStartValue = ref<CellValue>(undefined)
 // committed and the input is being torn down. Without this, an empty draft
 // from the watcher reset would clobber the value we just emitted.
 let committedThisSession = false
-const inputEl = ref<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement | null>(null)
-
 const isEmpty = isEmptyEditableCellValue
 
 const displayValue = computed<string>(() =>
   formatEditableCellDisplay(props.modelValue, props.format),
 )
 
-const optionsResolved = computed(() => resolveEditableCellOptions(props.options))
-
-const beginEdit = async () => {
+const beginEdit = () => {
   if (props.readonly) return
   sessionStartValue.value = props.modelValue
   draft.value = editableCellDraftFromValue(props.modelValue)
   committedThisSession = false
   editing.value = true
-  await nextTick()
-  const el = inputEl.value
-  if (el) {
-    el.focus()
-    if ('select' in el && typeof (el as HTMLInputElement).select === 'function') {
-      ;(el as HTMLInputElement).select()
-    }
-  }
 }
 
 /** Convert the local draft string into the value we emit. */
@@ -136,31 +122,7 @@ const cancel = () => {
   editing.value = false
 }
 
-const onKeydown = (e: KeyboardEvent) => {
-  if (e.key === 'Escape') {
-    e.preventDefault()
-    cancel()
-    return
-  }
-  if (e.key === 'Enter' && props.type !== 'textarea') {
-    e.preventDefault()
-    commit()
-    return
-  }
-  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && props.type === 'textarea') {
-    e.preventDefault()
-    commit()
-  }
-}
-
-// For selects, the user picks an option — commit immediately (no blur dance).
-const onSelectChange = (e: Event) => {
-  draft.value = textValueFromEvent(e)
-  commit()
-}
-
-const onInput = (e: Event) => {
-  draft.value = textValueFromEvent(e)
+const onEditorInput = () => {
   if (props.commitOnInput) applyDraft()
 }
 
@@ -199,47 +161,16 @@ const onInput = (e: Event) => {
     </template>
 
     <template v-else>
-      <select
-        v-if="type === 'select'"
-        ref="inputEl"
-        :value="draft"
-        class="editable-cell__input editable-cell__input--select"
-        @change="onSelectChange"
-        @blur="commit"
-        @keydown="onKeydown"
-      >
-        <option value="">{{ placeholder || '—' }}</option>
-        <option
-          v-for="opt in optionsResolved"
-          :key="opt.value"
-          :value="opt.value"
-        >{{ opt.label }}</option>
-      </select>
-
-      <textarea
-        v-else-if="type === 'textarea'"
-        ref="inputEl"
-        :value="draft"
-        rows="2"
-        class="editable-cell__input editable-cell__input--textarea"
+      <EditableCellEditor
+        v-model:draft="draft"
+        :type="type"
         :placeholder="placeholder"
-        @input="onInput"
-        @blur="commit"
-        @keydown="onKeydown"
-      />
-
-      <input
-        v-else
-        ref="inputEl"
-        :type="type === 'number' ? 'number' : 'text'"
-        :value="draft"
-        :min="type === 'number' ? min : undefined"
-        :max="type === 'number' ? max : undefined"
-        :placeholder="placeholder"
-        class="editable-cell__input"
-        @input="onInput"
-        @blur="commit"
-        @keydown="onKeydown"
+        :options="options"
+        :min="min"
+        :max="max"
+        @input="onEditorInput"
+        @commit="commit"
+        @cancel="cancel"
       />
     </template>
   </span>
@@ -291,29 +222,5 @@ const onInput = (e: Event) => {
 
 .editable-cell__display {
   color: inherit;
-}
-
-.editable-cell__input {
-  font: inherit;
-  color: inherit;
-  width: 100%;
-  min-width: 4em;
-  border: 1px solid var(--accent, #fabd2f);
-  border-radius: 4px;
-  background: var(--paper, #fff);
-  padding: 0.1em 0.35em;
-  outline: none;
-  box-shadow: 0 0 0 2px rgba(250, 189, 47, 0.18);
-}
-
-.editable-cell__input--textarea {
-  resize: vertical;
-  min-height: 2.4em;
-  width: 100%;
-  white-space: pre-wrap;
-}
-
-.editable-cell__input--select {
-  appearance: auto;
 }
 </style>
