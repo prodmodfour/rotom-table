@@ -7,6 +7,8 @@ import {
   MAP_TERRAIN_KINDS,
   MAP_WEATHER_DEFINITIONS,
   MAP_WEATHER_KINDS,
+} from '~/utils/mapFieldEffectDefinitions'
+import {
   createMapRoomEffect,
   createMapTerrainEffect,
   createMapWeatherEffect,

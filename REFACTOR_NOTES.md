@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass (latest full test run: 197 files / 752 tests). `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include another focused server/use-case helper split, move-automation helper split, renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass (latest full test run: 198 files / 757 tests). `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include another focused server/use-case helper split, move-automation helper split, renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
 
 ## Phase 0 baseline audit
 
@@ -4309,3 +4309,17 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
 
+
+## Next phase update: map field-effect definition split
+
+- Extracted map field-effect kinds, definition tables, typed definition DTO, and weather/terrain/room kind guards from `utils/mapFieldEffects.ts` into `utils/mapFieldEffectDefinitions.ts`.
+- Reduced `utils/mapFieldEffects.ts` to field-effect creation, normalization, source/round coercion, deduplication, and active-count logic while renderer/editor UI modules import definitions from the focused definition module.
+- Preserved field-effect palettes, default round counts, Weather/Terrain/Room labels/rules/colors, map field-effect normalization, renderer terrain/room overlay colors, and map editor behavior.
+- Added `tests/utils/mapFieldEffects.test.ts` covering canonical definition alignment, kind guards, default effect factories, normalization/deduplication/source trimming, and effect counts.
+- Next remaining phase: continue one bounded cleanup pass, with candidates including another focused server/use-case helper split, move-automation helper split, renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/utils/mapFieldEffects.test.ts` — passes: 1 test file / 5 tests.
+  - `npm run typecheck` — passes.
+  - `npm test` — passes: 198 test files / 757 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

@@ -21,7 +21,7 @@ import type {
   VoxelMaterial,
   MapHazardKind,
 } from '~/types/map'
-import type { MapEffectDefinition } from '~/utils/mapFieldEffects'
+import type { MapEffectDefinition } from '~/utils/mapFieldEffectDefinitions'
 import type { MapHazardDefinition } from '~/utils/mapHazards'
 import type { VoxelMaterialDef } from '~/utils/voxels'
 

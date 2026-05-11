@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import FieldEffectChipList, { type FieldEffectChip } from '~/components/map/FieldEffectChipList.vue'
 import FieldEffectSwatchGrid from '~/components/map/FieldEffectSwatchGrid.vue'
-import type { MapEffectDefinition } from '~/utils/mapFieldEffects'
+import type { MapEffectDefinition } from '~/utils/mapFieldEffectDefinitions'
 
 defineProps<{
   title: string

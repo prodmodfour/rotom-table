@@ -4,7 +4,7 @@ import type { MapFieldEffects, MapVoxelV2 } from '~/types/map'
 import {
   MAP_ROOM_DEFINITIONS,
   MAP_TERRAIN_DEFINITIONS,
-} from '~/utils/mapFieldEffects'
+} from '~/utils/mapFieldEffectDefinitions'
 import { disposeObject3D } from './resourceDisposal'
 import {
   createFieldEffectRoomBoundary,

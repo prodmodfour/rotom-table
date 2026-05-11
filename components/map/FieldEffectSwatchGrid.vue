@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { MapEffectDefinition } from '~/utils/mapFieldEffects'
+import type { MapEffectDefinition } from '~/utils/mapFieldEffectDefinitions'
 
 defineProps<{
   effects: MapEffectDefinition[]

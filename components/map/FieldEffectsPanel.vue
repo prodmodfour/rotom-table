@@ -4,7 +4,7 @@ import FieldEffectBulkActions from '~/components/map/FieldEffectBulkActions.vue'
 import FieldEffectSection from '~/components/map/FieldEffectSection.vue'
 import FieldEffectWeatherOptions from '~/components/map/FieldEffectWeatherOptions.vue'
 import { formatActiveFieldEffectsBadge } from '~/utils/mapPanelBadges'
-import type { MapEffectDefinition } from '~/utils/mapFieldEffects'
+import type { MapEffectDefinition } from '~/utils/mapFieldEffectDefinitions'
 import type {
   MapRoomEffect,
   MapRoomKind,
