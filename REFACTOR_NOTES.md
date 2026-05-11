@@ -55,7 +55,7 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
 ## Current quality gate results
 
 - `npm run typecheck` — passes.
-- `npm test` — passes: 166 test files / 637 tests.
+- `npm test` — passes: 169 test files / 649 tests.
 - `npm run build` — passes; existing large chunk warnings remain.
 - `npm run check:move-automation` — still fails with the same baseline `Explicit move automation coverage: 0/769` missing-script report.
 - `npm run sync:item-sprites -- --dry-run` was not run because the script does not implement a dry-run mode.
@@ -3861,5 +3861,20 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
   - `npm test -- tests/utils/pokedex/searchValueRanges.test.ts tests/utils/pokedex/searchText.test.ts` — passes: 2 test files / 8 tests.
   - `npm run typecheck` — passes.
   - `npm test` — passes: 168 test files / 646 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: Pokédex search bucket helper split
+
+- Extracted generic Pokédex search-bucket primitives from `utils/pokedex/searchText.ts` into `utils/pokedex/searchBuckets.ts`.
+  - The new helper owns text normalization, raw value filtering, field-to-aggregate bucket insertion, compact-alias search text building, and final bucket-to-text projection.
+- Updated `searchText.ts` to keep the existing public `normalizeText`/`buildSearchText` exports for compatibility while delegating bucket mechanics to the focused helper.
+- Preserved existing Pokédex filtering behavior, compact aliases such as `thunderpunch`/`tm35`, field-specific search text shapes, and all route/import compatibility.
+- Added `tests/utils/pokedex/searchBuckets.test.ts` covering normalization, compact aliases, nullish/blank value filtering, aggregate bucket insertion, and final text projection.
+- Next remaining phase: continue one bounded cleanup pass, with candidates including another focused Pokédex/search helper split, renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/utils/pokedex/searchBuckets.test.ts tests/utils/pokedex/searchText.test.ts` — passes: 2 test files / 6 tests.
+  - `npm run typecheck` — passes.
+  - `npm test` — passes: 169 test files / 649 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

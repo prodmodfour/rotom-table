@@ -1,5 +1,13 @@
 import type { PokedexCapabilities, PokedexRecord } from '~/types/pokemon'
 import {
+  addSearchValuesToBucket,
+  buildSearchText,
+  buildSearchTextsFromBuckets,
+  createSearchBuckets as createSearchBucketsForKeys,
+  normalizeSearchText,
+  type SearchBucketValue,
+} from '~/utils/pokedex/searchBuckets'
+import {
   maximumNumericComponent,
   minimumIntegerSearchValues,
   minimumSkillDiceSearchValues,
@@ -25,7 +33,7 @@ export type PokedexSearchTextKey = typeof searchFieldConfigs[number]['key']
 export type FieldFilterKey = Exclude<PokedexSearchTextKey, 'any'>
 export type PokedexSearchTexts = Record<PokedexSearchTextKey, string>
 export type PokedexSearchTextBuckets = Record<PokedexSearchTextKey, string[]>
-export type SearchValue = string | number | null | undefined
+export type SearchValue = SearchBucketValue
 export type FilterMode = 'fields' | 'advanced'
 export type FilterOperator = 'and' | 'or'
 
@@ -60,14 +68,7 @@ const BASE_STAT_SEARCH_FIELDS = [
   ['spd', 'Speed', 'Spd'],
 ] as const
 
-export const normalizeText = (value: string) => value
-  .normalize('NFKD')
-  .replace(/[\u0300-\u036f]/g, '')
-  .toLowerCase()
-  .replace(/['\u2019]/g, '')
-  .replace(/[^a-z0-9#]+/g, ' ')
-  .replace(/\s+/g, ' ')
-  .trim()
+export const normalizeText = normalizeSearchText
 
 export const formatNationalDexNumber = (number: number | null | undefined): string | null => (
   number == null ? null : `#${number.toString().padStart(3, '0')}`
@@ -81,30 +82,16 @@ export const toPokedexSlug = (value: string): string => value
   .replace(/[^a-z0-9]+/g, '-')
   .replace(/^-+|-+$/g, '')
 
-const createSearchBuckets = (): PokedexSearchTextBuckets => Object.fromEntries(
-  searchFieldConfigs.map(({ key }) => [key, [] as string[]]),
-) as PokedexSearchTextBuckets
+const POKEDEX_SEARCH_KEYS = searchFieldConfigs.map(({ key }) => key)
 
-const addSearchValue = (values: string[], value: SearchValue) => {
-  if (value === undefined || value === null) return
-
-  const stringValue = String(value).trim()
-  if (stringValue) values.push(stringValue)
-}
-
-const addSearchValues = (values: string[], ...rawValues: SearchValue[]) => {
-  for (const value of rawValues) {
-    addSearchValue(values, value)
-  }
-}
+const createPokedexSearchBuckets = (): PokedexSearchTextBuckets => createSearchBucketsForKeys(POKEDEX_SEARCH_KEYS)
 
 const addBucketSearchValues = (
   buckets: PokedexSearchTextBuckets,
   key: Exclude<PokedexSearchTextKey, 'any'>,
   ...rawValues: SearchValue[]
 ) => {
-  addSearchValues(buckets[key], ...rawValues)
-  addSearchValues(buckets.any, ...rawValues)
+  addSearchValuesToBucket(buckets, key, 'any', ...rawValues)
 }
 
 const hasCapabilityValue = (value: PokedexCapabilities[MovementCapabilityKey]) => {
@@ -189,28 +176,10 @@ const addMinimumBaseStatSearchValues = (
   }
 }
 
-export const buildSearchText = (values: string[]): string => {
-  const normalizedValues = new Set<string>()
-
-  for (const value of values) {
-    const normalized = normalizeText(value)
-    if (!normalized) continue
-
-    normalizedValues.add(normalized)
-
-    // Also index a no-space version so "thunderpunch" and "tm35" work even
-    // when the source data says "Thunder Punch" or "TM 35".
-    const compact = normalized.replace(/\s+/g, '')
-    if (compact && compact !== normalized) {
-      normalizedValues.add(compact)
-    }
-  }
-
-  return Array.from(normalizedValues).join(' ')
-}
+export { buildSearchText }
 
 export const buildPokedexSearchTexts = (entry: PokedexSearchableEntry): PokedexSearchTexts => {
-  const buckets = createSearchBuckets()
+  const buckets = createPokedexSearchBuckets()
 
   addBucketSearchValues(buckets, 'identity', entry.species, entry.slug.replace(/-/g, ' '), entry.source_gen)
   if (entry.source_gen) {
@@ -428,7 +397,5 @@ export const buildPokedexSearchTexts = (entry: PokedexSearchableEntry): PokedexS
     addBucketSearchValues(buckets, 'size', `width ${entry.width}`)
   }
 
-  return Object.fromEntries(
-    searchFieldConfigs.map(({ key }) => [key, buildSearchText(buckets[key])]),
-  ) as PokedexSearchTexts
+  return buildSearchTextsFromBuckets(POKEDEX_SEARCH_KEYS, buckets) as PokedexSearchTexts
 }
