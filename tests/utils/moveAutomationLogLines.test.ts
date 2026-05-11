@@ -1,0 +1,100 @@
+import { describe, expect, it } from 'vitest'
+import {
+  buildMoveAutomationStartLogLines,
+  formatMoveAutomationAutomationNoteLogLines,
+  formatMoveAutomationConditionSuggestionLogLine,
+  formatMoveAutomationDamageLogLine,
+  formatMoveAutomationHpSuggestionLogLine,
+  formatMoveAutomationManualNoteLogLine,
+  formatMoveAutomationStageSuggestionLogLine,
+} from '~/utils/moveAutomationLogLines'
+import type {
+  MoveAutomationConditionSuggestion,
+  MoveAutomationHpSuggestion,
+  MoveAutomationScript,
+  MoveAutomationStageSuggestion,
+} from '~/types/moveAutomation'
+
+const script = (overrides: Partial<MoveAutomationScript> = {}): MoveAutomationScript => ({
+  kind: 'explicit',
+  moveName: 'Test Move',
+  version: 3,
+  targetMode: 'one-target',
+  targetCount: 1,
+  damaging: true,
+  requiresAccuracy: true,
+  damageBase: 4,
+  damageClass: 'Physical',
+  type: 'Fire',
+  ac: 2,
+  range: 'Melee, 1 Target',
+  effect: '',
+  keywords: [],
+  criticalRange: 20,
+  conditionSuggestions: [],
+  stageSuggestions: [],
+  hpSuggestions: [],
+  fieldSuggestions: [],
+  hazardSuggestions: [],
+  automationNotes: [],
+  ...overrides,
+})
+
+describe('move automation log line helpers', () => {
+  it('builds start lines for explicit and manual scripts', () => {
+    expect(buildMoveAutomationStartLogLines(script(), 'Caster')).toEqual([
+      'Caster used Test Move.',
+      'Explicit move script v3 used.',
+    ])
+    expect(buildMoveAutomationStartLogLines(script({ kind: 'manual-fallback' }), 'Caster')).toEqual([
+      'Caster used Test Move.',
+      'Manual fallback resolver used: no explicit reviewed automation script exists for this move.',
+    ])
+  })
+
+  it('formats damage and HP suggestion lines', () => {
+    const hpSuggestion: MoveAutomationHpSuggestion = {
+      recipient: 'user',
+      mode: 'heal-percent-max',
+      percent: 25,
+      label: 'Recover',
+    }
+
+    expect(formatMoveAutomationDamageLogLine('Target', 12)).toBe('Target: 12 HP damage.')
+    expect(formatMoveAutomationDamageLogLine('Target', 12, true)).toBe('Target: 12 HP damage (critical flagged).')
+    expect(formatMoveAutomationHpSuggestionLogLine('Caster', hpSuggestion, 10)).toBe('Caster: Recover (10 HP).')
+    expect(formatMoveAutomationHpSuggestionLogLine('Caster', hpSuggestion, 0)).toBe('Caster: Recover.')
+  })
+
+  it('formats condition and combat-stage recipient lines', () => {
+    const recipients = [{ species: 'Aipom' }, { species: 'Buizel' }]
+    const conditionSuggestion: MoveAutomationConditionSuggestion = {
+      recipient: 'target',
+      condition: 'Burned',
+      action: 'remove',
+      label: 'Clear burns',
+    }
+    const stageSuggestion: MoveAutomationStageSuggestion = {
+      recipient: 'target',
+      key: 'def',
+      delta: -1,
+      label: 'Lower Defense',
+    }
+
+    expect(formatMoveAutomationConditionSuggestionLogLine(conditionSuggestion, recipients))
+      .toBe('Clear burns removed from Aipom, Buizel.')
+    expect(formatMoveAutomationConditionSuggestionLogLine({ ...conditionSuggestion, action: 'add' }, recipients))
+      .toBe('Clear burns applied to Aipom, Buizel.')
+    expect(formatMoveAutomationStageSuggestionLogLine(stageSuggestion, recipients))
+      .toBe('Lower Defense on Aipom, Buizel.')
+    expect(formatMoveAutomationConditionSuggestionLogLine(conditionSuggestion, [])).toBeNull()
+    expect(formatMoveAutomationStageSuggestionLogLine(stageSuggestion, [])).toBeNull()
+  })
+
+  it('formats manual and automation notes', () => {
+    expect(formatMoveAutomationManualNoteLogLine('  Check weather.  ')).toBe('Manual note: Check weather.')
+    expect(formatMoveAutomationManualNoteLogLine('   ')).toBeNull()
+    expect(formatMoveAutomationAutomationNoteLogLines(['Verify text.', 'Track duration.']))
+      .toEqual(['Note: Verify text.', 'Note: Track duration.'])
+  })
+})

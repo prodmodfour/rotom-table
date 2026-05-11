@@ -12,6 +12,15 @@ import {
   buildMoveAutomationHazards,
 } from '~/utils/moveAutomationMapEffects'
 import {
+  buildMoveAutomationStartLogLines,
+  formatMoveAutomationAutomationNoteLogLines,
+  formatMoveAutomationConditionSuggestionLogLine,
+  formatMoveAutomationDamageLogLine,
+  formatMoveAutomationHpSuggestionLogLine,
+  formatMoveAutomationManualNoteLogLine,
+  formatMoveAutomationStageSuggestionLogLine,
+} from '~/utils/moveAutomationLogLines'
+import {
   resolveHpSuggestionAmount,
   resolveMoveAutomationTargetDamageLoss,
   suggestionIsEnabled,
@@ -76,18 +85,13 @@ export const buildMoveAutomationTransaction = ({
 
   const conditionAccumulator = createMoveAutomationConditionUpdateAccumulator()
   const stageAccumulator = createMoveAutomationCombatStageUpdateAccumulator()
-  const logLines: string[] = [
-    `${user.species} used ${script.moveName}.`,
-    script.kind === 'manual-fallback'
-      ? 'Manual fallback resolver used: no explicit reviewed automation script exists for this move.'
-      : `Explicit move script v${script.version} used.`,
-  ]
+  const logLines = buildMoveAutomationStartLogLines(script, user.species)
 
   for (const target of selectedTargets) {
     const loss = resolveMoveAutomationTargetDamageLoss(script, user, target, targetResolutions[target.id], fieldEffects)
     if (loss > 0) {
       hpAccumulator.set(target, hpAccumulator.get(target) - loss)
-      logLines.push(`${target.species}: ${loss} HP damage${targetResolutions[target.id]?.crit ? ' (critical flagged)' : ''}.`)
+      logLines.push(formatMoveAutomationDamageLogLine(target.species, loss, targetResolutions[target.id]?.crit))
     }
   }
 
@@ -99,7 +103,7 @@ export const buildMoveAutomationTransaction = ({
       if (amount <= 0 && item.mode !== 'set-zero') continue
       const next = applyHpSuggestion(hpAccumulator.get(token), token.maxHp, amount, item.mode)
       hpAccumulator.set(token, next)
-      logLines.push(`${token.species}: ${item.label}${amount > 0 ? ` (${amount} HP)` : ''}.`)
+      logLines.push(formatMoveAutomationHpSuggestionLogLine(token.species, item, amount))
     }
   })
 
@@ -107,9 +111,8 @@ export const buildMoveAutomationTransaction = ({
     if (!suggestionIsEnabled(script, enabledSuggestions, 'condition', index)) return
     const recipients = item.recipient === 'user' ? [user] : selectedTargets
     for (const token of recipients) conditionAccumulator.applySuggestion(token, item)
-    if (recipients.length) {
-      logLines.push(`${item.label} ${item.action === 'remove' ? 'removed from' : 'applied to'} ${recipients.map((token) => token.species).join(', ')}.`)
-    }
+    const logLine = formatMoveAutomationConditionSuggestionLogLine(item, recipients)
+    if (logLine) logLines.push(logLine)
   })
   conditionAccumulator.merge(user, manualUserConditions)
   for (const target of selectedTargets) conditionAccumulator.merge(target, manualTargetConditions)
@@ -121,7 +124,8 @@ export const buildMoveAutomationTransaction = ({
     if (!suggestionIsEnabled(script, enabledSuggestions, 'stage', index)) return
     const recipients = item.recipient === 'user' ? [user] : selectedTargets
     for (const token of recipients) addStageDelta(token, { [item.key]: item.delta })
-    if (recipients.length) logLines.push(`${item.label} on ${recipients.map((token) => token.species).join(', ')}.`)
+    const logLine = formatMoveAutomationStageSuggestionLogLine(item, recipients)
+    if (logLine) logLines.push(logLine)
   })
   const userManualStages = nonZeroStageDeltas(manualUserStageDeltas)
   const targetManualStages = nonZeroStageDeltas(manualTargetStageDeltas)
@@ -146,8 +150,9 @@ export const buildMoveAutomationTransaction = ({
   const fieldEffectsToApply = fieldEffectResult.fieldEffectsToApply
   logLines.push(...hazardResult.logLines, ...fieldEffectResult.logLines)
 
-  if (manualNote.trim()) logLines.push(`Manual note: ${manualNote.trim()}`)
-  if (script.automationNotes.length) logLines.push(...script.automationNotes.map((note) => `Note: ${note}`))
+  const manualNoteLogLine = formatMoveAutomationManualNoteLogLine(manualNote)
+  if (manualNoteLogLine) logLines.push(manualNoteLogLine)
+  logLines.push(...formatMoveAutomationAutomationNoteLogLines(script.automationNotes))
 
   return {
     userId: user.id,

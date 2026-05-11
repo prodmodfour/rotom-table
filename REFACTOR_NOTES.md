@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass (latest full test run: 185 files / 709 tests). `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include another focused move-automation helper split, renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass (latest full test run: 186 files / 713 tests). `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include another focused move-automation helper split, renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
 
 ## Phase 0 baseline audit
 
@@ -4137,5 +4137,20 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
   - `npm test -- tests/utils/moveAutomationTargeting.test.ts tests/utils/moveAutomationManual.test.ts` — passes: 2 test files / 8 tests.
   - `npm run typecheck` — passes.
   - `npm test` — passes: 185 test files / 709 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: move automation transaction log helper split
+
+- Extracted move-automation transaction log-line formatting from `utils/moveAutomationTransaction.ts` into `utils/moveAutomationLogLines.ts`.
+  - The new helper owns start lines, damage/HP suggestion lines, condition/stage recipient lines, manual-note trimming, and automation-note formatting.
+- Reduced transaction assembly so it focuses on applying damage, HP/status accumulators, map effects, and final payload construction while delegating string formatting to focused pure helpers.
+- Preserved transaction log output, critical-hit notes, HP suggestion amount copy, condition/stage recipient wording, manual note trimming, and automation-note prefixes.
+- Added `tests/utils/moveAutomationLogLines.test.ts` covering explicit/manual start lines, damage/HP logs, condition/stage recipient logs, empty-recipient suppression, manual-note trimming, and automation-note lines.
+- Next remaining phase: continue one bounded cleanup pass, with candidates including another focused move-automation helper split, renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/utils/moveAutomationLogLines.test.ts tests/utils/moveAutomationTransaction.test.ts` — passes: 2 test files / 5 tests.
+  - `npm run typecheck` — passes.
+  - `npm test` — passes: 186 test files / 713 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
