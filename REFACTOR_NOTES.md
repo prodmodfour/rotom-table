@@ -3832,3 +3832,19 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
   - `npm test` — passes: 166 test files / 637 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: shared move damage-base helper
+
+- Extracted the move-automation damage-base table, DB formatting, and dice-formula rolling into `utils/moveDamageBase.ts`.
+  - `utils/moveAutomation.ts` now re-exports the legacy table/formatter/roller API from the focused helper for compatibility while keeping move-script parsing logic local.
+  - `utils/sheetMoveLookup.ts` now uses the shared move damage-base lookup instead of owning a duplicate DB table.
+- Preserved existing move-automation damage values, including the current DB 4 `1d8+6` behavior, and kept the manual damage-dialog table in `utils/ptuDamage.ts` intentionally distinct.
+- Added `tests/utils/moveDamageBase.test.ts` covering DB lookup/formatting, legacy move-automation formatter compatibility, deterministic dice rolling, and invalid formula rejection.
+- Next remaining phase: continue one bounded cleanup pass, with candidates including another focused renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/utils/moveDamageBase.test.ts` — passes: 1 test file / 4 tests.
+  - `npm run typecheck` — passes.
+  - `npm test -- tests/utils/moveDamageBase.test.ts tests/utils/moveAutomationResolution.test.ts tests/composables/move-automation/useMoveAutomationWizard.test.ts` — passes: 3 test files / 12 tests.
+  - `npm test` — passes: 167 test files / 641 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

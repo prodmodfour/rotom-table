@@ -1,4 +1,5 @@
 import { findMove } from '~/data/ptuReference'
+import { findMoveDamageBase } from '~/utils/moveDamageBase'
 import type { CharacterSheetMove } from '~/types/characterSheet'
 import type { PtuMove } from '~/types/ptuReference'
 import type { TrainerMove } from '~/types/trainerSheet'
@@ -43,37 +44,6 @@ export const lookupMoveReference = (move: Pick<SheetMoveLike, 'name'>): PtuMove 
   return name ? findMove(name) : null
 }
 
-const DAMAGE_BASE_TABLE: Record<number, { count: number; sides: number; mod: number }> = {
-  1: { count: 1, sides: 6, mod: 1 },
-  2: { count: 1, sides: 6, mod: 3 },
-  3: { count: 1, sides: 6, mod: 5 },
-  4: { count: 1, sides: 8, mod: 6 },
-  5: { count: 1, sides: 8, mod: 8 },
-  6: { count: 2, sides: 6, mod: 8 },
-  7: { count: 2, sides: 6, mod: 10 },
-  8: { count: 2, sides: 8, mod: 10 },
-  9: { count: 2, sides: 10, mod: 10 },
-  10: { count: 3, sides: 8, mod: 10 },
-  11: { count: 3, sides: 10, mod: 10 },
-  12: { count: 3, sides: 12, mod: 10 },
-  13: { count: 4, sides: 10, mod: 10 },
-  14: { count: 4, sides: 10, mod: 15 },
-  15: { count: 4, sides: 10, mod: 20 },
-  16: { count: 5, sides: 10, mod: 20 },
-  17: { count: 5, sides: 12, mod: 25 },
-  18: { count: 6, sides: 12, mod: 25 },
-  19: { count: 6, sides: 12, mod: 30 },
-  20: { count: 6, sides: 12, mod: 35 },
-  21: { count: 6, sides: 12, mod: 40 },
-  22: { count: 6, sides: 12, mod: 45 },
-  23: { count: 6, sides: 12, mod: 50 },
-  24: { count: 7, sides: 12, mod: 50 },
-  25: { count: 8, sides: 12, mod: 50 },
-  26: { count: 8, sides: 12, mod: 55 },
-  27: { count: 8, sides: 12, mod: 60 },
-  28: { count: 8, sides: 12, mod: 65 },
-}
-
 const toNumber = (value: number | null | undefined): number =>
   typeof value === 'number' && Number.isFinite(value) ? value : 0
 
@@ -104,7 +74,7 @@ const attackBonusFor = (move: PtuMove, options: MoveLookupOptions): number => {
 const damageFormulaFor = (damageBase: number | null, attackBonus: number): string | null => {
   if (damageBase == null) return null
   const attackSuffix = attackBonus ? formatSignedMod(attackBonus) : ''
-  const dice = DAMAGE_BASE_TABLE[damageBase]
+  const dice = findMoveDamageBase(damageBase)
   if (!dice) return `DB ${damageBase}${attackSuffix}`
   return `${dice.count}d${dice.sides}${formatSignedMod(dice.mod)}${attackSuffix}`
 }
