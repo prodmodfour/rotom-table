@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass (latest full test run: 176 files / 679 tests). `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include another focused move-automation helper split, renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass (latest full test run: 177 files / 683 tests). `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include another focused move-automation helper split, renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
 
 ## Phase 0 baseline audit
 
@@ -4003,5 +4003,21 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
   - `npm test -- tests/utils/moveAutomationManual.test.ts tests/utils/moveDamageBase.test.ts tests/utils/moveAutomationResolution.test.ts tests/composables/move-automation/useMoveAutomationWizard.test.ts` — passes: 4 test files / 17 tests.
   - `npm run typecheck` — passes.
   - `npm test` — passes: 176 test files / 679 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: move automation stage/text helper split
+
+- Split manual move-automation text parsing and combat-stage suggestion extraction out of `utils/moveAutomationManual.ts` into focused helpers:
+  - `utils/moveAutomationText.ts` owns whitespace normalization, range keyword splitting, text matching, and nearby threshold detection.
+  - `utils/moveAutomationStages.ts` owns stat-name normalization, stat-list parsing, combat-stage labels, and stage-suggestion extraction/de-duplication.
+- Reduced `moveAutomationManual.ts` so it focuses on manual fallback orchestration plus condition/HP/field/hazard/manual-note parsing while delegating shared text and stage mechanics.
+- Preserved manual fallback script shapes, target-mode/count behavior, condition thresholds, stage suggestion labels/thresholds, damage formula resolution, and existing public `utils/moveAutomation` compatibility exports.
+- Added `tests/utils/moveAutomationStages.test.ts` covering shared text primitives, stat key/list parsing, thresholded target debuffs, user buffs, and stage suggestion de-duplication.
+- Next remaining phase: continue one bounded cleanup pass, with candidates including another focused move-automation helper split, renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/utils/moveAutomationStages.test.ts tests/utils/moveAutomationManual.test.ts` — passes: 2 test files / 9 tests.
+  - `npm run typecheck` — passes.
+  - `npm test` — passes: 177 test files / 683 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
