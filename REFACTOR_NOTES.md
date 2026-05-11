@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass (latest full test run: 201 files / 772 tests). `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include another focused server/use-case helper split, move-automation helper split, renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass (latest full test run: 202 files / 776 tests). `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include another focused server/use-case helper split, move-automation helper split, renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
 
 ## Phase 0 baseline audit
 
@@ -4354,5 +4354,20 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
   - `npm test -- tests/utils/voxelColors.test.ts tests/utils/voxelOccupancy.test.ts tests/utils/isometric/buildVoxels.test.ts tests/utils/gridPlacementPathfinding.test.ts` — passes: 4 test files / 17 tests.
   - `npm run typecheck` — passes.
   - `npm test` — passes: 201 test files / 772 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: isometric block texture primitive painter split
+
+- Extracted generated block-texture primitive painting routines from `utils/isometric/blockTexturePainters.ts` into `utils/isometric/blockTexturePrimitivePainters.ts`.
+  - The focused primitive module now owns per-material pixel painting plus hazard-stripe and tech-panel overlay drawing.
+  - `blockTexturePainters.ts` is reduced to dispatching resolved pattern kinds to primitive painters and applying top-face overlays.
+- Preserved generated terrain texture behavior, hazard stripe overlays, tech-panel overlay colors/opacities, material seed usage, and existing `paintResolvedBlockTexturePattern` integration.
+- Added `tests/utils/isometric/blockTexturePrimitivePainters.test.ts` covering single-pixel writes, full-grid primitive painting, hazard overlay stripe dimensions, and typed tech-panel overlay styles.
+- Next remaining phase: continue one bounded cleanup pass, with candidates including another focused renderer/helper split, server/use-case helper split, move-automation helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/utils/isometric/blockTexturePrimitivePainters.test.ts tests/utils/isometric/blockTexturePainters.test.ts tests/utils/isometric/blockTexturePatterns.test.ts` — passes: 3 test files / 10 tests.
+  - `npm run typecheck` — passes.
+  - `npm test` — passes: 202 test files / 776 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
