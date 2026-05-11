@@ -55,7 +55,7 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
 ## Current quality gate results
 
 - `npm run typecheck` — passes.
-- `npm test` — passes: 161 test files / 616 tests.
+- `npm test` — passes: 162 test files / 621 tests.
 - `npm run build` — passes; existing large chunk warnings remain.
 - `npm run check:move-automation` — still fails with the same baseline `Explicit move automation coverage: 0/769` missing-script report.
 - `npm run sync:item-sprites -- --dry-run` was not run because the script does not implement a dry-run mode.
@@ -3756,5 +3756,20 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
   - `npm test -- tests/utils/isometric/worldSpriteAssets.test.ts` — passes: 1 test file / 5 tests.
   - `npm run typecheck` — passes.
   - `npm test` — passes: 161 test files / 616 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: isometric token HUD metrics split
+
+- Extracted token HUD metric/formatting helpers from `utils/isometric/tokenHud.ts` into `utils/isometric/tokenHudMetrics.ts`.
+  - The new helper owns elevation labels/offsets, level/name formatting, active combat-stage filtering, status HUD height calculation, and HP tier classification without depending on DOM mutation.
+- Reduced `tokenHud.ts` so it focuses on CSS3D badge/HUD DOM construction and updates while delegating pure sizing/formatting rules to the focused helper.
+- Preserved token elevation badges, HP/status HUD sizing, combat-stage chips, condition chips, held-item icons, active-turn chevrons, and HP tier behavior.
+- Added `tests/utils/isometric/tokenHudMetrics.test.ts` covering elevation/level labels, camera-relative badge offsets, name/stage normalization, HUD height derivation, and HP tier classification.
+- Next remaining phase: continue one bounded cleanup pass, with candidates including another focused renderer/helper split, storage split, map-editor extraction, or small UI duplication cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/utils/isometric/tokenHudMetrics.test.ts` — passes: 1 test file / 5 tests.
+  - `npm run typecheck` — passes.
+  - `npm test` — passes: 162 test files / 621 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

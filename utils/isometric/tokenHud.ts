@@ -3,30 +3,26 @@ import { CSS3DSprite } from 'three/examples/jsm/renderers/CSS3DRenderer.js'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import type { CombatStageMap } from '~/types/combatStages'
 import {
-  COMBAT_STAGE_KEYS,
   COMBAT_STAGE_SHORT_LABELS,
-  clampCombatStage,
   normalizeCombatStages,
 } from '~/utils/combatStages'
 import { conditionTagSvg, normalizeConditionNames } from '~/utils/statusConditions'
 import { itemSpriteUrl } from '~/utils/itemSprites'
-
-const ELEVATION_BADGE_PIXELS_PER_METRE = 48
-const TOKEN_STATUS_CSS_WIDTH_PX = 80
-const TOKEN_STATUS_BASE_CSS_HEIGHT_PX = 18
-const TOKEN_STATUS_LABEL_LINE_CSS_HEIGHT_PX = 11
-const TOKEN_STATUS_TURN_CHEVRON_CSS_HEIGHT_PX = 8
-const TOKEN_STATUS_STAGE_ROW_CSS_HEIGHT_PX = 10
-const TOKEN_STATUS_CONDITION_ROW_CSS_HEIGHT_PX = 15
-const TOKEN_STATUS_HEAD_GAP_EXTRA = 0.3
-// Matches the scaled size that Miltank landed on; every token now uses this
-// same tabletop marker size instead of resizing by sprite dimensions.
-const TOKEN_STATUS_WORLD_WIDTH = 1.05
-
-const mapSpecificY = (absoluteY: number, groundLevelY: number) => Math.round(absoluteY) - groundLevelY
-
-const formatElevationDelta = (localY: number): string =>
-  localY > 0 ? `+${localY} ↑` : `${localY} ↓`
+import {
+  ELEVATION_BADGE_PIXELS_PER_METRE,
+  TOKEN_STATUS_HEAD_GAP_EXTRA,
+  TOKEN_STATUS_CSS_WIDTH_PX,
+  TOKEN_STATUS_WORLD_WIDTH,
+  activeCombatStageEntries,
+  formatCombatStage,
+  formatElevationDelta,
+  formatTokenLevel,
+  getElevationBadgeOffset,
+  hpTierForRatio,
+  mapSpecificY,
+  tokenStatusCssHeight,
+  tokenStatusNameWords,
+} from '~/utils/isometric/tokenHudMetrics'
 
 export const buildElevationBadge = (ghost = false) => {
   const wrapper = document.createElement('div')
@@ -39,27 +35,6 @@ export const buildElevationBadge = (ghost = false) => {
   badge.scale.setScalar(1 / ELEVATION_BADGE_PIXELS_PER_METRE)
   badge.visible = false
   return badge
-}
-
-const getElevationBadgeOffset = (
-  center: THREE.Vector3,
-  base: number,
-  camera: THREE.Camera | null,
-) => {
-  const inset = Math.min(0.18, base / 4)
-  const edgeOffset = Math.max(base / 2 - inset, 0)
-
-  if (!camera) {
-    return {
-      x: edgeOffset,
-      z: edgeOffset,
-    }
-  }
-
-  return {
-    x: (camera.position.x >= center.x ? 1 : -1) * edgeOffset,
-    z: (camera.position.z >= center.z ? 1 : -1) * edgeOffset,
-  }
 }
 
 export const updateElevationBadge = ({
@@ -89,50 +64,6 @@ export const updateElevationBadge = ({
   badge.position.set(center.x + offset.x, center.y + 0.08, center.z + offset.z)
   badge.element.textContent = formatElevationDelta(localY)
   badge.visible = true
-}
-
-const formatTokenLevel = (level: number): string => {
-  if (!Number.isFinite(level)) return '?'
-  return String(Math.max(1, Math.floor(level)))
-}
-
-const tokenStatusNameWords = (displayName: string): string[] => {
-  const words = displayName.trim().split(/\s+/).filter(Boolean)
-  return words.length ? words : ['Unknown']
-}
-
-const tokenStatusLabelLineCount = (displayName: string): number => {
-  const nameLines = tokenStatusNameWords(displayName).length
-  return nameLines > 1 ? nameLines + 1 : 1
-}
-
-const activeCombatStageEntries = (stages: CombatStageMap) =>
-  COMBAT_STAGE_KEYS
-    .map((key) => ({ key, value: clampCombatStage(stages[key]) }))
-    .filter((entry) => entry.value !== 0)
-
-const formatCombatStage = (value: unknown): string => {
-  const normalized = clampCombatStage(value)
-  return normalized > 0 ? `+${normalized}` : String(normalized)
-}
-
-const tokenStatusCssHeight = (
-  displayName: string,
-  stages: CombatStageMap,
-  conditions: readonly string[],
-  activeTurn: boolean,
-): number => {
-  const stageCount = activeCombatStageEntries(stages).length
-  const conditionCount = normalizeConditionNames(conditions).length
-  const turnHeight = activeTurn ? TOKEN_STATUS_TURN_CHEVRON_CSS_HEIGHT_PX : 0
-  const stageRows = stageCount === 0 ? 0 : Math.ceil(stageCount / 2)
-  const conditionRows = conditionCount === 0 ? 0 : Math.ceil(conditionCount / 2)
-  const labelExtraHeight = (tokenStatusLabelLineCount(displayName) - 1) * TOKEN_STATUS_LABEL_LINE_CSS_HEIGHT_PX
-  return TOKEN_STATUS_BASE_CSS_HEIGHT_PX
-    + labelExtraHeight
-    + turnHeight
-    + (stageRows ? 1 + stageRows * TOKEN_STATUS_STAGE_ROW_CSS_HEIGHT_PX : 0)
-    + (conditionRows ? 1 + conditionRows * TOKEN_STATUS_CONDITION_ROW_CSS_HEIGHT_PX : 0)
 }
 
 const updateTokenStatusLabel = (
@@ -306,12 +237,6 @@ export const buildHpBar = (pokemon: SpawnedPokemon) => {
   applyTokenStatusScale(bar)
   bar.visible = false
   return bar
-}
-
-const hpTierForRatio = (ratio: number): 'critical' | 'wounded' | 'healthy' => {
-  if (ratio <= 0.25) return 'critical'
-  if (ratio <= 0.5) return 'wounded'
-  return 'healthy'
 }
 
 export const updateHpBar = ({
