@@ -4451,3 +4451,19 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
   - `npm test` — passes: 202 test files / 776 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: trainer combat action subpanel extraction
+
+- Extracted the trainer sheet Combat Actions tab sections from `components/sheets/TrainerCombatActionsPanel.vue` into focused child components:
+  - `components/sheets/TrainerMovesPanel.vue`
+  - `components/sheets/TrainerAbilitiesPanel.vue`
+  - `components/sheets/TrainerManeuversPanel.vue`
+  - `components/sheets/TrainerOrdersPanel.vue`
+- Added `components/sheets/trainerCombatActionPanel.css` for shared combat-action block/table/action styling so the extracted panels preserve the existing visual presentation without duplicating route-level chrome.
+- Reduced `TrainerCombatActionsPanel` to a composition shell that forwards explicit add/remove/tag events while preserving move lookup editing, ability lookup editing, maneuver editing, order tag CSV persistence, and sheet autosave behavior.
+- Next remaining phase: continue one bounded cleanup pass, with candidates including another focused sheet-panel extraction, server/use-case helper split, move-automation helper split, renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm run typecheck` — passes.
+  - `npm test` — passes: 202 test files / 776 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
