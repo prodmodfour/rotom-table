@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { MapHazardKind } from '~/types/map'
-import type { MapHazardDefinition } from '~/utils/mapHazards'
+import type { MapHazardDefinition } from '~/utils/mapHazardDefinitions'
 
 defineProps<{
   activeKind: MapHazardKind

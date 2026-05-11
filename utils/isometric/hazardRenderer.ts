@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import type { MapHazardKind, MapHazardV2 } from '~/types/map'
-import { MAP_HAZARD_DEFINITIONS, normalizeMapHazardLayer } from '~/utils/mapHazards'
+import { MAP_HAZARD_DEFINITIONS } from '~/utils/mapHazardDefinitions'
+import { normalizeMapHazardLayer } from '~/utils/mapHazards'
 import { parseHexColor } from '~/utils/voxels'
 import { disposeObject3D } from './resourceDisposal'
 

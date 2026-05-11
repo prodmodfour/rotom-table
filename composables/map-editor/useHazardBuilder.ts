@@ -3,6 +3,8 @@ import type { BuildTool } from '~/shared/mapEditor'
 import {
   MAIN_MAP_HAZARD_KINDS,
   MAP_HAZARD_DEFINITIONS,
+} from '~/utils/mapHazardDefinitions'
+import {
   mapHazardKey,
   normalizeMapHazardLayer,
 } from '~/utils/mapHazards'

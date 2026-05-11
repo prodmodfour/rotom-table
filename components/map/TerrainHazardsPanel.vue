@@ -9,7 +9,7 @@ import type { MapLayerVisibilityKey } from '~/utils/mapLayerVisibility'
 import type { VoxelMaterialDef } from '~/utils/voxels'
 import type { BuildTool } from '~/shared/mapEditor'
 import type { LayerVisibility, MapHazardKind, VoxelMaterial } from '~/types/map'
-import type { MapHazardDefinition } from '~/utils/mapHazards'
+import type { MapHazardDefinition } from '~/utils/mapHazardDefinitions'
 
 defineProps<{
   collapsed: boolean

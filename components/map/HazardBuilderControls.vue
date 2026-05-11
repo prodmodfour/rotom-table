@@ -6,7 +6,7 @@ import BuildToolToggle from '~/components/map/BuildToolToggle.vue'
 import HazardPaletteGrid from '~/components/map/HazardPaletteGrid.vue'
 import type { BuildTool } from '~/shared/mapEditor'
 import type { MapHazardKind } from '~/types/map'
-import type { MapHazardDefinition } from '~/utils/mapHazards'
+import type { MapHazardDefinition } from '~/utils/mapHazardDefinitions'
 
 defineProps<{
   hazardTool: BuildTool
