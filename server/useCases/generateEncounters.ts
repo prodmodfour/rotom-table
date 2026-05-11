@@ -12,14 +12,15 @@ import { tmpdir } from 'node:os'
 import { join as joinPath, resolve as resolvePath } from 'node:path'
 import {
   EncounterGenerationInputError,
-  assertEncounterPathInsideRoot,
   readEncounterGenerateRequest,
   rollEncounterTable,
   safeEncounterTablePath,
-  slugifyEncounterOutputPath,
-  uniqueEncounterOutputDir,
   type GenerateEncounterBody,
 } from '../utils/encounterGeneration'
+import {
+  createEncounterOutputPlan,
+  type UniqueEncounterOutputDir,
+} from '../utils/encounterOutput'
 import {
   runPokegenForRolledEncounters,
   type EncounterGeneratedFileResult,
@@ -59,7 +60,7 @@ export interface GenerateEncountersDependencies {
   ensureDirectory?: (path: string) => void
   makeTempDir?: (prefix: string) => string
   cleanupDirectory?: (path: string) => void
-  uniqueOutputDir?: (parent: string, baseName: string, exists: (path: string) => boolean) => string
+  uniqueOutputDir?: UniqueEncounterOutputDir
   runPokegen?: RunPokegen
 }
 
@@ -136,45 +137,6 @@ export const readEncounterTableFile = (
   return JSON.parse(dependencies.readTextFile(tablePath)) as EncounterTable
 }
 
-export const encounterOutputSlugPrefix = (
-  projectRoot: string,
-  outputDir: string,
-  tableKey: string,
-  preview: boolean,
-  now: () => number,
-): string => {
-  const relForSlug = preview
-    ? joinPath('preview', tableKey, String(now()))
-    : outputDir.slice(projectRoot.length + 1)
-  return slugifyEncounterOutputPath(relForSlug.replace(/^data\/sheets\//, ''))
-}
-
-const resolveEncounterOutputDir = (
-  request: ReturnType<typeof readEncounterGenerateRequest>,
-  dependencies: Required<Pick<
-    GenerateEncountersDependencies,
-    | 'projectRoot'
-    | 'pathExists'
-    | 'ensureDirectory'
-    | 'makeTempDir'
-    | 'uniqueOutputDir'
-  >>,
-): { dir: string; cleanup: boolean } => {
-  if (request.preview) {
-    return {
-      dir: dependencies.makeTempDir(`rotom-encounter-${request.tableKey}-`),
-      cleanup: true,
-    }
-  }
-
-  const parent = resolvePath(dependencies.projectRoot, request.outRoot)
-  assertEncounterPathInsideRoot(dependencies.projectRoot, parent)
-  dependencies.ensureDirectory(parent)
-  const dir = dependencies.uniqueOutputDir(parent, `${request.tableKey}_${request.count}`, dependencies.pathExists)
-  dependencies.ensureDirectory(dir)
-  return { dir, cleanup: false }
-}
-
 export const generateEncountersUseCase = async (
   body: GenerateEncounterBody | null | undefined,
   dependencies: GenerateEncountersDependencies = {},
@@ -189,7 +151,6 @@ export const generateEncountersUseCase = async (
   const ensureDirectory = dependencies.ensureDirectory ?? ((path: string) => mkdirSync(path, { recursive: true }))
   const makeTempDir = dependencies.makeTempDir ?? ((prefix: string) => mkdtempSync(joinPath(tmpdir(), prefix)))
   const cleanupDirectory = dependencies.cleanupDirectory ?? ((path: string) => rmSync(path, { recursive: true, force: true }))
-  const uniqueOutputDir = dependencies.uniqueOutputDir ?? uniqueEncounterOutputDir
   const runPokegen = dependencies.runPokegen
     ?? ((species: string, level: number, outputDir: string, slugPrefix: string) =>
       runPokegenScript(species, level, outputDir, slugPrefix, {
@@ -207,21 +168,21 @@ export const generateEncountersUseCase = async (
       readTextFile,
     })
     const rolled = Array.from({ length: request.count }, () => rollEncounterTable(table, random))
-    const output = resolveEncounterOutputDir(request, {
+    const output = createEncounterOutputPlan(request, {
       projectRoot,
       pathExists,
       ensureDirectory,
       makeTempDir,
-      uniqueOutputDir,
+      now,
+      ...(dependencies.uniqueOutputDir ? { uniqueOutputDir: dependencies.uniqueOutputDir } : {}),
     })
     const dir = output.dir
     if (output.cleanup) cleanupDir = dir
 
-    const slugPrefix = encounterOutputSlugPrefix(projectRoot, dir, request.tableKey, request.preview, now)
     const batch = await runPokegenForRolledEncounters({
       rolled,
       dir,
-      slugPrefix,
+      slugPrefix: output.slugPrefix,
       preview: request.preview,
       pathExists,
       listDirectory,
@@ -231,8 +192,8 @@ export const generateEncountersUseCase = async (
 
     return {
       ok: true,
-      dir: request.preview ? '' : dir,
-      relDir: request.preview ? '' : dir.slice(projectRoot.length + 1),
+      dir: output.responseDir,
+      relDir: output.responseRelDir,
       rolled,
       files: batch.files,
       failures: batch.failures,

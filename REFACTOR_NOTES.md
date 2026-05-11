@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass (latest full test run: 188 files / 719 tests). `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include another focused server/use-case helper split, move-automation helper split, renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass (latest full test run: 189 files / 724 tests). `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include another focused server/use-case helper split, move-automation helper split, renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
 
 ## Phase 0 baseline audit
 
@@ -4182,5 +4182,20 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
   - `npm test -- tests/server/pokegenBatch.test.ts tests/server/generateEncounters.test.ts` — passes: 2 test files / 7 tests.
   - `npm run typecheck` — passes.
   - `npm test` — passes: 188 test files / 719 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: encounter output planning helper split
+
+- Extracted encounter output-directory planning from `server/useCases/generateEncounters.ts` into `server/utils/encounterOutput.ts`.
+  - The new helper owns preview-vs-persisted directory selection, persistent parent/output directory creation through injected filesystem boundaries, response `dir`/`relDir` shaping, cleanup flags, and compatible slug-prefix formatting.
+- Reduced `generateEncountersUseCase` so it focuses on request normalization, table loading, rolling, pokegen batch execution, result composition, error normalization, and preview cleanup while delegating output planning details.
+- Preserved encounter generation behavior: persisted outputs still land under the requested `outRoot`, preview outputs still use temporary directories and return blank `dir`/`relDir`, slug-prefix generation still strips `data/sheets/`, and path-containment hardening remains in place before persistent directory creation.
+- Added `tests/server/encounterOutput.test.ts` covering persistent and preview output plans, response path/slug-prefix compatibility, legacy `data/sheets` slug stripping, and escaped output-root rejection.
+- Next remaining phase: continue one bounded cleanup pass, with candidates including another focused server/use-case helper split, move-automation helper split, renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/server/encounterOutput.test.ts tests/server/generateEncounters.test.ts` — passes: 2 test files / 9 tests.
+  - `npm run typecheck` — passes.
+  - `npm test` — passes: 189 test files / 724 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
