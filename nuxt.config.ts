@@ -5,6 +5,12 @@ const isDev = process.env.NODE_ENV !== 'production'
 export default defineNuxtConfig({
   compatibilityDate: '2026-04-22',
   buildDir: isDev ? '.nuxt-dev' : '.nuxt-build',
+  components: [
+    {
+      path: '~/components',
+      pathPrefix: false,
+    },
+  ],
   css: [
     '@fontsource/atkinson-hyperlegible/latin-400.css',
     '@fontsource/atkinson-hyperlegible/latin-400-italic.css',

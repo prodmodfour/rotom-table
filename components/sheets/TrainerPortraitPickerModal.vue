@@ -5,7 +5,7 @@ import type { PokemonCatalogEntry } from '~/types/pokemon'
 
 defineProps<{
   query: string
-  options: PokemonCatalogEntry[]
+  options: readonly PokemonCatalogEntry[]
   selectedUrl?: string
 }>()
 

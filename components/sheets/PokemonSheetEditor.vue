@@ -11,7 +11,7 @@ const props = defineProps<{
   isGm: boolean
 }>()
 
-const sheet = computed<CharacterSheet | null>(() => props.sheet)
+const sheet = computed<CharacterSheet>(() => props.sheet)
 
 const {
   species,

@@ -18,7 +18,7 @@ const props = defineProps<{
   isGm: boolean
 }>()
 
-const sheet = computed<TrainerSheet | null>(() => props.sheet)
+const sheet = computed<TrainerSheet>(() => props.sheet)
 const SKILL_KEYS: TrainerSkillKey[] = TRAINER_SKILL_ORDER.map(([key]) => key)
 const RANK_OPTIONS: SkillRank[] = ['Pathetic', 'Untrained', 'Novice', 'Adept', 'Expert', 'Master']
 

@@ -53,7 +53,7 @@ const forwardEvasionBonus = (key: TrainerEvasionBonusKey, value: number | undefi
       :speed-total="speedTotal"
       @set-current-hp="emit('setCurrentHp', $event)"
       @update-damage-reduction="sheet.damageReduction = $event"
-      @update-level="sheet.level = $event"
+      @update-level="sheet.level = $event ?? 1"
     />
 
     <div class="grid-two">
