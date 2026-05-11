@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { capabilityArtSvg, capabilityArtTitle, type CapabilityArtSize } from '~/utils/capabilityArt'
+import { capabilityArtSvg, capabilityArtTitle } from '~/utils/capabilityArt'
+import type { CapabilityArtSize } from '~/utils/capabilityArtCore'
 
 const props = withDefaults(defineProps<{
   name: string

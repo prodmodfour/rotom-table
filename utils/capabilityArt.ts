@@ -1,15 +1,12 @@
-export type CapabilityArtSize = 'sm' | 'md' | 'lg' | 'hero'
-
-interface CapabilityArtDefinition {
-  /** Deep background color for the square badge. */
-  color: string
-  /** Bright accent used for glows/details. */
-  accent: string
-  /** Hand-authored SVG motif rendered in the badge center. */
-  icon: string
-  /** Optional short mark shown at the badge foot. */
-  label?: string
-}
+import {
+  CAPABILITY_ART_SIZE_PX,
+  capabilityArtInitials,
+  escapeCapabilityArtXml,
+  fallbackCapabilityArt,
+  normalizeCapabilityArtName,
+  type CapabilityArtDefinition,
+  type CapabilityArtSize,
+} from '~/utils/capabilityArtCore'
 
 const COLORS = {
   amber: '#d79921',
@@ -106,68 +103,12 @@ export const CAPABILITY_ART: Record<string, CapabilityArtDefinition> = {
   Zapper: { color: COLORS.amber, accent: COLORS.gold, icon: 'zapper', label: 'ZAP' },
 }
 
-const SIZE_PX: Record<CapabilityArtSize, number> = {
-  sm: 62,
-  md: 84,
-  lg: 116,
-  hero: 210,
-}
+const FALLBACK_ART_PALETTE = {
+  backgrounds: [COLORS.slate, COLORS.blue, COLORS.aqua, COLORS.brown, COLORS.purple, COLORS.amber],
+  accents: [COLORS.gold, COLORS.brightBlue, COLORS.brightAqua, COLORS.brightPurple, COLORS.orange],
+} as const
 
-const escapeXml = (value: string): string =>
-  value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-
-const normalizeCapabilityArtName = (raw: string): string => {
-  const trimmed = raw.trim()
-  let name = trimmed
-    .replace(/\s*\([^)]*\)\s*$/g, '')
-    .replace(/\s+\d+(?:\/\d+)?\s*$/g, '')
-    .trim()
-    .replace(/([a-z])\s+([a-z])/g, '$1$2')
-
-  const aliases: Record<string, string> = {
-    Mountable: 'Mountable X',
-    Teleporter: 'Teleporter X',
-    Materialiser: 'Materializer',
-    materialiser: 'Materializer',
-    'Aura  Reader': 'Aura Reader',
-  }
-
-  if (CAPABILITY_ART[trimmed]) return trimmed
-  name = aliases[name] ?? name
-  return CAPABILITY_ART[name] ? name : trimmed
-}
-
-const initials = (name: string): string => {
-  const parts = name
-    .replace(/X-Ray/i, 'X Ray')
-    .split(/[^A-Za-z0-9Δ₽]+/)
-    .filter(Boolean)
-  if (!parts.length) return 'CAP'
-  if (parts.length === 1) return parts[0].slice(0, 3).toUpperCase()
-  return parts.map((part) => part[0]).join('').slice(0, 3).toUpperCase()
-}
-
-const hashName = (name: string): number => {
-  let hash = 0
-  for (const char of name) hash = (hash * 31 + char.charCodeAt(0)) >>> 0
-  return hash
-}
-
-const fallbackArt = (name: string): CapabilityArtDefinition => {
-  const backgrounds = [COLORS.slate, COLORS.blue, COLORS.aqua, COLORS.brown, COLORS.purple, COLORS.amber]
-  const accents = [COLORS.gold, COLORS.brightBlue, COLORS.brightAqua, COLORS.brightPurple, COLORS.orange]
-  const hash = hashName(name)
-  return {
-    color: backgrounds[hash % backgrounds.length],
-    accent: accents[(hash >> 3) % accents.length],
-    icon: 'generic',
-    label: initials(name),
-  }
-}
+const hasCapabilityArt = (name: string): boolean => Boolean(CAPABILITY_ART[name])
 
 const iconMarkup = (icon: string, accent: string): string => {
   const cream = 'rgba(251,241,199,.96)'
@@ -332,18 +273,18 @@ const iconMarkup = (icon: string, accent: string): string => {
 }
 
 export const capabilityArtTitle = (rawName: string): string => {
-  const canonical = normalizeCapabilityArtName(rawName)
+  const canonical = normalizeCapabilityArtName(rawName, hasCapabilityArt)
   return `${canonical} capability art`
 }
 
 export const capabilityArtSvg = (rawName: string, size: CapabilityArtSize = 'md'): string => {
-  const canonical = normalizeCapabilityArtName(rawName)
-  const art = CAPABILITY_ART[canonical] ?? fallbackArt(canonical)
-  const label = escapeXml(art.label ?? initials(canonical))
-  const title = escapeXml(capabilityArtTitle(canonical))
-  const px = SIZE_PX[size]
-  const color = escapeXml(art.color)
-  const accent = escapeXml(art.accent)
+  const canonical = normalizeCapabilityArtName(rawName, hasCapabilityArt)
+  const art = CAPABILITY_ART[canonical] ?? fallbackCapabilityArt(canonical, FALLBACK_ART_PALETTE)
+  const label = escapeCapabilityArtXml(art.label ?? capabilityArtInitials(canonical))
+  const title = escapeCapabilityArtXml(capabilityArtTitle(canonical))
+  const px = CAPABILITY_ART_SIZE_PX[size]
+  const color = escapeCapabilityArtXml(art.color)
+  const accent = escapeCapabilityArtXml(art.accent)
 
   return `<svg class="capability-art-svg capability-art-svg--${size}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" width="${px}" height="${px}" role="img" aria-label="${title}"><title>${title}</title><rect x="3" y="3" width="90" height="90" rx="22" fill="${color}"/><path d="M7 10h82v19c-18 7-40 8-58 4C20 31 12 28 7 24Z" fill="rgba(255,255,255,.14)"/><circle cx="72" cy="21" r="18" fill="${accent}" opacity=".22"/><circle cx="48" cy="45" r="33" fill="rgba(29,32,33,.23)" stroke="rgba(255,255,255,.16)" stroke-width="2"/><g transform="translate(16 12)">${iconMarkup(art.icon, accent)}</g><rect x="25" y="74" width="46" height="14" rx="7" fill="rgba(29,32,33,.32)" stroke="rgba(255,255,255,.14)"/><text x="48" y="84.6" text-anchor="middle" fill="rgba(251,241,199,.96)" font-family="JetBrains Mono, Arial, sans-serif" font-size="9.5" font-weight="900" letter-spacing=".8">${label}</text></svg>`
 }

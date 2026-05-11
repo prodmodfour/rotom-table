@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass (latest full test run: 195 files / 745 tests). `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include another focused server/use-case helper split, move-automation helper split, renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass (latest full test run: 196 files / 749 tests). `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include another focused server/use-case helper split, move-automation helper split, renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
 
 ## Phase 0 baseline audit
 
@@ -4278,5 +4278,19 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
   - `npm test -- tests/utils/conditionTagArt.test.ts` — passes: 1 test file / 4 tests.
   - `npm run typecheck` — passes.
   - `npm test` — passes: 195 test files / 745 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: capability art core helper split
+
+- Extracted capability-art size rules, XML escaping, canonical-name normalization, fallback label/color selection, and deterministic hashing from `utils/capabilityArt.ts` into `utils/capabilityArtCore.ts`.
+- Reduced `capabilityArt.ts` so it focuses on the capability art registry, icon SVG motifs, and final SVG composition while `CapabilityArt.vue` imports the shared art-size type from the focused helper.
+- Preserved known capability SVG output and alias behavior for canonical art names, while fixing a fallback-art edge case where unknown capability names with high-bit hashes could produce an undefined accent and fail SVG generation.
+- Added `tests/utils/capabilityArtCore.test.ts` covering alias normalization, fallback labels, XML escaping, size constants, public title/SVG integration, and the fallback accent edge case.
+- Next remaining phase: continue one bounded cleanup pass, with candidates including another focused server/use-case helper split, move-automation helper split, renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/utils/capabilityArtCore.test.ts` — passes: 1 test file / 4 tests.
+  - `npm run typecheck` — passes.
+  - `npm test` — passes: 196 test files / 749 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
