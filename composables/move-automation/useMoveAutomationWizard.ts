@@ -27,6 +27,13 @@ import {
   type MoveAutomationSuggestionKind,
   type MoveAutomationTargetResolutionState,
 } from '~/utils/moveAutomationTargetResolution'
+import {
+  appendMoveAutomationHazardCellText,
+  canContinueMoveAutomationWizard,
+  createMoveAutomationStageDeltaRecord,
+  nextMoveAutomationWizardStep,
+  previousMoveAutomationWizardStep,
+} from '~/utils/moveAutomationWizardState'
 import type { CharacterSheetMove } from '~/types/characterSheet'
 import type { CombatStageKey } from '~/types/combatStages'
 import type { MapFieldEffects } from '~/types/map'
@@ -34,7 +41,10 @@ import type { MoveAutomationTransaction } from '~/types/moveAutomation'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import type { TrainerMove } from '~/types/trainerSheet'
 
-export const MOVE_AUTOMATION_OVERLAY_TITLE_ID = 'move-automation-title'
+export {
+  createMoveAutomationStageDeltaRecord,
+  MOVE_AUTOMATION_OVERLAY_TITLE_ID,
+} from '~/utils/moveAutomationWizardState'
 
 export interface MoveAutomationWizardProps {
   user: SpawnedPokemon
@@ -43,15 +53,6 @@ export interface MoveAutomationWizardProps {
   fieldEffects?: MapFieldEffects
   canApplyMapEffects?: boolean
 }
-
-export const createMoveAutomationStageDeltaRecord = (): Record<CombatStageKey, number> => ({
-  atk: 0,
-  def: 0,
-  satk: 0,
-  sdef: 0,
-  spd: 0,
-  acc: 0,
-})
 
 export const useMoveAutomationWizard = (
   props: MoveAutomationWizardProps,
@@ -169,8 +170,7 @@ export const useMoveAutomationWizard = (
   const parseHazardCells = () => parseHazardCellText(hazardCellsText.value, props.user.position.y)
 
   const addUserCellToHazardText = () => {
-    const line = `${props.user.position.x}, ${props.user.position.y}, ${props.user.position.z}`
-    hazardCellsText.value = hazardCellsText.value.trim() ? `${hazardCellsText.value.trim()}\n${line}` : line
+    hazardCellsText.value = appendMoveAutomationHazardCellText(hazardCellsText.value, props.user.position)
   }
 
   const buildTransaction = (): MoveAutomationTransaction => buildMoveAutomationTransaction({
@@ -191,19 +191,19 @@ export const useMoveAutomationWizard = (
 
   const transaction = computed(buildTransaction)
 
-  const canContinue = computed(() => {
-    if (step.value === 0) return Boolean(selectedEntry.value)
-    if (step.value === 1 && requiresTargets.value) return selectedTargets.value.length > 0
-    return true
-  })
+  const canContinue = computed(() => canContinueMoveAutomationWizard({
+    step: step.value,
+    hasSelectedMove: Boolean(selectedEntry.value),
+    requiresTargets: requiresTargets.value,
+    selectedTargetCount: selectedTargets.value.length,
+  }))
 
   const nextStep = () => {
-    if (!canContinue.value) return
-    step.value = Math.min(2, step.value + 1)
+    step.value = nextMoveAutomationWizardStep(step.value, canContinue.value)
   }
 
   const previousStep = () => {
-    step.value = Math.max(0, step.value - 1)
+    step.value = previousMoveAutomationWizardStep(step.value)
   }
 
   const selectMove = (name: string) => {

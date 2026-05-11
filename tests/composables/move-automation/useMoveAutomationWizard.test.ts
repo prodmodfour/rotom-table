@@ -1,8 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import {
-  createMoveAutomationStageDeltaRecord,
-  useMoveAutomationWizard,
-} from '~/composables/move-automation/useMoveAutomationWizard'
+import { useMoveAutomationWizard } from '~/composables/move-automation/useMoveAutomationWizard'
 import type { CharacterSheetMove } from '~/types/characterSheet'
 import type { MoveAutomationTransaction } from '~/types/moveAutomation'
 import type { SpawnedPokemon } from '~/types/pokemon'
@@ -40,16 +37,6 @@ const sheetMoves = (): CharacterSheetMove[] => [
 ]
 
 describe('useMoveAutomationWizard', () => {
-  it('creates independent combat-stage delta records', () => {
-    const first = createMoveAutomationStageDeltaRecord()
-    const second = createMoveAutomationStageDeltaRecord()
-
-    first.atk = 2
-
-    expect(first).toEqual({ atk: 2, def: 0, satk: 0, sdef: 0, spd: 0, acc: 0 })
-    expect(second).toEqual({ atk: 0, def: 0, satk: 0, sdef: 0, spd: 0, acc: 0 })
-  })
-
   it('owns move selection, target gating, hazard text, and apply orchestration', () => {
     const applied: MoveAutomationTransaction[] = []
     const user = token('user', 'Bolt', { x: 1, y: 0, z: 2 })

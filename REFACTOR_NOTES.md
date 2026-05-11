@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass (latest full test run: 186 files / 713 tests). `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include another focused move-automation helper split, renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass (latest full test run: 187 files / 716 tests). `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include another focused move-automation helper split, renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
 
 ## Phase 0 baseline audit
 
@@ -4152,5 +4152,20 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
   - `npm test -- tests/utils/moveAutomationLogLines.test.ts tests/utils/moveAutomationTransaction.test.ts` — passes: 2 test files / 5 tests.
   - `npm run typecheck` — passes.
   - `npm test` — passes: 186 test files / 713 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: move automation wizard state helper split
+
+- Extracted move-automation wizard UI-state primitives into `utils/moveAutomationWizardState.ts`.
+  - The new helper owns the overlay title id, stage-delta record factory, continue/step-clamping rules, and hazard-cell text formatting/appending.
+- Reduced `useMoveAutomationWizard` so it focuses on Vue reactivity, move/target orchestration, rolls, and transaction application while delegating pure wizard state rules to the focused helper.
+- Preserved wizard behavior, including selected-move gating, target-required gating, previous/next step bounds, hazard user-cell insertion text, and existing `MOVE_AUTOMATION_OVERLAY_TITLE_ID`/`createMoveAutomationStageDeltaRecord` compatibility exports.
+- Added `tests/utils/moveAutomationWizardState.test.ts` covering independent stage-delta records, continuation gating, step clamping, and hazard-cell text formatting/appending.
+- Next remaining phase: continue one bounded cleanup pass, with candidates including another focused move-automation helper split, renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/utils/moveAutomationWizardState.test.ts tests/composables/move-automation/useMoveAutomationWizard.test.ts` — passes: 2 test files / 5 tests.
+  - `npm run typecheck` — passes.
+  - `npm test` — passes: 187 test files / 716 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
