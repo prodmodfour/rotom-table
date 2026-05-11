@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass (latest full test run: 203 files / 779 tests). `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include another focused sheet-panel extraction, server/use-case helper split, move-automation helper split, renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass (latest full test run: 203 files / 779 tests). `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include map library page composable extraction, another focused sheet/map panel extraction, server/use-case helper split, move-automation helper split, renderer/helper split, storage split, map-editor extraction, or remaining client/helper cleanup; do not mark the full refactor complete yet.
 
 ## Phase 0 baseline audit
 
@@ -4495,6 +4495,20 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
 - Reduced `TrainerProgressPanel` to a composition shell over progress subsections while preserving class row actions, training-feature editing, advancement edits, current-team links, wishlist CSV editing, narrative textareas, and sheet autosave behavior.
 - Next remaining phase: continue one bounded cleanup pass, with candidates including another focused sheet-panel extraction, server/use-case helper split, move-automation helper split, renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
 - Quality gates after this phase:
+  - `npm run typecheck` — passes.
+  - `npm test` — passes: 203 test files / 779 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: sheet library page composable extraction
+
+- Extracted `/sheets` library route orchestration from `pages/sheets/index.vue` into `composables/library/useSheetLibraryPage.ts`.
+  - The composable now owns sheet-library auth/drag gating, folder navigation, grid filtering, sheet/folder drag-drop actions, creation flows, context-menu submit wiring, and Escape-key cleanup while keeping route-specific API calls injected through the existing API client boundary.
+- Reduced `pages/sheets/index.vue` to a route shell for metadata and composition of the shared library layout, intro panel, breadcrumbs, grid, and context menu.
+- Preserved sheet-library behavior: player/GM visibility rules, dev-only drag/create gating, hard navigation after new sheet creation, folder breadcrumbs, sheet/folder drag/drop, context-menu move/rename/delete flows, and existing API request shapes.
+- Next remaining phase: continue one bounded cleanup pass, with candidates including map library page composable extraction, another focused sheet/map panel extraction, server/use-case helper split, move-automation helper split, renderer/helper split, storage split, map-editor extraction, or remaining client/helper cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/composables/library/useSheetLibraryData.test.ts tests/composables/library/useSheetLibraryActions.test.ts tests/composables/library/useSheetLibraryCreation.test.ts tests/composables/library/useLibraryGridView.test.ts` — passes: 4 test files / 14 tests.
   - `npm run typecheck` — passes.
   - `npm test` — passes: 203 test files / 779 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
