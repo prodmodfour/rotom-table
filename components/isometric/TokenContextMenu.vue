@@ -57,12 +57,13 @@ const stageLabel = (move: TokenMoveMenuOption): string | null => {
 </script>
 
 <template>
-  <div
-    class="context-menu"
-    :style="{ left: `${props.menu.x}px`, top: `${props.menu.y}px` }"
-    @contextmenu.prevent
-    @pointerdown.stop
-  >
+  <Teleport to="body">
+    <div
+      class="context-menu"
+      :style="{ left: `${props.menu.x}px`, top: `${props.menu.y}px` }"
+      @contextmenu.prevent
+      @pointerdown.stop
+    >
     <div
       class="context-menu__submenu-wrap"
       @pointerenter="openMovePanel"
@@ -214,13 +215,14 @@ const stageLabel = (move: TokenMoveMenuOption): string | null => {
     >
       Delete
     </button>
-  </div>
+    </div>
+  </Teleport>
 </template>
 
 <style scoped>
 .context-menu {
-  position: absolute;
-  z-index: 8;
+  position: fixed;
+  z-index: 11000;
   min-width: 160px;
   padding: 0.4rem;
   border: 1px solid var(--rule-soft);
@@ -282,7 +284,7 @@ const stageLabel = (move: TokenMoveMenuOption): string | null => {
   grid-template-columns: minmax(220px, 280px) minmax(260px, 340px);
   gap: 0.45rem;
   max-width: min(680px, calc(100vw - 2rem));
-  z-index: 9;
+  z-index: 11001;
 }
 
 .move-submenu__list,

@@ -11,10 +11,17 @@ export interface TokenContextMenuState extends TokenContextMenuCapabilities {
   y: number
 }
 
+export interface TokenContextMenuBounds {
+  left: number
+  top: number
+  width: number
+  height: number
+}
+
 export interface TokenContextMenuPositionOptions extends TokenContextMenuCapabilities {
   clientX: number
   clientY: number
-  bounds: Pick<DOMRect, 'left' | 'top' | 'width' | 'height'>
+  bounds: TokenContextMenuBounds
   canDeleteTokens?: boolean
 }
 
@@ -24,6 +31,17 @@ export const TOKEN_CONTEXT_MENU_BASE_BUTTONS = 6
 export const TOKEN_CONTEXT_MENU_BUTTON_HEIGHT = 40
 export const TOKEN_CONTEXT_MENU_BUTTON_GAP = 5
 export const TOKEN_CONTEXT_MENU_VERTICAL_CHROME = 13
+
+export const getTokenContextMenuViewportBounds = (): TokenContextMenuBounds | null => {
+  if (typeof window === 'undefined') return null
+
+  return {
+    left: 0,
+    top: 0,
+    width: window.innerWidth,
+    height: window.innerHeight,
+  }
+}
 
 export const getTokenContextMenuCapabilities = (pokemon: SpawnedPokemon): TokenContextMenuCapabilities => ({
   canTurn: Boolean(pokemon.entityKind === 'pokemon' && pokemon.backSpriteUrl),
@@ -49,12 +67,20 @@ const clamp = (value: number, min: number, max: number): number =>
 export const getTokenContextMenuPosition = (options: TokenContextMenuPositionOptions) => {
   const buttonCount = getTokenContextMenuButtonCount(options)
   const menuHeight = getTokenContextMenuHeight(buttonCount)
-  const maxX = options.bounds.width - TOKEN_CONTEXT_MENU_WIDTH - TOKEN_CONTEXT_MENU_PADDING
-  const maxY = options.bounds.height - menuHeight - TOKEN_CONTEXT_MENU_PADDING
+  const minX = options.bounds.left + TOKEN_CONTEXT_MENU_PADDING
+  const minY = options.bounds.top + TOKEN_CONTEXT_MENU_PADDING
+  const maxX = Math.max(
+    minX,
+    options.bounds.left + options.bounds.width - TOKEN_CONTEXT_MENU_WIDTH - TOKEN_CONTEXT_MENU_PADDING,
+  )
+  const maxY = Math.max(
+    minY,
+    options.bounds.top + options.bounds.height - menuHeight - TOKEN_CONTEXT_MENU_PADDING,
+  )
 
   return {
-    x: clamp(options.clientX - options.bounds.left, TOKEN_CONTEXT_MENU_PADDING, maxX),
-    y: clamp(options.clientY - options.bounds.top, TOKEN_CONTEXT_MENU_PADDING, maxY),
+    x: clamp(options.clientX, minX, maxX),
+    y: clamp(options.clientY, minY, maxY),
   }
 }
 
@@ -62,7 +88,7 @@ export const createTokenContextMenuState = (options: {
   pokemon: SpawnedPokemon
   clientX: number
   clientY: number
-  bounds: Pick<DOMRect, 'left' | 'top' | 'width' | 'height'>
+  bounds: TokenContextMenuBounds
   canDeleteTokens?: boolean
 }): TokenContextMenuState => {
   const capabilities = getTokenContextMenuCapabilities(options.pokemon)

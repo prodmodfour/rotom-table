@@ -51,7 +51,7 @@ describe('isometric token context menu helpers', () => {
     })
   })
 
-  it('counts optional buttons and clamps menu position inside the scene bounds', () => {
+  it('counts optional buttons and clamps menu position inside viewport bounds', () => {
     expect(getTokenContextMenuButtonCount({
       canTurn: true,
       canViewPokedex: true,
@@ -65,7 +65,7 @@ describe('isometric token context menu helpers', () => {
       canTurn: true,
       canViewPokedex: true,
       canDeleteTokens: true,
-    })).toEqual({ x: 258, y: 75 })
+    })).toEqual({ x: 358, y: 125 })
   })
 
   it('creates the state shape consumed by the Vue context menu', () => {
@@ -79,8 +79,8 @@ describe('isometric token context menu helpers', () => {
       id: 'token-1',
       canTurn: true,
       canViewPokedex: true,
-      x: 20,
-      y: 25,
+      x: 120,
+      y: 75,
     })
   })
 })

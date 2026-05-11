@@ -4,6 +4,8 @@ import type { SpawnedPokemon } from '~/types/pokemon'
 import { normalizeConditionNames } from '~/utils/statusConditions'
 import {
   createTokenContextMenuState,
+  getTokenContextMenuViewportBounds,
+  type TokenContextMenuBounds,
   type TokenContextMenuState,
 } from '~/utils/isometric/contextMenu'
 import {
@@ -117,19 +119,27 @@ export const useTokenActionController = <TContainer extends BoundsProvider>(
     contextMenu.value = null
   }
 
+  const getContextMenuBounds = (): TokenContextMenuBounds | null => {
+    const containerBounds = options.container.value?.getBoundingClientRect()
+    if (!containerBounds) return null
+
+    return getTokenContextMenuViewportBounds() ?? containerBounds
+  }
+
   const openContextMenu = (event: MouseEvent, id: string) => {
-    if (!options.canControlPokemon(id) || !options.container.value) {
+    if (!options.canControlPokemon(id)) {
       return
     }
 
     const target = findPokemonById(id)
-    if (!target) return
+    const bounds = getContextMenuBounds()
+    if (!target || !bounds) return
 
     contextMenu.value = createTokenContextMenuState({
       pokemon: target,
       clientX: event.clientX,
       clientY: event.clientY,
-      bounds: options.container.value.getBoundingClientRect(),
+      bounds,
       canDeleteTokens: options.canDeleteTokens(),
     })
   }
