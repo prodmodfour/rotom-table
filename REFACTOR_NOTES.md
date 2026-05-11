@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass (latest full test run: 175 files / 674 tests). `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include another focused Pokédex/search helper split, renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass (latest full test run: 176 files / 679 tests). `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include another focused move-automation helper split, renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
 
 ## Phase 0 baseline audit
 
@@ -3989,3 +3989,19 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
 
+
+## Next phase update: move automation manual-resolution split
+
+- Split manual move-automation resolution parsing out of `utils/moveAutomation.ts` into focused helpers:
+  - `utils/moveAutomationManual.ts` now owns target-mode/count detection, effect keyword extraction, condition/stage/HP/field/hazard suggestions, critical-range parsing, and manual fallback script construction.
+  - `utils/moveAutomationCoercion.ts` now owns shared move AC and damage-base numeric coercion.
+- Reduced `utils/moveAutomation.ts` to its public compatibility facade: move-like conversion, damage-base legacy exports, manual fallback export wiring, explicit-script registry/coverage, and field-effect damage bonus.
+- Preserved existing public move-automation imports, manual fallback script shapes, damage formula resolution, explicit coverage behavior, and field-effect damage bonus behavior.
+- Added `tests/utils/moveAutomationManual.test.ts` covering numeric coercion, one-target damaging scripts, condition/stage extraction, field/hazard/HP suggestions, damage-formula fallback, and sheet-move conversion.
+- Next remaining phase: continue one bounded cleanup pass, with candidates including another focused move-automation helper split, renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/utils/moveAutomationManual.test.ts tests/utils/moveDamageBase.test.ts tests/utils/moveAutomationResolution.test.ts tests/composables/move-automation/useMoveAutomationWizard.test.ts` — passes: 4 test files / 17 tests.
+  - `npm run typecheck` — passes.
+  - `npm test` — passes: 176 test files / 679 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
