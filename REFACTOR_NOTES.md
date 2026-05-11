@@ -55,7 +55,7 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
 ## Current quality gate results
 
 - `npm run typecheck` — passes.
-- `npm test` — passes: 154 test files / 592 tests.
+- `npm test` — passes: 155 test files / 596 tests.
 - `npm run build` — passes; existing large chunk warnings remain.
 - `npm run check:move-automation` — still fails with the same baseline `Explicit move automation coverage: 0/769` missing-script report.
 - `npm run sync:item-sprites -- --dry-run` was not run because the script does not implement a dry-run mode.
@@ -3648,5 +3648,20 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
   - `npm test -- tests/utils/isometric/blockTexturePatterns.test.ts tests/utils/isometric/blockTextureColors.test.ts` — passes: 2 test files / 6 tests.
   - `npm run typecheck` — passes.
   - `npm test` — passes: 154 test files / 592 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: isometric weather field-effect renderer split
+
+- Extracted weather field-effect visual creation from `utils/isometric/fieldEffectRenderer.ts` into `utils/isometric/weatherEffects.ts`.
+  - The new weather utility owns seeded weather randomness, weather bounds, sun/rain/hail/sandstorm visual construction, weather texture cache disposal, and per-frame weather animation callbacks.
+  - `fieldEffectRenderer` now focuses on field-effect lifecycle orchestration plus terrain surface and room boundary rendering.
+- Preserved existing weather visuals, deterministic seeds, texture-cache lifetime per renderer instance, weather animation behavior, terrain/room overlays, and field-effect visibility/disposal behavior.
+- Added `tests/utils/isometric/weatherEffects.test.ts` covering deterministic random sequences, range wrapping, and weather-bound derivation from map dimensions/voxels/ground level.
+- Next remaining phase: continue one bounded cleanup pass, with candidates including another focused renderer/helper split (for example weather texture/subvisual modules), storage split, map-editor extraction, or small UI duplication cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/utils/isometric/weatherEffects.test.ts` — passes: 1 test file / 4 tests.
+  - `npm run typecheck` — passes.
+  - `npm test` — passes: 155 test files / 596 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
