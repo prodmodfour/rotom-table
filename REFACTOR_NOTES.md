@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass (latest full test run: 204 files / 784 tests). `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include another focused Pokédex/detail or sidebar extraction, sheet/map panel extraction, server/use-case helper split, move-automation helper split, renderer/helper split, storage split, map-editor extraction, or remaining client/helper cleanup; do not mark the full refactor complete yet.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass (latest full test run: 204 files / 784 tests). `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include another focused encounter setup/card extraction, Pokédex/detail or sidebar extraction, sheet/map panel extraction, server/use-case helper split, move-automation helper split, renderer/helper split, storage split, map-editor extraction, or remaining client/helper cleanup; do not mark the full refactor complete yet.
 
 ## Phase 0 baseline audit
 
@@ -4662,6 +4662,19 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
 - Quality gates after this phase:
   - `npm run typecheck` — passes.
   - `npm test -- tests/composables/pokedex/usePokedexFilters.test.ts tests/composables/pokedex/usePokedexBrowser.test.ts tests/utils/pokedex/searchQuery.test.ts tests/utils/pokedex/searchText.test.ts` — passes: 4 test files / 14 tests.
+  - `npm test` — passes: 204 test files / 784 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: encounter setup actions component extraction
+
+- Extracted the encounter generation setup card's preview checkbox, Re-roll preview button, Generate/Preview button, disabled-state rules, and responsive action styling into `components/encounters/EncounterGenerateSetupActions.vue`.
+- Reduced `components/encounters/EncounterGenerateSetupCard.vue` so it now focuses on region/table/count/output-root inputs and selected-table metadata while delegating setup actions through focused props, `v-model:preview`, and action emits.
+- Preserved encounter generation behavior: preview-only toggling, disabled states while generating or when no table is selected, button labels, roll-preview/generate emits, and responsive button layout remain unchanged.
+- Next remaining phase: continue one bounded cleanup pass, with candidates including another focused encounter setup/card extraction, Pokédex/detail or sidebar extraction, sheet/map panel extraction, server/use-case helper split, move-automation helper split, renderer/helper split, storage split, map-editor extraction, or remaining client/helper cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm run typecheck` — passes.
+  - `npm test -- tests/composables/encounters/useEncounterGenerationPage.test.ts tests/utils/encounterGeneration.test.ts` — passes: 2 test files / 11 tests.
   - `npm test` — passes: 204 test files / 784 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
