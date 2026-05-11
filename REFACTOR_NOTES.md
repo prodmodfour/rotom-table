@@ -55,7 +55,7 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
 ## Current quality gate results
 
 - `npm run typecheck` — passes.
-- `npm test` — passes: 157 test files / 602 tests.
+- `npm test` — passes: 158 test files / 604 tests.
 - `npm run build` — passes; existing large chunk warnings remain.
 - `npm run check:move-automation` — still fails with the same baseline `Explicit move automation coverage: 0/769` missing-script report.
 - `npm run sync:item-sprites -- --dry-run` was not run because the script does not implement a dry-run mode.
@@ -3693,5 +3693,24 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
   - `npm test -- tests/utils/isometric/weatherVisualConfig.test.ts tests/utils/isometric/weatherEffects.test.ts tests/utils/isometric/weatherTextures.test.ts` — passes: 3 test files / 10 tests.
   - `npm run typecheck` — passes.
   - `npm test` — passes: 157 test files / 602 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: isometric weather visual maker split
+
+- Split per-weather-kind visual construction out of `utils/isometric/weatherEffects.ts` into focused renderer modules:
+  - `utils/isometric/weatherSunny.ts`
+  - `utils/isometric/weatherRain.ts`
+  - `utils/isometric/weatherHail.ts`
+  - `utils/isometric/weatherSandstorm.ts`
+  - `utils/isometric/weatherVisualFactory.ts` and `utils/isometric/weatherVisualTypes.ts` for dispatch/seed/type boundaries.
+- Kept `weatherEffects.ts` as the small public factory/cache adapter used by `fieldEffectRenderer`, preserving its existing math/type re-exports for compatibility.
+- Preserved sunny, rainy, hail, and sandstorm visuals, deterministic seed formatting, texture-cache ownership, render-order offsets, animation update behavior, and field-effect renderer integration.
+- Added `tests/utils/isometric/weatherVisualFactory.test.ts` covering deterministic seed formatting and all weather-kind dispatch paths with no DOM canvas dependency.
+- Next remaining phase: continue one bounded cleanup pass, with candidates including another focused renderer/helper split, storage split, map-editor extraction, or small UI duplication cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/utils/isometric/weatherVisualFactory.test.ts tests/utils/isometric/weatherEffects.test.ts tests/utils/isometric/weatherTextures.test.ts tests/utils/isometric/weatherVisualConfig.test.ts` — passes: 4 test files / 12 tests.
+  - `npm run typecheck` — passes.
+  - `npm test` — passes: 158 test files / 604 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
