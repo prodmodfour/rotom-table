@@ -1,0 +1,123 @@
+<script setup lang="ts">
+import type { TrainerCapabilities } from '~/types/trainerSheet'
+
+const otherCapsCsv = defineModel<string>('otherCapsCsv', { required: true })
+
+defineProps<{
+  capabilities: TrainerCapabilities
+}>()
+</script>
+
+<template>
+  <div class="block">
+    <h2 class="block-title">Capabilities</h2>
+    <ul class="cap-grid">
+      <li>
+        <span class="cap-label">Overland</span>
+        <span class="cap-value">
+          <EditableCell v-model="capabilities.overland" type="number" :min="0" />
+        </span>
+      </li>
+      <li>
+        <span class="cap-label">Throw Range</span>
+        <span class="cap-value">
+          <EditableCell v-model="capabilities.throwingRange" type="number" :min="0" />
+        </span>
+      </li>
+      <li>
+        <span class="cap-label">High Jump</span>
+        <span class="cap-value">
+          <EditableCell v-model="capabilities.highJump" type="number" :min="0" />
+        </span>
+      </li>
+      <li>
+        <span class="cap-label">Long Jump</span>
+        <span class="cap-value">
+          <EditableCell v-model="capabilities.longJump" type="number" :min="0" />
+        </span>
+      </li>
+      <li>
+        <span class="cap-label">Swim</span>
+        <span class="cap-value">
+          <EditableCell v-model="capabilities.swim" type="number" :min="0" />
+        </span>
+      </li>
+      <li>
+        <span class="cap-label">Power</span>
+        <span class="cap-value">
+          <EditableCell v-model="capabilities.power" type="number" :min="0" />
+        </span>
+      </li>
+      <li>
+        <span class="cap-label">Sky</span>
+        <span class="cap-value">
+          <EditableCell v-model="capabilities.sky" type="number" :min="0" />
+        </span>
+      </li>
+      <li>
+        <span class="cap-label">Levitate</span>
+        <span class="cap-value">
+          <EditableCell v-model="capabilities.levitate" type="number" :min="0" />
+        </span>
+      </li>
+      <li>
+        <span class="cap-label">Burrow</span>
+        <span class="cap-value">
+          <EditableCell v-model="capabilities.burrow" type="number" :min="0" />
+        </span>
+      </li>
+    </ul>
+    <p class="muted-help capabilities-help">
+      <strong>Other capabilities:</strong>
+      <EditableCell v-model="otherCapsCsv" placeholder="Telepath, Aura Reader" />
+    </p>
+  </div>
+</template>
+
+<style scoped>
+.block {
+  border: 1px solid var(--rule-soft);
+  border-radius: 12px;
+  background: var(--paper-inset);
+  padding: 0.7rem 0.85rem;
+}
+
+.block-title {
+  margin: 0 0 0.5rem;
+  font-family: var(--font-book);
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-bright);
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+}
+
+.muted-help { color: var(--ink-muted); font-size: 0.78rem; margin: 0 0 0.4rem; }
+
+.cap-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.35rem;
+}
+
+.cap-grid li {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 0.3rem 0.55rem;
+  border: 1px solid var(--rule-soft);
+  border-radius: 8px;
+  background: var(--paper-inset);
+}
+
+.cap-label { color: var(--ink-soft); font-size: 0.82rem; }
+.cap-value { color: var(--ink-bright); font-weight: 700; font-size: 0.92rem; font-variant-numeric: tabular-nums; }
+
+.capabilities-help { margin-top: 0.6rem; }
+</style>
