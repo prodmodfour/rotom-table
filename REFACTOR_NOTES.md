@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass. `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include another focused storage split, map-editor/helper extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass. `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include another focused renderer/helper split, storage split, map-editor extraction, or small UI duplication cleanup; do not mark the full refactor complete yet.
 
 ## Phase 0 baseline audit
 
@@ -55,7 +55,7 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
 ## Current quality gate results
 
 - `npm run typecheck` — passes.
-- `npm test` — passes: 152 test files / 586 tests.
+- `npm test` — passes: 153 test files / 589 tests.
 - `npm run build` — passes; existing large chunk warnings remain.
 - `npm run check:move-automation` — still fails with the same baseline `Explicit move automation coverage: 0/769` missing-script report.
 - `npm run sync:item-sprites -- --dry-run` was not run because the script does not implement a dry-run mode.
@@ -3620,5 +3620,19 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
   - `npm test -- tests/server/mapFolderStorage.test.ts tests/server/createMapFolder.test.ts tests/server/moveMapFolder.test.ts tests/server/deleteMapFolder.test.ts tests/server/listMapLibrary.test.ts tests/server/mapPaths.test.ts tests/server/mapSummaries.test.ts` — passes: 7 test files / 24 tests.
   - `npm run typecheck` — passes.
   - `npm test` — passes: 152 test files / 586 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: isometric block texture color helper split
+
+- Extracted generated block-texture color math, deterministic hashing/noise, role shading, and jitter helpers from `utils/isometric/blockTextures.ts` into `utils/isometric/blockTextureColors.ts`.
+- Kept `blockTextures.ts` responsible for texture loading/generation/caching while the new helper owns pure, testable RGB and noise primitives used by the generated voxel textures.
+- Preserved public `blockHexCss` compatibility by re-exporting it from `blockTextures.ts` for existing preview-ghost callers.
+- Added `tests/utils/isometric/blockTextureColors.test.ts` covering channel clamping, RGB scaling/shifting/mixing/shading, and deterministic hash/noise/jitter behavior.
+- Next remaining phase: continue one bounded cleanup pass, with candidates including another focused renderer/helper split, storage split, map-editor extraction, or small UI duplication cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/utils/isometric/blockTextureColors.test.ts` — passes: 1 test file / 3 tests.
+  - `npm run typecheck` — passes.
+  - `npm test` — passes: 153 test files / 589 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
