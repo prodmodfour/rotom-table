@@ -1,18 +1,18 @@
-import { normalizeCombatStages } from '~/utils/combatStages'
 import { fieldEffectDamageBonus, type DamageRollResult } from '~/utils/moveAutomation'
 import { createMoveAutomationHpUpdateAccumulator } from '~/utils/moveAutomationHpUpdates'
 import {
-  addCombatStageDeltas,
   applyHpSuggestion,
   nonZeroStageDeltas,
   parsePositiveInt,
 } from '~/utils/moveAutomationDialog'
-import { normalizeConditionNames } from '~/utils/statusConditions'
+import {
+  createMoveAutomationCombatStageUpdateAccumulator,
+  createMoveAutomationConditionUpdateAccumulator,
+} from '~/utils/moveAutomationStatusUpdates'
 import { computeMultiplier, formatMultiplier } from '~/utils/typeChart'
-import type { CombatStageKey, CombatStageMap } from '~/types/combatStages'
+import type { CombatStageKey } from '~/types/combatStages'
 import type { MapFieldEffects, MapHazardV2 } from '~/types/map'
 import type {
-  MoveAutomationConditionSuggestion,
   MoveAutomationScript,
   MoveAutomationTransaction,
 } from '~/types/moveAutomation'
@@ -120,42 +120,6 @@ export const resolveHpSuggestionAmount = (
   return Math.max(0, Math.round(base * item.percent / 100))
 }
 
-const conditionSetForToken = (updates: Map<string, Set<string>>, token: SpawnedPokemon): Set<string> => {
-  const existing = updates.get(token.id)
-  if (existing) return existing
-  const set = new Set(normalizeConditionNames(token.conditions))
-  updates.set(token.id, set)
-  return set
-}
-
-const mergeConditionUpdate = (
-  updates: Map<string, Set<string>>,
-  token: SpawnedPokemon,
-  conditions: readonly string[],
-) => {
-  const normalized = normalizeConditionNames(conditions)
-  if (!normalized.length) return
-  const set = conditionSetForToken(updates, token)
-  for (const condition of normalized) set.add(condition)
-}
-
-const applyConditionSuggestion = (
-  updates: Map<string, Set<string>>,
-  token: SpawnedPokemon,
-  item: MoveAutomationConditionSuggestion,
-) => {
-  const set = conditionSetForToken(updates, token)
-  if (item.action === 'clear') {
-    set.clear()
-    return
-  }
-  const normalized = normalizeConditionNames([item.condition])
-  for (const condition of normalized) {
-    if (item.action === 'remove') set.delete(condition)
-    else set.add(condition)
-  }
-}
-
 const unknownMoveTransaction = (user: SpawnedPokemon): MoveAutomationTransaction => ({
   userId: user.id,
   userName: user.species,
@@ -189,8 +153,8 @@ export const buildMoveAutomationTransaction = ({
 
   const hpAccumulator = createMoveAutomationHpUpdateAccumulator()
 
-  const conditionById = new Map<string, Set<string>>()
-  const stagesById = new Map<string, CombatStageMap>()
+  const conditionAccumulator = createMoveAutomationConditionUpdateAccumulator()
+  const stageAccumulator = createMoveAutomationCombatStageUpdateAccumulator()
   const logLines: string[] = [
     `${user.species} used ${script.moveName}.`,
     script.kind === 'manual-fallback'
@@ -221,16 +185,16 @@ export const buildMoveAutomationTransaction = ({
   script.conditionSuggestions.forEach((item, index) => {
     if (!suggestionIsEnabled(script, enabledSuggestions, 'condition', index)) return
     const recipients = item.recipient === 'user' ? [user] : selectedTargets
-    for (const token of recipients) applyConditionSuggestion(conditionById, token, item)
+    for (const token of recipients) conditionAccumulator.applySuggestion(token, item)
     if (recipients.length) {
       logLines.push(`${item.label} ${item.action === 'remove' ? 'removed from' : 'applied to'} ${recipients.map((token) => token.species).join(', ')}.`)
     }
   })
-  mergeConditionUpdate(conditionById, user, manualUserConditions)
-  for (const target of selectedTargets) mergeConditionUpdate(conditionById, target, manualTargetConditions)
+  conditionAccumulator.merge(user, manualUserConditions)
+  for (const target of selectedTargets) conditionAccumulator.merge(target, manualTargetConditions)
 
   const addStageDelta = (token: SpawnedPokemon, delta: Partial<Record<CombatStageKey, number>>) => {
-    stagesById.set(token.id, addCombatStageDeltas(stagesById.get(token.id) ?? normalizeCombatStages(token.combatStages), delta))
+    stageAccumulator.addDeltas(token, delta)
   }
   script.stageSuggestions.forEach((item, index) => {
     if (!suggestionIsEnabled(script, enabledSuggestions, 'stage', index)) return
@@ -269,8 +233,8 @@ export const buildMoveAutomationTransaction = ({
     scriptKind: script.kind,
     scriptVersion: script.version,
     hpUpdates: hpAccumulator.toUpdates(),
-    conditionUpdates: Array.from(conditionById.entries()).map(([id, set]) => ({ id, conditions: normalizeConditionNames(Array.from(set)) })),
-    combatStageUpdates: Array.from(stagesById.entries()).map(([id, stages]) => ({ id, stages })),
+    conditionUpdates: conditionAccumulator.toUpdates(),
+    combatStageUpdates: stageAccumulator.toUpdates(),
     hazardsToAdd,
     fieldEffectsToApply,
     logLines,

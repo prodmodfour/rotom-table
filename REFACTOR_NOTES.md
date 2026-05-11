@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass (latest full test run: 178 files / 686 tests). `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include another focused move-automation helper split, renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass (latest full test run: 179 files / 689 tests). `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include another focused move-automation helper split, renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
 
 ## Phase 0 baseline audit
 
@@ -4033,6 +4033,20 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
   - `npm test -- tests/utils/moveAutomationHpUpdates.test.ts tests/utils/moveAutomationTransaction.test.ts` — passes: 2 test files / 7 tests.
   - `npm run typecheck` — passes.
   - `npm test` — passes: 178 test files / 686 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: move automation status update helper split
+
+- Extracted move-automation condition and combat-stage update accumulation from `utils/moveAutomationTransaction.ts` into `utils/moveAutomationStatusUpdates.ts`.
+  - The new helper owns per-token condition set initialization, condition add/remove/clear suggestions, manual condition merging, normalized condition update projection, combat-stage delta accumulation, and clamped stage-update projection.
+- Updated transaction assembly to delegate status update bookkeeping while preserving damage, HP suggestions, hazard/field-effect payloads, log lines, condition normalization, combat-stage clamping, and final transaction response shapes.
+- Added `tests/utils/moveAutomationStatusUpdates.test.ts` covering condition merge/remove/clear behavior, ignored unknown manual conditions, stage accumulation, and combat-stage clamping.
+- Next remaining phase: continue one bounded cleanup pass, with candidates including another focused move-automation helper split, renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/utils/moveAutomationStatusUpdates.test.ts tests/utils/moveAutomationTransaction.test.ts` — passes: 2 test files / 7 tests.
+  - `npm run typecheck` — passes.
+  - `npm test` — passes: 179 test files / 689 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
 
