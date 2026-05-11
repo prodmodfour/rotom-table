@@ -3,7 +3,7 @@ import { DEFAULT_FACING_DIRECTION } from '~/utils/isometric/cameraControls'
 import {
   WORLD_SPRITE_HALO_MAX_ALPHA,
   WORLD_SPRITE_HALO_MIN_ALPHA,
-} from '~/utils/isometric/worldSprites'
+} from '~/utils/isometric/worldSpriteLighting'
 
 export const ISOMETRIC_SPRITE_BRIGHTNESS_LIT = 1.0
 export const ISOMETRIC_SPRITE_BRIGHTNESS_SHADOW = 0.92

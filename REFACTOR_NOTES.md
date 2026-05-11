@@ -55,7 +55,7 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
 ## Current quality gate results
 
 - `npm run typecheck` — passes.
-- `npm test` — passes: 165 test files / 633 tests.
+- `npm test` — passes: 166 test files / 637 tests.
 - `npm run build` — passes; existing large chunk warnings remain.
 - `npm run check:move-automation` — still fails with the same baseline `Explicit move automation coverage: 0/769` missing-script report.
 - `npm run sync:item-sprites -- --dry-run` was not run because the script does not implement a dry-run mode.
@@ -3814,5 +3814,21 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
   - `npm test -- tests/utils/isometric/worldSpriteFacing.test.ts` — passes: 1 test file / 4 tests.
   - `npm run typecheck` — passes.
   - `npm test` — passes: 165 test files / 633 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: isometric world sprite lighting helper split
+
+- Extracted world-sprite lighting style derivation from `utils/isometric/worldSprites.ts` into `utils/isometric/worldSpriteLighting.ts`.
+  - The new helper owns live/ghost/invalid sprite material opacity, scalar/RGB tinting, halo colors, and halo opacity decisions without depending on Three.js material mutation.
+- Reduced `worldSprites.ts` so it focuses on sprite construction, asset loading, facing, shadow creation, and applying returned lighting styles to renderer materials.
+- Updated camera-relative sprite-light calculations to import halo alpha constants from the focused lighting helper while preserving the existing `worldSprites` constant re-exports for compatibility.
+- Preserved live sprite brightness, valid move-preview ghost tinting, invalid red preview tinting, halo colors/opacities, and public renderer behavior.
+- Added `tests/utils/isometric/worldSpriteLighting.test.ts` covering live, valid-ghost, clamped ghost, and invalid-preview lighting styles.
+- Next remaining phase: continue one bounded cleanup pass, with candidates including another focused renderer/helper split, storage split, map-editor extraction, or small UI duplication cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/utils/isometric/worldSpriteLighting.test.ts tests/utils/isometric/spriteLighting.test.ts tests/utils/isometric/worldSpriteFacing.test.ts` — passes: 3 test files / 11 tests.
+  - `npm run typecheck` — passes.
+  - `npm test` — passes: 166 test files / 637 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

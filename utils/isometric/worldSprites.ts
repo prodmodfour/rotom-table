@@ -14,9 +14,17 @@ import {
   spriteVisualAssetKey,
 } from '~/utils/isometric/worldSpriteAssets'
 import { shouldUseFrontWorldSprite } from '~/utils/isometric/worldSpriteFacing'
+import {
+  getWorldSpriteLightingStyle,
+  WORLD_SPRITE_GHOST_HALO_COLOR,
+  WORLD_SPRITE_HALO_COLOR,
+  WORLD_SPRITE_HALO_MIN_ALPHA,
+} from '~/utils/isometric/worldSpriteLighting'
 
-export const WORLD_SPRITE_HALO_MIN_ALPHA = 0.1
-export const WORLD_SPRITE_HALO_MAX_ALPHA = 0.28
+export {
+  WORLD_SPRITE_HALO_MAX_ALPHA,
+  WORLD_SPRITE_HALO_MIN_ALPHA,
+} from '~/utils/isometric/worldSpriteLighting'
 
 export const nowMs = () => (typeof performance === 'undefined' ? Date.now() : performance.now())
 
@@ -78,28 +86,25 @@ export const updateWorldSpriteLighting = (
   brightness: number,
   haloAlpha: number,
 ) => {
-  if (state.ghost) {
-    if (state.invalid) {
-      state.material.opacity = 0.28
-      state.material.color.setRGB(
-        Math.min(1.4, brightness * 1.05),
-        Math.min(1.0, brightness * 0.68),
-        Math.min(1.0, brightness * 0.62),
-      )
-      state.haloMaterial.color.setHex(0xfb4934)
-      state.haloMaterial.opacity = 0.16
-    } else {
-      state.material.opacity = 0.4
-      state.material.color.setScalar(Math.min(1.35, brightness * 1.2))
-      state.haloMaterial.color.setHex(0xd5c4a1)
-      state.haloMaterial.opacity = 0.18
-    }
-    return
-  }
+  const style = getWorldSpriteLightingStyle({
+    ghost: state.ghost,
+    invalid: state.invalid,
+    brightness,
+    haloAlpha,
+  })
 
-  state.material.color.setScalar(brightness)
-  state.haloMaterial.color.setHex(0xfabd2f)
-  state.haloMaterial.opacity = haloAlpha
+  if (style.materialOpacity !== null) state.material.opacity = style.materialOpacity
+  if (style.materialColor.kind === 'rgb') {
+    state.material.color.setRGB(
+      style.materialColor.r,
+      style.materialColor.g,
+      style.materialColor.b,
+    )
+  } else {
+    state.material.color.setScalar(style.materialColor.value)
+  }
+  state.haloMaterial.color.setHex(style.haloColor)
+  state.haloMaterial.opacity = style.haloOpacity
 }
 
 export const buildWorldSprite = (pokemon: SpawnedPokemon, ghost = false): WorldSpriteState => {
@@ -121,7 +126,7 @@ export const buildWorldSprite = (pokemon: SpawnedPokemon, ghost = false): WorldS
 
   const haloMaterial = new THREE.SpriteMaterial({
     map: getSpriteHaloTexture(),
-    color: ghost ? 0xd5c4a1 : 0xfabd2f,
+    color: ghost ? WORLD_SPRITE_GHOST_HALO_COLOR : WORLD_SPRITE_HALO_COLOR,
     transparent: true,
     opacity: ghost ? 0.18 : WORLD_SPRITE_HALO_MIN_ALPHA,
     alphaTest: 0.02,
