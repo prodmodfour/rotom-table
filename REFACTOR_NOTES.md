@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass (latest full test run: 204 files / 784 tests). `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include another focused encounter setup/result-card extraction, Pokédex/detail or sidebar extraction, sheet/map panel extraction, server/use-case helper split, move-automation helper split, renderer/helper split, storage split, map-editor extraction, or remaining client/helper cleanup; do not mark the full refactor complete yet.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass (latest full test run: 204 files / 784 tests). `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include another focused encounter component extraction, Pokédex/detail or sidebar extraction, sheet/map panel extraction, server/use-case helper split, move-automation helper split, renderer/helper split, storage split, map-editor extraction, or remaining client/helper cleanup; do not mark the full refactor complete yet.
 
 ## Phase 0 baseline audit
 
@@ -4685,6 +4685,19 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
 - Extracted selected encounter-table level/count/region metadata into `components/encounters/EncounterGenerateSelectedTableMeta.vue`.
 - Reduced `EncounterGenerateSetupCard.vue` to a composition shell for the setup title, field controls, selected-table metadata, and setup actions while preserving all existing `v-model` bindings, disabled states, preview-output-root gating, selected-table badges, and generate/preview emits.
 - Next remaining phase: continue one bounded cleanup pass, with candidates including another focused encounter result/setup card extraction, Pokédex/detail or sidebar extraction, sheet/map panel extraction, server/use-case helper split, move-automation helper split, renderer/helper split, storage split, map-editor extraction, or remaining client/helper cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/composables/encounters/useEncounterGenerationPage.test.ts tests/utils/encounterGeneration.test.ts` — passes: 2 test files / 11 tests.
+  - `npm run typecheck` — passes.
+  - `npm test` — passes: 204 test files / 784 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: encounter result header and file list extraction
+
+- Extracted encounter-generation result heading, failure badge, file-count pills, and generated-folder hint into `components/encounters/EncounterGenerateResultHeader.vue`.
+- Extracted generated/preview file rows, expandable preview content, and per-file error rendering into `components/encounters/EncounterGenerateResultFiles.vue`.
+- Reduced `EncounterGenerateResultCard.vue` to a result-card shell that wires result data and open-file toggles while preserving preview expansion, generated-folder copy, failure/file badges, error rows, and visual styling.
+- Next remaining phase: continue one bounded cleanup pass, with candidates including another focused encounter component extraction, Pokédex/detail or sidebar extraction, sheet/map panel extraction, server/use-case helper split, move-automation helper split, renderer/helper split, storage split, map-editor extraction, or remaining client/helper cleanup; do not mark the full refactor complete yet.
 - Quality gates after this phase:
   - `npm test -- tests/composables/encounters/useEncounterGenerationPage.test.ts tests/utils/encounterGeneration.test.ts` — passes: 2 test files / 11 tests.
   - `npm run typecheck` — passes.
