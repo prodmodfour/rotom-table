@@ -1,5 +1,5 @@
 import type { GridAnchor, GridDimensions, SpawnedPokemon } from '~/types/pokemon'
-import type { PreviewState } from '~/utils/grid'
+import type { PreviewState } from '~/utils/gridPreview'
 
 export const EMPTY_MOVE_PREVIEW: PreviewState = {
   position: null,

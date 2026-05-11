@@ -1,6 +1,7 @@
 import type { TabletopMap, MapHazardV2, MapVoxelV2, SheetPlacement } from '~/types/map'
 import type { GridDimensions, SpawnedPokemon } from '~/types/pokemon'
-import { normalizeDimensions, reconcilePokemonPositions } from '~/utils/grid'
+import { normalizeDimensions } from '~/utils/gridGeometry'
+import { reconcilePokemonPositions } from '~/utils/gridPlacement'
 import { clampMapGroundLevelY } from '~/utils/mapGroundLevel'
 import { filterMapHazardsInBounds } from '~/utils/mapHazards'
 import { filterVoxelsInBounds } from '~/utils/voxels'

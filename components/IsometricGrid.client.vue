@@ -15,8 +15,8 @@ import type {
   MapVoxelV2,
   VoxelMaterial,
 } from '~/types/map'
-import type { PreviewState } from '~/utils/grid'
-import { getPokemonCenter } from '~/utils/grid'
+import type { PreviewState } from '~/utils/gridPreview'
+import { getPokemonCenter } from '~/utils/gridGeometry'
 import { buildAllVoxelOccupancy } from '~/utils/voxels'
 import { buildMapOccupancy } from '~/utils/mapOccupancy'
 import { normalizeMapFieldEffects } from '~/utils/mapFieldEffects'

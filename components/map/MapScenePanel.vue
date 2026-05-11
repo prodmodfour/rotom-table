@@ -20,7 +20,7 @@ import type { MoveAutomationTransaction } from '~/types/moveAutomation'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import type { TrainerMove } from '~/types/trainerSheet'
 import type { MapSaveStatus } from '~/composables/useEditableMap'
-import type { PreviewState } from '~/utils/grid'
+import type { PreviewState } from '~/utils/gridPreview'
 
 interface MapSceneRendererHandle {
   focusPokemon: (id: string) => boolean

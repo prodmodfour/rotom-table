@@ -14,7 +14,7 @@ import type {
   VoxelMaterial,
 } from '~/types/map'
 import type { SpawnedPokemon } from '~/types/pokemon'
-import type { PreviewState } from '~/utils/grid'
+import type { PreviewState } from '~/utils/gridPreview'
 
 interface IsometricGridHandle {
   focusPokemon: (id: string) => boolean

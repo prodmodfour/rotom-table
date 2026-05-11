@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import type { GridAnchor, SpawnedPokemon } from '~/types/pokemon'
-import { getAnchorCenter } from '~/utils/grid'
+import { getAnchorCenter } from '~/utils/gridGeometry'
 import { buildVolumeMaterials, paintVolumeMaterials } from '~/utils/isometric/materials'
 import { disposeObject3D } from '~/utils/isometric/resourceDisposal'
 import { buildElevationBadge, updateElevationBadge } from '~/utils/isometric/tokenHud'

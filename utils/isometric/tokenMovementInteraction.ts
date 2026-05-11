@@ -1,7 +1,8 @@
 import type * as THREE from 'three'
 import type { GridAnchor, GridDimensions, SpawnedPokemon } from '~/types/pokemon'
-import type { PreviewState } from '~/utils/grid'
-import { canPlacePokemon, findPathForPokemon } from '~/utils/grid'
+import type { PreviewState } from '~/utils/gridPreview'
+import { canPlacePokemon } from '~/utils/gridPlacement'
+import { findPathForPokemon } from '~/utils/gridPathfinding'
 import {
   EMPTY_MOVE_PREVIEW,
   getMovePreviewAnchor,

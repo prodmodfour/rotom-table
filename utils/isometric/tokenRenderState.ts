@@ -1,7 +1,7 @@
 import type { CombatStageMap } from '~/types/combatStages'
 import type { SpriteAnimation, SpriteCrop, SpawnedPokemon } from '~/types/pokemon'
 import { normalizeCombatStages } from '~/utils/combatStages'
-import { getPokemonCenter } from '~/utils/grid'
+import { getPokemonCenter } from '~/utils/gridGeometry'
 import { normalizeConditionNames } from '~/utils/statusConditions'
 
 const SPRITE_LIFT_AMOUNT = 0.08

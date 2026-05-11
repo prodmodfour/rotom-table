@@ -1,5 +1,6 @@
 import { computed, ref, watch, type ComputedRef, type Ref } from 'vue'
-import { findFirstAvailablePosition, type PreviewState } from '~/utils/grid'
+import { findFirstAvailablePosition } from '~/utils/gridPlacement'
+import type { PreviewState } from '~/utils/gridPreview'
 import { buildMapOccupancy } from '~/utils/mapOccupancy'
 import { pokedexEntryPathForSpecies } from '~/utils/pokedex/routes'
 import { toPokedexSlug as normalizePokedexSlug } from '~/utils/pokedex/searchText'
