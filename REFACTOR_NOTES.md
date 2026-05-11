@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass (latest full test run: 182 files / 702 tests). `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include another focused move-automation helper split, renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass (latest full test run: 183 files / 706 tests). `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include another focused move-automation helper split, renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
 
 ## Phase 0 baseline audit
 
@@ -4092,6 +4092,22 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
   - `npm test -- tests/utils/moveAutomationConditionSuggestions.test.ts tests/utils/moveAutomationManual.test.ts` — passes: 2 test files / 10 tests.
   - `npm run typecheck` — passes.
   - `npm test` — passes: 182 test files / 702 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+
+## Next phase update: move automation field/hazard suggestion helper split
+
+- Extracted manual move-automation field-effect and map-hazard suggestion parsing from `utils/moveAutomationManual.ts` into `utils/moveAutomationFieldHazardSuggestions.ts`.
+  - The new helper owns weather/terrain/room move detection, optional terrain suggestions from effect text, hazard kind/square-count mappings, and optional Fire Pledge hazard suggestions.
+- Reduced `moveAutomationManual.ts` so it focuses on manual fallback orchestration plus target/count, damage, notes, and imported suggestion helpers.
+- Preserved manual fallback script shapes, field/hazard suggestion labels, optional flags, Toxic Spikes/Stealth Rock square counts, and existing public `utils/moveAutomation` compatibility exports.
+- Added `tests/utils/moveAutomationFieldHazardSuggestions.test.ts` covering weather/room field effects, canonical/effect-text terrain suggestions, hazard square counts, optional Fire Pledge hazards, and empty suggestion cases.
+- Next remaining phase: continue one bounded cleanup pass, with candidates including another focused move-automation helper split, renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/utils/moveAutomationFieldHazardSuggestions.test.ts tests/utils/moveAutomationManual.test.ts` — passes: 2 test files / 9 tests.
+  - `npm run typecheck` — passes.
+  - `npm test` — passes: 183 test files / 706 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
 
