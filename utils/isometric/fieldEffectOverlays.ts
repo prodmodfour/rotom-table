@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import type { GridDimensions } from '~/types/pokemon'
 import type { MapVoxelV2 } from '~/types/map'
-import { parseHexColor } from '~/utils/voxels'
+import { parseHexColor } from '~/utils/voxelColors'
 
 export interface FieldEffectOverlayInput {
   dimensions: GridDimensions

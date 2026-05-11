@@ -1,6 +1,6 @@
 import type { GridAnchor, GridDimensions, SpawnedPokemon } from '~/types/pokemon'
 import type { MapVoxelV2 } from '~/types/map'
-import { buildVoxelOccupancy, footprintOverlapsVoxels } from './voxels'
+import { buildVoxelOccupancy, footprintOverlapsVoxels } from './voxelOccupancy'
 import {
   footprintsOverlap,
   getClearanceValue,

@@ -4,7 +4,7 @@ import { normalizeDimensions } from '~/utils/gridGeometry'
 import { reconcilePokemonPositions } from '~/utils/gridPlacement'
 import { clampMapGroundLevelY } from '~/utils/mapGroundLevel'
 import { filterMapHazardsInBounds } from '~/utils/mapHazards'
-import { filterVoxelsInBounds } from '~/utils/voxels'
+import { filterVoxelsInBounds } from '~/utils/voxelOccupancy'
 
 export interface MapDimensionReconciliationResult {
   dimensions: GridDimensions

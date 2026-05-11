@@ -2,7 +2,7 @@ import * as THREE from 'three'
 import type { MapHazardKind, MapHazardV2 } from '~/types/map'
 import { MAP_HAZARD_DEFINITIONS } from '~/utils/mapHazardDefinitions'
 import { normalizeMapHazardLayer } from '~/utils/mapHazards'
-import { parseHexColor } from '~/utils/voxels'
+import { parseHexColor } from '~/utils/voxelColors'
 import { disposeObject3D } from './resourceDisposal'
 
 export const HAZARD_DECAL_SIZE = 128

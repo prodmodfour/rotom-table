@@ -23,7 +23,7 @@ import type {
 } from '~/types/map'
 import type { MapEffectDefinition } from '~/utils/mapFieldEffectDefinitions'
 import type { MapHazardDefinition } from '~/utils/mapHazardDefinitions'
-import type { VoxelMaterialDef } from '~/utils/voxels'
+import type { VoxelMaterialDef } from '~/utils/voxelMaterials'
 
 type DimensionAxis = 'x' | 'y' | 'z'
 

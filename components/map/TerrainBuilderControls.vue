@@ -5,7 +5,7 @@ import BuilderHintText from '~/components/map/BuilderHintText.vue'
 import BuildToolToggle from '~/components/map/BuildToolToggle.vue'
 import TerrainColorPicker from '~/components/map/TerrainColorPicker.vue'
 import TerrainMaterialGrid from '~/components/map/TerrainMaterialGrid.vue'
-import type { VoxelMaterialDef } from '~/utils/voxels'
+import type { VoxelMaterialDef } from '~/utils/voxelMaterials'
 import type { BuildTool } from '~/shared/mapEditor'
 import type { VoxelMaterial } from '~/types/map'
 

@@ -1,6 +1,6 @@
 import type { MapVoxelV2 } from '~/types/map'
 import { getVoxelMaterialDefinition } from './mapMaterials'
-import { voxelKey } from './voxels'
+import { voxelKey } from './voxelOccupancy'
 
 export interface BuildMapOccupancyOptions {
   voxels?: ReadonlyArray<MapVoxelV2>

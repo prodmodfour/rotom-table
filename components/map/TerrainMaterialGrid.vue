@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { hexColorString, type VoxelMaterialDef } from '~/utils/voxels'
+import { hexColorString } from '~/utils/voxelColors'
+import type { VoxelMaterialDef } from '~/utils/voxelMaterials'
 import type { VoxelMaterial } from '~/types/map'
 
 defineProps<{

@@ -4,7 +4,7 @@ import {
   defaultBuilderVoxelColor,
   parseHexColor,
   withDefaultBuilderVoxelColor,
-} from '~/utils/voxels'
+} from '~/utils/voxelColors'
 
 export interface BuildVoxelStyleOptions {
   material: VoxelMaterial

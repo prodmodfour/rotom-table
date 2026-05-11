@@ -17,7 +17,7 @@ import type {
 } from '~/types/map'
 import type { PreviewState } from '~/utils/gridPreview'
 import { getPokemonCenter } from '~/utils/gridGeometry'
-import { buildAllVoxelOccupancy } from '~/utils/voxels'
+import { buildAllVoxelOccupancy } from '~/utils/voxelOccupancy'
 import { buildMapOccupancy } from '~/utils/mapOccupancy'
 import { normalizeMapFieldEffects } from '~/utils/mapFieldEffects'
 import type { CombatStageMap } from '~/types/combatStages'

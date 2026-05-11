@@ -1,15 +1,9 @@
 import { computed, ref, type ComputedRef, type Ref } from 'vue'
 import { textValueFromEvent } from '~/utils/domEvents'
 import { buildMapOccupancy } from '~/utils/mapOccupancy'
-import {
-  VOXEL_MATERIALS,
-  buildAllVoxelOccupancy,
-  cellInsidePokemonFootprint,
-  getMaterialDef,
-  hexColorString,
-  voxelKey,
-  withDefaultBuilderVoxelColor,
-} from '~/utils/voxels'
+import { hexColorString, withDefaultBuilderVoxelColor } from '~/utils/voxelColors'
+import { VOXEL_MATERIALS, getMaterialDef } from '~/utils/voxelMaterials'
+import { buildAllVoxelOccupancy, cellInsidePokemonFootprint, voxelKey } from '~/utils/voxelOccupancy'
 import type { BuildTool } from '~/shared/mapEditor'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import type { MapVoxelV2, TabletopMap, VoxelMaterial } from '~/types/map'

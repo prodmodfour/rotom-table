@@ -5,7 +5,7 @@ import {
   createDefaultMapLayerVisibility,
   resolveMapLayerVisibility,
 } from '~/utils/mapLayerVisibility'
-import { voxelMaterialId } from '~/utils/voxels'
+import { voxelMaterialId } from '~/utils/voxelMaterials'
 
 export const DEFAULT_ISOMETRIC_LAYER_VISIBILITY: LayerVisibility = createDefaultMapLayerVisibility()
 

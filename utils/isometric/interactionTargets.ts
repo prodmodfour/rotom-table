@@ -2,7 +2,7 @@ import * as THREE from 'three'
 import type { GridDimensions, SpawnedPokemon } from '~/types/pokemon'
 import type { MapHazardKind, MapHazardV2, MapVoxelV2 } from '~/types/map'
 import type { BuildTool } from '~/shared/mapEditor'
-import { cellInsidePokemonFootprint, voxelKey } from '~/utils/voxels'
+import { cellInsidePokemonFootprint, voxelKey } from '~/utils/voxelOccupancy'
 import type { BuildTarget, HazardTarget, PokemonRenderObject } from '~/utils/isometric/types'
 
 export type PointerCoords = Pick<MouseEvent | PointerEvent, 'clientX' | 'clientY'>

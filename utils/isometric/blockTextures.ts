@@ -1,7 +1,8 @@
 import * as THREE from 'three'
 import type { MapVoxelV2 } from '~/types/map'
 import { getMaterialDefinition, materialColorNumber } from '~/utils/mapMaterials'
-import { parseHexColor, voxelMaterialId } from '~/utils/voxels'
+import { parseHexColor } from '~/utils/voxelColors'
+import { voxelMaterialId } from '~/utils/voxelMaterials'
 import {
   blockHexCss,
   hashString,
