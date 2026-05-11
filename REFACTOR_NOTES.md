@@ -55,7 +55,7 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
 ## Current quality gate results
 
 - `npm run typecheck` — passes.
-- `npm test` — passes: 155 test files / 596 tests.
+- `npm test` — passes: 156 test files / 599 tests.
 - `npm run build` — passes; existing large chunk warnings remain.
 - `npm run check:move-automation` — still fails with the same baseline `Explicit move automation coverage: 0/769` missing-script report.
 - `npm run sync:item-sprites -- --dry-run` was not run because the script does not implement a dry-run mode.
@@ -3663,5 +3663,21 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
   - `npm test -- tests/utils/isometric/weatherEffects.test.ts` — passes: 1 test file / 4 tests.
   - `npm run typecheck` — passes.
   - `npm test` — passes: 155 test files / 596 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: isometric weather texture cache split
+
+- Split weather renderer texture generation/cache ownership out of `utils/isometric/weatherEffects.ts` into focused modules:
+  - `utils/isometric/weatherMath.ts` owns seeded randomness, range wrapping, random scaling, weather bounds, and shared weather input/bounds types.
+  - `utils/isometric/weatherTextures.ts` owns sun-ray and sandstream CanvasTexture generation, per-factory caching, injected canvas creation for tests, and cache disposal.
+- Kept `weatherEffects.ts` as the weather visual factory/orchestrator and re-exported the existing weather math/type helpers so current imports remain compatible.
+- Preserved existing sunny/rainy/hail/sandstorm visuals, texture dimensions, sandstream drawing loops, texture wrapping/color-space settings, deterministic sand texture randomness, and renderer texture-cache disposal behavior.
+- Added `tests/utils/isometric/weatherTextures.test.ts` covering texture-cache creation, dimensions, cache reuse, sandstream wrapping/drawing calls, and disposal/recreation.
+- Next remaining phase: continue one bounded cleanup pass, with candidates including another focused renderer/helper split, storage split, map-editor extraction, or small UI duplication cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/utils/isometric/weatherEffects.test.ts tests/utils/isometric/weatherTextures.test.ts` — passes: 2 test files / 7 tests.
+  - `npm run typecheck` — passes.
+  - `npm test` — passes: 156 test files / 599 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

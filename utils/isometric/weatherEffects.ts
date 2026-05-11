@@ -1,30 +1,25 @@
 import * as THREE from 'three'
-import type { GridDimensions } from '~/types/pokemon'
-import type { MapVoxelV2, MapWeatherKind } from '~/types/map'
+import type { MapWeatherKind } from '~/types/map'
+import {
+  getWeatherBounds,
+  randomRange,
+  seededWeatherRandom,
+  wrapRange,
+  type WeatherEffectRendererInput,
+} from './weatherMath'
+import { createWeatherTextureCache } from './weatherTextures'
+
+export {
+  getWeatherBounds,
+  randomRange,
+  seededWeatherRandom,
+  wrapRange,
+} from './weatherMath'
+export type { WeatherBounds, WeatherEffectRendererInput } from './weatherMath'
 
 export interface WeatherVisual {
   group: THREE.Group
   update: (delta: number, elapsed: number) => void
-}
-
-export interface WeatherBounds {
-  minX: number
-  maxX: number
-  minZ: number
-  maxZ: number
-  centerX: number
-  centerZ: number
-  groundY: number
-  topY: number
-  width: number
-  depth: number
-  height: number
-}
-
-export interface WeatherEffectRendererInput {
-  dimensions: GridDimensions
-  voxels: ReadonlyArray<MapVoxelV2>
-  groundLevelY: number
 }
 
 export interface WeatherVisualFactory {
@@ -37,174 +32,8 @@ export interface WeatherVisualFactory {
   disposeTextureCache(): void
 }
 
-export const seededWeatherRandom = (seed: string) => {
-  let state = 2166136261
-  for (let i = 0; i < seed.length; i += 1) {
-    state = Math.imul(state ^ seed.charCodeAt(i), 16777619) >>> 0
-  }
-
-  return () => {
-    state = (state + 0x6d2b79f5) >>> 0
-    let t = state
-    t = Math.imul(t ^ (t >>> 15), t | 1)
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61)
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
-  }
-}
-
-export const randomRange = (rand: () => number, min: number, max: number) =>
-  min + (max - min) * rand()
-
-export const wrapRange = (value: number, min: number, max: number) => {
-  const size = max - min
-  if (size <= 0) return min
-  return min + ((((value - min) % size) + size) % size)
-}
-
-export const getWeatherBounds = (
-  input: WeatherEffectRendererInput,
-): WeatherBounds => {
-  const groundY = input.groundLevelY
-  let highestY = groundY
-  for (const voxel of input.voxels) {
-    highestY = Math.max(highestY, voxel.y + 1)
-  }
-
-  const maxMapSide = Math.max(input.dimensions.x, input.dimensions.z)
-  const margin = Math.max(1.4, Math.min(5, maxMapSide * 0.22))
-  const topY = Math.max(
-    highestY + 3.2,
-    groundY + Math.max(4.5, input.dimensions.y + 1.5),
-  )
-  const minX = -margin
-  const maxX = input.dimensions.x + margin
-  const minZ = -margin
-  const maxZ = input.dimensions.z + margin
-
-  return {
-    minX,
-    maxX,
-    minZ,
-    maxZ,
-    centerX: input.dimensions.x / 2,
-    centerZ: input.dimensions.z / 2,
-    groundY,
-    topY,
-    width: maxX - minX,
-    depth: maxZ - minZ,
-    height: topY - groundY,
-  }
-}
-
 export const createWeatherVisualFactory = (): WeatherVisualFactory => {
-  let sunRayTexture: THREE.CanvasTexture | null = null
-  let sandstreamTexture: THREE.CanvasTexture | null = null
-
-  const getSunRayTexture = () => {
-    if (sunRayTexture) return sunRayTexture
-
-    const canvas = document.createElement('canvas')
-    canvas.width = 128
-    canvas.height = 512
-    const ctx = canvas.getContext('2d')
-    if (!ctx) throw new Error('2d canvas context unavailable')
-
-    const horizontal = ctx.createLinearGradient(0, 0, canvas.width, 0)
-    horizontal.addColorStop(0, 'rgba(255, 226, 128, 0)')
-    horizontal.addColorStop(0.28, 'rgba(255, 226, 128, 0.18)')
-    horizontal.addColorStop(0.5, 'rgba(255, 239, 170, 0.82)')
-    horizontal.addColorStop(0.72, 'rgba(255, 226, 128, 0.18)')
-    horizontal.addColorStop(1, 'rgba(255, 226, 128, 0)')
-    ctx.fillStyle = horizontal
-    ctx.fillRect(0, 0, canvas.width, canvas.height)
-
-    const verticalMask = ctx.createLinearGradient(0, 0, 0, canvas.height)
-    verticalMask.addColorStop(0, 'rgba(255, 255, 255, 0)')
-    verticalMask.addColorStop(0.16, 'rgba(255, 255, 255, 0.95)')
-    verticalMask.addColorStop(0.72, 'rgba(255, 255, 255, 0.58)')
-    verticalMask.addColorStop(1, 'rgba(255, 255, 255, 0)')
-    ctx.globalCompositeOperation = 'destination-in'
-    ctx.fillStyle = verticalMask
-    ctx.fillRect(0, 0, canvas.width, canvas.height)
-
-    sunRayTexture = new THREE.CanvasTexture(canvas)
-    sunRayTexture.colorSpace = THREE.SRGBColorSpace
-    sunRayTexture.needsUpdate = true
-    return sunRayTexture
-  }
-
-  const getSandstreamTexture = () => {
-    if (sandstreamTexture) return sandstreamTexture
-
-    const canvas = document.createElement('canvas')
-    canvas.width = 512
-    canvas.height = 256
-    const ctx = canvas.getContext('2d')
-    if (!ctx) throw new Error('2d canvas context unavailable')
-
-    const rand = seededWeatherRandom('sandstream-texture')
-    ctx.clearRect(0, 0, canvas.width, canvas.height)
-
-    const haze = ctx.createLinearGradient(0, 0, canvas.width, 0)
-    haze.addColorStop(0, 'rgba(250, 189, 47, 0)')
-    haze.addColorStop(0.32, 'rgba(250, 189, 47, 0.08)')
-    haze.addColorStop(0.68, 'rgba(235, 219, 178, 0.11)')
-    haze.addColorStop(1, 'rgba(250, 189, 47, 0)')
-    ctx.fillStyle = haze
-    ctx.fillRect(0, 0, canvas.width, canvas.height)
-
-    ctx.lineCap = 'round'
-    for (let i = 0; i < 92; i += 1) {
-      const y = randomRange(rand, -20, canvas.height + 20)
-      const lift = randomRange(rand, -22, 22)
-      const alpha = randomRange(rand, 0.05, 0.22)
-      const width = randomRange(rand, 0.7, 4.5)
-      ctx.strokeStyle = `rgba(250, 213, 133, ${alpha})`
-      ctx.lineWidth = width
-      ctx.beginPath()
-      ctx.moveTo(-40, y)
-      ctx.bezierCurveTo(
-        canvas.width * 0.28,
-        y + lift,
-        canvas.width * 0.68,
-        y - lift * 0.55,
-        canvas.width + 40,
-        y + lift * 0.35,
-      )
-      ctx.stroke()
-    }
-
-    for (let i = 0; i < 130; i += 1) {
-      const radius = randomRange(rand, 0.45, 1.8)
-      ctx.fillStyle = `rgba(255, 236, 170, ${randomRange(rand, 0.08, 0.28)})`
-      ctx.beginPath()
-      ctx.ellipse(
-        randomRange(rand, 0, canvas.width),
-        randomRange(rand, 0, canvas.height),
-        radius * randomRange(rand, 1.4, 3.2),
-        radius,
-        randomRange(rand, -0.4, 0.4),
-        0,
-        Math.PI * 2,
-      )
-      ctx.fill()
-    }
-
-    sandstreamTexture = new THREE.CanvasTexture(canvas)
-    sandstreamTexture.wrapS = THREE.RepeatWrapping
-    sandstreamTexture.wrapT = THREE.ClampToEdgeWrapping
-    sandstreamTexture.repeat.set(1.7, 1)
-    sandstreamTexture.colorSpace = THREE.SRGBColorSpace
-    sandstreamTexture.needsUpdate = true
-    return sandstreamTexture
-  }
-
-  const disposeTextureCache = () => {
-    sunRayTexture?.dispose()
-    sandstreamTexture?.dispose()
-    sunRayTexture = null
-    sandstreamTexture = null
-  }
+  const weatherTextures = createWeatherTextureCache()
 
   const makeSunnyWeatherVisual = (
     input: WeatherEffectRendererInput,
@@ -217,7 +46,7 @@ export const createWeatherVisualFactory = (): WeatherVisualFactory => {
     const group = new THREE.Group()
     group.name = 'weather-sun-rays'
 
-    const texture = getSunRayTexture()
+    const texture = weatherTextures.getSunRayTexture()
     const rayCount = Math.round(
       THREE.MathUtils.clamp(input.dimensions.x * 0.45 + 3, 5, 10),
     )
@@ -469,7 +298,7 @@ export const createWeatherVisualFactory = (): WeatherVisualFactory => {
     const group = new THREE.Group()
     group.name = 'weather-sandstream'
 
-    const streamTexture = getSandstreamTexture()
+    const streamTexture = weatherTextures.getSandstreamTexture()
     const planeWidth =
       Math.hypot(bounds.width, bounds.depth) + bounds.height + 4
     const planeHeight = Math.max(2.2, bounds.height * 0.72)
@@ -614,6 +443,6 @@ export const createWeatherVisualFactory = (): WeatherVisualFactory => {
 
   return {
     makeWeatherVisual,
-    disposeTextureCache,
+    disposeTextureCache: weatherTextures.disposeTextureCache,
   }
 }
