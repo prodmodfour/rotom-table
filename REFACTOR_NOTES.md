@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass (latest full test run: 180 files / 693 tests). `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include another focused move-automation helper split, renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass (latest full test run: 181 files / 697 tests). `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include another focused move-automation helper split, renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
 
 ## Phase 0 baseline audit
 
@@ -4062,6 +4062,21 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
   - `npm test -- tests/utils/moveAutomationMapEffects.test.ts tests/utils/moveAutomationTransaction.test.ts` — passes: 2 test files / 8 tests.
   - `npm run typecheck` — passes.
   - `npm test` — passes: 180 test files / 693 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: move automation HP suggestion helper split
+
+- Extracted manual move-automation HP suggestion parsing from `utils/moveAutomationManual.ts` into `utils/moveAutomationHpSuggestions.ts`.
+  - The new helper owns user HP loss/fainting, recoil, target fixed/current HP loss, user/target healing, optional weather/context flags, and duplicate HP suggestion filtering.
+- Reduced `moveAutomationManual.ts` so it focuses on manual fallback orchestration plus target/condition/field/hazard/manual-note parsing while delegating HP suggestion rules to the focused helper.
+- Preserved manual fallback script shapes, HP suggestion labels/modes/percentages/amounts, optional flags, deduplication behavior, and existing public `utils/moveAutomation` compatibility exports.
+- Added `tests/utils/moveAutomationHpSuggestions.test.ts` covering user HP loss/fainting, recoil/target loss, healing suggestions, optional flags, and deduplication.
+- Next remaining phase: continue one bounded cleanup pass, with candidates including another focused move-automation helper split, renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/utils/moveAutomationHpSuggestions.test.ts tests/utils/moveAutomationManual.test.ts` — passes: 2 test files / 9 tests.
+  - `npm run typecheck` — passes.
+  - `npm test` — passes: 181 test files / 697 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
 
