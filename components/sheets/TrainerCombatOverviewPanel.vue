@@ -58,21 +58,7 @@ const emit = defineEmits<{
     />
 
     <div class="grid-two">
-      <div class="block">
-        <h2 class="block-title">Action Points</h2>
-        <table class="data-table ap-table">
-          <thead><tr><th>Left</th><th>Spent</th><th>Bound</th><th>Drained</th><th>Max</th></tr></thead>
-          <tbody>
-            <tr>
-              <td><EditableCell v-model="sheet.ap!.left"    type="number" :min="0" /></td>
-              <td><EditableCell v-model="sheet.ap!.spent"   type="number" :min="0" /></td>
-              <td><EditableCell v-model="sheet.ap!.bound"   type="number" :min="0" /></td>
-              <td><EditableCell v-model="sheet.ap!.drained" type="number" :min="0" /></td>
-              <td><strong>{{ maxAp }}</strong></td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+      <TrainerActionPointsPanel :ap="sheet.ap!" :max-ap="maxAp" />
 
       <div class="block">
         <h2 class="block-title">Evasion</h2>
@@ -241,34 +227,6 @@ const emit = defineEmits<{
 
 .muted { color: var(--ink-muted); font-size: 0.85rem; }
 .muted-help { color: var(--ink-muted); font-size: 0.78rem; margin: 0 0 0.4rem; }
-
-.data-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.88rem;
-}
-
-.data-table th,
-.data-table td {
-  padding: 0.35rem 0.5rem;
-  text-align: left;
-  border-bottom: 1px solid var(--rule);
-  vertical-align: top;
-}
-
-.data-table th {
-  font-weight: 600;
-  color: var(--ink-bright);
-}
-
-.data-table thead th {
-  font-size: 0.7rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--ink-muted);
-  background: transparent;
-  font-weight: 600;
-}
 
 .kv-list {
   list-style: none;

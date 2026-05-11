@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass (latest full test run: 202 files / 776 tests). `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include another focused sheet-panel extraction, server/use-case helper split, move-automation helper split, renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass (latest full test run: 202 files / 776 tests). `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include another focused trainer combat panel extraction (for example evasion/conditions or capabilities), server/use-case helper split, move-automation helper split, renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
 
 ## Phase 0 baseline audit
 
@@ -4379,6 +4379,19 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
 - Reduced `TrainerCombatOverviewPanel` so it focuses on composing combat overview sections while preserving Action Point, evasion, condition, digestion, and capability editing behavior.
 - Preserved trainer sheet autosave/edit behavior, HP clamping through the existing parent setter, damage reduction/level editable-cell updates, combat-vitals copy/tooltips, and visual styling by moving the strip styles with the extracted component.
 - Next remaining phase: continue one bounded cleanup pass, with candidates including another focused sheet-panel extraction, server/use-case helper split, move-automation helper split, renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm run typecheck` — passes.
+  - `npm test` — passes: 202 test files / 776 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: trainer action points panel component
+
+- Extracted the trainer sheet Action Points table from `components/sheets/TrainerCombatOverviewPanel.vue` into `components/sheets/TrainerActionPointsPanel.vue`.
+  - The new component owns AP left/spent/bound/drained editing, max-AP display, table markup, and table-specific styles behind narrow `ap`/`maxAp` props.
+- Reduced `TrainerCombatOverviewPanel` so it composes combat vitals, Action Points, evasion/conditions, and capabilities as clearer focused sections while preserving existing editable-cell bindings and autosave behavior.
+- Preserved trainer AP editing semantics, max-AP display, visual table styling, and sheet route behavior; no data or route semantics changed.
+- Next remaining phase: continue one bounded cleanup pass, with candidates including another focused trainer combat panel extraction (for example evasion/conditions or capabilities), server/use-case helper split, move-automation helper split, renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
 - Quality gates after this phase:
   - `npm run typecheck` — passes.
   - `npm test` — passes: 202 test files / 776 tests.
