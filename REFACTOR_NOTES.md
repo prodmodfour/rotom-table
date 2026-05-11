@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass (latest full test run: 203 files / 779 tests). `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include map library page composable extraction, another focused sheet/map panel extraction, server/use-case helper split, move-automation helper split, renderer/helper split, storage split, map-editor extraction, or remaining client/helper cleanup; do not mark the full refactor complete yet.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass (latest full test run: 203 files / 779 tests). `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include another focused sheet/map panel extraction, server/use-case helper split, move-automation helper split, renderer/helper split, storage split, map-editor extraction, or remaining client/helper cleanup; do not mark the full refactor complete yet.
 
 ## Phase 0 baseline audit
 
@@ -4513,3 +4513,18 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
   - `npm test` — passes: 203 test files / 779 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: map library page composable extraction
+
+- Extracted `/maps` library route orchestration from `pages/maps/index.vue` into `composables/library/useMapLibraryPage.ts`.
+  - The composable now owns map-library auth visibility filtering, folder navigation, grid filtering, map/folder drag-drop actions, creation flows, context-menu submit wiring, realtime-backed data loading, and Escape-key cleanup while keeping API requests behind the existing API client boundary.
+- Reduced `pages/maps/index.vue` to a route shell for metadata and composition of the shared library layout, intro panel, breadcrumbs, grid, and context menu.
+- Preserved map-library behavior: player-visible filtering, GM-only create/drag/context actions, `clientId` echo suppression payloads, folder breadcrumbs, map/folder drag/drop, context-menu move/rename/delete flows, realtime updates, and existing API request shapes.
+- Next remaining phase: continue one bounded cleanup pass, with candidates including another focused sheet/map panel extraction, server/use-case helper split, move-automation helper split, renderer/helper split, storage split, map-editor extraction, or remaining client/helper cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/composables/library/useMapLibraryData.test.ts tests/composables/library/useMapLibraryActions.test.ts tests/composables/library/useMapLibraryCreation.test.ts tests/composables/library/useLibraryGridView.test.ts` — passes: 4 test files / 13 tests.
+  - `npm run typecheck` — passes.
+  - `npm test` — passes: 203 test files / 779 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+

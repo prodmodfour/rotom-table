@@ -1,158 +1,41 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useRouter } from 'vue-router'
 import AppNavigation from '~/components/AppNavigation.vue'
 import FolderBreadcrumbNav from '~/components/library/FolderBreadcrumbNav.vue'
 import LibraryContextMenu from '~/components/library/LibraryContextMenu.vue'
 import LibraryPageLayout from '~/components/library/LibraryPageLayout.vue'
 import MapLibraryGrid from '~/components/library/MapLibraryGrid.vue'
 import MapLibraryIntroPanel from '~/components/library/MapLibraryIntroPanel.vue'
-import { formatFolderLabel } from '~/utils/sheetFolders'
-import { getClientId } from '~/utils/clientId'
-import {
-  buildMapFolderSet,
-  filterVisibleMaps,
-  tabletopMapToSummary,
-} from '~/utils/mapLibrary'
-import {
-  useMapLibraryActions,
-  type MapLibraryContextTarget,
-  type MapLibraryDragPayload,
-} from '~/composables/library/useMapLibraryActions'
-import { useMapLibraryData } from '~/composables/library/useMapLibraryData'
-import { useLibraryContextMenu } from '~/composables/library/useLibraryContextMenu'
-import { useLibraryContextSubmit } from '~/composables/library/useLibraryContextSubmit'
-import { useLibraryDragDrop } from '~/composables/library/useLibraryDragDrop'
-import { useLibraryDropMove } from '~/composables/library/useLibraryDropMove'
-import { useLibraryFolderCreation } from '~/composables/library/useLibraryFolderCreation'
-import { useLibraryFolderNavigation } from '~/composables/library/useLibraryFolderNavigation'
-import { useLibraryGridView } from '~/composables/library/useLibraryGridView'
-import { useMapLibraryCreation } from '~/composables/library/useMapLibraryCreation'
-import { useApiClient } from '~/composables/useApiClient'
-import { useWindowKeydown } from '~/composables/useWindowKeydown'
-import { MAP_API_PATHS } from '~/utils/apiRoutes'
-import { isEscapeKey } from '~/utils/keyboardShortcuts'
-import { mapEditorPath, mapLibraryPath } from '~/utils/mapRoutes'
-import type { MapSummary, TabletopMap } from '~/types/map'
+import { useMapLibraryPage } from '~/composables/library/useMapLibraryPage'
 
 useHead({ title: 'Maps · Rotom Table' })
 
-const router = useRouter()
-const clientId = getClientId()
-const { postJson } = useApiClient()
-const { isGm, isPlayer } = useAuth()
-
 const {
-  maps,
-  extraFolders,
-  loading,
-  loadError,
-  refresh,
-} = useMapLibraryData({ clientId })
-
-const items = computed(() => {
-  const all = Array.from(maps.values())
-  return isPlayer.value ? all.filter((map) => map.playerVisible === true) : all
-})
-
-const allFolders = computed(() => buildMapFolderSet(items.value, extraFolders))
-
-const { currentPath, goToFolder, breadcrumbs } = useLibraryFolderNavigation({
-  routePath: mapLibraryPath(),
-  formatSegment: formatFolderLabel,
-})
-
-const { creating, createError, createNewFolder } = useLibraryFolderCreation({
-  canCreate: isGm,
-  currentPath,
-  folderPaths: allFolders,
-  createFolder: (folder) => postJson(MAP_API_PATHS.createFolder, { folder, clientId }),
-  onCreated: (folder) => extraFolders.add(folder),
-})
-
-const {
+  isGm,
   searchTerm,
-  visibleItems: visibleMaps,
+  visibleMaps,
   visibleFolders,
   hasAnything,
-  totalCount: mapCount,
-} = useLibraryGridView<MapSummary>({
-  items,
-  folderPaths: allFolders,
+  mapCount,
   currentPath,
-  filterVisibleItems: filterVisibleMaps,
-  formatFolderLabel,
-})
-
-type DragPayload = MapLibraryDragPayload
-
-type CtxTarget = MapLibraryContextTarget
-
-const mapActions = useMapLibraryActions({
-  currentPath,
-  allFolders,
-  maps,
-  extraFolders,
+  breadcrumbs,
   goToFolder,
-  refresh,
-  formatFolderLabel,
-  moveMap: ({ slug, folder }) => postJson(MAP_API_PATHS.move, { slug, folder, clientId }),
-  moveFolder: ({ from, to }) => postJson(MAP_API_PATHS.moveFolder, { from, to, clientId }),
-  renameMap: ({ slug, name }) => postJson<{ slug: string; name: string }>(MAP_API_PATHS.rename, { slug, name, clientId }),
-  deleteMap: ({ slug }) => postJson(MAP_API_PATHS.deleteMap, { slug, clientId }),
-  deleteFolder: ({ folder }) => postJson(MAP_API_PATHS.deleteFolder, { folder, clientId }),
-})
-
-const {
   drag,
   hoverTarget,
-  startDrag,
   canDropOn,
   onDragEnd,
   onDropEnter,
   onDropOver,
   onDropLeave,
-  takeDropPayload,
-} = useLibraryDragDrop<DragPayload>({
-  canDrag: isGm,
-  canDropPayloadOn: mapActions.canDropPayloadOn,
-})
-
-const onMapDragStart = (e: DragEvent, item: MapSummary) => {
-  startDrag(e, { type: 'map', slug: item.slug, from: item.folder }, {
-    mimeType: 'application/x-rotom-map',
-    value: item.slug,
-  })
-}
-
-const onFolderDragStart = (e: DragEvent, path: string) => {
-  if (!path) {
-    e.preventDefault()
-    return
-  }
-  startDrag(e, { type: 'folder', path }, {
-    mimeType: 'application/x-rotom-map-folder',
-    value: path,
-  })
-}
-
-const { moving, moveError, onDrop } = useLibraryDropMove<DragPayload>({
-  takeDropPayload,
-  movePayload: mapActions.movePayload,
-})
-
-const { createNewMap } = useMapLibraryCreation({
-  canCreate: isGm,
-  currentPath,
-  state: { creating, createError },
-  createMap: (folder) => postJson<{ map: TabletopMap }>(MAP_API_PATHS.create, { folder, clientId }),
-  onCreated: (map) => maps.set(map.slug, tabletopMapToSummary(map)),
-  navigateToMap: (slug) => {
-    void router.push(mapEditorPath(slug))
-  },
-})
-
-const {
+  onDrop,
+  loading,
+  loadError,
+  moveError,
+  onMapDragStart,
+  onFolderDragStart,
+  creating,
+  createError,
+  createNewFolder,
+  createNewMap,
   ctx,
   openContext,
   closeContext,
@@ -161,24 +44,8 @@ const {
   enterMove,
   enterRename,
   enterDelete,
-} = useLibraryContextMenu<CtxTarget>({
-  canOpen: isGm,
-  targetLabel: mapActions.targetLabel,
-  renameInputForTarget: mapActions.renameInputForTarget,
-  moveDestinationsForTarget: mapActions.moveDestinationsForTarget,
-})
-
-const { submitContext } = useLibraryContextSubmit<CtxTarget>({
-  ctx,
-  closeContext,
-  onMove: mapActions.moveTarget,
-  onRename: mapActions.renameTarget,
-  onDelete: mapActions.deleteTarget,
-})
-
-useWindowKeydown((event) => {
-  if (isEscapeKey(event)) closeContext()
-})
+  submitContext,
+} = useMapLibraryPage()
 </script>
 
 <template>
