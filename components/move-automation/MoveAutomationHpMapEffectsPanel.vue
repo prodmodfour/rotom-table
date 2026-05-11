@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { checkedValueFromEvent, textValueFromEvent } from '~/utils/domEvents'
 import type { MoveAutomationScript } from '~/types/moveAutomation'
-import type { MoveAutomationSuggestionKind } from '~/utils/moveAutomationTransaction'
+import type { MoveAutomationSuggestionKind } from '~/utils/moveAutomationTargetResolution'
 
 const hazardCellsText = defineModel<string>('hazardCellsText', { required: true })
 

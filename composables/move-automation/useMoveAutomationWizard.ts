@@ -18,15 +18,15 @@ import {
   rollAllMoveAutomationTargets,
   syncMoveAutomationTargetResolutions,
 } from '~/utils/moveAutomationResolution'
+import { buildMoveAutomationTransaction } from '~/utils/moveAutomationTransaction'
 import {
-  buildMoveAutomationTransaction,
   moveAutomationMultiplierLabel,
   moveAutomationSuggestionKey,
   resolveMoveAutomationTargetDamageLoss,
   suggestionIsEnabled,
-  type MoveAutomationTargetResolutionState,
   type MoveAutomationSuggestionKind,
-} from '~/utils/moveAutomationTransaction'
+  type MoveAutomationTargetResolutionState,
+} from '~/utils/moveAutomationTargetResolution'
 import type { CharacterSheetMove } from '~/types/characterSheet'
 import type { CombatStageKey } from '~/types/combatStages'
 import type { MapFieldEffects } from '~/types/map'

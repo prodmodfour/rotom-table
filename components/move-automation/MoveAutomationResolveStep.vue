@@ -6,7 +6,7 @@ import type { MoveAutomationMoveEntry } from '~/utils/moveAutomationMoves'
 import type {
   MoveAutomationSuggestionKind,
   MoveAutomationTargetResolutionState,
-} from '~/utils/moveAutomationTransaction'
+} from '~/utils/moveAutomationTargetResolution'
 
 const manualUserConditions = defineModel<string[]>('manualUserConditions', { required: true })
 const manualTargetConditions = defineModel<string[]>('manualTargetConditions', { required: true })

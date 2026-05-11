@@ -5,7 +5,7 @@ import {
   moveAutomationSuggestionKey,
   type MoveAutomationSuggestionKind,
   type MoveAutomationTargetResolutionState,
-} from '~/utils/moveAutomationTransaction'
+} from '~/utils/moveAutomationTargetResolution'
 import type { CombatStageKey } from '~/types/combatStages'
 import type { MoveAutomationScript } from '~/types/moveAutomation'
 

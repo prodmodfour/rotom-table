@@ -1,12 +1,9 @@
 import { describe, expect, it } from 'vitest'
+import { buildMoveAutomationTransaction } from '~/utils/moveAutomationTransaction'
 import {
-  buildMoveAutomationTransaction,
   defaultTargetResolutionState,
-  moveAutomationMultiplierLabel,
   moveAutomationSuggestionKey,
-  resolveHpSuggestionAmount,
-  resolveMoveAutomationTargetDamageLoss,
-} from '~/utils/moveAutomationTransaction'
+} from '~/utils/moveAutomationTargetResolution'
 import type { CombatStageMap } from '~/types/combatStages'
 import type { MoveAutomationScript } from '~/types/moveAutomation'
 import type { SpawnedPokemon } from '~/types/pokemon'
@@ -70,53 +67,6 @@ const script = (overrides: Partial<MoveAutomationScript> = {}): MoveAutomationSc
 })
 
 describe('move automation transaction helpers', () => {
-  it('builds stable suggestion keys and default target resolution state', () => {
-    const s = script({ moveName: 'Ember' })
-    expect(moveAutomationSuggestionKey(s, 'hp', 1)).toBe('Ember:hp:1')
-    expect(moveAutomationSuggestionKey(null, 'field', 0)).toBe('move:field:0')
-    expect(defaultTargetResolutionState(s)).toMatchObject({ hit: false, applyDamage: true, crit: false })
-    expect(defaultTargetResolutionState(script({ requiresAccuracy: false, damaging: false }))).toMatchObject({ hit: true, applyDamage: false })
-  })
-
-  it('resolves target damage with manual override, defense, and type immunity', () => {
-    const user = token({ id: 'u', species: 'User', atk: 12 })
-    const target = token({ id: 't', species: 'Target', currentHp: 30, def: 7, defenderTypes: ['Grass'] })
-    const s = script({ type: 'Fire', damageClass: 'Physical' })
-
-    expect(resolveMoveAutomationTargetDamageLoss(s, user, target, {
-      ...defaultTargetResolutionState(s),
-      hit: true,
-      damageRoll: { formula: '2d6+8', count: 2, sides: 6, total: 20, rolls: [6, 6], mod: 8 },
-    })).toBe(37)
-
-    expect(resolveMoveAutomationTargetDamageLoss(s, user, target, {
-      ...defaultTargetResolutionState(s),
-      hit: true,
-      manualHpLoss: '13',
-    })).toBe(13)
-
-    expect(resolveMoveAutomationTargetDamageLoss(script({ type: 'Normal' }), user, token({ id: 'g', species: 'Ghost', defenderTypes: ['Ghost'] }), {
-      ...defaultTargetResolutionState(s),
-      hit: true,
-      damageRoll: { formula: 'flat', count: 0, sides: 0, total: 20, rolls: [], mod: 20 },
-    })).toBe(0)
-  })
-
-  it('resolves HP suggestion amounts and multiplier labels', () => {
-    const s = script({
-      hpSuggestions: [
-        { recipient: 'target', mode: 'lose-percent-current', percent: 50, label: 'Lose half' },
-        { recipient: 'target', mode: 'set-zero', label: 'Faint' },
-      ],
-    })
-    const target = token({ id: 't', species: 'Target', currentHp: 22, maxHp: 50, defenderTypes: ['Grass'] })
-
-    expect(resolveHpSuggestionAmount(s, {}, 0, target)).toBe(11)
-    expect(resolveHpSuggestionAmount(s, { [moveAutomationSuggestionKey(s, 'hp', 0)]: '7' }, 0, target)).toBe(7)
-    expect(resolveHpSuggestionAmount(s, {}, 1, target)).toBe(22)
-    expect(moveAutomationMultiplierLabel(s, target)).toBe('1.5')
-  })
-
   it('builds transactions for damage, suggestions, hazards, fields, stages, and notes', () => {
     const user = token({ id: 'u', species: 'Caster', currentHp: 30, maxHp: 40 })
     const target = token({ id: 't', species: 'Target', currentHp: 25, maxHp: 30, conditions: ['Burned'] })

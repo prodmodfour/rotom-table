@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass (latest full test run: 183 files / 706 tests). `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include another focused move-automation helper split, renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass (latest full test run: 184 files / 706 tests). `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include another focused move-automation helper split, renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
 
 ## Phase 0 baseline audit
 
@@ -4111,3 +4111,17 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
 
+
+## Next phase update: move automation target-resolution helper split
+
+- Extracted move-automation suggestion keys, target-resolution defaults, damage multipliers, target HP-loss calculation, and HP-suggestion amount resolution from `utils/moveAutomationTransaction.ts` into `utils/moveAutomationTargetResolution.ts`.
+- Updated move-automation wizard/composition components and resolution-state helpers to import target-resolution contracts from the focused module, leaving transaction assembly responsible for orchestration and final payload construction.
+- Preserved transaction payloads, damage math, weather/terrain field bonus behavior, manual HP-loss overrides, HP suggestion overrides, multiplier labels, and wizard suggestion enablement behavior.
+- Added `tests/utils/moveAutomationTargetResolution.test.ts` covering suggestion keys/defaults, enabled-state checks, damage loss with manual/weather/immunity cases, HP suggestion amounts, and multiplier labels.
+- Next remaining phase: continue one bounded cleanup pass, with candidates including another focused move-automation helper split, renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/utils/moveAutomationTargetResolution.test.ts tests/utils/moveAutomationTransaction.test.ts tests/utils/moveAutomationResolution.test.ts tests/composables/move-automation/useMoveAutomationWizard.test.ts` — passes: 4 test files / 12 tests.
+  - `npm run typecheck` — passes.
+  - `npm test` — passes: 184 test files / 706 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

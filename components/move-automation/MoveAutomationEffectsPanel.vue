@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { CombatStageKey } from '~/types/combatStages'
 import type { MoveAutomationScript } from '~/types/moveAutomation'
-import type { MoveAutomationSuggestionKind } from '~/utils/moveAutomationTransaction'
+import type { MoveAutomationSuggestionKind } from '~/utils/moveAutomationTargetResolution'
 
 const manualUserConditions = defineModel<string[]>('manualUserConditions', { required: true })
 const manualTargetConditions = defineModel<string[]>('manualTargetConditions', { required: true })

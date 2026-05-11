@@ -11,7 +11,7 @@ import {
   syncMoveAutomationTargetResolutions,
   type MoveAutomationResolutionRecord,
 } from '~/utils/moveAutomationResolution'
-import { moveAutomationSuggestionKey } from '~/utils/moveAutomationTransaction'
+import { moveAutomationSuggestionKey } from '~/utils/moveAutomationTargetResolution'
 import type { CombatStageMap } from '~/types/combatStages'
 import type { MoveAutomationScript } from '~/types/moveAutomation'
 

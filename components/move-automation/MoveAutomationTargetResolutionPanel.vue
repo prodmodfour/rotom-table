@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { MoveAutomationScript } from '~/types/moveAutomation'
 import type { SpawnedPokemon } from '~/types/pokemon'
-import type { MoveAutomationTargetResolutionState } from '~/utils/moveAutomationTransaction'
+import type { MoveAutomationTargetResolutionState } from '~/utils/moveAutomationTargetResolution'
 
 defineProps<{
   user: SpawnedPokemon
