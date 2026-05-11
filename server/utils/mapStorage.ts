@@ -10,7 +10,6 @@ import type { MapSummary, TabletopMap } from '~/types/map'
 import { toPersistableMapPayload } from '~/utils/maps/persistence'
 import {
   findFileByName,
-  walkDirectories,
   walkFiles,
   writeJsonFile,
 } from './jsonFiles'
@@ -64,9 +63,6 @@ export const listMaps = (): MapSummary[] => {
   }
   return sortMapSummaries(out)
 }
-
-export const listMapFolders = (): string[] =>
-  walkDirectories(MAPS_ROOT).sort((a, b) => a.localeCompare(b))
 
 export const allocateSlug = (base: string): string => {
   const root = slugifyMapBase(base) || 'untitled-map'

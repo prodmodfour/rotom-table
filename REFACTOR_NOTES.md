@@ -55,7 +55,7 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
 ## Current quality gate results
 
 - `npm run typecheck` — passes.
-- `npm test` — passes: 149 test files / 578 tests.
+- `npm test` — passes: 152 test files / 586 tests.
 - `npm run build` — passes; existing large chunk warnings remain.
 - `npm run check:move-automation` — still fails with the same baseline `Explicit move automation coverage: 0/769` missing-script report.
 - `npm run sync:item-sprites -- --dry-run` was not run because the script does not implement a dry-run mode.
@@ -3605,5 +3605,20 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
   - `npm test -- tests/server/mapPaths.test.ts tests/server/mapSummaries.test.ts tests/server/mapNormalization.test.ts tests/server/createMap.test.ts tests/server/loadMap.test.ts` — passes: 5 test files / 19 tests.
   - `npm run typecheck` — passes.
   - `npm test` — passes: 151 test files / 584 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: map folder storage split
+
+- Split map folder filesystem operations out of map-folder use cases into `server/utils/mapFolderStorage.ts`.
+  - The new storage utility owns map-folder listing, create, move, delete, root containment, parent pruning, and project-relative path formatting for filesystem-backed map folders.
+- Updated map folder create/move/delete use cases to depend on narrow storage functions instead of importing `node:fs`/`node:path` directly, while preserving request validation, compatible error messages/status codes, response shapes, and `maps` realtime folder events.
+- Updated map folder listing to use the focused folder-storage module instead of exporting folder listing through `mapStorage`.
+- Added `tests/server/mapFolderStorage.test.ts` covering create/list/move/delete behavior, missing folders, invalid root targets, path traversal protection, non-directory rejection, descendant-move rejection, and destination conflicts.
+- Next remaining phase: continue one bounded cleanup pass, with candidates including another focused storage split, map-editor/helper extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/server/mapFolderStorage.test.ts tests/server/createMapFolder.test.ts tests/server/moveMapFolder.test.ts tests/server/deleteMapFolder.test.ts tests/server/listMapLibrary.test.ts tests/server/mapPaths.test.ts tests/server/mapSummaries.test.ts` — passes: 7 test files / 24 tests.
+  - `npm run typecheck` — passes.
+  - `npm test` — passes: 152 test files / 586 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

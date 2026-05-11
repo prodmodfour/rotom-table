@@ -1,9 +1,7 @@
-import { UseCaseHttpError } from '../utils/useCaseErrors'
-import { existsSync, rmSync, statSync } from 'node:fs'
-import { join, sep } from 'node:path'
 import { mapsChannel, type RealtimeEvent } from '~/shared/realtime'
-import { relativeToProjectRoot } from '../utils/fsPaths'
-import { MAPS_ROOT, pruneEmptyMapParents, sanitizeMapFolderPath } from '../utils/mapPaths'
+import { deleteMapFolder, type DeleteMapFolderResult as StoredDeleteMapFolderResult } from '../utils/mapFolderStorage'
+import { sanitizeMapFolderPath } from '../utils/mapPaths'
+import { UseCaseHttpError } from '../utils/useCaseErrors'
 
 export class DeleteMapFolderUseCaseError extends UseCaseHttpError<400 | 404> {}
 
@@ -13,13 +11,8 @@ export interface DeleteMapFolderInput {
 }
 
 export interface DeleteMapFolderDependencies {
-  mapsRoot?: string
+  deleteFolder?: (folder: string) => StoredDeleteMapFolderResult | null
   sanitizeFolder?: (folder: string, allowEmpty: boolean) => string
-  pathExists?: (dirPath: string) => boolean
-  isDirectory?: (dirPath: string) => boolean
-  removeFolder?: (dirPath: string) => void
-  pruneEmptyParents?: (dirPath: string) => void
-  relativePath?: (dirPath: string) => string
 }
 
 export interface DeleteMapFolderResult {
@@ -39,36 +32,34 @@ export const normalizeDeleteMapFolderPath = (
   }
 }
 
+const normalizeDeleteFolderStorageError = (err: unknown): DeleteMapFolderUseCaseError => {
+  const message = (err as Error).message
+  if (message === 'Invalid path: outside root') {
+    return new DeleteMapFolderUseCaseError(400, 'Invalid folder path')
+  }
+  return new DeleteMapFolderUseCaseError(400, message)
+}
+
 export const deleteMapFolderUseCase = (
   input: DeleteMapFolderInput,
   dependencies: DeleteMapFolderDependencies = {},
 ): DeleteMapFolderResult => {
-  const mapsRoot = dependencies.mapsRoot ?? MAPS_ROOT
   const sanitizeFolder = dependencies.sanitizeFolder ?? sanitizeMapFolderPath
-  const pathExists = dependencies.pathExists ?? existsSync
-  const isDirectory = dependencies.isDirectory ?? ((dirPath: string) => statSync(dirPath).isDirectory())
-  const removeFolder = dependencies.removeFolder ?? ((dirPath: string) => rmSync(dirPath, { recursive: true, force: true }))
-  const pruneEmptyParents = dependencies.pruneEmptyParents ?? pruneEmptyMapParents
-  const relativePath = dependencies.relativePath ?? relativeToProjectRoot
+  const deleteFolder = dependencies.deleteFolder ?? deleteMapFolder
 
   const folder = normalizeDeleteMapFolderPath(input.folder, sanitizeFolder)
-  const dir = join(mapsRoot, folder)
-  if (dir === mapsRoot || !dir.startsWith(mapsRoot + sep)) {
-    throw new DeleteMapFolderUseCaseError(400, 'Invalid folder path')
-  }
-  if (!pathExists(dir)) {
-    throw new DeleteMapFolderUseCaseError(404, `Folder "${folder}" not found`)
-  }
-  if (!isDirectory(dir)) {
-    throw new DeleteMapFolderUseCaseError(400, 'Not a directory')
+  let result: StoredDeleteMapFolderResult | null
+  try {
+    result = deleteFolder(folder)
+  } catch (err) {
+    throw normalizeDeleteFolderStorageError(err)
   }
 
-  removeFolder(dir)
-  pruneEmptyParents(dir)
+  if (!result) throw new DeleteMapFolderUseCaseError(404, `Folder "${folder}" not found`)
 
   return {
     ok: true,
-    removed: relativePath(dir),
+    removed: result.removed,
     events: [
       {
         channel: mapsChannel,

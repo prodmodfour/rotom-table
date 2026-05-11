@@ -1,6 +1,7 @@
 import type { AuthRole } from '~/shared/auth'
 import type { MapSummary } from '~/types/map'
-import { listMapFolders, listMaps } from '../utils/mapStorage'
+import { listMapFolders } from '../utils/mapFolderStorage'
+import { listMaps } from '../utils/mapStorage'
 
 export interface ListMapSummariesInput {
   role: AuthRole

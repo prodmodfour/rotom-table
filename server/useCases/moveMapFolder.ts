@@ -1,8 +1,7 @@
-import { UseCaseHttpError } from '../utils/useCaseErrors'
-import { existsSync, mkdirSync, renameSync, statSync } from 'node:fs'
-import { dirname, join, sep } from 'node:path'
 import { mapsChannel, type RealtimeEvent } from '~/shared/realtime'
-import { MAPS_ROOT, pruneEmptyMapParents, sanitizeMapFolderPath } from '../utils/mapPaths'
+import { moveMapFolder, type MoveMapFolderResult as StoredMoveMapFolderResult } from '../utils/mapFolderStorage'
+import { sanitizeMapFolderPath } from '../utils/mapPaths'
+import { UseCaseHttpError } from '../utils/useCaseErrors'
 
 export class MoveMapFolderUseCaseError extends UseCaseHttpError<400 | 404 | 409> {}
 
@@ -13,13 +12,8 @@ export interface MoveMapFolderInput {
 }
 
 export interface MoveMapFolderDependencies {
-  mapsRoot?: string
+  moveFolder?: (from: string, to: string) => StoredMoveMapFolderResult | null
   sanitizeFolder?: (folder: string, allowEmpty: boolean) => string
-  pathExists?: (dirPath: string) => boolean
-  isDirectory?: (dirPath: string) => boolean
-  ensureDirectory?: (dirPath: string) => void
-  renameFolder?: (fromPath: string, toPath: string) => void
-  pruneEmptyParents?: (dirPath: string) => void
 }
 
 export interface MoveMapFolderResult {
@@ -39,17 +33,23 @@ export const normalizeMoveMapFolderPath = (
   }
 }
 
+const normalizeMoveFolderStorageError = (err: unknown): MoveMapFolderUseCaseError => {
+  const message = (err as Error).message
+  if (message === 'Destination folder already exists') {
+    return new MoveMapFolderUseCaseError(409, message)
+  }
+  if (message === 'Invalid path: outside root') {
+    return new MoveMapFolderUseCaseError(400, 'Invalid path')
+  }
+  return new MoveMapFolderUseCaseError(400, message)
+}
+
 export const moveMapFolderUseCase = (
   input: MoveMapFolderInput,
   dependencies: MoveMapFolderDependencies = {},
 ): MoveMapFolderResult => {
-  const mapsRoot = dependencies.mapsRoot ?? MAPS_ROOT
   const sanitizeFolder = dependencies.sanitizeFolder ?? sanitizeMapFolderPath
-  const pathExists = dependencies.pathExists ?? existsSync
-  const isDirectory = dependencies.isDirectory ?? ((dirPath: string) => statSync(dirPath).isDirectory())
-  const ensureDirectory = dependencies.ensureDirectory ?? ((dirPath: string) => mkdirSync(dirPath, { recursive: true }))
-  const renameFolder = dependencies.renameFolder ?? renameSync
-  const pruneEmptyParents = dependencies.pruneEmptyParents ?? pruneEmptyMapParents
+  const moveFolder = dependencies.moveFolder ?? moveMapFolder
 
   const from = normalizeMoveMapFolderPath(input.from, sanitizeFolder)
   const to = normalizeMoveMapFolderPath(input.to, sanitizeFolder)
@@ -65,32 +65,27 @@ export const moveMapFolderUseCase = (
     throw new MoveMapFolderUseCaseError(400, 'Cannot move a folder into itself or one of its descendants')
   }
 
-  const source = join(mapsRoot, from)
-  const destination = join(mapsRoot, to)
-  if (!source.startsWith(mapsRoot + sep) || !destination.startsWith(mapsRoot + sep)) {
-    throw new MoveMapFolderUseCaseError(400, 'Invalid path')
-  }
-  if (!pathExists(source) || !isDirectory(source)) {
-    throw new MoveMapFolderUseCaseError(404, `Folder "${from}" not found`)
-  }
-  if (pathExists(destination)) {
-    throw new MoveMapFolderUseCaseError(409, 'Destination folder already exists')
+  let result: StoredMoveMapFolderResult | null
+  try {
+    result = moveFolder(from, to)
+  } catch (err) {
+    throw normalizeMoveFolderStorageError(err)
   }
 
-  ensureDirectory(dirname(destination))
-  renameFolder(source, destination)
-  pruneEmptyParents(source)
+  if (!result) throw new MoveMapFolderUseCaseError(404, `Folder "${from}" not found`)
 
   return {
     ok: true,
-    moved: true,
-    events: [
-      {
-        channel: mapsChannel,
-        type: 'folder-moved',
-        clientId: input.clientId,
-        data: { from, to },
-      },
-    ],
+    moved: result.moved,
+    events: result.moved
+      ? [
+          {
+            channel: mapsChannel,
+            type: 'folder-moved',
+            clientId: input.clientId,
+            data: { from, to },
+          },
+        ]
+      : [],
   }
 }

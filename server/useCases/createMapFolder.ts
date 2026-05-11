@@ -1,9 +1,7 @@
-import { UseCaseHttpError } from '../utils/useCaseErrors'
-import { existsSync, mkdirSync } from 'node:fs'
-import { join, sep } from 'node:path'
 import { mapsChannel, type RealtimeEvent } from '~/shared/realtime'
-import { relativeToProjectRoot } from '../utils/fsPaths'
-import { MAPS_ROOT, sanitizeMapFolderPath } from '../utils/mapPaths'
+import { createMapFolder, type CreateMapFolderResult as StoredCreateMapFolderResult } from '../utils/mapFolderStorage'
+import { sanitizeMapFolderPath } from '../utils/mapPaths'
+import { UseCaseHttpError } from '../utils/useCaseErrors'
 
 export class CreateMapFolderUseCaseError extends UseCaseHttpError<400> {}
 
@@ -13,11 +11,8 @@ export interface CreateMapFolderInput {
 }
 
 export interface CreateMapFolderDependencies {
-  mapsRoot?: string
+  createFolder?: (folder: string) => StoredCreateMapFolderResult
   sanitizeFolder?: (folder: string, allowEmpty: boolean) => string
-  pathExists?: (dirPath: string) => boolean
-  ensureDirectory?: (dirPath: string) => void
-  relativePath?: (dirPath: string) => string
 }
 
 export interface CreateMapFolderResult {
@@ -38,29 +33,33 @@ export const normalizeCreateMapFolder = (
   }
 }
 
+const normalizeCreateFolderStorageError = (err: unknown): CreateMapFolderUseCaseError => {
+  const message = (err as Error).message
+  if (message === 'Invalid path: outside root') {
+    return new CreateMapFolderUseCaseError(400, 'Invalid destination')
+  }
+  return new CreateMapFolderUseCaseError(400, message)
+}
+
 export const createMapFolderUseCase = (
   input: CreateMapFolderInput,
   dependencies: CreateMapFolderDependencies = {},
 ): CreateMapFolderResult => {
-  const mapsRoot = dependencies.mapsRoot ?? MAPS_ROOT
   const sanitizeFolder = dependencies.sanitizeFolder ?? sanitizeMapFolderPath
-  const pathExists = dependencies.pathExists ?? existsSync
-  const ensureDirectory = dependencies.ensureDirectory ?? ((dirPath: string) => mkdirSync(dirPath, { recursive: true }))
-  const relativePath = dependencies.relativePath ?? relativeToProjectRoot
+  const createFolder = dependencies.createFolder ?? createMapFolder
 
   const folder = normalizeCreateMapFolder(input.folder, sanitizeFolder)
-  const destination = join(mapsRoot, folder)
-  if (!destination.startsWith(mapsRoot + sep)) {
-    throw new CreateMapFolderUseCaseError(400, 'Invalid destination')
+  let result: StoredCreateMapFolderResult
+  try {
+    result = createFolder(folder)
+  } catch (err) {
+    throw normalizeCreateFolderStorageError(err)
   }
-
-  const existed = pathExists(destination)
-  ensureDirectory(destination)
 
   return {
     ok: true,
-    created: !existed,
-    path: relativePath(destination),
+    created: result.created,
+    path: result.path,
     events: [
       {
         channel: mapsChannel,

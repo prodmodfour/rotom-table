@@ -5,38 +5,14 @@ import {
   normalizeDeleteMapFolderPath,
 } from '../../server/useCases/deleteMapFolder'
 
-const MAPS_ROOT = '/repo/data/maps'
-
-const createDeps = (options: {
-  existingPaths?: string[]
-  directories?: string[]
-  sanitizeFolder?: (folder: string, allowEmpty: boolean) => string
-} = {}) => {
-  const existingPaths = new Set(options.existingPaths ?? [`${MAPS_ROOT}/old-folder`])
-  const directories = new Set(options.directories ?? Array.from(existingPaths))
-  const removed: string[] = []
-  const pruned: string[] = []
-  const deps = {
-    mapsRoot: MAPS_ROOT,
-    sanitizeFolder: vi.fn(options.sanitizeFolder ?? ((folder: string) => folder.replace(/^\/+|\/+$/g, ''))),
-    pathExists: vi.fn((path: string) => existingPaths.has(path)),
-    isDirectory: vi.fn((path: string) => directories.has(path)),
-    removeFolder: vi.fn((path: string) => {
-      removed.push(path)
-      existingPaths.delete(path)
-      directories.delete(path)
-    }),
-    pruneEmptyParents: vi.fn((path: string) => {
-      pruned.push(path)
-    }),
-    relativePath: vi.fn((path: string) => path.replace('/repo/', '')),
-  }
-  return { deps, removed, pruned }
-}
+const createDeps = () => ({
+  sanitizeFolder: vi.fn((folder: string) => folder.replace(/^\/+|\/+$/g, '')),
+  deleteFolder: vi.fn<(folder: string) => { removed: string } | null>((folder: string) => ({ removed: `data/maps/${folder}` })),
+})
 
 describe('delete map folder use case', () => {
-  it('normalizes the folder, removes it recursively, prunes parents, and emits a maps-channel event', () => {
-    const { deps, removed, pruned } = createDeps()
+  it('normalizes the folder, removes it through storage, and emits a maps-channel event', () => {
+    const deps = createDeps()
 
     const result = deleteMapFolderUseCase({
       folder: '/old-folder/',
@@ -44,10 +20,7 @@ describe('delete map folder use case', () => {
     }, deps)
 
     expect(deps.sanitizeFolder).toHaveBeenCalledWith('/old-folder/', false)
-    expect(deps.pathExists).toHaveBeenCalledWith(`${MAPS_ROOT}/old-folder`)
-    expect(deps.isDirectory).toHaveBeenCalledWith(`${MAPS_ROOT}/old-folder`)
-    expect(removed).toEqual([`${MAPS_ROOT}/old-folder`])
-    expect(pruned).toEqual([`${MAPS_ROOT}/old-folder`])
+    expect(deps.deleteFolder).toHaveBeenCalledWith('old-folder')
     expect(result).toEqual({
       ok: true,
       removed: 'data/maps/old-folder',
@@ -72,25 +45,27 @@ describe('delete map folder use case', () => {
   })
 
   it('rejects escaped or root folder targets before filesystem mutation', () => {
-    const escaped = createDeps({ sanitizeFolder: () => '../escape' })
-    expect(() => deleteMapFolderUseCase({ folder: '../escape' }, escaped.deps))
-      .toThrow('Invalid folder path')
-    expect(escaped.removed).toEqual([])
-
-    const root = createDeps({
-      existingPaths: [MAPS_ROOT],
-      directories: [MAPS_ROOT],
-      sanitizeFolder: () => '',
+    const escaped = createDeps()
+    escaped.deleteFolder.mockImplementation(() => {
+      throw new Error('Invalid path: outside root')
     })
-    expect(() => deleteMapFolderUseCase({ folder: '' }, root.deps))
+    expect(() => deleteMapFolderUseCase({ folder: '../escape' }, escaped))
       .toThrow('Invalid folder path')
-    expect(root.removed).toEqual([])
+
+    const root = createDeps()
+    root.sanitizeFolder.mockReturnValue('')
+    root.deleteFolder.mockImplementation(() => {
+      throw new Error('Invalid folder path')
+    })
+    expect(() => deleteMapFolderUseCase({ folder: '' }, root))
+      .toThrow('Invalid folder path')
   })
 
   it('rejects missing folders and non-directory targets with compatible messages', () => {
-    const missing = createDeps({ existingPaths: [], directories: [] })
+    const missing = createDeps()
+    missing.deleteFolder.mockReturnValue(null)
     try {
-      deleteMapFolderUseCase({ folder: 'missing' }, missing.deps)
+      deleteMapFolderUseCase({ folder: 'missing' }, missing)
       throw new Error('expected missing folder to throw')
     } catch (err) {
       expect(err).toBeInstanceOf(DeleteMapFolderUseCaseError)
@@ -100,12 +75,12 @@ describe('delete map folder use case', () => {
       })
     }
 
-    const fileInsteadOfFolder = createDeps({
-      existingPaths: [`${MAPS_ROOT}/old-folder`],
-      directories: [],
+    const fileInsteadOfFolder = createDeps()
+    fileInsteadOfFolder.deleteFolder.mockImplementation(() => {
+      throw new Error('Not a directory')
     })
     try {
-      deleteMapFolderUseCase({ folder: 'old-folder' }, fileInsteadOfFolder.deps)
+      deleteMapFolderUseCase({ folder: 'old-folder' }, fileInsteadOfFolder)
       throw new Error('expected non-directory target to throw')
     } catch (err) {
       expect(err).toBeInstanceOf(DeleteMapFolderUseCaseError)
