@@ -1,12 +1,16 @@
 import * as THREE from 'three'
 import type { LayerVisibility } from '~/types/map'
 import type { SpawnedPokemon } from '~/types/pokemon'
-import { normalizeCombatStages } from '~/utils/combatStages'
-import { getPokemonCenter } from '~/utils/grid'
-import { normalizeConditionNames } from '~/utils/statusConditions'
 import { buildVolumeMaterials, paintVolumeMaterials } from '~/utils/isometric/materials'
 import { disposeObject3D } from '~/utils/isometric/resourceDisposal'
 import { buildElevationBadge, buildHpBar, updateElevationBadge, updateHpBar } from '~/utils/isometric/tokenHud'
+import {
+  nextSelectionLiftFactor,
+  pokemonPickDimensions,
+  pokemonRenderSpawnState,
+  selectionLiftTarget,
+  tokenSelectionLiftStyle,
+} from '~/utils/isometric/tokenRenderState'
 import type { PokemonRenderObject } from '~/utils/isometric/types'
 import {
   applyAnimationFrame,
@@ -16,17 +20,6 @@ import {
   updateSpriteFacing,
   updateWorldSpriteLighting,
 } from '~/utils/isometric/worldSprites'
-
-// Selection lift: selected pokemon pops up while the shadow stays
-// anchored and grows more diffuse. Visible separation between sprite
-// and shadow is the strongest "this thing is in 3D" cue available.
-const SPRITE_LIFT_AMOUNT = 0.08
-const SHADOW_LIFT_SCALE = 1.3
-const SHADOW_LIFT_OPACITY = 0.55
-
-// Slight ellipse along the cage's shadow axis (±X). Mimics how shadows
-// fall away from a light source instead of reading as a perfect circle.
-const SHADOW_X_STRETCH = 1.15
 
 export type ShadowSurfaceResolver = (
   centerX: number,
@@ -67,10 +60,9 @@ export const createPokemonRenderObject = (
     }),
   )
 
-  const pickWidth = Math.max(pokemon.base, pokemon.width, 1)
-  const pickHeight = Math.max(pokemon.clearance, pokemon.height, 1)
+  const pickSize = pokemonPickDimensions(pokemon)
   const proxy = new THREE.Mesh(
-    new THREE.BoxGeometry(pickWidth, pickHeight, pickWidth),
+    new THREE.BoxGeometry(pickSize.width, pickSize.height, pickSize.width),
     new THREE.MeshBasicMaterial({
       transparent: true,
       opacity: 0,
@@ -80,8 +72,8 @@ export const createPokemonRenderObject = (
   )
   proxy.userData.pokemonId = pokemon.id
 
-  const center = getPokemonCenter(pokemon)
-  const currentCenter = new THREE.Vector3(center.x, center.y, center.z)
+  const spawnState = pokemonRenderSpawnState(pokemon)
+  const currentCenter = new THREE.Vector3(spawnState.center.x, spawnState.center.y, spawnState.center.z)
   const targetCenter = currentCenter.clone()
 
   containers.worldGroup.add(shadow)
@@ -105,24 +97,24 @@ export const createPokemonRenderObject = (
     shadow,
     currentCenter,
     targetCenter,
-    width: pokemon.width,
-    height: pokemon.height,
-    base: pokemon.base,
-    clearance: pokemon.clearance,
-    elevation: pokemon.position.y,
-    spriteUrl: pokemon.spriteUrl,
-    backSpriteUrl: pokemon.backSpriteUrl,
-    spriteAnimation: pokemon.spriteAnimation,
-    backSpriteAnimation: pokemon.backSpriteAnimation,
-    spriteCrop: pokemon.spriteCrop,
-    turned: Boolean(pokemon.turned),
-    displayName: pokemon.species,
-    level: pokemon.level,
-    currentHp: pokemon.currentHp,
-    maxHp: pokemon.maxHp,
-    combatStages: normalizeCombatStages(pokemon.combatStages),
-    conditions: normalizeConditionNames(pokemon.conditions),
-    tokenItems: [...pokemon.tokenItems],
+    width: spawnState.width,
+    height: spawnState.height,
+    base: spawnState.base,
+    clearance: spawnState.clearance,
+    elevation: spawnState.elevation,
+    spriteUrl: spawnState.spriteUrl,
+    backSpriteUrl: spawnState.backSpriteUrl,
+    spriteAnimation: spawnState.spriteAnimation,
+    backSpriteAnimation: spawnState.backSpriteAnimation,
+    spriteCrop: spawnState.spriteCrop,
+    turned: spawnState.turned,
+    displayName: spawnState.displayName,
+    level: spawnState.level,
+    currentHp: spawnState.currentHp,
+    maxHp: spawnState.maxHp,
+    combatStages: spawnState.combatStages,
+    conditions: spawnState.conditions,
+    tokenItems: spawnState.tokenItems,
     liftFactor: 0,
     liftTarget: 0,
   }
@@ -132,22 +124,22 @@ export const updatePokemonRenderObjectFromSpawn = (
   renderObject: PokemonRenderObject,
   pokemon: SpawnedPokemon,
 ) => {
-  const center = getPokemonCenter(pokemon)
-  renderObject.targetCenter.set(center.x, center.y, center.z)
-  renderObject.elevation = pokemon.position.y
-  renderObject.spriteUrl = pokemon.spriteUrl
-  renderObject.backSpriteUrl = pokemon.backSpriteUrl
-  renderObject.spriteAnimation = pokemon.spriteAnimation
-  renderObject.backSpriteAnimation = pokemon.backSpriteAnimation
-  renderObject.spriteCrop = pokemon.spriteCrop
-  renderObject.turned = Boolean(pokemon.turned)
-  renderObject.displayName = pokemon.species
-  renderObject.level = pokemon.level
-  renderObject.currentHp = pokemon.currentHp
-  renderObject.maxHp = pokemon.maxHp
-  renderObject.combatStages = normalizeCombatStages(pokemon.combatStages)
-  renderObject.conditions = normalizeConditionNames(pokemon.conditions)
-  renderObject.tokenItems = [...pokemon.tokenItems]
+  const spawnState = pokemonRenderSpawnState(pokemon)
+  renderObject.targetCenter.set(spawnState.center.x, spawnState.center.y, spawnState.center.z)
+  renderObject.elevation = spawnState.elevation
+  renderObject.spriteUrl = spawnState.spriteUrl
+  renderObject.backSpriteUrl = spawnState.backSpriteUrl
+  renderObject.spriteAnimation = spawnState.spriteAnimation
+  renderObject.backSpriteAnimation = spawnState.backSpriteAnimation
+  renderObject.spriteCrop = spawnState.spriteCrop
+  renderObject.turned = spawnState.turned
+  renderObject.displayName = spawnState.displayName
+  renderObject.level = spawnState.level
+  renderObject.currentHp = spawnState.currentHp
+  renderObject.maxHp = spawnState.maxHp
+  renderObject.combatStages = spawnState.combatStages
+  renderObject.conditions = spawnState.conditions
+  renderObject.tokenItems = spawnState.tokenItems
 }
 
 export const applyPokemonRenderObjectPosition = (
@@ -233,7 +225,7 @@ export const paintPokemonRenderObjectStyle = (
   // Idle edges fade so the cage reads via faces; selection sharpens
   // them back up so the active token has a clear hard outline.
   ;(renderObject.edges.material as THREE.LineBasicMaterial).opacity = selected ? 0.95 : 0.35
-  renderObject.liftTarget = selected ? 1 : 0
+  renderObject.liftTarget = selectionLiftTarget(selected)
 }
 
 export const setPokemonRenderObjectLayerVisibility = (
@@ -283,35 +275,26 @@ export const animatePokemonRenderObject = (
   // Selection lift: sprite + HP bar pop up, cage stays anchored,
   // shadow scales up and fades so it reads as a more diffuse blob
   // — the visible detachment is the "off the ground" cue.
-  if (Math.abs(renderObject.liftFactor - renderObject.liftTarget) < 0.001) {
-    renderObject.liftFactor = renderObject.liftTarget
-  } else {
-    renderObject.liftFactor = THREE.MathUtils.lerp(
-      renderObject.liftFactor,
-      renderObject.liftTarget,
-      options.damping,
-    )
-  }
+  renderObject.liftFactor = nextSelectionLiftFactor(
+    renderObject.liftFactor,
+    renderObject.liftTarget,
+    options.damping,
+  )
 
-  if (renderObject.liftFactor > 0) {
-    const lift = renderObject.liftFactor * SPRITE_LIFT_AMOUNT
-    renderObject.sprite.position.y += lift
-    renderObject.spriteState.halo.position.y += lift
+  const liftStyle = tokenSelectionLiftStyle(renderObject.liftFactor)
+  if (liftStyle.spriteLift > 0) {
+    renderObject.sprite.position.y += liftStyle.spriteLift
+    renderObject.spriteState.halo.position.y += liftStyle.spriteLift
     if (renderObject.hpBar.visible) {
-      renderObject.hpBar.position.y += lift
+      renderObject.hpBar.position.y += liftStyle.spriteLift
     }
   }
 
   // Non-uniform: lift grows the disc, X-stretch elongates it along
   // the cage's shadow axis so it reads as an ellipse falling away
   // from the implied light, not a perfect circle.
-  const shadowScale = THREE.MathUtils.lerp(1, SHADOW_LIFT_SCALE, renderObject.liftFactor)
-  renderObject.shadow.scale.set(shadowScale * SHADOW_X_STRETCH, shadowScale, 1)
-  renderObject.shadow.material.opacity = THREE.MathUtils.lerp(
-    1,
-    SHADOW_LIFT_OPACITY,
-    renderObject.liftFactor,
-  )
+  renderObject.shadow.scale.set(liftStyle.shadowScaleX, liftStyle.shadowScaleY, 1)
+  renderObject.shadow.material.opacity = liftStyle.shadowOpacity
 }
 
 export const disposePokemonRenderObject = (renderObject: PokemonRenderObject) => {

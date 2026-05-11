@@ -3787,3 +3787,17 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
   - `npm test` — passes: 163 test files / 624 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: isometric token render state helper split
+
+- Extracted token render metadata normalization, proxy pick-size derivation, selection lift targets, damped lift-factor stepping, and shadow/lift style calculations from `utils/isometric/tokenRenderer.ts` into `utils/isometric/tokenRenderState.ts`.
+- Reduced `tokenRenderer` so it focuses on Three.js object construction, lifecycle updates, layer visibility, animation wiring, and disposal while the pure token-state rules are isolated and unit-tested.
+- Preserved token center calculation, normalized combat stages/conditions, copied token-item metadata, picking proxy dimensions, selected-token lift animation, shadow scaling/opacity, and public `IsometricGrid` behavior.
+- Added `tests/utils/isometric/tokenRenderState.test.ts` covering render-state normalization, token-item copying, proxy dimensions, lift targets/damping, and shadow/lift style output.
+- Next remaining phase: continue one bounded cleanup pass, with candidates including another focused renderer/helper split, storage split, map-editor extraction, or small UI duplication cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/utils/isometric/tokenRenderState.test.ts` — passes: 1 test file / 5 tests.
+  - `npm run typecheck` — passes.
+  - `npm test` — passes: 164 test files / 629 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
