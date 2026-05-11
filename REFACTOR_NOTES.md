@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass (latest full test run: 174 files / 669 tests). `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include another focused Pokédex/search helper split, renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass (latest full test run: 175 files / 674 tests). `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include another focused Pokédex/search helper split, renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
 
 ## Phase 0 baseline audit
 
@@ -3951,5 +3951,19 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
   - `npm test -- tests/utils/pokedex/searchCapabilityValues.test.ts tests/utils/pokedex/searchFieldValues.test.ts tests/utils/pokedex/searchText.test.ts` — passes: 3 test files / 11 tests.
   - `npm run typecheck` — passes.
   - `npm test` — passes: 174 test files / 669 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: Pokédex search expression helper split
+
+- Extracted Pokédex boolean search expression types, query normalization, tokenization, parsing, criterion construction, and expression matching from `utils/pokedex/searchQuery.ts` into `utils/pokedex/searchExpressions.ts`.
+- Reduced `searchQuery.ts` to active field-filter combination while re-exporting the previous parser/matcher API for existing callers and tests.
+- Preserved advanced Pokédex search behavior, including dash exclusions, implicit AND, OR/NOT grouping, compact aliases, field-filter operator combination, and route/import compatibility.
+- Added `tests/utils/pokedex/searchExpressions.test.ts` covering normalization, tokenization, compact criteria, parsed expression shape, and expression matching.
+- Next remaining phase: continue one small bounded cleanup pass, with candidates including another focused Pokédex/search helper split, renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/utils/pokedex/searchExpressions.test.ts tests/utils/pokedex/searchQuery.test.ts` — passes: 2 test files / 9 tests.
+  - `npm run typecheck` — passes.
+  - `npm test` — passes: 175 test files / 674 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
