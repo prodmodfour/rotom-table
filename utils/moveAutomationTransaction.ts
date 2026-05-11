@@ -1,5 +1,6 @@
 import { normalizeCombatStages } from '~/utils/combatStages'
 import { fieldEffectDamageBonus, type DamageRollResult } from '~/utils/moveAutomation'
+import { createMoveAutomationHpUpdateAccumulator } from '~/utils/moveAutomationHpUpdates'
 import {
   addCombatStageDeltas,
   applyHpSuggestion,
@@ -186,11 +187,7 @@ export const buildMoveAutomationTransaction = ({
 }: BuildMoveAutomationTransactionInput): MoveAutomationTransaction => {
   if (!script) return unknownMoveTransaction(user)
 
-  const hpById = new Map<string, { token: SpawnedPokemon; currentHp: number }>()
-  const getHp = (token: SpawnedPokemon) => hpById.get(token.id)?.currentHp ?? token.currentHp
-  const setHp = (token: SpawnedPokemon, currentHp: number) => {
-    hpById.set(token.id, { token, currentHp: Math.max(0, Math.min(token.maxHp, Math.floor(currentHp))) })
-  }
+  const hpAccumulator = createMoveAutomationHpUpdateAccumulator()
 
   const conditionById = new Map<string, Set<string>>()
   const stagesById = new Map<string, CombatStageMap>()
@@ -204,7 +201,7 @@ export const buildMoveAutomationTransaction = ({
   for (const target of selectedTargets) {
     const loss = resolveMoveAutomationTargetDamageLoss(script, user, target, targetResolutions[target.id], fieldEffects)
     if (loss > 0) {
-      setHp(target, getHp(target) - loss)
+      hpAccumulator.set(target, hpAccumulator.get(target) - loss)
       logLines.push(`${target.species}: ${loss} HP damage${targetResolutions[target.id]?.crit ? ' (critical flagged)' : ''}.`)
     }
   }
@@ -215,8 +212,8 @@ export const buildMoveAutomationTransaction = ({
     for (const token of recipients) {
       const amount = resolveHpSuggestionAmount(script, hpSuggestionAmounts, index, token)
       if (amount <= 0 && item.mode !== 'set-zero') continue
-      const next = applyHpSuggestion(getHp(token), token.maxHp, amount, item.mode)
-      setHp(token, next)
+      const next = applyHpSuggestion(hpAccumulator.get(token), token.maxHp, amount, item.mode)
+      hpAccumulator.set(token, next)
       logLines.push(`${token.species}: ${item.label}${amount > 0 ? ` (${amount} HP)` : ''}.`)
     }
   })
@@ -271,9 +268,7 @@ export const buildMoveAutomationTransaction = ({
     moveName: script.moveName,
     scriptKind: script.kind,
     scriptVersion: script.version,
-    hpUpdates: Array.from(hpById.entries())
-      .filter(([_id, entry]) => entry.currentHp !== entry.token.currentHp)
-      .map(([id, entry]) => ({ id, currentHp: entry.currentHp })),
+    hpUpdates: hpAccumulator.toUpdates(),
     conditionUpdates: Array.from(conditionById.entries()).map(([id, set]) => ({ id, conditions: normalizeConditionNames(Array.from(set)) })),
     combatStageUpdates: Array.from(stagesById.entries()).map(([id, stages]) => ({ id, stages })),
     hazardsToAdd,

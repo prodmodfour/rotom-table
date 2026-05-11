@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass (latest full test run: 177 files / 683 tests). `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include another focused move-automation helper split, renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass (latest full test run: 178 files / 686 tests). `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include another focused move-automation helper split, renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
 
 ## Phase 0 baseline audit
 
@@ -4021,3 +4021,18 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
   - `npm test` — passes: 177 test files / 683 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: move automation HP update helper split
+
+- Extracted move-automation transaction HP update accumulation from `utils/moveAutomationTransaction.ts` into `utils/moveAutomationHpUpdates.ts`.
+  - The new helper owns current-HP lookup, clamped write tracking, latest-write behavior, and changed-update projection for `MoveAutomationTransaction` HP payloads.
+- Updated transaction assembly to delegate HP update bookkeeping while preserving damage, HP suggestion ordering, HP clamping, and final `hpUpdates` payload shape.
+- Added `tests/utils/moveAutomationHpUpdates.test.ts` covering HP clamping, unchanged-update omission, latest-write behavior, and accumulator read/write semantics.
+- Next remaining phase: continue one bounded cleanup pass, with candidates including another focused move-automation helper split, renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/utils/moveAutomationHpUpdates.test.ts tests/utils/moveAutomationTransaction.test.ts` — passes: 2 test files / 7 tests.
+  - `npm run typecheck` — passes.
+  - `npm test` — passes: 178 test files / 686 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
