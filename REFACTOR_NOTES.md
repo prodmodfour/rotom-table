@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass (latest full test run: 203 files / 780 tests). `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include another focused editable-cell/UI extraction, Pokédex/detail or sidebar extraction, sheet/map panel extraction, server/use-case helper split, move-automation helper split, renderer/helper split, storage split, map-editor extraction, or remaining client/helper cleanup; do not mark the full refactor complete yet.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass (latest full test run: 204 files / 784 tests). `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include another focused editable-cell/UI cleanup, Pokédex/detail or sidebar extraction, sheet/map panel extraction, server/use-case helper split, move-automation helper split, renderer/helper split, storage split, map-editor extraction, or remaining client/helper cleanup; do not mark the full refactor complete yet.
 
 ## Phase 0 baseline audit
 
@@ -4592,5 +4592,19 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
   - `npm test -- tests/utils/editableCell.test.ts` — passes: 1 test file / 6 tests.
   - `npm run typecheck` — passes.
   - `npm test` — passes: 203 test files / 780 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: editable cell session composable extraction
+
+- Extracted editable-cell edit-session orchestration from `components/EditableCell.vue` into `composables/editable-cell/useEditableCellSession.ts`.
+  - The composable now owns edit entry gating, draft initialization, commit-on-input updates, numeric draft parsing through the existing helper, cancel rollback, and duplicate blur-after-Enter commit suppression behind a narrow callback contract.
+- Reduced `EditableCell` so it composes focused display/editor children plus the session composable while preserving custom display slots, readonly behavior, Escape rollback, select-change commits, blur/Enter commits, numeric min/max parsing, and autosave-triggering model updates.
+- Added `tests/composables/editable-cell/useEditableCellSession.test.ts` covering readonly gating, draft initialization, input commits, cancel rollback, delayed commits, number clamping, and duplicate commit suppression.
+- Next remaining phase: continue one bounded cleanup pass, with candidates including another focused editable-cell/UI cleanup, Pokédex/detail or sidebar extraction, sheet/map panel extraction, server/use-case helper split, move-automation helper split, renderer/helper split, storage split, map-editor extraction, or remaining client/helper cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/composables/editable-cell/useEditableCellSession.test.ts tests/utils/editableCell.test.ts` — passes: 2 test files / 10 tests.
+  - `npm run typecheck` — passes.
+  - `npm test` — passes: 204 test files / 784 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

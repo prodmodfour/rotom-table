@@ -16,10 +16,9 @@
  * is dropped from the JSON, mirroring how the renderer handles missing
  * numeric values (em-dash / 0 fallback).
  */
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
+import { useEditableCellSession } from '~/composables/editable-cell/useEditableCellSession'
 import {
-  editableCellDraftFromValue,
-  parseEditableCellDraft,
   resolveEditableCellDisplay,
   type EditableCellOption,
   type EditableCellType,
@@ -68,62 +67,29 @@ const emit = defineEmits<{
   (e: 'commit', value: CellValue): void
 }>()
 
-const editing = ref(false)
-const draft = ref<string>('')
-const sessionStartValue = ref<CellValue>(undefined)
-// Guards against the blur handler re-firing commit after Enter has already
-// committed and the input is being torn down. Without this, an empty draft
-// from the watcher reset would clobber the value we just emitted.
-let committedThisSession = false
 const displayState = computed(() => resolveEditableCellDisplay(props.modelValue, {
   formatter: props.format,
   placeholder: props.placeholder,
   emptyText: props.emptyText,
 }))
 
-const beginEdit = () => {
-  if (props.readonly) return
-  sessionStartValue.value = props.modelValue
-  draft.value = editableCellDraftFromValue(props.modelValue)
-  committedThisSession = false
-  editing.value = true
-}
-
-/** Convert the local draft string into the value we emit. */
-const parseDraft = (raw: string): CellValue => parseEditableCellDraft(raw, {
-  type: props.type,
-  currentValue: props.modelValue,
-  min: props.min,
-  max: props.max,
+const {
+  editing,
+  draft,
+  beginEdit,
+  commit,
+  cancel,
+  onEditorInput,
+} = useEditableCellSession({
+  value: () => props.modelValue,
+  type: () => props.type,
+  readonly: () => props.readonly,
+  min: () => props.min,
+  max: () => props.max,
+  commitOnInput: () => props.commitOnInput,
+  onUpdate: (value) => emit('update:modelValue', value),
+  onCommit: (value) => emit('commit', value),
 })
-
-const applyDraft = (emitCommit = false) => {
-  const next = parseDraft(draft.value)
-  if (next !== props.modelValue) emit('update:modelValue', next)
-  if (emitCommit) emit('commit', next)
-}
-
-const commit = () => {
-  if (committedThisSession) {
-    editing.value = false
-    return
-  }
-  committedThisSession = true
-  applyDraft(true)
-  editing.value = false
-}
-
-const cancel = () => {
-  committedThisSession = true
-  if (props.commitOnInput && props.modelValue !== sessionStartValue.value) {
-    emit('update:modelValue', sessionStartValue.value)
-  }
-  editing.value = false
-}
-
-const onEditorInput = () => {
-  if (props.commitOnInput) applyDraft()
-}
 
 // External modelValue changes during display are picked up automatically by
 // the displayValue computed. We don't reset draft here — beginEdit() always
