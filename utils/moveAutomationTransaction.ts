@@ -9,9 +9,13 @@ import {
   createMoveAutomationCombatStageUpdateAccumulator,
   createMoveAutomationConditionUpdateAccumulator,
 } from '~/utils/moveAutomationStatusUpdates'
+import {
+  buildMoveAutomationFieldEffects,
+  buildMoveAutomationHazards,
+} from '~/utils/moveAutomationMapEffects'
 import { computeMultiplier, formatMultiplier } from '~/utils/typeChart'
 import type { CombatStageKey } from '~/types/combatStages'
-import type { MapFieldEffects, MapHazardV2 } from '~/types/map'
+import type { MapFieldEffects } from '~/types/map'
 import type {
   MoveAutomationScript,
   MoveAutomationTransaction,
@@ -209,19 +213,21 @@ export const buildMoveAutomationTransaction = ({
     for (const target of selectedTargets) addStageDelta(target, targetManualStages)
   }
 
-  const hazardsToAdd: MapHazardV2[] = []
-  script.hazardSuggestions.forEach((item, index) => {
-    if (!suggestionIsEnabled(script, enabledSuggestions, 'hazard', index)) return
-    for (const cell of hazardCells.slice(0, item.squares || hazardCells.length)) {
-      hazardsToAdd.push({ kind: item.kind, ...cell, layer: item.kind === 'toxic-spikes' ? 1 : undefined, owner: user.species })
-    }
-    if (hazardCells.length) logLines.push(`${item.label}: ${Math.min(hazardCells.length, item.squares || hazardCells.length)} square(s).`)
+  const mapSuggestionEnabled = (kind: 'field' | 'hazard', index: number): boolean =>
+    suggestionIsEnabled(script, enabledSuggestions, kind, index)
+  const hazardResult = buildMoveAutomationHazards({
+    script,
+    ownerName: user.species,
+    hazardCells,
+    suggestionEnabled: mapSuggestionEnabled,
   })
-
-  const fieldEffectsToApply = script.fieldSuggestions
-    .filter((_item, index) => suggestionIsEnabled(script, enabledSuggestions, 'field', index))
-    .map((item) => ({ kind: item.kind, value: item.value, source: script.moveName }))
-  for (const item of fieldEffectsToApply) logLines.push(`Field effect: ${item.source} applies ${item.value}.`)
+  const fieldEffectResult = buildMoveAutomationFieldEffects({
+    script,
+    suggestionEnabled: mapSuggestionEnabled,
+  })
+  const hazardsToAdd = hazardResult.hazardsToAdd
+  const fieldEffectsToApply = fieldEffectResult.fieldEffectsToApply
+  logLines.push(...hazardResult.logLines, ...fieldEffectResult.logLines)
 
   if (manualNote.trim()) logLines.push(`Manual note: ${manualNote.trim()}`)
   if (script.automationNotes.length) logLines.push(...script.automationNotes.map((note) => `Note: ${note}`))
