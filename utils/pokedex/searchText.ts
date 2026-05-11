@@ -14,12 +14,12 @@ import {
   buildDietSearchValues,
   buildHabitatSearchValues,
   buildIdentitySearchValues,
-  buildMoveSearchValues,
   buildSizeSearchValues,
   buildSkillSearchValues,
   buildTypeSearchValues,
   type PokedexSearchableEntry,
 } from '~/utils/pokedex/searchFieldValues'
+import { buildMoveSearchValues } from '~/utils/pokedex/searchMoveValues'
 
 export const searchFieldConfigs = [
   { key: 'any', label: 'All Together', placeholder: 'Filter species, move, ability, cap, type…' },

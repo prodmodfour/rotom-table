@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass (latest full test run: 171 files / 657 tests). `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include another focused Pokédex/search helper split, renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass (latest full test run: 172 files / 661 tests). `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include another focused Pokédex/search helper split, renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
 
 ## Phase 0 baseline audit
 
@@ -3906,5 +3906,20 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
   - `npm test -- tests/utils/pokedex/searchFieldValues.test.ts tests/utils/pokedex/searchText.test.ts tests/utils/pokedex/searchAliases.test.ts tests/utils/pokedex/searchBuckets.test.ts` — passes: 4 test files / 14 tests.
   - `npm run typecheck` — passes.
   - `npm test` — passes: 171 test files / 657 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: Pokédex move search helper split
+
+- Extracted Pokédex learned-move search alias construction from `utils/pokedex/searchFieldValues.ts` into `utils/pokedex/searchMoveValues.ts`.
+  - The new helper owns generic move-name aliases plus level-up, TM/HM, Egg, Tutor, and Heart Scale move-source aliases.
+- Updated `searchText.ts` to import move aliases from the focused helper while `searchFieldValues.ts` re-exports `buildMoveSearchValues` for compatibility with existing callers/tests.
+- Preserved existing Pokédex filtering behavior, compact TM/HM aliases, move-source search terms, field-specific search text output, and public Pokédex route behavior.
+- Added `tests/utils/pokedex/searchMoveValues.test.ts` covering empty move sources, level-up aliases, TM/HM compact machine aliases, Egg move aliases, and Heart Scale tutor aliases.
+- Next remaining phase: continue one bounded cleanup pass, with candidates including another focused Pokédex/search helper split, renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/utils/pokedex/searchMoveValues.test.ts tests/utils/pokedex/searchFieldValues.test.ts tests/utils/pokedex/searchText.test.ts` — passes: 3 test files / 11 tests.
+  - `npm run typecheck` — passes.
+  - `npm test` — passes: 172 test files / 661 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

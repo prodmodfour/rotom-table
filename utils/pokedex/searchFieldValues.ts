@@ -15,6 +15,7 @@ export type PokedexSearchableEntry = PokedexRecord & {
 }
 
 export type PokedexSearchFieldValue = SearchBucketValue
+export { buildMoveSearchValues } from '~/utils/pokedex/searchMoveValues'
 
 type MovementCapabilityKey = Exclude<keyof PokedexCapabilities, 'other'>
 
@@ -173,50 +174,6 @@ export const buildCapabilitySearchValues = (entry: Pick<PokedexRecord, 'capabili
       baseCapability ? `${baseCapability} capability` : null,
       ...buildMinimumLabelledCapabilityAliases(capability),
     )
-  }
-
-  return values
-}
-
-export const buildMoveSearchValues = (
-  entry: Pick<PokedexRecord, 'level_up_moves' | 'tm_hm_moves' | 'egg_moves' | 'tutor_moves'>,
-): PokedexSearchFieldValue[] => {
-  const values: PokedexSearchFieldValue[] = []
-
-  for (const move of entry.level_up_moves ?? []) {
-    values.push(
-      move.name,
-      `move ${move.name}`,
-      `moves ${move.name}`,
-      `${move.name} move`,
-      `level up ${move.name}`,
-      `level ${move.level} ${move.name}`,
-    )
-  }
-
-  for (const move of entry.tm_hm_moves ?? []) {
-    const machine = `${move.kind}${move.number}`
-    values.push(
-      move.name,
-      `move ${move.name}`,
-      `moves ${move.name}`,
-      `${move.name} move`,
-      `${move.kind} ${move.number}`,
-      machine,
-      `${move.kind} ${move.number} ${move.name}`,
-      `${machine} ${move.name}`,
-    )
-  }
-
-  for (const moveName of entry.egg_moves ?? []) {
-    values.push(moveName, `move ${moveName}`, `moves ${moveName}`, `${moveName} move`, `egg move ${moveName}`)
-  }
-
-  for (const move of entry.tutor_moves ?? []) {
-    values.push(move.name, `move ${move.name}`, `moves ${move.name}`, `${move.name} move`, `tutor move ${move.name}`)
-    if (move.heart_scale) {
-      values.push(`heart scale move ${move.name}`)
-    }
   }
 
   return values
