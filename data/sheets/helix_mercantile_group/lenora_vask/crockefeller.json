@@ -62,9 +62,7 @@
     "conditions": []
   },
   "items": {
-    "held": "",
-    "itemDescription": "",
-    "extraItems": []
+    "held": ""
   },
   "tutorPoints": {
     "earned": 7,
