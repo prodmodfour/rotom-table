@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass. `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include another focused renderer/helper split, storage split, map-editor extraction, or small UI duplication cleanup; do not mark the full refactor complete yet.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass. `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include another focused Pokédex/search helper split, renderer/helper split, storage split, map-editor extraction, or small UI duplication cleanup; do not mark the full refactor complete yet.
 
 ## Phase 0 baseline audit
 
@@ -3846,5 +3846,20 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
   - `npm run typecheck` — passes.
   - `npm test -- tests/utils/moveDamageBase.test.ts tests/utils/moveAutomationResolution.test.ts tests/composables/move-automation/useMoveAutomationWizard.test.ts` — passes: 3 test files / 12 tests.
   - `npm test` — passes: 167 test files / 641 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: Pokédex search value range helper split
+
+- Extracted Pokédex search range/threshold parsing from `utils/pokedex/searchText.ts` into `utils/pokedex/searchValueRanges.ts`.
+  - The new helper owns parenthetical stripping, maximum numeric component extraction, minimum integer alias generation, skill dice parsing/formatting, and minimum skill dice alias generation.
+- Reduced `searchText.ts` so it focuses on field configuration, bucket population, normalization, and final search-text assembly while delegating reusable range math to the focused helper.
+- Preserved existing Pokédex filtering behavior, including compact aliases, capability minimum searches, labelled capability ranges, and skill dice minimum/positive-modifier aliases.
+- Added `tests/utils/pokedex/searchValueRanges.test.ts` covering capability/range helpers and skill dice alias behavior.
+- Next remaining phase: continue one bounded cleanup pass, with candidates including another focused Pokédex/search helper split, renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/utils/pokedex/searchValueRanges.test.ts tests/utils/pokedex/searchText.test.ts` — passes: 2 test files / 8 tests.
+  - `npm run typecheck` — passes.
+  - `npm test` — passes: 168 test files / 646 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
