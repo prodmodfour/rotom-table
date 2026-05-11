@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass (latest full test run: 204 files / 785 tests). `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include another focused encounter component extraction (for example region-list item extraction), Pokédex/detail or sidebar extraction, sheet/map panel extraction, server/use-case helper split, move-automation helper split, renderer/helper split, storage split, map-editor extraction, or remaining client/helper cleanup; do not mark the full refactor complete yet.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass (latest full test run: 204 files / 785 tests). `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include another focused encounter component extraction, Pokédex/detail or sidebar extraction, sheet/map panel extraction, server/use-case helper split, move-automation helper split, renderer/helper split, storage split, map-editor extraction, or remaining client/helper cleanup; do not mark the full refactor complete yet.
 
 ## Phase 0 baseline audit
 
@@ -4753,6 +4753,19 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
 - Quality gates after this phase:
   - `npm run typecheck` — passes.
   - `npm test -- tests/composables/encounters/useEncounterTableBrowser.test.ts tests/utils/encounterTables.test.ts tests/utils/encounterRoutes.test.ts` — passes: 3 test files / 10 tests.
+  - `npm test` — passes: 204 test files / 785 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: encounter tables region-list item extraction
+
+- Extracted individual encounter-table sidebar result rows from `components/encounters/EncounterTablesRegionList.vue` into `components/encounters/EncounterTablesRegionListItem.vue`.
+- Reduced the region-list component so it owns only region grouping, region headings, empty-state copy, and select-entry forwarding while the focused item component owns table-row button presentation, active styling, level/count metadata, and click emits.
+- Preserved encounter-table search/selection behavior, active row styling, table metadata copy, sidebar layout, and public `/encounter-tables` route behavior.
+- Next remaining phase: continue one bounded cleanup pass, with candidates including another focused encounter component extraction, Pokédex/detail or sidebar extraction, sheet/map panel extraction, server/use-case helper split, move-automation helper split, renderer/helper split, storage split, map-editor extraction, or remaining client/helper cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/composables/encounters/useEncounterTableBrowser.test.ts tests/utils/encounterTables.test.ts tests/utils/encounterRoutes.test.ts` — passes: 3 test files / 10 tests.
+  - `npm run typecheck` — passes.
   - `npm test` — passes: 204 test files / 785 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
