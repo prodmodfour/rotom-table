@@ -55,7 +55,7 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
 ## Current quality gate results
 
 - `npm run typecheck` — passes.
-- `npm test` — passes: 160 test files / 611 tests.
+- `npm test` — passes: 161 test files / 616 tests.
 - `npm run build` — passes; existing large chunk warnings remain.
 - `npm run check:move-automation` — still fails with the same baseline `Explicit move automation coverage: 0/769` missing-script report.
 - `npm run sync:item-sprites -- --dry-run` was not run because the script does not implement a dry-run mode.
@@ -3742,5 +3742,19 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
   - `npm test -- tests/utils/isometric/blockTexturePatterns.test.ts tests/utils/isometric/blockTexturePainters.test.ts` — passes: 2 test files / 6 tests.
   - `npm run typecheck` — passes.
   - `npm test` — passes: 160 test files / 611 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: isometric world sprite asset helper split
+
+- Extracted world-sprite animation frame selection, visual asset key construction, and animated texture-coordinate updates from `utils/isometric/worldSprites.ts` into `utils/isometric/worldSpriteAssets.ts`.
+- Kept `worldSprites.ts` focused on sprite construction, texture acquisition/release, facing selection, lighting, shadow creation, and disposal while preserving the existing `applyAnimationFrame` export used by token renderers.
+- Preserved animated sprite timing/wrapping behavior, sprite asset cache keys, static/animated/cropped asset switching, and per-frame texture repeat/offset updates.
+- Added `tests/utils/isometric/worldSpriteAssets.test.ts` covering frame wrapping, fallback durations, asset keys, animation-frame texture updates, and no-op paths for missing animation data.
+- Next remaining phase: continue one bounded cleanup pass, with candidates including another focused renderer/helper split, storage split, map-editor extraction, or small UI duplication cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/utils/isometric/worldSpriteAssets.test.ts` — passes: 1 test file / 5 tests.
+  - `npm run typecheck` — passes.
+  - `npm test` — passes: 161 test files / 616 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
