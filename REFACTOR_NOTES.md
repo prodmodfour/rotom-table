@@ -55,7 +55,7 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
 ## Current quality gate results
 
 - `npm run typecheck` — passes.
-- `npm test` — passes: 153 test files / 589 tests.
+- `npm test` — passes: 154 test files / 592 tests.
 - `npm run build` — passes; existing large chunk warnings remain.
 - `npm run check:move-automation` — still fails with the same baseline `Explicit move automation coverage: 0/769` missing-script report.
 - `npm run sync:item-sprites -- --dry-run` was not run because the script does not implement a dry-run mode.
@@ -3634,5 +3634,19 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
   - `npm test -- tests/utils/isometric/blockTextureColors.test.ts` — passes: 1 test file / 3 tests.
   - `npm run typecheck` — passes.
   - `npm test` — passes: 153 test files / 589 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: isometric block texture pattern helper split
+
+- Extracted generated block-texture pattern selection, Canvas pixel-paint routines, side-depth overlays, and generated face borders from `utils/isometric/blockTextures.ts` into `utils/isometric/blockTexturePatterns.ts`.
+- Kept `blockTextures.ts` focused on Three.js texture loading/caching, clear-water texture-pack handling, canvas creation, texture configuration, and material application.
+- Preserved generated terrain visuals by delegating the same material-tag/role painting branches and overlay rules through the focused pattern helper.
+- Added `tests/utils/isometric/blockTexturePatterns.test.ts` covering material-tag-to-pattern resolution, special hazard/tech/custom precedence, and side-depth overlay scale rules.
+- Next remaining phase: continue one bounded cleanup pass, with candidates including another focused renderer/helper split, storage split, map-editor extraction, or small UI duplication cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/utils/isometric/blockTexturePatterns.test.ts tests/utils/isometric/blockTextureColors.test.ts` — passes: 2 test files / 6 tests.
+  - `npm run typecheck` — passes.
+  - `npm test` — passes: 154 test files / 592 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
