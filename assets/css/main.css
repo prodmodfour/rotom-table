@@ -103,6 +103,15 @@ samp {
   color: var(--ink-bright);
 }
 
+/* Shared card primitive used by sheets, references, library, and map panels. */
+.panel-card {
+  border: 1px solid var(--rule);
+  border-radius: 14px;
+  background: var(--paper-soft);
+  box-shadow: var(--shadow-card);
+  padding: 0.95rem;
+}
+
 .badge-empty {
   color: var(--ink-faint);
   font-style: italic;
