@@ -55,7 +55,7 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
 ## Current quality gate results
 
 - `npm run typecheck` — passes.
-- `npm test` — passes: 156 test files / 599 tests.
+- `npm test` — passes: 157 test files / 602 tests.
 - `npm run build` — passes; existing large chunk warnings remain.
 - `npm run check:move-automation` — still fails with the same baseline `Explicit move automation coverage: 0/769` missing-script report.
 - `npm run sync:item-sprites -- --dry-run` was not run because the script does not implement a dry-run mode.
@@ -3679,5 +3679,19 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
   - `npm test -- tests/utils/isometric/weatherEffects.test.ts tests/utils/isometric/weatherTextures.test.ts` — passes: 2 test files / 7 tests.
   - `npm run typecheck` — passes.
   - `npm test` — passes: 156 test files / 599 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: isometric weather visual config helper
+
+- Extracted weather visual density/count constants and formulas from `utils/isometric/weatherEffects.ts` into `utils/isometric/weatherVisualConfig.ts`.
+  - The helper now owns sun-ray counts, rain/hail/sandstorm particle counts, layered density/opacity scales, and the sand-ribbon count without depending on Three.js renderer state.
+- Updated the weather visual factory to consume the focused config helper while preserving the existing sunny/rainy/hail/sandstorm visual counts, opacity scaling, and sand-ribbon spacing behavior.
+- Added `tests/utils/isometric/weatherVisualConfig.test.ts` covering count clamping, layered density/opacity scales, and explicit sandstorm ribbon/mote rules.
+- Next remaining phase: continue one bounded cleanup pass, with candidates including another focused renderer/helper split, storage split, map-editor extraction, or small UI duplication cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/utils/isometric/weatherVisualConfig.test.ts tests/utils/isometric/weatherEffects.test.ts tests/utils/isometric/weatherTextures.test.ts` — passes: 3 test files / 10 tests.
+  - `npm run typecheck` — passes.
+  - `npm test` — passes: 157 test files / 602 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

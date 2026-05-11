@@ -7,6 +7,15 @@ import {
   wrapRange,
   type WeatherEffectRendererInput,
 } from './weatherMath'
+import {
+  SAND_RIBBON_COUNT,
+  hailParticleCountForDimensions,
+  layeredSandRibbonOpacityScale,
+  layeredSunRayOpacityScale,
+  rainDropCountForDimensions,
+  sandMoteCountForDimensions,
+  sunRayCountForDimensions,
+} from './weatherVisualConfig'
 import { createWeatherTextureCache } from './weatherTextures'
 
 export {
@@ -47,10 +56,8 @@ export const createWeatherVisualFactory = (): WeatherVisualFactory => {
     group.name = 'weather-sun-rays'
 
     const texture = weatherTextures.getSunRayTexture()
-    const rayCount = Math.round(
-      THREE.MathUtils.clamp(input.dimensions.x * 0.45 + 3, 5, 10),
-    )
-    const opacityScale = total > 1 ? 0.65 : 1
+    const rayCount = sunRayCountForDimensions(input.dimensions)
+    const opacityScale = layeredSunRayOpacityScale(total)
     const rays: Array<{
       sprite: THREE.Sprite
       baseX: number
@@ -132,10 +139,7 @@ export const createWeatherVisualFactory = (): WeatherVisualFactory => {
     const group = new THREE.Group()
     group.name = 'weather-rain'
 
-    const area = input.dimensions.x * input.dimensions.z
-    const count = Math.round(
-      THREE.MathUtils.clamp(area * 3.4, 100, 320) * (total > 1 ? 0.72 : 1),
-    )
+    const count = rainDropCountForDimensions(input.dimensions, total)
     const positions = new Float32Array(count * 2 * 3)
     const drops = Array.from({ length: count }, () => ({
       x: randomRange(rand, bounds.minX, bounds.maxX),
@@ -210,10 +214,7 @@ export const createWeatherVisualFactory = (): WeatherVisualFactory => {
     const group = new THREE.Group()
     group.name = 'weather-hail'
 
-    const area = input.dimensions.x * input.dimensions.z
-    const count = Math.round(
-      THREE.MathUtils.clamp(area * 1.55, 64, 180) * (total > 1 ? 0.75 : 1),
-    )
+    const count = hailParticleCountForDimensions(input.dimensions, total)
     const geometry = new THREE.OctahedronGeometry(1, 0)
     const material = new THREE.MeshBasicMaterial({
       // Keep this a fixed icy color; enabling vertexColors on an
@@ -302,7 +303,7 @@ export const createWeatherVisualFactory = (): WeatherVisualFactory => {
     const planeWidth =
       Math.hypot(bounds.width, bounds.depth) + bounds.height + 4
     const planeHeight = Math.max(2.2, bounds.height * 0.72)
-    const opacityScale = total > 1 ? 0.65 : 1
+    const opacityScale = layeredSandRibbonOpacityScale(total)
     const ribbons: Array<{
       sprite: THREE.Sprite
       baseY: number
@@ -310,7 +311,7 @@ export const createWeatherVisualFactory = (): WeatherVisualFactory => {
       phase: number
     }> = []
 
-    for (let i = 0; i < 4; i += 1) {
+    for (let i = 0; i < SAND_RIBBON_COUNT; i += 1) {
       const material = new THREE.SpriteMaterial({
         map: streamTexture,
         color: 0xffddb1,
@@ -327,7 +328,7 @@ export const createWeatherVisualFactory = (): WeatherVisualFactory => {
         bounds.centerX + randomRange(rand, -0.4, 0.4),
         baseY,
         bounds.minZ +
-          ((i + 0.5) / 4) * bounds.depth +
+          ((i + 0.5) / SAND_RIBBON_COUNT) * bounds.depth +
           randomRange(rand, -0.4, 0.4),
       )
       sprite.scale.set(planeWidth, planeHeight, 1)
@@ -342,13 +343,7 @@ export const createWeatherVisualFactory = (): WeatherVisualFactory => {
       })
     }
 
-    const moteCount = Math.round(
-      THREE.MathUtils.clamp(
-        input.dimensions.x * input.dimensions.z * 2.15,
-        90,
-        260,
-      ) * (total > 1 ? 0.75 : 1),
-    )
+    const moteCount = sandMoteCountForDimensions(input.dimensions, total)
     const motePositions = new Float32Array(moteCount * 3)
     const motes = Array.from({ length: moteCount }, () => ({
       x: randomRange(rand, bounds.minX, bounds.maxX),
