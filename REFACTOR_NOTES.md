@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass (latest full test run: 187 files / 716 tests). `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include another focused move-automation helper split, renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass (latest full test run: 188 files / 719 tests). `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include another focused server/use-case helper split, move-automation helper split, renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
 
 ## Phase 0 baseline audit
 
@@ -4167,5 +4167,20 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
   - `npm test -- tests/utils/moveAutomationWizardState.test.ts tests/composables/move-automation/useMoveAutomationWizard.test.ts` — passes: 2 test files / 5 tests.
   - `npm run typecheck` — passes.
   - `npm test` — passes: 187 test files / 716 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: encounter pokegen batch helper split
+
+- Extracted sequential encounter `pokegen.sh` batch execution from `server/useCases/generateEncounters.ts` into `server/utils/pokegenBatch.ts`.
+  - The new helper owns before-count capture, per-encounter file-diffing, preview content reads, failure/no-output reporting, and generated-file result shaping behind injected filesystem and runner boundaries.
+- Reduced `generateEncountersUseCase` so it focuses on request normalization, table loading, rolling, output-directory selection, slug-prefix construction, result composition, and preview cleanup while delegating batch execution details.
+- Preserved encounter generation response shape, sequential pokegen invocation order, persisted vs preview content behavior, beforeCount semantics, and failure messages for failed or no-output pokegen runs.
+- Added `tests/server/pokegenBatch.test.ts` covering persisted batches, preview content inclusion, before-count behavior, failed runs, no-output runs, and continued execution after failures.
+- Next remaining phase: continue one bounded cleanup pass, with candidates including another focused server/use-case helper split, move-automation helper split, renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/server/pokegenBatch.test.ts tests/server/generateEncounters.test.ts` — passes: 2 test files / 7 tests.
+  - `npm run typecheck` — passes.
+  - `npm test` — passes: 188 test files / 719 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.

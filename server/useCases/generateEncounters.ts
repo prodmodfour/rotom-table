@@ -20,27 +20,21 @@ import {
   uniqueEncounterOutputDir,
   type GenerateEncounterBody,
 } from '../utils/encounterGeneration'
+import {
+  runPokegenForRolledEncounters,
+  type EncounterGeneratedFileResult,
+  type PokegenRunResult,
+  type RunPokegen,
+} from '../utils/pokegenBatch'
 import type { EncounterTable, RolledEncounter } from '~/types/encounterTable'
 
+export type {
+  EncounterGeneratedFileResult,
+  PokegenRunResult,
+  RunPokegen,
+} from '../utils/pokegenBatch'
+
 export class GenerateEncountersUseCaseError extends UseCaseHttpError<number> {}
-
-export interface PokegenRunResult {
-  ok: boolean
-  stderr: string
-}
-
-export type RunPokegen = (
-  species: string,
-  level: number,
-  outputDir: string,
-  slugPrefix: string,
-) => Promise<PokegenRunResult>
-
-export interface EncounterGeneratedFileResult {
-  name: string
-  error?: string
-  content?: string
-}
 
 export interface GenerateEncountersResult {
   ok: true
@@ -224,49 +218,26 @@ export const generateEncountersUseCase = async (
     if (output.cleanup) cleanupDir = dir
 
     const slugPrefix = encounterOutputSlugPrefix(projectRoot, dir, request.tableKey, request.preview, now)
-    const beforeFiles = new Set(pathExists(dir) ? listDirectory(dir) : [])
-    const fileResults: EncounterGeneratedFileResult[] = []
-    let failures = 0
-
-    for (const enc of rolled) {
-      const before = new Set(listDirectory(dir))
-      const { ok, stderr } = await runPokegen(enc.species, enc.level, dir, slugPrefix)
-      if (!ok) {
-        failures += 1
-        fileResults.push({
-          name: `${enc.species} Lv ${enc.level}`,
-          error: stderr.trim() || 'pokegen failed',
-        })
-        continue
-      }
-
-      const after = listDirectory(dir)
-      const newFiles = after.filter((fileName) => !before.has(fileName))
-      if (newFiles.length === 0) {
-        failures += 1
-        fileResults.push({
-          name: `${enc.species} Lv ${enc.level}`,
-          error: 'pokegen exited 0 but did not write a new file',
-        })
-        continue
-      }
-
-      const filename = newFiles[0]
-      const content = request.preview
-        ? readTextFile(joinPath(dir, filename))
-        : undefined
-      fileResults.push({ name: filename, content })
-    }
+    const batch = await runPokegenForRolledEncounters({
+      rolled,
+      dir,
+      slugPrefix,
+      preview: request.preview,
+      pathExists,
+      listDirectory,
+      readTextFile,
+      runPokegen,
+    })
 
     return {
       ok: true,
       dir: request.preview ? '' : dir,
       relDir: request.preview ? '' : dir.slice(projectRoot.length + 1),
       rolled,
-      files: fileResults,
-      failures,
+      files: batch.files,
+      failures: batch.failures,
       preview: request.preview,
-      beforeCount: beforeFiles.size,
+      beforeCount: batch.beforeCount,
     }
   } catch (error) {
     throw normalizeGenerateEncountersError(error)
