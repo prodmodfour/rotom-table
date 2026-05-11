@@ -4437,3 +4437,17 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
   - `npm test` — passes: 202 test files / 776 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: Pokémon evasion and conditions panel component
+
+- Extracted the Pokémon sheet Evasion/Conditions/Vitamins/Combat Notes block from `components/sheets/PokemonCombatPanel.vue` into `components/sheets/PokemonEvasionConditionsPanel.vue`.
+  - The new component owns stat-derived evasion display, editable evasion bonuses, Bright Powder item-bonus copy, condition picker wiring, vitamins editing, and combat-note editing behind focused `combat` and `pokemonEvasion` props.
+- Reduced `PokemonCombatPanel` so it now composes combat vitals plus Pokémon evasion/conditions as focused child panels while preserving existing editable-cell bindings and autosave behavior.
+- Preserved Pokémon evasion bonus bounds/formatting, Bright Powder bonus display, condition normalization via `ConditionPicker`, vitamins/notes editing, and sheet route behavior; no data or route semantics changed.
+- Next remaining phase: continue one bounded cleanup pass, with candidates including another focused sheet-panel extraction, server/use-case helper split, move-automation helper split, renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- --run tests/composables/sheets/usePokemonSheetDerived.test.ts tests/composables/sheets/usePokemonSheetRowActions.test.ts` — passes: 2 test files / 7 tests.
+  - `npm run typecheck` — passes.
+  - `npm test` — passes: 202 test files / 776 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
