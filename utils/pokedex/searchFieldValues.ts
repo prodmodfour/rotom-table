@@ -1,14 +1,10 @@
-import type { PokedexCapabilities, PokedexRecord } from '~/types/pokemon'
+import type { PokedexRecord } from '~/types/pokemon'
 import type { SearchBucketValue } from '~/utils/pokedex/searchBuckets'
 import {
   buildMinimumBaseStatAliases,
-  buildMinimumCapabilityAliases,
-  buildMinimumLabelledCapabilityAliases,
   buildMinimumSkillAliases,
-  hasPokedexCapabilityValue,
 } from '~/utils/pokedex/searchAliases'
 import { buildEggGroupSearchValues } from '~/utils/pokedex/searchListValues'
-import { stripParenthetical } from '~/utils/pokedex/searchValueRanges'
 
 export type PokedexSearchableEntry = PokedexRecord & {
   slug: string
@@ -16,20 +12,9 @@ export type PokedexSearchableEntry = PokedexRecord & {
 }
 
 export type PokedexSearchFieldValue = SearchBucketValue
+export { buildCapabilitySearchValues } from '~/utils/pokedex/searchCapabilityValues'
 export { buildDietSearchValues, buildHabitatSearchValues, buildTypeSearchValues } from '~/utils/pokedex/searchListValues'
 export { buildMoveSearchValues } from '~/utils/pokedex/searchMoveValues'
-
-type MovementCapabilityKey = Exclude<keyof PokedexCapabilities, 'other'>
-
-const CAPABILITY_SEARCH_FIELDS: Array<[MovementCapabilityKey, string]> = [
-  ['overland', 'Overland'],
-  ['sky', 'Sky'],
-  ['swim', 'Swim'],
-  ['levitate', 'Levitate'],
-  ['burrow', 'Burrow'],
-  ['jump', 'Jump'],
-  ['power', 'Power'],
-]
 
 const BASE_STAT_SEARCH_FIELDS = [
   ['hp', 'HP', 'HP'],
@@ -95,53 +80,6 @@ export const buildAbilitySearchValues = (entry: Pick<PokedexRecord, 'abilities'>
         `${label} ${ability}`,
       )
     }
-  }
-
-  return values
-}
-
-export const buildCapabilitySearchValues = (entry: Pick<PokedexRecord, 'capabilities'>): PokedexSearchFieldValue[] => {
-  if (!entry.capabilities) return []
-
-  const values: PokedexSearchFieldValue[] = []
-
-  for (const [key, label] of CAPABILITY_SEARCH_FIELDS) {
-    const value = entry.capabilities[key]
-    if (!hasPokedexCapabilityValue(value)) continue
-
-    values.push(
-      label,
-      `cap ${label}`,
-      `caps ${label}`,
-      `capability ${label}`,
-      `capabilities ${label}`,
-      `${label} cap`,
-      `${label} capability`,
-      `${label} ${value}`,
-      `cap ${label} ${value}`,
-      `capability ${label} ${value}`,
-      ...buildMinimumCapabilityAliases(label, value),
-    )
-  }
-
-  for (const capability of entry.capabilities.other ?? []) {
-    if (!capability) continue
-
-    const baseCapability = stripParenthetical(capability)
-    values.push(
-      capability,
-      baseCapability,
-      `cap ${capability}`,
-      `capability ${capability}`,
-      `capabilities ${capability}`,
-      `${capability} cap`,
-      `${capability} capability`,
-      baseCapability ? `cap ${baseCapability}` : null,
-      baseCapability ? `capability ${baseCapability}` : null,
-      baseCapability ? `${baseCapability} cap` : null,
-      baseCapability ? `${baseCapability} capability` : null,
-      ...buildMinimumLabelledCapabilityAliases(capability),
-    )
   }
 
   return values
