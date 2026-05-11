@@ -13,20 +13,21 @@ import {
   EncounterGenerationInputError,
   readEncounterGenerateRequest,
   rollEncounterTable,
-  safeEncounterTablePath,
   type GenerateEncounterBody,
 } from '../utils/encounterGeneration'
 import {
   createEncounterOutputPlan,
   type UniqueEncounterOutputDir,
 } from '../utils/encounterOutput'
+import { readEncounterTableFile } from '../utils/encounterTableFiles'
 import {
   runPokegenForRolledEncounters,
   type EncounterGeneratedFileResult,
 } from '../utils/pokegenBatch'
 import { runPokegenScript, type RunPokegen } from '../utils/pokegenRunner'
-import type { EncounterTable, RolledEncounter } from '~/types/encounterTable'
+import type { RolledEncounter } from '~/types/encounterTable'
 
+export { readEncounterTableFile } from '../utils/encounterTableFiles'
 export type { EncounterGeneratedFileResult } from '../utils/pokegenBatch'
 export type { PokegenRunResult, RunPokegen } from '../utils/pokegenRunner'
 
@@ -79,21 +80,6 @@ export const normalizeGenerateEncountersError = (error: unknown): unknown => {
     )
   }
   return error
-}
-
-export const readEncounterTableFile = (
-  region: string,
-  tableKey: string,
-  dependencies: Pick<
-    Required<GenerateEncountersDependencies>,
-    'encounterRoot' | 'pathExists' | 'readTextFile'
-  >,
-): EncounterTable => {
-  const tablePath = safeEncounterTablePath(dependencies.encounterRoot, region, tableKey)
-  if (!dependencies.pathExists(tablePath)) {
-    throw new GenerateEncountersUseCaseError(404, `Table ${region}/${tableKey} not found`)
-  }
-  return JSON.parse(dependencies.readTextFile(tablePath)) as EncounterTable
 }
 
 export const generateEncountersUseCase = async (

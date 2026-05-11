@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass (latest full test run: 190 files / 727 tests). `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include another focused server/use-case helper split, move-automation helper split, renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass (latest full test run: 191 files / 730 tests). `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include another focused server/use-case helper split, move-automation helper split, renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
 
 ## Phase 0 baseline audit
 
@@ -4213,6 +4213,21 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
   - `npm test -- tests/server/pokegenRunner.test.ts tests/server/pokegenBatch.test.ts tests/server/generateEncounters.test.ts` — passes: 3 test files / 10 tests.
   - `npm run typecheck` — passes.
   - `npm test` — passes: 190 test files / 727 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: encounter table file loader helper split
+
+- Extracted encounter-table file loading from `server/useCases/generateEncounters.ts` into `server/utils/encounterTableFiles.ts`.
+  - The new helper owns safe table-path construction, missing-table error messages, typed 404 errors, and JSON table parsing behind injected `pathExists`/`readTextFile` dependencies.
+- Reduced `generateEncountersUseCase` so table loading is delegated to the focused server utility while preserving its public `readEncounterTableFile` re-export for compatibility.
+- Preserved encounter generation behavior: missing tables still map to `Table <region>/<table> not found`, path traversal is still rejected by the existing sanitizer, JSON parse behavior remains unchanged, and response shapes remain compatible.
+- Added `tests/server/encounterTableFiles.test.ts` covering successful safe-path reads, missing-table 404s, and traversal validation at the table-file boundary.
+- Next remaining phase: continue one bounded cleanup pass, with candidates including another focused server/use-case helper split, move-automation helper split, renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/server/encounterTableFiles.test.ts tests/server/generateEncounters.test.ts` — passes: 2 test files / 7 tests.
+  - `npm run typecheck` — passes.
+  - `npm test` — passes: 191 test files / 730 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
 
