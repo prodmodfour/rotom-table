@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { conditionTagSvg, conditionTitle, type ConditionTagSize } from '~/utils/statusConditions'
+import type { ConditionTagSize } from '~/utils/conditionTagArt'
+import { conditionTagSvg, conditionTitle } from '~/utils/statusConditions'
 
 const props = withDefaults(defineProps<{
   name: string

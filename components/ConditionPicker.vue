@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import type { ConditionTagSize } from '~/utils/conditionTagArt'
 import {
   conditionGroups,
   conditionTitle,
   normalizeConditionNames,
-  type ConditionTagSize,
 } from '~/utils/statusConditions'
 
 const props = withDefaults(defineProps<{

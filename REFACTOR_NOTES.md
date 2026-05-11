@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass (latest full test run: 194 files / 741 tests). `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include another focused server/use-case helper split, move-automation helper split, renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass (latest full test run: 195 files / 745 tests). `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include another focused server/use-case helper split, move-automation helper split, renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
 
 ## Phase 0 baseline audit
 
@@ -4264,5 +4264,19 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
   - `npm test -- tests/utils/gridGeometry.test.ts tests/utils/gridPlacementPathfinding.test.ts` — passes: 2 test files / 7 tests.
   - `npm run typecheck` — passes.
   - `npm test` — passes: 194 test files / 741 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: condition tag art helper split
+
+- Extracted condition-tag definitions, fallback label construction, inline SVG icon drawing, size scaling, and SVG markup construction from `utils/statusConditions.ts` into `utils/conditionTagArt.ts`.
+- Reduced `statusConditions.ts` to PTU condition loading, ordering, alias normalization, text extraction, grouping, and thin tag/title integration while `ConditionTag`/`ConditionPicker` import the shared tag-size type from the focused art helper.
+- Preserved condition normalization, tag badge SVG shape/classes, aliases, condition titles, and condition picker/tag behavior.
+- Added `tests/utils/conditionTagArt.test.ts` covering canonical tag definitions, fallback labels, SVG escaping/size scaling, and status-condition integration.
+- Next remaining phase: continue one bounded cleanup pass, with candidates including another focused server/use-case helper split, move-automation helper split, renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/utils/conditionTagArt.test.ts` — passes: 1 test file / 4 tests.
+  - `npm run typecheck` — passes.
+  - `npm test` — passes: 195 test files / 745 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
