@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass (latest full test run: 204 files / 785 tests). `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include another focused encounter component extraction, Pokédex/detail or sidebar extraction, sheet/map panel extraction, server/use-case helper split, move-automation helper split, renderer/helper split, storage split, map-editor extraction, or remaining client/helper cleanup; do not mark the full refactor complete yet.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass (latest full test run: 204 files / 785 tests). `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include another focused encounter component extraction (for example region-list item extraction), Pokédex/detail or sidebar extraction, sheet/map panel extraction, server/use-case helper split, move-automation helper split, renderer/helper split, storage split, map-editor extraction, or remaining client/helper cleanup; do not mark the full refactor complete yet.
 
 ## Phase 0 baseline audit
 
@@ -4740,6 +4740,19 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
 - Next remaining phase: continue one bounded cleanup pass, with candidates including another focused encounter component extraction, Pokédex/detail or sidebar extraction, sheet/map panel extraction, server/use-case helper split, move-automation helper split, renderer/helper split, storage split, map-editor extraction, or remaining client/helper cleanup; do not mark the full refactor complete yet.
 - Quality gates after this phase:
   - `npm run typecheck` — passes.
+  - `npm test` — passes: 204 test files / 785 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: encounter tables sidebar header extraction
+
+- Extracted the encounter-tables sidebar heading, count badge, explanatory Generate link copy, and search input into `components/encounters/EncounterTablesSidebarHeader.vue`.
+- Reduced `EncounterTablesSidebar.vue` so it now owns only navigation/sidebar shell and region-list composition while the focused header component owns sidebar intro/search presentation and the shared Generate route helper import.
+- Preserved encounter-table search binding, count badge copy, Generate-page link target, sidebar styling, region-list selection behavior, and public `/encounter-tables` route behavior.
+- Next remaining phase: continue one bounded cleanup pass, with candidates including another focused encounter component extraction (for example region-list item extraction), Pokédex/detail or sidebar extraction, sheet/map panel extraction, server/use-case helper split, move-automation helper split, renderer/helper split, storage split, map-editor extraction, or remaining client/helper cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm run typecheck` — passes.
+  - `npm test -- tests/composables/encounters/useEncounterTableBrowser.test.ts tests/utils/encounterTables.test.ts tests/utils/encounterRoutes.test.ts` — passes: 3 test files / 10 tests.
   - `npm test` — passes: 204 test files / 785 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
