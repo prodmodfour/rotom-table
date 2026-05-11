@@ -1,5 +1,4 @@
 import { UseCaseHttpError } from '../utils/useCaseErrors'
-import { spawn } from 'node:child_process'
 import {
   existsSync,
   mkdirSync,
@@ -24,16 +23,12 @@ import {
 import {
   runPokegenForRolledEncounters,
   type EncounterGeneratedFileResult,
-  type PokegenRunResult,
-  type RunPokegen,
 } from '../utils/pokegenBatch'
+import { runPokegenScript, type RunPokegen } from '../utils/pokegenRunner'
 import type { EncounterTable, RolledEncounter } from '~/types/encounterTable'
 
-export type {
-  EncounterGeneratedFileResult,
-  PokegenRunResult,
-  RunPokegen,
-} from '../utils/pokegenBatch'
+export type { EncounterGeneratedFileResult } from '../utils/pokegenBatch'
+export type { PokegenRunResult, RunPokegen } from '../utils/pokegenRunner'
 
 export class GenerateEncountersUseCaseError extends UseCaseHttpError<number> {}
 
@@ -84,42 +79,6 @@ export const normalizeGenerateEncountersError = (error: unknown): unknown => {
     )
   }
   return error
-}
-
-export const runPokegenScript = (
-  species: string,
-  level: number,
-  outputDir: string,
-  slugPrefix: string,
-  options: { projectRoot?: string; pokegenScript?: string } = {},
-): Promise<PokegenRunResult> => {
-  const projectRoot = options.projectRoot ?? DEFAULT_PROJECT_ROOT
-  const pokegenScript = options.pokegenScript ?? resolvePath(projectRoot, 'scripts/pokegen.sh')
-
-  return new Promise((resolve) => {
-    const child = spawn(
-      pokegenScript,
-      [
-        '--species', species,
-        '--level', String(level),
-        '--output-dir', outputDir,
-        '--slug-prefix', slugPrefix,
-      ],
-      { cwd: projectRoot, stdio: ['ignore', 'pipe', 'pipe'] },
-    )
-    let stderr = ''
-    child.stderr.on('data', (chunk) => {
-      stderr += String(chunk)
-    })
-    // Drain stdout so the child can't block on a full pipe.
-    child.stdout.on('data', () => {})
-    child.on('error', (err) => {
-      resolve({ ok: false, stderr: stderr + String(err) })
-    })
-    child.on('close', (code) => {
-      resolve({ ok: code === 0, stderr })
-    })
-  })
 }
 
 export const readEncounterTableFile = (

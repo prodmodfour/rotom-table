@@ -1,7 +1,7 @@
 # Refactor notes
 
 AUTOMATION_STATUS: IN_PROGRESS
-CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass (latest full test run: 189 files / 724 tests). `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include another focused server/use-case helper split, move-automation helper split, renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
+CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm test`, and `npm run build` currently pass (latest full test run: 190 files / 727 tests). `npm run check:move-automation` still fails with the baseline explicit coverage report. Next candidates include another focused server/use-case helper split, move-automation helper split, renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
 
 ## Phase 0 baseline audit
 
@@ -4199,3 +4199,20 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
   - `npm test` — passes: 189 test files / 724 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: encounter pokegen runner helper split
+
+- Extracted the concrete `pokegen.sh` child-process runner from `server/useCases/generateEncounters.ts` into `server/utils/pokegenRunner.ts`.
+  - The new helper owns spawn argument construction, project-root/script-path defaults, stdout draining, stderr accumulation, non-zero exit mapping, spawn-error mapping, and injected spawn seams for tests.
+- Updated `server/utils/pokegenBatch.ts` to depend on the runner's narrow `RunPokegen` contract while keeping batch file-diffing and generated-file attribution separate.
+- Reduced `generateEncountersUseCase` so it no longer imports `node:child_process` directly; it still injects the concrete runner by default and preserves the public `PokegenRunResult`/`RunPokegen` type re-exports.
+- Preserved encounter generation behavior: `pokegen.sh` arguments, cwd, stdout draining, stderr text, success/failure mapping, sequential batch behavior, preview cleanup, and response shapes remain compatible.
+- Added `tests/server/pokegenRunner.test.ts` covering successful runner invocation/args, non-zero exits, stderr accumulation, spawn errors, and single-resolution behavior.
+- Next remaining phase: continue one bounded cleanup pass, with candidates including another focused server/use-case helper split, move-automation helper split, renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/server/pokegenRunner.test.ts tests/server/pokegenBatch.test.ts tests/server/generateEncounters.test.ts` — passes: 3 test files / 10 tests.
+  - `npm run typecheck` — passes.
+  - `npm test` — passes: 190 test files / 727 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+

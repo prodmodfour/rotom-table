@@ -1,17 +1,6 @@
 import { join as joinPath } from 'node:path'
 import type { RolledEncounter } from '~/types/encounterTable'
-
-export interface PokegenRunResult {
-  ok: boolean
-  stderr: string
-}
-
-export type RunPokegen = (
-  species: string,
-  level: number,
-  outputDir: string,
-  slugPrefix: string,
-) => Promise<PokegenRunResult>
+import type { RunPokegen } from './pokegenRunner'
 
 export interface EncounterGeneratedFileResult {
   name: string
