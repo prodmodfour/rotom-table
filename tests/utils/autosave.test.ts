@@ -1,15 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import {
-  bindAutosaveUnloadFlushers,
-  createAutosaveDirtyScheduler,
-  createAutosaveResourceController,
-  createAutosaveSnapshotTracker,
-  createAutosaveStatusController,
-  createDebouncedAutosaveTask,
-  createLatestSaveGuard,
-  runLatestAutosave,
-  sendJsonWithUnloadFallback,
-} from '~/utils/autosave'
+import { createAutosaveDirtyScheduler } from '~/utils/autosaveDirtyScheduler'
+import { createAutosaveResourceController } from '~/utils/autosaveResource'
+import { runLatestAutosave } from '~/utils/autosaveSaveRunner'
+import { createAutosaveSnapshotTracker } from '~/utils/autosaveSnapshots'
+import { createAutosaveStatusController } from '~/utils/autosaveStatus'
+import { createDebouncedAutosaveTask, createLatestSaveGuard } from '~/utils/autosaveTasks'
+import { bindAutosaveUnloadFlushers, sendJsonWithUnloadFallback } from '~/utils/autosaveUnload'
 
 describe('createAutosaveStatusController', () => {
   type TestStatus = 'idle' | 'saving' | 'saved' | 'error'

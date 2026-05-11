@@ -19,12 +19,9 @@
 import { getCurrentInstance, onBeforeUnmount, ref, watch, type Ref } from 'vue'
 import { getClientId } from '~/utils/clientId'
 import { isRealtimeEcho, sheetChannel } from '~/shared/realtime'
-import {
-  bindAutosaveUnloadFlushers,
-  createAutosaveResourceController,
-  runLatestAutosave,
-  sendJsonWithUnloadFallback,
-} from '~/utils/autosave'
+import { createAutosaveResourceController } from '~/utils/autosaveResource'
+import { runLatestAutosave } from '~/utils/autosaveSaveRunner'
+import { bindAutosaveUnloadFlushers, sendJsonWithUnloadFallback } from '~/utils/autosaveUnload'
 import { SHEET_API_PATHS } from '~/utils/apiRoutes'
 import { deepCloneJson } from '~/utils/serialization'
 import { stablePersistableSheetJson, toPersistableSheetPayload } from '~/utils/sheets/persistence'

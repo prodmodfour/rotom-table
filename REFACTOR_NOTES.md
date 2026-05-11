@@ -3967,3 +3967,25 @@ CURRENT_NEXT_STEP: Continue one bounded cleanup phase; `npm run typecheck`, `npm
   - `npm test` — passes: 175 test files / 674 tests.
   - `npm run build` — passes; existing large chunk warnings remain.
   - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
+## Next phase update: autosave helper module split
+
+- Split the large autosave helper into focused modules:
+  - `utils/autosaveTypes.ts` for shared autosave contracts.
+  - `utils/autosaveTasks.ts` for debounce timers and latest-save sequence guards.
+  - `utils/autosaveSnapshots.ts` for clean-snapshot tracking.
+  - `utils/autosaveStatus.ts` for save-status/error transitions.
+  - `utils/autosaveSaveRunner.ts` for latest-save request orchestration.
+  - `utils/autosaveDirtyScheduler.ts` for dirty-check scheduling.
+  - `utils/autosaveResource.ts` for resource-controller composition.
+  - `utils/autosaveUnload.ts` for unload beacon/keepalive flushing.
+- Updated editable map/sheet composables and autosave tests to import the focused modules directly, removing the legacy `utils/autosave.ts` aggregate so Nuxt typecheck does not emit duplicate auto-import warnings.
+- Preserved autosave behavior for maps and sheets: debounce timing, latest-save suppression, clean-snapshot comparisons, save-status transitions, clientId echo suppression, and sheet unload flushing remain unchanged.
+- Next remaining phase: continue one bounded cleanup pass, with candidates including another focused renderer/helper split, storage split, map-editor extraction, remaining client/helper cleanup, or small UI duplication cleanup; do not mark the full refactor complete yet.
+- Quality gates after this phase:
+  - `npm test -- tests/utils/autosave.test.ts` — passes: 1 test file / 21 tests.
+  - `npm run typecheck` — passes.
+  - `npm test` — passes: 175 test files / 674 tests.
+  - `npm run build` — passes; existing large chunk warnings remain.
+  - `npm run check:move-automation` — still fails with baseline `Explicit move automation coverage: 0/769` missing-script report.
+
