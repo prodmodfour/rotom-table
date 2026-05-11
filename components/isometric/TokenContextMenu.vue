@@ -63,51 +63,6 @@ const stageLabel = (move: TokenMoveMenuOption): string | null => {
     @contextmenu.prevent
     @pointerdown.stop
   >
-    <button
-      type="button"
-      class="context-menu__button"
-      @click.stop="emit('view-sheet')"
-    >
-      View Sheet
-    </button>
-    <button
-      v-if="props.menu.canViewPokedex"
-      type="button"
-      class="context-menu__button"
-      @click.stop="emit('view-pokedex')"
-    >
-      View in Pokédex
-    </button>
-    <button
-      v-if="props.menu.canTurn"
-      type="button"
-      class="context-menu__button"
-      @click.stop="emit('turn')"
-    >
-      Turn sprite
-    </button>
-    <button
-      type="button"
-      class="context-menu__button"
-      @click.stop="emit('modify-hp')"
-    >
-      Modify HP
-    </button>
-    <button
-      type="button"
-      class="context-menu__button"
-      @click.stop="emit('modify-combat-stages')"
-    >
-      Change combat stages
-    </button>
-    <button
-      type="button"
-      class="context-menu__button"
-      @click.stop="emit('apply-remove-conditions')"
-    >
-      Apply/Remove Conditions
-    </button>
-
     <div
       class="context-menu__submenu-wrap"
       @pointerenter="openMovePanel"
@@ -198,6 +153,51 @@ const stageLabel = (move: TokenMoveMenuOption): string | null => {
         </aside>
       </div>
     </div>
+
+    <button
+      type="button"
+      class="context-menu__button"
+      @click.stop="emit('view-sheet')"
+    >
+      View Sheet
+    </button>
+    <button
+      v-if="props.menu.canViewPokedex"
+      type="button"
+      class="context-menu__button"
+      @click.stop="emit('view-pokedex')"
+    >
+      View in Pokédex
+    </button>
+    <button
+      v-if="props.menu.canTurn"
+      type="button"
+      class="context-menu__button"
+      @click.stop="emit('turn')"
+    >
+      Turn sprite
+    </button>
+    <button
+      type="button"
+      class="context-menu__button"
+      @click.stop="emit('modify-hp')"
+    >
+      Modify HP
+    </button>
+    <button
+      type="button"
+      class="context-menu__button"
+      @click.stop="emit('modify-combat-stages')"
+    >
+      Change combat stages
+    </button>
+    <button
+      type="button"
+      class="context-menu__button"
+      @click.stop="emit('apply-remove-conditions')"
+    >
+      Apply/Remove Conditions
+    </button>
 
     <button
       type="button"
