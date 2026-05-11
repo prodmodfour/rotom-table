@@ -18,20 +18,17 @@ const emit = defineEmits<{
     <section class="panel-card">
       <h2 class="panel-title">
         Held Item
-        <span class="panel-subtle">name editable · details from items.json</span>
+        <span class="panel-subtle">select from items.json</span>
       </h2>
       <dl class="kv-list">
         <div>
           <dt>Held Item</dt>
           <dd>
-            <span class="held-item-value">
-              <ItemSprite :item="heldItemName" size="md" />
-              <EditableCell
-                :model-value="sheet.items!.held"
-                placeholder="None"
-                @update:model-value="emit('setHeldItemName', $event)"
-              />
-            </span>
+            <PokemonHeldItemSelect
+              :model-value="sheet.items!.held"
+              placeholder="None"
+              @update:model-value="emit('setHeldItemName', $event)"
+            />
           </dd>
         </div>
         <div>
@@ -145,11 +142,6 @@ const emit = defineEmits<{
   color: var(--ink-bright);
 }
 
-.held-item-value {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-}
 
 .lookup-text {
   color: var(--ink-soft);
