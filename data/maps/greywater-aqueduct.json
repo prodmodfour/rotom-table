@@ -92439,9 +92439,9 @@
       "sheetKind": "pokemon",
       "sheetSlug": "lenora-vask-crockefeller",
       "position": {
-        "x": 42,
+        "x": 39,
         "y": 5,
-        "z": 14
+        "z": 16
       },
       "turned": false,
       "initiative": 17
@@ -92604,5 +92604,5 @@
     ]
   },
   "createdAt": 1777665906726,
-  "updatedAt": 1778302774934
+  "updatedAt": 1778554636082
 }
