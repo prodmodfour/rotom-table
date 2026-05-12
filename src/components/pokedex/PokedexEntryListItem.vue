@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { formatNationalDexNumber } from '~/utils/pokedex/searchText'
-import { pokedexEntryPath, type DisplayPokedexEntry } from '~/utils/pokedex/entryIndex'
+import { pokedexEntryPath, type PokedexEntrySummary } from '~/utils/pokedex/entryIndex'
 
 defineProps<{
-  entry: DisplayPokedexEntry
+  entry: PokedexEntrySummary
   selected: boolean
 }>()
 </script>
@@ -41,6 +41,7 @@ defineProps<{
   flex-direction: column;
   align-items: flex-start;
   gap: 0.25rem;
+  min-height: 4.625rem;
   padding: 0.7rem 0.8rem;
   border: 1px solid var(--rule-soft);
   border-radius: 10px;
@@ -53,6 +54,8 @@ defineProps<{
     border-color 0.15s ease,
     background 0.15s ease,
     color 0.15s ease;
+  content-visibility: auto;
+  contain-intrinsic-size: 4.5rem;
 }
 
 .entry-button:hover {

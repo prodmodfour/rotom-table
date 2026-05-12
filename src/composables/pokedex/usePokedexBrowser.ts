@@ -1,6 +1,6 @@
 import { computed } from 'vue'
-import { pokemonCatalogBySpecies } from '~~/data/pokemonCatalog'
 import { usePokedexFilters } from '~/composables/pokedex/usePokedexFilters'
+import { POKEDEX_API_PATHS } from '~/utils/apiRoutes'
 import {
   capabilityTokensForEntry,
   dietSummaryForEntry,
@@ -18,21 +18,23 @@ import {
   type DisplayedPokedexEvolution,
 } from '~/utils/pokedex/entryDetails'
 import {
-  buildPokedexEntries,
   buildPokedexEntryBySlug,
+  buildSearchablePokedexEntries,
   pokedexEntryPath,
   routeParamToPokedexSlug,
   type DisplayPokedexEntry,
+  type IndexedPokedexEntry,
+  type PokedexEntryDetail,
+  type PokedexEntrySummary,
 } from '~/utils/pokedex/entryIndex'
 import { toPokedexSlug } from '~/utils/pokedex/searchText'
 import { buildTypeMatchupGroups } from '~/utils/pokedex/typeMatchups'
-import type { PokedexRecord } from '~/types/pokemon'
 
-export const selectPokedexEntry = (
+export const selectPokedexEntry = <TEntry extends PokedexEntrySummary>(
   routeSlug: string | null,
-  filteredEntries: readonly DisplayPokedexEntry[],
-  entryBySlug: ReadonlyMap<string, DisplayPokedexEntry>,
-): DisplayPokedexEntry | null => {
+  filteredEntries: readonly TEntry[],
+  entryBySlug: ReadonlyMap<string, TEntry>,
+): TEntry | null => {
   if (routeSlug) {
     return entryBySlug.get(routeSlug) ?? null
   }
@@ -42,7 +44,7 @@ export const selectPokedexEntry = (
 
 export const requestedPokemonNameForRoute = (
   routeSlug: string | null,
-  selectedEntry: DisplayPokedexEntry | null,
+  selectedEntry: Pick<IndexedPokedexEntry, 'species'> | null,
   rawParam: unknown,
 ): string | null => {
   if (!routeSlug || selectedEntry) return null
@@ -52,9 +54,9 @@ export const requestedPokemonNameForRoute = (
 }
 
 export const buildDisplayedPokedexEvolutions = (
-  selectedEntry: DisplayPokedexEntry | null,
+  selectedEntry: Pick<IndexedPokedexEntry, 'evolutions'> | null,
   selectedId: string | null,
-  entryBySlug: ReadonlyMap<string, DisplayPokedexEntry>,
+  entryBySlug: ReadonlyMap<string, Pick<IndexedPokedexEntry, 'id' | 'slug'>>,
 ): DisplayedPokedexEvolution[] => (
   (selectedEntry?.evolutions ?? []).map((evolution) => {
     const entry = entryBySlug.get(toPokedexSlug(evolution.species)) ?? null
@@ -67,7 +69,7 @@ export const buildDisplayedPokedexEvolutions = (
 
 export const pokedexPageTitle = (
   routeSlug: string | null,
-  selectedEntry: DisplayPokedexEntry | null,
+  selectedEntry: Pick<IndexedPokedexEntry, 'species'> | null,
 ): string => {
   if (!routeSlug) return 'Pokédex · Rotom Table'
   return selectedEntry
@@ -75,43 +77,71 @@ export const pokedexPageTitle = (
     : 'Pokémon not found · Pokédex · Rotom Table'
 }
 
-export const usePokedexBrowser = (records: PokedexRecord[]) => {
+export const usePokedexBrowser = () => {
   const route = useRoute()
-  const allEntries = buildPokedexEntries(records)
-  const entryBySlug = buildPokedexEntryBySlug(allEntries)
   const pokemonRouteSlug = computed(() => routeParamToPokedexSlug(route.params.pokemon_name))
 
-  const { filteredEntries, filterMode, filterOperators, searchFilters } = usePokedexFilters(allEntries)
+  const summariesRequest = useFetch<PokedexEntrySummary[]>(POKEDEX_API_PATHS.index, {
+    key: 'pokedex-entry-summaries',
+    default: () => [],
+  })
+  const allEntries = computed(() => summariesRequest.data.value ?? [])
+  const entryBySlug = computed(() => buildPokedexEntryBySlug(allEntries.value))
 
-  const selectedEntry = computed(() => selectPokedexEntry(
+  const loadSearchEntries = async (): Promise<DisplayPokedexEntry[]> => {
+    const entries = await $fetch<IndexedPokedexEntry[]>(POKEDEX_API_PATHS.searchIndex)
+    return buildSearchablePokedexEntries(entries)
+  }
+
+  const {
+    filteredEntries,
+    filterMode,
+    filterOperators,
+    isSearchIndexLoading,
+    searchFilters,
+    searchIndexError,
+  } = usePokedexFilters(allEntries, { loadSearchEntries })
+
+  const selectedSummary = computed(() => selectPokedexEntry(
     pokemonRouteSlug.value,
     filteredEntries.value,
-    entryBySlug,
+    entryBySlug.value,
   ))
-  const selectedId = computed(() => selectedEntry.value?.id ?? null)
+  const selectedDetailSlug = computed(() => pokemonRouteSlug.value ?? selectedSummary.value?.slug ?? null)
+  const detailQuery = computed(() => (
+    selectedDetailSlug.value ? { slug: selectedDetailSlug.value } : {}
+  ))
+  const detailRequest = useFetch<PokedexEntryDetail | null>(POKEDEX_API_PATHS.detail, {
+    key: 'pokedex-entry-detail',
+    query: detailQuery,
+    watch: [selectedDetailSlug],
+    default: () => null,
+  })
+
+  const selectedEntry = computed(() => detailRequest.data.value)
+  const selectedId = computed(() => selectedSummary.value?.id ?? selectedEntry.value?.id ?? null)
+  const selectedTitleEntry = computed(() => (
+    pokemonRouteSlug.value ? selectedSummary.value : (selectedSummary.value ?? selectedEntry.value)
+  ))
   const displayedEvolutions = computed(() => buildDisplayedPokedexEvolutions(
     selectedEntry.value,
     selectedId.value,
-    entryBySlug,
+    entryBySlug.value,
   ))
   const requestedPokemonName = computed(() => requestedPokemonNameForRoute(
     pokemonRouteSlug.value,
-    selectedEntry.value,
+    selectedTitleEntry.value,
     route.params.pokemon_name,
   ))
-  const pageTitle = computed(() => pokedexPageTitle(pokemonRouteSlug.value, selectedEntry.value))
-
-  const selectedSprite = computed(() => {
-    if (!selectedEntry.value) {
-      return null
-    }
-
-    return pokemonCatalogBySpecies.get(selectedEntry.value.species) ?? null
-  })
+  const pageTitle = computed(() => pokedexPageTitle(pokemonRouteSlug.value, selectedTitleEntry.value))
+  const selectedSpriteUrl = computed(() => selectedEntry.value?.spriteUrl ?? null)
+  const searchIndexErrorMessage = computed(() => (
+    searchIndexError.value ? 'Unable to load the Pokédex search index.' : null
+  ))
 
   const isPlacementOnly = computed(() => isPlacementOnlyEntry(selectedEntry.value))
   const genderSummary = computed(() => genderSummaryForEntry(selectedEntry.value))
-  const pageNumber = computed(() => pageNumberForSelectedEntry(selectedId.value, filteredEntries.value, allEntries))
+  const pageNumber = computed(() => pageNumberForSelectedEntry(selectedId.value, filteredEntries.value, allEntries.value))
   const capabilityTokens = computed(() => capabilityTokensForEntry(selectedEntry.value))
   const tmHmTokens = computed(() => tmHmTokensForEntry(selectedEntry.value))
   const eggMoveTokens = computed(() => eggMoveTokensForEntry(selectedEntry.value))
@@ -123,6 +153,7 @@ export const usePokedexBrowser = (records: PokedexRecord[]) => {
   const dietSummary = computed(() => dietSummaryForEntry(selectedEntry.value))
   const habitatSummary = computed(() => habitatSummaryForEntry(selectedEntry.value))
   const typeMatchupGroups = computed(() => buildTypeMatchupGroups(selectedEntry.value?.types))
+  const ready = Promise.all([summariesRequest, detailRequest])
 
   return {
     capabilityTokens,
@@ -137,13 +168,16 @@ export const usePokedexBrowser = (records: PokedexRecord[]) => {
     habitatSummary,
     heightLabel,
     isPlacementOnly,
+    isSearchIndexLoading,
     pageNumber,
     pageTitle,
+    ready,
     requestedPokemonName,
     searchFilters,
+    searchIndexErrorMessage,
     selectedEntry,
     selectedId,
-    selectedSprite,
+    selectedSpriteUrl,
     skillPhrase,
     tmHmTokens,
     tutorMoveTokens,

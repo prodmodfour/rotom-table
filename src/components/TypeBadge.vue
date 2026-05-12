@@ -52,6 +52,7 @@ const alt = computed(() => props.decorative ? '' : `${label.value} type`)
     :title="label"
     :aria-hidden="decorative ? 'true' : undefined"
     draggable="false"
+    loading="lazy"
   />
 </template>
 

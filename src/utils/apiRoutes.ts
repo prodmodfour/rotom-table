@@ -29,3 +29,9 @@ export const SHEET_API_PATHS = {
 export const ENCOUNTER_API_PATHS = {
   generate: '/api/encounters/generate',
 } as const
+
+export const POKEDEX_API_PATHS = {
+  index: '/api/pokedex',
+  detail: '/api/pokedex/detail',
+  searchIndex: '/api/pokedex/search-index',
+} as const

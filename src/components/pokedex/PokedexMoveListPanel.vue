@@ -25,7 +25,7 @@ defineProps<{
           :key="`${move.level}-${move.name}`"
         >
           <span class="move-level">{{ move.level }}</span>
-          <span class="move-name"><RefLink kind="move" :name="move.name" /></span>
+          <span class="move-name"><PokedexRefLink kind="move" :name="move.name" /></span>
           <span class="move-sep">-</span>
           <span class="move-type"><TypeBadge :type="move.type" size="xs" /></span>
         </li>
@@ -37,7 +37,7 @@ defineProps<{
       <p class="paragraph paragraph--indent">
         <template v-for="(token, i) in tmHmTokens" :key="`tm-${i}`"
           ><span v-if="i > 0">, </span
-          ><RefLink kind="move" :name="token.name" :display="token.display"
+          ><PokedexRefLink kind="move" :name="token.name" :display="token.display"
         /></template>
       </p>
     </template>
@@ -47,7 +47,7 @@ defineProps<{
       <p class="paragraph paragraph--indent">
         <template v-for="(token, i) in eggMoveTokens" :key="`egg-${i}`"
           ><span v-if="i > 0">, </span
-          ><RefLink kind="move" :name="token.name" :display="token.display"
+          ><PokedexRefLink kind="move" :name="token.name" :display="token.display"
         /></template>
       </p>
     </template>
@@ -57,7 +57,7 @@ defineProps<{
       <p class="paragraph paragraph--indent">
         <template v-for="(token, i) in tutorMoveTokens" :key="`tut-${i}`"
           ><span v-if="i > 0">, </span
-          ><RefLink kind="move" :name="token.name" :display="token.display"
+          ><PokedexRefLink kind="move" :name="token.name" :display="token.display"
         /></template>
       </p>
     </template>

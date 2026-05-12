@@ -3,41 +3,75 @@ import { pokedexEntryPathForSlug } from '~/utils/pokedex/routes'
 import { createLazyPokedexSearchTexts, toPokedexSlug, type PokedexSearchTexts } from '~/utils/pokedex/searchText'
 import type { PokedexRecord } from '~/types/pokemon'
 
-export type DisplayPokedexEntry = PokedexRecord & {
+export type IndexedPokedexEntry = PokedexRecord & {
   id: string
   slug: string
   nationalDexNumber: number | null
+}
+
+export type DisplayPokedexEntry = IndexedPokedexEntry & {
   searchText: string
   searchTexts: PokedexSearchTexts
 }
 
-export const buildPokedexEntries = (records: PokedexRecord[]): DisplayPokedexEntry[] => [...records]
-  .filter((entry): entry is PokedexRecord => Boolean(entry?.species))
-  .sort(compareByNationalDex)
-  .map((entry, index) => {
-    const slug = toPokedexSlug(entry.species)
-    const displayEntry = {
-      ...entry,
-      id: `${index}-${slug || 'entry'}`,
-      slug,
-      nationalDexNumber: getNationalDexNumber(entry.species),
-    }
-    const searchTexts = createLazyPokedexSearchTexts(displayEntry)
+export type PokedexEntrySummary = Pick<IndexedPokedexEntry, 'id' | 'species' | 'slug' | 'nationalDexNumber' | 'types' | 'source_gen'>
 
-    return Object.defineProperties(displayEntry, {
-      searchText: {
-        enumerable: false,
-        get: () => searchTexts.any,
-      },
-      searchTexts: {
-        enumerable: false,
-        value: searchTexts,
-      },
-    }) as DisplayPokedexEntry
-  })
+export type PokedexEntryDetail = IndexedPokedexEntry & {
+  spriteUrl: string | null
+}
 
-export const buildPokedexEntryBySlug = (entries: DisplayPokedexEntry[]): Map<string, DisplayPokedexEntry> => {
-  const entryBySlug = new Map<string, DisplayPokedexEntry>()
+export const attachLazyPokedexSearchTexts = <TEntry extends IndexedPokedexEntry>(
+  entry: TEntry,
+): TEntry & Pick<DisplayPokedexEntry, 'searchText' | 'searchTexts'> => {
+  const searchTexts = createLazyPokedexSearchTexts(entry)
+
+  return Object.defineProperties(entry, {
+    searchText: {
+      enumerable: false,
+      get: () => searchTexts.any,
+    },
+    searchTexts: {
+      enumerable: false,
+      value: searchTexts,
+    },
+  }) as TEntry & Pick<DisplayPokedexEntry, 'searchText' | 'searchTexts'>
+}
+
+export const toIndexedPokedexEntry = (entry: PokedexRecord, index: number): IndexedPokedexEntry => {
+  const slug = toPokedexSlug(entry.species)
+
+  return {
+    ...entry,
+    id: `${index}-${slug || 'entry'}`,
+    slug,
+    nationalDexNumber: getNationalDexNumber(entry.species),
+  }
+}
+
+export const toPokedexEntrySummary = (entry: IndexedPokedexEntry): PokedexEntrySummary => ({
+  id: entry.id,
+  species: entry.species,
+  slug: entry.slug,
+  nationalDexNumber: entry.nationalDexNumber,
+  types: entry.types,
+  source_gen: entry.source_gen,
+})
+
+export const buildSearchablePokedexEntries = (entries: IndexedPokedexEntry[]): DisplayPokedexEntry[] => (
+  entries.map((entry) => attachLazyPokedexSearchTexts(entry))
+)
+
+export const buildPokedexEntries = (records: PokedexRecord[]): DisplayPokedexEntry[] => buildSearchablePokedexEntries(
+  [...records]
+    .filter((entry): entry is PokedexRecord => Boolean(entry?.species))
+    .sort(compareByNationalDex)
+    .map(toIndexedPokedexEntry),
+)
+
+export const buildPokedexEntryBySlug = <TEntry extends Pick<IndexedPokedexEntry, 'slug'>>(
+  entries: readonly TEntry[],
+): Map<string, TEntry> => {
+  const entryBySlug = new Map<string, TEntry>()
 
   for (const entry of entries) {
     // A few upstream parser artifacts share the same bogus species label. Keep
@@ -49,7 +83,7 @@ export const buildPokedexEntryBySlug = (entries: DisplayPokedexEntry[]): Map<str
   return entryBySlug
 }
 
-export const pokedexEntryPath = (entry: Pick<DisplayPokedexEntry, 'slug'>): string =>
+export const pokedexEntryPath = (entry: Pick<IndexedPokedexEntry, 'slug'>): string =>
   pokedexEntryPathForSlug(entry.slug)
 
 export const routeParamToPokedexSlug = (value: unknown): string | null => {

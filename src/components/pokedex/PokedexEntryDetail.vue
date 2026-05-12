@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { CapabilityToken, DisplayedPokedexEvolution, MoveToken } from '~/utils/pokedex/entryDetails'
-import type { DisplayPokedexEntry } from '~/utils/pokedex/entryIndex'
+import type { PokedexEntryDetail } from '~/utils/pokedex/entryIndex'
 import type { TypeMatchupGroup } from '~/utils/pokedex/typeMatchups'
 
 defineProps<{
@@ -9,7 +9,7 @@ defineProps<{
   displayedEvolutions: DisplayedPokedexEvolution[]
   eggGroupSummary: string | null
   eggMoveTokens: MoveToken[]
-  entry: DisplayPokedexEntry | null
+  entry: PokedexEntryDetail | null
   genderSummary: string | null
   habitatSummary: string | null
   heightLabel: string | null

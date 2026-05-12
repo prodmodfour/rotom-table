@@ -13,7 +13,7 @@ defineProps<{
     <p class="paragraph">
       <template v-for="(token, i) in capabilityTokens" :key="`cap-${i}`"
         ><span v-if="i > 0">, </span
-        ><RefLink
+        ><PokedexRefLink
           v-if="token.ref"
           kind="capability"
           :name="token.ref"

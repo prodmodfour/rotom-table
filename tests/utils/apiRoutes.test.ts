@@ -3,6 +3,7 @@ import {
   API_EVENTS_PATH,
   ENCOUNTER_API_PATHS,
   MAP_API_PATHS,
+  POKEDEX_API_PATHS,
   SHEET_API_PATHS,
 } from '~/utils/apiRoutes'
 
@@ -43,5 +44,13 @@ describe('API route constants', () => {
 
   it('exposes encounter API paths', () => {
     expect(ENCOUNTER_API_PATHS.generate).toBe('/api/encounters/generate')
+  })
+
+  it('exposes pokedex API paths', () => {
+    expect(POKEDEX_API_PATHS).toEqual({
+      index: '/api/pokedex',
+      detail: '/api/pokedex/detail',
+      searchIndex: '/api/pokedex/search-index',
+    })
   })
 })

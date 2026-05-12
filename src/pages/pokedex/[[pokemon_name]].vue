@@ -1,8 +1,6 @@
 <script setup lang="ts">
-import pokedexData from '~~/ptu-data/data/pokedex.json'
 import { usePokedexBrowser } from '~/composables/pokedex/usePokedexBrowser'
 import { isPokedexPath } from '~/utils/pokedex/routes'
-import type { PokedexRecord } from '~/types/pokemon'
 
 definePageMeta({
   // Keep the browser mounted between /pokedex and /pokedex/:pokemon_name so
@@ -25,21 +23,26 @@ const {
   habitatSummary,
   heightLabel,
   isPlacementOnly,
+  isSearchIndexLoading,
   pageNumber,
   pageTitle,
+  ready,
   requestedPokemonName,
   searchFilters,
+  searchIndexErrorMessage,
   selectedEntry,
   selectedId,
-  selectedSprite,
+  selectedSpriteUrl,
   skillPhrase,
   tmHmTokens,
   tutorMoveTokens,
   typeMatchupGroups,
   weightLabel,
-} = usePokedexBrowser(pokedexData as PokedexRecord[])
+} = usePokedexBrowser()
 
 useHead(() => ({ title: pageTitle.value }))
+
+await ready
 </script>
 
 <template>
@@ -48,7 +51,9 @@ useHead(() => ({ title: pageTitle.value }))
       v-model:filter-mode="filterMode"
       :entries="filteredEntries"
       :filter-operators="filterOperators"
+      :is-search-index-loading="isSearchIndexLoading"
       :search-filters="searchFilters"
+      :search-index-error-message="searchIndexErrorMessage"
       :selected-id="selectedId"
     />
 
@@ -66,7 +71,7 @@ useHead(() => ({ title: pageTitle.value }))
       :page-number="pageNumber"
       :requested-pokemon-name="requestedPokemonName"
       :skill-phrase="skillPhrase"
-      :sprite-url="selectedSprite?.spriteUrl ?? null"
+      :sprite-url="selectedSpriteUrl"
       :tm-hm-tokens="tmHmTokens"
       :tutor-move-tokens="tutorMoveTokens"
       :type-matchup-groups="typeMatchupGroups"

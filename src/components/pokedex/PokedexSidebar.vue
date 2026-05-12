@@ -6,14 +6,16 @@ import {
   type FilterOperator,
   type PokedexSearchTextKey,
 } from '~/utils/pokedex/searchText'
-import { type DisplayPokedexEntry } from '~/utils/pokedex/entryIndex'
+import { type PokedexEntrySummary } from '~/utils/pokedex/entryIndex'
 
 const filterMode = defineModel<FilterMode>('filterMode', { required: true })
 
 defineProps<{
-  entries: DisplayPokedexEntry[]
+  entries: PokedexEntrySummary[]
   filterOperators: Record<FieldFilterKey, FilterOperator>
+  isSearchIndexLoading: boolean
   searchFilters: Record<PokedexSearchTextKey, string>
+  searchIndexErrorMessage: string | null
   selectedId: string | null
 }>()
 
@@ -27,7 +29,7 @@ const { saveSidebarScroll, setEntryListRef, sidebarRef } = usePokedexSidebarScro
     <section class="sidebar-card">
       <div class="sidebar-heading">
         <h1>Pokédex</h1>
-        <span class="badge">{{ entries.length }} shown</span>
+        <span class="badge">{{ isSearchIndexLoading ? 'Searching…' : `${entries.length} shown` }}</span>
       </div>
 
       <p class="sidebar-copy">
@@ -43,6 +45,8 @@ const { saveSidebarScroll, setEntryListRef, sidebarRef } = usePokedexSidebarScro
 
         <PokedexEntryList
           :entries="entries"
+          :error-message="searchIndexErrorMessage"
+          :loading="isSearchIndexLoading"
           :selected-id="selectedId"
           @entry-list-ref="setEntryListRef"
           @scroll="saveSidebarScroll"

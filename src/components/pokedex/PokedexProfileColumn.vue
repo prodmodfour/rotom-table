@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import type { DisplayedPokedexEvolution } from '~/utils/pokedex/entryDetails'
-import type { DisplayPokedexEntry } from '~/utils/pokedex/entryIndex'
+import type { PokedexEntryDetail } from '~/utils/pokedex/entryIndex'
 
 defineProps<{
   dietSummary: string | null
   displayedEvolutions: DisplayedPokedexEvolution[]
   eggGroupSummary: string | null
-  entry: DisplayPokedexEntry
+  entry: PokedexEntryDetail
   genderSummary: string | null
   habitatSummary: string | null
   heightLabel: string | null

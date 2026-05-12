@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import type { DisplayPokedexEntry } from '~/utils/pokedex/entryIndex'
+import type { PokedexEntryDetail } from '~/utils/pokedex/entryIndex'
 
 defineProps<{
-  baseStats: DisplayPokedexEntry['base_stats']
+  baseStats: PokedexEntryDetail['base_stats']
 }>()
 </script>
 

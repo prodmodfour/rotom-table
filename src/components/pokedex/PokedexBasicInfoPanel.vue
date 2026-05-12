@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import type { DisplayPokedexEntry } from '~/utils/pokedex/entryIndex'
+import type { PokedexEntryDetail } from '~/utils/pokedex/entryIndex'
 
 defineProps<{
-  entry: DisplayPokedexEntry
+  entry: PokedexEntryDetail
 }>()
 </script>
 
@@ -27,21 +27,21 @@ defineProps<{
         :key="`basic-${ability}`"
         class="info-line"
       >
-        Basic Ability {{ index + 1 }}: <RefLink kind="ability" :name="ability" />
+        Basic Ability {{ index + 1 }}: <PokedexRefLink kind="ability" :name="ability" />
       </p>
       <p
         v-for="(ability, index) in entry.abilities.advanced ?? []"
         :key="`adv-${ability}`"
         class="info-line"
       >
-        Adv Ability {{ index + 1 }}: <RefLink kind="ability" :name="ability" />
+        Adv Ability {{ index + 1 }}: <PokedexRefLink kind="ability" :name="ability" />
       </p>
       <p
         v-for="ability in entry.abilities.high ?? []"
         :key="`high-${ability}`"
         class="info-line"
       >
-        High Ability: <RefLink kind="ability" :name="ability" />
+        High Ability: <PokedexRefLink kind="ability" :name="ability" />
       </p>
     </template>
   </section>
