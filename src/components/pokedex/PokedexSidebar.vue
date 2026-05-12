@@ -58,13 +58,19 @@ const { saveSidebarScroll, setEntryListRef, sidebarRef } = usePokedexSidebarScro
 
 <style scoped>
 .pokedex-sidebar {
+  position: sticky;
+  top: 0;
+  align-self: start;
   display: flex;
   flex-direction: column;
   gap: 0.85rem;
+  height: 100vh;
+  height: 100dvh;
+  max-height: 100vh;
+  max-height: 100dvh;
   padding: 0.85rem;
   border-right: 1px solid var(--rule);
   background: var(--paper);
-  max-height: 100vh;
   overflow: hidden;
 }
 
@@ -130,6 +136,8 @@ code {
 
 @media (max-width: 1040px) {
   .pokedex-sidebar {
+    position: static;
+    height: auto;
     max-height: none;
     overflow: visible;
     border-right: 0;
