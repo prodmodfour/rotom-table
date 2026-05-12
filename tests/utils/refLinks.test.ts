@@ -66,6 +66,22 @@ describe('refLinks helpers', () => {
     expect(tooltip?.sections.map((section) => section.heading)).toEqual(['Trigger', 'Effect'])
   })
 
+  it('builds Gen 7/8 ability tooltips that were split across source columns', () => {
+    const stamina = getRefTooltipDetail('ability', 'Stamina')
+    expect(stamina).toMatchObject({
+      kind: 'ability',
+      name: 'Stamina',
+      meta: [{ label: 'Freq', value: 'At-Will – Free Action' }],
+    })
+    expect(stamina?.sections).toEqual([
+      { heading: 'Trigger', body: 'The user is hit by a Damaging Attack' },
+      { heading: 'Effect', body: 'The user receives +1 Defense Combat Stage. Defensive.' },
+    ])
+
+    expect(getRefTooltipDetail('ability', 'Screen Cleaner')?.sections.map((section) => section.heading))
+      .toEqual(['Effect', 'Bonus'])
+  })
+
   it('builds capability and condition tooltips', () => {
     expect(getRefTooltipDetail('capability', 'Naturewalk')?.sections[0]?.heading).toBe('Effect')
 

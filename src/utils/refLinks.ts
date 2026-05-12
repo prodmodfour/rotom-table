@@ -74,6 +74,7 @@ export const getRefTooltipDetail = (kind: RefKind, name: string): RefTooltipDeta
         sections: [
           ...(presentRefValue(ability.trigger) ? [{ heading: 'Trigger', body: ability.trigger }] : []),
           ...(presentRefValue(ability.effect) ? [{ heading: 'Effect', body: ability.effect }] : []),
+          ...(presentRefValue(ability.bonus) ? [{ heading: 'Bonus', body: ability.bonus }] : []),
         ],
       }
     }

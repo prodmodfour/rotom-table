@@ -44,12 +44,15 @@
     "effect": "One target hit by the attack becomes one stage more vulnerable to the attack (applied after all other modifiers). Immune targets are treated as initially double-resistant for the purposes of this Ability, and may be damaged normally."
   },
   "Flavorful Aroma": {
-    "name": "Flavorful Aroma"
+    "name": "Flavorful Aroma",
+    "frequency": "At-Will – Free Action",
+    "trigger": "The user uses Aromatic Mist",
+    "effect": "Connection – Aromatic Mist. All allies affected by Aromatic Mist gain +1 to Accuracy Rolls and +5 to Damage Rolls for one full round."
   },
   "Ice Face": {
     "name": "Ice Face",
-    "trigger": "The user uses Aromatic Mist",
-    "effect": "Connection – Aromatic Mist. All allies affected by Aromatic Mist gain +1 to Accuracy Rolls and +5 to Damage Rolls for one full round."
+    "frequency": "Static",
+    "effect": "The user begins the battle with two ticks of Temporary Hit Points. As a Standard Action in Hail, they may gain two ticks of Temporary Hit Points. The user is immune to damage from Hail. While the user has Temporary Hit Points from this Feature, it is in Ice Face form, otherwise it is in Noice Face form."
   },
   "Gorilla Tactics": {
     "name": "Gorilla Tactics",
@@ -90,12 +93,16 @@
     "effect": "The user changes their Type to match the field. Pick one type from the following table. If two or more rows are relevant (such as because of Weather), pick one. Field/Weather Type Beach Ground or Water Cave Rock or Dark Desert Ground or Rock Forest Grass Fresh Water / Ocean Water Grassland Normal or Grass Marsh Water or Poison Mountain Rock or Ground Rainforest Grass or Poison Taiga Ice or Grass Tundra Ice Urban Normal or Steel Sunny Fire Rainy Water Hailing Ice Sandstorming Rock Your GM may provide additional options should they choose (for instance, an Ethereal Forest may provide Psychic and Fairy options.) Note: This table may be used for Camouflage, too."
   },
   "Mirror Armor": {
-    "name": "Mirror Armor"
+    "name": "Mirror Armor",
+    "frequency": "At-Will – Free Action, Reaction",
+    "trigger": "A foe’s Move or Ability directly lowers the user’s CS (including Effect Ranges, but not including things like Status)",
+    "effect": "The user’s CS are instead not lowered, and the triggering foe’s CS in the affected stats are instead lowered the same amount the user’s would have been."
   },
   "Perish Body": {
     "name": "Perish Body",
-    "trigger": "A foe’s Move or Ability directly lowers the",
-    "effect": "The user’s CS are instead not lowered, and the triggering foe’s CS in the affected stats are instead lowered the same amount the user’s would have been."
+    "frequency": "Daily – Standard Action, Reaction",
+    "trigger": "The user is hit with a Melee attack",
+    "effect": "The triggering creature and the user each receive a Perish Count of 3. At the beginning of each of the target’s turns, their Perish Count is lowered by 1. Once a Perish Count reaches 0, set the Pokémon’s Hit Points to 0. A Perish Count disappears if a target returns to their Poké Ball, Takes a Breather, or is knocked out. Perish Body never causes Massive Damage. Defensive."
   },
   "Missile Launch": {
     "name": "Missile Launch",
@@ -134,12 +141,16 @@
     "effect": "The user immediately uses a Move on the triggering foe as a Standard Action Interrupt (this Move must still obey Frequency and Range). If this Move hits, the foe also gains a -2 penalty to their attack roll for the triggering attack, unless the foe cannot Flinch."
   },
   "Ripen": {
-    "name": "Ripen"
+    "name": "Ripen",
+    "frequency": "Static",
+    "effect": "Any numeric benefits of Berry Food Buffs the user trades in are doubled. (Oran Berries restore 10 HP, Liechi increases Attack by +2 CS, Jaboca causes ¼ Hit Point loss, Occa Weakens a Move 2 stages, etc.). This does not increase the number of statuses cured, Scene Moves restored, stats lowered by suppressants, or allow triggering at double the usual HP one must be at."
   },
   "Stalwart": {
     "name": "Stalwart",
+    "frequency": "Scene – Free Action, Reaction",
     "trigger": "The user receives Massive Damage",
-    "effect": "Any numeric benefits of Berry Food Buffs the user trades in are doubled. (Oran Berries restore 10 HP, Liechi increases Attack by +2 CS, Jaboca causes ¼ Hit Point loss, Occa Weakens a Move 2 stages, etc.). This does not increase the number of statuses cured, Scene Moves restored, stats lowered by suppressants, or allow triggering at double the usual HP one must be at."
+    "effect": "The user’s Attack, Special Attack, Defense, and Special Defense all increase by 1 CS.",
+    "bonus": "The user may not be Intercepted, nor may any Abilities, Moves, or Features be activated to change the user’s target. Any of those existing effects (such as Follow Me) fail."
   },
   "Sand Spit": {
     "name": "Sand Spit",
@@ -148,24 +159,32 @@
     "effect": "Connection – Sand Attack. The user attacks the triggering foe with Sand Attack as a Free Action."
   },
   "Screen Cleaner": {
-    "name": "Screen Cleaner"
+    "name": "Screen Cleaner",
+    "frequency": "Daily – Standard Action",
+    "effect": "All Blessings on the field, both ally and enemy, are removed.",
+    "bonus": "The user is immune to non-Blocking Hazards, and destroys them when moving over them. Blocking Hazards are treated instead as Slow Terrain for the purposes of movement only (the user may still not target through them), and are destroyed if moved through."
   },
   "Steam Engine": {
     "name": "Steam Engine",
     "frequency": "Scene x2 – Swift Action, Reaction",
-    "trigger": "The user is hit by a damaging Fire-Type or",
+    "trigger": "The user is hit by a damaging Fire-Type or Water-Type Move, or begins their turn in Rainy Weather",
     "effect": "Connection – Smokescreen. The user may use Smokescreen as a Free Action, ignoring frequency, centered on the user."
   },
   "Transistor": {
-    "name": "Transistor"
+    "name": "Transistor",
+    "frequency": "Scene x2 – Free Action",
+    "trigger": "The user hits with a damaging Electric-Type Move",
+    "effect": "One target hit by the attack becomes one stage more vulnerable to the attack (applied after all other modifiers). Immune targets are treated as initially double-resistant for the purposes of this Ability, and may be damaged normally."
   },
   "Splendorous Rider": {
-    "name": "Splendorous Rider"
+    "name": "Splendorous Rider",
+    "frequency": "Scene x2 – Swift Action",
+    "effect": "The user may pick a Move from their Mount’s known Moves that they do not already know. For the rest of the user’s Turn, they may use that Move as though it was one of their own Moves. Note that this does not remove any frequency limitations – a Daily Move that the Mount knows may not be used more than once. This Ability may not be copied or transferred."
   },
   "Unseen Fist": {
     "name": "Unseen Fist",
-    "trigger": "The user hits with a damaging Electric-Type",
-    "effect": "The user may pick a Move from their Mount’s known Moves that they do not already know. For the rest of the user’s Turn, they may use that Move as though it was one of their own Moves. Note that this does not remove any frequency limitations – a Daily Move that the Mount knows may not be used more than once. This Ability may not be copied or transferred."
+    "frequency": "Static",
+    "effect": "Reactions, Interrupts, and Blessings may not be activated in response to the user’s Melee Attacks."
   },
   "Wandering Spirit": {
     "name": "Wandering Spirit",
@@ -217,11 +236,14 @@
     "effect": "The user receives +1 Special Attack Combat Stage."
   },
   "Chemical Romance": {
-    "name": "Chemical Romance"
+    "name": "Chemical Romance",
+    "frequency": "Static",
+    "effect": "Connection – Sweet Scent. Whenever the user hits a male target with Poison Gas, Smog, Sweet Scent, Toxic, or Venom Drench, that target becomes Infatuated with the user."
   },
   "Electric Surge": {
     "name": "Electric Surge",
-    "effect": "Connection – Sweet Scent. Whenever the user hits a male target with Poison Gas, Smog, Sweet Scent, Toxic, or Venom Drench, that target becomes Infatuated with the user."
+    "frequency": "Scene x3 – Swift Action",
+    "effect": "The Field becomes Electrified, as if affected by the Move Electric Terrain, for one full round."
   },
   "Comatose": {
     "name": "Comatose",
@@ -282,19 +304,25 @@
     "effect": "The Field becomes Grassy, as if affected by the Move Grassy Terrain, for one full round."
   },
   "Handyman": {
-    "name": "Handyman"
+    "name": "Handyman",
+    "frequency": "Static",
+    "effect": "The user may hold two Held Items at once. Whenever an Ability or Move affects the user’s Held Items, you may choose which one is affected."
   },
   "Misty Surge": {
     "name": "Misty Surge",
-    "effect": "The user may hold two Held Items at once. Whenever an Ability or Move affects the user’s Held Items, you may choose which one is affected."
+    "frequency": "Scene x3 – Swift Action",
+    "effect": "The Field becomes Misty, as if affected by the Move Misty Terrain, for one full round."
   },
   "Mud Shield": {
-    "name": "Mud Shield"
+    "name": "Mud Shield",
+    "frequency": "Scene – Swift Action",
+    "effect": "The user gains two ticks worth of Temporary Hit Points.",
+    "bonus": "When standing on any muddy or dirty terrain that is either Slow or Rough Terrain, the user gains +5 Damage Reduction. Defensive."
   },
   "Horde Break": {
     "name": "Horde Break",
     "frequency": "At-Will – Free Action",
-    "trigger": "The user changes from School Form to Solo",
+    "trigger": "The user changes from School Form to Solo Form",
     "effect": "The user is cured of all Status Conditions."
   },
   "Innards Out": {
@@ -340,11 +368,15 @@
     "effect": "The user gains +5 Damage Reduction against Super Effective-Damage. Defensive."
   },
   "Psychic Surge": {
-    "name": "Psychic Surge"
+    "name": "Psychic Surge",
+    "frequency": "Scene x3 – Swift Action",
+    "effect": "The Field becomes Weird, as if affected by the Move Psychic Terrain, for one full round."
   },
   "RKS System": {
     "name": "RKS System",
-    "effect": "The Field becomes Weird, as if affected by the Move Psychic Terrain, for one full round."
+    "frequency": "Scene – Free Action",
+    "effect": "If the user is hit by a damaging attack, they may calculate damage as if they were Normal-Type instead. If they were already Normal-Type, they instead resist the damage one step further.",
+    "bonus": "The user’s Type changes to match the Type of their held Memory Disc."
   },
   "Queenly Majesty": {
     "name": "Queenly Majesty",
@@ -394,20 +426,26 @@
     "effect": "The user receives +2 Special Attack Combat Stages and gains a tick of Temporary Hit Points."
   },
   "Stakeout": {
-    "name": "Stakeout"
+    "name": "Stakeout",
+    "frequency": "Static",
+    "effect": "The user gains a +2d6+4 bonus on damage rolls against foes that were released from a Pokéball or entered the encounter since the user's last turn."
   },
   "Water Compaction": {
     "name": "Water Compaction",
+    "frequency": "At-Will – Free Action",
     "trigger": "The user is hit by a Water Type Move",
-    "effect": "The user gains a +2d6+4 bonus on damage rolls against foes that were released from a Pokéball or entered the encounter since the user's last turn."
+    "effect": "The user receives +2 Defense Combat Stages. Defensive."
   },
   "Stamina": {
-    "name": "Stamina"
+    "name": "Stamina",
+    "frequency": "At-Will – Free Action",
+    "trigger": "The user is hit by a Damaging Attack",
+    "effect": "The user receives +1 Defense Combat Stage. Defensive."
   },
   "Wily": {
     "name": "Wily",
-    "trigger": "The user is hit by a Damaging Attack",
-    "effect": "The user receives +1 Defense Combat Stage. Defensive."
+    "frequency": "Static",
+    "effect": "The user's X-target Status Class Moves may target an additional target within range."
   },
   "Steelworker": {
     "name": "Steelworker",

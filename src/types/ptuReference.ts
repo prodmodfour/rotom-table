@@ -10,6 +10,7 @@ export interface PtuAbility {
   frequency?: string
   trigger?: string
   effect?: string
+  bonus?: string
 }
 
 export interface PtuMove {
