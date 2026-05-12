@@ -1,5 +1,5 @@
 import type { GridDimensions, MapHazardV2, MapVoxelV2, TabletopMapV2 } from '~/types/map'
-import { SLUG_RE } from '~/shared/paths'
+import { SLUG_RE } from '#shared/paths'
 import { normalizeMapFieldEffects } from '~/utils/mapFieldEffects'
 import { normalizeMapHazard } from '~/utils/mapHazards'
 import { normalizeMaterialId } from '~/utils/mapMaterials'

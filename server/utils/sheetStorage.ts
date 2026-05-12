@@ -5,7 +5,7 @@ import {
   unlinkSync,
 } from 'node:fs'
 import { dirname, relative } from 'node:path'
-import { sanitizeFolderPath, validateSlug } from '~/shared/paths'
+import { sanitizeFolderPath, validateSlug } from '#shared/paths'
 import { stripDerivedSheetFolder } from '~/utils/sheets/persistence'
 import {
   joinSafeUnderRoot,

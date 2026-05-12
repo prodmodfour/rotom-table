@@ -4,7 +4,7 @@ import {
   encounterOutputSlugPrefix,
   resolveEncounterOutputDir,
   type EncounterOutputRequest,
-} from '~/server/utils/encounterOutput'
+} from '~~/server/utils/encounterOutput'
 
 const safePersistedRequest: EncounterOutputRequest = {
   tableKey: 'forest-edge',

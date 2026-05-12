@@ -3,12 +3,12 @@ import { describe, expect, it } from 'vitest'
 import {
   appendMoveAutomationLogEntry,
   useMoveAutomationPanel,
-} from '../../../composables/map-editor/useMoveAutomationPanel'
-import type { CharacterSheet } from '../../../types/characterSheet'
-import type { TabletopMap } from '../../../types/map'
-import type { MoveAutomationTransaction } from '../../../types/moveAutomation'
-import type { SpawnedPokemon } from '../../../types/pokemon'
-import type { TrainerSheet } from '../../../types/trainerSheet'
+} from '~/composables/map-editor/useMoveAutomationPanel'
+import type { CharacterSheet } from '~/types/characterSheet'
+import type { TabletopMap } from '~/types/map'
+import type { MoveAutomationTransaction } from '~/types/moveAutomation'
+import type { SpawnedPokemon } from '~/types/pokemon'
+import type { TrainerSheet } from '~/types/trainerSheet'
 
 const mapFixture = (): TabletopMap => ({
   schemaVersion: 2,

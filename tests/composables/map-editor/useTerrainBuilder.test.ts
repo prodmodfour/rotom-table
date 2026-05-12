@@ -1,7 +1,7 @@
 import { computed, ref } from 'vue'
 import { describe, expect, it } from 'vitest'
-import { useTerrainBuilder } from '../../../composables/map-editor/useTerrainBuilder'
-import type { TabletopMap } from '../../../types/map'
+import { useTerrainBuilder } from '~/composables/map-editor/useTerrainBuilder'
+import type { TabletopMap } from '~/types/map'
 
 const mapFixture = (): TabletopMap => ({
   schemaVersion: 2,

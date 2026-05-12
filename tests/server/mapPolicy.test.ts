@@ -4,7 +4,7 @@ import {
   canSaveMap,
   clampAnchorToDimensions,
 } from '../../server/policies/mapPolicy'
-import type { TabletopMap } from '../../types/map'
+import type { TabletopMap } from '~/types/map'
 
 const baseMap = (overrides: Partial<TabletopMap> = {}): TabletopMap => ({
   schemaVersion: 2,

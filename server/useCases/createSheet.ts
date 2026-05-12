@@ -1,5 +1,5 @@
-import { sheetsChannel, type RealtimeEvent } from '~/shared/realtime'
-import type { SheetKind } from '~/shared/sheets'
+import { sheetsChannel, type RealtimeEvent } from '#shared/realtime'
+import type { SheetKind } from '#shared/sheets'
 import { createSheetFile, type CreateSheetFileResult } from '../utils/sheetStorage'
 
 export interface CreateSheetInput {

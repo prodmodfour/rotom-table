@@ -5,10 +5,10 @@ import {
   sheetPathForPlacement,
   toPokedexSlug,
   useTokenControls,
-} from '../../../composables/map-editor/useTokenControls'
-import type { CharacterSheet } from '../../../types/characterSheet'
-import type { TabletopMap } from '../../../types/map'
-import type { TrainerSheet } from '../../../types/trainerSheet'
+} from '~/composables/map-editor/useTokenControls'
+import type { CharacterSheet } from '~/types/characterSheet'
+import type { TabletopMap } from '~/types/map'
+import type { TrainerSheet } from '~/types/trainerSheet'
 
 const mapFixture = (): TabletopMap => ({
   schemaVersion: 2,

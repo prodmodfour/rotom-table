@@ -1,5 +1,5 @@
 import { UseCaseHttpError } from '../utils/useCaseErrors'
-import type { AuthRole } from '~/shared/auth'
+import type { AuthRole } from '#shared/auth'
 import type { TabletopMap } from '~/types/map'
 import { findMapFile, readMapFile } from '../utils/mapStorage'
 import { SLUG_RE } from '../utils/mapPaths'

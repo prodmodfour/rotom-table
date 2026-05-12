@@ -3,7 +3,7 @@ import { requireAuthRole } from '../../utils/auth'
 import { publishUseCaseRealtimeEvents, throwUseCaseHttpError } from '../../utils/useCaseHttp'
 import { expectRecord, expectSlug, readObjectBody } from '../../utils/http'
 import { saveMapUseCase } from '../../useCases/saveMap'
-import { normalizeRealtimeClientId } from '~/shared/realtime'
+import { normalizeRealtimeClientId } from '#shared/realtime'
 import type { TabletopMap } from '~/types/map'
 
 interface SaveBody {

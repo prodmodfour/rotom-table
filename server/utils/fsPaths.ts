@@ -1,6 +1,6 @@
 import { readdirSync, rmdirSync } from 'node:fs'
 import { dirname, isAbsolute, relative, resolve, sep, join } from 'node:path'
-import { sanitizeFolderPath as sanitizeSharedFolderPath, type SanitizeFolderPathOptions } from '~/shared/paths'
+import { sanitizeFolderPath as sanitizeSharedFolderPath, type SanitizeFolderPathOptions } from '#shared/paths'
 
 export const PROJECT_ROOT = resolve(process.cwd())
 

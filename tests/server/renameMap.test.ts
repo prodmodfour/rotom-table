@@ -5,7 +5,7 @@ import {
   normalizeRenameMapSlug,
   renameMapUseCase,
 } from '../../server/useCases/renameMap'
-import type { TabletopMap } from '../../types/map'
+import type { TabletopMap } from '~/types/map'
 
 const makeMap = (overrides: Partial<TabletopMap> = {}): TabletopMap => ({
   schemaVersion: 2,

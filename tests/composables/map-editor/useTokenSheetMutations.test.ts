@@ -3,11 +3,11 @@ import { describe, expect, it, vi } from 'vitest'
 import {
   useTokenSheetMutations,
   type SavePlacedSheetRequest,
-} from '../../../composables/map-editor/useTokenSheetMutations'
-import { applyConditionsToSheet } from '../../../utils/sheetMutations'
-import type { CharacterSheet } from '../../../types/characterSheet'
-import type { TabletopMap } from '../../../types/map'
-import type { TrainerSheet } from '../../../types/trainerSheet'
+} from '~/composables/map-editor/useTokenSheetMutations'
+import { applyConditionsToSheet } from '~/utils/sheetMutations'
+import type { CharacterSheet } from '~/types/characterSheet'
+import type { TabletopMap } from '~/types/map'
+import type { TrainerSheet } from '~/types/trainerSheet'
 
 const mapFixture = (): TabletopMap => ({
   schemaVersion: 2,

@@ -1,6 +1,6 @@
 import { UseCaseHttpError } from '../utils/useCaseErrors'
-import { sheetsChannel, type RealtimeEvent } from '~/shared/realtime'
-import type { SheetKind } from '~/shared/sheets'
+import { sheetsChannel, type RealtimeEvent } from '#shared/realtime'
+import type { SheetKind } from '#shared/sheets'
 import { moveSheetFile, type MoveSheetFileResult } from '../utils/sheetStorage'
 
 export class MoveSheetUseCaseError extends UseCaseHttpError<400 | 404 | 409> {}

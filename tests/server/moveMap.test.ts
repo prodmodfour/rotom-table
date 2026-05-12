@@ -5,7 +5,7 @@ import {
   normalizeMoveMapFolder,
   normalizeMoveMapSlug,
 } from '../../server/useCases/moveMap'
-import type { TabletopMap } from '../../types/map'
+import type { TabletopMap } from '~/types/map'
 
 const MAPS_ROOT = '/repo/data/maps'
 

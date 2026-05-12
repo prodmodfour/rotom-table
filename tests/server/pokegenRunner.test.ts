@@ -1,6 +1,6 @@
 import { EventEmitter } from 'node:events'
 import { describe, expect, it, vi } from 'vitest'
-import { runPokegenScript, type PokegenSpawn } from '~/server/utils/pokegenRunner'
+import { runPokegenScript, type PokegenSpawn } from '~~/server/utils/pokegenRunner'
 
 class FakeStream extends EventEmitter {}
 

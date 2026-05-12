@@ -1,5 +1,5 @@
 import { UseCaseHttpError } from '../utils/useCaseErrors'
-import { sanitizeFolderPath } from '~/shared/paths'
+import { sanitizeFolderPath } from '#shared/paths'
 import { deleteSheetFolder, type DeleteFolderResult } from '../utils/sheetFolderStorage'
 
 export class DeleteSheetFolderUseCaseError extends UseCaseHttpError<400 | 404> {}

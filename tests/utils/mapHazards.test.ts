@@ -4,14 +4,14 @@ import {
   MAP_HAZARD_DEFINITIONS,
   isMapHazardKind,
   normalizeMapHazardKind,
-} from '../../utils/mapHazardDefinitions'
+} from '~/utils/mapHazardDefinitions'
 import {
   filterMapHazardsInBounds,
   mapHazardCellKey,
   mapHazardKey,
   normalizeMapHazard,
   normalizeMapHazardLayer,
-} from '../../utils/mapHazards'
+} from '~/utils/mapHazards'
 
 describe('map hazard definitions', () => {
   it('keeps canonical hazard kinds aligned with definitions', () => {

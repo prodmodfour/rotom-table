@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { isUseCaseHttpErrorLike, UseCaseHttpError } from '~/server/utils/useCaseErrors'
+import { isUseCaseHttpErrorLike, UseCaseHttpError } from '~~/server/utils/useCaseErrors'
 
 class ExampleUseCaseError extends UseCaseHttpError<400 | 409> {}
 

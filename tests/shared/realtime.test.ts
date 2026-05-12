@@ -5,7 +5,7 @@ import {
   normalizeRealtimeClientId,
   sheetChannel,
   type RealtimeEvent,
-} from '~/shared/realtime'
+} from '#shared/realtime'
 
 describe('realtime helpers', () => {
   it('builds canonical channel names', () => {

@@ -9,7 +9,7 @@ import {
   requireNonProduction,
 } from '../../utils/http'
 import { moveSheetUseCase } from '../../useCases/moveSheet'
-import { normalizeRealtimeClientId } from '~/shared/realtime'
+import { normalizeRealtimeClientId } from '#shared/realtime'
 
 interface MoveSheetBody {
   kind?: unknown

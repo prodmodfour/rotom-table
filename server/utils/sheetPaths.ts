@@ -1,8 +1,8 @@
 import { relative, resolve, sep } from 'node:path'
-import { SHEET_KINDS, type SheetKind } from '~/shared/sheets'
+import { SHEET_KINDS, type SheetKind } from '#shared/sheets'
 import { PROJECT_ROOT } from './fsPaths'
 
-export { SHEET_KINDS, isSheetKind, type SheetKind } from '~/shared/sheets'
+export { SHEET_KINDS, isSheetKind, type SheetKind } from '#shared/sheets'
 
 export interface SheetKindConfig {
   kind: SheetKind

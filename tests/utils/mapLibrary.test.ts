@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { mapsChannel, type RealtimeEvent } from '~/shared/realtime'
+import { mapsChannel, type RealtimeEvent } from '#shared/realtime'
 import {
   applyMapLibraryRealtimeEvent,
   buildMapFolderSet,

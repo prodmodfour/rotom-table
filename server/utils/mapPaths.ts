@@ -5,7 +5,7 @@ import {
   SLUG_RE as SHARED_SLUG_RE,
   sanitizeFolderPath as sanitizeSharedFolderPath,
   slugify as sharedSlugify,
-} from '~/shared/paths'
+} from '#shared/paths'
 import { PROJECT_ROOT, pruneEmptyParents } from './fsPaths'
 
 export const MAPS_ROOT = resolve(PROJECT_ROOT, 'data/maps')

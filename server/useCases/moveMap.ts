@@ -1,7 +1,7 @@
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { existsSync, mkdirSync, renameSync } from 'node:fs'
 import { join, sep } from 'node:path'
-import { mapChannel, mapsChannel, type RealtimeEvent } from '~/shared/realtime'
+import { mapChannel, mapsChannel, type RealtimeEvent } from '#shared/realtime'
 import type { TabletopMap } from '~/types/map'
 import { relativeToProjectRoot } from '../utils/fsPaths'
 import { findMapFile, readMapFile, writeMapFile } from '../utils/mapStorage'

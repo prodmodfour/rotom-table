@@ -1,7 +1,7 @@
 import { createError, getCookie, type H3Event } from 'h3'
-import { AUTH_ROLE_COOKIE, isAuthRole, type AuthRole } from '~/shared/auth'
+import { AUTH_ROLE_COOKIE, isAuthRole, type AuthRole } from '#shared/auth'
 
-export { AUTH_ROLE_COOKIE, isAuthRole, type AuthRole } from '~/shared/auth'
+export { AUTH_ROLE_COOKIE, isAuthRole, type AuthRole } from '#shared/auth'
 
 export const getAuthRole = (event: H3Event): AuthRole | null => {
   const role = getCookie(event, AUTH_ROLE_COOKIE)

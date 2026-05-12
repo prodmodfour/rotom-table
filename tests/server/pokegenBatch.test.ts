@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { runPokegenForRolledEncounters } from '~/server/utils/pokegenBatch'
+import { runPokegenForRolledEncounters } from '~~/server/utils/pokegenBatch'
 import type { RolledEncounter } from '~/types/encounterTable'
 
 const rolled: RolledEncounter[] = [

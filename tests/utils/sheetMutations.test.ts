@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest'
-import { pokemonHpSnapshot, trainerHpSnapshot } from '../../utils/sheetSpawn'
+import { pokemonHpSnapshot, trainerHpSnapshot } from '~/utils/sheetSpawn'
 import {
   applyCombatStagesToSheet,
   applyConditionsToSheet,
   applyHpToSheet,
   createSheetUpdateForPlacement,
   toPersistableSheetPayload,
-} from '../../utils/sheetMutations'
-import type { CharacterSheet } from '../../types/characterSheet'
-import type { TrainerSheet } from '../../types/trainerSheet'
+} from '~/utils/sheetMutations'
+import type { CharacterSheet } from '~/types/characterSheet'
+import type { TrainerSheet } from '~/types/trainerSheet'
 
 describe('sheet mutation helpers', () => {
   const pokemon = (): CharacterSheet => ({

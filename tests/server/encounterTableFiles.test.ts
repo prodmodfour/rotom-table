@@ -3,8 +3,8 @@ import {
   EncounterTableFileError,
   encounterTableNotFoundMessage,
   readEncounterTableFile,
-} from '~/server/utils/encounterTableFiles'
-import { EncounterGenerationInputError } from '~/server/utils/encounterGeneration'
+} from '~~/server/utils/encounterTableFiles'
+import { EncounterGenerationInputError } from '~~/server/utils/encounterGeneration'
 import type { EncounterTable } from '~/types/encounterTable'
 
 const table: EncounterTable = {

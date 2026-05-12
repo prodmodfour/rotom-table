@@ -1,5 +1,5 @@
 import { UseCaseHttpError } from '../utils/useCaseErrors'
-import { sanitizeFolderPath } from '~/shared/paths'
+import { sanitizeFolderPath } from '#shared/paths'
 import { createSheetFolder } from '../utils/sheetFolderStorage'
 
 export class CreateSheetFolderUseCaseError extends UseCaseHttpError<400> {}

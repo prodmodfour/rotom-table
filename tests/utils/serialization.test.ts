@@ -4,7 +4,7 @@ import {
   omitUndefinedJsonFields,
   sameJsonValue,
   stableJsonStringify,
-} from '../../utils/serialization'
+} from '~/utils/serialization'
 
 describe('JSON serialization helpers', () => {
   it('sorts object keys recursively for stable comparisons', () => {

@@ -1,0 +1,59 @@
+<script setup lang="ts">
+import { trainerSheetsBySlug } from '~~/data/trainerSheets'
+import { normalizeTrainerSheet } from '~/utils/sheetNormalize'
+import { useEditableSheetResource } from '~/composables/sheets/useEditableSheetResource'
+import { routeSlugParam } from '~/utils/routeParams'
+import type { TrainerSheet } from '~/types/trainerSheet'
+
+// ---------------------------------------------------------------------------
+// Editable sheet wiring
+// ---------------------------------------------------------------------------
+
+// Route the page key off the slug so navigating between trainer sheets
+// forces a fresh component instance and a clean editable state.
+definePageMeta({
+  key: (route) => `trainer-${routeSlugParam(route.params)}`,
+})
+
+const route = useRoute()
+const { isGm, isPlayer } = useAuth()
+const slug = routeSlugParam(route.params)
+const baseSheet = trainerSheetsBySlug.get(slug) ?? null
+const {
+  sheet,
+  saveStatus,
+  saveError,
+} = useEditableSheetResource<TrainerSheet>({
+  baseSheet,
+  kind: 'trainer',
+  isPlayer,
+  normalize: normalizeTrainerSheet,
+})
+
+useHead(() => ({
+  title: sheet.value ? `${sheet.value.name} · Trainer Sheet` : 'Trainer not found · Rotom Table',
+}))
+
+</script>
+
+<template>
+  <SheetPageShell
+    :has-sheet="Boolean(sheet)"
+    :save-status="saveStatus"
+    :save-error="saveError"
+  >
+    <TrainerSheetEditor
+      v-if="sheet"
+      :sheet="sheet"
+      :is-gm="isGm"
+    />
+
+    <template #not-found>
+      <SheetNotFoundCard
+        title="Trainer not found"
+        message="No trainer for slug"
+        :slug="slug"
+      />
+    </template>
+  </SheetPageShell>
+</template>

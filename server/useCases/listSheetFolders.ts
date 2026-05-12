@@ -1,4 +1,4 @@
-import type { AuthRole } from '~/shared/auth'
+import type { AuthRole } from '#shared/auth'
 import { listSheetFolders } from '../utils/sheetFolderStorage'
 
 export interface ListSheetFoldersInput {

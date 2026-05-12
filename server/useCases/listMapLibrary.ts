@@ -1,4 +1,4 @@
-import type { AuthRole } from '~/shared/auth'
+import type { AuthRole } from '#shared/auth'
 import type { MapSummary } from '~/types/map'
 import { listMapFolders } from '../utils/mapFolderStorage'
 import { listMaps } from '../utils/mapStorage'

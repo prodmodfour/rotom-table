@@ -9,14 +9,14 @@ import {
   isMapRoomKind,
   isMapTerrainKind,
   isMapWeatherKind,
-} from '../../utils/mapFieldEffectDefinitions'
+} from '~/utils/mapFieldEffectDefinitions'
 import {
   createMapRoomEffect,
   createMapTerrainEffect,
   createMapWeatherEffect,
   mapFieldEffectCount,
   normalizeMapFieldEffects,
-} from '../../utils/mapFieldEffects'
+} from '~/utils/mapFieldEffects'
 
 describe('map field effect definitions', () => {
   it('keeps canonical kind lists aligned with definition maps', () => {

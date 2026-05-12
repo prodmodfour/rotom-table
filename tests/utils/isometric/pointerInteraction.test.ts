@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createIsometricPointerInteractionController } from '~/utils/isometric/pointerInteraction'
-import type { BuildTool } from '~/shared/mapEditor'
+import type { BuildTool } from '#shared/mapEditor'
 
 const pointerEvent = (overrides: Partial<PointerEvent> = {}) => ({
   button: 0,

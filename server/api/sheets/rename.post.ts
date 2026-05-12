@@ -9,7 +9,7 @@ import {
   requireNonProduction,
 } from '../../utils/http'
 import { renameSheetUseCase } from '../../useCases/renameSheet'
-import { normalizeRealtimeClientId } from '~/shared/realtime'
+import { normalizeRealtimeClientId } from '#shared/realtime'
 
 interface RenameBody {
   kind?: unknown

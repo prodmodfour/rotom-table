@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { MapSummary } from '../../types/map'
+import type { MapSummary } from '~/types/map'
 import {
   canListMapSummary,
   listMapFoldersUseCase,

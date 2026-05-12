@@ -4,8 +4,8 @@ import {
   durationLabel,
   parseRoundInputValue,
   useFieldEffectsEditor,
-} from '../../../composables/map-editor/useFieldEffectsEditor'
-import type { TabletopMap } from '../../../types/map'
+} from '~/composables/map-editor/useFieldEffectsEditor'
+import type { TabletopMap } from '~/types/map'
 
 const mapFixture = (): TabletopMap => ({
   schemaVersion: 2,

@@ -3,7 +3,7 @@ import { requireGm } from '../../utils/auth'
 import { publishUseCaseRealtimeEvents, throwUseCaseHttpError } from '../../utils/useCaseHttp'
 import { expectSheetKind, expectSlug, readObjectBody, requireNonProduction } from '../../utils/http'
 import { deleteSheetUseCase } from '../../useCases/deleteSheet'
-import { normalizeRealtimeClientId } from '~/shared/realtime'
+import { normalizeRealtimeClientId } from '#shared/realtime'
 
 interface DeleteBody {
   kind?: unknown

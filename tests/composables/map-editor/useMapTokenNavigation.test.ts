@@ -4,9 +4,9 @@ import {
   resolvePlacementPokedexHref,
   resolvePlacementSheetHref,
   useMapTokenNavigation,
-} from '../../../composables/map-editor/useMapTokenNavigation'
-import type { CharacterSheet } from '../../../types/characterSheet'
-import type { SheetPlacement, TabletopMap } from '../../../types/map'
+} from '~/composables/map-editor/useMapTokenNavigation'
+import type { CharacterSheet } from '~/types/characterSheet'
+import type { SheetPlacement, TabletopMap } from '~/types/map'
 
 const pokemonSheet = (overrides: Partial<CharacterSheet> = {}): CharacterSheet => ({
   slug: 'spark',

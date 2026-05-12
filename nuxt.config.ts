@@ -4,6 +4,13 @@ const isDev = process.env.NODE_ENV !== 'production'
 
 export default defineNuxtConfig({
   compatibilityDate: '2026-04-22',
+  srcDir: 'src',
+  // Keep non-app runtime directories at the project root while Nuxt app
+  // source (pages, components, composables, assets, middleware) lives in src/.
+  serverDir: 'server',
+  dir: {
+    public: '../public',
+  },
   buildDir: isDev ? '.nuxt-dev' : '.nuxt-build',
   components: [
     {

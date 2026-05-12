@@ -1,7 +1,7 @@
-import pokedexData from '~/ptu-data/data/pokedex.json'
+import pokedexData from '~~/ptu-data/data/pokedex.json'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { PokedexRecord } from '~/types/pokemon'
-import { pokemonCatalogBySpecies } from '~/data/pokemonCatalog'
+import { pokemonCatalogBySpecies } from '~~/data/pokemonCatalog'
 import { folderFromGlobKey } from '~/utils/sheetFolders'
 
 // ---------------------------------------------------------------------------

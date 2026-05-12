@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { mapsChannel, type RealtimeEvent } from '~/shared/realtime'
+import { mapsChannel, type RealtimeEvent } from '#shared/realtime'
 import { useMapLibraryData } from '~/composables/library/useMapLibraryData'
 import type { MapSummary } from '~/types/map'
 

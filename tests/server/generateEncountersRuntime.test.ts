@@ -10,7 +10,7 @@ import { describe, expect, it, vi } from 'vitest'
 import {
   DEFAULT_ENCOUNTER_GENERATION_PROJECT_ROOT,
   resolveGenerateEncountersRuntime,
-} from '~/server/utils/generateEncountersRuntime'
+} from '~~/server/utils/generateEncountersRuntime'
 
 const cleanup = (path: string) => rmSync(path, { recursive: true, force: true })
 

@@ -1,4 +1,4 @@
-import { mapsChannel, type RealtimeEvent } from '~/shared/realtime'
+import { mapsChannel, type RealtimeEvent } from '#shared/realtime'
 import { createMapFolder, type CreateMapFolderResult as StoredCreateMapFolderResult } from '../utils/mapFolderStorage'
 import { sanitizeMapFolderPath } from '../utils/mapPaths'
 import { UseCaseHttpError } from '../utils/useCaseErrors'

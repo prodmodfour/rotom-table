@@ -1,5 +1,5 @@
 import { createError } from 'h3'
-import type { RealtimeEvent } from '~/shared/realtime'
+import type { RealtimeEvent } from '#shared/realtime'
 import { publishRealtime } from './realtime'
 import { isUseCaseHttpErrorLike, type HttpUseCaseErrorLike } from './useCaseErrors'
 

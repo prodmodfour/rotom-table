@@ -1,7 +1,7 @@
 import { UseCaseHttpError } from '../utils/useCaseErrors'
-import type { AuthRole } from '~/shared/auth'
-import { sheetChannel, sheetsChannel, type RealtimeEvent } from '~/shared/realtime'
-import type { SheetKind } from '~/shared/sheets'
+import type { AuthRole } from '#shared/auth'
+import { sheetChannel, sheetsChannel, type RealtimeEvent } from '#shared/realtime'
+import type { SheetKind } from '#shared/sheets'
 import { relativeToProjectRoot } from '../utils/fsPaths'
 import {
   findPersistedSheetFile,

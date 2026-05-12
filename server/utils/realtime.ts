@@ -12,9 +12,9 @@
  * for Redis pub/sub or similar.
  */
 
-import type { RealtimeEvent } from '~/shared/realtime'
+import type { RealtimeEvent } from '#shared/realtime'
 
-export type { RealtimeEvent } from '~/shared/realtime'
+export type { RealtimeEvent } from '#shared/realtime'
 
 type Subscriber = (event: RealtimeEvent) => void
 

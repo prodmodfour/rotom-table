@@ -1,6 +1,6 @@
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { join } from 'node:path'
-import { mapsChannel, type RealtimeEvent } from '~/shared/realtime'
+import { mapsChannel, type RealtimeEvent } from '#shared/realtime'
 import type { GridDimensions, TabletopMap } from '~/types/map'
 import { allocateSlug, writeMapFile } from '../utils/mapStorage'
 import { MAPS_ROOT, ensureMapsRoot, sanitizeMapFolderPath } from '../utils/mapPaths'

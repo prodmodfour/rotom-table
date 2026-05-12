@@ -3,7 +3,7 @@ import {
   stablePersistableSheetJson,
   stripDerivedSheetFolder,
   toPersistableSheetPayload,
-} from '../../../utils/sheets/persistence'
+} from '~/utils/sheets/persistence'
 
 describe('sheet persistence helpers', () => {
   it('strips derived folder fields without mutating the source sheet', () => {

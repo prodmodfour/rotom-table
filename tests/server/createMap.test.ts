@@ -6,7 +6,7 @@ import {
   normalizeCreateMapDimensions,
   normalizeCreateMapName,
 } from '../../server/useCases/createMap'
-import type { TabletopMap } from '../../types/map'
+import type { TabletopMap } from '~/types/map'
 
 const createDeps = () => {
   const writes: Array<{ path: string; map: TabletopMap }> = []

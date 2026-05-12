@@ -4,8 +4,8 @@ import {
   stablePersistableMapJson,
   stripDerivedMapFolder,
   toPersistableMapPayload,
-} from '../../../utils/maps/persistence'
-import type { TabletopMap } from '../../../types/map'
+} from '~/utils/maps/persistence'
+import type { TabletopMap } from '~/types/map'
 
 const createMap = (folder = 'maps/a'): TabletopMap => ({
   schemaVersion: 2,

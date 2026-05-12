@@ -10,7 +10,7 @@ import {
   sanitizeEncounterOutRoot,
   slugifyEncounterOutputPath,
   uniqueEncounterOutputDir,
-} from '~/server/utils/encounterGeneration'
+} from '~~/server/utils/encounterGeneration'
 import type { EncounterTable } from '~/types/encounterTable'
 
 const errorFor = (fn: () => unknown): unknown => {

@@ -1,6 +1,6 @@
 import { createError, readBody, type H3Event } from 'h3'
-import { isSheetKind, type SheetKind } from '~/shared/sheets'
-import { sanitizeFolderPath, validateSlug, type SanitizeFolderPathOptions } from '~/shared/paths'
+import { isSheetKind, type SheetKind } from '#shared/sheets'
+import { sanitizeFolderPath, validateSlug, type SanitizeFolderPathOptions } from '#shared/paths'
 
 export const badRequest = (statusMessage: string): never => {
   throw createError({ statusCode: 400, statusMessage })

@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import {
   generateEncountersUseCase,
   type GenerateEncountersDependencies,
-} from '~/server/useCases/generateEncounters'
+} from '~~/server/useCases/generateEncounters'
 import type { EncounterTable } from '~/types/encounterTable'
 
 const table: EncounterTable = {

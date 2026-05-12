@@ -1,4 +1,4 @@
-import type { AuthRole } from '~/shared/auth'
+import type { AuthRole } from '#shared/auth'
 import type { GridAnchor, GridDimensions, SheetKind, SheetPlacement, TabletopMap } from '~/types/map'
 
 export type SheetAccessPredicate = (kind: SheetKind, slug: string) => boolean

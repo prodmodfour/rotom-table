@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { TabletopMap } from '../../types/map'
+import type { TabletopMap } from '~/types/map'
 import {
   LoadMapUseCaseError,
   loadMapUseCase,

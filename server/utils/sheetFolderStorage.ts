@@ -6,8 +6,8 @@ import {
   statSync,
 } from 'node:fs'
 import { dirname } from 'node:path'
-import { sanitizeFolderPath } from '~/shared/paths'
-import type { SheetKind } from '~/shared/sheets'
+import { sanitizeFolderPath } from '#shared/paths'
+import type { SheetKind } from '#shared/sheets'
 import {
   joinSafeUnderRoot,
   pruneEmptyParents,

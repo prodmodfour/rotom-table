@@ -1,5 +1,5 @@
-import trainerData from '~/trainer_sizes/trainers.json'
-import trainerManifest from '~/trainer_sizes/sprite_manifest.json'
+import trainerData from '~~/trainer_sizes/trainers.json'
+import trainerManifest from '~~/trainer_sizes/sprite_manifest.json'
 import type {
   PokemonCatalogEntry,
   TrainerSizeRecord,

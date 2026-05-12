@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { MapSummary, TabletopMap } from '../../types/map'
+import type { MapSummary, TabletopMap } from '~/types/map'
 import { compareMapSummaries, sortMapSummaries, summarizeMap } from '../../server/utils/mapSummaries'
 
 const makeMap = (overrides: Partial<TabletopMap> = {}): TabletopMap => ({

@@ -11,7 +11,7 @@ import { defineEventHandler, readBody } from 'h3'
 import { requireGm } from '../../utils/auth'
 import { publishUseCaseRealtimeEvents, throwUseCaseHttpError } from '../../utils/useCaseHttp'
 import { moveMapUseCase } from '../../useCases/moveMap'
-import { normalizeRealtimeClientId } from '~/shared/realtime'
+import { normalizeRealtimeClientId } from '#shared/realtime'
 
 interface MoveBody {
   slug?: unknown

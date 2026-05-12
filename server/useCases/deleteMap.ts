@@ -1,7 +1,7 @@
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { unlinkSync } from 'node:fs'
 import { sep } from 'node:path'
-import { mapChannel, mapsChannel, type RealtimeEvent } from '~/shared/realtime'
+import { mapChannel, mapsChannel, type RealtimeEvent } from '#shared/realtime'
 import { relativeToProjectRoot } from '../utils/fsPaths'
 import { findMapFile } from '../utils/mapStorage'
 import { MAPS_ROOT, SLUG_RE, pruneEmptyMapParents } from '../utils/mapPaths'

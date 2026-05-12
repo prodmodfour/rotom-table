@@ -1,5 +1,5 @@
 import { UseCaseHttpError } from '../utils/useCaseErrors'
-import { sanitizeFolderPath } from '~/shared/paths'
+import { sanitizeFolderPath } from '#shared/paths'
 import { moveSheetFolder, type MoveFolderResult } from '../utils/sheetFolderStorage'
 
 export class MoveSheetFolderUseCaseError extends UseCaseHttpError<400 | 404 | 409> {}

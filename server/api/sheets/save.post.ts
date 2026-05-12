@@ -9,7 +9,7 @@ import {
   requireNonProduction,
 } from '../../utils/http'
 import { saveSheetUseCase } from '../../useCases/saveSheet'
-import { normalizeRealtimeClientId } from '~/shared/realtime'
+import { normalizeRealtimeClientId } from '#shared/realtime'
 
 interface SaveBody {
   kind?: unknown
