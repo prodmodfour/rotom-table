@@ -19,6 +19,7 @@ import {
   writeJsonFile,
 } from './jsonFiles'
 import { SHEET_KIND_CONFIG, sheetRootFor } from './sheetPaths'
+import { pickRandomTrainerSpriteUrl } from './trainerSprites'
 import type { SheetKind } from './sheetPaths'
 
 export interface SheetFileResult {
@@ -96,11 +97,13 @@ export const buildDefaultSheet = (kind: SheetKind, slug: string): Record<string,
       player: false,
     }
   }
+  const portraitUrl = pickRandomTrainerSpriteUrl()
   return {
     slug,
     name: 'New Trainer',
     level: 1,
     player: false,
+    ...(portraitUrl ? { portraitUrl } : {}),
   }
 }
 

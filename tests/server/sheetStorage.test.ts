@@ -3,10 +3,12 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import {
+  buildDefaultSheet,
   findSheetFileBySlugInRoot,
   findSheetFileInRoot,
   stripDerivedSheetFields,
 } from '../../server/utils/sheetStorage'
+import { pickRandomTrainerSpriteUrl } from '../../server/utils/trainerSprites'
 
 describe('sheet storage helpers', () => {
   it('finds sheets by filename and by top-level slug fallback', () => {
@@ -28,5 +30,29 @@ describe('sheet storage helpers', () => {
 
     expect(persisted).toEqual({ slug: 'example', level: 5 })
     expect(sheet).toEqual({ slug: 'example', folder: 'party/a', level: 5 })
+  })
+
+  it('picks a random trainer sprite URL from available sprite options', () => {
+    const sprites = [
+      { spriteUrl: '/trainer-sprites/a.png' },
+      { spriteUrl: '/trainer-sprites/b.png' },
+      { spriteUrl: '/trainer-sprites/c.png' },
+    ]
+
+    expect(pickRandomTrainerSpriteUrl(sprites, () => 0)).toBe('/trainer-sprites/a.png')
+    expect(pickRandomTrainerSpriteUrl(sprites, () => 0.5)).toBe('/trainer-sprites/b.png')
+    expect(pickRandomTrainerSpriteUrl(sprites, () => 0.999)).toBe('/trainer-sprites/c.png')
+  })
+
+  it('includes a trainer portrait URL on newly built default trainer sheets', () => {
+    const sheet = buildDefaultSheet('trainer', 'new-trainer')
+
+    expect(sheet).toMatchObject({
+      slug: 'new-trainer',
+      name: 'New Trainer',
+      level: 1,
+      player: false,
+    })
+    expect(sheet.portraitUrl).toEqual(expect.stringMatching(/^\/trainer-sprites\//))
   })
 })
