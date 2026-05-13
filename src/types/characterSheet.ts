@@ -151,7 +151,7 @@ export interface CharacterSheet {
    */
   folder?: string
   nickname: string
-  /** Must match a `species` value in `ptu-data/data/pokedex.json`. */
+  /** Matches a `species` value in `ptu-data/data/pokedex.json`; blank means no species selected yet. */
   species: string
   level: number
   totalExp?: number

@@ -9,7 +9,7 @@ const createdPokemon = {
   sheet: {
     slug: 'new-pokemon',
     nickname: 'New Pokémon',
-    species: 'Bulbasaur',
+    species: '',
     level: 1,
     player: false,
   },

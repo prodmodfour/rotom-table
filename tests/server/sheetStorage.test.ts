@@ -63,6 +63,16 @@ describe('sheet storage helpers', () => {
     expect(pickRandomTrainerSpriteUrl(sprites, () => 0.999)).toBe('/trainer-sprites/c.png')
   })
 
+  it('builds default Pokémon sheets without a selected species', () => {
+    expect(buildDefaultSheet('pokemon', 'new-pokemon')).toMatchObject({
+      slug: 'new-pokemon',
+      nickname: 'New Pokémon',
+      species: '',
+      level: 1,
+      player: false,
+    })
+  })
+
   it('includes a trainer portrait URL on newly built default trainer sheets', () => {
     const sheet = buildDefaultSheet('trainer', 'new-trainer')
 

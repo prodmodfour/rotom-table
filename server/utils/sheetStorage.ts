@@ -152,7 +152,7 @@ export const buildDefaultSheet = (
     return {
       slug,
       nickname: 'New Pokémon',
-      species: 'Bulbasaur',
+      species: '',
       level: 1,
       player,
     }
