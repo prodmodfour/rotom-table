@@ -8,6 +8,7 @@ import {
   findSheetFileInRoot,
   isPlayerFolderPath,
   stripDerivedSheetFields,
+  withDerivedSheetFolder,
 } from '../../server/utils/sheetStorage'
 import { pickRandomTrainerSpriteUrl } from '../../server/utils/trainerSprites'
 
@@ -23,6 +24,23 @@ describe('sheet storage helpers', () => {
     expect(findSheetFileInRoot(root, 'bolt-pikachu')).toBe(filenameMatch)
     expect(findSheetFileInRoot(root, 'kebab-case-slug')).toBeNull()
     expect(findSheetFileBySlugInRoot(root, 'kebab-case-slug')).toBe(slugFallback)
+  })
+
+  it('derives runtime folder fields from sheet file paths', () => {
+    const sheet = { slug: 'new-trainer-1', name: 'New Trainer', level: 1 }
+    const withFolder = withDerivedSheetFolder(
+      'trainer',
+      join(process.cwd(), 'data/trainers/players/Hassan/new-trainer-1.json'),
+      sheet,
+    )
+
+    expect(withFolder).toEqual({
+      slug: 'new-trainer-1',
+      name: 'New Trainer',
+      level: 1,
+      folder: 'players/Hassan',
+    })
+    expect(sheet).toEqual({ slug: 'new-trainer-1', name: 'New Trainer', level: 1 })
   })
 
   it('strips derived folder fields without mutating the input sheet', () => {

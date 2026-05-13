@@ -16,9 +16,10 @@ import {
   findFileByName,
   findJsonFileByField,
   readJsonFile,
+  walkFiles,
   writeJsonFile,
 } from './jsonFiles'
-import { SHEET_KIND_CONFIG, sheetRootFor } from './sheetPaths'
+import { folderFromSheetPath, SHEET_KIND_CONFIG, sheetRootFor } from './sheetPaths'
 import { pickRandomTrainerSpriteUrl } from './trainerSprites'
 import type { SheetKind } from './sheetPaths'
 
@@ -61,7 +62,7 @@ export const findSheetFileBySlug = (kind: SheetKind, slug: string): string | nul
 export const findPersistedSheetFile = (kind: SheetKind, slug: string): string | null =>
   findSheetFile(kind, slug) ?? findSheetFileBySlug(kind, slug)
 
-export const readSheetFile = <T extends Record<string, unknown>>(
+export const readSheetFile = <T extends object>(
   kind: SheetKind,
   slug: string,
 ): { path: string; sheet: T } | null => {
@@ -69,6 +70,38 @@ export const readSheetFile = <T extends Record<string, unknown>>(
   if (!path) return null
   return { path, sheet: readJsonFile<T>(path) }
 }
+
+export const withDerivedSheetFolder = <T extends object>(
+  kind: SheetKind,
+  path: string,
+  sheet: T,
+): T & { folder: string } => {
+  const record = sheet as Record<string, unknown>
+  return {
+    ...sheet,
+    folder: typeof record.folder === 'string' ? record.folder : folderFromSheetPath(kind, path),
+  }
+}
+
+export const readSheetFileWithFolder = <T extends object>(
+  kind: SheetKind,
+  slug: string,
+): { path: string; sheet: T & { folder: string } } | null => {
+  const result = readSheetFile<T>(kind, slug)
+  if (!result) return null
+  return {
+    path: result.path,
+    sheet: withDerivedSheetFolder(kind, result.path, result.sheet),
+  }
+}
+
+export const listSheetFiles = (kind: SheetKind): string[] =>
+  walkFiles(sheetRootFor(kind), (entry) => entry.name.endsWith('.json'))
+
+export const listSheetFilesWithFolders = <T extends object>(
+  kind: SheetKind,
+): Array<T & { folder: string }> =>
+  listSheetFiles(kind).map((path) => withDerivedSheetFolder(kind, path, readJsonFile<T>(path)))
 
 export const stripDerivedSheetFields = stripDerivedSheetFolder
 

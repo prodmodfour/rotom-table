@@ -3,6 +3,7 @@ import { characterSheetsBySlug } from '~~/data/characterSheets'
 import { normalizeCharacterSheet } from '~/utils/sheetNormalize'
 import { useEditableSheetResource } from '~/composables/sheets/useEditableSheetResource'
 import { syncNatureModForSheet } from '~/composables/sheets/usePokemonNatureControls'
+import { SHEET_API_PATHS } from '~/utils/apiRoutes'
 import { routeSlugParam } from '~/utils/routeParams'
 import type { CharacterSheet } from '~/types/characterSheet'
 
@@ -22,7 +23,14 @@ definePageMeta({
 const route = useRoute()
 const { isGm, isPlayer } = useAuth()
 const slug = routeSlugParam(route.params)
-const baseSheet = characterSheetsBySlug.get(slug) ?? null
+const staticBaseSheet = characterSheetsBySlug.get(slug) ?? null
+const { data: runtimeSheetResult } = await useFetch<{ sheet: CharacterSheet } | null>(SHEET_API_PATHS.load, {
+  default: () => null,
+  immediate: import.meta.dev,
+  key: `pokemon-sheet-${slug}`,
+  query: { kind: 'pokemon', slug },
+})
+const baseSheet = runtimeSheetResult.value?.sheet ?? (import.meta.dev ? null : staticBaseSheet)
 const {
   sheet,
   saveStatus,

@@ -158,8 +158,8 @@ export const useSheetLibraryPage = () => {
       SHEET_API_PATHS.create,
       { kind, folder },
     ),
-    // Hard-navigate so Vite re-evaluates the sheet data globs before the editor
-    // route loads; a client-side router push can race HMR and show "not found".
+    // Hard-navigate so the editor route starts with a fresh server-loaded
+    // sheet payload instead of relying on the stale static data glob cache.
     navigateToSheet: (kind, slug) => {
       window.location.href = sheetEditorPath(kind, slug)
     },

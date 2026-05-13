@@ -16,6 +16,11 @@ export interface SheetLibraryFolderFetchResult {
   folders: string[]
 }
 
+export interface SheetLibraryListFetchResult {
+  pokemonSheets: CharacterSheet[]
+  trainerSheets: TrainerSheet[]
+}
+
 interface BooleanSource {
   readonly value: boolean
 }
@@ -26,6 +31,7 @@ export interface UseSheetLibraryDataOptions {
   canLoadFolders?: BooleanSource
   autoLoadFoldersOnMounted?: boolean
   fetchFolders?: () => Promise<SheetLibraryFolderFetchResult>
+  fetchSheets?: () => Promise<SheetLibraryListFetchResult>
   pokemonSheets?: ReadonlyArray<CharacterSheet>
   trainerSheets?: ReadonlyArray<TrainerSheet>
   speciesTypesFor?: (species: string) => string[] | undefined
@@ -34,6 +40,9 @@ export interface UseSheetLibraryDataOptions {
 
 const defaultFetchFolders = (): Promise<SheetLibraryFolderFetchResult> =>
   useApiClient().getJson<SheetLibraryFolderFetchResult>(SHEET_API_PATHS.folders)
+
+const defaultFetchSheets = (): Promise<SheetLibraryListFetchResult> =>
+  useApiClient().getJson<SheetLibraryListFetchResult>(SHEET_API_PATHS.list)
 
 export const useSheetLibraryData = (options: UseSheetLibraryDataOptions) => {
   const sheetOverrides = reactive<Record<string, string>>({})
@@ -44,14 +53,18 @@ export const useSheetLibraryData = (options: UseSheetLibraryDataOptions) => {
   const extraFolders = reactive(new Set<string>())
   const loadingFolders = ref(false)
   const folderLoadError = ref<string | null>(null)
+  const runtimePokemonSheets = ref<ReadonlyArray<CharacterSheet> | null>(null)
+  const runtimeTrainerSheets = ref<ReadonlyArray<TrainerSheet> | null>(null)
 
   const fetchFolders = options.fetchFolders ?? defaultFetchFolders
+  const fetchSheets = options.fetchSheets ?? defaultFetchSheets
   const speciesTypesFor = options.speciesTypesFor ?? ((species: string) => getPokedexEntry(species)?.types)
   const spriteUrlFor = options.spriteUrlFor ?? getSpriteUrl
+  const canUseDefaultSheetFetch = options.pokemonSheets === undefined && options.trainerSheets === undefined
 
   const baseItems = computed(() => buildSheetLibraryItems({
-    pokemonSheets: options.pokemonSheets ?? characterSheets,
-    trainerSheets: options.trainerSheets ?? trainerSheets,
+    pokemonSheets: runtimePokemonSheets.value ?? options.pokemonSheets ?? characterSheets,
+    trainerSheets: runtimeTrainerSheets.value ?? options.trainerSheets ?? trainerSheets,
     speciesTypesFor,
     spriteUrlFor,
   }))
@@ -74,18 +87,33 @@ export const useSheetLibraryData = (options: UseSheetLibraryDataOptions) => {
   }))
 
   const canLoadFolders = (): boolean => (options.canLoadFolders ?? options.isGm).value
+  const canLoadSheets = (): boolean => options.fetchSheets !== undefined || canUseDefaultSheetFetch
 
   const loadFolders = async (): Promise<void> => {
-    if (!canLoadFolders()) return
+    const shouldLoadFolders = canLoadFolders()
+    const shouldLoadSheets = canLoadSheets()
+    if (!shouldLoadFolders && !shouldLoadSheets) return
 
     loadingFolders.value = true
     folderLoadError.value = null
     try {
-      const data = await fetchFolders()
-      for (const folder of data.folders) extraFolders.add(folder)
+      const [folderData, sheetData] = await Promise.all([
+        shouldLoadFolders ? fetchFolders() : Promise.resolve(null),
+        shouldLoadSheets ? fetchSheets() : Promise.resolve(null),
+      ])
+
+      if (folderData) {
+        extraFolders.clear()
+        for (const folder of folderData.folders) extraFolders.add(folder)
+      }
+
+      if (sheetData) {
+        runtimePokemonSheets.value = sheetData.pokemonSheets
+        runtimeTrainerSheets.value = sheetData.trainerSheets
+      }
     } catch (err: unknown) {
       folderLoadError.value = getErrorMessage(err)
-      console.warn('[sheets] failed to load existing folders', err)
+      console.warn('[sheets] failed to load existing sheet data', err)
     } finally {
       loadingFolders.value = false
     }
@@ -102,6 +130,8 @@ export const useSheetLibraryData = (options: UseSheetLibraryDataOptions) => {
     items,
     allFolders,
     extraFolders,
+    runtimePokemonSheets,
+    runtimeTrainerSheets,
     sheetOverrides,
     folderRenames,
     nameOverrides,

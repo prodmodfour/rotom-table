@@ -2,6 +2,7 @@
 import { trainerSheetsBySlug } from '~~/data/trainerSheets'
 import { normalizeTrainerSheet } from '~/utils/sheetNormalize'
 import { useEditableSheetResource } from '~/composables/sheets/useEditableSheetResource'
+import { SHEET_API_PATHS } from '~/utils/apiRoutes'
 import { routeSlugParam } from '~/utils/routeParams'
 import type { TrainerSheet } from '~/types/trainerSheet'
 
@@ -18,7 +19,14 @@ definePageMeta({
 const route = useRoute()
 const { isGm, isPlayer } = useAuth()
 const slug = routeSlugParam(route.params)
-const baseSheet = trainerSheetsBySlug.get(slug) ?? null
+const staticBaseSheet = trainerSheetsBySlug.get(slug) ?? null
+const { data: runtimeSheetResult } = await useFetch<{ sheet: TrainerSheet } | null>(SHEET_API_PATHS.load, {
+  default: () => null,
+  immediate: import.meta.dev,
+  key: `trainer-sheet-${slug}`,
+  query: { kind: 'trainer', slug },
+})
+const baseSheet = runtimeSheetResult.value?.sheet ?? (import.meta.dev ? null : staticBaseSheet)
 const {
   sheet,
   saveStatus,

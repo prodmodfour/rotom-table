@@ -1,0 +1,46 @@
+import type { AuthRole } from '#shared/auth'
+import type { SheetKind } from '#shared/sheets'
+import type { CharacterSheet } from '~/types/characterSheet'
+import type { TrainerSheet } from '~/types/trainerSheet'
+import { UseCaseHttpError } from '../utils/useCaseErrors'
+import { readSheetFileWithFolder } from '../utils/sheetStorage'
+
+export class LoadSheetUseCaseError extends UseCaseHttpError<403 | 404> {}
+
+export type LoadedSheet = CharacterSheet | TrainerSheet
+
+export interface LoadSheetInput {
+  role: AuthRole
+  kind: SheetKind
+  slug: string
+}
+
+export interface LoadSheetDependencies {
+  readSheet?: (kind: SheetKind, slug: string) => { sheet: LoadedSheet } | null
+}
+
+export interface LoadSheetResult {
+  kind: SheetKind
+  slug: string
+  sheet: LoadedSheet
+}
+
+export const loadSheetUseCase = (
+  input: LoadSheetInput,
+  dependencies: LoadSheetDependencies = {},
+): LoadSheetResult => {
+  const readSheet = dependencies.readSheet
+    ?? ((kind: SheetKind, slug: string) => readSheetFileWithFolder<LoadedSheet>(kind, slug))
+  const result = readSheet(input.kind, input.slug)
+
+  if (!result) throw new LoadSheetUseCaseError(404, `Sheet ${input.slug}.json not found`)
+  if (input.role === 'player' && result.sheet.player !== true) {
+    throw new LoadSheetUseCaseError(403, 'Sheet is not marked as player accessible')
+  }
+
+  return {
+    kind: input.kind,
+    slug: input.slug,
+    sheet: result.sheet,
+  }
+}

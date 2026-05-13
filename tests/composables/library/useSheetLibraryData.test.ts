@@ -53,6 +53,72 @@ describe('useSheetLibraryData', () => {
     expect(data.loadingFolders.value).toBe(false)
   })
 
+  it('loads runtime sheets from the sheet list API when requested', async () => {
+    const fetchFolders = vi.fn(async () => ({ folders: ['players/Hassan'] }))
+    const fetchSheets = vi.fn(async () => ({
+      pokemonSheets: [],
+      trainerSheets: [makeTrainerSheet({
+        slug: 'new-trainer-1',
+        name: 'New Trainer',
+        folder: 'players/Hassan',
+      })],
+    }))
+    const data = useSheetLibraryData({
+      isGm: ref(true),
+      isPlayer: ref(false),
+      canLoadFolders: ref(true),
+      autoLoadFoldersOnMounted: false,
+      fetchFolders,
+      fetchSheets,
+      pokemonSheets: [],
+      trainerSheets: [],
+      speciesTypesFor: () => [],
+      spriteUrlFor: () => null,
+    })
+
+    expect(data.items.value).toEqual([])
+
+    await data.loadFolders()
+
+    expect(fetchSheets).toHaveBeenCalledTimes(1)
+    expect(data.items.value).toHaveLength(1)
+    expect(data.items.value[0]).toMatchObject({
+      kind: 'trainer',
+      slug: 'new-trainer-1',
+      folder: 'players/Hassan',
+    })
+    expect([...data.allFolders.value]).toEqual(['players/Hassan'])
+  })
+
+  it('loads runtime sheets for players without loading GM-only folder listings', async () => {
+    const fetchFolders = vi.fn(async () => ({ folders: ['gm-only'] }))
+    const fetchSheets = vi.fn(async () => ({
+      pokemonSheets: [],
+      trainerSheets: [
+        makeTrainerSheet({ slug: 'player-trainer', player: true }),
+        makeTrainerSheet({ slug: 'hidden-trainer', player: false }),
+      ],
+    }))
+    const data = useSheetLibraryData({
+      isGm: ref(false),
+      isPlayer: ref(true),
+      canLoadFolders: ref(false),
+      autoLoadFoldersOnMounted: false,
+      fetchFolders,
+      fetchSheets,
+      pokemonSheets: [],
+      trainerSheets: [],
+      speciesTypesFor: () => [],
+      spriteUrlFor: () => null,
+    })
+
+    await data.loadFolders()
+
+    expect(fetchFolders).not.toHaveBeenCalled()
+    expect(fetchSheets).toHaveBeenCalledTimes(1)
+    expect(data.items.value.map((item) => item.slug)).toEqual(['player-trainer'])
+  })
+
   it('honours player-only filtering from the reactive auth state', () => {
     const isPlayer = ref(true)
     const data = useSheetLibraryData({
@@ -130,7 +196,7 @@ describe('useSheetLibraryData', () => {
 
     expect(data.folderLoadError.value).toBe('Could not load folders.')
     expect(data.loadingFolders.value).toBe(false)
-    expect(warn).toHaveBeenCalledWith('[sheets] failed to load existing folders', expect.anything())
+    expect(warn).toHaveBeenCalledWith('[sheets] failed to load existing sheet data', expect.anything())
     warn.mockRestore()
   })
 })

@@ -15,7 +15,9 @@ export const MAP_API_PATHS = {
 } as const
 
 export const SHEET_API_PATHS = {
+  list: '/api/sheets/list',
   folders: '/api/sheets/folders',
+  load: '/api/sheets/load',
   save: '/api/sheets/save',
   create: '/api/sheets/create',
   createFolder: '/api/sheets/create-folder',
