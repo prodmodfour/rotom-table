@@ -20,6 +20,9 @@ const {
   skills,
   sheetTypes,
   eggGroups,
+  levelFromExperience,
+  levelIsExperienceDerived,
+  experienceToNextLevel,
   fullMaxHp,
   maxHp,
   currentHp,
@@ -80,6 +83,9 @@ const {
     :sprite-url="spriteUrl"
     :species="species"
     :sheet-types="sheetTypes"
+    :level-from-experience="levelFromExperience"
+    :level-is-experience-derived="levelIsExperienceDerived"
+    :experience-to-next-level="experienceToNextLevel"
     :gender-options="genderOptions"
     :nature-options="natureOptions"
     :nature-plus-display="naturePlusDisplay"

@@ -18,6 +18,10 @@ import {
   validateBaseRelations,
 } from '~/utils/sheets/pokemonDerived'
 import { computeSheetAbilityEvasionBonus } from '~/utils/sheetAbilityActivation'
+import {
+  calculatePokemonExperienceToNextLevel,
+  calculatePokemonLevelFromExperience,
+} from '~/utils/sheets/pokemonExperience'
 import { makeAbilityLookupRows } from '~/utils/sheetAbilityLookup'
 import { makeMoveLookupRows, type MoveLookupRow } from '~/utils/sheetMoveLookup'
 import type {
@@ -65,6 +69,19 @@ export function usePokemonSheetDerived(sheet: PokemonSheetRef) {
 
   const sheetTypes = computed(() => sheet.value?.types ?? species.value?.types ?? [])
   const eggGroups = computed(() => sheet.value?.eggGroups ?? species.value?.egg_groups ?? [])
+
+  const levelFromExperience = computed(() => calculatePokemonLevelFromExperience(sheet.value?.totalExp))
+  const levelIsExperienceDerived = computed(() => levelFromExperience.value != null)
+  const experienceToNextLevel = computed(() => calculatePokemonExperienceToNextLevel(sheet.value?.totalExp))
+
+  watch(
+    () => [sheet.value, levelFromExperience.value] as const,
+    ([currentSheet, level]) => {
+      if (!currentSheet || level == null || currentSheet.level === level) return
+      currentSheet.level = level
+    },
+    { immediate: true, flush: 'sync' },
+  )
 
   const hpTotal = computed(() => totalForStat(stats.value, 'hp'))
   const fullMaxHp = computed(() => (sheet.value ? computeFullMaxHp(sheet.value, hpTotal.value) : 0))
@@ -203,6 +220,9 @@ export function usePokemonSheetDerived(sheet: PokemonSheetRef) {
     capabilities,
     sheetTypes,
     eggGroups,
+    levelFromExperience,
+    levelIsExperienceDerived,
+    experienceToNextLevel,
     fullMaxHp,
     maxHp,
     currentHp,

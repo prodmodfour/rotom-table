@@ -1,8 +1,6 @@
 <script setup lang="ts">
-import { computed } from 'vue'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { PokedexRecord } from '~/types/pokemon'
-import { calculatePokemonExperienceToNextLevel } from '~/utils/sheets/pokemonExperience'
 
 const typesCsv = defineModel<string>('typesCsv', { required: true })
 const eggGroupsCsv = defineModel<string>('eggGroupsCsv', { required: true })
@@ -12,6 +10,9 @@ const props = defineProps<{
   spriteUrl: string | null
   species: PokedexRecord | null
   sheetTypes: readonly string[]
+  levelFromExperience: number | undefined
+  levelIsExperienceDerived: boolean
+  experienceToNextLevel: number | undefined
   genderOptions: readonly string[]
   natureOptions: readonly string[]
   naturePlusDisplay?: string
@@ -19,9 +20,6 @@ const props = defineProps<{
   isGm: boolean
 }>()
 
-const experienceToNextLevel = computed(() => (
-  calculatePokemonExperienceToNextLevel(props.sheet.totalExp)
-))
 </script>
 
 <template>
@@ -55,8 +53,17 @@ const experienceToNextLevel = computed(() => (
           </div>
         </div>
         <div class="identity__badges">
-          <span class="badge">
-            Lv <EditableCell v-model="sheet.level" type="number" :min="1" />
+          <span
+            class="badge"
+            :title="levelIsExperienceDerived ? `Level ${levelFromExperience} from Total EXP` : 'Manual level'"
+          >
+            Lv
+            <EditableCell
+              v-model="sheet.level"
+              type="number"
+              :min="1"
+              :readonly="levelIsExperienceDerived"
+            />
           </span>
           <label v-if="isGm" class="badge player-toggle" :class="{ player: sheet.player }" title="Player">
             <input v-model="sheet.player" type="checkbox" /> Player

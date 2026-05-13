@@ -1,4 +1,4 @@
-import { computed, ref } from 'vue'
+import { computed, nextTick, ref } from 'vue'
 import { describe, expect, it } from 'vitest'
 import { formatLookupList, usePokemonSheetDerived } from '~/composables/sheets/usePokemonSheetDerived'
 import type { CharacterSheet } from '~/types/characterSheet'
@@ -71,6 +71,34 @@ describe('usePokemonSheetDerived', () => {
     expect(derived.pokemonEvasion.value.vsAtk.total).toBe(Math.min(9, withoutSandVeil.vsAtk.total + 2))
     expect(derived.pokemonEvasion.value.vsSatk.total).toBe(Math.min(9, withoutSandVeil.vsSatk.total + 2))
     expect(derived.pokemonEvasion.value.vsAny.total).toBe(Math.min(9, withoutSandVeil.vsAny.total + 2))
+  })
+
+  it('syncs level from total experience when an experience total is present', async () => {
+    const sheet = ref<CharacterSheet | null>(makeSheet({ level: 1, totalExp: 110 }))
+    const derived = usePokemonSheetDerived(sheet)
+
+    expect(sheet.value?.level).toBe(11)
+    expect(derived.levelFromExperience.value).toBe(11)
+    expect(derived.levelIsExperienceDerived.value).toBe(true)
+
+    sheet.value!.totalExp = 215
+    await nextTick()
+
+    expect(sheet.value?.level).toBe(14)
+    expect(derived.experienceToNextLevel.value).toBe(5)
+
+    sheet.value = makeSheet({ level: 1, totalExp: 215 })
+    await nextTick()
+
+    expect(sheet.value?.level).toBe(14)
+
+    sheet.value!.totalExp = undefined
+    await nextTick()
+    sheet.value!.level = 20
+    await nextTick()
+
+    expect(sheet.value?.level).toBe(20)
+    expect(derived.levelIsExperienceDerived.value).toBe(false)
   })
 
   it('formats lookup lists for nullable arrays', () => {

@@ -113,6 +113,20 @@ const normalizeExperienceTotal = (totalExp: number | null | undefined): number |
   return Math.max(0, totalExp)
 }
 
+export const calculatePokemonLevelFromExperience = (
+  totalExp: number | null | undefined,
+): number | undefined => {
+  const normalizedTotalExp = normalizeExperienceTotal(totalExp)
+  if (normalizedTotalExp == null) return undefined
+
+  let currentLevel: number = POKEMON_EXPERIENCE_CHART[0].level
+  for (const { level, expNeeded } of POKEMON_EXPERIENCE_CHART) {
+    if (expNeeded > normalizedTotalExp) break
+    currentLevel = level
+  }
+  return currentLevel
+}
+
 export const calculatePokemonExperienceToNextLevel = (
   totalExp: number | null | undefined,
 ): number | undefined => {
