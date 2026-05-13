@@ -106,7 +106,6 @@ const unlink = (slug: string) => {
 
       <aside class="pokemon-team-strip" aria-labelledby="trainer-pokemon-team-title">
         <header class="pokemon-team-strip__header">
-          <span class="pokemon-team-strip__eyebrow">Party</span>
           <h2 id="trainer-pokemon-team-title">Team</h2>
           <span class="pokemon-panel-badge">{{ teamCount }}/{{ TRAINER_TEAM_LIMIT }}</span>
         </header>
@@ -236,16 +235,6 @@ const unlink = (slug: string) => {
   align-items: center;
 }
 
-.pokemon-team-strip__eyebrow {
-  writing-mode: vertical-rl;
-  transform: rotate(180deg);
-  color: var(--accent);
-  font-size: 0.68rem;
-  font-weight: 900;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-}
-
 .pokemon-team-strip__list {
   display: flex;
   flex-direction: column;
@@ -280,11 +269,6 @@ const unlink = (slug: string) => {
 
   .pokemon-team-strip {
     order: -1;
-  }
-
-  .pokemon-team-strip__eyebrow {
-    writing-mode: initial;
-    transform: none;
   }
 }
 </style>
