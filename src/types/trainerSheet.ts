@@ -17,13 +17,13 @@ import type { CombatStageKey } from '~/types/combatStages'
 export type TrainerStatKey = 'hp' | 'atk' | 'def' | 'satk' | 'sdef' | 'spd'
 
 export interface TrainerStatRow {
-  /** Personal "Base" points (defaults to 10 for HP, 5 otherwise per PTU). */
+  /** Default Combat Stat floor (10 HP, 5 otherwise for Level 1 Trainers). */
   base?: number
   /** Bonus from Feats (purple column on the sheet). */
   feats?: number
   /** Bonus column (race / one-off bonuses). */
   bonus?: number
-  /** Cumulative level-up additions. */
+  /** Cumulative assigned Stat Points: 10 at character creation plus later level gains. */
   levelUp?: number
   /** Current Combat Stage modifier (-6 .. +6). */
   stage?: number

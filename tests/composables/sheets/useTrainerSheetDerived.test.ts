@@ -57,8 +57,25 @@ describe('useTrainerSheetDerived', () => {
     const derived = useTrainerSheetDerived(sheet)
 
     expect(derived.statPointsSpent.value).toBe(14)
-    expect(derived.statPointsBudget.value).toBeGreaterThan(0)
-    expect(derived.statPointsLeft.value).toBe(derived.statPointsBudget.value - 14)
+    expect(derived.statPointsBudget.value).toBe(19)
+    expect(derived.statPointsLeft.value).toBe(5)
     expect(derived.totalRow('atk')).toBe(8)
+  })
+
+  it('counts the 10 level-1 trainer stat points as spendable', () => {
+    const sheet = ref<TrainerSheet | null>(makeSheet({
+      level: 1,
+      stats: {
+        def: { levelUp: 2 },
+        sdef: { levelUp: 2 },
+        spd: { levelUp: 5 },
+        atk: { levelUp: 1 },
+      },
+    }))
+    const derived = useTrainerSheetDerived(sheet)
+
+    expect(derived.statPointsSpent.value).toBe(10)
+    expect(derived.statPointsBudget.value).toBe(10)
+    expect(derived.statPointsLeft.value).toBe(0)
   })
 })

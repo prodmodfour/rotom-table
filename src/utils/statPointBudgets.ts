@@ -46,12 +46,11 @@ export const computePokemonLevelUpStatPointBudget = (level: number | null | unde
   computeLevelOffsetBudget(level, 'pokemonAdded', { offset: 10, min: 0, minLevel: 1, maxLevel: 100 })
 
 /**
- * PTU Trainer level-up Stat Points tracked in the Trainer sheet's Lvl-Up
- * column. The 10 character-creation points live in the Base column, so the
- * level-up-only budget is Level - 1.
+ * PTU Trainer discretionary Stat Points tracked in the Trainer sheet's Lvl-Up
+ * column: 10 character-creation points at Level 1, plus 1 more each Level.
  */
 export const computeTrainerLevelUpStatPointBudget = (level: number | null | undefined): number =>
-  computeLevelOffsetBudget(level, 'trainerLevelUp', { offset: -1, min: 0, minLevel: 1, maxLevel: 50 })
+  computeLevelOffsetBudget(level, 'trainerLevelUp', { offset: 9, min: 0, minLevel: 1, maxLevel: 50 })
 
 /** PTU Trainer baseline Total Stats from the progression chart: Level + 9. */
 export const computeTrainerTotalStatPointBudgetAtLevel = (level: number | null | undefined): number =>

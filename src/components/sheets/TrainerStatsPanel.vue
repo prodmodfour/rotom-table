@@ -70,7 +70,7 @@ const emit = defineEmits<{
       <tfoot>
         <tr
           class="stat-points-row"
-          title="Trainer Lvl-Up Stat Points = Level - 1; the 10 character-creation points live in Base (PTU Core, Character Advancement p.19)."
+          title="Trainer Stat Points in Lvl-Up = 10 at Level 1, plus 1 per later Level (PTU Core, Character Creation p.15 and Character Advancement p.19)."
         >
           <th colspan="4" scope="row">Total points to spend</th>
           <td :class="['stat-points-row__value', { negative: statPointsLeft < 0 }]">
