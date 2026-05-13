@@ -43,6 +43,7 @@ const makeWatcherHarness = () => {
   const buildMode = ref(false)
   const hazardMode = ref(false)
   const buildSettings = ref<unknown[]>([])
+  const ghostVoxelsFaded = ref(false)
   const hazardSettings = ref<unknown[]>([])
   const groundLevelY = ref(0)
   const dimensionsKey = ref<unknown[]>([1, 1, 1])
@@ -65,6 +66,7 @@ const makeWatcherHarness = () => {
         buildMode: () => buildMode.value,
         hazardMode: () => hazardMode.value,
         buildSettings,
+        ghostVoxelsFaded,
         hazardSettings,
         groundLevelY,
         dimensionsKey,
@@ -84,6 +86,7 @@ const makeWatcherHarness = () => {
     buildMode,
     hazardMode,
     buildSettings,
+    ghostVoxelsFaded,
     groundLevelY,
     dimensionsKey,
     controllable,
@@ -173,6 +176,18 @@ describe('useIsometricSceneWatchers', () => {
     expect(harness.actions.refreshMovementAfterStateChange).toHaveBeenCalledTimes(1)
     expect(harness.actions.hideBuildGhost).toHaveBeenCalledTimes(1)
     expect(harness.actions.hideHazardGhost).toHaveBeenCalledTimes(1)
+    harness.stop()
+  })
+
+  it('resyncs voxel meshes when the ghost fade setting changes', async () => {
+    const harness = makeWatcherHarness()
+    harness.ready.value = true
+
+    harness.ghostVoxelsFaded.value = true
+    await nextTick()
+
+    expect(harness.actions.syncVoxelMeshes).toHaveBeenCalledTimes(1)
+    expect(harness.actions.refreshMovementAfterStateChange).not.toHaveBeenCalled()
     harness.stop()
   })
 

@@ -41,6 +41,7 @@ export interface IsometricSceneWatcherSources {
   buildMode: () => boolean
   hazardMode: () => boolean | undefined
   buildSettings: WatchSource<unknown>
+  ghostVoxelsFaded: WatchSource<unknown>
   hazardSettings: WatchSource<unknown>
   groundLevelY: WatchSource<unknown>
   dimensionsKey: WatchSource<unknown>
@@ -196,6 +197,14 @@ export const useIsometricSceneWatchers = ({ sources, actions }: IsometricSceneWa
     () => {
       if (!sources.isRendererReady() || !sources.hazardMode()) return
       actions.replayHazardPreview()
+    },
+  )
+
+  watch(
+    sources.ghostVoxelsFaded,
+    () => {
+      if (!sources.isRendererReady()) return
+      actions.syncVoxelMeshes()
     },
   )
 

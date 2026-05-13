@@ -109,6 +109,8 @@ const props = defineProps<{
   buildTool: BuildTool
   buildMaterial: VoxelMaterial
   buildColor: string | null
+  buildGhostVoxel: boolean
+  ghostVoxelsFaded: boolean
   hazardMode?: boolean
   hazardTool?: BuildTool
   hazardKind?: MapHazardKind
@@ -388,7 +390,9 @@ const syncPokemonObjects = () => {
 }
 
 const syncVoxelMeshes = () => {
-  voxelRenderer.sync(renderedTerrainVoxels.value)
+  voxelRenderer.sync(renderedTerrainVoxels.value, {
+    ghostVoxelsFaded: props.ghostVoxelsFaded,
+  })
   applyLayerVisibility()
 }
 
@@ -501,6 +505,7 @@ const buildInteraction = createIsometricBuildInteractionController({
     buildTool: props.buildTool,
     buildMaterial: props.buildMaterial,
     buildColor: props.buildColor,
+    buildGhostVoxel: props.buildGhostVoxel,
   }),
   pickTarget: pickBuildTarget,
   updateGhost: (target, options) => buildGhostRenderer.update(target, options),
@@ -694,7 +699,8 @@ useIsometricSceneWatchers({
     layerVisibility: () => props.layerVisibility,
     buildMode: () => props.buildMode,
     hazardMode: () => props.hazardMode,
-    buildSettings: () => [props.buildTool, props.buildMaterial, props.buildColor] as const,
+    buildSettings: () => [props.buildTool, props.buildMaterial, props.buildColor, props.buildGhostVoxel] as const,
+    ghostVoxelsFaded: () => props.ghostVoxelsFaded,
     hazardSettings: () => [props.hazardTool, props.hazardKind] as const,
     groundLevelY: () => props.groundLevelY,
     dimensionsKey: () => [props.dimensions.x, props.dimensions.y, props.dimensions.z] as const,

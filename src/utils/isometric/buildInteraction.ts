@@ -14,6 +14,7 @@ export interface BuildInteractionState {
   buildTool: BuildTool
   buildMaterial: VoxelMaterial
   buildColor: string | null
+  buildGhostVoxel: boolean
 }
 
 export interface BuildInteractionGhostOptions {
@@ -80,6 +81,7 @@ export const createIsometricBuildInteractionController = (
       material: state.buildMaterial,
       color: state.buildColor,
       cell: target.cell,
+      ghost: state.buildGhostVoxel,
     }))
   }
 

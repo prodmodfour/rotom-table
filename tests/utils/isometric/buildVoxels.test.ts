@@ -46,4 +46,20 @@ describe('isometric build voxel helpers', () => {
       cell: { x: 0, y: 0, z: 0 },
     })).toEqual({ x: 0, y: 0, z: 0, materialId: 'shallow_water', color: '#86d7ee' })
   })
+
+  it('marks placements as ghost only when requested', () => {
+    expect(createBuildVoxelPlacement({
+      material: 'stone',
+      color: null,
+      cell: { x: 1, y: 0, z: 2 },
+      ghost: true,
+    })).toEqual({ x: 1, y: 0, z: 2, materialId: 'stone', ghost: true })
+
+    expect(createBuildVoxelPlacement({
+      material: 'stone',
+      color: null,
+      cell: { x: 1, y: 0, z: 2 },
+      ghost: false,
+    })).toEqual({ x: 1, y: 0, z: 2, materialId: 'stone' })
+  })
 })

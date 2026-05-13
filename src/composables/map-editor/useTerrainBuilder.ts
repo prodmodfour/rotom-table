@@ -36,6 +36,8 @@ export const useTerrainBuilder = ({
   const buildTool = ref<BuildTool>('pencil')
   const buildMaterial = ref<VoxelMaterial>('airship_floor_metal')
   const buildColor = ref<string | null>(null)
+  const buildGhostVoxel = ref(false)
+  const ghostVoxelsFaded = ref(false)
 
   const visibleVoxelMaterials = computed(() => VOXEL_MATERIALS.filter(materialCanBeBuilt))
   const activeMaterialDef = computed(() => getMaterialDef(buildMaterial.value))
@@ -81,6 +83,16 @@ export const useTerrainBuilder = ({
     buildColor.value = null
   }
 
+  const setBuildGhostVoxel = (value: boolean) => {
+    if (!canEditMap.value) return
+    buildGhostVoxel.value = value
+  }
+
+  const setGhostVoxelsFaded = (value: boolean) => {
+    if (!canEditMap.value) return
+    ghostVoxelsFaded.value = value
+  }
+
   const fillGround = () => {
     if (!map.value || !canEditMap.value) return
     const dims = map.value.dimensions
@@ -100,6 +112,7 @@ export const useTerrainBuilder = ({
           z,
           materialId: buildMaterial.value,
           ...(buildColor.value ? { color: buildColor.value } : {}),
+          ...(buildGhostVoxel.value ? { ghost: true } : {}),
         })
         additions.push(voxel)
       }
@@ -124,6 +137,8 @@ export const useTerrainBuilder = ({
     buildTool,
     buildMaterial,
     buildColor,
+    buildGhostVoxel,
+    ghostVoxelsFaded,
     visibleVoxelMaterials,
     activeMaterialDef,
     colorPickerValue,
@@ -133,6 +148,8 @@ export const useTerrainBuilder = ({
     setTool,
     handleColorInput,
     clearCustomColor,
+    setBuildGhostVoxel,
+    setGhostVoxelsFaded,
     fillGround,
     clearAllVoxels,
   }

@@ -39,16 +39,19 @@ export interface BuildVoxelPlacementOptions {
   material: VoxelMaterial
   color: string | null | undefined
   cell: Pick<MapVoxelV2, 'x' | 'y' | 'z'>
+  ghost?: boolean
 }
 
 export const createBuildVoxelPlacement = ({
   material,
   color,
   cell,
+  ghost,
 }: BuildVoxelPlacementOptions): MapVoxelV2 => withDefaultBuilderVoxelColor({
   x: cell.x,
   y: cell.y,
   z: cell.z,
   materialId: material,
   ...(color ? { color } : {}),
+  ...(ghost ? { ghost: true } : {}),
 })

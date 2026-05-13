@@ -42,6 +42,8 @@ defineProps<{
   buildTool: BuildTool
   buildMaterial: VoxelMaterial
   buildColor: string | null
+  buildGhostVoxel: boolean
+  ghostVoxelsFaded: boolean
   visibleVoxelMaterials: readonly VoxelMaterialDef[]
   colorPickerValue: string
   voxelCount: number
@@ -79,6 +81,8 @@ const emit = defineEmits<{
   (event: 'select-material', material: VoxelMaterial): void
   (event: 'color-input', value: Event): void
   (event: 'clear-custom-color'): void
+  (event: 'set-build-ghost-voxel', value: boolean): void
+  (event: 'set-ghost-voxels-faded', value: boolean): void
   (event: 'fill-ground'): void
   (event: 'clear-all-voxels'): void
   (event: 'set-layer-visibility', layer: MapLayerVisibilityKey, value: boolean): void
@@ -138,6 +142,8 @@ const emit = defineEmits<{
         :build-tool="buildTool"
         :build-material="buildMaterial"
         :build-color="buildColor"
+        :build-ghost-voxel="buildGhostVoxel"
+        :ghost-voxels-faded="ghostVoxelsFaded"
         :visible-voxel-materials="visibleVoxelMaterials"
         :color-picker-value="colorPickerValue"
         :voxel-count="voxelCount"
@@ -154,6 +160,8 @@ const emit = defineEmits<{
         @select-material="emit('select-material', $event)"
         @color-input="emit('color-input', $event)"
         @clear-custom-color="emit('clear-custom-color')"
+        @set-build-ghost-voxel="emit('set-build-ghost-voxel', $event)"
+        @set-ghost-voxels-faded="emit('set-ghost-voxels-faded', $event)"
         @fill-ground="emit('fill-ground')"
         @clear-all-voxels="emit('clear-all-voxels')"
         @set-layer-visibility="(layer, value) => emit('set-layer-visibility', layer, value)"

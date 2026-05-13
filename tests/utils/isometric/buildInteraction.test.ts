@@ -11,6 +11,7 @@ const makeController = (overrides: Partial<Parameters<typeof createIsometricBuil
     buildTool: 'pencil',
     buildMaterial: 'grass',
     buildColor: null,
+    buildGhostVoxel: false,
   }
   const pickTarget = vi.fn<(event: MouseEvent | PointerEvent, tool: 'pencil' | 'eraser') => BuildTarget | null>()
   const updateGhost = vi.fn()
@@ -64,10 +65,11 @@ describe('isometric build interaction', () => {
     )
   })
 
-  it('places valid voxels using the current material and color', () => {
+  it('places valid voxels using the current material, color, and ghost flag', () => {
     const { controller, state, pickTarget, placeVoxel } = makeController()
     state.buildMaterial = 'custom'
     state.buildColor = '#123456'
+    state.buildGhostVoxel = true
     pickTarget.mockReturnValue({ action: 'place', cell: { x: 2, y: 0, z: 4 }, valid: true })
 
     controller.performAction(pointer, 'pencil')
@@ -78,6 +80,7 @@ describe('isometric build interaction', () => {
       z: 4,
       materialId: 'custom',
       color: '#123456',
+      ghost: true,
     })
   })
 

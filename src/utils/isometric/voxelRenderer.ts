@@ -7,11 +7,23 @@ import { buildVoxelFaceMaterials } from './materials'
 import { disposeObject3D } from './resourceDisposal'
 import type { VoxelGroup } from './types'
 
+export const GHOST_VOXEL_FADED_OPACITY = 0.1
+
+export interface VoxelRendererSyncOptions {
+  ghostVoxelsFaded?: boolean
+}
+
 export interface VoxelRenderer {
-  sync(voxels: ReadonlyArray<MapVoxelV2>): void
+  sync(voxels: ReadonlyArray<MapVoxelV2>, options?: VoxelRendererSyncOptions): void
   dispose(): void
   setVisible(visible: boolean): void
   meshes(): THREE.InstancedMesh[]
+}
+
+interface VoxelRenderTraits {
+  opacity: number
+  depthWrite: boolean
+  renderOrder: number
 }
 
 const disposeVoxelGroup = (container: THREE.Group, group: VoxelGroup) => {
@@ -19,6 +31,37 @@ const disposeVoxelGroup = (container: THREE.Group, group: VoxelGroup) => {
   group.mesh.dispose()
   group.geometry.dispose()
   for (const material of group.materials) material.dispose()
+}
+
+const resolveVoxelRenderTraits = (
+  voxel: MapVoxelV2,
+  options: VoxelRendererSyncOptions = {},
+): VoxelRenderTraits => {
+  const definition = voxelMaterialDefinition(voxel)
+  const ghostFaded = options.ghostVoxelsFaded === true && voxel.ghost === true
+  const opacity = ghostFaded
+    ? GHOST_VOXEL_FADED_OPACITY
+    : definition.transparent
+      ? (definition.opacity ?? 0.5)
+      : 1
+  const transparent = opacity < 1
+
+  return {
+    opacity,
+    depthWrite: !transparent,
+    renderOrder: transparent ? 8 : 0,
+  }
+}
+
+const rendererVoxelGroupKey = (
+  voxel: MapVoxelV2,
+  options: VoxelRendererSyncOptions = {},
+): string => {
+  const baseKey = voxelGroupKey(voxel)
+  const ghostBucket = options.ghostVoxelsFaded === true && voxel.ghost === true
+    ? 'ghost-faded'
+    : 'normal'
+  return `${baseKey}|${ghostBucket}`
 }
 
 const appendTerrainTopEdgeLines = (
@@ -42,13 +85,18 @@ const appendTerrainTopEdgeLines = (
   group.add(lines)
 }
 
-export const buildTerrainTopEdgeOverlay = (voxels: ReadonlyArray<MapVoxelV2>): THREE.Group => {
+export const buildTerrainTopEdgeOverlay = (
+  voxels: ReadonlyArray<MapVoxelV2>,
+  options: VoxelRendererSyncOptions = {},
+): THREE.Group => {
   const group = new THREE.Group()
   if (voxels.length === 0) return group
 
   const occupied = buildAllVoxelOccupancy(voxels)
-  const lightSegments: number[] = []
-  const darkSegments: number[] = []
+  const normalLightSegments: number[] = []
+  const normalDarkSegments: number[] = []
+  const ghostLightSegments: number[] = []
+  const ghostDarkSegments: number[] = []
   const eps = 0.002
 
   const hasVoxel = (x: number, y: number, z: number) => occupied.has(voxelKey(x, y, z))
@@ -73,6 +121,9 @@ export const buildTerrainTopEdgeOverlay = (voxels: ReadonlyArray<MapVoxelV2>): T
     const x1 = voxel.x + 1
     const z0 = voxel.z
     const z1 = voxel.z + 1
+    const fadedGhost = options.ghostVoxelsFaded === true && voxel.ghost === true
+    const lightSegments = fadedGhost ? ghostLightSegments : normalLightSegments
+    const darkSegments = fadedGhost ? ghostDarkSegments : normalDarkSegments
 
     // Match the existing isometric face ramp: back/left top edges catch
     // the restrained highlight, front/right edges pick up the darker seam.
@@ -90,28 +141,33 @@ export const buildTerrainTopEdgeOverlay = (voxels: ReadonlyArray<MapVoxelV2>): T
     }
   }
 
-  appendTerrainTopEdgeLines(
-    group,
-    lightSegments,
-    new THREE.LineBasicMaterial({
-      color: 0xfbf1c7,
-      transparent: true,
-      opacity: 0.24,
-      depthTest: true,
-      depthWrite: false,
-    }),
-  )
-  appendTerrainTopEdgeLines(
-    group,
-    darkSegments,
-    new THREE.LineBasicMaterial({
-      color: 0x1d2021,
-      transparent: true,
-      opacity: 0.32,
-      depthTest: true,
-      depthWrite: false,
-    }),
-  )
+  const appendEdgePair = (lightSegments: number[], darkSegments: number[], opacityScale = 1) => {
+    appendTerrainTopEdgeLines(
+      group,
+      lightSegments,
+      new THREE.LineBasicMaterial({
+        color: 0xfbf1c7,
+        transparent: true,
+        opacity: 0.24 * opacityScale,
+        depthTest: true,
+        depthWrite: false,
+      }),
+    )
+    appendTerrainTopEdgeLines(
+      group,
+      darkSegments,
+      new THREE.LineBasicMaterial({
+        color: 0x1d2021,
+        transparent: true,
+        opacity: 0.32 * opacityScale,
+        depthTest: true,
+        depthWrite: false,
+      }),
+    )
+  }
+
+  appendEdgePair(normalLightSegments, normalDarkSegments)
+  appendEdgePair(ghostLightSegments, ghostDarkSegments, GHOST_VOXEL_FADED_OPACITY)
 
   return group
 }
@@ -126,9 +182,12 @@ export const createVoxelRenderer = (container: THREE.Group): VoxelRenderer => {
     terrainTopEdgeOverlay = null
   }
 
-  const syncTerrainTopEdgeOverlay = (voxels: ReadonlyArray<MapVoxelV2>) => {
+  const syncTerrainTopEdgeOverlay = (
+    voxels: ReadonlyArray<MapVoxelV2>,
+    options: VoxelRendererSyncOptions,
+  ) => {
     disposeTerrainTopEdgeOverlay()
-    const overlay = buildTerrainTopEdgeOverlay(voxels)
+    const overlay = buildTerrainTopEdgeOverlay(voxels, options)
     if (overlay.children.length === 0) return
 
     overlay.visible = visible
@@ -144,12 +203,12 @@ export const createVoxelRenderer = (container: THREE.Group): VoxelRenderer => {
   }
 
   return {
-    sync(voxels) {
+    sync(voxels, options = {}) {
       // Bucket voxels by group key so visually identical voxels share
       // an InstancedMesh.
       const buckets = new Map<string, MapVoxelV2[]>()
       for (const voxel of voxels) {
-        const key = voxelGroupKey(voxel)
+        const key = rendererVoxelGroupKey(voxel, options)
         let arr = buckets.get(key)
         if (!arr) {
           arr = []
@@ -176,14 +235,12 @@ export const createVoxelRenderer = (container: THREE.Group): VoxelRenderer => {
           disposeVoxelGroup(container, existing)
           voxelGroups.delete(key)
         }
-        const definition = voxelMaterialDefinition(groupVoxels[0])
-        const opacity = definition.transparent ? (definition.opacity ?? 0.5) : 1
-        const depthWrite = !definition.transparent
+        const traits = resolveVoxelRenderTraits(groupVoxels[0], options)
         const geometry = new THREE.BoxGeometry(1, 1, 1)
-        const materials = buildVoxelFaceMaterials(groupVoxels[0], opacity, depthWrite)
+        const materials = buildVoxelFaceMaterials(groupVoxels[0], traits.opacity, traits.depthWrite)
         const mesh = new THREE.InstancedMesh(geometry, materials, groupVoxels.length)
         mesh.userData.voxels = groupVoxels
-        mesh.renderOrder = definition.transparent ? 8 : 0
+        mesh.renderOrder = traits.renderOrder
         mesh.visible = visible
         for (let i = 0; i < groupVoxels.length; i += 1) {
           const v = groupVoxels[i]
@@ -195,7 +252,7 @@ export const createVoxelRenderer = (container: THREE.Group): VoxelRenderer => {
         voxelGroups.set(key, { key, geometry, materials, mesh, voxels: groupVoxels })
       }
 
-      syncTerrainTopEdgeOverlay(voxels)
+      syncTerrainTopEdgeOverlay(voxels, options)
     },
 
     dispose() {

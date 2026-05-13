@@ -87,6 +87,8 @@ export interface MapVoxelV2 {
   materialId: MapMaterialId
   /** Optional `#rrggbb` override for one-off generated maps. */
   color?: string
+  /** Marks a voxel for optional ghost-opacity rendering. */
+  ghost?: boolean
   blocksMovement?: boolean
   blocksSight?: boolean
   tags?: string[]

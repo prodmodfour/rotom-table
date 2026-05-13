@@ -59,12 +59,13 @@ describe('isometric scene state helpers', () => {
         z: 2,
         materialId: 'stone',
         color: '#aabbcc',
+        ghost: true,
         blocksMovement: true,
         tags: ['ledge', 'cover'],
       },
     ]
 
     expect(getHazardsRevisionKey(hazards)).toBe('spikes\u001e1\u001e0\u001e2\u001e\u001efoe\u001dtoxic-spikes\u001e1\u001e0\u001e2\u001e2\u001e')
-    expect(getTerrainVoxelsRevisionKey(voxels)).toBe('0\u001e1\u001e2\u001estone\u001e#aabbcc\u001etrue\u001e\u001eledge\u001fcover')
+    expect(getTerrainVoxelsRevisionKey(voxels)).toBe('0\u001e1\u001e2\u001estone\u001e#aabbcc\u001etrue\u001etrue\u001e\u001eledge\u001fcover')
   })
 })

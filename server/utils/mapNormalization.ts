@@ -63,6 +63,7 @@ const normalizeVoxelForEditor = (value: unknown, index: number, sourceLabel: str
     materialId: normalizeMaterialId(record.materialId as string),
   }
   if (typeof record.color === 'string') out.color = record.color
+  if (typeof record.ghost === 'boolean') out.ghost = record.ghost
   if (typeof record.blocksMovement === 'boolean') out.blocksMovement = record.blocksMovement
   if (typeof record.blocksSight === 'boolean') out.blocksSight = record.blocksSight
   if (Array.isArray(record.tags)) out.tags = record.tags.filter((tag: unknown): tag is string => typeof tag === 'string')

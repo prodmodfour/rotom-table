@@ -56,6 +56,29 @@ describe('useTerrainBuilder', () => {
     expect(map.value.voxels).toEqual([])
   })
 
+  it('tracks ghost voxel build and fade toggles', () => {
+    const map = ref(mapFixture())
+    const builder = useTerrainBuilder({
+      map,
+      mapVoxels: computed(() => map.value?.voxels ?? []),
+      mapGroundLevelY: computed(() => 0),
+      spawnedPokemon: computed(() => []),
+      canEditMap: computed(() => true),
+    })
+
+    expect(builder.buildGhostVoxel.value).toBe(false)
+    expect(builder.ghostVoxelsFaded.value).toBe(false)
+
+    builder.setBuildGhostVoxel(true)
+    builder.setGhostVoxelsFaded(true)
+    builder.fillGround()
+
+    expect(builder.buildGhostVoxel.value).toBe(true)
+    expect(builder.ghostVoxelsFaded.value).toBe(true)
+    expect(map.value.voxels).toHaveLength(4)
+    expect(map.value.voxels.every((voxel) => voxel.ghost === true)).toBe(true)
+  })
+
   it('does not mutate terrain without edit permission', () => {
     const map = ref(mapFixture())
     const builder = useTerrainBuilder({

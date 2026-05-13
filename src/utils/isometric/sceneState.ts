@@ -47,6 +47,7 @@ export const getTerrainVoxelsRevisionKey = (voxels: readonly MapVoxelV2[]): stri
       voxel.z,
       voxelMaterialId(voxel),
       voxel.color ?? '',
+      voxel.ghost ?? '',
       voxel.blocksMovement ?? '',
       voxel.blocksSight ?? '',
       (voxel.tags ?? []).join('\u001f'),

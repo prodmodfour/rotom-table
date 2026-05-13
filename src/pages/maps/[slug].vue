@@ -165,6 +165,8 @@ const {
   buildTool,
   buildMaterial,
   buildColor,
+  buildGhostVoxel,
+  ghostVoxelsFaded,
   visibleVoxelMaterials,
   colorPickerValue,
   placeVoxel,
@@ -173,6 +175,8 @@ const {
   setTool,
   handleColorInput,
   clearCustomColor,
+  setBuildGhostVoxel,
+  setGhostVoxelsFaded,
   fillGround,
   clearAllVoxels,
 } = useTerrainBuilder({ map, mapVoxels, mapGroundLevelY, spawnedPokemon, canEditMap })
@@ -313,6 +317,8 @@ useMapDimensionReconciliation({
         :build-tool="buildTool"
         :build-material="buildMaterial"
         :build-color="buildColor"
+        :build-ghost-voxel="buildGhostVoxel"
+        :ghost-voxels-faded="ghostVoxelsFaded"
         :visible-voxel-materials="visibleVoxelMaterials"
         :color-picker-value="colorPickerValue"
         :voxel-count="voxelCount"
@@ -347,6 +353,8 @@ useMapDimensionReconciliation({
         @select-material="selectMaterial"
         @color-input="handleColorInput"
         @clear-custom-color="clearCustomColor"
+        @set-build-ghost-voxel="setBuildGhostVoxel"
+        @set-ghost-voxels-faded="setGhostVoxelsFaded"
         @fill-ground="fillGround"
         @clear-all-voxels="clearAllVoxels"
         @set-layer-visibility="setLayerVisibility"
@@ -391,6 +399,8 @@ useMapDimensionReconciliation({
         :build-tool="buildTool"
         :build-material="buildMaterial"
         :build-color="buildColor"
+        :build-ghost-voxel="buildGhostVoxel"
+        :ghost-voxels-faded="ghostVoxelsFaded"
         :hazard-mode="hazardMode && canEditMap"
         :hazard-tool="hazardTool"
         :hazard-kind="hazardKind"
