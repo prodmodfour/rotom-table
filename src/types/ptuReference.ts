@@ -99,6 +99,10 @@ export interface PtuEdge {
   name: string
   tags: string[]
   prerequisites?: string | null
+  frequency?: string | null
+  trigger?: string | null
+  target?: string | null
+  condition?: string | null
   effect?: string | null
 }
 

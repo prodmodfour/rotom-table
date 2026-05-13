@@ -1,6 +1,13 @@
 <script setup lang="ts">
 import { PhPlus, PhX } from '@phosphor-icons/vue'
-import type { TrainerSheet } from '~/types/trainerSheet'
+import type { TrainerEdgeEntry, TrainerSheet } from '~/types/trainerSheet'
+import {
+  TRAINER_EDGE_AUTOFILL_COLUMNS,
+  TRAINER_EDGE_NAME_COLUMN,
+  TRAINER_EDGE_NAME_OPTIONS,
+  trainerEdgeFieldValue,
+  type TrainerEdgeAutofillField,
+} from '~/utils/sheets/trainerEdges'
 
 defineProps<{
   sheet: TrainerSheet
@@ -10,6 +17,9 @@ const emit = defineEmits<{
   addEdge: []
   removeEdge: [index: number]
 }>()
+
+const autofillValue = (edge: TrainerEdgeEntry, field: TrainerEdgeAutofillField): string =>
+  trainerEdgeFieldValue(edge, field)
 </script>
 
 <template>
@@ -21,27 +31,47 @@ const emit = defineEmits<{
           <PhPlus :size="14" weight="bold" /> Add row
         </button>
       </h2>
-      <table class="data-table feat-table">
-        <thead>
-          <tr><th>Edge</th><th>Notes</th><th aria-label="Row actions"></th></tr>
-        </thead>
-        <tbody>
-          <tr v-for="(edge, index) in sheet.edges" :key="index">
-            <th><EditableCell v-model="edge.name" placeholder="Edge" /></th>
-            <td class="effect-col">
-              <EditableCell v-model="edge.notes" type="textarea" placeholder="—" multiline />
-            </td>
-            <td class="row-actions">
-              <button type="button" class="row-remove" title="Remove edge" @click="emit('removeEdge', index)">
-                <PhX :size="14" weight="bold" />
-              </button>
-            </td>
-          </tr>
-          <tr v-if="!sheet.edges?.length">
-            <td colspan="3" class="muted">No edges taken.</td>
-          </tr>
-        </tbody>
-      </table>
+      <div class="table-scroll">
+        <table class="data-table edge-table">
+          <thead>
+            <tr>
+              <th>{{ TRAINER_EDGE_NAME_COLUMN.label }}</th>
+              <th
+                v-for="column in TRAINER_EDGE_AUTOFILL_COLUMNS"
+                :key="column.key"
+              >{{ column.label }}</th>
+              <th aria-label="Row actions"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(edge, index) in sheet.edges" :key="index">
+              <th class="edge-name-col">
+                <EditableCell
+                  v-model="edge.name"
+                  type="select"
+                  :options="TRAINER_EDGE_NAME_OPTIONS"
+                />
+              </th>
+              <td
+                v-for="column in TRAINER_EDGE_AUTOFILL_COLUMNS"
+                :key="column.key"
+                class="auto-fill-col"
+                :class="{ 'auto-fill-col--multiline': column.multiline }"
+              >
+                {{ autofillValue(edge, column.key) || '—' }}
+              </td>
+              <td class="row-actions">
+                <button type="button" class="row-remove" title="Remove edge" @click="emit('removeEdge', index)">
+                  <PhX :size="14" weight="bold" />
+                </button>
+              </td>
+            </tr>
+            <tr v-if="!sheet.edges?.length">
+              <td :colspan="TRAINER_EDGE_AUTOFILL_COLUMNS.length + 2" class="muted">No edges taken.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </section>
 </template>
@@ -73,10 +103,18 @@ const emit = defineEmits<{
   gap: 0.6rem;
 }
 
+.table-scroll {
+  overflow-x: auto;
+}
+
 .data-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.88rem;
+}
+
+.edge-table {
+  min-width: 82rem;
 }
 
 .data-table th,
@@ -142,15 +180,23 @@ const emit = defineEmits<{
   background: rgba(220, 80, 80, 0.08);
 }
 
+.edge-name-col {
+  min-width: 12rem;
+}
+
+.auto-fill-col {
+  min-width: 9rem;
+  color: var(--ink-soft);
+}
+
+.auto-fill-col--multiline {
+  min-width: 14rem;
+  white-space: pre-wrap;
+}
+
 .row-actions {
   width: 1.5rem;
   text-align: right;
-}
-
-.effect-col {
-  color: var(--ink-soft);
-  white-space: pre-wrap;
-  max-width: 22rem;
 }
 
 .muted {
