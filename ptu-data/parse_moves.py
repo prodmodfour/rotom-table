@@ -32,10 +32,17 @@ def _struggle_variant(
     type_: str,
     capability: str,
     *,
+    damage_class: str = "Special",
     range_: str = "Melee, 1 Target",
     capability_clause: str | None = None,
+    stat_clause: str | None = None,
 ) -> dict:
     clause = capability_clause or f"The user's Struggle Attacks may be {type_}-Typed."
+    stat_text = stat_clause or (
+        "The user may add Special Attack instead of Attack and deal Special Damage."
+        if damage_class == "Special"
+        else "This entry uses Attack and deals Physical Damage."
+    )
     return {
         "name": name,
         "type": type_,
@@ -43,11 +50,11 @@ def _struggle_variant(
         "ac": 4,
         "damage_base": 4,
         "damage_roll": "1d8+6 / 11",
-        "damage_class": "Special",
+        "damage_class": damage_class,
         "range": range_,
         "effect": (
             f"Requires {capability}. {clause} "
-            "The user may add Special Attack instead of Attack and deal Special Damage. "
+            f"{stat_text} "
             f"{STRUGGLE_EXPERT_NOTE}"
         ),
     }
@@ -74,7 +81,13 @@ MANUAL_MOVE_PATCHES = {
     "Struggle (Firestarter)": _struggle_variant("Struggle (Firestarter)", "Fire", "Firestarter"),
     "Struggle (Fountain)": _struggle_variant("Struggle (Fountain)", "Water", "Fountain"),
     "Struggle (Freezer)": _struggle_variant("Struggle (Freezer)", "Ice", "Freezer"),
-    "Struggle (Guster)": _struggle_variant("Struggle (Guster)", "Flying", "Guster"),
+    "Struggle (Guster Physical)": _struggle_variant(
+        "Struggle (Guster Physical)",
+        "Flying",
+        "Guster",
+        damage_class="Physical",
+    ),
+    "Struggle (Guster Special)": _struggle_variant("Struggle (Guster Special)", "Flying", "Guster"),
     "Struggle (Materializer)": _struggle_variant("Struggle (Materializer)", "Rock", "Materializer"),
     "Struggle (Telekinetic)": _struggle_variant(
         "Struggle (Telekinetic)",

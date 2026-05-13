@@ -8092,8 +8092,19 @@
     "range": "Melee, 1 Target",
     "effect": "Requires Freezer. The user's Struggle Attacks may be Ice-Typed. The user may add Special Attack instead of Attack and deal Special Damage. Struggle Attacks do not count as Moves; never apply STAB. If the user has Combat Skill Rank Expert or higher, use AC 3 and Damage Base 5 instead."
   },
-  "Struggle (Guster)": {
-    "name": "Struggle (Guster)",
+  "Struggle (Guster Physical)": {
+    "name": "Struggle (Guster Physical)",
+    "type": "Flying",
+    "frequency": "At-Will",
+    "ac": 4,
+    "damage_base": 4,
+    "damage_roll": "1d8+6 / 11",
+    "damage_class": "Physical",
+    "range": "Melee, 1 Target",
+    "effect": "Requires Guster. The user's Struggle Attacks may be Flying-Typed. This entry uses Attack and deals Physical Damage. Struggle Attacks do not count as Moves; never apply STAB. If the user has Combat Skill Rank Expert or higher, use AC 3 and Damage Base 5 instead."
+  },
+  "Struggle (Guster Special)": {
+    "name": "Struggle (Guster Special)",
     "type": "Flying",
     "frequency": "At-Will",
     "ac": 4,

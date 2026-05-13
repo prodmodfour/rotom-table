@@ -80,4 +80,32 @@ describe('map token move menu options', () => {
       { move: { name: 'Struggle (Zapper)' }, automatic: true },
     ]))
   })
+
+  it('auto-adds both physical and special Guster Struggle entries', () => {
+    const entries = trainerMoveEntriesForSheet({
+      slug: 'trainer',
+      name: 'Trainer',
+      level: 1,
+      movelist: [],
+      capabilities: { other: ['Guster'] },
+    })
+
+    expect(entries).toEqual(expect.arrayContaining([
+      { move: { name: 'Struggle' }, automatic: true },
+      { move: { name: 'Struggle (Guster Physical)' }, automatic: true },
+      { move: { name: 'Struggle (Guster Special)' }, automatic: true },
+    ]))
+
+    const options = buildTokenMoveMenuOptions(token({
+      sheetKind: 'trainer',
+      atk: 10,
+      satk: 8,
+      combatStages: stages({ atk: 2, satk: -1 }),
+    }), entries)
+    const physical = options.find((move) => move.name === 'Struggle (Guster Physical)')
+    const special = options.find((move) => move.name === 'Struggle (Guster Special)')
+
+    expect(physical).toMatchObject({ type: 'Flying', damageClass: 'Physical', attackStat: 14 })
+    expect(special).toMatchObject({ type: 'Flying', damageClass: 'Special', attackStat: 7 })
+  })
 })

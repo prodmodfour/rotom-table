@@ -5,17 +5,17 @@ export const BASE_STRUGGLE_MOVE_NAME = 'Struggle'
 export interface StruggleCapabilityVariant {
   capability: string
   aliases?: readonly string[]
-  moveName: string
+  moveNames: readonly string[]
 }
 
 export const STRUGGLE_CAPABILITY_VARIANTS: readonly StruggleCapabilityVariant[] = [
-  { capability: 'Firestarter', moveName: 'Struggle (Firestarter)' },
-  { capability: 'Fountain', moveName: 'Struggle (Fountain)' },
-  { capability: 'Freezer', moveName: 'Struggle (Freezer)' },
-  { capability: 'Guster', moveName: 'Struggle (Guster)' },
-  { capability: 'Materializer', aliases: ['Materialiser'], moveName: 'Struggle (Materializer)' },
-  { capability: 'Telekinetic', moveName: 'Struggle (Telekinetic)' },
-  { capability: 'Zapper', moveName: 'Struggle (Zapper)' },
+  { capability: 'Firestarter', moveNames: ['Struggle (Firestarter)'] },
+  { capability: 'Fountain', moveNames: ['Struggle (Fountain)'] },
+  { capability: 'Freezer', moveNames: ['Struggle (Freezer)'] },
+  { capability: 'Guster', moveNames: ['Struggle (Guster Physical)', 'Struggle (Guster Special)'] },
+  { capability: 'Materializer', aliases: ['Materialiser'], moveNames: ['Struggle (Materializer)'] },
+  { capability: 'Telekinetic', moveNames: ['Struggle (Telekinetic)'] },
+  { capability: 'Zapper', moveNames: ['Struggle (Zapper)'] },
 ]
 
 const stripCapabilityParams = (raw: string): string =>
@@ -37,8 +37,8 @@ const normalizeCapabilityKey = (raw: string): string => {
 }
 
 const normalizeMoveKey = (raw: string): string => {
-  const key = normalizeToken(raw)
-  return key.replace('materialiser', 'materializer')
+  const key = normalizeToken(raw).replace('materialiser', 'materializer')
+  return key === 'struggleguster' ? 'strugglegusterspecial' : key
 }
 
 export const struggleMoveNamesForCapabilities = (
@@ -49,7 +49,7 @@ export const struggleMoveNamesForCapabilities = (
 
   for (const variant of STRUGGLE_CAPABILITY_VARIANTS) {
     const keys = [variant.capability, ...(variant.aliases ?? [])].map(normalizeCapabilityKey)
-    if (keys.some((key) => capabilityKeys.has(key))) moveNames.push(variant.moveName)
+    if (keys.some((key) => capabilityKeys.has(key))) moveNames.push(...variant.moveNames)
   }
 
   return moveNames

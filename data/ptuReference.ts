@@ -147,6 +147,7 @@ export const findAbility = (name: string): PtuAbility | null => {
 }
 
 const MOVE_ALIASES: Record<string, string> = {
+  'struggle-guster': 'Struggle (Guster Special)',
   'struggle-materialiser': 'Struggle (Materializer)',
 }
 
