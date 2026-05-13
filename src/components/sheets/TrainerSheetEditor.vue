@@ -67,8 +67,6 @@ const {
   removeEdge,
   addInvItem,
   removeInvItem,
-  featureTagsCsv,
-  setFeatureTags,
   orderTagsCsv,
   setOrderTags,
   setStatField,
@@ -190,10 +188,8 @@ const {
     <TrainerFeaturesPanel
       v-if="activeTab === 'features'"
       :sheet="sheet"
-      :feature-tags-csv="featureTagsCsv"
       @add-feature="addFeature"
       @remove-feature="removeFeature"
-      @set-feature-tags="setFeatureTags"
     />
 
     <!-- =================================================================== -->

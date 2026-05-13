@@ -1,17 +1,25 @@
 <script setup lang="ts">
 import { PhPlus, PhX } from '@phosphor-icons/vue'
 import type { TrainerFeatureEntry, TrainerSheet } from '~/types/trainerSheet'
+import {
+  TRAINER_FEATURE_AUTOFILL_COLUMNS,
+  TRAINER_FEATURE_NAME_COLUMN,
+  TRAINER_FEATURE_NAME_OPTIONS,
+  trainerFeatureFieldValue,
+  type TrainerFeatureAutofillField,
+} from '~/utils/sheets/trainerFeatures'
 
 defineProps<{
   sheet: TrainerSheet
-  featureTagsCsv: (feature: TrainerFeatureEntry) => string
 }>()
 
 const emit = defineEmits<{
   addFeature: []
   removeFeature: [index: number]
-  setFeatureTags: [feature: TrainerFeatureEntry, value: string]
 }>()
+
+const autofillValue = (feature: TrainerFeatureEntry, field: TrainerFeatureAutofillField): string =>
+  trainerFeatureFieldValue(feature, field)
 </script>
 
 <template>
@@ -23,41 +31,47 @@ const emit = defineEmits<{
           <PhPlus :size="14" weight="bold" /> Add row
         </button>
       </h2>
-      <table class="data-table feat-table">
-        <thead>
-          <tr>
-            <th>Feature</th>
-            <th>Tags</th>
-            <th>Frequency / Action</th>
-            <th>Notes</th>
-            <th aria-label="Row actions"></th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="(feature, index) in sheet.features" :key="index">
-            <th><EditableCell v-model="feature.name" placeholder="Feature" /></th>
-            <td>
-              <EditableCell
-                :model-value="featureTagsCsv(feature)"
-                placeholder="Class"
-                @update:model-value="(value) => emit('setFeatureTags', feature, (value as string) ?? '')"
-              />
-            </td>
-            <td><EditableCell v-model="feature.frequency" placeholder="—" /></td>
-            <td class="effect-col">
-              <EditableCell v-model="feature.notes" type="textarea" placeholder="—" multiline />
-            </td>
-            <td class="row-actions">
-              <button type="button" class="row-remove" title="Remove feature" @click="emit('removeFeature', index)">
-                <PhX :size="14" weight="bold" />
-              </button>
-            </td>
-          </tr>
-          <tr v-if="!sheet.features?.length">
-            <td colspan="5" class="muted">No features taken.</td>
-          </tr>
-        </tbody>
-      </table>
+      <div class="table-scroll">
+        <table class="data-table feat-table">
+          <thead>
+            <tr>
+              <th>{{ TRAINER_FEATURE_NAME_COLUMN.label }}</th>
+              <th
+                v-for="column in TRAINER_FEATURE_AUTOFILL_COLUMNS"
+                :key="column.key"
+              >{{ column.label }}</th>
+              <th aria-label="Row actions"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(feature, index) in sheet.features" :key="index">
+              <th class="feature-name-col">
+                <EditableCell
+                  v-model="feature.name"
+                  type="select"
+                  :options="TRAINER_FEATURE_NAME_OPTIONS"
+                />
+              </th>
+              <td
+                v-for="column in TRAINER_FEATURE_AUTOFILL_COLUMNS"
+                :key="column.key"
+                class="auto-fill-col"
+                :class="{ 'auto-fill-col--multiline': column.multiline }"
+              >
+                {{ autofillValue(feature, column.key) || '—' }}
+              </td>
+              <td class="row-actions">
+                <button type="button" class="row-remove" title="Remove feature" @click="emit('removeFeature', index)">
+                  <PhX :size="14" weight="bold" />
+                </button>
+              </td>
+            </tr>
+            <tr v-if="!sheet.features?.length">
+              <td :colspan="TRAINER_FEATURE_AUTOFILL_COLUMNS.length + 2" class="muted">No features taken.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </section>
 </template>
@@ -89,10 +103,18 @@ const emit = defineEmits<{
   gap: 0.6rem;
 }
 
+.table-scroll {
+  overflow-x: auto;
+}
+
 .data-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.88rem;
+}
+
+.feat-table {
+  min-width: 92rem;
 }
 
 .data-table th,
@@ -158,15 +180,23 @@ const emit = defineEmits<{
   background: rgba(220, 80, 80, 0.08);
 }
 
+.feature-name-col {
+  min-width: 12rem;
+}
+
+.auto-fill-col {
+  min-width: 9rem;
+  color: var(--ink-soft);
+}
+
+.auto-fill-col--multiline {
+  min-width: 14rem;
+  white-space: pre-wrap;
+}
+
 .row-actions {
   width: 1.5rem;
   text-align: right;
-}
-
-.effect-col {
-  color: var(--ink-soft);
-  white-space: pre-wrap;
-  max-width: 22rem;
 }
 
 .muted {
