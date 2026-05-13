@@ -155,6 +155,7 @@ export interface CharacterSheet {
   species: string
   level: number
   totalExp?: number
+  /** Legacy/manual cache. The sheet UI derives this from totalExp and the PTU experience chart. */
   toNextLevel?: number
   gender?: 'Male' | 'Female' | 'Genderless' | string
   shiny?: boolean

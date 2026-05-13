@@ -1,11 +1,13 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { PokedexRecord } from '~/types/pokemon'
+import { calculatePokemonExperienceToNextLevel } from '~/utils/sheets/pokemonExperience'
 
 const typesCsv = defineModel<string>('typesCsv', { required: true })
 const eggGroupsCsv = defineModel<string>('eggGroupsCsv', { required: true })
 
-defineProps<{
+const props = defineProps<{
   sheet: CharacterSheet
   spriteUrl: string | null
   species: PokedexRecord | null
@@ -16,6 +18,10 @@ defineProps<{
   natureMinusDisplay?: string
   isGm: boolean
 }>()
+
+const experienceToNextLevel = computed(() => (
+  calculatePokemonExperienceToNextLevel(props.sheet.totalExp)
+))
 </script>
 
 <template>
@@ -69,7 +75,13 @@ defineProps<{
         </div>
         <div>
           <dt>To Next Lvl</dt>
-          <dd><EditableCell v-model="sheet.toNextLevel" type="number" /></dd>
+          <dd>
+            <EditableCell
+              :model-value="experienceToNextLevel"
+              type="number"
+              readonly
+            />
+          </dd>
         </div>
         <div>
           <dt>Gender</dt>
