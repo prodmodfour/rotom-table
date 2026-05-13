@@ -35,7 +35,7 @@ export default defineEventHandler(async (event) => {
       clientId: normalizeRealtimeClientId(body.clientId),
     })
     publishUseCaseRealtimeEvents(result.events)
-    return { ok: result.ok, name: result.name, path: result.path }
+    return { ok: result.ok, slug: result.slug, name: result.name, path: result.path }
   } catch (err) {
     throwUseCaseHttpError(err)
   }

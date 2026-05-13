@@ -50,13 +50,22 @@ export const useLiveSheets = (): LiveSheetsApi => {
   if (typeof window !== 'undefined') {
     const handler = (event: { type: string; data?: unknown }) => {
       const payload = event.data as
-        | { kind?: SheetKind; slug?: string; sheet?: CharacterSheet | TrainerSheet }
+        | {
+          kind?: SheetKind
+          slug?: string
+          oldSlug?: string
+          newSlug?: string
+          sheet?: CharacterSheet | TrainerSheet
+        }
         | undefined
-      if (!payload || !payload.kind || !payload.slug) return
+      if (!payload || !payload.kind) return
       const map = payload.kind === 'pokemon' ? pokemonBySlug.value : trainerBySlug.value
-      if (event.type === 'deleted') {
+      if (event.type === 'deleted' && payload.slug) {
         map.delete(payload.slug)
-      } else if (event.type === 'updated' && payload.sheet) {
+      } else if (event.type === 'renamed' && payload.newSlug && payload.sheet) {
+        if (payload.oldSlug) map.delete(payload.oldSlug)
+        map.set(payload.newSlug, payload.sheet as CharacterSheet & TrainerSheet)
+      } else if (event.type === 'updated' && payload.slug && payload.sheet) {
         // Replace the entry — placements re-derive their spawn data on
         // every read so simply swapping the object is enough.
         map.set(payload.slug, payload.sheet as CharacterSheet & TrainerSheet)

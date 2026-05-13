@@ -95,6 +95,91 @@ describe('save sheet use case', () => {
     })
   })
 
+  it('renames the persisted file and emitted slug when the display name changes', () => {
+    const writes: Array<{ path: string; sheet: Record<string, unknown> }> = []
+    const renames: Array<{ from: string; to: string }> = []
+    const existingPaths = new Set(['/repo/data/sheets/pika.json'])
+    const deps = {
+      findSheetPath: vi.fn((_kind: SheetKind, slug: string): string | null => (
+        slug === 'pika' ? '/repo/data/sheets/pika.json' : null
+      )),
+      findSlugPath: vi.fn(() => null),
+      isPlayerAccessible: vi.fn(() => true),
+      stripDerivedFields: vi.fn((sheet: Record<string, unknown>) => ({ ...sheet })),
+      writeSheet: vi.fn((path: string, sheet: Record<string, unknown>) => {
+        writes.push({ path, sheet })
+      }),
+      pathExists: vi.fn((path: string) => existingPaths.has(path)),
+      renameSheetPath: vi.fn((from: string, to: string) => {
+        renames.push({ from, to })
+        existingPaths.delete(from)
+        existingPaths.add(to)
+      }),
+      allocateSlug: vi.fn((_kind: SheetKind, base: string) => `${base.toLowerCase().replace(/\s+/g, '-')}-1`),
+      relativePath: vi.fn((path: string) => path.replace('/repo/', '')),
+    }
+
+    const result = saveSheetUseCase({
+      role: 'gm',
+      kind: 'pokemon',
+      slug: 'pika',
+      sheet: { slug: 'pika', nickname: 'Spark Prime', player: false },
+      clientId: 'client-1',
+    }, deps)
+
+    expect(renames).toEqual([
+      { from: '/repo/data/sheets/pika.json', to: '/repo/data/sheets/spark-prime.json' },
+    ])
+    expect(writes).toEqual([
+      {
+        path: '/repo/data/sheets/spark-prime.json',
+        sheet: { slug: 'spark-prime', nickname: 'Spark Prime', player: false },
+      },
+    ])
+    expect(result).toMatchObject({
+      ok: true,
+      slug: 'spark-prime',
+      path: 'data/sheets/spark-prime.json',
+      sheet: { slug: 'spark-prime', nickname: 'Spark Prime', player: false },
+    })
+    expect(result.events).toEqual([
+      {
+        channel: 'sheet:pokemon:pika',
+        type: 'renamed',
+        clientId: 'client-1',
+        data: {
+          kind: 'pokemon',
+          slug: 'spark-prime',
+          oldSlug: 'pika',
+          newSlug: 'spark-prime',
+          sheet: { slug: 'spark-prime', nickname: 'Spark Prime', player: false },
+        },
+      },
+      {
+        channel: 'sheet:pokemon:spark-prime',
+        type: 'updated',
+        clientId: 'client-1',
+        data: {
+          kind: 'pokemon',
+          slug: 'spark-prime',
+          sheet: { slug: 'spark-prime', nickname: 'Spark Prime', player: false },
+        },
+      },
+      {
+        channel: 'sheets',
+        type: 'renamed',
+        clientId: 'client-1',
+        data: {
+          kind: 'pokemon',
+          slug: 'spark-prime',
+          oldSlug: 'pika',
+          newSlug: 'spark-prime',
+          sheet: { slug: 'spark-prime', nickname: 'Spark Prime', player: false },
+        },
+      },
+    ])
+  })
+
   it('rejects payload slug mismatches before persistence', () => {
     const { deps, writes } = createDeps()
 

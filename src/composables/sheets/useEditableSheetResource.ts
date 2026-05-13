@@ -16,6 +16,7 @@ export interface EditableSheetResource<TSheet extends { slug: string }> {
   sheet: ComputedRef<TSheet | null>
   saveStatus: ComputedRef<SaveStatus>
   saveError: ComputedRef<string | null>
+  renamedTo: ComputedRef<string | null>
 }
 
 export function useEditableSheetResource<TSheet extends { slug: string; player?: boolean }>(
@@ -35,11 +36,13 @@ export function useEditableSheetResource<TSheet extends { slug: string; player?:
   const sheet = computed<TSheet | null>(() => editor?.sheet.value ?? null)
   const saveStatus = computed<SaveStatus>(() => editor?.saveStatus.value ?? 'idle')
   const saveError = computed<string | null>(() => editor?.saveError.value ?? null)
+  const renamedTo = computed<string | null>(() => editor?.renamedTo.value ?? null)
 
   return {
     editor,
     sheet,
     saveStatus,
     saveError,
+    renamedTo,
   }
 }

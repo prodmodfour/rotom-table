@@ -5,6 +5,7 @@ import { useEditableSheetResource } from '~/composables/sheets/useEditableSheetR
 import { syncNatureModForSheet } from '~/composables/sheets/usePokemonNatureControls'
 import { SHEET_API_PATHS } from '~/utils/apiRoutes'
 import { routeSlugParam } from '~/utils/routeParams'
+import { sheetEditorPath } from '~/utils/sheetRoutes'
 import type { CharacterSheet } from '~/types/characterSheet'
 
 // ---------------------------------------------------------------------------
@@ -21,6 +22,7 @@ definePageMeta({
 })
 
 const route = useRoute()
+const router = useRouter()
 const { isGm, isPlayer } = useAuth()
 const slug = routeSlugParam(route.params)
 const staticBaseSheet = characterSheetsBySlug.get(slug) ?? null
@@ -35,12 +37,17 @@ const {
   sheet,
   saveStatus,
   saveError,
+  renamedTo,
 } = useEditableSheetResource<CharacterSheet>({
   baseSheet,
   kind: 'pokemon',
   isPlayer,
   normalize: normalizeCharacterSheet,
   prepareInitial: syncNatureModForSheet,
+})
+
+watch(renamedTo, (newSlug) => {
+  if (newSlug && newSlug !== slug) router.replace(sheetEditorPath('pokemon', newSlug))
 })
 
 useHead(() => ({

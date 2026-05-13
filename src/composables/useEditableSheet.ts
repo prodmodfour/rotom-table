@@ -19,6 +19,7 @@
 import { getCurrentInstance, onBeforeUnmount, ref, watch, type Ref } from 'vue'
 import { getClientId } from '~/utils/clientId'
 import { isRealtimeEcho, sheetChannel } from '#shared/realtime'
+import { slugify } from '#shared/paths'
 import { createAutosaveResourceController } from '~/utils/autosaveResource'
 import { runLatestAutosave } from '~/utils/autosaveSaveRunner'
 import { bindAutosaveUnloadFlushers, sendJsonWithUnloadFallback } from '~/utils/autosaveUnload'
@@ -41,10 +42,19 @@ export interface UseEditableSheetReturn<T> {
   sheet: Ref<T>
   saveStatus: Ref<SaveStatus>
   saveError: Ref<string | null>
+  /** Set to the new slug when this sheet was renamed on save or in another tab. */
+  renamedTo: Ref<string | null>
   /** Force an immediate save (e.g. on row add/delete you may want it now). */
   saveNow: () => Promise<void>
   /** Cancel any pending debounced save. */
   cancelPendingSave: () => void
+}
+
+interface SaveSheetResponse<T> {
+  ok: true
+  slug?: string
+  path?: string
+  sheet?: T
 }
 
 export function useEditableSheet<T extends { slug: string }>(
@@ -57,10 +67,20 @@ export function useEditableSheet<T extends { slug: string }>(
   const sheet = ref(deepCloneJson(initial)) as Ref<T>
   const saveStatus = ref<SaveStatus>('idle')
   const saveError = ref<string | null>(null)
+  const renamedTo = ref<string | null>(null)
   const clientId = getClientId()
   const { postJson } = useApiClient()
 
   const toPersistedPayload = (value: T): Record<string, unknown> => toPersistableSheetPayload(value)
+  const displayNameFor = (value: T): string => {
+    const record = value as Record<string, unknown>
+    const displayName = kind === 'pokemon' ? record.nickname : record.name
+    return typeof displayName === 'string' ? displayName.trim() : ''
+  }
+  const needsSlugSync = (value: T): boolean => {
+    const desiredSlug = slugify(displayNameFor(value))
+    return Boolean(desiredSlug && desiredSlug !== value.slug)
+  }
 
   const jsonFor = (value: T): string => stablePersistableSheetJson(value)
   // Mirrors what's persisted on disk; used by the deep watcher to skip
@@ -85,7 +105,7 @@ export function useEditableSheet<T extends { slug: string }>(
   const performSave = async () => {
     const payload = toPersistedPayload(sheet.value)
     const payloadJson = stablePersistableSheetJson(sheet.value)
-    if (autosave.snapshot.isCleanJson(payloadJson)) {
+    if (autosave.snapshot.isCleanJson(payloadJson) && !needsSlugSync(sheet.value)) {
       if (saveStatus.value === 'saving') autosave.statusController.markSaved()
       return
     }
@@ -93,9 +113,27 @@ export function useEditableSheet<T extends { slug: string }>(
     await runLatestAutosave({
       guard: autosave.guard,
       status: autosave.statusController,
-      save: () => postJson(SHEET_API_PATHS.save, { kind, slug: sheet.value.slug, sheet: payload, clientId }),
-      onSuccess: () => {
-        autosave.snapshot.markCleanJson(payloadJson)
+      save: () => postJson<SaveSheetResponse<T>>(SHEET_API_PATHS.save, {
+        kind,
+        slug: sheet.value.slug,
+        sheet: payload,
+        clientId,
+      }),
+      onSuccess: (result, { latest }) => {
+        const persistedSheet = result.sheet ? deepCloneJson(result.sheet) : null
+        const persistedSlug = result.slug ?? persistedSheet?.slug
+        if (latest && persistedSlug && persistedSlug !== sheet.value.slug) {
+          sheet.value.slug = persistedSlug
+          renamedTo.value = persistedSlug
+        }
+
+        if (persistedSheet) {
+          autosave.snapshot.markClean(persistedSheet)
+        } else if (persistedSlug && persistedSlug !== payload.slug) {
+          autosave.snapshot.markCleanJson(stablePersistableSheetJson({ ...payload, slug: persistedSlug }))
+        } else {
+          autosave.snapshot.markCleanJson(payloadJson)
+        }
       },
       error: { logPrefix: '[useEditableSheet] save failed' },
     })
@@ -113,6 +151,11 @@ export function useEditableSheet<T extends { slug: string }>(
     { deep: true },
   )
 
+  if (typeof window !== 'undefined' && needsSlugSync(sheet.value)) {
+    saveStatus.value = 'saving'
+    void saveNow()
+  }
+
   // Cross-tab sync: replace the editable copy when another tab edits
   // the same sheet on disk.
   let unsubscribe: (() => void) | null = null
@@ -120,19 +163,31 @@ export function useEditableSheet<T extends { slug: string }>(
     unsubscribe = subscribeChannel(sheetChannel(kind, initial.slug), (event) => {
       if (isRealtimeEcho(event, clientId)) return
       const payload = event.data as
-        | { kind?: SheetKind; slug?: string; sheet?: T }
+        | { kind?: SheetKind; slug?: string; oldSlug?: string; newSlug?: string; sheet?: T }
         | undefined
       if (event.type === 'updated' && payload?.sheet) {
         const incoming = deepCloneJson(payload.sheet)
         autosave.snapshot.markClean(incoming)
         sheet.value = incoming
         saveStatus.value = 'saved'
+      } else if (event.type === 'renamed' && payload?.newSlug) {
+        autosave.cancelPendingSave()
+        if (payload.sheet) {
+          const incoming = deepCloneJson(payload.sheet)
+          autosave.snapshot.markClean(incoming)
+          sheet.value = incoming
+        } else {
+          sheet.value.slug = payload.newSlug
+          autosave.snapshot.markClean(sheet.value)
+        }
+        renamedTo.value = payload.newSlug
+        saveStatus.value = 'saved'
       }
     })
   }
 
   const flushWithBeacon = () => {
-    if (!hasUnsavedChanges()) return
+    if (renamedTo.value || !hasUnsavedChanges()) return
     autosave.cancelPendingSave()
 
     const payload = toPersistedPayload(sheet.value)
@@ -151,7 +206,8 @@ export function useEditableSheet<T extends { slug: string }>(
 
   if (getCurrentInstance()) {
     onBeforeUnmount(() => {
-      if (hasUnsavedChanges()) void autosave.saveNow()
+      if (renamedTo.value) autosave.cancelPendingSave()
+      else if (hasUnsavedChanges()) void autosave.saveNow()
       unsubscribe?.()
       unsubscribe = null
       removeUnloadFlushers?.()
@@ -159,5 +215,5 @@ export function useEditableSheet<T extends { slug: string }>(
     })
   }
 
-  return { sheet, saveStatus, saveError, saveNow, cancelPendingSave }
+  return { sheet, saveStatus, saveError, renamedTo, saveNow, cancelPendingSave }
 }

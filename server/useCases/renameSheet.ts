@@ -3,7 +3,7 @@ import { sheetChannel, sheetsChannel, type RealtimeEvent } from '#shared/realtim
 import type { SheetKind } from '#shared/sheets'
 import { renameSheetFile, type RenameSheetFileResult } from '../utils/sheetStorage'
 
-export class RenameSheetUseCaseError extends UseCaseHttpError<404 | 500> {}
+export class RenameSheetUseCaseError extends UseCaseHttpError<404 | 409 | 500> {}
 
 export interface RenameSheetInput {
   kind: SheetKind
@@ -18,6 +18,7 @@ export interface RenameSheetDependencies {
 
 export interface RenameSheetResult {
   ok: true
+  slug: string
   name: string
   path: string
   sheet: Record<string, unknown>
@@ -34,22 +35,34 @@ export const renameSheetUseCase = (
   try {
     renamed = renameSheet(input.kind, input.slug, input.name)
   } catch (err) {
+    const message = err instanceof Error ? err.message : String(err)
+    if (message.includes('already exists')) throw new RenameSheetUseCaseError(409, message)
     throw new RenameSheetUseCaseError(500, `Failed to parse or write sheet: ${err}`)
   }
 
   if (!renamed) throw new RenameSheetUseCaseError(404, `Sheet ${input.slug}.json not found`)
 
-  const data = { kind: input.kind, slug: input.slug, sheet: renamed.sheet }
+  const newSlug = renamed.slug || String(renamed.sheet.slug ?? input.slug)
+  const data = { kind: input.kind, slug: newSlug, sheet: renamed.sheet }
+  const renameData = { kind: input.kind, slug: newSlug, oldSlug: input.slug, newSlug, sheet: renamed.sheet }
   const clientId = input.clientId
+  const events: Array<Omit<RealtimeEvent, 'timestamp'>> = newSlug !== input.slug
+    ? [
+        { channel: sheetChannel(input.kind, input.slug), type: 'renamed', clientId, data: renameData },
+        { channel: sheetChannel(input.kind, newSlug), type: 'updated', clientId, data },
+        { channel: sheetsChannel, type: 'renamed', clientId, data: renameData },
+      ]
+    : [
+        { channel: sheetChannel(input.kind, input.slug), type: 'updated', clientId, data },
+        { channel: sheetsChannel, type: 'updated', clientId, data },
+      ]
 
   return {
     ok: true,
+    slug: newSlug,
     name: input.name,
     path: renamed.relativePath,
     sheet: renamed.sheet,
-    events: [
-      { channel: sheetChannel(input.kind, input.slug), type: 'updated', clientId, data },
-      { channel: sheetsChannel, type: 'updated', clientId, data },
-    ],
+    events,
   }
 }

@@ -45,6 +45,7 @@ export const useSheetLibraryPage = () => {
     nameOverrides,
     deletedSheets,
     deletedFolders,
+    loadFolders,
   } = useSheetLibraryData({
     isGm,
     isPlayer,
@@ -83,7 +84,10 @@ export const useSheetLibraryPage = () => {
     goToFolder,
     moveSheet: ({ kind, slug, folder }) => postJson(SHEET_API_PATHS.move, { kind, slug, folder }),
     moveFolder: ({ from, to }) => postJson(SHEET_API_PATHS.moveFolder, { from, to }),
-    renameSheet: ({ kind, slug, name }) => postJson(SHEET_API_PATHS.rename, { kind, slug, name }),
+    renameSheet: async ({ kind, slug, name }) => {
+      await postJson(SHEET_API_PATHS.rename, { kind, slug, name })
+      await loadFolders()
+    },
     deleteSheet: ({ kind, slug }) => postJson(SHEET_API_PATHS.deleteSheet, { kind, slug }),
     deleteFolder: ({ folder }) => postJson(SHEET_API_PATHS.deleteFolder, { folder }),
   })

@@ -17,6 +17,7 @@ describe('map path helpers', () => {
     expect(SLUG_RE.test('valid-map-1')).toBe(true)
     expect(SLUG_RE.test('Invalid Map')).toBe(false)
     expect(slugify('Untitled Map!')).toBe('untitled-map')
+    expect(slugify('New Pokémon')).toBe('new-pokemon')
   })
 
   it('derives map folders from filesystem paths with posix separators', () => {

@@ -4,8 +4,8 @@ import {
   renameSync,
   unlinkSync,
 } from 'node:fs'
-import { dirname, relative } from 'node:path'
-import { sanitizeFolderPath, validateSlug } from '#shared/paths'
+import { dirname, join } from 'node:path'
+import { sanitizeFolderPath, slugify, validateSlug } from '#shared/paths'
 import { stripDerivedSheetFolder } from '~/utils/sheets/persistence'
 import {
   joinSafeUnderRoot,
@@ -41,6 +41,7 @@ export interface CreateSheetFileResult extends SheetFileResult {
 }
 
 export interface RenameSheetFileResult extends SheetFileResult {
+  slug: string
   name: string
   sheet: Record<string, unknown>
 }
@@ -109,13 +110,27 @@ export const writeSheetFile = (path: string, sheet: Record<string, unknown>): vo
   writeJsonFile(path, stripDerivedSheetFields(sheet))
 }
 
-export const allocateSheetSlug = (kind: SheetKind): string => {
-  const root = sheetRootFor(kind)
-  const base = SHEET_KIND_CONFIG[kind].defaultBaseSlug
-  if (!findSheetFileInRoot(root, base)) return base
+export const sheetNameFieldForKind = (kind: SheetKind): 'nickname' | 'name' =>
+  kind === 'pokemon' ? 'nickname' : 'name'
+
+export const sheetNameSlug = (name: string): string => slugify(name)
+
+export interface AllocateSheetSlugOptions {
+  excludePath?: string
+}
+
+export const allocateSheetSlug = (
+  kind: SheetKind,
+  baseInput = '',
+  options: AllocateSheetSlugOptions = {},
+): string => {
+  const base = sheetNameSlug(baseInput) || SHEET_KIND_CONFIG[kind].defaultBaseSlug
+  const basePath = findPersistedSheetFile(kind, base)
+  if (!basePath || basePath === options.excludePath) return base
   for (let i = 1; i < 10000; i += 1) {
     const candidate = `${base}-${i}`
-    if (!findSheetFileInRoot(root, candidate)) return candidate
+    const candidatePath = findPersistedSheetFile(kind, candidate)
+    if (!candidatePath || candidatePath === options.excludePath) return candidate
   }
   throw new Error('Could not allocate a free slug')
 }
@@ -227,17 +242,36 @@ export const renameSheetFile = (
   name: string,
 ): RenameSheetFileResult | null => {
   const slug = validateSheetSlug(slugInput)
-  const path = findSheetFile(kind, slug)
+  const path = findPersistedSheetFile(kind, slug)
   if (!path) return null
+
   const json = readJsonFile<Record<string, unknown>>(path)
-  const field = kind === 'pokemon' ? 'nickname' : 'name'
+  const field = sheetNameFieldForKind(kind)
+  const desiredSlug = sheetNameSlug(name)
+  let newSlug = slug
+  let newPath = path
+
+  if (desiredSlug && desiredSlug !== slug) {
+    const existing = findPersistedSheetFile(kind, desiredSlug)
+    newSlug = existing && existing !== path
+      ? allocateSheetSlug(kind, name, { excludePath: path })
+      : desiredSlug
+    newPath = join(dirname(path), `${newSlug}.json`)
+    if (newPath !== path) {
+      if (existsSync(newPath)) throw new Error(`Sheet ${newSlug}.json already exists`)
+      renameSync(path, newPath)
+    }
+  }
+
+  json.slug = newSlug
   json[field] = name
-  writeSheetFile(path, json)
+  writeSheetFile(newPath, json)
   return {
+    slug: newSlug,
     name,
     sheet: stripDerivedSheetFields(json),
-    filePath: path,
-    relativePath: relativeToProjectRoot(path),
+    filePath: newPath,
+    relativePath: relativeToProjectRoot(newPath),
   }
 }
 

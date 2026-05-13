@@ -4,6 +4,7 @@ import { normalizeTrainerSheet } from '~/utils/sheetNormalize'
 import { useEditableSheetResource } from '~/composables/sheets/useEditableSheetResource'
 import { SHEET_API_PATHS } from '~/utils/apiRoutes'
 import { routeSlugParam } from '~/utils/routeParams'
+import { sheetEditorPath } from '~/utils/sheetRoutes'
 import type { TrainerSheet } from '~/types/trainerSheet'
 
 // ---------------------------------------------------------------------------
@@ -17,6 +18,7 @@ definePageMeta({
 })
 
 const route = useRoute()
+const router = useRouter()
 const { isGm, isPlayer } = useAuth()
 const slug = routeSlugParam(route.params)
 const staticBaseSheet = trainerSheetsBySlug.get(slug) ?? null
@@ -31,11 +33,16 @@ const {
   sheet,
   saveStatus,
   saveError,
+  renamedTo,
 } = useEditableSheetResource<TrainerSheet>({
   baseSheet,
   kind: 'trainer',
   isPlayer,
   normalize: normalizeTrainerSheet,
+})
+
+watch(renamedTo, (newSlug) => {
+  if (newSlug && newSlug !== slug) router.replace(sheetEditorPath('trainer', newSlug))
 })
 
 useHead(() => ({

@@ -1,6 +1,6 @@
 {
-  "slug": "new-trainer-1",
-  "name": "New Trainer",
+  "slug": "hassan",
+  "name": "Hassan",
   "level": 1,
   "player": true,
   "portraitUrl": "/trainer-sprites/showdown/trainers/waiter.png",
@@ -69,7 +69,14 @@
     "adept": "intuition",
     "novice": "survival"
   },
-  "skills": {},
+  "skills": {
+    "command": {
+      "rank": "Novice"
+    },
+    "perception": {
+      "rank": "Novice"
+    }
+  },
   "equipmentSlots": {},
   "inventory": {
     "keyItems": [],
@@ -84,12 +91,48 @@
   "maneuvers": [],
   "orders": [],
   "classes": [],
-  "features": [],
-  "edges": [],
+  "features": [
+    {
+      "name": "Let Me Help You With That"
+    },
+    {
+      "name": "Ace Trainer"
+    },
+    {
+      "name": "Capture Specialist"
+    },
+    {
+      "name": "Elite Trainer"
+    },
+    {
+      "name": "Agility Training"
+    },
+    {
+      "name": "Inspired Training"
+    }
+  ],
+  "edges": [
+    {
+      "name": "Instinctive Aptitude"
+    },
+    {
+      "name": "Traveler"
+    },
+    {
+      "name": "Basic Skills",
+      "basicSkill": "command"
+    },
+    {
+      "name": "Basic Skills",
+      "basicSkill": "perception"
+    }
+  ],
   "advancement": [],
   "currentTeam": [],
   "wishlist": [],
   "playedBy": "Igbunu",
   "height": "174",
-  "weight": "187"
+  "weight": "187",
+  "trainingFeature": "",
+  "boxedPokemon": []
 }
