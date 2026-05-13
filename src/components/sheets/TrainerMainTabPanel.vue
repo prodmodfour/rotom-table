@@ -16,8 +16,6 @@ import type {
 const adeptCsv = defineModel<string>('adeptCsv', { required: true })
 const noviceCsv = defineModel<string>('noviceCsv', { required: true })
 const patheticCsv = defineModel<string>('patheticCsv', { required: true })
-const currentTeamCsv = defineModel<string>('currentTeamCsv', { required: true })
-const wishlistCsv = defineModel<string>('wishlistCsv', { required: true })
 
 defineProps<{
   sheet: TrainerSheet
@@ -79,8 +77,6 @@ const forwardSetSkillModifier = (key: TrainerSkillKey, modifier: number | undefi
     />
 
     <TrainerProgressPanel
-      v-model:current-team-csv="currentTeamCsv"
-      v-model:wishlist-csv="wishlistCsv"
       :sheet="sheet"
       @add-class="emit('addClass')"
       @remove-class="emit('removeClass', $event)"

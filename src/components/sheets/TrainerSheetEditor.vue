@@ -48,8 +48,6 @@ const {
   noviceCsv,
   patheticCsv,
   otherCapsCsv,
-  currentTeamCsv,
-  wishlistCsv,
 } = useTrainerSheetCsvFields(sheet, SKILL_KEYS)
 
 const {
@@ -120,8 +118,6 @@ const {
       v-model:adept-csv="adeptCsv"
       v-model:novice-csv="noviceCsv"
       v-model:pathetic-csv="patheticCsv"
-      v-model:current-team-csv="currentTeamCsv"
-      v-model:wishlist-csv="wishlistCsv"
       :sheet="sheet"
       :stats="stats"
       :skills="skills"
