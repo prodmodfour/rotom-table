@@ -2,7 +2,8 @@ import { computed, watch, type ComputedRef, type Ref } from 'vue'
 import { makeAbilityLookupRows } from '~/utils/sheetAbilityLookup'
 import { clampHpValue, computeHpThresholds, computeTickValue } from '~/utils/ptuHp'
 import { computeTrainerLevelUpStatPointBudget } from '~/utils/statPointBudgets'
-import { makeMoveLookupRows } from '~/utils/sheetMoveLookup'
+import { makeAutomaticStruggleMoves } from '~/utils/struggleMoves'
+import { makeMoveLookupRows, type MoveLookupRow } from '~/utils/sheetMoveLookup'
 import {
   computeEvasionTotal,
   computeStatEvasion,
@@ -16,9 +17,14 @@ import {
   resolveTrainerSkills,
   resolveTrainerStats,
 } from '~/utils/sheets/trainerDerived'
-import type { TrainerSheet, TrainerStatKey } from '~/types/trainerSheet'
+import type { TrainerMove, TrainerSheet, TrainerStatKey } from '~/types/trainerSheet'
 
 export type TrainerSheetRef = Ref<TrainerSheet | null> | ComputedRef<TrainerSheet | null>
+
+export type TrainerSheetMoveLookupRow = MoveLookupRow<TrainerMove> & {
+  automatic: boolean
+  sheetIndex: number | null
+}
 
 type TrainerStatRows = ReturnType<typeof resolveTrainerStats>
 
@@ -57,12 +63,23 @@ export function useTrainerSheetDerived(sheet: TrainerSheetRef) {
   const attackTotal = computed(() => totalRow('atk'))
   const specialAttackTotal = computed(() => totalRow('satk'))
 
-  const moveRows = computed(() => makeMoveLookupRows(sheet.value?.movelist, {
-    physicalAttack: attackTotal.value,
-    specialAttack: specialAttackTotal.value,
-    physicalAttackStage: sheet.value?.stats?.atk?.stage ?? sheet.value?.combatStages?.atk ?? 0,
-    specialAttackStage: sheet.value?.stats?.satk?.stage ?? sheet.value?.combatStages?.satk ?? 0,
-  }))
+  const automaticStruggleMoves = computed(() =>
+    makeAutomaticStruggleMoves<TrainerMove>(sheet.value?.capabilities?.other, sheet.value?.movelist),
+  )
+
+  const moveRows = computed<TrainerSheetMoveLookupRow[]>(() => {
+    const options = {
+      physicalAttack: attackTotal.value,
+      specialAttack: specialAttackTotal.value,
+      physicalAttackStage: sheet.value?.stats?.atk?.stage ?? sheet.value?.combatStages?.atk ?? 0,
+      specialAttackStage: sheet.value?.stats?.satk?.stage ?? sheet.value?.combatStages?.satk ?? 0,
+    }
+    const manualRows = makeMoveLookupRows(sheet.value?.movelist, options)
+      .map((row, i) => ({ ...row, automatic: false, sheetIndex: i }))
+    const automaticRows = makeMoveLookupRows(automaticStruggleMoves.value, options)
+      .map((row) => ({ ...row, automatic: true, sheetIndex: null }))
+    return [...manualRows, ...automaticRows]
+  })
 
   const abilityRows = computed(() => makeAbilityLookupRows(sheet.value?.abilities))
 

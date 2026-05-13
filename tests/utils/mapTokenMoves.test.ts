@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildTokenMoveMenuOptions } from '~/utils/mapTokenMoves'
+import { buildTokenMoveMenuOptions, trainerMoveEntriesForSheet } from '~/utils/mapTokenMoves'
 import type { CombatStageMap } from '~/types/combatStages'
 import type { SpawnedPokemon } from '~/types/pokemon'
 
@@ -63,5 +63,21 @@ describe('map token move menu options', () => {
     expect(move.damageBase).toBe(4)
     expect(move.hasStab).toBe(false)
     expect(move.automatic).toBe(true)
+  })
+
+  it('auto-adds Struggle entries for trainer tokens too', () => {
+    const entries = trainerMoveEntriesForSheet({
+      slug: 'trainer',
+      name: 'Trainer',
+      level: 1,
+      movelist: [{ name: 'Tackle' }],
+      capabilities: { other: ['Zapper'] },
+    })
+
+    expect(entries).toEqual(expect.arrayContaining([
+      { move: { name: 'Tackle' }, automatic: false },
+      { move: { name: 'Struggle' }, automatic: true },
+      { move: { name: 'Struggle (Zapper)' }, automatic: true },
+    ]))
   })
 })

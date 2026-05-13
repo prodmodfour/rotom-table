@@ -1,23 +1,22 @@
 <script setup lang="ts">
 import type { AbilityLookupRow } from '~/utils/sheetAbilityLookup'
-import type { MoveLookupRow } from '~/utils/sheetMoveLookup'
+import type { TrainerSheetMoveLookupRow } from '~/composables/sheets/useTrainerSheetDerived'
 import type {
   TrainerAbilityEntry,
-  TrainerMove,
   TrainerOrder,
   TrainerSheet,
 } from '~/types/trainerSheet'
 
 defineProps<{
   sheet: TrainerSheet
-  moveRows: readonly MoveLookupRow<TrainerMove>[]
+  moveRows: readonly TrainerSheetMoveLookupRow[]
   abilityRows: readonly AbilityLookupRow<TrainerAbilityEntry>[]
   orderTagsCsv: (order: TrainerOrder) => string
 }>()
 
 const emit = defineEmits<{
   addMove: []
-  removeMove: [index: number]
+  removeMove: [index: number | null]
   addAbility: []
   removeAbility: [index: number]
   addManeuver: []
@@ -27,7 +26,7 @@ const emit = defineEmits<{
   setOrderTags: [order: TrainerOrder, raw: string]
 }>()
 
-const emitRemoveMove = (index: number) => emit('removeMove', index)
+const emitRemoveMove = (index: number | null) => emit('removeMove', index)
 const emitRemoveAbility = (index: number) => emit('removeAbility', index)
 const emitRemoveManeuver = (index: number) => emit('removeManeuver', index)
 const emitRemoveOrder = (index: number) => emit('removeOrder', index)

@@ -43,14 +43,21 @@ const pokemonStruggleCapabilities = (sheet: CharacterSheet): string[] => {
   ]
 }
 
+const trainerStruggleCapabilities = (sheet: TrainerSheet): string[] => [
+  ...(sheet.capabilities?.other ?? []),
+]
+
 export const pokemonMoveEntriesForSheet = (sheet: CharacterSheet): TokenSheetMoveEntry[] => [
   ...(sheet.movelist ?? []).map((move) => ({ move, automatic: false })),
   ...makeAutomaticStruggleMoves(pokemonStruggleCapabilities(sheet), sheet.movelist)
     .map((move) => ({ move, automatic: true })),
 ]
 
-export const trainerMoveEntriesForSheet = (sheet: TrainerSheet): TokenSheetMoveEntry[] =>
-  (sheet.movelist ?? []).map((move) => ({ move, automatic: false }))
+export const trainerMoveEntriesForSheet = (sheet: TrainerSheet): TokenSheetMoveEntry[] => [
+  ...(sheet.movelist ?? []).map((move) => ({ move, automatic: false })),
+  ...makeAutomaticStruggleMoves<TrainerMove>(trainerStruggleCapabilities(sheet), sheet.movelist)
+    .map((move) => ({ move, automatic: true })),
+]
 
 export const moveEntriesForPlacement = (
   placement: Pick<SheetPlacement, 'sheetKind' | 'sheetSlug'> | null | undefined,

@@ -31,7 +31,8 @@ describe('useTrainerSheetDerived', () => {
     expect(derived.skills.value).toHaveLength(17)
     expect(derived.capRes.value.rows.length).toBeGreaterThan(0)
     expect(derived.adv.value.map((row) => row.level)).toEqual([5, 10, 20, 30, 40])
-    expect(derived.moveRows.value.some((row) => row.move.name === 'Tackle')).toBe(true)
+    expect(derived.moveRows.value.some((row) => row.move.name === 'Tackle' && !row.automatic)).toBe(true)
+    expect(derived.moveRows.value.some((row) => row.move.name === 'Struggle' && row.automatic)).toBe(true)
     expect(derived.abilityRows.value.some((row) => row.ability.name === 'Intimidate')).toBe(true)
     expect(derived.apLeft.value).toBe(99)
   })
@@ -60,6 +61,19 @@ describe('useTrainerSheetDerived', () => {
     expect(derived.statPointsBudget.value).toBe(19)
     expect(derived.statPointsLeft.value).toBe(5)
     expect(derived.totalRow('atk')).toBe(8)
+  })
+
+  it('auto-adds trainer Struggle variants from capabilities and skips duplicates', () => {
+    const sheet = ref<TrainerSheet | null>(makeSheet({
+      capabilities: { other: ['Zapper'] },
+      movelist: [{ name: 'Struggle' }],
+    }))
+    const derived = useTrainerSheetDerived(sheet)
+
+    expect(derived.moveRows.value).toEqual(expect.arrayContaining([
+      expect.objectContaining({ move: expect.objectContaining({ name: 'Struggle' }), automatic: false, sheetIndex: 0 }),
+      expect.objectContaining({ move: expect.objectContaining({ name: 'Struggle (Zapper)' }), automatic: true, sheetIndex: null }),
+    ]))
   })
 
   it('counts the 10 level-1 trainer stat points as spendable', () => {

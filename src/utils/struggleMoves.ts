@@ -55,15 +55,15 @@ export const struggleMoveNamesForCapabilities = (
   return moveNames
 }
 
-export const makeAutomaticStruggleMoves = (
+export const makeAutomaticStruggleMoves = <T extends Pick<CharacterSheetMove, 'name'> = CharacterSheetMove>(
   capabilities: readonly string[] | undefined,
-  existingMoves: readonly Pick<CharacterSheetMove, 'name'>[] | undefined,
-): CharacterSheetMove[] => {
+  existingMoves: readonly Pick<T, 'name'>[] | undefined,
+): T[] => {
   const existingMoveKeys = new Set(
     (existingMoves ?? []).map((move) => normalizeMoveKey(move.name ?? '')).filter(Boolean),
   )
 
   return struggleMoveNamesForCapabilities(capabilities)
     .filter((name) => !existingMoveKeys.has(normalizeMoveKey(name)))
-    .map((name) => ({ name }))
+    .map((name) => ({ name }) as T)
 }

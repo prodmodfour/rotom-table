@@ -52,6 +52,8 @@ describe('useTrainerSheetRowActions', () => {
     expect(sheet.value?.inventory?.keyItems?.[0]).toMatchObject({ name: 'New Item' })
 
     actions.removeClass(0)
+    actions.removeMove(null)
+    expect(sheet.value?.movelist).toHaveLength(1)
     actions.removeMove(0)
     actions.removeAbility(0)
     actions.removeManeuver(0)

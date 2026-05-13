@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import type { AbilityLookupRow } from '~/utils/sheetAbilityLookup'
-import type { MoveLookupRow } from '~/utils/sheetMoveLookup'
+import type { TrainerSheetMoveLookupRow } from '~/composables/sheets/useTrainerSheetDerived'
 import type { TrainerEvasionBonusKey } from '~/composables/sheets/useTrainerSheetRowActions'
 import type {
   TrainerAbilityEntry,
-  TrainerMove,
   TrainerOrder,
   TrainerSheet,
 } from '~/types/trainerSheet'
@@ -33,7 +32,7 @@ defineProps<{
   specialAttackTotal: number
   speedTotal: number
   trainerEvasion: TrainerEvasionSummary
-  moveRows: readonly MoveLookupRow<TrainerMove>[]
+  moveRows: readonly TrainerSheetMoveLookupRow[]
   abilityRows: readonly AbilityLookupRow<TrainerAbilityEntry>[]
   orderTagsCsv: (order: TrainerOrder) => string
 }>()
@@ -42,7 +41,7 @@ const emit = defineEmits<{
   setCurrentHp: [value: unknown]
   setEvasionBonus: [key: TrainerEvasionBonusKey, value: number | undefined]
   addMove: []
-  removeMove: [index: number]
+  removeMove: [index: number | null]
   addAbility: []
   removeAbility: [index: number]
   addManeuver: []

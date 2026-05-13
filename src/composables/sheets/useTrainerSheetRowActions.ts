@@ -33,8 +33,10 @@ export function useTrainerSheetRowActions(sheet: Readonly<Ref<TrainerSheet | nul
 
   const addMove = () =>
     sheet.value?.movelist?.push({ name: '' } as TrainerMove)
-  const removeMove = (i: number) =>
+  const removeMove = (i: number | null) => {
+    if (i == null) return
     sheet.value?.movelist?.splice(i, 1)
+  }
 
   const addAbility = () =>
     sheet.value?.abilities?.push({ name: '' } as TrainerAbilityEntry)
