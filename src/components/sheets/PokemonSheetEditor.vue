@@ -62,6 +62,7 @@ const {
   removeMove,
   addAbility,
   removeAbility,
+  toggleAbilityActivation,
   addEdge,
   removeEdge,
   setStat,
@@ -154,6 +155,7 @@ const {
     :ability-rows="abilityRows"
     @add-ability="addAbility"
     @remove-ability="removeAbility"
+    @toggle-ability-activation="toggleAbilityActivation"
     @add-edge="addEdge"
     @remove-edge="removeEdge"
   />

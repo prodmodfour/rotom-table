@@ -8,6 +8,7 @@ import type {
   StatKey,
 } from '~/types/characterSheet'
 import { coerceEvasionBonus } from '~/utils/evasion'
+import { toggleSheetAbilityActivation } from '~/utils/sheetAbilityActivation'
 
 export type PokemonEvasionBonusKey = Extract<
   keyof CharacterSheetEvasion,
@@ -51,6 +52,12 @@ export function usePokemonSheetRowActions(sheet: Readonly<Ref<CharacterSheet | n
     sheet.value?.abilities?.splice(i, 1)
   }
 
+  const toggleAbilityActivation = (i: number) => {
+    const ability = sheet.value?.abilities?.[i]
+    if (!ability) return
+    toggleSheetAbilityActivation(ability)
+  }
+
   const addEdge = () => {
     sheet.value?.edges?.push({ name: 'New Edge' } as CharacterSheetEdge)
   }
@@ -86,6 +93,7 @@ export function usePokemonSheetRowActions(sheet: Readonly<Ref<CharacterSheet | n
     removeMove,
     addAbility,
     removeAbility,
+    toggleAbilityActivation,
     addEdge,
     removeEdge,
     setStat,

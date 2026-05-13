@@ -1,6 +1,6 @@
 import { computed, watch, type ComputedRef, type Ref } from 'vue'
 import { getPokedexEntry, getSpriteUrl } from '~~/data/characterSheets'
-import { findAbility, findItem } from '~~/data/ptuReference'
+import { findItem } from '~~/data/ptuReference'
 import { makeAutomaticStruggleMoves } from '~/utils/struggleMoves'
 import { POKEMON_TYPES, computeMultiplier, formatMultiplier } from '~/utils/typeChart'
 import { clampHpValue, computeHpThresholds, computeTickValue } from '~/utils/ptuHp'
@@ -17,11 +17,11 @@ import {
   resolveStats,
   validateBaseRelations,
 } from '~/utils/sheets/pokemonDerived'
+import { computeSheetAbilityEvasionBonus } from '~/utils/sheetAbilityActivation'
 import { makeAbilityLookupRows } from '~/utils/sheetAbilityLookup'
 import { makeMoveLookupRows, type MoveLookupRow } from '~/utils/sheetMoveLookup'
 import type {
   CharacterSheet,
-  CharacterSheetAbility,
   CharacterSheetMove,
   StatKey,
 } from '~/types/characterSheet'
@@ -34,8 +34,6 @@ export type PokemonSheetMoveLookupRow = MoveLookupRow<CharacterSheetMove> & {
 }
 
 const BRIGHT_POWDER_SPEED_EVASION_BONUS = 2
-const SAND_VEIL_ABILITY_NAME = 'Sand Veil'
-const SAND_VEIL_EVASION_BONUS = 1
 const BASE_RELATION_VISIBLE_LIMIT = 6
 
 const totalForStat = (
@@ -49,14 +47,6 @@ const heldItemSpeedEvasionBonus = (heldItem: string | null | undefined): number 
     ? BRIGHT_POWDER_SPEED_EVASION_BONUS
     : 0
 }
-
-const hasAbilityNamed = (
-  abilities: readonly CharacterSheetAbility[] | null | undefined,
-  name: string,
-): boolean => (abilities ?? []).some((ability) => findAbility(ability.name)?.name === name)
-
-const sheetEvasionAbilityBonus = (abilities: readonly CharacterSheetAbility[] | null | undefined): number =>
-  hasAbilityNamed(abilities, SAND_VEIL_ABILITY_NAME) ? SAND_VEIL_EVASION_BONUS : 0
 
 export const formatLookupList = (values: readonly string[] | null | undefined): string => {
   const presentValues = (values ?? []).filter(Boolean)
@@ -120,7 +110,7 @@ export function usePokemonSheetDerived(sheet: PokemonSheetRef) {
     const vsAtkBonus = evasion?.vsAtkBonus ?? 0
     const vsSatkBonus = evasion?.vsSatkBonus ?? 0
     const vsAnyBonus = evasion?.vsAnyBonus ?? 0
-    const abilityBonus = sheetEvasionAbilityBonus(sheet.value?.abilities)
+    const abilityBonus = computeSheetAbilityEvasionBonus(sheet.value?.abilities)
     const vsAnyItemBonus = heldItemSpeedEvasionBonus(sheet.value?.items?.held)
     const vsAtkTotalBonus = vsAtkBonus + abilityBonus
     const vsSatkTotalBonus = vsSatkBonus + abilityBonus

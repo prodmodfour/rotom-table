@@ -41,6 +41,8 @@ export interface CharacterSheetAbility {
   frequency?: string
   trigger?: string
   effect?: string
+  /** True when an ability's sheet-level toggle is active (for example, Sand Veil in a Sandstorm). */
+  activated?: boolean
 }
 
 export interface CharacterSheetEdge {

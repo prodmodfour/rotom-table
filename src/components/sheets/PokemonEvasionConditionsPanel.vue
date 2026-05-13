@@ -34,7 +34,7 @@ const emit = defineEmits<{
   <div class="evasion-row">
     <span class="cell-label">Evasion</span>
     <ul>
-      <li title="Stat evasion = floor(Defense Total / 5), capped at +6 from stats. Sand Veil adds +1 if present.">
+      <li title="Stat evasion = floor(Defense Total / 5), capped at +6 from stats. Sand Veil adds +1 if present, or +2 when activated from the Abilities table.">
         <span class="evasion-label">vs ATK</span>
         <strong>{{ pokemonEvasion.vsAtk.total }}</strong>
         <small>stat {{ pokemonEvasion.vsAtk.base }}</small>
@@ -57,7 +57,7 @@ const emit = defineEmits<{
           </span>
         </span>
       </li>
-      <li title="Stat evasion = floor(Special Defense Total / 5), capped at +6 from stats. Sand Veil adds +1 if present.">
+      <li title="Stat evasion = floor(Special Defense Total / 5), capped at +6 from stats. Sand Veil adds +1 if present, or +2 when activated from the Abilities table.">
         <span class="evasion-label">vs SATK</span>
         <strong>{{ pokemonEvasion.vsSatk.total }}</strong>
         <small>stat {{ pokemonEvasion.vsSatk.base }}</small>
@@ -80,7 +80,7 @@ const emit = defineEmits<{
           </span>
         </span>
       </li>
-      <li title="Stat evasion = floor(Speed Total / 5), capped at +6 from stats. Sand Veil adds +1 if present. Bright Powder adds +2 to Speed Evasion while held; total evasion is capped at +9.">
+      <li title="Stat evasion = floor(Speed Total / 5), capped at +6 from stats. Sand Veil adds +1 if present, or +2 when activated from the Abilities table. Bright Powder adds +2 to Speed Evasion while held; total evasion is capped at +9.">
         <span class="evasion-label">vs Any</span>
         <strong>{{ pokemonEvasion.vsAny.total }}</strong>
         <small>stat {{ pokemonEvasion.vsAny.base }}</small>

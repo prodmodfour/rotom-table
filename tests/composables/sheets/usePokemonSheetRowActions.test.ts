@@ -48,6 +48,23 @@ describe('usePokemonSheetRowActions', () => {
     expect(sheet.value?.edges).toHaveLength(0)
   })
 
+  it('toggles activatable ability state', () => {
+    const sheet = ref<CharacterSheet | null>(makeSheet())
+    const actions = usePokemonSheetRowActions(sheet)
+
+    sheet.value!.abilities = [{ name: 'Sand Veil' }]
+
+    actions.toggleAbilityActivation(0)
+    expect(sheet.value?.abilities?.[0].activated).toBe(true)
+
+    actions.toggleAbilityActivation(0)
+    expect(sheet.value?.abilities?.[0].activated).toBe(false)
+
+    sheet.value!.abilities = [{ name: 'Run Away', activated: true }]
+    actions.toggleAbilityActivation(0)
+    expect(sheet.value?.abilities?.[0]).toEqual({ name: 'Run Away' })
+  })
+
   it('updates held item names and strips lookup-backed item details', () => {
     const sheet = ref<CharacterSheet | null>(makeSheet())
     const actions = usePokemonSheetRowActions(sheet)
@@ -82,6 +99,7 @@ describe('usePokemonSheetRowActions', () => {
     actions.addMove()
     actions.setStat('atk', 'added', 5)
     actions.setEvasionBonus('vsAtkBonus', 1)
+    actions.toggleAbilityActivation(0)
     actions.setInheritedMove('20', 'Ignored')
     actions.setHeldItemName('Ignored')
 

@@ -1,4 +1,8 @@
 import { findAbility } from '~~/data/ptuReference'
+import {
+  clearSheetAbilityActivation,
+  isSheetActivatableAbility,
+} from '~/utils/sheetAbilityActivation'
 import type { CharacterSheetAbility } from '~/types/characterSheet'
 import type { PtuAbility } from '~/types/ptuReference'
 import type { TrainerAbilityEntry } from '~/types/trainerSheet'
@@ -39,4 +43,5 @@ export const setLookupAbilityName = (ability: SheetAbilityLike, value: unknown):
   // The sheet stores only the selected ability name; display details come from
   // ptu-data/data/abilities.json via data/ptuReference.ts.
   clearLookupBackedAbilityFields(ability)
+  if (!isSheetActivatableAbility(ability)) clearSheetAbilityActivation(ability)
 }
