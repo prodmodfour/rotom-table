@@ -6,6 +6,7 @@ import {
   buildDefaultSheet,
   findSheetFileBySlugInRoot,
   findSheetFileInRoot,
+  isPlayerFolderPath,
   stripDerivedSheetFields,
 } from '../../server/utils/sheetStorage'
 import { pickRandomTrainerSpriteUrl } from '../../server/utils/trainerSprites'
@@ -54,5 +55,24 @@ describe('sheet storage helpers', () => {
       player: false,
     })
     expect(sheet.portraitUrl).toEqual(expect.stringMatching(/^\/trainer-sprites\//))
+  })
+
+  it('can mark newly built sheets as player-accessible', () => {
+    expect(buildDefaultSheet('pokemon', 'new-pokemon', { playerAccessible: true })).toMatchObject({
+      slug: 'new-pokemon',
+      player: true,
+    })
+    expect(buildDefaultSheet('trainer', 'new-trainer', { playerAccessible: true })).toMatchObject({
+      slug: 'new-trainer',
+      player: true,
+    })
+  })
+
+  it('treats sheets created under the top-level players folder as player-accessible', () => {
+    expect(isPlayerFolderPath('players')).toBe(true)
+    expect(isPlayerFolderPath('players/Hassan')).toBe(true)
+    expect(isPlayerFolderPath('Players/Hassan')).toBe(true)
+    expect(isPlayerFolderPath('npcs/players')).toBe(false)
+    expect(isPlayerFolderPath('')).toBe(false)
   })
 })

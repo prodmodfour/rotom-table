@@ -87,14 +87,26 @@ export const allocateSheetSlug = (kind: SheetKind): string => {
   throw new Error('Could not allocate a free slug')
 }
 
-export const buildDefaultSheet = (kind: SheetKind, slug: string): Record<string, unknown> => {
+export interface BuildDefaultSheetOptions {
+  playerAccessible?: boolean
+}
+
+export const isPlayerFolderPath = (folder: string): boolean =>
+  folder.split('/')[0]?.toLowerCase() === 'players'
+
+export const buildDefaultSheet = (
+  kind: SheetKind,
+  slug: string,
+  options: BuildDefaultSheetOptions = {},
+): Record<string, unknown> => {
+  const player = options.playerAccessible === true
   if (kind === 'pokemon') {
     return {
       slug,
       nickname: 'New Pokémon',
       species: 'Bulbasaur',
       level: 1,
-      player: false,
+      player,
     }
   }
   const portraitUrl = pickRandomTrainerSpriteUrl()
@@ -102,7 +114,7 @@ export const buildDefaultSheet = (kind: SheetKind, slug: string): Record<string,
     slug,
     name: 'New Trainer',
     level: 1,
-    player: false,
+    player,
     ...(portraitUrl ? { portraitUrl } : {}),
   }
 }
@@ -111,7 +123,9 @@ export const createSheetFile = (kind: SheetKind, folderInput = ''): CreateSheetF
   const folder = sanitizeFolderPath(folderInput, { allowEmpty: true })
   const root = sheetRootFor(kind)
   const slug = allocateSheetSlug(kind)
-  const sheet = buildDefaultSheet(kind, slug)
+  const sheet = buildDefaultSheet(kind, slug, {
+    playerAccessible: isPlayerFolderPath(folder),
+  })
   const filePath = joinSafeUnderRoot(root, folder, `${slug}.json`)
   writeJsonFile(filePath, sheet)
   return {
