@@ -1,14 +1,11 @@
 <script setup lang="ts">
 import type { CharacterSheet } from '~/types/characterSheet'
-import type { PokedexRecord } from '~/types/pokemon'
 
-const typesCsv = defineModel<string>('typesCsv', { required: true })
 const eggGroupsCsv = defineModel<string>('eggGroupsCsv', { required: true })
 
 const props = defineProps<{
   sheet: CharacterSheet
   spriteUrl: string | null
-  species: PokedexRecord | null
   sheetTypes: readonly string[]
   levelFromExperience: number | undefined
   levelIsExperienceDerived: boolean
@@ -37,11 +34,6 @@ const props = defineProps<{
           </h1>
           <p class="identity__species">
             <EditableCell v-model="sheet.species" placeholder="Species" />
-            <span> · </span>
-            <EditableCell
-              v-model="typesCsv"
-              :placeholder="`Types (e.g. ${species?.types?.join(', ') ?? 'Electric, Steel'})`"
-            />
           </p>
           <div v-if="sheetTypes.length" class="identity__type-badges">
             <TypeBadge

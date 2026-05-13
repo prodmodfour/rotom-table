@@ -14,7 +14,6 @@ const props = defineProps<{
 const sheet = computed<CharacterSheet>(() => props.sheet)
 
 const {
-  species,
   spriteUrl,
   stats,
   skills,
@@ -52,7 +51,6 @@ const {
 } = usePokemonNatureControls(sheet)
 
 const {
-  typesAsCsv,
   eggGroupsAsCsv,
   otherCapsCsv,
   skillBgRaisedCsv,
@@ -77,11 +75,9 @@ const {
 <template>
   <!-- ============ Identity strip ============ -->
   <PokemonIdentityPanel
-    v-model:types-csv="typesAsCsv"
     v-model:egg-groups-csv="eggGroupsAsCsv"
     :sheet="sheet"
     :sprite-url="spriteUrl"
-    :species="species"
     :sheet-types="sheetTypes"
     :level-from-experience="levelFromExperience"
     :level-is-experience-derived="levelIsExperienceDerived"
