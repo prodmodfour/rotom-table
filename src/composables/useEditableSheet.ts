@@ -27,7 +27,7 @@ import { SHEET_API_PATHS } from '~/utils/apiRoutes'
 import { deepCloneJson } from '~/utils/serialization'
 import { stablePersistableSheetJson, toPersistableSheetPayload } from '~/utils/sheets/persistence'
 import { useApiClient } from './useApiClient'
-import { subscribeChannel } from './useRealtime'
+import { subscribeChannel, type RealtimeEvent } from './useRealtime'
 import type { SheetKind } from '#shared/sheets'
 
 export type { SheetKind } from '#shared/sheets'
@@ -98,6 +98,43 @@ export function useEditableSheet<T extends { slug: string }>(
   })
   const hasUnsavedChanges = (): boolean => autosave.snapshot.isDirty(sheet.value)
 
+  let unsubscribe: (() => void) | null = null
+  let subscribedSlug: string | null = null
+
+  const handleRealtimeEvent = (event: RealtimeEvent) => {
+    if (isRealtimeEcho(event, clientId)) return
+    const payload = event.data as
+      | { kind?: SheetKind; slug?: string; oldSlug?: string; newSlug?: string; sheet?: T }
+      | undefined
+    if (event.type === 'updated' && payload?.sheet) {
+      const incoming = deepCloneJson(payload.sheet)
+      autosave.snapshot.markClean(incoming)
+      sheet.value = incoming
+      if (incoming.slug) subscribeToSheetSlug(incoming.slug)
+      saveStatus.value = 'saved'
+    } else if (event.type === 'renamed' && payload?.newSlug) {
+      autosave.cancelPendingSave()
+      if (payload.sheet) {
+        const incoming = deepCloneJson(payload.sheet)
+        autosave.snapshot.markClean(incoming)
+        sheet.value = incoming
+      } else {
+        sheet.value.slug = payload.newSlug
+        autosave.snapshot.markClean(sheet.value)
+      }
+      subscribeToSheetSlug(payload.newSlug)
+      renamedTo.value = payload.newSlug
+      saveStatus.value = 'saved'
+    }
+  }
+
+  const subscribeToSheetSlug = (nextSlug: string) => {
+    if (typeof window === 'undefined' || subscribedSlug === nextSlug) return
+    unsubscribe?.()
+    subscribedSlug = nextSlug
+    unsubscribe = subscribeChannel(sheetChannel(kind, nextSlug), handleRealtimeEvent)
+  }
+
   const cancelPendingSave = () => {
     autosave.cancelPendingSave()
   }
@@ -124,6 +161,7 @@ export function useEditableSheet<T extends { slug: string }>(
         const persistedSlug = result.slug ?? persistedSheet?.slug
         if (latest && persistedSlug && persistedSlug !== sheet.value.slug) {
           sheet.value.slug = persistedSlug
+          subscribeToSheetSlug(persistedSlug)
           renamedTo.value = persistedSlug
         }
 
@@ -157,37 +195,12 @@ export function useEditableSheet<T extends { slug: string }>(
   }
 
   // Cross-tab sync: replace the editable copy when another tab edits
-  // the same sheet on disk.
-  let unsubscribe: (() => void) | null = null
-  if (typeof window !== 'undefined') {
-    unsubscribe = subscribeChannel(sheetChannel(kind, initial.slug), (event) => {
-      if (isRealtimeEcho(event, clientId)) return
-      const payload = event.data as
-        | { kind?: SheetKind; slug?: string; oldSlug?: string; newSlug?: string; sheet?: T }
-        | undefined
-      if (event.type === 'updated' && payload?.sheet) {
-        const incoming = deepCloneJson(payload.sheet)
-        autosave.snapshot.markClean(incoming)
-        sheet.value = incoming
-        saveStatus.value = 'saved'
-      } else if (event.type === 'renamed' && payload?.newSlug) {
-        autosave.cancelPendingSave()
-        if (payload.sheet) {
-          const incoming = deepCloneJson(payload.sheet)
-          autosave.snapshot.markClean(incoming)
-          sheet.value = incoming
-        } else {
-          sheet.value.slug = payload.newSlug
-          autosave.snapshot.markClean(sheet.value)
-        }
-        renamedTo.value = payload.newSlug
-        saveStatus.value = 'saved'
-      }
-    })
-  }
+  // the same sheet on disk. If the file is renamed, follow the new
+  // slug's channel without remounting the editor.
+  subscribeToSheetSlug(initial.slug)
 
   const flushWithBeacon = () => {
-    if (renamedTo.value || !hasUnsavedChanges()) return
+    if (!hasUnsavedChanges()) return
     autosave.cancelPendingSave()
 
     const payload = toPersistedPayload(sheet.value)
@@ -206,8 +219,7 @@ export function useEditableSheet<T extends { slug: string }>(
 
   if (getCurrentInstance()) {
     onBeforeUnmount(() => {
-      if (renamedTo.value) autosave.cancelPendingSave()
-      else if (hasUnsavedChanges()) void autosave.saveNow()
+      if (hasUnsavedChanges()) void autosave.saveNow()
       unsubscribe?.()
       unsubscribe = null
       removeUnloadFlushers?.()

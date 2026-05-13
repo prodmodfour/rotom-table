@@ -41,7 +41,7 @@ const emit = defineEmits<{
         <tbody>
           <tr
             v-for="(row, i) in moveRows"
-            :key="`${row.automatic ? 'auto' : 'sheet'}-${row.move.name}-${i}`"
+            :key="row.automatic ? `auto-${row.move.name}-${i}` : `sheet-${row.sheetIndex ?? i}`"
             :class="{ 'move-row--automatic': row.automatic }"
           >
             <td class="move-name">

@@ -1,6 +1,7 @@
 import { resolve } from 'node:path'
 
 const isDev = process.env.NODE_ENV !== 'production'
+const persistedDataWatchIgnored = [/(?:^|[\\/])data[\\/](?:sheets|trainers|maps)(?:[\\/]|$)/]
 
 export default defineNuxtConfig({
   compatibilityDate: '2026-04-22',
@@ -34,17 +35,19 @@ export default defineNuxtConfig({
   experimental: {
     appManifest: false,
   },
+  watchers: {
+    chokidar: {
+      // Sheet and map JSON is edited by the app itself. Let the realtime
+      // channels update UI state instead of letting Nuxt/Vite full-reload
+      // every open editor when an autosave writes to disk. Chokidar v4 no
+      // longer treats glob strings as patterns, so use regexes here.
+      ignored: persistedDataWatchIgnored,
+    },
+  },
   vite: {
     server: {
       watch: {
-        // Sheet and map JSON is edited by the app itself. Let the realtime
-        // channels update UI state instead of letting Vite HMR full-reload
-        // every open tabletop when a token HP/condition change is persisted.
-        ignored: [
-          '**/data/sheets/**',
-          '**/data/trainers/**',
-          '**/data/maps/**',
-        ],
+        ignored: persistedDataWatchIgnored,
       },
     },
   },
