@@ -111,26 +111,34 @@ const {
     />
 
     <!-- =================================================================== -->
-    <!-- TRAINER TAB                                                          -->
+    <!-- STATS TAB                                                            -->
     <!-- =================================================================== -->
-    <TrainerMainTabPanel
-      v-if="activeTab === 'trainer'"
+    <TrainerStatsTabPanel
+      v-if="activeTab === 'stats'"
+      :sheet="sheet"
+      :stats="stats"
+      :stat-points-left="statPointsLeft"
+      :stat-points-spent="statPointsSpent"
+      :stat-points-budget="statPointsBudget"
+      @set-stat-field="setStatField"
+      @add-class="addClass"
+      @remove-class="removeClass"
+    />
+
+    <!-- =================================================================== -->
+    <!-- SKILLS TAB                                                           -->
+    <!-- =================================================================== -->
+    <TrainerSkillsTabPanel
+      v-if="activeTab === 'skills'"
       v-model:adept-csv="adeptCsv"
       v-model:novice-csv="noviceCsv"
       v-model:pathetic-csv="patheticCsv"
       :sheet="sheet"
-      :stats="stats"
       :skills="skills"
       :rank-options="RANK_OPTIONS"
-      :stat-points-left="statPointsLeft"
-      :stat-points-spent="statPointsSpent"
-      :stat-points-budget="statPointsBudget"
       :skill-modifier="skillModifier"
-      @set-stat-field="setStatField"
       @set-skill-rank="setSkillRank"
       @set-skill-modifier="setSkillModifier"
-      @add-class="addClass"
-      @remove-class="removeClass"
     />
 
     <!-- =================================================================== -->

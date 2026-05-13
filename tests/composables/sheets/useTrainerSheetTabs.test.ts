@@ -7,17 +7,19 @@ import {
 
 describe('useTrainerSheetTabs', () => {
   it('defines the stable trainer sheet tab order', () => {
-    expect(TRAINER_SHEET_TABS.map((tab) => tab.key)).toEqual([
-      'trainer',
-      'combat',
-      'inventory',
-      'features',
-      'edges',
+    expect(TRAINER_SHEET_TABS.map((tab) => [tab.key, tab.label])).toEqual([
+      ['stats', 'Stats'],
+      ['skills', 'Skills'],
+      ['combat', 'Combat'],
+      ['inventory', 'Inventory'],
+      ['features', 'Features'],
+      ['edges', 'Edges'],
     ])
   })
 
   it('validates tab keys', () => {
-    expect(isTrainerSheetTabKey('trainer')).toBe(true)
+    expect(isTrainerSheetTabKey('stats')).toBe(true)
+    expect(isTrainerSheetTabKey('skills')).toBe(true)
     expect(isTrainerSheetTabKey('combat')).toBe(true)
     expect(isTrainerSheetTabKey('pokemon')).toBe(false)
     expect(isTrainerSheetTabKey(null)).toBe(false)
@@ -26,7 +28,7 @@ describe('useTrainerSheetTabs', () => {
   it('updates active tab only for known keys', () => {
     const tabs = useTrainerSheetTabs()
 
-    expect(tabs.activeTab.value).toBe('trainer')
+    expect(tabs.activeTab.value).toBe('stats')
     tabs.setActiveTab('inventory')
     expect(tabs.activeTab.value).toBe('inventory')
     tabs.setActiveTab('unknown')

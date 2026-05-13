@@ -1,7 +1,8 @@
 import { ref } from 'vue'
 
 const TRAINER_SHEET_TAB_DEFS = [
-  { key: 'trainer', label: 'Trainer' },
+  { key: 'stats', label: 'Stats' },
+  { key: 'skills', label: 'Skills' },
   { key: 'combat', label: 'Combat' },
   { key: 'inventory', label: 'Inventory' },
   { key: 'features', label: 'Features' },
@@ -21,7 +22,7 @@ export const isTrainerSheetTabKey = (value: unknown): value is TrainerSheetTabKe
   typeof value === 'string' && TRAINER_SHEET_TABS.some((tab) => tab.key === value)
 )
 
-export function useTrainerSheetTabs(initialTab: TrainerSheetTabKey = 'trainer') {
+export function useTrainerSheetTabs(initialTab: TrainerSheetTabKey = 'stats') {
   const activeTab = ref<TrainerSheetTabKey>(initialTab)
 
   const setActiveTab = (key: string) => {
