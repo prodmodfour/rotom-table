@@ -100,6 +100,8 @@ export interface TrainerFeatureEntry {
 
 export interface TrainerEdgeEntry {
   name: string
+  /** For the Basic Skills Edge, the skill being raised. */
+  basicSkill?: TrainerSkillKey
   notes?: string
 }
 

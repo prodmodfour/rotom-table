@@ -1,11 +1,16 @@
 <script setup lang="ts">
 import { PhPlus, PhX } from '@phosphor-icons/vue'
+import type { EditableCellValue } from '~/utils/editableCell'
 import type { TrainerEdgeEntry, TrainerSheet } from '~/types/trainerSheet'
 import {
   TRAINER_EDGE_AUTOFILL_COLUMNS,
   TRAINER_EDGE_NAME_COLUMN,
   TRAINER_EDGE_NAME_OPTIONS,
+  TRAINER_EDGE_SKILL_OPTIONS,
+  isBasicSkillsEdge,
+  isTrainerSkillKey,
   trainerEdgeFieldValue,
+  trainerSkillLabel,
   type TrainerEdgeAutofillField,
 } from '~/utils/sheets/trainerEdges'
 
@@ -20,6 +25,19 @@ const emit = defineEmits<{
 
 const autofillValue = (edge: TrainerEdgeEntry, field: TrainerEdgeAutofillField): string =>
   trainerEdgeFieldValue(edge, field)
+
+const setEdgeName = (edge: TrainerEdgeEntry, value: EditableCellValue) => {
+  edge.name = typeof value === 'string' ? value : ''
+  if (!isBasicSkillsEdge(edge)) delete edge.basicSkill
+}
+
+const setBasicSkill = (edge: TrainerEdgeEntry, value: EditableCellValue) => {
+  if (isTrainerSkillKey(value)) edge.basicSkill = value
+  else delete edge.basicSkill
+}
+
+const formatBasicSkill = (value: EditableCellValue): string =>
+  typeof value === 'string' ? trainerSkillLabel(value) : ''
 </script>
 
 <template>
@@ -46,11 +64,24 @@ const autofillValue = (edge: TrainerEdgeEntry, field: TrainerEdgeAutofillField):
           <tbody>
             <tr v-for="(edge, index) in sheet.edges" :key="index">
               <th class="edge-name-col">
-                <EditableCell
-                  v-model="edge.name"
-                  type="select"
-                  :options="TRAINER_EDGE_NAME_OPTIONS"
-                />
+                <div class="edge-name-stack">
+                  <EditableCell
+                    :model-value="edge.name"
+                    type="select"
+                    :options="TRAINER_EDGE_NAME_OPTIONS"
+                    @update:model-value="(value) => setEdgeName(edge, value)"
+                  />
+                  <label v-if="isBasicSkillsEdge(edge)" class="edge-extra-control">
+                    <span class="edge-extra-label">Skill</span>
+                    <EditableCell
+                      :model-value="edge.basicSkill"
+                      type="select"
+                      :options="TRAINER_EDGE_SKILL_OPTIONS"
+                      :format="formatBasicSkill"
+                      @update:model-value="(value) => setBasicSkill(edge, value)"
+                    />
+                  </label>
+                </div>
               </th>
               <td
                 v-for="column in TRAINER_EDGE_AUTOFILL_COLUMNS"
@@ -182,6 +213,28 @@ const autofillValue = (edge: TrainerEdgeEntry, field: TrainerEdgeAutofillField):
 
 .edge-name-col {
   min-width: 12rem;
+}
+
+.edge-name-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+}
+
+.edge-extra-control {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  color: var(--ink-soft);
+  font-weight: 400;
+}
+
+.edge-extra-label {
+  color: var(--ink-muted);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .auto-fill-col {

@@ -1,6 +1,7 @@
 import { edges, findEdge } from '~~/data/ptuReference'
+import { TRAINER_SKILL_ORDER } from '~/utils/sheets/trainerDerived'
 import type { PtuEdge } from '~/types/ptuReference'
-import type { TrainerEdgeEntry } from '~/types/trainerSheet'
+import type { TrainerEdgeEntry, TrainerSkillKey } from '~/types/trainerSheet'
 
 export const TRAINER_EDGE_DATA_FIELDS = [
   'name',
@@ -29,6 +30,21 @@ export const TRAINER_EDGE_NAME_COLUMN: TrainerEdgeColumn<'name'> = {
 
 export const TRAINER_EDGE_NAME_OPTIONS: readonly string[] = edges.map((edge) => edge.name)
 
+export const BASIC_SKILLS_EDGE_NAME = 'Basic Skills'
+
+export const TRAINER_EDGE_SKILL_OPTIONS = TRAINER_SKILL_ORDER.map(([value, label]) => ({ value, label }))
+
+const trainerSkillLabels = new Map<TrainerSkillKey, string>(TRAINER_SKILL_ORDER)
+
+export const trainerSkillLabel = (skill: string | null | undefined): string => {
+  if (!skill) return ''
+  return trainerSkillLabels.get(skill as TrainerSkillKey) ?? skill
+}
+
+export const isTrainerSkillKey = (value: unknown): value is TrainerSkillKey => (
+  typeof value === 'string' && trainerSkillLabels.has(value as TrainerSkillKey)
+)
+
 export const TRAINER_EDGE_AUTOFILL_COLUMNS = [
   { key: 'tags', label: 'Tags', multiline: false },
   { key: 'prerequisites', label: 'Prerequisites', multiline: true },
@@ -41,6 +57,9 @@ export const TRAINER_EDGE_AUTOFILL_COLUMNS = [
 
 export const resolveTrainerEdgeReference = (edge: Pick<TrainerEdgeEntry, 'name'>): PtuEdge | null =>
   findEdge(edge.name)
+
+export const isBasicSkillsEdge = (edge: Pick<TrainerEdgeEntry, 'name'>): boolean =>
+  resolveTrainerEdgeReference(edge)?.name === BASIC_SKILLS_EDGE_NAME
 
 const formatEdgeDataValue = (value: PtuEdge[TrainerEdgeDataField] | undefined): string => {
   if (Array.isArray(value)) return value.join(', ')
