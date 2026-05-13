@@ -3,5 +3,93 @@
   "name": "New Trainer",
   "level": 1,
   "player": true,
-  "portraitUrl": "/trainer-sprites/showdown/trainers/waiter.png"
+  "portraitUrl": "/trainer-sprites/showdown/trainers/waiter.png",
+  "stats": {
+    "hp": {
+      "base": 10,
+      "feats": 0,
+      "bonus": 0,
+      "levelUp": 1,
+      "stage": 0
+    },
+    "atk": {
+      "base": 5,
+      "feats": 0,
+      "bonus": 0,
+      "levelUp": 0,
+      "stage": 0
+    },
+    "def": {
+      "base": 5,
+      "feats": 0,
+      "bonus": 0,
+      "levelUp": 2,
+      "stage": 0
+    },
+    "satk": {
+      "base": 5,
+      "feats": 0,
+      "bonus": 0,
+      "levelUp": 0,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 5,
+      "feats": 0,
+      "bonus": 0,
+      "levelUp": 2,
+      "stage": 0
+    },
+    "spd": {
+      "base": 5,
+      "feats": 0,
+      "bonus": 0,
+      "levelUp": 5,
+      "stage": 0
+    }
+  },
+  "ap": {},
+  "evasion": {
+    "speedBonus": 0,
+    "physicalBonus": 0,
+    "specialBonus": 0
+  },
+  "conditions": [],
+  "capabilities": {
+    "other": []
+  },
+  "skillBackground": {
+    "pathetic": [
+      "occultEd",
+      "techEd",
+      "intimidate"
+    ],
+    "name": "-",
+    "description": "-\n",
+    "adept": "intuition",
+    "novice": "survival"
+  },
+  "skills": {},
+  "equipmentSlots": {},
+  "inventory": {
+    "keyItems": [],
+    "pokemonItems": [],
+    "medicalKit": [],
+    "pokeBalls": [],
+    "foodStuff": [],
+    "equipment": []
+  },
+  "movelist": [],
+  "abilities": [],
+  "maneuvers": [],
+  "orders": [],
+  "classes": [],
+  "features": [],
+  "edges": [],
+  "advancement": [],
+  "currentTeam": [],
+  "wishlist": [],
+  "playedBy": "Igbunu",
+  "height": "174",
+  "weight": "187"
 }

@@ -2,21 +2,24 @@ import { computed, type Ref } from 'vue'
 import type { TrainerSheet, TrainerSkillKey } from '~/types/trainerSheet'
 import {
   formatCsvList,
-  formatCsvSingleOrList,
-  parseAllowedCsvList,
   parseCsvList,
   toOptionalSingleOrList,
 } from '~/utils/sheets/csvFields'
+import {
+  formatTrainerSkillCsvList,
+  formatTrainerSkillCsvSingleOrList,
+  parseTrainerSkillCsvList,
+} from '~/utils/sheets/trainerSkillCsv'
 
 export function useTrainerSheetCsvFields(
   sheet: Readonly<Ref<TrainerSheet | null>>,
   skillKeys: readonly TrainerSkillKey[],
 ) {
   const splitSkillCsv = (raw: string): TrainerSkillKey[] =>
-    parseAllowedCsvList(raw, skillKeys)
+    parseTrainerSkillCsvList(raw, skillKeys)
 
   const adeptCsv = computed<string>({
-    get: () => formatCsvSingleOrList(sheet.value?.skillBackground?.adept),
+    get: () => formatTrainerSkillCsvSingleOrList(sheet.value?.skillBackground?.adept),
     set: (raw) => {
       if (!sheet.value) return
       sheet.value.skillBackground!.adept = toOptionalSingleOrList(splitSkillCsv(raw))
@@ -24,7 +27,7 @@ export function useTrainerSheetCsvFields(
   })
 
   const noviceCsv = computed<string>({
-    get: () => formatCsvSingleOrList(sheet.value?.skillBackground?.novice),
+    get: () => formatTrainerSkillCsvSingleOrList(sheet.value?.skillBackground?.novice),
     set: (raw) => {
       if (!sheet.value) return
       sheet.value.skillBackground!.novice = toOptionalSingleOrList(splitSkillCsv(raw))
@@ -32,7 +35,7 @@ export function useTrainerSheetCsvFields(
   })
 
   const patheticCsv = computed<string>({
-    get: () => formatCsvList(sheet.value?.skillBackground?.pathetic),
+    get: () => formatTrainerSkillCsvList(sheet.value?.skillBackground?.pathetic),
     set: (raw) => {
       if (!sheet.value) return
       sheet.value.skillBackground!.pathetic = splitSkillCsv(raw)

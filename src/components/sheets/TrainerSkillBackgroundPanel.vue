@@ -28,15 +28,15 @@ defineProps<{
       <ul class="bg-list">
         <li>
           <span class="bg-tag adept">Adept</span>
-          <EditableCell v-model="adeptCsv" placeholder="survival" />
+          <EditableCell v-model="adeptCsv" placeholder="e.g. Survival" />
         </li>
         <li>
           <span class="bg-tag novice">Novice</span>
-          <EditableCell v-model="noviceCsv" placeholder="medicineEd" />
+          <EditableCell v-model="noviceCsv" placeholder="e.g. Medicine Ed" />
         </li>
         <li>
           <span class="bg-tag pathetic">Pathetic</span>
-          <EditableCell v-model="patheticCsv" placeholder="combat, intimidate" />
+          <EditableCell v-model="patheticCsv" placeholder="e.g. Combat, Intimidate" />
         </li>
       </ul>
     </div>
