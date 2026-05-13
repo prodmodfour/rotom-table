@@ -41,33 +41,6 @@ defineProps<{
       </ul>
     </div>
 
-    <h2 class="block-title block-title--spaced">Milestones</h2>
-    <ul class="kv-list">
-      <li>
-        <span>Milestones</span>
-        <strong><EditableCell v-model="sheet.milestones" type="number" :min="0" /></strong>
-      </li>
-      <li>
-        <span>Dex EXP</span>
-        <strong><EditableCell v-model="sheet.dexExp" type="number" :min="0" /></strong>
-      </li>
-      <li>
-        <span>Misc EXP</span>
-        <strong><EditableCell v-model="sheet.miscExp" type="number" :min="0" /></strong>
-      </li>
-      <li>
-        <span>Bonus Skill Edges</span>
-        <strong><EditableCell v-model="sheet.bonusSkillEdges" type="number" :min="0" /></strong>
-      </li>
-      <li>
-        <span>Features remaining</span>
-        <strong><EditableCell v-model="sheet.remainingFeatures" type="number" :min="0" /></strong>
-      </li>
-      <li>
-        <span>Edges remaining</span>
-        <strong><EditableCell v-model="sheet.remainingEdges" type="number" :min="0" /></strong>
-      </li>
-    </ul>
   </div>
 </template>
 
@@ -91,8 +64,6 @@ defineProps<{
   align-items: baseline;
   gap: 0.6rem;
 }
-
-.block-title--spaced { margin-top: 0.85rem; }
 
 .bg-card {
   display: flex;
@@ -159,25 +130,4 @@ defineProps<{
   color: var(--bad);
   border-color: rgba(251, 73, 52, 0.45);
 }
-
-.kv-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-}
-
-.kv-list li {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 0.5rem;
-  padding: 0.28rem 0;
-  border-bottom: 1px dashed var(--rule);
-  font-size: 0.88rem;
-}
-
-.kv-list li:last-child { border-bottom: 0; }
 </style>
