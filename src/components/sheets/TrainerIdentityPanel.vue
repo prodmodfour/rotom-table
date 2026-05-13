@@ -243,15 +243,18 @@ const emit = defineEmits<{
 
 .identity-vitals {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  grid-template-columns: repeat(5, minmax(88px, 1fr));
   gap: 0.45rem;
-  min-width: 320px;
+  flex: 1 1 560px;
+  min-width: min(100%, 560px);
+  overflow-x: auto;
 }
 
 .vital {
   display: flex;
   flex-direction: column;
   gap: 0.1rem;
+  min-width: 0;
   padding: 0.45rem 0.6rem;
   border: 1px solid var(--rule-soft);
   border-radius: 10px;
