@@ -24,6 +24,7 @@ export interface TrainerSheetLibraryItem {
   slug: string
   folder: string
   sheet: TrainerSheet
+  spriteUrl: string | null
   sortKey: string
 }
 
@@ -108,6 +109,7 @@ export const buildSheetLibraryItems = (options: BuildSheetLibraryItemsOptions): 
     slug: sheet.slug,
     folder: sheet.folder ?? '',
     sheet,
+    spriteUrl: sheet.portraitUrl ?? null,
     sortKey: sheet.name.toLowerCase(),
   }))
 

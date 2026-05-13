@@ -61,9 +61,12 @@ const emit = defineEmits<{
     </template>
 
     <template v-else>
-      <LibraryCardMedia class="trainer-icon">
-        <span aria-hidden="true">🎯</span>
-      </LibraryCardMedia>
+      <LibraryCardMedia
+        class="trainer-icon"
+        :image-url="item.spriteUrl"
+        :image-alt="`${item.sheet.name} trainer sprite`"
+        fallback-label="🎯"
+      />
       <LibraryCardText
         :title="item.sheet.name"
         :subtitle="[

@@ -31,6 +31,7 @@ const trainer = (overrides: Partial<TrainerSheet> = {}): TrainerSheet => ({
   player: false,
   classes: [{ name: 'Ace Trainer' }],
   skillBackground: { name: 'Scholar' },
+  portraitUrl: '/trainer-sprites/lenora.png',
   ...overrides,
 } as TrainerSheet)
 
@@ -52,7 +53,13 @@ describe('sheetLibrary helpers', () => {
       spriteUrl: '/sprites/Pikachu.png',
       sortKey: 'bolt',
     })
-    expect(items[1]).toMatchObject({ kind: 'trainer', slug: 'lenora', folder: 'npcs/gm', sortKey: 'lenora' })
+    expect(items[1]).toMatchObject({
+      kind: 'trainer',
+      slug: 'lenora',
+      folder: 'npcs/gm',
+      spriteUrl: '/trainer-sprites/lenora.png',
+      sortKey: 'lenora',
+    })
   })
 
   it('resolves keys, display names, folder overrides, and folder renames', () => {
