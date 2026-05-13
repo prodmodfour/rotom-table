@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { trainerCatalog } from '~~/data/trainerCatalog'
+import TrainerPokemonTabPanel from './TrainerPokemonTabPanel.vue'
 import { TRAINER_SKILL_ORDER } from '~/utils/sheets/trainerDerived'
 import { useTrainerSheetDerived } from '~/composables/sheets/useTrainerSheetDerived'
 import { useTrainerPortraitPicker } from '~/composables/sheets/useTrainerPortraitPicker'
@@ -170,6 +171,14 @@ const {
       @add-order="addOrder"
       @remove-order="removeOrder"
       @set-order-tags="setOrderTags"
+    />
+
+    <!-- =================================================================== -->
+    <!-- POKÉMON TAB                                                          -->
+    <!-- =================================================================== -->
+    <TrainerPokemonTabPanel
+      v-if="activeTab === 'pokemon'"
+      :sheet="sheet"
     />
 
     <!-- =================================================================== -->

@@ -111,6 +111,7 @@ export const normalizeTrainerSheet = (sheet: TrainerSheet): TrainerSheet => {
   ensureArr(sheet, 'edges')
   ensureArr(sheet, 'advancement')
   ensureArr<string>(sheet, 'currentTeam')
+  ensureArr<string>(sheet, 'boxedPokemon')
   ensureArr<string>(sheet, 'wishlist')
 
   return sheet

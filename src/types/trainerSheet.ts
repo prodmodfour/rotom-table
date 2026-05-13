@@ -316,8 +316,10 @@ export interface TrainerSheet {
   personality?: string
   goalsAndDreams?: string
 
-  /** Sheet slugs of party Pokémon. */
+  /** Sheet slugs of the trainer's active party Pokémon (max 6 in the UI). */
   currentTeam?: string[]
+  /** Sheet slugs of linked Pokémon currently kept in storage. */
+  boxedPokemon?: string[]
   /** Free-form wishlist labels. */
   wishlist?: string[]
 

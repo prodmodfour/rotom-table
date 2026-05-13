@@ -4,6 +4,7 @@ const TRAINER_SHEET_TAB_DEFS = [
   { key: 'stats', label: 'Stats' },
   { key: 'skills', label: 'Skills' },
   { key: 'combat', label: 'Combat' },
+  { key: 'pokemon', label: 'Pokémon' },
   { key: 'inventory', label: 'Inventory' },
   { key: 'features', label: 'Features' },
   { key: 'edges', label: 'Edges' },
