@@ -8,7 +8,6 @@ import type {
 } from '~/utils/sheets/trainerDerived'
 import type {
   SkillRank,
-  TrainerAdvancementRow,
   TrainerSheet,
   TrainerSkillKey,
   TrainerStatKey,
@@ -24,7 +23,6 @@ defineProps<{
   sheet: TrainerSheet
   stats: readonly ResolvedTrainerStat[]
   skills: readonly ResolvedTrainerSkill[]
-  advancementRows: readonly TrainerAdvancementRow[]
   rankOptions: readonly SkillRank[]
   statPointsLeft: number
   statPointsSpent: number
@@ -38,7 +36,6 @@ const emit = defineEmits<{
   setSkillModifier: [key: TrainerSkillKey, modifier: number | undefined]
   addClass: []
   removeClass: [index: number]
-  setAdvancement: [level: number, field: keyof TrainerAdvancementRow, value: number | string | undefined]
 }>()
 
 const forwardSetStatField = (
@@ -52,12 +49,6 @@ const forwardSetSkillRank = (key: TrainerSkillKey, rank: SkillRank | undefined) 
 
 const forwardSetSkillModifier = (key: TrainerSkillKey, modifier: number | undefined) =>
   emit('setSkillModifier', key, modifier)
-
-const forwardSetAdvancement = (
-  level: number,
-  field: keyof TrainerAdvancementRow,
-  value: number | string | undefined,
-) => emit('setAdvancement', level, field, value)
 </script>
 
 <template>
@@ -91,10 +82,8 @@ const forwardSetAdvancement = (
       v-model:current-team-csv="currentTeamCsv"
       v-model:wishlist-csv="wishlistCsv"
       :sheet="sheet"
-      :advancement-rows="advancementRows"
       @add-class="emit('addClass')"
       @remove-class="emit('removeClass', $event)"
-      @set-advancement="forwardSetAdvancement"
     />
   </section>
 </template>

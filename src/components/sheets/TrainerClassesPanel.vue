@@ -15,7 +15,7 @@ const emit = defineEmits<{
 <template>
   <div class="block">
     <h2 class="block-title">
-      Trainer Classes
+      Class Features
       <button type="button" class="row-add" @click="emit('addClass')">
         <PhPlus :size="14" weight="bold" /> Add row
       </button>

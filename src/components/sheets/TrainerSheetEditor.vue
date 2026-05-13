@@ -27,7 +27,6 @@ const { tabs, activeTab, setActiveTab } = useTrainerSheetTabs()
 const {
   stats,
   skills,
-  adv,
   fullMaxHp,
   maxHp,
   maxAp,
@@ -68,7 +67,6 @@ const {
   removeFeature,
   addEdge,
   removeEdge,
-  setAdv,
   addInvItem,
   removeInvItem,
   featureTagsCsv,
@@ -127,7 +125,6 @@ const {
       :sheet="sheet"
       :stats="stats"
       :skills="skills"
-      :advancement-rows="adv"
       :rank-options="RANK_OPTIONS"
       :stat-points-left="statPointsLeft"
       :stat-points-spent="statPointsSpent"
@@ -138,7 +135,6 @@ const {
       @set-skill-modifier="setSkillModifier"
       @add-class="addClass"
       @remove-class="removeClass"
-      @set-advancement="setAdv"
     />
 
     <!-- =================================================================== -->
