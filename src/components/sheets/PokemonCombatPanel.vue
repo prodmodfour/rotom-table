@@ -12,6 +12,7 @@ interface EvasionEntry {
   total: number
   base: number
   bonus: number
+  abilityBonus: number
 }
 
 interface PokemonEvasionSummary {

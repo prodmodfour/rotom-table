@@ -45,6 +45,25 @@ describe('usePokemonSheetDerived', () => {
     expect(derived.heldItemReference.value?.name).toBe('Bright Powder')
   })
 
+  it('adds Sand Veil to every evasion total', () => {
+    const sheet = ref<CharacterSheet | null>(makeSheet({
+      combat: { evasion: { vsAtkBonus: 0, vsSatkBonus: 0, vsAnyBonus: 0 } },
+      items: {},
+      abilities: [],
+    }))
+    const derived = usePokemonSheetDerived(sheet)
+    const withoutSandVeil = derived.pokemonEvasion.value
+
+    sheet.value!.abilities = [{ name: 'sand veil' }]
+
+    expect(derived.pokemonEvasion.value.vsAtk.abilityBonus).toBe(1)
+    expect(derived.pokemonEvasion.value.vsSatk.abilityBonus).toBe(1)
+    expect(derived.pokemonEvasion.value.vsAny.abilityBonus).toBe(1)
+    expect(derived.pokemonEvasion.value.vsAtk.total).toBe(Math.min(9, withoutSandVeil.vsAtk.total + 1))
+    expect(derived.pokemonEvasion.value.vsSatk.total).toBe(Math.min(9, withoutSandVeil.vsSatk.total + 1))
+    expect(derived.pokemonEvasion.value.vsAny.total).toBe(Math.min(9, withoutSandVeil.vsAny.total + 1))
+  })
+
   it('formats lookup lists for nullable arrays', () => {
     expect(formatLookupList(['Overland', '', 'Darkvision'])).toBe('Overland, Darkvision')
     expect(formatLookupList([])).toBe('—')
