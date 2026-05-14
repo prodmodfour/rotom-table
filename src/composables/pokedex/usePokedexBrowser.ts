@@ -77,8 +77,37 @@ export const pokedexPageTitle = (
     : 'Pokémon not found · Pokédex · Rotom Table'
 }
 
+export const selectRandomPokedexEntry = <TEntry extends PokedexEntrySummary>(
+  entries: readonly TEntry[],
+  selectedId: string | null,
+  random: () => number = Math.random,
+): TEntry | null => {
+  const candidates = selectedId && entries.length > 1
+    ? entries.filter((entry) => entry.id !== selectedId)
+    : entries
+
+  if (candidates.length === 0) return null
+
+  const randomIndex = Math.floor(random() * candidates.length)
+  const boundedIndex = Number.isFinite(randomIndex)
+    ? Math.min(candidates.length - 1, Math.max(0, randomIndex))
+    : 0
+
+  return candidates[boundedIndex] ?? null
+}
+
+export const randomPokedexEntryPath = <TEntry extends PokedexEntrySummary>(
+  entries: readonly TEntry[],
+  selectedId: string | null,
+  random: () => number = Math.random,
+): string | null => {
+  const entry = selectRandomPokedexEntry(entries, selectedId, random)
+  return entry ? pokedexEntryPath(entry) : null
+}
+
 export const usePokedexBrowser = () => {
   const route = useRoute()
+  const router = useRouter()
   const pokemonRouteSlug = computed(() => routeParamToPokedexSlug(route.params.pokemon_name))
 
   const summariesRequest = useFetch<PokedexEntrySummary[]>(POKEDEX_API_PATHS.index, {
@@ -158,6 +187,14 @@ export const usePokedexBrowser = () => {
   ))
   const ready = Promise.all([summariesRequest, detailRequest])
 
+  const goToRandomPokemon = (): boolean => {
+    const path = randomPokedexEntryPath(filteredEntries.value, selectedId.value)
+    if (!path) return false
+
+    void router.push(path)
+    return true
+  }
+
   return {
     capabilityTokens,
     dietSummary,
@@ -175,6 +212,7 @@ export const usePokedexBrowser = () => {
     pageNumber,
     pageTitle,
     ready,
+    goToRandomPokemon,
     requestedPokemonName,
     searchFilters,
     searchIndexErrorMessage,

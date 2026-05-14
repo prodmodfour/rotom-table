@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { usePokedexBrowser } from '~/composables/pokedex/usePokedexBrowser'
+import { useWindowKeydown } from '~/composables/useWindowKeydown'
+import { isCtrlLetter } from '~/utils/keyboardShortcuts'
 import { isPokedexPath } from '~/utils/pokedex/routes'
 
 definePageMeta({
@@ -20,6 +22,7 @@ const {
   filterOperators,
   filteredEntries,
   genderSummary,
+  goToRandomPokemon,
   habitatSummary,
   heightLabel,
   isPlacementOnly,
@@ -41,6 +44,15 @@ const {
 } = usePokedexBrowser()
 
 useHead(() => ({ title: pageTitle.value }))
+
+useWindowKeydown((event) => {
+  if (!isCtrlLetter(event, 'r')) return
+
+  event.preventDefault()
+  if (event.repeat) return
+
+  goToRandomPokemon()
+})
 
 await ready
 </script>

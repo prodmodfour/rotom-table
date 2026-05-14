@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest'
 import {
   buildDisplayedPokedexEvolutions,
   pokedexPageTitle,
+  randomPokedexEntryPath,
   requestedPokemonNameForRoute,
   selectPokedexEntry,
+  selectRandomPokedexEntry,
 } from '~/composables/pokedex/usePokedexBrowser'
 import type { DisplayPokedexEntry } from '~/utils/pokedex/entryIndex'
 
@@ -73,5 +75,19 @@ describe('usePokedexBrowser helpers', () => {
     expect(pokedexPageTitle(null, null)).toBe('Pokédex · Rotom Table')
     expect(pokedexPageTitle('bulbasaur', bulbasaur)).toBe('Bulbasaur · Pokédex · Rotom Table')
     expect(pokedexPageTitle('missingno', null)).toBe('Pokémon not found · Pokédex · Rotom Table')
+  })
+
+  it('selects random entries while avoiding the current selection when possible', () => {
+    const charmander = makeEntry({ id: '4-charmander', species: 'Charmander', slug: 'charmander' })
+
+    expect(selectRandomPokedexEntry([bulbasaur, ivysaur, charmander], bulbasaur.id, () => 0)).toBe(ivysaur)
+    expect(selectRandomPokedexEntry([bulbasaur, ivysaur, charmander], bulbasaur.id, () => 0.99)).toBe(charmander)
+    expect(selectRandomPokedexEntry([bulbasaur], bulbasaur.id, () => 0)).toBe(bulbasaur)
+    expect(selectRandomPokedexEntry([], null, () => 0)).toBeNull()
+  })
+
+  it('builds random entry paths', () => {
+    expect(randomPokedexEntryPath([bulbasaur, ivysaur], bulbasaur.id, () => 0)).toBe('/pokedex/ivysaur')
+    expect(randomPokedexEntryPath([], null, () => 0)).toBeNull()
   })
 })
