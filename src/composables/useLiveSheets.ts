@@ -3,37 +3,52 @@
  * sync with the server via SSE.
  *
  * Bootstrapped from the static `import.meta.glob` data so the first
- * paint has full info; thereafter, save / rename / move / delete events
- * mutate the store so any component reading from it (map editor, sheet
- * list, etc.) stays current with cross-tab edits.
+ * paint has full info, then hydrated from the dev runtime sheet list so
+ * newly-created files missed by the glob are present. Thereafter, save /
+ * rename / move / delete events mutate the store so any component reading
+ * from it (map editor, sheet links, etc.) stays current with cross-tab edits.
  *
  * Returned refs are reactive — placements can simply read
  * `pokemonBySlug.value.get(slug)` inside a `computed` and Vue will
  * track the dependency.
  */
-import { reactive, ref } from 'vue'
+import { reactive, ref, type Ref } from 'vue'
 import { characterSheets } from '~~/data/characterSheets'
 import { trainerSheets } from '~~/data/trainerSheets'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import { sheetsChannel } from '#shared/realtime'
-import type { SheetKind } from '#shared/sheets'
+import { SHEET_API_PATHS } from '~/utils/apiRoutes'
+import {
+  applyLiveSheetRealtimeEvent,
+  buildLiveSheetMaps,
+  replaceLiveSheetMaps,
+  type LiveSheetListPayload,
+} from '~/utils/liveSheets'
+import { useApiClient } from './useApiClient'
 import { subscribeChannel } from './useRealtime'
 
 interface LiveSheetsApi {
-  pokemonBySlug: ReturnType<typeof ref<Map<string, CharacterSheet>>>
-  trainerBySlug: ReturnType<typeof ref<Map<string, TrainerSheet>>>
+  pokemonBySlug: Ref<Map<string, CharacterSheet>>
+  trainerBySlug: Ref<Map<string, TrainerSheet>>
 }
 
 let cached: LiveSheetsApi | null = null
 let unsubscribe: (() => void) | null = null
+let runtimeLoadStarted = false
 
-const buildInitial = () => {
-  const pokemon = new Map<string, CharacterSheet>()
-  const trainer = new Map<string, TrainerSheet>()
-  for (const sheet of characterSheets) pokemon.set(sheet.slug, sheet)
-  for (const sheet of trainerSheets) trainer.set(sheet.slug, sheet)
-  return { pokemon, trainer }
+const buildInitial = () => buildLiveSheetMaps(characterSheets, trainerSheets)
+
+const hydrateRuntimeSheets = async (api: LiveSheetsApi): Promise<void> => {
+  try {
+    const payload = await useApiClient().getJson<LiveSheetListPayload>(SHEET_API_PATHS.list)
+    replaceLiveSheetMaps({
+      pokemonBySlug: api.pokemonBySlug.value,
+      trainerBySlug: api.trainerBySlug.value,
+    }, payload)
+  } catch (err) {
+    console.warn('[live-sheets] failed to load runtime sheet list', err)
+  }
 }
 
 export const useLiveSheets = (): LiveSheetsApi => {
@@ -42,36 +57,29 @@ export const useLiveSheets = (): LiveSheetsApi => {
   const initial = buildInitial()
   // Use reactive() so per-key mutations propagate to consumers without
   // having to clone the whole Map on every event.
-  const pokemonBySlug = ref<Map<string, CharacterSheet>>(reactive(initial.pokemon) as Map<string, CharacterSheet>)
-  const trainerBySlug = ref<Map<string, TrainerSheet>>(reactive(initial.trainer) as Map<string, TrainerSheet>)
+  const pokemonBySlug = ref<Map<string, CharacterSheet>>(reactive(initial.pokemonBySlug) as Map<string, CharacterSheet>)
+  const trainerBySlug = ref<Map<string, TrainerSheet>>(reactive(initial.trainerBySlug) as Map<string, TrainerSheet>)
 
   cached = { pokemonBySlug, trainerBySlug }
 
   if (typeof window !== 'undefined') {
+    const liveMaps = {
+      pokemonBySlug: pokemonBySlug.value,
+      trainerBySlug: trainerBySlug.value,
+    }
     const handler = (event: { type: string; data?: unknown }) => {
-      const payload = event.data as
-        | {
-          kind?: SheetKind
-          slug?: string
-          oldSlug?: string
-          newSlug?: string
-          sheet?: CharacterSheet | TrainerSheet
-        }
-        | undefined
-      if (!payload || !payload.kind) return
-      const map = payload.kind === 'pokemon' ? pokemonBySlug.value : trainerBySlug.value
-      if (event.type === 'deleted' && payload.slug) {
-        map.delete(payload.slug)
-      } else if (event.type === 'renamed' && payload.newSlug && payload.sheet) {
-        if (payload.oldSlug) map.delete(payload.oldSlug)
-        map.set(payload.newSlug, payload.sheet as CharacterSheet & TrainerSheet)
-      } else if (event.type === 'updated' && payload.slug && payload.sheet) {
-        // Replace the entry — placements re-derive their spawn data on
-        // every read so simply swapping the object is enough.
-        map.set(payload.slug, payload.sheet as CharacterSheet & TrainerSheet)
-      }
+      applyLiveSheetRealtimeEvent(liveMaps, event)
     }
     unsubscribe = subscribeChannel(sheetsChannel, handler)
+
+    // The static import glob is baked when Vite builds the client module, so
+    // sheets created through the dev API can be missing when this store first
+    // starts. Hydrate from the runtime list endpoint so Link Pokémon and map
+    // spawners see newly-created sheets even if their creation event was missed.
+    if (import.meta.dev && !runtimeLoadStarted) {
+      runtimeLoadStarted = true
+      void hydrateRuntimeSheets(cached)
+    }
   }
 
   return cached
@@ -83,4 +91,5 @@ export const teardownLiveSheets = (): void => {
     unsubscribe = null
   }
   cached = null
+  runtimeLoadStarted = false
 }
