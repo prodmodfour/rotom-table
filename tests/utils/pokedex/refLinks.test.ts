@@ -15,11 +15,15 @@ describe('pokedex lightweight reference links', () => {
     expect(normalizePokedexReferenceName('ability', 'Type Aura (Electric)')).toBe('Type Aura')
     expect(normalizePokedexReferenceName('capability', 'Naturewalk (Grassland, Forest)')).toBe('Naturewalk')
     expect(normalizePokedexReferenceName('capability', 'Mountable 2')).toBe('Mountable')
+    expect(normalizePokedexReferenceName('capability', 'Overland 6')).toBe('Overland')
+    expect(normalizePokedexReferenceName('capability', 'Jump 2/3')).toBe('Jump')
   })
 
   it('creates reference paths and handles common aliases', () => {
     expect(pokedexReferencePath('move', 'Thunder Punch')).toBe('/moves/thunder-punch')
     expect(pokedexReferencePath('capability', 'Mountable 2')).toBe('/capabilities/mountable-x')
+    expect(pokedexReferencePath('capability', 'Teleporter 4')).toBe('/capabilities/teleporter')
+    expect(pokedexReferencePath('capability', 'Throw Range')).toBe('/capabilities/throwing-range')
     expect(pokedexReferencePath('move', '   ')).toBeNull()
   })
 })

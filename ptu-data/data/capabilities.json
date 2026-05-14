@@ -358,5 +358,60 @@
     "name": "Zapper",
     "effect": "The user’s struggle Attacks may be ElectricTyped if they wish. They may also add their Special Attack instead of their Attack and have the attack deal Special Damage, if they wish. Multiple Electric-Type Moves grant Zapper.",
     "source": "10-indices-and-reference.md"
+  },
+  "Power": {
+    "name": "Power",
+    "effect": "Power represents a Pokémon or Trainer’s physical strength. The chart below shows how much weight a Pokémon or Trainer can bear, depending on their power value.",
+    "source": "06-playing-the-game.md"
+  },
+  "Jump": {
+    "name": "Jump",
+    "effect": "There are two kinds of Jumps – Long Jumps and High Jumps. Long Jumps measure how far a Pokémon or Trainer can Jump, while High Jumps measure how high. Each Pokémon or Trainer has a specific value associated which each of these; this value is represented in meters and measures how far they can jump without making a check (assuming the jump is not particularly tricky; jumping onto a narrow ledge might require a check even if the distance isn’t particularly far). Pokémon or Trainers may attempt to increase their High or Long Jump value by +1 by making an Acrobatics Check with a DC of 16.",
+    "source": "06-playing-the-game.md"
+  },
+  "Burrow": {
+    "name": "Burrow",
+    "effect": "The Burrow Capability determines how much a Pokémon can shift each turn while underground. The holes dug are only as large as the Pokémon who burrows. If a Pokémon learns the Move Dig and does not have the Burrow Capability, they gain Burrow 3. If they already have the Burrow Capability, the Burrow value is raised 3. A Pokémon or Trainer ending its turn underground must spend a Standard Action to remain underground. If a Pokémon or Trainer has already spent its Standard Action on a round it ends underground, it instead forfeits its next Standard Action.",
+    "source": "06-playing-the-game.md"
+  },
+  "Overland": {
+    "name": "Overland",
+    "effect": "Overland is a Movement Capability that defines how many meters the Pokémon may shift while on dry land. Most Pokémon and Trainers will use Overland as their primary movement capability.",
+    "source": "06-playing-the-game.md"
+  },
+  "Sky": {
+    "name": "Sky",
+    "effect": "The Sky Speed determines how many meters a Pokémon may shift in the air. If a Pokémon learns the Move Fly and does not have the Sky Capability, they gain Sky 4. If they already have the Sky Capability, the Sky value is raised by 4.",
+    "source": "06-playing-the-game.md"
+  },
+  "Swim": {
+    "name": "Swim",
+    "effect": "Swim is a Movement Capability that defines how quickly the Pokémon can move underwater. If a Pokémon learns the Move Dive and does not have the Swim Capability, they gain Swim 3. If they already have the Underwater Capability, the Swim value is raised 3.",
+    "source": "06-playing-the-game.md"
+  },
+  "Levitate": {
+    "name": "Levitate",
+    "effect": "Levitate is a Movement Capability that defines how quickly the Pokémon moves while floating or levitating. When using the Levitate Capability, the maximum height off the ground the Pokémon can achieve is equal to half of their Levitate Capability. If a Pokémon gains the Levitate ability and does not have the Levitate Capability, they gain Levitate 4. If they already have the Levitate Capability, the Levitate value is raised 2.",
+    "source": "06-playing-the-game.md"
+  },
+  "Teleporter": {
+    "name": "Teleporter",
+    "effect": "Teleporter is a Movement Capability that defines how far the Pokémon can travel by teleportation. Only one teleport action can be taken during a round of combat. The Pokémon must have line of sight to the location they wish to teleport to, and they must end each teleport action touching a surface (ie it is not possible to ‘chain’ teleports in order to fly). If a Pokémon also has the Sky or Levitate Capability, they may Teleport into Sky spaces (only to spaces within their maximum height for Levitate). Teleporter cannot be increased by taking a Sprint Action. If a Pokémon learns the move Teleport and does not have the Teleporter Capability they gain Teleporter 4. If they already have the Teleporter Capability, the Teleporter value is raised 4.",
+    "source": "06-playing-the-game.md"
+  },
+  "Throwing Range": {
+    "name": "Throwing Range",
+    "effect": "Trainers have a Throwing Range that determines how far they can throw Poké Balls and other small items. This Capability is equal to 4 plus their Athletics Rank in meters.",
+    "source": "06-playing-the-game.md"
+  },
+  "High Jump": {
+    "name": "High Jump",
+    "effect": "High Jump determines how high a Trainer or Pokémon can jump in meters. A Trainer’s High Jump starts at 0, but is raised by several factors. »» If your Acrobatics is Adept, raise High Jump by +1. »» If your Acrobatics is Master, raise High Jump by an additional +1. »» If you have a running start when jumping, raise High Jump by +1. Note that a High Jump of 0 doesn’t mean you can’t jump; it just means you have to make a Skill Check to determine how high you can jump and whether you breach 1 meter.",
+    "source": "02-character-creation.md"
+  },
+  "Long Jump": {
+    "name": "Long Jump",
+    "effect": "Long Jump is how much horizontal distance a Trainer or Pokémon can jump in meters. This value for Trainers is equal to half of their Acrobatics Rank.",
+    "source": "02-character-creation.md"
   }
 }

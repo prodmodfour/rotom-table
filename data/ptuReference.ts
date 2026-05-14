@@ -205,6 +205,8 @@ export const findItem = (name: string): PtuItem | null => {
  *   'Naturewalk (Grassland, Forest)'  \u2192  'Naturewalk'
  *   'Mountable 2'                     \u2192  'Mountable'
  *   'Teleporter 2'                    \u2192  'Teleporter'
+ *   'Overland 6'                      \u2192  'Overland'
+ *   'Jump 2/3'                        \u2192  'Jump'
  *   'Mount able'                      \u2192  'Mountable'   (fix soft-hyphen split)
  */
 export const stripCapabilityParams = (raw: string): string => {
@@ -220,12 +222,10 @@ export const stripCapabilityParams = (raw: string): string => {
 /**
  * Capability JSON aliases. The PTU rulebook stores some entries with a
  * placeholder suffix (``Mountable X``); pokedex labels drop the placeholder.
- * The numeric movement caps (Overland, Sky, Swim, Levitate, Burrow, Jump,
- * Power) are core mechanics and intentionally not in capabilities.json.
  */
 const CAPABILITY_ALIASES: Record<string, string> = {
   Mountable: 'Mountable X',
-  Teleporter: 'Teleporter X',
+  'Throw Range': 'Throwing Range',
   Materialiser: 'Materializer',
   materialiser: 'Materializer',
   // Fix common upstream typo where two spaces appear between words.

@@ -3,9 +3,9 @@ import type { PokedexCapabilities, PokedexEvolution, PokedexRecord } from '~/typ
 
 // "Capability List" rendered as a sequence of items (mostly RefLinks). Each
 // entry has a ``ref`` name (the canonical capability for the link lookup) and
-// a ``display`` string (which may include numbers or ``(args)``). Movement
-// keywords (Overland/Sky/Swim/...) have no link target — RefLink renders them
-// as plain text in that case.
+// a ``display`` string (which may include numbers or ``(args)``). Core numeric
+// capabilities (Overland/Sky/Swim/Jump/Power/...) resolve to markdown-sourced
+// capability definitions for hover tooltips.
 export interface CapabilityToken {
   display: string
   /** Link lookup name, or null to render as plain text only. */
@@ -83,8 +83,7 @@ export const capabilityTokensForEntry = (entry: PokedexRecord | null | undefined
   const tokens: CapabilityToken[] = []
   for (const [label, value] of numbered) {
     if (value === undefined || value === null || value === 0 || value === '0') continue
-    // Movement caps: not in capabilities.json, render as plain text.
-    tokens.push({ display: `${label} ${value}`, ref: null })
+    tokens.push({ display: `${label} ${value}`, ref: label })
   }
   for (const extra of capabilities.other ?? []) {
     if (!extra) continue

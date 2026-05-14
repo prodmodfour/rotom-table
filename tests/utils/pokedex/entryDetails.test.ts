@@ -51,8 +51,8 @@ describe('pokedex entry detail helpers', () => {
 
   it('builds capability and move display tokens', () => {
     expect(capabilityTokensForEntry(entry)).toEqual([
-      { display: 'Overland 6', ref: null },
-      { display: 'Jump 2/3', ref: null },
+      { display: 'Overland 6', ref: 'Overland' },
+      { display: 'Jump 2/3', ref: 'Jump' },
       { display: 'Glow', ref: 'Glow' },
     ])
     expect(tmHmTokensForEntry(entry)).toEqual([

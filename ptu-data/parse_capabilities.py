@@ -14,6 +14,8 @@ SOURCE_FILES = [
     os.path.join(MARKDOWN_DIR, "errata-3.md"),
     os.path.join(MARKDOWN_DIR, "errata-2.md"),
     os.path.join(MARKDOWN_DIR, "core", "10-indices-and-reference.md"),
+    os.path.join(MARKDOWN_DIR, "core", "06-playing-the-game.md"),
+    os.path.join(MARKDOWN_DIR, "core", "02-character-creation.md"),
 ]
 CACHE_DIR = os.path.join(os.path.dirname(__file__), "data")
 
@@ -77,6 +79,52 @@ def _parse_swsh_capabilities(text: str) -> dict[str, dict]:
     return _parse_named_blocks(section)
 
 
+def _capability(name: str, effect: str) -> dict:
+    return {"name": name, "effect": effect}
+
+
+def _parse_playing_game_basic_capabilities(text: str) -> dict[str, dict]:
+    """Parse the short rulebook definitions for core numeric capabilities."""
+    capabilities: dict[str, dict] = {}
+
+    power_heading = "\nPower\n"
+    power_start = text.index(power_heading) + len(power_heading)
+    power_end = text.index("Power \nValue", power_start)
+    capabilities["Power"] = _capability("Power", _normalize_effect(text[power_start:power_end]))
+
+    jumping_heading = "Jumping Capabilities"
+    jumping_start = text.index(jumping_heading) + len(jumping_heading)
+    jumping_end = text.index("Movement Capabilities", jumping_start)
+    capabilities["Jump"] = _capability("Jump", _normalize_effect(text[jumping_start:jumping_end]))
+
+    movement_start = jumping_end
+    throwing_start = text.index("Throwing Range", movement_start)
+    capabilities.update(_parse_named_blocks(text[movement_start:throwing_start]))
+
+    throwing_heading_end = throwing_start + len("Throwing Range")
+    throwing_end = text.index("## Page 224", throwing_heading_end)
+    capabilities["Throwing Range"] = _capability(
+        "Throwing Range",
+        _normalize_effect(text[throwing_heading_end:throwing_end]),
+    )
+
+    return capabilities
+
+
+def _parse_character_creation_basic_capabilities(text: str) -> dict[str, dict]:
+    """Parse Basic Info definitions that split Jump into High/Long Jump."""
+    capabilities: dict[str, dict] = {}
+
+    high_start = text.index("High Jump determines")
+    long_start = text.index("Long Jump is", high_start)
+    overland_start = text.index("Overland Movement Speed", long_start)
+
+    capabilities["High Jump"] = _capability("High Jump", _normalize_effect(text[high_start:long_start]))
+    capabilities["Long Jump"] = _capability("Long Jump", _normalize_effect(text[long_start:overland_start]))
+
+    return capabilities
+
+
 def _parse_from_source(path: str, text: str) -> dict[str, dict]:
     basename = os.path.basename(path)
     if basename == "10-indices-and-reference.md":
@@ -85,6 +133,10 @@ def _parse_from_source(path: str, text: str) -> dict[str, dict]:
         return _parse_sumo_capabilities(text)
     if basename == "swsh_-_armor_crown_references.md":
         return _parse_swsh_capabilities(text)
+    if basename == "06-playing-the-game.md":
+        return _parse_playing_game_basic_capabilities(text)
+    if basename == "02-character-creation.md":
+        return _parse_character_creation_basic_capabilities(text)
     return {}
 
 

@@ -13,55 +13,55 @@ defineProps<{
     <h2 class="block-title">Capabilities</h2>
     <ul class="cap-grid">
       <li>
-        <span class="cap-label">Overland</span>
+        <span class="cap-label"><RefLink kind="capability" name="Overland" /></span>
         <span class="cap-value">
           <EditableCell v-model="capabilities.overland" type="number" :min="0" />
         </span>
       </li>
       <li>
-        <span class="cap-label">Throw Range</span>
+        <span class="cap-label"><RefLink kind="capability" name="Throwing Range" display="Throw Range" /></span>
         <span class="cap-value">
           <EditableCell v-model="capabilities.throwingRange" type="number" :min="0" />
         </span>
       </li>
       <li>
-        <span class="cap-label">High Jump</span>
+        <span class="cap-label"><RefLink kind="capability" name="High Jump" /></span>
         <span class="cap-value">
           <EditableCell v-model="capabilities.highJump" type="number" :min="0" />
         </span>
       </li>
       <li>
-        <span class="cap-label">Long Jump</span>
+        <span class="cap-label"><RefLink kind="capability" name="Long Jump" /></span>
         <span class="cap-value">
           <EditableCell v-model="capabilities.longJump" type="number" :min="0" />
         </span>
       </li>
       <li>
-        <span class="cap-label">Swim</span>
+        <span class="cap-label"><RefLink kind="capability" name="Swim" /></span>
         <span class="cap-value">
           <EditableCell v-model="capabilities.swim" type="number" :min="0" />
         </span>
       </li>
       <li>
-        <span class="cap-label">Power</span>
+        <span class="cap-label"><RefLink kind="capability" name="Power" /></span>
         <span class="cap-value">
           <EditableCell v-model="capabilities.power" type="number" :min="0" />
         </span>
       </li>
       <li>
-        <span class="cap-label">Sky</span>
+        <span class="cap-label"><RefLink kind="capability" name="Sky" /></span>
         <span class="cap-value">
           <EditableCell v-model="capabilities.sky" type="number" :min="0" />
         </span>
       </li>
       <li>
-        <span class="cap-label">Levitate</span>
+        <span class="cap-label"><RefLink kind="capability" name="Levitate" /></span>
         <span class="cap-value">
           <EditableCell v-model="capabilities.levitate" type="number" :min="0" />
         </span>
       </li>
       <li>
-        <span class="cap-label">Burrow</span>
+        <span class="cap-label"><RefLink kind="capability" name="Burrow" /></span>
         <span class="cap-value">
           <EditableCell v-model="capabilities.burrow" type="number" :min="0" />
         </span>

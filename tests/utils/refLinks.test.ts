@@ -84,6 +84,8 @@ describe('refLinks helpers', () => {
 
   it('builds capability and condition tooltips', () => {
     expect(getRefTooltipDetail('capability', 'Naturewalk')?.sections[0]?.heading).toBe('Effect')
+    expect(getRefTooltipDetail('capability', 'Overland')?.sections[0]?.body).toContain('dry land')
+    expect(getRefTooltipDetail('capability', 'Teleporter 4')?.name).toBe('Teleporter')
 
     const condition = getRefTooltipDetail('condition', 'Burned')
     expect(condition?.meta).toEqual([

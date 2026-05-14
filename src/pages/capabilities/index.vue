@@ -14,9 +14,9 @@ const filtered = computed(() => filterCapabilities(capabilities, searchTerm.valu
   <div class="ref-index">
     <ReferenceIndexHeader title="Capabilities" :count="filtered.length" :total="capabilities.length">
       <p class="ref-copy">
-        Named PTU capabilities from <code>ptu-data/data/capabilities.json</code>.
-        The numeric movement keywords (Overland, Sky, Swim, Levitate, Burrow,
-        Jump, Power) are core mechanics and live in the rulebook itself.
+        Named PTU capabilities from <code>ptu-data/data/capabilities.json</code>,
+        including the core numeric movement and basic capability definitions
+        sourced from the markdown rulebooks.
       </p>
       <ReferenceSearchField
         v-model="searchTerm"

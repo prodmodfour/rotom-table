@@ -65,7 +65,7 @@ export type CapabilityArtLookup = (name: string) => boolean
 
 const CAPABILITY_ART_ALIASES: Record<string, string> = {
   Mountable: 'Mountable X',
-  Teleporter: 'Teleporter X',
+  'Throw Range': 'Throwing Range',
   Materialiser: 'Materializer',
   materialiser: 'Materializer',
   'Aura  Reader': 'Aura Reader',

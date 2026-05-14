@@ -8,7 +8,7 @@ const REFERENCE_SLUG_ALIASES: Partial<Record<PokedexReferenceKind, Record<string
   },
   capability: {
     mountable: 'mountable-x',
-    teleporter: 'teleporter-x',
+    'throw-range': 'throwing-range',
     materialiser: 'materializer',
     'aura-reader': 'aura-reader',
   },

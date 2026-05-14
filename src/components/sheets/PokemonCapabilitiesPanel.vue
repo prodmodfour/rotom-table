@@ -31,19 +31,19 @@ const {
     <h2 class="panel-title">Capabilities</h2>
     <dl class="caps-grid">
       <div>
-        <dt>Overland</dt>
+        <dt><RefLink kind="capability" name="Overland" /></dt>
         <dd><EditableCell v-model="overland" type="number" :min="0" /></dd>
       </div>
       <div>
-        <dt>Sky</dt>
+        <dt><RefLink kind="capability" name="Sky" /></dt>
         <dd><EditableCell v-model="sky" type="number" :min="0" /></dd>
       </div>
       <div>
-        <dt>Swim</dt>
+        <dt><RefLink kind="capability" name="Swim" /></dt>
         <dd><EditableCell v-model="swim" type="number" :min="0" /></dd>
       </div>
       <div>
-        <dt>Levitate</dt>
+        <dt><RefLink kind="capability" name="Levitate" /></dt>
         <dd>
           <EditableCell v-model="levitate" type="number" :min="0" />
           <span
@@ -54,15 +54,15 @@ const {
         </dd>
       </div>
       <div>
-        <dt>Burrow</dt>
+        <dt><RefLink kind="capability" name="Burrow" /></dt>
         <dd><EditableCell v-model="burrow" type="number" :min="0" /></dd>
       </div>
       <div>
-        <dt>Jump</dt>
+        <dt><RefLink kind="capability" name="Jump" /></dt>
         <dd><EditableCell v-model="jump" placeholder="2/1" /></dd>
       </div>
       <div>
-        <dt>Power</dt>
+        <dt><RefLink kind="capability" name="Power" /></dt>
         <dd><EditableCell v-model="power" type="number" :min="0" /></dd>
       </div>
       <div>
@@ -75,7 +75,7 @@ const {
       </div>
     </dl>
     <p class="caps-line">
-      <strong>Naturewalk:</strong>
+      <strong><RefLink kind="capability" name="Naturewalk" />:</strong>
       <EditableCell v-model="naturewalk" placeholder="Forest, Grasslands" />
     </p>
     <p class="caps-line">
