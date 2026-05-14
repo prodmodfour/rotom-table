@@ -25,6 +25,20 @@ export interface PtuMove {
   effect?: string
 }
 
+export interface PtuManeuver {
+  name: string
+  category: string
+  action?: string
+  ac?: number | null
+  maneuver_class?: 'Physical' | 'Special' | 'Status' | string
+  range?: string
+  trigger?: string
+  effect?: string
+  special?: string
+  aliases?: string[]
+  source?: string
+}
+
 export interface PtuCapability {
   name: string
   effect?: string

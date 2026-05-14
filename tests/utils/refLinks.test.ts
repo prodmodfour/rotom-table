@@ -9,6 +9,7 @@ import {
 describe('refLinks helpers', () => {
   it('builds target paths for reference kinds', () => {
     expect(refTargetPath('move', 'tackle')).toBe('/moves/tackle')
+    expect(refTargetPath('maneuver', 'grapple')).toBe('/maneuvers/grapple')
     expect(refTargetPath('ability', 'static')).toBe('/abilities/static')
     expect(refTargetPath('capability', 'naturewalk')).toBe('/capabilities/naturewalk')
     expect(refTargetPath('condition', 'burned')).toBe('/conditions/burned')
@@ -28,6 +29,18 @@ describe('refLinks helpers', () => {
       name: 'Flamethrower',
       canonical: 'Flamethrower',
       slug: 'flamethrower',
+    })
+  })
+
+  it('resolves maneuver aliases', () => {
+    const target = describeRefTarget('maneuver', 'AoO')
+
+    expect(target.targetPath).toBe('/maneuvers/attack-of-opportunity')
+    expect(target.descriptor).toMatchObject({
+      kind: 'maneuver',
+      name: 'AoO',
+      canonical: 'Attack of Opportunity',
+      slug: 'attack-of-opportunity',
     })
   })
 
@@ -53,6 +66,22 @@ describe('refLinks helpers', () => {
       { label: 'Range', value: 'Melee, 1 Target, Dash, Push' },
     ])
     expect(tooltip?.sections[0]).toEqual({ heading: 'Effect', body: 'The target is pushed 2 Meters.' })
+  })
+
+  it('builds maneuver tooltip metadata and effect sections', () => {
+    const tooltip = getRefTooltipDetail('maneuver', 'Grapple')
+
+    expect(tooltip?.kind).toBe('maneuver')
+    expect(tooltip?.name).toBe('Grapple')
+    expect(tooltip?.meta).toEqual([
+      { label: 'Category', value: 'Combat Maneuver' },
+      { label: 'Action', value: 'Standard' },
+      { label: 'Class', value: 'Status', badge: 'damage-class' },
+      { label: 'AC', value: 4 },
+      { label: 'Range', value: 'Melee, 1 Target' },
+    ])
+    expect(tooltip?.sections[0]?.heading).toBe('Effect')
+    expect(tooltip?.sections[0]?.body).toContain('gain Dominance')
   })
 
   it('builds ability tooltip trigger/effect sections', () => {

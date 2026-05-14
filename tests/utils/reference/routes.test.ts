@@ -11,6 +11,7 @@ import {
 describe('reference route helpers', () => {
   it('returns canonical reference index paths by kind', () => {
     expect(referenceIndexPath('move')).toBe('/moves')
+    expect(referenceIndexPath('maneuver')).toBe('/maneuvers')
     expect(referenceIndexPath('ability')).toBe('/abilities')
     expect(referenceIndexPath('capability')).toBe('/capabilities')
     expect(referenceIndexPath('condition')).toBe('/conditions')
@@ -22,6 +23,7 @@ describe('reference route helpers', () => {
 
   it('builds encoded detail paths and nullable detail paths', () => {
     expect(referenceDetailPath('move', 'power-up-punch')).toBe('/moves/power-up-punch')
+    expect(referenceDetailPath('maneuver', 'attack of opportunity')).toBe('/maneuvers/attack%20of%20opportunity')
     expect(referenceDetailPath('item', 'rare candy')).toBe('/items/rare%20candy')
     expect(referenceDetailPathOrNull('ability', 'static')).toBe('/abilities/static')
     expect(referenceDetailPathOrNull('ability', null)).toBeNull()
@@ -30,6 +32,7 @@ describe('reference route helpers', () => {
 
   it('formats user-facing reference labels', () => {
     expect(referencePluralLabel('condition')).toBe('Conditions')
+    expect(referencePluralLabel('maneuver')).toBe('Maneuvers')
     expect(referenceAllBackLabel('item')).toBe('← All items')
     expect(referenceNotFoundBackLabel('feature')).toBe('← Back to all features')
   })

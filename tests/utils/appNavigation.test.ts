@@ -14,6 +14,7 @@ describe('app navigation helpers', () => {
       '/pokedex',
       '/sheets',
     ])
+    expect(filterAppNavItems(REFERENCE_APP_NAV_ITEMS, false).some((item) => item.path === '/maneuvers')).toBe(true)
     expect(filterAppNavItems(REFERENCE_APP_NAV_ITEMS, false).some((item) => item.path === ENCOUNTER_TABLES_PATH)).toBe(false)
     expect(filterAppNavItems(REFERENCE_APP_NAV_ITEMS, true).some((item) => item.path === ENCOUNTER_TABLES_PATH)).toBe(true)
   })

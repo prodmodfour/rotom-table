@@ -2,6 +2,7 @@ import type { RefKind } from '~~/data/ptuReference'
 
 export const REFERENCE_PATH_BY_KIND = {
   move: '/moves',
+  maneuver: '/maneuvers',
   ability: '/abilities',
   capability: '/capabilities',
   condition: '/conditions',
@@ -13,6 +14,7 @@ export const REFERENCE_PATH_BY_KIND = {
 
 export const REFERENCE_PLURAL_LABEL_BY_KIND = {
   move: 'Moves',
+  maneuver: 'Maneuvers',
   ability: 'Abilities',
   capability: 'Capabilities',
   condition: 'Conditions',

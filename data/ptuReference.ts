@@ -1,5 +1,6 @@
 import abilitiesJson from '~~/ptu-data/data/abilities.json'
 import movesJson from '~~/ptu-data/data/moves.json'
+import maneuversJson from '~~/ptu-data/data/maneuvers.json'
 import capabilitiesJson from '~~/ptu-data/data/capabilities.json'
 import conditionsJson from '~~/ptu-data/data/conditions.json'
 import rulesJson from '~~/ptu-data/data/rules.json'
@@ -7,7 +8,7 @@ import featuresJson from '~~/ptu-data/data/features.json'
 import edgesJson from '~~/ptu-data/data/edges.json'
 import itemsJson from '~~/ptu-data/data/items.json'
 import type {
-  PtuAbility, PtuCapability, PtuCondition, PtuEdge, PtuFeature, PtuItem, PtuMove, PtuRule,
+  PtuAbility, PtuCapability, PtuCondition, PtuEdge, PtuFeature, PtuItem, PtuManeuver, PtuMove, PtuRule,
 } from '~/types/ptuReference'
 
 // ---------------------------------------------------------------------------
@@ -39,6 +40,7 @@ export const toSlug = (name: string): string =>
 
 const abilitiesDict     = abilitiesJson     as Record<string, PtuAbility>
 const movesDict         = movesJson         as unknown as Record<string, PtuMove>
+const maneuversDict     = maneuversJson     as Record<string, PtuManeuver>
 const capabilitiesDict  = capabilitiesJson  as Record<string, PtuCapability>
 const conditionsDict    = conditionsJson    as Record<string, PtuCondition>
 const rulesDict         = rulesJson         as Record<string, PtuRule>
@@ -60,6 +62,7 @@ const VALID_MOVE_TYPES = new Set<string>([
 
 export const abilities    = sortedByName(abilitiesDict)
 export const moves        = sortedByName(movesDict).filter((m) => VALID_MOVE_TYPES.has(m.type))
+export const maneuvers    = sortedByName(maneuversDict)
 export const capabilities = sortedByName(capabilitiesDict)
 export const conditions   = sortedByName(conditionsDict)
 export const rules        = sortedByName(rulesDict)
@@ -80,6 +83,7 @@ const buildSlugMap = <T extends { name: string }>(items: T[]): Map<string, T> =>
 
 export const abilityBySlug    = buildSlugMap(abilities)
 export const moveBySlug       = buildSlugMap(moves)
+export const maneuverBySlug   = buildSlugMap(maneuvers)
 export const capabilityBySlug = buildSlugMap(capabilities)
 export const conditionBySlug  = buildSlugMap(conditions)
 export const ruleBySlug       = buildSlugMap(rules)
@@ -99,6 +103,7 @@ const exactByName = <T extends { name: string }>(items: T[]): Map<string, T> => 
 
 const abilityByName    = exactByName(abilities)
 const moveByName       = exactByName(moves)
+const maneuverByName   = exactByName(maneuvers)
 const capabilityByName = exactByName(capabilities)
 const conditionByName  = exactByName(conditions)
 const ruleByName       = exactByName(rules)
@@ -156,6 +161,24 @@ export const findMove = (name: string): PtuMove | null => {
   if (direct) return direct
   const alias = MOVE_ALIASES[toSlug(name)]
   return alias ? resolveByExactOrSlug(alias, moveByName, moveBySlug) : null
+}
+
+const maneuverByAliasName = new Map<string, PtuManeuver>()
+const maneuverByAliasSlug = new Map<string, PtuManeuver>()
+for (const maneuver of maneuvers) {
+  for (const alias of maneuver.aliases ?? []) {
+    if (!maneuverByAliasName.has(alias)) maneuverByAliasName.set(alias, maneuver)
+    const slug = toSlug(alias)
+    if (!maneuverByAliasSlug.has(slug)) maneuverByAliasSlug.set(slug, maneuver)
+  }
+}
+
+export const findManeuver = (name: string): PtuManeuver | null => {
+  const direct = resolveByExactOrSlug(name, maneuverByName, maneuverBySlug)
+  if (direct) return direct
+  const trimmed = name.trim()
+  if (!trimmed) return null
+  return maneuverByAliasName.get(trimmed) ?? maneuverByAliasSlug.get(toSlug(trimmed)) ?? null
 }
 
 /**
@@ -248,7 +271,7 @@ export const findRule = (name: string): PtuRule | null =>
 // Convenience: a "ref descriptor" for templates that want to maybe-link.
 // ---------------------------------------------------------------------------
 
-export type RefKind = 'move' | 'ability' | 'capability' | 'condition' | 'rule' | 'feature' | 'edge' | 'item'
+export type RefKind = 'move' | 'maneuver' | 'ability' | 'capability' | 'condition' | 'rule' | 'feature' | 'edge' | 'item'
 
 export interface RefDescriptor {
   kind: RefKind
@@ -262,6 +285,7 @@ export interface RefDescriptor {
 
 const KIND_FINDERS: Record<RefKind, (name: string) => { name: string } | null> = {
   move:       findMove,
+  maneuver:   findManeuver,
   ability:    findAbility,
   capability: findCapability,
   condition:  findCondition,

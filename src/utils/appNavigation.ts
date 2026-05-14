@@ -21,6 +21,7 @@ export const PRIMARY_APP_NAV_ITEMS: AppNavItem[] = [
 
 export const REFERENCE_APP_NAV_ITEMS: AppNavItem[] = [
   { path: referenceIndexPath('move'), label: 'Moves' },
+  { path: referenceIndexPath('maneuver'), label: 'Maneuvers' },
   { path: referenceIndexPath('ability'), label: 'Abilities' },
   { path: referenceIndexPath('capability'), label: 'Capabilities' },
   { path: referenceIndexPath('condition'), label: 'Conditions' },

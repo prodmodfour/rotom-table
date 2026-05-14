@@ -3,12 +3,13 @@ import {
   findAbility,
   findCapability,
   findCondition,
+  findManeuver,
   findMove,
   type RefKind,
 } from '~~/data/ptuReference'
 import { referenceDetailPathOrNull } from '~/utils/reference/routes'
 
-export type RefTooltipKind = Extract<RefKind, 'move' | 'ability' | 'capability' | 'condition'>
+export type RefTooltipKind = Extract<RefKind, 'move' | 'maneuver' | 'ability' | 'capability' | 'condition'>
 
 export interface RefTooltipMeta {
   label: string
@@ -61,6 +62,27 @@ export const getRefTooltipDetail = (kind: RefKind, name: string): RefTooltipDeta
         name: move.name,
         meta,
         sections: presentRefValue(move.effect) ? [{ heading: 'Effect', body: move.effect }] : [],
+      }
+    }
+
+    case 'maneuver': {
+      const maneuver = findManeuver(name)
+      if (!maneuver) return null
+      const meta: RefTooltipMeta[] = []
+      if (presentRefValue(maneuver.category)) meta.push({ label: 'Category', value: maneuver.category })
+      if (presentRefValue(maneuver.action)) meta.push({ label: 'Action', value: maneuver.action })
+      if (presentRefValue(maneuver.maneuver_class)) meta.push({ label: 'Class', value: maneuver.maneuver_class, badge: 'damage-class' })
+      if (maneuver.ac !== null && maneuver.ac !== undefined) meta.push({ label: 'AC', value: maneuver.ac })
+      if (presentRefValue(maneuver.range)) meta.push({ label: 'Range', value: maneuver.range })
+      return {
+        kind: 'maneuver',
+        name: maneuver.name,
+        meta,
+        sections: [
+          ...(presentRefValue(maneuver.trigger) ? [{ heading: 'Trigger', body: maneuver.trigger }] : []),
+          ...(presentRefValue(maneuver.effect) ? [{ heading: 'Effect', body: maneuver.effect }] : []),
+          ...(presentRefValue(maneuver.special) ? [{ heading: 'Special', body: maneuver.special }] : []),
+        ],
       }
     }
 
