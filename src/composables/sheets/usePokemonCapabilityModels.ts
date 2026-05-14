@@ -2,6 +2,12 @@ import { computed, type ComputedRef, type Ref, type WritableComputedRef } from '
 import { getPokedexEntry } from '~~/data/characterSheets'
 import type { CharacterSheet, CharacterSheetCapabilities } from '~/types/characterSheet'
 import type { PokedexRecord } from '~/types/pokemon'
+import {
+  LEVITATE_EXISTING_SPEED_BONUS,
+  LEVITATE_GRANTED_SPEED,
+  hasLevitateAbility,
+  resolveLevitateAbilitySpeed,
+} from '~/utils/sheetPassiveAbilityEffects'
 
 export type PokemonSheetRef = Ref<CharacterSheet | null> | ComputedRef<CharacterSheet | null>
 
@@ -48,11 +54,29 @@ export function usePokemonCapabilityModels(sheet: PokemonSheetRef) {
     },
   })
 
+  const baseLevitate = capabilityModel('levitate', () => species.value?.capabilities?.levitate)
+  const levitateAbilityApplied = computed(() => hasLevitateAbility(sheet.value?.abilities))
+  const effectiveLevitate = computed(() => resolveLevitateAbilitySpeed(baseLevitate.value, sheet.value?.abilities))
+  const levitate: WritableComputedRef<number | undefined> = computed({
+    get: () => effectiveLevitate.value,
+    set: (value) => {
+      if (!levitateAbilityApplied.value || value == null) {
+        baseLevitate.value = value
+        return
+      }
+      baseLevitate.value = value <= LEVITATE_GRANTED_SPEED
+        ? 0
+        : value - LEVITATE_EXISTING_SPEED_BONUS
+    },
+  })
+
   return {
     overland: capabilityModel('overland', () => species.value?.capabilities?.overland),
     sky: capabilityModel('sky', () => species.value?.capabilities?.sky),
     swim: capabilityModel('swim', () => species.value?.capabilities?.swim),
-    levitate: capabilityModel('levitate', () => species.value?.capabilities?.levitate),
+    levitate,
+    effectiveLevitate,
+    levitateAbilityApplied,
     burrow: capabilityModel('burrow', () => species.value?.capabilities?.burrow),
     jump: capabilityModel('jump', () => species.value?.capabilities?.jump),
     power: capabilityModel('power', () => species.value?.capabilities?.power),

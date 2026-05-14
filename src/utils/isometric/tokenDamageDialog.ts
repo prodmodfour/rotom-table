@@ -5,7 +5,8 @@ import {
   type DamageBaseDef,
   type PtuDamageRollResult,
 } from '~/utils/ptuDamage'
-import { computeMultiplier, formatMultiplier } from '~/utils/typeChart'
+import { formatMultiplier } from '~/utils/typeChart'
+import { computeSheetAbilityAwareMultiplier } from '~/utils/sheetPassiveAbilityEffects'
 
 export type DamageDialogMode = 'physical' | 'special'
 export type DamageDialogSource = 'flat' | 'db'
@@ -19,6 +20,7 @@ export interface DamageDialogState {
   def: number
   sdef: number
   defenderTypes: string[]
+  abilityNames?: string[]
   mode: DamageDialogMode
   attackType: string
   source: DamageDialogSource
@@ -30,7 +32,7 @@ export interface DamageDialogState {
 
 type DamageDialogPokemon = Pick<
   SpawnedPokemon,
-  'id' | 'species' | 'currentHp' | 'maxHp' | 'def' | 'sdef' | 'defenderTypes'
+  'id' | 'species' | 'currentHp' | 'maxHp' | 'def' | 'sdef' | 'defenderTypes' | 'abilityNames'
 >
 
 type DamageDialogAttacker = Pick<SpawnedPokemon, 'id' | 'species' | 'atk' | 'satk'>
@@ -41,22 +43,26 @@ const parsePositiveInteger = (value: string): number => {
   return parsed
 }
 
-export const createDamageDialogState = (pokemon: DamageDialogPokemon): DamageDialogState => ({
-  id: pokemon.id,
-  species: pokemon.species,
-  currentHp: pokemon.currentHp,
-  maxHp: pokemon.maxHp,
-  def: pokemon.def,
-  sdef: pokemon.sdef,
-  defenderTypes: [...pokemon.defenderTypes],
-  mode: 'physical',
-  attackType: 'Normal',
-  source: 'flat',
-  amount: '',
-  db: 1,
-  roll: null,
-  attackerId: null,
-})
+export const createDamageDialogState = (pokemon: DamageDialogPokemon): DamageDialogState => {
+  const abilityNames = [...(pokemon.abilityNames ?? [])]
+  return {
+    id: pokemon.id,
+    species: pokemon.species,
+    currentHp: pokemon.currentHp,
+    maxHp: pokemon.maxHp,
+    def: pokemon.def,
+    sdef: pokemon.sdef,
+    defenderTypes: [...pokemon.defenderTypes],
+    ...(abilityNames.length ? { abilityNames } : {}),
+    mode: 'physical',
+    attackType: 'Normal',
+    source: 'flat',
+    amount: '',
+    db: 1,
+    roll: null,
+    attackerId: null,
+  }
+}
 
 export const getDamageDialogDbDefinition = (
   dialog: DamageDialogState | null,
@@ -98,7 +104,7 @@ export const getDamageDialogAttackBonus = (
 
 export const getDamageDialogMultiplier = (dialog: DamageDialogState | null): number => {
   if (!dialog) return 1
-  return computeMultiplier(dialog.attackType, dialog.defenderTypes)
+  return computeSheetAbilityAwareMultiplier(dialog.attackType, dialog.defenderTypes, dialog.abilityNames)
 }
 
 export const getDamageDialogHpLoss = (
@@ -133,15 +139,21 @@ export const updateDamageDialogFromPokemon = (
   dialog: DamageDialogState,
   pokemon: DamageDialogPokemon,
   availableAttackers: readonly DamageDialogAttacker[],
-): DamageDialogState => ({
-  ...dialog,
-  species: pokemon.species,
-  currentHp: pokemon.currentHp,
-  maxHp: pokemon.maxHp,
-  def: pokemon.def,
-  sdef: pokemon.sdef,
-  defenderTypes: [...pokemon.defenderTypes],
-  attackerId: dialog.attackerId && availableAttackers.some((attacker) => attacker.id === dialog.attackerId)
-    ? dialog.attackerId
-    : null,
-})
+): DamageDialogState => {
+  const abilityNames = [...(pokemon.abilityNames ?? [])]
+  const next: DamageDialogState = {
+    ...dialog,
+    species: pokemon.species,
+    currentHp: pokemon.currentHp,
+    maxHp: pokemon.maxHp,
+    def: pokemon.def,
+    sdef: pokemon.sdef,
+    defenderTypes: [...pokemon.defenderTypes],
+    attackerId: dialog.attackerId && availableAttackers.some((attacker) => attacker.id === dialog.attackerId)
+      ? dialog.attackerId
+      : null,
+  }
+  if (abilityNames.length) next.abilityNames = abilityNames
+  else delete next.abilityNames
+  return next
+}

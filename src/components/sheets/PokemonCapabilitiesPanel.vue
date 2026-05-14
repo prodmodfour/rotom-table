@@ -15,6 +15,8 @@ const {
   sky,
   swim,
   levitate,
+  effectiveLevitate,
+  levitateAbilityApplied,
   burrow,
   jump,
   power,
@@ -42,7 +44,14 @@ const {
       </div>
       <div>
         <dt>Levitate</dt>
-        <dd><EditableCell v-model="levitate" type="number" :min="0" /></dd>
+        <dd>
+          <EditableCell v-model="levitate" type="number" :min="0" />
+          <span
+            v-if="levitateAbilityApplied && effectiveLevitate != null"
+            class="caps-derived"
+            title="Levitate ability grants Levitate 4, or +2 if a Levitate speed already exists."
+          >Levitate ability applied</span>
+        </dd>
       </div>
       <div>
         <dt>Burrow</dt>
@@ -115,6 +124,14 @@ const {
   margin: 0.15rem 0 0;
   font-weight: 700;
   color: var(--ink-bright);
+}
+
+.caps-derived {
+  display: block;
+  margin-top: 0.12rem;
+  font-size: 0.72rem;
+  color: var(--accent);
+  font-weight: 700;
 }
 
 .caps-line {

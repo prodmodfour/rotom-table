@@ -70,6 +70,22 @@ describe('usePokemonCapabilityModels', () => {
     expect(sheet.value?.capabilities?.burrow).toBe(2)
   })
 
+  it('displays Levitate ability speed as the editable effective value', () => {
+    const sheet = ref<CharacterSheet | null>(makeSheet({
+      abilities: [{ name: 'Levitate' }],
+      capabilities: {},
+    }))
+    const capabilities = usePokemonCapabilityModels(sheet)
+
+    expect(capabilities.levitate.value).toBe(4)
+    expect(capabilities.levitateAbilityApplied.value).toBe(true)
+
+    capabilities.levitate.value = 6
+
+    expect(sheet.value?.capabilities?.levitate).toBe(4)
+    expect(capabilities.levitate.value).toBe(6)
+  })
+
   it('parses Naturewalk defaults from Pokédex capability labels', () => {
     expect(pokedexNaturewalkDefault(getPokedexEntry('Pikachu'))).toBe('Forest, Urban')
     expect(pokedexNaturewalkDefault(getPokedexEntry('Miltank'))).toBeUndefined()

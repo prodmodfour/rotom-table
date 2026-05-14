@@ -146,5 +146,9 @@ describe('move automation target resolution helpers', () => {
     expect(resolveHpSuggestionAmount(s, {}, 2, target)).toBe(6)
     expect(resolveHpSuggestionAmount(s, {}, 99, target)).toBe(0)
     expect(moveAutomationMultiplierLabel(s, target)).toBe('1.5')
+    expect(moveAutomationMultiplierLabel(
+      script({ type: 'Ground' }),
+      token({ id: 'l', species: 'Levitate Target', defenderTypes: ['Electric'], abilityNames: ['Levitate'] }),
+    )).toBe('½')
   })
 })

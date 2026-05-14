@@ -2,6 +2,7 @@ import type { CharacterSheet, StatKey } from '~/types/characterSheet'
 import { getPokedexEntry } from '~~/data/characterSheets'
 import { adjustedNatureModForStat, resolveNatureMod } from '~/utils/ptuNatures'
 import { computeInjuryAdjustedMaxHp, computePokemonFormulaMaxHp } from '~/utils/ptuHp'
+import { resolveLevitateAbilitySpeed } from '~/utils/sheetPassiveAbilityEffects'
 
 // Maps a PTU "Skill" name (as stored in pokedex.json) to the camelCase key on
 // CharacterSheetSkills, so species defaults (e.g. ``"Athletics": "3d6+1"``)
@@ -205,11 +206,14 @@ export const resolveCapabilities = (sheet: CharacterSheet) => {
   const speciesCaps = species?.capabilities ?? {}
   const sheetCaps = sheet.capabilities ?? {}
 
+  const baseLevitate = sheetCaps.levitate ?? speciesCaps.levitate
+  const effectiveLevitate = resolveLevitateAbilitySpeed(baseLevitate, sheet.abilities)
+
   const numbered: Array<[string, number | string | undefined]> = [
     ['Overland', sheetCaps.overland ?? speciesCaps.overland],
     ['Sky',      sheetCaps.sky      ?? speciesCaps.sky],
     ['Swim',     sheetCaps.swim     ?? speciesCaps.swim],
-    ['Levitate', sheetCaps.levitate ?? speciesCaps.levitate],
+    ['Levitate', effectiveLevitate],
     ['Burrow',   sheetCaps.burrow   ?? speciesCaps.burrow],
     ['Jump',     sheetCaps.jump     ?? speciesCaps.jump],
     ['Power',    sheetCaps.power    ?? speciesCaps.power],

@@ -62,4 +62,15 @@ describe('pokemon sheet derived helpers', () => {
     expect(resolved.naturewalk).toBe('Urban')
     expect(resolved.other).toEqual(['Custom Sense'])
   })
+
+  it('applies the Levitate ability passive speed bonus to capabilities', () => {
+    expect(resolveCapabilities(makeAbraSheet({
+      abilities: [{ name: 'levitate' }],
+    })).rows).toContainEqual({ label: 'Levitate', value: 4 })
+
+    expect(resolveCapabilities(makeAbraSheet({
+      abilities: [{ name: 'Levitate' }],
+      capabilities: { levitate: 5 },
+    })).rows).toContainEqual({ label: 'Levitate', value: 7 })
+  })
 })

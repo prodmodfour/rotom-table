@@ -14,6 +14,7 @@ import {
   pokemonHpSnapshot,
   trainerHpSnapshot,
 } from '~/utils/sheetSpawn'
+import { sheetAbilityNames } from '~/utils/sheetAbilities'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { SheetPlacement, TabletopMap } from '~/types/map'
 import type { SpawnedPokemon } from '~/types/pokemon'
@@ -36,6 +37,12 @@ const splitEquippedItemNames = (value: string | null | undefined): string[] => {
 
 const pokemonTokenItems = (sheet: CharacterSheet): string[] =>
   splitEquippedItemNames(sheet.items?.held)
+
+const pokemonTokenAbilityNames = (sheet: CharacterSheet): string[] =>
+  sheetAbilityNames(sheet.abilities)
+
+const trainerTokenAbilityNames = (sheet: TrainerSheet): string[] =>
+  sheetAbilityNames(sheet.abilities)
 
 const trainerTokenItems = (sheet: TrainerSheet): string[] => {
   const slots = sheet.equipmentSlots
@@ -60,6 +67,7 @@ export const placementToSpawned = (
     const catalog = catalogEntryForPokemonSheet(sheet)
     if (!catalog) return null
     const hp = pokemonHpSnapshot(sheet)
+    const abilityNames = pokemonTokenAbilityNames(sheet)
     return {
       ...catalog,
       species: sheet.nickname,
@@ -76,6 +84,7 @@ export const placementToSpawned = (
       def: hp.def,
       sdef: hp.sdef,
       defenderTypes: hp.defenderTypes,
+      ...(abilityNames.length ? { abilityNames } : {}),
       combatStages: hp.combatStages,
       conditions: hp.conditions,
       tokenItems: pokemonTokenItems(sheet),
@@ -86,6 +95,7 @@ export const placementToSpawned = (
   const catalog = catalogEntryForTrainerSheet(sheet)
   if (!catalog) return null
   const hp = trainerHpSnapshot(sheet)
+  const abilityNames = trainerTokenAbilityNames(sheet)
   return {
     ...catalog,
     species: sheet.name,
@@ -102,6 +112,7 @@ export const placementToSpawned = (
     def: hp.def,
     sdef: hp.sdef,
     defenderTypes: hp.defenderTypes,
+    ...(abilityNames.length ? { abilityNames } : {}),
     combatStages: hp.combatStages,
     conditions: hp.conditions,
     tokenItems: trainerTokenItems(sheet),

@@ -45,6 +45,20 @@ describe('usePokemonSheetDerived', () => {
     expect(derived.heldItemReference.value?.name).toBe('Bright Powder')
   })
 
+  it('applies Levitate passive Ground resistance in type effectiveness', () => {
+    const sheet = ref<CharacterSheet | null>(makeSheet({
+      abilities: [{ name: 'Levitate' }],
+    }))
+    const derived = usePokemonSheetDerived(sheet)
+
+    expect(derived.typeEffectivenessRows.value.find((row) => row.type === 'Ground')).toMatchObject({
+      mult: 0.5,
+      label: '½',
+      tone: 'resist',
+      source: 'Levitate',
+    })
+  })
+
   it('adds Sand Veil to every evasion total and increases it while activated', () => {
     const sheet = ref<CharacterSheet | null>(makeSheet({
       combat: { evasion: { vsAtkBonus: 0, vsSatkBonus: 0, vsAnyBonus: 0 } },

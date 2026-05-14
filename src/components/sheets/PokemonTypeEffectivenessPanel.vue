@@ -3,6 +3,7 @@ interface TypeEffectivenessRow {
   type: string
   label: string
   tone: string
+  source?: string | null
 }
 
 defineProps<{
@@ -30,9 +31,11 @@ defineProps<{
         v-for="row in rows"
         :key="row.type"
         :class="['type-cell', `type-cell--${row.tone}`]"
+        :title="row.source ? `${row.source} passive modifier applied` : undefined"
       >
         <span class="type-name"><TypeBadge :type="row.type" size="xs" /></span>
         <span class="type-mult">×{{ row.label }}</span>
+        <span v-if="row.source" class="type-source">{{ row.source }}</span>
       </div>
     </div>
   </section>
@@ -112,5 +115,11 @@ defineProps<{
   font-size: 1.05rem;
   font-variant-numeric: tabular-nums;
   color: var(--ink-bright);
+}
+
+.type-source {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--accent);
 }
 </style>

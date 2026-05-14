@@ -2,7 +2,7 @@ import { computed, watch, type ComputedRef, type Ref } from 'vue'
 import { getPokedexEntry, getSpriteUrl } from '~~/data/characterSheets'
 import { findItem } from '~~/data/ptuReference'
 import { makeAutomaticStruggleMoves } from '~/utils/struggleMoves'
-import { POKEMON_TYPES, computeMultiplier, formatMultiplier } from '~/utils/typeChart'
+import { POKEMON_TYPES, formatMultiplier } from '~/utils/typeChart'
 import { clampHpValue, computeHpThresholds, computeTickValue } from '~/utils/ptuHp'
 import { computePokemonLevelUpStatPointBudget } from '~/utils/statPointBudgets'
 import {
@@ -18,6 +18,10 @@ import {
   validateBaseRelations,
 } from '~/utils/sheets/pokemonDerived'
 import { computeSheetAbilityEvasionBonus } from '~/utils/sheetAbilityActivation'
+import {
+  LEVITATE_ABILITY_NAME,
+  computeSheetAbilityAwareMultiplier,
+} from '~/utils/sheetPassiveAbilityEffects'
 import {
   calculatePokemonExperienceToNextLevel,
   calculatePokemonLevelFromExperience,
@@ -198,11 +202,13 @@ export function usePokemonSheetDerived(sheet: PokemonSheetRef) {
     const defenders = sheetTypes.value
     if (defenders.length === 0) return []
     return POKEMON_TYPES.map((attacker) => {
-      const mult = computeMultiplier(attacker, defenders)
+      const baseMult = computeSheetAbilityAwareMultiplier(attacker, defenders, undefined)
+      const mult = computeSheetAbilityAwareMultiplier(attacker, defenders, sheet.value?.abilities)
       return {
         type: attacker,
         mult,
         label: formatMultiplier(mult),
+        source: mult !== baseMult ? LEVITATE_ABILITY_NAME : null,
         tone:
           mult === 0 ? 'immune'
           : mult > 1 ? 'weak'

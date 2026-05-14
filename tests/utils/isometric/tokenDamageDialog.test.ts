@@ -108,6 +108,15 @@ describe('isometric damage dialog helpers', () => {
     expect(getDamageDialogMultiplier(dialog)).toBe(0)
     expect(getDamageDialogMultiplierTone(0)).toBe('is-immune')
     expect(getDamageDialogPreview(dialog, null)).toBe(40)
+
+    const levitateDialog = createDamageDialogState(pokemon({
+      defenderTypes: ['Electric'],
+      abilityNames: ['Levitate'],
+    }))
+    levitateDialog.amount = '20'
+    levitateDialog.attackType = 'Ground'
+    expect(getDamageDialogMultiplier(levitateDialog)).toBe(0.5)
+    expect(getDamageDialogMultiplierTone(0.5)).toBe('is-resist')
   })
 
   it('finds DB definitions and syncs live token metadata while clearing missing attackers', () => {

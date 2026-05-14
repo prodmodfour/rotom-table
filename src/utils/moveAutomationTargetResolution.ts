@@ -1,7 +1,8 @@
 import { applyCombatStageToStat } from '~/utils/combatStageStats'
 import { fieldEffectDamageBonus, type DamageRollResult } from '~/utils/moveAutomation'
 import { parsePositiveInt } from '~/utils/moveAutomationDialog'
-import { computeMultiplier, formatMultiplier } from '~/utils/typeChart'
+import { formatMultiplier } from '~/utils/typeChart'
+import { computeSheetAbilityAwareMultiplier } from '~/utils/sheetPassiveAbilityEffects'
 import type { MapFieldEffects } from '~/types/map'
 import type { MoveAutomationScript } from '~/types/moveAutomation'
 import type { SpawnedPokemon } from '~/types/pokemon'
@@ -44,7 +45,11 @@ export const suggestionIsEnabled = (
 export const moveAutomationTargetDamageMultiplier = (
   script: MoveAutomationScript | null | undefined,
   target: SpawnedPokemon,
-): number => computeMultiplier(script?.type ?? 'Normal', target.defenderTypes)
+): number => computeSheetAbilityAwareMultiplier(
+  script?.type ?? 'Normal',
+  target.defenderTypes,
+  target.abilityNames,
+)
 
 export const moveAutomationMultiplierLabel = (
   script: MoveAutomationScript | null | undefined,

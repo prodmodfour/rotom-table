@@ -1,5 +1,5 @@
-import { findAbility } from '~~/data/ptuReference'
 import type { CharacterSheetAbility } from '~/types/characterSheet'
+import { resolveCanonicalSheetAbilityName } from '~/utils/sheetAbilities'
 
 export const SAND_VEIL_ABILITY_NAME = 'Sand Veil'
 
@@ -27,16 +27,10 @@ const SHEET_ACTIVATABLE_ABILITIES = new Map<string, SheetActivatableAbilityConfi
   ],
 ])
 
-const resolveCanonicalAbilityName = (ability: Pick<CharacterSheetAbility, 'name'>): string | null => {
-  const rawName = typeof ability.name === 'string' ? ability.name.trim() : ''
-  if (!rawName) return null
-  return findAbility(rawName)?.name ?? null
-}
-
 export const getSheetAbilityActivationConfig = (
   ability: Pick<CharacterSheetAbility, 'name'>,
 ): SheetActivatableAbilityConfig | null => {
-  const canonicalName = resolveCanonicalAbilityName(ability)
+  const canonicalName = resolveCanonicalSheetAbilityName(ability)
   return canonicalName ? SHEET_ACTIVATABLE_ABILITIES.get(canonicalName) ?? null : null
 }
 
