@@ -1,0 +1,82 @@
+{
+  "slug": "bandit",
+  "nickname": "Bandit",
+  "species": "Croagunk",
+  "level": 9,
+  "player": true,
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 1,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 8,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 1,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 1,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 4,
+      "stage": 0
+    }
+  },
+  "natureMod": {
+    "plus": "sdef",
+    "minus": "sdef"
+  },
+  "combat": {
+    "evasion": {
+      "vsAtkBonus": 0,
+      "vsSatkBonus": 0,
+      "vsAnyBonus": 0
+    },
+    "conditions": []
+  },
+  "items": {
+    "extraItems": []
+  },
+  "weapon": {},
+  "tutorPoints": {},
+  "skillBackground": {},
+  "inheritedMoves": {},
+  "movelist": [
+    {
+      "name": "Astonish"
+    },
+    {
+      "name": "Mud-Slap"
+    },
+    {
+      "name": "Poison Sting"
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Poison Touch"
+    }
+  ],
+  "edges": [],
+  "capabilities": {
+    "other": []
+  },
+  "skills": {},
+  "scene": {},
+  "totalExp": 85,
+  "nature": "Quirky"
+}

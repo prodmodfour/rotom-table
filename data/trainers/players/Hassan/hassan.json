@@ -3,7 +3,7 @@
   "name": "Hassan",
   "level": 1,
   "player": true,
-  "portraitUrl": "/trainer-sprites/showdown/trainers/waiter.png",
+  "portraitUrl": "/trainer-sprites/showdown/trainers/hau.png",
   "stats": {
     "hp": {
       "base": 10,
@@ -128,11 +128,18 @@
     }
   ],
   "advancement": [],
-  "currentTeam": [],
+  "currentTeam": [
+    "chomps",
+    "rusty",
+    "bandit",
+    "scab"
+  ],
   "wishlist": [],
   "playedBy": "Igbunu",
   "height": "174",
   "weight": "187",
   "trainingFeature": "",
-  "boxedPokemon": []
+  "boxedPokemon": [],
+  "sex": "Male",
+  "age": "26"
 }

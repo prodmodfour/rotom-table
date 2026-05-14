@@ -1,5 +1,5 @@
 {
-  "slug": "examples-charizard",
+  "slug": "charizard",
   "nickname": "Charizard",
   "species": "Charizard",
   "level": 20,
@@ -49,9 +49,13 @@
     "evasion": {
       "vsAtk": 2,
       "vsSatk": 2,
-      "vsAny": 4
+      "vsAny": 4,
+      "vsAtkBonus": 0,
+      "vsSatkBonus": 0,
+      "vsAnyBonus": 0
     },
-    "dr": 0
+    "dr": 0,
+    "conditions": []
   },
   "tutorPoints": {
     "earned": 5,
@@ -118,5 +122,15 @@
       "Naturewalk (Mountain)",
       "Mountable 1"
     ]
-  }
+  },
+  "player": false,
+  "items": {
+    "extraItems": []
+  },
+  "weapon": {},
+  "skillBackground": {},
+  "inheritedMoves": {},
+  "edges": [],
+  "skills": {},
+  "scene": {}
 }

@@ -1,0 +1,84 @@
+{
+  "slug": "chomps",
+  "nickname": "Chomps",
+  "species": "Gible",
+  "level": 11,
+  "player": true,
+  "stats": {
+    "hp": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "atk": {
+      "base": 0,
+      "added": 9,
+      "stage": 0
+    },
+    "def": {
+      "base": 0,
+      "added": 3,
+      "stage": 0
+    },
+    "satk": {
+      "base": 0,
+      "added": 0,
+      "stage": 0
+    },
+    "sdef": {
+      "base": 0,
+      "added": 1,
+      "stage": 0
+    },
+    "spd": {
+      "base": 0,
+      "added": 5,
+      "stage": 0
+    }
+  },
+  "natureMod": {
+    "plus": "spd",
+    "minus": "satk"
+  },
+  "combat": {
+    "evasion": {
+      "vsAtkBonus": 0,
+      "vsSatkBonus": 0,
+      "vsAnyBonus": 0
+    },
+    "conditions": []
+  },
+  "items": {
+    "extraItems": []
+  },
+  "weapon": {},
+  "tutorPoints": {},
+  "skillBackground": {},
+  "inheritedMoves": {},
+  "movelist": [
+    {
+      "name": "Tackle"
+    },
+    {
+      "name": "Sand Attack"
+    },
+    {
+      "name": "Dragon Rage"
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Sand Veil",
+      "activated": false
+    }
+  ],
+  "edges": [],
+  "capabilities": {
+    "other": []
+  },
+  "skills": {},
+  "scene": {},
+  "nature": "Jolly",
+  "gender": "Male",
+  "totalExp": 110
+}

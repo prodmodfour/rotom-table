@@ -92451,12 +92451,67 @@
       "sheetKind": "pokemon",
       "sheetSlug": "lenora-vask-bayonce",
       "position": {
-        "x": 36,
-        "y": 5,
-        "z": 14
+        "x": 34,
+        "y": 6,
+        "z": 8
       },
       "turned": false,
       "initiative": 5
+    },
+    {
+      "id": "pkm-mp4dcaul-dki3zc",
+      "sheetKind": "pokemon",
+      "sheetSlug": "examples-onix",
+      "position": {
+        "x": 35,
+        "y": 5,
+        "z": 15
+      },
+      "turned": false
+    },
+    {
+      "id": "pkm-mp4doayk-0kn127",
+      "sheetKind": "pokemon",
+      "sheetSlug": "examples-torterra",
+      "position": {
+        "x": 25,
+        "y": 5,
+        "z": 14
+      },
+      "turned": false
+    },
+    {
+      "id": "pkm-mp4doi9n-lorrcx",
+      "sheetKind": "pokemon",
+      "sheetSlug": "examples-tyranitar",
+      "position": {
+        "x": 41,
+        "y": 5,
+        "z": 16
+      },
+      "turned": false
+    },
+    {
+      "id": "pkm-mp4dtce0-abrldq",
+      "sheetKind": "pokemon",
+      "sheetSlug": "examples-charizard",
+      "position": {
+        "x": 38,
+        "y": 5,
+        "z": 18
+      },
+      "turned": false
+    },
+    {
+      "id": "pkm-mp4dyjiq-bnd8qr",
+      "sheetKind": "trainer",
+      "sheetSlug": "new-trainer",
+      "position": {
+        "x": 32,
+        "y": 5,
+        "z": 14
+      },
+      "turned": false
     }
   ],
   "lights": [
@@ -92504,7 +92559,7 @@
     }
   ],
   "initiative": {
-    "activeId": "pkm-moncqt7s-nn3ifs",
+    "activeId": null,
     "round": 1
   },
   "metadata": {
@@ -92604,5 +92659,5 @@
     ]
   },
   "createdAt": 1777665906726,
-  "updatedAt": 1778554636082
+  "updatedAt": 1778700774616
 }

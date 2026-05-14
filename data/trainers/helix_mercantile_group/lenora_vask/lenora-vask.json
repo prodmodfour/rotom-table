@@ -1,5 +1,5 @@
 {
-  "slug": "new-trainer",
+  "slug": "lenora-vask",
   "name": "Lenora Vask",
   "level": 12,
   "stats": {
@@ -85,7 +85,7 @@
   "portraitUrl": "/trainer-sprites/showdown/trainers/officeworkerf-gen9.png",
   "sex": "Female",
   "height": "",
-  "currentHp": 56,
+  "currentHp": 64,
   "combatStages": {
     "acc": 0
   },
