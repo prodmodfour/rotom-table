@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import {
   applySheetPassiveAbilityTypeEffectiveness,
+  applySheetPassiveTypeEffectiveness,
   computeSheetAbilityAwareMultiplier,
+  getPassiveGroundResistanceSource,
+  hasGroundResistingCapability,
   hasLevitateAbility,
   resolveLevitateAbilitySpeed,
 } from '~/utils/sheetPassiveAbilityEffects'
@@ -28,8 +31,22 @@ describe('sheet passive ability effects', () => {
     expect(applySheetPassiveAbilityTypeEffectiveness('Fire', 1.5, [{ name: 'Levitate' }])).toBe(1.5)
   })
 
+  it('recognizes Sky and Levitate capabilities as Ground resistance sources', () => {
+    expect(hasGroundResistingCapability({ sky: 4 })).toBe(true)
+    expect(hasGroundResistingCapability({ levitate: 3 })).toBe(true)
+    expect(hasGroundResistingCapability({ sky: 0, levitate: 0 })).toBe(false)
+  })
+
   it('computes type matchups with Levitate passive resistance', () => {
     expect(computeSheetAbilityAwareMultiplier('Ground', ['Electric'], [{ name: 'Levitate' }])).toBe(0.5)
-    expect(computeSheetAbilityAwareMultiplier('Ground', ['Flying'], [{ name: 'Levitate' }])).toBe(0)
+    expect(computeSheetAbilityAwareMultiplier('Ground', ['Flying'], [{ name: 'Levitate' }])).toBe(0.5)
+  })
+
+  it('applies capability Ground resistance without stacking with Levitate ability', () => {
+    expect(applySheetPassiveTypeEffectiveness('Ground', 1, undefined, { sky: 5 })).toBe(0.5)
+    expect(applySheetPassiveTypeEffectiveness('Ground', 0.5, [{ name: 'Levitate' }], { levitate: 4 })).toBe(0.5)
+    expect(computeSheetAbilityAwareMultiplier('Ground', ['Fire'], undefined, { sky: 8 })).toBe(0.5)
+    expect(getPassiveGroundResistanceSource(undefined, { sky: 8 })).toBe('Sky Capability')
+    expect(getPassiveGroundResistanceSource([{ name: 'Levitate' }], { sky: 8, levitate: 4 })).toBe('Levitate')
   })
 })

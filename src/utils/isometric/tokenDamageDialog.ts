@@ -6,7 +6,10 @@ import {
   type PtuDamageRollResult,
 } from '~/utils/ptuDamage'
 import { formatMultiplier } from '~/utils/typeChart'
-import { computeSheetAbilityAwareMultiplier } from '~/utils/sheetPassiveAbilityEffects'
+import {
+  computeSheetAbilityAwareMultiplier,
+  type GroundResistanceCapabilities,
+} from '~/utils/sheetPassiveAbilityEffects'
 
 export type DamageDialogMode = 'physical' | 'special'
 export type DamageDialogSource = 'flat' | 'db'
@@ -20,6 +23,7 @@ export interface DamageDialogState {
   def: number
   sdef: number
   defenderTypes: string[]
+  defenderCapabilities?: GroundResistanceCapabilities
   abilityNames?: string[]
   mode: DamageDialogMode
   attackType: string
@@ -32,7 +36,7 @@ export interface DamageDialogState {
 
 type DamageDialogPokemon = Pick<
   SpawnedPokemon,
-  'id' | 'species' | 'currentHp' | 'maxHp' | 'def' | 'sdef' | 'defenderTypes' | 'abilityNames'
+  'id' | 'species' | 'currentHp' | 'maxHp' | 'def' | 'sdef' | 'defenderTypes' | 'defenderCapabilities' | 'abilityNames'
 >
 
 type DamageDialogAttacker = Pick<SpawnedPokemon, 'id' | 'species' | 'atk' | 'satk'>
@@ -53,6 +57,7 @@ export const createDamageDialogState = (pokemon: DamageDialogPokemon): DamageDia
     def: pokemon.def,
     sdef: pokemon.sdef,
     defenderTypes: [...pokemon.defenderTypes],
+    ...(pokemon.defenderCapabilities ? { defenderCapabilities: { ...pokemon.defenderCapabilities } } : {}),
     ...(abilityNames.length ? { abilityNames } : {}),
     mode: 'physical',
     attackType: 'Normal',
@@ -104,7 +109,12 @@ export const getDamageDialogAttackBonus = (
 
 export const getDamageDialogMultiplier = (dialog: DamageDialogState | null): number => {
   if (!dialog) return 1
-  return computeSheetAbilityAwareMultiplier(dialog.attackType, dialog.defenderTypes, dialog.abilityNames)
+  return computeSheetAbilityAwareMultiplier(
+    dialog.attackType,
+    dialog.defenderTypes,
+    dialog.abilityNames,
+    dialog.defenderCapabilities,
+  )
 }
 
 export const getDamageDialogHpLoss = (
@@ -153,6 +163,8 @@ export const updateDamageDialogFromPokemon = (
       ? dialog.attackerId
       : null,
   }
+  if (pokemon.defenderCapabilities) next.defenderCapabilities = { ...pokemon.defenderCapabilities }
+  else delete next.defenderCapabilities
   if (abilityNames.length) next.abilityNames = abilityNames
   else delete next.abilityNames
   return next

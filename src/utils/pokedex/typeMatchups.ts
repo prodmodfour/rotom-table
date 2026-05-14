@@ -1,4 +1,8 @@
 import { POKEMON_TYPES, isPokemonType, singleTypeMultiplier, type PokemonType } from '~/utils/typeChart'
+import {
+  applySheetPassiveTypeEffectiveness,
+  type GroundResistanceCapabilities,
+} from '~/utils/sheetPassiveAbilityEffects'
 
 export type TypeMatchupGroupKey = 'weaknesses' | 'resistances' | 'immunities'
 
@@ -22,7 +26,11 @@ const compareTypeMatchupOrder = (a: TypeMatchupItem, b: TypeMatchupItem) => (
   (TYPE_MATCHUP_ORDER.get(a.type) ?? 0) - (TYPE_MATCHUP_ORDER.get(b.type) ?? 0)
 )
 
-export const computePtuTypeMultiplier = (attacker: PokemonType, defenders: PokemonType[]): number => {
+export const computePtuTypeMultiplier = (
+  attacker: PokemonType,
+  defenders: PokemonType[],
+  capabilities?: GroundResistanceCapabilities | null,
+): number => {
   let effectivenessSteps = 0
 
   for (const defender of defenders) {
@@ -33,10 +41,12 @@ export const computePtuTypeMultiplier = (attacker: PokemonType, defenders: Pokem
     if (singleTypeMatchup < 1) effectivenessSteps -= 1
   }
 
-  if (effectivenessSteps < 0) return 1 / (2 ** Math.abs(effectivenessSteps))
-  if (effectivenessSteps === 1) return 1.5
-  if (effectivenessSteps >= 2) return effectivenessSteps
-  return 1
+  let multiplier = 1
+  if (effectivenessSteps < 0) multiplier = 1 / (2 ** Math.abs(effectivenessSteps))
+  else if (effectivenessSteps === 1) multiplier = 1.5
+  else if (effectivenessSteps >= 2) multiplier = effectivenessSteps
+
+  return applySheetPassiveTypeEffectiveness(attacker, multiplier, undefined, capabilities)
 }
 
 export const formatPtuMultiplier = (multiplier: number): string => {
@@ -47,12 +57,15 @@ export const formatPtuMultiplier = (multiplier: number): string => {
   return multiplier.toString()
 }
 
-export const buildTypeMatchupGroups = (rawDefendingTypes: readonly string[] | null | undefined): TypeMatchupGroup[] => {
+export const buildTypeMatchupGroups = (
+  rawDefendingTypes: readonly string[] | null | undefined,
+  capabilities?: GroundResistanceCapabilities | null,
+): TypeMatchupGroup[] => {
   const defendingTypes = (rawDefendingTypes ?? []).filter(isPokemonType)
   if (defendingTypes.length === 0) return []
 
   const matchups = POKEMON_TYPES.map((type): TypeMatchupItem => {
-    const multiplier = computePtuTypeMultiplier(type, defendingTypes)
+    const multiplier = computePtuTypeMultiplier(type, defendingTypes, capabilities)
     return {
       type,
       multiplier,

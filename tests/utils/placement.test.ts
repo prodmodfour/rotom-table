@@ -19,9 +19,12 @@ describe('placement helpers', () => {
       position: { x: 0, y: 0, z: 0 },
     }
 
-    expect(placementToSpawned(placement, {
+    const spawned = placementToSpawned(placement, {
       pokemon: new Map([[sheet.slug, sheet]]),
       trainer: new Map(),
-    })?.abilityNames).toEqual(['Levitate'])
+    })
+
+    expect(spawned?.abilityNames).toEqual(['Levitate'])
+    expect(spawned?.defenderCapabilities).toEqual({ levitate: 4 })
   })
 })

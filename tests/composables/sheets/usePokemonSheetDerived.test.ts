@@ -59,6 +59,30 @@ describe('usePokemonSheetDerived', () => {
     })
   })
 
+  it('applies Sky and Levitate capability Ground resistance without stacking', () => {
+    const sheet = ref<CharacterSheet | null>(makeSheet({
+      types: ['Fire', 'Flying'],
+      capabilities: { sky: 8, levitate: 4 },
+      abilities: [{ name: 'Levitate' }],
+    }))
+    const derived = usePokemonSheetDerived(sheet)
+
+    expect(derived.typeEffectivenessRows.value.find((row) => row.type === 'Ground')).toMatchObject({
+      mult: 0.5,
+      label: '½',
+      tone: 'resist',
+      source: 'Levitate',
+    })
+
+    sheet.value!.abilities = []
+    expect(derived.typeEffectivenessRows.value.find((row) => row.type === 'Ground')).toMatchObject({
+      mult: 0.5,
+      label: '½',
+      tone: 'resist',
+      source: 'Sky/Levitate Capability',
+    })
+  })
+
   it('adds Sand Veil to every evasion total and increases it while activated', () => {
     const sheet = ref<CharacterSheet | null>(makeSheet({
       combat: { evasion: { vsAtkBonus: 0, vsSatkBonus: 0, vsAnyBonus: 0 } },

@@ -11,8 +11,8 @@
  *      `resolveStats` / `computeMaxHp` (Pokémon) and the trainer equivalents.
  */
 import { getPokedexEntry } from '~~/data/characterSheets'
-import { computeMaxHp, resolveStats } from '~/utils/sheets/pokemonDerived'
-import { computeTrainerMaxHp, resolveTrainerStats } from '~/utils/sheets/trainerDerived'
+import { computeMaxHp, resolveCapabilities, resolveStats } from '~/utils/sheets/pokemonDerived'
+import { computeTrainerMaxHp, resolveTrainerCapabilities, resolveTrainerStats } from '~/utils/sheets/trainerDerived'
 import { pokemonCatalog, pokemonCatalogBySpecies } from '~~/data/pokemonCatalog'
 import { trainerCatalog } from '~~/data/trainerCatalog'
 import { COMBAT_STAT_STAGE_KEYS, normalizeCombatStages } from '~/utils/combatStages'
@@ -30,6 +30,37 @@ const trainerCatalogBySpriteUrl = new Map(
 const trainerCatalogByLowerName = new Map(
   trainerCatalog.map((entry) => [entry.species.toLowerCase(), entry]),
 )
+
+type DefenderCapabilities = { sky?: number; levitate?: number }
+type CapabilityNumberRow = { label: string; value: number | string }
+
+const resolvedCapabilityNumber = (
+  rows: readonly CapabilityNumberRow[],
+  label: string,
+): number | undefined => {
+  const value = rows.find((row) => row.label === label)?.value
+  if (typeof value === 'number') return Number.isFinite(value) && value > 0 ? value : undefined
+  if (typeof value !== 'string') return undefined
+
+  const parsed = Number.parseFloat(value.trim())
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined
+}
+
+const defenderCapabilitiesFromRows = (rows: readonly CapabilityNumberRow[]): DefenderCapabilities | undefined => {
+  const sky = resolvedCapabilityNumber(rows, 'Sky')
+  const levitate = resolvedCapabilityNumber(rows, 'Levitate')
+  const capabilities: DefenderCapabilities = {}
+  if (sky != null) capabilities.sky = sky
+  if (levitate != null) capabilities.levitate = levitate
+
+  return sky || levitate ? capabilities : undefined
+}
+
+const pokemonDefenderCapabilities = (sheet: CharacterSheet): DefenderCapabilities | undefined =>
+  defenderCapabilitiesFromRows(resolveCapabilities(sheet).rows)
+
+const trainerDefenderCapabilities = (sheet: TrainerSheet): DefenderCapabilities | undefined =>
+  defenderCapabilitiesFromRows(resolveTrainerCapabilities(sheet).rows)
 
 /** Resolve the catalog entry whose footprint a Pokémon sheet should use. */
 export const catalogEntryForPokemonSheet = (
@@ -55,7 +86,7 @@ export const catalogEntryForTrainerSheet = (
   return trainerCatalog[0] ?? null
 }
 
-/** Pokémon HP + offence/defence + types snapshot. Max HP is derived and injury-adjusted. */
+/** Pokémon HP + offence/defence + type/capability snapshot. Max HP is derived and injury-adjusted. */
 export const pokemonHpSnapshot = (
   sheet: CharacterSheet,
 ): {
@@ -66,6 +97,7 @@ export const pokemonHpSnapshot = (
   def: number
   sdef: number
   defenderTypes: string[]
+  defenderCapabilities?: DefenderCapabilities
   combatStages: CombatStageMap
   conditions: string[]
 } => {
@@ -79,6 +111,7 @@ export const pokemonHpSnapshot = (
   const sdef = stats.find((row) => row.key === 'sdef')?.total ?? 0
   const species = getPokedexEntry(sheet.species)
   const defenderTypes = sheet.types ?? species?.types ?? []
+  const defenderCapabilities = pokemonDefenderCapabilities(sheet)
   const combatStages = normalizeCombatStages({
     atk: sheet.stats?.atk?.stage,
     def: sheet.stats?.def?.stage,
@@ -88,10 +121,10 @@ export const pokemonHpSnapshot = (
     acc: sheet.combatStages?.acc,
   })
   const conditions = mergeLegacyConditions(sheet.combat?.conditions, sheet.combat?.statusAfflictions)
-  return { currentHp, maxHp, atk, satk, def, sdef, defenderTypes, combatStages, conditions }
+  return { currentHp, maxHp, atk, satk, def, sdef, defenderTypes, defenderCapabilities, combatStages, conditions }
 }
 
-/** Trainer HP + offence/defence snapshot. Max HP is derived and injury-adjusted; trainers have no defending types. */
+/** Trainer HP + offence/defence + capability snapshot. Max HP is derived and injury-adjusted; trainers have no defending types. */
 export const trainerHpSnapshot = (
   sheet: TrainerSheet,
 ): {
@@ -102,6 +135,7 @@ export const trainerHpSnapshot = (
   def: number
   sdef: number
   defenderTypes: string[]
+  defenderCapabilities?: DefenderCapabilities
   combatStages: CombatStageMap
   conditions: string[]
 } => {
@@ -112,12 +146,13 @@ export const trainerHpSnapshot = (
   const satk = stats.find((row) => row.key === 'satk')?.total ?? 0
   const def = stats.find((row) => row.key === 'def')?.total ?? 0
   const sdef = stats.find((row) => row.key === 'sdef')?.total ?? 0
+  const defenderCapabilities = trainerDefenderCapabilities(sheet)
   const stageSource = Object.fromEntries(
     COMBAT_STAT_STAGE_KEYS.map((key) => [key, sheet.stats?.[key]?.stage ?? sheet.combatStages?.[key]]),
   )
   const combatStages = normalizeCombatStages({ ...stageSource, acc: sheet.combatStages?.acc })
   const conditions = mergeLegacyConditions(sheet.conditions, sheet.statusAfflictions)
-  return { currentHp, maxHp, atk, satk, def, sdef, defenderTypes: [], combatStages, conditions }
+  return { currentHp, maxHp, atk, satk, def, sdef, defenderTypes: [], defenderCapabilities, combatStages, conditions }
 }
 
 // Re-export so callers don't have to import the catalog directly.

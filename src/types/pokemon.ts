@@ -217,6 +217,8 @@ export interface SpawnedPokemon extends PokemonCatalogEntry {
   sdef: number
   /** Defender's types (sheet override > species default; empty for trainers). */
   defenderTypes: string[]
+  /** Movement capabilities that alter type effectiveness, copied from the source sheet. */
+  defenderCapabilities?: Pick<PokedexCapabilities, 'sky' | 'levitate'>
   /** Ability names copied from the source sheet for passive automation modifiers. */
   abilityNames?: string[]
   /** Current combat stages copied from the source sheet. */

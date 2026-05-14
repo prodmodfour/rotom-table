@@ -49,6 +49,7 @@ export const moveAutomationTargetDamageMultiplier = (
   script?.type ?? 'Normal',
   target.defenderTypes,
   target.abilityNames,
+  target.defenderCapabilities,
 )
 
 export const moveAutomationMultiplierLabel = (
