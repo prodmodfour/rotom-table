@@ -2,7 +2,7 @@ import { ref, type Ref } from 'vue'
 import { useWindowKeydown } from '~/composables/useWindowKeydown'
 import type { MapEditorMode, MapLeftSidebarSection } from '#shared/mapEditor'
 import type { LayerVisibility } from '~/types/map'
-import { isCtrlShiftLetter, isEscapeKey } from '~/utils/keyboardShortcuts'
+import { isCtrlLetter, isCtrlShiftLetter, isEscapeKey } from '~/utils/keyboardShortcuts'
 import {
   createDefaultMapLayerVisibility,
   MAP_LAYER_OPTIONS,
@@ -72,6 +72,13 @@ export const useMapEditorUiState = ({
     layerVisibility.value[layer] = value
   }
 
+  const handleBuildShortcut = (event: KeyboardEvent) => {
+    if (!canEditMap.value || !isCtrlLetter(event, 'b')) return
+
+    event.preventDefault()
+    setMode(buildMode.value ? 'play' : 'build')
+  }
+
   const handleAdminShortcut = (event: KeyboardEvent) => {
     if (!isGm.value) return
 
@@ -86,7 +93,12 @@ export const useMapEditorUiState = ({
     }
   }
 
-  registerKeydown(handleAdminShortcut)
+  const handleKeydown = (event: KeyboardEvent) => {
+    handleBuildShortcut(event)
+    handleAdminShortcut(event)
+  }
+
+  registerKeydown(handleKeydown)
 
   return {
     sidebarCollapsed,
@@ -100,6 +112,8 @@ export const useMapEditorUiState = ({
     toggleLeftSection,
     setMode,
     setLayerVisibility,
+    handleBuildShortcut,
     handleAdminShortcut,
+    handleKeydown,
   }
 }

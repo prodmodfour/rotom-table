@@ -6,8 +6,14 @@ export const pluralizeCount = (count: number, singular: string, plural = `${sing
 export const formatMapDimensionsBadge = (dimensions: GridDimensions): string =>
   `${dimensions.x} × ${dimensions.y} × ${dimensions.z}`
 
+export const formatTerrainBuildBadge = (voxelCount: number): string =>
+  pluralizeCount(voxelCount, 'block')
+
 export const formatTerrainHazardBadge = (voxelCount: number, hazardCount: number): string =>
-  `${pluralizeCount(voxelCount, 'block')} · ${pluralizeCount(hazardCount, 'hazard')}`
+  `${formatTerrainBuildBadge(voxelCount)} · ${pluralizeCount(hazardCount, 'hazard')}`
 
 export const formatActiveFieldEffectsBadge = (fieldEffectCount: number): string =>
   `${fieldEffectCount} active`
+
+export const formatFieldEffectsHazardsBadge = (fieldEffectCount: number, hazardCount: number): string =>
+  `${formatActiveFieldEffectsBadge(fieldEffectCount)} · ${pluralizeCount(hazardCount, 'hazard')}`

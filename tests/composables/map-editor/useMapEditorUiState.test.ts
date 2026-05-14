@@ -37,7 +37,7 @@ describe('useMapEditorUiState', () => {
     })
 
     expect(registerKeydown).toHaveBeenCalledTimes(1)
-    expect(registerKeydown).toHaveBeenCalledWith(ui.handleAdminShortcut)
+    expect(registerKeydown).toHaveBeenCalledWith(ui.handleKeydown)
     expect(ui.sidebarCollapsed.value).toBe(false)
     expect(ui.initiativeCollapsed.value).toBe(false)
     expect(ui.layerVisibility.value.grid).toBe(true)
@@ -87,6 +87,36 @@ describe('useMapEditorUiState', () => {
     expect(clearSelection).toHaveBeenCalledTimes(2)
   })
 
+  it('toggles build mode with Ctrl+B and clears token selection when entering', () => {
+    const buildMode = ref(false)
+    const hazardMode = ref(false)
+    const clearSelection = vi.fn()
+    const ui = useMapEditorUiState({
+      isGm: ref(true),
+      canEditMap: ref(true),
+      buildMode,
+      hazardMode,
+      clearSelection,
+      registerKeydown: vi.fn(),
+    })
+
+    const enterEvent = keyEvent({ key: 'b', ctrlKey: true })
+    ui.handleKeydown(enterEvent)
+
+    expect(enterEvent.preventDefault).toHaveBeenCalledTimes(1)
+    expect(buildMode.value).toBe(true)
+    expect(hazardMode.value).toBe(false)
+    expect(clearSelection).toHaveBeenCalledTimes(1)
+
+    const exitEvent = keyEvent({ key: 'B', ctrlKey: true })
+    ui.handleKeydown(exitEvent)
+
+    expect(exitEvent.preventDefault).toHaveBeenCalledTimes(1)
+    expect(buildMode.value).toBe(false)
+    expect(hazardMode.value).toBe(false)
+    expect(clearSelection).toHaveBeenCalledTimes(1)
+  })
+
   it('blocks GM-only modes when map editing is unavailable', () => {
     const buildMode = ref(false)
     const hazardMode = ref(false)
@@ -104,6 +134,12 @@ describe('useMapEditorUiState', () => {
     expect(hazardMode.value).toBe(false)
 
     ui.setMode('hazards')
+    expect(buildMode.value).toBe(false)
+    expect(hazardMode.value).toBe(false)
+
+    const event = keyEvent({ key: 'b', ctrlKey: true })
+    ui.handleKeydown(event)
+    expect(event.preventDefault).not.toHaveBeenCalled()
     expect(buildMode.value).toBe(false)
     expect(hazardMode.value).toBe(false)
   })

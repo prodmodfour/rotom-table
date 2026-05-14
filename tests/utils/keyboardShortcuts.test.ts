@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { isCtrlShiftLetter, isEscapeKey } from '~/utils/keyboardShortcuts'
+import { isCtrlLetter, isCtrlShiftLetter, isEscapeKey } from '~/utils/keyboardShortcuts'
 
 const keyEvent = (overrides: Partial<KeyboardEvent>): KeyboardEvent => ({
   key: '',
@@ -13,6 +13,14 @@ describe('keyboard shortcut helpers', () => {
     expect(isEscapeKey(keyEvent({ key: 'Escape' }))).toBe(true)
     expect(isEscapeKey(keyEvent({ key: 'Esc' }))).toBe(false)
     expect(isEscapeKey(keyEvent({ key: 'Enter' }))).toBe(false)
+  })
+
+  it('detects ctrl letter shortcuts case-insensitively', () => {
+    expect(isCtrlLetter(keyEvent({ key: 'b', ctrlKey: true }), 'B')).toBe(true)
+    expect(isCtrlLetter(keyEvent({ key: 'B', ctrlKey: true }), 'b')).toBe(true)
+    expect(isCtrlLetter(keyEvent({ key: 'b', ctrlKey: false }), 'b')).toBe(false)
+    expect(isCtrlLetter(keyEvent({ key: 'b', ctrlKey: true, shiftKey: true }), 'b')).toBe(false)
+    expect(isCtrlLetter(keyEvent({ key: 'a', ctrlKey: true }), 'b')).toBe(false)
   })
 
   it('detects ctrl+shift letter shortcuts case-insensitively', () => {

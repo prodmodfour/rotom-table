@@ -121,7 +121,7 @@ const emit = defineEmits<{
       />
 
       <MapDetailsPanel
-        v-if="map && canViewMap"
+        v-if="map && canViewMap && buildMode"
         :collapsed="sectionCollapsed.details"
         :name="map.name"
         :dimensions="map.dimensions"
@@ -134,11 +134,9 @@ const emit = defineEmits<{
       />
 
       <MapTerrainHazardsPanel
-        v-if="map && canViewMap"
+        v-if="map && canViewMap && buildMode"
         :collapsed="sectionCollapsed.terrain"
         :can-edit-map="canEditMap"
-        :build-mode="buildMode"
-        :hazard-mode="hazardMode"
         :build-tool="buildTool"
         :build-material="buildMaterial"
         :build-color="buildColor"
@@ -147,15 +145,9 @@ const emit = defineEmits<{
         :visible-voxel-materials="visibleVoxelMaterials"
         :color-picker-value="colorPickerValue"
         :voxel-count="voxelCount"
-        :hazard-count="hazardCount"
-        :hazard-tool="hazardTool"
-        :hazard-kind="hazardKind"
-        :active-hazard-def="activeHazardDef"
-        :hazard-palette="hazardPalette"
         :layer-visibility="layerVisibility"
         :layer-options="layerOptions"
         @toggle-collapsed="emit('toggle-section', 'terrain')"
-        @set-mode="emit('set-mode', $event)"
         @set-build-tool="emit('set-build-tool', $event)"
         @select-material="emit('select-material', $event)"
         @color-input="emit('color-input', $event)"
@@ -165,16 +157,19 @@ const emit = defineEmits<{
         @fill-ground="emit('fill-ground')"
         @clear-all-voxels="emit('clear-all-voxels')"
         @set-layer-visibility="(layer, value) => emit('set-layer-visibility', layer, value)"
-        @set-hazard-tool="emit('set-hazard-tool', $event)"
-        @select-hazard-kind="emit('select-hazard-kind', $event)"
-        @clear-all-hazards="emit('clear-all-hazards')"
       />
 
       <MapFieldEffectsPanel
-        v-if="map && canViewMap"
+        v-if="map && canViewMap && !buildMode"
         :collapsed="sectionCollapsed.fieldEffects"
         :can-edit-map="canEditMap"
         :field-effect-count="fieldEffectCount"
+        :hazard-mode="hazardMode"
+        :hazard-count="hazardCount"
+        :hazard-tool="hazardTool"
+        :hazard-kind="hazardKind"
+        :active-hazard-def="activeHazardDef"
+        :hazard-palette="hazardPalette"
         :weather-coexist-next="weatherCoexistNext"
         :active-weather-effects="activeWeatherEffects"
         :active-terrain-effects="activeTerrainEffects"
@@ -190,6 +185,10 @@ const emit = defineEmits<{
         :room-is-active="roomIsActive"
         :duration-label="durationLabel"
         @toggle-collapsed="emit('toggle-section', 'fieldEffects')"
+        @set-mode="emit('set-mode', $event)"
+        @set-hazard-tool="emit('set-hazard-tool', $event)"
+        @select-hazard-kind="emit('select-hazard-kind', $event)"
+        @clear-all-hazards="emit('clear-all-hazards')"
         @set-weather="emit('set-weather', $event)"
         @remove-weather="emit('remove-weather', $event)"
         @clear-weather="emit('clear-weather')"
@@ -205,7 +204,7 @@ const emit = defineEmits<{
         @clear-all="emit('clear-all-field-effects')"
       />
 
-      <SheetBrowser v-if="map && canSpawnTokens" @select="emit('spawn-sheet', $event)" />
+      <SheetBrowser v-if="map && canSpawnTokens && !buildMode" @select="emit('spawn-sheet', $event)" />
     </div>
   </aside>
 </template>

@@ -1,21 +1,16 @@
 <script setup lang="ts">
 import CollapsiblePanelCard from '~/components/map/CollapsiblePanelCard.vue'
-import HazardBuilderControls from '~/components/map/HazardBuilderControls.vue'
 import LayerVisibilityControls from '~/components/map/LayerVisibilityControls.vue'
-import MapEditorModeToggle from '~/components/map/MapEditorModeToggle.vue'
 import TerrainBuilderControls from '~/components/map/TerrainBuilderControls.vue'
-import { formatTerrainHazardBadge } from '~/utils/mapPanelBadges'
+import { formatTerrainBuildBadge } from '~/utils/mapPanelBadges'
 import type { MapLayerVisibilityKey } from '~/utils/mapLayerVisibility'
 import type { VoxelMaterialDef } from '~/utils/voxelMaterials'
 import type { BuildTool } from '#shared/mapEditor'
-import type { LayerVisibility, MapHazardKind, VoxelMaterial } from '~/types/map'
-import type { MapHazardDefinition } from '~/utils/mapHazardDefinitions'
+import type { LayerVisibility, VoxelMaterial } from '~/types/map'
 
 defineProps<{
   collapsed: boolean
   canEditMap: boolean
-  buildMode: boolean
-  hazardMode: boolean
   buildTool: BuildTool
   buildMaterial: VoxelMaterial
   buildColor: string | null
@@ -24,18 +19,12 @@ defineProps<{
   visibleVoxelMaterials: readonly VoxelMaterialDef[]
   colorPickerValue: string
   voxelCount: number
-  hazardCount: number
-  hazardTool: BuildTool
-  hazardKind: MapHazardKind
-  activeHazardDef: MapHazardDefinition
-  hazardPalette: MapHazardDefinition[]
   layerVisibility: LayerVisibility
   layerOptions: readonly MapLayerVisibilityKey[]
 }>()
 
 const emit = defineEmits<{
   (event: 'toggle-collapsed'): void
-  (event: 'set-mode', mode: 'play' | 'build' | 'hazards'): void
   (event: 'set-build-tool', tool: BuildTool): void
   (event: 'select-material', material: VoxelMaterial): void
   (event: 'color-input', value: Event): void
@@ -45,9 +34,6 @@ const emit = defineEmits<{
   (event: 'fill-ground'): void
   (event: 'clear-all-voxels'): void
   (event: 'set-layer-visibility', layer: MapLayerVisibilityKey, value: boolean): void
-  (event: 'set-hazard-tool', tool: BuildTool): void
-  (event: 'select-hazard-kind', kind: MapHazardKind): void
-  (event: 'clear-all-hazards'): void
 }>()
 
 </script>
@@ -55,23 +41,13 @@ const emit = defineEmits<{
 <template>
   <CollapsiblePanelCard
     class="terrain-panel"
-    title="Terrain"
-    :badge="formatTerrainHazardBadge(voxelCount, hazardCount)"
+    title="Terrain Build"
+    :badge="formatTerrainBuildBadge(voxelCount)"
     :collapsed="collapsed"
     controls-id="map-terrain-section"
     @toggle-collapsed="emit('toggle-collapsed')"
   >
-    <MapEditorModeToggle
-      v-if="canEditMap"
-      :build-mode="buildMode"
-      :hazard-mode="hazardMode"
-      @set-mode="emit('set-mode', $event)"
-    />
-    <p v-else class="permission-note">
-      Terrain editing is GM-only.
-    </p>
-
-    <template v-if="buildMode && canEditMap">
+    <template v-if="canEditMap">
       <TerrainBuilderControls
         :build-tool="buildTool"
         :build-material="buildMaterial"
@@ -98,18 +74,9 @@ const emit = defineEmits<{
       />
     </template>
 
-    <template v-if="hazardMode && canEditMap">
-      <HazardBuilderControls
-        :hazard-tool="hazardTool"
-        :hazard-kind="hazardKind"
-        :active-hazard-def="activeHazardDef"
-        :hazard-palette="hazardPalette"
-        :hazard-count="hazardCount"
-        @set-hazard-tool="emit('set-hazard-tool', $event)"
-        @select-hazard-kind="emit('select-hazard-kind', $event)"
-        @clear-all-hazards="emit('clear-all-hazards')"
-      />
-    </template>
+    <p v-else class="permission-note">
+      Terrain editing is GM-only.
+    </p>
   </CollapsiblePanelCard>
 </template>
 

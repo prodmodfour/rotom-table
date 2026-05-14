@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import {
   formatActiveFieldEffectsBadge,
+  formatFieldEffectsHazardsBadge,
   formatMapDimensionsBadge,
+  formatTerrainBuildBadge,
   formatTerrainHazardBadge,
   pluralizeCount,
 } from '~/utils/mapPanelBadges'
@@ -19,6 +21,8 @@ describe('map panel badge helpers', () => {
   })
 
   it('formats terrain and hazard counts', () => {
+    expect(formatTerrainBuildBadge(1)).toBe('1 block')
+    expect(formatTerrainBuildBadge(3)).toBe('3 blocks')
     expect(formatTerrainHazardBadge(1, 2)).toBe('1 block · 2 hazards')
     expect(formatTerrainHazardBadge(3, 1)).toBe('3 blocks · 1 hazard')
   })
@@ -26,5 +30,6 @@ describe('map panel badge helpers', () => {
   it('formats active field-effect counts', () => {
     expect(formatActiveFieldEffectsBadge(0)).toBe('0 active')
     expect(formatActiveFieldEffectsBadge(2)).toBe('2 active')
+    expect(formatFieldEffectsHazardsBadge(1, 2)).toBe('1 active · 2 hazards')
   })
 })
