@@ -1,11 +1,27 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+import { usePokemonCapabilityModels } from '~/composables/sheets/usePokemonCapabilityModels'
 import type { CharacterSheet } from '~/types/characterSheet'
 
 const otherCapsCsv = defineModel<string>('otherCapsCsv', { required: true })
 
-defineProps<{
+const props = defineProps<{
   sheet: CharacterSheet
 }>()
+
+const sheetRef = computed(() => props.sheet)
+const {
+  overland,
+  sky,
+  swim,
+  levitate,
+  burrow,
+  jump,
+  power,
+  weight,
+  size,
+  naturewalk,
+} = usePokemonCapabilityModels(sheetRef)
 </script>
 
 <template>
@@ -14,44 +30,44 @@ defineProps<{
     <dl class="caps-grid">
       <div>
         <dt>Overland</dt>
-        <dd><EditableCell v-model="sheet.capabilities!.overland" type="number" :min="0" /></dd>
+        <dd><EditableCell v-model="overland" type="number" :min="0" /></dd>
       </div>
       <div>
         <dt>Sky</dt>
-        <dd><EditableCell v-model="sheet.capabilities!.sky" type="number" :min="0" /></dd>
+        <dd><EditableCell v-model="sky" type="number" :min="0" /></dd>
       </div>
       <div>
         <dt>Swim</dt>
-        <dd><EditableCell v-model="sheet.capabilities!.swim" type="number" :min="0" /></dd>
+        <dd><EditableCell v-model="swim" type="number" :min="0" /></dd>
       </div>
       <div>
         <dt>Levitate</dt>
-        <dd><EditableCell v-model="sheet.capabilities!.levitate" type="number" :min="0" /></dd>
+        <dd><EditableCell v-model="levitate" type="number" :min="0" /></dd>
       </div>
       <div>
         <dt>Burrow</dt>
-        <dd><EditableCell v-model="sheet.capabilities!.burrow" type="number" :min="0" /></dd>
+        <dd><EditableCell v-model="burrow" type="number" :min="0" /></dd>
       </div>
       <div>
         <dt>Jump</dt>
-        <dd><EditableCell v-model="sheet.capabilities!.jump" placeholder="2/1" /></dd>
+        <dd><EditableCell v-model="jump" placeholder="2/1" /></dd>
       </div>
       <div>
         <dt>Power</dt>
-        <dd><EditableCell v-model="sheet.capabilities!.power" type="number" :min="0" /></dd>
+        <dd><EditableCell v-model="power" type="number" :min="0" /></dd>
       </div>
       <div>
         <dt>Weight</dt>
-        <dd><EditableCell v-model="sheet.capabilities!.weight" type="number" :min="0" /></dd>
+        <dd><EditableCell v-model="weight" type="number" :min="0" /></dd>
       </div>
       <div>
         <dt>Size</dt>
-        <dd><EditableCell v-model="sheet.capabilities!.size" placeholder="Small" /></dd>
+        <dd><EditableCell v-model="size" placeholder="Small" /></dd>
       </div>
     </dl>
     <p class="caps-line">
       <strong>Naturewalk:</strong>
-      <EditableCell v-model="sheet.capabilities!.naturewalk" placeholder="Forest, Grasslands" />
+      <EditableCell v-model="naturewalk" placeholder="Forest, Grasslands" />
     </p>
     <p class="caps-line">
       <strong>Other:</strong>
