@@ -92,6 +92,18 @@ describe('usePokemonSheetDerived', () => {
     expect(derived.heldItemReference.value?.name).toBe('Luck Incense')
   })
 
+  it('adds Quick Claw to Pokémon sheet initiative before condition adjustments', () => {
+    const sheet = ref<CharacterSheet | null>(makeSheet({
+      combat: { currentHp: 30, conditions: ['Paralysis'] },
+      items: { held: 'quick-claw' },
+    }))
+    const derived = usePokemonSheetDerived(sheet)
+
+    expect(derived.initiativeItemBonus.value).toBe(10)
+    expect(derived.heldItemReference.value?.name).toBe('Quick Claw')
+    expect(derived.initiative.value).toBe(Math.floor((derived.speedTotal.value + 10) / 2))
+  })
+
   it('applies Weird Power to Pokémon sheet move damage formulas', () => {
     const sheet = ref<CharacterSheet | null>(makeSheet({
       abilities: [{ name: 'Weird Power' }],

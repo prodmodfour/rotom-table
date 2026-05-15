@@ -4,6 +4,8 @@ import { clampHpValue, computeHpThresholds, computeTickValue } from '~/utils/ptu
 import { computeTrainerLevelUpStatPointBudget } from '~/utils/statPointBudgets'
 import { makeAutomaticStruggleMoves } from '~/utils/struggleMoves'
 import { makeMoveLookupRows, type MoveLookupRow } from '~/utils/sheetMoveLookup'
+import { trainerEquippedItemNames } from '~/utils/sheetItemNames'
+import { sheetItemsInitiativeBonus } from '~/utils/sheetHeldItemEffects'
 import {
   computeTrainerFullMaxHp,
   computeTrainerMaxAp,
@@ -166,7 +168,11 @@ export function useTrainerSheetDerived(sheet: TrainerSheetRef) {
     combatConditions.value,
     { tickValue: tickValue.value },
   ))
-  const initiative = computed(() => conditionAdjustedInitiative(totalRow('spd'), combatConditions.value))
+  const equippedItemNames = computed(() => sheet.value ? trainerEquippedItemNames(sheet.value) : [])
+  const initiativeItemBonus = computed(() => sheetItemsInitiativeBonus(equippedItemNames.value))
+  const initiative = computed(() =>
+    conditionAdjustedInitiative(totalRow('spd') + initiativeItemBonus.value, combatConditions.value),
+  )
 
   const statPointsSpent = computed(() =>
     stats.value.reduce((sum, row) => sum + (Number.isFinite(row.levelUp) ? row.levelUp : 0), 0),
@@ -194,6 +200,7 @@ export function useTrainerSheetDerived(sheet: TrainerSheetRef) {
     tickValue,
     hpThresholds,
     initiative,
+    initiativeItemBonus,
     combatConditions,
     conditionEffects,
     statPointsSpent,

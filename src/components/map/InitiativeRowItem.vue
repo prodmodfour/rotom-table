@@ -58,6 +58,9 @@ const isFainted = computed(() => props.entry.currentHp <= 0)
         <span class="initiative-row__name">{{ entry.name }}</span>
         <span class="initiative-row__meta">
           {{ entry.meta }} · SPD {{ entry.speed }}
+          <template v-if="entry.initiativeItemBonus">
+            · Item Init +{{ entry.initiativeItemBonus }}
+          </template>
           <template v-if="entry.initiative !== null || entry.initiativeScore !== entry.speed">
             · Final Init {{ entry.initiativeScore }}
           </template>

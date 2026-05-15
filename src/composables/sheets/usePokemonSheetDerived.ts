@@ -15,7 +15,7 @@ import {
   validateBaseRelations,
 } from '~/utils/sheets/pokemonDerived'
 import { computeSheetAbilityEvasionBonus } from '~/utils/sheetAbilityActivation'
-import { heldItemAccuracyRollBonus, heldItemSpeedEvasionBonus } from '~/utils/sheetHeldItemEffects'
+import { heldItemAccuracyRollBonus, heldItemInitiativeBonus, heldItemSpeedEvasionBonus } from '~/utils/sheetHeldItemEffects'
 import {
   conditionAdjustedCombatStage,
   conditionAdjustedEvasion,
@@ -120,7 +120,10 @@ export function usePokemonSheetDerived(sheet: PokemonSheetRef) {
     combatConditions.value,
     { tickValue: tickValue.value },
   ))
-  const initiative = computed(() => conditionAdjustedInitiative(speedTotal.value, combatConditions.value))
+  const initiativeItemBonus = computed(() => heldItemInitiativeBonus(sheet.value?.items?.held))
+  const initiative = computed(() =>
+    conditionAdjustedInitiative(speedTotal.value + initiativeItemBonus.value, combatConditions.value),
+  )
 
   const setCurrentHp = (value: unknown) => {
     if (!sheet.value) return
@@ -308,6 +311,7 @@ export function usePokemonSheetDerived(sheet: PokemonSheetRef) {
     hpThresholds,
     speedTotal,
     initiative,
+    initiativeItemBonus,
     combatConditions,
     conditionEffects,
     statPointsSpent,

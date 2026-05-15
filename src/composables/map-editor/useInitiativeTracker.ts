@@ -3,6 +3,8 @@ import { trimmedTextValueFromEvent } from '~/utils/domEvents'
 import { resolveStats } from '~/utils/sheets/pokemonDerived'
 import { resolveTrainerStats } from '~/utils/sheets/trainerDerived'
 import { conditionAdjustedInitiative } from '~/utils/sheetConditionEffects'
+import { sheetItemsInitiativeBonus } from '~/utils/sheetHeldItemEffects'
+import { pokemonHeldItemNames, trainerEquippedItemNames } from '~/utils/sheetItemNames'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import type { InitiativeTrackerState, TabletopMap } from '~/types/map'
@@ -31,6 +33,10 @@ export interface InitiativeRow {
   /** Raw map-local initiative input before condition effects. */
   initiative: number | null
   speed: number
+  /** Default initiative before condition effects: Speed plus sheet item bonuses such as Quick Claw. */
+  baseInitiative: number
+  /** Initiative bonus supplied by sheet equipment. */
+  initiativeItemBonus: number
   /** Final initiative after applying conditions such as Paralysis and Flinch. */
   initiativeScore: number
 }
@@ -115,6 +121,15 @@ export const useInitiativeTracker = ({
     return resolveTrainerStats(sheet).find((row) => row.key === 'spd')?.total ?? 0
   }
 
+  const initiativeItemBonusForPlacement = (kind: InitiativeKind, sheetSlug: string): number => {
+    if (kind === 'pokemon') {
+      const sheet = pokemonBySlug.value?.get(sheetSlug)
+      return sheet ? sheetItemsInitiativeBonus(pokemonHeldItemNames(sheet)) : 0
+    }
+    const sheet = trainerBySlug.value?.get(sheetSlug)
+    return sheet ? sheetItemsInitiativeBonus(trainerEquippedItemNames(sheet)) : 0
+  }
+
   const metaForPlacement = (kind: InitiativeKind, sheetSlug: string): string => {
     if (kind === 'pokemon') {
       const sheet = pokemonBySlug.value?.get(sheetSlug)
@@ -131,6 +146,8 @@ export const useInitiativeTracker = ({
     return spawnedPokemon.value.map((pokemon) => {
       const placement = placements.get(pokemon.id)
       const speed = speedForPlacement(pokemon.sheetKind, pokemon.sheetSlug)
+      const initiativeItemBonus = initiativeItemBonusForPlacement(pokemon.sheetKind, pokemon.sheetSlug)
+      const baseInitiative = speed + initiativeItemBonus
       const initiative = normalizeInitiativeValue(placement?.initiative)
       return {
         id: pokemon.id,
@@ -142,7 +159,9 @@ export const useInitiativeTracker = ({
         conditions: pokemon.conditions,
         initiative,
         speed,
-        initiativeScore: conditionAdjustedInitiative(initiative ?? speed, pokemon.conditions),
+        baseInitiative,
+        initiativeItemBonus,
+        initiativeScore: conditionAdjustedInitiative(initiative ?? baseInitiative, pokemon.conditions),
       }
     })
   })
@@ -235,10 +254,10 @@ export const useInitiativeTracker = ({
 
   const fillInitiativeFromSpeed = () => {
     if (!map.value || !canManageInitiative.value) return
-    const speeds = new Map(initiativeRows.value.map((entry) => [entry.id, entry.speed]))
+    const baseInitiatives = new Map(initiativeRows.value.map((entry) => [entry.id, entry.baseInitiative]))
     for (const placement of map.value.placements) {
-      const speed = speeds.get(placement.id)
-      if (speed !== undefined) placement.initiative = speed
+      const baseInitiative = baseInitiatives.get(placement.id)
+      if (baseInitiative !== undefined) placement.initiative = baseInitiative
     }
   }
 

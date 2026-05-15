@@ -29,12 +29,16 @@ const emit = defineEmits<{
     <button
       type="button"
       class="initiative-row__speed-button"
-      :title="`Set base initiative to Speed (${entry.speed}); conditions apply afterward`"
-      :aria-label="`Use ${entry.name}'s Speed (${entry.speed}) as base initiative`"
+      :title="entry.initiativeItemBonus
+        ? `Set base initiative to Speed ${entry.speed} + item bonus (${entry.baseInitiative}); conditions apply afterward`
+        : `Set base initiative to Speed (${entry.speed}); conditions apply afterward`"
+      :aria-label="entry.initiativeItemBonus
+        ? `Use ${entry.name}'s Speed plus item bonus (${entry.baseInitiative}) as base initiative`
+        : `Use ${entry.name}'s Speed (${entry.speed}) as base initiative`"
       :disabled="!canManage"
-      @click="emit('set-initiative-from-speed', entry.id, entry.speed)"
+      @click="emit('set-initiative-from-speed', entry.id, entry.baseInitiative)"
     >
-      Use Speed
+      {{ entry.initiativeItemBonus ? 'Use Base' : 'Use Speed' }}
     </button>
   </div>
 </template>

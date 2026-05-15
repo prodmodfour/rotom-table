@@ -15,6 +15,7 @@ import {
   trainerHpSnapshot,
 } from '~/utils/sheetSpawn'
 import { sheetAbilityNames } from '~/utils/sheetAbilities'
+import { pokemonHeldItemNames, trainerEquippedItemNames } from '~/utils/sheetItemNames'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { SheetPlacement, TabletopMap } from '~/types/map'
 import type { SpawnedPokemon } from '~/types/pokemon'
@@ -25,37 +26,12 @@ export interface SheetLookup {
   trainer: Map<string, TrainerSheet>
 }
 
-const EMPTY_ITEM_LABELS = new Set(['-', '—', 'none', 'n/a', 'na'])
-
-const splitEquippedItemNames = (value: string | null | undefined): string[] => {
-  if (!value?.trim()) return []
-  return value
-    .split(/\s*(?:[,;]|\s+[+&|/]\s+)\s*/g)
-    .map((item) => item.trim())
-    .filter((item) => item.length > 0 && !EMPTY_ITEM_LABELS.has(item.toLowerCase()))
-}
-
-const pokemonTokenItems = (sheet: CharacterSheet): string[] =>
-  splitEquippedItemNames(sheet.items?.held)
-
 const pokemonTokenAbilityNames = (sheet: CharacterSheet): string[] =>
   sheetAbilityNames(sheet.abilities)
 
 const trainerTokenAbilityNames = (sheet: TrainerSheet): string[] =>
   sheetAbilityNames(sheet.abilities)
 
-const trainerTokenItems = (sheet: TrainerSheet): string[] => {
-  const slots = sheet.equipmentSlots
-  if (!slots) return []
-  return [
-    slots.mainHand,
-    slots.offHand,
-    slots.head,
-    slots.body,
-    slots.feet,
-    slots.accessory,
-  ].flatMap(splitEquippedItemNames)
-}
 
 export const placementToSpawned = (
   placement: SheetPlacement,
@@ -92,7 +68,7 @@ export const placementToSpawned = (
       focusSkillRankValue: hp.focusSkillRankValue,
       combatStages: hp.combatStages,
       conditions: hp.conditions,
-      tokenItems: pokemonTokenItems(sheet),
+      tokenItems: pokemonHeldItemNames(sheet),
     }
   }
   const sheet = sheets.trainer.get(placement.sheetSlug)
@@ -125,7 +101,7 @@ export const placementToSpawned = (
     focusSkillRankValue: hp.focusSkillRankValue,
     combatStages: hp.combatStages,
     conditions: hp.conditions,
-    tokenItems: trainerTokenItems(sheet),
+    tokenItems: trainerEquippedItemNames(sheet),
   }
 }
 

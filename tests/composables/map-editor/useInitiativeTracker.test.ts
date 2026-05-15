@@ -9,13 +9,14 @@ import type { TrainerSheet } from '~/types/trainerSheet'
 
 const stages: CombatStageMap = { atk: 0, def: 0, satk: 0, sdef: 0, spd: 0, acc: 0 }
 
-const sheet = (slug: string): CharacterSheet => ({
+const sheet = (slug: string, overrides: Partial<CharacterSheet> = {}): CharacterSheet => ({
   slug,
   nickname: slug,
   species: 'Pikachu',
   level: 10,
   combat: { currentHp: 30, conditions: [] },
   stats: {},
+  ...overrides,
 })
 
 const token = (overrides: Partial<SpawnedPokemon> & Pick<SpawnedPokemon, 'id' | 'sheetSlug' | 'species'>): SpawnedPokemon => ({
@@ -109,5 +110,30 @@ describe('useInitiativeTracker', () => {
 
     expect(map.value?.placements[0].initiative).toBe(41)
     expect(tracker.initiativeRows.value[0].initiativeScore).toBe(20)
+  })
+
+  it('includes Quick Claw in default initiative values from sheets', () => {
+    const map = ref<TabletopMap | null>(mapWithPlacements([
+      { id: 'quick', sheetKind: 'pokemon', sheetSlug: 'quick', position: { x: 0, y: 0, z: 0 } },
+    ]))
+    const tracker = useInitiativeTracker({
+      map,
+      spawnedPokemon: computed(() => [
+        token({ id: 'quick', sheetSlug: 'quick', species: 'Quick', conditions: ['Paralysis'] }),
+      ]),
+      pokemonBySlug: ref(new Map([['quick', sheet('quick', { items: { held: 'Quick Claw' } })]])),
+      trainerBySlug: ref(new Map<string, TrainerSheet>()),
+      canManageInitiative: computed(() => true),
+    })
+
+    const row = tracker.initiativeRows.value[0]
+
+    expect(row.initiativeItemBonus).toBe(10)
+    expect(row.baseInitiative).toBe(row.speed + 10)
+    expect(row.initiativeScore).toBe(Math.floor((row.speed + 10) / 2))
+
+    tracker.fillInitiativeFromSpeed()
+
+    expect(map.value?.placements[0].initiative).toBe(row.baseInitiative)
   })
 })

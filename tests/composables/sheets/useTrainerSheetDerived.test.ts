@@ -111,6 +111,17 @@ describe('useTrainerSheetDerived', () => {
     ]))
   })
 
+  it('adds equipped Quick Claw to trainer sheet initiative before condition adjustments', () => {
+    const sheet = ref<TrainerSheet | null>(makeSheet({
+      conditions: ['Flinch'],
+      equipmentSlots: { accessory: 'Quick Claw' },
+    }))
+    const derived = useTrainerSheetDerived(sheet)
+
+    expect(derived.initiativeItemBonus.value).toBe(10)
+    expect(derived.initiative.value).toBe(derived.totalRow('spd') + 10 - 5)
+  })
+
   it('auto-adds trainer Struggle variants from capabilities and skips duplicates', () => {
     const sheet = ref<TrainerSheet | null>(makeSheet({
       capabilities: { other: ['Zapper'] },
