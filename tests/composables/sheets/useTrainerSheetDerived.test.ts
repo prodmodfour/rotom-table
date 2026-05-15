@@ -79,6 +79,38 @@ describe('useTrainerSheetDerived', () => {
     expect(derived.totalRow('atk')).toBe(8)
   })
 
+  it('applies condition effects to stages, evasion suppression, initiative, and summaries', () => {
+    const common = { speedBonus: 2, specialBonus: 2 }
+    const unconditioned = useTrainerSheetDerived(ref<TrainerSheet | null>(makeSheet({
+      evasion: common,
+    })))
+    const sheet = ref<TrainerSheet | null>(makeSheet({
+      conditions: ['Poisoned', 'Sleep', 'Flinch'],
+      evasion: common,
+    }))
+    const derived = useTrainerSheetDerived(sheet)
+
+    expect(derived.combatConditions.value).toEqual(['Poisoned', 'Sleep', 'Flinch'])
+    expect(derived.stats.value.find((row) => row.key === 'sdef')).toMatchObject({
+      stage: 0,
+      conditionStageModifier: -2,
+      effectiveStage: -2,
+      total: unconditioned.stats.value.find((row) => row.key === 'sdef')?.total,
+    })
+    expect(useTrainerSheetDerived(ref<TrainerSheet | null>(makeSheet({
+      conditions: ['Poisoned'],
+      evasion: common,
+    }))).trainerEvasion.value.special.total).toBe(unconditioned.trainerEvasion.value.special.total)
+    expect(derived.trainerEvasion.value.speed.total).toBe(0)
+    expect(derived.trainerEvasion.value.speed.suppressedByCondition).toBe('Sleep')
+    expect(derived.initiative.value).toBe(derived.totalRow('spd') - 5)
+    expect(derived.conditionEffects.value).toEqual(expect.arrayContaining([
+      expect.objectContaining({ label: 'Poisoned' }),
+      expect.objectContaining({ label: 'Sleep' }),
+      expect.objectContaining({ label: 'Flinch' }),
+    ]))
+  })
+
   it('auto-adds trainer Struggle variants from capabilities and skips duplicates', () => {
     const sheet = ref<TrainerSheet | null>(makeSheet({
       capabilities: { other: ['Zapper'] },

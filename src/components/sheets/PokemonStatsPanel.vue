@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { formatCombatStage } from '~/utils/combatStageStats'
+import { formatSignedModifier } from '~/utils/evasion'
 import type { BaseRelationViolation, ResolvedStat } from '~/utils/sheets/pokemonDerived'
 import type { PokemonStatEditableField } from '~/composables/sheets/usePokemonSheetRowActions'
 import type { StatKey } from '~/types/characterSheet'
@@ -52,13 +54,29 @@ const emit = defineEmits<{
             </td>
             <td class="total">{{ row.total }}</td>
             <td>
-              <EditableCell
-                :model-value="row.stage"
-                type="number"
-                :min="-6"
-                :max="6"
-                @update:model-value="(v) => emit('setStat', row.key, 'stage', v as number | undefined)"
-              />
+              <div class="stage-cell">
+                <strong
+                  v-if="row.conditionStageModifier"
+                  class="stage-effective"
+                  :class="{ plus: row.effectiveStage > 0, minus: row.effectiveStage < 0 }"
+                  title="Effective Combat Stage after condition effects"
+                >
+                  {{ formatCombatStage(row.effectiveStage) }}
+                </strong>
+                <span class="stage-edit" :class="{ 'stage-edit--with-effective': row.conditionStageModifier }">
+                  <span v-if="row.conditionStageModifier" class="stage-edit__label">manual</span>
+                  <EditableCell
+                    :model-value="row.stage"
+                    type="number"
+                    :min="-6"
+                    :max="6"
+                    @update:model-value="(v) => emit('setStat', row.key, 'stage', v as number | undefined)"
+                  />
+                </span>
+                <small v-if="row.conditionStageModifier" class="stage-condition">
+                  condition {{ formatSignedModifier(row.conditionStageModifier) }}
+                </small>
+              </div>
             </td>
           </tr>
         </tbody>
@@ -177,8 +195,44 @@ const emit = defineEmits<{
   color: var(--ink-bright);
 }
 
-.stats-table .mod.plus { color: var(--good); }
-.stats-table .mod.minus { color: var(--bad); }
+.stats-table .mod.plus,
+.stage-effective.plus { color: var(--good); }
+
+.stats-table .mod.minus,
+.stage-effective.minus { color: var(--bad); }
+
+.stage-cell {
+  display: inline-flex;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 0.32rem;
+  flex-wrap: wrap;
+}
+
+.stage-effective {
+  color: var(--ink-bright);
+  font-weight: 800;
+}
+
+.stage-edit {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.2rem;
+}
+
+.stage-edit--with-effective { color: var(--ink-muted); }
+
+.stage-edit__label,
+.stage-condition {
+  color: var(--ink-muted);
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+}
+
+.stage-condition {
+  color: var(--bad);
+  font-weight: 700;
+}
 
 .stats-table tfoot th,
 .stats-table tfoot td {

@@ -1,13 +1,21 @@
 <script setup lang="ts">
 import type { TrainerEvasionBonusKey } from '~/composables/sheets/useTrainerSheetRowActions'
+import type { ConditionEffectSummary } from '~/utils/sheetConditionEffects'
 import type { TrainerSheet } from '~/types/trainerSheet'
 
 const otherCapsCsv = defineModel<string>('otherCapsCsv', { required: true })
 
+type TrainerEvasionEntry = {
+  total: number
+  base: number
+  bonus: number
+  suppressedByCondition?: string | null
+}
+
 type TrainerEvasionSummary = {
-  speed: { total: number; base: number; bonus: number }
-  physical: { total: number; base: number; bonus: number }
-  special: { total: number; base: number; bonus: number }
+  speed: TrainerEvasionEntry
+  physical: TrainerEvasionEntry
+  special: TrainerEvasionEntry
 }
 
 defineProps<{
@@ -25,7 +33,9 @@ defineProps<{
   attackTotal: number
   specialAttackTotal: number
   speedTotal: number
+  initiative: number
   trainerEvasion: TrainerEvasionSummary
+  conditionEffects: readonly ConditionEffectSummary[]
 }>()
 
 const emit = defineEmits<{
@@ -51,6 +61,7 @@ const forwardEvasionBonus = (key: TrainerEvasionBonusKey, value: number | undefi
       :attack-total="attackTotal"
       :special-attack-total="specialAttackTotal"
       :speed-total="speedTotal"
+      :initiative="initiative"
       @set-current-hp="emit('setCurrentHp', $event)"
       @update-damage-reduction="sheet.damageReduction = $event"
       @update-level="sheet.level = $event ?? 1"
@@ -63,6 +74,7 @@ const forwardEvasionBonus = (key: TrainerEvasionBonusKey, value: number | undefi
         v-model:conditions="sheet.conditions"
         v-model:digestion="sheet.digestion"
         :trainer-evasion="trainerEvasion"
+        :condition-effects="conditionEffects"
         @set-evasion-bonus="forwardEvasionBonus"
       />
     </div>

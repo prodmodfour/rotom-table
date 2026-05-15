@@ -16,6 +16,8 @@ defineProps<{
   fullMaxHp: number
   tickValue: number
   hpThresholds: HpThresholds
+  speedTotal: number
+  initiative: number
 }>()
 
 const emit = defineEmits<{
@@ -61,6 +63,13 @@ const emit = defineEmits<{
       <span class="cell-label">DR</span>
       <span class="cell-value">
         <EditableCell v-model="combat.dr" type="number" :min="0" />
+      </span>
+    </div>
+    <div class="combat-cell" title="Initiative is Speed adjusted by conditions such as Paralysis and Flinch.">
+      <span class="cell-label">Initiative</span>
+      <span class="cell-value">
+        {{ initiative }}
+        <span v-if="initiative !== speedTotal" class="cell-sub">Speed {{ speedTotal }}</span>
       </span>
     </div>
     <div class="combat-cell" title="Fractional HP values use full Max HP before the injury cap.">

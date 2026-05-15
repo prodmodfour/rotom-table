@@ -58,8 +58,14 @@ export interface ResolvedStat {
   base: number
   /** Stat points earned on level-up. */
   added: number
-  /** Combat stage. */
+  /** Sheet-authored Combat Stage before temporary condition effects. */
   stage: number
+  /** Alias for the sheet-authored Combat Stage, useful when an effective stage is displayed. */
+  manualStage: number
+  /** Condition-supplied Combat Stage delta, such as Burned's Defense -2. */
+  conditionStageModifier: number
+  /** Combat Stage after temporary condition effects. */
+  effectiveStage: number
   /** Sum displayed in the "Total" column (excluding stages). */
   total: number
 }
@@ -127,6 +133,9 @@ export const resolveStats = (sheet: CharacterSheet): ResolvedStat[] => {
       base,
       added,
       stage,
+      manualStage: stage,
+      conditionStageModifier: 0,
+      effectiveStage: stage,
       total: base + added,
     }
   })

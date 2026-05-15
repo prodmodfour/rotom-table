@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { PokemonEvasionBonusKey } from '~/composables/sheets/usePokemonSheetRowActions'
+import type { ConditionEffectSummary } from '~/utils/sheetConditionEffects'
 import type { CharacterSheet } from '~/types/characterSheet'
 
 interface HpThresholds {
@@ -13,6 +14,7 @@ interface EvasionEntry {
   base: number
   bonus: number
   abilityBonus: number
+  suppressedByCondition?: string | null
 }
 
 interface PokemonEvasionSummary {
@@ -28,7 +30,10 @@ defineProps<{
   fullMaxHp: number
   tickValue: number
   hpThresholds: HpThresholds
+  speedTotal: number
+  initiative: number
   pokemonEvasion: PokemonEvasionSummary
+  conditionEffects: readonly ConditionEffectSummary[]
 }>()
 
 const emit = defineEmits<{
@@ -51,12 +56,15 @@ const forwardEvasionBonus = (key: PokemonEvasionBonusKey, value: number | undefi
       :full-max-hp="fullMaxHp"
       :tick-value="tickValue"
       :hp-thresholds="hpThresholds"
+      :speed-total="speedTotal"
+      :initiative="initiative"
       @set-current-hp="emit('setCurrentHp', $event)"
     />
 
     <PokemonEvasionConditionsPanel
       :combat="sheet.combat!"
       :pokemon-evasion="pokemonEvasion"
+      :condition-effects="conditionEffects"
       @set-evasion-bonus="forwardEvasionBonus"
     />
   </section>

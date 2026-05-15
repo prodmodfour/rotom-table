@@ -28,6 +28,9 @@ const {
   setCurrentHp,
   tickValue,
   hpThresholds,
+  speedTotal,
+  initiative,
+  conditionEffects,
   statPointsSpent,
   statPointsBudget,
   statPointsLeft,
@@ -110,7 +113,10 @@ const {
       :full-max-hp="fullMaxHp"
       :tick-value="tickValue"
       :hp-thresholds="hpThresholds"
+      :speed-total="speedTotal"
+      :initiative="initiative"
       :pokemon-evasion="pokemonEvasion"
+      :condition-effects="conditionEffects"
       @set-current-hp="setCurrentHp"
       @set-evasion-bonus="setEvasionBonus"
     />

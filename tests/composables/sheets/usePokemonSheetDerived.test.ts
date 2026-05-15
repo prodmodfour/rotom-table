@@ -151,6 +151,36 @@ describe('usePokemonSheetDerived', () => {
     })
   })
 
+  it('applies condition effects to stages, evasion suppression, initiative, and summaries', () => {
+    const common = { evasion: { vsAtkBonus: 0, vsAnyBonus: 2 } }
+    const unconditioned = usePokemonSheetDerived(ref<CharacterSheet | null>(makeSheet({
+      combat: common,
+      items: {},
+    })))
+    const sheet = ref<CharacterSheet | null>(makeSheet({
+      combat: { ...common, conditions: ['Burned', 'Stuck', 'Paralysis'] },
+      items: {},
+    }))
+    const derived = usePokemonSheetDerived(sheet)
+
+    expect(derived.combatConditions.value).toEqual(['Burned', 'Paralysis', 'Stuck'])
+    expect(derived.stats.value.find((row) => row.key === 'def')).toMatchObject({
+      stage: 0,
+      conditionStageModifier: -2,
+      effectiveStage: -2,
+      total: unconditioned.stats.value.find((row) => row.key === 'def')?.total,
+    })
+    expect(derived.pokemonEvasion.value.vsAtk.total).toBe(unconditioned.pokemonEvasion.value.vsAtk.total)
+    expect(derived.pokemonEvasion.value.vsAny.total).toBe(0)
+    expect(derived.pokemonEvasion.value.vsAny.suppressedByCondition).toBe('Stuck')
+    expect(derived.initiative.value).toBe(Math.floor(derived.speedTotal.value / 2))
+    expect(derived.conditionEffects.value).toEqual(expect.arrayContaining([
+      expect.objectContaining({ label: 'Burned' }),
+      expect.objectContaining({ label: 'Paralysis' }),
+      expect.objectContaining({ label: 'Stuck' }),
+    ]))
+  })
+
   it('adds Sand Veil to every evasion total and increases it while activated', () => {
     const sheet = ref<CharacterSheet | null>(makeSheet({
       combat: { evasion: { vsAtkBonus: 0, vsSatkBonus: 0, vsAnyBonus: 0 } },

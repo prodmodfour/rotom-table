@@ -109,7 +109,7 @@ describe('move automation transaction helpers', () => {
     })
 
     expect(transaction.hpUpdates).toEqual(expect.arrayContaining([
-      { id: 't', currentHp: 10 },
+      { id: 't', currentHp: 9 },
       { id: 'u', currentHp: 40 },
     ]))
     expect(transaction.conditionUpdates).toEqual(expect.arrayContaining([
@@ -124,7 +124,7 @@ describe('move automation transaction helpers', () => {
     expect(transaction.fieldEffectsToApply).toEqual([{ kind: 'weather', value: 'sunny', source: 'Test Move' }])
     expect(transaction.logLines).toEqual(expect.arrayContaining([
       'Caster used Test Move.',
-      'Target: 15 HP damage (critical flagged).',
+      'Target: 16 HP damage (critical flagged).',
       'Manual note: Manual note',
       'Note: Check secondary effects.',
     ]))

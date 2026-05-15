@@ -39,6 +39,8 @@ const {
   trainerEvasion,
   tickValue,
   hpThresholds,
+  initiative,
+  conditionEffects,
   statPointsSpent,
   statPointsBudget,
   statPointsLeft,
@@ -157,7 +159,9 @@ const {
       :attack-total="totalRow('atk')"
       :special-attack-total="totalRow('satk')"
       :speed-total="totalRow('spd')"
+      :initiative="initiative"
       :trainer-evasion="trainerEvasion"
+      :condition-effects="conditionEffects"
       :move-rows="moveRows"
       :ability-rows="abilityRows"
       :order-tags-csv="orderTagsCsv"

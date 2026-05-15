@@ -5,15 +5,24 @@ import {
   formatSignedModifier,
 } from '~/utils/evasion'
 import type { TrainerEvasionBonusKey } from '~/composables/sheets/useTrainerSheetRowActions'
+import type { ConditionEffectSummary } from '~/utils/sheetConditionEffects'
+
+type TrainerEvasionEntry = {
+  total: number
+  base: number
+  bonus: number
+  suppressedByCondition?: string | null
+}
 
 type TrainerEvasionSummary = {
-  speed: { total: number; base: number; bonus: number }
-  physical: { total: number; base: number; bonus: number }
-  special: { total: number; base: number; bonus: number }
+  speed: TrainerEvasionEntry
+  physical: TrainerEvasionEntry
+  special: TrainerEvasionEntry
 }
 
 defineProps<{
   trainerEvasion: TrainerEvasionSummary
+  conditionEffects: readonly ConditionEffectSummary[]
 }>()
 
 const conditions = defineModel<string[] | undefined>('conditions', { required: true })
@@ -29,7 +38,10 @@ const emit = defineEmits<{
     <h2 class="block-title">Evasion</h2>
     <ul class="kv-list evasion-list">
       <li title="Stat evasion = floor(Speed Total / 5), capped at +6 from stats.">
-        <span class="evasion-list__label">Speed Evasion <small>stat {{ trainerEvasion.speed.base }}</small></span>
+        <span class="evasion-list__label">
+          Speed Evasion
+          <small>stat {{ trainerEvasion.speed.base }}</small>
+        </span>
         <span class="evasion-list__value">
           <strong>{{ trainerEvasion.speed.total }}</strong>
           <span class="evasion-list__bonus">
@@ -42,11 +54,21 @@ const emit = defineEmits<{
               :format="formatSignedModifier"
               @update:model-value="(v) => emit('setEvasionBonus', 'speedBonus', v as number | undefined)"
             />
+            <span
+              v-if="trainerEvasion.speed.suppressedByCondition"
+              class="evasion-list__condition"
+              :title="`${trainerEvasion.speed.suppressedByCondition} prevents this Evasion from applying`"
+            >
+              suppressed by {{ trainerEvasion.speed.suppressedByCondition }}
+            </span>
           </span>
         </span>
       </li>
       <li title="Stat evasion = floor(Defense Total / 5), capped at +6 from stats.">
-        <span class="evasion-list__label">Physical Evasion <small>stat {{ trainerEvasion.physical.base }}</small></span>
+        <span class="evasion-list__label">
+          Physical Evasion
+          <small>stat {{ trainerEvasion.physical.base }}</small>
+        </span>
         <span class="evasion-list__value">
           <strong>{{ trainerEvasion.physical.total }}</strong>
           <span class="evasion-list__bonus">
@@ -59,11 +81,21 @@ const emit = defineEmits<{
               :format="formatSignedModifier"
               @update:model-value="(v) => emit('setEvasionBonus', 'physicalBonus', v as number | undefined)"
             />
+            <span
+              v-if="trainerEvasion.physical.suppressedByCondition"
+              class="evasion-list__condition"
+              :title="`${trainerEvasion.physical.suppressedByCondition} prevents this Evasion from applying`"
+            >
+              suppressed by {{ trainerEvasion.physical.suppressedByCondition }}
+            </span>
           </span>
         </span>
       </li>
       <li title="Stat evasion = floor(Special Defense Total / 5), capped at +6 from stats.">
-        <span class="evasion-list__label">Special Evasion <small>stat {{ trainerEvasion.special.base }}</small></span>
+        <span class="evasion-list__label">
+          Special Evasion
+          <small>stat {{ trainerEvasion.special.base }}</small>
+        </span>
         <span class="evasion-list__value">
           <strong>{{ trainerEvasion.special.total }}</strong>
           <span class="evasion-list__bonus">
@@ -76,6 +108,13 @@ const emit = defineEmits<{
               :format="formatSignedModifier"
               @update:model-value="(v) => emit('setEvasionBonus', 'specialBonus', v as number | undefined)"
             />
+            <span
+              v-if="trainerEvasion.special.suppressedByCondition"
+              class="evasion-list__condition"
+              :title="`${trainerEvasion.special.suppressedByCondition} prevents this Evasion from applying`"
+            >
+              suppressed by {{ trainerEvasion.special.suppressedByCondition }}
+            </span>
           </span>
         </span>
       </li>
@@ -83,6 +122,11 @@ const emit = defineEmits<{
     <div class="muted condition-block">
       <strong>Conditions:</strong>
       <ConditionPicker v-model="conditions" />
+      <ul v-if="conditionEffects.length" class="condition-effects" aria-label="Condition effects">
+        <li v-for="effect in conditionEffects" :key="effect.id">
+          <strong>{{ effect.label }}:</strong> {{ effect.description }}
+        </li>
+      </ul>
     </div>
     <p class="muted">
       <strong>Digestion:</strong>
@@ -158,6 +202,11 @@ const emit = defineEmits<{
   gap: 0.45rem;
 }
 
+.evasion-list__condition {
+  color: var(--bad);
+  font-weight: 700;
+}
+
 .evasion-list__value strong {
   color: var(--ink-bright);
   font-variant-numeric: tabular-nums;
@@ -170,4 +219,15 @@ const emit = defineEmits<{
 }
 
 .condition-block > strong { color: var(--ink-bright); }
+
+.condition-effects {
+  margin: 0;
+  padding-left: 1.1rem;
+  color: var(--ink-soft);
+  font-size: 0.8rem;
+}
+
+.condition-effects li + li { margin-top: 0.25rem; }
+
+.condition-effects strong { color: var(--ink-bright); }
 </style>

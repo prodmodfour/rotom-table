@@ -2,6 +2,7 @@ import { computed, watch, type ComputedRef, type Ref } from 'vue'
 import { trimmedTextValueFromEvent } from '~/utils/domEvents'
 import { resolveStats } from '~/utils/sheets/pokemonDerived'
 import { resolveTrainerStats } from '~/utils/sheets/trainerDerived'
+import { conditionAdjustedInitiative } from '~/utils/sheetConditionEffects'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import type { InitiativeTrackerState, TabletopMap } from '~/types/map'
@@ -29,6 +30,7 @@ export interface InitiativeRow {
   conditions: string[]
   initiative: number | null
   speed: number
+  initiativeScore: number
 }
 
 export interface UseInitiativeTrackerOptions {
@@ -126,6 +128,7 @@ export const useInitiativeTracker = ({
     const placements = new Map((map.value?.placements ?? []).map((placement) => [placement.id, placement]))
     return spawnedPokemon.value.map((pokemon) => {
       const placement = placements.get(pokemon.id)
+      const speed = speedForPlacement(pokemon.sheetKind, pokemon.sheetSlug)
       return {
         id: pokemon.id,
         name: pokemon.species,
@@ -135,7 +138,8 @@ export const useInitiativeTracker = ({
         maxHp: Math.max(0, Math.floor(pokemon.maxHp)),
         conditions: pokemon.conditions,
         initiative: normalizeInitiativeValue(placement?.initiative),
-        speed: speedForPlacement(pokemon.sheetKind, pokemon.sheetSlug),
+        speed,
+        initiativeScore: conditionAdjustedInitiative(speed, pokemon.conditions),
       }
     })
   })
@@ -148,7 +152,7 @@ export const useInitiativeTracker = ({
       if (a.initiative !== null && b.initiative !== null && a.initiative !== b.initiative) {
         return b.initiative - a.initiative
       }
-      if (a.speed !== b.speed) return b.speed - a.speed
+      if (a.initiativeScore !== b.initiativeScore) return b.initiativeScore - a.initiativeScore
       return a.name.localeCompare(b.name)
     }),
   )
@@ -231,7 +235,7 @@ export const useInitiativeTracker = ({
 
   const fillInitiativeFromSpeed = () => {
     if (!map.value || !canManageInitiative.value) return
-    const speeds = new Map(initiativeRows.value.map((entry) => [entry.id, entry.speed]))
+    const speeds = new Map(initiativeRows.value.map((entry) => [entry.id, entry.initiativeScore]))
     for (const placement of map.value.placements) {
       const speed = speeds.get(placement.id)
       if (speed !== undefined) placement.initiative = speed

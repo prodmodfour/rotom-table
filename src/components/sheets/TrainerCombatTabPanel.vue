@@ -2,6 +2,7 @@
 import type { AbilityLookupRow } from '~/utils/sheetAbilityLookup'
 import type { TrainerSheetMoveLookupRow } from '~/composables/sheets/useTrainerSheetDerived'
 import type { TrainerEvasionBonusKey } from '~/composables/sheets/useTrainerSheetRowActions'
+import type { ConditionEffectSummary } from '~/utils/sheetConditionEffects'
 import type {
   TrainerAbilityEntry,
   TrainerOrder,
@@ -10,10 +11,17 @@ import type {
 
 const otherCapsCsv = defineModel<string>('otherCapsCsv', { required: true })
 
+type TrainerEvasionEntry = {
+  total: number
+  base: number
+  bonus: number
+  suppressedByCondition?: string | null
+}
+
 type TrainerEvasionSummary = {
-  speed: { total: number; base: number; bonus: number }
-  physical: { total: number; base: number; bonus: number }
-  special: { total: number; base: number; bonus: number }
+  speed: TrainerEvasionEntry
+  physical: TrainerEvasionEntry
+  special: TrainerEvasionEntry
 }
 
 defineProps<{
@@ -31,7 +39,9 @@ defineProps<{
   attackTotal: number
   specialAttackTotal: number
   speedTotal: number
+  initiative: number
   trainerEvasion: TrainerEvasionSummary
+  conditionEffects: readonly ConditionEffectSummary[]
   moveRows: readonly TrainerSheetMoveLookupRow[]
   abilityRows: readonly AbilityLookupRow<TrainerAbilityEntry>[]
   orderTagsCsv: (order: TrainerOrder) => string
@@ -76,7 +86,9 @@ const forwardReorderMove = (fromIndex: number, toIndex: number) =>
       :attack-total="attackTotal"
       :special-attack-total="specialAttackTotal"
       :speed-total="speedTotal"
+      :initiative="initiative"
       :trainer-evasion="trainerEvasion"
+      :condition-effects="conditionEffects"
       @set-current-hp="emit('setCurrentHp', $event)"
       @set-evasion-bonus="forwardSetEvasionBonus"
     />

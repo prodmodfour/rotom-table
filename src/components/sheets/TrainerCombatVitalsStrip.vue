@@ -14,6 +14,7 @@ defineProps<{
   attackTotal: number
   specialAttackTotal: number
   speedTotal: number
+  initiative: number
 }>()
 
 const emit = defineEmits<{
@@ -80,7 +81,10 @@ const emit = defineEmits<{
     </div>
     <div class="combat-cell"><span>CS Atk</span><strong>{{ attackTotal }}</strong></div>
     <div class="combat-cell"><span>CS SAtk</span><strong>{{ specialAttackTotal }}</strong></div>
-    <div class="combat-cell"><span>Speed</span><strong>{{ speedTotal }}</strong></div>
+    <div class="combat-cell" title="Initiative is Speed adjusted by conditions such as Paralysis and Flinch.">
+      <span>Initiative</span>
+      <strong>{{ initiative }}<small v-if="initiative !== speedTotal">Speed {{ speedTotal }}</small></strong>
+    </div>
   </div>
 </template>
 

@@ -5,6 +5,7 @@ import {
   formatSignedModifier,
 } from '~/utils/evasion'
 import type { PokemonEvasionBonusKey } from '~/composables/sheets/usePokemonSheetRowActions'
+import type { ConditionEffectSummary } from '~/utils/sheetConditionEffects'
 import type { CharacterSheetCombat } from '~/types/characterSheet'
 
 interface EvasionEntry {
@@ -12,6 +13,7 @@ interface EvasionEntry {
   base: number
   bonus: number
   abilityBonus: number
+  suppressedByCondition?: string | null
 }
 
 interface PokemonEvasionSummary {
@@ -23,6 +25,7 @@ interface PokemonEvasionSummary {
 defineProps<{
   combat: CharacterSheetCombat
   pokemonEvasion: PokemonEvasionSummary
+  conditionEffects: readonly ConditionEffectSummary[]
 }>()
 
 const emit = defineEmits<{
@@ -55,6 +58,13 @@ const emit = defineEmits<{
           >
             Sand Veil {{ formatSignedModifier(pokemonEvasion.vsAtk.abilityBonus) }}
           </span>
+          <span
+            v-if="pokemonEvasion.vsAtk.suppressedByCondition"
+            class="evasion-bonus__condition"
+            :title="`${pokemonEvasion.vsAtk.suppressedByCondition} prevents this Evasion from applying`"
+          >
+            suppressed by {{ pokemonEvasion.vsAtk.suppressedByCondition }}
+          </span>
         </span>
       </li>
       <li title="Stat evasion = floor(Special Defense Total / 5), capped at +6 from stats. Sand Veil adds +1 if present, or +2 when activated from the Abilities table.">
@@ -77,6 +87,13 @@ const emit = defineEmits<{
             title="Sand Veil ability bonus"
           >
             Sand Veil {{ formatSignedModifier(pokemonEvasion.vsSatk.abilityBonus) }}
+          </span>
+          <span
+            v-if="pokemonEvasion.vsSatk.suppressedByCondition"
+            class="evasion-bonus__condition"
+            :title="`${pokemonEvasion.vsSatk.suppressedByCondition} prevents this Evasion from applying`"
+          >
+            suppressed by {{ pokemonEvasion.vsSatk.suppressedByCondition }}
           </span>
         </span>
       </li>
@@ -108,6 +125,13 @@ const emit = defineEmits<{
           >
             Bright Powder {{ formatSignedModifier(pokemonEvasion.vsAny.itemBonus) }}
           </span>
+          <span
+            v-if="pokemonEvasion.vsAny.suppressedByCondition"
+            class="evasion-bonus__condition"
+            :title="`${pokemonEvasion.vsAny.suppressedByCondition} prevents this Evasion from applying`"
+          >
+            suppressed by {{ pokemonEvasion.vsAny.suppressedByCondition }}
+          </span>
         </span>
       </li>
     </ul>
@@ -116,6 +140,11 @@ const emit = defineEmits<{
   <div class="combat-line condition-block">
     <strong>Conditions:</strong>
     <ConditionPicker v-model="combat.conditions" />
+    <ul v-if="conditionEffects.length" class="condition-effects" aria-label="Condition effects">
+      <li v-for="effect in conditionEffects" :key="effect.id">
+        <strong>{{ effect.label }}:</strong> {{ effect.description }}
+      </li>
+    </ul>
   </div>
   <p class="combat-line">
     <strong>Vitamins:</strong>
@@ -186,10 +215,13 @@ const emit = defineEmits<{
 }
 
 .evasion-bonus__item,
-.evasion-bonus__ability {
+.evasion-bonus__ability,
+.evasion-bonus__condition {
   color: var(--accent);
   font-weight: 700;
 }
+
+.evasion-bonus__condition { color: var(--bad); }
 
 .combat-line {
   margin: 0.55rem 0 0;
@@ -203,6 +235,17 @@ const emit = defineEmits<{
 }
 
 .condition-block > strong { color: var(--ink-bright); }
+
+.condition-effects {
+  margin: 0;
+  padding-left: 1.1rem;
+  color: var(--ink-soft);
+  font-size: 0.8rem;
+}
+
+.condition-effects li + li { margin-top: 0.25rem; }
+
+.condition-effects strong { color: var(--ink-bright); }
 
 .combat-line.notes {
   color: var(--ink-soft);
