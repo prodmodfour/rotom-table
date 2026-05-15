@@ -35,14 +35,17 @@ describe('pokedex type matchup helpers', () => {
   it('uses Sky and Levitate capabilities as Ground resistance sources', () => {
     const charizardGroups = buildTypeMatchupGroups(['Fire', 'Flying'], { sky: 8 })
     expect(charizardGroups.find((group) => group.key === 'weaknesses')?.items.map((item) => item.type)).not.toContain('Ground')
-    expect(charizardGroups.find((group) => group.key === 'resistances')?.items).toContainEqual({
+    expect(charizardGroups.find((group) => group.key === 'resistances')?.items.map((item) => item.type)).not.toContain('Ground')
+
+    const geodudeGroups = buildTypeMatchupGroups(['Rock', 'Ground'], { levitate: 3 })
+    expect(geodudeGroups.find((group) => group.key === 'weaknesses')?.items.map((item) => item.type)).not.toContain('Ground')
+    expect(geodudeGroups.find((group) => group.key === 'resistances')?.items.map((item) => item.type)).not.toContain('Ground')
+
+    const flyingGroups = buildTypeMatchupGroups(['Flying'], { sky: 4 })
+    expect(flyingGroups.find((group) => group.key === 'resistances')?.items).toContainEqual({
       type: 'Ground',
       multiplier: 0.5,
       label: '1/2',
     })
-
-    const geodudeGroups = buildTypeMatchupGroups(['Rock', 'Ground'], { levitate: 3 })
-    expect(geodudeGroups.find((group) => group.key === 'weaknesses')?.items.map((item) => item.type)).not.toContain('Ground')
-    expect(geodudeGroups.find((group) => group.key === 'resistances')?.items.map((item) => item.type)).toContain('Ground')
   })
 })

@@ -83,16 +83,16 @@ describe('usePokemonSheetDerived', () => {
     })
   })
 
-  it('applies Levitate passive Ground resistance in type effectiveness', () => {
+  it('applies Levitate passive Ground resistance one step further in type effectiveness', () => {
     const sheet = ref<CharacterSheet | null>(makeSheet({
       abilities: [{ name: 'Levitate' }],
     }))
     const derived = usePokemonSheetDerived(sheet)
 
     expect(derived.typeEffectivenessRows.value.find((row) => row.type === 'Ground')).toMatchObject({
-      mult: 0.5,
-      label: '½',
-      tone: 'resist',
+      mult: 1,
+      label: '1',
+      tone: 'neutral',
       source: 'Levitate',
     })
   })
@@ -106,17 +106,17 @@ describe('usePokemonSheetDerived', () => {
     const derived = usePokemonSheetDerived(sheet)
 
     expect(derived.typeEffectivenessRows.value.find((row) => row.type === 'Ground')).toMatchObject({
-      mult: 0.5,
-      label: '½',
-      tone: 'resist',
+      mult: 1,
+      label: '1',
+      tone: 'neutral',
       source: 'Levitate',
     })
 
     sheet.value!.abilities = []
     expect(derived.typeEffectivenessRows.value.find((row) => row.type === 'Ground')).toMatchObject({
-      mult: 0.5,
-      label: '½',
-      tone: 'resist',
+      mult: 1,
+      label: '1',
+      tone: 'neutral',
       source: 'Sky/Levitate Capability',
     })
   })

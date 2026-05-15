@@ -1,4 +1,10 @@
-import { POKEMON_TYPES, isPokemonType, singleTypeMultiplier, type PokemonType } from '~/utils/typeChart'
+import {
+  POKEMON_TYPES,
+  isPokemonType,
+  multiplierFromEffectivenessSteps,
+  singleTypeMultiplier,
+  type PokemonType,
+} from '~/utils/typeChart'
 import {
   applySheetPassiveTypeEffectiveness,
   type GroundResistanceCapabilities,
@@ -41,12 +47,12 @@ export const computePtuTypeMultiplier = (
     if (singleTypeMatchup < 1) effectivenessSteps -= 1
   }
 
-  let multiplier = 1
-  if (effectivenessSteps < 0) multiplier = 1 / (2 ** Math.abs(effectivenessSteps))
-  else if (effectivenessSteps === 1) multiplier = 1.5
-  else if (effectivenessSteps >= 2) multiplier = effectivenessSteps
-
-  return applySheetPassiveTypeEffectiveness(attacker, multiplier, undefined, capabilities)
+  return applySheetPassiveTypeEffectiveness(
+    attacker,
+    multiplierFromEffectivenessSteps(effectivenessSteps),
+    undefined,
+    capabilities,
+  )
 }
 
 export const formatPtuMultiplier = (multiplier: number): string => {

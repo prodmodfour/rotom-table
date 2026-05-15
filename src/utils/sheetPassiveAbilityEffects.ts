@@ -1,4 +1,4 @@
-import { computeMultiplier } from '~/utils/typeChart'
+import { computeMultiplier, resistMultiplierOneStepFurther } from '~/utils/typeChart'
 import {
   sheetHasCanonicalAbility,
   type SheetAbilityNameSource,
@@ -7,7 +7,6 @@ import {
 export const LEVITATE_ABILITY_NAME = 'Levitate'
 export const LEVITATE_GRANTED_SPEED = 4
 export const LEVITATE_EXISTING_SPEED_BONUS = 2
-export const LEVITATE_GROUND_RESISTANCE_MULTIPLIER = 0.5
 
 export interface GroundResistanceCapabilities {
   sky?: number | string | null
@@ -73,9 +72,9 @@ export const resolveLevitateAbilitySpeed = (
 
 /**
  * Passive type effects used by sheets and token automation. Levitate ability,
- * Sky capability, and Levitate capability grant Ground resistance rather than
- * full immunity; an existing type immunity still wins, and an already-stronger
- * resistance is preserved. Multiple passive sources do not stack.
+ * Sky capability, and Levitate capability make Ground one effectiveness step
+ * more resisted. Existing type immunities still win, and multiple passive
+ * sources do not stack.
  */
 export const applySheetPassiveTypeEffectiveness = (
   attackingType: string,
@@ -90,7 +89,7 @@ export const applySheetPassiveTypeEffectiveness = (
   ) {
     return baseMultiplier
   }
-  return Math.min(baseMultiplier, LEVITATE_GROUND_RESISTANCE_MULTIPLIER)
+  return resistMultiplierOneStepFurther(baseMultiplier)
 }
 
 /** Backwards-compatible ability-only wrapper. */

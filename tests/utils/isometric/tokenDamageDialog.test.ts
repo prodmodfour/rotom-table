@@ -124,8 +124,8 @@ describe('isometric damage dialog helpers', () => {
     }))
     levitateDialog.amount = '20'
     levitateDialog.attackType = 'Ground'
-    expect(getDamageDialogMultiplier(levitateDialog)).toBe(0.5)
-    expect(getDamageDialogMultiplierTone(0.5)).toBe('is-resist')
+    expect(getDamageDialogMultiplier(levitateDialog)).toBe(1)
+    expect(getDamageDialogMultiplierTone(1)).toBeNull()
   })
 
   it('finds DB definitions and syncs live token metadata while clearing missing attackers', () => {

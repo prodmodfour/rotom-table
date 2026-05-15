@@ -73,6 +73,32 @@ export const isPokemonType = (value: string): value is PokemonType =>
 export const singleTypeMultiplier = (attacker: PokemonType, defender: PokemonType): number =>
   SUPER[attacker][defender] ?? 1
 
+export const multiplierFromEffectivenessSteps = (effectivenessSteps: number): number => {
+  if (effectivenessSteps < 0) return 1 / (2 ** Math.abs(effectivenessSteps))
+  if (effectivenessSteps === 1) return 1.5
+  if (effectivenessSteps >= 2) return effectivenessSteps
+  return 1
+}
+
+export const effectivenessStepsFromMultiplier = (multiplier: number): number | null => {
+  if (multiplier === 0) return null
+  if (multiplier === 1) return 0
+  if (multiplier === 1.5) return 1
+  if (multiplier >= 2 && Number.isInteger(multiplier)) return multiplier
+  if (multiplier > 0 && multiplier < 1) {
+    const resistanceSteps = Math.log2(1 / multiplier)
+    return Number.isInteger(resistanceSteps) ? -resistanceSteps : null
+  }
+  return null
+}
+
+export const resistMultiplierOneStepFurther = (multiplier: number): number => {
+  const effectivenessSteps = effectivenessStepsFromMultiplier(multiplier)
+  return effectivenessSteps == null
+    ? multiplier
+    : multiplierFromEffectivenessSteps(effectivenessSteps - 1)
+}
+
 /**
  * PTU effectiveness of an attacking type against any number of defending
  * types. Unknown types are treated as neutral (``1``).
@@ -93,10 +119,7 @@ export const computeMultiplier = (
     if (singleTypeMatchup < 1) effectivenessSteps -= 1
   }
 
-  if (effectivenessSteps < 0) return 1 / (2 ** Math.abs(effectivenessSteps))
-  if (effectivenessSteps === 1) return 1.5
-  if (effectivenessSteps >= 2) return effectivenessSteps
-  return 1
+  return multiplierFromEffectivenessSteps(effectivenessSteps)
 }
 
 /** Format a multiplier for display: ``0`` → ``"0"``, ``0.5`` → ``"½"`` etc. */

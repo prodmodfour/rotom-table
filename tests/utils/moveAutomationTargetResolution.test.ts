@@ -149,7 +149,7 @@ describe('move automation target resolution helpers', () => {
     expect(moveAutomationMultiplierLabel(
       script({ type: 'Ground' }),
       token({ id: 'l', species: 'Levitate Target', defenderTypes: ['Electric'], abilityNames: ['Levitate'] }),
-    )).toBe('½')
+    )).toBe('1')
     expect(moveAutomationMultiplierLabel(
       script({ type: 'Ground' }),
       token({ id: 's', species: 'Sky Target', defenderTypes: ['Flying'], defenderCapabilities: { sky: 6 } }),
