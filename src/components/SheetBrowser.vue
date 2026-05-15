@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { characterSheets, getSpriteUrl } from '~~/data/characterSheets'
-import { trainerSheets } from '~~/data/trainerSheets'
+import { getSpriteUrl } from '~~/data/characterSheets'
+import { useLiveSheets } from '~/composables/useLiveSheets'
 import { buildFolderBreadcrumbs } from '~/utils/folderBrowser'
 import {
   buildSheetBrowserFolderTiles,
@@ -19,10 +19,11 @@ const emit = defineEmits<{ (event: 'select', selection: SheetSelection): void }>
 const currentPath = ref('')
 const searchTerm = ref('')
 const collapsed = ref(false)
+const { pokemonBySlug, trainerBySlug } = useLiveSheets()
 
 const items = computed<SheetBrowserItem[]>(() => buildSheetBrowserItems({
-  pokemonSheets: characterSheets,
-  trainerSheets,
+  pokemonSheets: Array.from(pokemonBySlug.value.values()),
+  trainerSheets: Array.from(trainerBySlug.value.values()),
   spriteUrlForSpecies: getSpriteUrl,
 }))
 
