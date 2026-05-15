@@ -68,6 +68,20 @@ describe('instant move automation', () => {
     expect(result.transaction.conditionUpdates).toEqual([{ id: 't', conditions: ['Burned'] }])
   })
 
+  it('adds the damage dice a second time on critical hits', () => {
+    const script = explicitScriptForMove('Ember')!
+    const result = resolveInstantMoveAutomation({
+      script,
+      user: token({ id: 'u', species: 'Caster' }),
+      target: token({ id: 't', species: 'Target' }),
+      damageFormula: '1d8+6',
+      random: sequenceRandom([0.999, 0.375]),
+    })
+
+    expect(result.feedback).toMatchObject({ naturalRoll: 20, hit: true, crit: true, damageLoss: 19 })
+    expect(result.transaction.hpUpdates).toEqual([{ id: 't', currentHp: 21 }])
+  })
+
   it('does not apply Ember burn below its natural-roll threshold', () => {
     const script = explicitScriptForMove('Ember')!
     const result = resolveInstantMoveAutomation({

@@ -69,7 +69,11 @@ export const resolveMoveAutomationTargetDamageLoss = (
   if (!state.applyDamage || !state.hit) return 0
   const manual = parsePositiveInt(state.manualHpLoss)
   if (manual != null) return manual
-  const raw = state.damageRoll?.total ?? 0
+  const baseRollTotal = state.damageRoll?.total ?? 0
+  const criticalDiceBonus = state.crit
+    ? state.damageRoll?.rolls.reduce((sum, roll) => sum + roll, 0) ?? 0
+    : 0
+  const raw = baseRollTotal + criticalDiceBonus
   if (raw <= 0) return 0
   const physical = script.damageClass === 'Physical'
   const offense = physical
