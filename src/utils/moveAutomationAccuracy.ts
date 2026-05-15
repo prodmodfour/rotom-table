@@ -1,6 +1,10 @@
 import { applyCombatStageToStat } from '~/utils/combatStageStats'
 import { computeEvasionTotal, computeStatEvasion } from '~/utils/evasion'
-import { normalizeConditionNames } from '~/utils/statusConditions'
+import {
+  conditionAccuracyModifier,
+  evasionSuppressedByCondition,
+  speedEvasionSuppressedByCondition,
+} from '~/utils/sheetConditionEffects'
 import type { MoveAutomationScript } from '~/types/moveAutomation'
 import type { SpawnedPokemon } from '~/types/pokemon'
 
@@ -18,18 +22,6 @@ export interface MoveAutomationEvasionResolution {
   candidates: MoveAutomationEvasionCandidate[]
   suppressedByCondition: string | null
 }
-
-const conditionSet = (target: SpawnedPokemon): Set<string> =>
-  new Set(normalizeConditionNames(target.conditions))
-
-const suppressesAllEvasion = (conditions: Set<string>): string | null => {
-  for (const condition of ['Vulnerable', 'Sleep', 'Frozen']) {
-    if (conditions.has(condition)) return condition
-  }
-  return null
-}
-
-const speedEvasionSuppressed = (conditions: Set<string>): boolean => conditions.has('Stuck')
 
 const evasionForStat = (
   stat: number | null | undefined,
@@ -62,14 +54,13 @@ export const moveAutomationEvasionCandidates = (
   script: MoveAutomationScript | null | undefined,
   target: SpawnedPokemon,
 ): MoveAutomationEvasionCandidate[] => {
-  const conditions = conditionSet(target)
-  if (suppressesAllEvasion(conditions)) return []
+  if (evasionSuppressedByCondition(target.conditions)) return []
 
   const candidates: MoveAutomationEvasionCandidate[] = []
   if (script?.damageClass === 'Physical') candidates.push(physicalEvasion(target))
   else if (script?.damageClass === 'Special') candidates.push(specialEvasion(target))
 
-  if (!speedEvasionSuppressed(conditions)) candidates.push(speedEvasion(target))
+  if (!speedEvasionSuppressedByCondition(target.conditions)) candidates.push(speedEvasion(target))
   return candidates
 }
 
@@ -77,8 +68,7 @@ export const resolveMoveAutomationTargetEvasion = (
   script: MoveAutomationScript | null | undefined,
   target: SpawnedPokemon,
 ): MoveAutomationEvasionResolution => {
-  const conditions = conditionSet(target)
-  const suppressedByCondition = suppressesAllEvasion(conditions)
+  const suppressedByCondition = evasionSuppressedByCondition(target.conditions)
   if (suppressedByCondition) {
     return {
       value: 0,
@@ -102,12 +92,5 @@ export const resolveMoveAutomationTargetEvasion = (
   }
 }
 
-const accuracyPenaltyFromConditions = (conditions: readonly string[]): number => {
-  const normalized = new Set(normalizeConditionNames(conditions))
-  if (normalized.has('Total Blindness')) return -10
-  if (normalized.has('Blindness')) return -6
-  return 0
-}
-
 export const moveAutomationUserAccuracy = (user: SpawnedPokemon): number =>
-  user.combatStages.acc + accuracyPenaltyFromConditions(user.conditions)
+  user.combatStages.acc + conditionAccuracyModifier(user.conditions)

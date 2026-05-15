@@ -7,6 +7,7 @@ import type { CombatStageKey, CombatStageMap, CombatStatStageKey } from '~/types
 const EVASION_SUPPRESSING_CONDITIONS = [
   'Vulnerable',
   'Sleep',
+  'Bad Sleep',
   'Frozen',
   'Fainted',
   'Blindness',
@@ -235,7 +236,7 @@ export const describeSheetConditionEffects = (
     effects.push({
       id: 'bad-sleep-ticks',
       label: 'Bad Sleep',
-      description: `Whenever a save against Sleep is made, lose ${tickText(options.tickValue, 2)}. Ends when Sleep ends.`,
+      description: `Applies no Evasion. Whenever a save against Sleep is made, lose ${tickText(options.tickValue, 2)}. Ends when Sleep ends.`,
     })
   }
 

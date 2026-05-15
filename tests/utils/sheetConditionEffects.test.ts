@@ -66,6 +66,15 @@ describe('sheet condition effects', () => {
       statTotal: 30,
       combatStage: 0,
       bonus: 2,
+      conditions: ['Bad SLeep'],
+      statStageKey: 'spd',
+      kind: 'speed',
+    })).toMatchObject({ total: 0, suppressedByCondition: 'Bad Sleep' })
+
+    expect(conditionAdjustedEvasion({
+      statTotal: 30,
+      combatStage: 0,
+      bonus: 2,
       conditions: ['Stuck'],
       statStageKey: 'spd',
       kind: 'speed',
@@ -82,12 +91,13 @@ describe('sheet condition effects', () => {
 
   it('identifies evasion-suppressing conditions and describes sheet effects', () => {
     expect(evasionSuppressedByCondition(['Tripped'])).toBe('Tripped')
+    expect(evasionSuppressedByCondition(['Bad SLeep'])).toBe('Bad Sleep')
     expect(speedEvasionSuppressedByCondition(['Stuck'])).toBe('Stuck')
 
     const effects = describeSheetConditionEffects(['Burned', 'Bad Sleep', 'Disabled'], { tickValue: 7 })
     expect(effects).toEqual(expect.arrayContaining([
       expect.objectContaining({ label: 'Burned', description: expect.stringContaining('Defense Combat Stage -2') }),
-      expect.objectContaining({ label: 'Bad Sleep', description: expect.stringContaining('14 HP') }),
+      expect.objectContaining({ label: 'Bad Sleep', description: expect.stringMatching(/Applies no Evasion.*14 HP/) }),
       expect.objectContaining({ label: 'Disabled', description: expect.stringContaining('Record the disabled Move') }),
     ]))
   })

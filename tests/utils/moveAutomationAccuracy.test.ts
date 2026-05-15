@@ -81,6 +81,11 @@ describe('move automation accuracy helpers', () => {
       value: 0,
       suppressedByCondition: 'Vulnerable',
     })
+    expect(resolveMoveAutomationTargetEvasion(script('Physical'), token({ conditions: ['Bad SLeep'] }))).toMatchObject({
+      value: 0,
+      label: 'No Evasion (Bad Sleep)',
+      suppressedByCondition: 'Bad Sleep',
+    })
     expect(moveAutomationUserAccuracy(token({ combatStages: { ...stages, acc: 2 } }))).toBe(2)
     expect(moveAutomationUserAccuracy(token({ combatStages: { ...stages, acc: 2 }, conditions: ['Blindness'] }))).toBe(-4)
     expect(moveAutomationUserAccuracy(token({ combatStages: { ...stages, acc: 2 }, conditions: ['Total Blindness'] }))).toBe(-8)
