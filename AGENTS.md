@@ -21,3 +21,5 @@ When writing software, we explicitly always adhere to the following principles:
   - Dependency Inversion Principle
   - DRY principle
   - Law of Demeter
+
+  Viiolations of these principles should be seen as codebase corruption. If you spot violations while doing work, ensure that you clean up corruption in order to keep a pure codebase.
