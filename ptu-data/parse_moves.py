@@ -60,6 +60,33 @@ def _struggle_variant(
     }
 
 
+def _struggle_variant_pair(
+    capability: str,
+    type_: str,
+    *,
+    range_: str = "Melee, 1 Target",
+    capability_clause: str | None = None,
+) -> dict[str, dict]:
+    return {
+        f"Struggle ({capability} Physical)": _struggle_variant(
+            f"Struggle ({capability} Physical)",
+            type_,
+            capability,
+            damage_class="Physical",
+            range_=range_,
+            capability_clause=capability_clause,
+        ),
+        f"Struggle ({capability} Special)": _struggle_variant(
+            f"Struggle ({capability} Special)",
+            type_,
+            capability,
+            damage_class="Special",
+            range_=range_,
+            capability_clause=capability_clause,
+        ),
+    }
+
+
 # Struggle Attacks live in the Combat chapter rather than the move reference,
 # but the app's sheets resolve attack details through moves.json. Keep these
 # manual records here so regenerating the cache does not drop them.
@@ -78,28 +105,21 @@ MANUAL_MOVE_PATCHES = {
             f"{STRUGGLE_EXPERT_NOTE}"
         ),
     },
-    "Struggle (Firestarter)": _struggle_variant("Struggle (Firestarter)", "Fire", "Firestarter"),
-    "Struggle (Fountain)": _struggle_variant("Struggle (Fountain)", "Water", "Fountain"),
-    "Struggle (Freezer)": _struggle_variant("Struggle (Freezer)", "Ice", "Freezer"),
-    "Struggle (Guster Physical)": _struggle_variant(
-        "Struggle (Guster Physical)",
-        "Flying",
-        "Guster",
-        damage_class="Physical",
-    ),
-    "Struggle (Guster Special)": _struggle_variant("Struggle (Guster Special)", "Flying", "Guster"),
-    "Struggle (Materializer)": _struggle_variant("Struggle (Materializer)", "Rock", "Materializer"),
-    "Struggle (Telekinetic)": _struggle_variant(
-        "Struggle (Telekinetic)",
-        "Normal",
+    **_struggle_variant_pair("Firestarter", "Fire"),
+    **_struggle_variant_pair("Fountain", "Water"),
+    **_struggle_variant_pair("Freezer", "Ice"),
+    **_struggle_variant_pair("Guster", "Flying"),
+    **_struggle_variant_pair("Materializer", "Rock"),
+    **_struggle_variant_pair(
         "Telekinetic",
+        "Normal",
         range_="Focus Rank, 1 Target",
         capability_clause=(
             "The user may make Struggle Attacks at a range equal to their Focus Rank. "
             "These attacks deal Normal-Type Damage as usual."
         ),
     ),
-    "Struggle (Zapper)": _struggle_variant("Struggle (Zapper)", "Electric", "Zapper"),
+    **_struggle_variant_pair("Zapper", "Electric"),
 }
 
 

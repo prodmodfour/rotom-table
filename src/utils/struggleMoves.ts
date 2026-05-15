@@ -8,14 +8,19 @@ export interface StruggleCapabilityVariant {
   moveNames: readonly string[]
 }
 
+const physicalAndSpecialStruggleMoveNames = (capability: string): readonly string[] => [
+  `Struggle (${capability} Physical)`,
+  `Struggle (${capability} Special)`,
+]
+
 export const STRUGGLE_CAPABILITY_VARIANTS: readonly StruggleCapabilityVariant[] = [
-  { capability: 'Firestarter', moveNames: ['Struggle (Firestarter)'] },
-  { capability: 'Fountain', moveNames: ['Struggle (Fountain)'] },
-  { capability: 'Freezer', moveNames: ['Struggle (Freezer)'] },
-  { capability: 'Guster', moveNames: ['Struggle (Guster Physical)', 'Struggle (Guster Special)'] },
-  { capability: 'Materializer', aliases: ['Materialiser'], moveNames: ['Struggle (Materializer)'] },
-  { capability: 'Telekinetic', moveNames: ['Struggle (Telekinetic)'] },
-  { capability: 'Zapper', moveNames: ['Struggle (Zapper)'] },
+  { capability: 'Firestarter', moveNames: physicalAndSpecialStruggleMoveNames('Firestarter') },
+  { capability: 'Fountain', moveNames: physicalAndSpecialStruggleMoveNames('Fountain') },
+  { capability: 'Freezer', moveNames: physicalAndSpecialStruggleMoveNames('Freezer') },
+  { capability: 'Guster', moveNames: physicalAndSpecialStruggleMoveNames('Guster') },
+  { capability: 'Materializer', aliases: ['Materialiser'], moveNames: physicalAndSpecialStruggleMoveNames('Materializer') },
+  { capability: 'Telekinetic', moveNames: physicalAndSpecialStruggleMoveNames('Telekinetic') },
+  { capability: 'Zapper', moveNames: physicalAndSpecialStruggleMoveNames('Zapper') },
 ]
 
 const stripCapabilityParams = (raw: string): string =>
@@ -36,9 +41,19 @@ const normalizeCapabilityKey = (raw: string): string => {
   return key === 'materialiser' ? 'materializer' : key
 }
 
+const LEGACY_SPECIAL_STRUGGLE_MOVE_KEYS: Record<string, string> = {
+  strugglefirestarter: 'strugglefirestarterspecial',
+  strugglefountain: 'strugglefountainspecial',
+  strugglefreezer: 'strugglefreezerspecial',
+  struggleguster: 'strugglegusterspecial',
+  strugglematerializer: 'strugglematerializerspecial',
+  struggletelekinetic: 'struggletelekineticspecial',
+  strugglezapper: 'strugglezapperspecial',
+}
+
 const normalizeMoveKey = (raw: string): string => {
   const key = normalizeToken(raw).replace('materialiser', 'materializer')
-  return key === 'struggleguster' ? 'strugglegusterspecial' : key
+  return LEGACY_SPECIAL_STRUGGLE_MOVE_KEYS[key] ?? key
 }
 
 export const struggleMoveNamesForCapabilities = (

@@ -152,8 +152,16 @@ export const findAbility = (name: string): PtuAbility | null => {
 }
 
 const MOVE_ALIASES: Record<string, string> = {
+  'struggle-firestarter': 'Struggle (Firestarter Special)',
+  'struggle-fountain': 'Struggle (Fountain Special)',
+  'struggle-freezer': 'Struggle (Freezer Special)',
   'struggle-guster': 'Struggle (Guster Special)',
-  'struggle-materialiser': 'Struggle (Materializer)',
+  'struggle-materializer': 'Struggle (Materializer Special)',
+  'struggle-materialiser': 'Struggle (Materializer Special)',
+  'struggle-materialiser-physical': 'Struggle (Materializer Physical)',
+  'struggle-materialiser-special': 'Struggle (Materializer Special)',
+  'struggle-telekinetic': 'Struggle (Telekinetic Special)',
+  'struggle-zapper': 'Struggle (Zapper Special)',
 }
 
 export const findMove = (name: string): PtuMove | null => {

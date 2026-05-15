@@ -4,7 +4,16 @@ export type PokedexReferenceKind = 'move' | 'ability' | 'capability'
 
 const REFERENCE_SLUG_ALIASES: Partial<Record<PokedexReferenceKind, Record<string, string>>> = {
   move: {
-    'struggle-materialiser': 'struggle-materializer',
+    'struggle-firestarter': 'struggle-firestarter-special',
+    'struggle-fountain': 'struggle-fountain-special',
+    'struggle-freezer': 'struggle-freezer-special',
+    'struggle-guster': 'struggle-guster-special',
+    'struggle-materializer': 'struggle-materializer-special',
+    'struggle-materialiser': 'struggle-materializer-special',
+    'struggle-materialiser-physical': 'struggle-materializer-physical',
+    'struggle-materialiser-special': 'struggle-materializer-special',
+    'struggle-telekinetic': 'struggle-telekinetic-special',
+    'struggle-zapper': 'struggle-zapper-special',
   },
   capability: {
     mountable: 'mountable-x',

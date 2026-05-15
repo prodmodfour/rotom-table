@@ -107,7 +107,8 @@ describe('map token move menu options', () => {
 
     expect(entries).toEqual([
       { move: { name: 'Struggle' }, automatic: true },
-      { move: { name: 'Struggle (Zapper)' }, automatic: true },
+      { move: { name: 'Struggle (Zapper Physical)' }, automatic: true },
+      { move: { name: 'Struggle (Zapper Special)' }, automatic: true },
       { move: { name: 'Tackle' }, automatic: false },
     ])
   })
@@ -124,7 +125,8 @@ describe('map token move menu options', () => {
 
     expect(entries).toEqual(expect.arrayContaining([
       { move: { name: 'Struggle' }, automatic: true },
-      { move: { name: 'Struggle (Firestarter)' }, automatic: true },
+      { move: { name: 'Struggle (Firestarter Physical)' }, automatic: true },
+      { move: { name: 'Struggle (Firestarter Special)' }, automatic: true },
       { move: { name: 'Ember' }, automatic: false },
     ]))
   })

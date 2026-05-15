@@ -54,7 +54,8 @@ describe('usePokemonSheetDerived', () => {
     const derived = usePokemonSheetDerived(sheet)
 
     expect(derived.moveRows.value).toEqual(expect.arrayContaining([
-      expect.objectContaining({ move: { name: 'Struggle (Firestarter)' }, automatic: true }),
+      expect.objectContaining({ move: { name: 'Struggle (Firestarter Physical)' }, automatic: true }),
+      expect.objectContaining({ move: { name: 'Struggle (Firestarter Special)' }, automatic: true }),
       expect.objectContaining({ move: { name: 'Ember' }, automatic: false }),
     ]))
   })

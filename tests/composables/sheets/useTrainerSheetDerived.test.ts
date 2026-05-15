@@ -88,7 +88,8 @@ describe('useTrainerSheetDerived', () => {
 
     expect(derived.moveRows.value).toEqual(expect.arrayContaining([
       expect.objectContaining({ move: expect.objectContaining({ name: 'Struggle' }), automatic: false, sheetIndex: 0 }),
-      expect.objectContaining({ move: expect.objectContaining({ name: 'Struggle (Zapper)' }), automatic: true, sheetIndex: null }),
+      expect.objectContaining({ move: expect.objectContaining({ name: 'Struggle (Zapper Physical)' }), automatic: true, sheetIndex: null }),
+      expect.objectContaining({ move: expect.objectContaining({ name: 'Struggle (Zapper Special)' }), automatic: true, sheetIndex: null }),
     ]))
   })
 
