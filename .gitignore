@@ -15,3 +15,11 @@ temp/
 .env
 .env.*
 !.env.example
+
+# Local campaign content
+# Keep generated example sheets trackable while ignoring personal/campaign sheets.
+data/maps/
+data/sheets/*
+!data/sheets/examples/
+!data/sheets/examples/**
+data/trainers/
