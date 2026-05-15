@@ -34,6 +34,7 @@ defineProps<{
   pokemonAccuracy: PokemonAccuracySummary
   pokemonEvasion: PokemonEvasionSummary
   conditionEffects: readonly ConditionEffectSummary[]
+  availableMoves?: string[]
 }>()
 
 const emit = defineEmits<{
@@ -162,7 +163,7 @@ const emit = defineEmits<{
 
   <div class="combat-line condition-block">
     <strong>Conditions:</strong>
-    <ConditionPicker v-model="combat.conditions" />
+    <ConditionPicker v-model="combat.conditions" :available-moves="availableMoves" />
     <ul v-if="conditionEffects.length" class="condition-effects" aria-label="Condition effects">
       <li v-for="effect in conditionEffects" :key="effect.id">
         <strong>{{ effect.label }}:</strong> {{ effect.description }}

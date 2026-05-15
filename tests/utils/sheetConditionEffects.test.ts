@@ -94,11 +94,11 @@ describe('sheet condition effects', () => {
     expect(evasionSuppressedByCondition(['Bad SLeep'])).toBe('Bad Sleep')
     expect(speedEvasionSuppressedByCondition(['Stuck'])).toBe('Stuck')
 
-    const effects = describeSheetConditionEffects(['Burned', 'Bad Sleep', 'Disabled'], { tickValue: 7 })
+    const effects = describeSheetConditionEffects(['Burned', 'Bad Sleep', 'Disabled: Thunder Wave'], { tickValue: 7 })
     expect(effects).toEqual(expect.arrayContaining([
       expect.objectContaining({ label: 'Burned', description: expect.stringContaining('Defense Combat Stage -2') }),
       expect.objectContaining({ label: 'Bad Sleep', description: expect.stringMatching(/Applies no Evasion.*14 HP/) }),
-      expect.objectContaining({ label: 'Disabled', description: expect.stringContaining('Record the disabled Move') }),
+      expect.objectContaining({ label: 'Disabled: Thunder Wave', description: expect.stringContaining('Thunder Wave cannot be used') }),
     ]))
   })
 })

@@ -29,6 +29,7 @@ const pokemon = (): CharacterSheet => ({
   folder: 'party/a',
   combat: { currentHp: 1, conditions: [] },
   stats: {},
+  abilities: [{ name: 'Sand Veil' }],
 } as CharacterSheet)
 
 const makeMutations = (options: {
@@ -80,6 +81,15 @@ describe('useTokenSheetMutations', () => {
     })
     expect(saved[0].sheet).not.toHaveProperty('folder')
     expect(saved[0].sheet).toMatchObject({ slug: 'bolt' })
+  })
+
+  it('activates sheet ability automation and persists it', async () => {
+    const { mutations, pokemonSheets, saved } = makeMutations()
+
+    await mutations.modifyAbilityActivation({ id: 'token-1', abilityName: 'Sand Veil', activated: true })
+
+    expect(pokemonSheets.get('bolt')?.abilities?.[0]).toMatchObject({ name: 'Sand Veil', activated: true })
+    expect(saved).toHaveLength(1)
   })
 
   it('rolls back the optimistic update when persistence fails', async () => {

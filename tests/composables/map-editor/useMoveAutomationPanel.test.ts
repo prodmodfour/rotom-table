@@ -27,7 +27,7 @@ const mapFixture = (): TabletopMap => ({
   initiative: { activeId: null, round: 1 },
 })
 
-const spawned = (): SpawnedPokemon => ({
+const spawned = (overrides: Partial<SpawnedPokemon> = {}): SpawnedPokemon => ({
   species: 'Bolt',
   slug: 'bulbasaur',
   size: 'Small',
@@ -52,6 +52,7 @@ const spawned = (): SpawnedPokemon => ({
   combatStages: { atk: 0, def: 0, satk: 0, sdef: 0, spd: 0, acc: 0 },
   conditions: [],
   tokenItems: [],
+  ...overrides,
 })
 
 const transaction = (): MoveAutomationTransaction => ({
@@ -100,6 +101,41 @@ describe('useMoveAutomationPanel', () => {
     expect(panel.moveAutomationInitialMoveName.value).toBe('Tackle')
     expect(panel.moveAutomationMoves.value.map((move) => move.name)).toEqual(['Struggle', 'Tackle'])
     expect(panel.tokenMoveOptionsById.value['user-token'].map((move) => move.name)).toEqual(['Struggle', 'Tackle'])
+  })
+
+  it('omits Disabled moves from automation while leaving them visible in the token menu', () => {
+    const map = ref(mapFixture())
+    const pokemonSheet = {
+      slug: 'bolt',
+      nickname: 'Bolt',
+      species: 'Bulbasaur',
+      level: 5,
+      movelist: [{ name: 'Tackle' }, { name: 'Ember' }],
+    } as CharacterSheet
+    const panel = useMoveAutomationPanel({
+      map,
+      spawnedPokemon: computed(() => [spawned({ conditions: ['Disabled: Tackle'] })]),
+      pokemonBySlug: ref(new Map([[pokemonSheet.slug, pokemonSheet]])),
+      trainerBySlug: ref(new Map<string, TrainerSheet>()),
+      canEditMap: computed(() => false),
+      canControlPlacement: (id) => id === 'user-token',
+      modifyHp: () => undefined,
+      modifyCombatStages: () => undefined,
+      modifyConditions: () => undefined,
+      applyMoveFieldEffect: () => undefined,
+      placeHazard: () => undefined,
+    })
+
+    panel.openMoveAutomation({ id: 'user-token', moveName: 'Tackle' })
+
+    expect(panel.moveAutomationInitialMoveName.value).toBe('Tackle')
+    expect(panel.moveAutomationMoves.value.map((move) => move.name)).toEqual([
+      'Struggle',
+      'Struggle (Firestarter Physical)',
+      'Struggle (Firestarter Special)',
+      'Ember',
+    ])
+    expect(panel.tokenMoveOptionsById.value['user-token'].find((move) => move.name === 'Tackle')?.disabledByCondition).toBe(true)
   })
 
   it('applies sheet updates, gates map effects by GM permission, and appends logs', async () => {

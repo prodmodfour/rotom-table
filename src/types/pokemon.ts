@@ -240,7 +240,7 @@ export interface SpawnedPokemon extends PokemonCatalogEntry {
   focusSkillRankValue?: number
   /** Current combat stages copied from the source sheet. */
   combatStages: CombatStageMap
-  /** Canonical PTU conditions copied from the source sheet. */
+  /** PTU condition entries copied from the source sheet. */
   conditions: string[]
   /** Equipped/held item names copied from the source sheet for map token icons. */
   tokenItems: string[]

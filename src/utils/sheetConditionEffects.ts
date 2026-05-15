@@ -1,7 +1,11 @@
 import { applyCombatStageToStat } from '~/utils/combatStageStats'
 import { clampCombatStage } from '~/utils/combatStages'
 import { computeEvasionTotal, computeStatEvasion } from '~/utils/evasion'
-import { normalizeConditionNames } from '~/utils/statusConditions'
+import {
+  conditionBaseName,
+  disabledConditionMove,
+  normalizeConditionNames,
+} from '~/utils/statusConditions'
 import type { CombatStageKey, CombatStageMap, CombatStatStageKey } from '~/types/combatStages'
 
 const EVASION_SUPPRESSING_CONDITIONS = [
@@ -65,7 +69,7 @@ const finiteNumber = (value: unknown, fallback = 0): number => {
 }
 
 const conditionSet = (conditions: readonly string[] | null | undefined): Set<string> =>
-  new Set(normalizeConditionNames(conditions))
+  new Set(normalizeConditionNames(conditions).map((condition) => conditionBaseName(condition) ?? condition))
 
 const hasAnyCondition = (conditions: Set<string>, names: readonly string[]): boolean =>
   names.some((name) => conditions.has(name))
@@ -352,13 +356,16 @@ export const describeSheetConditionEffects = (
     })
   }
 
-  // Disabled names a particular move; the sheet stores only the condition name,
-  // so the exact move must stay in notes until per-instance condition data exists.
-  if (set.has('Disabled')) {
+  const disabledEntries = normalizeConditionNames(conditions)
+    .filter((condition) => conditionBaseName(condition) === 'Disabled')
+  for (const entry of disabledEntries) {
+    const moveName = disabledConditionMove(entry)
     effects.push({
-      id: 'disabled-move',
-      label: 'Disabled',
-      description: 'The named Move cannot be used. Record the disabled Move in notes.',
+      id: moveName ? `disabled-move-${moveName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}` : 'disabled-move',
+      label: moveName ? `Disabled: ${moveName}` : 'Disabled',
+      description: moveName
+        ? `${moveName} cannot be used while Disabled.`
+        : 'Choose the disabled Move; that Move cannot be used while Disabled.',
     })
   }
 

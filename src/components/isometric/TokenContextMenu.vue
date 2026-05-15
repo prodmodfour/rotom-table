@@ -1,16 +1,20 @@
 <script setup lang="ts">
-import { computed, ref, useId, watch } from 'vue'
+import { computed, ref, useId, watch, type ComputedRef } from 'vue'
 import ReferenceTooltip from '~/components/reference/ReferenceTooltip.vue'
 import { useAnchoredTooltip } from '~/composables/reference/useAnchoredTooltip'
 import type { TokenContextMenuState } from '~/utils/isometric/contextMenu'
+import type { TokenAbilityMenuOption } from '~/utils/mapTokenAbilities'
+import { buildTokenAbilityTooltipDetail } from '~/utils/mapTokenAbilityTooltips'
 import type { TokenMoveMenuOption } from '~/utils/mapTokenMoves'
 import { buildTokenMoveTooltipDetail } from '~/utils/mapTokenMoveTooltips'
+import type { RefTooltipDetail } from '~/utils/refLinks'
 import type { TokenSendOutOption } from '~/utils/mapTokenSendOut'
 
 const props = defineProps<{
   menu: TokenContextMenuState
   canDeleteTokens?: boolean
   moves?: TokenMoveMenuOption[]
+  abilities?: TokenAbilityMenuOption[]
   sendOutOptions?: TokenSendOutOption[]
 }>()
 
@@ -22,75 +26,145 @@ const emit = defineEmits<{
   (event: 'modify-combat-stages'): void
   (event: 'apply-remove-conditions'): void
   (event: 'use-move', moveName?: string | null): void
+  (event: 'use-ability', abilityName?: string | null): void
   (event: 'send-out-pokemon', pokemonSlug: string): void
   (event: 'deal-damage'): void
   (event: 'delete'): void
 }>()
 
-type ActiveContextPanel = 'main' | 'moves' | 'sendOut'
+type ActiveContextPanel = 'main' | 'moves' | 'abilities' | 'sendOut'
+
+interface NamedMenuItem {
+  name: string
+}
 
 const activePanel = ref<ActiveContextPanel>('main')
-const hoveredMoveName = ref<string | null>(null)
-const moveTooltipId = useId()
 
 const moves = computed(() => props.moves ?? [])
+const abilities = computed(() => props.abilities ?? [])
 const sendOutOptions = computed(() => props.sendOutOptions ?? [])
-const hoveredMove = computed(() =>
-  moves.value.find((move) => move.name === hoveredMoveName.value) ?? null,
-)
-const hoveredMoveTooltipDetail = computed(() =>
-  hoveredMove.value ? buildTokenMoveTooltipDetail(hoveredMove.value) : null,
-)
+
+const createSubmenuTooltipController = <TItem extends NamedMenuItem>(options: {
+  panel: ActiveContextPanel
+  items: ComputedRef<TItem[]>
+  buildDetail: (item: TItem) => RefTooltipDetail
+}) => {
+  const hoveredName = ref<string | null>(null)
+  const tooltipId = useId()
+  const hoveredItem = computed(() =>
+    options.items.value.find((item) => item.name === hoveredName.value) ?? null,
+  )
+  const tooltipDetail = computed(() =>
+    hoveredItem.value ? options.buildDetail(hoveredItem.value) : null,
+  )
+
+  const {
+    anchorEl,
+    tooltipComponent,
+    isTooltipVisible,
+    tooltipReady,
+    tooltipPlacement,
+    tooltipStyle: anchoredTooltipStyle,
+    showTooltip: showAnchoredTooltip,
+    hideTooltipNow: hideAnchoredTooltip,
+  } = useAnchoredTooltip(() => activePanel.value === options.panel && Boolean(tooltipDetail.value))
+
+  const tooltipStyle = computed(() => ({
+    ...anchoredTooltipStyle.value,
+    zIndex: 12050,
+  }))
+
+  const setTooltipAnchor = (event: Event): boolean => {
+    if (!(event.currentTarget instanceof HTMLElement)) return false
+    anchorEl.value = event.currentTarget
+    return true
+  }
+
+  const hideTooltip = () => {
+    hoveredName.value = null
+    anchorEl.value = null
+    hideAnchoredTooltip()
+  }
+
+  const showTooltip = async (name: string, event: Event) => {
+    hoveredName.value = name
+    if (!setTooltipAnchor(event)) {
+      hideTooltip()
+      return
+    }
+    await showAnchoredTooltip()
+  }
+
+  return {
+    hoveredName,
+    tooltipId,
+    tooltipComponent,
+    isTooltipVisible,
+    tooltipReady,
+    tooltipPlacement,
+    tooltipStyle,
+    tooltipDetail,
+    showTooltip,
+    hideTooltip,
+  }
+}
 
 const {
-  anchorEl: moveTooltipAnchorEl,
+  hoveredName: hoveredMoveName,
+  tooltipId: moveTooltipId,
   tooltipComponent: moveTooltipComponent,
   isTooltipVisible: isMoveTooltipVisible,
   tooltipReady: isMoveTooltipReady,
   tooltipPlacement: moveTooltipPlacement,
-  tooltipStyle: anchoredMoveTooltipStyle,
-  showTooltip: showAnchoredMoveTooltip,
-  hideTooltipNow: hideAnchoredMoveTooltip,
-} = useAnchoredTooltip(() => activePanel.value === 'moves' && Boolean(hoveredMoveTooltipDetail.value))
+  tooltipStyle: moveTooltipStyle,
+  tooltipDetail: hoveredMoveTooltipDetail,
+  showTooltip: showMoveTooltip,
+  hideTooltip: hideMoveTooltip,
+} = createSubmenuTooltipController<TokenMoveMenuOption>({
+  panel: 'moves',
+  items: moves,
+  buildDetail: buildTokenMoveTooltipDetail,
+})
 
-const moveTooltipStyle = computed(() => ({
-  ...anchoredMoveTooltipStyle.value,
-  zIndex: 12050,
-}))
+const {
+  hoveredName: hoveredAbilityName,
+  tooltipId: abilityTooltipId,
+  tooltipComponent: abilityTooltipComponent,
+  isTooltipVisible: isAbilityTooltipVisible,
+  tooltipReady: isAbilityTooltipReady,
+  tooltipPlacement: abilityTooltipPlacement,
+  tooltipStyle: abilityTooltipStyle,
+  tooltipDetail: hoveredAbilityTooltipDetail,
+  showTooltip: showAbilityTooltip,
+  hideTooltip: hideAbilityTooltip,
+} = createSubmenuTooltipController<TokenAbilityMenuOption>({
+  panel: 'abilities',
+  items: abilities,
+  buildDetail: buildTokenAbilityTooltipDetail,
+})
 
-const setMoveTooltipAnchor = (event: Event): boolean => {
-  if (!(event.currentTarget instanceof HTMLElement)) return false
-  moveTooltipAnchorEl.value = event.currentTarget
-  return true
-}
-
-const hideMoveTooltip = () => {
-  hoveredMoveName.value = null
-  moveTooltipAnchorEl.value = null
-  hideAnchoredMoveTooltip()
-}
-
-const showMoveTooltip = async (moveName: string, event: Event) => {
-  hoveredMoveName.value = moveName
-  if (!setMoveTooltipAnchor(event)) {
-    hideMoveTooltip()
-    return
-  }
-  await showAnchoredMoveTooltip()
+const hideSubmenuTooltips = () => {
+  hideMoveTooltip()
+  hideAbilityTooltip()
 }
 
 const resetContextPanel = () => {
-  hideMoveTooltip()
+  hideSubmenuTooltips()
   activePanel.value = 'main'
 }
 
 const openMovePanel = () => {
-  hideMoveTooltip()
+  hideSubmenuTooltips()
   activePanel.value = 'moves'
 }
 
+const openAbilityPanel = () => {
+  hideSubmenuTooltips()
+  activePanel.value = 'abilities'
+}
+
 const openSendOutPanel = () => {
-  hideMoveTooltip()
+  hideSubmenuTooltips()
   activePanel.value = 'sendOut'
 }
 
@@ -102,6 +176,11 @@ watch(moves, (nextMoves) => {
   hideMoveTooltip()
 })
 
+watch(abilities, (nextAbilities) => {
+  if (activePanel.value !== 'abilities' || !hoveredAbilityName.value) return
+  if (nextAbilities.some((ability) => ability.name === hoveredAbilityName.value)) return
+  hideAbilityTooltip()
+})
 </script>
 
 <template>
@@ -120,6 +199,16 @@ watch(moves, (nextMoves) => {
           @click.stop="openMovePanel"
         >
           <span>Use Move</span>
+          <span class="context-menu__chevron">›</span>
+        </button>
+
+        <button
+          type="button"
+          class="context-menu__button context-menu__button--submenu"
+          aria-haspopup="menu"
+          @click.stop="openAbilityPanel"
+        >
+          <span>Use Ability</span>
           <span class="context-menu__chevron">›</span>
         </button>
 
@@ -208,29 +297,33 @@ watch(moves, (nextMoves) => {
 
         <p class="context-menu__submenu-title">Use Move</p>
 
-        <div class="move-submenu">
-          <div class="move-submenu__list" role="menu" aria-label="Moves">
+        <div class="action-submenu">
+          <div class="action-submenu__list" role="menu" aria-label="Moves">
             <button
               v-for="move in moves"
               :key="move.name"
               type="button"
-              class="move-submenu__item"
-              :class="{ 'is-active': hoveredMoveName === move.name }"
+              class="action-submenu__item"
+              :class="{ 'is-active': hoveredMoveName === move.name, 'is-disabled': move.disabledByCondition }"
               role="menuitem"
+              :aria-disabled="move.disabledByCondition ? 'true' : undefined"
+              :title="move.disabledByCondition ? `${move.name} is Disabled and cannot be used.` : undefined"
               :aria-describedby="hoveredMoveName === move.name && hoveredMoveTooltipDetail && isMoveTooltipVisible ? moveTooltipId : undefined"
+              :disabled="move.disabledByCondition"
               @pointerenter="showMoveTooltip(move.name, $event)"
               @pointerleave="hideMoveTooltip"
               @focus="showMoveTooltip(move.name, $event)"
               @blur="hideMoveTooltip"
               @click.stop="emit('use-move', move.name)"
             >
-              <span class="move-submenu__name">{{ move.name }}</span>
-              <span class="move-submenu__badges">
+              <span class="action-submenu__name">{{ move.name }}</span>
+              <span class="action-submenu__badges">
                 <TypeBadge v-if="move.type" :type="move.type" size="xs" />
                 <DamageClassBadge v-if="move.damageClass" :category="move.damageClass" size="xs" />
-                <span v-if="move.damageBase != null" class="move-submenu__badge">DB {{ move.damageBase }}</span>
-                <span v-if="move.hasStab" class="move-submenu__badge move-submenu__badge--stab">STAB</span>
-                <span v-if="move.automatic" class="move-submenu__badge">Auto</span>
+                <span v-if="move.damageBase != null" class="action-submenu__badge">DB {{ move.damageBase }}</span>
+                <span v-if="move.hasStab" class="action-submenu__badge action-submenu__badge--stab">STAB</span>
+                <span v-if="move.automatic" class="action-submenu__badge">Auto</span>
+                <span v-if="move.disabledByCondition" class="action-submenu__badge action-submenu__badge--disabled">Disabled</span>
               </span>
             </button>
 
@@ -248,6 +341,71 @@ watch(moves, (nextMoves) => {
               :placement="moveTooltipPlacement"
               :ready="isMoveTooltipReady"
               :style="moveTooltipStyle"
+            />
+          </Teleport>
+        </div>
+      </template>
+
+      <template v-else-if="activePanel === 'abilities'">
+        <button
+          type="button"
+          class="context-menu__button context-menu__button--back"
+          @click.stop="resetContextPanel"
+        >
+          <span class="context-menu__back-icon" aria-hidden="true">‹</span>
+          <span>Back</span>
+        </button>
+
+        <p class="context-menu__submenu-title">Use Ability</p>
+
+        <div class="action-submenu">
+          <div class="action-submenu__list" role="menu" aria-label="Abilities">
+            <button
+              v-for="ability in abilities"
+              :key="ability.name"
+              type="button"
+              class="action-submenu__item"
+              :class="{
+                'is-active': hoveredAbilityName === ability.name,
+                'is-disabled': !ability.automation,
+              }"
+              role="menuitem"
+              :aria-disabled="!ability.automation"
+              :aria-describedby="hoveredAbilityName === ability.name && hoveredAbilityTooltipDetail && isAbilityTooltipVisible ? abilityTooltipId : undefined"
+              @pointerenter="showAbilityTooltip(ability.name, $event)"
+              @pointerleave="hideAbilityTooltip"
+              @focus="showAbilityTooltip(ability.name, $event)"
+              @blur="hideAbilityTooltip"
+              @click.stop="ability.automation && emit('use-ability', ability.name)"
+            >
+              <span class="action-submenu__name">{{ ability.name }}</span>
+              <span class="action-submenu__badges">
+                <span
+                  v-if="ability.automation"
+                  class="action-submenu__badge"
+                  :class="`action-submenu__badge--${ability.automation.category}`"
+                >
+                  {{ ability.automation.label }}
+                </span>
+                <span v-else class="action-submenu__badge">Manual</span>
+                <span v-if="ability.activated" class="action-submenu__badge action-submenu__badge--active">Active</span>
+              </span>
+            </button>
+
+            <div v-if="!abilities.length" class="context-menu__empty">
+              This sheet has no abilities.
+            </div>
+          </div>
+
+          <Teleport to="body">
+            <ReferenceTooltip
+              v-if="hoveredAbilityTooltipDetail && isAbilityTooltipVisible"
+              :id="abilityTooltipId"
+              ref="abilityTooltipComponent"
+              :detail="hoveredAbilityTooltipDetail"
+              :placement="abilityTooltipPlacement"
+              :ready="isAbilityTooltipReady"
+              :style="abilityTooltipStyle"
             />
           </Teleport>
         </div>
@@ -332,7 +490,7 @@ watch(moves, (nextMoves) => {
 
 .context-menu__button + .context-menu__button,
 .context-menu__button + .context-menu__submenu-title,
-.context-menu__submenu-title + .move-submenu,
+.context-menu__submenu-title + .action-submenu,
 .context-menu__submenu-title + .sendout-submenu {
   margin-top: 0.3rem;
 }
@@ -374,24 +532,14 @@ watch(moves, (nextMoves) => {
   text-transform: uppercase;
 }
 
-.move-submenu {
+.action-submenu {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 0.45rem;
 }
 
+.action-submenu__list,
 .sendout-submenu {
-  max-height: min(70vh, 24rem);
-  overflow: auto;
-  padding: 0.35rem;
-  border: 1px solid var(--rule-soft);
-  border-radius: 12px;
-  background: var(--paper-soft);
-  box-shadow: var(--shadow-card);
-  backdrop-filter: blur(8px);
-}
-
-.move-submenu__list {
   max-height: min(42vh, 18rem);
   overflow: auto;
   padding: 0.35rem;
@@ -402,7 +550,11 @@ watch(moves, (nextMoves) => {
   backdrop-filter: blur(8px);
 }
 
-.move-submenu__item {
+.sendout-submenu {
+  max-height: min(70vh, 24rem);
+}
+
+.action-submenu__item {
   display: grid;
   gap: 0.3rem;
   width: 100%;
@@ -415,14 +567,19 @@ watch(moves, (nextMoves) => {
   cursor: pointer;
 }
 
-.move-submenu__item:hover,
-.move-submenu__item:focus-visible,
-.move-submenu__item.is-active,
+.action-submenu__item:hover:not(:disabled),
+.action-submenu__item:focus-visible:not(:disabled),
+.action-submenu__item.is-active:not(:disabled),
 .sendout-submenu__item:hover,
 .sendout-submenu__item:focus-visible {
   border-color: var(--rule-soft);
   background: var(--paper-hover);
   color: var(--ink-bright);
+}
+
+.action-submenu__item.is-disabled {
+  cursor: not-allowed;
+  opacity: 0.72;
 }
 
 .sendout-submenu__item {
@@ -466,18 +623,18 @@ watch(moves, (nextMoves) => {
   font-weight: 800;
 }
 
-.move-submenu__name {
+.action-submenu__name {
   font-weight: 900;
 }
 
-.move-submenu__badges {
+.action-submenu__badges {
   display: flex;
   flex-wrap: wrap;
   gap: 0.25rem;
   align-items: center;
 }
 
-.move-submenu__badge {
+.action-submenu__badge {
   display: inline-flex;
   align-items: center;
   min-height: 1.35rem;
@@ -491,8 +648,19 @@ watch(moves, (nextMoves) => {
   text-transform: uppercase;
 }
 
-.move-submenu__badge--stab {
+.action-submenu__badge--stab,
+.action-submenu__badge--active,
+.action-submenu__badge--sheet {
   color: var(--accent);
+}
+
+.action-submenu__badge--map {
+  color: var(--ink-bright);
+}
+
+.action-submenu__badge--disabled {
+  border-color: color-mix(in srgb, var(--bad) 55%, var(--rule-soft));
+  color: var(--bad);
 }
 
 .context-menu__empty {

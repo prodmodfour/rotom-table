@@ -63,6 +63,16 @@ describe('map token move menu options', () => {
     expect(move.special).toBe('Grants Firestarter')
   })
 
+  it('marks moves named by Disabled condition instances', () => {
+    const moves = buildTokenMoveMenuOptions(token({ conditions: ['Disabled: Tackle'] }), [
+      { move: { name: 'Tackle' }, automatic: false },
+      { move: { name: 'Ember' }, automatic: false },
+    ])
+
+    expect(moves.find((move) => move.name === 'Tackle')?.disabledByCondition).toBe(true)
+    expect(moves.find((move) => move.name === 'Ember')?.disabledByCondition).toBe(false)
+  })
+
   it('does not apply STAB to Struggle auto moves', () => {
     const [move] = buildTokenMoveMenuOptions(token(), [
       { move: { name: 'Struggle' }, automatic: true },

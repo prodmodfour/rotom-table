@@ -10,6 +10,7 @@ import {
 } from '~/utils/moveAutomation'
 import { buildMoveAutomationMoveEntries } from '~/utils/moveAutomationMoves'
 import { resolveInstantMoveAutomation } from '~/utils/moveAutomationInstant'
+import { isMoveDisabledByConditions } from '~/utils/statusConditions'
 import {
   moveAutomationTargetsInRange,
   parseSingleTargetMoveRangeMeters,
@@ -132,16 +133,22 @@ export const useMoveAutomationPanel = ({
     )
   }
 
-  const moveAutomationMoves = computed<Array<CharacterSheetMove | TrainerMove>>(() =>
-    moveEntriesForId(moveAutomationId.value).map((entry) => entry.move),
-  )
-
   const findSpawnedPokemon = (id: string | null | undefined): SpawnedPokemon | null =>
     id ? spawnedPokemon.value.find((pokemon) => pokemon.id === id) ?? null : null
 
+  const moveDisabledForToken = (token: SpawnedPokemon, moveName: string): boolean =>
+    isMoveDisabledByConditions(moveName, token.conditions)
+
+  const moveAutomationMoves = computed<Array<CharacterSheetMove | TrainerMove>>(() => {
+    const user = findSpawnedPokemon(moveAutomationId.value)
+    return moveEntriesForId(moveAutomationId.value)
+      .map((entry) => entry.move)
+      .filter((move) => !user || !moveDisabledForToken(user, move.name))
+  })
+
   const moveAutomationEntryForUse = (id: string, moveName: string) => {
     const user = findSpawnedPokemon(id)
-    if (!user) return null
+    if (!user || moveDisabledForToken(user, moveName)) return null
     const normalizedMoveName = moveName.trim().toLowerCase()
     const moves = moveEntriesForId(id).map((entry) => entry.move)
     return buildMoveAutomationMoveEntries(moves, {

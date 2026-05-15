@@ -26,6 +26,7 @@ const props = defineProps<{
   combatStagesDialogChanged: boolean
   conditionsDialog: ConditionsDialogState | null
   conditionsDialogChanged: boolean
+  conditionMoveOptions?: string[]
   damageDialog: DamageDialogState | null
   damageDialogDbDef: DamageBaseDef | null
   damageDialogRawAmount: number
@@ -87,6 +88,7 @@ defineExpose({ focusHpAmount, focusDamageAmount })
     v-if="props.conditionsDialog"
     :dialog="props.conditionsDialog"
     :changed="props.conditionsDialogChanged"
+    :available-moves="props.conditionMoveOptions ?? []"
     @close="emit('close-conditions')"
     @submit="emit('submit-conditions')"
   />

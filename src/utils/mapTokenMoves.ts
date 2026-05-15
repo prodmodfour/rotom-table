@@ -3,6 +3,7 @@ import { resolvePokemonOtherCapabilities } from '~/utils/sheets/pokemonCapabilit
 import { resolveMoveGrantedCapabilities } from '~/utils/sheets/pokemonMoveGrantedCapabilities'
 import { makeAutomaticStruggleMoves } from '~/utils/struggleMoves'
 import { makeMoveLookupRows, type MoveLookupRow } from '~/utils/sheetMoveLookup'
+import { isMoveDisabledByConditions } from '~/utils/statusConditions'
 import type { CharacterSheet, CharacterSheetMove } from '~/types/characterSheet'
 import type { SheetPlacement } from '~/types/map'
 import type { SpawnedPokemon } from '~/types/pokemon'
@@ -44,6 +45,7 @@ export interface TokenMoveMenuOption {
   additionalAttackStatKey: 'atk' | 'satk' | null
   additionalAttackStatLabel: string | null
   automatic: boolean
+  disabledByCondition: boolean
 }
 
 const pokemonStruggleCapabilities = (sheet: CharacterSheet): string[] => {
@@ -94,6 +96,7 @@ const fallback = <T>(...values: T[]): NonNullable<T> | null => {
 const optionForMoveRow = (
   row: MoveLookupRow<TokenSheetMove>,
   automatic: boolean,
+  token: SpawnedPokemon,
 ): TokenMoveMenuOption => ({
   name: row.reference?.name ?? row.move.name,
   type: fallback(row.reference?.type, row.move.type),
@@ -118,6 +121,8 @@ const optionForMoveRow = (
   additionalAttackStatKey: row.additionalAttackStatKey,
   additionalAttackStatLabel: row.additionalAttackStatLabel,
   automatic,
+  disabledByCondition: isMoveDisabledByConditions(row.reference?.name ?? row.move.name, token.conditions)
+    || isMoveDisabledByConditions(row.move.name, token.conditions),
 })
 
 export const buildTokenMoveMenuOptions = (
@@ -133,5 +138,5 @@ export const buildTokenMoveMenuOptions = (
     abilities: token.abilityNames,
     combatSkillRankValue: token.combatSkillRankValue,
   })
-  return rows.map((row, index) => optionForMoveRow(row, entries[index]?.automatic ?? false))
+  return rows.map((row, index) => optionForMoveRow(row, entries[index]?.automatic ?? false, token))
 }

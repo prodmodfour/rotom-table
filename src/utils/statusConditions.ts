@@ -101,24 +101,123 @@ for (const condition of conditions) {
   for (const alias of aliases) aliasToName.set(slugify(alias), condition.name)
 }
 
+const DISABLED_CONDITION_NAME = 'Disabled'
+const DISABLED_CUSTOM_SEPARATOR_RE = /^(.+?)\s*(?::|：|[-–—])\s*(.+)$/
+const DISABLED_PAREN_RE = /^(.+?)\s*\((.+)\)\s*$/
+
+const normalizeDisabledMoveName = (raw: unknown): string | null => {
+  if (typeof raw !== 'string') return null
+  const moveName = raw.trim().replace(/\s+/g, ' ')
+  return moveName ? moveName : null
+}
+
+const parseDisabledConditionEntry = (raw: string): { conditionName: string; moveName: string | null } | null => {
+  const value = raw.trim()
+  if (!value) return null
+
+  for (const pattern of [DISABLED_PAREN_RE, DISABLED_CUSTOM_SEPARATOR_RE]) {
+    const match = value.match(pattern)
+    if (!match) continue
+
+    const baseName = aliasToName.get(slugify(match[1] ?? ''))
+    if (baseName !== DISABLED_CONDITION_NAME) continue
+
+    return {
+      conditionName: DISABLED_CONDITION_NAME,
+      moveName: normalizeDisabledMoveName(match[2]),
+    }
+  }
+
+  return null
+}
+
+export const formatDisabledCondition = (moveName: string): string => {
+  const normalizedMove = normalizeDisabledMoveName(moveName)
+  return normalizedMove ? `${DISABLED_CONDITION_NAME}: ${normalizedMove}` : DISABLED_CONDITION_NAME
+}
+
+export const disabledConditionMove = (raw: unknown): string | null => {
+  if (typeof raw !== 'string') return null
+  return parseDisabledConditionEntry(raw)?.moveName ?? null
+}
+
 export const normalizeConditionName = (raw: unknown): string | null => {
   if (typeof raw !== 'string') return null
+  const disabledEntry = parseDisabledConditionEntry(raw)
+  if (disabledEntry) return disabledEntry.conditionName
+
   const key = slugify(raw.trim())
   if (!key) return null
   return aliasToName.get(key) ?? null
 }
+
+export const conditionBaseName = (raw: unknown): string | null => normalizeConditionName(raw)
+
+export const conditionDisplayName = (raw: unknown): string => {
+  if (typeof raw !== 'string') return ''
+  const baseName = conditionBaseName(raw)
+  if (baseName === DISABLED_CONDITION_NAME) {
+    const moveName = disabledConditionMove(raw)
+    return moveName ? formatDisabledCondition(moveName) : DISABLED_CONDITION_NAME
+  }
+  return baseName ?? raw.trim()
+}
+
+const normalizeConditionEntry = (raw: unknown): string | null => {
+  const baseName = conditionBaseName(raw)
+  if (!baseName) return null
+  if (baseName === DISABLED_CONDITION_NAME) {
+    const moveName = disabledConditionMove(raw)
+    return moveName ? formatDisabledCondition(moveName) : DISABLED_CONDITION_NAME
+  }
+  return baseName
+}
+
+const normalizedConditionKey = (condition: string): string => {
+  const baseName = conditionBaseName(condition) ?? condition
+  if (baseName === DISABLED_CONDITION_NAME) {
+    const moveName = disabledConditionMove(condition)
+    return `${baseName}:${moveName ? slugify(moveName) : ''}`
+  }
+  return baseName
+}
+
+const conditionEntrySortIndex = (condition: string): number =>
+  conditionSortIndex.get(conditionBaseName(condition) ?? condition) ?? 999
 
 export const normalizeConditionNames = (raw: readonly unknown[] | undefined | null): string[] => {
   if (!raw) return []
   const seen = new Set<string>()
   const out: string[] = []
   for (const value of raw) {
-    const name = normalizeConditionName(value)
-    if (!name || seen.has(name)) continue
-    seen.add(name)
+    const name = normalizeConditionEntry(value)
+    if (!name) continue
+    const key = normalizedConditionKey(name)
+    if (seen.has(key)) continue
+    seen.add(key)
     out.push(name)
   }
-  return out.sort((a, b) => (conditionSortIndex.get(a) ?? 999) - (conditionSortIndex.get(b) ?? 999))
+  return out.sort((a, b) => {
+    const indexCmp = conditionEntrySortIndex(a) - conditionEntrySortIndex(b)
+    if (indexCmp !== 0) return indexCmp
+    return a.localeCompare(b)
+  })
+}
+
+export const disabledMoveNamesFromConditions = (
+  raw: readonly unknown[] | undefined | null,
+): string[] => normalizeConditionNames(raw)
+  .map((condition) => disabledConditionMove(condition))
+  .filter((moveName): moveName is string => Boolean(moveName))
+
+export const isMoveDisabledByConditions = (
+  moveName: unknown,
+  rawConditions: readonly unknown[] | undefined | null,
+): boolean => {
+  const normalizedMoveName = normalizeDisabledMoveName(moveName)
+  if (!normalizedMoveName) return false
+  const moveKey = slugify(normalizedMoveName)
+  return disabledMoveNamesFromConditions(rawConditions).some((disabledMove) => slugify(disabledMove) === moveKey)
 }
 
 const aliasSearchTerms = conditions
@@ -148,20 +247,23 @@ export const mergeLegacyConditions = (
 ): string[] => normalizeConditionNames([...normalizeConditionNames(explicit), ...conditionsFromText(legacyText)])
 
 export const conditionTagDefinition = (name: string): ConditionTagDefinition => {
-  const canonical = normalizeConditionName(name) ?? name
+  const canonical = conditionBaseName(name) ?? name
   const tag = CONDITION_TAGS[canonical]
   if (tag) return tag
   return conditionTagFallbackDefinition(canonical)
 }
 
 export const conditionTagSvg = (name: string, size: ConditionTagSize = 'md'): string => {
-  const canonical = normalizeConditionName(name) ?? name
-  return conditionTagSvgMarkup(canonical, conditionTagDefinition(canonical), size)
+  const canonical = conditionBaseName(name) ?? name
+  const displayName = conditionDisplayName(name) || canonical
+  return conditionTagSvgMarkup(displayName, conditionTagDefinition(canonical), size)
 }
 
 export const conditionTitle = (name: string): string => {
-  const canonical = normalizeConditionName(name) ?? name
+  const canonical = conditionBaseName(name) ?? name
   const condition = conditionByName.get(canonical)
-  if (!condition) return canonical
-  return condition.effect ? `${condition.name} — ${condition.effect}` : condition.name
+  const displayName = conditionDisplayName(name) || canonical
+  const disabledMove = canonical === DISABLED_CONDITION_NAME ? disabledConditionMove(name) : null
+  const baseTitle = condition?.effect ? `${displayName} — ${condition.effect}` : displayName
+  return disabledMove ? `${baseTitle} Disabled Move: ${disabledMove}.` : baseTitle
 }

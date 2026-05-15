@@ -8,7 +8,10 @@ import {
   conditionTagDefinition,
   conditionTagSvg,
   conditionsFromText,
+  disabledMoveNamesFromConditions,
+  isMoveDisabledByConditions,
   normalizeConditionName,
+  normalizeConditionNames,
 } from '~/utils/statusConditions'
 
 describe('condition tag art helpers', () => {
@@ -50,5 +53,18 @@ describe('condition tag art helpers', () => {
     expect(conditionTagDefinition('burnt')).toEqual(CONDITION_TAGS.Burned)
     expect(conditionTagSvg('Badly Poisoned', 'sm')).toContain('TOX')
     expect(conditionsFromText('The target is burned and asleep.')).toEqual(['Burned', 'Sleep'])
+  })
+
+  it('preserves move-specific Disabled condition instances', () => {
+    expect(normalizeConditionName('Disabled: Thunder Wave')).toBe('Disabled')
+    expect(normalizeConditionNames([
+      'Disable: Thunder Wave',
+      'disabled (Quick Attack)',
+      'Disabled: thunder wave',
+      'Burn',
+    ])).toEqual(['Burned', 'Disabled: Quick Attack', 'Disabled: Thunder Wave'])
+    expect(disabledMoveNamesFromConditions(['Disabled: Thunder Wave', 'Burned'])).toEqual(['Thunder Wave'])
+    expect(isMoveDisabledByConditions('thunder wave', ['Disabled: Thunder Wave'])).toBe(true)
+    expect(conditionTagSvg('Disabled: Thunder Wave', 'sm')).toContain('aria-label="Disabled: Thunder Wave"')
   })
 })

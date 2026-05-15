@@ -23,6 +23,7 @@ import type {
 } from '~/types/moveAutomation'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import type { TrainerMove } from '~/types/trainerSheet'
+import type { TokenAbilityMenuOption } from '~/utils/mapTokenAbilities'
 import type { TokenMoveMenuOption } from '~/utils/mapTokenMoves'
 import type { TokenSendOutOption } from '~/utils/mapTokenSendOut'
 import type { MapSaveStatus } from '~/composables/useEditableMap'
@@ -63,6 +64,7 @@ const props = defineProps<{
   moveAutomationTargeting?: MoveAutomationTargetingOverlayState | null
   moveAutomationFeedback?: MoveAutomationFeedbackState | null
   tokenMoveOptionsById?: Record<string, TokenMoveMenuOption[]>
+  tokenAbilityOptionsById?: Record<string, TokenAbilityMenuOption[]>
   tokenSendOutOptionsById?: Record<string, TokenSendOutOption[]>
   canApplyMapEffects: boolean
 }>()
@@ -76,6 +78,7 @@ const emit = defineEmits<{
   (event: 'modify-combat-stages', payload: { id: string; stages: CombatStageMap }): void
   (event: 'modify-conditions', payload: { id: string; conditions: string[] }): void
   (event: 'use-move', payload: { id: string; moveName?: string | null }): void
+  (event: 'use-ability', payload: { id: string; abilityName?: string | null }): void
   (event: 'send-out-pokemon', payload: { trainerId: string; pokemonSlug: string; position: GridAnchor }): void
   (event: 'view-sheet', id: string): void
   (event: 'view-pokedex', id: string): void
@@ -124,6 +127,7 @@ defineExpose({ focusPokemon })
         :hazard-kind="hazardKind"
         :can-delete-tokens="canDeleteTokens"
         :token-move-options-by-id="tokenMoveOptionsById"
+        :token-ability-options-by-id="tokenAbilityOptionsById"
         :token-send-out-options-by-id="tokenSendOutOptionsById"
         :move-automation-targeting="moveAutomationTargeting"
         :move-automation-feedback="moveAutomationFeedback"
@@ -135,6 +139,7 @@ defineExpose({ focusPokemon })
         @modify-combat-stages="emit('modify-combat-stages', $event)"
         @modify-conditions="emit('modify-conditions', $event)"
         @use-move="emit('use-move', $event)"
+        @use-ability="emit('use-ability', $event)"
         @send-out-pokemon="emit('send-out-pokemon', $event)"
         @view-sheet="emit('view-sheet', $event)"
         @view-pokedex="emit('view-pokedex', $event)"

@@ -5,6 +5,7 @@ import type { ConditionsDialogState } from '~/utils/isometric/tokenStatusDialogs
 const props = defineProps<{
   dialog: ConditionsDialogState
   changed: boolean
+  availableMoves?: string[]
 }>()
 
 const emit = defineEmits<{
@@ -34,6 +35,7 @@ const emit = defineEmits<{
         class="conditions-dialog__picker"
         compact
         tag-size="sm"
+        :available-moves="props.availableMoves ?? []"
       />
 
       <p class="hp-dialog__note">Conditions are saved to the source character sheet and shown on every map token for that sheet.</p>

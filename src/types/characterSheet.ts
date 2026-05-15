@@ -81,7 +81,7 @@ export interface CharacterSheetCombat {
   tick?: number
   evasion?: CharacterSheetEvasion
   dr?: number
-  /** Canonical PTU condition names (for example, "Burned" or "Tripped"). */
+  /** PTU condition entries (for example, "Burned", "Tripped", or "Disabled: Tackle"). */
   conditions?: string[]
   /** Legacy/free-form status notes that do not map to a canonical condition. */
   statusAfflictions?: string

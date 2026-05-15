@@ -26,6 +26,7 @@ import type {
   MoveAutomationTargetingOverlayState,
 } from '~/types/moveAutomation'
 import type { BuildTool } from '#shared/mapEditor'
+import type { TokenAbilityMenuOption } from '~/utils/mapTokenAbilities'
 import type { TokenMoveMenuOption } from '~/utils/mapTokenMoves'
 import {
   POKEBALL_THROW_RANGE_SQUARES,
@@ -129,6 +130,7 @@ const props = defineProps<{
   hazardKind?: MapHazardKind
   canDeleteTokens?: boolean
   tokenMoveOptionsById?: Record<string, TokenMoveMenuOption[]>
+  tokenAbilityOptionsById?: Record<string, TokenAbilityMenuOption[]>
   tokenSendOutOptionsById?: Record<string, TokenSendOutOption[]>
   moveAutomationTargeting?: MoveAutomationTargetingOverlayState | null
   moveAutomationFeedback?: MoveAutomationFeedbackState | null
@@ -143,6 +145,7 @@ const emit = defineEmits<{
   (event: 'modify-combat-stages', payload: { id: string; stages: CombatStageMap }): void
   (event: 'modify-conditions', payload: { id: string; conditions: string[] }): void
   (event: 'use-move', payload: { id: string; moveName?: string | null }): void
+  (event: 'use-ability', payload: { id: string; abilityName?: string | null }): void
   (event: 'send-out-pokemon', payload: { trainerId: string; pokemonSlug: string; position: GridAnchor }): void
   (event: 'view-sheet', id: string): void
   (event: 'view-pokedex', id: string): void
@@ -239,6 +242,7 @@ const {
   closeConditionsDialog,
   handleConditionsDialogSubmit,
   handleContextUseMove,
+  handleContextUseAbility,
   handleContextSendOutPokemon,
   handleContextViewSheet,
   handleContextViewPokedex,
@@ -262,6 +266,7 @@ const {
     modifyCombatStages: (payload) => emit('modify-combat-stages', payload),
     modifyConditions: (payload) => emit('modify-conditions', payload),
     useMove: (payload) => emit('use-move', payload),
+    useAbility: (payload) => emit('use-ability', payload),
     sendOutPokemon: beginSendOutPlacement,
     viewSheet: (id) => emit('view-sheet', id),
     viewPokedex: (id) => emit('view-pokedex', id),
@@ -271,6 +276,9 @@ const {
 const selectedPokemon = computed(
   () => props.pokemons.find((pokemon) => pokemon.id === props.selectedId) ?? null,
 )
+const conditionMoveOptions = computed(() => conditionsDialog.value
+  ? props.tokenMoveOptionsById?.[conditionsDialog.value.id]?.map((move) => move.name) ?? []
+  : [])
 const renderedTerrainVoxels = computed(() => props.voxels)
 const renderedHazards = computed(() => props.hazards ?? [])
 const renderedFieldEffects = computed(() => normalizeMapFieldEffects(props.fieldEffects))
@@ -1005,6 +1013,7 @@ useIsometricSceneWatchers({
       :menu="contextMenu"
       :can-delete-tokens="props.canDeleteTokens"
       :moves="props.tokenMoveOptionsById?.[contextMenu.id] ?? []"
+      :abilities="props.tokenAbilityOptionsById?.[contextMenu.id] ?? []"
       :send-out-options="sendOutOptionsForToken(contextMenu.id)"
       @view-sheet="handleContextViewSheet"
       @view-pokedex="handleContextViewPokedex"
@@ -1013,6 +1022,7 @@ useIsometricSceneWatchers({
       @modify-combat-stages="handleContextModifyCombatStages"
       @apply-remove-conditions="handleContextApplyRemoveConditions"
       @use-move="handleContextUseMove"
+      @use-ability="handleContextUseAbility"
       @send-out-pokemon="handleContextSendOutPokemon"
       @deal-damage="handleContextDealDamage"
       @delete="handleContextDelete"
@@ -1027,6 +1037,7 @@ useIsometricSceneWatchers({
       :combat-stages-dialog-changed="combatStagesDialogChanged"
       :conditions-dialog="conditionsDialog"
       :conditions-dialog-changed="conditionsDialogChanged"
+      :condition-move-options="conditionMoveOptions"
       :damage-dialog="damageDialog"
       :damage-dialog-db-def="damageDialogDbDef"
       :damage-dialog-raw-amount="damageDialogRawAmount"

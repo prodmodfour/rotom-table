@@ -1,5 +1,5 @@
 import type { CharacterSheetAbility } from '~/types/characterSheet'
-import { resolveCanonicalSheetAbilityName } from '~/utils/sheetAbilities'
+import { resolveCanonicalSheetAbilityName, type SheetAbilityNameSource } from '~/utils/sheetAbilities'
 
 export const SAND_VEIL_ABILITY_NAME = 'Sand Veil'
 
@@ -28,13 +28,13 @@ const SHEET_ACTIVATABLE_ABILITIES = new Map<string, SheetActivatableAbilityConfi
 ])
 
 export const getSheetAbilityActivationConfig = (
-  ability: Pick<CharacterSheetAbility, 'name'>,
+  ability: SheetAbilityNameSource,
 ): SheetActivatableAbilityConfig | null => {
   const canonicalName = resolveCanonicalSheetAbilityName(ability)
   return canonicalName ? SHEET_ACTIVATABLE_ABILITIES.get(canonicalName) ?? null : null
 }
 
-export const isSheetActivatableAbility = (ability: Pick<CharacterSheetAbility, 'name'>): boolean =>
+export const isSheetActivatableAbility = (ability: SheetAbilityNameSource): boolean =>
   getSheetAbilityActivationConfig(ability) != null
 
 export const isSheetAbilityActivated = (ability: SheetAbilityActivationState): boolean =>
@@ -43,6 +43,22 @@ export const isSheetAbilityActivated = (ability: SheetAbilityActivationState): b
 export const clearSheetAbilityActivation = (ability: SheetAbilityActivationState): void => {
   delete ability.activated
 }
+
+export const setSheetAbilityActivation = (
+  ability: SheetAbilityActivationState,
+  activated: boolean,
+): boolean => {
+  if (!isSheetActivatableAbility(ability)) {
+    clearSheetAbilityActivation(ability)
+    return false
+  }
+
+  ability.activated = activated
+  return true
+}
+
+export const activateSheetAbility = (ability: SheetAbilityActivationState): boolean =>
+  setSheetAbilityActivation(ability, true)
 
 export const toggleSheetAbilityActivation = (ability: CharacterSheetAbility): void => {
   if (!isSheetActivatableAbility(ability)) {

@@ -75,6 +75,7 @@ const forwardEvasionBonus = (key: TrainerEvasionBonusKey, value: number | undefi
         v-model:digestion="sheet.digestion"
         :trainer-evasion="trainerEvasion"
         :condition-effects="conditionEffects"
+        :available-moves="sheet.movelist?.map((move) => move.name) ?? []"
         @set-evasion-bonus="forwardEvasionBonus"
       />
     </div>

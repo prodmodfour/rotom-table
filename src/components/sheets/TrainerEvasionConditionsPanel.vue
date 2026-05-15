@@ -23,6 +23,7 @@ type TrainerEvasionSummary = {
 defineProps<{
   trainerEvasion: TrainerEvasionSummary
   conditionEffects: readonly ConditionEffectSummary[]
+  availableMoves?: string[]
 }>()
 
 const conditions = defineModel<string[] | undefined>('conditions', { required: true })
@@ -121,7 +122,7 @@ const emit = defineEmits<{
     </ul>
     <div class="muted condition-block">
       <strong>Conditions:</strong>
-      <ConditionPicker v-model="conditions" />
+      <ConditionPicker v-model="conditions" :available-moves="availableMoves" />
       <ul v-if="conditionEffects.length" class="condition-effects" aria-label="Condition effects">
         <li v-for="effect in conditionEffects" :key="effect.id">
           <strong>{{ effect.label }}:</strong> {{ effect.description }}

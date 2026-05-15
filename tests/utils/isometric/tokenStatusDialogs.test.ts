@@ -77,10 +77,10 @@ describe('isometric combat-stage dialog helpers', () => {
 describe('isometric condition dialog helpers', () => {
   it('creates normalized condition dialog state and detects canonical changes', () => {
     const dialog = createConditionsDialogState(pokemon({
-      conditions: [' poisoned ', 'Burned', 'poisoned'],
+      conditions: [' poisoned ', 'Burned', 'poisoned', 'Disable: Tackle'],
     }))
 
-    expect(dialog.originalConditions).toEqual(['Burned', 'Poisoned'])
+    expect(dialog.originalConditions).toEqual(['Burned', 'Poisoned', 'Disabled: Tackle'])
     expect(isConditionsDialogChanged(dialog)).toBe(false)
 
     dialog.conditions = ['Burned']

@@ -189,6 +189,8 @@ export interface TrainerAbilityEntry {
   frequency?: string
   trigger?: string
   effect?: string
+  /** True when a sheet-level ability toggle is active. Mostly used by Pokémon sheets, but kept here for shared ability automation. */
+  activated?: boolean
 }
 
 export interface TrainerManeuver {
@@ -281,7 +283,7 @@ export interface TrainerSheet {
   evasion?: TrainerEvasion
   /** Legacy stat stages and non-stat modifiers such as Accuracy. */
   combatStages?: Partial<Record<CombatStageKey, number>>
-  /** Canonical PTU condition names (for example, "Burned" or "Tripped"). */
+  /** PTU condition entries (for example, "Burned", "Tripped", or "Disabled: Tackle"). */
   conditions?: string[]
   /** Legacy/free-form status notes that do not map to a canonical condition. */
   statusAfflictions?: string

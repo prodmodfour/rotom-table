@@ -3,6 +3,8 @@ import { pokemonHpSnapshot, trainerHpSnapshot } from './sheetSpawn'
 import { clampHpValue } from './ptuHp'
 import { COMBAT_STAT_STAGE_KEYS, normalizeCombatStages as normalizeCombatStageMap } from './combatStages'
 import { normalizeConditionNames } from './statusConditions'
+import { activateSheetAbility } from './sheetAbilityActivation'
+import { resolveCanonicalSheetAbilityName } from './sheetAbilities'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { CombatStageMap } from '~/types/combatStages'
 import type { SheetKind, SheetPlacement } from '~/types/map'
@@ -131,5 +133,30 @@ export const applyConditionsToSheet = (
 
   const updated = deepCloneJson(sheet as TrainerSheet)
   updated.conditions = normalized
+  return updated
+}
+
+export const applyAbilityActivationToSheet = (
+  kind: SheetKind,
+  sheet: AnyLiveSheet,
+  abilityName: string,
+): AnyLiveSheet => {
+  const canonicalName = resolveCanonicalSheetAbilityName(abilityName)
+  if (!canonicalName) return sheet
+
+  if (kind === 'pokemon') {
+    const updated = deepCloneJson(sheet as CharacterSheet)
+    const ability = updated.abilities?.find((entry) =>
+      resolveCanonicalSheetAbilityName(entry) === canonicalName,
+    )
+    if (ability) activateSheetAbility(ability)
+    return updated
+  }
+
+  const updated = deepCloneJson(sheet as TrainerSheet)
+  const ability = updated.abilities?.find((entry) =>
+    resolveCanonicalSheetAbilityName(entry) === canonicalName,
+  )
+  if (ability) activateSheetAbility(ability)
   return updated
 }

@@ -17,6 +17,7 @@ import {
 } from '~/composables/map-editor/useMapDimensions'
 import { useMapEditorUiState } from '~/composables/map-editor/useMapEditorUiState'
 import { useMapTokenNavigation } from '~/composables/map-editor/useMapTokenNavigation'
+import { useAbilityAutomationPanel } from '~/composables/map-editor/useAbilityAutomationPanel'
 import { useMoveAutomationPanel } from '~/composables/map-editor/useMoveAutomationPanel'
 import { useTerrainBuilder } from '~/composables/map-editor/useTerrainBuilder'
 import { useTokenSheetMutations } from '~/composables/map-editor/useTokenSheetMutations'
@@ -241,6 +242,7 @@ const {
   modifyHp,
   modifyCombatStages,
   modifyConditions,
+  modifyAbilityActivation,
 } = useTokenSheetMutations({
   map,
   sheetLookup,
@@ -273,6 +275,53 @@ const {
   applyMoveFieldEffect,
   placeHazard,
 })
+
+const {
+  abilityAutomationTargeting,
+  tokenAbilityOptionsById,
+  openAbilityAutomation,
+  cancelAbilityAutomationTargeting,
+  selectAbilityAutomationTarget,
+} = useAbilityAutomationPanel({
+  map,
+  spawnedPokemon,
+  pokemonBySlug,
+  trainerBySlug,
+  canControlPlacement,
+  modifyCombatStages,
+  modifyAbilityActivation,
+})
+
+const actionAutomationTargeting = computed(() =>
+  moveAutomationTargeting.value ?? abilityAutomationTargeting.value,
+)
+
+const openMoveAutomationFromContext = (payload: { id: string; moveName?: string | null }) => {
+  cancelAbilityAutomationTargeting()
+  openMoveAutomation(payload)
+}
+
+const openAbilityAutomationFromContext = (payload: { id: string; abilityName?: string | null }) => {
+  closeMoveAutomation()
+  cancelMoveAutomationTargeting()
+  void openAbilityAutomation(payload)
+}
+
+const selectActionAutomationTarget = (targetId: string) => {
+  if (moveAutomationTargeting.value) {
+    selectMoveAutomationTarget(targetId)
+    return
+  }
+  if (abilityAutomationTargeting.value) void selectAbilityAutomationTarget(targetId)
+}
+
+const cancelActionAutomationTargeting = () => {
+  if (moveAutomationTargeting.value) {
+    cancelMoveAutomationTargeting()
+    return
+  }
+  cancelAbilityAutomationTargeting()
+}
 
 useMapGmModeGuard({
   isGm,
@@ -414,9 +463,10 @@ useMapDimensionReconciliation({
         :move-automation-user="moveAutomationUser"
         :move-automation-moves="moveAutomationMoves"
         :move-automation-initial-move-name="moveAutomationInitialMoveName"
-        :move-automation-targeting="moveAutomationTargeting"
+        :move-automation-targeting="actionAutomationTargeting"
         :move-automation-feedback="moveAutomationFeedback"
         :token-move-options-by-id="tokenMoveOptionsById"
+        :token-ability-options-by-id="tokenAbilityOptionsById"
         :token-send-out-options-by-id="tokenSendOutOptionsById"
         :can-apply-map-effects="canEditMap"
         @select-pokemon="selectPokemon"
@@ -426,7 +476,8 @@ useMapDimensionReconciliation({
         @modify-hp="modifyHp"
         @modify-combat-stages="modifyCombatStages"
         @modify-conditions="modifyConditions"
-        @use-move="openMoveAutomation"
+        @use-move="openMoveAutomationFromContext"
+        @use-ability="openAbilityAutomationFromContext"
         @send-out-pokemon="sendOutPokemon"
         @view-sheet="viewSheet"
         @view-pokedex="viewPokedex"
@@ -437,8 +488,8 @@ useMapDimensionReconciliation({
         @remove-hazard="removeHazard"
         @close-move-automation="closeMoveAutomation"
         @apply-move-automation="applyMoveAutomation"
-        @select-move-target="selectMoveAutomationTarget"
-        @cancel-move-targeting="cancelMoveAutomationTargeting"
+        @select-move-target="selectActionAutomationTarget"
+        @cancel-move-targeting="cancelActionAutomationTargeting"
       />
     </template>
 

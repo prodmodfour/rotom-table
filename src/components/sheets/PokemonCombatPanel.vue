@@ -74,6 +74,7 @@ const forwardEvasionBonus = (key: PokemonEvasionBonusKey, value: number | undefi
       :pokemon-accuracy="pokemonAccuracy"
       :pokemon-evasion="pokemonEvasion"
       :condition-effects="conditionEffects"
+      :available-moves="sheet.movelist?.map((move) => move.name) ?? []"
       @set-evasion-bonus="forwardEvasionBonus"
     />
   </section>
