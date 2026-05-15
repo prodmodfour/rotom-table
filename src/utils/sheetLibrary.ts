@@ -78,13 +78,18 @@ export const isInsideDeletedSheetFolder = (
   return false
 }
 
+const hasReactiveRecordKey = (
+  record: Readonly<Record<string, unknown>>,
+  key: string,
+): boolean => key in record && Object.prototype.hasOwnProperty.call(record, key)
+
 export const resolveSheetLibraryFolder = (
   item: Pick<SheetLibraryItem, 'kind' | 'slug' | 'folder'>,
   sheetOverrides: Readonly<Record<string, string | undefined>>,
   folderRenames: ReadonlyArray<{ from: string; to: string }>,
 ): string => {
   const key = sheetLibraryKey(item.kind, item.slug)
-  const direct = Object.prototype.hasOwnProperty.call(sheetOverrides, key)
+  const direct = hasReactiveRecordKey(sheetOverrides, key)
     ? sheetOverrides[key]
     : item.folder
   return applyFolderRenames(direct ?? '', folderRenames)

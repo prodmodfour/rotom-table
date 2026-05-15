@@ -1,3 +1,4 @@
+import { computed, reactive } from 'vue'
 import { describe, expect, it } from 'vitest'
 import {
   applyFolderRenames,
@@ -97,6 +98,30 @@ describe('sheetLibrary helpers', () => {
     expect(items[0]).toMatchObject({ folder: 'team/beta/live', sortKey: 'sparky' })
     expect(displaySheetLibraryName(items[0])).toBe('Sparky')
     expect(displaySheetLibraryName(baseItems[0])).toBe('Bolt')
+  })
+
+  it('tracks newly added folder overrides in Vue computed state', () => {
+    const baseItems = buildSheetLibraryItems({
+      pokemonSheets: [pokemon()],
+      trainerSheets: [],
+      speciesTypesFor: () => [],
+      spriteUrlFor: () => null,
+    })
+    const sheetOverrides = reactive<Record<string, string | undefined>>({})
+    const visibleItems = computed(() => applySheetLibraryOverrides(baseItems, {
+      playerOnly: false,
+      sheetOverrides,
+      folderRenames: [],
+      nameOverrides: {},
+      deletedSheets: new Set(),
+      deletedFolders: new Set(),
+    }))
+
+    expect(visibleItems.value[0].folder).toBe('team/alpha')
+
+    sheetOverrides[sheetLibraryKey('pokemon', 'bolt')] = ''
+
+    expect(visibleItems.value[0].folder).toBe('')
   })
 
   it('filters deleted sheets and folders', () => {
