@@ -24,10 +24,20 @@ export interface MoveAutomationResetInput {
   manualTargetStageDeltas: MoveAutomationStageDeltaRecord
 }
 
+export interface MoveAutomationAccuracyRollOptions {
+  userAccuracy?: number
+  targetEvasion?: number
+}
+
 export interface MoveAutomationAccuracyRollResult {
   accuracyRoll: string
   hit: boolean
   crit: boolean
+  naturalRoll?: number
+  modifiedRoll?: number
+  accuracyCheck?: number | null
+  userAccuracy?: number
+  targetEvasion?: number
 }
 
 export const clearMutableRecord = (record: Record<string, unknown>): void => {
@@ -43,12 +53,36 @@ export const randomD20 = (random: () => number = Math.random): number => 1 + Mat
 export const resolveMoveAutomationAccuracyRoll = (
   script: MoveAutomationScript | null | undefined,
   roll: number,
+  options?: MoveAutomationAccuracyRollOptions,
 ): MoveAutomationAccuracyRollResult => {
   const ac = script?.ac
+  const hasContext = options?.userAccuracy != null || options?.targetEvasion != null
+  const userAccuracy = options?.userAccuracy ?? 0
+  const targetEvasion = options?.targetEvasion ?? 0
+  const modifiedRoll = roll + userAccuracy
+  const accuracyCheck = ac == null ? null : ac + targetEvasion
+  const hit = ac == null
+    ? true
+    : roll === 20 || (roll !== 1 && modifiedRoll >= ac + targetEvasion)
+  const crit = Boolean(script?.criticalRange && roll >= script.criticalRange)
+
+  if (!hasContext) {
+    return {
+      accuracyRoll: String(roll),
+      hit,
+      crit,
+    }
+  }
+
   return {
-    accuracyRoll: String(roll),
-    hit: ac == null ? true : roll >= ac,
-    crit: Boolean(script?.criticalRange && roll >= script.criticalRange),
+    accuracyRoll: `${roll}${userAccuracy ? ` ${userAccuracy > 0 ? '+' : '-'} ${Math.abs(userAccuracy)}` : ''}`,
+    hit,
+    crit,
+    naturalRoll: roll,
+    modifiedRoll,
+    accuracyCheck,
+    userAccuracy,
+    targetEvasion,
   }
 }
 
@@ -119,9 +153,10 @@ export const applyMoveAutomationAccuracyRoll = (
   id: string,
   script: MoveAutomationScript | null | undefined,
   roll: number = randomD20(),
+  options?: MoveAutomationAccuracyRollOptions,
 ): MoveAutomationTargetResolutionState => {
   const state = ensureMoveAutomationTargetResolution(targetResolutions, id, script)
-  const result = resolveMoveAutomationAccuracyRoll(script, roll)
+  const result = resolveMoveAutomationAccuracyRoll(script, roll, options)
   state.accuracyRoll = result.accuracyRoll
   state.hit = result.hit
   state.crit = result.crit

@@ -173,6 +173,138 @@ samp {
   color: var(--accent);
 }
 
+/* Move automation targeting + roll feedback. Reticles are also reused by the
+   clickable map overlay, so keep transforms on inner nodes only. */
+.move-target-reticle-anchor {
+  width: 72px;
+  height: 72px;
+  user-select: none;
+  pointer-events: none;
+}
+
+.move-target-reticle {
+  position: relative;
+  display: block;
+  width: 72px;
+  height: 72px;
+  border: 4px solid #ff2d20;
+  border-radius: 999px;
+  opacity: 0.94;
+  user-select: none;
+  pointer-events: none;
+  filter:
+    drop-shadow(0 2px 2px rgba(0, 0, 0, 0.92))
+    drop-shadow(0 0 8px rgba(255, 45, 32, 0.82));
+  animation: move-target-reticle-pulse 1.05s ease-in-out infinite;
+}
+
+.move-target-reticle::before,
+.move-target-reticle::after {
+  content: '';
+  position: absolute;
+  inset: 50% auto auto 50%;
+  display: block;
+  background: #ff2d20;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 6px rgba(255, 45, 32, 0.88);
+}
+
+.move-target-reticle::before {
+  width: 92px;
+  height: 4px;
+}
+
+.move-target-reticle::after {
+  width: 4px;
+  height: 92px;
+}
+
+@keyframes move-target-reticle-pulse {
+  0%, 100% {
+    transform: scale(0.96);
+  }
+
+  50% {
+    transform: scale(1.08);
+  }
+}
+
+.move-automation-roll-anchor {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 118px;
+  user-select: none;
+  pointer-events: none;
+}
+
+.move-automation-roll {
+  min-width: 118px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 7px 9px;
+  border: 2px solid var(--rule-active);
+  border-radius: 14px;
+  background: rgba(29, 32, 33, 0.9);
+  color: var(--ink-bright);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  font-weight: 900;
+  line-height: 1;
+  text-align: center;
+  white-space: nowrap;
+  user-select: none;
+  pointer-events: none;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+  box-shadow:
+    0 10px 20px rgba(0, 0, 0, 0.42),
+    0 0 10px rgba(250, 189, 47, 0.35);
+}
+
+.move-automation-roll.is-rolling {
+  width: 46px;
+  min-width: 46px;
+  height: 46px;
+  padding: 0;
+  border-color: var(--accent);
+  border-radius: 15px;
+  color: var(--accent);
+  animation: move-automation-d20-roll 0.42s linear infinite;
+}
+
+.move-automation-roll.is-result.is-hit {
+  border-color: #b8bb26;
+  color: #b8ff26;
+}
+
+.move-automation-roll.is-result.is-miss {
+  border-color: #fb4934;
+  color: #ff6b5f;
+}
+
+.move-automation-roll.is-result.is-crit {
+  border-color: #fabd2f;
+  color: #fabd2f;
+  box-shadow:
+    0 10px 20px rgba(0, 0, 0, 0.45),
+    0 0 16px rgba(250, 189, 47, 0.78);
+}
+
+@keyframes move-automation-d20-roll {
+  from {
+    transform: rotate(0deg) scale(0.92);
+  }
+
+  50% {
+    transform: rotate(180deg) scale(1.08);
+  }
+
+  to {
+    transform: rotate(360deg) scale(0.92);
+  }
+}
+
 /* Compact token status HUD floating above each sprite. The text stays
    readable with stroke/shadow instead of a filled nameplate, and the thin
    HP track remains visible at full health. */

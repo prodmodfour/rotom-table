@@ -1,4 +1,4 @@
-import { moves } from '~~/data/ptuReference'
+import { findMove, moves } from '~~/data/ptuReference'
 import {
   MOVE_DAMAGE_BASE_TABLE,
   formatMoveDamageBase,
@@ -55,19 +55,72 @@ const defineExplicitMoveScript = (script: Omit<MoveAutomationScript, 'kind'>): M
   kind: 'explicit',
 })
 
+const reviewedSingleTargetAttackScript = (moveName: string, version = 1): MoveAutomationScript => {
+  const move = findMove(moveName)
+  if (!move) throw new Error(`Missing canonical PTU move data for ${moveName}`)
+  const manualScript = createManualMoveAutomationScript(move)
+  return defineExplicitMoveScript({
+    moveName: manualScript.moveName,
+    version,
+    targetMode: manualScript.targetMode,
+    targetCount: manualScript.targetCount,
+    damaging: manualScript.damaging,
+    requiresAccuracy: manualScript.requiresAccuracy,
+    damageBase: manualScript.damageBase,
+    damageClass: manualScript.damageClass,
+    type: manualScript.type,
+    ac: manualScript.ac,
+    range: manualScript.range,
+    effect: manualScript.effect,
+    special: manualScript.special,
+    keywords: manualScript.keywords,
+    criticalRange: manualScript.criticalRange,
+    conditionSuggestions: manualScript.conditionSuggestions,
+    stageSuggestions: manualScript.stageSuggestions,
+    hpSuggestions: manualScript.hpSuggestions,
+    fieldSuggestions: manualScript.fieldSuggestions,
+    hazardSuggestions: manualScript.hazardSuggestions,
+    automationNotes: [],
+  })
+}
+
+const SEAMLESS_SINGLE_TARGET_ATTACK_SCRIPT_NAMES = [
+  'Ember',
+  'Fire Punch',
+  'Flamethrower',
+  'Ice Beam',
+  'Lick',
+  'Poison Sting',
+  'Scald',
+  'Thunder Shock',
+  'Thunderbolt',
+] as const
+
+export const SEAMLESS_SINGLE_TARGET_ATTACK_SCRIPTS: ReadonlyMap<string, MoveAutomationScript> = new Map(
+  SEAMLESS_SINGLE_TARGET_ATTACK_SCRIPT_NAMES.map((name) => [name, reviewedSingleTargetAttackScript(name)]),
+)
+
+export const isSeamlessSingleTargetAttackScript = (
+  script: MoveAutomationScript | null | undefined,
+): script is MoveAutomationScript => Boolean(
+  script
+    && script.kind === 'explicit'
+    && SEAMLESS_SINGLE_TARGET_ATTACK_SCRIPTS.has(script.moveName)
+    && script.targetMode === 'one-target'
+    && script.targetCount === 1
+    && script.requiresAccuracy
+    && script.damaging,
+)
+
 /**
- * Human-authored move automation scripts. This registry is intentionally not
- * populated from moves.json. A move only counts as automated when an explicit
- * entry is added here (or moved into per-move modules later) and reviewed.
+ * Human-reviewed move automation scripts. A move only counts as automated when
+ * an explicit entry is added here (or moved into per-move modules later). Small
+ * factories may copy canonical move data, but the registry itself remains an
+ * allow-list of reviewed automation coverage.
  */
 export const EXPLICIT_MOVE_AUTOMATION_SCRIPTS: ReadonlyMap<string, MoveAutomationScript> = new Map<string, MoveAutomationScript>([
-  // Example shape for future scripts:
-  // ['Tackle', defineExplicitMoveScript({ ...buildManualMoveResolution(findMove('Tackle')!), ...move-specific steps })],
+  ...SEAMLESS_SINGLE_TARGET_ATTACK_SCRIPTS,
 ])
-
-// Keep the helper referenced so TypeScript warns if its signature drifts while
-// the explicit registry is still empty.
-void defineExplicitMoveScript
 
 export const moveAutomationCoverage = {
   canonicalMoveCount: moves.length,

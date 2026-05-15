@@ -12,6 +12,16 @@ describe('move automation condition suggestion helpers', () => {
         threshold: '15+',
         optional: true,
       }))
+
+    expect(parseMoveAutomationConditionSuggestions('Ember Burns the target on 18+.'))
+      .toContainEqual(expect.objectContaining({
+        recipient: 'target',
+        condition: 'Burned',
+        action: 'add',
+        label: 'Burned on 18+',
+        threshold: '18+',
+        optional: true,
+      }))
   })
 
   it('routes Rest sleep to the user', () => {

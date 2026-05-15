@@ -32,6 +32,9 @@ export interface IsometricPointerInteractionOptions {
   performPlacement?: () => boolean | void
   stepPlacementElevation?: (deltaY: number) => boolean | void
   cancelPlacement?: () => boolean | void
+  getTargetingModeActive?: () => boolean
+  performTargeting?: (event: MouseEvent | PointerEvent) => boolean | void
+  cancelTargeting?: () => boolean | void
   performBuildAction: (event: MouseEvent | PointerEvent, tool: BuildTool) => void
   performHazardAction: (event: MouseEvent | PointerEvent, tool: BuildTool) => void
   hideBuildGhost: () => void
@@ -69,6 +72,9 @@ export const createIsometricPointerInteractionController = ({
   performPlacement = () => false,
   stepPlacementElevation = () => false,
   cancelPlacement = () => false,
+  getTargetingModeActive = () => false,
+  performTargeting = () => false,
+  cancelTargeting = () => false,
   performBuildAction,
   performHazardAction,
   hideBuildGhost,
@@ -82,6 +88,11 @@ export const createIsometricPointerInteractionController = ({
 
     if (getPlacementModeActive()) {
       performPlacement()
+      return
+    }
+
+    if (getTargetingModeActive()) {
+      performTargeting(event)
       return
     }
 
@@ -109,6 +120,11 @@ export const createIsometricPointerInteractionController = ({
 
     if (getPlacementModeActive()) {
       cancelPlacement()
+      return
+    }
+
+    if (getTargetingModeActive()) {
+      cancelTargeting()
       return
     }
 
@@ -151,6 +167,10 @@ export const createIsometricPointerInteractionController = ({
       return
     }
 
+    if (getTargetingModeActive()) {
+      return
+    }
+
     if (getBuildMode()) {
       updateBuildPreviewFromPointer(event)
       return
@@ -178,6 +198,10 @@ export const createIsometricPointerInteractionController = ({
       return
     }
 
+    if (getTargetingModeActive()) {
+      return
+    }
+
     if (!selectedPokemon || !canControlPokemon(selectedPokemon.id)) {
       return
     }
@@ -195,6 +219,11 @@ export const createIsometricPointerInteractionController = ({
 
     if (getPlacementModeActive()) {
       performPlacement()
+      return
+    }
+
+    if (getTargetingModeActive()) {
+      performTargeting(event)
       return
     }
 
@@ -230,6 +259,11 @@ export const createIsometricPointerInteractionController = ({
     if (closeTopmostOverlay()) return
     if (getPlacementModeActive()) {
       cancelPlacement()
+      return
+    }
+
+    if (getTargetingModeActive()) {
+      cancelTargeting()
       return
     }
 

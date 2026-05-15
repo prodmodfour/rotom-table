@@ -193,6 +193,15 @@ export interface GridAnchor {
   z: number
 }
 
+export interface SpawnedPokemonEvasionModifiers {
+  /** Modifier stacked on top of Defense-derived Physical Evasion. */
+  physical: number
+  /** Modifier stacked on top of Special Defense-derived Special Evasion. */
+  special: number
+  /** Modifier stacked on top of Speed-derived Speed Evasion. */
+  speed: number
+}
+
 export interface SpawnedPokemon extends PokemonCatalogEntry {
   id: string
   position: GridAnchor
@@ -215,6 +224,10 @@ export interface SpawnedPokemon extends PokemonCatalogEntry {
   def: number
   /** Resolved Special Defense stat. */
   sdef: number
+  /** Resolved Speed stat. Optional for legacy test fixtures and older map snapshots. */
+  spd?: number
+  /** Current non-stat Evasion modifiers copied from the source sheet. */
+  evasion?: SpawnedPokemonEvasionModifiers
   /** Defender's types (sheet override > species default; empty for trainers). */
   defenderTypes: string[]
   /** Movement capabilities that alter type effectiveness, copied from the source sheet. */

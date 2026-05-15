@@ -13,7 +13,24 @@ const REMOVE_ACTION_RE = /cures?|cured|removes?/i
 const CONTEXTUAL_MENTION_RE = /\bif\b|\bwhile\b|already|has been|have been|afflicted with|affected by|immune to|cannot Sleep|ignore the first turn/i
 const OPTIONAL_CONDITION_RE = /may choose|may|can choose/i
 
-const conditionSearchTerm = (condition: string): string => condition.toLowerCase().split(' ')[0] ?? ''
+const CONDITION_SEARCH_TERMS: Record<string, string[]> = {
+  Burned: ['burned', 'burns', 'burn'],
+  Frozen: ['frozen', 'freezes', 'freeze'],
+  Paralysis: ['paralysis', 'paralyzes', 'paralyses', 'paralyzed', 'paralysed', 'paralyze', 'paralyse'],
+  Poisoned: ['poisoned', 'poisons', 'poison'],
+  Sleep: ['asleep', 'sleeping', 'sleep'],
+}
+
+const conditionSearchTerms = (condition: string): string[] =>
+  CONDITION_SEARCH_TERMS[condition] ?? [condition.toLowerCase().split(' ')[0] ?? '']
+
+const conditionMentionIndex = (effect: string, condition: string): number => {
+  const lowerEffect = effect.toLowerCase()
+  return conditionSearchTerms(condition)
+    .map((term) => lowerEffect.indexOf(term))
+    .filter((index) => index >= 0)
+    .sort((left, right) => left - right)[0] ?? -1
+}
 
 const conditionWindow = (effect: string, index: number): string => {
   if (index < 0) return effect
@@ -50,8 +67,7 @@ export const parseMoveAutomationConditionSuggestions = (effect: string): MoveAut
 
   for (const condition of conditionsFromText(effect)) {
     const canonical = normalizeConditionName(condition) ?? condition
-    const searchTerm = conditionSearchTerm(canonical)
-    const index = searchTerm ? effect.toLowerCase().indexOf(searchTerm) : -1
+    const index = conditionMentionIndex(effect, canonical)
     const threshold = index >= 0 ? effectThresholdNear(effect, index) : undefined
     const before = index >= 0 ? effect.slice(Math.max(0, index - 80), index) : ''
     const after = index >= 0 ? effect.slice(index, Math.min(effect.length, index + 100)) : ''

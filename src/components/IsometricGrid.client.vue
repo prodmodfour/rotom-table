@@ -21,6 +21,10 @@ import { buildAllVoxelOccupancy } from '~/utils/voxelOccupancy'
 import { buildMapOccupancy } from '~/utils/mapOccupancy'
 import { normalizeMapFieldEffects } from '~/utils/mapFieldEffects'
 import type { CombatStageMap } from '~/types/combatStages'
+import type {
+  MoveAutomationFeedbackState,
+  MoveAutomationTargetingOverlayState,
+} from '~/types/moveAutomation'
 import type { BuildTool } from '#shared/mapEditor'
 import type { TokenMoveMenuOption } from '~/utils/mapTokenMoves'
 import {
@@ -57,6 +61,10 @@ import {
 } from '~/utils/isometric/interactionTargets'
 import { createBuildGhostRenderer, createHazardGhostRenderer } from '~/utils/isometric/previewGhosts'
 import { createTokenMovePreviewRenderer } from '~/utils/isometric/tokenMovePreview'
+import {
+  createMoveAutomationFeedbackRenderer,
+  createMoveTargetingReticleRenderer,
+} from '~/utils/isometric/moveAutomationOverlays'
 import {
   clampIsometricGroundLevelY,
   getFieldEffectsRevisionKey,
@@ -122,6 +130,8 @@ const props = defineProps<{
   canDeleteTokens?: boolean
   tokenMoveOptionsById?: Record<string, TokenMoveMenuOption[]>
   tokenSendOutOptionsById?: Record<string, TokenSendOutOption[]>
+  moveAutomationTargeting?: MoveAutomationTargetingOverlayState | null
+  moveAutomationFeedback?: MoveAutomationFeedbackState | null
 }>()
 
 const emit = defineEmits<{
@@ -141,6 +151,8 @@ const emit = defineEmits<{
   (event: 'remove-voxel', cell: { x: number; y: number; z: number }): void
   (event: 'place-hazard', hazard: MapHazardV2): void
   (event: 'remove-hazard', cell: { x: number; y: number; z: number; kind?: MapHazardKind }): void
+  (event: 'select-move-target', targetId: string): void
+  (event: 'cancel-move-targeting'): void
 }>()
 
 const visibleLayers = () => resolveIsometricLayerVisibility(props.layerVisibility)
@@ -148,6 +160,12 @@ const visibleLayers = () => resolveIsometricLayerVisibility(props.layerVisibilit
 const normalizedGroundLevelY = () => clampIsometricGroundLevelY(props.dimensions, props.groundLevelY)
 
 const container = ref<HTMLDivElement | null>(null)
+const targetReticleButtons = ref<Array<{ id: string; left: number; top: number }>>([])
+
+const emitPokemonSelection = (id: string | null) => {
+  if (props.moveAutomationTargeting) return
+  emit('select-pokemon', id)
+}
 
 const controllableIdSet = computed(() => new Set(props.controllableIds ?? props.pokemons.map((pokemon) => pokemon.id)))
 const canControlPokemon = (id: string | null | undefined): id is string =>
@@ -184,7 +202,7 @@ const beginSendOutPlacement = (payload: { trainerId: string; pokemonSlug: string
   if (!findSendOutOption(payload.trainerId, payload.pokemonSlug)) return
 
   sendOutPlacement.value = payload
-  emit('select-pokemon', null)
+  emitPokemonSelection(null)
 }
 
 const {
@@ -304,6 +322,8 @@ const gridRenderer = createGridRenderer(gridGroup)
 const buildGhostRenderer = createBuildGhostRenderer(previewGroup)
 const hazardGhostRenderer = createHazardGhostRenderer(previewGroup)
 const tokenMovePreviewRenderer = createTokenMovePreviewRenderer({ scene, group: previewGroup })
+const moveTargetingReticleRenderer = createMoveTargetingReticleRenderer(scene)
+const moveAutomationFeedbackRenderer = createMoveAutomationFeedbackRenderer(scene)
 let renderer: THREE.WebGLRenderer | null = null
 let cssRenderer: ReturnType<typeof createIsometricCssRenderer> | null = null
 let camera: THREE.OrthographicCamera | null = null
@@ -487,6 +507,75 @@ const pickPokemonId = (event: MouseEvent | PointerEvent) =>
     renderObjects: renderObjects.values(),
   })
 
+const moveTargetingCandidateIdSet = () => new Set(props.moveAutomationTargeting?.candidateIds ?? [])
+
+const worldPointToScreen = (point: THREE.Vector3): { x: number; y: number } | null => {
+  if (!camera || !renderer) return null
+  const bounds = renderer.domElement.getBoundingClientRect()
+  const projected = point.clone().project(camera)
+  return {
+    x: bounds.left + (projected.x + 1) * bounds.width / 2,
+    y: bounds.top + (1 - projected.y) * bounds.height / 2,
+  }
+}
+
+const worldPointToContainerPoint = (point: THREE.Vector3): { x: number; y: number } | null => {
+  const screenPoint = worldPointToScreen(point)
+  const bounds = container.value?.getBoundingClientRect()
+  if (!screenPoint || !bounds) return null
+  return {
+    x: screenPoint.x - bounds.left,
+    y: screenPoint.y - bounds.top,
+  }
+}
+
+const moveTargetReticleCenter = (renderObject: PokemonRenderObject): THREE.Vector3 => new THREE.Vector3(
+  renderObject.currentCenter.x,
+  renderObject.currentCenter.y + Math.max(renderObject.height * 0.58, 0.45),
+  renderObject.currentCenter.z,
+)
+
+const moveTargetScreenHitRadius = (renderObject: PokemonRenderObject, center: { x: number; y: number }): number => {
+  const edge = worldPointToScreen(new THREE.Vector3(
+    renderObject.currentCenter.x + Math.max(0.475, renderObject.base * 0.475),
+    renderObject.currentCenter.y + Math.max(renderObject.height * 0.58, 0.45),
+    renderObject.currentCenter.z,
+  ))
+  const projectedRadius = edge ? Math.hypot(edge.x - center.x, edge.y - center.y) : 0
+  return THREE.MathUtils.clamp(Math.max(36, projectedRadius + 18), 36, 96)
+}
+
+const pickMoveTargetId = (event: MouseEvent | PointerEvent): string | null => {
+  const candidateIds = moveTargetingCandidateIdSet()
+  const hitId = pickPokemonId(event)
+  if (hitId && candidateIds.has(hitId)) return hitId
+
+  let best: { id: string; distance: number } | null = null
+  for (const id of candidateIds) {
+    const renderObject = renderObjects.get(id)
+    if (!renderObject) continue
+    const center = worldPointToScreen(moveTargetReticleCenter(renderObject))
+    if (!center) continue
+    const distance = Math.hypot(event.clientX - center.x, event.clientY - center.y)
+    if (distance > moveTargetScreenHitRadius(renderObject, center)) continue
+    if (!best || distance < best.distance) best = { id, distance }
+  }
+  return best?.id ?? null
+}
+
+const performMoveTargeting = (event: MouseEvent | PointerEvent): boolean => {
+  const hitId = pickMoveTargetId(event)
+  if (!hitId) return false
+  emit('select-move-target', hitId)
+  return true
+}
+
+const cancelMoveTargeting = (): boolean => {
+  if (!props.moveAutomationTargeting) return false
+  emit('cancel-move-targeting')
+  return true
+}
+
 const updateHoverFromPointer = (event: PointerEvent) => {
   // Match normal link hover behaviour: touch/drag interactions don't leave a
   // sticky hover state behind, while every mouse move immediately re-picks the
@@ -616,7 +705,7 @@ const pointerInteraction = createIsometricPointerInteractionController({
   getHazardTool: () => props.hazardTool,
   canControlPokemon,
   pickPokemonId,
-  selectPokemon: (id) => emit('select-pokemon', id),
+  selectPokemon: emitPokemonSelection,
   closeContextMenu,
   openContextMenu,
   updateHoverFromPointer,
@@ -631,6 +720,9 @@ const pointerInteraction = createIsometricPointerInteractionController({
   performPlacement: sendOutInteraction.performSendOut,
   stepPlacementElevation: sendOutInteraction.stepPreviewElevation,
   cancelPlacement: sendOutInteraction.cancel,
+  getTargetingModeActive: () => Boolean(props.moveAutomationTargeting),
+  performTargeting: performMoveTargeting,
+  cancelTargeting: cancelMoveTargeting,
   performBuildAction,
   performHazardAction,
   hideBuildGhost,
@@ -674,6 +766,50 @@ watch([() => props.buildMode, () => props.hazardMode], ([buildActive, hazardActi
   sendOutInteraction.cancel()
 })
 
+watch(() => props.moveAutomationTargeting, (targeting) => {
+  if (!targeting) return
+  closeContextMenu()
+  sendOutInteraction.cancel()
+  clearPreviewVisuals()
+})
+
+const syncTargetReticleButtons = (show: boolean) => {
+  if (!show) {
+    if (targetReticleButtons.value.length) targetReticleButtons.value = []
+    return
+  }
+
+  const next = (props.moveAutomationTargeting?.candidateIds ?? []).flatMap((id) => {
+    const renderObject = renderObjects.get(id)
+    const point = renderObject ? worldPointToContainerPoint(moveTargetReticleCenter(renderObject)) : null
+    return point ? [{ id, left: point.x, top: point.y }] : []
+  })
+  const current = targetReticleButtons.value
+  const unchanged = next.length === current.length && next.every((entry, index) => {
+    const old = current[index]
+    return old?.id === entry.id
+      && Math.abs(old.left - entry.left) < 0.5
+      && Math.abs(old.top - entry.top) < 0.5
+  })
+  if (!unchanged) targetReticleButtons.value = next
+}
+
+const updateMoveAutomationOverlays = () => {
+  const layers = visibleLayers()
+  const showTargeting = Boolean(props.moveAutomationTargeting && layers.tokens)
+  syncTargetReticleButtons(showTargeting)
+  moveTargetingReticleRenderer.update({
+    candidateIds: [],
+    renderObjects,
+    show: false,
+  })
+  moveAutomationFeedbackRenderer.update({
+    feedback: props.moveAutomationFeedback,
+    renderObjects,
+    show: layers.tokens,
+  })
+}
+
 const animate = () => {
   animationFrame = window.requestAnimationFrame(animate)
 
@@ -695,6 +831,7 @@ const animate = () => {
     cssRenderer,
     scene,
     facingDirection: DEFAULT_FACING_DIRECTION,
+    beforeRender: updateMoveAutomationOverlays,
   })
 }
 
@@ -750,6 +887,9 @@ onBeforeUnmount(() => {
   cleanupResizeObserver?.()
   cleanupResizeObserver = null
 
+  moveTargetingReticleRenderer.dispose()
+  moveAutomationFeedbackRenderer.dispose()
+
   disposeIsometricRendererResources({
     clearPreviewVisuals,
     tokenMovePreviewRenderer,
@@ -800,7 +940,7 @@ useIsometricSceneWatchers({
     replayHazardPreview,
     syncHazardMeshes,
     syncFieldEffectMeshes,
-    selectPokemon: (id) => emit('select-pokemon', id),
+    selectPokemon: emitPokemonSelection,
     refreshPokemonStyles,
     updateGridVisibility,
     setControlsZoomEnabled: (enabled) => {
@@ -825,6 +965,41 @@ useIsometricSceneWatchers({
 
 <template>
   <div ref="container" class="scene-root">
+    <div v-if="props.moveAutomationTargeting" class="move-targeting-hud" @contextmenu.prevent>
+      <div class="move-targeting-hud__copy">
+        <strong>{{ props.moveAutomationTargeting.moveName }}</strong>
+        <span v-if="props.moveAutomationTargeting.candidateIds.length">
+          Choose a target within {{ props.moveAutomationTargeting.rangeLabel }}.
+        </span>
+        <span v-else>
+          No targets in range {{ props.moveAutomationTargeting.rangeLabel }}.
+        </span>
+      </div>
+      <button
+        class="move-targeting-hud__cancel"
+        type="button"
+        @pointerdown.stop
+        @click.stop="emit('cancel-move-targeting')"
+      >
+        Cancel
+      </button>
+    </div>
+
+    <div v-if="props.moveAutomationTargeting" class="move-targeting-click-layer" @contextmenu.prevent>
+      <button
+        v-for="button in targetReticleButtons"
+        :key="button.id"
+        class="move-target-reticle-button"
+        type="button"
+        :style="{ left: `${button.left}px`, top: `${button.top}px` }"
+        aria-label="Select move target"
+        @pointerdown.stop
+        @click.stop="emit('select-move-target', button.id)"
+      >
+        <span class="move-target-reticle" aria-hidden="true" />
+      </button>
+    </div>
+
     <TokenContextMenu
       v-if="contextMenu"
       :menu="contextMenu"
@@ -883,6 +1058,83 @@ useIsometricSceneWatchers({
   min-height: 100vh;
   overflow: hidden;
   background: var(--paper);
+}
+
+.move-targeting-hud {
+  position: absolute;
+  z-index: 10;
+  top: 1rem;
+  left: 50%;
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  max-width: min(92vw, 520px);
+  padding: 0.72rem 0.86rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 62%, var(--rule-strong));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--paper) 91%, transparent);
+  box-shadow: 0 18px 46px rgba(0, 0, 0, 0.35);
+  color: var(--ink);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.move-targeting-hud__copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
+  min-width: 0;
+  font-size: 0.8rem;
+  line-height: 1.15;
+}
+
+.move-targeting-hud__copy strong {
+  color: var(--accent);
+  font-size: 0.92rem;
+}
+
+.move-targeting-hud__cancel {
+  flex: 0 0 auto;
+  border: 1px solid var(--rule-strong);
+  border-radius: 999px;
+  background: var(--paper-accent);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 700;
+  padding: 0.35rem 0.65rem;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.move-targeting-hud__cancel:hover,
+.move-targeting-hud__cancel:focus-visible {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.move-targeting-click-layer {
+  position: absolute;
+  z-index: 9;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.move-target-reticle-button {
+  position: absolute;
+  width: 72px;
+  height: 72px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: crosshair;
+  transform: translate(-50%, -50%);
+  pointer-events: auto;
+}
+
+.move-target-reticle-button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 8px;
 }
 
 </style>

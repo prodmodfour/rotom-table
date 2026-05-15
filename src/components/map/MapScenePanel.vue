@@ -16,7 +16,11 @@ import type {
   TabletopMap,
   VoxelMaterial,
 } from '~/types/map'
-import type { MoveAutomationTransaction } from '~/types/moveAutomation'
+import type {
+  MoveAutomationFeedbackState,
+  MoveAutomationTargetingOverlayState,
+  MoveAutomationTransaction,
+} from '~/types/moveAutomation'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import type { TrainerMove } from '~/types/trainerSheet'
 import type { TokenMoveMenuOption } from '~/utils/mapTokenMoves'
@@ -56,6 +60,8 @@ const props = defineProps<{
   moveAutomationUser: SpawnedPokemon | null
   moveAutomationMoves: Array<CharacterSheetMove | TrainerMove>
   moveAutomationInitialMoveName?: string | null
+  moveAutomationTargeting?: MoveAutomationTargetingOverlayState | null
+  moveAutomationFeedback?: MoveAutomationFeedbackState | null
   tokenMoveOptionsById?: Record<string, TokenMoveMenuOption[]>
   tokenSendOutOptionsById?: Record<string, TokenSendOutOption[]>
   canApplyMapEffects: boolean
@@ -80,6 +86,8 @@ const emit = defineEmits<{
   (event: 'remove-hazard', cell: { x: number; y: number; z: number; kind?: MapHazardKind }): void
   (event: 'close-move-automation'): void
   (event: 'apply-move-automation', transaction: MoveAutomationTransaction): void
+  (event: 'select-move-target', targetId: string): void
+  (event: 'cancel-move-targeting'): void
 }>()
 
 const rendererRef = ref<MapSceneRendererHandle | null>(null)
@@ -117,6 +125,8 @@ defineExpose({ focusPokemon })
         :can-delete-tokens="canDeleteTokens"
         :token-move-options-by-id="tokenMoveOptionsById"
         :token-send-out-options-by-id="tokenSendOutOptionsById"
+        :move-automation-targeting="moveAutomationTargeting"
+        :move-automation-feedback="moveAutomationFeedback"
         @select-pokemon="emit('select-pokemon', $event)"
         @move-pokemon="emit('move-pokemon', $event)"
         @turn-pokemon="emit('turn-pokemon', $event)"
@@ -133,6 +143,8 @@ defineExpose({ focusPokemon })
         @remove-voxel="emit('remove-voxel', $event)"
         @place-hazard="emit('place-hazard', $event)"
         @remove-hazard="emit('remove-hazard', $event)"
+        @select-move-target="emit('select-move-target', $event)"
+        @cancel-move-targeting="emit('cancel-move-targeting')"
       />
       <MapSceneStatus v-else :status="status" :error="error" :slug="slug" />
 

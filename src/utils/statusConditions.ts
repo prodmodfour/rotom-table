@@ -77,11 +77,11 @@ const slugify = (value: string): string =>
 
 const EXTRA_ALIASES: Record<string, string[]> = {
   Sleep: ['Asleep', 'Sleeping'],
-  Poisoned: ['Poison', 'Poisoned'],
+  Poisoned: ['Poison', 'Poisons', 'Poisoned'],
   'Badly Poisoned': ['Badly Poison', 'Toxic', 'Tox'],
-  Paralysis: ['Paralyzed', 'Paralysed', 'Paralyze', 'Paralyse', 'Paralysis'],
-  Frozen: ['Freeze', 'Freezing', 'Frozen'],
-  Burned: ['Burn', 'Burnt', 'Burned'],
+  Paralysis: ['Paralyzed', 'Paralysed', 'Paralyze', 'Paralyse', 'Paralyzes', 'Paralyses', 'Paralysis'],
+  Frozen: ['Freeze', 'Freezes', 'Freezing', 'Frozen'],
+  Burned: ['Burn', 'Burns', 'Burnt', 'Burned'],
   Confused: ['Confusion', 'Confused'],
   Rage: ['Enraged', 'Enrage', 'Rage'],
   Infatuation: ['Infatuated', 'Infatuation'],

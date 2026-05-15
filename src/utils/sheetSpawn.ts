@@ -18,6 +18,10 @@ import { trainerCatalog } from '~~/data/trainerCatalog'
 import { COMBAT_STAT_STAGE_KEYS, normalizeCombatStages } from '~/utils/combatStages'
 import { mergeLegacyConditions } from '~/utils/statusConditions'
 import { clampHpValue } from '~/utils/ptuHp'
+import {
+  pokemonEvasionModifiers,
+  trainerEvasionModifiers,
+} from '~/utils/sheetEvasionBonuses'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { CombatStageMap } from '~/types/combatStages'
 import type { PokemonCatalogEntry } from '~/types/pokemon'
@@ -96,6 +100,8 @@ export const pokemonHpSnapshot = (
   satk: number
   def: number
   sdef: number
+  spd: number
+  evasion: ReturnType<typeof pokemonEvasionModifiers>
   defenderTypes: string[]
   defenderCapabilities?: DefenderCapabilities
   combatStages: CombatStageMap
@@ -109,6 +115,8 @@ export const pokemonHpSnapshot = (
   const satk = stats.find((row) => row.key === 'satk')?.total ?? 0
   const def = stats.find((row) => row.key === 'def')?.total ?? 0
   const sdef = stats.find((row) => row.key === 'sdef')?.total ?? 0
+  const spd = stats.find((row) => row.key === 'spd')?.total ?? 0
+  const evasion = pokemonEvasionModifiers(sheet)
   const species = getPokedexEntry(sheet.species)
   const defenderTypes = sheet.types ?? species?.types ?? []
   const defenderCapabilities = pokemonDefenderCapabilities(sheet)
@@ -121,7 +129,7 @@ export const pokemonHpSnapshot = (
     acc: sheet.combatStages?.acc,
   })
   const conditions = mergeLegacyConditions(sheet.combat?.conditions, sheet.combat?.statusAfflictions)
-  return { currentHp, maxHp, atk, satk, def, sdef, defenderTypes, defenderCapabilities, combatStages, conditions }
+  return { currentHp, maxHp, atk, satk, def, sdef, spd, evasion, defenderTypes, defenderCapabilities, combatStages, conditions }
 }
 
 /** Trainer HP + offence/defence + capability snapshot. Max HP is derived and injury-adjusted; trainers have no defending types. */
@@ -134,6 +142,8 @@ export const trainerHpSnapshot = (
   satk: number
   def: number
   sdef: number
+  spd: number
+  evasion: ReturnType<typeof trainerEvasionModifiers>
   defenderTypes: string[]
   defenderCapabilities?: DefenderCapabilities
   combatStages: CombatStageMap
@@ -146,13 +156,15 @@ export const trainerHpSnapshot = (
   const satk = stats.find((row) => row.key === 'satk')?.total ?? 0
   const def = stats.find((row) => row.key === 'def')?.total ?? 0
   const sdef = stats.find((row) => row.key === 'sdef')?.total ?? 0
+  const spd = stats.find((row) => row.key === 'spd')?.total ?? 0
+  const evasion = trainerEvasionModifiers(sheet)
   const defenderCapabilities = trainerDefenderCapabilities(sheet)
   const stageSource = Object.fromEntries(
     COMBAT_STAT_STAGE_KEYS.map((key) => [key, sheet.stats?.[key]?.stage ?? sheet.combatStages?.[key]]),
   )
   const combatStages = normalizeCombatStages({ ...stageSource, acc: sheet.combatStages?.acc })
   const conditions = mergeLegacyConditions(sheet.conditions, sheet.statusAfflictions)
-  return { currentHp, maxHp, atk, satk, def, sdef, defenderTypes: [], defenderCapabilities, combatStages, conditions }
+  return { currentHp, maxHp, atk, satk, def, sdef, spd, evasion, defenderTypes: [], defenderCapabilities, combatStages, conditions }
 }
 
 // Re-export so callers don't have to import the catalog directly.

@@ -37,6 +37,38 @@ export interface MoveAutomationLogEntry {
   lines: string[]
 }
 
+export interface MoveAutomationTargetingOverlayState {
+  userId: string
+  moveName: string
+  rangeLabel: string
+  rangeMeters: number
+  candidateIds: string[]
+}
+
+export interface MoveAutomationFeedbackCondition {
+  condition: string
+  applied: boolean
+  blockedBy?: string
+}
+
+export interface MoveAutomationFeedbackState {
+  id: string
+  userId: string
+  targetId: string
+  moveName: string
+  phase: 'rolling' | 'result'
+  naturalRoll: number
+  modifiedRoll: number
+  accuracyCheck: number | null
+  userAccuracy: number
+  targetEvasion: number
+  targetEvasionLabel: string
+  hit: boolean
+  crit: boolean
+  damageLoss: number
+  conditions: MoveAutomationFeedbackCondition[]
+}
+
 export interface MoveAutomationTransaction {
   userId: string
   userName: string

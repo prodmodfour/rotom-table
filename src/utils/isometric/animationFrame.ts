@@ -39,6 +39,7 @@ export interface IsometricAnimationFrameOptions {
   facingDirection: THREE.Vector2
   frameNowMs?: number
   animateRenderObject?: typeof animatePokemonRenderObject
+  beforeRender?: () => void
 }
 
 export const stepIsometricAnimationFrame = (
@@ -89,6 +90,8 @@ export const stepIsometricAnimationFrame = (
     spriteBrightness,
     haloAlpha,
   })
+
+  options.beforeRender?.()
 
   options.renderer.render(options.scene, options.camera)
   options.cssRenderer.render(options.scene, options.camera)

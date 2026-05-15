@@ -1,9 +1,19 @@
-import { computed, ref, type ComputedRef, type Ref } from 'vue'
+import { computed, onBeforeUnmount, ref, type ComputedRef, type Ref } from 'vue'
 import {
   buildTokenMoveMenuOptions,
   moveEntriesForPlacement,
   type TokenSheetMoveEntry,
 } from '~/utils/mapTokenMoves'
+import {
+  damageFormulaForMove,
+  isSeamlessSingleTargetAttackScript,
+} from '~/utils/moveAutomation'
+import { buildMoveAutomationMoveEntries } from '~/utils/moveAutomationMoves'
+import { resolveInstantMoveAutomation } from '~/utils/moveAutomationInstant'
+import {
+  moveAutomationTargetsInRange,
+  parseSingleTargetMoveRangeMeters,
+} from '~/utils/moveAutomationRange'
 import type { CharacterSheet, CharacterSheetMove } from '~/types/characterSheet'
 import type { MapFieldEffects, MapHazardV2, TabletopMap } from '~/types/map'
 import type {
@@ -11,7 +21,10 @@ import type {
   MoveAutomationConditionUpdate,
   MoveAutomationFieldEffectApply,
   MoveAutomationHpUpdate,
+  MoveAutomationFeedbackState,
   MoveAutomationLogEntry,
+  MoveAutomationScript,
+  MoveAutomationTargetingOverlayState,
   MoveAutomationTransaction,
 } from '~/types/moveAutomation'
 import type { SpawnedPokemon } from '~/types/pokemon'
@@ -48,6 +61,16 @@ export interface UseMoveAutomationPanelOptions {
 }
 
 const DEFAULT_MAX_LOG_ENTRIES = 100
+const D20_ROLL_ANIMATION_MS = 850
+const ROLL_RESULT_VISIBLE_MS = 1600
+
+interface ActiveMoveTargetingRequest {
+  userId: string
+  moveName: string
+  script: MoveAutomationScript
+  damageFormula: string
+  rangeMeters: number
+}
 
 export const appendMoveAutomationLogEntry = (
   metadata: Record<string, unknown> | undefined,
@@ -86,6 +109,9 @@ export const useMoveAutomationPanel = ({
 }: UseMoveAutomationPanelOptions) => {
   const moveAutomationId = ref<string | null>(null)
   const moveAutomationInitialMoveName = ref<string | null>(null)
+  const activeMoveTargeting = ref<ActiveMoveTargetingRequest | null>(null)
+  const moveAutomationFeedback = ref<MoveAutomationFeedbackState | null>(null)
+  const feedbackTimers: Array<ReturnType<typeof setTimeout>> = []
 
   const moveAutomationUser = computed(() =>
     moveAutomationId.value
@@ -110,6 +136,40 @@ export const useMoveAutomationPanel = ({
     moveEntriesForId(moveAutomationId.value).map((entry) => entry.move),
   )
 
+  const findSpawnedPokemon = (id: string | null | undefined): SpawnedPokemon | null =>
+    id ? spawnedPokemon.value.find((pokemon) => pokemon.id === id) ?? null : null
+
+  const moveAutomationEntryForUse = (id: string, moveName: string) => {
+    const user = findSpawnedPokemon(id)
+    if (!user) return null
+    const normalizedMoveName = moveName.trim().toLowerCase()
+    const moves = moveEntriesForId(id).map((entry) => entry.move)
+    return buildMoveAutomationMoveEntries(moves, {
+      stabTypes: user.sheetKind === 'pokemon' ? user.defenderTypes : [],
+    }).find((entry) =>
+      entry.move.name.toLowerCase() === normalizedMoveName
+        || entry.sheetMove.name.toLowerCase() === normalizedMoveName,
+    ) ?? null
+  }
+
+  const moveAutomationTargeting = computed<MoveAutomationTargetingOverlayState | null>(() => {
+    const request = activeMoveTargeting.value
+    const user = findSpawnedPokemon(request?.userId)
+    if (!request || !user || !canControlPlacement(request.userId)) return null
+    const candidates = moveAutomationTargetsInRange({
+      user,
+      tokens: spawnedPokemon.value,
+      rangeMeters: request.rangeMeters,
+    })
+    return {
+      userId: request.userId,
+      moveName: request.moveName,
+      rangeLabel: `${request.rangeMeters}m`,
+      rangeMeters: request.rangeMeters,
+      candidateIds: candidates.map((candidate) => candidate.id),
+    }
+  })
+
   const tokenMoveOptionsById = computed(() => {
     const out: Record<string, ReturnType<typeof buildTokenMoveMenuOptions>> = {}
     if (!map.value) return out
@@ -119,16 +179,58 @@ export const useMoveAutomationPanel = ({
     return out
   })
 
+  const clearFeedbackTimers = () => {
+    while (feedbackTimers.length) {
+      const timer = feedbackTimers.pop()
+      if (timer) clearTimeout(timer)
+    }
+  }
+
+  const clearMoveAutomationFeedback = () => {
+    clearFeedbackTimers()
+    moveAutomationFeedback.value = null
+  }
+
+  const beginSeamlessMoveTargeting = (id: string, moveName: string | null | undefined): boolean => {
+    const trimmedMoveName = moveName?.trim()
+    if (!trimmedMoveName) return false
+    const entry = moveAutomationEntryForUse(id, trimmedMoveName)
+    if (!entry || !isSeamlessSingleTargetAttackScript(entry.script)) return false
+    const rangeMeters = parseSingleTargetMoveRangeMeters(entry.script.range)
+    const damageFormula = damageFormulaForMove(entry.move)
+    if (rangeMeters == null || !damageFormula) return false
+
+    clearMoveAutomationFeedback()
+    closeMoveAutomation()
+    activeMoveTargeting.value = {
+      userId: id,
+      moveName: entry.script.moveName,
+      script: entry.script,
+      damageFormula,
+      rangeMeters,
+    }
+    return true
+  }
+
   const openMoveAutomation = (input: string | { id: string; moveName?: string | null }) => {
     const id = typeof input === 'string' ? input : input.id
     if (!canControlPlacement(id)) return
+    const moveName = typeof input === 'string' ? null : input.moveName?.trim() || null
+    if (beginSeamlessMoveTargeting(id, moveName)) return
+
+    clearMoveAutomationFeedback()
+    activeMoveTargeting.value = null
     moveAutomationId.value = id
-    moveAutomationInitialMoveName.value = typeof input === 'string' ? null : input.moveName?.trim() || null
+    moveAutomationInitialMoveName.value = moveName
   }
 
   const closeMoveAutomation = () => {
     moveAutomationId.value = null
     moveAutomationInitialMoveName.value = null
+  }
+
+  const cancelMoveAutomationTargeting = () => {
+    activeMoveTargeting.value = null
   }
 
   const appendMoveAutomationLog = (transaction: MoveAutomationTransaction) => {
@@ -152,14 +254,55 @@ export const useMoveAutomationPanel = ({
     closeMoveAutomation()
   }
 
+  const showMoveAutomationResolution = (
+    feedback: MoveAutomationFeedbackState,
+    transaction: MoveAutomationTransaction,
+  ) => {
+    clearFeedbackTimers()
+    moveAutomationFeedback.value = feedback
+    feedbackTimers.push(setTimeout(() => {
+      if (moveAutomationFeedback.value?.id !== feedback.id) return
+      moveAutomationFeedback.value = { ...feedback, phase: 'result' }
+      void applyMoveAutomation(transaction)
+    }, D20_ROLL_ANIMATION_MS))
+    feedbackTimers.push(setTimeout(() => {
+      if (moveAutomationFeedback.value?.id === feedback.id) moveAutomationFeedback.value = null
+    }, D20_ROLL_ANIMATION_MS + ROLL_RESULT_VISIBLE_MS))
+  }
+
+  const selectMoveAutomationTarget = (targetId: string) => {
+    const request = activeMoveTargeting.value
+    const overlay = moveAutomationTargeting.value
+    if (!request || !overlay?.candidateIds.includes(targetId)) return
+    const user = findSpawnedPokemon(request.userId)
+    const target = findSpawnedPokemon(targetId)
+    if (!user || !target) return
+
+    const result = resolveInstantMoveAutomation({
+      script: request.script,
+      user,
+      target,
+      damageFormula: request.damageFormula,
+      fieldEffects: map.value?.fieldEffects,
+    })
+    activeMoveTargeting.value = null
+    showMoveAutomationResolution(result.feedback, result.transaction)
+  }
+
+  onBeforeUnmount(clearFeedbackTimers)
+
   return {
     moveAutomationId,
     moveAutomationUser,
     moveAutomationMoves,
     moveAutomationInitialMoveName,
+    moveAutomationTargeting,
+    moveAutomationFeedback,
     tokenMoveOptionsById,
     openMoveAutomation,
     closeMoveAutomation,
+    cancelMoveAutomationTargeting,
+    selectMoveAutomationTarget,
     appendMoveAutomationLog,
     applyMoveAutomation,
   }

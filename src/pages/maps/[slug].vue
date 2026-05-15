@@ -252,9 +252,13 @@ const {
   moveAutomationUser,
   moveAutomationMoves,
   moveAutomationInitialMoveName,
+  moveAutomationTargeting,
+  moveAutomationFeedback,
   tokenMoveOptionsById,
   openMoveAutomation,
   closeMoveAutomation,
+  cancelMoveAutomationTargeting,
+  selectMoveAutomationTarget,
   applyMoveAutomation,
 } = useMoveAutomationPanel({
   map,
@@ -410,6 +414,8 @@ useMapDimensionReconciliation({
         :move-automation-user="moveAutomationUser"
         :move-automation-moves="moveAutomationMoves"
         :move-automation-initial-move-name="moveAutomationInitialMoveName"
+        :move-automation-targeting="moveAutomationTargeting"
+        :move-automation-feedback="moveAutomationFeedback"
         :token-move-options-by-id="tokenMoveOptionsById"
         :token-send-out-options-by-id="tokenSendOutOptionsById"
         :can-apply-map-effects="canEditMap"
@@ -431,6 +437,8 @@ useMapDimensionReconciliation({
         @remove-hazard="removeHazard"
         @close-move-automation="closeMoveAutomation"
         @apply-move-automation="applyMoveAutomation"
+        @select-move-target="selectMoveAutomationTarget"
+        @cancel-move-targeting="cancelMoveAutomationTargeting"
       />
     </template>
 
