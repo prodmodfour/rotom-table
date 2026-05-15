@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
-import { formatCombatStage } from '~/utils/combatStageStats'
+import { computed, ref, useId, watch } from 'vue'
+import ReferenceTooltip from '~/components/reference/ReferenceTooltip.vue'
+import { useAnchoredTooltip } from '~/composables/reference/useAnchoredTooltip'
 import type { TokenContextMenuState } from '~/utils/isometric/contextMenu'
 import type { TokenMoveMenuOption } from '~/utils/mapTokenMoves'
+import { buildTokenMoveTooltipDetail } from '~/utils/mapTokenMoveTooltips'
 import type { TokenSendOutOption } from '~/utils/mapTokenSendOut'
 
 const props = defineProps<{
@@ -29,63 +31,77 @@ type ActiveContextPanel = 'main' | 'moves' | 'sendOut'
 
 const activePanel = ref<ActiveContextPanel>('main')
 const hoveredMoveName = ref<string | null>(null)
+const moveTooltipId = useId()
 
 const moves = computed(() => props.moves ?? [])
 const sendOutOptions = computed(() => props.sendOutOptions ?? [])
 const hoveredMove = computed(() =>
-  moves.value.find((move) => move.name === hoveredMoveName.value) ?? moves.value[0] ?? null,
+  moves.value.find((move) => move.name === hoveredMoveName.value) ?? null,
+)
+const hoveredMoveTooltipDetail = computed(() =>
+  hoveredMove.value ? buildTokenMoveTooltipDetail(hoveredMove.value) : null,
 )
 
-const resetContextPanel = () => {
-  activePanel.value = 'main'
+const {
+  anchorEl: moveTooltipAnchorEl,
+  tooltipComponent: moveTooltipComponent,
+  isTooltipVisible: isMoveTooltipVisible,
+  tooltipReady: isMoveTooltipReady,
+  tooltipPlacement: moveTooltipPlacement,
+  tooltipStyle: anchoredMoveTooltipStyle,
+  showTooltip: showAnchoredMoveTooltip,
+  hideTooltipNow: hideAnchoredMoveTooltip,
+} = useAnchoredTooltip(() => activePanel.value === 'moves' && Boolean(hoveredMoveTooltipDetail.value))
+
+const moveTooltipStyle = computed(() => ({
+  ...anchoredMoveTooltipStyle.value,
+  zIndex: 12050,
+}))
+
+const setMoveTooltipAnchor = (event: Event): boolean => {
+  if (!(event.currentTarget instanceof HTMLElement)) return false
+  moveTooltipAnchorEl.value = event.currentTarget
+  return true
+}
+
+const hideMoveTooltip = () => {
   hoveredMoveName.value = null
+  moveTooltipAnchorEl.value = null
+  hideAnchoredMoveTooltip()
+}
+
+const showMoveTooltip = async (moveName: string, event: Event) => {
+  hoveredMoveName.value = moveName
+  if (!setMoveTooltipAnchor(event)) {
+    hideMoveTooltip()
+    return
+  }
+  await showAnchoredMoveTooltip()
+}
+
+const resetContextPanel = () => {
+  hideMoveTooltip()
+  activePanel.value = 'main'
 }
 
 const openMovePanel = () => {
+  hideMoveTooltip()
   activePanel.value = 'moves'
-  hoveredMoveName.value = moves.value[0]?.name ?? null
 }
 
 const openSendOutPanel = () => {
+  hideMoveTooltip()
   activePanel.value = 'sendOut'
-  hoveredMoveName.value = null
 }
 
 watch(() => props.menu.id, () => resetContextPanel())
 
 watch(moves, (nextMoves) => {
-  if (activePanel.value !== 'moves') return
+  if (activePanel.value !== 'moves' || !hoveredMoveName.value) return
   if (nextMoves.some((move) => move.name === hoveredMoveName.value)) return
-  hoveredMoveName.value = nextMoves[0]?.name ?? null
+  hideMoveTooltip()
 })
 
-const statStageLabel = (
-  label: string | null,
-  base: number | null,
-  stage: number | null,
-  current: number | null,
-): string | null => {
-  if (stage == null || base == null || current == null) return null
-  const statLabel = label ? `${label} ` : ''
-  if (stage === 0) return `${statLabel}${current}`
-  return `${statLabel}${base} @ ${formatCombatStage(stage)} CS → ${current}`
-}
-
-const stageLabel = (move: TokenMoveMenuOption): string | null => {
-  const normalCurrent = move.attackStat == null
-    ? null
-    : move.attackStatAbility ? move.attackStat - (move.additionalAttackStat ?? 0) : move.attackStat
-  const normal = statStageLabel(move.attackStatLabel, move.baseAttackStat, move.attackStage, normalCurrent)
-  if (!normal || !move.attackStatAbility) return normal
-
-  const additional = statStageLabel(
-    move.additionalAttackStatLabel,
-    move.additionalBaseAttackStat,
-    move.additionalAttackStage,
-    move.additionalAttackStat,
-  )
-  return additional ? `${normal} + ${additional} (${move.attackStatAbility}) → ${move.attackStat}` : `${normal} (${move.attackStatAbility})`
-}
 </script>
 
 <template>
@@ -199,10 +215,13 @@ const stageLabel = (move: TokenMoveMenuOption): string | null => {
               :key="move.name"
               type="button"
               class="move-submenu__item"
-              :class="{ 'is-active': hoveredMove?.name === move.name }"
+              :class="{ 'is-active': hoveredMoveName === move.name }"
               role="menuitem"
-              @pointerenter="hoveredMoveName = move.name"
-              @focus="hoveredMoveName = move.name"
+              :aria-describedby="hoveredMoveName === move.name && hoveredMoveTooltipDetail && isMoveTooltipVisible ? moveTooltipId : undefined"
+              @pointerenter="showMoveTooltip(move.name, $event)"
+              @pointerleave="hideMoveTooltip"
+              @focus="showMoveTooltip(move.name, $event)"
+              @blur="hideMoveTooltip"
               @click.stop="emit('use-move', move.name)"
             >
               <span class="move-submenu__name">{{ move.name }}</span>
@@ -220,49 +239,17 @@ const stageLabel = (move: TokenMoveMenuOption): string | null => {
             </div>
           </div>
 
-          <aside v-if="hoveredMove" class="move-tooltip" aria-live="polite">
-            <header class="move-tooltip__header">
-              <strong>{{ hoveredMove.name }}</strong>
-              <span class="move-tooltip__pills">
-                <TypeBadge v-if="hoveredMove.type" :type="hoveredMove.type" size="xs" />
-                <DamageClassBadge v-if="hoveredMove.damageClass" :category="hoveredMove.damageClass" size="xs" />
-              </span>
-            </header>
-
-            <dl class="move-tooltip__stats">
-              <div v-if="hoveredMove.damageBase != null">
-                <dt>DB</dt>
-                <dd>
-                  {{ hoveredMove.damageBase }}
-                  <span v-if="hoveredMove.hasStab" class="move-tooltip__note">STAB included</span>
-                </dd>
-              </div>
-              <div v-if="hoveredMove.damageFormula">
-                <dt>Damage</dt>
-                <dd>{{ hoveredMove.damageFormula }}</dd>
-              </div>
-              <div v-if="stageLabel(hoveredMove)">
-                <dt>Stat</dt>
-                <dd>{{ stageLabel(hoveredMove) }}</dd>
-              </div>
-              <div v-if="hoveredMove.frequency">
-                <dt>Freq</dt>
-                <dd>{{ hoveredMove.frequency }}</dd>
-              </div>
-              <div v-if="hoveredMove.ac != null">
-                <dt>AC</dt>
-                <dd>{{ hoveredMove.ac }}</dd>
-              </div>
-              <div v-if="hoveredMove.range">
-                <dt>Range</dt>
-                <dd>{{ hoveredMove.range }}</dd>
-              </div>
-            </dl>
-
-            <p v-if="hoveredMove.effect" class="move-tooltip__effect">{{ hoveredMove.effect }}</p>
-            <p v-if="hoveredMove.special" class="move-tooltip__effect"><strong>Special:</strong> {{ hoveredMove.special }}</p>
-            <p v-if="!hoveredMove.effect && !hoveredMove.special" class="move-tooltip__effect is-muted">No effect or special text in moves.json.</p>
-          </aside>
+          <Teleport to="body">
+            <ReferenceTooltip
+              v-if="hoveredMoveTooltipDetail && isMoveTooltipVisible"
+              :id="moveTooltipId"
+              ref="moveTooltipComponent"
+              :detail="hoveredMoveTooltipDetail"
+              :placement="moveTooltipPlacement"
+              :ready="isMoveTooltipReady"
+              :style="moveTooltipStyle"
+            />
+          </Teleport>
         </div>
       </template>
 
@@ -404,19 +391,15 @@ const stageLabel = (move: TokenMoveMenuOption): string | null => {
   backdrop-filter: blur(8px);
 }
 
-.move-submenu__list,
-.move-tooltip {
+.move-submenu__list {
+  max-height: min(42vh, 18rem);
+  overflow: auto;
+  padding: 0.35rem;
   border: 1px solid var(--rule-soft);
   border-radius: 12px;
   background: var(--paper-soft);
   box-shadow: var(--shadow-card);
   backdrop-filter: blur(8px);
-}
-
-.move-submenu__list {
-  max-height: min(42vh, 18rem);
-  overflow: auto;
-  padding: 0.35rem;
 }
 
 .move-submenu__item {
@@ -487,8 +470,7 @@ const stageLabel = (move: TokenMoveMenuOption): string | null => {
   font-weight: 900;
 }
 
-.move-submenu__badges,
-.move-tooltip__pills {
+.move-submenu__badges {
   display: flex;
   flex-wrap: wrap;
   gap: 0.25rem;
@@ -509,8 +491,7 @@ const stageLabel = (move: TokenMoveMenuOption): string | null => {
   text-transform: uppercase;
 }
 
-.move-submenu__badge--stab,
-.move-tooltip__note {
+.move-submenu__badge--stab {
   color: var(--accent);
 }
 
@@ -520,59 +501,4 @@ const stageLabel = (move: TokenMoveMenuOption): string | null => {
   font-size: 0.84rem;
 }
 
-.move-tooltip {
-  max-height: min(32vh, 14rem);
-  overflow: auto;
-  padding: 0.75rem;
-}
-
-.move-tooltip__header {
-  display: flex;
-  justify-content: space-between;
-  gap: 0.6rem;
-  align-items: flex-start;
-}
-
-.move-tooltip__stats {
-  display: grid;
-  gap: 0.35rem;
-  margin: 0.7rem 0;
-}
-
-.move-tooltip__stats div {
-  display: grid;
-  grid-template-columns: 4.5rem minmax(0, 1fr);
-  gap: 0.45rem;
-}
-
-.move-tooltip__stats dt {
-  color: var(--ink-muted);
-  font-size: 0.72rem;
-  font-weight: 900;
-  text-transform: uppercase;
-}
-
-.move-tooltip__stats dd {
-  margin: 0;
-  color: var(--ink-bright);
-  font-variant-numeric: tabular-nums;
-}
-
-.move-tooltip__note {
-  margin-left: 0.25rem;
-  font-size: 0.72rem;
-  font-weight: 800;
-  text-transform: uppercase;
-}
-
-.move-tooltip__effect {
-  margin: 0;
-  color: var(--ink-muted);
-  font-size: 0.84rem;
-  line-height: 1.45;
-}
-
-.move-tooltip__effect.is-muted {
-  font-style: italic;
-}
 </style>
