@@ -5,6 +5,7 @@ import {
   evasionSuppressedByCondition,
   speedEvasionSuppressedByCondition,
 } from '~/utils/sheetConditionEffects'
+import { heldItemsAccuracyRollBonus } from '~/utils/sheetHeldItemEffects'
 import type { MoveAutomationScript } from '~/types/moveAutomation'
 import type { SpawnedPokemon } from '~/types/pokemon'
 
@@ -92,5 +93,10 @@ export const resolveMoveAutomationTargetEvasion = (
   }
 }
 
+const moveAutomationHeldItemAccuracyBonus = (user: SpawnedPokemon): number =>
+  user.sheetKind === 'pokemon' ? heldItemsAccuracyRollBonus(user.tokenItems) : 0
+
 export const moveAutomationUserAccuracy = (user: SpawnedPokemon): number =>
-  user.combatStages.acc + conditionAccuracyModifier(user.conditions)
+  user.combatStages.acc
+  + conditionAccuracyModifier(user.conditions)
+  + moveAutomationHeldItemAccuracyBonus(user)

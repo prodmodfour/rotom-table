@@ -13,6 +13,7 @@ export type MoveAutomationResolutionRecord = Record<string, MoveAutomationTarget
 export type MoveAutomationSuggestionRecord = Record<string, boolean | undefined>
 export type MoveAutomationHpSuggestionAmountRecord = Record<string, string | undefined>
 export type MoveAutomationStageDeltaRecord = Record<CombatStageKey, number>
+export type MoveAutomationAccuracyOptionsForTarget = (id: string) => MoveAutomationAccuracyRollOptions | undefined
 
 export interface MoveAutomationResetInput {
   script: MoveAutomationScript | null | undefined
@@ -183,9 +184,12 @@ export const rollAllMoveAutomationTargets = (
   script: MoveAutomationScript | null | undefined,
   targetResolutions: MoveAutomationResolutionRecord,
   damageFormula: string | null | undefined,
+  accuracyOptionsFor?: MoveAutomationAccuracyOptionsForTarget,
 ): void => {
   for (const id of targetIds) {
-    if (script?.requiresAccuracy) applyMoveAutomationAccuracyRoll(targetResolutions, id, script)
+    if (script?.requiresAccuracy) {
+      applyMoveAutomationAccuracyRoll(targetResolutions, id, script, randomD20(), accuracyOptionsFor?.(id))
+    }
     if (script?.damaging) applyMoveAutomationDamageRoll(targetResolutions, id, script, damageFormula)
   }
 }

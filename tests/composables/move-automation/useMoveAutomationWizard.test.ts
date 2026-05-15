@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { useMoveAutomationWizard } from '~/composables/move-automation/useMoveAutomationWizard'
 import type { CharacterSheetMove } from '~/types/characterSheet'
 import type { MoveAutomationTransaction } from '~/types/moveAutomation'
@@ -80,5 +80,29 @@ describe('useMoveAutomationWizard', () => {
 
     expect(wizard.step.value).toBe(1)
     expect(wizard.selectedEntry.value?.move.name).toBe('Water Gun')
+  })
+
+  it('applies Luck Incense when rolling accuracy in the review wizard', () => {
+    const user = { ...token('user', 'Bolt'), tokenItems: ['Luck Incense'] }
+    const target = { ...token('target', 'Aqua'), conditions: ['Vulnerable'] }
+    const wizard = useMoveAutomationWizard({
+      user,
+      moves: [{ name: 'Custom Shot', type: 'Normal', category: 'Physical', db: 4, ac: 4, range: '4, 1 Target' }],
+      allTokens: [user, target],
+    }, () => undefined)
+
+    const random = vi.spyOn(Math, 'random')
+    random.mockReturnValue(0.1)
+    try {
+      wizard.rollAccuracy('target')
+    } finally {
+      random.mockRestore()
+    }
+
+    expect(wizard.ensureTargetResolution('target')).toMatchObject({
+      accuracyRoll: '3 + 1',
+      hit: true,
+      crit: false,
+    })
   })
 })

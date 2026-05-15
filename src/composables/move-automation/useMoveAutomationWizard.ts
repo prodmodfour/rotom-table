@@ -2,6 +2,10 @@ import { computed, reactive, ref, watch } from 'vue'
 import { damageFormulaForMove } from '~/utils/moveAutomation'
 import { parseHazardCellText } from '~/utils/moveAutomationDialog'
 import {
+  moveAutomationUserAccuracy,
+  resolveMoveAutomationTargetEvasion,
+} from '~/utils/moveAutomationAccuracy'
+import {
   buildMoveAutomationMoveEntries,
   filterMoveAutomationMoveEntries,
   moveAutomationRequiresTargets,
@@ -135,6 +139,14 @@ export const useMoveAutomationWizard = (
   const ensureTargetResolution = (id: string): MoveAutomationTargetResolutionState =>
     ensureMoveAutomationTargetResolution(targetResolutions, id, script.value)
 
+  const accuracyRollOptionsFor = (id: string) => {
+    const target = props.allTokens.find((token) => token.id === id)
+    return {
+      userAccuracy: moveAutomationUserAccuracy(props.user),
+      targetEvasion: target ? resolveMoveAutomationTargetEvasion(script.value, target).value : 0,
+    }
+  }
+
   watch(
     targetIds,
     (ids) => syncMoveAutomationTargetResolutions(targetResolutions, ids, script.value),
@@ -146,7 +158,7 @@ export const useMoveAutomationWizard = (
   }
 
   const rollAccuracy = (id: string) => {
-    applyMoveAutomationAccuracyRoll(targetResolutions, id, script.value)
+    applyMoveAutomationAccuracyRoll(targetResolutions, id, script.value, undefined, accuracyRollOptionsFor(id))
   }
 
   const rollDamage = (id: string) => {
@@ -154,7 +166,13 @@ export const useMoveAutomationWizard = (
   }
 
   const rollAll = () => {
-    rollAllMoveAutomationTargets(targetIds.value, script.value, targetResolutions, selectedMoveFormula.value)
+    rollAllMoveAutomationTargets(
+      targetIds.value,
+      script.value,
+      targetResolutions,
+      selectedMoveFormula.value,
+      accuracyRollOptionsFor,
+    )
   }
 
   const targetDamageLoss = (target: SpawnedPokemon): number =>

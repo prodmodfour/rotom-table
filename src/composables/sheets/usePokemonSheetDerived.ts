@@ -2,6 +2,7 @@ import { computed, watch, type ComputedRef, type Ref } from 'vue'
 import { getPokedexEntry, getSpriteUrl } from '~~/data/characterSheets'
 import { findItem } from '~~/data/ptuReference'
 import { makeAutomaticStruggleMoves } from '~/utils/struggleMoves'
+import { clampCombatStage } from '~/utils/combatStages'
 import { POKEMON_TYPES, formatMultiplier } from '~/utils/typeChart'
 import { clampHpValue, computeHpThresholds, computeTickValue } from '~/utils/ptuHp'
 import { computePokemonLevelUpStatPointBudget } from '~/utils/statPointBudgets'
@@ -14,12 +15,13 @@ import {
   validateBaseRelations,
 } from '~/utils/sheets/pokemonDerived'
 import { computeSheetAbilityEvasionBonus } from '~/utils/sheetAbilityActivation'
-import { heldItemSpeedEvasionBonus } from '~/utils/sheetEvasionBonuses'
+import { heldItemAccuracyRollBonus, heldItemSpeedEvasionBonus } from '~/utils/sheetHeldItemEffects'
 import {
   conditionAdjustedCombatStage,
   conditionAdjustedEvasion,
   conditionAdjustedInitiative,
   conditionCombatStageModifier,
+  conditionAccuracyModifier,
   describeSheetConditionEffects,
 } from '~/utils/sheetConditionEffects'
 import { mergeLegacyConditions } from '~/utils/statusConditions'
@@ -149,6 +151,18 @@ export function usePokemonSheetDerived(sheet: PokemonSheetRef) {
   const remainingBaseRelationViolationCount = computed(() =>
     Math.max(0, baseRelationViolations.value.length - visibleBaseRelationViolations.value.length),
   )
+
+  const pokemonAccuracy = computed(() => {
+    const stage = clampCombatStage(sheet.value?.combatStages?.acc)
+    const conditionModifier = conditionAccuracyModifier(combatConditions.value)
+    const itemBonus = heldItemAccuracyRollBonus(sheet.value?.items?.held)
+    return {
+      total: stage + conditionModifier + itemBonus,
+      stage,
+      conditionModifier,
+      itemBonus,
+    }
+  })
 
   const pokemonEvasion = computed(() => {
     const evasion = sheet.value?.combat?.evasion
@@ -302,6 +316,7 @@ export function usePokemonSheetDerived(sheet: PokemonSheetRef) {
     baseRelationViolations,
     visibleBaseRelationViolations,
     remainingBaseRelationViolationCount,
+    pokemonAccuracy,
     pokemonEvasion,
     tutorPointsLeft,
     attackTotal,

@@ -22,8 +22,16 @@ interface PokemonEvasionSummary {
   vsAny: EvasionEntry & { itemBonus: number }
 }
 
+interface PokemonAccuracySummary {
+  total: number
+  stage: number
+  conditionModifier: number
+  itemBonus: number
+}
+
 defineProps<{
   combat: CharacterSheetCombat
+  pokemonAccuracy: PokemonAccuracySummary
   pokemonEvasion: PokemonEvasionSummary
   conditionEffects: readonly ConditionEffectSummary[]
 }>()
@@ -137,6 +145,21 @@ const emit = defineEmits<{
     </ul>
   </div>
 
+  <p
+    class="combat-line accuracy-line"
+    title="Accuracy Roll modifier = Accuracy Combat Stage + condition modifiers + Luck Incense held-item bonus. A natural 1 still always misses."
+  >
+    <strong>Accuracy Rolls:</strong>
+    <span class="accuracy-line__total">{{ formatSignedModifier(pokemonAccuracy.total) }}</span>
+    <small>stage {{ formatSignedModifier(pokemonAccuracy.stage) }}</small>
+    <small v-if="pokemonAccuracy.conditionModifier" class="accuracy-line__condition">
+      condition {{ formatSignedModifier(pokemonAccuracy.conditionModifier) }}
+    </small>
+    <small v-if="pokemonAccuracy.itemBonus" class="accuracy-line__item">
+      Luck Incense {{ formatSignedModifier(pokemonAccuracy.itemBonus) }}
+    </small>
+  </p>
+
   <div class="combat-line condition-block">
     <strong>Conditions:</strong>
     <ConditionPicker v-model="combat.conditions" />
@@ -222,6 +245,28 @@ const emit = defineEmits<{
 }
 
 .evasion-bonus__condition { color: var(--bad); }
+
+.accuracy-line {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.accuracy-line__total {
+  color: var(--ink-bright);
+  font-weight: 800;
+}
+
+.accuracy-line__item {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.accuracy-line__condition {
+  color: var(--bad);
+  font-weight: 700;
+}
 
 .combat-line {
   margin: 0.55rem 0 0;

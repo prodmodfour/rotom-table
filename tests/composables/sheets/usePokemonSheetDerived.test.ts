@@ -75,6 +75,23 @@ describe('usePokemonSheetDerived', () => {
     expect(derived.heldItemReference.value?.name).toBe('Bright Powder')
   })
 
+  it('accounts for Luck Incense accuracy roll bonuses', () => {
+    const sheet = ref<CharacterSheet | null>(makeSheet({
+      combat: { currentHp: 30, conditions: ['Blindness'] },
+      combatStages: { acc: 2 },
+      items: { held: 'Luck Incense' },
+    }))
+    const derived = usePokemonSheetDerived(sheet)
+
+    expect(derived.pokemonAccuracy.value).toEqual({
+      total: -3,
+      stage: 2,
+      conditionModifier: -6,
+      itemBonus: 1,
+    })
+    expect(derived.heldItemReference.value?.name).toBe('Luck Incense')
+  })
+
   it('applies Weird Power to Pokémon sheet move damage formulas', () => {
     const sheet = ref<CharacterSheet | null>(makeSheet({
       abilities: [{ name: 'Weird Power' }],

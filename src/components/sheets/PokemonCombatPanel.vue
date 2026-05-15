@@ -23,6 +23,13 @@ interface PokemonEvasionSummary {
   vsAny: EvasionEntry & { itemBonus: number }
 }
 
+interface PokemonAccuracySummary {
+  total: number
+  stage: number
+  conditionModifier: number
+  itemBonus: number
+}
+
 defineProps<{
   sheet: CharacterSheet
   currentHp: number
@@ -32,6 +39,7 @@ defineProps<{
   hpThresholds: HpThresholds
   speedTotal: number
   initiative: number
+  pokemonAccuracy: PokemonAccuracySummary
   pokemonEvasion: PokemonEvasionSummary
   conditionEffects: readonly ConditionEffectSummary[]
 }>()
@@ -63,6 +71,7 @@ const forwardEvasionBonus = (key: PokemonEvasionBonusKey, value: number | undefi
 
     <PokemonEvasionConditionsPanel
       :combat="sheet.combat!"
+      :pokemon-accuracy="pokemonAccuracy"
       :pokemon-evasion="pokemonEvasion"
       :condition-effects="conditionEffects"
       @set-evasion-bonus="forwardEvasionBonus"

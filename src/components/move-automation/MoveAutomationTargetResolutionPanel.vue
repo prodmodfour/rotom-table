@@ -60,7 +60,7 @@ const emit = defineEmits<{
       <div v-if="script.requiresAccuracy" class="target-resolution__row">
         <label>
           <span>Accuracy d20</span>
-          <input v-model="ensureTargetResolution(target.id).accuracyRoll" type="number" min="1" max="20" />
+          <input v-model="ensureTargetResolution(target.id).accuracyRoll" type="text" inputmode="numeric" />
         </label>
         <button type="button" class="mini-button" @click="emit('roll-accuracy', target.id)">Roll</button>
         <label class="inline-check"><input v-model="ensureTargetResolution(target.id).hit" type="checkbox" /> Hit</label>

@@ -90,4 +90,10 @@ describe('move automation accuracy helpers', () => {
     expect(moveAutomationUserAccuracy(token({ combatStages: { ...stages, acc: 2 }, conditions: ['Blindness'] }))).toBe(-4)
     expect(moveAutomationUserAccuracy(token({ combatStages: { ...stages, acc: 2 }, conditions: ['Total Blindness'] }))).toBe(-8)
   })
+
+  it('adds Luck Incense to Pokémon accuracy rolls only', () => {
+    expect(moveAutomationUserAccuracy(token({ tokenItems: ['Luck Incense'] }))).toBe(1)
+    expect(moveAutomationUserAccuracy(token({ tokenItems: ['luck-incense'], combatStages: { ...stages, acc: 2 } }))).toBe(3)
+    expect(moveAutomationUserAccuracy(token({ sheetKind: 'trainer', tokenItems: ['Luck Incense'] }))).toBe(0)
+  })
 })

@@ -54,6 +54,7 @@ describe('move automation resolution helpers', () => {
     expect(randomD20(() => 0.999)).toBe(20)
     expect(resolveMoveAutomationAccuracyRoll(script(), 5)).toEqual({ accuracyRoll: '5', hit: false, crit: false })
     expect(resolveMoveAutomationAccuracyRoll(script(), 19)).toEqual({ accuracyRoll: '19', hit: true, crit: true })
+    expect(resolveMoveAutomationAccuracyRoll(script(), 1, { userAccuracy: 10 })).toMatchObject({ accuracyRoll: '1 + 10', hit: false })
     expect(resolveMoveAutomationAccuracyRoll(script({ ac: null, criticalRange: null }), 2)).toEqual({ accuracyRoll: '2', hit: true, crit: false })
   })
 

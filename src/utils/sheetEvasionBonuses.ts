@@ -1,17 +1,8 @@
-import { findItem } from '~~/data/ptuReference'
 import { computeSheetAbilityEvasionBonus } from '~/utils/sheetAbilityActivation'
+import { heldItemSpeedEvasionBonus } from '~/utils/sheetHeldItemEffects'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { SpawnedPokemonEvasionModifiers } from '~/types/pokemon'
 import type { TrainerSheet } from '~/types/trainerSheet'
-
-const BRIGHT_POWDER_SPEED_EVASION_BONUS = 2
-
-export const heldItemSpeedEvasionBonus = (heldItem: string | null | undefined): number => {
-  if (!heldItem?.trim()) return 0
-  return findItem(heldItem)?.name === 'Bright Powder'
-    ? BRIGHT_POWDER_SPEED_EVASION_BONUS
-    : 0
-}
 
 export const pokemonEvasionModifiers = (
   sheet: CharacterSheet,

@@ -37,6 +37,7 @@ const {
   baseRelationViolations,
   visibleBaseRelationViolations,
   remainingBaseRelationViolationCount,
+  pokemonAccuracy,
   pokemonEvasion,
   tutorPointsLeft,
   moveRows,
@@ -115,6 +116,7 @@ const {
       :hp-thresholds="hpThresholds"
       :speed-total="speedTotal"
       :initiative="initiative"
+      :pokemon-accuracy="pokemonAccuracy"
       :pokemon-evasion="pokemonEvasion"
       :condition-effects="conditionEffects"
       @set-current-hp="setCurrentHp"
