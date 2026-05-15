@@ -112,7 +112,21 @@
     "trigger": "You apply a Restorative Item",
     "target": null,
     "condition": null,
-    "effect": "The target of the triggering action gains a Tick of Hit Points, plus an additional amount of Hit Points equal to your Medicine Education Rank. I’m a Doctor [Ranked 2] [Gift] Rank 1 Prerequisites: Medic Rank 2 Prerequisites: Medic, Adept Medicine Education Static Effect: Each Rank, you gain one of Field Clinic or Medic Training and one of Nurse or First Aid Expertise.",
+    "effect": "The target of the triggering action gains a Tick of Hit Points, plus an additional amount of Hit Points equal to your Medicine Education Rank.",
+    "className": "Cheerleader"
+  },
+  "I’m a Doctor": {
+    "name": "I’m a Doctor",
+    "tags": [
+      "Gift",
+      "Ranked 2"
+    ],
+    "prerequisites": "Rank 1 Prerequisites: Medic Rank 2 Prerequisites: Medic, Adept Medicine Education",
+    "frequency": "Static",
+    "trigger": null,
+    "target": null,
+    "condition": null,
+    "effect": "Each Rank, you gain one of Field Clinic or Medic Training and one of Nurse or First Aid Expertise.",
     "className": "Cheerleader"
   },
   "Proper Care": {
@@ -298,7 +312,21 @@
     "trigger": null,
     "target": null,
     "condition": null,
-    "effect": "You gain two Capture Techniques of your choice, found on the next page. You must meet any prerequisites of the Technique. Advanced Capture Techniques [Ranked 4] [+Speed] Rank 1 Prerequisites: Capture Specialist Rank 2 Prerequisites: Capture Specialist, any 2 Skills at Adept Rank Rank 3 Prerequisites: Capture Specialist, any 2 Skills at Expert Rank Rank 4 Prerequisites: Capture Specialist, any 3 Skills at Expert Rank Static Effect: At each Rank, you gain two Capture Techniques of your choice, found on the next page. You must meet any prerequisites of the Technique. You may qualify for Advanced Capture Techniques’ prerequisites with the Acrobatics, Athletics, Stealth, Survival, Guile, or Perception Skills only.",
+    "effect": "You gain two Capture Techniques of your choice, found on the next page. You must meet any prerequisites of the Technique.",
+    "className": "Capture Specialist"
+  },
+  "Advanced Capture Techniques": {
+    "name": "Advanced Capture Techniques",
+    "tags": [
+      "+Speed",
+      "Ranked 4"
+    ],
+    "prerequisites": "Rank 1 Prerequisites: Capture Specialist Rank 2 Prerequisites: Capture Specialist, any 2 Skills at Adept Rank Rank 3 Prerequisites: Capture Specialist, any 2 Skills at Expert Rank Rank 4 Prerequisites: Capture Specialist, any 3 Skills at Expert Rank",
+    "frequency": "Static",
+    "trigger": null,
+    "target": null,
+    "condition": null,
+    "effect": "At each Rank, you gain two Capture Techniques of your choice, found on the next page. You must meet any prerequisites of the Technique. You may qualify for Advanced Capture Techniques’ prerequisites with the Acrobatics, Athletics, Stealth, Survival, Guile, or Perception Skills only.",
     "className": "Capture Specialist"
   },
   "Captured Momentum": {
@@ -519,7 +547,20 @@
     "trigger": null,
     "target": null,
     "condition": null,
-    "effect": "You gain three Skill Edges for which you qualify. Special: You may count Hobbyist Features as “General Features” for the purposes of any effect that would grant you a General Feature. Dilettante [Ranked 4] All Ranks Prerequisites: Hobbyist Static Effect: Each Rank of Dilettante, you gain both an Edge and a General Feature from the lists below. You may gain the chosen Edge and Feature even if you do not meet the Skill prerequisites. You must meet any other Prerequisites. »» Edges: Acrobat, Apricorn Balls, Basic Balls, Basic Cooking, Basic Martial Arts, Beast Master, Breeder, Dynamism, Gem Lore, Grace, Green Thumb, Groomer, Instinctive Aptitude, Instruction, Intimidating Presence, Iron Mind, Medic Training, Mounted Prowess, Repel Crafter, Slippery, Swimmer, Train the Reserves. »» Features: Command Versatility, Commander’s Voice, Defender, Dive, First Aid Expertise, Let Me Help You With That, Poké Ball Crafter, PokéManiac, Press, Quick Switch, Skill Monkey, Species Savant, any [Training] Feature, Tutoring, Walk It Off. Whenever you gain a Feature or Edge this way, change any Skill Rank applications or Skill Checks mandated directly by the Edge or Feature into your choice of General Education or Perception Skill Checks or Rank applications instead.",
+    "effect": "You gain three Skill Edges for which you qualify. Special: You may count Hobbyist Features as “General Features” for the purposes of any effect that would grant you a General Feature.",
+    "className": "Hobbyist"
+  },
+  "Dilettante": {
+    "name": "Dilettante",
+    "tags": [
+      "Ranked 4"
+    ],
+    "prerequisites": "All Ranks Prerequisites: Hobbyist",
+    "frequency": "Static",
+    "trigger": null,
+    "target": null,
+    "condition": null,
+    "effect": "Each Rank of Dilettante, you gain both an Edge and a General Feature from the lists below. You may gain the chosen Edge and Feature even if you do not meet the Skill prerequisites. You must meet any other Prerequisites. »» Edges: Acrobat, Apricorn Balls, Basic Balls, Basic Cooking, Basic Martial Arts, Beast Master, Breeder, Dynamism, Gem Lore, Grace, Green Thumb, Groomer, Instinctive Aptitude, Instruction, Intimidating Presence, Iron Mind, Medic Training, Mounted Prowess, Repel Crafter, Slippery, Swimmer, Train the Reserves. »» Features: Command Versatility, Commander’s Voice, Defender, Dive, First Aid Expertise, Let Me Help You With That, Poké Ball Crafter, PokéManiac, Press, Quick Switch, Skill Monkey, Species Savant, any [Training] Feature, Tutoring, Walk It Off. Whenever you gain a Feature or Edge this way, change any Skill Rank applications or Skill Checks mandated directly by the Edge or Feature into your choice of General Education or Perception Skill Checks or Rank applications instead.",
     "className": "Hobbyist"
   },
   "Dabbler": {
@@ -1136,7 +1177,20 @@
     "trigger": "Your Pokémon hits a foe with a Status-Class Move or a foe triggers your Pokémon’s Hazard",
     "target": null,
     "condition": null,
-    "effect": "After the Move is resolved, your Pokémon may perform a Dirty Trick or Manipulate Maneuver on that foe as a Free Action. The Maneuver automatically hits, but the target must be in range for the chosen Maneuver. Use your own Guile to resolve Manipulate Rolls. Bag of Tricks [Ranked 2] Rank 1 Prerequisites: Trickster Rank 2 Prerequisites: Trickster Static Effect: You gain two Trickster Techniques of your choice, found on the next page.",
+    "effect": "After the Move is resolved, your Pokémon may perform a Dirty Trick or Manipulate Maneuver on that foe as a Free Action. The Maneuver automatically hits, but the target must be in range for the chosen Maneuver. Use your own Guile to resolve Manipulate Rolls.",
+    "className": "Trickster"
+  },
+  "Bag of Tricks": {
+    "name": "Bag of Tricks",
+    "tags": [
+      "Ranked 2"
+    ],
+    "prerequisites": "Rank 1 Prerequisites: Trickster Rank 2 Prerequisites: Trickster",
+    "frequency": "Static",
+    "trigger": null,
+    "target": null,
+    "condition": null,
+    "effect": "You gain two Trickster Techniques of your choice, found on the next page.",
     "className": "Trickster"
   },
   "Stacked Deck": {
@@ -1311,7 +1365,20 @@
     "trigger": null,
     "target": "Your Pokémon",
     "condition": null,
-    "effect": "Your Pokémon gains one of the following Abilities corresponding to your chosen Contest Stat for the rest of the Scene, even if it is switched out. Style Entrainment may only grant one Ability to a Pokémon at a time. If it is used a second time on the same target, it replaces the first granted Ability. »» Beauty gives Gentle Vibe or Serene Grace »» Cool gives Defiant or Sniper »» Cute gives Cute Charm or Cute Tears »» Smart gives Analytic or Anticipation »» Tough gives Sturdy or Intimidate Cast: When reading the following Features, keep in mind that Beautiful Ballet and the equivalents for the other Contest Stats are intended to be usable not only in battle but in Contests as well! Beauty Expert Features Beautiful Ballet [Ranked 2] Rank 1 Prerequisites: Style Expert, Beauty as Chosen Stat, Novice Intuition Rank 2 Prerequisites: Expert Intuition 1 AP – Special Effect: Your Pokémon with at least 3d6 in their Beauty Stat from Poffins may activate Beautiful Ballet as a Standard Action to perform one of the following Moves. They must still follow frequency limits as usual for these Moves. Rank 1: Captivate, Mist Rank 2: Lovely Kiss, Mean Look",
+    "effect": "Your Pokémon gains one of the following Abilities corresponding to your chosen Contest Stat for the rest of the Scene, even if it is switched out. Style Entrainment may only grant one Ability to a Pokémon at a time. If it is used a second time on the same target, it replaces the first granted Ability. »» Beauty gives Gentle Vibe or Serene Grace »» Cool gives Defiant or Sniper »» Cute gives Cute Charm or Cute Tears »» Smart gives Analytic or Anticipation »» Tough gives Sturdy or Intimidate Cast: When reading the following Features, keep in mind that Beautiful Ballet and the equivalents for the other Contest Stats are intended to be usable not only in battle but in Contests as well! Beauty Expert Features",
+    "className": "Stat Ace"
+  },
+  "Beautiful Ballet": {
+    "name": "Beautiful Ballet",
+    "tags": [
+      "Ranked 2"
+    ],
+    "prerequisites": "Rank 1 Prerequisites: Style Expert, Beauty as Chosen Stat, Novice Intuition Rank 2 Prerequisites: Expert Intuition",
+    "frequency": "1 AP – Special",
+    "trigger": null,
+    "target": null,
+    "condition": null,
+    "effect": "Your Pokémon with at least 3d6 in their Beauty Stat from Poffins may activate Beautiful Ballet as a Standard Action to perform one of the following Moves. They must still follow frequency limits as usual for these Moves. Rank 1: Captivate, Mist Rank 2: Lovely Kiss, Mean Look",
     "className": "Stat Ace"
   },
   "Fabulous Max": {
@@ -1350,6 +1417,19 @@
     "effect": null,
     "className": "Style Expert"
   },
+  "Cool Conduct": {
+    "name": "Cool Conduct",
+    "tags": [
+      "Ranked 2"
+    ],
+    "prerequisites": "Rank 1 Prerequisites: Style Expert, Cool as Chosen Stat, Novice Command Rank 2 Prerequisites: Expert Command",
+    "frequency": "1 AP – Special",
+    "trigger": null,
+    "target": null,
+    "condition": null,
+    "effect": "Your Pokémon with at least 3d6 in their Cool Stat from Poffins may activate Cool Conduct as a Standard Action to perform one of the following Moves. They must still follow frequency limits as usual for these Moves. Rank 1: Focus Energy, Noble Roar Rank 2: Roar, Double Team",
+    "className": "Style Expert"
+  },
   "Rule of Cool": {
     "name": "Rule of Cool",
     "tags": [],
@@ -1369,7 +1449,20 @@
     "trigger": "Your Pokémon makes a Skill Check for a dramatic, high risk action",
     "target": null,
     "condition": null,
-    "effect": "Instead of using a Skill for this Check, your Pokémon rolls their Cool Dice from Poffins and adds their number of Cool Dice from Stats as a modifier. For example, a Pokémon with 5d6 Cool from Poffins and 2d6 from Attack rolls 5d6+2. Skill Checks invoked by Intercepting attacks, Combat Maneuvers, Moves, and Abilities don’t trigger this Feature. Example Trigger: Charging into a burning building for a heroic rescue. Cast: To decide whether an action triggers Action Hero Stunt, ask yourself if there are dramatic consequences for the outcome and if the player chose a risky and cool option over safer alternatives. Cute Expert Features Cute Cuddle [Ranked 2] Rank 1 Prerequisites: Style Expert, Cute as Chosen Stat, Novice Charm Rank 2 Prerequisites: Expert Charm 1 AP – Special Effect: Your Pokémon with at least 3d6 in their Cute Stat from Poffins may activate Cute Cuddle as a Standard Action to perform one of the following Moves. They must still follow frequency limits as usual for these Moves. Rank 1: Charm, Block Rank 2: Teeter Dance, Attract",
+    "effect": "Instead of using a Skill for this Check, your Pokémon rolls their Cool Dice from Poffins and adds their number of Cool Dice from Stats as a modifier. For example, a Pokémon with 5d6 Cool from Poffins and 2d6 from Attack rolls 5d6+2. Skill Checks invoked by Intercepting attacks, Combat Maneuvers, Moves, and Abilities don’t trigger this Feature. Example Trigger: Charging into a burning building for a heroic rescue. Cast: To decide whether an action triggers Action Hero Stunt, ask yourself if there are dramatic consequences for the outcome and if the player chose a risky and cool option over safer alternatives. Cute Expert Features",
+    "className": "Style Expert"
+  },
+  "Cute Cuddle": {
+    "name": "Cute Cuddle",
+    "tags": [
+      "Ranked 2"
+    ],
+    "prerequisites": "Rank 1 Prerequisites: Style Expert, Cute as Chosen Stat, Novice Charm Rank 2 Prerequisites: Expert Charm",
+    "frequency": "1 AP – Special",
+    "trigger": null,
+    "target": null,
+    "condition": null,
+    "effect": "Your Pokémon with at least 3d6 in their Cute Stat from Poffins may activate Cute Cuddle as a Standard Action to perform one of the following Moves. They must still follow frequency limits as usual for these Moves. Rank 1: Charm, Block Rank 2: Teeter Dance, Attract",
     "className": "Style Expert"
   },
   "Gleeful Steps": {
@@ -1394,6 +1487,19 @@
     "effect": "The target may attempt to improve the disposition of a Wild Pokémon as if making a Charm Check. They roll their Cute Dice from Poffins and add their number of Cute Dice from Stats as a modifier. For example, a Pokémon with 4d6 Cute from Poffins and 3d6 Cute from Speed rolls 4d6+3 in place of a Charm Check.",
     "className": "Style Expert"
   },
+  "Smart Scheme": {
+    "name": "Smart Scheme",
+    "tags": [
+      "Ranked 2"
+    ],
+    "prerequisites": "Rank 1 Prerequisites: Style Expert, Smart as Chosen Stat, Novice Guile Rank 2 Prerequisites: Expert Guile",
+    "frequency": "1 AP – Special",
+    "trigger": null,
+    "target": null,
+    "condition": null,
+    "effect": "Your Pokémon with at least 3d6 in their Smart Stat from Poffins may activate Smart Scheme as a Standard Action to perform one of the following Moves. They must still follow frequency limits as usual for these Moves. Rank 1: Fake Tears, Calm Mind Rank 2: Taunt, Flatter",
+    "className": "Style Expert"
+  },
   "Calculated Assault": {
     "name": "Calculated Assault",
     "tags": [],
@@ -1413,7 +1519,20 @@
     "trigger": "Your Pokémon fails a Skill Check.",
     "target": null,
     "condition": null,
-    "effect": "Your Pokémon may re-roll the Skill Check with a Bonus equal to its number of Smart Dice from Poffins. Tough Expert Features Tough Tumble [Ranked 2] Rank 1 Prerequisites: Style Expert, Tough as Chosen Stat, Novice Intimidate Rank 2 Prerequisites: Expert Intimidate 1 AP – Special Effect: Your Pokémon with at least 3d6 in their Tough Stat from Poffins may activate Tough Tumble as a Standard Action to perform one of the following Moves. They must still follow frequency limits as usual for these Moves. Rank 1: Scary Face, Spite Rank 2: Glare, Bide",
+    "effect": "Your Pokémon may re-roll the Skill Check with a Bonus equal to its number of Smart Dice from Poffins. Tough Expert Features",
+    "className": "Style Expert"
+  },
+  "Tough Tumble": {
+    "name": "Tough Tumble",
+    "tags": [
+      "Ranked 2"
+    ],
+    "prerequisites": "Rank 1 Prerequisites: Style Expert, Tough as Chosen Stat, Novice Intimidate Rank 2 Prerequisites: Expert Intimidate",
+    "frequency": "1 AP – Special",
+    "trigger": null,
+    "target": null,
+    "condition": null,
+    "effect": "Your Pokémon with at least 3d6 in their Tough Stat from Poffins may activate Tough Tumble as a Standard Action to perform one of the following Moves. They must still follow frequency limits as usual for these Moves. Rank 1: Scary Face, Spite Rank 2: Glare, Bide",
     "className": "Style Expert"
   },
   "Macho Charge": {
@@ -2477,7 +2596,20 @@
     "trigger": null,
     "target": "A Pokémon, Trainer, Move, or Location.",
     "condition": null,
-    "effect": "You make Record of the target. Records can be placed in an Archive as an Extended Action. When you take Chronicler, you gain one Archive. Archives: Profile Archive: You may place Records of Pokémon and Trainers in your Profile Archive. You gain a +2 bonus to Charm, Guile, Command, Intimidate, and Intuition Checks targeting Pokémon and Trainers in your Profile Archive. Technique Archive: You may place Records of Moves in your Technique Archive. You and your Pokémon gain +2 Evasion against Moves in your Technique Archives. Travel Archive: You may place Records of Locations in your Travel Archive. When you gain Travel Archive, choose Keen Eye or Perception. While you are in a Location in your Travel Archive, you have the Chosen Ability and gain a +2 bonus to Perception Checks to notice the environment. Archival Training [Ranked 2] All Rank Prerequisites: Chronicler Static Effect: Each Rank, you gain an Archive.",
+    "effect": "You make Record of the target. Records can be placed in an Archive as an Extended Action. When you take Chronicler, you gain one Archive. Archives: Profile Archive: You may place Records of Pokémon and Trainers in your Profile Archive. You gain a +2 bonus to Charm, Guile, Command, Intimidate, and Intuition Checks targeting Pokémon and Trainers in your Profile Archive. Technique Archive: You may place Records of Moves in your Technique Archive. You and your Pokémon gain +2 Evasion against Moves in your Technique Archives. Travel Archive: You may place Records of Locations in your Travel Archive. When you gain Travel Archive, choose Keen Eye or Perception. While you are in a Location in your Travel Archive, you have the Chosen Ability and gain a +2 bonus to Perception Checks to notice the environment.",
+    "className": "Chronicler"
+  },
+  "Archival Training": {
+    "name": "Archival Training",
+    "tags": [
+      "Ranked 2"
+    ],
+    "prerequisites": "All Rank Prerequisites: Chronicler",
+    "frequency": "Static",
+    "trigger": null,
+    "target": null,
+    "condition": null,
+    "effect": "Each Rank, you gain an Archive.",
     "className": "Chronicler"
   },
   "Archive Tutor": {
@@ -2907,6 +3039,19 @@
     "effect": null,
     "className": "Researcher"
   },
+  "Seed Bag": {
+    "name": "Seed Bag",
+    "tags": [
+      "Ranked 2"
+    ],
+    "prerequisites": "Rank 1 Prerequisites: Green Thumb, Adept General Education or Adept Survival Rank 2 Prerequisites: Master General Education or Master Survival",
+    "frequency": "X Daily – Extended Action",
+    "trigger": null,
+    "target": "A Willing Pokémon",
+    "condition": null,
+    "effect": "Rank 1 Effect: You become adept at harvesting Seeds and Spores from Pokémon. You may target a willing Grass-Type Pokémon that knows Sleep Powder, Stun Spore, or Poison Powder. Add this move to your Move list for the remainder of the day. You may not use Seed Bag to have multiple instances of the same move in your Move list. Seed Bag may be used twice per day per Rank. Rank 2 Effect: You may also harvest Cotton Spore, Leech Seed, Spore, or Worry Seed.",
+    "className": "Researcher"
+  },
   "Top Tier Berries": {
     "name": "Top Tier Berries",
     "tags": [],
@@ -3211,7 +3356,21 @@
     "trigger": null,
     "target": null,
     "condition": null,
-    "effect": "Wilderness Guide’s effect depends on your current terrain. »» Grassland or Forest: All allies gain the Stealth Capability and a +2 bonus to their Overland Speed for one full round. »» Ocean or Wetlands: All allies gain 5 Damage Reduction and a +2 bonus to their Swim Speed for one full round. »» Desert or Tundra: All allies do not lose Hit Points from Weather and ignore the effects of foes’ Sand Veil and Snow Cloak Abilities for one full round. »» Mountain or Cave: All allies do not trigger Hazards and are not Blinded in Low-Light conditions for one full round. »» Urban: All allies gain +1 Evasion and a +2 bonus on Accuracy Rolls and Skill Checks to perform the Dirty Trick and Manipulate Combat Maneuvers for one full round. Terrain Talent [Ranked 2] [+HP] Rank 1 Prerequisites: Survivalist, 2 Mastered Terrains Rank 2 Prerequisites: Survivalist, 4 Mastered Terrains Static Effect: Each Rank, you gain two Terrain Talents, cho- sen from the Terrains for which you gained Naturewalk from Survivalist.",
+    "effect": "Wilderness Guide’s effect depends on your current terrain. »» Grassland or Forest: All allies gain the Stealth Capability and a +2 bonus to their Overland Speed for one full round. »» Ocean or Wetlands: All allies gain 5 Damage Reduction and a +2 bonus to their Swim Speed for one full round. »» Desert or Tundra: All allies do not lose Hit Points from Weather and ignore the effects of foes’ Sand Veil and Snow Cloak Abilities for one full round. »» Mountain or Cave: All allies do not trigger Hazards and are not Blinded in Low-Light conditions for one full round. »» Urban: All allies gain +1 Evasion and a +2 bonus on Accuracy Rolls and Skill Checks to perform the Dirty Trick and Manipulate Combat Maneuvers for one full round.",
+    "className": "Survivalist"
+  },
+  "Terrain Talent": {
+    "name": "Terrain Talent",
+    "tags": [
+      "+HP",
+      "Ranked 2"
+    ],
+    "prerequisites": "Rank 1 Prerequisites: Survivalist, 2 Mastered Terrains Rank 2 Prerequisites: Survivalist, 4 Mastered Terrains",
+    "frequency": "Static",
+    "trigger": null,
+    "target": null,
+    "condition": null,
+    "effect": "Each Rank, you gain two Terrain Talents, cho- sen from the Terrains for which you gained Naturewalk from Survivalist.",
     "className": "Survivalist"
   },
   "Adaptive Geography": {
@@ -3277,7 +3436,21 @@
     "trigger": "You are lowered to half or your Maximum Hit Points or less",
     "target": null,
     "condition": null,
-    "effect": "You gain +1 Combat Stage in each of your Trained Stats, are cured of up to two Status Afflictions, and gain a Tick of Temporary Hit Points. Adrenaline Rush may be used only once per Scene Athletic Moves [Ranked 3] [+HP] Rank 1 Prerequisites: Athlete Rank 2 Prerequisites: Athlete, Expert Athletics Rank 3 Prerequisites: Athlete, Master Athletics Static Effect: You learn two Athlete Moves marked with the Rank of this Feature you are taking or lower. Athlete Moves Rank 1 Rank 2 Rank 3 Bind Body Slam Mega Kick Block Take Down Facade Slam Extreme Speed Retaliate Strength",
+    "effect": "You gain +1 Combat Stage in each of your Trained Stats, are cured of up to two Status Afflictions, and gain a Tick of Temporary Hit Points. Adrenaline Rush may be used only once per Scene",
+    "className": "Athlete"
+  },
+  "Athletic Moves": {
+    "name": "Athletic Moves",
+    "tags": [
+      "+HP",
+      "Ranked 3"
+    ],
+    "prerequisites": "Rank 1 Prerequisites: Athlete Rank 2 Prerequisites: Athlete, Expert Athletics Rank 3 Prerequisites: Athlete, Master Athletics",
+    "frequency": "Static",
+    "trigger": null,
+    "target": null,
+    "condition": null,
+    "effect": "You learn two Athlete Moves marked with the Rank of this Feature you are taking or lower. Athlete Moves Rank 1 Rank 2 Rank 3 Bind Body Slam Mega Kick Block Take Down Facade Slam Extreme Speed Retaliate Strength",
     "className": "Athlete"
   },
   "Dancer": {
@@ -3474,7 +3647,20 @@
     "trigger": null,
     "target": null,
     "condition": null,
-    "effect": "Choose one of the abilities listed below. You gain the chosen Ability, and its associated tags. Whenever you gain any Martial Artist Feature, you also gain the associated tags. Guts [+HP] Inner Focus [+Speed] Iron Fist [+Defense] Limber [+Speed] Reckless [+Attack] Technician [+Speed] Martial Training [Ranked 3] Rank 1 Prerequisites: Martial Artist Rank 2 Prerequisites: Martial Artist, Expert Combat Rank 3 Prerequisites: Martial Artist, Master Combat Static Effect: Learn two Martial Artist Moves. You may choose any Move marked with the Martial Training Rank you are taking or lower. You must meet a Move’s Prerequisites to choose that Move. Rank 1 Moves Move Prerequisites Acupressure Limber Arm Thrust Technician Double Kick None Focus Energy None Karate Chop Inner Focus Low Sweep None Mach Punch Iron Fist Rolling Kick Reckless Vital Throw Guts Rank 2 Moves Move Prerequisites Brick Break None Circle Throw Guts Comet Punch Iron Fist Counter Limber Low Kick Inner Focus Jump Kick Reckless Power Trick Limber Quick Guard Technician Rank 3 Moves Move Prerequisites Cross Chop Inner Focus Close Combat None Triple Kick Technician High Jump Kick Reckless Sky Uppercut Iron Fist Storm Throw Guts Martial Artist Moves",
+    "effect": "Choose one of the abilities listed below. You gain the chosen Ability, and its associated tags. Whenever you gain any Martial Artist Feature, you also gain the associated tags. Guts [+HP] Inner Focus [+Speed] Iron Fist [+Defense] Limber [+Speed] Reckless [+Attack] Technician [+Speed]",
+    "className": "Martial Artist"
+  },
+  "Martial Training": {
+    "name": "Martial Training",
+    "tags": [
+      "Ranked 3"
+    ],
+    "prerequisites": "Rank 1 Prerequisites: Martial Artist Rank 2 Prerequisites: Martial Artist, Expert Combat Rank 3 Prerequisites: Martial Artist, Master Combat",
+    "frequency": "Static",
+    "trigger": null,
+    "target": null,
+    "condition": null,
+    "effect": "Learn two Martial Artist Moves. You may choose any Move marked with the Martial Training Rank you are taking or lower. You must meet a Move’s Prerequisites to choose that Move. Rank 1 Moves Move Prerequisites Acupressure Limber Arm Thrust Technician Double Kick None Focus Energy None Karate Chop Inner Focus Low Sweep None Mach Punch Iron Fist Rolling Kick Reckless Vital Throw Guts Rank 2 Moves Move Prerequisites Brick Break None Circle Throw Guts Comet Punch Iron Fist Counter Limber Low Kick Inner Focus Jump Kick Reckless Power Trick Limber Quick Guard Technician Rank 3 Moves Move Prerequisites Cross Chop Inner Focus Close Combat None Triple Kick Technician High Jump Kick Reckless Sky Uppercut Iron Fist Storm Throw Guts Martial Artist Moves",
     "className": "Martial Artist"
   },
   "My Kung-Fu is Stronger": {
@@ -4059,7 +4245,21 @@
     "trigger": null,
     "target": null,
     "condition": null,
-    "effect": "You gain the Aura Reader Capability for the rest of the scene. If your Intuition is Adept Rank or higher, you also gain the Aura Pulse Capability. The Power of Aura [+Attack or Special Attack] [Ranked 2] Rank 1 Prerequisites: Aura Guardian Rank 2 Prerequisites: Aura Guardian, Expert Intuition Static Effect: Each Rank, choose Scrappy or Aura Storm. You gain the Chosen Ability.",
+    "effect": "You gain the Aura Reader Capability for the rest of the scene. If your Intuition is Adept Rank or higher, you also gain the Aura Pulse Capability.",
+    "className": "Aura Guardian"
+  },
+  "The Power of Aura": {
+    "name": "The Power of Aura",
+    "tags": [
+      "Ranked 2",
+      "+Attack or Special Attack"
+    ],
+    "prerequisites": "Rank 1 Prerequisites: Aura Guardian Rank 2 Prerequisites: Aura Guardian, Expert Intuition",
+    "frequency": "Static",
+    "trigger": null,
+    "target": null,
+    "condition": null,
+    "effect": "Each Rank, choose Scrappy or Aura Storm. You gain the Chosen Ability.",
     "className": "Aura Guardian"
   },
   "Sword of Body and Soul": {
@@ -4196,7 +4396,21 @@
     "trigger": null,
     "target": null,
     "condition": null,
-    "effect": "Choose Cursed Body or Omen. You gain the Chosen Ability. Hex Maniac Studies [+HP] [Ranked 3] Rank 1 Prerequisites: Hex Maniac Rank 2 Prerequisites: Hex Maniac Rank 3 Prerequisites: Hex Maniac, Expert Occult Education Static Effect: Learn two Hex Maniac Moves. You may choose any Move marked with the Hex Maniac Studies Rank you are taking or lower. Hex Maniac Moves Confuse Ray Rank 1 Curse* Rank 1 Hypnosis Rank 1 Spite Rank 1 Will-O-Wisp Rank 1 Hex Rank 3 *Note: When using Curse, you must use Curse as if you were a Ghost-Type Pokémon",
+    "effect": "Choose Cursed Body or Omen. You gain the Chosen Ability.",
+    "className": "Hex Maniac"
+  },
+  "Hex Maniac Studies": {
+    "name": "Hex Maniac Studies",
+    "tags": [
+      "Ranked 3",
+      "+HP"
+    ],
+    "prerequisites": "Rank 1 Prerequisites: Hex Maniac Rank 2 Prerequisites: Hex Maniac Rank 3 Prerequisites: Hex Maniac, Expert Occult Education",
+    "frequency": "Static",
+    "trigger": null,
+    "target": null,
+    "condition": null,
+    "effect": "Learn two Hex Maniac Moves. You may choose any Move marked with the Hex Maniac Studies Rank you are taking or lower. Hex Maniac Moves Confuse Ray Rank 1 Curse* Rank 1 Hypnosis Rank 1 Spite Rank 1 Will-O-Wisp Rank 1 Hex Rank 3 *Note: When using Curse, you must use Curse as if you were a Ghost-Type Pokémon",
     "className": "Hex Maniac"
   },
   "Diffuse Pain": {
@@ -5034,7 +5248,20 @@
     "trigger": null,
     "target": null,
     "condition": null,
-    "effect": "Choose a Move you know. Increase the Move’s Frequency one step, as if you had used a PP Up. This choice cannot be changed once made. This Feature may not select Moves known through temporary means, nor can these Moves be used to qualify for this Feature. Type Expertise [Ranked 2] [+Any Stat] All Ranks Prerequisites: Level 9, 3 Moves of the Chosen Type in your Move List Static Effect: Each Rank, choose a Type of which you know at least 3 Moves. You gain STAB for the chosen Type. STAB is never applied to Struggle Attacks."
+    "effect": "Choose a Move you know. Increase the Move’s Frequency one step, as if you had used a PP Up. This choice cannot be changed once made. This Feature may not select Moves known through temporary means, nor can these Moves be used to qualify for this Feature."
+  },
+  "Type Expertise": {
+    "name": "Type Expertise",
+    "tags": [
+      "+Any Stat",
+      "Ranked 2"
+    ],
+    "prerequisites": "All Ranks Prerequisites: Level 9, 3 Moves of the Chosen Type in your Move List",
+    "frequency": "Static",
+    "trigger": null,
+    "target": null,
+    "condition": null,
+    "effect": "Each Rank, choose a Type of which you know at least 3 Moves. You gain STAB for the chosen Type. STAB is never applied to Struggle Attacks."
   },
   "Walk It Off": {
     "name": "Walk It Off",

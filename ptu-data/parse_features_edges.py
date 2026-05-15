@@ -75,7 +75,10 @@ NON_NAME_LINES: frozenset[str] = frozenset({
 TAG_RE         = re.compile(r"^(\[[A-Za-z+ \dxX/]+\]\s*)+$")
 TAG_INNER_RE   = re.compile(r"\[([^\]]+)\]")
 PREREQ_RE      = re.compile(r"^Prerequisites?:\s*(.*)$")
+RANKED_PREREQ_RE = re.compile(r"^(?:Rank\s+\d+|All\s+Ranks?)\s+Prerequisites?:\s*(.*)$")
+ENTRY_PREREQ_RE = re.compile(r"^(?:Prerequisites?:|(?:Rank\s+\d+|All\s+Ranks?)\s+Prerequisites?:)\s*(.*)$")
 EFFECT_RE      = re.compile(r"^Effect:\s*(.*)$")
+ENTRY_EFFECT_RE = re.compile(r"^(?:Effect:|(?:Rank\s+\d+|All\s+Ranks?)\s+Effect:)\s*(.*)$")
 TRIGGER_RE     = re.compile(r"^Trigger:\s*(.*)$")
 TARGET_RE      = re.compile(r"^Target:\s*(.*)$")
 CONDITION_RE   = re.compile(r"^Condition:\s*(.*)$")
@@ -97,6 +100,7 @@ FREQ_ACTION_RE = re.compile(
     r"|Drain\s+\d+\s+AP"
     r"|Bind\s+\d+\s+AP"
     r"|X\s+AP"          # parameterised cost (e.g. Cheers' "X AP – Swift Action")
+    r"|X\s+Daily"       # ranked daily uses (e.g. Seed Bag's "X Daily")
     r"|\d+\s+AP"
     r"|Special"
     r")"
@@ -157,7 +161,7 @@ def parse_entries(text: str, default_kind: str) -> list[dict]:
             if hint in stripped:
                 current_kind = kind
 
-        m = PREREQ_RE.match(stripped)
+        m = ENTRY_PREREQ_RE.match(stripped)
         if not m:
             i += 1
             continue
@@ -200,15 +204,19 @@ def parse_entries(text: str, default_kind: str) -> list[dict]:
             current_class = name
 
         # ----- Collect Prereqs (multi-line continuation) -----
-        prereqs = m.group(1).strip()
+        prereqs = m.group(1).strip() if PREREQ_RE.match(stripped) else stripped
         j = i + 1
         while j < len(lines):
             ls = lines[j].strip()
             if not ls or PAGE_RE.match(lines[j]) or SECTION_HEAD_RE.match(lines[j]):
                 break
-            if (FREQ_ACTION_RE.match(ls) or EFFECT_RE.match(ls) or TRIGGER_RE.match(ls)
+            if RANKED_PREREQ_RE.match(ls):
+                prereqs += " " + ls
+                j += 1
+                continue
+            if (FREQ_ACTION_RE.match(ls) or ENTRY_EFFECT_RE.match(ls) or TRIGGER_RE.match(ls)
                     or TARGET_RE.match(ls) or CONDITION_RE.match(ls)
-                    or PREREQ_RE.match(ls) or NOTE_RE.match(ls)):
+                    or ENTRY_PREREQ_RE.match(ls) or NOTE_RE.match(ls)):
                 break
             prereqs += " " + ls
             j += 1
@@ -223,7 +231,7 @@ def parse_entries(text: str, default_kind: str) -> list[dict]:
             if not ls:
                 j += 1
                 continue
-            if EFFECT_RE.match(ls) or PREREQ_RE.match(ls):
+            if ENTRY_EFFECT_RE.match(ls) or ENTRY_PREREQ_RE.match(ls):
                 break
             if PAGE_RE.match(lines[j]) or SECTION_HEAD_RE.match(lines[j]):
                 break
@@ -252,9 +260,10 @@ def parse_entries(text: str, default_kind: str) -> list[dict]:
         # ----- Collect Effect (multi-line until next entry / page / Note) ---
         effect_parts: list[str] = []
         if j < len(lines):
-            mm = EFFECT_RE.match(lines[j].strip())
+            effect_line = lines[j].strip()
+            mm = ENTRY_EFFECT_RE.match(effect_line)
             if mm:
-                effect_parts.append(mm.group(1).strip())
+                effect_parts.append(mm.group(1).strip() if EFFECT_RE.match(effect_line) else effect_line)
                 j += 1
                 while j < len(lines):
                     ls = lines[j].strip()
@@ -263,7 +272,7 @@ def parse_entries(text: str, default_kind: str) -> list[dict]:
                         continue
                     if PAGE_RE.match(lines[j]) or SECTION_HEAD_RE.match(lines[j]):
                         break
-                    if PREREQ_RE.match(ls) or NOTE_RE.match(ls):
+                    if ENTRY_PREREQ_RE.match(ls) or NOTE_RE.match(ls):
                         break
                     # Look ahead: if the next non-blank line is Prereq, this
                     # line is the next entry's name — stop before it.
@@ -272,7 +281,7 @@ def parse_entries(text: str, default_kind: str) -> list[dict]:
                         look += 1
                     if look < len(lines):
                         peek = lines[look].strip()
-                        if PREREQ_RE.match(peek):
+                        if ENTRY_PREREQ_RE.match(peek):
                             break
                         if TAG_RE.match(peek):
                             look2 = look + 1
@@ -280,7 +289,7 @@ def parse_entries(text: str, default_kind: str) -> list[dict]:
                                 not lines[look2].strip() or TAG_RE.match(lines[look2].strip())
                             ):
                                 look2 += 1
-                            if look2 < len(lines) and PREREQ_RE.match(lines[look2].strip()):
+                            if look2 < len(lines) and ENTRY_PREREQ_RE.match(lines[look2].strip()):
                                 break
                     effect_parts.append(ls)
                     j += 1
