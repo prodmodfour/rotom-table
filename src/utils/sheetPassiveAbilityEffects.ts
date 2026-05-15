@@ -5,6 +5,7 @@ import {
 } from '~/utils/sheetAbilities'
 
 export const LEVITATE_ABILITY_NAME = 'Levitate'
+export const FLASH_FIRE_ABILITY_NAME = 'Flash Fire'
 export const LEVITATE_GRANTED_SPEED = 4
 export const LEVITATE_EXISTING_SPEED_BONUS = 2
 
@@ -16,6 +17,10 @@ export interface GroundResistanceCapabilities {
 export const hasLevitateAbility = (
   abilities: readonly SheetAbilityNameSource[] | null | undefined,
 ): boolean => sheetHasCanonicalAbility(abilities, LEVITATE_ABILITY_NAME)
+
+export const hasFlashFireAbility = (
+  abilities: readonly SheetAbilityNameSource[] | null | undefined,
+): boolean => sheetHasCanonicalAbility(abilities, FLASH_FIRE_ABILITY_NAME)
 
 const positiveCapabilitySpeed = (value: number | string | null | undefined): boolean => {
   if (typeof value === 'number') return Number.isFinite(value) && value > 0
@@ -56,6 +61,20 @@ export const getPassiveGroundResistanceSource = (
   return capabilitySources.length ? `${capabilitySources.join('/')} Capability` : null
 }
 
+export const getPassiveFireImmunitySource = (
+  abilities: readonly SheetAbilityNameSource[] | null | undefined,
+): string | null => hasFlashFireAbility(abilities) ? FLASH_FIRE_ABILITY_NAME : null
+
+export const getPassiveTypeEffectivenessSource = (
+  attackingType: string,
+  abilities: readonly SheetAbilityNameSource[] | null | undefined,
+  capabilities?: GroundResistanceCapabilities | null,
+): string | null => {
+  if (attackingType === 'Fire') return getPassiveFireImmunitySource(abilities)
+  if (attackingType === 'Ground') return getPassiveGroundResistanceSource(abilities, capabilities)
+  return null
+}
+
 /**
  * Levitate grants a Levitate speed of 4 if none exists, otherwise +2 to the
  * existing Levitate speed. A value of 0 is treated as no existing speed.
@@ -71,10 +90,10 @@ export const resolveLevitateAbilitySpeed = (
 }
 
 /**
- * Passive type effects used by sheets and token automation. Levitate ability,
- * Sky capability, and Levitate capability make Ground one effectiveness step
- * more resisted. Existing type immunities still win, and multiple passive
- * sources do not stack.
+ * Passive type effects used by sheets and token automation. Flash Fire makes
+ * Fire attacks immune. Levitate ability, Sky capability, and Levitate capability
+ * make Ground one effectiveness step more resisted. Existing type immunities
+ * still win, and multiple passive Ground-resistance sources do not stack.
  */
 export const applySheetPassiveTypeEffectiveness = (
   attackingType: string,
@@ -82,6 +101,8 @@ export const applySheetPassiveTypeEffectiveness = (
   abilities: readonly SheetAbilityNameSource[] | null | undefined,
   capabilities?: GroundResistanceCapabilities | null,
 ): number => {
+  if (attackingType === 'Fire' && hasFlashFireAbility(abilities)) return 0
+
   if (
     attackingType !== 'Ground'
     || !hasPassiveGroundResistance(abilities, capabilities)

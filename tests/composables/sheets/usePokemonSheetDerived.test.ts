@@ -97,6 +97,21 @@ describe('usePokemonSheetDerived', () => {
     })
   })
 
+  it('applies Flash Fire immunity in type effectiveness', () => {
+    const sheet = ref<CharacterSheet | null>(makeSheet({
+      types: ['Grass'],
+      abilities: [{ name: 'Flash Fire' }],
+    }))
+    const derived = usePokemonSheetDerived(sheet)
+
+    expect(derived.typeEffectivenessRows.value.find((row) => row.type === 'Fire')).toMatchObject({
+      mult: 0,
+      label: '0',
+      tone: 'immune',
+      source: 'Flash Fire',
+    })
+  })
+
   it('applies Sky and Levitate capability Ground resistance without stacking', () => {
     const sheet = ref<CharacterSheet | null>(makeSheet({
       types: ['Fire', 'Flying'],

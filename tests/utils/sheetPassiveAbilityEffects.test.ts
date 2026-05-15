@@ -4,16 +4,21 @@ import {
   applySheetPassiveTypeEffectiveness,
   computeSheetAbilityAwareMultiplier,
   getPassiveGroundResistanceSource,
+  getPassiveTypeEffectivenessSource,
+  hasFlashFireAbility,
   hasGroundResistingCapability,
   hasLevitateAbility,
   resolveLevitateAbilitySpeed,
 } from '~/utils/sheetPassiveAbilityEffects'
 
 describe('sheet passive ability effects', () => {
-  it('recognizes Levitate by canonical ability lookup', () => {
+  it('recognizes Levitate and Flash Fire by canonical ability lookup', () => {
     expect(hasLevitateAbility([{ name: 'levitate' }])).toBe(true)
     expect(hasLevitateAbility(['Levitate'])).toBe(true)
     expect(hasLevitateAbility([{ name: 'Run Away' }])).toBe(false)
+    expect(hasFlashFireAbility([{ name: 'flash fire' }])).toBe(true)
+    expect(hasFlashFireAbility(['Flash Fire'])).toBe(true)
+    expect(hasFlashFireAbility([{ name: 'Run Away' }])).toBe(false)
   })
 
   it('grants Levitate speed 4 or +2 to an existing Levitate speed', () => {
@@ -31,6 +36,13 @@ describe('sheet passive ability effects', () => {
     expect(applySheetPassiveAbilityTypeEffectiveness('Ground', 0.25, [{ name: 'Levitate' }])).toBe(0.125)
     expect(applySheetPassiveAbilityTypeEffectiveness('Ground', 0, [{ name: 'Levitate' }])).toBe(0)
     expect(applySheetPassiveAbilityTypeEffectiveness('Fire', 1.5, [{ name: 'Levitate' }])).toBe(1.5)
+  })
+
+  it('makes Fire attacks immune with Flash Fire', () => {
+    expect(applySheetPassiveAbilityTypeEffectiveness('Fire', 2, [{ name: 'Flash Fire' }])).toBe(0)
+    expect(applySheetPassiveAbilityTypeEffectiveness('Water', 1.5, [{ name: 'Flash Fire' }])).toBe(1.5)
+    expect(computeSheetAbilityAwareMultiplier('Fire', ['Grass'], [{ name: 'flash fire' }])).toBe(0)
+    expect(getPassiveTypeEffectivenessSource('Fire', [{ name: 'Flash Fire' }])).toBe('Flash Fire')
   })
 
   it('recognizes Sky and Levitate capabilities as Ground resistance sources', () => {

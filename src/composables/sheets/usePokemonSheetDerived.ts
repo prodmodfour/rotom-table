@@ -21,7 +21,7 @@ import { resolvePokemonOtherCapabilities } from '~/utils/sheets/pokemonCapabilit
 import { computeSheetAbilityEvasionBonus } from '~/utils/sheetAbilityActivation'
 import {
   computeSheetAbilityAwareMultiplier,
-  getPassiveGroundResistanceSource,
+  getPassiveTypeEffectivenessSource,
   type GroundResistanceCapabilities,
 } from '~/utils/sheetPassiveAbilityEffects'
 import {
@@ -220,7 +220,7 @@ export function usePokemonSheetDerived(sheet: PokemonSheetRef) {
         mult,
         label: formatMultiplier(mult),
         source: mult !== baseMult
-          ? getPassiveGroundResistanceSource(sheet.value?.abilities, groundResistanceCapabilities.value)
+          ? getPassiveTypeEffectivenessSource(attacker, sheet.value?.abilities, groundResistanceCapabilities.value)
           : null,
         tone:
           mult === 0 ? 'immune'
