@@ -29,12 +29,12 @@ const emit = defineEmits<{
     <button
       type="button"
       class="initiative-row__speed-button"
-      :title="`Set initiative to condition-adjusted value (${entry.initiativeScore})`"
-      :aria-label="`Use ${entry.name}'s condition-adjusted initiative (${entry.initiativeScore})`"
+      :title="`Set base initiative to Speed (${entry.speed}); conditions apply afterward`"
+      :aria-label="`Use ${entry.name}'s Speed (${entry.speed}) as base initiative`"
       :disabled="!canManage"
-      @click="emit('set-initiative-from-speed', entry.id, entry.initiativeScore)"
+      @click="emit('set-initiative-from-speed', entry.id, entry.speed)"
     >
-      Use Init
+      Use Speed
     </button>
   </div>
 </template>

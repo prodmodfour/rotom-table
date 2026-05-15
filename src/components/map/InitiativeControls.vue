@@ -64,7 +64,7 @@ const emit = defineEmits<{
       :disabled="!rowCount || !canManage"
       @click="emit('fill-from-speed')"
     >
-      Use All Initiative
+      Use All Speed
     </button>
     <button
       type="button"

@@ -28,8 +28,10 @@ export interface InitiativeRow {
   currentHp: number
   maxHp: number
   conditions: string[]
+  /** Raw map-local initiative input before condition effects. */
   initiative: number | null
   speed: number
+  /** Final initiative after applying conditions such as Paralysis and Flinch. */
   initiativeScore: number
 }
 
@@ -129,6 +131,7 @@ export const useInitiativeTracker = ({
     return spawnedPokemon.value.map((pokemon) => {
       const placement = placements.get(pokemon.id)
       const speed = speedForPlacement(pokemon.sheetKind, pokemon.sheetSlug)
+      const initiative = normalizeInitiativeValue(placement?.initiative)
       return {
         id: pokemon.id,
         name: pokemon.species,
@@ -137,9 +140,9 @@ export const useInitiativeTracker = ({
         currentHp: Math.max(0, Math.floor(pokemon.currentHp)),
         maxHp: Math.max(0, Math.floor(pokemon.maxHp)),
         conditions: pokemon.conditions,
-        initiative: normalizeInitiativeValue(placement?.initiative),
+        initiative,
         speed,
-        initiativeScore: conditionAdjustedInitiative(speed, pokemon.conditions),
+        initiativeScore: conditionAdjustedInitiative(initiative ?? speed, pokemon.conditions),
       }
     })
   })
@@ -149,9 +152,6 @@ export const useInitiativeTracker = ({
       const aHasInitiative = a.initiative !== null
       const bHasInitiative = b.initiative !== null
       if (aHasInitiative !== bHasInitiative) return aHasInitiative ? -1 : 1
-      if (a.initiative !== null && b.initiative !== null && a.initiative !== b.initiative) {
-        return b.initiative - a.initiative
-      }
       if (a.initiativeScore !== b.initiativeScore) return b.initiativeScore - a.initiativeScore
       return a.name.localeCompare(b.name)
     }),
@@ -235,7 +235,7 @@ export const useInitiativeTracker = ({
 
   const fillInitiativeFromSpeed = () => {
     if (!map.value || !canManageInitiative.value) return
-    const speeds = new Map(initiativeRows.value.map((entry) => [entry.id, entry.initiativeScore]))
+    const speeds = new Map(initiativeRows.value.map((entry) => [entry.id, entry.speed]))
     for (const placement of map.value.placements) {
       const speed = speeds.get(placement.id)
       if (speed !== undefined) placement.initiative = speed
