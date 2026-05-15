@@ -33,6 +33,7 @@ export interface CharacterSheetMove {
   ac?: number | string
   range?: string
   effect?: string
+  special?: string
   contestStats?: string
 }
 

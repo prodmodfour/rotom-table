@@ -130,7 +130,8 @@ def _movelist(poke: dict) -> list[dict[str, Any]]:
         if roll:
             entry["damageRoll"] = roll
         for src, dst in (("frequency", "frequency"), ("ac", "ac"),
-                         ("range", "range"), ("effect", "effect")):
+                         ("range", "range"), ("effect", "effect"),
+                         ("special", "special")):
             v = m.get(src)
             if v not in (None, ""):
                 entry[dst] = v

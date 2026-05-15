@@ -35,7 +35,8 @@ defineProps<{
       Explicit reviewed script v{{ script.version }}.
     </div>
     <p v-if="script.effect" class="move-summary__effect">{{ script.effect }}</p>
-    <p v-else class="move-summary__effect is-muted">No effect text in moves.json.</p>
+    <p v-if="script.special" class="move-summary__effect"><strong>Special:</strong> {{ script.special }}</p>
+    <p v-if="!script.effect && !script.special" class="move-summary__effect is-muted">No effect or special text in moves.json.</p>
   </aside>
 </template>
 

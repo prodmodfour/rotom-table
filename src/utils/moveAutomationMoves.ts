@@ -79,6 +79,7 @@ export const filterMoveAutomationMoveEntries = (
       entry.move.frequency ?? '',
       script.range,
       script.effect,
+      script.special ?? '',
     ]
       .join(' ')
       .toLowerCase()

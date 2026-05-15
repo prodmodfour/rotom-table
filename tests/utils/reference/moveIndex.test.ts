@@ -17,6 +17,7 @@ const move = (overrides: Partial<PtuMove> & Pick<PtuMove, 'name' | 'type'>): Ptu
   damage_class: overrides.damage_class,
   range: overrides.range,
   effect: overrides.effect,
+  special: overrides.special,
 })
 
 const sampleMoves: PtuMove[] = [
@@ -68,6 +69,7 @@ describe('move index helpers', () => {
     expect(moveMatchesSearch(sampleMoves[0]!, 'push')).toBe(true)
     expect(moveMatchesSearch(sampleMoves[1]!, 'special')).toBe(true)
     expect(moveMatchesSearch(sampleMoves[2]!, 'self')).toBe(true)
+    expect(moveMatchesSearch(move({ name: 'Ember', type: 'Fire', special: 'Grants Firestarter' }), 'firestarter')).toBe(true)
     expect(moveMatchesSearch(sampleMoves[3]!, 'missing')).toBe(false)
   })
 

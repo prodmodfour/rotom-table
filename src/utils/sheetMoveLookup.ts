@@ -58,6 +58,7 @@ const LOOKUP_BACKED_MOVE_KEYS = [
   'ac',
   'range',
   'effect',
+  'special',
   'contestStats',
 ] as const
 

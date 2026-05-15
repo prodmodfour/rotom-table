@@ -85,6 +85,12 @@ describe('move automation move helpers', () => {
     expect(entry.move.damage_roll).toBeNull()
   })
 
+  it('carries canonical move special text into automation entries', () => {
+    const [entry] = buildMoveAutomationMoveEntries([{ name: 'Ember' }])
+
+    expect(entry.script.special).toBe('Grants Firestarter')
+  })
+
   it('filters entries by script and sheet move fields while preserving no-query order', () => {
     const entries = buildMoveAutomationMoveEntries([
       { name: 'Scratch', frequency: 'At-Will' },
@@ -94,6 +100,7 @@ describe('move automation move helpers', () => {
     expect(filterMoveAutomationMoveEntries(entries, '').map((entry) => entry.move.name)).toEqual(['Scratch', 'Custom Move'])
     expect(filterMoveAutomationMoveEntries(entries, 'psychic').map((entry) => entry.move.name)).toEqual(['Custom Move'])
     expect(filterMoveAutomationMoveEntries(entries, 'at-will').map((entry) => entry.move.name)).toEqual(['Scratch'])
+    expect(filterMoveAutomationMoveEntries(buildMoveAutomationMoveEntries([{ name: 'Ember' }]), 'firestarter').map((entry) => entry.move.name)).toEqual(['Ember'])
   })
 
   it('selects requested move entries with first-entry fallback', () => {

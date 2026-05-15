@@ -178,6 +178,7 @@ export interface TrainerMove {
   ac?: number | string
   range?: string
   effect?: string
+  special?: string
   /** ``"MH"`` (main hand), ``"OH"`` (off hand), ``"EW"`` (energy weapon),
    *  ``"Adept"`` / ``"Master"``. Used to colour-tag the movelist row. */
   weaponSlot?: 'MH' | 'OH' | 'EW' | 'Adept' | 'Master' | 'Natural'

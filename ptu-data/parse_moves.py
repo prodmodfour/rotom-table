@@ -159,7 +159,7 @@ def _parse_blocks(text: str) -> dict[str, dict]:
 
         # Effect — may span multiple lines.
         m = re.search(
-            r"^Effect:\s*([\s\S]+?)(?:^Contest|^Special:|^Move:|^Ability:|^## Page|^New |^\Z)",
+            r"^Effect:\s*([\s\S]+?)(?:^Contest|^Special:|^Move:|^Ability:|^## Page|^New |\Z)",
             body,
             re.MULTILINE,
         )
@@ -167,6 +167,30 @@ def _parse_blocks(text: str) -> dict[str, dict]:
             effect = m.group(1).strip()
             effect = re.sub(r"\s*\n\s*", " ", effect)
             move["effect"] = effect
+
+        # Special — may appear before or after Contest lines and may span lines.
+        # Ignore any following ability/features text accidentally captured in the
+        # same split block; only Special lines belonging to this Move are valid.
+        move_body = re.split(
+            r"^Ability:|^Feature:|^Edge:|^## Page|^New ",
+            body,
+            maxsplit=1,
+            flags=re.MULTILINE,
+        )[0]
+        specials = re.findall(
+            r"^Special:\s*([\s\S]+?)(?=^Contest|^Special:|^Move:|^Ability:|^Feature:|^Edge:|^## Page|^New |\Z)",
+            move_body,
+            re.MULTILINE,
+        )
+        if specials:
+            normalized_specials = []
+            for special in specials:
+                special = re.sub(r"\s*\n\s*", " ", special).strip()
+                special = re.sub(r"\s+", " ", special)
+                if special:
+                    normalized_specials.append(special)
+            if normalized_specials:
+                move["special"] = " ".join(normalized_specials)
 
         moves[name] = move
 

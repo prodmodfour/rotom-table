@@ -55,6 +55,14 @@ describe('map token move menu options', () => {
     expect(move.damageFormula).toBe('2d6+8+14')
   })
 
+  it('includes reference special text in move menu options', () => {
+    const [move] = buildTokenMoveMenuOptions(token({ defenderTypes: ['Fire'] }), [
+      { move: { name: 'Ember' }, automatic: false },
+    ])
+
+    expect(move.special).toBe('Grants Firestarter')
+  })
+
   it('does not apply STAB to Struggle auto moves', () => {
     const [move] = buildTokenMoveMenuOptions(token(), [
       { move: { name: 'Struggle' }, automatic: true },

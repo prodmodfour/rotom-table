@@ -61,7 +61,10 @@ export const getRefTooltipDetail = (kind: RefKind, name: string): RefTooltipDeta
         kind: 'move',
         name: move.name,
         meta,
-        sections: presentRefValue(move.effect) ? [{ heading: 'Effect', body: move.effect }] : [],
+        sections: [
+          ...(presentRefValue(move.effect) ? [{ heading: 'Effect', body: move.effect }] : []),
+          ...(presentRefValue(move.special) ? [{ heading: 'Special', body: move.special }] : []),
+        ],
       }
     }
 

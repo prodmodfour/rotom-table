@@ -28,6 +28,7 @@ defineProps<{
         <span v-if="move.range" class="badge">{{ move.range }}</span>
       </div>
       <p v-if="move.effect" class="ref-row__effect">{{ move.effect }}</p>
+      <p v-if="move.special" class="ref-row__effect"><strong>Special:</strong> {{ move.special }}</p>
     </NuxtLink>
     <ReferenceEmptyState v-if="moves.length === 0" message="No moves match." />
   </main>

@@ -22,6 +22,7 @@ export const moveMatchesSearch = (move: PtuMove, normalizedQuery: string): boole
     move.damage_class ?? '',
     move.range ?? '',
     move.effect ?? '',
+    move.special ?? '',
   ]
   return matchesReferenceSearch(haystacks, normalizedQuery)
 }

@@ -18,6 +18,7 @@ import type { MoveAutomationMoveLike } from '~/utils/moveAutomation'
 
 export const createManualMoveAutomationScript = (move: MoveAutomationMoveLike): MoveAutomationScript => {
   const effect = move.effect ?? ''
+  const special = move.special ?? ''
   const range = move.range ?? ''
   const damageBase = coerceMoveDamageBase(move.damage_base)
   const damageClass = move.damage_class ?? null
@@ -56,6 +57,7 @@ export const createManualMoveAutomationScript = (move: MoveAutomationMoveLike): 
     ac: coerceMoveAccuracy(move.ac),
     range,
     effect,
+    special,
     keywords,
     criticalRange: parseMoveAutomationCriticalRange(effect),
     conditionSuggestions,

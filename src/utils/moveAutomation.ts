@@ -24,6 +24,7 @@ export interface MoveAutomationMoveLike {
   damage_class?: string | null
   range?: string
   effect?: string
+  special?: string
 }
 
 export type DamageRollResult = MoveDamageRollResult
@@ -42,6 +43,7 @@ export const sheetMoveToMoveLike = (move: CharacterSheetMove | TrainerMove): Mov
   damage_class: move.category ?? null,
   range: move.range,
   effect: move.effect,
+  special: move.special,
 })
 
 export const damageFormulaForMove = damageFormulaForManualMove

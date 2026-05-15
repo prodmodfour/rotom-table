@@ -27,6 +27,7 @@ export interface TokenMoveMenuOption {
   ac: number | string | null
   range: string | null
   effect: string | null
+  special: string | null
   damageBase: number | null
   hasStab: boolean
   damageFormula: string | null
@@ -96,6 +97,7 @@ const optionForMoveRow = (
   ac: fallback(row.reference?.ac, row.move.ac),
   range: fallback(row.reference?.range, row.move.range),
   effect: fallback(row.reference?.effect, row.move.effect),
+  special: fallback(row.reference?.special, row.move.special),
   damageBase: row.damageBase,
   hasStab: row.hasStab,
   damageFormula: row.damageFormula,

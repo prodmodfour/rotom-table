@@ -26,5 +26,9 @@ defineProps<{
     <ReferenceFieldBlock v-if="move.effect" title="Effect">
       <p>{{ move.effect }}</p>
     </ReferenceFieldBlock>
+
+    <ReferenceFieldBlock v-if="move.special" title="Special">
+      <p>{{ move.special }}</p>
+    </ReferenceFieldBlock>
   </article>
 </template>

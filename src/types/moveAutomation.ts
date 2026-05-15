@@ -121,6 +121,7 @@ export interface MoveAutomationScript {
   ac: number | null
   range: string
   effect: string
+  special?: string
   keywords: string[]
   criticalRange: number | null
   conditionSuggestions: MoveAutomationConditionSuggestion[]

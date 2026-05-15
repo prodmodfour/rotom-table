@@ -44,6 +44,8 @@ def format_move(move: dict, atk_stat: int = 0, spatk_stat: int = 0) -> str:
         lines.append(f"  - {move['range']}")
     if move.get("effect") and move["effect"].lower() != "none":
         lines.append(f"  - {move['effect']}")
+    if move.get("special"):
+        lines.append(f"  - Special: {move['special']}")
     return "\n".join(lines)
 
 

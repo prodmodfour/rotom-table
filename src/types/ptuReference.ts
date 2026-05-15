@@ -23,6 +23,7 @@ export interface PtuMove {
   damage_class?: 'Physical' | 'Special' | 'Status' | string
   range?: string
   effect?: string
+  special?: string
 }
 
 export interface PtuManeuver {

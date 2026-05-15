@@ -49,6 +49,7 @@ const {
             <th>AC</th>
             <th>Range</th>
             <th>Effect</th>
+            <th>Special</th>
             <th aria-label="Row actions"></th>
           </tr>
         </thead>
@@ -109,7 +110,11 @@ const {
             <td>{{ formatLookupValue(row.reference?.range) }}</td>
             <td class="move-effect">
               <span v-if="row.reference?.effect">{{ row.reference.effect }}</span>
-              <span v-else class="badge-empty">{{ row.move.name.trim() ? 'No matching move in moves.json' : '—' }}</span>
+              <span v-else class="badge-empty">{{ row.reference || !row.move.name.trim() ? '—' : 'No matching move in moves.json' }}</span>
+            </td>
+            <td class="move-effect">
+              <span v-if="row.reference?.special">{{ row.reference.special }}</span>
+              <span v-else class="badge-empty">—</span>
             </td>
             <td class="row-actions">
               <button
@@ -125,7 +130,7 @@ const {
             </td>
           </tr>
           <tr v-if="!moveRows.length">
-            <td colspan="11" class="empty-cell">No moves yet — click "Add row" to start.</td>
+            <td colspan="12" class="empty-cell">No moves yet — click "Add row" to start.</td>
           </tr>
         </tbody>
       </table>

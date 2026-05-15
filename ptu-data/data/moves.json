@@ -426,7 +426,8 @@
     "damage_roll": "3d10+10 / 27",
     "damage_class": "Physical",
     "range": "Melee, 1 Target",
-    "effect": "The user’s Speed is increased 1 CS."
+    "effect": "The user’s Speed is increased 1 CS.",
+    "special": "If the user is in Hangry Mode, Aura Wheel is Dark-Typed."
   },
   "Bolt Beak": {
     "name": "Bolt Beak",
@@ -447,7 +448,8 @@
     "damage_base": null,
     "damage_class": "Status",
     "range": "Burst 4",
-    "effect": "Choose +1 or -1. All targets that are ElectricType or have the Magnetic Capability receive that many Defense and Special Defense Combat Stages."
+    "effect": "Choose +1 or -1. All targets that are ElectricType or have the Magnetic Capability receive that many Defense and Special Defense Combat Stages.",
+    "special": "Grants Magnetic"
   },
   "Overdrive": {
     "name": "Overdrive",
@@ -1472,7 +1474,8 @@
     "damage_base": null,
     "damage_class": "Status",
     "range": "Blessing",
-    "effect": "Blessing – Any user affected by Aurora Veil may activate it when receiving Damage to resist the Damage one step. Aurora Veil may be activated 2 times, and then disappears."
+    "effect": "Blessing – Any user affected by Aurora Veil may activate it when receiving Damage to resist the Damage one step. Aurora Veil may be activated 2 times, and then disappears.",
+    "special": "Aurora Veil can only be used when the user is in Hailing Weather. The Blessings persist even after Hailing Weather has ended, however."
   },
   "Ice Hammer": {
     "name": "Ice Hammer",
@@ -1931,7 +1934,8 @@
     "damage_base": null,
     "damage_class": "Status",
     "range": "5",
-    "effect": "Spider Web cannot miss. The target is Stuck and Trapped. If the user is freed of the Stuck condition, they are freed of Trapped as well."
+    "effect": "Spider Web cannot miss. The target is Stuck and Trapped. If the user is freed of the Stuck condition, they are freed of Trapped as well.",
+    "special": "Grants Threaded"
   },
   "Steamroller": {
     "name": "Steamroller",
@@ -1952,7 +1956,8 @@
     "damage_base": null,
     "damage_class": "Status",
     "range": "6, Hazard",
-    "effect": "Set 8 square meters of Sticky Web hazards within your range, all 8 meters must be adjacent with at least one other space of Sticky Web. Sticky Web causes Terrain to become Slow Terrain, and a foe that runs into the hazard has its Speed lowered by one stage, and they become Slowed until the end of their next turn. Flying- type Pokémon and Pokémon and Trainers with Levitate are not affected by Sticky Web. Bug-type Pokémon may move over Sticky Web harmlessly, destroying the Hazards as they do so."
+    "effect": "Set 8 square meters of Sticky Web hazards within your range, all 8 meters must be adjacent with at least one other space of Sticky Web. Sticky Web causes Terrain to become Slow Terrain, and a foe that runs into the hazard has its Speed lowered by one stage, and they become Slowed until the end of their next turn. Flying- type Pokémon and Pokémon and Trainers with Levitate are not affected by Sticky Web. Bug-type Pokémon may move over Sticky Web harmlessly, destroying the Hazards as they do so.",
+    "special": "Grants Threaded"
   },
   "String Shot": {
     "name": "String Shot",
@@ -1962,7 +1967,8 @@
     "damage_base": null,
     "damage_class": "Status",
     "range": "Cone 2",
-    "effect": "Targets have their Speed CS lowered by -1. If this lowers their Speed CS to -6, or if their Speed CS was already at -6, the target is instead Stuck."
+    "effect": "Targets have their Speed CS lowered by -1. If this lowers their Speed CS to -6, or if their Speed CS was already at -6, the target is instead Stuck.",
+    "special": "Grants Threaded"
   },
   "Struggle Bug": {
     "name": "Struggle Bug",
@@ -1983,7 +1989,8 @@
     "damage_base": null,
     "damage_class": "Status",
     "range": "Self",
-    "effect": "Raise the user’s Special Attack 3 Combat Stages."
+    "effect": "Raise the user’s Special Attack 3 Combat Stages.",
+    "special": "Grants Glow"
   },
   "Twineedle": {
     "name": "Twineedle",
@@ -2513,7 +2520,8 @@
     "damage_base": null,
     "damage_class": "Status",
     "range": "6, 1 Target",
-    "effect": "The target’s Special Attack is lowered 2 Combat Stages."
+    "effect": "The target’s Special Attack is lowered 2 Combat Stages.",
+    "special": "Grants Glow"
   },
   "Electric Terrain": {
     "name": "Electric Terrain",
@@ -2586,7 +2594,8 @@
     "damage_base": null,
     "damage_class": "Status",
     "range": "Self, Swift Action",
-    "effect": "The user gains the Levitate Ability for 5 turns. Magnet Rise may be activated as a Swift Action if the user is otherwise given an action that consumes a Command."
+    "effect": "The user gains the Levitate Ability for 5 turns. Magnet Rise may be activated as a Swift Action if the user is otherwise given an action that consumes a Command.",
+    "special": "Grants Magnetic"
   },
   "Nuzzle": {
     "name": "Nuzzle",
@@ -2608,7 +2617,8 @@
     "damage_roll": "2d6+8 / 15",
     "damage_class": "Special",
     "range": "6, 1 Target",
-    "effect": "Shock Wave cannot miss."
+    "effect": "Shock Wave cannot miss.",
+    "special": "Grants Zapper"
   },
   "Spark": {
     "name": "Spark",
@@ -2674,7 +2684,8 @@
     "damage_roll": "1d8+6 / 11",
     "damage_class": "Special",
     "range": "4, 1 Target",
-    "effect": "Thunder Shock Paralyzes the target on 17+."
+    "effect": "Thunder Shock Paralyzes the target on 17+.",
+    "special": "Grants Zapper"
   },
   "Volt Switch": {
     "name": "Volt Switch",
@@ -3369,7 +3380,8 @@
     "damage_roll": "1d8+6 / 11",
     "damage_class": "Special",
     "range": "4, 1 Target",
-    "effect": "Ember Burns the target on 18+."
+    "effect": "Ember Burns the target on 18+.",
+    "special": "Grants Firestarter"
   },
   "Eruption": {
     "name": "Eruption",
@@ -3446,7 +3458,8 @@
     "damage_roll": "1d8+6 / 11",
     "damage_class": "Special",
     "range": "3, 1 Target",
-    "effect": "The target is put in a Vortex."
+    "effect": "The target is put in a Vortex.",
+    "special": "Grants Firestarter"
   },
   "Flame Burst": {
     "name": "Flame Burst",
@@ -3719,7 +3732,8 @@
     "damage_roll": "2d10+10 / 21",
     "damage_class": "Physical",
     "range": "Melee, 1 Target, Dash, Full Action",
-    "effect": "The user first Shifts, gaining a +1 Bonus to Movement Speed and to their Jump Capabilities. After the user Shifts, they may attack with Bounce. The target becomes Vulnerable, and is Paralyzed on 16+."
+    "effect": "The user first Shifts, gaining a +1 Bonus to Movement Speed and to their Jump Capabilities. After the user Shifts, they may attack with Bounce. The target becomes Vulnerable, and is Paralyzed on 16+.",
+    "special": "Grants High Jump +1"
   },
   "Brave Bird": {
     "name": "Brave Bird",
@@ -3793,7 +3807,8 @@
     "damage_base": 8,
     "damage_roll": "2d8+10 / 19",
     "damage_class": "Physical",
-    "range": "Melee, Dash, Set-Up"
+    "range": "Melee, Dash, Set-Up",
+    "special": "Grants Sky +3"
   },
   "Gust": {
     "name": "Gust",
@@ -3804,7 +3819,8 @@
     "damage_roll": "1d8+6 / 11",
     "damage_class": "Special",
     "range": "4, 1 Target",
-    "effect": "If the target is airborne as a result of Fly or Sky Drop, Gust can hit them, ignoring Range and has a Damage Base of 8 instead."
+    "effect": "If the target is airborne as a result of Fly or Sky Drop, Gust can hit them, ignoring Range and has a Damage Base of 8 instead.",
+    "special": "Grants Guster"
   },
   "Hurricane": {
     "name": "Hurricane",
@@ -3897,7 +3913,8 @@
     "ac": null,
     "damage_base": null,
     "damage_class": "Status",
-    "effect": "For the remainder of the encounter, all allied trainers and Pokémon gain +5 to their Initiative. Multiple instances of Tailwind cannot stack."
+    "effect": "For the remainder of the encounter, all allied trainers and Pokémon gain +5 to their Initiative. Multiple instances of Tailwind cannot stack.",
+    "special": "Grants Guster"
   },
   "Wing Attack": {
     "name": "Wing Attack",
@@ -4362,7 +4379,8 @@
     "damage_roll": "3d12+10 / 30",
     "damage_class": "Physical",
     "range": "8, 1 Target, Smite",
-    "effect": "None"
+    "effect": "None",
+    "special": "Grants Threaded"
   },
   "Razor Leaf": {
     "name": "Razor Leaf",
@@ -4466,7 +4484,8 @@
     "damage_roll": "1d8+6 / 11",
     "damage_class": "Physical",
     "range": "4, 1 Target",
-    "effect": "None"
+    "effect": "None",
+    "special": "Grants Threaded"
   },
   "Wood Hammer": {
     "name": "Wood Hammer",
@@ -4541,7 +4560,8 @@
     "damage_base": 8,
     "damage_roll": "2d8+10 / 19",
     "damage_class": "Physical",
-    "range": "Burst 1, Set-Up, Full Action, Groundsource"
+    "range": "Burst 1, Set-Up, Full Action, Groundsource",
+    "special": "Grants Burrow +3"
   },
   "Drill Run": {
     "name": "Drill Run",
@@ -4574,7 +4594,8 @@
     "damage_roll": "3d8+10 / 24",
     "damage_class": "Physical",
     "range": "Burst 3, Groundsource",
-    "effect": "Earthquake can hit targets that are underground, including those using the Move Dig."
+    "effect": "Earthquake can hit targets that are underground, including those using the Move Dig.",
+    "special": "Grants Groundshaper"
   },
   "Fissure": {
     "name": "Fissure",
@@ -4584,7 +4605,8 @@
     "damage_base": null,
     "damage_class": "Status",
     "range": "5, 1 Target, Execute, Groundsource",
-    "effect": "Roll 1d100. This roll may not be modified in any way.  If you roll X or lower, the target Faints. X is equal to 30 + The User’s Level - The Target’s Level."
+    "effect": "Roll 1d100. This roll may not be modified in any way.  If you roll X or lower, the target Faints. X is equal to 30 + The User’s Level - The Target’s Level.",
+    "special": "Grants Groundshaper"
   },
   "Land’s Wrath": {
     "name": "Land’s Wrath",
@@ -4595,7 +4617,8 @@
     "damage_roll": "2d10+10 / 21",
     "damage_class": "Physical",
     "range": "Burst 5, Friendly, Groundsource",
-    "effect": "None."
+    "effect": "None.",
+    "special": "Grants Groundshaper"
   },
   "Magnitude": {
     "name": "Magnitude",
@@ -4604,7 +4627,8 @@
     "damage_base": null,
     "damage_class": "Physical",
     "range": "Burst 2, Groundsource",
-    "effect": "When you use Magnitude, roll 1d6.  Magnitude’s Damage Base is equal to 5+X, where X is the value of the d6. Magnitude can hit targets that are underground, including those using the Move Dig."
+    "effect": "When you use Magnitude, roll 1d6.  Magnitude’s Damage Base is equal to 5+X, where X is the value of the d6. Magnitude can hit targets that are underground, including those using the Move Dig.",
+    "special": "Grants Groundshaper"
   },
   "Mud Bomb": {
     "name": "Mud Bomb",
@@ -4710,7 +4734,8 @@
     "damage_roll": "2d6+10 / 17",
     "damage_class": "Special",
     "range": "6, 1 Target",
-    "effect": "Aurora Beam lowers the target’s Attack 1 Combat Stage on 18+."
+    "effect": "Aurora Beam lowers the target’s Attack 1 Combat Stage on 18+.",
+    "special": "Grants Freezer"
   },
   "Avalanche": {
     "name": "Avalanche",
@@ -4764,7 +4789,8 @@
     "damage_roll": "2d6+8 / 15",
     "damage_class": "Special",
     "range": "4, 1 Target",
-    "effect": "If Frost Breath hits, it is a Critical Hit."
+    "effect": "If Frost Breath hits, it is a Critical Hit.",
+    "special": "Grants Freezer"
   },
   "Glaciate": {
     "name": "Glaciate",
@@ -4914,7 +4940,8 @@
     "damage_roll": "1d8+6 / 11",
     "damage_class": "Special",
     "range": "Line 4",
-    "effect": "Powder Snow Freezes all Legal Targets on 19+."
+    "effect": "Powder Snow Freezes all Legal Targets on 19+.",
+    "special": "Grants Freezer"
   },
   "Sheer Cold": {
     "name": "Sheer Cold",
@@ -4924,7 +4951,8 @@
     "damage_base": null,
     "damage_class": "Status",
     "range": "4, 1 Target, Execute",
-    "effect": "Roll 1d100. This roll may not be modified in any way.  If you roll X or lower, the target Faints. X is equal to 30 + The User’s Level - The Target’s Level."
+    "effect": "Roll 1d100. This roll may not be modified in any way.  If you roll X or lower, the target Faints. X is equal to 30 + The User’s Level - The Target’s Level.",
+    "special": "Grants Freezer"
   },
   "Acupressure": {
     "name": "Acupressure",
@@ -5065,7 +5093,8 @@
     "damage_base": null,
     "damage_class": "Status",
     "range": "Self",
-    "effect": "The user changes their Type to match the field. Forests and grassy areas change the user into Grass- Type. Watery areas change the user into Water-Type. Caves and Mountains could change the user into Rock- Type or Ground-Type. An icy terrain would turn the user into Ice-Type. A building may change the user into Steel-Type or Normal-Type. Weather affects what Type the user becomes. Use common sense, if you are having difficult determining what type the user should become, consult the GM."
+    "effect": "The user changes their Type to match the field. Forests and grassy areas change the user into Grass- Type. Watery areas change the user into Water-Type. Caves and Mountains could change the user into Rock- Type or Ground-Type. An icy terrain would turn the user into Ice-Type. A building may change the user into Steel-Type or Normal-Type. Weather affects what Type the user becomes. Use common sense, if you are having difficult determining what type the user should become, consult the GM.",
+    "special": "Grants Blender"
   },
   "Captivate": {
     "name": "Captivate",
@@ -5403,7 +5432,8 @@
     "damage_base": null,
     "damage_class": "Status",
     "range": "Cone 2",
-    "effect": "The Accuracy of all Legal Targets is lowered by -1."
+    "effect": "The Accuracy of all Legal Targets is lowered by -1.",
+    "special": "Grants Glow"
   },
   "Focus Energy": {
     "name": "Focus Energy",
@@ -5506,7 +5536,8 @@
     "damage_base": null,
     "damage_class": "Status",
     "range": "Self",
-    "effect": "Raise the user’s Attack 1 Combat Stage and raise the user’s Special Attack 1 Combat Stage. If it is Sunny, double the amount of Combat Stages gained."
+    "effect": "Raise the user’s Attack 1 Combat Stage and raise the user’s Special Attack 1 Combat Stage. If it is Sunny, double the amount of Combat Stages gained.",
+    "special": "Grants Inflatable"
   },
   "Guillotine": {
     "name": "Guillotine",
@@ -5787,7 +5818,8 @@
     "damage_base": null,
     "damage_class": "Status",
     "range": "Self",
-    "effect": "The user gains +4 Evasion, and user’s size is lowered to Small for the remainder of the encounter."
+    "effect": "The user gains +4 Evasion, and user’s size is lowered to Small for the remainder of the encounter.",
+    "special": "Grants Shrinkable"
   },
   "Morning Sun": {
     "name": "Morning Sun",
@@ -5837,7 +5869,8 @@
     "damage_base": null,
     "damage_class": "Status",
     "range": "Self, Swift Action",
-    "effect": "Odor Sleuth may be activated as a Swift Action on the user’s turn. For the rest of the turn, the user’s Normal-Type and Fighting-Type Moves can hit and affect Ghost-Type targets, and the user can see through the Illusion Ability, Moves with the Illusion keyword, and effects created by the Illusionist Capability, ignoring all effects from those."
+    "effect": "Odor Sleuth may be activated as a Swift Action on the user’s turn. For the rest of the turn, the user’s Normal-Type and Fighting-Type Moves can hit and affect Ghost-Type targets, and the user can see through the Illusion Ability, Moves with the Illusion keyword, and effects created by the Illusionist Capability, ignoring all effects from those.",
+    "special": "Grants Tracker"
   },
   "Pain Split": {
     "name": "Pain Split",
@@ -6302,7 +6335,8 @@
     "damage_base": null,
     "damage_class": "Status",
     "range": "Self",
-    "effect": "Shift Action - The user may make a single Jump, adding +1 to their Long Jump and High Jump values, and gains +2 Evasion until the end of their next turn."
+    "effect": "Shift Action - The user may make a single Jump, adding +1 to their Long Jump and High Jump values, and gains +2 Evasion until the end of their next turn.",
+    "special": "Grants Long Jump +1"
   },
   "Stockpile": {
     "name": "Stockpile",
@@ -6334,7 +6368,8 @@
     "damage_roll": "2d8+10 / 19",
     "damage_class": "Physical",
     "range": "Melee, 1 Target, Push",
-    "effect": "You may immediately initiate a Push Maneuver as a Free Action. The Maneuver automatically hits, but you must still make the Opposed Roll."
+    "effect": "You may immediately initiate a Push Maneuver as a Free Action. The Maneuver automatically hits, but you must still make the Opposed Roll.",
+    "special": "Grants +1 Power"
   },
   "Substitute": {
     "name": "Substitute",
@@ -6384,7 +6419,8 @@
     "damage_base": null,
     "damage_class": "Status",
     "range": "Burst 2, Friendly",
-    "effect": "Targets hit by Sweet Scent gain a -2 Penalty to Evasion. (Total Evasion may not be lowered to a negative value. )"
+    "effect": "Targets hit by Sweet Scent gain a -2 Penalty to Evasion. (Total Evasion may not be lowered to a negative value. )",
+    "special": "Grants Alluring"
   },
   "Swift": {
     "name": "Swift",
@@ -7206,7 +7242,8 @@
     "damage_roll": "2d10+10 / 21",
     "damage_class": "Special",
     "range": "5, 1 Target, Push",
-    "effect": "The target is Pushed 1 meter in any direction. Psychic lowers the target’s Special Defense 1 Combat Stage on 17+."
+    "effect": "The target is Pushed 1 meter in any direction. Psychic lowers the target’s Special Defense 1 Combat Stage on 17+.",
+    "special": "Grants Telekinetic"
   },
   "Psycho Boost": {
     "name": "Psycho Boost",
@@ -7342,7 +7379,8 @@
     "damage_base": null,
     "damage_class": "Status",
     "range": "4, 1 Target",
-    "effect": "The target becomes Lifted. While Lifted, they gain the Levitate Ability, are Slowed, and lose all Movement Capabilities except for the Levitate 4 granted by Levitate (reduced to 2 by the Slow condition). While Lifted, the user may not apply any Evasion bonuses to determine whether they are hit by Moves or not. The Lifted target may use a Shift Action to roll 1d20; on a result of 16+, they stop being Lifted."
+    "effect": "The target becomes Lifted. While Lifted, they gain the Levitate Ability, are Slowed, and lose all Movement Capabilities except for the Levitate 4 granted by Levitate (reduced to 2 by the Slow condition). While Lifted, the user may not apply any Evasion bonuses to determine whether they are hit by Moves or not. The Lifted target may use a Shift Action to roll 1d20; on a result of 16+, they stop being Lifted.",
+    "special": "Grants Telekinetic"
   },
   "Teleport": {
     "name": "Teleport",
@@ -7352,7 +7390,8 @@
     "damage_base": null,
     "damage_class": "Status",
     "range": "Self, Interrupt",
-    "effect": "The user Teleports up to X meters, where X is its Teleporter Capability. Teleport can be used as an Interrupt at any time. Moves that targeted Teleport’s user continue through the desired target’s space if the Move allows for it as if the user hadn’t been there; single target moves simply miss."
+    "effect": "The user Teleports up to X meters, where X is its Teleporter Capability. Teleport can be used as an Interrupt at any time. Moves that targeted Teleport’s user continue through the desired target’s space if the Move allows for it as if the user hadn’t been there; single target moves simply miss.",
+    "special": "Grants Teleporter 4"
   },
   "Trick": {
     "name": "Trick",
@@ -7448,7 +7487,8 @@
     "damage_roll": "1d6+5 / 9",
     "damage_class": "Physical",
     "range": "6, 1 Target, Five Strike",
-    "effect": "None"
+    "effect": "None",
+    "special": "Grants Materializer"
   },
   "Rock Polish": {
     "name": "Rock Polish",
@@ -7491,7 +7531,8 @@
     "damage_roll": "2d6+8 / 15",
     "damage_class": "Physical",
     "range": "6, 1 Target",
-    "effect": "Rock Tomb lowers the target’s Speed by -1 Combat Stage."
+    "effect": "Rock Tomb lowers the target’s Speed by -1 Combat Stage.",
+    "special": "Grants Materializer"
   },
   "Rock Wrecker": {
     "name": "Rock Wrecker",
@@ -7502,7 +7543,8 @@
     "damage_roll": "4d10+20 / 45",
     "damage_class": "Physical",
     "range": "Melee, 1 Target, Dash, Exhaust, Smite",
-    "effect": "None"
+    "effect": "None",
+    "special": "Grants Materializer"
   },
   "Rollout": {
     "name": "Rollout",
@@ -7544,7 +7586,8 @@
     "damage_base": null,
     "damage_class": "Status",
     "range": "Field, Hazard",
-    "effect": "Set 4 square meters of Stealth Rock hazards within 6 meters. If a foe moves within 2 meters of a space occupied by Rocks, move at most one Rock to the offender, then destroy the Rock. When that happens, the Stealth Rock causes a foe to lose a Tick of Hit Points. Stealth Rock is considered to be dealing damage; Apply Weakness and Resistance. Do not apply stats. A Pokémon who has been hit by a Stealth Rock Hazard cannot get hit by another in the same encounter until it is returned to a Poké Ball and then sent back out."
+    "effect": "Set 4 square meters of Stealth Rock hazards within 6 meters. If a foe moves within 2 meters of a space occupied by Rocks, move at most one Rock to the offender, then destroy the Rock. When that happens, the Stealth Rock causes a foe to lose a Tick of Hit Points. Stealth Rock is considered to be dealing damage; Apply Weakness and Resistance. Do not apply stats. A Pokémon who has been hit by a Stealth Rock Hazard cannot get hit by another in the same encounter until it is returned to a Poké Ball and then sent back out.",
+    "special": "Grants Materializer"
   },
   "Stone Edge": {
     "name": "Stone Edge",
@@ -7694,7 +7737,8 @@
     "damage_roll": "2d6+8 / 15",
     "damage_class": "Physical",
     "range": "8, 1 target",
-    "effect": "Magnet Bomb cannot miss."
+    "effect": "Magnet Bomb cannot miss.",
+    "special": "Grants Magnetic"
   },
   "Metal Burst": {
     "name": "Metal Burst",
@@ -7862,7 +7906,8 @@
     "damage_base": 8,
     "damage_roll": "2d8+10 / 19",
     "damage_class": "Physical",
-    "range": "Burst 1, Set-Up, Full Action"
+    "range": "Burst 1, Set-Up, Full Action",
+    "special": "Swim +3"
   },
   "Hydro Cannon": {
     "name": "Hydro Cannon",
@@ -7981,7 +8026,8 @@
     "damage_roll": "1d8+6 / 11",
     "damage_class": "Special",
     "range": "4, 1 Target",
-    "effect": "None"
+    "effect": "None",
+    "special": "Grants Fountain"
   },
   "Water Pledge": {
     "name": "Water Pledge",
@@ -8013,7 +8059,8 @@
     "damage_base": null,
     "damage_class": "Status",
     "range": "Burst 2, Coat",
-    "effect": "All targets in the burst, including the user, gain a Coat which grants them 1 Step of Resistance to Fire Type Moves. After a target has been hit by a damaging Fire Type Move, the coat is removed."
+    "effect": "All targets in the burst, including the user, gain a Coat which grants them 1 Step of Resistance to Fire Type Moves. After a target has been hit by a damaging Fire Type Move, the coat is removed.",
+    "special": "Grants Fountain"
   },
   "Water Spout": {
     "name": "Water Spout",

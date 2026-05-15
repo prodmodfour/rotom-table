@@ -68,6 +68,13 @@ describe('refLinks helpers', () => {
     expect(tooltip?.sections[0]).toEqual({ heading: 'Effect', body: 'The target is pushed 2 Meters.' })
   })
 
+  it('includes move special sections in tooltips', () => {
+    expect(getRefTooltipDetail('move', 'Ember')?.sections).toContainEqual({
+      heading: 'Special',
+      body: 'Grants Firestarter',
+    })
+  })
+
   it('builds maneuver tooltip metadata and effect sections', () => {
     const tooltip = getRefTooltipDetail('maneuver', 'Grapple')
 
