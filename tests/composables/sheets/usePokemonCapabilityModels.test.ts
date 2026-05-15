@@ -86,6 +86,28 @@ describe('usePokemonCapabilityModels', () => {
     expect(capabilities.levitate.value).toBe(6)
   })
 
+  it('displays move-granted movement capabilities as effective editable values', () => {
+    const sheet = ref<CharacterSheet | null>(makeSheet({
+      species: 'Abra',
+      capabilities: {},
+      movelist: [{ name: 'Dig' }, { name: 'Fly' }, { name: 'Strength' }, { name: 'Bounce' }],
+    }))
+    const capabilities = usePokemonCapabilityModels(sheet)
+
+    expect(capabilities.burrow.value).toBe(3)
+    expect(capabilities.sky.value).toBe(3)
+    expect(capabilities.power.value).toBe(2)
+    expect(capabilities.jump.value).toBe('1/2')
+
+    capabilities.burrow.value = 5
+    capabilities.jump.value = '3/4'
+
+    expect(sheet.value?.capabilities?.burrow).toBe(2)
+    expect(sheet.value?.capabilities?.jump).toBe('3/3')
+    expect(capabilities.burrow.value).toBe(5)
+    expect(capabilities.jump.value).toBe('3/4')
+  })
+
   it('parses Naturewalk defaults from Pokédex capability labels', () => {
     expect(pokedexNaturewalkDefault(getPokedexEntry('Pikachu'))).toBe('Forest, Urban')
     expect(pokedexNaturewalkDefault(getPokedexEntry('Miltank'))).toBeUndefined()

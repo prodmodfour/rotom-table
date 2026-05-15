@@ -1,8 +1,15 @@
 import type { CharacterSheetCapabilities } from '~/types/characterSheet'
 import type { PokedexRecord } from '~/types/pokemon'
+import type { ValuedOtherCapabilityBonus } from '~/utils/sheets/pokemonMoveGrantedCapabilities'
 
 const NATUREWALK_PATTERN = /^Naturewalk\s*\(([^)]*)\)\s*$/i
 const TRAILING_CAPABILITY_VALUE_PATTERN = /\s+\d+(?:\/\d+)?\s*$/
+const TRAILING_SINGLE_VALUE_PATTERN = /^(.+?)\s+(\d+)\s*$/
+
+export interface AdditionalOtherCapabilityDefaults {
+  other?: readonly string[] | null
+  valuedBonuses?: readonly ValuedOtherCapabilityBonus[] | null
+}
 
 export const normalizeCapabilityLabel = (capability: string): string =>
   capability.trim().replace(/\s+/g, ' ')
@@ -36,6 +43,68 @@ const uniqueNormalizedOtherCapabilities = (
   capabilities: readonly string[] | null | undefined,
 ): string[] => uniqueNormalizedCapabilities(capabilities)
   .filter((capability) => !isNaturewalkCapability(capability))
+
+const parseCapabilitySingleValue = (capability: string): { label: string; value: number } | null => {
+  const match = TRAILING_SINGLE_VALUE_PATTERN.exec(normalizeCapabilityLabel(capability))
+  if (!match) return null
+  const value = Number.parseInt(match[2] ?? '', 10)
+  if (!Number.isFinite(value)) return null
+  return { label: normalizeCapabilityLabel(match[1] ?? ''), value }
+}
+
+const formatCapabilitySingleValue = (label: string, value: number): string =>
+  `${normalizeCapabilityLabel(label)} ${value}`
+
+const applyValuedOtherCapabilityBonuses = (
+  capabilities: readonly string[],
+  bonuses: readonly ValuedOtherCapabilityBonus[] | null | undefined,
+): string[] => {
+  const next = uniqueNormalizedOtherCapabilities(capabilities)
+  for (const bonus of bonuses ?? []) {
+    if (bonus.bonus <= 0) continue
+    const bonusIdentity = capabilityIdentityKey(bonus.capability)
+    const existingIndex = next.findIndex((capability) => capabilityIdentityKey(capability) === bonusIdentity)
+    if (existingIndex === -1) {
+      next.push(formatCapabilitySingleValue(bonus.capability, bonus.bonus))
+      continue
+    }
+
+    const existing = next[existingIndex]!
+    const parsed = parseCapabilitySingleValue(existing)
+    const label = parsed?.label ?? existing
+    const baseValue = parsed?.value ?? 0
+    next[existingIndex] = formatCapabilitySingleValue(label, baseValue + bonus.bonus)
+  }
+  return next
+}
+
+const removeValuedOtherCapabilityBonusesForStorage = (
+  capabilities: readonly string[] | null | undefined,
+  bonuses: readonly ValuedOtherCapabilityBonus[] | null | undefined,
+): string[] => {
+  let next = uniqueNormalizedOtherCapabilities(capabilities)
+  for (const bonus of bonuses ?? []) {
+    if (bonus.bonus <= 0) continue
+    const bonusIdentity = capabilityIdentityKey(bonus.capability)
+    next = next.flatMap((capability) => {
+      if (capabilityIdentityKey(capability) !== bonusIdentity) return [capability]
+      const parsed = parseCapabilitySingleValue(capability)
+      if (!parsed) return [capability]
+      const baseValue = parsed.value - bonus.bonus
+      return baseValue > 0 ? [formatCapabilitySingleValue(parsed.label, baseValue)] : []
+    })
+  }
+  return next
+}
+
+const removeAutomaticOtherCapabilitiesForStorage = (
+  capabilities: readonly string[] | null | undefined,
+  automaticCapabilities: readonly string[] | null | undefined,
+): string[] => {
+  const automaticExactKeys = new Set(uniqueNormalizedOtherCapabilities(automaticCapabilities).map(capabilityExactKey))
+  return uniqueNormalizedOtherCapabilities(capabilities)
+    .filter((capability) => !automaticExactKeys.has(capabilityExactKey(capability)))
+}
 
 const naturewalkValueFromCapabilities = (
   capabilities: readonly string[] | null | undefined,
@@ -84,16 +153,32 @@ export const mergeDefaultCapabilities = (
 export const removeDefaultCapabilitiesForStorage = (
   capabilities: readonly string[] | null | undefined,
   defaults: readonly string[] | null | undefined,
+  additionalDefaults: AdditionalOtherCapabilityDefaults = {},
 ): string[] => {
+  const withoutValuedBonuses = removeValuedOtherCapabilityBonusesForStorage(
+    capabilities,
+    additionalDefaults.valuedBonuses,
+  )
+  const withoutAutomatic = removeAutomaticOtherCapabilitiesForStorage(
+    withoutValuedBonuses,
+    additionalDefaults.other,
+  )
   const defaultExactKeys = new Set(uniqueNormalizedOtherCapabilities(defaults).map(capabilityExactKey))
-  return uniqueNormalizedOtherCapabilities(capabilities)
+  return uniqueNormalizedOtherCapabilities(withoutAutomatic)
     .filter((capability) => !defaultExactKeys.has(capabilityExactKey(capability)))
 }
 
 export const resolvePokemonOtherCapabilities = (
   species: PokedexRecord | null | undefined,
   sheetCapabilities: CharacterSheetCapabilities | null | undefined,
-): string[] => mergeDefaultCapabilities(
-  pokedexOtherCapabilityDefaults(species),
-  uniqueNormalizedOtherCapabilities(sheetCapabilities?.other),
+  additionalDefaults: AdditionalOtherCapabilityDefaults = {},
+): string[] => applyValuedOtherCapabilityBonuses(
+  mergeDefaultCapabilities(
+    mergeDefaultCapabilities(
+      pokedexOtherCapabilityDefaults(species),
+      uniqueNormalizedOtherCapabilities(sheetCapabilities?.other),
+    ),
+    uniqueNormalizedOtherCapabilities(additionalDefaults.other),
+  ),
+  additionalDefaults.valuedBonuses,
 )

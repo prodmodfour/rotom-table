@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildTokenMoveMenuOptions, trainerMoveEntriesForSheet } from '~/utils/mapTokenMoves'
+import { buildTokenMoveMenuOptions, pokemonMoveEntriesForSheet, trainerMoveEntriesForSheet } from '~/utils/mapTokenMoves'
 import type { CombatStageMap } from '~/types/combatStages'
 import type { SpawnedPokemon } from '~/types/pokemon'
 
@@ -110,6 +110,23 @@ describe('map token move menu options', () => {
       { move: { name: 'Struggle (Zapper)' }, automatic: true },
       { move: { name: 'Tackle' }, automatic: false },
     ])
+  })
+
+  it('auto-adds Pokémon Struggle variants from move-granted capabilities', () => {
+    const entries = pokemonMoveEntriesForSheet({
+      slug: 'abra',
+      nickname: 'Abra',
+      species: 'Abra',
+      level: 1,
+      movelist: [{ name: 'Ember' }],
+      capabilities: { other: [] },
+    })
+
+    expect(entries).toEqual(expect.arrayContaining([
+      { move: { name: 'Struggle' }, automatic: true },
+      { move: { name: 'Struggle (Firestarter)' }, automatic: true },
+      { move: { name: 'Ember' }, automatic: false },
+    ]))
   })
 
   it('auto-adds both physical and special Guster Struggle entries', () => {

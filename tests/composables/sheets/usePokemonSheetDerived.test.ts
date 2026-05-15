@@ -45,6 +45,20 @@ describe('usePokemonSheetDerived', () => {
     })
   })
 
+  it('uses move-granted capabilities when choosing automatic Struggle variants', () => {
+    const sheet = ref<CharacterSheet | null>(makeSheet({
+      species: 'Abra',
+      movelist: [{ name: 'Ember' }],
+      capabilities: { other: [] },
+    }))
+    const derived = usePokemonSheetDerived(sheet)
+
+    expect(derived.moveRows.value).toEqual(expect.arrayContaining([
+      expect.objectContaining({ move: { name: 'Struggle (Firestarter)' }, automatic: true }),
+      expect.objectContaining({ move: { name: 'Ember' }, automatic: false }),
+    ]))
+  })
+
   it('clamps current HP and accounts for Bright Powder evasion', () => {
     const sheet = ref<CharacterSheet | null>(makeSheet())
     const derived = usePokemonSheetDerived(sheet)

@@ -7,6 +7,7 @@ import {
   removeDefaultCapabilitiesForStorage,
   resolvePokemonOtherCapabilities,
 } from '~/utils/sheets/pokemonCapabilities'
+import { resolveMoveGrantedCapabilities } from '~/utils/sheets/pokemonMoveGrantedCapabilities'
 
 export interface PokemonSheetCsvFieldSources {
   sheet: Readonly<Ref<CharacterSheet | null>>
@@ -45,14 +46,24 @@ export function usePokemonSheetCsvFields({
   })
 
   const species = computed(() => (sheet.value ? getPokedexEntry(sheet.value.species) : null))
+  const moveGrantedCapabilities = computed(() => resolveMoveGrantedCapabilities(sheet.value?.movelist))
+  const moveGrantedOtherDefaults = computed(() => ({
+    other: moveGrantedCapabilities.value.other,
+    valuedBonuses: moveGrantedCapabilities.value.valuedOtherBonuses,
+  }))
 
   const otherCapsCsv = computed<string>({
-    get: () => formatCsvList(resolvePokemonOtherCapabilities(species.value, sheet.value?.capabilities)),
+    get: () => formatCsvList(resolvePokemonOtherCapabilities(
+      species.value,
+      sheet.value?.capabilities,
+      moveGrantedOtherDefaults.value,
+    )),
     set: (raw) => {
       if (!sheet.value) return
       ensureCapabilities(sheet.value).other = removeDefaultCapabilitiesForStorage(
         parseCsvList(raw),
         pokedexOtherCapabilityDefaults(species.value),
+        moveGrantedOtherDefaults.value,
       )
     },
   })

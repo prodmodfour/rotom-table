@@ -17,7 +17,6 @@ import {
   resolveStats,
   validateBaseRelations,
 } from '~/utils/sheets/pokemonDerived'
-import { resolvePokemonOtherCapabilities } from '~/utils/sheets/pokemonCapabilities'
 import { computeSheetAbilityEvasionBonus } from '~/utils/sheetAbilityActivation'
 import {
   computeSheetAbilityAwareMultiplier,
@@ -175,9 +174,7 @@ export function usePokemonSheetDerived(sheet: PokemonSheetRef) {
   const attackTotal = computed(() => totalForStat(stats.value, 'atk'))
   const specialAttackTotal = computed(() => totalForStat(stats.value, 'satk'))
 
-  const struggleCapabilityNames = computed(() =>
-    resolvePokemonOtherCapabilities(species.value, sheet.value?.capabilities),
-  )
+  const struggleCapabilityNames = computed(() => capabilities.value.other)
 
   const automaticStruggleMoves = computed(() =>
     makeAutomaticStruggleMoves(struggleCapabilityNames.value, sheet.value?.movelist),

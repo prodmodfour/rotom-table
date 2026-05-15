@@ -86,4 +86,26 @@ describe('pokemon sheet derived helpers', () => {
       capabilities: { levitate: 5 },
     })).rows).toContainEqual({ label: 'Levitate', value: 7 })
   })
+
+  it('adds capabilities granted by known moves', () => {
+    const resolved = resolveCapabilities(makeAbraSheet({
+      movelist: [
+        { name: 'Ember' },
+        { name: 'Dig' },
+        { name: 'Fly' },
+        { name: 'Strength' },
+        { name: 'Bounce' },
+        { name: 'Splash' },
+        { name: 'Teleport' },
+      ],
+    }))
+
+    expect(resolved.rows).toEqual(expect.arrayContaining([
+      { label: 'Sky', value: 3 },
+      { label: 'Burrow', value: 3 },
+      { label: 'Jump', value: '2/2' },
+      { label: 'Power', value: 2 },
+    ]))
+    expect(resolved.other).toEqual(expect.arrayContaining(['Firestarter', 'Teleporter 6']))
+  })
 })

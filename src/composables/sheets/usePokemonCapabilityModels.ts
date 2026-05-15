@@ -8,12 +8,24 @@ import {
   resolveLevitateAbilitySpeed,
 } from '~/utils/sheetPassiveAbilityEffects'
 import { pokedexNaturewalkDefault, resolvePokemonNaturewalk } from '~/utils/sheets/pokemonCapabilities'
+import {
+  applyJumpCapabilityBonuses,
+  applyNumberedCapabilityBonus,
+  removeJumpCapabilityBonusesForStorage,
+  removeNumberedCapabilityBonusForStorage,
+  resolveMoveGrantedCapabilities,
+} from '~/utils/sheets/pokemonMoveGrantedCapabilities'
 
 export { pokedexNaturewalkDefault } from '~/utils/sheets/pokemonCapabilities'
 
 export type PokemonSheetRef = Ref<CharacterSheet | null> | ComputedRef<CharacterSheet | null>
 
 export type PokemonCapabilityModelKey = Exclude<keyof CharacterSheetCapabilities, 'other'>
+
+type NumberedMoveCapabilityModelKey = Extract<
+  PokemonCapabilityModelKey,
+  'overland' | 'sky' | 'swim' | 'levitate' | 'burrow' | 'power'
+>
 
 type CapabilityModelValue<K extends PokemonCapabilityModelKey> = CharacterSheetCapabilities[K]
 
@@ -32,6 +44,7 @@ const ensureCapabilities = (sheet: CharacterSheet): CharacterSheetCapabilities =
  */
 export function usePokemonCapabilityModels(sheet: PokemonSheetRef) {
   const species = computed(() => (sheet.value ? getPokedexEntry(sheet.value.species) : null))
+  const moveGrantedCapabilities = computed(() => resolveMoveGrantedCapabilities(sheet.value?.movelist))
 
   const capabilityModel = <K extends PokemonCapabilityModelKey>(
     key: K,
@@ -44,7 +57,38 @@ export function usePokemonCapabilityModels(sheet: PokemonSheetRef) {
     },
   })
 
-  const baseLevitate = capabilityModel('levitate', () => species.value?.capabilities?.levitate)
+  const numberedCapabilityModel = <K extends NumberedMoveCapabilityModelKey>(
+    key: K,
+    speciesDefault: () => number | undefined,
+  ): WritableComputedRef<number | undefined> => computed({
+    get: () => applyNumberedCapabilityBonus(
+      sheet.value?.capabilities?.[key] ?? speciesDefault(),
+      moveGrantedCapabilities.value.numberedBonuses[key],
+    ),
+    set: (value) => {
+      if (!sheet.value) return
+      ensureCapabilities(sheet.value)[key] = removeNumberedCapabilityBonusForStorage(
+        value,
+        moveGrantedCapabilities.value.numberedBonuses[key],
+      ) as CharacterSheetCapabilities[K]
+    },
+  })
+
+  const jump: WritableComputedRef<string | undefined> = computed({
+    get: () => applyJumpCapabilityBonuses(
+      sheet.value?.capabilities?.jump ?? species.value?.capabilities?.jump,
+      moveGrantedCapabilities.value.jumpBonuses,
+    ),
+    set: (value) => {
+      if (!sheet.value) return
+      ensureCapabilities(sheet.value).jump = removeJumpCapabilityBonusesForStorage(
+        value,
+        moveGrantedCapabilities.value.jumpBonuses,
+      )
+    },
+  })
+
+  const baseLevitate = numberedCapabilityModel('levitate', () => species.value?.capabilities?.levitate)
   const levitateAbilityApplied = computed(() => hasLevitateAbility(sheet.value?.abilities))
   const effectiveLevitate = computed(() => resolveLevitateAbilitySpeed(baseLevitate.value, sheet.value?.abilities))
   const levitate: WritableComputedRef<number | undefined> = computed({
@@ -61,15 +105,15 @@ export function usePokemonCapabilityModels(sheet: PokemonSheetRef) {
   })
 
   return {
-    overland: capabilityModel('overland', () => species.value?.capabilities?.overland),
-    sky: capabilityModel('sky', () => species.value?.capabilities?.sky),
-    swim: capabilityModel('swim', () => species.value?.capabilities?.swim),
+    overland: numberedCapabilityModel('overland', () => species.value?.capabilities?.overland),
+    sky: numberedCapabilityModel('sky', () => species.value?.capabilities?.sky),
+    swim: numberedCapabilityModel('swim', () => species.value?.capabilities?.swim),
     levitate,
     effectiveLevitate,
     levitateAbilityApplied,
-    burrow: capabilityModel('burrow', () => species.value?.capabilities?.burrow),
-    jump: capabilityModel('jump', () => species.value?.capabilities?.jump),
-    power: capabilityModel('power', () => species.value?.capabilities?.power),
+    burrow: numberedCapabilityModel('burrow', () => species.value?.capabilities?.burrow),
+    jump,
+    power: numberedCapabilityModel('power', () => species.value?.capabilities?.power),
     weight: capabilityModel('weight', () => species.value?.weight),
     size: capabilityModel('size', () => species.value?.size),
     naturewalk: capabilityModel('naturewalk', () => resolvePokemonNaturewalk(species.value, sheet.value?.capabilities)),

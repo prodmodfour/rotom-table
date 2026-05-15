@@ -35,4 +35,32 @@ describe('pokemon capability list helpers', () => {
       ['Teleporter 2', 'Underdog'],
     )).toEqual(['Teleporter 4', 'Custom Sense'])
   })
+
+  it('layers move-granted Other capabilities without storing automatic grants', () => {
+    const species = getPokedexEntry('Abra')
+    const moveDefaults = {
+      other: ['Firestarter'],
+      valuedBonuses: [{ capability: 'Teleporter', bonus: 4 }],
+    }
+
+    expect(resolvePokemonOtherCapabilities(species, undefined, moveDefaults)).toEqual([
+      'Teleporter 6',
+      'Telekinetic',
+      'Telepath',
+      'Underdog',
+      'Firestarter',
+    ])
+
+    expect(removeDefaultCapabilitiesForStorage(
+      ['Teleporter 6', 'Firestarter', 'Custom Sense'],
+      pokedexOtherCapabilityDefaults(species),
+      moveDefaults,
+    )).toEqual(['Custom Sense'])
+
+    expect(removeDefaultCapabilitiesForStorage(
+      ['Teleporter 8', 'Firestarter', 'Custom Sense'],
+      pokedexOtherCapabilityDefaults(species),
+      moveDefaults,
+    )).toEqual(['Teleporter 4', 'Custom Sense'])
+  })
 })

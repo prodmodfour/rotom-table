@@ -59,6 +59,29 @@ describe('usePokemonSheetCsvFields', () => {
     expect(fields.eggGroupsAsCsv.value).toBe('Water 1')
   })
 
+  it('shows move-granted Other capabilities without storing automatic entries', () => {
+    const sheet = ref<CharacterSheet | null>({
+      slug: 'abra',
+      species: 'Abra',
+      nickname: 'Abra',
+      level: 5,
+      movelist: [{ name: 'Ember' }, { name: 'Teleport' }],
+      capabilities: { other: [] },
+    })
+    const fields = usePokemonSheetCsvFields({
+      sheet,
+      sheetTypes: computed(() => []),
+      eggGroups: computed(() => []),
+    })
+
+    expect(fields.otherCapsCsv.value).toBe('Teleporter 6, Telekinetic, Telepath, Underdog, Firestarter')
+
+    fields.otherCapsCsv.value = 'Teleporter 8, Firestarter, Custom Sense'
+
+    expect(sheet.value?.capabilities?.other).toEqual(['Teleporter 4', 'Custom Sense'])
+    expect(fields.otherCapsCsv.value).toBe('Telekinetic, Telepath, Underdog, Teleporter 8, Custom Sense, Firestarter')
+  })
+
   it('clears optional arrays consistently and is inert without a sheet', () => {
     const sheet = ref<CharacterSheet | null>(makeSheet())
     const fields = usePokemonSheetCsvFields({

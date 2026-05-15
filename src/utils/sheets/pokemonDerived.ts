@@ -7,6 +7,11 @@ import {
   resolvePokemonNaturewalk,
   resolvePokemonOtherCapabilities,
 } from '~/utils/sheets/pokemonCapabilities'
+import {
+  applyJumpCapabilityBonuses,
+  applyNumberedCapabilityBonus,
+  resolveMoveGrantedCapabilities,
+} from '~/utils/sheets/pokemonMoveGrantedCapabilities'
 
 // Maps a PTU "Skill" name (as stored in pokedex.json) to the camelCase key on
 // CharacterSheetSkills, so species defaults (e.g. ``"Athletics": "3d6+1"``)
@@ -209,18 +214,40 @@ export const resolveCapabilities = (sheet: CharacterSheet) => {
   const species = getPokedexEntry(sheet.species)
   const speciesCaps = species?.capabilities ?? {}
   const sheetCaps = sheet.capabilities ?? {}
+  const moveGrantedCapabilities = resolveMoveGrantedCapabilities(sheet.movelist)
 
-  const baseLevitate = sheetCaps.levitate ?? speciesCaps.levitate
+  const baseLevitate = applyNumberedCapabilityBonus(
+    sheetCaps.levitate ?? speciesCaps.levitate,
+    moveGrantedCapabilities.numberedBonuses.levitate,
+  )
   const effectiveLevitate = resolveLevitateAbilitySpeed(baseLevitate, sheet.abilities)
 
   const numbered: Array<[string, number | string | undefined]> = [
-    ['Overland', sheetCaps.overland ?? speciesCaps.overland],
-    ['Sky',      sheetCaps.sky      ?? speciesCaps.sky],
-    ['Swim',     sheetCaps.swim     ?? speciesCaps.swim],
+    ['Overland', applyNumberedCapabilityBonus(
+      sheetCaps.overland ?? speciesCaps.overland,
+      moveGrantedCapabilities.numberedBonuses.overland,
+    )],
+    ['Sky',      applyNumberedCapabilityBonus(
+      sheetCaps.sky      ?? speciesCaps.sky,
+      moveGrantedCapabilities.numberedBonuses.sky,
+    )],
+    ['Swim',     applyNumberedCapabilityBonus(
+      sheetCaps.swim     ?? speciesCaps.swim,
+      moveGrantedCapabilities.numberedBonuses.swim,
+    )],
     ['Levitate', effectiveLevitate],
-    ['Burrow',   sheetCaps.burrow   ?? speciesCaps.burrow],
-    ['Jump',     sheetCaps.jump     ?? speciesCaps.jump],
-    ['Power',    sheetCaps.power    ?? speciesCaps.power],
+    ['Burrow',   applyNumberedCapabilityBonus(
+      sheetCaps.burrow   ?? speciesCaps.burrow,
+      moveGrantedCapabilities.numberedBonuses.burrow,
+    )],
+    ['Jump',     applyJumpCapabilityBonuses(
+      sheetCaps.jump     ?? speciesCaps.jump,
+      moveGrantedCapabilities.jumpBonuses,
+    )],
+    ['Power',    applyNumberedCapabilityBonus(
+      sheetCaps.power    ?? speciesCaps.power,
+      moveGrantedCapabilities.numberedBonuses.power,
+    )],
     ['Weight',   sheetCaps.weight   ?? species?.weight],
     ['Size',     sheetCaps.size     ?? species?.size],
   ]
@@ -232,6 +259,9 @@ export const resolveCapabilities = (sheet: CharacterSheet) => {
   }
 
   const naturewalk = resolvePokemonNaturewalk(species, sheetCaps)
-  const other = resolvePokemonOtherCapabilities(species, sheetCaps)
+  const other = resolvePokemonOtherCapabilities(species, sheetCaps, {
+    other: moveGrantedCapabilities.other,
+    valuedBonuses: moveGrantedCapabilities.valuedOtherBonuses,
+  })
   return { rows, naturewalk, other }
 }

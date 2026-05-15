@@ -1,5 +1,6 @@
 import { getPokedexEntry } from '~~/data/characterSheets'
 import { resolvePokemonOtherCapabilities } from '~/utils/sheets/pokemonCapabilities'
+import { resolveMoveGrantedCapabilities } from '~/utils/sheets/pokemonMoveGrantedCapabilities'
 import { makeAutomaticStruggleMoves } from '~/utils/struggleMoves'
 import { makeMoveLookupRows, type MoveLookupRow } from '~/utils/sheetMoveLookup'
 import type { CharacterSheet, CharacterSheetMove } from '~/types/characterSheet'
@@ -47,7 +48,11 @@ export interface TokenMoveMenuOption {
 
 const pokemonStruggleCapabilities = (sheet: CharacterSheet): string[] => {
   const species = getPokedexEntry(sheet.species)
-  return resolvePokemonOtherCapabilities(species, sheet.capabilities)
+  const moveGrantedCapabilities = resolveMoveGrantedCapabilities(sheet.movelist)
+  return resolvePokemonOtherCapabilities(species, sheet.capabilities, {
+    other: moveGrantedCapabilities.other,
+    valuedBonuses: moveGrantedCapabilities.valuedOtherBonuses,
+  })
 }
 
 const trainerStruggleCapabilities = (sheet: TrainerSheet): string[] => [
