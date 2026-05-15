@@ -56,6 +56,7 @@ export interface TokenActionControllerEmitters {
   modifyCombatStages: (payload: { id: string; stages: CombatStageMap }) => void
   modifyConditions: (payload: { id: string; conditions: string[] }) => void
   useMove: (payload: { id: string; moveName?: string | null }) => void
+  sendOutPokemon?: (payload: { trainerId: string; pokemonSlug: string }) => void
   viewSheet: (id: string) => void
   viewPokedex: (id: string) => void
 }
@@ -65,6 +66,7 @@ export interface TokenActionControllerOptions<TContainer extends BoundsProvider 
   pokemons: () => readonly SpawnedPokemon[]
   canDeleteTokens: () => boolean | undefined
   canControlPokemon: (id: string | null | undefined) => boolean
+  getSendOutOptionCount?: (id: string) => number
   emit: TokenActionControllerEmitters
 }
 
@@ -141,6 +143,7 @@ export const useTokenActionController = <TContainer extends BoundsProvider>(
       clientY: event.clientY,
       bounds,
       canDeleteTokens: options.canDeleteTokens(),
+      canSendOut: (options.getSendOutOptionCount?.(id) ?? 0) > 0,
     })
   }
 
@@ -280,6 +283,15 @@ export const useTokenActionController = <TContainer extends BoundsProvider>(
     closeContextMenu()
   }
 
+  const handleContextSendOutPokemon = (pokemonSlug: string) => {
+    const id = controllableContextId()
+    if (!id || !options.emit.sendOutPokemon) return
+    if ((options.getSendOutOptionCount?.(id) ?? 0) <= 0) return
+
+    options.emit.sendOutPokemon({ trainerId: id, pokemonSlug })
+    closeContextMenu()
+  }
+
   const handleContextViewSheet = () => {
     const id = controllableContextId()
     if (!id) return
@@ -408,6 +420,7 @@ export const useTokenActionController = <TContainer extends BoundsProvider>(
     closeConditionsDialog,
     handleConditionsDialogSubmit,
     handleContextUseMove,
+    handleContextSendOutPokemon,
     handleContextViewSheet,
     handleContextViewPokedex,
     handleContextDealDamage,

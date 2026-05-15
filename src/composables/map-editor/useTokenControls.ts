@@ -1,5 +1,5 @@
 import { computed, ref, watch, type ComputedRef, type Ref } from 'vue'
-import { findFirstAvailablePosition } from '~/utils/gridPlacement'
+import { canPlacePokemon, findFirstAvailablePosition } from '~/utils/gridPlacement'
 import type { PreviewState } from '~/utils/gridPreview'
 import { buildMapOccupancy } from '~/utils/mapOccupancy'
 import { pokedexEntryPathForSpecies } from '~/utils/pokedex/routes'
@@ -14,6 +14,11 @@ import {
   catalogEntryForTrainerSheet,
 } from '~/utils/sheetSpawn'
 import { sheetEditorPath } from '~/utils/sheetRoutes'
+import {
+  buildTokenSendOutOptionsByPlacementId,
+  isSendOutPositionWithinThrowRange,
+  POKEBALL_THROW_RANGE_SQUARES,
+} from '~/utils/mapTokenSendOut'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { GridAnchor, MapVoxelV2, SheetPlacement, TabletopMap } from '~/types/map'
 import type { SpawnedPokemon } from '~/types/pokemon'
@@ -94,6 +99,11 @@ export const useTokenControls = ({
   const controllablePlacementIdSet = computed(() => new Set(controllablePlacementIds.value))
   const canControlPlacement = (id: string): boolean => controllablePlacementIdSet.value.has(id)
   const placementById = (id: string) => map.value?.placements.find((placement) => placement.id === id) ?? null
+  const tokenSendOutOptionsById = computed(() => buildTokenSendOutOptionsByPlacementId(
+    map.value?.placements ?? [],
+    sheetLookup.value,
+    canSpawnTokens.value,
+  ))
 
   const resetPreview = () => {
     previewState.value = emptyPreviewState()
@@ -133,6 +143,45 @@ export const useTokenControls = ({
       sheetKind: selection.kind,
       sheetSlug: selection.sheet.slug,
       position,
+      turned: false,
+    })
+    clearSelection()
+  }
+
+  const sendOutPokemon = (payload: { trainerId: string; pokemonSlug: string; position: GridAnchor }) => {
+    if (!map.value || !canSpawnTokens.value || !canControlPlacement(payload.trainerId)) return
+
+    const trainerPlacement = placementById(payload.trainerId)
+    if (trainerPlacement?.sheetKind !== 'trainer') return
+
+    const trainer = spawnedPokemon.value.find((pokemon) => pokemon.id === payload.trainerId)
+    const option = tokenSendOutOptionsById.value[payload.trainerId]
+      ?.find((entry) => entry.pokemonSlug === payload.pokemonSlug)
+    if (!trainer || !option) return
+
+    const occupiedKeys = buildMapOccupancy({
+      voxels: mapVoxels.value,
+    })
+    if (!canPlacePokemon(
+      option.preview,
+      payload.position,
+      spawnedPokemon.value,
+      map.value.dimensions,
+      null,
+      occupiedKeys,
+    )) return
+    if (!isSendOutPositionWithinThrowRange({
+      trainer,
+      pokemon: option.preview,
+      position: payload.position,
+      range: POKEBALL_THROW_RANGE_SQUARES,
+    })) return
+
+    map.value.placements.push({
+      id: createPlacementId(),
+      sheetKind: 'pokemon',
+      sheetSlug: payload.pokemonSlug,
+      position: payload.position,
       turned: false,
     })
     clearSelection()
@@ -180,12 +229,14 @@ export const useTokenControls = ({
     sheetLookup,
     spawnedPokemon,
     controllablePlacementIds,
+    tokenSendOutOptionsById,
     canControlPlacement,
     placementById,
     resetPreview,
     clearSelection,
     updatePreview,
     spawnSheet,
+    sendOutPokemon,
     selectPlacement,
     deletePlacement,
     turnPlacement,

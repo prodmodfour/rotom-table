@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import * as THREE from 'three'
 import TokenActionDialogs from '~/components/isometric/TokenActionDialogs.vue'
 import TokenContextMenu from '~/components/isometric/TokenContextMenu.vue'
@@ -23,6 +23,10 @@ import { normalizeMapFieldEffects } from '~/utils/mapFieldEffects'
 import type { CombatStageMap } from '~/types/combatStages'
 import type { BuildTool } from '#shared/mapEditor'
 import type { TokenMoveMenuOption } from '~/utils/mapTokenMoves'
+import {
+  POKEBALL_THROW_RANGE_SQUARES,
+  type TokenSendOutOption,
+} from '~/utils/mapTokenSendOut'
 import {
   DEFAULT_FACING_DIRECTION,
   alignCameraToGrid as alignIsometricCameraToGrid,
@@ -61,6 +65,7 @@ import {
   resolveIsometricLayerVisibility,
 } from '~/utils/isometric/sceneState'
 import { createIsometricTokenMovementInteractionController } from '~/utils/isometric/tokenMovementInteraction'
+import { createIsometricTokenSendOutInteractionController } from '~/utils/isometric/tokenSendOutInteraction'
 import {
   applyPokemonRenderObjectPosition,
   createPokemonRenderObject,
@@ -116,6 +121,7 @@ const props = defineProps<{
   hazardKind?: MapHazardKind
   canDeleteTokens?: boolean
   tokenMoveOptionsById?: Record<string, TokenMoveMenuOption[]>
+  tokenSendOutOptionsById?: Record<string, TokenSendOutOption[]>
 }>()
 
 const emit = defineEmits<{
@@ -127,6 +133,7 @@ const emit = defineEmits<{
   (event: 'modify-combat-stages', payload: { id: string; stages: CombatStageMap }): void
   (event: 'modify-conditions', payload: { id: string; conditions: string[] }): void
   (event: 'use-move', payload: { id: string; moveName?: string | null }): void
+  (event: 'send-out-pokemon', payload: { trainerId: string; pokemonSlug: string; position: GridAnchor }): void
   (event: 'view-sheet', id: string): void
   (event: 'view-pokedex', id: string): void
   (event: 'preview-change', preview: PreviewState): void
@@ -145,6 +152,40 @@ const container = ref<HTMLDivElement | null>(null)
 const controllableIdSet = computed(() => new Set(props.controllableIds ?? props.pokemons.map((pokemon) => pokemon.id)))
 const canControlPokemon = (id: string | null | undefined): id is string =>
   Boolean(id && controllableIdSet.value.has(id))
+
+const sendOutPlacement = ref<{ trainerId: string; pokemonSlug: string } | null>(null)
+const sendOutOptionsForToken = (id: string | null | undefined): TokenSendOutOption[] =>
+  id ? props.tokenSendOutOptionsById?.[id] ?? [] : []
+const findSendOutOption = (trainerId: string, pokemonSlug: string): TokenSendOutOption | null =>
+  sendOutOptionsForToken(trainerId).find((option) => option.pokemonSlug === pokemonSlug) ?? null
+const activeSendOutRequest = computed(() => {
+  const placement = sendOutPlacement.value
+  if (!placement || !canControlPokemon(placement.trainerId)) return null
+
+  const trainer = props.pokemons.find((pokemon) => pokemon.id === placement.trainerId)
+  const option = findSendOutOption(placement.trainerId, placement.pokemonSlug)
+  if (!trainer || !option) return null
+
+  return {
+    trainerId: placement.trainerId,
+    pokemonSlug: placement.pokemonSlug,
+    trainer,
+    pokemon: option.preview,
+    range: POKEBALL_THROW_RANGE_SQUARES,
+  }
+})
+
+const clearSendOutPlacement = () => {
+  sendOutPlacement.value = null
+}
+
+const beginSendOutPlacement = (payload: { trainerId: string; pokemonSlug: string }) => {
+  if (!canControlPokemon(payload.trainerId)) return
+  if (!findSendOutOption(payload.trainerId, payload.pokemonSlug)) return
+
+  sendOutPlacement.value = payload
+  emit('select-pokemon', null)
+}
 
 const {
   actionDialogs,
@@ -180,6 +221,7 @@ const {
   closeConditionsDialog,
   handleConditionsDialogSubmit,
   handleContextUseMove,
+  handleContextSendOutPokemon,
   handleContextViewSheet,
   handleContextViewPokedex,
   handleContextDealDamage,
@@ -194,6 +236,7 @@ const {
   pokemons: () => props.pokemons,
   canDeleteTokens: () => props.canDeleteTokens,
   canControlPokemon,
+  getSendOutOptionCount: (id) => sendOutOptionsForToken(id).length,
   emit: {
     turnPokemon: (id) => emit('turn-pokemon', id),
     deletePokemon: (id) => emit('delete-pokemon', id),
@@ -201,6 +244,7 @@ const {
     modifyCombatStages: (payload) => emit('modify-combat-stages', payload),
     modifyConditions: (payload) => emit('modify-conditions', payload),
     useMove: (payload) => emit('use-move', payload),
+    sendOutPokemon: beginSendOutPlacement,
     viewSheet: (id) => emit('view-sheet', id),
     viewPokedex: (id) => emit('view-pokedex', id),
   },
@@ -481,6 +525,20 @@ const ensurePreviewObjects = movementInteraction.ensurePreviewObjects
 const clearPreviewVisuals = movementInteraction.clearPreviewVisuals
 const updatePreviewFromPointer = movementInteraction.updatePreviewFromPointer
 
+const sendOutInteraction = createIsometricTokenSendOutInteractionController({
+  getActiveRequest: () => activeSendOutRequest.value,
+  getPokemons: () => props.pokemons,
+  getDimensions: () => props.dimensions,
+  getMapMovementOccupancy: () => mapMovementOccupancy.value,
+  getGroundLevelY: normalizedGroundLevelY,
+  getCamera: () => camera,
+  getMoveGridIntersection,
+  previewRenderer: tokenMovePreviewRenderer,
+  emitPreviewChange: (preview) => emit('preview-change', preview),
+  sendOutPokemon: (payload) => emit('send-out-pokemon', payload),
+  clearActiveRequest: clearSendOutPlacement,
+})
+
 const pickBuildTarget = (
   event: MouseEvent | PointerEvent,
   tool: BuildTool,
@@ -568,6 +626,11 @@ const pointerInteraction = createIsometricPointerInteractionController({
   updateMovePreviewFromPointer: updatePreviewFromPointer,
   performSelectedMove: movementInteraction.performSelectedMove,
   stepPreviewElevation: movementInteraction.stepPreviewElevation,
+  getPlacementModeActive: () => Boolean(activeSendOutRequest.value),
+  updatePlacementPreviewFromPointer: sendOutInteraction.updatePreviewFromPointer,
+  performPlacement: sendOutInteraction.performSendOut,
+  stepPlacementElevation: sendOutInteraction.stepPreviewElevation,
+  cancelPlacement: sendOutInteraction.cancel,
   performBuildAction,
   performHazardAction,
   hideBuildGhost,
@@ -589,6 +652,28 @@ const {
 
 useWindowKeydown(handleEscape)
 
+watch(activeSendOutRequest, (request) => {
+  if (controls) controls.enableZoom = !request && !selectedPokemon.value
+
+  if (!request) {
+    sendOutInteraction.clearPreviewVisuals()
+    if (sendOutPlacement.value) clearSendOutPlacement()
+    return
+  }
+
+  sendOutInteraction.resetForRequestChange()
+})
+
+watch([terrainVoxelRevision, () => props.dimensions], () => {
+  if (!activeSendOutRequest.value) return
+  sendOutInteraction.refreshAfterStateChange()
+})
+
+watch([() => props.buildMode, () => props.hazardMode], ([buildActive, hazardActive]) => {
+  if (!activeSendOutRequest.value || (!buildActive && !hazardActive)) return
+  sendOutInteraction.cancel()
+})
+
 const animate = () => {
   animationFrame = window.requestAnimationFrame(animate)
 
@@ -603,8 +688,8 @@ const animate = () => {
     controls,
     fieldEffectRenderer,
     tokenMovePreviewRenderer,
-    selectedPokemon: selectedPokemon.value,
-    previewPositionY: movementInteraction.previewPositionY(),
+    selectedPokemon: sendOutInteraction.activePokemon() ?? selectedPokemon.value,
+    previewPositionY: activeSendOutRequest.value ? sendOutInteraction.previewPositionY() : movementInteraction.previewPositionY(),
     camera,
     renderer,
     cssRenderer,
@@ -719,7 +804,7 @@ useIsometricSceneWatchers({
     refreshPokemonStyles,
     updateGridVisibility,
     setControlsZoomEnabled: (enabled) => {
-      if (controls) controls.enableZoom = enabled
+      if (controls) controls.enableZoom = enabled && !activeSendOutRequest.value
     },
     clearPreviewVisuals,
     closeContextMenu,
@@ -745,6 +830,7 @@ useIsometricSceneWatchers({
       :menu="contextMenu"
       :can-delete-tokens="props.canDeleteTokens"
       :moves="props.tokenMoveOptionsById?.[contextMenu.id] ?? []"
+      :send-out-options="sendOutOptionsForToken(contextMenu.id)"
       @view-sheet="handleContextViewSheet"
       @view-pokedex="handleContextViewPokedex"
       @turn="handleContextTurn"
@@ -752,6 +838,7 @@ useIsometricSceneWatchers({
       @modify-combat-stages="handleContextModifyCombatStages"
       @apply-remove-conditions="handleContextApplyRemoveConditions"
       @use-move="handleContextUseMove"
+      @send-out-pokemon="handleContextSendOutPokemon"
       @deal-damage="handleContextDealDamage"
       @delete="handleContextDelete"
     />

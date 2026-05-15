@@ -81,11 +81,13 @@ const {
   sheetLookup,
   spawnedPokemon,
   controllablePlacementIds,
+  tokenSendOutOptionsById,
   canControlPlacement,
   placementById,
   clearSelection,
   updatePreview,
   spawnSheet,
+  sendOutPokemon,
   selectPlacement,
   deletePlacement,
   turnPlacement,
@@ -409,6 +411,7 @@ useMapDimensionReconciliation({
         :move-automation-moves="moveAutomationMoves"
         :move-automation-initial-move-name="moveAutomationInitialMoveName"
         :token-move-options-by-id="tokenMoveOptionsById"
+        :token-send-out-options-by-id="tokenSendOutOptionsById"
         :can-apply-map-effects="canEditMap"
         @select-pokemon="selectPokemon"
         @move-pokemon="movePokemon"
@@ -418,6 +421,7 @@ useMapDimensionReconciliation({
         @modify-combat-stages="modifyCombatStages"
         @modify-conditions="modifyConditions"
         @use-move="openMoveAutomation"
+        @send-out-pokemon="sendOutPokemon"
         @view-sheet="viewSheet"
         @view-pokedex="viewPokedex"
         @preview-change="updatePreview"

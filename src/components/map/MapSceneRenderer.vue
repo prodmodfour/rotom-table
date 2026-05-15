@@ -16,6 +16,7 @@ import type {
 import type { SpawnedPokemon } from '~/types/pokemon'
 import type { PreviewState } from '~/utils/gridPreview'
 import type { TokenMoveMenuOption } from '~/utils/mapTokenMoves'
+import type { TokenSendOutOption } from '~/utils/mapTokenSendOut'
 
 interface IsometricGridHandle {
   focusPokemon: (id: string) => boolean
@@ -43,6 +44,7 @@ defineProps<{
   hazardKind: MapHazardKind
   canDeleteTokens: boolean
   tokenMoveOptionsById?: Record<string, TokenMoveMenuOption[]>
+  tokenSendOutOptionsById?: Record<string, TokenSendOutOption[]>
 }>()
 
 const emit = defineEmits<{
@@ -54,6 +56,7 @@ const emit = defineEmits<{
   (event: 'modify-combat-stages', payload: { id: string; stages: CombatStageMap }): void
   (event: 'modify-conditions', payload: { id: string; conditions: string[] }): void
   (event: 'use-move', payload: { id: string; moveName?: string | null }): void
+  (event: 'send-out-pokemon', payload: { trainerId: string; pokemonSlug: string; position: GridAnchor }): void
   (event: 'view-sheet', id: string): void
   (event: 'view-pokedex', id: string): void
   (event: 'preview-change', preview: PreviewState): void
@@ -94,6 +97,7 @@ defineExpose({ focusPokemon })
     :hazard-kind="hazardKind"
     :can-delete-tokens="canDeleteTokens"
     :token-move-options-by-id="tokenMoveOptionsById"
+    :token-send-out-options-by-id="tokenSendOutOptionsById"
     @select-pokemon="emit('select-pokemon', $event)"
     @move-pokemon="emit('move-pokemon', $event)"
     @turn-pokemon="emit('turn-pokemon', $event)"
@@ -102,6 +106,7 @@ defineExpose({ focusPokemon })
     @modify-combat-stages="emit('modify-combat-stages', $event)"
     @modify-conditions="emit('modify-conditions', $event)"
     @use-move="emit('use-move', $event)"
+    @send-out-pokemon="emit('send-out-pokemon', $event)"
     @view-sheet="emit('view-sheet', $event)"
     @view-pokedex="emit('view-pokedex', $event)"
     @preview-change="emit('preview-change', $event)"

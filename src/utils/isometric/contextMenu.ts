@@ -9,6 +9,7 @@ export interface TokenContextMenuState extends TokenContextMenuCapabilities {
   id: string
   x: number
   y: number
+  canSendOut?: boolean
 }
 
 export interface TokenContextMenuBounds {
@@ -23,6 +24,7 @@ export interface TokenContextMenuPositionOptions extends TokenContextMenuCapabil
   clientY: number
   bounds: TokenContextMenuBounds
   canDeleteTokens?: boolean
+  canSendOut?: boolean
 }
 
 export const TOKEN_CONTEXT_MENU_WIDTH = 230
@@ -50,10 +52,12 @@ export const getTokenContextMenuCapabilities = (pokemon: SpawnedPokemon): TokenC
 
 export const getTokenContextMenuButtonCount = (options: TokenContextMenuCapabilities & {
   canDeleteTokens?: boolean
+  canSendOut?: boolean
 }): number =>
   TOKEN_CONTEXT_MENU_BASE_BUTTONS +
   (options.canViewPokedex ? 1 : 0) +
   (options.canTurn ? 1 : 0) +
+  (options.canSendOut ? 1 : 0) +
   (options.canDeleteTokens ? 1 : 0)
 
 export const getTokenContextMenuHeight = (buttonCount: number): number =>
@@ -90,17 +94,20 @@ export const createTokenContextMenuState = (options: {
   clientY: number
   bounds: TokenContextMenuBounds
   canDeleteTokens?: boolean
+  canSendOut?: boolean
 }): TokenContextMenuState => {
   const capabilities = getTokenContextMenuCapabilities(options.pokemon)
   return {
     id: options.pokemon.id,
     ...capabilities,
+    ...(options.canSendOut ? { canSendOut: true } : {}),
     ...getTokenContextMenuPosition({
       ...capabilities,
       clientX: options.clientX,
       clientY: options.clientY,
       bounds: options.bounds,
       canDeleteTokens: options.canDeleteTokens,
+      canSendOut: options.canSendOut,
     }),
   }
 }

@@ -27,6 +27,11 @@ export interface IsometricPointerInteractionOptions {
   updateMovePreviewFromPointer: (event: PointerEvent) => void
   performSelectedMove: () => void
   stepPreviewElevation: (deltaY: number) => void
+  getPlacementModeActive?: () => boolean
+  updatePlacementPreviewFromPointer?: (event: PointerEvent) => void
+  performPlacement?: () => boolean | void
+  stepPlacementElevation?: (deltaY: number) => boolean | void
+  cancelPlacement?: () => boolean | void
   performBuildAction: (event: MouseEvent | PointerEvent, tool: BuildTool) => void
   performHazardAction: (event: MouseEvent | PointerEvent, tool: BuildTool) => void
   hideBuildGhost: () => void
@@ -59,6 +64,11 @@ export const createIsometricPointerInteractionController = ({
   updateMovePreviewFromPointer,
   performSelectedMove,
   stepPreviewElevation,
+  getPlacementModeActive = () => false,
+  updatePlacementPreviewFromPointer = () => {},
+  performPlacement = () => false,
+  stepPlacementElevation = () => false,
+  cancelPlacement = () => false,
   performBuildAction,
   performHazardAction,
   hideBuildGhost,
@@ -69,6 +79,12 @@ export const createIsometricPointerInteractionController = ({
 
   const handleLeftClick = (event: PointerEvent) => {
     closeContextMenu()
+
+    if (getPlacementModeActive()) {
+      performPlacement()
+      return
+    }
+
     const hitId = pickPokemonId(event)
     const selectedId = getSelectedId()
 
@@ -90,6 +106,11 @@ export const createIsometricPointerInteractionController = ({
 
   const handleRightClick = (event: MouseEvent) => {
     event.preventDefault()
+
+    if (getPlacementModeActive()) {
+      cancelPlacement()
+      return
+    }
 
     if (getBuildMode()) {
       if (pointerTracker.isClick()) {
@@ -125,6 +146,11 @@ export const createIsometricPointerInteractionController = ({
     lastPointerCoords = { clientX: event.clientX, clientY: event.clientY }
     updateHoverFromPointer(event)
 
+    if (getPlacementModeActive()) {
+      updatePlacementPreviewFromPointer(event)
+      return
+    }
+
     if (getBuildMode()) {
       updateBuildPreviewFromPointer(event)
       return
@@ -145,6 +171,13 @@ export const createIsometricPointerInteractionController = ({
   const handleWheel = (event: WheelEvent) => {
     const selectedPokemon = getSelectedPokemon()
 
+    if (getPlacementModeActive()) {
+      event.preventDefault()
+      event.stopPropagation()
+      stepPlacementElevation(event.deltaY)
+      return
+    }
+
     if (!selectedPokemon || !canControlPokemon(selectedPokemon.id)) {
       return
     }
@@ -157,6 +190,11 @@ export const createIsometricPointerInteractionController = ({
 
   const handlePointerUp = (event: PointerEvent) => {
     if (!pointerTracker.isClick() || event.button !== 0) {
+      return
+    }
+
+    if (getPlacementModeActive()) {
+      performPlacement()
       return
     }
 
@@ -190,6 +228,10 @@ export const createIsometricPointerInteractionController = ({
     }
 
     if (closeTopmostOverlay()) return
+    if (getPlacementModeActive()) {
+      cancelPlacement()
+      return
+    }
 
     selectPokemon(null)
   }

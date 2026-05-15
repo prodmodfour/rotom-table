@@ -3,11 +3,13 @@ import { computed, ref, watch } from 'vue'
 import { formatCombatStage } from '~/utils/combatStageStats'
 import type { TokenContextMenuState } from '~/utils/isometric/contextMenu'
 import type { TokenMoveMenuOption } from '~/utils/mapTokenMoves'
+import type { TokenSendOutOption } from '~/utils/mapTokenSendOut'
 
 const props = defineProps<{
   menu: TokenContextMenuState
   canDeleteTokens?: boolean
   moves?: TokenMoveMenuOption[]
+  sendOutOptions?: TokenSendOutOption[]
 }>()
 
 const emit = defineEmits<{
@@ -18,19 +20,23 @@ const emit = defineEmits<{
   (event: 'modify-combat-stages'): void
   (event: 'apply-remove-conditions'): void
   (event: 'use-move', moveName?: string | null): void
+  (event: 'send-out-pokemon', pokemonSlug: string): void
   (event: 'deal-damage'): void
   (event: 'delete'): void
 }>()
 
 const movePanelOpen = ref(false)
+const sendOutPanelOpen = ref(false)
 const hoveredMoveName = ref<string | null>(null)
 
 const moves = computed(() => props.moves ?? [])
+const sendOutOptions = computed(() => props.sendOutOptions ?? [])
 const hoveredMove = computed(() =>
   moves.value.find((move) => move.name === hoveredMoveName.value) ?? moves.value[0] ?? null,
 )
 
 const openMovePanel = () => {
+  closeSendOutPanel()
   movePanelOpen.value = true
   hoveredMoveName.value = moves.value[0]?.name ?? null
 }
@@ -40,13 +46,25 @@ const closeMovePanel = () => {
   hoveredMoveName.value = null
 }
 
-watch(() => props.menu.id, () => closeMovePanel())
+const openSendOutPanel = () => {
+  closeMovePanel()
+  sendOutPanelOpen.value = true
+}
 
-const handleSubmenuFocusOut = (event: FocusEvent) => {
+const closeSendOutPanel = () => {
+  sendOutPanelOpen.value = false
+}
+
+watch(() => props.menu.id, () => {
+  closeMovePanel()
+  closeSendOutPanel()
+})
+
+const handleSubmenuFocusOut = (event: FocusEvent, closePanel: () => void) => {
   const current = event.currentTarget
   const next = event.relatedTarget
   if (current instanceof HTMLElement && next instanceof Node && current.contains(next)) return
-  closeMovePanel()
+  closePanel()
 }
 
 const statStageLabel = (
@@ -91,7 +109,7 @@ const stageLabel = (move: TokenMoveMenuOption): string | null => {
       @pointerenter="openMovePanel"
       @pointerleave="closeMovePanel"
       @focusin="openMovePanel"
-      @focusout="handleSubmenuFocusOut"
+      @focusout="handleSubmenuFocusOut($event, closeMovePanel)"
     >
       <button
         type="button"
@@ -172,8 +190,56 @@ const stageLabel = (move: TokenMoveMenuOption): string | null => {
           </dl>
 
           <p v-if="hoveredMove.effect" class="move-tooltip__effect">{{ hoveredMove.effect }}</p>
-          <p v-else class="move-tooltip__effect is-muted">No effect text in moves.json.</p>
+          <p v-if="hoveredMove.special" class="move-tooltip__effect"><strong>Special:</strong> {{ hoveredMove.special }}</p>
+          <p v-if="!hoveredMove.effect && !hoveredMove.special" class="move-tooltip__effect is-muted">No effect or special text in moves.json.</p>
         </aside>
+      </div>
+    </div>
+
+    <div
+      v-if="props.menu.canSendOut"
+      class="context-menu__submenu-wrap"
+      @pointerenter="openSendOutPanel"
+      @pointerleave="closeSendOutPanel"
+      @focusin="openSendOutPanel"
+      @focusout="handleSubmenuFocusOut($event, closeSendOutPanel)"
+    >
+      <button
+        type="button"
+        class="context-menu__button context-menu__button--submenu"
+        :aria-expanded="sendOutPanelOpen"
+        aria-haspopup="menu"
+        @click.stop="openSendOutPanel"
+      >
+        <span>Send Out Pokémon</span>
+        <span class="context-menu__chevron">›</span>
+      </button>
+
+      <div v-if="sendOutPanelOpen" class="sendout-submenu" role="menu">
+        <button
+          v-for="option in sendOutOptions"
+          :key="option.pokemonSlug"
+          type="button"
+          class="sendout-submenu__item"
+          role="menuitem"
+          @click.stop="emit('send-out-pokemon', option.pokemonSlug)"
+        >
+          <img
+            v-if="option.spriteUrl"
+            class="sendout-submenu__sprite"
+            :src="option.spriteUrl"
+            alt=""
+            loading="lazy"
+          >
+          <span class="sendout-submenu__text">
+            <strong>{{ option.label }}</strong>
+            <small>Lv {{ option.level }} · {{ option.species }}</small>
+          </span>
+        </button>
+
+        <div v-if="!sendOutOptions.length" class="move-submenu__empty">
+          This trainer has no linked team Pokémon.
+        </div>
       </div>
     </div>
 
@@ -269,7 +335,8 @@ const stageLabel = (move: TokenMoveMenuOption): string | null => {
 
 .context-menu__button + .context-menu__button,
 .context-menu__submenu-wrap + .context-menu__button,
-.context-menu__button + .context-menu__submenu-wrap {
+.context-menu__button + .context-menu__submenu-wrap,
+.context-menu__submenu-wrap + .context-menu__submenu-wrap {
   margin-top: 0.3rem;
 }
 
@@ -298,15 +365,31 @@ const stageLabel = (move: TokenMoveMenuOption): string | null => {
   position: relative;
 }
 
-.move-submenu {
+.move-submenu,
+.sendout-submenu {
   position: absolute;
   left: calc(100% + 0.45rem);
   top: 0;
+  z-index: 11001;
+}
+
+.move-submenu {
   display: grid;
   grid-template-columns: minmax(220px, 280px) minmax(260px, 340px);
   gap: 0.45rem;
   max-width: min(680px, calc(100vw - 2rem));
-  z-index: 11001;
+}
+
+.sendout-submenu {
+  width: min(18rem, calc(100vw - 2rem));
+  max-height: min(70vh, 24rem);
+  overflow: auto;
+  padding: 0.35rem;
+  border: 1px solid var(--rule-soft);
+  border-radius: 12px;
+  background: var(--paper-soft);
+  box-shadow: var(--shadow-card);
+  backdrop-filter: blur(8px);
 }
 
 .move-submenu__list,
@@ -339,10 +422,53 @@ const stageLabel = (move: TokenMoveMenuOption): string | null => {
 
 .move-submenu__item:hover,
 .move-submenu__item:focus-visible,
-.move-submenu__item.is-active {
+.move-submenu__item.is-active,
+.sendout-submenu__item:hover,
+.sendout-submenu__item:focus-visible {
   border-color: var(--rule-soft);
   background: var(--paper-hover);
   color: var(--ink-bright);
+}
+
+.sendout-submenu__item {
+  display: grid;
+  grid-template-columns: 2.4rem minmax(0, 1fr);
+  gap: 0.55rem;
+  align-items: center;
+  width: 100%;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--ink);
+  padding: 0.45rem 0.55rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.sendout-submenu__sprite {
+  width: 2.2rem;
+  height: 2.2rem;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+.sendout-submenu__text {
+  display: grid;
+  gap: 0.12rem;
+  min-width: 0;
+}
+
+.sendout-submenu__text strong,
+.sendout-submenu__text small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sendout-submenu__text small {
+  color: var(--ink-muted);
+  font-size: 0.74rem;
+  font-weight: 800;
 }
 
 .move-submenu__name {

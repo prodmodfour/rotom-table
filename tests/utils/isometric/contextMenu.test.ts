@@ -57,6 +57,11 @@ describe('isometric token context menu helpers', () => {
       canViewPokedex: true,
       canDeleteTokens: true,
     })).toBe(9)
+    expect(getTokenContextMenuButtonCount({
+      canTurn: false,
+      canViewPokedex: false,
+      canSendOut: true,
+    })).toBe(7)
 
     expect(getTokenContextMenuPosition({
       clientX: 999,
