@@ -59,7 +59,8 @@
   font-size: 0.88rem;
 }
 
-.move-stab {
+.move-stab,
+.move-derived-bonus {
   display: inline-flex;
   margin-left: 0.25rem;
   color: var(--accent);
@@ -67,6 +68,10 @@
   font-weight: 700;
   letter-spacing: 0.08em;
   vertical-align: middle;
+}
+
+.move-derived-bonus {
+  color: var(--ink-muted);
 }
 
 .move-row--automatic { background: rgba(184, 187, 38, 0.06); }

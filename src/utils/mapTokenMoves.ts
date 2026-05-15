@@ -32,6 +32,14 @@ export interface TokenMoveMenuOption {
   attackStat: number | null
   baseAttackStat: number | null
   attackStage: number | null
+  attackStatKey: 'atk' | 'satk' | null
+  attackStatLabel: string | null
+  attackStatAbility: string | null
+  additionalAttackStat: number | null
+  additionalBaseAttackStat: number | null
+  additionalAttackStage: number | null
+  additionalAttackStatKey: 'atk' | 'satk' | null
+  additionalAttackStatLabel: string | null
   automatic: boolean
 }
 
@@ -96,6 +104,14 @@ const optionForMoveRow = (
   attackStat: row.attackStat,
   baseAttackStat: row.baseAttackStat,
   attackStage: row.attackStage,
+  attackStatKey: row.attackStatKey,
+  attackStatLabel: row.attackStatLabel,
+  attackStatAbility: row.attackStatAbility,
+  additionalAttackStat: row.additionalAttackStat,
+  additionalBaseAttackStat: row.additionalBaseAttackStat,
+  additionalAttackStage: row.additionalAttackStage,
+  additionalAttackStatKey: row.additionalAttackStatKey,
+  additionalAttackStatLabel: row.additionalAttackStatLabel,
   automatic,
 })
 
@@ -109,6 +125,7 @@ export const buildTokenMoveMenuOptions = (
     specialAttack: token.satk,
     physicalAttackStage: token.combatStages.atk,
     specialAttackStage: token.combatStages.satk,
+    abilities: token.abilityNames,
   })
   return rows.map((row, index) => optionForMoveRow(row, entries[index]?.automatic ?? false))
 }

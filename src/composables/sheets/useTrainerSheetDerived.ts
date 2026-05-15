@@ -73,6 +73,7 @@ export function useTrainerSheetDerived(sheet: TrainerSheetRef) {
       specialAttack: specialAttackTotal.value,
       physicalAttackStage: sheet.value?.stats?.atk?.stage ?? sheet.value?.combatStages?.atk ?? 0,
       specialAttackStage: sheet.value?.stats?.satk?.stage ?? sheet.value?.combatStages?.satk ?? 0,
+      abilities: sheet.value?.abilities,
     }
     const manualRows = makeMoveLookupRows(sheet.value?.movelist, options)
       .map((row, i) => ({ ...row, automatic: false, sheetIndex: i }))

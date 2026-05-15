@@ -45,6 +45,29 @@ describe('usePokemonSheetDerived', () => {
     expect(derived.heldItemReference.value?.name).toBe('Bright Powder')
   })
 
+  it('applies Weird Power to Pokémon sheet move damage formulas', () => {
+    const sheet = ref<CharacterSheet | null>(makeSheet({
+      abilities: [{ name: 'Weird Power' }],
+      items: {},
+      movelist: [{ name: 'Custom Blast', category: 'Special', db: 6 }],
+      stats: {
+        atk: { added: 20 },
+        satk: { added: 0 },
+      },
+    }))
+    const derived = usePokemonSheetDerived(sheet)
+
+    const row = derived.moveRows.value.find((moveRow) => moveRow.move.name === 'Custom Blast')
+    expect(row).toMatchObject({
+      attackStat: derived.specialAttackTotal.value + derived.attackTotal.value,
+      attackStatKey: 'satk',
+      attackStatAbility: 'Weird Power',
+      additionalAttackStat: derived.attackTotal.value,
+      additionalAttackStatKey: 'atk',
+      damageFormula: `2d6+8+${derived.specialAttackTotal.value + derived.attackTotal.value}`,
+    })
+  })
+
   it('applies Levitate passive Ground resistance in type effectiveness', () => {
     const sheet = ref<CharacterSheet | null>(makeSheet({
       abilities: [{ name: 'Levitate' }],

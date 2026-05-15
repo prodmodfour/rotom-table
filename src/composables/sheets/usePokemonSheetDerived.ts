@@ -190,6 +190,7 @@ export function usePokemonSheetDerived(sheet: PokemonSheetRef) {
       specialAttack: specialAttackTotal.value,
       physicalAttackStage: sheet.value?.stats?.atk?.stage ?? 0,
       specialAttackStage: sheet.value?.stats?.satk?.stage ?? 0,
+      abilities: sheet.value?.abilities,
     }
     const manualRows = makeMoveLookupRows(sheet.value?.movelist, options)
       .map((row, i) => ({ ...row, automatic: false, sheetIndex: i }))

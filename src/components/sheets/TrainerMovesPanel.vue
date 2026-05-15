@@ -62,7 +62,14 @@ const emit = defineEmits<{
               <span v-else class="badge-empty">—</span>
             </td>
             <td>{{ formatLookupValue(row.damageBase) }}</td>
-            <td>{{ formatLookupValue(row.damageFormula) }}</td>
+            <td>
+              {{ formatLookupValue(row.damageFormula) }}
+              <span
+                v-if="row.attackStatAbility"
+                class="move-derived-bonus"
+                :title="`${row.attackStatAbility}: adds ${row.additionalAttackStatLabel ?? 'alternate stat'} to this damage roll`"
+              >{{ row.attackStatAbility }}</span>
+            </td>
             <td>{{ formatLookupValue(row.reference?.frequency) }}</td>
             <td>{{ formatLookupValue(row.reference?.ac) }}</td>
             <td>{{ formatLookupValue(row.reference?.range) }}</td>

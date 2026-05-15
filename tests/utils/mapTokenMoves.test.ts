@@ -65,6 +65,29 @@ describe('map token move menu options', () => {
     expect(move.automatic).toBe(true)
   })
 
+  it('applies Weird Power to map token move damage formulas', () => {
+    const [move] = buildTokenMoveMenuOptions(token({
+      abilityNames: ['Weird Power'],
+      atk: 12,
+      satk: 8,
+      combatStages: stages(),
+    }), [
+      { move: { name: 'Custom Beam', category: 'Special', db: 6 }, automatic: false },
+    ])
+
+    expect(move).toMatchObject({
+      damageClass: 'Special',
+      attackStat: 20,
+      baseAttackStat: 8,
+      attackStage: 0,
+      attackStatKey: 'satk',
+      attackStatAbility: 'Weird Power',
+      additionalAttackStat: 12,
+      additionalAttackStatKey: 'atk',
+      damageFormula: '2d6+8+20',
+    })
+  })
+
   it('auto-adds Struggle entries for trainer tokens too', () => {
     const entries = trainerMoveEntriesForSheet({
       slug: 'trainer',

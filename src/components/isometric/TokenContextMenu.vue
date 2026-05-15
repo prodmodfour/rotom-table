@@ -49,10 +49,32 @@ const handleSubmenuFocusOut = (event: FocusEvent) => {
   closeMovePanel()
 }
 
+const statStageLabel = (
+  label: string | null,
+  base: number | null,
+  stage: number | null,
+  current: number | null,
+): string | null => {
+  if (stage == null || base == null || current == null) return null
+  const statLabel = label ? `${label} ` : ''
+  if (stage === 0) return `${statLabel}${current}`
+  return `${statLabel}${base} @ ${formatCombatStage(stage)} CS → ${current}`
+}
+
 const stageLabel = (move: TokenMoveMenuOption): string | null => {
-  if (move.attackStage == null || move.baseAttackStat == null || move.attackStat == null) return null
-  if (move.attackStage === 0) return `${move.attackStat}`
-  return `${move.baseAttackStat} @ ${formatCombatStage(move.attackStage)} CS → ${move.attackStat}`
+  const normalCurrent = move.attackStat == null
+    ? null
+    : move.attackStatAbility ? move.attackStat - (move.additionalAttackStat ?? 0) : move.attackStat
+  const normal = statStageLabel(move.attackStatLabel, move.baseAttackStat, move.attackStage, normalCurrent)
+  if (!normal || !move.attackStatAbility) return normal
+
+  const additional = statStageLabel(
+    move.additionalAttackStatLabel,
+    move.additionalBaseAttackStat,
+    move.additionalAttackStage,
+    move.additionalAttackStat,
+  )
+  return additional ? `${normal} + ${additional} (${move.attackStatAbility}) → ${move.attackStat}` : `${normal} (${move.attackStatAbility})`
 }
 </script>
 
