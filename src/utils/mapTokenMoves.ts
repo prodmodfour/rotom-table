@@ -99,7 +99,7 @@ const optionForMoveRow = (
   type: fallback(row.reference?.type, row.move.type),
   damageClass: fallback(row.reference?.damage_class, row.move.category),
   frequency: fallback(row.reference?.frequency, row.move.frequency),
-  ac: fallback(row.reference?.ac, row.move.ac),
+  ac: fallback(row.ac, row.reference?.ac, row.move.ac),
   range: fallback(row.reference?.range, row.move.range),
   effect: fallback(row.reference?.effect, row.move.effect),
   special: fallback(row.reference?.special, row.move.special),
@@ -131,6 +131,7 @@ export const buildTokenMoveMenuOptions = (
     physicalAttackStage: token.combatStages.atk,
     specialAttackStage: token.combatStages.satk,
     abilities: token.abilityNames,
+    combatSkillRankValue: token.combatSkillRankValue,
   })
   return rows.map((row, index) => optionForMoveRow(row, entries[index]?.automatic ?? false))
 }

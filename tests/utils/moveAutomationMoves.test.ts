@@ -8,6 +8,7 @@ import {
   sortMoveAutomationTargets,
   toggleMoveAutomationTargetIds,
 } from '~/utils/moveAutomationMoves'
+import { STRUGGLE_ATTACK_MOVE_NAMES } from '~/utils/struggleMoves'
 import type { MoveAutomationScript } from '~/types/moveAutomation'
 import type { SpawnedPokemon } from '~/types/pokemon'
 
@@ -83,6 +84,21 @@ describe('move automation move helpers', () => {
     expect(entry.hasStab).toBe(true)
     expect(entry.script.damageBase).toBe(6)
     expect(entry.move.damage_roll).toBeNull()
+  })
+
+  it('uses explicit Struggle scripts without STAB and applies Expert Combat Skill overrides', () => {
+    const names = STRUGGLE_ATTACK_MOVE_NAMES.map((name) => ({ name }))
+    const entries = buildMoveAutomationMoveEntries(names, {
+      stabTypes: ['Normal', 'Fire', 'Water', 'Ice', 'Flying', 'Rock', 'Electric'],
+      combatSkillRankValue: 5,
+    })
+
+    expect(entries.map((entry) => entry.move.name)).toEqual(STRUGGLE_ATTACK_MOVE_NAMES)
+    expect(entries.every((entry) => entry.hasExplicitScript)).toBe(true)
+    expect(entries.every((entry) => !entry.hasStab)).toBe(true)
+    expect(entries.every((entry) => entry.script.ac === 3)).toBe(true)
+    expect(entries.every((entry) => entry.script.damageBase === 5)).toBe(true)
+    expect(entries.every((entry) => entry.move.damage_roll == null)).toBe(true)
   })
 
   it('carries canonical move special text into automation entries', () => {

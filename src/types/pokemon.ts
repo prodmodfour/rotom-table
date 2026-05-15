@@ -234,6 +234,10 @@ export interface SpawnedPokemon extends PokemonCatalogEntry {
   defenderCapabilities?: Pick<PokedexCapabilities, 'sky' | 'levitate'>
   /** Ability names copied from the source sheet for passive automation modifiers. */
   abilityNames?: string[]
+  /** Combat Skill rank value (Pathetic=1 … Master=6), used by Struggle automation. */
+  combatSkillRankValue?: number
+  /** Focus Skill rank value (Pathetic=1 … Master=6), used by Telekinetic Struggle range automation. */
+  focusSkillRankValue?: number
   /** Current combat stages copied from the source sheet. */
   combatStages: CombatStageMap
   /** Canonical PTU conditions copied from the source sheet. */

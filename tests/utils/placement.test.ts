@@ -4,13 +4,14 @@ import type { CharacterSheet } from '~/types/characterSheet'
 import type { SheetPlacement } from '~/types/map'
 
 describe('placement helpers', () => {
-  it('copies sheet ability names onto spawned tokens for passive automation', () => {
+  it('copies sheet ability names and Combat Skill rank onto spawned tokens for passive automation', () => {
     const sheet: CharacterSheet = {
       slug: 'pika',
       nickname: 'Pika',
       species: 'Pikachu',
       level: 5,
       abilities: [{ name: 'Levitate' }],
+      skills: { combat: '5d6+1', focus: '4d6' },
     }
     const placement: SheetPlacement = {
       id: 'placement-1',
@@ -26,5 +27,7 @@ describe('placement helpers', () => {
 
     expect(spawned?.abilityNames).toEqual(['Levitate'])
     expect(spawned?.defenderCapabilities).toEqual({ levitate: 4 })
+    expect(spawned?.combatSkillRankValue).toBe(5)
+    expect(spawned?.focusSkillRankValue).toBe(4)
   })
 })

@@ -28,10 +28,21 @@ export const tokenGridDistance = (
   gridAxisDistance(left.position.z, left.base, right.position.z, right.base),
 )
 
-export const parseSingleTargetMoveRangeMeters = (range: string | null | undefined): number | null => {
+export interface SingleTargetMoveRangeOptions {
+  focusSkillRankValue?: number | null
+}
+
+const finitePositiveRankValue = (value: number | null | undefined): number | null =>
+  typeof value === 'number' && Number.isFinite(value) && value > 0 ? Math.floor(value) : null
+
+export const parseSingleTargetMoveRangeMeters = (
+  range: string | null | undefined,
+  options: SingleTargetMoveRangeOptions = {},
+): number | null => {
   const keywords = splitMoveRangeKeywords(range ?? '')
   const numericKeyword = keywords.find((keyword) => /^\d+$/.test(keyword))
   if (numericKeyword) return Number(numericKeyword)
+  if (keywords.some((keyword) => /^Focus Rank$/i.test(keyword))) return finitePositiveRankValue(options.focusSkillRankValue)
   return keywords.some((keyword) => /^Melee$/i.test(keyword)) ? MELEE_MOVE_RANGE_METERS : null
 }
 

@@ -1,6 +1,9 @@
+import { EXPERT_SKILL_RANK_VALUE, skillRankValueAtLeast } from '~/utils/skillRanks'
 import type { CharacterSheetMove } from '~/types/characterSheet'
 
 export const BASE_STRUGGLE_MOVE_NAME = 'Struggle'
+export const EXPERT_STRUGGLE_AC = 3
+export const EXPERT_STRUGGLE_DAMAGE_BASE = 5
 
 export interface StruggleCapabilityVariant {
   capability: string
@@ -22,6 +25,45 @@ export const STRUGGLE_CAPABILITY_VARIANTS: readonly StruggleCapabilityVariant[] 
   { capability: 'Telekinetic', moveNames: physicalAndSpecialStruggleMoveNames('Telekinetic') },
   { capability: 'Zapper', moveNames: physicalAndSpecialStruggleMoveNames('Zapper') },
 ]
+
+export const STRUGGLE_ATTACK_MOVE_NAMES: readonly string[] = [
+  BASE_STRUGGLE_MOVE_NAME,
+  ...STRUGGLE_CAPABILITY_VARIANTS.flatMap((variant) => variant.moveNames),
+]
+
+export const isStruggleAttackMoveName = (name: string): boolean =>
+  /^struggle(?:\s*\(|$)/i.test(name.trim())
+
+export const hasExpertStruggleCombatSkill = (
+  combatSkillRankValue: number | null | undefined,
+): boolean => skillRankValueAtLeast(combatSkillRankValue, EXPERT_SKILL_RANK_VALUE)
+
+export const struggleAccuracyForCombatRank = <T>(
+  moveName: string,
+  accuracy: T,
+  combatSkillRankValue: number | null | undefined,
+): T | number => isStruggleAttackMoveName(moveName) && hasExpertStruggleCombatSkill(combatSkillRankValue)
+  ? EXPERT_STRUGGLE_AC
+  : accuracy
+
+export const struggleDamageBaseForCombatRank = (
+  moveName: string,
+  damageBase: number | null | undefined,
+  combatSkillRankValue: number | null | undefined,
+): number | null => {
+  if (isStruggleAttackMoveName(moveName) && hasExpertStruggleCombatSkill(combatSkillRankValue)) {
+    return EXPERT_STRUGGLE_DAMAGE_BASE
+  }
+  return damageBase ?? null
+}
+
+export const struggleDamageRollForCombatRank = <T>(
+  moveName: string,
+  damageRoll: T,
+  combatSkillRankValue: number | null | undefined,
+): T | null => isStruggleAttackMoveName(moveName) && hasExpertStruggleCombatSkill(combatSkillRankValue)
+  ? null
+  : damageRoll
 
 const stripCapabilityParams = (raw: string): string =>
   raw

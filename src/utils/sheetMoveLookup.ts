@@ -4,6 +4,11 @@ import {
   resolveSheetMoveAttackStat,
   type SheetMoveAttackStatOptions,
 } from '~/utils/sheetMoveAttackStats'
+import {
+  isStruggleAttackMoveName,
+  struggleAccuracyForCombatRank,
+  struggleDamageBaseForCombatRank,
+} from '~/utils/struggleMoves'
 import type { CharacterSheetMove } from '~/types/characterSheet'
 import type { PtuMove } from '~/types/ptuReference'
 import type { TrainerMove } from '~/types/trainerSheet'
@@ -13,11 +18,15 @@ export type SheetMoveLike = CharacterSheetMove | TrainerMove
 export interface MoveLookupOptions extends SheetMoveAttackStatOptions {
   /** Types that grant Pokémon STAB. Trainers normally leave this empty. */
   stabTypes?: readonly string[]
+  /** Rank value for Combat Skill (Pathetic=1 … Master=6), used by Struggle Attacks. */
+  combatSkillRankValue?: number | null
 }
 
 export interface MoveLookupRow<T extends SheetMoveLike> {
   move: T
   reference: PtuMove | null
+  /** Accuracy Check after sheet-derived Struggle Attack overrides. */
+  ac: number | string | null
   /** Damage Base after sheet-derived bonuses such as Pokémon STAB. */
   damageBase: number | null
   /** True when this row's DB includes the +2 same-type attack bonus. */
@@ -81,7 +90,7 @@ export interface MoveDamageLike {
 }
 
 export const isStruggleAttackEntry = (move: Pick<MoveDamageLike, 'name'>): boolean =>
-  /^struggle(?:\s*\(|$)/i.test(move.name.trim())
+  isStruggleAttackMoveName(move.name)
 
 export const hasSameTypeAttackBonus = (
   move: MoveDamageLike,
@@ -99,7 +108,11 @@ const effectiveMoveDamageBase = (
   reference: PtuMove | null,
   options: MoveLookupOptions,
 ): { damageBase: number | null; hasStab: boolean } => {
-  const base = reference?.damage_base ?? move.db ?? null
+  const base = struggleDamageBaseForCombatRank(
+    reference?.name ?? move.name,
+    reference?.damage_base ?? move.db ?? null,
+    options.combatSkillRankValue,
+  )
   const damageLike: MoveDamageLike = {
     name: reference?.name ?? move.name,
     type: reference?.type ?? move.type,
@@ -112,6 +125,16 @@ const effectiveMoveDamageBase = (
     hasStab,
   }
 }
+
+const effectiveMoveAccuracy = (
+  move: SheetMoveLike,
+  reference: PtuMove | null,
+  options: MoveLookupOptions,
+): number | string | null => struggleAccuracyForCombatRank(
+  reference?.name ?? move.name,
+  reference?.ac ?? move.ac ?? null,
+  options.combatSkillRankValue,
+)
 
 const attackBonusFor = (
   move: SheetMoveLike,
@@ -138,6 +161,7 @@ export const makeMoveLookupRows = <T extends SheetMoveLike>(
     return {
       move,
       reference,
+      ac: effectiveMoveAccuracy(move, reference, options),
       damageBase,
       hasStab,
       ...attack,

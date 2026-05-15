@@ -7,6 +7,10 @@ import type {
   TrainerStatKey,
 } from '~/types/trainerSheet'
 import { computeInjuryAdjustedMaxHp, computeTrainerFormulaMaxHp } from '~/utils/ptuHp'
+import {
+  SKILL_RANK_TO_DICE,
+  SKILL_RANK_TO_VALUE,
+} from '~/utils/skillRanks'
 
 // ---------------------------------------------------------------------------
 // Stat resolution
@@ -113,24 +117,6 @@ export const TRAINER_SKILL_ORDER: Array<[TrainerSkillKey, string]> = [
   ['survival',    'Survival'],
 ]
 
-const RANK_TO_VALUE: Record<SkillRank, number> = {
-  Pathetic:  1,
-  Untrained: 2,
-  Novice:    3,
-  Adept:     4,
-  Expert:    5,
-  Master:    6,
-}
-
-const RANK_TO_DICE: Record<SkillRank, string> = {
-  Pathetic:  '1d6',
-  Untrained: '2d6',
-  Novice:    '3d6',
-  Adept:     '4d6',
-  Expert:    '5d6',
-  Master:    '6d6',
-}
-
 export interface ResolvedTrainerSkill {
   key: TrainerSkillKey
   label: string
@@ -173,9 +159,9 @@ export const resolveTrainerSkills = (sheet: TrainerSheet): ResolvedTrainerSkill[
       key,
       label,
       rank,
-      rankValue: RANK_TO_VALUE[rank],
+      rankValue: SKILL_RANK_TO_VALUE[rank],
       modifier,
-      dice: RANK_TO_DICE[rank],
+      dice: SKILL_RANK_TO_DICE[rank],
       raised:  rank === 'Adept' || rank === 'Novice',
       lowered: rank === 'Pathetic',
     }
@@ -202,7 +188,7 @@ export type BasicTrainerCapabilityKey =
 export type DefaultTrainerCapabilities = Required<Pick<TrainerCapabilities, BasicTrainerCapabilityKey>>
 
 const trainerSkillRankValue = (skills: readonly ResolvedTrainerSkill[], key: TrainerSkillKey): number =>
-  skills.find((skill) => skill.key === key)?.rankValue ?? RANK_TO_VALUE.Untrained
+  skills.find((skill) => skill.key === key)?.rankValue ?? SKILL_RANK_TO_VALUE.Untrained
 
 /**
  * PTU 1.05 trainer capability formulas (Core Character Creation p.16):
@@ -223,12 +209,12 @@ export const computeDefaultTrainerCapabilities = (sheet: TrainerSheet): DefaultT
   return {
     overland,
     throwingRange: 4 + athletics,
-    highJump: (acrobatics >= RANK_TO_VALUE.Adept ? 1 : 0) + (acrobatics >= RANK_TO_VALUE.Master ? 1 : 0),
+    highJump: (acrobatics >= SKILL_RANK_TO_VALUE.Adept ? 1 : 0) + (acrobatics >= SKILL_RANK_TO_VALUE.Master ? 1 : 0),
     longJump: Math.floor(acrobatics / 2),
     swim: Math.floor(overland / 2),
     power: 4
-      + (athletics >= RANK_TO_VALUE.Novice ? 1 : 0)
-      + (combat >= RANK_TO_VALUE.Adept ? 1 : 0),
+      + (athletics >= SKILL_RANK_TO_VALUE.Novice ? 1 : 0)
+      + (combat >= SKILL_RANK_TO_VALUE.Adept ? 1 : 0),
   }
 }
 

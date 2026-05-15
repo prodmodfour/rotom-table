@@ -23,6 +23,7 @@ import {
   describeSheetConditionEffects,
 } from '~/utils/sheetConditionEffects'
 import { mergeLegacyConditions } from '~/utils/statusConditions'
+import { parseSkillDiceRankValue } from '~/utils/skillRanks'
 import {
   computeSheetAbilityAwareMultiplier,
   getPassiveTypeEffectivenessSource,
@@ -80,6 +81,9 @@ export function usePokemonSheetDerived(sheet: PokemonSheetRef) {
     })
   })
   const skills = computed(() => (sheet.value ? resolveSkills(sheet.value) : []))
+  const combatSkillRankValue = computed(() =>
+    parseSkillDiceRankValue(skills.value.find((skill) => skill.key === 'combat')?.value),
+  )
   const capabilities = computed(() =>
     sheet.value ? resolveCapabilities(sheet.value) : { rows: [], naturewalk: undefined, other: [] },
   )
@@ -230,6 +234,7 @@ export function usePokemonSheetDerived(sheet: PokemonSheetRef) {
         'satk',
       ),
       abilities: sheet.value?.abilities,
+      combatSkillRankValue: combatSkillRankValue.value,
     }
     const manualRows = makeMoveLookupRows(sheet.value?.movelist, options)
       .map((row, i) => ({ ...row, automatic: false, sheetIndex: i }))

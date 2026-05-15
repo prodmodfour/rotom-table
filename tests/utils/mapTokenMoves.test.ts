@@ -73,6 +73,17 @@ describe('map token move menu options', () => {
     expect(move.automatic).toBe(true)
   })
 
+  it('applies Expert Combat Skill Struggle AC and DB upgrades in token move options', () => {
+    const [move] = buildTokenMoveMenuOptions(token({ combatSkillRankValue: 5 }), [
+      { move: { name: 'Struggle' }, automatic: true },
+    ])
+
+    expect(move.damageBase).toBe(5)
+    expect(move.ac).toBe(3)
+    expect(move.damageFormula).toBe('1d8+8+14')
+    expect(move.hasStab).toBe(false)
+  })
+
   it('applies Weird Power to map token move damage formulas', () => {
     const [move] = buildTokenMoveMenuOptions(token({
       abilityNames: ['Weird Power'],

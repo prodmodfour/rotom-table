@@ -106,7 +106,7 @@ const {
               >{{ row.attackStatAbility }}</span>
             </td>
             <td>{{ formatLookupValue(row.reference?.frequency) }}</td>
-            <td>{{ formatLookupValue(row.reference?.ac) }}</td>
+            <td>{{ formatLookupValue(row.ac) }}</td>
             <td>{{ formatLookupValue(row.reference?.range) }}</td>
             <td class="move-effect">
               <span v-if="row.reference?.effect">{{ row.reference.effect }}</span>

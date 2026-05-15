@@ -11,21 +11,22 @@
  *      `resolveStats` / `computeMaxHp` (Pokémon) and the trainer equivalents.
  */
 import { getPokedexEntry } from '~~/data/characterSheets'
-import { computeMaxHp, resolveCapabilities, resolveStats } from '~/utils/sheets/pokemonDerived'
-import { computeTrainerMaxHp, resolveTrainerCapabilities, resolveTrainerStats } from '~/utils/sheets/trainerDerived'
+import { computeMaxHp, resolveCapabilities, resolveSkills, resolveStats } from '~/utils/sheets/pokemonDerived'
+import { computeTrainerMaxHp, resolveTrainerCapabilities, resolveTrainerSkills, resolveTrainerStats } from '~/utils/sheets/trainerDerived'
 import { pokemonCatalog, pokemonCatalogBySpecies } from '~~/data/pokemonCatalog'
 import { trainerCatalog } from '~~/data/trainerCatalog'
 import { COMBAT_STAT_STAGE_KEYS, normalizeCombatStages } from '~/utils/combatStages'
 import { mergeLegacyConditions } from '~/utils/statusConditions'
 import { clampHpValue } from '~/utils/ptuHp'
+import { parseSkillDiceRankValue } from '~/utils/skillRanks'
 import {
   pokemonEvasionModifiers,
   trainerEvasionModifiers,
 } from '~/utils/sheetEvasionBonuses'
-import type { CharacterSheet } from '~/types/characterSheet'
+import type { CharacterSheet, CharacterSheetSkills } from '~/types/characterSheet'
 import type { CombatStageMap } from '~/types/combatStages'
 import type { PokemonCatalogEntry } from '~/types/pokemon'
-import type { TrainerSheet } from '~/types/trainerSheet'
+import type { TrainerSheet, TrainerSkillKey } from '~/types/trainerSheet'
 
 const trainerCatalogBySpriteUrl = new Map(
   trainerCatalog.map((entry) => [entry.spriteUrl, entry]),
@@ -66,6 +67,21 @@ const pokemonDefenderCapabilities = (sheet: CharacterSheet): DefenderCapabilitie
 const trainerDefenderCapabilities = (sheet: TrainerSheet): DefenderCapabilities | undefined =>
   defenderCapabilitiesFromRows(resolveTrainerCapabilities(sheet).rows)
 
+type ResolvedPokemonSkills = ReturnType<typeof resolveSkills>
+
+type ResolvedTrainerSkills = ReturnType<typeof resolveTrainerSkills>
+
+const pokemonSkillRankValue = (
+  skills: ResolvedPokemonSkills,
+  key: keyof CharacterSheetSkills,
+): number | undefined => {
+  const skill = skills.find((row) => row.key === key)?.value
+  return parseSkillDiceRankValue(skill) ?? undefined
+}
+
+const trainerSkillRankValue = (skills: ResolvedTrainerSkills, key: TrainerSkillKey): number | undefined =>
+  skills.find((skill) => skill.key === key)?.rankValue
+
 /** Resolve the catalog entry whose footprint a Pokémon sheet should use. */
 export const catalogEntryForPokemonSheet = (
   sheet: CharacterSheet,
@@ -104,6 +120,8 @@ export const pokemonHpSnapshot = (
   evasion: ReturnType<typeof pokemonEvasionModifiers>
   defenderTypes: string[]
   defenderCapabilities?: DefenderCapabilities
+  combatSkillRankValue?: number
+  focusSkillRankValue?: number
   combatStages: CombatStageMap
   conditions: string[]
 } => {
@@ -129,7 +147,23 @@ export const pokemonHpSnapshot = (
     acc: sheet.combatStages?.acc,
   })
   const conditions = mergeLegacyConditions(sheet.combat?.conditions, sheet.combat?.statusAfflictions)
-  return { currentHp, maxHp, atk, satk, def, sdef, spd, evasion, defenderTypes, defenderCapabilities, combatStages, conditions }
+  const skillRows = resolveSkills(sheet)
+  return {
+    currentHp,
+    maxHp,
+    atk,
+    satk,
+    def,
+    sdef,
+    spd,
+    evasion,
+    defenderTypes,
+    defenderCapabilities,
+    combatSkillRankValue: pokemonSkillRankValue(skillRows, 'combat'),
+    focusSkillRankValue: pokemonSkillRankValue(skillRows, 'focus'),
+    combatStages,
+    conditions,
+  }
 }
 
 /** Trainer HP + offence/defence + capability snapshot. Max HP is derived and injury-adjusted; trainers have no defending types. */
@@ -146,6 +180,8 @@ export const trainerHpSnapshot = (
   evasion: ReturnType<typeof trainerEvasionModifiers>
   defenderTypes: string[]
   defenderCapabilities?: DefenderCapabilities
+  combatSkillRankValue?: number
+  focusSkillRankValue?: number
   combatStages: CombatStageMap
   conditions: string[]
 } => {
@@ -164,7 +200,23 @@ export const trainerHpSnapshot = (
   )
   const combatStages = normalizeCombatStages({ ...stageSource, acc: sheet.combatStages?.acc })
   const conditions = mergeLegacyConditions(sheet.conditions, sheet.statusAfflictions)
-  return { currentHp, maxHp, atk, satk, def, sdef, spd, evasion, defenderTypes: [], defenderCapabilities, combatStages, conditions }
+  const skillRows = resolveTrainerSkills(sheet)
+  return {
+    currentHp,
+    maxHp,
+    atk,
+    satk,
+    def,
+    sdef,
+    spd,
+    evasion,
+    defenderTypes: [],
+    defenderCapabilities,
+    combatSkillRankValue: trainerSkillRankValue(skillRows, 'combat'),
+    focusSkillRankValue: trainerSkillRankValue(skillRows, 'focus'),
+    combatStages,
+    conditions,
+  }
 }
 
 // Re-export so callers don't have to import the catalog directly.

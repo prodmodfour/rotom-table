@@ -8,6 +8,7 @@ import {
   createManualMoveAutomationScript,
   damageFormulaForManualMove,
 } from '~/utils/moveAutomationManual'
+import { STRUGGLE_ATTACK_MOVE_NAMES } from '~/utils/struggleMoves'
 import type { MoveDamageRollResult } from '~/utils/moveDamageBase'
 import type { CharacterSheetMove } from '~/types/characterSheet'
 import type { MapFieldEffects } from '~/types/map'
@@ -85,6 +86,7 @@ const reviewedSingleTargetAttackScript = (moveName: string, version = 1): MoveAu
 }
 
 const SEAMLESS_SINGLE_TARGET_ATTACK_SCRIPT_NAMES = [
+  ...STRUGGLE_ATTACK_MOVE_NAMES,
   'Ember',
   'Fire Punch',
   'Flamethrower',
@@ -94,7 +96,11 @@ const SEAMLESS_SINGLE_TARGET_ATTACK_SCRIPT_NAMES = [
   'Scald',
   'Thunder Shock',
   'Thunderbolt',
-] as const
+]
+
+const STRUGGLE_ATTACK_SCRIPTS: ReadonlyMap<string, MoveAutomationScript> = new Map(
+  STRUGGLE_ATTACK_MOVE_NAMES.map((name) => [name, reviewedSingleTargetAttackScript(name)]),
+)
 
 export const SEAMLESS_SINGLE_TARGET_ATTACK_SCRIPTS: ReadonlyMap<string, MoveAutomationScript> = new Map(
   SEAMLESS_SINGLE_TARGET_ATTACK_SCRIPT_NAMES.map((name) => [name, reviewedSingleTargetAttackScript(name)]),
@@ -119,6 +125,7 @@ export const isSeamlessSingleTargetAttackScript = (
  * allow-list of reviewed automation coverage.
  */
 export const EXPLICIT_MOVE_AUTOMATION_SCRIPTS: ReadonlyMap<string, MoveAutomationScript> = new Map<string, MoveAutomationScript>([
+  ...STRUGGLE_ATTACK_SCRIPTS,
   ...SEAMLESS_SINGLE_TARGET_ATTACK_SCRIPTS,
 ])
 
@@ -130,8 +137,13 @@ export const moveAutomationCoverage = {
     .map((move) => move.name),
 }
 
-export const explicitScriptForMove = (moveName: string): MoveAutomationScript | null =>
-  EXPLICIT_MOVE_AUTOMATION_SCRIPTS.get(moveName) ?? null
+export const explicitScriptForMove = (moveName: string): MoveAutomationScript | null => {
+  const direct = EXPLICIT_MOVE_AUTOMATION_SCRIPTS.get(moveName)
+  if (direct) return direct
+
+  const canonical = findMove(moveName)
+  return canonical ? EXPLICIT_MOVE_AUTOMATION_SCRIPTS.get(canonical.name) ?? null : null
+}
 
 export const fieldEffectDamageBonus = (attackType: string, fieldEffects: MapFieldEffects | null | undefined): number => {
   let bonus = 0

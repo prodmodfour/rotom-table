@@ -53,6 +53,7 @@ export function useTrainerSheetDerived(sheet: TrainerSheetRef) {
     })
   })
   const skills = computed(() => sheet.value ? resolveTrainerSkills(sheet.value) : [])
+  const combatSkillRankValue = computed(() => skills.value.find((skill) => skill.key === 'combat')?.rankValue ?? null)
   const capRes = computed(() => sheet.value ? resolveTrainerCapabilities(sheet.value) : { rows: [], other: [] })
   const adv = computed(() => sheet.value ? resolveAdvancement(sheet.value) : [])
 
@@ -101,6 +102,7 @@ export function useTrainerSheetDerived(sheet: TrainerSheetRef) {
         'satk',
       ),
       abilities: sheet.value?.abilities,
+      combatSkillRankValue: combatSkillRankValue.value,
     }
     const manualRows = makeMoveLookupRows(sheet.value?.movelist, options)
       .map((row, i) => ({ ...row, automatic: false, sheetIndex: i }))

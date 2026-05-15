@@ -146,6 +146,7 @@ export const useMoveAutomationPanel = ({
     const moves = moveEntriesForId(id).map((entry) => entry.move)
     return buildMoveAutomationMoveEntries(moves, {
       stabTypes: user.sheetKind === 'pokemon' ? user.defenderTypes : [],
+      combatSkillRankValue: user.combatSkillRankValue,
     }).find((entry) =>
       entry.move.name.toLowerCase() === normalizedMoveName
         || entry.sheetMove.name.toLowerCase() === normalizedMoveName,
@@ -194,9 +195,12 @@ export const useMoveAutomationPanel = ({
   const beginSeamlessMoveTargeting = (id: string, moveName: string | null | undefined): boolean => {
     const trimmedMoveName = moveName?.trim()
     if (!trimmedMoveName) return false
+    const user = findSpawnedPokemon(id)
     const entry = moveAutomationEntryForUse(id, trimmedMoveName)
-    if (!entry || !isSeamlessSingleTargetAttackScript(entry.script)) return false
-    const rangeMeters = parseSingleTargetMoveRangeMeters(entry.script.range)
+    if (!user || !entry || !isSeamlessSingleTargetAttackScript(entry.script)) return false
+    const rangeMeters = parseSingleTargetMoveRangeMeters(entry.script.range, {
+      focusSkillRankValue: user.focusSkillRankValue,
+    })
     const damageFormula = damageFormulaForMove(entry.move)
     if (rangeMeters == null || !damageFormula) return false
 

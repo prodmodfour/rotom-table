@@ -6,6 +6,12 @@ import {
   type MoveAutomationMoveLike,
 } from '~/utils/moveAutomation'
 import { hasSameTypeAttackBonus } from '~/utils/sheetMoveLookup'
+import {
+  isStruggleAttackMoveName,
+  struggleAccuracyForCombatRank,
+  struggleDamageBaseForCombatRank,
+  struggleDamageRollForCombatRank,
+} from '~/utils/struggleMoves'
 import type { CharacterSheetMove } from '~/types/characterSheet'
 import type { MoveAutomationScript } from '~/types/moveAutomation'
 import type { SpawnedPokemon } from '~/types/pokemon'
@@ -25,6 +31,33 @@ export interface MoveAutomationMoveEntry {
 export interface MoveAutomationMoveEntryOptions {
   /** Types that grant STAB for this move user. Trainers normally leave this empty. */
   stabTypes?: readonly string[]
+  /** Rank value for Combat Skill (Pathetic=1 … Master=6), used by Struggle Attacks. */
+  combatSkillRankValue?: number | null
+}
+
+const moveWithStruggleCombatSkill = (
+  move: MoveAutomationMoveLike,
+  combatSkillRankValue: number | null | undefined,
+): MoveAutomationMoveLike => {
+  if (!isStruggleAttackMoveName(move.name)) return move
+  return {
+    ...move,
+    ac: struggleAccuracyForCombatRank(move.name, move.ac ?? null, combatSkillRankValue),
+    damage_base: struggleDamageBaseForCombatRank(move.name, move.damage_base ?? null, combatSkillRankValue),
+    damage_roll: struggleDamageRollForCombatRank(move.name, move.damage_roll ?? null, combatSkillRankValue),
+  }
+}
+
+const scriptWithStruggleCombatSkill = (
+  script: MoveAutomationScript,
+  combatSkillRankValue: number | null | undefined,
+): MoveAutomationScript => {
+  if (!isStruggleAttackMoveName(script.moveName)) return script
+  return {
+    ...script,
+    ac: struggleAccuracyForCombatRank(script.moveName, script.ac, combatSkillRankValue),
+    damageBase: struggleDamageBaseForCombatRank(script.moveName, script.damageBase, combatSkillRankValue),
+  }
 }
 
 export const moveLikeForSheetMove = (
@@ -32,7 +65,7 @@ export const moveLikeForSheetMove = (
   options: MoveAutomationMoveEntryOptions = {},
 ): MoveAutomationMoveLike => {
   const canonical = findMove(sheetMove.name)
-  const move = canonical ?? sheetMoveToMoveLike(sheetMove)
+  const move = moveWithStruggleCombatSkill(canonical ?? sheetMoveToMoveLike(sheetMove), options.combatSkillRankValue)
   const hasStab = hasSameTypeAttackBonus(move, options.stabTypes)
   if (!hasStab || move.damage_base == null) return move
   return {
@@ -51,9 +84,10 @@ export const buildMoveAutomationMoveEntries = (
     const move = moveLikeForSheetMove(sheetMove, options)
     const hasStab = hasSameTypeAttackBonus(move, options.stabTypes)
     const explicitScript = explicitScriptForMove(move.name)
-    const script = explicitScript && hasStab && explicitScript.damageBase != null
+    const baseScript = explicitScript && hasStab && explicitScript.damageBase != null
       ? { ...explicitScript, damageBase: explicitScript.damageBase + 2 }
       : explicitScript ?? buildManualMoveResolution(move)
+    const script = scriptWithStruggleCombatSkill(baseScript, options.combatSkillRankValue)
     return {
       label: move.name,
       sheetMove,

@@ -75,6 +75,7 @@ export const useMoveAutomationWizard = (
 
   const moveEntries = computed(() => buildMoveAutomationMoveEntries(props.moves, {
     stabTypes: props.user.sheetKind === 'pokemon' ? props.user.defenderTypes : [],
+    combatSkillRankValue: props.user.combatSkillRankValue,
   }))
   const filteredMoveEntries = computed(() => filterMoveAutomationMoveEntries(moveEntries.value, search.value))
   const selectedEntry = computed(() => selectMoveAutomationEntry(moveEntries.value, selectedMoveName.value))
