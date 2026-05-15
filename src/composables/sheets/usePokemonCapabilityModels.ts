@@ -1,13 +1,15 @@
 import { computed, type ComputedRef, type Ref, type WritableComputedRef } from 'vue'
 import { getPokedexEntry } from '~~/data/characterSheets'
 import type { CharacterSheet, CharacterSheetCapabilities } from '~/types/characterSheet'
-import type { PokedexRecord } from '~/types/pokemon'
 import {
   LEVITATE_EXISTING_SPEED_BONUS,
   LEVITATE_GRANTED_SPEED,
   hasLevitateAbility,
   resolveLevitateAbilitySpeed,
 } from '~/utils/sheetPassiveAbilityEffects'
+import { pokedexNaturewalkDefault } from '~/utils/sheets/pokemonCapabilities'
+
+export { pokedexNaturewalkDefault } from '~/utils/sheets/pokemonCapabilities'
 
 export type PokemonSheetRef = Ref<CharacterSheet | null> | ComputedRef<CharacterSheet | null>
 
@@ -15,23 +17,11 @@ export type PokemonCapabilityModelKey = Exclude<keyof CharacterSheetCapabilities
 
 type CapabilityModelValue<K extends PokemonCapabilityModelKey> = CharacterSheetCapabilities[K]
 
-const NATUREWALK_PATTERN = /^Naturewalk\s*\(([^)]*)\)\s*$/i
-
 const ensureCapabilities = (sheet: CharacterSheet): CharacterSheetCapabilities => {
   if (!sheet.capabilities || typeof sheet.capabilities !== 'object' || Array.isArray(sheet.capabilities)) {
     sheet.capabilities = {}
   }
   return sheet.capabilities
-}
-
-export const pokedexNaturewalkDefault = (
-  species: PokedexRecord | null | undefined,
-): string | undefined => {
-  const values = (species?.capabilities?.other ?? [])
-    .map((capability) => NATUREWALK_PATTERN.exec(capability.trim())?.[1]?.trim())
-    .filter((value): value is string => Boolean(value))
-
-  return values.length ? values.join(', ') : undefined
 }
 
 /**

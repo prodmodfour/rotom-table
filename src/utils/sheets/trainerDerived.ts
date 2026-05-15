@@ -1,5 +1,6 @@
 import type {
   SkillRank,
+  TrainerCapabilities,
   TrainerSheet,
   TrainerSkillEntry,
   TrainerSkillKey,
@@ -180,14 +181,45 @@ export interface TrainerCapabilityRow {
   value: number | string
 }
 
-/** Default trainer capabilities (PTU 1.05 baseline at level 1, no edges). */
-const DEFAULT_TRAINER_CAPABILITIES = {
-  overland: 5,
-  throwingRange: 6,
-  highJump: 0,
-  longJump: 1,
-  swim: 2,
-  power: 4,
+export type BasicTrainerCapabilityKey =
+  | 'overland'
+  | 'throwingRange'
+  | 'highJump'
+  | 'longJump'
+  | 'swim'
+  | 'power'
+
+export type DefaultTrainerCapabilities = Required<Pick<TrainerCapabilities, BasicTrainerCapabilityKey>>
+
+const trainerSkillRankValue = (skills: readonly ResolvedTrainerSkill[], key: TrainerSkillKey): number =>
+  skills.find((skill) => skill.key === key)?.rankValue ?? RANK_TO_VALUE.Untrained
+
+/**
+ * PTU 1.05 trainer capability formulas (Core Character Creation p.16):
+ * - Power starts at 4, +1 at Novice Athletics, +1 at Adept Combat.
+ * - High Jump starts at 0, +1 at Adept Acrobatics, +1 more at Master Acrobatics.
+ * - Long Jump = floor(Acrobatics Rank / 2).
+ * - Overland = 3 + floor((Athletics Rank + Acrobatics Rank) / 2).
+ * - Swim = floor(Overland / 2).
+ * - Throwing Range = 4 + Athletics Rank.
+ */
+export const computeDefaultTrainerCapabilities = (sheet: TrainerSheet): DefaultTrainerCapabilities => {
+  const skills = resolveTrainerSkills(sheet)
+  const athletics = trainerSkillRankValue(skills, 'athletics')
+  const acrobatics = trainerSkillRankValue(skills, 'acrobatics')
+  const combat = trainerSkillRankValue(skills, 'combat')
+  const overland = 3 + Math.floor((athletics + acrobatics) / 2)
+
+  return {
+    overland,
+    throwingRange: 4 + athletics,
+    highJump: (acrobatics >= RANK_TO_VALUE.Adept ? 1 : 0) + (acrobatics >= RANK_TO_VALUE.Master ? 1 : 0),
+    longJump: Math.floor(acrobatics / 2),
+    swim: Math.floor(overland / 2),
+    power: 4
+      + (athletics >= RANK_TO_VALUE.Novice ? 1 : 0)
+      + (combat >= RANK_TO_VALUE.Adept ? 1 : 0),
+  }
 }
 
 export const resolveTrainerCapabilities = (sheet: TrainerSheet): {
@@ -195,13 +227,14 @@ export const resolveTrainerCapabilities = (sheet: TrainerSheet): {
   other: string[]
 } => {
   const c = sheet.capabilities ?? {}
+  const defaults = computeDefaultTrainerCapabilities(sheet)
   const rows: TrainerCapabilityRow[] = [
-    { label: 'Overland',       value: c.overland       ?? DEFAULT_TRAINER_CAPABILITIES.overland },
-    { label: 'Throwing Range', value: c.throwingRange  ?? DEFAULT_TRAINER_CAPABILITIES.throwingRange },
-    { label: 'High Jump',      value: c.highJump       ?? DEFAULT_TRAINER_CAPABILITIES.highJump },
-    { label: 'Long Jump',      value: c.longJump       ?? DEFAULT_TRAINER_CAPABILITIES.longJump },
-    { label: 'Swim',           value: c.swim           ?? DEFAULT_TRAINER_CAPABILITIES.swim },
-    { label: 'Power',          value: c.power          ?? DEFAULT_TRAINER_CAPABILITIES.power },
+    { label: 'Overland',       value: c.overland       ?? defaults.overland },
+    { label: 'Throwing Range', value: c.throwingRange  ?? defaults.throwingRange },
+    { label: 'High Jump',      value: c.highJump       ?? defaults.highJump },
+    { label: 'Long Jump',      value: c.longJump       ?? defaults.longJump },
+    { label: 'Swim',           value: c.swim           ?? defaults.swim },
+    { label: 'Power',          value: c.power          ?? defaults.power },
   ]
   if (c.sky      != null) rows.splice(2, 0, { label: 'Sky',      value: c.sky })
   if (c.levitate != null) rows.push({ label: 'Levitate', value: c.levitate })

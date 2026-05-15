@@ -60,7 +60,21 @@ describe('pokemon sheet derived helpers', () => {
     expect(resolved.rows).toContainEqual({ label: 'Overland', value: 7 })
     expect(resolved.rows).not.toContainEqual({ label: 'Sky', value: 0 })
     expect(resolved.naturewalk).toBe('Urban')
-    expect(resolved.other).toEqual(['Custom Sense'])
+    expect(resolved.other).toEqual([
+      'Teleporter 2',
+      'Naturewalk (Forest, Urban)',
+      'Telekinetic',
+      'Telepath',
+      'Underdog',
+      'Custom Sense',
+    ])
+  })
+
+  it('uses Pokédex Naturewalk and other capability defaults when sheet arrays are empty', () => {
+    const resolved = resolveCapabilities(makeAbraSheet({ capabilities: { other: [] } }))
+
+    expect(resolved.naturewalk).toBe('Forest, Urban')
+    expect(resolved.other).toEqual(['Teleporter 2', 'Naturewalk (Forest, Urban)', 'Telekinetic', 'Telepath', 'Underdog'])
   })
 
   it('applies the Levitate ability passive speed bonus to capabilities', () => {

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import {
+  computeDefaultTrainerCapabilities,
   computeTrainerFullMaxHp,
   computeTrainerMaxAp,
   computeTrainerMaxHp,
@@ -55,6 +56,22 @@ describe('trainer sheet derived helpers', () => {
     expect(skills.find((row) => row.key === 'focus')).toMatchObject({ rank: 'Novice', dice: '3d6', raised: true })
     expect(skills.find((row) => row.key === 'stealth')).toMatchObject({ rank: 'Pathetic', dice: '1d6', lowered: true })
     expect(skills.find((row) => row.key === 'combat')).toMatchObject({ rank: 'Master', rankValue: 6, modifier: 2 })
+  })
+
+  it('computes default trainer capabilities from skill ranks using Core formulas', () => {
+    const capabilities = computeDefaultTrainerCapabilities(makeTrainer({
+      skillBackground: { adept: 'acrobatics', novice: 'athletics' },
+      skills: { combat: { rank: 'Adept' } },
+    }))
+
+    expect(capabilities).toEqual({
+      overland: 6,
+      throwingRange: 7,
+      highJump: 1,
+      longJump: 2,
+      swim: 3,
+      power: 6,
+    })
   })
 
   it('resolves default and optional capabilities', () => {

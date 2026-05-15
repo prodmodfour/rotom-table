@@ -69,7 +69,7 @@ const forwardEvasionBonus = (key: TrainerEvasionBonusKey, value: number | undefi
 
     <TrainerCapabilitiesPanel
       v-model:other-caps-csv="otherCapsCsv"
-      :capabilities="sheet.capabilities!"
+      :sheet="sheet"
     />
   </div>
 </template>

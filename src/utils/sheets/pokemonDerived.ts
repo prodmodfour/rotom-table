@@ -3,6 +3,10 @@ import { getPokedexEntry } from '~~/data/characterSheets'
 import { adjustedNatureModForStat, resolveNatureMod } from '~/utils/ptuNatures'
 import { computeInjuryAdjustedMaxHp, computePokemonFormulaMaxHp } from '~/utils/ptuHp'
 import { resolveLevitateAbilitySpeed } from '~/utils/sheetPassiveAbilityEffects'
+import {
+  pokedexNaturewalkDefault,
+  resolvePokemonOtherCapabilities,
+} from '~/utils/sheets/pokemonCapabilities'
 
 // Maps a PTU "Skill" name (as stored in pokedex.json) to the camelCase key on
 // CharacterSheetSkills, so species defaults (e.g. ``"Athletics": "3d6+1"``)
@@ -227,6 +231,7 @@ export const resolveCapabilities = (sheet: CharacterSheet) => {
     rows.push({ label, value })
   }
 
-  const other = sheetCaps.other ?? speciesCaps.other ?? []
-  return { rows, naturewalk: sheetCaps.naturewalk, other }
+  const naturewalk = sheetCaps.naturewalk ?? pokedexNaturewalkDefault(species)
+  const other = resolvePokemonOtherCapabilities(species, sheetCaps)
+  return { rows, naturewalk, other }
 }

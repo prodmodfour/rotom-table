@@ -1,11 +1,24 @@
 import { computed, type ComputedRef, type Ref } from 'vue'
-import type { CharacterSheet } from '~/types/characterSheet'
+import { getPokedexEntry } from '~~/data/characterSheets'
+import type { CharacterSheet, CharacterSheetCapabilities } from '~/types/characterSheet'
 import { formatCsvList, parseCsvList } from '~/utils/sheets/csvFields'
+import {
+  pokedexOtherCapabilityDefaults,
+  removeDefaultCapabilitiesForStorage,
+  resolvePokemonOtherCapabilities,
+} from '~/utils/sheets/pokemonCapabilities'
 
 export interface PokemonSheetCsvFieldSources {
   sheet: Readonly<Ref<CharacterSheet | null>>
   sheetTypes: ComputedRef<readonly string[]>
   eggGroups: ComputedRef<readonly string[]>
+}
+
+const ensureCapabilities = (sheet: CharacterSheet): CharacterSheetCapabilities => {
+  if (!sheet.capabilities || typeof sheet.capabilities !== 'object' || Array.isArray(sheet.capabilities)) {
+    sheet.capabilities = {}
+  }
+  return sheet.capabilities
 }
 
 export function usePokemonSheetCsvFields({
@@ -31,11 +44,16 @@ export function usePokemonSheetCsvFields({
     },
   })
 
+  const species = computed(() => (sheet.value ? getPokedexEntry(sheet.value.species) : null))
+
   const otherCapsCsv = computed<string>({
-    get: () => formatCsvList(sheet.value?.capabilities?.other),
+    get: () => formatCsvList(resolvePokemonOtherCapabilities(species.value, sheet.value?.capabilities)),
     set: (raw) => {
       if (!sheet.value) return
-      sheet.value.capabilities!.other = parseCsvList(raw)
+      ensureCapabilities(sheet.value).other = removeDefaultCapabilitiesForStorage(
+        parseCsvList(raw),
+        pokedexOtherCapabilityDefaults(species.value),
+      )
     },
   })
 

@@ -25,7 +25,7 @@ describe('usePokemonSheetCsvFields', () => {
 
     expect(fields.typesAsCsv.value).toBe('Electric')
     expect(fields.eggGroupsAsCsv.value).toBe('Field, Fairy')
-    expect(fields.otherCapsCsv.value).toBe('Zapper')
+    expect(fields.otherCapsCsv.value).toBe('Zapper, Naturewalk (Forest, Urban), Underdog')
     expect(fields.skillBgRaisedCsv.value).toBe('Acrobatics')
     expect(fields.skillBgLoweredCsv.value).toBe('Stealth')
 
@@ -38,6 +38,7 @@ describe('usePokemonSheetCsvFields', () => {
     expect(sheet.value?.types).toEqual(['Electric', 'Steel'])
     expect(sheet.value?.eggGroups).toEqual(['Field', 'Monster'])
     expect(sheet.value?.capabilities?.other).toEqual(['Telepath', 'Aura Reader'])
+    expect(fields.otherCapsCsv.value).toBe('Zapper, Naturewalk (Forest, Urban), Underdog, Telepath, Aura Reader')
     expect(sheet.value?.skillBackground?.raised).toEqual(['Athletics', 'Survival'])
     expect(sheet.value?.skillBackground?.lowered).toEqual(['Combat'])
   })
@@ -77,6 +78,7 @@ describe('usePokemonSheetCsvFields', () => {
     expect(sheet.value?.skillBackground?.raised).toBeUndefined()
     expect(sheet.value?.skillBackground?.lowered).toBeUndefined()
     expect(sheet.value?.capabilities?.other).toEqual([])
+    expect(fields.otherCapsCsv.value).toBe('Zapper, Naturewalk (Forest, Urban), Underdog')
 
     sheet.value = null
     fields.typesAsCsv.value = 'ignored'
