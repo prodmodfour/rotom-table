@@ -32,19 +32,35 @@ const uniqueNormalizedCapabilities = (capabilities: readonly string[] | null | u
 export const isNaturewalkCapability = (capability: string): boolean =>
   NATUREWALK_PATTERN.test(normalizeCapabilityLabel(capability))
 
-export const pokedexNaturewalkDefault = (
-  species: PokedexRecord | null | undefined,
+const uniqueNormalizedOtherCapabilities = (
+  capabilities: readonly string[] | null | undefined,
+): string[] => uniqueNormalizedCapabilities(capabilities)
+  .filter((capability) => !isNaturewalkCapability(capability))
+
+const naturewalkValueFromCapabilities = (
+  capabilities: readonly string[] | null | undefined,
 ): string | undefined => {
-  const values = (species?.capabilities?.other ?? [])
+  const values = (capabilities ?? [])
     .map((capability) => NATUREWALK_PATTERN.exec(normalizeCapabilityLabel(capability))?.[1]?.trim())
     .filter((value): value is string => Boolean(value))
 
   return values.length ? values.join(', ') : undefined
 }
 
+export const pokedexNaturewalkDefault = (
+  species: PokedexRecord | null | undefined,
+): string | undefined => naturewalkValueFromCapabilities(species?.capabilities?.other)
+
+export const resolvePokemonNaturewalk = (
+  species: PokedexRecord | null | undefined,
+  sheetCapabilities: CharacterSheetCapabilities | null | undefined,
+): string | undefined => sheetCapabilities?.naturewalk
+  ?? naturewalkValueFromCapabilities(sheetCapabilities?.other)
+  ?? pokedexNaturewalkDefault(species)
+
 export const pokedexOtherCapabilityDefaults = (
   species: PokedexRecord | null | undefined,
-): string[] => uniqueNormalizedCapabilities(species?.capabilities?.other)
+): string[] => uniqueNormalizedOtherCapabilities(species?.capabilities?.other)
 
 export const mergeDefaultCapabilities = (
   defaults: readonly string[] | null | undefined,
@@ -69,8 +85,8 @@ export const removeDefaultCapabilitiesForStorage = (
   capabilities: readonly string[] | null | undefined,
   defaults: readonly string[] | null | undefined,
 ): string[] => {
-  const defaultExactKeys = new Set(uniqueNormalizedCapabilities(defaults).map(capabilityExactKey))
-  return uniqueNormalizedCapabilities(capabilities)
+  const defaultExactKeys = new Set(uniqueNormalizedOtherCapabilities(defaults).map(capabilityExactKey))
+  return uniqueNormalizedOtherCapabilities(capabilities)
     .filter((capability) => !defaultExactKeys.has(capabilityExactKey(capability)))
 }
 
@@ -79,5 +95,5 @@ export const resolvePokemonOtherCapabilities = (
   sheetCapabilities: CharacterSheetCapabilities | null | undefined,
 ): string[] => mergeDefaultCapabilities(
   pokedexOtherCapabilityDefaults(species),
-  sheetCapabilities?.other,
+  uniqueNormalizedOtherCapabilities(sheetCapabilities?.other),
 )

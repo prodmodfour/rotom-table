@@ -4,7 +4,7 @@ import { adjustedNatureModForStat, resolveNatureMod } from '~/utils/ptuNatures'
 import { computeInjuryAdjustedMaxHp, computePokemonFormulaMaxHp } from '~/utils/ptuHp'
 import { resolveLevitateAbilitySpeed } from '~/utils/sheetPassiveAbilityEffects'
 import {
-  pokedexNaturewalkDefault,
+  resolvePokemonNaturewalk,
   resolvePokemonOtherCapabilities,
 } from '~/utils/sheets/pokemonCapabilities'
 
@@ -231,7 +231,7 @@ export const resolveCapabilities = (sheet: CharacterSheet) => {
     rows.push({ label, value })
   }
 
-  const naturewalk = sheetCaps.naturewalk ?? pokedexNaturewalkDefault(species)
+  const naturewalk = resolvePokemonNaturewalk(species, sheetCaps)
   const other = resolvePokemonOtherCapabilities(species, sheetCaps)
   return { rows, naturewalk, other }
 }

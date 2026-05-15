@@ -7,7 +7,7 @@ import {
   hasLevitateAbility,
   resolveLevitateAbilitySpeed,
 } from '~/utils/sheetPassiveAbilityEffects'
-import { pokedexNaturewalkDefault } from '~/utils/sheets/pokemonCapabilities'
+import { pokedexNaturewalkDefault, resolvePokemonNaturewalk } from '~/utils/sheets/pokemonCapabilities'
 
 export { pokedexNaturewalkDefault } from '~/utils/sheets/pokemonCapabilities'
 
@@ -72,6 +72,6 @@ export function usePokemonCapabilityModels(sheet: PokemonSheetRef) {
     power: capabilityModel('power', () => species.value?.capabilities?.power),
     weight: capabilityModel('weight', () => species.value?.weight),
     size: capabilityModel('size', () => species.value?.size),
-    naturewalk: capabilityModel('naturewalk', () => pokedexNaturewalkDefault(species.value)),
+    naturewalk: capabilityModel('naturewalk', () => resolvePokemonNaturewalk(species.value, sheet.value?.capabilities)),
   }
 }

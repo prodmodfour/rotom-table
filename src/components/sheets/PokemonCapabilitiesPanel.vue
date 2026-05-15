@@ -76,7 +76,7 @@ const {
     </dl>
     <p class="caps-line">
       <strong><RefLink kind="capability" name="Naturewalk" />:</strong>
-      <EditableCell v-model="naturewalk" placeholder="Forest, Grasslands" />
+      <EditableCell v-model="naturewalk" empty-text="" />
     </p>
     <p class="caps-line">
       <strong>Other:</strong>
