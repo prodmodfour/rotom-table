@@ -196,7 +196,7 @@ export function usePokemonSheetDerived(sheet: PokemonSheetRef) {
       .map((row, i) => ({ ...row, automatic: false, sheetIndex: i }))
     const automaticRows = makeMoveLookupRows(automaticStruggleMoves.value, options)
       .map((row) => ({ ...row, automatic: true, sheetIndex: null }))
-    return [...manualRows, ...automaticRows]
+    return [...automaticRows, ...manualRows]
   })
 
   const abilityRows = computed(() => makeAbilityLookupRows(sheet.value?.abilities))

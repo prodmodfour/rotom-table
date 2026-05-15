@@ -98,8 +98,8 @@ describe('useMoveAutomationPanel', () => {
     panel.openMoveAutomation({ id: 'user-token', moveName: 'Tackle' })
     expect(panel.moveAutomationUser.value?.id).toBe('user-token')
     expect(panel.moveAutomationInitialMoveName.value).toBe('Tackle')
-    expect(panel.moveAutomationMoves.value.map((move) => move.name)).toEqual(['Tackle', 'Struggle'])
-    expect(panel.tokenMoveOptionsById.value['user-token'].map((move) => move.name)).toEqual(['Tackle', 'Struggle'])
+    expect(panel.moveAutomationMoves.value.map((move) => move.name)).toEqual(['Struggle', 'Tackle'])
+    expect(panel.tokenMoveOptionsById.value['user-token'].map((move) => move.name)).toEqual(['Struggle', 'Tackle'])
   })
 
   it('applies sheet updates, gates map effects by GM permission, and appends logs', async () => {

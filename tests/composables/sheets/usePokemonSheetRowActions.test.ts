@@ -48,6 +48,23 @@ describe('usePokemonSheetRowActions', () => {
     expect(sheet.value?.edges).toHaveLength(0)
   })
 
+  it('reorders Pokémon move rows by sheet index', () => {
+    const sheet = ref<CharacterSheet | null>(makeSheet())
+    const actions = usePokemonSheetRowActions(sheet)
+
+    sheet.value!.movelist = [{ name: 'A' }, { name: 'B' }, { name: 'C' }]
+
+    actions.reorderMove(0, 2)
+    expect(sheet.value?.movelist?.map((move) => move.name)).toEqual(['B', 'C', 'A'])
+
+    actions.reorderMove(2, 0)
+    expect(sheet.value?.movelist?.map((move) => move.name)).toEqual(['A', 'B', 'C'])
+
+    actions.reorderMove(null, 1)
+    actions.reorderMove(0, 99)
+    expect(sheet.value?.movelist?.map((move) => move.name)).toEqual(['A', 'B', 'C'])
+  })
+
   it('toggles activatable ability state', () => {
     const sheet = ref<CharacterSheet | null>(makeSheet())
     const actions = usePokemonSheetRowActions(sheet)
@@ -97,6 +114,7 @@ describe('usePokemonSheetRowActions', () => {
     const actions = usePokemonSheetRowActions(sheet)
 
     actions.addMove()
+    actions.reorderMove(0, 1)
     actions.setStat('atk', 'added', 5)
     actions.setEvasionBonus('vsAtkBonus', 1)
     actions.toggleAbilityActivation(0)

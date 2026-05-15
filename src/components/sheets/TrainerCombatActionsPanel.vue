@@ -17,6 +17,7 @@ defineProps<{
 const emit = defineEmits<{
   addMove: []
   removeMove: [index: number | null]
+  reorderMove: [fromIndex: number, toIndex: number]
   addAbility: []
   removeAbility: [index: number]
   addManeuver: []
@@ -27,6 +28,7 @@ const emit = defineEmits<{
 }>()
 
 const emitRemoveMove = (index: number | null) => emit('removeMove', index)
+const emitReorderMove = (fromIndex: number, toIndex: number) => emit('reorderMove', fromIndex, toIndex)
 const emitRemoveAbility = (index: number) => emit('removeAbility', index)
 const emitRemoveManeuver = (index: number) => emit('removeManeuver', index)
 const emitRemoveOrder = (index: number) => emit('removeOrder', index)
@@ -39,6 +41,7 @@ const emitSetOrderTags = (order: TrainerOrder, raw: string) => emit('setOrderTag
       :move-rows="moveRows"
       @add="emit('addMove')"
       @remove="emitRemoveMove"
+      @reorder="emitReorderMove"
     />
     <TrainerAbilitiesPanel
       :ability-rows="abilityRows"

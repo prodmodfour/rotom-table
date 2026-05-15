@@ -76,6 +76,54 @@
 
 .move-row--automatic { background: rgba(184, 187, 38, 0.06); }
 
+.move-row--dragging {
+  opacity: 0.45;
+}
+
+.move-row--drag-over {
+  outline: 1px dashed var(--accent);
+  outline-offset: -3px;
+  background: rgba(250, 189, 47, 0.08);
+}
+
+.move-reorder-heading,
+.move-reorder-cell {
+  width: 1.6rem;
+  min-width: 1.6rem;
+  text-align: center;
+}
+
+.move-drag-handle,
+.move-drag-placeholder {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.35rem;
+  height: 1.35rem;
+}
+
+.move-drag-handle {
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--ink-muted);
+  padding: 0;
+  cursor: grab;
+  transition: border-color 0.12s ease, color 0.12s ease, background 0.12s ease;
+}
+
+.move-drag-handle:active {
+  cursor: grabbing;
+}
+
+.move-drag-handle:hover,
+.move-drag-handle:focus-visible {
+  border-color: var(--accent);
+  background: rgba(250, 189, 47, 0.08);
+  color: var(--accent);
+  outline: none;
+}
+
 .move-auto-badge,
 .row-auto-note {
   display: inline-flex;

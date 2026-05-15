@@ -42,6 +42,7 @@ const emit = defineEmits<{
   setEvasionBonus: [key: TrainerEvasionBonusKey, value: number | undefined]
   addMove: []
   removeMove: [index: number | null]
+  reorderMove: [fromIndex: number, toIndex: number]
   addAbility: []
   removeAbility: [index: number]
   addManeuver: []
@@ -56,6 +57,9 @@ const forwardSetEvasionBonus = (key: TrainerEvasionBonusKey, value: number | und
 
 const forwardSetOrderTags = (order: TrainerOrder, raw: string) =>
   emit('setOrderTags', order, raw)
+
+const forwardReorderMove = (fromIndex: number, toIndex: number) =>
+  emit('reorderMove', fromIndex, toIndex)
 </script>
 
 <template>
@@ -84,6 +88,7 @@ const forwardSetOrderTags = (order: TrainerOrder, raw: string) =>
       :order-tags-csv="orderTagsCsv"
       @add-move="emit('addMove')"
       @remove-move="emit('removeMove', $event)"
+      @reorder-move="forwardReorderMove"
       @add-ability="emit('addAbility')"
       @remove-ability="emit('removeAbility', $event)"
       @add-maneuver="emit('addManeuver')"

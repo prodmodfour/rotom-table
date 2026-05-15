@@ -37,6 +37,22 @@ describe('useTrainerSheetDerived', () => {
     expect(derived.apLeft.value).toBe(99)
   })
 
+  it('lists auto-added Struggle moves before sheet moves', () => {
+    const sheet = ref<TrainerSheet | null>(makeSheet())
+    const derived = useTrainerSheetDerived(sheet)
+
+    expect(derived.moveRows.value[0]).toMatchObject({
+      move: { name: 'Struggle' },
+      automatic: true,
+      sheetIndex: null,
+    })
+    expect(derived.moveRows.value.at(-1)).toMatchObject({
+      move: { name: 'Tackle' },
+      automatic: false,
+      sheetIndex: 0,
+    })
+  })
+
   it('clamps current HP and exposes combat summaries', () => {
     const sheet = ref<TrainerSheet | null>(makeSheet())
     const derived = useTrainerSheetDerived(sheet)

@@ -56,6 +56,7 @@ const {
   removeClass,
   addMove,
   removeMove,
+  reorderMove,
   addAbility,
   removeAbility,
   addManeuver,
@@ -164,6 +165,7 @@ const {
       @set-evasion-bonus="setEvasionBonus"
       @add-move="addMove"
       @remove-move="removeMove"
+      @reorder-move="reorderMove"
       @add-ability="addAbility"
       @remove-ability="removeAbility"
       @add-maneuver="addManeuver"

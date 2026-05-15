@@ -61,6 +61,7 @@ const {
   setHeldItemName,
   addMove,
   removeMove,
+  reorderMove,
   addAbility,
   removeAbility,
   toggleAbilityActivation,
@@ -137,6 +138,7 @@ const {
     :move-rows="moveRows"
     @add-move="addMove"
     @remove-move="removeMove"
+    @reorder-move="reorderMove"
   />
 
   <!-- ============ Type Effectiveness ============ -->

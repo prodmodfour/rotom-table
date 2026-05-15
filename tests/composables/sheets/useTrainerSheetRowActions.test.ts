@@ -72,6 +72,23 @@ describe('useTrainerSheetRowActions', () => {
     expect(sheet.value?.inventory?.keyItems).toHaveLength(0)
   })
 
+  it('reorders trainer move rows by sheet index', () => {
+    const sheet = ref<TrainerSheet | null>(makeSheet())
+    const actions = useTrainerSheetRowActions(sheet)
+
+    sheet.value!.movelist = [{ name: 'A' }, { name: 'B' }, { name: 'C' }]
+
+    actions.reorderMove(0, 2)
+    expect(sheet.value?.movelist?.map((move) => move.name)).toEqual(['B', 'C', 'A'])
+
+    actions.reorderMove(2, 0)
+    expect(sheet.value?.movelist?.map((move) => move.name)).toEqual(['A', 'B', 'C'])
+
+    actions.reorderMove(null, 1)
+    actions.reorderMove(0, 99)
+    expect(sheet.value?.movelist?.map((move) => move.name)).toEqual(['A', 'B', 'C'])
+  })
+
   it('updates advancement rows without duplicating levels', () => {
     const sheet = ref<TrainerSheet | null>(makeSheet())
     const actions = useTrainerSheetRowActions(sheet)
@@ -129,6 +146,7 @@ describe('useTrainerSheetRowActions', () => {
     const actions = useTrainerSheetRowActions(sheet)
 
     actions.addClass()
+    actions.reorderMove(0, 1)
     actions.setStatField('atk', 'base', 10)
     actions.setSkillRank('focus', 'Adept')
 

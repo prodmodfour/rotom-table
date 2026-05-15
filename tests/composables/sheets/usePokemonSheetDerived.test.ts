@@ -30,6 +30,21 @@ describe('usePokemonSheetDerived', () => {
     expect(derived.typeEffectivenessRows.value).toHaveLength(18)
   })
 
+  it('lists auto-added Struggle moves before sheet moves', () => {
+    const sheet = ref<CharacterSheet | null>(makeSheet())
+    const derived = usePokemonSheetDerived(sheet)
+
+    const firstManualIndex = derived.moveRows.value.findIndex((row) => !row.automatic)
+
+    expect(firstManualIndex).toBeGreaterThan(0)
+    expect(derived.moveRows.value.slice(0, firstManualIndex).every((row) => row.automatic)).toBe(true)
+    expect(derived.moveRows.value[firstManualIndex]).toMatchObject({
+      move: { name: 'Thunder Shock' },
+      automatic: false,
+      sheetIndex: 0,
+    })
+  })
+
   it('clamps current HP and accounts for Bright Powder evasion', () => {
     const sheet = ref<CharacterSheet | null>(makeSheet())
     const derived = usePokemonSheetDerived(sheet)

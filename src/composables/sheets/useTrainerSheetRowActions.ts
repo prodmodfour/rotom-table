@@ -15,6 +15,7 @@ import type {
   TrainerSkillKey,
   TrainerStatKey,
 } from '~/types/trainerSheet'
+import { moveArrayItem } from '~/utils/arrayReorder'
 import { coerceEvasionBonus } from '~/utils/evasion'
 import { parseCsvList } from '~/utils/sheets/csvFields'
 
@@ -36,6 +37,9 @@ export function useTrainerSheetRowActions(sheet: Readonly<Ref<TrainerSheet | nul
   const removeMove = (i: number | null) => {
     if (i == null) return
     sheet.value?.movelist?.splice(i, 1)
+  }
+  const reorderMove = (fromIndex: number | null, toIndex: number | null) => {
+    moveArrayItem(sheet.value?.movelist, fromIndex, toIndex)
   }
 
   const addAbility = () =>
@@ -149,6 +153,7 @@ export function useTrainerSheetRowActions(sheet: Readonly<Ref<TrainerSheet | nul
     removeClass,
     addMove,
     removeMove,
+    reorderMove,
     addAbility,
     removeAbility,
     addManeuver,

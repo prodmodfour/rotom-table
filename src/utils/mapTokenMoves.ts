@@ -56,15 +56,15 @@ const trainerStruggleCapabilities = (sheet: TrainerSheet): string[] => [
 ]
 
 export const pokemonMoveEntriesForSheet = (sheet: CharacterSheet): TokenSheetMoveEntry[] => [
-  ...(sheet.movelist ?? []).map((move) => ({ move, automatic: false })),
   ...makeAutomaticStruggleMoves(pokemonStruggleCapabilities(sheet), sheet.movelist)
     .map((move) => ({ move, automatic: true })),
+  ...(sheet.movelist ?? []).map((move) => ({ move, automatic: false })),
 ]
 
 export const trainerMoveEntriesForSheet = (sheet: TrainerSheet): TokenSheetMoveEntry[] => [
-  ...(sheet.movelist ?? []).map((move) => ({ move, automatic: false })),
   ...makeAutomaticStruggleMoves<TrainerMove>(trainerStruggleCapabilities(sheet), sheet.movelist)
     .map((move) => ({ move, automatic: true })),
+  ...(sheet.movelist ?? []).map((move) => ({ move, automatic: false })),
 ]
 
 export const moveEntriesForPlacement = (

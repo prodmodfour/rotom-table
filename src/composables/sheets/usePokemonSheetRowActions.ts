@@ -7,6 +7,7 @@ import type {
   CharacterSheetMove,
   StatKey,
 } from '~/types/characterSheet'
+import { moveArrayItem } from '~/utils/arrayReorder'
 import { coerceEvasionBonus } from '~/utils/evasion'
 import { toggleSheetAbilityActivation } from '~/utils/sheetAbilityActivation'
 
@@ -42,6 +43,10 @@ export function usePokemonSheetRowActions(sheet: Readonly<Ref<CharacterSheet | n
   const removeMove = (i: number | null) => {
     if (i == null) return
     sheet.value?.movelist?.splice(i, 1)
+  }
+
+  const reorderMove = (fromIndex: number | null, toIndex: number | null) => {
+    moveArrayItem(sheet.value?.movelist, fromIndex, toIndex)
   }
 
   const addAbility = () => {
@@ -91,6 +96,7 @@ export function usePokemonSheetRowActions(sheet: Readonly<Ref<CharacterSheet | n
     setHeldItemName,
     addMove,
     removeMove,
+    reorderMove,
     addAbility,
     removeAbility,
     toggleAbilityActivation,

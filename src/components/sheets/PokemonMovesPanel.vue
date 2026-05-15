@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { PhPlus, PhX } from '@phosphor-icons/vue'
+import { PhDotsSixVertical, PhPlus, PhX } from '@phosphor-icons/vue'
+import { useSheetMoveRowDragReorder } from '~/composables/sheets/useSheetMoveRowDragReorder'
 import { formatLookupValue, setLookupMoveName } from '~/utils/sheetMoveLookup'
 import type { PokemonSheetMoveLookupRow } from '~/composables/sheets/usePokemonSheetDerived'
 
@@ -10,7 +11,19 @@ defineProps<{
 const emit = defineEmits<{
   addMove: []
   removeMove: [index: number | null]
+  reorderMove: [fromIndex: number, toIndex: number]
 }>()
+
+const {
+  canDragMoveRow,
+  moveRowDragClass,
+  onMoveRowDragStart,
+  onMoveRowDragEnter,
+  onMoveRowDragOver,
+  onMoveRowDrop,
+  onMoveRowDragEnd,
+  reorderMoveRowByOffset,
+} = useSheetMoveRowDragReorder((fromIndex, toIndex) => emit('reorderMove', fromIndex, toIndex))
 </script>
 
 <template>
@@ -26,6 +39,7 @@ const emit = defineEmits<{
       <table class="moves-table">
         <thead>
           <tr>
+            <th class="move-reorder-heading" aria-label="Move order"></th>
             <th>Name</th>
             <th>Type</th>
             <th>Cat.</th>
@@ -42,8 +56,28 @@ const emit = defineEmits<{
           <tr
             v-for="(row, i) in moveRows"
             :key="row.automatic ? `auto-${row.move.name}-${i}` : `sheet-${row.sheetIndex ?? i}`"
-            :class="{ 'move-row--automatic': row.automatic }"
+            :class="moveRowDragClass(row)"
+            @dragenter="onMoveRowDragEnter($event, row)"
+            @dragover="onMoveRowDragOver($event, row)"
+            @drop="onMoveRowDrop($event, row)"
           >
+            <td class="move-reorder-cell">
+              <button
+                v-if="canDragMoveRow(row)"
+                type="button"
+                class="move-drag-handle"
+                draggable="true"
+                :aria-label="`Drag ${row.move.name.trim() || 'blank move'} to reorder`"
+                title="Drag to reorder move. Focus and use ↑/↓ as an alternative."
+                @dragstart="onMoveRowDragStart($event, row)"
+                @dragend="onMoveRowDragEnd"
+                @keydown.up.prevent="reorderMoveRowByOffset(row, -1)"
+                @keydown.down.prevent="reorderMoveRowByOffset(row, 1)"
+              >
+                <PhDotsSixVertical :size="16" weight="bold" />
+              </button>
+              <span v-else class="move-drag-placeholder" aria-hidden="true"></span>
+            </td>
             <td class="move-name">
               <EditableCell
                 :model-value="row.move.name"
@@ -94,7 +128,7 @@ const emit = defineEmits<{
             </td>
           </tr>
           <tr v-if="!moveRows.length">
-            <td colspan="10" class="empty-cell">No moves yet — click "Add row" to start.</td>
+            <td colspan="11" class="empty-cell">No moves yet — click "Add row" to start.</td>
           </tr>
         </tbody>
       </table>

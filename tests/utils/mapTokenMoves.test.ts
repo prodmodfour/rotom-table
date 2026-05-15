@@ -97,11 +97,11 @@ describe('map token move menu options', () => {
       capabilities: { other: ['Zapper'] },
     })
 
-    expect(entries).toEqual(expect.arrayContaining([
-      { move: { name: 'Tackle' }, automatic: false },
+    expect(entries).toEqual([
       { move: { name: 'Struggle' }, automatic: true },
       { move: { name: 'Struggle (Zapper)' }, automatic: true },
-    ]))
+      { move: { name: 'Tackle' }, automatic: false },
+    ])
   })
 
   it('auto-adds both physical and special Guster Struggle entries', () => {
