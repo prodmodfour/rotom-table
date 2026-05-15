@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { trainerSheetsBySlug } from '~~/data/trainerSheets'
 import { normalizeTrainerSheet } from '~/utils/sheetNormalize'
 import { useEditableSheetResource } from '~/composables/sheets/useEditableSheetResource'
@@ -46,6 +47,12 @@ useSheetRenameUrlSync({
   renamedTo,
 })
 
+const sheetFolder = computed(() => sheet.value?.folder ?? '')
+const sheetPathLabel = computed(() => {
+  if (!sheet.value) return null
+  return sheet.value.name || sheet.value.slug
+})
+
 useHead(() => ({
   title: sheet.value ? `${sheet.value.name} · Trainer Sheet` : 'Trainer not found · Rotom Table',
 }))
@@ -57,6 +64,8 @@ useHead(() => ({
     :has-sheet="Boolean(sheet)"
     :save-status="saveStatus"
     :save-error="saveError"
+    :sheet-folder="sheetFolder"
+    :sheet-path-label="sheetPathLabel"
   >
     <TrainerSheetEditor
       v-if="sheet"

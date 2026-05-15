@@ -11,7 +11,7 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   backTo: SHEET_LIBRARY_PATH,
-  backLabel: '← Back to all sheets',
+  backLabel: '← Back to sheets',
 })
 </script>
 

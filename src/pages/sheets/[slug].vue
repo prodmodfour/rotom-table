@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { characterSheetsBySlug } from '~~/data/characterSheets'
 import { normalizeCharacterSheet } from '~/utils/sheetNormalize'
 import { useEditableSheetResource } from '~/composables/sheets/useEditableSheetResource'
@@ -51,6 +52,12 @@ useSheetRenameUrlSync({
   renamedTo,
 })
 
+const sheetFolder = computed(() => sheet.value?.folder ?? '')
+const sheetPathLabel = computed(() => {
+  if (!sheet.value) return null
+  return sheet.value.nickname || sheet.value.slug
+})
+
 useHead(() => ({
   title: sheet.value
     ? `${sheet.value.nickname} (${sheet.value.species}) · Sheets`
@@ -64,6 +71,8 @@ useHead(() => ({
     :has-sheet="Boolean(sheet)"
     :save-status="saveStatus"
     :save-error="saveError"
+    :sheet-folder="sheetFolder"
+    :sheet-path-label="sheetPathLabel"
   >
     <PokemonSheetEditor
       v-if="sheet"

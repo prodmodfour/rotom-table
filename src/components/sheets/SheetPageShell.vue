@@ -6,6 +6,8 @@ interface Props {
   hasSheet: boolean
   saveStatus?: SaveStatus
   saveError?: string | null
+  sheetFolder?: string | null
+  sheetPathLabel?: string | null
   backTo?: string
   backLabel?: string
 }
@@ -13,8 +15,10 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   saveStatus: undefined,
   saveError: null,
+  sheetFolder: '',
+  sheetPathLabel: null,
   backTo: SHEET_LIBRARY_PATH,
-  backLabel: '← All sheets',
+  backLabel: '← Sheets',
 })
 </script>
 
@@ -23,8 +27,13 @@ const props = withDefaults(defineProps<Props>(), {
     <header class="sheet-page-shell__header">
       <AppNavigation />
 
-      <div class="sheet-page-shell__back-row">
-        <NuxtLink :to="props.backTo" class="sheet-page-shell__back-link">
+      <div class="sheet-page-shell__path-row">
+        <SheetPathBreadcrumbs
+          v-if="props.hasSheet && props.sheetPathLabel"
+          :folder="props.sheetFolder"
+          :current-label="props.sheetPathLabel"
+        />
+        <NuxtLink v-else :to="props.backTo" class="sheet-page-shell__back-link">
           {{ props.backLabel }}
         </NuxtLink>
         <SaveIndicator
@@ -62,11 +71,12 @@ const props = withDefaults(defineProps<Props>(), {
   gap: 0.85rem;
 }
 
-.sheet-page-shell__back-row {
+.sheet-page-shell__path-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.6rem;
+  min-width: 0;
 }
 
 .sheet-page-shell__back-link {
