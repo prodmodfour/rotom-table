@@ -25,8 +25,9 @@ const emit = defineEmits<{
   (event: 'delete'): void
 }>()
 
-const movePanelOpen = ref(false)
-const sendOutPanelOpen = ref(false)
+type ActiveContextPanel = 'main' | 'moves' | 'sendOut'
+
+const activePanel = ref<ActiveContextPanel>('main')
 const hoveredMoveName = ref<string | null>(null)
 
 const moves = computed(() => props.moves ?? [])
@@ -35,37 +36,28 @@ const hoveredMove = computed(() =>
   moves.value.find((move) => move.name === hoveredMoveName.value) ?? moves.value[0] ?? null,
 )
 
-const openMovePanel = () => {
-  closeSendOutPanel()
-  movePanelOpen.value = true
-  hoveredMoveName.value = moves.value[0]?.name ?? null
-}
-
-const closeMovePanel = () => {
-  movePanelOpen.value = false
+const resetContextPanel = () => {
+  activePanel.value = 'main'
   hoveredMoveName.value = null
 }
 
+const openMovePanel = () => {
+  activePanel.value = 'moves'
+  hoveredMoveName.value = moves.value[0]?.name ?? null
+}
+
 const openSendOutPanel = () => {
-  closeMovePanel()
-  sendOutPanelOpen.value = true
+  activePanel.value = 'sendOut'
+  hoveredMoveName.value = null
 }
 
-const closeSendOutPanel = () => {
-  sendOutPanelOpen.value = false
-}
+watch(() => props.menu.id, () => resetContextPanel())
 
-watch(() => props.menu.id, () => {
-  closeMovePanel()
-  closeSendOutPanel()
+watch(moves, (nextMoves) => {
+  if (activePanel.value !== 'moves') return
+  if (nextMoves.some((move) => move.name === hoveredMoveName.value)) return
+  hoveredMoveName.value = nextMoves[0]?.name ?? null
 })
-
-const handleSubmenuFocusOut = (event: FocusEvent, closePanel: () => void) => {
-  const current = event.currentTarget
-  const next = event.relatedTarget
-  if (current instanceof HTMLElement && next instanceof Node && current.contains(next)) return
-  closePanel()
-}
 
 const statStageLabel = (
   label: string | null,
@@ -104,205 +96,215 @@ const stageLabel = (move: TokenMoveMenuOption): string | null => {
       @contextmenu.prevent
       @pointerdown.stop
     >
-    <div
-      class="context-menu__submenu-wrap"
-      @pointerenter="openMovePanel"
-      @pointerleave="closeMovePanel"
-      @focusin="openMovePanel"
-      @focusout="handleSubmenuFocusOut($event, closeMovePanel)"
-    >
-      <button
-        type="button"
-        class="context-menu__button context-menu__button--submenu"
-        :aria-expanded="movePanelOpen"
-        aria-haspopup="menu"
-        @click.stop="openMovePanel"
-      >
-        <span>Use Move</span>
-        <span class="context-menu__chevron">›</span>
-      </button>
+      <template v-if="activePanel === 'main'">
+        <button
+          type="button"
+          class="context-menu__button context-menu__button--submenu"
+          aria-haspopup="menu"
+          @click.stop="openMovePanel"
+        >
+          <span>Use Move</span>
+          <span class="context-menu__chevron">›</span>
+        </button>
 
-      <div v-if="movePanelOpen" class="move-submenu" role="menu">
-        <div class="move-submenu__list" aria-label="Moves">
+        <button
+          v-if="props.menu.canSendOut"
+          type="button"
+          class="context-menu__button context-menu__button--submenu"
+          aria-haspopup="menu"
+          @click.stop="openSendOutPanel"
+        >
+          <span>Send Out Pokémon</span>
+          <span class="context-menu__chevron">›</span>
+        </button>
+
+        <button
+          type="button"
+          class="context-menu__button"
+          @click.stop="emit('view-sheet')"
+        >
+          View Sheet
+        </button>
+        <button
+          v-if="props.menu.canViewPokedex"
+          type="button"
+          class="context-menu__button"
+          @click.stop="emit('view-pokedex')"
+        >
+          View in Pokédex
+        </button>
+        <button
+          v-if="props.menu.canTurn"
+          type="button"
+          class="context-menu__button"
+          @click.stop="emit('turn')"
+        >
+          Turn sprite
+        </button>
+        <button
+          type="button"
+          class="context-menu__button"
+          @click.stop="emit('modify-hp')"
+        >
+          Modify HP
+        </button>
+        <button
+          type="button"
+          class="context-menu__button"
+          @click.stop="emit('modify-combat-stages')"
+        >
+          Change combat stages
+        </button>
+        <button
+          type="button"
+          class="context-menu__button"
+          @click.stop="emit('apply-remove-conditions')"
+        >
+          Apply/Remove Conditions
+        </button>
+
+        <button
+          type="button"
+          class="context-menu__button"
+          @click.stop="emit('deal-damage')"
+        >
+          Deal damage
+        </button>
+        <button
+          v-if="props.canDeleteTokens"
+          type="button"
+          class="context-menu__button"
+          @click.stop="emit('delete')"
+        >
+          Delete
+        </button>
+      </template>
+
+      <template v-else-if="activePanel === 'moves'">
+        <button
+          type="button"
+          class="context-menu__button context-menu__button--back"
+          @click.stop="resetContextPanel"
+        >
+          <span class="context-menu__back-icon" aria-hidden="true">‹</span>
+          <span>Back</span>
+        </button>
+
+        <p class="context-menu__submenu-title">Use Move</p>
+
+        <div class="move-submenu">
+          <div class="move-submenu__list" role="menu" aria-label="Moves">
+            <button
+              v-for="move in moves"
+              :key="move.name"
+              type="button"
+              class="move-submenu__item"
+              :class="{ 'is-active': hoveredMove?.name === move.name }"
+              role="menuitem"
+              @pointerenter="hoveredMoveName = move.name"
+              @focus="hoveredMoveName = move.name"
+              @click.stop="emit('use-move', move.name)"
+            >
+              <span class="move-submenu__name">{{ move.name }}</span>
+              <span class="move-submenu__badges">
+                <TypeBadge v-if="move.type" :type="move.type" size="xs" />
+                <DamageClassBadge v-if="move.damageClass" :category="move.damageClass" size="xs" />
+                <span v-if="move.damageBase != null" class="move-submenu__badge">DB {{ move.damageBase }}</span>
+                <span v-if="move.hasStab" class="move-submenu__badge move-submenu__badge--stab">STAB</span>
+                <span v-if="move.automatic" class="move-submenu__badge">Auto</span>
+              </span>
+            </button>
+
+            <div v-if="!moves.length" class="context-menu__empty">
+              This sheet has no moves.
+            </div>
+          </div>
+
+          <aside v-if="hoveredMove" class="move-tooltip" aria-live="polite">
+            <header class="move-tooltip__header">
+              <strong>{{ hoveredMove.name }}</strong>
+              <span class="move-tooltip__pills">
+                <TypeBadge v-if="hoveredMove.type" :type="hoveredMove.type" size="xs" />
+                <DamageClassBadge v-if="hoveredMove.damageClass" :category="hoveredMove.damageClass" size="xs" />
+              </span>
+            </header>
+
+            <dl class="move-tooltip__stats">
+              <div v-if="hoveredMove.damageBase != null">
+                <dt>DB</dt>
+                <dd>
+                  {{ hoveredMove.damageBase }}
+                  <span v-if="hoveredMove.hasStab" class="move-tooltip__note">STAB included</span>
+                </dd>
+              </div>
+              <div v-if="hoveredMove.damageFormula">
+                <dt>Damage</dt>
+                <dd>{{ hoveredMove.damageFormula }}</dd>
+              </div>
+              <div v-if="stageLabel(hoveredMove)">
+                <dt>Stat</dt>
+                <dd>{{ stageLabel(hoveredMove) }}</dd>
+              </div>
+              <div v-if="hoveredMove.frequency">
+                <dt>Freq</dt>
+                <dd>{{ hoveredMove.frequency }}</dd>
+              </div>
+              <div v-if="hoveredMove.ac != null">
+                <dt>AC</dt>
+                <dd>{{ hoveredMove.ac }}</dd>
+              </div>
+              <div v-if="hoveredMove.range">
+                <dt>Range</dt>
+                <dd>{{ hoveredMove.range }}</dd>
+              </div>
+            </dl>
+
+            <p v-if="hoveredMove.effect" class="move-tooltip__effect">{{ hoveredMove.effect }}</p>
+            <p v-if="hoveredMove.special" class="move-tooltip__effect"><strong>Special:</strong> {{ hoveredMove.special }}</p>
+            <p v-if="!hoveredMove.effect && !hoveredMove.special" class="move-tooltip__effect is-muted">No effect or special text in moves.json.</p>
+          </aside>
+        </div>
+      </template>
+
+      <template v-else-if="activePanel === 'sendOut'">
+        <button
+          type="button"
+          class="context-menu__button context-menu__button--back"
+          @click.stop="resetContextPanel"
+        >
+          <span class="context-menu__back-icon" aria-hidden="true">‹</span>
+          <span>Back</span>
+        </button>
+
+        <p class="context-menu__submenu-title">Send Out Pokémon</p>
+
+        <div class="sendout-submenu" role="menu" aria-label="Send out Pokémon">
           <button
-            v-for="move in moves"
-            :key="move.name"
+            v-for="option in sendOutOptions"
+            :key="option.pokemonSlug"
             type="button"
-            class="move-submenu__item"
-            :class="{ 'is-active': hoveredMove?.name === move.name }"
+            class="sendout-submenu__item"
             role="menuitem"
-            @pointerenter="hoveredMoveName = move.name"
-            @focus="hoveredMoveName = move.name"
-            @click.stop="emit('use-move', move.name)"
+            @click.stop="emit('send-out-pokemon', option.pokemonSlug)"
           >
-            <span class="move-submenu__name">{{ move.name }}</span>
-            <span class="move-submenu__badges">
-              <TypeBadge v-if="move.type" :type="move.type" size="xs" />
-              <DamageClassBadge v-if="move.damageClass" :category="move.damageClass" size="xs" />
-              <span v-if="move.damageBase != null" class="move-submenu__badge">DB {{ move.damageBase }}</span>
-              <span v-if="move.hasStab" class="move-submenu__badge move-submenu__badge--stab">STAB</span>
-              <span v-if="move.automatic" class="move-submenu__badge">Auto</span>
+            <img
+              v-if="option.spriteUrl"
+              class="sendout-submenu__sprite"
+              :src="option.spriteUrl"
+              alt=""
+              loading="lazy"
+            >
+            <span class="sendout-submenu__text">
+              <strong>{{ option.label }}</strong>
+              <small>Lv {{ option.level }} · {{ option.species }}</small>
             </span>
           </button>
 
-          <div v-if="!moves.length" class="move-submenu__empty">
-            This sheet has no moves.
+          <div v-if="!sendOutOptions.length" class="context-menu__empty">
+            This trainer has no linked team Pokémon.
           </div>
         </div>
-
-        <aside v-if="hoveredMove" class="move-tooltip" aria-live="polite">
-          <header class="move-tooltip__header">
-            <strong>{{ hoveredMove.name }}</strong>
-            <span class="move-tooltip__pills">
-              <TypeBadge v-if="hoveredMove.type" :type="hoveredMove.type" size="xs" />
-              <DamageClassBadge v-if="hoveredMove.damageClass" :category="hoveredMove.damageClass" size="xs" />
-            </span>
-          </header>
-
-          <dl class="move-tooltip__stats">
-            <div v-if="hoveredMove.damageBase != null">
-              <dt>DB</dt>
-              <dd>
-                {{ hoveredMove.damageBase }}
-                <span v-if="hoveredMove.hasStab" class="move-tooltip__note">STAB included</span>
-              </dd>
-            </div>
-            <div v-if="hoveredMove.damageFormula">
-              <dt>Damage</dt>
-              <dd>{{ hoveredMove.damageFormula }}</dd>
-            </div>
-            <div v-if="stageLabel(hoveredMove)">
-              <dt>Stat</dt>
-              <dd>{{ stageLabel(hoveredMove) }}</dd>
-            </div>
-            <div v-if="hoveredMove.frequency">
-              <dt>Freq</dt>
-              <dd>{{ hoveredMove.frequency }}</dd>
-            </div>
-            <div v-if="hoveredMove.ac != null">
-              <dt>AC</dt>
-              <dd>{{ hoveredMove.ac }}</dd>
-            </div>
-            <div v-if="hoveredMove.range">
-              <dt>Range</dt>
-              <dd>{{ hoveredMove.range }}</dd>
-            </div>
-          </dl>
-
-          <p v-if="hoveredMove.effect" class="move-tooltip__effect">{{ hoveredMove.effect }}</p>
-          <p v-if="hoveredMove.special" class="move-tooltip__effect"><strong>Special:</strong> {{ hoveredMove.special }}</p>
-          <p v-if="!hoveredMove.effect && !hoveredMove.special" class="move-tooltip__effect is-muted">No effect or special text in moves.json.</p>
-        </aside>
-      </div>
-    </div>
-
-    <div
-      v-if="props.menu.canSendOut"
-      class="context-menu__submenu-wrap"
-      @pointerenter="openSendOutPanel"
-      @pointerleave="closeSendOutPanel"
-      @focusin="openSendOutPanel"
-      @focusout="handleSubmenuFocusOut($event, closeSendOutPanel)"
-    >
-      <button
-        type="button"
-        class="context-menu__button context-menu__button--submenu"
-        :aria-expanded="sendOutPanelOpen"
-        aria-haspopup="menu"
-        @click.stop="openSendOutPanel"
-      >
-        <span>Send Out Pokémon</span>
-        <span class="context-menu__chevron">›</span>
-      </button>
-
-      <div v-if="sendOutPanelOpen" class="sendout-submenu" role="menu">
-        <button
-          v-for="option in sendOutOptions"
-          :key="option.pokemonSlug"
-          type="button"
-          class="sendout-submenu__item"
-          role="menuitem"
-          @click.stop="emit('send-out-pokemon', option.pokemonSlug)"
-        >
-          <img
-            v-if="option.spriteUrl"
-            class="sendout-submenu__sprite"
-            :src="option.spriteUrl"
-            alt=""
-            loading="lazy"
-          >
-          <span class="sendout-submenu__text">
-            <strong>{{ option.label }}</strong>
-            <small>Lv {{ option.level }} · {{ option.species }}</small>
-          </span>
-        </button>
-
-        <div v-if="!sendOutOptions.length" class="move-submenu__empty">
-          This trainer has no linked team Pokémon.
-        </div>
-      </div>
-    </div>
-
-    <button
-      type="button"
-      class="context-menu__button"
-      @click.stop="emit('view-sheet')"
-    >
-      View Sheet
-    </button>
-    <button
-      v-if="props.menu.canViewPokedex"
-      type="button"
-      class="context-menu__button"
-      @click.stop="emit('view-pokedex')"
-    >
-      View in Pokédex
-    </button>
-    <button
-      v-if="props.menu.canTurn"
-      type="button"
-      class="context-menu__button"
-      @click.stop="emit('turn')"
-    >
-      Turn sprite
-    </button>
-    <button
-      type="button"
-      class="context-menu__button"
-      @click.stop="emit('modify-hp')"
-    >
-      Modify HP
-    </button>
-    <button
-      type="button"
-      class="context-menu__button"
-      @click.stop="emit('modify-combat-stages')"
-    >
-      Change combat stages
-    </button>
-    <button
-      type="button"
-      class="context-menu__button"
-      @click.stop="emit('apply-remove-conditions')"
-    >
-      Apply/Remove Conditions
-    </button>
-
-    <button
-      type="button"
-      class="context-menu__button"
-      @click.stop="emit('deal-damage')"
-    >
-      Deal damage
-    </button>
-    <button
-      v-if="props.canDeleteTokens"
-      type="button"
-      class="context-menu__button"
-      @click.stop="emit('delete')"
-    >
-      Delete
-    </button>
+      </template>
     </div>
   </Teleport>
 </template>
@@ -311,13 +313,21 @@ const stageLabel = (move: TokenMoveMenuOption): string | null => {
 .context-menu {
   position: fixed;
   z-index: 11000;
-  min-width: 160px;
+  width: min(230px, calc(100vw - 1.5rem));
+  max-height: calc(100vh - 1.5rem);
+  overflow: visible;
   padding: 0.4rem;
   border: 1px solid var(--rule-soft);
   border-radius: 12px;
   background: var(--paper-soft);
   box-shadow: var(--shadow-card);
   backdrop-filter: blur(8px);
+  box-sizing: border-box;
+}
+
+.context-menu,
+.context-menu * {
+  box-sizing: border-box;
 }
 
 .context-menu__button {
@@ -334,15 +344,14 @@ const stageLabel = (move: TokenMoveMenuOption): string | null => {
 }
 
 .context-menu__button + .context-menu__button,
-.context-menu__submenu-wrap + .context-menu__button,
-.context-menu__button + .context-menu__submenu-wrap,
-.context-menu__submenu-wrap + .context-menu__submenu-wrap {
+.context-menu__button + .context-menu__submenu-title,
+.context-menu__submenu-title + .move-submenu,
+.context-menu__submenu-title + .sendout-submenu {
   margin-top: 0.3rem;
 }
 
 .context-menu__button:hover,
-.context-menu__button:focus-visible,
-.context-menu__submenu-wrap:hover > .context-menu__button {
+.context-menu__button:focus-visible {
   border-color: var(--rule-strong);
   background: var(--paper-hover);
   color: var(--ink-bright);
@@ -355,33 +364,36 @@ const stageLabel = (move: TokenMoveMenuOption): string | null => {
   gap: 0.8rem;
 }
 
-.context-menu__chevron {
+.context-menu__button--back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.45rem;
+}
+
+.context-menu__chevron,
+.context-menu__back-icon {
   color: var(--ink-muted);
   font-size: 1.1rem;
   line-height: 1;
 }
 
-.context-menu__submenu-wrap {
-  position: relative;
-}
-
-.move-submenu,
-.sendout-submenu {
-  position: absolute;
-  left: calc(100% + 0.45rem);
-  top: 0;
-  z-index: 11001;
+.context-menu__submenu-title {
+  margin: 0;
+  color: var(--ink-muted);
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .move-submenu {
   display: grid;
-  grid-template-columns: minmax(220px, 280px) minmax(260px, 340px);
+  grid-template-columns: minmax(0, 1fr);
   gap: 0.45rem;
-  max-width: min(680px, calc(100vw - 2rem));
 }
 
 .sendout-submenu {
-  width: min(18rem, calc(100vw - 2rem));
   max-height: min(70vh, 24rem);
   overflow: auto;
   padding: 0.35rem;
@@ -402,7 +414,7 @@ const stageLabel = (move: TokenMoveMenuOption): string | null => {
 }
 
 .move-submenu__list {
-  max-height: min(70vh, 30rem);
+  max-height: min(42vh, 18rem);
   overflow: auto;
   padding: 0.35rem;
 }
@@ -502,14 +514,14 @@ const stageLabel = (move: TokenMoveMenuOption): string | null => {
   color: var(--accent);
 }
 
-.move-submenu__empty {
+.context-menu__empty {
   padding: 0.7rem;
   color: var(--ink-muted);
   font-size: 0.84rem;
 }
 
 .move-tooltip {
-  max-height: min(70vh, 30rem);
+  max-height: min(32vh, 14rem);
   overflow: auto;
   padding: 0.75rem;
 }
@@ -562,11 +574,5 @@ const stageLabel = (move: TokenMoveMenuOption): string | null => {
 
 .move-tooltip__effect.is-muted {
   font-style: italic;
-}
-
-@media (max-width: 860px) {
-  .move-submenu {
-    grid-template-columns: minmax(220px, 1fr);
-  }
 }
 </style>
