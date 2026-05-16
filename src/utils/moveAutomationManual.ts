@@ -1,4 +1,5 @@
 import { formatMoveDamageBase } from '~/utils/moveDamageBase'
+import { parseMoveAutomationAreaTemplates } from '~/utils/moveAutomationAreaTemplates'
 import { parseMoveAutomationConditionSuggestions } from '~/utils/moveAutomationConditionSuggestions'
 import { coerceMoveAccuracy, coerceMoveDamageBase } from '~/utils/moveAutomationCoercion'
 import {
@@ -60,6 +61,7 @@ export const createManualMoveAutomationScript = (move: MoveAutomationMoveLike): 
     special,
     keywords,
     criticalRange: parseMoveAutomationCriticalRange(effect),
+    areaTemplates: parseMoveAutomationAreaTemplates(range),
     conditionSuggestions,
     stageSuggestions,
     hpSuggestions,

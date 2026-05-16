@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { MoveAutomationScript } from '~/types/moveAutomation'
 import type { SpawnedPokemon } from '~/types/pokemon'
+import type { MoveAutomationAreaTemplatePlacement } from '~/utils/moveAutomationAreaTemplates'
 import type { MoveAutomationTargetResolutionState } from '~/utils/moveAutomationTargetResolution'
 
 defineProps<{
@@ -8,6 +9,7 @@ defineProps<{
   script: MoveAutomationScript
   targetOptions: SpawnedPokemon[]
   selectedTargets: SpawnedPokemon[]
+  areaTemplateOptions: MoveAutomationAreaTemplatePlacement[]
   targetIds: string[]
   requiresTargets: boolean
   selectedMoveFormula: string | null
@@ -18,6 +20,7 @@ defineProps<{
 
 const emit = defineEmits<{
   (event: 'toggle-target', id: string): void
+  (event: 'apply-area-template', id: string): void
   (event: 'roll-all'): void
   (event: 'roll-accuracy', id: string): void
   (event: 'roll-damage', id: string): void
@@ -31,6 +34,21 @@ const emit = defineEmits<{
       <span v-if="script.targetCount">Choose {{ script.targetCount }}</span>
       <span v-else>Choose all affected tokens</span>
     </header>
+    <div v-if="areaTemplateOptions.length" class="template-grid">
+      <button
+        v-for="template in areaTemplateOptions"
+        :key="template.id"
+        type="button"
+        class="template-chip"
+        @click="emit('apply-area-template', template.id)"
+      >
+        <strong>{{ template.label }}</strong>
+        <span>{{ template.targetIds.length }} affected</span>
+      </button>
+    </div>
+    <p v-if="areaTemplateOptions.length" class="move-resolution__hint">
+      Templates are based on PTU Burst, Blast, Cone, and Line geometry. Use manual target chips for allies, blockers, elevation, or unusual rulings.
+    </p>
     <div class="target-grid">
       <button
         v-for="token in targetOptions"
@@ -113,7 +131,8 @@ const emit = defineEmits<{
 }
 
 .mini-button,
-.target-chip {
+.target-chip,
+.template-chip {
   border: 1px solid var(--rule-soft);
   border-radius: 14px;
   background: var(--paper);
@@ -133,14 +152,16 @@ const emit = defineEmits<{
   cursor: not-allowed;
 }
 
-.target-grid {
+.target-grid,
+.template-grid {
   display: flex;
   flex-wrap: wrap;
   gap: 0.45rem;
   margin-top: 0.6rem;
 }
 
-.target-chip {
+.target-chip,
+.template-chip {
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
@@ -148,6 +169,11 @@ const emit = defineEmits<{
   padding: 0.55rem 0.65rem;
   color: var(--ink);
   cursor: pointer;
+}
+
+.template-chip {
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--rule-soft));
+  background: color-mix(in srgb, var(--accent) 7%, var(--paper));
 }
 
 .target-chip.is-selected {

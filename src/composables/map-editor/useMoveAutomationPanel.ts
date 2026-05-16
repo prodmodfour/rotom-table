@@ -6,18 +6,30 @@ import {
 } from '~/utils/mapTokenMoves'
 import {
   damageFormulaForMove,
+  isSeamlessAreaConfirmationScript,
   isSeamlessSingleTargetAttackScript,
 } from '~/utils/moveAutomation'
+import {
+  buildMoveAutomationAreaTemplateCells,
+  buildMoveAutomationAreaTemplatePlacements,
+  tokensInMoveAutomationArea,
+  type MoveAutomationAreaTemplatePlacement,
+} from '~/utils/moveAutomationAreaTemplates'
 import { buildMoveAutomationMoveEntries } from '~/utils/moveAutomationMoves'
-import { resolveInstantMoveAutomation } from '~/utils/moveAutomationInstant'
+import {
+  resolveInstantAreaMoveAutomation,
+  resolveInstantMoveAutomation,
+} from '~/utils/moveAutomationInstant'
 import { isMoveDisabledByConditions } from '~/utils/statusConditions'
 import {
   moveAutomationTargetsInRange,
   parseSingleTargetMoveRangeMeters,
 } from '~/utils/moveAutomationRange'
 import type { CharacterSheet, CharacterSheetMove } from '~/types/characterSheet'
-import type { MapFieldEffects, MapHazardV2, TabletopMap } from '~/types/map'
+import type { GridAnchor, MapFieldEffects, MapHazardV2, TabletopMap } from '~/types/map'
 import type {
+  MoveAutomationAreaDirection,
+  MoveAutomationAreaDirectionOption,
   MoveAutomationCombatStageUpdate,
   MoveAutomationConditionUpdate,
   MoveAutomationFieldEffectApply,
@@ -65,13 +77,28 @@ const DEFAULT_MAX_LOG_ENTRIES = 100
 const D20_ROLL_ANIMATION_MS = 850
 const ROLL_RESULT_VISIBLE_MS = 1600
 
-interface ActiveMoveTargetingRequest {
+interface ActiveSingleTargetingRequest {
+  kind: 'single-target'
   userId: string
   moveName: string
   script: MoveAutomationScript
   damageFormula: string
   rangeMeters: number
 }
+
+interface ActiveAreaConfirmationRequest {
+  kind: 'area-confirmation'
+  userId: string
+  moveName: string
+  script: MoveAutomationScript
+  label: string
+  cells: GridAnchor[]
+  targetIds: string[]
+  direction?: MoveAutomationAreaDirection
+  directionOptions: MoveAutomationAreaDirectionOption[]
+}
+
+type ActiveMoveTargetingRequest = ActiveSingleTargetingRequest | ActiveAreaConfirmationRequest
 
 export const appendMoveAutomationLogEntry = (
   metadata: Record<string, unknown> | undefined,
@@ -164,6 +191,22 @@ export const useMoveAutomationPanel = ({
     const request = activeMoveTargeting.value
     const user = findSpawnedPokemon(request?.userId)
     if (!request || !user || !canControlPlacement(request.userId)) return null
+
+    if (request.kind === 'area-confirmation') {
+      return {
+        userId: request.userId,
+        moveName: request.moveName,
+        mode: 'area-confirmation',
+        rangeLabel: request.label,
+        rangeMeters: 0,
+        candidateIds: request.targetIds,
+        areaCells: request.cells,
+        affectedIds: request.targetIds,
+        areaDirection: request.direction,
+        areaDirectionOptions: request.directionOptions,
+      }
+    }
+
     const candidates = moveAutomationTargetsInRange({
       user,
       tokens: spawnedPokemon.value,
@@ -172,6 +215,7 @@ export const useMoveAutomationPanel = ({
     return {
       userId: request.userId,
       moveName: request.moveName,
+      mode: 'target',
       rangeLabel: `${request.rangeMeters}m`,
       rangeMeters: request.rangeMeters,
       candidateIds: candidates.map((candidate) => candidate.id),
@@ -199,28 +243,121 @@ export const useMoveAutomationPanel = ({
     moveAutomationFeedback.value = null
   }
 
+  const tokenFacingAreaDirection = (user: SpawnedPokemon): MoveAutomationAreaDirection =>
+    user.turned ? 'north-west' : 'south-east'
+
+  const directionOptionsForPlacements = (
+    placements: readonly MoveAutomationAreaTemplatePlacement[],
+  ): MoveAutomationAreaDirectionOption[] => placements
+    .filter((placement): placement is MoveAutomationAreaTemplatePlacement & { direction: MoveAutomationAreaDirection } => Boolean(placement.direction))
+    .map((placement) => ({
+      direction: placement.direction,
+      label: placement.label,
+      areaCells: placement.cells,
+      affectedIds: placement.targetIds,
+    }))
+
+  const areaPlacementForTokenFacing = (
+    placements: readonly MoveAutomationAreaTemplatePlacement[],
+    user: SpawnedPokemon,
+  ): MoveAutomationAreaTemplatePlacement | null => placements.find((placement) =>
+    placement.direction === tokenFacingAreaDirection(user),
+  ) ?? placements[0] ?? null
+
+  const requestFromAreaPlacement = (
+    user: SpawnedPokemon,
+    script: MoveAutomationScript,
+    placement: MoveAutomationAreaTemplatePlacement,
+    placements: readonly MoveAutomationAreaTemplatePlacement[],
+  ): ActiveAreaConfirmationRequest => ({
+    kind: 'area-confirmation',
+    userId: user.id,
+    moveName: script.moveName,
+    script,
+    label: placement.label,
+    cells: placement.cells,
+    targetIds: placement.targetIds,
+    direction: placement.direction,
+    directionOptions: directionOptionsForPlacements(placements),
+  })
+
+  const makeFallbackAreaPlacement = (
+    script: MoveAutomationScript,
+    user: SpawnedPokemon,
+  ): ActiveAreaConfirmationRequest | null => {
+    const template = script.areaTemplates?.[0]
+    if (!template) return null
+    const direction = template.kind === 'cone' || template.kind === 'line' || template.kind === 'close-blast'
+      ? tokenFacingAreaDirection(user)
+      : undefined
+    const cells = buildMoveAutomationAreaTemplateCells({ template, user, direction })
+    const targetIds = tokensInMoveAutomationArea({
+      cells,
+      tokens: spawnedPokemon.value,
+      excludeIds: [user.id],
+    }).map((token) => token.id)
+    return {
+      kind: 'area-confirmation',
+      userId: user.id,
+      moveName: script.moveName,
+      script,
+      label: template.label,
+      cells,
+      targetIds,
+      direction,
+      directionOptions: [],
+    }
+  }
+
+  const beginSeamlessAreaConfirmation = (id: string, entry: ReturnType<typeof moveAutomationEntryForUse>): boolean => {
+    const user = findSpawnedPokemon(id)
+    if (!user || !entry || !isSeamlessAreaConfirmationScript(entry.script)) return false
+    const placements = buildMoveAutomationAreaTemplatePlacements({
+      script: entry.script,
+      user,
+      tokens: spawnedPokemon.value,
+      includeEmpty: true,
+    })
+    const placement = areaPlacementForTokenFacing(placements, user)
+    const request = placement
+      ? requestFromAreaPlacement(user, entry.script, placement, placements)
+      : makeFallbackAreaPlacement(entry.script, user)
+    if (!request) return false
+
+    clearMoveAutomationFeedback()
+    closeMoveAutomation()
+    activeMoveTargeting.value = request
+    return true
+  }
+
   const beginSeamlessMoveTargeting = (id: string, moveName: string | null | undefined): boolean => {
     const trimmedMoveName = moveName?.trim()
     if (!trimmedMoveName) return false
     const user = findSpawnedPokemon(id)
     const entry = moveAutomationEntryForUse(id, trimmedMoveName)
-    if (!user || !entry || !isSeamlessSingleTargetAttackScript(entry.script)) return false
-    const rangeMeters = parseSingleTargetMoveRangeMeters(entry.script.range, {
-      focusSkillRankValue: user.focusSkillRankValue,
-    })
-    const damageFormula = damageFormulaForMove(entry.move)
-    if (rangeMeters == null || !damageFormula) return false
+    if (!user || !entry) return false
 
-    clearMoveAutomationFeedback()
-    closeMoveAutomation()
-    activeMoveTargeting.value = {
-      userId: id,
-      moveName: entry.script.moveName,
-      script: entry.script,
-      damageFormula,
-      rangeMeters,
+    if (isSeamlessSingleTargetAttackScript(entry.script)) {
+      const rangeMeters = parseSingleTargetMoveRangeMeters(entry.script.range, {
+        focusSkillRankValue: user.focusSkillRankValue,
+      })
+      const damageFormula = damageFormulaForMove(entry.move)
+      if (rangeMeters == null || !damageFormula) return false
+
+      clearMoveAutomationFeedback()
+      closeMoveAutomation()
+      activeMoveTargeting.value = {
+        kind: 'single-target',
+        userId: id,
+        moveName: entry.script.moveName,
+        script: entry.script,
+        damageFormula,
+        rangeMeters,
+      }
+      return true
     }
-    return true
+
+    return beginSeamlessAreaConfirmation(id, entry)
   }
 
   const openMoveAutomation = (input: string | { id: string; moveName?: string | null }) => {
@@ -281,10 +418,46 @@ export const useMoveAutomationPanel = ({
     }, D20_ROLL_ANIMATION_MS + ROLL_RESULT_VISIBLE_MS))
   }
 
-  const selectMoveAutomationTarget = (targetId: string) => {
+  const selectMoveAutomationAreaDirection = (direction: MoveAutomationAreaDirection) => {
+    const request = activeMoveTargeting.value
+    if (request?.kind !== 'area-confirmation') return
+    const option = request.directionOptions.find((item) => item.direction === direction)
+    if (!option) return
+    activeMoveTargeting.value = {
+      ...request,
+      label: option.label,
+      cells: option.areaCells,
+      targetIds: option.affectedIds,
+      direction: option.direction,
+    }
+  }
+
+  const confirmMoveAutomationArea = async (request: ActiveAreaConfirmationRequest) => {
+    const user = findSpawnedPokemon(request.userId)
+    if (!user) return
+    const targetSet = new Set(request.targetIds)
+    const targets = spawnedPokemon.value.filter((token) => targetSet.has(token.id))
+    const transaction = resolveInstantAreaMoveAutomation({
+      script: request.script,
+      user,
+      targets,
+      fieldEffects: map.value?.fieldEffects,
+    })
+    activeMoveTargeting.value = null
+    await applyMoveAutomation(transaction)
+  }
+
+  const selectMoveAutomationTarget = async (targetId: string) => {
     const request = activeMoveTargeting.value
     const overlay = moveAutomationTargeting.value
-    if (!request || !overlay?.candidateIds.includes(targetId)) return
+    if (!request) return
+
+    if (request.kind === 'area-confirmation') {
+      await confirmMoveAutomationArea(request)
+      return
+    }
+
+    if (!overlay?.candidateIds.includes(targetId)) return
     const user = findSpawnedPokemon(request.userId)
     const target = findSpawnedPokemon(targetId)
     if (!user || !target) return
@@ -314,6 +487,7 @@ export const useMoveAutomationPanel = ({
     closeMoveAutomation,
     cancelMoveAutomationTargeting,
     selectMoveAutomationTarget,
+    selectMoveAutomationAreaDirection,
     appendMoveAutomationLog,
     applyMoveAutomation,
   }

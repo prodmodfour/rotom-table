@@ -17,6 +17,7 @@ import type {
   VoxelMaterial,
 } from '~/types/map'
 import type {
+  MoveAutomationAreaDirection,
   MoveAutomationFeedbackState,
   MoveAutomationTargetingOverlayState,
   MoveAutomationTransaction,
@@ -90,6 +91,7 @@ const emit = defineEmits<{
   (event: 'close-move-automation'): void
   (event: 'apply-move-automation', transaction: MoveAutomationTransaction): void
   (event: 'select-move-target', targetId: string): void
+  (event: 'select-move-area-direction', direction: MoveAutomationAreaDirection): void
   (event: 'cancel-move-targeting'): void
 }>()
 
@@ -149,6 +151,7 @@ defineExpose({ focusPokemon })
         @place-hazard="emit('place-hazard', $event)"
         @remove-hazard="emit('remove-hazard', $event)"
         @select-move-target="emit('select-move-target', $event)"
+        @select-move-area-direction="emit('select-move-area-direction', $event)"
         @cancel-move-targeting="emit('cancel-move-targeting')"
       />
       <MapSceneStatus v-else :status="status" :error="error" :slug="slug" />

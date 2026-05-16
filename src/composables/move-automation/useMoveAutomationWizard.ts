@@ -1,5 +1,6 @@
 import { computed, reactive, ref, watch } from 'vue'
 import { damageFormulaForMove } from '~/utils/moveAutomation'
+import { buildMoveAutomationAreaTemplatePlacements } from '~/utils/moveAutomationAreaTemplates'
 import { parseHazardCellText } from '~/utils/moveAutomationDialog'
 import {
   moveAutomationUserAccuracy,
@@ -86,6 +87,11 @@ export const useMoveAutomationWizard = (
   const script = computed(() => selectedEntry.value?.script ?? null)
   const targetOptions = computed(() => sortMoveAutomationTargets(props.allTokens))
   const selectedTargets = computed(() => selectedMoveAutomationTargets(targetIds.value, props.allTokens))
+  const areaTemplateOptions = computed(() => buildMoveAutomationAreaTemplatePlacements({
+    script: script.value,
+    user: props.user,
+    tokens: props.allTokens,
+  }))
   const requiresTargets = computed(() => moveAutomationRequiresTargets(script.value))
   const selectedMoveFormula = computed(() => selectedEntry.value ? damageFormulaForMove(selectedEntry.value.move) : null)
 
@@ -155,6 +161,12 @@ export const useMoveAutomationWizard = (
 
   const toggleTarget = (id: string) => {
     targetIds.value = toggleMoveAutomationTargetIds(targetIds.value, id, script.value)
+  }
+
+  const applyAreaTemplate = (id: string) => {
+    const placement = areaTemplateOptions.value.find((item) => item.id === id)
+    if (!placement) return
+    targetIds.value = [...placement.targetIds]
   }
 
   const rollAccuracy = (id: string) => {
@@ -262,6 +274,7 @@ export const useMoveAutomationWizard = (
     script,
     targetOptions,
     selectedTargets,
+    areaTemplateOptions,
     requiresTargets,
     selectedMoveFormula,
     transaction,
@@ -269,6 +282,7 @@ export const useMoveAutomationWizard = (
     suggestionKey,
     ensureTargetResolution,
     toggleTarget,
+    applyAreaTemplate,
     rollAccuracy,
     rollDamage,
     rollAll,

@@ -1,5 +1,5 @@
 import { computed, ref } from 'vue'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import {
   appendMoveAutomationLogEntry,
   useMoveAutomationPanel,
@@ -166,6 +166,122 @@ describe('useMoveAutomationPanel', () => {
     expect(map.value.metadata?.moveLog).toMatchObject([
       { at: 1234, userId: 'user-token', moveName: 'Tackle', lines: ['Rolled Tackle.'] },
     ])
+  })
+
+  it('opens Growl as an on-map AoE confirmation and applies it on target selection/confirmation', async () => {
+    const map = ref({
+      ...mapFixture(),
+      dimensions: { x: 8, y: 2, z: 8 },
+      placements: [
+        { id: 'user-token', sheetKind: 'pokemon' as const, sheetSlug: 'bolt', position: { x: 3, y: 0, z: 3 } },
+        { id: 'target-token', sheetKind: 'pokemon' as const, sheetSlug: 'target', position: { x: 3, y: 0, z: 4 } },
+      ],
+    })
+    const pokemonSheet = {
+      slug: 'bolt',
+      nickname: 'Bolt',
+      species: 'Bulbasaur',
+      level: 5,
+      movelist: [{ name: 'Growl' }],
+    } as CharacterSheet
+    const calls: string[] = []
+    const panel = useMoveAutomationPanel({
+      map,
+      spawnedPokemon: computed(() => [
+        spawned({ id: 'user-token', sheetSlug: 'bolt', position: { x: 3, y: 0, z: 3 } }),
+        spawned({ id: 'target-token', species: 'Target', sheetSlug: 'target', position: { x: 3, y: 0, z: 4 } }),
+      ]),
+      pokemonBySlug: ref(new Map([[pokemonSheet.slug, pokemonSheet]])),
+      trainerBySlug: ref(new Map<string, TrainerSheet>()),
+      canEditMap: computed(() => false),
+      canControlPlacement: (id) => id === 'user-token',
+      modifyHp: () => undefined,
+      modifyCombatStages: (update) => { calls.push(`stages:${update.id}:${update.stages.atk}`) },
+      modifyConditions: () => undefined,
+      applyMoveFieldEffect: () => undefined,
+      placeHazard: () => undefined,
+    })
+
+    panel.openMoveAutomation({ id: 'user-token', moveName: 'Growl' })
+
+    expect(panel.moveAutomationUser.value).toBeNull()
+    expect(panel.moveAutomationTargeting.value).toMatchObject({
+      mode: 'area-confirmation',
+      moveName: 'Growl',
+      rangeLabel: 'Burst 1',
+      candidateIds: ['target-token'],
+      affectedIds: ['target-token'],
+    })
+    expect(panel.moveAutomationTargeting.value?.areaCells?.length).toBe(8)
+
+    const random = vi.spyOn(Math, 'random')
+    random.mockReturnValue(0.5)
+    try {
+      await panel.selectMoveAutomationTarget('user-token')
+    } finally {
+      random.mockRestore()
+    }
+
+    expect(calls).toEqual(['stages:target-token:-1'])
+    expect(panel.moveAutomationTargeting.value).toBeNull()
+    expect(map.value.metadata?.moveLog).toMatchObject([
+      { moveName: 'Growl', scriptKind: 'explicit' },
+    ])
+  })
+
+  it('opens Leer as a cone AoE confirmation and lets the user select direction', () => {
+    const map = ref({
+      ...mapFixture(),
+      dimensions: { x: 8, y: 2, z: 8 },
+      placements: [
+        { id: 'user-token', sheetKind: 'pokemon' as const, sheetSlug: 'bolt', position: { x: 3, y: 0, z: 3 } },
+        { id: 'target-token', sheetKind: 'pokemon' as const, sheetSlug: 'target', position: { x: 4, y: 0, z: 4 } },
+        { id: 'nw-token', sheetKind: 'pokemon' as const, sheetSlug: 'nw', position: { x: 2, y: 0, z: 2 } },
+      ],
+    })
+    const pokemonSheet = {
+      slug: 'bolt',
+      nickname: 'Bolt',
+      species: 'Bulbasaur',
+      level: 5,
+      movelist: [{ name: 'Leer' }],
+    } as CharacterSheet
+    const panel = useMoveAutomationPanel({
+      map,
+      spawnedPokemon: computed(() => [
+        spawned({ id: 'user-token', sheetSlug: 'bolt', position: { x: 3, y: 0, z: 3 } }),
+        spawned({ id: 'target-token', species: 'Target', sheetSlug: 'target', position: { x: 4, y: 0, z: 4 } }),
+        spawned({ id: 'nw-token', species: 'Northwest', sheetSlug: 'nw', position: { x: 2, y: 0, z: 2 } }),
+      ]),
+      pokemonBySlug: ref(new Map([[pokemonSheet.slug, pokemonSheet]])),
+      trainerBySlug: ref(new Map<string, TrainerSheet>()),
+      canEditMap: computed(() => false),
+      canControlPlacement: (id) => id === 'user-token',
+      modifyHp: () => undefined,
+      modifyCombatStages: () => undefined,
+      modifyConditions: () => undefined,
+      applyMoveFieldEffect: () => undefined,
+      placeHazard: () => undefined,
+    })
+
+    panel.openMoveAutomation({ id: 'user-token', moveName: 'Leer' })
+
+    expect(panel.moveAutomationTargeting.value).toMatchObject({
+      mode: 'area-confirmation',
+      moveName: 'Leer',
+      rangeLabel: 'Cone 2 south-east',
+      candidateIds: ['target-token'],
+      areaDirection: 'south-east',
+    })
+    expect(panel.moveAutomationTargeting.value?.areaDirectionOptions).toHaveLength(8)
+
+    panel.selectMoveAutomationAreaDirection('north-west')
+
+    expect(panel.moveAutomationTargeting.value).toMatchObject({
+      rangeLabel: 'Cone 2 north-west',
+      candidateIds: ['nw-token'],
+      areaDirection: 'north-west',
+    })
   })
 
   it('applies map effects when map editing is allowed', async () => {

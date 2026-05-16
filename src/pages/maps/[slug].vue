@@ -261,6 +261,7 @@ const {
   closeMoveAutomation,
   cancelMoveAutomationTargeting,
   selectMoveAutomationTarget,
+  selectMoveAutomationAreaDirection,
   applyMoveAutomation,
 } = useMoveAutomationPanel({
   map,
@@ -489,6 +490,7 @@ useMapDimensionReconciliation({
         @close-move-automation="closeMoveAutomation"
         @apply-move-automation="applyMoveAutomation"
         @select-move-target="selectActionAutomationTarget"
+        @select-move-area-direction="selectMoveAutomationAreaDirection"
         @cancel-move-targeting="cancelActionAutomationTargeting"
       />
     </template>

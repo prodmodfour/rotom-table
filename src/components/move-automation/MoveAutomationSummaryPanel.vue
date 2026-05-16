@@ -25,6 +25,7 @@ defineProps<{
       <div v-if="selectedEntry?.move.frequency"><dt>Frequency</dt><dd>{{ selectedEntry.move.frequency }}</dd></div>
       <div v-if="selectedMoveFormula"><dt>Damage Roll</dt><dd>{{ selectedMoveFormula }}</dd></div>
       <div v-if="script.range"><dt>Range</dt><dd>{{ script.range }}</dd></div>
+      <div v-if="script.areaTemplates?.length"><dt>Template</dt><dd>{{ script.areaTemplates.map((template) => template.label).join(' / ') }}</dd></div>
       <div v-if="script.criticalRange"><dt>Crit</dt><dd>{{ script.criticalRange }}+</dd></div>
     </dl>
     <div v-if="script.kind === 'manual-fallback'" class="manual-fallback-warning">

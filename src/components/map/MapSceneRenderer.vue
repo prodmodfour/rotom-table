@@ -4,6 +4,7 @@ import IsometricGrid from '~/components/IsometricGrid.client.vue'
 import type { BuildTool } from '#shared/mapEditor'
 import type { CombatStageMap } from '~/types/combatStages'
 import type {
+  MoveAutomationAreaDirection,
   MoveAutomationFeedbackState,
   MoveAutomationTargetingOverlayState,
 } from '~/types/moveAutomation'
@@ -74,6 +75,7 @@ const emit = defineEmits<{
   (event: 'place-hazard', hazard: MapHazardV2): void
   (event: 'remove-hazard', cell: { x: number; y: number; z: number; kind?: MapHazardKind }): void
   (event: 'select-move-target', targetId: string): void
+  (event: 'select-move-area-direction', direction: MoveAutomationAreaDirection): void
   (event: 'cancel-move-targeting'): void
 }>()
 
@@ -130,6 +132,7 @@ defineExpose({ focusPokemon })
     @place-hazard="emit('place-hazard', $event)"
     @remove-hazard="emit('remove-hazard', $event)"
     @select-move-target="emit('select-move-target', $event)"
+    @select-move-area-direction="emit('select-move-area-direction', $event)"
     @cancel-move-targeting="emit('cancel-move-targeting')"
   />
 </template>

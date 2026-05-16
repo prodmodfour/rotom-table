@@ -2,6 +2,7 @@
 import type { CombatStageKey } from '~/types/combatStages'
 import type { MoveAutomationScript } from '~/types/moveAutomation'
 import type { SpawnedPokemon } from '~/types/pokemon'
+import type { MoveAutomationAreaTemplatePlacement } from '~/utils/moveAutomationAreaTemplates'
 import type { MoveAutomationMoveEntry } from '~/utils/moveAutomationMoves'
 import type {
   MoveAutomationSuggestionKind,
@@ -20,6 +21,7 @@ const props = defineProps<{
   selectedMoveFormula: string | null
   targetOptions: SpawnedPokemon[]
   selectedTargets: SpawnedPokemon[]
+  areaTemplateOptions: MoveAutomationAreaTemplatePlacement[]
   targetIds: string[]
   requiresTargets: boolean
   canApplyMapEffects?: boolean
@@ -35,6 +37,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (event: 'toggle-target', id: string): void
+  (event: 'apply-area-template', id: string): void
   (event: 'roll-all'): void
   (event: 'roll-accuracy', id: string): void
   (event: 'roll-damage', id: string): void
@@ -61,6 +64,7 @@ const emit = defineEmits<{
         :script="script"
         :target-options="targetOptions"
         :selected-targets="selectedTargets"
+        :area-template-options="areaTemplateOptions"
         :target-ids="targetIds"
         :requires-targets="requiresTargets"
         :selected-move-formula="selectedMoveFormula"
@@ -68,6 +72,7 @@ const emit = defineEmits<{
         :target-damage-loss="targetDamageLoss"
         :multiplier-label="multiplierLabel"
         @toggle-target="emit('toggle-target', $event)"
+        @apply-area-template="emit('apply-area-template', $event)"
         @roll-all="emit('roll-all')"
         @roll-accuracy="emit('roll-accuracy', $event)"
         @roll-damage="emit('roll-damage', $event)"

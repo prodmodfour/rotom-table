@@ -46,6 +46,7 @@ const {
   script,
   targetOptions,
   selectedTargets,
+  areaTemplateOptions,
   requiresTargets,
   selectedMoveFormula,
   transaction,
@@ -53,6 +54,7 @@ const {
   suggestionKey,
   ensureTargetResolution,
   toggleTarget,
+  applyAreaTemplate,
   rollAccuracy,
   rollDamage,
   rollAll,
@@ -106,6 +108,7 @@ const {
         :selected-move-formula="selectedMoveFormula"
         :target-options="targetOptions"
         :selected-targets="selectedTargets"
+        :area-template-options="areaTemplateOptions"
         :target-ids="targetIds"
         :requires-targets="requiresTargets"
         :can-apply-map-effects="canApplyMapEffects"
@@ -118,6 +121,7 @@ const {
         :suggestion-enabled="suggestionEnabled"
         :suggestion-key="suggestionKey"
         @toggle-target="toggleTarget"
+        @apply-area-template="applyAreaTemplate"
         @roll-all="rollAll"
         @roll-accuracy="rollAccuracy"
         @roll-damage="rollDamage"

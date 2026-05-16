@@ -1,0 +1,36 @@
+import { describe, expect, it } from 'vitest'
+import { explicitScriptForMove } from '~/utils/moveAutomation'
+
+describe('explicit move automation scripts', () => {
+  it('implements Growl as a reviewed Burst Attack-lowering AoE script', () => {
+    const script = explicitScriptForMove('Growl')
+
+    expect(script).toMatchObject({
+      kind: 'explicit',
+      moveName: 'Growl',
+      targetMode: 'multi-target',
+      targetCount: null,
+      damaging: false,
+      requiresAccuracy: true,
+      ac: 2,
+    })
+    expect(script?.areaTemplates).toMatchObject([{ kind: 'burst', size: 1 }])
+    expect(script?.stageSuggestions).toEqual([{ recipient: 'target', key: 'atk', delta: -1, label: 'Growl lowers Attack: -1 Attack CS' }])
+  })
+
+  it('implements Leer as a reviewed Cone Defense-lowering AoE script', () => {
+    const script = explicitScriptForMove('Leer')
+
+    expect(script).toMatchObject({
+      kind: 'explicit',
+      moveName: 'Leer',
+      targetMode: 'multi-target',
+      targetCount: null,
+      damaging: false,
+      requiresAccuracy: true,
+      ac: 2,
+    })
+    expect(script?.areaTemplates).toMatchObject([{ kind: 'cone', size: 2 }])
+    expect(script?.stageSuggestions).toEqual([{ recipient: 'target', key: 'def', delta: -1, label: 'Leer lowers Defense: -1 Defense CS' }])
+  })
+})

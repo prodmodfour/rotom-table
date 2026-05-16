@@ -129,4 +129,36 @@ describe('move automation transaction helpers', () => {
       'Note: Check secondary effects.',
     ]))
   })
+
+  it('applies target suggestions only to targets the move hit', () => {
+    const user = token({ id: 'u', species: 'Caster' })
+    const hitTarget = token({ id: 'hit', species: 'Hitmon' })
+    const missedTarget = token({ id: 'miss', species: 'Missmon' })
+    const s = script({
+      damaging: false,
+      damageBase: null,
+      stageSuggestions: [{ recipient: 'target', key: 'atk', delta: -1, label: 'Lower Attack' }],
+    })
+
+    const transaction = buildMoveAutomationTransaction({
+      script: s,
+      user,
+      selectedTargets: [hitTarget, missedTarget],
+      targetResolutions: {
+        hit: { ...defaultTargetResolutionState(s), hit: true },
+        miss: { ...defaultTargetResolutionState(s), hit: false },
+      },
+      enabledSuggestions: { [moveAutomationSuggestionKey(s, 'stage', 0)]: true },
+      hpSuggestionAmounts: {},
+      manualUserConditions: [],
+      manualTargetConditions: [],
+      manualUserStageDeltas: stages,
+      manualTargetStageDeltas: stages,
+      hazardCells: [],
+      manualNote: '',
+    })
+
+    expect(transaction.combatStageUpdates).toEqual([{ id: 'hit', stages: { ...stages, atk: -1 } }])
+    expect(transaction.logLines).toContain('Lower Attack on Hitmon.')
+  })
 })

@@ -95,9 +95,15 @@ export const buildMoveAutomationTransaction = ({
     }
   }
 
+  const targetEffectsApplyOnMiss = script.keywords.some((keyword) => /^Spirit Surge$/i.test(keyword))
+  const targetWasHit = (target: SpawnedPokemon): boolean =>
+    !script.requiresAccuracy || targetEffectsApplyOnMiss || targetResolutions[target.id]?.hit === true
+  const suggestionRecipients = (recipient: 'user' | 'target'): SpawnedPokemon[] =>
+    recipient === 'user' ? [user] : selectedTargets.filter(targetWasHit)
+
   script.hpSuggestions.forEach((item, index) => {
     if (!suggestionIsEnabled(script, enabledSuggestions, 'hp', index)) return
-    const recipients = item.recipient === 'user' ? [user] : selectedTargets
+    const recipients = suggestionRecipients(item.recipient)
     for (const token of recipients) {
       const amount = resolveHpSuggestionAmount(script, hpSuggestionAmounts, index, token)
       if (amount <= 0 && item.mode !== 'set-zero') continue
@@ -109,7 +115,7 @@ export const buildMoveAutomationTransaction = ({
 
   script.conditionSuggestions.forEach((item, index) => {
     if (!suggestionIsEnabled(script, enabledSuggestions, 'condition', index)) return
-    const recipients = item.recipient === 'user' ? [user] : selectedTargets
+    const recipients = suggestionRecipients(item.recipient)
     for (const token of recipients) conditionAccumulator.applySuggestion(token, item)
     const logLine = formatMoveAutomationConditionSuggestionLogLine(item, recipients)
     if (logLine) logLines.push(logLine)
@@ -122,7 +128,7 @@ export const buildMoveAutomationTransaction = ({
   }
   script.stageSuggestions.forEach((item, index) => {
     if (!suggestionIsEnabled(script, enabledSuggestions, 'stage', index)) return
-    const recipients = item.recipient === 'user' ? [user] : selectedTargets
+    const recipients = suggestionRecipients(item.recipient)
     for (const token of recipients) addStageDelta(token, { [item.key]: item.delta })
     const logLine = formatMoveAutomationStageSuggestionLogLine(item, recipients)
     if (logLine) logLines.push(logLine)

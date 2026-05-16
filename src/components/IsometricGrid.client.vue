@@ -22,6 +22,7 @@ import { buildMapOccupancy } from '~/utils/mapOccupancy'
 import { normalizeMapFieldEffects } from '~/utils/mapFieldEffects'
 import type { CombatStageMap } from '~/types/combatStages'
 import type {
+  MoveAutomationAreaDirection,
   MoveAutomationFeedbackState,
   MoveAutomationTargetingOverlayState,
 } from '~/types/moveAutomation'
@@ -63,6 +64,7 @@ import {
 import { createBuildGhostRenderer, createHazardGhostRenderer } from '~/utils/isometric/previewGhosts'
 import { createTokenMovePreviewRenderer } from '~/utils/isometric/tokenMovePreview'
 import {
+  createMoveAreaTemplateRenderer,
   createMoveAutomationFeedbackRenderer,
   createMoveTargetingReticleRenderer,
 } from '~/utils/isometric/moveAutomationOverlays'
@@ -155,6 +157,7 @@ const emit = defineEmits<{
   (event: 'place-hazard', hazard: MapHazardV2): void
   (event: 'remove-hazard', cell: { x: number; y: number; z: number; kind?: MapHazardKind }): void
   (event: 'select-move-target', targetId: string): void
+  (event: 'select-move-area-direction', direction: MoveAutomationAreaDirection): void
   (event: 'cancel-move-targeting'): void
 }>()
 
@@ -331,6 +334,7 @@ const buildGhostRenderer = createBuildGhostRenderer(previewGroup)
 const hazardGhostRenderer = createHazardGhostRenderer(previewGroup)
 const tokenMovePreviewRenderer = createTokenMovePreviewRenderer({ scene, group: previewGroup })
 const moveTargetingReticleRenderer = createMoveTargetingReticleRenderer(scene)
+const moveAreaTemplateRenderer = createMoveAreaTemplateRenderer(scene)
 const moveAutomationFeedbackRenderer = createMoveAutomationFeedbackRenderer(scene)
 let renderer: THREE.WebGLRenderer | null = null
 let cssRenderer: ReturnType<typeof createIsometricCssRenderer> | null = null
@@ -572,6 +576,11 @@ const pickMoveTargetId = (event: MouseEvent | PointerEvent): string | null => {
 }
 
 const performMoveTargeting = (event: MouseEvent | PointerEvent): boolean => {
+  if (props.moveAutomationTargeting?.mode === 'area-confirmation') {
+    emit('select-move-target', props.moveAutomationTargeting.userId)
+    return true
+  }
+
   const hitId = pickMoveTargetId(event)
   if (!hitId) return false
   emit('select-move-target', hitId)
@@ -805,7 +814,12 @@ const syncTargetReticleButtons = (show: boolean) => {
 const updateMoveAutomationOverlays = () => {
   const layers = visibleLayers()
   const showTargeting = Boolean(props.moveAutomationTargeting && layers.tokens)
+  const showAreaTemplate = Boolean(props.moveAutomationTargeting?.mode === 'area-confirmation')
   syncTargetReticleButtons(showTargeting)
+  moveAreaTemplateRenderer.update({
+    cells: props.moveAutomationTargeting?.areaCells ?? [],
+    show: showAreaTemplate,
+  })
   moveTargetingReticleRenderer.update({
     candidateIds: [],
     renderObjects,
@@ -896,6 +910,7 @@ onBeforeUnmount(() => {
   cleanupResizeObserver = null
 
   moveTargetingReticleRenderer.dispose()
+  moveAreaTemplateRenderer.dispose()
   moveAutomationFeedbackRenderer.dispose()
 
   disposeIsometricRendererResources({
@@ -976,12 +991,33 @@ useIsometricSceneWatchers({
     <div v-if="props.moveAutomationTargeting" class="move-targeting-hud" @contextmenu.prevent>
       <div class="move-targeting-hud__copy">
         <strong>{{ props.moveAutomationTargeting.moveName }}</strong>
-        <span v-if="props.moveAutomationTargeting.candidateIds.length">
-          Choose a target within {{ props.moveAutomationTargeting.rangeLabel }}.
-        </span>
-        <span v-else>
-          No targets in range {{ props.moveAutomationTargeting.rangeLabel }}.
-        </span>
+        <template v-if="props.moveAutomationTargeting.mode === 'area-confirmation'">
+          <span>
+            Confirm {{ props.moveAutomationTargeting.rangeLabel }}: {{ props.moveAutomationTargeting.affectedIds?.length ?? 0 }} affected. Click the battlefield to use the move.
+          </span>
+          <div v-if="props.moveAutomationTargeting.areaDirectionOptions?.length" class="move-targeting-hud__directions" @pointerdown.stop @click.stop>
+            <button
+              v-for="option in props.moveAutomationTargeting.areaDirectionOptions"
+              :key="option.direction"
+              type="button"
+              class="move-targeting-hud__direction"
+              :class="{ 'is-active': option.direction === props.moveAutomationTargeting.areaDirection }"
+              :title="`${option.label}: ${option.affectedIds.length} affected`"
+              @click="emit('select-move-area-direction', option.direction)"
+            >
+              {{ option.direction.replace('-', ' ') }}
+              <small>{{ option.affectedIds.length }}</small>
+            </button>
+          </div>
+        </template>
+        <template v-else>
+          <span v-if="props.moveAutomationTargeting.candidateIds.length">
+            Choose a target within {{ props.moveAutomationTargeting.rangeLabel }}.
+          </span>
+          <span v-else>
+            No targets in range {{ props.moveAutomationTargeting.rangeLabel }}.
+          </span>
+        </template>
       </div>
       <button
         class="move-targeting-hud__cancel"
@@ -1104,7 +1140,16 @@ useIsometricSceneWatchers({
   font-size: 0.92rem;
 }
 
-.move-targeting-hud__cancel {
+.move-targeting-hud__directions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-top: 0.35rem;
+  pointer-events: auto;
+}
+
+.move-targeting-hud__cancel,
+.move-targeting-hud__direction {
   flex: 0 0 auto;
   border: 1px solid var(--rule-strong);
   border-radius: 999px;
@@ -1117,8 +1162,30 @@ useIsometricSceneWatchers({
   pointer-events: auto;
 }
 
+.move-targeting-hud__direction {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+  padding: 0.26rem 0.5rem;
+  font-size: 0.72rem;
+  text-transform: capitalize;
+}
+
+.move-targeting-hud__direction small {
+  color: var(--ink-muted);
+  font-size: 0.68rem;
+}
+
+.move-targeting-hud__direction.is-active {
+  border-color: var(--accent);
+  color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(250, 189, 47, 0.16);
+}
+
 .move-targeting-hud__cancel:hover,
-.move-targeting-hud__cancel:focus-visible {
+.move-targeting-hud__cancel:focus-visible,
+.move-targeting-hud__direction:hover,
+.move-targeting-hud__direction:focus-visible {
   border-color: var(--accent);
   color: var(--accent);
 }

@@ -76,6 +76,7 @@ const reviewedSingleTargetAttackScript = (moveName: string, version = 1): MoveAu
     special: manualScript.special,
     keywords: manualScript.keywords,
     criticalRange: manualScript.criticalRange,
+    areaTemplates: manualScript.areaTemplates,
     conditionSuggestions: manualScript.conditionSuggestions,
     stageSuggestions: manualScript.stageSuggestions,
     hpSuggestions: manualScript.hpSuggestions,
@@ -84,6 +85,54 @@ const reviewedSingleTargetAttackScript = (moveName: string, version = 1): MoveAu
     automationNotes: [],
   })
 }
+
+const reviewedTargetStageAreaScript = (
+  moveName: string,
+  key: 'atk' | 'def',
+  label: string,
+  version = 1,
+): MoveAutomationScript => {
+  const move = findMove(moveName)
+  if (!move) throw new Error(`Missing canonical PTU move data for ${moveName}`)
+  const manualScript = createManualMoveAutomationScript(move)
+  return defineExplicitMoveScript({
+    moveName: manualScript.moveName,
+    version,
+    targetMode: 'multi-target',
+    targetCount: null,
+    damaging: false,
+    requiresAccuracy: manualScript.ac != null,
+    damageBase: null,
+    damageClass: manualScript.damageClass,
+    type: manualScript.type,
+    ac: manualScript.ac,
+    range: manualScript.range,
+    effect: manualScript.effect,
+    special: manualScript.special,
+    keywords: manualScript.keywords,
+    criticalRange: null,
+    areaTemplates: manualScript.areaTemplates,
+    conditionSuggestions: [],
+    stageSuggestions: [{
+      recipient: 'target',
+      key,
+      delta: -1,
+      label,
+    }],
+    hpSuggestions: [],
+    fieldSuggestions: [],
+    hazardSuggestions: [],
+    automationNotes: [
+      'Use the area-template buttons to choose affected legal targets, or select targets manually.',
+      'Friendly keyword: allies are not hit; team allegiance is not tracked, so choose legal foes only.',
+    ],
+  })
+}
+
+const REVIEWED_TARGET_STAGE_AREA_SCRIPTS: ReadonlyMap<string, MoveAutomationScript> = new Map([
+  ['Growl', reviewedTargetStageAreaScript('Growl', 'atk', 'Growl lowers Attack: -1 Attack CS')],
+  ['Leer', reviewedTargetStageAreaScript('Leer', 'def', 'Leer lowers Defense: -1 Defense CS')],
+])
 
 const SEAMLESS_SINGLE_TARGET_ATTACK_SCRIPT_NAMES = [
   ...STRUGGLE_ATTACK_MOVE_NAMES,
@@ -118,6 +167,17 @@ export const isSeamlessSingleTargetAttackScript = (
     && script.damaging,
 )
 
+export const isSeamlessAreaConfirmationScript = (
+  script: MoveAutomationScript | null | undefined,
+): script is MoveAutomationScript => Boolean(
+  script
+    && script.kind === 'explicit'
+    && REVIEWED_TARGET_STAGE_AREA_SCRIPTS.has(script.moveName)
+    && script.targetMode === 'multi-target'
+    && !script.damaging
+    && script.areaTemplates?.length,
+)
+
 /**
  * Human-reviewed move automation scripts. A move only counts as automated when
  * an explicit entry is added here (or moved into per-move modules later). Small
@@ -127,6 +187,7 @@ export const isSeamlessSingleTargetAttackScript = (
 export const EXPLICIT_MOVE_AUTOMATION_SCRIPTS: ReadonlyMap<string, MoveAutomationScript> = new Map<string, MoveAutomationScript>([
   ...STRUGGLE_ATTACK_SCRIPTS,
   ...SEAMLESS_SINGLE_TARGET_ATTACK_SCRIPTS,
+  ...REVIEWED_TARGET_STAGE_AREA_SCRIPTS,
 ])
 
 export const moveAutomationCoverage = {

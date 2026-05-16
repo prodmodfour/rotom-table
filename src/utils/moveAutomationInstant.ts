@@ -1,5 +1,8 @@
 import { buildMoveAutomationTransaction } from '~/utils/moveAutomationTransaction'
-import { moveAutomationSuggestionKey } from '~/utils/moveAutomationTargetResolution'
+import {
+  defaultTargetResolutionState,
+  moveAutomationSuggestionKey,
+} from '~/utils/moveAutomationTargetResolution'
 import {
   randomD20,
   resolveMoveAutomationAccuracyRoll,
@@ -25,6 +28,14 @@ import type { SpawnedPokemon } from '~/types/pokemon'
 export interface InstantMoveAutomationResult {
   transaction: MoveAutomationTransaction
   feedback: MoveAutomationFeedbackState
+}
+
+export interface ResolveInstantAreaMoveAutomationInput {
+  script: MoveAutomationScript
+  user: SpawnedPokemon
+  targets: readonly SpawnedPokemon[]
+  fieldEffects?: MapFieldEffects
+  random?: () => number
 }
 
 export interface ResolveInstantMoveAutomationInput {
@@ -69,6 +80,21 @@ export const naturalRollMeetsMoveThreshold = (
 
 const feedbackId = (factory: (() => string) | undefined): string =>
   factory?.() ?? `move-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
+
+const enableDefaultSuggestions = (
+  script: MoveAutomationScript,
+  enabledSuggestions: Record<string, boolean>,
+): void => {
+  script.hpSuggestions.forEach((suggestion, index) => {
+    if (!suggestion.optional) enabledSuggestions[moveAutomationSuggestionKey(script, 'hp', index)] = true
+  })
+  script.conditionSuggestions.forEach((suggestion, index) => {
+    if (!suggestion.optional) enabledSuggestions[moveAutomationSuggestionKey(script, 'condition', index)] = true
+  })
+  script.stageSuggestions.forEach((suggestion, index) => {
+    if (!suggestion.optional) enabledSuggestions[moveAutomationSuggestionKey(script, 'stage', index)] = true
+  })
+}
 
 const buildConditionFeedback = (options: {
   script: MoveAutomationScript
@@ -136,6 +162,7 @@ export const resolveInstantMoveAutomation = ({
     },
   }
   const enabledSuggestions: Record<string, boolean> = {}
+  enableDefaultSuggestions(script, enabledSuggestions)
   const conditions = buildConditionFeedback({
     script,
     target,
@@ -186,4 +213,61 @@ export const resolveInstantMoveAutomation = ({
       conditions,
     },
   }
+}
+
+const formatAreaAccuracyLogLines = (
+  targets: readonly SpawnedPokemon[],
+  targetResolutions: Record<string, { accuracyRoll: string; hit: boolean }>,
+): string[] => {
+  if (!targets.length) return ['No legal targets in the confirmed area.']
+  return targets.map((target) => {
+    const resolution = targetResolutions[target.id]
+    if (!resolution?.accuracyRoll) return `${target.species}: ${resolution?.hit ? 'hit' : 'miss'}.`
+    return `${target.species}: accuracy ${resolution.accuracyRoll} (${resolution.hit ? 'hit' : 'miss'}).`
+  })
+}
+
+export const resolveInstantAreaMoveAutomation = ({
+  script,
+  user,
+  targets,
+  fieldEffects,
+  random,
+}: ResolveInstantAreaMoveAutomationInput): MoveAutomationTransaction => {
+  const targetResolutions: Record<string, ReturnType<typeof defaultTargetResolutionState>> = {}
+  for (const target of targets) {
+    const state = defaultTargetResolutionState(script)
+    if (script.requiresAccuracy) {
+      const targetEvasion = resolveMoveAutomationTargetEvasion(script, target)
+      const accuracy = resolveMoveAutomationAccuracyRoll(script, randomD20(random), {
+        userAccuracy: moveAutomationUserAccuracy(user),
+        targetEvasion: targetEvasion.value,
+      })
+      state.accuracyRoll = accuracy.accuracyRoll
+      state.hit = accuracy.hit
+      state.crit = accuracy.crit
+    }
+    targetResolutions[target.id] = state
+  }
+
+  const enabledSuggestions: Record<string, boolean> = {}
+  enableDefaultSuggestions(script, enabledSuggestions)
+  const transaction = buildMoveAutomationTransaction({
+    script,
+    user,
+    selectedTargets: [...targets],
+    targetResolutions,
+    enabledSuggestions,
+    hpSuggestionAmounts: {},
+    manualUserConditions: [],
+    manualTargetConditions: [],
+    manualUserStageDeltas: emptyStageDeltas(),
+    manualTargetStageDeltas: emptyStageDeltas(),
+    hazardCells: [],
+    manualNote: '',
+    fieldEffects,
+  })
+
+  transaction.logLines.push(...formatAreaAccuracyLogLines(targets, targetResolutions))
+  return transaction
 }

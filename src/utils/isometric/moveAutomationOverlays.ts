@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import { CSS3DSprite } from 'three/examples/jsm/renderers/CSS3DRenderer.js'
 import { disposeObject3D } from '~/utils/isometric/resourceDisposal'
+import type { GridAnchor } from '~/types/map'
 import type { MoveAutomationFeedbackState } from '~/types/moveAutomation'
 import type { PokemonRenderObject } from '~/utils/isometric/types'
 
@@ -128,6 +129,72 @@ const updateFeedbackElement = (element: HTMLElement, feedback: MoveAutomationFee
 
 const feedbackY = (renderObject: PokemonRenderObject): number =>
   renderObject.currentCenter.y + Math.max(renderObject.height, renderObject.clearance) + 0.95
+
+export const createMoveAreaTemplateRenderer = (scene: THREE.Scene) => {
+  const group = new THREE.Group()
+  group.visible = false
+  scene.add(group)
+  let signature = ''
+
+  const disposeCells = () => {
+    for (const child of [...group.children]) disposeObject3D(child)
+  }
+
+  const cellSignature = (cells: readonly GridAnchor[]): string =>
+    cells.map((cell) => `${cell.x},${cell.y},${cell.z}`).join('|')
+
+  const addCell = (cell: GridAnchor) => {
+    const geometry = new THREE.PlaneGeometry(0.92, 0.92)
+    const mesh = new THREE.Mesh(
+      geometry,
+      new THREE.MeshBasicMaterial({
+        color: 0xfabd2f,
+        transparent: true,
+        opacity: 0.32,
+        depthTest: true,
+        depthWrite: false,
+        side: THREE.DoubleSide,
+      }),
+    )
+    mesh.rotation.x = -Math.PI / 2
+    mesh.renderOrder = 36
+    mesh.position.set(cell.x + 0.5, cell.y + 0.075, cell.z + 0.5)
+    group.add(mesh)
+
+    const edges = new THREE.LineSegments(
+      new THREE.EdgesGeometry(geometry),
+      new THREE.LineBasicMaterial({
+        color: 0xfbf1c7,
+        transparent: true,
+        opacity: 0.78,
+        depthTest: true,
+        depthWrite: false,
+      }),
+    )
+    edges.rotation.x = -Math.PI / 2
+    edges.renderOrder = 37
+    edges.position.copy(mesh.position)
+    group.add(edges)
+  }
+
+  const update = (options: { cells: readonly GridAnchor[]; show: boolean }) => {
+    group.visible = Boolean(options.show && options.cells.length)
+    if (!group.visible) return
+
+    const nextSignature = cellSignature(options.cells)
+    if (nextSignature === signature) return
+    signature = nextSignature
+    disposeCells()
+    for (const cell of options.cells) addCell(cell)
+  }
+
+  const dispose = () => {
+    disposeCells()
+    disposeObject3D(group)
+  }
+
+  return { update, dispose }
+}
 
 export const createMoveAutomationFeedbackRenderer = (scene: THREE.Scene) => {
   const sprite = new CSS3DSprite(createFeedbackElement())

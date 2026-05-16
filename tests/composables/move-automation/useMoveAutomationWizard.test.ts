@@ -69,6 +69,23 @@ describe('useMoveAutomationWizard', () => {
     expect(applied[0]).toMatchObject({ userId: 'user', moveName: 'Water Gun' })
   })
 
+  it('selects targets from an AoE template placement', () => {
+    const user = token('user', 'Bolt', { x: 5, y: 0, z: 5 })
+    const adjacent = token('adjacent', 'Aqua', { x: 5, y: 0, z: 4 })
+    const far = token('far', 'Leaf', { x: 9, y: 0, z: 5 })
+    const wizard = useMoveAutomationWizard({
+      user,
+      moves: [{ name: 'Growl' }],
+      allTokens: [user, adjacent, far],
+    }, () => undefined)
+
+    expect(wizard.areaTemplateOptions.value).toHaveLength(1)
+    expect(wizard.areaTemplateOptions.value[0].targetIds).toEqual(['adjacent'])
+
+    wizard.applyAreaTemplate(wizard.areaTemplateOptions.value[0].id)
+    expect(wizard.targetIds.value).toEqual(['adjacent'])
+  })
+
   it('can start on the context-menu selected move', () => {
     const user = token('user', 'Bolt')
     const wizard = useMoveAutomationWizard({

@@ -1,5 +1,6 @@
 import type { CombatStageKey, CombatStageMap } from '~/types/combatStages'
 import type {
+  GridAnchor,
   MapHazardV2,
   MapRoomKind,
   MapTerrainKind,
@@ -37,12 +38,34 @@ export interface MoveAutomationLogEntry {
   lines: string[]
 }
 
+export type MoveAutomationAreaDirection =
+  | 'north'
+  | 'north-east'
+  | 'east'
+  | 'south-east'
+  | 'south'
+  | 'south-west'
+  | 'west'
+  | 'north-west'
+
+export interface MoveAutomationAreaDirectionOption {
+  direction: MoveAutomationAreaDirection
+  label: string
+  areaCells: GridAnchor[]
+  affectedIds: string[]
+}
+
 export interface MoveAutomationTargetingOverlayState {
   userId: string
   moveName: string
+  mode?: 'target' | 'area-confirmation'
   rangeLabel: string
   rangeMeters: number
   candidateIds: string[]
+  areaCells?: GridAnchor[]
+  affectedIds?: string[]
+  areaDirection?: MoveAutomationAreaDirection
+  areaDirectionOptions?: MoveAutomationAreaDirectionOption[]
 }
 
 export interface MoveAutomationFeedbackCondition {
@@ -135,6 +158,23 @@ export interface MoveAutomationHazardSuggestion {
   optional?: boolean
 }
 
+export type MoveAutomationAreaTemplateKind =
+  | 'burst'
+  | 'close-blast'
+  | 'ranged-blast'
+  | 'cone'
+  | 'line'
+  | 'cardinally-adjacent'
+
+export interface MoveAutomationAreaTemplate {
+  kind: MoveAutomationAreaTemplateKind
+  /** Template size in meters/squares: Burst X, Cone X, Line X, Blast X. */
+  size: number
+  /** Maximum placement range for Ranged X Blast Y templates. */
+  range?: number | null
+  label: string
+}
+
 export interface MoveAutomationScript {
   /**
    * `explicit` means a human-authored move script owns this move. `manual-fallback`
@@ -156,6 +196,7 @@ export interface MoveAutomationScript {
   special?: string
   keywords: string[]
   criticalRange: number | null
+  areaTemplates?: MoveAutomationAreaTemplate[]
   conditionSuggestions: MoveAutomationConditionSuggestion[]
   stageSuggestions: MoveAutomationStageSuggestion[]
   hpSuggestions: MoveAutomationHpSuggestion[]
