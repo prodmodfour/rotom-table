@@ -17,7 +17,11 @@ import {
   moveAutomationUserAccuracy,
   resolveMoveAutomationTargetEvasion,
 } from '~/utils/moveAutomationAccuracy'
-import { moveAutomationConditionImmunitySource } from '~/utils/moveAutomationConditionImmunity'
+import { moveAutomationSecondaryEffectBlockSource } from '~/utils/moveAutomationAbilityProtection'
+import {
+  moveAutomationConditionImmunitySource,
+  type MoveAutomationConditionImmunityContext,
+} from '~/utils/moveAutomationConditionImmunity'
 import {
   naturalRollMeetsMoveThreshold,
   parseMoveAutomationNaturalRoll,
@@ -44,6 +48,7 @@ export interface ResolveInstantAreaMoveAutomationInput {
   targets: readonly SpawnedPokemon[]
   damageFormula?: string | null
   fieldEffects?: MapFieldEffects
+  conditionImmunityContext?: MoveAutomationConditionImmunityContext
   random?: () => number
 }
 
@@ -53,6 +58,7 @@ export interface ResolveInstantMoveAutomationInput {
   target: SpawnedPokemon
   damageFormula: string | null | undefined
   fieldEffects?: MapFieldEffects
+  conditionImmunityContext?: MoveAutomationConditionImmunityContext
   random?: () => number
   idFactory?: () => string
 }
@@ -63,6 +69,7 @@ export interface ResolveInstantTargetMoveAutomationInput {
   target: SpawnedPokemon
   damageFormula?: string | null
   fieldEffects?: MapFieldEffects
+  conditionImmunityContext?: MoveAutomationConditionImmunityContext
   random?: () => number
 }
 
@@ -125,6 +132,7 @@ const buildConditionFeedback = (options: {
   naturalRoll: number
   hit: boolean
   enabledSuggestions: Record<string, boolean>
+  conditionImmunityContext?: MoveAutomationConditionImmunityContext
 }): MoveAutomationFeedbackCondition[] => {
   const feedback: MoveAutomationFeedbackCondition[] = []
 
@@ -136,7 +144,16 @@ const buildConditionFeedback = (options: {
     if (!targetConditionSuggestionApplies(suggestion, options.hit, options.script.requiresAccuracy)) return
 
     const condition = normalizeConditionName(suggestion.condition) ?? suggestion.condition
-    const blockedBy = moveAutomationConditionImmunitySource(condition, options.target, options.script.type)
+    const blockedBy = moveAutomationConditionImmunitySource(
+      condition,
+      options.target,
+      options.script.type,
+      options.conditionImmunityContext,
+    ) ?? moveAutomationSecondaryEffectBlockSource({
+      script: options.script,
+      target: options.target,
+      threshold: suggestion.threshold,
+    })
     const applied = !blockedBy
     if (applied) options.enabledSuggestions[suggestionKey] = true
     feedback.push({
@@ -163,6 +180,7 @@ const resolveAreaConditionApplications = (
   script: MoveAutomationScript,
   targets: readonly SpawnedPokemon[],
   targetResolutions: Readonly<Record<string, ReturnType<typeof defaultTargetResolutionState> | undefined>>,
+  conditionImmunityContext?: MoveAutomationConditionImmunityContext,
 ): {
   filteredSuggestionIndexes: Set<number>
   targetIdsBySuggestion: Map<number, Set<string>>
@@ -188,7 +206,12 @@ const resolveAreaConditionApplications = (
       if (!targetThresholdMatches(suggestion.threshold, naturalRoll)) return
 
       const condition = normalizeConditionName(suggestion.condition) ?? suggestion.condition
-      const blockedBy = moveAutomationConditionImmunitySource(condition, target, script.type)
+      const blockedBy = moveAutomationConditionImmunitySource(
+        condition,
+        target,
+        script.type,
+        conditionImmunityContext,
+      ) ?? moveAutomationSecondaryEffectBlockSource({ script, target, threshold: suggestion.threshold })
       if (blockedBy) {
         blockedNotes.push(`${condition} did not apply to ${target.species}: immune (${blockedBy}).`)
         return
@@ -267,6 +290,7 @@ export const resolveInstantMoveAutomation = ({
   target,
   damageFormula,
   fieldEffects,
+  conditionImmunityContext,
   random,
   idFactory,
 }: ResolveInstantMoveAutomationInput): InstantMoveAutomationResult => {
@@ -301,6 +325,7 @@ export const resolveInstantMoveAutomation = ({
     naturalRoll,
     hit: accuracy.hit,
     enabledSuggestions,
+    conditionImmunityContext,
   })
   enableSingleTargetStageThresholds({
     script,
@@ -332,6 +357,7 @@ export const resolveInstantMoveAutomation = ({
     hazardCells: [],
     manualNote: combineManualNotes(runtimeDamage.note, randomStageNote, blockedConditionNote),
     fieldEffects,
+    conditionImmunityContext,
   })
   const targetHpUpdate = transaction.hpUpdates.find((update) => update.id === target.id)
   const damageLoss = targetHpUpdate
@@ -363,6 +389,7 @@ const buildNoRollTargetTransaction = ({
   target,
   damageFormula,
   fieldEffects,
+  conditionImmunityContext,
   random,
 }: ResolveInstantTargetMoveAutomationInput): MoveAutomationTransaction => {
   const state = defaultTargetResolutionState(script)
@@ -374,7 +401,7 @@ const buildNoRollTargetTransaction = ({
   const enabledSuggestions: Record<string, boolean> = {}
   enableDefaultSuggestions(script, enabledSuggestions)
   const randomStageNote = resolveMoveAutomationRandomStageSuggestion({ script, enabledSuggestions, random })
-  const conditionApplications = resolveAreaConditionApplications(script, [target], targetResolutions)
+  const conditionApplications = resolveAreaConditionApplications(script, [target], targetResolutions, conditionImmunityContext)
   conditionApplications.targetIdsBySuggestion.forEach((targetIds, index) => {
     if (targetIds.size) enabledSuggestions[moveAutomationSuggestionKey(script, 'condition', index)] = true
   })
@@ -393,6 +420,7 @@ const buildNoRollTargetTransaction = ({
     hazardCells: [],
     manualNote: combineManualNotes(runtimeDamage.note, randomStageNote, conditionApplications.blockedNotes.join(' ')),
     fieldEffects,
+    conditionImmunityContext,
     suggestionRecipientFilter: ({ kind, index, recipient, token }) => {
       if (recipient !== 'target') return true
       if (kind === 'condition' && conditionApplications.filteredSuggestionIndexes.has(index)) {
@@ -449,6 +477,7 @@ export const resolveInstantAreaMoveAutomation = ({
   targets,
   damageFormula,
   fieldEffects,
+  conditionImmunityContext,
   random,
 }: ResolveInstantAreaMoveAutomationInput): MoveAutomationTransaction => {
   const targetResolutions: Record<string, ReturnType<typeof defaultTargetResolutionState>> = {}
@@ -471,7 +500,7 @@ export const resolveInstantAreaMoveAutomation = ({
 
   const enabledSuggestions: Record<string, boolean> = {}
   enableDefaultSuggestions(script, enabledSuggestions)
-  const conditionApplications = resolveAreaConditionApplications(script, targets, targetResolutions)
+  const conditionApplications = resolveAreaConditionApplications(script, targets, targetResolutions, conditionImmunityContext)
   conditionApplications.targetIdsBySuggestion.forEach((targetIds, index) => {
     if (targetIds.size) enabledSuggestions[moveAutomationSuggestionKey(script, 'condition', index)] = true
   })
@@ -493,6 +522,7 @@ export const resolveInstantAreaMoveAutomation = ({
     hazardCells: [],
     manualNote: conditionApplications.blockedNotes.join(' '),
     fieldEffects,
+    conditionImmunityContext,
     suggestionRecipientFilter: ({ kind, index, recipient, token }) => {
       if (recipient !== 'target') return true
       if (kind === 'condition' && conditionApplications.filteredSuggestionIndexes.has(index)) {

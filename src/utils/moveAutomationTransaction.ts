@@ -1,3 +1,8 @@
+import { moveAutomationSecondaryEffectBlockSource } from '~/utils/moveAutomationAbilityProtection'
+import {
+  moveAutomationConditionImmunitySource,
+  type MoveAutomationConditionImmunityContext,
+} from '~/utils/moveAutomationConditionImmunity'
 import { createMoveAutomationHpUpdateAccumulator } from '~/utils/moveAutomationHpUpdates'
 import {
   applyHpSuggestion,
@@ -65,6 +70,7 @@ export interface BuildMoveAutomationTransactionInput {
   hazardCells: GridAnchor[]
   manualNote: string
   fieldEffects?: MapFieldEffects
+  conditionImmunityContext?: MoveAutomationConditionImmunityContext
   suggestionRecipientFilter?: MoveAutomationSuggestionRecipientFilter
 }
 
@@ -117,6 +123,7 @@ export const buildMoveAutomationTransaction = ({
   hazardCells,
   manualNote,
   fieldEffects,
+  conditionImmunityContext,
   suggestionRecipientFilter,
 }: BuildMoveAutomationTransactionInput): MoveAutomationTransaction => {
   if (!script) return unknownMoveTransaction(user)
@@ -172,6 +179,43 @@ export const buildMoveAutomationTransaction = ({
     threshold: string | undefined,
     target: SpawnedPokemon,
   ): boolean => accuracyRollMeetsMoveThreshold(threshold, targetResolutions[target.id]?.accuracyRoll)
+  const blockedSuggestionLogLines: string[] = []
+  const blockSuggestion = (
+    label: string,
+    target: SpawnedPokemon,
+    source: string,
+    reason: 'immunity' | 'secondary-effect',
+  ): false => {
+    blockedSuggestionLogLines.push(reason === 'immunity'
+      ? `${label} did not apply to ${target.species}: immune (${source}).`
+      : `${label} did not apply to ${target.species}: blocked by ${source}.`)
+    return false
+  }
+  const targetSuggestionBlockSource = (
+    kind: MoveAutomationSuggestionKind,
+    index: number,
+    target: SpawnedPokemon,
+  ): { source: string; reason: 'immunity' | 'secondary-effect'; label: string } | null => {
+    if (kind === 'condition') {
+      const suggestion = script.conditionSuggestions[index]
+      if (!suggestion || suggestion.action === 'remove' || suggestion.action === 'clear') return null
+      const condition = conditionBaseName(suggestion.condition) ?? suggestion.condition
+      const source = moveAutomationConditionImmunitySource(condition, target, script.type, conditionImmunityContext)
+      if (source) return { source, reason: 'immunity', label: suggestion.label }
+      const secondarySource = moveAutomationSecondaryEffectBlockSource({ script, target, threshold: suggestion.threshold })
+      return secondarySource ? { source: secondarySource, reason: 'secondary-effect', label: suggestion.label } : null
+    }
+
+    if (kind === 'stage') {
+      const suggestion = script.stageSuggestions[index]
+      const source = suggestion
+        ? moveAutomationSecondaryEffectBlockSource({ script, target, threshold: suggestion.threshold })
+        : null
+      return source && suggestion ? { source, reason: 'secondary-effect', label: suggestion.label } : null
+    }
+
+    return null
+  }
   const suggestionRecipients = (
     kind: MoveAutomationSuggestionKind,
     index: number,
@@ -181,7 +225,12 @@ export const buildMoveAutomationTransaction = ({
     const recipients = recipient === 'user'
       ? [user]
       : selectedTargets.filter((target) => targetMatchesSuggestionTiming(kind, index, target) && targetMeetsSuggestionThreshold(threshold, target))
-    return recipients.filter((token) => suggestionRecipientFilter?.({ kind, index, recipient, token }) ?? true)
+    return recipients.filter((token) => {
+      if (!(suggestionRecipientFilter?.({ kind, index, recipient, token }) ?? true)) return false
+      if (recipient !== 'target') return true
+      const block = targetSuggestionBlockSource(kind, index, token)
+      return block ? blockSuggestion(block.label, token, block.source, block.reason) : true
+    })
   }
 
   script.hpSuggestions.forEach((item, index) => {
@@ -241,6 +290,7 @@ export const buildMoveAutomationTransaction = ({
   if (Object.keys(targetManualStages).length) {
     for (const target of selectedTargets) addStageDelta(target, targetManualStages)
   }
+  logLines.push(...blockedSuggestionLogLines)
 
   const mapSuggestionEnabled = (kind: 'field' | 'hazard', index: number): boolean =>
     suggestionIsEnabled(script, enabledSuggestions, kind, index)
