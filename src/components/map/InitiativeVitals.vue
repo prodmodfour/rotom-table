@@ -33,16 +33,16 @@ defineProps<{
   display: flex;
   flex-direction: column;
   gap: 0.22rem;
-  color: var(--good);
+  color: var(--map-hp-healthy);
   font-size: 0.74rem;
 }
 
 .initiative-row__hp[data-hp-tier='wounded'] {
-  color: var(--warn);
+  color: var(--map-hp-wounded);
 }
 
 .initiative-row__hp[data-hp-tier='critical'] {
-  color: var(--bad);
+  color: var(--map-hp-critical);
 }
 
 .initiative-row__hp-track {
@@ -57,16 +57,16 @@ defineProps<{
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: var(--good);
+  background: var(--map-hp-healthy);
 }
 
 .initiative-row__hp-track[data-hp-tier='wounded'] > span {
-  background: var(--warn);
+  background: var(--map-hp-wounded);
 }
 
 .initiative-row__hp-track[data-hp-tier='critical'] > span,
 :global(.initiative-row.is-fainted) .initiative-row__hp-track > span {
-  background: var(--bad);
+  background: var(--map-hp-critical);
 }
 
 .initiative-row__conditions {

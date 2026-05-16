@@ -54,6 +54,10 @@
   --warn:          #fe8019;   /* orange bright */
   --magic:         #d3869b;   /* purple bright */
 
+  --map-hp-healthy:  #00ff00;
+  --map-hp-wounded:  #ff9500;
+  --map-hp-critical: #ff0000;
+
   --shadow-card:   0 18px 40px rgba(0, 0, 0, 0.55);
 }
 
@@ -548,15 +552,15 @@ samp {
   height: 100%;
   width: 100%;
   border-radius: inherit;
-  background: var(--good);
+  background: var(--map-hp-healthy);
   box-shadow: inset 0 0 2px rgba(251, 241, 199, 0.28);
   transition: width 0.18s ease, background-color 0.18s ease;
 }
 
 .hp-bar[data-hp-tier='wounded'] .hp-bar__fill {
-  background: var(--warn);
+  background: var(--map-hp-wounded);
 }
 
 .hp-bar[data-hp-tier='critical'] .hp-bar__fill {
-  background: var(--bad);
+  background: var(--map-hp-critical);
 }
