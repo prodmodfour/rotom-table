@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { explicitScriptForMove, isSeamlessAreaConfirmationScript } from '~/utils/moveAutomation'
+import { explicitScriptForMove, isSeamlessAreaConfirmationScript, isSeamlessSingleTargetMoveScript } from '~/utils/moveAutomation'
 
 describe('explicit move automation scripts', () => {
   it('implements Growl as a reviewed Burst Attack-lowering AoE script', () => {
@@ -61,5 +61,37 @@ describe('explicit move automation scripts', () => {
       },
     ])
     expect(isSeamlessAreaConfirmationScript(script)).toBe(true)
+  })
+
+  it('implements Psywave as reviewed level-scaled direct HP loss', () => {
+    const script = explicitScriptForMove('Psywave')
+
+    expect(script).toMatchObject({
+      kind: 'explicit',
+      moveName: 'Psywave',
+      targetMode: 'one-target',
+      targetCount: 1,
+      damaging: true,
+      requiresAccuracy: true,
+      damageBase: null,
+      damageClass: 'Special',
+      type: 'Psychic',
+      ac: 5,
+      criticalRange: null,
+      directHpLoss: {
+        kind: 'user-level-roll-table',
+        rollFormula: '1d4',
+        applyTypeImmunity: true,
+        ignoreWeaknessResistance: true,
+        ignoreStats: true,
+      },
+    })
+    expect(script?.directHpLoss?.rollTable).toEqual([
+      { roll: 1, multiplier: 0.5, label: 'Half user level' },
+      { roll: 2, multiplier: 1, label: 'User level' },
+      { roll: 3, multiplier: 1.5, label: 'One and a half times user level' },
+      { roll: 4, multiplier: 2, label: 'Double user level' },
+    ])
+    expect(isSeamlessSingleTargetMoveScript(script)).toBe(true)
   })
 })

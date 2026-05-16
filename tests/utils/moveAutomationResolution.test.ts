@@ -56,6 +56,15 @@ describe('move automation resolution helpers', () => {
     expect(resolveMoveAutomationAccuracyRoll(script(), 19)).toEqual({ accuracyRoll: '19', hit: true, crit: true })
     expect(resolveMoveAutomationAccuracyRoll(script(), 1, { userAccuracy: 10 })).toMatchObject({ accuracyRoll: '1 + 10', hit: false })
     expect(resolveMoveAutomationAccuracyRoll(script({ ac: null, criticalRange: null }), 2)).toEqual({ accuracyRoll: '2', hit: true, crit: false })
+    expect(resolveMoveAutomationAccuracyRoll(script({ criticalRange: null, directHpLoss: {
+      kind: 'user-level-roll-table',
+      rollFormula: '1d4',
+      rollTable: [{ roll: 4, multiplier: 2, label: 'Double user level' }],
+      applyTypeImmunity: true,
+      ignoreWeaknessResistance: true,
+      ignoreStats: true,
+      label: 'Direct HP loss',
+    } }), 20)).toEqual({ accuracyRoll: '20', hit: true, crit: false })
   })
 
   it('ensures and syncs target resolution records', () => {

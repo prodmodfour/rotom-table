@@ -21,6 +21,12 @@ export const formatMoveAutomationDamageLogLine = (
   critical: boolean | undefined = false,
 ): string => `${targetName}: ${hpLoss} HP damage${critical ? ' (critical flagged)' : ''}.`
 
+export const formatMoveAutomationDirectHpLossLogLine = (
+  targetName: string,
+  hpLoss: number,
+  label: string,
+): string => `${targetName}: ${hpLoss} HP lost (${label}).`
+
 export const formatMoveAutomationHpSuggestionLogLine = (
   tokenName: string,
   suggestion: Pick<MoveAutomationHpSuggestion, 'label'>,

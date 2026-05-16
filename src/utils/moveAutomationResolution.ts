@@ -65,7 +65,7 @@ export const resolveMoveAutomationAccuracyRoll = (
   const hit = ac == null
     ? true
     : roll === 20 || (roll !== 1 && modifiedRoll >= ac + targetEvasion)
-  const criticalRange = script?.criticalRange ?? (script?.damaging ? 20 : null)
+  const criticalRange = script?.criticalRange ?? (script?.damaging && !script?.directHpLoss ? 20 : null)
   const crit = Boolean(criticalRange && roll >= criticalRange)
 
   if (!hasContext) {

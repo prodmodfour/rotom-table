@@ -138,6 +138,75 @@ describe('useMoveAutomationPanel', () => {
     expect(panel.tokenMoveOptionsById.value['user-token'].find((move) => move.name === 'Tackle')?.disabledByCondition).toBe(true)
   })
 
+  it('opens Psywave with the same on-map single-target flow as Ember', async () => {
+    vi.useFakeTimers()
+    const map = ref({
+      ...mapFixture(),
+      placements: [
+        { id: 'user-token', sheetKind: 'pokemon' as const, sheetSlug: 'bolt', position: { x: 0, y: 0, z: 0 } },
+        { id: 'target-token', sheetKind: 'pokemon' as const, sheetSlug: 'target', position: { x: 2, y: 0, z: 0 } },
+      ],
+    })
+    const pokemonSheet = {
+      slug: 'bolt',
+      nickname: 'Bolt',
+      species: 'Bulbasaur',
+      level: 10,
+      movelist: [{ name: 'Psywave' }],
+    } as CharacterSheet
+    const calls: string[] = []
+    const panel = useMoveAutomationPanel({
+      map,
+      spawnedPokemon: computed(() => [
+        spawned({ id: 'user-token', sheetSlug: 'bolt', level: 10, position: { x: 0, y: 0, z: 0 } }),
+        spawned({ id: 'target-token', species: 'Target', sheetSlug: 'target', currentHp: 40, maxHp: 40, position: { x: 2, y: 0, z: 0 } }),
+      ]),
+      pokemonBySlug: ref(new Map([[pokemonSheet.slug, pokemonSheet]])),
+      trainerBySlug: ref(new Map<string, TrainerSheet>()),
+      canEditMap: computed(() => false),
+      canControlPlacement: (id) => id === 'user-token',
+      modifyHp: (update) => { calls.push(`hp:${update.id}:${update.currentHp}`) },
+      modifyCombatStages: () => undefined,
+      modifyConditions: () => undefined,
+      applyMoveFieldEffect: () => undefined,
+      placeHazard: () => undefined,
+    })
+    const random = vi.spyOn(Math, 'random')
+    random.mockReturnValue(0.1)
+    random.mockReturnValueOnce(0.5).mockReturnValueOnce(0.75)
+
+    try {
+      panel.openMoveAutomation({ id: 'user-token', moveName: 'Psywave' })
+
+      expect(panel.moveAutomationUser.value).toBeNull()
+      expect(panel.moveAutomationTargeting.value).toMatchObject({
+        mode: 'target',
+        moveName: 'Psywave',
+        rangeLabel: '6m',
+        candidateIds: ['target-token'],
+      })
+
+      await panel.selectMoveAutomationTarget('target-token')
+
+      expect(panel.moveAutomationTargeting.value).toBeNull()
+      expect(panel.moveAutomationFeedback.value).toMatchObject({
+        moveName: 'Psywave',
+        naturalRoll: 11,
+        hit: true,
+        crit: false,
+        damageLoss: 20,
+      })
+
+      await vi.advanceTimersByTimeAsync(850)
+
+      expect(calls).toEqual(['hp:target-token:20'])
+      expect(map.value.metadata?.moveLog).toMatchObject([{ moveName: 'Psywave', scriptKind: 'explicit' }])
+    } finally {
+      random.mockRestore()
+      vi.useRealTimers()
+    }
+  })
+
   it('applies sheet updates, gates map effects by GM permission, and appends logs', async () => {
     const map = ref(mapFixture())
     const calls: string[] = []

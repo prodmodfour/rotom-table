@@ -1,6 +1,7 @@
 import { computed, reactive, ref, watch } from 'vue'
 import { damageFormulaForMove } from '~/utils/moveAutomation'
 import { buildMoveAutomationAreaTemplatePlacements } from '~/utils/moveAutomationAreaTemplates'
+import { directHpLossRollFormulaForScript } from '~/utils/moveAutomationDirectHpLoss'
 import { parseHazardCellText } from '~/utils/moveAutomationDialog'
 import {
   moveAutomationUserAccuracy,
@@ -93,7 +94,9 @@ export const useMoveAutomationWizard = (
     tokens: props.allTokens,
   }))
   const requiresTargets = computed(() => moveAutomationRequiresTargets(script.value))
-  const selectedMoveFormula = computed(() => selectedEntry.value ? damageFormulaForMove(selectedEntry.value.move) : null)
+  const selectedMoveFormula = computed(() =>
+    directHpLossRollFormulaForScript(script.value) ?? (selectedEntry.value ? damageFormulaForMove(selectedEntry.value.move) : null),
+  )
 
   watch(
     moveEntries,

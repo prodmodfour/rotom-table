@@ -23,7 +23,8 @@ defineProps<{
     </div>
     <dl class="move-summary__stats">
       <div v-if="selectedEntry?.move.frequency"><dt>Frequency</dt><dd>{{ selectedEntry.move.frequency }}</dd></div>
-      <div v-if="selectedMoveFormula"><dt>Damage Roll</dt><dd>{{ selectedMoveFormula }}</dd></div>
+      <div v-if="selectedMoveFormula"><dt>{{ script.directHpLoss ? 'Effect Roll' : 'Damage Roll' }}</dt><dd>{{ selectedMoveFormula }}</dd></div>
+      <div v-if="script.directHpLoss"><dt>HP Loss</dt><dd>{{ script.directHpLoss.label }}</dd></div>
       <div v-if="script.range"><dt>Range</dt><dd>{{ script.range }}</dd></div>
       <div v-if="script.areaTemplates?.length"><dt>Template</dt><dd>{{ script.areaTemplates.map((template) => template.label).join(' / ') }}</dd></div>
       <div v-if="script.criticalRange"><dt>Crit</dt><dd>{{ script.criticalRange }}+</dd></div>

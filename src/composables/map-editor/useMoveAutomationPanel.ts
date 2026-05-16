@@ -7,8 +7,9 @@ import {
 import {
   damageFormulaForMove,
   isSeamlessAreaConfirmationScript,
-  isSeamlessSingleTargetAttackScript,
+  isSeamlessSingleTargetMoveScript,
 } from '~/utils/moveAutomation'
+import { directHpLossRollFormulaForScript } from '~/utils/moveAutomationDirectHpLoss'
 import {
   buildMoveAutomationAreaTemplateCells,
   buildMoveAutomationAreaTemplatePlacements,
@@ -314,10 +315,13 @@ export const useMoveAutomationPanel = ({
     }
   }
 
+  const rollFormulaForEntry = (entry: NonNullable<ReturnType<typeof moveAutomationEntryForUse>>): string | null =>
+    directHpLossRollFormulaForScript(entry.script) ?? damageFormulaForMove(entry.move)
+
   const beginSeamlessAreaConfirmation = (id: string, entry: ReturnType<typeof moveAutomationEntryForUse>): boolean => {
     const user = findSpawnedPokemon(id)
     if (!user || !entry || !isSeamlessAreaConfirmationScript(entry.script)) return false
-    const damageFormula = entry.script.damaging ? damageFormulaForMove(entry.move) : null
+    const damageFormula = entry.script.damaging ? rollFormulaForEntry(entry) : null
     if (entry.script.damaging && !damageFormula) return false
     const placements = buildMoveAutomationAreaTemplatePlacements({
       script: entry.script,
@@ -344,11 +348,11 @@ export const useMoveAutomationPanel = ({
     const entry = moveAutomationEntryForUse(id, trimmedMoveName)
     if (!user || !entry) return false
 
-    if (isSeamlessSingleTargetAttackScript(entry.script)) {
+    if (isSeamlessSingleTargetMoveScript(entry.script)) {
       const rangeMeters = parseSingleTargetMoveRangeMeters(entry.script.range, {
         focusSkillRankValue: user.focusSkillRankValue,
       })
-      const damageFormula = damageFormulaForMove(entry.move)
+      const damageFormula = rollFormulaForEntry(entry)
       if (rangeMeters == null || !damageFormula) return false
 
       clearMoveAutomationFeedback()

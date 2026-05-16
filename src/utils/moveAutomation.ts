@@ -169,6 +169,53 @@ const reviewedSmogScript = (version = 1): MoveAutomationScript => {
   })
 }
 
+const reviewedPsywaveScript = (version = 1): MoveAutomationScript => {
+  const move = findMove('Psywave')
+  if (!move) throw new Error('Missing canonical PTU move data for Psywave')
+  const manualScript = createManualMoveAutomationScript(move)
+  return defineExplicitMoveScript({
+    moveName: manualScript.moveName,
+    version,
+    targetMode: 'one-target',
+    targetCount: 1,
+    damaging: true,
+    requiresAccuracy: true,
+    damageBase: null,
+    damageClass: manualScript.damageClass,
+    type: manualScript.type,
+    ac: manualScript.ac,
+    range: manualScript.range,
+    effect: manualScript.effect,
+    special: manualScript.special,
+    keywords: manualScript.keywords,
+    criticalRange: null,
+    areaTemplates: manualScript.areaTemplates,
+    directHpLoss: {
+      kind: 'user-level-roll-table',
+      rollFormula: '1d4',
+      rollTable: [
+        { roll: 1, multiplier: 0.5, label: 'Half user level' },
+        { roll: 2, multiplier: 1, label: 'User level' },
+        { roll: 3, multiplier: 1.5, label: 'One and a half times user level' },
+        { roll: 4, multiplier: 2, label: 'Double user level' },
+      ],
+      applyTypeImmunity: true,
+      ignoreWeaknessResistance: true,
+      ignoreStats: true,
+      label: 'Psywave level-scaled HP loss',
+    },
+    conditionSuggestions: [],
+    stageSuggestions: [],
+    hpSuggestions: [],
+    fieldSuggestions: [],
+    hazardSuggestions: [],
+    automationNotes: [
+      'Psywave rolls 1d4 for direct HP loss based on the user’s Level; fractions round down by PTU rules.',
+      'Weakness, resistance, Stats, STAB, and critical hits are ignored; type immunity still prevents HP loss.',
+    ],
+  })
+}
+
 const REVIEWED_TARGET_STAGE_AREA_SCRIPTS: ReadonlyMap<string, MoveAutomationScript> = new Map([
   ['Growl', reviewedTargetStageAreaScript('Growl', 'atk', 'Growl lowers Attack: -1 Attack CS')],
   ['Leer', reviewedTargetStageAreaScript('Leer', 'def', 'Leer lowers Defense: -1 Defense CS')],
@@ -176,6 +223,10 @@ const REVIEWED_TARGET_STAGE_AREA_SCRIPTS: ReadonlyMap<string, MoveAutomationScri
 
 const REVIEWED_SMOG_SCRIPTS: ReadonlyMap<string, MoveAutomationScript> = new Map([
   ['Smog', reviewedSmogScript()],
+])
+
+const REVIEWED_DIRECT_HP_LOSS_SCRIPTS: ReadonlyMap<string, MoveAutomationScript> = new Map([
+  ['Psywave', reviewedPsywaveScript()],
 ])
 
 const SEAMLESS_AREA_CONFIRMATION_SCRIPTS: ReadonlyMap<string, MoveAutomationScript> = new Map([
@@ -216,6 +267,23 @@ export const isSeamlessSingleTargetAttackScript = (
     && script.damaging,
 )
 
+export const isSeamlessSingleTargetMoveScript = (
+  script: MoveAutomationScript | null | undefined,
+): script is MoveAutomationScript => {
+  if (!script) return false
+  return Boolean(
+    script.kind === 'explicit'
+      && (
+        SEAMLESS_SINGLE_TARGET_ATTACK_SCRIPTS.has(script.moveName)
+        || (REVIEWED_DIRECT_HP_LOSS_SCRIPTS.has(script.moveName) && Boolean(script.directHpLoss))
+      )
+      && script.targetMode === 'one-target'
+      && script.targetCount === 1
+      && script.requiresAccuracy
+      && script.damaging,
+  )
+}
+
 export const isSeamlessAreaConfirmationScript = (
   script: MoveAutomationScript | null | undefined,
 ): script is MoveAutomationScript => Boolean(
@@ -236,6 +304,7 @@ export const EXPLICIT_MOVE_AUTOMATION_SCRIPTS: ReadonlyMap<string, MoveAutomatio
   ...STRUGGLE_ATTACK_SCRIPTS,
   ...SEAMLESS_SINGLE_TARGET_ATTACK_SCRIPTS,
   ...SEAMLESS_AREA_CONFIRMATION_SCRIPTS,
+  ...REVIEWED_DIRECT_HP_LOSS_SCRIPTS,
 ])
 
 export const moveAutomationCoverage = {

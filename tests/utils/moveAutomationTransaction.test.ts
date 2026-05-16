@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { explicitScriptForMove } from '~/utils/moveAutomation'
 import { buildMoveAutomationTransaction } from '~/utils/moveAutomationTransaction'
 import {
   defaultTargetResolutionState,
@@ -160,5 +161,73 @@ describe('move automation transaction helpers', () => {
 
     expect(transaction.combatStageUpdates).toEqual([{ id: 'hit', stages: { ...stages, atk: -1 } }])
     expect(transaction.logLines).toContain('Lower Attack on Hitmon.')
+  })
+
+  it('applies Psywave direct HP loss from the user level table without stats or resistance', () => {
+    const s = explicitScriptForMove('Psywave')
+    expect(s).not.toBeNull()
+    const user = token({ id: 'u', species: 'Psyduck', level: 21, satk: 99 })
+    const target = token({
+      id: 't',
+      species: 'Croagunk',
+      currentHp: 80,
+      maxHp: 80,
+      sdef: 99,
+      defenderTypes: ['Fighting', 'Poison'],
+    })
+
+    const transaction = buildMoveAutomationTransaction({
+      script: s!,
+      user,
+      selectedTargets: [target],
+      targetResolutions: {
+        t: {
+          ...defaultTargetResolutionState(s!),
+          hit: true,
+          damageRoll: { formula: '1d4', count: 1, sides: 4, rolls: [3], total: 3, mod: 0 },
+        },
+      },
+      enabledSuggestions: {},
+      hpSuggestionAmounts: {},
+      manualUserConditions: [],
+      manualTargetConditions: [],
+      manualUserStageDeltas: stages,
+      manualTargetStageDeltas: stages,
+      hazardCells: [],
+      manualNote: '',
+    })
+
+    expect(transaction.hpUpdates).toEqual([{ id: 't', currentHp: 49 }])
+    expect(transaction.logLines).toContain('Croagunk: 31 HP lost (Psywave level-scaled HP loss).')
+  })
+
+  it('lets Psywave apply Psychic immunity', () => {
+    const s = explicitScriptForMove('Psywave')
+    expect(s).not.toBeNull()
+    const user = token({ id: 'u', species: 'Drowzee', level: 20 })
+    const target = token({ id: 't', species: 'Umbreon', currentHp: 80, maxHp: 80, defenderTypes: ['Dark'] })
+
+    const transaction = buildMoveAutomationTransaction({
+      script: s!,
+      user,
+      selectedTargets: [target],
+      targetResolutions: {
+        t: {
+          ...defaultTargetResolutionState(s!),
+          hit: true,
+          damageRoll: { formula: '1d4', count: 1, sides: 4, rolls: [4], total: 4, mod: 0 },
+        },
+      },
+      enabledSuggestions: {},
+      hpSuggestionAmounts: {},
+      manualUserConditions: [],
+      manualTargetConditions: [],
+      manualUserStageDeltas: stages,
+      manualTargetStageDeltas: stages,
+      hazardCells: [],
+      manualNote: '',
+    })
+
+    expect(transaction.hpUpdates).toEqual([])
   })
 })

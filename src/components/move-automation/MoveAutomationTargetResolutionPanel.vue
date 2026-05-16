@@ -82,10 +82,10 @@ const emit = defineEmits<{
         </label>
         <button type="button" class="mini-button" @click="emit('roll-accuracy', target.id)">Roll</button>
         <label class="inline-check"><input v-model="ensureTargetResolution(target.id).hit" type="checkbox" /> Hit</label>
-        <label class="inline-check"><input v-model="ensureTargetResolution(target.id).crit" type="checkbox" /> Crit</label>
+        <label v-if="!script.directHpLoss" class="inline-check"><input v-model="ensureTargetResolution(target.id).crit" type="checkbox" /> Crit</label>
       </div>
       <div v-if="script.damaging" class="target-resolution__row">
-        <button type="button" class="mini-button" :disabled="!selectedMoveFormula" @click="emit('roll-damage', target.id)">Roll damage</button>
+        <button type="button" class="mini-button" :disabled="!selectedMoveFormula" @click="emit('roll-damage', target.id)">{{ script.directHpLoss ? 'Roll HP loss' : 'Roll damage' }}</button>
         <span v-if="ensureTargetResolution(target.id).damageRoll" class="roll-readout">
           [{{ ensureTargetResolution(target.id).damageRoll?.rolls.join(', ') }}] + {{ ensureTargetResolution(target.id).damageRoll?.mod }} =
           <strong>{{ ensureTargetResolution(target.id).damageRoll?.total }}</strong>

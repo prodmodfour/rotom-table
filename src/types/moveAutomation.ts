@@ -144,6 +144,22 @@ export interface MoveAutomationHpSuggestion {
   optional?: boolean
 }
 
+export interface MoveAutomationDirectHpLossRollTableEntry {
+  roll: number
+  multiplier: number
+  label: string
+}
+
+export interface MoveAutomationDirectHpLossRule {
+  kind: 'user-level-roll-table'
+  rollFormula: string
+  rollTable: MoveAutomationDirectHpLossRollTableEntry[]
+  applyTypeImmunity: boolean
+  ignoreWeaknessResistance: boolean
+  ignoreStats: boolean
+  label: string
+}
+
 export interface MoveAutomationFieldSuggestion {
   kind: 'weather' | 'terrain' | 'room'
   value: MapWeatherKind | MapTerrainKind | MapRoomKind
@@ -196,6 +212,7 @@ export interface MoveAutomationScript {
   special?: string
   keywords: string[]
   criticalRange: number | null
+  directHpLoss?: MoveAutomationDirectHpLossRule
   areaTemplates?: MoveAutomationAreaTemplate[]
   conditionSuggestions: MoveAutomationConditionSuggestion[]
   stageSuggestions: MoveAutomationStageSuggestion[]

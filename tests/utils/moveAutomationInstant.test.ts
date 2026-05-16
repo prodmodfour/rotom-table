@@ -114,6 +114,21 @@ describe('instant move automation', () => {
     expect(result.transaction.logLines).toContain('Manual note: Burned did not apply to Flare: immune (Fire type).')
   })
 
+  it('resolves Psywave through the same instant single-target flow as Ember', () => {
+    const script = explicitScriptForMove('Psywave')!
+    const result = resolveInstantMoveAutomation({
+      script,
+      user: token({ id: 'u', species: 'Caster', level: 21, satk: 99 }),
+      target: token({ id: 't', species: 'Target', currentHp: 80, maxHp: 80, sdef: 99, defenderTypes: ['Fighting', 'Poison'] }),
+      damageFormula: '1d4',
+      random: sequenceRandom([0.5, 0.5]),
+    })
+
+    expect(result.feedback).toMatchObject({ naturalRoll: 11, hit: true, crit: false, damageLoss: 31 })
+    expect(result.transaction.hpUpdates).toEqual([{ id: 't', currentHp: 49 }])
+    expect(result.transaction.logLines).toContain('Target: 31 HP lost (Psywave level-scaled HP loss).')
+  })
+
   it('resolves Smog area damage and poisons only hit targets with even natural rolls', () => {
     const script = explicitScriptForMove('Smog')!
     const transaction = resolveInstantAreaMoveAutomation({

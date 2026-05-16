@@ -3,6 +3,7 @@ import { conditionAdjustedCombatStage } from '~/utils/sheetConditionEffects'
 import { fieldEffectDamageBonus, type DamageRollResult } from '~/utils/moveAutomation'
 import { parsePositiveInt } from '~/utils/moveAutomationDialog'
 import { applyInfatuationOffenseModifier, resolveInfatuationDamageEffect } from '~/utils/infatuationDamage'
+import { resolveMoveAutomationDirectHpLoss } from '~/utils/moveAutomationDirectHpLoss'
 import { formatMultiplier } from '~/utils/typeChart'
 import { computeSheetAbilityAwareMultiplier } from '~/utils/sheetPassiveAbilityEffects'
 import type { MapFieldEffects } from '~/types/map'
@@ -57,7 +58,13 @@ export const moveAutomationTargetDamageMultiplier = (
 export const moveAutomationMultiplierLabel = (
   script: MoveAutomationScript | null | undefined,
   target: SpawnedPokemon,
-): string => formatMultiplier(moveAutomationTargetDamageMultiplier(script, target))
+): string => {
+  const multiplier = moveAutomationTargetDamageMultiplier(script, target)
+  if (script?.directHpLoss?.ignoreWeaknessResistance) {
+    return multiplier === 0 ? '0 (immune)' : '1 (ignores weakness/resistance)'
+  }
+  return formatMultiplier(multiplier)
+}
 
 export const resolveMoveAutomationTargetDamageLoss = (
   script: MoveAutomationScript | null | undefined,
@@ -72,6 +79,13 @@ export const resolveMoveAutomationTargetDamageLoss = (
   if (!state.applyDamage || !state.hit) return 0
   const manual = parsePositiveInt(state.manualHpLoss)
   if (manual != null) return manual
+  const directHpLoss = resolveMoveAutomationDirectHpLoss({
+    script,
+    user,
+    target,
+    rollTotal: state.damageRoll?.total,
+  })
+  if (directHpLoss != null) return directHpLoss
   const baseRollTotal = state.damageRoll?.total ?? 0
   const criticalDiceBonus = state.crit
     ? state.damageRoll?.rolls.reduce((sum, roll) => sum + roll, 0) ?? 0

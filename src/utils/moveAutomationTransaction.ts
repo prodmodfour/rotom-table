@@ -16,6 +16,7 @@ import {
   formatMoveAutomationAutomationNoteLogLines,
   formatMoveAutomationConditionSuggestionLogLine,
   formatMoveAutomationDamageLogLine,
+  formatMoveAutomationDirectHpLossLogLine,
   formatMoveAutomationHpSuggestionLogLine,
   formatMoveAutomationManualNoteLogLine,
   formatMoveAutomationStageSuggestionLogLine,
@@ -114,7 +115,9 @@ export const buildMoveAutomationTransaction = ({
     )
     if (loss > 0) {
       hpAccumulator.set(target, hpAccumulator.get(target) - loss)
-      logLines.push(formatMoveAutomationDamageLogLine(target.species, loss, targetResolutions[target.id]?.crit))
+      logLines.push(script.directHpLoss
+        ? formatMoveAutomationDirectHpLossLogLine(target.species, loss, script.directHpLoss.label)
+        : formatMoveAutomationDamageLogLine(target.species, loss, targetResolutions[target.id]?.crit))
     }
   }
 
