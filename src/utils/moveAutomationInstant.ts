@@ -10,6 +10,10 @@ import {
 } from '~/utils/moveAutomationResolution'
 import { rollDamageFormula } from '~/utils/moveAutomation'
 import {
+  resolveMoveAutomationRandomStageSuggestion,
+  resolveMoveAutomationRuntimeDamageFormula,
+} from '~/utils/moveAutomationDynamicDamage'
+import {
   moveAutomationUserAccuracy,
   resolveMoveAutomationTargetEvasion,
 } from '~/utils/moveAutomationAccuracy'
@@ -254,6 +258,9 @@ const addAccuracyToFeedback = (
   targetEvasion: result.targetEvasion ?? 0,
 })
 
+const combineManualNotes = (...notes: Array<string | null | undefined>): string =>
+  notes.map((note) => note?.trim() ?? '').filter(Boolean).join(' ')
+
 export const resolveInstantMoveAutomation = ({
   script,
   user,
@@ -270,8 +277,11 @@ export const resolveInstantMoveAutomation = ({
     userAccuracy,
     targetEvasion: targetEvasion.value,
   })
-  const damageRoll = accuracy.hit && script.damaging && damageFormula
-    ? rollDamageFormula(damageFormula, random)
+  const runtimeDamage = accuracy.hit && script.damaging
+    ? resolveMoveAutomationRuntimeDamageFormula({ script, user, fallbackFormula: damageFormula, random })
+    : { formula: damageFormula ?? null, note: null }
+  const damageRoll = accuracy.hit && script.damaging && runtimeDamage.formula
+    ? rollDamageFormula(runtimeDamage.formula, random)
     : null
   const targetResolutions = {
     [target.id]: {
@@ -298,6 +308,15 @@ export const resolveInstantMoveAutomation = ({
     hit: accuracy.hit,
     enabledSuggestions,
   })
+  const randomStageNote = accuracy.hit
+    ? resolveMoveAutomationRandomStageSuggestion({ script, enabledSuggestions, random })
+    : null
+  const blockedConditionNote = accuracy.hit
+    ? conditions
+      .filter((condition) => condition.blockedBy)
+      .map((condition) => `${condition.condition} did not apply to ${target.species}: immune (${condition.blockedBy}).`)
+      .join(' ')
+    : ''
 
   const transaction = buildMoveAutomationTransaction({
     script,
@@ -311,12 +330,7 @@ export const resolveInstantMoveAutomation = ({
     manualUserStageDeltas: emptyStageDeltas(),
     manualTargetStageDeltas: emptyStageDeltas(),
     hazardCells: [],
-    manualNote: accuracy.hit
-      ? conditions
-        .filter((condition) => condition.blockedBy)
-        .map((condition) => `${condition.condition} did not apply to ${target.species}: immune (${condition.blockedBy}).`)
-        .join(' ')
-      : '',
+    manualNote: combineManualNotes(runtimeDamage.note, randomStageNote, blockedConditionNote),
     fieldEffects,
   })
   const targetHpUpdate = transaction.hpUpdates.find((update) => update.id === target.id)
@@ -352,10 +366,14 @@ const buildNoRollTargetTransaction = ({
   random,
 }: ResolveInstantTargetMoveAutomationInput): MoveAutomationTransaction => {
   const state = defaultTargetResolutionState(script)
-  if (script.damaging && state.hit && damageFormula) state.damageRoll = rollDamageFormula(damageFormula, random)
+  const runtimeDamage = script.damaging && state.hit
+    ? resolveMoveAutomationRuntimeDamageFormula({ script, user, fallbackFormula: damageFormula, random })
+    : { formula: damageFormula ?? null, note: null }
+  if (script.damaging && state.hit && runtimeDamage.formula) state.damageRoll = rollDamageFormula(runtimeDamage.formula, random)
   const targetResolutions = { [target.id]: state }
   const enabledSuggestions: Record<string, boolean> = {}
   enableDefaultSuggestions(script, enabledSuggestions)
+  const randomStageNote = resolveMoveAutomationRandomStageSuggestion({ script, enabledSuggestions, random })
   const conditionApplications = resolveAreaConditionApplications(script, [target], targetResolutions)
   conditionApplications.targetIdsBySuggestion.forEach((targetIds, index) => {
     if (targetIds.size) enabledSuggestions[moveAutomationSuggestionKey(script, 'condition', index)] = true
@@ -373,7 +391,7 @@ const buildNoRollTargetTransaction = ({
     manualUserStageDeltas: emptyStageDeltas(),
     manualTargetStageDeltas: emptyStageDeltas(),
     hazardCells: [],
-    manualNote: conditionApplications.blockedNotes.join(' '),
+    manualNote: combineManualNotes(runtimeDamage.note, randomStageNote, conditionApplications.blockedNotes.join(' ')),
     fieldEffects,
     suggestionRecipientFilter: ({ kind, index, recipient, token }) => {
       if (recipient !== 'target') return true
@@ -395,6 +413,7 @@ export const resolveInstantSelfMoveAutomation = ({
 }: ResolveInstantSelfMoveAutomationInput): MoveAutomationTransaction => {
   const enabledSuggestions: Record<string, boolean> = {}
   enableDefaultSuggestions(script, enabledSuggestions)
+  const randomStageNote = resolveMoveAutomationRandomStageSuggestion({ script, enabledSuggestions })
   return buildMoveAutomationTransaction({
     script,
     user,
@@ -407,7 +426,7 @@ export const resolveInstantSelfMoveAutomation = ({
     manualUserStageDeltas: emptyStageDeltas(),
     manualTargetStageDeltas: emptyStageDeltas(),
     hazardCells: [],
-    manualNote: '',
+    manualNote: combineManualNotes(randomStageNote),
     fieldEffects,
   })
 }

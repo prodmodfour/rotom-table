@@ -336,6 +336,87 @@ const reviewedPsywaveScript = (version = 1): MoveAutomationScript => {
   })
 }
 
+const reviewedDragonRageScript = (version = 1): MoveAutomationScript => reviewedMoveScriptFromCanonical('Dragon Rage', version, {
+  targetMode: 'one-target',
+  targetCount: 1,
+  damaging: true,
+  requiresAccuracy: true,
+  damageBase: null,
+  criticalRange: null,
+  directHpLoss: {
+    kind: 'fixed',
+    amount: 15,
+    applyTypeImmunity: true,
+    ignoreWeaknessResistance: true,
+    ignoreStats: true,
+    label: 'Dragon Rage fixed HP loss',
+  },
+  hpSuggestions: [],
+  automationNotes: [
+    'Dragon Rage applies exactly 15 HP loss on a hit; Stats, weakness/resistance, STAB, and critical hits are ignored.',
+    'Dragon-type immunity still prevents the HP loss.',
+  ],
+})
+
+const reviewedFiveStrikeScript = (moveName: string, version = 1): MoveAutomationScript => reviewedMoveScriptFromCanonical(moveName, version, {
+  targetMode: 'one-target',
+  targetCount: 1,
+  dynamicDamageBase: {
+    kind: 'five-strike',
+    rollFormula: '1d8',
+    label: `${moveName} Five Strike`,
+  },
+  automationNotes: [
+    'Five Strike is rolled automatically after a hit: 1=one hit, 2-3=two hits, 4-6=three hits, 7=four hits, 8=five hits.',
+    'STAB is applied after strike-count Damage Base multiplication.',
+    'Technician and other non-STAB Damage Base modifiers are not inferred; adjust the move before use if they apply.',
+  ],
+})
+
+const reviewedPowerTripScript = (version = 1): MoveAutomationScript => reviewedMoveScriptFromCanonical('Power Trip', version, {
+  targetMode: 'one-target',
+  targetCount: 1,
+  dynamicDamageBase: {
+    kind: 'positive-combat-stage-scaling',
+    dbPerPositiveStage: 2,
+    maxDamageBase: 20,
+    label: 'Power Trip Damage Base scaling',
+  },
+  automationNotes: [
+    'Power Trip recalculates Damage Base from the user’s current positive Combat Stages at resolution time.',
+    'The Power Trip bonus caps at DB 20 before this automation applies STAB.',
+  ],
+})
+
+const ACUPRESSURE_STAGE_BOOSTS: readonly ReviewedTargetStageDefinition[] = [
+  { key: 'atk', delta: 2, label: 'Acupressure raises Attack: +2 Attack CS', optional: true },
+  { key: 'def', delta: 2, label: 'Acupressure raises Defense: +2 Defense CS', optional: true },
+  { key: 'satk', delta: 2, label: 'Acupressure raises Special Attack: +2 Special Attack CS', optional: true },
+  { key: 'sdef', delta: 2, label: 'Acupressure raises Special Defense: +2 Special Defense CS', optional: true },
+  { key: 'spd', delta: 2, label: 'Acupressure raises Speed: +2 Speed CS', optional: true },
+  { key: 'acc', delta: 2, label: 'Acupressure raises Accuracy: +2 Accuracy CS', optional: true },
+]
+
+const reviewedAcupressureScript = (version = 1): MoveAutomationScript => reviewedMoveScriptFromCanonical('Acupressure', version, {
+  targetMode: 'one-target',
+  targetCount: 1,
+  stageSuggestions: targetStageSuggestions(ACUPRESSURE_STAGE_BOOSTS),
+  randomStageSuggestion: {
+    kind: 'roll-table',
+    rollFormula: '1d6',
+    label: 'Acupressure',
+    entries: ACUPRESSURE_STAGE_BOOSTS.map((boost, index) => ({
+      roll: index + 1,
+      stageSuggestionIndex: index,
+      label: boost.label,
+    })),
+  },
+  automationNotes: [
+    'Acupressure rolls 1d6 automatically after a successful accuracy roll and applies the matching +2 Combat Stage boost.',
+    'The range includes Self; select the user token in the targeting overlay to apply Acupressure to itself.',
+  ],
+})
+
 const reviewedAbsorbScript = (version = 1): MoveAutomationScript => reviewedMoveScriptFromCanonical('Absorb', version, {
   targetMode: 'one-target',
   targetCount: 1,
@@ -430,6 +511,7 @@ const REVIEWED_SMOG_SCRIPTS: ReadonlyMap<string, MoveAutomationScript> = new Map
 ])
 
 const REVIEWED_DIRECT_HP_LOSS_SCRIPTS: ReadonlyMap<string, MoveAutomationScript> = new Map([
+  ['Dragon Rage', reviewedDragonRageScript()],
   ['Psywave', reviewedPsywaveScript()],
 ])
 
@@ -612,6 +694,7 @@ const REVIEWED_SINGLE_TARGET_STAGE_SCRIPTS: ReadonlyMap<string, MoveAutomationSc
 
 const REVIEWED_ADDITIONAL_SINGLE_TARGET_SCRIPTS: ReadonlyMap<string, MoveAutomationScript> = new Map([
   ['Absorb', reviewedAbsorbScript()],
+  ['Acupressure', reviewedAcupressureScript()],
   ['Fake Out', reviewedSingleTargetConditionScript('Fake Out', [{ condition: 'Flinch', label: 'Fake Out flinches on hit' }], 1, {
     automationNotes: ['Fake Out’s Priority/Flinch clause is only legal upon joining an encounter; automation applies Flinch on hit assuming that requirement is met.'],
   })],
@@ -624,6 +707,17 @@ const REVIEWED_ADDITIONAL_SINGLE_TARGET_SCRIPTS: ReadonlyMap<string, MoveAutomat
     requiresAccuracy: false,
     automationNotes: ['Helping Hand creates a removable marker; remove it after the target consumes the +2 Accuracy/+10 Damage bonus or the round ends.'],
   })],
+  ['Fury Attack', reviewedFiveStrikeScript('Fury Attack')],
+  ['Knock Off', reviewedMoveScriptFromCanonical('Knock Off', 1, {
+    targetMode: 'one-target',
+    targetCount: 1,
+    automationNotes: [
+      'On hit, choose one of the target’s Held Items or Accessory Slot Items; the chosen item is knocked to the ground.',
+      'Equipment slots and ground item placement are not tracked by this transaction, so update the sheet/map item manually after damage resolves.',
+    ],
+  })],
+  ['Pin Missile', reviewedFiveStrikeScript('Pin Missile')],
+  ['Power Trip', reviewedPowerTripScript()],
   ['Sand Tomb', reviewedSingleTargetConditionScript('Sand Tomb', [
     { condition: 'Slowed', label: 'Vortex slows target' },
     { condition: 'Trapped', label: 'Vortex traps target' },
@@ -640,9 +734,21 @@ const REVIEWED_ADDITIONAL_SINGLE_TARGET_SCRIPTS: ReadonlyMap<string, MoveAutomat
     automationNotes: ['Tackle pushes the target 2 meters after damage; move the target token manually after the automated hit resolves.'],
   })],
   ['Torment', reviewedSingleTargetConditionScript('Torment', [{ condition: 'Suppressed', label: 'Suppressed' }])],
+  ['U-Turn', reviewedMoveScriptFromCanonical('U-Turn', 1, {
+    targetMode: 'one-target',
+    targetCount: 1,
+    automationNotes: [
+      'On hit, the user is recalled immediately after damage and may send out a new Pokémon; perform the token recall/send-out after the automated damage resolves.',
+      'U-Turn explicitly allows a Trapped user to be recalled.',
+    ],
+  })],
 ])
 
 const REVIEWED_SELF_SCRIPTS: ReadonlyMap<string, MoveAutomationScript> = new Map([
+  ['Hone Claws', reviewedSelfStageScript('Hone Claws', [
+    { key: 'acc', delta: 1, label: 'Hone Claws raises Accuracy: +1 Accuracy CS' },
+    { key: 'atk', delta: 1, label: 'Hone Claws raises Attack: +1 Attack CS' },
+  ])],
   ['Swords Dance', reviewedSelfStageScript('Swords Dance', [{ key: 'atk', delta: 2, label: 'Swords Dance raises Attack: +2 Attack CS' }])],
 ])
 

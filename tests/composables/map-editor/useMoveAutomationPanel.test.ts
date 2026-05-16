@@ -343,6 +343,78 @@ describe('useMoveAutomationPanel', () => {
     }
   })
 
+  it('queues and applies an ignorable Cute Charm prompt after an opposite-gender attack, even on a miss', async () => {
+    vi.useFakeTimers()
+    const map = ref({
+      ...mapFixture(),
+      placements: [
+        { id: 'user-token', sheetKind: 'pokemon' as const, sheetSlug: 'attacker', position: { x: 0, y: 0, z: 0 } },
+        { id: 'target-token', sheetKind: 'pokemon' as const, sheetSlug: 'defender', position: { x: 2, y: 0, z: 0 } },
+      ],
+    })
+    const attackerSheet = {
+      slug: 'attacker',
+      nickname: 'Attacker',
+      species: 'Charmander',
+      level: 5,
+      movelist: [{ name: 'Ember' }],
+    } as CharacterSheet
+    const defenderSheet = {
+      slug: 'defender',
+      nickname: 'Defender',
+      species: 'Vulpix Alola',
+      level: 5,
+      abilities: [{ name: 'Cute Charm' }],
+    } as CharacterSheet
+    const conditionCalls: MoveAutomationTransaction['conditionUpdates'] = []
+    const panel = useMoveAutomationPanel({
+      map,
+      spawnedPokemon: computed(() => [
+        spawned({ id: 'user-token', species: 'Attacker', sheetSlug: 'attacker', gender: 'Male', position: { x: 0, y: 0, z: 0 } }),
+        spawned({ id: 'target-token', species: 'Defender', sheetSlug: 'defender', gender: 'Female', abilityNames: ['Cute Charm'], currentHp: 40, maxHp: 40, position: { x: 2, y: 0, z: 0 } }),
+      ]),
+      pokemonBySlug: ref(new Map([
+        [attackerSheet.slug, attackerSheet],
+        [defenderSheet.slug, defenderSheet],
+      ])),
+      trainerBySlug: ref(new Map<string, TrainerSheet>()),
+      canEditMap: computed(() => false),
+      canControlPlacement: (id) => id === 'user-token',
+      modifyHp: () => undefined,
+      modifyCombatStages: () => undefined,
+      modifyConditions: (update) => { conditionCalls.push(update) },
+      applyMoveFieldEffect: () => undefined,
+      placeHazard: () => undefined,
+    })
+    const random = vi.spyOn(Math, 'random').mockReturnValue(0)
+
+    try {
+      panel.openMoveAutomation({ id: 'user-token', moveName: 'Ember' })
+      await panel.selectMoveAutomationTarget('target-token')
+      expect(panel.cuteCharmReactionPrompts.value).toEqual([])
+
+      await vi.advanceTimersByTimeAsync(850)
+
+      expect(panel.moveAutomationFeedback.value).toMatchObject({ hit: false })
+      expect(panel.cuteCharmReactionPrompts.value).toMatchObject([{
+        defenderId: 'target-token',
+        defenderName: 'Defender',
+        attackerId: 'user-token',
+        attackerName: 'Attacker',
+        moveName: 'Ember',
+      }])
+      expect(panel.spiteReactionPrompts.value).toEqual([])
+
+      await panel.applyCuteCharmReactionPrompt(panel.cuteCharmReactionPrompts.value[0]!.id)
+
+      expect(conditionCalls).toEqual([{ id: 'user-token', conditions: ['Infatuation: Defender'] }])
+      expect(panel.cuteCharmReactionPrompts.value).toEqual([])
+    } finally {
+      random.mockRestore()
+      vi.useRealTimers()
+    }
+  })
+
   it('queues and applies an optional Moxie prompt after a target faints', async () => {
     const map = ref({
       ...mapFixture(),
@@ -509,6 +581,71 @@ describe('useMoveAutomationPanel', () => {
     expect(panel.moveAutomationFeedback.value).toBeNull()
     expect(conditionCalls).toEqual([{ id: 'target-token', conditions: ['Helping Hand'] }])
     expect(map.value.metadata?.moveLog).toMatchObject([{ moveName: 'Helping Hand', scriptKind: 'explicit' }])
+  })
+
+  it('opens Acupressure as a self-or-target overlay and applies the rolled boost', async () => {
+    vi.useFakeTimers()
+    const map = ref({
+      ...mapFixture(),
+      placements: [
+        { id: 'user-token', sheetKind: 'pokemon' as const, sheetSlug: 'helper', position: { x: 0, y: 0, z: 0 } },
+        { id: 'target-token', sheetKind: 'pokemon' as const, sheetSlug: 'target', position: { x: 1, y: 0, z: 0 } },
+      ],
+    })
+    const pokemonSheet = {
+      slug: 'helper',
+      nickname: 'Helper',
+      species: 'Scab',
+      level: 5,
+      movelist: [{ name: 'Acupressure' }],
+    } as CharacterSheet
+    const calls: string[] = []
+    const panel = useMoveAutomationPanel({
+      map,
+      spawnedPokemon: computed(() => [
+        spawned({ id: 'user-token', species: 'Helper', sheetSlug: 'helper', position: { x: 0, y: 0, z: 0 } }),
+        spawned({ id: 'target-token', species: 'Target', sheetSlug: 'target', position: { x: 1, y: 0, z: 0 } }),
+      ]),
+      pokemonBySlug: ref(new Map([[pokemonSheet.slug, pokemonSheet]])),
+      trainerBySlug: ref(new Map<string, TrainerSheet>()),
+      canEditMap: computed(() => false),
+      canControlPlacement: (id) => id === 'user-token',
+      modifyHp: () => undefined,
+      modifyCombatStages: (update) => { calls.push(`stages:${update.id}:${update.stages.sdef}`) },
+      modifyConditions: () => undefined,
+      applyMoveFieldEffect: () => undefined,
+      placeHazard: () => undefined,
+    })
+    const random = vi.spyOn(Math, 'random').mockReturnValue(0.5)
+
+    try {
+      panel.openMoveAutomation({ id: 'user-token', moveName: 'Acupressure' })
+
+      expect(panel.moveAutomationUser.value).toBeNull()
+      expect(panel.moveAutomationTargeting.value).toMatchObject({
+        mode: 'target',
+        moveName: 'Acupressure',
+        rangeLabel: '1m',
+        candidateIds: ['user-token', 'target-token'],
+      })
+
+      await panel.selectMoveAutomationTarget('user-token')
+
+      expect(panel.moveAutomationFeedback.value).toMatchObject({
+        moveName: 'Acupressure',
+        naturalRoll: 11,
+        hit: true,
+        damageLoss: 0,
+      })
+
+      await vi.advanceTimersByTimeAsync(850)
+
+      expect(calls).toEqual(['stages:user-token:2'])
+      expect(map.value.metadata?.moveLog).toMatchObject([{ moveName: 'Acupressure', scriptKind: 'explicit' }])
+    } finally {
+      random.mockRestore()
+      vi.useRealTimers()
+    }
   })
 
   it('opens Growl as an on-map AoE confirmation and applies it on target selection/confirmation', async () => {

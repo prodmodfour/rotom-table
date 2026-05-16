@@ -86,6 +86,15 @@ describe('move automation move helpers', () => {
     expect(entry.move.damage_roll).toBeNull()
   })
 
+  it('defers STAB for dynamic Damage Base move scripts', () => {
+    const [entry] = buildMoveAutomationMoveEntries([{ name: 'Fury Attack' }], { stabTypes: ['Normal'] })
+
+    expect(entry.hasStab).toBe(true)
+    expect(entry.script.damageBase).toBe(2)
+    expect(entry.script.stabDamageBaseBonus).toBe(2)
+    expect(entry.script.dynamicDamageBase).toMatchObject({ kind: 'five-strike' })
+  })
+
   it('uses explicit Struggle scripts without STAB and applies Expert Combat Skill overrides', () => {
     const names = STRUGGLE_ATTACK_MOVE_NAMES.map((name) => ({ name }))
     const entries = buildMoveAutomationMoveEntries(names, {

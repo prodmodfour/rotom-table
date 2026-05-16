@@ -129,6 +129,68 @@ describe('instant move automation', () => {
     expect(result.transaction.logLines).toContain('Target: 31 HP lost (Psywave level-scaled HP loss).')
   })
 
+  it('resolves fixed direct HP loss for Dragon Rage', () => {
+    const script = explicitScriptForMove('Dragon Rage')!
+    const result = resolveInstantMoveAutomation({
+      script,
+      user: token({ id: 'u', species: 'Drake', satk: 99 }),
+      target: token({ id: 't', species: 'Target', currentHp: 40, maxHp: 40, sdef: 99 }),
+      damageFormula: null,
+      random: sequenceRandom([0.5]),
+    })
+
+    expect(result.feedback).toMatchObject({ naturalRoll: 11, hit: true, crit: false, damageLoss: 15 })
+    expect(result.transaction.hpUpdates).toEqual([{ id: 't', currentHp: 25 }])
+    expect(result.transaction.logLines).toContain('Target: 15 HP lost (Dragon Rage fixed HP loss).')
+  })
+
+  it('rolls Five Strike damage base before rolling damage dice', () => {
+    const script = explicitScriptForMove('Pin Missile')!
+    const result = resolveInstantMoveAutomation({
+      script,
+      user: token({ id: 'u', species: 'Launcher', atk: 5 }),
+      target: token({ id: 't', species: 'Target', def: 5 }),
+      damageFormula: '1d6+5',
+      random: sequenceRandom([0.5, 0.75, 0, 0, 0]),
+    })
+
+    expect(result.feedback).toMatchObject({ naturalRoll: 11, hit: true, damageLoss: 13 })
+    expect(result.transaction.hpUpdates).toEqual([{ id: 't', currentHp: 27 }])
+    expect(result.transaction.logLines).toContain('Manual note: Pin Missile Five Strike rolled 7: 4 hits; DB 3 × 4 = DB 12.')
+  })
+
+  it('scales Power Trip from the user’s positive Combat Stages', () => {
+    const script = explicitScriptForMove('Power Trip')!
+    const result = resolveInstantMoveAutomation({
+      script,
+      user: token({ id: 'u', species: 'Rook', atk: 5, combatStages: { ...stages, acc: 3 } }),
+      target: token({ id: 't', species: 'Target', def: 5 }),
+      damageFormula: '1d6+3',
+      random: sequenceRandom([0.5, 0, 0]),
+    })
+
+    expect(result.feedback).toMatchObject({ naturalRoll: 11, hit: true, damageLoss: 12 })
+    expect(result.transaction.hpUpdates).toEqual([{ id: 't', currentHp: 28 }])
+    expect(result.transaction.logLines).toContain('Manual note: Power Trip Damage Base scaling: 3 positive Combat Stages -> DB 8.')
+  })
+
+  it('rolls Acupressure and applies only the selected stage boost', () => {
+    const script = explicitScriptForMove('Acupressure')!
+    const result = resolveInstantMoveAutomation({
+      script,
+      user: token({ id: 'u', species: 'Medic' }),
+      target: token({ id: 't', species: 'Target' }),
+      damageFormula: null,
+      random: sequenceRandom([0.5, 0.5]),
+    })
+
+    expect(result.feedback).toMatchObject({ naturalRoll: 11, hit: true, damageLoss: 0 })
+    expect(result.transaction.combatStageUpdates).toEqual([
+      { id: 't', stages: { ...stages, sdef: 2 } },
+    ])
+    expect(result.transaction.logLines).toContain('Manual note: Acupressure rolled 4: Acupressure raises Special Defense: +2 Special Defense CS.')
+  })
+
   it('applies reviewed single-target stage thresholds during instant targeting', () => {
     const script = explicitScriptForMove('Bubble Beam')!
     const result = resolveInstantMoveAutomation({

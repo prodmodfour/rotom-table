@@ -11,6 +11,7 @@ import {
   isSeamlessSingleTargetMoveScript,
 } from '~/utils/moveAutomation'
 import { directHpLossRollFormulaForScript } from '~/utils/moveAutomationDirectHpLoss'
+import { moveAutomationCanResolveDamageAtRuntime } from '~/utils/moveAutomationDynamicDamage'
 import {
   buildMoveAutomationAreaTemplateCells,
   buildMoveAutomationAreaTemplatePlacements,
@@ -229,6 +230,7 @@ export const useMoveAutomationPanel = ({
       tokens: spawnedPokemon.value,
       rangeMeters: request.rangeMeters,
     })
+    if (/\bSelf\b/i.test(request.script.range)) candidates.unshift(user)
     return {
       userId: request.userId,
       moveName: request.moveName,
@@ -337,7 +339,7 @@ export const useMoveAutomationPanel = ({
     const user = findSpawnedPokemon(id)
     if (!user || !entry || !isSeamlessAreaConfirmationScript(entry.script)) return false
     const damageFormula = entry.script.damaging ? rollFormulaForEntry(entry) : null
-    if (entry.script.damaging && !damageFormula) return false
+    if (entry.script.damaging && !damageFormula && !moveAutomationCanResolveDamageAtRuntime(entry.script)) return false
     const placements = buildMoveAutomationAreaTemplatePlacements({
       script: entry.script,
       user,
@@ -381,7 +383,7 @@ export const useMoveAutomationPanel = ({
         focusSkillRankValue: user.focusSkillRankValue,
       })
       const damageFormula = rollFormulaForEntry(entry)
-      if (rangeMeters == null || (script.damaging && !damageFormula)) return false
+      if (rangeMeters == null || (script.damaging && !damageFormula && !moveAutomationCanResolveDamageAtRuntime(script))) return false
 
       clearMoveAutomationFeedback()
       closeMoveAutomation()

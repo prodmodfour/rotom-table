@@ -174,7 +174,7 @@ export interface MoveAutomationDirectHpLossRollTableEntry {
   label: string
 }
 
-export interface MoveAutomationDirectHpLossRule {
+export interface MoveAutomationUserLevelRollTableDirectHpLossRule {
   kind: 'user-level-roll-table'
   rollFormula: string
   rollTable: MoveAutomationDirectHpLossRollTableEntry[]
@@ -182,6 +182,49 @@ export interface MoveAutomationDirectHpLossRule {
   ignoreWeaknessResistance: boolean
   ignoreStats: boolean
   label: string
+}
+
+export interface MoveAutomationFixedDirectHpLossRule {
+  kind: 'fixed'
+  amount: number
+  applyTypeImmunity: boolean
+  ignoreWeaknessResistance: boolean
+  ignoreStats: boolean
+  label: string
+}
+
+export type MoveAutomationDirectHpLossRule =
+  | MoveAutomationUserLevelRollTableDirectHpLossRule
+  | MoveAutomationFixedDirectHpLossRule
+
+export interface MoveAutomationFiveStrikeDamageBaseRule {
+  kind: 'five-strike'
+  rollFormula: '1d8'
+  label: string
+}
+
+export interface MoveAutomationPositiveCombatStageDamageBaseRule {
+  kind: 'positive-combat-stage-scaling'
+  dbPerPositiveStage: number
+  maxDamageBase: number
+  label: string
+}
+
+export type MoveAutomationDynamicDamageBaseRule =
+  | MoveAutomationFiveStrikeDamageBaseRule
+  | MoveAutomationPositiveCombatStageDamageBaseRule
+
+export interface MoveAutomationRandomStageSuggestionEntry {
+  roll: number
+  stageSuggestionIndex: number
+  label: string
+}
+
+export interface MoveAutomationRandomStageSuggestionRule {
+  kind: 'roll-table'
+  rollFormula: '1d6'
+  label: string
+  entries: MoveAutomationRandomStageSuggestionEntry[]
 }
 
 export interface MoveAutomationFieldSuggestion {
@@ -237,6 +280,10 @@ export interface MoveAutomationScript {
   keywords: string[]
   criticalRange: number | null
   directHpLoss?: MoveAutomationDirectHpLossRule
+  dynamicDamageBase?: MoveAutomationDynamicDamageBaseRule
+  /** Dynamic-damage scripts set this per move-user instead of mutating `damageBase` before mechanics resolve. */
+  stabDamageBaseBonus?: number
+  randomStageSuggestion?: MoveAutomationRandomStageSuggestionRule
   areaTemplates?: MoveAutomationAreaTemplate[]
   conditionSuggestions: MoveAutomationConditionSuggestion[]
   stageSuggestions: MoveAutomationStageSuggestion[]

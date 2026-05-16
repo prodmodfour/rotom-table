@@ -312,12 +312,85 @@ describe('explicit move automation scripts', () => {
         ignoreStats: true,
       },
     })
-    expect(script?.directHpLoss?.rollTable).toEqual([
+    expect(script?.directHpLoss?.kind === 'user-level-roll-table' ? script.directHpLoss.rollTable : []).toEqual([
       { roll: 1, multiplier: 0.5, label: 'Half user level' },
       { roll: 2, multiplier: 1, label: 'User level' },
       { roll: 3, multiplier: 1.5, label: 'One and a half times user level' },
       { roll: 4, multiplier: 2, label: 'Double user level' },
     ])
     expect(isSeamlessSingleTargetMoveScript(script)).toBe(true)
+  })
+
+  it('implements the requested Hassan moves as seamless explicit scripts', () => {
+    expect(explicitScriptForMove('Knock Off')).toMatchObject({
+      moveName: 'Knock Off',
+      targetMode: 'one-target',
+      damaging: true,
+    })
+    expect(explicitScriptForMove('Knock Off')?.automationNotes).toEqual(expect.arrayContaining([
+      expect.stringContaining('Held Items or Accessory Slot Items'),
+    ]))
+    expect(isSeamlessSingleTargetMoveScript(explicitScriptForMove('Knock Off'))).toBe(true)
+
+    expect(explicitScriptForMove('Pin Missile')).toMatchObject({
+      moveName: 'Pin Missile',
+      targetMode: 'one-target',
+      dynamicDamageBase: { kind: 'five-strike', rollFormula: '1d8' },
+    })
+    expect(isSeamlessSingleTargetMoveScript(explicitScriptForMove('Pin Missile'))).toBe(true)
+
+    const acupressure = explicitScriptForMove('Acupressure')
+    expect(acupressure).toMatchObject({
+      moveName: 'Acupressure',
+      targetMode: 'one-target',
+      damaging: false,
+      requiresAccuracy: true,
+      randomStageSuggestion: { kind: 'roll-table', rollFormula: '1d6' },
+    })
+    expect(acupressure?.stageSuggestions).toHaveLength(6)
+    expect(isSeamlessSingleTargetMoveScript(acupressure)).toBe(true)
+
+    expect(explicitScriptForMove('Dragon Rage')).toMatchObject({
+      moveName: 'Dragon Rage',
+      targetMode: 'one-target',
+      damaging: true,
+      damageBase: null,
+      criticalRange: null,
+      directHpLoss: { kind: 'fixed', amount: 15, ignoreWeaknessResistance: true, ignoreStats: true },
+    })
+    expect(isSeamlessSingleTargetMoveScript(explicitScriptForMove('Dragon Rage'))).toBe(true)
+
+    expect(explicitScriptForMove('Fury Attack')).toMatchObject({
+      moveName: 'Fury Attack',
+      dynamicDamageBase: { kind: 'five-strike', rollFormula: '1d8' },
+    })
+    expect(isSeamlessSingleTargetMoveScript(explicitScriptForMove('Fury Attack'))).toBe(true)
+
+    expect(explicitScriptForMove('Hone Claws')).toMatchObject({
+      moveName: 'Hone Claws',
+      targetMode: 'self',
+      stageSuggestions: [
+        { recipient: 'user', key: 'acc', delta: 1, label: 'Hone Claws raises Accuracy: +1 Accuracy CS' },
+        { recipient: 'user', key: 'atk', delta: 1, label: 'Hone Claws raises Attack: +1 Attack CS' },
+      ],
+    })
+    expect(isSeamlessSelfMoveScript(explicitScriptForMove('Hone Claws'))).toBe(true)
+
+    expect(explicitScriptForMove('Power Trip')).toMatchObject({
+      moveName: 'Power Trip',
+      targetMode: 'one-target',
+      dynamicDamageBase: { kind: 'positive-combat-stage-scaling', dbPerPositiveStage: 2, maxDamageBase: 20 },
+    })
+    expect(isSeamlessSingleTargetMoveScript(explicitScriptForMove('Power Trip'))).toBe(true)
+
+    expect(explicitScriptForMove('U-Turn')).toMatchObject({
+      moveName: 'U-Turn',
+      targetMode: 'one-target',
+      damaging: true,
+    })
+    expect(explicitScriptForMove('U-Turn')?.automationNotes).toEqual(expect.arrayContaining([
+      expect.stringContaining('recalled immediately after damage'),
+    ]))
+    expect(isSeamlessSingleTargetMoveScript(explicitScriptForMove('U-Turn'))).toBe(true)
   })
 })

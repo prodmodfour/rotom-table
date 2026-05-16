@@ -84,8 +84,11 @@ export const buildMoveAutomationMoveEntries = (
     const move = moveLikeForSheetMove(sheetMove, options)
     const hasStab = hasSameTypeAttackBonus(move, options.stabTypes)
     const explicitScript = explicitScriptForMove(move.name)
+    const dynamicExplicitScript = Boolean(explicitScript?.dynamicDamageBase)
     const baseScript = explicitScript && hasStab && explicitScript.damageBase != null
-      ? { ...explicitScript, damageBase: explicitScript.damageBase + 2 }
+      ? dynamicExplicitScript
+        ? { ...explicitScript, stabDamageBaseBonus: 2 }
+        : { ...explicitScript, damageBase: explicitScript.damageBase + 2 }
       : explicitScript ?? buildManualMoveResolution(move)
     const script = scriptWithStruggleCombatSkill(baseScript, options.combatSkillRankValue)
     return {
