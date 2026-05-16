@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import MovementCapabilityAdjustment from '~/components/sheets/MovementCapabilityAdjustment.vue'
 import { parseCsvList } from '~/utils/sheets/csvFields'
-import { isSlowedMovementCapability } from '~/utils/sheetConditionEffects'
+import { isConditionAdjustedMovementCapability } from '~/utils/sheetConditionEffects'
 
 const props = defineProps<{
   capabilitiesText?: string | null
@@ -18,7 +18,7 @@ const valuedMovementCapabilities = computed(() => parseCsvList(props.capabilitie
 
     const label = (match[1] ?? '').trim().replace(/\s+/g, ' ')
     const value = Number.parseInt(match[2] ?? '', 10)
-    if (!Number.isFinite(value) || !isSlowedMovementCapability(label)) return []
+    if (!Number.isFinite(value) || !isConditionAdjustedMovementCapability(label)) return []
 
     return [{ label, value }]
   }))

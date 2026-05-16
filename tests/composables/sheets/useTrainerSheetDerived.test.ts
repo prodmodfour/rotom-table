@@ -111,6 +111,25 @@ describe('useTrainerSheetDerived', () => {
     ]))
   })
 
+  it('applies Stuck to trainer Speed Evasion without suppressing other evasion', () => {
+    const common = { speedBonus: 2, physicalBonus: 1, specialBonus: 2 }
+    const unconditioned = useTrainerSheetDerived(ref<TrainerSheet | null>(makeSheet({
+      evasion: common,
+    })))
+    const derived = useTrainerSheetDerived(ref<TrainerSheet | null>(makeSheet({
+      conditions: ['Stuck'],
+      evasion: common,
+    })))
+
+    expect(derived.trainerEvasion.value.speed.total).toBe(0)
+    expect(derived.trainerEvasion.value.speed.suppressedByCondition).toBe('Stuck')
+    expect(derived.trainerEvasion.value.physical.total).toBe(unconditioned.trainerEvasion.value.physical.total)
+    expect(derived.trainerEvasion.value.special.total).toBe(unconditioned.trainerEvasion.value.special.total)
+    expect(derived.conditionEffects.value).toEqual(expect.arrayContaining([
+      expect.objectContaining({ label: 'Stuck' }),
+    ]))
+  })
+
   it('adds equipped Quick Claw to trainer sheet initiative before condition adjustments', () => {
     const sheet = ref<TrainerSheet | null>(makeSheet({
       conditions: ['Flinch'],

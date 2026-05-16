@@ -23,7 +23,7 @@ const EVASION_SUPPRESSING_CONDITIONS = [
 
 const SPEED_EVASION_SUPPRESSING_CONDITIONS = ['Stuck'] as const
 
-const SLOWED_MOVEMENT_CAPABILITY_LABELS = [
+const MOVEMENT_CAPABILITY_LABELS = [
   'Overland',
   'Sky',
   'Swim',
@@ -32,8 +32,8 @@ const SLOWED_MOVEMENT_CAPABILITY_LABELS = [
   'Teleporter',
 ] as const
 
-const slowedMovementCapabilityLabels = new Set<string>(
-  SLOWED_MOVEMENT_CAPABILITY_LABELS.map((label) => label.toLowerCase()),
+const movementCapabilityLabels = new Set<string>(
+  MOVEMENT_CAPABILITY_LABELS.map((label) => label.toLowerCase()),
 )
 
 const normalizedCapabilityLabel = (label: string): string => label.trim().replace(/\s+/g, ' ').toLowerCase()
@@ -80,6 +80,13 @@ export interface ConditionEffectSummary {
   description: string
 }
 
+export interface MovementCapabilityConditionAdjustment {
+  condition: 'Slowed' | 'Stuck'
+  adjustedValue: number
+  displayValue: string
+  title: string
+}
+
 const finiteNumber = (value: unknown, fallback = 0): number => {
   const n = Number(value)
   return Number.isFinite(n) ? n : fallback
@@ -103,15 +110,23 @@ export const conditionSlowsMovement = (
   conditions: readonly string[] | null | undefined,
 ): boolean => conditionSet(conditions).has('Slowed')
 
-export const isSlowedMovementCapability = (label: string): boolean =>
-  slowedMovementCapabilityLabels.has(normalizedCapabilityLabel(label))
+export const conditionBlocksShiftMovement = (
+  conditions: readonly string[] | null | undefined,
+): boolean => conditionSet(conditions).has('Stuck')
+
+export const isConditionAdjustedMovementCapability = (label: string): boolean =>
+  movementCapabilityLabels.has(normalizedCapabilityLabel(label))
+
+export const isSlowedMovementCapability = isConditionAdjustedMovementCapability
 
 export const conditionAdjustedMovement = (
   baseMovement: unknown,
   conditions: readonly string[] | null | undefined,
 ): number => {
   const movement = numericMovementValue(baseMovement) ?? 0
-  if (!conditionSlowsMovement(conditions) || movement <= 0) return movement
+  if (movement <= 0) return movement
+  if (conditionBlocksShiftMovement(conditions)) return 0
+  if (!conditionSlowsMovement(conditions)) return movement
   return Math.max(1, Math.floor(movement / 2))
 }
 
@@ -120,20 +135,44 @@ export const conditionAdjustedMovementCapability = <T extends number | string | 
   value: T,
   conditions: readonly string[] | null | undefined,
 ): T | number => {
-  if (!isSlowedMovementCapability(label) || !conditionSlowsMovement(conditions)) return value
+  if (!isConditionAdjustedMovementCapability(label)) return value
+  if (!conditionBlocksShiftMovement(conditions) && !conditionSlowsMovement(conditions)) return value
   const movement = numericMovementValue(value)
   if (movement == null) return value
   return conditionAdjustedMovement(movement, conditions)
+}
+
+export const movementCapabilityConditionAdjustment = (
+  label: string,
+  value: number | string | null | undefined,
+  conditions: readonly string[] | null | undefined,
+): MovementCapabilityConditionAdjustment | null => {
+  if (!isConditionAdjustedMovementCapability(label)) return null
+  const movement = numericMovementValue(value)
+  if (movement == null || movement <= 0) return null
+  if (conditionBlocksShiftMovement(conditions)) {
+    return {
+      condition: 'Stuck',
+      adjustedValue: 0,
+      displayValue: 'no Shift movement',
+      title: 'Stuck prevents Shift Actions used to move.',
+    }
+  }
+  if (!conditionSlowsMovement(conditions)) return null
+  const adjustedValue = conditionAdjustedMovement(movement, conditions)
+  return {
+    condition: 'Slowed',
+    adjustedValue,
+    displayValue: String(adjustedValue),
+    title: 'Slowed halves Movement, minimum 1.',
+  }
 }
 
 export const slowedMovementCapabilityApplied = (
   label: string,
   value: number | string | null | undefined,
   conditions: readonly string[] | null | undefined,
-): boolean => {
-  const movement = numericMovementValue(value)
-  return isSlowedMovementCapability(label) && movement != null && movement > 0 && conditionSlowsMovement(conditions)
-}
+): boolean => movementCapabilityConditionAdjustment(label, value, conditions)?.condition === 'Slowed'
 
 export const conditionCombatStageModifier = (
   conditions: readonly string[] | null | undefined,
@@ -394,7 +433,7 @@ export const describeSheetConditionEffects = (
     effects.push({
       id: 'stuck-movement-evasion',
       label: 'Stuck',
-      description: 'Cannot Shift to move and cannot apply Speed Evasion.',
+      description: 'Cannot Shift to move and cannot apply Speed Evasion. Ghost-type Pokémon are immune.',
     })
   }
 

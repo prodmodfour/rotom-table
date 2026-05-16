@@ -1,9 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import {
-  conditionAdjustedMovementCapability,
-  slowedMovementCapabilityApplied,
-} from '~/utils/sheetConditionEffects'
+import { movementCapabilityConditionAdjustment } from '~/utils/sheetConditionEffects'
 
 const props = defineProps<{
   name: string
@@ -14,12 +11,7 @@ const props = defineProps<{
 
 const displayName = computed(() => props.name.trim().replace(/\s+/g, ' '))
 
-const applied = computed(() => slowedMovementCapabilityApplied(
-  props.name,
-  props.value,
-  props.conditions,
-))
-const adjustedValue = computed(() => conditionAdjustedMovementCapability(
+const adjustment = computed(() => movementCapabilityConditionAdjustment(
   props.name,
   props.value,
   props.conditions,
@@ -28,10 +20,11 @@ const adjustedValue = computed(() => conditionAdjustedMovementCapability(
 
 <template>
   <small
-    v-if="applied"
+    v-if="adjustment"
     class="movement-capability-adjustment"
-    title="Slowed halves Movement, minimum 1."
-  >Slowed: <template v-if="showName">{{ displayName }} </template>{{ adjustedValue }}</small>
+    :class="{ 'movement-capability-adjustment--blocked': adjustment.condition === 'Stuck' }"
+    :title="adjustment.title"
+  >{{ adjustment.condition }}: <template v-if="showName">{{ displayName }} </template>{{ adjustment.displayValue }}</small>
 </template>
 
 <style scoped>
@@ -42,5 +35,9 @@ const adjustedValue = computed(() => conditionAdjustedMovementCapability(
   font-size: 0.72rem;
   font-weight: 700;
   line-height: 1.15;
+}
+
+.movement-capability-adjustment--blocked {
+  color: var(--bad);
 }
 </style>
