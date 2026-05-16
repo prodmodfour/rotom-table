@@ -30,6 +30,7 @@ describe('encounter table file helpers', () => {
 
   it('throws a typed 404 when the table file is missing', () => {
     expect(encounterTableNotFoundMessage('missing', 'forest')).toBe('Table missing/forest not found')
+    expect(encounterTableNotFoundMessage('', 'forest')).toBe('Table forest not found')
 
     expect(() => readEncounterTableFile('missing', 'forest', {
       encounterRoot: '/repo/encounter_tables',

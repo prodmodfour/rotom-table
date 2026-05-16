@@ -29,7 +29,16 @@ export const SHEET_API_PATHS = {
 } as const
 
 export const ENCOUNTER_API_PATHS = {
+  list: '/api/encounters/list',
+  folders: '/api/encounters/folders',
   generate: '/api/encounters/generate',
+  create: '/api/encounters/create',
+  createFolder: '/api/encounters/create-folder',
+  move: '/api/encounters/move',
+  moveFolder: '/api/encounters/move-folder',
+  rename: '/api/encounters/rename',
+  deleteTable: '/api/encounters/delete',
+  deleteFolder: '/api/encounters/delete-folder',
 } as const
 
 export const POKEDEX_API_PATHS = {

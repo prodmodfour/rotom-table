@@ -45,7 +45,18 @@ describe('API route constants', () => {
   })
 
   it('exposes encounter API paths', () => {
-    expect(ENCOUNTER_API_PATHS.generate).toBe('/api/encounters/generate')
+    expect(ENCOUNTER_API_PATHS).toEqual({
+      list: '/api/encounters/list',
+      folders: '/api/encounters/folders',
+      generate: '/api/encounters/generate',
+      create: '/api/encounters/create',
+      createFolder: '/api/encounters/create-folder',
+      move: '/api/encounters/move',
+      moveFolder: '/api/encounters/move-folder',
+      rename: '/api/encounters/rename',
+      deleteTable: '/api/encounters/delete',
+      deleteFolder: '/api/encounters/delete-folder',
+    })
   })
 
   it('exposes pokedex API paths', () => {

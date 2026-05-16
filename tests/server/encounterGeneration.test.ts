@@ -6,6 +6,7 @@ import {
   rollEncounterTable,
   safeEncounterTablePath,
   sanitizeEncounterCount,
+  sanitizeEncounterFolderPath,
   sanitizeEncounterNameComponent,
   sanitizeEncounterOutRoot,
   slugifyEncounterOutputPath,
@@ -48,6 +49,9 @@ describe('server encounter generation helpers', () => {
   it('sanitizes region/table names and out roots', () => {
     expect(sanitizeEncounterNameComponent('thickerby_vale-1', 'region')).toBe('thickerby_vale-1')
     expect(statusMessageFor(() => sanitizeEncounterNameComponent('../bad', 'region'))).toContain('region must match')
+    expect(sanitizeEncounterFolderPath('thickerby_vale//deep-woods', 'region')).toBe('thickerby_vale/deep-woods')
+    expect(sanitizeEncounterFolderPath('', 'region', true)).toBe('')
+    expect(statusMessageFor(() => sanitizeEncounterFolderPath('../bad', 'region'))).toBe('Invalid region segment')
 
     expect(sanitizeEncounterOutRoot('data//sheets\\wild/forest')).toBe('data/sheets/wild/forest')
     expect(statusMessageFor(() => sanitizeEncounterOutRoot('../data'))).toBe('Invalid outRoot segment')
@@ -72,7 +76,8 @@ describe('server encounter generation helpers', () => {
   it('formats slug prefixes and safe paths', () => {
     expect(slugifyEncounterOutputPath('wild/Forest Run #2')).toBe('wild-forest-run-2')
     expect(slugifyEncounterOutputPath('!!!')).toBe('sheet')
-    expect(safeEncounterTablePath('/repo/encounter_tables', 'region', 'forest')).toBe('/repo/encounter_tables/region/forest.json')
+    expect(safeEncounterTablePath('/repo/encounter_tables', 'region/deep', 'forest')).toBe('/repo/encounter_tables/region/deep/forest.json')
+    expect(safeEncounterTablePath('/repo/encounter_tables', '', 'forest')).toBe('/repo/encounter_tables/forest.json')
     expect(statusMessageFor(() => safeEncounterTablePath('/repo/encounter_tables', '..', 'forest'))).toBe('Invalid table path')
   })
 

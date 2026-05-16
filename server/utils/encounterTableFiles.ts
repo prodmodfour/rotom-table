@@ -11,7 +11,7 @@ export interface ReadEncounterTableFileDependencies {
 }
 
 export const encounterTableNotFoundMessage = (region: string, tableKey: string): string =>
-  `Table ${region}/${tableKey} not found`
+  `Table ${region ? `${region}/` : ''}${tableKey} not found`
 
 export const readEncounterTableFile = (
   region: string,

@@ -8,6 +8,7 @@ const outRoot = defineModel<string>('outRoot', { required: true })
 const preview = defineModel<boolean>('preview', { required: true })
 
 defineProps<{
+  regions: string[]
   tablesForRegion: EncounterTableEntry[]
   selectedTable: EncounterTableEntry | null
   generating: boolean
@@ -29,6 +30,7 @@ const emit = defineEmits<{
       v-model:count="count"
       v-model:out-root="outRoot"
       v-model:preview="preview"
+      :regions="regions"
       :tables-for-region="tablesForRegion"
       :generating="generating"
     />

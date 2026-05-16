@@ -139,7 +139,7 @@ describe('generateEncountersUseCase', () => {
       count: 1,
     }, dependencies)).rejects.toMatchObject({
       statusCode: 400,
-      message: expect.stringContaining('region must match'),
+      message: 'Invalid region segment',
     })
 
     await expect(generateEncountersUseCase({

@@ -1,8 +1,9 @@
-import { nextTick } from 'vue'
+import { nextTick, ref } from 'vue'
 import { describe, expect, it, vi } from 'vitest'
 import { encounterTables, tablesInRegion } from '~/utils/encounterTables'
 import { useEncounterGenerationPage } from '~/composables/encounters/useEncounterGenerationPage'
 import type { EncounterGenerateRequestBody, EncounterGenerateResult } from '~/utils/encounterGeneration'
+import type { EncounterTableEntry } from '~/types/encounterTable'
 
 const firstEntry = encounterTables[0]
 const alternateRegion = encounterTables.find((entry) => entry.region !== firstEntry?.region)?.region
@@ -87,6 +88,48 @@ describe('useEncounterGenerationPage', () => {
     expect(page.result.value).toBeNull()
     expect(page.error.value).toBe('Generation failed')
     expect(page.generating.value).toBe(false)
+  })
+
+  it('uses injected table entries and updates when that source changes', async () => {
+    const entries = ref<EncounterTableEntry[]>([
+      { region: 'custom', key: 'forest', table: { name: 'Custom Forest', min_level: 1, max_level: 2, entries: [[100, 'Oddish']] } },
+    ])
+    const page = useEncounterGenerationPage({
+      query: { region: 'custom', table: 'forest' },
+      entries,
+      fetchGenerate: async (body) => result(body),
+    })
+
+    expect(page.regions.value).toEqual(['custom'])
+    expect(page.selectedTable.value?.table.name).toBe('Custom Forest')
+
+    entries.value = [
+      ...entries.value,
+      { region: 'custom/deep', key: 'cave', table: { name: 'Deep Cave', min_level: 3, max_level: 4, entries: [[100, 'Zubat']] } },
+    ]
+    await nextTick()
+
+    expect(page.regions.value).toEqual(['custom', 'custom/deep'])
+  })
+
+  it('selects the first injected table when an initially empty source loads', async () => {
+    const entries = ref<EncounterTableEntry[]>([])
+    const page = useEncounterGenerationPage({
+      query: {},
+      entries,
+      fetchGenerate: async (body) => result(body),
+    })
+
+    expect(page.selectedTable.value).toBeNull()
+
+    entries.value = [
+      { region: 'loaded', key: 'field', table: { name: 'Loaded Field', min_level: 1, max_level: 2, entries: [[100, 'Pidgey']] } },
+    ]
+    await nextTick()
+
+    expect(page.region.value).toBe('loaded')
+    expect(page.tableKey.value).toBe('field')
+    expect(page.selectedTable.value?.table.name).toBe('Loaded Field')
   })
 
   it('toggles generated preview file content state', () => {

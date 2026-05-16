@@ -1,9 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import {
   countEncounterRegionTables,
+  encounterRegionsForEntries,
+  encounterTableEntryId,
   filterEncounterTablesByRegion,
   findEncounterTableInEntries,
   firstEncounterTable,
+  formatRegionLabel,
   normalizeEncounterSearch,
 } from '~/utils/encounterTables'
 import type { EncounterTableEntry } from '~/types/encounterTable'
@@ -31,6 +34,10 @@ const regions = ['iron_islands', 'thickerby_vale']
 describe('encounter table browser helpers', () => {
   it('normalizes search text and selects entries', () => {
     expect(normalizeEncounterSearch('  Forest Path  ')).toBe('forest path')
+    expect(formatRegionLabel('')).toBe('Home')
+    expect(formatRegionLabel('iron_islands/deep-cave')).toBe('Iron Islands Deep Cave')
+    expect(encounterRegionsForEntries(entries)).toEqual(['iron_islands', 'thickerby_vale'])
+    expect(encounterTableEntryId(entries[0])).toBe('thickerby_vale/forest_path')
     expect(firstEncounterTable(entries)).toBe(entries[0])
     expect(firstEncounterTable([])).toBeNull()
     expect(findEncounterTableInEntries(entries, 'thickerby_vale', 'river')).toBe(entries[1])

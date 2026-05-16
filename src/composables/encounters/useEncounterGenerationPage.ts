@@ -1,11 +1,12 @@
-import { computed, ref, watch } from 'vue'
+import { computed, ref, toValue, watch, type MaybeRefOrGetter } from 'vue'
 import { useApiClient } from '~/composables/useApiClient'
 import { ENCOUNTER_API_PATHS } from '~/utils/apiRoutes'
 import {
+  encounterRegionsForEntries,
   encounterTables,
-  findEncounterTable,
+  findEncounterTableInEntries,
   rollEncounters,
-  tablesInRegion,
+  tablesInRegionFromEntries,
 } from '~/utils/encounterTables'
 import {
   buildEncounterGenerateRequestBody,
@@ -19,20 +20,24 @@ import {
   type EncounterGenerateRequestBody,
   type EncounterGenerateResult,
 } from '~/utils/encounterGeneration'
-import type { RolledEncounter } from '~/types/encounterTable'
+import type { EncounterTableEntry, RolledEncounter } from '~/types/encounterTable'
 
 export interface UseEncounterGenerationPageOptions {
   query: Record<string, unknown>
   replaceQuery?: (query: { region: string; table: string }) => void | Promise<void>
+  entries?: MaybeRefOrGetter<readonly EncounterTableEntry[]>
   fetchGenerate?: (body: EncounterGenerateRequestBody) => Promise<EncounterGenerateResult>
 }
 
 export const useEncounterGenerationPage = ({
   query,
   replaceQuery,
+  entries = encounterTables,
   fetchGenerate = (body) => useApiClient().postJson<EncounterGenerateResult>(ENCOUNTER_API_PATHS.generate, body),
 }: UseEncounterGenerationPageOptions) => {
-  const initialEntry = encounterTables[0] ?? null
+  const allTables = computed(() => Array.from(toValue(entries)))
+  const regions = computed(() => encounterRegionsForEntries(allTables.value))
+  const initialEntry = allTables.value[0] ?? null
   const initialSelection = initialEncounterGenerationSelection(query, initialEntry)
   const region = ref<string>(initialSelection.region)
   const tableKey = ref<string>(initialSelection.tableKey)
@@ -41,11 +46,22 @@ export const useEncounterGenerationPage = ({
   const preview = ref<boolean>(false)
 
   watch(region, (next) => {
-    tableKey.value = coerceTableKeyForRegion(tableKey.value, tablesInRegion(next))
+    tableKey.value = coerceTableKeyForRegion(tableKey.value, tablesInRegionFromEntries(allTables.value, next))
   })
 
-  const tablesForRegion = computed(() => tablesInRegion(region.value))
-  const selectedTable = computed(() => findEncounterTable(region.value, tableKey.value))
+  watch(allTables, (next) => {
+    if (!region.value && !tableKey.value && next[0]) {
+      region.value = next[0].region
+      tableKey.value = next[0].key
+      return
+    }
+    if (region.value && !tableKey.value) {
+      tableKey.value = coerceTableKeyForRegion(tableKey.value, tablesInRegionFromEntries(next, region.value))
+    }
+  })
+
+  const tablesForRegion = computed(() => tablesInRegionFromEntries(allTables.value, region.value))
+  const selectedTable = computed(() => findEncounterTableInEntries(allTables.value, region.value, tableKey.value))
 
   const rolledPreview = ref<RolledEncounter[]>([])
   const rollPreview = () => {
@@ -97,6 +113,7 @@ export const useEncounterGenerationPage = ({
 
   return {
     region,
+    regions,
     tableKey,
     count,
     outRoot,

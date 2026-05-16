@@ -23,8 +23,8 @@ const PREFIX = '../../encounter_tables/'
 const parseKey = (key: string): { region: string; key: string } | null => {
   if (!key.startsWith(PREFIX)) return null
   const rest = key.slice(PREFIX.length).replace(/\.json$/i, '')
-  const slash = rest.indexOf('/')
-  if (slash === -1) return null
+  const slash = rest.lastIndexOf('/')
+  if (slash === -1) return { region: '', key: rest }
   return {
     region: rest.slice(0, slash),
     key:    rest.slice(slash + 1),
@@ -44,18 +44,22 @@ export const encounterTables: EncounterTableEntry[] = Object.entries(tableModule
     return a.key.localeCompare(b.key)
   })
 
+export const encounterRegionsForEntries = (
+  entries: ReadonlyArray<EncounterTableEntry>,
+): string[] => Array.from(new Set(entries.map((entry) => entry.region))).sort()
+
 /** Sorted list of unique region directory names. */
-export const encounterRegions: string[] = Array.from(
-  new Set(encounterTables.map((entry) => entry.region)),
-).sort()
+export const encounterRegions: string[] = encounterRegionsForEntries(encounterTables)
 
 /** ``"thickerby_vale"`` → ``"Thickerby Vale"`` for display. */
 export const formatRegionLabel = (region: string): string =>
   region
-    .split(/[-_/]+/)
-    .filter(Boolean)
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .join(' ')
+    ? region
+        .split(/[-_/]+/)
+        .filter(Boolean)
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        .join(' ')
+    : 'Home'
 
 /** ``"forest"`` → ``"Forest"``. */
 export const formatTableLabel = (key: string): string =>
@@ -72,9 +76,14 @@ export const findEncounterTable = (
 ): EncounterTableEntry | null =>
   encounterTables.find((entry) => entry.region === region && entry.key === key) ?? null
 
+export const tablesInRegionFromEntries = (
+  entries: ReadonlyArray<EncounterTableEntry>,
+  region: string,
+): EncounterTableEntry[] => entries.filter((entry) => entry.region === region)
+
 /** All tables in a single region, sorted by key. */
 export const tablesInRegion = (region: string): EncounterTableEntry[] =>
-  encounterTables.filter((entry) => entry.region === region)
+  tablesInRegionFromEntries(encounterTables, region)
 
 /* ------------------------------------------------------------------ */
 /* Rolling                                                            */
@@ -157,6 +166,9 @@ export const findEncounterTableInEntries = (
 export const firstEncounterTable = (
   entries: ReadonlyArray<EncounterTableEntry>,
 ): EncounterTableEntry | null => entries[0] ?? null
+
+export const encounterTableEntryId = (entry: Pick<EncounterTableEntry, 'region' | 'key'>): string =>
+  entry.region ? `${entry.region}/${entry.key}` : entry.key
 
 export const filterEncounterTablesByRegion = (
   options: {

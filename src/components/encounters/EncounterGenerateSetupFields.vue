@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { EncounterTableEntry } from '~/types/encounterTable'
-import { encounterRegions, formatRegionLabel } from '~/utils/encounterTables'
+import { formatRegionLabel } from '~/utils/encounterTables'
 
 const region = defineModel<string>('region', { required: true })
 const tableKey = defineModel<string>('tableKey', { required: true })
@@ -9,6 +9,7 @@ const outRoot = defineModel<string>('outRoot', { required: true })
 const preview = defineModel<boolean>('preview', { required: true })
 
 defineProps<{
+  regions: string[]
   tablesForRegion: EncounterTableEntry[]
   generating: boolean
 }>()
@@ -19,7 +20,7 @@ defineProps<{
     <label class="field">
       <span class="field-label">Region</span>
       <select v-model="region" :disabled="generating">
-        <option v-for="r in encounterRegions" :key="r" :value="r">
+        <option v-for="r in regions" :key="r" :value="r">
           {{ formatRegionLabel(r) }}
         </option>
       </select>

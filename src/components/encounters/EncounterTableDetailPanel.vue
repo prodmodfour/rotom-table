@@ -28,8 +28,8 @@ defineProps<{
     <section v-else class="panel-card panel-card--empty">
       <h2>No encounter tables yet</h2>
       <p>
-        Drop a JSON file into
-        <code>encounter_tables/&lt;region&gt;/&lt;table&gt;.json</code>
+        Create a table here, or drop a JSON file anywhere under
+        <code>encounter_tables/</code>
         and refresh.
       </p>
     </section>
@@ -39,7 +39,7 @@ defineProps<{
 <style scoped>
 .encounter-detail {
   min-width: 0;
-  padding: 1.5rem;
+  padding: 0;
   display: flex;
   justify-content: center;
 }

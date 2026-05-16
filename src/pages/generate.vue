@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useEncounterGenerationPage } from '~/composables/encounters/useEncounterGenerationPage'
-import { encounterTables } from '~/utils/encounterTables'
+import { useEncounterTableLibraryData } from '~/composables/encounters/useEncounterTableLibraryData'
 
 useHead({
   title: 'Generate · Rotom Table',
@@ -8,9 +8,12 @@ useHead({
 
 const route = useRoute()
 const router = useRouter()
+const encounterTableData = useEncounterTableLibraryData()
+const tableCount = computed(() => encounterTableData.items.value.length)
 
 const {
   region,
+  regions,
   tableKey,
   count,
   outRoot,
@@ -27,6 +30,7 @@ const {
   toggleFile,
 } = useEncounterGenerationPage({
   query: route.query,
+  entries: encounterTableData.items,
   replaceQuery: async (query) => {
     await router.replace({ query })
   },
@@ -38,7 +42,7 @@ const {
     <header class="generate-header">
       <AppNavigation />
 
-      <EncounterGenerateIntroCard :table-count="encounterTables.length" />
+      <EncounterGenerateIntroCard :table-count="tableCount" />
     </header>
 
     <main class="generate-main">
@@ -48,6 +52,7 @@ const {
         v-model:count="count"
         v-model:out-root="outRoot"
         v-model:preview="preview"
+        :regions="regions"
         :tables-for-region="tablesForRegion"
         :selected-table="selectedTable"
         :generating="generating"

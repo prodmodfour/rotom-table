@@ -1,5 +1,5 @@
 import { existsSync } from 'node:fs'
-import { join as joinPath, sep } from 'node:path'
+import { join as joinPath, resolve, sep } from 'node:path'
 import { DEFAULT_ENCOUNTER_OUT_ROOT } from '~/utils/encounterGeneration'
 import type { EncounterTable, RolledEncounter } from '~/types/encounterTable'
 import { UseCaseHttpError } from './useCaseErrors'
@@ -33,6 +33,29 @@ export const sanitizeEncounterNameComponent = (value: string, label: string): st
   return value
 }
 
+export const sanitizeEncounterFolderPath = (
+  value: string,
+  label: string,
+  allowEmpty = false,
+): string => {
+  const normalized = value.replace(/\\/g, '/').replace(/\/+/g, '/').replace(/^\/+|\/+$/g, '')
+  if (!normalized) {
+    if (allowEmpty) return ''
+    badEncounterInput(`${label} required`)
+  }
+
+  const segments = normalized.split('/')
+  for (const seg of segments) {
+    if (!seg || seg === '.' || seg === '..') {
+      badEncounterInput(`Invalid ${label} segment`)
+    }
+    if (!SAFE_NAME.test(seg)) {
+      badEncounterInput(`${label} segment "${seg}" must match /^[A-Za-z0-9_-]+$/`)
+    }
+  }
+  return segments.join('/')
+}
+
 export const sanitizeEncounterOutRoot = (value: string): string => {
   const normalized = value.replace(/\\/g, '/').replace(/\/+/g, '/').replace(/^\/+|\/+$/g, '')
   if (!normalized) {
@@ -62,8 +85,9 @@ export const slugifyEncounterOutputPath = (value: string): string =>
   value.replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-+|-+$/g, '').toLowerCase() || 'sheet'
 
 export const safeEncounterTablePath = (root: string, region: string, key: string): string => {
-  const path = joinPath(root, region, `${key}.json`)
-  if (!path.startsWith(root + sep)) {
+  const resolvedRoot = resolve(root)
+  const path = resolve(joinPath(resolvedRoot, region), `${key}.json`)
+  if (!path.startsWith(resolvedRoot + sep)) {
     badEncounterInput('Invalid table path')
   }
   return path
@@ -104,7 +128,7 @@ export const uniqueEncounterOutputDir = (
 }
 
 export const readEncounterGenerateRequest = (body: GenerateEncounterBody | null | undefined) => ({
-  region: sanitizeEncounterNameComponent(String(body?.region ?? ''), 'region'),
+  region: sanitizeEncounterFolderPath(String(body?.region ?? ''), 'region', true),
   tableKey: sanitizeEncounterNameComponent(String(body?.table ?? ''), 'table'),
   outRoot: sanitizeEncounterOutRoot(String(body?.outRoot ?? DEFAULT_ENCOUNTER_GENERATE_OUT_ROOT)),
   count: sanitizeEncounterCount(body?.count),
