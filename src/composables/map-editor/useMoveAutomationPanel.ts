@@ -597,6 +597,7 @@ export const useMoveAutomationPanel = ({
       targets,
       damageFormula: request.damageFormula,
       fieldEffects: map.value?.fieldEffects,
+      conditionImmunityContext: { sweetVeilProviders: spawnedPokemon.value },
     })
     activeMoveTargeting.value = null
     await applyMoveAutomation(transaction)
@@ -624,6 +625,7 @@ export const useMoveAutomationPanel = ({
         target,
         damageFormula: request.damageFormula,
         fieldEffects: map.value?.fieldEffects,
+        conditionImmunityContext: { sweetVeilProviders: spawnedPokemon.value },
       })
       activeMoveTargeting.value = null
       await applyMoveAutomation(transaction)
@@ -636,6 +638,7 @@ export const useMoveAutomationPanel = ({
       target,
       damageFormula: request.damageFormula,
       fieldEffects: map.value?.fieldEffects,
+      conditionImmunityContext: { sweetVeilProviders: spawnedPokemon.value },
     })
     activeMoveTargeting.value = null
     showMoveAutomationResolution(result.feedback, result.transaction)

@@ -15,6 +15,8 @@ describe('map token ability menu options', () => {
       { name: 'Moxie' },
       { name: 'Cute Charm' },
       { name: 'Quick Feet' },
+      { name: 'Shield Dust' },
+      { name: 'Sweet Veil' },
       { name: 'Run Away' },
     ])
 
@@ -25,6 +27,8 @@ describe('map token ability menu options', () => {
       { name: 'Moxie', automation: { category: 'map', label: 'Self' }, activated: false },
       { name: 'Cute Charm', automation: { category: 'passive', label: 'Auto' }, activated: false },
       { name: 'Quick Feet', automation: { category: 'passive', label: 'Auto' }, activated: false },
+      { name: 'Shield Dust', automation: { category: 'passive', label: 'Auto' }, activated: false },
+      { name: 'Sweet Veil', automation: { category: 'passive', label: 'Auto' }, activated: false },
       { name: 'Run Away', automation: null, activated: false },
     ])
   })

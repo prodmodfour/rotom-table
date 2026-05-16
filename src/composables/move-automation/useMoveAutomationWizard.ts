@@ -241,6 +241,7 @@ export const useMoveAutomationWizard = (
     hazardCells: parseHazardCells(),
     manualNote: manualNote.value,
     fieldEffects: props.fieldEffects,
+    conditionImmunityContext: { sweetVeilProviders: props.allTokens },
   })
 
   const transaction = computed(buildTransaction)
