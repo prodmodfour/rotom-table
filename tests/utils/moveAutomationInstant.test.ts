@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { explicitScriptForMove } from '~/utils/moveAutomation'
+import { buildMoveAutomationMoveEntries } from '~/utils/moveAutomationMoves'
 import {
   resolveInstantAreaMoveAutomation,
   resolveInstantMoveAutomation,
@@ -157,6 +158,21 @@ describe('instant move automation', () => {
     expect(result.feedback).toMatchObject({ naturalRoll: 11, hit: true, damageLoss: 13 })
     expect(result.transaction.hpUpdates).toEqual([{ id: 't', currentHp: 27 }])
     expect(result.transaction.logLines).toContain('Manual note: Pin Missile Five Strike rolled 7: 4 hits; DB 3 × 4 = DB 12.')
+  })
+
+  it('applies STAB after Five Strike multiplies Damage Base', () => {
+    const [entry] = buildMoveAutomationMoveEntries([{ name: 'Pin Missile' }], { stabTypes: ['Bug'] })
+    const result = resolveInstantMoveAutomation({
+      script: entry.script,
+      user: token({ id: 'u', species: 'Launcher', atk: 5, defenderTypes: ['Bug'] }),
+      target: token({ id: 't', species: 'Target', def: 5 }),
+      damageFormula: null,
+      random: sequenceRandom([0.5, 0.75, 0, 0, 0, 0]),
+    })
+
+    expect(result.feedback).toMatchObject({ naturalRoll: 11, hit: true, damageLoss: 19 })
+    expect(result.transaction.hpUpdates).toEqual([{ id: 't', currentHp: 21 }])
+    expect(result.transaction.logLines).toContain('Manual note: Pin Missile Five Strike rolled 7: 4 hits; DB 3 × 4 + 2 STAB = DB 14.')
   })
 
   it('scales Power Trip from the user’s positive Combat Stages', () => {
