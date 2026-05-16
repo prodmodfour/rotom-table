@@ -148,10 +148,26 @@ const reviewedSingleTargetConditionScript = (
   moveName: string,
   conditions: readonly ReviewedTargetConditionDefinition[],
   version = 1,
+  overrides: ReviewedMoveScriptOverrides = {},
 ): MoveAutomationScript => reviewedMoveScriptFromCanonical(moveName, version, {
   targetMode: 'one-target',
   targetCount: 1,
   conditionSuggestions: targetConditionSuggestions(conditions),
+  ...overrides,
+})
+
+const reviewedSingleTargetConditionAndStageScript = (
+  moveName: string,
+  conditions: readonly ReviewedTargetConditionDefinition[],
+  stages: readonly ReviewedTargetStageDefinition[],
+  version = 1,
+  overrides: ReviewedMoveScriptOverrides = {},
+): MoveAutomationScript => reviewedMoveScriptFromCanonical(moveName, version, {
+  targetMode: 'one-target',
+  targetCount: 1,
+  conditionSuggestions: targetConditionSuggestions(conditions),
+  stageSuggestions: targetStageSuggestions(stages),
+  ...overrides,
 })
 
 const reviewedSingleTargetStageScript = (
@@ -341,6 +357,9 @@ const REVIEWED_AREA_CONFIRMATION_SCRIPTS: ReadonlyMap<string, MoveAutomationScri
 )
 
 const REVIEWED_AREA_CONDITION_SCRIPTS: ReadonlyMap<string, MoveAutomationScript> = new Map([
+  ['Poison Gas', reviewedAreaConditionScript('Poison Gas', [{ condition: 'Poisoned', label: 'Poisoned' }])],
+  ['Rock Slide', reviewedAreaConditionScript('Rock Slide', [{ condition: 'Flinch', label: 'Flinch on 17+', threshold: '17+' }])],
+  ['Sludge Wave', reviewedAreaConditionScript('Sludge Wave', [{ condition: 'Poisoned', label: 'Poisoned on 19+', threshold: '19+' }])],
   ['Teeter Dance', reviewedAreaConditionScript('Teeter Dance', [{ condition: 'Confused', label: 'Confused' }])],
 ])
 
@@ -378,10 +397,12 @@ const SEAMLESS_SINGLE_TARGET_ATTACK_SCRIPT_NAMES = [
   'Dragon Breath',
   'Dragon Claw',
   'Dragon Pulse',
+  'Drill Peck',
   'Drill Run',
   'Ember',
   'Esper Wing',
   'Extrasensory',
+  'Extreme Speed',
   'Fairy Wind',
   'Fire Blast',
   'Fire Punch',
@@ -390,6 +411,7 @@ const SEAMLESS_SINGLE_TARGET_ATTACK_SCRIPT_NAMES = [
   'Gunk Shot',
   'Headbutt',
   'Heart Stamp',
+  'Horn Attack',
   'Hyper Fang',
   'Ice Beam',
   'Ice Punch',
@@ -432,6 +454,7 @@ const SEAMLESS_SINGLE_TARGET_ATTACK_SCRIPT_NAMES = [
   'Water Gun',
   'Waterfall',
   'Wing Attack',
+  'X-Scissor',
   'Zing Zap',
 ]
 
@@ -448,23 +471,49 @@ const REVIEWED_SINGLE_TARGET_STATUS_SCRIPT_NAMES = [
 ]
 
 const REVIEWED_SINGLE_TARGET_CONDITION_SCRIPTS: ReadonlyMap<string, MoveAutomationScript> = new Map([
+  ['Astonish', reviewedSingleTargetConditionScript('Astonish', [{ condition: 'Flinch', label: 'Flinch on 15+', threshold: '15+' }], 1, {
+    automationNotes: ['Astonish’s once-per-scene automatic Flinch against an unaware target is not inferred; apply Flinch manually if that clause applies.'],
+  })],
   ['Confusion', reviewedSingleTargetConditionScript('Confusion', [{ condition: 'Confused', label: 'Confused on 19+', threshold: '19+' }])],
   ['Cross Poison', reviewedSingleTargetConditionScript('Cross Poison', [{ condition: 'Poisoned', label: 'Poisoned on 19+', threshold: '19+' }])],
   ['Dizzy Punch', reviewedSingleTargetConditionScript('Dizzy Punch', [{ condition: 'Confused', label: 'Confused on 17+', threshold: '17+' }])],
+  ['Flame Wheel', reviewedSingleTargetConditionScript('Flame Wheel', [{ condition: 'Burned', label: 'Burned on 19+', threshold: '19+' }])],
+  ['Flatter', reviewedSingleTargetConditionAndStageScript('Flatter',
+    [{ condition: 'Confused', label: 'Confused' }],
+    [{ key: 'satk', delta: 1, label: 'Flatter raises Special Attack: +1 Special Attack CS' }],
+  )],
+  ['Iron Head', reviewedSingleTargetConditionScript('Iron Head', [{ condition: 'Flinch', label: 'Flinch on 15+', threshold: '15+' }])],
+  ['Mountain Gale', reviewedSingleTargetConditionScript('Mountain Gale', [{ condition: 'Flinch', label: 'Flinch on 15+', threshold: '15+' }])],
+  ['Nuzzle', reviewedSingleTargetConditionScript('Nuzzle', [{ condition: 'Paralysis', label: 'Paralysis' }])],
   ['Poison Fang', reviewedSingleTargetConditionScript('Poison Fang', [{ condition: 'Badly Poisoned', label: 'Badly Poisoned on 17+', threshold: '17+' }])],
   ['Poison Tail', reviewedSingleTargetConditionScript('Poison Tail', [{ condition: 'Poisoned', label: 'Poisoned on 19+', threshold: '19+' }])],
   ['Psybeam', reviewedSingleTargetConditionScript('Psybeam', [{ condition: 'Confused', label: 'Confused on 19+', threshold: '19+' }])],
+  ['Rock Climb', reviewedSingleTargetConditionScript('Rock Climb', [{ condition: 'Confused', label: 'Confused on 17+', threshold: '17+' }])],
+  ['Sacred Fire', reviewedSingleTargetConditionScript('Sacred Fire', [{ condition: 'Burned', label: 'Burned on even roll', threshold: 'even roll' }])],
+  ['Sand Attack', reviewedSingleTargetConditionScript('Sand Attack', [{ condition: 'Blindness', label: 'Blindness' }])],
   ['Signal Beam', reviewedSingleTargetConditionScript('Signal Beam', [{ condition: 'Confused', label: 'Confused on 19+', threshold: '19+' }])],
+  ['Spark', reviewedSingleTargetConditionScript('Spark', [{ condition: 'Paralysis', label: 'Paralysis on 15+', threshold: '15+' }])],
+  ['Swagger', reviewedSingleTargetConditionAndStageScript('Swagger',
+    [{ condition: 'Confused', label: 'Confused' }],
+    [{ key: 'atk', delta: 2, label: 'Swagger raises Attack: +2 Attack CS' }],
+  )],
   ['Water Pulse', reviewedSingleTargetConditionScript('Water Pulse', [{ condition: 'Confused', label: 'Confused on 17+', threshold: '17+' }])],
+  ['Zen Headbutt', reviewedSingleTargetConditionScript('Zen Headbutt', [{ condition: 'Flinch', label: 'Flinch on 15+', threshold: '15+' }])],
 ])
 
 const REVIEWED_SINGLE_TARGET_STAGE_SCRIPTS: ReadonlyMap<string, MoveAutomationScript> = new Map([
   ['Acid Spray', reviewedSingleTargetStageScript('Acid Spray', [{ key: 'sdef', delta: -2, label: 'Acid Spray lowers Special Defense: -2 Special Defense CS' }])],
   ['Aurora Beam', reviewedSingleTargetStageScript('Aurora Beam', [{ key: 'atk', delta: -1, label: 'Aurora Beam lowers Attack on 18+: -1 Attack CS', threshold: '18+' }])],
+  ['Baby-Doll Eyes', reviewedSingleTargetStageScript('Baby-Doll Eyes', [{ key: 'atk', delta: -1, label: 'Baby-Doll Eyes lowers Attack: -1 Attack CS' }])],
   ['Bubble Beam', reviewedSingleTargetStageScript('Bubble Beam', [{ key: 'spd', delta: -1, label: 'Bubble Beam lowers Speed on 18+: -1 Speed CS', threshold: '18+' }])],
+  ['Charm', reviewedSingleTargetStageScript('Charm', [{ key: 'atk', delta: -2, label: 'Charm lowers Attack: -2 Attack CS' }])],
+  ['Confide', reviewedSingleTargetStageScript('Confide', [{ key: 'satk', delta: -1, label: 'Confide lowers Special Attack: -1 Special Attack CS' }])],
   ['Crunch', reviewedSingleTargetStageScript('Crunch', [{ key: 'def', delta: -1, label: 'Crunch lowers Defense on 17+: -1 Defense CS', threshold: '17+' }])],
+  ['Crush Claw', reviewedSingleTargetStageScript('Crush Claw', [{ key: 'def', delta: -1, label: 'Crush Claw lowers Defense on even roll: -1 Defense CS', threshold: 'even roll' }])],
   ['Drum Beating', reviewedSingleTargetStageScript('Drum Beating', [{ key: 'spd', delta: -1, label: 'Drum Beating lowers Speed: -1 Speed CS' }])],
+  ['Eerie Impulse', reviewedSingleTargetStageScript('Eerie Impulse', [{ key: 'satk', delta: -2, label: 'Eerie Impulse lowers Special Attack: -2 Special Attack CS' }])],
   ['Energy Ball', reviewedSingleTargetStageScript('Energy Ball', [{ key: 'sdef', delta: -1, label: 'Energy Ball lowers Special Defense on 17+: -1 Special Defense CS', threshold: '17+' }])],
+  ['Fake Tears', reviewedSingleTargetStageScript('Fake Tears', [{ key: 'sdef', delta: -2, label: 'Fake Tears lowers Special Defense: -2 Special Defense CS' }])],
   ['Fire Lash', reviewedSingleTargetStageScript('Fire Lash', [{ key: 'def', delta: -1, label: 'Fire Lash lowers Defense: -1 Defense CS' }])],
   ['Flash Cannon', reviewedSingleTargetStageScript('Flash Cannon', [{ key: 'sdef', delta: -1, label: 'Flash Cannon lowers Special Defense on 17+: -1 Special Defense CS', threshold: '17+' }])],
   ['Focus Blast', reviewedSingleTargetStageScript('Focus Blast', [{ key: 'sdef', delta: -1, label: 'Focus Blast lowers Special Defense on 18+: -1 Special Defense CS', threshold: '18+' }])],
@@ -475,15 +524,23 @@ const REVIEWED_SINGLE_TARGET_STAGE_SCRIPTS: ReadonlyMap<string, MoveAutomationSc
   ['Luster Purge', reviewedSingleTargetStageScript('Luster Purge', [{ key: 'sdef', delta: -1, label: 'Luster Purge lowers Special Defense on even roll: -1 Special Defense CS', threshold: 'even roll' }])],
   ['Mist Ball', reviewedSingleTargetStageScript('Mist Ball', [{ key: 'satk', delta: -1, label: 'Mist Ball lowers Special Attack on even roll: -1 Special Attack CS', threshold: 'even roll' }])],
   ['Moonblast', reviewedSingleTargetStageScript('Moonblast', [{ key: 'satk', delta: -1, label: 'Moonblast lowers Special Attack on 15+: -1 Special Attack CS', threshold: '15+' }])],
+  ['Mud Shot', reviewedSingleTargetStageScript('Mud Shot', [{ key: 'spd', delta: -1, label: 'Mud Shot lowers Speed: -1 Speed CS' }])],
   ['Mud-Slap', reviewedSingleTargetStageScript('Mud-Slap', [{ key: 'acc', delta: -1, label: 'Mud-Slap lowers Accuracy: -1 Accuracy CS' }])],
   ['Mystical Fire', reviewedSingleTargetStageScript('Mystical Fire', [{ key: 'satk', delta: -1, label: 'Mystical Fire lowers Special Attack: -1 Special Attack CS' }])],
   ['Night Daze', reviewedSingleTargetStageScript('Night Daze', [{ key: 'acc', delta: -1, label: 'Night Daze lowers Accuracy on 13+: -1 Accuracy CS', threshold: '13+' }])],
+  ['Play Nice', reviewedSingleTargetStageScript('Play Nice', [{ key: 'atk', delta: -1, label: 'Play Nice lowers Attack: -1 Attack CS' }])],
   ['Play Rough', reviewedSingleTargetStageScript('Play Rough', [{ key: 'atk', delta: -1, label: 'Play Rough lowers Attack on 17-20: -1 Attack CS', threshold: '17-20' }])],
+  ['Razor Shell', reviewedSingleTargetStageScript('Razor Shell', [{ key: 'def', delta: -1, label: 'Razor Shell lowers Defense on even roll: -1 Defense CS', threshold: 'even roll' }])],
   ['Rock Smash', reviewedSingleTargetStageScript('Rock Smash', [{ key: 'def', delta: -1, label: 'Rock Smash lowers Defense on 17+: -1 Defense CS', threshold: '17+' }])],
   ['Rock Tomb', reviewedSingleTargetStageScript('Rock Tomb', [{ key: 'spd', delta: -1, label: 'Rock Tomb lowers Speed: -1 Speed CS' }])],
+  ['Scary Face', reviewedSingleTargetStageScript('Scary Face', [{ key: 'spd', delta: -2, label: 'Scary Face lowers Speed: -2 Speed CS' }])],
   ['Shadow Ball', reviewedSingleTargetStageScript('Shadow Ball', [{ key: 'sdef', delta: -1, label: 'Shadow Ball lowers Special Defense on 17+: -1 Special Defense CS', threshold: '17+' }])],
   ['Shadow Bone', reviewedSingleTargetStageScript('Shadow Bone', [{ key: 'def', delta: -1, label: 'Shadow Bone lowers Defense on 17+: -1 Defense CS', threshold: '17+' }])],
   ['Spirit Break', reviewedSingleTargetStageScript('Spirit Break', [{ key: 'satk', delta: -1, label: 'Spirit Break lowers Special Attack: -1 Special Attack CS' }])],
+  ['Tickle', reviewedSingleTargetStageScript('Tickle', [
+    { key: 'atk', delta: -1, label: 'Tickle lowers Attack: -1 Attack CS' },
+    { key: 'def', delta: -1, label: 'Tickle lowers Defense: -1 Defense CS' },
+  ])],
 ])
 
 const STRUGGLE_ATTACK_SCRIPTS: ReadonlyMap<string, MoveAutomationScript> = new Map(

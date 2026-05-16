@@ -106,9 +106,56 @@ describe('explicit move automation scripts', () => {
     expect(isSeamlessSingleTargetMoveScript(script)).toBe(true)
   })
 
+  it('implements additional reviewed simple condition and stage scripts', () => {
+    const astonish = explicitScriptForMove('Astonish')
+    const sandAttack = explicitScriptForMove('Sand Attack')
+    const mudShot = explicitScriptForMove('Mud Shot')
+    const flatter = explicitScriptForMove('Flatter')
+
+    expect(astonish).toMatchObject({
+      kind: 'explicit',
+      moveName: 'Astonish',
+      targetMode: 'one-target',
+      damaging: true,
+      conditionSuggestions: [
+        { recipient: 'target', condition: 'Flinch', label: 'Flinch on 15+', threshold: '15+', optional: true },
+      ],
+    })
+    expect(astonish?.automationNotes).toEqual(expect.arrayContaining([
+      expect.stringContaining('automatic Flinch against an unaware target is not inferred'),
+    ]))
+    expect(isSeamlessSingleTargetMoveScript(astonish)).toBe(true)
+
+    expect(sandAttack).toMatchObject({
+      kind: 'explicit',
+      moveName: 'Sand Attack',
+      damaging: false,
+      conditionSuggestions: [{ recipient: 'target', condition: 'Blindness', label: 'Blindness' }],
+    })
+    expect(isSeamlessSingleTargetMoveScript(sandAttack)).toBe(true)
+
+    expect(mudShot).toMatchObject({
+      kind: 'explicit',
+      moveName: 'Mud Shot',
+      damaging: true,
+      stageSuggestions: [{ recipient: 'target', key: 'spd', delta: -1, label: 'Mud Shot lowers Speed: -1 Speed CS' }],
+    })
+    expect(isSeamlessSingleTargetMoveScript(mudShot)).toBe(true)
+
+    expect(flatter).toMatchObject({
+      kind: 'explicit',
+      moveName: 'Flatter',
+      damaging: false,
+      conditionSuggestions: [{ recipient: 'target', condition: 'Confused', label: 'Confused' }],
+      stageSuggestions: [{ recipient: 'target', key: 'satk', delta: 1, label: 'Flatter raises Special Attack: +1 Special Attack CS' }],
+    })
+    expect(isSeamlessSingleTargetMoveScript(flatter)).toBe(true)
+  })
+
   it('implements additional reviewed AoE confirmations without opening the wizard', () => {
     const tailWhip = explicitScriptForMove('Tail Whip')
     const heatWave = explicitScriptForMove('Heat Wave')
+    const poisonGas = explicitScriptForMove('Poison Gas')
 
     expect(tailWhip).toMatchObject({
       kind: 'explicit',
@@ -129,6 +176,16 @@ describe('explicit move automation scripts', () => {
     })
     expect(heatWave?.areaTemplates).toMatchObject([{ kind: 'close-blast', size: 3 }])
     expect(isSeamlessAreaConfirmationScript(heatWave)).toBe(true)
+
+    expect(poisonGas).toMatchObject({
+      kind: 'explicit',
+      moveName: 'Poison Gas',
+      targetMode: 'multi-target',
+      damaging: false,
+      conditionSuggestions: [{ recipient: 'target', condition: 'Poisoned', label: 'Poisoned' }],
+    })
+    expect(poisonGas?.areaTemplates).toMatchObject([{ kind: 'burst', size: 1 }, { kind: 'cone', size: 2 }])
+    expect(isSeamlessAreaConfirmationScript(poisonGas)).toBe(true)
   })
 
   it('implements Smog as a reviewed Line 2 damaging AoE with even-roll poison', () => {
