@@ -129,6 +129,45 @@ describe('instant move automation', () => {
     expect(result.transaction.logLines).toContain('Target: 31 HP lost (Psywave level-scaled HP loss).')
   })
 
+  it('applies reviewed single-target stage thresholds during instant targeting', () => {
+    const script = explicitScriptForMove('Bubble Beam')!
+    const result = resolveInstantMoveAutomation({
+      script,
+      user: token({ id: 'u', species: 'Squirtle' }),
+      target: token({ id: 't', species: 'Target' }),
+      damageFormula: '1d6',
+      random: sequenceRandom([0.85, 0]),
+    })
+
+    expect(result.feedback).toMatchObject({ naturalRoll: 18, hit: true })
+    expect(result.transaction.combatStageUpdates).toEqual([
+      { id: 't', stages: { ...stages, spd: -1 } },
+    ])
+  })
+
+  it('applies reviewed AoE stage thresholds per target natural roll', () => {
+    const script = explicitScriptForMove('Bubble')!
+    const transaction = resolveInstantAreaMoveAutomation({
+      script,
+      user: token({ id: 'u', species: 'Squirtle' }),
+      targets: [
+        token({ id: 'fast', species: 'Fast' }),
+        token({ id: 'steady', species: 'Steady' }),
+      ],
+      damageFormula: '1d6',
+      random: sequenceRandom([0.75, 0, 0.7, 0]),
+    })
+
+    expect(transaction.combatStageUpdates).toEqual([
+      { id: 'fast', stages: { ...stages, spd: -1 } },
+    ])
+    expect(transaction.logLines).toEqual(expect.arrayContaining([
+      'Bubble lowers Speed on 16+: -1 Speed CS on Fast.',
+      'Fast: accuracy 16 (hit).',
+      'Steady: accuracy 15 (hit).',
+    ]))
+  })
+
   it('resolves Smog area damage and poisons only hit targets with even natural rolls', () => {
     const script = explicitScriptForMove('Smog')!
     const transaction = resolveInstantAreaMoveAutomation({

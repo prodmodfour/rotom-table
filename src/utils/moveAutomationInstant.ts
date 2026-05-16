@@ -84,7 +84,7 @@ const isTargetConditionAddition = (
   suggestion: MoveAutomationScript['conditionSuggestions'][number],
 ): boolean => suggestion.recipient === 'target' && suggestion.action !== 'remove' && suggestion.action !== 'clear'
 
-const targetConditionThresholdMatches = (
+const targetThresholdMatches = (
   threshold: string | undefined,
   naturalRoll: number | null,
 ): boolean => !threshold || (naturalRoll != null && naturalRollMeetsMoveThreshold(threshold, naturalRoll))
@@ -100,7 +100,7 @@ const buildConditionFeedback = (options: {
 
   options.script.conditionSuggestions.forEach((suggestion, index) => {
     if (!isTargetConditionAddition(suggestion)) return
-    if (!targetConditionThresholdMatches(suggestion.threshold, options.naturalRoll)) return
+    if (!targetThresholdMatches(suggestion.threshold, options.naturalRoll)) return
 
     const condition = normalizeConditionName(suggestion.condition) ?? suggestion.condition
     const blockedBy = moveAutomationConditionImmunitySource(condition, options.target, options.script.type)
@@ -116,7 +116,7 @@ const buildConditionFeedback = (options: {
   return feedback
 }
 
-const addConditionTargetId = (
+const addSuggestionTargetId = (
   targetIdsBySuggestion: Map<number, Set<string>>,
   index: number,
   targetId: string,
@@ -151,7 +151,7 @@ const resolveAreaConditionApplications = (
 
     script.conditionSuggestions.forEach((suggestion, index) => {
       if (!filteredSuggestionIndexes.has(index)) return
-      if (!targetConditionThresholdMatches(suggestion.threshold, naturalRoll)) return
+      if (!targetThresholdMatches(suggestion.threshold, naturalRoll)) return
 
       const condition = normalizeConditionName(suggestion.condition) ?? suggestion.condition
       const blockedBy = moveAutomationConditionImmunitySource(condition, target, script.type)
@@ -159,11 +159,60 @@ const resolveAreaConditionApplications = (
         blockedNotes.push(`${condition} did not apply to ${target.species}: immune (${blockedBy}).`)
         return
       }
-      addConditionTargetId(targetIdsBySuggestion, index, target.id)
+      addSuggestionTargetId(targetIdsBySuggestion, index, target.id)
     })
   }
 
   return { filteredSuggestionIndexes, targetIdsBySuggestion, blockedNotes }
+}
+
+const isTargetStageThresholdSuggestion = (
+  suggestion: MoveAutomationScript['stageSuggestions'][number],
+): boolean => suggestion.recipient === 'target' && Boolean(suggestion.threshold)
+
+const enableSingleTargetStageThresholds = (options: {
+  script: MoveAutomationScript
+  naturalRoll: number
+  hit: boolean
+  enabledSuggestions: Record<string, boolean>
+}): void => {
+  if (!options.hit) return
+  options.script.stageSuggestions.forEach((suggestion, index) => {
+    if (!isTargetStageThresholdSuggestion(suggestion)) return
+    if (!targetThresholdMatches(suggestion.threshold, options.naturalRoll)) return
+    options.enabledSuggestions[moveAutomationSuggestionKey(options.script, 'stage', index)] = true
+  })
+}
+
+const resolveAreaStageApplications = (
+  script: MoveAutomationScript,
+  targets: readonly SpawnedPokemon[],
+  targetResolutions: Readonly<Record<string, ReturnType<typeof defaultTargetResolutionState> | undefined>>,
+): {
+  filteredSuggestionIndexes: Set<number>
+  targetIdsBySuggestion: Map<number, Set<string>>
+} => {
+  const filteredSuggestionIndexes = new Set<number>()
+  const targetIdsBySuggestion = new Map<number, Set<string>>()
+
+  script.stageSuggestions.forEach((suggestion, index) => {
+    if (isTargetStageThresholdSuggestion(suggestion)) filteredSuggestionIndexes.add(index)
+  })
+  if (!filteredSuggestionIndexes.size) return { filteredSuggestionIndexes, targetIdsBySuggestion }
+
+  for (const target of targets) {
+    const resolution = targetResolutions[target.id]
+    if (!resolution?.hit) continue
+    const naturalRoll = parseMoveAutomationNaturalRoll(resolution.accuracyRoll)
+
+    script.stageSuggestions.forEach((suggestion, index) => {
+      if (!filteredSuggestionIndexes.has(index)) return
+      if (!targetThresholdMatches(suggestion.threshold, naturalRoll)) return
+      addSuggestionTargetId(targetIdsBySuggestion, index, target.id)
+    })
+  }
+
+  return { filteredSuggestionIndexes, targetIdsBySuggestion }
 }
 
 const addAccuracyToFeedback = (
@@ -209,6 +258,12 @@ export const resolveInstantMoveAutomation = ({
   const conditions = buildConditionFeedback({
     script,
     target,
+    naturalRoll,
+    hit: accuracy.hit,
+    enabledSuggestions,
+  })
+  enableSingleTargetStageThresholds({
+    script,
     naturalRoll,
     hit: accuracy.hit,
     enabledSuggestions,
@@ -302,6 +357,10 @@ export const resolveInstantAreaMoveAutomation = ({
   conditionApplications.targetIdsBySuggestion.forEach((targetIds, index) => {
     if (targetIds.size) enabledSuggestions[moveAutomationSuggestionKey(script, 'condition', index)] = true
   })
+  const stageApplications = resolveAreaStageApplications(script, targets, targetResolutions)
+  stageApplications.targetIdsBySuggestion.forEach((targetIds, index) => {
+    if (targetIds.size) enabledSuggestions[moveAutomationSuggestionKey(script, 'stage', index)] = true
+  })
   const transaction = buildMoveAutomationTransaction({
     script,
     user,
@@ -317,8 +376,14 @@ export const resolveInstantAreaMoveAutomation = ({
     manualNote: conditionApplications.blockedNotes.join(' '),
     fieldEffects,
     suggestionRecipientFilter: ({ kind, index, recipient, token }) => {
-      if (kind !== 'condition' || recipient !== 'target' || !conditionApplications.filteredSuggestionIndexes.has(index)) return true
-      return conditionApplications.targetIdsBySuggestion.get(index)?.has(token.id) ?? false
+      if (recipient !== 'target') return true
+      if (kind === 'condition' && conditionApplications.filteredSuggestionIndexes.has(index)) {
+        return conditionApplications.targetIdsBySuggestion.get(index)?.has(token.id) ?? false
+      }
+      if (kind === 'stage' && stageApplications.filteredSuggestionIndexes.has(index)) {
+        return stageApplications.targetIdsBySuggestion.get(index)?.has(token.id) ?? false
+      }
+      return true
     },
   })
 

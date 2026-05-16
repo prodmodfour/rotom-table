@@ -88,7 +88,7 @@ interface ActiveSingleTargetingRequest {
   userId: string
   moveName: string
   script: MoveAutomationScript
-  damageFormula: string
+  damageFormula: string | null
   rangeMeters: number
 }
 
@@ -359,7 +359,7 @@ export const useMoveAutomationPanel = ({
         focusSkillRankValue: user.focusSkillRankValue,
       })
       const damageFormula = rollFormulaForEntry(entry)
-      if (rangeMeters == null || !damageFormula) return false
+      if (rangeMeters == null || (entry.script.damaging && !damageFormula)) return false
 
       clearMoveAutomationFeedback()
       closeMoveAutomation()

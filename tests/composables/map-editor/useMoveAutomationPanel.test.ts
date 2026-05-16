@@ -207,6 +207,72 @@ describe('useMoveAutomationPanel', () => {
     }
   })
 
+  it('opens condition-only moves with on-map targeting instead of the wizard', async () => {
+    vi.useFakeTimers()
+    const map = ref({
+      ...mapFixture(),
+      placements: [
+        { id: 'user-token', sheetKind: 'pokemon' as const, sheetSlug: 'caster', position: { x: 0, y: 0, z: 0 } },
+        { id: 'target-token', sheetKind: 'pokemon' as const, sheetSlug: 'target', position: { x: 2, y: 0, z: 0 } },
+      ],
+    })
+    const pokemonSheet = {
+      slug: 'caster',
+      nickname: 'Caster',
+      species: 'Charmander',
+      level: 5,
+      movelist: [{ name: 'Will-O-Wisp' }],
+    } as CharacterSheet
+    const conditionCalls: MoveAutomationTransaction['conditionUpdates'] = []
+    const panel = useMoveAutomationPanel({
+      map,
+      spawnedPokemon: computed(() => [
+        spawned({ id: 'user-token', species: 'Caster', sheetSlug: 'caster', position: { x: 0, y: 0, z: 0 } }),
+        spawned({ id: 'target-token', species: 'Target', sheetSlug: 'target', currentHp: 40, maxHp: 40, defenderTypes: ['Grass'], position: { x: 2, y: 0, z: 0 } }),
+      ]),
+      pokemonBySlug: ref(new Map([[pokemonSheet.slug, pokemonSheet]])),
+      trainerBySlug: ref(new Map<string, TrainerSheet>()),
+      canEditMap: computed(() => false),
+      canControlPlacement: (id) => id === 'user-token',
+      modifyHp: () => undefined,
+      modifyCombatStages: () => undefined,
+      modifyConditions: (update) => { conditionCalls.push(update) },
+      applyMoveFieldEffect: () => undefined,
+      placeHazard: () => undefined,
+    })
+    const random = vi.spyOn(Math, 'random').mockReturnValue(0.5)
+
+    try {
+      panel.openMoveAutomation({ id: 'user-token', moveName: 'Will-O-Wisp' })
+
+      expect(panel.moveAutomationUser.value).toBeNull()
+      expect(panel.moveAutomationTargeting.value).toMatchObject({
+        mode: 'target',
+        moveName: 'Will-O-Wisp',
+        rangeLabel: '6m',
+        candidateIds: ['target-token'],
+      })
+
+      await panel.selectMoveAutomationTarget('target-token')
+
+      expect(panel.moveAutomationFeedback.value).toMatchObject({
+        moveName: 'Will-O-Wisp',
+        naturalRoll: 11,
+        hit: true,
+        damageLoss: 0,
+        conditions: [{ condition: 'Burned', applied: true }],
+      })
+
+      await vi.advanceTimersByTimeAsync(850)
+
+      expect(conditionCalls).toEqual([{ id: 'target-token', conditions: ['Burned'] }])
+      expect(map.value.metadata?.moveLog).toMatchObject([{ moveName: 'Will-O-Wisp', scriptKind: 'explicit' }])
+    } finally {
+      random.mockRestore()
+      vi.useRealTimers()
+    }
+  })
+
   it('queues and applies an ignorable Spite prompt after a hit', async () => {
     vi.useFakeTimers()
     const map = ref({

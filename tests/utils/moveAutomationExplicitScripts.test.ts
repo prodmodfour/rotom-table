@@ -1,7 +1,20 @@
 import { describe, expect, it } from 'vitest'
-import { explicitScriptForMove, isSeamlessAreaConfirmationScript, isSeamlessSingleTargetMoveScript } from '~/utils/moveAutomation'
+import {
+  EXPLICIT_MOVE_AUTOMATION_SCRIPTS,
+  explicitScriptForMove,
+  isSeamlessAreaConfirmationScript,
+  isSeamlessSingleTargetMoveScript,
+} from '~/utils/moveAutomation'
 
 describe('explicit move automation scripts', () => {
+  it('keeps every explicit script on a seamless map-targeting flow', () => {
+    const nonSeamlessScripts = [...EXPLICIT_MOVE_AUTOMATION_SCRIPTS.values()].filter((script) =>
+      !isSeamlessSingleTargetMoveScript(script) && !isSeamlessAreaConfirmationScript(script),
+    )
+
+    expect(nonSeamlessScripts).toEqual([])
+  })
+
   it('implements Growl as a reviewed Burst Attack-lowering AoE script', () => {
     const script = explicitScriptForMove('Growl')
 
@@ -32,6 +45,90 @@ describe('explicit move automation scripts', () => {
     })
     expect(script?.areaTemplates).toMatchObject([{ kind: 'cone', size: 2 }])
     expect(script?.stageSuggestions).toEqual([{ recipient: 'target', key: 'def', delta: -1, label: 'Leer lowers Defense: -1 Defense CS' }])
+  })
+
+  it('marks straightforward single-target attacks for seamless on-map targeting', () => {
+    const script = explicitScriptForMove('Water Gun')
+
+    expect(script).toMatchObject({
+      kind: 'explicit',
+      moveName: 'Water Gun',
+      targetMode: 'one-target',
+      targetCount: 1,
+      damaging: true,
+      requiresAccuracy: true,
+      damageBase: 4,
+      type: 'Water',
+      ac: 2,
+    })
+    expect(isSeamlessSingleTargetMoveScript(script)).toBe(true)
+  })
+
+  it('marks condition-only target moves for seamless on-map targeting', () => {
+    const script = explicitScriptForMove('Will-O-Wisp')
+
+    expect(script).toMatchObject({
+      kind: 'explicit',
+      moveName: 'Will-O-Wisp',
+      targetMode: 'one-target',
+      targetCount: 1,
+      damaging: false,
+      requiresAccuracy: true,
+      conditionSuggestions: [{ recipient: 'target', condition: 'Burned', action: 'add', label: 'Burned', optional: false }],
+    })
+    expect(isSeamlessSingleTargetMoveScript(script)).toBe(true)
+  })
+
+  it('uses reviewed condition thresholds when move text is ambiguous', () => {
+    expect(explicitScriptForMove('Confusion')?.conditionSuggestions).toEqual([
+      { recipient: 'target', condition: 'Confused', action: 'add', label: 'Confused on 19+', threshold: '19+', optional: true },
+    ])
+    expect(explicitScriptForMove('Poison Tail')?.conditionSuggestions).toEqual([
+      { recipient: 'target', condition: 'Poisoned', action: 'add', label: 'Poisoned on 19+', threshold: '19+', optional: true },
+    ])
+    expect(explicitScriptForMove('Teeter Dance')?.conditionSuggestions).toEqual([
+      { recipient: 'target', condition: 'Confused', action: 'add', label: 'Confused' },
+    ])
+  })
+
+  it('implements reviewed stage-changing attacks with thresholds', () => {
+    const script = explicitScriptForMove('Bubble Beam')
+
+    expect(script).toMatchObject({
+      kind: 'explicit',
+      moveName: 'Bubble Beam',
+      targetMode: 'one-target',
+      damaging: true,
+      stageSuggestions: [
+        { recipient: 'target', key: 'spd', delta: -1, label: 'Bubble Beam lowers Speed on 18+: -1 Speed CS', threshold: '18+', optional: true },
+      ],
+    })
+    expect(isSeamlessSingleTargetMoveScript(script)).toBe(true)
+  })
+
+  it('implements additional reviewed AoE confirmations without opening the wizard', () => {
+    const tailWhip = explicitScriptForMove('Tail Whip')
+    const heatWave = explicitScriptForMove('Heat Wave')
+
+    expect(tailWhip).toMatchObject({
+      kind: 'explicit',
+      moveName: 'Tail Whip',
+      targetMode: 'multi-target',
+      damaging: false,
+      stageSuggestions: [{ recipient: 'target', key: 'def', delta: -1, label: 'Tail Whip lowers Defense: -1 Defense CS' }],
+    })
+    expect(tailWhip?.areaTemplates).toMatchObject([{ kind: 'burst', size: 1 }])
+    expect(isSeamlessAreaConfirmationScript(tailWhip)).toBe(true)
+
+    expect(heatWave).toMatchObject({
+      kind: 'explicit',
+      moveName: 'Heat Wave',
+      targetMode: 'multi-target',
+      damaging: true,
+      conditionSuggestions: [{ recipient: 'target', condition: 'Burned', threshold: '18+', optional: true }],
+    })
+    expect(heatWave?.areaTemplates).toMatchObject([{ kind: 'close-blast', size: 3 }])
+    expect(isSeamlessAreaConfirmationScript(heatWave)).toBe(true)
   })
 
   it('implements Smog as a reviewed Line 2 damaging AoE with even-roll poison', () => {
