@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { explicitScriptForMove } from '~/utils/moveAutomation'
-import { resolveInstantMoveAutomation } from '~/utils/moveAutomationInstant'
+import {
+  resolveInstantAreaMoveAutomation,
+  resolveInstantMoveAutomation,
+} from '~/utils/moveAutomationInstant'
 import type { CombatStageMap } from '~/types/combatStages'
 import type { SpawnedPokemon } from '~/types/pokemon'
 
@@ -109,5 +112,35 @@ describe('instant move automation', () => {
     expect(result.feedback.conditions).toEqual([{ condition: 'Burned', applied: false, blockedBy: 'Fire type' }])
     expect(result.transaction.conditionUpdates).toEqual([])
     expect(result.transaction.logLines).toContain('Manual note: Burned did not apply to Flare: immune (Fire type).')
+  })
+
+  it('resolves Smog area damage and poisons only hit targets with even natural rolls', () => {
+    const script = explicitScriptForMove('Smog')!
+    const transaction = resolveInstantAreaMoveAutomation({
+      script,
+      user: token({ id: 'u', species: 'Koffing' }),
+      targets: [
+        token({ id: 'even', species: 'Evenmon' }),
+        token({ id: 'odd', species: 'Oddmon' }),
+        token({ id: 'immune', species: 'Gear', defenderTypes: ['Steel'] }),
+      ],
+      damageFormula: '1d6+5',
+      random: sequenceRandom([0.35, 0.375, 0.4, 0.375, 0.45, 0.375]),
+    })
+
+    expect(transaction.hpUpdates).toEqual([
+      { id: 'even', currentHp: 27 },
+      { id: 'odd', currentHp: 27 },
+    ])
+    expect(transaction.conditionUpdates).toEqual([{ id: 'even', conditions: ['Poisoned'] }])
+    expect(transaction.logLines).toEqual(expect.arrayContaining([
+      'Evenmon: 13 HP damage.',
+      'Oddmon: 13 HP damage.',
+      'Poisoned on even roll applied to Evenmon.',
+      'Manual note: Poisoned did not apply to Gear: immune (Steel type).',
+      'Evenmon: accuracy 8 (hit).',
+      'Oddmon: accuracy 9 (hit).',
+      'Gear: accuracy 10 (hit).',
+    ]))
   })
 })

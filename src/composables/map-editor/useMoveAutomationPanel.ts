@@ -91,6 +91,7 @@ interface ActiveAreaConfirmationRequest {
   userId: string
   moveName: string
   script: MoveAutomationScript
+  damageFormula: string | null
   label: string
   cells: GridAnchor[]
   targetIds: string[]
@@ -267,6 +268,7 @@ export const useMoveAutomationPanel = ({
   const requestFromAreaPlacement = (
     user: SpawnedPokemon,
     script: MoveAutomationScript,
+    damageFormula: string | null,
     placement: MoveAutomationAreaTemplatePlacement,
     placements: readonly MoveAutomationAreaTemplatePlacement[],
   ): ActiveAreaConfirmationRequest => ({
@@ -274,6 +276,7 @@ export const useMoveAutomationPanel = ({
     userId: user.id,
     moveName: script.moveName,
     script,
+    damageFormula,
     label: placement.label,
     cells: placement.cells,
     targetIds: placement.targetIds,
@@ -283,6 +286,7 @@ export const useMoveAutomationPanel = ({
 
   const makeFallbackAreaPlacement = (
     script: MoveAutomationScript,
+    damageFormula: string | null,
     user: SpawnedPokemon,
   ): ActiveAreaConfirmationRequest | null => {
     const template = script.areaTemplates?.[0]
@@ -301,6 +305,7 @@ export const useMoveAutomationPanel = ({
       userId: user.id,
       moveName: script.moveName,
       script,
+      damageFormula,
       label: template.label,
       cells,
       targetIds,
@@ -312,6 +317,8 @@ export const useMoveAutomationPanel = ({
   const beginSeamlessAreaConfirmation = (id: string, entry: ReturnType<typeof moveAutomationEntryForUse>): boolean => {
     const user = findSpawnedPokemon(id)
     if (!user || !entry || !isSeamlessAreaConfirmationScript(entry.script)) return false
+    const damageFormula = entry.script.damaging ? damageFormulaForMove(entry.move) : null
+    if (entry.script.damaging && !damageFormula) return false
     const placements = buildMoveAutomationAreaTemplatePlacements({
       script: entry.script,
       user,
@@ -320,8 +327,8 @@ export const useMoveAutomationPanel = ({
     })
     const placement = areaPlacementForTokenFacing(placements, user)
     const request = placement
-      ? requestFromAreaPlacement(user, entry.script, placement, placements)
-      : makeFallbackAreaPlacement(entry.script, user)
+      ? requestFromAreaPlacement(user, entry.script, damageFormula, placement, placements)
+      : makeFallbackAreaPlacement(entry.script, damageFormula, user)
     if (!request) return false
 
     clearMoveAutomationFeedback()
@@ -441,6 +448,7 @@ export const useMoveAutomationPanel = ({
       script: request.script,
       user,
       targets,
+      damageFormula: request.damageFormula,
       fieldEffects: map.value?.fieldEffects,
     })
     activeMoveTargeting.value = null

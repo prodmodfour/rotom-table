@@ -24,15 +24,29 @@ import {
   resolveHpSuggestionAmount,
   resolveMoveAutomationTargetDamageLoss,
   suggestionIsEnabled,
+  type MoveAutomationSuggestionKind,
   type MoveAutomationTargetResolutionState,
 } from '~/utils/moveAutomationTargetResolution'
+import { accuracyRollMeetsMoveThreshold } from '~/utils/moveAutomationThresholds'
 import type { CombatStageKey } from '~/types/combatStages'
 import type { MapFieldEffects } from '~/types/map'
 import type {
+  MoveAutomationRecipient,
   MoveAutomationScript,
   MoveAutomationTransaction,
 } from '~/types/moveAutomation'
 import type { GridAnchor, SpawnedPokemon } from '~/types/pokemon'
+
+export interface MoveAutomationSuggestionRecipientFilterContext {
+  kind: MoveAutomationSuggestionKind
+  index: number
+  recipient: MoveAutomationRecipient
+  token: SpawnedPokemon
+}
+
+export type MoveAutomationSuggestionRecipientFilter = (
+  context: MoveAutomationSuggestionRecipientFilterContext,
+) => boolean
 
 export interface BuildMoveAutomationTransactionInput {
   script: MoveAutomationScript | null
@@ -48,6 +62,7 @@ export interface BuildMoveAutomationTransactionInput {
   hazardCells: GridAnchor[]
   manualNote: string
   fieldEffects?: MapFieldEffects
+  suggestionRecipientFilter?: MoveAutomationSuggestionRecipientFilter
 }
 
 const unknownMoveTransaction = (user: SpawnedPokemon): MoveAutomationTransaction => ({
@@ -78,6 +93,7 @@ export const buildMoveAutomationTransaction = ({
   hazardCells,
   manualNote,
   fieldEffects,
+  suggestionRecipientFilter,
 }: BuildMoveAutomationTransactionInput): MoveAutomationTransaction => {
   if (!script) return unknownMoveTransaction(user)
 
@@ -105,12 +121,25 @@ export const buildMoveAutomationTransaction = ({
   const targetEffectsApplyOnMiss = script.keywords.some((keyword) => /^Spirit Surge$/i.test(keyword))
   const targetWasHit = (target: SpawnedPokemon): boolean =>
     !script.requiresAccuracy || targetEffectsApplyOnMiss || targetResolutions[target.id]?.hit === true
-  const suggestionRecipients = (recipient: 'user' | 'target'): SpawnedPokemon[] =>
-    recipient === 'user' ? [user] : selectedTargets.filter(targetWasHit)
+  const targetMeetsSuggestionThreshold = (
+    threshold: string | undefined,
+    target: SpawnedPokemon,
+  ): boolean => accuracyRollMeetsMoveThreshold(threshold, targetResolutions[target.id]?.accuracyRoll)
+  const suggestionRecipients = (
+    kind: MoveAutomationSuggestionKind,
+    index: number,
+    recipient: MoveAutomationRecipient,
+    threshold?: string,
+  ): SpawnedPokemon[] => {
+    const recipients = recipient === 'user'
+      ? [user]
+      : selectedTargets.filter((target) => targetWasHit(target) && targetMeetsSuggestionThreshold(threshold, target))
+    return recipients.filter((token) => suggestionRecipientFilter?.({ kind, index, recipient, token }) ?? true)
+  }
 
   script.hpSuggestions.forEach((item, index) => {
     if (!suggestionIsEnabled(script, enabledSuggestions, 'hp', index)) return
-    const recipients = suggestionRecipients(item.recipient)
+    const recipients = suggestionRecipients('hp', index, item.recipient)
     for (const token of recipients) {
       const amount = resolveHpSuggestionAmount(script, hpSuggestionAmounts, index, token)
       if (amount <= 0 && item.mode !== 'set-zero') continue
@@ -122,7 +151,7 @@ export const buildMoveAutomationTransaction = ({
 
   script.conditionSuggestions.forEach((item, index) => {
     if (!suggestionIsEnabled(script, enabledSuggestions, 'condition', index)) return
-    const recipients = suggestionRecipients(item.recipient)
+    const recipients = suggestionRecipients('condition', index, item.recipient, item.threshold)
     for (const token of recipients) conditionAccumulator.applySuggestion(token, item)
     const logLine = formatMoveAutomationConditionSuggestionLogLine(item, recipients)
     if (logLine) logLines.push(logLine)
@@ -135,7 +164,7 @@ export const buildMoveAutomationTransaction = ({
   }
   script.stageSuggestions.forEach((item, index) => {
     if (!suggestionIsEnabled(script, enabledSuggestions, 'stage', index)) return
-    const recipients = suggestionRecipients(item.recipient)
+    const recipients = suggestionRecipients('stage', index, item.recipient, item.threshold)
     for (const token of recipients) addStageDelta(token, { [item.key]: item.delta })
     const logLine = formatMoveAutomationStageSuggestionLogLine(item, recipients)
     if (logLine) logLines.push(logLine)

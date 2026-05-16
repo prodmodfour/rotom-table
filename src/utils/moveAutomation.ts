@@ -129,9 +129,58 @@ const reviewedTargetStageAreaScript = (
   })
 }
 
+const reviewedSmogScript = (version = 1): MoveAutomationScript => {
+  const move = findMove('Smog')
+  if (!move) throw new Error('Missing canonical PTU move data for Smog')
+  const manualScript = createManualMoveAutomationScript(move)
+  return defineExplicitMoveScript({
+    moveName: manualScript.moveName,
+    version,
+    targetMode: 'multi-target',
+    targetCount: null,
+    damaging: true,
+    requiresAccuracy: true,
+    damageBase: manualScript.damageBase,
+    damageClass: manualScript.damageClass,
+    type: manualScript.type,
+    ac: manualScript.ac,
+    range: manualScript.range,
+    effect: manualScript.effect,
+    special: manualScript.special,
+    keywords: manualScript.keywords,
+    criticalRange: manualScript.criticalRange,
+    areaTemplates: manualScript.areaTemplates,
+    conditionSuggestions: [{
+      recipient: 'target',
+      condition: 'Poisoned',
+      action: 'add',
+      label: 'Poisoned on even roll',
+      threshold: 'even roll',
+      optional: true,
+    }],
+    stageSuggestions: [],
+    hpSuggestions: [],
+    fieldSuggestions: [],
+    hazardSuggestions: [],
+    automationNotes: [
+      'Use the Line 2 template to confirm affected legal targets, or select targets manually.',
+      'Poison is applied only to hit targets whose natural accuracy roll is even.',
+    ],
+  })
+}
+
 const REVIEWED_TARGET_STAGE_AREA_SCRIPTS: ReadonlyMap<string, MoveAutomationScript> = new Map([
   ['Growl', reviewedTargetStageAreaScript('Growl', 'atk', 'Growl lowers Attack: -1 Attack CS')],
   ['Leer', reviewedTargetStageAreaScript('Leer', 'def', 'Leer lowers Defense: -1 Defense CS')],
+])
+
+const REVIEWED_SMOG_SCRIPTS: ReadonlyMap<string, MoveAutomationScript> = new Map([
+  ['Smog', reviewedSmogScript()],
+])
+
+const SEAMLESS_AREA_CONFIRMATION_SCRIPTS: ReadonlyMap<string, MoveAutomationScript> = new Map([
+  ...REVIEWED_TARGET_STAGE_AREA_SCRIPTS,
+  ...REVIEWED_SMOG_SCRIPTS,
 ])
 
 const SEAMLESS_SINGLE_TARGET_ATTACK_SCRIPT_NAMES = [
@@ -172,9 +221,8 @@ export const isSeamlessAreaConfirmationScript = (
 ): script is MoveAutomationScript => Boolean(
   script
     && script.kind === 'explicit'
-    && REVIEWED_TARGET_STAGE_AREA_SCRIPTS.has(script.moveName)
+    && SEAMLESS_AREA_CONFIRMATION_SCRIPTS.has(script.moveName)
     && script.targetMode === 'multi-target'
-    && !script.damaging
     && script.areaTemplates?.length,
 )
 
@@ -187,7 +235,7 @@ export const isSeamlessAreaConfirmationScript = (
 export const EXPLICIT_MOVE_AUTOMATION_SCRIPTS: ReadonlyMap<string, MoveAutomationScript> = new Map<string, MoveAutomationScript>([
   ...STRUGGLE_ATTACK_SCRIPTS,
   ...SEAMLESS_SINGLE_TARGET_ATTACK_SCRIPTS,
-  ...REVIEWED_TARGET_STAGE_AREA_SCRIPTS,
+  ...SEAMLESS_AREA_CONFIRMATION_SCRIPTS,
 ])
 
 export const moveAutomationCoverage = {

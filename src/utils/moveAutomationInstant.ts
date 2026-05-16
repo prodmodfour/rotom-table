@@ -14,6 +14,10 @@ import {
   resolveMoveAutomationTargetEvasion,
 } from '~/utils/moveAutomationAccuracy'
 import { moveAutomationConditionImmunitySource } from '~/utils/moveAutomationConditionImmunity'
+import {
+  naturalRollMeetsMoveThreshold,
+  parseMoveAutomationNaturalRoll,
+} from '~/utils/moveAutomationThresholds'
 import { normalizeConditionName } from '~/utils/statusConditions'
 import type { CombatStageKey } from '~/types/combatStages'
 import type { MapFieldEffects } from '~/types/map'
@@ -34,6 +38,7 @@ export interface ResolveInstantAreaMoveAutomationInput {
   script: MoveAutomationScript
   user: SpawnedPokemon
   targets: readonly SpawnedPokemon[]
+  damageFormula?: string | null
   fieldEffects?: MapFieldEffects
   random?: () => number
 }
@@ -57,27 +62,6 @@ const emptyStageDeltas = (): Record<CombatStageKey, number> => ({
   acc: 0,
 })
 
-export const naturalRollMeetsMoveThreshold = (
-  threshold: string | null | undefined,
-  naturalRoll: number,
-): boolean => {
-  const value = threshold?.trim()
-  if (!value) return true
-
-  const plus = value.match(/^(\d{1,2})\+$/)
-  if (plus) return naturalRoll >= Number(plus[1])
-
-  const range = value.match(/^(\d{1,2})\s*-\s*(\d{1,2})$/)
-  if (range) {
-    const start = Number(range[1])
-    const end = Number(range[2])
-    return naturalRoll >= Math.min(start, end) && naturalRoll <= Math.max(start, end)
-  }
-
-  if (/even roll/i.test(value)) return naturalRoll % 2 === 0
-  return false
-}
-
 const feedbackId = (factory: (() => string) | undefined): string =>
   factory?.() ?? `move-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
 
@@ -96,6 +80,15 @@ const enableDefaultSuggestions = (
   })
 }
 
+const isTargetConditionAddition = (
+  suggestion: MoveAutomationScript['conditionSuggestions'][number],
+): boolean => suggestion.recipient === 'target' && suggestion.action !== 'remove' && suggestion.action !== 'clear'
+
+const targetConditionThresholdMatches = (
+  threshold: string | undefined,
+  naturalRoll: number | null,
+): boolean => !threshold || (naturalRoll != null && naturalRollMeetsMoveThreshold(threshold, naturalRoll))
+
 const buildConditionFeedback = (options: {
   script: MoveAutomationScript
   target: SpawnedPokemon
@@ -106,8 +99,8 @@ const buildConditionFeedback = (options: {
   const feedback: MoveAutomationFeedbackCondition[] = []
 
   options.script.conditionSuggestions.forEach((suggestion, index) => {
-    if (suggestion.recipient !== 'target' || suggestion.action === 'remove' || suggestion.action === 'clear') return
-    if (!naturalRollMeetsMoveThreshold(suggestion.threshold, options.naturalRoll)) return
+    if (!isTargetConditionAddition(suggestion)) return
+    if (!targetConditionThresholdMatches(suggestion.threshold, options.naturalRoll)) return
 
     const condition = normalizeConditionName(suggestion.condition) ?? suggestion.condition
     const blockedBy = moveAutomationConditionImmunitySource(condition, options.target, options.script.type)
@@ -121,6 +114,56 @@ const buildConditionFeedback = (options: {
   })
 
   return feedback
+}
+
+const addConditionTargetId = (
+  targetIdsBySuggestion: Map<number, Set<string>>,
+  index: number,
+  targetId: string,
+): void => {
+  const ids = targetIdsBySuggestion.get(index) ?? new Set<string>()
+  ids.add(targetId)
+  targetIdsBySuggestion.set(index, ids)
+}
+
+const resolveAreaConditionApplications = (
+  script: MoveAutomationScript,
+  targets: readonly SpawnedPokemon[],
+  targetResolutions: Readonly<Record<string, ReturnType<typeof defaultTargetResolutionState> | undefined>>,
+): {
+  filteredSuggestionIndexes: Set<number>
+  targetIdsBySuggestion: Map<number, Set<string>>
+  blockedNotes: string[]
+} => {
+  const filteredSuggestionIndexes = new Set<number>()
+  const targetIdsBySuggestion = new Map<number, Set<string>>()
+  const blockedNotes: string[] = []
+
+  script.conditionSuggestions.forEach((suggestion, index) => {
+    if (isTargetConditionAddition(suggestion)) filteredSuggestionIndexes.add(index)
+  })
+  if (!filteredSuggestionIndexes.size) return { filteredSuggestionIndexes, targetIdsBySuggestion, blockedNotes }
+
+  for (const target of targets) {
+    const resolution = targetResolutions[target.id]
+    if (!resolution?.hit) continue
+    const naturalRoll = parseMoveAutomationNaturalRoll(resolution.accuracyRoll)
+
+    script.conditionSuggestions.forEach((suggestion, index) => {
+      if (!filteredSuggestionIndexes.has(index)) return
+      if (!targetConditionThresholdMatches(suggestion.threshold, naturalRoll)) return
+
+      const condition = normalizeConditionName(suggestion.condition) ?? suggestion.condition
+      const blockedBy = moveAutomationConditionImmunitySource(condition, target, script.type)
+      if (blockedBy) {
+        blockedNotes.push(`${condition} did not apply to ${target.species}: immune (${blockedBy}).`)
+        return
+      }
+      addConditionTargetId(targetIdsBySuggestion, index, target.id)
+    })
+  }
+
+  return { filteredSuggestionIndexes, targetIdsBySuggestion, blockedNotes }
 }
 
 const addAccuracyToFeedback = (
@@ -231,27 +274,34 @@ export const resolveInstantAreaMoveAutomation = ({
   script,
   user,
   targets,
+  damageFormula,
   fieldEffects,
   random,
 }: ResolveInstantAreaMoveAutomationInput): MoveAutomationTransaction => {
   const targetResolutions: Record<string, ReturnType<typeof defaultTargetResolutionState>> = {}
+  const userAccuracy = moveAutomationUserAccuracy(user)
   for (const target of targets) {
     const state = defaultTargetResolutionState(script)
     if (script.requiresAccuracy) {
       const targetEvasion = resolveMoveAutomationTargetEvasion(script, target)
       const accuracy = resolveMoveAutomationAccuracyRoll(script, randomD20(random), {
-        userAccuracy: moveAutomationUserAccuracy(user),
+        userAccuracy,
         targetEvasion: targetEvasion.value,
       })
       state.accuracyRoll = accuracy.accuracyRoll
       state.hit = accuracy.hit
       state.crit = accuracy.crit
     }
+    if (script.damaging && state.hit && damageFormula) state.damageRoll = rollDamageFormula(damageFormula, random)
     targetResolutions[target.id] = state
   }
 
   const enabledSuggestions: Record<string, boolean> = {}
   enableDefaultSuggestions(script, enabledSuggestions)
+  const conditionApplications = resolveAreaConditionApplications(script, targets, targetResolutions)
+  conditionApplications.targetIdsBySuggestion.forEach((targetIds, index) => {
+    if (targetIds.size) enabledSuggestions[moveAutomationSuggestionKey(script, 'condition', index)] = true
+  })
   const transaction = buildMoveAutomationTransaction({
     script,
     user,
@@ -264,8 +314,12 @@ export const resolveInstantAreaMoveAutomation = ({
     manualUserStageDeltas: emptyStageDeltas(),
     manualTargetStageDeltas: emptyStageDeltas(),
     hazardCells: [],
-    manualNote: '',
+    manualNote: conditionApplications.blockedNotes.join(' '),
     fieldEffects,
+    suggestionRecipientFilter: ({ kind, index, recipient, token }) => {
+      if (kind !== 'condition' || recipient !== 'target' || !conditionApplications.filteredSuggestionIndexes.has(index)) return true
+      return conditionApplications.targetIdsBySuggestion.get(index)?.has(token.id) ?? false
+    },
   })
 
   transaction.logLines.push(...formatAreaAccuracyLogLines(targets, targetResolutions))
