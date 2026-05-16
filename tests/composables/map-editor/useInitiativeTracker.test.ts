@@ -83,6 +83,32 @@ describe('useInitiativeTracker', () => {
     expect(tracker.sortedInitiativeRows.value.map((row) => row.id)).toEqual(['normal', 'paralyzed'])
   })
 
+  it('does not halve paralyzed Quick Feet users in initiative order', () => {
+    const map = ref<TabletopMap | null>(mapWithPlacements([
+      { id: 'quick-feet', sheetKind: 'pokemon', sheetSlug: 'quick-feet', position: { x: 0, y: 0, z: 0 }, initiative: 40 },
+    ]))
+    const tracker = useInitiativeTracker({
+      map,
+      spawnedPokemon: computed(() => [
+        token({
+          id: 'quick-feet',
+          sheetSlug: 'quick-feet',
+          species: 'Quick Feet',
+          conditions: ['Paralysis'],
+          abilityNames: ['Quick Feet'],
+        }),
+      ]),
+      pokemonBySlug: ref(new Map([['quick-feet', sheet('quick-feet')]])),
+      trainerBySlug: ref(new Map<string, TrainerSheet>()),
+      canManageInitiative: computed(() => true),
+    })
+
+    expect(tracker.initiativeRows.value[0]).toMatchObject({
+      initiative: 40,
+      initiativeScore: 40,
+    })
+  })
+
   it('stores Speed as the base initiative and applies conditions afterward', () => {
     const map = ref<TabletopMap | null>(mapWithPlacements([
       { id: 'paralyzed', sheetKind: 'pokemon', sheetSlug: 'paralyzed', position: { x: 0, y: 0, z: 0 } },

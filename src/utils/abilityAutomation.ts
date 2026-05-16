@@ -1,6 +1,7 @@
 import { normalizeCombatStages } from '~/utils/combatStages'
 import { isSheetActivatableAbility } from '~/utils/sheetAbilityActivation'
 import { resolveCanonicalSheetAbilityName, type SheetAbilityNameSource } from '~/utils/sheetAbilities'
+import { QUICK_FEET_ABILITY_NAME } from '~/utils/sheetConditionEffects'
 import type { AbilityAutomationCategory, AbilityAutomationTransaction } from '~/types/abilityAutomation'
 import type { SpawnedPokemon } from '~/types/pokemon'
 
@@ -24,9 +25,16 @@ export interface MapAbilityAutomationDefinition {
   readonly rangeMeters: number
 }
 
+export interface PassiveAbilityAutomationDefinition {
+  readonly name: string
+  readonly category: 'passive'
+  readonly label: string
+}
+
 export type AbilityAutomationDefinition =
   | SheetAbilityAutomationDefinition
   | MapAbilityAutomationDefinition
+  | PassiveAbilityAutomationDefinition
 
 const MAP_WIDE_RANGE_METERS = Number.POSITIVE_INFINITY
 
@@ -55,6 +63,17 @@ const MAP_ABILITY_AUTOMATIONS = new Map<string, MapAbilityAutomationDefinition>(
   ],
 ])
 
+const PASSIVE_ABILITY_AUTOMATIONS = new Map<string, PassiveAbilityAutomationDefinition>([
+  [
+    QUICK_FEET_ABILITY_NAME,
+    {
+      name: QUICK_FEET_ABILITY_NAME,
+      category: 'passive',
+      label: 'Auto',
+    },
+  ],
+])
+
 const sheetAbilityAutomationForName = (name: string): SheetAbilityAutomationDefinition => ({
   name,
   category: 'sheet',
@@ -76,10 +95,17 @@ export const getMapAbilityAutomation = (
   return canonicalName ? MAP_ABILITY_AUTOMATIONS.get(canonicalName) ?? null : null
 }
 
+export const getPassiveAbilityAutomation = (
+  ability: SheetAbilityNameSource,
+): PassiveAbilityAutomationDefinition | null => {
+  const canonicalName = resolveCanonicalSheetAbilityName(ability)
+  return canonicalName ? PASSIVE_ABILITY_AUTOMATIONS.get(canonicalName) ?? null : null
+}
+
 export const getAbilityAutomation = (
   ability: SheetAbilityNameSource,
 ): AbilityAutomationDefinition | null =>
-  getSheetAbilityAutomation(ability) ?? getMapAbilityAutomation(ability)
+  getSheetAbilityAutomation(ability) ?? getMapAbilityAutomation(ability) ?? getPassiveAbilityAutomation(ability)
 
 export const getAbilityAutomationCategory = (
   ability: SheetAbilityNameSource,

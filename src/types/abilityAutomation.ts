@@ -1,6 +1,6 @@
 import type { MoveAutomationCombatStageUpdate } from '~/types/moveAutomation'
 
-export type AbilityAutomationCategory = 'sheet' | 'map'
+export type AbilityAutomationCategory = 'sheet' | 'map' | 'passive'
 
 export interface AbilitySheetActivationUpdate {
   id: string

@@ -45,12 +45,13 @@ export function useTrainerSheetDerived(sheet: TrainerSheetRef) {
   const stats = computed(() => {
     if (!sheet.value) return []
     const conditions = combatConditions.value
+    const abilities = sheet.value.abilities
     return resolveTrainerStats(sheet.value).map((row) => {
       if (row.key === 'hp') return row
       return {
         ...row,
-        conditionStageModifier: conditionCombatStageModifier(conditions, row.key),
-        effectiveStage: conditionAdjustedCombatStage(row.stage, conditions, row.key),
+        conditionStageModifier: conditionCombatStageModifier(conditions, row.key, { abilities }),
+        effectiveStage: conditionAdjustedCombatStage(row.stage, conditions, row.key, { abilities }),
       }
     })
   })
@@ -97,11 +98,13 @@ export function useTrainerSheetDerived(sheet: TrainerSheetRef) {
         sheet.value?.stats?.atk?.stage ?? sheet.value?.combatStages?.atk ?? 0,
         combatConditions.value,
         'atk',
+        { abilities: sheet.value?.abilities },
       ),
       specialAttackStage: conditionAdjustedCombatStage(
         sheet.value?.stats?.satk?.stage ?? sheet.value?.combatStages?.satk ?? 0,
         combatConditions.value,
         'satk',
+        { abilities: sheet.value?.abilities },
       ),
       abilities: sheet.value?.abilities,
       combatSkillRankValue: combatSkillRankValue.value,
@@ -129,6 +132,7 @@ export function useTrainerSheetDerived(sheet: TrainerSheetRef) {
           combatStage: sheet.value?.stats?.spd?.stage ?? sheet.value?.combatStages?.spd,
           bonus: speedBonus,
           conditions,
+          abilities: sheet.value?.abilities,
           statStageKey: 'spd',
           kind: 'speed',
           applyCombatStages: false,
@@ -141,6 +145,7 @@ export function useTrainerSheetDerived(sheet: TrainerSheetRef) {
           combatStage: sheet.value?.stats?.def?.stage ?? sheet.value?.combatStages?.def,
           bonus: physicalBonus,
           conditions,
+          abilities: sheet.value?.abilities,
           statStageKey: 'def',
           kind: 'physical',
           applyCombatStages: false,
@@ -153,6 +158,7 @@ export function useTrainerSheetDerived(sheet: TrainerSheetRef) {
           combatStage: sheet.value?.stats?.sdef?.stage ?? sheet.value?.combatStages?.sdef,
           bonus: specialBonus,
           conditions,
+          abilities: sheet.value?.abilities,
           statStageKey: 'sdef',
           kind: 'special',
           applyCombatStages: false,
@@ -166,12 +172,16 @@ export function useTrainerSheetDerived(sheet: TrainerSheetRef) {
   const hpThresholds = computed(() => computeHpThresholds(fullMaxHp.value))
   const conditionEffects = computed(() => describeSheetConditionEffects(
     combatConditions.value,
-    { tickValue: tickValue.value },
+    { tickValue: tickValue.value, abilities: sheet.value?.abilities },
   ))
   const equippedItemNames = computed(() => sheet.value ? trainerEquippedItemNames(sheet.value) : [])
   const initiativeItemBonus = computed(() => sheetItemsInitiativeBonus(equippedItemNames.value))
   const initiative = computed(() =>
-    conditionAdjustedInitiative(totalRow('spd') + initiativeItemBonus.value, combatConditions.value),
+    conditionAdjustedInitiative(
+      totalRow('spd') + initiativeItemBonus.value,
+      combatConditions.value,
+      { abilities: sheet.value?.abilities },
+    ),
   )
 
   const statPointsSpent = computed(() =>

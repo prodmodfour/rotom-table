@@ -108,6 +108,37 @@ describe('useAbilityAutomationPanel', () => {
     ])
   })
 
+  it('does not treat passive ability automation as a manual use action', async () => {
+    const map = ref(mapFixture())
+    const calls: string[] = []
+    const pokemonSheet = {
+      slug: 'bolt',
+      nickname: 'Bolt',
+      species: 'Jolteon',
+      level: 5,
+      abilities: [{ name: 'Quick Feet' }],
+    } as CharacterSheet
+    const panel = useAbilityAutomationPanel({
+      map,
+      spawnedPokemon: computed(() => [spawned('user-token', { conditions: ['Paralysis'] })]),
+      pokemonBySlug: ref(new Map([[pokemonSheet.slug, pokemonSheet]])),
+      trainerBySlug: ref(new Map<string, TrainerSheet>()),
+      canControlPlacement: (id) => id === 'user-token',
+      modifyCombatStages: (update) => { calls.push(`stages:${update.id}:${update.stages.spd}`) },
+      modifyAbilityActivation: (update) => { calls.push(`ability:${update.id}:${update.abilityName}:${update.activated}`) },
+      now: () => 111,
+    })
+
+    expect(panel.tokenAbilityOptionsById.value['user-token']).toMatchObject([
+      { name: 'Quick Feet', automation: { category: 'passive', label: 'Auto' } },
+    ])
+
+    await panel.openAbilityAutomation({ id: 'user-token', abilityName: 'Quick Feet' })
+
+    expect(calls).toEqual([])
+    expect(map.value.metadata?.abilityLog).toBeUndefined()
+  })
+
   it('applies self map abilities immediately', async () => {
     const map = ref(mapFixture())
     const calls: string[] = []

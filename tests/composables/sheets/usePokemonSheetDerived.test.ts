@@ -210,6 +210,31 @@ describe('usePokemonSheetDerived', () => {
     ]))
   })
 
+  it('applies Quick Feet speed and paralysis initiative automation while statused', () => {
+    const sheet = ref<CharacterSheet | null>(makeSheet({
+      combat: { conditions: ['Paralysis'], evasion: { vsAnyBonus: 0 } },
+      items: {},
+      abilities: [{ name: 'Quick Feet' }],
+    }))
+    const derived = usePokemonSheetDerived(sheet)
+
+    expect(derived.stats.value.find((row) => row.key === 'spd')).toMatchObject({
+      conditionStageModifier: 2,
+      effectiveStage: 2,
+    })
+    expect(derived.initiative.value).toBe(derived.speedTotal.value)
+    expect(derived.conditionEffects.value).toEqual(expect.arrayContaining([
+      expect.objectContaining({ label: 'Quick Feet' }),
+    ]))
+
+    sheet.value!.combat!.conditions = []
+
+    expect(derived.stats.value.find((row) => row.key === 'spd')).toMatchObject({
+      conditionStageModifier: 0,
+      effectiveStage: 0,
+    })
+  })
+
   it('adds Sand Veil to every evasion total and increases it while activated', () => {
     const sheet = ref<CharacterSheet | null>(makeSheet({
       combat: { evasion: { vsAtkBonus: 0, vsSatkBonus: 0, vsAnyBonus: 0 } },

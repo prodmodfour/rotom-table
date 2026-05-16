@@ -161,7 +161,11 @@ export const useInitiativeTracker = ({
         speed,
         baseInitiative,
         initiativeItemBonus,
-        initiativeScore: conditionAdjustedInitiative(initiative ?? baseInitiative, pokemon.conditions),
+        initiativeScore: conditionAdjustedInitiative(
+          initiative ?? baseInitiative,
+          pokemon.conditions,
+          { abilities: pokemon.abilityNames },
+        ),
       }
     })
   })

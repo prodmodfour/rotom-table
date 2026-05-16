@@ -73,12 +73,13 @@ export function usePokemonSheetDerived(sheet: PokemonSheetRef) {
   const stats = computed(() => {
     if (!sheet.value) return []
     const conditions = combatConditions.value
+    const abilities = sheet.value.abilities
     return resolveStats(sheet.value).map((row) => {
       if (row.key === 'hp') return row
       return {
         ...row,
-        conditionStageModifier: conditionCombatStageModifier(conditions, row.key),
-        effectiveStage: conditionAdjustedCombatStage(row.stage, conditions, row.key),
+        conditionStageModifier: conditionCombatStageModifier(conditions, row.key, { abilities }),
+        effectiveStage: conditionAdjustedCombatStage(row.stage, conditions, row.key, { abilities }),
       }
     })
   })
@@ -118,11 +119,15 @@ export function usePokemonSheetDerived(sheet: PokemonSheetRef) {
   const tickValue = computed(() => computeTickValue(fullMaxHp.value))
   const conditionEffects = computed(() => describeSheetConditionEffects(
     combatConditions.value,
-    { tickValue: tickValue.value },
+    { tickValue: tickValue.value, abilities: sheet.value?.abilities },
   ))
   const initiativeItemBonus = computed(() => heldItemInitiativeBonus(sheet.value?.items?.held))
   const initiative = computed(() =>
-    conditionAdjustedInitiative(speedTotal.value + initiativeItemBonus.value, combatConditions.value),
+    conditionAdjustedInitiative(
+      speedTotal.value + initiativeItemBonus.value,
+      combatConditions.value,
+      { abilities: sheet.value?.abilities },
+    ),
   )
 
   const setCurrentHp = (value: unknown) => {
@@ -183,6 +188,7 @@ export function usePokemonSheetDerived(sheet: PokemonSheetRef) {
           combatStage: sheet.value?.stats?.def?.stage,
           bonus: vsAtkBonus + abilityBonus,
           conditions,
+          abilities: sheet.value?.abilities,
           statStageKey: 'def',
           kind: 'physical',
           applyCombatStages: false,
@@ -196,6 +202,7 @@ export function usePokemonSheetDerived(sheet: PokemonSheetRef) {
           combatStage: sheet.value?.stats?.sdef?.stage,
           bonus: vsSatkBonus + abilityBonus,
           conditions,
+          abilities: sheet.value?.abilities,
           statStageKey: 'sdef',
           kind: 'special',
           applyCombatStages: false,
@@ -209,6 +216,7 @@ export function usePokemonSheetDerived(sheet: PokemonSheetRef) {
           combatStage: sheet.value?.stats?.spd?.stage,
           bonus: vsAnyBonus + abilityBonus + vsAnyItemBonus,
           conditions,
+          abilities: sheet.value?.abilities,
           statStageKey: 'spd',
           kind: 'speed',
           applyCombatStages: false,
@@ -244,11 +252,13 @@ export function usePokemonSheetDerived(sheet: PokemonSheetRef) {
         sheet.value?.stats?.atk?.stage ?? 0,
         combatConditions.value,
         'atk',
+        { abilities: sheet.value?.abilities },
       ),
       specialAttackStage: conditionAdjustedCombatStage(
         sheet.value?.stats?.satk?.stage ?? 0,
         combatConditions.value,
         'satk',
+        { abilities: sheet.value?.abilities },
       ),
       abilities: sheet.value?.abilities,
       combatSkillRankValue: combatSkillRankValue.value,

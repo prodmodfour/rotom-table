@@ -2,10 +2,12 @@ import { applyCombatStageToStat } from '~/utils/combatStageStats'
 import { computeEvasionTotal, computeStatEvasion } from '~/utils/evasion'
 import {
   conditionAccuracyModifier,
+  conditionAdjustedCombatStage,
   evasionSuppressedByCondition,
   speedEvasionSuppressedByCondition,
 } from '~/utils/sheetConditionEffects'
 import { heldItemsAccuracyRollBonus } from '~/utils/sheetHeldItemEffects'
+import type { CombatStatStageKey } from '~/types/combatStages'
 import type { MoveAutomationScript } from '~/types/moveAutomation'
 import type { SpawnedPokemon } from '~/types/pokemon'
 
@@ -25,30 +27,35 @@ export interface MoveAutomationEvasionResolution {
 }
 
 const evasionForStat = (
+  target: SpawnedPokemon,
+  key: CombatStatStageKey,
   stat: number | null | undefined,
   stage: number | null | undefined,
   bonus: number | null | undefined,
 ): number => computeEvasionTotal(
-  computeStatEvasion(applyCombatStageToStat(stat ?? 0, stage ?? 0)),
+  computeStatEvasion(applyCombatStageToStat(
+    stat ?? 0,
+    conditionAdjustedCombatStage(stage ?? 0, target.conditions, key, { abilities: target.abilityNames }),
+  )),
   bonus ?? 0,
 )
 
 const physicalEvasion = (target: SpawnedPokemon): MoveAutomationEvasionCandidate => ({
   kind: 'physical',
   label: 'Physical Evasion',
-  value: evasionForStat(target.def, target.combatStages.def, target.evasion?.physical),
+  value: evasionForStat(target, 'def', target.def, target.combatStages.def, target.evasion?.physical),
 })
 
 const specialEvasion = (target: SpawnedPokemon): MoveAutomationEvasionCandidate => ({
   kind: 'special',
   label: 'Special Evasion',
-  value: evasionForStat(target.sdef, target.combatStages.sdef, target.evasion?.special),
+  value: evasionForStat(target, 'sdef', target.sdef, target.combatStages.sdef, target.evasion?.special),
 })
 
 const speedEvasion = (target: SpawnedPokemon): MoveAutomationEvasionCandidate => ({
   kind: 'speed',
   label: 'Speed Evasion',
-  value: evasionForStat(target.spd ?? 0, target.combatStages.spd, target.evasion?.speed),
+  value: evasionForStat(target, 'spd', target.spd ?? 0, target.combatStages.spd, target.evasion?.speed),
 })
 
 export const moveAutomationEvasionCandidates = (

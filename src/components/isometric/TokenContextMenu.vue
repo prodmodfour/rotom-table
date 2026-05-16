@@ -44,6 +44,9 @@ const moves = computed(() => props.moves ?? [])
 const abilities = computed(() => props.abilities ?? [])
 const sendOutOptions = computed(() => props.sendOutOptions ?? [])
 
+const abilityCanBeUsed = (ability: TokenAbilityMenuOption): boolean =>
+  ability.automation != null && ability.automation.category !== 'passive'
+
 const createSubmenuTooltipController = <TItem extends NamedMenuItem>(options: {
   panel: ActiveContextPanel
   items: ComputedRef<TItem[]>
@@ -367,16 +370,16 @@ watch(abilities, (nextAbilities) => {
               class="action-submenu__item"
               :class="{
                 'is-active': hoveredAbilityName === ability.name,
-                'is-disabled': !ability.automation,
+                'is-disabled': !abilityCanBeUsed(ability),
               }"
               role="menuitem"
-              :aria-disabled="!ability.automation"
+              :aria-disabled="!abilityCanBeUsed(ability)"
               :aria-describedby="hoveredAbilityName === ability.name && hoveredAbilityTooltipDetail && isAbilityTooltipVisible ? abilityTooltipId : undefined"
               @pointerenter="showAbilityTooltip(ability.name, $event)"
               @pointerleave="hideAbilityTooltip"
               @focus="showAbilityTooltip(ability.name, $event)"
               @blur="hideAbilityTooltip"
-              @click.stop="ability.automation && emit('use-ability', ability.name)"
+              @click.stop="abilityCanBeUsed(ability) && emit('use-ability', ability.name)"
             >
               <span class="action-submenu__name">{{ ability.name }}</span>
               <span class="action-submenu__badges">
@@ -650,7 +653,8 @@ watch(abilities, (nextAbilities) => {
 
 .action-submenu__badge--stab,
 .action-submenu__badge--active,
-.action-submenu__badge--sheet {
+.action-submenu__badge--sheet,
+.action-submenu__badge--passive {
   color: var(--accent);
 }
 

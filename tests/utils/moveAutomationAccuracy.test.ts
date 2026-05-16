@@ -76,6 +76,17 @@ describe('move automation accuracy helpers', () => {
     })
   })
 
+  it('applies Quick Feet to statused target Speed Evasion', () => {
+    expect(resolveMoveAutomationTargetEvasion(script('Special'), token({
+      spd: 20,
+      conditions: ['Paralysis'],
+      abilityNames: ['Quick Feet'],
+    }))).toMatchObject({
+      value: 5,
+      label: 'Speed Evasion',
+    })
+  })
+
   it('suppresses evasion when conditions forbid it and exposes condition-adjusted user accuracy', () => {
     expect(resolveMoveAutomationTargetEvasion(script('Physical'), token({ conditions: ['Vulnerable'] }))).toMatchObject({
       value: 0,

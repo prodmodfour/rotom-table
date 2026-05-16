@@ -52,6 +52,7 @@ describe('ability automation helpers', () => {
     expect(getAbilityAutomationCategory('Sand Veil')).toBe('sheet')
     expect(getAbilityAutomationCategory(INTIMIDATE_ABILITY_NAME)).toBe('map')
     expect(getAbilityAutomationCategory(MOXIE_ABILITY_NAME)).toBe('map')
+    expect(getAbilityAutomationCategory('Quick Feet')).toBe('passive')
     expect(getAbilityAutomationCategory('Run Away')).toBeNull()
   })
 

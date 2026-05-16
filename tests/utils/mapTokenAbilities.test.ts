@@ -12,6 +12,7 @@ describe('map token ability menu options', () => {
       { name: 'Sand Veil', activated: true },
       { name: 'Intimidate' },
       { name: 'Moxie' },
+      { name: 'Quick Feet' },
       { name: 'Run Away' },
     ])
 
@@ -19,6 +20,7 @@ describe('map token ability menu options', () => {
       { name: 'Sand Veil', automation: { category: 'sheet', label: 'Sheet' }, activated: true },
       { name: 'Intimidate', automation: { category: 'map', label: 'Map' }, activated: false },
       { name: 'Moxie', automation: { category: 'map', label: 'Self' }, activated: false },
+      { name: 'Quick Feet', automation: { category: 'passive', label: 'Auto' }, activated: false },
       { name: 'Run Away', automation: null, activated: false },
     ])
   })

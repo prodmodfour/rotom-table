@@ -210,6 +210,7 @@ export const useAbilityAutomationPanel = ({
     if (!user || !option?.automation) return
 
     activeAbilityTargeting.value = null
+    if (option.automation.category === 'passive') return
     if (option.automation.category === 'sheet') {
       if (!option.activated) await activateSheetAbility(user, option)
       return
