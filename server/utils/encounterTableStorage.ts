@@ -46,7 +46,7 @@ export const defaultEncounterTable = (name = DEFAULT_ENCOUNTER_TABLE_NAME): Enco
   name,
   min_level: 1,
   max_level: 5,
-  entries: [[100, 'Pidgey']],
+  entries: [{ ceiling: 100, species: 'Pidgey', min_level: 1, max_level: 5 }],
 })
 
 export const ensureEncounterTablesRoot = (root = ENCOUNTER_TABLES_ROOT): void => {
@@ -206,6 +206,21 @@ export const moveEncounterTableFile = (
   return {
     entry: { region: toFolder, key, table: readEncounterTableJsonFile(destinationPath) },
     path: relativeToProjectRoot(destinationPath),
+  }
+}
+
+export const writeEncounterTableStorageFile = (
+  folder: string,
+  key: string,
+  table: EncounterTable,
+  root = ENCOUNTER_TABLES_ROOT,
+): EncounterTableStorageResult | null => {
+  const filePath = encounterTablePath(root, folder, key)
+  if (!existsSync(filePath)) return null
+  writeJsonFile(filePath, table)
+  return {
+    entry: { region: folder, key, table },
+    path: relativeToProjectRoot(filePath),
   }
 }
 

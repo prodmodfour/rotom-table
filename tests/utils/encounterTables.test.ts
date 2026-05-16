@@ -3,6 +3,7 @@ import {
   countEncounterRegionTables,
   encounterRegionsForEntries,
   encounterTableEntryId,
+  describeEntries,
   filterEncounterTablesByRegion,
   findEncounterTableInEntries,
   firstEncounterTable,
@@ -43,6 +44,21 @@ describe('encounter table browser helpers', () => {
     expect(findEncounterTableInEntries(entries, 'thickerby_vale', 'river')).toBe(entries[1])
     expect(findEncounterTableInEntries(entries, null, 'river')).toBeNull()
     expect(findEncounterTableInEntries(entries, 'missing', 'river')).toBeNull()
+  })
+
+  it('describes entries with per-row level ranges', () => {
+    expect(describeEntries({
+      name: 'Mixed',
+      min_level: 2,
+      max_level: 6,
+      entries: [
+        [25, 'Pidgey'],
+        { ceiling: 100, species: 'Oddish', min_level: 8, max_level: 10 },
+      ],
+    })).toEqual([
+      { range: '01–25', percent: 25, species: 'Pidgey', minLevel: 2, maxLevel: 6, levelRange: 'Lv 2–6' },
+      { range: '26–100', percent: 75, species: 'Oddish', minLevel: 8, maxLevel: 10, levelRange: 'Lv 8–10' },
+    ])
   })
 
   it('groups all entries by region when no query is provided', () => {

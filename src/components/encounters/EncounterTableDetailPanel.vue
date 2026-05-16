@@ -1,28 +1,73 @@
 <script setup lang="ts">
+import { ref, watch } from 'vue'
 import { encounterGeneratorTablePath } from '~/utils/encounterRoutes'
 import type { DisplayedEncounterRow } from '~/utils/encounterTables'
-import type { EncounterTableEntry } from '~/types/encounterTable'
+import type { EncounterTable, EncounterTableEntry } from '~/types/encounterTable'
 
-defineProps<{
+const props = withDefaults(defineProps<{
   selectedEntry: EncounterTableEntry | null
   selectedRows: DisplayedEncounterRow[]
-}>()
+  canManage?: boolean
+  saving?: boolean
+  saveError?: string | null
+  saveTable?: (entry: EncounterTableEntry, table: EncounterTable) => Promise<boolean>
+}>(), {
+  canManage: false,
+  saving: false,
+  saveError: null,
+  saveTable: undefined,
+})
+
+const editing = ref(false)
+
+watch(
+  () => props.selectedEntry ? `${props.selectedEntry.region}/${props.selectedEntry.key}` : null,
+  () => {
+    editing.value = false
+  },
+)
+
+const saveEditedTable = async (table: EncounterTable) => {
+  if (!props.selectedEntry || !props.saveTable) return
+  const saved = await props.saveTable(props.selectedEntry, table)
+  if (saved) editing.value = false
+}
 </script>
 
 <template>
   <main class="encounter-detail">
     <article v-if="selectedEntry" class="panel-card">
       <EncounterTableDetailHeader :selected-entry="selectedEntry" />
-      <EncounterTableRollList :rows="selectedRows" />
 
-      <footer class="detail-actions">
-        <NuxtLink
-          :to="encounterGeneratorTablePath(selectedEntry.region, selectedEntry.key)"
-          class="cta-link"
-        >
-          Roll on this table →
-        </NuxtLink>
-      </footer>
+      <EncounterTableEditForm
+        v-if="editing"
+        :table="selectedEntry.table"
+        :saving="saving"
+        :error="saveError"
+        @save="saveEditedTable"
+        @cancel="editing = false"
+      />
+
+      <template v-else>
+        <EncounterTableRollList :rows="selectedRows" />
+
+        <footer class="detail-actions">
+          <button
+            v-if="canManage"
+            type="button"
+            class="secondary-button"
+            @click="editing = true"
+          >
+            Edit table
+          </button>
+          <NuxtLink
+            :to="encounterGeneratorTablePath(selectedEntry.region, selectedEntry.key)"
+            class="cta-link"
+          >
+            Roll on this table →
+          </NuxtLink>
+        </footer>
+      </template>
     </article>
 
     <section v-else class="panel-card panel-card--empty">
@@ -46,7 +91,7 @@ defineProps<{
 
 .panel-card {
   width: 100%;
-  max-width: 720px;
+  max-width: 760px;
   border: 1px solid var(--rule);
   border-radius: 14px;
   background: var(--paper-soft);
@@ -69,9 +114,12 @@ code {
   margin-top: 1.2rem;
   display: flex;
   justify-content: flex-end;
+  gap: 0.6rem;
+  flex-wrap: wrap;
 }
 
-.cta-link {
+.cta-link,
+.secondary-button {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
@@ -82,13 +130,27 @@ code {
   color: var(--accent);
   text-decoration: none;
   letter-spacing: 0.04em;
+  font: inherit;
   font-weight: 600;
+  cursor: pointer;
   transition: background 0.15s ease, color 0.15s ease;
 }
 
-.cta-link:hover {
+.secondary-button {
+  border-color: var(--rule);
+  background: var(--paper-soft);
+  color: var(--ink);
+}
+
+.cta-link:hover,
+.secondary-button:hover {
   background: rgba(250, 189, 47, 0.22);
   color: var(--ink-bright);
+}
+
+.secondary-button:hover {
+  border-color: var(--rule-strong);
+  background: var(--paper-hover);
 }
 
 @media (max-width: 1040px) {

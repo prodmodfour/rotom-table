@@ -12,6 +12,7 @@ defineProps<{
       <span class="entry-roll">Roll</span>
       <span class="entry-pct">%</span>
       <span class="entry-species">Species</span>
+      <span class="entry-levels">Levels</span>
     </div>
     <div
       v-for="(row, index) in rows"
@@ -21,6 +22,7 @@ defineProps<{
       <span class="entry-roll">{{ row.range }}</span>
       <span class="entry-pct">{{ row.percent }}%</span>
       <span class="entry-species">{{ row.species }}</span>
+      <span class="entry-levels">{{ row.levelRange }}</span>
     </div>
   </div>
 </template>
@@ -35,7 +37,7 @@ defineProps<{
 
 .entry-row {
   display: grid;
-  grid-template-columns: 6.5rem 4rem 1fr;
+  grid-template-columns: 6.5rem 4rem minmax(0, 1fr) 6.5rem;
   align-items: baseline;
   gap: 0.6rem;
   padding: 0.45rem 0.65rem;
@@ -69,7 +71,8 @@ defineProps<{
   font-weight: 600;
 }
 
-.entry-pct {
+.entry-pct,
+.entry-levels {
   color: var(--ink-soft);
   font-size: 0.85rem;
 }
@@ -79,5 +82,19 @@ defineProps<{
   font-family: var(--font-book);
   font-size: 1.02rem;
   letter-spacing: 0.02em;
+}
+
+@media (max-width: 640px) {
+  .entry-row {
+    grid-template-columns: 5.5rem 3rem 1fr;
+  }
+
+  .entry-levels {
+    grid-column: 3;
+  }
+
+  .entry-row--head .entry-levels {
+    display: none;
+  }
 }
 </style>

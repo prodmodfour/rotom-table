@@ -27,6 +27,9 @@ const {
   selectedEntry,
   selectedRows,
   selectEntry,
+  savingTable,
+  saveError,
+  saveSelectedTable,
   drag,
   hoverTarget,
   canDropOn,
@@ -120,6 +123,10 @@ const {
       <EncounterTableDetailPanel
         :selected-entry="selectedEntry"
         :selected-rows="selectedRows"
+        :can-manage="canManage"
+        :saving="savingTable"
+        :save-error="saveError"
+        :save-table="saveSelectedTable"
       />
     </div>
 

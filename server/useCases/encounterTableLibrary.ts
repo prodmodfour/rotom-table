@@ -1,3 +1,10 @@
+import {
+  clampEncounterCeiling,
+  clampEncounterLevel,
+  normalizeEncounterLevelRange,
+  normalizeEncounterTableRollEntry,
+  serializeEncounterTableRollEntry,
+} from '#shared/encounterTables'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 import {
   createEncounterTableFile,
@@ -10,13 +17,14 @@ import {
   moveEncounterTableFolder,
   renameEncounterTableFile,
   sanitizeEncounterTableFolderPath,
+  writeEncounterTableStorageFile,
   sanitizeEncounterTableKey,
   type EncounterFolderDeleteResult,
   type EncounterFolderMoveResult,
   type EncounterFolderStorageResult,
   type EncounterTableStorageResult,
 } from '../utils/encounterTableStorage'
-import type { EncounterTableEntry } from '~/types/encounterTable'
+import type { EncounterTable, EncounterTableEntry } from '~/types/encounterTable'
 
 export class EncounterTableLibraryUseCaseError extends UseCaseHttpError<400 | 404 | 409> {}
 
@@ -52,6 +60,12 @@ export interface RenameEncounterTableInput {
   region?: unknown
   key?: unknown
   name?: unknown
+}
+
+export interface SaveEncounterTableInput {
+  region?: unknown
+  key?: unknown
+  table?: unknown
 }
 
 export interface DeleteEncounterTableInput {
@@ -94,6 +108,7 @@ export interface EncounterTableLibraryDependencies {
   moveTable?: (fromFolder: string, key: string, toFolder: string) => EncounterTableStorageResult | null
   moveFolder?: (from: string, to: string) => EncounterFolderMoveResult | null
   renameTable?: (folder: string, key: string, name: string) => EncounterTableStorageResult | null
+  saveTable?: (folder: string, key: string, table: EncounterTable) => EncounterTableStorageResult | null
   deleteTable?: (folder: string, key: string) => EncounterTableStorageResult | null
   deleteFolder?: (folder: string) => EncounterFolderDeleteResult | null
   sanitizeFolder?: (folder: string, allowEmpty: boolean) => string
@@ -150,6 +165,51 @@ export const normalizeEncounterTableName = (value: unknown): string => {
     throw new EncounterTableLibraryUseCaseError(400, 'name too long (max 80 chars)')
   }
   return name
+}
+
+const recordFromUnknown = (value: unknown, label: string): Record<string, unknown> => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new EncounterTableLibraryUseCaseError(400, `${label} must be an object`)
+  }
+  return value as Record<string, unknown>
+}
+
+export const normalizeEncounterTableForSave = (value: unknown): EncounterTable => {
+  const table = recordFromUnknown(value, 'table')
+  const name = normalizeEncounterTableName(table.name)
+  const fallback = normalizeEncounterLevelRange(table.min_level, table.max_level, {
+    min_level: 1,
+    max_level: 5,
+  })
+  const rawEntries = table.entries
+  if (!Array.isArray(rawEntries) || rawEntries.length === 0) {
+    throw new EncounterTableLibraryUseCaseError(400, 'table.entries must contain at least one row')
+  }
+
+  let previousCeiling = 0
+  const entries = rawEntries.map((rawEntry, index) => {
+    const entry = normalizeEncounterTableRollEntry(rawEntry, fallback)
+    if (!entry.species) {
+      throw new EncounterTableLibraryUseCaseError(400, `Row ${index + 1}: species is required`)
+    }
+    if (entry.ceiling <= previousCeiling) {
+      throw new EncounterTableLibraryUseCaseError(400, `Row ${index + 1}: ceiling must be greater than the previous row`)
+    }
+    previousCeiling = entry.ceiling
+    return serializeEncounterTableRollEntry(entry)
+  })
+
+  const last = entries[entries.length - 1]
+  if (clampEncounterCeiling(last?.ceiling) !== 100) {
+    throw new EncounterTableLibraryUseCaseError(400, 'Encounter table chances must add up to 100%')
+  }
+
+  return {
+    name,
+    min_level: Math.min(...entries.map((entry) => clampEncounterLevel(entry.min_level))),
+    max_level: Math.max(...entries.map((entry) => clampEncounterLevel(entry.max_level))),
+    entries,
+  }
 }
 
 export const listEncounterTablesUseCase = (
@@ -260,6 +320,27 @@ export const renameEncounterTableUseCase = (
 
   try {
     const result = renameTable(folder, key, name)
+    if (!result) throw new EncounterTableLibraryUseCaseError(404, `Encounter table ${folder}/${key}.json not found`)
+    return { ok: true, entry: result.entry, path: result.path }
+  } catch (err) {
+    if (err instanceof EncounterTableLibraryUseCaseError) throw err
+    throw normalizeStorageError(err)
+  }
+}
+
+export const saveEncounterTableUseCase = (
+  input: SaveEncounterTableInput,
+  dependencies: EncounterTableLibraryDependencies = {},
+): EncounterTableMutationResult => {
+  const sanitizeFolder = dependencies.sanitizeFolder ?? sanitizeEncounterTableFolderPath
+  const sanitizeKey = dependencies.sanitizeKey ?? sanitizeEncounterTableKey
+  const saveTable = dependencies.saveTable ?? writeEncounterTableStorageFile
+  const folder = normalizeEncounterTableFolder(input.region, { allowEmpty: true, label: 'region' }, sanitizeFolder)
+  const key = normalizeEncounterTableKey(input.key, sanitizeKey)
+  const table = normalizeEncounterTableForSave(input.table)
+
+  try {
+    const result = saveTable(folder, key, table)
     if (!result) throw new EncounterTableLibraryUseCaseError(404, `Encounter table ${folder}/${key}.json not found`)
     return { ok: true, entry: result.entry, path: result.path }
   } catch (err) {

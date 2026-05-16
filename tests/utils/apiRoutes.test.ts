@@ -51,6 +51,7 @@ describe('API route constants', () => {
       generate: '/api/encounters/generate',
       create: '/api/encounters/create',
       createFolder: '/api/encounters/create-folder',
+      save: '/api/encounters/save',
       move: '/api/encounters/move',
       moveFolder: '/api/encounters/move-folder',
       rename: '/api/encounters/rename',

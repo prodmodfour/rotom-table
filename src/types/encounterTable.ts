@@ -1,3 +1,6 @@
+import type { EncounterTableRollEntry } from '#shared/encounterTables'
+export type { EncounterTableRollEntry, NormalizedEncounterTableRollEntry } from '#shared/encounterTables'
+
 /**
  * Shape of an encounter table JSON in ``encounter_tables/<region>/<table>.json``.
  *
@@ -12,11 +15,12 @@ export interface EncounterTable {
   /** Inclusive maximum level for rolled encounters. */
   max_level: number
   /**
-   * Cumulative roll table. Each entry is ``[ceiling, species]`` where
+   * Cumulative roll table. Legacy entries are ``[ceiling, species]`` tuples.
+   * Edited entries may be objects with per-Pokémon ``min_level`` / ``max_level``.
    * ``ceiling`` is the upper bound of a 1–100 roll that selects this species.
    * Entries should be sorted ascending and the last ceiling should be 100.
    */
-  entries: Array<[number, string]>
+  entries: EncounterTableRollEntry[]
 }
 
 /** A single rolled encounter (species + level). */

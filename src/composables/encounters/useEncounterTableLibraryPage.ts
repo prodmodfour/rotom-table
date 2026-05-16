@@ -9,7 +9,7 @@ import { useLibraryGridView } from '~/composables/library/useLibraryGridView'
 import { useApiClient } from '~/composables/useApiClient'
 import { useAuth } from '~/composables/useAuth'
 import { useWindowKeydown } from '~/composables/useWindowKeydown'
-import type { EncounterTableEntry } from '~/types/encounterTable'
+import type { EncounterTable, EncounterTableEntry } from '~/types/encounterTable'
 import {
   useEncounterTableLibraryActions,
   type EncounterTableContextTarget,
@@ -18,6 +18,7 @@ import {
 import { useEncounterTableLibraryCreation } from '~/composables/encounters/useEncounterTableLibraryCreation'
 import { useEncounterTableLibraryData } from '~/composables/encounters/useEncounterTableLibraryData'
 import { ENCOUNTER_API_PATHS } from '~/utils/apiRoutes'
+import { getErrorMessage } from '~/utils/errorMessages'
 import { buildEncounterTableFolderSet, countFilteredEncounterTables, encounterTableFolder, encounterTableLibraryKey, filterVisibleEncounterTables } from '~/utils/encounterTableLibrary'
 import { describeEntries, formatRegionLabel } from '~/utils/encounterTables'
 import { ENCOUNTER_TABLES_PATH } from '~/utils/encounterRoutes'
@@ -72,6 +73,8 @@ export const useEncounterTableLibraryPage = () => {
 
   const selectedRows = computed(() => selectedEntry.value ? describeEntries(selectedEntry.value.table) : [])
   const activeSelectedId = computed(() => selectedEntry.value ? encounterTableLibraryKey(selectedEntry.value) : null)
+  const savingTable = ref(false)
+  const saveError = ref<string | null>(null)
 
   const selectEntry = (entry: EncounterTableEntry) => {
     selectedId.value = encounterTableLibraryKey(entry)
@@ -95,6 +98,30 @@ export const useEncounterTableLibraryPage = () => {
       selectEntry(entry)
     },
   })
+
+  const saveSelectedTable = async (entry: EncounterTableEntry, table: EncounterTable): Promise<boolean> => {
+    if (!canManage.value || savingTable.value) return false
+
+    savingTable.value = true
+    saveError.value = null
+    try {
+      const result = await postJson<{ ok: true; entry: EncounterTableEntry }>(ENCOUNTER_API_PATHS.save, {
+        region: entry.region,
+        key: entry.key,
+        table,
+      })
+      const oldId = encounterTableLibraryKey(entry)
+      tables.delete(oldId)
+      tables.set(encounterTableLibraryKey(result.entry), result.entry)
+      selectedId.value = encounterTableLibraryKey(result.entry)
+      return true
+    } catch (err: unknown) {
+      saveError.value = getErrorMessage(err)
+      return false
+    } finally {
+      savingTable.value = false
+    }
+  }
 
   const tableActions = useEncounterTableLibraryActions({
     currentPath,
@@ -201,6 +228,9 @@ export const useEncounterTableLibraryPage = () => {
     selectedEntry,
     selectedRows,
     selectEntry,
+    savingTable,
+    saveError,
+    saveSelectedTable,
     drag,
     hoverTarget,
     canDropOn,

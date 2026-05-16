@@ -57,7 +57,14 @@ describe('useEncounterTableBrowser', () => {
     expect(browser.selectedRegion.value).toBe('beta_region')
     expect(browser.selectedKey.value).toBe('lake')
     expect(browser.selectedEntry.value).toBe(entries[2])
-    expect(browser.selectedRows.value).toEqual([{ range: '01–100', percent: 100, species: 'Magikarp' }])
+    expect(browser.selectedRows.value).toEqual([{
+      range: '01–100',
+      percent: 100,
+      species: 'Magikarp',
+      minLevel: 6,
+      maxLevel: 10,
+      levelRange: 'Lv 6–10',
+    }])
   })
 
   it('handles an empty table collection', () => {

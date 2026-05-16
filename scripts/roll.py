@@ -12,7 +12,11 @@ Tables are JSON files in encounter_tables/<region>/<table>.json with shape:
       "name": str,
       "min_level": int,
       "max_level": int,
-      "entries": [[ceiling, species], ...]
+      "entries": [
+        [ceiling, species],
+        [ceiling, species, min_level, max_level],
+        {"ceiling": int, "species": str, "min_level": int, "max_level": int}
+      ]
     }
 """
 
@@ -27,7 +31,11 @@ ROOT = Path(__file__).resolve().parent.parent / "encounter_tables"
 def list_regions():
     if not ROOT.is_dir():
         return []
-    return sorted(p.name for p in ROOT.iterdir() if p.is_dir())
+    regions = set()
+    for path in ROOT.rglob("*.json"):
+        rel_parent = path.parent.relative_to(ROOT).as_posix()
+        regions.add("" if rel_parent == "." else rel_parent)
+    return sorted(regions)
 
 
 def list_tables(region):
@@ -45,12 +53,58 @@ def load_table(region, key):
         return json.load(f)
 
 
+def coerce_level(value, fallback):
+    try:
+        return max(1, min(100, int(value)))
+    except (TypeError, ValueError):
+        return fallback
+
+
+def normalize_range(min_level, max_level, fallback_min, fallback_max):
+    lo = coerce_level(min_level, fallback_min)
+    hi = coerce_level(max_level, fallback_max)
+    return (lo, hi) if lo <= hi else (hi, lo)
+
+
+def normalize_entry(entry, fallback_min, fallback_max):
+    if isinstance(entry, dict):
+        ceiling = int(entry.get("ceiling", 100))
+        species = str(entry.get("species", "")).strip()
+        min_level, max_level = normalize_range(
+            entry.get("min_level"),
+            entry.get("max_level"),
+            fallback_min,
+            fallback_max,
+        )
+        return ceiling, species, min_level, max_level
+
+    ceiling = int(entry[0])
+    species = str(entry[1]).strip()
+    min_level, max_level = normalize_range(
+        entry[2] if len(entry) > 2 else None,
+        entry[3] if len(entry) > 3 else None,
+        fallback_min,
+        fallback_max,
+    )
+    return ceiling, species, min_level, max_level
+
+
 def roll(entries, min_level, max_level):
     r = random.randint(1, 100)
-    level = random.randint(min_level, max_level)
-    for ceiling, species in entries:
+    last = None
+    for raw_entry in entries:
+        ceiling, species, entry_min, entry_max = normalize_entry(raw_entry, min_level, max_level)
+        last = (species, entry_min, entry_max)
         if r <= ceiling:
-            return r, species, level
+            return r, species, random.randint(entry_min, entry_max)
+    if last:
+        species, entry_min, entry_max = last
+        return r, species, random.randint(entry_min, entry_max)
+    return r, "Magikarp", random.randint(min_level, max_level)
+
+
+def level_label(min_level, max_level):
+    return f"Lv {min_level}" if min_level == max_level else f"Lv {min_level}-{max_level}"
 
 
 def print_region_tables(region):
@@ -73,7 +127,7 @@ def main():
         print()
         print("Regions:")
         for region in list_regions():
-            print(f"  {region}")
+            print(f"  {region or '.'}")
         sys.exit(0)
 
     if not args:
@@ -84,7 +138,7 @@ def main():
         if regions:
             print("Regions:")
             for region in regions:
-                print(f"  {region}")
+                print(f"  {region or '.'}")
         else:
             print(f"No regions found in {ROOT}")
         sys.exit(0)
@@ -110,10 +164,15 @@ def main():
     if len(args) <= 2:
         print(f"--- {table['name']} (Lv {lv_range}) ---")
         prev = 0
-        for ceiling, species in table["entries"]:
+        for raw_entry in table["entries"]:
+            ceiling, species, entry_min, entry_max = normalize_entry(
+                raw_entry,
+                table["min_level"],
+                table["max_level"],
+            )
             span = f"{prev + 1:>3d}-{ceiling:<3d}" if ceiling > prev + 1 else f"    {ceiling:<3d}"
             pct = ceiling - prev
-            print(f"  {span}  ({pct:>2d}%)  {species}")
+            print(f"  {span}  ({pct:>2d}%)  {species:16s}  {level_label(entry_min, entry_max)}")
             prev = ceiling
         sys.exit(0)
 

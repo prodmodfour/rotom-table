@@ -86,12 +86,21 @@ describe('server encounter generation helpers', () => {
     expect(statusMessageFor(() => assertEncounterPathInsideRoot('/repo', '/tmp/out'))).toBe('Invalid outRoot')
   })
 
-  it('rolls encounter tables with injectable randomness and fallback species', () => {
+  it('rolls encounter tables with injectable randomness and per-row level ranges', () => {
     const first = rollEncounterTable(table, () => 0)
     expect(first).toEqual({ species: 'Pidgey', level: 3, roll: 1 })
 
     const second = rollEncounterTable(table, () => 0.99)
     expect(second).toEqual({ species: 'Rattata', level: 5, roll: 100 })
+
+    const perRow = rollEncounterTable({
+      ...table,
+      entries: [
+        { ceiling: 50, species: 'Oddish', min_level: 10, max_level: 10 },
+        [100, 'Zubat', 12, 12],
+      ],
+    }, () => 0)
+    expect(perRow).toEqual({ species: 'Oddish', level: 10, roll: 1 })
 
     expect(rollEncounterTable({ ...table, entries: [] }, () => 0.5).species).toBe('Magikarp')
   })

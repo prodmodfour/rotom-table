@@ -1,5 +1,6 @@
 import { existsSync } from 'node:fs'
 import { join as joinPath, resolve, sep } from 'node:path'
+import { normalizeEncounterTableRollEntry } from '#shared/encounterTables'
 import { DEFAULT_ENCOUNTER_OUT_ROOT } from '~/utils/encounterGeneration'
 import type { EncounterTable, RolledEncounter } from '~/types/encounterTable'
 import { UseCaseHttpError } from './useCaseErrors'
@@ -107,12 +108,24 @@ export const rollEncounterTable = (
   random: () => number = Math.random,
 ): RolledEncounter => {
   const roll = randomEncounterInt(1, 100, random)
-  const level = randomEncounterInt(table.min_level, table.max_level, random)
-  for (const [ceiling, species] of table.entries) {
-    if (roll <= ceiling) return { species, level, roll }
+  const fallback = { min_level: table.min_level, max_level: table.max_level }
+  for (const rawEntry of table.entries) {
+    const entry = normalizeEncounterTableRollEntry(rawEntry, fallback)
+    if (roll <= entry.ceiling) {
+      return {
+        species: entry.species,
+        level: randomEncounterInt(entry.min_level, entry.max_level, random),
+        roll,
+      }
+    }
   }
   const last = table.entries[table.entries.length - 1]
-  return { species: last?.[1] ?? 'Magikarp', level, roll }
+  const entry = last ? normalizeEncounterTableRollEntry(last, fallback) : null
+  return {
+    species: entry?.species || 'Magikarp',
+    level: randomEncounterInt(entry?.min_level ?? table.min_level, entry?.max_level ?? table.max_level, random),
+    roll,
+  }
 }
 
 export const uniqueEncounterOutputDir = (

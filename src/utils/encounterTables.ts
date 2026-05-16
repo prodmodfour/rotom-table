@@ -5,6 +5,10 @@
  * picked up at build time via ``import.meta.glob``. The shape mirrors what
  * ``scripts/roll.py`` consumes so the CLI and the web UI agree on the data.
  */
+import {
+  formatEncounterLevelRange,
+  normalizeEncounterTableRollEntry,
+} from '#shared/encounterTables'
 import type {
   EncounterTable,
   EncounterTableEntry,
@@ -98,16 +102,26 @@ const randInt = (min: number, max: number): number =>
  */
 export const rollEncounter = (table: EncounterTable): RolledEncounter => {
   const r = randInt(1, 100)
-  const level = randInt(table.min_level, table.max_level)
-  for (const [ceiling, species] of table.entries) {
-    if (r <= ceiling) {
-      return { species, level, roll: r }
+  const fallback = { min_level: table.min_level, max_level: table.max_level }
+  for (const rawEntry of table.entries) {
+    const entry = normalizeEncounterTableRollEntry(rawEntry, fallback)
+    if (r <= entry.ceiling) {
+      return {
+        species: entry.species,
+        level: randInt(entry.min_level, entry.max_level),
+        roll: r,
+      }
     }
   }
   // Fallback if entries don't actually cover up to 100. Should not happen
   // for well-formed tables, but guard anyway.
   const last = table.entries[table.entries.length - 1]
-  return { species: last?.[1] ?? 'Magikarp', level, roll: r }
+  const entry = last ? normalizeEncounterTableRollEntry(last, fallback) : null
+  return {
+    species: entry?.species || 'Magikarp',
+    level: randInt(entry?.min_level ?? table.min_level, entry?.max_level ?? table.max_level),
+    roll: r,
+  }
 }
 
 /** Convenience: roll N times. */
@@ -125,6 +139,9 @@ export interface DisplayedEncounterRow {
   range: string
   percent: number
   species: string
+  minLevel: number
+  maxLevel: number
+  levelRange: string
 }
 
 export const describeEntries = (
@@ -132,11 +149,20 @@ export const describeEntries = (
 ): DisplayedEncounterRow[] => {
   const rows: DisplayedEncounterRow[] = []
   let prev = 0
-  for (const [ceiling, species] of table.entries) {
+  const fallback = { min_level: table.min_level, max_level: table.max_level }
+  for (const rawEntry of table.entries) {
+    const entry = normalizeEncounterTableRollEntry(rawEntry, fallback)
     const lo = prev + 1
-    const range = lo === ceiling ? `${pad(ceiling)}` : `${pad(lo)}–${pad(ceiling)}`
-    rows.push({ range, percent: ceiling - prev, species })
-    prev = ceiling
+    const range = lo === entry.ceiling ? `${pad(entry.ceiling)}` : `${pad(lo)}–${pad(entry.ceiling)}`
+    rows.push({
+      range,
+      percent: entry.ceiling - prev,
+      species: entry.species,
+      minLevel: entry.min_level,
+      maxLevel: entry.max_level,
+      levelRange: formatEncounterLevelRange(entry),
+    })
+    prev = entry.ceiling
   }
   return rows
 }
@@ -190,7 +216,10 @@ export const filterEncounterTablesByRegion = (
             const haystacks = [
               entry.key,
               entry.table.name,
-              ...entry.table.entries.map(([, species]) => species),
+              ...entry.table.entries.map((rawEntry) => normalizeEncounterTableRollEntry(rawEntry, {
+                min_level: entry.table.min_level,
+                max_level: entry.table.max_level,
+              }).species),
             ]
             return haystacks.some((value) => normalizeEncounterSearch(value).includes(query))
           })
