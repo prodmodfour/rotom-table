@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest'
+import { trainerCatalog } from '~~/data/trainerCatalog'
 import { placementToSpawned } from '~/utils/placement'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { SheetPlacement } from '~/types/map'
+import type { TrainerSheet } from '~/types/trainerSheet'
 
 describe('placement helpers', () => {
   it('copies sheet ability names, gender, and skill ranks onto spawned tokens for automation', () => {
@@ -31,5 +33,32 @@ describe('placement helpers', () => {
     expect(spawned?.defenderCapabilities).toEqual({ levitate: 4 })
     expect(spawned?.combatSkillRankValue).toBe(5)
     expect(spawned?.focusSkillRankValue).toBe(4)
+  })
+
+  it('scales trainer sprite dimensions to the trainer sheet height in metres', () => {
+    const catalog = trainerCatalog[0]!
+    const sheet: TrainerSheet = {
+      slug: 'trainer-1',
+      name: 'Trainer One',
+      level: 5,
+      height: '1.72',
+      portraitUrl: catalog.spriteUrl,
+    }
+    const placement: SheetPlacement = {
+      id: 'placement-1',
+      sheetKind: 'trainer',
+      sheetSlug: 'trainer-1',
+      position: { x: 0, y: 0, z: 0 },
+    }
+
+    const spawned = placementToSpawned(placement, {
+      pokemon: new Map(),
+      trainer: new Map([[sheet.slug, sheet]]),
+    })
+
+    expect(spawned?.sheetKind).toBe('trainer')
+    expect(spawned?.height).toBe(1.72)
+    expect(spawned?.width).toBeCloseTo(catalog.width * (1.72 / catalog.height))
+    expect(spawned?.base).toBe(catalog.base)
   })
 })

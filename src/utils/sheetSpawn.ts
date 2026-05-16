@@ -16,6 +16,7 @@ import { computeTrainerMaxHp, resolveTrainerCapabilities, resolveTrainerSkills, 
 import { pokemonCatalog, pokemonCatalogBySpecies } from '~~/data/pokemonCatalog'
 import { trainerCatalog } from '~~/data/trainerCatalog'
 import { COMBAT_STAT_STAGE_KEYS, normalizeCombatStages } from '~/utils/combatStages'
+import { scaleTrainerSpriteToSheetHeight } from '~/utils/trainerSpriteScaling'
 import { mergeLegacyConditions } from '~/utils/statusConditions'
 import { clampHpValue } from '~/utils/ptuHp'
 import { parseSkillDiceRankValue } from '~/utils/skillRanks'
@@ -94,9 +95,7 @@ export const catalogEntryForPokemonSheet = (
  * name match (handy for freshly-authored sheets that haven't picked a
  * portrait yet) and finally to the first catalog entry as a last resort.
  */
-export const catalogEntryForTrainerSheet = (
-  sheet: TrainerSheet,
-): PokemonCatalogEntry | null => {
+const rawCatalogEntryForTrainerSheet = (sheet: TrainerSheet): PokemonCatalogEntry | null => {
   if (sheet.portraitUrl) {
     const byUrl = trainerCatalogBySpriteUrl.get(sheet.portraitUrl)
     if (byUrl) return byUrl
@@ -104,6 +103,13 @@ export const catalogEntryForTrainerSheet = (
   const byName = trainerCatalogByLowerName.get(sheet.name.toLowerCase())
   if (byName) return byName
   return trainerCatalog[0] ?? null
+}
+
+export const catalogEntryForTrainerSheet = (
+  sheet: TrainerSheet,
+): PokemonCatalogEntry | null => {
+  const catalogEntry = rawCatalogEntryForTrainerSheet(sheet)
+  return catalogEntry ? scaleTrainerSpriteToSheetHeight(catalogEntry, sheet.height) : null
 }
 
 /** Pokémon HP + offence/defence + type/capability snapshot. Max HP is derived and injury-adjusted. */

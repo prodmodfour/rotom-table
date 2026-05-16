@@ -55,7 +55,7 @@ const emit = defineEmits<{
         Lv <EditableCell v-model="sheet.level" type="number" :min="1" /> ·
         <EditableCell v-model="sheet.sex" placeholder="Sex" /> · Age
         <EditableCell v-model="sheet.age" placeholder="—" /> ·
-        <EditableCell v-model="sheet.height" placeholder="5'4" /> ·
+        <EditableCell v-model="sheet.height" placeholder="1.65m" /> ·
         <EditableCell v-model="sheet.weight" placeholder="115 lb" />
       </p>
       <p class="identity-played-by">
