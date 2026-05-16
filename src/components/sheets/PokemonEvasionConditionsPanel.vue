@@ -46,7 +46,7 @@ const emit = defineEmits<{
   <div class="evasion-row">
     <span class="cell-label">Evasion</span>
     <ul>
-      <li title="Stat evasion = floor(Defense Total / 5), capped at +6 from stats. Sand Veil adds +1 if present, or +2 when activated from the Abilities table.">
+      <li title="Stat evasion = floor(Defense Total / 5), capped at +6 from stats. Sand Veil or Snow Cloak adds +1 if present, or +2 when activated from the Abilities table.">
         <span class="evasion-label">vs ATK</span>
         <strong>{{ pokemonEvasion.vsAtk.total }}</strong>
         <small>stat {{ pokemonEvasion.vsAtk.base }}</small>
@@ -63,9 +63,9 @@ const emit = defineEmits<{
           <span
             v-if="pokemonEvasion.vsAtk.abilityBonus"
             class="evasion-bonus__ability"
-            title="Sand Veil ability bonus"
+            title="Sand Veil / Snow Cloak ability bonus"
           >
-            Sand Veil {{ formatSignedModifier(pokemonEvasion.vsAtk.abilityBonus) }}
+            Veil {{ formatSignedModifier(pokemonEvasion.vsAtk.abilityBonus) }}
           </span>
           <span
             v-if="pokemonEvasion.vsAtk.suppressedByCondition"
@@ -76,7 +76,7 @@ const emit = defineEmits<{
           </span>
         </span>
       </li>
-      <li title="Stat evasion = floor(Special Defense Total / 5), capped at +6 from stats. Sand Veil adds +1 if present, or +2 when activated from the Abilities table.">
+      <li title="Stat evasion = floor(Special Defense Total / 5), capped at +6 from stats. Sand Veil or Snow Cloak adds +1 if present, or +2 when activated from the Abilities table.">
         <span class="evasion-label">vs SATK</span>
         <strong>{{ pokemonEvasion.vsSatk.total }}</strong>
         <small>stat {{ pokemonEvasion.vsSatk.base }}</small>
@@ -93,9 +93,9 @@ const emit = defineEmits<{
           <span
             v-if="pokemonEvasion.vsSatk.abilityBonus"
             class="evasion-bonus__ability"
-            title="Sand Veil ability bonus"
+            title="Sand Veil / Snow Cloak ability bonus"
           >
-            Sand Veil {{ formatSignedModifier(pokemonEvasion.vsSatk.abilityBonus) }}
+            Veil {{ formatSignedModifier(pokemonEvasion.vsSatk.abilityBonus) }}
           </span>
           <span
             v-if="pokemonEvasion.vsSatk.suppressedByCondition"
@@ -106,7 +106,7 @@ const emit = defineEmits<{
           </span>
         </span>
       </li>
-      <li title="Stat evasion = floor(Speed Total / 5), capped at +6 from stats. Sand Veil adds +1 if present, or +2 when activated from the Abilities table. Bright Powder adds +2 to Speed Evasion while held; total evasion is capped at +9.">
+      <li title="Stat evasion = floor(Speed Total / 5), capped at +6 from stats. Sand Veil or Snow Cloak adds +1 if present, or +2 when activated from the Abilities table. Bright Powder adds +2 to Speed Evasion while held; total evasion is capped at +9.">
         <span class="evasion-label">vs Any</span>
         <strong>{{ pokemonEvasion.vsAny.total }}</strong>
         <small>stat {{ pokemonEvasion.vsAny.base }}</small>
@@ -123,9 +123,9 @@ const emit = defineEmits<{
           <span
             v-if="pokemonEvasion.vsAny.abilityBonus"
             class="evasion-bonus__ability"
-            title="Sand Veil ability bonus"
+            title="Sand Veil / Snow Cloak ability bonus"
           >
-            Sand Veil {{ formatSignedModifier(pokemonEvasion.vsAny.abilityBonus) }}
+            Veil {{ formatSignedModifier(pokemonEvasion.vsAny.abilityBonus) }}
           </span>
           <span
             v-if="pokemonEvasion.vsAny.itemBonus"

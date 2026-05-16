@@ -257,6 +257,7 @@ const {
   moveAutomationTargeting,
   moveAutomationFeedback,
   spiteReactionPrompts,
+  cuteCharmReactionPrompts,
   moxieTriggerPrompts,
   tokenMoveOptionsById,
   openMoveAutomation,
@@ -266,6 +267,8 @@ const {
   selectMoveAutomationAreaDirection,
   dismissSpiteReactionPrompt,
   applySpiteReactionPrompt,
+  dismissCuteCharmReactionPrompt,
+  applyCuteCharmReactionPrompt,
   dismissMoxieTriggerPrompt,
   applyMoxieTriggerPrompt,
   applyMoveAutomation,
@@ -473,6 +476,7 @@ useMapDimensionReconciliation({
         :move-automation-targeting="actionAutomationTargeting"
         :move-automation-feedback="moveAutomationFeedback"
         :spite-reaction-prompts="spiteReactionPrompts"
+        :cute-charm-reaction-prompts="cuteCharmReactionPrompts"
         :moxie-trigger-prompts="moxieTriggerPrompts"
         :token-move-options-by-id="tokenMoveOptionsById"
         :token-ability-options-by-id="tokenAbilityOptionsById"
@@ -502,6 +506,8 @@ useMapDimensionReconciliation({
         @cancel-move-targeting="cancelActionAutomationTargeting"
         @dismiss-spite-reaction="dismissSpiteReactionPrompt"
         @apply-spite-reaction="applySpiteReactionPrompt"
+        @dismiss-cute-charm-reaction="dismissCuteCharmReactionPrompt"
+        @apply-cute-charm-reaction="applyCuteCharmReactionPrompt"
         @dismiss-moxie-trigger="dismissMoxieTriggerPrompt"
         @apply-moxie-trigger="applyMoxieTriggerPrompt"
       />

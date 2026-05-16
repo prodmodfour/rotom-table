@@ -1,17 +1,21 @@
 <script setup lang="ts">
 import type {
+  MoveAutomationCuteCharmPrompt,
   MoveAutomationMoxiePrompt,
   MoveAutomationSpitePrompt,
 } from '~/types/moveAutomation'
 
 const props = defineProps<{
   spitePrompts: MoveAutomationSpitePrompt[]
+  cuteCharmPrompts?: MoveAutomationCuteCharmPrompt[]
   moxiePrompts?: MoveAutomationMoxiePrompt[]
 }>()
 
 const emit = defineEmits<{
   (event: 'apply', id: string): void
   (event: 'dismiss', id: string): void
+  (event: 'apply-cute-charm', id: string): void
+  (event: 'dismiss-cute-charm', id: string): void
   (event: 'apply-moxie', id: string): void
   (event: 'dismiss-moxie', id: string): void
 }>()
@@ -24,7 +28,7 @@ const targetList = (prompt: MoveAutomationMoxiePrompt): string => {
 </script>
 
 <template>
-  <div v-if="props.spitePrompts.length || props.moxiePrompts?.length" class="reaction-prompt-stack" aria-live="polite">
+  <div v-if="props.spitePrompts.length || props.cuteCharmPrompts?.length || props.moxiePrompts?.length" class="reaction-prompt-stack" aria-live="polite">
     <article
       v-for="prompt in props.moxiePrompts ?? []"
       :key="prompt.id"
@@ -40,6 +44,26 @@ const targetList = (prompt: MoveAutomationMoxiePrompt): string => {
           Raise Attack
         </button>
         <button type="button" class="reaction-prompt__dismiss" @click="emit('dismiss-moxie', prompt.id)">
+          Ignore
+        </button>
+      </div>
+    </article>
+
+    <article
+      v-for="prompt in props.cuteCharmPrompts ?? []"
+      :key="prompt.id"
+      class="reaction-prompt"
+    >
+      <div class="reaction-prompt__copy">
+        <span class="reaction-prompt__eyebrow">Cute Charm?</span>
+        <strong>{{ prompt.defenderName }}</strong>
+        <span>was attacked by {{ prompt.attackerName }}'s {{ prompt.moveName }}. Infatuate {{ prompt.attackerName }}?</span>
+      </div>
+      <div class="reaction-prompt__actions">
+        <button type="button" class="reaction-prompt__apply" @click="emit('apply-cute-charm', prompt.id)">
+          Infatuate {{ prompt.attackerName }}
+        </button>
+        <button type="button" class="reaction-prompt__dismiss" @click="emit('dismiss-cute-charm', prompt.id)">
           Ignore
         </button>
       </div>

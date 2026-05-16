@@ -77,6 +77,10 @@ describe('usePokemonSheetRowActions', () => {
     actions.toggleAbilityActivation(0)
     expect(sheet.value?.abilities?.[0].activated).toBe(false)
 
+    sheet.value!.abilities = [{ name: 'Snow Cloak' }]
+    actions.toggleAbilityActivation(0)
+    expect(sheet.value?.abilities?.[0].activated).toBe(true)
+
     sheet.value!.abilities = [{ name: 'Run Away', activated: true }]
     actions.toggleAbilityActivation(0)
     expect(sheet.value?.abilities?.[0]).toEqual({ name: 'Run Away' })

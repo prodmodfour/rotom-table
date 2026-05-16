@@ -68,20 +68,28 @@ export interface BuildMoveAutomationTransactionInput {
   suggestionRecipientFilter?: MoveAutomationSuggestionRecipientFilter
 }
 
-const attachHitTargetIds = (
+const attachTargetIds = (
   transaction: MoveAutomationTransaction,
-  hitTargetIds: string[],
+  targetIds: { attackedTargetIds: string[]; hitTargetIds: string[] },
 ): MoveAutomationTransaction => {
-  Object.defineProperty(transaction, 'hitTargetIds', {
-    value: hitTargetIds,
-    enumerable: false,
-    configurable: true,
-    writable: true,
+  Object.defineProperties(transaction, {
+    attackedTargetIds: {
+      value: targetIds.attackedTargetIds,
+      enumerable: false,
+      configurable: true,
+      writable: true,
+    },
+    hitTargetIds: {
+      value: targetIds.hitTargetIds,
+      enumerable: false,
+      configurable: true,
+      writable: true,
+    },
   })
   return transaction
 }
 
-const unknownMoveTransaction = (user: SpawnedPokemon): MoveAutomationTransaction => attachHitTargetIds({
+const unknownMoveTransaction = (user: SpawnedPokemon): MoveAutomationTransaction => attachTargetIds({
   userId: user.id,
   userName: user.species,
   moveName: 'Unknown Move',
@@ -93,7 +101,7 @@ const unknownMoveTransaction = (user: SpawnedPokemon): MoveAutomationTransaction
   hazardsToAdd: [],
   fieldEffectsToApply: [],
   logLines: [],
-}, [])
+}, { attackedTargetIds: [], hitTargetIds: [] })
 
 export const buildMoveAutomationTransaction = ({
   script,
@@ -142,6 +150,7 @@ export const buildMoveAutomationTransaction = ({
     }
   }
 
+  const attackedTargetIds = selectedTargets.map((target) => target.id)
   const hitTargetIds = selectedTargets
     .filter((target) => !script.requiresAccuracy || targetResolutions[target.id]?.hit === true)
     .map((target) => target.id)
@@ -253,7 +262,7 @@ export const buildMoveAutomationTransaction = ({
   if (manualNoteLogLine) logLines.push(manualNoteLogLine)
   logLines.push(...formatMoveAutomationAutomationNoteLogLines(script.automationNotes))
 
-  return attachHitTargetIds({
+  return attachTargetIds({
     userId: user.id,
     userName: user.species,
     moveName: script.moveName,
@@ -265,5 +274,5 @@ export const buildMoveAutomationTransaction = ({
     hazardsToAdd,
     fieldEffectsToApply,
     logLines,
-  }, hitTargetIds)
+  }, { attackedTargetIds, hitTargetIds })
 }

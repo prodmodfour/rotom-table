@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  CUTE_CHARM_ABILITY_NAME,
   INTIMIDATE_ABILITY_NAME,
   MOXIE_ABILITY_NAME,
   getAbilityAutomationCategory,
@@ -50,6 +51,8 @@ const token = (id: string, overrides: Partial<SpawnedPokemon> = {}): SpawnedPoke
 describe('ability automation helpers', () => {
   it('classifies sheet and map ability automation categories', () => {
     expect(getAbilityAutomationCategory('Sand Veil')).toBe('sheet')
+    expect(getAbilityAutomationCategory('Snow Cloak')).toBe('sheet')
+    expect(getAbilityAutomationCategory(CUTE_CHARM_ABILITY_NAME)).toBe('passive')
     expect(getAbilityAutomationCategory(INTIMIDATE_ABILITY_NAME)).toBe('map')
     expect(getAbilityAutomationCategory(MOXIE_ABILITY_NAME)).toBe('map')
     expect(getAbilityAutomationCategory('Quick Feet')).toBe('passive')

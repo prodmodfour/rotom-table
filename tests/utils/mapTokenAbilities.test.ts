@@ -10,16 +10,20 @@ describe('map token ability menu options', () => {
   it('resolves Pokémon sheet abilities with sheet and map automation categories', () => {
     const options = buildTokenAbilityMenuOptions([
       { name: 'Sand Veil', activated: true },
+      { name: 'Snow Cloak' },
       { name: 'Intimidate' },
       { name: 'Moxie' },
+      { name: 'Cute Charm' },
       { name: 'Quick Feet' },
       { name: 'Run Away' },
     ])
 
     expect(options).toMatchObject([
       { name: 'Sand Veil', automation: { category: 'sheet', label: 'Sheet' }, activated: true },
+      { name: 'Snow Cloak', automation: { category: 'sheet', label: 'Sheet' }, activated: false },
       { name: 'Intimidate', automation: { category: 'map', label: 'Map' }, activated: false },
       { name: 'Moxie', automation: { category: 'map', label: 'Self' }, activated: false },
+      { name: 'Cute Charm', automation: { category: 'passive', label: 'Auto' }, activated: false },
       { name: 'Quick Feet', automation: { category: 'passive', label: 'Auto' }, activated: false },
       { name: 'Run Away', automation: null, activated: false },
     ])

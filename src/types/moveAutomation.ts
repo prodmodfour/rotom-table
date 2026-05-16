@@ -98,6 +98,8 @@ export interface MoveAutomationTransaction {
   moveName: string
   scriptKind: MoveAutomationScript['kind']
   scriptVersion: number
+  /** Targets that were selected/affected by the move, whether the accuracy roll hit or missed. */
+  attackedTargetIds?: string[]
   /** Targets that were actually hit by the move, before damage/effect immunity. */
   hitTargetIds?: string[]
   hpUpdates: MoveAutomationHpUpdate[]
@@ -109,6 +111,15 @@ export interface MoveAutomationTransaction {
 }
 
 export interface MoveAutomationSpitePrompt {
+  id: string
+  defenderId: string
+  defenderName: string
+  attackerId: string
+  attackerName: string
+  moveName: string
+}
+
+export interface MoveAutomationCuteCharmPrompt {
   id: string
   defenderId: string
   defenderName: string

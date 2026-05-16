@@ -212,6 +212,8 @@ export interface SpawnedPokemon extends PokemonCatalogEntry {
   sheetSlug: string
   /** Display level copied from the source sheet. */
   level: number
+  /** Gender/sex copied from the source sheet, used by attraction-based automation. */
+  gender?: string
   /** Snapshot of the sheet's current HP at spawn time. */
   currentHp: number
   /** Snapshot of the sheet's computed max HP at spawn time. */

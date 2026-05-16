@@ -31,6 +31,10 @@ import {
   buildSpiteReactionPrompts,
 } from '~/utils/moveAutomationSpite'
 import {
+  buildCuteCharmReactionConditionUpdate,
+  buildCuteCharmReactionPrompts,
+} from '~/utils/moveAutomationCuteCharm'
+import {
   buildMoxieTriggerPrompts,
   buildMoxieTriggerTransaction,
 } from '~/utils/moveAutomationMoxie'
@@ -49,6 +53,7 @@ import type {
   MoveAutomationHpUpdate,
   MoveAutomationFeedbackState,
   MoveAutomationLogEntry,
+  MoveAutomationCuteCharmPrompt,
   MoveAutomationMoxiePrompt,
   MoveAutomationScript,
   MoveAutomationSpitePrompt,
@@ -156,6 +161,7 @@ export const useMoveAutomationPanel = ({
   const activeMoveTargeting = ref<ActiveMoveTargetingRequest | null>(null)
   const moveAutomationFeedback = ref<MoveAutomationFeedbackState | null>(null)
   const spiteReactionPrompts = ref<MoveAutomationSpitePrompt[]>([])
+  const cuteCharmReactionPrompts = ref<MoveAutomationCuteCharmPrompt[]>([])
   const moxieTriggerPrompts = ref<MoveAutomationMoxiePrompt[]>([])
   const feedbackTimers: Array<ReturnType<typeof setTimeout>> = []
 
@@ -447,6 +453,22 @@ export const useMoveAutomationPanel = ({
     if (prompts.length) spiteReactionPrompts.value = [...spiteReactionPrompts.value, ...prompts]
   }
 
+  const queueCuteCharmReactionPrompts = (transaction: MoveAutomationTransaction) => {
+    const attacker = findSpawnedPokemon(transaction.userId)
+    const attackedTargets = (transaction.attackedTargetIds ?? transaction.hitTargetIds ?? [])
+      .map((id) => findSpawnedPokemon(id))
+      .filter((token): token is SpawnedPokemon => Boolean(token))
+    if (!attacker || !attackedTargets.length) return
+
+    const prompts = buildCuteCharmReactionPrompts({
+      attacker,
+      moveName: transaction.moveName,
+      attackedTargets,
+      existingPrompts: cuteCharmReactionPrompts.value,
+    })
+    if (prompts.length) cuteCharmReactionPrompts.value = [...cuteCharmReactionPrompts.value, ...prompts]
+  }
+
   const moxieTriggerPromptsForTransaction = (
     transaction: MoveAutomationTransaction,
   ): MoveAutomationMoxiePrompt[] => {
@@ -479,6 +501,21 @@ export const useMoveAutomationPanel = ({
     const update = attacker ? buildSpiteReactionConditionUpdate(attacker, prompt.moveName) : null
     if (update) await modifyConditions(update, { allowAnyTarget: true })
     dismissSpiteReactionPrompt(id)
+  }
+
+  const dismissCuteCharmReactionPrompt = (id: string) => {
+    cuteCharmReactionPrompts.value = cuteCharmReactionPrompts.value.filter((prompt) => prompt.id !== id)
+  }
+
+  const applyCuteCharmReactionPrompt = async (id: string) => {
+    const prompt = cuteCharmReactionPrompts.value.find((item) => item.id === id)
+    if (!prompt) return
+
+    const attacker = findSpawnedPokemon(prompt.attackerId)
+    const defender = findSpawnedPokemon(prompt.defenderId)
+    const update = attacker && defender ? buildCuteCharmReactionConditionUpdate(attacker, defender) : null
+    if (update) await modifyConditions(update, { allowAnyTarget: true })
+    dismissCuteCharmReactionPrompt(id)
   }
 
   const dismissMoxieTriggerPrompt = (id: string) => {
@@ -514,6 +551,7 @@ export const useMoveAutomationPanel = ({
     }
     appendMoveAutomationLog(transaction)
     queueMoxieTriggerPrompts(moxiePrompts)
+    queueCuteCharmReactionPrompts(transaction)
     queueSpiteReactionPrompts(transaction)
     closeMoveAutomation()
   }
@@ -613,6 +651,7 @@ export const useMoveAutomationPanel = ({
     moveAutomationTargeting,
     moveAutomationFeedback,
     spiteReactionPrompts,
+    cuteCharmReactionPrompts,
     moxieTriggerPrompts,
     tokenMoveOptionsById,
     openMoveAutomation,
@@ -622,6 +661,8 @@ export const useMoveAutomationPanel = ({
     selectMoveAutomationAreaDirection,
     dismissSpiteReactionPrompt,
     applySpiteReactionPrompt,
+    dismissCuteCharmReactionPrompt,
+    applyCuteCharmReactionPrompt,
     dismissMoxieTriggerPrompt,
     applyMoxieTriggerPrompt,
     appendMoveAutomationLog,

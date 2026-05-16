@@ -5,8 +5,11 @@ import { QUICK_FEET_ABILITY_NAME } from '~/utils/sheetConditionEffects'
 import type { AbilityAutomationCategory, AbilityAutomationTransaction } from '~/types/abilityAutomation'
 import type { SpawnedPokemon } from '~/types/pokemon'
 
+export const CUTE_CHARM_ABILITY_NAME = 'Cute Charm'
 export const INTIMIDATE_ABILITY_NAME = 'Intimidate'
 export const MOXIE_ABILITY_NAME = 'Moxie'
+export const SHIELD_DUST_ABILITY_NAME = 'Shield Dust'
+export const SWEET_VEIL_ABILITY_NAME = 'Sweet Veil'
 
 export interface SheetAbilityAutomationDefinition {
   readonly name: string
@@ -65,9 +68,33 @@ const MAP_ABILITY_AUTOMATIONS = new Map<string, MapAbilityAutomationDefinition>(
 
 const PASSIVE_ABILITY_AUTOMATIONS = new Map<string, PassiveAbilityAutomationDefinition>([
   [
+    CUTE_CHARM_ABILITY_NAME,
+    {
+      name: CUTE_CHARM_ABILITY_NAME,
+      category: 'passive',
+      label: 'Auto',
+    },
+  ],
+  [
     QUICK_FEET_ABILITY_NAME,
     {
       name: QUICK_FEET_ABILITY_NAME,
+      category: 'passive',
+      label: 'Auto',
+    },
+  ],
+  [
+    SHIELD_DUST_ABILITY_NAME,
+    {
+      name: SHIELD_DUST_ABILITY_NAME,
+      category: 'passive',
+      label: 'Auto',
+    },
+  ],
+  [
+    SWEET_VEIL_ABILITY_NAME,
+    {
+      name: SWEET_VEIL_ABILITY_NAME,
       category: 'passive',
       label: 'Auto',
     },

@@ -20,6 +20,7 @@ import type {
 import type {
   MoveAutomationAreaDirection,
   MoveAutomationFeedbackState,
+  MoveAutomationCuteCharmPrompt,
   MoveAutomationMoxiePrompt,
   MoveAutomationSpitePrompt,
   MoveAutomationTargetingOverlayState,
@@ -68,6 +69,7 @@ const props = defineProps<{
   moveAutomationTargeting?: MoveAutomationTargetingOverlayState | null
   moveAutomationFeedback?: MoveAutomationFeedbackState | null
   spiteReactionPrompts?: MoveAutomationSpitePrompt[]
+  cuteCharmReactionPrompts?: MoveAutomationCuteCharmPrompt[]
   moxieTriggerPrompts?: MoveAutomationMoxiePrompt[]
   tokenMoveOptionsById?: Record<string, TokenMoveMenuOption[]>
   tokenAbilityOptionsById?: Record<string, TokenAbilityMenuOption[]>
@@ -100,6 +102,8 @@ const emit = defineEmits<{
   (event: 'cancel-move-targeting'): void
   (event: 'dismiss-spite-reaction', id: string): void
   (event: 'apply-spite-reaction', id: string): void
+  (event: 'dismiss-cute-charm-reaction', id: string): void
+  (event: 'apply-cute-charm-reaction', id: string): void
   (event: 'dismiss-moxie-trigger', id: string): void
   (event: 'apply-moxie-trigger', id: string): void
 }>()
@@ -167,9 +171,12 @@ defineExpose({ focusPokemon })
 
       <MapMoveReactionPromptStack
         :spite-prompts="props.spiteReactionPrompts ?? []"
+        :cute-charm-prompts="props.cuteCharmReactionPrompts ?? []"
         :moxie-prompts="props.moxieTriggerPrompts ?? []"
         @dismiss="emit('dismiss-spite-reaction', $event)"
         @apply="emit('apply-spite-reaction', $event)"
+        @dismiss-cute-charm="emit('dismiss-cute-charm-reaction', $event)"
+        @apply-cute-charm="emit('apply-cute-charm-reaction', $event)"
         @dismiss-moxie="emit('dismiss-moxie-trigger', $event)"
         @apply-moxie="emit('apply-moxie-trigger', $event)"
       />

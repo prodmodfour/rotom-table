@@ -20,7 +20,7 @@ describe('sheet mutation helpers', () => {
     folder: 'party/a',
     combat: { currentHp: 1, conditions: [] },
     stats: {},
-    abilities: [{ name: 'Sand Veil' }],
+    abilities: [{ name: 'Sand Veil' }, { name: 'Snow Cloak' }],
   } as CharacterSheet)
 
   const trainer = (): TrainerSheet => ({
@@ -73,6 +73,13 @@ describe('sheet mutation helpers', () => {
 
     expect(updatedPokemon.abilities?.[0]).toMatchObject({ name: 'Sand Veil', activated: true })
     expect(originalPokemon.abilities?.[0]).toEqual({ name: 'Sand Veil' })
+
+    const updatedSnowCloak = applyAbilityActivationToSheet(
+      'pokemon',
+      originalPokemon,
+      'Snow Cloak',
+    ) as CharacterSheet
+    expect(updatedSnowCloak.abilities?.[1]).toMatchObject({ name: 'Snow Cloak', activated: true })
   })
 
   it('creates update contexts and strips derived folder fields for persistence', () => {

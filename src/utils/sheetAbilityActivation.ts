@@ -2,9 +2,10 @@ import type { CharacterSheetAbility } from '~/types/characterSheet'
 import { resolveCanonicalSheetAbilityName, type SheetAbilityNameSource } from '~/utils/sheetAbilities'
 
 export const SAND_VEIL_ABILITY_NAME = 'Sand Veil'
+export const SNOW_CLOAK_ABILITY_NAME = 'Snow Cloak'
 
-const SAND_VEIL_INACTIVE_EVASION_BONUS = 1
-const SAND_VEIL_ACTIVE_EVASION_BONUS = 2
+const WEATHER_VEIL_INACTIVE_EVASION_BONUS = 1
+const WEATHER_VEIL_ACTIVE_EVASION_BONUS = 2
 
 export interface SheetActivatableAbilityConfig {
   readonly name: string
@@ -21,8 +22,16 @@ const SHEET_ACTIVATABLE_ABILITIES = new Map<string, SheetActivatableAbilityConfi
     SAND_VEIL_ABILITY_NAME,
     {
       name: SAND_VEIL_ABILITY_NAME,
-      inactiveEvasionBonus: SAND_VEIL_INACTIVE_EVASION_BONUS,
-      activeEvasionBonus: SAND_VEIL_ACTIVE_EVASION_BONUS,
+      inactiveEvasionBonus: WEATHER_VEIL_INACTIVE_EVASION_BONUS,
+      activeEvasionBonus: WEATHER_VEIL_ACTIVE_EVASION_BONUS,
+    },
+  ],
+  [
+    SNOW_CLOAK_ABILITY_NAME,
+    {
+      name: SNOW_CLOAK_ABILITY_NAME,
+      inactiveEvasionBonus: WEATHER_VEIL_INACTIVE_EVASION_BONUS,
+      activeEvasionBonus: WEATHER_VEIL_ACTIVE_EVASION_BONUS,
     },
   ],
 ])
