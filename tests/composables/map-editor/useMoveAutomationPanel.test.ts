@@ -207,6 +207,76 @@ describe('useMoveAutomationPanel', () => {
     }
   })
 
+  it('queues and applies an ignorable Spite prompt after a hit', async () => {
+    vi.useFakeTimers()
+    const map = ref({
+      ...mapFixture(),
+      placements: [
+        { id: 'user-token', sheetKind: 'pokemon' as const, sheetSlug: 'attacker', position: { x: 0, y: 0, z: 0 } },
+        { id: 'target-token', sheetKind: 'pokemon' as const, sheetSlug: 'defender', position: { x: 2, y: 0, z: 0 } },
+      ],
+    })
+    const attackerSheet = {
+      slug: 'attacker',
+      nickname: 'Attacker',
+      species: 'Charmander',
+      level: 5,
+      movelist: [{ name: 'Ember' }],
+    } as CharacterSheet
+    const defenderSheet = {
+      slug: 'defender',
+      nickname: 'Defender',
+      species: 'Dusclops',
+      level: 5,
+      movelist: [{ name: 'Spite' }],
+    } as CharacterSheet
+    const conditionCalls: MoveAutomationTransaction['conditionUpdates'] = []
+    const panel = useMoveAutomationPanel({
+      map,
+      spawnedPokemon: computed(() => [
+        spawned({ id: 'user-token', species: 'Attacker', sheetSlug: 'attacker', position: { x: 0, y: 0, z: 0 } }),
+        spawned({ id: 'target-token', species: 'Defender', sheetSlug: 'defender', currentHp: 40, maxHp: 40, position: { x: 2, y: 0, z: 0 } }),
+      ]),
+      pokemonBySlug: ref(new Map([
+        [attackerSheet.slug, attackerSheet],
+        [defenderSheet.slug, defenderSheet],
+      ])),
+      trainerBySlug: ref(new Map<string, TrainerSheet>()),
+      canEditMap: computed(() => false),
+      canControlPlacement: (id) => id === 'user-token',
+      modifyHp: () => undefined,
+      modifyCombatStages: () => undefined,
+      modifyConditions: (update) => { conditionCalls.push(update) },
+      applyMoveFieldEffect: () => undefined,
+      placeHazard: () => undefined,
+    })
+    const random = vi.spyOn(Math, 'random').mockReturnValue(0.5)
+
+    try {
+      panel.openMoveAutomation({ id: 'user-token', moveName: 'Ember' })
+      await panel.selectMoveAutomationTarget('target-token')
+      expect(panel.spiteReactionPrompts.value).toEqual([])
+
+      await vi.advanceTimersByTimeAsync(850)
+
+      expect(panel.spiteReactionPrompts.value).toMatchObject([{
+        defenderId: 'target-token',
+        defenderName: 'Defender',
+        attackerId: 'user-token',
+        attackerName: 'Attacker',
+        moveName: 'Ember',
+      }])
+
+      await panel.applySpiteReactionPrompt(panel.spiteReactionPrompts.value[0]!.id)
+
+      expect(conditionCalls).toEqual([{ id: 'user-token', conditions: ['Disabled: Ember'] }])
+      expect(panel.spiteReactionPrompts.value).toEqual([])
+    } finally {
+      random.mockRestore()
+      vi.useRealTimers()
+    }
+  })
+
   it('applies sheet updates, gates map effects by GM permission, and appends logs', async () => {
     const map = ref(mapFixture())
     const calls: string[] = []

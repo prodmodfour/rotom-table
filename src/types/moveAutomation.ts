@@ -98,12 +98,23 @@ export interface MoveAutomationTransaction {
   moveName: string
   scriptKind: MoveAutomationScript['kind']
   scriptVersion: number
+  /** Targets that were actually hit by the move, before damage/effect immunity. */
+  hitTargetIds?: string[]
   hpUpdates: MoveAutomationHpUpdate[]
   conditionUpdates: MoveAutomationConditionUpdate[]
   combatStageUpdates: MoveAutomationCombatStageUpdate[]
   hazardsToAdd: MapHazardV2[]
   fieldEffectsToApply: MoveAutomationFieldEffectApply[]
   logLines: string[]
+}
+
+export interface MoveAutomationSpitePrompt {
+  id: string
+  defenderId: string
+  defenderName: string
+  attackerId: string
+  attackerName: string
+  moveName: string
 }
 
 export type MoveAutomationTargetMode =

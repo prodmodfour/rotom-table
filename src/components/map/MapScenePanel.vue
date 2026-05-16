@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import MapMoveAutomationOverlay from '~/components/map/MapMoveAutomationOverlay.vue'
 import MapSceneRenderer from '~/components/map/MapSceneRenderer.vue'
 import MapSceneStatus from '~/components/map/MapSceneStatus.vue'
+import MapSpiteReactionPromptStack from '~/components/map/MapSpiteReactionPromptStack.vue'
 import type { BuildTool } from '#shared/mapEditor'
 import type { CharacterSheetMove } from '~/types/characterSheet'
 import type { CombatStageMap } from '~/types/combatStages'
@@ -19,6 +20,7 @@ import type {
 import type {
   MoveAutomationAreaDirection,
   MoveAutomationFeedbackState,
+  MoveAutomationSpitePrompt,
   MoveAutomationTargetingOverlayState,
   MoveAutomationTransaction,
 } from '~/types/moveAutomation'
@@ -64,6 +66,7 @@ const props = defineProps<{
   moveAutomationInitialMoveName?: string | null
   moveAutomationTargeting?: MoveAutomationTargetingOverlayState | null
   moveAutomationFeedback?: MoveAutomationFeedbackState | null
+  spiteReactionPrompts?: MoveAutomationSpitePrompt[]
   tokenMoveOptionsById?: Record<string, TokenMoveMenuOption[]>
   tokenAbilityOptionsById?: Record<string, TokenAbilityMenuOption[]>
   tokenSendOutOptionsById?: Record<string, TokenSendOutOption[]>
@@ -93,6 +96,8 @@ const emit = defineEmits<{
   (event: 'select-move-target', targetId: string): void
   (event: 'select-move-area-direction', direction: MoveAutomationAreaDirection): void
   (event: 'cancel-move-targeting'): void
+  (event: 'dismiss-spite-reaction', id: string): void
+  (event: 'apply-spite-reaction', id: string): void
 }>()
 
 const rendererRef = ref<MapSceneRendererHandle | null>(null)
@@ -156,6 +161,12 @@ defineExpose({ focusPokemon })
       />
       <MapSceneStatus v-else :status="status" :error="error" :slug="slug" />
 
+      <MapSpiteReactionPromptStack
+        :prompts="props.spiteReactionPrompts ?? []"
+        @dismiss="emit('dismiss-spite-reaction', $event)"
+        @apply="emit('apply-spite-reaction', $event)"
+      />
+
       <MapMoveAutomationOverlay
         :user="moveAutomationUser"
         :moves="moveAutomationMoves"
@@ -181,6 +192,7 @@ defineExpose({ focusPokemon })
 
 <style scoped>
 .scene-column {
+  position: relative;
   min-width: 0;
   min-height: 100vh;
   background: var(--paper);

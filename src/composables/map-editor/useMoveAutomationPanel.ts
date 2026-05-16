@@ -23,6 +23,10 @@ import {
 } from '~/utils/moveAutomationInstant'
 import { isMoveDisabledByConditions } from '~/utils/statusConditions'
 import {
+  buildSpiteReactionConditionUpdate,
+  buildSpiteReactionPrompts,
+} from '~/utils/moveAutomationSpite'
+import {
   moveAutomationTargetsInRange,
   parseSingleTargetMoveRangeMeters,
 } from '~/utils/moveAutomationRange'
@@ -38,6 +42,7 @@ import type {
   MoveAutomationFeedbackState,
   MoveAutomationLogEntry,
   MoveAutomationScript,
+  MoveAutomationSpitePrompt,
   MoveAutomationTargetingOverlayState,
   MoveAutomationTransaction,
 } from '~/types/moveAutomation'
@@ -141,6 +146,7 @@ export const useMoveAutomationPanel = ({
   const moveAutomationInitialMoveName = ref<string | null>(null)
   const activeMoveTargeting = ref<ActiveMoveTargetingRequest | null>(null)
   const moveAutomationFeedback = ref<MoveAutomationFeedbackState | null>(null)
+  const spiteReactionPrompts = ref<MoveAutomationSpitePrompt[]>([])
   const feedbackTimers: Array<ReturnType<typeof setTimeout>> = []
 
   const moveAutomationUser = computed(() =>
@@ -400,6 +406,37 @@ export const useMoveAutomationPanel = ({
     })
   }
 
+  const queueSpiteReactionPrompts = (transaction: MoveAutomationTransaction) => {
+    const attacker = findSpawnedPokemon(transaction.userId)
+    const hitTargets = (transaction.hitTargetIds ?? [])
+      .map((id) => findSpawnedPokemon(id))
+      .filter((token): token is SpawnedPokemon => Boolean(token))
+    if (!attacker || !hitTargets.length) return
+
+    const prompts = buildSpiteReactionPrompts({
+      attacker,
+      moveName: transaction.moveName,
+      hitTargets,
+      moveEntriesForTarget: (target) => moveEntriesForId(target.id),
+      existingPrompts: spiteReactionPrompts.value,
+    })
+    if (prompts.length) spiteReactionPrompts.value = [...spiteReactionPrompts.value, ...prompts]
+  }
+
+  const dismissSpiteReactionPrompt = (id: string) => {
+    spiteReactionPrompts.value = spiteReactionPrompts.value.filter((prompt) => prompt.id !== id)
+  }
+
+  const applySpiteReactionPrompt = async (id: string) => {
+    const prompt = spiteReactionPrompts.value.find((item) => item.id === id)
+    if (!prompt) return
+
+    const attacker = findSpawnedPokemon(prompt.attackerId)
+    const update = attacker ? buildSpiteReactionConditionUpdate(attacker, prompt.moveName) : null
+    if (update) await modifyConditions(update, { allowAnyTarget: true })
+    dismissSpiteReactionPrompt(id)
+  }
+
   const applyMoveAutomation = async (transaction: MoveAutomationTransaction) => {
     if (!map.value || !canControlPlacement(transaction.userId)) return
     for (const update of transaction.hpUpdates) await modifyHp(update, { allowAnyTarget: true })
@@ -410,6 +447,7 @@ export const useMoveAutomationPanel = ({
       for (const hazard of transaction.hazardsToAdd) await placeHazard(hazard)
     }
     appendMoveAutomationLog(transaction)
+    queueSpiteReactionPrompts(transaction)
     closeMoveAutomation()
   }
 
@@ -494,12 +532,15 @@ export const useMoveAutomationPanel = ({
     moveAutomationInitialMoveName,
     moveAutomationTargeting,
     moveAutomationFeedback,
+    spiteReactionPrompts,
     tokenMoveOptionsById,
     openMoveAutomation,
     closeMoveAutomation,
     cancelMoveAutomationTargeting,
     selectMoveAutomationTarget,
     selectMoveAutomationAreaDirection,
+    dismissSpiteReactionPrompt,
+    applySpiteReactionPrompt,
     appendMoveAutomationLog,
     applyMoveAutomation,
   }

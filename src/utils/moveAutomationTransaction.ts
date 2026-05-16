@@ -66,7 +66,20 @@ export interface BuildMoveAutomationTransactionInput {
   suggestionRecipientFilter?: MoveAutomationSuggestionRecipientFilter
 }
 
-const unknownMoveTransaction = (user: SpawnedPokemon): MoveAutomationTransaction => ({
+const attachHitTargetIds = (
+  transaction: MoveAutomationTransaction,
+  hitTargetIds: string[],
+): MoveAutomationTransaction => {
+  Object.defineProperty(transaction, 'hitTargetIds', {
+    value: hitTargetIds,
+    enumerable: false,
+    configurable: true,
+    writable: true,
+  })
+  return transaction
+}
+
+const unknownMoveTransaction = (user: SpawnedPokemon): MoveAutomationTransaction => attachHitTargetIds({
   userId: user.id,
   userName: user.species,
   moveName: 'Unknown Move',
@@ -78,7 +91,7 @@ const unknownMoveTransaction = (user: SpawnedPokemon): MoveAutomationTransaction
   hazardsToAdd: [],
   fieldEffectsToApply: [],
   logLines: [],
-})
+}, [])
 
 export const buildMoveAutomationTransaction = ({
   script,
@@ -121,6 +134,9 @@ export const buildMoveAutomationTransaction = ({
     }
   }
 
+  const hitTargetIds = selectedTargets
+    .filter((target) => !script.requiresAccuracy || targetResolutions[target.id]?.hit === true)
+    .map((target) => target.id)
   const targetEffectsApplyOnMiss = script.keywords.some((keyword) => /^Spirit Surge$/i.test(keyword))
   const targetWasHit = (target: SpawnedPokemon): boolean =>
     !script.requiresAccuracy || targetEffectsApplyOnMiss || targetResolutions[target.id]?.hit === true
@@ -199,7 +215,7 @@ export const buildMoveAutomationTransaction = ({
   if (manualNoteLogLine) logLines.push(manualNoteLogLine)
   logLines.push(...formatMoveAutomationAutomationNoteLogLines(script.automationNotes))
 
-  return {
+  return attachHitTargetIds({
     userId: user.id,
     userName: user.species,
     moveName: script.moveName,
@@ -211,5 +227,5 @@ export const buildMoveAutomationTransaction = ({
     hazardsToAdd,
     fieldEffectsToApply,
     logLines,
-  }
+  }, hitTargetIds)
 }
