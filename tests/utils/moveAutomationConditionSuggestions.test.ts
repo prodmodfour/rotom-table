@@ -32,6 +32,24 @@ describe('move automation condition suggestion helpers', () => {
         threshold: '15+',
         optional: true,
       }))
+
+    expect(parseMoveAutomationConditionSuggestions('Headlong Rush Trips the target on a hit.'))
+      .toContainEqual(expect.objectContaining({
+        recipient: 'target',
+        condition: 'Tripped',
+        action: 'add',
+        label: 'Tripped',
+      }))
+
+    expect(parseMoveAutomationConditionSuggestions('Legal targets hit by Steel Roller are Tripped on a roll of 15+.'))
+      .toContainEqual(expect.objectContaining({
+        recipient: 'target',
+        condition: 'Tripped',
+        action: 'add',
+        label: 'Tripped on 15+',
+        threshold: '15+',
+        optional: true,
+      }))
   })
 
   it('routes Rest sleep to the user', () => {
@@ -70,6 +88,10 @@ describe('move automation condition suggestion helpers', () => {
     expect(parseMoveAutomationConditionSuggestions('On 16+, the target slows down.'))
       .toEqual(expect.arrayContaining([
         expect.objectContaining({ condition: 'Slowed', action: 'add', threshold: '16+' }),
+      ]))
+    expect(parseMoveAutomationConditionSuggestions('You may perform a Trip Maneuver against the target as a Free Action.'))
+      .toEqual(expect.arrayContaining([
+        expect.objectContaining({ condition: 'Tripped', action: 'add', optional: true }),
       ]))
   })
 

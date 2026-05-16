@@ -20,6 +20,7 @@ const CONDITION_SEARCH_TERMS: Record<string, string[]> = {
   Poisoned: ['poisoned', 'poisons', 'poison'],
   Sleep: ['asleep', 'sleeping', 'sleep'],
   Slowed: ['slowed', 'slows', 'slow'],
+  Tripped: ['tripped', 'trips', 'tripping', 'trip'],
 }
 
 const conditionSearchTerms = (condition: string): string[] =>

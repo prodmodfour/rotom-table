@@ -93,18 +93,26 @@ describe('sheet condition effects', () => {
     expect(conditionAdjustedMovement(1, ['Slowed'])).toBe(1)
     expect(conditionAdjustedMovement(0, ['Slowed'])).toBe(0)
     expect(conditionAdjustedMovement(7, ['Stuck'])).toBe(0)
+    expect(conditionAdjustedMovement(7, ['Tripped'])).toBe(0)
     expect(conditionAdjustedMovement(7, ['Stuck', 'Slowed'])).toBe(0)
     expect(conditionAdjustedMovement(7, [])).toBe(7)
     expect(conditionBlocksShiftMovement(['Stuck'])).toBe(true)
+    expect(conditionBlocksShiftMovement(['Tripped'])).toBe(true)
     expect(conditionAdjustedMovementCapability('Levitate', 4, ['Slow Condition'])).toBe(2)
     expect(conditionAdjustedMovementCapability('teleporter', 5, ['Slowed'])).toBe(2)
     expect(conditionAdjustedMovementCapability('Overland', 5, ['Stuck'])).toBe(0)
+    expect(conditionAdjustedMovementCapability('Overland', 5, ['Tripped'])).toBe(0)
     expect(conditionAdjustedMovementCapability('Overland', '5', [])).toBe('5')
     expect(conditionAdjustedMovementCapability('Power', 8, ['Slowed'])).toBe(8)
     expect(movementCapabilityConditionAdjustment('Overland', 5, ['Stuck'])).toMatchObject({
       condition: 'Stuck',
       adjustedValue: 0,
       displayValue: 'no Shift movement',
+    })
+    expect(movementCapabilityConditionAdjustment('Overland', 5, ['Tripped'])).toMatchObject({
+      condition: 'Tripped',
+      adjustedValue: 0,
+      displayValue: 'stand first',
     })
     expect(conditionAccuracyModifier(['Blindness'])).toBe(-6)
     expect(conditionAccuracyModifier(['Blindness', 'Total Blindness'])).toBe(-10)

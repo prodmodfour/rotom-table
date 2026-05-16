@@ -22,7 +22,7 @@ const adjustment = computed(() => movementCapabilityConditionAdjustment(
   <small
     v-if="adjustment"
     class="movement-capability-adjustment"
-    :class="{ 'movement-capability-adjustment--blocked': adjustment.condition === 'Stuck' }"
+    :class="{ 'movement-capability-adjustment--blocked': adjustment.condition === 'Stuck' || adjustment.condition === 'Tripped' }"
     :title="adjustment.title"
   >{{ adjustment.condition }}: <template v-if="showName">{{ displayName }} </template>{{ adjustment.displayValue }}</small>
 </template>

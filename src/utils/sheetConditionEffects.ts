@@ -22,6 +22,7 @@ const EVASION_SUPPRESSING_CONDITIONS = [
 ] as const
 
 const SPEED_EVASION_SUPPRESSING_CONDITIONS = ['Stuck'] as const
+const SHIFT_MOVEMENT_BLOCKING_CONDITIONS = ['Stuck', 'Tripped'] as const
 
 const MOVEMENT_CAPABILITY_LABELS = [
   'Overland',
@@ -81,7 +82,7 @@ export interface ConditionEffectSummary {
 }
 
 export interface MovementCapabilityConditionAdjustment {
-  condition: 'Slowed' | 'Stuck'
+  condition: 'Slowed' | 'Stuck' | 'Tripped'
   adjustedValue: number
   displayValue: string
   title: string
@@ -112,7 +113,7 @@ export const conditionSlowsMovement = (
 
 export const conditionBlocksShiftMovement = (
   conditions: readonly string[] | null | undefined,
-): boolean => conditionSet(conditions).has('Stuck')
+): boolean => hasAnyCondition(conditionSet(conditions), SHIFT_MOVEMENT_BLOCKING_CONDITIONS)
 
 export const isConditionAdjustedMovementCapability = (label: string): boolean =>
   movementCapabilityLabels.has(normalizedCapabilityLabel(label))
@@ -150,7 +151,16 @@ export const movementCapabilityConditionAdjustment = (
   if (!isConditionAdjustedMovementCapability(label)) return null
   const movement = numericMovementValue(value)
   if (movement == null || movement <= 0) return null
-  if (conditionBlocksShiftMovement(conditions)) {
+  const blockingCondition = firstPresentCondition(conditionSet(conditions), SHIFT_MOVEMENT_BLOCKING_CONDITIONS)
+  if (blockingCondition === 'Tripped') {
+    return {
+      condition: 'Tripped',
+      adjustedValue: 0,
+      displayValue: 'stand first',
+      title: 'Tripped requires spending a Shift Action to stand before taking further actions.',
+    }
+  }
+  if (blockingCondition === 'Stuck') {
     return {
       condition: 'Stuck',
       adjustedValue: 0,

@@ -101,6 +101,7 @@ const EXTRA_ALIASES: Record<string, string[]> = {
   Blindness: ['Blind', 'Blinded', 'Blindness'],
   'Total Blindness': ['Totally Blind', 'Totally Blinded', 'Total Blindness'],
   Slowed: ['Slow Condition', 'Slows', 'Slowed'],
+  Tripped: ['Trip', 'Trips', 'Tripping', 'Tripped'],
 }
 
 const aliasToName = new Map<string, string>()
