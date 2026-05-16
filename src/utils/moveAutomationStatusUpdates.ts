@@ -1,4 +1,9 @@
 import { normalizeCombatStages } from '~/utils/combatStages'
+import {
+  addAppliedCondition,
+  mergeAppliedConditions,
+  removeAppliedCondition,
+} from '~/utils/conditionApplication'
 import { addCombatStageDeltas } from '~/utils/moveAutomationDialog'
 import { normalizeConditionNames } from '~/utils/statusConditions'
 import type { CombatStageKey, CombatStageMap } from '~/types/combatStages'
@@ -20,45 +25,55 @@ export interface MoveAutomationCombatStageUpdateAccumulator {
   toUpdates(): MoveAutomationCombatStageUpdate[]
 }
 
-const conditionSetForToken = (
-  updates: Map<string, Set<string>>,
+const conditionListForToken = (
+  updates: Map<string, string[]>,
   token: SpawnedPokemon,
-): Set<string> => {
+): string[] => {
   const existing = updates.get(token.id)
   if (existing) return existing
 
-  const set = new Set(normalizeConditionNames(token.conditions))
-  updates.set(token.id, set)
-  return set
+  const conditions = normalizeConditionNames(token.conditions)
+  updates.set(token.id, conditions)
+  return conditions
+}
+
+const setConditionListForToken = (
+  updates: Map<string, string[]>,
+  token: SpawnedPokemon,
+  conditions: string[],
+): void => {
+  updates.set(token.id, normalizeConditionNames(conditions))
 }
 
 export const createMoveAutomationConditionUpdateAccumulator = (): MoveAutomationConditionUpdateAccumulator => {
-  const conditionById = new Map<string, Set<string>>()
+  const conditionById = new Map<string, string[]>()
 
   return {
     merge: (token, conditions) => {
       const normalized = normalizeConditionNames(conditions)
       if (!normalized.length) return
 
-      const set = conditionSetForToken(conditionById, token)
-      for (const condition of normalized) set.add(condition)
+      const current = conditionListForToken(conditionById, token)
+      setConditionListForToken(conditionById, token, mergeAppliedConditions(current, normalized))
     },
     applySuggestion: (token, suggestion) => {
-      const set = conditionSetForToken(conditionById, token)
       if (suggestion.action === 'clear') {
-        set.clear()
+        setConditionListForToken(conditionById, token, [])
         return
       }
 
       const normalized = normalizeConditionNames([suggestion.condition])
-      for (const condition of normalized) {
-        if (suggestion.action === 'remove') set.delete(condition)
-        else set.add(condition)
-      }
+      if (!normalized.length) return
+
+      const current = conditionListForToken(conditionById, token)
+      const next = suggestion.action === 'remove'
+        ? normalized.reduce((conditions, condition) => removeAppliedCondition(conditions, condition), current)
+        : normalized.reduce((conditions, condition) => addAppliedCondition(conditions, condition), current)
+      setConditionListForToken(conditionById, token, next)
     },
     toUpdates: () => Array.from(conditionById.entries()).map(([id, conditions]) => ({
       id,
-      conditions: normalizeConditionNames(Array.from(conditions)),
+      conditions: normalizeConditionNames(conditions),
     })),
   }
 }

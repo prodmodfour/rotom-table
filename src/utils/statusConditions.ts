@@ -25,6 +25,12 @@ export const STATUS_CONDITION_NAMES = [
   'Sleep',
 ] as const
 
+export const STACKABLE_CONDITION_NAMES = [
+  'Flinch',
+] as const
+
+type StackableConditionName = (typeof STACKABLE_CONDITION_NAMES)[number]
+
 export const CONDITION_CATEGORY_ORDER = [
   'Persistent Affliction',
   'Volatile Affliction',
@@ -83,6 +89,7 @@ const EXTRA_ALIASES: Record<string, string[]> = {
   Frozen: ['Freeze', 'Freezes', 'Freezing', 'Frozen'],
   Burned: ['Burn', 'Burns', 'Burnt', 'Burned'],
   Confused: ['Confusion', 'Confused'],
+  Flinch: ['Flinched', 'Flinches', 'Flinching'],
   Rage: ['Enraged', 'Enrage', 'Rage'],
   Infatuation: ['Infatuated', 'Infatuation'],
   Suppressed: ['Suppression', 'Suppress', 'Suppressed'],
@@ -153,6 +160,11 @@ export const normalizeConditionName = (raw: unknown): string | null => {
 
 export const conditionBaseName = (raw: unknown): string | null => normalizeConditionName(raw)
 
+export const isStackableCondition = (raw: unknown): boolean => {
+  const canonical = conditionBaseName(raw)
+  return STACKABLE_CONDITION_NAMES.includes(canonical as StackableConditionName)
+}
+
 export const conditionDisplayName = (raw: unknown): string => {
   if (typeof raw !== 'string') return ''
   const baseName = conditionBaseName(raw)
@@ -192,6 +204,11 @@ export const normalizeConditionNames = (raw: readonly unknown[] | undefined | nu
   for (const value of raw) {
     const name = normalizeConditionEntry(value)
     if (!name) continue
+    if (isStackableCondition(name)) {
+      out.push(name)
+      continue
+    }
+
     const key = normalizedConditionKey(name)
     if (seen.has(key)) continue
     seen.add(key)
@@ -202,6 +219,15 @@ export const normalizeConditionNames = (raw: readonly unknown[] | undefined | nu
     if (indexCmp !== 0) return indexCmp
     return a.localeCompare(b)
   })
+}
+
+export const conditionStackCount = (
+  raw: readonly unknown[] | undefined | null,
+  conditionName: unknown,
+): number => {
+  const canonical = normalizeConditionName(conditionName)
+  if (!canonical) return 0
+  return normalizeConditionNames(raw).filter((condition) => conditionBaseName(condition) === canonical).length
 }
 
 export const disabledMoveNamesFromConditions = (

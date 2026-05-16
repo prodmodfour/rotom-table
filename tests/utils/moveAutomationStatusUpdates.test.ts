@@ -63,6 +63,18 @@ describe('move automation status update accumulators', () => {
     expect(accumulator.toUpdates()).toEqual([])
   })
 
+  it('stacks Flinch and applies Vulnerable with every new Flinch stack', () => {
+    const target = token({ id: 'target', species: 'Target', conditions: ['Flinch'] })
+    const accumulator = createMoveAutomationConditionUpdateAccumulator()
+
+    accumulator.applySuggestion(target, { recipient: 'target', condition: 'Flinch', label: 'Flinch' })
+    accumulator.merge(target, ['Flinched'])
+
+    expect(accumulator.toUpdates()).toEqual([
+      { id: 'target', conditions: ['Flinch', 'Flinch', 'Flinch', 'Vulnerable'] },
+    ])
+  })
+
   it('accumulates combat-stage deltas from normalized token stages', () => {
     const target = token({
       id: 'target',

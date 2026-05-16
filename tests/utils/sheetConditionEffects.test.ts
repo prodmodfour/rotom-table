@@ -84,6 +84,7 @@ describe('sheet condition effects', () => {
   it('resolves initiative and accuracy modifiers from conditions', () => {
     expect(conditionAdjustedInitiative(31, ['Paralysis'])).toBe(15)
     expect(conditionAdjustedInitiative(31, ['Paralysis', 'Flinch'])).toBe(10)
+    expect(conditionAdjustedInitiative(31, ['Flinch', 'Flinched'])).toBe(21)
     expect(conditionAccuracyModifier(['Blindness'])).toBe(-6)
     expect(conditionAccuracyModifier(['Blindness', 'Total Blindness'])).toBe(-10)
     expect(conditionAdjustedAccuracy(2, ['Total Blindness'])).toBe(-8)
@@ -94,10 +95,11 @@ describe('sheet condition effects', () => {
     expect(evasionSuppressedByCondition(['Bad SLeep'])).toBe('Bad Sleep')
     expect(speedEvasionSuppressedByCondition(['Stuck'])).toBe('Stuck')
 
-    const effects = describeSheetConditionEffects(['Burned', 'Bad Sleep', 'Disabled: Thunder Wave'], { tickValue: 7 })
+    const effects = describeSheetConditionEffects(['Burned', 'Bad Sleep', 'Flinch', 'Flinch', 'Disabled: Thunder Wave'], { tickValue: 7 })
     expect(effects).toEqual(expect.arrayContaining([
       expect.objectContaining({ label: 'Burned', description: expect.stringContaining('Defense Combat Stage -2') }),
       expect.objectContaining({ label: 'Bad Sleep', description: expect.stringMatching(/Applies no Evasion.*14 HP/) }),
+      expect.objectContaining({ label: 'Flinch ×2', description: expect.stringContaining('lowered by 10') }),
       expect.objectContaining({ label: 'Disabled: Thunder Wave', description: expect.stringContaining('Thunder Wave cannot be used') }),
     ]))
   })

@@ -22,6 +22,16 @@ describe('move automation condition suggestion helpers', () => {
         threshold: '18+',
         optional: true,
       }))
+
+    expect(parseMoveAutomationConditionSuggestions('Bite Flinches the target on 15+.'))
+      .toContainEqual(expect.objectContaining({
+        recipient: 'target',
+        condition: 'Flinch',
+        action: 'add',
+        label: 'Flinch on 15+',
+        threshold: '15+',
+        optional: true,
+      }))
   })
 
   it('routes Rest sleep to the user', () => {

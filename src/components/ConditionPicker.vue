@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import type { ConditionTagSize } from '~/utils/conditionTagArt'
+import { addAppliedCondition } from '~/utils/conditionApplication'
 import {
   conditionBaseName,
   conditionDisplayName,
@@ -8,6 +9,7 @@ import {
   conditionTitle,
   disabledConditionMove,
   formatDisabledCondition,
+  isStackableCondition,
   normalizeConditionNames,
 } from '~/utils/statusConditions'
 
@@ -88,11 +90,16 @@ const addDisabledMove = () => {
   if (props.disabled) return
   const moveName = selectedDisabledMove.value
   if (!moveName) return
-  update([...selected.value, formatDisabledCondition(moveName)])
+  update(addAppliedCondition(selected.value, formatDisabledCondition(moveName)))
   closeDisabledMovePicker()
 }
 
-const removeCondition = (name: string) => {
+const removeCondition = (name: string, index: number) => {
+  if (isStackableCondition(name)) {
+    update(selected.value.filter((_, conditionIndex) => conditionIndex !== index))
+    return
+  }
+
   update(selected.value.filter((condition) => condition !== name))
 }
 
@@ -102,9 +109,14 @@ const toggle = (name: string) => {
     return
   }
 
+  if (isStackableCondition(name)) {
+    update(addAppliedCondition(selected.value, name))
+    return
+  }
+
   const next = selected.value.filter((condition) => condition !== name)
-  if (!selectedSet.value.has(name)) next.push(name)
-  update(next)
+  if (!selectedSet.value.has(name)) update(addAppliedCondition(next, name))
+  else update(next)
 }
 
 const optionSelected = (name: string): boolean =>
@@ -127,13 +139,13 @@ watch(moveOptions, (options) => {
   <div class="condition-picker" :class="{ 'condition-picker--compact': compact }">
     <div v-if="selected.length" class="condition-picker__active" aria-label="Applied conditions">
       <button
-        v-for="name in selected"
-        :key="name"
+        v-for="(name, index) in selected"
+        :key="`${name}-${index}`"
         type="button"
         class="condition-picker__active-tag"
         :title="`Remove ${conditionDisplayName(name)}`"
         :disabled="disabled"
-        @click="removeCondition(name)"
+        @click="removeCondition(name, index)"
       >
         <ConditionTag :name="name" :size="tagSize" />
         <span v-if="disabledConditionMove(name)" class="condition-picker__active-detail">{{ activeConditionLabel(name) }}</span>

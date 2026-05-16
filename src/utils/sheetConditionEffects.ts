@@ -3,6 +3,7 @@ import { clampCombatStage } from '~/utils/combatStages'
 import { computeEvasionTotal, computeStatEvasion } from '~/utils/evasion'
 import {
   conditionBaseName,
+  conditionStackCount,
   disabledConditionMove,
   normalizeConditionNames,
 } from '~/utils/statusConditions'
@@ -170,7 +171,8 @@ export const conditionAdjustedInitiative = (
   const set = conditionSet(conditions)
   let initiative = Math.trunc(finiteNumber(baseSpeed))
   if (set.has('Paralysis')) initiative = Math.floor(initiative / 2)
-  if (set.has('Flinch')) initiative -= 5
+  const flinchStacks = conditionStackCount(conditions, 'Flinch')
+  if (flinchStacks > 0) initiative -= 5 * flinchStacks
   return initiative
 }
 
@@ -252,11 +254,13 @@ export const describeSheetConditionEffects = (
     })
   }
 
-  if (set.has('Flinch')) {
+  const flinchStacks = conditionStackCount(conditions, 'Flinch')
+  if (flinchStacks > 0) {
+    const initiativePenalty = 5 * flinchStacks
     effects.push({
       id: 'flinch-initiative',
-      label: 'Flinch',
-      description: 'Initiative is lowered by 5 for the Scene; Vulnerable for 1 full round after becoming Flinched.',
+      label: flinchStacks === 1 ? 'Flinch' : `Flinch ×${flinchStacks}`,
+      description: `Initiative is lowered by ${initiativePenalty} for the Scene; each applied stack also makes the target Vulnerable for 1 full round.`,
     })
   }
 

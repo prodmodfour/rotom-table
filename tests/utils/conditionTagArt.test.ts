@@ -53,6 +53,15 @@ describe('condition tag art helpers', () => {
     expect(conditionTagDefinition('burnt')).toEqual(CONDITION_TAGS.Burned)
     expect(conditionTagSvg('Badly Poisoned', 'sm')).toContain('TOX')
     expect(conditionsFromText('The target is burned and asleep.')).toEqual(['Burned', 'Sleep'])
+    expect(conditionsFromText('Bite Flinches the target on 15+.')).toEqual(['Flinch'])
+  })
+
+  it('preserves Flinch as a stackable condition', () => {
+    expect(normalizeConditionNames(['Flinched', 'Flinches', 'Burn', 'Burned'])).toEqual([
+      'Burned',
+      'Flinch',
+      'Flinch',
+    ])
   })
 
   it('preserves move-specific Disabled condition instances', () => {
