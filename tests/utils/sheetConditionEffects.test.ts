@@ -6,6 +6,7 @@ import {
   conditionAdjustedEvasion,
   conditionAdjustedInitiative,
   conditionAdjustedMovement,
+  conditionDamageRollModifier,
   conditionAdjustedMovementCapability,
   conditionBlocksShiftMovement,
   describeSheetConditionEffects,
@@ -21,6 +22,20 @@ describe('sheet condition effects', () => {
     expect(conditionAdjustedCombatStage(1, ['Poisoned'], 'sdef')).toBe(-1)
     expect(conditionAdjustedCombatStage(1, ['Badly Poisoned'], 'sdef')).toBe(-1)
     expect(conditionAdjustedCombatStage(2, ['Burned'], 'atk')).toBe(2)
+  })
+
+  it('applies Quick Feet to qualifying status conditions', () => {
+    expect(conditionAdjustedCombatStage(0, ['Paralysis'], 'spd', { abilities: ['Quick Feet'] })).toBe(2)
+    expect(conditionAdjustedCombatStage(5, ['Sleep'], 'spd', { abilities: ['Quick Feet'] })).toBe(6)
+    expect(conditionAdjustedCombatStage(0, ['Badly Poisoned'], 'spd', { abilities: ['quick feet'] })).toBe(2)
+    expect(conditionAdjustedCombatStage(0, [], 'spd', { abilities: ['Quick Feet'] })).toBe(0)
+    expect(conditionAdjustedCombatStage(0, ['Paralysis'], 'atk', { abilities: ['Quick Feet'] })).toBe(0)
+    expect(conditionAdjustedInitiative(31, ['Paralysis'], { abilities: ['Quick Feet'] })).toBe(31)
+    expect(conditionAdjustedInitiative(31, ['Paralysis', 'Flinch'], { abilities: ['Quick Feet'] })).toBe(26)
+    expect(describeSheetConditionEffects(['Paralysis'], { abilities: ['Quick Feet'] })).toEqual(expect.arrayContaining([
+      expect.objectContaining({ label: 'Quick Feet', description: expect.stringContaining('Speed Combat Stage +2') }),
+      expect.objectContaining({ label: 'Paralysis', description: expect.stringContaining('prevents Initiative') }),
+    ]))
   })
 
   it('applies evasion suppression and condition stages', () => {
@@ -116,7 +131,9 @@ describe('sheet condition effects', () => {
     })
     expect(conditionAccuracyModifier(['Blindness'])).toBe(-6)
     expect(conditionAccuracyModifier(['Blindness', 'Total Blindness'])).toBe(-10)
+    expect(conditionAccuracyModifier(['Helping Hand', 'Supersonic Accuracy Penalty'])).toBe(0)
     expect(conditionAdjustedAccuracy(2, ['Total Blindness'])).toBe(-8)
+    expect(conditionDamageRollModifier(['Helping Hand'])).toBe(10)
   })
 
   it('identifies evasion-suppressing conditions and describes sheet effects', () => {
@@ -124,12 +141,15 @@ describe('sheet condition effects', () => {
     expect(evasionSuppressedByCondition(['Bad SLeep'])).toBe('Bad Sleep')
     expect(speedEvasionSuppressedByCondition(['Stuck'])).toBe('Stuck')
 
-    const effects = describeSheetConditionEffects(['Burned', 'Bad Sleep', 'Flinch', 'Flinch', 'Disabled: Thunder Wave'], { tickValue: 7 })
+    const effects = describeSheetConditionEffects(['Burned', 'Bad Sleep', 'Flinch', 'Flinch', 'Disabled: Thunder Wave', 'Helping Hand', 'Supersonic Accuracy Penalty', 'Electric-Resistant Coat'], { tickValue: 7 })
     expect(effects).toEqual(expect.arrayContaining([
       expect.objectContaining({ label: 'Burned', description: expect.stringContaining('Defense Combat Stage -2') }),
       expect.objectContaining({ label: 'Bad Sleep', description: expect.stringMatching(/Applies no Evasion.*14 HP/) }),
       expect.objectContaining({ label: 'Flinch ×2', description: expect.stringContaining('lowered by 10') }),
       expect.objectContaining({ label: 'Disabled: Thunder Wave', description: expect.stringContaining('Thunder Wave cannot be used') }),
+      expect.objectContaining({ label: 'Helping Hand', description: expect.stringContaining('+2') }),
+      expect.objectContaining({ label: 'Supersonic Accuracy Penalty', description: expect.stringContaining('-2') }),
+      expect.objectContaining({ label: 'Electric-Resistant Coat', description: expect.stringContaining('Electric-Type') }),
     ]))
   })
 })

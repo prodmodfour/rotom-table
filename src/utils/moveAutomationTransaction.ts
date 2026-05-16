@@ -29,6 +29,8 @@ import {
   type MoveAutomationTargetResolutionState,
 } from '~/utils/moveAutomationTargetResolution'
 import { accuracyRollMeetsMoveThreshold } from '~/utils/moveAutomationThresholds'
+import { conditionBaseName, normalizeConditionNames } from '~/utils/statusConditions'
+import { ELECTRIC_RESISTANT_COAT_CONDITION } from '~/utils/moveAutomationSpecialConditions'
 import type { CombatStageKey } from '~/types/combatStages'
 import type { MapFieldEffects } from '~/types/map'
 import type {
@@ -116,6 +118,8 @@ export const buildMoveAutomationTransaction = ({
   const conditionAccumulator = createMoveAutomationConditionUpdateAccumulator()
   const stageAccumulator = createMoveAutomationCombatStageUpdateAccumulator()
   const logLines = buildMoveAutomationStartLogLines(script, user.species)
+  const damageLossByTargetId = new Map<string, number>()
+  let totalAppliedDamageLoss = 0
 
   for (const target of selectedTargets) {
     const loss = resolveMoveAutomationTargetDamageLoss(
@@ -127,7 +131,11 @@ export const buildMoveAutomationTransaction = ({
       selectedTargets,
     )
     if (loss > 0) {
-      hpAccumulator.set(target, hpAccumulator.get(target) - loss)
+      const beforeHp = hpAccumulator.get(target)
+      hpAccumulator.set(target, beforeHp - loss)
+      const appliedLoss = Math.max(0, beforeHp - hpAccumulator.get(target))
+      damageLossByTargetId.set(target.id, appliedLoss)
+      totalAppliedDamageLoss += appliedLoss
       logLines.push(script.directHpLoss
         ? formatMoveAutomationDirectHpLossLogLine(target.species, loss, script.directHpLoss.label)
         : formatMoveAutomationDamageLogLine(target.species, loss, targetResolutions[target.id]?.crit))
@@ -140,6 +148,17 @@ export const buildMoveAutomationTransaction = ({
   const targetEffectsApplyOnMiss = script.keywords.some((keyword) => /^Spirit Surge$/i.test(keyword))
   const targetWasHit = (target: SpawnedPokemon): boolean =>
     !script.requiresAccuracy || targetEffectsApplyOnMiss || targetResolutions[target.id]?.hit === true
+  const targetMatchesSuggestionTiming = (
+    kind: MoveAutomationSuggestionKind,
+    index: number,
+    target: SpawnedPokemon,
+  ): boolean => {
+    if (kind !== 'condition') return targetWasHit(target)
+    const applyWhen = script.conditionSuggestions[index]?.applyWhen ?? 'hit'
+    if (applyWhen === 'always') return true
+    if (applyWhen === 'miss') return script.requiresAccuracy && targetResolutions[target.id]?.hit === false
+    return targetWasHit(target)
+  }
   const targetMeetsSuggestionThreshold = (
     threshold: string | undefined,
     target: SpawnedPokemon,
@@ -152,7 +171,7 @@ export const buildMoveAutomationTransaction = ({
   ): SpawnedPokemon[] => {
     const recipients = recipient === 'user'
       ? [user]
-      : selectedTargets.filter((target) => targetWasHit(target) && targetMeetsSuggestionThreshold(threshold, target))
+      : selectedTargets.filter((target) => targetMatchesSuggestionTiming(kind, index, target) && targetMeetsSuggestionThreshold(threshold, target))
     return recipients.filter((token) => suggestionRecipientFilter?.({ kind, index, recipient, token }) ?? true)
   }
 
@@ -160,7 +179,11 @@ export const buildMoveAutomationTransaction = ({
     if (!suggestionIsEnabled(script, enabledSuggestions, 'hp', index)) return
     const recipients = suggestionRecipients('hp', index, item.recipient)
     for (const token of recipients) {
-      const amount = resolveHpSuggestionAmount(script, hpSuggestionAmounts, index, token)
+      const amount = resolveHpSuggestionAmount(script, hpSuggestionAmounts, index, token, {
+        damageDealt: item.recipient === 'target'
+          ? damageLossByTargetId.get(token.id) ?? 0
+          : totalAppliedDamageLoss,
+      })
       if (amount <= 0 && item.mode !== 'set-zero') continue
       const next = applyHpSuggestion(hpAccumulator.get(token), token.maxHp, amount, item.mode)
       hpAccumulator.set(token, next)
@@ -175,6 +198,21 @@ export const buildMoveAutomationTransaction = ({
     const logLine = formatMoveAutomationConditionSuggestionLogLine(item, recipients)
     if (logLine) logLines.push(logLine)
   })
+  if (script.type === 'Electric' && script.damaging) {
+    for (const target of selectedTargets) {
+      if ((damageLossByTargetId.get(target.id) ?? 0) <= 0) continue
+      const hasCoat = normalizeConditionNames(target.conditions)
+        .some((condition) => (conditionBaseName(condition) ?? condition) === ELECTRIC_RESISTANT_COAT_CONDITION)
+      if (!hasCoat) continue
+      conditionAccumulator.applySuggestion(target, {
+        recipient: 'target',
+        condition: ELECTRIC_RESISTANT_COAT_CONDITION,
+        action: 'remove',
+        label: 'Electric-Resistant Coat consumed',
+      })
+      logLines.push(`${target.species}: Electric-Resistant Coat removed after Electric damage.`)
+    }
+  }
   conditionAccumulator.merge(user, manualUserConditions)
   for (const target of selectedTargets) conditionAccumulator.merge(target, manualTargetConditions)
 

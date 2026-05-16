@@ -9,6 +9,11 @@ import {
   damageFormulaForManualMove,
 } from '~/utils/moveAutomationManual'
 import { STRUGGLE_ATTACK_MOVE_NAMES } from '~/utils/struggleMoves'
+import {
+  ELECTRIC_RESISTANT_COAT_CONDITION,
+  HELPING_HAND_CONDITION,
+  SUPERSONIC_ACCURACY_PENALTY_CONDITION,
+} from '~/utils/moveAutomationSpecialConditions'
 import type { MoveDamageRollResult } from '~/utils/moveDamageBase'
 import type { CombatStageKey } from '~/types/combatStages'
 import type { CharacterSheetMove } from '~/types/characterSheet'
@@ -72,6 +77,7 @@ type ReviewedTargetConditionDefinition = {
   label: string
   threshold?: string
   optional?: boolean
+  applyWhen?: MoveAutomationScript['conditionSuggestions'][number]['applyWhen']
 }
 
 const reviewedMoveScriptFromCanonical = (
@@ -119,6 +125,16 @@ const targetStageSuggestions = (stages: readonly ReviewedTargetStageDefinition[]
     ...(!stage.threshold && stage.optional != null ? { optional: stage.optional } : {}),
   }))
 
+const userStageSuggestions = (stages: readonly ReviewedTargetStageDefinition[]): MoveAutomationScript['stageSuggestions'] =>
+  stages.map((stage) => ({
+    recipient: 'user',
+    key: stage.key,
+    delta: stage.delta,
+    label: stage.label,
+    ...(stage.threshold ? { threshold: stage.threshold, optional: stage.optional ?? true } : {}),
+    ...(!stage.threshold && stage.optional != null ? { optional: stage.optional } : {}),
+  }))
+
 const targetConditionSuggestions = (conditions: readonly ReviewedTargetConditionDefinition[]): MoveAutomationScript['conditionSuggestions'] =>
   conditions.map((condition) => ({
     recipient: 'target',
@@ -127,6 +143,7 @@ const targetConditionSuggestions = (conditions: readonly ReviewedTargetCondition
     label: condition.label,
     ...(condition.threshold ? { threshold: condition.threshold, optional: condition.optional ?? true } : {}),
     ...(!condition.threshold && condition.optional != null ? { optional: condition.optional } : {}),
+    ...(condition.applyWhen ? { applyWhen: condition.applyWhen } : {}),
   }))
 
 const areaAutomationNotes = (script: Pick<MoveAutomationScript, 'keywords'>): string[] => [
@@ -178,6 +195,19 @@ const reviewedSingleTargetStageScript = (
   targetMode: 'one-target',
   targetCount: 1,
   stageSuggestions: targetStageSuggestions(stages),
+})
+
+const reviewedSelfStageScript = (
+  moveName: string,
+  stages: readonly ReviewedTargetStageDefinition[],
+  version = 1,
+  overrides: ReviewedMoveScriptOverrides = {},
+): MoveAutomationScript => reviewedMoveScriptFromCanonical(moveName, version, {
+  targetMode: 'self',
+  targetCount: 1,
+  requiresAccuracy: false,
+  stageSuggestions: userStageSuggestions(stages),
+  ...overrides,
 })
 
 const reviewedAreaConfirmationScript = (
@@ -306,6 +336,38 @@ const reviewedPsywaveScript = (version = 1): MoveAutomationScript => {
   })
 }
 
+const reviewedAbsorbScript = (version = 1): MoveAutomationScript => reviewedMoveScriptFromCanonical('Absorb', version, {
+  targetMode: 'one-target',
+  targetCount: 1,
+  hpSuggestions: [{
+    recipient: 'user',
+    mode: 'heal-percent-damage-dealt',
+    percent: 50,
+    label: 'Absorb heals user for half damage dealt',
+  }],
+})
+
+const reviewedMudSportScript = (version = 1): MoveAutomationScript => reviewedAreaConfirmationScript('Mud Sport', version, {
+  conditionSuggestions: [
+    {
+      recipient: 'user',
+      condition: ELECTRIC_RESISTANT_COAT_CONDITION,
+      action: 'add',
+      label: 'Mud Sport grants Electric-Resistant Coat',
+    },
+    {
+      recipient: 'target',
+      condition: ELECTRIC_RESISTANT_COAT_CONDITION,
+      action: 'add',
+      label: 'Mud Sport grants Electric-Resistant Coat',
+    },
+  ],
+  automationNotes: [
+    'Burst 2 is shown as an area overlay; the user also receives the Coat even though the user token is not a selectable target.',
+    'Electric-Resistant Coat is consumed automatically after a damaging Electric-Type move hits that token.',
+  ],
+})
+
 const REVIEWED_TARGET_STAGE_AREA_SCRIPTS: ReadonlyMap<string, MoveAutomationScript> = new Map([
   ['Acid', reviewedTargetStagesAreaScript('Acid', [{ key: 'sdef', delta: -1, label: 'Acid lowers Special Defense on 18+: -1 Special Defense CS', threshold: '18+' }])],
   ['Apple Acid', reviewedTargetStagesAreaScript('Apple Acid', [{ key: 'sdef', delta: -1, label: 'Apple Acid lowers Special Defense: -1 Special Defense CS' }])],
@@ -371,11 +433,16 @@ const REVIEWED_DIRECT_HP_LOSS_SCRIPTS: ReadonlyMap<string, MoveAutomationScript>
   ['Psywave', reviewedPsywaveScript()],
 ])
 
+const REVIEWED_AREA_COAT_SCRIPTS: ReadonlyMap<string, MoveAutomationScript> = new Map([
+  ['Mud Sport', reviewedMudSportScript()],
+])
+
 const SEAMLESS_AREA_CONFIRMATION_SCRIPTS: ReadonlyMap<string, MoveAutomationScript> = new Map([
   ...REVIEWED_TARGET_STAGE_AREA_SCRIPTS,
   ...REVIEWED_AREA_CONFIRMATION_SCRIPTS,
   ...REVIEWED_AREA_CONDITION_SCRIPTS,
   ...REVIEWED_SMOG_SCRIPTS,
+  ...REVIEWED_AREA_COAT_SCRIPTS,
 ])
 
 const SEAMLESS_SINGLE_TARGET_ATTACK_SCRIPT_NAMES = [
@@ -543,6 +610,42 @@ const REVIEWED_SINGLE_TARGET_STAGE_SCRIPTS: ReadonlyMap<string, MoveAutomationSc
   ])],
 ])
 
+const REVIEWED_ADDITIONAL_SINGLE_TARGET_SCRIPTS: ReadonlyMap<string, MoveAutomationScript> = new Map([
+  ['Absorb', reviewedAbsorbScript()],
+  ['Fake Out', reviewedSingleTargetConditionScript('Fake Out', [{ condition: 'Flinch', label: 'Fake Out flinches on hit' }], 1, {
+    automationNotes: ['Fake Out’s Priority/Flinch clause is only legal upon joining an encounter; automation applies Flinch on hit assuming that requirement is met.'],
+  })],
+  ['Fury Cutter', reviewedMoveScriptFromCanonical('Fury Cutter', 1, {
+    targetMode: 'one-target',
+    targetCount: 1,
+    automationNotes: ['Fury Cutter’s consecutive same-target Damage Base scaling is not inferred; update the move DB manually before use if the chain has advanced.'],
+  })],
+  ['Helping Hand', reviewedSingleTargetConditionScript('Helping Hand', [{ condition: HELPING_HAND_CONDITION, label: 'Helping Hand bonus' }], 1, {
+    requiresAccuracy: false,
+    automationNotes: ['Helping Hand creates a removable marker; remove it after the target consumes the +2 Accuracy/+10 Damage bonus or the round ends.'],
+  })],
+  ['Sand Tomb', reviewedSingleTargetConditionScript('Sand Tomb', [
+    { condition: 'Slowed', label: 'Vortex slows target' },
+    { condition: 'Trapped', label: 'Vortex traps target' },
+  ], 1, {
+    automationNotes: ['Vortex tick damage and the end-of-turn dispel checks (20, 14, 8, 2, then wears off) are tracked by note, not automatic turn processing.'],
+  })],
+  ['Supersonic', reviewedSingleTargetConditionScript('Supersonic', [
+    { condition: 'Confused', label: 'Confused on hit' },
+    { condition: SUPERSONIC_ACCURACY_PENALTY_CONDITION, label: 'Supersonic miss accuracy penalty', applyWhen: 'miss' },
+  ])],
+  ['Tackle', reviewedMoveScriptFromCanonical('Tackle', 1, {
+    targetMode: 'one-target',
+    targetCount: 1,
+    automationNotes: ['Tackle pushes the target 2 meters after damage; move the target token manually after the automated hit resolves.'],
+  })],
+  ['Torment', reviewedSingleTargetConditionScript('Torment', [{ condition: 'Suppressed', label: 'Suppressed' }])],
+])
+
+const REVIEWED_SELF_SCRIPTS: ReadonlyMap<string, MoveAutomationScript> = new Map([
+  ['Swords Dance', reviewedSelfStageScript('Swords Dance', [{ key: 'atk', delta: 2, label: 'Swords Dance raises Attack: +2 Attack CS' }])],
+])
+
 const STRUGGLE_ATTACK_SCRIPTS: ReadonlyMap<string, MoveAutomationScript> = new Map(
   STRUGGLE_ATTACK_MOVE_NAMES.map((name) => [name, reviewedSingleTargetAttackScript(name)]),
 )
@@ -560,6 +663,7 @@ const hasReviewedSeamlessSingleTargetScript = (script: MoveAutomationScript): bo
   || REVIEWED_SINGLE_TARGET_CONDITION_SCRIPTS.has(script.moveName)
   || REVIEWED_SINGLE_TARGET_STATUS_SCRIPTS.has(script.moveName)
   || REVIEWED_SINGLE_TARGET_STAGE_SCRIPTS.has(script.moveName)
+  || REVIEWED_ADDITIONAL_SINGLE_TARGET_SCRIPTS.has(script.moveName)
   || (REVIEWED_DIRECT_HP_LOSS_SCRIPTS.has(script.moveName) && Boolean(script.directHpLoss))
 
 export const isSeamlessSingleTargetAttackScript = (
@@ -571,6 +675,7 @@ export const isSeamlessSingleTargetAttackScript = (
       SEAMLESS_SINGLE_TARGET_ATTACK_SCRIPTS.has(script.moveName)
       || REVIEWED_SINGLE_TARGET_CONDITION_SCRIPTS.has(script.moveName)
       || REVIEWED_SINGLE_TARGET_STAGE_SCRIPTS.has(script.moveName)
+      || REVIEWED_ADDITIONAL_SINGLE_TARGET_SCRIPTS.has(script.moveName)
     )
     && script.targetMode === 'one-target'
     && script.targetCount === 1
@@ -587,9 +692,20 @@ export const isSeamlessSingleTargetMoveScript = (
       && hasReviewedSeamlessSingleTargetScript(script)
       && script.targetMode === 'one-target'
       && script.targetCount === 1
-      && script.requiresAccuracy,
+      && (script.requiresAccuracy || !script.damaging),
   )
 }
+
+export const isSeamlessSelfMoveScript = (
+  script: MoveAutomationScript | null | undefined,
+): boolean => Boolean(
+  script
+    && script.kind === 'explicit'
+    && REVIEWED_SELF_SCRIPTS.has(script.moveName)
+    && script.targetMode === 'self'
+    && script.targetCount === 1
+    && !script.requiresAccuracy,
+)
 
 export const isSeamlessAreaConfirmationScript = (
   script: MoveAutomationScript | null | undefined,
@@ -613,6 +729,8 @@ export const EXPLICIT_MOVE_AUTOMATION_SCRIPTS: ReadonlyMap<string, MoveAutomatio
   ...REVIEWED_SINGLE_TARGET_CONDITION_SCRIPTS,
   ...REVIEWED_SINGLE_TARGET_STATUS_SCRIPTS,
   ...REVIEWED_SINGLE_TARGET_STAGE_SCRIPTS,
+  ...REVIEWED_ADDITIONAL_SINGLE_TARGET_SCRIPTS,
+  ...REVIEWED_SELF_SCRIPTS,
   ...SEAMLESS_AREA_CONFIRMATION_SCRIPTS,
   ...REVIEWED_DIRECT_HP_LOSS_SCRIPTS,
 ])

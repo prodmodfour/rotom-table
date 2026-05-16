@@ -3,13 +3,14 @@ import {
   EXPLICIT_MOVE_AUTOMATION_SCRIPTS,
   explicitScriptForMove,
   isSeamlessAreaConfirmationScript,
+  isSeamlessSelfMoveScript,
   isSeamlessSingleTargetMoveScript,
 } from '~/utils/moveAutomation'
 
 describe('explicit move automation scripts', () => {
   it('keeps every explicit script on a seamless map-targeting flow', () => {
     const nonSeamlessScripts = [...EXPLICIT_MOVE_AUTOMATION_SCRIPTS.values()].filter((script) =>
-      !isSeamlessSingleTargetMoveScript(script) && !isSeamlessAreaConfirmationScript(script),
+      !isSeamlessSingleTargetMoveScript(script) && !isSeamlessAreaConfirmationScript(script) && !isSeamlessSelfMoveScript(script),
     )
 
     expect(nonSeamlessScripts).toEqual([])
@@ -215,6 +216,77 @@ describe('explicit move automation scripts', () => {
       },
     ])
     expect(isSeamlessAreaConfirmationScript(script)).toBe(true)
+  })
+
+  it('implements the requested basic moves as seamless explicit scripts', () => {
+    const tackle = explicitScriptForMove('Tackle')
+    expect(tackle).toMatchObject({ moveName: 'Tackle', targetMode: 'one-target', damaging: true, requiresAccuracy: true })
+    expect(tackle?.automationNotes).toEqual(expect.arrayContaining([expect.stringContaining('pushes the target 2 meters')]))
+    expect(isSeamlessSingleTargetMoveScript(tackle)).toBe(true)
+
+    const absorb = explicitScriptForMove('Absorb')
+    expect(absorb).toMatchObject({ moveName: 'Absorb', targetMode: 'one-target', damaging: true })
+    expect(absorb?.hpSuggestions).toEqual([
+      { recipient: 'user', mode: 'heal-percent-damage-dealt', percent: 50, label: 'Absorb heals user for half damage dealt' },
+    ])
+    expect(isSeamlessSingleTargetMoveScript(absorb)).toBe(true)
+
+    const swordsDance = explicitScriptForMove('Swords Dance')
+    expect(swordsDance).toMatchObject({ moveName: 'Swords Dance', targetMode: 'self', requiresAccuracy: false })
+    expect(swordsDance?.stageSuggestions).toEqual([
+      { recipient: 'user', key: 'atk', delta: 2, label: 'Swords Dance raises Attack: +2 Attack CS' },
+    ])
+    expect(isSeamlessSelfMoveScript(swordsDance)).toBe(true)
+
+    const furyCutter = explicitScriptForMove('Fury Cutter')
+    expect(furyCutter).toMatchObject({ moveName: 'Fury Cutter', targetMode: 'one-target', damaging: true })
+    expect(furyCutter?.automationNotes).toEqual(expect.arrayContaining([expect.stringContaining('Damage Base scaling is not inferred')]))
+    expect(isSeamlessSingleTargetMoveScript(furyCutter)).toBe(true)
+
+    const supersonic = explicitScriptForMove('Supersonic')
+    expect(supersonic).toMatchObject({ moveName: 'Supersonic', targetMode: 'one-target', damaging: false, requiresAccuracy: true })
+    expect(supersonic?.conditionSuggestions).toEqual([
+      { recipient: 'target', condition: 'Confused', action: 'add', label: 'Confused on hit' },
+      { recipient: 'target', condition: 'Supersonic Accuracy Penalty', action: 'add', label: 'Supersonic miss accuracy penalty', applyWhen: 'miss' },
+    ])
+    expect(isSeamlessSingleTargetMoveScript(supersonic)).toBe(true)
+
+    const torment = explicitScriptForMove('Torment')
+    expect(torment?.conditionSuggestions).toEqual([
+      { recipient: 'target', condition: 'Suppressed', action: 'add', label: 'Suppressed' },
+    ])
+    expect(isSeamlessSingleTargetMoveScript(torment)).toBe(true)
+
+    const sandTomb = explicitScriptForMove('Sand Tomb')
+    expect(sandTomb).toMatchObject({ moveName: 'Sand Tomb', targetMode: 'one-target', damaging: true })
+    expect(sandTomb?.conditionSuggestions).toEqual([
+      { recipient: 'target', condition: 'Slowed', action: 'add', label: 'Vortex slows target' },
+      { recipient: 'target', condition: 'Trapped', action: 'add', label: 'Vortex traps target' },
+    ])
+    expect(isSeamlessSingleTargetMoveScript(sandTomb)).toBe(true)
+
+    const helpingHand = explicitScriptForMove('Helping Hand')
+    expect(helpingHand).toMatchObject({ moveName: 'Helping Hand', targetMode: 'one-target', requiresAccuracy: false })
+    expect(helpingHand?.conditionSuggestions).toEqual([
+      { recipient: 'target', condition: 'Helping Hand', action: 'add', label: 'Helping Hand bonus' },
+    ])
+    expect(isSeamlessSingleTargetMoveScript(helpingHand)).toBe(true)
+
+    const fakeOut = explicitScriptForMove('Fake Out')
+    expect(fakeOut).toMatchObject({ moveName: 'Fake Out', targetMode: 'one-target', damaging: true })
+    expect(fakeOut?.conditionSuggestions).toEqual([
+      { recipient: 'target', condition: 'Flinch', action: 'add', label: 'Fake Out flinches on hit' },
+    ])
+    expect(isSeamlessSingleTargetMoveScript(fakeOut)).toBe(true)
+
+    const mudSport = explicitScriptForMove('Mud Sport')
+    expect(mudSport).toMatchObject({ moveName: 'Mud Sport', targetMode: 'multi-target', requiresAccuracy: false, damaging: false })
+    expect(mudSport?.areaTemplates).toMatchObject([{ kind: 'burst', size: 2 }])
+    expect(mudSport?.conditionSuggestions).toEqual([
+      { recipient: 'user', condition: 'Electric-Resistant Coat', action: 'add', label: 'Mud Sport grants Electric-Resistant Coat' },
+      { recipient: 'target', condition: 'Electric-Resistant Coat', action: 'add', label: 'Mud Sport grants Electric-Resistant Coat' },
+    ])
+    expect(isSeamlessAreaConfirmationScript(mudSport)).toBe(true)
   })
 
   it('implements Psywave as reviewed level-scaled direct HP loss', () => {

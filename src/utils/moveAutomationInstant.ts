@@ -53,6 +53,21 @@ export interface ResolveInstantMoveAutomationInput {
   idFactory?: () => string
 }
 
+export interface ResolveInstantTargetMoveAutomationInput {
+  script: MoveAutomationScript
+  user: SpawnedPokemon
+  target: SpawnedPokemon
+  damageFormula?: string | null
+  fieldEffects?: MapFieldEffects
+  random?: () => number
+}
+
+export interface ResolveInstantSelfMoveAutomationInput {
+  script: MoveAutomationScript
+  user: SpawnedPokemon
+  fieldEffects?: MapFieldEffects
+}
+
 const emptyStageDeltas = (): Record<CombatStageKey, number> => ({
   atk: 0,
   def: 0,
@@ -89,6 +104,17 @@ const targetThresholdMatches = (
   naturalRoll: number | null,
 ): boolean => !threshold || (naturalRoll != null && naturalRollMeetsMoveThreshold(threshold, naturalRoll))
 
+const targetConditionSuggestionApplies = (
+  suggestion: MoveAutomationScript['conditionSuggestions'][number],
+  hit: boolean,
+  requiresAccuracy = true,
+): boolean => {
+  const applyWhen = suggestion.applyWhen ?? 'hit'
+  if (applyWhen === 'always') return true
+  if (applyWhen === 'miss') return requiresAccuracy && !hit
+  return hit
+}
+
 const buildConditionFeedback = (options: {
   script: MoveAutomationScript
   target: SpawnedPokemon
@@ -100,12 +126,15 @@ const buildConditionFeedback = (options: {
 
   options.script.conditionSuggestions.forEach((suggestion, index) => {
     if (!isTargetConditionAddition(suggestion)) return
+    const suggestionKey = moveAutomationSuggestionKey(options.script, 'condition', index)
+    options.enabledSuggestions[suggestionKey] = false
     if (!targetThresholdMatches(suggestion.threshold, options.naturalRoll)) return
+    if (!targetConditionSuggestionApplies(suggestion, options.hit, options.script.requiresAccuracy)) return
 
     const condition = normalizeConditionName(suggestion.condition) ?? suggestion.condition
     const blockedBy = moveAutomationConditionImmunitySource(condition, options.target, options.script.type)
-    const applied = options.hit && !blockedBy
-    if (applied) options.enabledSuggestions[moveAutomationSuggestionKey(options.script, 'condition', index)] = true
+    const applied = !blockedBy
+    if (applied) options.enabledSuggestions[suggestionKey] = true
     feedback.push({
       condition,
       applied,
@@ -146,11 +175,12 @@ const resolveAreaConditionApplications = (
 
   for (const target of targets) {
     const resolution = targetResolutions[target.id]
-    if (!resolution?.hit) continue
+    if (!resolution) continue
     const naturalRoll = parseMoveAutomationNaturalRoll(resolution.accuracyRoll)
 
     script.conditionSuggestions.forEach((suggestion, index) => {
       if (!filteredSuggestionIndexes.has(index)) return
+      if (!targetConditionSuggestionApplies(suggestion, resolution.hit, script.requiresAccuracy)) return
       if (!targetThresholdMatches(suggestion.threshold, naturalRoll)) return
 
       const condition = normalizeConditionName(suggestion.condition) ?? suggestion.condition
@@ -311,6 +341,75 @@ export const resolveInstantMoveAutomation = ({
       conditions,
     },
   }
+}
+
+const buildNoRollTargetTransaction = ({
+  script,
+  user,
+  target,
+  damageFormula,
+  fieldEffects,
+  random,
+}: ResolveInstantTargetMoveAutomationInput): MoveAutomationTransaction => {
+  const state = defaultTargetResolutionState(script)
+  if (script.damaging && state.hit && damageFormula) state.damageRoll = rollDamageFormula(damageFormula, random)
+  const targetResolutions = { [target.id]: state }
+  const enabledSuggestions: Record<string, boolean> = {}
+  enableDefaultSuggestions(script, enabledSuggestions)
+  const conditionApplications = resolveAreaConditionApplications(script, [target], targetResolutions)
+  conditionApplications.targetIdsBySuggestion.forEach((targetIds, index) => {
+    if (targetIds.size) enabledSuggestions[moveAutomationSuggestionKey(script, 'condition', index)] = true
+  })
+
+  return buildMoveAutomationTransaction({
+    script,
+    user,
+    selectedTargets: [target],
+    targetResolutions,
+    enabledSuggestions,
+    hpSuggestionAmounts: {},
+    manualUserConditions: [],
+    manualTargetConditions: [],
+    manualUserStageDeltas: emptyStageDeltas(),
+    manualTargetStageDeltas: emptyStageDeltas(),
+    hazardCells: [],
+    manualNote: conditionApplications.blockedNotes.join(' '),
+    fieldEffects,
+    suggestionRecipientFilter: ({ kind, index, recipient, token }) => {
+      if (recipient !== 'target') return true
+      if (kind === 'condition' && conditionApplications.filteredSuggestionIndexes.has(index)) {
+        return conditionApplications.targetIdsBySuggestion.get(index)?.has(token.id) ?? false
+      }
+      return true
+    },
+  })
+}
+
+export const resolveInstantTargetMoveAutomation = (input: ResolveInstantTargetMoveAutomationInput): MoveAutomationTransaction =>
+  buildNoRollTargetTransaction(input)
+
+export const resolveInstantSelfMoveAutomation = ({
+  script,
+  user,
+  fieldEffects,
+}: ResolveInstantSelfMoveAutomationInput): MoveAutomationTransaction => {
+  const enabledSuggestions: Record<string, boolean> = {}
+  enableDefaultSuggestions(script, enabledSuggestions)
+  return buildMoveAutomationTransaction({
+    script,
+    user,
+    selectedTargets: [],
+    targetResolutions: {},
+    enabledSuggestions,
+    hpSuggestionAmounts: {},
+    manualUserConditions: [],
+    manualTargetConditions: [],
+    manualUserStageDeltas: emptyStageDeltas(),
+    manualTargetStageDeltas: emptyStageDeltas(),
+    hazardCells: [],
+    manualNote: '',
+    fieldEffects,
+  })
 }
 
 const formatAreaAccuracyLogLines = (

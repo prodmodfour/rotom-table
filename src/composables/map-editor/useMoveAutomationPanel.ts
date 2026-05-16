@@ -7,6 +7,7 @@ import {
 import {
   damageFormulaForMove,
   isSeamlessAreaConfirmationScript,
+  isSeamlessSelfMoveScript,
   isSeamlessSingleTargetMoveScript,
 } from '~/utils/moveAutomation'
 import { directHpLossRollFormulaForScript } from '~/utils/moveAutomationDirectHpLoss'
@@ -20,6 +21,8 @@ import { buildMoveAutomationMoveEntries } from '~/utils/moveAutomationMoves'
 import {
   resolveInstantAreaMoveAutomation,
   resolveInstantMoveAutomation,
+  resolveInstantSelfMoveAutomation,
+  resolveInstantTargetMoveAutomation,
 } from '~/utils/moveAutomationInstant'
 import { isMoveDisabledByConditions } from '~/utils/statusConditions'
 import {
@@ -359,21 +362,34 @@ export const useMoveAutomationPanel = ({
     const user = findSpawnedPokemon(id)
     const entry = moveAutomationEntryForUse(id, trimmedMoveName)
     if (!user || !entry) return false
+    const script: MoveAutomationScript = entry.script
 
-    if (isSeamlessSingleTargetMoveScript(entry.script)) {
-      const rangeMeters = parseSingleTargetMoveRangeMeters(entry.script.range, {
+    if (isSeamlessSelfMoveScript(script)) {
+      clearMoveAutomationFeedback()
+      activeMoveTargeting.value = null
+      closeMoveAutomation()
+      void applyMoveAutomation(resolveInstantSelfMoveAutomation({
+        script,
+        user,
+        fieldEffects: map.value?.fieldEffects,
+      }))
+      return true
+    }
+
+    if (isSeamlessSingleTargetMoveScript(script)) {
+      const rangeMeters = parseSingleTargetMoveRangeMeters(script.range, {
         focusSkillRankValue: user.focusSkillRankValue,
       })
       const damageFormula = rollFormulaForEntry(entry)
-      if (rangeMeters == null || (entry.script.damaging && !damageFormula)) return false
+      if (rangeMeters == null || (script.damaging && !damageFormula)) return false
 
       clearMoveAutomationFeedback()
       closeMoveAutomation()
       activeMoveTargeting.value = {
         kind: 'single-target',
         userId: id,
-        moveName: entry.script.moveName,
-        script: entry.script,
+        moveName: script.moveName,
+        script,
         damageFormula,
         rangeMeters,
       }
@@ -560,6 +576,19 @@ export const useMoveAutomationPanel = ({
     const user = findSpawnedPokemon(request.userId)
     const target = findSpawnedPokemon(targetId)
     if (!user || !target) return
+
+    if (!request.script.requiresAccuracy) {
+      const transaction = resolveInstantTargetMoveAutomation({
+        script: request.script,
+        user,
+        target,
+        damageFormula: request.damageFormula,
+        fieldEffects: map.value?.fieldEffects,
+      })
+      activeMoveTargeting.value = null
+      await applyMoveAutomation(transaction)
+      return
+    }
 
     const result = resolveInstantMoveAutomation({
       script: request.script,

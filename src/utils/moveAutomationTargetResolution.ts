@@ -1,11 +1,19 @@
 import { applyCombatStageToStat } from '~/utils/combatStageStats'
-import { conditionAdjustedCombatStage } from '~/utils/sheetConditionEffects'
+import {
+  conditionAdjustedCombatStage,
+  conditionDamageRollModifier,
+} from '~/utils/sheetConditionEffects'
 import { fieldEffectDamageBonus, type DamageRollResult } from '~/utils/moveAutomation'
 import { parsePositiveInt } from '~/utils/moveAutomationDialog'
 import { applyInfatuationOffenseModifier, resolveInfatuationDamageEffect } from '~/utils/infatuationDamage'
 import { resolveMoveAutomationDirectHpLoss } from '~/utils/moveAutomationDirectHpLoss'
-import { formatMultiplier } from '~/utils/typeChart'
+import {
+  formatMultiplier,
+  resistMultiplierOneStepFurther,
+} from '~/utils/typeChart'
 import { computeSheetAbilityAwareMultiplier } from '~/utils/sheetPassiveAbilityEffects'
+import { conditionBaseName, normalizeConditionNames } from '~/utils/statusConditions'
+import { ELECTRIC_RESISTANT_COAT_CONDITION } from '~/utils/moveAutomationSpecialConditions'
 import type { MapFieldEffects } from '~/types/map'
 import type { MoveAutomationScript } from '~/types/moveAutomation'
 import type { SpawnedPokemon } from '~/types/pokemon'
@@ -45,15 +53,27 @@ export const suggestionIsEnabled = (
   index: number,
 ): boolean => Boolean(enabledSuggestions[moveAutomationSuggestionKey(script, kind, index)])
 
+const targetHasCondition = (
+  target: SpawnedPokemon,
+  conditionName: string,
+): boolean => normalizeConditionNames(target.conditions)
+  .some((condition) => (conditionBaseName(condition) ?? condition) === conditionName)
+
 export const moveAutomationTargetDamageMultiplier = (
   script: MoveAutomationScript | null | undefined,
   target: SpawnedPokemon,
-): number => computeSheetAbilityAwareMultiplier(
-  script?.type ?? 'Normal',
-  target.defenderTypes,
-  target.abilityNames,
-  target.defenderCapabilities,
-)
+): number => {
+  const multiplier = computeSheetAbilityAwareMultiplier(
+    script?.type ?? 'Normal',
+    target.defenderTypes,
+    target.abilityNames,
+    target.defenderCapabilities,
+  )
+  if (script?.type === 'Electric' && multiplier > 0 && targetHasCondition(target, ELECTRIC_RESISTANT_COAT_CONDITION)) {
+    return resistMultiplierOneStepFurther(multiplier)
+  }
+  return multiplier
+}
 
 export const moveAutomationMultiplierLabel = (
   script: MoveAutomationScript | null | undefined,
@@ -93,15 +113,35 @@ export const resolveMoveAutomationTargetDamageLoss = (
   const unmodifiedRaw = baseRollTotal + criticalDiceBonus
   if (unmodifiedRaw <= 0) return 0
   const infatuation = resolveInfatuationDamageEffect(user.conditions, selectedTargets)
-  const raw = unmodifiedRaw + infatuation.damageRollModifier
+  const raw = unmodifiedRaw + infatuation.damageRollModifier + conditionDamageRollModifier(user.conditions)
   const physical = script.damageClass === 'Physical'
   const stagedOffense = physical
-    ? applyCombatStageToStat(user.atk, conditionAdjustedCombatStage(user.combatStages.atk, user.conditions, 'atk'))
-    : applyCombatStageToStat(user.satk, conditionAdjustedCombatStage(user.combatStages.satk, user.conditions, 'satk'))
+    ? applyCombatStageToStat(user.atk, conditionAdjustedCombatStage(
+      user.combatStages.atk,
+      user.conditions,
+      'atk',
+      { abilities: user.abilityNames },
+    ))
+    : applyCombatStageToStat(user.satk, conditionAdjustedCombatStage(
+      user.combatStages.satk,
+      user.conditions,
+      'satk',
+      { abilities: user.abilityNames },
+    ))
   const offense = applyInfatuationOffenseModifier(stagedOffense, infatuation)
   const defense = physical
-    ? applyCombatStageToStat(target.def, conditionAdjustedCombatStage(target.combatStages.def, target.conditions, 'def'))
-    : applyCombatStageToStat(target.sdef, conditionAdjustedCombatStage(target.combatStages.sdef, target.conditions, 'sdef'))
+    ? applyCombatStageToStat(target.def, conditionAdjustedCombatStage(
+      target.combatStages.def,
+      target.conditions,
+      'def',
+      { abilities: target.abilityNames },
+    ))
+    : applyCombatStageToStat(target.sdef, conditionAdjustedCombatStage(
+      target.combatStages.sdef,
+      target.conditions,
+      'sdef',
+      { abilities: target.abilityNames },
+    ))
   const fieldBonus = fieldEffectDamageBonus(script.type, fieldEffects)
   const multiplier = moveAutomationTargetDamageMultiplier(script, target)
   if (multiplier === 0) return 0
@@ -109,11 +149,16 @@ export const resolveMoveAutomationTargetDamageLoss = (
   return Math.max(1, Math.floor(afterDefense * multiplier))
 }
 
+export interface ResolveHpSuggestionAmountOptions {
+  damageDealt?: number
+}
+
 export const resolveHpSuggestionAmount = (
   script: MoveAutomationScript | null | undefined,
   hpSuggestionAmounts: Readonly<Record<string, string | undefined>>,
   index: number,
   token: SpawnedPokemon,
+  options: ResolveHpSuggestionAmountOptions = {},
 ): number => {
   const item = script?.hpSuggestions[index]
   if (!item) return 0
@@ -122,6 +167,10 @@ export const resolveHpSuggestionAmount = (
   if (item.mode === 'fixed-loss') return item.amount ?? 0
   if (item.mode === 'set-zero') return token.currentHp
   if (!item.percent) return 0
-  const base = item.mode === 'lose-percent-current' ? token.currentHp : token.maxHp
+  const base = item.mode === 'heal-percent-damage-dealt'
+    ? options.damageDealt ?? 0
+    : item.mode === 'lose-percent-current'
+      ? token.currentHp
+      : token.maxHp
   return Math.max(0, Math.round(base * item.percent / 100))
 }

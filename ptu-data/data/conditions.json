@@ -45,6 +45,36 @@
     ],
     "source": "errata-3.md"
   },
+  "Helping Hand": {
+    "name": "Helping Hand",
+    "category": "Other Affliction",
+    "effect": "The next Accuracy Roll this round gains +2 and the next Damage Roll this round gains +10. Remove this marker after the bonus is consumed or the round ends.",
+    "aliases": [
+      "Helping Hand Bonus"
+    ],
+    "source": "move automation"
+  },
+  "Supersonic Accuracy Penalty": {
+    "name": "Supersonic Accuracy Penalty",
+    "category": "Other Affliction",
+    "effect": "Accuracy Rolls take a -2 penalty for one full round. Remove this marker after the penalty expires.",
+    "aliases": [
+      "Supersonic Miss Penalty",
+      "Supersonic Penalty"
+    ],
+    "source": "move automation"
+  },
+  "Electric-Resistant Coat": {
+    "name": "Electric-Resistant Coat",
+    "category": "Other Affliction",
+    "effect": "The target has one Step of Resistance to Electric-Type Moves. Remove this Coat after the target is hit by a damaging Electric-Type Move.",
+    "aliases": [
+      "Mud Sport Coat",
+      "Electric Resistance Coat",
+      "Electric Resistant Coat"
+    ],
+    "source": "move automation"
+  },
   "Vulnerable": {
     "name": "Vulnerable",
     "category": "Other Affliction",

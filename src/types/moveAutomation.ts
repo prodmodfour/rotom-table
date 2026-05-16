@@ -145,6 +145,8 @@ export interface MoveAutomationStageSuggestion {
   threshold?: string
 }
 
+export type MoveAutomationSuggestionApplyWhen = 'hit' | 'miss' | 'always'
+
 export interface MoveAutomationConditionSuggestion {
   recipient: MoveAutomationRecipient
   /** Canonical condition name, or '*' when action is 'clear'. */
@@ -153,11 +155,13 @@ export interface MoveAutomationConditionSuggestion {
   label: string
   optional?: boolean
   threshold?: string
+  /** Target-recipient timing. Defaults to hit; user-recipient suggestions ignore hit/miss. */
+  applyWhen?: MoveAutomationSuggestionApplyWhen
 }
 
 export interface MoveAutomationHpSuggestion {
   recipient: MoveAutomationRecipient
-  mode: 'heal-percent-max' | 'lose-percent-max' | 'lose-percent-current' | 'fixed-loss' | 'set-zero'
+  mode: 'heal-percent-max' | 'heal-percent-damage-dealt' | 'lose-percent-max' | 'lose-percent-current' | 'fixed-loss' | 'set-zero'
   percent?: number
   amount?: number
   label: string

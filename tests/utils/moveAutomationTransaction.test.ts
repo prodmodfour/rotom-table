@@ -131,6 +131,72 @@ describe('move automation transaction helpers', () => {
     ]))
   })
 
+  it('heals Absorb users for half of applied damage', () => {
+    const s = explicitScriptForMove('Absorb')
+    expect(s).not.toBeNull()
+    const user = token({ id: 'u', species: 'Oddish', currentHp: 12, maxHp: 40, satk: 20 })
+    const target = token({ id: 't', species: 'Target', currentHp: 25, maxHp: 30, sdef: 5, defenderTypes: ['Water'] })
+
+    const transaction = buildMoveAutomationTransaction({
+      script: s!,
+      user,
+      selectedTargets: [target],
+      targetResolutions: {
+        t: {
+          ...defaultTargetResolutionState(s!),
+          hit: true,
+          damageRoll: { formula: 'flat', count: 0, sides: 0, total: 10, rolls: [], mod: 10 },
+        },
+      },
+      enabledSuggestions: { [moveAutomationSuggestionKey(s!, 'hp', 0)]: true },
+      hpSuggestionAmounts: {},
+      manualUserConditions: [],
+      manualTargetConditions: [],
+      manualUserStageDeltas: stages,
+      manualTargetStageDeltas: stages,
+      hazardCells: [],
+      manualNote: '',
+    })
+
+    expect(transaction.hpUpdates).toEqual(expect.arrayContaining([
+      { id: 't', currentHp: 0 },
+      { id: 'u', currentHp: 25 },
+    ]))
+    expect(transaction.logLines).toContain('Oddish: Absorb heals user for half damage dealt (13 HP).')
+  })
+
+  it('resists Electric damage with Mud Sport Coat and removes the coat after damage', () => {
+    const s = explicitScriptForMove('Thunder Shock')
+    expect(s).not.toBeNull()
+    const user = token({ id: 'u', species: 'Pikachu', satk: 20 })
+    const target = token({ id: 't', species: 'Coated', currentHp: 40, maxHp: 40, sdef: 5, conditions: ['Electric-Resistant Coat'] })
+
+    const transaction = buildMoveAutomationTransaction({
+      script: s!,
+      user,
+      selectedTargets: [target],
+      targetResolutions: {
+        t: {
+          ...defaultTargetResolutionState(s!),
+          hit: true,
+          damageRoll: { formula: 'flat', count: 0, sides: 0, total: 10, rolls: [], mod: 10 },
+        },
+      },
+      enabledSuggestions: {},
+      hpSuggestionAmounts: {},
+      manualUserConditions: [],
+      manualTargetConditions: [],
+      manualUserStageDeltas: stages,
+      manualTargetStageDeltas: stages,
+      hazardCells: [],
+      manualNote: '',
+    })
+
+    expect(transaction.hpUpdates).toEqual([{ id: 't', currentHp: 28 }])
+    expect(transaction.conditionUpdates).toEqual([{ id: 't', conditions: [] }])
+    expect(transaction.logLines).toContain('Coated: Electric-Resistant Coat removed after Electric damage.')
+  })
+
   it('applies target suggestions only to targets the move hit', () => {
     const user = token({ id: 'u', species: 'Caster' })
     const hitTarget = token({ id: 'hit', species: 'Hitmon' })

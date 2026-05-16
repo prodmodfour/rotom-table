@@ -29,7 +29,7 @@ export const moveAutomationConditionImmunitySource = (
   if ((canonical === 'Poisoned' || canonical === 'Badly Poisoned') && (hasType(target, 'Poison') || hasType(target, 'Steel'))) {
     return hasType(target, 'Poison') ? 'Poison type' : 'Steel type'
   }
-  if (canonical === 'Stuck' && hasType(target, 'Ghost')) return 'Ghost type'
+  if ((canonical === 'Stuck' || canonical === 'Trapped') && hasType(target, 'Ghost')) return 'Ghost type'
 
   return null
 }

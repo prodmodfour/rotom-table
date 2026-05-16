@@ -77,7 +77,7 @@ describe('useMoveAutomationPanel', () => {
       nickname: 'Bolt',
       species: 'Bulbasaur',
       level: 5,
-      movelist: [{ name: 'Tackle' }],
+      movelist: [{ name: 'Teleport' }],
     } as CharacterSheet
     const panel = useMoveAutomationPanel({
       map,
@@ -96,11 +96,11 @@ describe('useMoveAutomationPanel', () => {
     panel.openMoveAutomation('blocked-token')
     expect(panel.moveAutomationUser.value).toBeNull()
 
-    panel.openMoveAutomation({ id: 'user-token', moveName: 'Tackle' })
+    panel.openMoveAutomation({ id: 'user-token', moveName: 'Teleport' })
     expect(panel.moveAutomationUser.value?.id).toBe('user-token')
-    expect(panel.moveAutomationInitialMoveName.value).toBe('Tackle')
-    expect(panel.moveAutomationMoves.value.map((move) => move.name)).toEqual(['Struggle', 'Tackle'])
-    expect(panel.tokenMoveOptionsById.value['user-token'].map((move) => move.name)).toEqual(['Struggle', 'Tackle'])
+    expect(panel.moveAutomationInitialMoveName.value).toBe('Teleport')
+    expect(panel.moveAutomationMoves.value.map((move) => move.name)).toEqual(['Struggle', 'Teleport'])
+    expect(panel.tokenMoveOptionsById.value['user-token'].map((move) => move.name)).toEqual(['Struggle', 'Teleport'])
   })
 
   it('omits Disabled moves from automation while leaving them visible in the token menu', () => {
@@ -426,6 +426,89 @@ describe('useMoveAutomationPanel', () => {
     expect(map.value.metadata?.moveLog).toMatchObject([
       { at: 1234, userId: 'user-token', moveName: 'Tackle', lines: ['Rolled Tackle.'] },
     ])
+  })
+
+  it('applies self-only reviewed moves immediately without opening the wizard', async () => {
+    const map = ref(mapFixture())
+    const pokemonSheet = {
+      slug: 'bolt',
+      nickname: 'Bolt',
+      species: 'Bulbasaur',
+      level: 5,
+      movelist: [{ name: 'Swords Dance' }],
+    } as CharacterSheet
+    const calls: string[] = []
+    const panel = useMoveAutomationPanel({
+      map,
+      spawnedPokemon: computed(() => [spawned({ combatStages: { atk: 1, def: 0, satk: 0, sdef: 0, spd: 0, acc: 0 } })]),
+      pokemonBySlug: ref(new Map([[pokemonSheet.slug, pokemonSheet]])),
+      trainerBySlug: ref(new Map<string, TrainerSheet>()),
+      canEditMap: computed(() => false),
+      canControlPlacement: (id) => id === 'user-token',
+      modifyHp: () => undefined,
+      modifyCombatStages: (update) => { calls.push(`stages:${update.id}:${update.stages.atk}`) },
+      modifyConditions: () => undefined,
+      applyMoveFieldEffect: () => undefined,
+      placeHazard: () => undefined,
+    })
+
+    panel.openMoveAutomation({ id: 'user-token', moveName: 'Swords Dance' })
+    await Promise.resolve()
+
+    expect(panel.moveAutomationUser.value).toBeNull()
+    expect(panel.moveAutomationTargeting.value).toBeNull()
+    expect(calls).toEqual(['stages:user-token:3'])
+    expect(map.value.metadata?.moveLog).toMatchObject([{ moveName: 'Swords Dance', scriptKind: 'explicit' }])
+  })
+
+  it('opens no-accuracy target buffs with targeting overlay and applies them directly', async () => {
+    const map = ref({
+      ...mapFixture(),
+      placements: [
+        { id: 'user-token', sheetKind: 'pokemon' as const, sheetSlug: 'helper', position: { x: 0, y: 0, z: 0 } },
+        { id: 'target-token', sheetKind: 'pokemon' as const, sheetSlug: 'target', position: { x: 2, y: 0, z: 0 } },
+      ],
+    })
+    const pokemonSheet = {
+      slug: 'helper',
+      nickname: 'Helper',
+      species: 'Plusle',
+      level: 5,
+      movelist: [{ name: 'Helping Hand' }],
+    } as CharacterSheet
+    const conditionCalls: MoveAutomationTransaction['conditionUpdates'] = []
+    const panel = useMoveAutomationPanel({
+      map,
+      spawnedPokemon: computed(() => [
+        spawned({ id: 'user-token', species: 'Helper', sheetSlug: 'helper', position: { x: 0, y: 0, z: 0 } }),
+        spawned({ id: 'target-token', species: 'Target', sheetSlug: 'target', position: { x: 2, y: 0, z: 0 } }),
+      ]),
+      pokemonBySlug: ref(new Map([[pokemonSheet.slug, pokemonSheet]])),
+      trainerBySlug: ref(new Map<string, TrainerSheet>()),
+      canEditMap: computed(() => false),
+      canControlPlacement: (id) => id === 'user-token',
+      modifyHp: () => undefined,
+      modifyCombatStages: () => undefined,
+      modifyConditions: (update) => { conditionCalls.push(update) },
+      applyMoveFieldEffect: () => undefined,
+      placeHazard: () => undefined,
+    })
+
+    panel.openMoveAutomation({ id: 'user-token', moveName: 'Helping Hand' })
+
+    expect(panel.moveAutomationUser.value).toBeNull()
+    expect(panel.moveAutomationTargeting.value).toMatchObject({
+      mode: 'target',
+      moveName: 'Helping Hand',
+      rangeLabel: '4m',
+      candidateIds: ['target-token'],
+    })
+
+    await panel.selectMoveAutomationTarget('target-token')
+
+    expect(panel.moveAutomationFeedback.value).toBeNull()
+    expect(conditionCalls).toEqual([{ id: 'target-token', conditions: ['Helping Hand'] }])
+    expect(map.value.metadata?.moveLog).toMatchObject([{ moveName: 'Helping Hand', scriptKind: 'explicit' }])
   })
 
   it('opens Growl as an on-map AoE confirmation and applies it on target selection/confirmation', async () => {
