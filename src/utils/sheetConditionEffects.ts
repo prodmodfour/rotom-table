@@ -5,6 +5,7 @@ import {
   conditionBaseName,
   conditionStackCount,
   disabledConditionMove,
+  infatuationCrushName,
   normalizeConditionNames,
 } from '~/utils/statusConditions'
 import type { CombatStageKey, CombatStageMap, CombatStatStageKey } from '~/types/combatStages'
@@ -265,10 +266,15 @@ export const describeSheetConditionEffects = (
   }
 
   if (set.has('Infatuation')) {
+    const entry = normalizeConditionNames(conditions)
+      .find((condition) => conditionBaseName(condition) === 'Infatuation')
+    const crushName = infatuationCrushName(entry)
     effects.push({
       id: 'infatuation-damage',
-      label: 'Infatuation',
-      description: 'Damage Rolls that do not include the crush take -5. Attacks including the crush halve Attack and Special Attack for the roll.',
+      label: crushName ? `Infatuation: ${crushName}` : 'Infatuation',
+      description: crushName
+        ? `Crush: ${crushName}. Damage Rolls that do not include the crush take -5. Attacks including the crush halve Attack and Special Attack for the roll.`
+        : 'Damage Rolls that do not include the crush take -5. Attacks including the crush halve Attack and Special Attack for the roll.',
     })
   }
 

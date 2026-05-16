@@ -9,11 +9,14 @@ import {
   conditionTitle,
   disabledConditionMove,
   formatDisabledCondition,
+  formatInfatuationCondition,
+  infatuationCrushName,
   isStackableCondition,
   normalizeConditionNames,
 } from '~/utils/statusConditions'
 
 const CUSTOM_MOVE_VALUE = '__custom-disabled-move__'
+const CUSTOM_INFATUATION_CRUSH_VALUE = '__custom-infatuation-crush__'
 
 const props = withDefaults(defineProps<{
   modelValue?: string[]
@@ -21,12 +24,14 @@ const props = withDefaults(defineProps<{
   compact?: boolean
   tagSize?: ConditionTagSize
   availableMoves?: string[]
+  availableCrushes?: string[]
 }>(), {
   modelValue: () => [],
   disabled: false,
   compact: false,
   tagSize: 'sm',
   availableMoves: () => [],
+  availableCrushes: () => [],
 })
 
 const emit = defineEmits<{
@@ -38,22 +43,28 @@ const selectedSet = computed(() => new Set(selected.value))
 const selectedBaseSet = computed(() => new Set(
   selected.value.map((condition) => conditionBaseName(condition) ?? condition),
 ))
-const moveOptions = computed(() => {
+const uniqueNormalizedOptions = (values: readonly string[]): string[] => {
   const seen = new Set<string>()
   const out: string[] = []
-  for (const move of props.availableMoves) {
-    const normalized = move.trim().replace(/\s+/g, ' ')
+  for (const value of values) {
+    const normalized = value.trim().replace(/\s+/g, ' ')
     const key = normalized.toLowerCase()
     if (!normalized || seen.has(key)) continue
     seen.add(key)
     out.push(normalized)
   }
   return out
-})
+}
+
+const moveOptions = computed(() => uniqueNormalizedOptions(props.availableMoves))
+const crushOptions = computed(() => uniqueNormalizedOptions(props.availableCrushes))
 
 const disabledMovePickerOpen = ref(false)
 const disabledMoveChoice = ref('')
 const disabledCustomMove = ref('')
+const infatuationPickerOpen = ref(false)
+const infatuationChoice = ref('')
+const infatuationCustomCrush = ref('')
 
 const update = (value: string[]) => {
   if (props.disabled) return
@@ -61,22 +72,44 @@ const update = (value: string[]) => {
 }
 
 const isDisabledCondition = (name: string) => conditionBaseName(name) === 'Disabled'
-const activeConditionLabel = (name: string): string => disabledConditionMove(name) ?? conditionDisplayName(name)
+const isInfatuationCondition = (name: string) => conditionBaseName(name) === 'Infatuation'
+const conditionDetail = (name: string): string | null => disabledConditionMove(name) ?? infatuationCrushName(name)
+const activeConditionLabel = (name: string): string => conditionDetail(name) ?? conditionDisplayName(name)
+const conditionsWithoutBase = (baseName: string): string[] =>
+  selected.value.filter((condition) => conditionBaseName(condition) !== baseName)
 
 const resetDisabledMovePicker = () => {
   disabledMoveChoice.value = ''
   disabledCustomMove.value = ''
 }
 
+const resetInfatuationPicker = () => {
+  infatuationChoice.value = ''
+  infatuationCustomCrush.value = ''
+}
+
 const openDisabledMovePicker = () => {
   if (props.disabled) return
+  if (infatuationPickerOpen.value) closeInfatuationPicker()
   disabledMovePickerOpen.value = true
   if (!disabledMoveChoice.value && moveOptions.value.length) disabledMoveChoice.value = moveOptions.value[0]
+}
+
+const openInfatuationPicker = () => {
+  if (props.disabled) return
+  if (disabledMovePickerOpen.value) closeDisabledMovePicker()
+  infatuationPickerOpen.value = true
+  if (!infatuationChoice.value && crushOptions.value.length) infatuationChoice.value = crushOptions.value[0]
 }
 
 const closeDisabledMovePicker = () => {
   disabledMovePickerOpen.value = false
   resetDisabledMovePicker()
+}
+
+const closeInfatuationPicker = () => {
+  infatuationPickerOpen.value = false
+  resetInfatuationPicker()
 }
 
 const selectedDisabledMove = computed(() => {
@@ -86,12 +119,27 @@ const selectedDisabledMove = computed(() => {
   return disabledMoveChoice.value.trim().replace(/\s+/g, ' ')
 })
 
+const selectedInfatuationCrush = computed(() => {
+  if (!crushOptions.value.length || infatuationChoice.value === CUSTOM_INFATUATION_CRUSH_VALUE) {
+    return infatuationCustomCrush.value.trim().replace(/\s+/g, ' ')
+  }
+  return infatuationChoice.value.trim().replace(/\s+/g, ' ')
+})
+
 const addDisabledMove = () => {
   if (props.disabled) return
   const moveName = selectedDisabledMove.value
   if (!moveName) return
   update(addAppliedCondition(selected.value, formatDisabledCondition(moveName)))
   closeDisabledMovePicker()
+}
+
+const addInfatuation = () => {
+  if (props.disabled) return
+  const crushName = selectedInfatuationCrush.value
+  const condition = crushName ? formatInfatuationCondition(crushName) : 'Infatuation'
+  update(addAppliedCondition(conditionsWithoutBase('Infatuation'), condition))
+  closeInfatuationPicker()
 }
 
 const removeCondition = (name: string, index: number) => {
@@ -109,6 +157,12 @@ const toggle = (name: string) => {
     return
   }
 
+  if (isInfatuationCondition(name)) {
+    if (selectedBaseSet.value.has('Infatuation')) update(conditionsWithoutBase('Infatuation'))
+    else openInfatuationPicker()
+    return
+  }
+
   if (isStackableCondition(name)) {
     update(addAppliedCondition(selected.value, name))
     return
@@ -119,8 +173,20 @@ const toggle = (name: string) => {
   else update(next)
 }
 
-const optionSelected = (name: string): boolean =>
-  isDisabledCondition(name) ? selectedBaseSet.value.has('Disabled') : selectedSet.value.has(name)
+const optionSelected = (name: string): boolean => {
+  if (isDisabledCondition(name)) return selectedBaseSet.value.has('Disabled')
+  if (isInfatuationCondition(name)) return selectedBaseSet.value.has('Infatuation')
+  return selectedSet.value.has(name)
+}
+
+const conditionOptionTitle = (name: string): string => {
+  if (isDisabledCondition(name)) return 'Add Disabled and choose a Move'
+  if (isInfatuationCondition(name)) return 'Add Infatuation and choose the crush'
+  return conditionTitle(name)
+}
+
+const conditionOptionHasDetailPicker = (name: string): boolean =>
+  isDisabledCondition(name) || isInfatuationCondition(name)
 
 const clear = () => update([])
 
@@ -131,6 +197,16 @@ watch(moveOptions, (options) => {
   }
   if (!options.includes(disabledMoveChoice.value) && disabledMoveChoice.value !== CUSTOM_MOVE_VALUE) {
     disabledMoveChoice.value = options[0]
+  }
+})
+
+watch(crushOptions, (options) => {
+  if (!options.length) {
+    if (infatuationChoice.value !== CUSTOM_INFATUATION_CRUSH_VALUE) infatuationChoice.value = ''
+    return
+  }
+  if (!options.includes(infatuationChoice.value) && infatuationChoice.value !== CUSTOM_INFATUATION_CRUSH_VALUE) {
+    infatuationChoice.value = options[0]
   }
 })
 </script>
@@ -148,7 +224,7 @@ watch(moveOptions, (options) => {
         @click="removeCondition(name, index)"
       >
         <ConditionTag :name="name" :size="tagSize" />
-        <span v-if="disabledConditionMove(name)" class="condition-picker__active-detail">{{ activeConditionLabel(name) }}</span>
+        <span v-if="conditionDetail(name)" class="condition-picker__active-detail">{{ activeConditionLabel(name) }}</span>
         <span aria-hidden="true" class="condition-picker__remove">×</span>
         <span class="sr-only">Remove {{ conditionDisplayName(name) }}</span>
       </button>
@@ -166,7 +242,7 @@ watch(moveOptions, (options) => {
 
     <div
       v-if="disabledMovePickerOpen"
-      class="condition-picker__disabled-move"
+      class="condition-picker__detail-picker"
       @keydown.enter.prevent="addDisabledMove"
     >
       <label>
@@ -187,10 +263,10 @@ watch(moveOptions, (options) => {
           placeholder="Move name…"
         >
       </label>
-      <div class="condition-picker__disabled-actions">
+      <div class="condition-picker__detail-actions">
         <button
           type="button"
-          class="condition-picker__disabled-button condition-picker__disabled-button--primary"
+          class="condition-picker__detail-button condition-picker__detail-button--primary"
           :disabled="disabled || !selectedDisabledMove"
           @click="addDisabledMove"
         >
@@ -198,9 +274,53 @@ watch(moveOptions, (options) => {
         </button>
         <button
           type="button"
-          class="condition-picker__disabled-button"
+          class="condition-picker__detail-button"
           :disabled="disabled"
           @click="closeDisabledMovePicker"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+
+    <div
+      v-if="infatuationPickerOpen"
+      class="condition-picker__detail-picker"
+      @keydown.enter.prevent="addInfatuation"
+    >
+      <label>
+        <span>Infatuation crush</span>
+        <select
+          v-if="crushOptions.length"
+          v-model="infatuationChoice"
+          :disabled="disabled"
+        >
+          <option v-for="crush in crushOptions" :key="crush" :value="crush">{{ crush }}</option>
+          <option :value="CUSTOM_INFATUATION_CRUSH_VALUE">Custom crush…</option>
+        </select>
+        <input
+          v-if="!crushOptions.length || infatuationChoice === CUSTOM_INFATUATION_CRUSH_VALUE"
+          v-model.trim="infatuationCustomCrush"
+          :disabled="disabled"
+          type="text"
+          placeholder="Crush name…"
+        >
+      </label>
+      <p class="condition-picker__detail-note">Choose the crush for damage automation; leave blank to track the condition only.</p>
+      <div class="condition-picker__detail-actions">
+        <button
+          type="button"
+          class="condition-picker__detail-button condition-picker__detail-button--primary"
+          :disabled="disabled"
+          @click="addInfatuation"
+        >
+          Apply Infatuation
+        </button>
+        <button
+          type="button"
+          class="condition-picker__detail-button"
+          :disabled="disabled"
+          @click="closeInfatuationPicker"
         >
           Cancel
         </button>
@@ -222,13 +342,13 @@ watch(moveOptions, (options) => {
             class="condition-picker__option"
             :class="{ 'is-selected': optionSelected(condition.name) }"
             :aria-pressed="optionSelected(condition.name)"
-            :title="isDisabledCondition(condition.name) ? 'Add Disabled and choose a Move' : conditionTitle(condition.name)"
+            :title="conditionOptionTitle(condition.name)"
             :disabled="disabled"
             @click="toggle(condition.name)"
           >
             <ConditionTag :name="condition.name" :size="tagSize" />
             <span v-if="!compact" class="condition-picker__option-name">{{ condition.name }}</span>
-            <span v-if="isDisabledCondition(condition.name)" class="condition-picker__option-action">+</span>
+            <span v-if="conditionOptionHasDetailPicker(condition.name)" class="condition-picker__option-action">+</span>
           </button>
         </div>
       </section>
@@ -333,7 +453,7 @@ watch(moveOptions, (options) => {
   gap: 0.35rem;
 }
 
-.condition-picker__disabled-move {
+.condition-picker__detail-picker {
   display: grid;
   gap: 0.55rem;
   padding: 0.62rem;
@@ -342,7 +462,7 @@ watch(moveOptions, (options) => {
   background: var(--paper-inset);
 }
 
-.condition-picker__disabled-move label {
+.condition-picker__detail-picker label {
   display: grid;
   gap: 0.32rem;
   color: var(--ink-soft);
@@ -352,8 +472,8 @@ watch(moveOptions, (options) => {
   text-transform: uppercase;
 }
 
-.condition-picker__disabled-move select,
-.condition-picker__disabled-move input {
+.condition-picker__detail-picker select,
+.condition-picker__detail-picker input {
   width: 100%;
   border: 1px solid var(--rule-soft);
   border-radius: 9px;
@@ -365,13 +485,19 @@ watch(moveOptions, (options) => {
   text-transform: none;
 }
 
-.condition-picker__disabled-actions {
+.condition-picker__detail-note {
+  margin: 0;
+  color: var(--ink-muted);
+  font-size: 0.76rem;
+}
+
+.condition-picker__detail-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 0.4rem;
 }
 
-.condition-picker__disabled-button {
+.condition-picker__detail-button {
   border: 1px solid var(--rule-soft);
   border-radius: 999px;
   background: rgba(60, 56, 54, 0.36);
@@ -383,7 +509,7 @@ watch(moveOptions, (options) => {
   padding: 0.36rem 0.62rem;
 }
 
-.condition-picker__disabled-button--primary {
+.condition-picker__detail-button--primary {
   border-color: var(--accent);
   color: var(--accent);
 }

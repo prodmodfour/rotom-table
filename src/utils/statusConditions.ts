@@ -72,7 +72,7 @@ export const conditionGroups = CONDITION_CATEGORY_ORDER.map((category) => ({
   conditions: conditions.filter((condition) => condition.category === category),
 })).filter((group) => group.conditions.length > 0)
 
-const slugify = (value: string): string =>
+export const conditionLookupKey = (value: string): string =>
   value
     .normalize('NFKD')
     .replace(/[\u0300-\u036f]/g, '')
@@ -80,6 +80,8 @@ const slugify = (value: string): string =>
     .replace(/['’]/g, '')
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
+
+const slugify = conditionLookupKey
 
 const EXTRA_ALIASES: Record<string, string[]> = {
   Sleep: ['Asleep', 'Sleeping'],
@@ -109,37 +111,60 @@ for (const condition of conditions) {
 }
 
 const DISABLED_CONDITION_NAME = 'Disabled'
-const DISABLED_CUSTOM_SEPARATOR_RE = /^(.+?)\s*(?::|：|[-–—])\s*(.+)$/
-const DISABLED_PAREN_RE = /^(.+?)\s*\((.+)\)\s*$/
+const INFATUATION_CONDITION_NAME = 'Infatuation'
+const DETAIL_CONDITION_NAMES = [DISABLED_CONDITION_NAME, INFATUATION_CONDITION_NAME] as const
+const CONDITION_DETAIL_SEPARATOR_RE = /^(.+?)\s*(?::|：|[-–—])\s*(.+)$/
+const CONDITION_DETAIL_PAREN_RE = /^(.+?)\s*\((.+)\)\s*$/
 
-const normalizeDisabledMoveName = (raw: unknown): string | null => {
+const normalizeConditionDetail = (raw: unknown): string | null => {
   if (typeof raw !== 'string') return null
-  const moveName = raw.trim().replace(/\s+/g, ' ')
-  return moveName ? moveName : null
+  const detail = raw.trim().replace(/\s+/g, ' ')
+  return detail ? detail : null
 }
 
-const parseDisabledConditionEntry = (raw: string): { conditionName: string; moveName: string | null } | null => {
+const parseConditionDetailEntry = (
+  raw: string,
+  conditionName: (typeof DETAIL_CONDITION_NAMES)[number],
+): { conditionName: string; detail: string | null } | null => {
   const value = raw.trim()
   if (!value) return null
 
-  for (const pattern of [DISABLED_PAREN_RE, DISABLED_CUSTOM_SEPARATOR_RE]) {
+  for (const pattern of [CONDITION_DETAIL_PAREN_RE, CONDITION_DETAIL_SEPARATOR_RE]) {
     const match = value.match(pattern)
     if (!match) continue
 
     const baseName = aliasToName.get(slugify(match[1] ?? ''))
-    if (baseName !== DISABLED_CONDITION_NAME) continue
+    if (baseName !== conditionName) continue
 
     return {
-      conditionName: DISABLED_CONDITION_NAME,
-      moveName: normalizeDisabledMoveName(match[2]),
+      conditionName,
+      detail: normalizeConditionDetail(match[2]),
     }
   }
 
   return null
 }
 
+const parseKnownConditionDetailEntry = (raw: string): { conditionName: string; detail: string | null } | null => {
+  for (const conditionName of DETAIL_CONDITION_NAMES) {
+    const entry = parseConditionDetailEntry(raw, conditionName)
+    if (entry) return entry
+  }
+  return null
+}
+
+const parseDisabledConditionEntry = (raw: string): { conditionName: string; moveName: string | null } | null => {
+  const entry = parseConditionDetailEntry(raw, DISABLED_CONDITION_NAME)
+  return entry ? { conditionName: entry.conditionName, moveName: entry.detail } : null
+}
+
+const parseInfatuationConditionEntry = (raw: string): { conditionName: string; crushName: string | null } | null => {
+  const entry = parseConditionDetailEntry(raw, INFATUATION_CONDITION_NAME)
+  return entry ? { conditionName: entry.conditionName, crushName: entry.detail } : null
+}
+
 export const formatDisabledCondition = (moveName: string): string => {
-  const normalizedMove = normalizeDisabledMoveName(moveName)
+  const normalizedMove = normalizeConditionDetail(moveName)
   return normalizedMove ? `${DISABLED_CONDITION_NAME}: ${normalizedMove}` : DISABLED_CONDITION_NAME
 }
 
@@ -148,10 +173,20 @@ export const disabledConditionMove = (raw: unknown): string | null => {
   return parseDisabledConditionEntry(raw)?.moveName ?? null
 }
 
+export const formatInfatuationCondition = (crushName: string): string => {
+  const normalizedCrush = normalizeConditionDetail(crushName)
+  return normalizedCrush ? `${INFATUATION_CONDITION_NAME}: ${normalizedCrush}` : INFATUATION_CONDITION_NAME
+}
+
+export const infatuationCrushName = (raw: unknown): string | null => {
+  if (typeof raw !== 'string') return null
+  return parseInfatuationConditionEntry(raw)?.crushName ?? null
+}
+
 export const normalizeConditionName = (raw: unknown): string | null => {
   if (typeof raw !== 'string') return null
-  const disabledEntry = parseDisabledConditionEntry(raw)
-  if (disabledEntry) return disabledEntry.conditionName
+  const detailEntry = parseKnownConditionDetailEntry(raw)
+  if (detailEntry) return detailEntry.conditionName
 
   const key = slugify(raw.trim())
   if (!key) return null
@@ -172,6 +207,10 @@ export const conditionDisplayName = (raw: unknown): string => {
     const moveName = disabledConditionMove(raw)
     return moveName ? formatDisabledCondition(moveName) : DISABLED_CONDITION_NAME
   }
+  if (baseName === INFATUATION_CONDITION_NAME) {
+    const crushName = infatuationCrushName(raw)
+    return crushName ? formatInfatuationCondition(crushName) : INFATUATION_CONDITION_NAME
+  }
   return baseName ?? raw.trim()
 }
 
@@ -181,6 +220,10 @@ const normalizeConditionEntry = (raw: unknown): string | null => {
   if (baseName === DISABLED_CONDITION_NAME) {
     const moveName = disabledConditionMove(raw)
     return moveName ? formatDisabledCondition(moveName) : DISABLED_CONDITION_NAME
+  }
+  if (baseName === INFATUATION_CONDITION_NAME) {
+    const crushName = infatuationCrushName(raw)
+    return crushName ? formatInfatuationCondition(crushName) : INFATUATION_CONDITION_NAME
   }
   return baseName
 }
@@ -240,7 +283,7 @@ export const isMoveDisabledByConditions = (
   moveName: unknown,
   rawConditions: readonly unknown[] | undefined | null,
 ): boolean => {
-  const normalizedMoveName = normalizeDisabledMoveName(moveName)
+  const normalizedMoveName = normalizeConditionDetail(moveName)
   if (!normalizedMoveName) return false
   const moveKey = slugify(normalizedMoveName)
   return disabledMoveNamesFromConditions(rawConditions).some((disabledMove) => slugify(disabledMove) === moveKey)
@@ -290,6 +333,9 @@ export const conditionTitle = (name: string): string => {
   const condition = conditionByName.get(canonical)
   const displayName = conditionDisplayName(name) || canonical
   const disabledMove = canonical === DISABLED_CONDITION_NAME ? disabledConditionMove(name) : null
+  const infatuationCrush = canonical === INFATUATION_CONDITION_NAME ? infatuationCrushName(name) : null
   const baseTitle = condition?.effect ? `${displayName} — ${condition.effect}` : displayName
-  return disabledMove ? `${baseTitle} Disabled Move: ${disabledMove}.` : baseTitle
+  if (disabledMove) return `${baseTitle} Disabled Move: ${disabledMove}.`
+  if (infatuationCrush) return `${baseTitle} Crush: ${infatuationCrush}.`
+  return baseTitle
 }

@@ -282,6 +282,11 @@ const selectedPokemon = computed(
 const conditionMoveOptions = computed(() => conditionsDialog.value
   ? props.tokenMoveOptionsById?.[conditionsDialog.value.id]?.map((move) => move.name) ?? []
   : [])
+const conditionCrushOptions = computed(() => conditionsDialog.value
+  ? props.pokemons
+      .filter((pokemon) => pokemon.id !== conditionsDialog.value?.id)
+      .map((pokemon) => pokemon.species)
+  : [])
 const renderedTerrainVoxels = computed(() => props.voxels)
 const renderedHazards = computed(() => props.hazards ?? [])
 const renderedFieldEffects = computed(() => normalizeMapFieldEffects(props.fieldEffects))
@@ -1074,6 +1079,7 @@ useIsometricSceneWatchers({
       :conditions-dialog="conditionsDialog"
       :conditions-dialog-changed="conditionsDialogChanged"
       :condition-move-options="conditionMoveOptions"
+      :condition-crush-options="conditionCrushOptions"
       :damage-dialog="damageDialog"
       :damage-dialog-db-def="damageDialogDbDef"
       :damage-dialog-raw-amount="damageDialogRawAmount"

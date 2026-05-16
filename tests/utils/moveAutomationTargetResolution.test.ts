@@ -142,6 +142,30 @@ describe('move automation target resolution helpers', () => {
     })).toBe(22)
   })
 
+  it('applies Infatuation damage penalties when the crush is tracked', () => {
+    const s = script({ type: 'Normal', damageClass: 'Physical' })
+    const roll = {
+      ...defaultTargetResolutionState(s),
+      hit: true,
+      damageRoll: { formula: 'flat', count: 0, sides: 0, total: 20, rolls: [], mod: 20 },
+    }
+    const user = token({ id: 'u', species: 'User', atk: 13, conditions: ['Infatuation: Crush'] })
+    const crush = token({ id: 'crush', species: 'Crush', def: 7, defenderTypes: [] })
+    const bystander = token({ id: 'b', species: 'Bystander', def: 7, defenderTypes: [] })
+
+    expect(resolveMoveAutomationTargetDamageLoss(s, user, bystander, roll, undefined, [bystander])).toBe(21)
+    expect(resolveMoveAutomationTargetDamageLoss(s, user, crush, roll, undefined, [crush])).toBe(19)
+    expect(resolveMoveAutomationTargetDamageLoss(s, user, bystander, roll, undefined, [crush, bystander])).toBe(19)
+    expect(resolveMoveAutomationTargetDamageLoss(
+      s,
+      token({ id: 'u2', species: 'User 2', atk: 13, conditions: ['Infatuation'] }),
+      bystander,
+      roll,
+      undefined,
+      [bystander],
+    )).toBe(26)
+  })
+
   it('resolves HP suggestion amounts and multiplier labels', () => {
     const s = script({
       hpSuggestions: [

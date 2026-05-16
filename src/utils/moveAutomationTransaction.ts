@@ -88,7 +88,14 @@ export const buildMoveAutomationTransaction = ({
   const logLines = buildMoveAutomationStartLogLines(script, user.species)
 
   for (const target of selectedTargets) {
-    const loss = resolveMoveAutomationTargetDamageLoss(script, user, target, targetResolutions[target.id], fieldEffects)
+    const loss = resolveMoveAutomationTargetDamageLoss(
+      script,
+      user,
+      target,
+      targetResolutions[target.id],
+      fieldEffects,
+      selectedTargets,
+    )
     if (loss > 0) {
       hpAccumulator.set(target, hpAccumulator.get(target) - loss)
       logLines.push(formatMoveAutomationDamageLogLine(target.species, loss, targetResolutions[target.id]?.crit))

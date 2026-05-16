@@ -188,7 +188,14 @@ export const useMoveAutomationWizard = (
   }
 
   const targetDamageLoss = (target: SpawnedPokemon): number =>
-    resolveMoveAutomationTargetDamageLoss(script.value, props.user, target, ensureTargetResolution(target.id), props.fieldEffects)
+    resolveMoveAutomationTargetDamageLoss(
+      script.value,
+      props.user,
+      target,
+      ensureTargetResolution(target.id),
+      props.fieldEffects,
+      selectedTargets.value,
+    )
 
   const multiplierLabel = (target: SpawnedPokemon): string => moveAutomationMultiplierLabel(script.value, target)
 

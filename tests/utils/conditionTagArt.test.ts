@@ -6,9 +6,12 @@ import {
 } from '~/utils/conditionTagArt'
 import {
   conditionTagDefinition,
+  conditionDisplayName,
   conditionTagSvg,
   conditionsFromText,
   disabledMoveNamesFromConditions,
+  formatInfatuationCondition,
+  infatuationCrushName,
   isMoveDisabledByConditions,
   normalizeConditionName,
   normalizeConditionNames,
@@ -75,5 +78,14 @@ describe('condition tag art helpers', () => {
     expect(disabledMoveNamesFromConditions(['Disabled: Thunder Wave', 'Burned'])).toEqual(['Thunder Wave'])
     expect(isMoveDisabledByConditions('thunder wave', ['Disabled: Thunder Wave'])).toBe(true)
     expect(conditionTagSvg('Disabled: Thunder Wave', 'sm')).toContain('aria-label="Disabled: Thunder Wave"')
+  })
+
+  it('preserves crush-specific Infatuation condition instances', () => {
+    expect(normalizeConditionName('Infatuated: Eevee')).toBe('Infatuation')
+    expect(formatInfatuationCondition('  Eevee  ')).toBe('Infatuation: Eevee')
+    expect(normalizeConditionNames(['Infatuated (Eevee)', 'Infatuation: Pikachu'])).toEqual(['Infatuation: Eevee'])
+    expect(infatuationCrushName('Infatuation: Eevee')).toBe('Eevee')
+    expect(conditionDisplayName('Infatuation: Eevee')).toBe('Infatuation: Eevee')
+    expect(conditionTagSvg('Infatuation: Eevee', 'sm')).toContain('aria-label="Infatuation: Eevee"')
   })
 })

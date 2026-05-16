@@ -2,6 +2,7 @@ import { applyCombatStageToStat } from '~/utils/combatStageStats'
 import { conditionAdjustedCombatStage } from '~/utils/sheetConditionEffects'
 import { fieldEffectDamageBonus, type DamageRollResult } from '~/utils/moveAutomation'
 import { parsePositiveInt } from '~/utils/moveAutomationDialog'
+import { applyInfatuationOffenseModifier, resolveInfatuationDamageEffect } from '~/utils/infatuationDamage'
 import { formatMultiplier } from '~/utils/typeChart'
 import { computeSheetAbilityAwareMultiplier } from '~/utils/sheetPassiveAbilityEffects'
 import type { MapFieldEffects } from '~/types/map'
@@ -64,6 +65,7 @@ export const resolveMoveAutomationTargetDamageLoss = (
   target: SpawnedPokemon,
   resolution: MoveAutomationTargetResolutionState | undefined,
   fieldEffects?: MapFieldEffects,
+  selectedTargets: readonly SpawnedPokemon[] = [target],
 ): number => {
   if (!script?.damaging) return 0
   const state = resolution ?? defaultTargetResolutionState(script)
@@ -74,12 +76,15 @@ export const resolveMoveAutomationTargetDamageLoss = (
   const criticalDiceBonus = state.crit
     ? state.damageRoll?.rolls.reduce((sum, roll) => sum + roll, 0) ?? 0
     : 0
-  const raw = baseRollTotal + criticalDiceBonus
-  if (raw <= 0) return 0
+  const unmodifiedRaw = baseRollTotal + criticalDiceBonus
+  if (unmodifiedRaw <= 0) return 0
+  const infatuation = resolveInfatuationDamageEffect(user.conditions, selectedTargets)
+  const raw = unmodifiedRaw + infatuation.damageRollModifier
   const physical = script.damageClass === 'Physical'
-  const offense = physical
+  const stagedOffense = physical
     ? applyCombatStageToStat(user.atk, conditionAdjustedCombatStage(user.combatStages.atk, user.conditions, 'atk'))
     : applyCombatStageToStat(user.satk, conditionAdjustedCombatStage(user.combatStages.satk, user.conditions, 'satk'))
+  const offense = applyInfatuationOffenseModifier(stagedOffense, infatuation)
   const defense = physical
     ? applyCombatStageToStat(target.def, conditionAdjustedCombatStage(target.combatStages.def, target.conditions, 'def'))
     : applyCombatStageToStat(target.sdef, conditionAdjustedCombatStage(target.combatStages.sdef, target.conditions, 'sdef'))

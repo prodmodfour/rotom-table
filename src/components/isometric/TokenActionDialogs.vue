@@ -27,6 +27,7 @@ const props = defineProps<{
   conditionsDialog: ConditionsDialogState | null
   conditionsDialogChanged: boolean
   conditionMoveOptions?: string[]
+  conditionCrushOptions?: string[]
   damageDialog: DamageDialogState | null
   damageDialogDbDef: DamageBaseDef | null
   damageDialogRawAmount: number
@@ -89,6 +90,7 @@ defineExpose({ focusHpAmount, focusDamageAmount })
     :dialog="props.conditionsDialog"
     :changed="props.conditionsDialogChanged"
     :available-moves="props.conditionMoveOptions ?? []"
+    :available-crushes="props.conditionCrushOptions ?? []"
     @close="emit('close-conditions')"
     @submit="emit('submit-conditions')"
   />

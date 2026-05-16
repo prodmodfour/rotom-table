@@ -6,6 +6,7 @@ const props = defineProps<{
   dialog: ConditionsDialogState
   changed: boolean
   availableMoves?: string[]
+  availableCrushes?: string[]
 }>()
 
 const emit = defineEmits<{
@@ -36,6 +37,7 @@ const emit = defineEmits<{
         compact
         tag-size="sm"
         :available-moves="props.availableMoves ?? []"
+        :available-crushes="props.availableCrushes ?? []"
       />
 
       <p class="hp-dialog__note">Conditions are saved to the source character sheet and shown on every map token for that sheet.</p>
