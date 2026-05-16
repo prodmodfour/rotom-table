@@ -66,6 +66,13 @@ export const resolveMoveAutomationRuntimeDamageFormula = ({
     return { formula, note }
   }
 
+  if (rule.kind === 'double-strike') {
+    return {
+      formula: fallbackFormula ?? null,
+      note: `${rule.label} requires two target-specific Accuracy Rolls and is resolved by seamless targeting.`,
+    }
+  }
+
   const positiveStages = positiveCombatStageTotal(user.combatStages)
   const scaledDb = Math.min(rule.maxDamageBase, baseDb + (positiveStages * rule.dbPerPositiveStage))
   const finalDb = scaledDb + stabDb

@@ -393,4 +393,65 @@ describe('explicit move automation scripts', () => {
     ]))
     expect(isSeamlessSingleTargetMoveScript(explicitScriptForMove('U-Turn'))).toBe(true)
   })
+
+  it('implements Synthesis, Razor Leaf, Magical Leaf, Reflect, Fury Swipes, and Double Kick as seamless scripts', () => {
+    const synthesis = explicitScriptForMove('Synthesis')
+    expect(synthesis).toMatchObject({
+      moveName: 'Synthesis',
+      targetMode: 'self',
+      requiresAccuracy: false,
+      hpSuggestions: [{
+        recipient: 'user',
+        mode: 'heal-percent-max',
+        percent: 50,
+        weatherPercentOverrides: { sunny: 200 / 3, rainy: 25, sandstorm: 25, hail: 25 },
+        rounding: 'floor',
+      }],
+    })
+    expect(isSeamlessSelfMoveScript(synthesis)).toBe(true)
+
+    const razorLeaf = explicitScriptForMove('Razor Leaf')
+    expect(razorLeaf).toMatchObject({
+      moveName: 'Razor Leaf',
+      targetMode: 'multi-target',
+      damaging: true,
+      requiresAccuracy: true,
+      criticalRange: 18,
+    })
+    expect(razorLeaf?.areaTemplates).toMatchObject([{ kind: 'cone', size: 2 }])
+    expect(isSeamlessAreaConfirmationScript(razorLeaf)).toBe(true)
+
+    const magicalLeaf = explicitScriptForMove('Magical Leaf')
+    expect(magicalLeaf).toMatchObject({
+      moveName: 'Magical Leaf',
+      targetMode: 'one-target',
+      damaging: true,
+      requiresAccuracy: false,
+      damageBase: 6,
+    })
+    expect(isSeamlessSingleTargetMoveScript(magicalLeaf)).toBe(true)
+
+    const reflect = explicitScriptForMove('Reflect')
+    expect(reflect).toMatchObject({
+      moveName: 'Reflect',
+      targetMode: 'self',
+      requiresAccuracy: false,
+      conditionSuggestions: [{ recipient: 'user', condition: 'Reflect Blessing', label: 'Reflect Blessing (2 activations)' }],
+    })
+    expect(isSeamlessSelfMoveScript(reflect)).toBe(true)
+
+    expect(explicitScriptForMove('Fury Swipes')).toMatchObject({
+      moveName: 'Fury Swipes',
+      targetMode: 'one-target',
+      dynamicDamageBase: { kind: 'five-strike', rollFormula: '1d8' },
+    })
+    expect(isSeamlessSingleTargetMoveScript(explicitScriptForMove('Fury Swipes'))).toBe(true)
+
+    expect(explicitScriptForMove('Double Kick')).toMatchObject({
+      moveName: 'Double Kick',
+      targetMode: 'one-target',
+      dynamicDamageBase: { kind: 'double-strike' },
+    })
+    expect(isSeamlessSingleTargetMoveScript(explicitScriptForMove('Double Kick'))).toBe(true)
+  })
 })

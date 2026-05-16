@@ -583,6 +583,61 @@ describe('useMoveAutomationPanel', () => {
     expect(map.value.metadata?.moveLog).toMatchObject([{ moveName: 'Helping Hand', scriptKind: 'explicit' }])
   })
 
+  it('opens cannot-miss damaging moves with targeting overlay and applies damage directly', async () => {
+    const map = ref({
+      ...mapFixture(),
+      placements: [
+        { id: 'user-token', sheetKind: 'pokemon' as const, sheetSlug: 'caster', position: { x: 0, y: 0, z: 0 } },
+        { id: 'target-token', sheetKind: 'pokemon' as const, sheetSlug: 'target', position: { x: 2, y: 0, z: 0 } },
+      ],
+    })
+    const pokemonSheet = {
+      slug: 'caster',
+      nickname: 'Caster',
+      species: 'Chikorita',
+      level: 5,
+      movelist: [{ name: 'Magical Leaf' }],
+    } as CharacterSheet
+    const calls: string[] = []
+    const panel = useMoveAutomationPanel({
+      map,
+      spawnedPokemon: computed(() => [
+        spawned({ id: 'user-token', species: 'Caster', sheetSlug: 'caster', position: { x: 0, y: 0, z: 0 } }),
+        spawned({ id: 'target-token', species: 'Target', sheetSlug: 'target', currentHp: 30, maxHp: 30, defenderTypes: [], position: { x: 2, y: 0, z: 0 } }),
+      ]),
+      pokemonBySlug: ref(new Map([[pokemonSheet.slug, pokemonSheet]])),
+      trainerBySlug: ref(new Map<string, TrainerSheet>()),
+      canEditMap: computed(() => false),
+      canControlPlacement: (id) => id === 'user-token',
+      modifyHp: (update) => { calls.push(`hp:${update.id}:${update.currentHp}`) },
+      modifyCombatStages: () => undefined,
+      modifyConditions: () => undefined,
+      applyMoveFieldEffect: () => undefined,
+      placeHazard: () => undefined,
+    })
+
+    panel.openMoveAutomation({ id: 'user-token', moveName: 'Magical Leaf' })
+
+    expect(panel.moveAutomationUser.value).toBeNull()
+    expect(panel.moveAutomationTargeting.value).toMatchObject({
+      mode: 'target',
+      moveName: 'Magical Leaf',
+      rangeLabel: '8m',
+      candidateIds: ['target-token'],
+    })
+
+    const random = vi.spyOn(Math, 'random').mockReturnValue(0)
+    try {
+      await panel.selectMoveAutomationTarget('target-token')
+    } finally {
+      random.mockRestore()
+    }
+
+    expect(panel.moveAutomationFeedback.value).toBeNull()
+    expect(calls).toEqual(['hp:target-token:18'])
+    expect(map.value.metadata?.moveLog).toMatchObject([{ moveName: 'Magical Leaf', scriptKind: 'explicit' }])
+  })
+
   it('opens Acupressure as a self-or-target overlay and applies the rolled boost', async () => {
     vi.useFakeTimers()
     const map = ref({

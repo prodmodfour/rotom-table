@@ -4,6 +4,8 @@ import { buildMoveAutomationMoveEntries } from '~/utils/moveAutomationMoves'
 import {
   resolveInstantAreaMoveAutomation,
   resolveInstantMoveAutomation,
+  resolveInstantSelfMoveAutomation,
+  resolveInstantTargetMoveAutomation,
 } from '~/utils/moveAutomationInstant'
 import type { CombatStageMap } from '~/types/combatStages'
 import type { SpawnedPokemon } from '~/types/pokemon'
@@ -195,6 +197,47 @@ describe('instant move automation', () => {
     expect(result.feedback).toMatchObject({ naturalRoll: 11, hit: true, crit: false, damageLoss: 15 })
     expect(result.transaction.hpUpdates).toEqual([{ id: 't', currentHp: 25 }])
     expect(result.transaction.logLines).toContain('Target: 15 HP lost (Dragon Rage fixed HP loss).')
+  })
+
+  it('heals Synthesis from current weather without opening a target flow', () => {
+    const script = explicitScriptForMove('Synthesis')!
+    const transaction = resolveInstantSelfMoveAutomation({
+      script,
+      user: token({ id: 'u', species: 'Sprout', currentHp: 10, maxHp: 99 }),
+      fieldEffects: { weather: [{ kind: 'sunny' }] },
+    })
+
+    expect(transaction.hpUpdates).toEqual([{ id: 'u', currentHp: 76 }])
+    expect(transaction.logLines).toContain('Sprout: Synthesis heals weather-adjusted HP (66 HP).')
+  })
+
+  it('resolves Magical Leaf damage as a cannot-miss target attack', () => {
+    const script = explicitScriptForMove('Magical Leaf')!
+    const transaction = resolveInstantTargetMoveAutomation({
+      script,
+      user: token({ id: 'u', species: 'Caster', satk: 10 }),
+      target: token({ id: 't', species: 'Target', currentHp: 40, maxHp: 40, sdef: 5, evasion: { physical: 9, special: 9, speed: 9 } }),
+      damageFormula: '2d6+8',
+      random: sequenceRandom([0, 0]),
+    })
+
+    expect(transaction.hpUpdates).toEqual([{ id: 't', currentHp: 25 }])
+    expect(transaction.hitTargetIds).toEqual(['t'])
+  })
+
+  it('rolls Double Strike attacks and critical bonus damage for Double Kick', () => {
+    const script = explicitScriptForMove('Double Kick')!
+    const result = resolveInstantMoveAutomation({
+      script,
+      user: token({ id: 'u', species: 'Kicker', atk: 5 }),
+      target: token({ id: 't', species: 'Target', currentHp: 40, maxHp: 40, def: 5, defenderTypes: [] }),
+      damageFormula: null,
+      random: sequenceRandom([0.5, 0.999, 0, 0, 0]),
+    })
+
+    expect(result.feedback).toMatchObject({ naturalRoll: 20, hit: true, crit: true, damageLoss: 16 })
+    expect(result.transaction.hpUpdates).toEqual([{ id: 't', currentHp: 24 }])
+    expect(result.transaction.logLines).toContain('Manual note: Double Kick Double Strike: roll 1 11 (hit); roll 2 20 (hit, critical); 2 hits -> DB 3 × 2 = DB 6. 1 critical hit adds 6 bonus damage before Stats and defenses.')
   })
 
   it('rolls Five Strike damage base before rolling damage dice', () => {

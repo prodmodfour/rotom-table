@@ -75,6 +75,16 @@
     ],
     "source": "move automation"
   },
+  "Reflect Blessing": {
+    "name": "Reflect Blessing",
+    "category": "Other Affliction",
+    "effect": "Team Blessing with 2 activations. An affected ally may activate Reflect when receiving Physical Damage to resist the Damage one step; remove after both activations are spent.",
+    "aliases": [
+      "Reflect Blessing (2 activations)",
+      "Reflect Blessing Marker"
+    ],
+    "source": "move automation"
+  },
   "Vulnerable": {
     "name": "Vulnerable",
     "category": "Other Affliction",

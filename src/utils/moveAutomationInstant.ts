@@ -8,7 +8,7 @@ import {
   resolveMoveAutomationAccuracyRoll,
   type MoveAutomationAccuracyRollResult,
 } from '~/utils/moveAutomationResolution'
-import { rollDamageFormula } from '~/utils/moveAutomation'
+import { formatDamageBase, rollDamageFormula } from '~/utils/moveAutomation'
 import {
   resolveMoveAutomationRandomStageSuggestion,
   resolveMoveAutomationRuntimeDamageFormula,
@@ -284,6 +284,120 @@ const addAccuracyToFeedback = (
 const combineManualNotes = (...notes: Array<string | null | undefined>): string =>
   notes.map((note) => note?.trim() ?? '').filter(Boolean).join(' ')
 
+const damageFormulaForDamageBase = (damageBase: number): string | null => {
+  const formula = formatDamageBase(damageBase)
+  return /^DB\s+/i.test(formula) ? null : formula
+}
+
+const formatDoubleStrikeRollSummary = (rolls: readonly MoveAutomationAccuracyRollResult[]): string => rolls
+  .map((roll, index) => `roll ${index + 1} ${roll.accuracyRoll} (${roll.hit ? 'hit' : 'miss'}${roll.hit && roll.crit ? ', critical' : ''})`)
+  .join('; ')
+
+const resolveInstantDoubleStrikeMoveAutomation = ({
+  script,
+  user,
+  target,
+  damageFormula,
+  fieldEffects,
+  conditionImmunityContext,
+  random,
+  idFactory,
+}: ResolveInstantMoveAutomationInput): InstantMoveAutomationResult => {
+  const targetEvasion = resolveMoveAutomationTargetEvasion(script, target)
+  const userAccuracy = moveAutomationUserAccuracy(user)
+  const accuracyRolls = [randomD20(random), randomD20(random)].map((naturalRoll) =>
+    resolveMoveAutomationAccuracyRoll(script, naturalRoll, {
+      userAccuracy,
+      targetEvasion: targetEvasion.value,
+    }),
+  )
+  const hitCount = accuracyRolls.filter((roll) => roll.hit).length
+  const critCount = accuracyRolls.filter((roll) => roll.hit && roll.crit).length
+  const baseDamageBase = script.damageBase ?? 0
+  const strikeMultiplier = hitCount >= 2 ? 2 : 1
+  const stabDamageBase = script.stabDamageBaseBonus ?? 0
+  const finalDamageBase = hitCount > 0 && baseDamageBase > 0
+    ? (baseDamageBase * strikeMultiplier) + stabDamageBase
+    : null
+  const resolvedDamageFormula = finalDamageBase != null
+    ? damageFormulaForDamageBase(finalDamageBase) ?? damageFormula ?? null
+    : damageFormula ?? null
+  const damageRoll = hitCount > 0 && script.damaging && resolvedDamageFormula
+    ? rollDamageFormula(resolvedDamageFormula, random)
+    : null
+  const criticalFormula = baseDamageBase > 0 ? damageFormulaForDamageBase(baseDamageBase) : null
+  let criticalBonusDamage = 0
+  for (let index = 0; index < critCount; index += 1) {
+    if (!criticalFormula) continue
+    criticalBonusDamage += rollDamageFormula(criticalFormula, random)?.total ?? 0
+  }
+  const targetResolutions = {
+    [target.id]: {
+      accuracyRoll: accuracyRolls.map((roll) => roll.accuracyRoll).join(', '),
+      hit: hitCount > 0,
+      crit: critCount > 0,
+      damageRoll,
+      criticalBonusDamage,
+      manualHpLoss: '',
+      applyDamage: true,
+    },
+  }
+  const enabledSuggestions: Record<string, boolean> = {}
+  enableDefaultSuggestions(script, enabledSuggestions)
+  const dbNote = hitCount > 0 && finalDamageBase != null
+    ? `DB ${baseDamageBase}${hitCount >= 2 ? ' × 2' : ''}${stabDamageBase ? ` + ${stabDamageBase} STAB` : ''} = DB ${finalDamageBase}`
+    : 'no damage'
+  const critNote = critCount > 0
+    ? ` ${critCount} critical ${critCount === 1 ? 'hit adds' : 'hits add'} ${criticalBonusDamage} bonus damage before Stats and defenses.`
+    : ''
+  const doubleStrikeNote = `${script.moveName} Double Strike: ${formatDoubleStrikeRollSummary(accuracyRolls)}; ${hitCount} ${hitCount === 1 ? 'hit' : 'hits'} -> ${dbNote}.${critNote}`
+
+  const transaction = buildMoveAutomationTransaction({
+    script,
+    user,
+    selectedTargets: [target],
+    targetResolutions,
+    enabledSuggestions,
+    hpSuggestionAmounts: {},
+    manualUserConditions: [],
+    manualTargetConditions: [],
+    manualUserStageDeltas: emptyStageDeltas(),
+    manualTargetStageDeltas: emptyStageDeltas(),
+    hazardCells: [],
+    manualNote: doubleStrikeNote,
+    fieldEffects,
+    conditionImmunityContext,
+  })
+  const targetHpUpdate = transaction.hpUpdates.find((update) => update.id === target.id)
+  const damageLoss = targetHpUpdate
+    ? Math.max(0, target.currentHp - targetHpUpdate.currentHp)
+    : 0
+  const feedbackAccuracy = accuracyRolls.find((roll) => roll.hit && roll.crit)
+    ?? accuracyRolls.find((roll) => roll.hit)
+    ?? accuracyRolls[0]
+
+  return {
+    transaction,
+    feedback: {
+      id: feedbackId(idFactory),
+      userId: user.id,
+      targetId: target.id,
+      moveName: script.moveName,
+      phase: 'rolling',
+      naturalRoll: feedbackAccuracy?.naturalRoll ?? 0,
+      modifiedRoll: feedbackAccuracy?.modifiedRoll ?? feedbackAccuracy?.naturalRoll ?? 0,
+      accuracyCheck: feedbackAccuracy?.accuracyCheck ?? null,
+      userAccuracy,
+      targetEvasion: targetEvasion.value,
+      targetEvasionLabel: targetEvasion.label,
+      hit: hitCount > 0,
+      crit: critCount > 0,
+      damageLoss,
+      conditions: [],
+    },
+  }
+}
+
 export const resolveInstantMoveAutomation = ({
   script,
   user,
@@ -294,6 +408,19 @@ export const resolveInstantMoveAutomation = ({
   random,
   idFactory,
 }: ResolveInstantMoveAutomationInput): InstantMoveAutomationResult => {
+  if (script.dynamicDamageBase?.kind === 'double-strike') {
+    return resolveInstantDoubleStrikeMoveAutomation({
+      script,
+      user,
+      target,
+      damageFormula,
+      fieldEffects,
+      conditionImmunityContext,
+      random,
+      idFactory,
+    })
+  }
+
   const naturalRoll = randomD20(random)
   const targetEvasion = resolveMoveAutomationTargetEvasion(script, target)
   const userAccuracy = moveAutomationUserAccuracy(user)

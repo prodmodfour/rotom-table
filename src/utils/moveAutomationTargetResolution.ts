@@ -25,6 +25,8 @@ export interface MoveAutomationTargetResolutionState {
   hit: boolean
   crit: boolean
   damageRoll: DamageRollResult | null
+  /** Explicit critical bonus used by multi-roll keywords such as Double Strike. */
+  criticalBonusDamage?: number
   manualHpLoss: string
   applyDamage: boolean
 }
@@ -107,10 +109,12 @@ export const resolveMoveAutomationTargetDamageLoss = (
   })
   if (directHpLoss != null) return directHpLoss
   const baseRollTotal = state.damageRoll?.total ?? 0
-  const criticalDiceBonus = state.crit
-    ? state.damageRoll?.rolls.reduce((sum, roll) => sum + roll, 0) ?? 0
-    : 0
-  const unmodifiedRaw = baseRollTotal + criticalDiceBonus
+  const criticalDamageBonus = state.criticalBonusDamage != null
+    ? state.criticalBonusDamage
+    : state.crit
+      ? state.damageRoll?.rolls.reduce((sum, roll) => sum + roll, 0) ?? 0
+      : 0
+  const unmodifiedRaw = baseRollTotal + criticalDamageBonus
   if (unmodifiedRaw <= 0) return 0
   const infatuation = resolveInfatuationDamageEffect(user.conditions, selectedTargets)
   const raw = unmodifiedRaw + infatuation.damageRollModifier + conditionDamageRollModifier(user.conditions)
@@ -151,6 +155,7 @@ export const resolveMoveAutomationTargetDamageLoss = (
 
 export interface ResolveHpSuggestionAmountOptions {
   damageDealt?: number
+  fieldEffects?: MapFieldEffects
 }
 
 export const resolveHpSuggestionAmount = (
@@ -166,11 +171,17 @@ export const resolveHpSuggestionAmount = (
   if (override != null) return override
   if (item.mode === 'fixed-loss') return item.amount ?? 0
   if (item.mode === 'set-zero') return token.currentHp
-  if (!item.percent) return 0
+  const weatherOverride = options.fieldEffects?.weather
+    ?.map((effect) => item.weatherPercentOverrides?.[effect.kind])
+    .find((percent): percent is number => typeof percent === 'number')
+  const percent = weatherOverride ?? item.percent
+  if (!percent) return 0
   const base = item.mode === 'heal-percent-damage-dealt'
     ? options.damageDealt ?? 0
     : item.mode === 'lose-percent-current'
       ? token.currentHp
       : token.maxHp
-  return Math.max(0, Math.round(base * item.percent / 100))
+  const raw = base * percent / 100
+  const rounded = item.rounding === 'floor' ? Math.floor(raw) : Math.round(raw)
+  return Math.max(0, rounded)
 }

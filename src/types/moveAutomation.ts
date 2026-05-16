@@ -175,6 +175,9 @@ export interface MoveAutomationHpSuggestion {
   mode: 'heal-percent-max' | 'heal-percent-damage-dealt' | 'lose-percent-max' | 'lose-percent-current' | 'fixed-loss' | 'set-zero'
   percent?: number
   amount?: number
+  /** Optional weather-specific percentages for moves such as Synthesis. */
+  weatherPercentOverrides?: Partial<Record<MapWeatherKind, number>>
+  rounding?: 'round' | 'floor'
   label: string
   optional?: boolean
 }
@@ -214,6 +217,11 @@ export interface MoveAutomationFiveStrikeDamageBaseRule {
   label: string
 }
 
+export interface MoveAutomationDoubleStrikeDamageBaseRule {
+  kind: 'double-strike'
+  label: string
+}
+
 export interface MoveAutomationPositiveCombatStageDamageBaseRule {
   kind: 'positive-combat-stage-scaling'
   dbPerPositiveStage: number
@@ -223,6 +231,7 @@ export interface MoveAutomationPositiveCombatStageDamageBaseRule {
 
 export type MoveAutomationDynamicDamageBaseRule =
   | MoveAutomationFiveStrikeDamageBaseRule
+  | MoveAutomationDoubleStrikeDamageBaseRule
   | MoveAutomationPositiveCombatStageDamageBaseRule
 
 export interface MoveAutomationRandomStageSuggestionEntry {

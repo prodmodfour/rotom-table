@@ -12,6 +12,7 @@ import { STRUGGLE_ATTACK_MOVE_NAMES } from '~/utils/struggleMoves'
 import {
   ELECTRIC_RESISTANT_COAT_CONDITION,
   HELPING_HAND_CONDITION,
+  REFLECT_BLESSING_CONDITION,
   SUPERSONIC_ACCURACY_PENALTY_CONDITION,
 } from '~/utils/moveAutomationSpecialConditions'
 import type { MoveDamageRollResult } from '~/utils/moveDamageBase'
@@ -373,6 +374,20 @@ const reviewedFiveStrikeScript = (moveName: string, version = 1): MoveAutomation
   ],
 })
 
+const reviewedDoubleStrikeScript = (moveName: string, version = 1): MoveAutomationScript => reviewedMoveScriptFromCanonical(moveName, version, {
+  targetMode: 'one-target',
+  targetCount: 1,
+  dynamicDamageBase: {
+    kind: 'double-strike',
+    label: `${moveName} Double Strike`,
+  },
+  automationNotes: [
+    'Double Strike rolls two Accuracy Rolls automatically: one hit uses the base Damage Base; two hits double the Damage Base.',
+    'Each hit can crit separately; critical bonus damage is rolled from the Move’s base Damage Base before doubling.',
+    'STAB is applied after Double Strike Damage Base multiplication.',
+  ],
+})
+
 const reviewedPowerTripScript = (version = 1): MoveAutomationScript => reviewedMoveScriptFromCanonical('Power Trip', version, {
   targetMode: 'one-target',
   targetCount: 1,
@@ -446,6 +461,44 @@ const reviewedMudSportScript = (version = 1): MoveAutomationScript => reviewedAr
   automationNotes: [
     'Burst 2 is shown as an area overlay; the user also receives the Coat even though the user token is not a selectable target.',
     'Electric-Resistant Coat is consumed automatically after a damaging Electric-Type move hits that token.',
+  ],
+})
+
+const reviewedSynthesisScript = (version = 1): MoveAutomationScript => reviewedMoveScriptFromCanonical('Synthesis', version, {
+  targetMode: 'self',
+  targetCount: 1,
+  requiresAccuracy: false,
+  hpSuggestions: [{
+    recipient: 'user',
+    mode: 'heal-percent-max',
+    percent: 50,
+    weatherPercentOverrides: {
+      sunny: 200 / 3,
+      rainy: 25,
+      sandstorm: 25,
+      hail: 25,
+    },
+    rounding: 'floor',
+    label: 'Synthesis heals weather-adjusted HP',
+  }],
+  automationNotes: [
+    'Synthesis heals 1/2 Max HP normally, 2/3 Max HP in Sunny Weather, or 1/4 Max HP in Rain, Sandstorm, or Hail.',
+  ],
+})
+
+const reviewedReflectScript = (version = 1): MoveAutomationScript => reviewedMoveScriptFromCanonical('Reflect', version, {
+  targetMode: 'self',
+  targetCount: 1,
+  requiresAccuracy: false,
+  conditionSuggestions: [{
+    recipient: 'user',
+    condition: REFLECT_BLESSING_CONDITION,
+    action: 'add',
+    label: 'Reflect Blessing (2 activations)',
+  }],
+  automationNotes: [
+    'Reflect creates a team Blessing shared by allies; this marker tracks the side’s 2 activations on the user token.',
+    'Remove the marker after both activations are spent, or move it manually if your table tracks side effects elsewhere.',
   ],
 })
 
@@ -570,6 +623,7 @@ const SEAMLESS_SINGLE_TARGET_ATTACK_SCRIPT_NAMES = [
   'Leaf Blade',
   'Lick',
   'Mach Punch',
+  'Magical Leaf',
   'Mega Punch',
   'Needle Arm',
   'Night Slash',
@@ -707,7 +761,9 @@ const REVIEWED_ADDITIONAL_SINGLE_TARGET_SCRIPTS: ReadonlyMap<string, MoveAutomat
     requiresAccuracy: false,
     automationNotes: ['Helping Hand creates a removable marker; remove it after the target consumes the +2 Accuracy/+10 Damage bonus or the round ends.'],
   })],
+  ['Double Kick', reviewedDoubleStrikeScript('Double Kick')],
   ['Fury Attack', reviewedFiveStrikeScript('Fury Attack')],
+  ['Fury Swipes', reviewedFiveStrikeScript('Fury Swipes')],
   ['Knock Off', reviewedMoveScriptFromCanonical('Knock Off', 1, {
     targetMode: 'one-target',
     targetCount: 1,
@@ -749,7 +805,9 @@ const REVIEWED_SELF_SCRIPTS: ReadonlyMap<string, MoveAutomationScript> = new Map
     { key: 'acc', delta: 1, label: 'Hone Claws raises Accuracy: +1 Accuracy CS' },
     { key: 'atk', delta: 1, label: 'Hone Claws raises Attack: +1 Attack CS' },
   ])],
+  ['Reflect', reviewedReflectScript()],
   ['Swords Dance', reviewedSelfStageScript('Swords Dance', [{ key: 'atk', delta: 2, label: 'Swords Dance raises Attack: +2 Attack CS' }])],
+  ['Synthesis', reviewedSynthesisScript()],
 ])
 
 const STRUGGLE_ATTACK_SCRIPTS: ReadonlyMap<string, MoveAutomationScript> = new Map(
@@ -785,7 +843,6 @@ export const isSeamlessSingleTargetAttackScript = (
     )
     && script.targetMode === 'one-target'
     && script.targetCount === 1
-    && script.requiresAccuracy
     && script.damaging,
 )
 
@@ -797,8 +854,7 @@ export const isSeamlessSingleTargetMoveScript = (
     script.kind === 'explicit'
       && hasReviewedSeamlessSingleTargetScript(script)
       && script.targetMode === 'one-target'
-      && script.targetCount === 1
-      && (script.requiresAccuracy || !script.damaging),
+      && script.targetCount === 1,
   )
 }
 

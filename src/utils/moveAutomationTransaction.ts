@@ -241,6 +241,7 @@ export const buildMoveAutomationTransaction = ({
         damageDealt: item.recipient === 'target'
           ? damageLossByTargetId.get(token.id) ?? 0
           : totalAppliedDamageLoss,
+        fieldEffects,
       })
       if (amount <= 0 && item.mode !== 'set-zero') continue
       const next = applyHpSuggestion(hpAccumulator.get(token), token.maxHp, amount, item.mode)
