@@ -343,6 +343,61 @@ describe('useMoveAutomationPanel', () => {
     }
   })
 
+  it('queues and applies an optional Moxie prompt after a target faints', async () => {
+    const map = ref({
+      ...mapFixture(),
+      placements: [
+        { id: 'user-token', sheetKind: 'pokemon' as const, sheetSlug: 'attacker', position: { x: 0, y: 0, z: 0 } },
+        { id: 'target-token', sheetKind: 'pokemon' as const, sheetSlug: 'target', position: { x: 2, y: 0, z: 0 } },
+      ],
+    })
+    const calls: string[] = []
+    const panel = useMoveAutomationPanel({
+      map,
+      spawnedPokemon: computed(() => [
+        spawned({ id: 'user-token', species: 'Attacker', sheetSlug: 'attacker', abilityNames: ['Moxie'], combatStages: { atk: 2, def: 0, satk: 0, sdef: 0, spd: 0, acc: 0 } }),
+        spawned({ id: 'target-token', species: 'Target', sheetSlug: 'target', currentHp: 3, maxHp: 10, position: { x: 2, y: 0, z: 0 } }),
+      ]),
+      pokemonBySlug: ref(new Map<string, CharacterSheet>()),
+      trainerBySlug: ref(new Map<string, TrainerSheet>()),
+      canEditMap: computed(() => false),
+      canControlPlacement: (id) => id === 'user-token',
+      modifyHp: (update) => { calls.push(`hp:${update.id}:${update.currentHp}`) },
+      modifyCombatStages: (update) => { calls.push(`stages:${update.id}:${update.stages.atk}`) },
+      modifyConditions: () => undefined,
+      applyMoveFieldEffect: () => undefined,
+      placeHazard: () => undefined,
+    })
+
+    await panel.applyMoveAutomation({
+      userId: 'user-token',
+      userName: 'Attacker',
+      moveName: 'Bite',
+      scriptKind: 'explicit',
+      scriptVersion: 1,
+      hitTargetIds: ['target-token'],
+      hpUpdates: [{ id: 'target-token', currentHp: 0 }],
+      combatStageUpdates: [],
+      conditionUpdates: [],
+      hazardsToAdd: [],
+      fieldEffectsToApply: [],
+      logLines: ['Attacker used Bite.'],
+    })
+
+    expect(calls).toEqual(['hp:target-token:0'])
+    expect(panel.moxieTriggerPrompts.value).toMatchObject([{
+      attackerId: 'user-token',
+      attackerName: 'Attacker',
+      moveName: 'Bite',
+      faintedTargetNames: ['Target'],
+    }])
+
+    await panel.applyMoxieTriggerPrompt(panel.moxieTriggerPrompts.value[0]!.id)
+
+    expect(calls).toEqual(['hp:target-token:0', 'stages:user-token:3'])
+    expect(panel.moxieTriggerPrompts.value).toEqual([])
+  })
+
   it('applies sheet updates, gates map effects by GM permission, and appends logs', async () => {
     const map = ref(mapFixture())
     const calls: string[] = []

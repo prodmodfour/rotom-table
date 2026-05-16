@@ -27,6 +27,10 @@ import {
   buildSpiteReactionPrompts,
 } from '~/utils/moveAutomationSpite'
 import {
+  buildMoxieTriggerPrompts,
+  buildMoxieTriggerTransaction,
+} from '~/utils/moveAutomationMoxie'
+import {
   moveAutomationTargetsInRange,
   parseSingleTargetMoveRangeMeters,
 } from '~/utils/moveAutomationRange'
@@ -41,6 +45,7 @@ import type {
   MoveAutomationHpUpdate,
   MoveAutomationFeedbackState,
   MoveAutomationLogEntry,
+  MoveAutomationMoxiePrompt,
   MoveAutomationScript,
   MoveAutomationSpitePrompt,
   MoveAutomationTargetingOverlayState,
@@ -147,6 +152,7 @@ export const useMoveAutomationPanel = ({
   const activeMoveTargeting = ref<ActiveMoveTargetingRequest | null>(null)
   const moveAutomationFeedback = ref<MoveAutomationFeedbackState | null>(null)
   const spiteReactionPrompts = ref<MoveAutomationSpitePrompt[]>([])
+  const moxieTriggerPrompts = ref<MoveAutomationMoxiePrompt[]>([])
   const feedbackTimers: Array<ReturnType<typeof setTimeout>> = []
 
   const moveAutomationUser = computed(() =>
@@ -423,6 +429,26 @@ export const useMoveAutomationPanel = ({
     if (prompts.length) spiteReactionPrompts.value = [...spiteReactionPrompts.value, ...prompts]
   }
 
+  const moxieTriggerPromptsForTransaction = (
+    transaction: MoveAutomationTransaction,
+  ): MoveAutomationMoxiePrompt[] => {
+    const attacker = findSpawnedPokemon(transaction.userId)
+    if (!attacker) return []
+
+    return buildMoxieTriggerPrompts({
+      attacker,
+      moveName: transaction.moveName,
+      hpUpdates: transaction.hpUpdates,
+      hitTargetIds: transaction.hitTargetIds,
+      tokens: spawnedPokemon.value,
+      existingPrompts: moxieTriggerPrompts.value,
+    })
+  }
+
+  const queueMoxieTriggerPrompts = (prompts: readonly MoveAutomationMoxiePrompt[]) => {
+    if (prompts.length) moxieTriggerPrompts.value = [...moxieTriggerPrompts.value, ...prompts]
+  }
+
   const dismissSpiteReactionPrompt = (id: string) => {
     spiteReactionPrompts.value = spiteReactionPrompts.value.filter((prompt) => prompt.id !== id)
   }
@@ -437,8 +463,30 @@ export const useMoveAutomationPanel = ({
     dismissSpiteReactionPrompt(id)
   }
 
+  const dismissMoxieTriggerPrompt = (id: string) => {
+    moxieTriggerPrompts.value = moxieTriggerPrompts.value.filter((prompt) => prompt.id !== id)
+  }
+
+  const applyMoxieTriggerPrompt = async (id: string) => {
+    const prompt = moxieTriggerPrompts.value.find((item) => item.id === id)
+    if (!prompt) return
+
+    const attacker = findSpawnedPokemon(prompt.attackerId)
+    const firstFaintedTarget = prompt.faintedTargetIds
+      .map((targetId) => findSpawnedPokemon(targetId))
+      .find((target): target is SpawnedPokemon => Boolean(target)) ?? null
+    const transaction = attacker ? buildMoxieTriggerTransaction(attacker, firstFaintedTarget) : null
+    if (transaction) {
+      for (const update of transaction.combatStageUpdates) {
+        await modifyCombatStages(update, { allowAnyTarget: true })
+      }
+    }
+    dismissMoxieTriggerPrompt(id)
+  }
+
   const applyMoveAutomation = async (transaction: MoveAutomationTransaction) => {
     if (!map.value || !canControlPlacement(transaction.userId)) return
+    const moxiePrompts = moxieTriggerPromptsForTransaction(transaction)
     for (const update of transaction.hpUpdates) await modifyHp(update, { allowAnyTarget: true })
     for (const update of transaction.combatStageUpdates) await modifyCombatStages(update, { allowAnyTarget: true })
     for (const update of transaction.conditionUpdates) await modifyConditions(update, { allowAnyTarget: true })
@@ -447,6 +495,7 @@ export const useMoveAutomationPanel = ({
       for (const hazard of transaction.hazardsToAdd) await placeHazard(hazard)
     }
     appendMoveAutomationLog(transaction)
+    queueMoxieTriggerPrompts(moxiePrompts)
     queueSpiteReactionPrompts(transaction)
     closeMoveAutomation()
   }
@@ -533,6 +582,7 @@ export const useMoveAutomationPanel = ({
     moveAutomationTargeting,
     moveAutomationFeedback,
     spiteReactionPrompts,
+    moxieTriggerPrompts,
     tokenMoveOptionsById,
     openMoveAutomation,
     closeMoveAutomation,
@@ -541,6 +591,8 @@ export const useMoveAutomationPanel = ({
     selectMoveAutomationAreaDirection,
     dismissSpiteReactionPrompt,
     applySpiteReactionPrompt,
+    dismissMoxieTriggerPrompt,
+    applyMoxieTriggerPrompt,
     appendMoveAutomationLog,
     applyMoveAutomation,
   }

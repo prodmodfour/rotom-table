@@ -5,6 +5,7 @@ import type { AbilityAutomationCategory, AbilityAutomationTransaction } from '~/
 import type { SpawnedPokemon } from '~/types/pokemon'
 
 export const INTIMIDATE_ABILITY_NAME = 'Intimidate'
+export const MOXIE_ABILITY_NAME = 'Moxie'
 
 export interface SheetAbilityAutomationDefinition {
   readonly name: string
@@ -12,10 +13,13 @@ export interface SheetAbilityAutomationDefinition {
   readonly label: string
 }
 
+export type MapAbilityTargetMode = 'target' | 'self'
+
 export interface MapAbilityAutomationDefinition {
   readonly name: string
   readonly category: 'map'
   readonly label: string
+  readonly targetMode: MapAbilityTargetMode
   readonly rangeLabel: string
   readonly rangeMeters: number
 }
@@ -33,8 +37,20 @@ const MAP_ABILITY_AUTOMATIONS = new Map<string, MapAbilityAutomationDefinition>(
       name: INTIMIDATE_ABILITY_NAME,
       category: 'map',
       label: 'Map',
+      targetMode: 'target',
       rangeLabel: 'the map',
       rangeMeters: MAP_WIDE_RANGE_METERS,
+    },
+  ],
+  [
+    MOXIE_ABILITY_NAME,
+    {
+      name: MOXIE_ABILITY_NAME,
+      category: 'map',
+      label: 'Self',
+      targetMode: 'self',
+      rangeLabel: 'self',
+      rangeMeters: 0,
     },
   ],
 ])
@@ -75,17 +91,23 @@ export const isMapAbilityAutomationName = (abilityName: string): boolean =>
 export const mapAbilityTargetCandidates = (
   user: SpawnedPokemon,
   tokens: readonly SpawnedPokemon[],
-): SpawnedPokemon[] => tokens.filter((token) => token.id !== user.id)
+  ability?: SheetAbilityNameSource,
+): SpawnedPokemon[] => {
+  const definition = ability ? getMapAbilityAutomation(ability) : null
+  if (definition?.targetMode === 'self') return []
+  return tokens.filter((token) => token.id !== user.id)
+}
 
 export const resolveMapAbilityAutomationTransaction = (options: {
   abilityName: string
   user: SpawnedPokemon
-  target: SpawnedPokemon
+  target?: SpawnedPokemon | null
 }): AbilityAutomationTransaction | null => {
   const definition = getMapAbilityAutomation(options.abilityName)
   if (!definition) return null
 
   if (definition.name === INTIMIDATE_ABILITY_NAME) {
+    if (!options.target) return null
     const nextStages = normalizeCombatStages({
       ...options.target.combatStages,
       atk: (options.target.combatStages.atk ?? 0) - 1,
@@ -100,6 +122,28 @@ export const resolveMapAbilityAutomationTransaction = (options: {
         `${options.user.species} used ${definition.name} on ${options.target.species}.`,
         `${options.target.species}'s Attack fell by 1 Combat Stage.`,
       ],
+    }
+  }
+
+  if (definition.name === MOXIE_ABILITY_NAME) {
+    const currentStages = normalizeCombatStages(options.user.combatStages)
+    const nextStages = normalizeCombatStages({
+      ...currentStages,
+      atk: currentStages.atk + 1,
+    })
+    const triggerLine = options.target
+      ? `${options.user.species} triggered ${definition.name} after causing ${options.target.species} to faint.`
+      : `${options.user.species} triggered ${definition.name}.`
+    const stageLine = nextStages.atk > currentStages.atk
+      ? `${options.user.species}'s Attack rose by 1 Combat Stage.`
+      : `${options.user.species}'s Attack is already at +6 Combat Stages.`
+    return {
+      userId: options.user.id,
+      userName: options.user.species,
+      abilityName: definition.name,
+      category: definition.category,
+      combatStageUpdates: [{ id: options.user.id, stages: nextStages }],
+      logLines: [triggerLine, stageLine],
     }
   }
 

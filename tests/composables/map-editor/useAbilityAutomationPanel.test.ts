@@ -108,6 +108,39 @@ describe('useAbilityAutomationPanel', () => {
     ])
   })
 
+  it('applies self map abilities immediately', async () => {
+    const map = ref(mapFixture())
+    const calls: string[] = []
+    const pokemonSheet = {
+      slug: 'bolt',
+      nickname: 'Bolt',
+      species: 'Sandile',
+      level: 5,
+      abilities: [{ name: 'Moxie' }],
+    } as CharacterSheet
+    const panel = useAbilityAutomationPanel({
+      map,
+      spawnedPokemon: computed(() => [
+        spawned('user-token', { species: 'Sandile', combatStages: stages({ atk: 2 }) }),
+        spawned('target-token'),
+      ]),
+      pokemonBySlug: ref(new Map([[pokemonSheet.slug, pokemonSheet]])),
+      trainerBySlug: ref(new Map<string, TrainerSheet>()),
+      canControlPlacement: (id) => id === 'user-token',
+      modifyCombatStages: (update) => { calls.push(`stages:${update.id}:${update.stages.atk}`) },
+      modifyAbilityActivation: () => undefined,
+      now: () => 321,
+    })
+
+    await panel.openAbilityAutomation({ id: 'user-token', abilityName: 'Moxie' })
+
+    expect(panel.abilityAutomationTargeting.value).toBeNull()
+    expect(calls).toEqual(['stages:user-token:3'])
+    expect(map.value.metadata?.abilityLog).toMatchObject([
+      { at: 321, userId: 'user-token', abilityName: 'Moxie', category: 'map' },
+    ])
+  })
+
   it('targets map abilities and applies their sheet updates to targets', async () => {
     const map = ref(mapFixture())
     const calls: string[] = []

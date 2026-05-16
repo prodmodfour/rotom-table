@@ -11,12 +11,14 @@ describe('map token ability menu options', () => {
     const options = buildTokenAbilityMenuOptions([
       { name: 'Sand Veil', activated: true },
       { name: 'Intimidate' },
+      { name: 'Moxie' },
       { name: 'Run Away' },
     ])
 
     expect(options).toMatchObject([
       { name: 'Sand Veil', automation: { category: 'sheet', label: 'Sheet' }, activated: true },
       { name: 'Intimidate', automation: { category: 'map', label: 'Map' }, activated: false },
+      { name: 'Moxie', automation: { category: 'map', label: 'Self' }, activated: false },
       { name: 'Run Away', automation: null, activated: false },
     ])
   })

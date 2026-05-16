@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   INTIMIDATE_ABILITY_NAME,
+  MOXIE_ABILITY_NAME,
   getAbilityAutomationCategory,
   mapAbilityTargetCandidates,
   resolveMapAbilityAutomationTransaction,
@@ -50,6 +51,7 @@ describe('ability automation helpers', () => {
   it('classifies sheet and map ability automation categories', () => {
     expect(getAbilityAutomationCategory('Sand Veil')).toBe('sheet')
     expect(getAbilityAutomationCategory(INTIMIDATE_ABILITY_NAME)).toBe('map')
+    expect(getAbilityAutomationCategory(MOXIE_ABILITY_NAME)).toBe('map')
     expect(getAbilityAutomationCategory('Run Away')).toBeNull()
   })
 
@@ -69,6 +71,30 @@ describe('ability automation helpers', () => {
       abilityName: INTIMIDATE_ABILITY_NAME,
       category: 'map',
       combatStageUpdates: [{ id: 'target', stages: { atk: -6 } }],
+    })
+  })
+
+  it('resolves Moxie as a self Attack stage update', () => {
+    const user = token('user', { combatStages: stages({ atk: 2 }) })
+    const target = token('target', { currentHp: 0 })
+
+    expect(mapAbilityTargetCandidates(user, [user, target], MOXIE_ABILITY_NAME)).toEqual([])
+
+    const transaction = resolveMapAbilityAutomationTransaction({
+      abilityName: MOXIE_ABILITY_NAME,
+      user,
+      target,
+    })
+
+    expect(transaction).toMatchObject({
+      userId: 'user',
+      abilityName: MOXIE_ABILITY_NAME,
+      category: 'map',
+      combatStageUpdates: [{ id: 'user', stages: { atk: 3 } }],
+      logLines: [
+        'user triggered Moxie after causing target to faint.',
+        "user's Attack rose by 1 Combat Stage.",
+      ],
     })
   })
 })

@@ -129,7 +129,7 @@ export const useAbilityAutomationPanel = ({
     const request = activeAbilityTargeting.value
     const user = findSpawnedPokemon(request?.userId)
     if (!request || !user || !canControlPlacement(request.userId)) return null
-    const candidates = mapAbilityTargetCandidates(user, spawnedPokemon.value)
+    const candidates = mapAbilityTargetCandidates(user, spawnedPokemon.value, request.abilityName)
     return {
       userId: request.userId,
       moveName: request.abilityName,
@@ -174,6 +174,17 @@ export const useAbilityAutomationPanel = ({
     })
   }
 
+  const applySelfMapAbility = async (
+    user: SpawnedPokemon,
+    option: TokenAbilityMenuOption,
+  ) => {
+    const transaction = resolveMapAbilityAutomationTransaction({
+      abilityName: option.name,
+      user,
+    })
+    if (transaction) await applyAbilityAutomationTransaction(transaction)
+  }
+
   const beginMapAbilityTargeting = (
     user: SpawnedPokemon,
     option: TokenAbilityMenuOption,
@@ -201,6 +212,12 @@ export const useAbilityAutomationPanel = ({
     activeAbilityTargeting.value = null
     if (option.automation.category === 'sheet') {
       if (!option.activated) await activateSheetAbility(user, option)
+      return
+    }
+
+    const mapAutomation = getMapAbilityAutomation(option.name)
+    if (mapAutomation?.targetMode === 'self') {
+      await applySelfMapAbility(user, option)
       return
     }
 

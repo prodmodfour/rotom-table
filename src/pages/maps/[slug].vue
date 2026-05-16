@@ -257,6 +257,7 @@ const {
   moveAutomationTargeting,
   moveAutomationFeedback,
   spiteReactionPrompts,
+  moxieTriggerPrompts,
   tokenMoveOptionsById,
   openMoveAutomation,
   closeMoveAutomation,
@@ -265,6 +266,8 @@ const {
   selectMoveAutomationAreaDirection,
   dismissSpiteReactionPrompt,
   applySpiteReactionPrompt,
+  dismissMoxieTriggerPrompt,
+  applyMoxieTriggerPrompt,
   applyMoveAutomation,
 } = useMoveAutomationPanel({
   map,
@@ -470,6 +473,7 @@ useMapDimensionReconciliation({
         :move-automation-targeting="actionAutomationTargeting"
         :move-automation-feedback="moveAutomationFeedback"
         :spite-reaction-prompts="spiteReactionPrompts"
+        :moxie-trigger-prompts="moxieTriggerPrompts"
         :token-move-options-by-id="tokenMoveOptionsById"
         :token-ability-options-by-id="tokenAbilityOptionsById"
         :token-send-out-options-by-id="tokenSendOutOptionsById"
@@ -498,6 +502,8 @@ useMapDimensionReconciliation({
         @cancel-move-targeting="cancelActionAutomationTargeting"
         @dismiss-spite-reaction="dismissSpiteReactionPrompt"
         @apply-spite-reaction="applySpiteReactionPrompt"
+        @dismiss-moxie-trigger="dismissMoxieTriggerPrompt"
+        @apply-moxie-trigger="applyMoxieTriggerPrompt"
       />
     </template>
 
