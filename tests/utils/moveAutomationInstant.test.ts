@@ -115,6 +115,58 @@ describe('instant move automation', () => {
     expect(result.transaction.logLines).toContain('Manual note: Burned did not apply to Flare: immune (Fire type).')
   })
 
+  it('uses Shield Dust to block damaging move Accuracy Roll condition effects', () => {
+    const script = explicitScriptForMove('Ember')!
+    const result = resolveInstantMoveAutomation({
+      script,
+      user: token({ id: 'u', species: 'Caster' }),
+      target: token({ id: 't', species: 'Dusty', defenderTypes: ['Grass'], abilityNames: ['Shield Dust'] }),
+      damageFormula: '1d8+6',
+      random: sequenceRandom([0.85, 0.375]),
+    })
+
+    expect(result.feedback).toMatchObject({ hit: true, damageLoss: 22 })
+    expect(result.feedback.conditions).toEqual([{ condition: 'Burned', applied: false, blockedBy: 'Shield Dust' }])
+    expect(result.transaction.hpUpdates).toEqual([{ id: 't', currentHp: 18 }])
+    expect(result.transaction.conditionUpdates).toEqual([])
+  })
+
+  it('uses Shield Dust to block damaging move Accuracy Roll stage effects', () => {
+    const script = explicitScriptForMove('Bubble Beam')!
+    const result = resolveInstantMoveAutomation({
+      script,
+      user: token({ id: 'u', species: 'Squirtle' }),
+      target: token({ id: 't', species: 'Dusty', abilityNames: ['Shield Dust'] }),
+      damageFormula: '1d6',
+      random: sequenceRandom([0.85, 0]),
+    })
+
+    expect(result.feedback).toMatchObject({ naturalRoll: 18, hit: true })
+    expect(result.transaction.combatStageUpdates).toEqual([])
+    expect(result.transaction.logLines).toContain('Bubble Beam lowers Speed on 18+: -1 Speed CS did not apply to Dusty: blocked by Shield Dust.')
+  })
+
+  it('uses nearby Sweet Veil providers to block Sleep', () => {
+    const script = explicitScriptForMove('Hypnosis')!
+    const sweetVeilProvider = token({
+      id: 'ally',
+      species: 'Aromatisse',
+      abilityNames: ['Sweet Veil'],
+      position: { x: 3, y: 0, z: 0 },
+    })
+    const result = resolveInstantMoveAutomation({
+      script,
+      user: token({ id: 'u', species: 'Caster' }),
+      target: token({ id: 't', species: 'Target', position: { x: 0, y: 0, z: 0 } }),
+      damageFormula: null,
+      conditionImmunityContext: { sweetVeilProviders: [sweetVeilProvider] },
+      random: sequenceRandom([0.85]),
+    })
+
+    expect(result.feedback.conditions).toEqual([{ condition: 'Sleep', applied: false, blockedBy: 'Sweet Veil (Aromatisse)' }])
+    expect(result.transaction.conditionUpdates).toEqual([])
+  })
+
   it('resolves Psywave through the same instant single-target flow as Ember', () => {
     const script = explicitScriptForMove('Psywave')!
     const result = resolveInstantMoveAutomation({

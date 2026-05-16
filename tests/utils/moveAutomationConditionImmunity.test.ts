@@ -38,28 +38,25 @@ describe('move automation condition immunity', () => {
     expect(moveAutomationConditionImmunitySource('Stuck', token({ defenderTypes: ['Normal'] }))).toBeNull()
   })
 
-  it('blocks Sleep from Sweet Veil on the target or a nearby provider', () => {
-    expect(moveAutomationConditionImmunitySource('Sleep', token({ abilityNames: ['Sweet Veil'] }))).toBe('Sweet Veil')
-
-    const target = token({ id: 'target', position: { x: 0, y: 0, z: 0 } })
+  it('blocks Sleep with Sweet Veil on the target or nearby providers', () => {
+    const target = token({ position: { x: 0, y: 0, z: 0 } })
     const nearbyProvider = token({
-      id: 'ally',
-      species: 'Ally',
+      id: 'provider',
+      species: 'Aromatisse',
       abilityNames: ['Sweet Veil'],
-      position: { x: 2, y: 0, z: 0 },
+      position: { x: 3, y: 0, z: 0 },
     })
     const distantProvider = token({
-      id: 'far',
-      species: 'Far',
+      id: 'distant',
+      species: 'Distant',
       abilityNames: ['Sweet Veil'],
-      position: { x: 10, y: 0, z: 0 },
+      position: { x: 4, y: 0, z: 0 },
     })
 
-    expect(moveAutomationConditionImmunitySource('Sleep', target, null, {
-      sweetVeilProviders: [nearbyProvider],
-    })).toBe('Sweet Veil (Ally)')
-    expect(moveAutomationConditionImmunitySource('Sleep', target, null, {
-      sweetVeilProviders: [distantProvider],
-    })).toBeNull()
+    expect(moveAutomationConditionImmunitySource('Sleep', token({ abilityNames: ['Sweet Veil'] }))).toBe('Sweet Veil')
+    expect(moveAutomationConditionImmunitySource('Sleep', target, null, { sweetVeilProviders: [nearbyProvider] }))
+      .toBe('Sweet Veil (Aromatisse)')
+    expect(moveAutomationConditionImmunitySource('Sleep', target, null, { sweetVeilProviders: [distantProvider] }))
+      .toBeNull()
   })
 })
