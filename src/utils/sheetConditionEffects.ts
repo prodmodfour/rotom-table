@@ -23,6 +23,21 @@ const EVASION_SUPPRESSING_CONDITIONS = [
 
 const SPEED_EVASION_SUPPRESSING_CONDITIONS = ['Stuck'] as const
 
+const SLOWED_MOVEMENT_CAPABILITY_LABELS = [
+  'Overland',
+  'Sky',
+  'Swim',
+  'Levitate',
+  'Burrow',
+  'Teleporter',
+] as const
+
+const slowedMovementCapabilityLabels = new Set<string>(
+  SLOWED_MOVEMENT_CAPABILITY_LABELS.map((label) => label.toLowerCase()),
+)
+
+const normalizedCapabilityLabel = (label: string): string => label.trim().replace(/\s+/g, ' ').toLowerCase()
+
 type EvasionKind = 'physical' | 'special' | 'speed'
 
 export interface ConditionAdjustedEvasionOptions {
@@ -78,6 +93,47 @@ const hasAnyCondition = (conditions: Set<string>, names: readonly string[]): boo
 
 const firstPresentCondition = (conditions: Set<string>, names: readonly string[]): string | null =>
   names.find((name) => conditions.has(name)) ?? null
+
+const numericMovementValue = (value: unknown): number | null => {
+  const n = Number(value)
+  return Number.isFinite(n) ? Math.max(0, Math.trunc(n)) : null
+}
+
+export const conditionSlowsMovement = (
+  conditions: readonly string[] | null | undefined,
+): boolean => conditionSet(conditions).has('Slowed')
+
+export const isSlowedMovementCapability = (label: string): boolean =>
+  slowedMovementCapabilityLabels.has(normalizedCapabilityLabel(label))
+
+export const conditionAdjustedMovement = (
+  baseMovement: unknown,
+  conditions: readonly string[] | null | undefined,
+): number => {
+  const movement = numericMovementValue(baseMovement) ?? 0
+  if (!conditionSlowsMovement(conditions) || movement <= 0) return movement
+  return Math.max(1, Math.floor(movement / 2))
+}
+
+export const conditionAdjustedMovementCapability = <T extends number | string | null | undefined>(
+  label: string,
+  value: T,
+  conditions: readonly string[] | null | undefined,
+): T | number => {
+  if (!isSlowedMovementCapability(label) || !conditionSlowsMovement(conditions)) return value
+  const movement = numericMovementValue(value)
+  if (movement == null) return value
+  return conditionAdjustedMovement(movement, conditions)
+}
+
+export const slowedMovementCapabilityApplied = (
+  label: string,
+  value: number | string | null | undefined,
+  conditions: readonly string[] | null | undefined,
+): boolean => {
+  const movement = numericMovementValue(value)
+  return isSlowedMovementCapability(label) && movement != null && movement > 0 && conditionSlowsMovement(conditions)
+}
 
 export const conditionCombatStageModifier = (
   conditions: readonly string[] | null | undefined,

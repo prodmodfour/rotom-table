@@ -5,6 +5,8 @@ import {
   conditionAdjustedCombatStage,
   conditionAdjustedEvasion,
   conditionAdjustedInitiative,
+  conditionAdjustedMovement,
+  conditionAdjustedMovementCapability,
   describeSheetConditionEffects,
   evasionSuppressedByCondition,
   speedEvasionSuppressedByCondition,
@@ -81,10 +83,18 @@ describe('sheet condition effects', () => {
     })).toMatchObject({ total: 0, suppressedByCondition: 'Stuck' })
   })
 
-  it('resolves initiative and accuracy modifiers from conditions', () => {
+  it('resolves initiative, movement, and accuracy modifiers from conditions', () => {
     expect(conditionAdjustedInitiative(31, ['Paralysis'])).toBe(15)
     expect(conditionAdjustedInitiative(31, ['Paralysis', 'Flinch'])).toBe(10)
     expect(conditionAdjustedInitiative(31, ['Flinch', 'Flinched'])).toBe(21)
+    expect(conditionAdjustedMovement(7, ['Slowed'])).toBe(3)
+    expect(conditionAdjustedMovement(1, ['Slowed'])).toBe(1)
+    expect(conditionAdjustedMovement(0, ['Slowed'])).toBe(0)
+    expect(conditionAdjustedMovement(7, [])).toBe(7)
+    expect(conditionAdjustedMovementCapability('Levitate', 4, ['Slow Condition'])).toBe(2)
+    expect(conditionAdjustedMovementCapability('teleporter', 5, ['Slowed'])).toBe(2)
+    expect(conditionAdjustedMovementCapability('Overland', '5', [])).toBe('5')
+    expect(conditionAdjustedMovementCapability('Power', 8, ['Slowed'])).toBe(8)
     expect(conditionAccuracyModifier(['Blindness'])).toBe(-6)
     expect(conditionAccuracyModifier(['Blindness', 'Total Blindness'])).toBe(-10)
     expect(conditionAdjustedAccuracy(2, ['Total Blindness'])).toBe(-8)

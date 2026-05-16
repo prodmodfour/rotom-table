@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import MovementCapabilityAdjustment from '~/components/sheets/MovementCapabilityAdjustment.vue'
+import OtherMovementCapabilityAdjustments from '~/components/sheets/OtherMovementCapabilityAdjustments.vue'
 import { useTrainerCapabilityModels } from '~/composables/sheets/useTrainerCapabilityModels'
+import { mergeLegacyConditions } from '~/utils/statusConditions'
 import type { TrainerSheet } from '~/types/trainerSheet'
 
 const otherCapsCsv = defineModel<string>('otherCapsCsv', { required: true })
@@ -10,6 +13,10 @@ const props = defineProps<{
 }>()
 
 const sheetRef = computed(() => props.sheet)
+const combatConditions = computed(() => mergeLegacyConditions(
+  props.sheet.conditions,
+  props.sheet.statusAfflictions,
+))
 const {
   overland,
   throwingRange,
@@ -31,6 +38,7 @@ const {
         <span class="cap-label"><RefLink kind="capability" name="Overland" /></span>
         <span class="cap-value">
           <EditableCell v-model="overland" type="number" :min="0" />
+          <MovementCapabilityAdjustment name="Overland" :value="overland" :conditions="combatConditions" />
         </span>
       </li>
       <li>
@@ -55,6 +63,7 @@ const {
         <span class="cap-label"><RefLink kind="capability" name="Swim" /></span>
         <span class="cap-value">
           <EditableCell v-model="swim" type="number" :min="0" />
+          <MovementCapabilityAdjustment name="Swim" :value="swim" :conditions="combatConditions" />
         </span>
       </li>
       <li>
@@ -67,24 +76,28 @@ const {
         <span class="cap-label"><RefLink kind="capability" name="Sky" /></span>
         <span class="cap-value">
           <EditableCell v-model="sky" type="number" :min="0" />
+          <MovementCapabilityAdjustment name="Sky" :value="sky" :conditions="combatConditions" />
         </span>
       </li>
       <li>
         <span class="cap-label"><RefLink kind="capability" name="Levitate" /></span>
         <span class="cap-value">
           <EditableCell v-model="levitate" type="number" :min="0" />
+          <MovementCapabilityAdjustment name="Levitate" :value="levitate" :conditions="combatConditions" />
         </span>
       </li>
       <li>
         <span class="cap-label"><RefLink kind="capability" name="Burrow" /></span>
         <span class="cap-value">
           <EditableCell v-model="burrow" type="number" :min="0" />
+          <MovementCapabilityAdjustment name="Burrow" :value="burrow" :conditions="combatConditions" />
         </span>
       </li>
     </ul>
     <p class="muted-help capabilities-help">
       <strong>Other capabilities:</strong>
       <EditableCell v-model="otherCapsCsv" placeholder="Telepath, Aura Reader" />
+      <OtherMovementCapabilityAdjustments :capabilities-text="otherCapsCsv" :conditions="combatConditions" />
     </p>
   </div>
 </template>

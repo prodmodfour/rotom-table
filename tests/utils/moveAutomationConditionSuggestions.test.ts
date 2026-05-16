@@ -67,6 +67,10 @@ describe('move automation condition suggestion helpers', () => {
         expect.objectContaining({ condition: 'Poisoned', optional: true }),
         expect.objectContaining({ condition: 'Slowed', action: 'add', optional: true }),
       ]))
+    expect(parseMoveAutomationConditionSuggestions('On 16+, the target slows down.'))
+      .toEqual(expect.arrayContaining([
+        expect.objectContaining({ condition: 'Slowed', action: 'add', threshold: '16+' }),
+      ]))
   })
 
   it('extracts condition removals from cure text windows', () => {

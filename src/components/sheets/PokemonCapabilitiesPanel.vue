@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import MovementCapabilityAdjustment from '~/components/sheets/MovementCapabilityAdjustment.vue'
+import OtherMovementCapabilityAdjustments from '~/components/sheets/OtherMovementCapabilityAdjustments.vue'
 import { usePokemonCapabilityModels } from '~/composables/sheets/usePokemonCapabilityModels'
+import { mergeLegacyConditions } from '~/utils/statusConditions'
 import type { CharacterSheet } from '~/types/characterSheet'
 
 const otherCapsCsv = defineModel<string>('otherCapsCsv', { required: true })
@@ -10,6 +13,10 @@ const props = defineProps<{
 }>()
 
 const sheetRef = computed(() => props.sheet)
+const combatConditions = computed(() => mergeLegacyConditions(
+  props.sheet.combat?.conditions,
+  props.sheet.combat?.statusAfflictions,
+))
 const {
   overland,
   sky,
@@ -32,15 +39,24 @@ const {
     <dl class="caps-grid">
       <div>
         <dt><RefLink kind="capability" name="Overland" /></dt>
-        <dd><EditableCell v-model="overland" type="number" :min="0" /></dd>
+        <dd>
+          <EditableCell v-model="overland" type="number" :min="0" />
+          <MovementCapabilityAdjustment name="Overland" :value="overland" :conditions="combatConditions" />
+        </dd>
       </div>
       <div>
         <dt><RefLink kind="capability" name="Sky" /></dt>
-        <dd><EditableCell v-model="sky" type="number" :min="0" /></dd>
+        <dd>
+          <EditableCell v-model="sky" type="number" :min="0" />
+          <MovementCapabilityAdjustment name="Sky" :value="sky" :conditions="combatConditions" />
+        </dd>
       </div>
       <div>
         <dt><RefLink kind="capability" name="Swim" /></dt>
-        <dd><EditableCell v-model="swim" type="number" :min="0" /></dd>
+        <dd>
+          <EditableCell v-model="swim" type="number" :min="0" />
+          <MovementCapabilityAdjustment name="Swim" :value="swim" :conditions="combatConditions" />
+        </dd>
       </div>
       <div>
         <dt><RefLink kind="capability" name="Levitate" /></dt>
@@ -51,11 +67,15 @@ const {
             class="caps-derived"
             title="Levitate ability grants Levitate 4, or +2 if a Levitate speed already exists."
           >Levitate ability applied</span>
+          <MovementCapabilityAdjustment name="Levitate" :value="levitate" :conditions="combatConditions" />
         </dd>
       </div>
       <div>
         <dt><RefLink kind="capability" name="Burrow" /></dt>
-        <dd><EditableCell v-model="burrow" type="number" :min="0" /></dd>
+        <dd>
+          <EditableCell v-model="burrow" type="number" :min="0" />
+          <MovementCapabilityAdjustment name="Burrow" :value="burrow" :conditions="combatConditions" />
+        </dd>
       </div>
       <div>
         <dt><RefLink kind="capability" name="Jump" /></dt>
@@ -81,6 +101,7 @@ const {
     <p class="caps-line">
       <strong>Other:</strong>
       <EditableCell v-model="otherCapsCsv" placeholder="Telepath, Aura Reader" />
+      <OtherMovementCapabilityAdjustments :capabilities-text="otherCapsCsv" :conditions="combatConditions" />
     </p>
   </section>
 </template>

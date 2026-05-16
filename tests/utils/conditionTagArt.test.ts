@@ -53,10 +53,12 @@ describe('condition tag art helpers', () => {
 
   it('preserves status-condition normalization and tag SVG integration', () => {
     expect(normalizeConditionName('brn')).toBe('Burned')
+    expect(normalizeConditionName('slow condition')).toBe('Slowed')
     expect(conditionTagDefinition('burnt')).toEqual(CONDITION_TAGS.Burned)
     expect(conditionTagSvg('Badly Poisoned', 'sm')).toContain('TOX')
     expect(conditionsFromText('The target is burned and asleep.')).toEqual(['Burned', 'Sleep'])
     expect(conditionsFromText('Bite Flinches the target on 15+.')).toEqual(['Flinch'])
+    expect(conditionsFromText('The battlefield contains Slow Terrain.')).toEqual([])
   })
 
   it('preserves Flinch as a stackable condition', () => {
