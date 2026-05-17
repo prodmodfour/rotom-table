@@ -1,12 +1,19 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import type { CombatLogMessage } from '~/utils/combatLog'
 
 const props = defineProps<{
   messages: CombatLogMessage[]
 }>()
 
+const rootRef = ref<HTMLElement | null>(null)
+const scrollViewportRef = ref<HTMLElement | null>(null)
+const scrollingEnabled = ref(false)
+
 const visibleMessages = computed(() => props.messages)
+const visibleMessageKey = computed(() =>
+  visibleMessages.value.map((message) => message.id).join('|'),
+)
 
 const timeFormatter = new Intl.DateTimeFormat(undefined, {
   hour: 'numeric',
@@ -17,43 +24,87 @@ const messageDate = (message: CombatLogMessage): Date => new Date(message.at)
 
 const formatMessageTime = (message: CombatLogMessage): string =>
   timeFormatter.format(messageDate(message))
+
+const scrollToBottom = () => {
+  const viewport = scrollViewportRef.value
+  if (!viewport) return
+  viewport.scrollTop = viewport.scrollHeight
+}
+
+const enableScrolling = () => {
+  scrollingEnabled.value = true
+}
+
+const disableScrolling = () => {
+  scrollingEnabled.value = false
+}
+
+const handleDocumentPointerDown = (event: PointerEvent) => {
+  if (!scrollingEnabled.value) return
+  const target = event.target
+  if (target instanceof Node && rootRef.value?.contains(target)) return
+  disableScrolling()
+}
+
+watch(
+  visibleMessageKey,
+  () => {
+    if (scrollingEnabled.value) return
+    void nextTick(scrollToBottom)
+  },
+  { immediate: true },
+)
+
+onMounted(() => {
+  document.addEventListener('pointerdown', handleDocumentPointerDown, true)
+  void nextTick(scrollToBottom)
+})
+
+onBeforeUnmount(() => {
+  document.removeEventListener('pointerdown', handleDocumentPointerDown, true)
+})
 </script>
 
 <template>
   <aside
     v-if="visibleMessages.length"
+    ref="rootRef"
     class="combat-log"
-    aria-label="Combat log"
+    :class="{ 'combat-log--scroll-active': scrollingEnabled }"
+    :aria-label="scrollingEnabled ? 'Combat log, scrolling enabled' : 'Combat log, click to enable scrolling'"
     aria-live="polite"
     aria-relevant="additions text"
     role="log"
+    @pointerdown="enableScrolling"
   >
-    <ol class="combat-log__list">
-      <li
-        v-for="message in visibleMessages"
-        :key="message.id"
-        class="combat-log__message"
-        :class="`combat-log__message--${message.source}`"
-        :title="`${message.userName} · ${message.actionName}`"
-      >
-        <span class="combat-log__meta">
-          <strong class="combat-log__title">{{ message.title }}</strong>
-          <time class="combat-log__time" :datetime="messageDate(message).toISOString()">
-            {{ formatMessageTime(message) }}
-          </time>
-        </span>
+    <div ref="scrollViewportRef" class="combat-log__viewport">
+      <ol class="combat-log__list">
+        <li
+          v-for="message in visibleMessages"
+          :key="message.id"
+          class="combat-log__message"
+          :class="`combat-log__message--${message.source}`"
+          :title="`${message.userName} · ${message.actionName}`"
+        >
+          <span class="combat-log__meta">
+            <strong class="combat-log__title">{{ message.title }}</strong>
+            <time class="combat-log__time" :datetime="messageDate(message).toISOString()">
+              {{ formatMessageTime(message) }}
+            </time>
+          </span>
 
-        <ol v-if="message.details.length" class="combat-log__details">
-          <li
-            v-for="(line, index) in message.details"
-            :key="`${message.id}-${index}`"
-            class="combat-log__detail"
-          >
-            {{ line }}
-          </li>
-        </ol>
-      </li>
-    </ol>
+          <ol v-if="message.details.length" class="combat-log__details">
+            <li
+              v-for="(line, index) in message.details"
+              :key="`${message.id}-${index}`"
+              class="combat-log__detail"
+            >
+              {{ line }}
+            </li>
+          </ol>
+        </li>
+      </ol>
+    </div>
   </aside>
 </template>
 
@@ -64,14 +115,30 @@ const formatMessageTime = (message: CombatLogMessage): string =>
   top: var(--map-combat-log-top, calc(var(--map-overlay-gutter, 0.75rem) + 4.25rem));
   right: var(--map-overlay-gutter, 0.75rem);
   bottom: var(--map-overlay-gutter, 0.75rem);
-  display: flex;
-  align-items: flex-end;
-  justify-content: flex-end;
+  display: block;
   width: min(25rem, 31vw);
   overflow: hidden;
   pointer-events: none;
   mask-image: linear-gradient(to bottom, transparent 0, black 3.2rem, black 100%);
   -webkit-mask-image: linear-gradient(to bottom, transparent 0, black 3.2rem, black 100%);
+}
+
+.combat-log__viewport {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: contain;
+  pointer-events: none;
+  scrollbar-width: thin;
+}
+
+.combat-log--scroll-active .combat-log__viewport {
+  overflow-y: auto;
+  pointer-events: auto;
+}
+
+.combat-log__viewport:focus {
+  outline: none;
 }
 
 .combat-log__list {
@@ -80,13 +147,14 @@ const formatMessageTime = (message: CombatLogMessage): string =>
   justify-content: flex-end;
   gap: 0.42rem;
   width: 100%;
-  min-height: 0;
+  min-height: 100%;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
 .combat-log__message {
+  flex: 0 0 auto;
   display: grid;
   gap: 0.26rem;
   max-width: 100%;
@@ -99,7 +167,13 @@ const formatMessageTime = (message: CombatLogMessage): string =>
   backdrop-filter: blur(12px) saturate(135%);
   -webkit-backdrop-filter: blur(12px) saturate(135%);
   color: #fff;
+  cursor: pointer;
+  pointer-events: auto;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85);
+}
+
+.combat-log--scroll-active .combat-log__message {
+  cursor: default;
 }
 
 .combat-log__meta {
