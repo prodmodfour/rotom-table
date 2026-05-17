@@ -1,6 +1,10 @@
 import { existsSync } from 'node:fs'
 import { join as joinPath, resolve, sep } from 'node:path'
-import { normalizeEncounterTableRollEntry } from '#shared/encounterTables'
+import {
+  normalizeEncounterTableRollEntries,
+  randomEncounterInt as sharedRandomEncounterInt,
+  selectWeightedEncounterEntry,
+} from '#shared/encounterTables'
 import { DEFAULT_ENCOUNTER_OUT_ROOT } from '~/utils/encounterGeneration'
 import type { EncounterTable, RolledEncounter } from '~/types/encounterTable'
 import { UseCaseHttpError } from './useCaseErrors'
@@ -100,31 +104,21 @@ export const assertEncounterPathInsideRoot = (projectRoot: string, path: string)
   }
 }
 
-export const randomEncounterInt = (min: number, max: number, random: () => number = Math.random): number =>
-  Math.floor(random() * (max - min + 1)) + min
+export const randomEncounterInt = sharedRandomEncounterInt
 
 export const rollEncounterTable = (
   table: EncounterTable,
   random: () => number = Math.random,
 ): RolledEncounter => {
-  const roll = randomEncounterInt(1, 100, random)
   const fallback = { min_level: table.min_level, max_level: table.max_level }
-  for (const rawEntry of table.entries) {
-    const entry = normalizeEncounterTableRollEntry(rawEntry, fallback)
-    if (roll <= entry.ceiling) {
-      return {
-        species: entry.species,
-        level: randomEncounterInt(entry.min_level, entry.max_level, random),
-        roll,
-      }
-    }
-  }
-  const last = table.entries[table.entries.length - 1]
-  const entry = last ? normalizeEncounterTableRollEntry(last, fallback) : null
+  const entries = normalizeEncounterTableRollEntries(table.entries, fallback)
+  const selection = selectWeightedEncounterEntry(entries, random)
+  const entry = selection.entry
+
   return {
     species: entry?.species || 'Magikarp',
     level: randomEncounterInt(entry?.min_level ?? table.min_level, entry?.max_level ?? table.max_level, random),
-    roll,
+    roll: selection.roll,
   }
 }
 

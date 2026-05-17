@@ -4,7 +4,7 @@ import type { EncounterTable } from '~/types/encounterTable'
 import {
   createEncounterTableEditRow,
   encounterTableEditModelToTable,
-  encounterTableEditTotalPercent,
+  encounterTableEditTotalWeight,
   encounterTableToEditModel,
   validateEncounterTableEditModel,
   type EncounterTableEditModel,
@@ -32,7 +32,7 @@ watch(
   },
 )
 
-const totalPercent = computed(() => encounterTableEditTotalPercent(model.value.rows))
+const totalWeight = computed(() => encounterTableEditTotalWeight(model.value.rows))
 const validation = computed(() => validateEncounterTableEditModel(model.value))
 const validationErrors = computed(() => validation.value.errors)
 const canSave = computed(() => validation.value.valid && !props.saving)
@@ -71,7 +71,7 @@ const save = () => {
 
     <div class="table-heading">
       <span>Pokémon</span>
-      <span>Chance</span>
+      <span>Weight</span>
       <span>Min Lv</span>
       <span>Max Lv</span>
       <span class="sr-only">Actions</span>
@@ -87,9 +87,8 @@ const save = () => {
         <input v-model.trim="row.species" type="text" :disabled="saving" placeholder="Species" />
       </label>
       <label class="field numeric-field">
-        <span class="sr-only">Row {{ index + 1 }} chance percent</span>
-        <input v-model.number="row.percent" type="number" min="1" max="100" :disabled="saving" />
-        <span class="suffix">%</span>
+        <span class="sr-only">Row {{ index + 1 }} encounter weight</span>
+        <input v-model.number="row.weight" type="number" min="1" :disabled="saving" />
       </label>
       <label class="field">
         <span class="sr-only">Row {{ index + 1 }} minimum level</span>
@@ -109,8 +108,9 @@ const save = () => {
       </button>
     </div>
 
-    <div class="edit-summary" :class="{ invalid: totalPercent !== 100 }">
-      Total chance: {{ totalPercent }}%
+    <div class="edit-summary">
+      Total weight: {{ totalWeight }}
+      <span class="summary-note">Chances are calculated from relative weights when rolling.</span>
     </div>
 
     <ul v-if="validationErrors.length || localError || error" class="edit-errors">
@@ -202,18 +202,6 @@ input:disabled {
   position: relative;
 }
 
-.numeric-field input {
-  padding-right: 1.8rem;
-}
-
-.suffix {
-  position: absolute;
-  right: 0.65rem;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--ink-muted);
-  pointer-events: none;
-}
 
 .row-remove,
 .secondary-button,
@@ -262,8 +250,9 @@ button:disabled {
   letter-spacing: 0.04em;
 }
 
-.edit-summary.invalid {
-  color: var(--bad);
+.summary-note {
+  color: var(--ink-muted);
+  margin-left: 0.35rem;
 }
 
 .edit-errors {

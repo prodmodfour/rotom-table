@@ -9,7 +9,7 @@ const table: EncounterTable = {
   name: 'Forest',
   min_level: 5,
   max_level: 5,
-  entries: [[100, 'Pidgey']],
+  entries: [{ weight: 1, species: 'Pidgey' }],
 }
 
 const sequenceRandom = (...values: number[]) => {

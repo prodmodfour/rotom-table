@@ -46,18 +46,18 @@ describe('encounter table browser helpers', () => {
     expect(findEncounterTableInEntries(entries, 'missing', 'river')).toBeNull()
   })
 
-  it('describes entries with per-row level ranges', () => {
+  it('describes entries with weights, derived chances, and per-row level ranges', () => {
     expect(describeEntries({
       name: 'Mixed',
       min_level: 2,
       max_level: 6,
       entries: [
-        [25, 'Pidgey'],
-        { ceiling: 100, species: 'Oddish', min_level: 8, max_level: 10 },
+        { weight: 1, species: 'Pidgey' },
+        { weight: 3, species: 'Oddish', min_level: 8, max_level: 10 },
       ],
     })).toEqual([
-      { range: '01–25', percent: 25, species: 'Pidgey', minLevel: 2, maxLevel: 6, levelRange: 'Lv 2–6' },
-      { range: '26–100', percent: 75, species: 'Oddish', minLevel: 8, maxLevel: 10, levelRange: 'Lv 8–10' },
+      { range: '01', weight: 1, percent: 25, chancePercentLabel: '25%', species: 'Pidgey', minLevel: 2, maxLevel: 6, levelRange: 'Lv 2–6' },
+      { range: '02–04', weight: 3, percent: 75, chancePercentLabel: '75%', species: 'Oddish', minLevel: 8, maxLevel: 10, levelRange: 'Lv 8–10' },
     ])
   })
 

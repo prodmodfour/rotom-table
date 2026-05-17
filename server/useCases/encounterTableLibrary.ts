@@ -1,8 +1,7 @@
 import {
-  clampEncounterCeiling,
   clampEncounterLevel,
   normalizeEncounterLevelRange,
-  normalizeEncounterTableRollEntry,
+  normalizeEncounterTableRollEntries,
   serializeEncounterTableRollEntry,
 } from '#shared/encounterTables'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
@@ -186,23 +185,15 @@ export const normalizeEncounterTableForSave = (value: unknown): EncounterTable =
     throw new EncounterTableLibraryUseCaseError(400, 'table.entries must contain at least one row')
   }
 
-  let previousCeiling = 0
-  const entries = rawEntries.map((rawEntry, index) => {
-    const entry = normalizeEncounterTableRollEntry(rawEntry, fallback)
+  const entries = normalizeEncounterTableRollEntries(rawEntries, fallback).map((entry, index) => {
     if (!entry.species) {
       throw new EncounterTableLibraryUseCaseError(400, `Row ${index + 1}: species is required`)
     }
-    if (entry.ceiling <= previousCeiling) {
-      throw new EncounterTableLibraryUseCaseError(400, `Row ${index + 1}: ceiling must be greater than the previous row`)
+    if (!Number.isInteger(entry.weight) || entry.weight < 1) {
+      throw new EncounterTableLibraryUseCaseError(400, `Row ${index + 1}: weight must be a positive integer`)
     }
-    previousCeiling = entry.ceiling
     return serializeEncounterTableRollEntry(entry)
   })
-
-  const last = entries[entries.length - 1]
-  if (clampEncounterCeiling(last?.ceiling) !== 100) {
-    throw new EncounterTableLibraryUseCaseError(400, 'Encounter table chances must add up to 100%')
-  }
 
   return {
     name,

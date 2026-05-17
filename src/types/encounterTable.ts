@@ -15,10 +15,10 @@ export interface EncounterTable {
   /** Inclusive maximum level for rolled encounters. */
   max_level: number
   /**
-   * Cumulative roll table. Legacy entries are ``[ceiling, species]`` tuples.
-   * Edited entries may be objects with per-Pokémon ``min_level`` / ``max_level``.
-   * ``ceiling`` is the upper bound of a 1–100 roll that selects this species.
-   * Entries should be sorted ascending and the last ceiling should be 100.
+   * Weighted roll table. Edited entries are objects with a relative ``weight``
+   * plus optional per-Pokémon ``min_level`` / ``max_level``.
+   * Legacy cumulative ``ceiling`` entries and ``[ceiling, species]`` tuples are
+   * still accepted and converted to weights while loading.
    */
   entries: EncounterTableRollEntry[]
 }
@@ -27,7 +27,7 @@ export interface EncounterTable {
 export interface RolledEncounter {
   species: string
   level: number
-  /** The 1–100 roll that selected this species. */
+  /** The weighted roll value that selected this species. */
   roll: number
 }
 

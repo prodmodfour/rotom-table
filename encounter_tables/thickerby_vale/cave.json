@@ -3,11 +3,41 @@
   "min_level": 8,
   "max_level": 14,
   "entries": [
-    [35, "Zubat"],
-    [60, "Geodude"],
-    [78, "Diglett"],
-    [88, "Onix"],
-    [95, "Roggenrola"],
-    [100, "Aron"]
+    {
+      "weight": 35,
+      "species": "Zubat",
+      "min_level": 8,
+      "max_level": 14
+    },
+    {
+      "weight": 25,
+      "species": "Geodude",
+      "min_level": 8,
+      "max_level": 14
+    },
+    {
+      "weight": 18,
+      "species": "Diglett",
+      "min_level": 8,
+      "max_level": 14
+    },
+    {
+      "weight": 10,
+      "species": "Onix",
+      "min_level": 8,
+      "max_level": 14
+    },
+    {
+      "weight": 7,
+      "species": "Roggenrola",
+      "min_level": 8,
+      "max_level": 14
+    },
+    {
+      "weight": 5,
+      "species": "Aron",
+      "min_level": 8,
+      "max_level": 14
+    }
   ]
 }

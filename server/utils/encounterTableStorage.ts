@@ -46,7 +46,7 @@ export const defaultEncounterTable = (name = DEFAULT_ENCOUNTER_TABLE_NAME): Enco
   name,
   min_level: 1,
   max_level: 5,
-  entries: [{ ceiling: 100, species: 'Pidgey', min_level: 1, max_level: 5 }],
+  entries: [{ weight: 1, species: 'Pidgey', min_level: 1, max_level: 5 }],
 })
 
 export const ensureEncounterTablesRoot = (root = ENCOUNTER_TABLES_ROOT): void => {

@@ -18,7 +18,7 @@ import type { EncounterTableEntry } from '~/types/encounterTable'
 const entry: EncounterTableEntry = {
   region: 'vale',
   key: 'forest',
-  table: { name: 'Forest', min_level: 1, max_level: 5, entries: [[100, 'Pidgey']] },
+  table: { name: 'Forest', min_level: 1, max_level: 5, entries: [{ weight: 1, species: 'Pidgey' }] },
 }
 
 const errorFor = (fn: () => unknown): unknown => {
@@ -85,7 +85,7 @@ describe('encounter table library use cases', () => {
     })).toEqual({ ok: true, removed: 'encounter_tables/deep' })
   })
 
-  it('saves tables with normalized per-Pokémon level ranges', () => {
+  it('saves tables with normalized weights and per-Pokémon level ranges', () => {
     const saveTable = vi.fn((region: string, key: string, table) => ({
       entry: { region, key, table },
       path: 'encounter_tables/vale/forest.json',
@@ -99,7 +99,7 @@ describe('encounter table library use cases', () => {
         min_level: 1,
         max_level: 5,
         entries: [
-          { ceiling: 25, species: 'Pidgey', min_level: 3, max_level: 4 },
+          { weight: 2, species: 'Pidgey', min_level: 3, max_level: 4 },
           [100, 'Oddish', 6, 9],
         ],
       },
@@ -114,8 +114,8 @@ describe('encounter table library use cases', () => {
           min_level: 3,
           max_level: 9,
           entries: [
-            { ceiling: 25, species: 'Pidgey', min_level: 3, max_level: 4 },
-            { ceiling: 100, species: 'Oddish', min_level: 6, max_level: 9 },
+            { weight: 2, species: 'Pidgey', min_level: 3, max_level: 4 },
+            { weight: 98, species: 'Oddish', min_level: 6, max_level: 9 },
           ],
         },
       },
@@ -127,11 +127,11 @@ describe('encounter table library use cases', () => {
       name: 'Bad',
       min_level: 1,
       max_level: 5,
-      entries: [{ ceiling: 50, species: 'Pidgey', min_level: 1, max_level: 5 }],
+      entries: [{ weight: 1, species: '', min_level: 1, max_level: 5 }],
     }))
 
     expect(invalid).toBeInstanceOf(EncounterTableLibraryUseCaseError)
-    expect(invalid).toMatchObject({ statusCode: 400, message: 'Encounter table chances must add up to 100%' })
+    expect(invalid).toMatchObject({ statusCode: 400, message: 'Row 1: species is required' })
   })
 
   it('deletes tables and reports missing storage entries', () => {

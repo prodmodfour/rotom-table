@@ -13,11 +13,14 @@ Tables are JSON files in encounter_tables/<region>/<table>.json with shape:
       "min_level": int,
       "max_level": int,
       "entries": [
-        [ceiling, species],
-        [ceiling, species, min_level, max_level],
-        {"ceiling": int, "species": str, "min_level": int, "max_level": int}
+        {"weight": int, "species": str, "min_level": int, "max_level": int}
       ]
     }
+
+Legacy entries are also accepted:
+    [ceiling, species]
+    [ceiling, species, min_level, max_level]
+    {"ceiling": int, "species": str, "min_level": int, "max_level": int}
 """
 
 import json
@@ -60,15 +63,28 @@ def coerce_level(value, fallback):
         return fallback
 
 
+def coerce_weight(value, fallback=1):
+    try:
+        return max(1, int(value))
+    except (TypeError, ValueError):
+        return fallback
+
+
+def coerce_ceiling(value, fallback=100):
+    try:
+        return max(1, min(100, int(value)))
+    except (TypeError, ValueError):
+        return fallback
+
+
 def normalize_range(min_level, max_level, fallback_min, fallback_max):
     lo = coerce_level(min_level, fallback_min)
     hi = coerce_level(max_level, fallback_max)
     return (lo, hi) if lo <= hi else (hi, lo)
 
 
-def normalize_entry(entry, fallback_min, fallback_max):
+def normalize_entry(entry, fallback_min, fallback_max, previous_ceiling=0):
     if isinstance(entry, dict):
-        ceiling = int(entry.get("ceiling", 100))
         species = str(entry.get("species", "")).strip()
         min_level, max_level = normalize_range(
             entry.get("min_level"),
@@ -76,9 +92,15 @@ def normalize_entry(entry, fallback_min, fallback_max):
             fallback_min,
             fallback_max,
         )
-        return ceiling, species, min_level, max_level
+        if entry.get("weight") is not None:
+            weight = coerce_weight(entry.get("weight"))
+            return weight, species, min_level, max_level, previous_ceiling + weight
 
-    ceiling = int(entry[0])
+        ceiling = coerce_ceiling(entry.get("ceiling", 100))
+        weight = coerce_weight(ceiling - previous_ceiling)
+        return weight, species, min_level, max_level, ceiling
+
+    ceiling = coerce_ceiling(entry[0])
     species = str(entry[1]).strip()
     min_level, max_level = normalize_range(
         entry[2] if len(entry) > 2 else None,
@@ -86,16 +108,37 @@ def normalize_entry(entry, fallback_min, fallback_max):
         fallback_min,
         fallback_max,
     )
-    return ceiling, species, min_level, max_level
+    weight = coerce_weight(ceiling - previous_ceiling)
+    return weight, species, min_level, max_level, ceiling
+
+
+def normalize_entries(entries, min_level, max_level):
+    normalized = []
+    previous_ceiling = 0
+    for raw_entry in entries:
+        weight, species, entry_min, entry_max, previous_ceiling = normalize_entry(
+            raw_entry,
+            min_level,
+            max_level,
+            previous_ceiling,
+        )
+        normalized.append((weight, species, entry_min, entry_max))
+    return normalized
 
 
 def roll(entries, min_level, max_level):
-    r = random.randint(1, 100)
+    normalized_entries = normalize_entries(entries, min_level, max_level)
+    total_weight = sum(entry[0] for entry in normalized_entries)
+    if total_weight < 1:
+        return 1, "Magikarp", random.randint(min_level, max_level)
+
+    r = random.randint(1, total_weight)
+    cumulative = 0
     last = None
-    for raw_entry in entries:
-        ceiling, species, entry_min, entry_max = normalize_entry(raw_entry, min_level, max_level)
+    for weight, species, entry_min, entry_max in normalized_entries:
+        cumulative += weight
         last = (species, entry_min, entry_max)
-        if r <= ceiling:
+        if r <= cumulative:
             return r, species, random.randint(entry_min, entry_max)
     if last:
         species, entry_min, entry_max = last
@@ -105,6 +148,16 @@ def roll(entries, min_level, max_level):
 
 def level_label(min_level, max_level):
     return f"Lv {min_level}" if min_level == max_level else f"Lv {min_level}-{max_level}"
+
+
+def percent_label(weight, total_weight):
+    if total_weight <= 0:
+        return "0%"
+    percent = weight / total_weight * 100
+    if percent.is_integer():
+        return f"{int(percent)}%"
+    digits = 1 if percent >= 10 else 2
+    return f"{percent:.{digits}f}".rstrip("0").rstrip(".") + "%"
 
 
 def print_region_tables(region):
@@ -163,17 +216,15 @@ def main():
 
     if len(args) <= 2:
         print(f"--- {table['name']} (Lv {lv_range}) ---")
+        normalized_entries = normalize_entries(table["entries"], table["min_level"], table["max_level"])
+        total_weight = sum(entry[0] for entry in normalized_entries)
         prev = 0
-        for raw_entry in table["entries"]:
-            ceiling, species, entry_min, entry_max = normalize_entry(
-                raw_entry,
-                table["min_level"],
-                table["max_level"],
-            )
-            span = f"{prev + 1:>3d}-{ceiling:<3d}" if ceiling > prev + 1 else f"    {ceiling:<3d}"
-            pct = ceiling - prev
-            print(f"  {span}  ({pct:>2d}%)  {species:16s}  {level_label(entry_min, entry_max)}")
-            prev = ceiling
+        for weight, species, entry_min, entry_max in normalized_entries:
+            hi = prev + weight
+            span = f"{prev + 1:>3d}-{hi:<3d}" if hi > prev + 1 else f"    {hi:<3d}"
+            pct = percent_label(weight, total_weight)
+            print(f"  {span}  (w {weight:>3d}, {pct:>6s})  {species:16s}  {level_label(entry_min, entry_max)}")
+            prev = hi
         sys.exit(0)
 
     count = int(args[2])

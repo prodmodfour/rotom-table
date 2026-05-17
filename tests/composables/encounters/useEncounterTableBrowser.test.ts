@@ -59,7 +59,9 @@ describe('useEncounterTableBrowser', () => {
     expect(browser.selectedEntry.value).toBe(entries[2])
     expect(browser.selectedRows.value).toEqual([{
       range: '01–100',
+      weight: 100,
       percent: 100,
+      chancePercentLabel: '100%',
       species: 'Magikarp',
       minLevel: 6,
       maxLevel: 10,

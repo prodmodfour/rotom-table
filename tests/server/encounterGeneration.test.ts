@@ -32,7 +32,7 @@ const table: EncounterTable = {
   name: 'Test Table',
   min_level: 3,
   max_level: 5,
-  entries: [[25, 'Pidgey'], [100, 'Rattata']],
+  entries: [{ weight: 1, species: 'Pidgey' }, { weight: 3, species: 'Rattata' }],
 }
 
 describe('server encounter generation helpers', () => {
@@ -86,18 +86,18 @@ describe('server encounter generation helpers', () => {
     expect(statusMessageFor(() => assertEncounterPathInsideRoot('/repo', '/tmp/out'))).toBe('Invalid outRoot')
   })
 
-  it('rolls encounter tables with injectable randomness and per-row level ranges', () => {
+  it('rolls weighted encounter tables with injectable randomness and per-row level ranges', () => {
     const first = rollEncounterTable(table, () => 0)
     expect(first).toEqual({ species: 'Pidgey', level: 3, roll: 1 })
 
     const second = rollEncounterTable(table, () => 0.99)
-    expect(second).toEqual({ species: 'Rattata', level: 5, roll: 100 })
+    expect(second).toEqual({ species: 'Rattata', level: 5, roll: 4 })
 
     const perRow = rollEncounterTable({
       ...table,
       entries: [
-        { ceiling: 50, species: 'Oddish', min_level: 10, max_level: 10 },
-        [100, 'Zubat', 12, 12],
+        { weight: 1, species: 'Oddish', min_level: 10, max_level: 10 },
+        { weight: 1, species: 'Zubat', min_level: 12, max_level: 12 },
       ],
     }, () => 0)
     expect(perRow).toEqual({ species: 'Oddish', level: 10, roll: 1 })

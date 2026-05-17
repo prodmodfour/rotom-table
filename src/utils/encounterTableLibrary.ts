@@ -1,4 +1,4 @@
-import { normalizeEncounterTableRollEntry } from '#shared/encounterTables'
+import { normalizeEncounterTableRollEntries } from '#shared/encounterTables'
 import type { EncounterTableEntry } from '~/types/encounterTable'
 import {
   isInsideFolder,
@@ -31,15 +31,16 @@ export const encounterTableMatchesQuery = (
   item: EncounterTableEntry,
   normalizedQuery: string,
 ): boolean => {
+  const normalizedEntries = normalizeEncounterTableRollEntries(item.table.entries, {
+    min_level: item.table.min_level,
+    max_level: item.table.max_level,
+  })
   const haystacks = [
     item.key,
     item.region,
     formatRegionLabel(item.region),
     item.table.name,
-    ...item.table.entries.map((rawEntry) => normalizeEncounterTableRollEntry(rawEntry, {
-      min_level: item.table.min_level,
-      max_level: item.table.max_level,
-    }).species),
+    ...normalizedEntries.map((entry) => entry.species),
   ]
   return haystacks.some((value) => normalizeSearchText(value).includes(normalizedQuery))
 }

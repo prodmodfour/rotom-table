@@ -3,13 +3,53 @@
   "min_level": 4,
   "max_level": 8,
   "entries": [
-    [25, "Caterpie"],
-    [45, "Weedle"],
-    [60, "Pidgey"],
-    [75, "Sentret"],
-    [85, "Hoothoot"],
-    [92, "Spinarak"],
-    [97, "Pineco"],
-    [100, "Cutiefly"]
+    {
+      "weight": 25,
+      "species": "Caterpie",
+      "min_level": 4,
+      "max_level": 8
+    },
+    {
+      "weight": 20,
+      "species": "Weedle",
+      "min_level": 4,
+      "max_level": 8
+    },
+    {
+      "weight": 15,
+      "species": "Pidgey",
+      "min_level": 4,
+      "max_level": 8
+    },
+    {
+      "weight": 15,
+      "species": "Sentret",
+      "min_level": 4,
+      "max_level": 8
+    },
+    {
+      "weight": 10,
+      "species": "Hoothoot",
+      "min_level": 4,
+      "max_level": 8
+    },
+    {
+      "weight": 7,
+      "species": "Spinarak",
+      "min_level": 4,
+      "max_level": 8
+    },
+    {
+      "weight": 5,
+      "species": "Pineco",
+      "min_level": 4,
+      "max_level": 8
+    },
+    {
+      "weight": 3,
+      "species": "Cutiefly",
+      "min_level": 4,
+      "max_level": 8
+    }
   ]
 }

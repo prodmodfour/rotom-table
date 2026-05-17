@@ -1,0 +1,13 @@
+{
+  "name": "Streets",
+  "min_level": 1,
+  "max_level": 5,
+  "entries": [
+    {
+      "weight": 100,
+      "species": "Pidgey",
+      "min_level": 1,
+      "max_level": 5
+    }
+  ]
+}

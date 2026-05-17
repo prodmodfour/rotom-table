@@ -1,9 +1,9 @@
 import {
-  clampEncounterCeiling,
   clampEncounterLevel,
+  clampEncounterWeight,
   formatEncounterLevelRange,
   normalizeEncounterLevelRange,
-  normalizeEncounterTableRollEntry,
+  normalizeEncounterTableRollEntries,
   serializeEncounterTableRollEntry,
   type NormalizedEncounterTableRollEntry,
 } from '#shared/encounterTables'
@@ -12,7 +12,7 @@ import type { EncounterTable } from '~/types/encounterTable'
 export interface EncounterTableEditRow {
   id: string
   species: string
-  percent: number
+  weight: number
   minLevel: number
   maxLevel: number
 }
@@ -31,17 +31,16 @@ export const DEFAULT_ENCOUNTER_EDIT_ROW_SPECIES = 'Pidgey'
 
 const rowId = (index: number): string => `row-${index}`
 
-export const encounterTableEditTotalPercent = (
-  rows: ReadonlyArray<Pick<EncounterTableEditRow, 'percent'>>,
+export const encounterTableEditTotalWeight = (
+  rows: ReadonlyArray<Pick<EncounterTableEditRow, 'weight'>>,
 ): number => rows.reduce((sum, row) => {
-  const percent = Number(row.percent)
-  return sum + (Number.isFinite(percent) ? percent : 0)
+  const weight = Number(row.weight)
+  return sum + (Number.isFinite(weight) ? weight : 0)
 }, 0)
 
 export const createEncounterTableEditRow = (
   existingRows: ReadonlyArray<EncounterTableEditRow> = [],
 ): EncounterTableEditRow => {
-  const remaining = Math.max(1, 100 - encounterTableEditTotalPercent(existingRows))
   const nextIndex = existingRows.reduce((max, row) => {
     const match = /^row-(\d+)$/.exec(row.id)
     return match ? Math.max(max, Number(match[1]) + 1) : max
@@ -49,7 +48,7 @@ export const createEncounterTableEditRow = (
   return {
     id: rowId(nextIndex),
     species: DEFAULT_ENCOUNTER_EDIT_ROW_SPECIES,
-    percent: remaining,
+    weight: 1,
     minLevel: 1,
     maxLevel: 5,
   }
@@ -57,19 +56,14 @@ export const createEncounterTableEditRow = (
 
 export const encounterTableToEditModel = (table: EncounterTable): EncounterTableEditModel => {
   const fallback = { min_level: table.min_level, max_level: table.max_level }
-  let previousCeiling = 0
-  const rows = table.entries.map((rawEntry, index): EncounterTableEditRow => {
-    const entry = normalizeEncounterTableRollEntry(rawEntry, fallback)
-    const percent = Math.max(0, entry.ceiling - previousCeiling)
-    previousCeiling = entry.ceiling
-    return {
+  const rows = normalizeEncounterTableRollEntries(table.entries, fallback)
+    .map((entry, index): EncounterTableEditRow => ({
       id: rowId(index),
       species: entry.species,
-      percent,
+      weight: entry.weight,
       minLevel: entry.min_level,
       maxLevel: entry.max_level,
-    }
-  })
+    }))
 
   return {
     name: table.name,
@@ -79,14 +73,13 @@ export const encounterTableToEditModel = (table: EncounterTable): EncounterTable
 
 const normalizeEditRow = (
   row: EncounterTableEditRow,
-  previousCeiling: number,
 ): NormalizedEncounterTableRollEntry => {
   const levels = normalizeEncounterLevelRange(row.minLevel, row.maxLevel, {
     min_level: 1,
     max_level: 5,
   })
   return {
-    ceiling: clampEncounterCeiling(previousCeiling + clampEncounterCeiling(row.percent)),
+    weight: clampEncounterWeight(row.weight),
     species: row.species.trim(),
     ...levels,
   }
@@ -103,9 +96,9 @@ export const validateEncounterTableEditModel = (
 
   model.rows.forEach((row, index) => {
     if (!row.species.trim()) errors.push(`Row ${index + 1}: species is required.`)
-    const percent = Number(row.percent)
-    if (!Number.isInteger(percent) || percent < 1 || percent > 100) {
-      errors.push(`Row ${index + 1}: chance must be an integer from 1 to 100.`)
+    const weight = Number(row.weight)
+    if (!Number.isInteger(weight) || weight < 1) {
+      errors.push(`Row ${index + 1}: weight must be a positive integer.`)
     }
     const minLevel = Number(row.minLevel)
     const maxLevel = Number(row.maxLevel)
@@ -120,9 +113,6 @@ export const validateEncounterTableEditModel = (
     }
   })
 
-  const total = model.rows.reduce((sum, row) => sum + Number(row.percent), 0)
-  if (total !== 100) errors.push(`Chances must add up to 100% (currently ${total}%).`)
-
   return { valid: errors.length === 0, errors }
 }
 
@@ -132,12 +122,9 @@ export const encounterTableEditModelToTable = (
   const validation = validateEncounterTableEditModel(model)
   if (!validation.valid) throw new Error(validation.errors[0] ?? 'Invalid encounter table.')
 
-  let previousCeiling = 0
-  const entries = model.rows.map((row) => {
-    const entry = normalizeEditRow(row, previousCeiling)
-    previousCeiling = entry.ceiling
-    return serializeEncounterTableRollEntry(entry)
-  })
+  const entries = model.rows
+    .map(normalizeEditRow)
+    .map(serializeEncounterTableRollEntry)
 
   const minLevel = Math.min(...entries.map((entry) => clampEncounterLevel(entry.min_level)))
   const maxLevel = Math.max(...entries.map((entry) => clampEncounterLevel(entry.max_level)))
