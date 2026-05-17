@@ -72,6 +72,7 @@ export const pokemonCatalog: PokemonCatalogEntry[] = (pokedexData as PokedexReco
       clearance: entry.clearance,
       slug: sprite.slug,
       spriteUrl: `/sprites/${sprite.local_path.replace(/^sprites\//, '')}`,
+      profileSpriteUrl: `/profile-sprites/pokemon/${sprite.slug}.png`,
       backSpriteUrl: backSprite
         ? `/sprites/${backSprite.local_path.replace(/^sprites\//, '')}`
         : undefined,

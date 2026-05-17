@@ -147,6 +147,7 @@ export interface SpriteCrop {
 export interface PokemonCatalogEntry extends PokemonSizeRecord {
   slug: string
   spriteUrl: string
+  profileSpriteUrl?: string
   backSpriteUrl?: string
   spriteAnimation?: SpriteAnimation
   backSpriteAnimation?: SpriteAnimation

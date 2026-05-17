@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import MapSceneRenderer from '~/components/map/MapSceneRenderer.vue'
 import MapSceneStatus from '~/components/map/MapSceneStatus.vue'
 import MapMoveReactionPromptStack from '~/components/map/MapMoveReactionPromptStack.vue'
+import InitiativeInfoBar from '~/components/map/InitiativeInfoBar.vue'
 import type { BuildTool } from '#shared/mapEditor'
 import type { CombatStageMap } from '~/types/combatStages'
 import type {
@@ -28,6 +29,7 @@ import type { TokenAbilityMenuOption } from '~/utils/mapTokenAbilities'
 import type { TokenMoveMenuOption } from '~/utils/mapTokenMoves'
 import type { TokenSendOutOption } from '~/utils/mapTokenSendOut'
 import type { MapSaveStatus } from '~/composables/useEditableMap'
+import type { InitiativeRow } from '~/composables/map-editor/useInitiativeTracker'
 import type { PreviewState } from '~/utils/gridPreview'
 
 interface MapSceneRendererHandle {
@@ -44,6 +46,9 @@ const props = defineProps<{
   selectedId: string | null
   controllablePlacementIds: string[]
   activeInitiativeId: string | null | undefined
+  initiativeRows?: InitiativeRow[]
+  initiativeRound?: number
+  canManageInitiative?: boolean
   mapVoxels: MapVoxelV2[]
   mapHazards: MapHazardV2[]
   mapFieldEffects?: MapFieldEffects
@@ -71,6 +76,9 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (event: 'select-pokemon', id: string | null): void
+  (event: 'focus-initiative-entry', id: string): void
+  (event: 'previous-initiative'): void
+  (event: 'next-initiative'): void
   (event: 'move-pokemon', payload: { id: string; position: GridAnchor }): void
   (event: 'turn-pokemon', id: string): void
   (event: 'delete-pokemon', id: string): void
@@ -158,6 +166,17 @@ defineExpose({ focusPokemon })
         @cancel-move-targeting="emit('cancel-move-targeting')"
       />
       <MapSceneStatus v-else :status="status" :error="error" :slug="slug" />
+
+      <InitiativeInfoBar
+        v-if="props.map && canViewMap"
+        :rows="initiativeRows ?? []"
+        :active-id="activeInitiativeId"
+        :round="initiativeRound ?? 1"
+        :can-manage="canManageInitiative ?? false"
+        @focus="emit('focus-initiative-entry', $event)"
+        @previous="emit('previous-initiative')"
+        @next="emit('next-initiative')"
+      />
 
       <MapMoveReactionPromptStack
         :spite-prompts="props.spiteReactionPrompts ?? []"
