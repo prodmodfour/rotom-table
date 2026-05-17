@@ -18,7 +18,7 @@ describe('move automation targeting helpers', () => {
     expect(determineMoveAutomationTargetMode({ name: 'Splash', range: 'None', effect: 'None' })).toBe('none')
   })
 
-  it('resolves target counts compatibly with manual fallback scripts', () => {
+  it('resolves target counts for generated move scripts', () => {
     expect(determineMoveAutomationTargetCount({ range: 'Self' }, 'self')).toBe(1)
     expect(determineMoveAutomationTargetCount({ range: 'Hazard' }, 'hazard')).toBeNull()
     expect(determineMoveAutomationTargetCount({ range: '6, 3 Targets' }, 'multi-target')).toBe(3)

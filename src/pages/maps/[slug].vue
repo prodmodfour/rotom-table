@@ -250,10 +250,6 @@ const {
 })
 
 const {
-  moveAutomationId,
-  moveAutomationUser,
-  moveAutomationMoves,
-  moveAutomationInitialMoveName,
   moveAutomationTargeting,
   moveAutomationFeedback,
   spiteReactionPrompts,
@@ -261,7 +257,6 @@ const {
   moxieTriggerPrompts,
   tokenMoveOptionsById,
   openMoveAutomation,
-  closeMoveAutomation,
   cancelMoveAutomationTargeting,
   selectMoveAutomationTarget,
   selectMoveAutomationAreaDirection,
@@ -271,7 +266,6 @@ const {
   applyCuteCharmReactionPrompt,
   dismissMoxieTriggerPrompt,
   applyMoxieTriggerPrompt,
-  applyMoveAutomation,
 } = useMoveAutomationPanel({
   map,
   spawnedPokemon,
@@ -312,7 +306,6 @@ const openMoveAutomationFromContext = (payload: { id: string; moveName?: string 
 }
 
 const openAbilityAutomationFromContext = (payload: { id: string; abilityName?: string | null }) => {
-  closeMoveAutomation()
   cancelMoveAutomationTargeting()
   void openAbilityAutomation(payload)
 }
@@ -339,10 +332,8 @@ useMapGmModeGuard({
   hazardMode,
   adminPanelOpen,
   selectedId,
-  moveAutomationId,
   canControlPlacement,
   clearSelection,
-  closeMoveAutomation,
 })
 
 const { viewSheet, viewPokedex } = useMapTokenNavigation({
@@ -470,9 +461,6 @@ useMapDimensionReconciliation({
         :hazard-tool="hazardTool"
         :hazard-kind="hazardKind"
         :can-delete-tokens="isGm"
-        :move-automation-user="moveAutomationUser"
-        :move-automation-moves="moveAutomationMoves"
-        :move-automation-initial-move-name="moveAutomationInitialMoveName"
         :move-automation-targeting="actionAutomationTargeting"
         :move-automation-feedback="moveAutomationFeedback"
         :spite-reaction-prompts="spiteReactionPrompts"
@@ -481,7 +469,6 @@ useMapDimensionReconciliation({
         :token-move-options-by-id="tokenMoveOptionsById"
         :token-ability-options-by-id="tokenAbilityOptionsById"
         :token-send-out-options-by-id="tokenSendOutOptionsById"
-        :can-apply-map-effects="canEditMap"
         @select-pokemon="selectPokemon"
         @move-pokemon="movePokemon"
         @turn-pokemon="turnPokemon"
@@ -499,8 +486,6 @@ useMapDimensionReconciliation({
         @remove-voxel="removeVoxel"
         @place-hazard="placeHazard"
         @remove-hazard="removeHazard"
-        @close-move-automation="closeMoveAutomation"
-        @apply-move-automation="applyMoveAutomation"
         @select-move-target="selectActionAutomationTarget"
         @select-move-area-direction="selectMoveAutomationAreaDirection"
         @cancel-move-targeting="cancelActionAutomationTargeting"

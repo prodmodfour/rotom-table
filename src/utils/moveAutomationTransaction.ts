@@ -99,7 +99,7 @@ const unknownMoveTransaction = (user: SpawnedPokemon): MoveAutomationTransaction
   userId: user.id,
   userName: user.species,
   moveName: 'Unknown Move',
-  scriptKind: 'manual-fallback',
+  scriptKind: 'explicit',
   scriptVersion: 0,
   hpUpdates: [],
   conditionUpdates: [],

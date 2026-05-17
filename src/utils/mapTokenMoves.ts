@@ -1,4 +1,5 @@
 import { getPokedexEntry } from '~~/data/characterSheets'
+import { explicitScriptForMove } from '~/utils/moveAutomation'
 import { resolvePokemonOtherCapabilities } from '~/utils/sheets/pokemonCapabilities'
 import { resolveMoveGrantedCapabilities } from '~/utils/sheets/pokemonMoveGrantedCapabilities'
 import { makeAutomaticStruggleMoves } from '~/utils/struggleMoves'
@@ -45,6 +46,7 @@ export interface TokenMoveMenuOption {
   additionalAttackStatKey: 'atk' | 'satk' | null
   additionalAttackStatLabel: string | null
   automatic: boolean
+  hasAutomationScript: boolean
   disabledByCondition: boolean
 }
 
@@ -93,10 +95,14 @@ const fallback = <T>(...values: T[]): NonNullable<T> | null => {
   return null
 }
 
+const moveHasAutomationScript = (row: MoveLookupRow<TokenSheetMove>): boolean =>
+  Boolean(explicitScriptForMove(row.reference?.name ?? row.move.name) ?? explicitScriptForMove(row.move.name))
+
 const optionForMoveRow = (
   row: MoveLookupRow<TokenSheetMove>,
   automatic: boolean,
   token: SpawnedPokemon,
+  hasAutomationScript: boolean,
 ): TokenMoveMenuOption => ({
   name: row.reference?.name ?? row.move.name,
   type: fallback(row.reference?.type, row.move.type),
@@ -121,6 +127,7 @@ const optionForMoveRow = (
   additionalAttackStatKey: row.additionalAttackStatKey,
   additionalAttackStatLabel: row.additionalAttackStatLabel,
   automatic,
+  hasAutomationScript,
   disabledByCondition: isMoveDisabledByConditions(row.reference?.name ?? row.move.name, token.conditions)
     || isMoveDisabledByConditions(row.move.name, token.conditions),
 })
@@ -138,5 +145,7 @@ export const buildTokenMoveMenuOptions = (
     abilities: token.abilityNames,
     combatSkillRankValue: token.combatSkillRankValue,
   })
-  return rows.map((row, index) => optionForMoveRow(row, entries[index]?.automatic ?? false, token))
+  return rows
+    .map((row, index) => ({ row, automatic: entries[index]?.automatic ?? false }))
+    .map(({ row, automatic }) => optionForMoveRow(row, automatic, token, moveHasAutomationScript(row)))
 }

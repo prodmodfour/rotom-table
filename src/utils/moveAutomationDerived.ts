@@ -17,7 +17,7 @@ import {
 import type { MoveAutomationScript } from '~/types/moveAutomation'
 import type { MoveAutomationMoveLike } from '~/utils/moveAutomation'
 
-export const createManualMoveAutomationScript = (move: MoveAutomationMoveLike): MoveAutomationScript => {
+export const createMoveAutomationScriptFromMoveData = (move: MoveAutomationMoveLike): MoveAutomationScript => {
   const effect = move.effect ?? ''
   const special = move.special ?? ''
   const range = move.range ?? ''
@@ -36,7 +36,7 @@ export const createManualMoveAutomationScript = (move: MoveAutomationMoveLike): 
 
   if (!effect || /^None\.?$/i.test(effect.trim())) automationNotes.push('No secondary effect text in moves.json; resolve range keywords normally.')
   if (/may|choose|instead|Once (?:a|per) Scene|if |If |roll 1d|random|last Move|Move List|copy|Transform|switch|recalled|Grapple|Weight Class|Loyalty|Injury|Stockpiled|Trump|Perish|Substitute|Illusory|Barrier|Smokescreen|Court Change|Defog|Gravity|Tailwind|Haze|Wondered|Warped/i.test(effect)) {
-    automationNotes.push('This move has conditional or unique text. The wizard exposes manual toggles; verify before applying.')
+    automationNotes.push('This move has conditional or unique text; verify the automated result before applying.')
   }
   if (/Set-Up|Set Up|Execute|Priority|Interrupt|Reaction|Trigger|Shield|Full Action|Swift Action|Free Action|Exhaust/i.test(range)) {
     automationNotes.push('Timing/action keyword present; confirm this move is being resolved at the correct timing window.')
@@ -45,7 +45,7 @@ export const createManualMoveAutomationScript = (move: MoveAutomationMoveLike): 
   if (/Blessing|Coat|Vortex|Leech Seed|Aqua Ring|Ingrain/i.test(effect)) automationNotes.push('Persistent non-sheet effect may need manual tracking after this transaction.')
 
   return {
-    kind: 'manual-fallback',
+    kind: 'explicit',
     moveName: move.name,
     version: 1,
     targetMode,
@@ -71,7 +71,7 @@ export const createManualMoveAutomationScript = (move: MoveAutomationMoveLike): 
   }
 }
 
-export const damageFormulaForManualMove = (move: MoveAutomationMoveLike): string | null => {
+export const damageFormulaForMoveData = (move: MoveAutomationMoveLike): string | null => {
   const roll = typeof move.damage_roll === 'string' ? move.damage_roll.trim() : ''
   if (roll) return roll.split('/')[0]?.trim() || null
   const db = coerceMoveDamageBase(move.damage_base)

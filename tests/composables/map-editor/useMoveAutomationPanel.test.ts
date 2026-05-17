@@ -59,7 +59,7 @@ const transaction = (): MoveAutomationTransaction => ({
   userId: 'user-token',
   userName: 'Bolt',
   moveName: 'Tackle',
-  scriptKind: 'manual-fallback',
+  scriptKind: 'explicit',
   scriptVersion: 1,
   hpUpdates: [{ id: 'target-token', currentHp: 7 }],
   combatStageUpdates: [{ id: 'target-token', stages: { atk: 1, def: 0, satk: 0, sdef: 0, spd: 0, acc: 0 } }],
@@ -70,7 +70,7 @@ const transaction = (): MoveAutomationTransaction => ({
 })
 
 describe('useMoveAutomationPanel', () => {
-  it('derives the active user and move list from the selected placement', () => {
+  it('does not open the removed wizard for unautomated moves', () => {
     const map = ref(mapFixture())
     const pokemonSheet = {
       slug: 'bolt',
@@ -94,13 +94,12 @@ describe('useMoveAutomationPanel', () => {
     })
 
     panel.openMoveAutomation('blocked-token')
-    expect(panel.moveAutomationUser.value).toBeNull()
+    expect(panel.moveAutomationTargeting.value).toBeNull()
 
     panel.openMoveAutomation({ id: 'user-token', moveName: 'Teleport' })
-    expect(panel.moveAutomationUser.value?.id).toBe('user-token')
-    expect(panel.moveAutomationInitialMoveName.value).toBe('Teleport')
-    expect(panel.moveAutomationMoves.value.map((move) => move.name)).toEqual(['Struggle', 'Teleport'])
+    expect(panel.moveAutomationTargeting.value).toBeNull()
     expect(panel.tokenMoveOptionsById.value['user-token'].map((move) => move.name)).toEqual(['Struggle', 'Teleport'])
+    expect(panel.tokenMoveOptionsById.value['user-token'].find((move) => move.name === 'Teleport')?.hasAutomationScript).toBe(false)
   })
 
   it('omits Disabled moves from automation while leaving them visible in the token menu', () => {
@@ -128,13 +127,7 @@ describe('useMoveAutomationPanel', () => {
 
     panel.openMoveAutomation({ id: 'user-token', moveName: 'Tackle' })
 
-    expect(panel.moveAutomationInitialMoveName.value).toBe('Tackle')
-    expect(panel.moveAutomationMoves.value.map((move) => move.name)).toEqual([
-      'Struggle',
-      'Struggle (Firestarter Physical)',
-      'Struggle (Firestarter Special)',
-      'Ember',
-    ])
+    expect(panel.moveAutomationTargeting.value).toBeNull()
     expect(panel.tokenMoveOptionsById.value['user-token'].find((move) => move.name === 'Tackle')?.disabledByCondition).toBe(true)
   })
 
@@ -178,8 +171,7 @@ describe('useMoveAutomationPanel', () => {
     try {
       panel.openMoveAutomation({ id: 'user-token', moveName: 'Psywave' })
 
-      expect(panel.moveAutomationUser.value).toBeNull()
-      expect(panel.moveAutomationTargeting.value).toMatchObject({
+        expect(panel.moveAutomationTargeting.value).toMatchObject({
         mode: 'target',
         moveName: 'Psywave',
         rangeLabel: '6m',
@@ -245,8 +237,7 @@ describe('useMoveAutomationPanel', () => {
     try {
       panel.openMoveAutomation({ id: 'user-token', moveName: 'Will-O-Wisp' })
 
-      expect(panel.moveAutomationUser.value).toBeNull()
-      expect(panel.moveAutomationTargeting.value).toMatchObject({
+        expect(panel.moveAutomationTargeting.value).toMatchObject({
         mode: 'target',
         moveName: 'Will-O-Wisp',
         rangeLabel: '6m',
@@ -527,7 +518,6 @@ describe('useMoveAutomationPanel', () => {
     panel.openMoveAutomation({ id: 'user-token', moveName: 'Swords Dance' })
     await Promise.resolve()
 
-    expect(panel.moveAutomationUser.value).toBeNull()
     expect(panel.moveAutomationTargeting.value).toBeNull()
     expect(calls).toEqual(['stages:user-token:3'])
     expect(map.value.metadata?.moveLog).toMatchObject([{ moveName: 'Swords Dance', scriptKind: 'explicit' }])
@@ -568,7 +558,6 @@ describe('useMoveAutomationPanel', () => {
 
     panel.openMoveAutomation({ id: 'user-token', moveName: 'Helping Hand' })
 
-    expect(panel.moveAutomationUser.value).toBeNull()
     expect(panel.moveAutomationTargeting.value).toMatchObject({
       mode: 'target',
       moveName: 'Helping Hand',
@@ -618,7 +607,6 @@ describe('useMoveAutomationPanel', () => {
 
     panel.openMoveAutomation({ id: 'user-token', moveName: 'Magical Leaf' })
 
-    expect(panel.moveAutomationUser.value).toBeNull()
     expect(panel.moveAutomationTargeting.value).toMatchObject({
       mode: 'target',
       moveName: 'Magical Leaf',
@@ -676,8 +664,7 @@ describe('useMoveAutomationPanel', () => {
     try {
       panel.openMoveAutomation({ id: 'user-token', moveName: 'Acupressure' })
 
-      expect(panel.moveAutomationUser.value).toBeNull()
-      expect(panel.moveAutomationTargeting.value).toMatchObject({
+        expect(panel.moveAutomationTargeting.value).toMatchObject({
         mode: 'target',
         moveName: 'Acupressure',
         rangeLabel: '1m',
@@ -739,7 +726,6 @@ describe('useMoveAutomationPanel', () => {
 
     panel.openMoveAutomation({ id: 'user-token', moveName: 'Growl' })
 
-    expect(panel.moveAutomationUser.value).toBeNull()
     expect(panel.moveAutomationTargeting.value).toMatchObject({
       mode: 'area-confirmation',
       moveName: 'Growl',

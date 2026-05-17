@@ -279,11 +279,8 @@ export interface MoveAutomationAreaTemplate {
 }
 
 export interface MoveAutomationScript {
-  /**
-   * `explicit` means a human-authored move script owns this move. `manual-fallback`
-   * is not automation coverage; it is only a guided manual resolver.
-   */
-  kind: 'explicit' | 'manual-fallback'
+  /** Human-authored or generated move automation that resolves through the on-map flow. */
+  kind: 'explicit'
   moveName: string
   version: number
   targetMode: MoveAutomationTargetMode

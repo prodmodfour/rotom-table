@@ -25,10 +25,8 @@ export interface UseMapGmModeGuardOptions {
   hazardMode: Ref<boolean>
   adminPanelOpen: Ref<boolean>
   selectedId: Ref<string | null>
-  moveAutomationId: Ref<string | null>
   canControlPlacement: (id: string) => boolean
   clearSelection: () => void
-  closeMoveAutomation: () => void
 }
 
 export const canPlayerViewMap = (
@@ -71,10 +69,8 @@ export const useMapGmModeGuard = ({
   hazardMode,
   adminPanelOpen,
   selectedId,
-  moveAutomationId,
   canControlPlacement,
   clearSelection,
-  closeMoveAutomation,
 }: UseMapGmModeGuardOptions): void => {
   watch(
     () => isGm.value,
@@ -84,7 +80,6 @@ export const useMapGmModeGuard = ({
       hazardMode.value = false
       adminPanelOpen.value = false
       if (selectedId.value && !canControlPlacement(selectedId.value)) clearSelection()
-      if (moveAutomationId.value && !canControlPlacement(moveAutomationId.value)) closeMoveAutomation()
     },
   )
 }

@@ -47,6 +47,15 @@ const sendOutOptions = computed(() => props.sendOutOptions ?? [])
 const abilityCanBeUsed = (ability: TokenAbilityMenuOption): boolean =>
   ability.automation != null && ability.automation.category !== 'passive'
 
+const moveCanBeUsed = (move: TokenMoveMenuOption): boolean =>
+  move.hasAutomationScript && !move.disabledByCondition
+
+const moveDisabledTitle = (move: TokenMoveMenuOption): string | undefined => {
+  if (move.disabledByCondition) return `${move.name} is Disabled and cannot be used.`
+  if (!move.hasAutomationScript) return `${move.name} does not have an automation script yet.`
+  return undefined
+}
+
 const createSubmenuTooltipController = <TItem extends NamedMenuItem>(options: {
   panel: ActiveContextPanel
   items: ComputedRef<TItem[]>
@@ -307,12 +316,12 @@ watch(abilities, (nextAbilities) => {
               :key="move.name"
               type="button"
               class="action-submenu__item"
-              :class="{ 'is-active': hoveredMoveName === move.name, 'is-disabled': move.disabledByCondition }"
+              :class="{ 'is-active': hoveredMoveName === move.name, 'is-disabled': !moveCanBeUsed(move) }"
               role="menuitem"
-              :aria-disabled="move.disabledByCondition ? 'true' : undefined"
-              :title="move.disabledByCondition ? `${move.name} is Disabled and cannot be used.` : undefined"
+              :aria-disabled="!moveCanBeUsed(move) ? 'true' : undefined"
+              :title="moveDisabledTitle(move)"
               :aria-describedby="hoveredMoveName === move.name && hoveredMoveTooltipDetail && isMoveTooltipVisible ? moveTooltipId : undefined"
-              :disabled="move.disabledByCondition"
+              :disabled="!moveCanBeUsed(move)"
               @pointerenter="showMoveTooltip(move.name, $event)"
               @pointerleave="hideMoveTooltip"
               @focus="showMoveTooltip(move.name, $event)"
@@ -326,6 +335,7 @@ watch(abilities, (nextAbilities) => {
                 <span v-if="move.damageBase != null" class="action-submenu__badge">DB {{ move.damageBase }}</span>
                 <span v-if="move.hasStab" class="action-submenu__badge action-submenu__badge--stab">STAB</span>
                 <span v-if="move.automatic" class="action-submenu__badge">Auto</span>
+                <span v-if="!move.hasAutomationScript" class="action-submenu__badge action-submenu__badge--disabled">Unscripted</span>
                 <span v-if="move.disabledByCondition" class="action-submenu__badge action-submenu__badge--disabled">Disabled</span>
               </span>
             </button>

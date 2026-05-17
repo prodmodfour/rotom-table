@@ -114,7 +114,7 @@ describe('instant move automation', () => {
 
     expect(result.feedback.conditions).toEqual([{ condition: 'Burned', applied: false, blockedBy: 'Fire type' }])
     expect(result.transaction.conditionUpdates).toEqual([])
-    expect(result.transaction.logLines).toContain('Manual note: Burned did not apply to Flare: immune (Fire type).')
+    expect(result.transaction.logLines).toContain('Note: Burned did not apply to Flare: immune (Fire type).')
   })
 
   it('uses Shield Dust to block damaging move Accuracy Roll condition effects', () => {
@@ -237,7 +237,7 @@ describe('instant move automation', () => {
 
     expect(result.feedback).toMatchObject({ naturalRoll: 20, hit: true, crit: true, damageLoss: 16 })
     expect(result.transaction.hpUpdates).toEqual([{ id: 't', currentHp: 24 }])
-    expect(result.transaction.logLines).toContain('Manual note: Double Kick Double Strike: roll 1 11 (hit); roll 2 20 (hit, critical); 2 hits -> DB 3 × 2 = DB 6. 1 critical hit adds 6 bonus damage before Stats and defenses.')
+    expect(result.transaction.logLines).toContain('Note: Double Kick Double Strike: roll 1 11 (hit); roll 2 20 (hit, critical); 2 hits -> DB 3 × 2 = DB 6. 1 critical hit adds 6 bonus damage before Stats and defenses.')
   })
 
   it('rolls Five Strike damage base before rolling damage dice', () => {
@@ -252,7 +252,7 @@ describe('instant move automation', () => {
 
     expect(result.feedback).toMatchObject({ naturalRoll: 11, hit: true, damageLoss: 13 })
     expect(result.transaction.hpUpdates).toEqual([{ id: 't', currentHp: 27 }])
-    expect(result.transaction.logLines).toContain('Manual note: Pin Missile Five Strike rolled 7: 4 hits; DB 3 × 4 = DB 12.')
+    expect(result.transaction.logLines).toContain('Note: Pin Missile Five Strike rolled 7: 4 hits; DB 3 × 4 = DB 12.')
   })
 
   it('applies STAB after Five Strike multiplies Damage Base', () => {
@@ -267,7 +267,7 @@ describe('instant move automation', () => {
 
     expect(result.feedback).toMatchObject({ naturalRoll: 11, hit: true, damageLoss: 19 })
     expect(result.transaction.hpUpdates).toEqual([{ id: 't', currentHp: 21 }])
-    expect(result.transaction.logLines).toContain('Manual note: Pin Missile Five Strike rolled 7: 4 hits; DB 3 × 4 + 2 STAB = DB 14.')
+    expect(result.transaction.logLines).toContain('Note: Pin Missile Five Strike rolled 7: 4 hits; DB 3 × 4 + 2 STAB = DB 14.')
   })
 
   it('scales Power Trip from the user’s positive Combat Stages', () => {
@@ -282,7 +282,7 @@ describe('instant move automation', () => {
 
     expect(result.feedback).toMatchObject({ naturalRoll: 11, hit: true, damageLoss: 12 })
     expect(result.transaction.hpUpdates).toEqual([{ id: 't', currentHp: 28 }])
-    expect(result.transaction.logLines).toContain('Manual note: Power Trip Damage Base scaling: 3 positive Combat Stages -> DB 8.')
+    expect(result.transaction.logLines).toContain('Note: Power Trip Damage Base scaling: 3 positive Combat Stages -> DB 8.')
   })
 
   it('rolls Acupressure and applies only the selected stage boost', () => {
@@ -299,7 +299,7 @@ describe('instant move automation', () => {
     expect(result.transaction.combatStageUpdates).toEqual([
       { id: 't', stages: { ...stages, sdef: 2 } },
     ])
-    expect(result.transaction.logLines).toContain('Manual note: Acupressure rolled 4: Acupressure raises Special Defense: +2 Special Defense CS.')
+    expect(result.transaction.logLines).toContain('Note: Acupressure rolled 4: Acupressure raises Special Defense: +2 Special Defense CS.')
   })
 
   it('applies reviewed single-target stage thresholds during instant targeting', () => {
@@ -364,7 +364,7 @@ describe('instant move automation', () => {
       'Evenmon: 13 HP damage.',
       'Oddmon: 13 HP damage.',
       'Poisoned on even roll applied to Evenmon.',
-      'Manual note: Poisoned did not apply to Gear: immune (Steel type).',
+      'Note: Poisoned did not apply to Gear: immune (Steel type).',
       'Evenmon: accuracy 8 (hit).',
       'Oddmon: accuracy 9 (hit).',
       'Gear: accuracy 10 (hit).',

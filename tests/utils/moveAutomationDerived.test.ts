@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import {
-  buildManualMoveResolution,
+  buildMoveAutomationScriptFromMoveData,
   damageFormulaForMove,
   sheetMoveToMoveLike,
 } from '~/utils/moveAutomation'
 import { coerceMoveAccuracy, coerceMoveDamageBase } from '~/utils/moveAutomationCoercion'
 
 
-describe('move automation manual resolution helpers', () => {
+describe('move automation derived resolution helpers', () => {
   it('coerces move numeric fields compatibly', () => {
     expect(coerceMoveAccuracy('4.8')).toBe(4)
     expect(coerceMoveAccuracy('--')).toBeNull()
@@ -17,7 +17,7 @@ describe('move automation manual resolution helpers', () => {
   })
 
   it('builds damaging one-target scripts with damage and range metadata', () => {
-    const script = buildManualMoveResolution({
+    const script = buildMoveAutomationScriptFromMoveData({
       name: 'Test Strike',
       type: 'Fire',
       ac: '4',
@@ -28,7 +28,7 @@ describe('move automation manual resolution helpers', () => {
     })
 
     expect(script).toMatchObject({
-      kind: 'manual-fallback',
+      kind: 'explicit',
       moveName: 'Test Strike',
       targetMode: 'one-target',
       targetCount: 1,
@@ -44,7 +44,7 @@ describe('move automation manual resolution helpers', () => {
   })
 
   it('extracts condition and combat-stage suggestions from effect text', () => {
-    const script = buildManualMoveResolution({
+    const script = buildMoveAutomationScriptFromMoveData({
       name: 'Test Debuff',
       type: 'Fire',
       ac: 3,
@@ -69,17 +69,17 @@ describe('move automation manual resolution helpers', () => {
   })
 
   it('extracts field, hazard, and HP suggestions', () => {
-    expect(buildManualMoveResolution({ name: 'Sunny Day', range: 'Field, Weather', effect: '' }).fieldSuggestions)
+    expect(buildMoveAutomationScriptFromMoveData({ name: 'Sunny Day', range: 'Field, Weather', effect: '' }).fieldSuggestions)
       .toContainEqual(expect.objectContaining({ kind: 'weather', value: 'sunny' }))
 
-    const hazardScript = buildManualMoveResolution({ name: 'Toxic Spikes', range: 'Hazard', effect: '' })
+    const hazardScript = buildMoveAutomationScriptFromMoveData({ name: 'Toxic Spikes', range: 'Hazard', effect: '' })
     expect(hazardScript.targetMode).toBe('hazard')
     expect(hazardScript.hazardSuggestions).toContainEqual(expect.objectContaining({
       kind: 'toxic-spikes',
       squares: 8,
     }))
 
-    const restScript = buildManualMoveResolution({
+    const restScript = buildMoveAutomationScriptFromMoveData({
       name: 'Rest',
       range: 'Self',
       effect: 'The user is set to their full Hit Point value.',

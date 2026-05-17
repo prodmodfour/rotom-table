@@ -6,10 +6,10 @@ Requirements-gathering notes for adding **Use Move** to the map token context me
 
 1. User right-clicks a controllable token on a map.
 2. Context menu includes **Use Move**.
-3. A move picker modal opens with that token's move list.
+3. The move submenu lists only moves with an automated script.
 4. User chooses a move.
-5. A sequential wizard runs that move's script, asking for input only when needed.
-6. The wizard previews and then applies all accepted state changes: HP, combat stages, positions, statuses, hazards, weather/terrain/rooms, frequencies, delayed effects, and log entries.
+5. The move resolves through an on-map flow: single-target overlay, AoE confirmation overlay, or immediate self/field resolution.
+6. The automated flow applies accepted state changes: HP, combat stages, positions, statuses, hazards, weather/terrain/rooms, frequencies, delayed effects, and log entries.
 
 ## `moves.json` audit
 
@@ -57,7 +57,7 @@ High-level mechanics found across all 761 valid moves, for component planning on
 | Random sub-effects | ~29 | Dire Claw/Tri Attack status rolls, Magnitude, Present, Acupressure, Metronome, Assist. |
 | Copy / move-list mutation | ~10 | Sketch, Mimic, Mirror Move, Copycat, Assist, Metronome, Instruct, Transform. |
 
-These groupings are **not** a proposed generic parser. They are only the reusable wizard primitives the hand-authored move scripts will call.
+These groupings are **not** a proposed generic parser. They are only the reusable automation primitives the hand-authored move scripts will call.
 
 ## Current app integration points
 
@@ -72,9 +72,9 @@ These groupings are **not** a proposed generic parser. They are only the reusabl
 
 - There must be exactly one script entry for each of the 761 valid canonical moves.
 - A missing script for any canonical move should fail a coverage check.
-- Each script may reuse shared wizard steps, but the script itself is move-specific and owns branching/edge cases.
-- Scripts must be versioned so saved in-progress wizards or logs can be interpreted after script changes.
-- Homebrew/custom moves on a sheet should be supported by a safe manual fallback wizard.
+- Each script may reuse shared automation steps, but the script itself is move-specific and owns branching/edge cases.
+- Scripts must be versioned so saved logs can be interpreted after script changes.
+- Homebrew/custom moves on a sheet must be explicitly automated before they appear in the token move menu.
 
 Suggested shape:
 
@@ -88,10 +88,10 @@ interface MoveScript {
 
 The important requirement is not the exact TypeScript API; it is that scripts are explicit, testable, and composable.
 
-### Wizard UX
+### Automation UX
 
-- Always show the canonical move card: type, class, frequency, AC, DB/roll, range, and full effect text.
-- Show a stepper with Back, Cancel, Preview, Apply, and manual override controls.
+- Always make the canonical move card data available: type, class, frequency, AC, DB/roll, range, and full effect text.
+- Use map-native target overlays, area confirmations, and immediate self/field resolution instead of a manual resolver modal.
 - Ask only context-relevant questions; do not force users through irrelevant generic fields.
 - Support branching choices, e.g. `Curse` Ghost vs non-Ghost, `Pollen Puff` attack vs heal, `Thunderous Kick` Fighting vs once-per-scene Electric.
 - Support multi-target resolution where each target may hit, miss, crit, resist, trigger a different secondary effect, or receive different damage.
@@ -131,12 +131,12 @@ Every completed move should create a structured encounter log entry:
 
 - user, move, script version, targets/areas, rolls, branch choices, applied state changes, skipped/manual changes.
 - Undo should revert the whole move transaction where possible.
-- Failed/cancelled wizard runs should not mutate state unless explicitly confirmed.
+- Failed/cancelled automation runs should not mutate state unless explicitly confirmed.
 
 ### Testing / coverage
 
 - Registry coverage test: 761/761 valid moves have scripts.
-- Each script has at least a smoke test that runs through the wizard with canned inputs.
+- Each script has at least a smoke test that runs through its map flow with canned inputs.
 - Complex scripts get scenario tests for every branch.
 - Golden audit should assert the canonical move count remains 761 after filtering the junk explanatory entry.
 
@@ -149,24 +149,23 @@ Every completed move should create a structured encounter log entry:
 5. Should players be able to resolve their own damage/statuses, or should the GM approve player move results?
 6. What is the expected source of truth for statuses and temporary effects on sheets outside a map encounter?
 7. Should move automation account for abilities/features/items immediately, or should first pass expose manual modifiers for them?
-8. How should custom/homebrew sheet moves be scripted or manually resolved?
+8. How should custom/homebrew sheet moves be scripted before they can appear in the automated move menu?
 
 ## Current implementation guardrails
 
-The map now has **Use Move** and a wizard shell. The current generic resolver is explicitly labelled **Manual fallback** in the UI and in the move log. It is not considered automation coverage.
+The map now has **Use Move** without a manual resolver modal. The token move menu shows all sheet moves, but unautomated/homebrew moves are greyed out and disabled until scripted.
 
-Canonical automation must come only from `EXPLICIT_MOVE_AUTOMATION_SCRIPTS` in `utils/moveAutomation.ts` (or future per-move modules imported into that registry). The coverage tool fails while any canonical move lacks an explicit script:
+Canonical automation must come only from `EXPLICIT_MOVE_AUTOMATION_SCRIPTS` in `src/utils/moveAutomation.ts` (or future per-move modules imported into that registry). The coverage tool fails while any canonical move lacks an explicit script:
 
 ```bash
 npm run check:move-automation
 ```
 
-At the time this guardrail was added, coverage intentionally reports `0/761`; the manual fallback is available so users can still resolve a move without pretending it is scripted.
+Until the explicit registry is complete, unregistered moves remain visible but disabled in the map move menu instead of falling back to manual resolution.
 
 ## Recommended next implementation slice
 
-1. Keep the manual fallback as an escape hatch only.
-2. Add explicit script modules in small reviewed batches.
-3. Run `npm run check:move-automation` in CI once the explicit registry is expected to be complete.
-4. Implement a small vertical slice of deliberately varied explicit scripts only to validate infrastructure, not to infer the rest: one plain attack, one status-only move, one multi-target area attack, one shield/interrupt, one weather/terrain move, one copy/random move.
-5. Continue until every one of the 761 canonical moves has a reviewed explicit script.
+1. Add explicit script modules in small reviewed batches.
+2. Run `npm run check:move-automation` in CI once the explicit registry is expected to be complete.
+3. Implement small reviewed slices of deliberately varied explicit scripts: plain attacks, status-only moves, multi-target area attacks, shields/interrupts, weather/terrain moves, and copy/random moves.
+4. Continue until every canonical move has a reviewed explicit script.

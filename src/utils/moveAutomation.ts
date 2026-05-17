@@ -5,9 +5,9 @@ import {
   rollMoveDamageFormula,
 } from '~/utils/moveDamageBase'
 import {
-  createManualMoveAutomationScript,
-  damageFormulaForManualMove,
-} from '~/utils/moveAutomationManual'
+  createMoveAutomationScriptFromMoveData,
+  damageFormulaForMoveData,
+} from '~/utils/moveAutomationDerived'
 import { STRUGGLE_ATTACK_MOVE_NAMES } from '~/utils/struggleMoves'
 import {
   ELECTRIC_RESISTANT_COAT_CONDITION,
@@ -54,9 +54,9 @@ export const sheetMoveToMoveLike = (move: CharacterSheetMove | TrainerMove): Mov
   special: move.special,
 })
 
-export const damageFormulaForMove = damageFormulaForManualMove
+export const damageFormulaForMove = damageFormulaForMoveData
 
-export const buildManualMoveResolution = createManualMoveAutomationScript
+export const buildMoveAutomationScriptFromMoveData = createMoveAutomationScriptFromMoveData
 
 const defineExplicitMoveScript = (script: Omit<MoveAutomationScript, 'kind'>): MoveAutomationScript => ({
   ...script,
@@ -88,29 +88,29 @@ const reviewedMoveScriptFromCanonical = (
 ): MoveAutomationScript => {
   const move = findMove(moveName)
   if (!move) throw new Error(`Missing canonical PTU move data for ${moveName}`)
-  const manualScript = createManualMoveAutomationScript(move)
+  const derivedScript = createMoveAutomationScriptFromMoveData(move)
   return defineExplicitMoveScript({
-    moveName: manualScript.moveName,
+    moveName: derivedScript.moveName,
     version,
-    targetMode: manualScript.targetMode,
-    targetCount: manualScript.targetCount,
-    damaging: manualScript.damaging,
-    requiresAccuracy: manualScript.requiresAccuracy,
-    damageBase: manualScript.damageBase,
-    damageClass: manualScript.damageClass,
-    type: manualScript.type,
-    ac: manualScript.ac,
-    range: manualScript.range,
-    effect: manualScript.effect,
-    special: manualScript.special,
-    keywords: manualScript.keywords,
-    criticalRange: manualScript.criticalRange,
-    areaTemplates: manualScript.areaTemplates,
-    conditionSuggestions: manualScript.conditionSuggestions,
-    stageSuggestions: manualScript.stageSuggestions,
-    hpSuggestions: manualScript.hpSuggestions,
-    fieldSuggestions: manualScript.fieldSuggestions,
-    hazardSuggestions: manualScript.hazardSuggestions,
+    targetMode: derivedScript.targetMode,
+    targetCount: derivedScript.targetCount,
+    damaging: derivedScript.damaging,
+    requiresAccuracy: derivedScript.requiresAccuracy,
+    damageBase: derivedScript.damageBase,
+    damageClass: derivedScript.damageClass,
+    type: derivedScript.type,
+    ac: derivedScript.ac,
+    range: derivedScript.range,
+    effect: derivedScript.effect,
+    special: derivedScript.special,
+    keywords: derivedScript.keywords,
+    criticalRange: derivedScript.criticalRange,
+    areaTemplates: derivedScript.areaTemplates,
+    conditionSuggestions: derivedScript.conditionSuggestions,
+    stageSuggestions: derivedScript.stageSuggestions,
+    hpSuggestions: derivedScript.hpSuggestions,
+    fieldSuggestions: derivedScript.fieldSuggestions,
+    hazardSuggestions: derivedScript.hazardSuggestions,
     automationNotes: [],
     ...overrides,
   })
@@ -253,24 +253,24 @@ const reviewedTargetStageAreaScript = (
 const reviewedSmogScript = (version = 1): MoveAutomationScript => {
   const move = findMove('Smog')
   if (!move) throw new Error('Missing canonical PTU move data for Smog')
-  const manualScript = createManualMoveAutomationScript(move)
+  const derivedScript = createMoveAutomationScriptFromMoveData(move)
   return defineExplicitMoveScript({
-    moveName: manualScript.moveName,
+    moveName: derivedScript.moveName,
     version,
     targetMode: 'multi-target',
     targetCount: null,
     damaging: true,
     requiresAccuracy: true,
-    damageBase: manualScript.damageBase,
-    damageClass: manualScript.damageClass,
-    type: manualScript.type,
-    ac: manualScript.ac,
-    range: manualScript.range,
-    effect: manualScript.effect,
-    special: manualScript.special,
-    keywords: manualScript.keywords,
-    criticalRange: manualScript.criticalRange,
-    areaTemplates: manualScript.areaTemplates,
+    damageBase: derivedScript.damageBase,
+    damageClass: derivedScript.damageClass,
+    type: derivedScript.type,
+    ac: derivedScript.ac,
+    range: derivedScript.range,
+    effect: derivedScript.effect,
+    special: derivedScript.special,
+    keywords: derivedScript.keywords,
+    criticalRange: derivedScript.criticalRange,
+    areaTemplates: derivedScript.areaTemplates,
     conditionSuggestions: [{
       recipient: 'target',
       condition: 'Poisoned',
@@ -293,24 +293,24 @@ const reviewedSmogScript = (version = 1): MoveAutomationScript => {
 const reviewedPsywaveScript = (version = 1): MoveAutomationScript => {
   const move = findMove('Psywave')
   if (!move) throw new Error('Missing canonical PTU move data for Psywave')
-  const manualScript = createManualMoveAutomationScript(move)
+  const derivedScript = createMoveAutomationScriptFromMoveData(move)
   return defineExplicitMoveScript({
-    moveName: manualScript.moveName,
+    moveName: derivedScript.moveName,
     version,
     targetMode: 'one-target',
     targetCount: 1,
     damaging: true,
     requiresAccuracy: true,
     damageBase: null,
-    damageClass: manualScript.damageClass,
-    type: manualScript.type,
-    ac: manualScript.ac,
-    range: manualScript.range,
-    effect: manualScript.effect,
-    special: manualScript.special,
-    keywords: manualScript.keywords,
+    damageClass: derivedScript.damageClass,
+    type: derivedScript.type,
+    ac: derivedScript.ac,
+    range: derivedScript.range,
+    effect: derivedScript.effect,
+    special: derivedScript.special,
+    keywords: derivedScript.keywords,
     criticalRange: null,
-    areaTemplates: manualScript.areaTemplates,
+    areaTemplates: derivedScript.areaTemplates,
     directHpLoss: {
       kind: 'user-level-roll-table',
       rollFormula: '1d4',

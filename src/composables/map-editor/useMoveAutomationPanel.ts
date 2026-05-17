@@ -42,7 +42,7 @@ import {
   moveAutomationTargetsInRange,
   parseSingleTargetMoveRangeMeters,
 } from '~/utils/moveAutomationRange'
-import type { CharacterSheet, CharacterSheetMove } from '~/types/characterSheet'
+import type { CharacterSheet } from '~/types/characterSheet'
 import type { GridAnchor, MapFieldEffects, MapHazardV2, TabletopMap } from '~/types/map'
 import type {
   MoveAutomationAreaDirection,
@@ -61,7 +61,7 @@ import type {
   MoveAutomationTransaction,
 } from '~/types/moveAutomation'
 import type { SpawnedPokemon } from '~/types/pokemon'
-import type { TrainerMove, TrainerSheet } from '~/types/trainerSheet'
+import type { TrainerSheet } from '~/types/trainerSheet'
 
 interface BooleanRef {
   readonly value: boolean
@@ -156,20 +156,12 @@ export const useMoveAutomationPanel = ({
   now,
   maxLogEntries = DEFAULT_MAX_LOG_ENTRIES,
 }: UseMoveAutomationPanelOptions) => {
-  const moveAutomationId = ref<string | null>(null)
-  const moveAutomationInitialMoveName = ref<string | null>(null)
   const activeMoveTargeting = ref<ActiveMoveTargetingRequest | null>(null)
   const moveAutomationFeedback = ref<MoveAutomationFeedbackState | null>(null)
   const spiteReactionPrompts = ref<MoveAutomationSpitePrompt[]>([])
   const cuteCharmReactionPrompts = ref<MoveAutomationCuteCharmPrompt[]>([])
   const moxieTriggerPrompts = ref<MoveAutomationMoxiePrompt[]>([])
   const feedbackTimers: Array<ReturnType<typeof setTimeout>> = []
-
-  const moveAutomationUser = computed(() =>
-    moveAutomationId.value
-      ? spawnedPokemon.value.find((pokemon) => pokemon.id === moveAutomationId.value) ?? null
-      : null,
-  )
 
   const sheetLookup = () => ({
     pokemon: pokemonBySlug.value,
@@ -189,13 +181,6 @@ export const useMoveAutomationPanel = ({
 
   const moveDisabledForToken = (token: SpawnedPokemon, moveName: string): boolean =>
     isMoveDisabledByConditions(moveName, token.conditions)
-
-  const moveAutomationMoves = computed<Array<CharacterSheetMove | TrainerMove>>(() => {
-    const user = findSpawnedPokemon(moveAutomationId.value)
-    return moveEntriesForId(moveAutomationId.value)
-      .map((entry) => entry.move)
-      .filter((move) => !user || !moveDisabledForToken(user, move.name))
-  })
 
   const moveAutomationEntryForUse = (id: string, moveName: string) => {
     const user = findSpawnedPokemon(id)
@@ -359,7 +344,6 @@ export const useMoveAutomationPanel = ({
     if (!request) return false
 
     clearMoveAutomationFeedback()
-    closeMoveAutomation()
     activeMoveTargeting.value = request
     return true
   }
@@ -375,7 +359,6 @@ export const useMoveAutomationPanel = ({
     if (isSeamlessSelfMoveScript(script)) {
       clearMoveAutomationFeedback()
       activeMoveTargeting.value = null
-      closeMoveAutomation()
       void applyMoveAutomation(resolveInstantSelfMoveAutomation({
         script,
         user,
@@ -392,7 +375,6 @@ export const useMoveAutomationPanel = ({
       if (rangeMeters == null || (script.damaging && !damageFormula && !moveAutomationCanResolveDamageAtRuntime(script))) return false
 
       clearMoveAutomationFeedback()
-      closeMoveAutomation()
       activeMoveTargeting.value = {
         kind: 'single-target',
         userId: id,
@@ -415,13 +397,6 @@ export const useMoveAutomationPanel = ({
 
     clearMoveAutomationFeedback()
     activeMoveTargeting.value = null
-    moveAutomationId.value = id
-    moveAutomationInitialMoveName.value = moveName
-  }
-
-  const closeMoveAutomation = () => {
-    moveAutomationId.value = null
-    moveAutomationInitialMoveName.value = null
   }
 
   const cancelMoveAutomationTargeting = () => {
@@ -553,7 +528,6 @@ export const useMoveAutomationPanel = ({
     queueMoxieTriggerPrompts(moxiePrompts)
     queueCuteCharmReactionPrompts(transaction)
     queueSpiteReactionPrompts(transaction)
-    closeMoveAutomation()
   }
 
   const showMoveAutomationResolution = (
@@ -647,10 +621,6 @@ export const useMoveAutomationPanel = ({
   onBeforeUnmount(clearFeedbackTimers)
 
   return {
-    moveAutomationId,
-    moveAutomationUser,
-    moveAutomationMoves,
-    moveAutomationInitialMoveName,
     moveAutomationTargeting,
     moveAutomationFeedback,
     spiteReactionPrompts,
@@ -658,7 +628,6 @@ export const useMoveAutomationPanel = ({
     moxieTriggerPrompts,
     tokenMoveOptionsById,
     openMoveAutomation,
-    closeMoveAutomation,
     cancelMoveAutomationTargeting,
     selectMoveAutomationTarget,
     selectMoveAutomationAreaDirection,

@@ -63,6 +63,17 @@ describe('map token move menu options', () => {
     expect(move.special).toBe('Grants Firestarter')
   })
 
+  it('shows unscripted moves while marking them unavailable for automation', () => {
+    const moves = buildTokenMoveMenuOptions(token(), [
+      { move: { name: 'Tackle' }, automatic: false },
+      { move: { name: 'Custom Beam', category: 'Special', db: 6 }, automatic: false },
+    ])
+
+    expect(moves.map((move) => move.name)).toEqual(['Tackle', 'Custom Beam'])
+    expect(moves.find((move) => move.name === 'Tackle')?.hasAutomationScript).toBe(true)
+    expect(moves.find((move) => move.name === 'Custom Beam')?.hasAutomationScript).toBe(false)
+  })
+
   it('marks moves named by Disabled condition instances', () => {
     const moves = buildTokenMoveMenuOptions(token({ conditions: ['Disabled: Tackle'] }), [
       { move: { name: 'Tackle' }, automatic: false },
@@ -94,14 +105,14 @@ describe('map token move menu options', () => {
     expect(move.hasStab).toBe(false)
   })
 
-  it('applies Weird Power to map token move damage formulas', () => {
+  it('applies Weird Power to automated map token move damage formulas', () => {
     const [move] = buildTokenMoveMenuOptions(token({
       abilityNames: ['Weird Power'],
       atk: 12,
       satk: 8,
       combatStages: stages(),
     }), [
-      { move: { name: 'Custom Beam', category: 'Special', db: 6 }, automatic: false },
+      { move: { name: 'Water Gun' }, automatic: false },
     ])
 
     expect(move).toMatchObject({
@@ -113,7 +124,7 @@ describe('map token move menu options', () => {
       attackStatAbility: 'Weird Power',
       additionalAttackStat: 12,
       additionalAttackStatKey: 'atk',
-      damageFormula: '2d6+8+20',
+      damageFormula: '1d8+6+20',
     })
   })
 

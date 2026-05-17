@@ -1,6 +1,5 @@
 import { findMove } from '~~/data/ptuReference'
 import {
-  buildManualMoveResolution,
   explicitScriptForMove,
   sheetMoveToMoveLike,
   type MoveAutomationMoveLike,
@@ -24,7 +23,6 @@ export interface MoveAutomationMoveEntry {
   sheetMove: MoveAutomationSheetMove
   move: MoveAutomationMoveLike
   script: MoveAutomationScript
-  hasExplicitScript: boolean
   hasStab: boolean
 }
 
@@ -80,25 +78,26 @@ export const buildMoveAutomationMoveEntries = (
   options: MoveAutomationMoveEntryOptions = {},
 ): MoveAutomationMoveEntry[] => moves
   .filter((move) => move.name?.trim())
-  .map((sheetMove) => {
+  .flatMap((sheetMove) => {
     const move = moveLikeForSheetMove(sheetMove, options)
-    const hasStab = hasSameTypeAttackBonus(move, options.stabTypes)
     const explicitScript = explicitScriptForMove(move.name)
-    const dynamicExplicitScript = Boolean(explicitScript?.dynamicDamageBase)
-    const baseScript = explicitScript && hasStab && explicitScript.damageBase != null
+    if (!explicitScript) return []
+
+    const hasStab = hasSameTypeAttackBonus(move, options.stabTypes)
+    const dynamicExplicitScript = Boolean(explicitScript.dynamicDamageBase)
+    const baseScript = hasStab && explicitScript.damageBase != null
       ? dynamicExplicitScript
         ? { ...explicitScript, stabDamageBaseBonus: 2 }
         : { ...explicitScript, damageBase: explicitScript.damageBase + 2 }
-      : explicitScript ?? buildManualMoveResolution(move)
+      : explicitScript
     const script = scriptWithStruggleCombatSkill(baseScript, options.combatSkillRankValue)
-    return {
+    return [{
       label: move.name,
       sheetMove,
       move,
       script,
-      hasExplicitScript: Boolean(explicitScript),
       hasStab,
-    }
+    }]
   })
 
 export const filterMoveAutomationMoveEntries = (

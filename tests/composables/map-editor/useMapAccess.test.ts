@@ -86,15 +86,13 @@ describe('useMapAccess', () => {
 })
 
 describe('useMapGmModeGuard', () => {
-  it('turns off GM-only UI state and closes uncontrolled token affordances when GM access is lost', async () => {
+  it('turns off GM-only UI state and clears uncontrolled token selection when GM access is lost', async () => {
     const isGm = ref(true)
     const buildMode = ref(true)
     const hazardMode = ref(true)
     const adminPanelOpen = ref(true)
     const selectedId = ref<string | null>('enemy-token')
-    const moveAutomationId = ref<string | null>('enemy-token')
     const clearSelection = vi.fn(() => { selectedId.value = null })
-    const closeMoveAutomation = vi.fn(() => { moveAutomationId.value = null })
 
     useMapGmModeGuard({
       isGm,
@@ -102,10 +100,8 @@ describe('useMapGmModeGuard', () => {
       hazardMode,
       adminPanelOpen,
       selectedId,
-      moveAutomationId,
       canControlPlacement: () => false,
       clearSelection,
-      closeMoveAutomation,
     })
 
     isGm.value = false
@@ -115,18 +111,15 @@ describe('useMapGmModeGuard', () => {
     expect(hazardMode.value).toBe(false)
     expect(adminPanelOpen.value).toBe(false)
     expect(clearSelection).toHaveBeenCalledTimes(1)
-    expect(closeMoveAutomation).toHaveBeenCalledTimes(1)
   })
 
-  it('preserves selected and move-automation tokens that remain controllable after GM access is lost', async () => {
+  it('preserves selected tokens that remain controllable after GM access is lost', async () => {
     const isGm = ref(true)
     const buildMode = ref(false)
     const hazardMode = ref(false)
     const adminPanelOpen = ref(false)
     const selectedId = ref<string | null>('player-token')
-    const moveAutomationId = ref<string | null>('player-token')
     const clearSelection = vi.fn()
-    const closeMoveAutomation = vi.fn()
 
     useMapGmModeGuard({
       isGm,
@@ -134,18 +127,14 @@ describe('useMapGmModeGuard', () => {
       hazardMode,
       adminPanelOpen,
       selectedId,
-      moveAutomationId,
       canControlPlacement: (id) => id === 'player-token',
       clearSelection,
-      closeMoveAutomation,
     })
 
     isGm.value = false
     await nextTick()
 
     expect(selectedId.value).toBe('player-token')
-    expect(moveAutomationId.value).toBe('player-token')
     expect(clearSelection).not.toHaveBeenCalled()
-    expect(closeMoveAutomation).not.toHaveBeenCalled()
   })
 })

@@ -41,14 +41,10 @@ const script = (overrides: Partial<MoveAutomationScript> = {}): MoveAutomationSc
 })
 
 describe('move automation log line helpers', () => {
-  it('builds start lines for explicit and manual scripts', () => {
+  it('builds start lines for explicit scripts', () => {
     expect(buildMoveAutomationStartLogLines(script(), 'Caster')).toEqual([
       'Caster used Test Move.',
       'Explicit move script v3 used.',
-    ])
-    expect(buildMoveAutomationStartLogLines(script({ kind: 'manual-fallback' }), 'Caster')).toEqual([
-      'Caster used Test Move.',
-      'Manual fallback resolver used: no explicit reviewed automation script exists for this move.',
     ])
   })
 
@@ -92,7 +88,7 @@ describe('move automation log line helpers', () => {
   })
 
   it('formats manual and automation notes', () => {
-    expect(formatMoveAutomationManualNoteLogLine('  Check weather.  ')).toBe('Manual note: Check weather.')
+    expect(formatMoveAutomationManualNoteLogLine('  Check weather.  ')).toBe('Note: Check weather.')
     expect(formatMoveAutomationManualNoteLogLine('   ')).toBeNull()
     expect(formatMoveAutomationAutomationNoteLogLines(['Verify text.', 'Track duration.']))
       .toEqual(['Note: Verify text.', 'Note: Track duration.'])

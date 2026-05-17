@@ -13,7 +13,7 @@ import type { MoveAutomationScript } from '~/types/moveAutomation'
 import type { SpawnedPokemon } from '~/types/pokemon'
 
 const script = (overrides: Partial<MoveAutomationScript> = {}): MoveAutomationScript => ({
-  kind: 'manual-fallback',
+  kind: 'explicit',
   moveName: 'Test Move',
   version: 0,
   targetMode: 'multi-target',
@@ -65,17 +65,15 @@ const token = (id: string, species: string): SpawnedPokemon => ({
 })
 
 describe('move automation move helpers', () => {
-  it('builds move entries from non-empty sheet moves with manual fallback scripts', () => {
+  it('builds move entries only for explicit automated sheet moves', () => {
     const entries = buildMoveAutomationMoveEntries([
       { name: 'Scratch' },
       { name: '  ' },
       { name: 'Custom Move', type: 'Psychic', category: 'Status', effect: 'Focus deeply' },
     ])
 
-    expect(entries.map((entry) => entry.move.name)).toEqual(['Scratch', 'Custom Move'])
+    expect(entries.map((entry) => entry.move.name)).toEqual(['Scratch'])
     expect(entries[0].script.moveName).toBe('Scratch')
-    expect(entries[1]).toMatchObject({ hasExplicitScript: false })
-    expect(entries[1].script.effect).toContain('Focus deeply')
   })
 
   it('applies STAB to canonical damaging move DB for automation', () => {
@@ -103,7 +101,6 @@ describe('move automation move helpers', () => {
     })
 
     expect(entries.map((entry) => entry.move.name)).toEqual(STRUGGLE_ATTACK_MOVE_NAMES)
-    expect(entries.every((entry) => entry.hasExplicitScript)).toBe(true)
     expect(entries.every((entry) => !entry.hasStab)).toBe(true)
     expect(entries.every((entry) => entry.script.ac === 3)).toBe(true)
     expect(entries.every((entry) => entry.script.damageBase === 5)).toBe(true)
@@ -116,15 +113,17 @@ describe('move automation move helpers', () => {
     expect(entry.script.special).toBe('Grants Firestarter')
   })
 
-  it('filters entries by script and sheet move fields while preserving no-query order', () => {
+  it('filters explicit entries by script and sheet move fields while preserving no-query order', () => {
     const entries = buildMoveAutomationMoveEntries([
       { name: 'Scratch', frequency: 'At-Will' },
+      { name: 'Psybeam' },
       { name: 'Custom Move', type: 'Psychic', category: 'Status', effect: 'Focus deeply' },
     ])
 
-    expect(filterMoveAutomationMoveEntries(entries, '').map((entry) => entry.move.name)).toEqual(['Scratch', 'Custom Move'])
-    expect(filterMoveAutomationMoveEntries(entries, 'psychic').map((entry) => entry.move.name)).toEqual(['Custom Move'])
-    expect(filterMoveAutomationMoveEntries(entries, 'at-will').map((entry) => entry.move.name)).toEqual(['Scratch'])
+    expect(filterMoveAutomationMoveEntries(entries, '').map((entry) => entry.move.name)).toEqual(['Scratch', 'Psybeam'])
+    expect(filterMoveAutomationMoveEntries(entries, 'psychic').map((entry) => entry.move.name)).toEqual(['Psybeam'])
+    expect(filterMoveAutomationMoveEntries(entries, 'scratch').map((entry) => entry.move.name)).toEqual(['Scratch'])
+    expect(filterMoveAutomationMoveEntries(entries, 'focus deeply')).toEqual([])
     expect(filterMoveAutomationMoveEntries(buildMoveAutomationMoveEntries([{ name: 'Ember' }]), 'firestarter').map((entry) => entry.move.name)).toEqual(['Ember'])
   })
 

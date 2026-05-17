@@ -10,9 +10,7 @@ export const buildMoveAutomationStartLogLines = (
   userName: string,
 ): string[] => [
   `${userName} used ${script.moveName}.`,
-  script.kind === 'manual-fallback'
-    ? 'Manual fallback resolver used: no explicit reviewed automation script exists for this move.'
-    : `Explicit move script v${script.version} used.`,
+  `Explicit move script v${script.version} used.`,
 ]
 
 export const formatMoveAutomationDamageLogLine = (
@@ -54,7 +52,7 @@ export const formatMoveAutomationStageSuggestionLogLine = (
 
 export const formatMoveAutomationManualNoteLogLine = (manualNote: string): string | null => {
   const trimmed = manualNote.trim()
-  return trimmed ? `Manual note: ${trimmed}` : null
+  return trimmed ? `Note: ${trimmed}` : null
 }
 
 export const formatMoveAutomationAutomationNoteLogLines = (notes: readonly string[]): string[] =>

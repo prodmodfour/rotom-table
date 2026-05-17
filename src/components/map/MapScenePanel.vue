@@ -1,11 +1,9 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import MapMoveAutomationOverlay from '~/components/map/MapMoveAutomationOverlay.vue'
 import MapSceneRenderer from '~/components/map/MapSceneRenderer.vue'
 import MapSceneStatus from '~/components/map/MapSceneStatus.vue'
 import MapMoveReactionPromptStack from '~/components/map/MapMoveReactionPromptStack.vue'
 import type { BuildTool } from '#shared/mapEditor'
-import type { CharacterSheetMove } from '~/types/characterSheet'
 import type { CombatStageMap } from '~/types/combatStages'
 import type {
   GridAnchor,
@@ -24,10 +22,8 @@ import type {
   MoveAutomationMoxiePrompt,
   MoveAutomationSpitePrompt,
   MoveAutomationTargetingOverlayState,
-  MoveAutomationTransaction,
 } from '~/types/moveAutomation'
 import type { SpawnedPokemon } from '~/types/pokemon'
-import type { TrainerMove } from '~/types/trainerSheet'
 import type { TokenAbilityMenuOption } from '~/utils/mapTokenAbilities'
 import type { TokenMoveMenuOption } from '~/utils/mapTokenMoves'
 import type { TokenSendOutOption } from '~/utils/mapTokenSendOut'
@@ -63,9 +59,6 @@ const props = defineProps<{
   hazardTool: BuildTool
   hazardKind: MapHazardKind
   canDeleteTokens: boolean
-  moveAutomationUser: SpawnedPokemon | null
-  moveAutomationMoves: Array<CharacterSheetMove | TrainerMove>
-  moveAutomationInitialMoveName?: string | null
   moveAutomationTargeting?: MoveAutomationTargetingOverlayState | null
   moveAutomationFeedback?: MoveAutomationFeedbackState | null
   spiteReactionPrompts?: MoveAutomationSpitePrompt[]
@@ -74,7 +67,6 @@ const props = defineProps<{
   tokenMoveOptionsById?: Record<string, TokenMoveMenuOption[]>
   tokenAbilityOptionsById?: Record<string, TokenAbilityMenuOption[]>
   tokenSendOutOptionsById?: Record<string, TokenSendOutOption[]>
-  canApplyMapEffects: boolean
 }>()
 
 const emit = defineEmits<{
@@ -95,8 +87,6 @@ const emit = defineEmits<{
   (event: 'remove-voxel', cell: { x: number; y: number; z: number }): void
   (event: 'place-hazard', hazard: MapHazardV2): void
   (event: 'remove-hazard', cell: { x: number; y: number; z: number; kind?: MapHazardKind }): void
-  (event: 'close-move-automation'): void
-  (event: 'apply-move-automation', transaction: MoveAutomationTransaction): void
   (event: 'select-move-target', targetId: string): void
   (event: 'select-move-area-direction', direction: MoveAutomationAreaDirection): void
   (event: 'cancel-move-targeting'): void
@@ -181,16 +171,6 @@ defineExpose({ focusPokemon })
         @apply-moxie="emit('apply-moxie-trigger', $event)"
       />
 
-      <MapMoveAutomationOverlay
-        :user="moveAutomationUser"
-        :moves="moveAutomationMoves"
-        :all-tokens="spawnedPokemon"
-        :field-effects="mapFieldEffects"
-        :can-apply-map-effects="canApplyMapEffects"
-        :initial-move-name="moveAutomationInitialMoveName"
-        @close="emit('close-move-automation')"
-        @apply="emit('apply-move-automation', $event)"
-      />
 
       <template #fallback>
         <MapSceneStatus
