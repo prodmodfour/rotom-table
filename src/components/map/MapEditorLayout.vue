@@ -1,32 +1,15 @@
-<script setup lang="ts">
-defineProps<{
-  sidebarCollapsed: boolean
-  initiativeCollapsed: boolean
-}>()
-</script>
-
 <template>
-  <div
-    class="layout-shell"
-    :class="{
-      'layout-shell--sidebar-collapsed': sidebarCollapsed,
-      'layout-shell--initiative-collapsed': initiativeCollapsed,
-    }"
-  >
+  <div class="layout-shell">
     <div class="layout-shell__scene">
       <slot name="scene" />
     </div>
 
-    <div class="layout-shell__overlay layout-shell__overlay--left">
-      <slot name="left" />
+    <div class="layout-shell__nav">
+      <slot name="nav" />
     </div>
 
-    <div class="layout-shell__overlay layout-shell__overlay--right">
-      <slot name="right" />
-    </div>
-
-    <div class="layout-shell__admin">
-      <slot name="admin" />
+    <div class="layout-shell__modals">
+      <slot name="modals" />
     </div>
   </div>
 </template>
@@ -34,8 +17,7 @@ defineProps<{
 <style scoped>
 .layout-shell {
   --map-overlay-gutter: clamp(0.55rem, 1.2vw, 1rem);
-  --map-sidebar-width: clamp(310px, 24vw, 380px);
-  --initiative-sidebar-width: clamp(300px, 23vw, 360px);
+  --map-nav-rail-width: clamp(112px, 9vw, 156px);
 
   --map-glass-surface: rgba(5, 6, 8, 0.42);
   --map-glass-surface-strong: rgba(12, 14, 18, 0.58);
@@ -68,41 +50,24 @@ defineProps<{
   background: #050608;
 }
 
-.layout-shell--sidebar-collapsed {
-  --map-sidebar-width: 56px;
-}
-
-.layout-shell--initiative-collapsed {
-  --initiative-sidebar-width: 56px;
-}
-
 .layout-shell__scene {
   position: relative;
   min-width: 0;
   min-height: 100vh;
 }
 
-.layout-shell__overlay {
+.layout-shell__nav {
   position: absolute;
   z-index: 2;
   top: var(--map-overlay-gutter);
   bottom: var(--map-overlay-gutter);
-  display: flex;
+  left: var(--map-overlay-gutter);
+  width: var(--map-nav-rail-width);
   min-width: 0;
   pointer-events: none;
 }
 
-.layout-shell__overlay--left {
-  left: var(--map-overlay-gutter);
-  width: var(--map-sidebar-width);
-}
-
-.layout-shell__overlay--right {
-  right: var(--map-overlay-gutter);
-  width: var(--initiative-sidebar-width);
-}
-
-.layout-shell__admin {
+.layout-shell__modals {
   position: relative;
 }
 
@@ -118,23 +83,8 @@ defineProps<{
 
 @media (max-width: 1100px) {
   .layout-shell {
+    --map-nav-rail-width: clamp(96px, 18vw, 140px);
     min-height: 100dvh;
-  }
-
-  .layout-shell__overlay {
-    height: calc(48dvh - var(--map-overlay-gutter));
-  }
-
-  .layout-shell__overlay--left {
-    top: var(--map-overlay-gutter);
-    bottom: auto;
-    width: min(calc(100vw - (var(--map-overlay-gutter) * 2)), var(--map-sidebar-width));
-  }
-
-  .layout-shell__overlay--right {
-    top: auto;
-    bottom: var(--map-overlay-gutter);
-    width: min(calc(100vw - (var(--map-overlay-gutter) * 2)), var(--initiative-sidebar-width));
   }
 }
 </style>

@@ -1,23 +1,14 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
-import CollapsiblePanelCard from '~/components/map/CollapsiblePanelCard.vue'
+import { ref, watch } from 'vue'
 import FieldEffectBulkActions from '~/components/map/FieldEffectBulkActions.vue'
 import FieldEffectSection from '~/components/map/FieldEffectSection.vue'
 import FieldEffectWeatherOptions from '~/components/map/FieldEffectWeatherOptions.vue'
 import HazardBuilderControls from '~/components/map/HazardBuilderControls.vue'
-import { formatFieldEffectsHazardsBadge } from '~/utils/mapPanelBadges'
-import type { BuildTool, MapEditorMode } from '#shared/mapEditor'
-import type { MapEffectDefinition } from '~/utils/mapFieldEffectDefinitions'
-import type { MapHazardDefinition } from '~/utils/mapHazardDefinitions'
 import type {
-  MapHazardKind,
-  MapRoomEffect,
-  MapRoomKind,
-  MapTerrainEffect,
-  MapTerrainKind,
-  MapWeatherEffect,
-  MapWeatherKind,
-} from '~/types/map'
+  FieldEffectsControlsEmit,
+  FieldEffectsControlsProps,
+} from '~/types/mapFieldEffectsControls'
+import type { MapRoomKind, MapTerrainKind, MapWeatherKind } from '~/types/map'
 
 type FieldEffectsTab = 'weather' | 'terrain' | 'hazards'
 
@@ -27,55 +18,10 @@ const FIELD_EFFECT_TABS = [
   { key: 'hazards', label: 'Hazards' },
 ] as const satisfies readonly { key: FieldEffectsTab, label: string }[]
 
-const props = defineProps<{
-  collapsed: boolean
-  canEditMap: boolean
-  fieldEffectCount: number
-  hazardMode: boolean
-  hazardCount: number
-  hazardTool: BuildTool
-  hazardKind: MapHazardKind
-  activeHazardDef: MapHazardDefinition
-  hazardPalette: MapHazardDefinition[]
-  weatherCoexistNext: boolean
-  activeWeatherEffects: MapWeatherEffect[]
-  activeTerrainEffects: MapTerrainEffect[]
-  activeRoomEffects: MapRoomEffect[]
-  weatherPalette: MapEffectDefinition<MapWeatherKind>[]
-  terrainPalette: MapEffectDefinition<MapTerrainKind>[]
-  roomPalette: MapEffectDefinition<MapRoomKind>[]
-  weatherDefinition: (kind: MapWeatherKind) => MapEffectDefinition<MapWeatherKind>
-  terrainDefinition: (kind: MapTerrainKind) => MapEffectDefinition<MapTerrainKind>
-  roomDefinition: (kind: MapRoomKind) => MapEffectDefinition<MapRoomKind>
-  weatherIsActive: (kind: MapWeatherKind) => boolean
-  terrainIsActive: (kind: MapTerrainKind) => boolean
-  roomIsActive: (kind: MapRoomKind) => boolean
-  durationLabel: (rounds: number | null | undefined) => string
-}>()
+const props = defineProps<FieldEffectsControlsProps>()
+const emit = defineEmits<FieldEffectsControlsEmit>()
 
-const emit = defineEmits<{
-  (event: 'toggle-collapsed'): void
-  (event: 'set-mode', mode: MapEditorMode): void
-  (event: 'set-hazard-tool', tool: BuildTool): void
-  (event: 'select-hazard-kind', kind: MapHazardKind): void
-  (event: 'clear-all-hazards'): void
-  (event: 'set-weather', kind: MapWeatherKind): void
-  (event: 'remove-weather', kind: MapWeatherKind): void
-  (event: 'clear-weather'): void
-  (event: 'update-weather-coexist-next', value: boolean): void
-  (event: 'toggle-terrain', kind: MapTerrainKind): void
-  (event: 'remove-terrain', kind: MapTerrainKind): void
-  (event: 'toggle-room', kind: MapRoomKind): void
-  (event: 'remove-room', kind: MapRoomKind): void
-  (event: 'set-weather-rounds', kind: MapWeatherKind, value: Event): void
-  (event: 'set-terrain-rounds', kind: MapTerrainKind, value: Event): void
-  (event: 'set-room-rounds', kind: MapRoomKind, value: Event): void
-  (event: 'tick-durations'): void
-  (event: 'clear-all'): void
-}>()
-
-const activeTab = ref<FieldEffectsTab>('weather')
-const fieldEffectsBadge = computed(() => formatFieldEffectsHazardsBadge(props.fieldEffectCount, props.hazardCount))
+const activeTab = ref<FieldEffectsTab>(props.hazardMode ? 'hazards' : 'weather')
 
 const fieldEffectTabId = (tab: FieldEffectsTab): string => `map-field-effects-${tab}-tab`
 const fieldEffectTabPanelId = (tab: FieldEffectsTab): string => `map-field-effects-${tab}-panel`
@@ -128,15 +74,7 @@ const roomDefinitionForSection = (kind: string) => props.roomDefinition(kind as 
 </script>
 
 <template>
-  <CollapsiblePanelCard
-    class="field-effects-panel"
-    title="Field effects"
-    :badge="fieldEffectsBadge"
-    :collapsed="collapsed"
-    controls-id="map-field-effects-section"
-    wide-gap
-    @toggle-collapsed="emit('toggle-collapsed')"
-  >
+  <div class="field-effects-panel">
     <div class="field-effects-tabs" role="tablist" aria-label="Field effect type">
       <button
         v-for="tab in FIELD_EFFECT_TABS"
@@ -263,10 +201,17 @@ const roomDefinitionForSection = (kind: string) => props.roomDefinition(kind as 
       @tick-durations="emit('tick-durations')"
       @clear-all="emit('clear-all')"
     />
-  </CollapsiblePanelCard>
+  </div>
 </template>
 
 <style scoped>
+.field-effects-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  min-width: 0;
+}
+
 .field-effects-tabs {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

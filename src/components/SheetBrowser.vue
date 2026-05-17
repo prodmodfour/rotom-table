@@ -14,6 +14,12 @@ import {
 
 export type SheetSelection = SheetBrowserSelection
 
+withDefaults(defineProps<{
+  showHeading?: boolean
+}>(), {
+  showHeading: true,
+})
+
 const emit = defineEmits<{ (event: 'select', selection: SheetSelection): void }>()
 
 const currentPath = ref('')
@@ -48,7 +54,7 @@ const selectItem = (item: SheetBrowserItem) => {
 
 <template>
   <section class="panel-card sheet-browser">
-    <div class="panel-heading panel-heading--collapsible">
+    <div v-if="showHeading" class="panel-heading panel-heading--collapsible">
       <button
         type="button"
         class="section-toggle-button"
@@ -64,24 +70,24 @@ const selectItem = (item: SheetBrowserItem) => {
       <span class="badge">{{ visibleSheets.length + visibleFolders.length }} shown</span>
     </div>
 
-    <div id="sheet-browser-body" v-show="!collapsed" class="sheet-browser__body">
-    <SheetBrowserBreadcrumbs
-      :breadcrumbs="breadcrumbs"
-      :current-path="currentPath"
-      @navigate="goToFolder"
-    />
+    <div id="sheet-browser-body" v-show="!showHeading || !collapsed" class="sheet-browser__body">
+      <SheetBrowserBreadcrumbs
+        :breadcrumbs="breadcrumbs"
+        :current-path="currentPath"
+        @navigate="goToFolder"
+      />
 
-    <label class="search-field">
-      <span class="sr-only">Search sheets</span>
-      <input v-model.trim="searchTerm" type="search" placeholder="Search sheets…" />
-    </label>
+      <label class="search-field">
+        <span class="sr-only">Search sheets</span>
+        <input v-model.trim="searchTerm" type="search" placeholder="Search sheets…" />
+      </label>
 
-    <SheetBrowserList
-      :folders="visibleFolders"
-      :sheets="visibleSheets"
-      @open-folder="goToFolder"
-      @select-sheet="selectItem"
-    />
+      <SheetBrowserList
+        :folders="visibleFolders"
+        :sheets="visibleSheets"
+        @open-folder="goToFolder"
+        @select-sheet="selectItem"
+      />
     </div>
   </section>
 </template>

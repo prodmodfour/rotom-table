@@ -1,6 +1,6 @@
-import { ref, type Ref } from 'vue'
+import { computed, ref, type Ref } from 'vue'
 import { useWindowKeydown } from '~/composables/useWindowKeydown'
-import type { MapEditorMode, MapLeftSidebarSection } from '#shared/mapEditor'
+import type { MapEditorMode } from '#shared/mapEditor'
 import type { LayerVisibility } from '~/types/map'
 import { isCtrlLetter, isCtrlShiftLetter, isEscapeKey } from '~/utils/keyboardShortcuts'
 import {
@@ -13,6 +13,7 @@ interface BooleanRef {
   readonly value: boolean
 }
 
+export type MapEditorMenu = 'fieldEffects' | 'sheets' | 'initiative'
 export type RegisterMapEditorKeydown = (handler: (event: KeyboardEvent) => void) => void
 
 export interface UseMapEditorUiStateOptions {
@@ -24,12 +25,6 @@ export interface UseMapEditorUiStateOptions {
   registerKeydown?: RegisterMapEditorKeydown
 }
 
-export const createDefaultLeftSidebarSections = (): Record<MapLeftSidebarSection, boolean> => ({
-  details: false,
-  terrain: false,
-  fieldEffects: false,
-})
-
 export const useMapEditorUiState = ({
   isGm,
   canEditMap,
@@ -38,23 +33,41 @@ export const useMapEditorUiState = ({
   clearSelection,
   registerKeydown = useWindowKeydown,
 }: UseMapEditorUiStateOptions) => {
-  const sidebarCollapsed = ref(false)
-  const initiativeCollapsed = ref(false)
   const adminPanelOpen = ref(false)
-  const leftSidebarSectionsCollapsed = ref(createDefaultLeftSidebarSections())
+  const activeMapMenu = ref<MapEditorMenu | null>(null)
   const layerVisibility = ref<LayerVisibility>(createDefaultMapLayerVisibility())
 
-  const toggleSidebarCollapsed = () => {
-    sidebarCollapsed.value = !sidebarCollapsed.value
+  const fieldEffectsMenuOpen = computed(() => activeMapMenu.value === 'fieldEffects')
+  const sheetsMenuOpen = computed(() => activeMapMenu.value === 'sheets')
+  const initiativeMenuOpen = computed(() => activeMapMenu.value === 'initiative')
+
+  const openMapMenu = (menu: MapEditorMenu) => {
+    activeMapMenu.value = menu
   }
 
-  const toggleInitiativeCollapsed = () => {
-    initiativeCollapsed.value = !initiativeCollapsed.value
+  const closeMapMenu = () => {
+    activeMapMenu.value = null
   }
 
-  const toggleLeftSection = (section: MapLeftSidebarSection) => {
-    leftSidebarSectionsCollapsed.value[section] = !leftSidebarSectionsCollapsed.value[section]
+  const closeMapMenuIfOpen = (menu: MapEditorMenu) => {
+    if (activeMapMenu.value === menu) closeMapMenu()
   }
+
+  const toggleMapMenu = (menu: MapEditorMenu) => {
+    activeMapMenu.value = activeMapMenu.value === menu ? null : menu
+  }
+
+  const openFieldEffectsMenu = () => openMapMenu('fieldEffects')
+  const closeFieldEffectsMenu = () => closeMapMenuIfOpen('fieldEffects')
+  const toggleFieldEffectsMenu = () => toggleMapMenu('fieldEffects')
+
+  const openSheetsMenu = () => openMapMenu('sheets')
+  const closeSheetsMenu = () => closeMapMenuIfOpen('sheets')
+  const toggleSheetsMenu = () => toggleMapMenu('sheets')
+
+  const openInitiativeMenu = () => openMapMenu('initiative')
+  const closeInitiativeMenu = () => closeMapMenuIfOpen('initiative')
+  const toggleInitiativeMenu = () => toggleMapMenu('initiative')
 
   const setMode = (mode: MapEditorMode) => {
     if (mode !== 'play' && !canEditMap.value) return
@@ -79,6 +92,37 @@ export const useMapEditorUiState = ({
     setMode(buildMode.value ? 'play' : 'build')
   }
 
+  const handleMapMenuShortcut = (
+    event: KeyboardEvent,
+    letter: string,
+    menu: MapEditorMenu,
+  ): boolean => {
+    if (!isCtrlLetter(event, letter)) return false
+
+    event.preventDefault()
+    toggleMapMenu(menu)
+    return true
+  }
+
+  const handleFieldEffectsShortcut = (event: KeyboardEvent) => {
+    handleMapMenuShortcut(event, 'f', 'fieldEffects')
+  }
+
+  const handleSheetsShortcut = (event: KeyboardEvent) => {
+    handleMapMenuShortcut(event, 's', 'sheets')
+  }
+
+  const handleInitiativeShortcut = (event: KeyboardEvent) => {
+    handleMapMenuShortcut(event, 'i', 'initiative')
+  }
+
+  const handleMapMenuEscape = (event: KeyboardEvent): boolean => {
+    if (!isEscapeKey(event) || !activeMapMenu.value) return false
+
+    closeMapMenu()
+    return true
+  }
+
   const handleAdminShortcut = (event: KeyboardEvent) => {
     if (!isGm.value) return
 
@@ -95,24 +139,42 @@ export const useMapEditorUiState = ({
 
   const handleKeydown = (event: KeyboardEvent) => {
     handleBuildShortcut(event)
+    handleFieldEffectsShortcut(event)
+    handleSheetsShortcut(event)
+    handleInitiativeShortcut(event)
+    if (handleMapMenuEscape(event)) return
     handleAdminShortcut(event)
   }
 
   registerKeydown(handleKeydown)
 
   return {
-    sidebarCollapsed,
-    initiativeCollapsed,
     adminPanelOpen,
-    leftSidebarSectionsCollapsed,
+    activeMapMenu,
+    fieldEffectsMenuOpen,
+    sheetsMenuOpen,
+    initiativeMenuOpen,
     layerVisibility,
     layerOptions: MAP_LAYER_OPTIONS,
-    toggleSidebarCollapsed,
-    toggleInitiativeCollapsed,
-    toggleLeftSection,
+    openMapMenu,
+    closeMapMenu,
+    toggleMapMenu,
+    openFieldEffectsMenu,
+    closeFieldEffectsMenu,
+    toggleFieldEffectsMenu,
+    openSheetsMenu,
+    closeSheetsMenu,
+    toggleSheetsMenu,
+    openInitiativeMenu,
+    closeInitiativeMenu,
+    toggleInitiativeMenu,
     setMode,
     setLayerVisibility,
     handleBuildShortcut,
+    handleFieldEffectsShortcut,
+    handleSheetsShortcut,
+    handleInitiativeShortcut,
+    handleMapMenuEscape,
     handleAdminShortcut,
     handleKeydown,
   }

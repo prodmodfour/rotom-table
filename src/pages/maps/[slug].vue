@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import FieldEffectsMenuModal from '~/components/map/FieldEffectsMenuModal.vue'
+import InitiativeMenuModal from '~/components/map/InitiativeMenuModal.vue'
 import MapAdminPanel from '~/components/map/MapAdminPanel.vue'
 import MapEditorLayout from '~/components/map/MapEditorLayout.vue'
-import MapInitiativeSidebar from '~/components/map/MapInitiativeSidebar.vue'
-import MapLeftSidebar from '~/components/map/MapLeftSidebar.vue'
+import MapNavigationRail from '~/components/map/MapNavigationRail.vue'
 import MapScenePanel from '~/components/map/MapScenePanel.vue'
+import SheetsMenuModal from '~/components/map/SheetsMenuModal.vue'
 import { useEditableMap } from '~/composables/useEditableMap'
 import { useLiveSheets } from '~/composables/useLiveSheets'
 import { useFieldEffectsEditor } from '~/composables/map-editor/useFieldEffectsEditor'
@@ -24,7 +26,6 @@ import { useTokenSheetMutations } from '~/composables/map-editor/useTokenSheetMu
 import { useTokenControls } from '~/composables/map-editor/useTokenControls'
 import { mapEditorPath, mapLibraryPath } from '~/utils/mapRoutes'
 import { routeSlugParam } from '~/utils/routeParams'
-import type { SaveStatus } from '~/composables/useEditableSheet'
 
 definePageMeta({
   key: (route) => `map-${routeSlugParam(route.params)}`,
@@ -71,8 +72,6 @@ const {
   mapGroundLevelY,
   mapSpecificYMin,
   mapSpecificYMax,
-  setMapPlayerVisible,
-  setMapDimension,
   setGroundLevelY,
 } = useMapDimensionControls({ map, canEditMap, isGm })
 
@@ -112,7 +111,6 @@ const deletePokemon = deletePlacement
 const turnPokemon = turnPlacement
 const movePokemon = movePlacement
 
-const voxelCount = computed(() => mapVoxels.value.length)
 const hazardCount = computed(() => mapHazards.value.length)
 const {
   hazardMode,
@@ -170,32 +168,20 @@ const {
   buildColor,
   buildGhostVoxel,
   ghostVoxelsFaded,
-  visibleVoxelMaterials,
-  colorPickerValue,
   placeVoxel,
   removeVoxel,
-  selectMaterial,
-  setTool,
-  handleColorInput,
-  clearCustomColor,
-  setBuildGhostVoxel,
-  setGhostVoxelsFaded,
-  fillGround,
-  clearAllVoxels,
 } = useTerrainBuilder({ map, mapVoxels, mapGroundLevelY, spawnedPokemon, canEditMap })
 
 const {
-  sidebarCollapsed,
-  initiativeCollapsed,
   adminPanelOpen,
-  leftSidebarSectionsCollapsed,
+  fieldEffectsMenuOpen,
+  sheetsMenuOpen,
+  initiativeMenuOpen,
   layerVisibility,
-  layerOptions,
-  toggleSidebarCollapsed,
-  toggleInitiativeCollapsed,
-  toggleLeftSection,
+  closeFieldEffectsMenu,
+  closeSheetsMenu,
+  closeInitiativeMenu,
   setMode,
-  setLayerVisibility,
 } = useMapEditorUiState({
   isGm,
   canEditMap,
@@ -229,13 +215,6 @@ const {
   focusEntry: (id) => {
     gridRef.value?.focusPokemon(id)
   },
-})
-
-const saveIndicatorStatus = computed<SaveStatus | null>(() => {
-  if (status.value === 'saving') return 'saving'
-  if (status.value === 'saved') return 'saved'
-  if (status.value === 'error') return 'error'
-  return null
 })
 
 const {
@@ -353,85 +332,9 @@ useMapDimensionReconciliation({
 </script>
 
 <template>
-  <MapEditorLayout
-    :sidebar-collapsed="sidebarCollapsed"
-    :initiative-collapsed="initiativeCollapsed"
-  >
-    <template #left>
-      <MapLeftSidebar
-        :collapsed="sidebarCollapsed"
-        :map="map"
-        :can-view-map="canViewMap"
-        :save-indicator-status="saveIndicatorStatus"
-        :error="error"
-        :section-collapsed="leftSidebarSectionsCollapsed"
-        :is-gm="isGm"
-        :can-edit-map="canEditMap"
-        :can-spawn-tokens="canSpawnTokens"
-        :build-mode="buildMode"
-        :hazard-mode="hazardMode"
-        :build-tool="buildTool"
-        :build-material="buildMaterial"
-        :build-color="buildColor"
-        :build-ghost-voxel="buildGhostVoxel"
-        :ghost-voxels-faded="ghostVoxelsFaded"
-        :visible-voxel-materials="visibleVoxelMaterials"
-        :color-picker-value="colorPickerValue"
-        :voxel-count="voxelCount"
-        :hazard-count="hazardCount"
-        :hazard-tool="hazardTool"
-        :hazard-kind="hazardKind"
-        :active-hazard-def="activeHazardDef"
-        :hazard-palette="hazardPalette"
-        :layer-visibility="layerVisibility"
-        :layer-options="layerOptions"
-        :field-effect-count="fieldEffectCount"
-        :weather-coexist-next="weatherCoexistNext"
-        :active-weather-effects="activeWeatherEffects"
-        :active-terrain-effects="activeTerrainEffects"
-        :active-room-effects="activeRoomEffects"
-        :weather-palette="weatherPalette"
-        :terrain-palette="terrainPalette"
-        :room-palette="roomPalette"
-        :weather-definition="weatherDefinition"
-        :terrain-definition="terrainDefinition"
-        :room-definition="roomDefinition"
-        :weather-is-active="weatherIsActive"
-        :terrain-is-active="terrainIsActive"
-        :room-is-active="roomIsActive"
-        :duration-label="durationLabel"
-        @toggle-collapsed="toggleSidebarCollapsed"
-        @toggle-section="toggleLeftSection"
-        @update-player-visible="setMapPlayerVisible"
-        @update-dimension="setMapDimension"
-        @set-mode="setMode"
-        @set-build-tool="setTool"
-        @select-material="selectMaterial"
-        @color-input="handleColorInput"
-        @clear-custom-color="clearCustomColor"
-        @set-build-ghost-voxel="setBuildGhostVoxel"
-        @set-ghost-voxels-faded="setGhostVoxelsFaded"
-        @fill-ground="fillGround"
-        @clear-all-voxels="clearAllVoxels"
-        @set-layer-visibility="setLayerVisibility"
-        @set-hazard-tool="setHazardTool"
-        @select-hazard-kind="selectHazardKind"
-        @clear-all-hazards="clearAllHazards"
-        @set-weather="setWeather"
-        @remove-weather="removeWeather"
-        @clear-weather="clearWeather"
-        @update-weather-coexist-next="setWeatherCoexistNext"
-        @toggle-terrain="toggleTerrain"
-        @remove-terrain="removeTerrain"
-        @toggle-room="toggleRoom"
-        @remove-room="removeRoom"
-        @set-weather-rounds="setWeatherRounds"
-        @set-terrain-rounds="setTerrainRounds"
-        @set-room-rounds="setRoomRounds"
-        @tick-durations="tickFieldEffectDurations"
-        @clear-all-field-effects="clearAllFieldEffects"
-        @spawn-sheet="spawnSheet"
-      />
+  <MapEditorLayout>
+    <template #nav>
+      <MapNavigationRail />
     </template>
 
     <template #scene>
@@ -498,10 +401,59 @@ useMapDimensionReconciliation({
       />
     </template>
 
-    <template #right>
-      <MapInitiativeSidebar
-        :collapsed="initiativeCollapsed"
-        :show-tracker="Boolean(map && canViewMap)"
+    <template #modals>
+      <FieldEffectsMenuModal
+        v-if="map && canViewMap && fieldEffectsMenuOpen"
+        :can-edit-map="canEditMap"
+        :field-effect-count="fieldEffectCount"
+        :hazard-mode="hazardMode"
+        :hazard-count="hazardCount"
+        :hazard-tool="hazardTool"
+        :hazard-kind="hazardKind"
+        :active-hazard-def="activeHazardDef"
+        :hazard-palette="hazardPalette"
+        :weather-coexist-next="weatherCoexistNext"
+        :active-weather-effects="activeWeatherEffects"
+        :active-terrain-effects="activeTerrainEffects"
+        :active-room-effects="activeRoomEffects"
+        :weather-palette="weatherPalette"
+        :terrain-palette="terrainPalette"
+        :room-palette="roomPalette"
+        :weather-definition="weatherDefinition"
+        :terrain-definition="terrainDefinition"
+        :room-definition="roomDefinition"
+        :weather-is-active="weatherIsActive"
+        :terrain-is-active="terrainIsActive"
+        :room-is-active="roomIsActive"
+        :duration-label="durationLabel"
+        @close="closeFieldEffectsMenu"
+        @set-mode="setMode"
+        @set-hazard-tool="setHazardTool"
+        @select-hazard-kind="selectHazardKind"
+        @clear-all-hazards="clearAllHazards"
+        @set-weather="setWeather"
+        @remove-weather="removeWeather"
+        @clear-weather="clearWeather"
+        @update-weather-coexist-next="setWeatherCoexistNext"
+        @toggle-terrain="toggleTerrain"
+        @remove-terrain="removeTerrain"
+        @toggle-room="toggleRoom"
+        @remove-room="removeRoom"
+        @set-weather-rounds="setWeatherRounds"
+        @set-terrain-rounds="setTerrainRounds"
+        @set-room-rounds="setRoomRounds"
+        @tick-durations="tickFieldEffectDurations"
+        @clear-all="clearAllFieldEffects"
+      />
+
+      <SheetsMenuModal
+        v-if="map && canViewMap && canSpawnTokens && sheetsMenuOpen"
+        @close="closeSheetsMenu"
+        @select="spawnSheet"
+      />
+
+      <InitiativeMenuModal
+        v-if="map && canViewMap && initiativeMenuOpen"
         :rows="initiativeRows"
         :sorted-rows="sortedInitiativeRows"
         :active-id="activeInitiativeId"
@@ -509,7 +461,7 @@ useMapDimensionReconciliation({
         :selected-id="selectedId"
         :can-manage="canManageInitiative"
         :has-initiative-values="hasInitiativeValues"
-        @toggle-collapsed="toggleInitiativeCollapsed"
+        @close="closeInitiativeMenu"
         @set-round="setInitiativeRound"
         @previous="previousInitiative"
         @next="nextInitiative"
@@ -521,9 +473,7 @@ useMapDimensionReconciliation({
         @set-initiative-input="setInitiativeInput"
         @set-initiative-from-speed="setInitiativeFromSpeed"
       />
-    </template>
 
-    <template #admin>
       <MapAdminPanel
         v-if="map && isGm && adminPanelOpen"
         :ground-level-y-max="groundLevelYMax"

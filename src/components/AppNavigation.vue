@@ -8,6 +8,14 @@ import {
 } from '~/utils/appNavigation'
 import { LOGIN_PATH } from '~/utils/appRoutes'
 
+withDefaults(defineProps<{
+  orientation?: 'horizontal' | 'vertical'
+  showRoleBadge?: boolean
+}>(), {
+  orientation: 'horizontal',
+  showRoleBadge: true,
+})
+
 const route = useRoute()
 const router = useRouter()
 const { isGm, roleLabel, logout } = useAuth()
@@ -24,7 +32,11 @@ const handleLogout = async () => {
 </script>
 
 <template>
-  <nav class="app-navigation" aria-label="Primary">
+  <nav
+    class="app-navigation"
+    :class="`app-navigation--${orientation}`"
+    aria-label="Primary"
+  >
     <NuxtLink
       v-for="item in primaryItems"
       :key="item.path"
@@ -43,7 +55,7 @@ const handleLogout = async () => {
       {{ item.label }}
     </NuxtLink>
     <span class="nav-spacer" aria-hidden="true" />
-    <span class="role-badge">{{ roleLabel }}</span>
+    <span v-if="showRoleBadge" class="role-badge">{{ roleLabel }}</span>
     <button type="button" class="nav-link nav-link--button" @click="handleLogout">
       Logout
     </button>
@@ -125,5 +137,40 @@ const handleLogout = async () => {
 
 .nav-link--button {
   cursor: pointer;
+}
+
+.app-navigation--vertical {
+  flex-direction: column;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  gap: 0.45rem;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+}
+
+.app-navigation--vertical .nav-divider {
+  width: 100%;
+  height: 1px;
+  margin: 0.15rem 0;
+}
+
+.app-navigation--vertical .nav-spacer {
+  display: none;
+}
+
+.app-navigation--vertical .nav-link,
+.app-navigation--vertical .role-badge {
+  width: 100%;
+  min-height: 2.35rem;
+  padding: 0.5rem 0.45rem;
+}
+
+.app-navigation--vertical .nav-link {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 </style>

@@ -1,9 +1,6 @@
 import { ref } from 'vue'
 import { describe, expect, it, vi } from 'vitest'
-import {
-  createDefaultLeftSidebarSections,
-  useMapEditorUiState,
-} from '~/composables/map-editor/useMapEditorUiState'
+import { useMapEditorUiState } from '~/composables/map-editor/useMapEditorUiState'
 
 const keyEvent = (overrides: Partial<Pick<KeyboardEvent, 'key' | 'ctrlKey' | 'shiftKey' | 'preventDefault'>> = {}) => ({
   key: '',
@@ -13,19 +10,8 @@ const keyEvent = (overrides: Partial<Pick<KeyboardEvent, 'key' | 'ctrlKey' | 'sh
   ...overrides,
 }) as unknown as KeyboardEvent & { preventDefault: ReturnType<typeof vi.fn> }
 
-describe('createDefaultLeftSidebarSections', () => {
-  it('returns independent expanded sidebar section state', () => {
-    const first = createDefaultLeftSidebarSections()
-    const second = createDefaultLeftSidebarSections()
-
-    expect(first).toEqual({ details: false, terrain: false, fieldEffects: false })
-    first.terrain = true
-    expect(second.terrain).toBe(false)
-  })
-})
-
 describe('useMapEditorUiState', () => {
-  it('owns sidebar, section, and layer visibility toggles', () => {
+  it('owns menu and layer visibility state', () => {
     const registerKeydown = vi.fn()
     const ui = useMapEditorUiState({
       isGm: ref(true),
@@ -38,18 +24,17 @@ describe('useMapEditorUiState', () => {
 
     expect(registerKeydown).toHaveBeenCalledTimes(1)
     expect(registerKeydown).toHaveBeenCalledWith(ui.handleKeydown)
-    expect(ui.sidebarCollapsed.value).toBe(false)
-    expect(ui.initiativeCollapsed.value).toBe(false)
+    expect(ui.activeMapMenu.value).toBe(null)
+    expect(ui.fieldEffectsMenuOpen.value).toBe(false)
+    expect(ui.sheetsMenuOpen.value).toBe(false)
+    expect(ui.initiativeMenuOpen.value).toBe(false)
     expect(ui.layerVisibility.value.grid).toBe(true)
 
-    ui.toggleSidebarCollapsed()
-    ui.toggleInitiativeCollapsed()
-    ui.toggleLeftSection('terrain')
     ui.setLayerVisibility('grid', false)
+    ui.openFieldEffectsMenu()
 
-    expect(ui.sidebarCollapsed.value).toBe(true)
-    expect(ui.initiativeCollapsed.value).toBe(true)
-    expect(ui.leftSidebarSectionsCollapsed.value.terrain).toBe(true)
+    expect(ui.activeMapMenu.value).toBe('fieldEffects')
+    expect(ui.fieldEffectsMenuOpen.value).toBe(true)
     expect(ui.layerVisibility.value.grid).toBe(false)
     expect(ui.layerOptions).toContain('fieldEffects')
   })
@@ -115,6 +100,65 @@ describe('useMapEditorUiState', () => {
     expect(buildMode.value).toBe(false)
     expect(hazardMode.value).toBe(false)
     expect(clearSelection).toHaveBeenCalledTimes(1)
+  })
+
+  it('toggles the field effects menu with Ctrl+F and closes it with Escape', () => {
+    const ui = useMapEditorUiState({
+      isGm: ref(false),
+      canEditMap: ref(false),
+      buildMode: ref(false),
+      hazardMode: ref(false),
+      clearSelection: vi.fn(),
+      registerKeydown: vi.fn(),
+    })
+
+    const openEvent = keyEvent({ key: 'f', ctrlKey: true })
+    ui.handleKeydown(openEvent)
+
+    expect(openEvent.preventDefault).toHaveBeenCalledTimes(1)
+    expect(ui.fieldEffectsMenuOpen.value).toBe(true)
+
+    const toggleClosedEvent = keyEvent({ key: 'F', ctrlKey: true })
+    ui.handleFieldEffectsShortcut(toggleClosedEvent)
+
+    expect(toggleClosedEvent.preventDefault).toHaveBeenCalledTimes(1)
+    expect(ui.fieldEffectsMenuOpen.value).toBe(false)
+
+    ui.openFieldEffectsMenu()
+    ui.handleKeydown(keyEvent({ key: 'Escape' }))
+
+    expect(ui.fieldEffectsMenuOpen.value).toBe(false)
+  })
+
+  it('opens sheets and initiative menus from keyboard shortcuts', () => {
+    const ui = useMapEditorUiState({
+      isGm: ref(false),
+      canEditMap: ref(false),
+      buildMode: ref(false),
+      hazardMode: ref(false),
+      clearSelection: vi.fn(),
+      registerKeydown: vi.fn(),
+    })
+
+    const sheetsEvent = keyEvent({ key: 's', ctrlKey: true })
+    ui.handleKeydown(sheetsEvent)
+
+    expect(sheetsEvent.preventDefault).toHaveBeenCalledTimes(1)
+    expect(ui.sheetsMenuOpen.value).toBe(true)
+    expect(ui.fieldEffectsMenuOpen.value).toBe(false)
+
+    const initiativeEvent = keyEvent({ key: 'I', ctrlKey: true })
+    ui.handleKeydown(initiativeEvent)
+
+    expect(initiativeEvent.preventDefault).toHaveBeenCalledTimes(1)
+    expect(ui.sheetsMenuOpen.value).toBe(false)
+    expect(ui.initiativeMenuOpen.value).toBe(true)
+
+    const toggleClosedEvent = keyEvent({ key: 'i', ctrlKey: true })
+    ui.handleInitiativeShortcut(toggleClosedEvent)
+
+    expect(toggleClosedEvent.preventDefault).toHaveBeenCalledTimes(1)
+    expect(ui.activeMapMenu.value).toBe(null)
   })
 
   it('blocks GM-only modes when map editing is unavailable', () => {
