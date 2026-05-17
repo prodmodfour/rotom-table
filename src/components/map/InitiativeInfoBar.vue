@@ -118,8 +118,8 @@ const tileTitle = (entry: InitiativeRow): string =>
 
 <style scoped>
 .initiative-info-bar {
-  --profile-width: clamp(88px, 8.5vw, 124px);
-  --profile-height: clamp(33px, 3.2vw, 46px);
+  --profile-width: var(--map-initiative-profile-width, clamp(88px, 8.5vw, 124px));
+  --profile-height: var(--map-initiative-profile-height, clamp(33px, 3.2vw, 46px));
 
   position: absolute;
   z-index: 4;

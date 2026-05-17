@@ -18,6 +18,12 @@
 .layout-shell {
   --map-overlay-gutter: clamp(0.55rem, 1.2vw, 1rem);
   --map-nav-rail-width: clamp(112px, 9vw, 156px);
+  --map-initiative-profile-width: clamp(88px, 8.5vw, 124px);
+  --map-initiative-profile-height: clamp(33px, 3.2vw, 46px);
+  --map-initiative-info-bar-height: calc(var(--map-initiative-profile-height) + 1rem);
+  --map-combat-log-top: calc(
+    var(--map-overlay-gutter) + var(--map-initiative-info-bar-height) + 0.6rem
+  );
 
   --map-glass-surface: rgba(5, 6, 8, 0.42);
   --map-glass-surface-strong: rgba(12, 14, 18, 0.58);

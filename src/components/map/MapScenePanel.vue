@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import MapSceneRenderer from '~/components/map/MapSceneRenderer.vue'
 import MapSceneStatus from '~/components/map/MapSceneStatus.vue'
 import MapMoveReactionPromptStack from '~/components/map/MapMoveReactionPromptStack.vue'
 import InitiativeInfoBar from '~/components/map/InitiativeInfoBar.vue'
+import MapCombatLog from '~/components/map/MapCombatLog.vue'
 import type { BuildTool } from '#shared/mapEditor'
 import type { CombatStageMap } from '~/types/combatStages'
 import type {
@@ -30,6 +31,7 @@ import type { TokenMoveMenuOption } from '~/utils/mapTokenMoves'
 import type { TokenSendOutOption } from '~/utils/mapTokenSendOut'
 import type { MapSaveStatus } from '~/composables/useEditableMap'
 import type { InitiativeRow } from '~/composables/map-editor/useInitiativeTracker'
+import { buildCombatLogMessages } from '~/utils/combatLog'
 import type { PreviewState } from '~/utils/gridPreview'
 
 interface MapSceneRendererHandle {
@@ -106,7 +108,12 @@ const emit = defineEmits<{
   (event: 'apply-moxie-trigger', id: string): void
 }>()
 
+const COMBAT_LOG_MESSAGE_LIMIT = 24
+
 const rendererRef = ref<MapSceneRendererHandle | null>(null)
+const combatLogMessages = computed(() =>
+  buildCombatLogMessages(props.map?.metadata, { maxMessages: COMBAT_LOG_MESSAGE_LIMIT }),
+)
 
 const focusPokemon = (id: string): boolean => rendererRef.value?.focusPokemon(id) ?? false
 
@@ -176,6 +183,11 @@ defineExpose({ focusPokemon })
         @focus="emit('focus-initiative-entry', $event)"
         @previous="emit('previous-initiative')"
         @next="emit('next-initiative')"
+      />
+
+      <MapCombatLog
+        v-if="props.map && canViewMap"
+        :messages="combatLogMessages"
       />
 
       <MapMoveReactionPromptStack
