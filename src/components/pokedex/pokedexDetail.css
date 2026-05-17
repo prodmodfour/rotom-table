@@ -274,7 +274,7 @@ code {
   height: 1.32rem;
   max-width: 100%;
   padding-right: 1.5rem;
-  border-radius: 999px;
+  border-radius: 999px !important;
   line-height: 1;
   vertical-align: middle;
 }
@@ -313,7 +313,7 @@ code {
   justify-content: center;
   width: 1.5rem;
   height: 1.5rem;
-  border-radius: 999px;
+  border-radius: 999px !important;
   background: rgba(255, 255, 255, 0.96);
   box-shadow:
     0 0 0 1px rgba(0, 0, 0, 0.14),
