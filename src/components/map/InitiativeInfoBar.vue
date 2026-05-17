@@ -125,7 +125,7 @@ const tileTitle = (entry: InitiativeRow): string =>
   z-index: 4;
   top: var(--map-overlay-gutter, 0.75rem);
   right: var(--map-overlay-gutter, 0.75rem);
-  left: calc(var(--map-nav-rail-width, 128px) + (var(--map-overlay-gutter, 0.75rem) * 2));
+  left: var(--map-overlay-gutter, 0.75rem);
   display: grid;
   min-width: 0;
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
@@ -178,6 +178,7 @@ const tileTitle = (entry: InitiativeRow): string =>
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-self: center;
   gap: 0.18rem;
 }
 
@@ -275,11 +276,5 @@ const tileTitle = (entry: InitiativeRow): string =>
     0 10px 26px rgba(0, 0, 0, 0.26),
     inset 0 1px 0 rgba(255, 255, 255, 0.16);
   opacity: 1;
-}
-
-@media (max-width: 900px) {
-  .initiative-info-bar {
-    left: var(--map-overlay-gutter, 0.75rem);
-  }
 }
 </style>

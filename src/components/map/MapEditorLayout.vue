@@ -58,7 +58,7 @@
 
 .layout-shell__nav {
   position: absolute;
-  z-index: 2;
+  z-index: 6;
   top: var(--map-overlay-gutter);
   bottom: var(--map-overlay-gutter);
   left: var(--map-overlay-gutter);
