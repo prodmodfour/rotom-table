@@ -214,13 +214,27 @@ const emit = defineEmits<{
   display: flex;
   flex-direction: column;
   gap: 0.85rem;
+  width: 100%;
+  height: 100%;
   min-width: 0;
   padding: 0.85rem;
-  border-right: 1px solid var(--rule);
-  background: var(--paper);
-  max-height: 100vh;
+  border: 1px solid var(--rule);
+  border-radius: 20px;
+  background: var(--map-glass-surface, var(--paper));
+  box-shadow:
+    0 24px 70px rgba(0, 0, 0, 0.34),
+    inset 0 1px 0 rgba(251, 241, 199, 0.08);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  max-height: 100%;
   overflow: auto;
-  transition: padding 0.2s ease;
+  overscroll-behavior: contain;
+  pointer-events: auto;
+  transition:
+    padding 0.2s ease,
+    background 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .sidebar--collapsed {
@@ -240,9 +254,7 @@ const emit = defineEmits<{
 
 @media (max-width: 1100px) {
   .sidebar {
-    max-height: none;
-    border-right: 0;
-    border-bottom: 1px solid var(--rule);
+    max-height: 100%;
   }
 }
 </style>

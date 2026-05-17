@@ -459,6 +459,17 @@ watch(abilities, (nextAbilities) => {
 
 <style scoped>
 .context-menu {
+  --paper: rgba(29, 32, 33, 0.48);
+  --paper-soft: rgba(40, 40, 40, 0.68);
+  --paper-hover: rgba(60, 56, 54, 0.72);
+  --paper-active: rgba(80, 73, 69, 0.74);
+  --paper-inset: rgba(29, 32, 33, 0.36);
+  --rule-soft: rgba(251, 241, 199, 0.24);
+  --rule-strong: rgba(251, 241, 199, 0.34);
+  --shadow-card:
+    0 18px 52px rgba(0, 0, 0, 0.32),
+    inset 0 1px 0 rgba(251, 241, 199, 0.08);
+
   position: fixed;
   z-index: 11000;
   width: min(230px, calc(100vw - 1.5rem));
@@ -469,7 +480,8 @@ watch(abilities, (nextAbilities) => {
   border-radius: 12px;
   background: var(--paper-soft);
   box-shadow: var(--shadow-card);
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(14px) saturate(135%);
+  -webkit-backdrop-filter: blur(14px) saturate(135%);
   box-sizing: border-box;
 }
 
