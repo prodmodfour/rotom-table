@@ -146,7 +146,7 @@ const emit = defineEmits<{
   border-color: var(--accent);
   background: var(--paper-hover);
   outline: none;
-  box-shadow: 0 0 0 2px rgba(250, 189, 47, 0.2);
+  box-shadow: 0 0 0 2px rgba(255, 31, 45, 0.2);
 }
 
 .portrait-tile--empty {

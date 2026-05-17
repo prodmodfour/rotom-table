@@ -41,9 +41,8 @@ export const createPokemonRenderObject = (
   const hpBar = buildHpBar(pokemon)
   const shadow = buildContactShadow(pokemon)
   const volumeGeometry = new THREE.BoxGeometry(pokemon.base, pokemon.clearance, pokemon.base)
-  // Per-face gruvbox shading: top=fg3, Z-sides=fg4, X-sides=gray.
-  // Sits in the foreground brightness band so the cage reads above
-  // the bg-band terrain instead of merging with it.
+  // Per-face white/graphite shading sits in the foreground brightness band
+  // so the cage reads above the terrain instead of merging with it.
   const volume = new THREE.Mesh(
     volumeGeometry,
     buildVolumeMaterials('idle', 0.28),
@@ -52,7 +51,7 @@ export const createPokemonRenderObject = (
   const edges = new THREE.LineSegments(
     new THREE.EdgesGeometry(volumeGeometry),
     new THREE.LineBasicMaterial({
-      color: 0xa89984, // fg4
+      color: 0xaeb5bd,
       transparent: true,
       opacity: 0.55,
       depthTest: true,
@@ -214,14 +213,14 @@ export const paintPokemonRenderObjectStyle = (
   renderObject: PokemonRenderObject,
   selected: boolean,
 ) => {
-  // Re-tint the per-face material array with the appropriate
-  // gruvbox terrain ramp instead of a single solid color.
+  // Re-tint the per-face material array with the appropriate tactical
+  // theme ramp instead of a single solid color.
   paintVolumeMaterials(
     renderObject.volume.material,
     selected ? 'selected' : 'idle',
     selected ? 0.32 : 0.28,
   )
-  ;(renderObject.edges.material as THREE.LineBasicMaterial).color.set(selected ? 0xfbf1c7 : 0xa89984)
+  ;(renderObject.edges.material as THREE.LineBasicMaterial).color.set(selected ? 0xf7f7f2 : 0xaeb5bd)
   // Idle edges fade so the cage reads via faces; selection sharpens
   // them back up so the active token has a clear hard outline.
   ;(renderObject.edges.material as THREE.LineBasicMaterial).opacity = selected ? 0.95 : 0.35

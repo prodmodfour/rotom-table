@@ -73,10 +73,10 @@ const emit = defineEmits<{
   justify-content: center;
   width: 2.45rem;
   min-height: 1.9rem;
-  border: 1px solid color-mix(in srgb, var(--hazard-color) 65%, #1d2021);
+  border: 1px solid color-mix(in srgb, var(--hazard-color) 65%, #050608);
   border-radius: 8px;
   background: color-mix(in srgb, var(--hazard-color) 24%, transparent);
-  color: color-mix(in srgb, var(--hazard-color) 78%, #fbf1c7);
+  color: color-mix(in srgb, var(--hazard-color) 78%, #f7f7f2);
   font-size: 0.68rem;
   font-weight: 800;
   letter-spacing: 0.08em;

@@ -27,7 +27,7 @@ export interface FieldEffectRoomBoundaryOptions {
 
 const fieldEffectColumnKey = (x: number, z: number): string => `${x},${z}`
 
-export const fieldEffectColor = (color: string, fallback = 0xfabd2f): number =>
+export const fieldEffectColor = (color: string, fallback = 0xff1f2d): number =>
   parseHexColor(color) ?? fallback
 
 export const buildFieldEffectColumnTops = (

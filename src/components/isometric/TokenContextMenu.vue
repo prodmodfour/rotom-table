@@ -469,16 +469,16 @@ watch(abilities, (nextAbilities) => {
 
 <style scoped>
 .context-menu {
-  --paper: rgba(29, 32, 33, 0.48);
-  --paper-soft: rgba(40, 40, 40, 0.68);
-  --paper-hover: rgba(60, 56, 54, 0.72);
-  --paper-active: rgba(80, 73, 69, 0.74);
-  --paper-inset: rgba(29, 32, 33, 0.36);
-  --rule-soft: rgba(251, 241, 199, 0.24);
-  --rule-strong: rgba(251, 241, 199, 0.34);
+  --paper: rgba(5, 6, 8, 0.48);
+  --paper-soft: rgba(12, 14, 18, 0.68);
+  --paper-hover: rgba(255, 255, 255, 0.11);
+  --paper-active: rgba(255, 31, 45, 0.20);
+  --paper-inset: rgba(5, 6, 8, 0.38);
+  --rule-soft: rgba(255, 255, 255, 0.26);
+  --rule-strong: rgba(255, 31, 45, 0.58);
   --shadow-card:
-    0 18px 52px rgba(0, 0, 0, 0.32),
-    inset 0 1px 0 rgba(251, 241, 199, 0.08);
+    0 18px 52px rgba(0, 0, 0, 0.38),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
 
   position: fixed;
   z-index: 11000;
@@ -486,12 +486,18 @@ watch(abilities, (nextAbilities) => {
   max-height: calc(100vh - 1.5rem);
   overflow: visible;
   padding: 0.4rem;
-  border: 1px solid var(--rule-soft);
+  border: 1px solid rgba(255, 255, 255, 0.26);
   border-radius: 12px;
-  background: var(--paper-soft);
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.13) 0 24%,
+      transparent 24% 100%
+    ),
+    rgba(12, 14, 18, 0.66);
   box-shadow: var(--shadow-card);
-  backdrop-filter: blur(14px) saturate(135%);
-  -webkit-backdrop-filter: blur(14px) saturate(135%);
+  backdrop-filter: blur(16px) saturate(145%) contrast(108%);
+  -webkit-backdrop-filter: blur(16px) saturate(145%) contrast(108%);
   box-sizing: border-box;
 }
 
@@ -522,8 +528,10 @@ watch(abilities, (nextAbilities) => {
 
 .context-menu__button:hover,
 .context-menu__button:focus-visible {
-  border-color: var(--rule-strong);
-  background: var(--paper-hover);
+  border-color: var(--accent);
+  background:
+    linear-gradient(90deg, rgba(255, 31, 45, 0.22), rgba(255, 255, 255, 0.08)),
+    var(--paper-hover);
   color: var(--ink-bright);
 }
 
@@ -597,8 +605,10 @@ watch(abilities, (nextAbilities) => {
 .action-submenu__item.is-active:not(:disabled),
 .sendout-submenu__item:hover,
 .sendout-submenu__item:focus-visible {
-  border-color: var(--rule-soft);
-  background: var(--paper-hover);
+  border-color: var(--accent);
+  background:
+    linear-gradient(90deg, rgba(255, 31, 45, 0.16), rgba(255, 255, 255, 0.06)),
+    var(--paper-hover);
   color: var(--ink-bright);
 }
 

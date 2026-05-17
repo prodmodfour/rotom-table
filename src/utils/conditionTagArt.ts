@@ -18,24 +18,24 @@ export const CONDITION_TAGS: Record<string, ConditionTagDefinition> = {
 
   'Badly Poisoned': { label: 'TOX',  color: '#8f3fb0', icon: 'toxic' },
   'Bad Sleep':      { label: 'BSLP', color: '#665c99', icon: 'bad-sleep' },
-  Confused:         { label: 'CNF',  color: '#d79921', icon: 'confused' },
+  Confused:         { label: 'CNF',  color: '#ffb84d', icon: 'confused' },
   Cursed:           { label: 'CRS',  color: '#6c3a9c', icon: 'curse' },
   Disabled:         { label: 'DIS',  color: '#8a8f98', icon: 'disabled' },
-  Rage:             { label: 'RAG',  color: '#cc241d', icon: 'rage' },
-  Flinch:           { label: 'FLN',  color: '#fe8019', icon: 'flinch' },
-  Infatuation:      { label: 'INF',  color: '#d65d9e', icon: 'heart' },
-  Suppressed:       { label: 'SUP',  color: '#458588', icon: 'suppress' },
-  Fainted:          { label: 'FNT',  color: '#3c3836', icon: 'faint' },
-  Blindness:        { label: 'BLD',  color: '#665c54', icon: 'blind' },
-  'Total Blindness': { label: 'TBLD', color: '#1d2021', icon: 'total-blind' },
-  Slowed:           { label: 'SLO',  color: '#98971a', icon: 'slow' },
-  Stuck:            { label: 'STK',  color: '#af7a3b', icon: 'stuck' },
-  Trapped:          { label: 'TRP',  color: '#b16286', icon: 'trap' },
-  Tripped:          { label: 'TRIP', color: '#d65d0e', icon: 'trip' },
-  Vulnerable:       { label: 'VUL',  color: '#fb4934', icon: 'vulnerable' },
+  Rage:             { label: 'RAG',  color: '#d7192c', icon: 'rage' },
+  Flinch:           { label: 'FLN',  color: '#ff7a2f', icon: 'flinch' },
+  Infatuation:      { label: 'INF',  color: '#d88cff', icon: 'heart' },
+  Suppressed:       { label: 'SUP',  color: '#5c8dff', icon: 'suppress' },
+  Fainted:          { label: 'FNT',  color: '#12151b', icon: 'faint' },
+  Blindness:        { label: 'BLD',  color: '#56606b', icon: 'blind' },
+  'Total Blindness': { label: 'TBLD', color: '#050608', icon: 'total-blind' },
+  Slowed:           { label: 'SLO',  color: '#9fd36b', icon: 'slow' },
+  Stuck:            { label: 'STK',  color: '#9a6b45', icon: 'stuck' },
+  Trapped:          { label: 'TRP',  color: '#b56cff', icon: 'trap' },
+  Tripped:          { label: 'TRIP', color: '#ff7a2f', icon: 'trip' },
+  Vulnerable:       { label: 'VUL',  color: '#ff1f2d', icon: 'vulnerable' },
 }
 
-const FALLBACK_TAG: ConditionTagDefinition = { label: '???', color: '#7c6f64', icon: 'generic' }
+const FALLBACK_TAG: ConditionTagDefinition = { label: '???', color: '#66707a', icon: 'generic' }
 
 export const conditionTagFallbackDefinition = (canonical: string): ConditionTagDefinition => {
   const label = canonical
@@ -89,7 +89,7 @@ const iconMarkup = (icon: string): string => {
     case 'blind':
       return '<path d="M3.5 13.5s3.8-6 9.5-6 9.5 6 9.5 6-3.8 6-9.5 6-9.5-6-9.5-6Z"/><circle fill="rgba(102,92,84,.88)" cx="13" cy="13.5" r="3.2"/><path d="M4.5 23 22 4" stroke="white" stroke-width="2.5" stroke-linecap="round"/>'
     case 'total-blind':
-      return '<path d="M3.5 13.5s3.8-6 9.5-6 9.5 6 9.5 6-3.8 6-9.5 6-9.5-6-9.5-6Z"/><g stroke="rgba(29,32,33,.9)" stroke-width="2.3" stroke-linecap="round"><path d="m8.5 9 9 9M17.5 9l-9 9"/></g>'
+      return '<path d="M3.5 13.5s3.8-6 9.5-6 9.5 6 9.5 6-3.8 6-9.5 6-9.5-6-9.5-6Z"/><g stroke="rgba(5,6,8,.9)" stroke-width="2.3" stroke-linecap="round"><path d="m8.5 9 9 9M17.5 9l-9 9"/></g>'
     case 'slow':
       return '<circle cx="13" cy="13" r="9"/><path fill="rgba(152,151,26,.82)" d="M12 7h2.5v7l5 2.7-1.2 2.1-6.3-3.5z"/>'
     case 'stuck':

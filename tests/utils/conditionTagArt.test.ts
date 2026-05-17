@@ -26,12 +26,12 @@ describe('condition tag art helpers', () => {
   it('builds deterministic fallback labels without requiring condition data', () => {
     expect(conditionTagFallbackDefinition('Wide Open')).toEqual({
       label: 'WO',
-      color: '#7c6f64',
+      color: '#66707a',
       icon: 'generic',
     })
     expect(conditionTagFallbackDefinition('')).toEqual({
       label: '???',
-      color: '#7c6f64',
+      color: '#66707a',
       icon: 'generic',
     })
   })

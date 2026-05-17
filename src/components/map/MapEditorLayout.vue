@@ -37,15 +37,15 @@ defineProps<{
   --map-sidebar-width: clamp(310px, 24vw, 380px);
   --initiative-sidebar-width: clamp(300px, 23vw, 360px);
 
-  --map-glass-surface: rgba(29, 32, 33, 0.42);
-  --map-glass-surface-strong: rgba(40, 40, 40, 0.54);
-  --map-glass-surface-hover: rgba(60, 56, 54, 0.58);
-  --map-glass-surface-active: rgba(80, 73, 69, 0.64);
-  --map-glass-surface-inset: rgba(29, 32, 33, 0.32);
-  --map-glass-border: rgba(251, 241, 199, 0.18);
-  --map-glass-border-soft: rgba(251, 241, 199, 0.22);
-  --map-glass-border-strong: rgba(251, 241, 199, 0.32);
-  --map-glass-accent-border: rgba(250, 189, 47, 0.42);
+  --map-glass-surface: rgba(5, 6, 8, 0.42);
+  --map-glass-surface-strong: rgba(12, 14, 18, 0.58);
+  --map-glass-surface-hover: rgba(255, 255, 255, 0.10);
+  --map-glass-surface-active: rgba(255, 31, 45, 0.18);
+  --map-glass-surface-inset: rgba(5, 6, 8, 0.34);
+  --map-glass-border: rgba(255, 255, 255, 0.18);
+  --map-glass-border-soft: rgba(255, 255, 255, 0.24);
+  --map-glass-border-strong: rgba(255, 255, 255, 0.34);
+  --map-glass-accent-border: rgba(255, 31, 45, 0.48);
 
   --paper: var(--map-glass-surface);
   --paper-soft: var(--map-glass-surface-strong);
@@ -58,14 +58,14 @@ defineProps<{
   --rule-strong: var(--map-glass-border-strong);
   --rule-active: var(--map-glass-accent-border);
   --shadow-card:
-    0 18px 52px rgba(0, 0, 0, 0.28),
-    inset 0 1px 0 rgba(251, 241, 199, 0.07);
+    0 18px 52px rgba(0, 0, 0, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.10);
 
   position: relative;
   min-height: 100vh;
   overflow: hidden;
   isolation: isolate;
-  background: #1d2021;
+  background: #050608;
 }
 
 .layout-shell--sidebar-collapsed {

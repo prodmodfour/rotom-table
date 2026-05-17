@@ -244,7 +244,7 @@ export const drawHazardStripeOverlay = (ctx: CanvasRenderingContext2D) => {
   ctx.save()
   ctx.globalAlpha = 0.9
   for (let x = -BLOCK_TEXTURE_SIZE; x < BLOCK_TEXTURE_SIZE * 2; x += 6) {
-    ctx.fillStyle = '#1d2021'
+    ctx.fillStyle = '#050608'
     ctx.fillRect(x, 0, 3, BLOCK_TEXTURE_SIZE)
   }
   ctx.restore()

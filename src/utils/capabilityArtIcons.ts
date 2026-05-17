@@ -1,7 +1,7 @@
 export const capabilityIconMarkup = (icon: string, accent: string): string => {
-  const cream = 'rgba(251,241,199,.96)'
-  const soft = 'rgba(251,241,199,.58)'
-  const dark = 'rgba(29,32,33,.35)'
+  const cream = 'rgba(247,247,242,.96)'
+  const soft = 'rgba(247,247,242,.58)'
+  const dark = 'rgba(5,6,8,.35)'
   const line = `fill="none" stroke="${cream}" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"`
   const thin = `fill="none" stroke="${cream}" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"`
   const accentLine = `fill="none" stroke="${accent}" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"`
@@ -50,7 +50,7 @@ export const capabilityIconMarkup = (icon: string, accent: string): string => {
     case 'firestarter':
       return `<path ${fill} d="M35 60C20 60 11 51 11 39c0-9 5-17 13-24 0 8 4 12 9 15 5-10 2-18-2-26 13 6 22 17 22 31 0 15-10 25-18 25Z"/><path ${accentFill} d="M33 55c-7 0-12-5-12-11 0-5 3-9 7-13 1 5 4 8 8 9 3-5 2-9 0-14 7 4 12 10 12 17 0 8-6 12-15 12Z"/>`
     case 'fortune':
-      return `<circle ${fill} cx="32" cy="33" r="23"/><circle ${accentFill} cx="32" cy="33" r="16"/><text x="32" y="42" text-anchor="middle" fill="rgba(29,32,33,.55)" font-size="27" font-family="Arial, sans-serif" font-weight="900">₽</text><path ${thin} d="M14 11 9 16M52 49l5 5M51 12l5-5"/>`
+      return `<circle ${fill} cx="32" cy="33" r="23"/><circle ${accentFill} cx="32" cy="33" r="16"/><text x="32" y="42" text-anchor="middle" fill="rgba(5,6,8,.55)" font-size="27" font-family="Arial, sans-serif" font-weight="900">₽</text><path ${thin} d="M14 11 9 16M52 49l5 5M51 12l5-5"/>`
     case 'fountain':
       return `<path ${fill} d="M32 5c14 17 22 28 22 39 0 10-9 17-22 17S10 54 10 44C10 33 18 22 32 5Z"/><path ${accentFill} d="M17 43c8 6 22 6 30 0-2 9-8 14-15 14s-13-5-15-14Z"/><path ${thin} d="M14 21c6 3 10 7 11 14M50 21c-6 3-10 7-11 14"/>`
     case 'freezer':
@@ -84,7 +84,7 @@ export const capabilityIconMarkup = (icon: string, accent: string): string => {
     case 'keystone-warp':
       return `<path ${fill} d="M32 6 50 18l-4 36-14 7-14-7-4-36z"/><ellipse ${accentLine} cx="32" cy="33" rx="16" ry="22"/><ellipse ${thin} cx="32" cy="33" rx="7" ry="15"/><path ${accentFill} d="M29 28h6v10h-6z"/>`
     case 'letter-press':
-      return `<rect ${fill} x="10" y="15" width="44" height="32" rx="4"/><path ${accentFill} d="M16 9h32v10H16zM20 47h24v10H20z"/><text x="32" y="38" text-anchor="middle" fill="rgba(29,32,33,.55)" font-size="22" font-family="Arial, sans-serif" font-weight="900">A</text><path ${thin} d="M16 57h32"/>`
+      return `<rect ${fill} x="10" y="15" width="44" height="32" rx="4"/><path ${accentFill} d="M16 9h32v10H16zM20 47h24v10H20z"/><text x="32" y="38" text-anchor="middle" fill="rgba(5,6,8,.55)" font-size="22" font-family="Arial, sans-serif" font-weight="900">A</text><path ${thin} d="M16 57h32"/>`
     case 'living-weapon':
       return `<path ${fill} d="M29 4h7l-2 35 10 10-5 6-7-7-7 7-5-6 10-10z"/><path ${accentFill} d="M18 20c8-7 20-7 28 0-8 7-20 7-28 0Z" opacity=".96"/><circle ${darkFill} cx="32" cy="20" r="4"/><path ${thin} d="M17 59h30"/>`
     case 'magnetic':
@@ -156,7 +156,7 @@ export const capabilityIconMarkup = (icon: string, accent: string): string => {
     case 'zapper':
       return `<path ${fill} d="M38 4 11 36h17l-5 24 30-37H35z"/><path ${accentFill} d="M34 15 21 31h14l-3 13 16-20H34z"/><path ${thin} d="M9 14c7-5 14-5 21 0M34 52c7 4 14 4 21 0"/>`
     default:
-      return `<circle ${fill} cx="32" cy="32" r="22"/><text x="32" y="42" text-anchor="middle" fill="rgba(29,32,33,.55)" font-size="30" font-family="Arial, sans-serif" font-weight="900">?</text><path ${accentLine} d="M14 52c10 6 26 6 36 0"/>`
+      return `<circle ${fill} cx="32" cy="32" r="22"/><text x="32" y="42" text-anchor="middle" fill="rgba(5,6,8,.55)" font-size="30" font-family="Arial, sans-serif" font-weight="900">?</text><path ${accentLine} d="M14 52c10 6 26 6 36 0"/>`
   }
 }
 

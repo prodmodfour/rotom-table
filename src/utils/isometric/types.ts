@@ -28,7 +28,7 @@ export interface PokemonRenderObject {
   hpBar: CSS3DSprite
   /**
    * Volume box wrapping the pokemon's footprint × clearance. Uses a
-   * 6-material array so we can paint each face with the gruvbox
+   * 6-material array so we can paint each face with the theme-aware
    * top/left/right brightness ramp.
    */
   volume: THREE.Mesh<THREE.BoxGeometry, THREE.MeshBasicMaterial[]>

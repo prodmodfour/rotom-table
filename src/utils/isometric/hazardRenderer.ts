@@ -18,7 +18,7 @@ export interface HazardRenderer {
 const hazardTextureCache = new Map<string, THREE.CanvasTexture>()
 
 export const hazardColorNumber = (kind: MapHazardKind): number =>
-  parseHexColor(MAP_HAZARD_DEFINITIONS[kind].color) ?? 0xfabd2f
+  parseHexColor(MAP_HAZARD_DEFINITIONS[kind].color) ?? 0xff1f2d
 
 const hazardCanvasColor = (kind: MapHazardKind, alpha = 1): string => {
   const hex = MAP_HAZARD_DEFINITIONS[kind].color.replace('#', '')
@@ -34,7 +34,7 @@ const drawHazardTriangle = (
   y: number,
   radius: number,
   fill: string,
-  stroke = 'rgba(29, 32, 33, 0.85)',
+  stroke = 'rgba(5, 6, 8, 0.85)',
 ) => {
   ctx.beginPath()
   ctx.moveTo(x, y - radius)
@@ -63,7 +63,7 @@ const drawHazardTexture = (
   const mid = hazardCanvasColor(kind, 0.55)
 
   ctx.clearRect(0, 0, canvas.width, canvas.height)
-  ctx.fillStyle = 'rgba(29, 32, 33, 0.48)'
+  ctx.fillStyle = 'rgba(5, 6, 8, 0.48)'
   ctx.beginPath()
   ctx.roundRect(7, 7, 114, 114, 18)
   ctx.fill()
@@ -77,7 +77,7 @@ const drawHazardTexture = (
     ctx.arc(cx, cy, 42, 0, Math.PI * 2)
     ctx.fill()
     drawHazardTriangle(ctx, 42, 72, 25, color)
-    drawHazardTriangle(ctx, 70, 50, 31, '#fbf1c7')
+    drawHazardTriangle(ctx, 70, 50, 31, '#f7f7f2')
     drawHazardTriangle(ctx, 88, 78, 23, color)
   } else if (kind === 'toxic-spikes') {
     ctx.fillStyle = faint
@@ -93,7 +93,7 @@ const drawHazardTexture = (
       ctx.lineTo(cx + Math.cos(angle) * 39, cy + Math.sin(angle) * 39)
       ctx.stroke()
     }
-    ctx.fillStyle = '#fbf1c7'
+    ctx.fillStyle = '#f7f7f2'
     ctx.beginPath()
     ctx.arc(cx, cy, 15, 0, Math.PI * 2)
     ctx.fill()
@@ -103,7 +103,7 @@ const drawHazardTexture = (
     ctx.textBaseline = 'middle'
     ctx.fillText(String(layer ?? 1), 101, 29)
   } else if (kind === 'sticky-web') {
-    ctx.strokeStyle = 'rgba(251, 241, 199, 0.9)'
+    ctx.strokeStyle = 'rgba(247, 247, 242, 0.9)'
     ctx.lineWidth = 4
     for (let i = 0; i < 8; i += 1) {
       const angle = (i / 8) * Math.PI * 2
@@ -125,16 +125,16 @@ const drawHazardTexture = (
   } else if (kind === 'stealth-rock') {
     const rocks: Array<[number, number, number, string]> = [
       [45, 68, 28, color],
-      [72, 51, 32, '#d5c4a1'],
-      [86, 78, 24, '#928374'],
-      [58, 89, 18, '#a89984'],
+      [72, 51, 32, '#dfe3e8'],
+      [86, 78, 24, '#66707a'],
+      [58, 89, 18, '#aeb5bd'],
     ]
     for (const [x, y, r, fill] of rocks) drawHazardTriangle(ctx, x, y, r, fill)
   } else {
     const gradient = ctx.createRadialGradient(cx, cy + 18, 8, cx, cy, 52)
-    gradient.addColorStop(0, 'rgba(250, 189, 47, 0.98)')
+    gradient.addColorStop(0, 'rgba(255, 184, 77, 0.98)')
     gradient.addColorStop(0.42, color)
-    gradient.addColorStop(1, 'rgba(204, 36, 29, 0.1)')
+    gradient.addColorStop(1, 'rgba(184, 15, 34, 0.1)')
     ctx.fillStyle = gradient
     ctx.beginPath()
     ctx.moveTo(cx, 20)
@@ -145,12 +145,12 @@ const drawHazardTexture = (
     ctx.bezierCurveTo(75, 42, 72, 31, cx, 20)
     ctx.closePath()
     ctx.fill()
-    ctx.strokeStyle = 'rgba(29, 32, 33, 0.72)'
+    ctx.strokeStyle = 'rgba(5, 6, 8, 0.72)'
     ctx.lineWidth = 4
     ctx.stroke()
   }
 
-  ctx.fillStyle = 'rgba(251, 241, 199, 0.92)'
+  ctx.fillStyle = 'rgba(247, 247, 242, 0.92)'
   ctx.font = '900 13px Arial, sans-serif'
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'

@@ -155,7 +155,7 @@ const updateQuery = (event: Event) => {
 .portrait-picker__input:focus {
   outline: none;
   border-color: var(--accent);
-  box-shadow: 0 0 0 2px rgba(250, 189, 47, 0.18);
+  box-shadow: 0 0 0 2px rgba(255, 31, 45, 0.18);
 }
 
 .portrait-picker__count {
@@ -203,7 +203,7 @@ const updateQuery = (event: Event) => {
 .portrait-option--active {
   border-color: var(--accent);
   background: var(--accent-soft);
-  box-shadow: 0 0 0 2px rgba(250, 189, 47, 0.25);
+  box-shadow: 0 0 0 2px rgba(255, 31, 45, 0.25);
 }
 
 .portrait-option__img {

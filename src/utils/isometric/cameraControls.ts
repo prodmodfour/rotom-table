@@ -43,7 +43,7 @@ export const createIsometricCamera = () => {
 
 export const createIsometricWebGLRenderer = () => {
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false })
-  renderer.setClearColor(0x1d2021, 1) // gruvbox bg0_h
+  renderer.setClearColor(0x050608, 1) // Pokémon black surface
   renderer.outputColorSpace = THREE.SRGBColorSpace
   renderer.domElement.style.display = 'block'
   renderer.domElement.style.width = '100%'

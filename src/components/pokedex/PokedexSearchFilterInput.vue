@@ -45,6 +45,6 @@ input {
 
 input:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 2px rgba(250, 189, 47, 0.18);
+  box-shadow: 0 0 0 2px rgba(255, 31, 45, 0.18);
 }
 </style>

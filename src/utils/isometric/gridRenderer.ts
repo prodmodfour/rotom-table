@@ -63,12 +63,12 @@ export const createGridRenderer = (group: THREE.Group) => {
     sync(dimensions: GridDimensions) {
       disposeGridObjects()
 
-      // Gruvbox terrain seam lines: bg0_h, the same warm near-black as the
-      // page background. Seam lines stay subtle so terrain reads as tile grout.
+      // Graphite-black terrain seam lines matching the page background.
+      // Seam lines stay subtle so terrain reads as tile grout.
       floorGridLines = new THREE.LineSegments(
         buildFloorGridGeometry(dimensions),
         new THREE.LineBasicMaterial({
-          color: 0x1d2021,
+          color: 0x050608,
           transparent: true,
           opacity: 0.85,
           depthTest: true,
@@ -80,7 +80,7 @@ export const createGridRenderer = (group: THREE.Group) => {
       moveGridLines = new THREE.LineSegments(
         buildMoveGridGeometry(dimensions),
         new THREE.LineBasicMaterial({
-          color: 0x1d2021,
+          color: 0x050608,
           transparent: true,
           opacity: 0.01,
           depthTest: true,
@@ -89,12 +89,12 @@ export const createGridRenderer = (group: THREE.Group) => {
       )
       group.add(moveGridLines)
 
-      // Floor plane = the lit "top" of the tabletop. bg2 sits just below the
-      // bg3 voxel tops so placed objects visually pop upward.
+      // Floor plane = the lit "top" of the tabletop. The graphite surface sits
+      // just below voxel tops so placed objects visually pop upward.
       floorPlane = new THREE.Mesh(
         new THREE.PlaneGeometry(dimensions.x, dimensions.z),
         new THREE.MeshBasicMaterial({
-          color: 0x504945,
+          color: 0x12151b,
           side: THREE.DoubleSide,
           depthWrite: false,
         }),

@@ -99,7 +99,7 @@ const metaLabel = computed(() => (
 .pokemon-link-card--team {
   grid-template-columns: 50px minmax(0, 1fr);
   padding: 0.5rem;
-  background: linear-gradient(135deg, rgba(250, 189, 47, 0.1), var(--paper));
+  background: linear-gradient(135deg, rgba(255, 31, 45, 0.1), var(--paper));
 }
 
 .pokemon-link-card__sprite-link {
@@ -199,8 +199,8 @@ const metaLabel = computed(() => (
 }
 
 .pokemon-link-card__action--danger:hover:not(:disabled) {
-  border-color: rgba(251, 73, 52, 0.62);
+  border-color: rgba(255, 31, 45, 0.62);
   color: var(--bad);
-  background: rgba(251, 73, 52, 0.08);
+  background: rgba(255, 31, 45, 0.08);
 }
 </style>

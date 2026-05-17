@@ -177,11 +177,11 @@
   color: var(--bad);
 }
 
-.narrative--yellow {
+.narrative--accent {
   border-left-color: var(--accent);
 }
 
-.narrative--yellow h3 {
+.narrative--accent h3 {
   color: var(--accent);
 }
 

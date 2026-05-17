@@ -48,11 +48,11 @@ const emit = defineEmits<{
 }
 
 .bulk-button--danger {
-  color: #fb4934;
+  color: var(--bad);
 }
 
 .bulk-button--danger:hover:not(:disabled) {
-  border-color: #fb4934;
-  background: rgba(251, 73, 52, 0.08);
+  border-color: var(--bad);
+  background: rgba(255, 31, 45, 0.08);
 }
 </style>

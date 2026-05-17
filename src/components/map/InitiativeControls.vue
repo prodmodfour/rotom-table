@@ -131,7 +131,7 @@ input {
 
 input:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 2px rgba(250, 189, 47, 0.18);
+  box-shadow: 0 0 0 2px rgba(255, 31, 45, 0.18);
 }
 
 input:disabled {
@@ -212,12 +212,12 @@ input:disabled {
 }
 
 .initiative-tool--danger {
-  color: #fb4934;
+  color: var(--bad);
 }
 
 .initiative-tool--danger:hover:not(:disabled) {
-  border-color: #fb4934;
-  background: rgba(251, 73, 52, 0.08);
+  border-color: var(--bad);
+  background: rgba(255, 31, 45, 0.08);
 }
 
 @media (max-width: 640px) {

@@ -148,7 +148,7 @@ export const createMoveAreaTemplateRenderer = (scene: THREE.Scene) => {
     const mesh = new THREE.Mesh(
       geometry,
       new THREE.MeshBasicMaterial({
-        color: 0xfabd2f,
+        color: 0xff1f2d,
         transparent: true,
         opacity: 0.32,
         depthTest: true,
@@ -164,7 +164,7 @@ export const createMoveAreaTemplateRenderer = (scene: THREE.Scene) => {
     const edges = new THREE.LineSegments(
       new THREE.EdgesGeometry(geometry),
       new THREE.LineBasicMaterial({
-        color: 0xfbf1c7,
+        color: 0xf7f7f2,
         transparent: true,
         opacity: 0.78,
         depthTest: true,

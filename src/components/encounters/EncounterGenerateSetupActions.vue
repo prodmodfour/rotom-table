@@ -89,7 +89,7 @@ const emit = defineEmits<{
 }
 
 .primary-button:hover:not(:disabled) {
-  background: rgba(250, 189, 47, 0.22);
+  background: rgba(255, 31, 45, 0.22);
   color: var(--ink-bright);
 }
 

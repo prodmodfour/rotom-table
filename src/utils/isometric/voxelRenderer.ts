@@ -146,7 +146,7 @@ export const buildTerrainTopEdgeOverlay = (
       group,
       lightSegments,
       new THREE.LineBasicMaterial({
-        color: 0xfbf1c7,
+        color: 0xf7f7f2,
         transparent: true,
         opacity: 0.24 * opacityScale,
         depthTest: true,
@@ -157,7 +157,7 @@ export const buildTerrainTopEdgeOverlay = (
       group,
       darkSegments,
       new THREE.LineBasicMaterial({
-        color: 0x1d2021,
+        color: 0x050608,
         transparent: true,
         opacity: 0.32 * opacityScale,
         depthTest: true,

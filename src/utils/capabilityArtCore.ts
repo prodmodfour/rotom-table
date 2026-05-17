@@ -50,8 +50,8 @@ export const fallbackCapabilityArt = (
   name: string,
   palette: CapabilityArtFallbackPalette,
 ): CapabilityArtDefinition => {
-  const backgrounds = palette.backgrounds.length ? palette.backgrounds : ['#504945']
-  const accents = palette.accents.length ? palette.accents : ['#fabd2f']
+  const backgrounds = palette.backgrounds.length ? palette.backgrounds : ['#12151b']
+  const accents = palette.accents.length ? palette.accents : ['#ff1f2d']
   const hash = hashCapabilityArtName(name)
   return {
     color: backgrounds[hash % backgrounds.length],

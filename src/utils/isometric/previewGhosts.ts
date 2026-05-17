@@ -19,7 +19,7 @@ export const createBuildGhostRenderer = (group: THREE.Group) => {
     if (ghost && edges) return
 
     const geometry = new THREE.BoxGeometry(1, 1, 1)
-    const materials = buildVoxelFaceMaterials({ materialId: 'airship_floor_metal', color: '#fabd2f' }, 0.45, false)
+    const materials = buildVoxelFaceMaterials({ materialId: 'airship_floor_metal', color: '#ff1f2d' }, 0.45, false)
     ghost = new THREE.Mesh(geometry, materials)
     ghost.visible = false
     group.add(ghost)
@@ -27,7 +27,7 @@ export const createBuildGhostRenderer = (group: THREE.Group) => {
     edges = new THREE.LineSegments(
       new THREE.EdgesGeometry(geometry),
       new THREE.LineBasicMaterial({
-        color: 0xfbf1c7,
+        color: 0xf7f7f2,
         transparent: true,
         opacity: 0.95,
         depthTest: true,
@@ -74,14 +74,14 @@ export const createBuildGhostRenderer = (group: THREE.Group) => {
 
       const edgeMaterial = edges.material as THREE.LineBasicMaterial
       if (target.action === 'remove') {
-        paintBuildGhostMaterials(ghost.material, dangerVoxelStyle(0xfb4934), 0.42)
-        edgeMaterial.color.setHex(0xfb4934)
+        paintBuildGhostMaterials(ghost.material, dangerVoxelStyle(0xff4a55), 0.42)
+        edgeMaterial.color.setHex(0xff4a55)
       } else if (!target.valid) {
-        paintBuildGhostMaterials(ghost.material, dangerVoxelStyle(0xfb4934), 0.32)
-        edgeMaterial.color.setHex(0xfb4934)
+        paintBuildGhostMaterials(ghost.material, dangerVoxelStyle(0xff4a55), 0.32)
+        edgeMaterial.color.setHex(0xff4a55)
       } else {
         paintBuildGhostMaterials(ghost.material, options.styleForCell(target.cell), 0.55)
-        edgeMaterial.color.setHex(0xfbf1c7)
+        edgeMaterial.color.setHex(0xf7f7f2)
       }
     },
 
@@ -121,7 +121,7 @@ export const createHazardGhostRenderer = (group: THREE.Group) => {
     edges = new THREE.LineSegments(
       new THREE.EdgesGeometry(geometry),
       new THREE.LineBasicMaterial({
-        color: 0xfbf1c7,
+        color: 0xf7f7f2,
         transparent: true,
         opacity: 0.95,
         depthTest: true,
@@ -158,12 +158,12 @@ export const createHazardGhostRenderer = (group: THREE.Group) => {
 
       const material = ghost.material as THREE.MeshBasicMaterial
       material.map = getHazardTexture(options.kind)
-      material.color.setHex(target.valid ? 0xffffff : 0xfb4934)
+      material.color.setHex(target.valid ? 0xffffff : 0xff4a55)
       material.opacity = target.action === 'remove' ? 0.42 : 0.68
       material.needsUpdate = true
 
       const color = target.action === 'remove' || !target.valid
-        ? 0xfb4934
+        ? 0xff4a55
         : hazardColorNumber(options.kind)
       ;(edges.material as THREE.LineBasicMaterial).color.setHex(color)
 

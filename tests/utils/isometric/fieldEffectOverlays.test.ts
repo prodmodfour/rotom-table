@@ -33,7 +33,7 @@ const matrixPosition = (matrix: THREE.Matrix4) => ({
 describe('fieldEffectOverlays', () => {
   it('normalizes effect colors and falls back for invalid input', () => {
     expect(fieldEffectColor('#123456')).toBe(0x123456)
-    expect(fieldEffectColor('not-a-color')).toBe(0xfabd2f)
+    expect(fieldEffectColor('not-a-color')).toBe(0xff1f2d)
     expect(fieldEffectColor('not-a-color', 0x00ff00)).toBe(0x00ff00)
   })
 

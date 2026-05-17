@@ -136,7 +136,7 @@ const selectItem = (item: SheetBrowserItem) => {
 }
 
 .section-toggle-button:focus-visible {
-  outline: 2px solid rgba(250, 189, 47, 0.35);
+  outline: 2px solid rgba(255, 31, 45, 0.35);
   outline-offset: 3px;
   border-radius: 8px;
 }
@@ -202,7 +202,7 @@ const selectItem = (item: SheetBrowserItem) => {
 
 .search-field input:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 2px rgba(250, 189, 47, 0.18);
+  box-shadow: 0 0 0 2px rgba(255, 31, 45, 0.18);
 }
 
 .sr-only {

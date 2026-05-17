@@ -227,7 +227,7 @@ const unlink = (slug: string) => {
 
 .pokemon-team-strip {
   background:
-    linear-gradient(180deg, rgba(250, 189, 47, 0.08), transparent 40%),
+    linear-gradient(180deg, rgba(255, 31, 45, 0.08), transparent 40%),
     var(--paper-inset);
 }
 
@@ -248,7 +248,7 @@ const unlink = (slug: string) => {
   border: 1px dashed var(--rule-soft);
   border-radius: 12px;
   color: var(--ink-faint);
-  background: rgba(29, 32, 33, 0.24);
+  background: rgba(5, 6, 8, 0.24);
   font-size: 0.78rem;
   font-weight: 700;
   letter-spacing: 0.08em;

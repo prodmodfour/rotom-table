@@ -1,9 +1,9 @@
 export const WORLD_SPRITE_HALO_MIN_ALPHA = 0.1
 export const WORLD_SPRITE_HALO_MAX_ALPHA = 0.28
 
-export const WORLD_SPRITE_HALO_COLOR = 0xfabd2f
-export const WORLD_SPRITE_GHOST_HALO_COLOR = 0xd5c4a1
-export const WORLD_SPRITE_INVALID_HALO_COLOR = 0xfb4934
+export const WORLD_SPRITE_HALO_COLOR = 0xff1f2d
+export const WORLD_SPRITE_GHOST_HALO_COLOR = 0xdfe3e8
+export const WORLD_SPRITE_INVALID_HALO_COLOR = 0xff4a55
 
 export type WorldSpriteMaterialColorStyle =
   | { kind: 'scalar'; value: number }

@@ -52,7 +52,7 @@ const chooseRole = async (nextRole: AuthRole) => {
   place-items: center;
   padding: 1rem;
   background:
-    radial-gradient(circle at top, rgba(250, 189, 47, 0.12), transparent 34rem),
+    radial-gradient(circle at top, rgba(255, 31, 45, 0.12), transparent 34rem),
     var(--paper);
 }
 
@@ -117,7 +117,7 @@ h1 {
 }
 
 .login-button--gm {
-  border-color: rgba(250, 189, 47, 0.6);
+  border-color: rgba(255, 31, 45, 0.6);
   background: var(--accent-soft);
 }
 

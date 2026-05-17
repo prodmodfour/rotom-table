@@ -374,7 +374,7 @@ watch(crushOptions, (options) => {
 .condition-picker__option {
   border: 1px solid var(--rule-soft);
   border-radius: 999px;
-  background: rgba(60, 56, 54, 0.36);
+  background: rgba(255, 255, 255, 0.08);
   color: var(--ink);
   font-family: var(--font-ui);
   cursor: pointer;
@@ -500,7 +500,7 @@ watch(crushOptions, (options) => {
 .condition-picker__detail-button {
   border: 1px solid var(--rule-soft);
   border-radius: 999px;
-  background: rgba(60, 56, 54, 0.36);
+  background: rgba(255, 255, 255, 0.08);
   color: var(--ink);
   cursor: pointer;
   font-family: var(--font-ui);

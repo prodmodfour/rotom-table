@@ -10,9 +10,8 @@ import {
  * Lazily-built radial-gradient texture for sprite contact shadows. A
  * soft dark blob laid flat on the floor under each pokemon — the
  * "this thing is sitting on the world" cue the cage alone can't give.
- * Tinted ``bg0_h`` (warm near-black, same as floor seam lines) so the
- * shadow blends into the gruvbox palette instead of reading as a hard
- * black decal.
+ * Tinted graphite-black (same as floor seam lines) so the shadow blends
+ * into the map palette instead of reading as a hard black decal.
  */
 let contactShadowTexture: THREE.CanvasTexture | null = null
 
@@ -29,10 +28,10 @@ export const getContactShadowTexture = (): THREE.CanvasTexture => {
   // stop ensures the geometry's edge sits in transparent territory so
   // the disc has no visible boundary.
   const gradient = ctx.createRadialGradient(center, center, 0, center, center, center)
-  gradient.addColorStop(0,    'rgba(29, 32, 33, 0.78)') // bg0_h core
-  gradient.addColorStop(0.55, 'rgba(29, 32, 33, 0.42)')
-  gradient.addColorStop(0.85, 'rgba(29, 32, 33, 0)')
-  gradient.addColorStop(1,    'rgba(29, 32, 33, 0)')
+  gradient.addColorStop(0,    'rgba(5, 6, 8, 0.78)') // graphite-black core
+  gradient.addColorStop(0.55, 'rgba(5, 6, 8, 0.42)')
+  gradient.addColorStop(0.85, 'rgba(5, 6, 8, 0)')
+  gradient.addColorStop(1,    'rgba(5, 6, 8, 0)')
   ctx.fillStyle = gradient
   ctx.fillRect(0, 0, size, size)
   const texture = new THREE.CanvasTexture(canvas)
@@ -54,10 +53,10 @@ export const getSpriteHaloTexture = (): THREE.CanvasTexture => {
   if (!ctx) throw new Error('2d canvas context unavailable')
   const center = size / 2
   const gradient = ctx.createRadialGradient(center, center, 0, center, center, center)
-  gradient.addColorStop(0, 'rgba(250, 189, 47, 0.46)')
-  gradient.addColorStop(0.45, 'rgba(250, 189, 47, 0.22)')
-  gradient.addColorStop(0.82, 'rgba(250, 189, 47, 0.04)')
-  gradient.addColorStop(1, 'rgba(250, 189, 47, 0)')
+  gradient.addColorStop(0, 'rgba(255, 31, 45, 0.46)')
+  gradient.addColorStop(0.45, 'rgba(255, 31, 45, 0.22)')
+  gradient.addColorStop(0.82, 'rgba(255, 31, 45, 0.04)')
+  gradient.addColorStop(1, 'rgba(255, 31, 45, 0)')
   ctx.fillStyle = gradient
   ctx.fillRect(0, 0, size, size)
   const texture = new THREE.CanvasTexture(canvas)

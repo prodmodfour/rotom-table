@@ -63,7 +63,7 @@ const emit = defineEmits<{
 }
 
 .section-toggle-button:focus-visible {
-  outline: 2px solid rgba(250, 189, 47, 0.35);
+  outline: 2px solid rgba(255, 31, 45, 0.35);
   outline-offset: 3px;
   border-radius: 8px;
 }

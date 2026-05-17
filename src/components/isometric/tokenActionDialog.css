@@ -4,8 +4,11 @@
   z-index: 9;
   display: grid;
   place-items: center;
-  background: rgba(29, 32, 33, 0.45);
-  backdrop-filter: blur(2px);
+  background:
+    radial-gradient(circle at top, rgba(255, 31, 45, 0.14), transparent 42%),
+    rgba(5, 6, 8, 0.42);
+  backdrop-filter: blur(3px) saturate(125%);
+  -webkit-backdrop-filter: blur(3px) saturate(125%);
 }
 
 .hp-dialog {
@@ -14,10 +17,20 @@
   gap: 0.85rem;
   width: min(320px, 90vw);
   padding: 1rem 1.1rem;
-  border: 1px solid var(--rule-soft);
+  border: 1px solid rgba(255, 255, 255, 0.24);
   border-radius: 14px;
-  background: var(--paper-soft);
-  box-shadow: var(--shadow-card);
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.11) 0 20%,
+      transparent 20% 100%
+    ),
+    rgba(12, 14, 18, 0.72);
+  box-shadow:
+    var(--shadow-card),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
 }
 
 .hp-dialog--wide {
@@ -85,7 +98,7 @@
 
 .combat-stage-dialog__input:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 2px rgba(250, 189, 47, 0.18);
+  box-shadow: 0 0 0 2px rgba(255, 31, 45, 0.18);
 }
 
 .combat-stage-dialog__preview {
@@ -96,11 +109,11 @@
 }
 
 .combat-stage-dialog__preview.is-positive {
-  color: #b8bb26;
+  color: var(--good);
 }
 
 .combat-stage-dialog__preview.is-negative {
-  color: #fb4934;
+  color: var(--bad);
 }
 
 .conditions-dialog__picker {
@@ -155,11 +168,11 @@
 }
 
 .hp-dialog__preview.is-damage {
-  color: #fb4934;
+  color: var(--bad);
 }
 
 .hp-dialog__preview.is-heal {
-  color: #b8bb26;
+  color: var(--good);
 }
 
 .hp-dialog__multiplier {
@@ -174,13 +187,13 @@
 }
 
 .hp-dialog__multiplier.is-weak {
-  color: #fb4934;
-  background: rgba(251, 73, 52, 0.12);
+  color: var(--bad);
+  background: rgba(255, 31, 45, 0.12);
 }
 
 .hp-dialog__multiplier.is-resist {
-  color: #b8bb26;
-  background: rgba(184, 187, 38, 0.12);
+  color: var(--good);
+  background: rgba(100, 230, 118, 0.12);
 }
 
 .hp-dialog__multiplier.is-immune {
@@ -260,7 +273,7 @@
 .hp-dialog__field input:focus,
 .hp-dialog__field select:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 2px rgba(250, 189, 47, 0.18);
+  box-shadow: 0 0 0 2px rgba(255, 31, 45, 0.18);
 }
 
 .hp-dialog__field select {

@@ -223,7 +223,7 @@ const emit = defineEmits<{
   background: var(--map-glass-surface, var(--paper));
   box-shadow:
     0 24px 70px rgba(0, 0, 0, 0.34),
-    inset 0 1px 0 rgba(251, 241, 199, 0.08);
+    inset 0 1px 0 rgba(255, 255, 255, 0.10);
   backdrop-filter: blur(18px) saturate(140%);
   -webkit-backdrop-filter: blur(18px) saturate(140%);
   max-height: 100%;

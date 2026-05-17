@@ -10,23 +10,23 @@ import {
 } from '~/utils/capabilityArtCore'
 
 const COLORS = {
-  amber: '#d79921',
-  gold: '#fabd2f',
-  orange: '#fe8019',
-  red: '#fb4934',
-  green: '#98971a',
-  brightGreen: '#b8bb26',
-  aqua: '#689d6a',
-  brightAqua: '#8ec07c',
-  blue: '#458588',
-  brightBlue: '#83a598',
-  purple: '#b16286',
-  brightPurple: '#d3869b',
-  brown: '#af7a3b',
-  steel: '#7c6f64',
-  slate: '#504945',
-  dark: '#3c3836',
-  black: '#282828',
+  amber: '#ffb84d',
+  gold: '#ffe45e',
+  orange: '#ff7a2f',
+  red: '#ff1f2d',
+  green: '#48b85a',
+  brightGreen: '#64e676',
+  aqua: '#4db89f',
+  brightAqua: '#8eeedc',
+  blue: '#5c8dff',
+  brightBlue: '#8fb8ff',
+  purple: '#b56cff',
+  brightPurple: '#d88cff',
+  brown: '#9a6b45',
+  steel: '#66707a',
+  slate: '#29303a',
+  dark: '#12151b',
+  black: '#050608',
 } as const
 
 export const CAPABILITY_ART: Record<string, CapabilityArtDefinition> = {
@@ -71,7 +71,7 @@ export const CAPABILITY_ART: Record<string, CapabilityArtDefinition> = {
   Magnetic: { color: COLORS.red, accent: COLORS.brightBlue, icon: 'magnetic', label: 'MAG' },
   Marsupial: { color: COLORS.brown, accent: COLORS.gold, icon: 'marsupial', label: 'MAR' },
   Materializer: { color: COLORS.brown, accent: COLORS.gold, icon: 'materializer', label: 'ROC' },
-  'Milk Collection': { color: COLORS.brightBlue, accent: '#fbf1c7', icon: 'milk-collection', label: 'MLK' },
+  'Milk Collection': { color: COLORS.brightBlue, accent: '#f7f7f2', icon: 'milk-collection', label: 'MLK' },
   Mindlock: { color: COLORS.dark, accent: COLORS.gold, icon: 'mindlock', label: 'MND' },
   'Mountable X': { color: COLORS.brown, accent: COLORS.gold, icon: 'mountable', label: 'MTX' },
   'Mushroom Harvest': { color: COLORS.purple, accent: COLORS.gold, icon: 'mushroom-harvest', label: 'MSH' },
@@ -125,5 +125,5 @@ export const capabilityArtSvg = (rawName: string, size: CapabilityArtSize = 'md'
   const color = escapeCapabilityArtXml(art.color)
   const accent = escapeCapabilityArtXml(art.accent)
 
-  return `<svg class="capability-art-svg capability-art-svg--${size}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" width="${px}" height="${px}" role="img" aria-label="${title}"><title>${title}</title><rect x="3" y="3" width="90" height="90" rx="22" fill="${color}"/><path d="M7 10h82v19c-18 7-40 8-58 4C20 31 12 28 7 24Z" fill="rgba(255,255,255,.14)"/><circle cx="72" cy="21" r="18" fill="${accent}" opacity=".22"/><circle cx="48" cy="45" r="33" fill="rgba(29,32,33,.23)" stroke="rgba(255,255,255,.16)" stroke-width="2"/><g transform="translate(16 12)">${capabilityIconMarkup(art.icon, accent)}</g><rect x="25" y="74" width="46" height="14" rx="7" fill="rgba(29,32,33,.32)" stroke="rgba(255,255,255,.14)"/><text x="48" y="84.6" text-anchor="middle" fill="rgba(251,241,199,.96)" font-family="JetBrains Mono, Arial, sans-serif" font-size="9.5" font-weight="900" letter-spacing=".8">${label}</text></svg>`
+  return `<svg class="capability-art-svg capability-art-svg--${size}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" width="${px}" height="${px}" role="img" aria-label="${title}"><title>${title}</title><rect x="3" y="3" width="90" height="90" rx="22" fill="${color}"/><path d="M7 10h82v19c-18 7-40 8-58 4C20 31 12 28 7 24Z" fill="rgba(255,255,255,.14)"/><circle cx="72" cy="21" r="18" fill="${accent}" opacity=".22"/><circle cx="48" cy="45" r="33" fill="rgba(5,6,8,.23)" stroke="rgba(255,255,255,.16)" stroke-width="2"/><g transform="translate(16 12)">${capabilityIconMarkup(art.icon, accent)}</g><rect x="25" y="74" width="46" height="14" rx="7" fill="rgba(5,6,8,.32)" stroke="rgba(255,255,255,.14)"/><text x="48" y="84.6" text-anchor="middle" fill="rgba(247,247,242,.96)" font-family="JetBrains Mono, Arial, sans-serif" font-size="9.5" font-weight="900" letter-spacing=".8">${label}</text></svg>`
 }

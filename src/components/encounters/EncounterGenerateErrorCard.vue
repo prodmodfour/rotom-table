@@ -35,8 +35,8 @@ defineProps<{
 }
 
 .error-card {
-  border-color: rgba(251, 73, 52, 0.45);
-  background: rgba(251, 73, 52, 0.08);
+  border-color: rgba(255, 31, 45, 0.45);
+  background: rgba(255, 31, 45, 0.08);
 }
 
 .error-message {

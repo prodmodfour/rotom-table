@@ -2,12 +2,11 @@ import * as THREE from 'three'
 import { BLOCK_FACE_ROLES, applyVoxelFaceMaterialStyle, type VoxelRenderStyle } from './blockTextures'
 
 /**
- * Gruvbox terrain palette for isometric face shading.
+ * Black / white / red terrain palette for isometric face shading.
  *
  * The classic isometric trick is roughly 100 / 80 / 60 % brightness for
- * top / left / right faces. With gruvbox we step bg3 → bg2 → bg1
- * (and dark/neutral/bright for accent variants) so everything stays
- * in-palette without any literal HSL math.
+ * top / left / right faces. We keep neutral cages in a white-to-graphite
+ * ramp and reserve red for selected or invalid tactical feedback.
  *
  * Opposite faces share roles so 90° azimuth rotations preserve the
  * lighting pattern: ±X faces are always the "shadow" axis, ±Z faces
@@ -15,41 +14,37 @@ import { BLOCK_FACE_ROLES, applyVoxelFaceMaterialStyle, type VoxelRenderStyle } 
  */
 export const TERRAIN_PALETTE = {
   idle: {
-    // fg-band rather than bg-band so the cage sits visually above the
-    // terrain's brightness range. Terrain pulls from gruvbox bg/mid,
-    // sprites pull from bright accents — the cage takes the fg/grey
-    // band in between, giving each layer its own zone instead of the
-    // cage merging with the grid underneath it.
-    top:    0xbdae93, // fg3 — lit top
-    side:   0xa89984, // fg4 — Z-perp visible side
-    shadow: 0x7c6f64, // bg4 — X-perp shadowed side (sharpened ramp so
-                      //       top↔shadow contrast reads across the table)
-    bottom: 0x665c54, // bg3 — floor of the cage (rarely seen)
+    // White/graphite band so the cage sits visually above the terrain's
+    // brightness range without taking on the active red accent.
+    top:    0xdfe3e8, // white-soft — lit top
+    side:   0xaeb5bd, // white-muted — Z-perp visible side
+    shadow: 0x66707a, // faint steel — X-perp shadowed side
+    bottom: 0x29303a, // steel-2 — floor of the cage (rarely seen)
   },
   selected: {
-    top:    0xfabd2f, // yellow bright
-    side:   0xd79921, // yellow neutral
-    shadow: 0xb57614, // yellow faded
-    bottom: 0x79740e, // yellow dim
+    top:    0xff5a62,
+    side:   0xff1f2d,
+    shadow: 0xb80f22,
+    bottom: 0x5a0710,
   },
   reachable: {
-    top:    0xfabd2f,
-    side:   0xd79921,
-    shadow: 0xb57614,
-    bottom: 0x79740e,
+    top:    0xf7f7f2,
+    side:   0xdfe3e8,
+    shadow: 0xaeb5bd,
+    bottom: 0x66707a,
   },
   unreachable: {
-    top:    0xfb4934, // red bright
-    side:   0xcc241d, // red neutral
-    shadow: 0x9d0006, // red faded
-    bottom: 0x79190f, // red dim
+    top:    0xff4a55,
+    side:   0xd7192c,
+    shadow: 0x9d0b1c,
+    bottom: 0x5a0710,
   },
 } as const
 
 export type TerrainVariant = keyof typeof TERRAIN_PALETTE
 
 /**
- * Build a 6-material array for a ``THREE.BoxGeometry`` with gruvbox
+ * Build a 6-material array for a ``THREE.BoxGeometry`` with theme-aware
  * face shading. BoxGeometry face groups are ordered
  * ``+X, -X, +Y, -Y, +Z, -Z`` — we map opposing faces to the same role
  * so the box reads consistently regardless of camera azimuth.

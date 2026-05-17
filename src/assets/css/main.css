@@ -13,52 +13,58 @@
   font-family: var(--font-ui);
 
   /* ----------------------------------------------------------------
-   * Gruvbox Dark theme tokens.
-   *
-   * Palette reference (hard variant):
-   *   bg0_h #1d2021   bg0   #282828   bg0_s #32302f
-   *   bg1   #3c3836   bg2   #504945   bg3   #665c54   bg4 #7c6f64
-   *   fg0   #fbf1c7   fg1   #ebdbb2   fg2   #d5c4a1
-   *   fg3   #bdae93   fg4   #a89984   gray  #928374
-   *   yellow #fabd2f  orange #fe8019   red   #fb4934   green #b8bb26
-   *   aqua   #8ec07c  blue   #83a598   purple #d3869b
+   * Pokémon Black / White / Red theme tokens.
    *
    * Names follow the original "paper / ink / rule" structure so
    * scoped styles already wired up keep working.
    * ---------------------------------------------------------------- */
 
-  --paper:         #1d2021;   /* bg0_h - page background */
-  --paper-soft:    #282828;   /* bg0   - card background */
-  --paper-hover:   #32302f;   /* bg0_s - row/btn hover */
-  --paper-active:  #3c3836;   /* bg1   - active row/btn */
-  --paper-inset:   #32302f;   /* inset / sub-card panel */
+  --pokemon-black: #050608;
+  --pokemon-black-2: #0b0d11;
+  --pokemon-graphite: #12151b;
+  --pokemon-steel: #1b2028;
+  --pokemon-steel-2: #29303a;
+  --pokemon-white: #f7f7f2;
+  --pokemon-white-soft: #dfe3e8;
+  --pokemon-white-muted: #aeb5bd;
+  --pokemon-red: #ff1f2d;
+  --pokemon-red-dark: #b80f22;
 
-  --ink:           #ebdbb2;   /* fg1  - primary text */
-  --ink-bright:    #fbf1c7;   /* fg0  - emphasized text */
-  --ink-soft:      #d5c4a1;   /* fg2  - secondary text */
-  --ink-muted:     #a89984;   /* fg4  - tertiary / labels */
-  --ink-faint:     #928374;   /* gray - disabled / faint */
+  --paper:         var(--pokemon-black);
+  --paper-soft:    var(--pokemon-graphite);
+  --paper-hover:   var(--pokemon-steel);
+  --paper-active:  #241219;
+  --paper-inset:   #090b0f;
 
-  --rule:          #3c3836;   /* bg1  - hairline */
-  --rule-soft:     #504945;   /* bg2  - normal border */
-  --rule-strong:   #665c54;   /* bg3  - hover border */
-  --rule-active:   #7c6f64;   /* bg4  - active border */
+  --ink:           var(--pokemon-white-soft);
+  --ink-bright:    var(--pokemon-white);
+  --ink-soft:      #c9cdd2;
+  --ink-muted:     var(--pokemon-white-muted);
+  --ink-faint:     #66707a;
 
-  --accent:        #fabd2f;   /* yellow bright - the iconic gruvbox accent */
-  --accent-soft:   rgba(250, 189, 47, 0.12);
-  --accent-muted:  #d79921;   /* yellow neutral - for subtler accents */
+  --rule:          rgba(255, 255, 255, 0.10);
+  --rule-soft:     rgba(255, 255, 255, 0.18);
+  --rule-strong:   rgba(255, 255, 255, 0.34);
+  --rule-active:   rgba(255, 31, 45, 0.68);
 
-  --good:          #b8bb26;   /* green bright */
-  --bad:           #fb4934;   /* red bright */
-  --info:          #83a598;   /* blue bright */
-  --warn:          #fe8019;   /* orange bright */
-  --magic:         #d3869b;   /* purple bright */
+  --accent:        var(--pokemon-red);
+  --accent-soft:   rgba(255, 31, 45, 0.16);
+  --accent-muted:  var(--pokemon-red-dark);
+
+  /* Keep semantic/gameplay colors readable and distinct. */
+  --good:          #64e676;
+  --bad:           var(--pokemon-red);
+  --info:          #8fb8ff;
+  --warn:          #ffb84d;
+  --magic:         #d88cff;
 
   --map-hp-healthy:  #00ff00;
   --map-hp-wounded:  #ff9500;
   --map-hp-critical: #ff0000;
 
-  --shadow-card:   0 18px 40px rgba(0, 0, 0, 0.55);
+  --shadow-card:
+    0 18px 44px rgba(0, 0, 0, 0.72),
+    0 0 0 1px rgba(255, 255, 255, 0.035);
 }
 
 * {
@@ -103,16 +109,29 @@ samp {
 }
 
 ::selection {
-  background: rgba(250, 189, 47, 0.28);
+  background: rgba(255, 31, 45, 0.35);
   color: var(--ink-bright);
 }
 
 /* Shared card primitive used by sheets, references, library, and map panels. */
 .panel-card {
-  border: 1px solid var(--rule);
-  border-radius: 14px;
-  background: var(--paper-soft);
-  box-shadow: var(--shadow-card);
+  border: 1px solid var(--rule-soft);
+  border-radius: 12px;
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.08) 0 18%,
+      transparent 18% 100%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.04),
+      rgba(255, 255, 255, 0.01)
+    ),
+    var(--paper-soft);
+  box-shadow:
+    var(--shadow-card),
+    inset 0 1px 0 rgba(255, 255, 255, 0.10);
   padding: 0.95rem;
 }
 
@@ -121,7 +140,7 @@ samp {
   font-style: italic;
 }
 
-/* Scrollbars — match the warm dark surface so they don't
+/* Scrollbars — match the graphite dark surface so they don't
    stand out as ice-blue strips on Chromium. */
 * {
   scrollbar-color: var(--rule-strong) var(--paper);
@@ -159,7 +178,7 @@ samp {
   padding: 3px 7px;
   border: 1px solid var(--rule-active);
   border-radius: 999px;
-  background: rgba(40, 40, 40, 0.88);
+  background: rgba(12, 14, 18, 0.88);
   color: var(--ink);
   font-size: 14px;
   font-weight: 700;
@@ -173,7 +192,7 @@ samp {
 .elevation-badge.is-ghost {
   opacity: 0.85;
   border-color: var(--accent);
-  background: rgba(60, 56, 54, 0.85);
+  background: rgba(12, 14, 18, 0.85);
   color: var(--accent);
 }
 
@@ -250,7 +269,7 @@ samp {
   padding: 7px 9px;
   border: 2px solid var(--rule-active);
   border-radius: 14px;
-  background: rgba(29, 32, 33, 0.9);
+  background: rgba(5, 6, 8, 0.9);
   color: var(--ink-bright);
   font-family: var(--font-ui);
   font-size: 14px;
@@ -263,7 +282,7 @@ samp {
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
   box-shadow:
     0 10px 20px rgba(0, 0, 0, 0.42),
-    0 0 10px rgba(250, 189, 47, 0.35);
+    0 0 10px rgba(255, 31, 45, 0.35);
 }
 
 .move-automation-roll.is-rolling {
@@ -278,21 +297,21 @@ samp {
 }
 
 .move-automation-roll.is-result.is-hit {
-  border-color: #b8bb26;
-  color: #b8ff26;
+  border-color: var(--good);
+  color: #8cff9a;
 }
 
 .move-automation-roll.is-result.is-miss {
-  border-color: #fb4934;
-  color: #ff6b5f;
+  border-color: var(--bad);
+  color: #ff6b73;
 }
 
 .move-automation-roll.is-result.is-crit {
-  border-color: #fabd2f;
-  color: #fabd2f;
+  border-color: var(--accent);
+  color: var(--accent);
   box-shadow:
     0 10px 20px rgba(0, 0, 0, 0.45),
-    0 0 16px rgba(250, 189, 47, 0.78);
+    0 0 16px rgba(255, 31, 45, 0.78);
 }
 
 @keyframes move-automation-d20-roll {
@@ -335,7 +354,7 @@ samp {
   line-height: 0.65;
   text-shadow:
     0 1px 1px rgba(0, 0, 0, 0.96),
-    0 0 5px rgba(250, 189, 47, 0.65);
+    0 0 5px rgba(255, 31, 45, 0.65);
   -webkit-text-stroke: 0.35px rgba(0, 0, 0, 0.78);
   paint-order: stroke fill;
 }
@@ -362,7 +381,7 @@ samp {
   text-shadow:
     0 1px 1px rgba(0, 0, 0, 0.95),
     0 0 3px rgba(0, 0, 0, 0.82),
-    0 0 6px rgba(29, 32, 33, 0.55);
+    0 0 6px rgba(5, 6, 8, 0.55);
 }
 
 .token-status__label.is-stacked-name {
@@ -456,7 +475,7 @@ samp {
   padding: 0 3px;
   border: 1px solid currentColor;
   border-radius: 999px;
-  background: rgba(29, 32, 33, 0.72);
+  background: rgba(5, 6, 8, 0.72);
   font-size: 6px;
   font-weight: 900;
   letter-spacing: 0.01em;
@@ -523,9 +542,9 @@ samp {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid rgba(251, 241, 199, 0.62);
+  border: 1px solid rgba(255, 255, 255, 0.62);
   border-radius: 999px;
-  background: rgba(60, 56, 54, 0.88);
+  background: rgba(12, 14, 18, 0.88);
   color: var(--accent);
   font-size: 8px;
   font-weight: 900;
@@ -539,7 +558,7 @@ samp {
   height: 5px;
   border: 1px solid rgba(0, 0, 0, 0.72);
   border-radius: 999px;
-  background: rgba(29, 32, 33, 0.52);
+  background: rgba(5, 6, 8, 0.52);
   overflow: hidden;
   user-select: none;
   pointer-events: none;
@@ -553,7 +572,7 @@ samp {
   width: 100%;
   border-radius: inherit;
   background: var(--map-hp-healthy);
-  box-shadow: inset 0 0 2px rgba(251, 241, 199, 0.28);
+  box-shadow: inset 0 0 2px rgba(247, 247, 242, 0.28);
   transition: width 0.18s ease, background-color 0.18s ease;
 }
 

@@ -175,7 +175,7 @@ input {
 
 input:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 2px rgba(250, 189, 47, 0.18);
+  box-shadow: 0 0 0 2px rgba(255, 31, 45, 0.18);
 }
 
 input:disabled {
@@ -258,9 +258,9 @@ button:disabled {
 .edit-errors {
   margin: 0;
   padding: 0.7rem 0.9rem;
-  border: 1px solid rgba(251, 73, 52, 0.35);
+  border: 1px solid rgba(255, 31, 45, 0.35);
   border-radius: 10px;
-  background: rgba(251, 73, 52, 0.08);
+  background: rgba(255, 31, 45, 0.08);
   color: var(--bad);
   list-style-position: inside;
   font-size: 0.84rem;

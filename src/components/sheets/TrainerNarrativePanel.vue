@@ -18,7 +18,7 @@ const goalsAndDreams = defineModel<string | undefined>('goalsAndDreams')
         />
       </p>
     </div>
-    <div class="narrative narrative--yellow">
+    <div class="narrative narrative--accent">
       <h3>Background</h3>
       <p>
         <EditableCell

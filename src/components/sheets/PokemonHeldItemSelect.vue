@@ -305,25 +305,25 @@ onBeforeUnmount(() => {
   gap: 0.45rem;
   width: min(100%, 18rem);
   min-height: 2.1rem;
-  border: 1px solid var(--accent, #fabd2f);
+  border: 1px solid var(--accent, #ff1f2d);
   border-radius: 4px;
-  background: var(--paper, #1d2021);
-  color: var(--ink-bright, #fbf1c7);
+  background: var(--paper, #050608);
+  color: var(--ink-bright, #f7f7f2);
   padding: 0.1rem 0.45rem;
   text-align: left;
   cursor: pointer;
-  box-shadow: 0 0 0 2px rgba(250, 189, 47, 0.12);
+  box-shadow: 0 0 0 2px rgba(255, 31, 45, 0.12);
 }
 
 .held-item-select__trigger:hover,
 .held-item-select__trigger:focus-visible {
-  background: var(--paper-hover, #32302f);
+  background: var(--paper-hover, #1b2028);
   outline: none;
-  box-shadow: 0 0 0 2px rgba(250, 189, 47, 0.2);
+  box-shadow: 0 0 0 2px rgba(255, 31, 45, 0.2);
 }
 
 .held-item-select__trigger--empty {
-  color: var(--ink-faint, #928374);
+  color: var(--ink-faint, #66707a);
 }
 
 .held-item-select__sprite {
@@ -336,7 +336,7 @@ onBeforeUnmount(() => {
 }
 
 .held-item-select__sprite-placeholder {
-  color: var(--ink-faint, #928374);
+  color: var(--ink-faint, #66707a);
   font-size: 0.78rem;
 }
 
@@ -348,7 +348,7 @@ onBeforeUnmount(() => {
 }
 
 .held-item-select__chevron {
-  color: var(--ink-muted, #a89984);
+  color: var(--ink-muted, #aeb5bd);
   font-size: 0.78rem;
 }
 
@@ -358,9 +358,9 @@ onBeforeUnmount(() => {
   top: calc(100% + 0.3rem);
   left: 0;
   width: min(28rem, calc(100vw - 2rem));
-  border: 1px solid var(--rule-strong, #665c54);
+  border: 1px solid var(--rule-strong, #56606b);
   border-radius: 10px;
-  background: var(--paper-soft, #282828);
+  background: var(--paper-soft, #12151b);
   box-shadow: 0 18px 38px rgba(0, 0, 0, 0.58);
   padding: 0.45rem;
 }
@@ -372,17 +372,17 @@ onBeforeUnmount(() => {
 
 .held-item-select__search {
   width: 100%;
-  border: 1px solid var(--rule-soft, #504945);
+  border: 1px solid var(--rule-soft, #29303a);
   border-radius: 8px;
-  background: var(--paper, #1d2021);
-  color: var(--ink-bright, #fbf1c7);
+  background: var(--paper, #050608);
+  color: var(--ink-bright, #f7f7f2);
   padding: 0.35rem 0.5rem;
   outline: none;
 }
 
 .held-item-select__search:focus {
-  border-color: var(--accent, #fabd2f);
-  box-shadow: 0 0 0 2px rgba(250, 189, 47, 0.14);
+  border-color: var(--accent, #ff1f2d);
+  box-shadow: 0 0 0 2px rgba(255, 31, 45, 0.14);
 }
 
 .held-item-select__list {
@@ -400,7 +400,7 @@ onBeforeUnmount(() => {
   border: 1px solid transparent;
   border-radius: 8px;
   background: transparent;
-  color: var(--ink, #ebdbb2);
+  color: var(--ink, #dfe3e8);
   padding: 0.35rem 0.4rem;
   text-align: left;
   cursor: pointer;
@@ -408,17 +408,17 @@ onBeforeUnmount(() => {
 
 .held-item-select__option:hover,
 .held-item-select__option--active {
-  border-color: var(--rule-soft, #504945);
-  background: var(--paper-hover, #32302f);
+  border-color: var(--rule-soft, #29303a);
+  background: var(--paper-hover, #1b2028);
 }
 
 .held-item-select__option--selected {
-  border-color: rgba(250, 189, 47, 0.55);
-  background: rgba(250, 189, 47, 0.09);
+  border-color: rgba(255, 31, 45, 0.55);
+  background: rgba(255, 31, 45, 0.09);
 }
 
 .held-item-select__option--empty .held-item-select__option-label {
-  color: var(--ink-faint, #928374);
+  color: var(--ink-faint, #66707a);
   font-style: italic;
 }
 
@@ -433,25 +433,25 @@ onBeforeUnmount(() => {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: var(--ink-bright, #fbf1c7);
+  color: var(--ink-bright, #f7f7f2);
 }
 
 .held-item-select__option-detail {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: var(--ink-muted, #a89984);
+  color: var(--ink-muted, #aeb5bd);
   font-size: 0.74rem;
 }
 
 .held-item-select__selected-mark {
-  color: var(--accent, #fabd2f);
+  color: var(--accent, #ff1f2d);
   font-weight: 700;
 }
 
 .held-item-select__empty {
   margin: 0.5rem;
-  color: var(--ink-faint, #928374);
+  color: var(--ink-faint, #66707a);
   font-style: italic;
 }
 

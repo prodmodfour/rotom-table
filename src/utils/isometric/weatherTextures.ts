@@ -71,10 +71,10 @@ export const createWeatherTextureCache = (
     ctx.clearRect(0, 0, canvas.width, canvas.height)
 
     const haze = ctx.createLinearGradient(0, 0, canvas.width, 0)
-    haze.addColorStop(0, 'rgba(250, 189, 47, 0)')
-    haze.addColorStop(0.32, 'rgba(250, 189, 47, 0.08)')
-    haze.addColorStop(0.68, 'rgba(235, 219, 178, 0.11)')
-    haze.addColorStop(1, 'rgba(250, 189, 47, 0)')
+    haze.addColorStop(0, 'rgba(202, 164, 90, 0)')
+    haze.addColorStop(0.32, 'rgba(202, 164, 90, 0.08)')
+    haze.addColorStop(0.68, 'rgba(247, 224, 170, 0.11)')
+    haze.addColorStop(1, 'rgba(202, 164, 90, 0)')
     ctx.fillStyle = haze
     ctx.fillRect(0, 0, canvas.width, canvas.height)
 

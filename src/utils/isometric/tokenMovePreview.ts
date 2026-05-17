@@ -46,7 +46,7 @@ export const createTokenMovePreviewRenderer = (containers: {
     pathLine = new THREE.Line(
       new THREE.BufferGeometry(),
       new THREE.LineBasicMaterial({
-        color: 0xfabd2f, // gruvbox yellow path trail
+        color: 0xff1f2d, // red active path trail
         transparent: true,
         opacity: 0.95,
         depthTest: true,
@@ -85,8 +85,8 @@ export const createTokenMovePreviewRenderer = (containers: {
     containers.scene.add(elevationBadge)
 
     // Preview volume gets the same per-face shading as live pokemon
-    // boxes, but tinted with gruvbox yellow (reachable) or red
-    // (unreachable) instead of the warm gray ramp.
+    // boxes, but tinted with white/red tactical feedback instead of the
+    // neutral graphite ramp.
     volume = new THREE.Mesh(
       new THREE.BoxGeometry(pokemon.base, pokemon.clearance, pokemon.base),
       buildVolumeMaterials('reachable', 0.24),
@@ -97,7 +97,7 @@ export const createTokenMovePreviewRenderer = (containers: {
     edges = new THREE.LineSegments(
       new THREE.EdgesGeometry(new THREE.BoxGeometry(pokemon.base, pokemon.clearance, pokemon.base)),
       new THREE.LineBasicMaterial({
-        color: 0xfbf1c7, // fg0 - bright cream highlight on the yellow box
+        color: 0xf7f7f2, // bright white highlight on the preview box
         transparent: true,
         opacity: 0.92,
         depthTest: true,
@@ -159,7 +159,7 @@ export const createTokenMovePreviewRenderer = (containers: {
       )
       volume.visible = true
 
-      ;(edges.material as THREE.LineBasicMaterial).color.set(options.reachable ? 0xfbf1c7 : 0xfb4934)
+      ;(edges.material as THREE.LineBasicMaterial).color.set(options.reachable ? 0xf7f7f2 : 0xff4a55)
       edges.position.copy(volume.position)
       edges.visible = true
 

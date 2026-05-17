@@ -49,7 +49,7 @@ const props = withDefaults(defineProps<Props>(), {
 }
 
 .save-pill[data-status='saving'] .save-pill__dot {
-  background: var(--accent, #fabd2f);
+  background: var(--accent, #ff1f2d);
   animation: pulse 0.9s ease-in-out infinite;
 }
 

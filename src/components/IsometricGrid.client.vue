@@ -1185,7 +1185,7 @@ useIsometricSceneWatchers({
 .move-targeting-hud__direction.is-active {
   border-color: var(--accent);
   color: var(--accent);
-  box-shadow: 0 0 0 2px rgba(250, 189, 47, 0.16);
+  box-shadow: 0 0 0 2px rgba(255, 31, 45, 0.16);
 }
 
 .move-targeting-hud__cancel:hover,

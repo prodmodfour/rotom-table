@@ -105,7 +105,7 @@ describe('isometric block texture primitive painters', () => {
       y: 0,
       width: 3,
       height: BLOCK_TEXTURE_SIZE,
-      fillStyle: '#1d2021',
+      fillStyle: '#050608',
       globalAlpha: 0.9,
     }))
   })
