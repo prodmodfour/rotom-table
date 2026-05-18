@@ -1,4 +1,4 @@
-export type CombatLogSource = 'move' | 'ability'
+export type CombatLogSource = 'move' | 'ability' | 'movement'
 
 export interface CombatLogMessage {
   id: string
@@ -16,8 +16,9 @@ export interface CombatLogBuildOptions {
 
 interface CombatLogSourceConfig {
   source: CombatLogSource
-  metadataKey: 'moveLog' | 'abilityLog'
-  actionKey: 'moveName' | 'abilityName'
+  metadataKey: string
+  actionKey: string
+  fallbackActionName: string
 }
 
 interface CombatLogEntry {
@@ -36,8 +37,9 @@ interface SortableCombatLogMessage extends CombatLogMessage {
 }
 
 const COMBAT_LOG_SOURCES: readonly CombatLogSourceConfig[] = [
-  { source: 'move', metadataKey: 'moveLog', actionKey: 'moveName' },
-  { source: 'ability', metadataKey: 'abilityLog', actionKey: 'abilityName' },
+  { source: 'move', metadataKey: 'moveLog', actionKey: 'moveName', fallbackActionName: 'Move' },
+  { source: 'ability', metadataKey: 'abilityLog', actionKey: 'abilityName', fallbackActionName: 'Ability' },
+  { source: 'movement', metadataKey: 'movementLog', actionKey: 'actionName', fallbackActionName: 'Movement' },
 ]
 
 const HIDDEN_LOG_LINE_PATTERNS: readonly RegExp[] = [
@@ -90,7 +92,7 @@ const readEntriesForSource = (
       sourceOrder,
       entryIndex,
       userName: stringOrFallback(rawEntry.userName, 'Unknown'),
-      actionName: stringOrFallback(rawEntry[config.actionKey], config.source === 'move' ? 'Move' : 'Ability'),
+      actionName: stringOrFallback(rawEntry[config.actionKey], config.fallbackActionName),
       lines,
     }]
   })

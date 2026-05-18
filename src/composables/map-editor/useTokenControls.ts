@@ -2,6 +2,7 @@ import { computed, ref, watch, type ComputedRef, type Ref } from 'vue'
 import { canPlacePokemon, findFirstAvailablePosition } from '~/utils/gridPlacement'
 import type { PreviewState } from '~/utils/gridPreview'
 import { buildMapOccupancy } from '~/utils/mapOccupancy'
+import { appendMovementLogEntry, sameGridAnchor } from '~/utils/mapMovementLog'
 import { pokedexEntryPathForSpecies } from '~/utils/pokedex/routes'
 import { toPokedexSlug as normalizePokedexSlug } from '~/utils/pokedex/searchText'
 import {
@@ -45,6 +46,8 @@ export interface UseTokenControlsOptions {
   canDeleteTokens?: BooleanRef
   selectionDisabled?: BooleanRef
   createPlacementId?: () => string
+  now?: () => number
+  maxMovementLogEntries?: number
 }
 
 const EMPTY_POKEMON_SHEETS = new Map<string, CharacterSheet>()
@@ -74,6 +77,8 @@ export const useTokenControls = ({
   canDeleteTokens = canControlAllTokens,
   selectionDisabled,
   createPlacementId = defaultCreatePlacementId,
+  now,
+  maxMovementLogEntries,
 }: UseTokenControlsOptions) => {
   const selectedId = ref<string | null>(null)
   const previewState = ref<PreviewState>(emptyPreviewState())
@@ -212,7 +217,25 @@ export const useTokenControls = ({
     if (!map.value || !canControlPlacement(payload.id)) return
     const placement = placementById(payload.id)
     if (!placement) return
-    placement.position = payload.position
+
+    const from = { ...placement.position }
+    const to = { ...payload.position }
+    if (!sameGridAnchor(from, to)) {
+      const tokenName = spawnedPokemon.value.find((pokemon) => pokemon.id === payload.id)?.species
+        ?? placement.sheetSlug
+      map.value.metadata = appendMovementLogEntry(map.value.metadata, {
+        userId: payload.id,
+        userName: tokenName,
+        from,
+        to,
+        pathLength: previewState.value.pathLength,
+      }, {
+        now,
+        maxLogEntries: maxMovementLogEntries,
+      })
+    }
+
+    placement.position = to
     clearSelection()
   }
 

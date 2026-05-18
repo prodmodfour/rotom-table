@@ -49,6 +49,7 @@ const makeControls = (
     trainerSheets?: TrainerSheet[]
     isGm?: boolean
     nextId?: string
+    now?: () => number
   } = {},
 ) => {
   const map = ref(options.map ?? mapFixture())
@@ -66,6 +67,7 @@ const makeControls = (
       canControlAllTokens: isGm,
       canDeleteTokens: isGm,
       createPlacementId: () => options.nextId ?? 'token-1',
+      now: options.now,
     }),
   }
 }
@@ -119,6 +121,49 @@ describe('useTokenControls', () => {
     isGm.value = true
     controls.deletePlacement('gm-token')
     expect(map.placements.map((placement) => placement.id)).toEqual(['player-token'])
+  })
+
+  it('logs token movement as a combat action', () => {
+    const sheet = pokemon()
+    const map = mapFixture()
+    map.placements = [
+      { id: 'bolt-token', sheetKind: 'pokemon', sheetSlug: sheet.slug, position: { x: 0, y: 0, z: 0 } },
+    ]
+    const { controls } = makeControls({
+      map,
+      pokemonSheets: [sheet],
+      now: () => 123,
+    })
+
+    controls.updatePreview({ position: { x: 2, y: 0, z: 1 }, reachable: true, pathLength: 3 })
+    controls.movePlacement({ id: 'bolt-token', position: { x: 2, y: 0, z: 1 } })
+
+    expect(map.placements[0]?.position).toEqual({ x: 2, y: 0, z: 1 })
+    expect(map.metadata?.movementLog).toMatchObject([
+      {
+        at: 123,
+        userId: 'bolt-token',
+        userName: 'Bolt',
+        actionName: 'Movement',
+        from: { x: 0, y: 0, z: 0 },
+        to: { x: 2, y: 0, z: 1 },
+        pathLength: 3,
+        lines: ['Bolt moved 3 squares from (0, 0, 0) to (2, 0, 1).'],
+      },
+    ])
+  })
+
+  it('does not log movement when the token stays in place', () => {
+    const sheet = pokemon()
+    const map = mapFixture()
+    map.placements = [
+      { id: 'bolt-token', sheetKind: 'pokemon', sheetSlug: sheet.slug, position: { x: 0, y: 0, z: 0 } },
+    ]
+    const { controls } = makeControls({ map, pokemonSheets: [sheet] })
+
+    controls.movePlacement({ id: 'bolt-token', position: { x: 0, y: 0, z: 0 } })
+
+    expect(map.metadata?.movementLog).toBeUndefined()
   })
 
   it('centralizes map-token navigation paths', () => {

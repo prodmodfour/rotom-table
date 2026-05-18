@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { buildCombatLogMessages } from '~/utils/combatLog'
 
 describe('buildCombatLogMessages', () => {
-  it('combines move and ability automation entries in chronological order', () => {
+  it('combines move, ability, and movement entries in chronological order', () => {
     const messages = buildCombatLogMessages({
       moveLog: [
         {
@@ -30,19 +30,29 @@ describe('buildCombatLogMessages', () => {
           lines: ['Lux activated Intimidate.'],
         },
       ],
+      movementLog: [
+        {
+          at: 175,
+          userName: 'Crockefeller',
+          actionName: 'Movement',
+          lines: ['Crockefeller moved 3 squares from (0, 0, 0) to (3, 0, 0).'],
+        },
+      ],
     })
 
     expect(messages.map((message) => message.title)).toEqual([
       'Doug used Leer.',
       'Lux activated Intimidate.',
+      'Crockefeller moved 3 squares from (0, 0, 0) to (3, 0, 0).',
       'Foil used Ember.',
     ])
     expect(messages.map((message) => message.source)).toEqual([
       'move',
       'ability',
+      'movement',
       'move',
     ])
-    expect(messages[2]?.details).toEqual(['Crockefeller: 9 HP damage.'])
+    expect(messages[3]?.details).toEqual(['Crockefeller: 9 HP damage.'])
   })
 
   it('returns the newest limited action messages while keeping display order', () => {
