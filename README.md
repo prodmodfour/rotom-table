@@ -4,6 +4,7 @@
 ![Nuxt 3](https://img.shields.io/badge/Nuxt-3-00DC82?logo=nuxtdotjs&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict%20app-3178C6?logo=typescript&logoColor=white)
 ![Vitest](https://img.shields.io/badge/Vitest-tested-6E9F18?logo=vitest&logoColor=white)
+![License](https://img.shields.io/badge/license-MIT%20(original%20code)-22c55e)
 ![Local-first](https://img.shields.io/badge/local--first-filesystem%20JSON-334155)
 ![Fan project](https://img.shields.io/badge/fan%20project-unofficial-f59e0b)
 
@@ -229,7 +230,9 @@ Check that generated JSON files landed under `data/sheets/`, usually `data/sheet
 
 ## License
 
-No license file is currently included. No reuse licence is granted unless a future `LICENSE` file is added.
+Original Rotom Table application code, project-specific documentation, and original tooling are available under the MIT License. See [LICENSE](LICENSE).
+
+That license does not grant rights to Pokémon-related or PTU-related names, images, rules terms, concepts, sprites, reference text, or other third-party materials.
 
 ## Fan project notice
 

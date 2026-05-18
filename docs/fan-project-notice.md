@@ -8,4 +8,4 @@ Rotom Table is not an official Pokémon product, is not affiliated with or endor
 
 Original application code, project-specific documentation, local workflow design, and campaign-specific data structure work are distinct from the underlying third-party names, images, and concepts the fan utility references.
 
-No reuse licence is granted by this notice. See `NOTICE.md` for repository-level notice language.
+The repository `LICENSE` applies only to original Rotom Table application code, project-specific documentation, and original tooling. It does not license Pokémon-related or PTU-related names, images, rules terms, concepts, sprites, reference text, or other third-party materials. See `NOTICE.md` for repository-level notice language.

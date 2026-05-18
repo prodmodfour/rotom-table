@@ -14,4 +14,6 @@ Original application code, project-specific documentation, local workflow design
 
 ## Reuse licence
 
-No reuse licence is granted unless a future `LICENSE` file is added to the repository. Do not assume permission to copy, redistribute, sublicense, or commercially reuse repository contents from this notice alone.
+Original Rotom Table application code, project-specific documentation, and original tooling are available under the MIT License in `LICENSE`.
+
+That licence does not grant rights to Pokémon-related or Pokémon Tabletop United-related names, images, rules terms, concepts, characters, creatures, sprites, reference text, or other third-party materials. Those remain outside the scope of the repository licence and belong to their respective owners.
