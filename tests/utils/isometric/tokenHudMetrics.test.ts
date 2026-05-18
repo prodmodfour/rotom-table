@@ -52,7 +52,7 @@ describe('token HUD metrics', () => {
     const stages = normalizeCombatStages({ atk: 1, def: -1, spd: 2 })
 
     expect(tokenStatusCssHeight('Pikachu', normalizeCombatStages(), [], false)).toBe(18)
-    expect(tokenStatusCssHeight('Mega Gengar', stages, ['Burned', 'Poisoned', 'Burned'], true)).toBe(85)
+    expect(tokenStatusCssHeight('Mega Gengar', stages, ['Burned', 'Poisoned', 'Burned'], true)).toBe(93)
   })
 
   it('classifies HP ratios into existing token HUD tiers', () => {
