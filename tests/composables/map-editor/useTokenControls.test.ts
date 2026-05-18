@@ -142,6 +142,7 @@ describe('useTokenControls', () => {
     controls.movePlacement({ id: 'bolt-token', position: { x: 2, y: 0, z: 1 } })
 
     expect(map.placements[0]?.position).toEqual({ x: 2, y: 0, z: 1 })
+    expect(map.placements[0]).toMatchObject({ facing: 'south-east', turned: false })
     expect(map.metadata?.movementLog).toMatchObject([
       {
         at: 123,
@@ -166,6 +167,7 @@ describe('useTokenControls', () => {
 
     controls.movePlacement({ id: 'bolt-token', position: { x: 0, y: 0, z: 0 } })
 
+    expect(map.placements[0]?.facing).toBeUndefined()
     expect(map.metadata?.movementLog).toBeUndefined()
   })
 

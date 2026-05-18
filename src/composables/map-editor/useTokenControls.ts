@@ -23,7 +23,9 @@ import {
 import {
   DEFAULT_TOKEN_FACING_DIRECTION,
   nextTokenFacingForPlacement,
-  tokenFacingStoresLegacyTurned,
+  setTokenFacingOnPlacement,
+  tokenFacingForPlacement,
+  tokenFacingTowardPoint,
 } from '~/utils/tokenFacing'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { GridAnchor, MapVoxelV2, SheetPlacement, TabletopMap } from '~/types/map'
@@ -218,8 +220,7 @@ export const useTokenControls = ({
     const placement = placementById(id)
     if (!placement) return
     const facing = nextTokenFacingForPlacement(placement)
-    placement.facing = facing
-    placement.turned = tokenFacingStoresLegacyTurned(facing)
+    setTokenFacingOnPlacement(placement, facing)
   }
 
   const movePlacement = (payload: { id: string; position: GridAnchor }) => {
@@ -243,6 +244,9 @@ export const useTokenControls = ({
         maxLogEntries: maxMovementLogEntries,
       })
     }
+
+    const facing = tokenFacingTowardPoint(from, to, tokenFacingForPlacement(placement))
+    if (facing) setTokenFacingOnPlacement(placement, facing)
 
     placement.position = to
     clearSelection()

@@ -16,6 +16,21 @@ export const TOKEN_FACING_DIRECTIONS = [
 
 type TokenFacingVector = Readonly<{ x: number; y: number }>
 
+export interface TokenFacingPoint {
+  x: number
+  z: number
+}
+
+export interface TokenFacingDelta {
+  dx: number
+  dz: number
+}
+
+export interface MutableTokenFacingPlacement {
+  facing?: TokenFacingDirection
+  turned?: boolean
+}
+
 const TOKEN_FACING_DIRECTION_SET = new Set<string>(TOKEN_FACING_DIRECTIONS)
 
 const TOKEN_FACING_VECTORS: Record<TokenFacingDirection, TokenFacingVector> = {
@@ -55,6 +70,64 @@ export const nextTokenFacingForPlacement = (placement: {
 
 export const tokenFacingVector = (facing: TokenFacingDirection): TokenFacingVector =>
   TOKEN_FACING_VECTORS[facing]
+
+const TOKEN_FACING_BY_SIGNS: Record<`${-1 | 1},${-1 | 1}`, TokenFacingDirection> = {
+  '1,1': 'south-east',
+  '-1,1': 'south-west',
+  '-1,-1': 'north-west',
+  '1,-1': 'north-east',
+}
+
+const AREA_DIRECTION_DELTAS: Record<MoveAutomationAreaDirection, TokenFacingDelta> = {
+  north: { dx: 0, dz: -1 },
+  'north-east': { dx: 1, dz: -1 },
+  east: { dx: 1, dz: 0 },
+  'south-east': { dx: 1, dz: 1 },
+  south: { dx: 0, dz: 1 },
+  'south-west': { dx: -1, dz: 1 },
+  west: { dx: -1, dz: 0 },
+  'north-west': { dx: -1, dz: -1 },
+}
+
+const axisSign = (value: number, fallback: number): -1 | 1 => {
+  if (value > 0) return 1
+  if (value < 0) return -1
+  return fallback < 0 ? -1 : 1
+}
+
+export const tokenFacingFromDelta = (
+  delta: TokenFacingDelta,
+  currentFacing: TokenFacingDirection = DEFAULT_TOKEN_FACING_DIRECTION,
+): TokenFacingDirection | null => {
+  if (delta.dx === 0 && delta.dz === 0) return null
+
+  const fallback = tokenFacingVector(currentFacing)
+  const x = axisSign(delta.dx, fallback.x)
+  const z = axisSign(delta.dz, fallback.y)
+  return TOKEN_FACING_BY_SIGNS[`${x},${z}`]
+}
+
+export const tokenFacingTowardPoint = (
+  from: TokenFacingPoint,
+  to: TokenFacingPoint,
+  currentFacing: TokenFacingDirection = DEFAULT_TOKEN_FACING_DIRECTION,
+): TokenFacingDirection | null => tokenFacingFromDelta({
+  dx: to.x - from.x,
+  dz: to.z - from.z,
+}, currentFacing)
+
+export const tokenFacingFromAreaDirection = (
+  direction: MoveAutomationAreaDirection,
+  currentFacing: TokenFacingDirection = DEFAULT_TOKEN_FACING_DIRECTION,
+): TokenFacingDirection | null => tokenFacingFromDelta(AREA_DIRECTION_DELTAS[direction], currentFacing)
+
+export const setTokenFacingOnPlacement = (
+  placement: MutableTokenFacingPlacement,
+  facing: TokenFacingDirection,
+): void => {
+  placement.facing = facing
+  placement.turned = tokenFacingStoresLegacyTurned(facing)
+}
 
 export const tokenFacingAreaDirection = (facing: TokenFacingDirection): MoveAutomationAreaDirection =>
   facing

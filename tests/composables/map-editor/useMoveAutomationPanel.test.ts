@@ -461,12 +461,21 @@ describe('useMoveAutomationPanel', () => {
     expect(panel.moxieTriggerPrompts.value).toEqual([])
   })
 
-  it('applies sheet updates, gates map effects by GM permission, and appends logs', async () => {
-    const map = ref(mapFixture())
+  it('applies sheet updates, gates map effects by GM permission, appends logs, and faces targets', async () => {
+    const map = ref({
+      ...mapFixture(),
+      placements: [
+        { id: 'user-token', sheetKind: 'pokemon' as const, sheetSlug: 'bolt', position: { x: 0, y: 0, z: 0 } },
+        { id: 'target-token', sheetKind: 'pokemon' as const, sheetSlug: 'target', position: { x: -1, y: 0, z: -1 } },
+      ],
+    })
     const calls: string[] = []
     const panel = useMoveAutomationPanel({
       map,
-      spawnedPokemon: computed(() => [spawned()]),
+      spawnedPokemon: computed(() => [
+        spawned(),
+        spawned({ id: 'target-token', species: 'Target', sheetSlug: 'target', position: { x: -1, y: 0, z: -1 } }),
+      ]),
       pokemonBySlug: ref(new Map<string, CharacterSheet>()),
       trainerBySlug: ref(new Map<string, TrainerSheet>()),
       canEditMap: computed(() => false),
@@ -486,6 +495,7 @@ describe('useMoveAutomationPanel', () => {
       'stages:target-token:1',
       'conditions:target-token:Burned',
     ])
+    expect(map.value.placements[0]).toMatchObject({ facing: 'north-west', turned: true })
     expect(map.value.metadata?.moveLog).toMatchObject([
       { at: 1234, userId: 'user-token', moveName: 'Tackle', lines: ['Rolled Tackle.'] },
     ])
@@ -750,7 +760,7 @@ describe('useMoveAutomationPanel', () => {
     ])
   })
 
-  it('opens Leer as a cone AoE confirmation and lets the user select direction', () => {
+  it('opens Leer as a cone AoE confirmation and lets the user select direction', async () => {
     const map = ref({
       ...mapFixture(),
       dimensions: { x: 8, y: 2, z: 8 },
@@ -803,6 +813,10 @@ describe('useMoveAutomationPanel', () => {
       candidateIds: ['nw-token'],
       areaDirection: 'north-west',
     })
+
+    await panel.selectMoveAutomationTarget('user-token')
+
+    expect(map.value.placements[0]).toMatchObject({ facing: 'north-west', turned: true })
   })
 
   it('applies map effects when map editing is allowed', async () => {
