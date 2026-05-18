@@ -22,6 +22,7 @@ const baseMap = (overrides: Partial<TabletopMap> = {}): TabletopMap => ({
       sheetKind: 'pokemon',
       sheetSlug: 'player-mon',
       position: { x: 1, y: 1, z: 1 },
+      facing: 'south-east',
       turned: false,
     },
     {
@@ -29,6 +30,7 @@ const baseMap = (overrides: Partial<TabletopMap> = {}): TabletopMap => ({
       sheetKind: 'trainer',
       sheetSlug: 'gm-npc',
       position: { x: 2, y: 1, z: 2 },
+      facing: 'south-east',
       turned: false,
     },
   ],
@@ -68,13 +70,15 @@ describe('map save policy', () => {
           sheetKind: 'pokemon',
           sheetSlug: 'player-mon',
           position: { x: 99, y: -5, z: 3 },
-          turned: true,
+          facing: 'south-west',
+          turned: false,
         },
         {
           id: 'gm-token',
           sheetKind: 'trainer',
           sheetSlug: 'gm-npc',
           position: { x: 0, y: 0, z: 0 },
+          facing: 'north-west',
           turned: true,
         },
         {
@@ -100,7 +104,8 @@ describe('map save policy', () => {
     expect(result.placements[0]).toMatchObject({
       id: 'player-token',
       position: { x: 4, y: 0, z: 3 },
-      turned: true,
+      facing: 'south-west',
+      turned: false,
     })
     expect(result.placements[1]).toEqual(existing.placements[1])
   })

@@ -16,6 +16,10 @@ import {
 } from '~/utils/sheetSpawn'
 import { sheetAbilityNames } from '~/utils/sheetAbilities'
 import { pokemonHeldItemNames, trainerEquippedItemNames } from '~/utils/sheetItemNames'
+import {
+  tokenFacingForPlacement,
+  tokenFacingStoresLegacyTurned,
+} from '~/utils/tokenFacing'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { SheetPlacement, TabletopMap } from '~/types/map'
 import type { SpawnedPokemon } from '~/types/pokemon'
@@ -37,6 +41,9 @@ export const placementToSpawned = (
   placement: SheetPlacement,
   sheets: SheetLookup,
 ): SpawnedPokemon | null => {
+  const facing = tokenFacingForPlacement(placement)
+  const turned = tokenFacingStoresLegacyTurned(facing)
+
   if (placement.sheetKind === 'pokemon') {
     const sheet = sheets.pokemon.get(placement.sheetSlug)
     if (!sheet) return null
@@ -49,7 +56,8 @@ export const placementToSpawned = (
       species: sheet.nickname,
       id: placement.id,
       position: placement.position,
-      turned: placement.turned ?? false,
+      facing,
+      turned,
       sheetKind: 'pokemon',
       sheetSlug: sheet.slug,
       level: sheet.level,
@@ -83,7 +91,8 @@ export const placementToSpawned = (
     species: sheet.name,
     id: placement.id,
     position: placement.position,
-    turned: placement.turned ?? false,
+    facing,
+    turned,
     sheetKind: 'trainer',
     sheetSlug: sheet.slug,
     level: sheet.level,

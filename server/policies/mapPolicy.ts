@@ -1,5 +1,11 @@
 import type { AuthRole } from '#shared/auth'
 import type { GridAnchor, GridDimensions, SheetKind, SheetPlacement, TabletopMap } from '~/types/map'
+import {
+  isTokenFacingDirection,
+  legacyTokenFacingFromTurned,
+  tokenFacingForPlacement,
+  tokenFacingStoresLegacyTurned,
+} from '~/utils/tokenFacing'
 
 export type SheetAccessPredicate = (kind: SheetKind, slug: string) => boolean
 
@@ -28,6 +34,12 @@ export const clampAnchorToDimensions = (
   }
 }
 
+const mergedPlacementFacing = (current: SheetPlacement, next: SheetPlacement) => {
+  if (isTokenFacingDirection(next.facing)) return next.facing
+  if (typeof next.turned === 'boolean') return legacyTokenFacingFromTurned(next.turned)
+  return tokenFacingForPlacement(current)
+}
+
 export const mergePlayerPlacementEdits = (
   existing: TabletopMap,
   incoming: TabletopMap,
@@ -43,10 +55,13 @@ export const mergePlayerPlacementEdits = (
     const next = incomingById.get(placement.id)
     if (!next || next.sheetKind !== placement.sheetKind || next.sheetSlug !== placement.sheetSlug) return placement
 
+    const facing = mergedPlacementFacing(placement, next)
+
     return {
       ...placement,
       position: clampAnchorToDimensions(next.position, placement.position, existing.dimensions),
-      turned: typeof next.turned === 'boolean' ? next.turned : placement.turned,
+      facing,
+      turned: tokenFacingStoresLegacyTurned(facing),
     }
   })
 }

@@ -21,6 +21,7 @@ const spawnedPokemon = (overrides: Partial<SpawnedPokemon> = {}): SpawnedPokemon
   entityKind: 'pokemon',
   id: 'token-pikachu',
   position: { x: 3, y: 4, z: 5 },
+  facing: 'north-west',
   turned: true,
   sheetKind: 'pokemon',
   sheetSlug: 'sparky',
@@ -44,6 +45,7 @@ describe('token render state helpers', () => {
 
     expect(state.center).toEqual({ x: 4, y: 4, z: 6 })
     expect(state.elevation).toBe(4)
+    expect(state.facing).toBe('north-west')
     expect(state.turned).toBe(true)
     expect(state.displayName).toBe('Pikachu')
     expect(state.combatStages).toMatchObject({ atk: 6, def: -6, satk: 1, spd: 2, acc: -1 })

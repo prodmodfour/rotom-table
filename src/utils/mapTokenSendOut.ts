@@ -1,5 +1,6 @@
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { SheetPlacement } from '~/types/map'
+import { DEFAULT_TOKEN_FACING_DIRECTION } from '~/utils/tokenFacing'
 import type { GridAnchor, SpawnedPokemon } from '~/types/pokemon'
 import { getClearanceValue } from '~/utils/gridGeometry'
 import { placementToSpawned, type SheetLookup } from '~/utils/placement'
@@ -45,6 +46,7 @@ const previewPlacementForTeamPokemon = (
   sheetKind: 'pokemon',
   sheetSlug: pokemonSlug,
   position: trainerPlacement.position,
+  facing: DEFAULT_TOKEN_FACING_DIRECTION,
   turned: false,
 })
 

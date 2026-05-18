@@ -3,6 +3,7 @@ import type { CSS3DSprite } from 'three/examples/jsm/renderers/CSS3DRenderer.js'
 import type { CombatStageMap } from '~/types/combatStages'
 import type { MapHazardKind, MapVoxelV2 } from '~/types/map'
 import type { SpriteAnimation, SpriteCrop } from '~/types/pokemon'
+import type { TokenFacingDirection } from '~/types/tokenFacing'
 
 export interface WorldSpriteState {
   sprite: THREE.Sprite
@@ -16,6 +17,9 @@ export interface WorldSpriteState {
   animationMeta: SpriteAnimation | null
   animationStartedAtMs: number
   currentFrame: number
+  textureRepeat: THREE.Vector2
+  textureOffset: THREE.Vector2
+  mirroredX: boolean
   ghost: boolean
   invalid: boolean
 }
@@ -48,6 +52,7 @@ export interface PokemonRenderObject {
   spriteAnimation?: SpriteAnimation
   backSpriteAnimation?: SpriteAnimation
   spriteCrop?: SpriteCrop
+  facing: TokenFacingDirection
   turned: boolean
   displayName: string
   level: number

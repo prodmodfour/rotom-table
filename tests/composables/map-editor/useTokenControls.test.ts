@@ -85,6 +85,7 @@ describe('useTokenControls', () => {
       id: 'spawned-1',
       sheetKind: 'pokemon',
       sheetSlug: 'bolt',
+      facing: 'south-east',
       turned: false,
     })
     expect(map.value.placements[0].position.x).toBeGreaterThanOrEqual(0)
@@ -116,7 +117,9 @@ describe('useTokenControls', () => {
     expect(map.placements.map((placement) => placement.id)).toEqual(['player-token', 'gm-token'])
 
     controls.turnPlacement('player-token')
-    expect(map.placements[0].turned).toBe(true)
+    expect(map.placements[0]).toMatchObject({ facing: 'north-east', turned: false })
+    controls.turnPlacement('player-token')
+    expect(map.placements[0]).toMatchObject({ facing: 'north-west', turned: true })
 
     isGm.value = true
     controls.deletePlacement('gm-token')

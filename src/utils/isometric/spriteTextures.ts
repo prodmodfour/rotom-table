@@ -3,7 +3,6 @@ import type { SpriteAnimation, SpriteCrop } from '~/types/pokemon'
 import {
   applySpriteTextureCrop,
   configureSpriteTexture,
-  spriteCropCacheKey,
 } from '~/utils/isometric/spriteTextureTransforms'
 
 /**
@@ -94,13 +93,8 @@ interface CachedTextureRecord {
   texture?: THREE.Texture
 }
 
-interface RefCountedTextureRecord extends CachedTextureRecord {
-  refs: number
-}
-
 const spriteTextureLoader = new THREE.TextureLoader()
 const baseSpriteTextureCache = new Map<string, CachedTextureRecord>()
-const croppedSpriteTextureCache = new Map<string, RefCountedTextureRecord>()
 const loadBaseSpriteTexture = (url: string): Promise<THREE.Texture> => {
   const cached = baseSpriteTextureCache.get(url)
   if (cached) return cached.promise
@@ -126,46 +120,24 @@ const loadBaseSpriteTexture = (url: string): Promise<THREE.Texture> => {
 }
 
 export const acquireStaticSpriteTexture = (url: string, crop?: SpriteCrop): TextureHandle => {
-  if (!crop) {
-    return {
-      promise: loadBaseSpriteTexture(url),
-      release: () => {},
-    }
-  }
-
-  const key = spriteCropCacheKey(url, crop)
-  let record = croppedSpriteTextureCache.get(key)
-  if (!record) {
-    const newRecord: RefCountedTextureRecord = {
-      refs: 0,
-      promise: Promise.resolve(null as never),
-    }
-    newRecord.promise = loadBaseSpriteTexture(url).then((baseTexture) => {
-      const texture = baseTexture.clone()
-      configureSpriteTexture(texture)
-      applySpriteTextureCrop(texture, crop)
-      newRecord.texture = texture
-      if (newRecord.refs <= 0) {
-        texture.dispose()
-      }
-      return texture
-    })
-    record = newRecord
-    croppedSpriteTextureCache.set(key, record)
-  }
-
-  record.refs += 1
   let released = false
+  const promise = loadBaseSpriteTexture(url).then((baseTexture) => {
+    // Texture repeat/offset are mutated per token for crop windows,
+    // animation frames, and horizontal mirroring. Clone the shared decoded
+    // image so one token's facing never changes another token's UVs.
+    const texture = baseTexture.clone()
+    configureSpriteTexture(texture)
+    if (crop) applySpriteTextureCrop(texture, crop)
+    if (released) texture.dispose()
+    return texture
+  })
+
   return {
-    promise: record.promise,
+    promise,
     release: () => {
       if (released) return
       released = true
-      record!.refs -= 1
-      if (record!.refs <= 0) {
-        croppedSpriteTextureCache.delete(key)
-        record!.promise.then((texture) => texture.dispose()).catch(() => {})
-      }
+      promise.then((texture) => texture.dispose()).catch(() => {})
     },
   }
 }
@@ -192,10 +164,6 @@ export const acquireAnimatedSpriteTexture = (url: string): TextureHandle => {
 }
 
 export const disposeSpriteTextureCaches = () => {
-  for (const record of croppedSpriteTextureCache.values()) {
-    record.texture?.dispose()
-  }
-  croppedSpriteTextureCache.clear()
   for (const record of baseSpriteTextureCache.values()) {
     record.texture?.dispose()
   }

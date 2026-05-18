@@ -24,7 +24,6 @@ export interface IsometricAnimationFrameOptions {
       pokemon: SpawnedPokemon | null
       positionY: number | null
       camera: THREE.Camera
-      facingDirection: THREE.Vector2
       frameNowMs: number
       spriteBrightness: number
       haloAlpha: number
@@ -73,7 +72,6 @@ export const stepIsometricAnimationFrame = (
   for (const renderObject of renderObjects) {
     animateRenderObject(renderObject, {
       camera: options.camera,
-      facingDirection: options.facingDirection,
       damping,
       frameNowMs,
       spriteBrightness,
@@ -85,7 +83,6 @@ export const stepIsometricAnimationFrame = (
     pokemon: options.selectedPokemon,
     positionY: options.previewPositionY,
     camera: options.camera,
-    facingDirection: options.facingDirection,
     frameNowMs,
     spriteBrightness,
     haloAlpha,

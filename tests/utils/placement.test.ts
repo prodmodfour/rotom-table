@@ -21,6 +21,7 @@ describe('placement helpers', () => {
       sheetKind: 'pokemon',
       sheetSlug: 'pika',
       position: { x: 0, y: 0, z: 0 },
+      facing: 'north-east',
     }
 
     const spawned = placementToSpawned(placement, {
@@ -33,6 +34,8 @@ describe('placement helpers', () => {
     expect(spawned?.defenderCapabilities).toEqual({ levitate: 4 })
     expect(spawned?.combatSkillRankValue).toBe(5)
     expect(spawned?.focusSkillRankValue).toBe(4)
+    expect(spawned?.facing).toBe('north-east')
+    expect(spawned?.turned).toBe(false)
   })
 
   it('scales trainer sprite dimensions to the trainer sheet height in metres', () => {

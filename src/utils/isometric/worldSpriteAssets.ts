@@ -26,6 +26,32 @@ export const spriteVisualAssetKey = (asset: SpriteVisualAsset): string => {
   return `${asset.animation?.url ?? asset.url}|${asset.animation ? 'animated' : 'static'}|${crop}`
 }
 
+export const applyWorldSpriteTextureTransform = (state: WorldSpriteState): void => {
+  const texture = state.texture
+  if (!texture) return
+
+  const repeatX = state.mirroredX ? -state.textureRepeat.x : state.textureRepeat.x
+  const offsetX = state.mirroredX
+    ? state.textureOffset.x + state.textureRepeat.x
+    : state.textureOffset.x
+
+  texture.repeat.set(repeatX, state.textureRepeat.y)
+  texture.offset.set(offsetX, state.textureOffset.y)
+  texture.needsUpdate = true
+}
+
+export const setWorldSpriteTextureWindow = (
+  state: WorldSpriteState,
+  repeatX: number,
+  repeatY: number,
+  offsetX: number,
+  offsetY: number,
+): void => {
+  state.textureRepeat.set(repeatX, repeatY)
+  state.textureOffset.set(offsetX, offsetY)
+  applyWorldSpriteTextureTransform(state)
+}
+
 export const applyWorldSpriteAnimationFrame = (
   state: WorldSpriteState,
   timestampMs: number,
@@ -41,11 +67,13 @@ export const applyWorldSpriteAnimationFrame = (
   const rows = Math.max(1, animation.rows)
   const column = frame % columns
   const row = Math.floor(frame / columns)
-  texture.repeat.set(1 / columns, 1 / rows)
-  texture.offset.set(
+
+  setWorldSpriteTextureWindow(
+    state,
+    1 / columns,
+    1 / rows,
     column / columns,
     1 - (row + 1) / rows,
   )
-  texture.needsUpdate = true
   state.currentFrame = frame
 }

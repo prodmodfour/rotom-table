@@ -26,6 +26,7 @@ import {
   resolveInstantTargetMoveAutomation,
 } from '~/utils/moveAutomationInstant'
 import { isMoveDisabledByConditions } from '~/utils/statusConditions'
+import { tokenFacingAreaDirection, tokenFacingForPlacement } from '~/utils/tokenFacing'
 import {
   buildSpiteReactionConditionUpdate,
   buildSpiteReactionPrompts,
@@ -253,8 +254,8 @@ export const useMoveAutomationPanel = ({
     moveAutomationFeedback.value = null
   }
 
-  const tokenFacingAreaDirection = (user: SpawnedPokemon): MoveAutomationAreaDirection =>
-    user.turned ? 'north-west' : 'south-east'
+  const tokenAreaDirection = (user: SpawnedPokemon): MoveAutomationAreaDirection =>
+    tokenFacingAreaDirection(tokenFacingForPlacement(user))
 
   const directionOptionsForPlacements = (
     placements: readonly MoveAutomationAreaTemplatePlacement[],
@@ -271,7 +272,7 @@ export const useMoveAutomationPanel = ({
     placements: readonly MoveAutomationAreaTemplatePlacement[],
     user: SpawnedPokemon,
   ): MoveAutomationAreaTemplatePlacement | null => placements.find((placement) =>
-    placement.direction === tokenFacingAreaDirection(user),
+    placement.direction === tokenAreaDirection(user),
   ) ?? placements[0] ?? null
 
   const requestFromAreaPlacement = (
@@ -301,7 +302,7 @@ export const useMoveAutomationPanel = ({
     const template = script.areaTemplates?.[0]
     if (!template) return null
     const direction = template.kind === 'cone' || template.kind === 'line' || template.kind === 'close-blast'
-      ? tokenFacingAreaDirection(user)
+      ? tokenAreaDirection(user)
       : undefined
     const cells = buildMoveAutomationAreaTemplateCells({ template, user, direction })
     const targetIds = tokensInMoveAutomationArea({

@@ -20,6 +20,11 @@ import {
   isSendOutPositionWithinThrowRange,
   POKEBALL_THROW_RANGE_SQUARES,
 } from '~/utils/mapTokenSendOut'
+import {
+  DEFAULT_TOKEN_FACING_DIRECTION,
+  nextTokenFacingForPlacement,
+  tokenFacingStoresLegacyTurned,
+} from '~/utils/tokenFacing'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { GridAnchor, MapVoxelV2, SheetPlacement, TabletopMap } from '~/types/map'
 import type { SpawnedPokemon } from '~/types/pokemon'
@@ -148,6 +153,7 @@ export const useTokenControls = ({
       sheetKind: selection.kind,
       sheetSlug: selection.sheet.slug,
       position,
+      facing: DEFAULT_TOKEN_FACING_DIRECTION,
       turned: false,
     })
     clearSelection()
@@ -187,6 +193,7 @@ export const useTokenControls = ({
       sheetKind: 'pokemon',
       sheetSlug: payload.pokemonSlug,
       position: payload.position,
+      facing: DEFAULT_TOKEN_FACING_DIRECTION,
       turned: false,
     })
     clearSelection()
@@ -210,7 +217,9 @@ export const useTokenControls = ({
     if (!map.value || !canControlPlacement(id)) return
     const placement = placementById(id)
     if (!placement) return
-    placement.turned = !placement.turned
+    const facing = nextTokenFacingForPlacement(placement)
+    placement.facing = facing
+    placement.turned = tokenFacingStoresLegacyTurned(facing)
   }
 
   const movePlacement = (payload: { id: string; position: GridAnchor }) => {

@@ -1,4 +1,5 @@
 import type { CombatStageMap } from '~/types/combatStages'
+import type { TokenFacingDirection } from '~/types/tokenFacing'
 
 export interface PokemonSizeRecord {
   species: string
@@ -206,6 +207,9 @@ export interface SpawnedPokemonEvasionModifiers {
 export interface SpawnedPokemon extends PokemonCatalogEntry {
   id: string
   position: GridAnchor
+  /** Direction the token faces on the isometric map. */
+  facing?: TokenFacingDirection
+  /** @deprecated Use `facing`; kept for older map documents. */
   turned?: boolean
   /** Which sheet directory this token's data was loaded from. */
   sheetKind: 'pokemon' | 'trainer'

@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import type { GridAnchor, SpawnedPokemon } from '~/types/pokemon'
 import { getAnchorCenter } from '~/utils/gridGeometry'
+import { tokenFacingForPlacement, tokenFacingVector } from '~/utils/tokenFacing'
 import { buildVolumeMaterials, paintVolumeMaterials } from '~/utils/isometric/materials'
 import { disposeObject3D } from '~/utils/isometric/resourceDisposal'
 import { buildElevationBadge, updateElevationBadge } from '~/utils/isometric/tokenHud'
@@ -196,7 +197,6 @@ export const createTokenMovePreviewRenderer = (containers: {
       pokemon: SpawnedPokemon | null
       positionY: number | null
       camera: THREE.Camera
-      facingDirection: THREE.Vector2
       frameNowMs: number
       spriteBrightness: number
       haloAlpha: number
@@ -211,13 +211,12 @@ export const createTokenMovePreviewRenderer = (containers: {
       updateSpriteFacing(ghostSpriteState, {
         camera: options.camera,
         center: ghostCenter,
-        facingDirection: options.facingDirection,
+        facingDirection: tokenFacingVector(tokenFacingForPlacement(options.pokemon)),
         frontSpriteUrl: options.pokemon.spriteUrl,
         frontSpriteAnimation: options.pokemon.spriteAnimation,
         backSpriteUrl: options.pokemon.backSpriteUrl,
         backSpriteAnimation: options.pokemon.backSpriteAnimation,
         spriteCrop: options.pokemon.spriteCrop,
-        turned: Boolean(options.pokemon.turned),
       })
       // Ghost gets the directional tint too so it previews how the
       // pokemon will be lit at the destination.

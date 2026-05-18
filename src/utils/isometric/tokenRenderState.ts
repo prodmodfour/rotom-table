@@ -1,8 +1,10 @@
 import type { CombatStageMap } from '~/types/combatStages'
 import type { SpriteAnimation, SpriteCrop, SpawnedPokemon } from '~/types/pokemon'
+import type { TokenFacingDirection } from '~/types/tokenFacing'
 import { normalizeCombatStages } from '~/utils/combatStages'
 import { getPokemonCenter } from '~/utils/gridGeometry'
 import { normalizeConditionNames } from '~/utils/statusConditions'
+import { tokenFacingForPlacement, tokenFacingStoresLegacyTurned } from '~/utils/tokenFacing'
 
 const SPRITE_LIFT_AMOUNT = 0.08
 const SHADOW_LIFT_SCALE = 1.3
@@ -22,6 +24,7 @@ export interface PokemonRenderSpawnState {
   spriteAnimation?: SpriteAnimation
   backSpriteAnimation?: SpriteAnimation
   spriteCrop?: SpriteCrop
+  facing: TokenFacingDirection
   turned: boolean
   displayName: string
   level: number
@@ -44,27 +47,32 @@ export interface TokenSelectionLiftStyle {
   shadowOpacity: number
 }
 
-export const pokemonRenderSpawnState = (pokemon: SpawnedPokemon): PokemonRenderSpawnState => ({
-  center: getPokemonCenter(pokemon),
-  width: pokemon.width,
-  height: pokemon.height,
-  base: pokemon.base,
-  clearance: pokemon.clearance,
-  elevation: pokemon.position.y,
-  spriteUrl: pokemon.spriteUrl,
-  backSpriteUrl: pokemon.backSpriteUrl,
-  spriteAnimation: pokemon.spriteAnimation,
-  backSpriteAnimation: pokemon.backSpriteAnimation,
-  spriteCrop: pokemon.spriteCrop,
-  turned: Boolean(pokemon.turned),
-  displayName: pokemon.species,
-  level: pokemon.level,
-  currentHp: pokemon.currentHp,
-  maxHp: pokemon.maxHp,
-  combatStages: normalizeCombatStages(pokemon.combatStages),
-  conditions: normalizeConditionNames(pokemon.conditions),
-  tokenItems: [...pokemon.tokenItems],
-})
+export const pokemonRenderSpawnState = (pokemon: SpawnedPokemon): PokemonRenderSpawnState => {
+  const facing = tokenFacingForPlacement(pokemon)
+
+  return {
+    center: getPokemonCenter(pokemon),
+    width: pokemon.width,
+    height: pokemon.height,
+    base: pokemon.base,
+    clearance: pokemon.clearance,
+    elevation: pokemon.position.y,
+    spriteUrl: pokemon.spriteUrl,
+    backSpriteUrl: pokemon.backSpriteUrl,
+    spriteAnimation: pokemon.spriteAnimation,
+    backSpriteAnimation: pokemon.backSpriteAnimation,
+    spriteCrop: pokemon.spriteCrop,
+    facing,
+    turned: tokenFacingStoresLegacyTurned(facing),
+    displayName: pokemon.species,
+    level: pokemon.level,
+    currentHp: pokemon.currentHp,
+    maxHp: pokemon.maxHp,
+    combatStages: normalizeCombatStages(pokemon.combatStages),
+    conditions: normalizeConditionNames(pokemon.conditions),
+    tokenItems: [...pokemon.tokenItems],
+  }
+}
 
 export const pokemonPickDimensions = (pokemon: SpawnedPokemon): PokemonPickDimensions => ({
   width: Math.max(pokemon.base, pokemon.width, 1),

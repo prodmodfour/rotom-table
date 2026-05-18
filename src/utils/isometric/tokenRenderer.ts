@@ -12,6 +12,7 @@ import {
   tokenSelectionLiftStyle,
 } from '~/utils/isometric/tokenRenderState'
 import type { PokemonRenderObject } from '~/utils/isometric/types'
+import { tokenFacingVector } from '~/utils/tokenFacing'
 import {
   applyAnimationFrame,
   buildContactShadow,
@@ -106,6 +107,7 @@ export const createPokemonRenderObject = (
     spriteAnimation: spawnState.spriteAnimation,
     backSpriteAnimation: spawnState.backSpriteAnimation,
     spriteCrop: spawnState.spriteCrop,
+    facing: spawnState.facing,
     turned: spawnState.turned,
     displayName: spawnState.displayName,
     level: spawnState.level,
@@ -131,6 +133,7 @@ export const updatePokemonRenderObjectFromSpawn = (
   renderObject.spriteAnimation = spawnState.spriteAnimation
   renderObject.backSpriteAnimation = spawnState.backSpriteAnimation
   renderObject.spriteCrop = spawnState.spriteCrop
+  renderObject.facing = spawnState.facing
   renderObject.turned = spawnState.turned
   renderObject.displayName = spawnState.displayName
   renderObject.level = spawnState.level
@@ -248,7 +251,6 @@ export const animatePokemonRenderObject = (
   renderObject: PokemonRenderObject,
   options: {
     camera: THREE.Camera
-    facingDirection: THREE.Vector2
     damping: number
     frameNowMs: number
     spriteBrightness: number
@@ -258,13 +260,12 @@ export const animatePokemonRenderObject = (
   updateSpriteFacing(renderObject.spriteState, {
     camera: options.camera,
     center: renderObject.currentCenter,
-    facingDirection: options.facingDirection,
+    facingDirection: tokenFacingVector(renderObject.facing),
     frontSpriteUrl: renderObject.spriteUrl,
     frontSpriteAnimation: renderObject.spriteAnimation,
     backSpriteUrl: renderObject.backSpriteUrl,
     backSpriteAnimation: renderObject.backSpriteAnimation,
     spriteCrop: renderObject.spriteCrop,
-    turned: renderObject.turned,
   })
   if (renderObject.spriteState.animationMeta) {
     applyAnimationFrame(renderObject.spriteState, options.frameNowMs)

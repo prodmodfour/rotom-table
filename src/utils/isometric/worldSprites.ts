@@ -11,9 +11,11 @@ import {
 } from '~/utils/isometric/spriteTextures'
 import {
   applyWorldSpriteAnimationFrame,
+  applyWorldSpriteTextureTransform,
+  setWorldSpriteTextureWindow,
   spriteVisualAssetKey,
 } from '~/utils/isometric/worldSpriteAssets'
-import { shouldUseFrontWorldSprite } from '~/utils/isometric/worldSpriteFacing'
+import { resolveWorldSpriteFacing, type WorldSpriteFacingDirection } from '~/utils/isometric/worldSpriteFacing'
 import {
   getWorldSpriteLightingStyle,
   WORLD_SPRITE_GHOST_HALO_COLOR,
@@ -56,6 +58,14 @@ const setWorldSpriteAsset = (state: WorldSpriteState, asset: SpriteVisualAsset) 
       state.currentFrame = -1
       if (state.animationMeta) {
         applyAnimationFrame(state, nowMs())
+      } else {
+        setWorldSpriteTextureWindow(
+          state,
+          texture.repeat.x,
+          texture.repeat.y,
+          texture.offset.x,
+          texture.offset.y,
+        )
       }
       state.material.map = texture
       state.material.needsUpdate = true
@@ -115,6 +125,9 @@ export const buildWorldSprite = (pokemon: SpawnedPokemon, ghost = false): WorldS
     opacity: ghost ? 0.4 : 1,
     depthTest: true,
     depthWrite: !ghost,
+    // Side facings mirror the billboard with a negative X scale. Render
+    // both windings so mirrored sprites cannot be back-face culled.
+    side: THREE.DoubleSide,
     toneMapped: false,
   })
   const sprite = new THREE.Sprite(material)
@@ -154,6 +167,9 @@ export const buildWorldSprite = (pokemon: SpawnedPokemon, ghost = false): WorldS
     animationMeta: null,
     animationStartedAtMs: nowMs(),
     currentFrame: -1,
+    textureRepeat: new THREE.Vector2(1, 1),
+    textureOffset: new THREE.Vector2(0, 0),
+    mirroredX: false,
     ghost,
     invalid: false,
   }
@@ -205,12 +221,18 @@ export const buildContactShadow = (
   return mesh
 }
 
+const applyWorldSpriteMirrorX = (state: WorldSpriteState, mirrorX: boolean) => {
+  if (state.mirroredX === mirrorX) return
+  state.mirroredX = mirrorX
+  applyWorldSpriteTextureTransform(state)
+}
+
 export const updateSpriteFacing = (
   state: WorldSpriteState,
   options: {
     camera: THREE.Camera | null
     center: THREE.Vector3
-    facingDirection: THREE.Vector2
+    facingDirection: WorldSpriteFacingDirection
     frontSpriteUrl: string
     frontSpriteAnimation?: SpriteAnimation
     backSpriteUrl?: string
@@ -219,12 +241,14 @@ export const updateSpriteFacing = (
     turned?: boolean
   },
 ) => {
-  const useBack = Boolean(options.backSpriteUrl && !shouldUseFrontWorldSprite({
+  const facing = resolveWorldSpriteFacing({
     cameraPosition: options.camera?.position ?? null,
     center: options.center,
     facingDirection: options.facingDirection,
     turned: options.turned,
-  }))
+  })
+  const useBack = Boolean(options.backSpriteUrl && facing.asset === 'back')
+  applyWorldSpriteMirrorX(state, facing.mirrorX)
   setWorldSpriteAsset(state, useBack
     ? {
         url: options.backSpriteUrl!,

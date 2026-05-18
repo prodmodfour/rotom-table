@@ -256,7 +256,7 @@ watch(abilities, (nextAbilities) => {
           class="context-menu__button"
           @click.stop="emit('turn')"
         >
-          Turn sprite
+          Rotate sprite
         </button>
         <button
           type="button"

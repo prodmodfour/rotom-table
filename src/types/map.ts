@@ -4,8 +4,10 @@
  * Maps store sparse terrain voxels, sheet placements, and lighting state.
  */
 import type { GridAnchor, GridDimensions } from './pokemon'
+import type { TokenFacingDirection } from './tokenFacing'
 
 export type { GridAnchor, GridDimensions }
+export type { TokenFacingDirection }
 
 export type SheetKind = 'pokemon' | 'trainer'
 
@@ -17,7 +19,9 @@ export interface SheetPlacement {
   position: GridAnchor
   /** Map-local initiative value used by the encounter tracker. */
   initiative?: number | null
-  /** Whether the sprite is facing away from the camera. */
+  /** Direction the sprite faces on the isometric map. */
+  facing?: TokenFacingDirection
+  /** @deprecated Use `facing`; kept for older map documents. */
   turned?: boolean
 }
 

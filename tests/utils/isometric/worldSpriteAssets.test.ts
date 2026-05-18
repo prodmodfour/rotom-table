@@ -1,8 +1,11 @@
+import * as THREE from 'three'
 import { describe, expect, it, vi } from 'vitest'
 import type { SpriteAnimation } from '~/types/pokemon'
 import type { WorldSpriteState } from '~/utils/isometric/types'
 import {
   applyWorldSpriteAnimationFrame,
+  applyWorldSpriteTextureTransform,
+  setWorldSpriteTextureWindow,
   spriteAnimationFrameAt,
   spriteVisualAssetKey,
 } from '~/utils/isometric/worldSpriteAssets'
@@ -84,6 +87,9 @@ describe('world sprite asset helpers', () => {
       animationStartedAtMs: 100,
       texture,
       currentFrame: -1,
+      textureRepeat: new THREE.Vector2(1, 1),
+      textureOffset: new THREE.Vector2(0, 0),
+      mirroredX: false,
     } as unknown as WorldSpriteState
 
     applyWorldSpriteAnimationFrame(state, 350)
@@ -99,6 +105,31 @@ describe('world sprite asset helpers', () => {
     expect(offsetSet).toHaveBeenCalledTimes(1)
   })
 
+  it('mirrors the active texture window by flipping X repeat and shifting X offset', () => {
+    const texture = {
+      repeat: { set: vi.fn() },
+      offset: { set: vi.fn() },
+      needsUpdate: false,
+    }
+    const state = {
+      texture,
+      textureRepeat: new THREE.Vector2(0.25, 0.5),
+      textureOffset: new THREE.Vector2(0.5, 0.25),
+      mirroredX: true,
+    } as unknown as WorldSpriteState
+
+    applyWorldSpriteTextureTransform(state)
+
+    expect(texture.repeat.set).toHaveBeenCalledWith(-0.25, 0.5)
+    expect(texture.offset.set).toHaveBeenCalledWith(0.75, 0.25)
+    expect(texture.needsUpdate).toBe(true)
+
+    setWorldSpriteTextureWindow(state, 0.5, 0.5, 0, 0.5)
+
+    expect(texture.repeat.set).toHaveBeenLastCalledWith(-0.5, 0.5)
+    expect(texture.offset.set).toHaveBeenLastCalledWith(0.5, 0.5)
+  })
+
   it('ignores missing animation metadata or textures', () => {
     const texture = {
       repeat: { set: vi.fn() },
@@ -109,11 +140,17 @@ describe('world sprite asset helpers', () => {
       animationMeta: null,
       texture,
       currentFrame: -1,
+      textureRepeat: new THREE.Vector2(1, 1),
+      textureOffset: new THREE.Vector2(0, 0),
+      mirroredX: false,
     } as unknown as WorldSpriteState
     const noTexture = {
       animationMeta: animation(),
       texture: null,
       currentFrame: -1,
+      textureRepeat: new THREE.Vector2(1, 1),
+      textureOffset: new THREE.Vector2(0, 0),
+      mirroredX: false,
     } as unknown as WorldSpriteState
 
     applyWorldSpriteAnimationFrame(noAnimation, 1000)
