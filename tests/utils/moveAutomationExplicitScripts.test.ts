@@ -373,6 +373,7 @@ describe('explicit move automation scripts', () => {
       damageBase: null,
       criticalRange: null,
       directHpLoss: { kind: 'fixed', amount: 15, ignoreWeaknessResistance: true, ignoreStats: true },
+      conditionSuggestions: [],
     })
     expect(isSeamlessSingleTargetMoveScript(explicitScriptForMove('Dragon Rage'))).toBe(true)
 

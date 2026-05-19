@@ -63,6 +63,7 @@ describe('condition tag art helpers', () => {
     expect(conditionsFromText('The target is burned and asleep.')).toEqual(['Burned', 'Sleep'])
     expect(conditionsFromText('Bite Flinches the target on 15+.')).toEqual(['Flinch'])
     expect(conditionsFromText('Headlong Rush Trips the target on a hit.')).toEqual(['Tripped'])
+    expect(conditionsFromText('If it hits, Dragon Rage causes the target to lose 15 Hit Points.')).toEqual([])
     expect(conditionsFromText('The battlefield contains Slow Terrain.')).toEqual([])
   })
 

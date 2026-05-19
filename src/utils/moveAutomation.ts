@@ -352,6 +352,7 @@ const reviewedDragonRageScript = (version = 1): MoveAutomationScript => reviewed
     ignoreStats: true,
     label: 'Dragon Rage fixed HP loss',
   },
+  conditionSuggestions: [],
   hpSuggestions: [],
   automationNotes: [
     'Dragon Rage applies exactly 15 HP loss on a hit; Stats, weakness/resistance, STAB, and critical hits are ignored.',

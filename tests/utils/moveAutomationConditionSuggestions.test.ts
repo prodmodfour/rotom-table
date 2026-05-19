@@ -61,6 +61,12 @@ describe('move automation condition suggestion helpers', () => {
       }))
   })
 
+  it('does not infer Enraged from Dragon Rage move-name mentions', () => {
+    expect(parseMoveAutomationConditionSuggestions(
+      'If it hits, Dragon Rage causes the target to lose 15 Hit Points. Dragon Rage is Special and interacts with other moves and effects as such.',
+    )).toEqual([])
+  })
+
   it('builds clear-status suggestions for target and user text', () => {
     expect(parseMoveAutomationConditionSuggestions('All targets are cured of any Persistent Status.'))
       .toContainEqual(expect.objectContaining({

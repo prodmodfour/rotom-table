@@ -306,12 +306,39 @@ const aliasSearchTerms = conditions
 
 const escapeRegExp = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
+type ConditionAliasSearchTerm = (typeof aliasSearchTerms)[number]
+
+const aliasMatchPattern = (alias: string): RegExp =>
+  new RegExp(`(^|[^A-Za-z])(${escapeRegExp(alias)})([^A-Za-z]|$)`, 'gi')
+
+const conditionAliasMentionIsIgnored = (
+  term: ConditionAliasSearchTerm,
+  text: string,
+  aliasStart: number,
+  aliasEnd: number,
+): boolean => {
+  if (term.name !== 'Rage' || slugify(term.alias) !== 'rage') return false
+  return /\bdragon\s+rage\b/i.test(text.slice(Math.max(0, aliasStart - 12), aliasEnd))
+}
+
+const hasConditionAliasMention = (term: ConditionAliasSearchTerm, text: string): boolean => {
+  const pattern = aliasMatchPattern(term.alias)
+  let match: RegExpExecArray | null
+  while ((match = pattern.exec(text)) !== null) {
+    const prefix = match[1] ?? ''
+    const matchedAlias = match[2] ?? term.alias
+    const aliasStart = match.index + prefix.length
+    const aliasEnd = aliasStart + matchedAlias.length
+    if (!conditionAliasMentionIsIgnored(term, text, aliasStart, aliasEnd)) return true
+  }
+  return false
+}
+
 export const conditionsFromText = (raw: unknown): string[] => {
   if (typeof raw !== 'string' || !raw.trim()) return []
   const found = new Set<string>()
-  for (const { alias, name } of aliasSearchTerms) {
-    const pattern = new RegExp(`(^|[^A-Za-z])${escapeRegExp(alias)}([^A-Za-z]|$)`, 'i')
-    if (pattern.test(raw)) found.add(name)
+  for (const term of aliasSearchTerms) {
+    if (hasConditionAliasMention(term, raw)) found.add(term.name)
   }
   return normalizeConditionNames([...found])
 }

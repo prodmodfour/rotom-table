@@ -197,7 +197,9 @@ describe('instant move automation', () => {
     })
 
     expect(result.feedback).toMatchObject({ naturalRoll: 11, hit: true, crit: false, damageLoss: 15 })
+    expect(result.feedback.conditions).toEqual([])
     expect(result.transaction.hpUpdates).toEqual([{ id: 't', currentHp: 25 }])
+    expect(result.transaction.conditionUpdates).toEqual([])
     expect(result.transaction.logLines).toContain('Target: 15 HP lost (Dragon Rage fixed HP loss).')
   })
 
