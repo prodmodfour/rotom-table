@@ -130,22 +130,6 @@ const props = defineProps<{
             <EditableCell v-model="eggGroupsCsv" placeholder="Field, Fairy" />
           </dd>
         </div>
-        <div>
-          <dt>Scene Xp</dt>
-          <dd><EditableCell v-model="sheet.scene!.sceneXp" type="number" /></dd>
-        </div>
-        <div>
-          <dt># Pkmn</dt>
-          <dd><EditableCell v-model="sheet.scene!.pkmnCount" type="number" /></dd>
-        </div>
-        <div>
-          <dt>Modifiers</dt>
-          <dd><EditableCell v-model="sheet.scene!.modifiers" type="number" /></dd>
-        </div>
-        <div>
-          <dt>New Total</dt>
-          <dd><EditableCell v-model="sheet.scene!.newTotal" type="number" /></dd>
-        </div>
       </dl>
     </div>
   </section>
