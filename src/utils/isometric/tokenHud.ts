@@ -66,6 +66,33 @@ export const updateElevationBadge = ({
   badge.visible = true
 }
 
+const TOKEN_LEVEL_PREFIX_TEXT = 'Lv'
+
+const ensureTokenLevelNodes = (levelNode: HTMLElement) => {
+  let prefix = levelNode.querySelector<HTMLElement>('.token-status__level-prefix')
+  let value = levelNode.querySelector<HTMLElement>('.token-status__level-value')
+
+  if (!prefix || !value) {
+    prefix = document.createElement('span')
+    prefix.className = 'token-status__level-prefix'
+    prefix.textContent = TOKEN_LEVEL_PREFIX_TEXT
+
+    value = document.createElement('span')
+    value.className = 'token-status__level-value'
+    levelNode.replaceChildren(prefix, value)
+  }
+
+  return { prefix, value }
+}
+
+const updateTokenStatusLevel = (levelNode: HTMLElement, level: number) => {
+  const { prefix, value } = ensureTokenLevelNodes(levelNode)
+  const formattedLevel = formatTokenLevel(level)
+
+  if (prefix.textContent !== TOKEN_LEVEL_PREFIX_TEXT) prefix.textContent = TOKEN_LEVEL_PREFIX_TEXT
+  if (value.textContent !== formattedLevel) value.textContent = formattedLevel
+}
+
 const updateTokenStatusLabel = (
   element: HTMLElement,
   displayName: string,
@@ -95,10 +122,7 @@ const updateTokenStatusLabel = (
     }
   }
 
-  if (levelNode) {
-    const levelText = `Lv ${formatTokenLevel(level)}`
-    if (levelNode.textContent !== levelText) levelNode.textContent = levelText
-  }
+  if (levelNode) updateTokenStatusLevel(levelNode, level)
 }
 
 const updateTokenCombatStages = (element: HTMLElement, stages: CombatStageMap) => {

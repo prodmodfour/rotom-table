@@ -61,6 +61,7 @@
   --map-hp-healthy:  #00ff00;
   --map-hp-wounded:  #ff9500;
   --map-hp-critical: #ff0000;
+  --map-token-level-prefix: #ff8c00;
 
   --shadow-card:
     0 18px 44px rgba(0, 0, 0, 0.72),
@@ -425,7 +426,17 @@ samp {
 
 .token-status__level {
   flex: 0 0 auto;
-  color: var(--accent);
+  display: inline-flex;
+  align-items: baseline;
+  gap: 2px;
+}
+
+.token-status__level-prefix {
+  color: var(--map-token-level-prefix);
+}
+
+.token-status__level-value {
+  color: var(--ink-bright);
 }
 
 .token-status__cs-strip {
