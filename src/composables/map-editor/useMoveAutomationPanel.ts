@@ -126,7 +126,10 @@ interface ActiveAreaConfirmationRequest {
   damageFormula: string | null
   label: string
   cells: GridAnchor[]
+  /** All token ids in the current area template. */
   targetIds: string[]
+  /** Candidate token ids manually excluded before confirming Friendly area moves. */
+  excludedTargetIds: string[]
   direction?: MoveAutomationAreaDirection
   directionOptions: MoveAutomationAreaDirectionOption[]
 }
@@ -271,6 +274,15 @@ export const useMoveAutomationPanel = ({
     }),
   )
 
+  const canToggleAreaTargets = (script: MoveAutomationScript): boolean =>
+    script.keywords.some((keyword) => /^Friendly$/i.test(keyword))
+
+  const selectedAreaTargetIds = (request: ActiveAreaConfirmationRequest): string[] => {
+    if (!canToggleAreaTargets(request.script) || !request.excludedTargetIds.length) return request.targetIds
+    const excluded = new Set(request.excludedTargetIds)
+    return request.targetIds.filter((id) => !excluded.has(id))
+  }
+
   const moveAutomationTargeting = computed<MoveAutomationTargetingOverlayState | null>(() => {
     const request = activeMoveTargeting.value
     const user = findSpawnedPokemon(request?.userId)
@@ -286,7 +298,8 @@ export const useMoveAutomationPanel = ({
         candidateIds: request.targetIds,
         hitChances: moveTargetHitChances(request.script, user, request.targetIds),
         areaCells: request.cells,
-        affectedIds: request.targetIds,
+        affectedIds: selectedAreaTargetIds(request),
+        canToggleTargets: canToggleAreaTargets(request.script),
         areaDirection: request.direction,
         areaDirectionOptions: request.directionOptions,
       }
@@ -372,6 +385,7 @@ export const useMoveAutomationPanel = ({
     label: placement.label,
     cells: placement.cells,
     targetIds: placement.targetIds,
+    excludedTargetIds: [],
     direction: placement.direction,
     directionOptions: directionOptionsForPlacements(placements),
   })
@@ -406,6 +420,7 @@ export const useMoveAutomationPanel = ({
       label: template.label,
       cells,
       targetIds,
+      excludedTargetIds: [],
       direction,
       directionOptions: [],
     }
@@ -719,10 +734,20 @@ export const useMoveAutomationPanel = ({
     }
   }
 
+  const toggleMoveAutomationAreaTarget = (request: ActiveAreaConfirmationRequest, targetId: string) => {
+    const excluded = new Set(request.excludedTargetIds)
+    if (excluded.has(targetId)) excluded.delete(targetId)
+    else excluded.add(targetId)
+    activeMoveTargeting.value = {
+      ...request,
+      excludedTargetIds: Array.from(excluded),
+    }
+  }
+
   const confirmMoveAutomationArea = async (request: ActiveAreaConfirmationRequest) => {
     const user = findSpawnedPokemon(request.userId)
     if (!user) return
-    const targetSet = new Set(request.targetIds)
+    const targetSet = new Set(selectedAreaTargetIds(request))
     const targets = spawnedPokemon.value.filter((token) => targetSet.has(token.id))
     if (request.direction) faceTokenTowardAreaDirection(user, request.direction)
     else faceTokenTowardNearestTarget(user, targets)
@@ -745,6 +770,10 @@ export const useMoveAutomationPanel = ({
     if (!request) return
 
     if (request.kind === 'area-confirmation') {
+      if (canToggleAreaTargets(request.script) && request.targetIds.includes(targetId)) {
+        toggleMoveAutomationAreaTarget(request, targetId)
+        return
+      }
       await confirmMoveAutomationArea(request)
       return
     }

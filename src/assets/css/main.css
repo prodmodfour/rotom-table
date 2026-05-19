@@ -264,6 +264,13 @@ samp {
     0 0 12px rgba(100, 230, 118, 0.45);
 }
 
+.move-target-hit-chance.is-unselected {
+  color: #b5bdc8;
+  box-shadow:
+    0 8px 18px rgba(0, 0, 0, 0.55),
+    0 0 10px rgba(181, 189, 200, 0.28);
+}
+
 .move-target-reticle {
   --move-target-reticle-color: #ff2d20;
   --move-target-reticle-glow: rgba(255, 45, 32, 0.82);
@@ -296,6 +303,14 @@ samp {
 .move-target-reticle.is-high {
   --move-target-reticle-color: #64e676;
   --move-target-reticle-glow: rgba(100, 230, 118, 0.72);
+}
+
+.move-target-reticle.is-unselected {
+  --move-target-reticle-color: #9aa3af;
+  --move-target-reticle-glow: rgba(154, 163, 175, 0.44);
+
+  opacity: 0.58;
+  animation: none;
 }
 
 .move-target-reticle::before,

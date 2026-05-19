@@ -168,12 +168,17 @@ const visibleLayers = () => resolveIsometricLayerVisibility(props.layerVisibilit
 const normalizedGroundLevelY = () => clampIsometricGroundLevelY(props.dimensions, props.groundLevelY)
 
 const container = ref<HTMLDivElement | null>(null)
-const targetReticleButtons = ref<Array<{
+
+type TargetReticleButton = {
   id: string
   left: number
   top: number
+  selected: boolean
+  showsReticle: boolean
   hitChance?: MoveAutomationTargetHitChance
-}>>([])
+}
+
+const targetReticleButtons = ref<TargetReticleButton[]>([])
 
 const emitPokemonSelection = (id: string | null) => {
   if (props.moveAutomationTargeting) return
@@ -604,6 +609,13 @@ const pickMoveTargetId = (event: MouseEvent | PointerEvent): string | null => {
 
 const performMoveTargeting = (event: MouseEvent | PointerEvent): boolean => {
   if (props.moveAutomationTargeting?.mode === 'area-confirmation') {
+    if (props.moveAutomationTargeting.canToggleTargets) {
+      const hitId = pickMoveTargetId(event)
+      if (hitId) {
+        emit('select-move-target', hitId)
+        return true
+      }
+    }
     updateMoveAreaDirectionFromPointer(event)
     emit('select-move-target', props.moveAutomationTargeting.userId)
     return true
@@ -852,20 +864,33 @@ const sameMoveTargetHitChance = (
     && a.title === b.title
 }
 
-const syncTargetReticleButtons = (show: boolean) => {
-  if (!show) {
+const areaSelectedTargetIdSet = (
+  targeting: MoveAutomationTargetingOverlayState | null | undefined,
+): Set<string> | null => {
+  if (targeting?.mode !== 'area-confirmation') return null
+  return new Set(targeting.affectedIds ?? targeting.candidateIds)
+}
+
+const syncTargetReticleButtons = (options: {
+  show: boolean
+  showsReticle: boolean
+  selectedIds?: ReadonlySet<string> | null
+}) => {
+  if (!options.show) {
     if (targetReticleButtons.value.length) targetReticleButtons.value = []
     return
   }
 
   const targeting = props.moveAutomationTargeting
-  const next = (targeting?.candidateIds ?? []).flatMap((id) => {
+  const next = (targeting?.candidateIds ?? []).flatMap((id): TargetReticleButton[] => {
     const renderObject = renderObjects.get(id)
     const point = renderObject ? worldPointToContainerPoint(moveTargetReticleCenter(renderObject)) : null
     return point ? [{
       id,
       left: point.x,
       top: point.y,
+      selected: options.selectedIds ? options.selectedIds.has(id) : true,
+      showsReticle: options.showsReticle,
       hitChance: targeting?.hitChances?.[id],
     }] : []
   })
@@ -875,27 +900,45 @@ const syncTargetReticleButtons = (show: boolean) => {
     return old?.id === entry.id
       && Math.abs(old.left - entry.left) < 0.5
       && Math.abs(old.top - entry.top) < 0.5
+      && old?.selected === entry.selected
+      && old?.showsReticle === entry.showsReticle
       && sameMoveTargetHitChance(old?.hitChance, entry.hitChance)
   })
   if (!unchanged) targetReticleButtons.value = next
+}
+
+const targetReticleButtonTitle = (button: TargetReticleButton): string => {
+  if (!button.showsReticle) return button.selected ? 'Exclude this target from the move' : 'Include this target in the move'
+  return button.hitChance?.title ?? 'Select move target'
+}
+
+const targetReticleButtonLabel = (button: TargetReticleButton): string => {
+  if (!button.showsReticle) return button.selected ? 'Exclude move target' : 'Include move target'
+  return button.hitChance ? `Select move target (${button.hitChance.label} to hit)` : 'Select move target'
 }
 
 const updateMoveAutomationOverlays = () => {
   const layers = visibleLayers()
   const targeting = props.moveAutomationTargeting
   const showClickableTargetReticles = Boolean(targeting?.mode === 'target' && layers.tokens)
+  const canToggleAreaTargets = Boolean(targeting?.mode === 'area-confirmation' && targeting.canToggleTargets)
+  const showAreaToggleButtons = Boolean(canToggleAreaTargets && layers.tokens)
   const showAreaTemplate = Boolean(targeting?.mode === 'area-confirmation')
-  const areaAffectedIds = targeting?.mode === 'area-confirmation'
-    ? targeting.affectedIds ?? targeting.candidateIds
-    : []
-  const showAreaTargetReticles = Boolean(showAreaTemplate && layers.tokens && areaAffectedIds.length)
-  syncTargetReticleButtons(showClickableTargetReticles)
+  const areaReticleIds = targeting?.mode === 'area-confirmation' ? targeting.candidateIds : []
+  const areaSelectedIds = areaSelectedTargetIdSet(targeting)
+  const showAreaTargetReticles = Boolean(showAreaTemplate && layers.tokens && areaReticleIds.length)
+  syncTargetReticleButtons({
+    show: showClickableTargetReticles || showAreaToggleButtons,
+    showsReticle: showClickableTargetReticles,
+    selectedIds: showAreaToggleButtons ? areaSelectedIds : null,
+  })
   moveAreaTemplateRenderer.update({
     cells: targeting?.areaCells ?? [],
     show: showAreaTemplate,
   })
   moveTargetingReticleRenderer.update({
-    candidateIds: areaAffectedIds,
+    candidateIds: areaReticleIds,
+    selectedIds: areaSelectedIds ? Array.from(areaSelectedIds) : undefined,
     hitChances: targeting?.hitChances,
     renderObjects,
     show: showAreaTargetReticles,
@@ -1068,12 +1111,18 @@ useIsometricSceneWatchers({
         <strong>{{ props.moveAutomationTargeting.moveName }}</strong>
         <template v-if="props.moveAutomationTargeting.mode === 'area-confirmation'">
           <span>
-            Confirm {{ props.moveAutomationTargeting.rangeLabel }}: {{ props.moveAutomationTargeting.affectedIds?.length ?? 0 }} affected.
-            <template v-if="props.moveAutomationTargeting.areaDirectionOptions?.length">
-              Move the cursor around the user to rotate, or use a direction button; click to use the move.
+            Confirm {{ props.moveAutomationTargeting.rangeLabel }}:
+            <template v-if="props.moveAutomationTargeting.canToggleTargets">
+              {{ props.moveAutomationTargeting.affectedIds?.length ?? 0 }} of {{ props.moveAutomationTargeting.candidateIds.length }} selected. Click reticles to include/exclude targets; click the battlefield to use the move.
             </template>
             <template v-else>
-              Click the battlefield to use the move.
+              {{ props.moveAutomationTargeting.affectedIds?.length ?? 0 }} affected.
+              <template v-if="props.moveAutomationTargeting.areaDirectionOptions?.length">
+                Move the cursor around the user to rotate, or use a direction button; click to use the move.
+              </template>
+              <template v-else>
+                Click the battlefield to use the move.
+              </template>
             </template>
           </span>
         </template>
@@ -1114,29 +1163,31 @@ useIsometricSceneWatchers({
       </button>
     </div>
 
-    <div v-if="props.moveAutomationTargeting?.mode === 'target'" class="move-targeting-click-layer" @contextmenu.prevent>
+    <div v-if="targetReticleButtons.length" class="move-targeting-click-layer" @contextmenu.prevent>
       <button
         v-for="button in targetReticleButtons"
         :key="button.id"
         class="move-target-reticle-button"
+        :class="{ 'is-area-toggle': !button.showsReticle, 'is-unselected': !button.selected }"
         type="button"
         :style="{ left: `${button.left}px`, top: `${button.top}px` }"
-        :aria-label="button.hitChance ? `Select move target (${button.hitChance.label} to hit)` : 'Select move target'"
-        :title="button.hitChance?.title ?? 'Select move target'"
+        :aria-label="targetReticleButtonLabel(button)"
+        :title="targetReticleButtonTitle(button)"
         @pointerdown.stop
         @click.stop="emit('select-move-target', button.id)"
       >
         <span
-          v-if="button.hitChance"
+          v-if="button.showsReticle && button.hitChance"
           class="move-target-hit-chance"
-          :class="`is-${button.hitChance.tone}`"
+          :class="[`is-${button.hitChance.tone}`, { 'is-unselected': !button.selected }]"
           :title="button.hitChance.title"
         >
           {{ button.hitChance.label }}
         </span>
         <span
+          v-if="button.showsReticle"
           class="move-target-reticle"
-          :class="button.hitChance ? `is-${button.hitChance.tone}` : ''"
+          :class="[button.hitChance ? `is-${button.hitChance.tone}` : '', { 'is-unselected': !button.selected }]"
           aria-hidden="true"
         />
       </button>
@@ -1303,6 +1354,10 @@ useIsometricSceneWatchers({
   cursor: crosshair;
   transform: translate(-50%, -50%);
   pointer-events: auto;
+}
+
+.move-target-reticle-button.is-area-toggle {
+  cursor: pointer;
 }
 
 .move-target-reticle-button:focus-visible {

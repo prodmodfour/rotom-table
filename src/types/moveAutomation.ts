@@ -77,6 +77,8 @@ export interface MoveAutomationTargetingOverlayState {
   hitChances?: Record<string, MoveAutomationTargetHitChance | undefined>
   areaCells?: GridAnchor[]
   affectedIds?: string[]
+  /** Area-confirmation overlays may let the user exclude/re-include candidate targets before confirming. */
+  canToggleTargets?: boolean
   areaDirection?: MoveAutomationAreaDirection
   areaDirectionOptions?: MoveAutomationAreaDirectionOption[]
 }

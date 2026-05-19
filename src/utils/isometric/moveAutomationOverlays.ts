@@ -34,6 +34,7 @@ const createTargetReticleElement = (label: string): HTMLElement => {
 const updateTargetReticleElement = (
   element: HTMLElement,
   hitChance: MoveAutomationTargetHitChance | undefined,
+  selected = true,
 ) => {
   const badge = element.querySelector<HTMLElement>('.move-target-hit-chance')
   if (!badge) return
@@ -44,6 +45,7 @@ const updateTargetReticleElement = (
   badge.className = [
     'move-target-hit-chance',
     hitChance ? `is-${hitChance.tone}` : '',
+    selected ? '' : 'is-unselected',
   ].filter(Boolean).join(' ')
 
   const ring = element.querySelector<HTMLElement>('.move-target-reticle')
@@ -51,6 +53,7 @@ const updateTargetReticleElement = (
     ring.className = [
       'move-target-reticle',
       hitChance ? `is-${hitChance.tone}` : '',
+      selected ? '' : 'is-unselected',
     ].filter(Boolean).join(' ')
   }
   element.title = hitChance?.title ?? ''
@@ -96,16 +99,18 @@ export const createMoveTargetingReticleRenderer = (scene: THREE.Scene) => {
   const update = (options: {
     candidateIds: readonly string[]
     hitChances?: Readonly<Record<string, MoveAutomationTargetHitChance | undefined>>
+    selectedIds?: readonly string[]
     renderObjects: Map<string, PokemonRenderObject>
     show: boolean
   }) => {
     syncIds(options.show ? options.candidateIds : [])
     const candidateSet = new Set(options.candidateIds)
+    const selectedSet = options.selectedIds ? new Set(options.selectedIds) : null
     for (const [id, reticle] of reticles) {
       const renderObject = options.renderObjects.get(id)
       reticle.visible = Boolean(options.show && renderObject && candidateSet.has(id))
       if (!renderObject || !reticle.visible) continue
-      updateTargetReticleElement(reticle.element, options.hitChances?.[id])
+      updateTargetReticleElement(reticle.element, options.hitChances?.[id], selectedSet ? selectedSet.has(id) : true)
       reticle.position.set(
         renderObject.currentCenter.x,
         reticleY(renderObject),

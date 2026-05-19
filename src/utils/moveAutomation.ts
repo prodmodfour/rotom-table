@@ -150,7 +150,7 @@ const targetConditionSuggestions = (conditions: readonly ReviewedTargetCondition
 const areaAutomationNotes = (script: Pick<MoveAutomationScript, 'keywords'>): string[] => [
   'Use the area-template buttons to choose affected legal targets, or select targets manually.',
   ...(script.keywords.some((keyword) => /^Friendly$/i.test(keyword))
-    ? ['Friendly keyword: allies are not hit; team allegiance is not tracked, so choose legal foes only.']
+    ? ['Friendly keyword: allies are not hit; team allegiance is not tracked, so unselect any allies before confirming.']
     : []),
 ]
 

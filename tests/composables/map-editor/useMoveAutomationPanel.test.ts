@@ -803,6 +803,70 @@ describe('useMoveAutomationPanel', () => {
     ])
   })
 
+  it('lets Friendly area move targets be unselected before confirmation', async () => {
+    const map = ref({
+      ...mapFixture(),
+      dimensions: { x: 8, y: 2, z: 8 },
+      placements: [
+        { id: 'user-token', sheetKind: 'pokemon' as const, sheetSlug: 'growler', position: { x: 3, y: 0, z: 3 } },
+        { id: 'ally-token', sheetKind: 'pokemon' as const, sheetSlug: 'ally', position: { x: 3, y: 0, z: 4 } },
+        { id: 'foe-token', sheetKind: 'pokemon' as const, sheetSlug: 'foe', position: { x: 4, y: 0, z: 3 } },
+      ],
+    })
+    const pokemonSheet = {
+      slug: 'growler',
+      nickname: 'Growler',
+      species: 'Bulbasaur',
+      level: 5,
+      movelist: [{ name: 'Growl' }],
+    } as CharacterSheet
+    const calls: string[] = []
+    const panel = useMoveAutomationPanel({
+      map,
+      spawnedPokemon: computed(() => [
+        spawned({ id: 'user-token', species: 'Growler', sheetSlug: 'growler', position: { x: 3, y: 0, z: 3 } }),
+        spawned({ id: 'ally-token', species: 'Ally', sheetSlug: 'ally', position: { x: 3, y: 0, z: 4 } }),
+        spawned({ id: 'foe-token', species: 'Foe', sheetSlug: 'foe', position: { x: 4, y: 0, z: 3 } }),
+      ]),
+      pokemonBySlug: ref(new Map([[pokemonSheet.slug, pokemonSheet]])),
+      trainerBySlug: ref(new Map<string, TrainerSheet>()),
+      canEditMap: computed(() => false),
+      canControlPlacement: (id) => id === 'user-token',
+      modifyHp: () => undefined,
+      modifyCombatStages: (update) => { calls.push(`stages:${update.id}:${update.stages.atk}`) },
+      modifyConditions: () => undefined,
+      applyMoveFieldEffect: () => undefined,
+      placeHazard: () => undefined,
+    })
+
+    panel.openMoveAutomation({ id: 'user-token', moveName: 'Growl' })
+
+    expect(panel.moveAutomationTargeting.value).toMatchObject({
+      mode: 'area-confirmation',
+      moveName: 'Growl',
+      rangeLabel: 'Burst 1',
+      candidateIds: ['ally-token', 'foe-token'],
+      affectedIds: ['ally-token', 'foe-token'],
+      canToggleTargets: true,
+    })
+
+    await panel.selectMoveAutomationTarget('ally-token')
+
+    expect(panel.moveAutomationTargeting.value).toMatchObject({
+      candidateIds: ['ally-token', 'foe-token'],
+      affectedIds: ['foe-token'],
+      canToggleTargets: true,
+    })
+
+    await panel.selectMoveAutomationTarget('user-token')
+
+    expect(calls).toEqual(['stages:foe-token:-1'])
+    expect(panel.moveAutomationTargeting.value).toBeNull()
+    expect(map.value.metadata?.moveLog).toMatchObject([
+      { moveName: 'Growl', scriptKind: 'explicit' },
+    ])
+  })
+
   it('opens Leer as a cone AoE confirmation and lets the user select direction', async () => {
     const map = ref({
       ...mapFixture(),
