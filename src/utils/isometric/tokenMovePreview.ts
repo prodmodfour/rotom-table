@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import type { GridAnchor, SpawnedPokemon } from '~/types/pokemon'
 import { getAnchorCenter } from '~/utils/gridGeometry'
-import { tokenFacingForPlacement, tokenFacingVector } from '~/utils/tokenFacing'
+import { tokenFacingForPlacement, tokenFacingTowardPoint, tokenFacingVector } from '~/utils/tokenFacing'
 import { buildVolumeMaterials, paintVolumeMaterials } from '~/utils/isometric/materials'
 import { disposeObject3D } from '~/utils/isometric/resourceDisposal'
 import { buildElevationBadge, updateElevationBadge } from '~/utils/isometric/tokenHud'
@@ -22,6 +22,7 @@ export const createTokenMovePreviewRenderer = (containers: {
 }) => {
   let ghostSprite: THREE.Sprite | null = null
   let ghostSpriteState: WorldSpriteState | null = null
+  let ghostAnchor: GridAnchor | null = null
   let elevationBadge: ReturnType<typeof buildElevationBadge> | null = null
   let volume: THREE.Mesh<THREE.BoxGeometry, THREE.MeshBasicMaterial[]> | null = null
   let edges: THREE.LineSegments | null = null
@@ -35,6 +36,7 @@ export const createTokenMovePreviewRenderer = (containers: {
     disposeObject3D(edges)
     ghostSprite = null
     ghostSpriteState = null
+    ghostAnchor = null
     elevationBadge = null
     volume = null
     edges = null
@@ -146,6 +148,7 @@ export const createTokenMovePreviewRenderer = (containers: {
       }
 
       const center = getAnchorCenter(options.anchor, options.pokemon.base)
+      ghostAnchor = options.anchor
       ghostSprite.position.set(center.x, options.anchor.y, center.z)
       ghostSpriteState.halo.position.copy(ghostSprite.position)
       setWorldSpriteVisible(ghostSpriteState, true)
@@ -208,10 +211,15 @@ export const createTokenMovePreviewRenderer = (containers: {
         options.positionY ?? options.pokemon.position.y,
         ghostSprite.position.z,
       )
+      const currentFacing = tokenFacingForPlacement(options.pokemon)
+      const previewFacing = ghostAnchor
+        ? tokenFacingTowardPoint(options.pokemon.position, ghostAnchor, currentFacing) ?? currentFacing
+        : currentFacing
+
       updateSpriteFacing(ghostSpriteState, {
         camera: options.camera,
         center: ghostCenter,
-        facingDirection: tokenFacingVector(tokenFacingForPlacement(options.pokemon)),
+        facingDirection: tokenFacingVector(previewFacing),
         frontSpriteUrl: options.pokemon.spriteUrl,
         frontSpriteAnimation: options.pokemon.spriteAnimation,
         backSpriteUrl: options.pokemon.backSpriteUrl,

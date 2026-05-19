@@ -157,6 +157,25 @@ describe('useTokenControls', () => {
     ])
   })
 
+  it('turns moved tokens toward cardinal destinations instead of preserving stale side-facing', () => {
+    const sheet = pokemon()
+    const map = mapFixture()
+    map.placements = [
+      {
+        id: 'bolt-token',
+        sheetKind: 'pokemon',
+        sheetSlug: sheet.slug,
+        position: { x: 2, y: 0, z: 2 },
+        facing: 'north-east',
+      },
+    ]
+    const { controls } = makeControls({ map, pokemonSheets: [sheet] })
+
+    controls.movePlacement({ id: 'bolt-token', position: { x: 1, y: 0, z: 2 } })
+
+    expect(map.placements[0]).toMatchObject({ facing: 'south-west', turned: false })
+  })
+
   it('does not log movement when the token stays in place', () => {
     const sheet = pokemon()
     const map = mapFixture()

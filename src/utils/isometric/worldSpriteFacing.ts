@@ -9,7 +9,16 @@ export interface WorldSpriteFacingDirection {
 }
 
 export interface WorldSpriteFacingInput {
+  /**
+   * Absolute camera position. Kept as a fallback for callers that do not have
+   * a projected camera direction available.
+   */
   cameraPosition?: WorldSpriteFacingVector2 | null
+  /**
+   * XZ direction from the sprite toward the camera. Prefer this for
+   * orthographic cameras because every sprite shares the same view direction.
+   */
+  toCameraDirection?: WorldSpriteFacingVector2 | null
   center: WorldSpriteFacingVector2
   facingDirection: WorldSpriteFacingDirection
   turned?: boolean
@@ -31,10 +40,14 @@ const BACK_MIRRORED_VIEW: WorldSpriteFacingView = { asset: 'back', mirrorX: true
 // missing left/right three-quarter views.
 const DIAGONAL_VIEW_THRESHOLD = Math.SQRT1_2
 
+const DIAGONAL_VIEW_THRESHOLD_EPSILON = 1e-9
+
+type NormalizedWorldSpriteFacingDirection = Readonly<WorldSpriteFacingDirection>
+
 const normalizeFacingDirection = (
   facingDirection: WorldSpriteFacingDirection,
   turned: boolean,
-): WorldSpriteFacingDirection | null => {
+): NormalizedWorldSpriteFacingDirection | null => {
   const turnScalar = turned ? -1 : 1
   const x = facingDirection.x * turnScalar
   const y = facingDirection.y * turnScalar
@@ -43,31 +56,57 @@ const normalizeFacingDirection = (
   return { x: x / length, y: y / length }
 }
 
+const normalizeXzDirection = (
+  direction: WorldSpriteFacingVector2 | null | undefined,
+): NormalizedWorldSpriteFacingDirection | null => {
+  if (!direction) return null
+  const length = Math.hypot(direction.x, direction.z)
+  if (length === 0) return null
+  return { x: direction.x / length, y: direction.z / length }
+}
+
+const resolveToCameraDirection = (
+  toCameraDirection: WorldSpriteFacingVector2 | null | undefined,
+  cameraPosition: WorldSpriteFacingVector2 | null | undefined,
+  center: WorldSpriteFacingVector2,
+): NormalizedWorldSpriteFacingDirection | null => {
+  const projectedDirection = normalizeXzDirection(toCameraDirection)
+  if (projectedDirection) return projectedDirection
+  if (!cameraPosition) return null
+  return normalizeXzDirection({
+    x: cameraPosition.x - center.x,
+    z: cameraPosition.z - center.z,
+  })
+}
+
 export const resolveWorldSpriteFacing = ({
   cameraPosition,
+  toCameraDirection,
   center,
   facingDirection,
   turned = false,
 }: WorldSpriteFacingInput): WorldSpriteFacingView => {
-  if (!cameraPosition) return FRONT_VIEW
-
-  const toCameraX = cameraPosition.x - center.x
-  const toCameraZ = cameraPosition.z - center.z
-  const distance = Math.hypot(toCameraX, toCameraZ)
-  if (distance === 0) return FRONT_VIEW
+  const camera = resolveToCameraDirection(toCameraDirection, cameraPosition, center)
+  if (!camera) return FRONT_VIEW
 
   const facing = normalizeFacingDirection(facingDirection, turned)
   if (!facing) return FRONT_VIEW
 
-  const cameraX = toCameraX / distance
-  const cameraZ = toCameraZ / distance
-  const dot = facing.x * cameraX + facing.y * cameraZ
+  const dot = facing.x * camera.x + facing.y * camera.y
 
-  if (dot >= DIAGONAL_VIEW_THRESHOLD) return FRONT_VIEW
-  if (dot <= -DIAGONAL_VIEW_THRESHOLD) return BACK_VIEW
+  if (dot > DIAGONAL_VIEW_THRESHOLD + DIAGONAL_VIEW_THRESHOLD_EPSILON) return FRONT_VIEW
+  if (dot < -DIAGONAL_VIEW_THRESHOLD - DIAGONAL_VIEW_THRESHOLD_EPSILON) return BACK_VIEW
 
-  const cross = facing.x * cameraZ - facing.y * cameraX
+  const cross = facing.x * camera.y - facing.y * camera.x
   return cross < 0 ? FRONT_MIRRORED_VIEW : BACK_MIRRORED_VIEW
+}
+
+export const worldSpriteMirrorXForAvailableAsset = (
+  view: WorldSpriteFacingView,
+  hasBackSprite: boolean,
+): boolean => {
+  if (hasBackSprite || view.asset === 'front') return view.mirrorX
+  return !view.mirrorX
 }
 
 export const shouldUseFrontWorldSprite = (input: WorldSpriteFacingInput): boolean =>

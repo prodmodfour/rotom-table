@@ -89,21 +89,34 @@ const AREA_DIRECTION_DELTAS: Partial<Record<MoveAutomationAreaDirection, TokenFa
   'north-west': { dx: -1, dz: -1 },
 }
 
-const axisSign = (value: number, fallback: number): -1 | 1 => {
-  if (value > 0) return 1
-  if (value < 0) return -1
-  return fallback < 0 ? -1 : 1
+const axisSign = (value: number): -1 | 1 => value < 0 ? -1 : 1
+
+const cardinalTokenFacingSigns = (delta: TokenFacingDelta): { x: -1 | 1; z: -1 | 1 } | null => {
+  if (delta.dx === 0 && delta.dz === 0) return null
+
+  if (delta.dx === 0) {
+    const z = axisSign(delta.dz)
+    return { x: z, z }
+  }
+
+  if (delta.dz === 0) {
+    const x = axisSign(delta.dx)
+    return { x, z: x > 0 ? -1 : 1 }
+  }
+
+  return null
 }
 
 export const tokenFacingFromDelta = (
   delta: TokenFacingDelta,
-  currentFacing: TokenFacingDirection = DEFAULT_TOKEN_FACING_DIRECTION,
+  _currentFacing: TokenFacingDirection = DEFAULT_TOKEN_FACING_DIRECTION,
 ): TokenFacingDirection | null => {
+  const cardinalSigns = cardinalTokenFacingSigns(delta)
+  if (cardinalSigns) return TOKEN_FACING_BY_SIGNS[`${cardinalSigns.x},${cardinalSigns.z}`]
   if (delta.dx === 0 && delta.dz === 0) return null
 
-  const fallback = tokenFacingVector(currentFacing)
-  const x = axisSign(delta.dx, fallback.x)
-  const z = axisSign(delta.dz, fallback.y)
+  const x = axisSign(delta.dx)
+  const z = axisSign(delta.dz)
   return TOKEN_FACING_BY_SIGNS[`${x},${z}`]
 }
 

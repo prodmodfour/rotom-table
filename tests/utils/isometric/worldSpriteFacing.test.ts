@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   resolveWorldSpriteFacing,
   shouldUseFrontWorldSprite,
+  worldSpriteMirrorXForAvailableAsset,
 } from '~/utils/isometric/worldSpriteFacing'
 
 describe('world sprite facing helpers', () => {
@@ -35,6 +36,18 @@ describe('world sprite facing helpers', () => {
     })).toEqual({ asset: 'back', mirrorX: false })
   })
 
+  it('prefers a projected to-camera direction over token-relative camera position', () => {
+    const center = { x: 40, z: 0 }
+    const facingDirection = { x: 1, y: 1 }
+
+    expect(resolveWorldSpriteFacing({
+      center,
+      facingDirection,
+      cameraPosition: { x: 0, z: 0 },
+      toCameraDirection: { x: 1, z: 1 },
+    })).toEqual({ asset: 'front', mirrorX: false })
+  })
+
   it('uses mirrored side views for the two perpendicular camera directions', () => {
     const center = { x: 0, z: 0 }
     const facingDirection = { x: 0, y: 1 }
@@ -48,6 +61,22 @@ describe('world sprite facing helpers', () => {
       center,
       facingDirection,
       cameraPosition: { x: -5, z: 0 },
+    })).toEqual({ asset: 'back', mirrorX: true })
+  })
+
+  it('keeps adjacent diagonal facings distinct on exact sector boundaries', () => {
+    const center = { x: 0, z: 0 }
+    const eastCameraDirection = { x: 1, z: 0 }
+
+    expect(resolveWorldSpriteFacing({
+      center,
+      facingDirection: { x: Math.SQRT1_2, y: Math.SQRT1_2 },
+      toCameraDirection: eastCameraDirection,
+    })).toEqual({ asset: 'front', mirrorX: true })
+    expect(resolveWorldSpriteFacing({
+      center,
+      facingDirection: { x: Math.SQRT1_2, y: -Math.SQRT1_2 },
+      toCameraDirection: eastCameraDirection,
     })).toEqual({ asset: 'back', mirrorX: true })
   })
 
@@ -67,6 +96,14 @@ describe('world sprite facing helpers', () => {
       cameraPosition: { x: 0, z: -5 },
       turned: true,
     })).toEqual({ asset: 'front', mirrorX: false })
+  })
+
+  it('mirrors front-only sprites by facing side when back art is unavailable', () => {
+    expect(worldSpriteMirrorXForAvailableAsset({ asset: 'front', mirrorX: false }, false)).toBe(false)
+    expect(worldSpriteMirrorXForAvailableAsset({ asset: 'front', mirrorX: true }, false)).toBe(true)
+    expect(worldSpriteMirrorXForAvailableAsset({ asset: 'back', mirrorX: false }, false)).toBe(true)
+    expect(worldSpriteMirrorXForAvailableAsset({ asset: 'back', mirrorX: true }, false)).toBe(false)
+    expect(worldSpriteMirrorXForAvailableAsset({ asset: 'back', mirrorX: true }, true)).toBe(true)
   })
 
   it('preserves the boolean front/back helper as a wrapper around facing resolution', () => {

@@ -25,11 +25,13 @@ describe('token facing helpers', () => {
     expect(nextTokenFacingForPlacement({ facing: 'south-west' })).toBe('south-east')
   })
 
-  it('derives facing from points and keeps cardinal directions on the existing side', () => {
+  it('derives facing from movement and resolves cardinal steps deterministically', () => {
     expect(tokenFacingTowardPoint({ x: 0, z: 0 }, { x: 2, z: -1 }, 'south-east')).toBe('north-east')
     expect(tokenFacingTowardPoint({ x: 0, z: 0 }, { x: 0, z: -1 }, 'south-west')).toBe('north-west')
+    expect(tokenFacingTowardPoint({ x: 0, z: 0 }, { x: 0, z: 1 }, 'north-east')).toBe('south-east')
+    expect(tokenFacingTowardPoint({ x: 0, z: 0 }, { x: -1, z: 0 }, 'north-east')).toBe('south-west')
     expect(tokenFacingTowardPoint({ x: 0, z: 0 }, { x: 0, z: 0 }, 'south-east')).toBeNull()
-    expect(tokenFacingFromAreaDirection('west', 'north-east')).toBe('north-west')
+    expect(tokenFacingFromAreaDirection('west', 'north-east')).toBe('south-west')
   })
 
   it('keeps the legacy turned flag tied to the old north-west back view', () => {

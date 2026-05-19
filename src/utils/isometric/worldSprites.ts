@@ -15,7 +15,12 @@ import {
   setWorldSpriteTextureWindow,
   spriteVisualAssetKey,
 } from '~/utils/isometric/worldSpriteAssets'
-import { resolveWorldSpriteFacing, type WorldSpriteFacingDirection } from '~/utils/isometric/worldSpriteFacing'
+import {
+  resolveWorldSpriteFacing,
+  worldSpriteMirrorXForAvailableAsset,
+  type WorldSpriteFacingDirection,
+  type WorldSpriteFacingVector2,
+} from '~/utils/isometric/worldSpriteFacing'
 import {
   getWorldSpriteLightingStyle,
   WORLD_SPRITE_GHOST_HALO_COLOR,
@@ -227,6 +232,17 @@ const applyWorldSpriteMirrorX = (state: WorldSpriteState, mirrorX: boolean) => {
   applyWorldSpriteTextureTransform(state)
 }
 
+const cameraWorldDirection = new THREE.Vector3()
+const spriteToCameraDirection: WorldSpriteFacingVector2 = { x: 0, z: 0 }
+
+const getOrthographicSpriteToCameraDirection = (camera: THREE.Camera | null): WorldSpriteFacingVector2 | null => {
+  if (!camera || (camera as THREE.OrthographicCamera).isOrthographicCamera !== true) return null
+  camera.getWorldDirection(cameraWorldDirection)
+  spriteToCameraDirection.x = -cameraWorldDirection.x
+  spriteToCameraDirection.z = -cameraWorldDirection.z
+  return spriteToCameraDirection
+}
+
 export const updateSpriteFacing = (
   state: WorldSpriteState,
   options: {
@@ -243,12 +259,14 @@ export const updateSpriteFacing = (
 ) => {
   const facing = resolveWorldSpriteFacing({
     cameraPosition: options.camera?.position ?? null,
+    toCameraDirection: getOrthographicSpriteToCameraDirection(options.camera),
     center: options.center,
     facingDirection: options.facingDirection,
     turned: options.turned,
   })
-  const useBack = Boolean(options.backSpriteUrl && facing.asset === 'back')
-  applyWorldSpriteMirrorX(state, facing.mirrorX)
+  const hasBackSprite = Boolean(options.backSpriteUrl)
+  const useBack = hasBackSprite && facing.asset === 'back'
+  applyWorldSpriteMirrorX(state, worldSpriteMirrorXForAvailableAsset(facing, hasBackSprite))
   setWorldSpriteAsset(state, useBack
     ? {
         url: options.backSpriteUrl!,
