@@ -464,6 +464,18 @@ const reviewedMudSportScript = (version = 1): MoveAutomationScript => reviewedAr
   ],
 })
 
+const reviewedHowlScript = (version = 1): MoveAutomationScript => reviewedAreaConfirmationScript('Howl', version, {
+  requiresAccuracy: false,
+  stageSuggestions: [
+    { recipient: 'user', key: 'atk', delta: 1, label: "Howl raises user's Attack: +1 Attack CS" },
+    { recipient: 'target', key: 'atk', delta: 1, label: "Howl raises allies' Attack: +1 Attack CS" },
+  ],
+  automationNotes: [
+    'Burst 1 is shown as an area overlay; the user also receives the Attack boost even though the user token is not a selectable target.',
+    'Howl affects allies only. Team allegiance is not tracked, so verify affected tokens are allies or correct Combat Stages manually afterward.',
+  ],
+})
+
 const reviewedSynthesisScript = (version = 1): MoveAutomationScript => reviewedMoveScriptFromCanonical('Synthesis', version, {
   targetMode: 'self',
   targetCount: 1,
@@ -572,12 +584,17 @@ const REVIEWED_AREA_COAT_SCRIPTS: ReadonlyMap<string, MoveAutomationScript> = ne
   ['Mud Sport', reviewedMudSportScript()],
 ])
 
+const REVIEWED_ALLY_AREA_STAGE_SCRIPTS: ReadonlyMap<string, MoveAutomationScript> = new Map([
+  ['Howl', reviewedHowlScript()],
+])
+
 const SEAMLESS_AREA_CONFIRMATION_SCRIPTS: ReadonlyMap<string, MoveAutomationScript> = new Map([
   ...REVIEWED_TARGET_STAGE_AREA_SCRIPTS,
   ...REVIEWED_AREA_CONFIRMATION_SCRIPTS,
   ...REVIEWED_AREA_CONDITION_SCRIPTS,
   ...REVIEWED_SMOG_SCRIPTS,
   ...REVIEWED_AREA_COAT_SCRIPTS,
+  ...REVIEWED_ALLY_AREA_STAGE_SCRIPTS,
 ])
 
 const SEAMLESS_SINGLE_TARGET_ATTACK_SCRIPT_NAMES = [

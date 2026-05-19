@@ -213,6 +213,27 @@ describe('instant move automation', () => {
     expect(transaction.logLines).toContain('Sprout: Synthesis heals weather-adjusted HP (66 HP).')
   })
 
+  it('resolves Howl as a no-accuracy Burst buff for the user and selected allies', () => {
+    const script = explicitScriptForMove('Howl')!
+    const transaction = resolveInstantAreaMoveAutomation({
+      script,
+      user: token({ id: 'u', species: 'Howler', combatStages: { ...stages, atk: 1 } }),
+      targets: [
+        token({ id: 'ally', species: 'Ally', combatStages: { ...stages, atk: -1 } }),
+      ],
+    })
+
+    expect(transaction.hpUpdates).toEqual([])
+    expect(transaction.combatStageUpdates).toEqual([
+      { id: 'u', stages: { ...stages, atk: 2 } },
+      { id: 'ally', stages: { ...stages, atk: 0 } },
+    ])
+    expect(transaction.logLines).toEqual(expect.arrayContaining([
+      "Howl raises user's Attack: +1 Attack CS on Howler.",
+      "Howl raises allies' Attack: +1 Attack CS on Ally.",
+    ]))
+  })
+
   it('resolves Magical Leaf damage as a cannot-miss target attack', () => {
     const script = explicitScriptForMove('Magical Leaf')!
     const transaction = resolveInstantTargetMoveAutomation({

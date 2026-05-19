@@ -279,6 +279,15 @@ describe('explicit move automation scripts', () => {
     ])
     expect(isSeamlessSingleTargetMoveScript(helpingHand)).toBe(true)
 
+    const howl = explicitScriptForMove('Howl')
+    expect(howl).toMatchObject({ moveName: 'Howl', targetMode: 'multi-target', requiresAccuracy: false, damaging: false })
+    expect(howl?.areaTemplates).toMatchObject([{ kind: 'burst', size: 1 }])
+    expect(howl?.stageSuggestions).toEqual([
+      { recipient: 'user', key: 'atk', delta: 1, label: "Howl raises user's Attack: +1 Attack CS" },
+      { recipient: 'target', key: 'atk', delta: 1, label: "Howl raises allies' Attack: +1 Attack CS" },
+    ])
+    expect(isSeamlessAreaConfirmationScript(howl)).toBe(true)
+
     const fakeOut = explicitScriptForMove('Fake Out')
     expect(fakeOut).toMatchObject({ moveName: 'Fake Out', targetMode: 'one-target', damaging: true })
     expect(fakeOut?.conditionSuggestions).toEqual([
