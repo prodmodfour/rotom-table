@@ -4,6 +4,7 @@ import {
   moveAutomationMultiplierLabel,
   moveAutomationSuggestionKey,
   resolveHpSuggestionAmount,
+  resolveMoveAutomationTargetDamageBreakdown,
   resolveMoveAutomationTargetDamageLoss,
   suggestionIsEnabled,
 } from '~/utils/moveAutomationTargetResolution'
@@ -87,11 +88,22 @@ describe('move automation target resolution helpers', () => {
     const target = token({ id: 't', species: 'Target', currentHp: 30, def: 7, defenderTypes: ['Grass'] })
     const s = script({ type: 'Fire', damageClass: 'Physical' })
 
-    expect(resolveMoveAutomationTargetDamageLoss(s, user, target, {
+    const rolledDamage = {
       ...defaultTargetResolutionState(s),
       hit: true,
       damageRoll: { formula: '2d6+8', count: 2, sides: 6, total: 20, rolls: [6, 6], mod: 8 },
-    })).toBe(37)
+    }
+    expect(resolveMoveAutomationTargetDamageLoss(s, user, target, rolledDamage)).toBe(37)
+    expect(resolveMoveAutomationTargetDamageBreakdown(s, user, target, rolledDamage)).toMatchObject({
+      kind: 'standard',
+      hpLoss: 37,
+      terms: [
+        { operator: 'add', amount: 20, label: 'roll' },
+        { operator: 'add', amount: 12, label: 'Atk' },
+        { operator: 'subtract', amount: 7, label: 'Def' },
+      ],
+      multiplierLabel: '1.5',
+    })
 
     expect(resolveMoveAutomationTargetDamageLoss(s, user, target, {
       ...defaultTargetResolutionState(s),

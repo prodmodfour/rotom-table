@@ -4,6 +4,10 @@ import type {
   MoveAutomationScript,
   MoveAutomationStageSuggestion,
 } from '~/types/moveAutomation'
+import type {
+  MoveAutomationDamageBreakdown,
+  MoveAutomationDamageBreakdownTerm,
+} from '~/utils/moveAutomationTargetResolution'
 
 export const buildMoveAutomationStartLogLines = (
   script: MoveAutomationScript,
@@ -18,6 +22,34 @@ export const formatMoveAutomationDamageLogLine = (
   hpLoss: number,
   critical: boolean | undefined = false,
 ): string => `${targetName}: ${hpLoss} damage${critical ? ' (critical flagged)' : ''}.`
+
+const formatDamageBreakdownTerm = (
+  term: MoveAutomationDamageBreakdownTerm,
+  index: number,
+): string => {
+  const sign = term.operator === 'subtract' ? '−' : '+'
+  const prefix = index === 0 && term.operator === 'add' ? '' : `${sign} `
+  return `${prefix}${term.amount} ${term.label}`
+}
+
+const formatDamageBreakdownTerms = (terms: readonly MoveAutomationDamageBreakdownTerm[]): string =>
+  terms.map(formatDamageBreakdownTerm).join(' ')
+
+export const formatMoveAutomationDamageBreakdownLogLine = (
+  targetName: string,
+  breakdown: MoveAutomationDamageBreakdown,
+): string | null => {
+  if (breakdown.kind === 'none' || breakdown.kind === 'direct') return null
+  if (breakdown.kind === 'manual') {
+    return `${targetName} damage breakdown: manual override = ${breakdown.manualHpLoss}.`
+  }
+
+  const result = breakdown.minimumDamageApplied
+    ? `${breakdown.scaledDamage} → minimum ${breakdown.hpLoss}`
+    : String(breakdown.hpLoss)
+
+  return `${targetName} damage breakdown: (${formatDamageBreakdownTerms(breakdown.terms)}) × ${breakdown.multiplierLabel} = ${result}.`
+}
 
 export const formatMoveAutomationDirectHpLossLogLine = (
   targetName: string,

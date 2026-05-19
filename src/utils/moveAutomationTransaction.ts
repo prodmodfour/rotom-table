@@ -20,6 +20,7 @@ import {
   buildMoveAutomationStartLogLines,
   formatMoveAutomationAutomationNoteLogLines,
   formatMoveAutomationConditionSuggestionLogLine,
+  formatMoveAutomationDamageBreakdownLogLine,
   formatMoveAutomationDamageLogLine,
   formatMoveAutomationDirectHpLossLogLine,
   formatMoveAutomationHpSuggestionLogLine,
@@ -28,7 +29,7 @@ import {
 } from '~/utils/moveAutomationLogLines'
 import {
   resolveHpSuggestionAmount,
-  resolveMoveAutomationTargetDamageLoss,
+  resolveMoveAutomationTargetDamageBreakdown,
   suggestionIsEnabled,
   type MoveAutomationSuggestionKind,
   type MoveAutomationTargetResolutionState,
@@ -137,7 +138,7 @@ export const buildMoveAutomationTransaction = ({
   let totalAppliedDamageLoss = 0
 
   for (const target of selectedTargets) {
-    const loss = resolveMoveAutomationTargetDamageLoss(
+    const damageBreakdown = resolveMoveAutomationTargetDamageBreakdown(
       script,
       user,
       target,
@@ -145,15 +146,20 @@ export const buildMoveAutomationTransaction = ({
       fieldEffects,
       selectedTargets,
     )
+    const loss = damageBreakdown.hpLoss
     if (loss > 0) {
       const beforeHp = hpAccumulator.get(target)
       hpAccumulator.set(target, beforeHp - loss)
       const appliedLoss = Math.max(0, beforeHp - hpAccumulator.get(target))
       damageLossByTargetId.set(target.id, appliedLoss)
       totalAppliedDamageLoss += appliedLoss
-      logLines.push(script.directHpLoss
-        ? formatMoveAutomationDirectHpLossLogLine(target.species, loss, script.directHpLoss.label)
-        : formatMoveAutomationDamageLogLine(target.species, loss, targetResolutions[target.id]?.crit))
+      if (damageBreakdown.kind === 'direct') {
+        logLines.push(formatMoveAutomationDirectHpLossLogLine(target.species, loss, damageBreakdown.label))
+      } else {
+        logLines.push(formatMoveAutomationDamageLogLine(target.species, loss, targetResolutions[target.id]?.crit))
+        const breakdownLine = formatMoveAutomationDamageBreakdownLogLine(target.species, damageBreakdown)
+        if (breakdownLine) logLines.push(breakdownLine)
+      }
     }
   }
 

@@ -126,6 +126,7 @@ describe('move automation transaction helpers', () => {
     expect(transaction.logLines).toEqual(expect.arrayContaining([
       'Caster used Test Move.',
       'Target: 16 damage (critical flagged).',
+      'Target damage breakdown: (12 roll + 8 Atk − 4 Def) × 1 = 16.',
       'Note: Manual note',
       'Note: Check secondary effects.',
     ]))

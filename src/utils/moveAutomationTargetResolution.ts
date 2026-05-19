@@ -31,6 +31,50 @@ export interface MoveAutomationTargetResolutionState {
   applyDamage: boolean
 }
 
+export type MoveAutomationDamageBreakdownKind = 'none' | 'manual' | 'direct' | 'standard'
+
+export interface MoveAutomationDamageBreakdownTerm {
+  operator: 'add' | 'subtract'
+  amount: number
+  label: string
+}
+
+export interface MoveAutomationDamageBreakdownBase {
+  kind: MoveAutomationDamageBreakdownKind
+  hpLoss: number
+}
+
+export interface MoveAutomationNoDamageBreakdown extends MoveAutomationDamageBreakdownBase {
+  kind: 'none'
+  hpLoss: 0
+}
+
+export interface MoveAutomationManualDamageBreakdown extends MoveAutomationDamageBreakdownBase {
+  kind: 'manual'
+  manualHpLoss: number
+}
+
+export interface MoveAutomationDirectDamageBreakdown extends MoveAutomationDamageBreakdownBase {
+  kind: 'direct'
+  label: string
+}
+
+export interface MoveAutomationStandardDamageBreakdown extends MoveAutomationDamageBreakdownBase {
+  kind: 'standard'
+  terms: MoveAutomationDamageBreakdownTerm[]
+  multiplier: number
+  multiplierLabel: string
+  scaledDamage: number
+  minimumDamageApplied: boolean
+  critical: boolean
+}
+
+export type MoveAutomationDamageBreakdown =
+  | MoveAutomationNoDamageBreakdown
+  | MoveAutomationManualDamageBreakdown
+  | MoveAutomationDirectDamageBreakdown
+  | MoveAutomationStandardDamageBreakdown
+
 export const moveAutomationSuggestionKey = (
   script: MoveAutomationScript | null | undefined,
   kind: MoveAutomationSuggestionKind,
@@ -88,26 +132,40 @@ export const moveAutomationMultiplierLabel = (
   return formatMultiplier(multiplier)
 }
 
-export const resolveMoveAutomationTargetDamageLoss = (
+const NO_DAMAGE_BREAKDOWN: MoveAutomationNoDamageBreakdown = { kind: 'none', hpLoss: 0 }
+
+const damageTerm = (
+  amount: number,
+  label: string,
+): MoveAutomationDamageBreakdownTerm => ({
+  operator: amount < 0 ? 'subtract' : 'add',
+  amount: Math.abs(amount),
+  label,
+})
+
+export const resolveMoveAutomationTargetDamageBreakdown = (
   script: MoveAutomationScript | null | undefined,
   user: SpawnedPokemon,
   target: SpawnedPokemon,
   resolution: MoveAutomationTargetResolutionState | undefined,
   fieldEffects?: MapFieldEffects,
   selectedTargets: readonly SpawnedPokemon[] = [target],
-): number => {
-  if (!script?.damaging) return 0
+): MoveAutomationDamageBreakdown => {
+  if (!script?.damaging) return NO_DAMAGE_BREAKDOWN
   const state = resolution ?? defaultTargetResolutionState(script)
-  if (!state.applyDamage || !state.hit) return 0
+  if (!state.applyDamage || !state.hit) return NO_DAMAGE_BREAKDOWN
   const manual = parsePositiveInt(state.manualHpLoss)
-  if (manual != null) return manual
+  if (manual != null) return { kind: 'manual', hpLoss: manual, manualHpLoss: manual }
   const directHpLoss = resolveMoveAutomationDirectHpLoss({
     script,
     user,
     target,
     rollTotal: state.damageRoll?.total,
   })
-  if (directHpLoss != null) return directHpLoss
+  if (directHpLoss != null) {
+    if (directHpLoss <= 0) return NO_DAMAGE_BREAKDOWN
+    return { kind: 'direct', hpLoss: directHpLoss, label: script.directHpLoss?.label ?? 'direct HP loss' }
+  }
   const baseRollTotal = state.damageRoll?.total ?? 0
   const criticalDamageBonus = state.criticalBonusDamage != null
     ? state.criticalBonusDamage
@@ -115,9 +173,10 @@ export const resolveMoveAutomationTargetDamageLoss = (
       ? state.damageRoll?.rolls.reduce((sum, roll) => sum + roll, 0) ?? 0
       : 0
   const unmodifiedRaw = baseRollTotal + criticalDamageBonus
-  if (unmodifiedRaw <= 0) return 0
+  if (unmodifiedRaw <= 0) return NO_DAMAGE_BREAKDOWN
   const infatuation = resolveInfatuationDamageEffect(user.conditions, selectedTargets)
-  const raw = unmodifiedRaw + infatuation.damageRollModifier + conditionDamageRollModifier(user.conditions)
+  const conditionRollModifier = conditionDamageRollModifier(user.conditions)
+  const raw = unmodifiedRaw + infatuation.damageRollModifier + conditionRollModifier
   const physical = script.damageClass === 'Physical'
   const stagedOffense = physical
     ? applyCombatStageToStat(user.atk, conditionAdjustedCombatStage(
@@ -148,10 +207,47 @@ export const resolveMoveAutomationTargetDamageLoss = (
     ))
   const fieldBonus = fieldEffectDamageBonus(script.type, fieldEffects)
   const multiplier = moveAutomationTargetDamageMultiplier(script, target)
-  if (multiplier === 0) return 0
+  if (multiplier === 0) return NO_DAMAGE_BREAKDOWN
   const afterDefense = raw + offense + fieldBonus - defense
-  return Math.max(1, Math.floor(afterDefense * multiplier))
+  const scaledDamage = Math.floor(afterDefense * multiplier)
+  const hpLoss = Math.max(1, scaledDamage)
+  const terms: MoveAutomationDamageBreakdownTerm[] = [
+    damageTerm(baseRollTotal, 'roll'),
+  ]
+  if (criticalDamageBonus !== 0) terms.push(damageTerm(criticalDamageBonus, 'critical'))
+  if (conditionRollModifier !== 0) terms.push(damageTerm(conditionRollModifier, 'conditions'))
+  if (infatuation.damageRollModifier !== 0) terms.push(damageTerm(infatuation.damageRollModifier, 'Infatuation'))
+  terms.push(damageTerm(offense, physical ? 'Atk' : 'Sp.Atk'))
+  if (fieldBonus !== 0) terms.push(damageTerm(fieldBonus, 'field'))
+  terms.push({ operator: 'subtract', amount: defense, label: physical ? 'Def' : 'Sp.Def' })
+
+  return {
+    kind: 'standard',
+    hpLoss,
+    terms,
+    multiplier,
+    multiplierLabel: formatMultiplier(multiplier),
+    scaledDamage,
+    minimumDamageApplied: hpLoss !== scaledDamage,
+    critical: state.crit,
+  }
 }
+
+export const resolveMoveAutomationTargetDamageLoss = (
+  script: MoveAutomationScript | null | undefined,
+  user: SpawnedPokemon,
+  target: SpawnedPokemon,
+  resolution: MoveAutomationTargetResolutionState | undefined,
+  fieldEffects?: MapFieldEffects,
+  selectedTargets: readonly SpawnedPokemon[] = [target],
+): number => resolveMoveAutomationTargetDamageBreakdown(
+  script,
+  user,
+  target,
+  resolution,
+  fieldEffects,
+  selectedTargets,
+).hpLoss
 
 export interface ResolveHpSuggestionAmountOptions {
   damageDealt?: number

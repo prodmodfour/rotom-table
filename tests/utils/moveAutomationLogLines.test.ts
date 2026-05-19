@@ -3,6 +3,7 @@ import {
   buildMoveAutomationStartLogLines,
   formatMoveAutomationAutomationNoteLogLines,
   formatMoveAutomationConditionSuggestionLogLine,
+  formatMoveAutomationDamageBreakdownLogLine,
   formatMoveAutomationDamageLogLine,
   formatMoveAutomationHpSuggestionLogLine,
   formatMoveAutomationManualNoteLogLine,
@@ -58,6 +59,25 @@ describe('move automation log line helpers', () => {
 
     expect(formatMoveAutomationDamageLogLine('Target', 12)).toBe('Target: 12 damage.')
     expect(formatMoveAutomationDamageLogLine('Target', 12, true)).toBe('Target: 12 damage (critical flagged).')
+    expect(formatMoveAutomationDamageBreakdownLogLine('Target', {
+      kind: 'standard',
+      hpLoss: 22,
+      terms: [
+        { operator: 'add', amount: 20, label: 'roll' },
+        { operator: 'add', amount: 5, label: 'Atk' },
+        { operator: 'subtract', amount: 10, label: 'Def' },
+      ],
+      multiplier: 1.5,
+      multiplierLabel: '1.5',
+      scaledDamage: 22,
+      minimumDamageApplied: false,
+      critical: false,
+    })).toBe('Target damage breakdown: (20 roll + 5 Atk − 10 Def) × 1.5 = 22.')
+    expect(formatMoveAutomationDamageBreakdownLogLine('Target', {
+      kind: 'manual',
+      hpLoss: 7,
+      manualHpLoss: 7,
+    })).toBe('Target damage breakdown: manual override = 7.')
     expect(formatMoveAutomationHpSuggestionLogLine('Caster', hpSuggestion, 10)).toBe('Caster: Recover (10 HP).')
     expect(formatMoveAutomationHpSuggestionLogLine('Caster', hpSuggestion, 0)).toBe('Caster: Recover.')
   })
