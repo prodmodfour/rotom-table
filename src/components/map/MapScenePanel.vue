@@ -20,6 +20,7 @@ import type {
 import type {
   MoveAutomationAreaDirection,
   MoveAutomationFeedbackState,
+  MoveAutomationHpUpdate,
   MoveAutomationCuteCharmPrompt,
   MoveAutomationMoxiePrompt,
   MoveAutomationSpitePrompt,
@@ -84,7 +85,7 @@ const emit = defineEmits<{
   (event: 'move-pokemon', payload: { id: string; position: GridAnchor }): void
   (event: 'turn-pokemon', id: string): void
   (event: 'delete-pokemon', id: string): void
-  (event: 'modify-hp', payload: { id: string; currentHp: number }): void
+  (event: 'modify-hp', payload: MoveAutomationHpUpdate): void
   (event: 'modify-combat-stages', payload: { id: string; stages: CombatStageMap }): void
   (event: 'modify-conditions', payload: { id: string; conditions: string[] }): void
   (event: 'use-move', payload: { id: string; moveName?: string | null }): void

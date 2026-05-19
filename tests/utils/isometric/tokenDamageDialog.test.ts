@@ -8,10 +8,13 @@ import {
   getDamageDialogDbDefinition,
   getDamageDialogDefense,
   getDamageDialogHpLoss,
+  getDamageDialogHpUpdate,
+  getDamageDialogInjuryResult,
   getDamageDialogMultiplier,
   getDamageDialogMultiplierLabel,
   getDamageDialogMultiplierTone,
   getDamageDialogPreview,
+  getDamageDialogPreviewMaxHp,
   getDamageDialogRawAmount,
   updateDamageDialogFromPokemon,
 } from '~/utils/isometric/tokenDamageDialog'
@@ -130,6 +133,20 @@ describe('isometric damage dialog helpers', () => {
     levitateDialog.attackType = 'Ground'
     expect(getDamageDialogMultiplier(levitateDialog)).toBe(1)
     expect(getDamageDialogMultiplierTone(1)).toBeNull()
+  })
+
+  it('adds Massive Damage and marker Injury updates for damage application', () => {
+    const dialog = createDamageDialogState(pokemon({ currentHp: 53, maxHp: 53, fullMaxHp: 53, injuries: 0, def: 0 }))
+    dialog.amount = '28'
+
+    expect(getDamageDialogInjuryResult(dialog, null)).toMatchObject({
+      injuryDelta: 2,
+      markerInjuries: 1,
+      massiveDamageInjuries: 1,
+      injuries: 2,
+    })
+    expect(getDamageDialogPreviewMaxHp(dialog, null)).toBe(42)
+    expect(getDamageDialogHpUpdate(dialog, null)).toEqual({ id: 'token-1', currentHp: 25, injuries: 2 })
   })
 
   it('finds DB definitions and syncs live token metadata while clearing missing attackers', () => {

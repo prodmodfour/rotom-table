@@ -1,5 +1,6 @@
 import { computed, nextTick, ref, type Ref } from 'vue'
 import type { CombatStageMap } from '~/types/combatStages'
+import type { MoveAutomationHpUpdate } from '~/types/moveAutomation'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import { normalizeConditionNames } from '~/utils/statusConditions'
 import {
@@ -11,7 +12,10 @@ import {
 import {
   createHpDialogState,
   getHpDialogDelta,
+  getHpDialogHpUpdate,
+  getHpDialogInjuryResult,
   getHpDialogPreview,
+  getHpDialogPreviewMaxHp,
   updateHpDialogFromPokemon,
   type HpDialogState,
 } from '~/utils/isometric/tokenHpDialog'
@@ -33,10 +37,13 @@ import {
   getDamageDialogDbDefinition,
   getDamageDialogDefense,
   getDamageDialogHpLoss,
+  getDamageDialogHpUpdate,
+  getDamageDialogInjuryResult,
   getDamageDialogMultiplier,
   getDamageDialogMultiplierLabel,
   getDamageDialogMultiplierTone,
   getDamageDialogPreview,
+  getDamageDialogPreviewMaxHp,
   getDamageDialogRawAmount,
   updateDamageDialogFromPokemon,
   type DamageDialogState,
@@ -52,7 +59,7 @@ type BoundsProvider = Pick<HTMLElement, 'getBoundingClientRect'>
 export interface TokenActionControllerEmitters {
   turnPokemon: (id: string) => void
   deletePokemon: (id: string) => void
-  modifyHp: (payload: { id: string; currentHp: number }) => void
+  modifyHp: (payload: MoveAutomationHpUpdate) => void
   modifyCombatStages: (payload: { id: string; stages: CombatStageMap }) => void
   modifyConditions: (payload: { id: string; conditions: string[] }) => void
   useMove: (payload: { id: string; moveName?: string | null }) => void
@@ -85,6 +92,8 @@ export const useTokenActionController = <TContainer extends BoundsProvider>(
   const conditionsDialogChanged = computed(() => isConditionsDialogChanged(conditionsDialog.value))
   const hpDialogDelta = computed(() => getHpDialogDelta(hpDialog.value))
   const hpDialogPreview = computed(() => getHpDialogPreview(hpDialog.value))
+  const hpDialogInjuryResult = computed(() => getHpDialogInjuryResult(hpDialog.value))
+  const hpDialogPreviewMaxHp = computed(() => getHpDialogPreviewMaxHp(hpDialog.value))
   const damageDialogDbDef = computed(() => getDamageDialogDbDefinition(damageDialog.value))
   const damageDialogRawAmount = computed(() => getDamageDialogRawAmount(damageDialog.value))
   const damageDialogDefense = computed(() => getDamageDialogDefense(damageDialog.value))
@@ -102,6 +111,14 @@ export const useTokenActionController = <TContainer extends BoundsProvider>(
     damageDialogAttacker.value,
   ))
   const damageDialogPreview = computed(() => getDamageDialogPreview(
+    damageDialog.value,
+    damageDialogAttacker.value,
+  ))
+  const damageDialogInjuryResult = computed(() => getDamageDialogInjuryResult(
+    damageDialog.value,
+    damageDialogAttacker.value,
+  ))
+  const damageDialogPreviewMaxHp = computed(() => getDamageDialogPreviewMaxHp(
     damageDialog.value,
     damageDialogAttacker.value,
   ))
@@ -183,7 +200,8 @@ export const useTokenActionController = <TContainer extends BoundsProvider>(
       return
     }
 
-    options.emit.modifyHp({ id: hpDialog.value.id, currentHp: hpDialogPreview.value })
+    const update = getHpDialogHpUpdate(hpDialog.value)
+    if (update) options.emit.modifyHp(update)
     closeHpDialog()
   }
 
@@ -272,7 +290,8 @@ export const useTokenActionController = <TContainer extends BoundsProvider>(
       return
     }
 
-    options.emit.modifyHp({ id: damageDialog.value.id, currentHp: damageDialogPreview.value })
+    const update = getDamageDialogHpUpdate(damageDialog.value, damageDialogAttacker.value)
+    if (update) options.emit.modifyHp(update)
     closeDamageDialog()
   }
 
@@ -401,6 +420,8 @@ export const useTokenActionController = <TContainer extends BoundsProvider>(
     hpDialog,
     hpDialogDelta,
     hpDialogPreview,
+    hpDialogInjuryResult,
+    hpDialogPreviewMaxHp,
     combatStagesDialog,
     combatStagesDialogChanged,
     conditionsDialog,
@@ -414,6 +435,8 @@ export const useTokenActionController = <TContainer extends BoundsProvider>(
     damageDialogMultiplier,
     damageDialogHpLoss,
     damageDialogPreview,
+    damageDialogInjuryResult,
+    damageDialogPreviewMaxHp,
     damageDialogMultiplierTone,
     damageDialogMultiplierLabel,
     openContextMenu,

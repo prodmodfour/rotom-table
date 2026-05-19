@@ -3,7 +3,10 @@ import type { SpawnedPokemon } from '~/types/pokemon'
 import {
   createHpDialogState,
   getHpDialogDelta,
+  getHpDialogHpUpdate,
+  getHpDialogInjuryResult,
   getHpDialogPreview,
+  getHpDialogPreviewMaxHp,
   updateHpDialogFromPokemon,
 } from '~/utils/isometric/tokenHpDialog'
 
@@ -70,6 +73,20 @@ describe('isometric HP dialog helpers', () => {
 
     dialog.mode = 'heal'
     expect(getHpDialogPreview(dialog)).toBe(12)
+  })
+
+  it('adds marker Injury updates for HP loss without Massive Damage injuries', () => {
+    const dialog = createHpDialogState(pokemon({ currentHp: 40, maxHp: 40, fullMaxHp: 40, injuries: 0 }))
+    dialog.amount = '25'
+
+    expect(getHpDialogInjuryResult(dialog)).toMatchObject({
+      injuryDelta: 1,
+      markerInjuries: 1,
+      massiveDamageInjuries: 0,
+      injuries: 1,
+    })
+    expect(getHpDialogPreviewMaxHp(dialog)).toBe(36)
+    expect(getHpDialogHpUpdate(dialog)).toEqual({ id: 'token-1', currentHp: 15, injuries: 1 })
   })
 
   it('updates live HP metadata without losing in-progress edits', () => {

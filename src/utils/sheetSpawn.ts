@@ -11,14 +11,14 @@
  *      `resolveStats` / `computeMaxHp` (Pokémon) and the trainer equivalents.
  */
 import { getPokedexEntry } from '~~/data/characterSheets'
-import { computeMaxHp, resolveCapabilities, resolveSkills, resolveStats } from '~/utils/sheets/pokemonDerived'
-import { computeTrainerMaxHp, resolveTrainerCapabilities, resolveTrainerSkills, resolveTrainerStats } from '~/utils/sheets/trainerDerived'
+import { computeFullMaxHp, computeMaxHp, resolveCapabilities, resolveSkills, resolveStats } from '~/utils/sheets/pokemonDerived'
+import { computeTrainerFullMaxHp, computeTrainerMaxHp, resolveTrainerCapabilities, resolveTrainerSkills, resolveTrainerStats } from '~/utils/sheets/trainerDerived'
 import { pokemonCatalog, pokemonCatalogBySpecies } from '~~/data/pokemonCatalog'
 import { trainerCatalog } from '~~/data/trainerCatalog'
 import { COMBAT_STAT_STAGE_KEYS, normalizeCombatStages } from '~/utils/combatStages'
 import { scaleTrainerSpriteToSheetHeight } from '~/utils/trainerSpriteScaling'
 import { mergeLegacyConditions } from '~/utils/statusConditions'
-import { clampHpValue } from '~/utils/ptuHp'
+import { clampHpValue, normalizeInjuryCount } from '~/utils/ptuHp'
 import { parseSkillDiceRankValue } from '~/utils/skillRanks'
 import {
   pokemonEvasionModifiers,
@@ -118,6 +118,8 @@ export const pokemonHpSnapshot = (
 ): {
   currentHp: number
   maxHp: number
+  fullMaxHp: number
+  injuries: number
   atk: number
   satk: number
   def: number
@@ -133,6 +135,8 @@ export const pokemonHpSnapshot = (
 } => {
   const stats = resolveStats(sheet)
   const hpTotal = stats.find((row) => row.key === 'hp')?.total ?? 0
+  const fullMaxHp = computeFullMaxHp(sheet, hpTotal)
+  const injuries = normalizeInjuryCount(sheet.combat?.injuries)
   const maxHp = computeMaxHp(sheet, hpTotal)
   const currentHp = clampHpValue(sheet.combat?.currentHp ?? maxHp, maxHp)
   const atk = stats.find((row) => row.key === 'atk')?.total ?? 0
@@ -157,6 +161,8 @@ export const pokemonHpSnapshot = (
   return {
     currentHp,
     maxHp,
+    fullMaxHp,
+    injuries,
     atk,
     satk,
     def,
@@ -178,6 +184,8 @@ export const trainerHpSnapshot = (
 ): {
   currentHp: number
   maxHp: number
+  fullMaxHp: number
+  injuries: number
   atk: number
   satk: number
   def: number
@@ -191,6 +199,8 @@ export const trainerHpSnapshot = (
   combatStages: CombatStageMap
   conditions: string[]
 } => {
+  const fullMaxHp = computeTrainerFullMaxHp(sheet)
+  const injuries = normalizeInjuryCount(sheet.currentInjuries)
   const maxHp = computeTrainerMaxHp(sheet)
   const currentHp = clampHpValue(sheet.currentHp ?? maxHp, maxHp)
   const stats = resolveTrainerStats(sheet)
@@ -210,6 +220,8 @@ export const trainerHpSnapshot = (
   return {
     currentHp,
     maxHp,
+    fullMaxHp,
+    injuries,
     atk,
     satk,
     def,

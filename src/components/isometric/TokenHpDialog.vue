@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import type { HpDialogState } from '~/utils/isometric/tokenHpDialog'
+import type { PtuInjuryAutomationResult } from '~/utils/ptuInjuries'
 
 const props = defineProps<{
   dialog: HpDialogState
   delta: number
   preview: number
+  previewMaxHp: number
+  injuryResult: PtuInjuryAutomationResult | null
 }>()
 
 const emit = defineEmits<{
@@ -48,7 +51,11 @@ defineExpose({ focusAmount })
             'is-damage': props.delta < 0,
             'is-heal': props.delta > 0,
           }"
-        >{{ props.preview }} / {{ props.dialog.maxHp }}</span>
+        >{{ props.preview }} / {{ props.previewMaxHp }}</span>
+        <span
+          v-if="props.injuryResult?.injuryDelta"
+          class="hp-dialog__multiplier is-injury"
+        >+{{ props.injuryResult.injuryDelta }} {{ props.injuryResult.injuryDelta === 1 ? 'Injury' : 'Injuries' }}</span>
       </div>
 
       <div class="hp-dialog__mode" role="group" aria-label="Operation">
@@ -84,6 +91,16 @@ defineExpose({ focusAmount })
           placeholder="0"
         />
       </label>
+
+      <p
+        v-if="props.injuryResult?.injuryDelta"
+        class="hp-dialog__breakdown"
+      >
+        <span>Injury automation</span>
+        <span aria-hidden="true">=</span>
+        <strong>{{ props.injuryResult.markerInjuries }} HP marker{{ props.injuryResult.markerInjuries === 1 ? '' : 's' }}</strong>
+        <span v-if="props.dialog.mode === 'damage'" class="hp-dialog__subtle">HP loss never adds Massive Damage Injuries.</span>
+      </p>
 
       <footer class="hp-dialog__footer">
         <button

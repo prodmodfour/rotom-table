@@ -8,6 +8,7 @@ import type {
   MoveAutomationDamageBreakdown,
   MoveAutomationDamageBreakdownTerm,
 } from '~/utils/moveAutomationTargetResolution'
+import type { PtuInjuryAutomationResult } from '~/utils/ptuInjuries'
 
 export const buildMoveAutomationStartLogLines = (
   script: MoveAutomationScript,
@@ -56,6 +57,19 @@ export const formatMoveAutomationDirectHpLossLogLine = (
   hpLoss: number,
   label: string,
 ): string => `${targetName}: ${hpLoss} HP lost (${label}).`
+
+export const formatMoveAutomationInjuryLogLine = (
+  targetName: string,
+  result: PtuInjuryAutomationResult,
+): string | null => {
+  if (result.injuryDelta <= 0) return null
+  const reasons: string[] = []
+  if (result.massiveDamageInjuries > 0) reasons.push('Massive Damage')
+  if (result.markerInjuries > 0) {
+    reasons.push(`${result.markerInjuries} HP Marker${result.markerInjuries === 1 ? '' : 's'}`)
+  }
+  return `${targetName}: +${result.injuryDelta} ${result.injuryDelta === 1 ? 'Injury' : 'Injuries'}${reasons.length ? ` (${reasons.join(', ')})` : ''}.`
+}
 
 export const formatMoveAutomationHpSuggestionLogLine = (
   tokenName: string,

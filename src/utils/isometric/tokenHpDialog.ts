@@ -1,4 +1,9 @@
+import type { MoveAutomationHpUpdate } from '~/types/moveAutomation'
 import type { SpawnedPokemon } from '~/types/pokemon'
+import {
+  computePtuInjuryAutomation,
+  type PtuInjuryAutomationResult,
+} from '~/utils/ptuInjuries'
 
 export type HpDialogMode = 'damage' | 'heal'
 
@@ -7,11 +12,13 @@ export interface HpDialogState {
   species: string
   currentHp: number
   maxHp: number
+  fullMaxHp?: number
+  injuries?: number
   mode: HpDialogMode
   amount: string
 }
 
-type HpDialogPokemon = Pick<SpawnedPokemon, 'id' | 'species' | 'currentHp' | 'maxHp'>
+type HpDialogPokemon = Pick<SpawnedPokemon, 'id' | 'species' | 'currentHp' | 'maxHp' | 'fullMaxHp' | 'injuries'>
 
 const parsePositiveInteger = (value: string): number => {
   const parsed = Number.parseInt(value, 10)
@@ -19,11 +26,20 @@ const parsePositiveInteger = (value: string): number => {
   return parsed
 }
 
+const hpDialogFullMaxHp = (dialog: HpDialogState): number => dialog.fullMaxHp ?? dialog.maxHp
+const hpDialogInjuries = (dialog: HpDialogState): number => dialog.injuries ?? 0
+
+const maybeHpMetadata = (pokemon: HpDialogPokemon): Pick<HpDialogState, 'fullMaxHp' | 'injuries'> => ({
+  ...(pokemon.fullMaxHp != null ? { fullMaxHp: pokemon.fullMaxHp } : {}),
+  ...(pokemon.injuries != null ? { injuries: pokemon.injuries } : {}),
+})
+
 export const createHpDialogState = (pokemon: HpDialogPokemon): HpDialogState => ({
   id: pokemon.id,
   species: pokemon.species,
   currentHp: pokemon.currentHp,
   maxHp: pokemon.maxHp,
+  ...maybeHpMetadata(pokemon),
   mode: 'damage',
   amount: '',
 })
@@ -41,6 +57,32 @@ export const getHpDialogPreview = (dialog: HpDialogState | null): number => {
   return Math.min(dialog.maxHp, nextHp)
 }
 
+export const getHpDialogInjuryResult = (dialog: HpDialogState | null): PtuInjuryAutomationResult | null => {
+  if (!dialog || dialog.mode !== 'damage') return null
+  const preview = getHpDialogPreview(dialog)
+  if (preview >= dialog.currentHp) return null
+  return computePtuInjuryAutomation({
+    beforeHp: dialog.currentHp,
+    afterHp: preview,
+    fullMaxHp: hpDialogFullMaxHp(dialog),
+    currentInjuries: hpDialogInjuries(dialog),
+    source: 'hp-loss',
+  })
+}
+
+export const getHpDialogPreviewMaxHp = (dialog: HpDialogState | null): number =>
+  getHpDialogInjuryResult(dialog)?.maxHp ?? dialog?.maxHp ?? 0
+
+export const getHpDialogHpUpdate = (dialog: HpDialogState | null): MoveAutomationHpUpdate | null => {
+  if (!dialog) return null
+  const injuryResult = getHpDialogInjuryResult(dialog)
+  return {
+    id: dialog.id,
+    currentHp: getHpDialogPreview(dialog),
+    ...(injuryResult && injuryResult.injuryDelta > 0 ? { injuries: injuryResult.injuries } : {}),
+  }
+}
+
 export const updateHpDialogFromPokemon = (
   dialog: HpDialogState,
   pokemon: HpDialogPokemon,
@@ -49,4 +91,5 @@ export const updateHpDialogFromPokemon = (
   species: pokemon.species,
   currentHp: pokemon.currentHp,
   maxHp: pokemon.maxHp,
+  ...maybeHpMetadata(pokemon),
 })

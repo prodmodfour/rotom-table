@@ -1,3 +1,4 @@
+import type { MoveAutomationHpUpdate } from '~/types/moveAutomation'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import {
   calculatePtuDamageLoss,
@@ -10,6 +11,10 @@ import {
   computeSheetAbilityAwareMultiplier,
   type GroundResistanceCapabilities,
 } from '~/utils/sheetPassiveAbilityEffects'
+import {
+  computePtuInjuryAutomation,
+  type PtuInjuryAutomationResult,
+} from '~/utils/ptuInjuries'
 
 export type DamageDialogMode = 'physical' | 'special'
 export type DamageDialogSource = 'flat' | 'db'
@@ -20,6 +25,8 @@ export interface DamageDialogState {
   species: string
   currentHp: number
   maxHp: number
+  fullMaxHp?: number
+  injuries?: number
   def: number
   sdef: number
   defenderTypes: string[]
@@ -36,7 +43,7 @@ export interface DamageDialogState {
 
 type DamageDialogPokemon = Pick<
   SpawnedPokemon,
-  'id' | 'species' | 'currentHp' | 'maxHp' | 'def' | 'sdef' | 'defenderTypes' | 'defenderCapabilities' | 'abilityNames'
+  'id' | 'species' | 'currentHp' | 'maxHp' | 'fullMaxHp' | 'injuries' | 'def' | 'sdef' | 'defenderTypes' | 'defenderCapabilities' | 'abilityNames'
 >
 
 type DamageDialogAttacker = Pick<SpawnedPokemon, 'id' | 'species' | 'atk' | 'satk'>
@@ -47,6 +54,14 @@ const parsePositiveInteger = (value: string): number => {
   return parsed
 }
 
+const damageDialogFullMaxHp = (dialog: DamageDialogState): number => dialog.fullMaxHp ?? dialog.maxHp
+const damageDialogInjuries = (dialog: DamageDialogState): number => dialog.injuries ?? 0
+
+const maybeHpMetadata = (pokemon: DamageDialogPokemon): Pick<DamageDialogState, 'fullMaxHp' | 'injuries'> => ({
+  ...(pokemon.fullMaxHp != null ? { fullMaxHp: pokemon.fullMaxHp } : {}),
+  ...(pokemon.injuries != null ? { injuries: pokemon.injuries } : {}),
+})
+
 export const createDamageDialogState = (pokemon: DamageDialogPokemon): DamageDialogState => {
   const abilityNames = [...(pokemon.abilityNames ?? [])]
   return {
@@ -54,6 +69,7 @@ export const createDamageDialogState = (pokemon: DamageDialogPokemon): DamageDia
     species: pokemon.species,
     currentHp: pokemon.currentHp,
     maxHp: pokemon.maxHp,
+    ...maybeHpMetadata(pokemon),
     def: pokemon.def,
     sdef: pokemon.sdef,
     defenderTypes: [...pokemon.defenderTypes],
@@ -135,6 +151,40 @@ export const getDamageDialogPreview = (
   return dialog.currentHp - getDamageDialogHpLoss(dialog, attacker)
 }
 
+export const getDamageDialogInjuryResult = (
+  dialog: DamageDialogState | null,
+  attacker: DamageDialogAttacker | null,
+): PtuInjuryAutomationResult | null => {
+  if (!dialog) return null
+  const preview = getDamageDialogPreview(dialog, attacker)
+  if (preview >= dialog.currentHp) return null
+  return computePtuInjuryAutomation({
+    beforeHp: dialog.currentHp,
+    afterHp: preview,
+    fullMaxHp: damageDialogFullMaxHp(dialog),
+    currentInjuries: damageDialogInjuries(dialog),
+    source: 'damage',
+  })
+}
+
+export const getDamageDialogPreviewMaxHp = (
+  dialog: DamageDialogState | null,
+  attacker: DamageDialogAttacker | null,
+): number => getDamageDialogInjuryResult(dialog, attacker)?.maxHp ?? dialog?.maxHp ?? 0
+
+export const getDamageDialogHpUpdate = (
+  dialog: DamageDialogState | null,
+  attacker: DamageDialogAttacker | null,
+): MoveAutomationHpUpdate | null => {
+  if (!dialog) return null
+  const injuryResult = getDamageDialogInjuryResult(dialog, attacker)
+  return {
+    id: dialog.id,
+    currentHp: getDamageDialogPreview(dialog, attacker),
+    ...(injuryResult && injuryResult.injuryDelta > 0 ? { injuries: injuryResult.injuries } : {}),
+  }
+}
+
 export const getDamageDialogMultiplierTone = (multiplier: number): DamageDialogMultiplierTone => {
   if (multiplier === 0) return 'is-immune'
   if (multiplier < 1) return 'is-resist'
@@ -156,6 +206,7 @@ export const updateDamageDialogFromPokemon = (
     species: pokemon.species,
     currentHp: pokemon.currentHp,
     maxHp: pokemon.maxHp,
+    ...maybeHpMetadata(pokemon),
     def: pokemon.def,
     sdef: pokemon.sdef,
     defenderTypes: [...pokemon.defenderTypes],

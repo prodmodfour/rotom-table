@@ -24,6 +24,7 @@ import {
   formatMoveAutomationDamageLogLine,
   formatMoveAutomationDirectHpLossLogLine,
   formatMoveAutomationHpSuggestionLogLine,
+  formatMoveAutomationInjuryLogLine,
   formatMoveAutomationManualNoteLogLine,
   formatMoveAutomationStageSuggestionLogLine,
 } from '~/utils/moveAutomationLogLines'
@@ -149,7 +150,11 @@ export const buildMoveAutomationTransaction = ({
     const loss = damageBreakdown.hpLoss
     if (loss > 0) {
       const beforeHp = hpAccumulator.get(target)
-      hpAccumulator.set(target, beforeHp - loss)
+      const injuryResult = hpAccumulator.setWithInjuryAutomation(
+        target,
+        beforeHp - loss,
+        damageBreakdown.kind === 'direct' ? 'hp-loss' : 'damage',
+      )
       const appliedLoss = Math.max(0, beforeHp - hpAccumulator.get(target))
       damageLossByTargetId.set(target.id, appliedLoss)
       totalAppliedDamageLoss += appliedLoss
@@ -160,6 +165,8 @@ export const buildMoveAutomationTransaction = ({
         const breakdownLine = formatMoveAutomationDamageBreakdownLogLine(target.species, damageBreakdown)
         if (breakdownLine) logLines.push(breakdownLine)
       }
+      const injuryLine = formatMoveAutomationInjuryLogLine(target.species, injuryResult)
+      if (injuryLine) logLines.push(injuryLine)
     }
   }
 
@@ -250,9 +257,14 @@ export const buildMoveAutomationTransaction = ({
         fieldEffects,
       })
       if (amount <= 0 && item.mode !== 'set-zero') continue
-      const next = applyHpSuggestion(hpAccumulator.get(token), token.maxHp, amount, item.mode)
-      hpAccumulator.set(token, next)
+      const beforeHp = hpAccumulator.get(token)
+      const next = applyHpSuggestion(beforeHp, hpAccumulator.getMaxHp(token), amount, item.mode)
+      const injuryResult = next < beforeHp
+        ? hpAccumulator.setWithInjuryAutomation(token, next, 'hp-loss')
+        : (hpAccumulator.set(token, next), null)
       logLines.push(formatMoveAutomationHpSuggestionLogLine(token.species, item, amount))
+      const injuryLine = injuryResult ? formatMoveAutomationInjuryLogLine(token.species, injuryResult) : null
+      if (injuryLine) logLines.push(injuryLine)
     }
   })
 

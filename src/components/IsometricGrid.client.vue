@@ -25,6 +25,7 @@ import type { CombatStageMap } from '~/types/combatStages'
 import type {
   MoveAutomationAreaDirection,
   MoveAutomationFeedbackState,
+  MoveAutomationHpUpdate,
   MoveAutomationTargetHitChance,
   MoveAutomationTargetingOverlayState,
 } from '~/types/moveAutomation'
@@ -145,7 +146,7 @@ const emit = defineEmits<{
   (event: 'move-pokemon', payload: { id: string; position: GridAnchor }): void
   (event: 'turn-pokemon', id: string): void
   (event: 'delete-pokemon', id: string): void
-  (event: 'modify-hp', payload: { id: string; currentHp: number }): void
+  (event: 'modify-hp', payload: MoveAutomationHpUpdate): void
   (event: 'modify-combat-stages', payload: { id: string; stages: CombatStageMap }): void
   (event: 'modify-conditions', payload: { id: string; conditions: string[] }): void
   (event: 'use-move', payload: { id: string; moveName?: string | null }): void
@@ -229,6 +230,8 @@ const {
   hpDialog,
   hpDialogDelta,
   hpDialogPreview,
+  hpDialogInjuryResult,
+  hpDialogPreviewMaxHp,
   combatStagesDialog,
   combatStagesDialogChanged,
   conditionsDialog,
@@ -242,6 +245,8 @@ const {
   damageDialogMultiplier,
   damageDialogHpLoss,
   damageDialogPreview,
+  damageDialogInjuryResult,
+  damageDialogPreviewMaxHp,
   damageDialogMultiplierTone,
   damageDialogMultiplierLabel,
   openContextMenu,
@@ -1218,6 +1223,8 @@ useIsometricSceneWatchers({
       :hp-dialog="hpDialog"
       :hp-dialog-delta="hpDialogDelta"
       :hp-dialog-preview="hpDialogPreview"
+      :hp-dialog-preview-max-hp="hpDialogPreviewMaxHp"
+      :hp-dialog-injury-result="hpDialogInjuryResult"
       :combat-stages-dialog="combatStagesDialog"
       :combat-stages-dialog-changed="combatStagesDialogChanged"
       :conditions-dialog="conditionsDialog"
@@ -1233,6 +1240,8 @@ useIsometricSceneWatchers({
       :damage-dialog-multiplier="damageDialogMultiplier"
       :damage-dialog-hp-loss="damageDialogHpLoss"
       :damage-dialog-preview="damageDialogPreview"
+      :damage-dialog-preview-max-hp="damageDialogPreviewMaxHp"
+      :damage-dialog-injury-result="damageDialogInjuryResult"
       :damage-dialog-multiplier-tone="damageDialogMultiplierTone"
       :damage-dialog-multiplier-label="damageDialogMultiplierLabel"
       @close-hp="closeHpDialog"

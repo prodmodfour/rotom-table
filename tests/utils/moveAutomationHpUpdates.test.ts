@@ -64,4 +64,18 @@ describe('move automation HP update helpers', () => {
     accumulator.set(eevee, 30)
     expect(accumulator.toUpdates()).toEqual([{ id: 'eevee', currentHp: 12 }])
   })
+
+  it('adds injury updates when damage crosses PTU injury thresholds', () => {
+    const oddish = token('oddish', 53, 53)
+    oddish.fullMaxHp = 53
+    oddish.injuries = 0
+    const accumulator = createMoveAutomationHpUpdateAccumulator()
+
+    const result = accumulator.setWithInjuryAutomation(oddish, 25, 'damage')
+
+    expect(result.injuryDelta).toBe(2)
+    expect(accumulator.getInjuries(oddish)).toBe(2)
+    expect(accumulator.getMaxHp(oddish)).toBe(42)
+    expect(accumulator.toUpdates()).toEqual([{ id: 'oddish', currentHp: 25, injuries: 2 }])
+  })
 })

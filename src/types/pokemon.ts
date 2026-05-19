@@ -221,8 +221,12 @@ export interface SpawnedPokemon extends PokemonCatalogEntry {
   gender?: string
   /** Snapshot of the sheet's current HP at spawn time. */
   currentHp: number
-  /** Snapshot of the sheet's computed max HP at spawn time. */
+  /** Snapshot of the sheet's computed injury-adjusted max HP / healing cap. */
   maxHp: number
+  /** Real/formula Max HP before Injuries; fractional Injury checks use this value. */
+  fullMaxHp?: number
+  /** Current Injury count copied from the source sheet. */
+  injuries?: number
   /** Resolved Attack stat. */
   atk: number
   /** Resolved Special Attack stat. */

@@ -201,6 +201,11 @@
   background: var(--paper);
 }
 
+.hp-dialog__multiplier.is-injury {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
 .hp-dialog__mode {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -353,6 +358,13 @@
 .hp-dialog__breakdown strong {
   color: var(--ink-bright);
   font-weight: 600;
+}
+
+.hp-dialog__subtle {
+  flex-basis: 100%;
+  text-align: center;
+  color: var(--ink-muted);
+  font-size: 0.76rem;
 }
 
 .hp-dialog__immune-line {

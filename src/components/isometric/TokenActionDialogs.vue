@@ -11,6 +11,7 @@ import type {
   ConditionsDialogState,
 } from '~/utils/isometric/tokenStatusDialogs'
 import type { HpDialogState } from '~/utils/isometric/tokenHpDialog'
+import type { PtuInjuryAutomationResult } from '~/utils/ptuInjuries'
 import type {
   DamageDialogMultiplierTone,
   DamageDialogState,
@@ -22,6 +23,8 @@ const props = defineProps<{
   hpDialog: HpDialogState | null
   hpDialogDelta: number
   hpDialogPreview: number
+  hpDialogPreviewMaxHp: number
+  hpDialogInjuryResult: PtuInjuryAutomationResult | null
   combatStagesDialog: CombatStagesDialogState | null
   combatStagesDialogChanged: boolean
   conditionsDialog: ConditionsDialogState | null
@@ -37,6 +40,8 @@ const props = defineProps<{
   damageDialogMultiplier: number
   damageDialogHpLoss: number
   damageDialogPreview: number
+  damageDialogPreviewMaxHp: number
+  damageDialogInjuryResult: PtuInjuryAutomationResult | null
   damageDialogMultiplierTone: DamageDialogMultiplierTone
   damageDialogMultiplierLabel: string
 }>()
@@ -73,6 +78,8 @@ defineExpose({ focusHpAmount, focusDamageAmount })
     :dialog="props.hpDialog"
     :delta="props.hpDialogDelta"
     :preview="props.hpDialogPreview"
+    :preview-max-hp="props.hpDialogPreviewMaxHp"
+    :injury-result="props.hpDialogInjuryResult"
     @close="emit('close-hp')"
     @submit="emit('submit-hp')"
   />
@@ -107,6 +114,8 @@ defineExpose({ focusHpAmount, focusDamageAmount })
     :multiplier="props.damageDialogMultiplier"
     :hp-loss="props.damageDialogHpLoss"
     :preview="props.damageDialogPreview"
+    :preview-max-hp="props.damageDialogPreviewMaxHp"
+    :injury-result="props.damageDialogInjuryResult"
     :multiplier-tone="props.damageDialogMultiplierTone"
     :multiplier-label="props.damageDialogMultiplierLabel"
     @close="emit('close-damage')"

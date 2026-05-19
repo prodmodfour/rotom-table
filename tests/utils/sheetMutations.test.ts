@@ -47,6 +47,16 @@ describe('sheet mutation helpers', () => {
     expect((applyHpToSheet('trainer', originalTrainer, -7) as TrainerSheet).currentHp).toBe(-7)
   })
 
+  it('applies Injury updates alongside HP updates', () => {
+    const injuredPokemon = applyHpToSheet('pokemon', pokemon(), 10, 2) as CharacterSheet
+    expect(injuredPokemon.combat?.injuries).toBe(2)
+    expect(injuredPokemon.combat?.currentHp).toBeLessThanOrEqual(pokemonHpSnapshot(injuredPokemon).maxHp)
+
+    const injuredTrainer = applyHpToSheet('trainer', trainer(), 10, 3) as TrainerSheet
+    expect(injuredTrainer.currentInjuries).toBe(3)
+    expect(injuredTrainer.currentHp).toBeLessThanOrEqual(trainerHpSnapshot(injuredTrainer).maxHp)
+  })
+
   it('normalizes combat stages and condition names', () => {
     const staged = applyCombatStagesToSheet('pokemon', pokemon(), {
       atk: 99,

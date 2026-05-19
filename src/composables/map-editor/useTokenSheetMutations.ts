@@ -95,7 +95,7 @@ export const useTokenSheetMutations = ({
   ): Promise<void> => {
     await updatePlacedSheet(
       payload.id,
-      (kind, sheet) => applyHpToSheet(kind, sheet, payload.currentHp),
+      (kind, sheet) => applyHpToSheet(kind, sheet, payload.currentHp, payload.injuries),
       'modifyHp',
       options,
     )

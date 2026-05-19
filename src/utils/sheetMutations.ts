@@ -1,6 +1,6 @@
 import { deepCloneJson } from './serialization'
 import { pokemonHpSnapshot, trainerHpSnapshot } from './sheetSpawn'
-import { clampHpValue } from './ptuHp'
+import { clampHpValue, normalizeInjuryCount } from './ptuHp'
 import { COMBAT_STAT_STAGE_KEYS, normalizeCombatStages as normalizeCombatStageMap } from './combatStages'
 import { normalizeConditionNames } from './statusConditions'
 import { activateSheetAbility } from './sheetAbilityActivation'
@@ -87,20 +87,19 @@ export const applyHpToSheet = (
   kind: SheetKind,
   sheet: AnyLiveSheet,
   currentHp: number,
+  injuries?: number,
 ): AnyLiveSheet => {
   if (kind === 'pokemon') {
-    const original = sheet as CharacterSheet
-    const updated = deepCloneJson(original)
-    updated.combat = {
-      ...(updated.combat ?? {}),
-      currentHp: clampHpValue(currentHp, pokemonHpSnapshot(original).maxHp),
-    }
+    const updated = deepCloneJson(sheet as CharacterSheet)
+    updated.combat = { ...(updated.combat ?? {}) }
+    if (injuries != null) updated.combat.injuries = normalizeInjuryCount(injuries)
+    updated.combat.currentHp = clampHpValue(currentHp, pokemonHpSnapshot(updated).maxHp)
     return updated
   }
 
-  const original = sheet as TrainerSheet
-  const updated = deepCloneJson(original)
-  updated.currentHp = clampHpValue(currentHp, trainerHpSnapshot(original).maxHp)
+  const updated = deepCloneJson(sheet as TrainerSheet)
+  if (injuries != null) updated.currentInjuries = normalizeInjuryCount(injuries)
+  updated.currentHp = clampHpValue(currentHp, trainerHpSnapshot(updated).maxHp)
   return updated
 }
 

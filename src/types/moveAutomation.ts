@@ -10,6 +10,8 @@ import type {
 export interface MoveAutomationHpUpdate {
   id: string
   currentHp: number
+  /** Absolute Injury count after automating HP-marker / Massive Damage Injuries. */
+  injuries?: number
 }
 
 export interface MoveAutomationConditionUpdate {

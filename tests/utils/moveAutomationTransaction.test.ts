@@ -198,6 +198,36 @@ describe('move automation transaction helpers', () => {
     expect(transaction.logLines).toContain('Coated: Electric-Resistant Coat removed after Electric damage.')
   })
 
+  it('adds Injury updates and log lines when automated damage crosses injury thresholds', () => {
+    const user = token({ id: 'u', species: 'Caster', atk: 0 })
+    const target = token({ id: 't', species: 'Oddish', currentHp: 53, maxHp: 53, fullMaxHp: 53, injuries: 0, def: 0 })
+    const s = script({ requiresAccuracy: false })
+
+    const transaction = buildMoveAutomationTransaction({
+      script: s,
+      user,
+      selectedTargets: [target],
+      targetResolutions: {
+        t: {
+          ...defaultTargetResolutionState(s),
+          hit: true,
+          damageRoll: { formula: 'flat', count: 0, sides: 0, total: 28, rolls: [], mod: 28 },
+        },
+      },
+      enabledSuggestions: {},
+      hpSuggestionAmounts: {},
+      manualUserConditions: [],
+      manualTargetConditions: [],
+      manualUserStageDeltas: stages,
+      manualTargetStageDeltas: stages,
+      hazardCells: [],
+      manualNote: '',
+    })
+
+    expect(transaction.hpUpdates).toEqual([{ id: 't', currentHp: 25, injuries: 2 }])
+    expect(transaction.logLines).toContain('Oddish: +2 Injuries (Massive Damage, 1 HP Marker).')
+  })
+
   it('applies target suggestions only to targets the move hit', () => {
     const user = token({ id: 'u', species: 'Caster' })
     const hitTarget = token({ id: 'hit', species: 'Hitmon' })

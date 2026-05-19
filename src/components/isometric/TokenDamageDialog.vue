@@ -14,6 +14,7 @@ import type {
   DamageDialogMultiplierTone,
   DamageDialogState,
 } from '~/utils/isometric/tokenDamageDialog'
+import type { PtuInjuryAutomationResult } from '~/utils/ptuInjuries'
 
 type DamageDialogAttackerOption = Pick<SpawnedPokemon, 'id' | 'species' | 'atk' | 'satk'>
 
@@ -27,6 +28,8 @@ const props = defineProps<{
   multiplier: number
   hpLoss: number
   preview: number
+  previewMaxHp: number
+  injuryResult: PtuInjuryAutomationResult | null
   multiplierTone: DamageDialogMultiplierTone
   multiplierLabel: string
 }>()
@@ -90,7 +93,11 @@ defineExpose({ focusAmount })
         <span
           class="hp-dialog__preview"
           :class="{ 'is-damage': props.hpLoss > 0 }"
-        >{{ props.preview }} / {{ props.dialog.maxHp }}</span>
+        >{{ props.preview }} / {{ props.previewMaxHp }}</span>
+        <span
+          v-if="props.injuryResult?.injuryDelta"
+          class="hp-dialog__multiplier is-injury"
+        >+{{ props.injuryResult.injuryDelta }} {{ props.injuryResult.injuryDelta === 1 ? 'Injury' : 'Injuries' }}</span>
         <span
           v-if="props.multiplierTone"
           class="hp-dialog__multiplier"
@@ -232,6 +239,17 @@ defineExpose({ focusAmount })
         <span>{{ props.multiplierLabel }}</span>
         <span aria-hidden="true">=</span>
         <strong>{{ props.hpLoss }} HP lost</strong>
+      </p>
+
+      <p
+        v-if="props.injuryResult?.injuryDelta"
+        class="hp-dialog__breakdown"
+      >
+        <span>Injury automation</span>
+        <span aria-hidden="true">=</span>
+        <strong v-if="props.injuryResult.massiveDamageInjuries">Massive Damage</strong>
+        <span v-if="props.injuryResult.massiveDamageInjuries && props.injuryResult.markerInjuries" aria-hidden="true">+</span>
+        <strong v-if="props.injuryResult.markerInjuries">{{ props.injuryResult.markerInjuries }} HP marker{{ props.injuryResult.markerInjuries === 1 ? '' : 's' }}</strong>
       </p>
 
       <footer class="hp-dialog__footer">
