@@ -147,11 +147,8 @@ const targetConditionSuggestions = (conditions: readonly ReviewedTargetCondition
     ...(condition.applyWhen ? { applyWhen: condition.applyWhen } : {}),
   }))
 
-const areaAutomationNotes = (script: Pick<MoveAutomationScript, 'keywords'>): string[] => [
+const areaAutomationNotes = (): string[] => [
   'Use the area-template buttons to choose affected legal targets, or select targets manually.',
-  ...(script.keywords.some((keyword) => /^Friendly$/i.test(keyword))
-    ? ['Friendly keyword: allies are not hit; team allegiance is not tracked, so unselect any allies before confirming.']
-    : []),
 ]
 
 const reviewedSingleTargetAttackScript = (moveName: string, version = 1): MoveAutomationScript =>
@@ -223,7 +220,7 @@ const reviewedAreaConfirmationScript = (
   })
   return {
     ...script,
-    automationNotes: overrides.automationNotes ?? areaAutomationNotes(script),
+    automationNotes: overrides.automationNotes ?? areaAutomationNotes(),
   }
 }
 
