@@ -700,6 +700,7 @@ const REVIEWED_SINGLE_TARGET_CONDITION_SCRIPTS: ReadonlyMap<string, MoveAutomati
     [{ condition: 'Confused', label: 'Confused' }],
     [{ key: 'atk', delta: 2, label: 'Swagger raises Attack: +2 Attack CS' }],
   )],
+  ['Taunt', reviewedSingleTargetConditionScript('Taunt', [{ condition: 'Rage', label: 'Enraged' }])],
   ['Water Pulse', reviewedSingleTargetConditionScript('Water Pulse', [{ condition: 'Confused', label: 'Confused on 17+', threshold: '17+' }])],
   ['Zen Headbutt', reviewedSingleTargetConditionScript('Zen Headbutt', [{ condition: 'Flinch', label: 'Flinch on 15+', threshold: '15+' }])],
 ])

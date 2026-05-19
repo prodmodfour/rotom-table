@@ -257,6 +257,13 @@ describe('explicit move automation scripts', () => {
     ])
     expect(isSeamlessSingleTargetMoveScript(torment)).toBe(true)
 
+    const taunt = explicitScriptForMove('Taunt')
+    expect(taunt).toMatchObject({ moveName: 'Taunt', targetMode: 'one-target', damaging: false, requiresAccuracy: true })
+    expect(taunt?.conditionSuggestions).toEqual([
+      { recipient: 'target', condition: 'Rage', action: 'add', label: 'Enraged' },
+    ])
+    expect(isSeamlessSingleTargetMoveScript(taunt)).toBe(true)
+
     const sandTomb = explicitScriptForMove('Sand Tomb')
     expect(sandTomb).toMatchObject({ moveName: 'Sand Tomb', targetMode: 'one-target', damaging: true })
     expect(sandTomb?.conditionSuggestions).toEqual([
