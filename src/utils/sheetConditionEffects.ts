@@ -4,6 +4,7 @@ import { computeEvasionTotal, computeStatEvasion } from '~/utils/evasion'
 import { sheetHasCanonicalAbility, type SheetAbilityNameSource } from '~/utils/sheetAbilities'
 import {
   conditionBaseName,
+  conditionDisplayName,
   conditionStackCount,
   disabledConditionMove,
   infatuationCrushName,
@@ -487,7 +488,7 @@ export const describeSheetConditionEffects = (
   if (set.has('Rage')) {
     effects.push({
       id: 'rage-actions',
-      label: 'Rage',
+      label: conditionDisplayName('Rage'),
       description: 'Must use a damaging Physical or Special Move or Struggle Attack. End-of-turn save DC 15.',
     })
   }

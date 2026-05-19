@@ -4,7 +4,7 @@ import { resolvePokemonOtherCapabilities } from '~/utils/sheets/pokemonCapabilit
 import { resolveMoveGrantedCapabilities } from '~/utils/sheets/pokemonMoveGrantedCapabilities'
 import { makeAutomaticStruggleMoves } from '~/utils/struggleMoves'
 import { makeMoveLookupRows, type MoveLookupRow } from '~/utils/sheetMoveLookup'
-import { isMoveDisabledByConditions } from '~/utils/statusConditions'
+import { moveConditionUseBlock, type MoveConditionUseBlock } from '~/utils/moveConditionRestrictions'
 import type { CharacterSheet, CharacterSheetMove } from '~/types/characterSheet'
 import type { SheetPlacement } from '~/types/map'
 import type { SpawnedPokemon } from '~/types/pokemon'
@@ -47,6 +47,7 @@ export interface TokenMoveMenuOption {
   additionalAttackStatLabel: string | null
   automatic: boolean
   hasAutomationScript: boolean
+  conditionUseBlock: MoveConditionUseBlock | null
   disabledByCondition: boolean
 }
 
@@ -103,34 +104,44 @@ const optionForMoveRow = (
   automatic: boolean,
   token: SpawnedPokemon,
   hasAutomationScript: boolean,
-): TokenMoveMenuOption => ({
-  name: row.reference?.name ?? row.move.name,
-  type: fallback(row.reference?.type, row.move.type),
-  damageClass: fallback(row.reference?.damage_class, row.move.category),
-  frequency: fallback(row.reference?.frequency, row.move.frequency),
-  ac: fallback(row.ac, row.reference?.ac, row.move.ac),
-  range: fallback(row.reference?.range, row.move.range),
-  effect: fallback(row.reference?.effect, row.move.effect),
-  special: fallback(row.reference?.special, row.move.special),
-  damageBase: row.damageBase,
-  hasStab: row.hasStab,
-  damageFormula: row.damageFormula,
-  attackStat: row.attackStat,
-  baseAttackStat: row.baseAttackStat,
-  attackStage: row.attackStage,
-  attackStatKey: row.attackStatKey,
-  attackStatLabel: row.attackStatLabel,
-  attackStatAbility: row.attackStatAbility,
-  additionalAttackStat: row.additionalAttackStat,
-  additionalBaseAttackStat: row.additionalBaseAttackStat,
-  additionalAttackStage: row.additionalAttackStage,
-  additionalAttackStatKey: row.additionalAttackStatKey,
-  additionalAttackStatLabel: row.additionalAttackStatLabel,
-  automatic,
-  hasAutomationScript,
-  disabledByCondition: isMoveDisabledByConditions(row.reference?.name ?? row.move.name, token.conditions)
-    || isMoveDisabledByConditions(row.move.name, token.conditions),
-})
+): TokenMoveMenuOption => {
+  const name = row.reference?.name ?? row.move.name
+  const damageClass = fallback(row.reference?.damage_class, row.move.category)
+  const conditionUseBlock = moveConditionUseBlock({
+    name,
+    aliases: [row.move.name],
+    damageClass,
+  }, token.conditions)
+
+  return {
+    name,
+    type: fallback(row.reference?.type, row.move.type),
+    damageClass,
+    frequency: fallback(row.reference?.frequency, row.move.frequency),
+    ac: fallback(row.ac, row.reference?.ac, row.move.ac),
+    range: fallback(row.reference?.range, row.move.range),
+    effect: fallback(row.reference?.effect, row.move.effect),
+    special: fallback(row.reference?.special, row.move.special),
+    damageBase: row.damageBase,
+    hasStab: row.hasStab,
+    damageFormula: row.damageFormula,
+    attackStat: row.attackStat,
+    baseAttackStat: row.baseAttackStat,
+    attackStage: row.attackStage,
+    attackStatKey: row.attackStatKey,
+    attackStatLabel: row.attackStatLabel,
+    attackStatAbility: row.attackStatAbility,
+    additionalAttackStat: row.additionalAttackStat,
+    additionalBaseAttackStat: row.additionalBaseAttackStat,
+    additionalAttackStage: row.additionalAttackStage,
+    additionalAttackStatKey: row.additionalAttackStatKey,
+    additionalAttackStatLabel: row.additionalAttackStatLabel,
+    automatic,
+    hasAutomationScript,
+    conditionUseBlock,
+    disabledByCondition: conditionUseBlock != null,
+  }
+}
 
 export const buildTokenMoveMenuOptions = (
   token: SpawnedPokemon,

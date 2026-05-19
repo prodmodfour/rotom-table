@@ -4,6 +4,7 @@ import { conditionBySlug } from '~~/data/ptuReference'
 import { referenceDetailTitle } from '~/utils/reference/pageTitles'
 import { referenceAllBackLabel, referenceIndexPath, referenceNotFoundBackLabel } from '~/utils/reference/routes'
 import { routeSlugParam } from '~/utils/routeParams'
+import { conditionDisplayName } from '~/utils/statusConditions'
 
 const route = useRoute()
 const slug = computed(() => routeSlugParam(route.params))
@@ -14,7 +15,11 @@ const conditionsBackLabel = referenceAllBackLabel('condition')
 const conditionsNotFoundBackLabel = referenceNotFoundBackLabel('condition')
 
 useHead(() => ({
-  title: referenceDetailTitle(condition.value?.name, 'Conditions', 'Condition not found'),
+  title: referenceDetailTitle(
+    condition.value ? conditionDisplayName(condition.value.name) : undefined,
+    'Conditions',
+    'Condition not found',
+  ),
 }))
 </script>
 

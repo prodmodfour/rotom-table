@@ -83,6 +83,10 @@ export const conditionLookupKey = (value: string): string =>
 
 const slugify = conditionLookupKey
 
+const CONDITION_DISPLAY_NAMES: Record<string, string> = {
+  Rage: 'Enraged',
+}
+
 const EXTRA_ALIASES: Record<string, string[]> = {
   Sleep: ['Asleep', 'Sleeping'],
   Poisoned: ['Poison', 'Poisons', 'Poisoned'],
@@ -213,7 +217,7 @@ export const conditionDisplayName = (raw: unknown): string => {
     const crushName = infatuationCrushName(raw)
     return crushName ? formatInfatuationCondition(crushName) : INFATUATION_CONDITION_NAME
   }
-  return baseName ?? raw.trim()
+  return baseName ? CONDITION_DISPLAY_NAMES[baseName] ?? baseName : raw.trim()
 }
 
 const normalizeConditionEntry = (raw: unknown): string | null => {

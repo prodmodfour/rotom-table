@@ -141,7 +141,7 @@ describe('sheet condition effects', () => {
     expect(evasionSuppressedByCondition(['Bad SLeep'])).toBe('Bad Sleep')
     expect(speedEvasionSuppressedByCondition(['Stuck'])).toBe('Stuck')
 
-    const effects = describeSheetConditionEffects(['Burned', 'Bad Sleep', 'Flinch', 'Flinch', 'Disabled: Thunder Wave', 'Helping Hand', 'Supersonic Accuracy Penalty', 'Electric-Resistant Coat'], { tickValue: 7 })
+    const effects = describeSheetConditionEffects(['Burned', 'Bad Sleep', 'Flinch', 'Flinch', 'Disabled: Thunder Wave', 'Helping Hand', 'Supersonic Accuracy Penalty', 'Electric-Resistant Coat', 'Enraged'], { tickValue: 7 })
     expect(effects).toEqual(expect.arrayContaining([
       expect.objectContaining({ label: 'Burned', description: expect.stringContaining('Defense Combat Stage -2') }),
       expect.objectContaining({ label: 'Bad Sleep', description: expect.stringMatching(/Applies no Evasion.*14 HP/) }),
@@ -150,6 +150,7 @@ describe('sheet condition effects', () => {
       expect.objectContaining({ label: 'Helping Hand', description: expect.stringContaining('+2') }),
       expect.objectContaining({ label: 'Supersonic Accuracy Penalty', description: expect.stringContaining('-2') }),
       expect.objectContaining({ label: 'Electric-Resistant Coat', description: expect.stringContaining('Electric-Type') }),
+      expect.objectContaining({ label: 'Enraged', description: expect.stringContaining('damaging Physical or Special Move') }),
     ]))
   })
 })

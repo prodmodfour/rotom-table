@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { toSlug } from '~~/data/ptuReference'
 import { referenceDetailPath } from '~/utils/reference/routes'
+import { conditionDisplayName } from '~/utils/statusConditions'
 import type { ConditionGroupForIndex } from '~/utils/reference/conditionIndex'
 
 defineProps<{
@@ -25,7 +26,7 @@ defineProps<{
       >
         <div class="ref-row__heading">
           <span class="condition-row__tag"><ConditionTag :name="condition.name" size="sm" /></span>
-          <h3>{{ condition.name }}</h3>
+          <h3>{{ conditionDisplayName(condition.name) }}</h3>
           <span v-if="condition.source" class="ref-row__freq">{{ condition.source }}</span>
         </div>
         <p v-if="condition.effect" class="ref-row__effect">

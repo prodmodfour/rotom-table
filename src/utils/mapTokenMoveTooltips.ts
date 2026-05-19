@@ -50,6 +50,7 @@ const buildSheetSpecificLines = (move: TokenMoveMenuOption): string[] => {
   if (attackStat) lines.push(`Attack Stat: ${attackStat}`)
   if (move.hasStab) lines.push('STAB: +2 DB included')
   if (move.automatic) lines.push('Source: Automatic Struggle Attack')
+  if (move.conditionUseBlock) lines.push(`Condition: ${move.conditionUseBlock.reason}`)
   if (!move.hasAutomationScript) lines.push('Automation: No script yet')
   return lines
 }

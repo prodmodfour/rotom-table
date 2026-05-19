@@ -135,6 +135,37 @@ describe('useMoveAutomationPanel', () => {
     expect(panel.tokenMoveOptionsById.value['user-token'].find((move) => move.name === 'Tackle')?.disabledByCondition).toBe(true)
   })
 
+  it('omits non-damaging non-Struggle moves from automation while Enraged', () => {
+    const map = ref(mapFixture())
+    const pokemonSheet = {
+      slug: 'bolt',
+      nickname: 'Bolt',
+      species: 'Bulbasaur',
+      level: 5,
+      movelist: [{ name: 'Swords Dance' }, { name: 'Tackle' }],
+    } as CharacterSheet
+    const panel = useMoveAutomationPanel({
+      map,
+      spawnedPokemon: computed(() => [spawned({ conditions: ['Enraged'] })]),
+      pokemonBySlug: ref(new Map([[pokemonSheet.slug, pokemonSheet]])),
+      trainerBySlug: ref(new Map<string, TrainerSheet>()),
+      canEditMap: computed(() => false),
+      canControlPlacement: (id) => id === 'user-token',
+      modifyHp: () => undefined,
+      modifyCombatStages: () => undefined,
+      modifyConditions: () => undefined,
+      applyMoveFieldEffect: () => undefined,
+      placeHazard: () => undefined,
+    })
+
+    panel.openMoveAutomation({ id: 'user-token', moveName: 'Swords Dance' })
+    expect(panel.moveAutomationTargeting.value).toBeNull()
+    expect(panel.tokenMoveOptionsById.value['user-token'].find((move) => move.name === 'Swords Dance')?.conditionUseBlock?.label).toBe('Enraged')
+
+    panel.openMoveAutomation({ id: 'user-token', moveName: 'Tackle' })
+    expect(panel.moveAutomationTargeting.value?.moveName).toBe('Tackle')
+  })
+
   it('opens Psywave with the same on-map single-target flow as Ember', async () => {
     vi.useFakeTimers()
     const map = ref({

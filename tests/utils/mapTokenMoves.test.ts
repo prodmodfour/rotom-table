@@ -81,7 +81,24 @@ describe('map token move menu options', () => {
     ])
 
     expect(moves.find((move) => move.name === 'Tackle')?.disabledByCondition).toBe(true)
+    expect(moves.find((move) => move.name === 'Tackle')?.conditionUseBlock?.label).toBe('Disabled')
     expect(moves.find((move) => move.name === 'Ember')?.disabledByCondition).toBe(false)
+  })
+
+  it('blocks non-damaging non-Struggle moves while Enraged', () => {
+    const moves = buildTokenMoveMenuOptions(token({ conditions: ['Enraged'] }), [
+      { move: { name: 'Tackle' }, automatic: false },
+      { move: { name: 'Swords Dance' }, automatic: false },
+      { move: { name: 'Struggle' }, automatic: true },
+    ])
+
+    expect(moves.find((move) => move.name === 'Tackle')?.conditionUseBlock).toBeNull()
+    expect(moves.find((move) => move.name === 'Struggle')?.conditionUseBlock).toBeNull()
+    expect(moves.find((move) => move.name === 'Swords Dance')?.conditionUseBlock).toMatchObject({
+      condition: 'Rage',
+      label: 'Enraged',
+      reason: expect.stringContaining('damaging Physical or Special Move'),
+    })
   })
 
   it('does not apply STAB to Struggle auto moves', () => {

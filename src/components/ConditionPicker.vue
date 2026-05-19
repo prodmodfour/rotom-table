@@ -347,7 +347,7 @@ watch(crushOptions, (options) => {
             @click="toggle(condition.name)"
           >
             <ConditionTag :name="condition.name" :size="tagSize" />
-            <span v-if="!compact" class="condition-picker__option-name">{{ condition.name }}</span>
+            <span v-if="!compact" class="condition-picker__option-name">{{ conditionDisplayName(condition.name) }}</span>
             <span v-if="conditionOptionHasDetailPicker(condition.name)" class="condition-picker__option-action">+</span>
           </button>
         </div>

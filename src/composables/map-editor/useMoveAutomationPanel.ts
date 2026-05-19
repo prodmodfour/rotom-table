@@ -25,7 +25,7 @@ import {
   resolveInstantSelfMoveAutomation,
   resolveInstantTargetMoveAutomation,
 } from '~/utils/moveAutomationInstant'
-import { isMoveDisabledByConditions } from '~/utils/statusConditions'
+import { moveConditionUseBlock } from '~/utils/moveConditionRestrictions'
 import {
   setTokenFacingOnPlacement,
   tokenFacingAreaDirection,
@@ -236,21 +236,27 @@ export const useMoveAutomationPanel = ({
     if (target) faceTokenTowardToken(user, target)
   }
 
-  const moveDisabledForToken = (token: SpawnedPokemon, moveName: string): boolean =>
-    isMoveDisabledByConditions(moveName, token.conditions)
-
   const moveAutomationEntryForUse = (id: string, moveName: string) => {
     const user = findSpawnedPokemon(id)
-    if (!user || moveDisabledForToken(user, moveName)) return null
+    if (!user) return null
+
     const normalizedMoveName = moveName.trim().toLowerCase()
     const moves = moveEntriesForId(id).map((entry) => entry.move)
-    return buildMoveAutomationMoveEntries(moves, {
+    const entry = buildMoveAutomationMoveEntries(moves, {
       stabTypes: user.sheetKind === 'pokemon' ? user.defenderTypes : [],
       combatSkillRankValue: user.combatSkillRankValue,
-    }).find((entry) =>
-      entry.move.name.toLowerCase() === normalizedMoveName
-        || entry.sheetMove.name.toLowerCase() === normalizedMoveName,
+    }).find((candidate) =>
+      candidate.move.name.toLowerCase() === normalizedMoveName
+        || candidate.sheetMove.name.toLowerCase() === normalizedMoveName,
     ) ?? null
+
+    if (!entry) return null
+    const blocked = moveConditionUseBlock({
+      name: entry.move.name,
+      aliases: [entry.sheetMove.name, entry.script.moveName],
+      damageClass: entry.script.damageClass ?? entry.move.damage_class,
+    }, user.conditions)
+    return blocked ? null : entry
   }
 
   const moveAutomationTargeting = computed<MoveAutomationTargetingOverlayState | null>(() => {
