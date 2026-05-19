@@ -180,7 +180,7 @@ export const createMoveAreaTemplateRenderer = (scene: THREE.Scene) => {
   const addCells = (cells: readonly GridAnchor[]) => {
     const geometry = new THREE.BoxGeometry(cellSize, cellSize, cellSize)
     const material = new THREE.MeshBasicMaterial({
-      color: 0xff1f2d,
+      color: 0xffc97a,
       transparent: true,
       opacity: 0.16,
       depthTest: true,
