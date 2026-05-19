@@ -273,9 +273,13 @@ const emit = defineEmits<{
   gap: 0.2rem;
 }
 
-.accuracy-line__item,
-.accuracy-line__ability {
+.accuracy-line__item {
   color: var(--accent);
+  font-weight: 700;
+}
+
+.accuracy-line__ability {
+  color: darkorange;
   font-weight: 700;
 }
 
