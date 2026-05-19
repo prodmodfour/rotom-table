@@ -1,6 +1,7 @@
 import { computed, onBeforeUnmount, ref, type ComputedRef, type Ref } from 'vue'
 import {
   buildTokenMoveMenuOptions,
+  buildTokenMoveUsageState,
   moveEntriesForPlacement,
   type TokenSheetMoveEntry,
 } from '~/utils/mapTokenMoves'
@@ -51,6 +52,8 @@ import {
 } from '~/utils/moveAutomationRange'
 import { moveAutomationTargetHitChance } from '~/utils/moveAutomationAccuracy'
 import { buildAllVoxelOccupancy } from '~/utils/voxelOccupancy'
+import { getErrorMessage } from '~/utils/errorMessages'
+import { moveFrequencyTracksOnMap, moveFrequencyTracksOnSheet, parseMoveFrequency } from '~/utils/moveUsage'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { GridAnchor, MapFieldEffects, MapHazardV2, TabletopMap } from '~/types/map'
 import type {
@@ -81,6 +84,9 @@ type MaybePromise<T> = T | Promise<T>
 
 type SheetUpdateOptions = { allowAnyTarget?: boolean }
 
+type MoveUsageRecordRequest = { placementId: string; moveName: string }
+type MoveUsageRecordHandler = (request: MoveUsageRecordRequest) => MaybePromise<void>
+
 type SheetUpdateHandler<TUpdate> = (
   update: TUpdate,
   options?: SheetUpdateOptions,
@@ -98,6 +104,7 @@ export interface UseMoveAutomationPanelOptions {
   modifyConditions: SheetUpdateHandler<MoveAutomationConditionUpdate>
   applyMoveFieldEffect: (effect: MoveAutomationFieldEffectApply) => MaybePromise<void>
   placeHazard: (hazard: MapHazardV2) => MaybePromise<void>
+  recordMoveUsage?: MoveUsageRecordHandler
   now?: () => number
   maxLogEntries?: number
 }
@@ -115,6 +122,7 @@ interface ActiveSingleTargetingRequest {
   moveName: string
   script: MoveAutomationScript
   damageFormula: string | null
+  frequency: string | null
   rangeMeters: number
 }
 
@@ -124,6 +132,7 @@ interface ActiveAreaConfirmationRequest {
   moveName: string
   script: MoveAutomationScript
   damageFormula: string | null
+  frequency: string | null
   label: string
   cells: GridAnchor[]
   /** All token ids in the current area template. */
@@ -168,11 +177,13 @@ export const useMoveAutomationPanel = ({
   modifyConditions,
   applyMoveFieldEffect,
   placeHazard,
+  recordMoveUsage,
   now,
   maxLogEntries = DEFAULT_MAX_LOG_ENTRIES,
 }: UseMoveAutomationPanelOptions) => {
   const activeMoveTargeting = ref<ActiveMoveTargetingRequest | null>(null)
   const moveAutomationFeedback = ref<MoveAutomationFeedbackState | null>(null)
+  const moveUsageError = ref<string | null>(null)
   const spiteReactionPrompts = ref<MoveAutomationSpitePrompt[]>([])
   const cuteCharmReactionPrompts = ref<MoveAutomationCuteCharmPrompt[]>([])
   const moxieTriggerPrompts = ref<MoveAutomationMoxiePrompt[]>([])
@@ -195,6 +206,20 @@ export const useMoveAutomationPanel = ({
     id ? spawnedPokemon.value.find((pokemon) => pokemon.id === id) ?? null : null
 
   const placementById = (id: string) => map.value?.placements.find((placement) => placement.id === id) ?? null
+
+  const sheetMoveUsageForPlacement = (id: string) => {
+    const placement = placementById(id)
+    if (!placement) return undefined
+    return placement.sheetKind === 'pokemon'
+      ? pokemonBySlug.value?.get(placement.sheetSlug)?.moveUsage
+      : trainerBySlug.value?.get(placement.sheetSlug)?.moveUsage
+  }
+
+  const tokenMoveUsageContext = (id: string) => ({
+    mapMoveUsage: map.value?.moveUsage,
+    sheetMoveUsage: sheetMoveUsageForPlacement(id),
+    currentRound: map.value?.initiative?.round ?? null,
+  })
 
   const tokenFacingPoint = (token: SpawnedPokemon) => ({
     x: token.position.x + token.base / 2,
@@ -260,7 +285,15 @@ export const useMoveAutomationPanel = ({
       aliases: [entry.sheetMove.name, entry.script.moveName],
       damageClass: entry.script.damageClass ?? entry.move.damage_class,
     }, user.conditions)
-    return blocked ? null : entry
+    if (blocked) return null
+
+    const usage = buildTokenMoveUsageState(
+      user.id,
+      entry.move.name,
+      entry.move.frequency ?? entry.sheetMove.frequency ?? null,
+      tokenMoveUsageContext(user.id),
+    )
+    return usage?.available === false ? null : entry
   }
 
   const moveTargetHitChances = (
@@ -327,7 +360,11 @@ export const useMoveAutomationPanel = ({
     const out: Record<string, ReturnType<typeof buildTokenMoveMenuOptions>> = {}
     if (!map.value) return out
     for (const token of spawnedPokemon.value) {
-      out[token.id] = buildTokenMoveMenuOptions(token, moveEntriesForId(token.id))
+      out[token.id] = buildTokenMoveMenuOptions(
+        token,
+        moveEntriesForId(token.id),
+        tokenMoveUsageContext(token.id),
+      )
     }
     return out
   })
@@ -374,6 +411,7 @@ export const useMoveAutomationPanel = ({
     user: SpawnedPokemon,
     script: MoveAutomationScript,
     damageFormula: string | null,
+    frequency: string | null,
     placement: MoveAutomationAreaTemplatePlacement,
     placements: readonly MoveAutomationAreaTemplatePlacement[],
   ): ActiveAreaConfirmationRequest => ({
@@ -382,6 +420,7 @@ export const useMoveAutomationPanel = ({
     moveName: script.moveName,
     script,
     damageFormula,
+    frequency,
     label: placement.label,
     cells: placement.cells,
     targetIds: placement.targetIds,
@@ -393,6 +432,7 @@ export const useMoveAutomationPanel = ({
   const makeFallbackAreaPlacement = (
     script: MoveAutomationScript,
     damageFormula: string | null,
+    frequency: string | null,
     user: SpawnedPokemon,
   ): ActiveAreaConfirmationRequest | null => {
     const template = script.areaTemplates?.[0]
@@ -417,6 +457,7 @@ export const useMoveAutomationPanel = ({
       moveName: script.moveName,
       script,
       damageFormula,
+      frequency,
       label: template.label,
       cells,
       targetIds,
@@ -429,10 +470,33 @@ export const useMoveAutomationPanel = ({
   const rollFormulaForEntry = (entry: NonNullable<ReturnType<typeof moveAutomationEntryForUse>>): string | null =>
     directHpLossRollFormulaForScript(entry.script) ?? damageFormulaForMove(entry.move)
 
+  const frequencyForEntry = (entry: NonNullable<ReturnType<typeof moveAutomationEntryForUse>>): string | null =>
+    entry.move.frequency ?? entry.sheetMove.frequency ?? null
+
+  const usageIsTracked = (frequency: string | null): boolean => {
+    const parsed = parseMoveFrequency(frequency)
+    return moveFrequencyTracksOnMap(parsed) || moveFrequencyTracksOnSheet(parsed)
+  }
+
+  const recordMoveUseIfTracked = async (request: MoveUsageRecordRequest, frequency: string | null): Promise<boolean> => {
+    moveUsageError.value = null
+    if (!usageIsTracked(frequency) || !recordMoveUsage) return true
+    try {
+      await recordMoveUsage(request)
+      return true
+    } catch (error) {
+      const message = getErrorMessage(error, { fallback: 'Move usage could not be recorded.' })
+      moveUsageError.value = message
+      console.warn('[useMoveAutomationPanel] move usage failed', error)
+      return false
+    }
+  }
+
   const beginSeamlessAreaConfirmation = (id: string, entry: ReturnType<typeof moveAutomationEntryForUse>): boolean => {
     const user = findSpawnedPokemon(id)
     if (!user || !entry || !isSeamlessAreaConfirmationScript(entry.script)) return false
     const damageFormula = entry.script.damaging ? rollFormulaForEntry(entry) : null
+    const frequency = frequencyForEntry(entry)
     if (entry.script.damaging && !damageFormula && !moveAutomationCanResolveDamageAtRuntime(entry.script)) return false
     const placements = buildMoveAutomationAreaTemplatePlacements({
       script: entry.script,
@@ -443,8 +507,8 @@ export const useMoveAutomationPanel = ({
     })
     const placement = areaPlacementForTokenFacing(placements, user)
     const request = placement
-      ? requestFromAreaPlacement(user, entry.script, damageFormula, placement, placements)
-      : makeFallbackAreaPlacement(entry.script, damageFormula, user)
+      ? requestFromAreaPlacement(user, entry.script, damageFormula, frequency, placement, placements)
+      : makeFallbackAreaPlacement(entry.script, damageFormula, frequency, user)
     if (!request) return false
 
     clearMoveAutomationFeedback()
@@ -463,11 +527,16 @@ export const useMoveAutomationPanel = ({
     if (isSeamlessSelfMoveScript(script)) {
       clearMoveAutomationFeedback()
       activeMoveTargeting.value = null
-      void applyMoveAutomation(resolveInstantSelfMoveAutomation({
-        script,
-        user,
-        fieldEffects: map.value?.fieldEffects,
-      }))
+      const frequency = frequencyForEntry(entry)
+      void (async () => {
+        const recorded = await recordMoveUseIfTracked({ placementId: id, moveName: script.moveName }, frequency)
+        if (!recorded) return
+        await applyMoveAutomation(resolveInstantSelfMoveAutomation({
+          script,
+          user,
+          fieldEffects: map.value?.fieldEffects,
+        }))
+      })()
       return true
     }
 
@@ -485,6 +554,7 @@ export const useMoveAutomationPanel = ({
         moveName: script.moveName,
         script,
         damageFormula,
+        frequency: frequencyForEntry(entry),
         rangeMeters,
       }
       return true
@@ -494,6 +564,7 @@ export const useMoveAutomationPanel = ({
   }
 
   const openMoveAutomation = (input: string | { id: string; moveName?: string | null }) => {
+    moveUsageError.value = null
     const id = typeof input === 'string' ? input : input.id
     if (!canControlPlacement(id)) return
     const moveName = typeof input === 'string' ? null : input.moveName?.trim() || null
@@ -747,6 +818,11 @@ export const useMoveAutomationPanel = ({
   const confirmMoveAutomationArea = async (request: ActiveAreaConfirmationRequest) => {
     const user = findSpawnedPokemon(request.userId)
     if (!user) return
+    const recorded = await recordMoveUseIfTracked(
+      { placementId: request.userId, moveName: request.moveName },
+      request.frequency,
+    )
+    if (!recorded) return
     const targetSet = new Set(selectedAreaTargetIds(request))
     const targets = spawnedPokemon.value.filter((token) => targetSet.has(token.id))
     if (request.direction) faceTokenTowardAreaDirection(user, request.direction)
@@ -783,6 +859,12 @@ export const useMoveAutomationPanel = ({
     const target = findSpawnedPokemon(targetId)
     if (!user || !target) return
 
+    const recorded = await recordMoveUseIfTracked(
+      { placementId: request.userId, moveName: request.moveName },
+      request.frequency,
+    )
+    if (!recorded) return
+
     faceTokenTowardToken(user, target)
 
     if (!request.script.requiresAccuracy) {
@@ -816,6 +898,7 @@ export const useMoveAutomationPanel = ({
   return {
     moveAutomationTargeting,
     moveAutomationFeedback,
+    moveUsageError,
     spiteReactionPrompts,
     cuteCharmReactionPrompts,
     moxieTriggerPrompts,

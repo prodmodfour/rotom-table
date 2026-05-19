@@ -69,6 +69,7 @@ const props = defineProps<{
   canDeleteTokens: boolean
   moveAutomationTargeting?: MoveAutomationTargetingOverlayState | null
   moveAutomationFeedback?: MoveAutomationFeedbackState | null
+  moveUsageError?: string | null
   spiteReactionPrompts?: MoveAutomationSpitePrompt[]
   cuteCharmReactionPrompts?: MoveAutomationCuteCharmPrompt[]
   moxieTriggerPrompts?: MoveAutomationMoxiePrompt[]
@@ -191,6 +192,10 @@ defineExpose({ focusPokemon })
         :messages="combatLogMessages"
       />
 
+      <div v-if="props.moveUsageError" class="move-usage-error" role="status">
+        {{ props.moveUsageError }}
+      </div>
+
       <MapMoveReactionPromptStack
         :spite-prompts="props.spiteReactionPrompts ?? []"
         :cute-charm-prompts="props.cuteCharmReactionPrompts ?? []"
@@ -222,5 +227,24 @@ defineExpose({ focusPokemon })
   min-width: 0;
   min-height: 100vh;
   background: var(--paper);
+}
+
+.move-usage-error {
+  position: absolute;
+  top: 1rem;
+  left: 50%;
+  z-index: 10800;
+  max-width: min(32rem, calc(100vw - 2rem));
+  transform: translateX(-50%);
+  padding: 0.7rem 0.95rem;
+  border: 1px solid color-mix(in srgb, var(--bad) 65%, rgba(255, 255, 255, 0.3));
+  border-radius: 999px;
+  background: rgba(60, 8, 12, 0.86);
+  color: var(--ink-bright);
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.35);
+  font-size: 0.86rem;
+  font-weight: 900;
+  text-align: center;
+  pointer-events: none;
 }
 </style>

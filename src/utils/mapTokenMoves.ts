@@ -5,7 +5,17 @@ import { resolveMoveGrantedCapabilities } from '~/utils/sheets/pokemonMoveGrante
 import { makeAutomaticStruggleMoves } from '~/utils/struggleMoves'
 import { makeMoveLookupRows, type MoveLookupRow } from '~/utils/sheetMoveLookup'
 import { moveConditionUseBlock, type MoveConditionUseBlock } from '~/utils/moveConditionRestrictions'
+import {
+  eotMoveUsageState,
+  getMapMoveUsageEntry,
+  getSheetDailyMoveUsageEntry,
+  limitedMoveUsageState,
+  moveUsageKey,
+  parseMoveFrequency,
+  type MoveFrequencyKind,
+} from '~/utils/moveUsage'
 import type { CharacterSheet, CharacterSheetMove } from '~/types/characterSheet'
+import type { MapMoveUsageState, SheetMoveUsageState } from '~/types/moveUsage'
 import type { SheetPlacement } from '~/types/map'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import type { TrainerMove, TrainerSheet } from '~/types/trainerSheet'
@@ -20,6 +30,26 @@ export interface TokenSheetMoveEntry {
 export interface MapTokenSheetLookup {
   pokemon?: Map<string, CharacterSheet>
   trainer?: Map<string, TrainerSheet>
+}
+
+export interface TokenMoveUsageMenuState {
+  tracking: 'map' | 'sheet'
+  frequencyKind: Extract<MoveFrequencyKind, 'eot' | 'scene' | 'daily'>
+  label: string
+  title: string
+  available: boolean
+  tone: 'available' | 'limited' | 'blocked'
+  uses: number
+  maxUses?: number
+  remainingUses?: number
+  lastUsedRound?: number | null
+  nextAvailableRound?: number | null
+}
+
+export interface TokenMoveUsageContext {
+  mapMoveUsage?: MapMoveUsageState
+  sheetMoveUsage?: SheetMoveUsageState
+  currentRound?: number | null
 }
 
 export interface TokenMoveMenuOption {
@@ -49,6 +79,8 @@ export interface TokenMoveMenuOption {
   hasAutomationScript: boolean
   conditionUseBlock: MoveConditionUseBlock | null
   disabledByCondition: boolean
+  usage: TokenMoveUsageMenuState | null
+  disabledByUsage: boolean
 }
 
 const pokemonStruggleCapabilities = (sheet: CharacterSheet): string[] => {
@@ -99,14 +131,98 @@ const fallback = <T>(...values: T[]): NonNullable<T> | null => {
 const moveHasAutomationScript = (row: MoveLookupRow<TokenSheetMove>): boolean =>
   Boolean(explicitScriptForMove(row.reference?.name ?? row.move.name) ?? explicitScriptForMove(row.move.name))
 
+const usageLimitTitle = (
+  moveName: string,
+  scope: 'Scene' | 'Daily',
+  uses: number,
+  maxUses: number,
+  remainingUses: number,
+): string => remainingUses > 0
+  ? `${moveName}: ${remainingUses} of ${maxUses} ${scope} uses remaining.`
+  : `${moveName}: no ${scope} uses remaining.`
+
+export const buildTokenMoveUsageState = (
+  tokenId: string,
+  moveName: string,
+  frequency: string | null | undefined,
+  context: TokenMoveUsageContext = {},
+): TokenMoveUsageMenuState | null => {
+  const parsed = parseMoveFrequency(frequency)
+  const moveKey = moveUsageKey(moveName)
+  if (!moveKey) return null
+
+  if (parsed.kind === 'eot') {
+    const state = eotMoveUsageState(
+      getMapMoveUsageEntry(context.mapMoveUsage, tokenId, moveKey),
+      context.currentRound,
+    )
+    return {
+      tracking: 'map',
+      frequencyKind: 'eot',
+      label: state.available ? 'EOT ready' : `EOT R${state.nextAvailableRound ?? '?'}`,
+      title: state.available
+        ? `${moveName}: EOT is available.`
+        : `${moveName}: EOT is unavailable until round ${state.nextAvailableRound ?? '?'}.`,
+      available: state.available,
+      tone: state.available ? 'available' : 'blocked',
+      uses: state.uses,
+      lastUsedRound: state.lastUsedRound,
+      nextAvailableRound: state.nextAvailableRound,
+    }
+  }
+
+  if (parsed.kind === 'scene') {
+    const maxUses = Math.max(1, parsed.usesPerPeriod ?? 1)
+    const state = limitedMoveUsageState(
+      getMapMoveUsageEntry(context.mapMoveUsage, tokenId, moveKey),
+      maxUses,
+    )
+    return {
+      tracking: 'map',
+      frequencyKind: 'scene',
+      label: `Scene ${state.remainingUses}/${state.maxUses}`,
+      title: usageLimitTitle(moveName, 'Scene', state.uses, state.maxUses, state.remainingUses),
+      available: state.available,
+      tone: state.available ? 'limited' : 'blocked',
+      uses: state.uses,
+      maxUses: state.maxUses,
+      remainingUses: state.remainingUses,
+    }
+  }
+
+  if (parsed.kind === 'daily') {
+    const maxUses = Math.max(1, parsed.usesPerPeriod ?? 1)
+    const state = limitedMoveUsageState(
+      getSheetDailyMoveUsageEntry(context.sheetMoveUsage, moveKey),
+      maxUses,
+    )
+    return {
+      tracking: 'sheet',
+      frequencyKind: 'daily',
+      label: `Daily ${state.remainingUses}/${state.maxUses}`,
+      title: usageLimitTitle(moveName, 'Daily', state.uses, state.maxUses, state.remainingUses),
+      available: state.available,
+      tone: state.available ? 'limited' : 'blocked',
+      uses: state.uses,
+      maxUses: state.maxUses,
+      remainingUses: state.remainingUses,
+    }
+  }
+
+  return null
+}
+
 const optionForMoveRow = (
   row: MoveLookupRow<TokenSheetMove>,
   automatic: boolean,
   token: SpawnedPokemon,
   hasAutomationScript: boolean,
+  usageContext: TokenMoveUsageContext = {},
 ): TokenMoveMenuOption => {
   const name = row.reference?.name ?? row.move.name
   const damageClass = fallback(row.reference?.damage_class, row.move.category)
+  const frequency = fallback(row.reference?.frequency, row.move.frequency)
+  const usage = buildTokenMoveUsageState(token.id, name, frequency, usageContext)
   const conditionUseBlock = moveConditionUseBlock({
     name,
     aliases: [row.move.name],
@@ -117,7 +233,7 @@ const optionForMoveRow = (
     name,
     type: fallback(row.reference?.type, row.move.type),
     damageClass,
-    frequency: fallback(row.reference?.frequency, row.move.frequency),
+    frequency,
     ac: fallback(row.ac, row.reference?.ac, row.move.ac),
     range: fallback(row.reference?.range, row.move.range),
     effect: fallback(row.reference?.effect, row.move.effect),
@@ -140,12 +256,15 @@ const optionForMoveRow = (
     hasAutomationScript,
     conditionUseBlock,
     disabledByCondition: conditionUseBlock != null,
+    usage,
+    disabledByUsage: usage?.available === false,
   }
 }
 
 export const buildTokenMoveMenuOptions = (
   token: SpawnedPokemon,
   entries: readonly TokenSheetMoveEntry[],
+  usageContext: TokenMoveUsageContext = {},
 ): TokenMoveMenuOption[] => {
   const rows = makeMoveLookupRows(entries.map((entry) => entry.move), {
     stabTypes: token.sheetKind === 'pokemon' ? token.defenderTypes : [],
@@ -158,5 +277,5 @@ export const buildTokenMoveMenuOptions = (
   })
   return rows
     .map((row, index) => ({ row, automatic: entries[index]?.automatic ?? false }))
-    .map(({ row, automatic }) => optionForMoveRow(row, automatic, token, moveHasAutomationScript(row)))
+    .map(({ row, automatic }) => optionForMoveRow(row, automatic, token, moveHasAutomationScript(row), usageContext))
 }

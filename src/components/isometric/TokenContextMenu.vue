@@ -48,10 +48,11 @@ const abilityCanBeUsed = (ability: TokenAbilityMenuOption): boolean =>
   ability.automation != null && ability.automation.category !== 'passive'
 
 const moveCanBeUsed = (move: TokenMoveMenuOption): boolean =>
-  move.hasAutomationScript && !move.conditionUseBlock
+  move.hasAutomationScript && !move.conditionUseBlock && !move.disabledByUsage
 
 const moveDisabledTitle = (move: TokenMoveMenuOption): string | undefined => {
   if (move.conditionUseBlock) return move.conditionUseBlock.reason
+  if (move.disabledByUsage && move.usage) return move.usage.title
   if (!move.hasAutomationScript) return `${move.name} does not have an automation script yet.`
   return undefined
 }
@@ -335,6 +336,14 @@ watch(abilities, (nextAbilities) => {
                 <DamageClassBadge v-if="move.damageClass" :category="move.damageClass" size="xs" />
                 <span v-if="move.damageBase != null" class="action-submenu__badge">DB {{ move.damageBase }}</span>
                 <span v-if="move.hasStab" class="action-submenu__badge action-submenu__badge--stab">STAB</span>
+                <span
+                  v-if="move.usage"
+                  class="action-submenu__badge"
+                  :class="[`action-submenu__badge--usage-${move.usage.tone}`, { 'action-submenu__badge--disabled': !move.usage.available }]"
+                  :title="move.usage.title"
+                >
+                  {{ move.usage.label }}
+                </span>
                 <span v-if="move.automatic" class="action-submenu__badge">Auto</span>
                 <span v-if="!move.hasAutomationScript" class="action-submenu__badge action-submenu__badge--disabled">Unscripted</span>
                 <span v-if="move.conditionUseBlock" class="action-submenu__badge action-submenu__badge--disabled">{{ move.conditionUseBlock.label }}</span>
@@ -707,8 +716,18 @@ watch(abilities, (nextAbilities) => {
   color: var(--accent);
 }
 
-.action-submenu__badge--map {
+.action-submenu__badge--map,
+.action-submenu__badge--usage-available {
   color: var(--ink-bright);
+}
+
+.action-submenu__badge--usage-limited {
+  color: var(--accent);
+}
+
+.action-submenu__badge--usage-blocked {
+  border-color: color-mix(in srgb, var(--bad) 55%, var(--rule-soft));
+  color: var(--bad);
 }
 
 .action-submenu__badge--disabled {

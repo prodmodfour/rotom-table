@@ -9,6 +9,7 @@ import MapScenePanel from '~/components/map/MapScenePanel.vue'
 import SheetsMenuModal from '~/components/map/SheetsMenuModal.vue'
 import { useEditableMap } from '~/composables/useEditableMap'
 import { useLiveSheets } from '~/composables/useLiveSheets'
+import { useApiClient } from '~/composables/useApiClient'
 import { useFieldEffectsEditor } from '~/composables/map-editor/useFieldEffectsEditor'
 import { useHazardBuilder } from '~/composables/map-editor/useHazardBuilder'
 import { useInitiativeTracker } from '~/composables/map-editor/useInitiativeTracker'
@@ -24,8 +25,13 @@ import { useMoveAutomationPanel } from '~/composables/map-editor/useMoveAutomati
 import { useTerrainBuilder } from '~/composables/map-editor/useTerrainBuilder'
 import { useTokenSheetMutations } from '~/composables/map-editor/useTokenSheetMutations'
 import { useTokenControls } from '~/composables/map-editor/useTokenControls'
+import { MAP_API_PATHS } from '~/utils/apiRoutes'
+import { getClientId } from '~/utils/clientId'
 import { mapEditorPath, mapLibraryPath } from '~/utils/mapRoutes'
 import { routeSlugParam } from '~/utils/routeParams'
+import type { CharacterSheet } from '~/types/characterSheet'
+import type { TabletopMap } from '~/types/map'
+import type { TrainerSheet } from '~/types/trainerSheet'
 
 definePageMeta({
   key: (route) => `map-${routeSlugParam(route.params)}`,
@@ -38,6 +44,7 @@ const slug = routeSlugParam(route.params)
 
 const { map, status, error, renamedTo } = useEditableMap(slug)
 const { pokemonBySlug, trainerBySlug } = useLiveSheets()
+const { postJson } = useApiClient()
 
 watch(renamedTo, (newSlug) => {
   if (newSlug) router.replace(mapEditorPath(newSlug))
@@ -228,9 +235,53 @@ const {
   canControlPlacement,
 })
 
+interface RecordMoveUsageResponse {
+  ok: true
+  map?: TabletopMap
+  sheet?: Record<string, unknown>
+  sheetKind?: 'pokemon' | 'trainer'
+  sheetSlug?: string
+}
+
+const applyRecordedMapUsage = (incoming: TabletopMap | undefined) => {
+  if (!incoming || !map.value) return
+  map.value.moveUsage = incoming.moveUsage
+  map.value.updatedAt = incoming.updatedAt
+}
+
+const mergeRecordedSheet = <TSheet extends { slug: string }>(
+  sheets: Map<string, TSheet>,
+  slug: string,
+  incoming: Record<string, unknown>,
+) => {
+  const previous = sheets.get(slug)
+  sheets.set(slug, { ...(previous ?? {}), ...incoming } as TSheet)
+}
+
+const applyRecordedSheetUsage = (response: RecordMoveUsageResponse) => {
+  if (!response.sheet || !response.sheetSlug || !response.sheetKind) return
+  if (response.sheetKind === 'pokemon') {
+    mergeRecordedSheet<CharacterSheet>(pokemonBySlug.value, response.sheetSlug, response.sheet)
+    return
+  }
+  mergeRecordedSheet<TrainerSheet>(trainerBySlug.value, response.sheetSlug, response.sheet)
+}
+
+const recordMoveUsage = async (request: { placementId: string; moveName: string }) => {
+  const response = await postJson<RecordMoveUsageResponse>(MAP_API_PATHS.useMove, {
+    slug,
+    placementId: request.placementId,
+    moveName: request.moveName,
+    clientId: getClientId(),
+  })
+  applyRecordedMapUsage(response.map)
+  applyRecordedSheetUsage(response)
+}
+
 const {
   moveAutomationTargeting,
   moveAutomationFeedback,
+  moveUsageError,
   spiteReactionPrompts,
   cuteCharmReactionPrompts,
   moxieTriggerPrompts,
@@ -257,6 +308,7 @@ const {
   modifyConditions,
   applyMoveFieldEffect,
   placeHazard,
+  recordMoveUsage,
 })
 
 const {
@@ -370,6 +422,7 @@ useMapDimensionReconciliation({
         :can-delete-tokens="isGm"
         :move-automation-targeting="actionAutomationTargeting"
         :move-automation-feedback="moveAutomationFeedback"
+        :move-usage-error="moveUsageError"
         :spite-reaction-prompts="spiteReactionPrompts"
         :cute-charm-reaction-prompts="cuteCharmReactionPrompts"
         :moxie-trigger-prompts="moxieTriggerPrompts"

@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { buildTokenMoveMenuOptions, pokemonMoveEntriesForSheet, trainerMoveEntriesForSheet } from '~/utils/mapTokenMoves'
+import {
+  buildTokenMoveMenuOptions,
+  buildTokenMoveUsageState,
+  pokemonMoveEntriesForSheet,
+  trainerMoveEntriesForSheet,
+} from '~/utils/mapTokenMoves'
 import type { CombatStageMap } from '~/types/combatStages'
 import type { SpawnedPokemon } from '~/types/pokemon'
 
@@ -72,6 +77,68 @@ describe('map token move menu options', () => {
     expect(moves.map((move) => move.name)).toEqual(['Tackle', 'Custom Beam'])
     expect(moves.find((move) => move.name === 'Tackle')?.hasAutomationScript).toBe(true)
     expect(moves.find((move) => move.name === 'Custom Beam')?.hasAutomationScript).toBe(false)
+  })
+
+  it('reports map and sheet move frequency usage states', () => {
+    expect(buildTokenMoveUsageState('token', 'Bite', 'EOT', {
+      mapMoveUsage: {
+        byPlacementId: {
+          token: {
+            bite: { moveName: 'Bite', frequency: 'eot', uses: 1, lastUsedRound: 2 },
+          },
+        },
+      },
+      currentRound: 3,
+    })).toMatchObject({
+      tracking: 'map',
+      frequencyKind: 'eot',
+      label: 'EOT R4',
+      available: false,
+      nextAvailableRound: 4,
+    })
+
+    expect(buildTokenMoveUsageState('token', 'Growl', 'Scene x2', {
+      mapMoveUsage: {
+        byPlacementId: {
+          token: {
+            growl: { moveName: 'Growl', frequency: 'scene', uses: 1 },
+          },
+        },
+      },
+    })).toMatchObject({
+      label: 'Scene 1/2',
+      available: true,
+      remainingUses: 1,
+    })
+
+    expect(buildTokenMoveUsageState('token', 'Recover', 'Daily', {
+      sheetMoveUsage: {
+        daily: {
+          recover: { moveName: 'Recover', uses: 1 },
+        },
+      },
+    })).toMatchObject({
+      tracking: 'sheet',
+      label: 'Daily 0/1',
+      available: false,
+    })
+  })
+
+  it('includes usage state in move menu options', () => {
+    const [move] = buildTokenMoveMenuOptions(token(), [
+      { move: { name: 'Poison Gas' }, automatic: false },
+    ], {
+      mapMoveUsage: {
+        byPlacementId: {
+          token: {
+            'poison-gas': { moveName: 'Poison Gas', frequency: 'scene', uses: 1 },
+          },
+        },
+      },
+    })
+
+    expect(move.usage).toMatchObject({ label: 'Scene 0/1', available: false })
+    expect(move.disabledByUsage).toBe(true)
   })
 
   it('marks moves named by Disabled condition instances', () => {
