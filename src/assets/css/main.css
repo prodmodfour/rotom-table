@@ -214,7 +214,7 @@ samp {
   width: 72px;
   height: 72px;
   border: 4px solid #ff2d20;
-  border-radius: 999px;
+  border-radius: 50% !important;
   opacity: 0.94;
   user-select: none;
   pointer-events: none;
