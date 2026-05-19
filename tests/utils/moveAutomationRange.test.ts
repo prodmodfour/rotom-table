@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseSingleTargetMoveRangeMeters } from '~/utils/moveAutomationRange'
+import { parseSingleTargetMoveRangeMeters, tokenGridDistance } from '~/utils/moveAutomationRange'
 
 describe('move automation range helpers', () => {
   it('parses numeric, melee, and Focus Rank single-target ranges', () => {
@@ -7,5 +7,13 @@ describe('move automation range helpers', () => {
     expect(parseSingleTargetMoveRangeMeters('Melee, 1 Target')).toBe(1)
     expect(parseSingleTargetMoveRangeMeters('Focus Rank, 1 Target', { focusSkillRankValue: 4 })).toBe(4)
     expect(parseSingleTargetMoveRangeMeters('Focus Rank, 1 Target')).toBeNull()
+  })
+
+  it('measures token range with PTU alternating diagonal costs', () => {
+    const user = { base: 1, clearance: 1, position: { x: 0, y: 0, z: 0 } }
+
+    expect(tokenGridDistance(user, { base: 1, clearance: 1, position: { x: 1, y: 0, z: 1 } })).toBe(1)
+    expect(tokenGridDistance(user, { base: 1, clearance: 1, position: { x: 2, y: 0, z: 2 } })).toBe(3)
+    expect(tokenGridDistance(user, { base: 1, clearance: 1, position: { x: 3, y: 0, z: 3 } })).toBe(4)
   })
 })

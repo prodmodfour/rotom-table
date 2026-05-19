@@ -83,6 +83,12 @@ describe('move automation area templates', () => {
     expect(burst).toContainEqual({ x: 5, y: 0, z: 5 })
     expect(burst).toContainEqual({ x: 5, y: 2, z: 5 })
 
+    const burst2 = buildMoveAutomationAreaTemplateCells({ template: template('burst', 2), user, bounds })
+    expect(burst2).toContainEqual({ x: 7, y: 1, z: 5 })
+    expect(burst2).toContainEqual({ x: 7, y: 2, z: 5 })
+    expect(burst2).not.toContainEqual({ x: 7, y: 1, z: 7 })
+    expect(burst2).not.toContainEqual({ x: 7, y: 3, z: 5 })
+
     const cone = buildMoveAutomationAreaTemplateCells({ template: template('cone', 2), user, direction: 'north', bounds })
     expect(cone).toHaveLength(10)
     expect(sortedCells(cone.filter((cell) => cell.y === 1))).toEqual(sortedCells(cells([
@@ -92,8 +98,19 @@ describe('move automation area templates', () => {
     expect(cone).toContainEqual({ x: 4, y: 0, z: 3 })
     expect(cone).toContainEqual({ x: 6, y: 2, z: 3 })
 
+    const diagonalCone = buildMoveAutomationAreaTemplateCells({ template: template('cone', 2), user, direction: 'north-east', bounds })
+    expect(diagonalCone).toHaveLength(7)
+    expect(sortedCells(diagonalCone.filter((cell) => cell.y === 1))).toEqual(sortedCells(cells([
+      [6, 1, 3], [6, 1, 4],
+      [7, 1, 4],
+    ])))
+    expect(diagonalCone).not.toContainEqual({ x: 7, y: 1, z: 3 })
+
     expect(buildMoveAutomationAreaTemplateCells({ template: template('line', 3), user, direction: 'east', bounds })).toEqual(cells([
       [6, 1, 5], [7, 1, 5], [8, 1, 5],
+    ]))
+    expect(buildMoveAutomationAreaTemplateCells({ template: template('line', 4), user, direction: 'north-east', bounds })).toEqual(cells([
+      [6, 1, 4], [7, 1, 3], [8, 1, 2],
     ]))
     expect(buildMoveAutomationAreaTemplateCells({ template: template('line', 3), user, direction: 'up', bounds })).toEqual(cells([
       [5, 2, 5], [5, 3, 5],
@@ -127,6 +144,13 @@ describe('move automation area templates', () => {
       [4, 3, 4], [4, 3, 5], [5, 3, 4], [5, 3, 5],
     ])))
 
+    const elevatedUser = token('elevated-user', 'Eevee', { x: 5, y: 3, z: 5 })
+    const tallBounds = { x: 12, y: 8, z: 12 }
+    const closeBlast4 = buildMoveAutomationAreaTemplateCells({ template: template('close-blast', 4), user: elevatedUser, direction: 'north', bounds: tallBounds })
+    expect(closeBlast4).toContainEqual({ x: 5, y: 3, z: 1 })
+    expect(closeBlast4).toContainEqual({ x: 4, y: 2, z: 1 })
+    expect(closeBlast4).not.toContainEqual({ x: 3, y: 1, z: 1 })
+
     const rangedBlast = buildMoveAutomationAreaTemplateCells({ template: template('ranged-blast', 3, 8), user, center: { x: 5, y: 1, z: 5 }, bounds })
     expect(rangedBlast).toHaveLength(27)
     expect(sortedCells(rangedBlast.filter((cell) => cell.y === 1))).toEqual(sortedCells(cells([
@@ -136,6 +160,11 @@ describe('move automation area templates', () => {
     ])))
     expect(rangedBlast).toContainEqual({ x: 5, y: 0, z: 5 })
     expect(rangedBlast).toContainEqual({ x: 5, y: 2, z: 5 })
+
+    const rangedBlast5 = buildMoveAutomationAreaTemplateCells({ template: template('ranged-blast', 5, 8), user: elevatedUser, center: { x: 5, y: 3, z: 5 }, bounds: tallBounds })
+    expect(rangedBlast5).toContainEqual({ x: 3, y: 3, z: 5 })
+    expect(rangedBlast5).toContainEqual({ x: 3, y: 2, z: 5 })
+    expect(rangedBlast5).not.toContainEqual({ x: 3, y: 1, z: 3 })
 
     expect(sortedCells(buildMoveAutomationAreaTemplateCells({ template: template('cardinally-adjacent', 1), user, bounds }))).toEqual(sortedCells(cells([
       [5, 1, 4], [6, 1, 5], [5, 1, 6], [4, 1, 5],

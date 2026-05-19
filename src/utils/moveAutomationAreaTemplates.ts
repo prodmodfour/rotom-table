@@ -1,5 +1,10 @@
 import { getClearanceValue } from '~/utils/gridGeometry'
 import { tokenGridDistance } from '~/utils/moveAutomationRange'
+import {
+  ptuAlternatingDiagonalDistance,
+  ptuGridDistanceBetweenFootprints,
+  ptuGridVectorDistance,
+} from '~/utils/ptuGridDistance'
 import type {
   MoveAutomationAreaDirection,
   MoveAutomationAreaTemplate,
@@ -343,22 +348,25 @@ const closeBlastStart = (user: AreaTemplateFootprint, size: number, direction: D
   }
 }
 
+const directionStepDistance = (step: number, direction: DirectionDefinition): number =>
+  direction.dx !== 0 && direction.dz !== 0 ? ptuAlternatingDiagonalDistance(step) : step
+
 const buildLineCells = (user: AreaTemplateFootprint, length: number, direction: DirectionDefinition): GridAnchor[] => {
   const origin = originCellForDirection(user, direction)
   const cells: GridAnchor[] = []
-  for (let distance = 1; distance <= length; distance += 1) {
+  for (let step = 1; directionStepDistance(step, direction) <= length; step += 1) {
     if (direction.dy === 0) {
       for (let y = user.position.y; y <= footprintTopY(user); y += 1) {
         cells.push({
-          x: origin.x + direction.dx * distance,
+          x: origin.x + direction.dx * step,
           y,
-          z: origin.z + direction.dz * distance,
+          z: origin.z + direction.dz * step,
         })
       }
     } else {
       cells.push({
         x: origin.x,
-        y: origin.y + direction.dy * distance,
+        y: origin.y + direction.dy * step,
         z: origin.z,
       })
     }
@@ -390,7 +398,7 @@ const buildVerticalConeCells = (user: AreaTemplateFootprint, length: number, dir
   return uniqueCells(cells)
 }
 
-const buildHorizontalConeCells = (user: AreaTemplateFootprint, length: number, direction: DirectionDefinition): GridAnchor[] => {
+const buildCardinalHorizontalConeCells = (user: AreaTemplateFootprint, length: number, direction: DirectionDefinition): GridAnchor[] => {
   const origin = originCellForDirection(user, direction)
   const lateral = coneLateralVector(direction)
   const cells: GridAnchor[] = []
@@ -415,6 +423,36 @@ const buildHorizontalConeCells = (user: AreaTemplateFootprint, length: number, d
   return uniqueCells(cells)
 }
 
+const buildDiagonalHorizontalConeCells = (user: AreaTemplateFootprint, length: number, direction: DirectionDefinition): GridAnchor[] => {
+  const origin = originCellForDirection(user, direction)
+  const cells: GridAnchor[] = []
+  for (let step = 1; directionStepDistance(step, direction) <= length; step += 1) {
+    const lineCell = {
+      x: origin.x + direction.dx * step,
+      y: origin.y,
+      z: origin.z + direction.dz * step,
+    }
+    const xValues = direction.dx > 0 ? [lineCell.x, lineCell.x + 1] : [lineCell.x - 1, lineCell.x]
+    const zValues = direction.dz > 0 ? [lineCell.z, lineCell.z + 1] : [lineCell.z - 1, lineCell.z]
+
+    for (const x of xValues) {
+      for (const z of zValues) {
+        const isImmediateLineCell = step === 1 && x === lineCell.x && z === lineCell.z
+        const verticalRadius = isImmediateLineCell ? 0 : 1
+        for (let yOffset = -verticalRadius; yOffset <= verticalRadius; yOffset += 1) {
+          cells.push({ x, y: lineCell.y + yOffset, z })
+        }
+      }
+    }
+  }
+  return uniqueCells(cells)
+}
+
+const buildHorizontalConeCells = (user: AreaTemplateFootprint, length: number, direction: DirectionDefinition): GridAnchor[] =>
+  direction.dx !== 0 && direction.dz !== 0
+    ? buildDiagonalHorizontalConeCells(user, length, direction)
+    : buildCardinalHorizontalConeCells(user, length, direction)
+
 const buildConeCells = (user: AreaTemplateFootprint, length: number, direction: DirectionDefinition): GridAnchor[] =>
   direction.dy === 0
     ? buildHorizontalConeCells(user, length, direction)
@@ -424,6 +462,31 @@ const buildRangedBlastCells = (center: GridAnchor, size: number): GridAnchor[] =
   const offset = Math.floor(size / 2)
   return buildCubeCells({ x: center.x - offset, y: center.y - offset, z: center.z - offset }, size)
 }
+
+const cellFootprint = (position: GridAnchor): AreaTemplateFootprint => ({ position, base: 1, clearance: 1 })
+
+const filterCellsWithinFootprintDistance = (
+  cells: GridAnchor[],
+  source: AreaTemplateFootprint,
+  maxDistance: number,
+): GridAnchor[] => cells.filter((cell) => ptuGridDistanceBetweenFootprints(source, cellFootprint(cell)) <= maxDistance)
+
+const minCellDistanceFromOrigins = (cell: GridAnchor, origins: readonly GridAnchor[]): number =>
+  origins.reduce((bestDistance, origin) => Math.min(bestDistance, ptuGridVectorDistance({
+    x: cell.x - origin.x,
+    y: cell.y - origin.y,
+    z: cell.z - origin.z,
+  })), Number.POSITIVE_INFINITY)
+
+const filterCellsWithinOriginDistance = (
+  cells: GridAnchor[],
+  origins: readonly GridAnchor[],
+  maxDistance: number,
+): GridAnchor[] => origins.length
+  ? cells.filter((cell) => minCellDistanceFromOrigins(cell, origins) <= maxDistance)
+  : []
+
+const rangedBlastDistanceRadius = (size: number): number => Math.floor(size / 2)
 
 const cellInBounds = (cell: GridAnchor, bounds: GridDimensions | undefined): boolean =>
   cell.x >= 0
@@ -534,23 +597,35 @@ export const buildMoveAutomationAreaTemplateCells = ({
 }: BuildMoveAutomationAreaTemplateCellsInput): GridAnchor[] => {
   const constraints = { bounds, blockedCells }
   switch (template.kind) {
-    case 'burst': return applyCellConstraints(buildBurstCells(user, template.size), footprintCells(user), constraints)
+    case 'burst': return applyCellConstraints(
+      filterCellsWithinFootprintDistance(buildBurstCells(user, template.size), user, template.size),
+      footprintCells(user),
+      constraints,
+    )
     case 'cardinally-adjacent': return applyCellConstraints(buildCardinalAdjacentCells(user), footprintCells(user), constraints)
     case 'close-blast': {
       const resolvedDirection = directionDefinition(direction)
-      return resolvedDirection
-        ? applyCellConstraints(
-            buildCubeCells(closeBlastStart(user, template.size, resolvedDirection), template.size),
-            directionOriginCells(user, resolvedDirection),
-            constraints,
-          )
-        : []
+      if (!resolvedDirection) return []
+      const origins = directionOriginCells(user, resolvedDirection)
+      return applyCellConstraints(
+        filterCellsWithinOriginDistance(
+          buildCubeCells(closeBlastStart(user, template.size, resolvedDirection), template.size),
+          origins,
+          template.size,
+        ),
+        origins,
+        constraints,
+      )
     }
     case 'cone': {
       const resolvedDirection = directionDefinition(direction)
-      return resolvedDirection
-        ? applyCellConstraints(buildConeCells(user, template.size, resolvedDirection), directionOriginCells(user, resolvedDirection), constraints)
-        : []
+      if (!resolvedDirection) return []
+      const origins = directionOriginCells(user, resolvedDirection)
+      return applyCellConstraints(
+        filterCellsWithinOriginDistance(buildConeCells(user, template.size, resolvedDirection), origins, template.size),
+        origins,
+        constraints,
+      )
     }
     case 'line': {
       const resolvedDirection = directionDefinition(direction)
@@ -559,7 +634,11 @@ export const buildMoveAutomationAreaTemplateCells = ({
         : []
     }
     case 'ranged-blast': return center
-      ? applyCellConstraints(buildRangedBlastCells(center, template.size), [center], constraints)
+      ? applyCellConstraints(
+          filterCellsWithinOriginDistance(buildRangedBlastCells(center, template.size), [center], rangedBlastDistanceRadius(template.size)),
+          [center],
+          constraints,
+        )
       : []
   }
 }
