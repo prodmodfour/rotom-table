@@ -92,7 +92,7 @@ describe('map token move menu options', () => {
     })).toMatchObject({
       tracking: 'map',
       frequencyKind: 'eot',
-      label: 'EOT R4',
+      label: 'EOT Round 4',
       available: false,
       nextAvailableRound: 4,
     })

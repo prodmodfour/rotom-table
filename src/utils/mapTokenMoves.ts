@@ -159,7 +159,7 @@ export const buildTokenMoveUsageState = (
     return {
       tracking: 'map',
       frequencyKind: 'eot',
-      label: state.available ? 'EOT ready' : `EOT R${state.nextAvailableRound ?? '?'}`,
+      label: state.available ? 'EOT ready' : `EOT Round ${state.nextAvailableRound ?? '?'}`,
       title: state.available
         ? `${moveName}: EOT is available.`
         : `${moveName}: EOT is unavailable until round ${state.nextAvailableRound ?? '?'}.`,
