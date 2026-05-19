@@ -47,6 +47,8 @@ export type MoveAutomationAreaDirection =
   | 'south-west'
   | 'west'
   | 'north-west'
+  | 'up'
+  | 'down'
 
 export interface MoveAutomationAreaDirectionOption {
   direction: MoveAutomationAreaDirection

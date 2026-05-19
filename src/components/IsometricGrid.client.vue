@@ -527,6 +527,21 @@ const pickPokemonId = (event: MouseEvent | PointerEvent) =>
 
 const moveTargetingCandidateIdSet = () => new Set(props.moveAutomationTargeting?.candidateIds ?? [])
 
+const areaDirectionButtonLabel = (direction: MoveAutomationAreaDirection): string => {
+  switch (direction) {
+    case 'north': return 'N'
+    case 'north-east': return 'NE'
+    case 'east': return 'E'
+    case 'south-east': return 'SE'
+    case 'south': return 'S'
+    case 'south-west': return 'SW'
+    case 'west': return 'W'
+    case 'north-west': return 'NW'
+    case 'up': return 'Up'
+    case 'down': return 'Down'
+  }
+}
+
 const worldPointToScreen = (point: THREE.Vector3): { x: number; y: number } | null => {
   if (!camera || !renderer) return null
   const bounds = renderer.domElement.getBoundingClientRect()
@@ -1025,7 +1040,7 @@ useIsometricSceneWatchers({
           <span>
             Confirm {{ props.moveAutomationTargeting.rangeLabel }}: {{ props.moveAutomationTargeting.affectedIds?.length ?? 0 }} affected.
             <template v-if="props.moveAutomationTargeting.areaDirectionOptions?.length">
-              Move the cursor around the user to rotate; click to use the move.
+              Move the cursor around the user to rotate, or use a direction button; click to use the move.
             </template>
             <template v-else>
               Click the battlefield to use the move.
@@ -1040,6 +1055,24 @@ useIsometricSceneWatchers({
             No targets in range {{ props.moveAutomationTargeting.rangeLabel }}.
           </span>
         </template>
+      </div>
+      <div
+        v-if="props.moveAutomationTargeting.mode === 'area-confirmation' && props.moveAutomationTargeting.areaDirectionOptions?.length"
+        class="move-targeting-hud__directions"
+        aria-label="Area direction"
+      >
+        <button
+          v-for="option in props.moveAutomationTargeting.areaDirectionOptions"
+          :key="option.direction"
+          class="move-targeting-hud__direction"
+          :class="{ 'is-active': option.direction === props.moveAutomationTargeting.areaDirection }"
+          type="button"
+          :title="option.label"
+          @pointerdown.stop
+          @click.stop="emit('select-move-area-direction', option.direction)"
+        >
+          {{ areaDirectionButtonLabel(option.direction) }}
+        </button>
       </div>
       <button
         class="move-targeting-hud__cancel"
@@ -1138,7 +1171,7 @@ useIsometricSceneWatchers({
   display: flex;
   align-items: center;
   gap: 0.85rem;
-  max-width: min(92vw, 520px);
+  max-width: min(96vw, 760px);
   padding: 0.72rem 0.86rem;
   border: 1px solid color-mix(in srgb, var(--accent) 62%, var(--rule-strong));
   border-radius: 999px;
@@ -1163,6 +1196,17 @@ useIsometricSceneWatchers({
   font-size: 0.92rem;
 }
 
+.move-targeting-hud__directions {
+  display: flex;
+  flex: 0 1 auto;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.25rem;
+  max-width: 18rem;
+  pointer-events: auto;
+}
+
+.move-targeting-hud__direction,
 .move-targeting-hud__cancel {
   flex: 0 0 auto;
   border: 1px solid var(--rule-strong);
@@ -1171,15 +1215,31 @@ useIsometricSceneWatchers({
   color: var(--ink);
   font: inherit;
   font-weight: 700;
-  padding: 0.35rem 0.65rem;
   cursor: pointer;
   pointer-events: auto;
 }
 
+.move-targeting-hud__direction {
+  min-width: 2.3rem;
+  padding: 0.28rem 0.42rem;
+  font-size: 0.74rem;
+}
+
+.move-targeting-hud__cancel {
+  padding: 0.35rem 0.65rem;
+}
+
+.move-targeting-hud__direction:hover,
+.move-targeting-hud__direction:focus-visible,
+.move-targeting-hud__direction.is-active,
 .move-targeting-hud__cancel:hover,
 .move-targeting-hud__cancel:focus-visible {
   border-color: var(--accent);
   color: var(--accent);
+}
+
+.move-targeting-hud__direction.is-active {
+  background: color-mix(in srgb, var(--accent) 14%, var(--paper-accent));
 }
 
 .move-targeting-click-layer {

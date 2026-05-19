@@ -763,11 +763,13 @@ describe('useMoveAutomationPanel', () => {
   it('opens Leer as a cone AoE confirmation and lets the user select direction', async () => {
     const map = ref({
       ...mapFixture(),
-      dimensions: { x: 8, y: 2, z: 8 },
+      dimensions: { x: 8, y: 4, z: 8 },
       placements: [
-        { id: 'user-token', sheetKind: 'pokemon' as const, sheetSlug: 'bolt', position: { x: 3, y: 0, z: 3 } },
-        { id: 'target-token', sheetKind: 'pokemon' as const, sheetSlug: 'target', position: { x: 4, y: 0, z: 4 } },
-        { id: 'nw-token', sheetKind: 'pokemon' as const, sheetSlug: 'nw', position: { x: 2, y: 0, z: 2 } },
+        { id: 'user-token', sheetKind: 'pokemon' as const, sheetSlug: 'bolt', position: { x: 3, y: 1, z: 3 } },
+        { id: 'target-token', sheetKind: 'pokemon' as const, sheetSlug: 'target', position: { x: 4, y: 1, z: 4 } },
+        { id: 'nw-token', sheetKind: 'pokemon' as const, sheetSlug: 'nw', position: { x: 2, y: 1, z: 2 } },
+        { id: 'up-token', sheetKind: 'pokemon' as const, sheetSlug: 'up', position: { x: 3, y: 2, z: 3 } },
+        { id: 'down-token', sheetKind: 'pokemon' as const, sheetSlug: 'down', position: { x: 3, y: 0, z: 3 } },
       ],
     })
     const pokemonSheet = {
@@ -780,9 +782,11 @@ describe('useMoveAutomationPanel', () => {
     const panel = useMoveAutomationPanel({
       map,
       spawnedPokemon: computed(() => [
-        spawned({ id: 'user-token', sheetSlug: 'bolt', position: { x: 3, y: 0, z: 3 } }),
-        spawned({ id: 'target-token', species: 'Target', sheetSlug: 'target', position: { x: 4, y: 0, z: 4 } }),
-        spawned({ id: 'nw-token', species: 'Northwest', sheetSlug: 'nw', position: { x: 2, y: 0, z: 2 } }),
+        spawned({ id: 'user-token', sheetSlug: 'bolt', position: { x: 3, y: 1, z: 3 } }),
+        spawned({ id: 'target-token', species: 'Target', sheetSlug: 'target', position: { x: 4, y: 1, z: 4 } }),
+        spawned({ id: 'nw-token', species: 'Northwest', sheetSlug: 'nw', position: { x: 2, y: 1, z: 2 } }),
+        spawned({ id: 'up-token', species: 'Up', sheetSlug: 'up', position: { x: 3, y: 2, z: 3 } }),
+        spawned({ id: 'down-token', species: 'Down', sheetSlug: 'down', position: { x: 3, y: 0, z: 3 } }),
       ]),
       pokemonBySlug: ref(new Map([[pokemonSheet.slug, pokemonSheet]])),
       trainerBySlug: ref(new Map<string, TrainerSheet>()),
@@ -804,7 +808,23 @@ describe('useMoveAutomationPanel', () => {
       candidateIds: ['target-token'],
       areaDirection: 'south-east',
     })
-    expect(panel.moveAutomationTargeting.value?.areaDirectionOptions).toHaveLength(8)
+    expect(panel.moveAutomationTargeting.value?.areaDirectionOptions).toHaveLength(10)
+
+    panel.selectMoveAutomationAreaDirection('up')
+
+    expect(panel.moveAutomationTargeting.value).toMatchObject({
+      rangeLabel: 'Cone 2 up',
+      candidateIds: ['up-token'],
+      areaDirection: 'up',
+    })
+
+    panel.selectMoveAutomationAreaDirection('down')
+
+    expect(panel.moveAutomationTargeting.value).toMatchObject({
+      rangeLabel: 'Cone 2 down',
+      candidateIds: ['down-token'],
+      areaDirection: 'down',
+    })
 
     panel.selectMoveAutomationAreaDirection('north-west')
 

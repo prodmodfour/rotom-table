@@ -78,7 +78,7 @@ const TOKEN_FACING_BY_SIGNS: Record<`${-1 | 1},${-1 | 1}`, TokenFacingDirection>
   '1,-1': 'north-east',
 }
 
-const AREA_DIRECTION_DELTAS: Record<MoveAutomationAreaDirection, TokenFacingDelta> = {
+const AREA_DIRECTION_DELTAS: Partial<Record<MoveAutomationAreaDirection, TokenFacingDelta>> = {
   north: { dx: 0, dz: -1 },
   'north-east': { dx: 1, dz: -1 },
   east: { dx: 1, dz: 0 },
@@ -119,7 +119,10 @@ export const tokenFacingTowardPoint = (
 export const tokenFacingFromAreaDirection = (
   direction: MoveAutomationAreaDirection,
   currentFacing: TokenFacingDirection = DEFAULT_TOKEN_FACING_DIRECTION,
-): TokenFacingDirection | null => tokenFacingFromDelta(AREA_DIRECTION_DELTAS[direction], currentFacing)
+): TokenFacingDirection | null => {
+  const delta = AREA_DIRECTION_DELTAS[direction]
+  return delta ? tokenFacingFromDelta(delta, currentFacing) : null
+}
 
 export const setTokenFacingOnPlacement = (
   placement: MutableTokenFacingPlacement,

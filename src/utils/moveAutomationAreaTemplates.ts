@@ -12,6 +12,7 @@ interface DirectionDefinition {
   id: MoveAutomationAreaDirection
   label: string
   dx: -1 | 0 | 1
+  dy: -1 | 0 | 1
   dz: -1 | 0 | 1
 }
 
@@ -59,14 +60,16 @@ export interface BuildMoveAutomationAreaTemplatePlacementsInput extends AreaTemp
 }
 
 const AREA_DIRECTIONS: readonly DirectionDefinition[] = [
-  { id: 'north', label: 'north', dx: 0, dz: -1 },
-  { id: 'north-east', label: 'north-east', dx: 1, dz: -1 },
-  { id: 'east', label: 'east', dx: 1, dz: 0 },
-  { id: 'south-east', label: 'south-east', dx: 1, dz: 1 },
-  { id: 'south', label: 'south', dx: 0, dz: 1 },
-  { id: 'south-west', label: 'south-west', dx: -1, dz: 1 },
-  { id: 'west', label: 'west', dx: -1, dz: 0 },
-  { id: 'north-west', label: 'north-west', dx: -1, dz: -1 },
+  { id: 'north', label: 'north', dx: 0, dy: 0, dz: -1 },
+  { id: 'north-east', label: 'north-east', dx: 1, dy: 0, dz: -1 },
+  { id: 'east', label: 'east', dx: 1, dy: 0, dz: 0 },
+  { id: 'south-east', label: 'south-east', dx: 1, dy: 0, dz: 1 },
+  { id: 'south', label: 'south', dx: 0, dy: 0, dz: 1 },
+  { id: 'south-west', label: 'south-west', dx: -1, dy: 0, dz: 1 },
+  { id: 'west', label: 'west', dx: -1, dy: 0, dz: 0 },
+  { id: 'north-west', label: 'north-west', dx: -1, dy: 0, dz: -1 },
+  { id: 'up', label: 'up', dx: 0, dy: 1, dz: 0 },
+  { id: 'down', label: 'down', dx: 0, dy: -1, dz: 0 },
 ]
 
 export const MOVE_AUTOMATION_AREA_DIRECTIONS: readonly MoveAutomationAreaDirection[] = AREA_DIRECTIONS.map((item) => item.id)
@@ -240,7 +243,7 @@ const originCellForDirection = (user: AreaTemplateFootprint, direction: Directio
   const center = footprintCenterCell(user)
   return {
     x: direction.dx > 0 ? user.position.x + user.base - 1 : direction.dx < 0 ? user.position.x : center.x,
-    y: center.y,
+    y: direction.dy > 0 ? footprintTopY(user) : direction.dy < 0 ? user.position.y : center.y,
     z: direction.dz > 0 ? user.position.z + user.base - 1 : direction.dz < 0 ? user.position.z : center.z,
   }
 }
@@ -251,7 +254,11 @@ const directionOriginCells = (user: AreaTemplateFootprint, direction: DirectionD
     : direction.dx < 0
       ? [user.position.x]
       : rangeInclusive(user.position.x, user.position.x + user.base - 1)
-  const yValues = rangeInclusive(user.position.y, footprintTopY(user))
+  const yValues = direction.dy > 0
+    ? [footprintTopY(user)]
+    : direction.dy < 0
+      ? [user.position.y]
+      : rangeInclusive(user.position.y, footprintTopY(user))
   const zValues = direction.dz > 0
     ? [user.position.z + user.base - 1]
     : direction.dz < 0
@@ -323,7 +330,11 @@ const closeBlastStart = (user: AreaTemplateFootprint, size: number, direction: D
       : direction.dx < 0
         ? user.position.x - size
         : user.position.x + neutralOffset,
-    y: verticalStartForSize(user, size),
+    y: direction.dy > 0
+      ? footprintTopY(user) + 1
+      : direction.dy < 0
+        ? user.position.y - size
+        : verticalStartForSize(user, size),
     z: direction.dz > 0
       ? user.position.z + user.base
       : direction.dz < 0
@@ -336,11 +347,19 @@ const buildLineCells = (user: AreaTemplateFootprint, length: number, direction: 
   const origin = originCellForDirection(user, direction)
   const cells: GridAnchor[] = []
   for (let distance = 1; distance <= length; distance += 1) {
-    for (let y = user.position.y; y <= footprintTopY(user); y += 1) {
+    if (direction.dy === 0) {
+      for (let y = user.position.y; y <= footprintTopY(user); y += 1) {
+        cells.push({
+          x: origin.x + direction.dx * distance,
+          y,
+          z: origin.z + direction.dz * distance,
+        })
+      }
+    } else {
       cells.push({
-        x: origin.x + direction.dx * distance,
-        y,
-        z: origin.z + direction.dz * distance,
+        x: origin.x,
+        y: origin.y + direction.dy * distance,
+        z: origin.z,
       })
     }
   }
@@ -353,7 +372,25 @@ const coneLateralVector = (direction: DirectionDefinition): { x: -1 | 0 | 1; z: 
   return { x: -direction.dz as -1 | 1, z: direction.dx as -1 | 1 }
 }
 
-const buildConeCells = (user: AreaTemplateFootprint, length: number, direction: DirectionDefinition): GridAnchor[] => {
+const buildVerticalConeCells = (user: AreaTemplateFootprint, length: number, direction: DirectionDefinition): GridAnchor[] => {
+  const origin = originCellForDirection(user, direction)
+  const cells: GridAnchor[] = []
+  for (let distance = 1; distance <= length; distance += 1) {
+    const lateralRadius = distance === 1 ? 0 : 1
+    for (let xOffset = -lateralRadius; xOffset <= lateralRadius; xOffset += 1) {
+      for (let zOffset = -lateralRadius; zOffset <= lateralRadius; zOffset += 1) {
+        cells.push({
+          x: origin.x + xOffset,
+          y: origin.y + direction.dy * distance,
+          z: origin.z + zOffset,
+        })
+      }
+    }
+  }
+  return uniqueCells(cells)
+}
+
+const buildHorizontalConeCells = (user: AreaTemplateFootprint, length: number, direction: DirectionDefinition): GridAnchor[] => {
   const origin = originCellForDirection(user, direction)
   const lateral = coneLateralVector(direction)
   const cells: GridAnchor[] = []
@@ -377,6 +414,11 @@ const buildConeCells = (user: AreaTemplateFootprint, length: number, direction: 
   }
   return uniqueCells(cells)
 }
+
+const buildConeCells = (user: AreaTemplateFootprint, length: number, direction: DirectionDefinition): GridAnchor[] =>
+  direction.dy === 0
+    ? buildHorizontalConeCells(user, length, direction)
+    : buildVerticalConeCells(user, length, direction)
 
 const buildRangedBlastCells = (center: GridAnchor, size: number): GridAnchor[] => {
   const offset = Math.floor(size / 2)

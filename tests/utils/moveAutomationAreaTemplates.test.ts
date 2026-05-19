@@ -95,6 +95,21 @@ describe('move automation area templates', () => {
     expect(buildMoveAutomationAreaTemplateCells({ template: template('line', 3), user, direction: 'east', bounds })).toEqual(cells([
       [6, 1, 5], [7, 1, 5], [8, 1, 5],
     ]))
+    expect(buildMoveAutomationAreaTemplateCells({ template: template('line', 3), user, direction: 'up', bounds })).toEqual(cells([
+      [5, 2, 5], [5, 3, 5],
+    ]))
+    expect(buildMoveAutomationAreaTemplateCells({ template: template('line', 3), user, direction: 'down', bounds })).toEqual(cells([
+      [5, 0, 5],
+    ]))
+
+    const coneUp = buildMoveAutomationAreaTemplateCells({ template: template('cone', 2), user, direction: 'up', bounds })
+    expect(coneUp).toHaveLength(10)
+    expect(coneUp).toContainEqual({ x: 5, y: 2, z: 5 })
+    expect(sortedCells(coneUp.filter((cell) => cell.y === 3))).toEqual(sortedCells(cells([
+      [4, 3, 4], [4, 3, 5], [4, 3, 6],
+      [5, 3, 4], [5, 3, 5], [5, 3, 6],
+      [6, 3, 4], [6, 3, 5], [6, 3, 6],
+    ])))
 
     const closeBlast = buildMoveAutomationAreaTemplateCells({ template: template('close-blast', 2), user, direction: 'north', bounds })
     expect(closeBlast).toHaveLength(8)
@@ -102,6 +117,15 @@ describe('move automation area templates', () => {
       [4, 1, 3], [4, 1, 4], [5, 1, 3], [5, 1, 4],
     ])))
     expect(closeBlast).toContainEqual({ x: 4, y: 0, z: 3 })
+
+    const closeBlastUp = buildMoveAutomationAreaTemplateCells({ template: template('close-blast', 2), user, direction: 'up', bounds })
+    expect(closeBlastUp).toHaveLength(8)
+    expect(sortedCells(closeBlastUp.filter((cell) => cell.y === 2))).toEqual(sortedCells(cells([
+      [4, 2, 4], [4, 2, 5], [5, 2, 4], [5, 2, 5],
+    ])))
+    expect(sortedCells(closeBlastUp.filter((cell) => cell.y === 3))).toEqual(sortedCells(cells([
+      [4, 3, 4], [4, 3, 5], [5, 3, 4], [5, 3, 5],
+    ])))
 
     const rangedBlast = buildMoveAutomationAreaTemplateCells({ template: template('ranged-blast', 3, 8), user, center: { x: 5, y: 1, z: 5 }, bounds })
     expect(rangedBlast).toHaveLength(27)
