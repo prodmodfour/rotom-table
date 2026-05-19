@@ -1,4 +1,7 @@
-import type { MoveAutomationCombatStageUpdate } from '~/types/moveAutomation'
+import type {
+  MoveAutomationCombatStageUpdate,
+  MoveAutomationConditionUpdate,
+} from '~/types/moveAutomation'
 
 export type AbilityAutomationCategory = 'sheet' | 'map' | 'passive'
 
@@ -23,5 +26,6 @@ export interface AbilityAutomationTransaction {
   abilityName: string
   category: AbilityAutomationCategory
   combatStageUpdates: MoveAutomationCombatStageUpdate[]
+  conditionUpdates: MoveAutomationConditionUpdate[]
   logLines: string[]
 }

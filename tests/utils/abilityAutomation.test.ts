@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import {
   CUTE_CHARM_ABILITY_NAME,
+  HEALER_ABILITY_NAME,
   INTIMIDATE_ABILITY_NAME,
+  LEAF_GUARD_ABILITY_NAME,
   MOXIE_ABILITY_NAME,
   SHIELD_DUST_ABILITY_NAME,
   SWEET_VEIL_ABILITY_NAME,
@@ -56,7 +58,9 @@ describe('ability automation helpers', () => {
     expect(getAbilityAutomationCategory('Sand Veil')).toBe('sheet')
     expect(getAbilityAutomationCategory('Snow Cloak')).toBe('sheet')
     expect(getAbilityAutomationCategory(CUTE_CHARM_ABILITY_NAME)).toBe('passive')
+    expect(getAbilityAutomationCategory(HEALER_ABILITY_NAME)).toBe('map')
     expect(getAbilityAutomationCategory(INTIMIDATE_ABILITY_NAME)).toBe('map')
+    expect(getAbilityAutomationCategory(LEAF_GUARD_ABILITY_NAME)).toBe('map')
     expect(getAbilityAutomationCategory(MOXIE_ABILITY_NAME)).toBe('map')
     expect(getAbilityAutomationCategory('Quick Feet')).toBe('passive')
     expect(getAbilityAutomationCategory(NO_GUARD_ABILITY_NAME)).toBe('passive')
@@ -81,6 +85,54 @@ describe('ability automation helpers', () => {
       abilityName: INTIMIDATE_ABILITY_NAME,
       category: 'map',
       combatStageUpdates: [{ id: 'target', stages: { atk: -6 } }],
+    })
+  })
+
+  it('resolves Healer by curing all persistent and volatile status afflictions on a target', () => {
+    const user = token('user')
+    const target = token('target', { conditions: ['Burned', 'Confused', 'Disabled: Ember', 'Vulnerable'] })
+
+    const transaction = resolveMapAbilityAutomationTransaction({
+      abilityName: HEALER_ABILITY_NAME,
+      user,
+      target,
+    })
+
+    expect(transaction).toMatchObject({
+      userId: 'user',
+      abilityName: HEALER_ABILITY_NAME,
+      category: 'map',
+      combatStageUpdates: [],
+      conditionUpdates: [{ id: 'target', conditions: ['Vulnerable'] }],
+      logLines: [
+        'user used Healer on target.',
+        'target was cured of Burned, Confused, and Disabled: Ember.',
+      ],
+    })
+  })
+
+  it('resolves Leaf Guard by curing one user status affliction and noting Sunny Weather', () => {
+    const user = token('user', { conditions: ['Burned', 'Confused', 'Vulnerable'] })
+
+    expect(mapAbilityTargetCandidates(user, [user, token('target')], LEAF_GUARD_ABILITY_NAME)).toEqual([])
+
+    const transaction = resolveMapAbilityAutomationTransaction({
+      abilityName: LEAF_GUARD_ABILITY_NAME,
+      user,
+      fieldEffects: { weather: [{ kind: 'sunny' }] },
+    })
+
+    expect(transaction).toMatchObject({
+      userId: 'user',
+      abilityName: LEAF_GUARD_ABILITY_NAME,
+      category: 'map',
+      combatStageUpdates: [],
+      conditionUpdates: [{ id: 'user', conditions: ['Confused', 'Vulnerable'] }],
+      logLines: [
+        'user used Leaf Guard.',
+        'user was cured of Burned.',
+        "Leaf Guard's frequency is ignored during Sunny Weather.",
+      ],
     })
   })
 

@@ -272,6 +272,7 @@ const {
   trainerBySlug,
   canControlPlacement,
   modifyCombatStages,
+  modifyConditions,
   modifyAbilityActivation,
 })
 

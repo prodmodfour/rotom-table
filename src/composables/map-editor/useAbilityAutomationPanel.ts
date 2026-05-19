@@ -19,6 +19,7 @@ import type {
 } from '~/types/abilityAutomation'
 import type {
   MoveAutomationCombatStageUpdate,
+  MoveAutomationConditionUpdate,
   MoveAutomationTargetingOverlayState,
 } from '~/types/moveAutomation'
 import type { SpawnedPokemon } from '~/types/pokemon'
@@ -45,6 +46,7 @@ export interface UseAbilityAutomationPanelOptions {
   trainerBySlug: SheetMapRef<TrainerSheet>
   canControlPlacement: (id: string) => boolean
   modifyCombatStages: SheetUpdateHandler<MoveAutomationCombatStageUpdate>
+  modifyConditions: SheetUpdateHandler<MoveAutomationConditionUpdate>
   modifyAbilityActivation: SheetUpdateHandler<AbilitySheetActivationUpdate>
   now?: () => number
   maxLogEntries?: number
@@ -83,6 +85,7 @@ export const useAbilityAutomationPanel = ({
   trainerBySlug,
   canControlPlacement,
   modifyCombatStages,
+  modifyConditions,
   modifyAbilityActivation,
   now,
   maxLogEntries = DEFAULT_MAX_LOG_ENTRIES,
@@ -152,6 +155,9 @@ export const useAbilityAutomationPanel = ({
     for (const update of transaction.combatStageUpdates) {
       await modifyCombatStages(update, { allowAnyTarget: true })
     }
+    for (const update of transaction.conditionUpdates) {
+      await modifyConditions(update, { allowAnyTarget: true })
+    }
     appendAbilityAutomationLog(transaction)
   }
 
@@ -170,6 +176,7 @@ export const useAbilityAutomationPanel = ({
       abilityName: option.name,
       category: 'sheet',
       combatStageUpdates: [],
+      conditionUpdates: [],
       logLines: [`${user.species} activated ${option.name}.`],
     })
   }
@@ -181,6 +188,7 @@ export const useAbilityAutomationPanel = ({
     const transaction = resolveMapAbilityAutomationTransaction({
       abilityName: option.name,
       user,
+      fieldEffects: map.value?.fieldEffects,
     })
     if (transaction) await applyAbilityAutomationTransaction(transaction)
   }
@@ -242,6 +250,7 @@ export const useAbilityAutomationPanel = ({
       abilityName: request.abilityName,
       user,
       target,
+      fieldEffects: map.value?.fieldEffects,
     })
     activeAbilityTargeting.value = null
     if (!transaction) return

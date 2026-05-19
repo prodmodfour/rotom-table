@@ -1,13 +1,22 @@
 import { normalizeCombatStages } from '~/utils/combatStages'
+import {
+  conditionBaseName,
+  conditionByName,
+  conditionDisplayName,
+  normalizeConditionNames,
+} from '~/utils/statusConditions'
 import { isSheetActivatableAbility } from '~/utils/sheetAbilityActivation'
 import { resolveCanonicalSheetAbilityName, type SheetAbilityNameSource } from '~/utils/sheetAbilities'
 import { QUICK_FEET_ABILITY_NAME } from '~/utils/sheetConditionEffects'
 import { NO_GUARD_ABILITY_NAME } from '~/utils/sheetAbilityCombatModifiers'
 import type { AbilityAutomationCategory, AbilityAutomationTransaction } from '~/types/abilityAutomation'
+import type { MapFieldEffects } from '~/types/map'
 import type { SpawnedPokemon } from '~/types/pokemon'
 
 export const CUTE_CHARM_ABILITY_NAME = 'Cute Charm'
+export const HEALER_ABILITY_NAME = 'Healer'
 export const INTIMIDATE_ABILITY_NAME = 'Intimidate'
+export const LEAF_GUARD_ABILITY_NAME = 'Leaf Guard'
 export const MOXIE_ABILITY_NAME = 'Moxie'
 export const SHIELD_DUST_ABILITY_NAME = 'Shield Dust'
 export const SWEET_VEIL_ABILITY_NAME = 'Sweet Veil'
@@ -44,6 +53,17 @@ const MAP_WIDE_RANGE_METERS = Number.POSITIVE_INFINITY
 
 const MAP_ABILITY_AUTOMATIONS = new Map<string, MapAbilityAutomationDefinition>([
   [
+    HEALER_ABILITY_NAME,
+    {
+      name: HEALER_ABILITY_NAME,
+      category: 'map',
+      label: 'Map',
+      targetMode: 'target',
+      rangeLabel: 'the map',
+      rangeMeters: MAP_WIDE_RANGE_METERS,
+    },
+  ],
+  [
     INTIMIDATE_ABILITY_NAME,
     {
       name: INTIMIDATE_ABILITY_NAME,
@@ -52,6 +72,17 @@ const MAP_ABILITY_AUTOMATIONS = new Map<string, MapAbilityAutomationDefinition>(
       targetMode: 'target',
       rangeLabel: 'the map',
       rangeMeters: MAP_WIDE_RANGE_METERS,
+    },
+  ],
+  [
+    LEAF_GUARD_ABILITY_NAME,
+    {
+      name: LEAF_GUARD_ABILITY_NAME,
+      category: 'map',
+      label: 'Self',
+      targetMode: 'self',
+      rangeLabel: 'self',
+      rangeMeters: 0,
     },
   ],
   [
@@ -160,13 +191,88 @@ export const mapAbilityTargetCandidates = (
   return tokens.filter((token) => token.id !== user.id)
 }
 
+const STATUS_AFFLICTION_CATEGORIES = new Set(['Persistent Affliction', 'Volatile Affliction'])
+
+interface StatusAfflictionCureResult {
+  nextConditions: string[]
+  curedConditions: string[]
+}
+
+const isStatusAfflictionCondition = (condition: string): boolean => {
+  const canonicalName = conditionBaseName(condition) ?? condition
+  const category = conditionByName.get(canonicalName)?.category
+  return category ? STATUS_AFFLICTION_CATEGORIES.has(category) : false
+}
+
+const cureAllStatusAfflictions = (
+  conditions: readonly string[] | null | undefined,
+): StatusAfflictionCureResult => {
+  const previousConditions = normalizeConditionNames(conditions)
+  const curedConditions = previousConditions.filter(isStatusAfflictionCondition)
+  const nextConditions = previousConditions.filter((condition) => !isStatusAfflictionCondition(condition))
+  return { nextConditions, curedConditions }
+}
+
+const cureOneStatusAffliction = (
+  conditions: readonly string[] | null | undefined,
+): StatusAfflictionCureResult => {
+  const previousConditions = normalizeConditionNames(conditions)
+  const curedIndex = previousConditions.findIndex(isStatusAfflictionCondition)
+  if (curedIndex === -1) return { nextConditions: previousConditions, curedConditions: [] }
+
+  return {
+    nextConditions: previousConditions.filter((_, index) => index !== curedIndex),
+    curedConditions: [previousConditions[curedIndex]],
+  }
+}
+
+const formatConditionList = (conditions: readonly string[]): string => {
+  const labels = conditions.map(conditionDisplayName).filter(Boolean)
+  if (labels.length <= 1) return labels[0] ?? ''
+  if (labels.length === 2) return `${labels[0]} and ${labels[1]}`
+  return `${labels.slice(0, -1).join(', ')}, and ${labels[labels.length - 1]}`
+}
+
+const conditionUpdatesForCure = (
+  token: SpawnedPokemon,
+  cure: StatusAfflictionCureResult,
+): AbilityAutomationTransaction['conditionUpdates'] => cure.curedConditions.length
+  ? [{ id: token.id, conditions: cure.nextConditions }]
+  : []
+
+const statusCureLogLine = (targetName: string, cure: StatusAfflictionCureResult): string => {
+  if (!cure.curedConditions.length) return `${targetName} has no status afflictions to cure.`
+  return `${targetName} was cured of ${formatConditionList(cure.curedConditions)}.`
+}
+
+const hasSunnyWeather = (fieldEffects: MapFieldEffects | null | undefined): boolean =>
+  (fieldEffects?.weather ?? []).some((weather) => weather.kind === 'sunny')
+
 export const resolveMapAbilityAutomationTransaction = (options: {
   abilityName: string
   user: SpawnedPokemon
   target?: SpawnedPokemon | null
+  fieldEffects?: MapFieldEffects | null
 }): AbilityAutomationTransaction | null => {
   const definition = getMapAbilityAutomation(options.abilityName)
   if (!definition) return null
+
+  if (definition.name === HEALER_ABILITY_NAME) {
+    if (!options.target) return null
+    const cure = cureAllStatusAfflictions(options.target.conditions)
+    return {
+      userId: options.user.id,
+      userName: options.user.species,
+      abilityName: definition.name,
+      category: definition.category,
+      combatStageUpdates: [],
+      conditionUpdates: conditionUpdatesForCure(options.target, cure),
+      logLines: [
+        `${options.user.species} used ${definition.name} on ${options.target.species}.`,
+        statusCureLogLine(options.target.species, cure),
+      ],
+    }
+  }
 
   if (definition.name === INTIMIDATE_ABILITY_NAME) {
     if (!options.target) return null
@@ -180,10 +286,31 @@ export const resolveMapAbilityAutomationTransaction = (options: {
       abilityName: definition.name,
       category: definition.category,
       combatStageUpdates: [{ id: options.target.id, stages: nextStages }],
+      conditionUpdates: [],
       logLines: [
         `${options.user.species} used ${definition.name} on ${options.target.species}.`,
         `${options.target.species}'s Attack fell by 1 Combat Stage.`,
       ],
+    }
+  }
+
+  if (definition.name === LEAF_GUARD_ABILITY_NAME) {
+    const cure = cureOneStatusAffliction(options.user.conditions)
+    const sunnyLine = hasSunnyWeather(options.fieldEffects)
+      ? `${definition.name}'s frequency is ignored during Sunny Weather.`
+      : null
+    return {
+      userId: options.user.id,
+      userName: options.user.species,
+      abilityName: definition.name,
+      category: definition.category,
+      combatStageUpdates: [],
+      conditionUpdates: conditionUpdatesForCure(options.user, cure),
+      logLines: [
+        `${options.user.species} used ${definition.name}.`,
+        statusCureLogLine(options.user.species, cure),
+        sunnyLine,
+      ].filter((line): line is string => Boolean(line)),
     }
   }
 
@@ -205,6 +332,7 @@ export const resolveMapAbilityAutomationTransaction = (options: {
       abilityName: definition.name,
       category: definition.category,
       combatStageUpdates: [{ id: options.user.id, stages: nextStages }],
+      conditionUpdates: [],
       logLines: [triggerLine, stageLine],
     }
   }

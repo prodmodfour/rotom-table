@@ -70,6 +70,7 @@ const transaction = (): AbilityAutomationTransaction => ({
   abilityName: 'Intimidate',
   category: 'map',
   combatStageUpdates: [{ id: 'target-token', stages: stages({ atk: -1 }) }],
+  conditionUpdates: [],
   logLines: ['Used Intimidate.'],
 })
 
@@ -91,6 +92,7 @@ describe('useAbilityAutomationPanel', () => {
       trainerBySlug: ref(new Map<string, TrainerSheet>()),
       canControlPlacement: (id) => id === 'user-token',
       modifyCombatStages: (update) => { calls.push(`stages:${update.id}:${update.stages.atk}`) },
+      modifyConditions: () => undefined,
       modifyAbilityActivation: (update) => { calls.push(`ability:${update.id}:${update.abilityName}:${update.activated}`) },
       now: () => 123,
     })
@@ -125,6 +127,7 @@ describe('useAbilityAutomationPanel', () => {
       trainerBySlug: ref(new Map<string, TrainerSheet>()),
       canControlPlacement: (id) => id === 'user-token',
       modifyCombatStages: (update) => { calls.push(`stages:${update.id}:${update.stages.spd}`) },
+      modifyConditions: () => undefined,
       modifyAbilityActivation: (update) => { calls.push(`ability:${update.id}:${update.abilityName}:${update.activated}`) },
       now: () => 111,
     })
@@ -159,6 +162,7 @@ describe('useAbilityAutomationPanel', () => {
       trainerBySlug: ref(new Map<string, TrainerSheet>()),
       canControlPlacement: (id) => id === 'user-token',
       modifyCombatStages: (update) => { calls.push(`stages:${update.id}:${update.stages.atk}`) },
+      modifyConditions: () => undefined,
       modifyAbilityActivation: () => undefined,
       now: () => 321,
     })
@@ -192,6 +196,7 @@ describe('useAbilityAutomationPanel', () => {
       trainerBySlug: ref(new Map<string, TrainerSheet>()),
       canControlPlacement: (id) => id === 'user-token',
       modifyCombatStages: (update) => { calls.push(`stages:${update.id}:${update.stages.atk}`) },
+      modifyConditions: () => undefined,
       modifyAbilityActivation: () => undefined,
       now: () => 456,
     })
@@ -209,6 +214,40 @@ describe('useAbilityAutomationPanel', () => {
     expect(panel.abilityAutomationTargeting.value).toBeNull()
     expect(map.value.metadata?.abilityLog).toMatchObject([
       { at: 456, userId: 'user-token', abilityName: 'Intimidate', category: 'map' },
+    ])
+  })
+
+  it('applies target condition updates from map abilities', async () => {
+    const map = ref(mapFixture())
+    const calls: string[] = []
+    const pokemonSheet = {
+      slug: 'bolt',
+      nickname: 'Bolt',
+      species: 'Audino',
+      level: 5,
+      abilities: [{ name: 'Healer' }],
+    } as CharacterSheet
+    const panel = useAbilityAutomationPanel({
+      map,
+      spawnedPokemon: computed(() => [
+        spawned('user-token', { species: 'Audino' }),
+        spawned('target-token', { conditions: ['Burned', 'Confused', 'Vulnerable'] }),
+      ]),
+      pokemonBySlug: ref(new Map([[pokemonSheet.slug, pokemonSheet]])),
+      trainerBySlug: ref(new Map<string, TrainerSheet>()),
+      canControlPlacement: (id) => id === 'user-token',
+      modifyCombatStages: () => undefined,
+      modifyConditions: (update) => { calls.push(`conditions:${update.id}:${update.conditions.join(',')}`) },
+      modifyAbilityActivation: () => undefined,
+      now: () => 789,
+    })
+
+    await panel.openAbilityAutomation({ id: 'user-token', abilityName: 'Healer' })
+    await panel.selectAbilityAutomationTarget('target-token')
+
+    expect(calls).toEqual(['conditions:target-token:Vulnerable'])
+    expect(map.value.metadata?.abilityLog).toMatchObject([
+      { at: 789, userId: 'user-token', abilityName: 'Healer', category: 'map' },
     ])
   })
 
