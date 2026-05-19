@@ -1,11 +1,6 @@
 import * as THREE from 'three'
 import { CSS3DSprite } from 'three/examples/jsm/renderers/CSS3DRenderer.js'
 import type { SpawnedPokemon } from '~/types/pokemon'
-import type { CombatStageMap } from '~/types/combatStages'
-import {
-  COMBAT_STAGE_SHORT_LABELS,
-  normalizeCombatStages,
-} from '~/utils/combatStages'
 import { conditionTagSvg, normalizeConditionNames } from '~/utils/statusConditions'
 import { itemSpriteUrl } from '~/utils/itemSprites'
 import {
@@ -13,8 +8,6 @@ import {
   TOKEN_STATUS_HEAD_GAP_EXTRA,
   TOKEN_STATUS_CSS_WIDTH_PX,
   TOKEN_STATUS_WORLD_WIDTH,
-  activeCombatStageEntries,
-  formatCombatStage,
   formatElevationDelta,
   formatTokenLevel,
   getElevationBadgeOffset,
@@ -125,22 +118,6 @@ const updateTokenStatusLabel = (
   if (levelNode) updateTokenStatusLevel(levelNode, level)
 }
 
-const updateTokenCombatStages = (element: HTMLElement, stages: CombatStageMap) => {
-  const strip = element.querySelector<HTMLElement>('.token-status__cs-strip')
-  if (!strip) return
-
-  const entries = activeCombatStageEntries(stages)
-  strip.replaceChildren()
-  strip.hidden = entries.length === 0
-
-  for (const { key, value } of entries) {
-    const chip = document.createElement('span')
-    chip.className = `token-status__cs-chip ${value > 0 ? 'is-positive' : 'is-negative'}`
-    chip.textContent = `${COMBAT_STAGE_SHORT_LABELS[key]} ${formatCombatStage(value)}`
-    strip.appendChild(chip)
-  }
-}
-
 const updateTokenConditions = (element: HTMLElement, conditions: readonly string[]) => {
   const strip = element.querySelector<HTMLElement>('.token-status__condition-strip')
   if (!strip) return
@@ -225,10 +202,6 @@ export const buildHpBar = (pokemon: SpawnedPokemon) => {
 
   label.append(name, separator, level)
 
-  const combatStages = document.createElement('div')
-  combatStages.className = 'token-status__cs-strip'
-  combatStages.hidden = true
-
   const conditions = document.createElement('div')
   conditions.className = 'token-status__condition-strip'
   conditions.hidden = true
@@ -248,9 +221,8 @@ export const buildHpBar = (pokemon: SpawnedPokemon) => {
   itemStack.hidden = true
 
   hpRow.append(track, itemStack)
-  wrapper.append(turnChevron, combatStages, conditions, label, hpRow)
+  wrapper.append(turnChevron, conditions, label, hpRow)
   updateTokenStatusLabel(wrapper, pokemon.species, pokemon.level)
-  updateTokenCombatStages(wrapper, normalizeCombatStages(pokemon.combatStages))
   updateTokenConditions(wrapper, pokemon.conditions)
   updateTokenItems(wrapper, pokemon.tokenItems)
 
@@ -271,7 +243,6 @@ export const updateHpBar = ({
   level,
   currentHp,
   maxHp,
-  combatStages,
   conditions,
   tokenItems,
   activeTurn,
@@ -284,7 +255,6 @@ export const updateHpBar = ({
   level: number
   currentHp: number
   maxHp: number
-  combatStages: CombatStageMap
   conditions: readonly string[]
   tokenItems: readonly string[]
   activeTurn: boolean
@@ -309,7 +279,6 @@ export const updateHpBar = ({
     track.dataset.hpTier = hpTierForRatio(ratio)
   }
   updateTokenStatusLabel(bar.element, displayName, level)
-  updateTokenCombatStages(bar.element, combatStages)
   updateTokenConditions(bar.element, conditions)
   updateTokenItems(bar.element, tokenItems)
   updateTokenActiveTurn(bar.element, activeTurn)
@@ -319,7 +288,7 @@ export const updateHpBar = ({
   // ``center.y + spriteHeight``. The offset accounts for the scaled DOM
   // height so smaller sprites keep the HUD tucked close instead of floating
   // as a detached nameplate.
-  const overlayHalfHeight = tokenStatusCssHeight(displayName, combatStages, conditions, activeTurn) * bar.scale.y / 2
+  const overlayHalfHeight = tokenStatusCssHeight(displayName, conditions, activeTurn) * bar.scale.y / 2
   const headGap = THREE.MathUtils.clamp(spriteHeight * 0.06, 0.025, 0.08) + TOKEN_STATUS_HEAD_GAP_EXTRA
   bar.position.set(center.x, center.y + spriteHeight + overlayHalfHeight + headGap, center.z)
   bar.visible = true

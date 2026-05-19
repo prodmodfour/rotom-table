@@ -1,9 +1,4 @@
 import type * as THREE from 'three'
-import type { CombatStageMap } from '~/types/combatStages'
-import {
-  COMBAT_STAGE_KEYS,
-  clampCombatStage,
-} from '~/utils/combatStages'
 import { normalizeConditionNames } from '~/utils/statusConditions'
 
 export const ELEVATION_BADGE_PIXELS_PER_METRE = 48
@@ -13,7 +8,6 @@ export const TOKEN_STATUS_WORLD_WIDTH = 1.05
 const TOKEN_STATUS_BASE_CSS_HEIGHT_PX = 18
 const TOKEN_STATUS_LABEL_LINE_CSS_HEIGHT_PX = 11
 const TOKEN_STATUS_TURN_CHEVRON_CSS_HEIGHT_PX = 16
-const TOKEN_STATUS_STAGE_ROW_CSS_HEIGHT_PX = 10
 const TOKEN_STATUS_CONDITION_ROW_CSS_HEIGHT_PX = 15
 
 export const TOKEN_STATUS_HEAD_GAP_EXTRA = 0.3
@@ -60,32 +54,18 @@ export const tokenStatusLabelLineCount = (displayName: string): number => {
   return nameLines > 1 ? nameLines + 1 : 1
 }
 
-export const activeCombatStageEntries = (stages: CombatStageMap) =>
-  COMBAT_STAGE_KEYS
-    .map((key) => ({ key, value: clampCombatStage(stages[key]) }))
-    .filter((entry) => entry.value !== 0)
-
-export const formatCombatStage = (value: unknown): string => {
-  const normalized = clampCombatStage(value)
-  return normalized > 0 ? `+${normalized}` : String(normalized)
-}
-
 export const tokenStatusCssHeight = (
   displayName: string,
-  stages: CombatStageMap,
   conditions: readonly string[],
   activeTurn: boolean,
 ): number => {
-  const stageCount = activeCombatStageEntries(stages).length
   const conditionCount = normalizeConditionNames(conditions).length
   const turnHeight = activeTurn ? TOKEN_STATUS_TURN_CHEVRON_CSS_HEIGHT_PX : 0
-  const stageRows = stageCount === 0 ? 0 : Math.ceil(stageCount / 2)
   const conditionRows = conditionCount === 0 ? 0 : Math.ceil(conditionCount / 2)
   const labelExtraHeight = (tokenStatusLabelLineCount(displayName) - 1) * TOKEN_STATUS_LABEL_LINE_CSS_HEIGHT_PX
   return TOKEN_STATUS_BASE_CSS_HEIGHT_PX
     + labelExtraHeight
     + turnHeight
-    + (stageRows ? 1 + stageRows * TOKEN_STATUS_STAGE_ROW_CSS_HEIGHT_PX : 0)
     + (conditionRows ? 1 + conditionRows * TOKEN_STATUS_CONDITION_ROW_CSS_HEIGHT_PX : 0)
 }
 

@@ -46,6 +46,7 @@ const makeRenderObject = (pokemon: SpawnedPokemon): PokemonRenderObject => {
     spriteState,
     elevationBadge: {} as PokemonRenderObject['elevationBadge'],
     hpBar: {} as PokemonRenderObject['hpBar'],
+    combatStageGlass: {} as PokemonRenderObject['combatStageGlass'],
     volume: new THREE.Mesh(
       new THREE.BoxGeometry(pokemon.base, pokemon.clearance, pokemon.base),
       [new THREE.MeshBasicMaterial()],

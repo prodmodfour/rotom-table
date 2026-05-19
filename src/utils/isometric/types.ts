@@ -1,6 +1,7 @@
 import type * as THREE from 'three'
 import type { CSS3DSprite } from 'three/examples/jsm/renderers/CSS3DRenderer.js'
 import type { CombatStageMap } from '~/types/combatStages'
+import type { TokenCombatStageGlass } from '~/utils/isometric/tokenCombatStageGlass'
 import type { MapHazardKind, MapVoxelV2 } from '~/types/map'
 import type { SpriteAnimation, SpriteCrop } from '~/types/pokemon'
 import type { TokenFacingDirection } from '~/types/tokenFacing'
@@ -30,6 +31,7 @@ export interface PokemonRenderObject {
   spriteState: WorldSpriteState
   elevationBadge: CSS3DSprite
   hpBar: CSS3DSprite
+  combatStageGlass: TokenCombatStageGlass
   /**
    * Volume box wrapping the pokemon's footprint × clearance. Uses a
    * 6-material array so we can paint each face with the theme-aware

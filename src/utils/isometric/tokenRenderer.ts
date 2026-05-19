@@ -3,6 +3,11 @@ import type { LayerVisibility } from '~/types/map'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import { buildVolumeMaterials, paintVolumeMaterials } from '~/utils/isometric/materials'
 import { disposeObject3D } from '~/utils/isometric/resourceDisposal'
+import {
+  buildTokenCombatStageGlass,
+  disposeTokenCombatStageGlass,
+  updateTokenCombatStageGlass,
+} from '~/utils/isometric/tokenCombatStageGlass'
 import { buildElevationBadge, buildHpBar, updateElevationBadge, updateHpBar } from '~/utils/isometric/tokenHud'
 import {
   nextSelectionLiftFactor,
@@ -94,6 +99,7 @@ export const createPokemonRenderObject = (
   const sprite = spriteState.sprite
   const elevationBadge = buildElevationBadge()
   const hpBar = buildHpBar(pokemon)
+  const combatStageGlass = buildTokenCombatStageGlass()
   const shadow = buildContactShadow(pokemon)
   const volumeGeometry = new THREE.BoxGeometry(pokemon.base, pokemon.clearance, pokemon.base)
   // Per-face white/graphite shading sits in the foreground brightness band
@@ -133,6 +139,7 @@ export const createPokemonRenderObject = (
   containers.worldGroup.add(shadow)
   containers.worldGroup.add(volume)
   containers.worldGroup.add(edges)
+  containers.worldGroup.add(combatStageGlass.mesh)
   containers.worldGroup.add(spriteState.halo)
   containers.worldGroup.add(sprite)
   containers.worldGroup.add(proxy)
@@ -145,6 +152,7 @@ export const createPokemonRenderObject = (
     spriteState,
     elevationBadge,
     hpBar,
+    combatStageGlass,
     volume,
     edges,
     proxy,
@@ -253,6 +261,15 @@ export const applyPokemonRenderObjectPosition = (
     camera: options.camera,
     show: options.hoveredPokemonId === renderObject.id && options.layers.tokens,
   })
+  updateTokenCombatStageGlass({
+    glass: renderObject.combatStageGlass,
+    center: renderObject.currentCenter,
+    base: renderObject.base,
+    clearance: renderObject.clearance,
+    stages: renderObject.combatStages,
+    camera: options.camera,
+    show: options.layers.tokens,
+  })
   updateHpBar({
     bar: renderObject.hpBar,
     center: renderObject.currentCenter,
@@ -261,7 +278,6 @@ export const applyPokemonRenderObjectPosition = (
     level: renderObject.level,
     currentHp: renderObject.currentHp,
     maxHp: renderObject.maxHp,
-    combatStages: renderObject.combatStages,
     conditions: renderObject.conditions,
     tokenItems: renderObject.tokenItems,
     activeTurn: options.activeTurnId === renderObject.id,
@@ -297,6 +313,7 @@ export const setPokemonRenderObjectLayerVisibility = (
   renderObject.volume.visible = tokens
   renderObject.edges.visible = tokens
   renderObject.proxy.visible = tokens
+  renderObject.combatStageGlass.mesh.visible = tokens && renderObject.combatStageGlass.active
   renderObject.elevationBadge.visible = tokens && renderObject.elevationBadge.visible
   renderObject.hpBar.visible = tokens && renderObject.hpBar.visible
   renderObject.elevationBadge.element.style.display = tokens ? '' : 'none'
@@ -358,6 +375,7 @@ export const disposePokemonRenderObject = (renderObject: PokemonRenderObject) =>
   disposeWorldSprite(renderObject.spriteState)
   disposeObject3D(renderObject.elevationBadge)
   disposeObject3D(renderObject.hpBar)
+  disposeTokenCombatStageGlass(renderObject.combatStageGlass)
   disposeObject3D(renderObject.volume)
   disposeObject3D(renderObject.edges)
   disposeObject3D(renderObject.proxy)
