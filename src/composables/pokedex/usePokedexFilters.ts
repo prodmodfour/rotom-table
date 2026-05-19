@@ -121,6 +121,17 @@ export const usePokedexFilters = <TEntry extends PokedexEntrySummary>(
     }
   }
 
+  const refreshSearchEntries = async () => {
+    loadedSearchEntries.value = null
+    searchIndexError.value = null
+    await ensureSearchEntries()
+  }
+
+  const clearSearchEntries = () => {
+    loadedSearchEntries.value = null
+    searchIndexError.value = null
+  }
+
   const scheduleSearchEntries = () => {
     if (!import.meta.client) {
       void ensureSearchEntries()
@@ -166,10 +177,12 @@ export const usePokedexFilters = <TEntry extends PokedexEntrySummary>(
 
   return {
     activeSearchFilters,
+    clearSearchEntries,
     filteredEntries,
     filterMode,
     filterOperators,
     isSearchIndexLoading,
+    refreshSearchEntries,
     searchFilters,
     searchIndexError,
   }

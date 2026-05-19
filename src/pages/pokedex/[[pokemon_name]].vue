@@ -1,7 +1,14 @@
 <script setup lang="ts">
+import { usePokedexAdminPanel } from '~/composables/pokedex/usePokedexAdminPanel'
 import { usePokedexBrowser } from '~/composables/pokedex/usePokedexBrowser'
+import { usePokedexEntryEditing } from '~/composables/pokedex/usePokedexEntryEditing'
+import { useApiClient } from '~/composables/useApiClient'
+import { useAuth } from '~/composables/useAuth'
 import { useWindowKeydown } from '~/composables/useWindowKeydown'
-import { isCtrlLetter } from '~/utils/keyboardShortcuts'
+import { POKEDEX_API_PATHS } from '~/utils/apiRoutes'
+import { isCtrlLetter, isEscapeKey } from '~/utils/keyboardShortcuts'
+import type { PokedexEntryMutationResponse } from '~/utils/pokedex/admin'
+import { pokedexEntryPath, type PokedexEntryDetail } from '~/utils/pokedex/entryIndex'
 import { isPokedexPath } from '~/utils/pokedex/routes'
 
 definePageMeta({
@@ -30,6 +37,7 @@ const {
   pageNumber,
   pageTitle,
   ready,
+  refreshPokedexData,
   requestedPokemonName,
   searchFilters,
   searchIndexErrorMessage,
@@ -43,15 +51,99 @@ const {
   weightLabel,
 } = usePokedexBrowser()
 
+const apiClient = useApiClient()
+const router = useRouter()
+const { isGm } = useAuth()
+
+const isTextEntryTarget = (target: EventTarget | null): boolean => {
+  if (!(target instanceof HTMLElement)) return false
+  return target instanceof HTMLInputElement
+    || target instanceof HTMLTextAreaElement
+    || target instanceof HTMLSelectElement
+    || target.isContentEditable
+}
+
 useHead(() => ({ title: pageTitle.value }))
 
+const routeToMutatedEntry = async (
+  previousSlug: string,
+  entry: PokedexEntryDetail,
+): Promise<void> => {
+  await refreshPokedexData()
+
+  if (entry.slug !== previousSlug) {
+    await router.replace(pokedexEntryPath(entry))
+  }
+}
+
+const saveEntry = (slug: string, entry: Record<string, unknown>): Promise<PokedexEntryMutationResponse> => (
+  apiClient.postJson<PokedexEntryMutationResponse>(POKEDEX_API_PATHS.update, { slug, entry })
+)
+
+const restoreFromBooks = (slug: string): Promise<PokedexEntryMutationResponse> => (
+  apiClient.postJson<PokedexEntryMutationResponse>(POKEDEX_API_PATHS.restoreFromBooks, { slug })
+)
+
+const {
+  draftJson: entryDraftJson,
+  enterEditMode,
+  errorMessage: entryEditErrorMessage,
+  exitEditMode,
+  isEditMode,
+  isSaving: isSavingEntry,
+  replaceDraftWithEntry,
+  saveEditedEntry,
+  statusMessage: entryEditStatusMessage,
+} = usePokedexEntryEditing({
+  afterMutation: routeToMutatedEntry,
+  isGm,
+  saveEntry,
+  selectedEntry,
+})
+
+const {
+  close: closeAdminPanel,
+  errorMessage: adminErrorMessage,
+  isOpen: isAdminPanelOpen,
+  isRestoring: isRestoringEntry,
+  open: openAdminPanel,
+  restoreSelectedEntryFromBooks,
+  selectedSpeciesName,
+  statusMessage: adminStatusMessage,
+} = usePokedexAdminPanel({
+  afterMutation: routeToMutatedEntry,
+  isGm,
+  onRestoredEntry: replaceDraftWithEntry,
+  restoreFromBooks,
+  selectedEntry,
+})
+
 useWindowKeydown((event) => {
-  if (!isCtrlLetter(event, 'r')) return
+  if (isCtrlLetter(event, 'r')) {
+    event.preventDefault()
+    if (!event.repeat) goToRandomPokemon()
+    return
+  }
 
-  event.preventDefault()
-  if (event.repeat) return
+  if (isCtrlLetter(event, 'e')) {
+    if (!isGm.value || isEditMode.value) return
 
-  goToRandomPokemon()
+    event.preventDefault()
+    if (!event.repeat) enterEditMode()
+    return
+  }
+
+  if (isCtrlLetter(event, 'a')) {
+    if (!isGm.value || isTextEntryTarget(event.target)) return
+
+    event.preventDefault()
+    if (!event.repeat) openAdminPanel()
+    return
+  }
+
+  if (isEscapeKey(event) && isAdminPanelOpen.value) {
+    closeAdminPanel()
+  }
 })
 
 await ready
@@ -69,7 +161,19 @@ await ready
       :selected-id="selectedId"
     />
 
+    <PokedexEntryEditor
+      v-if="isEditMode && selectedEntry"
+      v-model:draft="entryDraftJson"
+      :error-message="entryEditErrorMessage"
+      :is-saving="isSavingEntry"
+      :species="selectedEntry.species"
+      :status-message="entryEditStatusMessage"
+      @cancel="exitEditMode"
+      @save="saveEditedEntry"
+    />
+
     <PokedexEntryDetail
+      v-else
       :capability-tokens="capabilityTokens"
       :diet-summary="dietSummary"
       :displayed-evolutions="displayedEvolutions"
@@ -88,6 +192,16 @@ await ready
       :tutor-move-tokens="tutorMoveTokens"
       :type-matchup-groups="typeMatchupGroups"
       :weight-label="weightLabel"
+    />
+
+    <PokedexAdminPanel
+      v-if="isAdminPanelOpen"
+      :error-message="adminErrorMessage"
+      :is-restoring="isRestoringEntry"
+      :species="selectedSpeciesName"
+      :status-message="adminStatusMessage"
+      @close="closeAdminPanel"
+      @restore-from-books="restoreSelectedEntryFromBooks"
     />
   </div>
 </template>

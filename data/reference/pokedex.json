@@ -47,8 +47,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 75.0,
-    "female_pct": 25.0,
+    "male_pct": 75,
+    "female_pct": 25,
     "egg_groups": [
       "Humanshape"
     ],
@@ -943,8 +943,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 75.0,
-    "female_pct": 25.0,
+    "male_pct": 75,
+    "female_pct": 25,
     "egg_groups": [
       "Humanshape"
     ],
@@ -1434,8 +1434,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field",
       "Dragon"
@@ -1839,8 +1839,8 @@
     "size": "Large",
     "weight": 5,
     "genderless": false,
-    "male_pct": 75.0,
-    "female_pct": 25.0,
+    "male_pct": 75,
+    "female_pct": 25,
     "egg_groups": [
       "Field"
     ],
@@ -2647,8 +2647,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Bug"
     ],
@@ -2991,7 +2991,7 @@
     ],
     "source_gen": "gen1",
     "width": 0.92,
-    "height": 1.0,
+    "height": 1,
     "base": 1,
     "clearance": 1
   },
@@ -3044,8 +3044,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Plant"
     ],
@@ -4278,8 +4278,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Bug"
     ],
@@ -4674,8 +4674,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Bug"
     ],
@@ -4804,8 +4804,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 0.0,
-    "female_pct": 100.0,
+    "male_pct": 0,
+    "female_pct": 100,
     "egg_groups": [
       "Fairy"
     ],
@@ -6755,8 +6755,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 25.0,
-    "female_pct": 75.0,
+    "male_pct": 25,
+    "female_pct": 75,
     "egg_groups": [
       "Fairy"
     ],
@@ -7393,8 +7393,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 25.0,
-    "female_pct": 75.0,
+    "male_pct": 25,
+    "female_pct": 75,
     "egg_groups": [
       "Fairy"
     ],
@@ -8000,8 +8000,8 @@
     "size": "Medium",
     "weight": 5,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 3"
     ],
@@ -8309,8 +8309,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Monster"
     ],
@@ -8768,8 +8768,8 @@
     "size": "Medium",
     "weight": 5,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 1",
       "Field"
@@ -9127,8 +9127,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -9573,8 +9573,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Flying"
     ],
@@ -9588,7 +9588,6 @@
     ],
     "capabilities": {
       "overland": 9,
-      "sky": 2,
       "swim": 4,
       "levitate": 0,
       "burrow": 0,
@@ -9912,8 +9911,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Flying"
     ],
@@ -10251,8 +10250,8 @@
     "size": "Medium",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 1",
       "Dragon"
@@ -10564,7 +10563,7 @@
     ],
     "source_gen": "gen1",
     "width": 3.49,
-    "height": 4.0,
+    "height": 4,
     "base": 1,
     "clearance": 4
   },
@@ -10617,8 +10616,8 @@
     "size": "Large",
     "weight": 6,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 1",
       "Dragon"
@@ -11187,8 +11186,8 @@
     "size": "Medium",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 1",
       "Dragon"
@@ -11566,8 +11565,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Humanshape"
     ],
@@ -12006,7 +12005,7 @@
     ],
     "source_gen": "gen1",
     "width": 0.98,
-    "height": 1.0,
+    "height": 1,
     "base": 1,
     "clearance": 1
   },
@@ -12053,8 +12052,8 @@
     "size": "Small",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -12778,8 +12777,8 @@
     "size": "Medium",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field",
       "Dragon"
@@ -13128,7 +13127,7 @@
     ],
     "source_gen": "gen1",
     "width": 1.86,
-    "height": 2.0,
+    "height": 2,
     "base": 1,
     "clearance": 2
   },
@@ -13180,8 +13179,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 75.0,
-    "female_pct": 25.0,
+    "male_pct": 75,
+    "female_pct": 25,
     "egg_groups": [
       "Humanshape"
     ],
@@ -13948,8 +13947,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Plant"
     ],
@@ -14337,8 +14336,8 @@
     "size": "Medium",
     "weight": 5,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Plant"
     ],
@@ -14724,7 +14723,7 @@
     ],
     "source_gen": "gen1",
     "width": 1.86,
-    "height": 2.0,
+    "height": 2,
     "base": 1,
     "clearance": 2
   },
@@ -14767,8 +14766,8 @@
     "size": "Huge",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Flying",
       "Field"
@@ -15184,8 +15183,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Flying"
     ],
@@ -15888,8 +15887,8 @@
     "size": "Medium",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Indeterminate"
     ],
@@ -16332,8 +16331,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Indeterminate"
     ],
@@ -16858,8 +16857,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Mineral"
     ],
@@ -17298,8 +17297,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Plant"
     ],
@@ -17649,8 +17648,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Flying"
     ],
@@ -18030,8 +18029,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 2"
     ],
@@ -18364,8 +18363,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 1",
       "Field"
@@ -18853,8 +18852,8 @@
     "size": "Medium",
     "weight": 6,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Mineral"
     ],
@@ -19301,8 +19300,8 @@
     "size": "Medium",
     "weight": 5,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Mineral"
     ],
@@ -19696,7 +19695,7 @@
     ],
     "source_gen": "gen1",
     "width": 1.58,
-    "height": 1.0,
+    "height": 1,
     "base": 1,
     "clearance": 1
   },
@@ -19743,8 +19742,8 @@
     "size": "Small",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Indeterminate"
     ],
@@ -20167,8 +20166,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 75.0,
-    "female_pct": 25.0,
+    "male_pct": 75,
+    "female_pct": 25,
     "egg_groups": [
       "Field"
     ],
@@ -20550,8 +20549,8 @@
     "size": "Huge",
     "weight": 6,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 2",
       "Dragon"
@@ -20990,8 +20989,8 @@
     "size": "Medium",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Indeterminate"
     ],
@@ -21423,8 +21422,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 100.0,
-    "female_pct": 0.0,
+    "male_pct": 100,
+    "female_pct": 0,
     "egg_groups": [
       "Humanshape"
     ],
@@ -21844,8 +21843,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 100.0,
-    "female_pct": 0.0,
+    "male_pct": 100,
+    "female_pct": 0,
     "egg_groups": [
       "Humanshape"
     ],
@@ -22285,8 +22284,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 1",
       "Dragon"
@@ -22604,8 +22603,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Humanshape"
     ],
@@ -23431,7 +23430,7 @@
     ],
     "source_gen": "gen1",
     "width": 1.14,
-    "height": 1.0,
+    "height": 1,
     "base": 1,
     "clearance": 1
   },
@@ -23484,8 +23483,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 25.0,
-    "female_pct": 75.0,
+    "male_pct": 25,
+    "female_pct": 75,
     "egg_groups": [
       "Fairy"
     ],
@@ -24389,8 +24388,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 0.0,
-    "female_pct": 100.0,
+    "male_pct": 0,
+    "female_pct": 100,
     "egg_groups": [
       "Humanshape"
     ],
@@ -25597,8 +25596,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 75.0,
-    "female_pct": 25.0,
+    "male_pct": 75,
+    "female_pct": 25,
     "egg_groups": [
       "Humanshape"
     ],
@@ -26082,8 +26081,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Bug"
     ],
@@ -26191,8 +26190,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 0.0,
-    "female_pct": 100.0,
+    "male_pct": 0,
+    "female_pct": 100,
     "egg_groups": [
       "Monster"
     ],
@@ -26715,8 +26714,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 3"
     ],
@@ -27103,8 +27102,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Indeterminate"
     ],
@@ -27479,8 +27478,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 3"
     ],
@@ -27871,8 +27870,8 @@
     "size": "Large",
     "weight": 6,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Monster",
       "Water 1"
@@ -28292,8 +28291,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Monster"
     ],
@@ -28791,8 +28790,8 @@
     "size": "Medium",
     "weight": 5,
     "genderless": false,
-    "male_pct": 75.0,
-    "female_pct": 25.0,
+    "male_pct": 75,
+    "female_pct": 25,
     "egg_groups": [
       "Humanshape"
     ],
@@ -29255,8 +29254,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 75.0,
-    "female_pct": 25.0,
+    "male_pct": 75,
+    "female_pct": 25,
     "egg_groups": [
       "Humanshape"
     ],
@@ -29703,8 +29702,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 75.0,
-    "female_pct": 25.0,
+    "male_pct": 75,
+    "female_pct": 25,
     "egg_groups": [
       "Humanshape"
     ],
@@ -30169,8 +30168,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 2",
       "Dragon"
@@ -30284,8 +30283,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 75.0,
-    "female_pct": 25.0,
+    "male_pct": 75,
+    "female_pct": 25,
     "egg_groups": [
       "Humanshape"
     ],
@@ -31424,7 +31423,7 @@
     ],
     "source_gen": "gen1",
     "width": 1.06,
-    "height": 1.0,
+    "height": 1,
     "base": 1,
     "clearance": 1
   },
@@ -31471,8 +31470,8 @@
     "size": "Small",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -31985,8 +31984,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Monster"
     ],
@@ -32402,7 +32401,7 @@
     ],
     "source_gen": "gen1",
     "width": 1.36,
-    "height": 1.0,
+    "height": 1,
     "base": 1,
     "clearance": 1
   },
@@ -32449,8 +32448,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -32899,8 +32898,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Bug"
     ],
@@ -33727,7 +33726,7 @@
     ],
     "source_gen": "gen1",
     "width": 2.09,
-    "height": 2.0,
+    "height": 2,
     "base": 2,
     "clearance": 2
   },
@@ -34112,7 +34111,7 @@
     ],
     "source_gen": "gen1",
     "width": 2.73,
-    "height": 2.0,
+    "height": 2,
     "base": 2,
     "clearance": 2
   },
@@ -34160,8 +34159,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Humanshape"
     ],
@@ -34715,8 +34714,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Indeterminate"
     ],
@@ -35170,8 +35169,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 100.0,
-    "female_pct": 0.0,
+    "male_pct": 100,
+    "female_pct": 0,
     "egg_groups": [
       "Monster",
       "Field"
@@ -35762,8 +35761,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 0.0,
-    "female_pct": 100.0,
+    "male_pct": 0,
+    "female_pct": 100,
     "egg_groups": [
       "Monster",
       "Field"
@@ -36346,8 +36345,8 @@
     "size": "Huge",
     "weight": 1,
     "genderless": false,
-    "male_pct": 0.0,
-    "female_pct": 100.0,
+    "male_pct": 0,
+    "female_pct": 100,
     "egg_groups": [
       "Monster",
       "Field"
@@ -36710,8 +36709,8 @@
     "size": "Huge",
     "weight": 1,
     "genderless": false,
-    "male_pct": 100.0,
-    "female_pct": 0.0,
+    "male_pct": 100,
+    "female_pct": 0,
     "egg_groups": [
       "Monster",
       "Field"
@@ -37088,8 +37087,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 0.0,
-    "female_pct": 100.0,
+    "male_pct": 0,
+    "female_pct": 100,
     "egg_groups": [
       "Monster",
       "Field"
@@ -37441,8 +37440,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 100.0,
-    "female_pct": 0.0,
+    "male_pct": 100,
+    "female_pct": 0,
     "egg_groups": [
       "Monster",
       "Field"
@@ -37792,8 +37791,8 @@
     "size": "Medium",
     "weight": 2,
     "genderless": false,
-    "male_pct": 25.0,
-    "female_pct": 75.0,
+    "male_pct": 25,
+    "female_pct": 75,
     "egg_groups": [
       "Field"
     ],
@@ -38251,8 +38250,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Plant"
     ],
@@ -39320,7 +39319,7 @@
     ],
     "source_gen": "gen1",
     "width": 1.15,
-    "height": 1.0,
+    "height": 1,
     "base": 1,
     "clearance": 1
   },
@@ -39368,8 +39367,8 @@
     "size": "Huge",
     "weight": 6,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Mineral"
     ],
@@ -39805,8 +39804,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Bug",
       "Plant"
@@ -40196,8 +40195,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Bug",
       "Plant"
@@ -40540,7 +40539,7 @@
     ],
     "source_gen": "gen1",
     "width": 0.92,
-    "height": 1.0,
+    "height": 1,
     "base": 1,
     "clearance": 1
   },
@@ -40587,8 +40586,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -41000,7 +40999,7 @@
     ],
     "source_gen": "gen1",
     "width": 1.11,
-    "height": 1.0,
+    "height": 1,
     "base": 1,
     "clearance": 1
   },
@@ -41053,8 +41052,8 @@
     "size": "Large",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Flying"
     ],
@@ -41396,8 +41395,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Flying"
     ],
@@ -41728,8 +41727,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Flying"
     ],
@@ -42071,8 +42070,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field",
       "Fairy"
@@ -42480,8 +42479,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Bug"
     ],
@@ -42902,8 +42901,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 1"
     ],
@@ -43238,8 +43237,8 @@
     "size": "Medium",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 1"
     ],
@@ -43571,7 +43570,7 @@
     ],
     "source_gen": "gen1",
     "width": 1.43,
-    "height": 1.0,
+    "height": 1,
     "base": 1,
     "clearance": 1
   },
@@ -43624,8 +43623,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 1"
     ],
@@ -44095,8 +44094,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -44381,7 +44380,7 @@
     ],
     "source_gen": "gen1",
     "width": 0.98,
-    "height": 1.0,
+    "height": 1,
     "base": 1,
     "clearance": 1
   },
@@ -44843,8 +44842,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -45304,7 +45303,7 @@
     ],
     "source_gen": "gen1",
     "width": 1.13,
-    "height": 1.0,
+    "height": 1,
     "base": 1,
     "clearance": 1
   },
@@ -45351,8 +45350,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 1",
       "Field"
@@ -45833,8 +45832,8 @@
     "size": "Small",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field",
       "Fairy"
@@ -46268,8 +46267,8 @@
     "size": "Large",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -46617,8 +46616,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -47034,8 +47033,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -47441,8 +47440,8 @@
     "size": "Medium",
     "weight": 5,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Monster",
       "Field"
@@ -47990,8 +47989,8 @@
     "size": "Medium",
     "weight": 5,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Monster",
       "Field"
@@ -48392,7 +48391,7 @@
     ],
     "source_gen": "gen1",
     "width": 1.19,
-    "height": 1.0,
+    "height": 1,
     "base": 1,
     "clearance": 1
   },
@@ -48439,8 +48438,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -48868,8 +48867,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -49255,7 +49254,7 @@
     ],
     "source_gen": "gen1",
     "width": 1.08,
-    "height": 1.0,
+    "height": 1,
     "base": 1,
     "clearance": 1
   },
@@ -49303,8 +49302,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Bug"
     ],
@@ -49700,8 +49699,8 @@
     "size": "Medium",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 1",
       "Dragon"
@@ -50018,8 +50017,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 2"
     ],
@@ -50343,8 +50342,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 1",
       "Field"
@@ -50696,8 +50695,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 3"
     ],
@@ -51013,8 +51012,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Monster",
       "Water 1"
@@ -51556,8 +51555,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Monster",
       "Water 1"
@@ -52551,8 +52550,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Flying"
     ],
@@ -54172,8 +54171,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Plant"
     ],
@@ -54532,7 +54531,7 @@
     ],
     "source_gen": "gen1",
     "width": 1.14,
-    "height": 1.0,
+    "height": 1,
     "base": 1,
     "clearance": 1
   },
@@ -54574,8 +54573,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 100.0,
-    "female_pct": 0.0,
+    "male_pct": 100,
+    "female_pct": 0,
     "egg_groups": [
       "Field"
     ],
@@ -54991,8 +54990,8 @@
     "size": "Small",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 3"
     ],
@@ -55389,8 +55388,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 3"
     ],
@@ -56113,7 +56112,7 @@
     ],
     "source_gen": "gen1",
     "width": 0.89,
-    "height": 1.0,
+    "height": 1,
     "base": 1,
     "clearance": 1
   },
@@ -56161,8 +56160,8 @@
     "size": "Medium",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Bug"
     ],
@@ -56544,8 +56543,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Bug"
     ],
@@ -56822,7 +56821,7 @@
     ],
     "source_gen": "gen1",
     "width": 0.79,
-    "height": 1.0,
+    "height": 1,
     "base": 1,
     "clearance": 1
   },
@@ -57245,7 +57244,7 @@
     ],
     "source_gen": "gen1",
     "width": 2.39,
-    "height": 2.0,
+    "height": 2,
     "base": 2,
     "clearance": 2
   },
@@ -57298,8 +57297,8 @@
     "size": "Medium",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Plant"
     ],
@@ -57694,8 +57693,8 @@
     "size": "Medium",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Plant"
     ],
@@ -58426,8 +58425,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 25.0,
-    "female_pct": 75.0,
+    "male_pct": 25,
+    "female_pct": 75,
     "egg_groups": [
       "Field"
     ],
@@ -59188,7 +59187,7 @@
     ],
     "source_gen": "gen1",
     "width": 0.98,
-    "height": 1.0,
+    "height": 1,
     "base": 1,
     "clearance": 1
   },
@@ -59241,8 +59240,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Bug"
     ],
@@ -59364,8 +59363,8 @@
     "size": "Medium",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Plant"
     ],
@@ -59660,7 +59659,7 @@
     ],
     "source_gen": "gen1",
     "width": 1.06,
-    "height": 1.0,
+    "height": 1,
     "base": 1,
     "clearance": 1
   },
@@ -59707,8 +59706,8 @@
     "size": "Medium",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Indeterminate"
     ],
@@ -60070,8 +60069,8 @@
     "size": "Medium",
     "weight": 2,
     "genderless": false,
-    "male_pct": 25.0,
-    "female_pct": 75.0,
+    "male_pct": 25,
+    "female_pct": 75,
     "egg_groups": [
       "Fairy"
     ],
@@ -60596,7 +60595,7 @@
     ],
     "source_gen": "gen1",
     "width": 0.7,
-    "height": 1.0,
+    "height": 1,
     "base": 1,
     "clearance": 1
   },
@@ -61045,8 +61044,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Flying"
     ],
@@ -61433,8 +61432,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -61949,8 +61948,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Monster",
       "Field"
@@ -62382,8 +62381,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Bug"
     ],
@@ -62747,8 +62746,8 @@
     "size": "Small",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 1",
       "Fairy"
@@ -63556,8 +63555,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Plant"
     ],
@@ -63964,8 +63963,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 0.0,
-    "female_pct": 100.0,
+    "male_pct": 0,
+    "female_pct": 100,
     "egg_groups": [
       "Fairy"
     ],
@@ -65376,8 +65375,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 2"
     ],
@@ -65751,8 +65750,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 25.0,
-    "female_pct": 75.0,
+    "male_pct": 25,
+    "female_pct": 75,
     "egg_groups": [
       "Fairy"
     ],
@@ -66184,8 +66183,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 25.0,
-    "female_pct": 75.0,
+    "male_pct": 25,
+    "female_pct": 75,
     "egg_groups": [
       "Water 1",
       "Water 3"
@@ -66644,8 +66643,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Flying"
     ],
@@ -67838,8 +67837,8 @@
     "size": "Medium",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 1",
       "Field"
@@ -68163,8 +68162,8 @@
     "size": "Medium",
     "weight": 5,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -68552,8 +68551,8 @@
     "size": "Medium",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -69056,8 +69055,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 75.0,
-    "female_pct": 25.0,
+    "male_pct": 75,
+    "female_pct": 25,
     "egg_groups": [
       "Humanshape"
     ],
@@ -70790,8 +70789,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Monster",
       "Field"
@@ -71148,8 +71147,8 @@
     "size": "Medium",
     "weight": 5,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Bug"
     ],
@@ -71577,8 +71576,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -72037,8 +72036,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -72507,8 +72506,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Bug"
     ],
@@ -72976,8 +72975,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 25.0,
-    "female_pct": 75.0,
+    "male_pct": 25,
+    "female_pct": 75,
     "egg_groups": [
       "Field",
       "Fairy"
@@ -73489,8 +73488,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Bug"
     ],
@@ -73919,8 +73918,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 100.0,
-    "female_pct": 0.0,
+    "male_pct": 100,
+    "female_pct": 0,
     "egg_groups": [
       "Humanshape"
     ],
@@ -74802,8 +74801,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Flying"
     ],
@@ -75210,8 +75209,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Fairy",
       "Plant"
@@ -75586,8 +75585,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -76021,8 +76020,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -76452,8 +76451,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 25.0,
-    "female_pct": 75.0,
+    "male_pct": 25,
+    "female_pct": 75,
     "egg_groups": [
       "Fairy"
     ],
@@ -76881,8 +76880,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Fairy",
       "Plant"
@@ -77256,8 +77255,8 @@
     "size": "Medium",
     "weight": 5,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 1",
       "Dragon"
@@ -77585,8 +77584,8 @@
     "size": "Medium",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 2"
     ],
@@ -77989,8 +77988,8 @@
     "size": "Small",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Monster"
     ],
@@ -78402,8 +78401,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Bug"
     ],
@@ -78823,8 +78822,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Bug"
     ],
@@ -79176,7 +79175,7 @@
     ],
     "source_gen": "gen2",
     "width": 0.88,
-    "height": 1.0,
+    "height": 1,
     "base": 1,
     "clearance": 1
   },
@@ -79756,8 +79755,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 75.0,
-    "female_pct": 25.0,
+    "male_pct": 75,
+    "female_pct": 25,
     "egg_groups": [
       "Humanshape"
     ],
@@ -80136,8 +80135,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Indeterminate"
     ],
@@ -80552,8 +80551,8 @@
     "size": "Large",
     "weight": 6,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 1"
     ],
@@ -80942,8 +80941,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Monster",
       "Field"
@@ -81289,8 +81288,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 1",
       "Fairy"
@@ -82110,8 +82109,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 0.0,
-    "female_pct": 100.0,
+    "male_pct": 0,
+    "female_pct": 100,
     "egg_groups": [
       "Field"
     ],
@@ -82583,8 +82582,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Indeterminate"
     ],
@@ -83034,8 +83033,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Flying"
     ],
@@ -83474,8 +83473,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Flying"
     ],
@@ -83934,8 +83933,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Flying"
     ],
@@ -84337,8 +84336,8 @@
     "size": "Small",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 1",
       "Water 2"
@@ -84750,8 +84749,8 @@
     "size": "Small",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -85091,8 +85090,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field",
       "Fairy"
@@ -85442,8 +85441,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -85769,7 +85768,7 @@
       }
     ],
     "source_gen": "gen2",
-    "width": 1.0,
+    "width": 1,
     "height": 1.1,
     "base": 1,
     "clearance": 1
@@ -85817,8 +85816,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Bug"
     ],
@@ -86197,8 +86196,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 1"
     ],
@@ -87075,8 +87074,8 @@
     "size": "Medium",
     "weight": 5,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Monster"
     ],
@@ -87421,7 +87420,7 @@
       }
     ],
     "source_gen": "gen2",
-    "width": 1.0,
+    "width": 1,
     "height": 1.2,
     "base": 1,
     "clearance": 1
@@ -87470,8 +87469,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 1",
       "Field"
@@ -88272,8 +88271,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 2"
     ],
@@ -89110,8 +89109,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 1",
       "Water 2"
@@ -89490,8 +89489,8 @@
     "size": "Medium",
     "weight": 5,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Bug"
     ],
@@ -89915,8 +89914,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -90365,8 +90364,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Bug"
     ],
@@ -90798,8 +90797,8 @@
     "size": "Large",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Flying"
     ],
@@ -91233,8 +91232,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Fairy",
       "Plant"
@@ -91594,8 +91593,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Monster",
       "Water 1"
@@ -92103,7 +92102,7 @@
     ],
     "source_gen": "gen2",
     "width": 1.29,
-    "height": 2.0,
+    "height": 2,
     "base": 1,
     "clearance": 2
   },
@@ -92150,8 +92149,8 @@
     "size": "Small",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Indeterminate"
     ],
@@ -92514,8 +92513,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -92656,8 +92655,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 0.0,
-    "female_pct": 100.0,
+    "male_pct": 0,
+    "female_pct": 100,
     "egg_groups": [
       "Humanshape"
     ],
@@ -93104,8 +93103,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -93609,8 +93608,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 25.0,
-    "female_pct": 75.0,
+    "male_pct": 25,
+    "female_pct": 75,
     "egg_groups": [
       "Field",
       "Fairy"
@@ -94109,8 +94108,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Bug"
     ],
@@ -94463,8 +94462,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -94920,8 +94919,8 @@
     "size": "Gigantic",
     "weight": 6,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Mineral"
     ],
@@ -95377,8 +95376,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Mineral"
     ],
@@ -96180,7 +96179,7 @@
     ],
     "source_gen": "gen2",
     "width": 2.14,
-    "height": 2.0,
+    "height": 2,
     "base": 2,
     "clearance": 2
   },
@@ -96227,8 +96226,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Plant"
     ],
@@ -96573,8 +96572,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Plant"
     ],
@@ -96934,8 +96933,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -97299,8 +97298,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -99690,8 +99689,8 @@
     "size": "Large",
     "weight": 6,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Monster"
     ],
@@ -100223,7 +100222,7 @@
     ],
     "source_gen": "gen2",
     "width": 2.03,
-    "height": 2.0,
+    "height": 2,
     "base": 2,
     "clearance": 2
   },
@@ -100280,8 +100279,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 100.0,
-    "female_pct": 0.0,
+    "male_pct": 100,
+    "female_pct": 0,
     "egg_groups": [
       "Humanshape"
     ],
@@ -100925,7 +100924,7 @@
     ],
     "source_gen": "gen2",
     "width": 0.82,
-    "height": 1.0,
+    "height": 1,
     "base": 1,
     "clearance": 1
   },
@@ -101062,8 +101061,8 @@
     "size": "Medium",
     "weight": 5,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -101532,8 +101531,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Indeterminate"
     ],
@@ -101639,8 +101638,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 1",
       "Field"
@@ -102046,8 +102045,8 @@
     "size": "Medium",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Flying"
     ],
@@ -102519,8 +102518,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Bug"
     ],
@@ -102873,8 +102872,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -103461,8 +103460,8 @@
     "size": "Large",
     "weight": 6,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Monster"
     ],
@@ -104053,8 +104052,8 @@
     "size": "Medium",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Flying",
       "Dragon"
@@ -105310,8 +105309,8 @@
     "size": "Small",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Monster"
     ],
@@ -105730,8 +105729,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 25.0,
-    "female_pct": 75.0,
+    "male_pct": 25,
+    "female_pct": 75,
     "egg_groups": [
       "Water 1",
       "Fairy"
@@ -106086,8 +106085,8 @@
     "size": "Small",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Dragon"
     ],
@@ -106896,8 +106895,8 @@
     "size": "Medium",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Indeterminate"
     ],
@@ -107353,8 +107352,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 2"
     ],
@@ -107697,8 +107696,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Bug"
     ],
@@ -108019,7 +108018,7 @@
     ],
     "source_gen": "gen3",
     "width": 1.16,
-    "height": 1.0,
+    "height": 1,
     "base": 1,
     "clearance": 1
   },
@@ -108701,8 +108700,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Fairy",
       "Plant"
@@ -109145,8 +109144,8 @@
     "size": "Small",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Plant",
       "Humanshape"
@@ -109574,8 +109573,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Plant",
       "Humanshape"
@@ -110046,8 +110045,8 @@
     "size": "Large",
     "weight": 6,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -110455,8 +110454,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 2"
     ],
@@ -110835,8 +110834,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Bug"
     ],
@@ -110943,8 +110942,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Fairy",
       "Indeterminate"
@@ -111333,8 +111332,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Indeterminate"
     ],
@@ -111764,8 +111763,8 @@
     "size": "Small",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 1"
     ],
@@ -112947,8 +112946,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 1",
       "Water 3"
@@ -113786,8 +113785,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 1",
       "Water 3"
@@ -114256,8 +114255,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 25.0,
-    "female_pct": 75.0,
+    "male_pct": 25,
+    "female_pct": 75,
     "egg_groups": [
       "Field",
       "Fairy"
@@ -116852,8 +116851,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Indeterminate"
     ],
@@ -117364,8 +117363,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Indeterminate"
     ],
@@ -117777,8 +117776,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Bug"
     ],
@@ -118146,8 +118145,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -118503,8 +118502,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Monster",
       "Field"
@@ -119011,8 +119010,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 1",
       "Dragon"
@@ -119288,8 +119287,8 @@
     "size": "Large",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Bug"
     ],
@@ -119737,8 +119736,8 @@
       }
     ],
     "source_gen": "gen3",
-    "width": 2.0,
-    "height": 2.0,
+    "width": 2,
+    "height": 2,
     "base": 2,
     "clearance": 2
   },
@@ -119791,8 +119790,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Indeterminate"
     ],
@@ -120311,8 +120310,8 @@
     "size": "Medium",
     "weight": 6,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Fairy",
       "Mineral"
@@ -120693,8 +120692,8 @@
     "size": "Medium",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 1"
     ],
@@ -121997,8 +121996,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -122487,8 +122486,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Indeterminate"
     ],
@@ -122894,8 +122893,8 @@
     "size": "Medium",
     "weight": 6,
     "genderless": false,
-    "male_pct": 75.0,
-    "female_pct": 25.0,
+    "male_pct": 75,
+    "female_pct": 25,
     "egg_groups": [
       "Humanshape"
     ],
@@ -123335,8 +123334,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 1"
     ],
@@ -123675,8 +123674,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 0.0,
-    "female_pct": 100.0,
+    "male_pct": 0,
+    "female_pct": 100,
     "egg_groups": [
       "Bug",
       "Humanshape"
@@ -124626,8 +124625,8 @@
     "size": "Medium",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -125162,7 +125161,7 @@
     ],
     "source_gen": "gen3",
     "width": 0.85,
-    "height": 1.0,
+    "height": 1,
     "base": 1,
     "clearance": 1
   },
@@ -125220,8 +125219,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Indeterminate"
     ],
@@ -126101,8 +126100,8 @@
     "size": "Medium",
     "weight": 5,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Monster"
     ],
@@ -126493,8 +126492,8 @@
     "size": "Large",
     "weight": 3,
     "genderless": false,
-    "male_pct": 0.0,
-    "female_pct": 100.0,
+    "male_pct": 0,
+    "female_pct": 100,
     "egg_groups": [],
     "hatch_rate": "75 Days",
     "diet": [
@@ -127052,8 +127051,8 @@
     "size": "Large",
     "weight": 3,
     "genderless": false,
-    "male_pct": 100.0,
-    "female_pct": 0.0,
+    "male_pct": 100,
+    "female_pct": 0,
     "egg_groups": [],
     "hatch_rate": "75 Days",
     "diet": [
@@ -127560,7 +127559,7 @@
     ],
     "source_gen": "gen3",
     "width": 1.94,
-    "height": 2.0,
+    "height": 2,
     "base": 2,
     "clearance": 2
   },
@@ -127940,7 +127939,7 @@
     ],
     "source_gen": "gen3",
     "width": 0.85,
-    "height": 1.0,
+    "height": 1,
     "base": 1,
     "clearance": 1
   },
@@ -127987,8 +127986,8 @@
     "size": "Small",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -128435,8 +128434,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 1",
       "Plant"
@@ -128857,8 +128856,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 1",
       "Plant"
@@ -129217,8 +129216,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Monster",
       "Field"
@@ -129620,7 +129619,7 @@
     ],
     "source_gen": "gen3",
     "width": 0.92,
-    "height": 1.0,
+    "height": 1,
     "base": 1,
     "clearance": 1
   },
@@ -129673,8 +129672,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 1",
       "Plant"
@@ -130572,7 +130571,7 @@
     ],
     "source_gen": "gen3",
     "width": 0.89,
-    "height": 1.0,
+    "height": 1,
     "base": 1,
     "clearance": 1
   },
@@ -130614,8 +130613,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 25.0,
-    "female_pct": 75.0,
+    "male_pct": 25,
+    "female_pct": 75,
     "egg_groups": [
       "Water 2"
     ],
@@ -130934,8 +130933,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 75.0,
-    "female_pct": 25.0,
+    "male_pct": 75,
+    "female_pct": 25,
     "egg_groups": [
       "Humanshape"
     ],
@@ -131320,7 +131319,7 @@
     ],
     "source_gen": "gen3",
     "width": 0.91,
-    "height": 1.0,
+    "height": 1,
     "base": 1,
     "clearance": 1
   },
@@ -131367,8 +131366,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -132167,8 +132166,8 @@
     "size": "Medium",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 1",
       "Bug"
@@ -132538,8 +132537,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field",
       "Fairy"
@@ -133066,8 +133065,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Humanshape"
     ],
@@ -133566,8 +133565,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Humanshape"
     ],
@@ -134976,8 +134975,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -135323,7 +135322,7 @@
     ],
     "source_gen": "gen3",
     "width": 1.05,
-    "height": 1.0,
+    "height": 1,
     "base": 1,
     "clearance": 1
   },
@@ -135370,8 +135369,8 @@
     "size": "Large",
     "weight": 5,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 1",
       "Dragon"
@@ -135751,8 +135750,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Fairy"
     ],
@@ -136568,8 +136567,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Bug"
     ],
@@ -136881,8 +136880,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Bug"
     ],
@@ -137245,8 +137244,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Mineral"
     ],
@@ -137622,7 +137621,7 @@
     ],
     "source_gen": "gen3",
     "width": 0.8,
-    "height": 1.0,
+    "height": 1,
     "base": 1,
     "clearance": 1
   },
@@ -137670,8 +137669,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -138044,8 +138043,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field",
       "Plant"
@@ -138439,7 +138438,7 @@
     ],
     "source_gen": "gen3",
     "width": 0.77,
-    "height": 1.0,
+    "height": 1,
     "base": 1,
     "clearance": 1
   },
@@ -138487,8 +138486,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 1",
       "Flying"
@@ -138901,8 +138900,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Fairy"
     ],
@@ -139325,8 +139324,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -139720,8 +139719,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Indeterminate"
     ],
@@ -140672,7 +140671,7 @@
     ],
     "source_gen": "gen3",
     "width": 7.51,
-    "height": 7.0,
+    "height": 7,
     "base": 4,
     "clearance": 7
   },
@@ -142460,7 +142459,7 @@
     ],
     "source_gen": "gen3",
     "width": 1.04,
-    "height": 1.0,
+    "height": 1,
     "base": 1,
     "clearance": 1
   },
@@ -142513,8 +142512,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Fairy",
       "Plant"
@@ -142877,8 +142876,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Humanshape"
     ],
@@ -143458,8 +143457,8 @@
     "size": "Large",
     "weight": 5,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Dragon"
     ],
@@ -144436,8 +144435,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 1",
       "Field"
@@ -144789,8 +144788,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field",
       "Plant"
@@ -145103,8 +145102,8 @@
     "size": "Large",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field",
       "Dragon"
@@ -145524,8 +145523,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 2"
     ],
@@ -146319,8 +146318,8 @@
     "size": "Medium",
     "weight": 5,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Dragon"
     ],
@@ -146680,8 +146679,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field",
       "Plant"
@@ -147206,8 +147205,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Fairy",
       "Plant"
@@ -147531,8 +147530,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Indeterminate"
     ],
@@ -147969,8 +147968,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Bug"
     ],
@@ -148080,8 +148079,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 25.0,
-    "female_pct": 75.0,
+    "male_pct": 25,
+    "female_pct": 75,
     "egg_groups": [
       "Field",
       "Fairy"
@@ -148531,8 +148530,8 @@
     "size": "Large",
     "weight": 5,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -148995,7 +148994,7 @@
     ],
     "source_gen": "gen3",
     "width": 2.53,
-    "height": 2.0,
+    "height": 2,
     "base": 2,
     "clearance": 2
   },
@@ -149047,8 +149046,8 @@
     "size": "Small",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -149484,8 +149483,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Fairy",
       "Mineral"
@@ -150297,8 +150296,8 @@
     "size": "Small",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 1",
       "Field"
@@ -150666,8 +150665,8 @@
     "size": "Medium",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field",
       "Humanshape"
@@ -151154,8 +151153,8 @@
     "size": "Small",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -151574,8 +151573,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 1",
       "Bug"
@@ -151908,8 +151907,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Flying",
       "Dragon"
@@ -152306,8 +152305,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Indeterminate"
     ],
@@ -153209,8 +153208,8 @@
     "size": "Medium",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Flying"
     ],
@@ -153548,8 +153547,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Flying"
     ],
@@ -154280,8 +154279,8 @@
     "size": "Small",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -154702,8 +154701,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Bug"
     ],
@@ -155508,8 +155507,8 @@
     "size": "Large",
     "weight": 5,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Monster",
       "Plant"
@@ -155898,7 +155897,7 @@
     ],
     "source_gen": "gen3",
     "width": 2.08,
-    "height": 2.0,
+    "height": 2,
     "base": 2,
     "clearance": 2
   },
@@ -155951,8 +155950,8 @@
     "size": "Medium",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Bug"
     ],
@@ -156384,8 +156383,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -156835,8 +156834,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 100.0,
-    "female_pct": 0.0,
+    "male_pct": 100,
+    "female_pct": 0,
     "egg_groups": [
       "Bug",
       "Humanshape"
@@ -157289,8 +157288,8 @@
     "size": "Large",
     "weight": 5,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field",
       "Water 2"
@@ -157605,7 +157604,7 @@
     ],
     "source_gen": "gen3",
     "width": 2.96,
-    "height": 2.0,
+    "height": 2,
     "base": 2,
     "clearance": 2
   },
@@ -157652,8 +157651,8 @@
     "size": "Gigantic",
     "weight": 6,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field",
       "Water 2"
@@ -158029,8 +158028,8 @@
     "size": "Large",
     "weight": 5,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 1",
       "Field"
@@ -158423,8 +158422,8 @@
     "size": "Medium",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 2"
     ],
@@ -158794,8 +158793,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Monster",
       "Field"
@@ -159189,8 +159188,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 1",
       "Flying"
@@ -159584,8 +159583,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Bug"
     ],
@@ -159712,8 +159711,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Indeterminate"
     ],
@@ -159830,8 +159829,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -160367,8 +160366,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -160802,8 +160801,8 @@
     "size": "Large",
     "weight": 5,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Monster",
       "Plant"
@@ -161204,8 +161203,8 @@
     "size": "Medium",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -163210,8 +163209,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 1",
       "Field"
@@ -163579,7 +163578,7 @@
     ],
     "source_gen": "gen4",
     "width": 1.11,
-    "height": 1.0,
+    "height": 1,
     "base": 1,
     "clearance": 1
   },
@@ -163626,8 +163625,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 1",
       "Field"
@@ -164009,8 +164008,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Mineral"
     ],
@@ -165227,8 +165226,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Fairy",
       "Plant"
@@ -165543,8 +165542,8 @@
     "size": "Small",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 1",
       "Field"
@@ -165918,8 +165917,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field",
       "Humanshape"
@@ -166360,8 +166359,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Bug"
     ],
@@ -166483,8 +166482,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Plant"
     ],
@@ -166840,8 +166839,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Flying"
     ],
@@ -167212,8 +167211,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Fairy",
       "Plant"
@@ -167517,8 +167516,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Fairy",
       "Plant"
@@ -168290,8 +168289,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Indeterminate"
     ],
@@ -169261,8 +169260,8 @@
     "size": "Large",
     "weight": 4,
     "genderless": false,
-    "male_pct": 0.0,
-    "female_pct": 100.0,
+    "male_pct": 0,
+    "female_pct": 100,
     "egg_groups": [],
     "hatch_rate": "75 Days",
     "diet": [
@@ -169664,8 +169663,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Humanshape"
     ],
@@ -171136,8 +171135,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Bug",
       "Water 3"
@@ -171594,8 +171593,8 @@
     "size": "Medium",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Indeterminate"
     ],
@@ -172033,8 +172032,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Indeterminate"
     ],
@@ -172470,8 +172469,8 @@
     "size": "Medium",
     "weight": 5,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Indeterminate"
     ],
@@ -172988,8 +172987,8 @@
     "size": "Large",
     "weight": 5,
     "genderless": false,
-    "male_pct": 75.0,
-    "female_pct": 25.0,
+    "male_pct": 75,
+    "female_pct": 25,
     "egg_groups": [
       "Humanshape"
     ],
@@ -173911,8 +173910,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 2"
     ],
@@ -174271,8 +174270,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 1",
       "Field"
@@ -174624,7 +174623,7 @@
       }
     ],
     "source_gen": "gen4",
-    "width": 1.0,
+    "width": 1,
     "height": 1.1,
     "base": 1,
     "clearance": 1
@@ -174673,8 +174672,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 0.0,
-    "female_pct": 100.0,
+    "male_pct": 0,
+    "female_pct": 100,
     "egg_groups": [
       "Fairy",
       "Mineral"
@@ -175094,8 +175093,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Monster",
       "Dragon"
@@ -175466,8 +175465,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 100.0,
-    "female_pct": 0.0,
+    "male_pct": 100,
+    "female_pct": 0,
     "egg_groups": [
       "Indeterminate"
     ],
@@ -176090,8 +176089,8 @@
     "size": "Large",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Monster",
       "Dragon"
@@ -176516,8 +176515,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 1",
       "Indeterminate"
@@ -176887,8 +176886,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Monster",
       "Dragon"
@@ -178570,8 +178569,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 25.0,
-    "female_pct": 75.0,
+    "male_pct": 25,
+    "female_pct": 75,
     "egg_groups": [
       "Field"
     ],
@@ -178977,8 +178976,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Bug"
     ],
@@ -179419,7 +179418,7 @@
     ],
     "source_gen": "gen4",
     "width": 2.56,
-    "height": 2.0,
+    "height": 2,
     "base": 1,
     "clearance": 2
   },
@@ -179813,8 +179812,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 0.0,
-    "female_pct": 100.0,
+    "male_pct": 0,
+    "female_pct": 100,
     "egg_groups": [
       "Fairy"
     ],
@@ -180174,8 +180173,8 @@
     "size": "Huge",
     "weight": 6,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Monster",
       "Mineral"
@@ -180588,8 +180587,8 @@
     "size": "Small",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -180887,8 +180886,8 @@
     "size": "Large",
     "weight": 6,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -181154,7 +181153,7 @@
     ],
     "source_gen": "gen4",
     "width": 2.66,
-    "height": 2.0,
+    "height": 2,
     "base": 2,
     "clearance": 2
   },
@@ -181202,8 +181201,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Flying"
     ],
@@ -182204,8 +182203,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Bug"
     ],
@@ -182340,8 +182339,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Bug"
     ],
@@ -182647,7 +182646,7 @@
     ],
     "source_gen": "gen4",
     "width": 0.86,
-    "height": 1.0,
+    "height": 1,
     "base": 1,
     "clearance": 1
   },
@@ -183026,7 +183025,7 @@
     ],
     "source_gen": "gen4",
     "width": 1.02,
-    "height": 1.0,
+    "height": 1,
     "base": 1,
     "clearance": 1
   },
@@ -183073,8 +183072,8 @@
     "size": "Medium",
     "weight": 5,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Monster"
     ],
@@ -183592,8 +183591,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field",
       "Humanshape"
@@ -184535,8 +184534,8 @@
     "size": "Medium",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 2"
     ],
@@ -184904,8 +184903,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -185222,8 +185221,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -185562,8 +185561,8 @@
     "size": "Large",
     "weight": 4,
     "genderless": false,
-    "male_pct": 75.0,
-    "female_pct": 25.0,
+    "male_pct": 75,
+    "female_pct": 25,
     "egg_groups": [
       "Humanshape"
     ],
@@ -186426,8 +186425,8 @@
     "size": "Large",
     "weight": 6,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -187215,8 +187214,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 1"
     ],
@@ -187522,7 +187521,7 @@
     ],
     "source_gen": "gen4",
     "width": 1.17,
-    "height": 1.0,
+    "height": 1,
     "base": 1,
     "clearance": 1
   },
@@ -188015,8 +188014,8 @@
     "size": "Huge",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Humanshape"
     ],
@@ -188471,8 +188470,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Indeterminate"
     ],
@@ -189424,8 +189423,8 @@
     "size": "Medium",
     "weight": 2,
     "genderless": false,
-    "male_pct": 100.0,
-    "female_pct": 0.0,
+    "male_pct": 100,
+    "female_pct": 0,
     "egg_groups": [
       "Bug"
     ],
@@ -190289,8 +190288,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field",
       "Fairy"
@@ -192642,8 +192641,8 @@
     "size": "Medium",
     "weight": 6,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Mineral"
     ],
@@ -193068,8 +193067,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 25.0,
-    "female_pct": 75.0,
+    "male_pct": 25,
+    "female_pct": 75,
     "egg_groups": [
       "Field"
     ],
@@ -193433,8 +193432,8 @@
       }
     ],
     "source_gen": "gen4",
-    "width": 1.0,
-    "height": 1.0,
+    "width": 1,
+    "height": 1,
     "base": 1,
     "clearance": 1
   },
@@ -194383,8 +194382,8 @@
     "size": "Large",
     "weight": 6,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Monster",
       "Field"
@@ -195368,8 +195367,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Fairy",
       "Plant"
@@ -197276,8 +197275,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 1",
       "Indeterminate"
@@ -197972,8 +197971,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -198307,8 +198306,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Bug",
       "Water 3"
@@ -198729,8 +198728,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -199071,7 +199070,7 @@
     ],
     "source_gen": "gen4",
     "width": 1.39,
-    "height": 1.0,
+    "height": 1,
     "base": 1,
     "clearance": 1
   },
@@ -199119,8 +199118,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Monster",
       "Plant"
@@ -199417,7 +199416,7 @@
     ],
     "source_gen": "gen4",
     "width": 1.32,
-    "height": 1.0,
+    "height": 1,
     "base": 1,
     "clearance": 1
   },
@@ -199460,8 +199459,8 @@
     "size": "Medium",
     "weight": 5,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Indeterminate"
     ],
@@ -199815,7 +199814,7 @@
     ],
     "source_gen": "gen4",
     "width": 1.14,
-    "height": 1.0,
+    "height": 1,
     "base": 1,
     "clearance": 1
   },
@@ -199868,8 +199867,8 @@
     "size": "Medium",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Flying"
     ],
@@ -200208,8 +200207,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Flying"
     ],
@@ -200529,8 +200528,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Flying"
     ],
@@ -200859,8 +200858,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -201241,8 +201240,8 @@
     "size": "Large",
     "weight": 5,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Plant"
     ],
@@ -201634,7 +201633,7 @@
     ],
     "source_gen": "gen4",
     "width": 2.28,
-    "height": 2.0,
+    "height": 2,
     "base": 2,
     "clearance": 2
   },
@@ -202670,8 +202669,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Humanshape"
     ],
@@ -203991,8 +203990,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 0.0,
-    "female_pct": 100.0,
+    "male_pct": 0,
+    "female_pct": 100,
     "egg_groups": [
       "Bug"
     ],
@@ -204378,8 +204377,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -204858,8 +204857,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 0.0,
-    "female_pct": 100.0,
+    "male_pct": 0,
+    "female_pct": 100,
     "egg_groups": [
       "Bug"
     ],
@@ -205210,8 +205209,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 0.0,
-    "female_pct": 100.0,
+    "male_pct": 0,
+    "female_pct": 100,
     "egg_groups": [
       "Bug"
     ],
@@ -205560,8 +205559,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 0.0,
-    "female_pct": 100.0,
+    "male_pct": 0,
+    "female_pct": 100,
     "egg_groups": [
       "Bug"
     ],
@@ -205925,8 +205924,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Bug"
     ],
@@ -206321,8 +206320,8 @@
     "size": "Small",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Bug"
     ],
@@ -206634,8 +206633,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 1",
       "Water 2"
@@ -206996,8 +206995,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Plant"
     ],
@@ -208174,8 +208173,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Fairy"
     ],
@@ -208702,8 +208701,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Monster",
       "Dragon"
@@ -209085,8 +209084,8 @@
     "size": "Medium",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 2"
     ],
@@ -209376,7 +209375,7 @@
     ],
     "source_gen": "gen5",
     "width": 1.32,
-    "height": 1.0,
+    "height": 1,
     "base": 1,
     "clearance": 1
   },
@@ -209423,8 +209422,8 @@
     "size": "Large",
     "weight": 6,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -209845,8 +209844,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Humanshape"
     ],
@@ -210237,7 +210236,7 @@
     ],
     "source_gen": "gen5",
     "width": 0.7,
-    "height": 1.0,
+    "height": 1,
     "base": 1,
     "clearance": 1
   },
@@ -210285,8 +210284,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Humanshape"
     ],
@@ -210746,8 +210745,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -211053,8 +211052,8 @@
     "size": "Medium",
     "weight": 5,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Mineral"
     ],
@@ -211360,8 +211359,8 @@
     "size": "Large",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -211725,8 +211724,8 @@
     "size": "Large",
     "weight": 3,
     "genderless": false,
-    "male_pct": 100.0,
-    "female_pct": 0.0,
+    "male_pct": 100,
+    "female_pct": 0,
     "egg_groups": [
       "Flying"
     ],
@@ -212486,8 +212485,8 @@
     "size": "Medium",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Indeterminate"
     ],
@@ -212842,7 +212841,7 @@
     ],
     "source_gen": "gen5",
     "width": 0.99,
-    "height": 1.0,
+    "height": 1,
     "base": 1,
     "clearance": 1
   },
@@ -212889,8 +212888,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 25.0,
-    "female_pct": 75.0,
+    "male_pct": 25,
+    "female_pct": 75,
     "egg_groups": [
       "Field"
     ],
@@ -213695,8 +213694,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Mineral",
       "Indeterminate"
@@ -214086,8 +214085,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 75.0,
-    "female_pct": 25.0,
+    "male_pct": 75,
+    "female_pct": 25,
     "egg_groups": [
       "Humanshape"
     ],
@@ -214484,8 +214483,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Plant",
       "Fairy"
@@ -214827,8 +214826,8 @@
     "size": "Medium",
     "weight": 6,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Bug",
       "Mineral"
@@ -215585,8 +215584,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -215957,8 +215956,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -216046,8 +216045,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -216406,8 +216405,8 @@
     "size": "Small",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -216807,8 +216806,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -217160,8 +217159,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Dragon"
     ],
@@ -217886,8 +217885,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -218235,8 +218234,8 @@
     "size": "Large",
     "weight": 5,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Dragon",
       "Monster"
@@ -218714,8 +218713,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 1",
       "Flying"
@@ -219041,8 +219040,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Indeterminate"
     ],
@@ -219436,8 +219435,8 @@
     "size": "Small",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Bug"
     ],
@@ -219805,8 +219804,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Bug",
       "Mineral"
@@ -220196,8 +220195,8 @@
     "size": "Medium",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Indeterminate"
     ],
@@ -220537,8 +220536,8 @@
     "size": "Large",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Indeterminate"
     ],
@@ -220989,8 +220988,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Humanshape"
     ],
@@ -221900,8 +221899,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -222262,8 +222261,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Bug"
     ],
@@ -222541,7 +222540,7 @@
     ],
     "source_gen": "gen5",
     "width": 0.89,
-    "height": 1.0,
+    "height": 1,
     "base": 1,
     "clearance": 1
   },
@@ -222589,8 +222588,8 @@
     "size": "Small",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -222953,8 +222952,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Plant",
       "Mineral"
@@ -223310,8 +223309,8 @@
     "size": "Medium",
     "weight": 5,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Plant",
       "Mineral"
@@ -223666,7 +223665,7 @@
     ],
     "source_gen": "gen5",
     "width": 0.99,
-    "height": 1.0,
+    "height": 1,
     "base": 1,
     "clearance": 1
   },
@@ -223714,8 +223713,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Plant"
     ],
@@ -224046,8 +224045,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Monster",
       "Dragon"
@@ -224378,8 +224377,8 @@
       }
     ],
     "source_gen": "gen5",
-    "width": 1.0,
-    "height": 1.0,
+    "width": 1,
+    "height": 1,
     "base": 1,
     "clearance": 1
   },
@@ -224427,8 +224426,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Indeterminate"
     ],
@@ -224813,8 +224812,8 @@
     "size": "Medium",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Bug"
     ],
@@ -225154,8 +225153,8 @@
     "size": "Large",
     "weight": 5,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Mineral"
     ],
@@ -225963,8 +225962,8 @@
     "size": "Large",
     "weight": 6,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Mineral"
     ],
@@ -226649,7 +226648,7 @@
     ],
     "source_gen": "gen5",
     "width": 1.04,
-    "height": 1.0,
+    "height": 1,
     "base": 1,
     "clearance": 1
   },
@@ -227150,8 +227149,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 25.0,
-    "female_pct": 75.0,
+    "male_pct": 25,
+    "female_pct": 75,
     "egg_groups": [
       "Humanshape"
     ],
@@ -227602,8 +227601,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 25.0,
-    "female_pct": 75.0,
+    "male_pct": 25,
+    "female_pct": 75,
     "egg_groups": [
       "Humanshape"
     ],
@@ -228068,8 +228067,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 25.0,
-    "female_pct": 75.0,
+    "male_pct": 25,
+    "female_pct": 75,
     "egg_groups": [
       "Humanshape"
     ],
@@ -228501,8 +228500,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 75.0,
-    "female_pct": 25.0,
+    "male_pct": 75,
+    "female_pct": 25,
     "egg_groups": [
       "Humanshape"
     ],
@@ -228884,8 +228883,8 @@
     "size": "Medium",
     "weight": 5,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Monster",
       "Dragon"
@@ -229303,8 +229302,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -229731,8 +229730,8 @@
     "size": "Medium",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -230075,8 +230074,8 @@
     "size": "Large",
     "weight": 5,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Dragon"
     ],
@@ -230547,8 +230546,8 @@
     "size": "Large",
     "weight": 5,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Indeterminate"
     ],
@@ -230933,8 +230932,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Bug"
     ],
@@ -231291,8 +231290,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Bug"
     ],
@@ -232949,8 +232948,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -233331,7 +233330,7 @@
     ],
     "source_gen": "gen5",
     "width": 0.93,
-    "height": 1.0,
+    "height": 1,
     "base": 1,
     "clearance": 1
   },
@@ -233384,8 +233383,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -234244,7 +234243,7 @@
     ],
     "source_gen": "gen5",
     "width": 3.16,
-    "height": 3.0,
+    "height": 3,
     "base": 4,
     "clearance": 3
   },
@@ -234662,7 +234661,7 @@
     ],
     "source_gen": "gen5",
     "width": 3.03,
-    "height": 3.0,
+    "height": 3,
     "base": 4,
     "clearance": 3
   },
@@ -235078,7 +235077,7 @@
     ],
     "source_gen": "gen5",
     "width": 3.81,
-    "height": 3.0,
+    "height": 3,
     "base": 4,
     "clearance": 3
   },
@@ -235131,8 +235130,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Indeterminate"
     ],
@@ -236356,8 +236355,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Bug"
     ],
@@ -236698,8 +236697,8 @@
     "size": "Medium",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Bug"
     ],
@@ -237094,8 +237093,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -237498,8 +237497,8 @@
     "size": "Medium",
     "weight": 2,
     "genderless": false,
-    "male_pct": 0.0,
-    "female_pct": 100.0,
+    "male_pct": 0,
+    "female_pct": 100,
     "egg_groups": [
       "Plant"
     ],
@@ -237879,8 +237878,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -238236,8 +238235,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Indeterminate"
     ],
@@ -238634,8 +238633,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 0.0,
-    "female_pct": 100.0,
+    "male_pct": 0,
+    "female_pct": 100,
     "egg_groups": [
       "Flying"
     ],
@@ -239042,8 +239041,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Plant"
     ],
@@ -239353,7 +239352,7 @@
     ],
     "source_gen": "gen5",
     "width": 0.82,
-    "height": 1.0,
+    "height": 1,
     "base": 1,
     "clearance": 1
   },
@@ -240446,8 +240445,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field",
       "Humanshape"
@@ -240867,8 +240866,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field",
       "Humanshape"
@@ -241291,8 +241290,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 25.0,
-    "female_pct": 75.0,
+    "male_pct": 25,
+    "female_pct": 75,
     "egg_groups": [
       "Field"
     ],
@@ -241668,8 +241667,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -242079,8 +242078,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -242883,8 +242882,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 1"
     ],
@@ -244437,8 +244436,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -244787,8 +244786,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Humanshape"
     ],
@@ -245234,8 +245233,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 0.0,
-    "female_pct": 100.0,
+    "male_pct": 0,
+    "female_pct": 100,
     "egg_groups": [
       "Plant"
     ],
@@ -245571,8 +245570,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Flying"
     ],
@@ -246271,7 +246270,7 @@
     ],
     "source_gen": "gen5",
     "width": 0.95,
-    "height": 1.0,
+    "height": 1,
     "base": 1,
     "clearance": 1
   },
@@ -246318,8 +246317,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -247153,8 +247152,8 @@
     "size": "Medium",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Indeterminate"
     ],
@@ -247584,7 +247583,7 @@
     ],
     "source_gen": "gen5",
     "width": 1.69,
-    "height": 1.0,
+    "height": 1,
     "base": 1,
     "clearance": 1
   },
@@ -247636,8 +247635,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Mineral"
     ],
@@ -247959,8 +247958,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 100.0,
-    "female_pct": 0.0,
+    "male_pct": 100,
+    "female_pct": 0,
     "egg_groups": [
       "Flying"
     ],
@@ -248715,8 +248714,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -249108,8 +249107,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 100.0,
-    "female_pct": 0.0,
+    "male_pct": 100,
+    "female_pct": 0,
     "egg_groups": [
       "Humanshape"
     ],
@@ -249504,8 +249503,8 @@
     "size": "Large",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -249871,8 +249870,8 @@
     "size": "Large",
     "weight": 6,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Bug"
     ],
@@ -250246,8 +250245,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field",
       "Dragon"
@@ -250720,8 +250719,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field",
       "Dragon"
@@ -251218,8 +251217,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 1"
     ],
@@ -252391,8 +252390,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Bug"
     ],
@@ -252707,8 +252706,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Bug"
     ],
@@ -252998,8 +252997,8 @@
     "size": "Medium",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Flying"
     ],
@@ -253856,7 +253855,7 @@
     ],
     "source_gen": "gen5",
     "width": 1.02,
-    "height": 1.0,
+    "height": 1,
     "base": 1,
     "clearance": 1
   },
@@ -254744,7 +254743,7 @@
     ],
     "source_gen": "gen5",
     "width": 1.05,
-    "height": 1.0,
+    "height": 1,
     "base": 1,
     "clearance": 1
   },
@@ -255171,8 +255170,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Indeterminate"
     ],
@@ -255590,8 +255589,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -255953,8 +255952,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 1",
       "Indeterminate"
@@ -256363,8 +256362,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Bug"
     ],
@@ -256642,8 +256641,8 @@
     "size": "Medium",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 1",
       "Flying"
@@ -256964,8 +256963,8 @@
     "size": "Medium",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field",
       "Flying"
@@ -258170,8 +258169,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 100.0,
-    "female_pct": 0.0,
+    "male_pct": 100,
+    "female_pct": 0,
     "egg_groups": [
       "Humanshape"
     ],
@@ -259456,8 +259455,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 75.0,
-    "female_pct": 25.0,
+    "male_pct": 75,
+    "female_pct": 25,
     "egg_groups": [
       "Humanshape"
     ],
@@ -261083,8 +261082,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Flying"
     ],
@@ -261390,8 +261389,8 @@
     "size": "Small",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Mineral"
     ],
@@ -261734,8 +261733,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 1"
     ],
@@ -262047,8 +262046,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Indeterminate"
     ],
@@ -262168,8 +262167,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Flying"
     ],
@@ -262493,8 +262492,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Mineral"
     ],
@@ -262803,8 +262802,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Mineral"
     ],
@@ -263127,8 +263126,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Mineral"
     ],
@@ -263459,8 +263458,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Bug"
     ],
@@ -264592,7 +264591,7 @@
     ],
     "source_gen": "gen5",
     "width": 1.51,
-    "height": 2.0,
+    "height": 2,
     "base": 2,
     "clearance": 2
   },
@@ -264640,8 +264639,8 @@
     "size": "Large",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Bug"
     ],
@@ -265028,8 +265027,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 0.0,
-    "female_pct": 100.0,
+    "male_pct": 0,
+    "female_pct": 100,
     "egg_groups": [
       "Flying"
     ],
@@ -265425,8 +265424,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -265861,8 +265860,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Plant",
       "Fairy"
@@ -266240,8 +266239,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Bug"
     ],
@@ -266534,8 +266533,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field",
       "Flying"
@@ -266979,8 +266978,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Mineral",
       "Indeterminate"
@@ -267365,8 +267364,8 @@
     "size": "Large",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -268980,8 +268979,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Dragon"
     ],
@@ -269337,8 +269336,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Mineral"
     ],
@@ -270141,8 +270140,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Fairy"
     ],
@@ -270996,8 +270995,8 @@
     "size": "Huge",
     "weight": 6,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Monster"
     ],
@@ -271336,7 +271335,7 @@
     ],
     "source_gen": "gen6",
     "width": 4.25,
-    "height": 2.0,
+    "height": 2,
     "base": 3,
     "clearance": 2
   },
@@ -271384,8 +271383,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 1",
       "Water 3"
@@ -271896,8 +271895,8 @@
     "size": "Small",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Monster"
     ],
@@ -272191,7 +272190,7 @@
     ],
     "source_gen": "gen6",
     "width": 0.82,
-    "height": 1.0,
+    "height": 1,
     "base": 1,
     "clearance": 1
   },
@@ -272239,8 +272238,8 @@
     "size": "Small",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 1",
       "Water 3"
@@ -273076,7 +273075,7 @@
     ],
     "source_gen": "gen6",
     "width": 0.85,
-    "height": 1.0,
+    "height": 1,
     "base": 1,
     "clearance": 1
   },
@@ -273123,8 +273122,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -274893,8 +274892,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 1",
       "Water 3"
@@ -275228,8 +275227,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 1",
       "Water 3"
@@ -275604,8 +275603,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field",
       "Fairy"
@@ -276869,8 +276868,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -277290,7 +277289,7 @@
     ],
     "source_gen": "gen6",
     "width": 1.15,
-    "height": 1.0,
+    "height": 1,
     "base": 1,
     "clearance": 1
   },
@@ -277343,8 +277342,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Mineral"
     ],
@@ -277669,8 +277668,8 @@
     "size": "Large",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 1",
       "Dragon"
@@ -278047,8 +278046,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -278813,8 +278812,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 0.0,
-    "female_pct": 100.0,
+    "male_pct": 0,
+    "female_pct": 100,
     "egg_groups": [
       "Fairy"
     ],
@@ -279157,8 +279156,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Flying"
     ],
@@ -279494,8 +279493,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Flying"
     ],
@@ -279808,8 +279807,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 0.0,
-    "female_pct": 100.0,
+    "male_pct": 0,
+    "female_pct": 100,
     "egg_groups": [
       "Fairy"
     ],
@@ -280152,8 +280151,8 @@
     "size": "Medium",
     "weight": 1,
     "genderless": false,
-    "male_pct": 0.0,
-    "female_pct": 100.0,
+    "male_pct": 0,
+    "female_pct": 100,
     "egg_groups": [
       "Fairy"
     ],
@@ -281291,8 +281290,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -281641,8 +281640,8 @@
     "size": "Large",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -282043,8 +282042,8 @@
     "size": "Large",
     "weight": 5,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Dragon"
     ],
@@ -282386,7 +282385,7 @@
     ],
     "source_gen": "gen6",
     "width": 1.19,
-    "height": 2.0,
+    "height": 2,
     "base": 2,
     "clearance": 2
   },
@@ -282438,8 +282437,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Dragon"
     ],
@@ -282723,8 +282722,8 @@
     "size": "Medium",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Amorphous"
     ],
@@ -282813,8 +282812,8 @@
     "size": "Medium",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Amorphous"
     ],
@@ -282903,8 +282902,8 @@
     "size": "Large",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Amorphous"
     ],
@@ -282993,8 +282992,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Amorphous"
     ],
@@ -283868,8 +283867,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Human-Like"
     ],
@@ -284349,8 +284348,8 @@
     "size": "Medium",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Monster",
       "Dragon"
@@ -284704,7 +284703,7 @@
     ],
     "source_gen": "gen6",
     "width": 0.69,
-    "height": 1.0,
+    "height": 1,
     "base": 1,
     "clearance": 1
   },
@@ -284752,8 +284751,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Monster",
       "Dragon"
@@ -285123,8 +285122,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Mineral"
     ],
@@ -286000,8 +285999,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 1",
       "Water 2"
@@ -286398,8 +286397,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Mineral"
     ],
@@ -286764,8 +286763,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -287143,8 +287142,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 1",
       "Water 2"
@@ -287562,8 +287561,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -287973,8 +287972,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Flying"
     ],
@@ -288374,8 +288373,8 @@
     "size": "Large",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Flying"
     ],
@@ -288817,8 +288816,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field, Human-Like"
     ],
@@ -289286,8 +289285,8 @@
     "size": "Large",
     "weight": 5,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field, Human-Like"
     ],
@@ -289808,8 +289807,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Grass",
       "Amorphous"
@@ -290201,8 +290200,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Amorphous"
     ],
@@ -290292,8 +290291,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Amorphous"
     ],
@@ -290383,8 +290382,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Amorphous"
     ],
@@ -290474,8 +290473,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Amorphous"
     ],
@@ -290886,8 +290885,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -291760,8 +291759,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Bug"
     ],
@@ -291877,8 +291876,8 @@
     "size": "Small",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -292237,8 +292236,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 1",
       "Dragon"
@@ -292576,8 +292575,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Dragon"
     ],
@@ -292854,8 +292853,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Fairy"
     ],
@@ -293218,8 +293217,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Bug"
     ],
@@ -293329,8 +293328,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Fairy"
     ],
@@ -293695,8 +293694,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Fairy"
     ],
@@ -294046,8 +294045,8 @@
     "size": "Medium",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -294348,7 +294347,7 @@
     ],
     "source_gen": "gen6",
     "width": 0.69,
-    "height": 1.0,
+    "height": 1,
     "base": 1,
     "clearance": 1
   },
@@ -294401,8 +294400,8 @@
     "size": "Medium",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Flying"
     ],
@@ -294756,8 +294755,8 @@
     "size": "Large",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Grass",
       "Amorphous"
@@ -295975,8 +295974,8 @@
     "size": "Medium",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Bug"
     ],
@@ -296687,7 +296686,7 @@
     ],
     "source_gen": "gen6",
     "width": 2.52,
-    "height": 3.0,
+    "height": 3,
     "base": 3,
     "clearance": 3
   },
@@ -297469,7 +297468,7 @@
     ],
     "source_gen": "gen6",
     "width": 4.48,
-    "height": 5.0,
+    "height": 5,
     "base": 3,
     "clearance": 5
   },
@@ -297517,8 +297516,8 @@
     "size": "Large",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 1",
       "Bug"
@@ -297855,8 +297854,8 @@
     "size": "Large",
     "weight": 5,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -298581,8 +298580,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 0.0,
-    "female_pct": 100.0,
+    "male_pct": 0,
+    "female_pct": 100,
     "egg_groups": [
       "Plant"
     ],
@@ -299200,8 +299199,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 2"
     ],
@@ -300363,8 +300362,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Bug"
     ],
@@ -300654,8 +300653,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 25.0,
-    "female_pct": 75.0,
+    "male_pct": 25,
+    "female_pct": 75,
     "egg_groups": [
       "Plant"
     ],
@@ -301281,8 +301280,8 @@
     "size": "Large",
     "weight": 5,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 3"
     ],
@@ -301652,8 +301651,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 3"
     ],
@@ -302003,8 +302002,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Bug",
       "Fairy"
@@ -303106,8 +303105,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 1",
       "Bug"
@@ -303837,8 +303836,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -304164,8 +304163,8 @@
     "size": "Huge",
     "weight": 5,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Monster",
       "Dragon"
@@ -304600,7 +304599,7 @@
     ],
     "source_gen": "gen7",
     "width": 3.23,
-    "height": 3.0,
+    "height": 3,
     "base": 3,
     "clearance": 3
   },
@@ -304648,8 +304647,8 @@
     "size": "Small",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -304990,8 +304989,8 @@
     "size": "Huge",
     "weight": 6,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Plant"
     ],
@@ -305441,8 +305440,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Plant"
     ],
@@ -305766,8 +305765,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Mineral"
     ],
@@ -306169,8 +306168,8 @@
     "size": "Medium",
     "weight": 6,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Mineral"
     ],
@@ -306593,8 +306592,8 @@
     "size": "Large",
     "weight": 5,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Bug",
       "Water 3"
@@ -306970,7 +306969,7 @@
     ],
     "source_gen": "gen7",
     "width": 2.08,
-    "height": 2.0,
+    "height": 2,
     "base": 2,
     "clearance": 2
   },
@@ -307023,8 +307022,8 @@
     "size": "Medium",
     "weight": 5,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Mineral"
     ],
@@ -307361,7 +307360,7 @@
     ],
     "source_gen": "gen7",
     "width": 1.76,
-    "height": 1.0,
+    "height": 1,
     "base": 1,
     "clearance": 1
   },
@@ -307409,8 +307408,8 @@
     "size": "Small",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Indeterminate"
     ],
@@ -307836,8 +307835,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Bug"
     ],
@@ -308128,8 +308127,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -308902,8 +308901,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Dragon"
     ],
@@ -309736,8 +309735,8 @@
     "size": "Small",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Dragon"
     ],
@@ -310423,8 +310422,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -310761,8 +310760,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Dragon"
     ],
@@ -311969,7 +311968,7 @@
     ],
     "source_gen": "gen7",
     "width": 4.87,
-    "height": 4.0,
+    "height": 4,
     "base": 3,
     "clearance": 4
   },
@@ -312016,8 +312015,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Plant"
     ],
@@ -312368,8 +312367,8 @@
     "size": "Small",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -312712,8 +312711,8 @@
     "size": "Small",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -313052,8 +313051,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -313772,7 +313771,7 @@
     ],
     "source_gen": "gen7",
     "width": 0.68,
-    "height": 1.0,
+    "height": 1,
     "base": 1,
     "clearance": 1
   },
@@ -313820,8 +313819,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 1"
     ],
@@ -314176,8 +314175,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Monster"
     ],
@@ -314606,7 +314605,7 @@
     ],
     "source_gen": "gen7",
     "width": 1.21,
-    "height": 1.0,
+    "height": 1,
     "base": 1,
     "clearance": 1
   },
@@ -315074,8 +315073,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -315482,8 +315481,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Indeterminate"
     ],
@@ -316652,8 +316651,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Plant"
     ],
@@ -316989,8 +316988,8 @@
     "size": "Medium",
     "weight": 5,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -317255,7 +317254,7 @@
     ],
     "source_gen": "gen7",
     "width": 0.72,
-    "height": 1.0,
+    "height": 1,
     "base": 1,
     "clearance": 1
   },
@@ -317302,8 +317301,8 @@
     "size": "Large",
     "weight": 6,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -317615,8 +317614,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Indeterminate"
     ],
@@ -318002,7 +318001,7 @@
     ],
     "source_gen": "gen7",
     "width": 1.68,
-    "height": 1.0,
+    "height": 1,
     "base": 1,
     "clearance": 1
   },
@@ -320162,8 +320161,8 @@
     "size": "Medium",
     "weight": 2,
     "genderless": false,
-    "male_pct": 25.0,
-    "female_pct": 75.0,
+    "male_pct": 25,
+    "female_pct": 75,
     "egg_groups": [
       "Field"
     ],
@@ -320562,8 +320561,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -321003,8 +321002,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 25.0,
-    "female_pct": 75.0,
+    "male_pct": 25,
+    "female_pct": 75,
     "egg_groups": [
       "Flying"
     ],
@@ -321085,8 +321084,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 25.0,
-    "female_pct": 75.0,
+    "male_pct": 25,
+    "female_pct": 75,
     "egg_groups": [
       "Flying"
     ],
@@ -321167,8 +321166,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 25.0,
-    "female_pct": 75.0,
+    "male_pct": 25,
+    "female_pct": 75,
     "egg_groups": [
       "Flying"
     ],
@@ -321249,8 +321248,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 25.0,
-    "female_pct": 75.0,
+    "male_pct": 25,
+    "female_pct": 75,
     "egg_groups": [
       "Flying"
     ],
@@ -321586,8 +321585,8 @@
     "size": "Medium",
     "weight": 6,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Indeterminate"
     ],
@@ -321939,8 +321938,8 @@
     "size": "Large",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -322307,7 +322306,7 @@
     ],
     "source_gen": "gen7",
     "width": 2.11,
-    "height": 2.0,
+    "height": 2,
     "base": 2,
     "clearance": 2
   },
@@ -322354,8 +322353,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -323144,8 +323143,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Flying"
     ],
@@ -324451,8 +324450,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 1"
     ],
@@ -324739,8 +324738,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field",
       "Fairy"
@@ -325161,8 +325160,8 @@
     "size": "Small",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -325555,8 +325554,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -325921,8 +325920,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Bug",
       "Fairy"
@@ -326288,8 +326287,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -327332,8 +327331,8 @@
     "size": "Medium",
     "weight": 2,
     "genderless": false,
-    "male_pct": 0.0,
-    "female_pct": 100.0,
+    "male_pct": 0,
+    "female_pct": 100,
     "egg_groups": [
       "Dragon",
       "Monster"
@@ -327709,8 +327708,8 @@
     "size": "Small",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -328107,8 +328106,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -328512,8 +328511,8 @@
     "size": "Small",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Indeterminate"
     ],
@@ -328864,8 +328863,8 @@
     "size": "Medium",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Plant"
     ],
@@ -329153,7 +329152,7 @@
     ],
     "source_gen": "gen7",
     "width": 1.19,
-    "height": 1.0,
+    "height": 1,
     "base": 1,
     "clearance": 1
   },
@@ -330456,8 +330455,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 0.0,
-    "female_pct": 100.0,
+    "male_pct": 0,
+    "female_pct": 100,
     "egg_groups": [
       "Plant"
     ],
@@ -330777,8 +330776,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -331872,7 +331871,7 @@
       }
     ],
     "source_gen": "gen7",
-    "width": 1.0,
+    "width": 1,
     "height": 1.3,
     "base": 1,
     "clearance": 1
@@ -332717,8 +332716,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field",
       "Fairy"
@@ -333444,8 +333443,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Flying"
     ],
@@ -333773,8 +333772,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 1"
     ],
@@ -334137,8 +334136,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Flying"
     ],
@@ -334457,8 +334456,8 @@
     "size": "Medium",
     "weight": 2,
     "genderless": false,
-    "male_pct": 0.0,
-    "female_pct": 100.0,
+    "male_pct": 0,
+    "female_pct": 100,
     "egg_groups": [
       "Plant"
     ],
@@ -334813,8 +334812,8 @@
     "size": "Large",
     "weight": 6,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Monster",
       "Dragon"
@@ -335188,7 +335187,7 @@
     ],
     "source_gen": "gen7",
     "width": 1.76,
-    "height": 2.0,
+    "height": 2,
     "base": 2,
     "clearance": 2
   },
@@ -335595,8 +335594,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Bug"
     ],
@@ -336349,8 +336348,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 25.0,
-    "female_pct": 75.0,
+    "male_pct": 25,
+    "female_pct": 75,
     "egg_groups": [
       "Field"
     ],
@@ -336721,8 +336720,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Bug",
       "Water 3"
@@ -336927,8 +336926,8 @@
     "size": "Huge",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 2"
     ],
@@ -337244,8 +337243,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 2"
     ],
@@ -337933,8 +337932,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -339793,8 +339792,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 0.0,
-    "female_pct": 100.0,
+    "male_pct": 0,
+    "female_pct": 100,
     "egg_groups": [
       "Fairy",
       "Indeterminate"
@@ -339970,8 +339969,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Plant",
       "Dragon"
@@ -340193,8 +340192,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Plant",
       "Dragon"
@@ -340475,7 +340474,7 @@
     ],
     "source_gen": "gen8",
     "width": 1.86,
-    "height": 2.0,
+    "height": 2,
     "base": 2,
     "clearance": 2
   },
@@ -340724,8 +340723,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 2"
     ],
@@ -341145,8 +341144,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 2"
     ],
@@ -341322,8 +341321,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Bug"
     ],
@@ -341421,8 +341420,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -341542,7 +341541,7 @@
     ],
     "source_gen": "gen8",
     "width": 0.48,
-    "height": 1.0,
+    "height": 1,
     "base": 1,
     "clearance": 1
   },
@@ -342305,8 +342304,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Mineral"
     ],
@@ -342484,8 +342483,8 @@
     "size": "Huge",
     "weight": 5,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Bug"
     ],
@@ -342617,7 +342616,7 @@
     ],
     "source_gen": "gen8",
     "width": 2.29,
-    "height": 3.0,
+    "height": 3,
     "base": 3,
     "clearance": 3
   },
@@ -342664,8 +342663,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Monster",
       "Water 1"
@@ -343050,8 +343049,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 1",
       "Humanshape"
@@ -343251,8 +343250,8 @@
     "size": "Huge",
     "weight": 6,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Mineral"
     ],
@@ -343452,8 +343451,8 @@
     "size": "Huge",
     "weight": 6,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field",
       "Mineral"
@@ -343619,7 +343618,7 @@
     ],
     "source_gen": "gen8",
     "width": 2.5,
-    "height": 3.0,
+    "height": 3,
     "base": 3,
     "clearance": 3
   },
@@ -343666,8 +343665,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 25.0,
-    "female_pct": 75.0,
+    "male_pct": 25,
+    "female_pct": 75,
     "egg_groups": [
       "Water 1",
       "Water 3"
@@ -343901,8 +343900,8 @@
     "size": "Large",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Flying"
     ],
@@ -344092,8 +344091,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Flying"
     ],
@@ -344254,8 +344253,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 1",
       "Flying"
@@ -344454,8 +344453,8 @@
     "size": "Medium",
     "weight": 5,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field",
       "Mineral"
@@ -344679,8 +344678,8 @@
     "size": "Medium",
     "weight": 1,
     "genderless": false,
-    "male_pct": 25.0,
-    "female_pct": 75.0,
+    "male_pct": 25,
+    "female_pct": 75,
     "egg_groups": [
       "Water 1",
       "Water 3"
@@ -344848,7 +344847,7 @@
     ],
     "source_gen": "gen8",
     "width": 1.01,
-    "height": 1.0,
+    "height": 1,
     "base": 1,
     "clearance": 1
   },
@@ -344895,8 +344894,8 @@
     "size": "Huge",
     "weight": 5,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -345107,8 +345106,8 @@
     "size": "Huge",
     "weight": 5,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -345319,8 +345318,8 @@
     "size": "Small",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -345543,8 +345542,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Bug"
     ],
@@ -346099,8 +346098,8 @@
     "size": "Huge",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Indeterminate",
       "Dragon"
@@ -346266,7 +346265,7 @@
     ],
     "source_gen": "gen8",
     "width": 2.72,
-    "height": 3.0,
+    "height": 3,
     "base": 3,
     "clearance": 3
   },
@@ -346319,8 +346318,8 @@
     "size": "Medium",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Indeterminate",
       "Dragon"
@@ -346526,8 +346525,8 @@
     "size": "Medium",
     "weight": 5,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Monster",
       "Water 1"
@@ -346681,7 +346680,7 @@
     ],
     "source_gen": "gen8",
     "width": 1.22,
-    "height": 1.0,
+    "height": 1,
     "base": 1,
     "clearance": 1
   },
@@ -346734,8 +346733,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Indeterminate",
       "Dragon"
@@ -347061,8 +347060,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -347236,8 +347235,8 @@
     "size": "Medium",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Mineral",
       "Dragon"
@@ -347444,8 +347443,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 1",
       "Field"
@@ -347644,8 +347643,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 1",
       "Field"
@@ -347849,8 +347848,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Plant"
     ],
@@ -348153,7 +348152,7 @@
     ],
     "source_gen": "gen8",
     "width": 25.39,
-    "height": 20.0,
+    "height": 20,
     "base": 4,
     "clearance": 20
   },
@@ -348339,7 +348338,7 @@
     ],
     "source_gen": "gen8",
     "width": 5.18,
-    "height": 3.0,
+    "height": 3,
     "base": 3,
     "clearance": 3
   },
@@ -348386,8 +348385,8 @@
     "size": "Huge",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Flying",
       "Field"
@@ -348603,8 +348602,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Plant",
       "Dragon"
@@ -348810,8 +348809,8 @@
     "size": "Medium",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Bug"
     ],
@@ -349220,8 +349219,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Plant"
     ],
@@ -349402,8 +349401,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 1",
       "Humanshape"
@@ -349600,8 +349599,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -349808,8 +349807,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 100.0,
-    "female_pct": 0.0,
+    "male_pct": 100,
+    "female_pct": 0,
     "egg_groups": [
       "Fairy",
       "Humanshape"
@@ -350265,8 +350264,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 0.0,
-    "female_pct": 100.0,
+    "male_pct": 0,
+    "female_pct": 100,
     "egg_groups": [
       "Fairy"
     ],
@@ -350445,8 +350444,8 @@
     "size": "Large",
     "weight": 1,
     "genderless": false,
-    "male_pct": 0.0,
-    "female_pct": 100.0,
+    "male_pct": 0,
+    "female_pct": 100,
     "egg_groups": [
       "Fairy"
     ],
@@ -350626,8 +350625,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 0.0,
-    "female_pct": 100.0,
+    "male_pct": 0,
+    "female_pct": 100,
     "egg_groups": [
       "Fairy"
     ],
@@ -350791,8 +350790,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 100.0,
-    "female_pct": 0.0,
+    "male_pct": 100,
+    "female_pct": 0,
     "egg_groups": [
       "Fairy",
       "Humanshape"
@@ -350988,8 +350987,8 @@
     "size": "Small",
     "weight": 3,
     "genderless": false,
-    "male_pct": 0.0,
-    "female_pct": 100.0,
+    "male_pct": 0,
+    "female_pct": 100,
     "egg_groups": [
       "Fairy"
     ],
@@ -351178,8 +351177,8 @@
     "size": "Small",
     "weight": 3,
     "genderless": false,
-    "male_pct": 100.0,
-    "female_pct": 0.0,
+    "male_pct": 100,
+    "female_pct": 0,
     "egg_groups": [
       "Fairy"
     ],
@@ -351832,8 +351831,8 @@
     "size": "Small",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -352400,8 +352399,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -352627,8 +352626,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 0.0,
-    "female_pct": 100.0,
+    "male_pct": 0,
+    "female_pct": 100,
     "egg_groups": [
       "Fairy",
       "Indeterminate"
@@ -352993,7 +352992,7 @@
     ],
     "source_gen": "gen8",
     "width": 3.1,
-    "height": 2.0,
+    "height": 2,
     "base": 2,
     "clearance": 2
   },
@@ -353046,8 +353045,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 100.0,
-    "female_pct": 0.0,
+    "male_pct": 100,
+    "female_pct": 0,
     "egg_groups": [
       "Fairy",
       "Humanshape"
@@ -353237,8 +353236,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field",
       "Fairy"
@@ -353459,8 +353458,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Humanshape"
     ],
@@ -353749,8 +353748,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Humanshape"
     ],
@@ -354049,8 +354048,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -354230,8 +354229,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -354494,8 +354493,8 @@
     "size": "Small",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Bug"
     ],
@@ -354710,8 +354709,8 @@
     "size": "Small",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -354919,8 +354918,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 1",
       "Indeterminate"
@@ -355294,8 +355293,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -355689,8 +355688,8 @@
     "size": "Large",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -356546,8 +356545,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Mineral"
     ],
@@ -356727,8 +356726,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Flying"
     ],
@@ -356911,8 +356910,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Mineral",
       "Indeterminate"
@@ -357124,8 +357123,8 @@
     "size": "Large",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field",
       "Dragon"
@@ -357521,8 +357520,8 @@
     "size": "Medium",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field",
       "Dragon"
@@ -357888,8 +357887,8 @@
     "size": "Huge",
     "weight": 5,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Flying",
       "Field"
@@ -358099,8 +358098,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Bug"
     ],
@@ -358290,8 +358289,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -358498,8 +358497,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Monster",
       "Water 1"
@@ -358805,8 +358804,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Monster",
       "Water 1"
@@ -359136,8 +359135,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Monster",
       "Water 1"
@@ -359432,8 +359431,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Bug"
     ],
@@ -359895,7 +359894,7 @@
     ],
     "source_gen": "gen8",
     "width": 1.33,
-    "height": 2.0,
+    "height": 2,
     "base": 2,
     "clearance": 2
   },
@@ -359937,8 +359936,8 @@
     "size": "Large",
     "weight": 5,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Mineral"
     ],
@@ -360148,8 +360147,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 1",
       "Indeterminate"
@@ -360372,8 +360371,8 @@
     "size": "Medium",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -360732,8 +360731,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Humanshape"
     ],
@@ -360868,8 +360867,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Humanshape"
     ],
@@ -361625,8 +361624,8 @@
     "size": "Huge",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Indeterminate"
     ],
@@ -361771,8 +361770,8 @@
       }
     ],
     "source_gen": "gen8",
-    "width": 3.0,
-    "height": 3.0,
+    "width": 3,
+    "height": 3,
     "base": 3,
     "clearance": 3
   },
@@ -361819,8 +361818,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -361983,8 +361982,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Mineral",
       "Indeterminate"
@@ -362193,8 +362192,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -363617,8 +363616,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -363839,8 +363838,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Plant"
     ],
@@ -364186,8 +364185,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Plant"
     ],
@@ -364488,8 +364487,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 2"
     ],
@@ -364774,8 +364773,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 2"
     ],
@@ -365116,8 +365115,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 2"
     ],
@@ -365463,8 +365462,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Plant"
     ],
@@ -365758,8 +365757,8 @@
     "size": "Large",
     "weight": 5,
     "genderless": false,
-    "male_pct": 75.0,
-    "female_pct": 25.0,
+    "male_pct": 75,
+    "female_pct": 25,
     "egg_groups": [
       "Field"
     ],
@@ -365914,7 +365913,7 @@
     ],
     "source_gen": "hisui",
     "width": 2.1,
-    "height": 2.0,
+    "height": 2,
     "base": 2,
     "clearance": 2
   },
@@ -365962,8 +365961,8 @@
     "size": "Large",
     "weight": 6,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Monster"
     ],
@@ -366175,8 +366174,8 @@
     "size": "Huge",
     "weight": 5,
     "genderless": false,
-    "male_pct": 0.0,
-    "female_pct": 100.0,
+    "male_pct": 0,
+    "female_pct": 100,
     "egg_groups": [
       "Water 2"
     ],
@@ -366312,7 +366311,7 @@
     ],
     "source_gen": "hisui",
     "width": 4.42,
-    "height": 3.0,
+    "height": 3,
     "base": 3,
     "clearance": 3
   },
@@ -366359,8 +366358,8 @@
     "size": "Huge",
     "weight": 5,
     "genderless": false,
-    "male_pct": 100.0,
-    "female_pct": 0.0,
+    "male_pct": 100,
+    "female_pct": 0,
     "egg_groups": [
       "Water 2"
     ],
@@ -366496,7 +366495,7 @@
     ],
     "source_gen": "hisui",
     "width": 4.31,
-    "height": 3.0,
+    "height": 3,
     "base": 3,
     "clearance": 3
   },
@@ -366544,8 +366543,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 100.0,
-    "female_pct": 0.0,
+    "male_pct": 100,
+    "female_pct": 0,
     "egg_groups": [
       "Flying"
     ],
@@ -367363,7 +367362,7 @@
     ],
     "source_gen": "hisui",
     "width": 5.76,
-    "height": 7.0,
+    "height": 7,
     "base": 4,
     "clearance": 7
   },
@@ -367575,8 +367574,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 0.0,
-    "female_pct": 100.0,
+    "male_pct": 0,
+    "female_pct": 100,
     "egg_groups": [],
     "hatch_rate": "40 Days",
     "diet": [
@@ -367744,8 +367743,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 0.0,
-    "female_pct": 100.0,
+    "male_pct": 0,
+    "female_pct": 100,
     "egg_groups": [],
     "hatch_rate": "40 Days",
     "diet": [
@@ -367927,8 +367926,8 @@
     "size": "Medium",
     "weight": 6,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Dragon"
     ],
@@ -368127,8 +368126,8 @@
     "size": "Small",
     "weight": 2,
     "genderless": false,
-    "male_pct": 75.0,
-    "female_pct": 25.0,
+    "male_pct": 75,
+    "female_pct": 25,
     "egg_groups": [
       "Field"
     ],
@@ -368306,8 +368305,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Bug"
     ],
@@ -368501,8 +368500,8 @@
     "size": "Medium",
     "weight": 2,
     "genderless": false,
-    "male_pct": 0.0,
-    "female_pct": 100.0,
+    "male_pct": 0,
+    "female_pct": 100,
     "egg_groups": [
       "Plant"
     ],
@@ -368699,8 +368698,8 @@
     "size": "Large",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 2"
     ],
@@ -369355,8 +369354,8 @@
     "size": "Small",
     "weight": 1,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Water 2"
     ],
@@ -369759,8 +369758,8 @@
     "size": "Small",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Dragon"
     ],
@@ -369934,8 +369933,8 @@
     "size": "Small",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -370120,8 +370119,8 @@
     "size": "Medium",
     "weight": 3,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -370541,8 +370540,8 @@
     "size": "Large",
     "weight": 6,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -370912,8 +370911,8 @@
     "size": "Medium",
     "weight": 4,
     "genderless": false,
-    "male_pct": 50.0,
-    "female_pct": 50.0,
+    "male_pct": 50,
+    "female_pct": 50,
     "egg_groups": [
       "Field"
     ],
@@ -371444,7 +371443,7 @@
     "species": "Zygarde 50% Forme",
     "size": "Huge",
     "width": 4.48,
-    "height": 5.0,
+    "height": 5,
     "base": 3,
     "clearance": 5
   },
@@ -371491,7 +371490,7 @@
   {
     "species": "Zamazenta Hero Of Many Battles Forme",
     "size": "Huge",
-    "width": 3.0,
+    "width": 3,
     "height": 2.9,
     "base": 3,
     "clearance": 3
@@ -371508,7 +371507,7 @@
     "species": "Archaludon",
     "size": "Large",
     "width": 1.48,
-    "height": 2.0,
+    "height": 2,
     "base": 2,
     "clearance": 2
   },
@@ -371635,7 +371634,7 @@
   {
     "species": "Clodsire",
     "size": "Medium",
-    "width": 3.0,
+    "width": 3,
     "height": 1.8,
     "base": 1,
     "clearance": 2
@@ -371644,7 +371643,7 @@
     "species": "Crocalor",
     "size": "Medium",
     "width": 0.8,
-    "height": 1.0,
+    "height": 1,
     "base": 1,
     "clearance": 1
   },
@@ -371676,7 +371675,7 @@
     "species": "Dondozo",
     "size": "Gigantic",
     "width": 24.19,
-    "height": 12.0,
+    "height": 12,
     "base": 4,
     "clearance": 12
   },
@@ -371860,7 +371859,7 @@
     "species": "Houndstone",
     "size": "Large",
     "width": 1.87,
-    "height": 2.0,
+    "height": 2,
     "base": 2,
     "clearance": 2
   },
@@ -371964,7 +371963,7 @@
     "species": "Kingambit",
     "size": "Large",
     "width": 1.49,
-    "height": 2.0,
+    "height": 2,
     "base": 2,
     "clearance": 2
   },
@@ -371996,7 +371995,7 @@
     "species": "Lokix",
     "size": "Medium",
     "width": 0.64,
-    "height": 1.0,
+    "height": 1,
     "base": 1,
     "clearance": 1
   },
@@ -372052,7 +372051,7 @@
     "species": "Munkidori",
     "size": "Medium",
     "width": 1.21,
-    "height": 1.0,
+    "height": 1,
     "base": 1,
     "clearance": 1
   },
@@ -372116,7 +372115,7 @@
     "species": "Oinkologne Female",
     "size": "Medium",
     "width": 0.78,
-    "height": 1.0,
+    "height": 1,
     "base": 1,
     "clearance": 1
   },
@@ -372124,7 +372123,7 @@
     "species": "Oinkologne Male",
     "size": "Medium",
     "width": 0.91,
-    "height": 1.0,
+    "height": 1,
     "base": 1,
     "clearance": 1
   },
@@ -372244,7 +372243,7 @@
     "species": "Roaring Moon",
     "size": "Large",
     "width": 1.79,
-    "height": 2.0,
+    "height": 2,
     "base": 2,
     "clearance": 2
   },
@@ -372308,7 +372307,7 @@
     "species": "Spidops",
     "size": "Medium",
     "width": 1.12,
-    "height": 1.0,
+    "height": 1,
     "base": 1,
     "clearance": 1
   },
@@ -372508,7 +372507,7 @@
     "species": "Varoom",
     "size": "Medium",
     "width": 0.92,
-    "height": 1.0,
+    "height": 1,
     "base": 1,
     "clearance": 1
   },

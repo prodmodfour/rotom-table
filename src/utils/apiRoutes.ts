@@ -46,4 +46,6 @@ export const POKEDEX_API_PATHS = {
   index: '/api/pokedex',
   detail: '/api/pokedex/detail',
   searchIndex: '/api/pokedex/search-index',
+  update: '/api/pokedex/update',
+  restoreFromBooks: '/api/pokedex/restore-from-books',
 } as const

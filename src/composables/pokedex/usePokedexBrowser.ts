@@ -123,10 +123,13 @@ export const usePokedexBrowser = () => {
   }
 
   const {
+    activeSearchFilters,
+    clearSearchEntries,
     filteredEntries,
     filterMode,
     filterOperators,
     isSearchIndexLoading,
+    refreshSearchEntries,
     searchFilters,
     searchIndexError,
   } = usePokedexFilters(allEntries, { loadSearchEntries })
@@ -187,6 +190,18 @@ export const usePokedexBrowser = () => {
   ))
   const ready = Promise.all([summariesRequest, detailRequest])
 
+  const refreshPokedexData = async (): Promise<void> => {
+    const shouldReloadSearchEntries = activeSearchFilters.value.length > 0
+    clearSearchEntries()
+
+    await Promise.all([
+      summariesRequest.refresh(),
+      detailRequest.refresh(),
+    ])
+
+    if (shouldReloadSearchEntries) await refreshSearchEntries()
+  }
+
   const goToRandomPokemon = (): boolean => {
     const path = randomPokedexEntryPath(filteredEntries.value, selectedId.value)
     if (!path) return false
@@ -212,6 +227,7 @@ export const usePokedexBrowser = () => {
     pageNumber,
     pageTitle,
     ready,
+    refreshPokedexData,
     goToRandomPokemon,
     requestedPokemonName,
     searchFilters,
