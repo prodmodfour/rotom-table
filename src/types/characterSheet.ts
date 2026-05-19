@@ -1,4 +1,5 @@
 import type { CombatStageKey } from '~/types/combatStages'
+import type { SheetMoveUsageState } from '~/types/moveUsage'
 
 /**
  * Schema for a Pokémon character sheet, modelled on the PTU pokesheet
@@ -191,6 +192,8 @@ export interface CharacterSheet {
   inheritedRemaining?: number
 
   movelist?: CharacterSheetMove[]
+  /** Persistent Daily move frequency usage. EOT and Scene usage are map-scoped. */
+  moveUsage?: SheetMoveUsageState
 
   /** Override capabilities. Defaults pull from species. */
   capabilities?: CharacterSheetCapabilities

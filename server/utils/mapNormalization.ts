@@ -3,6 +3,7 @@ import { SLUG_RE } from '#shared/paths'
 import { normalizeMapFieldEffects } from '~/utils/mapFieldEffects'
 import { normalizeMapHazard } from '~/utils/mapHazards'
 import { normalizeMaterialId } from '~/utils/mapMaterials'
+import { normalizeMapMoveUsage } from '~/utils/moveUsage'
 
 export interface NormalizeMapDocumentOptions {
   /** Human-readable source label used in validation errors. */
@@ -116,6 +117,7 @@ export const normalizeMapDocument = (
     placements: Array.isArray(record.placements) ? record.placements as TabletopMapV2['placements'] : [],
     lights: Array.isArray(record.lights) ? record.lights as TabletopMapV2['lights'] : [],
     initiative,
+    moveUsage: normalizeMapMoveUsage(record.moveUsage),
     metadata: record.metadata as TabletopMapV2['metadata'],
     createdAt: record.createdAt as TabletopMapV2['createdAt'],
     updatedAt: record.updatedAt as TabletopMapV2['updatedAt'],

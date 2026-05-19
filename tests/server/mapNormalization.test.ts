@@ -36,6 +36,14 @@ const validMap = () => ({
   placements: [{ id: 'token-1' }],
   lights: [{ id: 'light-1' }],
   initiative: { activeId: 'token-1', round: 2 },
+  moveUsage: {
+    byPlacementId: {
+      'token-1': {
+        Thunderbolt: { moveName: 'Thunderbolt', frequency: 'scene', uses: 1, lastUsedRound: 2, updatedAt: 10 },
+        invalid: { moveName: '', frequency: 'daily', uses: 1 },
+      },
+    },
+  },
   metadata: { note: 'kept' },
   createdAt: '2026-01-01T00:00:00.000Z',
   updatedAt: '2026-01-02T00:00:00.000Z',
@@ -57,6 +65,13 @@ describe('map document normalization', () => {
       groundLevelY: 2,
       playerVisible: true,
       initiative: { activeId: 'token-1', round: 2 },
+      moveUsage: {
+        byPlacementId: {
+          'token-1': {
+            thunderbolt: { moveName: 'Thunderbolt', frequency: 'scene', uses: 1, lastUsedRound: 2, updatedAt: 10 },
+          },
+        },
+      },
       metadata: { note: 'kept' },
       createdAt: '2026-01-01T00:00:00.000Z',
       updatedAt: '2026-01-02T00:00:00.000Z',
@@ -92,6 +107,7 @@ describe('map document normalization', () => {
     delete (map as Record<string, unknown>).placements
     delete (map as Record<string, unknown>).lights
     delete (map as Record<string, unknown>).initiative
+    delete (map as Record<string, unknown>).moveUsage
     map.playerVisible = false
 
     const normalized = normalizeMapDocument(map, { sourceLabel: 'fixture' })
@@ -102,6 +118,7 @@ describe('map document normalization', () => {
     expect(normalized.placements).toEqual([])
     expect(normalized.lights).toEqual([])
     expect(normalized.initiative).toEqual({ activeId: null, round: 1 })
+    expect(normalized.moveUsage).toBeUndefined()
     expect(normalized.fieldEffects).toEqual({ weather: [], terrains: [], rooms: [] })
   })
 

@@ -1,4 +1,5 @@
 import type { CombatStageKey } from '~/types/combatStages'
+import type { SheetMoveUsageState } from '~/types/moveUsage'
 
 /**
  * Schema for a Trainer character sheet, modelled on the PTU "Fancy" trainer
@@ -291,6 +292,8 @@ export interface TrainerSheet {
 
   /** Trainer's natural / weapon-attack moves. */
   movelist?: TrainerMove[]
+  /** Persistent Daily move frequency usage. EOT and Scene usage are map-scoped. */
+  moveUsage?: SheetMoveUsageState
   abilities?: TrainerAbilityEntry[]
   maneuvers?: TrainerManeuver[]
   /** Pokémon Training & Orders that the trainer can apply to their team. */

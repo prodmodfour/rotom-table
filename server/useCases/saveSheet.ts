@@ -15,6 +15,7 @@ import {
   writeSheetFile,
   type AllocateSheetSlugOptions,
 } from '../utils/sheetStorage'
+import { tryReadJsonFile } from '../utils/jsonFiles'
 
 export class SaveSheetUseCaseError extends UseCaseHttpError<400 | 403 | 404 | 409> {}
 
@@ -31,6 +32,7 @@ export interface SaveSheetDependencies {
   findSlugPath?: (kind: SheetKind, slug: string) => string | null
   isPlayerAccessible?: (kind: SheetKind, slug: string) => boolean
   stripDerivedFields?: (sheet: Record<string, unknown>) => Record<string, unknown>
+  readExistingSheet?: (path: string) => Record<string, unknown>
   writeSheet?: (path: string, sheet: Record<string, unknown>) => void
   pathExists?: (path: string) => boolean
   renameSheetPath?: (from: string, to: string) => void
@@ -89,6 +91,7 @@ export const saveSheetUseCase = (
   const findSlugPath = dependencies.findSlugPath ?? findPersistedSheetFile
   const isPlayerAccessible = dependencies.isPlayerAccessible ?? sheetIsPlayerAccessible
   const stripDerivedFields = dependencies.stripDerivedFields ?? stripDerivedSheetFields
+  const readExistingSheet = dependencies.readExistingSheet ?? ((path: string) => tryReadJsonFile<Record<string, unknown>>(path) ?? {})
   const writeSheet = dependencies.writeSheet ?? writeSheetFile
   const pathExists = dependencies.pathExists ?? existsSync
   const renameSheetPath = dependencies.renameSheetPath ?? renameSync
@@ -110,6 +113,7 @@ export const saveSheetUseCase = (
     throw new SaveSheetUseCaseError(403, 'Sheet is not marked as player accessible')
   }
 
+  const existingSheet = readExistingSheet(path)
   const target = resolveSheetSaveTarget(input, path, {
     findSlugPath,
     pathExists,
@@ -118,6 +122,9 @@ export const saveSheetUseCase = (
   })
 
   const sheet = stripDerivedFields(input.sheet)
+  if (!Object.prototype.hasOwnProperty.call(input.sheet, 'moveUsage') && existingSheet.moveUsage !== undefined) {
+    sheet.moveUsage = existingSheet.moveUsage
+  }
   sheet.slug = target.slug
   if (input.role === 'player') sheet.player = true
   writeSheet(target.path, sheet)

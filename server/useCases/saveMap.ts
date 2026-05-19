@@ -1,6 +1,7 @@
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { mapChannel, mapsChannel, type RealtimeEvent } from '#shared/realtime'
 import { normalizeMapFieldEffects } from '~/utils/mapFieldEffects'
+import { normalizeMapMoveUsage } from '~/utils/moveUsage'
 import type { AuthRole } from '#shared/auth'
 import type { TabletopMap } from '~/types/map'
 import { relativeToProjectRoot } from '../utils/fsPaths'
@@ -59,6 +60,7 @@ export const toPersistedMap = (
     placements: Array.isArray(source.placements) ? source.placements : [],
     lights: Array.isArray(source.lights) ? source.lights : [],
     initiative,
+    moveUsage: normalizeMapMoveUsage(source.moveUsage),
     metadata: source.metadata,
     createdAt: source.createdAt,
     updatedAt,
@@ -91,8 +93,11 @@ export const saveMapUseCase = (
       dependencies.canControlSheet ?? sheetIsPlayerAccessible,
     )
     : input.map
+  const sourceWithMoveUsage = Object.prototype.hasOwnProperty.call(source, 'moveUsage') || !existing.moveUsage
+    ? source
+    : { ...source, moveUsage: existing.moveUsage }
 
-  const persisted = toPersistedMap(source, filePath, dependencies.now?.() ?? Date.now())
+  const persisted = toPersistedMap(sourceWithMoveUsage, filePath, dependencies.now?.() ?? Date.now())
   writeMapFile(filePath, persisted)
 
   return {

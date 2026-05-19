@@ -115,6 +115,7 @@ export const useEditableMap = (slug: string, debounceMs = 200): UseEditableMapRe
     assignIfChanged(target, 'placements', next.placements)
     assignIfChanged(target, 'lights', next.lights)
     assignIfChanged(target, 'initiative', next.initiative)
+    assignIfChanged(target, 'moveUsage', next.moveUsage)
     assignIfChanged(target, 'metadata', next.metadata)
     assignIfChanged(target, 'createdAt', next.createdAt)
     assignIfChanged(target, 'updatedAt', next.updatedAt)

@@ -4,6 +4,7 @@
  * Maps store sparse terrain voxels, sheet placements, and lighting state.
  */
 import type { GridAnchor, GridDimensions } from './pokemon'
+import type { MapMoveUsageState } from './moveUsage'
 import type { TokenFacingDirection } from './tokenFacing'
 
 export type { GridAnchor, GridDimensions }
@@ -143,6 +144,8 @@ export interface TabletopMapV2 {
   lights?: LightPlacement[]
   /** Current turn + round state for the collapsible initiative tracker. */
   initiative?: InitiativeTrackerState
+  /** Per-placement EOT/Scene move frequency usage for the current map scene. */
+  moveUsage?: MapMoveUsageState
   metadata?: Record<string, unknown>
   createdAt?: number
   updatedAt?: number

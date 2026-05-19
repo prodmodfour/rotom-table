@@ -18,6 +18,7 @@ describe('API route constants', () => {
       folders: '/api/maps/folders',
       load: '/api/maps/load',
       save: '/api/maps/save',
+      useMove: '/api/maps/use-move',
       create: '/api/maps/create',
       createFolder: '/api/maps/create-folder',
       move: '/api/maps/move',

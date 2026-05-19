@@ -95,6 +95,30 @@ describe('save sheet use case', () => {
     })
   })
 
+  it('preserves existing move usage when a general sheet save omits it', () => {
+    const { deps, writes } = createDeps()
+    const moveUsage = { daily: { thunderbolt: { moveName: 'Thunderbolt', uses: 1 } } }
+    const depsWithExisting = {
+      ...deps,
+      readExistingSheet: vi.fn(() => ({ slug: 'pika', nickname: 'Pika', moveUsage })),
+    }
+
+    const result = saveSheetUseCase({
+      role: 'gm',
+      kind: 'pokemon',
+      slug: 'pika',
+      sheet: { slug: 'pika', nickname: 'Pika' },
+    }, depsWithExisting)
+
+    expect(writes).toEqual([
+      {
+        path: '/repo/data/sheets/pika.json',
+        sheet: { slug: 'pika', nickname: 'Pika', moveUsage },
+      },
+    ])
+    expect(result.sheet.moveUsage).toBe(moveUsage)
+  })
+
   it('renames the persisted file and emitted slug when the display name changes', () => {
     const writes: Array<{ path: string; sheet: Record<string, unknown> }> = []
     const renames: Array<{ from: string; to: string }> = []
