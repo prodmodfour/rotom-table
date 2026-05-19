@@ -199,6 +199,7 @@ watch(abilities, (nextAbilities) => {
   <Teleport to="body">
     <div
       class="context-menu"
+      :class="{ 'context-menu--move-panel': activePanel === 'moves' }"
       :style="{ left: `${props.menu.x}px`, top: `${props.menu.y}px` }"
       @contextmenu.prevent
       @pointerdown.stop
@@ -310,7 +311,7 @@ watch(abilities, (nextAbilities) => {
         <p class="context-menu__submenu-title">Use Move</p>
 
         <div class="action-submenu">
-          <div class="action-submenu__list" role="menu" aria-label="Moves">
+          <div class="action-submenu__list action-submenu__list--moves" role="menu" aria-label="Moves">
             <button
               v-for="move in moves"
               :key="move.name"
@@ -506,6 +507,11 @@ watch(abilities, (nextAbilities) => {
   box-sizing: border-box;
 }
 
+.context-menu--move-panel {
+  width: max-content;
+  max-width: none;
+}
+
 .context-menu__button {
   width: 100%;
   border: 1px solid var(--rule-soft);
@@ -581,6 +587,17 @@ watch(abilities, (nextAbilities) => {
   background: var(--paper-soft);
   box-shadow: var(--shadow-card);
   backdrop-filter: blur(8px);
+}
+
+.action-submenu__list--moves {
+  display: grid;
+  grid-template-rows: repeat(4, auto);
+  grid-auto-flow: column;
+  grid-auto-columns: 14rem;
+  gap: 0.25rem;
+  width: max-content;
+  max-height: none;
+  overflow: visible;
 }
 
 .sendout-submenu {
