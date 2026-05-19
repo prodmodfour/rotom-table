@@ -2,7 +2,10 @@ import * as THREE from 'three'
 import { CSS3DSprite } from 'three/examples/jsm/renderers/CSS3DRenderer.js'
 import { disposeObject3D } from '~/utils/isometric/resourceDisposal'
 import type { GridAnchor } from '~/types/map'
-import type { MoveAutomationFeedbackState } from '~/types/moveAutomation'
+import type {
+  MoveAutomationFeedbackState,
+  MoveAutomationTargetHitChance,
+} from '~/types/moveAutomation'
 import type { PokemonRenderObject } from '~/utils/isometric/types'
 
 const RETICLE_CSS_SIZE_PX = 72
@@ -15,12 +18,42 @@ const createTargetReticleElement = (label: string): HTMLElement => {
   element.setAttribute('aria-label', label)
   element.style.pointerEvents = 'none'
 
+  const hitChance = document.createElement('div')
+  hitChance.className = 'move-target-hit-chance'
+  hitChance.hidden = true
+  element.appendChild(hitChance)
+
   const ring = document.createElement('div')
   ring.className = 'move-target-reticle'
   ring.setAttribute('aria-hidden', 'true')
   element.appendChild(ring)
 
   return element
+}
+
+const updateTargetReticleElement = (
+  element: HTMLElement,
+  hitChance: MoveAutomationTargetHitChance | undefined,
+) => {
+  const badge = element.querySelector<HTMLElement>('.move-target-hit-chance')
+  if (!badge) return
+
+  badge.hidden = !hitChance
+  badge.textContent = hitChance?.label ?? ''
+  badge.title = hitChance?.title ?? ''
+  badge.className = [
+    'move-target-hit-chance',
+    hitChance ? `is-${hitChance.tone}` : '',
+  ].filter(Boolean).join(' ')
+
+  const ring = element.querySelector<HTMLElement>('.move-target-reticle')
+  if (ring) {
+    ring.className = [
+      'move-target-reticle',
+      hitChance ? `is-${hitChance.tone}` : '',
+    ].filter(Boolean).join(' ')
+  }
+  element.title = hitChance?.title ?? ''
 }
 
 const setReticleScale = (sprite: CSS3DSprite, renderObject: PokemonRenderObject) => {
@@ -62,6 +95,7 @@ export const createMoveTargetingReticleRenderer = (scene: THREE.Scene) => {
 
   const update = (options: {
     candidateIds: readonly string[]
+    hitChances?: Readonly<Record<string, MoveAutomationTargetHitChance | undefined>>
     renderObjects: Map<string, PokemonRenderObject>
     show: boolean
   }) => {
@@ -71,6 +105,7 @@ export const createMoveTargetingReticleRenderer = (scene: THREE.Scene) => {
       const renderObject = options.renderObjects.get(id)
       reticle.visible = Boolean(options.show && renderObject && candidateSet.has(id))
       if (!renderObject || !reticle.visible) continue
+      updateTargetReticleElement(reticle.element, options.hitChances?.[id])
       reticle.position.set(
         renderObject.currentCenter.x,
         reticleY(renderObject),

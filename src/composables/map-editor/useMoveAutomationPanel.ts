@@ -49,6 +49,7 @@ import {
   moveAutomationTargetsInRange,
   parseSingleTargetMoveRangeMeters,
 } from '~/utils/moveAutomationRange'
+import { moveAutomationTargetHitChance } from '~/utils/moveAutomationAccuracy'
 import { buildAllVoxelOccupancy } from '~/utils/voxelOccupancy'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { GridAnchor, MapFieldEffects, MapHazardV2, TabletopMap } from '~/types/map'
@@ -259,6 +260,17 @@ export const useMoveAutomationPanel = ({
     return blocked ? null : entry
   }
 
+  const moveTargetHitChances = (
+    script: MoveAutomationScript,
+    user: SpawnedPokemon,
+    targetIds: readonly string[],
+  ): NonNullable<MoveAutomationTargetingOverlayState['hitChances']> => Object.fromEntries(
+    targetIds.flatMap((targetId) => {
+      const target = findSpawnedPokemon(targetId)
+      return target ? [[targetId, moveAutomationTargetHitChance(script, user, target)]] : []
+    }),
+  )
+
   const moveAutomationTargeting = computed<MoveAutomationTargetingOverlayState | null>(() => {
     const request = activeMoveTargeting.value
     const user = findSpawnedPokemon(request?.userId)
@@ -272,6 +284,7 @@ export const useMoveAutomationPanel = ({
         rangeLabel: request.label,
         rangeMeters: 0,
         candidateIds: request.targetIds,
+        hitChances: moveTargetHitChances(request.script, user, request.targetIds),
         areaCells: request.cells,
         affectedIds: request.targetIds,
         areaDirection: request.direction,
@@ -285,13 +298,15 @@ export const useMoveAutomationPanel = ({
       rangeMeters: request.rangeMeters,
     })
     if (/\bSelf\b/i.test(request.script.range)) candidates.unshift(user)
+    const candidateIds = candidates.map((candidate) => candidate.id)
     return {
       userId: request.userId,
       moveName: request.moveName,
       mode: 'target',
       rangeLabel: `${request.rangeMeters}m`,
       rangeMeters: request.rangeMeters,
-      candidateIds: candidates.map((candidate) => candidate.id),
+      candidateIds,
+      hitChances: moveTargetHitChances(request.script, user, candidateIds),
     }
   })
 

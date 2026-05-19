@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
+  moveAutomationHitChanceTone,
+  moveAutomationTargetHitChance,
   moveAutomationUserAccuracy,
   resolveMoveAutomationTargetEvasion,
 } from '~/utils/moveAutomationAccuracy'
@@ -108,5 +110,21 @@ describe('move automation accuracy helpers', () => {
     expect(moveAutomationUserAccuracy(token({ tokenItems: ['Luck Incense'] }))).toBe(1)
     expect(moveAutomationUserAccuracy(token({ tokenItems: ['luck-incense'], combatStages: { ...stages, acc: 2 } }))).toBe(3)
     expect(moveAutomationUserAccuracy(token({ sheetKind: 'trainer', tokenItems: ['Luck Incense'] }))).toBe(0)
+  })
+
+  it('builds target-specific hit chance badge data', () => {
+    const chance = moveAutomationTargetHitChance(script('Physical'), token({ id: 'user', species: 'User', combatStages: { ...stages, acc: 2 } }), token())
+
+    expect(chance).toMatchObject({
+      targetId: 't',
+      percent: 75,
+      label: '75%',
+      tone: 'medium',
+    })
+    expect(chance.title).toContain('AC 2 + Speed Evasion 6; user Accuracy +2')
+    expect(moveAutomationHitChanceTone(45)).toBe('low')
+    expect(moveAutomationHitChanceTone(50)).toBe('medium')
+    expect(moveAutomationHitChanceTone(79)).toBe('medium')
+    expect(moveAutomationHitChanceTone(80)).toBe('high')
   })
 })

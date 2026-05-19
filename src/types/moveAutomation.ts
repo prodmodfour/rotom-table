@@ -57,6 +57,16 @@ export interface MoveAutomationAreaDirectionOption {
   affectedIds: string[]
 }
 
+export type MoveAutomationHitChanceTone = 'low' | 'medium' | 'high'
+
+export interface MoveAutomationTargetHitChance {
+  targetId: string
+  percent: number
+  label: string
+  tone: MoveAutomationHitChanceTone
+  title: string
+}
+
 export interface MoveAutomationTargetingOverlayState {
   userId: string
   moveName: string
@@ -64,6 +74,7 @@ export interface MoveAutomationTargetingOverlayState {
   rangeLabel: string
   rangeMeters: number
   candidateIds: string[]
+  hitChances?: Record<string, MoveAutomationTargetHitChance | undefined>
   areaCells?: GridAnchor[]
   affectedIds?: string[]
   areaDirection?: MoveAutomationAreaDirection

@@ -203,26 +203,99 @@ samp {
 /* Move automation targeting + roll feedback. Reticles are also reused by the
    clickable map overlay, so keep transforms on inner nodes only. */
 .move-target-reticle-anchor {
+  position: relative;
   width: 72px;
   height: 72px;
   user-select: none;
   pointer-events: none;
 }
 
+.move-target-hit-chance {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 5px);
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 46px;
+  padding: 4px 7px;
+  border: 2px solid currentColor;
+  border-radius: 999px !important;
+  background: rgba(5, 6, 8, 0.92);
+  color: var(--ink-bright);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  font-weight: 900;
+  line-height: 1;
+  text-align: center;
+  white-space: nowrap;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.96);
+  transform: translateX(-50%);
+  user-select: none;
+  pointer-events: none;
+  box-shadow:
+    0 8px 18px rgba(0, 0, 0, 0.55),
+    0 0 10px rgba(255, 255, 255, 0.16);
+}
+
+.move-target-hit-chance[hidden] {
+  display: none;
+}
+
+.move-target-hit-chance.is-low {
+  color: #ff6b73;
+  box-shadow:
+    0 8px 18px rgba(0, 0, 0, 0.55),
+    0 0 12px rgba(255, 31, 45, 0.55);
+}
+
+.move-target-hit-chance.is-medium {
+  color: #ffb84d;
+  box-shadow:
+    0 8px 18px rgba(0, 0, 0, 0.55),
+    0 0 12px rgba(255, 184, 77, 0.5);
+}
+
+.move-target-hit-chance.is-high {
+  color: #8cff9a;
+  box-shadow:
+    0 8px 18px rgba(0, 0, 0, 0.55),
+    0 0 12px rgba(100, 230, 118, 0.45);
+}
+
 .move-target-reticle {
+  --move-target-reticle-color: #ff2d20;
+  --move-target-reticle-glow: rgba(255, 45, 32, 0.82);
+
   position: relative;
   display: block;
   width: 72px;
   height: 72px;
-  border: 4px solid #ff2d20;
+  border: 4px solid var(--move-target-reticle-color);
   border-radius: 50% !important;
   opacity: 0.94;
   user-select: none;
   pointer-events: none;
   filter:
     drop-shadow(0 2px 2px rgba(0, 0, 0, 0.92))
-    drop-shadow(0 0 8px rgba(255, 45, 32, 0.82));
+    drop-shadow(0 0 8px var(--move-target-reticle-glow));
   animation: move-target-reticle-pulse 1.05s ease-in-out infinite;
+}
+
+.move-target-reticle.is-low {
+  --move-target-reticle-color: #ff2d20;
+  --move-target-reticle-glow: rgba(255, 45, 32, 0.82);
+}
+
+.move-target-reticle.is-medium {
+  --move-target-reticle-color: #ffb84d;
+  --move-target-reticle-glow: rgba(255, 184, 77, 0.76);
+}
+
+.move-target-reticle.is-high {
+  --move-target-reticle-color: #64e676;
+  --move-target-reticle-glow: rgba(100, 230, 118, 0.72);
 }
 
 .move-target-reticle::before,
@@ -231,9 +304,9 @@ samp {
   position: absolute;
   inset: 50% auto auto 50%;
   display: block;
-  background: #ff2d20;
+  background: var(--move-target-reticle-color);
   transform: translate(-50%, -50%);
-  box-shadow: 0 0 6px rgba(255, 45, 32, 0.88);
+  box-shadow: 0 0 6px var(--move-target-reticle-glow);
 }
 
 .move-target-reticle::before {

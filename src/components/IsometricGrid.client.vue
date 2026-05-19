@@ -25,6 +25,7 @@ import type { CombatStageMap } from '~/types/combatStages'
 import type {
   MoveAutomationAreaDirection,
   MoveAutomationFeedbackState,
+  MoveAutomationTargetHitChance,
   MoveAutomationTargetingOverlayState,
 } from '~/types/moveAutomation'
 import type { BuildTool } from '#shared/mapEditor'
@@ -167,7 +168,12 @@ const visibleLayers = () => resolveIsometricLayerVisibility(props.layerVisibilit
 const normalizedGroundLevelY = () => clampIsometricGroundLevelY(props.dimensions, props.groundLevelY)
 
 const container = ref<HTMLDivElement | null>(null)
-const targetReticleButtons = ref<Array<{ id: string; left: number; top: number }>>([])
+const targetReticleButtons = ref<Array<{
+  id: string
+  left: number
+  top: number
+  hitChance?: MoveAutomationTargetHitChance
+}>>([])
 
 const emitPokemonSelection = (id: string | null) => {
   if (props.moveAutomationTargeting) return
@@ -835,16 +841,33 @@ watch(() => props.moveAutomationTargeting, (targeting) => {
   clearPreviewVisuals()
 })
 
+const sameMoveTargetHitChance = (
+  a: MoveAutomationTargetHitChance | undefined,
+  b: MoveAutomationTargetHitChance | undefined,
+): boolean => {
+  if (!a || !b) return a === b
+  return a.percent === b.percent
+    && a.label === b.label
+    && a.tone === b.tone
+    && a.title === b.title
+}
+
 const syncTargetReticleButtons = (show: boolean) => {
   if (!show) {
     if (targetReticleButtons.value.length) targetReticleButtons.value = []
     return
   }
 
-  const next = (props.moveAutomationTargeting?.candidateIds ?? []).flatMap((id) => {
+  const targeting = props.moveAutomationTargeting
+  const next = (targeting?.candidateIds ?? []).flatMap((id) => {
     const renderObject = renderObjects.get(id)
     const point = renderObject ? worldPointToContainerPoint(moveTargetReticleCenter(renderObject)) : null
-    return point ? [{ id, left: point.x, top: point.y }] : []
+    return point ? [{
+      id,
+      left: point.x,
+      top: point.y,
+      hitChance: targeting?.hitChances?.[id],
+    }] : []
   })
   const current = targetReticleButtons.value
   const unchanged = next.length === current.length && next.every((entry, index) => {
@@ -852,6 +875,7 @@ const syncTargetReticleButtons = (show: boolean) => {
     return old?.id === entry.id
       && Math.abs(old.left - entry.left) < 0.5
       && Math.abs(old.top - entry.top) < 0.5
+      && sameMoveTargetHitChance(old?.hitChance, entry.hitChance)
   })
   if (!unchanged) targetReticleButtons.value = next
 }
@@ -872,6 +896,7 @@ const updateMoveAutomationOverlays = () => {
   })
   moveTargetingReticleRenderer.update({
     candidateIds: areaAffectedIds,
+    hitChances: targeting?.hitChances,
     renderObjects,
     show: showAreaTargetReticles,
   })
@@ -1096,11 +1121,24 @@ useIsometricSceneWatchers({
         class="move-target-reticle-button"
         type="button"
         :style="{ left: `${button.left}px`, top: `${button.top}px` }"
-        aria-label="Select move target"
+        :aria-label="button.hitChance ? `Select move target (${button.hitChance.label} to hit)` : 'Select move target'"
+        :title="button.hitChance?.title ?? 'Select move target'"
         @pointerdown.stop
         @click.stop="emit('select-move-target', button.id)"
       >
-        <span class="move-target-reticle" aria-hidden="true" />
+        <span
+          v-if="button.hitChance"
+          class="move-target-hit-chance"
+          :class="`is-${button.hitChance.tone}`"
+          :title="button.hitChance.title"
+        >
+          {{ button.hitChance.label }}
+        </span>
+        <span
+          class="move-target-reticle"
+          :class="button.hitChance ? `is-${button.hitChance.tone}` : ''"
+          aria-hidden="true"
+        />
       </button>
     </div>
 

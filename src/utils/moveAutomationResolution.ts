@@ -108,6 +108,36 @@ export const syncMoveAutomationTargetResolutions = (
   }
 }
 
+const D20_ROLL_COUNT = 20
+
+const roundHitChancePercent = (chance: number): number =>
+  Math.round(chance * 1000) / 10
+
+export const resolveMoveAutomationSingleRollHitChancePercent = (
+  script: MoveAutomationScript | null | undefined,
+  options?: MoveAutomationAccuracyRollOptions,
+): number => {
+  if (!script?.requiresAccuracy || script.ac == null) return 100
+
+  let hits = 0
+  for (let roll = 1; roll <= D20_ROLL_COUNT; roll += 1) {
+    if (resolveMoveAutomationAccuracyRoll(script, roll, options).hit) hits += 1
+  }
+  return roundHitChancePercent(hits / D20_ROLL_COUNT)
+}
+
+export const resolveMoveAutomationHitChancePercent = (
+  script: MoveAutomationScript | null | undefined,
+  options?: MoveAutomationAccuracyRollOptions,
+): number => {
+  const singleRollPercent = resolveMoveAutomationSingleRollHitChancePercent(script, options)
+  if (script?.dynamicDamageBase?.kind !== 'double-strike') return singleRollPercent
+
+  const singleRollChance = singleRollPercent / 100
+  const atLeastOneHitChance = 1 - ((1 - singleRollChance) ** 2)
+  return roundHitChancePercent(atLeastOneHitChance)
+}
+
 const enableSuggestions = (
   script: MoveAutomationScript,
   enabledSuggestions: MoveAutomationSuggestionRecord,

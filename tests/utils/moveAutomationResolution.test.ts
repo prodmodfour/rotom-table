@@ -7,6 +7,8 @@ import {
   randomD20,
   resetMoveAutomationResolutionState,
   resolveMoveAutomationAccuracyRoll,
+  resolveMoveAutomationHitChancePercent,
+  resolveMoveAutomationSingleRollHitChancePercent,
   rollAllMoveAutomationTargets,
   syncMoveAutomationTargetResolutions,
   type MoveAutomationResolutionRecord,
@@ -65,6 +67,16 @@ describe('move automation resolution helpers', () => {
       ignoreStats: true,
       label: 'Direct HP loss',
     } }), 20)).toEqual({ accuracyRoll: '20', hit: true, crit: false })
+  })
+
+  it('calculates hit chance percentages from the same accuracy roll rules', () => {
+    expect(resolveMoveAutomationSingleRollHitChancePercent(script())).toBe(75)
+    expect(resolveMoveAutomationHitChancePercent(script(), { userAccuracy: 2, targetEvasion: 3 })).toBe(70)
+    expect(resolveMoveAutomationHitChancePercent(script({ ac: 30 }))).toBe(5)
+    expect(resolveMoveAutomationHitChancePercent(script({ requiresAccuracy: false }))).toBe(100)
+    expect(resolveMoveAutomationHitChancePercent(script({
+      dynamicDamageBase: { kind: 'double-strike', label: 'Double Strike' },
+    }))).toBe(93.8)
   })
 
   it('ensures and syncs target resolution records', () => {
