@@ -27,7 +27,9 @@ const spawnedPokemon = (overrides: Partial<SpawnedPokemon> = {}): SpawnedPokemon
   sheetSlug: 'sparky',
   level: 17,
   currentHp: 21,
-  maxHp: 44,
+  maxHp: 39,
+  fullMaxHp: 44,
+  injuries: 1,
   atk: 12,
   satk: 10,
   def: 8,
@@ -48,6 +50,9 @@ describe('token render state helpers', () => {
     expect(state.facing).toBe('north-west')
     expect(state.turned).toBe(true)
     expect(state.displayName).toBe('Pikachu')
+    expect(state.maxHp).toBe(39)
+    expect(state.fullMaxHp).toBe(44)
+    expect(state.injuries).toBe(1)
     expect(state.combatStages).toMatchObject({ atk: 6, def: -6, satk: 1, spd: 2, acc: -1 })
     expect(state.conditions).toEqual(['Burned', 'Poisoned'])
     expect(state.tokenItems).toEqual(['Light Ball'])

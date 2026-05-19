@@ -4,6 +4,11 @@ import type { SpawnedPokemon } from '~/types/pokemon'
 import { conditionTagSvg, normalizeConditionNames } from '~/utils/statusConditions'
 import { itemSpriteUrl } from '~/utils/itemSprites'
 import {
+  getHpBarDisplayMetrics,
+  hpBarPercentFromRatio,
+  hpTierForRatio,
+} from '~/utils/hpBarDisplay'
+import {
   ELEVATION_BADGE_PIXELS_PER_METRE,
   TOKEN_STATUS_HEAD_GAP_EXTRA,
   TOKEN_STATUS_CSS_WIDTH_PX,
@@ -11,7 +16,6 @@ import {
   formatElevationDelta,
   formatTokenLevel,
   getElevationBadgeOffset,
-  hpTierForRatio,
   mapSpecificY,
   tokenStatusCssHeight,
   tokenStatusNameWords,
@@ -177,6 +181,14 @@ const applyTokenStatusScale = (status: CSS3DSprite) => {
   status.scale.setScalar(TOKEN_STATUS_WORLD_WIDTH / TOKEN_STATUS_CSS_WIDTH_PX)
 }
 
+const formatInjuryBlockTitle = (injuries: number | undefined, blockedRatio: number): string => {
+  const injuryCount = injuries == null || !Number.isFinite(injuries) ? 0 : Math.max(0, Math.floor(injuries))
+  const injuryLabel = injuryCount > 0
+    ? `${injuryCount} ${injuryCount === 1 ? 'Injury' : 'Injuries'}`
+    : 'Injuries'
+  return `${injuryLabel} block ${hpBarPercentFromRatio(blockedRatio)} of Max HP.`
+}
+
 export const buildHpBar = (pokemon: SpawnedPokemon) => {
   const wrapper = document.createElement('div')
   wrapper.className = 'token-status'
@@ -214,7 +226,12 @@ export const buildHpBar = (pokemon: SpawnedPokemon) => {
 
   const fill = document.createElement('div')
   fill.className = 'hp-bar__fill'
-  track.appendChild(fill)
+
+  const blocked = document.createElement('div')
+  blocked.className = 'hp-bar__blocked'
+  blocked.hidden = true
+
+  track.append(fill, blocked)
 
   const itemStack = document.createElement('div')
   itemStack.className = 'token-status__item-stack'
@@ -243,6 +260,8 @@ export const updateHpBar = ({
   level,
   currentHp,
   maxHp,
+  fullMaxHp,
+  injuries,
   conditions,
   tokenItems,
   activeTurn,
@@ -255,28 +274,44 @@ export const updateHpBar = ({
   level: number
   currentHp: number
   maxHp: number
+  fullMaxHp?: number
+  injuries?: number
   conditions: readonly string[]
   tokenItems: readonly string[]
   activeTurn: boolean
   show?: boolean
 }) => {
+  const hpMetrics = getHpBarDisplayMetrics({ currentHp, maxHp, fullMaxHp })
+
   // Hide the whole token HUD when the token layer is disabled or HP data is
   // not meaningful. CSS3DRenderer rewrites DOM display from object.visible,
   // so keep this on the CSS3D object instead of only touching element.style.
-  if (!show || maxHp <= 0) {
+  if (!show || hpMetrics.trackMaxHp <= 0) {
     bar.visible = false
     return
   }
 
-  const ratio = Math.max(0, Math.min(1, currentHp / maxHp))
   const fill = bar.element.querySelector<HTMLElement>('.hp-bar__fill')
   if (fill) {
-    fill.style.width = `${ratio * 100}%`
+    fill.style.width = hpBarPercentFromRatio(hpMetrics.currentRatio)
+  }
+
+  const blocked = bar.element.querySelector<HTMLElement>('.hp-bar__blocked')
+  if (blocked) {
+    blocked.style.width = hpBarPercentFromRatio(hpMetrics.blockedRatio)
+    blocked.hidden = hpMetrics.blockedRatio <= 0
   }
 
   const track = bar.element.querySelector<HTMLElement>('.hp-bar')
   if (track) {
-    track.dataset.hpTier = hpTierForRatio(ratio)
+    track.dataset.hpTier = hpTierForRatio(hpMetrics.currentRatio)
+    if (hpMetrics.blockedRatio > 0) {
+      track.dataset.injuryBlocked = 'true'
+      track.title = formatInjuryBlockTitle(injuries, hpMetrics.blockedRatio)
+    } else {
+      delete track.dataset.injuryBlocked
+      track.removeAttribute('title')
+    }
   }
   updateTokenStatusLabel(bar.element, displayName, level)
   updateTokenConditions(bar.element, conditions)

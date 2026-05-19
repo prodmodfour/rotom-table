@@ -5,6 +5,11 @@ import { resolveTrainerStats } from '~/utils/sheets/trainerDerived'
 import { conditionAdjustedInitiative } from '~/utils/sheetConditionEffects'
 import { sheetItemsInitiativeBonus } from '~/utils/sheetHeldItemEffects'
 import { pokemonHeldItemNames, trainerEquippedItemNames } from '~/utils/sheetItemNames'
+import {
+  getHpBarDisplayMetrics,
+  hpBarPercentFromRatio,
+  hpTierForRatio,
+} from '~/utils/hpBarDisplay'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import type { InitiativeTrackerState, TabletopMap } from '~/types/map'
@@ -30,6 +35,7 @@ export interface InitiativeRow {
   profileUrl: string | null
   currentHp: number
   maxHp: number
+  fullMaxHp?: number
   conditions: string[]
   /** Raw map-local initiative input before condition effects. */
   initiative: number | null
@@ -89,19 +95,19 @@ export const initiativeSpriteFrameStyle = (entry: InitiativeRow): Record<string,
   transform: `scale(${entry.sprite.scale})`,
 })
 
-export const hpPercent = (entry: InitiativeRow): string => {
-  if (entry.maxHp <= 0) return '0%'
-  const percent = Math.max(0, Math.min(100, (entry.currentHp / entry.maxHp) * 100))
-  return `${percent}%`
-}
+const initiativeHpMetrics = (entry: InitiativeRow) => getHpBarDisplayMetrics(entry)
 
-export const hpTier = (entry: InitiativeRow): 'critical' | 'wounded' | 'healthy' => {
-  if (entry.maxHp <= 0) return 'critical'
-  const ratio = Math.max(0, Math.min(1, entry.currentHp / entry.maxHp))
-  if (ratio <= 0.25) return 'critical'
-  if (ratio <= 0.5) return 'wounded'
-  return 'healthy'
-}
+export const hpPercent = (entry: InitiativeRow): string =>
+  hpBarPercentFromRatio(initiativeHpMetrics(entry).currentRatio)
+
+export const hpBlockedPercent = (entry: InitiativeRow): string =>
+  hpBarPercentFromRatio(initiativeHpMetrics(entry).blockedRatio)
+
+export const hasHpBlocked = (entry: InitiativeRow): boolean =>
+  initiativeHpMetrics(entry).blockedRatio > 0
+
+export const hpTier = (entry: InitiativeRow): 'critical' | 'wounded' | 'healthy' =>
+  hpTierForRatio(initiativeHpMetrics(entry).currentRatio)
 
 export const useInitiativeTracker = ({
   map,
@@ -158,6 +164,7 @@ export const useInitiativeTracker = ({
         profileUrl: pokemon.profileSpriteUrl ?? null,
         currentHp: Math.floor(pokemon.currentHp),
         maxHp: Math.max(0, Math.floor(pokemon.maxHp)),
+        fullMaxHp: pokemon.fullMaxHp == null ? undefined : Math.max(0, Math.floor(pokemon.fullMaxHp)),
         conditions: pokemon.conditions,
         initiative,
         speed,
@@ -326,6 +333,8 @@ export const useInitiativeTracker = ({
     hasInitiativeValues,
     initiativeSpriteFrameStyle,
     hpPercent,
+    hpBlockedPercent,
+    hasHpBlocked,
     hpTier,
     focusInitiativeEntry,
     setActiveInitiative,

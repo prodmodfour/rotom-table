@@ -30,6 +30,8 @@ export interface PokemonRenderSpawnState {
   level: number
   currentHp: number
   maxHp: number
+  fullMaxHp?: number
+  injuries?: number
   combatStages: CombatStageMap
   conditions: string[]
   tokenItems: string[]
@@ -68,6 +70,8 @@ export const pokemonRenderSpawnState = (pokemon: SpawnedPokemon): PokemonRenderS
     level: pokemon.level,
     currentHp: pokemon.currentHp,
     maxHp: pokemon.maxHp,
+    fullMaxHp: pokemon.fullMaxHp,
+    injuries: pokemon.injuries,
     combatStages: normalizeCombatStages(pokemon.combatStages),
     conditions: normalizeConditionNames(pokemon.conditions),
     tokenItems: [...pokemon.tokenItems],

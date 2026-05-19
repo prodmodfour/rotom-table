@@ -1,5 +1,6 @@
 import type * as THREE from 'three'
 import { normalizeConditionNames } from '~/utils/statusConditions'
+export { hpTierForRatio } from '~/utils/hpBarDisplay'
 
 export const ELEVATION_BADGE_PIXELS_PER_METRE = 48
 export const TOKEN_STATUS_CSS_WIDTH_PX = 80
@@ -67,10 +68,4 @@ export const tokenStatusCssHeight = (
     + labelExtraHeight
     + turnHeight
     + (conditionRows ? 1 + conditionRows * TOKEN_STATUS_CONDITION_ROW_CSS_HEIGHT_PX : 0)
-}
-
-export const hpTierForRatio = (ratio: number): 'critical' | 'wounded' | 'healthy' => {
-  if (ratio <= 0.25) return 'critical'
-  if (ratio <= 0.5) return 'wounded'
-  return 'healthy'
 }

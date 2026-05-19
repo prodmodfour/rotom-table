@@ -60,6 +60,8 @@ export interface PokemonRenderObject {
   level: number
   currentHp: number
   maxHp: number
+  fullMaxHp?: number
+  injuries?: number
   combatStages: CombatStageMap
   conditions: string[]
   tokenItems: string[]

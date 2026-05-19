@@ -158,6 +158,27 @@ describe('useInitiativeTracker', () => {
     expect(tracker.hpTier(row)).toBe('critical')
   })
 
+  it('reports injury-blocked HP bar width from full Max HP in initiative rows', () => {
+    const map = ref<TabletopMap | null>(mapWithPlacements([
+      { id: 'injured', sheetKind: 'pokemon', sheetSlug: 'injured', position: { x: 0, y: 0, z: 0 } },
+    ]))
+    const tracker = useInitiativeTracker({
+      map,
+      spawnedPokemon: computed(() => [
+        token({ id: 'injured', sheetSlug: 'injured', species: 'Injured', currentHp: 50, maxHp: 70, fullMaxHp: 100 }),
+      ]),
+      pokemonBySlug: ref(new Map([['injured', sheet('injured')]])),
+      trainerBySlug: ref(new Map<string, TrainerSheet>()),
+      canManageInitiative: computed(() => true),
+    })
+    const row = tracker.initiativeRows.value[0]
+
+    expect(tracker.hpPercent(row)).toBe('50%')
+    expect(tracker.hpBlockedPercent(row)).toBe('30%')
+    expect(tracker.hasHpBlocked(row)).toBe(true)
+    expect(tracker.hpTier(row)).toBe('wounded')
+  })
+
   it('includes Quick Claw in default initiative values from sheets', () => {
     const map = ref<TabletopMap | null>(mapWithPlacements([
       { id: 'quick', sheetKind: 'pokemon', sheetSlug: 'quick', position: { x: 0, y: 0, z: 0 } },
