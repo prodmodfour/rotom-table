@@ -54,6 +54,7 @@ export const computePtuTypeMultiplier = (
 
 export const formatPtuMultiplier = (multiplier: number): string => {
   if (multiplier === 0) return '0'
+  if (multiplier === 0.0625) return '1/16'
   if (multiplier === 0.125) return '1/8'
   if (multiplier === 0.25) return '1/4'
   if (multiplier === 0.5) return '1/2'

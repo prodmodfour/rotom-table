@@ -13,10 +13,12 @@ describe('pokedex type matchup helpers', () => {
     expect(computePtuTypeMultiplier('Fire', ['Water', 'Rock'])).toBe(0.25)
     expect(computePtuTypeMultiplier('Ground', ['Flying'])).toBe(0.5)
     expect(computePtuTypeMultiplier('Ground', ['Fire', 'Flying'])).toBe(1)
+    expect(computePtuTypeMultiplier('Fire', ['Water'], ['Tolerance'])).toBe(0.25)
   })
 
   it('formats PTU multiplier labels', () => {
     expect(formatPtuMultiplier(0)).toBe('0')
+    expect(formatPtuMultiplier(0.0625)).toBe('1/16')
     expect(formatPtuMultiplier(0.125)).toBe('1/8')
     expect(formatPtuMultiplier(0.25)).toBe('1/4')
     expect(formatPtuMultiplier(0.5)).toBe('1/2')

@@ -125,6 +125,7 @@ export const computeMultiplier = (
 /** Format a multiplier for display: ``0`` → ``"0"``, ``0.5`` → ``"½"`` etc. */
 export const formatMultiplier = (mult: number): string => {
   if (mult === 0) return '0'
+  if (mult === 0.0625) return '1/16'
   if (mult === 0.125) return '⅛'
   if (mult === 0.25) return '¼'
   if (mult === 0.5) return '½'

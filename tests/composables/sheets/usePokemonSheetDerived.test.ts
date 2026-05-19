@@ -172,6 +172,25 @@ describe('usePokemonSheetDerived', () => {
     })
   })
 
+  it('applies Tolerance to resisted type effectiveness', () => {
+    const sheet = ref<CharacterSheet | null>(makeSheet({
+      types: ['Water'],
+      abilities: [{ name: 'Tolerance' }],
+    }))
+    const derived = usePokemonSheetDerived(sheet)
+
+    expect(derived.typeEffectivenessRows.value.find((row) => row.type === 'Fire')).toMatchObject({
+      mult: 0.25,
+      label: '¼',
+      tone: 'resist',
+      source: 'Tolerance',
+    })
+    expect(derived.typeEffectivenessRows.value.find((row) => row.type === 'Electric')).toMatchObject({
+      mult: 1.5,
+      source: null,
+    })
+  })
+
   it('uses Flying type and Levitate ability for Ground effectiveness while ignoring airborne capabilities', () => {
     const sheet = ref<CharacterSheet | null>(makeSheet({
       types: ['Fire', 'Flying'],

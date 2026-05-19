@@ -3,7 +3,7 @@ import { getPokedexEntry, getSpriteUrl } from '~~/data/characterSheets'
 import { findItem } from '~~/data/ptuReference'
 import { makeAutomaticStruggleMoves } from '~/utils/struggleMoves'
 import { buildSheetAccuracySummary } from '~/utils/sheetAccuracy'
-import { POKEMON_TYPES, formatMultiplier } from '~/utils/typeChart'
+import { POKEMON_TYPES, computeMultiplier, formatMultiplier } from '~/utils/typeChart'
 import { clampHpValue, computeHpThresholds, computeTickValue } from '~/utils/ptuHp'
 import { computePokemonLevelUpStatPointBudget } from '~/utils/statPointBudgets'
 import {
@@ -25,10 +25,7 @@ import {
 } from '~/utils/sheetConditionEffects'
 import { mergeLegacyConditions } from '~/utils/statusConditions'
 import { parseSkillDiceRankValue } from '~/utils/skillRanks'
-import {
-  computeSheetAbilityAwareMultiplier,
-  getPassiveTypeEffectivenessSource,
-} from '~/utils/sheetPassiveAbilityEffects'
+import { resolveSheetPassiveTypeEffectiveness } from '~/utils/sheetPassiveAbilityEffects'
 import {
   calculatePokemonExperienceToNextLevel,
   calculatePokemonLevelFromExperience,
@@ -267,18 +264,19 @@ export function usePokemonSheetDerived(sheet: PokemonSheetRef) {
     const defenders = sheetTypes.value
     if (defenders.length === 0) return []
     return POKEMON_TYPES.map((attacker) => {
-      const baseMult = computeSheetAbilityAwareMultiplier(attacker, defenders, undefined)
-      const mult = computeSheetAbilityAwareMultiplier(
+      const baseMult = computeMultiplier(attacker, defenders)
+      const passiveEffectiveness = resolveSheetPassiveTypeEffectiveness(
         attacker,
-        defenders,
+        baseMult,
         sheet.value?.abilities,
       )
+      const mult = passiveEffectiveness.multiplier
       return {
         type: attacker,
         mult,
         label: formatMultiplier(mult),
-        source: mult !== baseMult
-          ? getPassiveTypeEffectivenessSource(attacker, sheet.value?.abilities)
+        source: mult !== baseMult && passiveEffectiveness.sources.length
+          ? passiveEffectiveness.sources.join(', ')
           : null,
         tone:
           mult === 0 ? 'immune'

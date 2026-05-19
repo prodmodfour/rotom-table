@@ -6,6 +6,7 @@ import {
 
 export const LEVITATE_ABILITY_NAME = 'Levitate'
 export const FLASH_FIRE_ABILITY_NAME = 'Flash Fire'
+export const TOLERANCE_ABILITY_NAME = 'Tolerance'
 export const GROUNDSOURCE_KEYWORD = 'Groundsource'
 export const LEVITATE_GRANTED_SPEED = 4
 export const LEVITATE_EXISTING_SPEED_BONUS = 2
@@ -20,6 +21,12 @@ export type GroundResistanceCapabilities = AirborneMovementCapabilities
 
 export interface SheetPassiveTypeEffectivenessContext {
   moveKeywords?: readonly string[] | null
+  baseMultiplier?: number | null
+}
+
+export interface SheetPassiveTypeEffectivenessResult {
+  multiplier: number
+  sources: string[]
 }
 
 export const hasLevitateAbility = (
@@ -29,6 +36,10 @@ export const hasLevitateAbility = (
 export const hasFlashFireAbility = (
   abilities: readonly SheetAbilityNameSource[] | null | undefined,
 ): boolean => sheetHasCanonicalAbility(abilities, FLASH_FIRE_ABILITY_NAME)
+
+export const hasToleranceAbility = (
+  abilities: readonly SheetAbilityNameSource[] | null | undefined,
+): boolean => sheetHasCanonicalAbility(abilities, TOLERANCE_ABILITY_NAME)
 
 const positiveCapabilitySpeed = (value: number | string | null | undefined): boolean => {
   if (typeof value === 'number') return Number.isFinite(value) && value > 0
@@ -87,17 +98,56 @@ export const getPassiveFireImmunitySource = (
   abilities: readonly SheetAbilityNameSource[] | null | undefined,
 ): string | null => hasFlashFireAbility(abilities) ? FLASH_FIRE_ABILITY_NAME : null
 
+const isResistanceMultiplier = (multiplier: number): boolean => multiplier > 0 && multiplier < 1
+
+export const resolveSheetPassiveTypeEffectiveness = (
+  attackingType: string,
+  baseMultiplier: number,
+  abilities: readonly SheetAbilityNameSource[] | null | undefined,
+  capabilities?: AirborneMovementCapabilities | null,
+  context: SheetPassiveTypeEffectivenessContext = {},
+): SheetPassiveTypeEffectivenessResult => {
+  const groundsourceSource = getGroundsourceMoveImmunitySource(capabilities, context.moveKeywords)
+  if (groundsourceSource) return { multiplier: 0, sources: [groundsourceSource] }
+  if (attackingType === 'Fire' && hasFlashFireAbility(abilities)) {
+    return { multiplier: 0, sources: [FLASH_FIRE_ABILITY_NAME] }
+  }
+
+  let multiplier = baseMultiplier
+  const sources: string[] = []
+
+  if (attackingType === 'Ground' && hasPassiveGroundResistance(abilities) && multiplier !== 0) {
+    const nextMultiplier = resistMultiplierOneStepFurther(multiplier)
+    if (!Object.is(nextMultiplier, multiplier)) sources.push(LEVITATE_ABILITY_NAME)
+    multiplier = nextMultiplier
+  }
+
+  if (hasToleranceAbility(abilities) && isResistanceMultiplier(multiplier)) {
+    const nextMultiplier = resistMultiplierOneStepFurther(multiplier)
+    if (!Object.is(nextMultiplier, multiplier)) sources.push(TOLERANCE_ABILITY_NAME)
+    multiplier = nextMultiplier
+  }
+
+  return { multiplier, sources }
+}
+
 export const getPassiveTypeEffectivenessSource = (
   attackingType: string,
   abilities: readonly SheetAbilityNameSource[] | null | undefined,
   capabilities?: AirborneMovementCapabilities | null,
   context: SheetPassiveTypeEffectivenessContext = {},
 ): string | null => {
-  const groundsourceSource = getGroundsourceMoveImmunitySource(capabilities, context.moveKeywords)
-  if (groundsourceSource) return groundsourceSource
-  if (attackingType === 'Fire') return getPassiveFireImmunitySource(abilities)
-  if (attackingType === 'Ground') return getPassiveGroundResistanceSource(abilities)
-  return null
+  const result = resolveSheetPassiveTypeEffectiveness(
+    attackingType,
+    context.baseMultiplier ?? 1,
+    abilities,
+    capabilities,
+    context,
+  )
+  const sources = context.baseMultiplier == null
+    ? result.sources.filter((source) => source !== TOLERANCE_ABILITY_NAME)
+    : result.sources
+  return sources.length ? sources.join(', ') : null
 }
 
 /**
@@ -117,7 +167,8 @@ export const resolveLevitateAbilitySpeed = (
 /**
  * Passive type effects used by sheets and token automation. Flash Fire makes
  * Fire attacks immune. The Levitate ability makes Ground one effectiveness
- * step more resisted. Sky and Levitate capabilities make moves with the
+ * step more resisted. Tolerance makes any currently resisted type one
+ * additional step resisted. Sky and Levitate capabilities make moves with the
  * Groundsource keyword immune. Existing type immunities still win.
  */
 export const applySheetPassiveTypeEffectiveness = (
@@ -126,19 +177,13 @@ export const applySheetPassiveTypeEffectiveness = (
   abilities: readonly SheetAbilityNameSource[] | null | undefined,
   capabilities?: AirborneMovementCapabilities | null,
   context: SheetPassiveTypeEffectivenessContext = {},
-): number => {
-  if (getGroundsourceMoveImmunitySource(capabilities, context.moveKeywords)) return 0
-  if (attackingType === 'Fire' && hasFlashFireAbility(abilities)) return 0
-
-  if (
-    attackingType !== 'Ground'
-    || !hasPassiveGroundResistance(abilities)
-    || baseMultiplier === 0
-  ) {
-    return baseMultiplier
-  }
-  return resistMultiplierOneStepFurther(baseMultiplier)
-}
+): number => resolveSheetPassiveTypeEffectiveness(
+  attackingType,
+  baseMultiplier,
+  abilities,
+  capabilities,
+  context,
+).multiplier
 
 /** Backwards-compatible ability-only wrapper. */
 export const applySheetPassiveAbilityTypeEffectiveness = (

@@ -9,18 +9,22 @@ import {
   hasFlashFireAbility,
   hasGroundsourceImmunityCapability,
   hasLevitateAbility,
+  hasToleranceAbility,
   moveHasGroundsourceKeyword,
   resolveLevitateAbilitySpeed,
 } from '~/utils/sheetPassiveAbilityEffects'
 
 describe('sheet passive ability effects', () => {
-  it('recognizes Levitate and Flash Fire by canonical ability lookup', () => {
+  it('recognizes Levitate, Flash Fire, and Tolerance by canonical ability lookup', () => {
     expect(hasLevitateAbility([{ name: 'levitate' }])).toBe(true)
     expect(hasLevitateAbility(['Levitate'])).toBe(true)
     expect(hasLevitateAbility([{ name: 'Run Away' }])).toBe(false)
     expect(hasFlashFireAbility([{ name: 'flash fire' }])).toBe(true)
     expect(hasFlashFireAbility(['Flash Fire'])).toBe(true)
     expect(hasFlashFireAbility([{ name: 'Run Away' }])).toBe(false)
+    expect(hasToleranceAbility([{ name: 'tolerance' }])).toBe(true)
+    expect(hasToleranceAbility(['Tolerance'])).toBe(true)
+    expect(hasToleranceAbility([{ name: 'Run Away' }])).toBe(false)
   })
 
   it('grants Levitate speed 4 or +2 to an existing Levitate speed', () => {
@@ -45,6 +49,38 @@ describe('sheet passive ability effects', () => {
     expect(applySheetPassiveAbilityTypeEffectiveness('Water', 1.5, [{ name: 'Flash Fire' }])).toBe(1.5)
     expect(computeSheetAbilityAwareMultiplier('Fire', ['Grass'], [{ name: 'flash fire' }])).toBe(0)
     expect(getPassiveTypeEffectivenessSource('Fire', [{ name: 'Flash Fire' }])).toBe('Flash Fire')
+  })
+
+  it('moves resisted type effectiveness one step further with Tolerance', () => {
+    expect(applySheetPassiveAbilityTypeEffectiveness('Water', 0.5, [{ name: 'Tolerance' }]))
+      .toBe(0.25)
+    expect(applySheetPassiveAbilityTypeEffectiveness('Water', 0.25, [{ name: 'Tolerance' }]))
+      .toBe(0.125)
+    expect(applySheetPassiveAbilityTypeEffectiveness('Water', 1, [{ name: 'Tolerance' }]))
+      .toBe(1)
+    expect(applySheetPassiveAbilityTypeEffectiveness('Water', 1.5, [{ name: 'Tolerance' }]))
+      .toBe(1.5)
+    expect(applySheetPassiveAbilityTypeEffectiveness('Water', 0, [{ name: 'Tolerance' }]))
+      .toBe(0)
+    expect(computeSheetAbilityAwareMultiplier('Fire', ['Water'], [{ name: 'tolerance' }]))
+      .toBe(0.25)
+    expect(computeSheetAbilityAwareMultiplier(
+      'Ground',
+      ['Fire', 'Flying'],
+      [{ name: 'Levitate' }, { name: 'Tolerance' }],
+    )).toBe(0.25)
+    expect(getPassiveTypeEffectivenessSource(
+      'Fire',
+      [{ name: 'Tolerance' }],
+      undefined,
+      { baseMultiplier: 0.5 },
+    )).toBe('Tolerance')
+    expect(getPassiveTypeEffectivenessSource(
+      'Ground',
+      [{ name: 'Levitate' }, { name: 'Tolerance' }],
+      undefined,
+      { baseMultiplier: 1 },
+    )).toBe('Levitate, Tolerance')
   })
 
   it('recognizes Sky and Levitate capabilities as Groundsource immunity sources', () => {
