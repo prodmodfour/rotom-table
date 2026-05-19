@@ -57,6 +57,7 @@ const spawned = (overrides: Partial<SpawnedPokemon> = {}): SpawnedPokemon => ({
 
 const MOVE_FEEDBACK_OUTCOME_MS = 1500
 const MOVE_FEEDBACK_FINAL_MS = 2100
+const MOVE_FEEDBACK_EFFECTIVE_FINAL_MS = 2800
 
 const transaction = (): MoveAutomationTransaction => ({
   userId: 'user-token',
@@ -318,6 +319,14 @@ describe('useMoveAutomationPanel', () => {
       expect(panel.spiteReactionPrompts.value).toEqual([])
 
       await vi.advanceTimersByTimeAsync(MOVE_FEEDBACK_FINAL_MS)
+
+      expect(panel.moveAutomationFeedback.value).toMatchObject({
+        phase: 'effectiveness',
+        effectiveness: 'super-effective',
+      })
+      expect(panel.spiteReactionPrompts.value).toEqual([])
+
+      await vi.advanceTimersByTimeAsync(MOVE_FEEDBACK_EFFECTIVE_FINAL_MS - MOVE_FEEDBACK_FINAL_MS)
 
       expect(panel.spiteReactionPrompts.value).toMatchObject([{
         defenderId: 'target-token',

@@ -76,7 +76,8 @@ export interface MoveAutomationFeedbackCondition {
   blockedBy?: string
 }
 
-export type MoveAutomationFeedbackPhase = 'rolling' | 'hit-roll' | 'outcome' | 'damage'
+export type MoveAutomationFeedbackPhase = 'rolling' | 'hit-roll' | 'outcome' | 'effectiveness' | 'damage'
+export type MoveAutomationFeedbackEffectiveness = 'super-effective' | 'resisted' | null
 
 export interface MoveAutomationFeedbackState {
   id: string
@@ -92,6 +93,7 @@ export interface MoveAutomationFeedbackState {
   targetEvasionLabel: string
   hit: boolean
   crit: boolean
+  effectiveness: MoveAutomationFeedbackEffectiveness
   damageResolved: boolean
   damageLoss: number
   conditions: MoveAutomationFeedbackCondition[]

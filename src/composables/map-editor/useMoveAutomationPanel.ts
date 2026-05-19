@@ -105,6 +105,7 @@ const DEFAULT_MAX_LOG_ENTRIES = 100
 const D20_ROLL_ANIMATION_MS = 650
 const HIT_ROLL_VISIBLE_MS = 850
 const HIT_RESULT_VISIBLE_MS = 600
+const EFFECTIVENESS_VISIBLE_MS = 700
 const FINAL_RESULT_VISIBLE_MS = 1100
 
 interface ActiveSingleTargetingRequest {
@@ -621,6 +622,9 @@ export const useMoveAutomationPanel = ({
   const feedbackHasFinalResolutionPhase = (feedback: MoveAutomationFeedbackState): boolean =>
     feedback.damageResolved || feedback.conditions.length > 0
 
+  const feedbackHasEffectivenessPhase = (feedback: MoveAutomationFeedbackState): boolean =>
+    Boolean(feedback.effectiveness)
+
   const showMoveAutomationResolution = (
     feedback: MoveAutomationFeedbackState,
     transaction: MoveAutomationTransaction,
@@ -628,6 +632,7 @@ export const useMoveAutomationPanel = ({
     clearFeedbackTimers()
 
     const hasFinalPhase = feedbackHasFinalResolutionPhase(feedback)
+    const hasEffectivenessPhase = hasFinalPhase && feedbackHasEffectivenessPhase(feedback)
     let transactionApplied = false
     const feedbackStillCurrent = () => moveAutomationFeedback.value?.id === feedback.id
     const applyTransactionOnce = () => {
@@ -656,7 +661,14 @@ export const useMoveAutomationPanel = ({
     })
 
     if (hasFinalPhase) {
-      const finalDelay = outcomeDelay + HIT_RESULT_VISIBLE_MS
+      const effectivenessDelay = outcomeDelay + HIT_RESULT_VISIBLE_MS
+      if (hasEffectivenessPhase) {
+        scheduleFeedbackStep(effectivenessDelay, () => {
+          setFeedbackPhase('effectiveness')
+        })
+      }
+
+      const finalDelay = effectivenessDelay + (hasEffectivenessPhase ? EFFECTIVENESS_VISIBLE_MS : 0)
       scheduleFeedbackStep(finalDelay, () => {
         if (!setFeedbackPhase('damage')) return
         applyTransactionOnce()

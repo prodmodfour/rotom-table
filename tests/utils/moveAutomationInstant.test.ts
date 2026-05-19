@@ -67,6 +67,7 @@ describe('instant move automation', () => {
       id: 'fixed-feedback',
       naturalRoll: 18,
       hit: true,
+      effectiveness: 'super-effective',
       damageLoss: 22,
       conditions: [{ condition: 'Burned', applied: true }],
     })
@@ -112,6 +113,7 @@ describe('instant move automation', () => {
       random: sequenceRandom([0.85, 0.375]),
     })
 
+    expect(result.feedback).toMatchObject({ effectiveness: 'resisted' })
     expect(result.feedback.conditions).toEqual([{ condition: 'Burned', applied: false, blockedBy: 'Fire type' }])
     expect(result.transaction.conditionUpdates).toEqual([])
     expect(result.transaction.logLines).toContain('Note: Burned did not apply to Flare: immune (Fire type).')

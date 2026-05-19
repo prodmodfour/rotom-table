@@ -121,6 +121,12 @@ const conditionText = (condition: MoveAutomationFeedbackState['conditions'][numb
   return null
 }
 
+const effectivenessText = (feedback: MoveAutomationFeedbackState): string => {
+  if (feedback.effectiveness === 'super-effective') return 'Super Effective!'
+  if (feedback.effectiveness === 'resisted') return 'Resisted..'
+  return outcomeText(feedback)
+}
+
 const finalResultText = (feedback: MoveAutomationFeedbackState): string => {
   const parts: string[] = []
   if (feedback.damageResolved) parts.push(`${feedback.damageLoss} Damage`)
@@ -135,11 +141,12 @@ const feedbackText = (feedback: MoveAutomationFeedbackState): string => {
   if (feedback.phase === 'rolling') return 'd20'
   if (feedback.phase === 'hit-roll') return hitRollText(feedback)
   if (feedback.phase === 'outcome') return outcomeText(feedback)
+  if (feedback.phase === 'effectiveness') return effectivenessText(feedback)
   return finalResultText(feedback)
 }
 
 const feedbackUsesOutcomeTone = (feedback: MoveAutomationFeedbackState): boolean =>
-  feedback.phase === 'outcome' || feedback.phase === 'damage'
+  feedback.phase === 'outcome' || feedback.phase === 'effectiveness' || feedback.phase === 'damage'
 
 const updateFeedbackElement = (element: HTMLElement, feedback: MoveAutomationFeedbackState) => {
   const body = element.querySelector<HTMLElement>('.move-automation-roll')
@@ -150,6 +157,7 @@ const updateFeedbackElement = (element: HTMLElement, feedback: MoveAutomationFee
     'move-automation-roll',
     feedback.phase === 'rolling' ? 'is-rolling' : 'is-result',
     feedback.phase === 'hit-roll' ? 'is-hit-roll' : '',
+    feedback.phase === 'effectiveness' && feedback.effectiveness ? `is-${feedback.effectiveness}` : '',
     useOutcomeTone ? (feedback.hit ? 'is-hit' : 'is-miss') : '',
     useOutcomeTone && feedback.crit ? 'is-crit' : '',
   ].filter(Boolean).join(' ')

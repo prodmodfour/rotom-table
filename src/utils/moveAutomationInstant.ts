@@ -2,6 +2,7 @@ import { buildMoveAutomationTransaction } from '~/utils/moveAutomationTransactio
 import {
   defaultTargetResolutionState,
   moveAutomationSuggestionKey,
+  moveAutomationTargetDamageMultiplier,
 } from '~/utils/moveAutomationTargetResolution'
 import {
   randomD20,
@@ -31,6 +32,7 @@ import type { CombatStageKey } from '~/types/combatStages'
 import type { MapFieldEffects } from '~/types/map'
 import type {
   MoveAutomationFeedbackCondition,
+  MoveAutomationFeedbackEffectiveness,
   MoveAutomationFeedbackState,
   MoveAutomationScript,
   MoveAutomationTransaction,
@@ -284,6 +286,18 @@ const addAccuracyToFeedback = (
 const combineManualNotes = (...notes: Array<string | null | undefined>): string =>
   notes.map((note) => note?.trim() ?? '').filter(Boolean).join(' ')
 
+const feedbackEffectiveness = (
+  script: MoveAutomationScript,
+  target: SpawnedPokemon,
+  hit: boolean,
+): MoveAutomationFeedbackEffectiveness => {
+  if (!hit || !script.damaging || script.directHpLoss) return null
+  const multiplier = moveAutomationTargetDamageMultiplier(script, target)
+  if (multiplier > 1) return 'super-effective'
+  if (multiplier > 0 && multiplier < 1) return 'resisted'
+  return null
+}
+
 const damageFormulaForDamageBase = (damageBase: number): string | null => {
   const formula = formatDamageBase(damageBase)
   return /^DB\s+/i.test(formula) ? null : formula
@@ -392,6 +406,7 @@ const resolveInstantDoubleStrikeMoveAutomation = ({
       targetEvasionLabel: targetEvasion.label,
       hit: hitCount > 0,
       crit: critCount > 0,
+      effectiveness: feedbackEffectiveness(script, target, hitCount > 0),
       damageResolved: hitCount > 0 && script.damaging,
       damageLoss,
       conditions: [],
@@ -505,6 +520,7 @@ export const resolveInstantMoveAutomation = ({
       targetEvasionLabel: targetEvasion.label,
       hit: accuracy.hit,
       crit: accuracy.crit,
+      effectiveness: feedbackEffectiveness(script, target, accuracy.hit),
       damageResolved: accuracy.hit && script.damaging,
       damageLoss,
       conditions,
