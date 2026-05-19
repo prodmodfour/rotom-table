@@ -858,17 +858,22 @@ const syncTargetReticleButtons = (show: boolean) => {
 
 const updateMoveAutomationOverlays = () => {
   const layers = visibleLayers()
-  const showTargetReticles = Boolean(props.moveAutomationTargeting?.mode === 'target' && layers.tokens)
-  const showAreaTemplate = Boolean(props.moveAutomationTargeting?.mode === 'area-confirmation')
-  syncTargetReticleButtons(showTargetReticles)
+  const targeting = props.moveAutomationTargeting
+  const showClickableTargetReticles = Boolean(targeting?.mode === 'target' && layers.tokens)
+  const showAreaTemplate = Boolean(targeting?.mode === 'area-confirmation')
+  const areaAffectedIds = targeting?.mode === 'area-confirmation'
+    ? targeting.affectedIds ?? targeting.candidateIds
+    : []
+  const showAreaTargetReticles = Boolean(showAreaTemplate && layers.tokens && areaAffectedIds.length)
+  syncTargetReticleButtons(showClickableTargetReticles)
   moveAreaTemplateRenderer.update({
-    cells: props.moveAutomationTargeting?.areaCells ?? [],
+    cells: targeting?.areaCells ?? [],
     show: showAreaTemplate,
   })
   moveTargetingReticleRenderer.update({
-    candidateIds: [],
+    candidateIds: areaAffectedIds,
     renderObjects,
-    show: false,
+    show: showAreaTargetReticles,
   })
   moveAutomationFeedbackRenderer.update({
     feedback: props.moveAutomationFeedback,
