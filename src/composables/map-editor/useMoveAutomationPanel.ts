@@ -49,6 +49,7 @@ import {
   moveAutomationTargetsInRange,
   parseSingleTargetMoveRangeMeters,
 } from '~/utils/moveAutomationRange'
+import { buildAllVoxelOccupancy } from '~/utils/voxelOccupancy'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { GridAnchor, MapFieldEffects, MapHazardV2, TabletopMap } from '~/types/map'
 import type {
@@ -309,6 +310,11 @@ export const useMoveAutomationPanel = ({
   const tokenAreaDirection = (user: SpawnedPokemon): MoveAutomationAreaDirection =>
     tokenFacingAreaDirection(tokenFacingForPlacement(user))
 
+  const areaTemplateCellConstraints = () => ({
+    bounds: map.value?.dimensions,
+    blockedCells: buildAllVoxelOccupancy(map.value?.voxels ?? []),
+  })
+
   const directionOptionsForPlacements = (
     placements: readonly MoveAutomationAreaTemplatePlacement[],
   ): MoveAutomationAreaDirectionOption[] => placements
@@ -356,7 +362,12 @@ export const useMoveAutomationPanel = ({
     const direction = template.kind === 'cone' || template.kind === 'line' || template.kind === 'close-blast'
       ? tokenAreaDirection(user)
       : undefined
-    const cells = buildMoveAutomationAreaTemplateCells({ template, user, direction })
+    const cells = buildMoveAutomationAreaTemplateCells({
+      template,
+      user,
+      direction,
+      ...areaTemplateCellConstraints(),
+    })
     const targetIds = tokensInMoveAutomationArea({
       cells,
       tokens: spawnedPokemon.value,
@@ -389,6 +400,7 @@ export const useMoveAutomationPanel = ({
       user,
       tokens: spawnedPokemon.value,
       includeEmpty: true,
+      ...areaTemplateCellConstraints(),
     })
     const placement = areaPlacementForTokenFacing(placements, user)
     const request = placement

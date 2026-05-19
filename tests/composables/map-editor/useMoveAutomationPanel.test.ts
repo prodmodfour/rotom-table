@@ -743,7 +743,7 @@ describe('useMoveAutomationPanel', () => {
       candidateIds: ['target-token'],
       affectedIds: ['target-token'],
     })
-    expect(panel.moveAutomationTargeting.value?.areaCells?.length).toBe(8)
+    expect(panel.moveAutomationTargeting.value?.areaCells?.length).toBe(17)
 
     const random = vi.spyOn(Math, 'random')
     random.mockReturnValue(0.5)

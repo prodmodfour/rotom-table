@@ -6,7 +6,7 @@ import type {
   MoveAutomationAreaTemplateKind,
   MoveAutomationScript,
 } from '~/types/moveAutomation'
-import type { GridAnchor, SpawnedPokemon } from '~/types/pokemon'
+import type { GridAnchor, GridDimensions, SpawnedPokemon } from '~/types/pokemon'
 
 interface DirectionDefinition {
   id: MoveAutomationAreaDirection
@@ -31,11 +31,17 @@ interface AreaTemplateFootprint {
   clearance?: number
 }
 
-export interface BuildMoveAutomationAreaTemplateCellsInput {
+export interface AreaTemplateCellConstraints {
+  bounds?: GridDimensions
+  /** Terrain cells that the AoE volume cannot occupy or pass through. */
+  blockedCells?: ReadonlySet<string>
+}
+
+export interface BuildMoveAutomationAreaTemplateCellsInput extends AreaTemplateCellConstraints {
   template: MoveAutomationAreaTemplate
   user: AreaTemplateFootprint
   direction?: MoveAutomationAreaDirection
-  /** Center square for Ranged Blast templates. */
+  /** Center square/cube for Ranged Blast templates. */
   center?: GridAnchor
 }
 
@@ -45,7 +51,7 @@ export interface TokensInMoveAutomationAreaInput {
   excludeIds?: readonly string[]
 }
 
-export interface BuildMoveAutomationAreaTemplatePlacementsInput {
+export interface BuildMoveAutomationAreaTemplatePlacementsInput extends AreaTemplateCellConstraints {
   script: Pick<MoveAutomationScript, 'areaTemplates' | 'range'> | null | undefined
   user: SpawnedPokemon
   tokens: readonly SpawnedPokemon[]
@@ -196,42 +202,98 @@ const uniqueCells = (cells: GridAnchor[]): GridAnchor[] => Array.from(
   new Map(cells.map((cell) => [cellKey(cell), cell])).values(),
 )
 
+const rangeInclusive = (start: number, end: number): number[] => {
+  const values: number[] = []
+  for (let value = start; value <= end; value += 1) values.push(value)
+  return values
+}
+
+const footprintClearance = (user: AreaTemplateFootprint): number => getClearanceValue(user)
+
+const footprintTopY = (user: AreaTemplateFootprint): number => user.position.y + footprintClearance(user) - 1
+
 const footprintCenterCell = (user: AreaTemplateFootprint): GridAnchor => ({
   x: user.position.x + Math.floor((user.base - 1) / 2),
-  y: user.position.y,
+  y: user.position.y + Math.floor((footprintClearance(user) - 1) / 2),
   z: user.position.z + Math.floor((user.base - 1) / 2),
 })
+
+const footprintContainsCell = (user: AreaTemplateFootprint, cell: GridAnchor): boolean =>
+  cell.x >= user.position.x
+  && cell.x < user.position.x + user.base
+  && cell.y >= user.position.y
+  && cell.y <= footprintTopY(user)
+  && cell.z >= user.position.z
+  && cell.z < user.position.z + user.base
+
+const footprintCells = (user: AreaTemplateFootprint): GridAnchor[] => {
+  const cells: GridAnchor[] = []
+  for (let x = user.position.x; x < user.position.x + user.base; x += 1) {
+    for (let y = user.position.y; y <= footprintTopY(user); y += 1) {
+      for (let z = user.position.z; z < user.position.z + user.base; z += 1) cells.push({ x, y, z })
+    }
+  }
+  return cells
+}
 
 const originCellForDirection = (user: AreaTemplateFootprint, direction: DirectionDefinition): GridAnchor => {
   const center = footprintCenterCell(user)
   return {
     x: direction.dx > 0 ? user.position.x + user.base - 1 : direction.dx < 0 ? user.position.x : center.x,
-    y: user.position.y,
+    y: center.y,
     z: direction.dz > 0 ? user.position.z + user.base - 1 : direction.dz < 0 ? user.position.z : center.z,
   }
 }
 
-const buildSquareCells = (start: GridAnchor, size: number): GridAnchor[] => {
+const directionOriginCells = (user: AreaTemplateFootprint, direction: DirectionDefinition): GridAnchor[] => {
+  const xValues = direction.dx > 0
+    ? [user.position.x + user.base - 1]
+    : direction.dx < 0
+      ? [user.position.x]
+      : rangeInclusive(user.position.x, user.position.x + user.base - 1)
+  const yValues = rangeInclusive(user.position.y, footprintTopY(user))
+  const zValues = direction.dz > 0
+    ? [user.position.z + user.base - 1]
+    : direction.dz < 0
+      ? [user.position.z]
+      : rangeInclusive(user.position.z, user.position.z + user.base - 1)
+
   const cells: GridAnchor[] = []
-  for (let x = start.x; x < start.x + size; x += 1) {
-    for (let z = start.z; z < start.z + size; z += 1) cells.push({ x, y: start.y, z })
+  for (const x of xValues) {
+    for (const y of yValues) {
+      for (const z of zValues) cells.push({ x, y, z })
+    }
   }
   return cells
 }
+
+const buildCuboidCells = (start: GridAnchor, size: GridDimensions): GridAnchor[] => {
+  const cells: GridAnchor[] = []
+  for (let x = start.x; x < start.x + size.x; x += 1) {
+    for (let y = start.y; y < start.y + size.y; y += 1) {
+      for (let z = start.z; z < start.z + size.z; z += 1) cells.push({ x, y, z })
+    }
+  }
+  return cells
+}
+
+const buildCubeCells = (start: GridAnchor, size: number): GridAnchor[] =>
+  buildCuboidCells(start, { x: size, y: size, z: size })
 
 const buildBurstCells = (user: AreaTemplateFootprint, radius: number): GridAnchor[] => {
   const cells: GridAnchor[] = []
   const minX = user.position.x - radius
   const maxX = user.position.x + user.base - 1 + radius
+  const minY = user.position.y - radius
+  const maxY = footprintTopY(user) + radius
   const minZ = user.position.z - radius
   const maxZ = user.position.z + user.base - 1 + radius
   for (let x = minX; x <= maxX; x += 1) {
-    for (let z = minZ; z <= maxZ; z += 1) {
-      const insideUser = x >= user.position.x
-        && x < user.position.x + user.base
-        && z >= user.position.z
-        && z < user.position.z + user.base
-      if (!insideUser) cells.push({ x, y: user.position.y, z })
+    for (let y = minY; y <= maxY; y += 1) {
+      for (let z = minZ; z <= maxZ; z += 1) {
+        const cell = { x, y, z }
+        if (!footprintContainsCell(user, cell)) cells.push(cell)
+      }
     }
   }
   return cells
@@ -239,15 +301,19 @@ const buildBurstCells = (user: AreaTemplateFootprint, radius: number): GridAncho
 
 const buildCardinalAdjacentCells = (user: AreaTemplateFootprint): GridAnchor[] => {
   const cells: GridAnchor[] = []
-  const y = user.position.y
-  for (let x = user.position.x; x < user.position.x + user.base; x += 1) {
-    cells.push({ x, y, z: user.position.z - 1 }, { x, y, z: user.position.z + user.base })
-  }
-  for (let z = user.position.z; z < user.position.z + user.base; z += 1) {
-    cells.push({ x: user.position.x - 1, y, z }, { x: user.position.x + user.base, y, z })
+  for (let y = user.position.y; y <= footprintTopY(user); y += 1) {
+    for (let x = user.position.x; x < user.position.x + user.base; x += 1) {
+      cells.push({ x, y, z: user.position.z - 1 }, { x, y, z: user.position.z + user.base })
+    }
+    for (let z = user.position.z; z < user.position.z + user.base; z += 1) {
+      cells.push({ x: user.position.x - 1, y, z }, { x: user.position.x + user.base, y, z })
+    }
   }
   return uniqueCells(cells)
 }
+
+const verticalStartForSize = (user: AreaTemplateFootprint, size: number): number =>
+  user.position.y + Math.floor((footprintClearance(user) - size) / 2)
 
 const closeBlastStart = (user: AreaTemplateFootprint, size: number, direction: DirectionDefinition): GridAnchor => {
   const neutralOffset = Math.floor((user.base - size) / 2)
@@ -257,7 +323,7 @@ const closeBlastStart = (user: AreaTemplateFootprint, size: number, direction: D
       : direction.dx < 0
         ? user.position.x - size
         : user.position.x + neutralOffset,
-    y: user.position.y,
+    y: verticalStartForSize(user, size),
     z: direction.dz > 0
       ? user.position.z + user.base
       : direction.dz < 0
@@ -270,13 +336,15 @@ const buildLineCells = (user: AreaTemplateFootprint, length: number, direction: 
   const origin = originCellForDirection(user, direction)
   const cells: GridAnchor[] = []
   for (let distance = 1; distance <= length; distance += 1) {
-    cells.push({
-      x: origin.x + direction.dx * distance,
-      y: origin.y,
-      z: origin.z + direction.dz * distance,
-    })
+    for (let y = user.position.y; y <= footprintTopY(user); y += 1) {
+      cells.push({
+        x: origin.x + direction.dx * distance,
+        y,
+        z: origin.z + direction.dz * distance,
+      })
+    }
   }
-  return cells
+  return uniqueCells(cells)
 }
 
 const coneLateralVector = (direction: DirectionDefinition): { x: -1 | 0 | 1; z: -1 | 0 | 1 } => {
@@ -296,12 +364,15 @@ const buildConeCells = (user: AreaTemplateFootprint, length: number, direction: 
       z: origin.z + direction.dz * distance,
     }
     const lateralRadius = distance === 1 ? 0 : 1
+    const verticalRadius = distance === 1 ? 0 : 1
     for (let offset = -lateralRadius; offset <= lateralRadius; offset += 1) {
-      cells.push({
-        x: center.x + lateral.x * offset,
-        y: center.y,
-        z: center.z + lateral.z * offset,
-      })
+      for (let yOffset = -verticalRadius; yOffset <= verticalRadius; yOffset += 1) {
+        cells.push({
+          x: center.x + lateral.x * offset,
+          y: center.y + yOffset,
+          z: center.z + lateral.z * offset,
+        })
+      }
     }
   }
   return uniqueCells(cells)
@@ -309,7 +380,106 @@ const buildConeCells = (user: AreaTemplateFootprint, length: number, direction: 
 
 const buildRangedBlastCells = (center: GridAnchor, size: number): GridAnchor[] => {
   const offset = Math.floor(size / 2)
-  return buildSquareCells({ x: center.x - offset, y: center.y, z: center.z - offset }, size)
+  return buildCubeCells({ x: center.x - offset, y: center.y - offset, z: center.z - offset }, size)
+}
+
+const cellInBounds = (cell: GridAnchor, bounds: GridDimensions | undefined): boolean =>
+  cell.x >= 0
+  && cell.y >= 0
+  && cell.z >= 0
+  && (!bounds || (
+    cell.x < bounds.x
+    && cell.y < bounds.y
+    && cell.z < bounds.z
+  ))
+
+const cellsBetweenCellCenters = (from: GridAnchor, to: GridAnchor): GridAnchor[] => {
+  const current: GridAnchor = { ...from }
+  const target: GridAnchor = { ...to }
+  const cells: GridAnchor[] = [{ ...current }]
+  if (current.x === target.x && current.y === target.y && current.z === target.z) return cells
+
+  const start = { x: from.x + 0.5, y: from.y + 0.5, z: from.z + 0.5 }
+  const end = { x: to.x + 0.5, y: to.y + 0.5, z: to.z + 0.5 }
+  const dx = end.x - start.x
+  const dy = end.y - start.y
+  const dz = end.z - start.z
+  const stepX = Math.sign(dx)
+  const stepY = Math.sign(dy)
+  const stepZ = Math.sign(dz)
+  const tDeltaX = stepX === 0 ? Number.POSITIVE_INFINITY : Math.abs(1 / dx)
+  const tDeltaY = stepY === 0 ? Number.POSITIVE_INFINITY : Math.abs(1 / dy)
+  const tDeltaZ = stepZ === 0 ? Number.POSITIVE_INFINITY : Math.abs(1 / dz)
+  let tMaxX = stepX === 0
+    ? Number.POSITIVE_INFINITY
+    : stepX > 0
+      ? (from.x + 1 - start.x) / dx
+      : (start.x - from.x) / -dx
+  let tMaxY = stepY === 0
+    ? Number.POSITIVE_INFINITY
+    : stepY > 0
+      ? (from.y + 1 - start.y) / dy
+      : (start.y - from.y) / -dy
+  let tMaxZ = stepZ === 0
+    ? Number.POSITIVE_INFINITY
+    : stepZ > 0
+      ? (from.z + 1 - start.z) / dz
+      : (start.z - from.z) / -dz
+  const epsilon = 1e-9
+  const guardLimit = Math.abs(target.x - current.x) + Math.abs(target.y - current.y) + Math.abs(target.z - current.z) + 3
+  let guard = 0
+
+  while ((current.x !== target.x || current.y !== target.y || current.z !== target.z) && guard < guardLimit) {
+    const nextT = Math.min(tMaxX, tMaxY, tMaxZ)
+    if (tMaxX <= nextT + epsilon) {
+      current.x += stepX
+      tMaxX += tDeltaX
+    }
+    if (tMaxY <= nextT + epsilon) {
+      current.y += stepY
+      tMaxY += tDeltaY
+    }
+    if (tMaxZ <= nextT + epsilon) {
+      current.z += stepZ
+      tMaxZ += tDeltaZ
+    }
+    cells.push({ ...current })
+    guard += 1
+  }
+
+  return cells
+}
+
+const lineBetweenCellsIsClear = (
+  origin: GridAnchor,
+  target: GridAnchor,
+  blockedCells: ReadonlySet<string>,
+): boolean => {
+  const lineCells = cellsBetweenCellCenters(origin, target)
+  for (let index = 1; index < lineCells.length - 1; index += 1) {
+    if (blockedCells.has(cellKey(lineCells[index]))) return false
+  }
+  return true
+}
+
+const cellHasLineOfEffect = (
+  cell: GridAnchor,
+  origins: readonly GridAnchor[],
+  blockedCells: ReadonlySet<string>,
+): boolean => origins.length === 0 || origins.some((origin) => lineBetweenCellsIsClear(origin, cell, blockedCells))
+
+const applyCellConstraints = (
+  cells: GridAnchor[],
+  origins: readonly GridAnchor[],
+  constraints: AreaTemplateCellConstraints,
+): GridAnchor[] => {
+  const bounded = uniqueCells(cells).filter((cell) => cellInBounds(cell, constraints.bounds))
+  const blockedCells = constraints.blockedCells
+  if (!blockedCells?.size) return bounded
+
+  return bounded.filter((cell) =>
+    !blockedCells.has(cellKey(cell)) && cellHasLineOfEffect(cell, origins, blockedCells),
+  )
 }
 
 export const buildMoveAutomationAreaTemplateCells = ({
@@ -317,23 +487,38 @@ export const buildMoveAutomationAreaTemplateCells = ({
   user,
   direction,
   center,
+  bounds,
+  blockedCells,
 }: BuildMoveAutomationAreaTemplateCellsInput): GridAnchor[] => {
+  const constraints = { bounds, blockedCells }
   switch (template.kind) {
-    case 'burst': return buildBurstCells(user, template.size)
-    case 'cardinally-adjacent': return buildCardinalAdjacentCells(user)
+    case 'burst': return applyCellConstraints(buildBurstCells(user, template.size), footprintCells(user), constraints)
+    case 'cardinally-adjacent': return applyCellConstraints(buildCardinalAdjacentCells(user), footprintCells(user), constraints)
     case 'close-blast': {
       const resolvedDirection = directionDefinition(direction)
-      return resolvedDirection ? buildSquareCells(closeBlastStart(user, template.size, resolvedDirection), template.size) : []
+      return resolvedDirection
+        ? applyCellConstraints(
+            buildCubeCells(closeBlastStart(user, template.size, resolvedDirection), template.size),
+            directionOriginCells(user, resolvedDirection),
+            constraints,
+          )
+        : []
     }
     case 'cone': {
       const resolvedDirection = directionDefinition(direction)
-      return resolvedDirection ? buildConeCells(user, template.size, resolvedDirection) : []
+      return resolvedDirection
+        ? applyCellConstraints(buildConeCells(user, template.size, resolvedDirection), directionOriginCells(user, resolvedDirection), constraints)
+        : []
     }
     case 'line': {
       const resolvedDirection = directionDefinition(direction)
-      return resolvedDirection ? buildLineCells(user, template.size, resolvedDirection) : []
+      return resolvedDirection
+        ? applyCellConstraints(buildLineCells(user, template.size, resolvedDirection), directionOriginCells(user, resolvedDirection), constraints)
+        : []
     }
-    case 'ranged-blast': return center ? buildRangedBlastCells(center, template.size) : []
+    case 'ranged-blast': return center
+      ? applyCellConstraints(buildRangedBlastCells(center, template.size), [center], constraints)
+      : []
   }
 }
 
@@ -361,7 +546,7 @@ const cellsSignature = (cells: readonly GridAnchor[]): string =>
 
 const tokenCenterCell = (token: SpawnedPokemon): GridAnchor => ({
   x: token.position.x + Math.floor((token.base - 1) / 2),
-  y: token.position.y,
+  y: token.position.y + Math.floor((getClearanceValue(token) - 1) / 2),
   z: token.position.z + Math.floor((token.base - 1) / 2),
 })
 
@@ -392,14 +577,17 @@ export const buildMoveAutomationAreaTemplatePlacements = ({
   user,
   tokens,
   includeEmpty = false,
+  bounds,
+  blockedCells,
 }: BuildMoveAutomationAreaTemplatePlacementsInput): MoveAutomationAreaTemplatePlacement[] => {
   const templates = templatesForScript(script)
   const placements: MoveAutomationAreaTemplatePlacement[] = []
   const seen = new Set<string>()
+  const constraints = { bounds, blockedCells }
 
   for (const template of templates) {
     if (template.kind === 'burst' || template.kind === 'cardinally-adjacent') {
-      const cells = buildMoveAutomationAreaTemplateCells({ template, user })
+      const cells = buildMoveAutomationAreaTemplateCells({ template, user, ...constraints })
       const targetIds = tokensInMoveAutomationArea({ cells, tokens, excludeIds: [user.id] }).map((token) => token.id)
       addPlacement(placements, seen, {
         id: `${template.kind}:${template.size}`,
@@ -415,7 +603,7 @@ export const buildMoveAutomationAreaTemplatePlacements = ({
       for (const token of tokens) {
         if (token.id === user.id || !templateCanBeCenteredOnToken(template, user, token)) continue
         const center = tokenCenterCell(token)
-        const cells = buildMoveAutomationAreaTemplateCells({ template, user, center })
+        const cells = buildMoveAutomationAreaTemplateCells({ template, user, center, ...constraints })
         const targetIds = tokensInMoveAutomationArea({ cells, tokens, excludeIds: [user.id] }).map((item) => item.id)
         addPlacement(placements, seen, {
           id: `${template.kind}:${template.range ?? 'any'}:${template.size}:${token.id}`,
@@ -429,7 +617,7 @@ export const buildMoveAutomationAreaTemplatePlacements = ({
     }
 
     for (const direction of AREA_DIRECTIONS) {
-      const cells = buildMoveAutomationAreaTemplateCells({ template, user, direction: direction.id })
+      const cells = buildMoveAutomationAreaTemplateCells({ template, user, direction: direction.id, ...constraints })
       const targetIds = tokensInMoveAutomationArea({ cells, tokens, excludeIds: [user.id] }).map((token) => token.id)
       addPlacement(placements, seen, {
         id: `${template.kind}:${template.size}:${direction.id}`,
