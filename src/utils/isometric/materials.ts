@@ -2,16 +2,19 @@ import * as THREE from 'three'
 import { BLOCK_FACE_ROLES, applyVoxelFaceMaterialStyle, type VoxelRenderStyle } from './blockTextures'
 
 /**
- * Black / white / red terrain palette for isometric face shading.
+ * Black / white / orange / red terrain palette for isometric face shading.
  *
  * The classic isometric trick is roughly 100 / 80 / 60 % brightness for
  * top / left / right faces. We keep neutral cages in a white-to-graphite
- * ramp and reserve red for selected or invalid tactical feedback.
+ * ramp, use warm orange for selected-token feedback, and reserve red for
+ * invalid tactical feedback.
  *
  * Opposite faces share roles so 90° azimuth rotations preserve the
  * lighting pattern: ±X faces are always the "shadow" axis, ±Z faces
  * are always the "side" axis, and ±Y is top/bottom.
  */
+export const TACTICAL_SELECTION_HIGHLIGHT_COLOR = 0xffb84d
+
 export const TERRAIN_PALETTE = {
   idle: {
     // White/graphite band so the cage sits visually above the terrain's
@@ -22,10 +25,10 @@ export const TERRAIN_PALETTE = {
     bottom: 0x29303a, // steel-2 — floor of the cage (rarely seen)
   },
   selected: {
-    top:    0xff5a62,
-    side:   0xff1f2d,
-    shadow: 0xb80f22,
-    bottom: 0x5a0710,
+    top:    0xffd18a,
+    side:   TACTICAL_SELECTION_HIGHLIGHT_COLOR,
+    shadow: 0xd98220,
+    bottom: 0x6a3908,
   },
   reachable: {
     top:    0xf7f7f2,

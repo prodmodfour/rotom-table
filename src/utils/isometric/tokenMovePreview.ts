@@ -2,7 +2,11 @@ import * as THREE from 'three'
 import type { GridAnchor, SpawnedPokemon } from '~/types/pokemon'
 import { getAnchorCenter } from '~/utils/gridGeometry'
 import { tokenFacingForPlacement, tokenFacingTowardPoint, tokenFacingVector } from '~/utils/tokenFacing'
-import { buildVolumeMaterials, paintVolumeMaterials } from '~/utils/isometric/materials'
+import {
+  TACTICAL_SELECTION_HIGHLIGHT_COLOR,
+  buildVolumeMaterials,
+  paintVolumeMaterials,
+} from '~/utils/isometric/materials'
 import { disposeObject3D } from '~/utils/isometric/resourceDisposal'
 import { buildElevationBadge, updateElevationBadge } from '~/utils/isometric/tokenHud'
 import type { WorldSpriteState } from '~/utils/isometric/types'
@@ -49,7 +53,7 @@ export const createTokenMovePreviewRenderer = (containers: {
     pathLine = new THREE.Line(
       new THREE.BufferGeometry(),
       new THREE.LineBasicMaterial({
-        color: 0xff1f2d, // red active path trail
+        color: TACTICAL_SELECTION_HIGHLIGHT_COLOR, // light orange active path trail
         transparent: true,
         opacity: 0.95,
         depthTest: true,
