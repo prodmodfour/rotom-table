@@ -122,6 +122,16 @@ export const updateWorldSpriteLighting = (
   state.haloMaterial.opacity = style.haloOpacity
 }
 
+export const setWorldSpriteSize = (
+  state: Pick<WorldSpriteState, 'sprite' | 'halo'>,
+  dimensions: Pick<SpawnedPokemon, 'width' | 'height'>,
+) => {
+  const width = Math.max(0.1, dimensions.width)
+  const height = Math.max(0.1, dimensions.height)
+  state.sprite.scale.set(width, height, 1)
+  state.halo.scale.set(width * 1.25, height * 1.15, 1)
+}
+
 export const buildWorldSprite = (pokemon: SpawnedPokemon, ghost = false): WorldSpriteState => {
   const material = new THREE.SpriteMaterial({
     map: getTransparentSpriteTexture(),
@@ -139,7 +149,6 @@ export const buildWorldSprite = (pokemon: SpawnedPokemon, ghost = false): WorldS
   // Bottom-center anchoring keeps the feet planted at the token's
   // ground/elevation Y while preserving the old visual footprint/height.
   sprite.center.set(0.5, 0)
-  sprite.scale.set(Math.max(0.1, pokemon.width), Math.max(0.1, pokemon.height), 1)
   sprite.visible = true
 
   const haloMaterial = new THREE.SpriteMaterial({
@@ -157,7 +166,6 @@ export const buildWorldSprite = (pokemon: SpawnedPokemon, ghost = false): WorldS
   })
   const halo = new THREE.Sprite(haloMaterial)
   halo.center.set(0.5, 0)
-  halo.scale.set(Math.max(0.1, pokemon.width) * 1.25, Math.max(0.1, pokemon.height) * 1.15, 1)
   halo.visible = true
 
   const state: WorldSpriteState = {
@@ -179,6 +187,7 @@ export const buildWorldSprite = (pokemon: SpawnedPokemon, ghost = false): WorldS
     invalid: false,
   }
 
+  setWorldSpriteSize(state, pokemon)
   setWorldSpriteAsset(state, {
     url: pokemon.spriteUrl,
     animation: pokemon.spriteAnimation,
@@ -206,14 +215,19 @@ export const disposeWorldSprite = (state: WorldSpriteState | null) => {
  * than the cage footprint so the soft alpha rim spills past the cage
  * edges, anchoring the billboarded sprite to the ground.
  */
-export const buildContactShadow = (
-  pokemon: SpawnedPokemon,
-): THREE.Mesh<THREE.CircleGeometry, THREE.MeshBasicMaterial> => {
+export const contactShadowRadiusForPokemon = (
+  pokemon: Pick<SpawnedPokemon, 'base' | 'clearance'>,
+): number => {
   // Scale by clearance so a Wailord doesn't share Cutiefly's shadow.
   // Base term keeps small/wide mons grounded; clearance term grows the
   // disc as the cage gets taller without making it absurdly wide.
-  const radius = Math.max(pokemon.base, 0.5) * 0.55 + pokemon.clearance * 0.06
-  const geometry = new THREE.CircleGeometry(radius, 32)
+  return Math.max(pokemon.base, 0.5) * 0.55 + pokemon.clearance * 0.06
+}
+
+export const buildContactShadow = (
+  pokemon: SpawnedPokemon,
+): THREE.Mesh<THREE.CircleGeometry, THREE.MeshBasicMaterial> => {
+  const geometry = new THREE.CircleGeometry(contactShadowRadiusForPokemon(pokemon), 32)
   const material = new THREE.MeshBasicMaterial({
     map: getContactShadowTexture(),
     transparent: true,

@@ -17,7 +17,9 @@ import {
   applyAnimationFrame,
   buildContactShadow,
   buildWorldSprite,
+  contactShadowRadiusForPokemon,
   disposeWorldSprite,
+  setWorldSpriteSize,
   updateSpriteFacing,
   updateWorldSpriteLighting,
 } from '~/utils/isometric/worldSprites'
@@ -28,6 +30,58 @@ export type ShadowSurfaceResolver = (
   base: number,
   footY: number,
 ) => number
+
+type TokenRenderDimensions = Pick<
+  ReturnType<typeof pokemonRenderSpawnState>,
+  'width' | 'height' | 'base' | 'clearance'
+>
+
+const tokenDimensionsChanged = (
+  renderObject: PokemonRenderObject,
+  spawnState: TokenRenderDimensions,
+): boolean => (
+  renderObject.width !== spawnState.width ||
+  renderObject.height !== spawnState.height ||
+  renderObject.base !== spawnState.base ||
+  renderObject.clearance !== spawnState.clearance
+)
+
+const replaceVolumeGeometry = (renderObject: PokemonRenderObject, base: number, clearance: number) => {
+  const volumeGeometry = new THREE.BoxGeometry(base, clearance, base)
+  const edgesGeometry = new THREE.EdgesGeometry(volumeGeometry)
+
+  renderObject.volume.geometry.dispose()
+  renderObject.volume.geometry = volumeGeometry
+  renderObject.edges.geometry.dispose()
+  renderObject.edges.geometry = edgesGeometry
+}
+
+const replaceProxyGeometry = (renderObject: PokemonRenderObject, pokemon: SpawnedPokemon) => {
+  const pickSize = pokemonPickDimensions(pokemon)
+  renderObject.proxy.geometry.dispose()
+  renderObject.proxy.geometry = new THREE.BoxGeometry(pickSize.width, pickSize.height, pickSize.width)
+}
+
+const replaceShadowGeometry = (renderObject: PokemonRenderObject, pokemon: SpawnedPokemon) => {
+  renderObject.shadow.geometry.dispose()
+  renderObject.shadow.geometry = new THREE.CircleGeometry(contactShadowRadiusForPokemon(pokemon), 32)
+}
+
+const applyPokemonRenderObjectDimensions = (
+  renderObject: PokemonRenderObject,
+  pokemon: SpawnedPokemon,
+  spawnState: TokenRenderDimensions,
+) => {
+  renderObject.width = spawnState.width
+  renderObject.height = spawnState.height
+  renderObject.base = spawnState.base
+  renderObject.clearance = spawnState.clearance
+
+  setWorldSpriteSize(renderObject.spriteState, spawnState)
+  replaceVolumeGeometry(renderObject, spawnState.base, spawnState.clearance)
+  replaceProxyGeometry(renderObject, pokemon)
+  replaceShadowGeometry(renderObject, pokemon)
+}
 
 export const createPokemonRenderObject = (
   pokemon: SpawnedPokemon,
@@ -126,6 +180,9 @@ export const updatePokemonRenderObjectFromSpawn = (
   pokemon: SpawnedPokemon,
 ) => {
   const spawnState = pokemonRenderSpawnState(pokemon)
+  if (tokenDimensionsChanged(renderObject, spawnState)) {
+    applyPokemonRenderObjectDimensions(renderObject, pokemon, spawnState)
+  }
   renderObject.targetCenter.set(spawnState.center.x, spawnState.center.y, spawnState.center.z)
   renderObject.elevation = spawnState.elevation
   renderObject.spriteUrl = spawnState.spriteUrl
