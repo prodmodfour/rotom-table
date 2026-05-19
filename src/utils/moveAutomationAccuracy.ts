@@ -6,6 +6,11 @@ import {
   speedEvasionSuppressedByCondition,
 } from '~/utils/sheetConditionEffects'
 import { heldItemsAccuracyRollBonus } from '~/utils/sheetHeldItemEffects'
+import {
+  NO_GUARD_ABILITY_NAME,
+  sheetAbilityAccuracyRollBonus,
+  sheetAbilityIncomingAttackEvasionModifier,
+} from '~/utils/sheetAbilityCombatModifiers'
 import { resolveMoveAutomationHitChancePercent } from '~/utils/moveAutomationResolution'
 import type { CombatStatStageKey } from '~/types/combatStages'
 import type {
@@ -28,9 +33,19 @@ export interface MoveAutomationEvasionResolution {
   label: string
   candidates: MoveAutomationEvasionCandidate[]
   suppressedByCondition: string | null
+  abilityModifier: number
 }
 
 type MoveAutomationEvasionStatStageKey = Extract<CombatStatStageKey, 'def' | 'sdef' | 'spd'>
+
+const signedAccuracyModifier = (value: number): string =>
+  value > 0 ? `+${value}` : String(value)
+
+const evasionLabelWithAbilityModifier = (label: string, modifier: number): string =>
+  modifier ? `${label} (${NO_GUARD_ABILITY_NAME} ${signedAccuracyModifier(modifier)})` : label
+
+const moveAutomationTargetAbilityEvasionModifier = (target: SpawnedPokemon): number =>
+  sheetAbilityIncomingAttackEvasionModifier(target.abilityNames)
 
 const evasionKindForStatStageKey = (key: MoveAutomationEvasionStatStageKey): MoveAutomationEvasionKind => {
   switch (key) {
@@ -93,13 +108,16 @@ export const resolveMoveAutomationTargetEvasion = (
   script: MoveAutomationScript | null | undefined,
   target: SpawnedPokemon,
 ): MoveAutomationEvasionResolution => {
+  const abilityModifier = moveAutomationTargetAbilityEvasionModifier(target)
   const suppressedByCondition = evasionSuppressedByCondition(target.conditions)
   if (suppressedByCondition) {
+    const label = `No Evasion (${suppressedByCondition})`
     return {
-      value: 0,
-      label: `No Evasion (${suppressedByCondition})`,
+      value: abilityModifier,
+      label: evasionLabelWithAbilityModifier(label, abilityModifier),
       candidates: [],
       suppressedByCondition,
+      abilityModifier,
     }
   }
 
@@ -108,12 +126,14 @@ export const resolveMoveAutomationTargetEvasion = (
     if (!current || candidate.value > current.value) return candidate
     return current
   }, null)
+  const label = best ? best.label : 'No Evasion'
 
   return {
-    value: best?.value ?? 0,
-    label: best ? best.label : 'No Evasion',
+    value: (best?.value ?? 0) + abilityModifier,
+    label: evasionLabelWithAbilityModifier(label, abilityModifier),
     candidates,
     suppressedByCondition: null,
+    abilityModifier,
   }
 }
 
@@ -124,6 +144,7 @@ export const moveAutomationUserAccuracy = (user: SpawnedPokemon): number =>
   clampCombatStage(user.combatStages?.acc)
   + conditionAccuracyModifier(user.conditions)
   + moveAutomationHeldItemAccuracyBonus(user)
+  + sheetAbilityAccuracyRollBonus(user.abilityNames)
 
 export const moveAutomationHitChanceTone = (percent: number): MoveAutomationHitChanceTone => {
   if (percent < 50) return 'low'
@@ -133,9 +154,6 @@ export const moveAutomationHitChanceTone = (percent: number): MoveAutomationHitC
 
 const formatMoveAutomationHitChancePercent = (percent: number): string =>
   `${Number.isInteger(percent) ? percent.toString() : percent.toFixed(1)}%`
-
-const signedAccuracyModifier = (value: number): string =>
-  value > 0 ? `+${value}` : String(value)
 
 const moveAutomationHitChanceTitle = (options: {
   script: MoveAutomationScript

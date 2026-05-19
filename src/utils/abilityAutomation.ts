@@ -2,6 +2,7 @@ import { normalizeCombatStages } from '~/utils/combatStages'
 import { isSheetActivatableAbility } from '~/utils/sheetAbilityActivation'
 import { resolveCanonicalSheetAbilityName, type SheetAbilityNameSource } from '~/utils/sheetAbilities'
 import { QUICK_FEET_ABILITY_NAME } from '~/utils/sheetConditionEffects'
+import { NO_GUARD_ABILITY_NAME } from '~/utils/sheetAbilityCombatModifiers'
 import type { AbilityAutomationCategory, AbilityAutomationTransaction } from '~/types/abilityAutomation'
 import type { SpawnedPokemon } from '~/types/pokemon'
 
@@ -79,6 +80,14 @@ const PASSIVE_ABILITY_AUTOMATIONS = new Map<string, PassiveAbilityAutomationDefi
     QUICK_FEET_ABILITY_NAME,
     {
       name: QUICK_FEET_ABILITY_NAME,
+      category: 'passive',
+      label: 'Auto',
+    },
+  ],
+  [
+    NO_GUARD_ABILITY_NAME,
+    {
+      name: NO_GUARD_ABILITY_NAME,
       category: 'passive',
       label: 'Auto',
     },

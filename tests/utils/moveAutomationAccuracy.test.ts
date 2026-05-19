@@ -106,6 +106,31 @@ describe('move automation accuracy helpers', () => {
     expect(moveAutomationUserAccuracy(token({ combatStages: { ...stages, acc: 2 }, conditions: ['Total Blindness'] }))).toBe(-8)
   })
 
+  it('applies No Guard as outgoing Accuracy and incoming pseudo-Evasion modifiers', () => {
+    expect(moveAutomationUserAccuracy(token({ abilityNames: ['No Guard'] }))).toBe(3)
+    expect(moveAutomationUserAccuracy(token({ abilityNames: ['no-guard'], combatStages: { ...stages, acc: 6 } }))).toBe(9)
+
+    expect(resolveMoveAutomationTargetEvasion(script('Physical'), token({
+      abilityNames: ['No Guard'],
+      def: 0,
+      spd: 0,
+      evasion: { physical: 0, special: 0, speed: 0 },
+    }))).toMatchObject({
+      value: -3,
+      label: 'Physical Evasion (No Guard -3)',
+      abilityModifier: -3,
+    })
+
+    expect(resolveMoveAutomationTargetEvasion(script('Physical'), token({
+      abilityNames: ['No Guard'],
+      conditions: ['Vulnerable'],
+    }))).toMatchObject({
+      value: -3,
+      label: 'No Evasion (Vulnerable) (No Guard -3)',
+      suppressedByCondition: 'Vulnerable',
+    })
+  })
+
   it('adds Luck Incense to Pokémon accuracy rolls only', () => {
     expect(moveAutomationUserAccuracy(token({ tokenItems: ['Luck Incense'] }))).toBe(1)
     expect(moveAutomationUserAccuracy(token({ tokenItems: ['luck-incense'], combatStages: { ...stages, acc: 2 } }))).toBe(3)

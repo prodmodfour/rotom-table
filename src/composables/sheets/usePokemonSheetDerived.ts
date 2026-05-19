@@ -163,6 +163,7 @@ export function usePokemonSheetDerived(sheet: PokemonSheetRef) {
     stage: sheet.value?.combatStages?.acc,
     conditions: combatConditions.value,
     heldItem: sheet.value?.items?.held,
+    abilities: sheet.value?.abilities,
   }))
 
   const pokemonEvasion = computed(() => {

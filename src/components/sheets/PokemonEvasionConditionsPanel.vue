@@ -143,7 +143,7 @@ const emit = defineEmits<{
 
   <p
     class="combat-line accuracy-line"
-    title="Accuracy Roll modifier = Accuracy Combat Stage + condition modifiers + Luck Incense held-item bonus. A natural 1 still always misses."
+    title="Accuracy Roll modifier = Accuracy Combat Stage + condition modifiers + Luck Incense held-item bonus + passive ability bonuses such as No Guard. A natural 1 still always misses."
   >
     <strong>Accuracy Rolls:</strong>
     <span class="accuracy-line__total">{{ formatSignedModifier(pokemonAccuracy.total) }}</span>
@@ -163,6 +163,9 @@ const emit = defineEmits<{
     </small>
     <small v-if="pokemonAccuracy.itemBonus" class="accuracy-line__item">
       Luck Incense {{ formatSignedModifier(pokemonAccuracy.itemBonus) }}
+    </small>
+    <small v-if="pokemonAccuracy.abilityBonus" class="accuracy-line__ability">
+      ability {{ formatSignedModifier(pokemonAccuracy.abilityBonus) }}
     </small>
   </p>
 
@@ -270,7 +273,8 @@ const emit = defineEmits<{
   gap: 0.2rem;
 }
 
-.accuracy-line__item {
+.accuracy-line__item,
+.accuracy-line__ability {
   color: var(--accent);
   font-weight: 700;
 }

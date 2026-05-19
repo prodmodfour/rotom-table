@@ -125,7 +125,7 @@ const emit = defineEmits<{
     </ul>
     <p
       class="accuracy-line"
-      title="Accuracy Roll modifier = Accuracy Combat Stage + condition modifiers. A natural 1 still always misses."
+      title="Accuracy Roll modifier = Accuracy Combat Stage + condition modifiers + passive ability bonuses such as No Guard. A natural 1 still always misses."
     >
       <strong>Accuracy Rolls:</strong>
       <span class="accuracy-line__total">{{ formatSignedModifier(trainerAccuracy.total) }}</span>
@@ -142,6 +142,9 @@ const emit = defineEmits<{
       </small>
       <small v-if="trainerAccuracy.conditionModifier" class="accuracy-line__condition">
         condition {{ formatSignedModifier(trainerAccuracy.conditionModifier) }}
+      </small>
+      <small v-if="trainerAccuracy.abilityBonus" class="accuracy-line__ability">
+        ability {{ formatSignedModifier(trainerAccuracy.abilityBonus) }}
       </small>
     </p>
     <div class="muted condition-block">
@@ -261,6 +264,11 @@ const emit = defineEmits<{
 
 .accuracy-line__condition {
   color: var(--bad);
+  font-weight: 700;
+}
+
+.accuracy-line__ability {
+  color: var(--accent);
   font-weight: 700;
 }
 

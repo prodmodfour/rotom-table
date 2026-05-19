@@ -88,8 +88,24 @@ describe('usePokemonSheetDerived', () => {
       stage: 2,
       conditionModifier: -6,
       itemBonus: 1,
+      abilityBonus: 0,
     })
     expect(derived.heldItemReference.value?.name).toBe('Luck Incense')
+  })
+
+  it('adds No Guard to Pokémon sheet Accuracy Rolls', () => {
+    const sheet = ref<CharacterSheet | null>(makeSheet({
+      combatStages: { acc: 1 },
+      items: {},
+      abilities: [{ name: 'No Guard' }],
+    }))
+    const derived = usePokemonSheetDerived(sheet)
+
+    expect(derived.pokemonAccuracy.value).toMatchObject({
+      total: 4,
+      stage: 1,
+      abilityBonus: 3,
+    })
   })
 
   it('adds Quick Claw to Pokémon sheet initiative before condition adjustments', () => {

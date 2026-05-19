@@ -82,6 +82,21 @@ describe('useTrainerSheetDerived', () => {
       stage: 2,
       conditionModifier: -10,
       itemBonus: 0,
+      abilityBonus: 0,
+    })
+  })
+
+  it('adds No Guard to trainer Accuracy Rolls', () => {
+    const sheet = ref<TrainerSheet | null>(makeSheet({
+      combatStages: { acc: -1 },
+      abilities: [{ name: 'No Guard' }],
+    }))
+    const derived = useTrainerSheetDerived(sheet)
+
+    expect(derived.trainerAccuracy.value).toMatchObject({
+      total: 2,
+      stage: -1,
+      abilityBonus: 3,
     })
   })
 

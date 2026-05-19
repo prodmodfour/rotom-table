@@ -123,6 +123,7 @@ export function useTrainerSheetDerived(sheet: TrainerSheetRef) {
     stage: sheet.value?.combatStages?.acc,
     conditions: combatConditions.value,
     includeHeldItemBonus: false,
+    abilities: sheet.value?.abilities,
   }))
 
   const trainerEvasion = computed(() => {
