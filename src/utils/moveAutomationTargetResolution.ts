@@ -114,6 +114,7 @@ export const moveAutomationTargetDamageMultiplier = (
     target.defenderTypes,
     target.abilityNames,
     target.defenderCapabilities,
+    { moveKeywords: script?.keywords },
   )
   if (script?.type === 'Electric' && multiplier > 0 && targetHasCondition(target, ELECTRIC_RESISTANT_COAT_CONDITION)) {
     return resistMultiplierOneStepFurther(multiplier)

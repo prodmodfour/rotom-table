@@ -112,9 +112,9 @@ describe('isometric damage dialog helpers', () => {
 
     dialog.attackType = 'Ground'
     dialog.defenderTypes = ['Flying']
-    expect(getDamageDialogMultiplier(dialog)).toBe(1)
-    expect(getDamageDialogMultiplierTone(1)).toBeNull()
-    expect(getDamageDialogPreview(dialog, null)).toBe(25)
+    expect(getDamageDialogMultiplier(dialog)).toBe(0.5)
+    expect(getDamageDialogMultiplierTone(0.5)).toBe('is-resist')
+    expect(getDamageDialogPreview(dialog, null)).toBe(33)
 
     const skyDialog = createDamageDialogState(pokemon({
       defenderTypes: ['Flying'],

@@ -11,8 +11,8 @@ describe('pokedex type matchup helpers', () => {
     expect(computePtuTypeMultiplier('Fire', ['Grass', 'Ice'])).toBe(2)
     expect(computePtuTypeMultiplier('Fire', ['Water'])).toBe(0.5)
     expect(computePtuTypeMultiplier('Fire', ['Water', 'Rock'])).toBe(0.25)
-    expect(computePtuTypeMultiplier('Ground', ['Flying'])).toBe(1)
-    expect(computePtuTypeMultiplier('Ground', ['Flying'], { sky: 4 })).toBe(0.5)
+    expect(computePtuTypeMultiplier('Ground', ['Flying'])).toBe(0.5)
+    expect(computePtuTypeMultiplier('Ground', ['Fire', 'Flying'])).toBe(1)
   })
 
   it('formats PTU multiplier labels', () => {
@@ -32,16 +32,16 @@ describe('pokedex type matchup helpers', () => {
     expect(buildTypeMatchupGroups(['Unknown'])).toEqual([])
   })
 
-  it('uses Sky and Levitate capabilities as Ground resistance sources', () => {
-    const charizardGroups = buildTypeMatchupGroups(['Fire', 'Flying'], { sky: 8 })
+  it('uses Flying typing and Levitate ability as Ground resistance sources', () => {
+    const charizardGroups = buildTypeMatchupGroups(['Fire', 'Flying'])
     expect(charizardGroups.find((group) => group.key === 'weaknesses')?.items.map((item) => item.type)).not.toContain('Ground')
     expect(charizardGroups.find((group) => group.key === 'resistances')?.items.map((item) => item.type)).not.toContain('Ground')
 
-    const geodudeGroups = buildTypeMatchupGroups(['Rock', 'Ground'], { levitate: 3 })
+    const geodudeGroups = buildTypeMatchupGroups(['Rock', 'Ground'], ['Levitate'])
     expect(geodudeGroups.find((group) => group.key === 'weaknesses')?.items.map((item) => item.type)).not.toContain('Ground')
     expect(geodudeGroups.find((group) => group.key === 'resistances')?.items.map((item) => item.type)).not.toContain('Ground')
 
-    const flyingGroups = buildTypeMatchupGroups(['Flying'], { sky: 4 })
+    const flyingGroups = buildTypeMatchupGroups(['Flying'])
     expect(flyingGroups.find((group) => group.key === 'resistances')?.items).toContainEqual({
       type: 'Ground',
       multiplier: 0.5,

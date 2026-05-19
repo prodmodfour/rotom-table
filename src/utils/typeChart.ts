@@ -5,7 +5,7 @@
  * The chart is keyed as ``effectiveness[attackingType][defendingType]``.
  * Anything not listed is the default ``1`` (neutral). Single-type matchups
  * start from the mainline games, with the Rotom Table PTU adjustment that
- * Flying does not inherently grant Ground immunity. Combined matchups are
+ * Flying resists Ground instead of being immune to it. Combined matchups are
  * converted to PTU's stepped damage values: x1.5 for one weakness, x2 for two
  * weaknesses, x3 for three, and halved for each resistance step.
  */
@@ -40,7 +40,7 @@ const SUPER: Record<PokemonType, Partial<Record<PokemonType, number>>> = {
   Flying:    { Fighting: 2, Rock: 0.5, Bug: 2, Steel: 0.5, Grass: 2, Electric: 0.5 },
   Poison:    { Poison: 0.5, Ground: 0.5, Rock: 0.5, Ghost: 0.5,
                Steel: 0,    Grass: 2,    Fairy: 2 },
-  Ground:    { Poison: 2, Rock: 2, Bug: 0.5, Steel: 2,
+  Ground:    { Flying: 0.5, Poison: 2, Rock: 2, Bug: 0.5, Steel: 2,
                Fire: 2,   Grass: 0.5, Electric: 2 },
   Rock:      { Fighting: 0.5, Flying: 2, Ground: 0.5, Bug: 2,
                Steel: 0.5,    Fire: 2,   Ice: 2 },

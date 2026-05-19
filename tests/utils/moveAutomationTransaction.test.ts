@@ -228,6 +228,53 @@ describe('move automation transaction helpers', () => {
     expect(transaction.logLines).toContain('Oddish: +2 Injuries (Massive Damage, 1 HP Marker).')
   })
 
+  it('blocks damage and target suggestions when an airborne capability is immune to Groundsource', () => {
+    const user = token({ id: 'u', species: 'Caster', atk: 12 })
+    const target = token({
+      id: 't',
+      species: 'Airborne',
+      currentHp: 30,
+      maxHp: 30,
+      defenderCapabilities: { sky: 6 },
+    })
+    const s = script({
+      type: 'Ground',
+      keywords: ['Groundsource'],
+      stageSuggestions: [{ recipient: 'target', key: 'sdef', delta: -1, label: 'Lower Special Defense' }],
+      conditionSuggestions: [{ recipient: 'target', condition: 'Trapped', label: 'Trap target' }],
+    })
+
+    const transaction = buildMoveAutomationTransaction({
+      script: s,
+      user,
+      selectedTargets: [target],
+      targetResolutions: {
+        t: {
+          ...defaultTargetResolutionState(s),
+          hit: true,
+          damageRoll: { formula: 'flat', count: 0, sides: 0, total: 20, rolls: [], mod: 20 },
+        },
+      },
+      enabledSuggestions: {
+        [moveAutomationSuggestionKey(s, 'stage', 0)]: true,
+        [moveAutomationSuggestionKey(s, 'condition', 0)]: true,
+      },
+      hpSuggestionAmounts: {},
+      manualUserConditions: [],
+      manualTargetConditions: [],
+      manualUserStageDeltas: stages,
+      manualTargetStageDeltas: stages,
+      hazardCells: [],
+      manualNote: '',
+    })
+
+    expect(transaction.hpUpdates).toEqual([])
+    expect(transaction.conditionUpdates).toEqual([])
+    expect(transaction.combatStageUpdates).toEqual([])
+    expect(transaction.logLines).toContain('Trap target did not apply to Airborne: immune (Sky Capability).')
+    expect(transaction.logLines).toContain('Lower Special Defense did not apply to Airborne: immune (Sky Capability).')
+  })
+
   it('applies target suggestions only to targets the move hit', () => {
     const user = token({ id: 'u', species: 'Caster' })
     const hitTarget = token({ id: 'hit', species: 'Hitmon' })

@@ -1,4 +1,5 @@
 import { computeSheetAbilityAwareMultiplier } from '~/utils/sheetPassiveAbilityEffects'
+import { moveAutomationMoveImmunitySource } from '~/utils/moveAutomationMoveImmunity'
 import type {
   MoveAutomationDirectHpLossRule,
   MoveAutomationScript,
@@ -45,6 +46,7 @@ export const resolveMoveAutomationDirectHpLoss = ({
 }: ResolveMoveAutomationDirectHpLossInput): number | null => {
   const rule = script?.directHpLoss
   if (!script || !rule) return null
+  if (moveAutomationMoveImmunitySource(script, target)) return 0
   if (rule.applyTypeImmunity && targetHasTypeImmunity(script, target)) return 0
 
   if (rule.kind === 'fixed') return Math.max(0, Math.floor(rule.amount))

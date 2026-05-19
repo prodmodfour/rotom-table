@@ -9,7 +9,7 @@ import {
 import { formatMultiplier } from '~/utils/typeChart'
 import {
   computeSheetAbilityAwareMultiplier,
-  type GroundResistanceCapabilities,
+  type AirborneMovementCapabilities,
 } from '~/utils/sheetPassiveAbilityEffects'
 import {
   computePtuInjuryAutomation,
@@ -30,7 +30,7 @@ export interface DamageDialogState {
   def: number
   sdef: number
   defenderTypes: string[]
-  defenderCapabilities?: GroundResistanceCapabilities
+  defenderCapabilities?: AirborneMovementCapabilities
   abilityNames?: string[]
   mode: DamageDialogMode
   attackType: string

@@ -19,6 +19,7 @@ import {
   resolveMoveAutomationTargetEvasion,
 } from '~/utils/moveAutomationAccuracy'
 import { moveAutomationSecondaryEffectBlockSource } from '~/utils/moveAutomationAbilityProtection'
+import { moveAutomationMoveImmunitySource } from '~/utils/moveAutomationMoveImmunity'
 import {
   moveAutomationConditionImmunitySource,
   type MoveAutomationConditionImmunityContext,
@@ -146,16 +147,18 @@ const buildConditionFeedback = (options: {
     if (!targetConditionSuggestionApplies(suggestion, options.hit, options.script.requiresAccuracy)) return
 
     const condition = normalizeConditionName(suggestion.condition) ?? suggestion.condition
-    const blockedBy = moveAutomationConditionImmunitySource(
-      condition,
-      options.target,
-      options.script.type,
-      options.conditionImmunityContext,
-    ) ?? moveAutomationSecondaryEffectBlockSource({
-      script: options.script,
-      target: options.target,
-      threshold: suggestion.threshold,
-    })
+    const blockedBy = moveAutomationMoveImmunitySource(options.script, options.target)
+      ?? moveAutomationConditionImmunitySource(
+        condition,
+        options.target,
+        options.script.type,
+        options.conditionImmunityContext,
+      )
+      ?? moveAutomationSecondaryEffectBlockSource({
+        script: options.script,
+        target: options.target,
+        threshold: suggestion.threshold,
+      })
     const applied = !blockedBy
     if (applied) options.enabledSuggestions[suggestionKey] = true
     feedback.push({
@@ -208,12 +211,14 @@ const resolveAreaConditionApplications = (
       if (!targetThresholdMatches(suggestion.threshold, naturalRoll)) return
 
       const condition = normalizeConditionName(suggestion.condition) ?? suggestion.condition
-      const blockedBy = moveAutomationConditionImmunitySource(
-        condition,
-        target,
-        script.type,
-        conditionImmunityContext,
-      ) ?? moveAutomationSecondaryEffectBlockSource({ script, target, threshold: suggestion.threshold })
+      const blockedBy = moveAutomationMoveImmunitySource(script, target)
+        ?? moveAutomationConditionImmunitySource(
+          condition,
+          target,
+          script.type,
+          conditionImmunityContext,
+        )
+        ?? moveAutomationSecondaryEffectBlockSource({ script, target, threshold: suggestion.threshold })
       if (blockedBy) {
         blockedNotes.push(`${condition} did not apply to ${target.species}: immune (${blockedBy}).`)
         return

@@ -1053,7 +1053,7 @@
     "name": "Spray Down",
     "frequency": "Scene x2 – Free Action",
     "trigger": "The user hits an airborne target with a ranged",
-    "effect": "The triggering attack’s target is knocked down to ground level, and loses all Sky or Levitate Speeds for 3 turns. During this time, they may be hit by Ground-Type Moves even if normally immune."
+    "effect": "The triggering attack’s target is knocked down to ground level, and loses all Sky or Levitate Speeds for 3 turns. During this time, they may be hit by Moves with the Groundsource keyword even if normally immune."
   },
   "Sprint": {
     "name": "Sprint",
@@ -1893,7 +1893,7 @@
   "Levitate": {
     "name": "Levitate",
     "frequency": "Static",
-    "effect": "The Pokémon is immune to the damage and effects of Ground Type Moves, and gains a Levitate Speed of 4, or has existing Levitate Speeds increased by +2. Defensive."
+    "effect": "The Pokémon resists Ground-Type Moves one step further, and gains a Levitate Speed of 4, or has existing Levitate Speeds increased by +2. Defensive."
   },
   "Limber": {
     "name": "Limber",

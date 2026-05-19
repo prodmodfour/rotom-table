@@ -184,10 +184,7 @@ export const usePokedexBrowser = () => {
   const eggGroupSummary = computed(() => eggGroupSummaryForEntry(selectedEntry.value))
   const dietSummary = computed(() => dietSummaryForEntry(selectedEntry.value))
   const habitatSummary = computed(() => habitatSummaryForEntry(selectedEntry.value))
-  const typeMatchupGroups = computed(() => buildTypeMatchupGroups(
-    selectedEntry.value?.types,
-    selectedEntry.value?.capabilities,
-  ))
+  const typeMatchupGroups = computed(() => buildTypeMatchupGroups(selectedEntry.value?.types))
   const ready = Promise.all([summariesRequest, detailRequest])
 
   const refreshPokedexData = async (): Promise<void> => {

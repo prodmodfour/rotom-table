@@ -202,5 +202,13 @@ describe('move automation target resolution helpers', () => {
       script({ type: 'Ground' }),
       token({ id: 's', species: 'Sky Target', defenderTypes: ['Flying'], defenderCapabilities: { sky: 6 } }),
     )).toBe('½')
+    expect(moveAutomationMultiplierLabel(
+      script({ type: 'Ground' }),
+      token({ id: 'a', species: 'Airborne Target', defenderTypes: ['Normal'], defenderCapabilities: { sky: 6 } }),
+    )).toBe('1')
+    expect(moveAutomationMultiplierLabel(
+      script({ type: 'Ground', keywords: ['Groundsource'] }),
+      token({ id: 'g', species: 'Groundsource Immune Target', defenderTypes: ['Normal'], defenderCapabilities: { sky: 6 } }),
+    )).toBe('0')
   })
 })

@@ -28,7 +28,6 @@ import { parseSkillDiceRankValue } from '~/utils/skillRanks'
 import {
   computeSheetAbilityAwareMultiplier,
   getPassiveTypeEffectivenessSource,
-  type GroundResistanceCapabilities,
 } from '~/utils/sheetPassiveAbilityEffects'
 import {
   calculatePokemonExperienceToNextLevel,
@@ -89,11 +88,6 @@ export function usePokemonSheetDerived(sheet: PokemonSheetRef) {
   const capabilities = computed(() =>
     sheet.value ? resolveCapabilities(sheet.value) : { rows: [], naturewalk: undefined, other: [] },
   )
-  const groundResistanceCapabilities = computed<GroundResistanceCapabilities>(() => ({
-    sky: capabilities.value.rows.find((row) => row.label === 'Sky')?.value,
-    levitate: capabilities.value.rows.find((row) => row.label === 'Levitate')?.value,
-  }))
-
   const sheetTypes = computed(() => sheet.value?.types ?? species.value?.types ?? [])
   const eggGroups = computed(() => sheet.value?.eggGroups ?? species.value?.egg_groups ?? [])
 
@@ -278,14 +272,13 @@ export function usePokemonSheetDerived(sheet: PokemonSheetRef) {
         attacker,
         defenders,
         sheet.value?.abilities,
-        groundResistanceCapabilities.value,
       )
       return {
         type: attacker,
         mult,
         label: formatMultiplier(mult),
         source: mult !== baseMult
-          ? getPassiveTypeEffectivenessSource(attacker, sheet.value?.abilities, groundResistanceCapabilities.value)
+          ? getPassiveTypeEffectivenessSource(attacker, sheet.value?.abilities)
           : null,
         tone:
           mult === 0 ? 'immune'

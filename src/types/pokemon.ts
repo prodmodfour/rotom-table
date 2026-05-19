@@ -241,7 +241,7 @@ export interface SpawnedPokemon extends PokemonCatalogEntry {
   evasion?: SpawnedPokemonEvasionModifiers
   /** Defender's types (sheet override > species default; empty for trainers). */
   defenderTypes: string[]
-  /** Movement capabilities that alter type effectiveness, copied from the source sheet. */
+  /** Airborne movement capabilities that can grant Groundsource move immunity, copied from the source sheet. */
   defenderCapabilities?: Pick<PokedexCapabilities, 'sky' | 'levitate'>
   /** Ability names copied from the source sheet for passive automation modifiers. */
   abilityNames?: string[]

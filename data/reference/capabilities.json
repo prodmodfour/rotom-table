@@ -381,7 +381,7 @@
   },
   "Sky": {
     "name": "Sky",
-    "effect": "The Sky Speed determines how many meters a Pokémon may shift in the air. If a Pokémon learns the Move Fly and does not have the Sky Capability, they gain Sky 4. If they already have the Sky Capability, the Sky value is raised by 4.",
+    "effect": "The Sky Speed determines how many meters a Pokémon may shift in the air. A Pokémon with a Sky Speed is immune to Moves with the Groundsource keyword. If a Pokémon learns the Move Fly and does not have the Sky Capability, they gain Sky 4. If they already have the Sky Capability, the Sky value is raised by 4.",
     "source": "06-playing-the-game.md"
   },
   "Swim": {
@@ -391,7 +391,7 @@
   },
   "Levitate": {
     "name": "Levitate",
-    "effect": "Levitate is a Movement Capability that defines how quickly the Pokémon moves while floating or levitating. When using the Levitate Capability, the maximum height off the ground the Pokémon can achieve is equal to half of their Levitate Capability. If a Pokémon gains the Levitate ability and does not have the Levitate Capability, they gain Levitate 4. If they already have the Levitate Capability, the Levitate value is raised 2.",
+    "effect": "Levitate is a Movement Capability that defines how quickly the Pokémon moves while floating or levitating. A Pokémon with a Levitate Speed is immune to Moves with the Groundsource keyword. When using the Levitate Capability, the maximum height off the ground the Pokémon can achieve is equal to half of their Levitate Capability. If a Pokémon gains the Levitate ability and does not have the Levitate Capability, they gain Levitate 4. If they already have the Levitate Capability, the Levitate value is raised 2.",
     "source": "06-playing-the-game.md"
   },
   "Teleporter": {

@@ -172,7 +172,7 @@ describe('usePokemonSheetDerived', () => {
     })
   })
 
-  it('applies Sky and Levitate capability Ground resistance without stacking', () => {
+  it('uses Flying type and Levitate ability for Ground effectiveness while ignoring airborne capabilities', () => {
     const sheet = ref<CharacterSheet | null>(makeSheet({
       types: ['Fire', 'Flying'],
       capabilities: { sky: 8, levitate: 4 },
@@ -181,9 +181,9 @@ describe('usePokemonSheetDerived', () => {
     const derived = usePokemonSheetDerived(sheet)
 
     expect(derived.typeEffectivenessRows.value.find((row) => row.type === 'Ground')).toMatchObject({
-      mult: 1,
-      label: '1',
-      tone: 'neutral',
+      mult: 0.5,
+      label: '½',
+      tone: 'resist',
       source: 'Levitate',
     })
 
@@ -192,7 +192,7 @@ describe('usePokemonSheetDerived', () => {
       mult: 1,
       label: '1',
       tone: 'neutral',
-      source: 'Sky/Levitate Capability',
+      source: null,
     })
   })
 

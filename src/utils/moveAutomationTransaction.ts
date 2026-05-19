@@ -38,6 +38,7 @@ import {
 import { accuracyRollMeetsMoveThreshold } from '~/utils/moveAutomationThresholds'
 import { conditionBaseName, normalizeConditionNames } from '~/utils/statusConditions'
 import { ELECTRIC_RESISTANT_COAT_CONDITION } from '~/utils/moveAutomationSpecialConditions'
+import { moveAutomationMoveImmunitySource } from '~/utils/moveAutomationMoveImmunity'
 import type { CombatStageKey } from '~/types/combatStages'
 import type { MapFieldEffects } from '~/types/map'
 import type {
@@ -204,11 +205,27 @@ export const buildMoveAutomationTransaction = ({
       : `${label} did not apply to ${target.species}: blocked by ${source}.`)
     return false
   }
+  const targetSuggestionLabel = (
+    kind: MoveAutomationSuggestionKind,
+    index: number,
+  ): string | null => {
+    if (kind === 'condition') {
+      const suggestion = script.conditionSuggestions[index]
+      return suggestion && suggestion.action !== 'remove' && suggestion.action !== 'clear' ? suggestion.label : null
+    }
+    if (kind === 'stage') return script.stageSuggestions[index]?.label ?? null
+    if (kind === 'hp') return script.hpSuggestions[index]?.label ?? null
+    return null
+  }
   const targetSuggestionBlockSource = (
     kind: MoveAutomationSuggestionKind,
     index: number,
     target: SpawnedPokemon,
   ): { source: string; reason: 'immunity' | 'secondary-effect'; label: string } | null => {
+    const moveImmunity = moveAutomationMoveImmunitySource(script, target)
+    const label = targetSuggestionLabel(kind, index)
+    if (moveImmunity && label) return { source: moveImmunity, reason: 'immunity', label }
+
     if (kind === 'condition') {
       const suggestion = script.conditionSuggestions[index]
       if (!suggestion || suggestion.action === 'remove' || suggestion.action === 'clear') return null

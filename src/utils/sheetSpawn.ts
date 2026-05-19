@@ -112,7 +112,7 @@ export const catalogEntryForTrainerSheet = (
   return catalogEntry ? scaleTrainerSpriteToSheetHeight(catalogEntry, sheet.height) : null
 }
 
-/** Pokémon HP + offence/defence + type/capability snapshot. Max HP is derived and injury-adjusted. */
+/** Pokémon HP + offence/defence + type/airborne-capability snapshot. Max HP is derived and injury-adjusted. */
 export const pokemonHpSnapshot = (
   sheet: CharacterSheet,
 ): {
@@ -178,7 +178,7 @@ export const pokemonHpSnapshot = (
   }
 }
 
-/** Trainer HP + offence/defence + capability snapshot. Max HP is derived and injury-adjusted; trainers have no defending types. */
+/** Trainer HP + offence/defence + airborne-capability snapshot. Max HP is derived and injury-adjusted; trainers have no defending types. */
 export const trainerHpSnapshot = (
   sheet: TrainerSheet,
 ): {
