@@ -103,6 +103,10 @@ describe('isometric damage dialog helpers', () => {
     expect(getDamageDialogHpLoss(dialog, null)).toBe(22)
     expect(getDamageDialogPreview(dialog, null)).toBe(18)
 
+    dialog.currentHp = 10
+    expect(getDamageDialogPreview(dialog, null)).toBe(-12)
+    dialog.currentHp = 40
+
     dialog.attackType = 'Ground'
     dialog.defenderTypes = ['Flying']
     expect(getDamageDialogMultiplier(dialog)).toBe(1)

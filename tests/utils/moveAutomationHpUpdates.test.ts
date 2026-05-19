@@ -33,9 +33,9 @@ const token = (id: string, currentHp: number, maxHp: number): SpawnedPokemon => 
 })
 
 describe('move automation HP update helpers', () => {
-  it('clamps HP updates to token bounds while preserving integer semantics', () => {
+  it('caps HP updates at Max HP while preserving integer overkill damage', () => {
     expect(clampMoveAutomationHp(12.9, 20)).toBe(12)
-    expect(clampMoveAutomationHp(-3, 20)).toBe(0)
+    expect(clampMoveAutomationHp(-3, 20)).toBe(-3)
     expect(clampMoveAutomationHp(99, 20)).toBe(20)
   })
 
@@ -54,12 +54,12 @@ describe('move automation HP update helpers', () => {
     expect(accumulator.toUpdates()).toEqual([{ id: 'pikachu', currentHp: 17 }])
   })
 
-  it('uses the latest write for a token and clamps before emitting', () => {
+  it('uses the latest write for a token and caps before emitting', () => {
     const eevee = token('eevee', 7, 12)
     const accumulator = createMoveAutomationHpUpdateAccumulator()
 
     accumulator.set(eevee, -10)
-    expect(accumulator.get(eevee)).toBe(0)
+    expect(accumulator.get(eevee)).toBe(-10)
 
     accumulator.set(eevee, 30)
     expect(accumulator.toUpdates()).toEqual([{ id: 'eevee', currentHp: 12 }])

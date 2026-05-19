@@ -32,7 +32,6 @@ const emit = defineEmits<{
         <EditableCell
           :model-value="currentHp"
           type="number"
-          :min="0"
           :max="maxHp"
           @update:model-value="emit('setCurrentHp', $event)"
         />

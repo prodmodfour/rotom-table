@@ -38,7 +38,7 @@ export const getHpDialogDelta = (dialog: HpDialogState | null): number => {
 export const getHpDialogPreview = (dialog: HpDialogState | null): number => {
   if (!dialog) return 0
   const nextHp = dialog.currentHp + getHpDialogDelta(dialog)
-  return Math.max(0, Math.min(dialog.maxHp, nextHp))
+  return Math.min(dialog.maxHp, nextHp)
 }
 
 export const updateHpDialogFromPokemon = (

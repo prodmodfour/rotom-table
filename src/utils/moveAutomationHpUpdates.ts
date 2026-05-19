@@ -1,5 +1,6 @@
 import type { MoveAutomationHpUpdate } from '~/types/moveAutomation'
 import type { SpawnedPokemon } from '~/types/pokemon'
+import { clampHpValue } from '~/utils/ptuHp'
 
 export interface MoveAutomationHpUpdateAccumulator {
   get(token: SpawnedPokemon): number
@@ -7,7 +8,7 @@ export interface MoveAutomationHpUpdateAccumulator {
   toUpdates(): MoveAutomationHpUpdate[]
 }
 
-export const clampMoveAutomationHp = (currentHp: number, maxHp: number): number => Math.max(0, Math.min(maxHp, Math.floor(currentHp)))
+export const clampMoveAutomationHp = (currentHp: number, maxHp: number): number => clampHpValue(currentHp, maxHp)
 
 export const createMoveAutomationHpUpdateAccumulator = (): MoveAutomationHpUpdateAccumulator => {
   const hpById = new Map<string, { token: SpawnedPokemon; currentHp: number }>()

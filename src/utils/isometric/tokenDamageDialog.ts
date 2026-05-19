@@ -132,7 +132,7 @@ export const getDamageDialogPreview = (
   attacker: DamageDialogAttacker | null,
 ): number => {
   if (!dialog) return 0
-  return Math.max(0, dialog.currentHp - getDamageDialogHpLoss(dialog, attacker))
+  return dialog.currentHp - getDamageDialogHpLoss(dialog, attacker)
 }
 
 export const getDamageDialogMultiplierTone = (multiplier: number): DamageDialogMultiplierTone => {

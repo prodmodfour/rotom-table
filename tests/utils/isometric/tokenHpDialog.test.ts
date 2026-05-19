@@ -59,14 +59,14 @@ describe('isometric HP dialog helpers', () => {
     expect(getHpDialogPreview(dialog)).toBe(17)
   })
 
-  it('ignores invalid amounts and clamps the preview to the valid HP range', () => {
+  it('ignores invalid amounts, allows overkill HP, and caps healing at Max HP', () => {
     const dialog = createHpDialogState(pokemon({ currentHp: 2, maxHp: 12 }))
     dialog.amount = 'not-a-number'
     expect(getHpDialogDelta(dialog)).toBe(0)
     expect(getHpDialogPreview(dialog)).toBe(2)
 
     dialog.amount = '99'
-    expect(getHpDialogPreview(dialog)).toBe(0)
+    expect(getHpDialogPreview(dialog)).toBe(-97)
 
     dialog.mode = 'heal'
     expect(getHpDialogPreview(dialog)).toBe(12)

@@ -60,15 +60,15 @@ describe('usePokemonSheetDerived', () => {
     ]))
   })
 
-  it('clamps current HP and accounts for Bright Powder evasion', () => {
+  it('caps current HP at Max HP, allows overkill, and accounts for Bright Powder evasion', () => {
     const sheet = ref<CharacterSheet | null>(makeSheet())
     const derived = usePokemonSheetDerived(sheet)
 
     expect(sheet.value?.combat?.currentHp).toBe(derived.maxHp.value)
 
     derived.setCurrentHp(-20)
-    expect(sheet.value?.combat?.currentHp).toBe(0)
-    expect(derived.currentHp.value).toBe(0)
+    expect(sheet.value?.combat?.currentHp).toBe(-20)
+    expect(derived.currentHp.value).toBe(-20)
 
     expect(derived.pokemonEvasion.value.vsAny.itemBonus).toBe(2)
     expect(derived.heldItemName.value).toBe('Bright Powder')

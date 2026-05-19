@@ -74,7 +74,6 @@ const emit = defineEmits<{
           <EditableCell
             :model-value="currentHp"
             type="number"
-            :min="0"
             :max="maxHp"
             @update:model-value="(value) => emit('set-current-hp', value)"
           />

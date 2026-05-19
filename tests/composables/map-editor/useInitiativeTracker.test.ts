@@ -138,6 +138,26 @@ describe('useInitiativeTracker', () => {
     expect(tracker.initiativeRows.value[0].initiativeScore).toBe(20)
   })
 
+  it('preserves negative current HP in initiative rows while flooring HP bar display', () => {
+    const map = ref<TabletopMap | null>(mapWithPlacements([
+      { id: 'overkill', sheetKind: 'pokemon', sheetSlug: 'overkill', position: { x: 0, y: 0, z: 0 } },
+    ]))
+    const tracker = useInitiativeTracker({
+      map,
+      spawnedPokemon: computed(() => [
+        token({ id: 'overkill', sheetSlug: 'overkill', species: 'Overkill', currentHp: -4, maxHp: 30 }),
+      ]),
+      pokemonBySlug: ref(new Map([['overkill', sheet('overkill')]])),
+      trainerBySlug: ref(new Map<string, TrainerSheet>()),
+      canManageInitiative: computed(() => true),
+    })
+    const row = tracker.initiativeRows.value[0]
+
+    expect(row.currentHp).toBe(-4)
+    expect(tracker.hpPercent(row)).toBe('0%')
+    expect(tracker.hpTier(row)).toBe('critical')
+  })
+
   it('includes Quick Claw in default initiative values from sheets', () => {
     const map = ref<TabletopMap | null>(mapWithPlacements([
       { id: 'quick', sheetKind: 'pokemon', sheetSlug: 'quick', position: { x: 0, y: 0, z: 0 } },

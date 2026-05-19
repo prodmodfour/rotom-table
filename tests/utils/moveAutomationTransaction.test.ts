@@ -132,7 +132,7 @@ describe('move automation transaction helpers', () => {
     ]))
   })
 
-  it('heals Absorb users for half of applied damage', () => {
+  it('heals Absorb users for half of full overkill damage', () => {
     const s = explicitScriptForMove('Absorb')
     expect(s).not.toBeNull()
     const user = token({ id: 'u', species: 'Oddish', currentHp: 12, maxHp: 40, satk: 20 })
@@ -160,10 +160,10 @@ describe('move automation transaction helpers', () => {
     })
 
     expect(transaction.hpUpdates).toEqual(expect.arrayContaining([
-      { id: 't', currentHp: 0 },
-      { id: 'u', currentHp: 25 },
+      { id: 't', currentHp: -12 },
+      { id: 'u', currentHp: 31 },
     ]))
-    expect(transaction.logLines).toContain('Oddish: Absorb heals user for half damage dealt (13 HP).')
+    expect(transaction.logLines).toContain('Oddish: Absorb heals user for half damage dealt (19 HP).')
   })
 
   it('resists Electric damage with Mud Sport Coat and removes the coat after damage', () => {

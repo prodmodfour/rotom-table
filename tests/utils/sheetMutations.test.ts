@@ -38,11 +38,13 @@ describe('sheet mutation helpers', () => {
     const updatedPokemon = applyHpToSheet('pokemon', originalPokemon, 999) as CharacterSheet
     expect(updatedPokemon.combat?.currentHp).toBe(pokemonHpSnapshot(originalPokemon).maxHp)
     expect(originalPokemon.combat?.currentHp).toBe(1)
+    expect((applyHpToSheet('pokemon', originalPokemon, -7) as CharacterSheet).combat?.currentHp).toBe(-7)
 
     const originalTrainer = trainer()
     const updatedTrainer = applyHpToSheet('trainer', originalTrainer, 999) as TrainerSheet
     expect(updatedTrainer.currentHp).toBe(trainerHpSnapshot(originalTrainer).maxHp)
     expect(originalTrainer.currentHp).toBe(1)
+    expect((applyHpToSheet('trainer', originalTrainer, -7) as TrainerSheet).currentHp).toBe(-7)
   })
 
   it('normalizes combat stages and condition names', () => {

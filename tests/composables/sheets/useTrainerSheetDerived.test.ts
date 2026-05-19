@@ -53,15 +53,15 @@ describe('useTrainerSheetDerived', () => {
     })
   })
 
-  it('clamps current HP and exposes combat summaries', () => {
+  it('caps current HP at Max HP, allows overkill, and exposes combat summaries', () => {
     const sheet = ref<TrainerSheet | null>(makeSheet())
     const derived = useTrainerSheetDerived(sheet)
 
     expect(sheet.value?.currentHp).toBe(derived.maxHp.value)
 
     derived.setCurrentHp(-5)
-    expect(sheet.value?.currentHp).toBe(0)
-    expect(derived.currentHp.value).toBe(0)
+    expect(sheet.value?.currentHp).toBe(-5)
+    expect(derived.currentHp.value).toBe(-5)
 
     expect(derived.maxAp.value).toBeGreaterThan(0)
     expect(derived.tickValue.value).toBeGreaterThan(0)

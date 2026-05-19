@@ -156,7 +156,7 @@ export const useInitiativeTracker = ({
         meta: metaForPlacement(pokemon.sheetKind, pokemon.sheetSlug),
         sprite: initiativeSpriteFor(pokemon),
         profileUrl: pokemon.profileSpriteUrl ?? null,
-        currentHp: Math.max(0, Math.floor(pokemon.currentHp)),
+        currentHp: Math.floor(pokemon.currentHp),
         maxHp: Math.max(0, Math.floor(pokemon.maxHp)),
         conditions: pokemon.conditions,
         initiative,

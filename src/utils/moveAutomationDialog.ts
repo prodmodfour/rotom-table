@@ -15,7 +15,7 @@ export const applyHpSuggestion = (
   mode: string,
 ): number => {
   if (mode.startsWith('heal')) return Math.min(max, current + amount)
-  return Math.max(0, current - amount)
+  return current - amount
 }
 
 export const addCombatStageDeltas = (

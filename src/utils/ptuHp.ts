@@ -37,11 +37,12 @@ export const computeInjuryAdjustedMaxHp = (
   return Math.floor((maxHp * remainingTenths) / 10)
 }
 
+/** Normalize current HP: floor values and cap healing at Max HP, while allowing overkill below 0. */
 export const clampHpValue = (value: unknown, maxHp: number): number => {
   const cap = Math.max(0, whole(maxHp))
   const n = typeof value === 'number' ? value : Number(value)
   if (!Number.isFinite(n)) return cap
-  return Math.max(0, Math.min(cap, Math.floor(n)))
+  return Math.min(cap, Math.floor(n))
 }
 
 /** Tick value from the real formula maximum, not the injury-adjusted healing cap. */
