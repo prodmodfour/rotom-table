@@ -52,22 +52,22 @@ A table includes:
 
 The browser `/encounter-tables` editor and the optional terminal `just encounter` workflow operate on these same JSON files. This keeps encounter design inspectable and reusable.
 
-## PTU/reference content
+## App-owned PTU reference content
 
-Reference data is stored primarily in `ptu-data/data/` and app-facing data modules under `data/`.
+Runtime PTU reference data is app-owned and stored under `data/reference/`. Treat this content as authoritative for Rotom Table's PTU implementation, including deliberate differences introduced by the 3D tabletop model. The `ptu-data/` tree remains useful as documentary upstream/source material and parser output, but the app should not depend on it as the runtime source of truth.
 
 Important reference files include:
 
-- `ptu-data/data/abilities.json`
-- `ptu-data/data/capabilities.json`
-- `ptu-data/data/conditions.json`
-- `ptu-data/data/edges.json`
-- `ptu-data/data/features.json`
-- `ptu-data/data/items.json`
-- `ptu-data/data/maneuvers.json`
-- `ptu-data/data/moves.json`
-- `ptu-data/data/pokedex.json`
-- `ptu-data/data/rules.json`
+- `data/reference/abilities.json`
+- `data/reference/capabilities.json`
+- `data/reference/conditions.json`
+- `data/reference/edges.json`
+- `data/reference/features.json`
+- `data/reference/items.json`
+- `data/reference/maneuvers.json`
+- `data/reference/moves.json`
+- `data/reference/pokedex.json`
+- `data/reference/rules.json`
 
 The app uses this content for Pokédex browsing, reference pages, sheet defaults, lookup helpers, and automation support.
 

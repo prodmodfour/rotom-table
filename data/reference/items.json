@@ -1,0 +1,6203 @@
+{
+  "Basic Ball": {
+    "name": "Basic Ball",
+    "categories": [
+      "Poké Ball"
+    ],
+    "effects": [
+      "Capture Modifier +0. Basic Poké Ball; often called just a “Poké Ball”."
+    ],
+    "costs": [
+      "$250"
+    ],
+    "sections": [
+      "Poké Ball Chart"
+    ],
+    "aliases": [
+      "Poké Ball",
+      "Poke Ball"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Great Ball": {
+    "name": "Great Ball",
+    "categories": [
+      "Poké Ball"
+    ],
+    "effects": [
+      "Capture Modifier -10. A better Poké Ball with no special effects."
+    ],
+    "costs": [
+      "$400"
+    ],
+    "sections": [
+      "Poké Ball Chart"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Ultra Ball": {
+    "name": "Ultra Ball",
+    "categories": [
+      "Poké Ball"
+    ],
+    "effects": [
+      "Capture Modifier -15. The best generic Poké Ball."
+    ],
+    "costs": [
+      "$800"
+    ],
+    "sections": [
+      "Poké Ball Chart"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Master Ball": {
+    "name": "Master Ball",
+    "categories": [
+      "Poké Ball"
+    ],
+    "effects": [
+      "Capture Modifier -100. Incredibly Rare. Worth at least $300,000. Sold nowhere."
+    ],
+    "costs": [
+      "$300,000 or more"
+    ],
+    "sections": [
+      "Poké Ball Chart"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Safari Ball": {
+    "name": "Safari Ball",
+    "categories": [
+      "Poké Ball"
+    ],
+    "effects": [
+      "Capture Modifier +0. Used during Safari hunts."
+    ],
+    "costs": [
+      "$800"
+    ],
+    "sections": [
+      "Poké Ball Chart"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Level Ball": {
+    "name": "Level Ball",
+    "categories": [
+      "Poké Ball"
+    ],
+    "effects": [
+      "Capture Modifier +0. -20 Modifier if the target is under half the level your active Pokémon is."
+    ],
+    "costs": [
+      "$800"
+    ],
+    "sections": [
+      "Poké Ball Chart"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Lure Ball": {
+    "name": "Lure Ball",
+    "categories": [
+      "Poké Ball"
+    ],
+    "effects": [
+      "Capture Modifier +0. -20 Modifier if the target was baited into the encounter with food."
+    ],
+    "costs": [
+      "$800"
+    ],
+    "sections": [
+      "Poké Ball Chart"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Moon Ball": {
+    "name": "Moon Ball",
+    "categories": [
+      "Poké Ball"
+    ],
+    "effects": [
+      "Capture Modifier +0. -20 Modifier if the target evolves with an Evolution Stone."
+    ],
+    "costs": [
+      "$800"
+    ],
+    "sections": [
+      "Poké Ball Chart"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Friend Ball": {
+    "name": "Friend Ball",
+    "categories": [
+      "Poké Ball"
+    ],
+    "effects": [
+      "Capture Modifier -5. A caught Pokémon will start with +1 Loyalty."
+    ],
+    "costs": [
+      "$800"
+    ],
+    "sections": [
+      "Poké Ball Chart"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Love Ball": {
+    "name": "Love Ball",
+    "categories": [
+      "Poké Ball"
+    ],
+    "effects": [
+      "Capture Modifier +0. -30 Modifier if the user has an active Pokémon that is of the same evolutionary line as the target, and the opposite gender. Does not work with genderless Pokémon."
+    ],
+    "costs": [
+      "$800"
+    ],
+    "sections": [
+      "Poké Ball Chart"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Heavy Ball": {
+    "name": "Heavy Ball",
+    "categories": [
+      "Poké Ball"
+    ],
+    "effects": [
+      "Capture Modifier +0. -5 Modifier for each Weight Class the target is above 1."
+    ],
+    "costs": [
+      "$800"
+    ],
+    "sections": [
+      "Poké Ball Chart"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Fast Ball": {
+    "name": "Fast Ball",
+    "categories": [
+      "Poké Ball"
+    ],
+    "effects": [
+      "Capture Modifier +0. -20 Modifier if the target has a Movement Capability above 7."
+    ],
+    "costs": [
+      "$800"
+    ],
+    "sections": [
+      "Poké Ball Chart"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Sport Ball": {
+    "name": "Sport Ball",
+    "categories": [
+      "Poké Ball"
+    ],
+    "effects": [
+      "Capture Modifier +0. Used during Safari hunts."
+    ],
+    "costs": [
+      "$800"
+    ],
+    "sections": [
+      "Poké Ball Chart"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Premier Ball": {
+    "name": "Premier Ball",
+    "categories": [
+      "Poké Ball"
+    ],
+    "effects": [
+      "Capture Modifier +0. Given as promotional balls during sales."
+    ],
+    "costs": [
+      "$800"
+    ],
+    "sections": [
+      "Poké Ball Chart"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Repeat Ball": {
+    "name": "Repeat Ball",
+    "categories": [
+      "Poké Ball"
+    ],
+    "effects": [
+      "Capture Modifier +0. -20 Modifier if you already own a Pokémon of the target’s species."
+    ],
+    "costs": [
+      "$800"
+    ],
+    "sections": [
+      "Poké Ball Chart"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Timer Ball": {
+    "name": "Timer Ball",
+    "categories": [
+      "Poké Ball"
+    ],
+    "effects": [
+      "Capture Modifier +5. -5 to the Modifier after every round since the beginning of the encounter, until the Modifier is -20."
+    ],
+    "costs": [
+      "$800"
+    ],
+    "sections": [
+      "Poké Ball Chart"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Nest Ball": {
+    "name": "Nest Ball",
+    "categories": [
+      "Poké Ball"
+    ],
+    "effects": [
+      "Capture Modifier +0. -20 Modifier if the target is under level 10."
+    ],
+    "costs": [
+      "$800"
+    ],
+    "sections": [
+      "Poké Ball Chart"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Net Ball": {
+    "name": "Net Ball",
+    "categories": [
+      "Poké Ball"
+    ],
+    "effects": [
+      "Capture Modifier +0. -20 Modifier, if the target is Water or Bug type."
+    ],
+    "costs": [
+      "$800"
+    ],
+    "sections": [
+      "Poké Ball Chart"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Dive Ball": {
+    "name": "Dive Ball",
+    "categories": [
+      "Poké Ball"
+    ],
+    "effects": [
+      "Capture Modifier +0. -20 Modifier, if the target was found underwater or underground."
+    ],
+    "costs": [
+      "$800"
+    ],
+    "sections": [
+      "Poké Ball Chart"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Luxury Ball": {
+    "name": "Luxury Ball",
+    "categories": [
+      "Poké Ball"
+    ],
+    "effects": [
+      "Capture Modifier -5. A caught Pokémon is easily pleased and starts with a raised happiness."
+    ],
+    "costs": [
+      "$800"
+    ],
+    "sections": [
+      "Poké Ball Chart"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Heal Ball": {
+    "name": "Heal Ball",
+    "categories": [
+      "Poké Ball"
+    ],
+    "effects": [
+      "Capture Modifier -5. A caught Pokémon will heal to Max HP immediately upon capture."
+    ],
+    "costs": [
+      "$800"
+    ],
+    "sections": [
+      "Poké Ball Chart"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Quick Ball": {
+    "name": "Quick Ball",
+    "categories": [
+      "Poké Ball"
+    ],
+    "effects": [
+      "Capture Modifier -20. +5 to Modifier after 1 round of the encounter, +10 to Modifier after round 2, +20 to modifier after round 3."
+    ],
+    "costs": [
+      "$800"
+    ],
+    "sections": [
+      "Poké Ball Chart"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Dusk Ball": {
+    "name": "Dusk Ball",
+    "categories": [
+      "Poké Ball"
+    ],
+    "effects": [
+      "Capture Modifier +0. -20 Modifier if it is dark, or if there is very little light out, when used."
+    ],
+    "costs": [
+      "$800"
+    ],
+    "sections": [
+      "Poké Ball Chart"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Cherish Ball": {
+    "name": "Cherish Ball",
+    "categories": [
+      "Poké Ball"
+    ],
+    "effects": [
+      "Capture Modifier -5. A decorative Poké Ball often given out during special events."
+    ],
+    "costs": [
+      "$800"
+    ],
+    "sections": [
+      "Poké Ball Chart"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Park Ball": {
+    "name": "Park Ball",
+    "categories": [
+      "Poké Ball"
+    ],
+    "effects": [
+      "Capture Modifier -15. Used during Safari hunts."
+    ],
+    "costs": [
+      "$800"
+    ],
+    "sections": [
+      "Poké Ball Chart"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Bait": {
+    "name": "Bait",
+    "categories": [
+      "Trainer Essential"
+    ],
+    "effects": [
+      "Bait is a tasty, strong-smelling morsel of food designed to attract Pokémon. It may be used in two ways; to lure Pokémon, or to distract Pokémon. Bait can be bought for $250. To lure Pokémon, set the bait on a route. Every 15 minutes thereafter, roll 1d20 until you roll 15 or higher. If you roll 3 times without success, the bait loses its potency and fails. If you succeed however, a random Pokémon, based on your GM’s discretion will appear. The Pokémon attracted with bait should usually be of a Level comparable to the party’s Pokémon. Bait is often used for Fishing in this way. To distract Pokémon, throw it at a Wild Pokémon as a Standard Action. The target must then make a Focus Roll with a DC of 12. If they fail, the Pokémon gives up its next Standard Action to eat the food."
+    ],
+    "costs": [
+      "Bait can be bought for $250"
+    ],
+    "sections": [
+      "Trainer Essentials"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Collection Jar": {
+    "name": "Collection Jar",
+    "categories": [
+      "Trainer Essential"
+    ],
+    "effects": [
+      "A simple sealable glass jar. Useful when collecting Items from Pokémon, such as Honey from Pokémon with the Honey Gather Ability, or MooMoo Milk from Pokémon with the Milk Collection Ability. Available almost everywhere, and cost $100."
+    ],
+    "costs": [
+      "Available almost everywhere, and cost $100"
+    ],
+    "sections": [
+      "Trainer Essentials"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "First Aid Kit": {
+    "name": "First Aid Kit",
+    "categories": [
+      "Trainer Essential"
+    ],
+    "effects": [
+      "Required to use the First Aid Expertise Feature. By Draining 1 AP, any Trainer can make a Medicine Education Check on a target as an Extended Action. The target gains Hit Points equal to the result, and is cured of Burn, Poison, and Paralysis. Costs $500."
+    ],
+    "costs": [
+      "Costs $500"
+    ],
+    "sections": [
+      "Trainer Essentials"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Fishing Lure": {
+    "name": "Fishing Lure",
+    "categories": [
+      "Trainer Essential"
+    ],
+    "effects": [
+      "Instead of Bait, some trainers may opt to use a Fishing Lure when attempting to Fish. Fishing Lures work just like Bait, but can be used multiple times. If the line snaps or the fish gets away, they may take your lure with them, however. Fishing Lures cost $1500."
+    ],
+    "costs": [
+      "Fishing Lures cost $1500"
+    ],
+    "sections": [
+      "Trainer Essentials"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Saddle": {
+    "name": "Saddle",
+    "categories": [
+      "Trainer Essential"
+    ],
+    "effects": [
+      "Saddles help Trainers ride Pokémon. They are created with a specific Pokémon species in mind, and only Pokémon with that body type can wear the saddle. A common Saddle type fits Ponyta, Rapidash, Blitzle, and Zebstrika, for example. Saddles grant a +3 bonus to all Skill Checks made to mount Pokémon, or to remain on the Saddle when hit by an attack. Costs $2000."
+    ],
+    "costs": [
+      "Costs $2000"
+    ],
+    "sections": [
+      "Trainer Essentials"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Sleeping Bag": {
+    "name": "Sleeping Bag",
+    "categories": [
+      "Trainer Essential"
+    ],
+    "effects": [
+      "A standard sleeping bag. Costs $1000 for a single, or $1800 for a double."
+    ],
+    "costs": [
+      "Costs $1000 for a single, or $1800 for a double"
+    ],
+    "sections": [
+      "Trainer Essentials"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Tents": {
+    "name": "Tents",
+    "categories": [
+      "Trainer Essential"
+    ],
+    "effects": [
+      "Standard outdoor tents. Provide protection from the elements of nature. Costs $400 per meter cubed. (A small one person tent would be about 1m x 1.5m x 1.5m, or 2.25 cubic meters– meaning 900 in price. )"
+    ],
+    "costs": [
+      "Costs $400 per meter cubed"
+    ],
+    "sections": [
+      "Trainer Essentials"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Lighter": {
+    "name": "Lighter",
+    "categories": [
+      "Trainer Essential"
+    ],
+    "effects": [
+      "For creating flames in a hurry. A regular convenience store lighter costs $150; a waterproof lighter costs $1000."
+    ],
+    "costs": [
+      "A regular convenience store lighter costs $150; a waterproof lighter costs $1000"
+    ],
+    "sections": [
+      "Trainer Essentials"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Flashlight": {
+    "name": "Flashlight",
+    "categories": [
+      "Trainer Essential"
+    ],
+    "effects": [
+      "For, you know, seeing. In the dark. Yes. Costs $200 for a regular Flashlight; + $400 to make it Waterproof."
+    ],
+    "costs": [
+      "Costs $200 for a regular Flashlight; + $400 to make it Waterproof"
+    ],
+    "sections": [
+      "Trainer Essentials"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Water Filter": {
+    "name": "Water Filter",
+    "categories": [
+      "Trainer Essential"
+    ],
+    "effects": [
+      "Can ensure that river or pond water is clean to drink after being filtered. Costs $500. Travel Gear"
+    ],
+    "costs": [
+      "Costs $500"
+    ],
+    "sections": [
+      "Trainer Essentials"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Rope": {
+    "name": "Rope",
+    "categories": [
+      "Trainer Essential"
+    ],
+    "effects": [
+      "Rope has many different uses, and is thus popular gear for explorers, campers, and hikers. Rope can only be damaged by Fire-Type attacks, or attacks made with sharp objects – knives, swords, sharp teeth, and Moves like Scratch, Slash, Leaf Blade, Razor Leaf, etc. The Move Cut ignores all Damage Reduction against Rope. Rope can be bought in any length of 25 Feet up to 300. The listed prices below reflect 25 feet of rope; simply multiply the price appropriately for more. »» Basic Rope: Basic Fiber Rope. Has a tensile strength of 35 kg or 77 lbs. It has 5 Hit Points. Costs $100 »» Utility Rope: Braided Utility Rope. Has a tensile strength of 80 kg or 176 lbs. It has 20 Hit Points and 10 Damage Reduction. Costs $200 »» Sturdy Rope: Sturdy Rope with a tensile strength of 225 kg or roughly 500lbs. 30 Hit Points and 20 Damage Reduction. Costs $400"
+    ],
+    "costs": [],
+    "sections": [
+      "Trainer Essentials"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Basic Rope": {
+    "name": "Basic Rope",
+    "categories": [
+      "Rope"
+    ],
+    "effects": [
+      "Basic Fiber Rope. Has a tensile strength of 35 kg or 77 lbs. It has 5 Hit Points. Costs $100 »»"
+    ],
+    "costs": [
+      "$100"
+    ],
+    "sections": [
+      "Trainer Essentials"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Utility Rope": {
+    "name": "Utility Rope",
+    "categories": [
+      "Rope"
+    ],
+    "effects": [
+      "Braided"
+    ],
+    "costs": [
+      "$200"
+    ],
+    "sections": [
+      "Trainer Essentials"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Sturdy Rope": {
+    "name": "Sturdy Rope",
+    "categories": [
+      "Rope"
+    ],
+    "effects": [
+      "Sturdy Rope with a tensile strength of 225 kg or roughly 500lbs. 30 Hit Points and 20 Damage Reduction. Costs $400"
+    ],
+    "costs": [
+      "$400"
+    ],
+    "sections": [
+      "Trainer Essentials"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Repel": {
+    "name": "Repel",
+    "categories": [
+      "Repellent"
+    ],
+    "effects": [
+      "Lasts 1 hour; causes Pokémon of level 15 or lower to flee."
+    ],
+    "costs": [
+      "$200"
+    ],
+    "sections": [
+      "Repels"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Super Repel": {
+    "name": "Super Repel",
+    "categories": [
+      "Repellent"
+    ],
+    "effects": [
+      "Lasts 2 hours; causes Pokémon of level 25 or lower to flee."
+    ],
+    "costs": [
+      "$300"
+    ],
+    "sections": [
+      "Repels"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Max Repel": {
+    "name": "Max Repel",
+    "categories": [
+      "Repellent"
+    ],
+    "effects": [
+      "Lasts 5 hours; causes Pokémon of level 35 or lower to flee."
+    ],
+    "costs": [
+      "$400"
+    ],
+    "sections": [
+      "Repels"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Potion": {
+    "name": "Potion",
+    "categories": [
+      "Medicine"
+    ],
+    "effects": [
+      "Heals 20 Hit Points"
+    ],
+    "costs": [
+      "$200"
+    ],
+    "sections": [
+      "Medicines"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Super Potion": {
+    "name": "Super Potion",
+    "categories": [
+      "Medicine"
+    ],
+    "effects": [
+      "Heals 35 Hit Points"
+    ],
+    "costs": [
+      "$380"
+    ],
+    "sections": [
+      "Medicines"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Hyper Potion": {
+    "name": "Hyper Potion",
+    "categories": [
+      "Medicine"
+    ],
+    "effects": [
+      "Heals 70 Hit Points"
+    ],
+    "costs": [
+      "$800"
+    ],
+    "sections": [
+      "Medicines"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Antidote": {
+    "name": "Antidote",
+    "categories": [
+      "Medicine"
+    ],
+    "effects": [
+      "Cures Poison"
+    ],
+    "costs": [
+      "$200"
+    ],
+    "sections": [
+      "Medicines"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Paralyze Heal": {
+    "name": "Paralyze Heal",
+    "categories": [
+      "Medicine"
+    ],
+    "effects": [
+      "Cures Paralysis"
+    ],
+    "costs": [
+      "$200"
+    ],
+    "sections": [
+      "Medicines"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Burn Heal": {
+    "name": "Burn Heal",
+    "categories": [
+      "Medicine"
+    ],
+    "effects": [
+      "Cures Burns"
+    ],
+    "costs": [
+      "$200"
+    ],
+    "sections": [
+      "Medicines"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Ice Heal": {
+    "name": "Ice Heal",
+    "categories": [
+      "Medicine"
+    ],
+    "effects": [
+      "Cures Freezing"
+    ],
+    "costs": [
+      "$200"
+    ],
+    "sections": [
+      "Medicines"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Full Heal": {
+    "name": "Full Heal",
+    "categories": [
+      "Medicine"
+    ],
+    "effects": [
+      "Cures all Persistent Status Afflictions"
+    ],
+    "costs": [
+      "$450"
+    ],
+    "sections": [
+      "Medicines"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Full Restore": {
+    "name": "Full Restore",
+    "categories": [
+      "Medicine"
+    ],
+    "effects": [
+      "Heals a Pokémon for 80 Hit Points and cures any Status Afflictions"
+    ],
+    "costs": [
+      "$1450"
+    ],
+    "sections": [
+      "Medicines"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Revive": {
+    "name": "Revive",
+    "categories": [
+      "Medicine"
+    ],
+    "effects": [
+      "Revives fainted Pokémon and sets to 20 Hit Points"
+    ],
+    "costs": [
+      "$300"
+    ],
+    "sections": [
+      "Medicines"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Energy Powder": {
+    "name": "Energy Powder",
+    "categories": [
+      "Medicine"
+    ],
+    "effects": [
+      "Heals 25 Hit Points - Repulsive"
+    ],
+    "costs": [
+      "$150"
+    ],
+    "sections": [
+      "Medicines"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Energy Root": {
+    "name": "Energy Root",
+    "categories": [
+      "Medicine"
+    ],
+    "effects": [
+      "Heals 70 Hit Points - Repulsive"
+    ],
+    "costs": [
+      "$500"
+    ],
+    "sections": [
+      "Medicines"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Heal Powder": {
+    "name": "Heal Powder",
+    "categories": [
+      "Medicine"
+    ],
+    "effects": [
+      "Cure all Persistent Status Afflictions – Repulsive"
+    ],
+    "costs": [
+      "$350"
+    ],
+    "sections": [
+      "Medicines"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Revival Herb": {
+    "name": "Revival Herb",
+    "categories": [
+      "Medicine",
+      "Herb"
+    ],
+    "effects": [
+      "Revives Pokémon and sets to 50% Hit Points - Repulsive",
+      "Revives and sets to 50% Hit Points - Repulsive"
+    ],
+    "costs": [
+      "$350"
+    ],
+    "sections": [
+      "Medicines",
+      "Apricorns, Berries, and Herbs"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "X Attack": {
+    "name": "X Attack",
+    "categories": [
+      "X-Item"
+    ],
+    "effects": [
+      "Increases the Pokémon’s Attack by two Combat Stages"
+    ],
+    "costs": [
+      "$350"
+    ],
+    "sections": [
+      "Medicines"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "X Defend": {
+    "name": "X Defend",
+    "categories": [
+      "X-Item"
+    ],
+    "effects": [
+      "Increases the Pokémon’s Defense by two Combat Stages"
+    ],
+    "costs": [
+      "$350"
+    ],
+    "sections": [
+      "Medicines"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "X Special": {
+    "name": "X Special",
+    "categories": [
+      "X-Item"
+    ],
+    "effects": [
+      "Increases the Pokémon’s Special Attack by two Combat Stages"
+    ],
+    "costs": [
+      "$350"
+    ],
+    "sections": [
+      "Medicines"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "X Sp. Def": {
+    "name": "X Sp. Def",
+    "categories": [
+      "X-Item"
+    ],
+    "effects": [
+      "Increases the Pokémon’s Special Defense by two Combat Stages"
+    ],
+    "costs": [
+      "$350"
+    ],
+    "sections": [
+      "Medicines"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "X Speed": {
+    "name": "X Speed",
+    "categories": [
+      "X-Item"
+    ],
+    "effects": [
+      "Increases the Pokémon’s Speed by two Combat Stages"
+    ],
+    "costs": [
+      "$350"
+    ],
+    "sections": [
+      "Medicines"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Dire Hit": {
+    "name": "Dire Hit",
+    "categories": [
+      "X-Item"
+    ],
+    "effects": [
+      "Increases Critical Hit Range of all moves by +2."
+    ],
+    "costs": [
+      "$600"
+    ],
+    "sections": [
+      "Medicines"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "X Accuracy": {
+    "name": "X Accuracy",
+    "categories": [
+      "X-Item"
+    ],
+    "effects": [
+      "Increases Accuracy by +2"
+    ],
+    "costs": [
+      "$600"
+    ],
+    "sections": [
+      "Medicines"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Guard Spec": {
+    "name": "Guard Spec",
+    "categories": [
+      "X-Item"
+    ],
+    "effects": [
+      "Prevents reduction of Combat Stages or Accuracy on the Pokémon for 5 Turns"
+    ],
+    "costs": [
+      "$700"
+    ],
+    "sections": [
+      "Medicines"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Bandages": {
+    "name": "Bandages",
+    "categories": [
+      "Medicine"
+    ],
+    "effects": [
+      "on Pokémon or Trainers. Bandages last for 6 hours; while applied, they double the Natural Healing Rate of Pokémon or Trainers, meaning a Pokémon or Trainer will heal 1/8th of their Hit Points per half hour. Bandages also immediately heal one Injury if they remain in place for their full duration. If a Pokémon is damaged or loses Hit Points in any way, the Bandages immediately stop working. Bandages can be found in even minor convenience stores for $300. Poultices have the same effect as Bandages, but are itchy and irritating to the skin – they may lower the loyalty of Pokémon if used too often, much like Repulsive medicine. Note: Multiple Bandages may be used throughout the day to heal injuries, but only 3 Injuries can be removed per day through any combination of are important medical supplies for traveling Trainers that aren’t quite the same as other Restorative Items. are applied as Extended Actions on Pokémon or Trainers. Bandages last for 6 hours; while applied, they double the Natural Healing Rate of Pokémon or Trainers, meaning a Pokémon or Trainer will heal 1/8th of their Hit Points per half hour. also immediately heal one Injury if they remain in place for their full duration. If a Pokémon is damaged or loses Hit Points in any way, the Bandages immediately stop working. can be found in even minor convenience stores for $300. Poultices have the same effect as Bandages, but are itchy and irritating to the skin – they may lower the loyalty of Pokémon if used too often, much like Repulsive medicine. Note: Multiple Bandages may be used throughout the day to heal injuries, but only 3 Injuries can be removed per day through any combination of Items, Features, or Natural Healing. are incredibly helpful for extended treks in the wilderness where you might accrue multiple injuries over days without seeing a Pokémon Center. See attached Section"
+    ],
+    "costs": [
+      "$300"
+    ],
+    "sections": [
+      "Bandages and Poultices"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Poultices": {
+    "name": "Poultices",
+    "categories": [
+      "Medicine"
+    ],
+    "effects": [
+      "on Pokémon or Trainers. Bandages last for 6 hours; while applied, they double the Natural Healing Rate of Pokémon or Trainers, meaning a Pokémon or Trainer will heal 1/8th of their Hit Points per half hour. Bandages also immediately heal one Injury if they remain in place for their full duration. If a Pokémon is damaged or loses Hit Points in any way, the Bandages immediately stop working. Bandages can be found in even minor convenience stores for $300. Poultices have the same effect as Bandages, but are itchy and irritating to the skin – they may lower the loyalty of Pokémon if used too often, much like Repulsive medicine. Note: Multiple Bandages may be used throughout the day to heal injuries, but only 3 Injuries can be removed per day through any combination of See attached Section - Repulsive"
+    ],
+    "costs": [
+      "$225"
+    ],
+    "sections": [
+      "Bandages and Poultices"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Candy Bar": {
+    "name": "Candy Bar",
+    "categories": [
+      "Snack Item"
+    ],
+    "effects": [
+      "Snack. Grants a Digestion Buff that heals 5 Hit Points."
+    ],
+    "costs": [
+      "$75"
+    ],
+    "sections": [
+      "Food Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Honey": {
+    "name": "Honey",
+    "categories": [
+      "Snack Item"
+    ],
+    "effects": [
+      "Snack. Grants a Digestion Buff that heals 5 Hit Points. May be used as Bait"
+    ],
+    "costs": [
+      "$100"
+    ],
+    "sections": [
+      "Food Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Leftovers": {
+    "name": "Leftovers",
+    "categories": [
+      "Snack Item"
+    ],
+    "effects": [
+      "Snack. When their Digestion Buff is traded in, the user recovers 1/16th of their max Hit Points at the beginning of each turn for the rest of the encounter."
+    ],
+    "costs": [
+      "$350"
+    ],
+    "sections": [
+      "Food Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Black Sludge": {
+    "name": "Black Sludge",
+    "categories": [
+      "Snack Item"
+    ],
+    "effects": [
+      "Poison-Type Pokémon may consume the Black Sludge as a Snack Item; when the Digestion Buff is traded in, they recover 1/8th of their Max Hit Points at the beginning of each turn for the rest of the encounter. $500 Snacks may be consumed at any time by a Pokémon or Trainer as an Extended Action to grant a Digestion Buff. A Pokémon or Trainer may only have one Digestion Buff stored at a time unless they have the Gluttony Ability, and they made trade in this Buff during battle to use the effect of the Snack. Berries are considered snacks. Some Snacks require a certain condition to be met before a Digestion Buff can be traded in. For example, Digestion Buffs from Berries cannot be traded in unless the user is at 50% Hit Points or lower or unless the user is suffering from a Status Affliction the Berry’s Digestion Buff can cure. Some Berries specify alternate conditions instead, such as being dealt a certain kind of damage or being hit by a Type of attack. Candy Bars and Leftovers are the two other most common forms of snacks. Chefs however, are capable of creating diverse varieties of Snacks by using ingredients."
+    ],
+    "costs": [],
+    "sections": [
+      "Food Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Enriched Water": {
+    "name": "Enriched Water",
+    "categories": [
+      "Refreshment Item"
+    ],
+    "effects": [
+      "Heals 20 Hit Points."
+    ],
+    "costs": [
+      "$75"
+    ],
+    "sections": [
+      "Refreshment Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Shuckle’s Berry Juice": {
+    "name": "Shuckle’s Berry Juice",
+    "categories": [
+      "Refreshment Item"
+    ],
+    "effects": [
+      "Heals 30 Hit Points."
+    ],
+    "costs": [
+      "---"
+    ],
+    "sections": [
+      "Refreshment Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Super Soda Pop": {
+    "name": "Super Soda Pop",
+    "categories": [
+      "Refreshment Item"
+    ],
+    "effects": [
+      "Heals 30 Hit Points."
+    ],
+    "costs": [
+      "$125"
+    ],
+    "sections": [
+      "Refreshment Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Sparkling Lemonade": {
+    "name": "Sparkling Lemonade",
+    "categories": [
+      "Refreshment Item"
+    ],
+    "effects": [
+      "Heals 50 Hit Points."
+    ],
+    "costs": [
+      "$250"
+    ],
+    "sections": [
+      "Refreshment Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "MooMoo Milk": {
+    "name": "MooMoo Milk",
+    "categories": [
+      "Refreshment Item"
+    ],
+    "effects": [
+      "Heals 80 Hit Points."
+    ],
+    "costs": [
+      "$500"
+    ],
+    "sections": [
+      "Refreshment Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Mulch": {
+    "name": "Mulch",
+    "categories": [
+      "Gardening Item"
+    ],
+    "effects": [
+      "to temporarily increase soil Quality; it may be applied to a Plant to increase the Soil Quality of a plant by +1 for the following day. This cannot make a Soil Quality go above +2. Mulch costs $200 per unit."
+    ],
+    "costs": [
+      "$200"
+    ],
+    "sections": [
+      "Apricorns, Berries, and Herbs"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Red Apricorns": {
+    "name": "Red Apricorns",
+    "categories": [
+      "Apricorn"
+    ],
+    "effects": [
+      "Can be turned into a Level Ball."
+    ],
+    "costs": [],
+    "sections": [
+      "Apricorns"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Yellow Apricorns": {
+    "name": "Yellow Apricorns",
+    "categories": [
+      "Apricorn"
+    ],
+    "effects": [
+      "Can be turned into a Moon Ball."
+    ],
+    "costs": [],
+    "sections": [
+      "Apricorns"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Blue Apricorns": {
+    "name": "Blue Apricorns",
+    "categories": [
+      "Apricorn"
+    ],
+    "effects": [
+      "Can be turned into a Lure Ball."
+    ],
+    "costs": [],
+    "sections": [
+      "Apricorns"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Green Apricorns": {
+    "name": "Green Apricorns",
+    "categories": [
+      "Apricorn"
+    ],
+    "effects": [
+      "Can be turned into a Friend Ball."
+    ],
+    "costs": [],
+    "sections": [
+      "Apricorns"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Pink Apricorns": {
+    "name": "Pink Apricorns",
+    "categories": [
+      "Apricorn"
+    ],
+    "effects": [
+      "Can be turned into a Love Ball."
+    ],
+    "costs": [],
+    "sections": [
+      "Apricorns"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "White Apricorns": {
+    "name": "White Apricorns",
+    "categories": [
+      "Apricorn"
+    ],
+    "effects": [
+      "Can be turned into a Fast Ball."
+    ],
+    "costs": [],
+    "sections": [
+      "Apricorns"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Black Apricorns": {
+    "name": "Black Apricorns",
+    "categories": [
+      "Apricorn"
+    ],
+    "effects": [
+      "Can be turned into a Heavy Ball."
+    ],
+    "costs": [],
+    "sections": [
+      "Apricorns"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Mental Herb": {
+    "name": "Mental Herb",
+    "categories": [
+      "Herb"
+    ],
+    "effects": [
+      "Cures all Volatile Status Effects."
+    ],
+    "costs": [
+      "$300"
+    ],
+    "sections": [
+      "Apricorns, Berries, and Herbs"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Power Herb": {
+    "name": "Power Herb",
+    "categories": [
+      "Herb"
+    ],
+    "effects": [
+      "Eliminates the Set-Up turn of Moves with the Set-Up Keyword."
+    ],
+    "costs": [
+      "$300"
+    ],
+    "sections": [
+      "Apricorns, Berries, and Herbs"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "White Herb": {
+    "name": "White Herb",
+    "categories": [
+      "Herb"
+    ],
+    "effects": [
+      "Any negative Stages are set to 0. $300 Tiny Mushroom** The user loses 5 HP, and gains +1 Combat Stage in a random Stat. --- Big Mushroom** The user becomes Poisoned; if they do, they gain +1 Combat Stage in two random Stats. --- Balm Mushroom** The user is cured of Burn, Paralysis, or Poison. If they are, they lose 1 Combat Stage in a random Stat. --- *Energy Roots can be grown and harvested like Herbs, but are not Snack Items. ** Mushrooms may be identified with a DC 20 Survival Check. If identified, you may roll to see which stats that mushroom affects ahead of time. Apricorns are fruit that can be turned into Apricorn Poké Balls. Finding a smith to make them isn’t always easy. It’s usually simpler to buy the Poké Balls in stores. Herbs have varied effects, ranging from acting as repulsive restorative items to giving Pokémon unique advantages in the middle of battle. Energy Roots and Revival Herbs are used as restorative items in battle. Mental, Power, and White Herbs are Snack Items. Mushrooms are Held Items and consumed as a Shift Action in combat."
+    ],
+    "costs": [],
+    "sections": [
+      "Apricorns, Berries, and Herbs"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Chemistry Set": {
+    "name": "Chemistry Set",
+    "categories": [
+      "Crafting Item"
+    ],
+    "effects": [
+      "Used to create Repels, Potions, and other objects. Costs $1000."
+    ],
+    "costs": [
+      "Costs $1000"
+    ],
+    "sections": [
+      "Crafting Kits"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Cooking Set": {
+    "name": "Cooking Set",
+    "categories": [
+      "Crafting Item"
+    ],
+    "effects": [
+      "Used by Chefs to create Snacks and Refreshments. Costs $1000."
+    ],
+    "costs": [
+      "Costs $1000"
+    ],
+    "sections": [
+      "Crafting Kits"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Dowsing Rod": {
+    "name": "Dowsing Rod",
+    "categories": [
+      "Crafting Item"
+    ],
+    "effects": [
+      "Dowsing Rods have been attuned to the energy resonance given off by Shards. They may be used while in any route, cave, or outside area and can be bought for $2000. They may be activated by spending 10 minutes searching an area, and may be activated a number of times per day equal to half of the trainer’s Occult Education Rank. After the 10 minutes, roll 1d6 per Occult Education Rank. If the area being searched is a beach, cave, desert, or any other sandy or rocky area, roll +1d6. If you have Skill Stunt (Dowsing), you roll an additional 1d6. For each die that results in 4 or higher, you find 1 Shard of a random color: Red, Orange, Yellow, Green, Blue, or Violet. You may reroll any die that result in 6, gaining that shard and potentially more."
+    ],
+    "costs": [
+      "They may be used while in any route, cave, or outside area and can be bought for $2000"
+    ],
+    "sections": [
+      "Crafting Kits"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Poffin Mixer": {
+    "name": "Poffin Mixer",
+    "categories": [
+      "Crafting Item"
+    ],
+    "effects": [
+      "A Poffin Mixer can be used by any Trainer to create Poffins. You simply insert cooking ingredients worth $500, and at least one of the listed berries. You create two Poffins that raises the Contest Stat most represented by the berries used by +1 Contest Die. Some Berries can raise multiple Contest Stats; you choose which to raise when using these Berries to make Poffins. Cheri, Figy, Razz, Spelon and Belue Berries raise Cool; Chesto, Wiki, Bluk, Spelon and Pamtre Berries raise Beauty; Pecha, Mago, Nanab, Pamtre, and Watmel Berries raise Cute; Rawst, Aguav, Wepear, Watmel, and Durin Berries raise Smart; Aspear, Iapapa, Pinap, Durin, and Belue Berries raise Tough. Poffins can be purchased for $500 in bakeries and Contest halls, and Poffin Mixers cost $500 as well."
+    ],
+    "costs": [
+      "You simply insert cooking ingredients worth $500, and at least one of the listed berries; Poffins can be purchased for $500 in bakeries and Contest halls, and Poffin Mixers cost $500 as well"
+    ],
+    "sections": [
+      "Crafting Kits"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Poké Ball Tool Box": {
+    "name": "Poké Ball Tool Box",
+    "categories": [
+      "Crafting Item"
+    ],
+    "effects": [
+      "These tool boxes let those with the know-how craft and repair Poké Balls. They cost $500 and can be found in most Poké Marts."
+    ],
+    "costs": [
+      "They cost $500 and can be found in most Poké Marts"
+    ],
+    "sections": [
+      "Crafting Kits"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Portable Grower / Berry Planter": {
+    "name": "Portable Grower / Berry Planter",
+    "categories": [
+      "Crafting Item"
+    ],
+    "effects": [
+      "Portable Growers can be used to grow berries and herbs. Portable Growers protect the plants within them from external weather, and never need to be fertilized. Each Grower holds one plant. Portable Growers cost $2000."
+    ],
+    "costs": [
+      "Portable Growers cost $2000"
+    ],
+    "sections": [
+      "Crafting Kits"
+    ],
+    "aliases": [
+      "Portable Grower",
+      "Berry Planter"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Shards": {
+    "name": "Shards",
+    "categories": [
+      "Crafting Item"
+    ],
+    "effects": [
+      "Shards are bits of colored energized crystal and are used for various crafting purposes. Each color is associated with three Types. Red is Fire, Fairy, and Psychic; Orange is Normal, Fighting, and Dragon; Yellow is Electric, Rock and Steel; Green is Bug, Grass, and Ground; Blue is Water, Ice, and Flying; Violet is Poison, Dark, and Ghost."
+    ],
+    "costs": [],
+    "sections": [
+      "Crafting Kits"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Kitchen Knife": {
+    "name": "Kitchen Knife",
+    "categories": [
+      "Weapon"
+    ],
+    "effects": [
+      "Small Melee Weapon"
+    ],
+    "costs": [],
+    "sections": [
+      "Example Weapons"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Baseball Bat": {
+    "name": "Baseball Bat",
+    "categories": [
+      "Weapon"
+    ],
+    "effects": [
+      "Large Melee Weapon"
+    ],
+    "costs": [],
+    "sections": [
+      "Example Weapons"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Weighted Rope": {
+    "name": "Weighted Rope",
+    "categories": [
+      "Weapon"
+    ],
+    "effects": [
+      "Short Range Weapon"
+    ],
+    "costs": [],
+    "sections": [
+      "Example Weapons"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Slingshot": {
+    "name": "Slingshot",
+    "categories": [
+      "Weapon"
+    ],
+    "effects": [
+      "Long Range Weapon"
+    ],
+    "costs": [],
+    "sections": [
+      "Example Weapons"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Survival Knife": {
+    "name": "Survival Knife",
+    "categories": [
+      "Weapon"
+    ],
+    "effects": [
+      "Small Melee Weapon Adept Move: Cheap Shot"
+    ],
+    "costs": [],
+    "sections": [
+      "Example Weapons"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Quarterstaff": {
+    "name": "Quarterstaff",
+    "categories": [
+      "Weapon"
+    ],
+    "effects": [
+      "Large Melee Weapon, grants Reach for Weapon Attacks Adept Move: Backswing"
+    ],
+    "costs": [],
+    "sections": [
+      "Example Weapons"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Throwing Hammers": {
+    "name": "Throwing Hammers",
+    "categories": [
+      "Weapon"
+    ],
+    "effects": [
+      "Short Range Weapon Adept Move: Bash!"
+    ],
+    "costs": [],
+    "sections": [
+      "Example Weapons"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Hunting Bow": {
+    "name": "Hunting Bow",
+    "categories": [
+      "Weapon"
+    ],
+    "effects": [
+      "Long Range Weapon Adept Move: Pierce!"
+    ],
+    "costs": [],
+    "sections": [
+      "Example Weapons"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Honed Claws": {
+    "name": "Honed Claws",
+    "categories": [
+      "Weapon"
+    ],
+    "effects": [
+      "Small Melee Weapon Adept Move: Wounding Strike Master Move: Gouge"
+    ],
+    "costs": [],
+    "sections": [
+      "Example Weapons"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Meteor Masher": {
+    "name": "Meteor Masher",
+    "categories": [
+      "Weapon"
+    ],
+    "effects": [
+      "Large Melee Weapon Adept Move: Backswing Master Move: Titanic Slam"
+    ],
+    "costs": [],
+    "sections": [
+      "Example Weapons"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Super Lucky Throwing Stars": {
+    "name": "Super Lucky Throwing Stars",
+    "categories": [
+      "Weapon"
+    ],
+    "effects": [
+      "Short Range Weapon Adept Move: Bullseye Master Move: Deadly Strike"
+    ],
+    "costs": [],
+    "sections": [
+      "Example Weapons"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Twin-Needled Bow": {
+    "name": "Twin-Needled Bow",
+    "categories": [
+      "Weapon"
+    ],
+    "effects": [
+      "Long Range Weapon Adept Move: Double Swipe Master Move: Triple Threat"
+    ],
+    "costs": [],
+    "sections": [
+      "Example Weapons"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Light Armor": {
+    "name": "Light Armor",
+    "categories": [
+      "Body Equipment"
+    ],
+    "effects": [
+      "Grants 5 Damage Reduction"
+    ],
+    "costs": [
+      "$8000"
+    ],
+    "sections": [
+      "Equipment"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Heavy Armor": {
+    "name": "Heavy Armor",
+    "categories": [
+      "Body Equipment"
+    ],
+    "effects": [
+      "grants +10 Damage Reduction. Heavy Armor causes the wearer’s Speed’s Default Combat Stage to be -1."
+    ],
+    "costs": [
+      "$12,000"
+    ],
+    "sections": [
+      "Equipment"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Fancy Clothes": {
+    "name": "Fancy Clothes",
+    "categories": [
+      "Body Equipment"
+    ],
+    "effects": [
+      "Each set of Fancy Clothes is assigned a Contest Stat – either Beauty, Cool, Cute, Smart, or Tough. Trainers wearing these clothes may roll 2d6 during the Introduction Stage of a Contest to try to generate Contest Stat Dice for the assigned Stat."
+    ],
+    "costs": [
+      "$5000"
+    ],
+    "sections": [
+      "Equipment"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Stealth Clothes": {
+    "name": "Stealth Clothes",
+    "categories": [
+      "Body Equipment"
+    ],
+    "effects": [
+      "Whether it’s a dark cloak and hood, a ninja suit, or spy gear, these clothes help you blend in. This body-slot equipment raises your modifier to Stealth Checks made to remain unseen by +4, to a maximum total modifier of +4."
+    ],
+    "costs": [
+      "$2000"
+    ],
+    "sections": [
+      "Equipment"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Dark Vision Goggles": {
+    "name": "Dark Vision Goggles",
+    "categories": [
+      "Head Equipment"
+    ],
+    "effects": [
+      "These Goggles simply grant the Darkvision Capability while worn."
+    ],
+    "costs": [
+      "$1,000"
+    ],
+    "sections": [
+      "Equipment"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Gas Mask": {
+    "name": "Gas Mask",
+    "categories": [
+      "Head Equipment"
+    ],
+    "effects": [
+      "Gas Masks are invaluable equipment when trying to breathe in toxic environments or heavy smoke. They not only let you breathe through environmental toxins or smoke, but you become immune to the Moves Rage Powder, Poison Gas, Poisonpowder, Sleep Powder, Smog, Smokescreen, Spore, Stun Spore, and Sweet Scent."
+    ],
+    "costs": [
+      "$1,500"
+    ],
+    "sections": [
+      "Equipment"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Helmet": {
+    "name": "Helmet",
+    "categories": [
+      "Head Equipment"
+    ],
+    "effects": [
+      "The user gains 15 Damage Reduction against Critical Hits. The user resists the Moves Headbutt and Zen Headbutt and can’t be flinched by these Moves."
+    ],
+    "costs": [
+      "$2250"
+    ],
+    "sections": [
+      "Equipment"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Re-Breather": {
+    "name": "Re-Breather",
+    "categories": [
+      "Head Equipment"
+    ],
+    "effects": [
+      "This small partial face mask allows Trainers and Pokémon to breathe underwater as if they had the Gilled Capability for up to an hour. The Re-Breather is refilled automatically in 5 minutes while in open air."
+    ],
+    "costs": [
+      "$4000"
+    ],
+    "sections": [
+      "Equipment"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Sunglasses": {
+    "name": "Sunglasses",
+    "categories": [
+      "Head Equipment"
+    ],
+    "effects": [
+      "+1 to Charm, Guile, and Intimidate Checks, to a maximum total modifier of +3."
+    ],
+    "costs": [
+      "$2000"
+    ],
+    "sections": [
+      "Equipment"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Snow Boots": {
+    "name": "Snow Boots",
+    "categories": [
+      "Feet Equipment"
+    ],
+    "effects": [
+      "grant you the Naturewalk (Tundra) capability, but lower your Overland Speed by -1 while on ice or deep snow."
+    ],
+    "costs": [
+      "$1500"
+    ],
+    "sections": [
+      "Equipment"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Running Shoes": {
+    "name": "Running Shoes",
+    "categories": [
+      "Feet Equipment"
+    ],
+    "effects": [
+      "grant a +2 bonus to Athletics Checks, to a maximum total modifier of +3, and increase your Overland Speed by +1."
+    ],
+    "costs": [
+      "$2000"
+    ],
+    "sections": [
+      "Equipment"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Flippers": {
+    "name": "Flippers",
+    "categories": [
+      "Feet Equipment"
+    ],
+    "effects": [
+      "grant a +2 bonus to your Swim speed when fully submerged, and decrease your Overland speed by the same amount."
+    ],
+    "costs": [
+      "$2000"
+    ],
+    "sections": [
+      "Equipment"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Jungle Boots": {
+    "name": "Jungle Boots",
+    "categories": [
+      "Feet Equipment"
+    ],
+    "effects": [
+      "grant you the Naturewalk (Forest) capability"
+    ],
+    "costs": [
+      "$1500"
+    ],
+    "sections": [
+      "Equipment"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Fishing Rod": {
+    "name": "Fishing Rod",
+    "categories": [
+      "Hand Equipment"
+    ],
+    "effects": [
+      "Fishing Rods are used to Fish. They are two-handed items. They come in three varieties; Old Rods, Good Rods, and Super Rods. Old Rods cost $1000, Good Rods cost $5,000, and Super Rods cost $15,000."
+    ],
+    "costs": [
+      "Old Rods cost $1000, Good Rods cost $5,000, and Super Rods cost $15,000"
+    ],
+    "sections": [
+      "Equipment"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Glue Cannon": {
+    "name": "Glue Cannon",
+    "categories": [
+      "Hand Equipment"
+    ],
+    "effects": [
+      "Glue Cannons are exactly what you expect; This two-handed Equipment piece is a hand-held cannon that launches globs of glue. Attacking with a Glue Cannon expends a charge, which must be purchased. The attack is an AC8 Status Attack. If it hits, the target is Slowed. On a critical hit, the target is instead Stuck and Trapped. The Glue Cannon and three charge packets cost $3000, and additional charge packets costs $100."
+    ],
+    "costs": [
+      "The Glue Cannon and three charge packets cost $3000, and additional charge packets costs $100"
+    ],
+    "sections": [
+      "Equipment"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Hand Net": {
+    "name": "Hand Net",
+    "categories": [
+      "Hand Equipment"
+    ],
+    "effects": [
+      "A long net, usually on the end of a long stick, these pieces of two-handed Equipment are usually used for bug catching or fishing. As an AC6 Status Attack, you may attempt to net a Small Pokémon using this item. If you hit, you manage to scoop up the Pokémon, trapping them. You may move with the Pokémon, dragging them with you. Pokémon may still attack from the Hand Net using long-range attacks, or try to attack the net itself, potentially breaking it and freeing themselves. Capture Rolls against Pokémon in a net receive a -20 bonus. Hand Nets with 50 Hit Points cost $100; 100 Hit Points cost $600; and 200 Hit Points cost $1500. Nets aren’t broken until all of their Hit Points are depleted."
+    ],
+    "costs": [
+      "Hand Nets with 50 Hit Points cost $100; 100 Hit Points cost $600; and 200 Hit Points cost $1500"
+    ],
+    "sections": [
+      "Equipment"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Weighted Nets": {
+    "name": "Weighted Nets",
+    "categories": [
+      "Hand Equipment"
+    ],
+    "effects": [
+      "are foldable nets used for trapping Pokémon. These two-handed nets, when Equipped, can be thrown at a target as a Standard Action, as a Status Attack with an AC of 8. While a Pokémon is netted, you may pull on the rope attached to the Net to pull the Pokémon 1 Meter towards you as a Standard Action. Pokémon hit by a weighted net become Slowed as long as the net remains and cannot use Sky or Levitate Speeds except to safely lower themselves back to the ground. A Pokémon may attack the Net to attempt to break free. Capture Rolls against Pokémon in a net receive a -20 bonus. with 50 Hit Points cost $500; 80 Hit Points cost $850; and 150 Hit Points cost $1200. Styler A Capture Styler is a Main-Hand specialized piece of equipment used by some certified Pokémon Rangers in a region. It emits a string of energy that is used in a similar fashion to a lasso but is too weak to physically restrain a target. Instead, the energy has a calming effect on Pokémon. Trainers using a Capture Styler may use Survival in place of Charm when raising the Disposition of Pokémon. Acquiring a Capture Styler is easy for those who become certified Pokémon Rangers; most qualified Rangers receive one as part of the job. They are not for sale to the general public and may cost upwards of $7500 on the black market due to their iconic nature – it’s easy to assume that someone who has a Capture Styler is a Ranger."
+    ],
+    "costs": [
+      "with 50 Hit Points cost $500; 80 Hit Points cost $850; and 150 Hit Points cost $1200; They are not for sale to the general public and may cost upwards of $7500 on the black market due to their iconic nature – it’s easy to assume that someone who has a Capture Styler is a Ranger"
+    ],
+    "sections": [
+      "Equipment"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Light Shield": {
+    "name": "Light Shield",
+    "categories": [
+      "Hand Equipment"
+    ],
+    "effects": [
+      "A Shield is an Off-Hand defensive item held in one hand or braced to an arm. Light Shields grant +2 Evasion. They may be readied as a Standard Action to instead grant +4 Evasion and 10 Damage Reduction until the end of your next turn, but also cause you to become Slowed for that duration. If used Two-Handed, light shields can also function as a Small Melee Weapon. Light Shields cost around $3000."
+    ],
+    "costs": [
+      "Light Shields cost around $3000"
+    ],
+    "sections": [
+      "Equipment"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Heavy Shield": {
+    "name": "Heavy Shield",
+    "categories": [
+      "Hand Equipment"
+    ],
+    "effects": [
+      "A Shield is an Off-Hand defensive item held in one hand or braced to an arm. Heavy Shields grnat +2 Evasion and may be readied as a Standard Action to grant +6 Evasion and 15 Damage Reduction until the end of your next turn, but also cause you to become Slowed for that duration. If used Two-Handed, shields can also function as a Small Melee Weapon. Heavy Shields cost around $4500."
+    ],
+    "costs": [
+      "Heavy Shields cost around $4500"
+    ],
+    "sections": [
+      "Equipment"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Wonder Launcher": {
+    "name": "Wonder Launcher",
+    "categories": [
+      "Hand Equipment"
+    ],
+    "effects": [
+      "This strange and complicated two-handed machine can only be used by those that have an Expert-Level Medicine or Technology Education Skill. The wielder can spend 1 AP to activate it, and apply an X-Item at a Pokémon within 8 meters. X-Items applied through the Wonder Launcher do not cause the target to forfeit any actions. Items combined by a Researcher may be used in the Wonder Launcher, and do not cause the target to forfeit any actions even if they are also a Restorative. Wonder Launchers cost $10,000 or more."
+    ],
+    "costs": [
+      "Wonder Launchers cost $10,000 or more"
+    ],
+    "sections": [
+      "Equipment"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Focus": {
+    "name": "Focus",
+    "categories": [
+      "Accessory Item"
+    ],
+    "effects": [
+      "A Focus grants +5 Bonus to a Stat, chosen when crafted. This Bonus is applied AFTER Combat Stages. Focuses are often Accessory-Slot Items, but may be crafted as Head-Slot, Hand or OffHand Slot Items as well; a Trainer may only benefit from one Focus at a time, regardless of the Equipment Slot. Focuses are not usually found in stores, but may sometimes be found for $6000 at your GM’s discretion."
+    ],
+    "costs": [
+      "Focuses are not usually found in stores, but may sometimes be found for $6000 at your GM’s discretion"
+    ],
+    "sections": [
+      "Accessory Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Snag Machine": {
+    "name": "Snag Machine",
+    "categories": [
+      "Accessory Item"
+    ],
+    "effects": [
+      "Snag Machines are extremely illegal machines that allow trainers to steal another Trainer’s Pokémon. They come in both large, immovable varieties and smaller portable varieties. The Portable Variety is an Accessory-Slot Item. Inserting a Poké Ball into a Large Snag Machine turns it into a Snag Ball permanently, but Large Snag Machines may only turn 5 Poké Balls into Snag Balls per day. Inserting a Poké Ball into a Portable Snag Machine, which is a Swift Action, turns it into a Snag Ball after one round, but only for that round. Snag Balls have the same properties as the Poké Ball type they were before being inserted into the machine, but receive a -2 penalty on all Poké Ball attack rolls, and are capable of capturing owned Pokémon. Snag Machines cannot be bought in stores, but may sell on the black market for prices of $30,000 or more."
+    ],
+    "costs": [
+      "Snag Machines cannot be bought in stores, but may sell on the black market for prices of $30,000 or more"
+    ],
+    "sections": [
+      "Accessory Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Mega Ring": {
+    "name": "Mega Ring",
+    "categories": [
+      "Accessory Item"
+    ],
+    "effects": [
+      "Mega Rings are extraordinarily rare accessories that allow a Trainer’s Pokémon to Mega Evolve when used in conjunction with a Mega Stone. They cannot be bought in stores anywhere and must usually be earned through a trial of sorts, governed by a Gym Leader or other influential Pokémon Trainer. They can take the form of a bracelet, a necklace, or an actual ring."
+    ],
+    "costs": [],
+    "sections": [
+      "Accessory Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Big Root": {
+    "name": "Big Root",
+    "categories": [
+      "Held Item"
+    ],
+    "effects": [
+      "HP stealing moves restore double HP. Cannot be used by Trainers."
+    ],
+    "costs": [
+      "$1000"
+    ],
+    "sections": [
+      "Held Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Bright Powder": {
+    "name": "Bright Powder",
+    "categories": [
+      "Held Item"
+    ],
+    "effects": [
+      "+2 to Speed Evasion. Cannot be used by Trainers."
+    ],
+    "costs": [
+      "$2000"
+    ],
+    "sections": [
+      "Held Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Choice Item": {
+    "name": "Choice Item",
+    "categories": [
+      "Held Item"
+    ],
+    "effects": [
+      "Choice Items are tied to a Specific Stat. While worn, the default state of the Stat is +2 Combat Stages instead of 0. However, the user is Suppressed and cannot be cured until the end of Combat, even if the item is removed. Cannot be used by Trainers."
+    ],
+    "costs": [
+      "$3000"
+    ],
+    "sections": [
+      "Held Items"
+    ],
+    "aliases": [
+      "Attack Choice Item",
+      "Defense Choice Item",
+      "Special Attack Choice Item",
+      "Special Defense Choice Item",
+      "Speed Choice Item",
+      "Accuracy Choice Item",
+      "Evasion Choice Item"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Contest Accessory": {
+    "name": "Contest Accessory",
+    "categories": [
+      "Held Item"
+    ],
+    "effects": [
+      "The user rolls +2d6 during the Introduction Stage of a Contest. Cannot be used by Trainers."
+    ],
+    "costs": [
+      "$1500"
+    ],
+    "sections": [
+      "Held Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Contest Fashion": {
+    "name": "Contest Fashion",
+    "categories": [
+      "Held Item"
+    ],
+    "effects": [
+      "These Items have a chosen Contest Stat; Beauty, Cool, Cute, Smart, or Tough. When held, once per Contest, the holder may re-roll any 1s made when using a Move of the chosen Type. Cannot be used by Trainers."
+    ],
+    "costs": [
+      "$1000"
+    ],
+    "sections": [
+      "Held Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Everstone": {
+    "name": "Everstone",
+    "categories": [
+      "Held Item"
+    ],
+    "effects": [
+      "Evolution is prevented for the holder. Cannot be used by Trainers."
+    ],
+    "costs": [
+      "$1500"
+    ],
+    "sections": [
+      "Held Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Eviolite": {
+    "name": "Eviolite",
+    "categories": [
+      "Held Item"
+    ],
+    "effects": [
+      "Only affects not-fully-evolved Pokémon of a single family, decided when the is made. Grants a +5 Bonus to two different Stats, after Combat Stages, decided when the Eviolite is made. Prevents Pokémon from evolving when held. Cannot be used by Trainers."
+    ],
+    "costs": [
+      "$4000"
+    ],
+    "sections": [
+      "Held Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Expert Belt": {
+    "name": "Expert Belt",
+    "categories": [
+      "Held Item"
+    ],
+    "effects": [
+      "Whenever the holder deals Super Effective Damage, they deal an additional 5 damage (this damage is not multiplied). Accessory Item for Trainers."
+    ],
+    "costs": [
+      "$3500"
+    ],
+    "sections": [
+      "Held Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Flame Orb": {
+    "name": "Flame Orb",
+    "categories": [
+      "Held Item"
+    ],
+    "effects": [
+      "Induces burn on holder. Off-Hand Item for Trainers. Standard Action to drop."
+    ],
+    "costs": [
+      "$3800"
+    ],
+    "sections": [
+      "Held Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Focus Band": {
+    "name": "Focus Band",
+    "categories": [
+      "Held Item"
+    ],
+    "effects": [
+      "Whenever the user faints, roll 1d20. Once a Scene on a result of 16+, the holder does not faint, and is left with 1 Hit Point. Accessory Item for Trainers."
+    ],
+    "costs": [
+      "$4700"
+    ],
+    "sections": [
+      "Held Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Focus Sash": {
+    "name": "Focus Sash",
+    "categories": [
+      "Held Item"
+    ],
+    "effects": [
+      "Once a Scene, if damage from a Move would take Focus Sash’s holder’s Hit Points from Max to 0 or less, Focus Sash’s holder instead has 1 Hit Point remaining. Accessory Item for Trainers."
+    ],
+    "costs": [
+      "$4700"
+    ],
+    "sections": [
+      "Held Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Full Incense": {
+    "name": "Full Incense",
+    "categories": [
+      "Held Item"
+    ],
+    "effects": [
+      "The holder gains the Stall ability. Cannot be used by Trainers."
+    ],
+    "costs": [
+      "$900"
+    ],
+    "sections": [
+      "Held Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Go-Goggles": {
+    "name": "Go-Goggles",
+    "categories": [
+      "Held Item"
+    ],
+    "effects": [
+      "The user does not take damage from Sandstorm. Head Item for Trainers."
+    ],
+    "costs": [
+      "$1500"
+    ],
+    "sections": [
+      "Held Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Iron Ball": {
+    "name": "Iron Ball",
+    "categories": [
+      "Held Item"
+    ],
+    "effects": [
+      "The Holder’s Speed is halved, and any immunity to Ground Type is lost. Hand Item for Trainers. Standard Action to drop."
+    ],
+    "costs": [
+      "$900"
+    ],
+    "sections": [
+      "Held Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "King’s Rock": {
+    "name": "King’s Rock",
+    "categories": [
+      "Held Item",
+      "Evolutionary Keepsake"
+    ],
+    "effects": [
+      "Attacks cause Flinch on a roll of 19+. This does not stack with any abilities, moves, or effects that extend flinch rate. Head Item for Trainers.",
+      "Evolves Poliwhirl, Slowpoke"
+    ],
+    "costs": [
+      "$2500",
+      "$3000"
+    ],
+    "sections": [
+      "Held Items",
+      "Evolutionary Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Lagging Item": {
+    "name": "Lagging Item",
+    "categories": [
+      "Held Item"
+    ],
+    "effects": [
+      "The Lagging Items are tied to a specific Stat. When held, they set that Stat to -4 Combat Stages. Cannot be used by Trainers. Standard Action to drop."
+    ],
+    "costs": [
+      "$900"
+    ],
+    "sections": [
+      "Held Items"
+    ],
+    "aliases": [
+      "Attack Lagging Item",
+      "Defense Lagging Item",
+      "Special Attack Lagging Item",
+      "Special Defense Lagging Item",
+      "Speed Lagging Item",
+      "Accuracy Lagging Item",
+      "Evasion Lagging Item"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Lax Incense": {
+    "name": "Lax Incense",
+    "categories": [
+      "Held Item"
+    ],
+    "effects": [
+      "+1 to all Stat Evasions. Cannot be used by Trainers."
+    ],
+    "costs": [
+      "$2000"
+    ],
+    "sections": [
+      "Held Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Life Orb": {
+    "name": "Life Orb",
+    "categories": [
+      "Held Item"
+    ],
+    "effects": [
+      "Whenever the holder deals direct damage, increase the damage by +5, and then the holder loses Hit Points equal to 1/16th of their Max Hit Points. Off-Hand Item for Trainers."
+    ],
+    "costs": [
+      "$3700"
+    ],
+    "sections": [
+      "Held Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Luck Incense": {
+    "name": "Luck Incense",
+    "categories": [
+      "Held Item"
+    ],
+    "effects": [
+      "Grants +1 Bonus to all Accuracy Rolls. A roll of 1 always misses. Cannot be used by Trainers."
+    ],
+    "costs": [
+      "$1800"
+    ],
+    "sections": [
+      "Held Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Quick Claw": {
+    "name": "Quick Claw",
+    "categories": [
+      "Held Item"
+    ],
+    "effects": [
+      "The user adds +10 to their Initiative. Accessory Item for Trainers."
+    ],
+    "costs": [
+      "$4200"
+    ],
+    "sections": [
+      "Held Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Razor Claw": {
+    "name": "Razor Claw",
+    "categories": [
+      "Held Item",
+      "Evolutionary Keepsake"
+    ],
+    "effects": [
+      "The holder’s damaging attacks have their Critical Hit Range extended by +1.",
+      "Evolves Sneasel"
+    ],
+    "costs": [
+      "$3000"
+    ],
+    "sections": [
+      "Held Items",
+      "Evolutionary Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Razor Fang": {
+    "name": "Razor Fang",
+    "categories": [
+      "Held Item",
+      "Evolutionary Keepsake"
+    ],
+    "effects": [
+      "The holder’s damaging attacks cause an Injury on a roll of 19+. Accessory Item for Trainers.",
+      "Evolves Gligar"
+    ],
+    "costs": [
+      "$3000"
+    ],
+    "sections": [
+      "Held Items",
+      "Evolutionary Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Safety Goggles": {
+    "name": "Safety Goggles",
+    "categories": [
+      "Held Item"
+    ],
+    "effects": [
+      "The holder is immune to Moves with the Powder Keyword. Accessory or Head Item for Trainers."
+    ],
+    "costs": [
+      "$1500"
+    ],
+    "sections": [
+      "Held Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Shell Bell": {
+    "name": "Shell Bell",
+    "categories": [
+      "Held Item"
+    ],
+    "effects": [
+      "Whenever the user damages a foe, they gain a Tick of Temporary Hit Points. Accessory Item for Trainers."
+    ],
+    "costs": [
+      "$5200"
+    ],
+    "sections": [
+      "Held Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Shock Collar": {
+    "name": "Shock Collar",
+    "categories": [
+      "Held Item"
+    ],
+    "effects": [
+      "Comes with a remote activator, which when pressed, causes the Pokémon or Trainer wearing the shock collar to lose Hit Points equal to 1/6th of their Max Hit Points. This may be used to activate the “Press” Feature. Collars that work on Ground Type Pokémon are available for an additional $500."
+    ],
+    "costs": [
+      "$3500"
+    ],
+    "sections": [
+      "Held Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Stat Boosters": {
+    "name": "Stat Boosters",
+    "categories": [
+      "Held Item"
+    ],
+    "effects": [
+      "These items have a chosen Stat, either Attack, Defense, Special Attack, Special Defense, Speed, Evasion, or Accuracy. These items cause the default Stage of their linked Stat to be +1 Combat Stage instead of 0, or simply +1 for Accuracy and Evasion. Accessory Item for Trainers."
+    ],
+    "costs": [
+      "$4000"
+    ],
+    "sections": [
+      "Held Items"
+    ],
+    "aliases": [
+      "Attack Stat Booster",
+      "Defense Stat Booster",
+      "Special Attack Stat Booster",
+      "Special Defense Stat Booster",
+      "Speed Stat Booster",
+      "Accuracy Stat Booster",
+      "Evasion Stat Booster"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Toxic Orb": {
+    "name": "Toxic Orb",
+    "categories": [
+      "Held Item"
+    ],
+    "effects": [
+      "Induces Poison on holder. Off-Hand Item for Trainers. Standard Action to drop."
+    ],
+    "costs": [
+      "$4800"
+    ],
+    "sections": [
+      "Held Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Type Boosters": {
+    "name": "Type Boosters",
+    "categories": [
+      "Held Item"
+    ],
+    "effects": [
+      "These items come in a variety of each of the Elemental Types, and grants a +5 Damage Bonus to all direct damage Moves of its Specific Type when performed by the user. Accessory Item for Trainers."
+    ],
+    "costs": [
+      "$1800"
+    ],
+    "sections": [
+      "Held Items"
+    ],
+    "aliases": [
+      "Normal Type Booster",
+      "Fire Type Booster",
+      "Water Type Booster",
+      "Electric Type Booster",
+      "Grass Type Booster",
+      "Ice Type Booster",
+      "Fighting Type Booster",
+      "Poison Type Booster",
+      "Ground Type Booster",
+      "Flying Type Booster",
+      "Psychic Type Booster",
+      "Bug Type Booster",
+      "Rock Type Booster",
+      "Ghost Type Booster",
+      "Dragon Type Booster",
+      "Dark Type Booster",
+      "Steel Type Booster",
+      "Fairy Type Booster"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Type Brace": {
+    "name": "Type Brace",
+    "categories": [
+      "Held Item"
+    ],
+    "effects": [
+      "These items come in a variety of each of the Elemental Types, and grant the holder 15 Damage Reduction against that specific Type. Accessory Item for Trainers."
+    ],
+    "costs": [
+      "$2000"
+    ],
+    "sections": [
+      "Held Items"
+    ],
+    "aliases": [
+      "Normal Type Brace",
+      "Fire Type Brace",
+      "Water Type Brace",
+      "Electric Type Brace",
+      "Grass Type Brace",
+      "Ice Type Brace",
+      "Fighting Type Brace",
+      "Poison Type Brace",
+      "Ground Type Brace",
+      "Flying Type Brace",
+      "Psychic Type Brace",
+      "Bug Type Brace",
+      "Rock Type Brace",
+      "Ghost Type Brace",
+      "Dragon Type Brace",
+      "Dark Type Brace",
+      "Steel Type Brace",
+      "Fairy Type Brace"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Winter Cloak": {
+    "name": "Winter Cloak",
+    "categories": [
+      "Held Item"
+    ],
+    "effects": [
+      "The user does not take damage from Hail. Accessory Item for Trainers."
+    ],
+    "costs": [
+      "$1500"
+    ],
+    "sections": [
+      "Held Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Type Gem": {
+    "name": "Type Gem",
+    "categories": [
+      "Held Item"
+    ],
+    "effects": [
+      "These items come in a variety of each of the Elemental Types, and are consumed as a Free Action to give a +3 Damage Base bonus to one attack of their Type. Off-hand or Accessory Slot Item for Trainers --"
+    ],
+    "costs": [],
+    "sections": [
+      "Held Items"
+    ],
+    "aliases": [
+      "Normal Type Gem",
+      "Fire Type Gem",
+      "Water Type Gem",
+      "Electric Type Gem",
+      "Grass Type Gem",
+      "Ice Type Gem",
+      "Fighting Type Gem",
+      "Poison Type Gem",
+      "Ground Type Gem",
+      "Flying Type Gem",
+      "Psychic Type Gem",
+      "Bug Type Gem",
+      "Rock Type Gem",
+      "Ghost Type Gem",
+      "Dragon Type Gem",
+      "Dark Type Gem",
+      "Steel Type Gem",
+      "Fairy Type Gem"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Type Plate": {
+    "name": "Type Plate",
+    "categories": [
+      "Held Item"
+    ],
+    "effects": [
+      "These Rare items come in a variety of each of the Elemental Types, and act as both a Type Booster and a Type Brace. Accessory Slot Item for Trainers. --"
+    ],
+    "costs": [],
+    "sections": [
+      "Held Items"
+    ],
+    "aliases": [
+      "Normal Type Plate",
+      "Fire Type Plate",
+      "Water Type Plate",
+      "Electric Type Plate",
+      "Grass Type Plate",
+      "Ice Type Plate",
+      "Fighting Type Plate",
+      "Poison Type Plate",
+      "Ground Type Plate",
+      "Flying Type Plate",
+      "Psychic Type Plate",
+      "Bug Type Plate",
+      "Rock Type Plate",
+      "Ghost Type Plate",
+      "Dragon Type Plate",
+      "Dark Type Plate",
+      "Steel Type Plate",
+      "Fairy Type Plate"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Mega Stone": {
+    "name": "Mega Stone",
+    "categories": [
+      "Held Item"
+    ],
+    "effects": [
+      "An item that allows a Pokémon to Mega Evolve when used in conjunction with a Mega Ring. Each Mega Stone is specific to one species and Mega Evolved form. --"
+    ],
+    "costs": [],
+    "sections": [
+      "Held Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Metal Powder": {
+    "name": "Metal Powder",
+    "categories": [
+      "Held Item"
+    ],
+    "effects": [
+      "When held by an untransformed Ditto, increases both Defense and Special Defense by +2 Combat Stages. Cannot be used by Trainers. --"
+    ],
+    "costs": [],
+    "sections": [
+      "Held Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Rare Leek": {
+    "name": "Rare Leek",
+    "categories": [
+      "Held Item"
+    ],
+    "effects": [
+      "When held by a Farfetch’d, this rare Leek increase the holder’s critical range by 2. Rare Leeks are Wielded. Cannot be used by Trainers. --"
+    ],
+    "costs": [],
+    "sections": [
+      "Held Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Thick Club": {
+    "name": "Thick Club",
+    "categories": [
+      "Held Item"
+    ],
+    "effects": [
+      "When held by a Cubone or Marowak, this rare, dense bone grants the Pure Power Ability. Thick Clubs are Wielded. Cannot be used by Trainers. --"
+    ],
+    "costs": [],
+    "sections": [
+      "Held Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Pink Pearl": {
+    "name": "Pink Pearl",
+    "categories": [
+      "Held Item"
+    ],
+    "effects": [
+      "Acts as a Psychic Type Booster. If held by a Spoink, it also acts as a Special Attack Stat Booster. --"
+    ],
+    "costs": [],
+    "sections": [
+      "Held Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Egg Warmer": {
+    "name": "Egg Warmer",
+    "categories": [
+      "Pokémon Toolkit"
+    ],
+    "effects": [
+      "Egg Warmers are insulated cases that carry up to four Pokémon Eggs and protect them from harm. They also cause Pokémon to hatch twice as fast; each day spent in an Egg Warmer counts as 2 days for the purposes of Hatch Rate. Egg Warmers cost $2500."
+    ],
+    "costs": [
+      "Egg Warmers cost $2500"
+    ],
+    "sections": [
+      "Pokémon Toolkits"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Groomer’s Kit": {
+    "name": "Groomer’s Kit",
+    "categories": [
+      "Pokémon Toolkit"
+    ],
+    "effects": [
+      "Used by Trainers with the Groomer Edge to clean their Pokémon. Costs $500."
+    ],
+    "costs": [
+      "Costs $500"
+    ],
+    "sections": [
+      "Pokémon Toolkits"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Reanimation Machine": {
+    "name": "Reanimation Machine",
+    "categories": [
+      "Pokémon Toolkit"
+    ],
+    "effects": [
+      "Can be used to revive Fossils. Reanimation Machines also come in a smaller but more expensive Portable variety. Prices are up to GM discretion, often upwards of $10,000. See the Pokémon Fossils section for more details (page 216)."
+    ],
+    "costs": [
+      "Prices are up to GM discretion, often upwards of $10,000"
+    ],
+    "sections": [
+      "Pokémon Toolkits"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Fire Stone": {
+    "name": "Fire Stone",
+    "categories": [
+      "Evolutionary Stone"
+    ],
+    "effects": [
+      "Evolves Vulpix, Growlithe, Eevee, Pansear"
+    ],
+    "costs": [
+      "$3000"
+    ],
+    "sections": [
+      "Evolutionary Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Water Stone": {
+    "name": "Water Stone",
+    "categories": [
+      "Evolutionary Stone"
+    ],
+    "effects": [
+      "Evolves Poliwhirl, Shellder, Staryu, Eevee, Lombre, Panpour"
+    ],
+    "costs": [
+      "$3000"
+    ],
+    "sections": [
+      "Evolutionary Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Thunder Stone": {
+    "name": "Thunder Stone",
+    "categories": [
+      "Evolutionary Stone"
+    ],
+    "effects": [
+      "Evolves Pikachu, Eevee, Eelektrik"
+    ],
+    "costs": [
+      "$3000"
+    ],
+    "sections": [
+      "Evolutionary Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Leaf Stone": {
+    "name": "Leaf Stone",
+    "categories": [
+      "Evolutionary Stone"
+    ],
+    "effects": [
+      "Evolves Gloom, Weepinbell, Exeggcute, Eevee, Nuzleaf, Pansage"
+    ],
+    "costs": [
+      "$3000"
+    ],
+    "sections": [
+      "Evolutionary Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Moon Stone": {
+    "name": "Moon Stone",
+    "categories": [
+      "Evolutionary Stone"
+    ],
+    "effects": [
+      "Evolves Nidorina, Nidorino, Clefairy, Jigglypuff, Eevee, Skitty, Munna"
+    ],
+    "costs": [
+      "$3000"
+    ],
+    "sections": [
+      "Evolutionary Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Sun Stone": {
+    "name": "Sun Stone",
+    "categories": [
+      "Evolutionary Stone"
+    ],
+    "effects": [
+      "Evolves Gloom, Sunkern, Cottonee, Petilil, Helioptile"
+    ],
+    "costs": [
+      "$3000"
+    ],
+    "sections": [
+      "Evolutionary Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Shiny Stone": {
+    "name": "Shiny Stone",
+    "categories": [
+      "Evolutionary Stone"
+    ],
+    "effects": [
+      "Evolves Eevee, Togetic, Roselia, Minccino, Floette"
+    ],
+    "costs": [
+      "$3000"
+    ],
+    "sections": [
+      "Evolutionary Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Dusk Stone": {
+    "name": "Dusk Stone",
+    "categories": [
+      "Evolutionary Stone"
+    ],
+    "effects": [
+      "Evolves Eevee, Murkrow, Misdreavus, Lampent, Doublade"
+    ],
+    "costs": [
+      "$3000"
+    ],
+    "sections": [
+      "Evolutionary Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Dawn Stone": {
+    "name": "Dawn Stone",
+    "categories": [
+      "Evolutionary Stone"
+    ],
+    "effects": [
+      "Evolves Eevee, Male Kirlia, Female Snorunt"
+    ],
+    "costs": [
+      "$3000"
+    ],
+    "sections": [
+      "Evolutionary Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Deepseascale/Deepseatooth": {
+    "name": "Deepseascale/Deepseatooth",
+    "categories": [
+      "Evolutionary Keepsake"
+    ],
+    "effects": [
+      "Evolves Clamperl"
+    ],
+    "costs": [
+      "$3000"
+    ],
+    "sections": [
+      "Evolutionary Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Dragon Scale": {
+    "name": "Dragon Scale",
+    "categories": [
+      "Evolutionary Keepsake"
+    ],
+    "effects": [
+      "Evolves Seadra"
+    ],
+    "costs": [
+      "$3000"
+    ],
+    "sections": [
+      "Evolutionary Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Dubious Disc": {
+    "name": "Dubious Disc",
+    "categories": [
+      "Evolutionary Keepsake"
+    ],
+    "effects": [
+      "Evolves Porygon2"
+    ],
+    "costs": [
+      "$3000"
+    ],
+    "sections": [
+      "Evolutionary Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Electirizer": {
+    "name": "Electirizer",
+    "categories": [
+      "Evolutionary Keepsake"
+    ],
+    "effects": [
+      "Evolves Electabuzz"
+    ],
+    "costs": [
+      "$3000"
+    ],
+    "sections": [
+      "Evolutionary Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Oval Stone": {
+    "name": "Oval Stone",
+    "categories": [
+      "Evolutionary Keepsake"
+    ],
+    "effects": [
+      "Evolves Happiny"
+    ],
+    "costs": [
+      "$3000"
+    ],
+    "sections": [
+      "Evolutionary Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Magmarizer": {
+    "name": "Magmarizer",
+    "categories": [
+      "Evolutionary Keepsake"
+    ],
+    "effects": [
+      "Evolves Magmar"
+    ],
+    "costs": [
+      "$3000"
+    ],
+    "sections": [
+      "Evolutionary Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Metal Coat": {
+    "name": "Metal Coat",
+    "categories": [
+      "Evolutionary Keepsake"
+    ],
+    "effects": [
+      "Evolves Onix, Scyther"
+    ],
+    "costs": [
+      "$3000"
+    ],
+    "sections": [
+      "Evolutionary Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Protector": {
+    "name": "Protector",
+    "categories": [
+      "Evolutionary Keepsake"
+    ],
+    "effects": [
+      "Evolves Rhydon"
+    ],
+    "costs": [
+      "$3000"
+    ],
+    "sections": [
+      "Evolutionary Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Reaper Cloth": {
+    "name": "Reaper Cloth",
+    "categories": [
+      "Evolutionary Keepsake"
+    ],
+    "effects": [
+      "Evolves Dusclops"
+    ],
+    "costs": [
+      "$3000"
+    ],
+    "sections": [
+      "Evolutionary Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Sachet": {
+    "name": "Sachet",
+    "categories": [
+      "Evolutionary Keepsake"
+    ],
+    "effects": [
+      "Evolves Spritzee"
+    ],
+    "costs": [
+      "$3000"
+    ],
+    "sections": [
+      "Evolutionary Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Up-Grade": {
+    "name": "Up-Grade",
+    "categories": [
+      "Evolutionary Keepsake"
+    ],
+    "effects": [
+      "Evolves Porygon"
+    ],
+    "costs": [
+      "$3000"
+    ],
+    "sections": [
+      "Evolutionary Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Whipped Dream": {
+    "name": "Whipped Dream",
+    "categories": [
+      "Evolutionary Keepsake"
+    ],
+    "effects": [
+      "Evolves Swirlix"
+    ],
+    "costs": [
+      "$3000"
+    ],
+    "sections": [
+      "Evolutionary Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "HP Up": {
+    "name": "HP Up",
+    "categories": [
+      "Vitamin"
+    ],
+    "effects": [
+      "Raise the user’s HP Base Stat 1."
+    ],
+    "costs": [
+      "$4900"
+    ],
+    "sections": [
+      "Vitamins"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Protein": {
+    "name": "Protein",
+    "categories": [
+      "Vitamin"
+    ],
+    "effects": [
+      "Raise the user’s Attack Base Stat 1."
+    ],
+    "costs": [
+      "$4900"
+    ],
+    "sections": [
+      "Vitamins"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Iron": {
+    "name": "Iron",
+    "categories": [
+      "Vitamin"
+    ],
+    "effects": [
+      "Ball The Holder’s Speed is halved, and any immunity to Ground Type is lost. Hand Item for Trainers. Standard Action to drop. $900 King’s Rock Attacks cause Flinch on a roll of 19+. This does not stack with any abilities, moves, or effects that extend flinch rate. Head Item for Trainers. $2500 Lagging Item The Lagging Items are tied to a specific Stat. When held, they set that Stat to -4 Combat Stages. Cannot be used by Trainers. Standard Action to drop. $900 Lax Incense +1 to all Stat Evasions. Cannot be used by Trainers. $2000 Life Orb Whenever the holder deals direct damage, increase the damage by +5, and then the holder loses Hit Points equal to 1/16th of their Max Hit Points. Off-Hand Item for Trainers. $3700 Luck Incense Grants +1 Bonus to all Accuracy Rolls. A roll of 1 always misses. Cannot be used by Trainers. $1800 Quick Claw The user adds +10 to their Initiative. Accessory Item for Trainers. $4200 Razor Claw The holder’s damaging attacks have their Critical Hit Range extended by +1. $3000 Razor Fang The holder’s damaging attacks cause an Injury on a roll of 19+. Accessory Item for Trainers. $3000 Safety Goggles The holder is immune to Moves with the Powder Keyword. Accessory or Head Item for Trainers. $1500 Shell Bell Whenever the user damages a foe, they gain a Tick of Temporary Hit Points. Accessory Item for Trainers. $5200 Shock Collar Comes with a remote activator, which when pressed, causes the Pokémon or Trainer wearing the shock collar to lose Hit Points equal to 1/6th of their Max Hit Points. This may be used to activate the “Press” Feature. Collars that work on Ground Type Pokémon are available for an additional $500. $3500 Stat Boosters These items have a chosen Stat, either Attack, Defense, Special Attack, Special Defense, Speed, Evasion, or Accuracy. These items cause the default Stage of their linked Stat to be +1 Combat Stage instead of 0, or simply +1 for Accuracy and Evasion. Accessory Item for Trainers. $4000 Toxic Orb Induces Poison on holder. Off-Hand Item for Trainers. Standard Action to drop. $4800 Type Boosters These items come in a variety of each of the Elemental Types, and grants a +5 Damage Bonus to all direct damage Moves of its Specific Type when performed by the user. Accessory Item for Trainers. $1800 Type Brace These items come in a variety of each of the Elemental Types, and grant the holder 15 Damage Reduction against that specific Type. Accessory Item for Trainers. $2000 Winter Cloak The user does not take damage from Hail. Accessory Item for Trainers. $1500 Type Gem These items come in a variety of each of the Elemental Types, and are consumed as a Free Action to give a +3 Damage Base bonus to one attack of their Type. Off-hand or Accessory Slot Item for Trainers -- Type Plate These Rare items come in a variety of each of the Elemental Types, and act as both a Type Booster and a Type Brace. Accessory Slot Item for Trainers. -- Mega Stone An item that allows a Pokémon to Mega Evolve when used in conjunction with a Mega Ring. Each Mega Stone is specific to one species and Mega Evolved form. -- Metal Powder When held by an untransformed Ditto, increases both Defense and Special Defense by +2 Combat Stages. Cannot be used by Trainers. -- Rare Leek When held by a Farfetch’d, this rare Leek increase the holder’s critical range by 2. Rare Leeks are Wielded. Cannot be used by Trainers. -- Thick Club When held by a Cubone or Marowak, this rare, dense bone grants the Pure Power Ability. Thick Clubs are Wielded. Cannot be used by Trainers. -- Pink Pearl Acts as a Psychic Type Booster. If held by a Spoink, it also acts as a Special Attack Stat Booster. -- Pokémon Toolkits The following Items help with various tasks related to the raising of Pokémon. Egg Warmer: Egg Warmers are insulated cases that carry up to four Pokémon Eggs and protect them from harm. They also cause Pokémon to hatch twice as fast; each day spent in an Egg Warmer counts as 2 days for the purposes of Hatch Rate. Egg Warmers cost $2500. Groomer’s Kit: Used by Trainers with the Groomer Edge to clean their Pokémon. Costs $500. Reanimation Machine: Can be used to revive Fossils. Reanimation Machines also come in a smaller but more expensive Portable variety. Prices are up to GM discretion, often upwards of $10,000. See the Pokémon Fossils section for more details (page 216). Evolutionary Items Some Pokémon evolve upon contact with radioactive Elemental Stones, while rarer evolutions take place only once a Pokémon becomes bonded to a keepsake of sorts. Here are the relevant Elemental Stones and a list of Evolutionary Keepsake. All of these items can be bought for $3000 in major stores. Evolutionary Stones Item Fire Stone Evolves Vulpix, Growlithe, Eevee, Pansear Water Stone Evolves Poliwhirl, Shellder, Staryu, Eevee, Lombre, Panpour Thunder Stone Evolves Pikachu, Eevee, Eelektrik Leaf Stone Evolves Gloom, Weepinbell, Exeggcute, Eevee, Nuzleaf, Pansage Moon Stone Evolves Nidorina, Nidorino, Clefairy, Jigglypuff, Eevee, Skitty, Munna Sun Stone Evolves Gloom, Sunkern, Cottonee, Petilil, Helioptile Shiny Stone Evolves Eevee, Togetic, Roselia, Minccino, Floette Dusk Stone Evolves Eevee, Murkrow, Misdreavus, Lampent, Doublade Dawn Stone Evolves Eevee, Male Kirlia, Female Snorunt Evolutionary Keepsakes Item Deepseascale/ Deepseatooth Evolves Clamperl Dragon Scale Evolves Seadra Dubious Disc Evolves Porygon2 Electirizer Evolves Electabuzz King’s Rock Evolves Poliwhirl, Slowpoke Oval Stone Evolves Happiny Magmarizer Evolves Magmar Metal Coat Evolves Onix, Scyther Protector Evolves Rhydon Razor Claw Evolves Sneasel Razor Fang Evolves Gligar Reaper Cloth Evolves Dusclops Sachet Evolves Spritzee Up-Grade Evolves Porygon Whipped Dream Evolves Swirlix Vitamins Vitamins are special nutritional drinks which can permanently improve aspects of your Pokémon. However, you may only get use out of up to five Vitamins per Pokémon. After you have used five Vitamins on a Pokémon, any Vitamins fed to a Pokémon afterwards will have no effect. Raise the user’s Defense Base Stat 1."
+    ],
+    "costs": [
+      "$4900"
+    ],
+    "sections": [
+      "Vitamins"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Calcium": {
+    "name": "Calcium",
+    "categories": [
+      "Vitamin"
+    ],
+    "effects": [
+      "Raise the user’s Special Attack Base Stat 1."
+    ],
+    "costs": [
+      "$4900"
+    ],
+    "sections": [
+      "Vitamins"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Zinc": {
+    "name": "Zinc",
+    "categories": [
+      "Vitamin"
+    ],
+    "effects": [
+      "Raise the user’s Special Defense Base Stat 1."
+    ],
+    "costs": [
+      "$4900"
+    ],
+    "sections": [
+      "Vitamins"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Carbos": {
+    "name": "Carbos",
+    "categories": [
+      "Vitamin"
+    ],
+    "effects": [
+      "Raise the user’s Speed Base Stat 1."
+    ],
+    "costs": [
+      "$4900"
+    ],
+    "sections": [
+      "Vitamins"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Heart Booster": {
+    "name": "Heart Booster",
+    "categories": [
+      "Vitamin"
+    ],
+    "effects": [
+      "The Pokémon gains 2 Tutor Points. Use only one per Pokémon."
+    ],
+    "costs": [
+      "$9800"
+    ],
+    "sections": [
+      "Vitamins"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "PP Up": {
+    "name": "PP Up",
+    "categories": [
+      "Vitamin"
+    ],
+    "effects": [
+      "Raise one of the user’s Move’s Frequency one level. Use only one per Pokémon."
+    ],
+    "costs": [
+      "$9800"
+    ],
+    "sections": [
+      "Vitamins"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Heart Scale": {
+    "name": "Heart Scale",
+    "categories": [
+      "Related Vitamin Item"
+    ],
+    "effects": [
+      "This tiny rainbow scale from a Luvdisc is valued by Apothecary Researchers, because it can be used to create the Heart Booster vitamin. Luvdiscs will produce them occasionally; they can be found along sandy beaches, and ancient ones can be found in desert, caves, or underground. Heart Scales cannot normally be bought, but Heart Boosters are detailed in the vitamins section."
+    ],
+    "costs": [],
+    "sections": [
+      "Vitamins"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Rare Candy": {
+    "name": "Rare Candy",
+    "categories": [
+      "Related Vitamin Item"
+    ],
+    "effects": [
+      "These very rare treats are created from Shuckles that have held a Berry for a long time. When ingested by a Pokémon, the eater gains enough experience to reach its next Level. Pokémon may benefit from up to five Rare Candies in their lifetime. Rare Candies can cost $9800 or more."
+    ],
+    "costs": [
+      "$9800 or more"
+    ],
+    "sections": [
+      "Vitamins"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Stat Suppressants": {
+    "name": "Stat Suppressants",
+    "categories": [
+      "Medicine"
+    ],
+    "effects": [
+      "These medicines have an identical effect to the Suppressant Berries – they lower one of the user’s Base Stats by 1 point and only function if the Trainer of the Pokémon wants them to. These cost $500."
+    ],
+    "costs": [
+      "$500"
+    ],
+    "sections": [
+      "Vitamins"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 01 - Hone Claws": {
+    "name": "TM 01 - Hone Claws",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Hone Claws. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$1200"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Hone Claws TM",
+      "Hone Claws",
+      "TM 01",
+      "TM01"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 26 - Earthquake": {
+    "name": "TM 26 - Earthquake",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Earthquake. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$4000"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Earthquake TM",
+      "Earthquake",
+      "TM 26",
+      "TM26"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 51 - Steel Wing": {
+    "name": "TM 51 - Steel Wing",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Steel Wing. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$2200"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Steel Wing TM",
+      "Steel Wing",
+      "TM 51",
+      "TM51"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 76 - Struggle Bug": {
+    "name": "TM 76 - Struggle Bug",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Struggle Bug. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$1700"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Struggle Bug TM",
+      "Struggle Bug",
+      "TM 76",
+      "TM76"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 02 - Dragon Claw": {
+    "name": "TM 02 - Dragon Claw",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Dragon Claw. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$2400"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Dragon Claw TM",
+      "Dragon Claw",
+      "TM 02",
+      "TM02"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 27 - Return": {
+    "name": "TM 27 - Return",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Return. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$3000"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Return TM",
+      "Return",
+      "TM 27",
+      "TM27"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 52 - Focus Blast": {
+    "name": "TM 52 - Focus Blast",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Focus Blast. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$4400"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Focus Blast TM",
+      "Focus Blast",
+      "TM 52",
+      "TM52"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 77 - Psych Up": {
+    "name": "TM 77 - Psych Up",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Psych Up. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$2100"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Psych Up TM",
+      "Psych Up",
+      "TM 77",
+      "TM77"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 03 - Psyshock": {
+    "name": "TM 03 - Psyshock",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Psyshock. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$2900"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Psyshock TM",
+      "Psyshock",
+      "TM 03",
+      "TM03"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 28 - Dig": {
+    "name": "TM 28 - Dig",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Dig. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$3400"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Dig TM",
+      "Dig",
+      "TM 28",
+      "TM28"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 53 - Energy Ball": {
+    "name": "TM 53 - Energy Ball",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Energy Ball. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$2700"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Energy Ball TM",
+      "Energy Ball",
+      "TM 53",
+      "TM53"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 78 - Bulldoze": {
+    "name": "TM 78 - Bulldoze",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Bulldoze. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$2400"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Bulldoze TM",
+      "Bulldoze",
+      "TM 78",
+      "TM78"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 04 - Calm Mind": {
+    "name": "TM 04 - Calm Mind",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Calm Mind. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$1200"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Calm Mind TM",
+      "Calm Mind",
+      "TM 04",
+      "TM04"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 29 - Psychic": {
+    "name": "TM 29 - Psychic",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Psychic. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$3000"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Psychic TM",
+      "Psychic",
+      "TM 29",
+      "TM29"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 54 - False Swipe": {
+    "name": "TM 54 - False Swipe",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches False Swipe. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$1200"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "False Swipe TM",
+      "False Swipe",
+      "TM 54",
+      "TM54"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 79 - Frost Breath": {
+    "name": "TM 79 - Frost Breath",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Frost Breath. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$1000"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Frost Breath TM",
+      "Frost Breath",
+      "TM 79",
+      "TM79"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 05 - Roar": {
+    "name": "TM 05 - Roar",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Roar. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$1000"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Roar TM",
+      "Roar",
+      "TM 05",
+      "TM05"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 30 - Shadow Ball": {
+    "name": "TM 30 - Shadow Ball",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Shadow Ball. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$2700"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Shadow Ball TM",
+      "Shadow Ball",
+      "TM 30",
+      "TM30"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 55 - Scald": {
+    "name": "TM 55 - Scald",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Scald. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$3000"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Scald TM",
+      "Scald",
+      "TM 55",
+      "TM55"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 80 - Rock Slide": {
+    "name": "TM 80 - Rock Slide",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Rock Slide. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$4200"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Rock Slide TM",
+      "Rock Slide",
+      "TM 80",
+      "TM80"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 06 - Toxic": {
+    "name": "TM 06 - Toxic",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Toxic. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$1900"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Toxic TM",
+      "Toxic",
+      "TM 06",
+      "TM06"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 31 - Brick Break": {
+    "name": "TM 31 - Brick Break",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Brick Break. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$2400"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Brick Break TM",
+      "Brick Break",
+      "TM 31",
+      "TM31"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 56 - Fling": {
+    "name": "TM 56 - Fling",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Fling. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$2000"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Fling TM",
+      "Fling",
+      "TM 56",
+      "TM56"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 81 - X-Scissor": {
+    "name": "TM 81 - X-Scissor",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches X-Scissor. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$2400"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "X-Scissor TM",
+      "X-Scissor",
+      "TM 81",
+      "TM81"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 07 - Hail": {
+    "name": "TM 07 - Hail",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Hail. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$1500"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Hail TM",
+      "Hail",
+      "TM 07",
+      "TM07"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 32 - Double Team": {
+    "name": "TM 32 - Double Team",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Double Team. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$2500"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Double Team TM",
+      "Double Team",
+      "TM 32",
+      "TM32"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 57 - Charge Beam": {
+    "name": "TM 57 - Charge Beam",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Charge Beam. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$2300"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Charge Beam TM",
+      "Charge Beam",
+      "TM 57",
+      "TM57"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 82 - Dragon Tail": {
+    "name": "TM 82 - Dragon Tail",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Dragon Tail. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$2800"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Dragon Tail TM",
+      "Dragon Tail",
+      "TM 82",
+      "TM82"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 08 - Bulk Up": {
+    "name": "TM 08 - Bulk Up",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Bulk Up. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$1200"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Bulk Up TM",
+      "Bulk Up",
+      "TM 08",
+      "TM08"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 33 - Reflect": {
+    "name": "TM 33 - Reflect",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Reflect. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$1500"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Reflect TM",
+      "Reflect",
+      "TM 33",
+      "TM33"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 58 - Sky Drop": {
+    "name": "TM 58 - Sky Drop",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Sky Drop. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$2800"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Sky Drop TM",
+      "Sky Drop",
+      "TM 58",
+      "TM58"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 83 - Infestation": {
+    "name": "TM 83 - Infestation",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Infestation. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$2200"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Infestation TM",
+      "Infestation",
+      "TM 83",
+      "TM83"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 09 - Venoshock": {
+    "name": "TM 09 - Venoshock",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Venoshock. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$2300"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Venoshock TM",
+      "Venoshock",
+      "TM 09",
+      "TM09"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 34 - Sludge Wave": {
+    "name": "TM 34 - Sludge Wave",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Sludge Wave. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$4200"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Sludge Wave TM",
+      "Sludge Wave",
+      "TM 34",
+      "TM34"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 59 - Incinerate": {
+    "name": "TM 59 - Incinerate",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Incinerate. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$1400"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Incinerate TM",
+      "Incinerate",
+      "TM 59",
+      "TM59"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 84 - Poison Jab": {
+    "name": "TM 84 - Poison Jab",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Poison Jab. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$3000"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Poison Jab TM",
+      "Poison Jab",
+      "TM 84",
+      "TM84"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 10 - Hidden Power": {
+    "name": "TM 10 - Hidden Power",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Hidden Power. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$1500"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Hidden Power TM",
+      "Hidden Power",
+      "TM 10",
+      "TM10"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 35 - Flamethrower": {
+    "name": "TM 35 - Flamethrower",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Flamethrower. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$4200"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Flamethrower TM",
+      "Flamethrower",
+      "TM 35",
+      "TM35"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 60 - Quash": {
+    "name": "TM 60 - Quash",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Quash. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$1000"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Quash TM",
+      "Quash",
+      "TM 60",
+      "TM60"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 85 - Dream Eater": {
+    "name": "TM 85 - Dream Eater",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Dream Eater. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$3000"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Dream Eater TM",
+      "Dream Eater",
+      "TM 85",
+      "TM85"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 11 - Sunny Day": {
+    "name": "TM 11 - Sunny Day",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Sunny Day. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$1500"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Sunny Day TM",
+      "Sunny Day",
+      "TM 11",
+      "TM11"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 36 - Sludge Bomb": {
+    "name": "TM 36 - Sludge Bomb",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Sludge Bomb. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$4300"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Sludge Bomb TM",
+      "Sludge Bomb",
+      "TM 36",
+      "TM36"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 61 - Will-O-Wisp": {
+    "name": "TM 61 - Will-O-Wisp",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Will-O-Wisp. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$2200"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Will-O-Wisp TM",
+      "Will-O-Wisp",
+      "TM 61",
+      "TM61"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 86 - Grass Knot": {
+    "name": "TM 86 - Grass Knot",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Grass Knot. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$2900"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Grass Knot TM",
+      "Grass Knot",
+      "TM 86",
+      "TM86"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 12 - Taunt": {
+    "name": "TM 12 - Taunt",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Taunt. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$1000"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Taunt TM",
+      "Taunt",
+      "TM 12",
+      "TM12"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 37 - Sandstorm": {
+    "name": "TM 37 - Sandstorm",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Sandstorm. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$1500"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Sandstorm TM",
+      "Sandstorm",
+      "TM 37",
+      "TM37"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 62 - Acrobatics": {
+    "name": "TM 62 - Acrobatics",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Acrobatics. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$2800"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Acrobatics TM",
+      "Acrobatics",
+      "TM 62",
+      "TM62"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 87 - Swagger": {
+    "name": "TM 87 - Swagger",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Swagger. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$1000"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Swagger TM",
+      "Swagger",
+      "TM 87",
+      "TM87"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 13 - Ice Beam": {
+    "name": "TM 13 - Ice Beam",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Ice Beam. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$4200"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Ice Beam TM",
+      "Ice Beam",
+      "TM 13",
+      "TM13"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 38 - Fire Blast": {
+    "name": "TM 38 - Fire Blast",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Fire Blast. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$5100"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Fire Blast TM",
+      "Fire Blast",
+      "TM 38",
+      "TM38"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 63 - Embargo": {
+    "name": "TM 63 - Embargo",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Embargo. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$1000"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Embargo TM",
+      "Embargo",
+      "TM 63",
+      "TM63"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 88 - Sleep Talk": {
+    "name": "TM 88 - Sleep Talk",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Sleep Talk. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$1500"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Sleep Talk TM",
+      "Sleep Talk",
+      "TM 88",
+      "TM88"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 14 - Blizzard": {
+    "name": "TM 14 - Blizzard",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Blizzard. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$5100"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Blizzard TM",
+      "Blizzard",
+      "TM 14",
+      "TM14"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 39 - Rock Tomb": {
+    "name": "TM 39 - Rock Tomb",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Rock Tomb. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$2800"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Rock Tomb TM",
+      "Rock Tomb",
+      "TM 39",
+      "TM39"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 64 - Explosion": {
+    "name": "TM 64 - Explosion",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Explosion. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$7500"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Explosion TM",
+      "Explosion",
+      "TM 64",
+      "TM64"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 89 - U-Turn": {
+    "name": "TM 89 - U-Turn",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches U-Turn. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$3100"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "U-Turn TM",
+      "U-Turn",
+      "TM 89",
+      "TM89"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 15 - Hyper Beam": {
+    "name": "TM 15 - Hyper Beam",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Hyper Beam. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$5000"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Hyper Beam TM",
+      "Hyper Beam",
+      "TM 15",
+      "TM15"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 40 - Aerial Ace": {
+    "name": "TM 40 - Aerial Ace",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Aerial Ace. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$2800"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Aerial Ace TM",
+      "Aerial Ace",
+      "TM 40",
+      "TM40"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 65 - Shadow Claw": {
+    "name": "TM 65 - Shadow Claw",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Shadow Claw. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$2400"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Shadow Claw TM",
+      "Shadow Claw",
+      "TM 65",
+      "TM65"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 90 - Substitute": {
+    "name": "TM 90 - Substitute",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Substitute. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$2000"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Substitute TM",
+      "Substitute",
+      "TM 90",
+      "TM90"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 16 - Light Screen": {
+    "name": "TM 16 - Light Screen",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Light Screen. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$1500"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Light Screen TM",
+      "Light Screen",
+      "TM 16",
+      "TM16"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 41 - Torment": {
+    "name": "TM 41 - Torment",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Torment. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$1000"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Torment TM",
+      "Torment",
+      "TM 41",
+      "TM41"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 66 - Payback": {
+    "name": "TM 66 - Payback",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Payback. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$2500"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Payback TM",
+      "Payback",
+      "TM 66",
+      "TM66"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 91 - Flash Cannon": {
+    "name": "TM 91 - Flash Cannon",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Flash Cannon. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$2700"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Flash Cannon TM",
+      "Flash Cannon",
+      "TM 91",
+      "TM91"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 17 - Protect": {
+    "name": "TM 17 - Protect",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Protect. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$2500"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Protect TM",
+      "Protect",
+      "TM 17",
+      "TM17"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 42 - Facade": {
+    "name": "TM 42 - Facade",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Facade. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$3100"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Facade TM",
+      "Facade",
+      "TM 42",
+      "TM42"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 67 - Retaliate": {
+    "name": "TM 67 - Retaliate",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Retaliate. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$3600"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Retaliate TM",
+      "Retaliate",
+      "TM 67",
+      "TM67"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 92 - Trick Room": {
+    "name": "TM 92 - Trick Room",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Trick Room. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$2000"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Trick Room TM",
+      "Trick Room",
+      "TM 92",
+      "TM92"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 18 - Rain Dance": {
+    "name": "TM 18 - Rain Dance",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Rain Dance. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$1500"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Rain Dance TM",
+      "Rain Dance",
+      "TM 18",
+      "TM18"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 43 - Flame Charge": {
+    "name": "TM 43 - Flame Charge",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Flame Charge. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$2100"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Flame Charge TM",
+      "Flame Charge",
+      "TM 43",
+      "TM43"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 68 - Giga Impact": {
+    "name": "TM 68 - Giga Impact",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Giga Impact. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$5000"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Giga Impact TM",
+      "Giga Impact",
+      "TM 68",
+      "TM68"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 93 - Wild Charge": {
+    "name": "TM 93 - Wild Charge",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Wild Charge. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$2500"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Wild Charge TM",
+      "Wild Charge",
+      "TM 93",
+      "TM93"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 19 - Roost": {
+    "name": "TM 19 - Roost",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Roost. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$2500"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Roost TM",
+      "Roost",
+      "TM 19",
+      "TM19"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 44 - Rest": {
+    "name": "TM 44 - Rest",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Rest. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$2000"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Rest TM",
+      "Rest",
+      "TM 44",
+      "TM44"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 69 - Rock Polish": {
+    "name": "TM 69 - Rock Polish",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Rock Polish. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$1200"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Rock Polish TM",
+      "Rock Polish",
+      "TM 69",
+      "TM69"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 94 - Rock Smash": {
+    "name": "TM 94 - Rock Smash",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Rock Smash. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$1500"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Rock Smash TM",
+      "Rock Smash",
+      "TM 94",
+      "TM94"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 20 - Safeguard": {
+    "name": "TM 20 - Safeguard",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Safeguard. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$1000"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Safeguard TM",
+      "Safeguard",
+      "TM 20",
+      "TM20"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 45 - Attract": {
+    "name": "TM 45 - Attract",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Attract. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$1200"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Attract TM",
+      "Attract",
+      "TM 45",
+      "TM45"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 70 - Flash": {
+    "name": "TM 70 - Flash",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Flash. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$1500"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Flash TM",
+      "Flash",
+      "TM 70",
+      "TM70"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 95 - Snarl": {
+    "name": "TM 95 - Snarl",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Snarl. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$2400"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Snarl TM",
+      "Snarl",
+      "TM 95",
+      "TM95"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 21 - Frustration": {
+    "name": "TM 21 - Frustration",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Frustration. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$3000"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Frustration TM",
+      "Frustration",
+      "TM 21",
+      "TM21"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 46 - Thief": {
+    "name": "TM 46 - Thief",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Thief. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$2200"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Thief TM",
+      "Thief",
+      "TM 46",
+      "TM46"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 71 - Stone Edge": {
+    "name": "TM 71 - Stone Edge",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Stone Edge. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$3900"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Stone Edge TM",
+      "Stone Edge",
+      "TM 71",
+      "TM71"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 96 - Nature Power": {
+    "name": "TM 96 - Nature Power",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Nature Power. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$2000"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Nature Power TM",
+      "Nature Power",
+      "TM 96",
+      "TM96"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 22 - Solarbeam": {
+    "name": "TM 22 - Solarbeam",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Solarbeam. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$4600"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Solarbeam TM",
+      "Solarbeam",
+      "TM 22",
+      "TM22"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 47 - Low Sweep": {
+    "name": "TM 47 - Low Sweep",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Low Sweep. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$2400"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Low Sweep TM",
+      "Low Sweep",
+      "TM 47",
+      "TM47"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 72 - Volt Switch": {
+    "name": "TM 72 - Volt Switch",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Volt Switch. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$3100"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Volt Switch TM",
+      "Volt Switch",
+      "TM 72",
+      "TM72"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 97 - Dark Pulse": {
+    "name": "TM 97 - Dark Pulse",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Dark Pulse. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$2700"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Dark Pulse TM",
+      "Dark Pulse",
+      "TM 97",
+      "TM97"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 23 - Smack Down": {
+    "name": "TM 23 - Smack Down",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Smack Down. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$2500"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Smack Down TM",
+      "Smack Down",
+      "TM 23",
+      "TM23"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 48 - Round": {
+    "name": "TM 48 - Round",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Round. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$2800"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Round TM",
+      "Round",
+      "TM 48",
+      "TM48"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 73 - Thunder Wave": {
+    "name": "TM 73 - Thunder Wave",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Thunder Wave. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$2200"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Thunder Wave TM",
+      "Thunder Wave",
+      "TM 73",
+      "TM73"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 98 - Power-Up Punch": {
+    "name": "TM 98 - Power-Up Punch",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Power-Up Punch. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$2300"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Power-Up Punch TM",
+      "Power-Up Punch",
+      "TM 98",
+      "TM98"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 24 - Thunderbolt": {
+    "name": "TM 24 - Thunderbolt",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Thunderbolt. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$4200"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Thunderbolt TM",
+      "Thunderbolt",
+      "TM 24",
+      "TM24"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 49 - Echoed Voice": {
+    "name": "TM 49 - Echoed Voice",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Echoed Voice. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$1500"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Echoed Voice TM",
+      "Echoed Voice",
+      "TM 49",
+      "TM49"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 74 - Gyro Ball": {
+    "name": "TM 74 - Gyro Ball",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Gyro Ball. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$2500"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Gyro Ball TM",
+      "Gyro Ball",
+      "TM 74",
+      "TM74"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 99 - Dazzling Gleam": {
+    "name": "TM 99 - Dazzling Gleam",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Dazzling Gleam. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$2700"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Dazzling Gleam TM",
+      "Dazzling Gleam",
+      "TM 99",
+      "TM99"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 25 - Thunder": {
+    "name": "TM 25 - Thunder",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Thunder. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$5100"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Thunder TM",
+      "Thunder",
+      "TM 25",
+      "TM25"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 50 - Overheat": {
+    "name": "TM 50 - Overheat",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Overheat. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$5100"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Overheat TM",
+      "Overheat",
+      "TM 50",
+      "TM50"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 75 - Swords Dance": {
+    "name": "TM 75 - Swords Dance",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Swords Dance. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$1200"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Swords Dance TM",
+      "Swords Dance",
+      "TM 75",
+      "TM75"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "TM 100 - Confide": {
+    "name": "TM 100 - Confide",
+    "categories": [
+      "TM"
+    ],
+    "effects": [
+      "Teaches Confide. TMs are one-time use items. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$1000"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Confide TM",
+      "Confide",
+      "TM 100",
+      "TM100"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "HM A1 - Cut": {
+    "name": "HM A1 - Cut",
+    "categories": [
+      "HM"
+    ],
+    "effects": [
+      "Teaches Cut. HMs may be used once per day. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$75"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Cut HM",
+      "Cut",
+      "HM A1",
+      "HMA1"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "HM A2 - Fly": {
+    "name": "HM A2 - Fly",
+    "categories": [
+      "HM"
+    ],
+    "effects": [
+      "Teaches Fly. HMs may be used once per day. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$3200"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Fly HM",
+      "Fly",
+      "HM A2",
+      "HMA2"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "HM A3 - Surf": {
+    "name": "HM A3 - Surf",
+    "categories": [
+      "HM"
+    ],
+    "effects": [
+      "Teaches Surf. HMs may be used once per day. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$5000"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Surf HM",
+      "Surf",
+      "HM A3",
+      "HMA3"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "HM A4 - Strength": {
+    "name": "HM A4 - Strength",
+    "categories": [
+      "HM"
+    ],
+    "effects": [
+      "Teaches Strength. HMs may be used once per day. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$3400"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Strength HM",
+      "Strength",
+      "HM A4",
+      "HMA4"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "HM A5 - Waterfall": {
+    "name": "HM A5 - Waterfall",
+    "categories": [
+      "HM"
+    ],
+    "effects": [
+      "Teaches Waterfall. HMs may be used once per day. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$3700"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Waterfall HM",
+      "Waterfall",
+      "HM A5",
+      "HMA5"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "HM A6 - Dive": {
+    "name": "HM A6 - Dive",
+    "categories": [
+      "HM"
+    ],
+    "effects": [
+      "Teaches Dive. HMs may be used once per day. Teaching the move takes about an hour, and normally costs the Pokémon 1 Tutor Point."
+    ],
+    "costs": [
+      "$2900"
+    ],
+    "sections": [
+      "TM Chart"
+    ],
+    "aliases": [
+      "Dive HM",
+      "Dive",
+      "HM A6",
+      "HMA6"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Caltrops": {
+    "name": "Caltrops",
+    "categories": [
+      "Combat Item"
+    ],
+    "effects": [
+      "These items let the user use the Move Spikes and Toxic Spikes, respectively, as a Standard Action. The item is then consumed. Caltrops are not usually sold in stores, but may be found from specialty shops for $500."
+    ],
+    "costs": [
+      "Caltrops are not usually sold in stores, but may be found from specialty shops for $500"
+    ],
+    "sections": [
+      "Combat Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Dream Mist": {
+    "name": "Dream Mist",
+    "categories": [
+      "Combat Item"
+    ],
+    "effects": [
+      "Dream Mist may be used as an AC 6 Melee Status Attack, performed as a Standard Action. If it hits, the target falls Asleep. Dream Mist is collected from Pokémon with the eponymous Capability using a Collection Jar but is also in rare occult shops for $500."
+    ],
+    "costs": [
+      "Dream Mist is collected from Pokémon with the eponymous Capability using a Collection Jar but is also in rare occult shops for $500"
+    ],
+    "sections": [
+      "Combat Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Magic Flute": {
+    "name": "Magic Flute",
+    "categories": [
+      "Combat Item"
+    ],
+    "effects": [
+      "Magic Flutes are rare artifacts made only by skilled crafters with occult knowledge. They are not usually found in stores. When a Flute is crafted, it is tied to a particular Status Condition. Once per day, the Flute may be played as a Standard Action. All Pokémon and Trainers within 20 meters of the Flute are cured of that Status. These rare artifacts cannot be found in most ordinary stores but may cost upwards of $4000 from an appropriate occult vendor."
+    ],
+    "costs": [
+      "These rare artifacts cannot be found in most ordinary stores but may cost upwards of $4000 from an appropriate occult vendor"
+    ],
+    "sections": [
+      "Combat Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Cleanse Tags": {
+    "name": "Cleanse Tags",
+    "categories": [
+      "Combat Item"
+    ],
+    "effects": [
+      "Cleanse Tags are small strips of paper with a prayer or incantation written on them. When created, the creator makes an Occult Education Roll; this is the Cleanse Tag’s Power Value. When glued, taped, or nailed to a surface, they stop Pokémon or Trainers within 30 meters of the tag from Phasing through that surface, as if it was solid, unless they make a Focus Skill Check with a result greater than the Tag’s Power Value. On a success, the tag is destroyed; on failure, the tag holds, and the encroacher cannot try again for at least an hour. They may also be stuck onto a weapon or appendage to let a Normal or Fighting-Type Attack hit a Ghost-Type Pokémon for Regularly-Effective Damage; once damage has been dealt, the Cleanse Tag is destroyed. Those with an Occult Education of Novice or higher can also burn a Cleanse Tag as a Standard Action to remove the Cursed, Suppressed, or Disabled condition from a single target within 5 meters. Those with an Occult Education of Expert or higher can burn a Cleanse Tags to cause all Pokémon and Trainers within 30 meters with the Invisibility and Phasing Capabilities to make a Focus Check; those whose result does not exceed the Tag’s Power Value lose both capabilities for 5 minutes. Cleanse Tags are simply made of paper and prayer and cannot normally be purchased. However, select occult shops may carry them for $500 or more depending on the rarity of occult knowledge in the setting. Tip: Don’t make your players have to purchase paper to make these … but also, if your Trainer for some reason can’t access his belongings at all, they may not be able to create Cleanse Tags unless they can find a scrap of paper and a writing utensil."
+    ],
+    "costs": [
+      "However, select occult shops may carry them for $500 or more depending on the rarity of occult knowledge in the setting"
+    ],
+    "sections": [
+      "Combat Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Toxic Caltrops": {
+    "name": "Toxic Caltrops",
+    "categories": [
+      "Combat Item"
+    ],
+    "effects": [
+      "These items let the user use the Move Toxic Spikes, respectively, as a Standard Action. The item is then consumed. Caltrops are not usually sold in stores, but may be found from specialty shops for $500."
+    ],
+    "costs": [
+      "$500"
+    ],
+    "sections": [
+      "Combat Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Smoke Ball": {
+    "name": "Smoke Ball",
+    "categories": [
+      "Combat Item"
+    ],
+    "effects": [
+      "When used, a Smoke Ball creates a 3 meter blast that fills the area with smoke, as if the move Smokescreen had been used. Smoke Balls can only be found in specialty shops for around $500."
+    ],
+    "costs": [
+      "$500"
+    ],
+    "sections": [
+      "Combat Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  }
+}

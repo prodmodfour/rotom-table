@@ -5,7 +5,7 @@ import type { CombatStageKey } from '~/types/combatStages'
  * spreadsheet (`pokesheet.pdf`).
  *
  * Almost everything is optional: the renderer pulls species defaults from
- * `ptu-data/data/pokedex.json` (types, base stats, capabilities, skills…) and
+ * `data/reference/pokedex.json` (types, base stats, capabilities, skills…) and
  * lets a sheet author override or layer on top of those defaults.
  */
 
@@ -154,7 +154,7 @@ export interface CharacterSheet {
    */
   folder?: string
   nickname: string
-  /** Matches a `species` value in `ptu-data/data/pokedex.json`; blank means no species selected yet. */
+  /** Matches a `species` value in `data/reference/pokedex.json`; blank means no species selected yet. */
   species: string
   level: number
   totalExp?: number

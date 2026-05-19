@@ -15,9 +15,9 @@ const filtered = computed(() => filterEdgesForIndex(edges, { searchTerm: searchT
   <div class="ref-index">
     <ReferenceIndexHeader title="Edges" :count="filtered.length" :total="edges.length">
       <p class="ref-copy">
-        Trainer Edges parsed from <code>core/03-skills-edges-and-features.md</code>.
-        Each is a small character-building unit with just Prerequisites and an
-        Effect — think Skill Edges, Crafting Edges, and Combat Edges.
+        PTU Trainer Edges from <code>data/reference/edges.json</code>. Each is a
+        small character-building unit with just Prerequisites and an Effect —
+        think Skill Edges, Crafting Edges, and Combat Edges.
       </p>
 
       <ReferenceSearchField

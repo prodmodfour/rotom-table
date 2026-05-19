@@ -33,7 +33,7 @@ const { saveSidebarScroll, setEntryListRef, sidebarRef } = usePokedexSidebarScro
       </div>
 
       <p class="sidebar-copy">
-        Browse every Pokémon entry from <code>ptu-data/data/pokedex.json</code>.
+        Browse every Pokémon entry from <code>data/reference/pokedex.json</code>.
       </p>
 
       <div class="filter-browser">

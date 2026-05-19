@@ -1,4 +1,4 @@
-import conditionsJson from '~~/ptu-data/data/conditions.json'
+import conditionsJson from '~~/data/reference/conditions.json'
 import {
   CONDITION_TAGS,
   conditionTagFallbackDefinition,

@@ -10,7 +10,7 @@ Rotom Table is a Nuxt 3 application with the app source under `src/`.
 - `src/components/` contains reusable Vue components for dense product UI: library grids, editors, map controls, sheet rows, encounter panels, and reference cards.
 - `src/composables/` coordinates feature state, API calls, autosave flows, and page-level behaviours.
 - `src/utils/` contains pure domain helpers, route helpers, persistence clients, reference indexes, map/sheet utilities, and automation logic.
-- `src/types/` captures the map, sheet, trainer, encounter, Pokémon, and PTU reference models used across the app.
+- `src/types/` captures the map, sheet, trainer, encounter, Pokémon, and app-owned PTU reference models used across the app.
 
 ## Nitro/server routes
 
@@ -30,7 +30,7 @@ Rotom Table is local-first. Campaign state is stored as JSON in the repository t
 - Pokémon sheets live under `data/sheets/`.
 - Trainer sheets live under `data/trainers/`.
 - Encounter tables live under `encounter_tables/`.
-- PTU/reference content lives primarily under `ptu-data/data/` with app-facing indexes in `data/` and `src/utils/reference/`.
+- App-owned PTU reference content lives under `data/reference/` with indexes in `data/ptuReference.ts` and `src/utils/reference/`. `ptu-data/` is documentary upstream/source material and parser output, not the runtime source of truth.
 
 This makes data easy to inspect, back up, diff, and repair while developing or running a home campaign.
 
@@ -70,7 +70,7 @@ This keeps browser and CLI workflows aligned around the same inspectable data fi
 
 ## Reference data
 
-The app exposes PTU reference material through searchable/browsable routes for moves, maneuvers, abilities, capabilities, conditions, rules, items, features, and edges. Reference data is structured in JSON and TypeScript modules so it can support both display pages and sheet/map automation helpers.
+The app exposes PTU reference material through searchable/browsable routes for moves, maneuvers, abilities, capabilities, conditions, rules, items, features, and edges. Reference data is structured in JSON and TypeScript modules so it can support both display pages and sheet/map automation helpers, including deliberate 3D-table differences from upstream PTU text.
 
 ## Production limitations
 

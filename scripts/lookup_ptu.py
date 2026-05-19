@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Lookup PTU reference data caches and print markdown."""
+"""Lookup Rotom Table's app-owned PTU reference data and print markdown.
+
+Runtime knowledge lives in data/reference/. This helper intentionally does not
+fall back to markdown/book parser scripts.
+"""
 
 import argparse
 import difflib
@@ -7,40 +11,27 @@ import json
 import os
 import re
 import sys
-from typing import Callable
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-PTU_DIR = os.path.join(REPO_ROOT, "ptu-data")
-DATA_DIR = os.path.join(PTU_DIR, "data")
-sys.path.insert(0, PTU_DIR)
+DATA_DIR = os.path.join(REPO_ROOT, "data", "reference")
 
-from parse_pokedex import build_cache as build_pokedex_cache
-from parse_abilities import build_cache as build_abilities_cache
-from parse_moves import build_cache as build_moves_cache
-from parse_capabilities import build_cache as build_capabilities_cache
-from parse_conditions import build_cache as build_conditions_cache
-from parse_items import build_cache as build_items_cache
-from parse_rules import build_cache as build_rules_cache
-
-
-BUILDERS: dict[str, tuple[str, Callable]] = {
-    "pokemon": ("pokedex.json", build_pokedex_cache),
-    "ability": ("abilities.json", build_abilities_cache),
-    "move": ("moves.json", build_moves_cache),
-    "capability": ("capabilities.json", build_capabilities_cache),
-    "condition": ("conditions.json", build_conditions_cache),
-    "item": ("items.json", build_items_cache),
-    "rule": ("rules.json", build_rules_cache),
+REFERENCE_FILES: dict[str, str] = {
+    "pokemon": "pokedex.json",
+    "ability": "abilities.json",
+    "move": "moves.json",
+    "capability": "capabilities.json",
+    "condition": "conditions.json",
+    "item": "items.json",
+    "rule": "rules.json",
 }
 
 
-def load_or_build(kind: str):
-    filename, builder = BUILDERS[kind]
-    path = os.path.join(DATA_DIR, filename)
-    if os.path.exists(path):
-        with open(path, "r", encoding="utf-8") as file:
-            return json.load(file)
-    return builder()
+def load_reference(kind: str):
+    path = os.path.join(DATA_DIR, REFERENCE_FILES[kind])
+    if not os.path.exists(path):
+        raise FileNotFoundError(f"app-owned PTU reference file not found: {path}")
+    with open(path, "r", encoding="utf-8") as file:
+        return json.load(file)
 
 
 def normalize_key(text: str) -> str:
@@ -234,16 +225,16 @@ def format_pokemon(entry: dict) -> str:
             f"  - Evolution Stage {entry.get('evolution_stage', '?')} | Evolutions Remaining {entry.get('evolutions_remaining', '?')}"
         )
 
-    has_ptu_data = any(
+    has_sheet_data = any(
         key in entry
         for key in ("base_stats", "abilities", "evolutions", "capabilities", "skills", "level_up_moves")
     )
-    if not has_ptu_data:
+    if not has_sheet_data:
         lines.extend([
             "",
             "## Available Data",
             format_bullets([
-                "Placement data only. PTU stat data is not available in the cache yet.",
+                "Placement data only. PTU sheet stat data is not available in the reference entry yet.",
             ]),
         ])
         return "\n".join(lines)
@@ -335,14 +326,14 @@ def coerce_entries(kind: str, data) -> list[dict]:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Lookup PTU cache entries")
-    parser.add_argument("kind", choices=sorted(BUILDERS.keys()))
+    parser = argparse.ArgumentParser(description="Lookup app-owned PTU reference entries")
+    parser.add_argument("kind", choices=sorted(REFERENCE_FILES.keys()))
     parser.add_argument("query", nargs="+", help="Name to look up")
     args = parser.parse_args()
 
     kind = args.kind
     query = " ".join(args.query).strip()
-    data = load_or_build(kind)
+    data = load_reference(kind)
     entries = coerce_entries(kind, data)
 
     match, suggestions = find_match(query, entries, kind)

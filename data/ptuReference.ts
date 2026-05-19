@@ -1,12 +1,12 @@
-import abilitiesJson from '~~/ptu-data/data/abilities.json'
-import movesJson from '~~/ptu-data/data/moves.json'
-import maneuversJson from '~~/ptu-data/data/maneuvers.json'
-import capabilitiesJson from '~~/ptu-data/data/capabilities.json'
-import conditionsJson from '~~/ptu-data/data/conditions.json'
-import rulesJson from '~~/ptu-data/data/rules.json'
-import featuresJson from '~~/ptu-data/data/features.json'
-import edgesJson from '~~/ptu-data/data/edges.json'
-import itemsJson from '~~/ptu-data/data/items.json'
+import abilitiesJson from '~~/data/reference/abilities.json'
+import movesJson from '~~/data/reference/moves.json'
+import maneuversJson from '~~/data/reference/maneuvers.json'
+import capabilitiesJson from '~~/data/reference/capabilities.json'
+import conditionsJson from '~~/data/reference/conditions.json'
+import rulesJson from '~~/data/reference/rules.json'
+import featuresJson from '~~/data/reference/features.json'
+import edgesJson from '~~/data/reference/edges.json'
+import itemsJson from '~~/data/reference/items.json'
 import type {
   PtuAbility, PtuCapability, PtuCondition, PtuEdge, PtuFeature, PtuItem, PtuManeuver, PtuMove, PtuRule,
 } from '~/types/ptuReference'
@@ -251,7 +251,7 @@ export const stripCapabilityParams = (raw: string): string => {
 }
 
 /**
- * Capability JSON aliases. The PTU rulebook stores some entries with a
+ * Capability JSON aliases. The source rule text stores some entries with a
  * placeholder suffix (``Mountable X``); pokedex labels drop the placeholder.
  */
 const CAPABILITY_ALIASES: Record<string, string> = {

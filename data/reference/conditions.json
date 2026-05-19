@@ -1,0 +1,215 @@
+{
+  "Paralysis": {
+    "name": "Paralysis",
+    "category": "Persistent Affliction",
+    "effect": "A paralyzed user’s Initiative is halved. Make a Save Check that succeeds on 11+ at start of the user’s turn. On a succesful check the user may act normally, but on a failed check the following effects occur: - The user can only take a Standard OR Shift Action that round, but not both - The user is Vulnerable for 1 full round - The user cannot take attacks of opportunity for 1 full round",
+    "aliases": [
+      "Paralyzed",
+      "Paralyze"
+    ],
+    "source": "errata-3.md"
+  },
+  "Flinch": {
+    "name": "Flinch",
+    "category": "Volatile Affliction",
+    "effect": "Upon becoming Flinched, the user lowers their Initiative by 5 for the rest of the Scene and is Vulnerable for 1 full round. Multiple of instances of Flinch may stack; being switched out removes the Initiative-lowering effect. (Also yes, you can now Flinch people of a higher Initiative than yourself)",
+    "aliases": [
+      "Flinched"
+    ],
+    "source": "errata-3.md"
+  },
+  "Infatuation": {
+    "name": "Infatuation",
+    "category": "Volatile Affliction",
+    "effect": "Infatuated users take a -5 penalty on all Damage Rolls that do not include their Crush as a target. For determining Damage Rolls that do include their Crush as a target, the Infatuated target’s Attack and Special Attack are halved. The user is cured of Infatuation with a Save Check of 16+ made at end of turn.",
+    "aliases": [
+      "Infatuated"
+    ],
+    "source": "errata-3.md"
+  },
+  "Confused": {
+    "name": "Confused",
+    "category": "Volatile Affliction",
+    "effect": "Confused users cannot take Attacks of Opportunity. If a Confused user makes an Attack (even at tacks without rolls), roll 1d2. On 1, after the attack is resolved, the user loses Hit Points equal to half their Attack Stat if the Move was Physical, half or their Special Attack Stat if the Move was Special, or two Ticks of Hit Poitns if the Move was a Status Move. The user is cured of Confusion with a Save of 16+ made at end of turn.",
+    "aliases": [
+      "Confusion"
+    ],
+    "source": "errata-3.md"
+  },
+  "Suppressed": {
+    "name": "Suppressed",
+    "category": "Volatile Affliction",
+    "effect": "Suppressed users cannot use Moves with any Frequency other than “At-Will”. Suppression always lasts 1 full round.",
+    "aliases": [
+      "Suppression"
+    ],
+    "source": "errata-3.md"
+  },
+  "Helping Hand": {
+    "name": "Helping Hand",
+    "category": "Other Affliction",
+    "effect": "The next Accuracy Roll this round gains +2 and the next Damage Roll this round gains +10. Remove this marker after the bonus is consumed or the round ends.",
+    "aliases": [
+      "Helping Hand Bonus"
+    ],
+    "source": "move automation"
+  },
+  "Supersonic Accuracy Penalty": {
+    "name": "Supersonic Accuracy Penalty",
+    "category": "Other Affliction",
+    "effect": "Accuracy Rolls take a -2 penalty for one full round. Remove this marker after the penalty expires.",
+    "aliases": [
+      "Supersonic Miss Penalty",
+      "Supersonic Penalty"
+    ],
+    "source": "move automation"
+  },
+  "Electric-Resistant Coat": {
+    "name": "Electric-Resistant Coat",
+    "category": "Other Affliction",
+    "effect": "The target has one Step of Resistance to Electric-Type Moves. Remove this Coat after the target is hit by a damaging Electric-Type Move.",
+    "aliases": [
+      "Mud Sport Coat",
+      "Electric Resistance Coat",
+      "Electric Resistant Coat"
+    ],
+    "source": "move automation"
+  },
+  "Reflect Blessing": {
+    "name": "Reflect Blessing",
+    "category": "Other Affliction",
+    "effect": "Team Blessing with 2 activations. An affected ally may activate Reflect when receiving Physical Damage to resist the Damage one step; remove after both activations are spent.",
+    "aliases": [
+      "Reflect Blessing (2 activations)",
+      "Reflect Blessing Marker"
+    ],
+    "source": "move automation"
+  },
+  "Vulnerable": {
+    "name": "Vulnerable",
+    "category": "Other Affliction",
+    "effect": "A Vulnerable Pokémon or Trainer cannot apply Evasion of any sort against attacks. Blinded, Sleeping, Fainted, Frozen, and Tripped targets are always considered Vulnerable.",
+    "aliases": [],
+    "source": "errata-3.md"
+  },
+  "Burned": {
+    "name": "Burned",
+    "category": "Persistent Affliction",
+    "effect": "The target’s Defense Stat is lowered by 2 Combat Stages for the duration of the Burn. Fire-Type Pokémon are immune to becoming Burned. If a Burned Target takes a Standard Action or is prevented from taking a Standard Action by an effect such as Sleep, Flinch, or Paralysis, they lose a Tick of Hit Points at the end of that turn.",
+    "aliases": [
+      "Burn"
+    ],
+    "source": "07-combat.md"
+  },
+  "Frozen": {
+    "name": "Frozen",
+    "category": "Persistent Affliction",
+    "effect": "The target may not act on their turn and receives no bonuses from Evasion. At the end of each turn, the target may make a DC 16 Save Check to become cured. This DC is lowered to 11 for Fire-Type Pokémon, and Ice-Type Pokémon are immune to becoming Frozen. If a Frozen Target is hit by a Damaging Fire, Fighting, Rock, or Steel Attack, they are cured of the Frozen Condition. Save Checks to cure this condition receive a +4 Bonus in Sunny Weather, and a -2 Penalty in Hail.",
+    "aliases": [
+      "Freeze"
+    ],
+    "source": "07-combat.md"
+  },
+  "Poisoned": {
+    "name": "Poisoned",
+    "category": "Persistent Affliction",
+    "effect": "The target’s Special Defense Value is lowered by 2 Combat Stages for the duration of the poison. Poison and Steel-Type Pokémon are immune to becoming Poisoned. If a Poisoned Target takes a Standard Action or is prevented from taking a Standard Action by an effect such as Sleep, Flinch, or Paralysis, they lose a Tick of Hit Points at the end of that turn. When Badly Poisoned, the afflicted instead loses 5 Hit Points; this amount is doubled each consecutive round (10, 20, 40, etc). Note: A reminder! A Tick of Hit Points is equal to 1/10th of a Pokémon or Trainer’s Maximum Hit Points.",
+    "aliases": [
+      "Poison"
+    ],
+    "source": "07-combat.md"
+  },
+  "Badly Poisoned": {
+    "name": "Badly Poisoned",
+    "category": "Persistent Affliction",
+    "effect": "the afflicted instead loses 5 Hit Points; this amount is doubled each consecutive round (10, 20, 40, etc).",
+    "aliases": [],
+    "source": "07-combat.md"
+  },
+  "Bad Sleep": {
+    "name": "Bad Sleep",
+    "category": "Volatile Affliction",
+    "effect": "Whenever the user makes a Save Check to save against Sleep, they lose two ticks of Hit Points. Bad Sleep may only afflict Sleeping targets; if the target is cured of Sleep, they are also cured of Bad Sleep.",
+    "aliases": [],
+    "source": "07-combat.md"
+  },
+  "Cursed": {
+    "name": "Cursed",
+    "category": "Volatile Affliction",
+    "effect": "If a Cursed Target takes a Standard Action, they lose two ticks of Hit Points at the end of that turn.",
+    "aliases": [],
+    "source": "07-combat.md"
+  },
+  "Disabled": {
+    "name": "Disabled",
+    "category": "Volatile Affliction",
+    "effect": "When the user gains the Disabled Affliction, a specific Move is specified. The user cannot use that Move as long as they remain Disabled. Pokémon or Trainers may have multiple instances of the Disabled Condition, each specifying a different Move.",
+    "aliases": [],
+    "source": "07-combat.md"
+  },
+  "Rage": {
+    "name": "Rage",
+    "category": "Volatile Affliction",
+    "effect": "While enraged, the target must use a Damaging Physical or Special Move or Struggle Attack. At the end of each turn, roll a DC15 Save Check; if they succeed, they are cured of Rage.",
+    "aliases": [
+      "Enraged"
+    ],
+    "source": "07-combat.md"
+  },
+  "Sleep": {
+    "name": "Sleep",
+    "category": "Volatile Affliction",
+    "effect": "Sleeping Trainers and Pokémon receive no bonuses from Evasion, and cannot take actions except for Free and Swift Actions that would cure Sleep (ex: activating the Shed Skin Ability). At the end of the sleeper’s turns, they may make a DC 16 Save Check to wake up. Whenever a Sleeping Pokémon takes Damage or loses life from an Attack, they wake up. This does not include loss of life from passive sources such as Poison or Burns, but active attacks and effects that cause Hit Point loss (such as being hit by the Press Feature, or Super Fang) would wake up their target. Sleeping targets cannot make Save Checks to be cured of Rage, Infatuation, or Confusion, but they also cannot hurt themselves in Confusion. Pokémon and Trainers may wake an adjacent ally as a Standard Action.",
+    "aliases": [],
+    "source": "07-combat.md"
+  },
+  "Fainted": {
+    "name": "Fainted",
+    "category": "Other Affliction",
+    "effect": "A Pokémon or Trainer that is at 0 Hit Points or lower is Fainted, or Knocked Out. A Fainted Pokémon or Trainer is unconscious due to injuries or other effects, and cannot use any Actions, Abilities, or Features unless the Feature or Ability specifically says otherwise. The “Fainted” Condition is removed only by specific items such as Revive, or by being brought up to a positive Hit Point count by healing Features or Moves such as Wish or Heal Pulse. Potions and other healing items may still bring a Pokémon above 0 Hit Points, but it remains Fainted for another 10 minutes. When a Pokémon becomes Fainted, they are automatically cured of all Persistent and Volatile Status Conditions.",
+    "aliases": [],
+    "source": "07-combat.md"
+  },
+  "Blindness": {
+    "name": "Blindness",
+    "category": "Other Affliction",
+    "effect": "Blindness represents the target’s vision becoming obscured. A Blinded Pokémon or Trainer receives a -6 penalty to Accuracy Rolls, and must make an Acrobatics Check with a DC of 10 when traveling over Rough or Slow Terrain or become Tripped. Blindness is caused by several effects. This is in perpetual effect in deep darkness, unless the target has Blindsense or Darkvision. Pokémon or Trainers with Blindsense cannot be Blinded.",
+    "aliases": [],
+    "source": "07-combat.md"
+  },
+  "Total Blindness": {
+    "name": "Total Blindness",
+    "category": "Other Affliction",
+    "effect": "Total Blindness is more than just obscured vision; it’s total and complete sightlessness, such as experienced in a completely dark cave or building interior. Total Blindness has the same disadvantages as Blindness, and more. Totally Blinded Pokémon or Trainers have no awareness of the map, and must declare any shifts as distance relative to them. Totally Blinded targets receive a -10 total Penalty to Accuracy Rolls, and cannot use Moves with Priority or as Interrupts. When making a Shift action, they must declare if they are moving Slowly or Quickly; moving Slowly restricts Movement as if Slowed. Moving Quickly has no Movement Penalty, but if the user attempts to Shift into Blocking Terrain, Rough Terrain, or Slow Terrain, they become Tripped. Pokémon or Trainers with Blindesense cannot be Totally Blinded.",
+    "aliases": [],
+    "source": "07-combat.md"
+  },
+  "Slowed": {
+    "name": "Slowed",
+    "category": "Other Affliction",
+    "effect": "A Pokémon that is Slowed has its Movement halved (minimum 1). This condition may be removed by switching, or at the end of a Scene as an Extended Action.",
+    "aliases": [],
+    "source": "07-combat.md"
+  },
+  "Stuck": {
+    "name": "Stuck",
+    "category": "Other Affliction",
+    "effect": "A Pokémon or Trainer that is Stuck cannot make a Shift Action to move and cannot apply their Speed Evasion to attacks. This condition may be removed by switching, or at the end of an Scene as an Extended Action. Ghost Type Pokémon are immune to the Stuck Condition.",
+    "aliases": [],
+    "source": "07-combat.md"
+  },
+  "Trapped": {
+    "name": "Trapped",
+    "category": "Other Affliction",
+    "effect": "A Pokémon or Trainer that is Trapped cannot be recalled. Ghost Type Pokémon are immune to the Trapped Condition.",
+    "aliases": [],
+    "source": "07-combat.md"
+  },
+  "Tripped": {
+    "name": "Tripped",
+    "category": "Other Affliction",
+    "effect": "A Pokémon or Trainer has been Tripped needs to spend a Shift Action getting up before they can take further actions.",
+    "aliases": [],
+    "source": "07-combat.md"
+  }
+}

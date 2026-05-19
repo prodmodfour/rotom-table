@@ -35,7 +35,7 @@ npm run build
 
 - [docs/review-guide.md](docs/review-guide.md) — fastest path through the project for recruiters and reviewers.
 - [docs/architecture.md](docs/architecture.md) — high-level Nuxt, Nitro, local data, and Three.js architecture.
-- [docs/data-model.md](docs/data-model.md) — maps, sheets, trainers, encounter tables, PTU/reference data, and generated sheets.
+- [docs/data-model.md](docs/data-model.md) — maps, sheets, trainers, encounter tables, app-owned PTU reference data, and generated sheets.
 - [docs/local-development.md](docs/local-development.md) — local setup, scripts, and filesystem persistence notes.
 - [docs/fan-project-notice.md](docs/fan-project-notice.md) — fan project and ownership boundaries.
 
@@ -70,7 +70,7 @@ npm run build
 
 - Product thinking around a real tabletop workflow instead of a thin demo.
 - Frontend complexity: searchable libraries, editors, autosave, role-aware navigation, and dense control panels.
-- Domain modelling for maps, sheets, trainers, move data, encounter tables, and PTU reference content.
+- Domain modelling for maps, sheets, trainers, move data, encounter tables, and app-owned PTU reference content.
 - Local-first persistence with human-readable JSON and `.gitignore` boundaries for personal campaign data.
 - Long-term ownership: broad test coverage, refactoring-oriented structure, and supporting documentation.
 
@@ -92,14 +92,14 @@ No screenshot files are committed in this presentation pass. See [docs/screensho
 - Vitest
 - Three.js
 - npm
-- Optional Python/`just` helper scripts for PTU data lookup and encounter generation
+- Optional Python/`just` helper scripts for PTU reference lookup and encounter generation
 
 ## Architecture at a glance
 
 - `src/` contains the Nuxt app: pages, components, composables, assets, and browser-side utilities.
 - `server/` contains Nitro API routes, use cases, and filesystem persistence helpers.
 - `shared/` contains auth, path, realtime, sheet, and encounter helpers shared by app and server code.
-- `data/`, `encounter_tables/`, and `ptu-data/` hold local JSON/TypeScript data consumed by the app and helper scripts.
+- `data/` and `encounter_tables/` hold app-owned JSON/TypeScript data consumed at runtime; `ptu-data/` is documentary upstream/source material and parser tooling.
 - `tests/` contains Vitest coverage across server use cases, composables, shared helpers, and domain utilities.
 
 See [docs/architecture.md](docs/architecture.md) for more detail.
@@ -129,8 +129,9 @@ See [docs/architecture.md](docs/architecture.md) for more detail.
 | `data/sheets/` | Pokémon character-sheet JSON, including generated wild sheets. |
 | `data/trainers/` | Trainer sheet JSON. |
 | `encounter_tables/` | Encounter-table JSON, grouped by folder/region. |
+| `data/reference/` | App-owned PTU reference JSON used by runtime pages, sheets, lookup helpers, and automation. |
 | `books/markdown/` | Markdown source/reference content. |
-| `ptu-data/` | PTU data parsing, lookup, and generation helpers. |
+| `ptu-data/` | Documentary upstream PTU parsing/source helpers; not the runtime source of truth. |
 | `public/` | Public static assets. |
 | `trainer_sizes/sprites/` | Trainer sprite assets served by Nitro at `/trainer-sprites`. |
 | `src/` | Nuxt app source: pages, components, composables, assets, and utilities. |
@@ -156,7 +157,7 @@ Saved sheets and maps are edited by the app itself. In development, Nuxt/Vite ig
 
 ## Optional `just` commands
 
-The `justfile` includes convenience commands for PTU lookups, encounter rolls, and generated sheets.
+The `justfile` includes convenience commands for PTU reference lookups, encounter rolls, and generated sheets.
 
 ```bash
 just                         # show available commands

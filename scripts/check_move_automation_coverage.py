@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fail unless every canonical PTU move has an explicit automation script.
+"""Fail unless every app-owned PTU move has an explicit automation script.
 
 A move is considered automated only when it appears in the explicit automation
 registry; unregistered moves stay visible but disabled in the token move menu.
@@ -11,7 +11,7 @@ import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-MOVES_PATH = ROOT / "ptu-data" / "data" / "moves.json"
+MOVES_PATH = ROOT / "data" / "reference" / "moves.json"
 REGISTRY_PATH = ROOT / "src" / "utils" / "moveAutomation.ts"
 
 VALID_TYPES = {

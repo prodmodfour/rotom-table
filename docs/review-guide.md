@@ -25,7 +25,7 @@ Rotom Table is best reviewed as a local-first product-style application: it has 
 | `/pokedex` and `/pokedex/:pokemon_name` | Search/filter/detail flow over reference data. |
 | `/generate` | GM-only encounter generation from JSON encounter tables. |
 | `/encounter-tables` | GM-only encounter-table browser/editor. |
-| `/moves`, `/maneuvers`, `/abilities`, `/capabilities`, `/conditions`, `/rules`, `/items`, `/features`, `/edges` | PTU reference pages built from structured data. |
+| `/moves`, `/maneuvers`, `/abilities`, `/capabilities`, `/conditions`, `/rules`, `/items`, `/features`, `/edges` | PTU reference pages built from app-owned structured data. |
 
 ## Key source areas
 
@@ -33,13 +33,13 @@ Rotom Table is best reviewed as a local-first product-style application: it has 
 - `src/components/` — reusable Vue UI, including map controls, library cards, sheet editors, encounter panels, and reference components.
 - `src/components/IsometricGrid.client.vue` and `src/utils/isometric/` — Three.js scene setup, rendering, interactions, tokens, weather, hazards, movement previews, and resource cleanup.
 - `src/composables/` — page and feature orchestration for libraries, maps, sheets, encounters, and auth.
-- `src/types/` — domain types for maps, sheets, trainers, encounters, Pokémon, and PTU reference data.
+- `src/types/` — domain types for maps, sheets, trainers, encounters, Pokémon, and app-owned PTU reference data.
 - `src/utils/` — route helpers, autosave, persistence clients, map/sheet/reference domain helpers, and automation logic.
 - `server/api/` — Nitro endpoints for maps, sheets, encounters, Pokédex data, trainer sprites, and realtime events.
 - `server/useCases/` — behaviour-oriented server application logic separated from route handlers.
 - `server/utils/` — filesystem paths, JSON persistence, storage helpers, policies, and runtime adapters.
 - `shared/` — auth, path, realtime, sheet, and encounter helpers used on both client and server.
-- `data/`, `encounter_tables/`, `ptu-data/` — local campaign data, encounter definitions, and reference data consumed by the app.
+- `data/`, `data/reference/`, and `encounter_tables/` — local campaign data, app-owned reference data, and encounter definitions consumed by the app. `ptu-data/` is documentary upstream/source material.
 - `tests/` — Vitest coverage for server use cases, composables, shared helpers, and pure domain utilities.
 
 ## Key scripts
@@ -54,7 +54,7 @@ Rotom Table is best reviewed as a local-first product-style application: it has 
 | `npm run check:move-automation` | Check explicit move automation coverage. |
 | `just` | List optional helper commands, if `just` is installed. |
 | `just encounter ... preview` | Preview generated encounter sheets without writing permanent files. |
-| `just pokemon`, `just move`, `just ability`, etc. | Query PTU/reference data from the terminal. |
+| `just pokemon`, `just move`, `just ability`, etc. | Query app-owned PTU reference data from the terminal. |
 
 ## What the project demonstrates
 
@@ -62,7 +62,7 @@ Rotom Table is best reviewed as a local-first product-style application: it has 
 - Product thinking: GM/player modes, route organisation, local data safety, autosave, search, libraries, editors, and dense tabletop controls.
 - TypeScript/Nuxt structure across pages, composables, utilities, server routes, shared helpers, and tests.
 - Interactive UI complexity: Three.js isometric map rendering, token interactions, initiative, field effects, hazards, and sheet-driven map state.
-- Domain modelling for PTU maps, Pokémon sheets, trainer sheets, encounter tables, reference content, and generated wild sheets.
+- Domain modelling for 3D tabletop maps, Pokémon sheets, trainer sheets, encounter tables, app-owned PTU reference content, and generated wild sheets.
 - Data-management discipline: JSON files remain human-inspectable and suitable for Git diffing, backups, and local campaign ownership.
 
 ## Intentionally not production-grade

@@ -1,20 +1,20 @@
 #!/usr/bin/env python3
 """
-PTU 1.05 Pokémon Generator CLI
+Rotom Table PTU Pokémon Generator CLI
 
-Generate a single PTU stat block as a ``CharacterSheet`` JSON file that
-the Nuxt ``/sheets`` UI can pick up. Random-pool rolling lives upstream
-(encounter tables, GM choice); this tool just stats what you tell it to.
+Generate a single PTU ``CharacterSheet`` JSON file that the Nuxt ``/sheets`` UI
+can pick up. Random-pool rolling lives upstream (encounter tables, GM choice);
+this tool just stats what you tell it to using the app-owned data/reference
+JSON as its source of truth.
 
 Usage:
-  python cli.py --species NAME --level N [options]
+  python ptu-data/cli.py --species NAME --level N [options]
 
 Options:
   --species NAME       Species to generate (required, case-insensitive)
   --level N            Level (required)
   --nature NAME        Force a specific nature (e.g. Adamant)
   --shiny-odds N       Shiny chance in percent (default: 0)
-  --rebuild-cache      Force rebuild of data cache from markdown sources
   --output-dir DIR     Where to write the generated .json sheet
                        (default: <repo>/data/sheets/wild)
   --slug-prefix PFX    Prefix added to the generated sheet's ``slug``
@@ -26,11 +26,11 @@ Options:
   -h, --help           Show this help message
 
 Examples:
-  python cli.py --species Charmander --level 5
-  python cli.py --species Pelipper --level 30 --nature Adamant
-  python cli.py --species Houndour --level 18 \\
-                --output-dir ../data/sheets/wild/forest_3 \\
-                --slug-prefix wild-forest-3
+  python ptu-data/cli.py --species Charmander --level 5
+  python ptu-data/cli.py --species Pelipper --level 30 --nature Adamant
+  python ptu-data/cli.py --species Houndour --level 18 \\
+                         --output-dir data/sheets/wild/forest_3 \\
+                         --slug-prefix wild-forest-3
 """
 
 import argparse
@@ -42,13 +42,10 @@ import sys
 # Ensure we can import sibling modules
 sys.path.insert(0, os.path.dirname(__file__))
 
-from parse_pokedex import build_cache as build_pokedex_cache
-from parse_moves import build_cache as build_moves_cache
-from parse_abilities import build_cache as build_abilities_cache
 from generator import generate_pokemon
 from sheet_emitter import to_character_sheet
 
-DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
+DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data", "reference")
 # Default lands inside the Nuxt sheet tree so freshly-generated mons
 # show up in /sheets without any extra plumbing.
 OUTPUT_DIR = os.path.join(
@@ -56,14 +53,13 @@ OUTPUT_DIR = os.path.join(
 )
 
 
-def load_or_build(name: str, builder):
+def load_reference(name: str):
     path = os.path.join(DATA_DIR, f"{name}.json")
-    if os.path.exists(path):
-        with open(path, "r", encoding="utf-8") as f:
-            return json.load(f)
-    else:
-        print(f"Cache not found for {name}, building...")
-        return builder()
+    if not os.path.exists(path):
+        print(f"Error: app-owned PTU reference file not found: {path}", file=sys.stderr)
+        sys.exit(1)
+    with open(path, "r", encoding="utf-8") as f:
+        return json.load(f)
 
 
 def sanitize_filename(name: str) -> str:
@@ -78,7 +74,7 @@ def slugify(value: str) -> str:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="PTU 1.05 Pokémon Generator",
+        description="Rotom Table PTU Pokémon Generator",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=__doc__
     )
@@ -88,7 +84,6 @@ def main():
                         help="Level (required)")
     parser.add_argument("--nature", type=str, help="Force a nature (e.g. Adamant)")
     parser.add_argument("--shiny-odds", type=float, default=0.0, help="Shiny chance %% (default: 0)")
-    parser.add_argument("--rebuild-cache", action="store_true", help="Force rebuild data cache")
     parser.add_argument("--output-dir", type=str, default=OUTPUT_DIR,
                         help=f"Where to write the generated .json sheet (default: {OUTPUT_DIR})")
     parser.add_argument("--slug-prefix", type=str, default=None,
@@ -99,27 +94,14 @@ def main():
 
     args = parser.parse_args()
 
-    # Build or load caches
-    if args.rebuild_cache:
-        pokedex = build_pokedex_cache()
-        moves_list = build_moves_cache()
-        abilities_list = build_abilities_cache()
-        # Reload as the builders return raw lists/dicts but also write JSON
-        pokedex_path = os.path.join(DATA_DIR, "pokedex.json")
-        moves_path = os.path.join(DATA_DIR, "moves.json")
-        abilities_path = os.path.join(DATA_DIR, "abilities.json")
-        with open(pokedex_path) as f:
-            pokedex = json.load(f)
-        with open(moves_path) as f:
-            moves_db = json.load(f)
-        with open(abilities_path) as f:
-            abilities_db = json.load(f)
-    else:
-        pokedex = load_or_build("pokedex", build_pokedex_cache)
-        moves_db = load_or_build("moves", build_moves_cache)
-        abilities_db = load_or_build("abilities", build_abilities_cache)
+    # Runtime generation is intentionally uncoupled from the markdown/book
+    # parser scripts; data/reference is the source of truth.
+    pokedex = load_reference("pokedex")
+    moves_db = load_reference("moves")
+    abilities_db = load_reference("abilities")
 
-    # If pokedex is a list (from builder), it's already good; moves/abilities are dicts
+    # Moves/abilities are dicts in data/reference, but keep list coercion for
+    # old generated fixtures and ad-hoc local edits.
     if isinstance(moves_db, list):
         moves_db = {m["name"]: m for m in moves_db}
     if isinstance(abilities_db, list):

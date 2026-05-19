@@ -1,4 +1,4 @@
-import pokedexData from '~~/ptu-data/data/pokedex.json'
+import pokedexData from '~~/data/reference/pokedex.json'
 import spriteManifest from '~~/data/pokemonSpriteManifest.json'
 import backSpriteManifest from '~~/data/pokemonBackSpriteManifest.json'
 import type {

@@ -21,8 +21,8 @@ const filtered = computed(() => filterManeuversForIndex(maneuvers, {
   <div class="ref-index">
     <ReferenceIndexHeader title="Maneuvers" :count="filtered.length" :total="maneuvers.length">
       <p class="ref-copy">
-        PTU 1.05 combat maneuvers from
-        <code>ptu-data/data/maneuvers.json</code>.
+        PTU combat maneuvers from
+        <code>data/reference/maneuvers.json</code>.
       </p>
 
       <div class="maneuvers-controls">

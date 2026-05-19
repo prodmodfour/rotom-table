@@ -41,7 +41,7 @@ export const clearLookupBackedAbilityFields = (ability: SheetAbilityLike): void 
 export const setLookupAbilityName = (ability: SheetAbilityLike, value: unknown): void => {
   ability.name = typeof value === 'string' ? value : value == null ? '' : String(value)
   // The sheet stores only the selected ability name; display details come from
-  // ptu-data/data/abilities.json via data/ptuReference.ts.
+  // data/reference/abilities.json via data/ptuReference.ts.
   clearLookupBackedAbilityFields(ability)
   if (!isSheetActivatableAbility(ability)) clearSheetAbilityActivation(ability)
 }

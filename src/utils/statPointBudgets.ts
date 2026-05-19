@@ -1,4 +1,4 @@
-import rulesJson from '~~/ptu-data/data/rules.json'
+import rulesJson from '~~/data/reference/rules.json'
 import type { PtuLevelOffsetFormula, PtuRule, PtuStatPointFormulaKey } from '~/types/ptuReference'
 
 const STAT_POINT_RULE_NAME = 'Stat Point Advancement'

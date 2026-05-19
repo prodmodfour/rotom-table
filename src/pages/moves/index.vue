@@ -21,8 +21,8 @@ const filtered = computed(() => filterMovesForIndex(moves, {
   <div class="ref-index">
     <ReferenceIndexHeader title="Moves" :count="filtered.length" :total="moves.length">
       <p class="ref-copy">
-        PTU 1.05 move list from
-        <code>ptu-data/data/moves.json</code>.
+        PTU move list from
+        <code>data/reference/moves.json</code>.
       </p>
 
       <div class="moves-controls">

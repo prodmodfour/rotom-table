@@ -33,7 +33,7 @@ export function usePokemonSheetRowActions(sheet: Readonly<Ref<CharacterSheet | n
     const next = typeof value === 'string' ? value : value == null ? '' : String(value)
     sheet.value.items!.held = next
     // The sheet stores only the held item name; display details come from
-    // ptu-data/data/items.json via data/ptuReference.ts.
+    // data/reference/items.json via data/ptuReference.ts.
     clearLookupBackedItemFields()
   }
 

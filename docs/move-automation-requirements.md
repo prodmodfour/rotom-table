@@ -13,7 +13,7 @@ Requirements-gathering notes for adding **Use Move** to the map token context me
 
 ## `moves.json` audit
 
-Source inspected: `ptu-data/data/moves.json`.
+Source inspected: `data/reference/moves.json`.
 
 Raw file has **762** dictionary entries. One entry is rulebook explanatory text, not a move:
 
@@ -37,7 +37,7 @@ Valid move field audit:
 | Empty/missing effect text | 28 moves |
 | Literal `None`/`None.` effect text | 62 moves |
 
-Range keywords are not clean enough to parse blindly. Examples: `Interupt`, `Set Up`, `Melee 1`, `1 Target.`, `Double Strike; or 6`, and missing ranges on static moves. The scripts should use the canonical move record for display/prefill, but each move's automation must be hand-authored and covered explicitly.
+Range keywords are not clean enough to parse blindly. Examples: `Interupt`, `Set Up`, `Melee 1`, `1 Target.`, `Double Strike; or 6`, and missing ranges on static moves. The scripts should use the app-owned PTU move record for display/prefill, but each move's automation must be hand-authored and covered explicitly.
 
 High-level mechanics found across all 761 valid moves, for component planning only:
 

@@ -18,7 +18,7 @@ const filteredByCategory = computed(() => groupFilteredConditions(conditionGroup
     <ReferenceIndexHeader title="Conditions" :count="filtered.length" :total="conditions.length">
       <p class="ref-copy">
         PTU status conditions and afflictions from
-        <code>ptu-data/data/conditions.json</code>.
+        <code>data/reference/conditions.json</code>.
       </p>
       <ReferenceSearchField
         v-model="searchTerm"

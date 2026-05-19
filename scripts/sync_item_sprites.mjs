@@ -46,9 +46,9 @@ const EXTRA_SPRITE_PATHS = [
 const spritePaths = [...new Set([...Object.values(itemMap), ...EXTRA_SPRITE_PATHS])].sort()
 const pathSet = new Set(spritePaths)
 
-const ptuItems = Object.values(await readJson('ptu-data/data/items.json'))
-const ptuMoves = Object.values(await readJson('ptu-data/data/moves.json'))
-const moveBySlug = new Map(ptuMoves.map((move) => [slugify(move.name), move]))
+const referenceItems = Object.values(await readJson('data/reference/items.json'))
+const referenceMoves = Object.values(await readJson('data/reference/moves.json'))
+const moveBySlug = new Map(referenceMoves.map((move) => [slugify(move.name), move]))
 
 const PLATE_BY_TYPE = {
   Fire: 'flame', Water: 'splash', Electric: 'zap', Grass: 'meadow', Ice: 'icicle', Fighting: 'fist',
@@ -193,7 +193,7 @@ const tmHmPath = (item) => {
   return pathSet.has(path) ? path : null
 }
 
-const inferPtuPath = (item) => {
+const inferReferencePath = (item) => {
   for (const value of [item.name, ...(item.aliases ?? [])]) {
     const manual = MANUAL_PATHS[value]
     if (manual && pathSet.has(manual)) return manual
@@ -272,11 +272,11 @@ for (const [alias, path] of Object.entries(STAT_ITEM_BY_ALIAS)) addIfPathExists(
 for (const [name, path] of Object.entries(MANUAL_PATHS)) addIfPathExists(manifest, name, path)
 
 // Canonical PTU item names and aliases.
-let matchedPtuItems = 0
-for (const item of ptuItems) {
-  const path = inferPtuPath(item)
+let matchedReferenceItems = 0
+for (const item of referenceItems) {
+  const path = inferReferencePath(item)
   if (!path) continue
-  matchedPtuItems++
+  matchedReferenceItems++
   addIfPathExists(manifest, item.name, path)
   for (const alias of item.aliases ?? []) addIfPathExists(manifest, alias, path)
 }
@@ -309,4 +309,4 @@ const workers = Array.from({ length: CONCURRENCY }, async () => {
 await Promise.all(workers)
 
 console.log(`Wrote ${MANIFEST_PATH} with ${Object.keys(orderedManifest).length} lookup keys.`)
-console.log(`Matched ${matchedPtuItems}/${ptuItems.length} PTU item rows.`)
+console.log(`Matched ${matchedReferenceItems}/${referenceItems.length} PTU item rows.`)

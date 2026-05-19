@@ -1,0 +1,612 @@
+{
+  "Acrobat": {
+    "name": "Acrobat",
+    "tags": [],
+    "prerequisites": "Novice Acrobatics",
+    "frequency": null,
+    "trigger": null,
+    "target": null,
+    "condition": null,
+    "effect": "Increase your Jump and Long Jump Capabilities by +1 each."
+  },
+  "Kip Up": {
+    "name": "Kip Up",
+    "tags": [],
+    "prerequisites": "Expert Acrobatics",
+    "frequency": null,
+    "trigger": null,
+    "target": null,
+    "condition": null,
+    "effect": "You may stand up from being Tripped as a Swift Action."
+  },
+  "Mounted Prowess": {
+    "name": "Mounted Prowess",
+    "tags": [],
+    "prerequisites": "Novice Acrobatics or Athletics",
+    "frequency": null,
+    "trigger": null,
+    "target": null,
+    "condition": null,
+    "effect": "You automatically succeed at Acrobatics and Athletics Checks made to mount a Pokémon, and you gain a +3 Bonus to all Acrobatics and Athletics Checks made to remain Mounted."
+  },
+  "Nimble Movement": {
+    "name": "Nimble Movement",
+    "tags": [],
+    "prerequisites": "Adept Acrobatics or Stealth",
+    "frequency": null,
+    "trigger": null,
+    "target": null,
+    "condition": null,
+    "effect": "Whenever you Disengage, you Shift 2 meters instead of 1."
+  },
+  "Throwing Masteries": {
+    "name": "Throwing Masteries",
+    "tags": [],
+    "prerequisites": "Adept Acrobatics",
+    "frequency": null,
+    "trigger": null,
+    "target": null,
+    "condition": null,
+    "effect": "Increase the Throwing Range of your Poké Balls, Ranged Weapons, and other small items by +2."
+  },
+  "Wallrunner": {
+    "name": "Wallrunner",
+    "tags": [],
+    "prerequisites": "Expert Acrobatics",
+    "frequency": null,
+    "trigger": null,
+    "target": null,
+    "condition": null,
+    "effect": "You may run on vertical surfaces both vertically and horizontally for up to your Acrobatics Rank in meters before jumping off."
+  },
+  "Athletic Initiative": {
+    "name": "Athletic Initiative",
+    "tags": [],
+    "prerequisites": "Adept Athletics",
+    "frequency": null,
+    "trigger": null,
+    "target": null,
+    "condition": null,
+    "effect": "You learn the Move Agility."
+  },
+  "Power Boost": {
+    "name": "Power Boost",
+    "tags": [],
+    "prerequisites": "Expert Athletics",
+    "frequency": null,
+    "trigger": null,
+    "target": null,
+    "condition": null,
+    "effect": "Increase your Power Capability by +2"
+  },
+  "Swimmer": {
+    "name": "Swimmer",
+    "tags": [],
+    "prerequisites": "Novice Athletics or Survival",
+    "frequency": null,
+    "trigger": null,
+    "target": null,
+    "condition": null,
+    "effect": "You gain +2 to your Swim Speed. You may spend X minutes underwater before you begin to suffocate, where X is the higher of your Athletics or Survival Ranks."
+  },
+  "Stamina": {
+    "name": "Stamina",
+    "tags": [],
+    "prerequisites": "Expert Athletics or Expert Combat",
+    "frequency": null,
+    "trigger": null,
+    "target": null,
+    "condition": null,
+    "effect": "Whenever you Take a Breather or take Massive Damage or a Critical Hit, you gain Temporary Hit Points equal to your Athletics or Combat Rank after the triggering action has resolved."
+  },
+  "Basic Martial Arts": {
+    "name": "Basic Martial Arts",
+    "tags": [],
+    "prerequisites": "Novice Combat",
+    "frequency": null,
+    "trigger": null,
+    "target": null,
+    "condition": null,
+    "effect": "You learn the Move Rock Smash."
+  },
+  "Beast Master": {
+    "name": "Beast Master",
+    "tags": [],
+    "prerequisites": "Novice Intimidate",
+    "frequency": null,
+    "trigger": null,
+    "target": null,
+    "condition": null,
+    "effect": "You may use Intimidate instead of Command to make Pokemon at 0 or 1 Loyalty obey your commands. You may also use Intimidate instead of Command to determine the limits and Bonus Experience from Training."
+  },
+  "Intimidating Presence": {
+    "name": "Intimidating Presence",
+    "tags": [],
+    "prerequisites": "Novice Intimidate",
+    "frequency": null,
+    "trigger": null,
+    "target": null,
+    "condition": null,
+    "effect": "You learn the Move Leer"
+  },
+  "Bad Mood": {
+    "name": "Bad Mood",
+    "tags": [],
+    "prerequisites": "Expert Intimidate",
+    "frequency": null,
+    "trigger": null,
+    "target": null,
+    "condition": null,
+    "effect": "Your Critical Hit Range is increased by +1 if you are suffering from a Persistent Status Affliction. Your Critical Hit Range is increased by +1 if you are suffering from a Volatile Status Affliction. These stack with each other, giving a total of +2 to Critical Hit Range if you are suffering from both a Persistant and a Volatile Status Affliction."
+  },
+  "Grace": {
+    "name": "Grace",
+    "tags": [],
+    "prerequisites": "Novice Charm, Command, Guile, Intimidate, or Intuition",
+    "frequency": null,
+    "trigger": null,
+    "target": null,
+    "condition": null,
+    "effect": "Your Pokémon may consume and benefit from 2 more Poffins each. If this Pokémon is traded to a Trainer without the Grace feature, these extra dice from additional Poffins are not lost, but a Trainer without Grace may not benefit from more than 6 Dice gained from Poffins. You may always use any of the Skills that are prerequisites for Grace in the Introduction Stage of a Contest to roll for Contest Stat Dice of any kind."
+  },
+  "Demoralize": {
+    "name": "Demoralize",
+    "tags": [],
+    "prerequisites": "Adept Intimidate",
+    "frequency": null,
+    "trigger": null,
+    "target": null,
+    "condition": null,
+    "effect": "Whenever you land a Critical Hit on a foe, that foe becomes Vulnerable. Status-Class Moves with an Accuracy Roll can “Crit” for the purposes of activating this effect on a natural roll of 19 or higher, and any ef- fects that expand your Critical-Hit Range also expand this range."
+  },
+  "Art of Stealth": {
+    "name": "Art of Stealth",
+    "tags": [],
+    "prerequisites": "Expert Stealth",
+    "frequency": null,
+    "trigger": null,
+    "target": null,
+    "condition": null,
+    "effect": "You gain the Stealth Capability."
+  },
+  "Sneak’s Tricks": {
+    "name": "Sneak’s Tricks",
+    "tags": [],
+    "prerequisites": "Adept Stealth",
+    "frequency": null,
+    "trigger": null,
+    "target": null,
+    "condition": null,
+    "effect": "You learn the Move Astonish."
+  },
+  "Slippery": {
+    "name": "Slippery",
+    "tags": [],
+    "prerequisites": "Novice Stealth",
+    "frequency": null,
+    "trigger": null,
+    "target": null,
+    "condition": null,
+    "effect": "You may use your Stealth Skill when defending in Opposed Grapple, Push, or Trip checks. When Grap- pling, if you win an Opposed Check when using Stealth, you must choose to end the Grapple (you cannot choose to gain Dominance)."
+  },
+  "Expert Trickster": {
+    "name": "Expert Trickster",
+    "tags": [],
+    "prerequisites": "Adept Stealth",
+    "frequency": null,
+    "trigger": null,
+    "target": null,
+    "condition": null,
+    "effect": "You gain a +2 Opposed Checks with all Dirty Trick Maneuvers. The “Once per Scene per Foe” Limitation of each Dirty Trick Maneuver is expended only upon successfully affecting a foe with that Dirty Trick Maneuver."
+  },
+  "Apricorn Balls": {
+    "name": "Apricorn Balls",
+    "tags": [],
+    "prerequisites": "Novice Survival or Adept Technology",
+    "frequency": null,
+    "trigger": null,
+    "target": null,
+    "condition": null,
+    "effect": "As an Extended Action, you may craft Apricorns into their corresponding Poké Ball. Use of this Feature requires access to a Poké Ball Tool Box."
+  },
+  "Green Thumb": {
+    "name": "Green Thumb",
+    "tags": [],
+    "prerequisites": "Novice General Education or Novice Survival",
+    "frequency": null,
+    "trigger": null,
+    "target": null,
+    "condition": null,
+    "effect": "You know how to grow Apricorns and Tier 1 Berries using a Portable Grower or Fertilized Soil."
+  },
+  "Traveler": {
+    "name": "Traveler",
+    "tags": [],
+    "prerequisites": "Novice Survival",
+    "frequency": null,
+    "trigger": null,
+    "target": null,
+    "condition": null,
+    "effect": "You may use Survival instead of Athletics and Acrobatics to determine your Power Capability, High Jump, and Long Jump values. Determine your Overland Movement by substituting your Survival Rank for the lower of your Athletics or Acrobatics Rank."
+  },
+  "Paleontologist": {
+    "name": "Paleontologist",
+    "tags": [],
+    "prerequisites": "Novice Pokémon Education or Novice Survival",
+    "frequency": null,
+    "trigger": null,
+    "target": null,
+    "condition": null,
+    "effect": "You can identify fossils with a DC 10 Pokémon Education or Survival Check. You know how to operate Reanimation Machines and can use them to revive Fossils. See the “Pokémon Fossils” section (page 216) for more information."
+  },
+  "Survival Drive": {
+    "name": "Survival Drive",
+    "tags": [],
+    "prerequisites": "Adept Survival",
+    "frequency": null,
+    "trigger": null,
+    "target": null,
+    "condition": null,
+    "effect": "You learn the Move Bulk Up. Survival is a Body Skill that governs all sorts of wilderness activities, from starting a fire, to building shelter, to making a trail through heavy brush and shrubbery. Characters with a high Survival Rank spend a lot of time outdoors. Pokémon Rangers and Trainers concerned with conservation efforts and Safari Zones tend to have high Survival Ranks. Survival can be used in almost any situation in the outdoors, whether it be navigating a snowstorm, foraging for food, or simply setting up camp for the night. It can be used to identify Mushrooms (page 281) that can be picked in the wild as well. A common use of Survival is to take half an hour or an hour to scout out an area and learn basic information about it – the common Pokémon of the area and what Apricorns or Berries are commonly found in it. For light density wilderness areas such as a savanna or small forest, the DC should be easy for anyone who’s invested in Survival – about a 12. Moderately complex ecosystems such as a foggy wetland may require a check of 16 or so. Denser or harsher areas of wilderness such as tropical rainforests or frigid arctic ecosystems may require a check of 20+. Succeeding by a margin of success of at least 4 should usually result in additional info, such as identifying signs of rare Pokémon or plants. More than just finding the means to live in the wilds, Survival also covers geology and geography and enables a Trainer to search for useful items, such as Elemental Stones and Fossils (page 216). Spelunking also falls under the purview of Survival. Survival can also be used to track someone through the wilderness. This is usually an Opposed Check between a Trainer’s Survival and their target’s Stealth. However, certain environments may make tracking easier or more difficult. Impose a circumstantial penalty to a target being tracked through a desert or to the tracker trying to find signs of movement through a dark gloomy cave. Despite counting as a Body Category Skill, Survival also counts as an Education Skill."
+  },
+  "Instruction": {
+    "name": "Instruction",
+    "tags": [],
+    "prerequisites": "Novice General Education",
+    "frequency": null,
+    "trigger": null,
+    "target": null,
+    "condition": null,
+    "effect": "Whenever you aid an ally in an Assisted Skill Check using an Education Skill you have at Novice Rank or higher, add your full Rank value as a bonus to their roll instead of half."
+  },
+  "Scholar": {
+    "name": "Scholar",
+    "tags": [],
+    "prerequisites": "Expert General Education",
+    "frequency": null,
+    "trigger": null,
+    "target": null,
+    "condition": null,
+    "effect": "You gain a +1 Bonus to Skill Checks with General Education, Medicine Education, Occult Education, Pokémon Education, Technology Education, and Survival."
+  },
+  "Groomer": {
+    "name": "Groomer",
+    "tags": [],
+    "prerequisites": "Novice Pokémon Education or Novice General Education",
+    "frequency": null,
+    "trigger": null,
+    "target": null,
+    "condition": null,
+    "effect": "You know how to effectively groom your Pokémon with access to a Groomer’s Kit. You may groom up to 6 Pokémon in one hour. Grooming Pokémon may count as an hour of Training, and you may apply Experience Training, teach Poke-Edges, and apply any Features that could be applied during Training. If you apply Experience Training from Grooming, use your General Education or Pokémon Education Rank to determine Bonus Experience gained during Training. A Pokémon that has been Groomed also gains a +1d6 Bonus to the Introduction Roll of a Contest for the rest of the day. General Education is a Mind Skill that covers well- rounded academic learning. The universal coursework covered through mandatory schooling along with a liberal arts education are most representative of the General Education Skill. Characters with a high General Education Rank tend to be masters of trivia and local or regional knowledge, though they often have specializations in more narrow fields such as literature, history, and philosophy. It’s a good idea to think about a field of expertise or two to give the Skill more personal flavor. Of course, General Education also encompasses basic training in mathematics, natural sciences, and other common fields. However, it’s safe to assume that most characters know the basics unless they have a Pathetic Rank in General Eduction. General Education is most often tested when characters are faced with issues of politics and current events, such as knowing about the stances of local Gym Leaders or government officials on political issues or being familiar with the details of recent news stories. Knowledge of history is also a common usage; it can be useful to know that the reason a town is wary of the party is because they have a Camerupt with them and a pack of that Pokémon was responsible for devastating the town half a decade back. Another way to treat General Education is as a catch-all Skill for a particular setting, covering common issues that aren’t associated well with other Education Skills but are important to the setting. A campaign with a law enforcement focus might use General Education to cover police protocol and the law, while a wild west campaign might use General Education to cover dueling etiquette and other narrative standbys in frontier life. While General Education isn’t specialized in itself, it also represents a character’s skill in conducting research. Obviously, you should use more specific Education Skills instead when the sought after information is highly advanced or it is more relevant. General Education, like most Education Skills, doesn’t have very many applications in Opposed Checks. At most, it might be used in a race determining who can research a specific piece of information first."
+  },
+  "Medic Training": {
+    "name": "Medic Training",
+    "tags": [],
+    "prerequisites": "Novice Medicine Education",
+    "frequency": null,
+    "trigger": null,
+    "target": null,
+    "condition": null,
+    "effect": "When you use Restorative Items on others, they do not forfeit their next turn."
+  },
+  "Repel Crafter": {
+    "name": "Repel Crafter",
+    "tags": [],
+    "prerequisites": "Novice Medicine or Technology Edu",
+    "frequency": null,
+    "trigger": null,
+    "target": null,
+    "condition": null,
+    "effect": "Create a Repel for $100 or a Super Repel for $150. Requires access to a Chemistry Set."
+  },
+  "Gem Lore": {
+    "name": "Gem Lore",
+    "tags": [],
+    "prerequisites": "Novice Occult Education",
+    "frequency": null,
+    "trigger": null,
+    "target": null,
+    "condition": null,
+    "effect": "As an Extended Action, you may turn a Shard into a Gem of one of its associated Types. Additionally, you can turn 4 Red Shards into a Fire Stone; 4 Blue Shards into a Water Stone; 4 Yellow Shards into a Thunder Stone; 4 Orange Shards into a Shiny Stone; 4 Green Shards into a Leaf Stone; or 4 Violet Shards into a Dusk Stone. You can also destroy any of these six Stones to gain 4 Shards of the corresponding color."
+  },
+  "Tag Scribe": {
+    "name": "Tag Scribe",
+    "tags": [],
+    "prerequisites": "Novice Occult Education",
+    "frequency": "Special - Extended Action",
+    "trigger": null,
+    "target": null,
+    "condition": null,
+    "effect": "You create a Cleanse Tag. This may be used a number of times each day equal to half your Occult Education Rank."
+  },
+  "Breeder": {
+    "name": "Breeder",
+    "tags": [],
+    "prerequisites": "Novice Pokémon Education",
+    "frequency": null,
+    "trigger": null,
+    "target": null,
+    "condition": null,
+    "effect": "If you are able to give two Pokémon that are compatible for breeding at least 4 hours of time alone, you may make a Pokémon Education Check with a DC of 12. If you succeed, the Pokémon are guaranteed to produce an egg if you give them an additional 4 hours."
+  },
+  "PokéPsychologist": {
+    "name": "PokéPsychologist",
+    "tags": [],
+    "prerequisites": "Novice Pokémon Education",
+    "frequency": null,
+    "trigger": null,
+    "target": null,
+    "condition": null,
+    "effect": "You may use your Pokémon Education Skill instead of Charm, Guile, Intimidate, or Intuition when making general Skill checks to interact with Pokémon or to raise or lower disposition."
+  },
+  "Basic Balls": {
+    "name": "Basic Balls",
+    "tags": [],
+    "prerequisites": "Novice Technology",
+    "frequency": null,
+    "trigger": null,
+    "target": null,
+    "condition": null,
+    "effect": "You may craft Basic Balls for $100 and Great Balls for $175. Requires access to a Poké Ball Tool Box."
+  },
+  "Poké Ball Repair": {
+    "name": "Poké Ball Repair",
+    "tags": [],
+    "prerequisites": "Basic Balls or Apricorn Balls",
+    "frequency": null,
+    "trigger": null,
+    "target": null,
+    "condition": null,
+    "effect": "You may attempt to fix any Poké Ball that has failed to capture a Pokémon and broke. Make a Technology Check with a DC of 15. If you succeed, the Poké Ball is fixed and is treated as if it had not broken. If you fail, the ball is permanently broken. Requires access to a Poké Ball Tool Box."
+  },
+  "Flustering Charisma": {
+    "name": "Flustering Charisma",
+    "tags": [],
+    "prerequisites": "Adept Charm or Guile",
+    "frequency": null,
+    "trigger": null,
+    "target": null,
+    "condition": null,
+    "effect": "When you hit with a Move with the Social keyword, the target takes a -2 penalty to Save Checks against Volatile Status Afflictions for 1 full round."
+  },
+  "Dynamism": {
+    "name": "Dynamism",
+    "tags": [],
+    "prerequisites": "Novice Guile",
+    "frequency": null,
+    "trigger": null,
+    "target": null,
+    "condition": null,
+    "effect": "Your initiative is increased by your Guile Rank."
+  },
+  "Expert Manipulator": {
+    "name": "Expert Manipulator",
+    "tags": [],
+    "prerequisites": "Adept Guile",
+    "frequency": null,
+    "trigger": null,
+    "target": null,
+    "condition": null,
+    "effect": "You gain a +2 Opposed Checks with all Manipulate Maneuvers. The “Once per Scene per Foe” Limitation of each Manipulate Maneuver is expended only upon succesfully affecting a foe with that Manipulate Maneuver."
+  },
+  "Confidence Artist": {
+    "name": "Confidence Artist",
+    "tags": [],
+    "prerequisites": "Novice Guile",
+    "frequency": null,
+    "trigger": null,
+    "target": null,
+    "condition": null,
+    "effect": "You learn the Move Confide. Guile is a Mind Skill that governs lying, manipulation, and general deception and subterfuge. Characters with a high Guile Rank think quickly on their feet and are usually clever and witty in conversation. The most common use of Guile is to lie convincingly. Lying with confidence and spinning believable yarns has many applications, of course, ranging from convincing a guard you have the right security clearance but left your ID at home to fooling a cop into thinking they saw someone else breaking into that house. Aside from the obvious application, Guile also covers a range of acting skills, from faking emotions to pretending to be someone else entirely. Someone armed with a high Guile Rank and a spare Team Rocket uniform could probably bluff their way into a secret hideout or learn the secrets of the criminal organization. This application of Guile goes beyond blunt deception into subtle manipulation as well, allowing a smooth talker to use carefully worded half-truths and targeted prods at a victim’s beliefs and passions to get what they want. Whereas Stealth would be used to hide from someone’s vision or hearing, Guile is often used to “hide in plain sight”, such as when blending into a crowd to tail someone through a busy city. Even when there’s no hiding place around, someone with high Guile might be able to pose as an innocuous passerby or fast-talk their way out of suspicion. Guile can also be thought of as a streetwise Skill, representing how well a character can read into situations on the street, gather information, and cut deals. Guile can help someone haggle on the black market, tell the difference between an undercover cop and a real seller or buyer of illicit goods, and realize when they’ve stepped somewhere they really don’t belong. Uses of Guile aren’t limited to just human interactions either. Faced with a hostile wild Pokémon that won’t be scared away, a Trainer with a high Guile Rank may attempt to trick it into a trap or distract it long enough to mount an escape. Opposed checks pitting Guile against Guile might be used in a duel of wits, but far more common is when Guile is rolled against Intuition to decide whether or not someone sees through another’s lies. Perception may also be rolled against Guile when attempting to see through a disguise."
+  },
+  "Charmer": {
+    "name": "Charmer",
+    "tags": [],
+    "prerequisites": "Novice Charm",
+    "frequency": null,
+    "trigger": null,
+    "target": null,
+    "condition": null,
+    "effect": "You learn the Move Baby-Doll Eyes."
+  },
+  "Smooth": {
+    "name": "Smooth",
+    "tags": [],
+    "prerequisites": "Expert Charm or Expert Focus",
+    "frequency": null,
+    "trigger": null,
+    "target": null,
+    "condition": null,
+    "effect": "You gain +4 Evasion against Moves with the Social keyword, and gain a +2 Bonus on Save Checks against Rage and Infatuation."
+  },
+  "Train the Reserves": {
+    "name": "Train the Reserves",
+    "tags": [],
+    "prerequisites": "Novice Command",
+    "frequency": null,
+    "trigger": null,
+    "target": null,
+    "condition": null,
+    "effect": "You may apply Experience Training to a number of Pokemon equal to twice your Command Rank, in- stead of equal to your Command Rank."
+  },
+  "Leader": {
+    "name": "Leader",
+    "tags": [],
+    "prerequisites": "Adept Command",
+    "frequency": null,
+    "trigger": null,
+    "target": null,
+    "condition": null,
+    "effect": "You learn the Move After You."
+  },
+  "Trainer of Champions": {
+    "name": "Trainer of Champions",
+    "tags": [],
+    "prerequisites": "Expert Command",
+    "frequency": null,
+    "trigger": null,
+    "target": null,
+    "condition": null,
+    "effect": "Whenever you apply Experience Training to a Pokemon, they gain an additional +5 Experience. Command is a Spirit Skill representing a character’s ability to lead and inspire. Command is about having presence and being seen and listened to. Characters with a high Command Rank can become the center of attention in a room with a few well-chosen words. The most obvious and common use of the Command Skill is in giving orders to Pokémon and particularly retaining control of unruly or untamed Pokémon. For example, Pokémon with Loyalty 0 or 1 require Command checks to successfully order them in battle (page 210). Expanding on this notion, a Trainer’s Command Rank also affects their ability to train their Pokémon in downtime outside of combat. The higher their Command Rank, the more effective their training (page 202). Outside of Pokémon-related applications, Command has a number of uses. Command is tested when trying to disperse a riot or when directing a panicking crowd to safety in the aftermath of a Team Rocket terrorist attack. For Pokémon Rangers and other members of law enforcement, Command may be necessary to keep subordinates in line, especially rebellious elements, similar to low Loyalty Pokémon. During combat, Command also lets a Trainer help their allies Take a Breather and recover from Status Afflictions such as Confusion and Rage (page 245). Command doesn’t have to relate to explicitly giving orders either. It can be used to gain presence and attention in a scene or give an impression of authority without issuing directives. For example, while Charm may often be tested when giving speeches to a crowd to win them over to an idea, a character who wants to make a show of a community’s solidarity and the strength of its leadership during a time of crisis might roll their Command Skill instead when delivering a speech. In Opposed Checks, Command may be used against a foe’s Intimidate to keep a crowd or a squad of allies from falling to fear and panic. Command is also tested to help snap allies out of supernatural mental influences, such as powerful Legendary Pokémon or Ghost and Psychic Types. In these cases, roll Command against the foe’s relevant Skill, usually Focus or Intimidate."
+  },
+  "Basic Psionics": {
+    "name": "Basic Psionics",
+    "tags": [],
+    "prerequisites": "Elemental Connection (Psychic)",
+    "frequency": null,
+    "trigger": null,
+    "target": null,
+    "condition": null,
+    "effect": "You learn the Move Confusion."
+  },
+  "Iron Mind": {
+    "name": "Iron Mind",
+    "tags": [],
+    "prerequisites": "Novice Focus",
+    "frequency": null,
+    "trigger": null,
+    "target": null,
+    "condition": null,
+    "effect": "You become aware of all attempts to read your mind with Telepathy, whether the attempt is successful or not."
+  },
+  "Work Up": {
+    "name": "Work Up",
+    "tags": [],
+    "prerequisites": "Adept Focus",
+    "frequency": null,
+    "trigger": null,
+    "target": null,
+    "condition": null,
+    "effect": "You learn the Move Work Up."
+  },
+  "Basic Cooking": {
+    "name": "Basic Cooking",
+    "tags": [],
+    "prerequisites": "Novice Intuition",
+    "frequency": null,
+    "trigger": null,
+    "target": null,
+    "condition": null,
+    "effect": "You may create “Candy Bars” or “Baby Food” with cooking ingredients costing 50. You may fluff the food in any reasonable manner you like."
+  },
+  "Mystic Senses": {
+    "name": "Mystic Senses",
+    "tags": [],
+    "prerequisites": "Novice Intuition",
+    "frequency": null,
+    "trigger": null,
+    "target": null,
+    "condition": null,
+    "effect": "You may use Intuition instead of Charm to improve the disposition of Wild Pokémon. You may not take Mystic Senses if you have the Elemental Connection Edge, and you may not take Elemental Connection if you have Mystic Senses."
+  },
+  "Instinctive Aptitude": {
+    "name": "Instinctive Aptitude",
+    "tags": [],
+    "prerequisites": "Adept Intuition",
+    "frequency": null,
+    "trigger": null,
+    "target": null,
+    "condition": null,
+    "effect": "Whenever you spend AP to raise your roll on an Accuracy Roll or Skill Check, you get a +2 bonus instead of +1. This cannot be used on Rolls made by your Pokémon."
+  },
+  "Basic Skills": {
+    "name": "Basic Skills",
+    "tags": [],
+    "prerequisites": "None",
+    "frequency": null,
+    "trigger": null,
+    "target": null,
+    "condition": null,
+    "effect": "You Rank Up a Skill from Pathetic to Untrained, or Untrained to Novice. You may take this Edge multiple times."
+  },
+  "Adept Skills": {
+    "name": "Adept Skills",
+    "tags": [],
+    "prerequisites": "Level 2",
+    "frequency": null,
+    "trigger": null,
+    "target": null,
+    "condition": null,
+    "effect": "You Rank Up a Skill from Novice to Adept. You may take this Edge multiple times."
+  },
+  "Expert Skills": {
+    "name": "Expert Skills",
+    "tags": [],
+    "prerequisites": "Level 6",
+    "frequency": null,
+    "trigger": null,
+    "target": null,
+    "condition": null,
+    "effect": "You Rank Up a Skill from Adept to Expert. You may take this Edge multiple times."
+  },
+  "Master Skills": {
+    "name": "Master Skills",
+    "tags": [],
+    "prerequisites": "Level 12",
+    "frequency": null,
+    "trigger": null,
+    "target": null,
+    "condition": null,
+    "effect": "You Rank Up a Skill from Expert to Master. You may take this Edge multiple times."
+  },
+  "Skill Stunt": {
+    "name": "Skill Stunt",
+    "tags": [],
+    "prerequisites": "A Skill at Novice Rank or higher",
+    "frequency": null,
+    "trigger": null,
+    "target": null,
+    "condition": null,
+    "effect": "Choose a Skill you have at Novice Rank or higher. Choose a specific use of that Skill; when rolling that skill under those circumstances, you may choose to roll one less dice, and instead add +6 to the result. You may take this Edge multiple times, choosing a different circumstance each time."
+  },
+  "Categoric Inclination": {
+    "name": "Categoric Inclination",
+    "tags": [],
+    "prerequisites": "None",
+    "frequency": null,
+    "trigger": null,
+    "target": null,
+    "condition": null,
+    "effect": "Choose Body, Mind, or Spirit. You gain a +1 Bonus to all Skill Checks of that Category."
+  },
+  "Skill Enhancement": {
+    "name": "Skill Enhancement",
+    "tags": [],
+    "prerequisites": "None",
+    "frequency": null,
+    "trigger": null,
+    "target": null,
+    "condition": null,
+    "effect": "Choose two different Skills. You gain a +2 bonus to each of those skills. Skill Enhancement may be taken multiple times, but the bonus may be applied only once to a particular skill."
+  },
+  "Virtuoso": {
+    "name": "Virtuoso",
+    "tags": [],
+    "prerequisites": "A Skill at Master Rank, Level 20",
+    "frequency": null,
+    "trigger": null,
+    "target": null,
+    "condition": null,
+    "effect": "Choose a Skill at Master Rank. Consider that Skill to be effectively “Rank 8” for any Features or effects that depend on Skill Rank. Virtuoso may be taken multiple times, but you must choose a different Skill each time."
+  },
+  "Weapon of Choice": {
+    "name": "Weapon of Choice",
+    "tags": [],
+    "prerequisites": "A Feature with the [Weapon] tag",
+    "frequency": null,
+    "trigger": null,
+    "target": null,
+    "condition": null,
+    "effect": "Choose a specific weapon type. You gain a +2 Bonus on Opposed Rolls to prevent being disarmed while wielding weapons of your chosen type. If you would be disarmed anyway, you may pay 1 AP to prevent yourself from being Disarmed."
+  },
+  "Elemental Connection": {
+    "name": "Elemental Connection",
+    "tags": [],
+    "prerequisites": "None",
+    "frequency": null,
+    "trigger": null,
+    "target": null,
+    "condition": null,
+    "effect": "Choose an Elemental Type. You gain a +2 bonus to Charm, Command, Guile, Intimidate, and Intuition Checks targeting Pokémon of that Type. You may not take Elemental Connection if you have the Mystic Senses Edge, and you may not take Mystic Senses if you have Elemental Connection."
+  }
+}

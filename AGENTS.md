@@ -1,16 +1,19 @@
 This is a Nuxt 3 and three.js project.
 
-## PTU data JSON references
+## Rotom Table authoritative reference JSON
 
-- `ptu-data/data/abilities.json`
-- `ptu-data/data/capabilities.json`
-- `ptu-data/data/conditions.json`
-- `ptu-data/data/edges.json`
-- `ptu-data/data/features.json`
-- `ptu-data/data/items.json`
-- `ptu-data/data/moves.json`
-- `ptu-data/data/pokedex.json`
-- `ptu-data/data/rules.json`
+Runtime app knowledge is authoritative under `data/reference/`. Treat `ptu-data/` as documentary upstream/source material and parser output, not as a runtime source of truth.
+
+- `data/reference/abilities.json`
+- `data/reference/capabilities.json`
+- `data/reference/conditions.json`
+- `data/reference/edges.json`
+- `data/reference/features.json`
+- `data/reference/items.json`
+- `data/reference/maneuvers.json`
+- `data/reference/moves.json`
+- `data/reference/pokedex.json`
+- `data/reference/rules.json`
 
 ## Software Practices
 When writing software, we explicitly always adhere to the following principles:

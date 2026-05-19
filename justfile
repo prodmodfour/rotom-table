@@ -41,10 +41,10 @@ default:
       '  just condition "<condition name>"' \
       '  just item "<item name>"' \
       '  just rule "<rule name>"' \
-      '      Lookup PTU reference data.' \
+      '      Lookup app-owned PTU reference data.' \
       '' \
-      '  just rebuild-reference-cache' \
-      '      Rebuild capability, condition, item, and rule lookup caches.'
+      '  just rebuild-ptu-data-cache' \
+      '      Rebuild documentary ptu-data parser output (not app runtime reference).' 
 
 help:
     @just default
@@ -124,8 +124,8 @@ encounter region="" table="" count="" preview="" out_root="data/sheets/wild":
             n=$((n + 1))
         done
         mkdir -p "$dir"
-        # pokegen.sh cd's into ptu-data/ before running cli.py, so we must
-        # pass an absolute path for --output-dir.
+        # pokegen.sh may be invoked from any working directory, so pass an
+        # absolute path for --output-dir.
         abs_dir=$(cd "$dir" && pwd)
         # Slug prefix derived from the per-run path under data/sheets so each
         # generated sheet's slug stays globally unique. Strip the data/sheets/
@@ -178,43 +178,45 @@ encounter region="" table="" count="" preview="" out_root="data/sheets/wild":
         echo "(!) $failures encounter(s) skipped" >&2
     fi
 
-# Lookup a Pokémon from ptu-data/data/pokedex.json.
+# Lookup a Pokémon from data/reference/pokedex.json.
 # Usage: just pokemon <pokemon name>
 pokemon +name:
     @python3 scripts/lookup_ptu.py pokemon "{{name}}"
 
-# Lookup an Ability from ptu-data/data/abilities.json.
+# Lookup an Ability from data/reference/abilities.json.
 # Usage: just ability <ability name>
 ability +name:
     @python3 scripts/lookup_ptu.py ability "{{name}}"
 
-# Lookup a Move from ptu-data/data/moves.json.
+# Lookup a Move from data/reference/moves.json.
 # Usage: just move <move name>
 move +name:
     @python3 scripts/lookup_ptu.py move "{{name}}"
 
-# Lookup a Capability from ptu-data/data/capabilities.json.
+# Lookup a Capability from data/reference/capabilities.json.
 # Usage: just capability <capability name>
 capability +name:
     @python3 scripts/lookup_ptu.py capability "{{name}}"
 
-# Lookup a Condition from ptu-data/data/conditions.json.
+# Lookup a Condition from data/reference/conditions.json.
 # Usage: just condition <condition name>
 condition +name:
     @python3 scripts/lookup_ptu.py condition "{{name}}"
 
-# Lookup an Item from ptu-data/data/items.json.
+# Lookup an Item from data/reference/items.json.
 # Usage: just item <item name>
 item +name:
     @python3 scripts/lookup_ptu.py item "{{name}}"
 
-# Lookup a Rule from ptu-data/data/rules.json.
+# Lookup a Rule from data/reference/rules.json.
 # Usage: just rule <rule name>
 rule +name:
     @python3 scripts/lookup_ptu.py rule "{{name}}"
 
-# Rebuild the reference caches used by capability/condition/item/rule lookups.
-rebuild-reference-cache:
+# Rebuild documentary upstream ptu-data caches. Review and copy intentional
+# Rotom Table PTU implementation changes into data/reference/ rather than treating
+# this as runtime sync.
+rebuild-ptu-data-cache:
     python3 ptu-data/parse_capabilities.py
     python3 ptu-data/parse_conditions.py
     python3 ptu-data/parse_items.py

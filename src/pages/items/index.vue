@@ -45,7 +45,7 @@ const toggleCategory = (category: string) => {
     <ReferenceIndexHeader title="Items" :count="filtered.length" :total="items.length">
       <p class="ref-copy">
         PTU gear, medicine, Poké Balls, TMs, Held Items, and equipment from
-        <code>ptu-data/data/items.json</code>. Pick a category or section, or search by
+        <code>data/reference/items.json</code>. Pick a category or section, or search by
         name, cost, source, or effect.
       </p>
 

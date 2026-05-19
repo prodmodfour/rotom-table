@@ -1,4 +1,4 @@
-import pokedexData from '~~/ptu-data/data/pokedex.json'
+import pokedexData from '~~/data/reference/pokedex.json'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { PokedexRecord } from '~/types/pokemon'
 import { pokemonCatalogBySpecies } from '~~/data/pokemonCatalog'
@@ -39,7 +39,7 @@ export const characterSheetsBySlug = new Map(characterSheets.map((sheet) => [she
 
 // ---------------------------------------------------------------------------
 // Species/catalog lookups so UI and sheet resolvers can layer personal sheet
-// data over the canonical PTU species data.
+// data over the app-owned PTU species reference data.
 // ---------------------------------------------------------------------------
 
 const pokedexBySpecies = new Map<string, PokedexRecord>(

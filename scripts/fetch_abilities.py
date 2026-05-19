@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Fetch PTU 1.05 abilities from the community character sheet and merge them
-into ptu-data/data/abilities.json.
+into the app-owned PTU reference file at data/reference/abilities.json.
 
 Source: https://docs.google.com/spreadsheets/d/1qNXTHozEWYrd_eGlhQdpCf5q1x3D0z7-zmFQyLwz83k
 Sheet : 'Abilities Data' (columns: Name, Frequency, Effect, Trigger, Target,
@@ -22,7 +22,7 @@ SPREADSHEET_ID = "1qNXTHozEWYrd_eGlhQdpCf5q1x3D0z7-zmFQyLwz83k"
 SHEET_RANGE = "Abilities Data!A1:G700"
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-CACHE_PATH = os.path.join(REPO_ROOT, "ptu-data", "data", "abilities.json")
+CACHE_PATH = os.path.join(REPO_ROOT, "data", "reference", "abilities.json")
 
 
 def fetch_rows() -> list[list[str]]:

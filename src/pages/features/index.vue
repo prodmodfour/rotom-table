@@ -35,8 +35,7 @@ const toggleTag = (tag: string) => {
   <div class="ref-index">
     <ReferenceIndexHeader title="Features" :count="filtered.length" :total="features.length">
       <p class="ref-copy">
-        Trainer Features parsed from <code>core/03-skills-edges-and-features.md</code>
-        and <code>core/04-trainer-classes.md</code> (errata-2 patches applied).
+        PTU Trainer Features from <code>data/reference/features.json</code>.
         Class Features are tagged <code>Class</code>; pick a tag below to filter.
       </p>
 

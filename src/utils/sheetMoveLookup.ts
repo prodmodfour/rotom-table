@@ -180,6 +180,6 @@ export const clearLookupBackedMoveFields = (move: SheetMoveLike): void => {
 export const setLookupMoveName = (move: SheetMoveLike, value: unknown): void => {
   move.name = typeof value === 'string' ? value : value == null ? '' : String(value)
   // The sheet stores only the selected move name; display/runtime details come
-  // from ptu-data/data/moves.json via data/ptuReference.ts.
+  // from data/reference/moves.json via data/ptuReference.ts.
   clearLookupBackedMoveFields(move)
 }

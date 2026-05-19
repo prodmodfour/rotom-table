@@ -6,7 +6,7 @@
  * each rolled species/level pair, writing ``CharacterSheet`` JSON files
  * into ``<outRoot>/<table>_<count>[-N]/``.
  *
- * Local dev tool only — spawns Python (``ptu-data/cli.py``) on the host.
+ * Local dev tool only — spawns the Rotom Table Pokémon sheet generator on the host.
  */
 import { defineEventHandler, readBody } from 'h3'
 import { requireGm } from '../../utils/auth'

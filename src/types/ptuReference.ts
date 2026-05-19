@@ -1,5 +1,5 @@
 /**
- * PTU reference-data shapes mirrored from `ptu-data/data/*.json`.
+ * PTU reference-data shapes mirrored from Rotom Table's app-owned `data/reference/*.json`.
  *
  * Each JSON file is a dict keyed by name; we expose them as both the canonical
  * dict and a sorted array of records via ``data/ptuReference.ts``.
@@ -85,8 +85,8 @@ export interface PtuRule {
 }
 
 /**
- * A trainer Feature parsed from ``core/03-skills-edges-and-features.md`` and
- * ``core/04-trainer-classes.md`` (plus errata patches). Class Features are
+ * A trainer Feature entry shaped from PTU Skills/Edges/Features and Trainer
+ * Classes source material (plus errata patches). Class Features are
  * marked by the ``Class`` tag; Branching Classes additionally carry ``Branch``.
  */
 export interface PtuFeature {

@@ -14,9 +14,9 @@ const filtered = computed(() => filterCapabilities(capabilities, searchTerm.valu
   <div class="ref-index">
     <ReferenceIndexHeader title="Capabilities" :count="filtered.length" :total="capabilities.length">
       <p class="ref-copy">
-        Named PTU capabilities from <code>ptu-data/data/capabilities.json</code>,
+        Named PTU capabilities from <code>data/reference/capabilities.json</code>,
         including the core numeric movement and basic capability definitions
-        sourced from the markdown rulebooks.
+        maintained as app-owned reference data.
       </p>
       <ReferenceSearchField
         v-model="searchTerm"
