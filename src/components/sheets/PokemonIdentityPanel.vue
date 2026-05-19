@@ -1,5 +1,7 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import type { CharacterSheet } from '~/types/characterSheet'
+import { pokedexEntryPathForSpecies } from '~/utils/pokedex/routes'
 
 const eggGroupsCsv = defineModel<string>('eggGroupsCsv', { required: true })
 
@@ -16,6 +18,8 @@ const props = defineProps<{
   natureMinusDisplay?: string
   isGm: boolean
 }>()
+
+const pokedexPath = computed(() => pokedexEntryPathForSpecies(props.sheet.species))
 
 </script>
 
@@ -45,6 +49,17 @@ const props = defineProps<{
           </div>
         </div>
         <div class="identity__badges">
+          <NuxtLink
+            v-if="pokedexPath"
+            :to="pokedexPath"
+            class="badge pokedex-link"
+            :aria-label="`Open ${sheet.species} in Pokédex in a new tab`"
+            target="_blank"
+            rel="noopener"
+            prefetch-on="interaction"
+          >
+            View in Pokédex
+          </NuxtLink>
           <span
             class="badge"
             :title="levelIsExperienceDerived ? `Level ${levelFromExperience} from Total EXP` : 'Manual level'"
@@ -231,6 +246,27 @@ const props = defineProps<{
   color: var(--ink-bright);
   cursor: pointer;
   user-select: none;
+}
+
+.pokedex-link {
+  border: 1px solid color-mix(in srgb, var(--accent) 70%, var(--rule-soft));
+  background: rgba(255, 31, 45, 0.18);
+  color: var(--ink-bright);
+  font-weight: 800;
+  text-decoration: none;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.pokedex-link:hover,
+.pokedex-link:focus-visible {
+  border-color: var(--accent);
+  background: rgba(255, 31, 45, 0.28);
+  color: var(--ink-bright);
+}
+
+.pokedex-link:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .badge.player-toggle.player,
