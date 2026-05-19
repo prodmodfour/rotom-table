@@ -14,6 +14,7 @@ import {
   HELPING_HAND_CONDITION,
   REFLECT_BLESSING_CONDITION,
   SUPERSONIC_ACCURACY_PENALTY_CONDITION,
+  SWEET_SCENT_EVASION_PENALTY_CONDITION,
 } from '~/utils/moveAutomationSpecialConditions'
 import type { MoveDamageRollResult } from '~/utils/moveDamageBase'
 import type { CombatStageKey } from '~/types/combatStages'
@@ -566,6 +567,7 @@ const REVIEWED_AREA_CONDITION_SCRIPTS: ReadonlyMap<string, MoveAutomationScript>
   ['Poison Gas', reviewedAreaConditionScript('Poison Gas', [{ condition: 'Poisoned', label: 'Poisoned' }])],
   ['Rock Slide', reviewedAreaConditionScript('Rock Slide', [{ condition: 'Flinch', label: 'Flinch on 17+', threshold: '17+' }])],
   ['Sludge Wave', reviewedAreaConditionScript('Sludge Wave', [{ condition: 'Poisoned', label: 'Poisoned on 19+', threshold: '19+' }])],
+  ['Sweet Scent', reviewedAreaConditionScript('Sweet Scent', [{ condition: SWEET_SCENT_EVASION_PENALTY_CONDITION, label: 'Sweet Scent Evasion Penalty' }])],
   ['Teeter Dance', reviewedAreaConditionScript('Teeter Dance', [{ condition: 'Confused', label: 'Confused' }])],
 ])
 

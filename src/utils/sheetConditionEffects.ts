@@ -14,6 +14,7 @@ import {
   ELECTRIC_RESISTANT_COAT_CONDITION,
   HELPING_HAND_CONDITION,
   SUPERSONIC_ACCURACY_PENALTY_CONDITION,
+  SWEET_SCENT_EVASION_PENALTY_CONDITION,
 } from '~/utils/moveAutomationSpecialConditions'
 import type { CombatStageKey, CombatStageMap, CombatStatStageKey } from '~/types/combatStages'
 
@@ -278,6 +279,10 @@ export const conditionDamageRollModifier = (
   conditions: readonly string[] | null | undefined,
 ): number => conditionSet(conditions).has(HELPING_HAND_CONDITION) ? 10 : 0
 
+export const conditionEvasionModifier = (
+  conditions: readonly string[] | null | undefined,
+): number => conditionSet(conditions).has(SWEET_SCENT_EVASION_PENALTY_CONDITION) ? -2 : 0
+
 /** Accuracy penalties from conditions are flat roll modifiers, not clamped Combat Stages. */
 export const conditionAdjustedAccuracy = (
   accuracyStage: unknown,
@@ -311,12 +316,13 @@ export const conditionAdjustedEvasion = ({
     : baseStatTotal
   const base = computeStatEvasion(effectiveStat)
   const evasionBonus = finiteNumber(bonus)
+  const conditionEvasionModifierValue = conditionEvasionModifier(conditions)
   const allSuppressedBy = evasionSuppressedByCondition(conditions)
   const speedSuppressedBy = kind === 'speed' ? speedEvasionSuppressedByCondition(conditions) : null
   const suppressedByCondition = allSuppressedBy ?? speedSuppressedBy
 
   return {
-    total: suppressedByCondition ? 0 : computeEvasionTotal(base, evasionBonus),
+    total: suppressedByCondition ? 0 : computeEvasionTotal(base, evasionBonus + conditionEvasionModifierValue),
     base,
     bonus: evasionBonus,
     manualStage,
@@ -482,6 +488,14 @@ export const describeSheetConditionEffects = (
       id: 'electric-resistant-coat',
       label: ELECTRIC_RESISTANT_COAT_CONDITION,
       description: 'Electric-Type damage is resisted one step further; remove after being hit by a damaging Electric-Type Move.',
+    })
+  }
+
+  if (set.has(SWEET_SCENT_EVASION_PENALTY_CONDITION)) {
+    effects.push({
+      id: 'sweet-scent-evasion-penalty',
+      label: SWEET_SCENT_EVASION_PENALTY_CONDITION,
+      description: 'Total Evasion takes a -2 penalty, to a minimum of 0.',
     })
   }
 

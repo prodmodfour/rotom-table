@@ -64,6 +64,16 @@
     ],
     "source": "move automation"
   },
+  "Sweet Scent Evasion Penalty": {
+    "name": "Sweet Scent Evasion Penalty",
+    "category": "Other Affliction",
+    "effect": "Total Evasion takes a -2 penalty, to a minimum of 0.",
+    "aliases": [
+      "Sweet Scent Penalty",
+      "Sweet Scent"
+    ],
+    "source": "move automation"
+  },
   "Electric-Resistant Coat": {
     "name": "Electric-Resistant Coat",
     "category": "Other Affliction",

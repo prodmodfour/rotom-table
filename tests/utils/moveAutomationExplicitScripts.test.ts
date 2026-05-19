@@ -157,6 +157,7 @@ describe('explicit move automation scripts', () => {
     const tailWhip = explicitScriptForMove('Tail Whip')
     const heatWave = explicitScriptForMove('Heat Wave')
     const poisonGas = explicitScriptForMove('Poison Gas')
+    const sweetScent = explicitScriptForMove('Sweet Scent')
 
     expect(tailWhip).toMatchObject({
       kind: 'explicit',
@@ -187,6 +188,18 @@ describe('explicit move automation scripts', () => {
     })
     expect(poisonGas?.areaTemplates).toMatchObject([{ kind: 'burst', size: 1 }, { kind: 'cone', size: 2 }])
     expect(isSeamlessAreaConfirmationScript(poisonGas)).toBe(true)
+
+    expect(sweetScent).toMatchObject({
+      kind: 'explicit',
+      moveName: 'Sweet Scent',
+      targetMode: 'multi-target',
+      damaging: false,
+      requiresAccuracy: true,
+      ac: 2,
+      conditionSuggestions: [{ recipient: 'target', condition: 'Sweet Scent Evasion Penalty', label: 'Sweet Scent Evasion Penalty' }],
+    })
+    expect(sweetScent?.areaTemplates).toMatchObject([{ kind: 'burst', size: 2 }])
+    expect(isSeamlessAreaConfirmationScript(sweetScent)).toBe(true)
   })
 
   it('implements Smog as a reviewed Line 2 damaging AoE with even-roll poison', () => {

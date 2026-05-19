@@ -1,9 +1,7 @@
-import { applyCombatStageToStat } from '~/utils/combatStageStats'
 import { clampCombatStage } from '~/utils/combatStages'
-import { computeEvasionTotal, computeStatEvasion } from '~/utils/evasion'
 import {
   conditionAccuracyModifier,
-  conditionAdjustedCombatStage,
+  conditionAdjustedEvasion,
   evasionSuppressedByCondition,
   speedEvasionSuppressedByCondition,
 } from '~/utils/sheetConditionEffects'
@@ -32,19 +30,32 @@ export interface MoveAutomationEvasionResolution {
   suppressedByCondition: string | null
 }
 
+type MoveAutomationEvasionStatStageKey = Extract<CombatStatStageKey, 'def' | 'sdef' | 'spd'>
+
+const evasionKindForStatStageKey = (key: MoveAutomationEvasionStatStageKey): MoveAutomationEvasionKind => {
+  switch (key) {
+    case 'def': return 'physical'
+    case 'sdef': return 'special'
+    case 'spd': return 'speed'
+  }
+}
+
 const evasionForStat = (
   target: SpawnedPokemon,
-  key: CombatStatStageKey,
+  key: MoveAutomationEvasionStatStageKey,
   stat: number | null | undefined,
   stage: number | null | undefined,
   bonus: number | null | undefined,
-): number => computeEvasionTotal(
-  computeStatEvasion(applyCombatStageToStat(
-    stat ?? 0,
-    conditionAdjustedCombatStage(stage ?? 0, target.conditions, key, { abilities: target.abilityNames }),
-  )),
-  bonus ?? 0,
-)
+): number => conditionAdjustedEvasion({
+  statTotal: stat,
+  combatStage: stage,
+  bonus,
+  conditions: target.conditions,
+  abilities: target.abilityNames,
+  statStageKey: key,
+  kind: evasionKindForStatStageKey(key),
+  applyCombatStages: true,
+}).total
 
 const physicalEvasion = (target: SpawnedPokemon): MoveAutomationEvasionCandidate => ({
   kind: 'physical',

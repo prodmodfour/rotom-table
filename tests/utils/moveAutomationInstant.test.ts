@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { explicitScriptForMove } from '~/utils/moveAutomation'
 import { buildMoveAutomationMoveEntries } from '~/utils/moveAutomationMoves'
+import { resolveMoveAutomationTargetEvasion } from '~/utils/moveAutomationAccuracy'
 import {
   resolveInstantAreaMoveAutomation,
   resolveInstantMoveAutomation,
@@ -234,6 +235,48 @@ describe('instant move automation', () => {
       "Howl raises user's Attack: +1 Attack CS on Howler.",
       "Howl raises allies' Attack: +1 Attack CS on Ally.",
     ]))
+  })
+
+  it('resolves Sweet Scent as a Burst evasion-penalty marker on hit targets', () => {
+    const script = explicitScriptForMove('Sweet Scent')!
+    const transaction = resolveInstantAreaMoveAutomation({
+      script,
+      user: token({ id: 'u', species: 'Aroma' }),
+      targets: [
+        token({ id: 'hit', species: 'Hitmon' }),
+        token({ id: 'miss', species: 'Missmon' }),
+      ],
+      random: sequenceRandom([0.5, 0]),
+    })
+
+    expect(transaction.hpUpdates).toEqual([])
+    expect(transaction.conditionUpdates).toEqual([
+      { id: 'hit', conditions: ['Sweet Scent Evasion Penalty'] },
+    ])
+    expect(transaction.logLines).toEqual(expect.arrayContaining([
+      'Sweet Scent Evasion Penalty applied to Hitmon.',
+      'Hitmon: accuracy 11 (hit).',
+      'Missmon: accuracy 1 (miss).',
+    ]))
+  })
+
+  it('applies Sweet Scent evasion penalties to later Accuracy checks without going below 0', () => {
+    const script = explicitScriptForMove('Tackle')!
+
+    expect(resolveMoveAutomationTargetEvasion(script, token({
+      id: 'scented',
+      species: 'Scented',
+      def: 20,
+      spd: 15,
+      conditions: ['Sweet Scent Evasion Penalty'],
+    }))).toMatchObject({ value: 2 })
+    expect(resolveMoveAutomationTargetEvasion(script, token({
+      id: 'low',
+      species: 'Low',
+      def: 5,
+      spd: 5,
+      conditions: ['Sweet Scent Evasion Penalty'],
+    }))).toMatchObject({ value: 0 })
   })
 
   it('resolves Magical Leaf damage as a cannot-miss target attack', () => {
