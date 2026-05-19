@@ -76,12 +76,14 @@ export interface MoveAutomationFeedbackCondition {
   blockedBy?: string
 }
 
+export type MoveAutomationFeedbackPhase = 'rolling' | 'hit-roll' | 'outcome' | 'damage'
+
 export interface MoveAutomationFeedbackState {
   id: string
   userId: string
   targetId: string
   moveName: string
-  phase: 'rolling' | 'result'
+  phase: MoveAutomationFeedbackPhase
   naturalRoll: number
   modifiedRoll: number
   accuracyCheck: number | null
@@ -90,6 +92,7 @@ export interface MoveAutomationFeedbackState {
   targetEvasionLabel: string
   hit: boolean
   crit: boolean
+  damageResolved: boolean
   damageLoss: number
   conditions: MoveAutomationFeedbackCondition[]
 }

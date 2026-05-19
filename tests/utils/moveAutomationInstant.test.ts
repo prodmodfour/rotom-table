@@ -361,8 +361,8 @@ describe('instant move automation', () => {
     ])
     expect(transaction.conditionUpdates).toEqual([{ id: 'even', conditions: ['Poisoned'] }])
     expect(transaction.logLines).toEqual(expect.arrayContaining([
-      'Evenmon: 13 HP damage.',
-      'Oddmon: 13 HP damage.',
+      'Evenmon: 13 damage.',
+      'Oddmon: 13 damage.',
       'Poisoned on even roll applied to Evenmon.',
       'Note: Poisoned did not apply to Gear: immune (Steel type).',
       'Evenmon: accuracy 8 (hit).',

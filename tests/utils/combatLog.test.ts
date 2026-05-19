@@ -12,7 +12,7 @@ describe('buildCombatLogMessages', () => {
           lines: [
             'Foil used Ember.',
             'Explicit move script v1 used.',
-            'Crockefeller: 9 HP damage.',
+            'Crockefeller: 9 damage.',
           ],
         },
         {
@@ -53,7 +53,7 @@ describe('buildCombatLogMessages', () => {
       'move',
     ])
     expect(messages[2]?.details).toEqual(['3 squares from (0, 0, 0) to (3, 0, 0).'])
-    expect(messages[3]?.details).toEqual(['Crockefeller: 9 HP damage.'])
+    expect(messages[3]?.details).toEqual(['Crockefeller: 9 damage.'])
   })
 
   it('returns the newest limited action messages while keeping display order', () => {

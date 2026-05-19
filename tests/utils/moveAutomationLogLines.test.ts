@@ -56,8 +56,8 @@ describe('move automation log line helpers', () => {
       label: 'Recover',
     }
 
-    expect(formatMoveAutomationDamageLogLine('Target', 12)).toBe('Target: 12 HP damage.')
-    expect(formatMoveAutomationDamageLogLine('Target', 12, true)).toBe('Target: 12 HP damage (critical flagged).')
+    expect(formatMoveAutomationDamageLogLine('Target', 12)).toBe('Target: 12 damage.')
+    expect(formatMoveAutomationDamageLogLine('Target', 12, true)).toBe('Target: 12 damage (critical flagged).')
     expect(formatMoveAutomationHpSuggestionLogLine('Caster', hpSuggestion, 10)).toBe('Caster: Recover (10 HP).')
     expect(formatMoveAutomationHpSuggestionLogLine('Caster', hpSuggestion, 0)).toBe('Caster: Recover.')
   })

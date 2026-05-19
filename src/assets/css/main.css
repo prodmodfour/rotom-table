@@ -260,13 +260,13 @@ samp {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 118px;
+  min-width: 180px;
   user-select: none;
   pointer-events: none;
 }
 
 .move-automation-roll {
-  min-width: 118px;
+  min-width: 180px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -298,6 +298,11 @@ samp {
   border-radius: 15px;
   color: var(--accent);
   animation: move-automation-d20-roll 0.42s linear infinite;
+}
+
+.move-automation-roll.is-result.is-hit-roll {
+  border-color: var(--rule-active);
+  color: var(--ink-bright);
 }
 
 .move-automation-roll.is-result.is-hit {

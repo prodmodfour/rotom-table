@@ -125,7 +125,7 @@ describe('move automation transaction helpers', () => {
     expect(transaction.fieldEffectsToApply).toEqual([{ kind: 'weather', value: 'sunny', source: 'Test Move' }])
     expect(transaction.logLines).toEqual(expect.arrayContaining([
       'Caster used Test Move.',
-      'Target: 16 HP damage (critical flagged).',
+      'Target: 16 damage (critical flagged).',
       'Note: Manual note',
       'Note: Check secondary effects.',
     ]))

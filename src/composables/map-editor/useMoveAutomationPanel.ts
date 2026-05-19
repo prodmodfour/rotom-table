@@ -102,8 +102,10 @@ export interface UseMoveAutomationPanelOptions {
 }
 
 const DEFAULT_MAX_LOG_ENTRIES = 100
-const D20_ROLL_ANIMATION_MS = 850
-const ROLL_RESULT_VISIBLE_MS = 1600
+const D20_ROLL_ANIMATION_MS = 650
+const HIT_ROLL_VISIBLE_MS = 850
+const HIT_RESULT_VISIBLE_MS = 600
+const FINAL_RESULT_VISIBLE_MS = 1100
 
 interface ActiveSingleTargetingRequest {
   kind: 'single-target'
@@ -616,20 +618,58 @@ export const useMoveAutomationPanel = ({
     queueSpiteReactionPrompts(transaction)
   }
 
+  const feedbackHasFinalResolutionPhase = (feedback: MoveAutomationFeedbackState): boolean =>
+    feedback.damageResolved || feedback.conditions.length > 0
+
   const showMoveAutomationResolution = (
     feedback: MoveAutomationFeedbackState,
     transaction: MoveAutomationTransaction,
   ) => {
     clearFeedbackTimers()
-    moveAutomationFeedback.value = feedback
-    feedbackTimers.push(setTimeout(() => {
-      if (moveAutomationFeedback.value?.id !== feedback.id) return
-      moveAutomationFeedback.value = { ...feedback, phase: 'result' }
+
+    const hasFinalPhase = feedbackHasFinalResolutionPhase(feedback)
+    let transactionApplied = false
+    const feedbackStillCurrent = () => moveAutomationFeedback.value?.id === feedback.id
+    const applyTransactionOnce = () => {
+      if (transactionApplied) return
+      transactionApplied = true
       void applyMoveAutomation(transaction)
-    }, D20_ROLL_ANIMATION_MS))
-    feedbackTimers.push(setTimeout(() => {
-      if (moveAutomationFeedback.value?.id === feedback.id) moveAutomationFeedback.value = null
-    }, D20_ROLL_ANIMATION_MS + ROLL_RESULT_VISIBLE_MS))
+    }
+    const setFeedbackPhase = (phase: MoveAutomationFeedbackState['phase']): boolean => {
+      if (!feedbackStillCurrent()) return false
+      moveAutomationFeedback.value = { ...feedback, phase }
+      return true
+    }
+    const scheduleFeedbackStep = (delay: number, step: () => void) => {
+      feedbackTimers.push(setTimeout(step, delay))
+    }
+
+    moveAutomationFeedback.value = feedback
+    scheduleFeedbackStep(D20_ROLL_ANIMATION_MS, () => {
+      setFeedbackPhase('hit-roll')
+    })
+
+    const outcomeDelay = D20_ROLL_ANIMATION_MS + HIT_ROLL_VISIBLE_MS
+    scheduleFeedbackStep(outcomeDelay, () => {
+      if (!setFeedbackPhase('outcome')) return
+      if (!hasFinalPhase) applyTransactionOnce()
+    })
+
+    if (hasFinalPhase) {
+      const finalDelay = outcomeDelay + HIT_RESULT_VISIBLE_MS
+      scheduleFeedbackStep(finalDelay, () => {
+        if (!setFeedbackPhase('damage')) return
+        applyTransactionOnce()
+      })
+      scheduleFeedbackStep(finalDelay + FINAL_RESULT_VISIBLE_MS, () => {
+        if (feedbackStillCurrent()) moveAutomationFeedback.value = null
+      })
+      return
+    }
+
+    scheduleFeedbackStep(outcomeDelay + HIT_RESULT_VISIBLE_MS, () => {
+      if (feedbackStillCurrent()) moveAutomationFeedback.value = null
+    })
   }
 
   const selectMoveAutomationAreaDirection = (direction: MoveAutomationAreaDirection) => {

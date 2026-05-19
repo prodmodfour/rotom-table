@@ -55,6 +55,9 @@ const spawned = (overrides: Partial<SpawnedPokemon> = {}): SpawnedPokemon => ({
   ...overrides,
 })
 
+const MOVE_FEEDBACK_OUTCOME_MS = 1500
+const MOVE_FEEDBACK_FINAL_MS = 2100
+
 const transaction = (): MoveAutomationTransaction => ({
   userId: 'user-token',
   userName: 'Bolt',
@@ -189,7 +192,7 @@ describe('useMoveAutomationPanel', () => {
         damageLoss: 20,
       })
 
-      await vi.advanceTimersByTimeAsync(850)
+      await vi.advanceTimersByTimeAsync(MOVE_FEEDBACK_FINAL_MS)
 
       expect(calls).toEqual(['hp:target-token:20'])
       expect(map.value.metadata?.moveLog).toMatchObject([{ moveName: 'Psywave', scriptKind: 'explicit' }])
@@ -254,7 +257,7 @@ describe('useMoveAutomationPanel', () => {
         conditions: [{ condition: 'Burned', applied: true }],
       })
 
-      await vi.advanceTimersByTimeAsync(850)
+      await vi.advanceTimersByTimeAsync(MOVE_FEEDBACK_FINAL_MS)
 
       expect(conditionCalls).toEqual([{ id: 'target-token', conditions: ['Burned'] }])
       expect(map.value.metadata?.moveLog).toMatchObject([{ moveName: 'Will-O-Wisp', scriptKind: 'explicit' }])
@@ -314,7 +317,7 @@ describe('useMoveAutomationPanel', () => {
       await panel.selectMoveAutomationTarget('target-token')
       expect(panel.spiteReactionPrompts.value).toEqual([])
 
-      await vi.advanceTimersByTimeAsync(850)
+      await vi.advanceTimersByTimeAsync(MOVE_FEEDBACK_FINAL_MS)
 
       expect(panel.spiteReactionPrompts.value).toMatchObject([{
         defenderId: 'target-token',
@@ -384,7 +387,7 @@ describe('useMoveAutomationPanel', () => {
       await panel.selectMoveAutomationTarget('target-token')
       expect(panel.cuteCharmReactionPrompts.value).toEqual([])
 
-      await vi.advanceTimersByTimeAsync(850)
+      await vi.advanceTimersByTimeAsync(MOVE_FEEDBACK_OUTCOME_MS)
 
       expect(panel.moveAutomationFeedback.value).toMatchObject({ hit: false })
       expect(panel.cuteCharmReactionPrompts.value).toMatchObject([{
@@ -690,7 +693,7 @@ describe('useMoveAutomationPanel', () => {
         damageLoss: 0,
       })
 
-      await vi.advanceTimersByTimeAsync(850)
+      await vi.advanceTimersByTimeAsync(MOVE_FEEDBACK_OUTCOME_MS)
 
       expect(calls).toEqual(['stages:user-token:2'])
       expect(map.value.metadata?.moveLog).toMatchObject([{ moveName: 'Acupressure', scriptKind: 'explicit' }])

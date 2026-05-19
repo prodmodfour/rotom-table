@@ -6,8 +6,8 @@ import type { MoveAutomationFeedbackState } from '~/types/moveAutomation'
 import type { PokemonRenderObject } from '~/utils/isometric/types'
 
 const RETICLE_CSS_SIZE_PX = 72
-const FEEDBACK_CSS_WIDTH_PX = 118
-const FEEDBACK_WORLD_WIDTH = 1.35
+const FEEDBACK_CSS_WIDTH_PX = 180
+const FEEDBACK_WORLD_WIDTH = 2.06
 
 const createTargetReticleElement = (label: string): HTMLElement => {
   const element = document.createElement('div')
@@ -99,32 +99,64 @@ const createFeedbackElement = (): HTMLElement => {
   return element
 }
 
-const resultText = (feedback: MoveAutomationFeedbackState): string => {
-  if (!feedback.hit) return `${feedback.naturalRoll} Miss`
-  const parts = [`${feedback.naturalRoll} Hit`]
-  if (feedback.crit) parts.push('Crit')
-  if (feedback.damageLoss > 0) parts.push(`${feedback.damageLoss} HP`)
-  for (const condition of feedback.conditions) {
-    if (condition.applied) parts.push(condition.condition)
-    else if (condition.blockedBy) parts.push(`${condition.condition} immune`)
-  }
-  return parts.join(' · ')
+const formatRollModifier = (modifier: number): string =>
+  modifier >= 0 ? `+ ${modifier}` : `- ${Math.abs(modifier)}`
+
+const hitRollFormulaText = (feedback: MoveAutomationFeedbackState): string => {
+  const modifier = feedback.modifiedRoll - feedback.naturalRoll
+  return `${feedback.naturalRoll} ${formatRollModifier(modifier)} = ${feedback.modifiedRoll}`
 }
+
+const hitRollText = (feedback: MoveAutomationFeedbackState): string =>
+  `${hitRollFormulaText(feedback)} Hit Roll`
+
+const outcomeText = (feedback: MoveAutomationFeedbackState): string => {
+  if (!feedback.hit) return 'Miss'
+  return feedback.crit ? 'Critical Hit' : 'Hit'
+}
+
+const conditionText = (condition: MoveAutomationFeedbackState['conditions'][number]): string | null => {
+  if (condition.applied) return condition.condition
+  if (condition.blockedBy) return `${condition.condition} immune`
+  return null
+}
+
+const finalResultText = (feedback: MoveAutomationFeedbackState): string => {
+  const parts: string[] = []
+  if (feedback.damageResolved) parts.push(`${feedback.damageLoss} Damage`)
+  for (const condition of feedback.conditions) {
+    const text = conditionText(condition)
+    if (text) parts.push(text)
+  }
+  return parts.length ? parts.join(' · ') : outcomeText(feedback)
+}
+
+const feedbackText = (feedback: MoveAutomationFeedbackState): string => {
+  if (feedback.phase === 'rolling') return 'd20'
+  if (feedback.phase === 'hit-roll') return hitRollText(feedback)
+  if (feedback.phase === 'outcome') return outcomeText(feedback)
+  return finalResultText(feedback)
+}
+
+const feedbackUsesOutcomeTone = (feedback: MoveAutomationFeedbackState): boolean =>
+  feedback.phase === 'outcome' || feedback.phase === 'damage'
 
 const updateFeedbackElement = (element: HTMLElement, feedback: MoveAutomationFeedbackState) => {
   const body = element.querySelector<HTMLElement>('.move-automation-roll')
   if (!body) return
 
+  const useOutcomeTone = feedbackUsesOutcomeTone(feedback)
   body.className = [
     'move-automation-roll',
     feedback.phase === 'rolling' ? 'is-rolling' : 'is-result',
-    feedback.hit ? 'is-hit' : 'is-miss',
-    feedback.crit ? 'is-crit' : '',
+    feedback.phase === 'hit-roll' ? 'is-hit-roll' : '',
+    useOutcomeTone ? (feedback.hit ? 'is-hit' : 'is-miss') : '',
+    useOutcomeTone && feedback.crit ? 'is-crit' : '',
   ].filter(Boolean).join(' ')
-  body.textContent = feedback.phase === 'rolling' ? 'd20' : resultText(feedback)
+  body.textContent = feedbackText(feedback)
   element.title = feedback.accuracyCheck == null
     ? 'This move cannot miss.'
-    : `Accuracy ${feedback.modifiedRoll} vs AC ${feedback.accuracyCheck} (${feedback.targetEvasionLabel} ${feedback.targetEvasion})`
+    : `${hitRollText(feedback)}; AC ${feedback.accuracyCheck} (${feedback.targetEvasionLabel} ${feedback.targetEvasion})`
 }
 
 const feedbackY = (renderObject: PokemonRenderObject): number =>
