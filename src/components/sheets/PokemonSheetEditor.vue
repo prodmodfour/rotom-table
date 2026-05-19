@@ -154,7 +154,6 @@ const {
   <!-- ============ Type Effectiveness ============ -->
   <PokemonTypeEffectivenessPanel
     :rows="typeEffectivenessRows"
-    :sheet-types="sheetTypes"
   />
 
   <!-- ============ Capabilities ============ -->

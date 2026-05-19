@@ -8,24 +8,12 @@ interface TypeEffectivenessRow {
 
 defineProps<{
   rows: readonly TypeEffectivenessRow[]
-  sheetTypes: readonly string[]
 }>()
 </script>
 
 <template>
   <section v-if="rows.length" class="panel-card">
-    <h2 class="panel-title">
-      Type Effectiveness
-      <span class="panel-subtle panel-subtle--types">
-        <span>vs</span>
-        <TypeBadge
-          v-for="type in sheetTypes"
-          :key="`effectiveness-${type}`"
-          :type="type"
-          size="xs"
-        />
-      </span>
-    </h2>
+    <h2 class="panel-title">Type Effectiveness</h2>
     <div class="type-grid">
       <div
         v-for="row in rows"
@@ -55,21 +43,6 @@ defineProps<{
   gap: 0.6rem;
 }
 
-.panel-subtle {
-  font-size: 0.74rem;
-  color: var(--ink-muted);
-  font-weight: 400;
-  letter-spacing: 0.02em;
-  text-transform: none;
-  font-family: var(--font-ui);
-}
-
-.panel-subtle--types {
-  display: inline-flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.25rem;
-}
 
 .type-grid {
   display: grid;
