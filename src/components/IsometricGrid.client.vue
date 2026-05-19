@@ -20,6 +20,7 @@ import { getPokemonCenter } from '~/utils/gridGeometry'
 import { buildAllVoxelOccupancy } from '~/utils/voxelOccupancy'
 import { buildMapOccupancy } from '~/utils/mapOccupancy'
 import { normalizeMapFieldEffects } from '~/utils/mapFieldEffects'
+import { moveAutomationAreaDirectionFromPoint } from '~/utils/moveAutomationAreaAiming'
 import type { CombatStageMap } from '~/types/combatStages'
 import type {
   MoveAutomationAreaDirection,
@@ -582,6 +583,7 @@ const pickMoveTargetId = (event: MouseEvent | PointerEvent): string | null => {
 
 const performMoveTargeting = (event: MouseEvent | PointerEvent): boolean => {
   if (props.moveAutomationTargeting?.mode === 'area-confirmation') {
+    updateMoveAreaDirectionFromPointer(event)
     emit('select-move-target', props.moveAutomationTargeting.userId)
     return true
   }
@@ -618,6 +620,28 @@ const getMoveGridIntersection = (event: MouseEvent | PointerEvent, yLevel: numbe
     camera,
     raycaster,
   })
+
+const moveAreaDirectionFromPointer = (event: MouseEvent | PointerEvent): MoveAutomationAreaDirection | null => {
+  const targeting = props.moveAutomationTargeting
+  if (targeting?.mode !== 'area-confirmation' || !targeting.areaDirectionOptions?.length) return null
+
+  const user = props.pokemons.find((pokemon) => pokemon.id === targeting.userId)
+  if (!user) return null
+
+  const point = getMoveGridIntersection(event, user.position.y)
+  if (!point) return null
+
+  const direction = moveAutomationAreaDirectionFromPoint(getPokemonCenter(user), point)
+  return direction && targeting.areaDirectionOptions.some((option) => option.direction === direction)
+    ? direction
+    : null
+}
+
+const updateMoveAreaDirectionFromPointer = (event: MouseEvent | PointerEvent) => {
+  const direction = moveAreaDirectionFromPointer(event)
+  if (!direction || direction === props.moveAutomationTargeting?.areaDirection) return
+  emit('select-move-area-direction', direction)
+}
 
 const movementInteraction = createIsometricTokenMovementInteractionController({
   getSelectedPokemon: () => selectedPokemon.value,
@@ -743,6 +767,7 @@ const pointerInteraction = createIsometricPointerInteractionController({
   stepPlacementElevation: sendOutInteraction.stepPreviewElevation,
   cancelPlacement: sendOutInteraction.cancel,
   getTargetingModeActive: () => Boolean(props.moveAutomationTargeting),
+  updateTargetingFromPointer: updateMoveAreaDirectionFromPointer,
   performTargeting: performMoveTargeting,
   cancelTargeting: cancelMoveTargeting,
   performBuildAction,
@@ -818,9 +843,9 @@ const syncTargetReticleButtons = (show: boolean) => {
 
 const updateMoveAutomationOverlays = () => {
   const layers = visibleLayers()
-  const showTargeting = Boolean(props.moveAutomationTargeting && layers.tokens)
+  const showTargetReticles = Boolean(props.moveAutomationTargeting?.mode === 'target' && layers.tokens)
   const showAreaTemplate = Boolean(props.moveAutomationTargeting?.mode === 'area-confirmation')
-  syncTargetReticleButtons(showTargeting)
+  syncTargetReticleButtons(showTargetReticles)
   moveAreaTemplateRenderer.update({
     cells: props.moveAutomationTargeting?.areaCells ?? [],
     show: showAreaTemplate,
@@ -998,22 +1023,14 @@ useIsometricSceneWatchers({
         <strong>{{ props.moveAutomationTargeting.moveName }}</strong>
         <template v-if="props.moveAutomationTargeting.mode === 'area-confirmation'">
           <span>
-            Confirm {{ props.moveAutomationTargeting.rangeLabel }}: {{ props.moveAutomationTargeting.affectedIds?.length ?? 0 }} affected. Click the battlefield to use the move.
+            Confirm {{ props.moveAutomationTargeting.rangeLabel }}: {{ props.moveAutomationTargeting.affectedIds?.length ?? 0 }} affected.
+            <template v-if="props.moveAutomationTargeting.areaDirectionOptions?.length">
+              Move the cursor around the user to rotate; click to use the move.
+            </template>
+            <template v-else>
+              Click the battlefield to use the move.
+            </template>
           </span>
-          <div v-if="props.moveAutomationTargeting.areaDirectionOptions?.length" class="move-targeting-hud__directions" @pointerdown.stop @click.stop>
-            <button
-              v-for="option in props.moveAutomationTargeting.areaDirectionOptions"
-              :key="option.direction"
-              type="button"
-              class="move-targeting-hud__direction"
-              :class="{ 'is-active': option.direction === props.moveAutomationTargeting.areaDirection }"
-              :title="`${option.label}: ${option.affectedIds.length} affected`"
-              @click="emit('select-move-area-direction', option.direction)"
-            >
-              {{ option.direction.replace('-', ' ') }}
-              <small>{{ option.affectedIds.length }}</small>
-            </button>
-          </div>
         </template>
         <template v-else>
           <span v-if="props.moveAutomationTargeting.candidateIds.length">
@@ -1034,7 +1051,7 @@ useIsometricSceneWatchers({
       </button>
     </div>
 
-    <div v-if="props.moveAutomationTargeting" class="move-targeting-click-layer" @contextmenu.prevent>
+    <div v-if="props.moveAutomationTargeting?.mode === 'target'" class="move-targeting-click-layer" @contextmenu.prevent>
       <button
         v-for="button in targetReticleButtons"
         :key="button.id"
@@ -1146,16 +1163,7 @@ useIsometricSceneWatchers({
   font-size: 0.92rem;
 }
 
-.move-targeting-hud__directions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.25rem;
-  margin-top: 0.35rem;
-  pointer-events: auto;
-}
-
-.move-targeting-hud__cancel,
-.move-targeting-hud__direction {
+.move-targeting-hud__cancel {
   flex: 0 0 auto;
   border: 1px solid var(--rule-strong);
   border-radius: 999px;
@@ -1168,30 +1176,8 @@ useIsometricSceneWatchers({
   pointer-events: auto;
 }
 
-.move-targeting-hud__direction {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.28rem;
-  padding: 0.26rem 0.5rem;
-  font-size: 0.72rem;
-  text-transform: capitalize;
-}
-
-.move-targeting-hud__direction small {
-  color: var(--ink-muted);
-  font-size: 0.68rem;
-}
-
-.move-targeting-hud__direction.is-active {
-  border-color: var(--accent);
-  color: var(--accent);
-  box-shadow: 0 0 0 2px rgba(255, 31, 45, 0.16);
-}
-
 .move-targeting-hud__cancel:hover,
-.move-targeting-hud__cancel:focus-visible,
-.move-targeting-hud__direction:hover,
-.move-targeting-hud__direction:focus-visible {
+.move-targeting-hud__cancel:focus-visible {
   border-color: var(--accent);
   color: var(--accent);
 }

@@ -32,6 +32,7 @@ const makeController = () => {
   let selectedPokemon: { id: string } | null = null
   let buildMode = false
   let hazardMode = false
+  let targetingMode = false
   let buildTool: BuildTool = 'pencil'
   let hazardTool: BuildTool | undefined = undefined
   let hitId: string | null = 'token-1'
@@ -60,6 +61,10 @@ const makeController = () => {
     updateBuildPreviewFromPointer: vi.fn(),
     updateHazardPreviewFromPointer: vi.fn(),
     updateMovePreviewFromPointer: vi.fn(),
+    getTargetingModeActive: () => targetingMode,
+    updateTargetingFromPointer: vi.fn(),
+    performTargeting: vi.fn(),
+    cancelTargeting: vi.fn(),
     performSelectedMove: vi.fn(),
     stepPreviewElevation: vi.fn(),
     performBuildAction: vi.fn(),
@@ -81,6 +86,7 @@ const makeController = () => {
     setHitId: (id: string | null) => { hitId = id },
     setBuildMode: (active: boolean) => { buildMode = active },
     setHazardMode: (active: boolean) => { hazardMode = active },
+    setTargetingMode: (active: boolean) => { targetingMode = active },
     setBuildTool: (tool: BuildTool) => { buildTool = tool },
     setHazardTool: (tool: BuildTool | undefined) => { hazardTool = tool },
     setClick: (next: boolean) => { isClick = next },
@@ -153,6 +159,22 @@ describe('isometric pointer interaction controller', () => {
     setSelected('token-1')
     controller.handlePointerMove(pointerEvent())
     expect(deps.updateMovePreviewFromPointer).toHaveBeenCalledTimes(1)
+  })
+
+  it('routes targeting pointer moves, confirmations, and cancellation', () => {
+    const { controller, deps, setTargetingMode } = makeController()
+
+    setTargetingMode(true)
+    const moveEvent = pointerEvent({ clientX: 60, clientY: 70 })
+    controller.handlePointerMove(moveEvent)
+    expect(deps.updateTargetingFromPointer).toHaveBeenCalledWith(moveEvent)
+
+    controller.handlePointerUp(pointerEvent())
+    expect(deps.performTargeting).toHaveBeenCalledTimes(1)
+
+    const rightClick = mouseEvent()
+    controller.handleRightClick(rightClick)
+    expect(deps.cancelTargeting).toHaveBeenCalledTimes(1)
   })
 
   it('handles wheel elevation, pointer leave cleanup, and escape priority', () => {

@@ -33,6 +33,7 @@ export interface IsometricPointerInteractionOptions {
   stepPlacementElevation?: (deltaY: number) => boolean | void
   cancelPlacement?: () => boolean | void
   getTargetingModeActive?: () => boolean
+  updateTargetingFromPointer?: (event: PointerEvent) => void
   performTargeting?: (event: MouseEvent | PointerEvent) => boolean | void
   cancelTargeting?: () => boolean | void
   performBuildAction: (event: MouseEvent | PointerEvent, tool: BuildTool) => void
@@ -73,6 +74,7 @@ export const createIsometricPointerInteractionController = ({
   stepPlacementElevation = () => false,
   cancelPlacement = () => false,
   getTargetingModeActive = () => false,
+  updateTargetingFromPointer = () => {},
   performTargeting = () => false,
   cancelTargeting = () => false,
   performBuildAction,
@@ -168,6 +170,7 @@ export const createIsometricPointerInteractionController = ({
     }
 
     if (getTargetingModeActive()) {
+      updateTargetingFromPointer(event)
       return
     }
 
