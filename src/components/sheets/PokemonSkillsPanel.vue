@@ -82,8 +82,8 @@ const setSkillOverride = (skill: ResolvedSkill, value: unknown) => {
 }
 
 .skill-cell--given {
-  background: var(--accent-soft);
-  border-color: var(--accent);
+  background: rgba(255, 255, 255, 0.14);
+  border-color: var(--rule-strong);
 }
 
 .skill-cell--given dt {

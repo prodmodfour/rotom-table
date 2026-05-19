@@ -116,8 +116,8 @@ const emit = defineEmits<{
 
 .combat-cell.hp-cell {
   grid-column: span 2;
-  background: var(--accent-soft);
-  border-color: var(--accent);
+  background: rgba(255, 255, 255, 0.14);
+  border-color: var(--rule-strong);
 }
 
 .cell-label {
