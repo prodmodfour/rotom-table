@@ -43,7 +43,7 @@ describe('buildCombatLogMessages', () => {
     expect(messages.map((message) => message.title)).toEqual([
       'Doug used Leer.',
       'Lux activated Intimidate.',
-      'Crockefeller moved 3 squares from (0, 0, 0) to (3, 0, 0).',
+      'Crockefeller Moves',
       'Foil used Ember.',
     ])
     expect(messages.map((message) => message.source)).toEqual([
@@ -52,6 +52,7 @@ describe('buildCombatLogMessages', () => {
       'movement',
       'move',
     ])
+    expect(messages[2]?.details).toEqual(['3 squares from (0, 0, 0) to (3, 0, 0).'])
     expect(messages[3]?.details).toEqual(['Crockefeller: 9 HP damage.'])
   })
 

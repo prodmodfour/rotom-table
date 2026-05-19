@@ -31,6 +31,11 @@ interface CombatLogEntry {
   lines: string[]
 }
 
+interface CombatLogMessageContent {
+  title: string
+  details: string[]
+}
+
 interface SortableCombatLogMessage extends CombatLogMessage {
   sourceOrder: number
   entryIndex: number
@@ -98,9 +103,37 @@ const readEntriesForSource = (
   })
 }
 
+const caseFold = (value: string): string => value.toLocaleLowerCase()
+
+const stripMovementLineSubject = (line: string, userName: string): string => {
+  const movedPrefix = `${userName} moved`
+  if (caseFold(line).startsWith(caseFold(movedPrefix))) return line.slice(movedPrefix.length).trim()
+
+  return line.match(/^.+?\s+moved\s+(.+)$/i)?.[1]?.trim() ?? line
+}
+
+const defaultMessageContent = (entry: CombatLogEntry): CombatLogMessageContent => ({
+  title: entry.lines[0] ?? entry.actionName,
+  details: entry.lines.slice(1),
+})
+
+const movementMessageContent = (entry: CombatLogEntry): CombatLogMessageContent => {
+  const title = `${entry.userName} Moves`
+  const [firstLine, ...remainingLines] = entry.lines
+  if (!firstLine) return { title, details: [] }
+  if (caseFold(firstLine) === caseFold(title)) return { title, details: remainingLines }
+
+  return {
+    title,
+    details: [stripMovementLineSubject(firstLine, entry.userName), ...remainingLines].filter(Boolean),
+  }
+}
+
+const messageContent = (entry: CombatLogEntry): CombatLogMessageContent =>
+  entry.source === 'movement' ? movementMessageContent(entry) : defaultMessageContent(entry)
+
 const toMessage = (entry: CombatLogEntry): SortableCombatLogMessage => {
-  const title = entry.lines[0] ?? entry.actionName
-  const details = entry.lines.slice(1)
+  const { title, details } = messageContent(entry)
   return {
     id: `${entry.source}-${entry.at}-${entry.entryIndex}`,
     at: entry.at,
