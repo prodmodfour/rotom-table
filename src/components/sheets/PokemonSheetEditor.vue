@@ -73,6 +73,7 @@ const {
   removeEdge,
   setStat,
   setEvasionBonus,
+  setAccuracyStage,
   setInheritedMove,
 } = usePokemonSheetRowActions(sheet)
 </script>
@@ -121,6 +122,7 @@ const {
       :condition-effects="conditionEffects"
       @set-current-hp="setCurrentHp"
       @set-evasion-bonus="setEvasionBonus"
+      @set-accuracy-stage="setAccuracyStage"
     />
   </div>
 

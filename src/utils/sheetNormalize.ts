@@ -47,6 +47,9 @@ export const normalizeCharacterSheet = (sheet: CharacterSheet): CharacterSheet =
   if (typeof evasion.vsAnyBonus  !== 'number') evasion.vsAnyBonus  = 0
   combat.conditions = mergeLegacyConditions(combat.conditions, combat.statusAfflictions)
 
+  const combatStages = ensureObj<NonNullable<CharacterSheet['combatStages']>>(sheet, 'combatStages')
+  if (typeof combatStages.acc !== 'number') combatStages.acc = 0
+
   ensureObj<NonNullable<CharacterSheet['items']>>(sheet, 'items')
   ensureArr<string>(sheet.items as Record<string, unknown>, 'extraItems')
 
@@ -88,6 +91,9 @@ export const normalizeTrainerSheet = (sheet: TrainerSheet): TrainerSheet => {
   if (typeof evasion.physicalBonus !== 'number') evasion.physicalBonus = 0
   if (typeof evasion.specialBonus  !== 'number') evasion.specialBonus  = 0
   sheet.conditions = mergeLegacyConditions(sheet.conditions, sheet.statusAfflictions)
+  const combatStages = ensureObj<NonNullable<TrainerSheet['combatStages']>>(sheet, 'combatStages')
+  if (typeof combatStages.acc !== 'number') combatStages.acc = 0
+
   ensureObj<NonNullable<TrainerSheet['capabilities']>>(sheet, 'capabilities')
   ensureArr<string>(sheet.capabilities as Record<string, unknown>, 'other')
 

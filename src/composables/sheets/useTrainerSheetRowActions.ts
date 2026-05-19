@@ -17,6 +17,7 @@ import type {
 } from '~/types/trainerSheet'
 import { moveArrayItem } from '~/utils/arrayReorder'
 import { coerceEvasionBonus } from '~/utils/evasion'
+import { setSheetAccuracyStage } from '~/utils/sheetAccuracy'
 import { parseCsvList } from '~/utils/sheets/csvFields'
 
 export type TrainerEvasionBonusKey = Extract<
@@ -126,6 +127,11 @@ export function useTrainerSheetRowActions(sheet: Readonly<Ref<TrainerSheet | nul
     evasion[key] = coerceEvasionBonus(value)
   }
 
+  const setAccuracyStage = (value: unknown) => {
+    if (!sheet.value) return
+    setSheetAccuracyStage(sheet.value, value)
+  }
+
   /** Update a skill's rank/modifier override. */
   const setSkillRank = (key: TrainerSkillKey, rank: SkillRank | undefined) => {
     if (!sheet.value?.skills) return
@@ -174,6 +180,7 @@ export function useTrainerSheetRowActions(sheet: Readonly<Ref<TrainerSheet | nul
     setOrderTags,
     setStatField,
     setEvasionBonus,
+    setAccuracyStage,
     setSkillRank,
     setSkillModifier,
     skillModifier,

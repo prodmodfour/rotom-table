@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import { trainerCatalog } from '~~/data/trainerCatalog'
 import { placementToSpawned } from '~/utils/placement'
+import { moveAutomationUserAccuracy } from '~/utils/moveAutomationAccuracy'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { SheetPlacement } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
 
 describe('placement helpers', () => {
-  it('copies sheet ability names, gender, and skill ranks onto spawned tokens for automation', () => {
+  it('copies sheet ability names, gender, skill ranks, and accuracy context onto spawned tokens for automation', () => {
     const sheet: CharacterSheet = {
       slug: 'pika',
       nickname: 'Pika',
@@ -15,6 +16,8 @@ describe('placement helpers', () => {
       gender: 'Female',
       abilities: [{ name: 'Levitate' }],
       skills: { combat: '5d6+1', focus: '4d6' },
+      combatStages: { acc: 2 },
+      items: { held: 'Luck Incense' },
     }
     const placement: SheetPlacement = {
       id: 'placement-1',
@@ -34,6 +37,9 @@ describe('placement helpers', () => {
     expect(spawned?.defenderCapabilities).toEqual({ levitate: 4 })
     expect(spawned?.combatSkillRankValue).toBe(5)
     expect(spawned?.focusSkillRankValue).toBe(4)
+    expect(spawned?.combatStages.acc).toBe(2)
+    expect(spawned?.tokenItems).toEqual(['Luck Incense'])
+    expect(spawned ? moveAutomationUserAccuracy(spawned) : null).toBe(3)
     expect(spawned?.facing).toBe('north-east')
     expect(spawned?.turned).toBe(false)
   })

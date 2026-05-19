@@ -1,4 +1,5 @@
 import { applyCombatStageToStat } from '~/utils/combatStageStats'
+import { clampCombatStage } from '~/utils/combatStages'
 import { computeEvasionTotal, computeStatEvasion } from '~/utils/evasion'
 import {
   conditionAccuracyModifier,
@@ -104,6 +105,6 @@ const moveAutomationHeldItemAccuracyBonus = (user: SpawnedPokemon): number =>
   user.sheetKind === 'pokemon' ? heldItemsAccuracyRollBonus(user.tokenItems) : 0
 
 export const moveAutomationUserAccuracy = (user: SpawnedPokemon): number =>
-  user.combatStages.acc
+  clampCombatStage(user.combatStages?.acc)
   + conditionAccuracyModifier(user.conditions)
   + moveAutomationHeldItemAccuracyBonus(user)

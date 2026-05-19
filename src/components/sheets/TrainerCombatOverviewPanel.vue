@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { TrainerEvasionBonusKey } from '~/composables/sheets/useTrainerSheetRowActions'
+import type { SheetAccuracySummary } from '~/utils/sheetAccuracy'
 import type { ConditionEffectSummary } from '~/utils/sheetConditionEffects'
 import type { TrainerSheet } from '~/types/trainerSheet'
 
@@ -34,6 +35,7 @@ defineProps<{
   specialAttackTotal: number
   speedTotal: number
   initiative: number
+  trainerAccuracy: SheetAccuracySummary
   trainerEvasion: TrainerEvasionSummary
   conditionEffects: readonly ConditionEffectSummary[]
 }>()
@@ -41,6 +43,7 @@ defineProps<{
 const emit = defineEmits<{
   setCurrentHp: [value: unknown]
   setEvasionBonus: [key: TrainerEvasionBonusKey, value: number | undefined]
+  setAccuracyStage: [value: unknown]
 }>()
 
 const forwardEvasionBonus = (key: TrainerEvasionBonusKey, value: number | undefined) => {
@@ -74,9 +77,11 @@ const forwardEvasionBonus = (key: TrainerEvasionBonusKey, value: number | undefi
         v-model:conditions="sheet.conditions"
         v-model:digestion="sheet.digestion"
         :trainer-evasion="trainerEvasion"
+        :trainer-accuracy="trainerAccuracy"
         :condition-effects="conditionEffects"
         :available-moves="sheet.movelist?.map((move) => move.name) ?? []"
         @set-evasion-bonus="forwardEvasionBonus"
+        @set-accuracy-stage="emit('setAccuracyStage', $event)"
       />
     </div>
 

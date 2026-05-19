@@ -105,11 +105,13 @@ describe('usePokemonSheetRowActions', () => {
     actions.setStat('atk', 'added', 3)
     actions.setStat('atk', 'stage', undefined)
     actions.setEvasionBonus('vsAnyBonus', -99)
+    actions.setAccuracyStage(99)
     actions.setInheritedMove('20', 'Volt Tackle')
     actions.setInheritedMove('30', '  ')
 
     expect(sheet.value?.stats?.atk).toEqual({ added: 3, stage: 0 })
     expect(sheet.value?.combat?.evasion?.vsAnyBonus).toBe(-6)
+    expect(sheet.value?.combatStages?.acc).toBe(6)
     expect(sheet.value?.inheritedMoves).toEqual({ '20': 'Volt Tackle' })
   })
 
@@ -121,6 +123,7 @@ describe('usePokemonSheetRowActions', () => {
     actions.reorderMove(0, 1)
     actions.setStat('atk', 'added', 5)
     actions.setEvasionBonus('vsAtkBonus', 1)
+    actions.setAccuracyStage(1)
     actions.toggleAbilityActivation(0)
     actions.setInheritedMove('20', 'Ignored')
     actions.setHeldItemName('Ignored')

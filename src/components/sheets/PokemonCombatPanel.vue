@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { PokemonEvasionBonusKey } from '~/composables/sheets/usePokemonSheetRowActions'
+import type { SheetAccuracySummary } from '~/utils/sheetAccuracy'
 import type { ConditionEffectSummary } from '~/utils/sheetConditionEffects'
 import type { CharacterSheet } from '~/types/characterSheet'
 
@@ -23,13 +24,6 @@ interface PokemonEvasionSummary {
   vsAny: EvasionEntry & { itemBonus: number }
 }
 
-interface PokemonAccuracySummary {
-  total: number
-  stage: number
-  conditionModifier: number
-  itemBonus: number
-}
-
 defineProps<{
   sheet: CharacterSheet
   currentHp: number
@@ -39,7 +33,7 @@ defineProps<{
   hpThresholds: HpThresholds
   speedTotal: number
   initiative: number
-  pokemonAccuracy: PokemonAccuracySummary
+  pokemonAccuracy: SheetAccuracySummary
   pokemonEvasion: PokemonEvasionSummary
   conditionEffects: readonly ConditionEffectSummary[]
 }>()
@@ -47,6 +41,7 @@ defineProps<{
 const emit = defineEmits<{
   setCurrentHp: [value: unknown]
   setEvasionBonus: [key: PokemonEvasionBonusKey, value: number | undefined]
+  setAccuracyStage: [value: unknown]
 }>()
 
 const forwardEvasionBonus = (key: PokemonEvasionBonusKey, value: number | undefined) => {
@@ -76,6 +71,7 @@ const forwardEvasionBonus = (key: PokemonEvasionBonusKey, value: number | undefi
       :condition-effects="conditionEffects"
       :available-moves="sheet.movelist?.map((move) => move.name) ?? []"
       @set-evasion-bonus="forwardEvasionBonus"
+      @set-accuracy-stage="emit('setAccuracyStage', $event)"
     />
   </section>
 </template>

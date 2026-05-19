@@ -118,11 +118,13 @@ describe('useTrainerSheetRowActions', () => {
     actions.setStatField('atk', 'levelUp', 3)
     actions.setStatField('atk', 'stage', undefined)
     actions.setEvasionBonus('speedBonus', 99)
+    actions.setAccuracyStage(-99)
 
     expect(feature.tags).toEqual(['Class', 'Orders'])
     expect(order.tags).toEqual(['Training', 'Command'])
     expect(sheet.value?.stats?.atk).toEqual({ levelUp: 3, stage: 0 })
     expect(sheet.value?.evasion?.speedBonus).toBe(6)
+    expect(sheet.value?.combatStages?.acc).toBe(-6)
   })
 
   it('sets, clears, and reads skill overrides', () => {
@@ -148,6 +150,7 @@ describe('useTrainerSheetRowActions', () => {
     actions.addClass()
     actions.reorderMove(0, 1)
     actions.setStatField('atk', 'base', 10)
+    actions.setAccuracyStage(1)
     actions.setSkillRank('focus', 'Adept')
 
     expect(sheet.value).toBeNull()

@@ -97,6 +97,8 @@ describe('move automation accuracy helpers', () => {
       label: 'No Evasion (Bad Sleep)',
       suppressedByCondition: 'Bad Sleep',
     })
+    expect(moveAutomationUserAccuracy(token({ combatStages: {} as CombatStageMap }))).toBe(0)
+    expect(moveAutomationUserAccuracy(token({ combatStages: { ...stages, acc: 99 } }))).toBe(6)
     expect(moveAutomationUserAccuracy(token({ combatStages: { ...stages, acc: 2 } }))).toBe(2)
     expect(moveAutomationUserAccuracy(token({ combatStages: { ...stages, acc: 2 }, conditions: ['Blindness'] }))).toBe(-4)
     expect(moveAutomationUserAccuracy(token({ combatStages: { ...stages, acc: 2 }, conditions: ['Total Blindness'] }))).toBe(-8)

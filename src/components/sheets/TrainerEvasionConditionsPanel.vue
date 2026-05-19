@@ -5,6 +5,7 @@ import {
   formatSignedModifier,
 } from '~/utils/evasion'
 import type { TrainerEvasionBonusKey } from '~/composables/sheets/useTrainerSheetRowActions'
+import type { SheetAccuracySummary } from '~/utils/sheetAccuracy'
 import type { ConditionEffectSummary } from '~/utils/sheetConditionEffects'
 
 type TrainerEvasionEntry = {
@@ -22,6 +23,7 @@ type TrainerEvasionSummary = {
 
 defineProps<{
   trainerEvasion: TrainerEvasionSummary
+  trainerAccuracy: SheetAccuracySummary
   conditionEffects: readonly ConditionEffectSummary[]
   availableMoves?: string[]
 }>()
@@ -31,6 +33,7 @@ const digestion = defineModel<string | undefined>('digestion', { required: true 
 
 const emit = defineEmits<{
   setEvasionBonus: [key: TrainerEvasionBonusKey, value: number | undefined]
+  setAccuracyStage: [value: unknown]
 }>()
 </script>
 
@@ -120,6 +123,27 @@ const emit = defineEmits<{
         </span>
       </li>
     </ul>
+    <p
+      class="accuracy-line"
+      title="Accuracy Roll modifier = Accuracy Combat Stage + condition modifiers. A natural 1 still always misses."
+    >
+      <strong>Accuracy Rolls:</strong>
+      <span class="accuracy-line__total">{{ formatSignedModifier(trainerAccuracy.total) }}</span>
+      <small class="accuracy-line__stage">
+        stage
+        <EditableCell
+          :model-value="trainerAccuracy.stage"
+          type="number"
+          :min="-6"
+          :max="6"
+          :format="formatSignedModifier"
+          @update:model-value="(v) => emit('setAccuracyStage', v)"
+        />
+      </small>
+      <small v-if="trainerAccuracy.conditionModifier" class="accuracy-line__condition">
+        condition {{ formatSignedModifier(trainerAccuracy.conditionModifier) }}
+      </small>
+    </p>
     <div class="muted condition-block">
       <strong>Conditions:</strong>
       <ConditionPicker v-model="conditions" :available-moves="availableMoves" />
@@ -211,6 +235,33 @@ const emit = defineEmits<{
 .evasion-list__value strong {
   color: var(--ink-bright);
   font-variant-numeric: tabular-nums;
+}
+
+.accuracy-line {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0.55rem 0;
+  color: var(--ink-muted);
+  font-size: 0.85rem;
+}
+
+.accuracy-line > strong,
+.accuracy-line__total {
+  color: var(--ink-bright);
+  font-weight: 800;
+}
+
+.accuracy-line__stage {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.2rem;
+}
+
+.accuracy-line__condition {
+  color: var(--bad);
+  font-weight: 700;
 }
 
 .condition-block {

@@ -5,6 +5,7 @@ import { computeTrainerLevelUpStatPointBudget } from '~/utils/statPointBudgets'
 import { makeAutomaticStruggleMoves } from '~/utils/struggleMoves'
 import { makeMoveLookupRows, type MoveLookupRow } from '~/utils/sheetMoveLookup'
 import { trainerEquippedItemNames } from '~/utils/sheetItemNames'
+import { buildSheetAccuracySummary } from '~/utils/sheetAccuracy'
 import { sheetItemsInitiativeBonus } from '~/utils/sheetHeldItemEffects'
 import {
   computeTrainerFullMaxHp,
@@ -118,6 +119,12 @@ export function useTrainerSheetDerived(sheet: TrainerSheetRef) {
 
   const abilityRows = computed(() => makeAbilityLookupRows(sheet.value?.abilities))
 
+  const trainerAccuracy = computed(() => buildSheetAccuracySummary({
+    stage: sheet.value?.combatStages?.acc,
+    conditions: combatConditions.value,
+    includeHeldItemBonus: false,
+  }))
+
   const trainerEvasion = computed(() => {
     const evasion = sheet.value?.evasion
     const speedBonus = evasion?.speedBonus ?? 0
@@ -206,6 +213,7 @@ export function useTrainerSheetDerived(sheet: TrainerSheetRef) {
     specialAttackTotal,
     moveRows,
     abilityRows,
+    trainerAccuracy,
     trainerEvasion,
     tickValue,
     hpThresholds,

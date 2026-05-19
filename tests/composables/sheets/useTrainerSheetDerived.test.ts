@@ -69,6 +69,22 @@ describe('useTrainerSheetDerived', () => {
     expect(derived.trainerEvasion.value.speed.bonus).toBe(1)
   })
 
+  it('tracks trainer Accuracy stages and condition roll modifiers', () => {
+    const sheet = ref<TrainerSheet | null>(makeSheet({
+      combatStages: { acc: 2 },
+      conditions: ['Total Blindness'],
+      equipmentSlots: { accessory: 'Luck Incense' },
+    }))
+    const derived = useTrainerSheetDerived(sheet)
+
+    expect(derived.trainerAccuracy.value).toEqual({
+      total: -8,
+      stage: 2,
+      conditionModifier: -10,
+      itemBonus: 0,
+    })
+  })
+
   it('derives stat point budgets and stat total lookup', () => {
     const sheet = ref<TrainerSheet | null>(makeSheet())
     const derived = useTrainerSheetDerived(sheet)

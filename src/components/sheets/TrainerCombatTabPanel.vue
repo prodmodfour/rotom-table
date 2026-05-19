@@ -2,6 +2,7 @@
 import type { AbilityLookupRow } from '~/utils/sheetAbilityLookup'
 import type { TrainerSheetMoveLookupRow } from '~/composables/sheets/useTrainerSheetDerived'
 import type { TrainerEvasionBonusKey } from '~/composables/sheets/useTrainerSheetRowActions'
+import type { SheetAccuracySummary } from '~/utils/sheetAccuracy'
 import type { ConditionEffectSummary } from '~/utils/sheetConditionEffects'
 import type {
   TrainerAbilityEntry,
@@ -40,6 +41,7 @@ defineProps<{
   specialAttackTotal: number
   speedTotal: number
   initiative: number
+  trainerAccuracy: SheetAccuracySummary
   trainerEvasion: TrainerEvasionSummary
   conditionEffects: readonly ConditionEffectSummary[]
   moveRows: readonly TrainerSheetMoveLookupRow[]
@@ -50,6 +52,7 @@ defineProps<{
 const emit = defineEmits<{
   setCurrentHp: [value: unknown]
   setEvasionBonus: [key: TrainerEvasionBonusKey, value: number | undefined]
+  setAccuracyStage: [value: unknown]
   addMove: []
   removeMove: [index: number | null]
   reorderMove: [fromIndex: number, toIndex: number]
@@ -87,10 +90,12 @@ const forwardReorderMove = (fromIndex: number, toIndex: number) =>
       :special-attack-total="specialAttackTotal"
       :speed-total="speedTotal"
       :initiative="initiative"
+      :trainer-accuracy="trainerAccuracy"
       :trainer-evasion="trainerEvasion"
       :condition-effects="conditionEffects"
       @set-current-hp="emit('setCurrentHp', $event)"
       @set-evasion-bonus="forwardSetEvasionBonus"
+      @set-accuracy-stage="emit('setAccuracyStage', $event)"
     />
 
     <TrainerCombatActionsPanel

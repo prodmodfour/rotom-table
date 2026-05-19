@@ -5,6 +5,7 @@ import {
   formatSignedModifier,
 } from '~/utils/evasion'
 import type { PokemonEvasionBonusKey } from '~/composables/sheets/usePokemonSheetRowActions'
+import type { SheetAccuracySummary } from '~/utils/sheetAccuracy'
 import type { ConditionEffectSummary } from '~/utils/sheetConditionEffects'
 import type { CharacterSheetCombat } from '~/types/characterSheet'
 
@@ -22,16 +23,9 @@ interface PokemonEvasionSummary {
   vsAny: EvasionEntry & { itemBonus: number }
 }
 
-interface PokemonAccuracySummary {
-  total: number
-  stage: number
-  conditionModifier: number
-  itemBonus: number
-}
-
 defineProps<{
   combat: CharacterSheetCombat
-  pokemonAccuracy: PokemonAccuracySummary
+  pokemonAccuracy: SheetAccuracySummary
   pokemonEvasion: PokemonEvasionSummary
   conditionEffects: readonly ConditionEffectSummary[]
   availableMoves?: string[]
@@ -39,6 +33,7 @@ defineProps<{
 
 const emit = defineEmits<{
   setEvasionBonus: [key: PokemonEvasionBonusKey, value: number | undefined]
+  setAccuracyStage: [value: unknown]
 }>()
 </script>
 
@@ -152,7 +147,17 @@ const emit = defineEmits<{
   >
     <strong>Accuracy Rolls:</strong>
     <span class="accuracy-line__total">{{ formatSignedModifier(pokemonAccuracy.total) }}</span>
-    <small>stage {{ formatSignedModifier(pokemonAccuracy.stage) }}</small>
+    <small class="accuracy-line__stage">
+      stage
+      <EditableCell
+        :model-value="pokemonAccuracy.stage"
+        type="number"
+        :min="-6"
+        :max="6"
+        :format="formatSignedModifier"
+        @update:model-value="(v) => emit('setAccuracyStage', v)"
+      />
+    </small>
     <small v-if="pokemonAccuracy.conditionModifier" class="accuracy-line__condition">
       condition {{ formatSignedModifier(pokemonAccuracy.conditionModifier) }}
     </small>
@@ -257,6 +262,12 @@ const emit = defineEmits<{
 .accuracy-line__total {
   color: var(--ink-bright);
   font-weight: 800;
+}
+
+.accuracy-line__stage {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.2rem;
 }
 
 .accuracy-line__item {

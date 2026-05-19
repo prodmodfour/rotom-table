@@ -36,6 +36,7 @@ const {
   totalRow,
   moveRows,
   abilityRows,
+  trainerAccuracy,
   trainerEvasion,
   tickValue,
   hpThresholds,
@@ -75,6 +76,7 @@ const {
   setOrderTags,
   setStatField,
   setEvasionBonus,
+  setAccuracyStage,
   setSkillRank,
   setSkillModifier,
   skillModifier,
@@ -160,6 +162,7 @@ const {
       :special-attack-total="totalRow('satk')"
       :speed-total="totalRow('spd')"
       :initiative="initiative"
+      :trainer-accuracy="trainerAccuracy"
       :trainer-evasion="trainerEvasion"
       :condition-effects="conditionEffects"
       :move-rows="moveRows"
@@ -167,6 +170,7 @@ const {
       :order-tags-csv="orderTagsCsv"
       @set-current-hp="setCurrentHp"
       @set-evasion-bonus="setEvasionBonus"
+      @set-accuracy-stage="setAccuracyStage"
       @add-move="addMove"
       @remove-move="removeMove"
       @reorder-move="reorderMove"

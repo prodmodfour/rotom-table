@@ -9,6 +9,7 @@ import type {
 } from '~/types/characterSheet'
 import { moveArrayItem } from '~/utils/arrayReorder'
 import { coerceEvasionBonus } from '~/utils/evasion'
+import { setSheetAccuracyStage } from '~/utils/sheetAccuracy'
 import { toggleSheetAbilityActivation } from '~/utils/sheetAbilityActivation'
 
 export type PokemonEvasionBonusKey = Extract<
@@ -84,6 +85,11 @@ export function usePokemonSheetRowActions(sheet: Readonly<Ref<CharacterSheet | n
     evasion[key] = coerceEvasionBonus(value)
   }
 
+  const setAccuracyStage = (value: unknown) => {
+    if (!sheet.value) return
+    setSheetAccuracyStage(sheet.value, value)
+  }
+
   const setInheritedMove = (level: string, value: string | undefined) => {
     if (!sheet.value) return
     const inherited = sheet.value.inheritedMoves ?? {}
@@ -104,6 +110,7 @@ export function usePokemonSheetRowActions(sheet: Readonly<Ref<CharacterSheet | n
     removeEdge,
     setStat,
     setEvasionBonus,
+    setAccuracyStage,
     setInheritedMove,
   }
 }
