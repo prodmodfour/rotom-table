@@ -57,6 +57,7 @@ import {
   buildCelebrateTriggerTransaction,
 } from '~/utils/moveAutomationCelebrate'
 import {
+  MELEE_MOVE_RANGE_METERS,
   moveAutomationTargetsInRange,
   parseSingleTargetMoveRangeMeters,
 } from '~/utils/moveAutomationRange'
@@ -101,6 +102,17 @@ type SheetUpdateOptions = { allowAnyTarget?: boolean }
 type MoveUsageRecordRequest = { placementId: string; moveName: string }
 type MoveUsageRecordHandler = (request: MoveUsageRecordRequest) => MaybePromise<void>
 
+export interface MoveAutomationNonImmediateActionEvent {
+  userId: string
+  moveName: string
+}
+
+export interface MoveAutomationRangedAttackOfOpportunityEvent {
+  provokerId: string
+  targetIds: string[]
+  moveName: string
+}
+
 type SheetUpdateHandler<TUpdate> = (
   update: TUpdate,
   options?: SheetUpdateOptions,
@@ -119,6 +131,8 @@ export interface UseMoveAutomationPanelOptions {
   applyMoveFieldEffect: (effect: MoveAutomationFieldEffectApply) => MaybePromise<void>
   placeHazard: (hazard: MapHazardV2) => MaybePromise<void>
   recordMoveUsage?: MoveUsageRecordHandler
+  onBeforeNonImmediateAction?: (event: MoveAutomationNonImmediateActionEvent) => void
+  onRangedAttackOfOpportunity?: (event: MoveAutomationRangedAttackOfOpportunityEvent) => void
   now?: () => number
   maxLogEntries?: number
 }
@@ -193,6 +207,8 @@ export const useMoveAutomationPanel = ({
   applyMoveFieldEffect,
   placeHazard,
   recordMoveUsage,
+  onBeforeNonImmediateAction,
+  onRangedAttackOfOpportunity,
   now,
   maxLogEntries = DEFAULT_MAX_LOG_ENTRIES,
 }: UseMoveAutomationPanelOptions) => {
@@ -205,6 +221,7 @@ export const useMoveAutomationPanel = ({
   const moxieTriggerPrompts = ref<MoveAutomationMoxiePrompt[]>([])
   const celebrateTriggerPrompts = ref<MoveAutomationCelebratePrompt[]>([])
   const feedbackTimers: Array<ReturnType<typeof setTimeout>> = []
+  let pendingFeedbackTransactionApplier: (() => void) | null = null
 
   const sheetLookup = () => ({
     pokemon: pokemonBySlug.value,
@@ -403,7 +420,14 @@ export const useMoveAutomationPanel = ({
     }
   }
 
+  const flushPendingFeedbackTransaction = () => {
+    const apply = pendingFeedbackTransactionApplier
+    pendingFeedbackTransactionApplier = null
+    apply?.()
+  }
+
   const clearMoveAutomationFeedback = () => {
+    flushPendingFeedbackTransaction()
     clearFeedbackTimers()
     moveAutomationFeedback.value = null
   }
@@ -507,6 +531,27 @@ export const useMoveAutomationPanel = ({
     return moveFrequencyTracksOnMap(parsed) || moveFrequencyTracksOnSheet(parsed)
   }
 
+  const moveScriptIsImmediateOrInterrupt = (script: MoveAutomationScript): boolean =>
+    script.keywords.some((keyword) => /^(Immediate|Interrupt|Reaction)$/i.test(keyword.trim()))
+
+  const notifyMoveActionTaken = (request: ActiveMoveTargetingRequest) => {
+    if (moveScriptIsImmediateOrInterrupt(request.script)) return
+    onBeforeNonImmediateAction?.({ userId: request.userId, moveName: request.moveName })
+  }
+
+  const notifyRangedAttackOfOpportunity = (
+    request: ActiveMoveTargetingRequest,
+    targetIds: readonly string[],
+  ) => {
+    if (request.kind !== 'single-target') return
+    if (request.rangeMeters <= MELEE_MOVE_RANGE_METERS) return
+    onRangedAttackOfOpportunity?.({
+      provokerId: request.userId,
+      targetIds: [...targetIds],
+      moveName: request.moveName,
+    })
+  }
+
   const recordMoveUseIfTracked = async (request: MoveUsageRecordRequest, frequency: string | null): Promise<boolean> => {
     moveUsageError.value = null
     if (!usageIsTracked(frequency) || !recordMoveUsage) return true
@@ -560,6 +605,15 @@ export const useMoveAutomationPanel = ({
       void (async () => {
         const recorded = await recordMoveUseIfTracked({ placementId: id, moveName: script.moveName }, frequency)
         if (!recorded) return
+        notifyMoveActionTaken({
+          kind: 'single-target',
+          userId: id,
+          moveName: script.moveName,
+          script,
+          damageFormula: null,
+          frequency,
+          rangeMeters: 0,
+        })
         await applyMoveAutomation(resolveInstantSelfMoveAutomation({
           script,
           user,
@@ -862,6 +916,7 @@ export const useMoveAutomationPanel = ({
     transaction: MoveAutomationTransaction,
     options: { script?: MoveAutomationScript } = {},
   ) => {
+    flushPendingFeedbackTransaction()
     clearFeedbackTimers()
 
     const hasFinalPhase = feedbackHasFinalResolutionPhase(feedback)
@@ -871,6 +926,7 @@ export const useMoveAutomationPanel = ({
     const applyTransactionOnce = () => {
       if (transactionApplied) return
       transactionApplied = true
+      pendingFeedbackTransactionApplier = null
       void applyMoveAutomation(transaction, { script: options.script })
     }
     const setFeedbackPhase = (phase: MoveAutomationFeedbackState['phase']): boolean => {
@@ -882,6 +938,7 @@ export const useMoveAutomationPanel = ({
       feedbackTimers.push(setTimeout(step, delay))
     }
 
+    pendingFeedbackTransactionApplier = applyTransactionOnce
     moveAutomationFeedback.value = feedback
     scheduleFeedbackStep(D20_ROLL_ANIMATION_MS, () => {
       setFeedbackPhase('hit-roll')
@@ -914,6 +971,108 @@ export const useMoveAutomationPanel = ({
 
     scheduleFeedbackStep(outcomeDelay + HIT_RESULT_VISIBLE_MS, () => {
       if (feedbackStillCurrent()) moveAutomationFeedback.value = null
+    })
+  }
+
+  const prependTransactionLogLine = (
+    transaction: MoveAutomationTransaction,
+    line: string | null | undefined,
+  ) => {
+    const trimmed = line?.trim()
+    if (trimmed) transaction.logLines.unshift(trimmed)
+  }
+
+  const executeSingleTargetMoveRequest = async (
+    request: ActiveSingleTargetingRequest,
+    targetId: string,
+    options: { skipActionNotifications?: boolean; logLine?: string } = {},
+  ): Promise<boolean> => {
+    const user = findSpawnedPokemon(request.userId)
+    const target = findSpawnedPokemon(targetId)
+    if (!user || !target) return false
+
+    const recorded = await recordMoveUseIfTracked(
+      { placementId: request.userId, moveName: request.moveName },
+      request.frequency,
+    )
+    if (!recorded) return false
+
+    if (!options.skipActionNotifications) {
+      notifyMoveActionTaken(request)
+      notifyRangedAttackOfOpportunity(request, [targetId])
+    }
+
+    faceTokenTowardToken(user, target)
+
+    if (!request.script.requiresAccuracy) {
+      const transaction = resolveInstantTargetMoveAutomation({
+        script: request.script,
+        user,
+        target,
+        damageFormula: request.damageFormula,
+        fieldEffects: map.value?.fieldEffects,
+        conditionImmunityContext: { sweetVeilProviders: spawnedPokemon.value },
+      })
+      prependTransactionLogLine(transaction, options.logLine)
+      activeMoveTargeting.value = null
+      await applyMoveAutomation(transaction, { script: request.script })
+      return true
+    }
+
+    const result = resolveInstantMoveAutomation({
+      script: request.script,
+      user,
+      target,
+      damageFormula: request.damageFormula,
+      fieldEffects: map.value?.fieldEffects,
+      conditionImmunityContext: { sweetVeilProviders: spawnedPokemon.value },
+    })
+    prependTransactionLogLine(result.transaction, options.logLine)
+    activeMoveTargeting.value = null
+    showMoveAutomationResolution(result.feedback, result.transaction, { script: request.script })
+    return true
+  }
+
+  const singleTargetRequestForMove = (
+    id: string,
+    moveName: string,
+  ): ActiveSingleTargetingRequest | null => {
+    const user = findSpawnedPokemon(id)
+    const entry = moveAutomationEntryForUse(id, moveName)
+    if (!user || !entry || !isSeamlessSingleTargetMoveScript(entry.script)) return null
+
+    const rangeMeters = parseSingleTargetMoveRangeMeters(entry.script.range, {
+      focusSkillRankValue: user.focusSkillRankValue,
+    })
+    const damageFormula = rollFormulaForEntry(entry)
+    if (rangeMeters == null || (entry.script.damaging && !damageFormula && !moveAutomationCanResolveDamageAtRuntime(entry.script))) {
+      return null
+    }
+
+    return {
+      kind: 'single-target',
+      userId: id,
+      moveName: entry.script.moveName,
+      script: entry.script,
+      damageFormula,
+      frequency: frequencyForEntry(entry),
+      rangeMeters,
+    }
+  }
+
+  const useMoveAgainstTarget = async (input: {
+    id: string
+    targetId: string
+    moveName: string
+    skipActionNotifications?: boolean
+    logLine?: string
+  }): Promise<boolean> => {
+    if (!canControlPlacement(input.id)) return false
+    const request = singleTargetRequestForMove(input.id, input.moveName)
+    if (!request) return false
+    return executeSingleTargetMoveRequest(request, input.targetId, {
+      skipActionNotifications: input.skipActionNotifications,
+      logLine: input.logLine,
     })
   }
 
@@ -950,6 +1109,7 @@ export const useMoveAutomationPanel = ({
       request.frequency,
     )
     if (!recorded) return
+    notifyMoveActionTaken(request)
     const targetSet = new Set(selectedAreaTargetIds(request))
     const targets = spawnedPokemon.value.filter((token) => targetSet.has(token.id))
     if (request.direction) faceTokenTowardAreaDirection(user, request.direction)
@@ -985,45 +1145,13 @@ export const useMoveAutomationPanel = ({
     }
 
     if (!overlay?.candidateIds.includes(targetId)) return
-    const user = findSpawnedPokemon(request.userId)
-    const target = findSpawnedPokemon(targetId)
-    if (!user || !target) return
-
-    const recorded = await recordMoveUseIfTracked(
-      { placementId: request.userId, moveName: request.moveName },
-      request.frequency,
-    )
-    if (!recorded) return
-
-    faceTokenTowardToken(user, target)
-
-    if (!request.script.requiresAccuracy) {
-      const transaction = resolveInstantTargetMoveAutomation({
-        script: request.script,
-        user,
-        target,
-        damageFormula: request.damageFormula,
-        fieldEffects: map.value?.fieldEffects,
-        conditionImmunityContext: { sweetVeilProviders: spawnedPokemon.value },
-      })
-      activeMoveTargeting.value = null
-      await applyMoveAutomation(transaction, { script: request.script })
-      return
-    }
-
-    const result = resolveInstantMoveAutomation({
-      script: request.script,
-      user,
-      target,
-      damageFormula: request.damageFormula,
-      fieldEffects: map.value?.fieldEffects,
-      conditionImmunityContext: { sweetVeilProviders: spawnedPokemon.value },
-    })
-    activeMoveTargeting.value = null
-    showMoveAutomationResolution(result.feedback, result.transaction, { script: request.script })
+    await executeSingleTargetMoveRequest(request, targetId)
   }
 
-  onBeforeUnmount(clearFeedbackTimers)
+  onBeforeUnmount(() => {
+    flushPendingFeedbackTransaction()
+    clearFeedbackTimers()
+  })
 
   return {
     moveAutomationTargeting,
@@ -1036,6 +1164,7 @@ export const useMoveAutomationPanel = ({
     celebrateTriggerPrompts,
     tokenMoveOptionsById,
     openMoveAutomation,
+    useMoveAgainstTarget,
     cancelMoveAutomationTargeting,
     selectMoveAutomationTarget,
     selectMoveAutomationAreaDirection,

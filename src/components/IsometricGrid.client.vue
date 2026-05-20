@@ -30,6 +30,7 @@ import type {
   MoveAutomationTargetingOverlayState,
 } from '~/types/moveAutomation'
 import type { BuildTool } from '#shared/mapEditor'
+import type { AttackOfOpportunityPrompt } from '~/utils/attackOfOpportunity'
 import type { TokenAbilityMenuOption } from '~/utils/mapTokenAbilities'
 import type { TokenMoveMenuOption } from '~/utils/mapTokenMoves'
 import {
@@ -139,6 +140,7 @@ const props = defineProps<{
   tokenSendOutOptionsById?: Record<string, TokenSendOutOption[]>
   moveAutomationTargeting?: MoveAutomationTargetingOverlayState | null
   moveAutomationFeedback?: MoveAutomationFeedbackState | null
+  attackOfOpportunityPrompts?: AttackOfOpportunityPrompt[]
 }>()
 
 const emit = defineEmits<{
@@ -162,6 +164,7 @@ const emit = defineEmits<{
   (event: 'select-move-target', targetId: string): void
   (event: 'select-move-area-direction', direction: MoveAutomationAreaDirection): void
   (event: 'cancel-move-targeting'): void
+  (event: 'use-attack-of-opportunity', payload: { promptId: string; moveName: string }): void
 }>()
 
 const visibleLayers = () => resolveIsometricLayerVisibility(props.layerVisibility)
@@ -179,7 +182,14 @@ type TargetReticleButton = {
   hitChance?: MoveAutomationTargetHitChance
 }
 
+type AttackOfOpportunityButton = AttackOfOpportunityPrompt & {
+  left: number
+  top: number
+}
+
 const targetReticleButtons = ref<TargetReticleButton[]>([])
+const attackOfOpportunityButtons = ref<AttackOfOpportunityButton[]>([])
+const openAttackOfOpportunityMenuId = ref<string | null>(null)
 
 const emitPokemonSelection = (id: string | null) => {
   if (props.moveAutomationTargeting) return
@@ -584,6 +594,12 @@ const moveTargetReticleCenter = (renderObject: PokemonRenderObject): THREE.Vecto
   renderObject.currentCenter.z,
 )
 
+const attackOfOpportunityButtonCenter = (renderObject: PokemonRenderObject): THREE.Vector3 => new THREE.Vector3(
+  renderObject.currentCenter.x,
+  renderObject.currentCenter.y + Math.max(renderObject.height * 0.92, 0.85),
+  renderObject.currentCenter.z,
+)
+
 const moveTargetScreenHitRadius = (renderObject: PokemonRenderObject, center: { x: number; y: number }): number => {
   const edge = worldPointToScreen(new THREE.Vector3(
     renderObject.currentCenter.x + Math.max(0.475, renderObject.base * 0.475),
@@ -912,6 +928,56 @@ const syncTargetReticleButtons = (options: {
   if (!unchanged) targetReticleButtons.value = next
 }
 
+const syncAttackOfOpportunityButtons = () => {
+  const layers = visibleLayers()
+  const prompts = props.attackOfOpportunityPrompts ?? []
+  if (!layers.tokens || !prompts.length) {
+    if (attackOfOpportunityButtons.value.length) attackOfOpportunityButtons.value = []
+    if (openAttackOfOpportunityMenuId.value) openAttackOfOpportunityMenuId.value = null
+    return
+  }
+
+  const next = prompts.flatMap((prompt): AttackOfOpportunityButton[] => {
+    const renderObject = renderObjects.get(prompt.attackerId)
+    const point = renderObject ? worldPointToContainerPoint(attackOfOpportunityButtonCenter(renderObject)) : null
+    return point ? [{ ...prompt, left: point.x, top: point.y }] : []
+  })
+  const current = attackOfOpportunityButtons.value
+  const unchanged = next.length === current.length && next.every((entry, index) => {
+    const old = current[index]
+    return old?.id === entry.id
+      && Math.abs(old.left - entry.left) < 0.5
+      && Math.abs(old.top - entry.top) < 0.5
+      && old.struggleOptions.length === entry.struggleOptions.length
+      && old.struggleOptions.every((move, moveIndex) => move.name === entry.struggleOptions[moveIndex]?.name)
+  })
+  if (!unchanged) attackOfOpportunityButtons.value = next
+
+  if (openAttackOfOpportunityMenuId.value && !next.some((button) => button.id === openAttackOfOpportunityMenuId.value)) {
+    openAttackOfOpportunityMenuId.value = null
+  }
+}
+
+const useAttackOfOpportunityMove = (promptId: string, moveName: string) => {
+  openAttackOfOpportunityMenuId.value = null
+  emit('use-attack-of-opportunity', { promptId, moveName })
+}
+
+const toggleAttackOfOpportunityButton = (button: AttackOfOpportunityButton) => {
+  if (button.struggleOptions.length <= 1) {
+    const moveName = button.struggleOptions[0]?.name
+    if (moveName) useAttackOfOpportunityMove(button.id, moveName)
+    return
+  }
+  openAttackOfOpportunityMenuId.value = openAttackOfOpportunityMenuId.value === button.id ? null : button.id
+}
+
+const attackOfOpportunityTitle = (button: AttackOfOpportunityButton): string =>
+  `${button.attackerName} may make an Attack of Opportunity against ${button.provokerName}.`
+
+const attackOfOpportunityReasonLabel = (button: AttackOfOpportunityButton): string =>
+  button.reason === 'movement' ? 'Provoked by movement' : 'Provoked by a ranged attack'
+
 const targetReticleButtonTitle = (button: TargetReticleButton): string => {
   if (!button.showsReticle) return button.selected ? 'Exclude this target from the move' : 'Include this target in the move'
   return button.hitChance?.title ?? 'Select move target'
@@ -953,6 +1019,7 @@ const updateMoveAutomationOverlays = () => {
     renderObjects,
     show: layers.tokens,
   })
+  syncAttackOfOpportunityButtons()
 }
 
 const animate = () => {
@@ -1198,6 +1265,53 @@ useIsometricSceneWatchers({
       </button>
     </div>
 
+    <div v-if="attackOfOpportunityButtons.length" class="attack-of-opportunity-layer" @contextmenu.prevent>
+      <div
+        v-for="button in attackOfOpportunityButtons"
+        :key="button.id"
+        class="attack-of-opportunity-anchor"
+        :style="{ left: `${button.left}px`, top: `${button.top}px` }"
+      >
+        <button
+          class="attack-of-opportunity-button"
+          type="button"
+          :title="attackOfOpportunityTitle(button)"
+          @pointerdown.stop
+          @click.stop="toggleAttackOfOpportunityButton(button)"
+        >
+          AoO!
+        </button>
+        <div
+          v-if="openAttackOfOpportunityMenuId === button.id && button.struggleOptions.length > 1"
+          class="attack-of-opportunity-menu"
+          role="menu"
+          :aria-label="`Choose ${button.attackerName}'s Struggle attack`"
+          @pointerdown.stop
+          @click.stop
+        >
+          <div class="attack-of-opportunity-menu__heading">
+            <strong>{{ button.provokerName }}</strong>
+            <span>{{ attackOfOpportunityReasonLabel(button) }}</span>
+          </div>
+          <button
+            v-for="move in button.struggleOptions"
+            :key="move.name"
+            class="attack-of-opportunity-menu__item"
+            type="button"
+            role="menuitem"
+            @click="useAttackOfOpportunityMove(button.id, move.name)"
+          >
+            <span>{{ move.name }}</span>
+            <small>
+              <template v-if="move.type">{{ move.type }}</template>
+              <template v-if="move.damageClass"> · {{ move.damageClass }}</template>
+              <template v-if="move.damageBase != null"> · DB {{ move.damageBase }}</template>
+            </small>
+          </button>
+        </div>
+      </div>
+    </div>
+
     <TokenContextMenu
       v-if="contextMenu"
       :menu="contextMenu"
@@ -1345,12 +1459,112 @@ useIsometricSceneWatchers({
   background: color-mix(in srgb, var(--accent) 14%, var(--paper-accent));
 }
 
-.move-targeting-click-layer {
+.move-targeting-click-layer,
+.attack-of-opportunity-layer {
   position: absolute;
   z-index: 9;
   inset: 0;
   overflow: hidden;
   pointer-events: none;
+}
+
+.attack-of-opportunity-layer {
+  z-index: 11;
+}
+
+.attack-of-opportunity-anchor {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.32rem;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.attack-of-opportunity-button {
+  border: 1px solid color-mix(in srgb, var(--bad) 76%, white 18%);
+  border-radius: 999px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--bad) 88%, white 12%), var(--bad));
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.32), 0 0 0 2px rgba(255, 255, 255, 0.28);
+  color: var(--ink-bright);
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 950;
+  letter-spacing: 0.04em;
+  padding: 0.34rem 0.52rem;
+  cursor: pointer;
+  pointer-events: auto;
+  text-transform: uppercase;
+  transform: translateY(-100%);
+}
+
+.attack-of-opportunity-button:hover,
+.attack-of-opportunity-button:focus-visible {
+  filter: brightness(1.08);
+  transform: translateY(calc(-100% - 1px));
+}
+
+.attack-of-opportunity-button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.attack-of-opportunity-menu {
+  min-width: 14rem;
+  max-width: 18rem;
+  padding: 0.45rem;
+  border: 1px solid var(--rule-strong);
+  border-radius: 0.85rem;
+  background: color-mix(in srgb, var(--paper) 96%, transparent);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.38);
+  color: var(--ink);
+  pointer-events: auto;
+}
+
+.attack-of-opportunity-menu__heading {
+  display: flex;
+  flex-direction: column;
+  gap: 0.08rem;
+  padding: 0.2rem 0.35rem 0.4rem;
+  border-bottom: 1px solid var(--rule);
+  font-size: 0.74rem;
+}
+
+.attack-of-opportunity-menu__heading strong {
+  color: var(--bad);
+  font-size: 0.82rem;
+}
+
+.attack-of-opportunity-menu__item {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  gap: 0.08rem;
+  margin-top: 0.25rem;
+  padding: 0.42rem 0.5rem;
+  border: 1px solid transparent;
+  border-radius: 0.65rem;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.attack-of-opportunity-menu__item:hover,
+.attack-of-opportunity-menu__item:focus-visible {
+  border-color: color-mix(in srgb, var(--bad) 55%, var(--rule-strong));
+  background: color-mix(in srgb, var(--bad) 11%, transparent);
+}
+
+.attack-of-opportunity-menu__item span {
+  font-weight: 850;
+}
+
+.attack-of-opportunity-menu__item small {
+  color: var(--muted);
+  font-size: 0.7rem;
 }
 
 .move-target-reticle-button {

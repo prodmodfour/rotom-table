@@ -1313,6 +1313,153 @@ describe('useMoveAutomationPanel', () => {
     expect(calls).toEqual(['effect:weather:rainy', 'hazard:spikes'])
   })
 
+  it('notifies map-level AoO hooks when a normal ranged attack is taken', async () => {
+    const map = ref({
+      ...mapFixture(),
+      placements: [
+        { id: 'user-token', sheetKind: 'pokemon' as const, sheetSlug: 'caster', position: { x: 0, y: 0, z: 0 } },
+        { id: 'target-token', sheetKind: 'pokemon' as const, sheetSlug: 'target', position: { x: 3, y: 0, z: 0 } },
+      ],
+    })
+    const pokemonSheet = {
+      slug: 'caster',
+      nickname: 'Caster',
+      species: 'Charmander',
+      level: 5,
+      movelist: [{ name: 'Ember' }],
+    } as CharacterSheet
+    const beforeAction = vi.fn()
+    const rangedAoO = vi.fn()
+    const panel = useMoveAutomationPanel({
+      map,
+      spawnedPokemon: computed(() => [
+        spawned({ id: 'user-token', species: 'Caster', sheetSlug: 'caster', position: { x: 0, y: 0, z: 0 } }),
+        spawned({ id: 'target-token', species: 'Target', sheetSlug: 'target', currentHp: 40, maxHp: 40, defenderTypes: ['Grass'], position: { x: 3, y: 0, z: 0 } }),
+      ]),
+      pokemonBySlug: ref(new Map([[pokemonSheet.slug, pokemonSheet]])),
+      trainerBySlug: ref(new Map<string, TrainerSheet>()),
+      canEditMap: computed(() => false),
+      canControlPlacement: (id) => id === 'user-token',
+      modifyHp: () => undefined,
+      modifyCombatStages: () => undefined,
+      modifyConditions: () => undefined,
+      applyMoveFieldEffect: () => undefined,
+      placeHazard: () => undefined,
+      onBeforeNonImmediateAction: beforeAction,
+      onRangedAttackOfOpportunity: rangedAoO,
+    })
+
+    panel.openMoveAutomation({ id: 'user-token', moveName: 'Ember' })
+    await panel.selectMoveAutomationTarget('target-token')
+
+    expect(beforeAction).toHaveBeenCalledWith({ userId: 'user-token', moveName: 'Ember' })
+    expect(rangedAoO).toHaveBeenCalledWith({
+      provokerId: 'user-token',
+      targetIds: ['target-token'],
+      moveName: 'Ember',
+    })
+  })
+
+  it('flushes a pending animated move transaction before starting another move', async () => {
+    const map = ref({
+      ...mapFixture(),
+      placements: [
+        { id: 'user-token', sheetKind: 'pokemon' as const, sheetSlug: 'caster', position: { x: 0, y: 0, z: 0 } },
+        { id: 'target-token', sheetKind: 'pokemon' as const, sheetSlug: 'target', position: { x: 3, y: 0, z: 0 } },
+      ],
+    })
+    const pokemonSheet = {
+      slug: 'caster',
+      nickname: 'Caster',
+      species: 'Charmander',
+      level: 5,
+      movelist: [{ name: 'Ember' }],
+    } as CharacterSheet
+    const hpCalls: string[] = []
+    const panel = useMoveAutomationPanel({
+      map,
+      spawnedPokemon: computed(() => [
+        spawned({ id: 'user-token', species: 'Caster', sheetSlug: 'caster', position: { x: 0, y: 0, z: 0 } }),
+        spawned({ id: 'target-token', species: 'Target', sheetSlug: 'target', currentHp: 40, maxHp: 40, defenderTypes: ['Grass'], position: { x: 3, y: 0, z: 0 } }),
+      ]),
+      pokemonBySlug: ref(new Map([[pokemonSheet.slug, pokemonSheet]])),
+      trainerBySlug: ref(new Map<string, TrainerSheet>()),
+      canEditMap: computed(() => false),
+      canControlPlacement: (id) => id === 'user-token',
+      modifyHp: (update) => { hpCalls.push(`${update.id}:${update.currentHp}`) },
+      modifyCombatStages: () => undefined,
+      modifyConditions: () => undefined,
+      applyMoveFieldEffect: () => undefined,
+      placeHazard: () => undefined,
+    })
+    const random = vi.spyOn(Math, 'random').mockReturnValue(0.99)
+    try {
+      panel.openMoveAutomation({ id: 'user-token', moveName: 'Ember' })
+      await panel.selectMoveAutomationTarget('target-token')
+      expect(hpCalls).toEqual([])
+
+      await panel.useMoveAgainstTarget({
+        id: 'user-token',
+        targetId: 'target-token',
+        moveName: 'Struggle',
+        skipActionNotifications: true,
+      })
+
+      expect(hpCalls.length).toBeGreaterThan(0)
+    } finally {
+      random.mockRestore()
+    }
+  })
+
+  it('can execute a direct interrupt Struggle target without expiring pending AoOs', async () => {
+    const map = ref({
+      ...mapFixture(),
+      placements: [
+        { id: 'user-token', sheetKind: 'pokemon' as const, sheetSlug: 'attacker', position: { x: 0, y: 0, z: 0 } },
+        { id: 'target-token', sheetKind: 'pokemon' as const, sheetSlug: 'target', position: { x: 3, y: 0, z: 0 } },
+      ],
+    })
+    const pokemonSheet = {
+      slug: 'attacker',
+      nickname: 'Attacker',
+      species: 'Bulbasaur',
+      level: 5,
+      movelist: [],
+    } as CharacterSheet
+    const beforeAction = vi.fn()
+    const rangedAoO = vi.fn()
+    const panel = useMoveAutomationPanel({
+      map,
+      spawnedPokemon: computed(() => [
+        spawned({ id: 'user-token', species: 'Attacker', sheetSlug: 'attacker', position: { x: 0, y: 0, z: 0 } }),
+        spawned({ id: 'target-token', species: 'Target', sheetSlug: 'target', currentHp: 40, maxHp: 40, position: { x: 3, y: 0, z: 0 } }),
+      ]),
+      pokemonBySlug: ref(new Map([[pokemonSheet.slug, pokemonSheet]])),
+      trainerBySlug: ref(new Map<string, TrainerSheet>()),
+      canEditMap: computed(() => false),
+      canControlPlacement: (id) => id === 'user-token',
+      modifyHp: () => undefined,
+      modifyCombatStages: () => undefined,
+      modifyConditions: () => undefined,
+      applyMoveFieldEffect: () => undefined,
+      placeHazard: () => undefined,
+      onBeforeNonImmediateAction: beforeAction,
+      onRangedAttackOfOpportunity: rangedAoO,
+    })
+
+    await expect(panel.useMoveAgainstTarget({
+      id: 'user-token',
+      targetId: 'target-token',
+      moveName: 'Struggle',
+      skipActionNotifications: true,
+      logLine: 'Attacker makes an Attack of Opportunity against Target.',
+    })).resolves.toBe(true)
+
+    expect(beforeAction).not.toHaveBeenCalled()
+    expect(rangedAoO).not.toHaveBeenCalled()
+    expect(panel.moveAutomationFeedback.value?.moveName).toBe('Struggle')
+  })
+
   it('keeps only the configured number of move log entries', () => {
     const previous = { moveLog: [{ moveName: 'Old 1' }, { moveName: 'Old 2' }] }
     const next = appendMoveAutomationLogEntry(previous, transaction(), {

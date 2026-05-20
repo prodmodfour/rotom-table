@@ -20,6 +20,7 @@ import type {
   VoxelMaterial,
 } from '~/types/map'
 import type { SpawnedPokemon } from '~/types/pokemon'
+import type { AttackOfOpportunityPrompt } from '~/utils/attackOfOpportunity'
 import type { PreviewState } from '~/utils/gridPreview'
 import type { TokenAbilityMenuOption } from '~/utils/mapTokenAbilities'
 import type { TokenMoveMenuOption } from '~/utils/mapTokenMoves'
@@ -55,6 +56,7 @@ defineProps<{
   tokenSendOutOptionsById?: Record<string, TokenSendOutOption[]>
   moveAutomationTargeting?: MoveAutomationTargetingOverlayState | null
   moveAutomationFeedback?: MoveAutomationFeedbackState | null
+  attackOfOpportunityPrompts?: AttackOfOpportunityPrompt[]
 }>()
 
 const emit = defineEmits<{
@@ -78,6 +80,7 @@ const emit = defineEmits<{
   (event: 'select-move-target', targetId: string): void
   (event: 'select-move-area-direction', direction: MoveAutomationAreaDirection): void
   (event: 'cancel-move-targeting'): void
+  (event: 'use-attack-of-opportunity', payload: { promptId: string; moveName: string }): void
 }>()
 
 const gridRef = ref<IsometricGridHandle | null>(null)
@@ -115,6 +118,7 @@ defineExpose({ focusPokemon })
     :token-send-out-options-by-id="tokenSendOutOptionsById"
     :move-automation-targeting="moveAutomationTargeting"
     :move-automation-feedback="moveAutomationFeedback"
+    :attack-of-opportunity-prompts="attackOfOpportunityPrompts ?? []"
     @select-pokemon="emit('select-pokemon', $event)"
     @move-pokemon="emit('move-pokemon', $event)"
     @turn-pokemon="emit('turn-pokemon', $event)"
@@ -135,5 +139,6 @@ defineExpose({ focusPokemon })
     @select-move-target="emit('select-move-target', $event)"
     @select-move-area-direction="emit('select-move-area-direction', $event)"
     @cancel-move-targeting="emit('cancel-move-targeting')"
+    @use-attack-of-opportunity="emit('use-attack-of-opportunity', $event)"
   />
 </template>

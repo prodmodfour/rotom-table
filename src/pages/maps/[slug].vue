@@ -23,14 +23,16 @@ import { useMapTokenNavigation } from '~/composables/map-editor/useMapTokenNavig
 import { useAbilityAutomationPanel } from '~/composables/map-editor/useAbilityAutomationPanel'
 import { useMoveAutomationPanel } from '~/composables/map-editor/useMoveAutomationPanel'
 import { useTerrainBuilder } from '~/composables/map-editor/useTerrainBuilder'
+import { useAttackOfOpportunityPanel } from '~/utils/attackOfOpportunity'
 import { useTokenSheetMutations } from '~/composables/map-editor/useTokenSheetMutations'
 import { useTokenControls } from '~/composables/map-editor/useTokenControls'
 import { MAP_API_PATHS } from '~/utils/apiRoutes'
 import { getClientId } from '~/utils/clientId'
+import { isSameAnchor } from '~/utils/gridGeometry'
 import { mapEditorPath, mapLibraryPath } from '~/utils/mapRoutes'
 import { routeSlugParam } from '~/utils/routeParams'
 import type { CharacterSheet } from '~/types/characterSheet'
-import type { TabletopMap } from '~/types/map'
+import type { GridAnchor, TabletopMap } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
 
 definePageMeta({
@@ -116,7 +118,21 @@ const selectPokemon = (id: string | null) => {
 }
 const deletePokemon = deletePlacement
 const turnPokemon = turnPlacement
-const movePokemon = movePlacement
+let attackOfOpportunityPanel: ReturnType<typeof useAttackOfOpportunityPanel> | null = null
+const movePokemon = (payload: { id: string; position: GridAnchor }) => {
+  const from = spawnedPokemon.value.find((pokemon) => pokemon.id === payload.id)?.position
+  const previousPosition = from ? { ...from } : null
+  movePlacement(payload)
+
+  const currentPosition = placementById(payload.id)?.position
+  if (!previousPosition || !currentPosition || isSameAnchor(previousPosition, currentPosition)) return
+  attackOfOpportunityPanel?.clearAttackOfOpportunityPromptsForNonImmediateAction()
+  attackOfOpportunityPanel?.provokeMovementAttackOfOpportunity({
+    provokerId: payload.id,
+    from: previousPosition,
+    to: { ...currentPosition },
+  })
+}
 
 const hazardCount = computed(() => mapHazards.value.length)
 const {
@@ -224,6 +240,16 @@ const {
   },
 })
 
+const previousInitiativeAndExpireAoo = () => {
+  attackOfOpportunityPanel?.clearAttackOfOpportunityPromptsForNonImmediateAction()
+  previousInitiative()
+}
+
+const nextInitiativeAndExpireAoo = () => {
+  attackOfOpportunityPanel?.clearAttackOfOpportunityPromptsForNonImmediateAction()
+  nextInitiative()
+}
+
 const {
   modifyHp,
   modifyCombatStages,
@@ -289,6 +315,7 @@ const {
   celebrateTriggerPrompts,
   tokenMoveOptionsById,
   openMoveAutomation,
+  useMoveAgainstTarget,
   cancelMoveAutomationTargeting,
   selectMoveAutomationTarget,
   selectMoveAutomationAreaDirection,
@@ -315,7 +342,32 @@ const {
   applyMoveFieldEffect,
   placeHazard,
   recordMoveUsage,
+  onBeforeNonImmediateAction: () => {
+    attackOfOpportunityPanel?.clearAttackOfOpportunityPromptsForNonImmediateAction()
+  },
+  onRangedAttackOfOpportunity: (event) => {
+    attackOfOpportunityPanel?.provokeRangedAttackOfOpportunity(event)
+  },
 })
+
+attackOfOpportunityPanel = useAttackOfOpportunityPanel({
+  map,
+  spawnedPokemon,
+  tokenMoveOptionsById,
+  canControlPlacement,
+  performStruggleAttack: ({ attackerId, targetId, moveName, prompt }) => useMoveAgainstTarget({
+    id: attackerId,
+    targetId,
+    moveName,
+    skipActionNotifications: true,
+    logLine: `${prompt.attackerName} makes an Attack of Opportunity against ${prompt.provokerName}.`,
+  }),
+})
+
+const {
+  attackOfOpportunityPrompts,
+  useAttackOfOpportunity,
+} = attackOfOpportunityPanel
 
 const {
   abilityAutomationTargeting,
@@ -332,6 +384,9 @@ const {
   modifyCombatStages,
   modifyConditions,
   modifyAbilityActivation,
+  onBeforeNonImmediateAction: () => {
+    attackOfOpportunityPanel?.clearAttackOfOpportunityPromptsForNonImmediateAction()
+  },
 })
 
 const actionAutomationTargeting = computed(() =>
@@ -434,13 +489,14 @@ useMapDimensionReconciliation({
         :poison-point-reaction-prompts="poisonPointReactionPrompts"
         :moxie-trigger-prompts="moxieTriggerPrompts"
         :celebrate-trigger-prompts="celebrateTriggerPrompts"
+        :attack-of-opportunity-prompts="attackOfOpportunityPrompts"
         :token-move-options-by-id="tokenMoveOptionsById"
         :token-ability-options-by-id="tokenAbilityOptionsById"
         :token-send-out-options-by-id="tokenSendOutOptionsById"
         @select-pokemon="selectPokemon"
         @focus-initiative-entry="focusInitiativeEntry"
-        @previous-initiative="previousInitiative"
-        @next-initiative="nextInitiative"
+        @previous-initiative="previousInitiativeAndExpireAoo"
+        @next-initiative="nextInitiativeAndExpireAoo"
         @move-pokemon="movePokemon"
         @turn-pokemon="turnPokemon"
         @delete-pokemon="deletePokemon"
@@ -470,6 +526,7 @@ useMapDimensionReconciliation({
         @apply-moxie-trigger="applyMoxieTriggerPrompt"
         @dismiss-celebrate-trigger="dismissCelebrateTriggerPrompt"
         @apply-celebrate-trigger="applyCelebrateTriggerPrompt"
+        @use-attack-of-opportunity="useAttackOfOpportunity"
       />
     </template>
 
@@ -535,8 +592,8 @@ useMapDimensionReconciliation({
         :has-initiative-values="hasInitiativeValues"
         @close="closeInitiativeMenu"
         @set-round="setInitiativeRound"
-        @previous="previousInitiative"
-        @next="nextInitiative"
+        @previous="previousInitiativeAndExpireAoo"
+        @next="nextInitiativeAndExpireAoo"
         @fill-from-speed="fillInitiativeFromSpeed"
         @clear-active="clearActiveInitiative"
         @clear-values="clearInitiativeValues"

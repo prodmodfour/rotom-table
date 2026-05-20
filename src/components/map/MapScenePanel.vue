@@ -29,6 +29,7 @@ import type {
   MoveAutomationTargetingOverlayState,
 } from '~/types/moveAutomation'
 import type { SpawnedPokemon } from '~/types/pokemon'
+import type { AttackOfOpportunityPrompt } from '~/utils/attackOfOpportunity'
 import type { TokenAbilityMenuOption } from '~/utils/mapTokenAbilities'
 import type { TokenMoveMenuOption } from '~/utils/mapTokenMoves'
 import type { TokenSendOutOption } from '~/utils/mapTokenSendOut'
@@ -77,6 +78,7 @@ const props = defineProps<{
   poisonPointReactionPrompts?: MoveAutomationPoisonPointPrompt[]
   moxieTriggerPrompts?: MoveAutomationMoxiePrompt[]
   celebrateTriggerPrompts?: MoveAutomationCelebratePrompt[]
+  attackOfOpportunityPrompts?: AttackOfOpportunityPrompt[]
   tokenMoveOptionsById?: Record<string, TokenMoveMenuOption[]>
   tokenAbilityOptionsById?: Record<string, TokenAbilityMenuOption[]>
   tokenSendOutOptionsById?: Record<string, TokenSendOutOption[]>
@@ -116,6 +118,7 @@ const emit = defineEmits<{
   (event: 'apply-moxie-trigger', id: string): void
   (event: 'dismiss-celebrate-trigger', id: string): void
   (event: 'apply-celebrate-trigger', id: string): void
+  (event: 'use-attack-of-opportunity', payload: { promptId: string; moveName: string }): void
 }>()
 
 const COMBAT_LOG_MESSAGE_LIMIT = 24
@@ -161,6 +164,7 @@ defineExpose({ focusPokemon })
         :token-send-out-options-by-id="tokenSendOutOptionsById"
         :move-automation-targeting="moveAutomationTargeting"
         :move-automation-feedback="moveAutomationFeedback"
+        :attack-of-opportunity-prompts="props.attackOfOpportunityPrompts ?? []"
         @select-pokemon="emit('select-pokemon', $event)"
         @move-pokemon="emit('move-pokemon', $event)"
         @turn-pokemon="emit('turn-pokemon', $event)"
@@ -181,6 +185,7 @@ defineExpose({ focusPokemon })
         @select-move-target="emit('select-move-target', $event)"
         @select-move-area-direction="emit('select-move-area-direction', $event)"
         @cancel-move-targeting="emit('cancel-move-targeting')"
+        @use-attack-of-opportunity="emit('use-attack-of-opportunity', $event)"
       />
       <MapSceneStatus v-else :status="status" :error="error" :slug="slug" />
 

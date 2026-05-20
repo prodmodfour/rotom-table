@@ -51,6 +51,7 @@ export interface UseAbilityAutomationPanelOptions {
   modifyCombatStages: SheetUpdateHandler<MoveAutomationCombatStageUpdate>
   modifyConditions: SheetUpdateHandler<MoveAutomationConditionUpdate>
   modifyAbilityActivation: SheetUpdateHandler<AbilitySheetActivationUpdate>
+  onBeforeNonImmediateAction?: (event: { userId: string; abilityName: string }) => void
   now?: () => number
   maxLogEntries?: number
 }
@@ -71,6 +72,7 @@ export const useAbilityAutomationPanel = ({
   modifyCombatStages,
   modifyConditions,
   modifyAbilityActivation,
+  onBeforeNonImmediateAction,
   now,
   maxLogEntries = DEFAULT_ABILITY_AUTOMATION_LOG_ENTRIES,
 }: UseAbilityAutomationPanelOptions) => {
@@ -136,6 +138,7 @@ export const useAbilityAutomationPanel = ({
 
   const applyAbilityAutomationTransaction = async (transaction: AbilityAutomationTransaction) => {
     if (!map.value || !canControlPlacement(transaction.userId)) return
+    onBeforeNonImmediateAction?.({ userId: transaction.userId, abilityName: transaction.abilityName })
     for (const update of transaction.combatStageUpdates) {
       await modifyCombatStages(update, { allowAnyTarget: true })
     }
@@ -149,6 +152,7 @@ export const useAbilityAutomationPanel = ({
     user: SpawnedPokemon,
     option: TokenAbilityMenuOption,
   ) => {
+    onBeforeNonImmediateAction?.({ userId: user.id, abilityName: option.name })
     await modifyAbilityActivation({
       id: user.id,
       abilityName: option.name,
