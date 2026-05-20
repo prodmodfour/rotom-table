@@ -146,6 +146,7 @@ export const useOrderActionPanel = ({
     return {
       userId: request.userId,
       moveName: request.orderName,
+      mode: 'target',
       rangeLabel: request.targetLabel,
       rangeMeters: 0,
       targetPrompt: `Choose a target for ${request.orderName} (${request.targetLabel}).`,

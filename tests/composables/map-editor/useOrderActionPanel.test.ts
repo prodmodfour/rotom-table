@@ -77,6 +77,7 @@ describe('useOrderActionPanel', () => {
     expect(panel.useOrder({ id: 'trainer', orderName: 'Agility Training' })).toBe(true)
     expect(panel.orderActionTargeting.value).toMatchObject({
       moveName: 'Agility Training',
+      mode: 'target',
       candidateIds: ['pika'],
       targetPrompt: 'Choose a target for Agility Training (Your Pokémon).',
     })
