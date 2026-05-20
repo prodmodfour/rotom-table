@@ -1076,6 +1076,78 @@ describe('useMoveAutomationPanel', () => {
     ])
   })
 
+  it('opens Scratch as a Pass confirmation, hits crossed targets, and moves to the end square', async () => {
+    const map = ref({
+      ...mapFixture(),
+      dimensions: { x: 7, y: 2, z: 3 },
+      placements: [
+        { id: 'user-token', sheetKind: 'pokemon' as const, sheetSlug: 'scratcher', position: { x: 1, y: 0, z: 1 } },
+        { id: 'first-token', sheetKind: 'pokemon' as const, sheetSlug: 'first', position: { x: 2, y: 0, z: 1 } },
+        { id: 'second-token', sheetKind: 'pokemon' as const, sheetSlug: 'second', position: { x: 3, y: 0, z: 1 } },
+        { id: 'beyond-token', sheetKind: 'pokemon' as const, sheetSlug: 'beyond', position: { x: 5, y: 0, z: 1 } },
+      ],
+    })
+    const pokemonSheet = {
+      slug: 'scratcher',
+      nickname: 'Scratcher',
+      species: 'Meowth',
+      level: 5,
+      movelist: [{ name: 'Scratch' }],
+    } as CharacterSheet
+    const calls: string[] = []
+    const panel = useMoveAutomationPanel({
+      map,
+      spawnedPokemon: computed(() => [
+        spawned({ id: 'user-token', species: 'Scratcher', sheetSlug: 'scratcher', position: { x: 1, y: 0, z: 1 } }),
+        spawned({ id: 'first-token', species: 'First', sheetSlug: 'first', currentHp: 40, maxHp: 40, position: { x: 2, y: 0, z: 1 } }),
+        spawned({ id: 'second-token', species: 'Second', sheetSlug: 'second', currentHp: 40, maxHp: 40, position: { x: 3, y: 0, z: 1 } }),
+        spawned({ id: 'beyond-token', species: 'Beyond', sheetSlug: 'beyond', currentHp: 40, maxHp: 40, position: { x: 5, y: 0, z: 1 } }),
+      ]),
+      pokemonBySlug: ref(new Map([[pokemonSheet.slug, pokemonSheet]])),
+      trainerBySlug: ref(new Map<string, TrainerSheet>()),
+      canEditMap: computed(() => false),
+      canControlPlacement: (id) => id === 'user-token',
+      modifyHp: (update) => { calls.push(`hp:${update.id}`) },
+      modifyCombatStages: () => undefined,
+      modifyConditions: () => undefined,
+      applyMoveFieldEffect: () => undefined,
+      placeHazard: () => undefined,
+    })
+
+    panel.openMoveAutomation({ id: 'user-token', moveName: 'Scratch' })
+    panel.selectMoveAutomationAreaDirection('east')
+
+    expect(panel.moveAutomationTargeting.value).toMatchObject({
+      mode: 'area-confirmation',
+      moveName: 'Scratch',
+      rangeLabel: 'Pass 4 east',
+      candidateIds: ['first-token', 'second-token'],
+      affectedIds: ['first-token', 'second-token'],
+      areaDirection: 'east',
+    })
+    expect(panel.moveAutomationTargeting.value?.areaCells).toEqual([
+      { x: 2, y: 0, z: 1 },
+      { x: 3, y: 0, z: 1 },
+      { x: 4, y: 0, z: 1 },
+    ])
+
+    const random = vi.spyOn(Math, 'random').mockReturnValue(0.9)
+    try {
+      await panel.selectMoveAutomationTarget('user-token')
+    } finally {
+      random.mockRestore()
+    }
+
+    expect(calls).toEqual(['hp:first-token', 'hp:second-token'])
+    expect(map.value.placements.find((placement) => placement.id === 'user-token')?.position).toEqual({ x: 4, y: 0, z: 1 })
+    expect(map.value.metadata?.moveLog).toMatchObject([
+      { moveName: 'Scratch', scriptKind: 'explicit' },
+    ])
+    expect((map.value.metadata?.moveLog as Array<{ lines: string[] }>)[0].lines).toEqual(expect.arrayContaining([
+      'Scratcher ends the Pass dash at (4, 0, 1).',
+    ]))
+  })
+
   it('lets Friendly area move targets be unselected before confirmation', async () => {
     const map = ref({
       ...mapFixture(),

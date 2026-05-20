@@ -152,6 +152,35 @@ const areaAutomationNotes = (): string[] => [
   'Use the area-template buttons to choose affected legal targets, or select targets manually.',
 ]
 
+const passAutomationNotes = (): string[] => [
+  'Pass previews the farthest legal empty end square in each direction, then attacks each token in the crossed squares once.',
+  'The user is moved to the previewed Pass end square after the automated attack resolves; foes are treated as passable for the dash.',
+]
+
+const passAreaTemplate = (): MoveAutomationScript['areaTemplates'] => [{ kind: 'pass', size: 4, label: 'Pass 4' }]
+
+const reviewedPassAttackScript = (
+  moveName: string,
+  version = 1,
+  overrides: ReviewedMoveScriptOverrides = {},
+): MoveAutomationScript => reviewedMoveScriptFromCanonical(moveName, version, {
+  targetMode: 'multi-target',
+  targetCount: null,
+  areaTemplates: passAreaTemplate(),
+  automationNotes: passAutomationNotes(),
+  ...overrides,
+})
+
+const reviewedPassConditionScript = (
+  moveName: string,
+  conditions: readonly ReviewedTargetConditionDefinition[],
+  version = 1,
+  overrides: ReviewedMoveScriptOverrides = {},
+): MoveAutomationScript => reviewedPassAttackScript(moveName, version, {
+  conditionSuggestions: targetConditionSuggestions(conditions),
+  ...overrides,
+})
+
 const reviewedSingleTargetAttackScript = (moveName: string, version = 1): MoveAutomationScript =>
   reviewedMoveScriptFromCanonical(moveName, version, {
     targetMode: 'one-target',
@@ -588,6 +617,17 @@ const REVIEWED_ALLY_AREA_STAGE_SCRIPTS: ReadonlyMap<string, MoveAutomationScript
   ['Howl', reviewedHowlScript()],
 ])
 
+const REVIEWED_PASS_SCRIPTS: ReadonlyMap<string, MoveAutomationScript> = new Map([
+  ['Aqua Tail', reviewedPassAttackScript('Aqua Tail')],
+  ['Cross Poison', reviewedPassConditionScript('Cross Poison', [{ condition: 'Poisoned', label: 'Poisoned on 19+', threshold: '19+' }])],
+  ['Esper Wing', reviewedPassAttackScript('Esper Wing')],
+  ['Leaf Blade', reviewedPassAttackScript('Leaf Blade')],
+  ['Night Slash', reviewedPassAttackScript('Night Slash')],
+  ['Scratch', reviewedPassAttackScript('Scratch')],
+  ['Shadow Claw', reviewedPassAttackScript('Shadow Claw')],
+  ['Slash', reviewedPassAttackScript('Slash')],
+])
+
 const SEAMLESS_AREA_CONFIRMATION_SCRIPTS: ReadonlyMap<string, MoveAutomationScript> = new Map([
   ...REVIEWED_TARGET_STAGE_AREA_SCRIPTS,
   ...REVIEWED_AREA_CONFIRMATION_SCRIPTS,
@@ -595,13 +635,13 @@ const SEAMLESS_AREA_CONFIRMATION_SCRIPTS: ReadonlyMap<string, MoveAutomationScri
   ...REVIEWED_SMOG_SCRIPTS,
   ...REVIEWED_AREA_COAT_SCRIPTS,
   ...REVIEWED_ALLY_AREA_STAGE_SCRIPTS,
+  ...REVIEWED_PASS_SCRIPTS,
 ])
 
 const SEAMLESS_SINGLE_TARGET_ATTACK_SCRIPT_NAMES = [
   ...STRUGGLE_ATTACK_MOVE_NAMES,
   'Air Slash',
   'Aqua Jet',
-  'Aqua Tail',
   'Attack Order',
   'Bite',
   'Blaze Kick',
@@ -619,7 +659,6 @@ const SEAMLESS_SINGLE_TARGET_ATTACK_SCRIPT_NAMES = [
   'Drill Peck',
   'Drill Run',
   'Ember',
-  'Esper Wing',
   'Extrasensory',
   'Extreme Speed',
   'Fairy Wind',
@@ -637,13 +676,11 @@ const SEAMLESS_SINGLE_TARGET_ATTACK_SCRIPT_NAMES = [
   'Ice Shard',
   'Icicle Crash',
   'Karate Chop',
-  'Leaf Blade',
   'Lick',
   'Mach Punch',
   'Magical Leaf',
   'Mega Punch',
   'Needle Arm',
-  'Night Slash',
   'Peck',
   'Poison Jab',
   'Poison Sting',
@@ -657,11 +694,8 @@ const SEAMLESS_SINGLE_TARGET_ATTACK_SCRIPT_NAMES = [
   'Rolling Kick',
   'Scald',
   'Scorching Sands',
-  'Scratch',
   'Seed Bomb',
-  'Shadow Claw',
   'Shadow Sneak',
-  'Slash',
   'Sludge',
   'Sludge Bomb',
   'Stone Edge',
@@ -695,7 +729,6 @@ const REVIEWED_SINGLE_TARGET_CONDITION_SCRIPTS: ReadonlyMap<string, MoveAutomati
     automationNotes: ['Astonish’s once-per-scene automatic Flinch against an unaware target is not inferred; apply Flinch manually if that clause applies.'],
   })],
   ['Confusion', reviewedSingleTargetConditionScript('Confusion', [{ condition: 'Confused', label: 'Confused on 19+', threshold: '19+' }])],
-  ['Cross Poison', reviewedSingleTargetConditionScript('Cross Poison', [{ condition: 'Poisoned', label: 'Poisoned on 19+', threshold: '19+' }])],
   ['Dizzy Punch', reviewedSingleTargetConditionScript('Dizzy Punch', [{ condition: 'Confused', label: 'Confused on 17+', threshold: '17+' }])],
   ['Flame Wheel', reviewedSingleTargetConditionScript('Flame Wheel', [{ condition: 'Burned', label: 'Burned on 19+', threshold: '19+' }])],
   ['Flatter', reviewedSingleTargetConditionAndStageScript('Flatter',

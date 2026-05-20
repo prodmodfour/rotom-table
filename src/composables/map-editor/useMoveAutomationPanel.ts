@@ -155,6 +155,7 @@ interface ActiveAreaConfirmationRequest {
   excludedTargetIds: string[]
   direction?: MoveAutomationAreaDirection
   directionOptions: MoveAutomationAreaDirectionOption[]
+  passDestination?: GridAnchor
 }
 
 type ActiveMoveTargetingRequest = ActiveSingleTargetingRequest | ActiveAreaConfirmationRequest
@@ -267,6 +268,16 @@ export const useMoveAutomationPanel = ({
     const facing = tokenFacingFromAreaDirection(direction, tokenFacingForPlacement(placement))
     if (facing) setTokenFacingOnPlacement(placement, facing)
   }
+
+  const moveTokenToPassDestination = (id: string, destination: GridAnchor | undefined) => {
+    if (!destination) return
+    const placement = placementById(id)
+    if (!placement) return
+    placement.position = { ...destination }
+  }
+
+  const passDestinationLogLine = (user: SpawnedPokemon, destination: GridAnchor | undefined): string | null =>
+    destination ? `${user.species} ends the Pass dash at (${destination.x}, ${destination.y}, ${destination.z}).` : null
 
   const faceTokenTowardNearestTarget = (user: SpawnedPokemon, targets: readonly SpawnedPokemon[]) => {
     const origin = tokenFacingPoint(user)
@@ -414,6 +425,7 @@ export const useMoveAutomationPanel = ({
       label: placement.label,
       areaCells: placement.cells,
       affectedIds: placement.targetIds,
+      ...(placement.destination ? { destination: placement.destination } : {}),
     }))
 
   const areaPlacementForTokenFacing = (
@@ -443,6 +455,7 @@ export const useMoveAutomationPanel = ({
     excludedTargetIds: [],
     direction: placement.direction,
     directionOptions: directionOptionsForPlacements(placements),
+    ...(placement.destination ? { passDestination: placement.destination } : {}),
   })
 
   const makeFallbackAreaPlacement = (
@@ -452,7 +465,7 @@ export const useMoveAutomationPanel = ({
     user: SpawnedPokemon,
   ): ActiveAreaConfirmationRequest | null => {
     const template = script.areaTemplates?.[0]
-    if (!template) return null
+    if (!template || template.kind === 'pass') return null
     const direction = template.kind === 'cone' || template.kind === 'line' || template.kind === 'close-blast'
       ? tokenAreaDirection(user)
       : undefined
@@ -915,6 +928,7 @@ export const useMoveAutomationPanel = ({
       cells: option.areaCells,
       targetIds: option.affectedIds,
       direction: option.direction,
+      passDestination: option.destination,
     }
   }
 
@@ -949,8 +963,11 @@ export const useMoveAutomationPanel = ({
       fieldEffects: map.value?.fieldEffects,
       conditionImmunityContext: { sweetVeilProviders: spawnedPokemon.value },
     })
+    const destinationLogLine = passDestinationLogLine(user, request.passDestination)
+    if (destinationLogLine) transaction.logLines.push(destinationLogLine)
     activeMoveTargeting.value = null
     await applyMoveAutomation(transaction, { updateFacing: !request.direction, script: request.script })
+    moveTokenToPassDestination(request.userId, request.passDestination)
   }
 
   const selectMoveAutomationTarget = async (targetId: string) => {

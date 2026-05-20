@@ -57,6 +57,7 @@ export interface MoveAutomationAreaDirectionOption {
   label: string
   areaCells: GridAnchor[]
   affectedIds: string[]
+  destination?: GridAnchor
 }
 
 export type MoveAutomationHitChanceTone = 'low' | 'medium' | 'high'
@@ -307,6 +308,7 @@ export type MoveAutomationAreaTemplateKind =
   | 'ranged-blast'
   | 'cone'
   | 'line'
+  | 'pass'
   | 'cardinally-adjacent'
 
 export interface MoveAutomationAreaTemplate {

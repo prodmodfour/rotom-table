@@ -21,7 +21,7 @@ export const determineMoveAutomationTargetMode = (move: MoveAutomationTargetingM
   if (has(range, /\bHazard\b/i) || /Spikes|Sticky Web|Stealth Rock/.test(move.name)) return 'hazard'
   if (has(range, /\bField\b/i) || has(range, /\bWeather\b/i)) return 'field'
   if (has(range, /\bSelf\b/i) && !has(range, /\bTarget\b/i) && !has(range, /Burst|Cone|Line|Blast/i)) return 'self'
-  if (has(range, /Burst|Cone|Line|Blast|all adjacent|all legal targets|all targets|\b[235]\s+Targets\b/i)) return 'multi-target'
+  if (has(range, /Burst|Cone|Line|Blast|\bPass\b|all adjacent|all legal targets|all targets|\b[235]\s+Targets\b/i)) return 'multi-target'
   if (has(range, /\b1\s*Target\b|\bSingle Target\b|\bTarget\b|\bMelee\b|^\s*\d+\b/i)) return 'one-target'
   if (damaging) return 'one-target'
   if (has(combined, /target/i)) return 'one-target'
@@ -45,7 +45,7 @@ export const buildMoveAutomationRangeKeywords = (range: string): string[] =>
   splitMoveRangeKeywords(range).filter((keyword) => !/^\d+$/.test(keyword) && !/1 Target|Single Target/i.test(keyword))
 
 export const parseMoveAutomationCriticalRange = (effect: string): number | null => {
-  const match = effect.match(/Critical Hit on (?:a )?(\d{1,2})\+/i)
+  const match = effect.match(/Critical Hit on (?:(?:a|an) )?(\d{1,2})\+/i)
   if (!match) return null
 
   const value = Number(match[1])

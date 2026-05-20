@@ -1,4 +1,8 @@
-import { getClearanceValue } from '~/utils/gridGeometry'
+import {
+  footprintsOverlap,
+  getClearanceValue,
+  isAnchorWithinBounds,
+} from '~/utils/gridGeometry'
 import { tokenGridDistance } from '~/utils/moveAutomationRange'
 import {
   ptuAlternatingDiagonalDistance,
@@ -28,6 +32,8 @@ export interface MoveAutomationAreaTemplatePlacement {
   cells: GridAnchor[]
   targetIds: string[]
   direction?: MoveAutomationAreaDirection
+  /** End square for Pass templates; undefined for stationary area templates. */
+  destination?: GridAnchor
 }
 
 interface AreaTemplateFootprint {
@@ -94,6 +100,7 @@ const areaTemplateLabel = (kind: MoveAutomationAreaTemplateKind, size: number, r
     case 'ranged-blast': return range != null ? `Ranged ${range} Blast ${size}` : `Blast ${size}`
     case 'cone': return `Cone ${size}`
     case 'line': return `Line ${size}`
+    case 'pass': return `Pass ${size}`
     case 'cardinally-adjacent': return 'Cardinally Adjacent Targets'
   }
 }
@@ -143,6 +150,7 @@ const templateTextIndex = (value: string, template: MoveAutomationAreaTemplate):
         : new RegExp(`\\b(?:Ranged\\s+)?Blast\\s+${size}\\b`, 'i')
       case 'cone': return new RegExp(`\\bCone\\s+${size}\\b`, 'i')
       case 'line': return new RegExp(`\\bLine\\s+${size}\\b`, 'i')
+      case 'pass': return /\bPass\b/i
       case 'cardinally-adjacent': return /\b(?:All\s+)?Cardinally\s+Adjacent\s+Targets\b/i
     }
   })()
@@ -196,6 +204,8 @@ export const parseMoveAutomationAreaTemplates = (range: string | null | undefine
 
   const line = /\bLine\s+(\d+)\b/gi
   while ((match = line.exec(value)) != null) addTemplate(templates, seen, 'line', positiveInt(match[1]))
+
+  if (/\bPass\b/i.test(value)) addTemplate(templates, seen, 'pass', 4)
 
   if (/\b(?:All\s+)?Cardinally\s+Adjacent\s+Targets\b/i.test(value)) {
     addTemplate(templates, seen, 'cardinally-adjacent', 1)
@@ -587,6 +597,77 @@ const applyCellConstraints = (
   )
 }
 
+const offsetPositionByDirectionStep = (
+  position: GridAnchor,
+  direction: DirectionDefinition,
+  step: number,
+): GridAnchor => ({
+  x: position.x + direction.dx * step,
+  y: position.y + direction.dy * step,
+  z: position.z + direction.dz * step,
+})
+
+const footprintOverlapsBlockedCells = (
+  footprint: AreaTemplateFootprint,
+  position: GridAnchor,
+  blockedCells: ReadonlySet<string> | undefined,
+): boolean => Boolean(
+  blockedCells?.size
+    && footprintCells({ ...footprint, position }).some((cell) => blockedCells.has(cellKey(cell))),
+)
+
+const footprintCanOccupyTerrain = (
+  footprint: AreaTemplateFootprint,
+  position: GridAnchor,
+  constraints: AreaTemplateCellConstraints,
+): boolean => (!constraints.bounds || isAnchorWithinBounds(position, footprint, constraints.bounds))
+  && !footprintOverlapsBlockedCells(footprint, position, constraints.blockedCells)
+
+const footprintOverlapsTokenAtPosition = (
+  user: AreaTemplateFootprint,
+  position: GridAnchor,
+  token: AreaTemplateFootprint,
+): boolean => footprintsOverlap(
+  position,
+  user.base,
+  footprintClearance(user),
+  token.position,
+  token.base,
+  footprintClearance(token),
+)
+
+const passDestinationIsEmpty = (
+  user: SpawnedPokemon,
+  position: GridAnchor,
+  tokens: readonly SpawnedPokemon[],
+): boolean => !tokens.some((token) => token.id !== user.id && footprintOverlapsTokenAtPosition(user, position, token))
+
+const buildPassPlacementForDirection = (
+  template: MoveAutomationAreaTemplate,
+  user: SpawnedPokemon,
+  tokens: readonly SpawnedPokemon[],
+  direction: DirectionDefinition,
+  constraints: AreaTemplateCellConstraints,
+): { cells: GridAnchor[]; destination: GridAnchor } | null => {
+  let destination: GridAnchor | null = null
+  let destinationDistance = 0
+
+  for (let step = 1; directionStepDistance(step, direction) <= template.size; step += 1) {
+    const position = offsetPositionByDirectionStep(user.position, direction, step)
+    if (!footprintCanOccupyTerrain(user, position, constraints)) break
+    if (!passDestinationIsEmpty(user, position, tokens)) continue
+    destination = position
+    destinationDistance = directionStepDistance(step, direction)
+  }
+
+  if (!destination) return null
+  const origins = directionOriginCells(user, direction)
+  return {
+    cells: applyCellConstraints(buildLineCells(user, destinationDistance, direction), origins, constraints),
+    destination,
+  }
+}
+
 export const buildMoveAutomationAreaTemplateCells = ({
   template,
   user,
@@ -628,6 +709,12 @@ export const buildMoveAutomationAreaTemplateCells = ({
       )
     }
     case 'line': {
+      const resolvedDirection = directionDefinition(direction)
+      return resolvedDirection
+        ? applyCellConstraints(buildLineCells(user, template.size, resolvedDirection), directionOriginCells(user, resolvedDirection), constraints)
+        : []
+    }
+    case 'pass': {
       const resolvedDirection = directionDefinition(direction)
       return resolvedDirection
         ? applyCellConstraints(buildLineCells(user, template.size, resolvedDirection), directionOriginCells(user, resolvedDirection), constraints)
@@ -717,6 +804,24 @@ export const buildMoveAutomationAreaTemplatePlacements = ({
         cells,
         targetIds,
       }, includeEmpty)
+      continue
+    }
+
+    if (template.kind === 'pass') {
+      for (const direction of AREA_DIRECTIONS) {
+        const path = buildPassPlacementForDirection(template, user, tokens, direction, constraints)
+        if (!path) continue
+        const targetIds = tokensInMoveAutomationArea({ cells: path.cells, tokens, excludeIds: [user.id] }).map((token) => token.id)
+        addPlacement(placements, seen, {
+          id: `${template.kind}:${template.size}:${direction.id}`,
+          label: `${template.label} ${direction.label}`,
+          template,
+          cells: path.cells,
+          targetIds,
+          direction: direction.id,
+          destination: path.destination,
+        }, includeEmpty)
+      }
       continue
     }
 

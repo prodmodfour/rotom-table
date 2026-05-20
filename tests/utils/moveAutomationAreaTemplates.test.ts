@@ -58,6 +58,9 @@ describe('move automation area templates', () => {
       { kind: 'cone', size: 3, label: 'Cone 3' },
       { kind: 'line', size: 8, label: 'Line 8' },
     ])
+    expect(parseMoveAutomationAreaTemplates('Melee, Pass')).toMatchObject([
+      { kind: 'pass', size: 4, label: 'Pass 4' },
+    ])
     expect(parseMoveAutomationAreaTemplates('8, Ranged Blast 3')).toMatchObject([
       { kind: 'ranged-blast', size: 3, range: 8, label: 'Ranged 8 Blast 3' },
     ])
@@ -108,6 +111,9 @@ describe('move automation area templates', () => {
 
     expect(buildMoveAutomationAreaTemplateCells({ template: template('line', 3), user, direction: 'east', bounds })).toEqual(cells([
       [6, 1, 5], [7, 1, 5], [8, 1, 5],
+    ]))
+    expect(buildMoveAutomationAreaTemplateCells({ template: template('pass', 4), user, direction: 'east', bounds })).toEqual(cells([
+      [6, 1, 5], [7, 1, 5], [8, 1, 5], [9, 1, 5],
     ]))
     expect(buildMoveAutomationAreaTemplateCells({ template: template('line', 4), user, direction: 'north-east', bounds })).toEqual(cells([
       [6, 1, 4], [7, 1, 3], [8, 1, 2],
@@ -204,5 +210,29 @@ describe('move automation area templates', () => {
 
     expect(placements).toHaveLength(1)
     expect(placements[0]).toMatchObject({ label: 'Burst 1', targetIds: ['north'] })
+  })
+
+  it('builds Pass placements that stop at the farthest legal empty end square', () => {
+    const user = token('user', 'Eevee', { x: 1, y: 0, z: 1 })
+    const first = token('first', 'Rattata', { x: 2, y: 0, z: 1 })
+    const second = token('second', 'Pidgey', { x: 3, y: 0, z: 1 })
+    const beyondEndpoint = token('beyond', 'Zubat', { x: 5, y: 0, z: 1 })
+
+    const placements = buildMoveAutomationAreaTemplatePlacements({
+      script: { range: 'Melee, Pass', areaTemplates: parseMoveAutomationAreaTemplates('Melee, Pass') },
+      user,
+      tokens: [user, first, second, beyondEndpoint],
+      bounds: { x: 7, y: 2, z: 3 },
+      includeEmpty: true,
+    })
+
+    const east = placements.find((placement) => placement.direction === 'east')
+
+    expect(east).toMatchObject({
+      label: 'Pass 4 east',
+      targetIds: ['first', 'second'],
+      destination: { x: 4, y: 0, z: 1 },
+    })
+    expect(east?.cells).toEqual(cells([[2, 0, 1], [3, 0, 1], [4, 0, 1]]))
   })
 })

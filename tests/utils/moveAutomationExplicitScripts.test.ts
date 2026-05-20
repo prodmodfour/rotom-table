@@ -65,6 +65,41 @@ describe('explicit move automation scripts', () => {
     expect(isSeamlessSingleTargetMoveScript(script)).toBe(true)
   })
 
+  it('marks reviewed Pass attacks for seamless on-map Pass targeting', () => {
+    const scratch = explicitScriptForMove('Scratch')
+    const slash = explicitScriptForMove('Slash')
+    const crossPoison = explicitScriptForMove('Cross Poison')
+    const esperWing = explicitScriptForMove('Esper Wing')
+
+    expect(scratch).toMatchObject({
+      kind: 'explicit',
+      moveName: 'Scratch',
+      targetMode: 'multi-target',
+      targetCount: null,
+      damaging: true,
+      requiresAccuracy: true,
+      damageBase: 4,
+    })
+    expect(scratch?.areaTemplates).toEqual([{ kind: 'pass', size: 4, label: 'Pass 4' }])
+    expect(isSeamlessAreaConfirmationScript(scratch)).toBe(true)
+    expect(isSeamlessSingleTargetMoveScript(scratch)).toBe(false)
+
+    expect(slash).toMatchObject({ moveName: 'Slash', targetMode: 'multi-target', criticalRange: 18 })
+    expect(slash?.areaTemplates).toEqual([{ kind: 'pass', size: 4, label: 'Pass 4' }])
+    expect(isSeamlessAreaConfirmationScript(slash)).toBe(true)
+
+    expect(crossPoison).toMatchObject({
+      moveName: 'Cross Poison',
+      targetMode: 'multi-target',
+      conditionSuggestions: [{ recipient: 'target', condition: 'Poisoned', label: 'Poisoned on 19+', threshold: '19+', optional: true }],
+    })
+    expect(crossPoison?.areaTemplates).toEqual([{ kind: 'pass', size: 4, label: 'Pass 4' }])
+    expect(isSeamlessAreaConfirmationScript(crossPoison)).toBe(true)
+
+    expect(esperWing).toMatchObject({ moveName: 'Esper Wing', targetMode: 'multi-target', criticalRange: 18 })
+    expect(esperWing?.areaTemplates).toEqual([{ kind: 'pass', size: 4, label: 'Pass 4' }])
+  })
+
   it('marks condition-only target moves for seamless on-map targeting', () => {
     const script = explicitScriptForMove('Will-O-Wisp')
 
