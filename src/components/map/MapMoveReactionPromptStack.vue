@@ -3,12 +3,14 @@ import type {
   MoveAutomationCelebratePrompt,
   MoveAutomationCuteCharmPrompt,
   MoveAutomationMoxiePrompt,
+  MoveAutomationPoisonPointPrompt,
   MoveAutomationSpitePrompt,
 } from '~/types/moveAutomation'
 
 const props = defineProps<{
   spitePrompts: MoveAutomationSpitePrompt[]
   cuteCharmPrompts?: MoveAutomationCuteCharmPrompt[]
+  poisonPointPrompts?: MoveAutomationPoisonPointPrompt[]
   moxiePrompts?: MoveAutomationMoxiePrompt[]
   celebratePrompts?: MoveAutomationCelebratePrompt[]
 }>()
@@ -18,6 +20,8 @@ const emit = defineEmits<{
   (event: 'dismiss', id: string): void
   (event: 'apply-cute-charm', id: string): void
   (event: 'dismiss-cute-charm', id: string): void
+  (event: 'apply-poison-point', id: string): void
+  (event: 'dismiss-poison-point', id: string): void
   (event: 'apply-moxie', id: string): void
   (event: 'dismiss-moxie', id: string): void
   (event: 'apply-celebrate', id: string): void
@@ -34,7 +38,7 @@ const celebrateTargetList = (prompt: MoveAutomationCelebratePrompt): string => n
 </script>
 
 <template>
-  <div v-if="props.spitePrompts.length || props.cuteCharmPrompts?.length || props.moxiePrompts?.length || props.celebratePrompts?.length" class="reaction-prompt-stack" aria-live="polite">
+  <div v-if="props.spitePrompts.length || props.cuteCharmPrompts?.length || props.poisonPointPrompts?.length || props.moxiePrompts?.length || props.celebratePrompts?.length" class="reaction-prompt-stack" aria-live="polite">
     <article
       v-for="prompt in props.moxiePrompts ?? []"
       :key="prompt.id"
@@ -90,6 +94,26 @@ const celebrateTargetList = (prompt: MoveAutomationCelebratePrompt): string => n
           Infatuate {{ prompt.attackerName }}
         </button>
         <button type="button" class="reaction-prompt__dismiss" @click="emit('dismiss-cute-charm', prompt.id)">
+          Ignore
+        </button>
+      </div>
+    </article>
+
+    <article
+      v-for="prompt in props.poisonPointPrompts ?? []"
+      :key="prompt.id"
+      class="reaction-prompt"
+    >
+      <div class="reaction-prompt__copy">
+        <span class="reaction-prompt__eyebrow">Poison Point?</span>
+        <strong>{{ prompt.defenderName }}</strong>
+        <span>was hit by {{ prompt.attackerName }}'s {{ prompt.moveName }}. Poison {{ prompt.attackerName }}?</span>
+      </div>
+      <div class="reaction-prompt__actions">
+        <button type="button" class="reaction-prompt__apply" @click="emit('apply-poison-point', prompt.id)">
+          Poison {{ prompt.attackerName }}
+        </button>
+        <button type="button" class="reaction-prompt__dismiss" @click="emit('dismiss-poison-point', prompt.id)">
           Ignore
         </button>
       </div>

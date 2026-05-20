@@ -1,4 +1,5 @@
 import { computed, onBeforeUnmount, ref, type ComputedRef, type Ref } from 'vue'
+import { findMove } from '~~/data/ptuReference'
 import {
   buildTokenMoveMenuOptions,
   buildTokenMoveUsageState,
@@ -6,6 +7,7 @@ import {
   type TokenSheetMoveEntry,
 } from '~/utils/mapTokenMoves'
 import {
+  buildMoveAutomationScriptFromMoveData,
   damageFormulaForMove,
   isSeamlessAreaConfirmationScript,
   isSeamlessSelfMoveScript,
@@ -43,6 +45,10 @@ import {
   buildCuteCharmReactionPrompts,
 } from '~/utils/moveAutomationCuteCharm'
 import {
+  buildPoisonPointReactionConditionUpdate,
+  buildPoisonPointReactionPrompts,
+} from '~/utils/moveAutomationPoisonPoint'
+import {
   buildMoxieTriggerPrompts,
   buildMoxieTriggerTransaction,
 } from '~/utils/moveAutomationMoxie'
@@ -74,6 +80,7 @@ import type {
   MoveAutomationCelebratePrompt,
   MoveAutomationCuteCharmPrompt,
   MoveAutomationMoxiePrompt,
+  MoveAutomationPoisonPointPrompt,
   MoveAutomationScript,
   MoveAutomationSpitePrompt,
   MoveAutomationTargetingOverlayState,
@@ -193,6 +200,7 @@ export const useMoveAutomationPanel = ({
   const moveUsageError = ref<string | null>(null)
   const spiteReactionPrompts = ref<MoveAutomationSpitePrompt[]>([])
   const cuteCharmReactionPrompts = ref<MoveAutomationCuteCharmPrompt[]>([])
+  const poisonPointReactionPrompts = ref<MoveAutomationPoisonPointPrompt[]>([])
   const moxieTriggerPrompts = ref<MoveAutomationMoxiePrompt[]>([])
   const celebrateTriggerPrompts = ref<MoveAutomationCelebratePrompt[]>([])
   const feedbackTimers: Array<ReturnType<typeof setTimeout>> = []
@@ -635,6 +643,35 @@ export const useMoveAutomationPanel = ({
     if (prompts.length) cuteCharmReactionPrompts.value = [...cuteCharmReactionPrompts.value, ...prompts]
   }
 
+  const scriptForPoisonPointReaction = (
+    transaction: MoveAutomationTransaction,
+    script?: MoveAutomationScript,
+  ): MoveAutomationScript | null => {
+    if (script) return script
+    const move = findMove(transaction.moveName)
+    return move ? buildMoveAutomationScriptFromMoveData(move) : null
+  }
+
+  const queuePoisonPointReactionPrompts = (
+    transaction: MoveAutomationTransaction,
+    script?: MoveAutomationScript,
+  ) => {
+    const attacker = findSpawnedPokemon(transaction.userId)
+    const hitTargets = (transaction.hitTargetIds ?? [])
+      .map((id) => findSpawnedPokemon(id))
+      .filter((token): token is SpawnedPokemon => Boolean(token))
+    if (!attacker || !hitTargets.length) return
+
+    const prompts = buildPoisonPointReactionPrompts({
+      attacker,
+      moveName: transaction.moveName,
+      hitTargets,
+      script: scriptForPoisonPointReaction(transaction, script),
+      existingPrompts: poisonPointReactionPrompts.value,
+    })
+    if (prompts.length) poisonPointReactionPrompts.value = [...poisonPointReactionPrompts.value, ...prompts]
+  }
+
   const moxieTriggerPromptsForTransaction = (
     transaction: MoveAutomationTransaction,
   ): MoveAutomationMoxiePrompt[] => {
@@ -706,6 +743,21 @@ export const useMoveAutomationPanel = ({
     const update = attacker && defender ? buildCuteCharmReactionConditionUpdate(attacker, defender) : null
     if (update) await modifyConditions(update, { allowAnyTarget: true })
     dismissCuteCharmReactionPrompt(id)
+  }
+
+  const dismissPoisonPointReactionPrompt = (id: string) => {
+    poisonPointReactionPrompts.value = poisonPointReactionPrompts.value.filter((prompt) => prompt.id !== id)
+  }
+
+  const applyPoisonPointReactionPrompt = async (id: string) => {
+    const prompt = poisonPointReactionPrompts.value.find((item) => item.id === id)
+    if (!prompt) return
+
+    const attacker = findSpawnedPokemon(prompt.attackerId)
+    const defender = findSpawnedPokemon(prompt.defenderId)
+    const update = attacker && defender ? buildPoisonPointReactionConditionUpdate(attacker, defender) : null
+    if (update) await modifyConditions(update, { allowAnyTarget: true })
+    dismissPoisonPointReactionPrompt(id)
   }
 
   const dismissMoxieTriggerPrompt = (id: string) => {
@@ -782,6 +834,7 @@ export const useMoveAutomationPanel = ({
     queueMoxieTriggerPrompts(moxiePrompts)
     queueCelebrateTriggerPrompts(celebratePrompts)
     queueCuteCharmReactionPrompts(transaction)
+    queuePoisonPointReactionPrompts(transaction, options.script)
     queueSpiteReactionPrompts(transaction)
   }
 
@@ -961,6 +1014,7 @@ export const useMoveAutomationPanel = ({
     moveUsageError,
     spiteReactionPrompts,
     cuteCharmReactionPrompts,
+    poisonPointReactionPrompts,
     moxieTriggerPrompts,
     celebrateTriggerPrompts,
     tokenMoveOptionsById,
@@ -972,6 +1026,8 @@ export const useMoveAutomationPanel = ({
     applySpiteReactionPrompt,
     dismissCuteCharmReactionPrompt,
     applyCuteCharmReactionPrompt,
+    dismissPoisonPointReactionPrompt,
+    applyPoisonPointReactionPrompt,
     dismissMoxieTriggerPrompt,
     applyMoxieTriggerPrompt,
     dismissCelebrateTriggerPrompt,

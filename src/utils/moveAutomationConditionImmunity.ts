@@ -5,6 +5,8 @@ import { FLASH_FIRE_ABILITY_NAME } from '~/utils/sheetPassiveAbilityEffects'
 import { normalizeConditionName } from '~/utils/statusConditions'
 import type { SpawnedPokemon } from '~/types/pokemon'
 
+const IMMUNITY_ABILITY_NAME = 'Immunity'
+const PASTEL_VEIL_ABILITY_NAME = 'Pastel Veil'
 const WATER_VEIL_ABILITY_NAME = 'Water Veil'
 const SWEET_VEIL_RANGE_METERS = 3
 
@@ -67,8 +69,10 @@ export const moveAutomationConditionImmunitySource = (
 
   if (canonical === 'Paralysis' && hasType(target, 'Electric')) return 'Electric type'
   if (canonical === 'Frozen' && hasType(target, 'Ice')) return 'Ice type'
-  if ((canonical === 'Poisoned' || canonical === 'Badly Poisoned') && (hasType(target, 'Poison') || hasType(target, 'Steel'))) {
-    return hasType(target, 'Poison') ? 'Poison type' : 'Steel type'
+  if (canonical === 'Poisoned' || canonical === 'Badly Poisoned') {
+    if (hasType(target, 'Poison') || hasType(target, 'Steel')) return hasType(target, 'Poison') ? 'Poison type' : 'Steel type'
+    if (hasAbility(target, IMMUNITY_ABILITY_NAME)) return IMMUNITY_ABILITY_NAME
+    if (hasAbility(target, PASTEL_VEIL_ABILITY_NAME)) return PASTEL_VEIL_ABILITY_NAME
   }
   if ((canonical === 'Stuck' || canonical === 'Trapped') && hasType(target, 'Ghost')) return 'Ghost type'
 

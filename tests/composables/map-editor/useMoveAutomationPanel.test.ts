@@ -449,6 +449,128 @@ describe('useMoveAutomationPanel', () => {
     }
   })
 
+  it('queues and applies an ignorable Poison Point prompt after a melee hit', async () => {
+    vi.useFakeTimers()
+    const map = ref({
+      ...mapFixture(),
+      placements: [
+        { id: 'user-token', sheetKind: 'pokemon' as const, sheetSlug: 'attacker', position: { x: 0, y: 0, z: 0 } },
+        { id: 'target-token', sheetKind: 'pokemon' as const, sheetSlug: 'defender', position: { x: 1, y: 0, z: 0 } },
+      ],
+    })
+    const attackerSheet = {
+      slug: 'attacker',
+      nickname: 'Attacker',
+      species: 'Charmander',
+      level: 5,
+      movelist: [{ name: 'Tackle' }],
+    } as CharacterSheet
+    const defenderSheet = {
+      slug: 'defender',
+      nickname: 'Defender',
+      species: 'Nidoran♀',
+      level: 5,
+      abilities: [{ name: 'Poison Point' }],
+    } as CharacterSheet
+    const conditionCalls: MoveAutomationTransaction['conditionUpdates'] = []
+    const panel = useMoveAutomationPanel({
+      map,
+      spawnedPokemon: computed(() => [
+        spawned({ id: 'user-token', species: 'Attacker', sheetSlug: 'attacker', position: { x: 0, y: 0, z: 0 } }),
+        spawned({ id: 'target-token', species: 'Defender', sheetSlug: 'defender', abilityNames: ['Poison Point'], currentHp: 40, maxHp: 40, position: { x: 1, y: 0, z: 0 } }),
+      ]),
+      pokemonBySlug: ref(new Map([
+        [attackerSheet.slug, attackerSheet],
+        [defenderSheet.slug, defenderSheet],
+      ])),
+      trainerBySlug: ref(new Map<string, TrainerSheet>()),
+      canEditMap: computed(() => false),
+      canControlPlacement: (id) => id === 'user-token',
+      modifyHp: () => undefined,
+      modifyCombatStages: () => undefined,
+      modifyConditions: (update) => { conditionCalls.push(update) },
+      applyMoveFieldEffect: () => undefined,
+      placeHazard: () => undefined,
+    })
+    const random = vi.spyOn(Math, 'random').mockReturnValue(0.5)
+
+    try {
+      panel.openMoveAutomation({ id: 'user-token', moveName: 'Tackle' })
+      await panel.selectMoveAutomationTarget('target-token')
+      expect(panel.poisonPointReactionPrompts.value).toEqual([])
+
+      await vi.advanceTimersByTimeAsync(MOVE_FEEDBACK_FINAL_MS)
+
+      expect(panel.poisonPointReactionPrompts.value).toMatchObject([{
+        defenderId: 'target-token',
+        defenderName: 'Defender',
+        attackerId: 'user-token',
+        attackerName: 'Attacker',
+        moveName: 'Tackle',
+      }])
+
+      await panel.applyPoisonPointReactionPrompt(panel.poisonPointReactionPrompts.value[0]!.id)
+
+      expect(conditionCalls).toEqual([{ id: 'user-token', conditions: ['Poisoned'] }])
+      expect(panel.poisonPointReactionPrompts.value).toEqual([])
+    } finally {
+      random.mockRestore()
+      vi.useRealTimers()
+    }
+  })
+
+  it('infers Poison Point melee triggers when applying canonical transactions directly', async () => {
+    const map = ref({
+      ...mapFixture(),
+      placements: [
+        { id: 'user-token', sheetKind: 'pokemon' as const, sheetSlug: 'attacker', position: { x: 0, y: 0, z: 0 } },
+        { id: 'target-token', sheetKind: 'pokemon' as const, sheetSlug: 'defender', position: { x: 1, y: 0, z: 0 } },
+      ],
+    })
+    const conditionCalls: MoveAutomationTransaction['conditionUpdates'] = []
+    const panel = useMoveAutomationPanel({
+      map,
+      spawnedPokemon: computed(() => [
+        spawned({ id: 'user-token', species: 'Attacker', sheetSlug: 'attacker' }),
+        spawned({ id: 'target-token', species: 'Defender', sheetSlug: 'defender', abilityNames: ['Poison Point'], position: { x: 1, y: 0, z: 0 } }),
+      ]),
+      pokemonBySlug: ref(new Map<string, CharacterSheet>()),
+      trainerBySlug: ref(new Map<string, TrainerSheet>()),
+      canEditMap: computed(() => false),
+      canControlPlacement: (id) => id === 'user-token',
+      modifyHp: () => undefined,
+      modifyCombatStages: () => undefined,
+      modifyConditions: (update) => { conditionCalls.push(update) },
+      applyMoveFieldEffect: () => undefined,
+      placeHazard: () => undefined,
+    })
+
+    await panel.applyMoveAutomation({
+      userId: 'user-token',
+      userName: 'Attacker',
+      moveName: 'Tackle',
+      scriptKind: 'explicit',
+      scriptVersion: 1,
+      hitTargetIds: ['target-token'],
+      hpUpdates: [],
+      combatStageUpdates: [],
+      conditionUpdates: [],
+      hazardsToAdd: [],
+      fieldEffectsToApply: [],
+      logLines: ['Attacker used Tackle.'],
+    })
+
+    expect(panel.poisonPointReactionPrompts.value).toMatchObject([{
+      defenderId: 'target-token',
+      attackerId: 'user-token',
+      moveName: 'Tackle',
+    }])
+
+    await panel.applyPoisonPointReactionPrompt(panel.poisonPointReactionPrompts.value[0]!.id)
+
+    expect(conditionCalls).toEqual([{ id: 'user-token', conditions: ['Poisoned'] }])
+  })
+
   it('queues and applies an optional Moxie prompt after a target faints', async () => {
     const map = ref({
       ...mapFixture(),

@@ -19,6 +19,7 @@ export const HEALER_ABILITY_NAME = 'Healer'
 export const INTIMIDATE_ABILITY_NAME = 'Intimidate'
 export const LEAF_GUARD_ABILITY_NAME = 'Leaf Guard'
 export const MOXIE_ABILITY_NAME = 'Moxie'
+export const POISON_POINT_ABILITY_NAME = 'Poison Point'
 export const SHIELD_DUST_ABILITY_NAME = 'Shield Dust'
 export const SWEET_VEIL_ABILITY_NAME = 'Sweet Veil'
 
@@ -123,6 +124,14 @@ const PASSIVE_ABILITY_AUTOMATIONS = new Map<string, PassiveAbilityAutomationDefi
     QUICK_FEET_ABILITY_NAME,
     {
       name: QUICK_FEET_ABILITY_NAME,
+      category: 'passive',
+      label: 'Auto',
+    },
+  ],
+  [
+    POISON_POINT_ABILITY_NAME,
+    {
+      name: POISON_POINT_ABILITY_NAME,
       category: 'passive',
       label: 'Auto',
     },

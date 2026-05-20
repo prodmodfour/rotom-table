@@ -150,6 +150,15 @@ export interface MoveAutomationCuteCharmPrompt {
   moveName: string
 }
 
+export interface MoveAutomationPoisonPointPrompt {
+  id: string
+  defenderId: string
+  defenderName: string
+  attackerId: string
+  attackerName: string
+  moveName: string
+}
+
 export interface MoveAutomationMoxiePrompt {
   id: string
   attackerId: string

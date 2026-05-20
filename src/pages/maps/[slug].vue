@@ -284,6 +284,7 @@ const {
   moveUsageError,
   spiteReactionPrompts,
   cuteCharmReactionPrompts,
+  poisonPointReactionPrompts,
   moxieTriggerPrompts,
   celebrateTriggerPrompts,
   tokenMoveOptionsById,
@@ -295,6 +296,8 @@ const {
   applySpiteReactionPrompt,
   dismissCuteCharmReactionPrompt,
   applyCuteCharmReactionPrompt,
+  dismissPoisonPointReactionPrompt,
+  applyPoisonPointReactionPrompt,
   dismissMoxieTriggerPrompt,
   applyMoxieTriggerPrompt,
   dismissCelebrateTriggerPrompt,
@@ -428,6 +431,7 @@ useMapDimensionReconciliation({
         :move-usage-error="moveUsageError"
         :spite-reaction-prompts="spiteReactionPrompts"
         :cute-charm-reaction-prompts="cuteCharmReactionPrompts"
+        :poison-point-reaction-prompts="poisonPointReactionPrompts"
         :moxie-trigger-prompts="moxieTriggerPrompts"
         :celebrate-trigger-prompts="celebrateTriggerPrompts"
         :token-move-options-by-id="tokenMoveOptionsById"
@@ -460,6 +464,8 @@ useMapDimensionReconciliation({
         @apply-spite-reaction="applySpiteReactionPrompt"
         @dismiss-cute-charm-reaction="dismissCuteCharmReactionPrompt"
         @apply-cute-charm-reaction="applyCuteCharmReactionPrompt"
+        @dismiss-poison-point-reaction="dismissPoisonPointReactionPrompt"
+        @apply-poison-point-reaction="applyPoisonPointReactionPrompt"
         @dismiss-moxie-trigger="dismissMoxieTriggerPrompt"
         @apply-moxie-trigger="applyMoxieTriggerPrompt"
         @dismiss-celebrate-trigger="dismissCelebrateTriggerPrompt"

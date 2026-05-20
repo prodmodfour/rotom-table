@@ -24,6 +24,7 @@ import type {
   MoveAutomationCelebratePrompt,
   MoveAutomationCuteCharmPrompt,
   MoveAutomationMoxiePrompt,
+  MoveAutomationPoisonPointPrompt,
   MoveAutomationSpitePrompt,
   MoveAutomationTargetingOverlayState,
 } from '~/types/moveAutomation'
@@ -73,6 +74,7 @@ const props = defineProps<{
   moveUsageError?: string | null
   spiteReactionPrompts?: MoveAutomationSpitePrompt[]
   cuteCharmReactionPrompts?: MoveAutomationCuteCharmPrompt[]
+  poisonPointReactionPrompts?: MoveAutomationPoisonPointPrompt[]
   moxieTriggerPrompts?: MoveAutomationMoxiePrompt[]
   celebrateTriggerPrompts?: MoveAutomationCelebratePrompt[]
   tokenMoveOptionsById?: Record<string, TokenMoveMenuOption[]>
@@ -108,6 +110,8 @@ const emit = defineEmits<{
   (event: 'apply-spite-reaction', id: string): void
   (event: 'dismiss-cute-charm-reaction', id: string): void
   (event: 'apply-cute-charm-reaction', id: string): void
+  (event: 'dismiss-poison-point-reaction', id: string): void
+  (event: 'apply-poison-point-reaction', id: string): void
   (event: 'dismiss-moxie-trigger', id: string): void
   (event: 'apply-moxie-trigger', id: string): void
   (event: 'dismiss-celebrate-trigger', id: string): void
@@ -203,12 +207,15 @@ defineExpose({ focusPokemon })
       <MapMoveReactionPromptStack
         :spite-prompts="props.spiteReactionPrompts ?? []"
         :cute-charm-prompts="props.cuteCharmReactionPrompts ?? []"
+        :poison-point-prompts="props.poisonPointReactionPrompts ?? []"
         :moxie-prompts="props.moxieTriggerPrompts ?? []"
         :celebrate-prompts="props.celebrateTriggerPrompts ?? []"
         @dismiss="emit('dismiss-spite-reaction', $event)"
         @apply="emit('apply-spite-reaction', $event)"
         @dismiss-cute-charm="emit('dismiss-cute-charm-reaction', $event)"
         @apply-cute-charm="emit('apply-cute-charm-reaction', $event)"
+        @dismiss-poison-point="emit('dismiss-poison-point-reaction', $event)"
+        @apply-poison-point="emit('apply-poison-point-reaction', $event)"
         @dismiss-moxie="emit('dismiss-moxie-trigger', $event)"
         @apply-moxie="emit('apply-moxie-trigger', $event)"
         @dismiss-celebrate="emit('dismiss-celebrate-trigger', $event)"
