@@ -9,7 +9,7 @@ import {
 } from '~~/data/ptuReference'
 import { referenceDetailPathOrNull } from '~/utils/reference/routes'
 
-export type RefTooltipKind = Extract<RefKind, 'move' | 'maneuver' | 'ability' | 'capability' | 'condition'>
+export type RefTooltipKind = Extract<RefKind, 'move' | 'maneuver' | 'ability' | 'capability' | 'condition'> | 'order'
 
 export interface RefTooltipMeta {
   label: string

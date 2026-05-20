@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { buildCombatLogMessages } from '~/utils/combatLog'
 
 describe('buildCombatLogMessages', () => {
-  it('combines move, ability, and movement entries in chronological order', () => {
+  it('combines move, ability, order, and movement entries in chronological order', () => {
     const messages = buildCombatLogMessages({
       moveLog: [
         {
@@ -30,6 +30,14 @@ describe('buildCombatLogMessages', () => {
           lines: ['Lux activated Intimidate.'],
         },
       ],
+      orderLog: [
+        {
+          at: 160,
+          userName: 'Lenora',
+          orderName: 'Mobilize',
+          lines: ['Lenora used Mobilize.', 'Target: Any Ally'],
+        },
+      ],
       movementLog: [
         {
           at: 175,
@@ -43,17 +51,20 @@ describe('buildCombatLogMessages', () => {
     expect(messages.map((message) => message.title)).toEqual([
       'Doug used Leer.',
       'Lux activated Intimidate.',
+      'Lenora used Mobilize.',
       'Crockefeller Moves',
       'Foil used Ember.',
     ])
     expect(messages.map((message) => message.source)).toEqual([
       'move',
       'ability',
+      'order',
       'movement',
       'move',
     ])
-    expect(messages[2]?.details).toEqual(['3 squares from (0, 0, 0) to (3, 0, 0).'])
-    expect(messages[3]?.details).toEqual(['Crockefeller: 9 damage.'])
+    expect(messages[2]?.details).toEqual(['Target: Any Ally'])
+    expect(messages[3]?.details).toEqual(['3 squares from (0, 0, 0) to (3, 0, 0).'])
+    expect(messages[4]?.details).toEqual(['Crockefeller: 9 damage.'])
   })
 
   it('returns the newest limited action messages while keeping display order', () => {

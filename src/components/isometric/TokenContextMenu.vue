@@ -7,6 +7,8 @@ import type { TokenAbilityMenuOption } from '~/utils/mapTokenAbilities'
 import { buildTokenAbilityTooltipDetail } from '~/utils/mapTokenAbilityTooltips'
 import type { TokenMoveMenuOption } from '~/utils/mapTokenMoves'
 import { buildTokenMoveTooltipDetail } from '~/utils/mapTokenMoveTooltips'
+import type { TokenOrderMenuOption } from '~/utils/mapTokenOrders'
+import { buildTokenOrderTooltipDetail } from '~/utils/mapTokenOrderTooltips'
 import type { RefTooltipDetail } from '~/utils/refLinks'
 import type { TokenSendOutOption } from '~/utils/mapTokenSendOut'
 
@@ -15,6 +17,7 @@ const props = defineProps<{
   canDeleteTokens?: boolean
   moves?: TokenMoveMenuOption[]
   abilities?: TokenAbilityMenuOption[]
+  orders?: TokenOrderMenuOption[]
   sendOutOptions?: TokenSendOutOption[]
 }>()
 
@@ -27,12 +30,13 @@ const emit = defineEmits<{
   (event: 'apply-remove-conditions'): void
   (event: 'use-move', moveName?: string | null): void
   (event: 'use-ability', abilityName?: string | null): void
+  (event: 'use-order', orderName?: string | null): void
   (event: 'send-out-pokemon', pokemonSlug: string): void
   (event: 'deal-damage'): void
   (event: 'delete'): void
 }>()
 
-type ActiveContextPanel = 'main' | 'moves' | 'abilities' | 'sendOut'
+type ActiveContextPanel = 'main' | 'moves' | 'abilities' | 'orders' | 'sendOut'
 
 interface NamedMenuItem {
   name: string
@@ -42,6 +46,7 @@ const activePanel = ref<ActiveContextPanel>('main')
 
 const moves = computed(() => props.moves ?? [])
 const abilities = computed(() => props.abilities ?? [])
+const orders = computed(() => props.orders ?? [])
 const sendOutOptions = computed(() => props.sendOutOptions ?? [])
 
 const abilityCanBeUsed = (ability: TokenAbilityMenuOption): boolean =>
@@ -156,9 +161,27 @@ const {
   buildDetail: buildTokenAbilityTooltipDetail,
 })
 
+const {
+  hoveredName: hoveredOrderName,
+  tooltipId: orderTooltipId,
+  tooltipComponent: orderTooltipComponent,
+  isTooltipVisible: isOrderTooltipVisible,
+  tooltipReady: isOrderTooltipReady,
+  tooltipPlacement: orderTooltipPlacement,
+  tooltipStyle: orderTooltipStyle,
+  tooltipDetail: hoveredOrderTooltipDetail,
+  showTooltip: showOrderTooltip,
+  hideTooltip: hideOrderTooltip,
+} = createSubmenuTooltipController<TokenOrderMenuOption>({
+  panel: 'orders',
+  items: orders,
+  buildDetail: buildTokenOrderTooltipDetail,
+})
+
 const hideSubmenuTooltips = () => {
   hideMoveTooltip()
   hideAbilityTooltip()
+  hideOrderTooltip()
 }
 
 const resetContextPanel = () => {
@@ -174,6 +197,11 @@ const openMovePanel = () => {
 const openAbilityPanel = () => {
   hideSubmenuTooltips()
   activePanel.value = 'abilities'
+}
+
+const openOrderPanel = () => {
+  hideSubmenuTooltips()
+  activePanel.value = 'orders'
 }
 
 const openSendOutPanel = () => {
@@ -193,6 +221,12 @@ watch(abilities, (nextAbilities) => {
   if (activePanel.value !== 'abilities' || !hoveredAbilityName.value) return
   if (nextAbilities.some((ability) => ability.name === hoveredAbilityName.value)) return
   hideAbilityTooltip()
+})
+
+watch(orders, (nextOrders) => {
+  if (activePanel.value !== 'orders' || !hoveredOrderName.value) return
+  if (nextOrders.some((order) => order.name === hoveredOrderName.value)) return
+  hideOrderTooltip()
 })
 </script>
 
@@ -223,6 +257,17 @@ watch(abilities, (nextAbilities) => {
           @click.stop="openAbilityPanel"
         >
           <span>Use Ability</span>
+          <span class="context-menu__chevron">›</span>
+        </button>
+
+        <button
+          v-if="props.menu.canUseOrders"
+          type="button"
+          class="context-menu__button context-menu__button--submenu"
+          aria-haspopup="menu"
+          @click.stop="openOrderPanel"
+        >
+          <span>Use Order</span>
           <span class="context-menu__chevron">›</span>
         </button>
 
@@ -429,6 +474,70 @@ watch(abilities, (nextAbilities) => {
               :placement="abilityTooltipPlacement"
               :ready="isAbilityTooltipReady"
               :style="abilityTooltipStyle"
+            />
+          </Teleport>
+        </div>
+      </template>
+
+      <template v-else-if="activePanel === 'orders'">
+        <button
+          type="button"
+          class="context-menu__button context-menu__button--back"
+          @click.stop="resetContextPanel"
+        >
+          <span class="context-menu__back-icon" aria-hidden="true">‹</span>
+          <span>Back</span>
+        </button>
+
+        <p class="context-menu__submenu-title">Use Order</p>
+
+        <div class="action-submenu">
+          <div class="action-submenu__list" role="menu" aria-label="Orders">
+            <button
+              v-for="order in orders"
+              :key="order.name"
+              type="button"
+              class="action-submenu__item"
+              :class="{ 'is-active': hoveredOrderName === order.name }"
+              role="menuitem"
+              :aria-describedby="hoveredOrderName === order.name && hoveredOrderTooltipDetail && isOrderTooltipVisible ? orderTooltipId : undefined"
+              @pointerenter="showOrderTooltip(order.name, $event)"
+              @pointerleave="hideOrderTooltip"
+              @focus="showOrderTooltip(order.name, $event)"
+              @blur="hideOrderTooltip"
+              @click.stop="emit('use-order', order.name)"
+            >
+              <span class="action-submenu__name">{{ order.name }}</span>
+              <span class="action-submenu__badges">
+                <span v-if="order.frequency" class="action-submenu__badge">{{ order.frequency }}</span>
+                <span
+                  v-for="tag in order.tags"
+                  :key="`${order.name}-${tag}`"
+                  class="action-submenu__badge"
+                  :class="{ 'action-submenu__badge--active': /^(training|stratagem)$/i.test(tag) }"
+                >
+                  {{ tag }}
+                </span>
+                <span v-if="order.source !== 'sheet-order'" class="action-submenu__badge action-submenu__badge--sheet">
+                  {{ order.source === 'granted-feature' ? 'Granted' : 'Feature' }}
+                </span>
+              </span>
+            </button>
+
+            <div v-if="!orders.length" class="context-menu__empty">
+              This trainer has no orders.
+            </div>
+          </div>
+
+          <Teleport to="body">
+            <ReferenceTooltip
+              v-if="hoveredOrderTooltipDetail && isOrderTooltipVisible"
+              :id="orderTooltipId"
+              ref="orderTooltipComponent"
+              :detail="hoveredOrderTooltipDetail"
+              :placement="orderTooltipPlacement"
+              :ready="isOrderTooltipReady"
+              :style="orderTooltipStyle"
             />
           </Teleport>
         </div>

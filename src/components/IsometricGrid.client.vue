@@ -33,6 +33,7 @@ import type { BuildTool } from '#shared/mapEditor'
 import type { AttackOfOpportunityPrompt } from '~/utils/attackOfOpportunity'
 import type { TokenAbilityMenuOption } from '~/utils/mapTokenAbilities'
 import type { TokenMoveMenuOption } from '~/utils/mapTokenMoves'
+import type { TokenOrderMenuOption } from '~/utils/mapTokenOrders'
 import {
   POKEBALL_THROW_RANGE_SQUARES,
   type TokenSendOutOption,
@@ -137,6 +138,7 @@ const props = defineProps<{
   canDeleteTokens?: boolean
   tokenMoveOptionsById?: Record<string, TokenMoveMenuOption[]>
   tokenAbilityOptionsById?: Record<string, TokenAbilityMenuOption[]>
+  tokenOrderOptionsById?: Record<string, TokenOrderMenuOption[]>
   tokenSendOutOptionsById?: Record<string, TokenSendOutOption[]>
   moveAutomationTargeting?: MoveAutomationTargetingOverlayState | null
   moveAutomationFeedback?: MoveAutomationFeedbackState | null
@@ -153,6 +155,7 @@ const emit = defineEmits<{
   (event: 'modify-conditions', payload: { id: string; conditions: string[] }): void
   (event: 'use-move', payload: { id: string; moveName?: string | null }): void
   (event: 'use-ability', payload: { id: string; abilityName?: string | null }): void
+  (event: 'use-order', payload: { id: string; orderName?: string | null }): void
   (event: 'send-out-pokemon', payload: { trainerId: string; pokemonSlug: string; position: GridAnchor }): void
   (event: 'view-sheet', id: string): void
   (event: 'view-pokedex', id: string): void
@@ -273,6 +276,7 @@ const {
   handleConditionsDialogSubmit,
   handleContextUseMove,
   handleContextUseAbility,
+  handleContextUseOrder,
   handleContextSendOutPokemon,
   handleContextViewSheet,
   handleContextViewPokedex,
@@ -297,6 +301,7 @@ const {
     modifyConditions: (payload) => emit('modify-conditions', payload),
     useMove: (payload) => emit('use-move', payload),
     useAbility: (payload) => emit('use-ability', payload),
+    useOrder: (payload) => emit('use-order', payload),
     sendOutPokemon: beginSendOutPlacement,
     viewSheet: (id) => emit('view-sheet', id),
     viewPokedex: (id) => emit('view-pokedex', id),
@@ -1318,6 +1323,7 @@ useIsometricSceneWatchers({
       :can-delete-tokens="props.canDeleteTokens"
       :moves="props.tokenMoveOptionsById?.[contextMenu.id] ?? []"
       :abilities="props.tokenAbilityOptionsById?.[contextMenu.id] ?? []"
+      :orders="props.tokenOrderOptionsById?.[contextMenu.id] ?? []"
       :send-out-options="sendOutOptionsForToken(contextMenu.id)"
       @view-sheet="handleContextViewSheet"
       @view-pokedex="handleContextViewPokedex"
@@ -1327,6 +1333,7 @@ useIsometricSceneWatchers({
       @apply-remove-conditions="handleContextApplyRemoveConditions"
       @use-move="handleContextUseMove"
       @use-ability="handleContextUseAbility"
+      @use-order="handleContextUseOrder"
       @send-out-pokemon="handleContextSendOutPokemon"
       @deal-damage="handleContextDealDamage"
       @delete="handleContextDelete"

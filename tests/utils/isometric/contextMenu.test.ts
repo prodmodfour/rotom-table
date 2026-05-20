@@ -40,6 +40,7 @@ describe('isometric token context menu helpers', () => {
     expect(getTokenContextMenuCapabilities(pokemon({ backSpriteUrl: '/back.png' }))).toEqual({
       canTurn: true,
       canViewPokedex: true,
+      canUseOrders: false,
     })
     expect(getTokenContextMenuCapabilities(pokemon({
       entityKind: 'trainer',
@@ -48,6 +49,7 @@ describe('isometric token context menu helpers', () => {
     }))).toEqual({
       canTurn: false,
       canViewPokedex: false,
+      canUseOrders: true,
     })
   })
 
@@ -55,13 +57,15 @@ describe('isometric token context menu helpers', () => {
     expect(getTokenContextMenuButtonCount({
       canTurn: true,
       canViewPokedex: true,
+      canUseOrders: false,
       canDeleteTokens: true,
     })).toBe(10)
     expect(getTokenContextMenuButtonCount({
       canTurn: false,
       canViewPokedex: false,
+      canUseOrders: true,
       canSendOut: true,
-    })).toBe(8)
+    })).toBe(9)
 
     expect(getTokenContextMenuPosition({
       clientX: 999,
@@ -69,6 +73,7 @@ describe('isometric token context menu helpers', () => {
       bounds: { left: 100, top: 50, width: 500, height: 500 } as DOMRect,
       canTurn: true,
       canViewPokedex: true,
+      canUseOrders: false,
       canDeleteTokens: true,
     })).toEqual({ x: 358, y: 80 })
   })
@@ -84,6 +89,7 @@ describe('isometric token context menu helpers', () => {
       id: 'token-1',
       canTurn: true,
       canViewPokedex: true,
+      canUseOrders: false,
       x: 120,
       y: 75,
     })

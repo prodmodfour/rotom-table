@@ -3,6 +3,7 @@ import type { SpawnedPokemon } from '~/types/pokemon'
 export interface TokenContextMenuCapabilities {
   canTurn: boolean
   canViewPokedex: boolean
+  canUseOrders: boolean
 }
 
 export interface TokenContextMenuState extends TokenContextMenuCapabilities {
@@ -48,6 +49,7 @@ export const getTokenContextMenuViewportBounds = (): TokenContextMenuBounds | nu
 export const getTokenContextMenuCapabilities = (pokemon: SpawnedPokemon): TokenContextMenuCapabilities => ({
   canTurn: Boolean(pokemon.entityKind === 'pokemon' && pokemon.backSpriteUrl),
   canViewPokedex: pokemon.sheetKind === 'pokemon',
+  canUseOrders: pokemon.sheetKind === 'trainer',
 })
 
 export const getTokenContextMenuButtonCount = (options: TokenContextMenuCapabilities & {
@@ -57,6 +59,7 @@ export const getTokenContextMenuButtonCount = (options: TokenContextMenuCapabili
   TOKEN_CONTEXT_MENU_BASE_BUTTONS +
   (options.canViewPokedex ? 1 : 0) +
   (options.canTurn ? 1 : 0) +
+  (options.canUseOrders ? 1 : 0) +
   (options.canSendOut ? 1 : 0) +
   (options.canDeleteTokens ? 1 : 0)
 

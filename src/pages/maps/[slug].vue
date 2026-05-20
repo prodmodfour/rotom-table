@@ -22,6 +22,7 @@ import { useMapEditorUiState } from '~/composables/map-editor/useMapEditorUiStat
 import { useMapTokenNavigation } from '~/composables/map-editor/useMapTokenNavigation'
 import { useAbilityAutomationPanel } from '~/composables/map-editor/useAbilityAutomationPanel'
 import { useMoveAutomationPanel } from '~/composables/map-editor/useMoveAutomationPanel'
+import { useOrderActionPanel } from '~/composables/map-editor/useOrderActionPanel'
 import { useTerrainBuilder } from '~/composables/map-editor/useTerrainBuilder'
 import { useAttackOfOpportunityPanel } from '~/utils/attackOfOpportunity'
 import { useTokenSheetMutations } from '~/composables/map-editor/useTokenSheetMutations'
@@ -389,6 +390,19 @@ const {
   },
 })
 
+const {
+  tokenOrderOptionsById,
+  useOrder,
+} = useOrderActionPanel({
+  map,
+  spawnedPokemon,
+  trainerBySlug,
+  canControlPlacement,
+  onBeforeOrderAction: () => {
+    attackOfOpportunityPanel?.clearAttackOfOpportunityPromptsForNonImmediateAction()
+  },
+})
+
 const actionAutomationTargeting = computed(() =>
   moveAutomationTargeting.value ?? abilityAutomationTargeting.value,
 )
@@ -401,6 +415,12 @@ const openMoveAutomationFromContext = (payload: { id: string; moveName?: string 
 const openAbilityAutomationFromContext = (payload: { id: string; abilityName?: string | null }) => {
   cancelMoveAutomationTargeting()
   void openAbilityAutomation(payload)
+}
+
+const useOrderFromContext = (payload: { id: string; orderName?: string | null }) => {
+  cancelMoveAutomationTargeting()
+  cancelAbilityAutomationTargeting()
+  useOrder(payload)
 }
 
 const selectActionAutomationTarget = (targetId: string) => {
@@ -492,6 +512,7 @@ useMapDimensionReconciliation({
         :attack-of-opportunity-prompts="attackOfOpportunityPrompts"
         :token-move-options-by-id="tokenMoveOptionsById"
         :token-ability-options-by-id="tokenAbilityOptionsById"
+        :token-order-options-by-id="tokenOrderOptionsById"
         :token-send-out-options-by-id="tokenSendOutOptionsById"
         @select-pokemon="selectPokemon"
         @focus-initiative-entry="focusInitiativeEntry"
@@ -505,6 +526,7 @@ useMapDimensionReconciliation({
         @modify-conditions="modifyConditions"
         @use-move="openMoveAutomationFromContext"
         @use-ability="openAbilityAutomationFromContext"
+        @use-order="useOrderFromContext"
         @send-out-pokemon="sendOutPokemon"
         @view-sheet="viewSheet"
         @view-pokedex="viewPokedex"

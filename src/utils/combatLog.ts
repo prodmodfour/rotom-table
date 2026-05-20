@@ -1,4 +1,4 @@
-export type CombatLogSource = 'move' | 'ability' | 'movement'
+export type CombatLogSource = 'move' | 'ability' | 'order' | 'movement'
 
 export interface CombatLogMessage {
   id: string
@@ -44,6 +44,7 @@ interface SortableCombatLogMessage extends CombatLogMessage {
 const COMBAT_LOG_SOURCES: readonly CombatLogSourceConfig[] = [
   { source: 'move', metadataKey: 'moveLog', actionKey: 'moveName', fallbackActionName: 'Move' },
   { source: 'ability', metadataKey: 'abilityLog', actionKey: 'abilityName', fallbackActionName: 'Ability' },
+  { source: 'order', metadataKey: 'orderLog', actionKey: 'orderName', fallbackActionName: 'Order' },
   { source: 'movement', metadataKey: 'movementLog', actionKey: 'actionName', fallbackActionName: 'Movement' },
 ]
 

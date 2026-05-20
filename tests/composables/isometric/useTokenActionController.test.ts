@@ -54,6 +54,7 @@ const makeController = () => {
       modifyConditions: (payload) => events.push(['conditions', payload]),
       useMove: (payload) => events.push(['move', payload]),
       useAbility: (payload) => events.push(['ability', payload]),
+      useOrder: (payload) => events.push(['order', payload]),
       viewSheet: (id) => events.push(['sheet', id]),
       viewPokedex: (id) => events.push(['pokedex', id]),
     },
@@ -76,6 +77,11 @@ describe('useTokenActionController', () => {
 
     controller.handleContextViewSheet()
     expect(events).toEqual([['sheet', 'token-1']])
+    expect(controller.contextMenu.value).toBeNull()
+
+    controller.openContextMenu({ clientX: 120, clientY: 90 } as MouseEvent, 'token-1')
+    controller.handleContextUseOrder('Mobilize')
+    expect(events.at(-1)).toEqual(['order', { id: 'token-1', orderName: 'Mobilize' }])
     expect(controller.contextMenu.value).toBeNull()
   })
 
