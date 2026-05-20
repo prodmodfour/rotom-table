@@ -8,7 +8,10 @@ import {
 import { isSheetActivatableAbility } from '~/utils/sheetAbilityActivation'
 import { resolveCanonicalSheetAbilityName, type SheetAbilityNameSource } from '~/utils/sheetAbilities'
 import { QUICK_FEET_ABILITY_NAME } from '~/utils/sheetConditionEffects'
-import { NO_GUARD_ABILITY_NAME } from '~/utils/sheetAbilityCombatModifiers'
+import {
+  COMPOUND_EYES_ABILITY_NAME,
+  NO_GUARD_ABILITY_NAME,
+} from '~/utils/sheetAbilityCombatModifiers'
 import type { AbilityAutomationCategory, AbilityAutomationTransaction } from '~/types/abilityAutomation'
 import type { MapFieldEffects } from '~/types/map'
 import type { SpawnedPokemon } from '~/types/pokemon'
@@ -112,6 +115,14 @@ const MAP_ABILITY_AUTOMATIONS = new Map<string, MapAbilityAutomationDefinition>(
 ])
 
 const PASSIVE_ABILITY_AUTOMATIONS = new Map<string, PassiveAbilityAutomationDefinition>([
+  [
+    COMPOUND_EYES_ABILITY_NAME,
+    {
+      name: COMPOUND_EYES_ABILITY_NAME,
+      category: 'passive',
+      label: 'Auto',
+    },
+  ],
   [
     CUTE_CHARM_ABILITY_NAME,
     {

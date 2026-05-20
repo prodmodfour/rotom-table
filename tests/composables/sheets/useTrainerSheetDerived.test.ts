@@ -86,6 +86,20 @@ describe('useTrainerSheetDerived', () => {
     })
   })
 
+  it('adds Compound Eyes to trainer Accuracy Rolls', () => {
+    const sheet = ref<TrainerSheet | null>(makeSheet({
+      combatStages: { acc: -1 },
+      abilities: [{ name: 'Compound Eyes' }],
+    }))
+    const derived = useTrainerSheetDerived(sheet)
+
+    expect(derived.trainerAccuracy.value).toMatchObject({
+      total: 2,
+      stage: -1,
+      abilityBonus: 3,
+    })
+  })
+
   it('adds No Guard to trainer Accuracy Rolls', () => {
     const sheet = ref<TrainerSheet | null>(makeSheet({
       combatStages: { acc: -1 },

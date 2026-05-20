@@ -14,7 +14,7 @@ export interface SheetAccuracySummary {
   conditionModifier: number
   /** Flat Accuracy Roll modifier from sheet equipment, currently Luck Incense for Pokémon. */
   itemBonus: number
-  /** Flat Accuracy Roll modifier from passive abilities, currently No Guard. */
+  /** Flat Accuracy Roll modifier from passive abilities such as Compound Eyes and No Guard. */
   abilityBonus: number
   /** Optional flat Accuracy Roll modifier from active Training Features such as Focused Training. */
   trainingBonus?: number

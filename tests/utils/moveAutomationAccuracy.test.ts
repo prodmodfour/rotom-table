@@ -108,6 +108,21 @@ describe('move automation accuracy helpers', () => {
     expect(moveAutomationUserAccuracy(token({ combatStages: { ...stages, acc: 2 }, conditions: ['Total Blindness'] }))).toBe(-8)
   })
 
+  it('applies Compound Eyes to outgoing Accuracy Rolls', () => {
+    expect(moveAutomationUserAccuracy(token({ abilityNames: ['Compound Eyes'] }))).toBe(3)
+    expect(moveAutomationUserAccuracy(token({ abilityNames: ['compound-eyes'], combatStages: { ...stages, acc: 6 } }))).toBe(9)
+    expect(resolveMoveAutomationTargetEvasion(script('Physical'), token({
+      abilityNames: ['Compound Eyes'],
+      def: 0,
+      spd: 0,
+      evasion: { physical: 0, special: 0, speed: 0 },
+    }))).toMatchObject({
+      value: 0,
+      label: 'Physical Evasion',
+      abilityModifier: 0,
+    })
+  })
+
   it('applies No Guard as outgoing Accuracy and incoming pseudo-Evasion modifiers', () => {
     expect(moveAutomationUserAccuracy(token({ abilityNames: ['No Guard'] }))).toBe(3)
     expect(moveAutomationUserAccuracy(token({ abilityNames: ['no-guard'], combatStages: { ...stages, acc: 6 } }))).toBe(9)
