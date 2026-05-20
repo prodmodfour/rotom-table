@@ -76,6 +76,8 @@ export interface MoveAutomationTargetingOverlayState {
   mode?: 'target' | 'area-confirmation'
   rangeLabel: string
   rangeMeters: number
+  /** Optional HUD copy override for non-move target selection flows that reuse the targeting overlay. */
+  targetPrompt?: string
   candidateIds: string[]
   hitChances?: Record<string, MoveAutomationTargetHitChance | undefined>
   areaCells?: GridAnchor[]

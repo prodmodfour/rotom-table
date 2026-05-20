@@ -1,3 +1,4 @@
+import type { ActiveOrderEffect } from '~/utils/activeOrderEffects'
 import type { TokenOrderMenuOption } from '~/utils/mapTokenOrders'
 import type { SpawnedPokemon } from '~/types/pokemon'
 
@@ -13,11 +14,17 @@ export interface OrderLogTransaction {
 export const buildOrderUseLogLines = (
   user: Pick<SpawnedPokemon, 'species'>,
   order: TokenOrderMenuOption,
+  options: {
+    target?: Pick<SpawnedPokemon, 'species'> | null
+    activeEffect?: ActiveOrderEffect | null
+  } = {},
 ): string[] => [
   `${user.species} used ${order.name}.`,
+  ...(options.target ? [`Target: ${options.target.species}`] : []),
+  ...(options.activeEffect ? [`Wears off: ${options.activeEffect.expiration.description}`] : []),
   ...(order.frequency ? [`Frequency: ${order.frequency}`] : []),
   ...(order.trigger ? [`Trigger: ${order.trigger}`] : []),
-  ...(order.target ? [`Target: ${order.target}`] : []),
+  ...(order.target ? [`Order Target: ${order.target}`] : []),
   ...(order.condition ? [`Condition: ${order.condition}`] : []),
   ...(order.effect ? [`Effect: ${order.effect}`] : []),
 ]

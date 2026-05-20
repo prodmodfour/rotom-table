@@ -1205,7 +1205,7 @@ useIsometricSceneWatchers({
         </template>
         <template v-else>
           <span v-if="props.moveAutomationTargeting.candidateIds.length">
-            Choose a target within {{ props.moveAutomationTargeting.rangeLabel }}.
+            {{ props.moveAutomationTargeting.targetPrompt ?? `Choose a target within ${props.moveAutomationTargeting.rangeLabel}.` }}
           </span>
           <span v-else>
             No targets in range {{ props.moveAutomationTargeting.rangeLabel }}.

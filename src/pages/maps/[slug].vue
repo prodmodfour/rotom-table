@@ -241,14 +241,26 @@ const {
   },
 })
 
+let expireActiveOrdersAfterInitiativeAdvance: (advance: {
+  before: { activeId: string | null; round: number }
+  after: { activeId: string | null; round: number }
+}) => void = () => {}
+
+const orderTimelinePoint = () => ({
+  activeId: activeInitiativeId.value ?? null,
+  round: initiativeRound.value,
+})
+
 const previousInitiativeAndExpireAoo = () => {
   attackOfOpportunityPanel?.clearAttackOfOpportunityPromptsForNonImmediateAction()
   previousInitiative()
 }
 
 const nextInitiativeAndExpireAoo = () => {
+  const before = orderTimelinePoint()
   attackOfOpportunityPanel?.clearAttackOfOpportunityPromptsForNonImmediateAction()
   nextInitiative()
+  expireActiveOrdersAfterInitiativeAdvance({ before, after: orderTimelinePoint() })
 }
 
 const {
@@ -390,10 +402,7 @@ const {
   },
 })
 
-const {
-  tokenOrderOptionsById,
-  useOrder,
-} = useOrderActionPanel({
+const orderActionPanel = useOrderActionPanel({
   map,
   spawnedPokemon,
   trainerBySlug,
@@ -402,18 +411,28 @@ const {
     attackOfOpportunityPanel?.clearAttackOfOpportunityPromptsForNonImmediateAction()
   },
 })
+const {
+  orderActionTargeting,
+  tokenOrderOptionsById,
+  useOrder,
+  cancelOrderActionTargeting,
+  selectOrderActionTarget,
+} = orderActionPanel
+expireActiveOrdersAfterInitiativeAdvance = orderActionPanel.expireActiveOrdersAfterInitiativeAdvance
 
 const actionAutomationTargeting = computed(() =>
-  moveAutomationTargeting.value ?? abilityAutomationTargeting.value,
+  moveAutomationTargeting.value ?? abilityAutomationTargeting.value ?? orderActionTargeting.value,
 )
 
 const openMoveAutomationFromContext = (payload: { id: string; moveName?: string | null }) => {
   cancelAbilityAutomationTargeting()
+  cancelOrderActionTargeting()
   openMoveAutomation(payload)
 }
 
 const openAbilityAutomationFromContext = (payload: { id: string; abilityName?: string | null }) => {
   cancelMoveAutomationTargeting()
+  cancelOrderActionTargeting()
   void openAbilityAutomation(payload)
 }
 
@@ -428,7 +447,11 @@ const selectActionAutomationTarget = (targetId: string) => {
     selectMoveAutomationTarget(targetId)
     return
   }
-  if (abilityAutomationTargeting.value) void selectAbilityAutomationTarget(targetId)
+  if (abilityAutomationTargeting.value) {
+    void selectAbilityAutomationTarget(targetId)
+    return
+  }
+  if (orderActionTargeting.value) selectOrderActionTarget(targetId)
 }
 
 const cancelActionAutomationTargeting = () => {
@@ -436,7 +459,11 @@ const cancelActionAutomationTargeting = () => {
     cancelMoveAutomationTargeting()
     return
   }
-  cancelAbilityAutomationTargeting()
+  if (abilityAutomationTargeting.value) {
+    cancelAbilityAutomationTargeting()
+    return
+  }
+  cancelOrderActionTargeting()
 }
 
 useMapGmModeGuard({
