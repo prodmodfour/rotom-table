@@ -6,16 +6,19 @@ import {
   getGroundsourceMoveImmunitySource,
   getPassiveGroundResistanceSource,
   getPassiveTypeEffectivenessSource,
+  getSonicMoveImmunitySource,
   hasFlashFireAbility,
   hasGroundsourceImmunityCapability,
   hasLevitateAbility,
+  hasSoundproofAbility,
   hasToleranceAbility,
   moveHasGroundsourceKeyword,
+  moveHasSonicKeyword,
   resolveLevitateAbilitySpeed,
 } from '~/utils/sheetPassiveAbilityEffects'
 
 describe('sheet passive ability effects', () => {
-  it('recognizes Levitate, Flash Fire, and Tolerance by canonical ability lookup', () => {
+  it('recognizes Levitate, Flash Fire, Tolerance, and Soundproof by canonical ability lookup', () => {
     expect(hasLevitateAbility([{ name: 'levitate' }])).toBe(true)
     expect(hasLevitateAbility(['Levitate'])).toBe(true)
     expect(hasLevitateAbility([{ name: 'Run Away' }])).toBe(false)
@@ -25,6 +28,9 @@ describe('sheet passive ability effects', () => {
     expect(hasToleranceAbility([{ name: 'tolerance' }])).toBe(true)
     expect(hasToleranceAbility(['Tolerance'])).toBe(true)
     expect(hasToleranceAbility([{ name: 'Run Away' }])).toBe(false)
+    expect(hasSoundproofAbility([{ name: 'soundproof' }])).toBe(true)
+    expect(hasSoundproofAbility(['Soundproof'])).toBe(true)
+    expect(hasSoundproofAbility([{ name: 'Run Away' }])).toBe(false)
   })
 
   it('grants Levitate speed 4 or +2 to an existing Levitate speed', () => {
@@ -49,6 +55,20 @@ describe('sheet passive ability effects', () => {
     expect(applySheetPassiveAbilityTypeEffectiveness('Water', 1.5, [{ name: 'Flash Fire' }])).toBe(1.5)
     expect(computeSheetAbilityAwareMultiplier('Fire', ['Grass'], [{ name: 'flash fire' }])).toBe(0)
     expect(getPassiveTypeEffectivenessSource('Fire', [{ name: 'Flash Fire' }])).toBe('Flash Fire')
+  })
+
+  it('makes Sonic moves immune with Soundproof', () => {
+    expect(moveHasSonicKeyword(['Cone 2', ' Sonic '])).toBe(true)
+    expect(moveHasSonicKeyword(['Supersonic'])).toBe(false)
+    expect(getSonicMoveImmunitySource([{ name: 'Soundproof' }], ['Sonic'])).toBe('Soundproof')
+    expect(getSonicMoveImmunitySource([{ name: 'Soundproof' }], ['Burst 1'])).toBeNull()
+    expect(applySheetPassiveTypeEffectiveness('Dark', 1, [{ name: 'Soundproof' }], undefined, { moveKeywords: ['Sonic'] }))
+      .toBe(0)
+    expect(applySheetPassiveTypeEffectiveness('Dark', 1, [{ name: 'Soundproof' }])).toBe(1)
+    expect(computeSheetAbilityAwareMultiplier('Dark', ['Normal'], [{ name: 'soundproof' }], undefined, { moveKeywords: ['Sonic'] }))
+      .toBe(0)
+    expect(getPassiveTypeEffectivenessSource('Dark', [{ name: 'Soundproof' }], undefined, { moveKeywords: ['Sonic'] }))
+      .toBe('Soundproof')
   })
 
   it('moves resisted type effectiveness one step further with Tolerance', () => {

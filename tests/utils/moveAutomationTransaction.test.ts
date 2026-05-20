@@ -275,6 +275,44 @@ describe('move automation transaction helpers', () => {
     expect(transaction.logLines).toContain('Lower Special Defense did not apply to Airborne: immune (Sky Capability).')
   })
 
+  it('blocks Snarl damage and Special Attack drops against Soundproof targets', () => {
+    const s = explicitScriptForMove('Snarl')
+    expect(s).not.toBeNull()
+    const user = token({ id: 'u', species: 'Nickit', satk: 18 })
+    const target = token({
+      id: 't',
+      species: 'Whismur',
+      currentHp: 30,
+      maxHp: 30,
+      abilityNames: ['Soundproof'],
+    })
+
+    const transaction = buildMoveAutomationTransaction({
+      script: s!,
+      user,
+      selectedTargets: [target],
+      targetResolutions: {
+        t: {
+          ...defaultTargetResolutionState(s!),
+          hit: true,
+          damageRoll: { formula: 'flat', count: 0, sides: 0, total: 20, rolls: [], mod: 20 },
+        },
+      },
+      enabledSuggestions: { [moveAutomationSuggestionKey(s!, 'stage', 0)]: true },
+      hpSuggestionAmounts: {},
+      manualUserConditions: [],
+      manualTargetConditions: [],
+      manualUserStageDeltas: stages,
+      manualTargetStageDeltas: stages,
+      hazardCells: [],
+      manualNote: '',
+    })
+
+    expect(transaction.hpUpdates).toEqual([])
+    expect(transaction.combatStageUpdates).toEqual([])
+    expect(transaction.logLines).toContain('Snarl lowers Special Attack: -1 Special Attack CS did not apply to Whismur: immune (Soundproof).')
+  })
+
   it('applies target suggestions only to targets the move hit', () => {
     const user = token({ id: 'u', species: 'Caster' })
     const hitTarget = token({ id: 'hit', species: 'Hitmon' })

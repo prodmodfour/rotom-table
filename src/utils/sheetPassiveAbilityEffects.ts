@@ -7,7 +7,9 @@ import {
 export const LEVITATE_ABILITY_NAME = 'Levitate'
 export const FLASH_FIRE_ABILITY_NAME = 'Flash Fire'
 export const TOLERANCE_ABILITY_NAME = 'Tolerance'
+export const SOUNDPROOF_ABILITY_NAME = 'Soundproof'
 export const GROUNDSOURCE_KEYWORD = 'Groundsource'
+export const SONIC_KEYWORD = 'Sonic'
 export const LEVITATE_GRANTED_SPEED = 4
 export const LEVITATE_EXISTING_SPEED_BONUS = 2
 
@@ -40,6 +42,10 @@ export const hasFlashFireAbility = (
 export const hasToleranceAbility = (
   abilities: readonly SheetAbilityNameSource[] | null | undefined,
 ): boolean => sheetHasCanonicalAbility(abilities, TOLERANCE_ABILITY_NAME)
+
+export const hasSoundproofAbility = (
+  abilities: readonly SheetAbilityNameSource[] | null | undefined,
+): boolean => sheetHasCanonicalAbility(abilities, SOUNDPROOF_ABILITY_NAME)
 
 const positiveCapabilitySpeed = (value: number | string | null | undefined): boolean => {
   if (typeof value === 'number') return Number.isFinite(value) && value > 0
@@ -80,6 +86,10 @@ export const moveHasGroundsourceKeyword = (
   moveKeywords: readonly string[] | null | undefined,
 ): boolean => (moveKeywords ?? []).some((keyword) => normalizedMoveKeyword(keyword) === GROUNDSOURCE_KEYWORD.toLowerCase())
 
+export const moveHasSonicKeyword = (
+  moveKeywords: readonly string[] | null | undefined,
+): boolean => (moveKeywords ?? []).some((keyword) => normalizedMoveKeyword(keyword) === SONIC_KEYWORD.toLowerCase())
+
 export const getGroundsourceMoveImmunitySource = (
   capabilities: AirborneMovementCapabilities | null | undefined,
   moveKeywords: readonly string[] | null | undefined,
@@ -94,6 +104,20 @@ export const getGroundsourceMoveImmunitySource = (
   return capabilitySources.length ? `${capabilitySources.join('/')} Capability` : null
 }
 
+export const getSonicMoveImmunitySource = (
+  abilities: readonly SheetAbilityNameSource[] | null | undefined,
+  moveKeywords: readonly string[] | null | undefined,
+): string | null => moveHasSonicKeyword(moveKeywords) && hasSoundproofAbility(abilities)
+  ? SOUNDPROOF_ABILITY_NAME
+  : null
+
+export const getPassiveMoveImmunitySource = (
+  abilities: readonly SheetAbilityNameSource[] | null | undefined,
+  capabilities: AirborneMovementCapabilities | null | undefined,
+  moveKeywords: readonly string[] | null | undefined,
+): string | null => getSonicMoveImmunitySource(abilities, moveKeywords)
+  ?? getGroundsourceMoveImmunitySource(capabilities, moveKeywords)
+
 export const getPassiveFireImmunitySource = (
   abilities: readonly SheetAbilityNameSource[] | null | undefined,
 ): string | null => hasFlashFireAbility(abilities) ? FLASH_FIRE_ABILITY_NAME : null
@@ -107,8 +131,8 @@ export const resolveSheetPassiveTypeEffectiveness = (
   capabilities?: AirborneMovementCapabilities | null,
   context: SheetPassiveTypeEffectivenessContext = {},
 ): SheetPassiveTypeEffectivenessResult => {
-  const groundsourceSource = getGroundsourceMoveImmunitySource(capabilities, context.moveKeywords)
-  if (groundsourceSource) return { multiplier: 0, sources: [groundsourceSource] }
+  const moveImmunitySource = getPassiveMoveImmunitySource(abilities, capabilities, context.moveKeywords)
+  if (moveImmunitySource) return { multiplier: 0, sources: [moveImmunitySource] }
   if (attackingType === 'Fire' && hasFlashFireAbility(abilities)) {
     return { multiplier: 0, sources: [FLASH_FIRE_ABILITY_NAME] }
   }
@@ -168,8 +192,9 @@ export const resolveLevitateAbilitySpeed = (
  * Passive type effects used by sheets and token automation. Flash Fire makes
  * Fire attacks immune. The Levitate ability makes Ground one effectiveness
  * step more resisted. Tolerance makes any currently resisted type one
- * additional step resisted. Sky and Levitate capabilities make moves with the
- * Groundsource keyword immune. Existing type immunities still win.
+ * additional step resisted. Soundproof makes Sonic moves immune. Sky and
+ * Levitate capabilities make moves with the Groundsource keyword immune.
+ * Existing type immunities still win.
  */
 export const applySheetPassiveTypeEffectiveness = (
   attackingType: string,

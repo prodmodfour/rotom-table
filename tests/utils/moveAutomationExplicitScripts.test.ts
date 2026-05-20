@@ -155,6 +155,7 @@ describe('explicit move automation scripts', () => {
 
   it('implements additional reviewed AoE confirmations without opening the wizard', () => {
     const tailWhip = explicitScriptForMove('Tail Whip')
+    const snarl = explicitScriptForMove('Snarl')
     const heatWave = explicitScriptForMove('Heat Wave')
     const poisonGas = explicitScriptForMove('Poison Gas')
     const sweetScent = explicitScriptForMove('Sweet Scent')
@@ -168,6 +169,22 @@ describe('explicit move automation scripts', () => {
     })
     expect(tailWhip?.areaTemplates).toMatchObject([{ kind: 'burst', size: 1 }])
     expect(isSeamlessAreaConfirmationScript(tailWhip)).toBe(true)
+
+    expect(snarl).toMatchObject({
+      kind: 'explicit',
+      moveName: 'Snarl',
+      targetMode: 'multi-target',
+      damaging: true,
+      requiresAccuracy: true,
+      damageBase: 6,
+      damageClass: 'Special',
+      type: 'Dark',
+      ac: 3,
+      stageSuggestions: [{ recipient: 'target', key: 'satk', delta: -1, label: 'Snarl lowers Special Attack: -1 Special Attack CS' }],
+    })
+    expect(snarl?.areaTemplates).toMatchObject([{ kind: 'cone', size: 2 }])
+    expect(snarl?.keywords).toEqual(expect.arrayContaining(['Sonic']))
+    expect(isSeamlessAreaConfirmationScript(snarl)).toBe(true)
 
     expect(heatWave).toMatchObject({
       kind: 'explicit',
