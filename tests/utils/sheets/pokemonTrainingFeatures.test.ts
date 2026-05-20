@@ -33,8 +33,9 @@ describe('pokemon training feature helpers', () => {
   it('describes Agility Training movement capability adjustments only for movement speeds', () => {
     expect(pokemonTrainingFeatureMovementCapabilityAdjustment('Overland', 6, 'Agile')).toMatchObject({
       featureName: 'Agility Training',
+      movementCapabilityBonus: 1,
       adjustedValue: 7,
-      displayValue: '7',
+      displayValue: '+1',
     })
     expect(pokemonTrainingFeatureMovementCapabilityAdjustment('Power', 6, 'Agility Training')).toBeNull()
     expect(pokemonTrainingFeatureMovementCapabilityAdjustment('Sky', 0, 'Agility Training')).toBeNull()

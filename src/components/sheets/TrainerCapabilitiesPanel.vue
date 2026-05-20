@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import MovementCapabilityAdjustment from '~/components/sheets/MovementCapabilityAdjustment.vue'
+import MovementCapabilityEditableCell from '~/components/sheets/MovementCapabilityEditableCell.vue'
 import OtherMovementCapabilityAdjustments from '~/components/sheets/OtherMovementCapabilityAdjustments.vue'
 import { useTrainerCapabilityModels } from '~/composables/sheets/useTrainerCapabilityModels'
 import { mergeLegacyConditions } from '~/utils/statusConditions'
@@ -37,7 +38,7 @@ const {
       <li>
         <span class="cap-label"><RefLink kind="capability" name="Overland" /></span>
         <span class="cap-value">
-          <EditableCell v-model="overland" type="number" :min="0" />
+          <MovementCapabilityEditableCell v-model="overland" name="Overland" :conditions="combatConditions" />
           <MovementCapabilityAdjustment name="Overland" :value="overland" :conditions="combatConditions" />
         </span>
       </li>
@@ -62,7 +63,7 @@ const {
       <li>
         <span class="cap-label"><RefLink kind="capability" name="Swim" /></span>
         <span class="cap-value">
-          <EditableCell v-model="swim" type="number" :min="0" />
+          <MovementCapabilityEditableCell v-model="swim" name="Swim" :conditions="combatConditions" />
           <MovementCapabilityAdjustment name="Swim" :value="swim" :conditions="combatConditions" />
         </span>
       </li>
@@ -75,21 +76,21 @@ const {
       <li>
         <span class="cap-label"><RefLink kind="capability" name="Sky" /></span>
         <span class="cap-value">
-          <EditableCell v-model="sky" type="number" :min="0" />
+          <MovementCapabilityEditableCell v-model="sky" name="Sky" :conditions="combatConditions" />
           <MovementCapabilityAdjustment name="Sky" :value="sky" :conditions="combatConditions" />
         </span>
       </li>
       <li>
         <span class="cap-label"><RefLink kind="capability" name="Levitate" /></span>
         <span class="cap-value">
-          <EditableCell v-model="levitate" type="number" :min="0" />
+          <MovementCapabilityEditableCell v-model="levitate" name="Levitate" :conditions="combatConditions" />
           <MovementCapabilityAdjustment name="Levitate" :value="levitate" :conditions="combatConditions" />
         </span>
       </li>
       <li>
         <span class="cap-label"><RefLink kind="capability" name="Burrow" /></span>
         <span class="cap-value">
-          <EditableCell v-model="burrow" type="number" :min="0" />
+          <MovementCapabilityEditableCell v-model="burrow" name="Burrow" :conditions="combatConditions" />
           <MovementCapabilityAdjustment name="Burrow" :value="burrow" :conditions="combatConditions" />
         </span>
       </li>

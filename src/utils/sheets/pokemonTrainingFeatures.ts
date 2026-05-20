@@ -1,4 +1,5 @@
 import { findFeature } from '~~/data/ptuReference'
+import { formatSignedModifier } from '~/utils/evasion'
 import { isConditionAdjustedMovementCapability } from '~/utils/sheetConditionEffects'
 import type { PtuFeature } from '~/types/ptuReference'
 
@@ -29,6 +30,7 @@ export interface PokemonTrainingFeatureEffects {
 
 export interface PokemonTrainingFeatureMovementAdjustment {
   featureName: PokemonTrainingFeatureName
+  movementCapabilityBonus: number
   adjustedValue: number
   displayValue: string
   title: string
@@ -151,11 +153,14 @@ export const pokemonTrainingFeatureMovementCapabilityAdjustment = (
   const n = Number(value)
   if (!Number.isFinite(n) || n <= 0) return null
 
-  const adjustedValue = Math.trunc(n) + effects.movementCapabilityBonus
+  const bonus = effects.movementCapabilityBonus
+  const adjustedValue = Math.trunc(n) + bonus
+  const displayValue = formatSignedModifier(bonus)
   return {
     featureName: effects.featureName,
+    movementCapabilityBonus: bonus,
     adjustedValue,
-    displayValue: String(adjustedValue),
-    title: `${effects.featureName} gives +${effects.movementCapabilityBonus} to Movement Capabilities.`,
+    displayValue,
+    title: `${effects.featureName} gives ${displayValue} to Movement Capabilities.`,
   }
 }

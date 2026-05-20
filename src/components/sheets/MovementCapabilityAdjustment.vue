@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { movementCapabilityConditionAdjustment } from '~/utils/sheetConditionEffects'
-import { pokemonTrainingFeatureMovementCapabilityAdjustment } from '~/utils/sheets/pokemonTrainingFeatures'
+import { resolveSheetMovementCapabilityAdjustments } from '~/utils/sheets/movementCapabilityAdjustments'
 
 const props = defineProps<{
   name: string
@@ -13,17 +12,15 @@ const props = defineProps<{
 
 const displayName = computed(() => props.name.trim().replace(/\s+/g, ' '))
 
-const trainingAdjustment = computed(() => pokemonTrainingFeatureMovementCapabilityAdjustment(
+const adjustments = computed(() => resolveSheetMovementCapabilityAdjustments(
   props.name,
   props.value,
+  props.conditions,
   props.trainingFeature,
 ))
 
-const conditionAdjustment = computed(() => movementCapabilityConditionAdjustment(
-  props.name,
-  trainingAdjustment.value?.adjustedValue ?? props.value,
-  props.conditions,
-))
+const trainingAdjustment = computed(() => adjustments.value.trainingAdjustment)
+const conditionAdjustment = computed(() => adjustments.value.conditionAdjustment)
 </script>
 
 <template>
@@ -32,8 +29,7 @@ const conditionAdjustment = computed(() => movementCapabilityConditionAdjustment
     class="movement-capability-adjustment movement-capability-adjustment--training"
     :title="trainingAdjustment.title"
   >
-    {{ trainingAdjustment.featureName }}:
-    <template v-if="showName">{{ displayName }} </template>{{ trainingAdjustment.displayValue }}
+    {{ trainingAdjustment.featureName }}<template v-if="showName"> ({{ displayName }})</template>
   </small>
   <small
     v-if="conditionAdjustment"

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import MovementCapabilityAdjustment from '~/components/sheets/MovementCapabilityAdjustment.vue'
+import MovementCapabilityEditableCell from '~/components/sheets/MovementCapabilityEditableCell.vue'
 import OtherMovementCapabilityAdjustments from '~/components/sheets/OtherMovementCapabilityAdjustments.vue'
 import { usePokemonCapabilityModels } from '~/composables/sheets/usePokemonCapabilityModels'
 import { mergeLegacyConditions } from '~/utils/statusConditions'
@@ -40,7 +41,12 @@ const {
       <div>
         <dt><RefLink kind="capability" name="Overland" /></dt>
         <dd>
-          <EditableCell v-model="overland" type="number" :min="0" />
+          <MovementCapabilityEditableCell
+            v-model="overland"
+            name="Overland"
+            :conditions="combatConditions"
+            :training-feature="sheet.activeTrainingFeature"
+          />
           <MovementCapabilityAdjustment
             name="Overland"
             :value="overland"
@@ -52,7 +58,12 @@ const {
       <div>
         <dt><RefLink kind="capability" name="Sky" /></dt>
         <dd>
-          <EditableCell v-model="sky" type="number" :min="0" />
+          <MovementCapabilityEditableCell
+            v-model="sky"
+            name="Sky"
+            :conditions="combatConditions"
+            :training-feature="sheet.activeTrainingFeature"
+          />
           <MovementCapabilityAdjustment
             name="Sky"
             :value="sky"
@@ -64,7 +75,12 @@ const {
       <div>
         <dt><RefLink kind="capability" name="Swim" /></dt>
         <dd>
-          <EditableCell v-model="swim" type="number" :min="0" />
+          <MovementCapabilityEditableCell
+            v-model="swim"
+            name="Swim"
+            :conditions="combatConditions"
+            :training-feature="sheet.activeTrainingFeature"
+          />
           <MovementCapabilityAdjustment
             name="Swim"
             :value="swim"
@@ -76,7 +92,12 @@ const {
       <div>
         <dt><RefLink kind="capability" name="Levitate" /></dt>
         <dd>
-          <EditableCell v-model="levitate" type="number" :min="0" />
+          <MovementCapabilityEditableCell
+            v-model="levitate"
+            name="Levitate"
+            :conditions="combatConditions"
+            :training-feature="sheet.activeTrainingFeature"
+          />
           <span
             v-if="levitateAbilityApplied && effectiveLevitate != null"
             class="caps-derived"
@@ -93,7 +114,12 @@ const {
       <div>
         <dt><RefLink kind="capability" name="Burrow" /></dt>
         <dd>
-          <EditableCell v-model="burrow" type="number" :min="0" />
+          <MovementCapabilityEditableCell
+            v-model="burrow"
+            name="Burrow"
+            :conditions="combatConditions"
+            :training-feature="sheet.activeTrainingFeature"
+          />
           <MovementCapabilityAdjustment
             name="Burrow"
             :value="burrow"
