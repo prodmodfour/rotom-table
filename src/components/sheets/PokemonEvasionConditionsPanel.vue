@@ -14,6 +14,7 @@ interface EvasionEntry {
   base: number
   bonus: number
   abilityBonus: number
+  trainingBonus?: number
   suppressedByCondition?: string | null
 }
 
@@ -63,6 +64,13 @@ const emit = defineEmits<{
             Veil {{ formatSignedModifier(pokemonEvasion.vsAtk.abilityBonus) }}
           </span>
           <span
+            v-if="pokemonEvasion.vsAtk.trainingBonus"
+            class="evasion-bonus__training"
+            title="Inspired Training active Training Feature bonus"
+          >
+            Training {{ formatSignedModifier(pokemonEvasion.vsAtk.trainingBonus) }}
+          </span>
+          <span
             v-if="pokemonEvasion.vsAtk.suppressedByCondition"
             class="evasion-bonus__condition"
             :title="`${pokemonEvasion.vsAtk.suppressedByCondition} prevents this Evasion from applying`"
@@ -91,6 +99,13 @@ const emit = defineEmits<{
             title="Sand Veil / Snow Cloak ability bonus"
           >
             Veil {{ formatSignedModifier(pokemonEvasion.vsSatk.abilityBonus) }}
+          </span>
+          <span
+            v-if="pokemonEvasion.vsSatk.trainingBonus"
+            class="evasion-bonus__training"
+            title="Inspired Training active Training Feature bonus"
+          >
+            Training {{ formatSignedModifier(pokemonEvasion.vsSatk.trainingBonus) }}
           </span>
           <span
             v-if="pokemonEvasion.vsSatk.suppressedByCondition"
@@ -130,6 +145,13 @@ const emit = defineEmits<{
             Bright Powder {{ formatSignedModifier(pokemonEvasion.vsAny.itemBonus) }}
           </span>
           <span
+            v-if="pokemonEvasion.vsAny.trainingBonus"
+            class="evasion-bonus__training"
+            title="Inspired Training active Training Feature bonus"
+          >
+            Training {{ formatSignedModifier(pokemonEvasion.vsAny.trainingBonus) }}
+          </span>
+          <span
             v-if="pokemonEvasion.vsAny.suppressedByCondition"
             class="evasion-bonus__condition"
             :title="`${pokemonEvasion.vsAny.suppressedByCondition} prevents this Evasion from applying`"
@@ -166,6 +188,9 @@ const emit = defineEmits<{
     </small>
     <small v-if="pokemonAccuracy.abilityBonus" class="accuracy-line__ability">
       ability {{ formatSignedModifier(pokemonAccuracy.abilityBonus) }}
+    </small>
+    <small v-if="pokemonAccuracy.trainingBonus" class="accuracy-line__training">
+      Training {{ formatSignedModifier(pokemonAccuracy.trainingBonus) }}
     </small>
   </p>
 
@@ -248,6 +273,7 @@ const emit = defineEmits<{
 
 .evasion-bonus__item,
 .evasion-bonus__ability,
+.evasion-bonus__training,
 .evasion-bonus__condition {
   color: var(--accent);
   font-weight: 700;
@@ -280,6 +306,11 @@ const emit = defineEmits<{
 
 .accuracy-line__ability {
   color: darkorange;
+  font-weight: 700;
+}
+
+.accuracy-line__training {
+  color: var(--accent);
   font-weight: 700;
 }
 

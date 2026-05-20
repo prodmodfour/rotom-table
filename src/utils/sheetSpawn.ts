@@ -24,6 +24,10 @@ import {
   pokemonEvasionModifiers,
   trainerEvasionModifiers,
 } from '~/utils/sheetEvasionBonuses'
+import {
+  normalizePokemonTrainingFeatureName,
+  pokemonTrainingFeatureAccuracyRollBonus,
+} from '~/utils/sheets/pokemonTrainingFeatures'
 import type { CharacterSheet, CharacterSheetSkills } from '~/types/characterSheet'
 import type { CombatStageMap } from '~/types/combatStages'
 import type { PokemonCatalogEntry } from '~/types/pokemon'
@@ -132,6 +136,8 @@ export const pokemonHpSnapshot = (
   focusSkillRankValue?: number
   combatStages: CombatStageMap
   conditions: string[]
+  activeTrainingFeature?: string
+  accuracyRollBonus?: number
 } => {
   const stats = resolveStats(sheet)
   const hpTotal = stats.find((row) => row.key === 'hp')?.total ?? 0
@@ -158,6 +164,8 @@ export const pokemonHpSnapshot = (
   })
   const conditions = mergeLegacyConditions(sheet.combat?.conditions, sheet.combat?.statusAfflictions)
   const skillRows = resolveSkills(sheet)
+  const activeTrainingFeature = normalizePokemonTrainingFeatureName(sheet.activeTrainingFeature) ?? undefined
+  const accuracyRollBonus = pokemonTrainingFeatureAccuracyRollBonus(activeTrainingFeature)
   return {
     currentHp,
     maxHp,
@@ -175,6 +183,8 @@ export const pokemonHpSnapshot = (
     focusSkillRankValue: pokemonSkillRankValue(skillRows, 'focus'),
     combatStages,
     conditions,
+    ...(activeTrainingFeature ? { activeTrainingFeature } : {}),
+    ...(accuracyRollBonus ? { accuracyRollBonus } : {}),
   }
 }
 

@@ -30,6 +30,7 @@ import {
   calculatePokemonExperienceToNextLevel,
   calculatePokemonLevelFromExperience,
 } from '~/utils/sheets/pokemonExperience'
+import { resolvePokemonTrainingFeatureEffects } from '~/utils/sheets/pokemonTrainingFeatures'
 import { makeAbilityLookupRows } from '~/utils/sheetAbilityLookup'
 import { makeMoveLookupRows, type MoveLookupRow } from '~/utils/sheetMoveLookup'
 import type {
@@ -85,6 +86,9 @@ export function usePokemonSheetDerived(sheet: PokemonSheetRef) {
   const capabilities = computed(() =>
     sheet.value ? resolveCapabilities(sheet.value) : { rows: [], naturewalk: undefined, other: [] },
   )
+  const activeTrainingFeatureEffects = computed(() =>
+    resolvePokemonTrainingFeatureEffects(sheet.value?.activeTrainingFeature),
+  )
   const sheetTypes = computed(() => sheet.value?.types ?? species.value?.types ?? [])
   const eggGroups = computed(() => sheet.value?.eggGroups ?? species.value?.egg_groups ?? [])
 
@@ -112,9 +116,10 @@ export function usePokemonSheetDerived(sheet: PokemonSheetRef) {
     { tickValue: tickValue.value, abilities: sheet.value?.abilities },
   ))
   const initiativeItemBonus = computed(() => heldItemInitiativeBonus(sheet.value?.items?.held))
+  const initiativeTrainingBonus = computed(() => activeTrainingFeatureEffects.value?.initiativeBonus ?? 0)
   const initiative = computed(() =>
     conditionAdjustedInitiative(
-      speedTotal.value + initiativeItemBonus.value,
+      speedTotal.value + initiativeItemBonus.value + initiativeTrainingBonus.value,
       combatConditions.value,
       { abilities: sheet.value?.abilities },
     ),
@@ -150,12 +155,18 @@ export function usePokemonSheetDerived(sheet: PokemonSheetRef) {
     Math.max(0, baseRelationViolations.value.length - visibleBaseRelationViolations.value.length),
   )
 
-  const pokemonAccuracy = computed(() => buildSheetAccuracySummary({
-    stage: sheet.value?.combatStages?.acc,
-    conditions: combatConditions.value,
-    heldItem: sheet.value?.items?.held,
-    abilities: sheet.value?.abilities,
-  }))
+  const pokemonAccuracy = computed(() => {
+    const summary = buildSheetAccuracySummary({
+      stage: sheet.value?.combatStages?.acc,
+      conditions: combatConditions.value,
+      heldItem: sheet.value?.items?.held,
+      abilities: sheet.value?.abilities,
+    })
+    const trainingBonus = activeTrainingFeatureEffects.value?.accuracyRollBonus ?? 0
+    return trainingBonus
+      ? { ...summary, total: summary.total + trainingBonus, trainingBonus }
+      : summary
+  })
 
   const pokemonEvasion = computed(() => {
     const evasion = sheet.value?.combat?.evasion
@@ -163,6 +174,8 @@ export function usePokemonSheetDerived(sheet: PokemonSheetRef) {
     const vsSatkBonus = evasion?.vsSatkBonus ?? 0
     const vsAnyBonus = evasion?.vsAnyBonus ?? 0
     const abilityBonus = computeSheetAbilityEvasionBonus(sheet.value?.abilities)
+    const trainingBonus = activeTrainingFeatureEffects.value?.evasionBonus ?? 0
+    const trainingBonusField = trainingBonus ? { trainingBonus } : {}
     const vsAnyItemBonus = heldItemSpeedEvasionBonus(sheet.value?.items?.held)
     const conditions = combatConditions.value
 
@@ -171,7 +184,7 @@ export function usePokemonSheetDerived(sheet: PokemonSheetRef) {
         ...conditionAdjustedEvasion({
           statTotal: totalForStat(stats.value, 'def'),
           combatStage: sheet.value?.stats?.def?.stage,
-          bonus: vsAtkBonus + abilityBonus,
+          bonus: vsAtkBonus + abilityBonus + trainingBonus,
           conditions,
           abilities: sheet.value?.abilities,
           statStageKey: 'def',
@@ -180,12 +193,13 @@ export function usePokemonSheetDerived(sheet: PokemonSheetRef) {
         }),
         bonus: vsAtkBonus,
         abilityBonus,
+        ...trainingBonusField,
       },
       vsSatk: {
         ...conditionAdjustedEvasion({
           statTotal: totalForStat(stats.value, 'sdef'),
           combatStage: sheet.value?.stats?.sdef?.stage,
-          bonus: vsSatkBonus + abilityBonus,
+          bonus: vsSatkBonus + abilityBonus + trainingBonus,
           conditions,
           abilities: sheet.value?.abilities,
           statStageKey: 'sdef',
@@ -194,12 +208,13 @@ export function usePokemonSheetDerived(sheet: PokemonSheetRef) {
         }),
         bonus: vsSatkBonus,
         abilityBonus,
+        ...trainingBonusField,
       },
       vsAny: {
         ...conditionAdjustedEvasion({
           statTotal: speedTotal.value,
           combatStage: sheet.value?.stats?.spd?.stage,
-          bonus: vsAnyBonus + abilityBonus + vsAnyItemBonus,
+          bonus: vsAnyBonus + abilityBonus + vsAnyItemBonus + trainingBonus,
           conditions,
           abilities: sheet.value?.abilities,
           statStageKey: 'spd',
@@ -209,6 +224,7 @@ export function usePokemonSheetDerived(sheet: PokemonSheetRef) {
         bonus: vsAnyBonus,
         abilityBonus,
         itemBonus: vsAnyItemBonus,
+        ...trainingBonusField,
       },
     }
   })
@@ -307,6 +323,8 @@ export function usePokemonSheetDerived(sheet: PokemonSheetRef) {
     speedTotal,
     initiative,
     initiativeItemBonus,
+    initiativeTrainingBonus,
+    activeTrainingFeatureEffects,
     combatConditions,
     conditionEffects,
     statPointsSpent,

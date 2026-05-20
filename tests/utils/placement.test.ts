@@ -17,6 +17,7 @@ describe('placement helpers', () => {
       abilities: [{ name: 'Levitate' }],
       skills: { combat: '5d6+1', focus: '4d6' },
       combatStages: { acc: 2 },
+      activeTrainingFeature: 'Focused Training',
       items: { held: 'Luck Incense' },
     }
     const placement: SheetPlacement = {
@@ -38,8 +39,10 @@ describe('placement helpers', () => {
     expect(spawned?.combatSkillRankValue).toBe(5)
     expect(spawned?.focusSkillRankValue).toBe(4)
     expect(spawned?.combatStages.acc).toBe(2)
+    expect(spawned?.activeTrainingFeature).toBe('Focused Training')
+    expect(spawned?.accuracyRollBonus).toBe(1)
     expect(spawned?.tokenItems).toEqual(['Luck Incense'])
-    expect(spawned ? moveAutomationUserAccuracy(spawned) : null).toBe(3)
+    expect(spawned ? moveAutomationUserAccuracy(spawned) : null).toBe(4)
     expect(spawned?.facing).toBe('north-east')
     expect(spawned?.turned).toBe(false)
   })

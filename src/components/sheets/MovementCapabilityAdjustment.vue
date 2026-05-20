@@ -1,30 +1,49 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { movementCapabilityConditionAdjustment } from '~/utils/sheetConditionEffects'
+import { pokemonTrainingFeatureMovementCapabilityAdjustment } from '~/utils/sheets/pokemonTrainingFeatures'
 
 const props = defineProps<{
   name: string
   value?: number | string | null
   conditions?: readonly string[] | null
+  trainingFeature?: string | null
   showName?: boolean
 }>()
 
 const displayName = computed(() => props.name.trim().replace(/\s+/g, ' '))
 
-const adjustment = computed(() => movementCapabilityConditionAdjustment(
+const trainingAdjustment = computed(() => pokemonTrainingFeatureMovementCapabilityAdjustment(
   props.name,
   props.value,
+  props.trainingFeature,
+))
+
+const conditionAdjustment = computed(() => movementCapabilityConditionAdjustment(
+  props.name,
+  trainingAdjustment.value?.adjustedValue ?? props.value,
   props.conditions,
 ))
 </script>
 
 <template>
   <small
-    v-if="adjustment"
+    v-if="trainingAdjustment"
+    class="movement-capability-adjustment movement-capability-adjustment--training"
+    :title="trainingAdjustment.title"
+  >
+    {{ trainingAdjustment.featureName }}:
+    <template v-if="showName">{{ displayName }} </template>{{ trainingAdjustment.displayValue }}
+  </small>
+  <small
+    v-if="conditionAdjustment"
     class="movement-capability-adjustment"
-    :class="{ 'movement-capability-adjustment--blocked': adjustment.condition === 'Stuck' || adjustment.condition === 'Tripped' }"
-    :title="adjustment.title"
-  >{{ adjustment.condition }}: <template v-if="showName">{{ displayName }} </template>{{ adjustment.displayValue }}</small>
+    :class="{ 'movement-capability-adjustment--blocked': conditionAdjustment.condition === 'Stuck' || conditionAdjustment.condition === 'Tripped' }"
+    :title="conditionAdjustment.title"
+  >
+    {{ conditionAdjustment.condition }}:
+    <template v-if="showName">{{ displayName }} </template>{{ conditionAdjustment.displayValue }}
+  </small>
 </template>
 
 <style scoped>

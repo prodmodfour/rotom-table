@@ -12,6 +12,7 @@ import {
   sheetAbilityIncomingAttackEvasionModifier,
 } from '~/utils/sheetAbilityCombatModifiers'
 import { resolveMoveAutomationHitChancePercent } from '~/utils/moveAutomationResolution'
+import { pokemonTrainingFeatureAccuracyRollBonus } from '~/utils/sheets/pokemonTrainingFeatures'
 import type { CombatStatStageKey } from '~/types/combatStages'
 import type {
   MoveAutomationHitChanceTone,
@@ -145,6 +146,7 @@ export const moveAutomationUserAccuracy = (user: SpawnedPokemon): number =>
   + conditionAccuracyModifier(user.conditions)
   + moveAutomationHeldItemAccuracyBonus(user)
   + sheetAbilityAccuracyRollBonus(user.abilityNames)
+  + (user.accuracyRollBonus ?? pokemonTrainingFeatureAccuracyRollBonus(user.activeTrainingFeature))
 
 export const moveAutomationHitChanceTone = (percent: number): MoveAutomationHitChanceTone => {
   if (percent < 50) return 'low'

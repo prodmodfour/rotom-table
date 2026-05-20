@@ -16,6 +16,8 @@ export interface SheetAccuracySummary {
   itemBonus: number
   /** Flat Accuracy Roll modifier from passive abilities, currently No Guard. */
   abilityBonus: number
+  /** Optional flat Accuracy Roll modifier from active Training Features such as Focused Training. */
+  trainingBonus?: number
 }
 
 export interface SheetAccuracySummaryInput {

@@ -41,21 +41,36 @@ const {
         <dt><RefLink kind="capability" name="Overland" /></dt>
         <dd>
           <EditableCell v-model="overland" type="number" :min="0" />
-          <MovementCapabilityAdjustment name="Overland" :value="overland" :conditions="combatConditions" />
+          <MovementCapabilityAdjustment
+            name="Overland"
+            :value="overland"
+            :conditions="combatConditions"
+            :training-feature="sheet.activeTrainingFeature"
+          />
         </dd>
       </div>
       <div>
         <dt><RefLink kind="capability" name="Sky" /></dt>
         <dd>
           <EditableCell v-model="sky" type="number" :min="0" />
-          <MovementCapabilityAdjustment name="Sky" :value="sky" :conditions="combatConditions" />
+          <MovementCapabilityAdjustment
+            name="Sky"
+            :value="sky"
+            :conditions="combatConditions"
+            :training-feature="sheet.activeTrainingFeature"
+          />
         </dd>
       </div>
       <div>
         <dt><RefLink kind="capability" name="Swim" /></dt>
         <dd>
           <EditableCell v-model="swim" type="number" :min="0" />
-          <MovementCapabilityAdjustment name="Swim" :value="swim" :conditions="combatConditions" />
+          <MovementCapabilityAdjustment
+            name="Swim"
+            :value="swim"
+            :conditions="combatConditions"
+            :training-feature="sheet.activeTrainingFeature"
+          />
         </dd>
       </div>
       <div>
@@ -67,14 +82,24 @@ const {
             class="caps-derived"
             title="Levitate ability grants Levitate 4, or +2 if a Levitate speed already exists."
           >Levitate ability applied</span>
-          <MovementCapabilityAdjustment name="Levitate" :value="levitate" :conditions="combatConditions" />
+          <MovementCapabilityAdjustment
+            name="Levitate"
+            :value="levitate"
+            :conditions="combatConditions"
+            :training-feature="sheet.activeTrainingFeature"
+          />
         </dd>
       </div>
       <div>
         <dt><RefLink kind="capability" name="Burrow" /></dt>
         <dd>
           <EditableCell v-model="burrow" type="number" :min="0" />
-          <MovementCapabilityAdjustment name="Burrow" :value="burrow" :conditions="combatConditions" />
+          <MovementCapabilityAdjustment
+            name="Burrow"
+            :value="burrow"
+            :conditions="combatConditions"
+            :training-feature="sheet.activeTrainingFeature"
+          />
         </dd>
       </div>
       <div>
@@ -101,7 +126,11 @@ const {
     <p class="caps-line">
       <strong>Other:</strong>
       <EditableCell v-model="otherCapsCsv" placeholder="Telepath, Aura Reader" />
-      <OtherMovementCapabilityAdjustments :capabilities-text="otherCapsCsv" :conditions="combatConditions" />
+      <OtherMovementCapabilityAdjustments
+        :capabilities-text="otherCapsCsv"
+        :conditions="combatConditions"
+        :training-feature="sheet.activeTrainingFeature"
+      />
     </p>
   </section>
 </template>

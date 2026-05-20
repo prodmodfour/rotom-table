@@ -239,6 +239,10 @@ export interface SpawnedPokemon extends PokemonCatalogEntry {
   spd?: number
   /** Current non-stat Evasion modifiers copied from the source sheet. */
   evasion?: SpawnedPokemonEvasionModifiers
+  /** Active [Training] Feature copied from the source Pokémon sheet, if any. */
+  activeTrainingFeature?: string
+  /** Flat outgoing Accuracy Roll bonus copied from the source sheet, such as Focused Training. */
+  accuracyRollBonus?: number
   /** Defender's types (sheet override > species default; empty for trainers). */
   defenderTypes: string[]
   /** Airborne movement capabilities that can grant Groundsource move immunity, copied from the source sheet. */

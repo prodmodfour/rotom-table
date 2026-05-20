@@ -30,6 +30,7 @@ const {
   hpThresholds,
   speedTotal,
   initiative,
+  initiativeTrainingBonus,
   conditionEffects,
   statPointsSpent,
   statPointsBudget,
@@ -117,6 +118,7 @@ const {
       :hp-thresholds="hpThresholds"
       :speed-total="speedTotal"
       :initiative="initiative"
+      :initiative-training-bonus="initiativeTrainingBonus"
       :pokemon-accuracy="pokemonAccuracy"
       :pokemon-evasion="pokemonEvasion"
       :condition-effects="conditionEffects"
@@ -134,7 +136,7 @@ const {
     @set-held-item-name="setHeldItemName"
   />
 
-  <!-- ============ Tutor pts + Skill bg + Inherited ============ -->
+  <!-- ============ Tutor pts + Active Training Feature + Skill bg + Inherited ============ -->
   <PokemonTrainingPanel
     v-model:skill-bg-raised-csv="skillBgRaisedCsv"
     v-model:skill-bg-lowered-csv="skillBgLoweredCsv"

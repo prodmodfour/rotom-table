@@ -1,15 +1,24 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import type { CharacterSheet } from '~/types/characterSheet'
+import {
+  POKEMON_TRAINING_FEATURE_OPTIONS,
+  resolvePokemonTrainingFeatureEffects,
+} from '~/utils/sheets/pokemonTrainingFeatures'
 
 const skillBgRaisedCsv = defineModel<string>('skillBgRaisedCsv', { required: true })
 const skillBgLoweredCsv = defineModel<string>('skillBgLoweredCsv', { required: true })
 
 const INHERITED_LEVELS = ['20', '30', '40', '50', '60', '70', '80', '90'] as const
 
-defineProps<{
+const props = defineProps<{
   sheet: CharacterSheet
   tutorPointsLeft: number | null
 }>()
+
+const activeTrainingFeatureEffects = computed(() =>
+  resolvePokemonTrainingFeatureEffects(props.sheet.activeTrainingFeature),
+)
 
 const emit = defineEmits<{
   setInheritedMove: [level: string, value: string | undefined]
@@ -17,7 +26,7 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <div class="row three-col">
+  <div class="training-grid">
     <section class="panel-card">
       <h2 class="panel-title">Tutor Points</h2>
       <dl class="kv-list">
@@ -34,6 +43,34 @@ const emit = defineEmits<{
           <dd>{{ tutorPointsLeft ?? 0 }}</dd>
         </div>
       </dl>
+    </section>
+
+    <section class="panel-card">
+      <h2 class="panel-title">Active Training Feature</h2>
+      <dl class="kv-list">
+        <div>
+          <dt>Feature</dt>
+          <dd>
+            <EditableCell
+              v-model="sheet.activeTrainingFeature"
+              type="select"
+              :options="POKEMON_TRAINING_FEATURE_OPTIONS"
+              placeholder="None"
+            />
+          </dd>
+        </div>
+        <div v-if="activeTrainingFeatureEffects">
+          <dt>State</dt>
+          <dd>{{ activeTrainingFeatureEffects.stateName }}</dd>
+        </div>
+      </dl>
+      <p v-if="activeTrainingFeatureEffects" class="training-feature-effect">
+        {{ activeTrainingFeatureEffects.reference?.effect
+          ?? 'Active Training Feature bonus is applied to this sheet.' }}
+      </p>
+      <p v-else class="training-feature-effect training-feature-effect--muted">
+        Choose the Training Feature currently affecting this Pokémon. This is separate from Training Exp.
+      </p>
     </section>
 
     <section class="panel-card">
@@ -80,15 +117,10 @@ const emit = defineEmits<{
 </template>
 
 <style scoped>
-.row {
+.training-grid {
   display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 0.85rem;
-}
-
-.row.three-col { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-
-@media (max-width: 980px) {
-  .row.three-col { grid-template-columns: 1fr; }
 }
 
 .panel-title {
@@ -167,6 +199,18 @@ const emit = defineEmits<{
   margin: 0 0 0.55rem;
   color: var(--ink);
   font-family: var(--font-book);
+  font-style: italic;
+}
+
+.training-feature-effect {
+  margin: 0.55rem 0 0;
+  color: var(--ink-soft);
+  font-size: 0.84rem;
+  line-height: 1.4;
+}
+
+.training-feature-effect--muted {
+  color: var(--ink-muted);
   font-style: italic;
 }
 </style>

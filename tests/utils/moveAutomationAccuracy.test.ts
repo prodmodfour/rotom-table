@@ -102,6 +102,8 @@ describe('move automation accuracy helpers', () => {
     expect(moveAutomationUserAccuracy(token({ combatStages: {} as CombatStageMap }))).toBe(0)
     expect(moveAutomationUserAccuracy(token({ combatStages: { ...stages, acc: 99 } }))).toBe(6)
     expect(moveAutomationUserAccuracy(token({ combatStages: { ...stages, acc: 2 } }))).toBe(2)
+    expect(moveAutomationUserAccuracy(token({ combatStages: { ...stages, acc: 2 }, accuracyRollBonus: 1 }))).toBe(3)
+    expect(moveAutomationUserAccuracy(token({ combatStages: { ...stages, acc: 2 }, activeTrainingFeature: 'Focused Training' }))).toBe(3)
     expect(moveAutomationUserAccuracy(token({ combatStages: { ...stages, acc: 2 }, conditions: ['Blindness'] }))).toBe(-4)
     expect(moveAutomationUserAccuracy(token({ combatStages: { ...stages, acc: 2 }, conditions: ['Total Blindness'] }))).toBe(-8)
   })

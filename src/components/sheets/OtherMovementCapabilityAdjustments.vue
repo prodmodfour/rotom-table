@@ -7,6 +7,7 @@ import { isConditionAdjustedMovementCapability } from '~/utils/sheetConditionEff
 const props = defineProps<{
   capabilitiesText?: string | null
   conditions?: readonly string[] | null
+  trainingFeature?: string | null
 }>()
 
 const VALUED_CAPABILITY_RE = /^(.+?)\s+(\d+)\s*$/
@@ -31,6 +32,7 @@ const valuedMovementCapabilities = computed(() => parseCsvList(props.capabilitie
     :name="capability.label"
     :value="capability.value"
     :conditions="props.conditions"
+    :training-feature="props.trainingFeature"
     show-name
   />
 </template>

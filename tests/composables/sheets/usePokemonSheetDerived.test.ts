@@ -120,6 +120,47 @@ describe('usePokemonSheetDerived', () => {
     expect(derived.initiative.value).toBe(Math.floor((derived.speedTotal.value + 10) / 2))
   })
 
+  it('applies active Training Feature bonuses to sheet combat summaries', () => {
+    const agilitySheet = ref<CharacterSheet | null>(makeSheet({
+      activeTrainingFeature: 'Agility Training',
+      items: {},
+    }))
+    const agility = usePokemonSheetDerived(agilitySheet)
+
+    expect(agility.activeTrainingFeatureEffects.value).toMatchObject({
+      featureName: 'Agility Training',
+      stateName: 'Agile',
+    })
+    expect(agility.initiativeTrainingBonus.value).toBe(4)
+    expect(agility.initiative.value).toBe(agility.speedTotal.value + 4)
+
+    const focused = usePokemonSheetDerived(ref<CharacterSheet | null>(makeSheet({
+      activeTrainingFeature: 'Focused Training',
+      combatStages: { acc: 1 },
+      items: {},
+    })))
+    expect(focused.pokemonAccuracy.value).toMatchObject({
+      stage: 1,
+      trainingBonus: 1,
+      total: 2,
+    })
+
+    const inspired = usePokemonSheetDerived(ref<CharacterSheet | null>(makeSheet({
+      activeTrainingFeature: 'Inspired Training',
+      combat: { evasion: { vsAtkBonus: 0, vsSatkBonus: 0, vsAnyBonus: 0 } },
+      items: {},
+    })))
+    const untrained = usePokemonSheetDerived(ref<CharacterSheet | null>(makeSheet({
+      combat: { evasion: { vsAtkBonus: 0, vsSatkBonus: 0, vsAnyBonus: 0 } },
+      items: {},
+    })))
+
+    expect(inspired.pokemonEvasion.value.vsAtk.trainingBonus).toBe(1)
+    expect(inspired.pokemonEvasion.value.vsAtk.total).toBe(Math.min(9, untrained.pokemonEvasion.value.vsAtk.total + 1))
+    expect(inspired.pokemonEvasion.value.vsSatk.total).toBe(Math.min(9, untrained.pokemonEvasion.value.vsSatk.total + 1))
+    expect(inspired.pokemonEvasion.value.vsAny.total).toBe(Math.min(9, untrained.pokemonEvasion.value.vsAny.total + 1))
+  })
+
   it('applies Weird Power to Pokémon sheet move damage formulas', () => {
     const sheet = ref<CharacterSheet | null>(makeSheet({
       abilities: [{ name: 'Weird Power' }],

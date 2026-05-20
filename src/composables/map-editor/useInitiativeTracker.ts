@@ -5,6 +5,7 @@ import { resolveTrainerStats } from '~/utils/sheets/trainerDerived'
 import { conditionAdjustedInitiative } from '~/utils/sheetConditionEffects'
 import { sheetItemsInitiativeBonus } from '~/utils/sheetHeldItemEffects'
 import { pokemonHeldItemNames, trainerEquippedItemNames } from '~/utils/sheetItemNames'
+import { pokemonTrainingFeatureInitiativeBonus } from '~/utils/sheets/pokemonTrainingFeatures'
 import {
   getHpBarDisplayMetrics,
   hpBarPercentFromRatio,
@@ -44,6 +45,8 @@ export interface InitiativeRow {
   baseInitiative: number
   /** Initiative bonus supplied by sheet equipment. */
   initiativeItemBonus: number
+  /** Initiative bonus supplied by active Training Features such as Agility Training. */
+  initiativeTrainingBonus: number
   /** Final initiative after applying conditions such as Paralysis and Flinch. */
   initiativeScore: number
 }
@@ -137,6 +140,12 @@ export const useInitiativeTracker = ({
     return sheet ? sheetItemsInitiativeBonus(trainerEquippedItemNames(sheet)) : 0
   }
 
+  const initiativeTrainingBonusForPlacement = (kind: InitiativeKind, sheetSlug: string): number => {
+    if (kind !== 'pokemon') return 0
+    const sheet = pokemonBySlug.value?.get(sheetSlug)
+    return sheet ? pokemonTrainingFeatureInitiativeBonus(sheet.activeTrainingFeature) : 0
+  }
+
   const metaForPlacement = (kind: InitiativeKind, sheetSlug: string): string => {
     if (kind === 'pokemon') {
       const sheet = pokemonBySlug.value?.get(sheetSlug)
@@ -154,7 +163,8 @@ export const useInitiativeTracker = ({
       const placement = placements.get(pokemon.id)
       const speed = speedForPlacement(pokemon.sheetKind, pokemon.sheetSlug)
       const initiativeItemBonus = initiativeItemBonusForPlacement(pokemon.sheetKind, pokemon.sheetSlug)
-      const baseInitiative = speed + initiativeItemBonus
+      const initiativeTrainingBonus = initiativeTrainingBonusForPlacement(pokemon.sheetKind, pokemon.sheetSlug)
+      const baseInitiative = speed + initiativeItemBonus + initiativeTrainingBonus
       const initiative = normalizeInitiativeValue(placement?.initiative)
       return {
         id: pokemon.id,
@@ -170,6 +180,7 @@ export const useInitiativeTracker = ({
         speed,
         baseInitiative,
         initiativeItemBonus,
+        initiativeTrainingBonus,
         initiativeScore: conditionAdjustedInitiative(
           initiative ?? baseInitiative,
           pokemon.conditions,

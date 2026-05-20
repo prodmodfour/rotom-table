@@ -15,6 +15,7 @@ interface EvasionEntry {
   base: number
   bonus: number
   abilityBonus: number
+  trainingBonus?: number
   suppressedByCondition?: string | null
 }
 
@@ -33,6 +34,7 @@ defineProps<{
   hpThresholds: HpThresholds
   speedTotal: number
   initiative: number
+  initiativeTrainingBonus: number
   pokemonAccuracy: SheetAccuracySummary
   pokemonEvasion: PokemonEvasionSummary
   conditionEffects: readonly ConditionEffectSummary[]
@@ -61,6 +63,7 @@ const forwardEvasionBonus = (key: PokemonEvasionBonusKey, value: number | undefi
       :hp-thresholds="hpThresholds"
       :speed-total="speedTotal"
       :initiative="initiative"
+      :initiative-training-bonus="initiativeTrainingBonus"
       @set-current-hp="emit('setCurrentHp', $event)"
     />
 

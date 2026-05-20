@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { formatSignedModifier } from '~/utils/evasion'
 import type { CharacterSheet } from '~/types/characterSheet'
 
 type PokemonCombatState = NonNullable<CharacterSheet['combat']>
@@ -18,6 +19,7 @@ defineProps<{
   hpThresholds: HpThresholds
   speedTotal: number
   initiative: number
+  initiativeTrainingBonus: number
 }>()
 
 const emit = defineEmits<{
@@ -64,10 +66,11 @@ const emit = defineEmits<{
         <EditableCell v-model="combat.dr" type="number" :min="0" />
       </span>
     </div>
-    <div class="combat-cell" title="Initiative is Speed adjusted by conditions such as Paralysis and Flinch.">
+    <div class="combat-cell" title="Initiative is Speed adjusted by active Training, held items, and conditions such as Paralysis and Flinch.">
       <span class="cell-label">Initiative</span>
       <span class="cell-value">
         {{ initiative }}
+        <span v-if="initiativeTrainingBonus" class="cell-sub">Training {{ formatSignedModifier(initiativeTrainingBonus) }}</span>
         <span v-if="initiative !== speedTotal" class="cell-sub">Speed {{ speedTotal }}</span>
       </span>
     </div>

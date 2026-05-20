@@ -72,6 +72,8 @@ export const placementToSpawned = (
       sdef: hp.sdef,
       spd: hp.spd,
       evasion: hp.evasion,
+      ...(hp.activeTrainingFeature ? { activeTrainingFeature: hp.activeTrainingFeature } : {}),
+      ...(hp.accuracyRollBonus ? { accuracyRollBonus: hp.accuracyRollBonus } : {}),
       defenderTypes: hp.defenderTypes,
       ...(hp.defenderCapabilities ? { defenderCapabilities: hp.defenderCapabilities } : {}),
       ...(abilityNames.length ? { abilityNames } : {}),

@@ -179,7 +179,7 @@ describe('useInitiativeTracker', () => {
     expect(tracker.hpTier(row)).toBe('wounded')
   })
 
-  it('includes Quick Claw in default initiative values from sheets', () => {
+  it('includes Quick Claw and active Agility Training in default initiative values from sheets', () => {
     const map = ref<TabletopMap | null>(mapWithPlacements([
       { id: 'quick', sheetKind: 'pokemon', sheetSlug: 'quick', position: { x: 0, y: 0, z: 0 } },
     ]))
@@ -188,7 +188,10 @@ describe('useInitiativeTracker', () => {
       spawnedPokemon: computed(() => [
         token({ id: 'quick', sheetSlug: 'quick', species: 'Quick', conditions: ['Paralysis'] }),
       ]),
-      pokemonBySlug: ref(new Map([['quick', sheet('quick', { items: { held: 'Quick Claw' } })]])),
+      pokemonBySlug: ref(new Map([['quick', sheet('quick', {
+        activeTrainingFeature: 'Agility Training',
+        items: { held: 'Quick Claw' },
+      })]])),
       trainerBySlug: ref(new Map<string, TrainerSheet>()),
       canManageInitiative: computed(() => true),
     })
@@ -196,8 +199,9 @@ describe('useInitiativeTracker', () => {
     const row = tracker.initiativeRows.value[0]
 
     expect(row.initiativeItemBonus).toBe(10)
-    expect(row.baseInitiative).toBe(row.speed + 10)
-    expect(row.initiativeScore).toBe(Math.floor((row.speed + 10) / 2))
+    expect(row.initiativeTrainingBonus).toBe(4)
+    expect(row.baseInitiative).toBe(row.speed + 14)
+    expect(row.initiativeScore).toBe(Math.floor((row.speed + 14) / 2))
 
     tracker.fillInitiativeFromSpeed()
 

@@ -181,6 +181,8 @@ export interface CharacterSheet {
   combatStages?: Partial<Record<CombatStageKey, number>>
 
   combat?: CharacterSheetCombat
+  /** Active [Training] Feature currently applied to this Pokémon, such as Agility Training or Inspired Training. */
+  activeTrainingFeature?: string
   items?: CharacterSheetItems
   weapon?: CharacterSheetWeapon
 

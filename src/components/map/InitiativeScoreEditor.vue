@@ -10,6 +10,18 @@ const emit = defineEmits<{
   (event: 'set-initiative-input', id: string, value: Event): void
   (event: 'set-initiative-from-speed', id: string, speed: number): void
 }>()
+
+const hasBaseInitiativeBonus = (entry: InitiativeRow): boolean =>
+  Boolean(entry.initiativeItemBonus || entry.initiativeTrainingBonus)
+
+const signed = (value: number): string => value >= 0 ? `+${value}` : String(value)
+
+const baseInitiativeFormula = (entry: InitiativeRow): string => {
+  const parts = [`Speed ${entry.speed}`]
+  if (entry.initiativeItemBonus) parts.push(`item ${signed(entry.initiativeItemBonus)}`)
+  if (entry.initiativeTrainingBonus) parts.push(`training ${signed(entry.initiativeTrainingBonus)}`)
+  return parts.join(' ')
+}
 </script>
 
 <template>
@@ -29,16 +41,16 @@ const emit = defineEmits<{
     <button
       type="button"
       class="initiative-row__speed-button"
-      :title="entry.initiativeItemBonus
-        ? `Set base initiative to Speed ${entry.speed} + item bonus (${entry.baseInitiative}); conditions apply afterward`
+      :title="hasBaseInitiativeBonus(entry)
+        ? `Set base initiative to ${baseInitiativeFormula(entry)} (${entry.baseInitiative}); conditions apply afterward`
         : `Set base initiative to Speed (${entry.speed}); conditions apply afterward`"
-      :aria-label="entry.initiativeItemBonus
-        ? `Use ${entry.name}'s Speed plus item bonus (${entry.baseInitiative}) as base initiative`
+      :aria-label="hasBaseInitiativeBonus(entry)
+        ? `Use ${entry.name}'s ${baseInitiativeFormula(entry)} (${entry.baseInitiative}) as base initiative`
         : `Use ${entry.name}'s Speed (${entry.speed}) as base initiative`"
       :disabled="!canManage"
       @click="emit('set-initiative-from-speed', entry.id, entry.baseInitiative)"
     >
-      {{ entry.initiativeItemBonus ? 'Use Base' : 'Use Speed' }}
+      {{ hasBaseInitiativeBonus(entry) ? 'Use Base' : 'Use Speed' }}
     </button>
   </div>
 </template>

@@ -61,6 +61,9 @@ const isFainted = computed(() => props.entry.currentHp <= 0)
           <template v-if="entry.initiativeItemBonus">
             · Item Init +{{ entry.initiativeItemBonus }}
           </template>
+          <template v-if="entry.initiativeTrainingBonus">
+            · Training Init +{{ entry.initiativeTrainingBonus }}
+          </template>
           <template v-if="entry.initiative !== null || entry.initiativeScore !== entry.speed">
             · Final Init {{ entry.initiativeScore }}
           </template>
