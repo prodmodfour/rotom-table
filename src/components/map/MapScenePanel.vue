@@ -21,6 +21,7 @@ import type {
   MoveAutomationAreaDirection,
   MoveAutomationFeedbackState,
   MoveAutomationHpUpdate,
+  MoveAutomationCelebratePrompt,
   MoveAutomationCuteCharmPrompt,
   MoveAutomationMoxiePrompt,
   MoveAutomationSpitePrompt,
@@ -73,6 +74,7 @@ const props = defineProps<{
   spiteReactionPrompts?: MoveAutomationSpitePrompt[]
   cuteCharmReactionPrompts?: MoveAutomationCuteCharmPrompt[]
   moxieTriggerPrompts?: MoveAutomationMoxiePrompt[]
+  celebrateTriggerPrompts?: MoveAutomationCelebratePrompt[]
   tokenMoveOptionsById?: Record<string, TokenMoveMenuOption[]>
   tokenAbilityOptionsById?: Record<string, TokenAbilityMenuOption[]>
   tokenSendOutOptionsById?: Record<string, TokenSendOutOption[]>
@@ -108,6 +110,8 @@ const emit = defineEmits<{
   (event: 'apply-cute-charm-reaction', id: string): void
   (event: 'dismiss-moxie-trigger', id: string): void
   (event: 'apply-moxie-trigger', id: string): void
+  (event: 'dismiss-celebrate-trigger', id: string): void
+  (event: 'apply-celebrate-trigger', id: string): void
 }>()
 
 const COMBAT_LOG_MESSAGE_LIMIT = 24
@@ -200,12 +204,15 @@ defineExpose({ focusPokemon })
         :spite-prompts="props.spiteReactionPrompts ?? []"
         :cute-charm-prompts="props.cuteCharmReactionPrompts ?? []"
         :moxie-prompts="props.moxieTriggerPrompts ?? []"
+        :celebrate-prompts="props.celebrateTriggerPrompts ?? []"
         @dismiss="emit('dismiss-spite-reaction', $event)"
         @apply="emit('apply-spite-reaction', $event)"
         @dismiss-cute-charm="emit('dismiss-cute-charm-reaction', $event)"
         @apply-cute-charm="emit('apply-cute-charm-reaction', $event)"
         @dismiss-moxie="emit('dismiss-moxie-trigger', $event)"
         @apply-moxie="emit('apply-moxie-trigger', $event)"
+        @dismiss-celebrate="emit('dismiss-celebrate-trigger', $event)"
+        @apply-celebrate="emit('apply-celebrate-trigger', $event)"
       />
 
 

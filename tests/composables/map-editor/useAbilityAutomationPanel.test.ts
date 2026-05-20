@@ -176,6 +176,40 @@ describe('useAbilityAutomationPanel', () => {
     ])
   })
 
+  it('logs self map abilities that only create tabletop reminders', async () => {
+    const map = ref(mapFixture())
+    const calls: string[] = []
+    const pokemonSheet = {
+      slug: 'bolt',
+      nickname: 'Bolt',
+      species: 'Furfrou',
+      level: 5,
+      abilities: [{ name: 'Celebrate' }],
+    } as CharacterSheet
+    const panel = useAbilityAutomationPanel({
+      map,
+      spawnedPokemon: computed(() => [
+        spawned('user-token', { species: 'Furfrou' }),
+        spawned('target-token'),
+      ]),
+      pokemonBySlug: ref(new Map([[pokemonSheet.slug, pokemonSheet]])),
+      trainerBySlug: ref(new Map<string, TrainerSheet>()),
+      canControlPlacement: (id) => id === 'user-token',
+      modifyCombatStages: (update) => { calls.push(`stages:${update.id}:${update.stages.atk}`) },
+      modifyConditions: (update) => { calls.push(`conditions:${update.id}:${update.conditions.join(',')}`) },
+      modifyAbilityActivation: () => undefined,
+      now: () => 654,
+    })
+
+    await panel.openAbilityAutomation({ id: 'user-token', abilityName: 'Celebrate' })
+
+    expect(panel.abilityAutomationTargeting.value).toBeNull()
+    expect(calls).toEqual([])
+    expect(map.value.metadata?.abilityLog).toMatchObject([
+      { at: 654, userId: 'user-token', abilityName: 'Celebrate', category: 'map' },
+    ])
+  })
+
   it('targets map abilities and applies their sheet updates to targets', async () => {
     const map = ref(mapFixture())
     const calls: string[] = []

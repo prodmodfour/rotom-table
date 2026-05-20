@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type {
+  MoveAutomationCelebratePrompt,
   MoveAutomationCuteCharmPrompt,
   MoveAutomationMoxiePrompt,
   MoveAutomationSpitePrompt,
@@ -9,6 +10,7 @@ const props = defineProps<{
   spitePrompts: MoveAutomationSpitePrompt[]
   cuteCharmPrompts?: MoveAutomationCuteCharmPrompt[]
   moxiePrompts?: MoveAutomationMoxiePrompt[]
+  celebratePrompts?: MoveAutomationCelebratePrompt[]
 }>()
 
 const emit = defineEmits<{
@@ -18,17 +20,21 @@ const emit = defineEmits<{
   (event: 'dismiss-cute-charm', id: string): void
   (event: 'apply-moxie', id: string): void
   (event: 'dismiss-moxie', id: string): void
+  (event: 'apply-celebrate', id: string): void
+  (event: 'dismiss-celebrate', id: string): void
 }>()
 
-const targetList = (prompt: MoveAutomationMoxiePrompt): string => {
-  const names = prompt.faintedTargetNames
+const nameList = (names: readonly string[]): string => {
   if (names.length <= 2) return names.join(' and ')
   return `${names.slice(0, -1).join(', ')}, and ${names[names.length - 1]}`
 }
+
+const moxieTargetList = (prompt: MoveAutomationMoxiePrompt): string => nameList(prompt.faintedTargetNames)
+const celebrateTargetList = (prompt: MoveAutomationCelebratePrompt): string => nameList(prompt.hitTargetNames)
 </script>
 
 <template>
-  <div v-if="props.spitePrompts.length || props.cuteCharmPrompts?.length || props.moxiePrompts?.length" class="reaction-prompt-stack" aria-live="polite">
+  <div v-if="props.spitePrompts.length || props.cuteCharmPrompts?.length || props.moxiePrompts?.length || props.celebratePrompts?.length" class="reaction-prompt-stack" aria-live="polite">
     <article
       v-for="prompt in props.moxiePrompts ?? []"
       :key="prompt.id"
@@ -37,13 +43,33 @@ const targetList = (prompt: MoveAutomationMoxiePrompt): string => {
       <div class="reaction-prompt__copy">
         <span class="reaction-prompt__eyebrow">Moxie?</span>
         <strong>{{ prompt.attackerName }}</strong>
-        <span>{{ prompt.moveName }} fainted {{ targetList(prompt) }}. Raise Attack?</span>
+        <span>{{ prompt.moveName }} fainted {{ moxieTargetList(prompt) }}. Raise Attack?</span>
       </div>
       <div class="reaction-prompt__actions">
         <button type="button" class="reaction-prompt__apply" @click="emit('apply-moxie', prompt.id)">
           Raise Attack
         </button>
         <button type="button" class="reaction-prompt__dismiss" @click="emit('dismiss-moxie', prompt.id)">
+          Ignore
+        </button>
+      </div>
+    </article>
+
+    <article
+      v-for="prompt in props.celebratePrompts ?? []"
+      :key="prompt.id"
+      class="reaction-prompt"
+    >
+      <div class="reaction-prompt__copy">
+        <span class="reaction-prompt__eyebrow">Celebrate?</span>
+        <strong>{{ prompt.attackerName }}</strong>
+        <span>{{ prompt.moveName }} hit {{ celebrateTargetList(prompt) }}. Disengage 1 meter as a Free Action?</span>
+      </div>
+      <div class="reaction-prompt__actions">
+        <button type="button" class="reaction-prompt__apply" @click="emit('apply-celebrate', prompt.id)">
+          Use Celebrate
+        </button>
+        <button type="button" class="reaction-prompt__dismiss" @click="emit('dismiss-celebrate', prompt.id)">
           Ignore
         </button>
       </div>

@@ -13,6 +13,7 @@ import type { AbilityAutomationCategory, AbilityAutomationTransaction } from '~/
 import type { MapFieldEffects } from '~/types/map'
 import type { SpawnedPokemon } from '~/types/pokemon'
 
+export const CELEBRATE_ABILITY_NAME = 'Celebrate'
 export const CUTE_CHARM_ABILITY_NAME = 'Cute Charm'
 export const HEALER_ABILITY_NAME = 'Healer'
 export const INTIMIDATE_ABILITY_NAME = 'Intimidate'
@@ -52,6 +53,17 @@ export type AbilityAutomationDefinition =
 const MAP_WIDE_RANGE_METERS = Number.POSITIVE_INFINITY
 
 const MAP_ABILITY_AUTOMATIONS = new Map<string, MapAbilityAutomationDefinition>([
+  [
+    CELEBRATE_ABILITY_NAME,
+    {
+      name: CELEBRATE_ABILITY_NAME,
+      category: 'map',
+      label: 'Trigger',
+      targetMode: 'self',
+      rangeLabel: 'self',
+      rangeMeters: 0,
+    },
+  ],
   [
     HEALER_ABILITY_NAME,
     {
@@ -256,6 +268,24 @@ export const resolveMapAbilityAutomationTransaction = (options: {
 }): AbilityAutomationTransaction | null => {
   const definition = getMapAbilityAutomation(options.abilityName)
   if (!definition) return null
+
+  if (definition.name === CELEBRATE_ABILITY_NAME) {
+    const triggerLine = options.target
+      ? `${options.user.species} triggered ${definition.name} after hitting ${options.target.species}.`
+      : `${options.user.species} used ${definition.name}.`
+    return {
+      userId: options.user.id,
+      userName: options.user.species,
+      abilityName: definition.name,
+      category: definition.category,
+      combatStageUpdates: [],
+      conditionUpdates: [],
+      logLines: [
+        triggerLine,
+        `${options.user.species} may immediately Disengage 1 meter as a Free Action without provoking an Attack of Opportunity.`,
+      ],
+    }
+  }
 
   if (definition.name === HEALER_ABILITY_NAME) {
     if (!options.target) return null

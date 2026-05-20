@@ -159,6 +159,15 @@ export interface MoveAutomationMoxiePrompt {
   faintedTargetNames: string[]
 }
 
+export interface MoveAutomationCelebratePrompt {
+  id: string
+  attackerId: string
+  attackerName: string
+  moveName: string
+  hitTargetIds: string[]
+  hitTargetNames: string[]
+}
+
 export type MoveAutomationTargetMode =
   | 'none'
   | 'self'

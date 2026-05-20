@@ -10,10 +10,13 @@ import {
   mapAbilityTargetCandidates,
   resolveMapAbilityAutomationTransaction,
 } from '~/utils/abilityAutomation'
+import {
+  DEFAULT_ABILITY_AUTOMATION_LOG_ENTRIES,
+  appendAbilityAutomationLogEntry,
+} from '~/utils/abilityAutomationLog'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { TabletopMap } from '~/types/map'
 import type {
-  AbilityAutomationLogEntry,
   AbilityAutomationTransaction,
   AbilitySheetActivationUpdate,
 } from '~/types/abilityAutomation'
@@ -25,7 +28,7 @@ import type {
 import type { SpawnedPokemon } from '~/types/pokemon'
 import type { TrainerSheet } from '~/types/trainerSheet'
 
-const DEFAULT_MAX_LOG_ENTRIES = 100
+export { appendAbilityAutomationLogEntry } from '~/utils/abilityAutomationLog'
 
 interface SheetUpdateOptions {
   allowAnyTarget?: boolean
@@ -59,25 +62,6 @@ interface ActiveAbilityTargetingRequest {
   rangeMeters: number
 }
 
-export const appendAbilityAutomationLogEntry = (
-  metadata: Record<string, unknown> | undefined,
-  transaction: AbilityAutomationTransaction,
-  options: { now?: () => number; maxLogEntries?: number } = {},
-): Record<string, unknown> => {
-  const next = { ...(metadata ?? {}) }
-  const previous = Array.isArray(next.abilityLog) ? next.abilityLog : []
-  const entry: AbilityAutomationLogEntry = {
-    at: options.now?.() ?? Date.now(),
-    userId: transaction.userId,
-    userName: transaction.userName,
-    abilityName: transaction.abilityName,
-    category: transaction.category,
-    lines: transaction.logLines,
-  }
-  next.abilityLog = [...previous, entry].slice(-(options.maxLogEntries ?? DEFAULT_MAX_LOG_ENTRIES))
-  return next
-}
-
 export const useAbilityAutomationPanel = ({
   map,
   spawnedPokemon,
@@ -88,7 +72,7 @@ export const useAbilityAutomationPanel = ({
   modifyConditions,
   modifyAbilityActivation,
   now,
-  maxLogEntries = DEFAULT_MAX_LOG_ENTRIES,
+  maxLogEntries = DEFAULT_ABILITY_AUTOMATION_LOG_ENTRIES,
 }: UseAbilityAutomationPanelOptions) => {
   const activeAbilityTargeting = ref<ActiveAbilityTargetingRequest | null>(null)
 

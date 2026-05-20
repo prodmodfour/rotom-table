@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  CELEBRATE_ABILITY_NAME,
   CUTE_CHARM_ABILITY_NAME,
   HEALER_ABILITY_NAME,
   INTIMIDATE_ABILITY_NAME,
@@ -57,6 +58,7 @@ describe('ability automation helpers', () => {
   it('classifies sheet and map ability automation categories', () => {
     expect(getAbilityAutomationCategory('Sand Veil')).toBe('sheet')
     expect(getAbilityAutomationCategory('Snow Cloak')).toBe('sheet')
+    expect(getAbilityAutomationCategory(CELEBRATE_ABILITY_NAME)).toBe('map')
     expect(getAbilityAutomationCategory(CUTE_CHARM_ABILITY_NAME)).toBe('passive')
     expect(getAbilityAutomationCategory(HEALER_ABILITY_NAME)).toBe('map')
     expect(getAbilityAutomationCategory(INTIMIDATE_ABILITY_NAME)).toBe('map')
@@ -85,6 +87,31 @@ describe('ability automation helpers', () => {
       abilityName: INTIMIDATE_ABILITY_NAME,
       category: 'map',
       combatStageUpdates: [{ id: 'target', stages: { atk: -6 } }],
+    })
+  })
+
+  it('resolves Celebrate as a self reminder to Disengage after hitting a target', () => {
+    const user = token('user')
+    const target = token('target')
+
+    expect(mapAbilityTargetCandidates(user, [user, target], CELEBRATE_ABILITY_NAME)).toEqual([])
+
+    const transaction = resolveMapAbilityAutomationTransaction({
+      abilityName: CELEBRATE_ABILITY_NAME,
+      user,
+      target,
+    })
+
+    expect(transaction).toMatchObject({
+      userId: 'user',
+      abilityName: CELEBRATE_ABILITY_NAME,
+      category: 'map',
+      combatStageUpdates: [],
+      conditionUpdates: [],
+      logLines: [
+        'user triggered Celebrate after hitting target.',
+        'user may immediately Disengage 1 meter as a Free Action without provoking an Attack of Opportunity.',
+      ],
     })
   })
 

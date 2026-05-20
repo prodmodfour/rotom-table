@@ -285,6 +285,7 @@ const {
   spiteReactionPrompts,
   cuteCharmReactionPrompts,
   moxieTriggerPrompts,
+  celebrateTriggerPrompts,
   tokenMoveOptionsById,
   openMoveAutomation,
   cancelMoveAutomationTargeting,
@@ -296,6 +297,8 @@ const {
   applyCuteCharmReactionPrompt,
   dismissMoxieTriggerPrompt,
   applyMoxieTriggerPrompt,
+  dismissCelebrateTriggerPrompt,
+  applyCelebrateTriggerPrompt,
 } = useMoveAutomationPanel({
   map,
   spawnedPokemon,
@@ -426,6 +429,7 @@ useMapDimensionReconciliation({
         :spite-reaction-prompts="spiteReactionPrompts"
         :cute-charm-reaction-prompts="cuteCharmReactionPrompts"
         :moxie-trigger-prompts="moxieTriggerPrompts"
+        :celebrate-trigger-prompts="celebrateTriggerPrompts"
         :token-move-options-by-id="tokenMoveOptionsById"
         :token-ability-options-by-id="tokenAbilityOptionsById"
         :token-send-out-options-by-id="tokenSendOutOptionsById"
@@ -458,6 +462,8 @@ useMapDimensionReconciliation({
         @apply-cute-charm-reaction="applyCuteCharmReactionPrompt"
         @dismiss-moxie-trigger="dismissMoxieTriggerPrompt"
         @apply-moxie-trigger="applyMoxieTriggerPrompt"
+        @dismiss-celebrate-trigger="dismissCelebrateTriggerPrompt"
+        @apply-celebrate-trigger="applyCelebrateTriggerPrompt"
       />
     </template>
 

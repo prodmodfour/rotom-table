@@ -504,6 +504,75 @@ describe('useMoveAutomationPanel', () => {
     expect(panel.moxieTriggerPrompts.value).toEqual([])
   })
 
+  it('queues and logs an optional Celebrate prompt after a damaging hit', async () => {
+    vi.useFakeTimers()
+    const map = ref({
+      ...mapFixture(),
+      placements: [
+        { id: 'user-token', sheetKind: 'pokemon' as const, sheetSlug: 'attacker', position: { x: 0, y: 0, z: 0 } },
+        { id: 'target-token', sheetKind: 'pokemon' as const, sheetSlug: 'target', position: { x: 2, y: 0, z: 0 } },
+      ],
+    })
+    const attackerSheet = {
+      slug: 'attacker',
+      nickname: 'Attacker',
+      species: 'Charmander',
+      level: 5,
+      movelist: [{ name: 'Ember' }],
+    } as CharacterSheet
+    const hpCalls: MoveAutomationTransaction['hpUpdates'] = []
+    const panel = useMoveAutomationPanel({
+      map,
+      spawnedPokemon: computed(() => [
+        spawned({ id: 'user-token', species: 'Attacker', sheetSlug: 'attacker', abilityNames: ['Celebrate'], position: { x: 0, y: 0, z: 0 } }),
+        spawned({ id: 'target-token', species: 'Target', sheetSlug: 'target', currentHp: 40, maxHp: 40, defenderTypes: ['Grass'], position: { x: 2, y: 0, z: 0 } }),
+      ]),
+      pokemonBySlug: ref(new Map([[attackerSheet.slug, attackerSheet]])),
+      trainerBySlug: ref(new Map<string, TrainerSheet>()),
+      canEditMap: computed(() => false),
+      canControlPlacement: (id) => id === 'user-token',
+      modifyHp: (update) => { hpCalls.push(update) },
+      modifyCombatStages: () => undefined,
+      modifyConditions: () => undefined,
+      applyMoveFieldEffect: () => undefined,
+      placeHazard: () => undefined,
+      now: () => 222,
+    })
+    const random = vi.spyOn(Math, 'random').mockReturnValue(0.5)
+
+    try {
+      panel.openMoveAutomation({ id: 'user-token', moveName: 'Ember' })
+      await panel.selectMoveAutomationTarget('target-token')
+
+      await vi.advanceTimersByTimeAsync(MOVE_FEEDBACK_EFFECTIVE_FINAL_MS)
+
+      expect(hpCalls.length).toBeGreaterThan(0)
+      expect(panel.celebrateTriggerPrompts.value).toMatchObject([{
+        attackerId: 'user-token',
+        attackerName: 'Attacker',
+        moveName: 'Ember',
+        hitTargetNames: ['Target'],
+      }])
+
+      panel.applyCelebrateTriggerPrompt(panel.celebrateTriggerPrompts.value[0]!.id)
+
+      expect(panel.celebrateTriggerPrompts.value).toEqual([])
+      expect(map.value.metadata?.abilityLog).toMatchObject([{
+        at: 222,
+        userId: 'user-token',
+        abilityName: 'Celebrate',
+        category: 'map',
+        lines: [
+          'Attacker triggered Celebrate after hitting Target.',
+          'Attacker may immediately Disengage 1 meter as a Free Action without provoking an Attack of Opportunity.',
+        ],
+      }])
+    } finally {
+      random.mockRestore()
+      vi.useRealTimers()
+    }
+  })
+
   it('applies sheet updates, gates map effects by GM permission, appends logs, and faces targets', async () => {
     const map = ref({
       ...mapFixture(),

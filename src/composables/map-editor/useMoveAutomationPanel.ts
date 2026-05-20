@@ -47,6 +47,10 @@ import {
   buildMoxieTriggerTransaction,
 } from '~/utils/moveAutomationMoxie'
 import {
+  buildCelebrateTriggerPrompts,
+  buildCelebrateTriggerTransaction,
+} from '~/utils/moveAutomationCelebrate'
+import {
   moveAutomationTargetsInRange,
   parseSingleTargetMoveRangeMeters,
 } from '~/utils/moveAutomationRange'
@@ -54,6 +58,8 @@ import { moveAutomationTargetHitChance } from '~/utils/moveAutomationAccuracy'
 import { buildAllVoxelOccupancy } from '~/utils/voxelOccupancy'
 import { getErrorMessage } from '~/utils/errorMessages'
 import { moveFrequencyTracksOnMap, moveFrequencyTracksOnSheet, parseMoveFrequency } from '~/utils/moveUsage'
+import { appendAbilityAutomationLogEntry } from '~/utils/abilityAutomationLog'
+import type { AbilityAutomationTransaction } from '~/types/abilityAutomation'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { GridAnchor, MapFieldEffects, MapHazardV2, TabletopMap } from '~/types/map'
 import type {
@@ -65,6 +71,7 @@ import type {
   MoveAutomationHpUpdate,
   MoveAutomationFeedbackState,
   MoveAutomationLogEntry,
+  MoveAutomationCelebratePrompt,
   MoveAutomationCuteCharmPrompt,
   MoveAutomationMoxiePrompt,
   MoveAutomationScript,
@@ -187,6 +194,7 @@ export const useMoveAutomationPanel = ({
   const spiteReactionPrompts = ref<MoveAutomationSpitePrompt[]>([])
   const cuteCharmReactionPrompts = ref<MoveAutomationCuteCharmPrompt[]>([])
   const moxieTriggerPrompts = ref<MoveAutomationMoxiePrompt[]>([])
+  const celebrateTriggerPrompts = ref<MoveAutomationCelebratePrompt[]>([])
   const feedbackTimers: Array<ReturnType<typeof setTimeout>> = []
 
   const sheetLookup = () => ({
@@ -535,7 +543,7 @@ export const useMoveAutomationPanel = ({
           script,
           user,
           fieldEffects: map.value?.fieldEffects,
-        }))
+        }), { script })
       })()
       return true
     }
@@ -581,6 +589,14 @@ export const useMoveAutomationPanel = ({
   const appendMoveAutomationLog = (transaction: MoveAutomationTransaction) => {
     if (!map.value) return
     map.value.metadata = appendMoveAutomationLogEntry(map.value.metadata, transaction, {
+      now,
+      maxLogEntries,
+    })
+  }
+
+  const appendAbilityAutomationLog = (transaction: AbilityAutomationTransaction) => {
+    if (!map.value) return
+    map.value.metadata = appendAbilityAutomationLogEntry(map.value.metadata, transaction, {
       now,
       maxLogEntries,
     })
@@ -639,6 +655,30 @@ export const useMoveAutomationPanel = ({
     if (prompts.length) moxieTriggerPrompts.value = [...moxieTriggerPrompts.value, ...prompts]
   }
 
+  const celebrateTriggerPromptsForTransaction = (
+    transaction: MoveAutomationTransaction,
+    script?: MoveAutomationScript,
+  ): MoveAutomationCelebratePrompt[] => {
+    const attacker = findSpawnedPokemon(transaction.userId)
+    if (!attacker || !script?.damaging) return []
+
+    const hitTargets = (transaction.hitTargetIds ?? [])
+      .map((id) => findSpawnedPokemon(id))
+      .filter((token): token is SpawnedPokemon => Boolean(token))
+
+    return buildCelebrateTriggerPrompts({
+      attacker,
+      moveName: transaction.moveName,
+      damaging: script.damaging,
+      hitTargets,
+      existingPrompts: celebrateTriggerPrompts.value,
+    })
+  }
+
+  const queueCelebrateTriggerPrompts = (prompts: readonly MoveAutomationCelebratePrompt[]) => {
+    if (prompts.length) celebrateTriggerPrompts.value = [...celebrateTriggerPrompts.value, ...prompts]
+  }
+
   const dismissSpiteReactionPrompt = (id: string) => {
     spiteReactionPrompts.value = spiteReactionPrompts.value.filter((prompt) => prompt.id !== id)
   }
@@ -689,6 +729,23 @@ export const useMoveAutomationPanel = ({
     dismissMoxieTriggerPrompt(id)
   }
 
+  const dismissCelebrateTriggerPrompt = (id: string) => {
+    celebrateTriggerPrompts.value = celebrateTriggerPrompts.value.filter((prompt) => prompt.id !== id)
+  }
+
+  const applyCelebrateTriggerPrompt = (id: string) => {
+    const prompt = celebrateTriggerPrompts.value.find((item) => item.id === id)
+    if (!prompt) return
+
+    const attacker = findSpawnedPokemon(prompt.attackerId)
+    const firstHitTarget = prompt.hitTargetIds
+      .map((targetId) => findSpawnedPokemon(targetId))
+      .find((target): target is SpawnedPokemon => Boolean(target)) ?? null
+    const transaction = attacker ? buildCelebrateTriggerTransaction(attacker, firstHitTarget) : null
+    if (transaction) appendAbilityAutomationLog(transaction)
+    dismissCelebrateTriggerPrompt(id)
+  }
+
   const faceTokenForTransaction = (transaction: MoveAutomationTransaction) => {
     const user = findSpawnedPokemon(transaction.userId)
     if (!user) return
@@ -708,11 +765,12 @@ export const useMoveAutomationPanel = ({
 
   const applyMoveAutomation = async (
     transaction: MoveAutomationTransaction,
-    options: { updateFacing?: boolean } = {},
+    options: { updateFacing?: boolean; script?: MoveAutomationScript } = {},
   ) => {
     if (!map.value || !canControlPlacement(transaction.userId)) return
     if (options.updateFacing !== false) faceTokenForTransaction(transaction)
     const moxiePrompts = moxieTriggerPromptsForTransaction(transaction)
+    const celebratePrompts = celebrateTriggerPromptsForTransaction(transaction, options.script)
     for (const update of transaction.hpUpdates) await modifyHp(update, { allowAnyTarget: true })
     for (const update of transaction.combatStageUpdates) await modifyCombatStages(update, { allowAnyTarget: true })
     for (const update of transaction.conditionUpdates) await modifyConditions(update, { allowAnyTarget: true })
@@ -722,6 +780,7 @@ export const useMoveAutomationPanel = ({
     }
     appendMoveAutomationLog(transaction)
     queueMoxieTriggerPrompts(moxiePrompts)
+    queueCelebrateTriggerPrompts(celebratePrompts)
     queueCuteCharmReactionPrompts(transaction)
     queueSpiteReactionPrompts(transaction)
   }
@@ -735,6 +794,7 @@ export const useMoveAutomationPanel = ({
   const showMoveAutomationResolution = (
     feedback: MoveAutomationFeedbackState,
     transaction: MoveAutomationTransaction,
+    options: { script?: MoveAutomationScript } = {},
   ) => {
     clearFeedbackTimers()
 
@@ -745,7 +805,7 @@ export const useMoveAutomationPanel = ({
     const applyTransactionOnce = () => {
       if (transactionApplied) return
       transactionApplied = true
-      void applyMoveAutomation(transaction)
+      void applyMoveAutomation(transaction, { script: options.script })
     }
     const setFeedbackPhase = (phase: MoveAutomationFeedbackState['phase']): boolean => {
       if (!feedbackStillCurrent()) return false
@@ -837,7 +897,7 @@ export const useMoveAutomationPanel = ({
       conditionImmunityContext: { sweetVeilProviders: spawnedPokemon.value },
     })
     activeMoveTargeting.value = null
-    await applyMoveAutomation(transaction, { updateFacing: !request.direction })
+    await applyMoveAutomation(transaction, { updateFacing: !request.direction, script: request.script })
   }
 
   const selectMoveAutomationTarget = async (targetId: string) => {
@@ -877,7 +937,7 @@ export const useMoveAutomationPanel = ({
         conditionImmunityContext: { sweetVeilProviders: spawnedPokemon.value },
       })
       activeMoveTargeting.value = null
-      await applyMoveAutomation(transaction)
+      await applyMoveAutomation(transaction, { script: request.script })
       return
     }
 
@@ -890,7 +950,7 @@ export const useMoveAutomationPanel = ({
       conditionImmunityContext: { sweetVeilProviders: spawnedPokemon.value },
     })
     activeMoveTargeting.value = null
-    showMoveAutomationResolution(result.feedback, result.transaction)
+    showMoveAutomationResolution(result.feedback, result.transaction, { script: request.script })
   }
 
   onBeforeUnmount(clearFeedbackTimers)
@@ -902,6 +962,7 @@ export const useMoveAutomationPanel = ({
     spiteReactionPrompts,
     cuteCharmReactionPrompts,
     moxieTriggerPrompts,
+    celebrateTriggerPrompts,
     tokenMoveOptionsById,
     openMoveAutomation,
     cancelMoveAutomationTargeting,
@@ -913,6 +974,8 @@ export const useMoveAutomationPanel = ({
     applyCuteCharmReactionPrompt,
     dismissMoxieTriggerPrompt,
     applyMoxieTriggerPrompt,
+    dismissCelebrateTriggerPrompt,
+    applyCelebrateTriggerPrompt,
     appendMoveAutomationLog,
     applyMoveAutomation,
   }
