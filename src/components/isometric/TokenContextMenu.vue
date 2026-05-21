@@ -448,14 +448,9 @@ watch(orders, (nextOrders) => {
             >
               <span class="action-submenu__name">{{ ability.name }}</span>
               <span class="action-submenu__badges">
-                <span
-                  v-if="ability.automation"
-                  class="action-submenu__badge"
-                  :class="`action-submenu__badge--${ability.automation.category}`"
-                >
-                  {{ ability.automation.label }}
+                <span v-if="!ability.automation" class="action-submenu__badge action-submenu__badge--disabled">
+                  Not Implemented
                 </span>
-                <span v-else class="action-submenu__badge">Manual</span>
                 <span v-if="ability.activated" class="action-submenu__badge action-submenu__badge--active">Active</span>
               </span>
             </button>
