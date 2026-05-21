@@ -11,6 +11,10 @@ import {
   struggleDamageBaseForCombatRank,
   struggleDamageRollForCombatRank,
 } from '~/utils/struggleMoves'
+import {
+  isPokemonLoyaltyDamageBaseMove,
+  pokemonLoyaltyDamageBase,
+} from '~/utils/sheets/pokemonLoyalty'
 import type { CharacterSheetMove } from '~/types/characterSheet'
 import type { MoveAutomationScript } from '~/types/moveAutomation'
 import type { SpawnedPokemon } from '~/types/pokemon'
@@ -31,6 +35,8 @@ export interface MoveAutomationMoveEntryOptions {
   stabTypes?: readonly string[]
   /** Rank value for Combat Skill (Pathetic=1 … Master=6), used by Struggle Attacks. */
   combatSkillRankValue?: number | null
+  /** Pokémon Loyalty rank (0–6), used by Return and Frustration. */
+  loyalty?: number | null
 }
 
 const moveWithStruggleCombatSkill = (
@@ -58,19 +64,59 @@ const scriptWithStruggleCombatSkill = (
   }
 }
 
-export const moveLikeForSheetMove = (
+const moveWithLoyaltyDamageBase = (
+  move: MoveAutomationMoveLike,
+  loyalty: number | null | undefined,
+): MoveAutomationMoveLike => {
+  const damageBase = pokemonLoyaltyDamageBase(move.name, loyalty)
+  return damageBase == null ? move : { ...move, damage_base: damageBase, damage_roll: null }
+}
+
+const baseMoveLikeForSheetMove = (
   sheetMove: MoveAutomationSheetMove,
   options: MoveAutomationMoveEntryOptions = {},
 ): MoveAutomationMoveLike => {
   const canonical = findMove(sheetMove.name)
-  const move = moveWithStruggleCombatSkill(canonical ?? sheetMoveToMoveLike(sheetMove), options.combatSkillRankValue)
-  const hasStab = hasSameTypeAttackBonus(move, options.stabTypes)
-  if (!hasStab || move.damage_base == null) return move
+  return moveWithLoyaltyDamageBase(
+    moveWithStruggleCombatSkill(canonical ?? sheetMoveToMoveLike(sheetMove), options.combatSkillRankValue),
+    options.loyalty,
+  )
+}
+
+const moveLikeWithSameTypeAttackBonus = (
+  move: MoveAutomationMoveLike,
+  stabTypes: readonly string[] | undefined,
+): { move: MoveAutomationMoveLike; hasStab: boolean } => {
+  const hasStab = hasSameTypeAttackBonus(move, stabTypes)
+  if (!hasStab || move.damage_base == null) return { move, hasStab }
   return {
-    ...move,
-    damage_base: move.damage_base + 2,
-    damage_roll: null,
+    move: {
+      ...move,
+      damage_base: move.damage_base + 2,
+      damage_roll: null,
+    },
+    hasStab,
   }
+}
+
+const scriptWithBaseMoveDamage = (
+  script: MoveAutomationScript,
+  move: MoveAutomationMoveLike,
+): MoveAutomationScript => {
+  if (move.damage_base == null || script.damageBase === move.damage_base) return script
+  return {
+    ...script,
+    damaging: script.damageClass !== 'Status' && script.damageClass !== 'Static',
+    damageBase: move.damage_base,
+  }
+}
+
+export const moveLikeForSheetMove = (
+  sheetMove: MoveAutomationSheetMove,
+  options: MoveAutomationMoveEntryOptions = {},
+): MoveAutomationMoveLike => {
+  const { move } = moveLikeWithSameTypeAttackBonus(baseMoveLikeForSheetMove(sheetMove, options), options.stabTypes)
+  return move
 }
 
 export const buildMoveAutomationMoveEntries = (
@@ -79,17 +125,20 @@ export const buildMoveAutomationMoveEntries = (
 ): MoveAutomationMoveEntry[] => moves
   .filter((move) => move.name?.trim())
   .flatMap((sheetMove) => {
-    const move = moveLikeForSheetMove(sheetMove, options)
+    const baseMove = baseMoveLikeForSheetMove(sheetMove, options)
+    if (isPokemonLoyaltyDamageBaseMove(baseMove.name) && baseMove.damage_base == null) return []
+
+    const { move, hasStab } = moveLikeWithSameTypeAttackBonus(baseMove, options.stabTypes)
     const explicitScript = explicitScriptForMove(move.name)
     if (!explicitScript) return []
 
-    const hasStab = hasSameTypeAttackBonus(move, options.stabTypes)
-    const dynamicExplicitScript = Boolean(explicitScript.dynamicDamageBase)
-    const baseScript = hasStab && explicitScript.damageBase != null
+    const damageScript = scriptWithBaseMoveDamage(explicitScript, baseMove)
+    const dynamicExplicitScript = Boolean(damageScript.dynamicDamageBase)
+    const baseScript = hasStab && damageScript.damageBase != null
       ? dynamicExplicitScript
-        ? { ...explicitScript, stabDamageBaseBonus: 2 }
-        : { ...explicitScript, damageBase: explicitScript.damageBase + 2 }
-      : explicitScript
+        ? { ...damageScript, stabDamageBaseBonus: 2 }
+        : { ...damageScript, damageBase: damageScript.damageBase + 2 }
+      : damageScript
     const script = scriptWithStruggleCombatSkill(baseScript, options.combatSkillRankValue)
     return [{
       label: move.name,

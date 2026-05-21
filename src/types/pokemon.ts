@@ -220,6 +220,8 @@ export interface SpawnedPokemon extends PokemonCatalogEntry {
   level: number
   /** Gender/sex copied from the source sheet, used by attraction-based automation. */
   gender?: string
+  /** PTU Loyalty rank copied from the source Pokémon sheet, used by Return and Frustration. */
+  loyalty?: number
   /** Snapshot of the sheet's current HP at spawn time. */
   currentHp: number
   /** Snapshot of the sheet's computed injury-adjusted max HP / healing cap. */

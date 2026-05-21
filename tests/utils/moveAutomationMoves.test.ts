@@ -84,6 +84,26 @@ describe('move automation move helpers', () => {
     expect(entry.move.damage_roll).toBeNull()
   })
 
+  it('uses Pokémon Loyalty for Return and Frustration automation scripts', () => {
+    const entries = buildMoveAutomationMoveEntries([
+      { name: 'Return' },
+      { name: 'Frustration' },
+    ], { loyalty: 4 })
+
+    expect(entries.find((entry) => entry.move.name === 'Return')?.script).toMatchObject({
+      damaging: true,
+      damageBase: 7,
+    })
+    expect(entries.find((entry) => entry.move.name === 'Frustration')?.script).toMatchObject({
+      damaging: true,
+      damageBase: 5,
+    })
+  })
+
+  it('skips loyalty-based automation scripts until Loyalty is set', () => {
+    expect(buildMoveAutomationMoveEntries([{ name: 'Return' }])).toEqual([])
+  })
+
   it('defers STAB for dynamic Damage Base move scripts', () => {
     const [entry] = buildMoveAutomationMoveEntries([{ name: 'Fury Attack' }], { stabTypes: ['Normal'] })
 

@@ -318,6 +318,7 @@ export const useMoveAutomationPanel = ({
     const entry = buildMoveAutomationMoveEntries(moves, {
       stabTypes: user.sheetKind === 'pokemon' ? user.defenderTypes : [],
       combatSkillRankValue: user.combatSkillRankValue,
+      loyalty: user.sheetKind === 'pokemon' ? user.loyalty : undefined,
     }).find((candidate) =>
       candidate.move.name.toLowerCase() === normalizedMoveName
         || candidate.sheetMove.name.toLowerCase() === normalizedMoveName,

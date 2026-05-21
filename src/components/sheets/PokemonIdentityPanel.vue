@@ -2,6 +2,11 @@
 import { computed } from 'vue'
 import type { CharacterSheet } from '~/types/characterSheet'
 import { pokedexEntryPathForSpecies } from '~/utils/pokedex/routes'
+import {
+  POKEMON_LOYALTY_MAX,
+  POKEMON_LOYALTY_MIN,
+  normalizePokemonLoyalty,
+} from '~/utils/sheets/pokemonLoyalty'
 
 const eggGroupsCsv = defineModel<string>('eggGroupsCsv', { required: true })
 
@@ -20,6 +25,14 @@ const props = defineProps<{
 }>()
 
 const pokedexPath = computed(() => pokedexEntryPathForSpecies(props.sheet.species))
+const loyaltyModel = computed({
+  get: () => props.sheet.loyalty,
+  set: (value: unknown) => {
+    const loyalty = normalizePokemonLoyalty(value)
+    if (loyalty == null) delete props.sheet.loyalty
+    else props.sheet.loyalty = loyalty
+  },
+})
 
 </script>
 
@@ -105,6 +118,18 @@ const pokedexPath = computed(() => pokedexEntryPathForSpecies(props.sheet.specie
               type="select"
               :options="genderOptions"
               placeholder="—"
+            />
+          </dd>
+        </div>
+        <div v-if="isGm" title="GM-only PTU Loyalty rank">
+          <dt>Loyalty</dt>
+          <dd>
+            <EditableCell
+              v-model="loyaltyModel"
+              type="number"
+              :min="POKEMON_LOYALTY_MIN"
+              :max="POKEMON_LOYALTY_MAX"
+              placeholder="0–6"
             />
           </dd>
         </div>

@@ -4,6 +4,7 @@ import { resolvePokemonOtherCapabilities } from '~/utils/sheets/pokemonCapabilit
 import { resolveMoveGrantedCapabilities } from '~/utils/sheets/pokemonMoveGrantedCapabilities'
 import { makeAutomaticStruggleMoves } from '~/utils/struggleMoves'
 import { makeMoveLookupRows, type MoveLookupRow } from '~/utils/sheetMoveLookup'
+import { isPokemonLoyaltyDamageBaseMove } from '~/utils/sheets/pokemonLoyalty'
 import { moveConditionUseBlock, type MoveConditionUseBlock } from '~/utils/moveConditionRestrictions'
 import {
   eotMoveUsageState,
@@ -128,8 +129,11 @@ const fallback = <T>(...values: T[]): NonNullable<T> | null => {
   return null
 }
 
-const moveHasAutomationScript = (row: MoveLookupRow<TokenSheetMove>): boolean =>
-  Boolean(explicitScriptForMove(row.reference?.name ?? row.move.name) ?? explicitScriptForMove(row.move.name))
+const moveHasAutomationScript = (row: MoveLookupRow<TokenSheetMove>): boolean => {
+  const moveName = row.reference?.name ?? row.move.name
+  if (isPokemonLoyaltyDamageBaseMove(moveName) && row.damageBase == null) return false
+  return Boolean(explicitScriptForMove(moveName) ?? explicitScriptForMove(row.move.name))
+}
 
 const usageLimitTitle = (
   moveName: string,
@@ -274,6 +278,7 @@ export const buildTokenMoveMenuOptions = (
     specialAttackStage: token.combatStages.satk,
     abilities: token.abilityNames,
     combatSkillRankValue: token.combatSkillRankValue,
+    loyalty: token.sheetKind === 'pokemon' ? token.loyalty : undefined,
   })
   return rows
     .map((row, index) => ({ row, automatic: entries[index]?.automatic ?? false }))

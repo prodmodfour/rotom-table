@@ -162,6 +162,8 @@ export interface CharacterSheet {
   /** Legacy/manual cache. The sheet UI derives this from totalExp and the PTU experience chart. */
   toNextLevel?: number
   gender?: 'Male' | 'Female' | 'Genderless' | string
+  /** PTU Loyalty rank, normally tracked by the GM, from 0 to 6. */
+  loyalty?: number
   shiny?: boolean
   /** Marks this sheet as a player-controlled character. */
   player?: boolean

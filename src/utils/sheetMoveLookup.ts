@@ -9,6 +9,7 @@ import {
   struggleAccuracyForCombatRank,
   struggleDamageBaseForCombatRank,
 } from '~/utils/struggleMoves'
+import { pokemonLoyaltyDamageBase } from '~/utils/sheets/pokemonLoyalty'
 import type { CharacterSheetMove } from '~/types/characterSheet'
 import type { PtuMove } from '~/types/ptuReference'
 import type { TrainerMove } from '~/types/trainerSheet'
@@ -20,6 +21,8 @@ export interface MoveLookupOptions extends SheetMoveAttackStatOptions {
   stabTypes?: readonly string[]
   /** Rank value for Combat Skill (Pathetic=1 … Master=6), used by Struggle Attacks. */
   combatSkillRankValue?: number | null
+  /** Pokémon Loyalty rank (0–6), used by Return and Frustration. */
+  loyalty?: number | null
 }
 
 export interface MoveLookupRow<T extends SheetMoveLike> {
@@ -108,13 +111,15 @@ const effectiveMoveDamageBase = (
   reference: PtuMove | null,
   options: MoveLookupOptions,
 ): { damageBase: number | null; hasStab: boolean } => {
+  const moveName = reference?.name ?? move.name
+  const loyaltyDamageBase = pokemonLoyaltyDamageBase(moveName, options.loyalty)
   const base = struggleDamageBaseForCombatRank(
-    reference?.name ?? move.name,
-    reference?.damage_base ?? move.db ?? null,
+    moveName,
+    loyaltyDamageBase ?? reference?.damage_base ?? move.db ?? null,
     options.combatSkillRankValue,
   )
   const damageLike: MoveDamageLike = {
-    name: reference?.name ?? move.name,
+    name: moveName,
     type: reference?.type ?? move.type,
     damage_base: base,
     damage_class: reference?.damage_class ?? move.category ?? null,

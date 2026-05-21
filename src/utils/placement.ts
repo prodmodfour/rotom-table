@@ -62,6 +62,7 @@ export const placementToSpawned = (
       sheetSlug: sheet.slug,
       level: sheet.level,
       ...(sheet.gender ? { gender: sheet.gender } : {}),
+      ...(hp.loyalty != null ? { loyalty: hp.loyalty } : {}),
       currentHp: hp.currentHp,
       maxHp: hp.maxHp,
       fullMaxHp: hp.fullMaxHp,

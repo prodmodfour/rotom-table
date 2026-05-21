@@ -29,6 +29,7 @@ import {
   pokemonTrainingFeatureAccuracyRollBonus,
 } from '~/utils/sheets/pokemonTrainingFeatures'
 import { adjustedSheetMovementCapabilityValue } from '~/utils/sheets/movementCapabilityAdjustments'
+import { normalizePokemonLoyalty } from '~/utils/sheets/pokemonLoyalty'
 import { movementCapabilityKeyFromLabel, normalizeMovementCapabilitySpeed } from '~/utils/movementCapabilities'
 import type { CharacterSheet, CharacterSheetSkills } from '~/types/characterSheet'
 import type { CombatStageMap } from '~/types/combatStages'
@@ -159,6 +160,7 @@ export const pokemonHpSnapshot = (
   focusSkillRankValue?: number
   combatStages: CombatStageMap
   conditions: string[]
+  loyalty?: number
   activeTrainingFeature?: string
   accuracyRollBonus?: number
 } => {
@@ -196,6 +198,7 @@ export const pokemonHpSnapshot = (
     activeTrainingFeature,
     combatStages.spd,
   )
+  const loyalty = normalizePokemonLoyalty(sheet.loyalty)
   return {
     currentHp,
     maxHp,
@@ -214,6 +217,7 @@ export const pokemonHpSnapshot = (
     focusSkillRankValue: pokemonSkillRankValue(skillRows, 'focus'),
     combatStages,
     conditions,
+    ...(loyalty != null ? { loyalty } : {}),
     ...(activeTrainingFeature ? { activeTrainingFeature } : {}),
     ...(accuracyRollBonus ? { accuracyRollBonus } : {}),
   }

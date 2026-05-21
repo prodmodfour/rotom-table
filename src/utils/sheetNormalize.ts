@@ -10,6 +10,7 @@
 import type { CharacterSheet, StatKey } from '~/types/characterSheet'
 import type { TrainerSheet, TrainerStatKey } from '~/types/trainerSheet'
 import { mergeLegacyConditions } from '~/utils/statusConditions'
+import { normalizePokemonLoyalty } from '~/utils/sheets/pokemonLoyalty'
 
 const STAT_KEYS: StatKey[] = ['hp', 'atk', 'def', 'satk', 'sdef', 'spd']
 const TRAINER_STAT_KEYS: TrainerStatKey[] = ['hp', 'atk', 'def', 'satk', 'sdef', 'spd']
@@ -28,6 +29,9 @@ const ensureArr = <T>(host: any, key: string): T[] => {
 
 export const normalizeCharacterSheet = (sheet: CharacterSheet): CharacterSheet => {
   if (typeof sheet.player !== 'boolean') sheet.player = false
+  const loyalty = normalizePokemonLoyalty(sheet.loyalty)
+  if (loyalty == null) delete sheet.loyalty
+  else sheet.loyalty = loyalty
 
   // Headline stats — give every key an entry so the stats table is editable.
   const stats = ensureObj<NonNullable<CharacterSheet['stats']>>(sheet, 'stats')

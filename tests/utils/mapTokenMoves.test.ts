@@ -60,6 +60,31 @@ describe('map token move menu options', () => {
     expect(move.damageFormula).toBe('2d6+8+14')
   })
 
+  it('uses token Loyalty for Return and Frustration menu Damage Bases', () => {
+    const moves = buildTokenMoveMenuOptions(token({ loyalty: 4, defenderTypes: [] }), [
+      { move: { name: 'Return' }, automatic: false },
+      { move: { name: 'Frustration' }, automatic: false },
+    ])
+
+    expect(moves.find((move) => move.name === 'Return')).toMatchObject({
+      damageBase: 7,
+      hasAutomationScript: true,
+    })
+    expect(moves.find((move) => move.name === 'Frustration')).toMatchObject({
+      damageBase: 5,
+      hasAutomationScript: true,
+    })
+  })
+
+  it('marks loyalty-based moves unscripted until Loyalty is set', () => {
+    const [move] = buildTokenMoveMenuOptions(token({ defenderTypes: [] }), [
+      { move: { name: 'Return' }, automatic: false },
+    ])
+
+    expect(move.damageBase).toBeNull()
+    expect(move.hasAutomationScript).toBe(false)
+  })
+
   it('includes reference special text in move menu options', () => {
     const [move] = buildTokenMoveMenuOptions(token({ defenderTypes: ['Fire'] }), [
       { move: { name: 'Ember' }, automatic: false },

@@ -177,6 +177,24 @@ describe('usePokemonSheetDerived', () => {
     expect(inspired.pokemonEvasion.value.vsAny.total).toBe(Math.min(9, untrained.pokemonEvasion.value.vsAny.total + 1))
   })
 
+  it('uses Pokémon Loyalty for Return and Frustration Damage Bases', () => {
+    const sheet = ref<CharacterSheet | null>(makeSheet({
+      loyalty: 4,
+      items: {},
+      movelist: [{ name: 'Return' }, { name: 'Frustration' }],
+      stats: { atk: { added: 10 } },
+    }))
+    const derived = usePokemonSheetDerived(sheet)
+
+    expect(derived.moveRows.value.find((moveRow) => moveRow.move.name === 'Return')).toMatchObject({
+      damageBase: 7,
+      damageFormula: `2d6+10+${derived.attackTotal.value}`,
+    })
+    expect(derived.moveRows.value.find((moveRow) => moveRow.move.name === 'Frustration')).toMatchObject({
+      damageBase: 5,
+    })
+  })
+
   it('applies Weird Power to Pokémon sheet move damage formulas', () => {
     const sheet = ref<CharacterSheet | null>(makeSheet({
       abilities: [{ name: 'Weird Power' }],
