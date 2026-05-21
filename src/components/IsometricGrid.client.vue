@@ -311,6 +311,26 @@ const {
 const selectedPokemon = computed(
   () => props.pokemons.find((pokemon) => pokemon.id === props.selectedId) ?? null,
 )
+
+const emptyMovementPreview = (): PreviewState => ({ position: null, reachable: false, pathLength: 0 })
+const movementPreviewState = ref<PreviewState>(emptyMovementPreview())
+const emitMovementPreviewChange = (preview: PreviewState) => {
+  movementPreviewState.value = preview
+  emit('preview-change', preview)
+}
+const movementPreviewHud = computed(() => {
+  const preview = movementPreviewState.value
+  if (!selectedPokemon.value || activeSendOutRequest.value || props.moveAutomationTargeting) return null
+  if (!preview.position || preview.pathLength <= 0) return null
+
+  return {
+    reachable: preview.reachable,
+    distance: preview.movementDistance ?? preview.pathLength,
+    limit: preview.movementLimit,
+    capabilityLabel: preview.movementCapabilityLabel ?? 'Movement',
+    failureReason: preview.movementFailureReason,
+  }
+})
 const conditionMoveOptions = computed(() => conditionsDialog.value
   ? props.tokenMoveOptionsById?.[conditionsDialog.value.id]?.map((move) => move.name) ?? []
   : [])
@@ -706,13 +726,13 @@ const movementInteraction = createIsometricTokenMovementInteractionController({
   getSelectedPokemon: () => selectedPokemon.value,
   getPokemons: () => props.pokemons,
   getDimensions: () => props.dimensions,
-  getMapMovementOccupancy: () => mapMovementOccupancy.value,
+  getMapVoxels: () => renderedTerrainVoxels.value,
   getPreviewLayerY,
   getGroundLevelY: normalizedGroundLevelY,
   getCamera: () => camera,
   getMoveGridIntersection,
   previewRenderer: tokenMovePreviewRenderer,
-  emitPreviewChange: (preview) => emit('preview-change', preview),
+  emitPreviewChange: emitMovementPreviewChange,
   movePokemon: (payload) => emit('move-pokemon', payload),
 })
 const ensurePreviewObjects = movementInteraction.ensurePreviewObjects
@@ -1183,6 +1203,25 @@ useIsometricSceneWatchers({
 
 <template>
   <div ref="container" class="scene-root">
+    <div
+      v-if="movementPreviewHud"
+      class="movement-preview-hud"
+      :class="{ 'is-unreachable': !movementPreviewHud.reachable }"
+      aria-live="polite"
+    >
+      <strong>Movement</strong>
+      <span>
+        {{ movementPreviewHud.distance }}m
+        <template v-if="movementPreviewHud.limit != null">
+          / {{ movementPreviewHud.limit }}m
+        </template>
+        · {{ movementPreviewHud.capabilityLabel }}
+      </span>
+      <small v-if="movementPreviewHud.failureReason">
+        {{ movementPreviewHud.failureReason }}
+      </small>
+    </div>
+
     <div v-if="props.moveAutomationTargeting" class="move-targeting-hud" @contextmenu.prevent>
       <div class="move-targeting-hud__copy">
         <strong>{{ props.moveAutomationTargeting.moveName }}</strong>
@@ -1385,6 +1424,46 @@ useIsometricSceneWatchers({
   min-height: 100vh;
   overflow: hidden;
   background: var(--paper);
+}
+
+.movement-preview-hud {
+  position: absolute;
+  z-index: 10;
+  top: 1rem;
+  left: 50%;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  max-width: min(96vw, 620px);
+  padding: 0.58rem 0.78rem;
+  border: 1px solid color-mix(in srgb, var(--good) 62%, var(--rule-strong));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--paper) 91%, transparent);
+  box-shadow: 0 18px 46px rgba(0, 0, 0, 0.32);
+  color: var(--ink);
+  font-size: 0.82rem;
+  font-weight: 850;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.movement-preview-hud strong {
+  color: var(--good);
+}
+
+.movement-preview-hud small {
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.movement-preview-hud.is-unreachable {
+  border-color: color-mix(in srgb, var(--bad) 70%, var(--rule-strong));
+}
+
+.movement-preview-hud.is-unreachable strong,
+.movement-preview-hud.is-unreachable small {
+  color: var(--bad);
 }
 
 .move-targeting-hud {

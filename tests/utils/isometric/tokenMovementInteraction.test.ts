@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createIsometricTokenMovementInteractionController } from '~/utils/isometric/tokenMovementInteraction'
+import type { MapVoxelV2 } from '~/types/map'
 import type { GridDimensions, SpawnedPokemon } from '~/types/pokemon'
 
 const makePokemon = (overrides: Partial<SpawnedPokemon> = {}): SpawnedPokemon => ({
@@ -24,6 +25,7 @@ const makePokemon = (overrides: Partial<SpawnedPokemon> = {}): SpawnedPokemon =>
   def: 5,
   sdef: 5,
   defenderTypes: [],
+  movementCapabilities: { overland: 6 },
   combatStages: { atk: 0, def: 0, satk: 0, sdef: 0, spd: 0, acc: 0 },
   conditions: [],
   tokenItems: [],
@@ -36,7 +38,7 @@ const makeController = () => {
   const selected = makePokemon()
   const dimensions: GridDimensions = { x: 5, y: 3, z: 5 }
   const pokemons = [selected]
-  const occupancy = new Set<string>()
+  const voxels: MapVoxelV2[] = []
   const renderer = {
     ensure: vi.fn(),
     update: vi.fn(() => true),
@@ -53,7 +55,7 @@ const makeController = () => {
     getSelectedPokemon: () => selectedState.value,
     getPokemons: () => pokemons,
     getDimensions: () => dimensions,
-    getMapMovementOccupancy: () => occupancy,
+    getMapVoxels: () => voxels,
     getPreviewLayerY: () => previewLayerY.value,
     getGroundLevelY: () => 0,
     getCamera: () => null,
@@ -70,7 +72,7 @@ const makeController = () => {
     previewLayerY,
     dimensions,
     pokemons,
-    occupancy,
+    voxels,
     renderer,
     emitPreviewChange,
     movePokemon,
@@ -94,10 +96,12 @@ describe('isometric token movement interaction', () => {
       groundLevelY: 0,
       camera: null,
     }))
-    expect(controller.preview()).toEqual({
+    expect(controller.preview()).toMatchObject({
       position: { x: 2, y: 0, z: 2 },
       reachable: true,
-      pathLength: expect.any(Number),
+      pathLength: 3,
+      movementLimit: 6,
+      movementCapabilityLabel: 'Overland',
     })
     expect(emitPreviewChange).toHaveBeenLastCalledWith(controller.preview())
   })
@@ -135,7 +139,7 @@ describe('isometric token movement interaction', () => {
     expect(movePokemon).not.toHaveBeenCalled()
   })
 
-  it('commits a selected move only when the active preview is placeable', () => {
+  it('commits a selected move only when the active preview is placeable and within capability', () => {
     const { controller, movePokemon } = makeController()
 
     expect(controller.performSelectedMove()).toBe(false)
@@ -146,8 +150,27 @@ describe('isometric token movement interaction', () => {
     expect(movePokemon).toHaveBeenCalledWith({ id: 'token-a', position: { x: 1, y: 0, z: 1 } })
   })
 
-  it('steps preview elevation within map bounds', () => {
-    const { controller, renderer } = makeController()
+  it('rejects movement previews that exceed the active movement capability', () => {
+    const { controller, selected, movePokemon } = makeController()
+    selected.movementCapabilities = { overland: 2 }
+
+    controller.updatePreviewAtAnchor({ x: 2, y: 0, z: 2 })
+
+    expect(controller.preview()).toMatchObject({
+      position: { x: 2, y: 0, z: 2 },
+      reachable: false,
+      pathLength: 3,
+      movementLimit: 2,
+      movementCapabilityLabel: 'Overland',
+    })
+    expect(controller.canPlacePreview()).toBe(false)
+    expect(controller.performSelectedMove()).toBe(false)
+    expect(movePokemon).not.toHaveBeenCalled()
+  })
+
+  it('steps preview elevation within map bounds for aerial movement', () => {
+    const { controller, renderer, selected } = makeController()
+    selected.movementCapabilities = { overland: 6, sky: 6 }
 
     expect(controller.stepPreviewElevation(-1)).toBe(true)
     expect(renderer.update).toHaveBeenLastCalledWith(expect.objectContaining({

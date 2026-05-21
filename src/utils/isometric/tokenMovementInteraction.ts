@@ -1,8 +1,12 @@
 import type * as THREE from 'three'
 import type { GridAnchor, GridDimensions, SpawnedPokemon } from '~/types/pokemon'
+import type { MapVoxelV2 } from '~/types/map'
 import type { PreviewState } from '~/utils/gridPreview'
 import { canPlacePokemon } from '~/utils/gridPlacement'
-import { findPathForPokemon } from '~/utils/gridPathfinding'
+import {
+  findMovementPathForPokemon,
+  movementPathFailureMessage,
+} from '~/utils/mapMovementPathfinding'
 import {
   EMPTY_MOVE_PREVIEW,
   getMovePreviewAnchor,
@@ -30,7 +34,7 @@ export interface TokenMovementInteractionDependencies {
   getSelectedPokemon: () => SpawnedPokemon | null
   getPokemons: () => SpawnedPokemon[]
   getDimensions: () => GridDimensions
-  getMapMovementOccupancy: () => ReadonlySet<string>
+  getMapVoxels: () => readonly MapVoxelV2[]
   getPreviewLayerY: () => number
   getGroundLevelY: () => number
   getCamera: () => THREE.Camera | null
@@ -84,9 +88,6 @@ export const createIsometricTokenMovementInteractionController = (
       return
     }
 
-    // Destination placement ignores terrain occupancy so the table can be used
-    // as a free-positioning tool, but pathfinding below still treats terrain as
-    // blocking and therefore won't show a legal route through/into blocks.
     const canForcePlace = canPlacePokemon(
       selected,
       anchor,
@@ -94,18 +95,20 @@ export const createIsometricTokenMovementInteractionController = (
       dependencies.getDimensions(),
       selected.id,
     )
-    const path = canForcePlace
-      ? findPathForPokemon(
-          selected,
-          selected.position,
-          anchor,
-          dependencies.getPokemons(),
-          dependencies.getDimensions(),
-          selected.id,
-          dependencies.getMapMovementOccupancy(),
-        )
+    const movementPath = canForcePlace
+      ? findMovementPathForPokemon({
+          pokemon: selected,
+          start: selected.position,
+          goal: anchor,
+          pokemons: dependencies.getPokemons(),
+          dimensions: dependencies.getDimensions(),
+          exceptId: selected.id,
+          voxels: dependencies.getMapVoxels(),
+          groundLevelY: dependencies.getGroundLevelY(),
+        })
       : null
-    const reachable = Boolean(path)
+    const path = movementPath?.path ?? null
+    const reachable = Boolean(movementPath?.legal)
     const previewUpdated = dependencies.previewRenderer.update({
       pokemon: selected,
       anchor,
@@ -122,11 +125,20 @@ export const createIsometricTokenMovementInteractionController = (
     }
 
     activePreviewAnchor = anchor
-    activePreviewCanPlace = canForcePlace
+    activePreviewCanPlace = canForcePlace && reachable
     activePreview = {
       position: anchor,
       reachable,
-      pathLength: path ? Math.max(path.length - 1, 0) : 0,
+      pathLength: movementPath?.distance ?? 0,
+      ...(movementPath
+        ? {
+            movementDistance: movementPath.distance,
+            movementLimit: movementPath.movementLimit,
+            movementCapabilities: movementPath.capabilityLabels,
+            movementCapabilityLabel: movementPath.capabilityLabel,
+            movementFailureReason: movementPathFailureMessage(movementPath),
+          }
+        : {}),
     }
     emitPreview()
   }

@@ -11,8 +11,8 @@
  *      `resolveStats` / `computeMaxHp` (Pokémon) and the trainer equivalents.
  */
 import { getPokedexEntry } from '~~/data/characterSheets'
-import { computeFullMaxHp, computeMaxHp, resolveCapabilities, resolveSkills, resolveStats } from '~/utils/sheets/pokemonDerived'
-import { computeTrainerFullMaxHp, computeTrainerMaxHp, resolveTrainerCapabilities, resolveTrainerSkills, resolveTrainerStats } from '~/utils/sheets/trainerDerived'
+import { computeFullMaxHp, computeMaxHp, resolveCapabilities, resolveSkills, resolveStats, type ResolvedCapability } from '~/utils/sheets/pokemonDerived'
+import { computeTrainerFullMaxHp, computeTrainerMaxHp, resolveTrainerCapabilities, resolveTrainerSkills, resolveTrainerStats, type TrainerCapabilityRow } from '~/utils/sheets/trainerDerived'
 import { pokemonCatalog, pokemonCatalogBySpecies } from '~~/data/pokemonCatalog'
 import { trainerCatalog } from '~~/data/trainerCatalog'
 import { COMBAT_STAT_STAGE_KEYS, normalizeCombatStages } from '~/utils/combatStages'
@@ -28,8 +28,11 @@ import {
   normalizePokemonTrainingFeatureName,
   pokemonTrainingFeatureAccuracyRollBonus,
 } from '~/utils/sheets/pokemonTrainingFeatures'
+import { adjustedSheetMovementCapabilityValue } from '~/utils/sheets/movementCapabilityAdjustments'
+import { movementCapabilityKeyFromLabel, normalizeMovementCapabilitySpeed } from '~/utils/movementCapabilities'
 import type { CharacterSheet, CharacterSheetSkills } from '~/types/characterSheet'
 import type { CombatStageMap } from '~/types/combatStages'
+import type { MovementCapabilitySpeeds } from '~/types/movement'
 import type { PokemonCatalogEntry } from '~/types/pokemon'
 import type { TrainerSheet, TrainerSkillKey } from '~/types/trainerSheet'
 
@@ -42,7 +45,7 @@ const trainerCatalogByLowerName = new Map(
 )
 
 type DefenderCapabilities = { sky?: number; levitate?: number }
-type CapabilityNumberRow = { label: string; value: number | string }
+type CapabilityNumberRow = Pick<ResolvedCapability | TrainerCapabilityRow, 'label' | 'value'>
 
 const resolvedCapabilityNumber = (
   rows: readonly CapabilityNumberRow[],
@@ -66,11 +69,30 @@ const defenderCapabilitiesFromRows = (rows: readonly CapabilityNumberRow[]): Def
   return sky || levitate ? capabilities : undefined
 }
 
-const pokemonDefenderCapabilities = (sheet: CharacterSheet): DefenderCapabilities | undefined =>
-  defenderCapabilitiesFromRows(resolveCapabilities(sheet).rows)
+const movementCapabilitiesFromRows = (
+  rows: readonly CapabilityNumberRow[],
+  conditions: readonly string[] | null | undefined,
+  trainingFeature: unknown,
+  speedCombatStage: unknown,
+): MovementCapabilitySpeeds => {
+  const capabilities: MovementCapabilitySpeeds = {}
 
-const trainerDefenderCapabilities = (sheet: TrainerSheet): DefenderCapabilities | undefined =>
-  defenderCapabilitiesFromRows(resolveTrainerCapabilities(sheet).rows)
+  for (const row of rows) {
+    const key = movementCapabilityKeyFromLabel(row.label)
+    if (!key) continue
+    const adjustedValue = adjustedSheetMovementCapabilityValue(
+      row.label,
+      row.value,
+      conditions,
+      trainingFeature,
+      speedCombatStage,
+    )
+    const speed = normalizeMovementCapabilitySpeed(adjustedValue)
+    if (speed != null) capabilities[key] = speed
+  }
+
+  return capabilities
+}
 
 type ResolvedPokemonSkills = ReturnType<typeof resolveSkills>
 
@@ -131,6 +153,7 @@ export const pokemonHpSnapshot = (
   spd: number
   evasion: ReturnType<typeof pokemonEvasionModifiers>
   defenderTypes: string[]
+  movementCapabilities: MovementCapabilitySpeeds
   defenderCapabilities?: DefenderCapabilities
   combatSkillRankValue?: number
   focusSkillRankValue?: number
@@ -153,7 +176,8 @@ export const pokemonHpSnapshot = (
   const evasion = pokemonEvasionModifiers(sheet)
   const species = getPokedexEntry(sheet.species)
   const defenderTypes = sheet.types ?? species?.types ?? []
-  const defenderCapabilities = pokemonDefenderCapabilities(sheet)
+  const capabilityRows = resolveCapabilities(sheet).rows
+  const defenderCapabilities = defenderCapabilitiesFromRows(capabilityRows)
   const combatStages = normalizeCombatStages({
     atk: sheet.stats?.atk?.stage,
     def: sheet.stats?.def?.stage,
@@ -166,6 +190,12 @@ export const pokemonHpSnapshot = (
   const skillRows = resolveSkills(sheet)
   const activeTrainingFeature = normalizePokemonTrainingFeatureName(sheet.activeTrainingFeature) ?? undefined
   const accuracyRollBonus = pokemonTrainingFeatureAccuracyRollBonus(activeTrainingFeature)
+  const movementCapabilities = movementCapabilitiesFromRows(
+    capabilityRows,
+    conditions,
+    activeTrainingFeature,
+    combatStages.spd,
+  )
   return {
     currentHp,
     maxHp,
@@ -178,6 +208,7 @@ export const pokemonHpSnapshot = (
     spd,
     evasion,
     defenderTypes,
+    movementCapabilities,
     defenderCapabilities,
     combatSkillRankValue: pokemonSkillRankValue(skillRows, 'combat'),
     focusSkillRankValue: pokemonSkillRankValue(skillRows, 'focus'),
@@ -203,6 +234,7 @@ export const trainerHpSnapshot = (
   spd: number
   evasion: ReturnType<typeof trainerEvasionModifiers>
   defenderTypes: string[]
+  movementCapabilities: MovementCapabilitySpeeds
   defenderCapabilities?: DefenderCapabilities
   combatSkillRankValue?: number
   focusSkillRankValue?: number
@@ -220,13 +252,20 @@ export const trainerHpSnapshot = (
   const sdef = stats.find((row) => row.key === 'sdef')?.total ?? 0
   const spd = stats.find((row) => row.key === 'spd')?.total ?? 0
   const evasion = trainerEvasionModifiers(sheet)
-  const defenderCapabilities = trainerDefenderCapabilities(sheet)
+  const capabilityRows = resolveTrainerCapabilities(sheet).rows
+  const defenderCapabilities = defenderCapabilitiesFromRows(capabilityRows)
   const stageSource = Object.fromEntries(
     COMBAT_STAT_STAGE_KEYS.map((key) => [key, sheet.stats?.[key]?.stage ?? sheet.combatStages?.[key]]),
   )
   const combatStages = normalizeCombatStages({ ...stageSource, acc: sheet.combatStages?.acc })
   const conditions = mergeLegacyConditions(sheet.conditions, sheet.statusAfflictions)
   const skillRows = resolveTrainerSkills(sheet)
+  const movementCapabilities = movementCapabilitiesFromRows(
+    capabilityRows,
+    conditions,
+    undefined,
+    combatStages.spd,
+  )
   return {
     currentHp,
     maxHp,
@@ -239,6 +278,7 @@ export const trainerHpSnapshot = (
     spd,
     evasion,
     defenderTypes: [],
+    movementCapabilities,
     defenderCapabilities,
     combatSkillRankValue: trainerSkillRankValue(skillRows, 'combat'),
     focusSkillRankValue: trainerSkillRankValue(skillRows, 'focus'),

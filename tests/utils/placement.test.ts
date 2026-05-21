@@ -36,6 +36,7 @@ describe('placement helpers', () => {
     expect(spawned?.abilityNames).toEqual(['Levitate'])
     expect(spawned?.gender).toBe('Female')
     expect(spawned?.defenderCapabilities).toEqual({ levitate: 4 })
+    expect(spawned?.movementCapabilities).toMatchObject({ overland: 7, levitate: 4 })
     expect(spawned?.combatSkillRankValue).toBe(5)
     expect(spawned?.focusSkillRankValue).toBe(4)
     expect(spawned?.combatStages.acc).toBe(2)
