@@ -38,6 +38,20 @@ describe('sheet condition effects', () => {
     ]))
   })
 
+  it('applies Keen Eye to Accuracy and Blindness condition effects', () => {
+    expect(conditionAccuracyModifier(['Blindness'], { abilities: ['Keen Eye'] })).toBe(0)
+    expect(conditionAccuracyModifier(['Supersonic Accuracy Penalty'], { abilities: ['Keen Eye'] })).toBe(0)
+    expect(conditionAccuracyModifier(['Total Blindness'], { abilities: ['Keen Eye'] })).toBe(-10)
+    expect(conditionAdjustedAccuracy(-2, ['Blindness'], { abilities: ['Keen Eye'] })).toBe(0)
+    expect(evasionSuppressedByCondition(['Blindness'], { abilities: ['Keen Eye'] })).toBeNull()
+    expect(evasionSuppressedByCondition(['Total Blindness'], { abilities: ['Keen Eye'] })).toBe('Total Blindness')
+    expect(describeSheetConditionEffects(['Blindness', 'Supersonic Accuracy Penalty'], { abilities: ['Keen Eye'] }))
+      .toEqual(expect.arrayContaining([
+        expect.objectContaining({ label: 'Blindness', description: expect.stringContaining('Ignored by Keen Eye') }),
+        expect.objectContaining({ label: 'Supersonic Accuracy Penalty', description: expect.stringContaining('Ignored by Keen Eye') }),
+      ]))
+  })
+
   it('applies evasion suppression and condition stages', () => {
     expect(conditionAdjustedEvasion({
       statTotal: 30,

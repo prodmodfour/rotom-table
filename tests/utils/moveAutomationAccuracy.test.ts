@@ -108,6 +108,52 @@ describe('move automation accuracy helpers', () => {
     expect(moveAutomationUserAccuracy(token({ combatStages: { ...stages, acc: 2 }, conditions: ['Total Blindness'] }))).toBe(-8)
   })
 
+  it('applies Keen Eye to outgoing Accuracy and target Evasion', () => {
+    expect(moveAutomationUserAccuracy(token({
+      abilityNames: ['Keen Eye'],
+      combatStages: { ...stages, acc: -3 },
+      conditions: ['Blindness'],
+    }))).toBe(0)
+    expect(moveAutomationUserAccuracy(token({
+      abilityNames: ['Keen Eye'],
+      combatStages: { ...stages, acc: -3 },
+      conditions: ['Total Blindness'],
+    }))).toBe(-10)
+
+    const attacker = token({ id: 'user', abilityNames: ['Keen Eye'] })
+    const evasiveTarget = token({
+      def: 10,
+      sdef: 10,
+      spd: 10,
+      evasion: { physical: 4, special: 4, speed: 4 },
+    })
+    expect(resolveMoveAutomationTargetEvasion(script('Physical'), evasiveTarget)).toMatchObject({
+      value: 6,
+      label: 'Physical Evasion',
+    })
+    expect(resolveMoveAutomationTargetEvasion(script('Physical'), evasiveTarget, { attacker })).toMatchObject({
+      value: 2,
+      label: 'Physical Evasion',
+    })
+
+    const illuminatedTarget = token({
+      abilityNames: ['Illuminate'],
+      def: 10,
+      spd: 10,
+      evasion: { physical: 0, special: 0, speed: 0 },
+    })
+    expect(resolveMoveAutomationTargetEvasion(script('Physical'), illuminatedTarget)).toMatchObject({
+      value: 4,
+      label: 'Physical Evasion (Illuminate +2)',
+      abilityModifier: 2,
+    })
+    expect(resolveMoveAutomationTargetEvasion(script('Physical'), illuminatedTarget, { attacker })).toMatchObject({
+      value: 2,
+      label: 'Physical Evasion',
+      abilityModifier: 0,
+    })
+  })
+
   it('applies Compound Eyes to outgoing Accuracy Rolls', () => {
     expect(moveAutomationUserAccuracy(token({ abilityNames: ['Compound Eyes'] }))).toBe(3)
     expect(moveAutomationUserAccuracy(token({ abilityNames: ['compound-eyes'], combatStages: { ...stages, acc: 6 } }))).toBe(9)

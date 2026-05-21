@@ -10,6 +10,8 @@ import { resolveCanonicalSheetAbilityName, type SheetAbilityNameSource } from '~
 import { QUICK_FEET_ABILITY_NAME } from '~/utils/sheetConditionEffects'
 import {
   COMPOUND_EYES_ABILITY_NAME,
+  ILLUMINATE_ABILITY_NAME,
+  KEEN_EYE_ABILITY_NAME,
   NO_GUARD_ABILITY_NAME,
 } from '~/utils/sheetAbilityCombatModifiers'
 import type { AbilityAutomationCategory, AbilityAutomationTransaction } from '~/types/abilityAutomation'
@@ -127,6 +129,22 @@ const PASSIVE_ABILITY_AUTOMATIONS = new Map<string, PassiveAbilityAutomationDefi
     CUTE_CHARM_ABILITY_NAME,
     {
       name: CUTE_CHARM_ABILITY_NAME,
+      category: 'passive',
+      label: 'Auto',
+    },
+  ],
+  [
+    ILLUMINATE_ABILITY_NAME,
+    {
+      name: ILLUMINATE_ABILITY_NAME,
+      category: 'passive',
+      label: 'Auto',
+    },
+  ],
+  [
+    KEEN_EYE_ABILITY_NAME,
+    {
+      name: KEEN_EYE_ABILITY_NAME,
       category: 'passive',
       label: 'Auto',
     },

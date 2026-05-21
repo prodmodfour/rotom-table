@@ -1,5 +1,6 @@
 import { SWEET_VEIL_ABILITY_NAME } from '~/utils/abilityAutomation'
 import { tokenGridDistance } from '~/utils/moveAutomationRange'
+import { KEEN_EYE_ABILITY_NAME } from '~/utils/sheetAbilityCombatModifiers'
 import { sheetHasCanonicalAbility } from '~/utils/sheetAbilities'
 import { FLASH_FIRE_ABILITY_NAME } from '~/utils/sheetPassiveAbilityEffects'
 import { normalizeConditionName } from '~/utils/statusConditions'
@@ -66,6 +67,7 @@ export const moveAutomationConditionImmunitySource = (
   }
 
   if (canonical === 'Sleep') return sweetVeilSource(target, context)
+  if (canonical === 'Blindness' && hasAbility(target, KEEN_EYE_ABILITY_NAME)) return KEEN_EYE_ABILITY_NAME
 
   if (canonical === 'Paralysis' && hasType(target, 'Electric')) return 'Electric type'
   if (canonical === 'Frozen' && hasType(target, 'Ice')) return 'Ice type'

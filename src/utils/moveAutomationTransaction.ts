@@ -1,4 +1,7 @@
-import { moveAutomationSecondaryEffectBlockSource } from '~/utils/moveAutomationAbilityProtection'
+import {
+  moveAutomationCombatStageBlockSource,
+  moveAutomationSecondaryEffectBlockSource,
+} from '~/utils/moveAutomationAbilityProtection'
 import {
   moveAutomationConditionImmunitySource,
   type MoveAutomationConditionImmunityContext,
@@ -238,10 +241,15 @@ export const buildMoveAutomationTransaction = ({
 
     if (kind === 'stage') {
       const suggestion = script.stageSuggestions[index]
-      const source = suggestion
-        ? moveAutomationSecondaryEffectBlockSource({ script, target, threshold: suggestion.threshold })
-        : null
-      return source && suggestion ? { source, reason: 'secondary-effect', label: suggestion.label } : null
+      if (!suggestion) return null
+      const stageBlockSource = moveAutomationCombatStageBlockSource({
+        target,
+        key: suggestion.key,
+        delta: suggestion.delta,
+      })
+      if (stageBlockSource) return { source: stageBlockSource, reason: 'immunity', label: suggestion.label }
+      const source = moveAutomationSecondaryEffectBlockSource({ script, target, threshold: suggestion.threshold })
+      return source ? { source, reason: 'secondary-effect', label: suggestion.label } : null
     }
 
     return null

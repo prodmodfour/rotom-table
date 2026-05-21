@@ -151,6 +151,21 @@ describe('instant move automation', () => {
     expect(result.transaction.logLines).toContain('Bubble Beam lowers Speed on 18+: -1 Speed CS did not apply to Dusty: blocked by Shield Dust.')
   })
 
+  it('uses Keen Eye to block Accuracy stage drops', () => {
+    const script = explicitScriptForMove('Mud-Slap')!
+    const result = resolveInstantMoveAutomation({
+      script,
+      user: token({ id: 'u', species: 'Caster' }),
+      target: token({ id: 't', species: 'Sharp', abilityNames: ['Keen Eye'] }),
+      damageFormula: '1d6',
+      random: sequenceRandom([0.85, 0]),
+    })
+
+    expect(result.feedback).toMatchObject({ naturalRoll: 18, hit: true })
+    expect(result.transaction.combatStageUpdates).toEqual([])
+    expect(result.transaction.logLines).toContain('Mud-Slap lowers Accuracy: -1 Accuracy CS did not apply to Sharp: immune (Keen Eye).')
+  })
+
   it('uses nearby Sweet Veil providers to block Sleep', () => {
     const script = explicitScriptForMove('Hypnosis')!
     const sweetVeilProvider = token({

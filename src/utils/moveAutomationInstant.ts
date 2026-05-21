@@ -322,7 +322,7 @@ const resolveInstantDoubleStrikeMoveAutomation = ({
   random,
   idFactory,
 }: ResolveInstantMoveAutomationInput): InstantMoveAutomationResult => {
-  const targetEvasion = resolveMoveAutomationTargetEvasion(script, target)
+  const targetEvasion = resolveMoveAutomationTargetEvasion(script, target, { attacker: user })
   const userAccuracy = moveAutomationUserAccuracy(user)
   const accuracyRolls = [randomD20(random), randomD20(random)].map((naturalRoll) =>
     resolveMoveAutomationAccuracyRoll(script, naturalRoll, {
@@ -443,7 +443,7 @@ export const resolveInstantMoveAutomation = ({
   }
 
   const naturalRoll = randomD20(random)
-  const targetEvasion = resolveMoveAutomationTargetEvasion(script, target)
+  const targetEvasion = resolveMoveAutomationTargetEvasion(script, target, { attacker: user })
   const userAccuracy = moveAutomationUserAccuracy(user)
   const accuracy = resolveMoveAutomationAccuracyRoll(script, naturalRoll, {
     userAccuracy,
@@ -635,7 +635,7 @@ export const resolveInstantAreaMoveAutomation = ({
   for (const target of targets) {
     const state = defaultTargetResolutionState(script)
     if (script.requiresAccuracy) {
-      const targetEvasion = resolveMoveAutomationTargetEvasion(script, target)
+      const targetEvasion = resolveMoveAutomationTargetEvasion(script, target, { attacker: user })
       const accuracy = resolveMoveAutomationAccuracyRoll(script, randomD20(random), {
         userAccuracy,
         targetEvasion: targetEvasion.value,

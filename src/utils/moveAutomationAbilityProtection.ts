@@ -1,5 +1,7 @@
 import { SHIELD_DUST_ABILITY_NAME } from '~/utils/abilityAutomation'
+import { KEEN_EYE_ABILITY_NAME } from '~/utils/sheetAbilityCombatModifiers'
 import { sheetHasCanonicalAbility, type SheetAbilityNameSource } from '~/utils/sheetAbilities'
+import type { CombatStageKey } from '~/types/combatStages'
 import type { MoveAutomationScript } from '~/types/moveAutomation'
 import type { SpawnedPokemon } from '~/types/pokemon'
 
@@ -24,6 +26,23 @@ export const moveAutomationSecondaryEffectBlockSource = ({
   if (!script.damaging || !script.requiresAccuracy) return null
   if (!hasAccuracyRollThreshold(threshold)) return null
   return tokenHasShieldDust(target) ? SHIELD_DUST_ABILITY_NAME : null
+}
+
+export interface MoveAutomationCombatStageBlockContext {
+  target: Pick<SpawnedPokemon, 'abilityNames'>
+  key: CombatStageKey
+  delta: number
+}
+
+export const moveAutomationCombatStageBlockSource = ({
+  target,
+  key,
+  delta,
+}: MoveAutomationCombatStageBlockContext): string | null => {
+  if (key === 'acc' && delta < 0 && sheetHasCanonicalAbility(target.abilityNames, KEEN_EYE_ABILITY_NAME)) {
+    return KEEN_EYE_ABILITY_NAME
+  }
+  return null
 }
 
 export const hasShieldDustAbility = (

@@ -1,4 +1,3 @@
-import { clampCombatStage } from '~/utils/combatStages'
 import {
   conditionAccuracyModifier,
   conditionAdjustedEvasion,
@@ -7,9 +6,11 @@ import {
 } from '~/utils/sheetConditionEffects'
 import { heldItemsAccuracyRollBonus } from '~/utils/sheetHeldItemEffects'
 import {
-  NO_GUARD_ABILITY_NAME,
+  hasKeenEyeAbility,
   sheetAbilityAccuracyRollBonus,
-  sheetAbilityIncomingAttackEvasionModifier,
+  sheetAbilityAdjustedAccuracyStage,
+  sheetAbilityIncomingAttackEvasionModifiers,
+  type SheetAbilityIncomingAttackEvasionModifier,
 } from '~/utils/sheetAbilityCombatModifiers'
 import { resolveMoveAutomationHitChancePercent } from '~/utils/moveAutomationResolution'
 import { pokemonTrainingFeatureAccuracyRollBonus } from '~/utils/sheets/pokemonTrainingFeatures'
@@ -35,6 +36,11 @@ export interface MoveAutomationEvasionResolution {
   candidates: MoveAutomationEvasionCandidate[]
   suppressedByCondition: string | null
   abilityModifier: number
+  abilityModifiers: SheetAbilityIncomingAttackEvasionModifier[]
+}
+
+export interface MoveAutomationEvasionContext {
+  attacker?: Pick<SpawnedPokemon, 'abilityNames'> | null
 }
 
 type MoveAutomationEvasionStatStageKey = Extract<CombatStatStageKey, 'def' | 'sdef' | 'spd'>
@@ -42,11 +48,40 @@ type MoveAutomationEvasionStatStageKey = Extract<CombatStatStageKey, 'def' | 'sd
 const signedAccuracyModifier = (value: number): string =>
   value > 0 ? `+${value}` : String(value)
 
-const evasionLabelWithAbilityModifier = (label: string, modifier: number): string =>
-  modifier ? `${label} (${NO_GUARD_ABILITY_NAME} ${signedAccuracyModifier(modifier)})` : label
+const evasionLabelWithAbilityModifiers = (
+  label: string,
+  modifiers: readonly SheetAbilityIncomingAttackEvasionModifier[],
+): string => {
+  const entries = modifiers
+    .filter((entry) => entry.modifier !== 0)
+    .map((entry) => `${entry.source} ${signedAccuracyModifier(entry.modifier)}`)
+  return entries.length ? `${label} (${entries.join(', ')})` : label
+}
 
-const moveAutomationTargetAbilityEvasionModifier = (target: SpawnedPokemon): number =>
-  sheetAbilityIncomingAttackEvasionModifier(target.abilityNames)
+const moveAutomationTargetAbilityEvasionModifiers = (
+  target: SpawnedPokemon,
+  context: MoveAutomationEvasionContext,
+): SheetAbilityIncomingAttackEvasionModifier[] => sheetAbilityIncomingAttackEvasionModifiers(
+  target.abilityNames,
+  { attackerAbilities: context.attacker?.abilityNames },
+)
+
+const sumAbilityEvasionModifiers = (
+  modifiers: readonly SheetAbilityIncomingAttackEvasionModifier[],
+): number => modifiers.reduce((sum, entry) => sum + entry.modifier, 0)
+
+const finiteEvasionBonus = (value: number | null | undefined): number => {
+  const n = Number(value)
+  return Number.isFinite(n) ? n : 0
+}
+
+const attackerAdjustedEvasionBonus = (
+  bonus: number | null | undefined,
+  context: MoveAutomationEvasionContext,
+): number => {
+  const finiteBonus = finiteEvasionBonus(bonus)
+  return hasKeenEyeAbility(context.attacker?.abilityNames) ? Math.min(0, finiteBonus) : finiteBonus
+}
 
 const evasionKindForStatStageKey = (key: MoveAutomationEvasionStatStageKey): MoveAutomationEvasionKind => {
   switch (key) {
@@ -73,56 +108,69 @@ const evasionForStat = (
   applyCombatStages: true,
 }).total
 
-const physicalEvasion = (target: SpawnedPokemon): MoveAutomationEvasionCandidate => ({
+const physicalEvasion = (
+  target: SpawnedPokemon,
+  context: MoveAutomationEvasionContext,
+): MoveAutomationEvasionCandidate => ({
   kind: 'physical',
   label: 'Physical Evasion',
-  value: evasionForStat(target, 'def', target.def, target.combatStages.def, target.evasion?.physical),
+  value: evasionForStat(target, 'def', target.def, target.combatStages.def, attackerAdjustedEvasionBonus(target.evasion?.physical, context)),
 })
 
-const specialEvasion = (target: SpawnedPokemon): MoveAutomationEvasionCandidate => ({
+const specialEvasion = (
+  target: SpawnedPokemon,
+  context: MoveAutomationEvasionContext,
+): MoveAutomationEvasionCandidate => ({
   kind: 'special',
   label: 'Special Evasion',
-  value: evasionForStat(target, 'sdef', target.sdef, target.combatStages.sdef, target.evasion?.special),
+  value: evasionForStat(target, 'sdef', target.sdef, target.combatStages.sdef, attackerAdjustedEvasionBonus(target.evasion?.special, context)),
 })
 
-const speedEvasion = (target: SpawnedPokemon): MoveAutomationEvasionCandidate => ({
+const speedEvasion = (
+  target: SpawnedPokemon,
+  context: MoveAutomationEvasionContext,
+): MoveAutomationEvasionCandidate => ({
   kind: 'speed',
   label: 'Speed Evasion',
-  value: evasionForStat(target, 'spd', target.spd ?? 0, target.combatStages.spd, target.evasion?.speed),
+  value: evasionForStat(target, 'spd', target.spd ?? 0, target.combatStages.spd, attackerAdjustedEvasionBonus(target.evasion?.speed, context)),
 })
 
 export const moveAutomationEvasionCandidates = (
   script: MoveAutomationScript | null | undefined,
   target: SpawnedPokemon,
+  context: MoveAutomationEvasionContext = {},
 ): MoveAutomationEvasionCandidate[] => {
-  if (evasionSuppressedByCondition(target.conditions)) return []
+  if (evasionSuppressedByCondition(target.conditions, { abilities: target.abilityNames })) return []
 
   const candidates: MoveAutomationEvasionCandidate[] = []
-  if (script?.damageClass === 'Physical') candidates.push(physicalEvasion(target))
-  else if (script?.damageClass === 'Special') candidates.push(specialEvasion(target))
+  if (script?.damageClass === 'Physical') candidates.push(physicalEvasion(target, context))
+  else if (script?.damageClass === 'Special') candidates.push(specialEvasion(target, context))
 
-  if (!speedEvasionSuppressedByCondition(target.conditions)) candidates.push(speedEvasion(target))
+  if (!speedEvasionSuppressedByCondition(target.conditions)) candidates.push(speedEvasion(target, context))
   return candidates
 }
 
 export const resolveMoveAutomationTargetEvasion = (
   script: MoveAutomationScript | null | undefined,
   target: SpawnedPokemon,
+  context: MoveAutomationEvasionContext = {},
 ): MoveAutomationEvasionResolution => {
-  const abilityModifier = moveAutomationTargetAbilityEvasionModifier(target)
-  const suppressedByCondition = evasionSuppressedByCondition(target.conditions)
+  const abilityModifiers = moveAutomationTargetAbilityEvasionModifiers(target, context)
+  const abilityModifier = sumAbilityEvasionModifiers(abilityModifiers)
+  const suppressedByCondition = evasionSuppressedByCondition(target.conditions, { abilities: target.abilityNames })
   if (suppressedByCondition) {
     const label = `No Evasion (${suppressedByCondition})`
     return {
       value: abilityModifier,
-      label: evasionLabelWithAbilityModifier(label, abilityModifier),
+      label: evasionLabelWithAbilityModifiers(label, abilityModifiers),
       candidates: [],
       suppressedByCondition,
       abilityModifier,
+      abilityModifiers,
     }
   }
 
-  const candidates = moveAutomationEvasionCandidates(script, target)
+  const candidates = moveAutomationEvasionCandidates(script, target, context)
   const best = candidates.reduce<MoveAutomationEvasionCandidate | null>((current, candidate) => {
     if (!current || candidate.value > current.value) return candidate
     return current
@@ -131,10 +179,11 @@ export const resolveMoveAutomationTargetEvasion = (
 
   return {
     value: (best?.value ?? 0) + abilityModifier,
-    label: evasionLabelWithAbilityModifier(label, abilityModifier),
+    label: evasionLabelWithAbilityModifiers(label, abilityModifiers),
     candidates,
     suppressedByCondition: null,
     abilityModifier,
+    abilityModifiers,
   }
 }
 
@@ -142,8 +191,8 @@ const moveAutomationHeldItemAccuracyBonus = (user: SpawnedPokemon): number =>
   user.sheetKind === 'pokemon' ? heldItemsAccuracyRollBonus(user.tokenItems) : 0
 
 export const moveAutomationUserAccuracy = (user: SpawnedPokemon): number =>
-  clampCombatStage(user.combatStages?.acc)
-  + conditionAccuracyModifier(user.conditions)
+  sheetAbilityAdjustedAccuracyStage(user.combatStages?.acc, user.abilityNames)
+  + conditionAccuracyModifier(user.conditions, { abilities: user.abilityNames })
   + moveAutomationHeldItemAccuracyBonus(user)
   + sheetAbilityAccuracyRollBonus(user.abilityNames)
   + (user.accuracyRollBonus ?? pokemonTrainingFeatureAccuracyRollBonus(user.activeTrainingFeature))
@@ -179,7 +228,7 @@ export const moveAutomationTargetHitChance = (
   target: SpawnedPokemon,
 ): MoveAutomationTargetHitChance => {
   const userAccuracy = moveAutomationUserAccuracy(user)
-  const targetEvasion = resolveMoveAutomationTargetEvasion(script, target)
+  const targetEvasion = resolveMoveAutomationTargetEvasion(script, target, { attacker: user })
   const percent = resolveMoveAutomationHitChancePercent(script, {
     userAccuracy,
     targetEvasion: targetEvasion.value,

@@ -1,6 +1,8 @@
-import { clampCombatStage } from '~/utils/combatStages'
 import { conditionAccuracyModifier } from '~/utils/sheetConditionEffects'
-import { sheetAbilityAccuracyRollBonus } from '~/utils/sheetAbilityCombatModifiers'
+import {
+  sheetAbilityAccuracyRollBonus,
+  sheetAbilityAdjustedAccuracyStage,
+} from '~/utils/sheetAbilityCombatModifiers'
 import { heldItemAccuracyRollBonus } from '~/utils/sheetHeldItemEffects'
 import type { CombatStageKey } from '~/types/combatStages'
 import type { SheetAbilityNameSource } from '~/utils/sheetAbilities'
@@ -8,7 +10,7 @@ import type { SheetAbilityNameSource } from '~/utils/sheetAbilities'
 export interface SheetAccuracySummary {
   /** Full Accuracy Roll modifier: Accuracy stage + condition modifiers + item and ability bonuses. */
   total: number
-  /** Sheet-authored Accuracy Combat Stage, clamped to PTU's -6..+6 stage bounds. */
+  /** Effective Accuracy Combat Stage, clamped to PTU bounds and floored at 0 by Keen Eye. */
   stage: number
   /** Flat Accuracy Roll modifier from conditions such as Blindness or Helping Hand. */
   conditionModifier: number
@@ -30,6 +32,7 @@ export interface SheetAccuracySummaryInput {
 
 export type AccuracyStageSheet = {
   combatStages?: Partial<Record<CombatStageKey, number>>
+  abilities?: readonly SheetAbilityNameSource[] | null
 }
 
 export const buildSheetAccuracySummary = ({
@@ -39,8 +42,8 @@ export const buildSheetAccuracySummary = ({
   includeHeldItemBonus = true,
   abilities,
 }: SheetAccuracySummaryInput): SheetAccuracySummary => {
-  const stage = clampCombatStage(rawStage)
-  const conditionModifier = conditionAccuracyModifier(conditions)
+  const stage = sheetAbilityAdjustedAccuracyStage(rawStage, abilities)
+  const conditionModifier = conditionAccuracyModifier(conditions, { abilities })
   const itemBonus = includeHeldItemBonus ? heldItemAccuracyRollBonus(heldItem) : 0
   const abilityBonus = sheetAbilityAccuracyRollBonus(abilities)
   return {
@@ -57,5 +60,5 @@ export const setSheetAccuracyStage = (
   value: unknown,
 ): void => {
   sheet.combatStages ??= {}
-  sheet.combatStages.acc = clampCombatStage(value)
+  sheet.combatStages.acc = sheetAbilityAdjustedAccuracyStage(value, sheet.abilities)
 }

@@ -12,7 +12,11 @@ import {
   mapAbilityTargetCandidates,
   resolveMapAbilityAutomationTransaction,
 } from '~/utils/abilityAutomation'
-import { NO_GUARD_ABILITY_NAME } from '~/utils/sheetAbilityCombatModifiers'
+import {
+  ILLUMINATE_ABILITY_NAME,
+  KEEN_EYE_ABILITY_NAME,
+  NO_GUARD_ABILITY_NAME,
+} from '~/utils/sheetAbilityCombatModifiers'
 import type { CombatStageMap } from '~/types/combatStages'
 import type { SpawnedPokemon } from '~/types/pokemon'
 
@@ -64,6 +68,8 @@ describe('ability automation helpers', () => {
     expect(getAbilityAutomationCategory(INTIMIDATE_ABILITY_NAME)).toBe('map')
     expect(getAbilityAutomationCategory(LEAF_GUARD_ABILITY_NAME)).toBe('map')
     expect(getAbilityAutomationCategory(MOXIE_ABILITY_NAME)).toBe('map')
+    expect(getAbilityAutomationCategory(ILLUMINATE_ABILITY_NAME)).toBe('passive')
+    expect(getAbilityAutomationCategory(KEEN_EYE_ABILITY_NAME)).toBe('passive')
     expect(getAbilityAutomationCategory('Quick Feet')).toBe('passive')
     expect(getAbilityAutomationCategory(NO_GUARD_ABILITY_NAME)).toBe('passive')
     expect(getAbilityAutomationCategory(SHIELD_DUST_ABILITY_NAME)).toBe('passive')

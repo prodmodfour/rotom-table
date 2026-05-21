@@ -38,6 +38,12 @@ describe('move automation condition immunity', () => {
     expect(moveAutomationConditionImmunitySource('Stuck', token({ defenderTypes: ['Normal'] }))).toBeNull()
   })
 
+  it('blocks Blindness with Keen Eye but not Total Blindness', () => {
+    expect(moveAutomationConditionImmunitySource('Blindness', token({ abilityNames: ['Keen Eye'] }))).toBe('Keen Eye')
+    expect(moveAutomationConditionImmunitySource('Blind', token({ abilityNames: ['keen-eye'] }))).toBe('Keen Eye')
+    expect(moveAutomationConditionImmunitySource('Total Blindness', token({ abilityNames: ['Keen Eye'] }))).toBeNull()
+  })
+
   it('blocks Sleep with Sweet Veil on the target or nearby providers', () => {
     const target = token({ position: { x: 0, y: 0, z: 0 } })
     const nearbyProvider = token({

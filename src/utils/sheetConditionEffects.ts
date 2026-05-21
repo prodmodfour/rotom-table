@@ -1,6 +1,10 @@
 import { applyCombatStageToStat } from '~/utils/combatStageStats'
 import { clampCombatStage } from '~/utils/combatStages'
 import { computeEvasionTotal, computeStatEvasion } from '~/utils/evasion'
+import {
+  hasKeenEyeAbility,
+  sheetAbilityAdjustedAccuracyStage,
+} from '~/utils/sheetAbilityCombatModifiers'
 import { sheetHasCanonicalAbility, type SheetAbilityNameSource } from '~/utils/sheetAbilities'
 import {
   conditionBaseName,
@@ -148,6 +152,12 @@ export const quickFeetSuppressesParalysisInitiative = (
 const firstPresentCondition = (conditions: Set<string>, names: readonly string[]): string | null =>
   names.find((name) => conditions.has(name)) ?? null
 
+const evasionSuppressingConditionsForAbilities = (
+  abilities: readonly SheetAbilityNameSource[] | null | undefined,
+): readonly string[] => hasKeenEyeAbility(abilities)
+  ? EVASION_SUPPRESSING_CONDITIONS.filter((condition) => condition !== 'Blindness')
+  : EVASION_SUPPRESSING_CONDITIONS
+
 const numericMovementValue = (value: unknown): number | null => {
   const n = Number(value)
   return Number.isFinite(n) ? Math.max(0, Math.trunc(n)) : null
@@ -260,17 +270,19 @@ export const conditionAdjustedCombatStages = (
   satk: conditionAdjustedCombatStage(stages?.satk, conditions, 'satk', options),
   sdef: conditionAdjustedCombatStage(stages?.sdef, conditions, 'sdef', options),
   spd: conditionAdjustedCombatStage(stages?.spd, conditions, 'spd', options),
-  acc: clampCombatStage(stages?.acc),
+  acc: sheetAbilityAdjustedAccuracyStage(stages?.acc, options.abilities),
 })
 
 export const conditionAccuracyModifier = (
   conditions: readonly string[] | null | undefined,
+  options: SheetConditionAbilityOptions = {},
 ): number => {
   const set = conditionSet(conditions)
+  const keenEye = hasKeenEyeAbility(options.abilities)
   let modifier = 0
   if (set.has('Total Blindness')) modifier -= 10
-  else if (set.has('Blindness')) modifier -= 6
-  if (set.has(SUPERSONIC_ACCURACY_PENALTY_CONDITION)) modifier -= 2
+  else if (set.has('Blindness') && !keenEye) modifier -= 6
+  if (set.has(SUPERSONIC_ACCURACY_PENALTY_CONDITION) && !keenEye) modifier -= 2
   if (set.has(HELPING_HAND_CONDITION)) modifier += 2
   return modifier
 }
@@ -287,11 +299,16 @@ export const conditionEvasionModifier = (
 export const conditionAdjustedAccuracy = (
   accuracyStage: unknown,
   conditions: readonly string[] | null | undefined,
-): number => clampCombatStage(accuracyStage) + conditionAccuracyModifier(conditions)
+  options: SheetConditionAbilityOptions = {},
+): number => {
+  const stage = sheetAbilityAdjustedAccuracyStage(accuracyStage, options.abilities)
+  return stage + conditionAccuracyModifier(conditions, options)
+}
 
 export const evasionSuppressedByCondition = (
   conditions: readonly string[] | null | undefined,
-): string | null => firstPresentCondition(conditionSet(conditions), EVASION_SUPPRESSING_CONDITIONS)
+  options: SheetConditionAbilityOptions = {},
+): string | null => firstPresentCondition(conditionSet(conditions), evasionSuppressingConditionsForAbilities(options.abilities))
 
 export const speedEvasionSuppressedByCondition = (
   conditions: readonly string[] | null | undefined,
@@ -317,7 +334,7 @@ export const conditionAdjustedEvasion = ({
   const base = computeStatEvasion(effectiveStat)
   const evasionBonus = finiteNumber(bonus)
   const conditionEvasionModifierValue = conditionEvasionModifier(conditions)
-  const allSuppressedBy = evasionSuppressedByCondition(conditions)
+  const allSuppressedBy = evasionSuppressedByCondition(conditions, { abilities })
   const speedSuppressedBy = kind === 'speed' ? speedEvasionSuppressedByCondition(conditions) : null
   const suppressedByCondition = allSuppressedBy ?? speedSuppressedBy
 
@@ -479,7 +496,9 @@ export const describeSheetConditionEffects = (
     effects.push({
       id: 'supersonic-accuracy-penalty',
       label: SUPERSONIC_ACCURACY_PENALTY_CONDITION,
-      description: 'Accuracy Rolls take a -2 penalty for one full round.',
+      description: hasKeenEyeAbility(options.abilities)
+        ? 'Ignored by Keen Eye; attacks cannot have Accuracy Penalties.'
+        : 'Accuracy Rolls take a -2 penalty for one full round.',
     })
   }
 
@@ -519,7 +538,9 @@ export const describeSheetConditionEffects = (
     effects.push({
       id: 'blindness-accuracy',
       label: 'Blindness',
-      description: 'Accuracy Rolls take -6 and the target is treated as Vulnerable. Rough or Slow Terrain may cause Tripping.',
+      description: hasKeenEyeAbility(options.abilities)
+        ? 'Ignored by Keen Eye; the user is immune to Blindness, but not Total Blindness.'
+        : 'Accuracy Rolls take -6 and the target is treated as Vulnerable. Rough or Slow Terrain may cause Tripping.',
     })
   }
 
