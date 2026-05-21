@@ -97,16 +97,16 @@
   text-align: right;
 }
 
-.equipped-item,
-.inventory-item-name {
+.equipped-item {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
   min-width: 0;
 }
 
-.inventory-item-name {
-  max-width: 100%;
+.inventory-name-col {
+  min-width: 12rem;
+  max-width: 20rem;
 }
 
 .kv-list {

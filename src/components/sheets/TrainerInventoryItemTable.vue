@@ -2,6 +2,10 @@
 import { computed } from 'vue'
 import { PhPlus, PhX } from '@phosphor-icons/vue'
 import { inventoryTableColumnCount } from '~/utils/sheets/trainerInventorySections'
+import {
+  setTrainerInventoryItemName,
+  trainerInventoryItemOptions,
+} from '~/utils/sheets/trainerInventoryItems'
 import type {
   TrainerInventoryKey,
   TrainerInventoryTableVariant,
@@ -25,6 +29,11 @@ const hasQuantityColumn = computed(() => props.variant !== 'equipment')
 const hasSlotColumn = computed(() => props.variant === 'equipment')
 const hasModColumn = computed(() => props.variant === 'pokeBalls')
 const emptyColumnCount = computed(() => inventoryTableColumnCount(props.variant))
+const itemNameOptions = computed(() => trainerInventoryItemOptions(props.sectionKey))
+
+const setItemName = (item: InventoryEntry, value: string) => {
+  setTrainerInventoryItemName(item, value, props.variant)
+}
 </script>
 
 <template>
@@ -49,15 +58,17 @@ const emptyColumnCount = computed(() => inventoryTableColumnCount(props.variant)
       </thead>
       <tbody>
         <tr v-for="(item, index) in items" :key="index">
-          <th>
-            <span class="inventory-item-name">
-              <ItemSprite :item="item.name" size="sm" />
-              <EditableCell v-model="item.name" :placeholder="namePlaceholder" />
-            </span>
+          <th class="inventory-name-col">
+            <TrainerInventoryItemNameCell
+              :model-value="item.name"
+              :options="itemNameOptions"
+              :placeholder="namePlaceholder"
+              @commit="(value) => setItemName(item, value)"
+            />
           </th>
           <td v-if="hasQuantityColumn"><EditableCell v-model="item.qty" type="number" :min="0" /></td>
           <td v-if="hasSlotColumn"><EditableCell v-model="item.slot" placeholder="Body" /></td>
-          <td><EditableCell v-model="item.cost" type="number" :min="0" /></td>
+          <td><EditableCell v-model="item.cost" placeholder="—" /></td>
           <td v-if="hasModColumn"><EditableCell v-model="item.mod" placeholder="x1" /></td>
           <td class="effect-col">
             <EditableCell v-model="item.description" type="textarea" placeholder="—" multiline />

@@ -49,7 +49,7 @@ describe('useTrainerSheetRowActions', () => {
     expect(sheet.value?.orders?.[0]).toMatchObject({ name: 'New Order' })
     expect(sheet.value?.features?.[0]).toMatchObject({ name: 'New Feature' })
     expect(sheet.value?.edges?.[0]).toMatchObject({ name: 'New Edge' })
-    expect(sheet.value?.inventory?.keyItems?.[0]).toMatchObject({ name: 'New Item' })
+    expect(sheet.value?.inventory?.keyItems?.[0]).toMatchObject({ name: '' })
 
     actions.removeClass(0)
     actions.removeMove(null)

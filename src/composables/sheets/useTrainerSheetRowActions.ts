@@ -89,7 +89,7 @@ export function useTrainerSheetRowActions(sheet: Readonly<Ref<TrainerSheet | nul
   const addInvItem = (key: keyof NonNullable<TrainerSheet['inventory']>) => {
     const inv = sheet.value?.inventory
     if (!inv) return
-    ;(inv[key] as InventoryEntry[]).push({ name: 'New Item' })
+    ;(inv[key] as InventoryEntry[]).push({ name: '' })
   }
 
   const removeInvItem = (key: keyof NonNullable<TrainerSheet['inventory']>, i: number) => {

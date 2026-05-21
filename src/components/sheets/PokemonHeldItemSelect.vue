@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, useId, watch } from 'vue'
 import { findItem, items } from '~~/data/ptuReference'
+import { ptuItemOptionDetail } from '~/utils/reference/itemOptions'
 import type { PtuItem } from '~/types/ptuReference'
 
 interface HeldItemOption {
@@ -37,14 +38,6 @@ const normalizedModelValue = computed(() => props.modelValue?.trim() ?? '')
 const selectedItem = computed(() => normalizedModelValue.value ? findItem(normalizedModelValue.value) : null)
 const displayLabel = computed(() => selectedItem.value?.name ?? (normalizedModelValue.value || props.placeholder))
 const hasCustomValue = computed(() => Boolean(normalizedModelValue.value && !selectedItem.value))
-
-const itemDetail = (item: PtuItem): string => {
-  const pieces = [
-    ...item.categories.slice(0, 2),
-    item.costs[0],
-  ].filter(Boolean)
-  return pieces.join(' · ')
-}
 
 const optionMatches = (item: PtuItem, query: string): boolean => {
   const haystack = [
@@ -85,7 +78,7 @@ const options = computed<HeldItemOption[]>(() => [
   ...filteredItems.value.map((item) => ({
     value: item.name,
     label: item.name,
-    detail: itemDetail(item),
+    detail: ptuItemOptionDetail(item),
     item,
   })),
 ])
