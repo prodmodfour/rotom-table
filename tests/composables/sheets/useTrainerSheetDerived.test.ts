@@ -1,6 +1,7 @@
 import { computed, ref } from 'vue'
 import { describe, expect, it } from 'vitest'
 import { useTrainerSheetDerived } from '~/composables/sheets/useTrainerSheetDerived'
+import { applyCombatStageToStat } from '~/utils/combatStageStats'
 import type { TrainerSheet } from '~/types/trainerSheet'
 
 const makeSheet = (overrides: Partial<TrainerSheet> = {}): TrainerSheet => ({
@@ -124,6 +125,25 @@ describe('useTrainerSheetDerived', () => {
     expect(derived.totalRow('atk')).toBe(8)
   })
 
+  it('applies Combat Stages to trainer sheet totals without double-applying move damage', () => {
+    const sheet = ref<TrainerSheet | null>(makeSheet({
+      stats: { atk: { base: 10, stage: 2 } },
+      movelist: [{ name: 'Custom Strike', category: 'Physical', db: 6 }],
+    }))
+    const derived = useTrainerSheetDerived(sheet)
+
+    const atk = derived.stats.value.find((row) => row.key === 'atk')!
+    const expectedAttack = applyCombatStageToStat(atk.baseTotal, 2)
+    const move = derived.moveRows.value.find((moveRow) => moveRow.move.name === 'Custom Strike')
+
+    expect(derived.totalRow('atk')).toBe(expectedAttack)
+    expect(move).toMatchObject({
+      baseAttackStat: atk.baseTotal,
+      attackStage: 2,
+      attackStat: expectedAttack,
+    })
+  })
+
   it('applies condition effects to stages, evasion suppression, initiative, and summaries', () => {
     const common = { speedBonus: 2, specialBonus: 2 }
     const unconditioned = useTrainerSheetDerived(ref<TrainerSheet | null>(makeSheet({
@@ -136,16 +156,18 @@ describe('useTrainerSheetDerived', () => {
     const derived = useTrainerSheetDerived(sheet)
 
     expect(derived.combatConditions.value).toEqual(['Poisoned', 'Sleep', 'Flinch'])
-    expect(derived.stats.value.find((row) => row.key === 'sdef')).toMatchObject({
+    const sdef = derived.stats.value.find((row) => row.key === 'sdef')!
+    expect(sdef).toMatchObject({
       stage: 0,
       conditionStageModifier: -2,
       effectiveStage: -2,
-      total: unconditioned.stats.value.find((row) => row.key === 'sdef')?.total,
+      total: applyCombatStageToStat(sdef.baseTotal, -2),
     })
+    expect(sdef.total).toBeLessThan(unconditioned.stats.value.find((row) => row.key === 'sdef')?.total ?? 0)
     expect(useTrainerSheetDerived(ref<TrainerSheet | null>(makeSheet({
       conditions: ['Poisoned'],
       evasion: common,
-    }))).trainerEvasion.value.special.total).toBe(unconditioned.trainerEvasion.value.special.total)
+    }))).trainerEvasion.value.special.total).toBeLessThan(unconditioned.trainerEvasion.value.special.total)
     expect(derived.trainerEvasion.value.speed.total).toBe(0)
     expect(derived.trainerEvasion.value.speed.suppressedByCondition).toBe('Sleep')
     expect(derived.initiative.value).toBe(derived.totalRow('spd') - 5)

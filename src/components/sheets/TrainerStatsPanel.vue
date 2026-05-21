@@ -28,7 +28,7 @@ const emit = defineEmits<{
           <th>Feats</th>
           <th>Bonus</th>
           <th>Lvl-Up</th>
-          <th>Total</th>
+          <th title="Current stat after Combat Stages">Total</th>
           <th>Stage</th>
         </tr>
       </thead>

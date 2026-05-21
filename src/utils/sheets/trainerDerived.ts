@@ -48,7 +48,9 @@ export interface ResolvedTrainerStat {
   conditionStageModifier: number
   /** Combat Stage after temporary condition effects. */
   effectiveStage: number
-  /** Sum used for the "Total" column (excluding stage modifier). */
+  /** Stat sum before Combat Stages; used for permanent build math such as HP and stat budgets. */
+  baseTotal: number
+  /** Current sheet Total. Raw resolution initializes this to baseTotal; sheet views apply Combat Stages. */
   total: number
 }
 
@@ -60,6 +62,7 @@ export const resolveTrainerStats = (sheet: TrainerSheet): ResolvedTrainerStat[] 
     const bonus   = row.bonus   ?? 0
     const levelUp = row.levelUp ?? 0
     const stage   = row.stage   ?? (key === 'hp' ? 0 : sheet.combatStages?.[key] ?? 0)
+    const baseTotal = base + feats + bonus + levelUp
     return {
       key,
       label: TRAINER_STAT_LABELS[key],
@@ -71,7 +74,8 @@ export const resolveTrainerStats = (sheet: TrainerSheet): ResolvedTrainerStat[] 
       manualStage: stage,
       conditionStageModifier: 0,
       effectiveStage: stage,
-      total: base + feats + bonus + levelUp,
+      baseTotal,
+      total: baseTotal,
     }
   })
 

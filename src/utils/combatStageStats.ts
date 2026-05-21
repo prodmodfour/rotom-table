@@ -1,4 +1,4 @@
-import { clampCombatStage } from '~/utils/combatStages'
+import { COMBAT_STAT_STAGE_KEYS, clampCombatStage } from '~/utils/combatStages'
 
 export const combatStageMultiplier = (stage: unknown): number => {
   const clamped = clampCombatStage(stage)
@@ -12,6 +12,19 @@ export const applyCombatStageToStat = (stat: number | null | undefined, stage: u
   if (base <= 0) return 0
   return Math.max(1, Math.floor(base * combatStageMultiplier(stage)))
 }
+
+const COMBAT_STAT_STAGE_KEY_SET = new Set<string>(COMBAT_STAT_STAGE_KEYS)
+
+const finiteStatTotal = (stat: number | null | undefined): number =>
+  typeof stat === 'number' && Number.isFinite(stat) ? stat : 0
+
+export const applyCombatStageToStatTotal = (
+  key: string,
+  stat: number | null | undefined,
+  stage: unknown,
+): number => COMBAT_STAT_STAGE_KEY_SET.has(key)
+  ? applyCombatStageToStat(stat, stage)
+  : finiteStatTotal(stat)
 
 export const formatCombatStage = (stage: unknown): string => {
   const clamped = clampCombatStage(stage)

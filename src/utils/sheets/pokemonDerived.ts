@@ -66,7 +66,9 @@ export interface ResolvedStat {
   conditionStageModifier: number
   /** Combat Stage after temporary condition effects. */
   effectiveStage: number
-  /** Sum displayed in the "Total" column (excluding stages). */
+  /** Stat sum before Combat Stages; used for permanent build math such as Base Relations. */
+  baseTotal: number
+  /** Current sheet Total. Raw resolution initializes this to baseTotal; sheet views apply Combat Stages. */
   total: number
 }
 
@@ -85,7 +87,7 @@ export const validateBaseRelations = (stats: ResolvedStat[]): BaseRelationViolat
     for (const lower of knownStats) {
       if (higher.key === lower.key) continue
       if (higher.base <= lower.base) continue
-      if (higher.total > lower.total) continue
+      if (higher.baseTotal > lower.baseTotal) continue
       violations.push({ higher, lower })
     }
   }
@@ -125,6 +127,7 @@ export const resolveStats = (sheet: CharacterSheet): ResolvedStat[] => {
     const base = speciesValue + mod
     const added = personal.added ?? 0
     const stage = personal.stage ?? 0
+    const baseTotal = base + added
     return {
       key,
       label: STAT_LABELS[key],
@@ -136,7 +139,8 @@ export const resolveStats = (sheet: CharacterSheet): ResolvedStat[] => {
       manualStage: stage,
       conditionStageModifier: 0,
       effectiveStage: stage,
-      total: base + added,
+      baseTotal,
+      total: baseTotal,
     }
   })
 }

@@ -32,7 +32,7 @@ const emit = defineEmits<{
             <th>Mod</th>
             <th>Base</th>
             <th>Added</th>
-            <th>Total</th>
+            <th title="Current stat after Combat Stages">Total</th>
             <th>Stage</th>
           </tr>
         </thead>
@@ -126,11 +126,11 @@ const emit = defineEmits<{
           >
             {{ violation.higher.label }}
             <span class="stat-validation__meta">
-              Base {{ violation.higher.base }}, Total {{ violation.higher.total }}
+              Base {{ violation.higher.base }}, build total {{ violation.higher.baseTotal }}
             </span>
             must stay above {{ violation.lower.label }}
             <span class="stat-validation__meta">
-              Base {{ violation.lower.base }}, Total {{ violation.lower.total }}
+              Base {{ violation.lower.base }}, build total {{ violation.lower.baseTotal }}
             </span>.
           </li>
           <li v-if="remainingBaseRelationViolationCount" class="stat-validation__more">

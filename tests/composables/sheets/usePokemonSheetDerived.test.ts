@@ -1,6 +1,7 @@
 import { computed, nextTick, ref } from 'vue'
 import { describe, expect, it } from 'vitest'
 import { formatLookupList, usePokemonSheetDerived } from '~/composables/sheets/usePokemonSheetDerived'
+import { applyCombatStageToStat } from '~/utils/combatStageStats'
 import type { CharacterSheet } from '~/types/characterSheet'
 
 const makeSheet = (overrides: Partial<CharacterSheet> = {}): CharacterSheet => ({
@@ -199,6 +200,27 @@ describe('usePokemonSheetDerived', () => {
     })
   })
 
+  it('applies Combat Stages to Pokémon sheet totals without double-applying move damage', () => {
+    const sheet = ref<CharacterSheet | null>(makeSheet({
+      items: {},
+      movelist: [{ name: 'Custom Strike', category: 'Physical', db: 6 }],
+      stats: { atk: { added: 10, stage: 2 } },
+    }))
+    const derived = usePokemonSheetDerived(sheet)
+
+    const atk = derived.stats.value.find((row) => row.key === 'atk')!
+    const expectedAttack = applyCombatStageToStat(atk.baseTotal, 2)
+    const move = derived.moveRows.value.find((moveRow) => moveRow.move.name === 'Custom Strike')
+
+    expect(atk.total).toBe(expectedAttack)
+    expect(derived.attackTotal.value).toBe(expectedAttack)
+    expect(move).toMatchObject({
+      baseAttackStat: atk.baseTotal,
+      attackStage: 2,
+      attackStat: expectedAttack,
+    })
+  })
+
   it('applies Levitate passive Ground resistance one step further in type effectiveness', () => {
     const sheet = ref<CharacterSheet | null>(makeSheet({
       abilities: [{ name: 'Levitate' }],
@@ -284,12 +306,14 @@ describe('usePokemonSheetDerived', () => {
     const derived = usePokemonSheetDerived(sheet)
 
     expect(derived.combatConditions.value).toEqual(['Burned', 'Paralysis', 'Stuck'])
-    expect(derived.stats.value.find((row) => row.key === 'def')).toMatchObject({
+    const def = derived.stats.value.find((row) => row.key === 'def')!
+    expect(def).toMatchObject({
       stage: 0,
       conditionStageModifier: -2,
       effectiveStage: -2,
-      total: unconditioned.stats.value.find((row) => row.key === 'def')?.total,
+      total: applyCombatStageToStat(def.baseTotal, -2),
     })
+    expect(def.total).toBeLessThan(unconditioned.stats.value.find((row) => row.key === 'def')?.total ?? 0)
     expect(derived.pokemonEvasion.value.vsAtk.total).toBe(unconditioned.pokemonEvasion.value.vsAtk.total)
     expect(derived.pokemonEvasion.value.vsAny.total).toBe(0)
     expect(derived.pokemonEvasion.value.vsAny.suppressedByCondition).toBe('Stuck')

@@ -1,4 +1,5 @@
 import { computed, watch, type ComputedRef, type Ref } from 'vue'
+import { applyCombatStageToStatTotal } from '~/utils/combatStageStats'
 import { makeAbilityLookupRows } from '~/utils/sheetAbilityLookup'
 import { clampHpValue, computeHpThresholds, computeTickValue } from '~/utils/ptuHp'
 import { computeTrainerLevelUpStatPointBudget } from '~/utils/statPointBudgets'
@@ -16,6 +17,11 @@ import {
   resolveTrainerSkills,
   resolveTrainerStats,
 } from '~/utils/sheets/trainerDerived'
+import {
+  resolvedStatBaseTotal,
+  resolvedStatEffectiveStage,
+  resolvedStatTotal,
+} from '~/utils/sheets/resolvedStatRows'
 import {
   conditionAdjustedCombatStage,
   conditionAdjustedEvasion,
@@ -36,7 +42,13 @@ export type TrainerSheetMoveLookupRow = MoveLookupRow<TrainerMove> & {
 type TrainerStatRows = ReturnType<typeof resolveTrainerStats>
 
 const totalForStat = (rows: TrainerStatRows, key: TrainerStatKey): number =>
-  rows.find((row) => row.key === key)?.total ?? 0
+  resolvedStatTotal(rows, key)
+
+const baseTotalForStat = (rows: TrainerStatRows, key: TrainerStatKey): number =>
+  resolvedStatBaseTotal(rows, key)
+
+const effectiveStageForStat = (rows: TrainerStatRows, key: TrainerStatKey): number =>
+  resolvedStatEffectiveStage(rows, key)
 
 export function useTrainerSheetDerived(sheet: TrainerSheetRef) {
   const combatConditions = computed(() => mergeLegacyConditions(
@@ -49,10 +61,13 @@ export function useTrainerSheetDerived(sheet: TrainerSheetRef) {
     const abilities = sheet.value.abilities
     return resolveTrainerStats(sheet.value).map((row) => {
       if (row.key === 'hp') return row
+      const conditionStageModifier = conditionCombatStageModifier(conditions, row.key, { abilities })
+      const effectiveStage = conditionAdjustedCombatStage(row.stage, conditions, row.key, { abilities })
       return {
         ...row,
-        conditionStageModifier: conditionCombatStageModifier(conditions, row.key, { abilities }),
-        effectiveStage: conditionAdjustedCombatStage(row.stage, conditions, row.key, { abilities }),
+        conditionStageModifier,
+        effectiveStage,
+        total: applyCombatStageToStatTotal(row.key, row.baseTotal, effectiveStage),
       }
     })
   })
@@ -93,20 +108,10 @@ export function useTrainerSheetDerived(sheet: TrainerSheetRef) {
 
   const moveRows = computed<TrainerSheetMoveLookupRow[]>(() => {
     const options = {
-      physicalAttack: attackTotal.value,
-      specialAttack: specialAttackTotal.value,
-      physicalAttackStage: conditionAdjustedCombatStage(
-        sheet.value?.stats?.atk?.stage ?? sheet.value?.combatStages?.atk ?? 0,
-        combatConditions.value,
-        'atk',
-        { abilities: sheet.value?.abilities },
-      ),
-      specialAttackStage: conditionAdjustedCombatStage(
-        sheet.value?.stats?.satk?.stage ?? sheet.value?.combatStages?.satk ?? 0,
-        combatConditions.value,
-        'satk',
-        { abilities: sheet.value?.abilities },
-      ),
+      physicalAttack: baseTotalForStat(stats.value, 'atk'),
+      specialAttack: baseTotalForStat(stats.value, 'satk'),
+      physicalAttackStage: effectiveStageForStat(stats.value, 'atk'),
+      specialAttackStage: effectiveStageForStat(stats.value, 'satk'),
       abilities: sheet.value?.abilities,
       combatSkillRankValue: combatSkillRankValue.value,
     }
@@ -136,40 +141,37 @@ export function useTrainerSheetDerived(sheet: TrainerSheetRef) {
     return {
       speed: {
         ...conditionAdjustedEvasion({
-          statTotal: totalRow('spd'),
+          statTotal: baseTotalForStat(stats.value, 'spd'),
           combatStage: sheet.value?.stats?.spd?.stage ?? sheet.value?.combatStages?.spd,
           bonus: speedBonus,
           conditions,
           abilities: sheet.value?.abilities,
           statStageKey: 'spd',
           kind: 'speed',
-          applyCombatStages: false,
         }),
         bonus: speedBonus,
       },
       physical: {
         ...conditionAdjustedEvasion({
-          statTotal: totalRow('def'),
+          statTotal: baseTotalForStat(stats.value, 'def'),
           combatStage: sheet.value?.stats?.def?.stage ?? sheet.value?.combatStages?.def,
           bonus: physicalBonus,
           conditions,
           abilities: sheet.value?.abilities,
           statStageKey: 'def',
           kind: 'physical',
-          applyCombatStages: false,
         }),
         bonus: physicalBonus,
       },
       special: {
         ...conditionAdjustedEvasion({
-          statTotal: totalRow('sdef'),
+          statTotal: baseTotalForStat(stats.value, 'sdef'),
           combatStage: sheet.value?.stats?.sdef?.stage ?? sheet.value?.combatStages?.sdef,
           bonus: specialBonus,
           conditions,
           abilities: sheet.value?.abilities,
           statStageKey: 'sdef',
           kind: 'special',
-          applyCombatStages: false,
         }),
         bonus: specialBonus,
       },

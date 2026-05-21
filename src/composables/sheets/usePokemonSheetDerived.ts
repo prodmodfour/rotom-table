@@ -1,6 +1,7 @@
 import { computed, watch, type ComputedRef, type Ref } from 'vue'
 import { getPokedexEntry, getSpriteUrl } from '~~/data/characterSheets'
 import { findItem } from '~~/data/ptuReference'
+import { applyCombatStageToStatTotal } from '~/utils/combatStageStats'
 import { makeAutomaticStruggleMoves } from '~/utils/struggleMoves'
 import { buildSheetAccuracySummary } from '~/utils/sheetAccuracy'
 import { POKEMON_TYPES, computeMultiplier, formatMultiplier } from '~/utils/typeChart'
@@ -31,6 +32,11 @@ import {
   calculatePokemonLevelFromExperience,
 } from '~/utils/sheets/pokemonExperience'
 import { resolvePokemonTrainingFeatureEffects } from '~/utils/sheets/pokemonTrainingFeatures'
+import {
+  resolvedStatBaseTotal,
+  resolvedStatEffectiveStage,
+  resolvedStatTotal,
+} from '~/utils/sheets/resolvedStatRows'
 import { makeAbilityLookupRows } from '~/utils/sheetAbilityLookup'
 import { makeMoveLookupRows, type MoveLookupRow } from '~/utils/sheetMoveLookup'
 import type {
@@ -48,10 +54,16 @@ export type PokemonSheetMoveLookupRow = MoveLookupRow<CharacterSheetMove> & {
 
 const BASE_RELATION_VISIBLE_LIMIT = 6
 
-const totalForStat = (
-  rows: ReturnType<typeof resolveStats>,
-  key: StatKey,
-): number => rows.find((row) => row.key === key)?.total ?? 0
+type PokemonStatRows = ReturnType<typeof resolveStats>
+
+const totalForStat = (rows: PokemonStatRows, key: StatKey): number =>
+  resolvedStatTotal(rows, key)
+
+const baseTotalForStat = (rows: PokemonStatRows, key: StatKey): number =>
+  resolvedStatBaseTotal(rows, key)
+
+const effectiveStageForStat = (rows: PokemonStatRows, key: StatKey): number =>
+  resolvedStatEffectiveStage(rows, key)
 
 export const formatLookupList = (values: readonly string[] | null | undefined): string => {
   const presentValues = (values ?? []).filter(Boolean)
@@ -72,10 +84,13 @@ export function usePokemonSheetDerived(sheet: PokemonSheetRef) {
     const abilities = sheet.value.abilities
     return resolveStats(sheet.value).map((row) => {
       if (row.key === 'hp') return row
+      const conditionStageModifier = conditionCombatStageModifier(conditions, row.key, { abilities })
+      const effectiveStage = conditionAdjustedCombatStage(row.stage, conditions, row.key, { abilities })
       return {
         ...row,
-        conditionStageModifier: conditionCombatStageModifier(conditions, row.key, { abilities }),
-        effectiveStage: conditionAdjustedCombatStage(row.stage, conditions, row.key, { abilities }),
+        conditionStageModifier,
+        effectiveStage,
+        total: applyCombatStageToStatTotal(row.key, row.baseTotal, effectiveStage),
       }
     })
   })
@@ -182,14 +197,13 @@ export function usePokemonSheetDerived(sheet: PokemonSheetRef) {
     return {
       vsAtk: {
         ...conditionAdjustedEvasion({
-          statTotal: totalForStat(stats.value, 'def'),
+          statTotal: baseTotalForStat(stats.value, 'def'),
           combatStage: sheet.value?.stats?.def?.stage,
           bonus: vsAtkBonus + abilityBonus + trainingBonus,
           conditions,
           abilities: sheet.value?.abilities,
           statStageKey: 'def',
           kind: 'physical',
-          applyCombatStages: false,
         }),
         bonus: vsAtkBonus,
         abilityBonus,
@@ -197,14 +211,13 @@ export function usePokemonSheetDerived(sheet: PokemonSheetRef) {
       },
       vsSatk: {
         ...conditionAdjustedEvasion({
-          statTotal: totalForStat(stats.value, 'sdef'),
+          statTotal: baseTotalForStat(stats.value, 'sdef'),
           combatStage: sheet.value?.stats?.sdef?.stage,
           bonus: vsSatkBonus + abilityBonus + trainingBonus,
           conditions,
           abilities: sheet.value?.abilities,
           statStageKey: 'sdef',
           kind: 'special',
-          applyCombatStages: false,
         }),
         bonus: vsSatkBonus,
         abilityBonus,
@@ -212,14 +225,13 @@ export function usePokemonSheetDerived(sheet: PokemonSheetRef) {
       },
       vsAny: {
         ...conditionAdjustedEvasion({
-          statTotal: speedTotal.value,
+          statTotal: baseTotalForStat(stats.value, 'spd'),
           combatStage: sheet.value?.stats?.spd?.stage,
           bonus: vsAnyBonus + abilityBonus + vsAnyItemBonus + trainingBonus,
           conditions,
           abilities: sheet.value?.abilities,
           statStageKey: 'spd',
           kind: 'speed',
-          applyCombatStages: false,
         }),
         bonus: vsAnyBonus,
         abilityBonus,
@@ -247,20 +259,10 @@ export function usePokemonSheetDerived(sheet: PokemonSheetRef) {
   const moveRows = computed<PokemonSheetMoveLookupRow[]>(() => {
     const options = {
       stabTypes: sheetTypes.value,
-      physicalAttack: attackTotal.value,
-      specialAttack: specialAttackTotal.value,
-      physicalAttackStage: conditionAdjustedCombatStage(
-        sheet.value?.stats?.atk?.stage ?? 0,
-        combatConditions.value,
-        'atk',
-        { abilities: sheet.value?.abilities },
-      ),
-      specialAttackStage: conditionAdjustedCombatStage(
-        sheet.value?.stats?.satk?.stage ?? 0,
-        combatConditions.value,
-        'satk',
-        { abilities: sheet.value?.abilities },
-      ),
+      physicalAttack: baseTotalForStat(stats.value, 'atk'),
+      specialAttack: baseTotalForStat(stats.value, 'satk'),
+      physicalAttackStage: effectiveStageForStat(stats.value, 'atk'),
+      specialAttackStage: effectiveStageForStat(stats.value, 'satk'),
       abilities: sheet.value?.abilities,
       combatSkillRankValue: combatSkillRankValue.value,
     }
