@@ -4,6 +4,7 @@ import MovementCapabilityAdjustment from '~/components/sheets/MovementCapability
 import MovementCapabilityEditableCell from '~/components/sheets/MovementCapabilityEditableCell.vue'
 import OtherMovementCapabilityAdjustments from '~/components/sheets/OtherMovementCapabilityAdjustments.vue'
 import { useTrainerCapabilityModels } from '~/composables/sheets/useTrainerCapabilityModels'
+import { conditionAdjustedCombatStage } from '~/utils/sheetConditionEffects'
 import { mergeLegacyConditions } from '~/utils/statusConditions'
 import type { TrainerSheet } from '~/types/trainerSheet'
 
@@ -17,6 +18,12 @@ const sheetRef = computed(() => props.sheet)
 const combatConditions = computed(() => mergeLegacyConditions(
   props.sheet.conditions,
   props.sheet.statusAfflictions,
+))
+const speedCombatStage = computed(() => conditionAdjustedCombatStage(
+  props.sheet.stats?.spd?.stage ?? props.sheet.combatStages?.spd,
+  combatConditions.value,
+  'spd',
+  { abilities: props.sheet.abilities },
 ))
 const {
   overland,
@@ -38,8 +45,18 @@ const {
       <li>
         <span class="cap-label"><RefLink kind="capability" name="Overland" /></span>
         <span class="cap-value">
-          <MovementCapabilityEditableCell v-model="overland" name="Overland" :conditions="combatConditions" />
-          <MovementCapabilityAdjustment name="Overland" :value="overland" :conditions="combatConditions" />
+          <MovementCapabilityEditableCell
+            v-model="overland"
+            name="Overland"
+            :conditions="combatConditions"
+            :speed-combat-stage="speedCombatStage"
+          />
+          <MovementCapabilityAdjustment
+            name="Overland"
+            :value="overland"
+            :conditions="combatConditions"
+            :speed-combat-stage="speedCombatStage"
+          />
         </span>
       </li>
       <li>
@@ -63,8 +80,18 @@ const {
       <li>
         <span class="cap-label"><RefLink kind="capability" name="Swim" /></span>
         <span class="cap-value">
-          <MovementCapabilityEditableCell v-model="swim" name="Swim" :conditions="combatConditions" />
-          <MovementCapabilityAdjustment name="Swim" :value="swim" :conditions="combatConditions" />
+          <MovementCapabilityEditableCell
+            v-model="swim"
+            name="Swim"
+            :conditions="combatConditions"
+            :speed-combat-stage="speedCombatStage"
+          />
+          <MovementCapabilityAdjustment
+            name="Swim"
+            :value="swim"
+            :conditions="combatConditions"
+            :speed-combat-stage="speedCombatStage"
+          />
         </span>
       </li>
       <li>
@@ -76,29 +103,63 @@ const {
       <li>
         <span class="cap-label"><RefLink kind="capability" name="Sky" /></span>
         <span class="cap-value">
-          <MovementCapabilityEditableCell v-model="sky" name="Sky" :conditions="combatConditions" />
-          <MovementCapabilityAdjustment name="Sky" :value="sky" :conditions="combatConditions" />
+          <MovementCapabilityEditableCell
+            v-model="sky"
+            name="Sky"
+            :conditions="combatConditions"
+            :speed-combat-stage="speedCombatStage"
+          />
+          <MovementCapabilityAdjustment
+            name="Sky"
+            :value="sky"
+            :conditions="combatConditions"
+            :speed-combat-stage="speedCombatStage"
+          />
         </span>
       </li>
       <li>
         <span class="cap-label"><RefLink kind="capability" name="Levitate" /></span>
         <span class="cap-value">
-          <MovementCapabilityEditableCell v-model="levitate" name="Levitate" :conditions="combatConditions" />
-          <MovementCapabilityAdjustment name="Levitate" :value="levitate" :conditions="combatConditions" />
+          <MovementCapabilityEditableCell
+            v-model="levitate"
+            name="Levitate"
+            :conditions="combatConditions"
+            :speed-combat-stage="speedCombatStage"
+          />
+          <MovementCapabilityAdjustment
+            name="Levitate"
+            :value="levitate"
+            :conditions="combatConditions"
+            :speed-combat-stage="speedCombatStage"
+          />
         </span>
       </li>
       <li>
         <span class="cap-label"><RefLink kind="capability" name="Burrow" /></span>
         <span class="cap-value">
-          <MovementCapabilityEditableCell v-model="burrow" name="Burrow" :conditions="combatConditions" />
-          <MovementCapabilityAdjustment name="Burrow" :value="burrow" :conditions="combatConditions" />
+          <MovementCapabilityEditableCell
+            v-model="burrow"
+            name="Burrow"
+            :conditions="combatConditions"
+            :speed-combat-stage="speedCombatStage"
+          />
+          <MovementCapabilityAdjustment
+            name="Burrow"
+            :value="burrow"
+            :conditions="combatConditions"
+            :speed-combat-stage="speedCombatStage"
+          />
         </span>
       </li>
     </ul>
     <p class="muted-help capabilities-help">
       <strong>Other capabilities:</strong>
       <EditableCell v-model="otherCapsCsv" placeholder="Telepath, Aura Reader" />
-      <OtherMovementCapabilityAdjustments :capabilities-text="otherCapsCsv" :conditions="combatConditions" />
+      <OtherMovementCapabilityAdjustments
+        :capabilities-text="otherCapsCsv"
+        :conditions="combatConditions"
+        :speed-combat-stage="speedCombatStage"
+      />
     </p>
   </div>
 </template>

@@ -45,6 +45,23 @@ describe('sheet movement capability adjustments', () => {
     expect(formatSheetMovementCapabilityValue('Overland', 6, ['Stuck'], 'Agility Training')).toBe('0')
   })
 
+  it('applies Speed Combat Stage movement modifiers before conditions and training', () => {
+    expect(formatSheetMovementCapabilityValue('Sky', 6, [], null, 3)).toBe('7')
+    expect(formatSheetMovementCapabilityValue('Overland', 6, ['Slowed'], 'Agility Training', 4)).toBe('5')
+    expect(formatSheetMovementCapabilityValue('Overland', 3, [], null, -6)).toBe('2')
+    expect(formatSheetMovementCapabilityValue('Overland', 1, [], null, -6)).toBe('1')
+    expect(formatSheetMovementCapabilityValue('Overland', 6, [], null, -1)).toBe('6')
+    expect(formatSheetMovementCapabilityValue('Power', 6, [], null, 6)).toBe('6')
+
+    const adjustments = resolveSheetMovementCapabilityAdjustments('Swim', 6, [], null, -3)
+    expect(adjustments.speedStageAdjustment).toMatchObject({
+      stage: -3,
+      delta: -1,
+      adjustedValue: 5,
+      displayValue: '-1',
+    })
+  })
+
   it('does not apply Agility Training when movement is blocked', () => {
     const adjustments = resolveSheetMovementCapabilityAdjustments(
       'Swim',

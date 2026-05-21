@@ -2,7 +2,11 @@ import { computed, watch, type ComputedRef, type Ref } from 'vue'
 import { trimmedTextValueFromEvent } from '~/utils/domEvents'
 import { resolveStats } from '~/utils/sheets/pokemonDerived'
 import { resolveTrainerStats } from '~/utils/sheets/trainerDerived'
-import { conditionAdjustedInitiative } from '~/utils/sheetConditionEffects'
+import { applyCombatStageToStat } from '~/utils/combatStageStats'
+import {
+  conditionAdjustedCombatStage,
+  conditionAdjustedInitiative,
+} from '~/utils/sheetConditionEffects'
 import { sheetItemsInitiativeBonus } from '~/utils/sheetHeldItemEffects'
 import { pokemonHeldItemNames, trainerEquippedItemNames } from '~/utils/sheetItemNames'
 import { pokemonTrainingFeatureInitiativeBonus } from '~/utils/sheets/pokemonTrainingFeatures'
@@ -40,8 +44,13 @@ export interface InitiativeRow {
   conditions: string[]
   /** Raw map-local initiative input before condition effects. */
   initiative: number | null
+  /** Raw Speed before Combat Stages. */
+  baseSpeed: number
+  /** Speed after current Combat Stages, before item/training bonuses. */
   speed: number
-  /** Default initiative before condition effects: Speed plus sheet item bonuses such as Quick Claw. */
+  /** Effective Speed Combat Stage used to calculate Speed. */
+  speedCombatStage: number
+  /** Default initiative before non-Speed condition effects: staged Speed plus sheet item bonuses such as Quick Claw. */
   baseInitiative: number
   /** Initiative bonus supplied by sheet equipment. */
   initiativeItemBonus: number
@@ -120,7 +129,7 @@ export const useInitiativeTracker = ({
   canManageInitiative,
   focusEntry,
 }: UseInitiativeTrackerOptions) => {
-  const speedForPlacement = (kind: InitiativeKind, sheetSlug: string): number => {
+  const baseSpeedForPlacement = (kind: InitiativeKind, sheetSlug: string): number => {
     if (kind === 'pokemon') {
       const sheet = pokemonBySlug.value?.get(sheetSlug)
       if (!sheet) return 0
@@ -161,7 +170,14 @@ export const useInitiativeTracker = ({
     const placements = new Map((map.value?.placements ?? []).map((placement) => [placement.id, placement]))
     return spawnedPokemon.value.map((pokemon) => {
       const placement = placements.get(pokemon.id)
-      const speed = speedForPlacement(pokemon.sheetKind, pokemon.sheetSlug)
+      const baseSpeed = baseSpeedForPlacement(pokemon.sheetKind, pokemon.sheetSlug)
+      const speedCombatStage = conditionAdjustedCombatStage(
+        pokemon.combatStages?.spd,
+        pokemon.conditions,
+        'spd',
+        { abilities: pokemon.abilityNames },
+      )
+      const speed = applyCombatStageToStat(baseSpeed, speedCombatStage)
       const initiativeItemBonus = initiativeItemBonusForPlacement(pokemon.sheetKind, pokemon.sheetSlug)
       const initiativeTrainingBonus = initiativeTrainingBonusForPlacement(pokemon.sheetKind, pokemon.sheetSlug)
       const baseInitiative = speed + initiativeItemBonus + initiativeTrainingBonus
@@ -177,7 +193,9 @@ export const useInitiativeTracker = ({
         fullMaxHp: pokemon.fullMaxHp == null ? undefined : Math.max(0, Math.floor(pokemon.fullMaxHp)),
         conditions: pokemon.conditions,
         initiative,
+        baseSpeed,
         speed,
+        speedCombatStage,
         baseInitiative,
         initiativeItemBonus,
         initiativeTrainingBonus,

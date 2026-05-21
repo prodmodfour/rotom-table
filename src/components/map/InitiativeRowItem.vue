@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { formatCombatStage } from '~/utils/combatStageStats'
 import InitiativeScoreEditor from '~/components/map/InitiativeScoreEditor.vue'
 import InitiativeTokenSprite from '~/components/map/InitiativeTokenSprite.vue'
 import InitiativeVitals from '~/components/map/InitiativeVitals.vue'
@@ -58,6 +59,9 @@ const isFainted = computed(() => props.entry.currentHp <= 0)
         <span class="initiative-row__name">{{ entry.name }}</span>
         <span class="initiative-row__meta">
           {{ entry.meta }} · SPD {{ entry.speed }}
+          <template v-if="entry.speedCombatStage">
+            ({{ entry.baseSpeed }} @ {{ formatCombatStage(entry.speedCombatStage) }} CS)
+          </template>
           <template v-if="entry.initiativeItemBonus">
             · Item Init +{{ entry.initiativeItemBonus }}
           </template>

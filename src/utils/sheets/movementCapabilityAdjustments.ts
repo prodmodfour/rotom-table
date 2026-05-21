@@ -3,11 +3,16 @@ import {
   type MovementCapabilityConditionAdjustment,
 } from '~/utils/sheetConditionEffects'
 import {
+  movementCapabilitySpeedCombatStageAdjustment,
+  type SpeedCombatStageMovementAdjustment,
+} from '~/utils/combatStageMovement'
+import {
   pokemonTrainingFeatureMovementCapabilityAdjustment,
   type PokemonTrainingFeatureMovementAdjustment,
 } from '~/utils/sheets/pokemonTrainingFeatures'
 
 export interface SheetMovementCapabilityAdjustments {
+  speedStageAdjustment: SpeedCombatStageMovementAdjustment | null
   conditionAdjustment: MovementCapabilityConditionAdjustment | null
   trainingAdjustment: PokemonTrainingFeatureMovementAdjustment | null
 }
@@ -29,9 +34,12 @@ export const resolveSheetMovementCapabilityAdjustments = (
   value: MovementCapabilityValue,
   conditions: readonly string[] | null | undefined,
   trainingFeature: unknown,
+  speedCombatStage?: unknown,
 ): SheetMovementCapabilityAdjustments => {
-  const conditionAdjustment = movementCapabilityConditionAdjustment(label, value, conditions)
-  const valueBeforeTraining = conditionAdjustment?.adjustedValue ?? value
+  const speedStageAdjustment = movementCapabilitySpeedCombatStageAdjustment(label, value, speedCombatStage)
+  const valueAfterSpeedStage = speedStageAdjustment?.adjustedValue ?? value
+  const conditionAdjustment = movementCapabilityConditionAdjustment(label, valueAfterSpeedStage, conditions)
+  const valueBeforeTraining = conditionAdjustment?.adjustedValue ?? valueAfterSpeedStage
   const trainingAdjustment = pokemonTrainingFeatureMovementCapabilityAdjustment(
     label,
     valueBeforeTraining,
@@ -39,6 +47,7 @@ export const resolveSheetMovementCapabilityAdjustments = (
   )
 
   return {
+    speedStageAdjustment,
     conditionAdjustment: conditionAdjustment && trainingAdjustment
       ? applyTrainingAdjustmentToConditionAdjustment(conditionAdjustment, trainingAdjustment)
       : conditionAdjustment,
@@ -51,10 +60,12 @@ export const adjustedSheetMovementCapabilityValue = (
   value: MovementCapabilityValue,
   conditions: readonly string[] | null | undefined,
   trainingFeature: unknown,
+  speedCombatStage?: unknown,
 ): MovementCapabilityValue => {
-  const adjustments = resolveSheetMovementCapabilityAdjustments(label, value, conditions, trainingFeature)
+  const adjustments = resolveSheetMovementCapabilityAdjustments(label, value, conditions, trainingFeature, speedCombatStage)
   return adjustments.conditionAdjustment?.adjustedValue
     ?? adjustments.trainingAdjustment?.adjustedValue
+    ?? adjustments.speedStageAdjustment?.adjustedValue
     ?? value
 }
 
@@ -63,8 +74,9 @@ export const formatSheetMovementCapabilityValue = (
   value: MovementCapabilityValue,
   conditions: readonly string[] | null | undefined,
   trainingFeature: unknown,
+  speedCombatStage?: unknown,
 ): string => {
-  const adjustedValue = adjustedSheetMovementCapabilityValue(label, value, conditions, trainingFeature)
+  const adjustedValue = adjustedSheetMovementCapabilityValue(label, value, conditions, trainingFeature, speedCombatStage)
   return adjustedValue === null || adjustedValue === undefined || adjustedValue === ''
     ? ''
     : String(adjustedValue)

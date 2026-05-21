@@ -61,7 +61,7 @@ const emit = defineEmits<{
     <button
       type="button"
       class="initiative-tool"
-      title="Use each character's default initiative: Speed plus item bonuses"
+      title="Use each character's default initiative: Speed after Combat Stages plus item/training bonuses"
       :disabled="!rowCount || !canManage"
       @click="emit('fill-from-speed')"
     >

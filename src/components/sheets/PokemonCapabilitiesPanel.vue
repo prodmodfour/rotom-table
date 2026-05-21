@@ -4,6 +4,7 @@ import MovementCapabilityAdjustment from '~/components/sheets/MovementCapability
 import MovementCapabilityEditableCell from '~/components/sheets/MovementCapabilityEditableCell.vue'
 import OtherMovementCapabilityAdjustments from '~/components/sheets/OtherMovementCapabilityAdjustments.vue'
 import { usePokemonCapabilityModels } from '~/composables/sheets/usePokemonCapabilityModels'
+import { conditionAdjustedCombatStage } from '~/utils/sheetConditionEffects'
 import { mergeLegacyConditions } from '~/utils/statusConditions'
 import type { CharacterSheet } from '~/types/characterSheet'
 
@@ -17,6 +18,12 @@ const sheetRef = computed(() => props.sheet)
 const combatConditions = computed(() => mergeLegacyConditions(
   props.sheet.combat?.conditions,
   props.sheet.combat?.statusAfflictions,
+))
+const speedCombatStage = computed(() => conditionAdjustedCombatStage(
+  props.sheet.stats?.spd?.stage ?? props.sheet.combatStages?.spd,
+  combatConditions.value,
+  'spd',
+  { abilities: props.sheet.abilities },
 ))
 const {
   overland,
@@ -46,12 +53,14 @@ const {
             name="Overland"
             :conditions="combatConditions"
             :training-feature="sheet.activeTrainingFeature"
+            :speed-combat-stage="speedCombatStage"
           />
           <MovementCapabilityAdjustment
             name="Overland"
             :value="overland"
             :conditions="combatConditions"
             :training-feature="sheet.activeTrainingFeature"
+            :speed-combat-stage="speedCombatStage"
           />
         </dd>
       </div>
@@ -63,12 +72,14 @@ const {
             name="Sky"
             :conditions="combatConditions"
             :training-feature="sheet.activeTrainingFeature"
+            :speed-combat-stage="speedCombatStage"
           />
           <MovementCapabilityAdjustment
             name="Sky"
             :value="sky"
             :conditions="combatConditions"
             :training-feature="sheet.activeTrainingFeature"
+            :speed-combat-stage="speedCombatStage"
           />
         </dd>
       </div>
@@ -80,12 +91,14 @@ const {
             name="Swim"
             :conditions="combatConditions"
             :training-feature="sheet.activeTrainingFeature"
+            :speed-combat-stage="speedCombatStage"
           />
           <MovementCapabilityAdjustment
             name="Swim"
             :value="swim"
             :conditions="combatConditions"
             :training-feature="sheet.activeTrainingFeature"
+            :speed-combat-stage="speedCombatStage"
           />
         </dd>
       </div>
@@ -97,6 +110,7 @@ const {
             name="Levitate"
             :conditions="combatConditions"
             :training-feature="sheet.activeTrainingFeature"
+            :speed-combat-stage="speedCombatStage"
           />
           <span
             v-if="levitateAbilityApplied && effectiveLevitate != null"
@@ -108,6 +122,7 @@ const {
             :value="levitate"
             :conditions="combatConditions"
             :training-feature="sheet.activeTrainingFeature"
+            :speed-combat-stage="speedCombatStage"
           />
         </dd>
       </div>
@@ -119,12 +134,14 @@ const {
             name="Burrow"
             :conditions="combatConditions"
             :training-feature="sheet.activeTrainingFeature"
+            :speed-combat-stage="speedCombatStage"
           />
           <MovementCapabilityAdjustment
             name="Burrow"
             :value="burrow"
             :conditions="combatConditions"
             :training-feature="sheet.activeTrainingFeature"
+            :speed-combat-stage="speedCombatStage"
           />
         </dd>
       </div>
@@ -156,6 +173,7 @@ const {
         :capabilities-text="otherCapsCsv"
         :conditions="combatConditions"
         :training-feature="sheet.activeTrainingFeature"
+        :speed-combat-stage="speedCombatStage"
       />
     </p>
   </section>

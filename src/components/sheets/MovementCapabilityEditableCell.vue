@@ -7,6 +7,7 @@ const props = defineProps<{
   name: string
   conditions?: readonly string[] | null
   trainingFeature?: string | null
+  speedCombatStage?: number | null
 }>()
 
 const emit = defineEmits<{
@@ -22,6 +23,7 @@ const formatAdjustedValue = (value: EditableCellValue): string => formatSheetMov
   movementCapabilityValue(value),
   props.conditions,
   props.trainingFeature,
+  props.speedCombatStage,
 )
 </script>
 

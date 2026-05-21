@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { formatCombatStage } from '~/utils/combatStageStats'
 import type { InitiativeRow } from '~/composables/map-editor/useInitiativeTracker'
 
 defineProps<{
@@ -12,12 +13,15 @@ const emit = defineEmits<{
 }>()
 
 const hasBaseInitiativeBonus = (entry: InitiativeRow): boolean =>
-  Boolean(entry.initiativeItemBonus || entry.initiativeTrainingBonus)
+  Boolean(entry.speedCombatStage || entry.initiativeItemBonus || entry.initiativeTrainingBonus)
 
 const signed = (value: number): string => value >= 0 ? `+${value}` : String(value)
 
 const baseInitiativeFormula = (entry: InitiativeRow): string => {
-  const parts = [`Speed ${entry.speed}`]
+  const speed = entry.speedCombatStage
+    ? `Speed ${entry.baseSpeed} @ ${formatCombatStage(entry.speedCombatStage)} CS → ${entry.speed}`
+    : `Speed ${entry.speed}`
+  const parts = [speed]
   if (entry.initiativeItemBonus) parts.push(`item ${signed(entry.initiativeItemBonus)}`)
   if (entry.initiativeTrainingBonus) parts.push(`training ${signed(entry.initiativeTrainingBonus)}`)
   return parts.join(' ')

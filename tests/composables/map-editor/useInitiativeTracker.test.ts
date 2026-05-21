@@ -1,6 +1,7 @@
 import { computed, ref } from 'vue'
 import { describe, expect, it } from 'vitest'
 import { useInitiativeTracker } from '~/composables/map-editor/useInitiativeTracker'
+import { applyCombatStageToStat } from '~/utils/combatStageStats'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { CombatStageMap } from '~/types/combatStages'
 import type { TabletopMap } from '~/types/map'
@@ -136,6 +137,35 @@ describe('useInitiativeTracker', () => {
 
     expect(map.value?.placements[0].initiative).toBe(41)
     expect(tracker.initiativeRows.value[0].initiativeScore).toBe(20)
+  })
+
+  it('uses current Speed Combat Stages for default initiative values', () => {
+    const map = ref<TabletopMap | null>(mapWithPlacements([
+      { id: 'boosted', sheetKind: 'pokemon', sheetSlug: 'boosted', position: { x: 0, y: 0, z: 0 } },
+    ]))
+    const tracker = useInitiativeTracker({
+      map,
+      spawnedPokemon: computed(() => [
+        token({
+          id: 'boosted',
+          sheetSlug: 'boosted',
+          species: 'Boosted',
+          combatStages: { ...stages, spd: 2 },
+        }),
+      ]),
+      pokemonBySlug: ref(new Map([['boosted', sheet('boosted', { stats: { spd: { stage: 2 } } })]])),
+      trainerBySlug: ref(new Map<string, TrainerSheet>()),
+      canManageInitiative: computed(() => true),
+    })
+
+    const row = tracker.initiativeRows.value[0]
+    expect(row.speedCombatStage).toBe(2)
+    expect(row.speed).toBe(applyCombatStageToStat(row.baseSpeed, 2))
+    expect(row.baseInitiative).toBe(row.speed)
+
+    tracker.fillInitiativeFromSpeed()
+
+    expect(map.value?.placements[0].initiative).toBe(row.speed)
   })
 
   it('preserves negative current HP in initiative rows while flooring HP bar display', () => {

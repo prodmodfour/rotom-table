@@ -7,6 +7,7 @@ const props = defineProps<{
   value?: number | string | null
   conditions?: readonly string[] | null
   trainingFeature?: string | null
+  speedCombatStage?: number | null
   showName?: boolean
 }>()
 
@@ -17,13 +18,23 @@ const adjustments = computed(() => resolveSheetMovementCapabilityAdjustments(
   props.value,
   props.conditions,
   props.trainingFeature,
+  props.speedCombatStage,
 ))
 
+const speedStageAdjustment = computed(() => adjustments.value.speedStageAdjustment)
 const trainingAdjustment = computed(() => adjustments.value.trainingAdjustment)
 const conditionAdjustment = computed(() => adjustments.value.conditionAdjustment)
 </script>
 
 <template>
+  <small
+    v-if="speedStageAdjustment"
+    class="movement-capability-adjustment movement-capability-adjustment--speed-stage"
+    :class="{ 'movement-capability-adjustment--negative': speedStageAdjustment.delta < 0 }"
+    :title="speedStageAdjustment.title"
+  >
+    Speed CS: Movement {{ speedStageAdjustment.displayValue }}<template v-if="showName"> ({{ displayName }})</template>
+  </small>
   <small
     v-if="trainingAdjustment"
     class="movement-capability-adjustment movement-capability-adjustment--training"
@@ -52,6 +63,7 @@ const conditionAdjustment = computed(() => adjustments.value.conditionAdjustment
   line-height: 1.15;
 }
 
+.movement-capability-adjustment--negative,
 .movement-capability-adjustment--blocked {
   color: var(--bad);
 }

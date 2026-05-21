@@ -8,6 +8,7 @@ const props = defineProps<{
   capabilitiesText?: string | null
   conditions?: readonly string[] | null
   trainingFeature?: string | null
+  speedCombatStage?: number | null
 }>()
 
 const VALUED_CAPABILITY_RE = /^(.+?)\s+(\d+)\s*$/
@@ -33,6 +34,7 @@ const valuedMovementCapabilities = computed(() => parseCsvList(props.capabilitie
     :value="capability.value"
     :conditions="props.conditions"
     :training-feature="props.trainingFeature"
+    :speed-combat-stage="props.speedCombatStage"
     show-name
   />
 </template>
