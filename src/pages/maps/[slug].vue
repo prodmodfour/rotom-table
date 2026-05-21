@@ -22,6 +22,7 @@ import { useMapEditorUiState } from '~/composables/map-editor/useMapEditorUiStat
 import { useMapTokenNavigation } from '~/composables/map-editor/useMapTokenNavigation'
 import { useAbilityAutomationPanel } from '~/composables/map-editor/useAbilityAutomationPanel'
 import { useMoveAutomationPanel } from '~/composables/map-editor/useMoveAutomationPanel'
+import { useManeuverActionPanel } from '~/composables/map-editor/useManeuverActionPanel'
 import { useOrderActionPanel } from '~/composables/map-editor/useOrderActionPanel'
 import { useTerrainBuilder } from '~/composables/map-editor/useTerrainBuilder'
 import { useAttackOfOpportunityPanel } from '~/utils/attackOfOpportunity'
@@ -402,6 +403,22 @@ const {
   },
 })
 
+const {
+  maneuverActionTargeting,
+  tokenManeuverOptionsById,
+  useManeuver,
+  cancelManeuverActionTargeting,
+  selectManeuverActionTarget,
+} = useManeuverActionPanel({
+  map,
+  spawnedPokemon,
+  trainerBySlug,
+  canControlPlacement,
+  onBeforeManeuverAction: () => {
+    attackOfOpportunityPanel?.clearAttackOfOpportunityPromptsForNonImmediateAction()
+  },
+})
+
 const orderActionPanel = useOrderActionPanel({
   map,
   spawnedPokemon,
@@ -421,23 +438,36 @@ const {
 expireActiveOrdersAfterInitiativeAdvance = orderActionPanel.expireActiveOrdersAfterInitiativeAdvance
 
 const actionAutomationTargeting = computed(() =>
-  moveAutomationTargeting.value ?? abilityAutomationTargeting.value ?? orderActionTargeting.value,
+  moveAutomationTargeting.value
+  ?? abilityAutomationTargeting.value
+  ?? maneuverActionTargeting.value
+  ?? orderActionTargeting.value,
 )
 
 const openMoveAutomationFromContext = (payload: { id: string; moveName?: string | null }) => {
   cancelAbilityAutomationTargeting()
+  cancelManeuverActionTargeting()
   cancelOrderActionTargeting()
   openMoveAutomation(payload)
 }
 
+const useManeuverFromContext = (payload: { id: string; maneuverName?: string | null }) => {
+  cancelMoveAutomationTargeting()
+  cancelAbilityAutomationTargeting()
+  cancelOrderActionTargeting()
+  useManeuver(payload)
+}
+
 const openAbilityAutomationFromContext = (payload: { id: string; abilityName?: string | null }) => {
   cancelMoveAutomationTargeting()
+  cancelManeuverActionTargeting()
   cancelOrderActionTargeting()
   void openAbilityAutomation(payload)
 }
 
 const useOrderFromContext = (payload: { id: string; orderName?: string | null }) => {
   cancelMoveAutomationTargeting()
+  cancelManeuverActionTargeting()
   cancelAbilityAutomationTargeting()
   useOrder(payload)
 }
@@ -451,6 +481,10 @@ const selectActionAutomationTarget = (targetId: string) => {
     void selectAbilityAutomationTarget(targetId)
     return
   }
+  if (maneuverActionTargeting.value) {
+    selectManeuverActionTarget(targetId)
+    return
+  }
   if (orderActionTargeting.value) selectOrderActionTarget(targetId)
 }
 
@@ -461,6 +495,10 @@ const cancelActionAutomationTargeting = () => {
   }
   if (abilityAutomationTargeting.value) {
     cancelAbilityAutomationTargeting()
+    return
+  }
+  if (maneuverActionTargeting.value) {
+    cancelManeuverActionTargeting()
     return
   }
   cancelOrderActionTargeting()
@@ -538,6 +576,7 @@ useMapDimensionReconciliation({
         :celebrate-trigger-prompts="celebrateTriggerPrompts"
         :attack-of-opportunity-prompts="attackOfOpportunityPrompts"
         :token-move-options-by-id="tokenMoveOptionsById"
+        :token-maneuver-options-by-id="tokenManeuverOptionsById"
         :token-ability-options-by-id="tokenAbilityOptionsById"
         :token-order-options-by-id="tokenOrderOptionsById"
         :token-send-out-options-by-id="tokenSendOutOptionsById"
@@ -552,6 +591,7 @@ useMapDimensionReconciliation({
         @modify-combat-stages="modifyCombatStages"
         @modify-conditions="modifyConditions"
         @use-move="openMoveAutomationFromContext"
+        @use-maneuver="useManeuverFromContext"
         @use-ability="openAbilityAutomationFromContext"
         @use-order="useOrderFromContext"
         @send-out-pokemon="sendOutPokemon"

@@ -63,6 +63,7 @@ export interface TokenActionControllerEmitters {
   modifyCombatStages: (payload: { id: string; stages: CombatStageMap }) => void
   modifyConditions: (payload: { id: string; conditions: string[] }) => void
   useMove: (payload: { id: string; moveName?: string | null }) => void
+  useManeuver?: (payload: { id: string; maneuverName?: string | null }) => void
   useAbility: (payload: { id: string; abilityName?: string | null }) => void
   useOrder?: (payload: { id: string; orderName?: string | null }) => void
   sendOutPokemon?: (payload: { trainerId: string; pokemonSlug: string }) => void
@@ -304,6 +305,14 @@ export const useTokenActionController = <TContainer extends BoundsProvider>(
     closeContextMenu()
   }
 
+  const handleContextUseManeuver = (maneuverName?: string | null) => {
+    const id = controllableContextId()
+    if (!id || !options.emit.useManeuver) return
+
+    options.emit.useManeuver({ id, maneuverName })
+    closeContextMenu()
+  }
+
   const handleContextUseAbility = (abilityName?: string | null) => {
     const id = controllableContextId()
     if (!id) return
@@ -461,6 +470,7 @@ export const useTokenActionController = <TContainer extends BoundsProvider>(
     closeConditionsDialog,
     handleConditionsDialogSubmit,
     handleContextUseMove,
+    handleContextUseManeuver,
     handleContextUseAbility,
     handleContextUseOrder,
     handleContextSendOutPokemon,

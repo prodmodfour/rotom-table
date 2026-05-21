@@ -59,13 +59,13 @@ describe('isometric token context menu helpers', () => {
       canViewPokedex: true,
       canUseOrders: false,
       canDeleteTokens: true,
-    })).toBe(10)
+    })).toBe(11)
     expect(getTokenContextMenuButtonCount({
       canTurn: false,
       canViewPokedex: false,
       canUseOrders: true,
       canSendOut: true,
-    })).toBe(9)
+    })).toBe(10)
 
     expect(getTokenContextMenuPosition({
       clientX: 999,
@@ -75,7 +75,7 @@ describe('isometric token context menu helpers', () => {
       canViewPokedex: true,
       canUseOrders: false,
       canDeleteTokens: true,
-    })).toEqual({ x: 358, y: 80 })
+    })).toEqual({ x: 358, y: 62 })
   })
 
   it('creates the state shape consumed by the Vue context menu', () => {

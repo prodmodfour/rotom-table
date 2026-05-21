@@ -33,6 +33,7 @@ import type { BuildTool } from '#shared/mapEditor'
 import type { AttackOfOpportunityPrompt } from '~/utils/attackOfOpportunity'
 import type { TokenAbilityMenuOption } from '~/utils/mapTokenAbilities'
 import type { TokenMoveMenuOption } from '~/utils/mapTokenMoves'
+import type { TokenManeuverMenuOption } from '~/utils/mapTokenManeuvers'
 import type { TokenOrderMenuOption } from '~/utils/mapTokenOrders'
 import {
   POKEBALL_THROW_RANGE_SQUARES,
@@ -137,6 +138,7 @@ const props = defineProps<{
   hazardKind?: MapHazardKind
   canDeleteTokens?: boolean
   tokenMoveOptionsById?: Record<string, TokenMoveMenuOption[]>
+  tokenManeuverOptionsById?: Record<string, TokenManeuverMenuOption[]>
   tokenAbilityOptionsById?: Record<string, TokenAbilityMenuOption[]>
   tokenOrderOptionsById?: Record<string, TokenOrderMenuOption[]>
   tokenSendOutOptionsById?: Record<string, TokenSendOutOption[]>
@@ -154,6 +156,7 @@ const emit = defineEmits<{
   (event: 'modify-combat-stages', payload: { id: string; stages: CombatStageMap }): void
   (event: 'modify-conditions', payload: { id: string; conditions: string[] }): void
   (event: 'use-move', payload: { id: string; moveName?: string | null }): void
+  (event: 'use-maneuver', payload: { id: string; maneuverName?: string | null }): void
   (event: 'use-ability', payload: { id: string; abilityName?: string | null }): void
   (event: 'use-order', payload: { id: string; orderName?: string | null }): void
   (event: 'send-out-pokemon', payload: { trainerId: string; pokemonSlug: string; position: GridAnchor }): void
@@ -275,6 +278,7 @@ const {
   closeConditionsDialog,
   handleConditionsDialogSubmit,
   handleContextUseMove,
+  handleContextUseManeuver,
   handleContextUseAbility,
   handleContextUseOrder,
   handleContextSendOutPokemon,
@@ -300,6 +304,7 @@ const {
     modifyCombatStages: (payload) => emit('modify-combat-stages', payload),
     modifyConditions: (payload) => emit('modify-conditions', payload),
     useMove: (payload) => emit('use-move', payload),
+    useManeuver: (payload) => emit('use-maneuver', payload),
     useAbility: (payload) => emit('use-ability', payload),
     useOrder: (payload) => emit('use-order', payload),
     sendOutPokemon: beginSendOutPlacement,
@@ -1361,6 +1366,7 @@ useIsometricSceneWatchers({
       :menu="contextMenu"
       :can-delete-tokens="props.canDeleteTokens"
       :moves="props.tokenMoveOptionsById?.[contextMenu.id] ?? []"
+      :maneuvers="props.tokenManeuverOptionsById?.[contextMenu.id] ?? []"
       :abilities="props.tokenAbilityOptionsById?.[contextMenu.id] ?? []"
       :orders="props.tokenOrderOptionsById?.[contextMenu.id] ?? []"
       :send-out-options="sendOutOptionsForToken(contextMenu.id)"
@@ -1371,6 +1377,7 @@ useIsometricSceneWatchers({
       @modify-combat-stages="handleContextModifyCombatStages"
       @apply-remove-conditions="handleContextApplyRemoveConditions"
       @use-move="handleContextUseMove"
+      @use-maneuver="handleContextUseManeuver"
       @use-ability="handleContextUseAbility"
       @use-order="handleContextUseOrder"
       @send-out-pokemon="handleContextSendOutPokemon"

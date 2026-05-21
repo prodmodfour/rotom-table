@@ -30,7 +30,7 @@ export interface TokenContextMenuPositionOptions extends TokenContextMenuCapabil
 
 export const TOKEN_CONTEXT_MENU_WIDTH = 230
 export const TOKEN_CONTEXT_MENU_PADDING = 12
-export const TOKEN_CONTEXT_MENU_BASE_BUTTONS = 7
+export const TOKEN_CONTEXT_MENU_BASE_BUTTONS = 8
 export const TOKEN_CONTEXT_MENU_BUTTON_HEIGHT = 40
 export const TOKEN_CONTEXT_MENU_BUTTON_GAP = 5
 export const TOKEN_CONTEXT_MENU_VERTICAL_CHROME = 13

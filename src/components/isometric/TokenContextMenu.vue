@@ -7,6 +7,8 @@ import type { TokenAbilityMenuOption } from '~/utils/mapTokenAbilities'
 import { buildTokenAbilityTooltipDetail } from '~/utils/mapTokenAbilityTooltips'
 import type { TokenMoveMenuOption } from '~/utils/mapTokenMoves'
 import { buildTokenMoveTooltipDetail } from '~/utils/mapTokenMoveTooltips'
+import type { TokenManeuverMenuOption } from '~/utils/mapTokenManeuvers'
+import { buildTokenManeuverTooltipDetail } from '~/utils/mapTokenManeuverTooltips'
 import type { TokenOrderMenuOption } from '~/utils/mapTokenOrders'
 import { buildTokenOrderTooltipDetail } from '~/utils/mapTokenOrderTooltips'
 import type { RefTooltipDetail } from '~/utils/refLinks'
@@ -16,6 +18,7 @@ const props = defineProps<{
   menu: TokenContextMenuState
   canDeleteTokens?: boolean
   moves?: TokenMoveMenuOption[]
+  maneuvers?: TokenManeuverMenuOption[]
   abilities?: TokenAbilityMenuOption[]
   orders?: TokenOrderMenuOption[]
   sendOutOptions?: TokenSendOutOption[]
@@ -29,6 +32,7 @@ const emit = defineEmits<{
   (event: 'modify-combat-stages'): void
   (event: 'apply-remove-conditions'): void
   (event: 'use-move', moveName?: string | null): void
+  (event: 'use-maneuver', maneuverName?: string | null): void
   (event: 'use-ability', abilityName?: string | null): void
   (event: 'use-order', orderName?: string | null): void
   (event: 'send-out-pokemon', pokemonSlug: string): void
@@ -36,7 +40,7 @@ const emit = defineEmits<{
   (event: 'delete'): void
 }>()
 
-type ActiveContextPanel = 'main' | 'moves' | 'abilities' | 'orders' | 'sendOut'
+type ActiveContextPanel = 'main' | 'moves' | 'maneuvers' | 'abilities' | 'orders' | 'sendOut'
 
 interface NamedMenuItem {
   name: string
@@ -45,6 +49,7 @@ interface NamedMenuItem {
 const activePanel = ref<ActiveContextPanel>('main')
 
 const moves = computed(() => props.moves ?? [])
+const maneuvers = computed(() => props.maneuvers ?? [])
 const abilities = computed(() => props.abilities ?? [])
 const orders = computed(() => props.orders ?? [])
 const sendOutOptions = computed(() => props.sendOutOptions ?? [])
@@ -145,6 +150,23 @@ const {
 })
 
 const {
+  hoveredName: hoveredManeuverName,
+  tooltipId: maneuverTooltipId,
+  tooltipComponent: maneuverTooltipComponent,
+  isTooltipVisible: isManeuverTooltipVisible,
+  tooltipReady: isManeuverTooltipReady,
+  tooltipPlacement: maneuverTooltipPlacement,
+  tooltipStyle: maneuverTooltipStyle,
+  tooltipDetail: hoveredManeuverTooltipDetail,
+  showTooltip: showManeuverTooltip,
+  hideTooltip: hideManeuverTooltip,
+} = createSubmenuTooltipController<TokenManeuverMenuOption>({
+  panel: 'maneuvers',
+  items: maneuvers,
+  buildDetail: buildTokenManeuverTooltipDetail,
+})
+
+const {
   hoveredName: hoveredAbilityName,
   tooltipId: abilityTooltipId,
   tooltipComponent: abilityTooltipComponent,
@@ -180,6 +202,7 @@ const {
 
 const hideSubmenuTooltips = () => {
   hideMoveTooltip()
+  hideManeuverTooltip()
   hideAbilityTooltip()
   hideOrderTooltip()
 }
@@ -192,6 +215,11 @@ const resetContextPanel = () => {
 const openMovePanel = () => {
   hideSubmenuTooltips()
   activePanel.value = 'moves'
+}
+
+const openManeuverPanel = () => {
+  hideSubmenuTooltips()
+  activePanel.value = 'maneuvers'
 }
 
 const openAbilityPanel = () => {
@@ -217,6 +245,12 @@ watch(moves, (nextMoves) => {
   hideMoveTooltip()
 })
 
+watch(maneuvers, (nextManeuvers) => {
+  if (activePanel.value !== 'maneuvers' || !hoveredManeuverName.value) return
+  if (nextManeuvers.some((maneuver) => maneuver.name === hoveredManeuverName.value)) return
+  hideManeuverTooltip()
+})
+
 watch(abilities, (nextAbilities) => {
   if (activePanel.value !== 'abilities' || !hoveredAbilityName.value) return
   if (nextAbilities.some((ability) => ability.name === hoveredAbilityName.value)) return
@@ -234,7 +268,7 @@ watch(orders, (nextOrders) => {
   <Teleport to="body">
     <div
       class="context-menu"
-      :class="{ 'context-menu--move-panel': activePanel === 'moves' }"
+      :class="{ 'context-menu--move-panel': activePanel === 'moves' || activePanel === 'maneuvers' }"
       :style="{ left: `${props.menu.x}px`, top: `${props.menu.y}px` }"
       @contextmenu.prevent
       @pointerdown.stop
@@ -247,6 +281,16 @@ watch(orders, (nextOrders) => {
           @click.stop="openMovePanel"
         >
           <span>Use Move</span>
+          <span class="context-menu__chevron">›</span>
+        </button>
+
+        <button
+          type="button"
+          class="context-menu__button context-menu__button--submenu"
+          aria-haspopup="menu"
+          @click.stop="openManeuverPanel"
+        >
+          <span>Use Maneuver</span>
           <span class="context-menu__chevron">›</span>
         </button>
 
@@ -409,6 +453,64 @@ watch(orders, (nextOrders) => {
               :placement="moveTooltipPlacement"
               :ready="isMoveTooltipReady"
               :style="moveTooltipStyle"
+            />
+          </Teleport>
+        </div>
+      </template>
+
+      <template v-else-if="activePanel === 'maneuvers'">
+        <button
+          type="button"
+          class="context-menu__button context-menu__button--back"
+          @click.stop="resetContextPanel"
+        >
+          <span class="context-menu__back-icon" aria-hidden="true">‹</span>
+          <span>Back</span>
+        </button>
+
+        <p class="context-menu__submenu-title">Use Maneuver</p>
+
+        <div class="action-submenu">
+          <div class="action-submenu__list action-submenu__list--maneuvers" role="menu" aria-label="Maneuvers">
+            <button
+              v-for="maneuver in maneuvers"
+              :key="maneuver.name"
+              type="button"
+              class="action-submenu__item"
+              :class="{ 'is-active': hoveredManeuverName === maneuver.name }"
+              role="menuitem"
+              :aria-describedby="hoveredManeuverName === maneuver.name && hoveredManeuverTooltipDetail && isManeuverTooltipVisible ? maneuverTooltipId : undefined"
+              @pointerenter="showManeuverTooltip(maneuver.name, $event)"
+              @pointerleave="hideManeuverTooltip"
+              @focus="showManeuverTooltip(maneuver.name, $event)"
+              @blur="hideManeuverTooltip"
+              @click.stop="emit('use-maneuver', maneuver.name)"
+            >
+              <span class="action-submenu__name">{{ maneuver.name }}</span>
+              <span class="action-submenu__badges">
+                <span v-if="maneuver.action" class="action-submenu__badge">{{ maneuver.action }}</span>
+                <DamageClassBadge v-if="maneuver.maneuverClass" :category="maneuver.maneuverClass" size="xs" />
+                <span v-if="maneuver.ac != null" class="action-submenu__badge">AC {{ maneuver.ac }}</span>
+                <span v-if="maneuver.range" class="action-submenu__badge">{{ maneuver.range }}</span>
+                <span v-if="maneuver.trigger" class="action-submenu__badge">Trigger</span>
+                <span v-if="maneuver.source === 'sheet'" class="action-submenu__badge action-submenu__badge--sheet">Sheet</span>
+              </span>
+            </button>
+
+            <div v-if="!maneuvers.length" class="context-menu__empty">
+              No maneuvers are available.
+            </div>
+          </div>
+
+          <Teleport to="body">
+            <ReferenceTooltip
+              v-if="hoveredManeuverTooltipDetail && isManeuverTooltipVisible"
+              :id="maneuverTooltipId"
+              ref="maneuverTooltipComponent"
+              :detail="hoveredManeuverTooltipDetail"
+              :placement="maneuverTooltipPlacement"
+              :ready="isManeuverTooltipReady"
+              :style="maneuverTooltipStyle"
             />
           </Teleport>
         </div>
@@ -702,7 +804,8 @@ watch(orders, (nextOrders) => {
   backdrop-filter: blur(8px);
 }
 
-.action-submenu__list--moves {
+.action-submenu__list--moves,
+.action-submenu__list--maneuvers {
   display: grid;
   grid-template-rows: repeat(4, auto);
   grid-auto-flow: column;
@@ -711,6 +814,10 @@ watch(orders, (nextOrders) => {
   width: max-content;
   max-height: none;
   overflow: visible;
+}
+
+.action-submenu__list--maneuvers {
+  grid-auto-columns: 16rem;
 }
 
 .sendout-submenu {

@@ -32,6 +32,7 @@ import type { SpawnedPokemon } from '~/types/pokemon'
 import type { AttackOfOpportunityPrompt } from '~/utils/attackOfOpportunity'
 import type { TokenAbilityMenuOption } from '~/utils/mapTokenAbilities'
 import type { TokenMoveMenuOption } from '~/utils/mapTokenMoves'
+import type { TokenManeuverMenuOption } from '~/utils/mapTokenManeuvers'
 import type { TokenOrderMenuOption } from '~/utils/mapTokenOrders'
 import type { TokenSendOutOption } from '~/utils/mapTokenSendOut'
 import type { MapSaveStatus } from '~/composables/useEditableMap'
@@ -81,6 +82,7 @@ const props = defineProps<{
   celebrateTriggerPrompts?: MoveAutomationCelebratePrompt[]
   attackOfOpportunityPrompts?: AttackOfOpportunityPrompt[]
   tokenMoveOptionsById?: Record<string, TokenMoveMenuOption[]>
+  tokenManeuverOptionsById?: Record<string, TokenManeuverMenuOption[]>
   tokenAbilityOptionsById?: Record<string, TokenAbilityMenuOption[]>
   tokenOrderOptionsById?: Record<string, TokenOrderMenuOption[]>
   tokenSendOutOptionsById?: Record<string, TokenSendOutOption[]>
@@ -98,6 +100,7 @@ const emit = defineEmits<{
   (event: 'modify-combat-stages', payload: { id: string; stages: CombatStageMap }): void
   (event: 'modify-conditions', payload: { id: string; conditions: string[] }): void
   (event: 'use-move', payload: { id: string; moveName?: string | null }): void
+  (event: 'use-maneuver', payload: { id: string; maneuverName?: string | null }): void
   (event: 'use-ability', payload: { id: string; abilityName?: string | null }): void
   (event: 'use-order', payload: { id: string; orderName?: string | null }): void
   (event: 'send-out-pokemon', payload: { trainerId: string; pokemonSlug: string; position: GridAnchor }): void
@@ -163,6 +166,7 @@ defineExpose({ focusPokemon })
         :hazard-kind="hazardKind"
         :can-delete-tokens="canDeleteTokens"
         :token-move-options-by-id="tokenMoveOptionsById"
+        :token-maneuver-options-by-id="tokenManeuverOptionsById"
         :token-ability-options-by-id="tokenAbilityOptionsById"
         :token-order-options-by-id="tokenOrderOptionsById"
         :token-send-out-options-by-id="tokenSendOutOptionsById"
@@ -177,6 +181,7 @@ defineExpose({ focusPokemon })
         @modify-combat-stages="emit('modify-combat-stages', $event)"
         @modify-conditions="emit('modify-conditions', $event)"
         @use-move="emit('use-move', $event)"
+        @use-maneuver="emit('use-maneuver', $event)"
         @use-ability="emit('use-ability', $event)"
         @use-order="emit('use-order', $event)"
         @send-out-pokemon="emit('send-out-pokemon', $event)"
