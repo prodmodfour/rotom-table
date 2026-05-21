@@ -183,6 +183,10 @@ const emit = defineEmits<{
   text-align: right;
 }
 
+.stats-table thead th:first-child {
+  text-align: left;
+}
+
 .stats-table tbody th {
   text-align: left;
   color: var(--ink-bright);
