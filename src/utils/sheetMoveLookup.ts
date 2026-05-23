@@ -1,5 +1,6 @@
 import { findMove } from '~~/data/ptuReference'
 import { findMoveDamageBase } from '~/utils/moveDamageBase'
+import { averageMoveDamageForDb } from '~/utils/moveDamageDisplay'
 import {
   resolveSheetMoveAttackStat,
   type SheetMoveAttackStatOptions,
@@ -56,6 +57,8 @@ export interface MoveLookupRow<T extends SheetMoveLike> {
   additionalAttackStatKey: 'atk' | 'satk' | null
   /** Human-readable label for the extra offensive stat, when relevant. */
   additionalAttackStatLabel: string | null
+  /** Average raw damage after adjusted DB and Attack/Special Attack additions. */
+  damageAverage: number | null
   /** Dice formula after adjusted DB and Attack/Special Attack additions. */
   damageFormula: string | null
 }
@@ -170,6 +173,7 @@ export const makeMoveLookupRows = <T extends SheetMoveLike>(
       damageBase,
       hasStab,
       ...attack,
+      damageAverage: averageMoveDamageForDb(damageBase, attack.attackStat ?? 0),
       damageFormula: damageFormulaFor(damageBase, attack.attackStat ?? 0),
     }
   })

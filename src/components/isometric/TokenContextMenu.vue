@@ -6,7 +6,9 @@ import type { TokenContextMenuState } from '~/utils/isometric/contextMenu'
 import type { TokenAbilityMenuOption } from '~/utils/mapTokenAbilities'
 import { buildTokenAbilityTooltipDetail } from '~/utils/mapTokenAbilityTooltips'
 import type { TokenMoveMenuOption } from '~/utils/mapTokenMoves'
+import { useDamageDisplayMode } from '~/composables/useDamageDisplayMode'
 import { buildTokenMoveTooltipDetail } from '~/utils/mapTokenMoveTooltips'
+import { formatMoveDamageDisplay } from '~/utils/moveDamageDisplay'
 import type { TokenManeuverMenuOption } from '~/utils/mapTokenManeuvers'
 import { buildTokenManeuverTooltipDetail } from '~/utils/mapTokenManeuverTooltips'
 import type { TokenOrderMenuOption } from '~/utils/mapTokenOrders'
@@ -53,6 +55,19 @@ const maneuvers = computed(() => props.maneuvers ?? [])
 const abilities = computed(() => props.abilities ?? [])
 const orders = computed(() => props.orders ?? [])
 const sendOutOptions = computed(() => props.sendOutOptions ?? [])
+
+const {
+  damageDisplayMode,
+  damageDisplayModeLabel,
+  damageDisplayModeTitle,
+  toggleDamageDisplayMode,
+} = useDamageDisplayMode()
+
+const moveDamageBadge = (move: TokenMoveMenuOption): string | null => {
+  const damage = formatMoveDamageDisplay(move, damageDisplayMode.value)
+  if (!damage) return null
+  return damageDisplayMode.value === 'average' ? `Avg ${damage}` : `Roll ${damage}`
+}
 
 const abilityCanBeUsed = (ability: TokenAbilityMenuOption): boolean =>
   ability.automation != null && ability.automation.category !== 'passive'
@@ -146,7 +161,7 @@ const {
 } = createSubmenuTooltipController<TokenMoveMenuOption>({
   panel: 'moves',
   items: moves,
-  buildDetail: buildTokenMoveTooltipDetail,
+  buildDetail: (move) => buildTokenMoveTooltipDetail(move, { damageDisplayMode: damageDisplayMode.value }),
 })
 
 const {
@@ -398,7 +413,17 @@ watch(orders, (nextOrders) => {
           <span>Back</span>
         </button>
 
-        <p class="context-menu__submenu-title">Use Move</p>
+        <div class="context-menu__submenu-heading">
+          <p class="context-menu__submenu-title">Use Move</p>
+          <button
+            type="button"
+            class="context-menu__mode-toggle"
+            :title="damageDisplayModeTitle"
+            @click.stop="toggleDamageDisplayMode"
+          >
+            {{ damageDisplayModeLabel }}
+          </button>
+        </div>
 
         <div class="action-submenu">
           <div class="action-submenu__list action-submenu__list--moves" role="menu" aria-label="Moves">
@@ -424,6 +449,7 @@ watch(orders, (nextOrders) => {
                 <TypeBadge v-if="move.type" :type="move.type" size="xs" />
                 <DamageClassBadge v-if="move.damageClass" :category="move.damageClass" size="xs" />
                 <span v-if="move.damageBase != null" class="action-submenu__badge">DB {{ move.damageBase }}</span>
+                <span v-if="moveDamageBadge(move)" class="action-submenu__badge action-submenu__badge--damage">{{ moveDamageBadge(move) }}</span>
                 <span v-if="move.hasStab" class="action-submenu__badge action-submenu__badge--stab">STAB</span>
                 <span
                   v-if="move.usage"
@@ -742,8 +768,10 @@ watch(orders, (nextOrders) => {
 
 .context-menu__button + .context-menu__button,
 .context-menu__button + .context-menu__submenu-title,
+.context-menu__button + .context-menu__submenu-heading,
 .context-menu__submenu-title + .action-submenu,
-.context-menu__submenu-title + .sendout-submenu {
+.context-menu__submenu-title + .sendout-submenu,
+.context-menu__submenu-heading + .action-submenu {
   margin-top: 0.3rem;
 }
 
@@ -777,6 +805,13 @@ watch(orders, (nextOrders) => {
   line-height: 1;
 }
 
+.context-menu__submenu-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
 .context-menu__submenu-title {
   margin: 0;
   color: var(--ink-muted);
@@ -784,6 +819,27 @@ watch(orders, (nextOrders) => {
   font-weight: 900;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+.context-menu__mode-toggle {
+  border: 1px solid var(--rule-soft);
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--ink-muted);
+  padding: 0.16rem 0.45rem;
+  font: inherit;
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.context-menu__mode-toggle:hover,
+.context-menu__mode-toggle:focus-visible {
+  border-color: var(--accent);
+  color: var(--accent);
+  outline: none;
 }
 
 .action-submenu {
@@ -921,6 +977,7 @@ watch(orders, (nextOrders) => {
 }
 
 .action-submenu__badge--stab,
+.action-submenu__badge--damage,
 .action-submenu__badge--active,
 .action-submenu__badge--sheet,
 .action-submenu__badge--passive {

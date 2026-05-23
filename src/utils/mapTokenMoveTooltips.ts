@@ -1,4 +1,10 @@
 import { formatCombatStage } from '~/utils/combatStageStats'
+import {
+  DEFAULT_MOVE_DAMAGE_DISPLAY_MODE,
+  formatMoveDamageDisplay,
+  moveDamageDisplayModeLabel,
+  type MoveDamageDisplayMode,
+} from '~/utils/moveDamageDisplay'
 import type { TokenMoveMenuOption } from '~/utils/mapTokenMoves'
 import type { RefTooltipDetail, RefTooltipMeta, RefTooltipSection } from '~/utils/refLinks'
 
@@ -43,9 +49,18 @@ export const formatTokenMoveAttackStat = (move: TokenMoveMenuOption): string | n
   return additional ? `${normal} + ${additional} (${move.attackStatAbility}) → ${move.attackStat}` : `${normal} (${move.attackStatAbility})`
 }
 
-const buildSheetSpecificLines = (move: TokenMoveMenuOption): string[] => {
+export interface TokenMoveTooltipOptions {
+  damageDisplayMode?: MoveDamageDisplayMode
+}
+
+const buildSheetSpecificLines = (
+  move: TokenMoveMenuOption,
+  options: TokenMoveTooltipOptions = {},
+): string[] => {
   const lines: string[] = []
-  if (move.damageFormula) lines.push(`Damage: ${move.damageFormula}`)
+  const damageDisplayMode = options.damageDisplayMode ?? DEFAULT_MOVE_DAMAGE_DISPLAY_MODE
+  const damage = formatMoveDamageDisplay(move, damageDisplayMode)
+  if (damage) lines.push(`${moveDamageDisplayModeLabel(damageDisplayMode)}: ${damage}`)
   const attackStat = formatTokenMoveAttackStat(move)
   if (attackStat) lines.push(`Attack Stat: ${attackStat}`)
   if (move.hasStab) lines.push('STAB: +2 DB included')
@@ -55,8 +70,11 @@ const buildSheetSpecificLines = (move: TokenMoveMenuOption): string[] => {
   return lines
 }
 
-const buildTooltipSections = (move: TokenMoveMenuOption): RefTooltipSection[] => {
-  const sheetLines = buildSheetSpecificLines(move)
+const buildTooltipSections = (
+  move: TokenMoveMenuOption,
+  options: TokenMoveTooltipOptions = {},
+): RefTooltipSection[] => {
+  const sheetLines = buildSheetSpecificLines(move, options)
   return [
     ...(sheetLines.length ? [{ heading: 'Sheet', body: sheetLines.join('\n') }] : []),
     ...(move.effect ? [{ heading: 'Effect', body: move.effect }] : []),
@@ -64,7 +82,10 @@ const buildTooltipSections = (move: TokenMoveMenuOption): RefTooltipSection[] =>
   ]
 }
 
-export const buildTokenMoveTooltipDetail = (move: TokenMoveMenuOption): RefTooltipDetail => {
+export const buildTokenMoveTooltipDetail = (
+  move: TokenMoveMenuOption,
+  options: TokenMoveTooltipOptions = {},
+): RefTooltipDetail => {
   const meta: RefTooltipMeta[] = []
   addMeta(meta, 'Type', move.type, 'type')
   addMeta(meta, 'Class', move.damageClass, 'damage-class')
@@ -77,6 +98,6 @@ export const buildTokenMoveTooltipDetail = (move: TokenMoveMenuOption): RefToolt
     kind: 'move',
     name: move.name,
     meta,
-    sections: buildTooltipSections(move),
+    sections: buildTooltipSections(move, options),
   }
 }

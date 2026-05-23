@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { PhDotsSixVertical, PhPlus, PhX } from '@phosphor-icons/vue'
+import { useDamageDisplayMode } from '~/composables/useDamageDisplayMode'
 import { useSheetMoveRowDragReorder } from '~/composables/sheets/useSheetMoveRowDragReorder'
+import { formatMoveDamageDisplay, type MoveDamageDisplayValues } from '~/utils/moveDamageDisplay'
 import { formatLookupValue, setLookupMoveName } from '~/utils/sheetMoveLookup'
 import type { TrainerSheetMoveLookupRow } from '~/composables/sheets/useTrainerSheetDerived'
 
@@ -13,6 +15,16 @@ const emit = defineEmits<{
   remove: [index: number | null]
   reorder: [fromIndex: number, toIndex: number]
 }>()
+
+const {
+  damageDisplayMode,
+  damageDisplayModeLabel,
+  damageDisplayModeTitle,
+  toggleDamageDisplayMode,
+} = useDamageDisplayMode()
+
+const displayMoveDamage = (row: MoveDamageDisplayValues): string =>
+  formatLookupValue(formatMoveDamageDisplay(row, damageDisplayMode.value))
 
 const {
   canDragMoveRow,
@@ -44,7 +56,16 @@ const {
             <th>Type</th>
             <th>Cat.</th>
             <th>DB</th>
-            <th>Damage</th>
+            <th>
+              <button
+                type="button"
+                class="damage-heading-toggle"
+                :title="damageDisplayModeTitle"
+                @click="toggleDamageDisplayMode"
+              >
+                {{ damageDisplayModeLabel }}
+              </button>
+            </th>
             <th>Freq</th>
             <th>AC</th>
             <th>Range</th>
@@ -98,7 +119,7 @@ const {
             </td>
             <td>{{ formatLookupValue(row.damageBase) }}</td>
             <td>
-              {{ formatLookupValue(row.damageFormula) }}
+              {{ displayMoveDamage(row) }}
               <span
                 v-if="row.attackStatAbility"
                 class="move-derived-bonus"

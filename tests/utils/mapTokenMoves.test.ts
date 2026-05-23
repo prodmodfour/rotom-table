@@ -57,6 +57,7 @@ describe('map token move menu options', () => {
     expect(move.baseAttackStat).toBe(10)
     expect(move.attackStage).toBe(2)
     expect(move.attackStat).toBe(14)
+    expect(move.damageAverage).toBe(29)
     expect(move.damageFormula).toBe('2d6+8+14')
   })
 
@@ -210,6 +211,7 @@ describe('map token move menu options', () => {
 
     expect(move.damageBase).toBe(5)
     expect(move.ac).toBe(3)
+    expect(move.damageAverage).toBe(26.5)
     expect(move.damageFormula).toBe('1d8+8+14')
     expect(move.hasStab).toBe(false)
   })
@@ -233,6 +235,7 @@ describe('map token move menu options', () => {
       attackStatAbility: 'Weird Power',
       additionalAttackStat: 12,
       additionalAttackStatKey: 'atk',
+      damageAverage: 30.5,
       damageFormula: '1d8+6+20',
     })
   })

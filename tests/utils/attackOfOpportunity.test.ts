@@ -61,6 +61,7 @@ const moveOption = (name: string, overrides: Partial<TokenMoveMenuOption> = {}):
   special: null,
   damageBase: 4,
   hasStab: false,
+  damageAverage: 18.5,
   damageFormula: '1d8+6+8',
   attackStat: 8,
   baseAttackStat: 8,

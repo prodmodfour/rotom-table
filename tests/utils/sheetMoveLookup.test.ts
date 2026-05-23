@@ -26,6 +26,7 @@ describe('sheet move lookup', () => {
       attackStatAbility: null,
       additionalAttackStat: null,
       additionalAttackStatKey: null,
+      damageAverage: 23,
       damageFormula: '2d6+8+8',
     })
   })
@@ -53,6 +54,7 @@ describe('sheet move lookup', () => {
       additionalAttackStage: 2,
       additionalAttackStatKey: 'atk',
       additionalAttackStatLabel: 'Attack',
+      damageAverage: 37,
       damageFormula: '2d6+8+22',
     })
   })
@@ -80,6 +82,7 @@ describe('sheet move lookup', () => {
       additionalAttackStage: 1,
       additionalAttackStatKey: 'satk',
       additionalAttackStatLabel: 'Special Attack',
+      damageAverage: 30.5,
       damageFormula: '1d8+6+20',
     })
   })
@@ -98,6 +101,7 @@ describe('sheet move lookup', () => {
       attackStatKey: 'satk',
       attackStatAbility: null,
       additionalAttackStat: null,
+      damageAverage: 25,
       damageFormula: '2d6+8+10',
     })
   })

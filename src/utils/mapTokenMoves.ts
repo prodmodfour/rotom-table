@@ -64,6 +64,7 @@ export interface TokenMoveMenuOption {
   special: string | null
   damageBase: number | null
   hasStab: boolean
+  damageAverage: number | null
   damageFormula: string | null
   attackStat: number | null
   baseAttackStat: number | null
@@ -244,6 +245,7 @@ const optionForMoveRow = (
     special: fallback(row.reference?.special, row.move.special),
     damageBase: row.damageBase,
     hasStab: row.hasStab,
+    damageAverage: row.damageAverage,
     damageFormula: row.damageFormula,
     attackStat: row.attackStat,
     baseAttackStat: row.baseAttackStat,
