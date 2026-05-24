@@ -1203,7 +1203,12 @@ describe('useMoveAutomationPanel', () => {
       canToggleTargets: true,
     })
 
-    await panel.selectMoveAutomationTarget('user-token')
+    const random = vi.spyOn(Math, 'random').mockReturnValue(0.5)
+    try {
+      await panel.selectMoveAutomationTarget('user-token')
+    } finally {
+      random.mockRestore()
+    }
 
     expect(calls).toEqual(['stages:foe-token:-1'])
     expect(panel.moveAutomationTargeting.value).toBeNull()
