@@ -60,6 +60,7 @@ describe('isometric render metrics model', () => {
       averageFrameDurationMs: null,
       maxFrameDurationMs: 0,
       lastFrameDurationMs: null,
+      lastFrameHadActiveAnimation: false,
       lastFrameReasons: [],
       reasonCounts: {},
     })

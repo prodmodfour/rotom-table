@@ -65,6 +65,7 @@ export interface RenderFrameTimingMetrics {
   averageFrameDurationMs: number | null
   maxFrameDurationMs: number
   lastFrameDurationMs: number | null
+  lastFrameHadActiveAnimation: boolean
   lastFrameReasons: RenderFrameReason[]
   reasonCounts: RenderFrameReasonCounts
 }
@@ -138,6 +139,7 @@ export const createEmptyRenderFrameTimingMetrics = (): RenderFrameTimingMetrics 
   averageFrameDurationMs: null,
   maxFrameDurationMs: 0,
   lastFrameDurationMs: null,
+  lastFrameHadActiveAnimation: false,
   lastFrameReasons: [],
   reasonCounts: createEmptyRenderFrameReasonCounts(),
 })
