@@ -9,6 +9,7 @@ This directory collects presentation and reviewer documentation for Rotom Table.
 - [Data model](data-model.md) — maps, sheets, trainers, encounter tables, app-owned PTU reference content, generated sheets, and local data hygiene.
 - [Local development](local-development.md) — setup commands, checks, optional `just` recipes, and local filesystem behaviour.
 - [Screenshots](screenshots.md) — capture checklist for future screenshots; no missing images are linked.
+- [Track 1 performance roadmap](track-1-performance-roadmap.md) — no-quality-loss performance constraints, benchmark categories, and staged isometric map optimization plan.
 - [Fan project notice](fan-project-notice.md) — unofficial fan-project boundaries.
 
 ## Existing technical notes
