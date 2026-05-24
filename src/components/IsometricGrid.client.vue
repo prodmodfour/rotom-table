@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import * as THREE from 'three'
+import RenderMetricsOverlay from '~/components/isometric/RenderMetricsOverlay.vue'
 import TokenActionDialogs from '~/components/isometric/TokenActionDialogs.vue'
 import TokenContextMenu from '~/components/isometric/TokenContextMenu.vue'
 import { useTokenActionController } from '~/composables/isometric/useTokenActionController'
@@ -113,6 +114,8 @@ import {
   syncPokemonRenderObjects,
   syncPokemonRenderObjectSelectionStyles,
 } from '~/utils/isometric/tokenObjectSync'
+import { isIsometricRenderDebugEnabled } from '~/utils/isometric/renderDebugFlag'
+import { createEmptyIsometricRenderMetricsSnapshot } from '~/utils/isometric/renderMetrics'
 
 export type { BuildTool } from '#shared/mapEditor'
 
@@ -177,7 +180,10 @@ const visibleLayers = () => resolveIsometricLayerVisibility(props.layerVisibilit
 
 const normalizedGroundLevelY = () => clampIsometricGroundLevelY(props.dimensions, props.groundLevelY)
 
+const route = useRoute()
 const container = ref<HTMLDivElement | null>(null)
+const renderMetricsOverlayEnabled = computed(() => isIsometricRenderDebugEnabled({ query: route.query }))
+const renderMetricsOverlaySnapshot = createEmptyIsometricRenderMetricsSnapshot()
 
 type TargetReticleButton = {
   id: string
@@ -1283,6 +1289,12 @@ useIsometricSceneWatchers({
         Cancel
       </button>
     </div>
+
+    <RenderMetricsOverlay
+      v-if="renderMetricsOverlayEnabled"
+      enabled
+      :metrics="renderMetricsOverlaySnapshot"
+    />
 
     <div v-if="targetReticleButtons.length" class="move-targeting-click-layer" @contextmenu.prevent>
       <button
