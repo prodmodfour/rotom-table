@@ -2,6 +2,10 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { CSS3DRenderer } from 'three/examples/jsm/renderers/CSS3DRenderer.js'
 import type { GridDimensions, SpawnedPokemon } from '~/types/pokemon'
+import {
+  ISOMETRIC_WEBGL_RENDERER_PARAMETERS,
+  resolveIsometricRendererPixelRatio,
+} from './rendererQuality'
 
 const ISO_POLAR_ANGLE = THREE.MathUtils.degToRad(54.735610317245346)
 const ISO_AZIMUTH_ANGLE = THREE.MathUtils.degToRad(45)
@@ -42,7 +46,7 @@ export const createIsometricCamera = () => {
 }
 
 export const createIsometricWebGLRenderer = () => {
-  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false })
+  const renderer = new THREE.WebGLRenderer(ISOMETRIC_WEBGL_RENDERER_PARAMETERS)
   renderer.setClearColor(0x050608, 1) // Pokémon black surface
   renderer.outputColorSpace = THREE.SRGBColorSpace
   renderer.domElement.style.display = 'block'
@@ -110,7 +114,7 @@ export const syncIsometricRendererSize = (options: {
 }) => {
   const bounds = options.container.getBoundingClientRect()
   options.renderer.setSize(bounds.width, bounds.height)
-  options.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+  options.renderer.setPixelRatio(resolveIsometricRendererPixelRatio(window.devicePixelRatio))
   options.cssRenderer.setSize(bounds.width, bounds.height)
   setOrthographicFrustum(options)
 }

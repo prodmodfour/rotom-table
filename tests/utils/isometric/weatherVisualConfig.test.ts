@@ -45,4 +45,13 @@ describe('weather visual config', () => {
     expect(sandMoteCountForDimensions(dimensions(20, 20), 1)).toBe(260)
     expect(sandMoteCountForDimensions(dimensions(20, 20), 2)).toBe(195)
   })
+
+  it('documents no-quality-loss particle baselines for one active weather layer', () => {
+    const typicalMap = dimensions(8, 8)
+
+    expect(sunRayCountForDimensions(typicalMap)).toBe(7)
+    expect(rainDropCountForDimensions(typicalMap, 1)).toBe(218)
+    expect(hailParticleCountForDimensions(typicalMap, 1)).toBe(99)
+    expect(sandMoteCountForDimensions(typicalMap, 1)).toBe(138)
+  })
 })

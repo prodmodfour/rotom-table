@@ -25,7 +25,7 @@ Performance work must preserve output-relevant scene state. Do not use any of th
 - simplifying token controls, move automation, build tools, targeting, or sheet interactions;
 - changing game rules to make rendering easier.
 
-Acceptable improvements should avoid duplicate work instead: render only when dirty or animated, coalesce high-frequency input, reuse safe resources, cache deterministic computations, and add tests or documented guardrails for visual-equivalence assumptions.
+Acceptable improvements should avoid duplicate work instead: render only when dirty or animated, coalesce high-frequency input, reuse safe resources, cache deterministic computations, and add tests or documented guardrails for visual-equivalence assumptions. See [Performance guardrails](performance-guardrails.md) for the reviewer checklist and automated no-quality-loss checks.
 
 ## Benchmark map categories
 
