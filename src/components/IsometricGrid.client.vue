@@ -694,7 +694,7 @@ const hideBuildGhostRenderer = () => buildGhostRenderer.hide()
 
 const ensureHazardGhost = () => hazardGhostRenderer.ensure(props.hazardKind ?? 'spikes')
 const disposeHazardGhost = () => hazardGhostRenderer.dispose()
-const hideHazardGhost = () => hazardGhostRenderer.hide()
+const hideHazardGhostRenderer = () => hazardGhostRenderer.hide()
 
 const pickPokemonId = (event: MouseEvent | PointerEvent) =>
   pickPokemonIdFromPointer({
@@ -950,12 +950,13 @@ const hazardInteraction = createIsometricHazardInteractionController({
   }),
   pickTarget: pickHazardTarget,
   updateGhost: (target, options) => hazardGhostRenderer.update(target, options),
-  hideGhost: hideHazardGhost,
+  hideGhost: hideHazardGhostRenderer,
   placeHazard: (hazard) => emit('place-hazard', hazard),
   removeHazard: (cell) => emit('remove-hazard', cell),
 })
 const updateHazardPreviewFromPointer = hazardInteraction.updatePreviewFromPointer
 const performHazardAction = hazardInteraction.performAction
+const hideHazardGhost = hazardInteraction.hideGhost
 
 const requestRenderAfterPointerInteraction = () => requestScheduledSceneFrame('pointer')
 
