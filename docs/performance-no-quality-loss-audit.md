@@ -45,4 +45,5 @@ The benchmark pass also noted no app console errors or warnings beyond normal Nu
 
 - Treat any future output-changing optimization as a product change, not as Track 1 performance-only work.
 - Keep using the benchmark runbook and guardrail tests for later performance PRs.
+- Use the [Track 1 final implementation review](performance-track-1-final-review.md) as the handoff checklist before marking the autonomous Track 1 run complete.
 - Add focused tests or explicit docs whenever a new cache, dirty reason, or resource reuse path could affect visible output or tool behaviour.
