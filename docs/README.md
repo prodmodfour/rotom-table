@@ -11,6 +11,7 @@ This directory collects presentation and reviewer documentation for Rotom Table.
 - [Screenshots](screenshots.md) — capture checklist for future screenshots; no missing images are linked.
 - [Track 1 performance roadmap](track-1-performance-roadmap.md) — no-quality-loss performance constraints, benchmark categories, and staged isometric map optimization plan.
 - [Performance benchmark scenarios](performance-benchmark-scenarios.md) — empty, typical campaign, and stress map scenarios plus before/after PR metrics to record.
+- [Performance benchmark fixtures](performance-benchmark-fixtures.md) — local fixture generator and manual checklist for reproducing benchmark maps without private campaign data.
 - [Performance guardrails](performance-guardrails.md) — reviewer checklist and automated checks that prevent performance work from reducing visual quality or map functionality.
 - [Fan project notice](fan-project-notice.md) — unofficial fan-project boundaries.
 
