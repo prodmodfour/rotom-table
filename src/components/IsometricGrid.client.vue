@@ -115,7 +115,11 @@ import {
   syncPokemonRenderObjectSelectionStyles,
 } from '~/utils/isometric/tokenObjectSync'
 import { isIsometricRenderDebugEnabled } from '~/utils/isometric/renderDebugFlag'
-import { createEmptyIsometricRenderMetricsSnapshot } from '~/utils/isometric/renderMetrics'
+import {
+  createEmptyIsometricRenderMetricsSnapshot,
+  createIsometricRenderMetricsSnapshotWithRendererInfo,
+} from '~/utils/isometric/renderMetrics'
+import { sampleWebGLRendererInfo } from '~/utils/isometric/rendererInfoSampler'
 
 export type { BuildTool } from '#shared/mapEditor'
 
@@ -183,7 +187,7 @@ const normalizedGroundLevelY = () => clampIsometricGroundLevelY(props.dimensions
 const route = useRoute()
 const container = ref<HTMLDivElement | null>(null)
 const renderMetricsOverlayEnabled = computed(() => isIsometricRenderDebugEnabled({ query: route.query }))
-const renderMetricsOverlaySnapshot = createEmptyIsometricRenderMetricsSnapshot()
+const renderMetricsOverlaySnapshot = ref(createEmptyIsometricRenderMetricsSnapshot())
 
 type TargetReticleButton = {
   id: string
@@ -412,6 +416,23 @@ let cleanupRendererDomEvents: (() => void) | null = null
 let cleanupResizeObserver: (() => void) | null = null
 let animationFrame = 0
 const pointerTracker = createPointerTravelTracker()
+
+const sampleRendererInfoForMetricsOverlay = () => {
+  if (!renderMetricsOverlayEnabled.value || !renderer) {
+    return
+  }
+
+  const rendererInfo = sampleWebGLRendererInfo(renderer)
+
+  if (!rendererInfo) {
+    return
+  }
+
+  renderMetricsOverlaySnapshot.value = createIsometricRenderMetricsSnapshotWithRendererInfo(
+    renderMetricsOverlaySnapshot.value,
+    rendererInfo,
+  )
+}
 
 const getPreviewLayerY = () => movementInteraction.activeAnchor()?.y ?? selectedPokemon.value?.position.y ?? 0
 
@@ -1081,6 +1102,7 @@ const animate = () => {
     facingDirection: DEFAULT_FACING_DIRECTION,
     beforeRender: updateMoveAutomationOverlays,
   })
+  sampleRendererInfoForMetricsOverlay()
 }
 
 onMounted(() => {

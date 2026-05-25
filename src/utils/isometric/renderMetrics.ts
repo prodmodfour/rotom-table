@@ -171,3 +171,39 @@ export const createEmptyIsometricRenderMetricsSnapshot = (
   frames: createEmptyRenderFrameTimingMetrics(),
   rendererInfo: null,
 })
+
+const copySampledWebGLRendererInfo = (
+  rendererInfo: SampledWebGLRendererInfo,
+): SampledWebGLRendererInfo => ({
+  sampledAtMs: rendererInfo.sampledAtMs,
+  autoReset: rendererInfo.autoReset,
+  memory: {
+    geometries: rendererInfo.memory.geometries,
+    textures: rendererInfo.memory.textures,
+  },
+  render: {
+    calls: rendererInfo.render.calls,
+    frame: rendererInfo.render.frame,
+    lines: rendererInfo.render.lines,
+    points: rendererInfo.render.points,
+    triangles: rendererInfo.render.triangles,
+  },
+  programs: {
+    count: rendererInfo.programs.count,
+  },
+})
+
+export const createIsometricRenderMetricsSnapshotWithRendererInfo = (
+  snapshot: IsometricRenderMetricsSnapshot,
+  rendererInfo: SampledWebGLRendererInfo | null,
+): IsometricRenderMetricsSnapshot => {
+  if (!rendererInfo) {
+    return snapshot
+  }
+
+  return {
+    ...snapshot,
+    sampledAtMs: rendererInfo.sampledAtMs,
+    rendererInfo: copySampledWebGLRendererInfo(rendererInfo),
+  }
+}

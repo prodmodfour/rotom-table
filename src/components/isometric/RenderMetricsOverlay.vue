@@ -81,7 +81,7 @@ const viewModel = computed(() => createRenderMetricsOverlayViewModel(metricsSnap
     <section class="render-metrics-overlay__section" aria-label="WebGL renderer metrics">
       <h3>Renderer</h3>
       <p v-if="!viewModel.hasRendererInfo" class="render-metrics-overlay__muted">
-        Renderer info is not wired yet.
+        Waiting for the next renderer info sample.
       </p>
       <dl class="render-metrics-overlay__grid">
         <div

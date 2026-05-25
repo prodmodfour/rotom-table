@@ -5,6 +5,7 @@ import {
   createEmptyIsometricRenderMetricsSnapshot,
   createEmptyRenderFrameTimingMetrics,
   createEmptySampledWebGLRendererInfo,
+  createIsometricRenderMetricsSnapshotWithRendererInfo,
   createRenderFrameReasonCounts,
   incrementRenderFrameReasonCount,
   isRenderFrameReason,
@@ -68,7 +69,7 @@ describe('isometric render metrics model', () => {
     expect(metrics.reasonCounts).not.toBe(nextMetrics.reasonCounts)
   })
 
-  it('creates a sampled WebGL renderer info shell for future renderer.info collection', () => {
+  it('creates a sampled WebGL renderer info shell', () => {
     const sample = createEmptySampledWebGLRendererInfo(1234)
     const nextSample = createEmptySampledWebGLRendererInfo(5678)
 
@@ -103,5 +104,25 @@ describe('isometric render metrics model', () => {
     expect(snapshot.rendererInfo).toBeNull()
     expect(snapshot.frames.frameCount).toBe(0)
     expect(snapshot.frames.lastFrameReasons).toEqual([])
+  })
+
+  it('adds sampled renderer info to an existing metrics snapshot without mutating it', () => {
+    const snapshot = createEmptyIsometricRenderMetricsSnapshot(42)
+    const rendererInfo = createEmptySampledWebGLRendererInfo(250)
+    rendererInfo.memory.geometries = 4
+    rendererInfo.render.calls = 12
+    rendererInfo.programs.count = 3
+
+    const updated = createIsometricRenderMetricsSnapshotWithRendererInfo(snapshot, rendererInfo)
+
+    expect(snapshot.rendererInfo).toBeNull()
+    expect(updated).not.toBe(snapshot)
+    expect(updated.devOnly).toBe(true)
+    expect(updated.frames).toBe(snapshot.frames)
+    expect(updated.sampledAtMs).toBe(250)
+    expect(updated.rendererInfo).toEqual(rendererInfo)
+    expect(updated.rendererInfo).not.toBe(rendererInfo)
+    expect(updated.rendererInfo?.memory).not.toBe(rendererInfo.memory)
+    expect(createIsometricRenderMetricsSnapshotWithRendererInfo(snapshot, null)).toBe(snapshot)
   })
 })

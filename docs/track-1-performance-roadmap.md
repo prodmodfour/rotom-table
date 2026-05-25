@@ -45,7 +45,7 @@ For each category, compare before/after runs with the same browser, map data, zo
 
 Start by making the performance rules explicit, then add developer-only metrics for frame reasons, frame timing, renderer info, pointer/raycast counts, and pathfinding cache behaviour. Instrumentation should be hidden unless explicitly enabled for debugging.
 
-In local development, appending `?debug=render`, `?debug=render-metrics`, or `?debug=isometric-render` to a map route enables the isometric render metrics overlay shell. The shell is hidden by default and currently accepts optional/stub metrics so later instrumentation can fill in renderer, pointer, and pathfinding counters without exposing diagnostics to normal users.
+In local development, appending `?debug=render`, `?debug=render-metrics`, or `?debug=isometric-render` to a map route enables the isometric render metrics overlay. The overlay is hidden by default; when enabled, it samples live WebGL `renderer.info` counters after rendered frames while leaving frame timing, pointer, and pathfinding counters ready for later instrumentation without exposing diagnostics to normal users.
 
 ### 2. Introduce render invalidation and scheduling
 
