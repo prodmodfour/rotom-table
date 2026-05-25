@@ -44,6 +44,8 @@ export interface IsometricRenderSchedulerSnapshot {
 export interface IsometricRenderScheduler {
   requestRender: (reasons?: IsometricRenderSchedulerReasonInput) => IsometricRenderSchedulerSnapshot
   setActiveAnimation: (active: boolean) => IsometricRenderSchedulerSnapshot
+  pause: () => IsometricRenderSchedulerSnapshot
+  resume: () => IsometricRenderSchedulerSnapshot
   cancel: () => IsometricRenderSchedulerSnapshot
   dispose: () => IsometricRenderSchedulerSnapshot
   snapshot: () => IsometricRenderSchedulerSnapshot
@@ -105,6 +107,7 @@ export const createIsometricRenderScheduler = ({
   let frameHandle: number | null = null
   let dirtyReasons: RenderInvalidationReason[] = []
   let activeAnimation = false
+  let isPaused = false
   let isDisposed = false
 
   const snapshot = () => copySnapshot(frameHandle, activeAnimation, dirtyReasons, isDisposed)
@@ -117,7 +120,7 @@ export const createIsometricRenderScheduler = ({
   }
 
   const scheduleFrame = () => {
-    if (isDisposed || frameHandle !== null || !hasFrameWork(dirtyReasons, activeAnimation)) {
+    if (isDisposed || isPaused || frameHandle !== null || !hasFrameWork(dirtyReasons, activeAnimation)) {
       return
     }
 
@@ -133,7 +136,7 @@ export const createIsometricRenderScheduler = ({
   const runFrame = (timestampMs: number) => {
     frameHandle = null
 
-    if (isDisposed) {
+    if (isDisposed || isPaused) {
       return
     }
 
@@ -194,6 +197,28 @@ export const createIsometricRenderScheduler = ({
     return snapshot()
   }
 
+  const pause = (): IsometricRenderSchedulerSnapshot => {
+    if (isDisposed) {
+      return snapshot()
+    }
+
+    isPaused = true
+    cancelFrameHandle()
+
+    return snapshot()
+  }
+
+  const resume = (): IsometricRenderSchedulerSnapshot => {
+    if (isDisposed) {
+      return snapshot()
+    }
+
+    isPaused = false
+    scheduleFrame()
+
+    return snapshot()
+  }
+
   const cancel = (): IsometricRenderSchedulerSnapshot => {
     cancelFrameHandle()
     dirtyReasons = []
@@ -212,6 +237,8 @@ export const createIsometricRenderScheduler = ({
   return {
     requestRender,
     setActiveAnimation,
+    pause,
+    resume,
     cancel,
     dispose,
     snapshot,

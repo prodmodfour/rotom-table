@@ -259,6 +259,58 @@ describe('isometric render scheduler', () => {
     })
   })
 
+  it('pauses hidden-tab animation work without clearing dirty state and resumes safely', () => {
+    const driver = createAnimationFrameDriver()
+    const renderFrame = vi.fn(() => ({ activeAnimation: true }))
+    const scheduler = createIsometricRenderScheduler({
+      renderFrame,
+      requestAnimationFrame: driver.requestAnimationFrame,
+      cancelAnimationFrame: driver.cancelAnimationFrame,
+    })
+
+    scheduler.requestRender('initial')
+    scheduler.setActiveAnimation(true)
+
+    expect(scheduler.pause()).toEqual({
+      isFramePending: false,
+      activeAnimation: true,
+      dirtyReasons: ['initial'],
+      isDisposed: false,
+    })
+    expect(driver.cancelAnimationFrame).toHaveBeenCalledWith(1)
+    expect(driver.pendingFrameCount()).toBe(0)
+
+    expect(scheduler.requestRender('tokens')).toEqual({
+      isFramePending: false,
+      activeAnimation: true,
+      dirtyReasons: ['initial', 'tokens'],
+      isDisposed: false,
+    })
+    expect(scheduler.setActiveAnimation(true)).toEqual({
+      isFramePending: false,
+      activeAnimation: true,
+      dirtyReasons: ['initial', 'tokens'],
+      isDisposed: false,
+    })
+    expect(driver.requestAnimationFrame).toHaveBeenCalledOnce()
+
+    expect(scheduler.resume()).toEqual({
+      isFramePending: true,
+      activeAnimation: true,
+      dirtyReasons: ['initial', 'tokens'],
+      isDisposed: false,
+    })
+    expect(driver.requestAnimationFrame).toHaveBeenCalledTimes(2)
+
+    scheduler.requestRender('hidden-tab-resume')
+    expect(driver.flushNextFrame(72)).toBe(true)
+    expect(renderFrame).toHaveBeenCalledWith({
+      timestampMs: 72,
+      reasons: ['initial', 'tokens', 'hidden-tab-resume', 'animation'],
+      activeAnimation: true,
+    })
+  })
+
   it('cancels a mounted scheduler pending frame before a remounted scheduler renders', () => {
     const driver = createAnimationFrameDriver()
     const firstRenderFrame = vi.fn()

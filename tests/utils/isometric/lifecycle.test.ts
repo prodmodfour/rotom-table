@@ -1,10 +1,62 @@
 import { describe, expect, it, vi } from 'vitest'
 import {
+  bindIsometricDocumentVisibilityChange,
   bindIsometricRendererDomEvents,
   disposeIsometricRendererResources,
 } from '~/utils/isometric/lifecycle'
 
 describe('isometric lifecycle helpers', () => {
+  it('binds document visibility changes for hidden-tab render pause and resume', () => {
+    const visibilityHandlers: Array<() => void> = []
+    const documentTarget = {
+      hidden: false,
+      addEventListener: vi.fn((_type: 'visibilitychange', listener: () => void) => {
+        visibilityHandlers.push(listener)
+      }),
+      removeEventListener: vi.fn(),
+    }
+    const pause = vi.fn()
+    const resume = vi.fn()
+
+    const cleanup = bindIsometricDocumentVisibilityChange(documentTarget, { pause, resume })
+    const visibilityHandler = visibilityHandlers[0]
+
+    expect(documentTarget.addEventListener).toHaveBeenCalledWith('visibilitychange', visibilityHandler)
+    expect(pause).not.toHaveBeenCalled()
+    expect(resume).not.toHaveBeenCalled()
+
+    documentTarget.hidden = true
+    visibilityHandler?.()
+    visibilityHandler?.()
+
+    expect(pause).toHaveBeenCalledOnce()
+    expect(resume).not.toHaveBeenCalled()
+
+    documentTarget.hidden = false
+    visibilityHandler?.()
+
+    expect(resume).toHaveBeenCalledOnce()
+
+    cleanup()
+
+    expect(documentTarget.removeEventListener).toHaveBeenCalledWith('visibilitychange', visibilityHandler)
+  })
+
+  it('applies the hidden document visibility state at bind time', () => {
+    const documentTarget = {
+      hidden: true,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    }
+    const pause = vi.fn()
+    const resume = vi.fn()
+
+    bindIsometricDocumentVisibilityChange(documentTarget, { pause, resume })
+
+    expect(pause).toHaveBeenCalledOnce()
+    expect(resume).not.toHaveBeenCalled()
+  })
+
   it('binds and cleans up renderer DOM event handlers', () => {
     const addEventListener = vi.fn()
     const removeEventListener = vi.fn()

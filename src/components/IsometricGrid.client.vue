@@ -96,6 +96,7 @@ import {
 } from '~/utils/isometric/tokenRenderer'
 import { buildVoxelColumnsByXZ, getVoxelShadowSurfaceY } from '~/utils/isometric/shadows'
 import {
+  bindIsometricDocumentVisibilityChange,
   bindIsometricRendererDomEvents,
   disposeIsometricRendererResources,
   observeIsometricResize,
@@ -437,6 +438,7 @@ let cssRenderer: ReturnType<typeof createIsometricCssRenderer> | null = null
 let camera: THREE.OrthographicCamera | null = null
 let controls: ReturnType<typeof createIsometricOrbitControls> | null = null
 let cleanupCameraControlChangeInvalidation: (() => void) | null = null
+let cleanupDocumentVisibilityChange: (() => void) | null = null
 let cleanupRendererDomEvents: (() => void) | null = null
 let cleanupResizeObserver: (() => void) | null = null
 let renderScheduler: IsometricRenderScheduler | null = null
@@ -1235,6 +1237,17 @@ function requestTokenTextureRender() {
   requestScheduledSceneFrame('token-texture')
 }
 
+const documentIsHidden = (): boolean => typeof document !== 'undefined' && document.hidden
+
+const pauseScheduledRenderLoopForHiddenTab = () => {
+  renderScheduler?.pause()
+}
+
+const resumeScheduledRenderLoopFromHiddenTab = () => {
+  renderScheduler?.resume()
+  requestScheduledSceneFrame('hidden-tab-resume')
+}
+
 const renderOneShotScheduledFrame = (frame: IsometricScheduledRenderFrame): boolean => {
   if (!renderer || !cssRenderer || !camera || !controls) {
     return false
@@ -1275,6 +1288,9 @@ const startScheduledRenderLoop = () => {
     requestAnimationFrame: window.requestAnimationFrame.bind(window),
     cancelAnimationFrame: window.cancelAnimationFrame.bind(window),
   })
+  if (documentIsHidden()) {
+    renderScheduler.pause()
+  }
   renderScheduler.requestRender('initial')
   renderScheduler.setActiveAnimation(resolveSceneAnimationContinuation().active)
 }
@@ -1328,10 +1344,17 @@ onMounted(() => {
   cleanupResizeObserver = observeIsometricResize(container.value, syncRendererSizeFromResizeObserver)
 
   startScheduledRenderLoop()
+  cleanupDocumentVisibilityChange = bindIsometricDocumentVisibilityChange(document, {
+    pause: pauseScheduledRenderLoopForHiddenTab,
+    resume: resumeScheduledRenderLoopFromHiddenTab,
+  })
 })
 
 onBeforeUnmount(() => {
   stopScheduledRenderLoop()
+
+  cleanupDocumentVisibilityChange?.()
+  cleanupDocumentVisibilityChange = null
 
   cleanupRendererDomEvents?.()
   cleanupRendererDomEvents = null

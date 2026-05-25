@@ -16,6 +16,41 @@ export interface IsometricRendererDomHandlers {
 
 export type CleanupFn = () => void
 
+export interface IsometricDocumentVisibilityHandlers {
+  pause: CleanupFn
+  resume: CleanupFn
+}
+
+export interface IsometricDocumentVisibilityTarget {
+  readonly hidden?: boolean
+  addEventListener(type: 'visibilitychange', listener: () => void): void
+  removeEventListener(type: 'visibilitychange', listener: () => void): void
+}
+
+export const bindIsometricDocumentVisibilityChange = (
+  documentTarget: IsometricDocumentVisibilityTarget,
+  handlers: IsometricDocumentVisibilityHandlers,
+): CleanupFn => {
+  let lastHidden = Boolean(documentTarget.hidden)
+
+  const applyVisibilityState = () => {
+    const hidden = Boolean(documentTarget.hidden)
+    if (hidden === lastHidden) return
+
+    lastHidden = hidden
+    if (hidden) {
+      handlers.pause()
+    } else {
+      handlers.resume()
+    }
+  }
+
+  documentTarget.addEventListener('visibilitychange', applyVisibilityState)
+  if (lastHidden) handlers.pause()
+
+  return () => documentTarget.removeEventListener('visibilitychange', applyVisibilityState)
+}
+
 export const bindIsometricRendererDomEvents = (
   element: HTMLElement,
   handlers: IsometricRendererDomHandlers,
