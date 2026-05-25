@@ -28,6 +28,7 @@ The protocol must preserve these locked decisions:
 | `shared/sessionCommandValidation.ts` | common envelope validator | Validates schema, IDs, actor shape, revisions, scopes, metadata, and payload presence. Command-specific payload validation is intentionally separate. |
 | `shared/sessionCommandResults.ts` | accepted, rejected, duplicate, stale, unauthorized, invalid, conflict result shapes | Results are the server's authoritative answer to a submitted command. |
 | `shared/sessionMessages.ts` | WebSocket message unions | Defines client `hello`, `heartbeat`, `command` messages and server `hello`, `heartbeat`, `commandAck`, `commandReject`, `snapshot`, `patch`, `presence`, and `error` messages. |
+| `shared/sessionState.ts` | authoritative session state model | Defines the server-owned session snapshot shape: selected map slug, session/map revisions, map documents, connected clients, joined players, and GM-managed assignments. |
 
 ## Wire format rules
 
@@ -52,6 +53,12 @@ The shared permission helpers distinguish:
 - controllable resources, which a player may command only when assigned and visible.
 
 Permission denials use safe reasons such as `gm-required`, `player-required`, `resource-not-visible`, `resource-not-assigned`, and `missing-player-identity`. These reasons are suitable for player-facing conflict/rejection UI without exposing secrets.
+
+## Authoritative state shape
+
+`AuthoritativeSessionState` is the JSON-serializable state the GM-hosted server owns for one session. It includes `sessionId`, monotonic session `revision`, `selectedMapSlug`, per-map `maps[]` entries with `MapRevision` values and server-owned map documents, `connectedClients[]` for WebSocket presence, joined `players[]`, and GM-controlled `assignments[]`.
+
+This model is the state stored in the in-memory session store and later written as local snapshots. It is not a client autosave format: live clients still send commands, the server mutates this authoritative copy, and broadcasts small patches or snapshots from it.
 
 ## Message flow
 

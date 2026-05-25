@@ -1,4 +1,5 @@
 import type { GmKey, JoinCode, SessionId } from '#shared/sessionIdentity'
+import type { AuthoritativeSessionState } from '#shared/sessionState'
 import { INITIAL_SESSION_REVISION, type SessionRevision } from '#shared/sessionRevisions'
 
 export const SESSION_STORE_STATUSES = ['active', 'ended'] as const
@@ -6,7 +7,7 @@ export type SessionStoreStatus = (typeof SESSION_STORE_STATUSES)[number]
 
 export type SessionStoreClock = () => string
 
-export interface SessionStoreRecord<TState = unknown> {
+export interface SessionStoreRecord<TState = AuthoritativeSessionState> {
   readonly sessionId: SessionId
   readonly joinCode: JoinCode
   readonly gmKey: GmKey
@@ -16,13 +17,13 @@ export interface SessionStoreRecord<TState = unknown> {
   readonly updatedAt: string
   readonly endedAt?: string
   /**
-   * Opaque authoritative state placeholder. Ticket 021 defines the concrete
-   * per-session map/player/assignment model that will be stored here.
+   * Server-owned authoritative state for the session. The default model tracks
+   * map documents, selected map slug, revision, clients, players, and assignments.
    */
   readonly state?: TState
 }
 
-export interface CreateSessionStoreRecordInput<TState = unknown> {
+export interface CreateSessionStoreRecordInput<TState = AuthoritativeSessionState> {
   readonly sessionId: SessionId
   readonly joinCode: JoinCode
   readonly gmKey: GmKey
@@ -45,7 +46,7 @@ export interface EndSessionStoreRecordOptions {
   readonly endedAt?: string
 }
 
-export interface InMemorySessionStore<TState = unknown> {
+export interface InMemorySessionStore<TState = AuthoritativeSessionState> {
   readonly size: number
   create(input: CreateSessionStoreRecordInput<TState>): SessionStoreRecord<TState>
   get(sessionId: SessionId): SessionStoreRecord<TState> | undefined
@@ -98,7 +99,7 @@ const sortSessionRecords = <TState>(
     })
     .map(cloneSessionRecord)
 
-export const createInMemorySessionStore = <TState = unknown>(
+export const createInMemorySessionStore = <TState = AuthoritativeSessionState>(
   clock: SessionStoreClock = defaultSessionStoreClock,
 ): InMemorySessionStore<TState> => {
   const recordsBySessionId = new Map<SessionId, MutableSessionStoreRecord<TState>>()
@@ -233,4 +234,4 @@ export const createInMemorySessionStore = <TState = unknown>(
   }
 }
 
-export const sessionStore = createInMemorySessionStore()
+export const sessionStore = createInMemorySessionStore<AuthoritativeSessionState>()
