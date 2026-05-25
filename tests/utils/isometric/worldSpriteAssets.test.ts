@@ -4,6 +4,7 @@ import type { SpriteAnimation } from '~/types/pokemon'
 import type { WorldSpriteState } from '~/utils/isometric/types'
 import {
   anyWorldSpriteStateNeedsAnimationFrame,
+  anyWorldSpriteStateNeedsRenderFrame,
   applyWorldSpriteAnimationFrame,
   applyWorldSpriteTextureTransform,
   setWorldSpriteTextureWindow,
@@ -11,6 +12,8 @@ import {
   spriteAnimationRequiresFrames,
   spriteVisualAssetKey,
   worldSpriteStateNeedsAnimationFrame,
+  worldSpriteStateNeedsRenderFrame,
+  worldSpriteStateNeedsTextureFrame,
 } from '~/utils/isometric/worldSpriteAssets'
 
 const animation = (overrides: Partial<SpriteAnimation> = {}): SpriteAnimation => ({
@@ -33,7 +36,7 @@ describe('world sprite asset helpers', () => {
     expect(spriteAnimationRequiresFrames(null)).toBe(false)
   })
 
-  it('detects visible world sprite states that need animation frames', () => {
+  it('detects visible world sprite states that need render continuation frames', () => {
     const visibleAnimated = {
       animationMeta: animation(),
       sprite: { visible: true },
@@ -46,13 +49,31 @@ describe('world sprite asset helpers', () => {
       animationMeta: null,
       sprite: { visible: true },
     }
+    const visibleLoading = {
+      animationMeta: null,
+      sprite: { visible: true },
+      textureLoading: true,
+    }
+    const hiddenLoading = {
+      animationMeta: null,
+      sprite: { visible: false },
+      textureLoading: true,
+    }
 
     expect(worldSpriteStateNeedsAnimationFrame(visibleAnimated)).toBe(true)
     expect(worldSpriteStateNeedsAnimationFrame(hiddenAnimated)).toBe(false)
     expect(worldSpriteStateNeedsAnimationFrame(visibleStatic)).toBe(false)
     expect(worldSpriteStateNeedsAnimationFrame(null)).toBe(false)
+    expect(worldSpriteStateNeedsTextureFrame(visibleLoading)).toBe(true)
+    expect(worldSpriteStateNeedsTextureFrame(hiddenLoading)).toBe(false)
+    expect(worldSpriteStateNeedsTextureFrame(visibleStatic)).toBe(false)
+    expect(worldSpriteStateNeedsRenderFrame(visibleAnimated)).toBe(true)
+    expect(worldSpriteStateNeedsRenderFrame(visibleLoading)).toBe(true)
+    expect(worldSpriteStateNeedsRenderFrame(visibleStatic)).toBe(false)
     expect(anyWorldSpriteStateNeedsAnimationFrame([hiddenAnimated, visibleStatic])).toBe(false)
     expect(anyWorldSpriteStateNeedsAnimationFrame([hiddenAnimated, visibleAnimated])).toBe(true)
+    expect(anyWorldSpriteStateNeedsRenderFrame([hiddenAnimated, visibleStatic])).toBe(false)
+    expect(anyWorldSpriteStateNeedsRenderFrame([hiddenAnimated, visibleLoading])).toBe(true)
   })
 
   it('selects animation frames with wrapping elapsed time', () => {

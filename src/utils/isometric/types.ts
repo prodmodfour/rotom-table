@@ -15,6 +15,7 @@ export interface WorldSpriteState {
   releaseTexture: (() => void) | null
   assetKey: string | null
   loadToken: number
+  textureLoading: boolean
   animationMeta: SpriteAnimation | null
   animationStartedAtMs: number
   currentFrame: number

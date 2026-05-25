@@ -9,13 +9,14 @@ import {
 } from './movementPreviewAnimation'
 import {
   worldSpriteStateNeedsAnimationFrame,
-  type WorldSpriteAnimationState,
+  worldSpriteStateNeedsTextureFrame,
+  type WorldSpriteRenderActivityState,
 } from './worldSpriteAssets'
 
 export const ISOMETRIC_ANIMATION_CONTINUATION_SOURCE = {
-  compatibilityContinuousLoop: 'compatibility-continuous-loop',
   tokenMotion: 'token-motion',
   spriteAnimation: 'sprite-animation',
+  spriteTextureLoading: 'sprite-texture-loading',
   fieldEffectAnimation: 'field-effect-animation',
   movementPreviewAnimation: 'movement-preview-animation',
 } as const
@@ -65,7 +66,7 @@ export const createIsometricAnimationContinuation = (
 }
 
 export interface IsometricSpriteAnimationRenderState {
-  spriteState: WorldSpriteAnimationState
+  spriteState: WorldSpriteRenderActivityState
 }
 
 export interface IsometricFieldEffectAnimationRenderer {
@@ -87,13 +88,27 @@ export const resolveIsometricTokenMotionContinuationSources = (
 export const resolveIsometricSpriteAnimationContinuationSources = (
   renderStates: Iterable<IsometricSpriteAnimationRenderState>,
 ): IsometricAnimationContinuationSource[] => {
+  const sources: IsometricAnimationContinuationSource[] = []
+
   for (const renderState of renderStates) {
-    if (worldSpriteStateNeedsAnimationFrame(renderState.spriteState)) {
-      return [ISOMETRIC_ANIMATION_CONTINUATION_SOURCE.spriteAnimation]
+    if (
+      worldSpriteStateNeedsAnimationFrame(renderState.spriteState)
+      && !sources.includes(ISOMETRIC_ANIMATION_CONTINUATION_SOURCE.spriteAnimation)
+    ) {
+      sources.push(ISOMETRIC_ANIMATION_CONTINUATION_SOURCE.spriteAnimation)
     }
+
+    if (
+      worldSpriteStateNeedsTextureFrame(renderState.spriteState)
+      && !sources.includes(ISOMETRIC_ANIMATION_CONTINUATION_SOURCE.spriteTextureLoading)
+    ) {
+      sources.push(ISOMETRIC_ANIMATION_CONTINUATION_SOURCE.spriteTextureLoading)
+    }
+
+    if (sources.length === 2) break
   }
 
-  return []
+  return sources
 }
 
 export const resolveIsometricFieldEffectAnimationContinuationSources = (

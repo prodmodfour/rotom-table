@@ -20,9 +20,11 @@ const animation = (overrides: Partial<SpriteAnimation> = {}): SpriteAnimation =>
 const ghostSpriteState = (
   visible: boolean,
   animationMeta: SpriteAnimation | null = animation(),
+  textureLoading = false,
 ) => ({
   sprite: { visible },
   animationMeta,
+  textureLoading,
 })
 
 describe('movement preview animation state', () => {
@@ -39,7 +41,7 @@ describe('movement preview animation state', () => {
     })
   })
 
-  it('requires frames only for visible previews with visible animated ghost sprites', () => {
+  it('requires frames only for visible previews with visible animated or loading ghost sprites', () => {
     expect(movementPreviewAnimationStateNeedsFrame(
       createMovementPreviewAnimationState(true, ghostSpriteState(true)),
     )).toBe(true)
@@ -55,6 +57,12 @@ describe('movement preview animation state', () => {
     )).toBe(false)
     expect(movementPreviewAnimationStateNeedsFrame(
       createMovementPreviewAnimationState(true, ghostSpriteState(true, animation({ frames: 1 }))),
+    )).toBe(false)
+    expect(movementPreviewAnimationStateNeedsFrame(
+      createMovementPreviewAnimationState(true, ghostSpriteState(true, null, true)),
+    )).toBe(true)
+    expect(movementPreviewAnimationStateNeedsFrame(
+      createMovementPreviewAnimationState(false, ghostSpriteState(true, null, true)),
     )).toBe(false)
     expect(movementPreviewAnimationStateNeedsFrame(null)).toBe(false)
   })

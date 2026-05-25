@@ -24,10 +24,12 @@ const spriteAnimation = () => ({
 const spriteRenderState = (
   visible: boolean,
   animationMeta: ReturnType<typeof spriteAnimation> | null = spriteAnimation(),
+  textureLoading = false,
 ) => ({
   spriteState: {
     sprite: { visible },
     animationMeta,
+    textureLoading,
   },
 })
 
@@ -35,12 +37,14 @@ const movementPreviewRenderer = (
   previewVisible: boolean,
   spriteVisible: boolean,
   animationMeta: ReturnType<typeof spriteAnimation> | null = spriteAnimation(),
+  textureLoading = false,
 ) => ({
   getAnimationState: () => ({
     visible: previewVisible,
     ghostSpriteState: {
       sprite: { visible: spriteVisible },
       animationMeta,
+      textureLoading,
     },
   }),
 })
@@ -61,7 +65,7 @@ describe('isometric render loop helpers', () => {
   it('deduplicates active animation sources in first-seen order', () => {
     const continuation = createIsometricAnimationContinuation([
       ISOMETRIC_ANIMATION_CONTINUATION_SOURCE.spriteAnimation,
-      ISOMETRIC_ANIMATION_CONTINUATION_SOURCE.compatibilityContinuousLoop,
+      ISOMETRIC_ANIMATION_CONTINUATION_SOURCE.spriteTextureLoading,
       ISOMETRIC_ANIMATION_CONTINUATION_SOURCE.spriteAnimation,
       ISOMETRIC_ANIMATION_CONTINUATION_SOURCE.tokenMotion,
     ])
@@ -70,24 +74,13 @@ describe('isometric render loop helpers', () => {
       active: true,
       sources: [
         ISOMETRIC_ANIMATION_CONTINUATION_SOURCE.spriteAnimation,
-        ISOMETRIC_ANIMATION_CONTINUATION_SOURCE.compatibilityContinuousLoop,
+        ISOMETRIC_ANIMATION_CONTINUATION_SOURCE.spriteTextureLoading,
         ISOMETRIC_ANIMATION_CONTINUATION_SOURCE.tokenMotion,
       ],
     })
     expect(toIsometricRenderSchedulerFrameResult(continuation)).toEqual({
       activeAnimation: true,
     })
-  })
-
-  it('keeps the compatibility loop represented as an explicit animation source', () => {
-    const continuation = createIsometricAnimationContinuation([
-      ISOMETRIC_ANIMATION_CONTINUATION_SOURCE.compatibilityContinuousLoop,
-    ])
-
-    expect(continuation.active).toBe(true)
-    expect(continuation.sources).toEqual([
-      ISOMETRIC_ANIMATION_CONTINUATION_SOURCE.compatibilityContinuousLoop,
-    ])
   })
 
   it('exposes token motion as a continuation source while centers or lift factors are settling', () => {
@@ -115,7 +108,7 @@ describe('isometric render loop helpers', () => {
     ])
   })
 
-  it('exposes visible animated sprites as a continuation source', () => {
+  it('exposes visible animated sprites and loading sprite textures as continuation sources', () => {
     expect(resolveIsometricSpriteAnimationContinuationSources([
       spriteRenderState(false),
       spriteRenderState(true, null),
@@ -125,6 +118,18 @@ describe('isometric render loop helpers', () => {
       spriteRenderState(true),
     ])).toEqual([
       ISOMETRIC_ANIMATION_CONTINUATION_SOURCE.spriteAnimation,
+    ])
+    expect(resolveIsometricSpriteAnimationContinuationSources([
+      spriteRenderState(true, null, true),
+    ])).toEqual([
+      ISOMETRIC_ANIMATION_CONTINUATION_SOURCE.spriteTextureLoading,
+    ])
+    expect(resolveIsometricSpriteAnimationContinuationSources([
+      spriteRenderState(true),
+      spriteRenderState(true, null, true),
+    ])).toEqual([
+      ISOMETRIC_ANIMATION_CONTINUATION_SOURCE.spriteAnimation,
+      ISOMETRIC_ANIMATION_CONTINUATION_SOURCE.spriteTextureLoading,
     ])
   })
 
@@ -152,6 +157,11 @@ describe('isometric render loop helpers', () => {
       movementPreviewRenderer(true, true, null),
     )).toEqual([])
     expect(resolveIsometricMovementPreviewAnimationContinuationSources(
+      movementPreviewRenderer(true, true, null, true),
+    )).toEqual([
+      ISOMETRIC_ANIMATION_CONTINUATION_SOURCE.movementPreviewAnimation,
+    ])
+    expect(resolveIsometricMovementPreviewAnimationContinuationSources(
       movementPreviewRenderer(true, true),
     )).toEqual([
       ISOMETRIC_ANIMATION_CONTINUATION_SOURCE.movementPreviewAnimation,
@@ -161,6 +171,7 @@ describe('isometric render loop helpers', () => {
   it('narrows known animation continuation source strings', () => {
     expect(isIsometricAnimationContinuationSource('token-motion')).toBe(true)
     expect(isIsometricAnimationContinuationSource('movement-preview-animation')).toBe(true)
+    expect(isIsometricAnimationContinuationSource('compatibility-continuous-loop')).toBe(false)
     expect(isIsometricAnimationContinuationSource('unknown-source')).toBe(false)
     expect(isIsometricAnimationContinuationSource(null)).toBe(false)
   })

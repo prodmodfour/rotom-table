@@ -124,6 +124,7 @@ import {
   createIsometricRenderMetricsSnapshotWithRendererInfo,
 } from '~/utils/isometric/renderMetrics'
 import { sampleWebGLRendererInfo } from '~/utils/isometric/rendererInfoSampler'
+import type { RenderInvalidationReason } from '~/utils/isometric/renderInvalidation'
 import {
   createIsometricRenderScheduler,
   type IsometricRenderScheduler,
@@ -131,7 +132,6 @@ import {
 } from '~/utils/isometric/renderScheduler'
 import {
   createIsometricAnimationContinuation,
-  ISOMETRIC_ANIMATION_CONTINUATION_SOURCE,
   resolveIsometricFieldEffectAnimationContinuationSources,
   resolveIsometricMovementPreviewAnimationContinuationSources,
   resolveIsometricSpriteAnimationContinuationSources,
@@ -258,6 +258,7 @@ const activeSendOutRequest = computed(() => {
 
 const clearSendOutPlacement = () => {
   sendOutPlacement.value = null
+  requestScheduledSceneFrame('movement-preview')
 }
 
 const beginSendOutPlacement = (payload: { trainerId: string; pokemonSlug: string }) => {
@@ -266,6 +267,7 @@ const beginSendOutPlacement = (payload: { trainerId: string; pokemonSlug: string
 
   sendOutPlacement.value = payload
   emitPokemonSelection(null)
+  requestScheduledSceneFrame('movement-preview')
 }
 
 const {
@@ -952,14 +954,45 @@ const replayBuildPreview = () => buildInteraction.replayPreview(pointerInteracti
 const replayHazardPreview = () => hazardInteraction.replayPreview(pointerInteraction.lastPointerCoords())
 
 const {
-  handleRightClick,
-  handlePointerDown,
-  handlePointerMove,
-  handleWheel,
-  handlePointerUp,
-  handlePointerLeave,
-  handleEscape,
+  handleRightClick: handleRightClickRaw,
+  handlePointerDown: handlePointerDownRaw,
+  handlePointerMove: handlePointerMoveRaw,
+  handleWheel: handleWheelRaw,
+  handlePointerUp: handlePointerUpRaw,
+  handlePointerLeave: handlePointerLeaveRaw,
+  handleEscape: handleEscapeRaw,
 } = pointerInteraction
+
+const requestRenderAfterPointerInteraction = () => requestScheduledSceneFrame('pointer')
+
+const handleRightClick = (event: MouseEvent) => {
+  handleRightClickRaw(event)
+  requestRenderAfterPointerInteraction()
+}
+const handlePointerDown = (event: PointerEvent) => {
+  handlePointerDownRaw(event)
+  requestRenderAfterPointerInteraction()
+}
+const handlePointerMove = (event: PointerEvent) => {
+  handlePointerMoveRaw(event)
+  requestRenderAfterPointerInteraction()
+}
+const handleWheel = (event: WheelEvent) => {
+  handleWheelRaw(event)
+  requestRenderAfterPointerInteraction()
+}
+const handlePointerUp = (event: PointerEvent) => {
+  handlePointerUpRaw(event)
+  requestRenderAfterPointerInteraction()
+}
+const handlePointerLeave = () => {
+  handlePointerLeaveRaw()
+  requestRenderAfterPointerInteraction()
+}
+const handleEscape = (event: KeyboardEvent) => {
+  handleEscapeRaw(event)
+  if (event.key === 'Escape') requestRenderAfterPointerInteraction()
+}
 
 useWindowKeydown(handleEscape)
 
@@ -969,10 +1002,12 @@ watch(activeSendOutRequest, (request) => {
   if (!request) {
     sendOutInteraction.clearPreviewVisuals()
     if (sendOutPlacement.value) clearSendOutPlacement()
+    requestScheduledSceneFrame('movement-preview')
     return
   }
 
   sendOutInteraction.resetForRequestChange()
+  requestScheduledSceneFrame('movement-preview')
 })
 
 watch([terrainVoxelRevision, () => props.dimensions], () => {
@@ -1140,16 +1175,47 @@ const updateMoveAutomationOverlays = () => {
   syncAttackOfOpportunityButtons()
 }
 
-// Keep the old continuous RAF behaviour as a compatibility source until later
-// tickets remove it, while also exposing real token motion, sprite animation,
-// movement-preview animation, and weather/field-effect animation as active sources.
-const resolveSceneAnimationContinuation = () => createIsometricAnimationContinuation([
-  ISOMETRIC_ANIMATION_CONTINUATION_SOURCE.compatibilityContinuousLoop,
-  ...resolveIsometricTokenMotionContinuationSources(renderObjects.values()),
-  ...resolveIsometricSpriteAnimationContinuationSources(renderObjects.values()),
-  ...resolveIsometricMovementPreviewAnimationContinuationSources(tokenMovePreviewRenderer),
-  ...resolveIsometricFieldEffectAnimationContinuationSources(fieldEffectRenderer),
-])
+// Continue scheduling only while concrete scene work is still active. A
+// settled scene now relies on explicit dirty requests instead of a
+// compatibility RAF source.
+function resolveSceneAnimationContinuation() {
+  return createIsometricAnimationContinuation([
+    ...resolveIsometricTokenMotionContinuationSources(renderObjects.values()),
+    ...resolveIsometricSpriteAnimationContinuationSources(renderObjects.values()),
+    ...resolveIsometricMovementPreviewAnimationContinuationSources(tokenMovePreviewRenderer),
+    ...resolveIsometricFieldEffectAnimationContinuationSources(fieldEffectRenderer),
+  ])
+}
+
+function requestScheduledSceneFrame(reason: RenderInvalidationReason) {
+  renderScheduler?.requestRender(reason)
+  renderScheduler?.setActiveAnimation(resolveSceneAnimationContinuation().active)
+}
+
+watch(
+  [
+    () => props.pokemons,
+    () => props.selectedId,
+    () => props.activeTurnId,
+    terrainVoxelRevision,
+    hazardRevision,
+    fieldEffectsRevision,
+    () => props.layerVisibility,
+    () => [props.buildMode, props.buildTool, props.buildMaterial, props.buildColor, props.buildGhostVoxel] as const,
+    () => [props.hazardMode, props.hazardTool, props.hazardKind] as const,
+    () => props.ghostVoxelsFaded,
+    () => props.groundLevelY,
+    () => [props.dimensions.x, props.dimensions.y, props.dimensions.z] as const,
+    () => props.moveAutomationTargeting,
+    () => props.moveAutomationFeedback,
+    () => props.attackOfOpportunityPrompts,
+  ],
+  () => {
+    if (!renderer) return
+    requestScheduledSceneFrame('scene-state')
+  },
+  { deep: true },
+)
 
 const renderOneShotScheduledFrame = (frame: IsometricScheduledRenderFrame): boolean => {
   if (!renderer || !cssRenderer || !camera || !controls) {

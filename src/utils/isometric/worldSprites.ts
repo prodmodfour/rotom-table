@@ -44,6 +44,7 @@ const setWorldSpriteAsset = (state: WorldSpriteState, asset: SpriteVisualAsset) 
   const token = state.loadToken + 1
   state.loadToken = token
   state.assetKey = key
+  state.textureLoading = true
 
   const handle = asset.animation
     ? acquireAnimatedSpriteTexture(asset.animation.url)
@@ -59,6 +60,7 @@ const setWorldSpriteAsset = (state: WorldSpriteState, asset: SpriteVisualAsset) 
       const previousRelease = state.releaseTexture
       state.texture = texture
       state.releaseTexture = handle.release
+      state.textureLoading = false
       state.animationMeta = asset.animation ?? null
       state.currentFrame = -1
       if (state.animationMeta) {
@@ -79,6 +81,7 @@ const setWorldSpriteAsset = (state: WorldSpriteState, asset: SpriteVisualAsset) 
     .catch((error) => {
       handle.release()
       if (state.loadToken === token && state.assetKey === key) {
+        state.textureLoading = false
         state.assetKey = null
         console.warn('Failed to load sprite texture', asset.animation?.url ?? asset.url, error)
       }
@@ -177,6 +180,7 @@ export const buildWorldSprite = (pokemon: SpawnedPokemon, ghost = false): WorldS
     releaseTexture: null,
     assetKey: null,
     loadToken: 0,
+    textureLoading: false,
     animationMeta: null,
     animationStartedAtMs: nowMs(),
     currentFrame: -1,
@@ -200,6 +204,7 @@ export const buildWorldSprite = (pokemon: SpawnedPokemon, ghost = false): WorldS
 export const disposeWorldSprite = (state: WorldSpriteState | null) => {
   if (!state) return
   state.loadToken += 1
+  state.textureLoading = false
   state.releaseTexture?.()
   state.releaseTexture = null
   state.texture = null

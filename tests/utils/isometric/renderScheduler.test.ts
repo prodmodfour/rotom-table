@@ -149,7 +149,7 @@ describe('isometric render scheduler', () => {
     })
   })
 
-  it('supports the scene compatibility loop by keeping active animation true after each frame', () => {
+  it('keeps scheduling while frame results report active animation', () => {
     const driver = createAnimationFrameDriver()
     const renderFrame = vi.fn(() => ({ activeAnimation: true }))
     const scheduler = createIsometricRenderScheduler({

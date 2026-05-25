@@ -7,6 +7,10 @@ export interface WorldSpriteAnimationState {
   sprite: { visible: boolean }
 }
 
+export interface WorldSpriteRenderActivityState extends WorldSpriteAnimationState {
+  textureLoading?: boolean
+}
+
 const spriteAnimationTotalDurationMs = (animation: SpriteAnimation): number => (
   animation.totalDurationMs > 0
     ? animation.totalDurationMs
@@ -27,11 +31,29 @@ export const worldSpriteStateNeedsAnimationFrame = (
   state?.sprite.visible && spriteAnimationRequiresFrames(state.animationMeta),
 )
 
+export const worldSpriteStateNeedsTextureFrame = (
+  state: WorldSpriteRenderActivityState | null | undefined,
+): boolean => Boolean(state?.sprite.visible && state.textureLoading)
+
+export const worldSpriteStateNeedsRenderFrame = (
+  state: WorldSpriteRenderActivityState | null | undefined,
+): boolean => worldSpriteStateNeedsAnimationFrame(state) || worldSpriteStateNeedsTextureFrame(state)
+
 export const anyWorldSpriteStateNeedsAnimationFrame = (
   states: Iterable<WorldSpriteAnimationState | null | undefined>,
 ): boolean => {
   for (const state of states) {
     if (worldSpriteStateNeedsAnimationFrame(state)) return true
+  }
+
+  return false
+}
+
+export const anyWorldSpriteStateNeedsRenderFrame = (
+  states: Iterable<WorldSpriteRenderActivityState | null | undefined>,
+): boolean => {
+  for (const state of states) {
+    if (worldSpriteStateNeedsRenderFrame(state)) return true
   }
 
   return false
