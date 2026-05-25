@@ -64,7 +64,9 @@ This model is the state stored in the in-memory session store and later written 
 
 `server/utils/sessionSnapshots.ts` writes the latest authoritative session snapshot as a JSON envelope containing the snapshot schema version, `sessionId`, current session `revision`, `writtenAt`, and the `AuthoritativeSessionState`. The default local path is `data/sessions/<sessionId>/snapshot.json`, which is ignored by git because snapshots may contain private campaign/session state.
 
-Snapshot writes serialize the complete JSON in memory, write a unique temp file in the same session directory, flush and close it, rename it over `snapshot.json`, best-effort flush the directory, and remove the temp file on failures before publish. Recovery and shape validation are implemented by later persistence tickets.
+Snapshot writes serialize the complete JSON in memory, write a unique temp file in the same session directory, flush and close it, rename it over `snapshot.json`, best-effort flush the directory, and remove the temp file on failures before publish.
+
+Snapshot reads use the same session-scoped path, parse the latest `snapshot.json`, validate the persisted envelope, schema versions, session ID, revisions, timestamps, authoritative state arrays, presence actors, players, assignments, visible/controllable resources, and cross-check that the envelope and state refer to the requested session/revision. `recoverSessionStateFromSnapshot` returns the validated `AuthoritativeSessionState` for reconnect or restart paths, or a typed failure such as `not-found`, `invalid-json`, or `invalid-shape`; it never reconstructs live authority from client autosave state.
 
 ## Message flow
 
