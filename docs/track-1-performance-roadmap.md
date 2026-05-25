@@ -37,7 +37,7 @@ Use benchmark maps that avoid private campaign data but still represent real wor
 | Typical campaign map | Measures common GM/player play sessions. | Moderate terrain, several Pokémon/trainer tokens, shadows, HP/status overlays, hazards, field effects, and movement previews. |
 | Stress map | Measures worst-case editor and combat interactions. | Large terrain, many voxels/tokens, multiple overlays/effects, weather, hazards, and repeated pointer/pathfinding interactions. |
 
-For each category, compare before/after runs with the same browser, map data, zoom/camera position, layer visibility, and weather/effect state. Future benchmark notes should record both idle behaviour and pointer-heavy interactions.
+For each category, compare before/after runs with the same browser, map data, zoom/camera position, layer visibility, and weather/effect state. Future benchmark notes should record both idle behaviour and pointer-heavy interactions. See [Performance benchmark scenarios](performance-benchmark-scenarios.md) for the empty, typical campaign, and stress scenario definitions plus the before/after metrics to capture for performance PRs.
 
 ## Staged optimization approach
 
