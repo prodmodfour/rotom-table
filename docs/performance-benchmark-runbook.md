@@ -2,7 +2,7 @@
 
 Use this runbook when collecting Track 1 before/after measurements for the isometric map. The goal is to make performance changes observable while preserving the same map data, renderer quality, visual effects, and table functionality.
 
-This workflow complements the scenario definitions in [Performance benchmark scenarios](performance-benchmark-scenarios.md), the public fixture generator in [Performance benchmark fixtures](performance-benchmark-fixtures.md), and the no-quality-loss rules in [Performance guardrails](performance-guardrails.md).
+This workflow complements the scenario definitions in [Performance benchmark scenarios](performance-benchmark-scenarios.md), the public fixture generator in [Performance benchmark fixtures](performance-benchmark-fixtures.md), the recorded [Track 1 integrated benchmark pass](performance-benchmark-results.md), and the no-quality-loss rules in [Performance guardrails](performance-guardrails.md).
 
 ## 1. Choose the comparison
 
