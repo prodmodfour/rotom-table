@@ -38,6 +38,7 @@ npm run build
 - [docs/data-model.md](docs/data-model.md) — maps, sheets, trainers, encounter tables, app-owned PTU reference data, and generated sheets.
 - [docs/track-2-roadmap.md](docs/track-2-roadmap.md) — planned GM-hosted session concurrency scope, lifecycle, and non-goals.
 - [docs/track-2-glossary.md](docs/track-2-glossary.md) — shared Track 2 vocabulary for identity, commands, revisions, reconnect, and safety.
+- [docs/track-2-validation-matrix.md](docs/track-2-validation-matrix.md) — expected tests, smoke checks, docs, and safety reviews for Track 2 implementation areas.
 - [docs/local-development.md](docs/local-development.md) — local setup, scripts, and filesystem persistence notes.
 - [docs/fan-project-notice.md](docs/fan-project-notice.md) — fan project and ownership boundaries.
 
