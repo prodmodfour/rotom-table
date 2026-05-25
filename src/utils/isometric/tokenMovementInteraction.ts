@@ -43,6 +43,7 @@ export interface TokenMovementInteractionDependencies {
   previewRenderer: TokenMovementPreviewRenderer
   emitPreviewChange: (preview: PreviewState) => void
   movePokemon: (payload: { id: string; position: GridAnchor }) => void
+  recordPathfindingRequest?: () => void
 }
 
 const emptyPreview = (): PreviewState => ({ ...EMPTY_MOVE_PREVIEW })
@@ -105,18 +106,20 @@ export const createIsometricTokenMovementInteractionController = (
       dependencies.getDimensions(),
       selected.id,
     )
-    const movementPath = canForcePlace
-      ? findMovementPathForPokemon({
-          pokemon: selected,
-          start: selected.position,
-          goal: anchor,
-          pokemons: dependencies.getPokemons(),
-          dimensions: dependencies.getDimensions(),
-          exceptId: selected.id,
-          voxels: dependencies.getMapVoxels(),
-          groundLevelY: dependencies.getGroundLevelY(),
-        })
-      : null
+    let movementPath: ReturnType<typeof findMovementPathForPokemon> | null = null
+    if (canForcePlace) {
+      dependencies.recordPathfindingRequest?.()
+      movementPath = findMovementPathForPokemon({
+        pokemon: selected,
+        start: selected.position,
+        goal: anchor,
+        pokemons: dependencies.getPokemons(),
+        dimensions: dependencies.getDimensions(),
+        exceptId: selected.id,
+        voxels: dependencies.getMapVoxels(),
+        groundLevelY: dependencies.getGroundLevelY(),
+      })
+    }
     const path = movementPath?.path ?? null
     const reachable = Boolean(movementPath?.legal)
     const previewUpdated = dependencies.previewRenderer.update({

@@ -45,7 +45,7 @@ For each category, compare before/after runs with the same browser, map data, zo
 
 Start by making the performance rules explicit, then add developer-only metrics for frame reasons, frame timing, renderer info, pointer/raycast counts, and pathfinding cache behaviour. Instrumentation should be hidden unless explicitly enabled for debugging.
 
-In local development, appending `?debug=render`, `?debug=render-metrics`, or `?debug=isometric-render` to a map route enables the isometric render metrics overlay. The overlay is hidden by default; when enabled, it records scheduler frame timing/reasons and samples live WebGL `renderer.info` counters after rendered frames while leaving pointer and pathfinding counters ready for later instrumentation without exposing diagnostics to normal users.
+In local development, appending `?debug=render`, `?debug=render-metrics`, or `?debug=isometric-render` to a map route enables the isometric render metrics overlay. The overlay is hidden by default; when enabled, it records scheduler frame timing/reasons, samples live WebGL `renderer.info` counters after rendered frames, and accumulates pointermove, raycast, and movement-preview pathfinding counts without exposing diagnostics to normal users.
 
 ### 2. Introduce render invalidation and scheduling
 
@@ -55,7 +55,7 @@ Resize handling, OrbitControls change events, scene watchers, pointer interactio
 
 ### 3. Coalesce pointer-heavy interactions
 
-Pointer movement can trigger hover updates, build/hazard previews, targeting, raycasts, and movement previews. Map pointermove handling now coalesces to the latest pointer event before running that heavy hover/preview/pathfinding work at most once per animation frame; upcoming passes should cache renderer bounds and picking lists, then short-circuit unchanged hover or preview anchors.
+Pointer movement can trigger hover updates, build/hazard previews, targeting, raycasts, and movement previews. Map pointermove handling now coalesces to the latest pointer event before running that heavy hover/preview/pathfinding work at most once per animation frame; the debug overlay reports raw pointermove events, processed pointer frames, raycasts by pick kind, and movement-preview pathfinding requests for benchmark sweeps.
 
 ### 4. Cache deterministic movement/pathfinding work
 

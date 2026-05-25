@@ -58,6 +58,7 @@ import {
 } from '~/utils/isometric/cameraControls'
 import { createPointerTravelTracker } from '~/utils/isometric/pointerTracker'
 import { createIsometricPointerInteractionController } from '~/utils/isometric/pointerInteraction'
+import type { CoalescedPointerEventFrame } from '~/utils/isometric/pointerEventCoalescer'
 import type {
   BuildTarget,
   HazardTarget,
@@ -129,8 +130,11 @@ import { createRenderFrameTimingSampler } from '~/utils/isometric/frameTimingSam
 import {
   createEmptyIsometricRenderMetricsSnapshot,
   createIsometricRenderMetricsSnapshotWithFrameTiming,
+  createIsometricRenderMetricsSnapshotWithPointerInteractions,
   createIsometricRenderMetricsSnapshotWithRendererInfo,
+  type IsometricPointerRaycastKind,
 } from '~/utils/isometric/renderMetrics'
+import { createPointerInteractionMetricsSampler } from '~/utils/isometric/pointerMetricsSampler'
 import { sampleWebGLRendererInfo } from '~/utils/isometric/rendererInfoSampler'
 import {
   createIsometricRenderScheduler,
@@ -456,6 +460,7 @@ const pointerRaycastScratch = createPointerRaycastScratch()
 const tokenProxyPickTargets = createTokenProxyPickTargetCache()
 const buildHazardPickTargets = createBuildHazardPickTargetCache()
 const renderFrameTimingSampler = createRenderFrameTimingSampler()
+const pointerInteractionMetricsSampler = createPointerInteractionMetricsSampler()
 
 const readRenderMetricsNowMs = (): number => {
   const performanceNow = globalThis.performance?.now
@@ -500,6 +505,56 @@ const sampleRendererInfoForMetricsOverlay = () => {
     renderMetricsOverlaySnapshot.value,
     rendererInfo,
   )
+}
+
+const syncPointerMetricsForMetricsOverlay = () => {
+  if (!renderMetricsOverlayEnabled.value) {
+    return
+  }
+
+  renderMetricsOverlaySnapshot.value = createIsometricRenderMetricsSnapshotWithPointerInteractions(
+    renderMetricsOverlaySnapshot.value,
+    pointerInteractionMetricsSampler.snapshot(),
+    readRenderMetricsNowMs(),
+  )
+}
+
+const recordPointerMoveEventForMetricsOverlay = () => {
+  if (!renderMetricsOverlayEnabled.value) {
+    return
+  }
+
+  pointerInteractionMetricsSampler.recordPointerMoveEvent()
+  syncPointerMetricsForMetricsOverlay()
+}
+
+const recordPointerMoveFrameForMetricsOverlay = (frame: CoalescedPointerEventFrame) => {
+  if (!renderMetricsOverlayEnabled.value) {
+    return
+  }
+
+  pointerInteractionMetricsSampler.recordPointerMoveFrame({
+    coalescedEventCount: frame.coalescedEventCount,
+  })
+  syncPointerMetricsForMetricsOverlay()
+}
+
+const recordPointerRaycastForMetricsOverlay = (kind: IsometricPointerRaycastKind) => {
+  if (!renderMetricsOverlayEnabled.value) {
+    return
+  }
+
+  pointerInteractionMetricsSampler.recordRaycast(kind)
+  syncPointerMetricsForMetricsOverlay()
+}
+
+const recordPathfindingRequestForMetricsOverlay = () => {
+  if (!renderMetricsOverlayEnabled.value) {
+    return
+  }
+
+  pointerInteractionMetricsSampler.recordPathfindingRequest()
+  syncPointerMetricsForMetricsOverlay()
 }
 
 const getPreviewLayerY = () => movementInteraction.activeAnchor()?.y ?? selectedPokemon.value?.position.y ?? 0
@@ -709,6 +764,7 @@ const pickPokemonId = (event: MouseEvent | PointerEvent) =>
     tokenProxyTargets: tokenProxyPickTargets,
     boundsCache: rendererBoundsCache,
     scratch: pointerRaycastScratch,
+    recordRaycast: recordPointerRaycastForMetricsOverlay,
   })
 
 const moveTargetingCandidateIdSet = () => new Set(props.moveAutomationTargeting?.candidateIds ?? [])
@@ -835,6 +891,7 @@ const getMoveGridIntersection = (event: MouseEvent | PointerEvent, yLevel: numbe
     raycaster,
     boundsCache: rendererBoundsCache,
     scratch: pointerRaycastScratch,
+    recordRaycast: recordPointerRaycastForMetricsOverlay,
   })
 
 const moveAreaDirectionFromPointer = (event: MouseEvent | PointerEvent): MoveAutomationAreaDirection | null => {
@@ -889,6 +946,7 @@ const movementInteraction = createIsometricTokenMovementInteractionController({
   previewRenderer: tokenMovePreviewRenderer,
   emitPreviewChange: emitMovementPreviewChange,
   movePokemon: (payload) => emit('move-pokemon', payload),
+  recordPathfindingRequest: recordPathfindingRequestForMetricsOverlay,
 })
 const ensurePreviewObjects = movementInteraction.ensurePreviewObjects
 const clearPreviewVisuals = movementInteraction.clearPreviewVisuals
@@ -925,6 +983,7 @@ const pickBuildTarget = (
     mapMovementOccupancy: mapMovementOccupancy.value,
     boundsCache: rendererBoundsCache,
     scratch: pointerRaycastScratch,
+    recordRaycast: recordPointerRaycastForMetricsOverlay,
   })
 
 const buildInteraction = createIsometricBuildInteractionController({
@@ -961,6 +1020,7 @@ const pickHazardTarget = (
     groundLevelY: normalizedGroundLevelY(),
     boundsCache: rendererBoundsCache,
     scratch: pointerRaycastScratch,
+    recordRaycast: recordPointerRaycastForMetricsOverlay,
   })
 
 const hazardInteraction = createIsometricHazardInteractionController({
@@ -980,6 +1040,11 @@ const performHazardAction = hazardInteraction.performAction
 const hideHazardGhost = hazardInteraction.hideGhost
 
 const requestRenderAfterPointerInteraction = () => requestScheduledSceneFrame('pointer')
+
+const handlePointerMoveFrameForMetricsOverlay = (frame: CoalescedPointerEventFrame) => {
+  recordPointerMoveFrameForMetricsOverlay(frame)
+  requestRenderAfterPointerInteraction()
+}
 
 const pointerInteraction = createIsometricPointerInteractionController({
   pointerTracker,
@@ -1015,7 +1080,7 @@ const pointerInteraction = createIsometricPointerInteractionController({
   hideBuildGhost,
   hideHazardGhost,
   closeTopmostOverlay,
-  onPointerMoveFrame: requestRenderAfterPointerInteraction,
+  onPointerMoveFrame: handlePointerMoveFrameForMetricsOverlay,
 })
 const replayBuildPreview = () => buildInteraction.replayPreview(pointerInteraction.lastPointerCoords())
 const replayHazardPreview = () => hazardInteraction.replayPreview(pointerInteraction.lastPointerCoords())
@@ -1042,6 +1107,7 @@ const handlePointerDown = (event: PointerEvent) => {
   requestRenderAfterPointerInteraction()
 }
 const handlePointerMove = (event: PointerEvent) => {
+  recordPointerMoveEventForMetricsOverlay()
   handlePointerMoveRaw(event)
   requestRenderAfterPointerInteraction()
 }

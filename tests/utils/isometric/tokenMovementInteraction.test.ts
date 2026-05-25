@@ -47,6 +47,7 @@ const makeController = () => {
   }
   const emitPreviewChange = vi.fn()
   const movePokemon = vi.fn()
+  const recordPathfindingRequest = vi.fn()
   const getMoveGridIntersection = vi.fn(() => ({ x: 2.5, z: 2.5 }))
   const selectedState = { value: selected as SpawnedPokemon | null }
   const previewLayerY = { value: 0 }
@@ -67,6 +68,7 @@ const makeController = () => {
     previewRenderer: renderer,
     emitPreviewChange,
     movePokemon,
+    recordPathfindingRequest,
   })
 
   return {
@@ -80,6 +82,7 @@ const makeController = () => {
     renderer,
     emitPreviewChange,
     movePokemon,
+    recordPathfindingRequest,
     getMoveGridIntersection,
     getSelectedPokemon,
     getPokemons,
@@ -90,11 +93,19 @@ const makeController = () => {
 
 describe('isometric token movement interaction', () => {
   it('updates movement previews from pointer intersections and emits preview state', () => {
-    const { controller, selected, renderer, emitPreviewChange, getMoveGridIntersection } = makeController()
+    const {
+      controller,
+      selected,
+      renderer,
+      emitPreviewChange,
+      getMoveGridIntersection,
+      recordPathfindingRequest,
+    } = makeController()
 
     controller.updatePreviewFromPointer(pointer)
 
     expect(getMoveGridIntersection).toHaveBeenCalledWith(pointer, 0)
+    expect(recordPathfindingRequest).toHaveBeenCalledOnce()
     expect(renderer.ensure).toHaveBeenCalledWith(selected)
     expect(renderer.update).toHaveBeenCalledWith(expect.objectContaining({
       pokemon: selected,
@@ -115,19 +126,21 @@ describe('isometric token movement interaction', () => {
   })
 
   it('skips renderer and pathfinding work while the selected token and preview anchor are unchanged', () => {
-    const { controller, renderer, emitPreviewChange, getMapVoxels } = makeController()
+    const { controller, renderer, emitPreviewChange, getMapVoxels, recordPathfindingRequest } = makeController()
 
     controller.updatePreviewAtAnchor({ x: 2, y: 0, z: 2 })
     renderer.ensure.mockClear()
     renderer.update.mockClear()
     emitPreviewChange.mockClear()
     getMapVoxels.mockClear()
+    recordPathfindingRequest.mockClear()
 
     controller.updatePreviewAtAnchor({ x: 2, y: 0, z: 2 })
 
     expect(renderer.ensure).not.toHaveBeenCalled()
     expect(renderer.update).not.toHaveBeenCalled()
     expect(getMapVoxels).not.toHaveBeenCalled()
+    expect(recordPathfindingRequest).not.toHaveBeenCalled()
     expect(emitPreviewChange).not.toHaveBeenCalled()
   })
 

@@ -94,6 +94,72 @@ describe('isometric interaction target picking', () => {
     )
   })
 
+  it('records pointer raycast metric kinds only after a pointer ray is available', () => {
+    const recordRaycast = vi.fn()
+
+    pickPokemonIdFromPointer({
+      event,
+      renderer: null,
+      camera,
+      raycaster: makeRaycaster(),
+      renderObjects: [],
+      recordRaycast,
+    })
+    expect(recordRaycast).not.toHaveBeenCalled()
+
+    pickPokemonIdFromPointer({
+      event,
+      renderer: makeRenderer().renderer,
+      camera,
+      raycaster: makeRaycaster(),
+      renderObjects: [],
+      recordRaycast,
+    })
+    getMoveGridIntersectionFromPointer({
+      event,
+      yLevel: 0,
+      renderer: makeRenderer().renderer,
+      camera,
+      raycaster: makeRaycaster(),
+      recordRaycast,
+    })
+    pickBuildTargetFromPointer({
+      event,
+      tool: 'pencil',
+      renderer: makeRenderer().renderer,
+      camera,
+      raycaster: makeRaycaster(),
+      floorPlane: null,
+      voxelMeshes: [],
+      dimensions: { x: 4, y: 4, z: 4 },
+      pokemons: [],
+      allVoxelOccupancy: new Set(),
+      mapMovementOccupancy: new Set(),
+      recordRaycast,
+    })
+    pickHazardTargetFromPointer({
+      event,
+      tool: 'pencil',
+      renderer: makeRenderer().renderer,
+      camera,
+      raycaster: makeRaycaster(),
+      hazardMeshes: [],
+      voxelMeshes: [],
+      hazards: [],
+      dimensions: { x: 4, y: 4, z: 4 },
+      groundLevelY: 0,
+      recordRaycast,
+    })
+
+    expect(recordRaycast).toHaveBeenCalledTimes(4)
+    expect(recordRaycast.mock.calls.map(([kind]) => kind)).toEqual([
+      'token-pick',
+      'movement-plane',
+      'build-pick',
+      'hazard-pick',
+    ])
+  })
+
   it('caches renderer bounds for repeated pointer normalization until invalidated', () => {
     const cache = createRendererPointerBoundsCache()
     const { renderer, getBoundingClientRect } = makeRenderer()

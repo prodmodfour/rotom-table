@@ -1,7 +1,10 @@
 import {
+  ISOMETRIC_POINTER_RAYCAST_KIND_LABELS,
+  ISOMETRIC_POINTER_RAYCAST_KINDS,
   ISOMETRIC_RENDER_FRAME_REASON_LABELS,
   ISOMETRIC_RENDER_FRAME_REASONS,
   type IsometricRenderMetricsSnapshot,
+  type PointerInteractionMetrics,
   type RenderFrameReason,
   type RenderFrameTimingMetrics,
   type SampledWebGLRendererInfo,
@@ -19,6 +22,7 @@ export interface RenderMetricsOverlayViewModel {
   frameRows: RenderMetricsOverlayRow[]
   lastReasonLabels: string[]
   reasonRows: RenderMetricsOverlayRow[]
+  pointerRows: RenderMetricsOverlayRow[]
   rendererRows: RenderMetricsOverlayRow[]
   hasRendererInfo: boolean
 }
@@ -101,6 +105,46 @@ export const createRenderMetricsReasonRows = (
     .filter((row) => row.value !== '0')
 )
 
+export const createRenderMetricsPointerRows = (
+  pointerInteractions: PointerInteractionMetrics,
+): RenderMetricsOverlayRow[] => [
+  {
+    key: 'pointer-move-events',
+    label: 'Pointermove events',
+    value: formatRenderMetricCount(pointerInteractions.pointerMoveEventCount),
+  },
+  {
+    key: 'pointer-move-frames',
+    label: 'Processed pointer frames',
+    value: formatRenderMetricCount(pointerInteractions.pointerMoveFrameCount),
+  },
+  {
+    key: 'coalesced-pointer-move-events',
+    label: 'Coalesced move events',
+    value: formatRenderMetricCount(pointerInteractions.coalescedPointerMoveEventCount),
+  },
+  {
+    key: 'last-pointer-frame-events',
+    label: 'Last pointer frame events',
+    value: formatRenderMetricCount(pointerInteractions.lastPointerMoveFrameCoalescedEventCount),
+  },
+  {
+    key: 'raycasts',
+    label: 'Raycasts',
+    value: formatRenderMetricCount(pointerInteractions.raycastCount),
+  },
+  ...ISOMETRIC_POINTER_RAYCAST_KINDS.map((kind) => ({
+    key: `raycast-${kind}`,
+    label: ISOMETRIC_POINTER_RAYCAST_KIND_LABELS[kind],
+    value: formatRenderMetricCount(pointerInteractions.raycastCounts[kind] ?? 0),
+  })),
+  {
+    key: 'pathfinding-requests',
+    label: 'Pathfinding requests',
+    value: formatRenderMetricCount(pointerInteractions.pathfindingRequestCount),
+  },
+]
+
 export const createRenderMetricsRendererRows = (
   rendererInfo: SampledWebGLRendererInfo | null,
 ): RenderMetricsOverlayRow[] => {
@@ -128,6 +172,7 @@ export const createRenderMetricsOverlayViewModel = (
   frameRows: createRenderMetricsFrameRows(snapshot.frames),
   lastReasonLabels: snapshot.frames.lastFrameReasons.map(frameReasonLabel),
   reasonRows: createRenderMetricsReasonRows(snapshot.frames),
+  pointerRows: createRenderMetricsPointerRows(snapshot.pointerInteractions),
   rendererRows: createRenderMetricsRendererRows(snapshot.rendererInfo),
   hasRendererInfo: Boolean(snapshot.rendererInfo),
 })

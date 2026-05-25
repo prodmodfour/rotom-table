@@ -4,8 +4,10 @@ import type { MapHazardKind, MapHazardV2, MapVoxelV2 } from '~/types/map'
 import type { BuildTool } from '#shared/mapEditor'
 import { cellInsidePokemonFootprint, voxelKey } from '~/utils/voxelOccupancy'
 import type { BuildTarget, HazardTarget, PokemonRenderObject } from '~/utils/isometric/types'
+import type { IsometricPointerRaycastKind } from '~/utils/isometric/renderMetrics'
 
 export type PointerCoords = Pick<MouseEvent | PointerEvent, 'clientX' | 'clientY'>
+export type PointerRaycastMetricRecorder = (kind: IsometricPointerRaycastKind) => void
 
 export interface RendererPointerBounds {
   readonly left: number
@@ -260,6 +262,13 @@ const horizontalPointerPlane = (yLevel: number, scratch?: PointerRaycastScratch)
   return plane
 }
 
+const recordPointerRaycast = (
+  recorder: PointerRaycastMetricRecorder | undefined,
+  kind: IsometricPointerRaycastKind,
+) => {
+  recorder?.(kind)
+}
+
 export const setRaycasterFromPointer = (options: {
   coords: PointerCoords
   renderer: THREE.WebGLRenderer | null
@@ -294,6 +303,7 @@ export const pickPokemonIdFromPointer = (options: {
   tokenProxyTargets?: TokenProxyPickTargetCache
   boundsCache?: RendererPointerBoundsCache
   scratch?: PointerRaycastScratch
+  recordRaycast?: PointerRaycastMetricRecorder
 }) => {
   if (!setRaycasterFromPointer({
     coords: options.event,
@@ -303,6 +313,8 @@ export const pickPokemonIdFromPointer = (options: {
     boundsCache: options.boundsCache,
     scratch: options.scratch,
   })) return null
+
+  recordPointerRaycast(options.recordRaycast, 'token-pick')
 
   const proxies = options.tokenProxyTargets?.targets() ?? (
     options.scratch
@@ -323,6 +335,7 @@ export const getMoveGridIntersectionFromPointer = (options: {
   raycaster: THREE.Raycaster
   boundsCache?: RendererPointerBoundsCache
   scratch?: PointerRaycastScratch
+  recordRaycast?: PointerRaycastMetricRecorder
 }) => {
   if (!setRaycasterFromPointer({
     coords: options.event,
@@ -334,6 +347,8 @@ export const getMoveGridIntersectionFromPointer = (options: {
   })) {
     return null
   }
+
+  recordPointerRaycast(options.recordRaycast, 'movement-plane')
 
   const point = options.scratch?.groundPoint ?? new THREE.Vector3()
   const hit = options.raycaster.ray.intersectPlane(
@@ -359,6 +374,7 @@ export const pickBuildTargetFromPointer = (options: {
   mapMovementOccupancy: ReadonlySet<string>
   boundsCache?: RendererPointerBoundsCache
   scratch?: PointerRaycastScratch
+  recordRaycast?: PointerRaycastMetricRecorder
 }): BuildTarget | null => {
   if (!setRaycasterFromPointer({
     coords: options.event,
@@ -368,6 +384,8 @@ export const pickBuildTargetFromPointer = (options: {
     boundsCache: options.boundsCache,
     scratch: options.scratch,
   })) return null
+
+  recordPointerRaycast(options.recordRaycast, 'build-pick')
 
   const floorPlane = options.pickTargetCache?.floorPlane() ?? options.floorPlane ?? null
   const targets = options.pickTargetCache?.buildTargets() ?? (() => {
@@ -477,6 +495,7 @@ export const pickHazardTargetFromPointer = (options: {
   groundLevelY: number
   boundsCache?: RendererPointerBoundsCache
   scratch?: PointerRaycastScratch
+  recordRaycast?: PointerRaycastMetricRecorder
 }): HazardTarget | null => {
   if (!setRaycasterFromPointer({
     coords: options.event,
@@ -486,6 +505,8 @@ export const pickHazardTargetFromPointer = (options: {
     boundsCache: options.boundsCache,
     scratch: options.scratch,
   })) return null
+
+  recordPointerRaycast(options.recordRaycast, 'hazard-pick')
 
   const targets = options.pickTargetCache?.hazardTargets() ?? (() => {
     const scratchTargets = options.scratch?.hazardTargets ?? []
