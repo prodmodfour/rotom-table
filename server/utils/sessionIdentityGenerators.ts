@@ -2,14 +2,17 @@ import { randomBytes, randomInt } from 'node:crypto'
 import {
   CLIENT_ID_PREFIX,
   GM_KEY_PREFIX,
+  PLAYER_ID_PREFIX,
   SESSION_ID_PREFIX,
   parseClientId,
   parseGmKey,
   parseJoinCode,
+  parsePlayerId,
   parseSessionId,
   type ClientId,
   type GmKey,
   type JoinCode,
+  type PlayerId,
   type SessionId,
 } from '#shared/sessionIdentity'
 
@@ -31,6 +34,9 @@ export const generateSessionId = (): SessionId =>
 
 export const generateClientId = (): ClientId =>
   parseClientId(`${CLIENT_ID_PREFIX}${randomBase64Url(12)}`)
+
+export const generatePlayerId = (): PlayerId =>
+  parsePlayerId(`${PLAYER_ID_PREFIX}${randomBase64Url(12)}`)
 
 export const generateGmKey = (): GmKey =>
   parseGmKey(`${GM_KEY_PREFIX}${randomBase64Url(32)}`)

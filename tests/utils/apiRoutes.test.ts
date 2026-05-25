@@ -16,6 +16,7 @@ describe('API route constants', () => {
   it('exposes session API paths', () => {
     expect(SESSION_API_PATHS).toEqual({
       start: '/api/sessions/start',
+      join: '/api/sessions/join',
     })
   })
 

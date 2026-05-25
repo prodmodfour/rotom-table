@@ -85,6 +85,51 @@ A successful start creates an active in-memory session record, a session ID, a s
 
 The GM key and join code are session-local secrets and should be shown or stored only by later lobby/client-identity flows. Starting a session does not add accounts, hosted persistence, or client whole-map authority.
 
+## Player join-session endpoint
+
+`POST /api/sessions/join` lets a player join an active Track 2 table session with a short join code and a display name. The route fails closed unless `ROTOM_ENABLE_SESSION_HOST=1` is present, but unlike the GM start route it does not require the existing local role-picker cookie: the join code is the session-local capability for creating a player identity. This is still not public account authentication; it creates only a session-local `playerId`, `clientId`, safe display name, and empty assignment record for the GM to manage later.
+
+Request bodies are small and do not contain map state:
+
+```json
+{
+  "joinCode": "ABCD-2345",
+  "displayName": "Misty"
+}
+```
+
+The server normalizes join-code casing/separators, sanitizes the display name into the shared safe display-name shape, rejects unknown or ended sessions, creates a unique player ID and client ID, advances the session revision, writes the updated authoritative snapshot, and returns the identity the later WebSocket hello/client-identity flow must use:
+
+```json
+{
+  "session": {
+    "sessionId": "session_generated_table_id",
+    "status": "active",
+    "revision": 1,
+    "createdAt": "2026-05-25T12:00:00.000Z",
+    "updatedAt": "2026-05-25T12:01:00.000Z"
+  },
+  "player": {
+    "playerId": "player_generated_id",
+    "clientId": "client_generated_browser_id",
+    "displayName": "Misty",
+    "joinedAt": "2026-05-25T12:01:00.000Z",
+    "actor": {
+      "role": "player",
+      "playerId": "player_generated_id",
+      "clientId": "client_generated_browser_id",
+      "displayName": "Misty"
+    }
+  },
+  "snapshot": {
+    "writtenAt": "2026-05-25T12:01:00.000Z",
+    "revision": 1
+  }
+}
+```
+
+Duplicate display names are allowed because identity comes from the generated `playerId`, not the display label. The initial assignment record has no visible or controllable resources; later GM lobby/assignment routes decide what each player can see or command. Joining never gives a player whole-map save authority.
+
 ## Authoritative state shape
 
 `AuthoritativeSessionState` is the JSON-serializable state the GM-hosted server owns for one session. It includes `sessionId`, monotonic session `revision`, `selectedMapSlug`, per-map `maps[]` entries with `MapRevision` values and server-owned map documents, `connectedClients[]` for WebSocket presence, joined `players[]`, and GM-controlled `assignments[]`.
