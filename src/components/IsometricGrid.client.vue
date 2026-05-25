@@ -43,6 +43,7 @@ import {
 import {
   DEFAULT_FACING_DIRECTION,
   alignCameraToGrid as alignIsometricCameraToGrid,
+  bindIsometricCameraControlChangeInvalidation,
   createIsometricCamera,
   createIsometricCssRenderer,
   createIsometricOrbitControls,
@@ -420,6 +421,7 @@ let renderer: THREE.WebGLRenderer | null = null
 let cssRenderer: ReturnType<typeof createIsometricCssRenderer> | null = null
 let camera: THREE.OrthographicCamera | null = null
 let controls: ReturnType<typeof createIsometricOrbitControls> | null = null
+let cleanupCameraControlChangeInvalidation: (() => void) | null = null
 let cleanupRendererDomEvents: (() => void) | null = null
 let cleanupResizeObserver: (() => void) | null = null
 let renderScheduler: IsometricRenderScheduler | null = null
@@ -1186,6 +1188,11 @@ onMounted(() => {
     maxUsefulCameraZoom(camera, props.dimensions),
   )
   controls.enableZoom = !selectedPokemon.value
+  cleanupCameraControlChangeInvalidation = bindIsometricCameraControlChangeInvalidation({
+    camera,
+    controls,
+    requestRender: (reason) => renderScheduler?.requestRender(reason),
+  })
 
   container.value.append(renderer.domElement, cssRenderer.domElement)
   syncRendererSize()
@@ -1221,6 +1228,9 @@ onBeforeUnmount(() => {
 
   cleanupResizeObserver?.()
   cleanupResizeObserver = null
+
+  cleanupCameraControlChangeInvalidation?.()
+  cleanupCameraControlChangeInvalidation = null
 
   moveTargetingReticleRenderer.dispose()
   moveAreaTemplateRenderer.dispose()

@@ -1,10 +1,14 @@
 import { describe, expect, it, vi, afterEach } from 'vitest'
+import * as THREE from 'three'
 import type { WebGLRenderer } from 'three'
 import type { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import type { CSS3DRenderer } from 'three/examples/jsm/renderers/CSS3DRenderer.js'
 import type { GridDimensions } from '~/types/pokemon'
 import {
+  bindIsometricCameraControlChangeInvalidation,
   createIsometricCamera,
+  readIsometricCameraControlState,
+  isSameIsometricCameraControlState,
   syncIsometricRendererSize,
 } from '~/utils/isometric/cameraControls'
 
@@ -33,9 +37,87 @@ const createRendererSizeHarness = (bounds: { width: number; height: number }) =>
   return { renderer, cssRenderer, camera, updateProjectionMatrix, controls, container }
 }
 
+type ControlsChangeListener = () => void
+
+const createControlsChangeHarness = () => {
+  let changeListener: ControlsChangeListener | null = null
+  const controls = {
+    target: new THREE.Vector3(0, 0, 0),
+    addEventListener: vi.fn((_type: 'change', listener: ControlsChangeListener) => {
+      changeListener = listener
+    }),
+    removeEventListener: vi.fn((_type: 'change', listener: ControlsChangeListener) => {
+      if (changeListener === listener) {
+        changeListener = null
+      }
+    }),
+  } as unknown as OrbitControls
+
+  return {
+    controls,
+    dispatchChange: () => changeListener?.(),
+  }
+}
+
 describe('isometric camera controls', () => {
   afterEach(() => {
     vi.unstubAllGlobals()
+  })
+
+  it('compares camera and controls state snapshots', () => {
+    const camera = createIsometricCamera()
+    const controls = { target: new THREE.Vector3(1, 2, 3) } as OrbitControls
+    const first = readIsometricCameraControlState(camera, controls)
+    const duplicate = readIsometricCameraControlState(camera, controls)
+
+    expect(isSameIsometricCameraControlState(first, duplicate)).toBe(true)
+
+    camera.zoom += 0.25
+    const zoomed = readIsometricCameraControlState(camera, controls)
+
+    expect(isSameIsometricCameraControlState(first, zoomed)).toBe(false)
+
+    controls.target.x += 1
+    const retargeted = readIsometricCameraControlState(camera, controls)
+
+    expect(isSameIsometricCameraControlState(zoomed, retargeted)).toBe(false)
+  })
+
+  it('requests scheduler renders for real OrbitControls camera changes only', () => {
+    const camera = createIsometricCamera()
+    const { controls, dispatchChange } = createControlsChangeHarness()
+    const requestRender = vi.fn()
+
+    const cleanup = bindIsometricCameraControlChangeInvalidation({
+      camera,
+      controls,
+      requestRender,
+    })
+
+    expect(controls.addEventListener).toHaveBeenCalledWith('change', expect.any(Function))
+
+    dispatchChange()
+    expect(requestRender).not.toHaveBeenCalled()
+
+    camera.position.x += 2
+    dispatchChange()
+    expect(requestRender).toHaveBeenCalledOnce()
+    expect(requestRender).toHaveBeenCalledWith('camera')
+
+    dispatchChange()
+    expect(requestRender).toHaveBeenCalledOnce()
+
+    controls.target.z += 3
+    dispatchChange()
+    expect(requestRender).toHaveBeenCalledTimes(2)
+    expect(requestRender).toHaveBeenLastCalledWith('camera')
+
+    cleanup()
+    expect(controls.removeEventListener).toHaveBeenCalledWith('change', expect.any(Function))
+
+    camera.position.y += 1
+    dispatchChange()
+    expect(requestRender).toHaveBeenCalledTimes(2)
   })
 
   it('skips redundant renderer size work when resize bounds are unchanged', () => {

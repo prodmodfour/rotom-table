@@ -49,7 +49,7 @@ In local development, appending `?debug=render`, `?debug=render-metrics`, or `?d
 
 ### 2. Introduce render invalidation and scheduling
 
-Move from unconditional full-frame work toward explicit dirty reasons and active-animation sources. The first compatibility integration routes the isometric scene through the scheduler while deliberately keeping active animation enabled, so visual behaviour remains the same as the old continuous loop while debug metrics can report scheduler frame reasons. Resize, camera controls, scene watchers, async texture loads, token style changes, and tab visibility changes should request renders through a scheduler while settled scenes stop producing duplicate idle frames.
+Move from unconditional full-frame work toward explicit dirty reasons and active-animation sources. The first compatibility integration routes the isometric scene through the scheduler while deliberately keeping active animation enabled, so visual behaviour remains the same as the old continuous loop while debug metrics can report scheduler frame reasons. Resize handling and OrbitControls change events now invalidate the scheduler only when their output-relevant state changes. Scene watchers, async texture loads, token style changes, and tab visibility changes should request renders through a scheduler while settled scenes stop producing duplicate idle frames.
 
 ### 3. Coalesce pointer-heavy interactions
 

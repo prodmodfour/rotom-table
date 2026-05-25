@@ -84,6 +84,85 @@ export const createIsometricOrbitControls = (
   return controls
 }
 
+export interface IsometricCameraControlState {
+  cameraPositionX: number
+  cameraPositionY: number
+  cameraPositionZ: number
+  cameraQuaternionX: number
+  cameraQuaternionY: number
+  cameraQuaternionZ: number
+  cameraQuaternionW: number
+  cameraZoom: number
+  targetX: number
+  targetY: number
+  targetZ: number
+}
+
+const CAMERA_CONTROL_STATE_EPSILON = 1e-9
+
+export const readIsometricCameraControlState = (
+  camera: THREE.OrthographicCamera,
+  controls: Pick<OrbitControls, 'target'>,
+): IsometricCameraControlState => ({
+  cameraPositionX: camera.position.x,
+  cameraPositionY: camera.position.y,
+  cameraPositionZ: camera.position.z,
+  cameraQuaternionX: camera.quaternion.x,
+  cameraQuaternionY: camera.quaternion.y,
+  cameraQuaternionZ: camera.quaternion.z,
+  cameraQuaternionW: camera.quaternion.w,
+  cameraZoom: camera.zoom,
+  targetX: controls.target.x,
+  targetY: controls.target.y,
+  targetZ: controls.target.z,
+})
+
+const isSameCameraControlValue = (a: number, b: number): boolean => (
+  Math.abs(a - b) <= CAMERA_CONTROL_STATE_EPSILON
+)
+
+export const isSameIsometricCameraControlState = (
+  a: IsometricCameraControlState,
+  b: IsometricCameraControlState,
+): boolean => (
+  isSameCameraControlValue(a.cameraPositionX, b.cameraPositionX)
+  && isSameCameraControlValue(a.cameraPositionY, b.cameraPositionY)
+  && isSameCameraControlValue(a.cameraPositionZ, b.cameraPositionZ)
+  && isSameCameraControlValue(a.cameraQuaternionX, b.cameraQuaternionX)
+  && isSameCameraControlValue(a.cameraQuaternionY, b.cameraQuaternionY)
+  && isSameCameraControlValue(a.cameraQuaternionZ, b.cameraQuaternionZ)
+  && isSameCameraControlValue(a.cameraQuaternionW, b.cameraQuaternionW)
+  && isSameCameraControlValue(a.cameraZoom, b.cameraZoom)
+  && isSameCameraControlValue(a.targetX, b.targetX)
+  && isSameCameraControlValue(a.targetY, b.targetY)
+  && isSameCameraControlValue(a.targetZ, b.targetZ)
+)
+
+export const bindIsometricCameraControlChangeInvalidation = (options: {
+  camera: THREE.OrthographicCamera
+  controls: OrbitControls
+  requestRender: (reason: 'camera') => void
+}): (() => void) => {
+  let previousState = readIsometricCameraControlState(options.camera, options.controls)
+
+  const handleControlsChange = () => {
+    const nextState = readIsometricCameraControlState(options.camera, options.controls)
+
+    if (isSameIsometricCameraControlState(previousState, nextState)) {
+      return
+    }
+
+    previousState = nextState
+    options.requestRender('camera')
+  }
+
+  options.controls.addEventListener('change', handleControlsChange)
+
+  return () => {
+    options.controls.removeEventListener('change', handleControlsChange)
+  }
+}
+
 export interface IsometricRendererSizeState {
   width: number
   height: number
