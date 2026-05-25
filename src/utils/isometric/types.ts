@@ -79,6 +79,8 @@ export interface VoxelGroup {
   materials: THREE.MeshBasicMaterial[]
   mesh: THREE.InstancedMesh
   voxels: MapVoxelV2[]
+  /** Output-relevant render traits and voxel positions used to skip unchanged bucket rebuilds. */
+  semanticSignature: string
 }
 
 export interface BuildTarget {

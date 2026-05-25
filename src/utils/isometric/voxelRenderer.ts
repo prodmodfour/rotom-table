@@ -26,6 +26,21 @@ interface VoxelRenderTraits {
   renderOrder: number
 }
 
+interface VoxelBucketSnapshot {
+  voxels: MapVoxelV2[]
+  traits: VoxelRenderTraits
+  semanticSignature: string
+}
+
+const voxelInstancePositionKey = (voxel: MapVoxelV2): string =>
+  `${voxel.x},${voxel.y},${voxel.z}`
+
+const voxelBucketPositionSignature = (voxels: ReadonlyArray<MapVoxelV2>): string =>
+  Array.from(voxels, voxelInstancePositionKey).sort().join('|')
+
+const voxelRenderTraitsSignature = (traits: VoxelRenderTraits): string =>
+  `${traits.opacity}:${traits.depthWrite ? 'depth' : 'no-depth'}:${traits.renderOrder}`
+
 const disposeVoxelGroup = (container: THREE.Group, group: VoxelGroup) => {
   container.remove(group.mesh)
   group.mesh.dispose()
@@ -61,6 +76,19 @@ const rendererVoxelGroupKey = (
     ? 'ghost-faded'
     : 'normal'
   return `${baseKey}|${ghostBucket}`
+}
+
+const buildVoxelBucketSnapshot = (
+  voxels: ReadonlyArray<MapVoxelV2>,
+  options: VoxelRendererSyncOptions,
+): VoxelBucketSnapshot => {
+  const groupVoxels = Array.from(voxels)
+  const traits = resolveVoxelRenderTraits(groupVoxels[0], options)
+  return {
+    voxels: groupVoxels,
+    traits,
+    semanticSignature: `${voxelRenderTraitsSignature(traits)}|${voxelBucketPositionSignature(groupVoxels)}`,
+  }
 }
 
 const appendTerrainTopEdgeLines = (
@@ -227,25 +255,35 @@ export const createVoxelRenderer = (container: THREE.Group): VoxelRenderer => {
         arr.push(voxel)
       }
 
+      const bucketSnapshots = new Map<string, VoxelBucketSnapshot>()
+      for (const [key, groupVoxels] of buckets.entries()) {
+        bucketSnapshots.set(key, buildVoxelBucketSnapshot(groupVoxels, options))
+      }
+
       // Drop groups that no longer have any voxels.
       for (const [key, group] of voxelGroups.entries()) {
-        if (!buckets.has(key)) {
+        if (!bucketSnapshots.has(key)) {
           disposeVoxelGroup(container, group)
-          voxelGroups.delete(key)
         }
       }
 
-      // Rebuild each bucket. We always rebuild rather than try to mutate
-      // ``InstancedMesh.count`` in place — voxel changes are debounced
-      // through the save layer so the cost is bounded.
+      const nextVoxelGroups = new Map<string, VoxelGroup>()
       const matrix = new THREE.Matrix4()
-      for (const [key, groupVoxels] of buckets.entries()) {
+      for (const [key, snapshot] of bucketSnapshots.entries()) {
+        const groupVoxels = snapshot.voxels
         const existing = voxelGroups.get(key)
+        if (existing && existing.semanticSignature === snapshot.semanticSignature) {
+          existing.mesh.visible = visible
+          // Keep the existing instance matrices and userData voxel array aligned;
+          // reordered-but-equivalent inputs do not need either to change.
+          nextVoxelGroups.set(key, existing)
+          continue
+        }
+
         if (existing) {
           disposeVoxelGroup(container, existing)
-          voxelGroups.delete(key)
         }
-        const traits = resolveVoxelRenderTraits(groupVoxels[0], options)
+        const traits = snapshot.traits
         const geometry = getVoxelBoxGeometry()
         const materials = buildVoxelFaceMaterials(groupVoxels[0], traits.opacity, traits.depthWrite)
         const mesh = new THREE.InstancedMesh(geometry, materials, groupVoxels.length)
@@ -259,7 +297,19 @@ export const createVoxelRenderer = (container: THREE.Group): VoxelRenderer => {
         }
         mesh.instanceMatrix.needsUpdate = true
         container.add(mesh)
-        voxelGroups.set(key, { key, geometry, materials, mesh, voxels: groupVoxels })
+        nextVoxelGroups.set(key, {
+          key,
+          geometry,
+          materials,
+          mesh,
+          voxels: groupVoxels,
+          semanticSignature: snapshot.semanticSignature,
+        })
+      }
+
+      voxelGroups.clear()
+      for (const [key, group] of nextVoxelGroups.entries()) {
+        voxelGroups.set(key, group)
       }
 
       syncTerrainTopEdgeOverlay(voxels, options)

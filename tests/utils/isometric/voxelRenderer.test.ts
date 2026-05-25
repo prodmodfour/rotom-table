@@ -26,6 +26,11 @@ const materialTransparency = (mesh: THREE.InstancedMesh): boolean => {
   return materials[0].transparent
 }
 
+const meshWithOpacity = (
+  meshes: THREE.InstancedMesh[],
+  opacity: number,
+): THREE.InstancedMesh | undefined => meshes.find((mesh) => materialOpacity(mesh) === opacity)
+
 const voxel = (x: number, ghost = false): MapVoxelV2 => ({
   x,
   y: 0,
@@ -71,7 +76,7 @@ describe('isometric voxel renderer', () => {
     const initialMeshes = renderer.meshes()
     const sharedGeometry = initialMeshes[0].geometry
     const geometryDisposeSpy = vi.spyOn(sharedGeometry, 'dispose')
-    const opaqueMesh = initialMeshes.find((mesh) => materialOpacity(mesh) === 1)
+    const opaqueMesh = meshWithOpacity(initialMeshes, 1)
     expect(opaqueMesh).toBeDefined()
     const opaqueMaterials = opaqueMesh!.material as THREE.MeshBasicMaterial[]
     const materialDisposeSpy = vi.spyOn(opaqueMaterials[0], 'dispose')
@@ -89,5 +94,86 @@ describe('isometric voxel renderer', () => {
 
     renderer.dispose()
     expect(geometryDisposeSpy).toHaveBeenCalledTimes(1)
+  })
+
+  it('keeps an unchanged voxel bucket mesh across semantically identical syncs', () => {
+    const container = new THREE.Group()
+    const renderer = createVoxelRenderer(container)
+
+    renderer.sync([
+      voxel(2),
+      { ...voxel(0), tags: ['old'] },
+      voxel(1),
+    ])
+
+    const [initialMesh] = renderer.meshes()
+    const initialMaterials = initialMesh.material as THREE.MeshBasicMaterial[]
+    const meshDisposeSpy = vi.spyOn(initialMesh, 'dispose')
+    const materialDisposeSpy = vi.spyOn(initialMaterials[0], 'dispose')
+
+    expect((initialMesh.userData.voxels as MapVoxelV2[]).map((v) => v.x)).toEqual([2, 0, 1])
+
+    renderer.sync([
+      { ...voxel(1), blocksMovement: true },
+      { ...voxel(2), tags: ['changed'] },
+      voxel(0),
+    ])
+
+    expect(renderer.meshes()).toEqual([initialMesh])
+    expect((initialMesh.userData.voxels as MapVoxelV2[]).map((v) => v.x)).toEqual([2, 0, 1])
+    expect(meshDisposeSpy).not.toHaveBeenCalled()
+    expect(materialDisposeSpy).not.toHaveBeenCalled()
+
+    renderer.dispose()
+  })
+
+  it('rebuilds only voxel buckets whose semantic positions changed', () => {
+    const container = new THREE.Group()
+    const renderer = createVoxelRenderer(container)
+
+    renderer.sync([voxel(0, true), voxel(1, false)], { ghostVoxelsFaded: true })
+
+    const initialMeshes = renderer.meshes()
+    const opaqueMesh = meshWithOpacity(initialMeshes, 1)
+    const fadedMesh = meshWithOpacity(initialMeshes, GHOST_VOXEL_FADED_OPACITY)
+    expect(opaqueMesh).toBeDefined()
+    expect(fadedMesh).toBeDefined()
+    const opaqueDisposeSpy = vi.spyOn(opaqueMesh!, 'dispose')
+    const fadedDisposeSpy = vi.spyOn(fadedMesh!, 'dispose')
+
+    renderer.sync([voxel(1, false), voxel(2, true)], { ghostVoxelsFaded: true })
+
+    const syncedMeshes = renderer.meshes()
+    expect(meshWithOpacity(syncedMeshes, 1)).toBe(opaqueMesh)
+    expect(meshWithOpacity(syncedMeshes, GHOST_VOXEL_FADED_OPACITY)).not.toBe(fadedMesh)
+    expect(opaqueDisposeSpy).not.toHaveBeenCalled()
+    expect(fadedDisposeSpy).toHaveBeenCalledTimes(1)
+
+    renderer.dispose()
+  })
+
+  it('rebuilds a same-position bucket when its render traits change', () => {
+    const container = new THREE.Group()
+    const renderer = createVoxelRenderer(container)
+    const customVoxel = (materialId: string): MapVoxelV2 => ({
+      ...voxel(0),
+      materialId,
+      color: '#123456',
+    })
+
+    renderer.sync([customVoxel('airship_floor_metal')])
+
+    const [initialMesh] = renderer.meshes()
+    const initialDisposeSpy = vi.spyOn(initialMesh, 'dispose')
+
+    renderer.sync([customVoxel('reinforced_glass')])
+
+    const [updatedMesh] = renderer.meshes()
+    expect(updatedMesh).not.toBe(initialMesh)
+    expect(materialOpacity(updatedMesh)).toBe(0.36)
+    expect(materialTransparency(updatedMesh)).toBe(true)
+    expect(initialDisposeSpy).toHaveBeenCalledTimes(1)
+
+    renderer.dispose()
   })
 })
