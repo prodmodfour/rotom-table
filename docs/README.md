@@ -17,6 +17,7 @@ This directory collects presentation and reviewer documentation for Rotom Table.
 - [ADR 003: WebSocket session transport](adrs/003-websocket-session-transport.md) — decision record for using WebSockets for live session commands, acks/rejections, broadcasts, heartbeat, and reconnect.
 - [ADR 004: Server-authoritative commands](adrs/004-server-authoritative-commands.md) — decision record for command envelopes instead of live whole-map autosave, including local-first compatibility boundaries.
 - [ADR 005: Session identity and permissions](adrs/005-session-identity-and-permissions.md) — decision record for session-local GM/player identity, join codes, display names, assignments, and server-enforced permissions without full accounts.
+- [ADR 006: Revisions and conflict rules](adrs/006-revisions-and-conflict-rules.md) — decision record for monotonic revisions, `opId` idempotency, stale command handling, GM precedence, and per-resource conflicts.
 - [Isometric render scheduler architecture](render-scheduler-architecture.md) — dirty rendering flow, active animation sources, and how to add future invalidation reasons.
 - [Performance benchmark scenarios](performance-benchmark-scenarios.md) — empty, typical campaign, and stress map scenarios plus before/after PR metrics to record.
 - [Performance benchmark fixtures](performance-benchmark-fixtures.md) — local fixture generator and manual checklist for reproducing benchmark maps without private campaign data.
