@@ -196,7 +196,69 @@ A successful response lists the current session lifecycle status, the player joi
 }
 ```
 
-The response intentionally excludes the GM key. It may include an ended session's status for GM inspection, but ended sessions remain absent from active join-code lookups. This endpoint is read-only: assignment mutation and player-facing filtered state are later ticket boundaries.
+The response intentionally excludes the GM key. It may include an ended session's status for GM inspection, but ended sessions remain absent from active join-code lookups. This endpoint is read-only; assignment mutation remains a later ticket boundary.
+
+## Player session-state endpoint
+
+`POST /api/sessions/player-state` returns the player-filtered lobby/session summary for one joined player. The route fails closed unless `ROTOM_ENABLE_SESSION_HOST=1` is present and validates the session-local `sessionId`, `playerId`, `clientId`, and safe `displayName` returned by the join flow. These IDs are session-local continuity values, not full account auth.
+
+```json
+{
+  "sessionId": "session_generated_table_id",
+  "playerId": "player_generated_id",
+  "clientId": "client_generated_browser_id",
+  "displayName": "Misty"
+}
+```
+
+A successful response returns the player's own identity, their assignment record, session lifecycle status, and current-map visibility filtered through visible map assignments. It does not return the GM key, join code, other players, connected-client lists, hidden selected-map slugs, or map documents:
+
+```json
+{
+  "session": {
+    "sessionId": "session_generated_table_id",
+    "status": "active",
+    "revision": 1,
+    "createdAt": "2026-05-25T12:00:00.000Z",
+    "updatedAt": "2026-05-25T12:01:00.000Z"
+  },
+  "player": {
+    "playerId": "player_generated_id",
+    "clientId": "client_generated_browser_id",
+    "displayName": "Misty",
+    "joinedAt": "2026-05-25T12:01:00.000Z",
+    "updatedAt": "2026-05-25T12:01:00.000Z",
+    "actor": {
+      "role": "player",
+      "playerId": "player_generated_id",
+      "clientId": "client_generated_browser_id",
+      "displayName": "Misty"
+    }
+  },
+  "assignment": {
+    "playerId": "player_generated_id",
+    "displayName": "Misty",
+    "controllableResources": [],
+    "visibleResources": [
+      { "kind": "map", "mapSlug": "viridian-gym" }
+    ],
+    "updatedAt": "2026-05-25T12:02:00.000Z"
+  },
+  "visibility": {
+    "currentMapVisible": true,
+    "currentMap": {
+      "mapSlug": "viridian-gym",
+      "revision": 2
+    },
+    "visibleMapSlugs": ["viridian-gym"],
+    "visibleMaps": [
+      { "mapSlug": "viridian-gym", "revision": 2 }
+    ]
+  }
+}
+```
+
+When the server's selected/current map is not visible to the player, `currentMapVisible` is `false` and `currentMap` is `null`; the hidden map slug is not included. Ended sessions may still return status to already joined players, but the endpoint stays read-only and never grants whole-map save authority.
 
 ## Client identity continuity helper
 

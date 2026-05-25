@@ -18,6 +18,7 @@ describe('API route constants', () => {
       start: '/api/sessions/start',
       join: '/api/sessions/join',
       manage: '/api/sessions/manage',
+      playerState: '/api/sessions/player-state',
     })
   })
 
