@@ -14,6 +14,7 @@ This page documents the Track 1 render-scheduler model for future map performanc
 | Animation continuation model | `src/utils/isometric/renderLoop.ts` | Resolves which concrete animation sources should keep requesting frames after a one-shot render. |
 | Scene watchers | `src/composables/isometric/useIsometricSceneWatchers.ts` | Syncs renderer objects after Vue state changes and requests focused render reasons. |
 | Lifecycle helpers | `src/utils/isometric/lifecycle.ts` | Binds renderer DOM events, resize observation, visibility pause/resume, and resource cleanup. |
+| Pointer interaction coalescing | `src/utils/isometric/pointerInteraction.ts`, `src/utils/isometric/pointerEventCoalescer.ts` | Tracks pointer travel immediately for click semantics while coalescing hover/preview/pathfinding pointermove work to the latest event per animation frame. |
 | Debug metrics | `src/utils/isometric/frameTimingSampler.ts`, `src/utils/isometric/renderMetrics.ts`, `src/components/isometric/RenderMetricsOverlay.vue` | Records scheduler frame timing/reasons and sampled WebGL renderer info only when render debug is explicitly enabled. |
 
 ## Dirty rendering flow
@@ -34,6 +35,7 @@ Important behaviours:
 - Dirty reasons are cleared at the start of the frame that consumes them. If an active animation was already running, the frame also includes the synthetic `animation` reason for metrics.
 - A settled scene has no compatibility continuous loop. With no dirty reasons and no active animation, the scheduler intentionally stops requesting RAF callbacks.
 - Hidden tabs call `pause()`, which cancels pending RAF work without clearing dirty reasons or active-animation state. When visible again, the scene calls `resume()` and requests `hidden-tab-resume` so the next visible frame is fresh.
+- Pointermove handling keeps click-distance tracking immediate, then runs hover picking, build/hazard previews, targeting updates, and movement-preview pathfinding from the latest queued pointer event at most once per animation frame. Pending pointermove work is flushed before pointer-up/wheel actions and cancelled on leave/unmount to avoid stale previews.
 - Unmount calls `dispose()`, then renderer resource cleanup. New invalidations after disposal are ignored by the disposed scheduler snapshot.
 
 ## Current invalidation reasons

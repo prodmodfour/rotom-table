@@ -55,7 +55,7 @@ Resize handling, OrbitControls change events, scene watchers, pointer interactio
 
 ### 3. Coalesce pointer-heavy interactions
 
-Pointer movement can trigger hover updates, build/hazard previews, targeting, raycasts, and movement previews. Coalesce pointer input to at most one processing pass per animation frame, cache renderer bounds and picking lists, and short-circuit unchanged hover or preview anchors.
+Pointer movement can trigger hover updates, build/hazard previews, targeting, raycasts, and movement previews. Map pointermove handling now coalesces to the latest pointer event before running that heavy hover/preview/pathfinding work at most once per animation frame; upcoming passes should cache renderer bounds and picking lists, then short-circuit unchanged hover or preview anchors.
 
 ### 4. Cache deterministic movement/pathfinding work
 

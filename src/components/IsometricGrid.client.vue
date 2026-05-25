@@ -926,6 +926,8 @@ const hazardInteraction = createIsometricHazardInteractionController({
 const updateHazardPreviewFromPointer = hazardInteraction.updatePreviewFromPointer
 const performHazardAction = hazardInteraction.performAction
 
+const requestRenderAfterPointerInteraction = () => requestScheduledSceneFrame('pointer')
+
 const pointerInteraction = createIsometricPointerInteractionController({
   pointerTracker,
   getSelectedId: () => props.selectedId,
@@ -960,6 +962,7 @@ const pointerInteraction = createIsometricPointerInteractionController({
   hideBuildGhost,
   hideHazardGhost,
   closeTopmostOverlay,
+  onPointerMoveFrame: requestRenderAfterPointerInteraction,
 })
 const replayBuildPreview = () => buildInteraction.replayPreview(pointerInteraction.lastPointerCoords())
 const replayHazardPreview = () => hazardInteraction.replayPreview(pointerInteraction.lastPointerCoords())
@@ -972,9 +975,8 @@ const {
   handlePointerUp: handlePointerUpRaw,
   handlePointerLeave: handlePointerLeaveRaw,
   handleEscape: handleEscapeRaw,
+  dispose: disposePointerInteraction,
 } = pointerInteraction
-
-const requestRenderAfterPointerInteraction = () => requestScheduledSceneFrame('pointer')
 
 const handleRightClick = (event: MouseEvent) => {
   handleRightClickRaw(event)
@@ -1352,6 +1354,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   stopScheduledRenderLoop()
+  disposePointerInteraction()
 
   cleanupDocumentVisibilityChange?.()
   cleanupDocumentVisibilityChange = null

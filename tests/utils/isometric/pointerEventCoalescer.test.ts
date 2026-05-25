@@ -175,6 +175,36 @@ describe('isometric pointer event coalescer', () => {
     expect(coalescer.snapshot().latestEvent).toMatchObject({ clientX: 42 })
   })
 
+  it('flushes pending pointer work immediately when callers need current state before an action', () => {
+    const driver = createAnimationFrameDriver()
+    const processFrame = vi.fn()
+    const coalescer = createPointerEventCoalescer({
+      processFrame,
+      requestAnimationFrame: driver.requestAnimationFrame,
+      cancelAnimationFrame: driver.cancelAnimationFrame,
+    })
+
+    coalescer.queue(pointerEvent({ clientX: 1 }))
+    coalescer.queue(pointerEvent({ clientX: 2, clientY: 3 }))
+    const flushed = coalescer.flush(24)
+
+    expect(flushed).toEqual({
+      isFramePending: false,
+      hasPendingEvent: false,
+      pendingEventCount: 0,
+      latestEvent: null,
+      isDisposed: false,
+    })
+    expect(driver.cancelAnimationFrame).toHaveBeenCalledWith(1)
+    expect(driver.flushNextFrame(32)).toBe(false)
+    expect(processFrame).toHaveBeenCalledOnce()
+    expect(processFrame).toHaveBeenCalledWith({
+      timestampMs: 24,
+      event: expect.objectContaining({ clientX: 2, clientY: 3 }),
+      coalescedEventCount: 2,
+    })
+  })
+
   it('cancels pending pointer work before it is processed', () => {
     const driver = createAnimationFrameDriver()
     const processFrame = vi.fn()

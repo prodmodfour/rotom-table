@@ -78,6 +78,7 @@ export interface PointerEventCoalescer<
   TPointerData extends object = CoalescedPointerEventData,
 > {
   queue: (event: PointerEvent) => PointerEventCoalescerSnapshot<TPointerData>
+  flush: (timestampMs?: number) => PointerEventCoalescerSnapshot<TPointerData>
   cancel: () => PointerEventCoalescerSnapshot<TPointerData>
   dispose: () => PointerEventCoalescerSnapshot<TPointerData>
   snapshot: () => PointerEventCoalescerSnapshot<TPointerData>
@@ -181,9 +182,7 @@ export const createPointerEventCoalescer = <
     pendingEventCount = 0
   }
 
-  const runFrame = (timestampMs: number) => {
-    frameHandle = null
-
+  const processPendingEvent = (timestampMs: number) => {
     if (isDisposed || latestEvent === null) return
 
     const event = latestEvent
@@ -197,12 +196,26 @@ export const createPointerEventCoalescer = <
     })
   }
 
+  const runFrame = (timestampMs: number) => {
+    frameHandle = null
+    processPendingEvent(timestampMs)
+  }
+
   const queue = (event: PointerEvent): PointerEventCoalescerSnapshot<TPointerData> => {
     if (isDisposed) return snapshot()
 
     latestEvent = resolveEventData(event)
     pendingEventCount += 1
     scheduleFrame()
+
+    return snapshot()
+  }
+
+  const flush = (timestampMs = Date.now()): PointerEventCoalescerSnapshot<TPointerData> => {
+    if (isDisposed) return snapshot()
+
+    cancelFrameHandle()
+    processPendingEvent(timestampMs)
 
     return snapshot()
   }
@@ -223,6 +236,7 @@ export const createPointerEventCoalescer = <
 
   return {
     queue,
+    flush,
     cancel,
     dispose,
     snapshot,
