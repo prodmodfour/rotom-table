@@ -10,6 +10,17 @@ This directory collects presentation and reviewer documentation for Rotom Table.
 - [Local development](local-development.md) — setup commands, checks, optional `just` recipes, and local filesystem behaviour.
 - [Screenshots](screenshots.md) — capture checklist for future screenshots; no missing images are linked.
 - [Track 1 performance roadmap](track-1-performance-roadmap.md) — no-quality-loss performance constraints, benchmark categories, and staged isometric map optimization plan.
+- [Track 2 roadmap](track-2-roadmap.md) — locked GM-hosted session scope, lifecycle, concurrency model, roadmap phases, and non-goals.
+- [Track 2 glossary](track-2-glossary.md) — shared vocabulary for session identity, commands, revisions, WebSocket flow, persistence, and safety boundaries.
+- [Track 2 validation matrix](track-2-validation-matrix.md) — expected tests, smoke checks, docs, and safety reviews for later implementation areas.
+- [ADR 001: GM-hosted session model](adrs/001-gm-hosted-session-model.md) — decision record for GM-controlled sessions instead of SaaS, public multi-tenancy, or generic collaborative editing.
+- [ADR 002: LAN first and named Cloudflare Tunnel second](adrs/002-lan-first-named-cloudflare-tunnel.md) — decision record for LAN-first hosting, named-tunnel remote access, and Quick Tunnel caveats.
+- [ADR 003: WebSocket session transport](adrs/003-websocket-session-transport.md) — decision record for using WebSockets for live session commands, acks/rejections, broadcasts, heartbeat, and reconnect.
+- [ADR 004: Server-authoritative commands](adrs/004-server-authoritative-commands.md) — decision record for command envelopes instead of live whole-map autosave, including local-first compatibility boundaries.
+- [ADR 005: Session identity and permissions](adrs/005-session-identity-and-permissions.md) — decision record for session-local GM/player identity, join codes, display names, assignments, and server-enforced permissions without full accounts.
+- [ADR 006: Revisions and conflict rules](adrs/006-revisions-and-conflict-rules.md) — decision record for monotonic revisions, `opId` idempotency, stale command handling, GM precedence, and per-resource conflicts.
+- [ADR 007: JSON snapshots and optional event log](adrs/007-json-snapshots-and-optional-event-log.md) — decision record for local-first session snapshots, atomic writes, optional append-only event logs, and recovery expectations.
+- [ADR 008: Session runtime safety flag](adrs/008-session-runtime-safety-flag.md) — decision record for the explicit session-host opt-in flag, fail-closed session routes, and public exposure warnings.
 - [Isometric render scheduler architecture](render-scheduler-architecture.md) — dirty rendering flow, active animation sources, and how to add future invalidation reasons.
 - [Performance benchmark scenarios](performance-benchmark-scenarios.md) — empty, typical campaign, and stress map scenarios plus before/after PR metrics to record.
 - [Performance benchmark fixtures](performance-benchmark-fixtures.md) — local fixture generator and manual checklist for reproducing benchmark maps without private campaign data.
