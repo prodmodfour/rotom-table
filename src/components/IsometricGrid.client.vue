@@ -50,6 +50,7 @@ import {
   focusCameraOnPokemon,
   maxUsefulCameraZoom,
   syncIsometricRendererSize,
+  type IsometricRendererSizeState,
 } from '~/utils/isometric/cameraControls'
 import { createPointerTravelTracker } from '~/utils/isometric/pointerTracker'
 import { createIsometricPointerInteractionController } from '~/utils/isometric/pointerInteraction'
@@ -422,6 +423,7 @@ let controls: ReturnType<typeof createIsometricOrbitControls> | null = null
 let cleanupRendererDomEvents: (() => void) | null = null
 let cleanupResizeObserver: (() => void) | null = null
 let renderScheduler: IsometricRenderScheduler | null = null
+let rendererSizeState: IsometricRendererSizeState | null = null
 const pointerTracker = createPointerTravelTracker()
 const renderFrameTimingSampler = createRenderFrameTimingSampler()
 
@@ -472,19 +474,31 @@ const sampleRendererInfoForMetricsOverlay = () => {
 
 const getPreviewLayerY = () => movementInteraction.activeAnchor()?.y ?? selectedPokemon.value?.position.y ?? 0
 
-const syncRendererSize = () => {
+const syncRendererSize = (): boolean => {
   if (!renderer || !cssRenderer || !camera || !container.value) {
-    return
+    return false
   }
 
-  syncIsometricRendererSize({
+  const result = syncIsometricRendererSize({
     renderer,
     cssRenderer,
     camera,
     controls,
     container: container.value,
     dimensions: props.dimensions,
+    previousSize: rendererSizeState,
   })
+  rendererSizeState = result.size
+
+  return result.changed
+}
+
+const syncRendererSizeFromResizeObserver = () => {
+  if (!syncRendererSize()) {
+    return
+  }
+
+  renderScheduler?.requestRender('resize')
 }
 
 const alignCameraToGrid = (initial = false) => {
@@ -1194,9 +1208,7 @@ onMounted(() => {
     contextmenu: handleRightClick,
     wheel: handleWheel,
   })
-  cleanupResizeObserver = observeIsometricResize(container.value, () => {
-    syncRendererSize()
-  })
+  cleanupResizeObserver = observeIsometricResize(container.value, syncRendererSizeFromResizeObserver)
 
   startContinuousRenderLoop()
 })
@@ -1233,6 +1245,7 @@ onBeforeUnmount(() => {
   renderer = null
   cssRenderer = null
   camera = null
+  rendererSizeState = null
 })
 
 useIsometricSceneWatchers({

@@ -84,14 +84,68 @@ export const createIsometricOrbitControls = (
   return controls
 }
 
-export const setOrthographicFrustum = (options: {
+export interface IsometricRendererSizeState {
+  width: number
+  height: number
+  pixelRatio: number
+  dimensionsX: number
+  dimensionsY: number
+  dimensionsZ: number
+}
+
+export interface IsometricRendererSizeSyncResult {
+  changed: boolean
+  size: IsometricRendererSizeState
+}
+
+interface IsometricRendererBounds {
+  width: number
+  height: number
+}
+
+const readBrowserDevicePixelRatio = (): number => {
+  const maybeGlobal = globalThis as typeof globalThis & {
+    devicePixelRatio?: number
+    window?: { devicePixelRatio?: number }
+  }
+
+  return maybeGlobal.window?.devicePixelRatio ?? maybeGlobal.devicePixelRatio ?? 1
+}
+
+const createRendererSizeState = (
+  bounds: IsometricRendererBounds,
+  dimensions: GridDimensions,
+  pixelRatio = resolveIsometricRendererPixelRatio(readBrowserDevicePixelRatio()),
+): IsometricRendererSizeState => ({
+  width: bounds.width,
+  height: bounds.height,
+  pixelRatio,
+  dimensionsX: dimensions.x,
+  dimensionsY: dimensions.y,
+  dimensionsZ: dimensions.z,
+})
+
+const isSameRendererSizeState = (
+  previous: IsometricRendererSizeState | null | undefined,
+  next: IsometricRendererSizeState,
+): boolean => {
+  if (!previous) return false
+
+  return previous.width === next.width
+    && previous.height === next.height
+    && previous.pixelRatio === next.pixelRatio
+    && previous.dimensionsX === next.dimensionsX
+    && previous.dimensionsY === next.dimensionsY
+    && previous.dimensionsZ === next.dimensionsZ
+}
+
+const applyOrthographicFrustumForBounds = (options: {
   camera: THREE.OrthographicCamera
-  container: HTMLElement
   controls: OrbitControls | null
   dimensions: GridDimensions
+  bounds: IsometricRendererBounds
 }) => {
-  const bounds = options.container.getBoundingClientRect()
-  const aspect = bounds.width / Math.max(bounds.height, 1)
+  const aspect = options.bounds.width / Math.max(options.bounds.height, 1)
   const frustumSize = fallbackFrustumHeight(options.dimensions)
 
   options.camera.left = (-frustumSize * aspect) / 2
@@ -104,6 +158,20 @@ export const setOrthographicFrustum = (options: {
   if (options.controls) options.controls.maxZoom = maxUsefulCameraZoom(options.camera, options.dimensions)
 }
 
+export const setOrthographicFrustum = (options: {
+  camera: THREE.OrthographicCamera
+  container: HTMLElement
+  controls: OrbitControls | null
+  dimensions: GridDimensions
+}) => {
+  applyOrthographicFrustumForBounds({
+    camera: options.camera,
+    controls: options.controls,
+    dimensions: options.dimensions,
+    bounds: options.container.getBoundingClientRect(),
+  })
+}
+
 export const syncIsometricRendererSize = (options: {
   renderer: THREE.WebGLRenderer
   cssRenderer: CSS3DRenderer
@@ -111,12 +179,26 @@ export const syncIsometricRendererSize = (options: {
   controls: OrbitControls | null
   container: HTMLElement
   dimensions: GridDimensions
-}) => {
+  previousSize?: IsometricRendererSizeState | null
+}): IsometricRendererSizeSyncResult => {
   const bounds = options.container.getBoundingClientRect()
+  const size = createRendererSizeState(bounds, options.dimensions)
+
+  if (isSameRendererSizeState(options.previousSize, size)) {
+    return { changed: false, size }
+  }
+
   options.renderer.setSize(bounds.width, bounds.height)
-  options.renderer.setPixelRatio(resolveIsometricRendererPixelRatio(window.devicePixelRatio))
+  options.renderer.setPixelRatio(size.pixelRatio)
   options.cssRenderer.setSize(bounds.width, bounds.height)
-  setOrthographicFrustum(options)
+  applyOrthographicFrustumForBounds({
+    camera: options.camera,
+    controls: options.controls,
+    dimensions: options.dimensions,
+    bounds,
+  })
+
+  return { changed: true, size }
 }
 
 export const alignCameraToGrid = (options: {
