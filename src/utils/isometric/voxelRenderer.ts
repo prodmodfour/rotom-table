@@ -29,7 +29,6 @@ interface VoxelRenderTraits {
 const disposeVoxelGroup = (container: THREE.Group, group: VoxelGroup) => {
   container.remove(group.mesh)
   group.mesh.dispose()
-  group.geometry.dispose()
   for (const material of group.materials) material.dispose()
 }
 
@@ -175,7 +174,18 @@ export const buildTerrainTopEdgeOverlay = (
 export const createVoxelRenderer = (container: THREE.Group): VoxelRenderer => {
   const voxelGroups = new Map<string, VoxelGroup>()
   let terrainTopEdgeOverlay: THREE.Group | null = null
+  let voxelBoxGeometry: THREE.BoxGeometry | null = null
   let visible = true
+
+  const getVoxelBoxGeometry = () => {
+    voxelBoxGeometry ??= new THREE.BoxGeometry(1, 1, 1)
+    return voxelBoxGeometry
+  }
+
+  const disposeVoxelBoxGeometry = () => {
+    voxelBoxGeometry?.dispose()
+    voxelBoxGeometry = null
+  }
 
   const disposeTerrainTopEdgeOverlay = () => {
     disposeObject3D(terrainTopEdgeOverlay)
@@ -236,7 +246,7 @@ export const createVoxelRenderer = (container: THREE.Group): VoxelRenderer => {
           voxelGroups.delete(key)
         }
         const traits = resolveVoxelRenderTraits(groupVoxels[0], options)
-        const geometry = new THREE.BoxGeometry(1, 1, 1)
+        const geometry = getVoxelBoxGeometry()
         const materials = buildVoxelFaceMaterials(groupVoxels[0], traits.opacity, traits.depthWrite)
         const mesh = new THREE.InstancedMesh(geometry, materials, groupVoxels.length)
         mesh.userData.voxels = groupVoxels
@@ -258,6 +268,7 @@ export const createVoxelRenderer = (container: THREE.Group): VoxelRenderer => {
     dispose() {
       disposeTerrainTopEdgeOverlay()
       disposeAllVoxelGroups()
+      disposeVoxelBoxGeometry()
     },
 
     setVisible(nextVisible) {

@@ -61,4 +61,33 @@ describe('isometric voxel renderer', () => {
 
     renderer.dispose()
   })
+
+  it('shares one voxel box geometry across buckets and rebuilds', () => {
+    const container = new THREE.Group()
+    const renderer = createVoxelRenderer(container)
+
+    renderer.sync([voxel(0, true), voxel(1, false)], { ghostVoxelsFaded: true })
+
+    const initialMeshes = renderer.meshes()
+    const sharedGeometry = initialMeshes[0].geometry
+    const geometryDisposeSpy = vi.spyOn(sharedGeometry, 'dispose')
+    const opaqueMesh = initialMeshes.find((mesh) => materialOpacity(mesh) === 1)
+    expect(opaqueMesh).toBeDefined()
+    const opaqueMaterials = opaqueMesh!.material as THREE.MeshBasicMaterial[]
+    const materialDisposeSpy = vi.spyOn(opaqueMaterials[0], 'dispose')
+
+    expect(initialMeshes).toHaveLength(2)
+    expect(initialMeshes[1].geometry).toBe(sharedGeometry)
+
+    renderer.sync([voxel(2, true)], { ghostVoxelsFaded: true })
+
+    const rebuiltMeshes = renderer.meshes()
+    expect(rebuiltMeshes).toHaveLength(1)
+    expect(rebuiltMeshes[0].geometry).toBe(sharedGeometry)
+    expect(materialDisposeSpy).toHaveBeenCalledTimes(1)
+    expect(geometryDisposeSpy).not.toHaveBeenCalled()
+
+    renderer.dispose()
+    expect(geometryDisposeSpy).toHaveBeenCalledTimes(1)
+  })
 })

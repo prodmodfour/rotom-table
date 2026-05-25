@@ -74,6 +74,7 @@ export interface PokemonRenderObject {
 
 export interface VoxelGroup {
   key: string
+  /** Renderer-owned shared unit box geometry; individual buckets own only their materials. */
   geometry: THREE.BoxGeometry
   materials: THREE.MeshBasicMaterial[]
   mesh: THREE.InstancedMesh
