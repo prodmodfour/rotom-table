@@ -11,6 +11,26 @@ export interface MapMovementTerrainIndex {
   highestVoxelYBelow: (x: number, y: number, z: number) => number | null
 }
 
+export type MapMovementTerrainIndexBuilder = (
+  voxels: readonly MapVoxelV2[] | null | undefined,
+) => MapMovementTerrainIndex
+
+export interface MapMovementTerrainIndexCache {
+  get: (
+    voxels: readonly MapVoxelV2[] | null | undefined,
+    revision: string | number | null | undefined,
+  ) => MapMovementTerrainIndex
+  clear: () => void
+  snapshot: () => {
+    revision: string | null
+    hasIndex: boolean
+  }
+}
+
+export interface MapMovementTerrainIndexCacheOptions {
+  buildIndex?: MapMovementTerrainIndexBuilder
+}
+
 export interface MovementAnchorTerrain {
   blocked: boolean
   requirements: MovementTerrainRequirement[]
@@ -83,6 +103,40 @@ export const buildMapMovementTerrainIndex = (
   return {
     voxelAt: (x, y, z) => byKey.get(voxelKey(x, y, z)) ?? null,
     highestVoxelYBelow: (x, y, z) => columnYs.get(`${x},${z}`)?.find((voxelY) => voxelY < y) ?? null,
+  }
+}
+
+export const createMapMovementTerrainIndexCache = (
+  options: MapMovementTerrainIndexCacheOptions = {},
+): MapMovementTerrainIndexCache => {
+  const buildIndex = options.buildIndex ?? buildMapMovementTerrainIndex
+  let cachedRevision: string | null = null
+  let cachedIndex: MapMovementTerrainIndex | null = null
+
+  return {
+    get: (voxels, revision) => {
+      if (revision == null) {
+        return buildIndex(voxels)
+      }
+
+      const revisionKey = String(revision)
+      if (cachedIndex && cachedRevision === revisionKey) {
+        return cachedIndex
+      }
+
+      const nextIndex = buildIndex(voxels)
+      cachedRevision = revisionKey
+      cachedIndex = nextIndex
+      return nextIndex
+    },
+    clear: () => {
+      cachedRevision = null
+      cachedIndex = null
+    },
+    snapshot: () => ({
+      revision: cachedRevision,
+      hasIndex: Boolean(cachedIndex),
+    }),
   }
 }
 

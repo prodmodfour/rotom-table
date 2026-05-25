@@ -84,6 +84,8 @@ describe('isometric render metrics model', () => {
       raycastCount: 0,
       raycastCounts: {},
       pathfindingRequestCount: 0,
+      pathfindingCacheHitCount: 0,
+      pathfindingCacheMissCount: 0,
     })
     expect(metrics.raycastCounts).not.toBe(nextMetrics.raycastCounts)
   })
@@ -181,6 +183,8 @@ describe('isometric render metrics model', () => {
     pointerInteractions.raycastCount = 4
     pointerInteractions.raycastCounts['token-pick'] = 3
     pointerInteractions.pathfindingRequestCount = 1
+    pointerInteractions.pathfindingCacheHitCount = 2
+    pointerInteractions.pathfindingCacheMissCount = 1
 
     const updated = createIsometricRenderMetricsSnapshotWithPointerInteractions(
       snapshot,

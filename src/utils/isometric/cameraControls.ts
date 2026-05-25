@@ -172,6 +172,12 @@ export interface IsometricRendererSizeState {
   dimensionsZ: number
 }
 
+interface IsometricRendererSizeChanges {
+  rendererSize: boolean
+  pixelRatio: boolean
+  frustum: boolean
+}
+
 export interface IsometricRendererSizeSyncResult {
   changed: boolean
   size: IsometricRendererSizeState
@@ -204,19 +210,39 @@ const createRendererSizeState = (
   dimensionsZ: dimensions.z,
 })
 
-const isSameRendererSizeState = (
+const rendererAspectRatio = (state: Pick<IsometricRendererSizeState, 'width' | 'height'>): number => (
+  state.width / Math.max(state.height, 1)
+)
+
+const createRendererSizeChanges = (
   previous: IsometricRendererSizeState | null | undefined,
   next: IsometricRendererSizeState,
-): boolean => {
-  if (!previous) return false
+): IsometricRendererSizeChanges => {
+  if (!previous) {
+    return {
+      rendererSize: true,
+      pixelRatio: true,
+      frustum: true,
+    }
+  }
 
-  return previous.width === next.width
-    && previous.height === next.height
-    && previous.pixelRatio === next.pixelRatio
-    && previous.dimensionsX === next.dimensionsX
-    && previous.dimensionsY === next.dimensionsY
-    && previous.dimensionsZ === next.dimensionsZ
+  const rendererSize = previous.width !== next.width || previous.height !== next.height
+  const pixelRatio = previous.pixelRatio !== next.pixelRatio
+  const dimensionsChanged = previous.dimensionsX !== next.dimensionsX
+    || previous.dimensionsY !== next.dimensionsY
+    || previous.dimensionsZ !== next.dimensionsZ
+  const frustum = dimensionsChanged || rendererAspectRatio(previous) !== rendererAspectRatio(next)
+
+  return {
+    rendererSize,
+    pixelRatio,
+    frustum,
+  }
 }
+
+const rendererSizeChangesIncludeWork = (changes: IsometricRendererSizeChanges): boolean => (
+  changes.rendererSize || changes.pixelRatio || changes.frustum
+)
 
 const applyOrthographicFrustumForBounds = (options: {
   camera: THREE.OrthographicCamera
@@ -262,20 +288,29 @@ export const syncIsometricRendererSize = (options: {
 }): IsometricRendererSizeSyncResult => {
   const bounds = options.container.getBoundingClientRect()
   const size = createRendererSizeState(bounds, options.dimensions)
+  const changes = createRendererSizeChanges(options.previousSize, size)
 
-  if (isSameRendererSizeState(options.previousSize, size)) {
+  if (!rendererSizeChangesIncludeWork(changes)) {
     return { changed: false, size }
   }
 
-  options.renderer.setSize(bounds.width, bounds.height)
-  options.renderer.setPixelRatio(size.pixelRatio)
-  options.cssRenderer.setSize(bounds.width, bounds.height)
-  applyOrthographicFrustumForBounds({
-    camera: options.camera,
-    controls: options.controls,
-    dimensions: options.dimensions,
-    bounds,
-  })
+  if (changes.rendererSize) {
+    options.renderer.setSize(bounds.width, bounds.height)
+    options.cssRenderer.setSize(bounds.width, bounds.height)
+  }
+
+  if (changes.pixelRatio) {
+    options.renderer.setPixelRatio(size.pixelRatio)
+  }
+
+  if (changes.frustum) {
+    applyOrthographicFrustumForBounds({
+      camera: options.camera,
+      controls: options.controls,
+      dimensions: options.dimensions,
+      bounds,
+    })
+  }
 
   return { changed: true, size }
 }

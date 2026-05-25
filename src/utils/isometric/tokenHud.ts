@@ -65,9 +65,10 @@ const rememberElevationBadgeRenderState = (
   badge.userData[ELEVATION_BADGE_RENDER_STATE_KEY] = state
 }
 
-const setElevationBadgeHidden = (badge: CSS3DSprite) => {
+const setElevationBadgeHidden = (badge: CSS3DSprite): boolean => {
   const previous = elevationBadgeRenderState(badge)
-  if (previous?.visible === false && !badge.visible) return
+  const changed = badge.visible || previous?.visible === true
+  if (!changed && previous?.visible === false) return false
 
   badge.visible = false
   rememberElevationBadgeRenderState(badge, {
@@ -77,6 +78,7 @@ const setElevationBadgeHidden = (badge: CSS3DSprite) => {
     y: badge.position.y,
     z: badge.position.z,
   })
+  return changed
 }
 
 const sameElevationBadgeRenderState = (
@@ -105,11 +107,10 @@ export const updateElevationBadge = ({
   groundLevelY: number
   camera: THREE.Camera | null
   show?: boolean
-}) => {
+}): boolean => {
   const localY = mapSpecificY(elevation, groundLevelY)
   if (!show || localY === 0) {
-    setElevationBadgeHidden(badge)
-    return
+    return setElevationBadgeHidden(badge)
   }
 
   const offset = getElevationBadgeOffset(center, base, camera)
@@ -122,7 +123,7 @@ export const updateElevationBadge = ({
   }
 
   if (badge.visible && sameElevationBadgeRenderState(elevationBadgeRenderState(badge), nextState)) {
-    return
+    return false
   }
 
   badge.position.set(nextState.x, nextState.y, nextState.z)
@@ -131,6 +132,7 @@ export const updateElevationBadge = ({
   }
   badge.visible = true
   rememberElevationBadgeRenderState(badge, nextState)
+  return true
 }
 
 const TOKEN_LEVEL_PREFIX_TEXT = 'Lv'
@@ -192,13 +194,32 @@ const updateTokenStatusLabel = (
   if (levelNode) updateTokenStatusLevel(levelNode, level)
 }
 
+const TOKEN_STATUS_KEY_SEPARATOR = '\u001f'
+
+const tokenStatusConditionKey = (conditions: readonly string[]): string => (
+  normalizeConditionNames(conditions).join(TOKEN_STATUS_KEY_SEPARATOR)
+)
+
+const tokenStatusItemKey = (items: readonly string[]): string => (
+  items.map((item) => item.trim()).filter(Boolean).join(TOKEN_STATUS_KEY_SEPARATOR)
+)
+
 const updateTokenConditions = (element: HTMLElement, conditions: readonly string[]) => {
   const strip = element.querySelector<HTMLElement>('.token-status__condition-strip')
   if (!strip) return
 
   const entries = normalizeConditionNames(conditions)
+  const key = entries.join(TOKEN_STATUS_KEY_SEPARATOR)
+  const hidden = entries.length === 0
+
+  if (strip.dataset.conditionNamesKey === key) {
+    if (strip.hidden !== hidden) strip.hidden = hidden
+    return
+  }
+
+  strip.dataset.conditionNamesKey = key
   strip.replaceChildren()
-  strip.hidden = entries.length === 0
+  strip.hidden = hidden
 
   for (const condition of entries) {
     const chip = document.createElement('span')
@@ -213,7 +234,7 @@ const updateTokenItems = (element: HTMLElement, items: readonly string[]) => {
   if (!stack) return
 
   const entries = items.map((item) => item.trim()).filter(Boolean)
-  const key = entries.join('\u001f')
+  const key = entries.join(TOKEN_STATUS_KEY_SEPARATOR)
   if (stack.dataset.itemNamesKey === key) return
   stack.dataset.itemNamesKey = key
 
@@ -257,6 +278,103 @@ const formatInjuryBlockTitle = (injuries: number | undefined, blockedRatio: numb
     ? `${injuryCount} ${injuryCount === 1 ? 'Injury' : 'Injuries'}`
     : 'Injuries'
   return `${injuryLabel} block ${hpBarPercentFromRatio(blockedRatio)} of Max HP.`
+}
+
+interface TokenStatusRenderState {
+  visible: boolean
+  fillWidth: string
+  blockedWidth: string
+  blockedHidden: boolean
+  hpTier: ReturnType<typeof hpTierForRatio>
+  injuryBlocked: boolean
+  title: string
+  displayName: string
+  level: number
+  conditionsKey: string
+  tokenItemsKey: string
+  activeTurn: boolean
+  x: number
+  y: number
+  z: number
+}
+
+const TOKEN_STATUS_RENDER_STATE_KEY = 'rotomTokenStatusRenderState'
+
+const tokenStatusRenderState = (bar: CSS3DSprite): TokenStatusRenderState | null => {
+  const state = bar.userData[TOKEN_STATUS_RENDER_STATE_KEY]
+  if (!state || typeof state !== 'object') return null
+
+  const maybeState = state as Partial<TokenStatusRenderState>
+  return typeof maybeState.visible === 'boolean'
+    && typeof maybeState.fillWidth === 'string'
+    && typeof maybeState.blockedWidth === 'string'
+    && typeof maybeState.blockedHidden === 'boolean'
+    && typeof maybeState.hpTier === 'string'
+    && typeof maybeState.injuryBlocked === 'boolean'
+    && typeof maybeState.title === 'string'
+    && typeof maybeState.displayName === 'string'
+    && typeof maybeState.level === 'number'
+    && typeof maybeState.conditionsKey === 'string'
+    && typeof maybeState.tokenItemsKey === 'string'
+    && typeof maybeState.activeTurn === 'boolean'
+    && typeof maybeState.x === 'number'
+    && typeof maybeState.y === 'number'
+    && typeof maybeState.z === 'number'
+    ? maybeState as TokenStatusRenderState
+    : null
+}
+
+const rememberTokenStatusRenderState = (
+  bar: CSS3DSprite,
+  state: TokenStatusRenderState,
+) => {
+  bar.userData[TOKEN_STATUS_RENDER_STATE_KEY] = state
+}
+
+const sameTokenStatusRenderState = (
+  previous: TokenStatusRenderState | null,
+  next: TokenStatusRenderState,
+): boolean => Boolean(previous
+  && previous.visible === next.visible
+  && previous.fillWidth === next.fillWidth
+  && previous.blockedWidth === next.blockedWidth
+  && previous.blockedHidden === next.blockedHidden
+  && previous.hpTier === next.hpTier
+  && previous.injuryBlocked === next.injuryBlocked
+  && previous.title === next.title
+  && previous.displayName === next.displayName
+  && previous.level === next.level
+  && previous.conditionsKey === next.conditionsKey
+  && previous.tokenItemsKey === next.tokenItemsKey
+  && previous.activeTurn === next.activeTurn
+  && previous.x === next.x
+  && previous.y === next.y
+  && previous.z === next.z)
+
+const setTokenStatusHidden = (bar: CSS3DSprite): boolean => {
+  const previous = tokenStatusRenderState(bar)
+  const changed = bar.visible || previous?.visible === true
+  if (!changed && previous?.visible === false) return false
+
+  bar.visible = false
+  rememberTokenStatusRenderState(bar, {
+    visible: false,
+    fillWidth: previous?.fillWidth ?? '',
+    blockedWidth: previous?.blockedWidth ?? '',
+    blockedHidden: previous?.blockedHidden ?? true,
+    hpTier: previous?.hpTier ?? 'healthy',
+    injuryBlocked: previous?.injuryBlocked ?? false,
+    title: previous?.title ?? '',
+    displayName: previous?.displayName ?? '',
+    level: previous?.level ?? 0,
+    conditionsKey: previous?.conditionsKey ?? '',
+    tokenItemsKey: previous?.tokenItemsKey ?? '',
+    activeTurn: previous?.activeTurn ?? false,
+    x: bar.position.x,
+    y: bar.position.y,
+    z: bar.position.z,
+  })
+  return changed
 }
 
 export const buildHpBar = (pokemon: SpawnedPokemon) => {
@@ -350,34 +468,68 @@ export const updateHpBar = ({
   tokenItems: readonly string[]
   activeTurn: boolean
   show?: boolean
-}) => {
+}): boolean => {
   const hpMetrics = getHpBarDisplayMetrics({ currentHp, maxHp, fullMaxHp })
 
   // Hide the whole token HUD when the token layer is disabled or HP data is
   // not meaningful. CSS3DRenderer rewrites DOM display from object.visible,
   // so keep this on the CSS3D object instead of only touching element.style.
   if (!show || hpMetrics.trackMaxHp <= 0) {
-    bar.visible = false
-    return
+    return setTokenStatusHidden(bar)
+  }
+
+  // Floats just above the sprite's head. WebGL world sprites are
+  // bottom-anchored at ``center.y``, so the top edge is
+  // ``center.y + spriteHeight``. The offset accounts for the scaled DOM
+  // height so smaller sprites keep the HUD tucked close instead of floating
+  // as a detached nameplate.
+  const overlayHalfHeight = tokenStatusCssHeight(displayName, conditions, activeTurn) * bar.scale.y / 2
+  const headGap = THREE.MathUtils.clamp(spriteHeight * 0.06, 0.025, 0.08) + TOKEN_STATUS_HEAD_GAP_EXTRA
+  const fillWidth = hpBarPercentFromRatio(hpMetrics.currentRatio)
+  const blockedWidth = hpBarPercentFromRatio(hpMetrics.blockedRatio)
+  const blockedHidden = hpMetrics.blockedRatio <= 0
+  const hpTier = hpTierForRatio(hpMetrics.currentRatio)
+  const injuryBlocked = hpMetrics.blockedRatio > 0
+  const title = injuryBlocked ? formatInjuryBlockTitle(injuries, hpMetrics.blockedRatio) : ''
+  const nextState: TokenStatusRenderState = {
+    visible: true,
+    fillWidth,
+    blockedWidth,
+    blockedHidden,
+    hpTier,
+    injuryBlocked,
+    title,
+    displayName,
+    level,
+    conditionsKey: tokenStatusConditionKey(conditions),
+    tokenItemsKey: tokenStatusItemKey(tokenItems),
+    activeTurn,
+    x: center.x,
+    y: center.y + spriteHeight + overlayHalfHeight + headGap,
+    z: center.z,
+  }
+
+  if (bar.visible && sameTokenStatusRenderState(tokenStatusRenderState(bar), nextState)) {
+    return false
   }
 
   const fill = bar.element.querySelector<HTMLElement>('.hp-bar__fill')
-  if (fill) {
-    fill.style.width = hpBarPercentFromRatio(hpMetrics.currentRatio)
+  if (fill && fill.style.width !== fillWidth) {
+    fill.style.width = fillWidth
   }
 
   const blocked = bar.element.querySelector<HTMLElement>('.hp-bar__blocked')
   if (blocked) {
-    blocked.style.width = hpBarPercentFromRatio(hpMetrics.blockedRatio)
-    blocked.hidden = hpMetrics.blockedRatio <= 0
+    if (blocked.style.width !== blockedWidth) blocked.style.width = blockedWidth
+    if (blocked.hidden !== blockedHidden) blocked.hidden = blockedHidden
   }
 
   const track = bar.element.querySelector<HTMLElement>('.hp-bar')
   if (track) {
-    track.dataset.hpTier = hpTierForRatio(hpMetrics.currentRatio)
-    if (hpMetrics.blockedRatio > 0) {
+    if (track.dataset.hpTier !== hpTier) track.dataset.hpTier = hpTier
+    if (injuryBlocked) {
       track.dataset.injuryBlocked = 'true'
-      track.title = formatInjuryBlockTitle(injuries, hpMetrics.blockedRatio)
+      if (track.title !== title) track.title = title
     } else {
       delete track.dataset.injuryBlocked
       track.removeAttribute('title')
@@ -388,13 +540,8 @@ export const updateHpBar = ({
   updateTokenItems(bar.element, tokenItems)
   updateTokenActiveTurn(bar.element, activeTurn)
 
-  // Floats just above the sprite's head. WebGL world sprites are
-  // bottom-anchored at ``center.y``, so the top edge is
-  // ``center.y + spriteHeight``. The offset accounts for the scaled DOM
-  // height so smaller sprites keep the HUD tucked close instead of floating
-  // as a detached nameplate.
-  const overlayHalfHeight = tokenStatusCssHeight(displayName, conditions, activeTurn) * bar.scale.y / 2
-  const headGap = THREE.MathUtils.clamp(spriteHeight * 0.06, 0.025, 0.08) + TOKEN_STATUS_HEAD_GAP_EXTRA
-  bar.position.set(center.x, center.y + spriteHeight + overlayHalfHeight + headGap, center.z)
+  bar.position.set(nextState.x, nextState.y, nextState.z)
   bar.visible = true
+  rememberTokenStatusRenderState(bar, nextState)
+  return true
 }

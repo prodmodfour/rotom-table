@@ -27,6 +27,8 @@ describe('render metrics overlay view model', () => {
       { key: 'pointer-move-events', label: 'Pointermove events', value: '0' },
       { key: 'raycasts', label: 'Raycasts', value: '0' },
       { key: 'pathfinding-requests', label: 'Pathfinding requests', value: '0' },
+      { key: 'pathfinding-cache-hits', label: 'Path cache hits', value: '0' },
+      { key: 'pathfinding-cache-misses', label: 'Path cache misses', value: '0' },
     ]))
     expect(viewModel.hasRendererInfo).toBe(false)
     expect(viewModel.rendererRows).toEqual([
@@ -77,6 +79,8 @@ describe('render metrics overlay view model', () => {
     snapshot.pointerInteractions.raycastCounts['token-pick'] = 2
     snapshot.pointerInteractions.raycastCounts['movement-plane'] = 1
     snapshot.pointerInteractions.pathfindingRequestCount = 5
+    snapshot.pointerInteractions.pathfindingCacheHitCount = 3
+    snapshot.pointerInteractions.pathfindingCacheMissCount = 2
 
     const viewModel = createRenderMetricsOverlayViewModel(snapshot)
 
@@ -89,6 +93,8 @@ describe('render metrics overlay view model', () => {
       { key: 'raycast-token-pick', label: 'Token pick raycasts', value: '2' },
       { key: 'raycast-movement-plane', label: 'Movement plane raycasts', value: '1' },
       { key: 'pathfinding-requests', label: 'Pathfinding requests', value: '5' },
+      { key: 'pathfinding-cache-hits', label: 'Path cache hits', value: '3' },
+      { key: 'pathfinding-cache-misses', label: 'Path cache misses', value: '2' },
     ]))
   })
 

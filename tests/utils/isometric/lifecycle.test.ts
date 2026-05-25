@@ -1,11 +1,16 @@
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   bindIsometricDocumentVisibilityChange,
   bindIsometricRendererDomEvents,
   disposeIsometricRendererResources,
+  observeIsometricResize,
 } from '~/utils/isometric/lifecycle'
 
 describe('isometric lifecycle helpers', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
   it('binds document visibility changes for hidden-tab render pause and resume', () => {
     const visibilityHandlers: Array<() => void> = []
     const documentTarget = {
@@ -87,6 +92,39 @@ describe('isometric lifecycle helpers', () => {
     expect(removeEventListener).toHaveBeenCalledWith('pointerleave', handlers.pointerleave)
     expect(removeEventListener).toHaveBeenCalledWith('contextmenu', handlers.contextmenu)
     expect(removeEventListener).toHaveBeenCalledWith('wheel', handlers.wheel)
+  })
+
+  it('disconnects resize observers during renderer unmount cleanup', () => {
+    const instances: Array<{
+      callback: ResizeObserverCallback
+      observe: ReturnType<typeof vi.fn>
+      disconnect: ReturnType<typeof vi.fn>
+    }> = []
+    class FakeResizeObserver {
+      readonly callback: ResizeObserverCallback
+      readonly observe = vi.fn()
+      readonly disconnect = vi.fn()
+
+      constructor(callback: ResizeObserverCallback) {
+        this.callback = callback
+        instances.push(this)
+      }
+    }
+    vi.stubGlobal('ResizeObserver', FakeResizeObserver)
+    const element = {} as Element
+    const onResize = vi.fn()
+
+    const cleanup = observeIsometricResize(element, onResize)
+
+    expect(instances).toHaveLength(1)
+    expect(instances[0].observe).toHaveBeenCalledWith(element)
+
+    instances[0].callback([], instances[0] as unknown as ResizeObserver)
+    expect(onResize).toHaveBeenCalledOnce()
+
+    cleanup()
+
+    expect(instances[0].disconnect).toHaveBeenCalledOnce()
   })
 
   it('disposes renderer-owned resources and clears token render objects', () => {

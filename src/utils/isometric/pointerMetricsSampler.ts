@@ -14,6 +14,8 @@ export interface PointerInteractionMetricsSampler {
   recordPointerMoveFrame(sample?: PointerMoveFrameMetricsSample): PointerInteractionMetrics
   recordRaycast(kind: IsometricPointerRaycastKind, count?: number | null): PointerInteractionMetrics
   recordPathfindingRequest(count?: number | null): PointerInteractionMetrics
+  recordPathfindingCacheHit(count?: number | null): PointerInteractionMetrics
+  recordPathfindingCacheMiss(count?: number | null): PointerInteractionMetrics
   snapshot(): PointerInteractionMetrics
   reset(): PointerInteractionMetrics
 }
@@ -73,6 +75,22 @@ export const createPointerInteractionMetricsSampler = (): PointerInteractionMetr
       metrics = {
         ...metrics,
         pathfindingRequestCount: metrics.pathfindingRequestCount + sanitizeMetricIncrement(count),
+      }
+
+      return snapshot()
+    },
+    recordPathfindingCacheHit(count) {
+      metrics = {
+        ...metrics,
+        pathfindingCacheHitCount: metrics.pathfindingCacheHitCount + sanitizeMetricIncrement(count),
+      }
+
+      return snapshot()
+    },
+    recordPathfindingCacheMiss(count) {
+      metrics = {
+        ...metrics,
+        pathfindingCacheMissCount: metrics.pathfindingCacheMissCount + sanitizeMetricIncrement(count),
       }
 
       return snapshot()

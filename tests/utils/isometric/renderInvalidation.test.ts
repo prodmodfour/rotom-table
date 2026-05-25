@@ -1,13 +1,26 @@
 import { describe, expect, it } from 'vitest'
 import { ISOMETRIC_RENDER_FRAME_REASONS } from '~/utils/isometric/renderMetrics'
 import {
+  ISOMETRIC_CSS3D_RENDER_INVALIDATION_REASONS,
+  ISOMETRIC_RENDER_DIRTY_LAYERS,
+  ISOMETRIC_RENDER_INVALIDATION_REASON_LAYERS,
   ISOMETRIC_RENDER_INVALIDATION_REASONS,
   ISOMETRIC_RENDER_INVALIDATION_REASON_LABELS,
+  ISOMETRIC_WEBGL_RENDER_INVALIDATION_REASONS,
   appendRenderInvalidationReason,
+  createIsometricRenderDirtyLayers,
   createRenderInvalidationReasons,
   hasRenderInvalidationReason,
+  isIsometricRenderDirtyLayer,
   isRenderInvalidationReason,
+  mergeIsometricRenderDirtyLayers,
   mergeRenderInvalidationReasons,
+  renderInvalidationLayersIncludeCss3D,
+  renderInvalidationLayersIncludeWebGL,
+  renderInvalidationReasonAffectsCss3D,
+  renderInvalidationReasonAffectsWebGL,
+  resolveRenderInvalidationLayers,
+  resolveRenderInvalidationReasonLayers,
   type RenderInvalidationReason,
 } from '~/utils/isometric/renderInvalidation'
 
@@ -30,12 +43,45 @@ describe('render invalidation reasons', () => {
     expect(ISOMETRIC_RENDER_FRAME_REASONS).toBe(ISOMETRIC_RENDER_INVALIDATION_REASONS)
   })
 
-  it('narrows unknown values to known invalidation reasons', () => {
+  it('narrows unknown values to known invalidation reasons and dirty layers', () => {
     expect(isRenderInvalidationReason('camera')).toBe(true)
     expect(isRenderInvalidationReason('hazards')).toBe(true)
     expect(isRenderInvalidationReason('token-texture')).toBe(true)
     expect(isRenderInvalidationReason('controller-build-note')).toBe(false)
     expect(isRenderInvalidationReason(undefined)).toBe(false)
+
+    expect(isIsometricRenderDirtyLayer('webgl')).toBe(true)
+    expect(isIsometricRenderDirtyLayer('css3d')).toBe(true)
+    expect(isIsometricRenderDirtyLayer('canvas2d')).toBe(false)
+  })
+
+  it('classifies invalidation reasons by WebGL and CSS3D dirty layers', () => {
+    expect(new Set(ISOMETRIC_RENDER_DIRTY_LAYERS).size).toBe(ISOMETRIC_RENDER_DIRTY_LAYERS.length)
+    expect(ISOMETRIC_RENDER_INVALIDATION_REASON_LAYERS.camera).toEqual(['webgl', 'css3d'])
+    expect(ISOMETRIC_RENDER_INVALIDATION_REASON_LAYERS.weather).toEqual(['webgl'])
+    expect(ISOMETRIC_RENDER_INVALIDATION_REASON_LAYERS['token-style']).toEqual(['webgl', 'css3d'])
+    expect(ISOMETRIC_RENDER_INVALIDATION_REASON_LAYERS.animation).toEqual(['webgl'])
+
+    const webglReasons: readonly RenderInvalidationReason[] = ISOMETRIC_WEBGL_RENDER_INVALIDATION_REASONS
+    const css3DReasons: readonly RenderInvalidationReason[] = ISOMETRIC_CSS3D_RENDER_INVALIDATION_REASONS
+
+    for (const reason of ISOMETRIC_RENDER_INVALIDATION_REASONS) {
+      expect(resolveRenderInvalidationReasonLayers(reason).length).toBeGreaterThan(0)
+      expect(renderInvalidationReasonAffectsWebGL(reason)).toBe(webglReasons.includes(reason))
+      expect(renderInvalidationReasonAffectsCss3D(reason)).toBe(css3DReasons.includes(reason))
+    }
+  })
+
+  it('merges dirty layers from reasons while preserving first-seen order', () => {
+    expect(resolveRenderInvalidationLayers(['weather', 'camera', 'token-style'])).toEqual(['webgl', 'css3d'])
+    expect(resolveRenderInvalidationLayers(['camera', 'weather'])).toEqual(['webgl', 'css3d'])
+    expect(resolveRenderInvalidationLayers(['weather', 'field-effect'])).toEqual(['webgl'])
+
+    const layers = createIsometricRenderDirtyLayers(['css3d', 'webgl', 'css3d'])
+    expect(layers).toEqual(['css3d', 'webgl'])
+    expect(mergeIsometricRenderDirtyLayers(['webgl'], undefined, ['css3d', 'webgl'])).toEqual(['webgl', 'css3d'])
+    expect(renderInvalidationLayersIncludeWebGL(layers)).toBe(true)
+    expect(renderInvalidationLayersIncludeCss3D(layers)).toBe(true)
   })
 
   it('creates deduplicated reason arrays from iterables while preserving first-seen order', () => {

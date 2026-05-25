@@ -143,6 +143,16 @@ export const createRenderMetricsPointerRows = (
     label: 'Pathfinding requests',
     value: formatRenderMetricCount(pointerInteractions.pathfindingRequestCount),
   },
+  {
+    key: 'pathfinding-cache-hits',
+    label: 'Path cache hits',
+    value: formatRenderMetricCount(pointerInteractions.pathfindingCacheHitCount),
+  },
+  {
+    key: 'pathfinding-cache-misses',
+    label: 'Path cache misses',
+    value: formatRenderMetricCount(pointerInteractions.pathfindingCacheMissCount),
+  },
 ]
 
 export const createRenderMetricsRendererRows = (
