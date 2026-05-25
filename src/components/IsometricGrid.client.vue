@@ -1430,7 +1430,7 @@ const renderOneShotScheduledFrame = (frame: IsometricScheduledRenderFrame): bool
   }
 
   const animationContinuation = resolveSceneAnimationContinuation()
-  css3DRenderDirtyTracker.markDirtyForRenderReasons(frame.reasons)
+  css3DRenderDirtyTracker.markDirtyForRenderLayers(frame.dirtyLayers, frame.reasons)
   css3DRenderDirtyTracker.markDirtyForAnimationContinuation(animationContinuation)
 
   stepIsometricAnimationFrame({

@@ -43,6 +43,20 @@ describe('CSS3D render dirty tracker', () => {
     expect(tracker.snapshot()).toEqual({ dirty: true, reasons: ['camera', 'movement-preview'] })
   })
 
+  it('uses scheduler dirty layers to ignore WebGL-only frames and honor CSS3D frames', () => {
+    const tracker = createCss3DRenderDirtyTracker({ dirty: false })
+
+    tracker.markDirtyForRenderLayers(['webgl'], ['camera'])
+    expect(tracker.snapshot()).toEqual({ dirty: false, reasons: [] })
+
+    tracker.markDirtyForRenderLayers(['css3d'], ['debug'])
+    expect(tracker.snapshot()).toEqual({ dirty: true, reasons: ['manual'] })
+
+    tracker.reset({ dirty: false })
+    tracker.markDirtyForRenderLayers(['webgl', 'css3d'], ['weather', 'camera'])
+    expect(tracker.snapshot()).toEqual({ dirty: true, reasons: ['camera'] })
+  })
+
   it('only treats token motion as an animation source that dirties CSS3D transforms', () => {
     const tracker = createCss3DRenderDirtyTracker({ dirty: false })
 

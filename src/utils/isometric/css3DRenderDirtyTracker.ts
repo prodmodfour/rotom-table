@@ -1,24 +1,16 @@
-import type { RenderInvalidationReason } from './renderInvalidation'
+import {
+  ISOMETRIC_CSS3D_RENDER_INVALIDATION_REASONS,
+  renderInvalidationLayersIncludeCss3D,
+  type IsometricRenderDirtyLayer,
+  type RenderInvalidationReason,
+} from './renderInvalidation'
 import {
   ISOMETRIC_ANIMATION_CONTINUATION_SOURCE,
   type IsometricAnimationContinuation,
   type IsometricAnimationContinuationSource,
 } from './renderLoop'
 
-export const CSS3D_RENDER_DIRTY_INVALIDATION_REASONS = [
-  'initial',
-  'manual',
-  'resize',
-  'camera',
-  'scene-state',
-  'tokens',
-  'token-style',
-  'movement-preview',
-  'targeting',
-  'layer-visibility',
-  'pointer',
-  'hidden-tab-resume',
-] as const satisfies readonly RenderInvalidationReason[]
+export const CSS3D_RENDER_DIRTY_INVALIDATION_REASONS = ISOMETRIC_CSS3D_RENDER_INVALIDATION_REASONS
 
 export type Css3DRenderDirtyInvalidationReason = typeof CSS3D_RENDER_DIRTY_INVALIDATION_REASONS[number]
 
@@ -38,6 +30,10 @@ export interface Css3DRenderDirtySnapshot {
 export interface Css3DRenderDirtyTracker {
   markDirty(reason?: Css3DRenderDirtyReason): Css3DRenderDirtySnapshot
   markDirtyForRenderReasons(reasons: Iterable<RenderInvalidationReason>): Css3DRenderDirtySnapshot
+  markDirtyForRenderLayers(
+    layers: Iterable<IsometricRenderDirtyLayer>,
+    reasons?: Iterable<RenderInvalidationReason>,
+  ): Css3DRenderDirtySnapshot
   markDirtyForAnimationContinuation(continuation: Pick<IsometricAnimationContinuation, 'sources'>): Css3DRenderDirtySnapshot
   consumeDirty(): boolean
   reset(options?: { dirty?: boolean; reasons?: Iterable<Css3DRenderDirtyReason> }): Css3DRenderDirtySnapshot
@@ -100,6 +96,27 @@ export const createCss3DRenderDirtyTracker = (options: {
     return snapshot()
   }
 
+  const markDirtyForRenderLayers = (
+    layers: Iterable<IsometricRenderDirtyLayer>,
+    reasons: Iterable<RenderInvalidationReason> = [],
+  ): Css3DRenderDirtySnapshot => {
+    if (!renderInvalidationLayersIncludeCss3D(layers)) {
+      return snapshot()
+    }
+
+    let markedReason = false
+    for (const reason of reasons) {
+      if (!isCss3DRenderDirtyInvalidationReason(reason)) continue
+
+      markDirty(reason)
+      markedReason = true
+    }
+
+    if (!markedReason) markDirty('manual')
+
+    return snapshot()
+  }
+
   const markDirtyForAnimationContinuation = (
     continuation: Pick<IsometricAnimationContinuation, 'sources'>,
   ): Css3DRenderDirtySnapshot => {
@@ -130,6 +147,7 @@ export const createCss3DRenderDirtyTracker = (options: {
   return {
     markDirty,
     markDirtyForRenderReasons,
+    markDirtyForRenderLayers,
     markDirtyForAnimationContinuation,
     consumeDirty,
     reset,
