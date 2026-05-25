@@ -40,6 +40,22 @@ const voxel = (x: number, ghost = false): MapVoxelV2 => ({
   ...(ghost ? { ghost: true } : {}),
 })
 
+const coloredVoxel = (x: number, color: string): MapVoxelV2 => ({
+  ...voxel(x),
+  color,
+})
+
+const meshVoxelXs = (mesh: THREE.InstancedMesh): number[] =>
+  (mesh.userData.voxels as MapVoxelV2[]).map((entry) => entry.x)
+
+const sortedMeshVoxelXs = (mesh: THREE.InstancedMesh): number[] =>
+  meshVoxelXs(mesh).toSorted((a, b) => a - b)
+
+const meshContainingVoxelX = (
+  meshes: THREE.InstancedMesh[],
+  x: number,
+): THREE.InstancedMesh | undefined => meshes.find((mesh) => meshVoxelXs(mesh).includes(x))
+
 const terrainTopEdgeOverlay = (container: THREE.Group): THREE.Group | undefined =>
   container.children.find((child): child is THREE.Group =>
     child instanceof THREE.Group
@@ -110,6 +126,27 @@ describe('isometric voxel renderer', () => {
     renderer.dispose()
   })
 
+  it('groups renderer buckets by normalized custom colors and material fallback keys', () => {
+    const container = new THREE.Group()
+    const renderer = createVoxelRenderer(container)
+
+    renderer.sync([
+      coloredVoxel(0, '#112233'),
+      coloredVoxel(1, '#445566'),
+      { ...coloredVoxel(2, '#112233'), tags: ['decorative'] },
+      coloredVoxel(3, 'not-a-color'),
+      voxel(4),
+    ])
+
+    expect(renderer.meshes()).toHaveLength(3)
+    expect(renderer.meshes()
+      .map(sortedMeshVoxelXs)
+      .toSorted((left, right) => left[0] - right[0]))
+      .toEqual([[0, 2], [1], [3, 4]])
+
+    renderer.dispose()
+  })
+
   it('shares one voxel box geometry across buckets and rebuilds', () => {
     const container = new THREE.Group()
     const renderer = createVoxelRenderer(container)
@@ -165,6 +202,66 @@ describe('isometric voxel renderer', () => {
     expect(renderer.meshes()).toEqual([initialMesh])
     expect((initialMesh.userData.voxels as MapVoxelV2[]).map((v) => v.x)).toEqual([2, 0, 1])
     expect(meshDisposeSpy).not.toHaveBeenCalled()
+    expect(materialDisposeSpy).not.toHaveBeenCalled()
+
+    renderer.dispose()
+  })
+
+  it('reuses normalized custom-color buckets when output-relevant positions are unchanged', () => {
+    const container = new THREE.Group()
+    const renderer = createVoxelRenderer(container)
+
+    renderer.sync([
+      coloredVoxel(0, '#ABCDEF'),
+      coloredVoxel(1, '#abcdef'),
+    ])
+
+    const [initialMesh] = renderer.meshes()
+    const meshDisposeSpy = vi.spyOn(initialMesh, 'dispose')
+
+    renderer.sync([
+      { ...coloredVoxel(1, '#abcdef'), tags: ['renamed'] },
+      coloredVoxel(0, '#abcdef'),
+    ])
+
+    expect(renderer.meshes()).toEqual([initialMesh])
+    expect(meshVoxelXs(initialMesh)).toEqual([0, 1])
+    expect(meshDisposeSpy).not.toHaveBeenCalled()
+
+    renderer.dispose()
+  })
+
+  it('rebuilds only the voxel bucket whose bucket key changes', () => {
+    const container = new THREE.Group()
+    const renderer = createVoxelRenderer(container)
+
+    renderer.sync([
+      coloredVoxel(0, '#112233'),
+      coloredVoxel(1, '#445566'),
+      voxel(2),
+    ])
+
+    const stableCustomMesh = meshContainingVoxelX(renderer.meshes(), 0)
+    const recoloredMesh = meshContainingVoxelX(renderer.meshes(), 1)
+    const materialMesh = meshContainingVoxelX(renderer.meshes(), 2)
+    expect(stableCustomMesh).toBeDefined()
+    expect(recoloredMesh).toBeDefined()
+    expect(materialMesh).toBeDefined()
+    const stableCustomDisposeSpy = vi.spyOn(stableCustomMesh!, 'dispose')
+    const recoloredDisposeSpy = vi.spyOn(recoloredMesh!, 'dispose')
+    const materialDisposeSpy = vi.spyOn(materialMesh!, 'dispose')
+
+    renderer.sync([
+      coloredVoxel(0, '#112233'),
+      coloredVoxel(1, '#778899'),
+      voxel(2),
+    ])
+
+    expect(meshContainingVoxelX(renderer.meshes(), 0)).toBe(stableCustomMesh)
+    expect(meshContainingVoxelX(renderer.meshes(), 1)).not.toBe(recoloredMesh)
+    expect(meshContainingVoxelX(renderer.meshes(), 2)).toBe(materialMesh)
+    expect(stableCustomDisposeSpy).not.toHaveBeenCalled()
+    expect(recoloredDisposeSpy).toHaveBeenCalledTimes(1)
     expect(materialDisposeSpy).not.toHaveBeenCalled()
 
     renderer.dispose()
@@ -236,6 +333,51 @@ describe('isometric voxel renderer', () => {
     expect(terrainTopEdgeOverlay(container)).toBe(initialOverlay)
     expect(geometryDisposeSpy).not.toHaveBeenCalled()
     expect(materialDisposeSpy).not.toHaveBeenCalled()
+
+    renderer.dispose()
+  })
+
+  it('keeps fallback terrain overlays for reordered voxels and invalidates changed positions', () => {
+    const container = new THREE.Group()
+    const renderer = createVoxelRenderer(container)
+
+    renderer.sync([voxel(0), voxel(2)])
+
+    const initialOverlay = terrainTopEdgeOverlay(container)
+    const initialLine = firstTerrainTopEdgeLine(container)
+    const geometryDisposeSpy = vi.spyOn(initialLine.geometry, 'dispose')
+    const materialDisposeSpy = vi.spyOn(initialLine.material as THREE.LineBasicMaterial, 'dispose')
+
+    renderer.sync([voxel(2), voxel(0)])
+
+    expect(terrainTopEdgeOverlay(container)).toBe(initialOverlay)
+    expect(geometryDisposeSpy).not.toHaveBeenCalled()
+    expect(materialDisposeSpy).not.toHaveBeenCalled()
+
+    renderer.sync([voxel(1), voxel(2)])
+
+    expect(terrainTopEdgeOverlay(container)).not.toBe(initialOverlay)
+    expect(geometryDisposeSpy).toHaveBeenCalledTimes(1)
+    expect(materialDisposeSpy).toHaveBeenCalledTimes(1)
+
+    renderer.dispose()
+  })
+
+  it('removes the terrain top-edge overlay when invalidation produces no visible overlay', () => {
+    const container = new THREE.Group()
+    const renderer = createVoxelRenderer(container)
+
+    renderer.sync([voxel(0)], { terrainRevision: 'terrain:1' })
+
+    const initialLine = firstTerrainTopEdgeLine(container)
+    const geometryDisposeSpy = vi.spyOn(initialLine.geometry, 'dispose')
+    const materialDisposeSpy = vi.spyOn(initialLine.material as THREE.LineBasicMaterial, 'dispose')
+
+    renderer.sync([], { terrainRevision: 'terrain:2' })
+
+    expect(terrainTopEdgeOverlay(container)).toBeUndefined()
+    expect(geometryDisposeSpy).toHaveBeenCalledTimes(1)
+    expect(materialDisposeSpy).toHaveBeenCalledTimes(1)
 
     renderer.dispose()
   })
