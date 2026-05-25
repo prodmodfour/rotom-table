@@ -11,6 +11,7 @@ import {
   EMPTY_MOVE_PREVIEW,
   getMovePreviewAnchor,
   getNextMovePreviewElevationAnchor,
+  movementPreviewAnchorKey,
 } from '~/utils/isometric/movementPreview'
 
 export type TokenMovementPointerEvent = MouseEvent | PointerEvent
@@ -52,6 +53,11 @@ export const createIsometricTokenMovementInteractionController = (
   let activePreview: PreviewState = emptyPreview()
   let activePreviewCanPlace = false
   let activePreviewAnchor: GridAnchor | null = null
+  let lastPreviewAnchorKey: string | null = null
+
+  const resetPreviewAnchorCache = () => {
+    lastPreviewAnchorKey = null
+  }
 
   const preview = () => activePreview
   const canPlacePreview = () => activePreviewCanPlace
@@ -70,23 +76,27 @@ export const createIsometricTokenMovementInteractionController = (
     activePreview = emptyPreview()
     activePreviewCanPlace = false
     activePreviewAnchor = null
+    resetPreviewAnchorCache()
     dependencies.previewRenderer.clear()
     emitPreview()
   }
 
-  const updatePreviewAtAnchor = (anchor: GridAnchor | null) => {
+  const updatePreviewAtAnchor = (anchor: GridAnchor | null, options: { force?: boolean } = {}) => {
     const selected = dependencies.getSelectedPokemon()
     if (!selected) {
       clearPreviewVisuals()
       return
     }
 
-    ensurePreviewObjects()
-
     if (!anchor) {
       clearPreviewVisuals()
       return
     }
+
+    const nextAnchorKey = movementPreviewAnchorKey(selected, anchor)
+    if (!options.force && nextAnchorKey && nextAnchorKey === lastPreviewAnchorKey) return
+
+    ensurePreviewObjects()
 
     const canForcePlace = canPlacePokemon(
       selected,
@@ -125,6 +135,7 @@ export const createIsometricTokenMovementInteractionController = (
     }
 
     activePreviewAnchor = anchor
+    lastPreviewAnchorKey = nextAnchorKey
     activePreviewCanPlace = canForcePlace && reachable
     activePreview = {
       position: anchor,
@@ -196,7 +207,7 @@ export const createIsometricTokenMovementInteractionController = (
 
   const refreshAfterStateChange = () => {
     if (dependencies.getSelectedPokemon() && activePreviewAnchor) {
-      updatePreviewAtAnchor(activePreviewAnchor)
+      updatePreviewAtAnchor(activePreviewAnchor, { force: true })
       return
     }
 
@@ -209,6 +220,7 @@ export const createIsometricTokenMovementInteractionController = (
     activePreviewAnchor = null
     activePreview = emptyPreview()
     activePreviewCanPlace = false
+    resetPreviewAnchorCache()
     ensurePreviewObjects()
     emitPreview()
   }

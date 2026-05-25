@@ -50,12 +50,16 @@ const makeController = () => {
   const getMoveGridIntersection = vi.fn(() => ({ x: 2.5, z: 2.5 }))
   const selectedState = { value: selected as SpawnedPokemon | null }
   const previewLayerY = { value: 0 }
+  const getSelectedPokemon = vi.fn(() => selectedState.value)
+  const getPokemons = vi.fn(() => pokemons)
+  const getDimensions = vi.fn(() => dimensions)
+  const getMapVoxels = vi.fn(() => voxels)
 
   const controller = createIsometricTokenMovementInteractionController({
-    getSelectedPokemon: () => selectedState.value,
-    getPokemons: () => pokemons,
-    getDimensions: () => dimensions,
-    getMapVoxels: () => voxels,
+    getSelectedPokemon,
+    getPokemons,
+    getDimensions,
+    getMapVoxels,
     getPreviewLayerY: () => previewLayerY.value,
     getGroundLevelY: () => 0,
     getCamera: () => null,
@@ -77,6 +81,10 @@ const makeController = () => {
     emitPreviewChange,
     movePokemon,
     getMoveGridIntersection,
+    getSelectedPokemon,
+    getPokemons,
+    getDimensions,
+    getMapVoxels,
   }
 }
 
@@ -104,6 +112,64 @@ describe('isometric token movement interaction', () => {
       movementCapabilityLabel: 'Overland',
     })
     expect(emitPreviewChange).toHaveBeenLastCalledWith(controller.preview())
+  })
+
+  it('skips renderer and pathfinding work while the selected token and preview anchor are unchanged', () => {
+    const { controller, renderer, emitPreviewChange, getMapVoxels } = makeController()
+
+    controller.updatePreviewAtAnchor({ x: 2, y: 0, z: 2 })
+    renderer.ensure.mockClear()
+    renderer.update.mockClear()
+    emitPreviewChange.mockClear()
+    getMapVoxels.mockClear()
+
+    controller.updatePreviewAtAnchor({ x: 2, y: 0, z: 2 })
+
+    expect(renderer.ensure).not.toHaveBeenCalled()
+    expect(renderer.update).not.toHaveBeenCalled()
+    expect(getMapVoxels).not.toHaveBeenCalled()
+    expect(emitPreviewChange).not.toHaveBeenCalled()
+  })
+
+  it('refreshes the same movement preview anchor when selected token or scene state changes', () => {
+    const { controller, selectedState, renderer, getMapVoxels } = makeController()
+
+    controller.updatePreviewAtAnchor({ x: 2, y: 0, z: 2 })
+    renderer.update.mockClear()
+    getMapVoxels.mockClear()
+
+    selectedState.value = makePokemon({ id: 'token-b' })
+    controller.updatePreviewAtAnchor({ x: 2, y: 0, z: 2 })
+
+    expect(renderer.update).toHaveBeenCalledOnce()
+    expect(renderer.update).toHaveBeenLastCalledWith(expect.objectContaining({
+      pokemon: selectedState.value,
+      anchor: { x: 2, y: 0, z: 2 },
+    }))
+    expect(getMapVoxels).toHaveBeenCalledOnce()
+
+    renderer.update.mockClear()
+    getMapVoxels.mockClear()
+    controller.refreshAfterStateChange()
+
+    expect(renderer.update).toHaveBeenCalledOnce()
+    expect(renderer.update).toHaveBeenLastCalledWith(expect.objectContaining({
+      pokemon: selectedState.value,
+      anchor: { x: 2, y: 0, z: 2 },
+    }))
+    expect(getMapVoxels).toHaveBeenCalledOnce()
+  })
+
+  it('resets the movement preview anchor cache when visuals are cleared', () => {
+    const { controller, renderer } = makeController()
+
+    controller.updatePreviewAtAnchor({ x: 2, y: 0, z: 2 })
+    controller.clearPreviewVisuals()
+    renderer.update.mockClear()
+
+    controller.updatePreviewAtAnchor({ x: 2, y: 0, z: 2 })
+
+    expect(renderer.update).toHaveBeenCalledOnce()
   })
 
   it('clears visuals when there is no selected token or the renderer rejects an update', () => {
