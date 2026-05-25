@@ -22,6 +22,7 @@ The protocol must preserve these locked decisions:
 | Module | Contract area | Notes |
 | --- | --- | --- |
 | `shared/sessionIdentity.ts` | `SessionId`, `PlayerId`, `ClientId`, `JoinCode`, `GmKey`, safe display names | Runtime wire values are strings. TypeScript brands prevent accidental mixing in app code. |
+| `shared/sessionClientIdentity.ts` | Browser-persisted session-local GM/player identity records plus non-secret cookie hints | Local storage can remember the full session-local identity for reconnect; the cookie hint deliberately excludes GM keys and join codes. |
 | `shared/sessionPermissions.ts` | GM/player actors, visible and controllable resources, assignments, permission results | Players can only view visible resources and control assigned visible resources. GM authority is broader but still validated. |
 | `shared/sessionRevisions.ts` | monotonic `Revision`, `SessionRevision`, `MapRevision` helpers | Wire revisions are safe non-negative integers. Accepted commands advance revisions; rejections and duplicates do not. |
 | `shared/sessionCommands.ts` | command envelope, `opId`, `baseRevision`, scope lanes, metadata | The common command wrapper is shared before individual command payloads are implemented. |
@@ -129,6 +130,14 @@ The server normalizes join-code casing/separators, sanitizes the display name in
 ```
 
 Duplicate display names are allowed because identity comes from the generated `playerId`, not the display label. The initial assignment record has no visible or controllable resources; later GM lobby/assignment routes decide what each player can see or command. Joining never gives a player whole-map save authority.
+
+## Client identity continuity helper
+
+`shared/sessionClientIdentity.ts` and `src/utils/sessionClientIdentityStorage.ts` define the browser continuity boundary for the identities returned by the GM start and player join flows. The helper stores one active session-local identity under `rotom:session:identity` in `localStorage` so a browser can reload or reconnect without asking the GM/player to copy the returned IDs again. A small `rotom-session-identity` cookie stores only a continuity hint for UI hydration and future same-origin request helpers.
+
+The full local identity may include the session-local GM key for a GM browser, or the player ID/display name for a player browser. The cookie hint intentionally excludes GM keys and join codes, uses `SameSite=Lax`, and is not an authentication credential. Later WebSocket and session-state routes must still validate any cookie, local-storage value, or client-supplied actor against the authoritative session state before subscribing, applying commands, or showing privileged data.
+
+The helper clears malformed local records or malformed/secret-bearing cookie hints instead of treating them as authority. This keeps Track 2 as session-local continuity, not full accounts, public auth, or durable cloud identity.
 
 ## Authoritative state shape
 
