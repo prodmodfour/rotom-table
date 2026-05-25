@@ -65,6 +65,7 @@ import { createHazardRenderer } from '~/utils/isometric/hazardRenderer'
 import { createFieldEffectRenderer } from '~/utils/isometric/fieldEffectRenderer'
 import { createGridRenderer } from '~/utils/isometric/gridRenderer'
 import {
+  createPointerRaycastScratch,
   createRendererPointerBoundsCache,
   getMoveGridIntersectionFromPointer,
   pickBuildTargetFromPointer,
@@ -446,6 +447,7 @@ let renderScheduler: IsometricRenderScheduler | null = null
 let rendererSizeState: IsometricRendererSizeState | null = null
 const pointerTracker = createPointerTravelTracker()
 const rendererBoundsCache = createRendererPointerBoundsCache()
+const pointerRaycastScratch = createPointerRaycastScratch()
 const renderFrameTimingSampler = createRenderFrameTimingSampler()
 
 const readRenderMetricsNowMs = (): number => {
@@ -685,6 +687,7 @@ const pickPokemonId = (event: MouseEvent | PointerEvent) =>
     raycaster,
     renderObjects: renderObjects.values(),
     boundsCache: rendererBoundsCache,
+    scratch: pointerRaycastScratch,
   })
 
 const moveTargetingCandidateIdSet = () => new Set(props.moveAutomationTargeting?.candidateIds ?? [])
@@ -810,6 +813,7 @@ const getMoveGridIntersection = (event: MouseEvent | PointerEvent, yLevel: numbe
     camera,
     raycaster,
     boundsCache: rendererBoundsCache,
+    scratch: pointerRaycastScratch,
   })
 
 const moveAreaDirectionFromPointer = (event: MouseEvent | PointerEvent): MoveAutomationAreaDirection | null => {
@@ -882,6 +886,7 @@ const pickBuildTarget = (
     allVoxelOccupancy: allVoxelOccupancy.value,
     mapMovementOccupancy: mapMovementOccupancy.value,
     boundsCache: rendererBoundsCache,
+    scratch: pointerRaycastScratch,
   })
 
 const buildInteraction = createIsometricBuildInteractionController({
@@ -917,6 +922,7 @@ const pickHazardTarget = (
     dimensions: props.dimensions,
     groundLevelY: normalizedGroundLevelY(),
     boundsCache: rendererBoundsCache,
+    scratch: pointerRaycastScratch,
   })
 
 const hazardInteraction = createIsometricHazardInteractionController({

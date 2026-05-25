@@ -1,7 +1,9 @@
 import { describe, expect, it, vi } from 'vitest'
-import type * as THREE from 'three'
+import * as THREE from 'three'
 import {
+  createPointerRaycastScratch,
   createRendererPointerBoundsCache,
+  getMoveGridIntersectionFromPointer,
   pickBuildTargetFromPointer,
   pickHazardTargetFromPointer,
   pickPokemonIdFromPointer,
@@ -151,5 +153,162 @@ describe('isometric interaction target picking', () => {
       expect.objectContaining({ x: 0, y: 0 }),
       camera,
     )
+  })
+
+  it('reuses explicit pointer scratch while preserving normalized coordinates', () => {
+    const scratch = createPointerRaycastScratch()
+    const { renderer } = makeRenderer()
+    const raycaster = makeRaycaster()
+
+    const firstPointer = setRaycasterFromPointer({
+      coords: event,
+      renderer,
+      camera,
+      raycaster,
+      scratch,
+    })
+    expect(firstPointer).toBe(scratch.pointer)
+    expect(scratch.pointer.x).toBe(0)
+    expect(scratch.pointer.y).toBe(0)
+    expect(raycaster.setFromCamera).toHaveBeenLastCalledWith(scratch.pointer, camera)
+
+    const secondPointer = setRaycasterFromPointer({
+      coords: { clientX: 85, clientY: 170 } as MouseEvent,
+      renderer,
+      camera,
+      raycaster,
+      scratch,
+    })
+    expect(secondPointer).toBe(firstPointer)
+    expect(scratch.pointer.x).toBe(0.5)
+    expect(scratch.pointer.y).toBe(-0.5)
+    expect(raycaster.setFromCamera).toHaveBeenLastCalledWith(scratch.pointer, camera)
+  })
+
+  it('reuses token proxy target and intersection arrays when scratch is provided', () => {
+    const scratch = createPointerRaycastScratch()
+    const proxyA = new THREE.Object3D()
+    proxyA.userData.pokemonId = 'alpha'
+    const proxyB = new THREE.Object3D()
+    proxyB.userData.pokemonId = 'beta'
+    const intersectionEntryLengths: number[] = []
+    const intersectObjects = vi.fn((targets: THREE.Object3D[], _recursive: boolean, optionalTarget?: THREE.Intersection[]) => {
+      expect(optionalTarget).toBe(scratch.intersections)
+      intersectionEntryLengths.push(optionalTarget?.length ?? -1)
+      optionalTarget?.push({ distance: 0, object: targets[0], point: new THREE.Vector3() } as THREE.Intersection)
+      return optionalTarget ?? []
+    })
+    const raycaster = {
+      setFromCamera: vi.fn(),
+      intersectObjects,
+      ray: { intersectPlane: vi.fn(() => null) },
+    } as unknown as THREE.Raycaster
+
+    expect(pickPokemonIdFromPointer({
+      event,
+      renderer: makeRenderer().renderer,
+      camera,
+      raycaster,
+      renderObjects: [{ proxy: proxyA } as never],
+      scratch,
+    })).toBe('alpha')
+    expect(intersectObjects.mock.calls[0]?.[0]).toBe(scratch.pokemonProxyTargets)
+    expect(scratch.pokemonProxyTargets).toEqual([proxyA])
+
+    expect(pickPokemonIdFromPointer({
+      event,
+      renderer: makeRenderer().renderer,
+      camera,
+      raycaster,
+      renderObjects: [{ proxy: proxyB } as never],
+      scratch,
+    })).toBe('beta')
+    expect(intersectObjects.mock.calls[1]?.[0]).toBe(scratch.pokemonProxyTargets)
+    expect(scratch.pokemonProxyTargets).toEqual([proxyB])
+    expect(intersectionEntryLengths).toEqual([0, 0])
+  })
+
+  it('reuses build and hazard target arrays without retaining stale intersections', () => {
+    const scratch = createPointerRaycastScratch()
+    const floorPlane = new THREE.Object3D()
+    const voxelMesh = new THREE.Object3D()
+    const hazardMesh = new THREE.Object3D()
+    hazardMesh.userData.hazard = { x: 3, y: 1, z: 2, kind: 'spikes' }
+    const intersectionEntryLengths: number[] = []
+    const intersectObjects = vi.fn((targets: THREE.Object3D[], _recursive: boolean, optionalTarget?: THREE.Intersection[]) => {
+      expect(optionalTarget).toBe(scratch.intersections)
+      intersectionEntryLengths.push(optionalTarget?.length ?? -1)
+      optionalTarget?.push(targets === scratch.buildTargets
+        ? { distance: 0, object: floorPlane, point: { x: 1.2, y: 0, z: 2.8 } } as THREE.Intersection
+        : { distance: 0, object: hazardMesh, point: new THREE.Vector3() } as THREE.Intersection)
+      return optionalTarget ?? []
+    })
+    const raycaster = {
+      setFromCamera: vi.fn(),
+      intersectObjects,
+      ray: { intersectPlane: vi.fn(() => null) },
+    } as unknown as THREE.Raycaster
+
+    expect(pickBuildTargetFromPointer({
+      event,
+      tool: 'pencil',
+      renderer: makeRenderer().renderer,
+      camera,
+      raycaster,
+      floorPlane,
+      voxelMeshes: [voxelMesh],
+      dimensions: { x: 4, y: 4, z: 4 },
+      pokemons: [],
+      allVoxelOccupancy: new Set(),
+      mapMovementOccupancy: new Set(),
+      scratch,
+    })).toEqual({ action: 'place', cell: { x: 1, y: 0, z: 2 }, valid: true })
+    expect(intersectObjects.mock.calls[0]?.[0]).toBe(scratch.buildTargets)
+    expect(scratch.buildTargets).toEqual([floorPlane, voxelMesh])
+
+    expect(pickHazardTargetFromPointer({
+      event,
+      tool: 'pencil',
+      renderer: makeRenderer().renderer,
+      camera,
+      raycaster,
+      hazardMeshes: [hazardMesh],
+      voxelMeshes: [voxelMesh],
+      hazards: [],
+      dimensions: { x: 4, y: 4, z: 4 },
+      groundLevelY: 0,
+      scratch,
+    })).toEqual({ action: 'place', cell: { x: 3, y: 1, z: 2 }, valid: true })
+    expect(intersectObjects.mock.calls[1]?.[0]).toBe(scratch.hazardTargets)
+    expect(scratch.hazardTargets).toEqual([hazardMesh, voxelMesh])
+    expect(intersectionEntryLengths).toEqual([0, 0])
+  })
+
+  it('reuses ground-plane scratch objects for movement-grid intersections', () => {
+    const scratch = createPointerRaycastScratch()
+    const intersectPlane = vi.fn((_plane: THREE.Plane, target: THREE.Vector3) => {
+      target.set(2.25, 3, 4.75)
+      return target
+    })
+    const raycaster = {
+      setFromCamera: vi.fn(),
+      intersectObjects: vi.fn(() => []),
+      ray: { intersectPlane },
+    } as unknown as THREE.Raycaster
+
+    const result = getMoveGridIntersectionFromPointer({
+      event,
+      yLevel: 3,
+      renderer: makeRenderer().renderer,
+      camera,
+      raycaster,
+      scratch,
+    })
+
+    expect(result).toBe(scratch.groundPoint)
+    expect(result).toEqual(expect.objectContaining({ x: 2.25, y: 3, z: 4.75 }))
+    expect(intersectPlane).toHaveBeenCalledWith(scratch.groundPlane, scratch.groundPoint)
+    expect(scratch.groundPlane.normal.toArray()).toEqual([0, 1, 0])
+    expect(scratch.groundPlane.constant).toBe(-3)
   })
 })

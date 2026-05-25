@@ -20,6 +20,28 @@ export interface RendererPointerBoundsCache {
   snapshot(): RendererPointerBounds | null
 }
 
+export interface PointerRaycastScratch {
+  readonly pointer: THREE.Vector2
+  readonly groundPoint: THREE.Vector3
+  readonly groundPlane: THREE.Plane
+  readonly pokemonProxyTargets: THREE.Object3D[]
+  readonly buildTargets: THREE.Object3D[]
+  readonly hazardTargets: THREE.Object3D[]
+  readonly intersections: THREE.Intersection[]
+}
+
+const POINTER_GROUND_NORMAL = new THREE.Vector3(0, 1, 0)
+
+export const createPointerRaycastScratch = (): PointerRaycastScratch => ({
+  pointer: new THREE.Vector2(),
+  groundPoint: new THREE.Vector3(),
+  groundPlane: new THREE.Plane(POINTER_GROUND_NORMAL.clone(), 0),
+  pokemonProxyTargets: [],
+  buildTargets: [],
+  hazardTargets: [],
+  intersections: [],
+})
+
 const copyRendererPointerBounds = (bounds: RendererPointerBounds): RendererPointerBounds => ({
   left: bounds.left,
   top: bounds.top,
@@ -60,12 +82,40 @@ export const createRendererPointerBoundsCache = (): RendererPointerBoundsCache =
   }
 }
 
+const fillPokemonProxyTargets = (
+  renderObjects: Iterable<PokemonRenderObject>,
+  targets: THREE.Object3D[],
+): THREE.Object3D[] => {
+  targets.length = 0
+  for (const renderObject of renderObjects) targets.push(renderObject.proxy)
+  return targets
+}
+
+const intersectObjectsWithScratch = (
+  raycaster: THREE.Raycaster,
+  targets: THREE.Object3D[],
+  scratch?: PointerRaycastScratch,
+): THREE.Intersection[] => {
+  if (!scratch) return raycaster.intersectObjects(targets, false)
+
+  scratch.intersections.length = 0
+  return raycaster.intersectObjects(targets, false, scratch.intersections)
+}
+
+const horizontalPointerPlane = (yLevel: number, scratch?: PointerRaycastScratch): THREE.Plane => {
+  const plane = scratch?.groundPlane ?? new THREE.Plane(POINTER_GROUND_NORMAL, -yLevel)
+  plane.normal.copy(POINTER_GROUND_NORMAL)
+  plane.constant = -yLevel
+  return plane
+}
+
 export const setRaycasterFromPointer = (options: {
   coords: PointerCoords
   renderer: THREE.WebGLRenderer | null
   camera: THREE.Camera | null
   raycaster: THREE.Raycaster
   boundsCache?: RendererPointerBoundsCache
+  scratch?: Pick<PointerRaycastScratch, 'pointer'>
 }) => {
   if (!options.renderer || !options.camera) return null
 
@@ -74,7 +124,8 @@ export const setRaycasterFromPointer = (options: {
     : readRendererPointerBounds(options.renderer)
   if (!bounds) return null
 
-  const pointer = new THREE.Vector2(
+  const pointer = options.scratch?.pointer ?? new THREE.Vector2()
+  pointer.set(
     ((options.coords.clientX - bounds.left) / bounds.width) * 2 - 1,
     -((options.coords.clientY - bounds.top) / bounds.height) * 2 + 1,
   )
@@ -90,6 +141,7 @@ export const pickPokemonIdFromPointer = (options: {
   raycaster: THREE.Raycaster
   renderObjects: Iterable<PokemonRenderObject>
   boundsCache?: RendererPointerBoundsCache
+  scratch?: PointerRaycastScratch
 }) => {
   if (!setRaycasterFromPointer({
     coords: options.event,
@@ -97,10 +149,13 @@ export const pickPokemonIdFromPointer = (options: {
     camera: options.camera,
     raycaster: options.raycaster,
     boundsCache: options.boundsCache,
+    scratch: options.scratch,
   })) return null
 
-  const proxies = Array.from(options.renderObjects, (renderObject) => renderObject.proxy)
-  const intersections = options.raycaster.intersectObjects(proxies, false)
+  const proxies = options.scratch
+    ? fillPokemonProxyTargets(options.renderObjects, options.scratch.pokemonProxyTargets)
+    : Array.from(options.renderObjects, (renderObject) => renderObject.proxy)
+  const intersections = intersectObjectsWithScratch(options.raycaster, proxies, options.scratch)
   const hit = intersections[0]?.object
 
   return (hit?.userData.pokemonId as string | undefined) ?? null
@@ -113,6 +168,7 @@ export const getMoveGridIntersectionFromPointer = (options: {
   camera: THREE.Camera | null
   raycaster: THREE.Raycaster
   boundsCache?: RendererPointerBoundsCache
+  scratch?: PointerRaycastScratch
 }) => {
   if (!setRaycasterFromPointer({
     coords: options.event,
@@ -120,13 +176,14 @@ export const getMoveGridIntersectionFromPointer = (options: {
     camera: options.camera,
     raycaster: options.raycaster,
     boundsCache: options.boundsCache,
+    scratch: options.scratch,
   })) {
     return null
   }
 
-  const point = new THREE.Vector3()
+  const point = options.scratch?.groundPoint ?? new THREE.Vector3()
   const hit = options.raycaster.ray.intersectPlane(
-    new THREE.Plane(new THREE.Vector3(0, 1, 0), -options.yLevel),
+    horizontalPointerPlane(options.yLevel, options.scratch),
     point,
   )
 
@@ -146,6 +203,7 @@ export const pickBuildTargetFromPointer = (options: {
   allVoxelOccupancy: ReadonlySet<string>
   mapMovementOccupancy: ReadonlySet<string>
   boundsCache?: RendererPointerBoundsCache
+  scratch?: PointerRaycastScratch
 }): BuildTarget | null => {
   if (!setRaycasterFromPointer({
     coords: options.event,
@@ -153,13 +211,15 @@ export const pickBuildTargetFromPointer = (options: {
     camera: options.camera,
     raycaster: options.raycaster,
     boundsCache: options.boundsCache,
+    scratch: options.scratch,
   })) return null
 
-  const targets: THREE.Object3D[] = []
+  const targets = options.scratch?.buildTargets ?? []
+  targets.length = 0
   if (options.floorPlane) targets.push(options.floorPlane)
   targets.push(...options.voxelMeshes)
 
-  const intersections = options.raycaster.intersectObjects(targets, false)
+  const intersections = intersectObjectsWithScratch(options.raycaster, targets, options.scratch)
   const hit = intersections[0]
   if (!hit) return null
 
@@ -233,10 +293,11 @@ const hazardTargetFromHit = (
 const hazardTargetFromGroundPlane = (options: {
   raycaster: THREE.Raycaster
   groundLevelY: number
+  scratch?: PointerRaycastScratch
 }): { x: number; y: number; z: number; kind?: MapHazardKind } | null => {
-  const point = new THREE.Vector3()
+  const point = options.scratch?.groundPoint ?? new THREE.Vector3()
   const hit = options.raycaster.ray.intersectPlane(
-    new THREE.Plane(new THREE.Vector3(0, 1, 0), -options.groundLevelY),
+    horizontalPointerPlane(options.groundLevelY, options.scratch),
     point,
   )
   if (!hit) return null
@@ -255,6 +316,7 @@ export const pickHazardTargetFromPointer = (options: {
   dimensions: GridDimensions
   groundLevelY: number
   boundsCache?: RendererPointerBoundsCache
+  scratch?: PointerRaycastScratch
 }): HazardTarget | null => {
   if (!setRaycasterFromPointer({
     coords: options.event,
@@ -262,16 +324,22 @@ export const pickHazardTargetFromPointer = (options: {
     camera: options.camera,
     raycaster: options.raycaster,
     boundsCache: options.boundsCache,
+    scratch: options.scratch,
   })) return null
 
-  const targets: THREE.Object3D[] = []
+  const targets = options.scratch?.hazardTargets ?? []
+  targets.length = 0
   targets.push(...options.hazardMeshes)
   targets.push(...options.voxelMeshes)
 
-  const intersections = options.raycaster.intersectObjects(targets, false)
+  const intersections = intersectObjectsWithScratch(options.raycaster, targets, options.scratch)
   const target = intersections[0]
     ? hazardTargetFromHit(intersections[0])
-    : hazardTargetFromGroundPlane({ raycaster: options.raycaster, groundLevelY: options.groundLevelY })
+    : hazardTargetFromGroundPlane({
+        raycaster: options.raycaster,
+        groundLevelY: options.groundLevelY,
+        scratch: options.scratch,
+      })
   if (!target) return null
 
   const cell = { x: target.x, y: target.y, z: target.z }
