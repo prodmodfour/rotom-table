@@ -415,7 +415,8 @@ export const applyPokemonRenderObjectPosition = (
     layers: LayerVisibility
     getShadowSurfaceY: ShadowSurfaceResolver
   },
-) => {
+): boolean => {
+  let cssHudChanged = false
   renderObject.sprite.position.set(
     renderObject.currentCenter.x,
     renderObject.currentCenter.y,
@@ -448,7 +449,7 @@ export const applyPokemonRenderObjectPosition = (
     surfaceY + 0.005,
     renderObject.currentCenter.z,
   )
-  updateElevationBadge({
+  cssHudChanged = updateElevationBadge({
     badge: renderObject.elevationBadge,
     center: renderObject.currentCenter,
     base: renderObject.base,
@@ -456,7 +457,7 @@ export const applyPokemonRenderObjectPosition = (
     groundLevelY: options.groundLevelY,
     camera: options.camera,
     show: options.hoveredPokemonId === renderObject.id && options.layers.tokens,
-  })
+  }) || cssHudChanged
   updateTokenCombatStageGlass({
     glass: renderObject.combatStageGlass,
     center: renderObject.currentCenter,
@@ -466,7 +467,7 @@ export const applyPokemonRenderObjectPosition = (
     camera: options.camera,
     show: options.layers.tokens,
   })
-  updateHpBar({
+  cssHudChanged = updateHpBar({
     bar: renderObject.hpBar,
     center: renderObject.currentCenter,
     spriteHeight: renderObject.height,
@@ -480,7 +481,9 @@ export const applyPokemonRenderObjectPosition = (
     tokenItems: renderObject.tokenItems,
     activeTurn: options.activeTurnId === renderObject.id,
     show: options.layers.tokens,
-  })
+  }) || cssHudChanged
+
+  return cssHudChanged
 }
 
 export const paintPokemonRenderObjectStyle = (

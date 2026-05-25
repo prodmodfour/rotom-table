@@ -688,16 +688,14 @@ const buildRenderObject = (pokemon: SpawnedPokemon): PokemonRenderObject =>
     geometryCache: tokenGeometryCache,
   })
 
-const applyRenderObjectPosition = (renderObject: PokemonRenderObject) => {
-  applyPokemonRenderObjectPosition(renderObject, {
-    camera,
-    activeTurnId: props.activeTurnId,
-    groundLevelY: normalizedGroundLevelY(),
-    hoveredPokemonId: hoverController.id(),
-    layers: visibleLayers(),
-    getShadowSurfaceY,
-  })
-}
+const applyRenderObjectPosition = (renderObject: PokemonRenderObject): boolean => applyPokemonRenderObjectPosition(renderObject, {
+  camera,
+  activeTurnId: props.activeTurnId,
+  groundLevelY: normalizedGroundLevelY(),
+  hoveredPokemonId: hoverController.id(),
+  layers: visibleLayers(),
+  getShadowSurfaceY,
+})
 
 const refreshPokemonStyles = () => {
   syncPokemonRenderObjectSelectionStyles({
@@ -1247,10 +1245,13 @@ const syncTargetReticleButtons = (options: {
   show: boolean
   showsReticle: boolean
   selectedIds?: ReadonlySet<string> | null
-}) => {
+}): boolean => {
   if (!options.show) {
-    if (targetReticleButtons.value.length) targetReticleButtons.value = []
-    return
+    if (targetReticleButtons.value.length) {
+      targetReticleButtons.value = []
+      return true
+    }
+    return false
   }
 
   const targeting = props.moveAutomationTargeting
@@ -1276,16 +1277,27 @@ const syncTargetReticleButtons = (options: {
       && old?.showsReticle === entry.showsReticle
       && sameMoveTargetHitChance(old?.hitChance, entry.hitChance)
   })
-  if (!unchanged) targetReticleButtons.value = next
+  if (!unchanged) {
+    targetReticleButtons.value = next
+    return true
+  }
+  return false
 }
 
-const syncAttackOfOpportunityButtons = () => {
+const syncAttackOfOpportunityButtons = (): boolean => {
   const layers = visibleLayers()
   const prompts = props.attackOfOpportunityPrompts ?? []
   if (!layers.tokens || !prompts.length) {
-    if (attackOfOpportunityButtons.value.length) attackOfOpportunityButtons.value = []
-    if (openAttackOfOpportunityMenuId.value) openAttackOfOpportunityMenuId.value = null
-    return
+    let changed = false
+    if (attackOfOpportunityButtons.value.length) {
+      attackOfOpportunityButtons.value = []
+      changed = true
+    }
+    if (openAttackOfOpportunityMenuId.value) {
+      openAttackOfOpportunityMenuId.value = null
+      changed = true
+    }
+    return changed
   }
 
   const next = prompts.flatMap((prompt): AttackOfOpportunityButton[] => {
@@ -1302,11 +1314,17 @@ const syncAttackOfOpportunityButtons = () => {
       && old.struggleOptions.length === entry.struggleOptions.length
       && old.struggleOptions.every((move, moveIndex) => move.name === entry.struggleOptions[moveIndex]?.name)
   })
-  if (!unchanged) attackOfOpportunityButtons.value = next
+  let changed = false
+  if (!unchanged) {
+    attackOfOpportunityButtons.value = next
+    changed = true
+  }
 
   if (openAttackOfOpportunityMenuId.value && !next.some((button) => button.id === openAttackOfOpportunityMenuId.value)) {
     openAttackOfOpportunityMenuId.value = null
+    changed = true
   }
+  return changed
 }
 
 const useAttackOfOpportunityMove = (promptId: string, moveName: string) => {
@@ -1339,7 +1357,7 @@ const targetReticleButtonLabel = (button: TargetReticleButton): string => {
   return button.hitChance ? `Select move target (${button.hitChance.label} to hit)` : 'Select move target'
 }
 
-const updateMoveAutomationOverlays = () => {
+const updateMoveAutomationOverlays = (): boolean => {
   const layers = visibleLayers()
   const targeting = props.moveAutomationTargeting
   const showClickableTargetReticles = Boolean(targeting?.mode === 'target' && layers.tokens)
@@ -1349,7 +1367,7 @@ const updateMoveAutomationOverlays = () => {
   const areaReticleIds = targeting?.mode === 'area-confirmation' ? targeting.candidateIds : []
   const areaSelectedIds = areaSelectedTargetIdSet(targeting)
   const showAreaTargetReticles = Boolean(showAreaTemplate && layers.tokens && areaReticleIds.length)
-  syncTargetReticleButtons({
+  let cssUiChanged = syncTargetReticleButtons({
     show: showClickableTargetReticles || showAreaToggleButtons,
     showsReticle: showClickableTargetReticles,
     selectedIds: showAreaToggleButtons ? areaSelectedIds : null,
@@ -1358,19 +1376,20 @@ const updateMoveAutomationOverlays = () => {
     cells: targeting?.areaCells ?? [],
     show: showAreaTemplate,
   })
-  moveTargetingReticleRenderer.update({
+  cssUiChanged = moveTargetingReticleRenderer.update({
     candidateIds: areaReticleIds,
     selectedIds: areaSelectedIds ? Array.from(areaSelectedIds) : undefined,
     hitChances: targeting?.hitChances,
     renderObjects,
     show: showAreaTargetReticles,
-  })
-  moveAutomationFeedbackRenderer.update({
+  }) || cssUiChanged
+  cssUiChanged = moveAutomationFeedbackRenderer.update({
     feedback: props.moveAutomationFeedback,
     renderObjects,
     show: layers.tokens,
-  })
-  syncAttackOfOpportunityButtons()
+  }) || cssUiChanged
+  cssUiChanged = syncAttackOfOpportunityButtons() || cssUiChanged
+  return cssUiChanged
 }
 
 // Continue scheduling only while concrete scene work is still active. A

@@ -191,6 +191,85 @@ describe('isometric animation frame', () => {
     expect(result.cssRendered).toBe(true)
   })
 
+  it('marks CSS3D dirty when token HUD position updates change CSS-visible state', () => {
+    const scene = new THREE.Scene()
+    const camera = new THREE.OrthographicCamera()
+    const renderer = { render: vi.fn() }
+    const cssRenderer = { render: vi.fn() }
+    const renderObject = {
+      currentCenter: new THREE.Vector3(1, 2, 3),
+      targetCenter: new THREE.Vector3(1, 2, 3),
+    } as PokemonRenderObject
+    let dirty = false
+    const css3DRenderDirtyTracker = {
+      markDirty: vi.fn((reason?: string) => {
+        if (reason === 'token-style') dirty = true
+      }),
+      consumeDirty: vi.fn(() => dirty),
+    }
+
+    const result = stepIsometricAnimationFrame({
+      clock: { getDelta: () => 0.016, elapsedTime: 1 },
+      renderObjects: [renderObject],
+      applyRenderObjectPosition: vi.fn(() => true),
+      controls: { target: new THREE.Vector3(), update: vi.fn() },
+      fieldEffectRenderer: { update: vi.fn() },
+      tokenMovePreviewRenderer: { animate: vi.fn() },
+      selectedPokemon: null,
+      previewPositionY: null,
+      camera,
+      renderer,
+      cssRenderer,
+      scene,
+      facingDirection: new THREE.Vector2(1, 0),
+      frameNowMs: 1,
+      animateRenderObject: vi.fn(),
+      css3DRenderDirtyTracker,
+    })
+
+    expect(css3DRenderDirtyTracker.markDirty).toHaveBeenCalledWith('token-style')
+    expect(cssRenderer.render).toHaveBeenCalledWith(scene, camera)
+    expect(result.cssRendered).toBe(true)
+  })
+
+  it('marks CSS3D dirty when before-render UI overlays change', () => {
+    const scene = new THREE.Scene()
+    const camera = new THREE.OrthographicCamera()
+    const renderer = { render: vi.fn() }
+    const cssRenderer = { render: vi.fn() }
+    let dirty = false
+    const css3DRenderDirtyTracker = {
+      markDirty: vi.fn((reason?: string) => {
+        if (reason === 'targeting') dirty = true
+      }),
+      consumeDirty: vi.fn(() => dirty),
+    }
+
+    const result = stepIsometricAnimationFrame({
+      clock: { getDelta: () => 0.016, elapsedTime: 1 },
+      renderObjects: [],
+      applyRenderObjectPosition: vi.fn(),
+      controls: { target: new THREE.Vector3(), update: vi.fn() },
+      fieldEffectRenderer: { update: vi.fn() },
+      tokenMovePreviewRenderer: { animate: vi.fn() },
+      selectedPokemon: null,
+      previewPositionY: null,
+      camera,
+      renderer,
+      cssRenderer,
+      scene,
+      facingDirection: new THREE.Vector2(1, 0),
+      frameNowMs: 1,
+      animateRenderObject: vi.fn(),
+      beforeRender: vi.fn(() => true),
+      css3DRenderDirtyTracker,
+    })
+
+    expect(css3DRenderDirtyTracker.markDirty).toHaveBeenCalledWith('targeting')
+    expect(cssRenderer.render).toHaveBeenCalledWith(scene, camera)
+    expect(result.cssRendered).toBe(true)
+  })
+
   it('snaps render objects already at their target', () => {
     const center = new THREE.Vector3(1, 2, 3)
     const target = new THREE.Vector3(1.0000001, 2, 3)

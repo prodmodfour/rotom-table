@@ -16,14 +16,14 @@ export interface IsometricAnimationFrameResult {
 }
 
 export interface IsometricCss3DRenderDirtyTrackerLike {
-  markDirty?: (reason?: 'camera') => void
+  markDirty?: (reason?: 'camera' | 'targeting' | 'token-style') => void
   consumeDirty: () => boolean
 }
 
 export interface IsometricAnimationFrameOptions {
   clock: Pick<THREE.Clock, 'getDelta' | 'elapsedTime'>
   renderObjects: Iterable<PokemonRenderObject>
-  applyRenderObjectPosition: (renderObject: PokemonRenderObject) => void
+  applyRenderObjectPosition: (renderObject: PokemonRenderObject) => boolean | void
   controls: { target: THREE.Vector3; update: () => boolean | void }
   fieldEffectRenderer: { update: (delta: number, elapsedTime: number) => void }
   tokenMovePreviewRenderer: {
@@ -45,7 +45,7 @@ export interface IsometricAnimationFrameOptions {
   facingDirection: THREE.Vector2
   frameNowMs?: number
   animateRenderObject?: typeof animatePokemonRenderObject
-  beforeRender?: () => void
+  beforeRender?: () => boolean | void
   css3DRenderDirtyTracker?: IsometricCss3DRenderDirtyTrackerLike
 }
 
@@ -63,7 +63,9 @@ export const stepIsometricAnimationFrame = (
       renderObject.currentCenter.copy(renderObject.targetCenter)
     }
 
-    options.applyRenderObjectPosition(renderObject)
+    if (options.applyRenderObjectPosition(renderObject) === true) {
+      options.css3DRenderDirtyTracker?.markDirty?.('token-style')
+    }
   }
 
   const controlsChanged = options.controls.update() === true
@@ -98,7 +100,9 @@ export const stepIsometricAnimationFrame = (
     haloAlpha,
   })
 
-  options.beforeRender?.()
+  if (options.beforeRender?.() === true) {
+    options.css3DRenderDirtyTracker?.markDirty?.('targeting')
+  }
 
   const cssRendered = options.css3DRenderDirtyTracker?.consumeDirty() ?? true
 
