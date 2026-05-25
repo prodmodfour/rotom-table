@@ -68,6 +68,14 @@ Snapshot writes serialize the complete JSON in memory, write a unique temp file 
 
 Snapshot reads use the same session-scoped path, parse the latest `snapshot.json`, validate the persisted envelope, schema versions, session ID, revisions, timestamps, authoritative state arrays, presence actors, players, assignments, visible/controllable resources, and cross-check that the envelope and state refer to the requested session/revision. `recoverSessionStateFromSnapshot` returns the validated `AuthoritativeSessionState` for reconnect or restart paths, or a typed failure such as `not-found`, `invalid-json`, or `invalid-shape`; it never reconstructs live authority from client autosave state.
 
+## Optional local event log
+
+`server/utils/sessionEventLog.ts` provides the opt-in append-only JSON-lines helper for future command application and reconnect work. The default local path is `data/sessions/<sessionId>/events.jsonl`, under the same git-ignored session data root as snapshots.
+
+Each line is one complete `schemaVersion: 1` event-log entry. Command entries bind the command envelope to the server command result, `opId`, command type, session ID, and resulting session revision. Generic event entries can record server-side session events such as presence or operational markers without becoming a client-edit stream.
+
+The helper serializes and validates entries before creating session directories, appends one compact JSON object plus a trailing newline, flushes the file by default, and best-effort flushes the session directory. The event log remains optional: the latest valid snapshot is still the required recovery baseline, and reconnect code must fall back to a current snapshot whenever replay is disabled, missing, truncated, or unsafe.
+
 ## Message flow
 
 ### 1. Socket hello and reconnect
