@@ -10,7 +10,10 @@ import {
   createFieldEffectRoomBoundary,
   createFieldEffectSurfaceMesh,
 } from './fieldEffectOverlays'
-import { createWeatherVisualFactory } from './weatherEffects'
+import {
+  createWeatherVisualFactory,
+  type WeatherVisualFactory,
+} from './weatherEffects'
 import {
   createFieldEffectAnimationState,
   fieldEffectAnimationStateNeedsFrame,
@@ -33,14 +36,19 @@ export interface FieldEffectRenderer {
   dispose(): void
 }
 
+export interface FieldEffectRendererOptions {
+  weatherVisualFactory?: WeatherVisualFactory
+}
+
 export const createFieldEffectRenderer = (
   container: THREE.Group,
+  options: FieldEffectRendererOptions = {},
 ): FieldEffectRenderer => {
   const fieldEffectObjects: THREE.Object3D[] = []
   const fieldEffectAnimators: Array<(delta: number, elapsed: number) => void> =
     []
   let visible = true
-  const weatherVisualFactory = createWeatherVisualFactory()
+  const weatherVisualFactory = options.weatherVisualFactory ?? createWeatherVisualFactory()
   let input: FieldEffectRendererInput = {
     dimensions: { x: 1, y: 1, z: 1 },
     voxels: [],
@@ -57,6 +65,8 @@ export const createFieldEffectRenderer = (
     visible,
     fieldEffectAnimators.length,
   )
+
+  const needsAnimationFrame = () => fieldEffectAnimationStateNeedsFrame(getAnimationState())
 
   const sync = (nextInput: FieldEffectRendererInput) => {
     input = nextInput
@@ -110,6 +120,8 @@ export const createFieldEffectRenderer = (
     sync,
 
     update(delta, elapsed) {
+      if (!needsAnimationFrame()) return
+
       for (const updateFieldEffect of fieldEffectAnimators) {
         updateFieldEffect(delta, elapsed)
       }
@@ -123,9 +135,7 @@ export const createFieldEffectRenderer = (
 
     getAnimationState,
 
-    needsAnimationFrame() {
-      return fieldEffectAnimationStateNeedsFrame(getAnimationState())
-    },
+    needsAnimationFrame,
 
     dispose() {
       disposeFieldEffectObjects()

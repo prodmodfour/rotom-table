@@ -25,7 +25,10 @@ export interface IsometricAnimationFrameOptions {
   renderObjects: Iterable<PokemonRenderObject>
   applyRenderObjectPosition: (renderObject: PokemonRenderObject) => boolean | void
   controls: { target: THREE.Vector3; update: () => boolean | void }
-  fieldEffectRenderer: { update: (delta: number, elapsedTime: number) => void }
+  fieldEffectRenderer: {
+    update: (delta: number, elapsedTime: number) => void
+    needsAnimationFrame?: () => boolean
+  }
   tokenMovePreviewRenderer: {
     animate: (options: {
       pokemon: SpawnedPokemon | null
@@ -71,7 +74,9 @@ export const stepIsometricAnimationFrame = (
   const controlsChanged = options.controls.update() === true
   if (controlsChanged) options.css3DRenderDirtyTracker?.markDirty?.('camera')
 
-  options.fieldEffectRenderer.update(delta, options.clock.elapsedTime)
+  if (options.fieldEffectRenderer.needsAnimationFrame?.() ?? true) {
+    options.fieldEffectRenderer.update(delta, options.clock.elapsedTime)
+  }
 
   const { spriteBrightness, haloAlpha } = getIsometricSpriteLighting({
     cameraPosition: options.camera.position,
