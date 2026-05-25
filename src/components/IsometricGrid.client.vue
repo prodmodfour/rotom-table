@@ -21,7 +21,10 @@ import { getPokemonCenter } from '~/utils/gridGeometry'
 import { buildAllVoxelOccupancy } from '~/utils/voxelOccupancy'
 import { buildMapOccupancy } from '~/utils/mapOccupancy'
 import { normalizeMapFieldEffects } from '~/utils/mapFieldEffects'
-import { moveAutomationAreaDirectionFromPoint } from '~/utils/moveAutomationAreaAiming'
+import {
+  createMoveAutomationAreaDirectionUpdateThrottle,
+  moveAutomationAreaDirectionFromPoint,
+} from '~/utils/moveAutomationAreaAiming'
 import type { CombatStageMap } from '~/types/combatStages'
 import type {
   MoveAutomationAreaDirection,
@@ -850,10 +853,28 @@ const moveAreaDirectionFromPointer = (event: MouseEvent | PointerEvent): MoveAut
     : null
 }
 
+const moveAreaDirectionUpdateThrottle = createMoveAutomationAreaDirectionUpdateThrottle(
+  props.moveAutomationTargeting?.areaDirection,
+)
+
+const selectMoveAreaDirection = (direction: MoveAutomationAreaDirection) => {
+  if (props.moveAutomationTargeting?.mode !== 'area-confirmation') {
+    moveAreaDirectionUpdateThrottle.reset()
+    return
+  }
+
+  if (!moveAreaDirectionUpdateThrottle.shouldEmitDirection(
+    direction,
+    props.moveAutomationTargeting.areaDirection,
+  )) return
+
+  emit('select-move-area-direction', direction)
+}
+
 const updateMoveAreaDirectionFromPointer = (event: MouseEvent | PointerEvent) => {
   const direction = moveAreaDirectionFromPointer(event)
-  if (!direction || direction === props.moveAutomationTargeting?.areaDirection) return
-  emit('select-move-area-direction', direction)
+  if (!direction) return
+  selectMoveAreaDirection(direction)
 }
 
 const movementInteraction = createIsometricTokenMovementInteractionController({
@@ -1069,6 +1090,7 @@ watch([() => props.buildMode, () => props.hazardMode], ([buildActive, hazardActi
 })
 
 watch(() => props.moveAutomationTargeting, (targeting) => {
+  moveAreaDirectionUpdateThrottle.syncCurrentDirection(targeting?.areaDirection)
   if (!targeting) return
 
   closeContextMenu()
@@ -1548,7 +1570,7 @@ useIsometricSceneWatchers({
           type="button"
           :title="option.label"
           @pointerdown.stop
-          @click.stop="emit('select-move-area-direction', option.direction)"
+          @click.stop="selectMoveAreaDirection(option.direction)"
         >
           {{ areaDirectionButtonLabel(option.direction) }}
         </button>

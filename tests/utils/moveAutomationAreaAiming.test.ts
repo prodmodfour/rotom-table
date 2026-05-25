@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  createMoveAutomationAreaDirectionUpdateThrottle,
   moveAutomationAreaDirectionFromDelta,
   moveAutomationAreaDirectionFromPoint,
 } from '~/utils/moveAutomationAreaAiming'
@@ -31,5 +32,35 @@ describe('move automation area aiming', () => {
 
   it('derives the pointer direction around an origin point', () => {
     expect(moveAutomationAreaDirectionFromPoint({ x: 3.5, z: 3.5 }, { x: 2, z: 2 })).toBe('north-west')
+  })
+
+  it('suppresses repeated area direction update requests while a prop update is pending', () => {
+    const throttle = createMoveAutomationAreaDirectionUpdateThrottle('east')
+
+    expect(throttle.shouldEmitDirection('north', 'east')).toBe(true)
+    expect(throttle.currentRequestedDirection()).toBe('north')
+    expect(throttle.shouldEmitDirection('north', 'east')).toBe(false)
+    expect(throttle.shouldEmitDirection('east', 'east')).toBe(false)
+    expect(throttle.shouldEmitDirection('south', 'east')).toBe(true)
+  })
+
+  it('resynchronizes area direction throttling from applied state changes', () => {
+    const throttle = createMoveAutomationAreaDirectionUpdateThrottle('east')
+
+    expect(throttle.shouldEmitDirection('north', 'east')).toBe(true)
+    throttle.syncCurrentDirection('south')
+
+    expect(throttle.currentRequestedDirection()).toBe('south')
+    expect(throttle.shouldEmitDirection('north', 'south')).toBe(true)
+  })
+
+  it('ignores empty area direction update requests and supports reset', () => {
+    const throttle = createMoveAutomationAreaDirectionUpdateThrottle('east')
+
+    expect(throttle.shouldEmitDirection(null, 'east')).toBe(false)
+    throttle.reset()
+
+    expect(throttle.currentRequestedDirection()).toBeNull()
+    expect(throttle.shouldEmitDirection('east')).toBe(true)
   })
 })
