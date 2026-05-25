@@ -27,7 +27,7 @@ const STRESS_SHEET_SLUGS = [
   'examples-onix',
   'examples-lapras',
   'examples-snorlax',
-  'examples-charizard',
+  'examples-aerodactyl',
   'examples-venusaur',
   'examples-blastoise',
   'examples-raichu',
@@ -35,7 +35,7 @@ const STRESS_SHEET_SLUGS = [
   'examples-dragonite',
   'examples-ditto',
   'examples-muk',
-  'examples-steelix',
+  'examples-aggron',
   'examples-skarmory',
   'examples-crobat',
 ]
@@ -137,7 +137,7 @@ const buildTypicalBenchmarkMap = () => {
     placement('typical-token', 3, 'examples-charmander', 9, 1, 10, 16),
     placement('typical-token', 4, 'examples-squirtle', 12, 2, 5, 13),
     placement('typical-token', 5, 'examples-gengar', 16, 1, 2, 20),
-    placement('typical-token', 6, 'examples-onix', 12, 2, 8, 8),
+    placement('typical-token', 6, 'examples-aerodactyl', 12, 2, 8, 8),
     placement('typical-token', 7, 'examples-snorlax', 15, 1, 12, 6),
   ]
   const hazards = [

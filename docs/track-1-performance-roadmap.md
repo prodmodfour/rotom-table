@@ -37,7 +37,7 @@ Use benchmark maps that avoid private campaign data but still represent real wor
 | Typical campaign map | Measures common GM/player play sessions. | Moderate terrain, several Pokémon/trainer tokens, shadows, HP/status overlays, hazards, field effects, and movement previews. |
 | Stress map | Measures worst-case editor and combat interactions. | Large terrain, many voxels/tokens, multiple overlays/effects, weather, hazards, and repeated pointer/pathfinding interactions. |
 
-For each category, compare before/after runs with the same browser, map data, zoom/camera position, layer visibility, and weather/effect state. Future benchmark notes should record both idle behaviour and pointer-heavy interactions. See [Performance benchmark scenarios](performance-benchmark-scenarios.md) for the empty, typical campaign, and stress scenario definitions plus the before/after metrics to capture for performance PRs, and [Performance benchmark fixtures](performance-benchmark-fixtures.md) for a local fixture generator/checklist that avoids private campaign data.
+For each category, compare before/after runs with the same browser, map data, zoom/camera position, layer visibility, and weather/effect state. Future benchmark notes should record both idle behaviour and pointer-heavy interactions. See [Performance benchmark scenarios](performance-benchmark-scenarios.md) for the empty, typical campaign, and stress scenario definitions plus the before/after metrics to capture for performance PRs, [Performance benchmark fixtures](performance-benchmark-fixtures.md) for a local fixture generator/checklist that avoids private campaign data, and the [Performance benchmark runbook](performance-benchmark-runbook.md) for the step-by-step measurement workflow and debug overlay interpretation guide.
 
 ## Staged optimization approach
 
@@ -67,7 +67,7 @@ Avoid disposing and rebuilding equivalent geometry, buffers, overlays, and targe
 
 ### 6. Validate and audit
 
-Finish with repeatable benchmark notes, resource cleanup coverage, and a no-quality-loss audit. Any optimization that changes output should be treated as a bug unless it is an intentional, separately reviewed product change.
+Finish with repeatable benchmark notes, resource cleanup coverage, a no-quality-loss audit, and a final implementation review. The [Track 1 no-quality-loss audit](performance-no-quality-loss-audit.md) records the integrated review that found no intentional visual-quality or functionality reduction, and the [Track 1 final implementation review](performance-track-1-final-review.md) records completion readiness, completed chunk PR coverage, and final automation handoff notes. Any optimization that changes output should be treated as a bug unless it is an intentional, separately reviewed product change.
 
 ## Validation expectations
 

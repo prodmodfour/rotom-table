@@ -1,10 +1,18 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import {
   ISOMETRIC_RENDER_DEBUG_QUERY_KEY,
   ISOMETRIC_RENDER_DEBUG_QUERY_VALUES,
   hasIsometricRenderDebugQueryFlag,
   isIsometricRenderDebugEnabled,
 } from '~/utils/isometric/renderDebugFlag'
+
+const originalProcessDev = process.dev
+const originalNodeEnv = process.env.NODE_ENV
+
+afterEach(() => {
+  process.dev = originalProcessDev
+  process.env.NODE_ENV = originalNodeEnv
+})
 
 describe('isometric render debug flag', () => {
   it('documents the explicit render debug query tokens', () => {
@@ -45,5 +53,12 @@ describe('isometric render debug flag', () => {
   it('is dev-safe by default while allowing an explicit benchmark override', () => {
     expect(isIsometricRenderDebugEnabled({ query: '?debug=render', isDev: false })).toBe(false)
     expect(isIsometricRenderDebugEnabled({ query: '?debug=render', isDev: false, allowProduction: true })).toBe(true)
+  })
+
+  it('uses the Nuxt client process.dev fallback for dev server benchmark runs', () => {
+    process.dev = true
+    process.env.NODE_ENV = 'production'
+
+    expect(isIsometricRenderDebugEnabled({ query: '?debug=render' })).toBe(true)
   })
 })
