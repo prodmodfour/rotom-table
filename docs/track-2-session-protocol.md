@@ -82,6 +82,14 @@ The helper serializes and validates entries before creating session directories,
 
 The helper also creates the accepted command result, a small `SessionPatchEvent`, and a validated command event-log entry object for optional persistence. It does not append the log or write snapshots itself, so callers can decide whether to persist, broadcast, or roll back as a unit.
 
+## Duplicate operation tracker
+
+`server/utils/sessionOperationTracker.ts` is the in-memory idempotency boundary for recently processed command `opId` values. It records only accepted or rejected command results, scopes entries by `sessionId`, actor `clientId`, and `opId`, and keeps a bounded recent history per session so retries can be answered without applying effects again.
+
+The tracker returns `new`, `duplicate`, or `mismatched-opId` decisions. Exact duplicate user intents receive a `SessionCommandDuplicateResult` with the original accepted/rejected revision and the server's current revision at retry time. Reusing the same scoped `opId` with a materially different command envelope or payload is surfaced as a mismatch for later command handlers to reject safely instead of treating it as an edit to the original command. Diagnostic command metadata may change across retries and is not part of the material fingerprint.
+
+This helper is process-local state, not a database. Snapshots and the optional event log remain the recovery baseline after server restart; future reconnect/replay work may rebuild or bypass recent-op memory from durable local data when safe.
+
 ## Message flow
 
 ### 1. Socket hello and reconnect
