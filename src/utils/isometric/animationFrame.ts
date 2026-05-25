@@ -2,6 +2,7 @@ import type * as THREE from 'three'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import type { PokemonRenderObject } from '~/utils/isometric/types'
 import { getIsometricSpriteLighting } from '~/utils/isometric/spriteLighting'
+import { tokenCenterLerpNeedsAnimation } from '~/utils/isometric/tokenRenderState'
 import { animatePokemonRenderObject } from '~/utils/isometric/tokenRenderer'
 import { nowMs } from '~/utils/isometric/worldSprites'
 
@@ -49,10 +50,10 @@ export const stepIsometricAnimationFrame = (
   const renderObjects = Array.from(options.renderObjects)
 
   for (const renderObject of renderObjects) {
-    if (renderObject.currentCenter.distanceToSquared(renderObject.targetCenter) < 0.000001) {
-      renderObject.currentCenter.copy(renderObject.targetCenter)
-    } else {
+    if (tokenCenterLerpNeedsAnimation(renderObject)) {
       renderObject.currentCenter.lerp(renderObject.targetCenter, damping)
+    } else {
+      renderObject.currentCenter.copy(renderObject.targetCenter)
     }
 
     options.applyRenderObjectPosition(renderObject)

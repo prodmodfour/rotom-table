@@ -3,6 +3,7 @@ import {
   createIsometricAnimationContinuation,
   ISOMETRIC_ANIMATION_CONTINUATION_SOURCE,
   isIsometricAnimationContinuationSource,
+  resolveIsometricTokenMotionContinuationSources,
   toIsometricRenderSchedulerFrameResult,
 } from '~/utils/isometric/renderLoop'
 
@@ -48,6 +49,31 @@ describe('isometric render loop helpers', () => {
     expect(continuation.active).toBe(true)
     expect(continuation.sources).toEqual([
       ISOMETRIC_ANIMATION_CONTINUATION_SOURCE.compatibilityContinuousLoop,
+    ])
+  })
+
+  it('exposes token motion as a continuation source while centers or lift factors are settling', () => {
+    const settledToken = {
+      currentCenter: { x: 1, y: 2, z: 3 },
+      targetCenter: { x: 1, y: 2, z: 3 },
+      liftFactor: 0,
+      liftTarget: 0,
+    }
+    const movingToken = {
+      ...settledToken,
+      targetCenter: { x: 2, y: 2, z: 3 },
+    }
+    const liftingToken = {
+      ...settledToken,
+      liftTarget: 1,
+    }
+
+    expect(resolveIsometricTokenMotionContinuationSources([settledToken])).toEqual([])
+    expect(resolveIsometricTokenMotionContinuationSources([settledToken, movingToken])).toEqual([
+      ISOMETRIC_ANIMATION_CONTINUATION_SOURCE.tokenMotion,
+    ])
+    expect(resolveIsometricTokenMotionContinuationSources([liftingToken])).toEqual([
+      ISOMETRIC_ANIMATION_CONTINUATION_SOURCE.tokenMotion,
     ])
   })
 

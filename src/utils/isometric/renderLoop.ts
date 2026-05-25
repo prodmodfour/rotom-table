@@ -1,4 +1,8 @@
 import type { IsometricRenderSchedulerFrameResult } from './renderScheduler'
+import {
+  anyTokenRenderStateNeedsAnimation,
+  type TokenRenderAnimationState,
+} from './tokenRenderState'
 
 export const ISOMETRIC_ANIMATION_CONTINUATION_SOURCE = {
   compatibilityContinuousLoop: 'compatibility-continuous-loop',
@@ -51,6 +55,14 @@ export const createIsometricAnimationContinuation = (
     sources: dedupedSources,
   }
 }
+
+export const resolveIsometricTokenMotionContinuationSources = (
+  tokens: Iterable<TokenRenderAnimationState>,
+): IsometricAnimationContinuationSource[] => (
+  anyTokenRenderStateNeedsAnimation(tokens)
+    ? [ISOMETRIC_ANIMATION_CONTINUATION_SOURCE.tokenMotion]
+    : []
+)
 
 export const toIsometricRenderSchedulerFrameResult = (
   continuation: IsometricAnimationContinuation,
