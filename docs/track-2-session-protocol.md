@@ -60,6 +60,12 @@ Permission denials use safe reasons such as `gm-required`, `player-required`, `r
 
 This model is the state stored in the in-memory session store and later written as local snapshots. It is not a client autosave format: live clients still send commands, the server mutates this authoritative copy, and broadcasts small patches or snapshots from it.
 
+## Local snapshot writer
+
+`server/utils/sessionSnapshots.ts` writes the latest authoritative session snapshot as a JSON envelope containing the snapshot schema version, `sessionId`, current session `revision`, `writtenAt`, and the `AuthoritativeSessionState`. The default local path is `data/sessions/<sessionId>/snapshot.json`, which is ignored by git because snapshots may contain private campaign/session state.
+
+Snapshot writes serialize the complete JSON in memory, write a unique temp file in the same session directory, flush and close it, rename it over `snapshot.json`, best-effort flush the directory, and remove the temp file on failures before publish. Recovery and shape validation are implemented by later persistence tickets.
+
 ## Message flow
 
 ### 1. Socket hello and reconnect
