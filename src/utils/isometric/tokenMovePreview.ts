@@ -11,6 +11,11 @@ import { disposeObject3D } from '~/utils/isometric/resourceDisposal'
 import { buildElevationBadge, updateElevationBadge } from '~/utils/isometric/tokenHud'
 import type { WorldSpriteState } from '~/utils/isometric/types'
 import {
+  createMovementPreviewAnimationState,
+  movementPreviewAnimationStateNeedsFrame,
+  type MovementPreviewAnimationState,
+} from '~/utils/isometric/movementPreviewAnimation'
+import {
   applyAnimationFrame,
   buildWorldSprite,
   disposeWorldSprite,
@@ -20,9 +25,86 @@ import {
   updateWorldSpriteLighting,
 } from '~/utils/isometric/worldSprites'
 
+const MIN_MOVEMENT_PATH_LINE_POINT_CAPACITY = 2
+
+export interface MovementPathLineGeometryBuffer {
+  readonly geometry: THREE.BufferGeometry
+  pointCapacity: number
+}
+
+export const createMovementPathLineGeometryBuffer = (): MovementPathLineGeometryBuffer => {
+  const geometry = new THREE.BufferGeometry()
+  geometry.setDrawRange(0, 0)
+
+  return {
+    geometry,
+    pointCapacity: 0,
+  }
+}
+
+const ensureMovementPathLinePointCapacity = (
+  buffer: MovementPathLineGeometryBuffer,
+  pointCount: number,
+) => {
+  if (buffer.pointCapacity >= pointCount) return
+
+  let nextCapacity = Math.max(
+    MIN_MOVEMENT_PATH_LINE_POINT_CAPACITY,
+    buffer.pointCapacity || MIN_MOVEMENT_PATH_LINE_POINT_CAPACITY,
+  )
+  while (nextCapacity < pointCount) nextCapacity *= 2
+
+  const positionAttribute = new THREE.Float32BufferAttribute(new Float32Array(nextCapacity * 3), 3)
+  positionAttribute.setUsage(THREE.DynamicDrawUsage)
+  buffer.geometry.setAttribute('position', positionAttribute)
+  buffer.pointCapacity = nextCapacity
+}
+
+export const resetMovementPathLineGeometry = (buffer: MovementPathLineGeometryBuffer) => {
+  buffer.geometry.setDrawRange(0, 0)
+  buffer.geometry.boundingBox = null
+  buffer.geometry.boundingSphere = null
+}
+
+export const updateMovementPathLineGeometry = (
+  buffer: MovementPathLineGeometryBuffer,
+  options: {
+    path: readonly GridAnchor[] | null | undefined
+    base: number
+    clearance: number
+  },
+) => {
+  const path = options.path ?? []
+  const pointCount = path.length
+  if (pointCount <= 0) {
+    resetMovementPathLineGeometry(buffer)
+    return 0
+  }
+
+  ensureMovementPathLinePointCapacity(buffer, pointCount)
+
+  const positionAttribute = buffer.geometry.getAttribute('position') as THREE.BufferAttribute
+  const positions = positionAttribute.array as Float32Array
+  for (let index = 0; index < pointCount; index += 1) {
+    const step = path[index]
+    const waypoint = getAnchorCenter(step, options.base)
+    const offset = index * 3
+    positions[offset] = waypoint.x
+    positions[offset + 1] = waypoint.y + options.clearance / 2
+    positions[offset + 2] = waypoint.z
+  }
+
+  positionAttribute.needsUpdate = true
+  buffer.geometry.setDrawRange(0, pointCount)
+  buffer.geometry.boundingBox = null
+  buffer.geometry.boundingSphere = null
+  return pointCount
+}
+
 export const createTokenMovePreviewRenderer = (containers: {
   scene: THREE.Scene
   group: THREE.Group
+  onTextureLoadComplete?: () => void
 }) => {
   let ghostSprite: THREE.Sprite | null = null
   let ghostSpriteState: WorldSpriteState | null = null
@@ -31,6 +113,7 @@ export const createTokenMovePreviewRenderer = (containers: {
   let volume: THREE.Mesh<THREE.BoxGeometry, THREE.MeshBasicMaterial[]> | null = null
   let edges: THREE.LineSegments | null = null
   let pathLine: THREE.Line | null = null
+  let pathLineGeometryBuffer: MovementPathLineGeometryBuffer | null = null
   let ownerId: string | null = null
 
   const disposeOwner = () => {
@@ -48,10 +131,13 @@ export const createTokenMovePreviewRenderer = (containers: {
   }
 
   const ensurePathLine = () => {
-    if (pathLine) return
+    if (pathLine && pathLineGeometryBuffer) return
+
+    disposeObject3D(pathLine)
+    pathLineGeometryBuffer = createMovementPathLineGeometryBuffer()
 
     pathLine = new THREE.Line(
-      new THREE.BufferGeometry(),
+      pathLineGeometryBuffer.geometry,
       new THREE.LineBasicMaterial({
         color: TACTICAL_SELECTION_HIGHLIGHT_COLOR, // light orange active path trail
         transparent: true,
@@ -81,7 +167,10 @@ export const createTokenMovePreviewRenderer = (containers: {
     ensurePathLine()
 
     ownerId = pokemon.id
-    ghostSpriteState = buildWorldSprite(pokemon, true)
+    ghostSpriteState = buildWorldSprite(pokemon, {
+      ghost: true,
+      onTextureLoadComplete: containers.onTextureLoadComplete,
+    })
     ghostSprite = ghostSpriteState.sprite
     setWorldSpriteVisible(ghostSpriteState, false)
     containers.group.add(ghostSpriteState.halo)
@@ -126,17 +215,33 @@ export const createTokenMovePreviewRenderer = (containers: {
     if (volume) volume.visible = false
     if (edges) edges.visible = false
 
-    if (pathLine) {
-      pathLine.visible = false
-      pathLine.geometry.dispose()
-      pathLine.geometry = new THREE.BufferGeometry()
-    }
+    if (pathLine) pathLine.visible = false
+    if (pathLineGeometryBuffer) resetMovementPathLineGeometry(pathLineGeometryBuffer)
   }
+
+  const movementPreviewVisible = () => Boolean(
+    ghostSpriteState?.sprite.visible ||
+    ghostSpriteState?.halo.visible ||
+    elevationBadge?.visible ||
+    volume?.visible ||
+    edges?.visible ||
+    pathLine?.visible,
+  )
+
+  const getAnimationState = (): MovementPreviewAnimationState => createMovementPreviewAnimationState(
+    movementPreviewVisible(),
+    ghostSpriteState,
+  )
 
   return {
     ensure,
     clear,
     disposeOwner,
+    getAnimationState,
+
+    needsAnimationFrame() {
+      return movementPreviewAnimationStateNeedsFrame(getAnimationState())
+    },
 
     update(options: {
       pokemon: SpawnedPokemon
@@ -181,20 +286,13 @@ export const createTokenMovePreviewRenderer = (containers: {
       })
 
       ensurePathLine()
-      if (pathLine) {
-        const points =
-          options.path?.map((step) => {
-            const waypoint = getAnchorCenter(step, options.pokemon.base)
-            return new THREE.Vector3(
-              waypoint.x,
-              waypoint.y + options.pokemon.clearance / 2,
-              waypoint.z,
-            )
-          }) ?? []
-
-        pathLine.geometry.dispose()
-        pathLine.geometry = new THREE.BufferGeometry().setFromPoints(points)
-        pathLine.visible = points.length >= 2
+      if (pathLine && pathLineGeometryBuffer) {
+        const pointCount = updateMovementPathLineGeometry(pathLineGeometryBuffer, {
+          path: options.path,
+          base: options.pokemon.base,
+          clearance: options.pokemon.clearance,
+        })
+        pathLine.visible = pointCount >= 2
       }
 
       return true
@@ -243,6 +341,7 @@ export const createTokenMovePreviewRenderer = (containers: {
       disposeOwner()
       disposeObject3D(pathLine)
       pathLine = null
+      pathLineGeometryBuffer = null
     },
   }
 }

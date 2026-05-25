@@ -38,14 +38,29 @@ interface ImportMetaDebugEnvironment {
   }
 }
 
+interface ProcessDebugEnvironment {
+  readonly dev?: unknown
+  readonly env?: {
+    readonly NODE_ENV?: unknown
+  }
+}
+
 const DEBUG_TOKEN_SEPARATOR = /[\s,]+/
 const DEBUG_QUERY_KEYS = new Set([ISOMETRIC_RENDER_DEBUG_QUERY_KEY, `${ISOMETRIC_RENDER_DEBUG_QUERY_KEY}[]`])
 const DEBUG_QUERY_VALUES = new Set<string>(ISOMETRIC_RENDER_DEBUG_QUERY_VALUES)
 
 const defaultIsDevEnvironment = (): boolean => {
   const meta = import.meta as ImportMetaDebugEnvironment
+  const processDebug = globalThis.process as ProcessDebugEnvironment | undefined
 
-  return meta.dev === true || meta.env?.DEV === true || meta.env?.DEV === 'true' || meta.env?.MODE === 'development'
+  return (
+    meta.dev === true
+    || meta.env?.DEV === true
+    || meta.env?.DEV === 'true'
+    || meta.env?.MODE === 'development'
+    || processDebug?.dev === true
+    || processDebug?.env?.NODE_ENV === 'development'
+  )
 }
 
 const normalizeDebugToken = (value: string): string => value.trim().toLowerCase()

@@ -18,8 +18,9 @@ import {
 } from '~/utils/gridGeometry'
 import { ptuGridVectorDistance } from '~/utils/ptuGridDistance'
 import {
-  buildMapMovementTerrainIndex,
+  createMapMovementTerrainIndexCache,
   movementTerrainForAnchor,
+  type MapMovementTerrainIndex,
   type MovementAnchorTerrain,
   type MovementTerrainRequirement,
 } from '~/utils/mapMovementTerrain'
@@ -78,6 +79,8 @@ const VERTICAL_DIRECTIONS: readonly GridAnchor[] = [
 ]
 
 const DIRECTIONS: readonly GridAnchor[] = [...HORIZONTAL_DIRECTIONS, ...VERTICAL_DIRECTIONS]
+
+const movementTerrainIndexCache = createMapMovementTerrainIndexCache()
 
 const sameAnchor = (left: GridAnchor, right: GridAnchor): boolean =>
   left.x === right.x && left.y === right.y && left.z === right.z
@@ -258,7 +261,7 @@ const evaluateAnchorMovementOptions = ({
 }: {
   pokemon: GridFootprint
   anchor: GridAnchor
-  terrainIndex: ReturnType<typeof buildMapMovementTerrainIndex>
+  terrainIndex: MapMovementTerrainIndex
   groundLevelY: number
   capabilities: MovementCapabilitySpeeds | null | undefined
 }): AnchorMovementEvaluation[] => {
@@ -344,6 +347,26 @@ const blockedResult = (
   reason,
 })
 
+export interface FindMovementPathForPokemonOptions {
+  pokemon: GridFootprint & { movementCapabilities?: MovementCapabilitySpeeds }
+  start: GridAnchor
+  goal: GridAnchor
+  pokemons: readonly PositionedGridFootprint[]
+  dimensions: GridDimensions
+  exceptId?: string | null
+  voxels?: readonly MapVoxelV2[] | null
+  groundLevelY?: number
+  terrainRevision?: string | number | null
+  terrainIndex?: MapMovementTerrainIndex | null
+}
+
+const resolveMovementTerrainIndex = ({
+  terrainIndex,
+  voxels,
+  terrainRevision,
+}: Pick<FindMovementPathForPokemonOptions, 'terrainIndex' | 'voxels' | 'terrainRevision'>): MapMovementTerrainIndex =>
+  terrainIndex ?? movementTerrainIndexCache.get(voxels, terrainRevision)
+
 export const findMovementPathForPokemon = ({
   pokemon,
   start,
@@ -353,16 +376,9 @@ export const findMovementPathForPokemon = ({
   exceptId,
   voxels,
   groundLevelY = 0,
-}: {
-  pokemon: GridFootprint & { movementCapabilities?: MovementCapabilitySpeeds }
-  start: GridAnchor
-  goal: GridAnchor
-  pokemons: readonly PositionedGridFootprint[]
-  dimensions: GridDimensions
-  exceptId?: string | null
-  voxels?: readonly MapVoxelV2[] | null
-  groundLevelY?: number
-}): MovementPathResult => {
+  terrainRevision = null,
+  terrainIndex: providedTerrainIndex = null,
+}: FindMovementPathForPokemonOptions): MovementPathResult => {
   const directDistance = anchorHeuristic(start, goal)
   const capabilities = pokemon.movementCapabilities
 
@@ -387,7 +403,11 @@ export const findMovementPathForPokemon = ({
     }
   }
 
-  const terrainIndex = buildMapMovementTerrainIndex(voxels)
+  const terrainIndex = resolveMovementTerrainIndex({
+    terrainIndex: providedTerrainIndex,
+    voxels,
+    terrainRevision,
+  })
   const directGoalMovementOptions = evaluateAnchorMovementOptions({
     pokemon,
     anchor: goal,

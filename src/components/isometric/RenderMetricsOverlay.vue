@@ -78,6 +78,20 @@ const viewModel = computed(() => createRenderMetricsOverlayViewModel(metricsSnap
       </p>
     </section>
 
+    <section class="render-metrics-overlay__section" aria-label="Pointer interaction metrics">
+      <h3>Pointer</h3>
+      <dl class="render-metrics-overlay__grid">
+        <div
+          v-for="row in viewModel.pointerRows"
+          :key="row.key"
+          class="render-metrics-overlay__row"
+        >
+          <dt>{{ row.label }}</dt>
+          <dd>{{ row.value }}</dd>
+        </div>
+      </dl>
+    </section>
+
     <section class="render-metrics-overlay__section" aria-label="WebGL renderer metrics">
       <h3>Renderer</h3>
       <p v-if="!viewModel.hasRendererInfo" class="render-metrics-overlay__muted">

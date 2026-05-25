@@ -29,11 +29,45 @@ export interface HazardInteractionDependencies {
 const resolveHazardKind = (kind: MapHazardKind | null | undefined): MapHazardKind =>
   kind ?? DEFAULT_ISOMETRIC_HAZARD_KIND
 
+type HazardPreviewStyleState = Pick<HazardInteractionState, 'hazardMode' | 'hazardKind'>
+
+export const hazardPreviewAnchorKey = (
+  target: HazardTarget | null,
+  state: HazardPreviewStyleState,
+): string => {
+  if (!state.hazardMode) return 'inactive'
+  if (!target) return 'none'
+
+  return [
+    target.action,
+    target.valid ? 'valid' : 'invalid',
+    target.cell.x,
+    target.cell.y,
+    target.cell.z,
+    resolveHazardKind(state.hazardKind),
+  ].join(':')
+}
+
 export const createIsometricHazardInteractionController = (
   dependencies: HazardInteractionDependencies,
 ) => {
+  let lastPreviewAnchorKey: string | null = null
+
+  const resetPreviewAnchor = () => {
+    lastPreviewAnchorKey = null
+  }
+
+  const hideGhost = () => {
+    resetPreviewAnchor()
+    dependencies.hideGhost()
+  }
+
   const updateGhost = (target: HazardTarget | null) => {
     const state = dependencies.getState()
+    const nextAnchorKey = hazardPreviewAnchorKey(target, state)
+    if (nextAnchorKey === lastPreviewAnchorKey) return
+
+    lastPreviewAnchorKey = nextAnchorKey
     dependencies.updateGhost(target, {
       hazardMode: state.hazardMode,
       kind: resolveHazardKind(state.hazardKind),
@@ -43,7 +77,7 @@ export const createIsometricHazardInteractionController = (
   const updatePreviewFromPointer = (event: HazardPointerEvent) => {
     const state = dependencies.getState()
     if (!state.hazardMode) {
-      dependencies.hideGhost()
+      hideGhost()
       return
     }
 
@@ -75,5 +109,7 @@ export const createIsometricHazardInteractionController = (
     updatePreviewFromPointer,
     replayPreview,
     performAction,
+    hideGhost,
+    resetPreviewAnchor,
   }
 }

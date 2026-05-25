@@ -1,3 +1,10 @@
+import {
+  ISOMETRIC_RENDER_INVALIDATION_REASONS,
+  ISOMETRIC_RENDER_INVALIDATION_REASON_LABELS,
+  isRenderInvalidationReason,
+  type RenderInvalidationReason,
+} from './renderInvalidation'
+
 /**
  * Developer-only data model for Track 1 isometric render instrumentation.
  *
@@ -5,57 +12,31 @@
  * Three.js renderer, or render UI. Runtime code can opt into filling this
  * model only when debug instrumentation is enabled.
  */
-export const ISOMETRIC_RENDER_FRAME_REASONS = [
-  'initial',
-  'manual',
-  'resize',
-  'camera',
-  'scene-state',
-  'terrain',
-  'tokens',
-  'token-texture',
-  'token-style',
-  'movement-preview',
-  'build-preview',
-  'hazard-preview',
-  'targeting',
-  'field-effect',
-  'weather',
-  'layer-visibility',
-  'pointer',
-  'animation',
-  'hidden-tab-resume',
-  'debug',
-] as const
+export const ISOMETRIC_RENDER_FRAME_REASONS = ISOMETRIC_RENDER_INVALIDATION_REASONS
 
-export type RenderFrameReason = typeof ISOMETRIC_RENDER_FRAME_REASONS[number]
+export type RenderFrameReason = RenderInvalidationReason
 
 export type RenderFrameReasonCounts = Partial<Record<RenderFrameReason, number>>
 
-export const ISOMETRIC_RENDER_FRAME_REASON_LABELS: Record<RenderFrameReason, string> = {
-  initial: 'Initial render',
-  manual: 'Manual render request',
-  resize: 'Renderer resize',
-  camera: 'Camera or controls changed',
-  'scene-state': 'Map scene state changed',
-  terrain: 'Terrain changed',
-  tokens: 'Token objects changed',
-  'token-texture': 'Token texture loaded',
-  'token-style': 'Token style or HUD changed',
-  'movement-preview': 'Movement preview changed',
-  'build-preview': 'Build preview changed',
-  'hazard-preview': 'Hazard preview changed',
-  targeting: 'Targeting state changed',
-  'field-effect': 'Field effect changed',
-  weather: 'Weather changed',
-  'layer-visibility': 'Layer visibility changed',
-  pointer: 'Pointer interaction changed',
-  animation: 'Active animation frame',
-  'hidden-tab-resume': 'Hidden tab resumed',
-  debug: 'Debug instrumentation',
+export const ISOMETRIC_POINTER_RAYCAST_KINDS = [
+  'token-pick',
+  'movement-plane',
+  'build-pick',
+  'hazard-pick',
+] as const
+
+export type IsometricPointerRaycastKind = typeof ISOMETRIC_POINTER_RAYCAST_KINDS[number]
+
+export type PointerRaycastKindCounts = Partial<Record<IsometricPointerRaycastKind, number>>
+
+export const ISOMETRIC_POINTER_RAYCAST_KIND_LABELS: Record<IsometricPointerRaycastKind, string> = {
+  'token-pick': 'Token pick raycasts',
+  'movement-plane': 'Movement plane raycasts',
+  'build-pick': 'Build pick raycasts',
+  'hazard-pick': 'Hazard pick raycasts',
 }
 
-const ISOMETRIC_RENDER_FRAME_REASON_SET = new Set<string>(ISOMETRIC_RENDER_FRAME_REASONS)
+export const ISOMETRIC_RENDER_FRAME_REASON_LABELS = ISOMETRIC_RENDER_INVALIDATION_REASON_LABELS
 
 export interface RenderFrameTimingMetrics {
   frameCount: number
@@ -96,17 +77,28 @@ export interface SampledWebGLRendererInfo {
   programs: SampledWebGLRendererProgramInfo
 }
 
+export interface PointerInteractionMetrics {
+  pointerMoveEventCount: number
+  pointerMoveFrameCount: number
+  coalescedPointerMoveEventCount: number
+  lastPointerMoveFrameCoalescedEventCount: number | null
+  raycastCount: number
+  raycastCounts: PointerRaycastKindCounts
+  pathfindingRequestCount: number
+  pathfindingCacheHitCount: number
+  pathfindingCacheMissCount: number
+}
+
 export interface IsometricRenderMetricsSnapshot {
   /** Marker to keep this model scoped to explicit debug/developer instrumentation. */
   devOnly: true
   sampledAtMs: number
   frames: RenderFrameTimingMetrics
   rendererInfo: SampledWebGLRendererInfo | null
+  pointerInteractions: PointerInteractionMetrics
 }
 
-export const isRenderFrameReason = (value: unknown): value is RenderFrameReason => (
-  typeof value === 'string' && ISOMETRIC_RENDER_FRAME_REASON_SET.has(value)
-)
+export const isRenderFrameReason = isRenderInvalidationReason
 
 export const createEmptyRenderFrameReasonCounts = (): RenderFrameReasonCounts => ({})
 
@@ -130,6 +122,29 @@ export const createRenderFrameReasonCounts = (
 
   return counts
 }
+
+export const createEmptyPointerRaycastKindCounts = (): PointerRaycastKindCounts => ({})
+
+export const incrementPointerRaycastKindCount = (
+  counts: PointerRaycastKindCounts,
+  kind: IsometricPointerRaycastKind,
+  increment = 1,
+): PointerRaycastKindCounts => ({
+  ...counts,
+  [kind]: (counts[kind] ?? 0) + increment,
+})
+
+export const createEmptyPointerInteractionMetrics = (): PointerInteractionMetrics => ({
+  pointerMoveEventCount: 0,
+  pointerMoveFrameCount: 0,
+  coalescedPointerMoveEventCount: 0,
+  lastPointerMoveFrameCoalescedEventCount: null,
+  raycastCount: 0,
+  raycastCounts: createEmptyPointerRaycastKindCounts(),
+  pathfindingRequestCount: 0,
+  pathfindingCacheHitCount: 0,
+  pathfindingCacheMissCount: 0,
+})
 
 export const createEmptyRenderFrameTimingMetrics = (): RenderFrameTimingMetrics => ({
   frameCount: 0,
@@ -170,6 +185,22 @@ export const createEmptyIsometricRenderMetricsSnapshot = (
   sampledAtMs,
   frames: createEmptyRenderFrameTimingMetrics(),
   rendererInfo: null,
+  pointerInteractions: createEmptyPointerInteractionMetrics(),
+})
+
+const copyRenderFrameTimingMetrics = (
+  frames: RenderFrameTimingMetrics,
+): RenderFrameTimingMetrics => ({
+  ...frames,
+  lastFrameReasons: [...frames.lastFrameReasons],
+  reasonCounts: { ...frames.reasonCounts },
+})
+
+const copyPointerInteractionMetrics = (
+  pointerInteractions: PointerInteractionMetrics,
+): PointerInteractionMetrics => ({
+  ...pointerInteractions,
+  raycastCounts: { ...pointerInteractions.raycastCounts },
 })
 
 const copySampledWebGLRendererInfo = (
@@ -191,6 +222,26 @@ const copySampledWebGLRendererInfo = (
   programs: {
     count: rendererInfo.programs.count,
   },
+})
+
+export const createIsometricRenderMetricsSnapshotWithFrameTiming = (
+  snapshot: IsometricRenderMetricsSnapshot,
+  frames: RenderFrameTimingMetrics,
+  sampledAtMs = snapshot.sampledAtMs,
+): IsometricRenderMetricsSnapshot => ({
+  ...snapshot,
+  sampledAtMs,
+  frames: copyRenderFrameTimingMetrics(frames),
+})
+
+export const createIsometricRenderMetricsSnapshotWithPointerInteractions = (
+  snapshot: IsometricRenderMetricsSnapshot,
+  pointerInteractions: PointerInteractionMetrics,
+  sampledAtMs = snapshot.sampledAtMs,
+): IsometricRenderMetricsSnapshot => ({
+  ...snapshot,
+  sampledAtMs,
+  pointerInteractions: copyPointerInteractionMetrics(pointerInteractions),
 })
 
 export const createIsometricRenderMetricsSnapshotWithRendererInfo = (

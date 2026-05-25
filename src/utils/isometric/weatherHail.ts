@@ -37,17 +37,27 @@ export const makeHailWeatherVisual = (
   mesh.frustumCulled = false
   group.add(mesh)
 
-  const particles = Array.from({ length: count }, () => ({
-    x: randomRange(rand, bounds.minX, bounds.maxX),
-    y: randomRange(rand, bounds.groundY, bounds.topY),
-    z: randomRange(rand, bounds.minZ, bounds.maxZ),
-    speed: randomRange(rand, 2.4, 4.6),
-    driftX: randomRange(rand, -0.18, 0.34),
-    driftZ: randomRange(rand, -0.08, 0.24),
-    scale: randomRange(rand, 0.045, 0.09),
-    phase: randomRange(rand, 0, Math.PI * 2),
-    spin: randomRange(rand, 1.8, 4.2),
-  }))
+  const particleX = new Float64Array(count)
+  const particleY = new Float64Array(count)
+  const particleZ = new Float64Array(count)
+  const particleSpeed = new Float64Array(count)
+  const particleDriftX = new Float64Array(count)
+  const particleDriftZ = new Float64Array(count)
+  const particleScale = new Float64Array(count)
+  const particlePhase = new Float64Array(count)
+  const particleSpin = new Float64Array(count)
+
+  for (let i = 0; i < count; i += 1) {
+    particleX[i] = randomRange(rand, bounds.minX, bounds.maxX)
+    particleY[i] = randomRange(rand, bounds.groundY, bounds.topY)
+    particleZ[i] = randomRange(rand, bounds.minZ, bounds.maxZ)
+    particleSpeed[i] = randomRange(rand, 2.4, 4.6)
+    particleDriftX[i] = randomRange(rand, -0.18, 0.34)
+    particleDriftZ[i] = randomRange(rand, -0.08, 0.24)
+    particleScale[i] = randomRange(rand, 0.045, 0.09)
+    particlePhase[i] = randomRange(rand, 0, Math.PI * 2)
+    particleSpin[i] = randomRange(rand, 1.8, 4.2)
+  }
 
   const matrix = new THREE.Matrix4()
   const position = new THREE.Vector3()
@@ -56,17 +66,19 @@ export const makeHailWeatherVisual = (
   const scale = new THREE.Vector3()
 
   const syncInstances = (elapsed: number) => {
-    for (let i = 0; i < particles.length; i += 1) {
-      const p = particles[i]
-      const pulse = 1 + Math.sin(elapsed * 5.2 + p.phase) * 0.08
-      position.set(p.x, p.y, p.z)
+    for (let i = 0; i < count; i += 1) {
+      const phase = particlePhase[i]
+      const spin = particleSpin[i]
+      const baseScale = particleScale[i]
+      const pulse = 1 + Math.sin(elapsed * 5.2 + phase) * 0.08
+      position.set(particleX[i], particleY[i], particleZ[i])
       rotation.set(
-        p.phase + elapsed * p.spin,
-        p.phase * 0.7 + elapsed * p.spin * 0.8,
-        p.phase * 1.3,
+        phase + elapsed * spin,
+        phase * 0.7 + elapsed * spin * 0.8,
+        phase * 1.3,
       )
       quaternion.setFromEuler(rotation)
-      scale.set(p.scale * pulse, p.scale * 1.35 * pulse, p.scale * pulse)
+      scale.set(baseScale * pulse, baseScale * 1.35 * pulse, baseScale * pulse)
       matrix.compose(position, quaternion, scale)
       mesh.setMatrixAt(i, matrix)
     }
@@ -77,17 +89,20 @@ export const makeHailWeatherVisual = (
   return {
     group,
     update: (delta, elapsed) => {
-      for (const p of particles) {
-        p.y -= p.speed * delta
-        p.x += p.driftX * delta
-        p.z += p.driftZ * delta
-        p.x = wrapRange(p.x, bounds.minX, bounds.maxX)
-        p.z = wrapRange(p.z, bounds.minZ, bounds.maxZ)
-        if (p.y < bounds.groundY + 0.02) {
-          p.y = bounds.topY + randomRange(rand, 0, 0.8)
-          p.x = randomRange(rand, bounds.minX, bounds.maxX)
-          p.z = randomRange(rand, bounds.minZ, bounds.maxZ)
+      for (let i = 0; i < count; i += 1) {
+        let x = particleX[i] + particleDriftX[i] * delta
+        let y = particleY[i] - particleSpeed[i] * delta
+        let z = particleZ[i] + particleDriftZ[i] * delta
+        x = wrapRange(x, bounds.minX, bounds.maxX)
+        z = wrapRange(z, bounds.minZ, bounds.maxZ)
+        if (y < bounds.groundY + 0.02) {
+          y = bounds.topY + randomRange(rand, 0, 0.8)
+          x = randomRange(rand, bounds.minX, bounds.maxX)
+          z = randomRange(rand, bounds.minZ, bounds.maxZ)
         }
+        particleX[i] = x
+        particleY[i] = y
+        particleZ[i] = z
       }
       syncInstances(elapsed)
     },

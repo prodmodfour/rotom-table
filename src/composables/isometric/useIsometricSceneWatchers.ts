@@ -1,4 +1,69 @@
 import { watch, type WatchSource } from 'vue'
+import type { RenderInvalidationReason } from '~/utils/isometric/renderInvalidation'
+
+export type IsometricSceneWatcherRenderRequest =
+  | RenderInvalidationReason
+  | readonly RenderInvalidationReason[]
+
+const TOKEN_OBJECT_RENDER_REASONS: readonly RenderInvalidationReason[] = [
+  'tokens',
+  'token-style',
+  'movement-preview',
+  'build-preview',
+]
+
+const TERRAIN_RENDER_REASONS: readonly RenderInvalidationReason[] = [
+  'terrain',
+  'movement-preview',
+  'build-preview',
+  'hazard-preview',
+]
+
+const HAZARD_RENDER_REASONS: readonly RenderInvalidationReason[] = [
+  'hazards',
+  'hazard-preview',
+]
+
+const FIELD_EFFECT_RENDER_REASONS: readonly RenderInvalidationReason[] = [
+  'field-effect',
+  'weather',
+]
+
+const SELECTION_RENDER_REASONS: readonly RenderInvalidationReason[] = [
+  'token-style',
+  'movement-preview',
+  'layer-visibility',
+]
+
+const BUILD_MODE_RENDER_REASONS: readonly RenderInvalidationReason[] = [
+  'layer-visibility',
+  'movement-preview',
+  'build-preview',
+  'hazard-preview',
+]
+
+const HAZARD_MODE_RENDER_REASONS: readonly RenderInvalidationReason[] = [
+  'layer-visibility',
+  'movement-preview',
+  'build-preview',
+  'hazard-preview',
+]
+
+const GROUND_LEVEL_RENDER_REASONS: readonly RenderInvalidationReason[] = [
+  'field-effect',
+  'movement-preview',
+  'token-style',
+]
+
+const DIMENSIONS_RENDER_REASONS: readonly RenderInvalidationReason[] = [
+  'resize',
+  'camera',
+  'terrain',
+  'field-effect',
+  'movement-preview',
+  'build-preview',
+  'hazard-preview',
+]
 
 export interface IsometricSceneWatcherActions {
   syncPokemonObjects: () => void
@@ -26,6 +91,7 @@ export interface IsometricSceneWatcherActions {
   buildGrid: () => void
   alignCameraToGrid: (initial: boolean) => void
   syncRendererSize: () => void
+  requestRender: (reasons: IsometricSceneWatcherRenderRequest) => void
 }
 
 export interface IsometricSceneWatcherSources {
@@ -45,6 +111,7 @@ export interface IsometricSceneWatcherSources {
   hazardSettings: WatchSource<unknown>
   groundLevelY: WatchSource<unknown>
   dimensionsKey: WatchSource<unknown>
+  activeTurnId?: WatchSource<unknown>
   isRendererReady: () => boolean
 }
 
@@ -65,6 +132,7 @@ export const useIsometricSceneWatchers = ({ sources, actions }: IsometricSceneWa
       actions.refreshMovementAfterStateChange()
       actions.syncDialogsFromPokemons()
       actions.replayBuildPreview()
+      actions.requestRender(TOKEN_OBJECT_RENDER_REASONS)
     },
     { deep: true },
   )
@@ -80,6 +148,7 @@ export const useIsometricSceneWatchers = ({ sources, actions }: IsometricSceneWa
       actions.refreshMovementAfterStateChange()
       actions.replayBuildPreview()
       actions.replayHazardPreview()
+      actions.requestRender(TERRAIN_RENDER_REASONS)
     },
   )
 
@@ -89,6 +158,7 @@ export const useIsometricSceneWatchers = ({ sources, actions }: IsometricSceneWa
       if (!sources.isRendererReady()) return
       actions.syncHazardMeshes()
       actions.replayHazardPreview()
+      actions.requestRender(HAZARD_RENDER_REASONS)
     },
   )
 
@@ -97,6 +167,7 @@ export const useIsometricSceneWatchers = ({ sources, actions }: IsometricSceneWa
     () => {
       if (!sources.isRendererReady()) return
       actions.syncFieldEffectMeshes()
+      actions.requestRender(FIELD_EFFECT_RENDER_REASONS)
     },
   )
 
@@ -120,10 +191,12 @@ export const useIsometricSceneWatchers = ({ sources, actions }: IsometricSceneWa
         actions.clearPreviewVisuals()
         actions.closeContextMenu()
         actions.disposePreviewOwner()
+        actions.requestRender(SELECTION_RENDER_REASONS)
         return
       }
 
       actions.resetMovementForSelectionChange()
+      actions.requestRender(SELECTION_RENDER_REASONS)
     },
   )
 
@@ -142,6 +215,7 @@ export const useIsometricSceneWatchers = ({ sources, actions }: IsometricSceneWa
       if (!sources.isRendererReady()) return
       actions.updateGridVisibility()
       actions.applyLayerVisibility()
+      actions.requestRender('layer-visibility')
     },
     { deep: true },
   )
@@ -162,6 +236,8 @@ export const useIsometricSceneWatchers = ({ sources, actions }: IsometricSceneWa
       } else {
         actions.hideBuildGhost()
       }
+
+      actions.requestRender(BUILD_MODE_RENDER_REASONS)
     },
   )
 
@@ -181,6 +257,8 @@ export const useIsometricSceneWatchers = ({ sources, actions }: IsometricSceneWa
       } else {
         actions.hideHazardGhost()
       }
+
+      actions.requestRender(HAZARD_MODE_RENDER_REASONS)
     },
   )
 
@@ -189,6 +267,7 @@ export const useIsometricSceneWatchers = ({ sources, actions }: IsometricSceneWa
     () => {
       if (!sources.isRendererReady() || !sources.buildMode()) return
       actions.replayBuildPreview()
+      actions.requestRender('build-preview')
     },
   )
 
@@ -197,6 +276,7 @@ export const useIsometricSceneWatchers = ({ sources, actions }: IsometricSceneWa
     () => {
       if (!sources.isRendererReady() || !sources.hazardMode()) return
       actions.replayHazardPreview()
+      actions.requestRender('hazard-preview')
     },
   )
 
@@ -205,6 +285,7 @@ export const useIsometricSceneWatchers = ({ sources, actions }: IsometricSceneWa
     () => {
       if (!sources.isRendererReady()) return
       actions.syncVoxelMeshes()
+      actions.requestRender('terrain')
     },
   )
 
@@ -214,6 +295,7 @@ export const useIsometricSceneWatchers = ({ sources, actions }: IsometricSceneWa
       if (!sources.isRendererReady()) return
       actions.syncFieldEffectMeshes()
       actions.refreshMovementAfterStateChange()
+      actions.requestRender(GROUND_LEVEL_RENDER_REASONS)
     },
   )
 
@@ -237,6 +319,18 @@ export const useIsometricSceneWatchers = ({ sources, actions }: IsometricSceneWa
       if (sources.hazardMode()) {
         actions.hideHazardGhost()
       }
+
+      actions.requestRender(DIMENSIONS_RENDER_REASONS)
     },
   )
+
+  if (sources.activeTurnId) {
+    watch(
+      sources.activeTurnId,
+      () => {
+        if (!sources.isRendererReady()) return
+        actions.requestRender('token-style')
+      },
+    )
+  }
 }
