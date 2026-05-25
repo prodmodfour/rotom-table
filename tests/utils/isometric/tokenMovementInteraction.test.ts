@@ -51,16 +51,19 @@ const makeController = () => {
   const getMoveGridIntersection = vi.fn(() => ({ x: 2.5, z: 2.5 }))
   const selectedState = { value: selected as SpawnedPokemon | null }
   const previewLayerY = { value: 0 }
+  const terrainRevision = { value: 'terrain-revision-a' as string | number | null }
   const getSelectedPokemon = vi.fn(() => selectedState.value)
   const getPokemons = vi.fn(() => pokemons)
   const getDimensions = vi.fn(() => dimensions)
   const getMapVoxels = vi.fn(() => voxels)
+  const getMapVoxelsRevision = vi.fn(() => terrainRevision.value)
 
   const controller = createIsometricTokenMovementInteractionController({
     getSelectedPokemon,
     getPokemons,
     getDimensions,
     getMapVoxels,
+    getMapVoxelsRevision,
     getPreviewLayerY: () => previewLayerY.value,
     getGroundLevelY: () => 0,
     getCamera: () => null,
@@ -79,6 +82,7 @@ const makeController = () => {
     dimensions,
     pokemons,
     voxels,
+    terrainRevision,
     renderer,
     emitPreviewChange,
     movePokemon,
@@ -88,6 +92,7 @@ const makeController = () => {
     getPokemons,
     getDimensions,
     getMapVoxels,
+    getMapVoxelsRevision,
   }
 }
 
@@ -99,6 +104,7 @@ describe('isometric token movement interaction', () => {
       renderer,
       emitPreviewChange,
       getMoveGridIntersection,
+      getMapVoxelsRevision,
       recordPathfindingRequest,
     } = makeController()
 
@@ -106,6 +112,7 @@ describe('isometric token movement interaction', () => {
 
     expect(getMoveGridIntersection).toHaveBeenCalledWith(pointer, 0)
     expect(recordPathfindingRequest).toHaveBeenCalledOnce()
+    expect(getMapVoxelsRevision).toHaveBeenCalledOnce()
     expect(renderer.ensure).toHaveBeenCalledWith(selected)
     expect(renderer.update).toHaveBeenCalledWith(expect.objectContaining({
       pokemon: selected,
@@ -126,13 +133,21 @@ describe('isometric token movement interaction', () => {
   })
 
   it('skips renderer and pathfinding work while the selected token and preview anchor are unchanged', () => {
-    const { controller, renderer, emitPreviewChange, getMapVoxels, recordPathfindingRequest } = makeController()
+    const {
+      controller,
+      renderer,
+      emitPreviewChange,
+      getMapVoxels,
+      getMapVoxelsRevision,
+      recordPathfindingRequest,
+    } = makeController()
 
     controller.updatePreviewAtAnchor({ x: 2, y: 0, z: 2 })
     renderer.ensure.mockClear()
     renderer.update.mockClear()
     emitPreviewChange.mockClear()
     getMapVoxels.mockClear()
+    getMapVoxelsRevision.mockClear()
     recordPathfindingRequest.mockClear()
 
     controller.updatePreviewAtAnchor({ x: 2, y: 0, z: 2 })
@@ -140,6 +155,7 @@ describe('isometric token movement interaction', () => {
     expect(renderer.ensure).not.toHaveBeenCalled()
     expect(renderer.update).not.toHaveBeenCalled()
     expect(getMapVoxels).not.toHaveBeenCalled()
+    expect(getMapVoxelsRevision).not.toHaveBeenCalled()
     expect(recordPathfindingRequest).not.toHaveBeenCalled()
     expect(emitPreviewChange).not.toHaveBeenCalled()
   })

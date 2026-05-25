@@ -36,6 +36,7 @@ export interface TokenMovementInteractionDependencies {
   getPokemons: () => SpawnedPokemon[]
   getDimensions: () => GridDimensions
   getMapVoxels: () => readonly MapVoxelV2[]
+  getMapVoxelsRevision?: () => string | number | null
   getPreviewLayerY: () => number
   getGroundLevelY: () => number
   getCamera: () => THREE.Camera | null
@@ -118,6 +119,7 @@ export const createIsometricTokenMovementInteractionController = (
         exceptId: selected.id,
         voxels: dependencies.getMapVoxels(),
         groundLevelY: dependencies.getGroundLevelY(),
+        terrainRevision: dependencies.getMapVoxelsRevision?.() ?? null,
       })
     }
     const path = movementPath?.path ?? null

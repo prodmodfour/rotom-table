@@ -59,7 +59,7 @@ Pointer movement can trigger hover updates, build/hazard previews, targeting, ra
 
 ### 4. Cache deterministic movement/pathfinding work
 
-Movement previews should reuse terrain indexes and path results keyed by selected token, start/goal, token dimensions, ground level, terrain revision, and placement revision. Cache invalidation must protect stale state when terrain, placements, dimensions, or selected tokens change.
+Movement previews should reuse terrain indexes and path results keyed by selected token, start/goal, token dimensions, ground level, terrain revision, and placement revision. The movement terrain index now uses the terrain-voxel revision to reuse the same indexed voxel lookup across repeated preview path queries until terrain changes. Cache invalidation must protect stale state when terrain, placements, dimensions, or selected tokens change.
 
 ### 5. Reuse renderer resources safely
 

@@ -939,6 +939,7 @@ const movementInteraction = createIsometricTokenMovementInteractionController({
   getPokemons: () => props.pokemons,
   getDimensions: () => props.dimensions,
   getMapVoxels: () => renderedTerrainVoxels.value,
+  getMapVoxelsRevision: () => terrainVoxelRevision.value,
   getPreviewLayerY,
   getGroundLevelY: normalizedGroundLevelY,
   getCamera: () => camera,
