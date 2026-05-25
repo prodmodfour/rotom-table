@@ -80,6 +80,7 @@ import {
 } from '~/utils/isometric/interactionTargets'
 import { createBuildGhostRenderer, createHazardGhostRenderer } from '~/utils/isometric/previewGhosts'
 import { createTokenMovePreviewRenderer } from '~/utils/isometric/tokenMovePreview'
+import { createTokenRenderGeometryCache } from '~/utils/isometric/tokenGeometryCache'
 import {
   createMoveAreaTemplateRenderer,
   createMoveAutomationFeedbackRenderer,
@@ -432,6 +433,7 @@ const {
 } = createIsometricSceneGraph()
 
 const renderObjects = new Map<string, PokemonRenderObject>()
+const tokenGeometryCache = createTokenRenderGeometryCache()
 const voxelRenderer = createVoxelRenderer(voxelContainer)
 const hazardRenderer = createHazardRenderer(hazardContainer)
 const fieldEffectRenderer = createFieldEffectRenderer(fieldEffectContainer)
@@ -680,6 +682,7 @@ const buildRenderObject = (pokemon: SpawnedPokemon): PokemonRenderObject =>
     scene,
     worldGroup,
     onTextureLoadComplete: requestTokenTextureRender,
+    geometryCache: tokenGeometryCache,
   })
 
 const applyRenderObjectPosition = (renderObject: PokemonRenderObject) => {
@@ -719,7 +722,9 @@ const syncPokemonObjects = () => {
     pokemons: props.pokemons,
     createRenderObject: buildRenderObject,
     onCreateRenderObject,
-    updateRenderObject: updatePokemonRenderObjectFromSpawn,
+    updateRenderObject: (renderObject, pokemon) => updatePokemonRenderObjectFromSpawn(renderObject, pokemon, {
+      geometryCache: tokenGeometryCache,
+    }),
     disposeRenderObject,
     clearHoverForToken: hoverController.clearIfHovered,
   })
@@ -1542,6 +1547,7 @@ onBeforeUnmount(() => {
   rendererBoundsCache.invalidate()
   tokenProxyPickTargets.clear()
   buildHazardPickTargets.clear()
+  tokenGeometryCache.dispose()
 })
 
 useIsometricSceneWatchers({

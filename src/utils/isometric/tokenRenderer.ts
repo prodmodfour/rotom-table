@@ -17,6 +17,11 @@ import {
   tokenSelectionLiftStyle,
 } from '~/utils/isometric/tokenRenderState'
 import type { PokemonRenderObject } from '~/utils/isometric/types'
+import type {
+  TokenGeometryLease,
+  TokenRenderGeometryCache,
+  TokenRenderGeometryLeases,
+} from '~/utils/isometric/tokenGeometryCache'
 import { tokenFacingVector } from '~/utils/tokenFacing'
 import {
   applyAnimationFrame,
@@ -40,12 +45,34 @@ export interface PokemonRenderObjectContainers {
   scene: THREE.Scene
   worldGroup: THREE.Group
   onTextureLoadComplete?: () => void
+  geometryCache?: TokenRenderGeometryCache
+}
+
+export interface PokemonRenderObjectUpdateOptions {
+  geometryCache?: TokenRenderGeometryCache
 }
 
 type TokenRenderDimensions = Pick<
   ReturnType<typeof pokemonRenderSpawnState>,
   'width' | 'height' | 'base' | 'clearance'
 >
+
+type TokenGeometryLeaseSlot = keyof TokenRenderGeometryLeases
+
+type TokenRenderableWithGeometry = THREE.Object3D & {
+  geometry?: THREE.BufferGeometry
+  material?: THREE.Material | THREE.Material[]
+}
+
+interface TokenGeometryReplacement<TGeometry extends THREE.BufferGeometry> {
+  geometry: TGeometry
+  lease?: TokenGeometryLease<TGeometry>
+}
+
+interface TokenVolumeGeometrySet {
+  volumeBox: TokenGeometryReplacement<THREE.BoxGeometry>
+  volumeEdges: TokenGeometryReplacement<THREE.EdgesGeometry>
+}
 
 const tokenDimensionsChanged = (
   renderObject: PokemonRenderObject,
@@ -57,20 +84,167 @@ const tokenDimensionsChanged = (
   renderObject.clearance !== spawnState.clearance
 )
 
-const replaceVolumeGeometry = (renderObject: PokemonRenderObject, base: number, clearance: number) => {
-  const volumeGeometry = new THREE.BoxGeometry(base, clearance, base)
-  const edgesGeometry = new THREE.EdgesGeometry(volumeGeometry)
+const acquireTokenVolumeGeometries = (
+  base: number,
+  clearance: number,
+  geometryCache: TokenRenderGeometryCache | undefined,
+): TokenVolumeGeometrySet => {
+  if (geometryCache) {
+    const volumeBox = geometryCache.acquireVolumeBoxGeometry(base, clearance)
+    const volumeEdges = geometryCache.acquireVolumeEdgesGeometry(base, clearance)
+    return {
+      volumeBox: { geometry: volumeBox.geometry, lease: volumeBox },
+      volumeEdges: { geometry: volumeEdges.geometry, lease: volumeEdges },
+    }
+  }
 
-  renderObject.volume.geometry.dispose()
-  renderObject.volume.geometry = volumeGeometry
-  renderObject.edges.geometry.dispose()
-  renderObject.edges.geometry = edgesGeometry
+  const volumeGeometry = new THREE.BoxGeometry(base, clearance, base)
+  return {
+    volumeBox: { geometry: volumeGeometry },
+    volumeEdges: { geometry: new THREE.EdgesGeometry(volumeGeometry) },
+  }
 }
 
-const replaceProxyGeometry = (renderObject: PokemonRenderObject, pokemon: SpawnedPokemon) => {
+const acquireTokenProxyGeometry = (
+  pokemon: SpawnedPokemon,
+  geometryCache: TokenRenderGeometryCache | undefined,
+): TokenGeometryReplacement<THREE.BoxGeometry> => {
   const pickSize = pokemonPickDimensions(pokemon)
-  renderObject.proxy.geometry.dispose()
-  renderObject.proxy.geometry = new THREE.BoxGeometry(pickSize.width, pickSize.height, pickSize.width)
+  if (geometryCache) {
+    const proxyBox = geometryCache.acquireProxyBoxGeometry(pickSize.width, pickSize.height)
+    return { geometry: proxyBox.geometry, lease: proxyBox }
+  }
+
+  return { geometry: new THREE.BoxGeometry(pickSize.width, pickSize.height, pickSize.width) }
+}
+
+const createTokenGeometryLeases = (
+  leases: TokenRenderGeometryLeases,
+): TokenRenderGeometryLeases | undefined => (
+  leases.volumeBox || leases.volumeEdges || leases.proxyBox ? leases : undefined
+)
+
+const tokenGeometryLease = (
+  renderObject: PokemonRenderObject,
+  slot: TokenGeometryLeaseSlot,
+): TokenGeometryLease<THREE.BufferGeometry> | undefined => {
+  const lease = renderObject.geometryLeases?.[slot]
+  return lease as TokenGeometryLease<THREE.BufferGeometry> | undefined
+}
+
+const setTokenGeometryLease = (
+  renderObject: PokemonRenderObject,
+  slot: TokenGeometryLeaseSlot,
+  lease: TokenGeometryLease<THREE.BufferGeometry> | undefined,
+) => {
+  if (lease) {
+    const leases = renderObject.geometryLeases ?? {}
+    ;(leases as Record<TokenGeometryLeaseSlot, TokenGeometryLease<THREE.BufferGeometry> | undefined>)[slot] = lease
+    renderObject.geometryLeases = leases
+    return
+  }
+
+  if (!renderObject.geometryLeases) return
+
+  delete renderObject.geometryLeases[slot]
+  if (
+    !renderObject.geometryLeases.volumeBox &&
+    !renderObject.geometryLeases.volumeEdges &&
+    !renderObject.geometryLeases.proxyBox
+  ) {
+    delete renderObject.geometryLeases
+  }
+}
+
+const releaseTokenGeometryLease = (
+  renderObject: PokemonRenderObject,
+  slot: TokenGeometryLeaseSlot,
+  currentGeometry: THREE.BufferGeometry | undefined,
+) => {
+  const lease = tokenGeometryLease(renderObject, slot)
+  if (lease) {
+    lease.release()
+    if (currentGeometry && currentGeometry !== lease.geometry) currentGeometry.dispose()
+  } else {
+    currentGeometry?.dispose()
+  }
+
+  setTokenGeometryLease(renderObject, slot, undefined)
+}
+
+const replaceTokenGeometry = <TGeometry extends THREE.BufferGeometry>(
+  renderObject: PokemonRenderObject,
+  slot: TokenGeometryLeaseSlot,
+  target: { geometry: TGeometry },
+  replacement: TokenGeometryReplacement<TGeometry>,
+) => {
+  const previousGeometry = target.geometry
+  target.geometry = replacement.geometry
+  releaseTokenGeometryLease(renderObject, slot, previousGeometry)
+  setTokenGeometryLease(
+    renderObject,
+    slot,
+    replacement.lease as TokenGeometryLease<THREE.BufferGeometry> | undefined,
+  )
+}
+
+const disposeTokenMaterial = (material: THREE.Material | THREE.Material[] | undefined) => {
+  if (Array.isArray(material)) {
+    for (const item of material) item.dispose()
+    return
+  }
+
+  material?.dispose()
+}
+
+const disposeTokenRenderableWithGeometryLease = (
+  renderObject: PokemonRenderObject,
+  slot: TokenGeometryLeaseSlot,
+  object: TokenRenderableWithGeometry,
+) => {
+  const rootLease = tokenGeometryLease(renderObject, slot)
+
+  object.parent?.remove(object)
+  object.traverse((child) => {
+    const renderable = child as TokenRenderableWithGeometry
+    const geometry = renderable.geometry
+    const material = renderable.material
+
+    if (child === object && rootLease) {
+      rootLease.release()
+      if (geometry && geometry !== rootLease.geometry) geometry.dispose()
+    } else {
+      geometry?.dispose()
+    }
+
+    disposeTokenMaterial(material)
+
+    if (typeof HTMLElement !== 'undefined' && 'element' in child && child.element instanceof HTMLElement) {
+      child.element.remove()
+    }
+  })
+  setTokenGeometryLease(renderObject, slot, undefined)
+  object.clear()
+}
+
+const replaceVolumeGeometry = (
+  renderObject: PokemonRenderObject,
+  base: number,
+  clearance: number,
+  geometryCache: TokenRenderGeometryCache | undefined,
+) => {
+  const geometries = acquireTokenVolumeGeometries(base, clearance, geometryCache)
+
+  replaceTokenGeometry(renderObject, 'volumeBox', renderObject.volume, geometries.volumeBox)
+  replaceTokenGeometry(renderObject, 'volumeEdges', renderObject.edges, geometries.volumeEdges)
+}
+
+const replaceProxyGeometry = (
+  renderObject: PokemonRenderObject,
+  pokemon: SpawnedPokemon,
+  geometryCache: TokenRenderGeometryCache | undefined,
+) => {
+  replaceTokenGeometry(renderObject, 'proxyBox', renderObject.proxy, acquireTokenProxyGeometry(pokemon, geometryCache))
 }
 
 const replaceShadowGeometry = (renderObject: PokemonRenderObject, pokemon: SpawnedPokemon) => {
@@ -82,6 +256,7 @@ const applyPokemonRenderObjectDimensions = (
   renderObject: PokemonRenderObject,
   pokemon: SpawnedPokemon,
   spawnState: TokenRenderDimensions,
+  options: PokemonRenderObjectUpdateOptions = {},
 ) => {
   renderObject.width = spawnState.width
   renderObject.height = spawnState.height
@@ -89,8 +264,8 @@ const applyPokemonRenderObjectDimensions = (
   renderObject.clearance = spawnState.clearance
 
   setWorldSpriteSize(renderObject.spriteState, spawnState)
-  replaceVolumeGeometry(renderObject, spawnState.base, spawnState.clearance)
-  replaceProxyGeometry(renderObject, pokemon)
+  replaceVolumeGeometry(renderObject, spawnState.base, spawnState.clearance, options.geometryCache)
+  replaceProxyGeometry(renderObject, pokemon, options.geometryCache)
   replaceShadowGeometry(renderObject, pokemon)
 }
 
@@ -106,16 +281,20 @@ export const createPokemonRenderObject = (
   const hpBar = buildHpBar(pokemon)
   const combatStageGlass = buildTokenCombatStageGlass()
   const shadow = buildContactShadow(pokemon)
-  const volumeGeometry = new THREE.BoxGeometry(pokemon.base, pokemon.clearance, pokemon.base)
+  const volumeGeometries = acquireTokenVolumeGeometries(
+    pokemon.base,
+    pokemon.clearance,
+    containers.geometryCache,
+  )
   // Per-face white/graphite shading sits in the foreground brightness band
   // so the cage reads above the terrain instead of merging with it.
   const volume = new THREE.Mesh(
-    volumeGeometry,
+    volumeGeometries.volumeBox.geometry,
     buildVolumeMaterials('idle', 0.28),
   )
 
   const edges = new THREE.LineSegments(
-    new THREE.EdgesGeometry(volumeGeometry),
+    volumeGeometries.volumeEdges.geometry,
     new THREE.LineBasicMaterial({
       color: 0xaeb5bd,
       transparent: true,
@@ -125,9 +304,9 @@ export const createPokemonRenderObject = (
     }),
   )
 
-  const pickSize = pokemonPickDimensions(pokemon)
+  const proxyGeometry = acquireTokenProxyGeometry(pokemon, containers.geometryCache)
   const proxy = new THREE.Mesh(
-    new THREE.BoxGeometry(pickSize.width, pickSize.height, pickSize.width),
+    proxyGeometry.geometry,
     new THREE.MeshBasicMaterial({
       transparent: true,
       opacity: 0,
@@ -136,6 +315,12 @@ export const createPokemonRenderObject = (
     }),
   )
   proxy.userData.pokemonId = pokemon.id
+
+  const geometryLeases = createTokenGeometryLeases({
+    volumeBox: volumeGeometries.volumeBox.lease,
+    volumeEdges: volumeGeometries.volumeEdges.lease,
+    proxyBox: proxyGeometry.lease,
+  })
 
   const spawnState = pokemonRenderSpawnState(pokemon)
   const currentCenter = new THREE.Vector3(spawnState.center.x, spawnState.center.y, spawnState.center.z)
@@ -162,6 +347,7 @@ export const createPokemonRenderObject = (
     edges,
     proxy,
     shadow,
+    ...(geometryLeases ? { geometryLeases } : {}),
     currentCenter,
     targetCenter,
     width: spawnState.width,
@@ -193,10 +379,11 @@ export const createPokemonRenderObject = (
 export const updatePokemonRenderObjectFromSpawn = (
   renderObject: PokemonRenderObject,
   pokemon: SpawnedPokemon,
+  options: PokemonRenderObjectUpdateOptions = {},
 ) => {
   const spawnState = pokemonRenderSpawnState(pokemon)
   if (tokenDimensionsChanged(renderObject, spawnState)) {
-    applyPokemonRenderObjectDimensions(renderObject, pokemon, spawnState)
+    applyPokemonRenderObjectDimensions(renderObject, pokemon, spawnState, options)
   }
   renderObject.targetCenter.set(spawnState.center.x, spawnState.center.y, spawnState.center.z)
   renderObject.elevation = spawnState.elevation
@@ -387,8 +574,8 @@ export const disposePokemonRenderObject = (renderObject: PokemonRenderObject) =>
   disposeObject3D(renderObject.elevationBadge)
   disposeObject3D(renderObject.hpBar)
   disposeTokenCombatStageGlass(renderObject.combatStageGlass)
-  disposeObject3D(renderObject.volume)
-  disposeObject3D(renderObject.edges)
-  disposeObject3D(renderObject.proxy)
+  disposeTokenRenderableWithGeometryLease(renderObject, 'volumeBox', renderObject.volume)
+  disposeTokenRenderableWithGeometryLease(renderObject, 'volumeEdges', renderObject.edges)
+  disposeTokenRenderableWithGeometryLease(renderObject, 'proxyBox', renderObject.proxy)
   disposeObject3D(renderObject.shadow)
 }
