@@ -57,7 +57,7 @@ Permission denials use safe reasons such as `gm-required`, `player-required`, `r
 
 ## GM start-session endpoint
 
-`POST /api/sessions/start` creates the first server-side identity and state record for a Track 2 table session. The route fails closed unless `ROTOM_ENABLE_SESSION_HOST=1` is present, and the server use case repeats that runtime-gate check before allocating anything. The route currently also requires the existing local GM role so the GM can start a session from the trusted local app, but that role picker is not public authentication; the returned session-local GM key is the credential future session management and WebSocket handshakes must validate.
+`POST /api/sessions/start` creates the first server-side identity and state record for a Track 2 table session. The route fails closed unless `ROTOM_ENABLE_SESSION_HOST=1` is present, and the server use case repeats that runtime-gate check before allocating anything. The route currently also requires the existing local GM role so the GM can start a session from the trusted local app, but that role picker is not public authentication; the returned session-local GM key is the credential GM management routes and future WebSocket handshakes must validate.
 
 A successful start creates an active in-memory session record, a session ID, a short player join code, a GM key, a GM client ID for the starting browser, an empty authoritative session state at revision `0`, and an initial local JSON snapshot. The response is shaped as session/join details rather than a whole-map autosave:
 
@@ -130,6 +130,73 @@ The server normalizes join-code casing/separators, sanitizes the display name in
 ```
 
 Duplicate display names are allowed because identity comes from the generated `playerId`, not the display label. The initial assignment record has no visible or controllable resources; later GM lobby/assignment routes decide what each player can see or command. Joining never gives a player whole-map save authority.
+
+## GM session management endpoint
+
+`POST /api/sessions/manage` returns the GM-facing lobby summary for one Track 2 table session. The route fails closed unless `ROTOM_ENABLE_SESSION_HOST=1` is present and requires the session-local `gmKey`; it must not rely on the trust-based local role picker as public authentication. The request body contains only the session identity and GM key, not map edits:
+
+```json
+{
+  "sessionId": "session_generated_table_id",
+  "gmKey": "gmkey_exampleGeneratedSecretValue01"
+}
+```
+
+A successful response lists the current session lifecycle status, the player join code, joined players, connected-client presence records, and the GM-managed assignment records that describe visible and controllable resources:
+
+```json
+{
+  "session": {
+    "sessionId": "session_generated_table_id",
+    "status": "active",
+    "revision": 1,
+    "selectedMapSlug": "viridian-gym",
+    "createdAt": "2026-05-25T12:00:00.000Z",
+    "updatedAt": "2026-05-25T12:01:00.000Z",
+    "playerCount": 1,
+    "connectedClientCount": 1,
+    "assignmentCount": 1,
+    "mapCount": 1
+  },
+  "join": {
+    "joinCode": "ABCD2345"
+  },
+  "players": [
+    {
+      "playerId": "player_generated_id",
+      "displayName": "Misty",
+      "joinedAt": "2026-05-25T12:01:00.000Z",
+      "updatedAt": "2026-05-25T12:01:00.000Z"
+    }
+  ],
+  "connectedClients": [
+    {
+      "clientId": "client_generated_browser_id",
+      "actor": {
+        "role": "player",
+        "playerId": "player_generated_id",
+        "clientId": "client_generated_browser_id",
+        "displayName": "Misty"
+      },
+      "status": "connected",
+      "connectedAt": "2026-05-25T12:01:05.000Z",
+      "lastSeenAt": "2026-05-25T12:01:30.000Z",
+      "lastSeenRevision": 1
+    }
+  ],
+  "assignments": [
+    {
+      "playerId": "player_generated_id",
+      "displayName": "Misty",
+      "controllableResources": [],
+      "visibleResources": [],
+      "updatedAt": "2026-05-25T12:01:00.000Z"
+    }
+  ]
+}
+```
+
+The response intentionally excludes the GM key. It may include an ended session's status for GM inspection, but ended sessions remain absent from active join-code lookups. This endpoint is read-only: assignment mutation and player-facing filtered state are later ticket boundaries.
 
 ## Client identity continuity helper
 

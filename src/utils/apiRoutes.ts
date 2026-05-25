@@ -3,6 +3,7 @@ export const API_EVENTS_PATH = '/api/events' as const
 export const SESSION_API_PATHS = {
   start: '/api/sessions/start',
   join: '/api/sessions/join',
+  manage: '/api/sessions/manage',
 } as const
 
 export const MAP_API_PATHS = {
