@@ -65,6 +65,7 @@ import { createHazardRenderer } from '~/utils/isometric/hazardRenderer'
 import { createFieldEffectRenderer } from '~/utils/isometric/fieldEffectRenderer'
 import { createGridRenderer } from '~/utils/isometric/gridRenderer'
 import {
+  createRendererPointerBoundsCache,
   getMoveGridIntersectionFromPointer,
   pickBuildTargetFromPointer,
   pickHazardTargetFromPointer,
@@ -444,6 +445,7 @@ let cleanupResizeObserver: (() => void) | null = null
 let renderScheduler: IsometricRenderScheduler | null = null
 let rendererSizeState: IsometricRendererSizeState | null = null
 const pointerTracker = createPointerTravelTracker()
+const rendererBoundsCache = createRendererPointerBoundsCache()
 const renderFrameTimingSampler = createRenderFrameTimingSampler()
 
 const readRenderMetricsNowMs = (): number => {
@@ -494,6 +496,8 @@ const sampleRendererInfoForMetricsOverlay = () => {
 const getPreviewLayerY = () => movementInteraction.activeAnchor()?.y ?? selectedPokemon.value?.position.y ?? 0
 
 const syncRendererSize = (): boolean => {
+  rendererBoundsCache.invalidate()
+
   if (!renderer || !cssRenderer || !camera || !container.value) {
     return false
   }
@@ -680,6 +684,7 @@ const pickPokemonId = (event: MouseEvent | PointerEvent) =>
     camera,
     raycaster,
     renderObjects: renderObjects.values(),
+    boundsCache: rendererBoundsCache,
   })
 
 const moveTargetingCandidateIdSet = () => new Set(props.moveAutomationTargeting?.candidateIds ?? [])
@@ -804,6 +809,7 @@ const getMoveGridIntersection = (event: MouseEvent | PointerEvent, yLevel: numbe
     renderer,
     camera,
     raycaster,
+    boundsCache: rendererBoundsCache,
   })
 
 const moveAreaDirectionFromPointer = (event: MouseEvent | PointerEvent): MoveAutomationAreaDirection | null => {
@@ -875,6 +881,7 @@ const pickBuildTarget = (
     pokemons: props.pokemons,
     allVoxelOccupancy: allVoxelOccupancy.value,
     mapMovementOccupancy: mapMovementOccupancy.value,
+    boundsCache: rendererBoundsCache,
   })
 
 const buildInteraction = createIsometricBuildInteractionController({
@@ -909,6 +916,7 @@ const pickHazardTarget = (
     hazards: renderedHazards.value,
     dimensions: props.dimensions,
     groundLevelY: normalizedGroundLevelY(),
+    boundsCache: rendererBoundsCache,
   })
 
 const hazardInteraction = createIsometricHazardInteractionController({
@@ -979,10 +987,12 @@ const {
 } = pointerInteraction
 
 const handleRightClick = (event: MouseEvent) => {
+  rendererBoundsCache.invalidate()
   handleRightClickRaw(event)
   requestRenderAfterPointerInteraction()
 }
 const handlePointerDown = (event: PointerEvent) => {
+  rendererBoundsCache.invalidate()
   handlePointerDownRaw(event)
   requestRenderAfterPointerInteraction()
 }
@@ -1392,6 +1402,7 @@ onBeforeUnmount(() => {
   cssRenderer = null
   camera = null
   rendererSizeState = null
+  rendererBoundsCache.invalidate()
 })
 
 useIsometricSceneWatchers({

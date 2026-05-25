@@ -7,15 +7,73 @@ import type { BuildTarget, HazardTarget, PokemonRenderObject } from '~/utils/iso
 
 export type PointerCoords = Pick<MouseEvent | PointerEvent, 'clientX' | 'clientY'>
 
+export interface RendererPointerBounds {
+  readonly left: number
+  readonly top: number
+  readonly width: number
+  readonly height: number
+}
+
+export interface RendererPointerBoundsCache {
+  read(renderer: THREE.WebGLRenderer | null): RendererPointerBounds | null
+  invalidate(): void
+  snapshot(): RendererPointerBounds | null
+}
+
+const copyRendererPointerBounds = (bounds: RendererPointerBounds): RendererPointerBounds => ({
+  left: bounds.left,
+  top: bounds.top,
+  width: bounds.width,
+  height: bounds.height,
+})
+
+const readRendererPointerBounds = (renderer: THREE.WebGLRenderer): RendererPointerBounds => (
+  copyRendererPointerBounds(renderer.domElement.getBoundingClientRect())
+)
+
+export const createRendererPointerBoundsCache = (): RendererPointerBoundsCache => {
+  let cachedElement: Element | null = null
+  let cachedBounds: RendererPointerBounds | null = null
+
+  const invalidate = () => {
+    cachedElement = null
+    cachedBounds = null
+  }
+
+  return {
+    read(renderer) {
+      if (!renderer) {
+        invalidate()
+        return null
+      }
+
+      const element = renderer.domElement
+      if (cachedElement !== element || !cachedBounds) {
+        cachedElement = element
+        cachedBounds = readRendererPointerBounds(renderer)
+      }
+
+      return cachedBounds
+    },
+    invalidate,
+    snapshot: () => cachedBounds ? copyRendererPointerBounds(cachedBounds) : null,
+  }
+}
+
 export const setRaycasterFromPointer = (options: {
   coords: PointerCoords
   renderer: THREE.WebGLRenderer | null
   camera: THREE.Camera | null
   raycaster: THREE.Raycaster
+  boundsCache?: RendererPointerBoundsCache
 }) => {
   if (!options.renderer || !options.camera) return null
 
-  const bounds = options.renderer.domElement.getBoundingClientRect()
+  const bounds = options.boundsCache
+    ? options.boundsCache.read(options.renderer)
+    : readRendererPointerBounds(options.renderer)
+  if (!bounds) return null
+
   const pointer = new THREE.Vector2(
     ((options.coords.clientX - bounds.left) / bounds.width) * 2 - 1,
     -((options.coords.clientY - bounds.top) / bounds.height) * 2 + 1,
@@ -31,12 +89,14 @@ export const pickPokemonIdFromPointer = (options: {
   camera: THREE.Camera | null
   raycaster: THREE.Raycaster
   renderObjects: Iterable<PokemonRenderObject>
+  boundsCache?: RendererPointerBoundsCache
 }) => {
   if (!setRaycasterFromPointer({
     coords: options.event,
     renderer: options.renderer,
     camera: options.camera,
     raycaster: options.raycaster,
+    boundsCache: options.boundsCache,
   })) return null
 
   const proxies = Array.from(options.renderObjects, (renderObject) => renderObject.proxy)
@@ -52,12 +112,14 @@ export const getMoveGridIntersectionFromPointer = (options: {
   renderer: THREE.WebGLRenderer | null
   camera: THREE.Camera | null
   raycaster: THREE.Raycaster
+  boundsCache?: RendererPointerBoundsCache
 }) => {
   if (!setRaycasterFromPointer({
     coords: options.event,
     renderer: options.renderer,
     camera: options.camera,
     raycaster: options.raycaster,
+    boundsCache: options.boundsCache,
   })) {
     return null
   }
@@ -83,12 +145,14 @@ export const pickBuildTargetFromPointer = (options: {
   pokemons: SpawnedPokemon[]
   allVoxelOccupancy: ReadonlySet<string>
   mapMovementOccupancy: ReadonlySet<string>
+  boundsCache?: RendererPointerBoundsCache
 }): BuildTarget | null => {
   if (!setRaycasterFromPointer({
     coords: options.event,
     renderer: options.renderer,
     camera: options.camera,
     raycaster: options.raycaster,
+    boundsCache: options.boundsCache,
   })) return null
 
   const targets: THREE.Object3D[] = []
@@ -190,12 +254,14 @@ export const pickHazardTargetFromPointer = (options: {
   hazards: MapHazardV2[]
   dimensions: GridDimensions
   groundLevelY: number
+  boundsCache?: RendererPointerBoundsCache
 }): HazardTarget | null => {
   if (!setRaycasterFromPointer({
     coords: options.event,
     renderer: options.renderer,
     camera: options.camera,
     raycaster: options.raycaster,
+    boundsCache: options.boundsCache,
   })) return null
 
   const targets: THREE.Object3D[] = []
