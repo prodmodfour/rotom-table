@@ -63,7 +63,7 @@ Movement previews now reuse both terrain indexes and path results keyed by selec
 
 ### 5. Reuse renderer resources safely
 
-Avoid disposing and rebuilding equivalent geometry, buffers, overlays, and target lists when semantic inputs are unchanged. Shared voxel/token geometries, movement preview line buffers, CSS3D dirty tracking, layer-visibility short-circuits, renderer size guards, and weather allocation reductions are preferred as long as particle counts, colours, opacity, and motion semantics remain equivalent.
+Avoid disposing and rebuilding equivalent geometry, buffers, overlays, and target lists when semantic inputs are unchanged. Movement-preview path trails now keep one dynamic `BufferGeometry` per preview renderer and update its position attribute/draw range instead of disposing and recreating geometry for every preview change. Shared voxel/token geometries, CSS3D dirty tracking, layer-visibility short-circuits, renderer size guards, and weather allocation reductions remain preferred as long as particle counts, colours, opacity, and motion semantics stay equivalent.
 
 ### 6. Validate and audit
 
