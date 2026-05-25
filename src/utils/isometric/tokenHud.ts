@@ -34,6 +34,61 @@ export const buildElevationBadge = (ghost = false) => {
   return badge
 }
 
+interface ElevationBadgeRenderState {
+  visible: boolean
+  textContent: string
+  x: number
+  y: number
+  z: number
+}
+
+const ELEVATION_BADGE_RENDER_STATE_KEY = 'rotomElevationBadgeRenderState'
+
+const elevationBadgeRenderState = (badge: CSS3DSprite): ElevationBadgeRenderState | null => {
+  const state = badge.userData[ELEVATION_BADGE_RENDER_STATE_KEY]
+  if (!state || typeof state !== 'object') return null
+
+  const maybeState = state as Partial<ElevationBadgeRenderState>
+  return typeof maybeState.visible === 'boolean'
+    && typeof maybeState.textContent === 'string'
+    && typeof maybeState.x === 'number'
+    && typeof maybeState.y === 'number'
+    && typeof maybeState.z === 'number'
+    ? maybeState as ElevationBadgeRenderState
+    : null
+}
+
+const rememberElevationBadgeRenderState = (
+  badge: CSS3DSprite,
+  state: ElevationBadgeRenderState,
+) => {
+  badge.userData[ELEVATION_BADGE_RENDER_STATE_KEY] = state
+}
+
+const setElevationBadgeHidden = (badge: CSS3DSprite) => {
+  const previous = elevationBadgeRenderState(badge)
+  if (previous?.visible === false && !badge.visible) return
+
+  badge.visible = false
+  rememberElevationBadgeRenderState(badge, {
+    visible: false,
+    textContent: badge.element.textContent ?? '',
+    x: badge.position.x,
+    y: badge.position.y,
+    z: badge.position.z,
+  })
+}
+
+const sameElevationBadgeRenderState = (
+  previous: ElevationBadgeRenderState | null,
+  next: ElevationBadgeRenderState,
+): boolean => Boolean(previous
+  && previous.visible === next.visible
+  && previous.textContent === next.textContent
+  && previous.x === next.x
+  && previous.y === next.y
+  && previous.z === next.z)
+
 export const updateElevationBadge = ({
   badge,
   center,
@@ -53,14 +108,29 @@ export const updateElevationBadge = ({
 }) => {
   const localY = mapSpecificY(elevation, groundLevelY)
   if (!show || localY === 0) {
-    badge.visible = false
+    setElevationBadgeHidden(badge)
     return
   }
 
   const offset = getElevationBadgeOffset(center, base, camera)
-  badge.position.set(center.x + offset.x, center.y + 0.08, center.z + offset.z)
-  badge.element.textContent = formatElevationDelta(localY)
+  const nextState: ElevationBadgeRenderState = {
+    visible: true,
+    textContent: formatElevationDelta(localY),
+    x: center.x + offset.x,
+    y: center.y + 0.08,
+    z: center.z + offset.z,
+  }
+
+  if (badge.visible && sameElevationBadgeRenderState(elevationBadgeRenderState(badge), nextState)) {
+    return
+  }
+
+  badge.position.set(nextState.x, nextState.y, nextState.z)
+  if (badge.element.textContent !== nextState.textContent) {
+    badge.element.textContent = nextState.textContent
+  }
   badge.visible = true
+  rememberElevationBadgeRenderState(badge, nextState)
 }
 
 const TOKEN_LEVEL_PREFIX_TEXT = 'Lv'

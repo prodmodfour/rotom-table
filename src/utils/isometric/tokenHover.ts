@@ -36,8 +36,8 @@ export const createIsometricTokenHoverController = <TRenderObject extends HoverB
 
   const id = () => hoveredId
 
-  const set = (nextId: string | null) => {
-    if (hoveredId === nextId) return
+  const set = (nextId: string | null): boolean => {
+    if (hoveredId === nextId) return false
 
     const previousId = hoveredId
     hoveredId = nextId
@@ -53,12 +53,14 @@ export const createIsometricTokenHoverController = <TRenderObject extends HoverB
     }
 
     dependencies.onHoverChange?.(nextId, previousId)
+    return true
   }
 
-  const clear = () => set(null)
+  const clear = (): boolean => set(null)
 
-  const clearIfHovered = (idToClear: string) => {
-    if (hoveredId === idToClear) clear()
+  const clearIfHovered = (idToClear: string): boolean => {
+    if (hoveredId !== idToClear) return false
+    return clear()
   }
 
   return {
