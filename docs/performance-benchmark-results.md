@@ -31,3 +31,4 @@ The fixture generator was refreshed before the pass so the browser-observed toke
 - Typical and stress idle windows intentionally kept rendering because animated weather/field effects were visible. The empty map confirms the settled no-animation path stops duplicate idle RAF/render work.
 - Movement-preview cache notes use repeated anchors on the same selected token. Hits appear after the first visit to an unchanged terrain/placement key; immediately repeated identical anchors are short-circuited earlier and do not increment cache counters.
 - Browser console after the final pass had no app errors or warnings beyond normal Nuxt dev informational logs.
+- The [Track 1 no-quality-loss audit](performance-no-quality-loss-audit.md) records the final visual-quality and functionality review for this benchmark branch.

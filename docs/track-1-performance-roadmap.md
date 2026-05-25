@@ -67,7 +67,7 @@ Avoid disposing and rebuilding equivalent geometry, buffers, overlays, and targe
 
 ### 6. Validate and audit
 
-Finish with repeatable benchmark notes, resource cleanup coverage, and a no-quality-loss audit. Any optimization that changes output should be treated as a bug unless it is an intentional, separately reviewed product change.
+Finish with repeatable benchmark notes, resource cleanup coverage, and a no-quality-loss audit. The [Track 1 no-quality-loss audit](performance-no-quality-loss-audit.md) records the integrated review that found no intentional visual-quality or functionality reduction. Any optimization that changes output should be treated as a bug unless it is an intentional, separately reviewed product change.
 
 ## Validation expectations
 

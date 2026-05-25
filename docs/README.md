@@ -15,6 +15,7 @@ This directory collects presentation and reviewer documentation for Rotom Table.
 - [Performance benchmark fixtures](performance-benchmark-fixtures.md) — local fixture generator and manual checklist for reproducing benchmark maps without private campaign data.
 - [Performance benchmark runbook](performance-benchmark-runbook.md) — step-by-step before/after measurement workflow and debug overlay interpretation guide.
 - [Track 1 integrated benchmark pass](performance-benchmark-results.md) — recorded empty, typical, and stress fixture measurements from the integrated Track 1 branch.
+- [Track 1 no-quality-loss audit](performance-no-quality-loss-audit.md) — final Track 1 audit confirming no intentional visual-quality or functionality reduction.
 - [Performance guardrails](performance-guardrails.md) — reviewer checklist and automated checks that prevent performance work from reducing visual quality or map functionality.
 - [Fan project notice](fan-project-notice.md) — unofficial fan-project boundaries.
 
