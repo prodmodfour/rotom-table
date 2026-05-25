@@ -129,7 +129,7 @@ The server normalizes join-code casing/separators, sanitizes the display name in
 }
 ```
 
-Duplicate display names are allowed because identity comes from the generated `playerId`, not the display label. The initial assignment record has no visible or controllable resources; later GM lobby/assignment routes decide what each player can see or command. Joining never gives a player whole-map save authority.
+Duplicate display names are allowed because identity comes from the generated `playerId`, not the display label. The initial assignment record has no visible or controllable resources; the GM player-assignment endpoint decides which sheets/tokens each player can see or command. Joining never gives a player whole-map save authority.
 
 ## GM session management endpoint
 
@@ -196,7 +196,78 @@ A successful response lists the current session lifecycle status, the player joi
 }
 ```
 
-The response intentionally excludes the GM key. It may include an ended session's status for GM inspection, but ended sessions remain absent from active join-code lookups. This endpoint is read-only; assignment mutation remains a later ticket boundary.
+The response intentionally excludes the GM key. It may include an ended session's status for GM inspection, but ended sessions remain absent from active join-code lookups. This endpoint is read-only; assignment mutation uses the GM player-assignment endpoint below.
+
+## GM player-assignment endpoint
+
+`POST /api/sessions/assignments` lets the GM assign or unassign player-controllable `sheet` and `token` resources for one joined player. The route fails closed unless `ROTOM_ENABLE_SESSION_HOST=1` is present, requires the session-local `gmKey`, and only updates active sessions. It does not accept `map` resources as controllable assignments, and it does not trust the local role picker or player-supplied actors as public authentication.
+
+```json
+{
+  "sessionId": "session_generated_table_id",
+  "gmKey": "gmkey_exampleGeneratedSecretValue01",
+  "gmClientId": "client_gm_browser_id",
+  "playerId": "player_generated_id",
+  "action": "assign",
+  "resources": [
+    { "kind": "sheet", "sheetKind": "trainer", "sheetSlug": "misty" },
+    {
+      "kind": "token",
+      "tokenId": "token-starmie",
+      "mapSlug": "viridian-gym",
+      "sheetKind": "pokemon",
+      "sheetSlug": "starmie"
+    }
+  ]
+}
+```
+
+Accepted assignment updates advance the authoritative session revision, update the player's assignment record, and write a local session snapshot. Assigning a sheet/token adds it to both `controllableResources` and `visibleResources` so later permission checks can allow player control. Unassigning removes matching sheet/token control and exact sheet/token visibility while preserving unrelated visible maps. Duplicate resources are collapsed rather than stored multiple times.
+
+```json
+{
+  "session": {
+    "sessionId": "session_generated_table_id",
+    "status": "active",
+    "revision": 2,
+    "createdAt": "2026-05-25T12:00:00.000Z",
+    "updatedAt": "2026-05-25T12:02:00.000Z"
+  },
+  "player": {
+    "playerId": "player_generated_id",
+    "displayName": "Misty",
+    "joinedAt": "2026-05-25T12:01:00.000Z",
+    "updatedAt": "2026-05-25T12:01:00.000Z"
+  },
+  "assignment": {
+    "playerId": "player_generated_id",
+    "displayName": "Misty",
+    "controllableResources": [
+      { "kind": "sheet", "sheetKind": "trainer", "sheetSlug": "misty" },
+      { "kind": "token", "tokenId": "token-starmie", "mapSlug": "viridian-gym" }
+    ],
+    "visibleResources": [
+      { "kind": "sheet", "sheetKind": "trainer", "sheetSlug": "misty" },
+      { "kind": "token", "tokenId": "token-starmie", "mapSlug": "viridian-gym" }
+    ],
+    "updatedAt": "2026-05-25T12:02:00.000Z",
+    "updatedByClientId": "client_gm_browser_id"
+  },
+  "change": {
+    "action": "assign",
+    "resources": [
+      { "kind": "sheet", "sheetKind": "trainer", "sheetSlug": "misty" },
+      { "kind": "token", "tokenId": "token-starmie", "mapSlug": "viridian-gym" }
+    ]
+  },
+  "snapshot": {
+    "writtenAt": "2026-05-25T12:02:00.000Z",
+    "revision": 2
+  }
+}
+```
+
+The response excludes the GM key and join code. If snapshot persistence fails, the server rolls back the in-memory assignment update so reconnect/player-state reads do not observe a revision that was not persisted.
 
 ## Player session-state endpoint
 
