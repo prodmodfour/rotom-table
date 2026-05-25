@@ -7,6 +7,7 @@ export type IsometricSceneWatcherRenderRequest =
 
 const TOKEN_OBJECT_RENDER_REASONS: readonly RenderInvalidationReason[] = [
   'tokens',
+  'token-style',
   'movement-preview',
   'build-preview',
 ]

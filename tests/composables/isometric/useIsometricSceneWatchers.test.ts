@@ -256,6 +256,7 @@ describe('useIsometricSceneWatchers', () => {
     expect(harness.actions.replayHazardPreview).toHaveBeenCalledTimes(1)
     expect(harness.actions.requestRender).toHaveBeenCalledWith([
       'tokens',
+      'token-style',
       'movement-preview',
       'build-preview',
     ])
@@ -264,6 +265,26 @@ describe('useIsometricSceneWatchers', () => {
       'movement-preview',
       'build-preview',
       'hazard-preview',
+    ])
+
+    vi.clearAllMocks()
+    const token = harness.pokemons.value[0] as {
+      currentHp: number
+      combatStages: { atk: number }
+      conditions: string[]
+    }
+    token.currentHp = 7
+    token.combatStages = { atk: 1 }
+    token.conditions = ['Burned']
+    await nextTick()
+
+    expect(harness.actions.syncPokemonObjects).toHaveBeenCalledTimes(1)
+    expect(harness.actions.syncDialogsFromPokemons).toHaveBeenCalledTimes(1)
+    expect(harness.actions.requestRender).toHaveBeenLastCalledWith([
+      'tokens',
+      'token-style',
+      'movement-preview',
+      'build-preview',
     ])
     harness.stop()
   })

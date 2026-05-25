@@ -4,21 +4,24 @@ import { createIsometricTokenHoverController } from '~/utils/isometric/tokenHove
 const makeObject = () => ({ elevationBadge: { visible: true } })
 
 describe('isometric token hover controller', () => {
-  it('tracks hovered ids and updates the active render object', () => {
+  it('tracks hovered ids, updates the active render object, and reports changes', () => {
     const objects = new Map([
       ['a', makeObject()],
       ['b', makeObject()],
     ])
     const updateHoveredRenderObject = vi.fn()
+    const onHoverChange = vi.fn()
     const controller = createIsometricTokenHoverController({
       getRenderObject: (id) => objects.get(id),
       updateHoveredRenderObject,
+      onHoverChange,
     })
 
     controller.set('a')
 
     expect(controller.id()).toBe('a')
     expect(updateHoveredRenderObject).toHaveBeenCalledWith(objects.get('a'))
+    expect(onHoverChange).toHaveBeenCalledWith('a', null)
   })
 
   it('hides the previous badge when the hover target changes or clears', () => {
@@ -46,9 +49,11 @@ describe('isometric token hover controller', () => {
     const current = makeObject()
     const objects = new Map([['a', current]])
     const updateHoveredRenderObject = vi.fn()
+    const onHoverChange = vi.fn()
     const controller = createIsometricTokenHoverController({
       getRenderObject: (id) => objects.get(id),
       updateHoveredRenderObject,
+      onHoverChange,
     })
 
     controller.set('a')
@@ -56,11 +61,13 @@ describe('isometric token hover controller', () => {
     controller.clearIfHovered('b')
 
     expect(updateHoveredRenderObject).toHaveBeenCalledOnce()
+    expect(onHoverChange).toHaveBeenCalledOnce()
     expect(controller.id()).toBe('a')
 
     controller.clearIfHovered('a')
 
     expect(controller.id()).toBeNull()
     expect(current.elevationBadge.visible).toBe(false)
+    expect(onHoverChange).toHaveBeenLastCalledWith(null, 'a')
   })
 })

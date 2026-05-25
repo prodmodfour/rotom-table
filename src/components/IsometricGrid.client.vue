@@ -579,6 +579,7 @@ const hoverController = createIsometricTokenHoverController({
     camera,
     show: visibleLayers().tokens,
   }),
+  onHoverChange: () => requestScheduledSceneFrame('token-style'),
 })
 
 const setHoveredPokemonId = hoverController.set

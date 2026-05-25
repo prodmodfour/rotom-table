@@ -9,6 +9,7 @@ export interface HoverBadgeRenderObject {
 export interface TokenHoverControllerDependencies<TRenderObject extends HoverBadgeRenderObject> {
   getRenderObject: (id: string) => TRenderObject | undefined
   updateHoveredRenderObject: (renderObject: TRenderObject) => void
+  onHoverChange?: (nextId: string | null, previousId: string | null) => void
 }
 
 export const updateHoveredPokemonElevationBadge = (
@@ -46,10 +47,12 @@ export const createIsometricTokenHoverController = <TRenderObject extends HoverB
       if (previous) previous.elevationBadge.visible = false
     }
 
-    if (!nextId) return
+    if (nextId) {
+      const next = dependencies.getRenderObject(nextId)
+      if (next) dependencies.updateHoveredRenderObject(next)
+    }
 
-    const next = dependencies.getRenderObject(nextId)
-    if (next) dependencies.updateHoveredRenderObject(next)
+    dependencies.onHoverChange?.(nextId, previousId)
   }
 
   const clear = () => set(null)
