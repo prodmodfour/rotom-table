@@ -22,6 +22,7 @@ export interface WorldSpriteState {
   textureRepeat: THREE.Vector2
   textureOffset: THREE.Vector2
   mirroredX: boolean
+  onTextureLoadComplete: (() => void) | null
   ghost: boolean
   invalid: boolean
 }

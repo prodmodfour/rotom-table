@@ -36,6 +36,12 @@ export type ShadowSurfaceResolver = (
   footY: number,
 ) => number
 
+export interface PokemonRenderObjectContainers {
+  scene: THREE.Scene
+  worldGroup: THREE.Group
+  onTextureLoadComplete?: () => void
+}
+
 type TokenRenderDimensions = Pick<
   ReturnType<typeof pokemonRenderSpawnState>,
   'width' | 'height' | 'base' | 'clearance'
@@ -90,12 +96,11 @@ const applyPokemonRenderObjectDimensions = (
 
 export const createPokemonRenderObject = (
   pokemon: SpawnedPokemon,
-  containers: {
-    scene: THREE.Scene
-    worldGroup: THREE.Group
-  },
+  containers: PokemonRenderObjectContainers,
 ): PokemonRenderObject => {
-  const spriteState = buildWorldSprite(pokemon)
+  const spriteState = buildWorldSprite(pokemon, {
+    onTextureLoadComplete: containers.onTextureLoadComplete,
+  })
   const sprite = spriteState.sprite
   const elevationBadge = buildElevationBadge()
   const hpBar = buildHpBar(pokemon)

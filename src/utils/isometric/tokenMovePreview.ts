@@ -28,6 +28,7 @@ import {
 export const createTokenMovePreviewRenderer = (containers: {
   scene: THREE.Scene
   group: THREE.Group
+  onTextureLoadComplete?: () => void
 }) => {
   let ghostSprite: THREE.Sprite | null = null
   let ghostSpriteState: WorldSpriteState | null = null
@@ -86,7 +87,10 @@ export const createTokenMovePreviewRenderer = (containers: {
     ensurePathLine()
 
     ownerId = pokemon.id
-    ghostSpriteState = buildWorldSprite(pokemon, true)
+    ghostSpriteState = buildWorldSprite(pokemon, {
+      ghost: true,
+      onTextureLoadComplete: containers.onTextureLoadComplete,
+    })
     ghostSprite = ghostSpriteState.sprite
     setWorldSpriteVisible(ghostSpriteState, false)
     containers.group.add(ghostSpriteState.halo)

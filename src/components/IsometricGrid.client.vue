@@ -424,7 +424,11 @@ const fieldEffectRenderer = createFieldEffectRenderer(fieldEffectContainer)
 const gridRenderer = createGridRenderer(gridGroup)
 const buildGhostRenderer = createBuildGhostRenderer(previewGroup)
 const hazardGhostRenderer = createHazardGhostRenderer(previewGroup)
-const tokenMovePreviewRenderer = createTokenMovePreviewRenderer({ scene, group: previewGroup })
+const tokenMovePreviewRenderer = createTokenMovePreviewRenderer({
+  scene,
+  group: previewGroup,
+  onTextureLoadComplete: requestTokenTextureRender,
+})
 const moveTargetingReticleRenderer = createMoveTargetingReticleRenderer(scene)
 const moveAreaTemplateRenderer = createMoveAreaTemplateRenderer(scene)
 const moveAutomationFeedbackRenderer = createMoveAutomationFeedbackRenderer(scene)
@@ -580,7 +584,11 @@ const hoverController = createIsometricTokenHoverController({
 const setHoveredPokemonId = hoverController.set
 
 const buildRenderObject = (pokemon: SpawnedPokemon): PokemonRenderObject =>
-  createPokemonRenderObject(pokemon, { scene, worldGroup })
+  createPokemonRenderObject(pokemon, {
+    scene,
+    worldGroup,
+    onTextureLoadComplete: requestTokenTextureRender,
+  })
 
 const applyRenderObjectPosition = (renderObject: PokemonRenderObject) => {
   applyPokemonRenderObjectPosition(renderObject, {
@@ -1220,6 +1228,10 @@ function resolveSceneAnimationContinuation() {
 function requestScheduledSceneFrame(reason: IsometricRenderSchedulerReasonInput) {
   renderScheduler?.requestRender(reason)
   renderScheduler?.setActiveAnimation(resolveSceneAnimationContinuation().active)
+}
+
+function requestTokenTextureRender() {
+  requestScheduledSceneFrame('token-texture')
 }
 
 const renderOneShotScheduledFrame = (frame: IsometricScheduledRenderFrame): boolean => {
