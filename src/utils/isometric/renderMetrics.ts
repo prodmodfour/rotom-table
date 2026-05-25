@@ -85,6 +85,8 @@ export interface PointerInteractionMetrics {
   raycastCount: number
   raycastCounts: PointerRaycastKindCounts
   pathfindingRequestCount: number
+  pathfindingCacheHitCount: number
+  pathfindingCacheMissCount: number
 }
 
 export interface IsometricRenderMetricsSnapshot {
@@ -140,6 +142,8 @@ export const createEmptyPointerInteractionMetrics = (): PointerInteractionMetric
   raycastCount: 0,
   raycastCounts: createEmptyPointerRaycastKindCounts(),
   pathfindingRequestCount: 0,
+  pathfindingCacheHitCount: 0,
+  pathfindingCacheMissCount: 0,
 })
 
 export const createEmptyRenderFrameTimingMetrics = (): RenderFrameTimingMetrics => ({

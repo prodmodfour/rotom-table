@@ -559,6 +559,24 @@ const recordPathfindingRequestForMetricsOverlay = () => {
   syncPointerMetricsForMetricsOverlay()
 }
 
+const recordPathfindingCacheHitForMetricsOverlay = () => {
+  if (!renderMetricsOverlayEnabled.value) {
+    return
+  }
+
+  pointerInteractionMetricsSampler.recordPathfindingCacheHit()
+  syncPointerMetricsForMetricsOverlay()
+}
+
+const recordPathfindingCacheMissForMetricsOverlay = () => {
+  if (!renderMetricsOverlayEnabled.value) {
+    return
+  }
+
+  pointerInteractionMetricsSampler.recordPathfindingCacheMiss()
+  syncPointerMetricsForMetricsOverlay()
+}
+
 const getPreviewLayerY = () => movementInteraction.activeAnchor()?.y ?? selectedPokemon.value?.position.y ?? 0
 
 const syncRendererSize = (): boolean => {
@@ -951,6 +969,8 @@ const movementInteraction = createIsometricTokenMovementInteractionController({
   emitPreviewChange: emitMovementPreviewChange,
   movePokemon: (payload) => emit('move-pokemon', payload),
   recordPathfindingRequest: recordPathfindingRequestForMetricsOverlay,
+  recordPathfindingCacheHit: recordPathfindingCacheHitForMetricsOverlay,
+  recordPathfindingCacheMiss: recordPathfindingCacheMissForMetricsOverlay,
 })
 const ensurePreviewObjects = movementInteraction.ensurePreviewObjects
 const clearPreviewVisuals = movementInteraction.clearPreviewVisuals

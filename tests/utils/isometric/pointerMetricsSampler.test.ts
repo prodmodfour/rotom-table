@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { createPointerInteractionMetricsSampler } from '~/utils/isometric/pointerMetricsSampler'
 
 describe('pointer interaction metrics sampler', () => {
-  it('aggregates pointermove, raycast, and pathfinding counts', () => {
+  it('aggregates pointermove, raycast, pathfinding, and cache counts', () => {
     const sampler = createPointerInteractionMetricsSampler()
 
     sampler.recordPointerMoveEvent()
@@ -11,6 +11,8 @@ describe('pointer interaction metrics sampler', () => {
     sampler.recordRaycast('token-pick')
     sampler.recordRaycast('movement-plane', 2)
     sampler.recordPathfindingRequest()
+    sampler.recordPathfindingCacheHit(2)
+    sampler.recordPathfindingCacheMiss()
 
     expect(sampler.snapshot()).toEqual({
       pointerMoveEventCount: 3,
@@ -23,6 +25,8 @@ describe('pointer interaction metrics sampler', () => {
         'movement-plane': 2,
       },
       pathfindingRequestCount: 1,
+      pathfindingCacheHitCount: 2,
+      pathfindingCacheMissCount: 1,
     })
   })
 
@@ -42,6 +46,8 @@ describe('pointer interaction metrics sampler', () => {
       raycastCount: 0,
       raycastCounts: {},
       pathfindingRequestCount: 0,
+      pathfindingCacheHitCount: 0,
+      pathfindingCacheMissCount: 0,
     })
     expect(reset.raycastCounts).not.toBe(sampler.snapshot().raycastCounts)
   })
@@ -54,6 +60,8 @@ describe('pointer interaction metrics sampler', () => {
     sampler.recordPointerMoveFrame({ coalescedEventCount: Number.NaN })
     sampler.recordRaycast('hazard-pick', -4)
     sampler.recordPathfindingRequest(Number.NaN)
+    sampler.recordPathfindingCacheHit(Number.NEGATIVE_INFINITY)
+    sampler.recordPathfindingCacheMiss(-2)
 
     expect(sampler.snapshot()).toEqual({
       pointerMoveEventCount: 0,
@@ -65,6 +73,8 @@ describe('pointer interaction metrics sampler', () => {
         'hazard-pick': 0,
       },
       pathfindingRequestCount: 0,
+      pathfindingCacheHitCount: 0,
+      pathfindingCacheMissCount: 0,
     })
   })
 })

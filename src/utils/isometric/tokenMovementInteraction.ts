@@ -53,6 +53,8 @@ export interface TokenMovementInteractionDependencies {
   emitPreviewChange: (preview: PreviewState) => void
   movePokemon: (payload: { id: string; position: GridAnchor }) => void
   recordPathfindingRequest?: () => void
+  recordPathfindingCacheHit?: () => void
+  recordPathfindingCacheMiss?: () => void
 }
 
 const emptyPreview = (): PreviewState => ({ ...EMPTY_MOVE_PREVIEW })
@@ -135,7 +137,7 @@ export const createIsometricTokenMovementInteractionController = (
             terrainRevision,
             placementRevision,
           })
-      movementPath = movementPathCache.getOrCompute(cacheKey, () => {
+      const pathCacheResult = movementPathCache.getOrCompute(cacheKey, () => {
         dependencies.recordPathfindingRequest?.()
         return findMovementPathForPokemon({
           pokemon: selected,
@@ -148,7 +150,13 @@ export const createIsometricTokenMovementInteractionController = (
           groundLevelY,
           terrainRevision,
         })
-      }).result
+      })
+      if (pathCacheResult.hit) {
+        dependencies.recordPathfindingCacheHit?.()
+      } else {
+        dependencies.recordPathfindingCacheMiss?.()
+      }
+      movementPath = pathCacheResult.result
     }
     const path = movementPath?.path ?? null
     const reachable = Boolean(movementPath?.legal)
