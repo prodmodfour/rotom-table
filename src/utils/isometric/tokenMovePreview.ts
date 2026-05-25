@@ -11,6 +11,11 @@ import { disposeObject3D } from '~/utils/isometric/resourceDisposal'
 import { buildElevationBadge, updateElevationBadge } from '~/utils/isometric/tokenHud'
 import type { WorldSpriteState } from '~/utils/isometric/types'
 import {
+  createMovementPreviewAnimationState,
+  movementPreviewAnimationStateNeedsFrame,
+  type MovementPreviewAnimationState,
+} from '~/utils/isometric/movementPreviewAnimation'
+import {
   applyAnimationFrame,
   buildWorldSprite,
   disposeWorldSprite,
@@ -133,10 +138,29 @@ export const createTokenMovePreviewRenderer = (containers: {
     }
   }
 
+  const movementPreviewVisible = () => Boolean(
+    ghostSpriteState?.sprite.visible ||
+    ghostSpriteState?.halo.visible ||
+    elevationBadge?.visible ||
+    volume?.visible ||
+    edges?.visible ||
+    pathLine?.visible,
+  )
+
+  const getAnimationState = (): MovementPreviewAnimationState => createMovementPreviewAnimationState(
+    movementPreviewVisible(),
+    ghostSpriteState,
+  )
+
   return {
     ensure,
     clear,
     disposeOwner,
+    getAnimationState,
+
+    needsAnimationFrame() {
+      return movementPreviewAnimationStateNeedsFrame(getAnimationState())
+    },
 
     update(options: {
       pokemon: SpawnedPokemon

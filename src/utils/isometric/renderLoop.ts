@@ -4,6 +4,10 @@ import {
   type TokenRenderAnimationState,
 } from './tokenRenderState'
 import {
+  movementPreviewAnimationStateNeedsFrame,
+  type MovementPreviewAnimationState,
+} from './movementPreviewAnimation'
+import {
   worldSpriteStateNeedsAnimationFrame,
   type WorldSpriteAnimationState,
 } from './worldSpriteAssets'
@@ -68,6 +72,10 @@ export interface IsometricFieldEffectAnimationRenderer {
   needsAnimationFrame(): boolean
 }
 
+export interface IsometricMovementPreviewAnimationRenderer {
+  getAnimationState(): MovementPreviewAnimationState
+}
+
 export const resolveIsometricTokenMotionContinuationSources = (
   tokens: Iterable<TokenRenderAnimationState>,
 ): IsometricAnimationContinuationSource[] => (
@@ -93,6 +101,14 @@ export const resolveIsometricFieldEffectAnimationContinuationSources = (
 ): IsometricAnimationContinuationSource[] => (
   renderer?.needsAnimationFrame()
     ? [ISOMETRIC_ANIMATION_CONTINUATION_SOURCE.fieldEffectAnimation]
+    : []
+)
+
+export const resolveIsometricMovementPreviewAnimationContinuationSources = (
+  renderer: IsometricMovementPreviewAnimationRenderer | null | undefined,
+): IsometricAnimationContinuationSource[] => (
+  renderer && movementPreviewAnimationStateNeedsFrame(renderer.getAnimationState())
+    ? [ISOMETRIC_ANIMATION_CONTINUATION_SOURCE.movementPreviewAnimation]
     : []
 )
 

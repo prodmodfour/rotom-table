@@ -4,6 +4,7 @@ import {
   ISOMETRIC_ANIMATION_CONTINUATION_SOURCE,
   isIsometricAnimationContinuationSource,
   resolveIsometricFieldEffectAnimationContinuationSources,
+  resolveIsometricMovementPreviewAnimationContinuationSources,
   resolveIsometricSpriteAnimationContinuationSources,
   resolveIsometricTokenMotionContinuationSources,
   toIsometricRenderSchedulerFrameResult,
@@ -28,6 +29,20 @@ const spriteRenderState = (
     sprite: { visible },
     animationMeta,
   },
+})
+
+const movementPreviewRenderer = (
+  previewVisible: boolean,
+  spriteVisible: boolean,
+  animationMeta: ReturnType<typeof spriteAnimation> | null = spriteAnimation(),
+) => ({
+  getAnimationState: () => ({
+    visible: previewVisible,
+    ghostSpriteState: {
+      sprite: { visible: spriteVisible },
+      animationMeta,
+    },
+  }),
 })
 
 describe('isometric render loop helpers', () => {
@@ -125,8 +140,27 @@ describe('isometric render loop helpers', () => {
     ])
   })
 
+  it('exposes visible animated movement-preview ghosts as a continuation source', () => {
+    expect(resolveIsometricMovementPreviewAnimationContinuationSources(null)).toEqual([])
+    expect(resolveIsometricMovementPreviewAnimationContinuationSources(
+      movementPreviewRenderer(false, true),
+    )).toEqual([])
+    expect(resolveIsometricMovementPreviewAnimationContinuationSources(
+      movementPreviewRenderer(true, false),
+    )).toEqual([])
+    expect(resolveIsometricMovementPreviewAnimationContinuationSources(
+      movementPreviewRenderer(true, true, null),
+    )).toEqual([])
+    expect(resolveIsometricMovementPreviewAnimationContinuationSources(
+      movementPreviewRenderer(true, true),
+    )).toEqual([
+      ISOMETRIC_ANIMATION_CONTINUATION_SOURCE.movementPreviewAnimation,
+    ])
+  })
+
   it('narrows known animation continuation source strings', () => {
     expect(isIsometricAnimationContinuationSource('token-motion')).toBe(true)
+    expect(isIsometricAnimationContinuationSource('movement-preview-animation')).toBe(true)
     expect(isIsometricAnimationContinuationSource('unknown-source')).toBe(false)
     expect(isIsometricAnimationContinuationSource(null)).toBe(false)
   })
