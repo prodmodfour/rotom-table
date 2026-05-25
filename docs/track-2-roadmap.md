@@ -82,7 +82,7 @@ Cloudflare Quick Tunnel can be used only as a temporary development smoke-test o
 
 8. **Session ends or expires**
    - The GM can end a session, and idle cleanup can remove in-memory state safely.
-   - Local snapshots and optional event logs remain available for backup or recovery according to later storage docs.
+   - Local snapshots and optional event logs remain available for backup or recovery according to the [Track 2 session storage guide](track-2-session-storage.md).
 
 ## Command and revision rules
 
@@ -116,4 +116,4 @@ Track 2 does not include:
 - broad VTT features unrelated to the current Rotom Table workflow;
 - committing private campaign maps, generated sheets, secrets, tokens, private keys, or real `.env` files.
 
-See [Track 2 glossary](track-2-glossary.md) for the shared vocabulary used by this roadmap and later protocol documents. See the [Track 2 session protocol](track-2-session-protocol.md) for the shared identity, command envelope, result, WebSocket message, ack/reject, duplicate, and reconnect contracts. See the [Track 2 validation matrix](track-2-validation-matrix.md) for the expected tests, smoke checks, docs, and safety reviews attached to later implementation areas.
+See [Track 2 glossary](track-2-glossary.md) for the shared vocabulary used by this roadmap and later protocol documents. See the [Track 2 session protocol](track-2-session-protocol.md) for the shared identity, command envelope, result, WebSocket message, ack/reject, duplicate, and reconnect contracts. See the [Track 2 session storage guide](track-2-session-storage.md) for snapshot/event-log paths, privacy boundaries, backup guidance, and recovery limitations. See the [Track 2 validation matrix](track-2-validation-matrix.md) for the expected tests, smoke checks, docs, and safety reviews attached to later implementation areas.

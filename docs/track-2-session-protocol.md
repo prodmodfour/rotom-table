@@ -2,7 +2,7 @@
 
 This document describes the shared TypeScript protocol contracts introduced for Track 2 session mode. It records the wire vocabulary that later server and client tickets must use when they add the session store, WebSocket endpoint, lobby UI, command handlers, and reconnect behaviour.
 
-This is a contract document, not a claim that the WebSocket runtime is already complete. The current shared contracts live in `shared/` and are covered by focused Vitest tests; command-specific payload contracts such as `moveToken` land in later command tickets.
+This is a contract document, not a claim that the WebSocket runtime is already complete. The current shared contracts live in `shared/` and are covered by focused Vitest tests; command-specific payload contracts such as `moveToken` land in later command tickets. See [Track 2 session storage](track-2-session-storage.md) for the operational snapshot/event-log layout, backup guidance, and recovery limitations.
 
 ## Protocol goals
 
@@ -96,7 +96,7 @@ This helper is process-local state, not a database. Snapshots and the optional e
 
 The explicit end-session helper is the path future GM management routes should use when the GM ends a table. It idempotently marks the session record `ended`, stamps `endedAt`, removes the session from active join-code lookups, and clears process-local duplicate-`opId` records for that session. Repeated end requests leave the original `endedAt` intact.
 
-Cleanup passes are conservative: an idle active session is ended but not deleted in the same pass, giving later socket/broadcast/persistence code a stable `session-ended` state to report. Only sessions that were already ended before a cleanup pass and have exceeded the ended-record retention window are pruned from the in-memory store. Cleanup does not delete `data/sessions/<sessionId>/snapshot.json` or `events.jsonl`; local snapshots and optional logs remain the recovery/backup boundary until the GM removes local files deliberately.
+Cleanup passes are conservative: an idle active session is ended but not deleted in the same pass, giving later socket/broadcast/persistence code a stable `session-ended` state to report. Only sessions that were already ended before a cleanup pass and have exceeded the ended-record retention window are pruned from the in-memory store. Cleanup does not delete `data/sessions/<sessionId>/snapshot.json` or `events.jsonl`; local snapshots and optional logs remain the recovery/backup boundary until the GM removes local files deliberately. The storage runbook documents when and how those local files should be backed up, restored, or manually removed.
 
 ## Message flow
 

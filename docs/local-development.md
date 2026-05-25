@@ -78,13 +78,14 @@ Encounter generation without `preview` writes generated Pokémon sheets under `d
 The app edits local JSON files during development:
 
 - maps: `data/maps/`
+- Track 2 session snapshots and optional event logs: `data/sessions/`
 - Pokémon sheets: `data/sheets/`
 - trainer sheets: `data/trainers/`
 - encounter tables: `encounter_tables/`
 
 Nuxt/Vite are configured to ignore app-written sheet/map data changes so autosaves do not trigger full page reloads while editing. If you edit files outside the browser, refresh the relevant page or restart the dev server if the UI does not reflect the change.
 
-`.gitignore` is configured to keep personal campaign data out of the repository by default. Before committing, check `git status` and make sure private campaign data, real player details, credentials, and unreleased story notes are not included.
+`.gitignore` is configured to keep personal campaign data and Track 2 session runtime files out of the repository by default. Before committing, check `git status` and make sure private campaign data, real player details, session snapshots/event logs, credentials, and unreleased story notes are not included. See [Track 2 session storage](track-2-session-storage.md) for snapshot/event-log backup and recovery guidance.
 
 ## Production write limitations
 

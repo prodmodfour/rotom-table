@@ -40,6 +40,7 @@ npm run build
 - [docs/track-2-glossary.md](docs/track-2-glossary.md) — shared Track 2 vocabulary for identity, commands, revisions, reconnect, and safety.
 - [docs/track-2-validation-matrix.md](docs/track-2-validation-matrix.md) — expected tests, smoke checks, docs, and safety reviews for Track 2 implementation areas.
 - [docs/track-2-session-protocol.md](docs/track-2-session-protocol.md) — shared Track 2 session protocol types, message flow, and accepted/rejected command examples.
+- [docs/track-2-session-storage.md](docs/track-2-session-storage.md) — local session snapshot/event-log paths, privacy boundaries, backup guidance, and recovery limits.
 - [docs/local-development.md](docs/local-development.md) — local setup, scripts, and filesystem persistence notes.
 - [docs/fan-project-notice.md](docs/fan-project-notice.md) — fan project and ownership boundaries.
 
@@ -130,6 +131,7 @@ See [docs/architecture.md](docs/architecture.md) for more detail.
 | Path | What it contains |
 | --- | --- |
 | `data/maps/` | Saved map JSON and map-adjacent local files. |
+| `data/sessions/` | Track 2 local session snapshots and optional event logs; ignored/private runtime data. |
 | `data/sheets/` | Pokémon character-sheet JSON, including generated wild sheets. |
 | `data/trainers/` | Trainer sheet JSON. |
 | `encounter_tables/` | Encounter-table JSON, grouped by folder/region. |
@@ -143,7 +145,7 @@ See [docs/architecture.md](docs/architecture.md) for more detail.
 | `shared/` | Shared auth/path/sheet helpers used by both app and server. |
 | `tests/` | Vitest coverage for shared logic, utilities, composables, and server helpers. |
 
-Saved sheets and maps are edited by the app itself. In development, Nuxt/Vite ignores changes under `data/sheets`, `data/trainers`, and `data/maps` so autosaves do not force a full page reload. `.gitignore` is configured to keep personal campaign data out of the repository while allowing curated examples to remain inspectable.
+Saved sheets and maps are edited by the app itself. Track 2 session snapshots and optional event logs live under `data/sessions/` when session hosting is used. In development, Nuxt/Vite ignores changes under `data/sheets`, `data/trainers`, and `data/maps` so autosaves do not force a full page reload. `.gitignore` is configured to keep personal campaign data and session runtime files out of the repository while allowing curated examples to remain inspectable.
 
 ## npm scripts
 
