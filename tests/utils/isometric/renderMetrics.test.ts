@@ -5,6 +5,7 @@ import {
   createEmptyIsometricRenderMetricsSnapshot,
   createEmptyRenderFrameTimingMetrics,
   createEmptySampledWebGLRendererInfo,
+  createIsometricRenderMetricsSnapshotWithFrameTiming,
   createIsometricRenderMetricsSnapshotWithRendererInfo,
   createRenderFrameReasonCounts,
   incrementRenderFrameReasonCount,
@@ -104,6 +105,30 @@ describe('isometric render metrics model', () => {
     expect(snapshot.rendererInfo).toBeNull()
     expect(snapshot.frames.frameCount).toBe(0)
     expect(snapshot.frames.lastFrameReasons).toEqual([])
+  })
+
+  it('adds frame timing metrics to an existing metrics snapshot without mutating it', () => {
+    const snapshot = createEmptyIsometricRenderMetricsSnapshot(42)
+    const frames = createEmptyRenderFrameTimingMetrics()
+    frames.frameCount = 3
+    frames.renderCount = 3
+    frames.activeAnimationFrameCount = 2
+    frames.lastFrameHadActiveAnimation = true
+    frames.lastFrameReasons.push('initial', 'animation')
+    frames.reasonCounts.initial = 1
+    frames.reasonCounts.animation = 3
+
+    const updated = createIsometricRenderMetricsSnapshotWithFrameTiming(snapshot, frames, 128)
+
+    expect(snapshot.frames.frameCount).toBe(0)
+    expect(updated).not.toBe(snapshot)
+    expect(updated.devOnly).toBe(true)
+    expect(updated.sampledAtMs).toBe(128)
+    expect(updated.rendererInfo).toBeNull()
+    expect(updated.frames).toEqual(frames)
+    expect(updated.frames).not.toBe(frames)
+    expect(updated.frames.lastFrameReasons).not.toBe(frames.lastFrameReasons)
+    expect(updated.frames.reasonCounts).not.toBe(frames.reasonCounts)
   })
 
   it('adds sampled renderer info to an existing metrics snapshot without mutating it', () => {

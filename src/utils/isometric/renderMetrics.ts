@@ -133,6 +133,14 @@ export const createEmptyIsometricRenderMetricsSnapshot = (
   rendererInfo: null,
 })
 
+const copyRenderFrameTimingMetrics = (
+  frames: RenderFrameTimingMetrics,
+): RenderFrameTimingMetrics => ({
+  ...frames,
+  lastFrameReasons: [...frames.lastFrameReasons],
+  reasonCounts: { ...frames.reasonCounts },
+})
+
 const copySampledWebGLRendererInfo = (
   rendererInfo: SampledWebGLRendererInfo,
 ): SampledWebGLRendererInfo => ({
@@ -152,6 +160,16 @@ const copySampledWebGLRendererInfo = (
   programs: {
     count: rendererInfo.programs.count,
   },
+})
+
+export const createIsometricRenderMetricsSnapshotWithFrameTiming = (
+  snapshot: IsometricRenderMetricsSnapshot,
+  frames: RenderFrameTimingMetrics,
+  sampledAtMs = snapshot.sampledAtMs,
+): IsometricRenderMetricsSnapshot => ({
+  ...snapshot,
+  sampledAtMs,
+  frames: copyRenderFrameTimingMetrics(frames),
 })
 
 export const createIsometricRenderMetricsSnapshotWithRendererInfo = (

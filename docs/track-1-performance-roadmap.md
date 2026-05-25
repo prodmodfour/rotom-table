@@ -45,11 +45,11 @@ For each category, compare before/after runs with the same browser, map data, zo
 
 Start by making the performance rules explicit, then add developer-only metrics for frame reasons, frame timing, renderer info, pointer/raycast counts, and pathfinding cache behaviour. Instrumentation should be hidden unless explicitly enabled for debugging.
 
-In local development, appending `?debug=render`, `?debug=render-metrics`, or `?debug=isometric-render` to a map route enables the isometric render metrics overlay. The overlay is hidden by default; when enabled, it samples live WebGL `renderer.info` counters after rendered frames while leaving frame timing, pointer, and pathfinding counters ready for later instrumentation without exposing diagnostics to normal users.
+In local development, appending `?debug=render`, `?debug=render-metrics`, or `?debug=isometric-render` to a map route enables the isometric render metrics overlay. The overlay is hidden by default; when enabled, it records scheduler frame timing/reasons and samples live WebGL `renderer.info` counters after rendered frames while leaving pointer and pathfinding counters ready for later instrumentation without exposing diagnostics to normal users.
 
 ### 2. Introduce render invalidation and scheduling
 
-Move from unconditional full-frame work toward explicit dirty reasons and active-animation sources. Resize, camera controls, scene watchers, async texture loads, token style changes, and tab visibility changes should request renders through a scheduler while settled scenes stop producing duplicate idle frames.
+Move from unconditional full-frame work toward explicit dirty reasons and active-animation sources. The first compatibility integration routes the isometric scene through the scheduler while deliberately keeping active animation enabled, so visual behaviour remains the same as the old continuous loop while debug metrics can report scheduler frame reasons. Resize, camera controls, scene watchers, async texture loads, token style changes, and tab visibility changes should request renders through a scheduler while settled scenes stop producing duplicate idle frames.
 
 ### 3. Coalesce pointer-heavy interactions
 

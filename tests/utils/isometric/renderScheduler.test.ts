@@ -149,6 +149,44 @@ describe('isometric render scheduler', () => {
     })
   })
 
+  it('supports the scene compatibility loop by keeping active animation true after each frame', () => {
+    const driver = createAnimationFrameDriver()
+    const renderFrame = vi.fn(() => ({ activeAnimation: true }))
+    const scheduler = createIsometricRenderScheduler({
+      renderFrame,
+      requestAnimationFrame: driver.requestAnimationFrame,
+      cancelAnimationFrame: driver.cancelAnimationFrame,
+    })
+
+    scheduler.requestRender('initial')
+    scheduler.setActiveAnimation(true)
+
+    expect(driver.requestAnimationFrame).toHaveBeenCalledOnce()
+    expect(driver.flushNextFrame(16)).toBe(true)
+    expect(renderFrame).toHaveBeenNthCalledWith(1, {
+      timestampMs: 16,
+      reasons: ['initial', 'animation'],
+      activeAnimation: true,
+    })
+    expect(scheduler.snapshot()).toEqual({
+      isFramePending: true,
+      activeAnimation: true,
+      dirtyReasons: [],
+      isDisposed: false,
+    })
+
+    expect(driver.flushNextFrame(32)).toBe(true)
+    expect(renderFrame).toHaveBeenNthCalledWith(2, {
+      timestampMs: 32,
+      reasons: ['animation'],
+      activeAnimation: true,
+    })
+    expect(driver.requestAnimationFrame).toHaveBeenCalledTimes(3)
+
+    scheduler.dispose()
+    expect(driver.pendingFrameCount()).toBe(0)
+  })
+
   it('continues scheduling frames while active animation remains true', () => {
     const driver = createAnimationFrameDriver()
     const renderFrame = vi.fn()

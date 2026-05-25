@@ -115,11 +115,18 @@ import {
   syncPokemonRenderObjectSelectionStyles,
 } from '~/utils/isometric/tokenObjectSync'
 import { isIsometricRenderDebugEnabled } from '~/utils/isometric/renderDebugFlag'
+import { createRenderFrameTimingSampler } from '~/utils/isometric/frameTimingSampler'
 import {
   createEmptyIsometricRenderMetricsSnapshot,
+  createIsometricRenderMetricsSnapshotWithFrameTiming,
   createIsometricRenderMetricsSnapshotWithRendererInfo,
 } from '~/utils/isometric/renderMetrics'
 import { sampleWebGLRendererInfo } from '~/utils/isometric/rendererInfoSampler'
+import {
+  createIsometricRenderScheduler,
+  type IsometricRenderScheduler,
+  type IsometricScheduledRenderFrame,
+} from '~/utils/isometric/renderScheduler'
 
 export type { BuildTool } from '#shared/mapEditor'
 
@@ -414,15 +421,44 @@ let camera: THREE.OrthographicCamera | null = null
 let controls: ReturnType<typeof createIsometricOrbitControls> | null = null
 let cleanupRendererDomEvents: (() => void) | null = null
 let cleanupResizeObserver: (() => void) | null = null
-let animationFrame = 0
+let renderScheduler: IsometricRenderScheduler | null = null
 const pointerTracker = createPointerTravelTracker()
+const renderFrameTimingSampler = createRenderFrameTimingSampler()
+
+const readRenderMetricsNowMs = (): number => {
+  const performanceNow = globalThis.performance?.now
+
+  if (typeof performanceNow === 'function') {
+    return performanceNow.call(globalThis.performance)
+  }
+
+  return Date.now()
+}
+
+const recordScheduledFrameForMetricsOverlay = (frame: IsometricScheduledRenderFrame) => {
+  if (!renderMetricsOverlayEnabled.value) {
+    return
+  }
+
+  const frames = renderFrameTimingSampler.recordFrame({
+    startedAtMs: frame.timestampMs,
+    activeAnimation: frame.activeAnimation,
+    reasons: frame.reasons,
+  })
+
+  renderMetricsOverlaySnapshot.value = createIsometricRenderMetricsSnapshotWithFrameTiming(
+    renderMetricsOverlaySnapshot.value,
+    frames,
+    readRenderMetricsNowMs(),
+  )
+}
 
 const sampleRendererInfoForMetricsOverlay = () => {
   if (!renderMetricsOverlayEnabled.value || !renderer) {
     return
   }
 
-  const rendererInfo = sampleWebGLRendererInfo(renderer)
+  const rendererInfo = sampleWebGLRendererInfo(renderer, { now: readRenderMetricsNowMs })
 
   if (!rendererInfo) {
     return
@@ -1079,11 +1115,9 @@ const updateMoveAutomationOverlays = () => {
   syncAttackOfOpportunityButtons()
 }
 
-const animate = () => {
-  animationFrame = window.requestAnimationFrame(animate)
-
+const renderScheduledFrame = (frame: IsometricScheduledRenderFrame) => {
   if (!renderer || !cssRenderer || !camera || !controls) {
-    return
+    return { activeAnimation: true }
   }
 
   stepIsometricAnimationFrame({
@@ -1102,7 +1136,26 @@ const animate = () => {
     facingDirection: DEFAULT_FACING_DIRECTION,
     beforeRender: updateMoveAutomationOverlays,
   })
+  recordScheduledFrameForMetricsOverlay(frame)
   sampleRendererInfoForMetricsOverlay()
+
+  return { activeAnimation: true }
+}
+
+const startContinuousRenderLoop = () => {
+  renderScheduler?.dispose()
+  renderScheduler = createIsometricRenderScheduler({
+    renderFrame: renderScheduledFrame,
+    requestAnimationFrame: window.requestAnimationFrame.bind(window),
+    cancelAnimationFrame: window.cancelAnimationFrame.bind(window),
+  })
+  renderScheduler.requestRender('initial')
+  renderScheduler.setActiveAnimation(true)
+}
+
+const stopContinuousRenderLoop = () => {
+  renderScheduler?.dispose()
+  renderScheduler = null
 }
 
 onMounted(() => {
@@ -1145,11 +1198,11 @@ onMounted(() => {
     syncRendererSize()
   })
 
-  animate()
+  startContinuousRenderLoop()
 })
 
 onBeforeUnmount(() => {
-  window.cancelAnimationFrame(animationFrame)
+  stopContinuousRenderLoop()
 
   cleanupRendererDomEvents?.()
   cleanupRendererDomEvents = null
