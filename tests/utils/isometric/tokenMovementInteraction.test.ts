@@ -1,5 +1,8 @@
 import { describe, expect, it, vi } from 'vitest'
-import { createIsometricTokenMovementInteractionController } from '~/utils/isometric/tokenMovementInteraction'
+import {
+  createIsometricTokenMovementInteractionController,
+  type TokenMovementPreviewRenderer,
+} from '~/utils/isometric/tokenMovementInteraction'
 import type { MapVoxelV2 } from '~/types/map'
 import type { GridDimensions, SpawnedPokemon } from '~/types/pokemon'
 
@@ -47,15 +50,28 @@ const makeController = () => {
   }
   const emitPreviewChange = vi.fn()
   const movePokemon = vi.fn()
+  const recordPathfindingRequest = vi.fn()
+  const recordPathfindingCacheHit = vi.fn()
+  const recordPathfindingCacheMiss = vi.fn()
   const getMoveGridIntersection = vi.fn(() => ({ x: 2.5, z: 2.5 }))
   const selectedState = { value: selected as SpawnedPokemon | null }
   const previewLayerY = { value: 0 }
+  const terrainRevision = { value: 'terrain-revision-a' as string | number | null }
+  const placementRevision = { value: 'placement-revision-a' as string | number | null }
+  const getSelectedPokemon = vi.fn(() => selectedState.value)
+  const getPokemons = vi.fn(() => pokemons)
+  const getDimensions = vi.fn(() => dimensions)
+  const getMapVoxels = vi.fn(() => voxels)
+  const getMapVoxelsRevision = vi.fn(() => terrainRevision.value)
+  const getPokemonPlacementRevision = vi.fn(() => placementRevision.value)
 
   const controller = createIsometricTokenMovementInteractionController({
-    getSelectedPokemon: () => selectedState.value,
-    getPokemons: () => pokemons,
-    getDimensions: () => dimensions,
-    getMapVoxels: () => voxels,
+    getSelectedPokemon,
+    getPokemons,
+    getDimensions,
+    getMapVoxels,
+    getMapVoxelsRevision,
+    getPokemonPlacementRevision,
     getPreviewLayerY: () => previewLayerY.value,
     getGroundLevelY: () => 0,
     getCamera: () => null,
@@ -63,6 +79,9 @@ const makeController = () => {
     previewRenderer: renderer,
     emitPreviewChange,
     movePokemon,
+    recordPathfindingRequest,
+    recordPathfindingCacheHit,
+    recordPathfindingCacheMiss,
   })
 
   return {
@@ -73,20 +92,45 @@ const makeController = () => {
     dimensions,
     pokemons,
     voxels,
+    terrainRevision,
+    placementRevision,
     renderer,
     emitPreviewChange,
     movePokemon,
+    recordPathfindingRequest,
+    recordPathfindingCacheHit,
+    recordPathfindingCacheMiss,
     getMoveGridIntersection,
+    getSelectedPokemon,
+    getPokemons,
+    getDimensions,
+    getMapVoxels,
+    getMapVoxelsRevision,
+    getPokemonPlacementRevision,
   }
 }
 
 describe('isometric token movement interaction', () => {
   it('updates movement previews from pointer intersections and emits preview state', () => {
-    const { controller, selected, renderer, emitPreviewChange, getMoveGridIntersection } = makeController()
+    const {
+      controller,
+      selected,
+      renderer,
+      emitPreviewChange,
+      getMoveGridIntersection,
+      getMapVoxelsRevision,
+      recordPathfindingRequest,
+      recordPathfindingCacheHit,
+      recordPathfindingCacheMiss,
+    } = makeController()
 
     controller.updatePreviewFromPointer(pointer)
 
     expect(getMoveGridIntersection).toHaveBeenCalledWith(pointer, 0)
+    expect(recordPathfindingRequest).toHaveBeenCalledOnce()
+    expect(recordPathfindingCacheHit).not.toHaveBeenCalled()
+    expect(recordPathfindingCacheMiss).toHaveBeenCalledOnce()
+    expect(getMapVoxelsRevision).toHaveBeenCalledOnce()
     expect(renderer.ensure).toHaveBeenCalledWith(selected)
     expect(renderer.update).toHaveBeenCalledWith(expect.objectContaining({
       pokemon: selected,
@@ -104,6 +148,241 @@ describe('isometric token movement interaction', () => {
       movementCapabilityLabel: 'Overland',
     })
     expect(emitPreviewChange).toHaveBeenLastCalledWith(controller.preview())
+  })
+
+  it('skips renderer and pathfinding work while the selected token and preview anchor are unchanged', () => {
+    const {
+      controller,
+      renderer,
+      emitPreviewChange,
+      getMapVoxels,
+      getMapVoxelsRevision,
+      recordPathfindingRequest,
+      recordPathfindingCacheHit,
+      recordPathfindingCacheMiss,
+    } = makeController()
+
+    controller.updatePreviewAtAnchor({ x: 2, y: 0, z: 2 })
+    renderer.ensure.mockClear()
+    renderer.update.mockClear()
+    emitPreviewChange.mockClear()
+    getMapVoxels.mockClear()
+    getMapVoxelsRevision.mockClear()
+    recordPathfindingRequest.mockClear()
+    recordPathfindingCacheHit.mockClear()
+    recordPathfindingCacheMiss.mockClear()
+
+    controller.updatePreviewAtAnchor({ x: 2, y: 0, z: 2 })
+
+    expect(renderer.ensure).not.toHaveBeenCalled()
+    expect(renderer.update).not.toHaveBeenCalled()
+    expect(getMapVoxels).not.toHaveBeenCalled()
+    expect(getMapVoxelsRevision).not.toHaveBeenCalled()
+    expect(recordPathfindingRequest).not.toHaveBeenCalled()
+    expect(recordPathfindingCacheHit).not.toHaveBeenCalled()
+    expect(recordPathfindingCacheMiss).not.toHaveBeenCalled()
+    expect(emitPreviewChange).not.toHaveBeenCalled()
+  })
+
+  it('reuses cached pathfinding results when returning to a previous preview anchor', () => {
+    const {
+      controller,
+      renderer,
+      getMapVoxels,
+      recordPathfindingRequest,
+      recordPathfindingCacheHit,
+      recordPathfindingCacheMiss,
+    } = makeController()
+
+    controller.updatePreviewAtAnchor({ x: 2, y: 0, z: 2 })
+    controller.updatePreviewAtAnchor({ x: 1, y: 0, z: 1 })
+    getMapVoxels.mockClear()
+    recordPathfindingRequest.mockClear()
+    recordPathfindingCacheHit.mockClear()
+    recordPathfindingCacheMiss.mockClear()
+    renderer.update.mockClear()
+
+    controller.updatePreviewAtAnchor({ x: 2, y: 0, z: 2 })
+
+    expect(renderer.update).toHaveBeenCalledOnce()
+    expect(renderer.update).toHaveBeenLastCalledWith(expect.objectContaining({
+      anchor: { x: 2, y: 0, z: 2 },
+      reachable: true,
+    }))
+    expect(getMapVoxels).not.toHaveBeenCalled()
+    expect(recordPathfindingRequest).not.toHaveBeenCalled()
+    expect(recordPathfindingCacheHit).toHaveBeenCalledOnce()
+    expect(recordPathfindingCacheMiss).not.toHaveBeenCalled()
+  })
+
+  it('misses the movement path cache after placement revision changes', () => {
+    const {
+      controller,
+      placementRevision,
+      getMapVoxels,
+      recordPathfindingRequest,
+      recordPathfindingCacheHit,
+      recordPathfindingCacheMiss,
+    } = makeController()
+
+    controller.updatePreviewAtAnchor({ x: 2, y: 0, z: 2 })
+    controller.updatePreviewAtAnchor({ x: 1, y: 0, z: 1 })
+    placementRevision.value = 'placement-revision-b'
+    getMapVoxels.mockClear()
+    recordPathfindingRequest.mockClear()
+    recordPathfindingCacheHit.mockClear()
+    recordPathfindingCacheMiss.mockClear()
+
+    controller.updatePreviewAtAnchor({ x: 2, y: 0, z: 2 })
+
+    expect(getMapVoxels).toHaveBeenCalledOnce()
+    expect(recordPathfindingRequest).toHaveBeenCalledOnce()
+    expect(recordPathfindingCacheHit).not.toHaveBeenCalled()
+    expect(recordPathfindingCacheMiss).toHaveBeenCalledOnce()
+  })
+
+  it('misses the movement path cache after terrain revision changes', () => {
+    const {
+      controller,
+      terrainRevision,
+      getMapVoxels,
+      recordPathfindingRequest,
+      recordPathfindingCacheHit,
+      recordPathfindingCacheMiss,
+    } = makeController()
+
+    controller.updatePreviewAtAnchor({ x: 2, y: 0, z: 2 })
+    controller.updatePreviewAtAnchor({ x: 1, y: 0, z: 1 })
+    terrainRevision.value = 'terrain-revision-b'
+    getMapVoxels.mockClear()
+    recordPathfindingRequest.mockClear()
+    recordPathfindingCacheHit.mockClear()
+    recordPathfindingCacheMiss.mockClear()
+
+    controller.updatePreviewAtAnchor({ x: 2, y: 0, z: 2 })
+
+    expect(getMapVoxels).toHaveBeenCalledOnce()
+    expect(recordPathfindingRequest).toHaveBeenCalledOnce()
+    expect(recordPathfindingCacheHit).not.toHaveBeenCalled()
+    expect(recordPathfindingCacheMiss).toHaveBeenCalledOnce()
+  })
+
+  it('does not reuse cached paths when terrain revision is unavailable', () => {
+    const {
+      controller,
+      terrainRevision,
+      getMapVoxels,
+      recordPathfindingRequest,
+      recordPathfindingCacheHit,
+      recordPathfindingCacheMiss,
+    } = makeController()
+    terrainRevision.value = null
+
+    controller.updatePreviewAtAnchor({ x: 2, y: 0, z: 2 })
+    controller.updatePreviewAtAnchor({ x: 1, y: 0, z: 1 })
+    getMapVoxels.mockClear()
+    recordPathfindingRequest.mockClear()
+    recordPathfindingCacheHit.mockClear()
+    recordPathfindingCacheMiss.mockClear()
+
+    controller.updatePreviewAtAnchor({ x: 2, y: 0, z: 2 })
+
+    expect(getMapVoxels).toHaveBeenCalledOnce()
+    expect(recordPathfindingRequest).toHaveBeenCalledOnce()
+    expect(recordPathfindingCacheHit).not.toHaveBeenCalled()
+    expect(recordPathfindingCacheMiss).toHaveBeenCalledOnce()
+  })
+
+  it('recomputes cached preview paths when selected token movement capabilities change', () => {
+    const { controller, selected, getMapVoxels, recordPathfindingRequest } = makeController()
+
+    controller.updatePreviewAtAnchor({ x: 2, y: 0, z: 2 })
+    selected.movementCapabilities = { overland: 2 }
+    getMapVoxels.mockClear()
+    recordPathfindingRequest.mockClear()
+
+    controller.refreshAfterStateChange()
+
+    expect(getMapVoxels).toHaveBeenCalledOnce()
+    expect(recordPathfindingRequest).toHaveBeenCalledOnce()
+    expect(controller.preview()).toMatchObject({
+      position: { x: 2, y: 0, z: 2 },
+      reachable: false,
+      pathLength: 3,
+      movementLimit: 2,
+      movementCapabilityLabel: 'Overland',
+    })
+    expect(controller.canPlacePreview()).toBe(false)
+  })
+
+  it('protects cached movement paths from renderer mutation between preview anchors', () => {
+    const { controller, renderer, getMapVoxels, recordPathfindingRequest } = makeController()
+
+    controller.updatePreviewAtAnchor({ x: 2, y: 0, z: 2 })
+    const firstUpdateCalls = renderer.update.mock.calls as unknown as Array<
+      Parameters<TokenMovementPreviewRenderer['update']>
+    >
+    const firstPath = firstUpdateCalls[0]?.[0].path
+    expect(firstPath).toHaveLength(3)
+    firstPath?.push({ x: 9, y: 9, z: 9 })
+
+    controller.updatePreviewAtAnchor({ x: 1, y: 0, z: 1 })
+    getMapVoxels.mockClear()
+    recordPathfindingRequest.mockClear()
+    renderer.update.mockClear()
+
+    controller.updatePreviewAtAnchor({ x: 2, y: 0, z: 2 })
+
+    const cachedUpdateCalls = renderer.update.mock.calls as unknown as Array<
+      Parameters<TokenMovementPreviewRenderer['update']>
+    >
+    const path = cachedUpdateCalls[0]?.[0].path
+    expect(getMapVoxels).not.toHaveBeenCalled()
+    expect(recordPathfindingRequest).not.toHaveBeenCalled()
+    expect(path).toHaveLength(3)
+    expect(path?.some((anchor) => anchor.x === 9 && anchor.y === 9 && anchor.z === 9)).toBe(false)
+    expect(path?.[path.length - 1]).toEqual({ x: 2, y: 0, z: 2 })
+  })
+
+  it('refreshes the same movement preview anchor when selected token changes and reuses cached paths for unchanged state', () => {
+    const { controller, selectedState, renderer, getMapVoxels } = makeController()
+
+    controller.updatePreviewAtAnchor({ x: 2, y: 0, z: 2 })
+    renderer.update.mockClear()
+    getMapVoxels.mockClear()
+
+    selectedState.value = makePokemon({ id: 'token-b' })
+    controller.updatePreviewAtAnchor({ x: 2, y: 0, z: 2 })
+
+    expect(renderer.update).toHaveBeenCalledOnce()
+    expect(renderer.update).toHaveBeenLastCalledWith(expect.objectContaining({
+      pokemon: selectedState.value,
+      anchor: { x: 2, y: 0, z: 2 },
+    }))
+    expect(getMapVoxels).toHaveBeenCalledOnce()
+
+    renderer.update.mockClear()
+    getMapVoxels.mockClear()
+    controller.refreshAfterStateChange()
+
+    expect(renderer.update).toHaveBeenCalledOnce()
+    expect(renderer.update).toHaveBeenLastCalledWith(expect.objectContaining({
+      pokemon: selectedState.value,
+      anchor: { x: 2, y: 0, z: 2 },
+    }))
+    expect(getMapVoxels).not.toHaveBeenCalled()
+  })
+
+  it('resets the movement preview anchor cache when visuals are cleared', () => {
+    const { controller, renderer } = makeController()
+
+    controller.updatePreviewAtAnchor({ x: 2, y: 0, z: 2 })
+    controller.clearPreviewVisuals()
+    renderer.update.mockClear()
+
+    controller.updatePreviewAtAnchor({ x: 2, y: 0, z: 2 })
+
+    expect(renderer.update).toHaveBeenCalledOnce()
   })
 
   it('clears visuals when there is no selected token or the renderer rejects an update', () => {

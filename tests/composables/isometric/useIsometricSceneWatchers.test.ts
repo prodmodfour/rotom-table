@@ -28,6 +28,7 @@ const makeActions = () => ({
   buildGrid: vi.fn(),
   alignCameraToGrid: vi.fn(),
   syncRendererSize: vi.fn(),
+  requestRender: vi.fn(),
 })
 
 const makeWatcherHarness = () => {
@@ -47,6 +48,7 @@ const makeWatcherHarness = () => {
   const hazardSettings = ref<unknown[]>([])
   const groundLevelY = ref(0)
   const dimensionsKey = ref<unknown[]>([1, 1, 1])
+  const activeTurnId = ref<string | null>(null)
   const controllable = new Set<string>()
   const actions = makeActions()
   const scope = effectScope()
@@ -70,6 +72,7 @@ const makeWatcherHarness = () => {
         hazardSettings,
         groundLevelY,
         dimensionsKey,
+        activeTurnId,
         isRendererReady: () => ready.value,
       },
       actions,
@@ -89,6 +92,11 @@ const makeWatcherHarness = () => {
     ghostVoxelsFaded,
     groundLevelY,
     dimensionsKey,
+    activeTurnId,
+    hazardRevision,
+    fieldEffectsRevision,
+    layerVisibility,
+    hazardSettings,
     controllable,
     actions,
     stop: () => scope.stop(),
@@ -104,6 +112,7 @@ describe('useIsometricSceneWatchers', () => {
 
     expect(harness.actions.selectPokemon).toHaveBeenCalledWith(null)
     expect(harness.actions.refreshPokemonStyles).not.toHaveBeenCalled()
+    expect(harness.actions.requestRender).not.toHaveBeenCalled()
     harness.stop()
   })
 
@@ -120,6 +129,11 @@ describe('useIsometricSceneWatchers', () => {
     expect(harness.actions.setControlsZoomEnabled).toHaveBeenCalledWith(false)
     expect(harness.actions.resetMovementForSelectionChange).toHaveBeenCalledTimes(1)
     expect(harness.actions.disposePreviewOwner).not.toHaveBeenCalled()
+    expect(harness.actions.requestRender).toHaveBeenLastCalledWith([
+      'token-style',
+      'movement-preview',
+      'layer-visibility',
+    ])
 
     harness.selectedPokemon.value = null
     harness.selectedId.value = null
@@ -129,6 +143,11 @@ describe('useIsometricSceneWatchers', () => {
     expect(harness.actions.clearPreviewVisuals).toHaveBeenCalled()
     expect(harness.actions.closeContextMenu).toHaveBeenCalled()
     expect(harness.actions.disposePreviewOwner).toHaveBeenCalledTimes(1)
+    expect(harness.actions.requestRender).toHaveBeenLastCalledWith([
+      'token-style',
+      'movement-preview',
+      'layer-visibility',
+    ])
     harness.stop()
   })
 
@@ -145,6 +164,12 @@ describe('useIsometricSceneWatchers', () => {
     expect(harness.actions.hideHazardGhost).toHaveBeenCalled()
     expect(harness.actions.ensureBuildGhost).toHaveBeenCalled()
     expect(harness.actions.replayBuildPreview).toHaveBeenCalled()
+    expect(harness.actions.requestRender).toHaveBeenLastCalledWith([
+      'layer-visibility',
+      'movement-preview',
+      'build-preview',
+      'hazard-preview',
+    ])
 
     harness.hazardMode.value = true
     await nextTick()
@@ -152,6 +177,12 @@ describe('useIsometricSceneWatchers', () => {
     expect(harness.actions.hideBuildGhost).toHaveBeenCalled()
     expect(harness.actions.ensureHazardGhost).toHaveBeenCalled()
     expect(harness.actions.replayHazardPreview).toHaveBeenCalled()
+    expect(harness.actions.requestRender).toHaveBeenLastCalledWith([
+      'layer-visibility',
+      'movement-preview',
+      'build-preview',
+      'hazard-preview',
+    ])
     harness.stop()
   })
 
@@ -176,6 +207,15 @@ describe('useIsometricSceneWatchers', () => {
     expect(harness.actions.refreshMovementAfterStateChange).toHaveBeenCalledTimes(1)
     expect(harness.actions.hideBuildGhost).toHaveBeenCalledTimes(1)
     expect(harness.actions.hideHazardGhost).toHaveBeenCalledTimes(1)
+    expect(harness.actions.requestRender).toHaveBeenCalledWith([
+      'resize',
+      'camera',
+      'terrain',
+      'field-effect',
+      'movement-preview',
+      'build-preview',
+      'hazard-preview',
+    ])
     harness.stop()
   })
 
@@ -188,6 +228,7 @@ describe('useIsometricSceneWatchers', () => {
 
     expect(harness.actions.syncVoxelMeshes).toHaveBeenCalledTimes(1)
     expect(harness.actions.refreshMovementAfterStateChange).not.toHaveBeenCalled()
+    expect(harness.actions.requestRender).toHaveBeenCalledWith('terrain')
     harness.stop()
   })
 
@@ -200,6 +241,7 @@ describe('useIsometricSceneWatchers', () => {
 
     expect(harness.actions.syncPokemonObjects).not.toHaveBeenCalled()
     expect(harness.actions.syncVoxelMeshes).not.toHaveBeenCalled()
+    expect(harness.actions.requestRender).not.toHaveBeenCalled()
 
     harness.ready.value = true
     harness.pokemons.value = [{ id: 'token-1' }]
@@ -212,6 +254,89 @@ describe('useIsometricSceneWatchers', () => {
     expect(harness.actions.refreshMovementAfterStateChange).toHaveBeenCalledTimes(2)
     expect(harness.actions.replayBuildPreview).toHaveBeenCalledTimes(2)
     expect(harness.actions.replayHazardPreview).toHaveBeenCalledTimes(1)
+    expect(harness.actions.requestRender).toHaveBeenCalledWith([
+      'tokens',
+      'token-style',
+      'movement-preview',
+      'build-preview',
+    ])
+    expect(harness.actions.requestRender).toHaveBeenCalledWith([
+      'terrain',
+      'movement-preview',
+      'build-preview',
+      'hazard-preview',
+    ])
+
+    vi.clearAllMocks()
+    const token = harness.pokemons.value[0] as {
+      currentHp: number
+      combatStages: { atk: number }
+      conditions: string[]
+    }
+    token.currentHp = 7
+    token.combatStages = { atk: 1 }
+    token.conditions = ['Burned']
+    await nextTick()
+
+    expect(harness.actions.syncPokemonObjects).toHaveBeenCalledTimes(1)
+    expect(harness.actions.syncDialogsFromPokemons).toHaveBeenCalledTimes(1)
+    expect(harness.actions.requestRender).toHaveBeenLastCalledWith([
+      'tokens',
+      'token-style',
+      'movement-preview',
+      'build-preview',
+    ])
+    harness.stop()
+  })
+
+  it('requests renders for focused hazard, field-effect, layer, active-turn, and setting changes', async () => {
+    const harness = makeWatcherHarness()
+    harness.ready.value = true
+
+    harness.hazardRevision.value = 'hazard:2'
+    await nextTick()
+    expect(harness.actions.syncHazardMeshes).toHaveBeenCalledTimes(1)
+    expect(harness.actions.requestRender).toHaveBeenLastCalledWith(['hazards', 'hazard-preview'])
+
+    harness.fieldEffectsRevision.value = 'field:2'
+    await nextTick()
+    expect(harness.actions.syncFieldEffectMeshes).toHaveBeenCalledTimes(1)
+    expect(harness.actions.requestRender).toHaveBeenLastCalledWith(['field-effect', 'weather'])
+
+    harness.layerVisibility.value = { tokens: false }
+    await nextTick()
+    expect(harness.actions.applyLayerVisibility).toHaveBeenCalledTimes(1)
+    expect(harness.actions.requestRender).toHaveBeenLastCalledWith('layer-visibility')
+
+    harness.activeTurnId.value = 'token-1'
+    await nextTick()
+    expect(harness.actions.requestRender).toHaveBeenLastCalledWith('token-style')
+
+    harness.buildMode.value = true
+    await nextTick()
+    vi.clearAllMocks()
+
+    harness.buildSettings.value = ['eraser']
+    await nextTick()
+    expect(harness.actions.replayBuildPreview).toHaveBeenCalledTimes(1)
+    expect(harness.actions.requestRender).toHaveBeenLastCalledWith('build-preview')
+
+    harness.hazardMode.value = true
+    await nextTick()
+    vi.clearAllMocks()
+
+    harness.hazardSettings.value = ['toxic-spikes']
+    await nextTick()
+    expect(harness.actions.replayHazardPreview).toHaveBeenCalledTimes(1)
+    expect(harness.actions.requestRender).toHaveBeenLastCalledWith('hazard-preview')
+
+    harness.groundLevelY.value = 1
+    await nextTick()
+    expect(harness.actions.requestRender).toHaveBeenLastCalledWith([
+      'field-effect',
+      'movement-preview',
+      'token-style',
+    ])
     harness.stop()
   })
 })

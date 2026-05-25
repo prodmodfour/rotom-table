@@ -71,19 +71,27 @@ export const makeSandstormWeatherVisual = (
 
   const moteCount = sandMoteCountForDimensions(input.dimensions, total)
   const motePositions = new Float32Array(moteCount * 3)
-  const motes = Array.from({ length: moteCount }, () => ({
-    x: randomRange(rand, bounds.minX, bounds.maxX),
-    y: randomRange(
+  const moteX = new Float64Array(moteCount)
+  const moteY = new Float64Array(moteCount)
+  const moteZ = new Float64Array(moteCount)
+  const moteSpeedX = new Float64Array(moteCount)
+  const moteSpeedZ = new Float64Array(moteCount)
+  const moteBob = new Float64Array(moteCount)
+  const motePhase = new Float64Array(moteCount)
+
+  for (let i = 0; i < moteCount; i += 1) {
+    moteX[i] = randomRange(rand, bounds.minX, bounds.maxX)
+    moteY[i] = randomRange(
       rand,
       bounds.groundY + 0.12,
       bounds.groundY + bounds.height * 0.78,
-    ),
-    z: randomRange(rand, bounds.minZ, bounds.maxZ),
-    speedX: randomRange(rand, 0.85, 1.85),
-    speedZ: randomRange(rand, 0.18, 0.65),
-    bob: randomRange(rand, 0.015, 0.055),
-    phase: randomRange(rand, 0, Math.PI * 2),
-  }))
+    )
+    moteZ[i] = randomRange(rand, bounds.minZ, bounds.maxZ)
+    moteSpeedX[i] = randomRange(rand, 0.85, 1.85)
+    moteSpeedZ[i] = randomRange(rand, 0.18, 0.65)
+    moteBob[i] = randomRange(rand, 0.015, 0.055)
+    motePhase[i] = randomRange(rand, 0, Math.PI * 2)
+  }
   const moteGeometry = new THREE.BufferGeometry()
   const moteAttribute = new THREE.BufferAttribute(motePositions, 3)
   moteGeometry.setAttribute('position', moteAttribute)
@@ -102,13 +110,12 @@ export const makeSandstormWeatherVisual = (
   group.add(motePoints)
 
   const syncMotes = (elapsed: number) => {
-    for (let i = 0; i < motes.length; i += 1) {
-      const mote = motes[i]
+    for (let i = 0; i < moteCount; i += 1) {
       const offset = i * 3
-      motePositions[offset] = mote.x
+      motePositions[offset] = moteX[i]
       motePositions[offset + 1] =
-        mote.y + Math.sin(elapsed * 3.4 + mote.phase) * mote.bob
-      motePositions[offset + 2] = mote.z
+        moteY[i] + Math.sin(elapsed * 3.4 + motePhase[i]) * moteBob[i]
+      motePositions[offset + 2] = moteZ[i]
     }
     moteAttribute.needsUpdate = true
   }
@@ -119,21 +126,22 @@ export const makeSandstormWeatherVisual = (
     update: (delta, elapsed) => {
       streamTexture.offset.x = (streamTexture.offset.x + delta * 0.18) % 1
       streamTexture.offset.y = (streamTexture.offset.y + delta * 0.012) % 1
-      for (const ribbon of ribbons) {
+      for (let i = 0; i < ribbons.length; i += 1) {
+        const ribbon = ribbons[i]
         ribbon.sprite.position.y =
           ribbon.baseY + Math.sin(elapsed * 0.42 + ribbon.phase) * 0.1
         ribbon.sprite.material.opacity =
           ribbon.baseOpacity *
           (0.92 + Math.sin(elapsed * 0.55 + ribbon.phase) * 0.08)
       }
-      for (const mote of motes) {
-        mote.x = wrapRange(
-          mote.x + mote.speedX * delta,
+      for (let i = 0; i < moteCount; i += 1) {
+        moteX[i] = wrapRange(
+          moteX[i] + moteSpeedX[i] * delta,
           bounds.minX,
           bounds.maxX,
         )
-        mote.z = wrapRange(
-          mote.z + mote.speedZ * delta,
+        moteZ[i] = wrapRange(
+          moteZ[i] + moteSpeedZ[i] * delta,
           bounds.minZ,
           bounds.maxZ,
         )

@@ -1,10 +1,67 @@
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
+  bindIsometricDocumentVisibilityChange,
   bindIsometricRendererDomEvents,
   disposeIsometricRendererResources,
+  observeIsometricResize,
 } from '~/utils/isometric/lifecycle'
 
 describe('isometric lifecycle helpers', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('binds document visibility changes for hidden-tab render pause and resume', () => {
+    const visibilityHandlers: Array<() => void> = []
+    const documentTarget = {
+      hidden: false,
+      addEventListener: vi.fn((_type: 'visibilitychange', listener: () => void) => {
+        visibilityHandlers.push(listener)
+      }),
+      removeEventListener: vi.fn(),
+    }
+    const pause = vi.fn()
+    const resume = vi.fn()
+
+    const cleanup = bindIsometricDocumentVisibilityChange(documentTarget, { pause, resume })
+    const visibilityHandler = visibilityHandlers[0]
+
+    expect(documentTarget.addEventListener).toHaveBeenCalledWith('visibilitychange', visibilityHandler)
+    expect(pause).not.toHaveBeenCalled()
+    expect(resume).not.toHaveBeenCalled()
+
+    documentTarget.hidden = true
+    visibilityHandler?.()
+    visibilityHandler?.()
+
+    expect(pause).toHaveBeenCalledOnce()
+    expect(resume).not.toHaveBeenCalled()
+
+    documentTarget.hidden = false
+    visibilityHandler?.()
+
+    expect(resume).toHaveBeenCalledOnce()
+
+    cleanup()
+
+    expect(documentTarget.removeEventListener).toHaveBeenCalledWith('visibilitychange', visibilityHandler)
+  })
+
+  it('applies the hidden document visibility state at bind time', () => {
+    const documentTarget = {
+      hidden: true,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    }
+    const pause = vi.fn()
+    const resume = vi.fn()
+
+    bindIsometricDocumentVisibilityChange(documentTarget, { pause, resume })
+
+    expect(pause).toHaveBeenCalledOnce()
+    expect(resume).not.toHaveBeenCalled()
+  })
+
   it('binds and cleans up renderer DOM event handlers', () => {
     const addEventListener = vi.fn()
     const removeEventListener = vi.fn()
@@ -35,6 +92,39 @@ describe('isometric lifecycle helpers', () => {
     expect(removeEventListener).toHaveBeenCalledWith('pointerleave', handlers.pointerleave)
     expect(removeEventListener).toHaveBeenCalledWith('contextmenu', handlers.contextmenu)
     expect(removeEventListener).toHaveBeenCalledWith('wheel', handlers.wheel)
+  })
+
+  it('disconnects resize observers during renderer unmount cleanup', () => {
+    const instances: Array<{
+      callback: ResizeObserverCallback
+      observe: ReturnType<typeof vi.fn>
+      disconnect: ReturnType<typeof vi.fn>
+    }> = []
+    class FakeResizeObserver {
+      readonly callback: ResizeObserverCallback
+      readonly observe = vi.fn()
+      readonly disconnect = vi.fn()
+
+      constructor(callback: ResizeObserverCallback) {
+        this.callback = callback
+        instances.push(this)
+      }
+    }
+    vi.stubGlobal('ResizeObserver', FakeResizeObserver)
+    const element = {} as Element
+    const onResize = vi.fn()
+
+    const cleanup = observeIsometricResize(element, onResize)
+
+    expect(instances).toHaveLength(1)
+    expect(instances[0].observe).toHaveBeenCalledWith(element)
+
+    instances[0].callback([], instances[0] as unknown as ResizeObserver)
+    expect(onResize).toHaveBeenCalledOnce()
+
+    cleanup()
+
+    expect(instances[0].disconnect).toHaveBeenCalledOnce()
   })
 
   it('disposes renderer-owned resources and clears token render objects', () => {

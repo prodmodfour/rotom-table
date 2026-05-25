@@ -37,6 +37,28 @@ export const nowMs = () => (typeof performance === 'undefined' ? Date.now() : pe
 
 export const applyAnimationFrame = applyWorldSpriteAnimationFrame
 
+export type WorldSpriteTextureLoadCompleteCallback = () => void
+
+export interface BuildWorldSpriteOptions {
+  ghost?: boolean
+  onTextureLoadComplete?: WorldSpriteTextureLoadCompleteCallback | null
+}
+
+const normalizeBuildWorldSpriteOptions = (
+  options: boolean | BuildWorldSpriteOptions,
+): Required<BuildWorldSpriteOptions> => (
+  typeof options === 'boolean'
+    ? { ghost: options, onTextureLoadComplete: null }
+    : {
+        ghost: options.ghost ?? false,
+        onTextureLoadComplete: options.onTextureLoadComplete ?? null,
+      }
+)
+
+const notifyWorldSpriteTextureLoadComplete = (state: WorldSpriteState) => {
+  state.onTextureLoadComplete?.()
+}
+
 const setWorldSpriteAsset = (state: WorldSpriteState, asset: SpriteVisualAsset) => {
   const key = spriteVisualAssetKey(asset)
   if (state.assetKey === key) return
@@ -44,6 +66,7 @@ const setWorldSpriteAsset = (state: WorldSpriteState, asset: SpriteVisualAsset) 
   const token = state.loadToken + 1
   state.loadToken = token
   state.assetKey = key
+  state.textureLoading = true
 
   const handle = asset.animation
     ? acquireAnimatedSpriteTexture(asset.animation.url)
@@ -59,6 +82,7 @@ const setWorldSpriteAsset = (state: WorldSpriteState, asset: SpriteVisualAsset) 
       const previousRelease = state.releaseTexture
       state.texture = texture
       state.releaseTexture = handle.release
+      state.textureLoading = false
       state.animationMeta = asset.animation ?? null
       state.currentFrame = -1
       if (state.animationMeta) {
@@ -75,12 +99,15 @@ const setWorldSpriteAsset = (state: WorldSpriteState, asset: SpriteVisualAsset) 
       state.material.map = texture
       state.material.needsUpdate = true
       previousRelease?.()
+      notifyWorldSpriteTextureLoadComplete(state)
     })
     .catch((error) => {
       handle.release()
       if (state.loadToken === token && state.assetKey === key) {
+        state.textureLoading = false
         state.assetKey = null
         console.warn('Failed to load sprite texture', asset.animation?.url ?? asset.url, error)
+        notifyWorldSpriteTextureLoadComplete(state)
       }
     })
 }
@@ -132,7 +159,11 @@ export const setWorldSpriteSize = (
   state.halo.scale.set(width * 1.25, height * 1.15, 1)
 }
 
-export const buildWorldSprite = (pokemon: SpawnedPokemon, ghost = false): WorldSpriteState => {
+export const buildWorldSprite = (
+  pokemon: SpawnedPokemon,
+  options: boolean | BuildWorldSpriteOptions = false,
+): WorldSpriteState => {
+  const { ghost, onTextureLoadComplete } = normalizeBuildWorldSpriteOptions(options)
   const material = new THREE.SpriteMaterial({
     map: getTransparentSpriteTexture(),
     alphaTest: 0.5,
@@ -177,12 +208,14 @@ export const buildWorldSprite = (pokemon: SpawnedPokemon, ghost = false): WorldS
     releaseTexture: null,
     assetKey: null,
     loadToken: 0,
+    textureLoading: false,
     animationMeta: null,
     animationStartedAtMs: nowMs(),
     currentFrame: -1,
     textureRepeat: new THREE.Vector2(1, 1),
     textureOffset: new THREE.Vector2(0, 0),
     mirroredX: false,
+    onTextureLoadComplete,
     ghost,
     invalid: false,
   }
@@ -200,9 +233,11 @@ export const buildWorldSprite = (pokemon: SpawnedPokemon, ghost = false): WorldS
 export const disposeWorldSprite = (state: WorldSpriteState | null) => {
   if (!state) return
   state.loadToken += 1
+  state.textureLoading = false
   state.releaseTexture?.()
   state.releaseTexture = null
   state.texture = null
+  state.onTextureLoadComplete = null
   state.material.map = null
   state.sprite.parent?.remove(state.sprite)
   state.material.dispose()

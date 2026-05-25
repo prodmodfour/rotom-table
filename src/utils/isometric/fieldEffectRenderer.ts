@@ -10,7 +10,14 @@ import {
   createFieldEffectRoomBoundary,
   createFieldEffectSurfaceMesh,
 } from './fieldEffectOverlays'
-import { createWeatherVisualFactory } from './weatherEffects'
+import {
+  createWeatherVisualFactory,
+  type WeatherVisualFactory,
+} from './weatherEffects'
+import {
+  createFieldEffectAnimationState,
+  type FieldEffectAnimationState,
+} from './fieldEffectAnimation'
 
 export interface FieldEffectRendererInput {
   dimensions: GridDimensions
@@ -23,17 +30,24 @@ export interface FieldEffectRenderer {
   sync(input: FieldEffectRendererInput): void
   update(delta: number, elapsed: number): void
   setVisible(visible: boolean): void
+  getAnimationState(): FieldEffectAnimationState
+  needsAnimationFrame(): boolean
   dispose(): void
+}
+
+export interface FieldEffectRendererOptions {
+  weatherVisualFactory?: WeatherVisualFactory
 }
 
 export const createFieldEffectRenderer = (
   container: THREE.Group,
+  options: FieldEffectRendererOptions = {},
 ): FieldEffectRenderer => {
   const fieldEffectObjects: THREE.Object3D[] = []
   const fieldEffectAnimators: Array<(delta: number, elapsed: number) => void> =
     []
   let visible = true
-  const weatherVisualFactory = createWeatherVisualFactory()
+  const weatherVisualFactory = options.weatherVisualFactory ?? createWeatherVisualFactory()
   let input: FieldEffectRendererInput = {
     dimensions: { x: 1, y: 1, z: 1 },
     voxels: [],
@@ -45,6 +59,19 @@ export const createFieldEffectRenderer = (
     fieldEffectAnimators.splice(0)
     for (const object of fieldEffectObjects.splice(0)) disposeObject3D(object)
   }
+
+  const applyObjectVisibility = (object: THREE.Object3D, nextVisible: boolean) => {
+    if (object.visible !== nextVisible) object.visible = nextVisible
+  }
+
+  const getAnimationState = () => createFieldEffectAnimationState(
+    visible,
+    fieldEffectAnimators.length,
+  )
+
+  const hasVisibleAnimators = () => visible && fieldEffectAnimators.length > 0
+
+  const needsAnimationFrame = () => hasVisibleAnimators()
 
   const sync = (nextInput: FieldEffectRendererInput) => {
     input = nextInput
@@ -90,24 +117,32 @@ export const createFieldEffectRenderer = (
       fieldEffectObjects.push(boundary)
     })
 
-    container.visible = visible
-    for (const object of fieldEffectObjects) object.visible = visible
+    applyObjectVisibility(container, visible)
+    for (const object of fieldEffectObjects) applyObjectVisibility(object, visible)
   }
 
   return {
     sync,
 
     update(delta, elapsed) {
-      for (const updateFieldEffect of fieldEffectAnimators) {
-        updateFieldEffect(delta, elapsed)
+      if (!hasVisibleAnimators()) return
+
+      for (let i = 0; i < fieldEffectAnimators.length; i += 1) {
+        fieldEffectAnimators[i](delta, elapsed)
       }
     },
 
     setVisible(nextVisible) {
+      if (visible === nextVisible) return
+
       visible = nextVisible
-      container.visible = nextVisible
-      for (const object of fieldEffectObjects) object.visible = nextVisible
+      applyObjectVisibility(container, nextVisible)
+      for (const object of fieldEffectObjects) applyObjectVisibility(object, nextVisible)
     },
+
+    getAnimationState,
+
+    needsAnimationFrame,
 
     dispose() {
       disposeFieldEffectObjects()

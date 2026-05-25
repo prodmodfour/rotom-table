@@ -35,37 +35,128 @@ const updateTargetReticleElement = (
   element: HTMLElement,
   hitChance: MoveAutomationTargetHitChance | undefined,
   selected = true,
-) => {
+): boolean => {
+  let changed = false
   const badge = element.querySelector<HTMLElement>('.move-target-hit-chance')
-  if (!badge) return
+  if (!badge) return changed
 
-  badge.hidden = !hitChance
-  badge.textContent = hitChance?.label ?? ''
-  badge.title = hitChance?.title ?? ''
-  badge.className = [
+  const badgeHidden = !hitChance
+  const badgeText = hitChance?.label ?? ''
+  const badgeTitle = hitChance?.title ?? ''
+  const badgeClassName = [
     'move-target-hit-chance',
     hitChance ? `is-${hitChance.tone}` : '',
     selected ? '' : 'is-unselected',
   ].filter(Boolean).join(' ')
 
+  if (badge.hidden !== badgeHidden) {
+    badge.hidden = badgeHidden
+    changed = true
+  }
+  if (badge.textContent !== badgeText) {
+    badge.textContent = badgeText
+    changed = true
+  }
+  if (badge.title !== badgeTitle) {
+    badge.title = badgeTitle
+    changed = true
+  }
+  if (badge.className !== badgeClassName) {
+    badge.className = badgeClassName
+    changed = true
+  }
+
   const ring = element.querySelector<HTMLElement>('.move-target-reticle')
   if (ring) {
-    ring.className = [
+    const ringClassName = [
       'move-target-reticle',
       hitChance ? `is-${hitChance.tone}` : '',
       selected ? '' : 'is-unselected',
     ].filter(Boolean).join(' ')
+    if (ring.className !== ringClassName) {
+      ring.className = ringClassName
+      changed = true
+    }
   }
-  element.title = hitChance?.title ?? ''
-}
+  if (element.title !== badgeTitle) {
+    element.title = badgeTitle
+    changed = true
+  }
 
-const setReticleScale = (sprite: CSS3DSprite, renderObject: PokemonRenderObject) => {
-  const worldWidth = Math.max(0.95, renderObject.base * 0.95)
-  sprite.scale.setScalar(worldWidth / RETICLE_CSS_SIZE_PX)
+  return changed
 }
 
 const reticleY = (renderObject: PokemonRenderObject): number =>
   renderObject.currentCenter.y + Math.max(renderObject.height * 0.58, 0.45)
+
+interface TargetReticleRenderState {
+  visible: boolean
+  hitChanceKey: string
+  selected: boolean
+  x: number
+  y: number
+  z: number
+  scale: number
+}
+
+const TARGET_RETICLE_RENDER_STATE_KEY = 'rotomMoveTargetReticleRenderState'
+
+const targetReticleHitChanceKey = (hitChance: MoveAutomationTargetHitChance | undefined): string => (
+  hitChance ? `${hitChance.percent}|${hitChance.label}|${hitChance.tone}|${hitChance.title}` : ''
+)
+
+const targetReticleRenderState = (reticle: CSS3DSprite): TargetReticleRenderState | null => {
+  const state = reticle.userData[TARGET_RETICLE_RENDER_STATE_KEY]
+  if (!state || typeof state !== 'object') return null
+
+  const maybeState = state as Partial<TargetReticleRenderState>
+  return typeof maybeState.visible === 'boolean'
+    && typeof maybeState.hitChanceKey === 'string'
+    && typeof maybeState.selected === 'boolean'
+    && typeof maybeState.x === 'number'
+    && typeof maybeState.y === 'number'
+    && typeof maybeState.z === 'number'
+    && typeof maybeState.scale === 'number'
+    ? maybeState as TargetReticleRenderState
+    : null
+}
+
+const rememberTargetReticleRenderState = (
+  reticle: CSS3DSprite,
+  state: TargetReticleRenderState,
+) => {
+  reticle.userData[TARGET_RETICLE_RENDER_STATE_KEY] = state
+}
+
+const sameTargetReticleRenderState = (
+  previous: TargetReticleRenderState | null,
+  next: TargetReticleRenderState,
+): boolean => Boolean(previous
+  && previous.visible === next.visible
+  && previous.hitChanceKey === next.hitChanceKey
+  && previous.selected === next.selected
+  && previous.x === next.x
+  && previous.y === next.y
+  && previous.z === next.z
+  && previous.scale === next.scale)
+
+const setTargetReticleHidden = (reticle: CSS3DSprite): boolean => {
+  const previous = targetReticleRenderState(reticle)
+  const changed = reticle.visible || previous?.visible === true
+  if (!changed && previous?.visible === false) return false
+
+  reticle.visible = false
+  rememberTargetReticleRenderState(reticle, {
+    visible: false,
+    hitChanceKey: previous?.hitChanceKey ?? '',
+    selected: previous?.selected ?? true,
+    x: reticle.position.x,
+    y: reticle.position.y,
+    z: reticle.position.z,
+    scale: reticle.scale.x,
+  })
+  return changed
+}
 
 export const createMoveTargetingReticleRenderer = (scene: THREE.Scene) => {
   const reticles = new Map<string, CSS3DSprite>()
@@ -81,19 +172,23 @@ export const createMoveTargetingReticleRenderer = (scene: THREE.Scene) => {
     return reticle
   }
 
-  const remove = (id: string) => {
+  const remove = (id: string): boolean => {
     const reticle = reticles.get(id)
-    if (!reticle) return
+    if (!reticle) return false
+    const changed = reticle.visible || targetReticleRenderState(reticle)?.visible === true
     disposeObject3D(reticle)
     reticles.delete(id)
+    return changed
   }
 
-  const syncIds = (candidateIds: readonly string[]) => {
+  const syncIds = (candidateIds: readonly string[]): boolean => {
+    let changed = false
     const live = new Set(candidateIds)
     for (const id of candidateIds) ensure(id)
-    for (const id of reticles.keys()) {
-      if (!live.has(id)) remove(id)
+    for (const id of Array.from(reticles.keys())) {
+      if (!live.has(id)) changed = remove(id) || changed
     }
+    return changed
   }
 
   const update = (options: {
@@ -102,22 +197,43 @@ export const createMoveTargetingReticleRenderer = (scene: THREE.Scene) => {
     selectedIds?: readonly string[]
     renderObjects: Map<string, PokemonRenderObject>
     show: boolean
-  }) => {
-    syncIds(options.show ? options.candidateIds : [])
+  }): boolean => {
+    let changed = syncIds(options.show ? options.candidateIds : [])
     const candidateSet = new Set(options.candidateIds)
     const selectedSet = options.selectedIds ? new Set(options.selectedIds) : null
     for (const [id, reticle] of reticles) {
       const renderObject = options.renderObjects.get(id)
-      reticle.visible = Boolean(options.show && renderObject && candidateSet.has(id))
-      if (!renderObject || !reticle.visible) continue
-      updateTargetReticleElement(reticle.element, options.hitChances?.[id], selectedSet ? selectedSet.has(id) : true)
-      reticle.position.set(
-        renderObject.currentCenter.x,
-        reticleY(renderObject),
-        renderObject.currentCenter.z,
-      )
-      setReticleScale(reticle, renderObject)
+      const visible = Boolean(options.show && renderObject && candidateSet.has(id))
+      if (!visible || !renderObject) {
+        changed = setTargetReticleHidden(reticle) || changed
+        continue
+      }
+
+      const selected = selectedSet ? selectedSet.has(id) : true
+      const hitChance = options.hitChances?.[id]
+      const scale = Math.max(0.95, renderObject.base * 0.95) / RETICLE_CSS_SIZE_PX
+      const nextState: TargetReticleRenderState = {
+        visible: true,
+        hitChanceKey: targetReticleHitChanceKey(hitChance),
+        selected,
+        x: renderObject.currentCenter.x,
+        y: reticleY(renderObject),
+        z: renderObject.currentCenter.z,
+        scale,
+      }
+
+      if (reticle.visible && sameTargetReticleRenderState(targetReticleRenderState(reticle), nextState)) {
+        continue
+      }
+
+      updateTargetReticleElement(reticle.element, hitChance, selected)
+      reticle.position.set(nextState.x, nextState.y, nextState.z)
+      reticle.scale.setScalar(nextState.scale)
+      reticle.visible = true
+      rememberTargetReticleRenderState(reticle, nextState)
+      changed = true
     }
+    return changed
   }
 
   const dispose = () => {
@@ -188,12 +304,13 @@ const feedbackText = (feedback: MoveAutomationFeedbackState): string => {
 const feedbackUsesOutcomeTone = (feedback: MoveAutomationFeedbackState): boolean =>
   feedback.phase === 'outcome' || feedback.phase === 'effectiveness' || feedback.phase === 'damage'
 
-const updateFeedbackElement = (element: HTMLElement, feedback: MoveAutomationFeedbackState) => {
+const updateFeedbackElement = (element: HTMLElement, feedback: MoveAutomationFeedbackState): boolean => {
+  let changed = false
   const body = element.querySelector<HTMLElement>('.move-automation-roll')
-  if (!body) return
+  if (!body) return changed
 
   const useOutcomeTone = feedbackUsesOutcomeTone(feedback)
-  body.className = [
+  const bodyClassName = [
     'move-automation-roll',
     feedback.phase === 'rolling' ? 'is-rolling' : 'is-result',
     feedback.phase === 'hit-roll' ? 'is-hit-roll' : '',
@@ -201,14 +318,107 @@ const updateFeedbackElement = (element: HTMLElement, feedback: MoveAutomationFee
     useOutcomeTone ? (feedback.hit ? 'is-hit' : 'is-miss') : '',
     useOutcomeTone && feedback.crit ? 'is-crit' : '',
   ].filter(Boolean).join(' ')
-  body.textContent = feedbackText(feedback)
-  element.title = feedback.accuracyCheck == null
+  const text = feedbackText(feedback)
+  const title = feedback.accuracyCheck == null
     ? 'This move cannot miss.'
     : `${hitRollText(feedback)}; AC ${feedback.accuracyCheck} (${feedback.targetEvasionLabel} ${feedback.targetEvasion})`
+
+  if (body.className !== bodyClassName) {
+    body.className = bodyClassName
+    changed = true
+  }
+  if (body.textContent !== text) {
+    body.textContent = text
+    changed = true
+  }
+  if (element.title !== title) {
+    element.title = title
+    changed = true
+  }
+
+  return changed
 }
 
 const feedbackY = (renderObject: PokemonRenderObject): number =>
   renderObject.currentCenter.y + Math.max(renderObject.height, renderObject.clearance) + 0.95
+
+interface MoveAutomationFeedbackRenderState {
+  visible: boolean
+  feedbackKey: string
+  x: number
+  y: number
+  z: number
+}
+
+const MOVE_AUTOMATION_FEEDBACK_RENDER_STATE_KEY = 'rotomMoveAutomationFeedbackRenderState'
+
+const moveAutomationFeedbackKey = (feedback: MoveAutomationFeedbackState): string => JSON.stringify({
+  id: feedback.id,
+  userId: feedback.userId,
+  targetId: feedback.targetId,
+  moveName: feedback.moveName,
+  phase: feedback.phase,
+  naturalRoll: feedback.naturalRoll,
+  modifiedRoll: feedback.modifiedRoll,
+  hit: feedback.hit,
+  crit: feedback.crit,
+  damageResolved: feedback.damageResolved,
+  damageLoss: feedback.damageLoss,
+  effectiveness: feedback.effectiveness,
+  accuracyCheck: feedback.accuracyCheck,
+  targetEvasionLabel: feedback.targetEvasionLabel,
+  targetEvasion: feedback.targetEvasion,
+  conditions: feedback.conditions,
+})
+
+const moveAutomationFeedbackRenderState = (
+  sprite: CSS3DSprite,
+): MoveAutomationFeedbackRenderState | null => {
+  const state = sprite.userData[MOVE_AUTOMATION_FEEDBACK_RENDER_STATE_KEY]
+  if (!state || typeof state !== 'object') return null
+
+  const maybeState = state as Partial<MoveAutomationFeedbackRenderState>
+  return typeof maybeState.visible === 'boolean'
+    && typeof maybeState.feedbackKey === 'string'
+    && typeof maybeState.x === 'number'
+    && typeof maybeState.y === 'number'
+    && typeof maybeState.z === 'number'
+    ? maybeState as MoveAutomationFeedbackRenderState
+    : null
+}
+
+const rememberMoveAutomationFeedbackRenderState = (
+  sprite: CSS3DSprite,
+  state: MoveAutomationFeedbackRenderState,
+) => {
+  sprite.userData[MOVE_AUTOMATION_FEEDBACK_RENDER_STATE_KEY] = state
+}
+
+const sameMoveAutomationFeedbackRenderState = (
+  previous: MoveAutomationFeedbackRenderState | null,
+  next: MoveAutomationFeedbackRenderState,
+): boolean => Boolean(previous
+  && previous.visible === next.visible
+  && previous.feedbackKey === next.feedbackKey
+  && previous.x === next.x
+  && previous.y === next.y
+  && previous.z === next.z)
+
+const setMoveAutomationFeedbackHidden = (sprite: CSS3DSprite): boolean => {
+  const previous = moveAutomationFeedbackRenderState(sprite)
+  const changed = sprite.visible || previous?.visible === true
+  if (!changed && previous?.visible === false) return false
+
+  sprite.visible = false
+  rememberMoveAutomationFeedbackRenderState(sprite, {
+    visible: false,
+    feedbackKey: previous?.feedbackKey ?? '',
+    x: sprite.position.x,
+    y: sprite.position.y,
+    z: sprite.position.z,
+  })
+  return changed
+}
 
 export const createMoveAreaTemplateRenderer = (scene: THREE.Scene) => {
   const group = new THREE.Group()
@@ -324,18 +534,29 @@ export const createMoveAutomationFeedbackRenderer = (scene: THREE.Scene) => {
     feedback: MoveAutomationFeedbackState | null | undefined
     renderObjects: Map<string, PokemonRenderObject>
     show: boolean
-  }) => {
+  }): boolean => {
     const feedback = options.feedback
     const renderObject = feedback ? options.renderObjects.get(feedback.userId) : null
-    sprite.visible = Boolean(options.show && feedback && renderObject)
-    if (!feedback || !renderObject || !sprite.visible) return
+    const visible = Boolean(options.show && feedback && renderObject)
+    if (!visible || !feedback || !renderObject) return setMoveAutomationFeedbackHidden(sprite)
+
+    const nextState: MoveAutomationFeedbackRenderState = {
+      visible: true,
+      feedbackKey: moveAutomationFeedbackKey(feedback),
+      x: renderObject.currentCenter.x,
+      y: feedbackY(renderObject),
+      z: renderObject.currentCenter.z,
+    }
+
+    if (sprite.visible && sameMoveAutomationFeedbackRenderState(moveAutomationFeedbackRenderState(sprite), nextState)) {
+      return false
+    }
 
     updateFeedbackElement(sprite.element, feedback)
-    sprite.position.set(
-      renderObject.currentCenter.x,
-      feedbackY(renderObject),
-      renderObject.currentCenter.z,
-    )
+    sprite.position.set(nextState.x, nextState.y, nextState.z)
+    sprite.visible = true
+    rememberMoveAutomationFeedbackRenderState(sprite, nextState)
+    return true
   }
 
   const dispose = () => disposeObject3D(sprite)
