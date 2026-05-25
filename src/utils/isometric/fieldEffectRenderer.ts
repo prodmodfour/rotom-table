@@ -11,6 +11,11 @@ import {
   createFieldEffectSurfaceMesh,
 } from './fieldEffectOverlays'
 import { createWeatherVisualFactory } from './weatherEffects'
+import {
+  createFieldEffectAnimationState,
+  fieldEffectAnimationStateNeedsFrame,
+  type FieldEffectAnimationState,
+} from './fieldEffectAnimation'
 
 export interface FieldEffectRendererInput {
   dimensions: GridDimensions
@@ -23,6 +28,8 @@ export interface FieldEffectRenderer {
   sync(input: FieldEffectRendererInput): void
   update(delta: number, elapsed: number): void
   setVisible(visible: boolean): void
+  getAnimationState(): FieldEffectAnimationState
+  needsAnimationFrame(): boolean
   dispose(): void
 }
 
@@ -45,6 +52,11 @@ export const createFieldEffectRenderer = (
     fieldEffectAnimators.splice(0)
     for (const object of fieldEffectObjects.splice(0)) disposeObject3D(object)
   }
+
+  const getAnimationState = () => createFieldEffectAnimationState(
+    visible,
+    fieldEffectAnimators.length,
+  )
 
   const sync = (nextInput: FieldEffectRendererInput) => {
     input = nextInput
@@ -107,6 +119,12 @@ export const createFieldEffectRenderer = (
       visible = nextVisible
       container.visible = nextVisible
       for (const object of fieldEffectObjects) object.visible = nextVisible
+    },
+
+    getAnimationState,
+
+    needsAnimationFrame() {
+      return fieldEffectAnimationStateNeedsFrame(getAnimationState())
     },
 
     dispose() {

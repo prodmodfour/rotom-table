@@ -132,6 +132,7 @@ import {
 import {
   createIsometricAnimationContinuation,
   ISOMETRIC_ANIMATION_CONTINUATION_SOURCE,
+  resolveIsometricFieldEffectAnimationContinuationSources,
   resolveIsometricSpriteAnimationContinuationSources,
   resolveIsometricTokenMotionContinuationSources,
   toIsometricRenderSchedulerFrameResult,
@@ -1139,12 +1140,13 @@ const updateMoveAutomationOverlays = () => {
 }
 
 // Keep the old continuous RAF behaviour as a compatibility source until later
-// tickets remove it, while also exposing real token motion and sprite animation
-// as active sources.
+// tickets remove it, while also exposing real token motion, sprite animation,
+// and weather/field-effect animation as active sources.
 const resolveSceneAnimationContinuation = () => createIsometricAnimationContinuation([
   ISOMETRIC_ANIMATION_CONTINUATION_SOURCE.compatibilityContinuousLoop,
   ...resolveIsometricTokenMotionContinuationSources(renderObjects.values()),
   ...resolveIsometricSpriteAnimationContinuationSources(renderObjects.values()),
+  ...resolveIsometricFieldEffectAnimationContinuationSources(fieldEffectRenderer),
 ])
 
 const renderOneShotScheduledFrame = (frame: IsometricScheduledRenderFrame): boolean => {

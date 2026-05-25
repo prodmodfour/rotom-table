@@ -3,6 +3,7 @@ import {
   createIsometricAnimationContinuation,
   ISOMETRIC_ANIMATION_CONTINUATION_SOURCE,
   isIsometricAnimationContinuationSource,
+  resolveIsometricFieldEffectAnimationContinuationSources,
   resolveIsometricSpriteAnimationContinuationSources,
   resolveIsometricTokenMotionContinuationSources,
   toIsometricRenderSchedulerFrameResult,
@@ -109,6 +110,18 @@ describe('isometric render loop helpers', () => {
       spriteRenderState(true),
     ])).toEqual([
       ISOMETRIC_ANIMATION_CONTINUATION_SOURCE.spriteAnimation,
+    ])
+  })
+
+  it('exposes active weather and field-effect animators as a continuation source', () => {
+    expect(resolveIsometricFieldEffectAnimationContinuationSources(null)).toEqual([])
+    expect(resolveIsometricFieldEffectAnimationContinuationSources({
+      needsAnimationFrame: () => false,
+    })).toEqual([])
+    expect(resolveIsometricFieldEffectAnimationContinuationSources({
+      needsAnimationFrame: () => true,
+    })).toEqual([
+      ISOMETRIC_ANIMATION_CONTINUATION_SOURCE.fieldEffectAnimation,
     ])
   })
 

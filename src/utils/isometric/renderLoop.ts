@@ -64,6 +64,10 @@ export interface IsometricSpriteAnimationRenderState {
   spriteState: WorldSpriteAnimationState
 }
 
+export interface IsometricFieldEffectAnimationRenderer {
+  needsAnimationFrame(): boolean
+}
+
 export const resolveIsometricTokenMotionContinuationSources = (
   tokens: Iterable<TokenRenderAnimationState>,
 ): IsometricAnimationContinuationSource[] => (
@@ -83,6 +87,14 @@ export const resolveIsometricSpriteAnimationContinuationSources = (
 
   return []
 }
+
+export const resolveIsometricFieldEffectAnimationContinuationSources = (
+  renderer: IsometricFieldEffectAnimationRenderer | null | undefined,
+): IsometricAnimationContinuationSource[] => (
+  renderer?.needsAnimationFrame()
+    ? [ISOMETRIC_ANIMATION_CONTINUATION_SOURCE.fieldEffectAnimation]
+    : []
+)
 
 export const toIsometricRenderSchedulerFrameResult = (
   continuation: IsometricAnimationContinuation,
