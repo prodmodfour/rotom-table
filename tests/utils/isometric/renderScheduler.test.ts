@@ -392,6 +392,46 @@ describe('isometric render scheduler', () => {
     })
   })
 
+  it('clears paused hidden-tab work on route-change disposal and ignores later wakeups', () => {
+    const driver = createAnimationFrameDriver()
+    const renderFrame = vi.fn()
+    const scheduler = createIsometricRenderScheduler({
+      renderFrame,
+      requestAnimationFrame: driver.requestAnimationFrame,
+      cancelAnimationFrame: driver.cancelAnimationFrame,
+    })
+
+    scheduler.requestRender('initial')
+    scheduler.setActiveAnimation(true)
+    scheduler.pause()
+    scheduler.requestRender('tokens')
+
+    expect(driver.pendingFrameCount()).toBe(0)
+    expect(scheduler.snapshot()).toEqual({
+      isFramePending: false,
+      activeAnimation: true,
+      dirtyReasons: ['initial', 'tokens'],
+      dirtyLayers: ['webgl', 'css3d'],
+      isDisposed: false,
+    })
+
+    expect(scheduler.dispose()).toEqual({
+      isFramePending: false,
+      activeAnimation: false,
+      dirtyReasons: [],
+      dirtyLayers: [],
+      isDisposed: true,
+    })
+
+    scheduler.resume()
+    scheduler.requestRender('hidden-tab-resume')
+    scheduler.setActiveAnimation(true)
+
+    expect(driver.pendingFrameCount()).toBe(0)
+    expect(driver.flushNextFrame(96)).toBe(false)
+    expect(renderFrame).not.toHaveBeenCalled()
+  })
+
   it('cancels a mounted scheduler pending frame before a remounted scheduler renders', () => {
     const driver = createAnimationFrameDriver()
     const firstRenderFrame = vi.fn()
