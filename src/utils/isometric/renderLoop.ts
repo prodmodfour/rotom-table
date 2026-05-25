@@ -3,6 +3,10 @@ import {
   anyTokenRenderStateNeedsAnimation,
   type TokenRenderAnimationState,
 } from './tokenRenderState'
+import {
+  worldSpriteStateNeedsAnimationFrame,
+  type WorldSpriteAnimationState,
+} from './worldSpriteAssets'
 
 export const ISOMETRIC_ANIMATION_CONTINUATION_SOURCE = {
   compatibilityContinuousLoop: 'compatibility-continuous-loop',
@@ -56,6 +60,10 @@ export const createIsometricAnimationContinuation = (
   }
 }
 
+export interface IsometricSpriteAnimationRenderState {
+  spriteState: WorldSpriteAnimationState
+}
+
 export const resolveIsometricTokenMotionContinuationSources = (
   tokens: Iterable<TokenRenderAnimationState>,
 ): IsometricAnimationContinuationSource[] => (
@@ -63,6 +71,18 @@ export const resolveIsometricTokenMotionContinuationSources = (
     ? [ISOMETRIC_ANIMATION_CONTINUATION_SOURCE.tokenMotion]
     : []
 )
+
+export const resolveIsometricSpriteAnimationContinuationSources = (
+  renderStates: Iterable<IsometricSpriteAnimationRenderState>,
+): IsometricAnimationContinuationSource[] => {
+  for (const renderState of renderStates) {
+    if (worldSpriteStateNeedsAnimationFrame(renderState.spriteState)) {
+      return [ISOMETRIC_ANIMATION_CONTINUATION_SOURCE.spriteAnimation]
+    }
+  }
+
+  return []
+}
 
 export const toIsometricRenderSchedulerFrameResult = (
   continuation: IsometricAnimationContinuation,

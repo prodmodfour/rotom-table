@@ -3,9 +3,31 @@ import {
   createIsometricAnimationContinuation,
   ISOMETRIC_ANIMATION_CONTINUATION_SOURCE,
   isIsometricAnimationContinuationSource,
+  resolveIsometricSpriteAnimationContinuationSources,
   resolveIsometricTokenMotionContinuationSources,
   toIsometricRenderSchedulerFrameResult,
 } from '~/utils/isometric/renderLoop'
+
+const spriteAnimation = () => ({
+  url: '/sprites/pikachu-animated.png',
+  frameWidth: 16,
+  frameHeight: 16,
+  frames: 4,
+  columns: 2,
+  rows: 2,
+  durationsMs: [100, 100, 100, 100],
+  totalDurationMs: 400,
+})
+
+const spriteRenderState = (
+  visible: boolean,
+  animationMeta: ReturnType<typeof spriteAnimation> | null = spriteAnimation(),
+) => ({
+  spriteState: {
+    sprite: { visible },
+    animationMeta,
+  },
+})
 
 describe('isometric render loop helpers', () => {
   it('creates an inactive continuation for one-shot renders without animation sources', () => {
@@ -74,6 +96,19 @@ describe('isometric render loop helpers', () => {
     ])
     expect(resolveIsometricTokenMotionContinuationSources([liftingToken])).toEqual([
       ISOMETRIC_ANIMATION_CONTINUATION_SOURCE.tokenMotion,
+    ])
+  })
+
+  it('exposes visible animated sprites as a continuation source', () => {
+    expect(resolveIsometricSpriteAnimationContinuationSources([
+      spriteRenderState(false),
+      spriteRenderState(true, null),
+    ])).toEqual([])
+    expect(resolveIsometricSpriteAnimationContinuationSources([
+      spriteRenderState(false),
+      spriteRenderState(true),
+    ])).toEqual([
+      ISOMETRIC_ANIMATION_CONTINUATION_SOURCE.spriteAnimation,
     ])
   })
 

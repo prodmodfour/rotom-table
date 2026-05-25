@@ -3,11 +3,14 @@ import { describe, expect, it, vi } from 'vitest'
 import type { SpriteAnimation } from '~/types/pokemon'
 import type { WorldSpriteState } from '~/utils/isometric/types'
 import {
+  anyWorldSpriteStateNeedsAnimationFrame,
   applyWorldSpriteAnimationFrame,
   applyWorldSpriteTextureTransform,
   setWorldSpriteTextureWindow,
   spriteAnimationFrameAt,
+  spriteAnimationRequiresFrames,
   spriteVisualAssetKey,
+  worldSpriteStateNeedsAnimationFrame,
 } from '~/utils/isometric/worldSpriteAssets'
 
 const animation = (overrides: Partial<SpriteAnimation> = {}): SpriteAnimation => ({
@@ -23,6 +26,35 @@ const animation = (overrides: Partial<SpriteAnimation> = {}): SpriteAnimation =>
 })
 
 describe('world sprite asset helpers', () => {
+  it('detects animation metadata that requires ongoing frames', () => {
+    expect(spriteAnimationRequiresFrames(animation())).toBe(true)
+    expect(spriteAnimationRequiresFrames(animation({ frames: 1 }))).toBe(false)
+    expect(spriteAnimationRequiresFrames(animation({ frames: 3, totalDurationMs: 0, durationsMs: [] }))).toBe(false)
+    expect(spriteAnimationRequiresFrames(null)).toBe(false)
+  })
+
+  it('detects visible world sprite states that need animation frames', () => {
+    const visibleAnimated = {
+      animationMeta: animation(),
+      sprite: { visible: true },
+    }
+    const hiddenAnimated = {
+      animationMeta: animation(),
+      sprite: { visible: false },
+    }
+    const visibleStatic = {
+      animationMeta: null,
+      sprite: { visible: true },
+    }
+
+    expect(worldSpriteStateNeedsAnimationFrame(visibleAnimated)).toBe(true)
+    expect(worldSpriteStateNeedsAnimationFrame(hiddenAnimated)).toBe(false)
+    expect(worldSpriteStateNeedsAnimationFrame(visibleStatic)).toBe(false)
+    expect(worldSpriteStateNeedsAnimationFrame(null)).toBe(false)
+    expect(anyWorldSpriteStateNeedsAnimationFrame([hiddenAnimated, visibleStatic])).toBe(false)
+    expect(anyWorldSpriteStateNeedsAnimationFrame([hiddenAnimated, visibleAnimated])).toBe(true)
+  })
+
   it('selects animation frames with wrapping elapsed time', () => {
     const meta = animation({
       frames: 3,
