@@ -4,12 +4,19 @@ import {
   ENCOUNTER_API_PATHS,
   MAP_API_PATHS,
   POKEDEX_API_PATHS,
+  SESSION_API_PATHS,
   SHEET_API_PATHS,
 } from '~/utils/apiRoutes'
 
 describe('API route constants', () => {
   it('exposes the realtime events path', () => {
     expect(API_EVENTS_PATH).toBe('/api/events')
+  })
+
+  it('exposes session API paths', () => {
+    expect(SESSION_API_PATHS).toEqual({
+      start: '/api/sessions/start',
+    })
   })
 
   it('exposes map API paths', () => {

@@ -54,6 +54,37 @@ The shared permission helpers distinguish:
 
 Permission denials use safe reasons such as `gm-required`, `player-required`, `resource-not-visible`, `resource-not-assigned`, and `missing-player-identity`. These reasons are suitable for player-facing conflict/rejection UI without exposing secrets.
 
+## GM start-session endpoint
+
+`POST /api/sessions/start` creates the first server-side identity and state record for a Track 2 table session. The route fails closed unless `ROTOM_ENABLE_SESSION_HOST=1` is present, and the server use case repeats that runtime-gate check before allocating anything. The route currently also requires the existing local GM role so the GM can start a session from the trusted local app, but that role picker is not public authentication; the returned session-local GM key is the credential future session management and WebSocket handshakes must validate.
+
+A successful start creates an active in-memory session record, a session ID, a short player join code, a GM key, a GM client ID for the starting browser, an empty authoritative session state at revision `0`, and an initial local JSON snapshot. The response is shaped as session/join details rather than a whole-map autosave:
+
+```json
+{
+  "session": {
+    "sessionId": "session_generated_table_id",
+    "status": "active",
+    "revision": 0,
+    "createdAt": "2026-05-25T12:00:00.000Z",
+    "updatedAt": "2026-05-25T12:00:00.000Z"
+  },
+  "gm": {
+    "gmKey": "gmkey_exampleGeneratedSecretValue01",
+    "clientId": "client_generated_browser_id"
+  },
+  "join": {
+    "joinCode": "ABCD2345"
+  },
+  "snapshot": {
+    "writtenAt": "2026-05-25T12:00:00.000Z",
+    "revision": 0
+  }
+}
+```
+
+The GM key and join code are session-local secrets and should be shown or stored only by later lobby/client-identity flows. Starting a session does not add accounts, hosted persistence, or client whole-map authority.
+
 ## Authoritative state shape
 
 `AuthoritativeSessionState` is the JSON-serializable state the GM-hosted server owns for one session. It includes `sessionId`, monotonic session `revision`, `selectedMapSlug`, per-map `maps[]` entries with `MapRevision` values and server-owned map documents, `connectedClients[]` for WebSocket presence, joined `players[]`, and GM-controlled `assignments[]`.
