@@ -690,7 +690,7 @@ const applyLayerVisibility = () => {
 
 const ensureBuildGhost = () => buildGhostRenderer.ensure()
 const disposeBuildGhost = () => buildGhostRenderer.dispose()
-const hideBuildGhost = () => buildGhostRenderer.hide()
+const hideBuildGhostRenderer = () => buildGhostRenderer.hide()
 
 const ensureHazardGhost = () => hazardGhostRenderer.ensure(props.hazardKind ?? 'spikes')
 const disposeHazardGhost = () => hazardGhostRenderer.dispose()
@@ -916,12 +916,13 @@ const buildInteraction = createIsometricBuildInteractionController({
   }),
   pickTarget: pickBuildTarget,
   updateGhost: (target, options) => buildGhostRenderer.update(target, options),
-  hideGhost: hideBuildGhost,
+  hideGhost: hideBuildGhostRenderer,
   placeVoxel: (voxel) => emit('place-voxel', voxel),
   removeVoxel: (cell) => emit('remove-voxel', cell),
 })
 const updateBuildPreviewFromPointer = buildInteraction.updatePreviewFromPointer
 const performBuildAction = buildInteraction.performAction
+const hideBuildGhost = buildInteraction.hideGhost
 
 const pickHazardTarget = (
   event: MouseEvent | PointerEvent,
