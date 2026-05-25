@@ -12,6 +12,7 @@ This page documents the Track 1 render-scheduler model for future map performanc
 | Scheduler | `src/utils/isometric/renderScheduler.ts` | Coalesces dirty reasons, owns pending RAF state, continues while active animation is reported, and supports pause/resume/dispose. |
 | Dirty reason model | `src/utils/isometric/renderInvalidation.ts` | Defines labelled `RenderInvalidationReason` values and merge/dedupe helpers used by scheduler and metrics. |
 | Animation continuation model | `src/utils/isometric/renderLoop.ts` | Resolves which concrete animation sources should keep requesting frames after a one-shot render. |
+| CSS3D dirty tracking | `src/utils/isometric/css3DRenderDirtyTracker.ts` | Tracks when CSS3D HUD/projection output needs a CSS renderer pass so WebGL-only animation frames can skip CSS work. |
 | Scene watchers | `src/composables/isometric/useIsometricSceneWatchers.ts` | Syncs renderer objects after Vue state changes and requests focused render reasons. |
 | Lifecycle helpers | `src/utils/isometric/lifecycle.ts` | Binds renderer DOM events, resize observation, visibility pause/resume, and resource cleanup. |
 | Pointer interaction coalescing | `src/utils/isometric/pointerInteraction.ts`, `src/utils/isometric/pointerEventCoalescer.ts` | Tracks pointer travel immediately for click semantics while coalescing hover/preview/pathfinding pointermove work to the latest event per animation frame. |
@@ -24,7 +25,7 @@ Vue props, pointer events, async texture loads, resize/control/lifecycle events
   -> mutate or sync output-relevant renderer state
   -> requestScheduledSceneFrame(reason or reasons)
   -> createIsometricRenderScheduler coalesces dirty reasons into one pending RAF
-  -> renderOneShotScheduledFrame updates animations, overlays, WebGL, CSS3D, and debug samples
+  -> renderOneShotScheduledFrame updates animations, overlays, WebGL, dirty CSS3D, and debug samples
   -> resolveSceneAnimationContinuation reports whether concrete animation sources need another frame
   -> scheduler either schedules the next active-animation frame or goes idle
 ```
@@ -36,6 +37,7 @@ Important behaviours:
 - A settled scene has no compatibility continuous loop. With no dirty reasons and no active animation, the scheduler intentionally stops requesting RAF callbacks.
 - Hidden tabs call `pause()`, which cancels pending RAF work without clearing dirty reasons or active-animation state. When visible again, the scene calls `resume()` and requests `hidden-tab-resume` so the next visible frame is fresh.
 - Pointermove handling keeps click-distance tracking immediate, then runs hover picking, build/hazard previews, targeting updates, and movement-preview pathfinding from the latest queued pointer event at most once per animation frame. Pending pointermove work is flushed before pointer-up/wheel actions and cancelled on leave/unmount to avoid stale previews.
+- CSS3D dirty tracking starts dirty for initial paint, marks camera/resize/HUD/targeting/pointer-related invalidations as CSS-visible, and marks token-motion animation frames because token HUD transforms follow moving/lifting tokens. WebGL-only animation frames such as weather, field effects, sprite animation, or texture-loading frames skip `CSS3DRenderer.render()` when no CSS-visible state is dirty.
 - Unmount calls `dispose()`, then renderer resource cleanup. New invalidations after disposal are ignored by the disposed scheduler snapshot.
 
 ## Current invalidation reasons

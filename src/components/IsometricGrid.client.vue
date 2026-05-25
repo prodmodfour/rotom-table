@@ -152,6 +152,7 @@ import {
   resolveIsometricTokenMotionContinuationSources,
   toIsometricRenderSchedulerFrameResult,
 } from '~/utils/isometric/renderLoop'
+import { createCss3DRenderDirtyTracker } from '~/utils/isometric/css3DRenderDirtyTracker'
 
 export type { BuildTool } from '#shared/mapEditor'
 
@@ -465,6 +466,7 @@ const tokenProxyPickTargets = createTokenProxyPickTargetCache()
 const buildHazardPickTargets = createBuildHazardPickTargetCache()
 const renderFrameTimingSampler = createRenderFrameTimingSampler()
 const pointerInteractionMetricsSampler = createPointerInteractionMetricsSampler()
+const css3DRenderDirtyTracker = createCss3DRenderDirtyTracker()
 
 const readRenderMetricsNowMs = (): number => {
   const performanceNow = globalThis.performance?.now
@@ -598,6 +600,7 @@ const syncRendererSize = (): boolean => {
     previousSize: rendererSizeState,
   })
   rendererSizeState = result.size
+  if (result.changed) css3DRenderDirtyTracker.markDirty('resize')
 
   return result.changed
 }
@@ -1407,6 +1410,10 @@ const renderOneShotScheduledFrame = (frame: IsometricScheduledRenderFrame): bool
     return false
   }
 
+  const animationContinuation = resolveSceneAnimationContinuation()
+  css3DRenderDirtyTracker.markDirtyForRenderReasons(frame.reasons)
+  css3DRenderDirtyTracker.markDirtyForAnimationContinuation(animationContinuation)
+
   stepIsometricAnimationFrame({
     clock,
     renderObjects: renderObjects.values(),
@@ -1422,6 +1429,7 @@ const renderOneShotScheduledFrame = (frame: IsometricScheduledRenderFrame): bool
     scene,
     facingDirection: DEFAULT_FACING_DIRECTION,
     beforeRender: updateMoveAutomationOverlays,
+    css3DRenderDirtyTracker,
   })
   recordScheduledFrameForMetricsOverlay(frame)
   sampleRendererInfoForMetricsOverlay()
@@ -1445,6 +1453,7 @@ const startScheduledRenderLoop = () => {
   if (documentIsHidden()) {
     renderScheduler.pause()
   }
+  css3DRenderDirtyTracker.markDirty('initial')
   renderScheduler.requestRender('initial')
   renderScheduler.setActiveAnimation(resolveSceneAnimationContinuation().active)
 }

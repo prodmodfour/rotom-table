@@ -12,13 +12,19 @@ export interface IsometricAnimationFrameResult {
   frameNowMs: number
   spriteBrightness: number
   haloAlpha: number
+  cssRendered: boolean
+}
+
+export interface IsometricCss3DRenderDirtyTrackerLike {
+  markDirty?: (reason?: 'camera') => void
+  consumeDirty: () => boolean
 }
 
 export interface IsometricAnimationFrameOptions {
   clock: Pick<THREE.Clock, 'getDelta' | 'elapsedTime'>
   renderObjects: Iterable<PokemonRenderObject>
   applyRenderObjectPosition: (renderObject: PokemonRenderObject) => void
-  controls: { target: THREE.Vector3; update: () => void }
+  controls: { target: THREE.Vector3; update: () => boolean | void }
   fieldEffectRenderer: { update: (delta: number, elapsedTime: number) => void }
   tokenMovePreviewRenderer: {
     animate: (options: {
@@ -40,6 +46,7 @@ export interface IsometricAnimationFrameOptions {
   frameNowMs?: number
   animateRenderObject?: typeof animatePokemonRenderObject
   beforeRender?: () => void
+  css3DRenderDirtyTracker?: IsometricCss3DRenderDirtyTrackerLike
 }
 
 export const stepIsometricAnimationFrame = (
@@ -59,7 +66,9 @@ export const stepIsometricAnimationFrame = (
     options.applyRenderObjectPosition(renderObject)
   }
 
-  options.controls.update()
+  const controlsChanged = options.controls.update() === true
+  if (controlsChanged) options.css3DRenderDirtyTracker?.markDirty?.('camera')
+
   options.fieldEffectRenderer.update(delta, options.clock.elapsedTime)
 
   const { spriteBrightness, haloAlpha } = getIsometricSpriteLighting({
@@ -91,8 +100,10 @@ export const stepIsometricAnimationFrame = (
 
   options.beforeRender?.()
 
+  const cssRendered = options.css3DRenderDirtyTracker?.consumeDirty() ?? true
+
   options.renderer.render(options.scene, options.camera)
-  options.cssRenderer.render(options.scene, options.camera)
+  if (cssRendered) options.cssRenderer.render(options.scene, options.camera)
 
   return {
     delta,
@@ -100,5 +111,6 @@ export const stepIsometricAnimationFrame = (
     frameNowMs,
     spriteBrightness,
     haloAlpha,
+    cssRendered,
   }
 }
