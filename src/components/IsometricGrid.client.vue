@@ -21,7 +21,10 @@ import { getPokemonCenter } from '~/utils/gridGeometry'
 import { buildAllVoxelOccupancy } from '~/utils/voxelOccupancy'
 import { buildMapOccupancy } from '~/utils/mapOccupancy'
 import { normalizeMapFieldEffects } from '~/utils/mapFieldEffects'
-import { moveAutomationAreaDirectionFromPoint } from '~/utils/moveAutomationAreaAiming'
+import {
+  createMoveAutomationAreaDirectionUpdateThrottle,
+  moveAutomationAreaDirectionFromPoint,
+} from '~/utils/moveAutomationAreaAiming'
 import type { CombatStageMap } from '~/types/combatStages'
 import type {
   MoveAutomationAreaDirection,
@@ -55,6 +58,7 @@ import {
 } from '~/utils/isometric/cameraControls'
 import { createPointerTravelTracker } from '~/utils/isometric/pointerTracker'
 import { createIsometricPointerInteractionController } from '~/utils/isometric/pointerInteraction'
+import type { CoalescedPointerEventFrame } from '~/utils/isometric/pointerEventCoalescer'
 import type {
   BuildTarget,
   HazardTarget,
@@ -65,6 +69,10 @@ import { createHazardRenderer } from '~/utils/isometric/hazardRenderer'
 import { createFieldEffectRenderer } from '~/utils/isometric/fieldEffectRenderer'
 import { createGridRenderer } from '~/utils/isometric/gridRenderer'
 import {
+  createBuildHazardPickTargetCache,
+  createPointerRaycastScratch,
+  createRendererPointerBoundsCache,
+  createTokenProxyPickTargetCache,
   getMoveGridIntersectionFromPointer,
   pickBuildTargetFromPointer,
   pickHazardTargetFromPointer,
@@ -72,6 +80,7 @@ import {
 } from '~/utils/isometric/interactionTargets'
 import { createBuildGhostRenderer, createHazardGhostRenderer } from '~/utils/isometric/previewGhosts'
 import { createTokenMovePreviewRenderer } from '~/utils/isometric/tokenMovePreview'
+import { createTokenRenderGeometryCache } from '~/utils/isometric/tokenGeometryCache'
 import {
   createMoveAreaTemplateRenderer,
   createMoveAutomationFeedbackRenderer,
@@ -86,6 +95,7 @@ import {
 } from '~/utils/isometric/sceneState'
 import { createIsometricTokenMovementInteractionController } from '~/utils/isometric/tokenMovementInteraction'
 import { createIsometricTokenSendOutInteractionController } from '~/utils/isometric/tokenSendOutInteraction'
+import { movementPathPlacementRevision } from '~/utils/mapMovementPathCache'
 import {
   applyPokemonRenderObjectPosition,
   createPokemonRenderObject,
@@ -104,7 +114,7 @@ import {
 import { createIsometricSceneGraph } from '~/utils/isometric/sceneGraph'
 import { stepIsometricAnimationFrame } from '~/utils/isometric/animationFrame'
 import {
-  applyIsometricLayerVisibility,
+  createIsometricLayerVisibilityApplicator,
   setIsometricGridVisibility,
 } from '~/utils/isometric/layerVisibility'
 import { createIsometricBuildInteractionController } from '~/utils/isometric/buildInteraction'
@@ -122,8 +132,11 @@ import { createRenderFrameTimingSampler } from '~/utils/isometric/frameTimingSam
 import {
   createEmptyIsometricRenderMetricsSnapshot,
   createIsometricRenderMetricsSnapshotWithFrameTiming,
+  createIsometricRenderMetricsSnapshotWithPointerInteractions,
   createIsometricRenderMetricsSnapshotWithRendererInfo,
+  type IsometricPointerRaycastKind,
 } from '~/utils/isometric/renderMetrics'
+import { createPointerInteractionMetricsSampler } from '~/utils/isometric/pointerMetricsSampler'
 import { sampleWebGLRendererInfo } from '~/utils/isometric/rendererInfoSampler'
 import {
   createIsometricRenderScheduler,
@@ -139,6 +152,7 @@ import {
   resolveIsometricTokenMotionContinuationSources,
   toIsometricRenderSchedulerFrameResult,
 } from '~/utils/isometric/renderLoop'
+import { createCss3DRenderDirtyTracker } from '~/utils/isometric/css3DRenderDirtyTracker'
 
 export type { BuildTool } from '#shared/mapEditor'
 
@@ -381,6 +395,7 @@ const renderedFieldEffects = computed(() => normalizeMapFieldEffects(props.field
 const fieldEffectsRevision = computed(() => getFieldEffectsRevisionKey(renderedFieldEffects.value))
 const hazardRevision = computed(() => getHazardsRevisionKey(renderedHazards.value))
 const terrainVoxelRevision = computed(() => getTerrainVoxelsRevisionKey(renderedTerrainVoxels.value))
+const pokemonPlacementRevision = computed(() => movementPathPlacementRevision(props.pokemons))
 const mapMovementOccupancy = computed(() =>
   buildMapOccupancy({
     voxels: renderedTerrainVoxels.value,
@@ -419,6 +434,7 @@ const {
 } = createIsometricSceneGraph()
 
 const renderObjects = new Map<string, PokemonRenderObject>()
+const tokenGeometryCache = createTokenRenderGeometryCache()
 const voxelRenderer = createVoxelRenderer(voxelContainer)
 const hazardRenderer = createHazardRenderer(hazardContainer)
 const fieldEffectRenderer = createFieldEffectRenderer(fieldEffectContainer)
@@ -444,7 +460,14 @@ let cleanupResizeObserver: (() => void) | null = null
 let renderScheduler: IsometricRenderScheduler | null = null
 let rendererSizeState: IsometricRendererSizeState | null = null
 const pointerTracker = createPointerTravelTracker()
+const rendererBoundsCache = createRendererPointerBoundsCache()
+const pointerRaycastScratch = createPointerRaycastScratch()
+const tokenProxyPickTargets = createTokenProxyPickTargetCache()
+const buildHazardPickTargets = createBuildHazardPickTargetCache()
 const renderFrameTimingSampler = createRenderFrameTimingSampler()
+const pointerInteractionMetricsSampler = createPointerInteractionMetricsSampler()
+const css3DRenderDirtyTracker = createCss3DRenderDirtyTracker()
+const layerVisibilityApplicator = createIsometricLayerVisibilityApplicator()
 
 const readRenderMetricsNowMs = (): number => {
   const performanceNow = globalThis.performance?.now
@@ -491,9 +514,79 @@ const sampleRendererInfoForMetricsOverlay = () => {
   )
 }
 
+const syncPointerMetricsForMetricsOverlay = () => {
+  if (!renderMetricsOverlayEnabled.value) {
+    return
+  }
+
+  renderMetricsOverlaySnapshot.value = createIsometricRenderMetricsSnapshotWithPointerInteractions(
+    renderMetricsOverlaySnapshot.value,
+    pointerInteractionMetricsSampler.snapshot(),
+    readRenderMetricsNowMs(),
+  )
+}
+
+const recordPointerMoveEventForMetricsOverlay = () => {
+  if (!renderMetricsOverlayEnabled.value) {
+    return
+  }
+
+  pointerInteractionMetricsSampler.recordPointerMoveEvent()
+  syncPointerMetricsForMetricsOverlay()
+}
+
+const recordPointerMoveFrameForMetricsOverlay = (frame: CoalescedPointerEventFrame) => {
+  if (!renderMetricsOverlayEnabled.value) {
+    return
+  }
+
+  pointerInteractionMetricsSampler.recordPointerMoveFrame({
+    coalescedEventCount: frame.coalescedEventCount,
+  })
+  syncPointerMetricsForMetricsOverlay()
+}
+
+const recordPointerRaycastForMetricsOverlay = (kind: IsometricPointerRaycastKind) => {
+  if (!renderMetricsOverlayEnabled.value) {
+    return
+  }
+
+  pointerInteractionMetricsSampler.recordRaycast(kind)
+  syncPointerMetricsForMetricsOverlay()
+}
+
+const recordPathfindingRequestForMetricsOverlay = () => {
+  if (!renderMetricsOverlayEnabled.value) {
+    return
+  }
+
+  pointerInteractionMetricsSampler.recordPathfindingRequest()
+  syncPointerMetricsForMetricsOverlay()
+}
+
+const recordPathfindingCacheHitForMetricsOverlay = () => {
+  if (!renderMetricsOverlayEnabled.value) {
+    return
+  }
+
+  pointerInteractionMetricsSampler.recordPathfindingCacheHit()
+  syncPointerMetricsForMetricsOverlay()
+}
+
+const recordPathfindingCacheMissForMetricsOverlay = () => {
+  if (!renderMetricsOverlayEnabled.value) {
+    return
+  }
+
+  pointerInteractionMetricsSampler.recordPathfindingCacheMiss()
+  syncPointerMetricsForMetricsOverlay()
+}
+
 const getPreviewLayerY = () => movementInteraction.activeAnchor()?.y ?? selectedPokemon.value?.position.y ?? 0
 
 const syncRendererSize = (): boolean => {
+  rendererBoundsCache.invalidate()
+
   if (!renderer || !cssRenderer || !camera || !container.value) {
     return false
   }
@@ -508,6 +601,7 @@ const syncRendererSize = (): boolean => {
     previousSize: rendererSizeState,
   })
   rendererSizeState = result.size
+  if (result.changed) css3DRenderDirtyTracker.markDirty('resize')
 
   return result.changed
 }
@@ -571,6 +665,7 @@ const updateGridVisibility = () => {
 
 const buildGrid = () => {
   gridRenderer.sync(props.dimensions)
+  buildHazardPickTargets.setFloorPlane(gridRenderer.floorPlane())
   updateGridVisibility()
 }
 
@@ -591,18 +686,17 @@ const buildRenderObject = (pokemon: SpawnedPokemon): PokemonRenderObject =>
     scene,
     worldGroup,
     onTextureLoadComplete: requestTokenTextureRender,
+    geometryCache: tokenGeometryCache,
   })
 
-const applyRenderObjectPosition = (renderObject: PokemonRenderObject) => {
-  applyPokemonRenderObjectPosition(renderObject, {
-    camera,
-    activeTurnId: props.activeTurnId,
-    groundLevelY: normalizedGroundLevelY(),
-    hoveredPokemonId: hoverController.id(),
-    layers: visibleLayers(),
-    getShadowSurfaceY,
-  })
-}
+const applyRenderObjectPosition = (renderObject: PokemonRenderObject): boolean => applyPokemonRenderObjectPosition(renderObject, {
+  camera,
+  activeTurnId: props.activeTurnId,
+  groundLevelY: normalizedGroundLevelY(),
+  hoveredPokemonId: hoverController.id(),
+  layers: visibleLayers(),
+  getShadowSurfaceY,
+})
 
 const refreshPokemonStyles = () => {
   syncPokemonRenderObjectSelectionStyles({
@@ -611,7 +705,17 @@ const refreshPokemonStyles = () => {
     selectedId: props.selectedId,
     paintRenderObjectStyle: (renderObject, selected) => paintPokemonRenderObjectStyle(renderObject, selected),
   })
-  applyLayerVisibility()
+  applyLayerVisibility({ force: true })
+}
+
+const onCreateRenderObject = (renderObject: PokemonRenderObject) => {
+  tokenProxyPickTargets.add(renderObject)
+  applyRenderObjectPosition(renderObject)
+}
+
+const disposeRenderObject = (renderObject: PokemonRenderObject) => {
+  tokenProxyPickTargets.remove(renderObject)
+  disposePokemonRenderObject(renderObject)
 }
 
 const syncPokemonObjects = () => {
@@ -619,9 +723,11 @@ const syncPokemonObjects = () => {
     renderObjects,
     pokemons: props.pokemons,
     createRenderObject: buildRenderObject,
-    onCreateRenderObject: applyRenderObjectPosition,
-    updateRenderObject: updatePokemonRenderObjectFromSpawn,
-    disposeRenderObject: disposePokemonRenderObject,
+    onCreateRenderObject,
+    updateRenderObject: (renderObject, pokemon) => updatePokemonRenderObjectFromSpawn(renderObject, pokemon, {
+      geometryCache: tokenGeometryCache,
+    }),
+    disposeRenderObject,
     clearHoverForToken: hoverController.clearIfHovered,
   })
 
@@ -631,8 +737,10 @@ const syncPokemonObjects = () => {
 const syncVoxelMeshes = () => {
   voxelRenderer.sync(renderedTerrainVoxels.value, {
     ghostVoxelsFaded: props.ghostVoxelsFaded,
+    terrainRevision: terrainVoxelRevision.value,
   })
-  applyLayerVisibility()
+  buildHazardPickTargets.setVoxelMeshes(voxelRenderer.meshes())
+  applyLayerVisibility({ force: true })
 }
 
 const syncFieldEffectMeshes = () => {
@@ -642,16 +750,21 @@ const syncFieldEffectMeshes = () => {
     groundLevelY: normalizedGroundLevelY(),
     effects: renderedFieldEffects.value,
   })
-  applyLayerVisibility()
+  applyLayerVisibility({ force: true })
 }
 
 const syncHazardMeshes = () => {
   hazardRenderer.sync(renderedHazards.value)
-  applyLayerVisibility()
+  buildHazardPickTargets.setHazardMeshes(hazardRenderer.meshes())
+  applyLayerVisibility({ force: true })
 }
 
-const applyLayerVisibility = () => {
-  applyIsometricLayerVisibility({
+const applyLayerVisibility = (options: { force?: boolean } = {}) => {
+  if (options.force) {
+    layerVisibilityApplicator.invalidate()
+  }
+
+  return layerVisibilityApplicator.apply({
     layers: visibleLayers(),
     hasSelectedPokemon: Boolean(selectedPokemon.value),
     buildMode: props.buildMode,
@@ -667,11 +780,11 @@ const applyLayerVisibility = () => {
 
 const ensureBuildGhost = () => buildGhostRenderer.ensure()
 const disposeBuildGhost = () => buildGhostRenderer.dispose()
-const hideBuildGhost = () => buildGhostRenderer.hide()
+const hideBuildGhostRenderer = () => buildGhostRenderer.hide()
 
 const ensureHazardGhost = () => hazardGhostRenderer.ensure(props.hazardKind ?? 'spikes')
 const disposeHazardGhost = () => hazardGhostRenderer.dispose()
-const hideHazardGhost = () => hazardGhostRenderer.hide()
+const hideHazardGhostRenderer = () => hazardGhostRenderer.hide()
 
 const pickPokemonId = (event: MouseEvent | PointerEvent) =>
   pickPokemonIdFromPointer({
@@ -680,6 +793,10 @@ const pickPokemonId = (event: MouseEvent | PointerEvent) =>
     camera,
     raycaster,
     renderObjects: renderObjects.values(),
+    tokenProxyTargets: tokenProxyPickTargets,
+    boundsCache: rendererBoundsCache,
+    scratch: pointerRaycastScratch,
+    recordRaycast: recordPointerRaycastForMetricsOverlay,
   })
 
 const moveTargetingCandidateIdSet = () => new Set(props.moveAutomationTargeting?.candidateIds ?? [])
@@ -804,6 +921,9 @@ const getMoveGridIntersection = (event: MouseEvent | PointerEvent, yLevel: numbe
     renderer,
     camera,
     raycaster,
+    boundsCache: rendererBoundsCache,
+    scratch: pointerRaycastScratch,
+    recordRaycast: recordPointerRaycastForMetricsOverlay,
   })
 
 const moveAreaDirectionFromPointer = (event: MouseEvent | PointerEvent): MoveAutomationAreaDirection | null => {
@@ -822,10 +942,28 @@ const moveAreaDirectionFromPointer = (event: MouseEvent | PointerEvent): MoveAut
     : null
 }
 
+const moveAreaDirectionUpdateThrottle = createMoveAutomationAreaDirectionUpdateThrottle(
+  props.moveAutomationTargeting?.areaDirection,
+)
+
+const selectMoveAreaDirection = (direction: MoveAutomationAreaDirection) => {
+  if (props.moveAutomationTargeting?.mode !== 'area-confirmation') {
+    moveAreaDirectionUpdateThrottle.reset()
+    return
+  }
+
+  if (!moveAreaDirectionUpdateThrottle.shouldEmitDirection(
+    direction,
+    props.moveAutomationTargeting.areaDirection,
+  )) return
+
+  emit('select-move-area-direction', direction)
+}
+
 const updateMoveAreaDirectionFromPointer = (event: MouseEvent | PointerEvent) => {
   const direction = moveAreaDirectionFromPointer(event)
-  if (!direction || direction === props.moveAutomationTargeting?.areaDirection) return
-  emit('select-move-area-direction', direction)
+  if (!direction) return
+  selectMoveAreaDirection(direction)
 }
 
 const movementInteraction = createIsometricTokenMovementInteractionController({
@@ -833,6 +971,8 @@ const movementInteraction = createIsometricTokenMovementInteractionController({
   getPokemons: () => props.pokemons,
   getDimensions: () => props.dimensions,
   getMapVoxels: () => renderedTerrainVoxels.value,
+  getMapVoxelsRevision: () => terrainVoxelRevision.value,
+  getPokemonPlacementRevision: () => pokemonPlacementRevision.value,
   getPreviewLayerY,
   getGroundLevelY: normalizedGroundLevelY,
   getCamera: () => camera,
@@ -840,6 +980,9 @@ const movementInteraction = createIsometricTokenMovementInteractionController({
   previewRenderer: tokenMovePreviewRenderer,
   emitPreviewChange: emitMovementPreviewChange,
   movePokemon: (payload) => emit('move-pokemon', payload),
+  recordPathfindingRequest: recordPathfindingRequestForMetricsOverlay,
+  recordPathfindingCacheHit: recordPathfindingCacheHitForMetricsOverlay,
+  recordPathfindingCacheMiss: recordPathfindingCacheMissForMetricsOverlay,
 })
 const ensurePreviewObjects = movementInteraction.ensurePreviewObjects
 const clearPreviewVisuals = movementInteraction.clearPreviewVisuals
@@ -869,12 +1012,14 @@ const pickBuildTarget = (
     renderer,
     camera,
     raycaster,
-    floorPlane: gridRenderer.floorPlane(),
-    voxelMeshes: voxelRenderer.meshes(),
+    pickTargetCache: buildHazardPickTargets,
     dimensions: props.dimensions,
     pokemons: props.pokemons,
     allVoxelOccupancy: allVoxelOccupancy.value,
     mapMovementOccupancy: mapMovementOccupancy.value,
+    boundsCache: rendererBoundsCache,
+    scratch: pointerRaycastScratch,
+    recordRaycast: recordPointerRaycastForMetricsOverlay,
   })
 
 const buildInteraction = createIsometricBuildInteractionController({
@@ -887,12 +1032,13 @@ const buildInteraction = createIsometricBuildInteractionController({
   }),
   pickTarget: pickBuildTarget,
   updateGhost: (target, options) => buildGhostRenderer.update(target, options),
-  hideGhost: hideBuildGhost,
+  hideGhost: hideBuildGhostRenderer,
   placeVoxel: (voxel) => emit('place-voxel', voxel),
   removeVoxel: (cell) => emit('remove-voxel', cell),
 })
 const updateBuildPreviewFromPointer = buildInteraction.updatePreviewFromPointer
 const performBuildAction = buildInteraction.performAction
+const hideBuildGhost = buildInteraction.hideGhost
 
 const pickHazardTarget = (
   event: MouseEvent | PointerEvent,
@@ -904,11 +1050,13 @@ const pickHazardTarget = (
     renderer,
     camera,
     raycaster,
-    hazardMeshes: hazardRenderer.meshes(),
-    voxelMeshes: voxelRenderer.meshes(),
+    pickTargetCache: buildHazardPickTargets,
     hazards: renderedHazards.value,
     dimensions: props.dimensions,
     groundLevelY: normalizedGroundLevelY(),
+    boundsCache: rendererBoundsCache,
+    scratch: pointerRaycastScratch,
+    recordRaycast: recordPointerRaycastForMetricsOverlay,
   })
 
 const hazardInteraction = createIsometricHazardInteractionController({
@@ -919,12 +1067,20 @@ const hazardInteraction = createIsometricHazardInteractionController({
   }),
   pickTarget: pickHazardTarget,
   updateGhost: (target, options) => hazardGhostRenderer.update(target, options),
-  hideGhost: hideHazardGhost,
+  hideGhost: hideHazardGhostRenderer,
   placeHazard: (hazard) => emit('place-hazard', hazard),
   removeHazard: (cell) => emit('remove-hazard', cell),
 })
 const updateHazardPreviewFromPointer = hazardInteraction.updatePreviewFromPointer
 const performHazardAction = hazardInteraction.performAction
+const hideHazardGhost = hazardInteraction.hideGhost
+
+const requestRenderAfterPointerInteraction = () => requestScheduledSceneFrame('pointer')
+
+const handlePointerMoveFrameForMetricsOverlay = (frame: CoalescedPointerEventFrame) => {
+  recordPointerMoveFrameForMetricsOverlay(frame)
+  requestRenderAfterPointerInteraction()
+}
 
 const pointerInteraction = createIsometricPointerInteractionController({
   pointerTracker,
@@ -960,6 +1116,7 @@ const pointerInteraction = createIsometricPointerInteractionController({
   hideBuildGhost,
   hideHazardGhost,
   closeTopmostOverlay,
+  onPointerMoveFrame: handlePointerMoveFrameForMetricsOverlay,
 })
 const replayBuildPreview = () => buildInteraction.replayPreview(pointerInteraction.lastPointerCoords())
 const replayHazardPreview = () => hazardInteraction.replayPreview(pointerInteraction.lastPointerCoords())
@@ -972,19 +1129,21 @@ const {
   handlePointerUp: handlePointerUpRaw,
   handlePointerLeave: handlePointerLeaveRaw,
   handleEscape: handleEscapeRaw,
+  dispose: disposePointerInteraction,
 } = pointerInteraction
 
-const requestRenderAfterPointerInteraction = () => requestScheduledSceneFrame('pointer')
-
 const handleRightClick = (event: MouseEvent) => {
+  rendererBoundsCache.invalidate()
   handleRightClickRaw(event)
   requestRenderAfterPointerInteraction()
 }
 const handlePointerDown = (event: PointerEvent) => {
+  rendererBoundsCache.invalidate()
   handlePointerDownRaw(event)
   requestRenderAfterPointerInteraction()
 }
 const handlePointerMove = (event: PointerEvent) => {
+  recordPointerMoveEventForMetricsOverlay()
   handlePointerMoveRaw(event)
   requestRenderAfterPointerInteraction()
 }
@@ -1033,6 +1192,7 @@ watch([() => props.buildMode, () => props.hazardMode], ([buildActive, hazardActi
 })
 
 watch(() => props.moveAutomationTargeting, (targeting) => {
+  moveAreaDirectionUpdateThrottle.syncCurrentDirection(targeting?.areaDirection)
   if (!targeting) return
 
   closeContextMenu()
@@ -1090,10 +1250,13 @@ const syncTargetReticleButtons = (options: {
   show: boolean
   showsReticle: boolean
   selectedIds?: ReadonlySet<string> | null
-}) => {
+}): boolean => {
   if (!options.show) {
-    if (targetReticleButtons.value.length) targetReticleButtons.value = []
-    return
+    if (targetReticleButtons.value.length) {
+      targetReticleButtons.value = []
+      return true
+    }
+    return false
   }
 
   const targeting = props.moveAutomationTargeting
@@ -1119,16 +1282,27 @@ const syncTargetReticleButtons = (options: {
       && old?.showsReticle === entry.showsReticle
       && sameMoveTargetHitChance(old?.hitChance, entry.hitChance)
   })
-  if (!unchanged) targetReticleButtons.value = next
+  if (!unchanged) {
+    targetReticleButtons.value = next
+    return true
+  }
+  return false
 }
 
-const syncAttackOfOpportunityButtons = () => {
+const syncAttackOfOpportunityButtons = (): boolean => {
   const layers = visibleLayers()
   const prompts = props.attackOfOpportunityPrompts ?? []
   if (!layers.tokens || !prompts.length) {
-    if (attackOfOpportunityButtons.value.length) attackOfOpportunityButtons.value = []
-    if (openAttackOfOpportunityMenuId.value) openAttackOfOpportunityMenuId.value = null
-    return
+    let changed = false
+    if (attackOfOpportunityButtons.value.length) {
+      attackOfOpportunityButtons.value = []
+      changed = true
+    }
+    if (openAttackOfOpportunityMenuId.value) {
+      openAttackOfOpportunityMenuId.value = null
+      changed = true
+    }
+    return changed
   }
 
   const next = prompts.flatMap((prompt): AttackOfOpportunityButton[] => {
@@ -1145,11 +1319,17 @@ const syncAttackOfOpportunityButtons = () => {
       && old.struggleOptions.length === entry.struggleOptions.length
       && old.struggleOptions.every((move, moveIndex) => move.name === entry.struggleOptions[moveIndex]?.name)
   })
-  if (!unchanged) attackOfOpportunityButtons.value = next
+  let changed = false
+  if (!unchanged) {
+    attackOfOpportunityButtons.value = next
+    changed = true
+  }
 
   if (openAttackOfOpportunityMenuId.value && !next.some((button) => button.id === openAttackOfOpportunityMenuId.value)) {
     openAttackOfOpportunityMenuId.value = null
+    changed = true
   }
+  return changed
 }
 
 const useAttackOfOpportunityMove = (promptId: string, moveName: string) => {
@@ -1182,7 +1362,7 @@ const targetReticleButtonLabel = (button: TargetReticleButton): string => {
   return button.hitChance ? `Select move target (${button.hitChance.label} to hit)` : 'Select move target'
 }
 
-const updateMoveAutomationOverlays = () => {
+const updateMoveAutomationOverlays = (): boolean => {
   const layers = visibleLayers()
   const targeting = props.moveAutomationTargeting
   const showClickableTargetReticles = Boolean(targeting?.mode === 'target' && layers.tokens)
@@ -1192,7 +1372,7 @@ const updateMoveAutomationOverlays = () => {
   const areaReticleIds = targeting?.mode === 'area-confirmation' ? targeting.candidateIds : []
   const areaSelectedIds = areaSelectedTargetIdSet(targeting)
   const showAreaTargetReticles = Boolean(showAreaTemplate && layers.tokens && areaReticleIds.length)
-  syncTargetReticleButtons({
+  let cssUiChanged = syncTargetReticleButtons({
     show: showClickableTargetReticles || showAreaToggleButtons,
     showsReticle: showClickableTargetReticles,
     selectedIds: showAreaToggleButtons ? areaSelectedIds : null,
@@ -1201,19 +1381,20 @@ const updateMoveAutomationOverlays = () => {
     cells: targeting?.areaCells ?? [],
     show: showAreaTemplate,
   })
-  moveTargetingReticleRenderer.update({
+  cssUiChanged = moveTargetingReticleRenderer.update({
     candidateIds: areaReticleIds,
     selectedIds: areaSelectedIds ? Array.from(areaSelectedIds) : undefined,
     hitChances: targeting?.hitChances,
     renderObjects,
     show: showAreaTargetReticles,
-  })
-  moveAutomationFeedbackRenderer.update({
+  }) || cssUiChanged
+  cssUiChanged = moveAutomationFeedbackRenderer.update({
     feedback: props.moveAutomationFeedback,
     renderObjects,
     show: layers.tokens,
-  })
-  syncAttackOfOpportunityButtons()
+  }) || cssUiChanged
+  cssUiChanged = syncAttackOfOpportunityButtons() || cssUiChanged
+  return cssUiChanged
 }
 
 // Continue scheduling only while concrete scene work is still active. A
@@ -1253,6 +1434,10 @@ const renderOneShotScheduledFrame = (frame: IsometricScheduledRenderFrame): bool
     return false
   }
 
+  const animationContinuation = resolveSceneAnimationContinuation()
+  css3DRenderDirtyTracker.markDirtyForRenderLayers(frame.dirtyLayers, frame.reasons)
+  css3DRenderDirtyTracker.markDirtyForAnimationContinuation(animationContinuation)
+
   stepIsometricAnimationFrame({
     clock,
     renderObjects: renderObjects.values(),
@@ -1268,6 +1453,7 @@ const renderOneShotScheduledFrame = (frame: IsometricScheduledRenderFrame): bool
     scene,
     facingDirection: DEFAULT_FACING_DIRECTION,
     beforeRender: updateMoveAutomationOverlays,
+    css3DRenderDirtyTracker,
   })
   recordScheduledFrameForMetricsOverlay(frame)
   sampleRendererInfoForMetricsOverlay()
@@ -1291,6 +1477,7 @@ const startScheduledRenderLoop = () => {
   if (documentIsHidden()) {
     renderScheduler.pause()
   }
+  css3DRenderDirtyTracker.markDirty('initial')
   renderScheduler.requestRender('initial')
   renderScheduler.setActiveAnimation(resolveSceneAnimationContinuation().active)
 }
@@ -1352,6 +1539,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   stopScheduledRenderLoop()
+  disposePointerInteraction()
 
   cleanupDocumentVisibilityChange?.()
   cleanupDocumentVisibilityChange = null
@@ -1378,7 +1566,7 @@ onBeforeUnmount(() => {
     fieldEffectRenderer,
     voxelRenderer,
     renderObjects,
-    disposeRenderObject: disposePokemonRenderObject,
+    disposeRenderObject,
     gridRenderer,
     controls,
     renderer,
@@ -1389,6 +1577,10 @@ onBeforeUnmount(() => {
   cssRenderer = null
   camera = null
   rendererSizeState = null
+  rendererBoundsCache.invalidate()
+  tokenProxyPickTargets.clear()
+  buildHazardPickTargets.clear()
+  tokenGeometryCache.dispose()
 })
 
 useIsometricSceneWatchers({
@@ -1508,7 +1700,7 @@ useIsometricSceneWatchers({
           type="button"
           :title="option.label"
           @pointerdown.stop
-          @click.stop="emit('select-move-area-direction', option.direction)"
+          @click.stop="selectMoveAreaDirection(option.direction)"
         >
           {{ areaDirectionButtonLabel(option.direction) }}
         </button>

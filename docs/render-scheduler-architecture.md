@@ -9,11 +9,13 @@ This page documents the Track 1 render-scheduler model for future map performanc
 | Area | File | Responsibility |
 | --- | --- | --- |
 | Vue/renderer bridge | `src/components/IsometricGrid.client.vue` | Owns the live Three.js/CSS3D scene, routes watcher/pointer/lifecycle events into the scheduler, and performs the one-shot render step. |
-| Scheduler | `src/utils/isometric/renderScheduler.ts` | Coalesces dirty reasons, owns pending RAF state, continues while active animation is reported, and supports pause/resume/dispose. |
-| Dirty reason model | `src/utils/isometric/renderInvalidation.ts` | Defines labelled `RenderInvalidationReason` values and merge/dedupe helpers used by scheduler and metrics. |
+| Scheduler | `src/utils/isometric/renderScheduler.ts` | Coalesces dirty reasons plus WebGL/CSS3D dirty-layer state, owns pending RAF state, continues while active animation is reported, and supports pause/resume/dispose. |
+| Dirty reason model | `src/utils/isometric/renderInvalidation.ts` | Defines labelled `RenderInvalidationReason` values, WebGL/CSS3D layer classification, and merge/dedupe helpers used by scheduler and metrics. |
 | Animation continuation model | `src/utils/isometric/renderLoop.ts` | Resolves which concrete animation sources should keep requesting frames after a one-shot render. |
+| CSS3D dirty tracking | `src/utils/isometric/css3DRenderDirtyTracker.ts` | Tracks when CSS3D HUD/projection output needs a CSS renderer pass so WebGL-only animation frames can skip CSS work. |
 | Scene watchers | `src/composables/isometric/useIsometricSceneWatchers.ts` | Syncs renderer objects after Vue state changes and requests focused render reasons. |
 | Lifecycle helpers | `src/utils/isometric/lifecycle.ts` | Binds renderer DOM events, resize observation, visibility pause/resume, and resource cleanup. |
+| Pointer interaction coalescing | `src/utils/isometric/pointerInteraction.ts`, `src/utils/isometric/pointerEventCoalescer.ts` | Tracks pointer travel immediately for click semantics while coalescing hover/preview/pathfinding pointermove work to the latest event per animation frame. |
 | Debug metrics | `src/utils/isometric/frameTimingSampler.ts`, `src/utils/isometric/renderMetrics.ts`, `src/components/isometric/RenderMetricsOverlay.vue` | Records scheduler frame timing/reasons and sampled WebGL renderer info only when render debug is explicitly enabled. |
 
 ## Dirty rendering flow
@@ -22,19 +24,32 @@ This page documents the Track 1 render-scheduler model for future map performanc
 Vue props, pointer events, async texture loads, resize/control/lifecycle events
   -> mutate or sync output-relevant renderer state
   -> requestScheduledSceneFrame(reason or reasons)
-  -> createIsometricRenderScheduler coalesces dirty reasons into one pending RAF
-  -> renderOneShotScheduledFrame updates animations, overlays, WebGL, CSS3D, and debug samples
+  -> createIsometricRenderScheduler coalesces dirty reasons and WebGL/CSS3D dirty layers into one pending RAF
+  -> renderOneShotScheduledFrame updates animations, overlays, WebGL, dirty CSS3D, and debug samples
   -> resolveSceneAnimationContinuation reports whether concrete animation sources need another frame
   -> scheduler either schedules the next active-animation frame or goes idle
 ```
 
 Important behaviours:
 
-- `requestRender` deduplicates reasons in first-seen order and never schedules more than one RAF while a frame is already pending.
-- Dirty reasons are cleared at the start of the frame that consumes them. If an active animation was already running, the frame also includes the synthetic `animation` reason for metrics.
+- `requestRender` deduplicates reasons and dirty layers in first-seen order and never schedules more than one RAF while a frame is already pending.
+- Dirty reasons are classified as WebGL, CSS3D, or both-dirty invalidations by `renderInvalidation.ts`. The scheduler frame carries both the reasons used for metrics and the dirty-layer list used by CSS3D dirty tracking. Internal callers may explicitly override dirty layers for future CSS-only or WebGL-only invalidations while keeping a normal debug reason label.
+- Dirty reasons/layers are cleared at the start of the frame that consumes them. If an active animation was already running, the frame also includes the synthetic WebGL-only `animation` reason for metrics.
 - A settled scene has no compatibility continuous loop. With no dirty reasons and no active animation, the scheduler intentionally stops requesting RAF callbacks.
 - Hidden tabs call `pause()`, which cancels pending RAF work without clearing dirty reasons or active-animation state. When visible again, the scene calls `resume()` and requests `hidden-tab-resume` so the next visible frame is fresh.
+- Pointermove handling keeps click-distance tracking immediate, then runs hover picking, build/hazard previews, targeting updates, and movement-preview pathfinding from the latest queued pointer event at most once per animation frame. Pending pointermove work is flushed before pointer-up/wheel actions and cancelled on leave/unmount to avoid stale previews.
+- CSS3D dirty tracking starts dirty for initial paint, consumes the scheduler's CSS3D dirty-layer state for camera/resize/HUD/targeting/pointer-related invalidations, and marks token-motion animation frames because token HUD transforms follow moving/lifting tokens. Same-frame HUD and targeting overlay update helpers also report output changes for HP bars, elevation badges, reticles, feedback, and attack-of-opportunity buttons before the CSS dirty state is consumed. WebGL-only animation frames such as weather, field effects, sprite animation, texture-loading, debug, or the synthetic `animation` reason skip `CSS3DRenderer.render()` when no CSS-visible state is dirty.
 - Unmount calls `dispose()`, then renderer resource cleanup. New invalidations after disposal are ignored by the disposed scheduler snapshot.
+
+## Render dirty layers
+
+Scheduler dirty state distinguishes which renderer output a requested frame needs to refresh:
+
+- **Both WebGL and CSS3D:** `initial`, `manual`, `resize`, `camera`, `scene-state`, `tokens`, `token-style`, `movement-preview`, `targeting`, `layer-visibility`, `pointer`, and `hidden-tab-resume`.
+- **WebGL only:** `terrain`, `hazards`, `token-texture`, `build-preview`, `hazard-preview`, `field-effect`, `weather`, `animation`, and `debug`.
+- **CSS3D only:** no canonical public reason currently defaults to CSS3D-only; the scheduler accepts explicit dirty-layer overrides for future internal CSS-only invalidations.
+
+`animation` remains WebGL-only at the reason level so weather, field-effect, sprite-animation, and texture-loading continuations do not force CSS3D work. Token-motion continuation separately marks CSS3D dirty because HUD sprites follow moving/lifting tokens.
 
 ## Current invalidation reasons
 
@@ -81,8 +96,8 @@ Add an active source only for time-dependent work that must continue after the c
 ## Adding a future invalidation reason
 
 1. Prefer an existing reason if the new state change affects the same output layer. A new reason should make debugging or invalidation ownership clearer, not just add a metric name.
-2. Add the string literal to `ISOMETRIC_RENDER_INVALIDATION_REASONS` and a human label to `ISOMETRIC_RENDER_INVALIDATION_REASON_LABELS` in `src/utils/isometric/renderInvalidation.ts`.
-3. Update focused tests in `tests/utils/isometric/renderInvalidation.test.ts`. The metrics reason list imports the invalidation constants, so this also guards debug-overlay alignment.
+2. Add the string literal to `ISOMETRIC_RENDER_INVALIDATION_REASONS`, a human label to `ISOMETRIC_RENDER_INVALIDATION_REASON_LABELS`, and the correct WebGL/CSS3D classification in `src/utils/isometric/renderInvalidation.ts`.
+3. Update focused tests in `tests/utils/isometric/renderInvalidation.test.ts`. The metrics reason list imports the invalidation constants, so this also guards debug-overlay alignment and dirty-layer classification.
 4. Request the reason at the mutation owner, after output-relevant renderer state is synced. Common sites are `useIsometricSceneWatchers`, pointer/interaction controllers via `requestScheduledSceneFrame`, async texture-load callbacks, resize/camera bindings, and document lifecycle handling.
 5. Pass multiple reasons as an array when one state change affects several layers. The scheduler will dedupe them, so callers do not need to guard repeated requests in the same pending frame unless the sync work itself is expensive.
 6. Keep the no-quality-loss contract intact: the reason should wake an equivalent render, not hide visuals, lower renderer quality, or skip required app behaviour.
@@ -99,7 +114,8 @@ Add an active source only for time-dependent work that must continue after the c
 
 For render-scheduler changes, run the standard checks plus focused tests for the touched layer. At minimum, cover:
 
-- dirty reasons merge and dedupe without mutation;
+- dirty reasons and WebGL/CSS3D dirty layers merge and dedupe without mutation;
+- WebGL-only, CSS3D-only, and both-dirty requests carry the expected scheduler frame state;
 - no duplicate RAF scheduling while a frame is pending;
 - active animation starts and stops as expected;
 - hidden-tab pause/resume preserves dirty state;

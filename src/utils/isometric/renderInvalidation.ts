@@ -55,12 +55,106 @@ export const ISOMETRIC_RENDER_INVALIDATION_REASON_LABELS: Record<RenderInvalidat
   debug: 'Debug instrumentation',
 }
 
+export const ISOMETRIC_RENDER_DIRTY_LAYERS = [
+  'webgl',
+  'css3d',
+] as const
+
+export type IsometricRenderDirtyLayer = typeof ISOMETRIC_RENDER_DIRTY_LAYERS[number]
+
+export const ISOMETRIC_RENDER_DIRTY_LAYER_LABELS: Record<IsometricRenderDirtyLayer, string> = {
+  webgl: 'WebGL',
+  css3d: 'CSS3D',
+}
+
+export const ISOMETRIC_WEBGL_RENDER_INVALIDATION_REASONS = [
+  'initial',
+  'manual',
+  'resize',
+  'camera',
+  'scene-state',
+  'terrain',
+  'hazards',
+  'tokens',
+  'token-texture',
+  'token-style',
+  'movement-preview',
+  'build-preview',
+  'hazard-preview',
+  'targeting',
+  'field-effect',
+  'weather',
+  'layer-visibility',
+  'pointer',
+  'animation',
+  'hidden-tab-resume',
+  'debug',
+] as const satisfies readonly RenderInvalidationReason[]
+
+export const ISOMETRIC_CSS3D_RENDER_INVALIDATION_REASONS = [
+  'initial',
+  'manual',
+  'resize',
+  'camera',
+  'scene-state',
+  'tokens',
+  'token-style',
+  'movement-preview',
+  'targeting',
+  'layer-visibility',
+  'pointer',
+  'hidden-tab-resume',
+] as const satisfies readonly RenderInvalidationReason[]
+
 const ISOMETRIC_RENDER_INVALIDATION_REASON_SET = new Set<string>(
   ISOMETRIC_RENDER_INVALIDATION_REASONS,
 )
 
+const ISOMETRIC_RENDER_DIRTY_LAYER_SET = new Set<string>(
+  ISOMETRIC_RENDER_DIRTY_LAYERS,
+)
+
+const ISOMETRIC_WEBGL_RENDER_INVALIDATION_REASON_SET = new Set<RenderInvalidationReason>(
+  ISOMETRIC_WEBGL_RENDER_INVALIDATION_REASONS,
+)
+
+const ISOMETRIC_CSS3D_RENDER_INVALIDATION_REASON_SET = new Set<RenderInvalidationReason>(
+  ISOMETRIC_CSS3D_RENDER_INVALIDATION_REASONS,
+)
+
 export const isRenderInvalidationReason = (value: unknown): value is RenderInvalidationReason => (
   typeof value === 'string' && ISOMETRIC_RENDER_INVALIDATION_REASON_SET.has(value)
+)
+
+export const isIsometricRenderDirtyLayer = (value: unknown): value is IsometricRenderDirtyLayer => (
+  typeof value === 'string' && ISOMETRIC_RENDER_DIRTY_LAYER_SET.has(value)
+)
+
+export const renderInvalidationReasonAffectsWebGL = (
+  reason: RenderInvalidationReason,
+): boolean => ISOMETRIC_WEBGL_RENDER_INVALIDATION_REASON_SET.has(reason)
+
+export const renderInvalidationReasonAffectsCss3D = (
+  reason: RenderInvalidationReason,
+): boolean => ISOMETRIC_CSS3D_RENDER_INVALIDATION_REASON_SET.has(reason)
+
+const resolveRenderInvalidationReasonLayerList = (
+  reason: RenderInvalidationReason,
+): IsometricRenderDirtyLayer[] => {
+  const layers: IsometricRenderDirtyLayer[] = []
+
+  if (renderInvalidationReasonAffectsWebGL(reason)) layers.push('webgl')
+  if (renderInvalidationReasonAffectsCss3D(reason)) layers.push('css3d')
+
+  return layers
+}
+
+export const ISOMETRIC_RENDER_INVALIDATION_REASON_LAYERS = ISOMETRIC_RENDER_INVALIDATION_REASONS.reduce(
+  (layersByReason, reason) => {
+    layersByReason[reason] = resolveRenderInvalidationReasonLayerList(reason)
+    return layersByReason
+  },
+  {} as Record<RenderInvalidationReason, readonly IsometricRenderDirtyLayer[]>,
 )
 
 const appendUniqueRenderInvalidationReason = (
@@ -74,6 +168,17 @@ const appendUniqueRenderInvalidationReason = (
   target.push(reason)
 }
 
+const appendUniqueRenderDirtyLayer = (
+  target: IsometricRenderDirtyLayer[],
+  seen: Set<IsometricRenderDirtyLayer>,
+  layer: IsometricRenderDirtyLayer,
+): void => {
+  if (seen.has(layer)) return
+
+  seen.add(layer)
+  target.push(layer)
+}
+
 export const mergeRenderInvalidationReasons = (
   ...reasonGroups: Array<Iterable<RenderInvalidationReason> | null | undefined>
 ): RenderInvalidationReason[] => {
@@ -85,6 +190,23 @@ export const mergeRenderInvalidationReasons = (
 
     for (const reason of reasons) {
       appendUniqueRenderInvalidationReason(merged, seen, reason)
+    }
+  }
+
+  return merged
+}
+
+export const mergeIsometricRenderDirtyLayers = (
+  ...layerGroups: Array<Iterable<IsometricRenderDirtyLayer> | null | undefined>
+): IsometricRenderDirtyLayer[] => {
+  const merged: IsometricRenderDirtyLayer[] = []
+  const seen = new Set<IsometricRenderDirtyLayer>()
+
+  for (const layers of layerGroups) {
+    if (!layers) continue
+
+    for (const layer of layers) {
+      appendUniqueRenderDirtyLayer(merged, seen, layer)
     }
   }
 
@@ -106,6 +228,46 @@ export const hasRenderInvalidationReason = (
 ): boolean => {
   for (const existingReason of reasons) {
     if (existingReason === reason) return true
+  }
+
+  return false
+}
+
+export const createIsometricRenderDirtyLayers = (
+  layers: Iterable<IsometricRenderDirtyLayer> = [],
+): IsometricRenderDirtyLayer[] => mergeIsometricRenderDirtyLayers(layers)
+
+export const resolveRenderInvalidationReasonLayers = (
+  reason: RenderInvalidationReason,
+): IsometricRenderDirtyLayer[] => [...ISOMETRIC_RENDER_INVALIDATION_REASON_LAYERS[reason]]
+
+export const resolveRenderInvalidationLayers = (
+  reasons: Iterable<RenderInvalidationReason>,
+): IsometricRenderDirtyLayer[] => {
+  const layerGroups: IsometricRenderDirtyLayer[][] = []
+
+  for (const reason of reasons) {
+    layerGroups.push(resolveRenderInvalidationReasonLayers(reason))
+  }
+
+  return mergeIsometricRenderDirtyLayers(...layerGroups)
+}
+
+export const renderInvalidationLayersIncludeWebGL = (
+  layers: Iterable<IsometricRenderDirtyLayer>,
+): boolean => {
+  for (const layer of layers) {
+    if (layer === 'webgl') return true
+  }
+
+  return false
+}
+
+export const renderInvalidationLayersIncludeCss3D = (
+  layers: Iterable<IsometricRenderDirtyLayer>,
+): boolean => {
+  for (const layer of layers) {
+    if (layer === 'css3d') return true
   }
 
   return false

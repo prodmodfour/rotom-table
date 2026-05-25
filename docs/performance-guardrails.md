@@ -34,4 +34,4 @@ Current tests include focused no-quality-loss checks:
 - `tests/utils/isometric/weatherVisualConfig.test.ts` locks representative weather particle baselines.
 - `tests/utils/isometric/weatherVisualFactory.test.ts` verifies every supported weather kind still creates a visible render group.
 
-If a future product change intentionally alters visual output, document it separately and update these guardrails in the same reviewed change. Track 1 performance-only changes should not loosen them.
+If a future product change intentionally alters visual output, document it separately and update these guardrails in the same reviewed change. Track 1 performance-only changes should not loosen them. The [Track 1 no-quality-loss audit](performance-no-quality-loss-audit.md) records the integrated Track 1 review against these rules.

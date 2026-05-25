@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import {
   createFieldEffectRenderer,
   type FieldEffectRendererInput,
@@ -71,6 +71,42 @@ describe('field effect renderer animation activity', () => {
     expect(renderer.needsAnimationFrame()).toBe(true)
 
     renderer.dispose()
+  })
+
+  it('skips update callbacks when no visible animated effects are active', () => {
+    const container = new THREE.Group()
+    const updateWeather = vi.fn()
+    const disposeTextureCache = vi.fn()
+    const renderer = createFieldEffectRenderer(container, {
+      weatherVisualFactory: {
+        makeWeatherVisual: () => ({ group: new THREE.Group(), update: updateWeather }),
+        disposeTextureCache,
+      },
+    })
+
+    renderer.sync({
+      ...baseInput(),
+      effects: {
+        weather: [{ kind: 'rainy', rounds: 5 }],
+        terrains: [],
+        rooms: [],
+      },
+    })
+    renderer.update(0.016, 1.5)
+    expect(updateWeather).toHaveBeenCalledWith(0.016, 1.5)
+
+    renderer.setVisible(false)
+    updateWeather.mockClear()
+    renderer.update(0.016, 1.75)
+    expect(updateWeather).not.toHaveBeenCalled()
+
+    renderer.setVisible(true)
+    renderer.sync(baseInput())
+    renderer.update(0.016, 2)
+    expect(updateWeather).not.toHaveBeenCalled()
+
+    renderer.dispose()
+    expect(disposeTextureCache).toHaveBeenCalledOnce()
   })
 
   it('clears animator activity when weather effects are removed', () => {

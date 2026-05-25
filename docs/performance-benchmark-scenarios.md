@@ -4,7 +4,7 @@ Track 1 performance PRs should compare the same scenario before and after the ch
 
 Use `?debug=render`, `?debug=render-metrics`, or `?debug=isometric-render` on map routes when collecting debug overlay values. If a metric is not available yet, record `N/A` rather than changing the scenario.
 
-For repeatable public map data, generate the local fixtures in [Performance benchmark fixtures](performance-benchmark-fixtures.md) or follow its manual checklist before recording these scenarios.
+For repeatable public map data, generate the local fixtures in [Performance benchmark fixtures](performance-benchmark-fixtures.md) or follow its manual checklist before recording these scenarios. Use the [Performance benchmark runbook](performance-benchmark-runbook.md) for the step-by-step before/after workflow, overlay delta formulas, and metric interpretation guidance.
 
 ## Shared recording rules
 

@@ -183,8 +183,9 @@ describe('isometric camera controls', () => {
     })
 
     expect(resizedForDimensions.changed).toBe(true)
-    expect(harness.renderer.setSize).toHaveBeenCalledWith(800, 600)
-    expect(harness.cssRenderer.setSize).toHaveBeenCalledWith(800, 600)
+    expect(harness.renderer.setSize).not.toHaveBeenCalled()
+    expect(harness.renderer.setPixelRatio).not.toHaveBeenCalled()
+    expect(harness.cssRenderer.setSize).not.toHaveBeenCalled()
     expect(harness.updateProjectionMatrix).toHaveBeenCalledTimes(1)
     expect(resizedForDimensions.size).toMatchObject({
       width: 800,
@@ -193,5 +194,105 @@ describe('isometric camera controls', () => {
       dimensionsY: 6,
       dimensionsZ: 10,
     })
+  })
+
+  it('updates only the WebGL pixel ratio when device pixel ratio changes', () => {
+    vi.stubGlobal('window', { devicePixelRatio: 1 })
+    const harness = createRendererSizeHarness({ width: 800, height: 600 })
+    const first = syncIsometricRendererSize({
+      renderer: harness.renderer,
+      cssRenderer: harness.cssRenderer,
+      camera: harness.camera,
+      controls: harness.controls,
+      container: harness.container,
+      dimensions: dimensions(),
+    })
+
+    vi.clearAllMocks()
+    vi.stubGlobal('window', { devicePixelRatio: 2 })
+
+    const dprOnly = syncIsometricRendererSize({
+      renderer: harness.renderer,
+      cssRenderer: harness.cssRenderer,
+      camera: harness.camera,
+      controls: harness.controls,
+      container: harness.container,
+      dimensions: dimensions(),
+      previousSize: first.size,
+    })
+
+    expect(dprOnly.changed).toBe(true)
+    expect(harness.renderer.setSize).not.toHaveBeenCalled()
+    expect(harness.renderer.setPixelRatio).toHaveBeenCalledWith(2)
+    expect(harness.cssRenderer.setSize).not.toHaveBeenCalled()
+    expect(harness.updateProjectionMatrix).not.toHaveBeenCalled()
+  })
+
+  it('skips frustum recalculation when renderer bounds change without changing aspect ratio', () => {
+    vi.stubGlobal('window', { devicePixelRatio: 1 })
+    const bounds = { width: 800, height: 600 }
+    const harness = createRendererSizeHarness(bounds)
+    const first = syncIsometricRendererSize({
+      renderer: harness.renderer,
+      cssRenderer: harness.cssRenderer,
+      camera: harness.camera,
+      controls: harness.controls,
+      container: harness.container,
+      dimensions: dimensions(),
+    })
+
+    vi.clearAllMocks()
+    bounds.width = 1200
+    bounds.height = 900
+
+    const sameAspectResize = syncIsometricRendererSize({
+      renderer: harness.renderer,
+      cssRenderer: harness.cssRenderer,
+      camera: harness.camera,
+      controls: harness.controls,
+      container: harness.container,
+      dimensions: dimensions(),
+      previousSize: first.size,
+    })
+
+    expect(sameAspectResize.changed).toBe(true)
+    expect(harness.renderer.setSize).toHaveBeenCalledWith(1200, 900)
+    expect(harness.renderer.setPixelRatio).not.toHaveBeenCalled()
+    expect(harness.cssRenderer.setSize).toHaveBeenCalledWith(1200, 900)
+    expect(harness.updateProjectionMatrix).not.toHaveBeenCalled()
+  })
+
+  it('keeps frustum recalculation when renderer bounds change aspect ratio', () => {
+    vi.stubGlobal('window', { devicePixelRatio: 1 })
+    const bounds = { width: 800, height: 600 }
+    const harness = createRendererSizeHarness(bounds)
+    const first = syncIsometricRendererSize({
+      renderer: harness.renderer,
+      cssRenderer: harness.cssRenderer,
+      camera: harness.camera,
+      controls: harness.controls,
+      container: harness.container,
+      dimensions: dimensions(),
+    })
+
+    vi.clearAllMocks()
+    bounds.width = 1000
+    bounds.height = 600
+
+    const changedAspectResize = syncIsometricRendererSize({
+      renderer: harness.renderer,
+      cssRenderer: harness.cssRenderer,
+      camera: harness.camera,
+      controls: harness.controls,
+      container: harness.container,
+      dimensions: dimensions(),
+      previousSize: first.size,
+    })
+
+    expect(changedAspectResize.changed).toBe(true)
+    expect(harness.renderer.setSize).toHaveBeenCalledWith(1000, 600)
+    expect(harness.renderer.setPixelRatio).not.toHaveBeenCalled()
+    expect(harness.cssRenderer.setSize).toHaveBeenCalledWith(1000, 600)
+    expect(harness.updateProjectionMatrix).toHaveBeenCalledTimes(1)
   })
 })

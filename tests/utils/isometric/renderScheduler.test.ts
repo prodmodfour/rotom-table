@@ -35,7 +35,7 @@ const createAnimationFrameDriver = () => {
 }
 
 describe('isometric render scheduler', () => {
-  it('requests a render frame with deduplicated dirty reasons', () => {
+  it('requests a render frame with deduplicated dirty reasons and layer state', () => {
     const driver = createAnimationFrameDriver()
     const renderFrame = vi.fn()
     const scheduler = createIsometricRenderScheduler({
@@ -50,12 +50,15 @@ describe('isometric render scheduler', () => {
       isFramePending: true,
       activeAnimation: false,
       dirtyReasons: ['resize', 'tokens'],
+      dirtyLayers: ['webgl', 'css3d'],
       isDisposed: false,
     })
     expect(driver.pendingFrameCount()).toBe(1)
 
     queued.dirtyReasons.push('debug')
+    queued.dirtyLayers.push('webgl')
     expect(scheduler.snapshot().dirtyReasons).toEqual(['resize', 'tokens'])
+    expect(scheduler.snapshot().dirtyLayers).toEqual(['webgl', 'css3d'])
 
     expect(driver.flushNextFrame(123)).toBe(true)
 
@@ -63,13 +66,70 @@ describe('isometric render scheduler', () => {
     expect(renderFrame).toHaveBeenCalledWith({
       timestampMs: 123,
       reasons: ['resize', 'tokens'],
+      dirtyLayers: ['webgl', 'css3d'],
       activeAnimation: false,
     })
     expect(scheduler.snapshot()).toEqual({
       isFramePending: false,
       activeAnimation: false,
       dirtyReasons: [],
+      dirtyLayers: [],
       isDisposed: false,
+    })
+  })
+
+  it('tracks WebGL-only, CSS3D-only, and both-dirty scheduler state', () => {
+    const driver = createAnimationFrameDriver()
+    const renderFrame = vi.fn()
+    const scheduler = createIsometricRenderScheduler({
+      renderFrame,
+      requestAnimationFrame: driver.requestAnimationFrame,
+      cancelAnimationFrame: driver.cancelAnimationFrame,
+    })
+
+    expect(scheduler.requestRender('weather')).toEqual({
+      isFramePending: true,
+      activeAnimation: false,
+      dirtyReasons: ['weather'],
+      dirtyLayers: ['webgl'],
+      isDisposed: false,
+    })
+    expect(driver.flushNextFrame(1)).toBe(true)
+    expect(renderFrame).toHaveBeenNthCalledWith(1, {
+      timestampMs: 1,
+      reasons: ['weather'],
+      dirtyLayers: ['webgl'],
+      activeAnimation: false,
+    })
+
+    expect(scheduler.requestRender({ reasons: 'manual', dirtyLayers: 'css3d' })).toEqual({
+      isFramePending: true,
+      activeAnimation: false,
+      dirtyReasons: ['manual'],
+      dirtyLayers: ['css3d'],
+      isDisposed: false,
+    })
+    expect(driver.flushNextFrame(2)).toBe(true)
+    expect(renderFrame).toHaveBeenNthCalledWith(2, {
+      timestampMs: 2,
+      reasons: ['manual'],
+      dirtyLayers: ['css3d'],
+      activeAnimation: false,
+    })
+
+    expect(scheduler.requestRender('camera')).toEqual({
+      isFramePending: true,
+      activeAnimation: false,
+      dirtyReasons: ['camera'],
+      dirtyLayers: ['webgl', 'css3d'],
+      isDisposed: false,
+    })
+    expect(driver.flushNextFrame(3)).toBe(true)
+    expect(renderFrame).toHaveBeenNthCalledWith(3, {
+      timestampMs: 3,
+      reasons: ['camera'],
+      dirtyLayers: ['webgl', 'css3d'],
+      activeAnimation: false,
     })
   })
 
@@ -86,6 +146,7 @@ describe('isometric render scheduler', () => {
       isFramePending: true,
       activeAnimation: false,
       dirtyReasons: ['tokens', 'camera'],
+      dirtyLayers: ['webgl', 'css3d'],
       isDisposed: false,
     })
     expect(driver.requestAnimationFrame).toHaveBeenCalledOnce()
@@ -94,6 +155,7 @@ describe('isometric render scheduler', () => {
       isFramePending: true,
       activeAnimation: false,
       dirtyReasons: ['tokens', 'camera', 'resize'],
+      dirtyLayers: ['webgl', 'css3d'],
       isDisposed: false,
     })
     expect(driver.requestAnimationFrame).toHaveBeenCalledOnce()
@@ -105,6 +167,7 @@ describe('isometric render scheduler', () => {
     expect(renderFrame).toHaveBeenCalledWith({
       timestampMs: 8,
       reasons: ['tokens', 'camera', 'resize'],
+      dirtyLayers: ['webgl', 'css3d'],
       activeAnimation: false,
     })
   })
@@ -129,6 +192,7 @@ describe('isometric render scheduler', () => {
       isFramePending: true,
       activeAnimation: true,
       dirtyReasons: ['initial', 'debug'],
+      dirtyLayers: ['webgl', 'css3d'],
       isDisposed: false,
     })
 
@@ -139,12 +203,14 @@ describe('isometric render scheduler', () => {
     expect(renderFrame).toHaveBeenCalledWith({
       timestampMs: 16,
       reasons: ['initial', 'debug', 'animation'],
+      dirtyLayers: ['webgl', 'css3d'],
       activeAnimation: true,
     })
     expect(scheduler.snapshot()).toEqual({
       isFramePending: false,
       activeAnimation: false,
       dirtyReasons: [],
+      dirtyLayers: [],
       isDisposed: false,
     })
   })
@@ -166,12 +232,14 @@ describe('isometric render scheduler', () => {
     expect(renderFrame).toHaveBeenNthCalledWith(1, {
       timestampMs: 16,
       reasons: ['initial', 'animation'],
+      dirtyLayers: ['webgl', 'css3d'],
       activeAnimation: true,
     })
     expect(scheduler.snapshot()).toEqual({
       isFramePending: true,
       activeAnimation: true,
       dirtyReasons: [],
+      dirtyLayers: [],
       isDisposed: false,
     })
 
@@ -179,6 +247,7 @@ describe('isometric render scheduler', () => {
     expect(renderFrame).toHaveBeenNthCalledWith(2, {
       timestampMs: 32,
       reasons: ['animation'],
+      dirtyLayers: ['webgl'],
       activeAnimation: true,
     })
     expect(driver.requestAnimationFrame).toHaveBeenCalledTimes(3)
@@ -202,6 +271,7 @@ describe('isometric render scheduler', () => {
       isFramePending: true,
       activeAnimation: true,
       dirtyReasons: [],
+      dirtyLayers: [],
       isDisposed: false,
     })
 
@@ -209,12 +279,14 @@ describe('isometric render scheduler', () => {
     expect(renderFrame).toHaveBeenNthCalledWith(1, {
       timestampMs: 16,
       reasons: ['animation'],
+      dirtyLayers: ['webgl'],
       activeAnimation: true,
     })
     expect(scheduler.snapshot()).toEqual({
       isFramePending: true,
       activeAnimation: true,
       dirtyReasons: [],
+      dirtyLayers: [],
       isDisposed: false,
     })
 
@@ -222,12 +294,14 @@ describe('isometric render scheduler', () => {
     expect(renderFrame).toHaveBeenNthCalledWith(2, {
       timestampMs: 32,
       reasons: ['animation'],
+      dirtyLayers: ['webgl'],
       activeAnimation: true,
     })
     expect(scheduler.snapshot()).toEqual({
       isFramePending: false,
       activeAnimation: false,
       dirtyReasons: [],
+      dirtyLayers: [],
       isDisposed: false,
     })
   })
@@ -248,6 +322,7 @@ describe('isometric render scheduler', () => {
       isFramePending: true,
       activeAnimation: false,
       dirtyReasons: ['camera'],
+      dirtyLayers: ['webgl', 'css3d'],
       isDisposed: false,
     })
 
@@ -255,6 +330,7 @@ describe('isometric render scheduler', () => {
     expect(renderFrame).toHaveBeenCalledWith({
       timestampMs: 24,
       reasons: ['camera'],
+      dirtyLayers: ['webgl', 'css3d'],
       activeAnimation: false,
     })
   })
@@ -275,6 +351,7 @@ describe('isometric render scheduler', () => {
       isFramePending: false,
       activeAnimation: true,
       dirtyReasons: ['initial'],
+      dirtyLayers: ['webgl', 'css3d'],
       isDisposed: false,
     })
     expect(driver.cancelAnimationFrame).toHaveBeenCalledWith(1)
@@ -284,12 +361,14 @@ describe('isometric render scheduler', () => {
       isFramePending: false,
       activeAnimation: true,
       dirtyReasons: ['initial', 'tokens'],
+      dirtyLayers: ['webgl', 'css3d'],
       isDisposed: false,
     })
     expect(scheduler.setActiveAnimation(true)).toEqual({
       isFramePending: false,
       activeAnimation: true,
       dirtyReasons: ['initial', 'tokens'],
+      dirtyLayers: ['webgl', 'css3d'],
       isDisposed: false,
     })
     expect(driver.requestAnimationFrame).toHaveBeenCalledOnce()
@@ -298,6 +377,7 @@ describe('isometric render scheduler', () => {
       isFramePending: true,
       activeAnimation: true,
       dirtyReasons: ['initial', 'tokens'],
+      dirtyLayers: ['webgl', 'css3d'],
       isDisposed: false,
     })
     expect(driver.requestAnimationFrame).toHaveBeenCalledTimes(2)
@@ -307,8 +387,49 @@ describe('isometric render scheduler', () => {
     expect(renderFrame).toHaveBeenCalledWith({
       timestampMs: 72,
       reasons: ['initial', 'tokens', 'hidden-tab-resume', 'animation'],
+      dirtyLayers: ['webgl', 'css3d'],
       activeAnimation: true,
     })
+  })
+
+  it('clears paused hidden-tab work on route-change disposal and ignores later wakeups', () => {
+    const driver = createAnimationFrameDriver()
+    const renderFrame = vi.fn()
+    const scheduler = createIsometricRenderScheduler({
+      renderFrame,
+      requestAnimationFrame: driver.requestAnimationFrame,
+      cancelAnimationFrame: driver.cancelAnimationFrame,
+    })
+
+    scheduler.requestRender('initial')
+    scheduler.setActiveAnimation(true)
+    scheduler.pause()
+    scheduler.requestRender('tokens')
+
+    expect(driver.pendingFrameCount()).toBe(0)
+    expect(scheduler.snapshot()).toEqual({
+      isFramePending: false,
+      activeAnimation: true,
+      dirtyReasons: ['initial', 'tokens'],
+      dirtyLayers: ['webgl', 'css3d'],
+      isDisposed: false,
+    })
+
+    expect(scheduler.dispose()).toEqual({
+      isFramePending: false,
+      activeAnimation: false,
+      dirtyReasons: [],
+      dirtyLayers: [],
+      isDisposed: true,
+    })
+
+    scheduler.resume()
+    scheduler.requestRender('hidden-tab-resume')
+    scheduler.setActiveAnimation(true)
+
+    expect(driver.pendingFrameCount()).toBe(0)
+    expect(driver.flushNextFrame(96)).toBe(false)
+    expect(renderFrame).not.toHaveBeenCalled()
   })
 
   it('cancels a mounted scheduler pending frame before a remounted scheduler renders', () => {
@@ -328,6 +449,7 @@ describe('isometric render scheduler', () => {
       isFramePending: false,
       activeAnimation: false,
       dirtyReasons: [],
+      dirtyLayers: [],
       isDisposed: true,
     })
     expect(driver.cancelAnimationFrame).toHaveBeenCalledWith(1)
@@ -344,6 +466,7 @@ describe('isometric render scheduler', () => {
       isFramePending: true,
       activeAnimation: false,
       dirtyReasons: ['initial'],
+      dirtyLayers: ['webgl', 'css3d'],
       isDisposed: false,
     })
     expect(driver.requestAnimationFrame).toHaveBeenCalledTimes(2)
@@ -355,6 +478,7 @@ describe('isometric render scheduler', () => {
     expect(secondRenderFrame).toHaveBeenCalledWith({
       timestampMs: 48,
       reasons: ['initial'],
+      dirtyLayers: ['webgl', 'css3d'],
       activeAnimation: false,
     })
   })
@@ -374,6 +498,7 @@ describe('isometric render scheduler', () => {
       isFramePending: false,
       activeAnimation: false,
       dirtyReasons: [],
+      dirtyLayers: [],
       isDisposed: false,
     })
     expect(driver.cancelAnimationFrame).toHaveBeenCalledWith(1)
@@ -381,6 +506,7 @@ describe('isometric render scheduler', () => {
     expect(renderFrame).not.toHaveBeenCalled()
 
     scheduler.requestRender('debug')
+    expect(scheduler.snapshot().dirtyLayers).toEqual(['webgl'])
     expect(driver.flushNextFrame(56)).toBe(true)
     expect(renderFrame).toHaveBeenCalledOnce()
 
@@ -388,18 +514,21 @@ describe('isometric render scheduler', () => {
       isFramePending: false,
       activeAnimation: false,
       dirtyReasons: [],
+      dirtyLayers: [],
       isDisposed: true,
     })
     expect(scheduler.requestRender('manual')).toEqual({
       isFramePending: false,
       activeAnimation: false,
       dirtyReasons: [],
+      dirtyLayers: [],
       isDisposed: true,
     })
     expect(scheduler.setActiveAnimation(true)).toEqual({
       isFramePending: false,
       activeAnimation: false,
       dirtyReasons: [],
+      dirtyLayers: [],
       isDisposed: true,
     })
     expect(driver.pendingFrameCount()).toBe(0)

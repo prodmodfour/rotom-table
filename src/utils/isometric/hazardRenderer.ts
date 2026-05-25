@@ -194,6 +194,10 @@ export const createHazardRenderer = (container: THREE.Group): HazardRenderer => 
   const hazardMeshes: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>[] = []
   let visible = true
 
+  const applyObjectVisibility = (object: THREE.Object3D, nextVisible: boolean) => {
+    if (object.visible !== nextVisible) object.visible = nextVisible
+  }
+
   return {
     sync(hazards) {
       for (const mesh of hazardMeshes.splice(0)) disposeObject3D(mesh)
@@ -222,7 +226,7 @@ export const createHazardRenderer = (container: THREE.Group): HazardRenderer => 
           hazard.z + 0.5,
         )
         mesh.renderOrder = 12
-        mesh.visible = visible
+        applyObjectVisibility(mesh, visible)
         mesh.userData.hazard = hazard
         container.add(mesh)
         hazardMeshes.push(mesh)
@@ -234,9 +238,11 @@ export const createHazardRenderer = (container: THREE.Group): HazardRenderer => 
     },
 
     setVisible(nextVisible) {
+      if (visible === nextVisible) return
+
       visible = nextVisible
-      container.visible = nextVisible
-      for (const mesh of hazardMeshes) mesh.visible = nextVisible
+      applyObjectVisibility(container, nextVisible)
+      for (const mesh of hazardMeshes) applyObjectVisibility(mesh, nextVisible)
     },
 
     meshes() {

@@ -37,7 +37,7 @@ Use benchmark maps that avoid private campaign data but still represent real wor
 | Typical campaign map | Measures common GM/player play sessions. | Moderate terrain, several Pokémon/trainer tokens, shadows, HP/status overlays, hazards, field effects, and movement previews. |
 | Stress map | Measures worst-case editor and combat interactions. | Large terrain, many voxels/tokens, multiple overlays/effects, weather, hazards, and repeated pointer/pathfinding interactions. |
 
-For each category, compare before/after runs with the same browser, map data, zoom/camera position, layer visibility, and weather/effect state. Future benchmark notes should record both idle behaviour and pointer-heavy interactions. See [Performance benchmark scenarios](performance-benchmark-scenarios.md) for the empty, typical campaign, and stress scenario definitions plus the before/after metrics to capture for performance PRs, and [Performance benchmark fixtures](performance-benchmark-fixtures.md) for a local fixture generator/checklist that avoids private campaign data.
+For each category, compare before/after runs with the same browser, map data, zoom/camera position, layer visibility, and weather/effect state. Future benchmark notes should record both idle behaviour and pointer-heavy interactions. See [Performance benchmark scenarios](performance-benchmark-scenarios.md) for the empty, typical campaign, and stress scenario definitions plus the before/after metrics to capture for performance PRs, [Performance benchmark fixtures](performance-benchmark-fixtures.md) for a local fixture generator/checklist that avoids private campaign data, and the [Performance benchmark runbook](performance-benchmark-runbook.md) for the step-by-step measurement workflow and debug overlay interpretation guide.
 
 ## Staged optimization approach
 
@@ -45,7 +45,7 @@ For each category, compare before/after runs with the same browser, map data, zo
 
 Start by making the performance rules explicit, then add developer-only metrics for frame reasons, frame timing, renderer info, pointer/raycast counts, and pathfinding cache behaviour. Instrumentation should be hidden unless explicitly enabled for debugging.
 
-In local development, appending `?debug=render`, `?debug=render-metrics`, or `?debug=isometric-render` to a map route enables the isometric render metrics overlay. The overlay is hidden by default; when enabled, it records scheduler frame timing/reasons and samples live WebGL `renderer.info` counters after rendered frames while leaving pointer and pathfinding counters ready for later instrumentation without exposing diagnostics to normal users.
+In local development, appending `?debug=render`, `?debug=render-metrics`, or `?debug=isometric-render` to a map route enables the isometric render metrics overlay. The overlay is hidden by default; when enabled, it records scheduler frame timing/reasons, samples live WebGL `renderer.info` counters after rendered frames, and accumulates pointermove, raycast, movement-preview pathfinding request, and path-cache hit/miss counts without exposing diagnostics to normal users.
 
 ### 2. Introduce render invalidation and scheduling
 
@@ -55,19 +55,19 @@ Resize handling, OrbitControls change events, scene watchers, pointer interactio
 
 ### 3. Coalesce pointer-heavy interactions
 
-Pointer movement can trigger hover updates, build/hazard previews, targeting, raycasts, and movement previews. Coalesce pointer input to at most one processing pass per animation frame, cache renderer bounds and picking lists, and short-circuit unchanged hover or preview anchors.
+Pointer movement can trigger hover updates, build/hazard previews, targeting, raycasts, and movement previews. Map pointermove handling now coalesces to the latest pointer event before running that heavy hover/preview/pathfinding work at most once per animation frame; the debug overlay reports raw pointermove events, processed pointer frames, raycasts by pick kind, movement-preview pathfinding requests, and path-cache hits/misses for benchmark sweeps.
 
 ### 4. Cache deterministic movement/pathfinding work
 
-Movement previews should reuse terrain indexes and path results keyed by selected token, start/goal, token dimensions, ground level, terrain revision, and placement revision. Cache invalidation must protect stale state when terrain, placements, dimensions, or selected tokens change.
+Movement previews now reuse both terrain indexes and path results keyed by selected token, start/goal, token dimensions, ground level, terrain revision, and placement revision. The movement terrain index uses the terrain-voxel revision to reuse the same indexed voxel lookup across repeated preview path queries until terrain changes, and the preview path cache skips repeated pathfinding when the same key is revisited while protecting stale state when terrain, placements, dimensions, or selected tokens change. The debug overlay exposes path-cache hit and miss counters so benchmark sweeps can verify repeated anchors reuse cached results.
 
 ### 5. Reuse renderer resources safely
 
-Avoid disposing and rebuilding equivalent geometry, buffers, overlays, and target lists when semantic inputs are unchanged. Shared voxel/token geometries, movement preview line buffers, CSS3D dirty tracking, layer-visibility short-circuits, renderer size guards, and weather allocation reductions are preferred as long as particle counts, colours, opacity, and motion semantics remain equivalent.
+Avoid disposing and rebuilding equivalent geometry, buffers, overlays, and target lists when semantic inputs are unchanged. Movement-preview path trails now keep one dynamic `BufferGeometry` per preview renderer and update its position attribute/draw range instead of disposing and recreating geometry for every preview change. Shared voxel/token geometries, CSS3D dirty tracking, layer-visibility short-circuits, renderer size guards, and weather allocation reductions remain preferred as long as particle counts, colours, opacity, and motion semantics stay equivalent.
 
 ### 6. Validate and audit
 
-Finish with repeatable benchmark notes, resource cleanup coverage, and a no-quality-loss audit. Any optimization that changes output should be treated as a bug unless it is an intentional, separately reviewed product change.
+Finish with repeatable benchmark notes, resource cleanup coverage, a no-quality-loss audit, and a final implementation review. The [Track 1 no-quality-loss audit](performance-no-quality-loss-audit.md) records the integrated review that found no intentional visual-quality or functionality reduction, and the [Track 1 final implementation review](performance-track-1-final-review.md) records completion readiness, completed chunk PR coverage, and final automation handoff notes. Any optimization that changes output should be treated as a bug unless it is an intentional, separately reviewed product change.
 
 ## Validation expectations
 
