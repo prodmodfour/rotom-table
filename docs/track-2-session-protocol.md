@@ -76,6 +76,12 @@ Each line is one complete `schemaVersion: 1` event-log entry. Command entries bi
 
 The helper serializes and validates entries before creating session directories, appends one compact JSON object plus a trailing newline, flushes the file by default, and best-effort flushes the session directory. The event log remains optional: the latest valid snapshot is still the required recovery baseline, and reconnect code must fall back to a current snapshot whenever replay is disabled, missing, truncated, or unsafe.
 
+## Revision application helper
+
+`server/utils/sessionRevisionApplication.ts` is the pure application boundary for already-accepted commands. Command-specific handlers still own validation, permission checks, stale/conflict rejection, and duplicate `opId` lookup; after a handler decides a command is accepted, it calls this helper to advance the authoritative session revision exactly once, apply any supplied map-document effects with per-map revision increments, stamp server metadata, and return the next immutable `AuthoritativeSessionState`.
+
+The helper also creates the accepted command result, a small `SessionPatchEvent`, and a validated command event-log entry object for optional persistence. It does not append the log or write snapshots itself, so callers can decide whether to persist, broadcast, or roll back as a unit.
+
 ## Message flow
 
 ### 1. Socket hello and reconnect
