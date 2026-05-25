@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   createMapMovementPathCache,
+  DEFAULT_MOVEMENT_PATH_CACHE_MAX_ENTRIES,
   MOVEMENT_PATH_CACHE_KEY_VERSION,
   movementPathCacheKey,
   movementPathCapabilitiesCachePart,
@@ -142,6 +143,92 @@ describe('movement path cache', () => {
 
     hit.result.path?.push({ x: 9, y: 9, z: 9 })
     hit.result.capabilityLabels.push('Mutated')
+
+    expect(cache.get(key)).toEqual(movementResult())
+  })
+
+  it('keeps revision-specific entries separate and reports misses for changed state', () => {
+    const cache = createMapMovementPathCache()
+    const terrainAKey = movementPathCacheKey(cacheOptions({ terrainRevision: 'terrain-a' }))!
+    const terrainBKey = movementPathCacheKey(cacheOptions({ terrainRevision: 'terrain-b' }))!
+    let terrainAComputes = 0
+    let terrainBComputes = 0
+
+    const firstA = cache.getOrCompute(terrainAKey, () => {
+      terrainAComputes += 1
+      return movementResult({ distance: 1 })
+    })
+    const firstB = cache.getOrCompute(terrainBKey, () => {
+      terrainBComputes += 1
+      return movementResult({ distance: 2 })
+    })
+    const secondA = cache.getOrCompute(terrainAKey, () => {
+      terrainAComputes += 1
+      return movementResult({ distance: 99 })
+    })
+
+    expect(firstA.hit).toBe(false)
+    expect(firstB.hit).toBe(false)
+    expect(secondA.hit).toBe(true)
+    expect(secondA.result.distance).toBe(1)
+    expect(terrainAComputes).toBe(1)
+    expect(terrainBComputes).toBe(1)
+  })
+
+  it('does not cache pathfinding results when a cache key cannot be built', () => {
+    const cache = createMapMovementPathCache()
+    let computes = 0
+
+    const first = cache.getOrCompute(null, () => {
+      computes += 1
+      return movementResult({ distance: 1 })
+    })
+    const second = cache.getOrCompute(undefined, () => {
+      computes += 1
+      return movementResult({ distance: 2 })
+    })
+
+    expect(first.key).toBeNull()
+    expect(first.hit).toBe(false)
+    expect(first.result.distance).toBe(1)
+    expect(second.key).toBeNull()
+    expect(second.hit).toBe(false)
+    expect(second.result.distance).toBe(2)
+    expect(computes).toBe(2)
+    expect(cache.snapshot()).toEqual({
+      size: 0,
+      maxEntries: DEFAULT_MOVEMENT_PATH_CACHE_MAX_ENTRIES,
+      keys: [],
+    })
+  })
+
+  it('evicts least-recently-used path results after the bounded cache fills', () => {
+    const cache = createMapMovementPathCache({ maxEntries: 2 })
+    const keyA = movementPathCacheKey(cacheOptions({ goal: { x: 1, y: 0, z: 1 } }))!
+    const keyB = movementPathCacheKey(cacheOptions({ goal: { x: 2, y: 0, z: 2 } }))!
+    const keyC = movementPathCacheKey(cacheOptions({ goal: { x: 3, y: 0, z: 3 } }))!
+
+    cache.set(keyA, movementResult({ distance: 1 }))
+    cache.set(keyB, movementResult({ distance: 2 }))
+    expect(cache.get(keyA)?.distance).toBe(1)
+
+    cache.set(keyC, movementResult({ distance: 3 }))
+
+    expect(cache.snapshot().keys).toEqual([keyA, keyC])
+    expect(cache.get(keyB)).toBeNull()
+    expect(cache.get(keyA)?.distance).toBe(1)
+    expect(cache.get(keyC)?.distance).toBe(3)
+  })
+
+  it('protects cached paths from mutations of computed miss results', () => {
+    const cache = createMapMovementPathCache()
+    const key = movementPathCacheKey(cacheOptions())!
+    const computed = movementResult()
+
+    const miss = cache.getOrCompute(key, () => computed)
+    miss.result.path?.push({ x: 9, y: 9, z: 9 })
+    miss.result.capabilityKeys.push('sky')
+    computed.capabilityLabels.push('Mutated')
 
     expect(cache.get(key)).toEqual(movementResult())
   })
