@@ -1,5 +1,8 @@
 import {
+  mergeIsometricRenderDirtyLayers,
   mergeRenderInvalidationReasons,
+  resolveRenderInvalidationLayers,
+  type IsometricRenderDirtyLayer,
   type RenderInvalidationReason,
 } from './renderInvalidation'
 
@@ -11,13 +14,34 @@ export type IsometricRenderSchedulerRequestAnimationFrame = (
 
 export type IsometricRenderSchedulerCancelAnimationFrame = (frameHandle: number) => void
 
-export type IsometricRenderSchedulerReasonInput =
+export type IsometricRenderSchedulerReasonCollection =
   | RenderInvalidationReason
   | Iterable<RenderInvalidationReason>
+
+export type IsometricRenderSchedulerDirtyLayerInput =
+  | IsometricRenderDirtyLayer
+  | Iterable<IsometricRenderDirtyLayer>
+
+export interface IsometricRenderSchedulerRenderRequest {
+  /** Reasons kept for metrics/debug labelling. Defaults to `manual` when omitted. */
+  reasons?: IsometricRenderSchedulerReasonCollection
+  /** Optional explicit dirty render layer override for CSS-only or WebGL-only invalidations. */
+  dirtyLayers?: IsometricRenderSchedulerDirtyLayerInput
+}
+
+export type IsometricRenderSchedulerReasonInput =
+  | IsometricRenderSchedulerReasonCollection
+  | IsometricRenderSchedulerRenderRequest
+
+interface NormalizedRenderSchedulerRequest {
+  reasons: RenderInvalidationReason[]
+  dirtyLayers: IsometricRenderDirtyLayer[]
+}
 
 export interface IsometricScheduledRenderFrame {
   timestampMs: number
   reasons: RenderInvalidationReason[]
+  dirtyLayers: IsometricRenderDirtyLayer[]
   activeAnimation: boolean
 }
 
@@ -38,6 +62,7 @@ export interface IsometricRenderSchedulerSnapshot {
   isFramePending: boolean
   activeAnimation: boolean
   dirtyReasons: RenderInvalidationReason[]
+  dirtyLayers: IsometricRenderDirtyLayer[]
   isDisposed: boolean
 }
 
@@ -76,16 +101,26 @@ const copySnapshot = (
   frameHandle: number | null,
   activeAnimation: boolean,
   dirtyReasons: RenderInvalidationReason[],
+  dirtyLayers: IsometricRenderDirtyLayer[],
   isDisposed: boolean,
 ): IsometricRenderSchedulerSnapshot => ({
   isFramePending: frameHandle !== null,
   activeAnimation,
   dirtyReasons: [...dirtyReasons],
+  dirtyLayers: [...dirtyLayers],
   isDisposed,
 })
 
-const normalizeReasonInput = (
-  reasons: IsometricRenderSchedulerReasonInput = 'manual',
+const isSchedulerRenderRequest = (
+  input: IsometricRenderSchedulerReasonInput,
+): input is IsometricRenderSchedulerRenderRequest => (
+  typeof input === 'object'
+  && input !== null
+  && ('reasons' in input || 'dirtyLayers' in input)
+)
+
+const normalizeReasonCollection = (
+  reasons: IsometricRenderSchedulerReasonCollection = 'manual',
 ): RenderInvalidationReason[] => {
   if (typeof reasons === 'string') {
     return [reasons]
@@ -94,10 +129,40 @@ const normalizeReasonInput = (
   return mergeRenderInvalidationReasons(reasons)
 }
 
+const normalizeDirtyLayerInput = (
+  dirtyLayers: IsometricRenderSchedulerDirtyLayerInput,
+): IsometricRenderDirtyLayer[] => {
+  if (typeof dirtyLayers === 'string') {
+    return [dirtyLayers]
+  }
+
+  return mergeIsometricRenderDirtyLayers(dirtyLayers)
+}
+
+const normalizeRenderRequest = (
+  input: IsometricRenderSchedulerReasonInput = 'manual',
+): NormalizedRenderSchedulerRequest => {
+  const isExplicitRequest = isSchedulerRenderRequest(input)
+  const rawReasons = isExplicitRequest ? input.reasons : input
+  const reasons = normalizeReasonCollection(rawReasons ?? 'manual')
+  const normalizedReasons: RenderInvalidationReason[] = reasons.length > 0 ? reasons : ['manual']
+  const explicitDirtyLayers = isExplicitRequest && input.dirtyLayers !== undefined
+    ? normalizeDirtyLayerInput(input.dirtyLayers)
+    : []
+
+  return {
+    reasons: normalizedReasons,
+    dirtyLayers: explicitDirtyLayers.length > 0
+      ? explicitDirtyLayers
+      : resolveRenderInvalidationLayers(normalizedReasons),
+  }
+}
+
 const hasFrameWork = (
   dirtyReasons: RenderInvalidationReason[],
+  dirtyLayers: IsometricRenderDirtyLayer[],
   activeAnimation: boolean,
-): boolean => dirtyReasons.length > 0 || activeAnimation
+): boolean => dirtyReasons.length > 0 || dirtyLayers.length > 0 || activeAnimation
 
 export const createIsometricRenderScheduler = ({
   renderFrame,
@@ -106,11 +171,12 @@ export const createIsometricRenderScheduler = ({
 }: IsometricRenderSchedulerOptions): IsometricRenderScheduler => {
   let frameHandle: number | null = null
   let dirtyReasons: RenderInvalidationReason[] = []
+  let dirtyLayers: IsometricRenderDirtyLayer[] = []
   let activeAnimation = false
   let isPaused = false
   let isDisposed = false
 
-  const snapshot = () => copySnapshot(frameHandle, activeAnimation, dirtyReasons, isDisposed)
+  const snapshot = () => copySnapshot(frameHandle, activeAnimation, dirtyReasons, dirtyLayers, isDisposed)
 
   const cancelFrameHandle = () => {
     if (frameHandle === null) return
@@ -120,7 +186,7 @@ export const createIsometricRenderScheduler = ({
   }
 
   const scheduleFrame = () => {
-    if (isDisposed || isPaused || frameHandle !== null || !hasFrameWork(dirtyReasons, activeAnimation)) {
+    if (isDisposed || isPaused || frameHandle !== null || !hasFrameWork(dirtyReasons, dirtyLayers, activeAnimation)) {
       return
     }
 
@@ -128,7 +194,7 @@ export const createIsometricRenderScheduler = ({
   }
 
   const cancelIdlePendingFrame = () => {
-    if (hasFrameWork(dirtyReasons, activeAnimation)) return
+    if (hasFrameWork(dirtyReasons, dirtyLayers, activeAnimation)) return
 
     cancelFrameHandle()
   }
@@ -141,19 +207,26 @@ export const createIsometricRenderScheduler = ({
     }
 
     const frameActiveAnimation = activeAnimation
+    const animationReasons: RenderInvalidationReason[] | undefined = frameActiveAnimation ? ['animation'] : undefined
     const reasons = mergeRenderInvalidationReasons(
       dirtyReasons,
-      frameActiveAnimation ? ['animation'] : undefined,
+      animationReasons,
+    )
+    const frameDirtyLayers = mergeIsometricRenderDirtyLayers(
+      dirtyLayers,
+      animationReasons ? resolveRenderInvalidationLayers(animationReasons) : undefined,
     )
     dirtyReasons = []
+    dirtyLayers = []
 
-    if (!hasFrameWork(reasons, frameActiveAnimation)) {
+    if (!hasFrameWork(reasons, frameDirtyLayers, frameActiveAnimation)) {
       return
     }
 
     const frameResult = renderFrame({
       timestampMs,
       reasons,
+      dirtyLayers: frameDirtyLayers,
       activeAnimation: frameActiveAnimation,
     })
 
@@ -171,10 +244,14 @@ export const createIsometricRenderScheduler = ({
       return snapshot()
     }
 
-    const nextReasons = normalizeReasonInput(reasons)
+    const nextRequest = normalizeRenderRequest(reasons)
     dirtyReasons = mergeRenderInvalidationReasons(
       dirtyReasons,
-      nextReasons.length > 0 ? nextReasons : ['manual'],
+      nextRequest.reasons,
+    )
+    dirtyLayers = mergeIsometricRenderDirtyLayers(
+      dirtyLayers,
+      nextRequest.dirtyLayers,
     )
     scheduleFrame()
 
@@ -222,6 +299,7 @@ export const createIsometricRenderScheduler = ({
   const cancel = (): IsometricRenderSchedulerSnapshot => {
     cancelFrameHandle()
     dirtyReasons = []
+    dirtyLayers = []
     activeAnimation = false
 
     return snapshot()

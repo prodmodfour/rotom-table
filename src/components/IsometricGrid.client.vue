@@ -114,7 +114,7 @@ import {
 import { createIsometricSceneGraph } from '~/utils/isometric/sceneGraph'
 import { stepIsometricAnimationFrame } from '~/utils/isometric/animationFrame'
 import {
-  applyIsometricLayerVisibility,
+  createIsometricLayerVisibilityApplicator,
   setIsometricGridVisibility,
 } from '~/utils/isometric/layerVisibility'
 import { createIsometricBuildInteractionController } from '~/utils/isometric/buildInteraction'
@@ -152,6 +152,7 @@ import {
   resolveIsometricTokenMotionContinuationSources,
   toIsometricRenderSchedulerFrameResult,
 } from '~/utils/isometric/renderLoop'
+import { createCss3DRenderDirtyTracker } from '~/utils/isometric/css3DRenderDirtyTracker'
 
 export type { BuildTool } from '#shared/mapEditor'
 
@@ -465,6 +466,8 @@ const tokenProxyPickTargets = createTokenProxyPickTargetCache()
 const buildHazardPickTargets = createBuildHazardPickTargetCache()
 const renderFrameTimingSampler = createRenderFrameTimingSampler()
 const pointerInteractionMetricsSampler = createPointerInteractionMetricsSampler()
+const css3DRenderDirtyTracker = createCss3DRenderDirtyTracker()
+const layerVisibilityApplicator = createIsometricLayerVisibilityApplicator()
 
 const readRenderMetricsNowMs = (): number => {
   const performanceNow = globalThis.performance?.now
@@ -598,6 +601,7 @@ const syncRendererSize = (): boolean => {
     previousSize: rendererSizeState,
   })
   rendererSizeState = result.size
+  if (result.changed) css3DRenderDirtyTracker.markDirty('resize')
 
   return result.changed
 }
@@ -685,16 +689,14 @@ const buildRenderObject = (pokemon: SpawnedPokemon): PokemonRenderObject =>
     geometryCache: tokenGeometryCache,
   })
 
-const applyRenderObjectPosition = (renderObject: PokemonRenderObject) => {
-  applyPokemonRenderObjectPosition(renderObject, {
-    camera,
-    activeTurnId: props.activeTurnId,
-    groundLevelY: normalizedGroundLevelY(),
-    hoveredPokemonId: hoverController.id(),
-    layers: visibleLayers(),
-    getShadowSurfaceY,
-  })
-}
+const applyRenderObjectPosition = (renderObject: PokemonRenderObject): boolean => applyPokemonRenderObjectPosition(renderObject, {
+  camera,
+  activeTurnId: props.activeTurnId,
+  groundLevelY: normalizedGroundLevelY(),
+  hoveredPokemonId: hoverController.id(),
+  layers: visibleLayers(),
+  getShadowSurfaceY,
+})
 
 const refreshPokemonStyles = () => {
   syncPokemonRenderObjectSelectionStyles({
@@ -703,7 +705,7 @@ const refreshPokemonStyles = () => {
     selectedId: props.selectedId,
     paintRenderObjectStyle: (renderObject, selected) => paintPokemonRenderObjectStyle(renderObject, selected),
   })
-  applyLayerVisibility()
+  applyLayerVisibility({ force: true })
 }
 
 const onCreateRenderObject = (renderObject: PokemonRenderObject) => {
@@ -738,7 +740,7 @@ const syncVoxelMeshes = () => {
     terrainRevision: terrainVoxelRevision.value,
   })
   buildHazardPickTargets.setVoxelMeshes(voxelRenderer.meshes())
-  applyLayerVisibility()
+  applyLayerVisibility({ force: true })
 }
 
 const syncFieldEffectMeshes = () => {
@@ -748,17 +750,21 @@ const syncFieldEffectMeshes = () => {
     groundLevelY: normalizedGroundLevelY(),
     effects: renderedFieldEffects.value,
   })
-  applyLayerVisibility()
+  applyLayerVisibility({ force: true })
 }
 
 const syncHazardMeshes = () => {
   hazardRenderer.sync(renderedHazards.value)
   buildHazardPickTargets.setHazardMeshes(hazardRenderer.meshes())
-  applyLayerVisibility()
+  applyLayerVisibility({ force: true })
 }
 
-const applyLayerVisibility = () => {
-  applyIsometricLayerVisibility({
+const applyLayerVisibility = (options: { force?: boolean } = {}) => {
+  if (options.force) {
+    layerVisibilityApplicator.invalidate()
+  }
+
+  return layerVisibilityApplicator.apply({
     layers: visibleLayers(),
     hasSelectedPokemon: Boolean(selectedPokemon.value),
     buildMode: props.buildMode,
@@ -1244,10 +1250,13 @@ const syncTargetReticleButtons = (options: {
   show: boolean
   showsReticle: boolean
   selectedIds?: ReadonlySet<string> | null
-}) => {
+}): boolean => {
   if (!options.show) {
-    if (targetReticleButtons.value.length) targetReticleButtons.value = []
-    return
+    if (targetReticleButtons.value.length) {
+      targetReticleButtons.value = []
+      return true
+    }
+    return false
   }
 
   const targeting = props.moveAutomationTargeting
@@ -1273,16 +1282,27 @@ const syncTargetReticleButtons = (options: {
       && old?.showsReticle === entry.showsReticle
       && sameMoveTargetHitChance(old?.hitChance, entry.hitChance)
   })
-  if (!unchanged) targetReticleButtons.value = next
+  if (!unchanged) {
+    targetReticleButtons.value = next
+    return true
+  }
+  return false
 }
 
-const syncAttackOfOpportunityButtons = () => {
+const syncAttackOfOpportunityButtons = (): boolean => {
   const layers = visibleLayers()
   const prompts = props.attackOfOpportunityPrompts ?? []
   if (!layers.tokens || !prompts.length) {
-    if (attackOfOpportunityButtons.value.length) attackOfOpportunityButtons.value = []
-    if (openAttackOfOpportunityMenuId.value) openAttackOfOpportunityMenuId.value = null
-    return
+    let changed = false
+    if (attackOfOpportunityButtons.value.length) {
+      attackOfOpportunityButtons.value = []
+      changed = true
+    }
+    if (openAttackOfOpportunityMenuId.value) {
+      openAttackOfOpportunityMenuId.value = null
+      changed = true
+    }
+    return changed
   }
 
   const next = prompts.flatMap((prompt): AttackOfOpportunityButton[] => {
@@ -1299,11 +1319,17 @@ const syncAttackOfOpportunityButtons = () => {
       && old.struggleOptions.length === entry.struggleOptions.length
       && old.struggleOptions.every((move, moveIndex) => move.name === entry.struggleOptions[moveIndex]?.name)
   })
-  if (!unchanged) attackOfOpportunityButtons.value = next
+  let changed = false
+  if (!unchanged) {
+    attackOfOpportunityButtons.value = next
+    changed = true
+  }
 
   if (openAttackOfOpportunityMenuId.value && !next.some((button) => button.id === openAttackOfOpportunityMenuId.value)) {
     openAttackOfOpportunityMenuId.value = null
+    changed = true
   }
+  return changed
 }
 
 const useAttackOfOpportunityMove = (promptId: string, moveName: string) => {
@@ -1336,7 +1362,7 @@ const targetReticleButtonLabel = (button: TargetReticleButton): string => {
   return button.hitChance ? `Select move target (${button.hitChance.label} to hit)` : 'Select move target'
 }
 
-const updateMoveAutomationOverlays = () => {
+const updateMoveAutomationOverlays = (): boolean => {
   const layers = visibleLayers()
   const targeting = props.moveAutomationTargeting
   const showClickableTargetReticles = Boolean(targeting?.mode === 'target' && layers.tokens)
@@ -1346,7 +1372,7 @@ const updateMoveAutomationOverlays = () => {
   const areaReticleIds = targeting?.mode === 'area-confirmation' ? targeting.candidateIds : []
   const areaSelectedIds = areaSelectedTargetIdSet(targeting)
   const showAreaTargetReticles = Boolean(showAreaTemplate && layers.tokens && areaReticleIds.length)
-  syncTargetReticleButtons({
+  let cssUiChanged = syncTargetReticleButtons({
     show: showClickableTargetReticles || showAreaToggleButtons,
     showsReticle: showClickableTargetReticles,
     selectedIds: showAreaToggleButtons ? areaSelectedIds : null,
@@ -1355,19 +1381,20 @@ const updateMoveAutomationOverlays = () => {
     cells: targeting?.areaCells ?? [],
     show: showAreaTemplate,
   })
-  moveTargetingReticleRenderer.update({
+  cssUiChanged = moveTargetingReticleRenderer.update({
     candidateIds: areaReticleIds,
     selectedIds: areaSelectedIds ? Array.from(areaSelectedIds) : undefined,
     hitChances: targeting?.hitChances,
     renderObjects,
     show: showAreaTargetReticles,
-  })
-  moveAutomationFeedbackRenderer.update({
+  }) || cssUiChanged
+  cssUiChanged = moveAutomationFeedbackRenderer.update({
     feedback: props.moveAutomationFeedback,
     renderObjects,
     show: layers.tokens,
-  })
-  syncAttackOfOpportunityButtons()
+  }) || cssUiChanged
+  cssUiChanged = syncAttackOfOpportunityButtons() || cssUiChanged
+  return cssUiChanged
 }
 
 // Continue scheduling only while concrete scene work is still active. A
@@ -1407,6 +1434,10 @@ const renderOneShotScheduledFrame = (frame: IsometricScheduledRenderFrame): bool
     return false
   }
 
+  const animationContinuation = resolveSceneAnimationContinuation()
+  css3DRenderDirtyTracker.markDirtyForRenderLayers(frame.dirtyLayers, frame.reasons)
+  css3DRenderDirtyTracker.markDirtyForAnimationContinuation(animationContinuation)
+
   stepIsometricAnimationFrame({
     clock,
     renderObjects: renderObjects.values(),
@@ -1422,6 +1453,7 @@ const renderOneShotScheduledFrame = (frame: IsometricScheduledRenderFrame): bool
     scene,
     facingDirection: DEFAULT_FACING_DIRECTION,
     beforeRender: updateMoveAutomationOverlays,
+    css3DRenderDirtyTracker,
   })
   recordScheduledFrameForMetricsOverlay(frame)
   sampleRendererInfoForMetricsOverlay()
@@ -1445,6 +1477,7 @@ const startScheduledRenderLoop = () => {
   if (documentIsHidden()) {
     renderScheduler.pause()
   }
+  css3DRenderDirtyTracker.markDirty('initial')
   renderScheduler.requestRender('initial')
   renderScheduler.setActiveAnimation(resolveSceneAnimationContinuation().active)
 }

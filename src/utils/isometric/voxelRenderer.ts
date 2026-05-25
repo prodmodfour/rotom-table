@@ -240,6 +240,10 @@ export const createVoxelRenderer = (container: THREE.Group): VoxelRenderer => {
     voxelBoxGeometry = null
   }
 
+  const applyObjectVisibility = (object: THREE.Object3D, nextVisible: boolean) => {
+    if (object.visible !== nextVisible) object.visible = nextVisible
+  }
+
   const disposeTerrainTopEdgeOverlay = () => {
     disposeObject3D(terrainTopEdgeOverlay)
     terrainTopEdgeOverlay = null
@@ -260,7 +264,7 @@ export const createVoxelRenderer = (container: THREE.Group): VoxelRenderer => {
     const overlay = buildTerrainTopEdgeOverlay(voxels, options)
     if (overlay.children.length === 0) return
 
-    overlay.visible = visible
+    applyObjectVisibility(overlay, visible)
     terrainTopEdgeOverlay = overlay
     container.add(terrainTopEdgeOverlay)
   }
@@ -305,7 +309,7 @@ export const createVoxelRenderer = (container: THREE.Group): VoxelRenderer => {
         const groupVoxels = snapshot.voxels
         const existing = voxelGroups.get(key)
         if (existing && existing.semanticSignature === snapshot.semanticSignature) {
-          existing.mesh.visible = visible
+          applyObjectVisibility(existing.mesh, visible)
           // Keep the existing instance matrices and userData voxel array aligned;
           // reordered-but-equivalent inputs do not need either to change.
           nextVoxelGroups.set(key, existing)
@@ -321,7 +325,7 @@ export const createVoxelRenderer = (container: THREE.Group): VoxelRenderer => {
         const mesh = new THREE.InstancedMesh(geometry, materials, groupVoxels.length)
         mesh.userData.voxels = groupVoxels
         mesh.renderOrder = traits.renderOrder
-        mesh.visible = visible
+        applyObjectVisibility(mesh, visible)
         for (let i = 0; i < groupVoxels.length; i += 1) {
           const v = groupVoxels[i]
           matrix.makeTranslation(v.x + 0.5, v.y + 0.5, v.z + 0.5)
@@ -354,12 +358,14 @@ export const createVoxelRenderer = (container: THREE.Group): VoxelRenderer => {
     },
 
     setVisible(nextVisible) {
+      if (visible === nextVisible) return
+
       visible = nextVisible
-      container.visible = nextVisible
+      applyObjectVisibility(container, nextVisible)
       for (const group of voxelGroups.values()) {
-        group.mesh.visible = nextVisible
+        applyObjectVisibility(group.mesh, nextVisible)
       }
-      if (terrainTopEdgeOverlay) terrainTopEdgeOverlay.visible = nextVisible
+      if (terrainTopEdgeOverlay) applyObjectVisibility(terrainTopEdgeOverlay, nextVisible)
     },
 
     meshes() {
