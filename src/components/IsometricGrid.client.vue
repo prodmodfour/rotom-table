@@ -129,6 +129,11 @@ import {
   type IsometricRenderScheduler,
   type IsometricScheduledRenderFrame,
 } from '~/utils/isometric/renderScheduler'
+import {
+  createIsometricAnimationContinuation,
+  ISOMETRIC_ANIMATION_CONTINUATION_SOURCE,
+  toIsometricRenderSchedulerFrameResult,
+} from '~/utils/isometric/renderLoop'
 
 export type { BuildTool } from '#shared/mapEditor'
 
@@ -1131,9 +1136,15 @@ const updateMoveAutomationOverlays = () => {
   syncAttackOfOpportunityButtons()
 }
 
-const renderScheduledFrame = (frame: IsometricScheduledRenderFrame) => {
+// Keep the old continuous RAF behaviour as an explicit source until real
+// token/sprite/weather/preview animation detectors replace it.
+const resolveSceneAnimationContinuation = () => createIsometricAnimationContinuation([
+  ISOMETRIC_ANIMATION_CONTINUATION_SOURCE.compatibilityContinuousLoop,
+])
+
+const renderOneShotScheduledFrame = (frame: IsometricScheduledRenderFrame): boolean => {
   if (!renderer || !cssRenderer || !camera || !controls) {
-    return { activeAnimation: true }
+    return false
   }
 
   stepIsometricAnimationFrame({
@@ -1155,10 +1166,16 @@ const renderScheduledFrame = (frame: IsometricScheduledRenderFrame) => {
   recordScheduledFrameForMetricsOverlay(frame)
   sampleRendererInfoForMetricsOverlay()
 
-  return { activeAnimation: true }
+  return true
 }
 
-const startContinuousRenderLoop = () => {
+const renderScheduledFrame = (frame: IsometricScheduledRenderFrame) => {
+  renderOneShotScheduledFrame(frame)
+
+  return toIsometricRenderSchedulerFrameResult(resolveSceneAnimationContinuation())
+}
+
+const startScheduledRenderLoop = () => {
   renderScheduler?.dispose()
   renderScheduler = createIsometricRenderScheduler({
     renderFrame: renderScheduledFrame,
@@ -1166,10 +1183,10 @@ const startContinuousRenderLoop = () => {
     cancelAnimationFrame: window.cancelAnimationFrame.bind(window),
   })
   renderScheduler.requestRender('initial')
-  renderScheduler.setActiveAnimation(true)
+  renderScheduler.setActiveAnimation(resolveSceneAnimationContinuation().active)
 }
 
-const stopContinuousRenderLoop = () => {
+const stopScheduledRenderLoop = () => {
   renderScheduler?.dispose()
   renderScheduler = null
 }
@@ -1217,11 +1234,11 @@ onMounted(() => {
   })
   cleanupResizeObserver = observeIsometricResize(container.value, syncRendererSizeFromResizeObserver)
 
-  startContinuousRenderLoop()
+  startScheduledRenderLoop()
 })
 
 onBeforeUnmount(() => {
-  stopContinuousRenderLoop()
+  stopScheduledRenderLoop()
 
   cleanupRendererDomEvents?.()
   cleanupRendererDomEvents = null
