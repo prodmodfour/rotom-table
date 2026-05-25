@@ -11,6 +11,8 @@ export const GHOST_VOXEL_FADED_OPACITY = 0.1
 
 export interface VoxelRendererSyncOptions {
   ghostVoxelsFaded?: boolean
+  /** Stable terrain revision from the caller; falls back to an overlay-specific voxel signature. */
+  terrainRevision?: string
 }
 
 export interface VoxelRenderer {
@@ -40,6 +42,28 @@ const voxelBucketPositionSignature = (voxels: ReadonlyArray<MapVoxelV2>): string
 
 const voxelRenderTraitsSignature = (traits: VoxelRenderTraits): string =>
   `${traits.opacity}:${traits.depthWrite ? 'depth' : 'no-depth'}:${traits.renderOrder}`
+
+const terrainTopEdgeOverlayVoxelSignature = (voxels: ReadonlyArray<MapVoxelV2>): string =>
+  Array.from(voxels, (voxel) => [
+    voxel.x,
+    voxel.y,
+    voxel.z,
+    voxel.ghost === true ? 'ghost' : 'solid',
+  ].join(','))
+    .sort()
+    .join('|')
+
+export const terrainTopEdgeOverlayCacheKey = (
+  voxels: ReadonlyArray<MapVoxelV2>,
+  options: VoxelRendererSyncOptions = {},
+): string => {
+  const terrainRevision = options.terrainRevision === undefined
+    ? `voxels:${terrainTopEdgeOverlayVoxelSignature(voxels)}`
+    : `revision:${options.terrainRevision}`
+  const ghostFadeRevision = options.ghostVoxelsFaded === true ? 'ghost-fade:on' : 'ghost-fade:off'
+
+  return `${terrainRevision}|${ghostFadeRevision}`
+}
 
 const disposeVoxelGroup = (container: THREE.Group, group: VoxelGroup) => {
   container.remove(group.mesh)
@@ -202,6 +226,7 @@ export const buildTerrainTopEdgeOverlay = (
 export const createVoxelRenderer = (container: THREE.Group): VoxelRenderer => {
   const voxelGroups = new Map<string, VoxelGroup>()
   let terrainTopEdgeOverlay: THREE.Group | null = null
+  let terrainTopEdgeOverlayRevision: string | null = null
   let voxelBoxGeometry: THREE.BoxGeometry | null = null
   let visible = true
 
@@ -218,13 +243,20 @@ export const createVoxelRenderer = (container: THREE.Group): VoxelRenderer => {
   const disposeTerrainTopEdgeOverlay = () => {
     disposeObject3D(terrainTopEdgeOverlay)
     terrainTopEdgeOverlay = null
+    terrainTopEdgeOverlayRevision = null
   }
 
   const syncTerrainTopEdgeOverlay = (
     voxels: ReadonlyArray<MapVoxelV2>,
     options: VoxelRendererSyncOptions,
   ) => {
+    const nextRevision = terrainTopEdgeOverlayCacheKey(voxels, options)
+    if (terrainTopEdgeOverlayRevision === nextRevision) {
+      return
+    }
+
     disposeTerrainTopEdgeOverlay()
+    terrainTopEdgeOverlayRevision = nextRevision
     const overlay = buildTerrainTopEdgeOverlay(voxels, options)
     if (overlay.children.length === 0) return
 

@@ -14,6 +14,7 @@ vi.mock('~/utils/isometric/materials', () => ({
 import {
   createVoxelRenderer,
   GHOST_VOXEL_FADED_OPACITY,
+  terrainTopEdgeOverlayCacheKey,
 } from '~/utils/isometric/voxelRenderer'
 
 const materialOpacity = (mesh: THREE.InstancedMesh): number => {
@@ -39,7 +40,49 @@ const voxel = (x: number, ghost = false): MapVoxelV2 => ({
   ...(ghost ? { ghost: true } : {}),
 })
 
+const terrainTopEdgeOverlay = (container: THREE.Group): THREE.Group | undefined =>
+  container.children.find((child): child is THREE.Group =>
+    child instanceof THREE.Group
+    && child.children.some((entry) => entry instanceof THREE.LineSegments),
+  )
+
+const firstTerrainTopEdgeLine = (container: THREE.Group): THREE.LineSegments => {
+  const overlay = terrainTopEdgeOverlay(container)
+  const line = overlay?.children.find((child): child is THREE.LineSegments => child instanceof THREE.LineSegments)
+  expect(line).toBeDefined()
+  return line!
+}
+
+const terrainTopEdgeOverlayOpacities = (container: THREE.Group): number[] => {
+  const overlay = terrainTopEdgeOverlay(container)
+  expect(overlay).toBeDefined()
+
+  return overlay!.children
+    .filter((child): child is THREE.LineSegments => child instanceof THREE.LineSegments)
+    .map((line) => (line.material as THREE.LineBasicMaterial).opacity)
+    .sort((a, b) => a - b)
+}
+
 describe('isometric voxel renderer', () => {
+  it('builds stable terrain top-edge overlay cache keys from terrain revision and ghost fade state', () => {
+    expect(terrainTopEdgeOverlayCacheKey([
+      voxel(2),
+      voxel(0, true),
+    ])).toBe(terrainTopEdgeOverlayCacheKey([
+      voxel(0, true),
+      voxel(2),
+    ]))
+    expect(terrainTopEdgeOverlayCacheKey([voxel(0)], { terrainRevision: 'terrain:1' }))
+      .toBe(terrainTopEdgeOverlayCacheKey([voxel(2)], { terrainRevision: 'terrain:1' }))
+    expect(terrainTopEdgeOverlayCacheKey([voxel(0)], { terrainRevision: 'terrain:1' }))
+      .not.toBe(terrainTopEdgeOverlayCacheKey([voxel(0)], { terrainRevision: 'terrain:2' }))
+    expect(terrainTopEdgeOverlayCacheKey([voxel(0, true)], { terrainRevision: 'terrain:1' }))
+      .not.toBe(terrainTopEdgeOverlayCacheKey([voxel(0, true)], {
+        ghostVoxelsFaded: true,
+        terrainRevision: 'terrain:1',
+      }))
+  })
+
   it('renders ghost voxels normally unless ghost fading is enabled', () => {
     const container = new THREE.Group()
     const renderer = createVoxelRenderer(container)
@@ -173,6 +216,69 @@ describe('isometric voxel renderer', () => {
     expect(materialOpacity(updatedMesh)).toBe(0.36)
     expect(materialTransparency(updatedMesh)).toBe(true)
     expect(initialDisposeSpy).toHaveBeenCalledTimes(1)
+
+    renderer.dispose()
+  })
+
+  it('keeps the terrain top-edge overlay for unchanged terrain revisions', () => {
+    const container = new THREE.Group()
+    const renderer = createVoxelRenderer(container)
+
+    renderer.sync([voxel(0)], { terrainRevision: 'terrain:1' })
+
+    const initialOverlay = terrainTopEdgeOverlay(container)
+    const initialLine = firstTerrainTopEdgeLine(container)
+    const geometryDisposeSpy = vi.spyOn(initialLine.geometry, 'dispose')
+    const materialDisposeSpy = vi.spyOn(initialLine.material as THREE.LineBasicMaterial, 'dispose')
+
+    renderer.sync([voxel(0)], { terrainRevision: 'terrain:1' })
+
+    expect(terrainTopEdgeOverlay(container)).toBe(initialOverlay)
+    expect(geometryDisposeSpy).not.toHaveBeenCalled()
+    expect(materialDisposeSpy).not.toHaveBeenCalled()
+
+    renderer.dispose()
+  })
+
+  it('rebuilds the terrain top-edge overlay when the terrain revision changes', () => {
+    const container = new THREE.Group()
+    const renderer = createVoxelRenderer(container)
+
+    renderer.sync([voxel(0)], { terrainRevision: 'terrain:1' })
+
+    const initialOverlay = terrainTopEdgeOverlay(container)
+    const initialLine = firstTerrainTopEdgeLine(container)
+    const geometryDisposeSpy = vi.spyOn(initialLine.geometry, 'dispose')
+    const materialDisposeSpy = vi.spyOn(initialLine.material as THREE.LineBasicMaterial, 'dispose')
+
+    renderer.sync([voxel(0)], { terrainRevision: 'terrain:2' })
+
+    expect(terrainTopEdgeOverlay(container)).not.toBe(initialOverlay)
+    expect(geometryDisposeSpy).toHaveBeenCalledTimes(1)
+    expect(materialDisposeSpy).toHaveBeenCalledTimes(1)
+
+    renderer.dispose()
+  })
+
+  it('rebuilds the terrain top-edge overlay when ghost fade settings change', () => {
+    const container = new THREE.Group()
+    const renderer = createVoxelRenderer(container)
+
+    renderer.sync([voxel(0, true)], { terrainRevision: 'terrain:1' })
+
+    const initialOverlay = terrainTopEdgeOverlay(container)
+    expect(terrainTopEdgeOverlayOpacities(container)).toEqual([0.24, 0.32])
+
+    renderer.sync([voxel(0, true)], {
+      ghostVoxelsFaded: true,
+      terrainRevision: 'terrain:1',
+    })
+
+    expect(terrainTopEdgeOverlay(container)).not.toBe(initialOverlay)
+    expect(terrainTopEdgeOverlayOpacities(container)).toEqual([
+      0.24 * GHOST_VOXEL_FADED_OPACITY,
+      0.32 * GHOST_VOXEL_FADED_OPACITY,
+    ])
 
     renderer.dispose()
   })

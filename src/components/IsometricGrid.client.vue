@@ -730,6 +730,7 @@ const syncPokemonObjects = () => {
 const syncVoxelMeshes = () => {
   voxelRenderer.sync(renderedTerrainVoxels.value, {
     ghostVoxelsFaded: props.ghostVoxelsFaded,
+    terrainRevision: terrainVoxelRevision.value,
   })
   buildHazardPickTargets.setVoxelMeshes(voxelRenderer.meshes())
   applyLayerVisibility()
