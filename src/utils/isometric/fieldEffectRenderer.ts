@@ -16,7 +16,6 @@ import {
 } from './weatherEffects'
 import {
   createFieldEffectAnimationState,
-  fieldEffectAnimationStateNeedsFrame,
   type FieldEffectAnimationState,
 } from './fieldEffectAnimation'
 
@@ -66,7 +65,9 @@ export const createFieldEffectRenderer = (
     fieldEffectAnimators.length,
   )
 
-  const needsAnimationFrame = () => fieldEffectAnimationStateNeedsFrame(getAnimationState())
+  const hasVisibleAnimators = () => visible && fieldEffectAnimators.length > 0
+
+  const needsAnimationFrame = () => hasVisibleAnimators()
 
   const sync = (nextInput: FieldEffectRendererInput) => {
     input = nextInput
@@ -120,10 +121,10 @@ export const createFieldEffectRenderer = (
     sync,
 
     update(delta, elapsed) {
-      if (!needsAnimationFrame()) return
+      if (!hasVisibleAnimators()) return
 
-      for (const updateFieldEffect of fieldEffectAnimators) {
-        updateFieldEffect(delta, elapsed)
+      for (let i = 0; i < fieldEffectAnimators.length; i += 1) {
+        fieldEffectAnimators[i](delta, elapsed)
       }
     },
 

@@ -43,6 +43,89 @@ const fakeTextureCache = (): WeatherTextureCache => {
   }
 }
 
+interface WeatherRenderResourceSnapshot {
+  objects: THREE.Object3D[]
+  geometries: THREE.BufferGeometry[]
+  materials: THREE.Material[]
+  attributes: unknown[]
+  attributeArrays: unknown[]
+  instanceMatrixArrays: unknown[]
+  textureMaps: THREE.Texture[]
+}
+
+const materialList = (
+  material: THREE.Material | THREE.Material[] | undefined,
+): THREE.Material[] => {
+  if (!material) return []
+  return Array.isArray(material) ? material : [material]
+}
+
+const captureWeatherRenderResources = (
+  group: THREE.Group,
+): WeatherRenderResourceSnapshot => {
+  const snapshot: WeatherRenderResourceSnapshot = {
+    objects: [],
+    geometries: [],
+    materials: [],
+    attributes: [],
+    attributeArrays: [],
+    instanceMatrixArrays: [],
+    textureMaps: [],
+  }
+
+  group.traverse((object) => {
+    const renderObject = object as THREE.Object3D & {
+      geometry?: THREE.BufferGeometry
+      material?: THREE.Material | THREE.Material[]
+      instanceMatrix?: { array?: unknown }
+    }
+    snapshot.objects.push(object)
+    if (renderObject.geometry) {
+      snapshot.geometries.push(renderObject.geometry)
+      const positionAttribute = renderObject.geometry.getAttribute('position')
+      if (positionAttribute) {
+        snapshot.attributes.push(positionAttribute)
+        const maybeArrayAttribute = positionAttribute as { array?: unknown }
+        if (maybeArrayAttribute.array) {
+          snapshot.attributeArrays.push(maybeArrayAttribute.array)
+        }
+      }
+    }
+    if (renderObject.instanceMatrix?.array) {
+      snapshot.instanceMatrixArrays.push(renderObject.instanceMatrix.array)
+    }
+    for (const material of materialList(renderObject.material)) {
+      snapshot.materials.push(material)
+      const mappedMaterial = material as THREE.Material & {
+        map?: THREE.Texture | null
+      }
+      if (mappedMaterial.map) snapshot.textureMaps.push(mappedMaterial.map)
+    }
+  })
+
+  return snapshot
+}
+
+const expectSameReferences = <T>(actual: T[], expected: T[]) => {
+  expect(actual).toHaveLength(expected.length)
+  for (let i = 0; i < expected.length; i += 1) {
+    expect(actual[i]).toBe(expected[i])
+  }
+}
+
+const expectSameWeatherRenderResources = (
+  actual: WeatherRenderResourceSnapshot,
+  expected: WeatherRenderResourceSnapshot,
+) => {
+  expectSameReferences(actual.objects, expected.objects)
+  expectSameReferences(actual.geometries, expected.geometries)
+  expectSameReferences(actual.materials, expected.materials)
+  expectSameReferences(actual.attributes, expected.attributes)
+  expectSameReferences(actual.attributeArrays, expected.attributeArrays)
+  expectSameReferences(actual.instanceMatrixArrays, expected.instanceMatrixArrays)
+  expectSameReferences(actual.textureMaps, expected.textureMaps)
+}
+
 describe('weather visual factory', () => {
   it('keeps deterministic weather visual seed formatting compatible', () => {
     expect(weatherVisualSeed('rainy', input, 2)).toBe('rainy:6x4x5:2')
@@ -62,6 +145,27 @@ describe('weather visual factory', () => {
       expect(visual.group.name).toBe(expectedNames[kind])
       expect(visual.group.children.length).toBeGreaterThan(0)
       expect(() => visual.update(0.016, 1.25)).not.toThrow()
+      disposeGroup(visual.group)
+    }
+
+    textures.disposeTextureCache()
+  })
+
+  it('updates weather visuals without recreating render resources', () => {
+    const textures = fakeTextureCache()
+    const kinds: MapWeatherKind[] = ['sunny', 'rainy', 'hail', 'sandstorm']
+
+    for (const kind of kinds) {
+      const visual = makeWeatherVisual(input, kind, 0, 1, textures)
+      const resourcesBeforeUpdate = captureWeatherRenderResources(visual.group)
+
+      visual.update(0.016, 1.25)
+      visual.update(0.032, 2.5)
+
+      expectSameWeatherRenderResources(
+        captureWeatherRenderResources(visual.group),
+        resourcesBeforeUpdate,
+      )
       disposeGroup(visual.group)
     }
 
