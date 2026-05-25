@@ -19,6 +19,7 @@ temp/
 # Local campaign content
 # Keep generated example sheets trackable while ignoring personal/campaign sheets.
 data/maps/
+data/sessions/
 data/sheets/*
 !data/sheets/examples/
 !data/sheets/examples/**

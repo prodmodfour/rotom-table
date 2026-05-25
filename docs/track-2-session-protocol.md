@@ -2,7 +2,7 @@
 
 This document describes the shared TypeScript protocol contracts introduced for Track 2 session mode. It records the wire vocabulary that later server and client tickets must use when they add the session store, WebSocket endpoint, lobby UI, command handlers, and reconnect behaviour.
 
-This is a contract document, not a claim that the WebSocket runtime is already complete. The current shared contracts live in `shared/` and are covered by focused Vitest tests; command-specific payload contracts such as `moveToken` land in later command tickets.
+This is a contract document, not a claim that the WebSocket runtime is already complete. The current shared contracts live in `shared/` and are covered by focused Vitest tests; command-specific payload contracts such as `moveToken` land in later command tickets. See [Track 2 session storage](track-2-session-storage.md) for the operational snapshot/event-log layout, backup guidance, and recovery limitations.
 
 ## Protocol goals
 
@@ -28,6 +28,7 @@ The protocol must preserve these locked decisions:
 | `shared/sessionCommandValidation.ts` | common envelope validator | Validates schema, IDs, actor shape, revisions, scopes, metadata, and payload presence. Command-specific payload validation is intentionally separate. |
 | `shared/sessionCommandResults.ts` | accepted, rejected, duplicate, stale, unauthorized, invalid, conflict result shapes | Results are the server's authoritative answer to a submitted command. |
 | `shared/sessionMessages.ts` | WebSocket message unions | Defines client `hello`, `heartbeat`, `command` messages and server `hello`, `heartbeat`, `commandAck`, `commandReject`, `snapshot`, `patch`, `presence`, and `error` messages. |
+| `shared/sessionState.ts` | authoritative session state model | Defines the server-owned session snapshot shape: selected map slug, session/map revisions, map documents, connected clients, joined players, and GM-managed assignments. |
 
 ## Wire format rules
 
@@ -52,6 +53,50 @@ The shared permission helpers distinguish:
 - controllable resources, which a player may command only when assigned and visible.
 
 Permission denials use safe reasons such as `gm-required`, `player-required`, `resource-not-visible`, `resource-not-assigned`, and `missing-player-identity`. These reasons are suitable for player-facing conflict/rejection UI without exposing secrets.
+
+## Authoritative state shape
+
+`AuthoritativeSessionState` is the JSON-serializable state the GM-hosted server owns for one session. It includes `sessionId`, monotonic session `revision`, `selectedMapSlug`, per-map `maps[]` entries with `MapRevision` values and server-owned map documents, `connectedClients[]` for WebSocket presence, joined `players[]`, and GM-controlled `assignments[]`.
+
+This model is the state stored in the in-memory session store and later written as local snapshots. It is not a client autosave format: live clients still send commands, the server mutates this authoritative copy, and broadcasts small patches or snapshots from it.
+
+## Local snapshot writer
+
+`server/utils/sessionSnapshots.ts` writes the latest authoritative session snapshot as a JSON envelope containing the snapshot schema version, `sessionId`, current session `revision`, `writtenAt`, and the `AuthoritativeSessionState`. The default local path is `data/sessions/<sessionId>/snapshot.json`, which is ignored by git because snapshots may contain private campaign/session state.
+
+Snapshot writes serialize the complete JSON in memory, write a unique temp file in the same session directory, flush and close it, rename it over `snapshot.json`, best-effort flush the directory, and remove the temp file on failures before publish.
+
+Snapshot reads use the same session-scoped path, parse the latest `snapshot.json`, validate the persisted envelope, schema versions, session ID, revisions, timestamps, authoritative state arrays, presence actors, players, assignments, visible/controllable resources, and cross-check that the envelope and state refer to the requested session/revision. `recoverSessionStateFromSnapshot` returns the validated `AuthoritativeSessionState` for reconnect or restart paths, or a typed failure such as `not-found`, `invalid-json`, or `invalid-shape`; it never reconstructs live authority from client autosave state.
+
+## Optional local event log
+
+`server/utils/sessionEventLog.ts` provides the opt-in append-only JSON-lines helper for future command application and reconnect work. The default local path is `data/sessions/<sessionId>/events.jsonl`, under the same git-ignored session data root as snapshots.
+
+Each line is one complete `schemaVersion: 1` event-log entry. Command entries bind the command envelope to the server command result, `opId`, command type, session ID, and resulting session revision. Generic event entries can record server-side session events such as presence or operational markers without becoming a client-edit stream.
+
+The helper serializes and validates entries before creating session directories, appends one compact JSON object plus a trailing newline, flushes the file by default, and best-effort flushes the session directory. The event log remains optional: the latest valid snapshot is still the required recovery baseline, and reconnect code must fall back to a current snapshot whenever replay is disabled, missing, truncated, or unsafe.
+
+## Revision application helper
+
+`server/utils/sessionRevisionApplication.ts` is the pure application boundary for already-accepted commands. Command-specific handlers still own validation, permission checks, stale/conflict rejection, and duplicate `opId` lookup; after a handler decides a command is accepted, it calls this helper to advance the authoritative session revision exactly once, apply any supplied map-document effects with per-map revision increments, stamp server metadata, and return the next immutable `AuthoritativeSessionState`.
+
+The helper also creates the accepted command result, a small `SessionPatchEvent`, and a validated command event-log entry object for optional persistence. It does not append the log or write snapshots itself, so callers can decide whether to persist, broadcast, or roll back as a unit.
+
+## Duplicate operation tracker
+
+`server/utils/sessionOperationTracker.ts` is the in-memory idempotency boundary for recently processed command `opId` values. It records only accepted or rejected command results, scopes entries by `sessionId`, actor `clientId`, and `opId`, and keeps a bounded recent history per session so retries can be answered without applying effects again.
+
+The tracker returns `new`, `duplicate`, or `mismatched-opId` decisions. Exact duplicate user intents receive a `SessionCommandDuplicateResult` with the original accepted/rejected revision and the server's current revision at retry time. Reusing the same scoped `opId` with a materially different command envelope or payload is surfaced as a mismatch for later command handlers to reject safely instead of treating it as an edit to the original command. Diagnostic command metadata may change across retries and is not part of the material fingerprint.
+
+This helper is process-local state, not a database. Snapshots and the optional event log remain the recovery baseline after server restart; future reconnect/replay work may rebuild or bypass recent-op memory from durable local data when safe.
+
+## Session cleanup and explicit end
+
+`server/utils/sessionCleanup.ts` defines the server-side lifecycle policy for in-memory session records. The default policy treats an active session as idle after 12 hours without server-owned activity and retains ended in-memory records for 24 hours before pruning them. Server-owned activity includes store updates plus authoritative state/presence timestamps, so future heartbeat, reconnect, command, join, and assignment paths should touch the store or state when a client is still active.
+
+The explicit end-session helper is the path future GM management routes should use when the GM ends a table. It idempotently marks the session record `ended`, stamps `endedAt`, removes the session from active join-code lookups, and clears process-local duplicate-`opId` records for that session. Repeated end requests leave the original `endedAt` intact.
+
+Cleanup passes are conservative: an idle active session is ended but not deleted in the same pass, giving later socket/broadcast/persistence code a stable `session-ended` state to report. Only sessions that were already ended before a cleanup pass and have exceeded the ended-record retention window are pruned from the in-memory store. Cleanup does not delete `data/sessions/<sessionId>/snapshot.json` or `events.jsonl`; local snapshots and optional logs remain the recovery/backup boundary until the GM removes local files deliberately. The storage runbook documents when and how those local files should be backed up, restored, or manually removed.
 
 ## Message flow
 
