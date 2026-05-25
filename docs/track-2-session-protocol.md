@@ -1,0 +1,455 @@
+# Track 2 session protocol
+
+This document describes the shared TypeScript protocol contracts introduced for Track 2 session mode. It records the wire vocabulary that later server and client tickets must use when they add the session store, WebSocket endpoint, lobby UI, command handlers, and reconnect behaviour.
+
+This is a contract document, not a claim that the WebSocket runtime is already complete. The current shared contracts live in `shared/` and are covered by focused Vitest tests; command-specific payload contracts such as `moveToken` land in later command tickets.
+
+## Protocol goals
+
+Track 2 session mode uses one GM-hosted server as the authority for live table state. Browsers send explicit commands and receive server acknowledgements, rejections, snapshots, patches, presence, heartbeat, and reconnect responses.
+
+The protocol must preserve these locked decisions:
+
+- session hosting is explicitly enabled by a runtime safety flag before session endpoints or sockets are available;
+- WebSockets carry live session messages;
+- clients do not autosave whole maps as the live concurrency mechanism;
+- commands carry `opId` and `baseRevision` values so the server can provide idempotency and stale/conflict decisions;
+- identity is session-local: GM key, join code, player ID, client ID, safe display name, and GM-managed assignments;
+- state stays local-first through authoritative JSON snapshots and optional event logs, not a hosted database.
+
+## Shared contract modules
+
+| Module | Contract area | Notes |
+| --- | --- | --- |
+| `shared/sessionIdentity.ts` | `SessionId`, `PlayerId`, `ClientId`, `JoinCode`, `GmKey`, safe display names | Runtime wire values are strings. TypeScript brands prevent accidental mixing in app code. |
+| `shared/sessionPermissions.ts` | GM/player actors, visible and controllable resources, assignments, permission results | Players can only view visible resources and control assigned visible resources. GM authority is broader but still validated. |
+| `shared/sessionRevisions.ts` | monotonic `Revision`, `SessionRevision`, `MapRevision` helpers | Wire revisions are safe non-negative integers. Accepted commands advance revisions; rejections and duplicates do not. |
+| `shared/sessionCommands.ts` | command envelope, `opId`, `baseRevision`, scope lanes, metadata | The common command wrapper is shared before individual command payloads are implemented. |
+| `shared/sessionCommandValidation.ts` | common envelope validator | Validates schema, IDs, actor shape, revisions, scopes, metadata, and payload presence. Command-specific payload validation is intentionally separate. |
+| `shared/sessionCommandResults.ts` | accepted, rejected, duplicate, stale, unauthorized, invalid, conflict result shapes | Results are the server's authoritative answer to a submitted command. |
+| `shared/sessionMessages.ts` | WebSocket message unions | Defines client `hello`, `heartbeat`, `command` messages and server `hello`, `heartbeat`, `commandAck`, `commandReject`, `snapshot`, `patch`, `presence`, and `error` messages. |
+
+## Wire format rules
+
+- Every WebSocket message uses `schemaVersion: 1` and a `direction` of `client` or `server`.
+- Every command envelope uses `schemaVersion: 1` and includes `sessionId`, `actor`, `type`, `opId`, `baseRevision`, `scopes`, and `payload`.
+- TypeScript-branded identifiers serialize as plain JSON strings. Revisions serialize as JSON numbers.
+- `opId` values are scoped to the session/client operation scope and must not be reused for different user intent.
+- `baseRevision` is the revision the client observed when it created the command. It is not authority; the server compares it to current authoritative state.
+- `scopes` declare the resource lanes touched by the command so the server can evaluate permissions and conflicts.
+- Message metadata such as `messageId`, `sentAt`, `traceId`, `clientIssuedAt`, and `clientSequence` is diagnostic. It does not decide command ordering.
+- Unknown command payload, snapshot, patch payload, and current-state shapes are command/state specific and must remain JSON-serializable.
+
+## Identity and permission boundaries
+
+A client may include an actor shape in command envelopes, but the server must validate that actor against the authenticated session identity from the hello/join path before applying any command. The actor field is part of the audit and result vocabulary; it is not public authentication by itself.
+
+The shared permission helpers distinguish:
+
+- GM actors, represented by `{ role: "gm", clientId }` after the GM key has been validated for the session;
+- player actors, represented by `{ role: "player", playerId, clientId, displayName }` after a join code and player identity have been validated;
+- visible resources, which a player may see;
+- controllable resources, which a player may command only when assigned and visible.
+
+Permission denials use safe reasons such as `gm-required`, `player-required`, `resource-not-visible`, `resource-not-assigned`, and `missing-player-identity`. These reasons are suitable for player-facing conflict/rejection UI without exposing secrets.
+
+## Message flow
+
+### 1. Socket hello and reconnect
+
+After session hosting is enabled and a GM/player has session-local identity, the browser opens the session WebSocket and sends a client `hello`.
+
+```json
+{
+  "schemaVersion": 1,
+  "type": "hello",
+  "direction": "client",
+  "sessionId": "session_lake_table_001",
+  "identity": {
+    "role": "player",
+    "clientId": "client_browser_01",
+    "playerId": "player_misty001",
+    "displayName": "Misty"
+  },
+  "reconnect": true,
+  "lastSeenRevision": 41
+}
+```
+
+The server validates the identity and replies with a server `hello`. If replay is unavailable or unsafe, `snapshotRequired` is true and a `snapshot` message follows.
+
+```json
+{
+  "schemaVersion": 1,
+  "type": "hello",
+  "direction": "server",
+  "sessionId": "session_lake_table_001",
+  "actor": {
+    "role": "player",
+    "playerId": "player_misty001",
+    "clientId": "client_browser_01",
+    "displayName": "Misty"
+  },
+  "currentRevision": 42,
+  "resumed": true,
+  "heartbeat": {
+    "intervalMs": 25000,
+    "timeoutMs": 60000
+  },
+  "snapshotRequired": false,
+  "replayFromRevision": 41
+}
+```
+
+### 2. Snapshot and presence
+
+The server sends snapshots for initial load, reconnect fallback, recovery, permission changes, or manual sync. Presence messages are session-scoped and must never fan out across sessions.
+
+```json
+{
+  "schemaVersion": 1,
+  "type": "presence",
+  "direction": "server",
+  "sessionId": "session_lake_table_001",
+  "change": "snapshot",
+  "currentRevision": 42,
+  "clients": [
+    {
+      "actor": {
+        "role": "player",
+        "playerId": "player_misty001",
+        "clientId": "client_browser_01",
+        "displayName": "Misty"
+      },
+      "clientId": "client_browser_01",
+      "status": "connected",
+      "lastSeenRevision": 42
+    }
+  ]
+}
+```
+
+### 3. Heartbeat
+
+Either side may send heartbeat messages according to the negotiated heartbeat configuration. The nonce is optional but lets implementations pair pings and pongs.
+
+```json
+{
+  "schemaVersion": 1,
+  "type": "heartbeat",
+  "direction": "client",
+  "sessionId": "session_lake_table_001",
+  "heartbeat": "ping",
+  "nonce": "hb-0001",
+  "lastSeenRevision": 42
+}
+```
+
+### 4. Client command
+
+The client wraps a command envelope in a client `command` message. The `moveToken` payload below is illustrative until the token command tickets define exact payload contracts.
+
+```json
+{
+  "schemaVersion": 1,
+  "type": "command",
+  "direction": "client",
+  "sessionId": "session_lake_table_001",
+  "command": {
+    "schemaVersion": 1,
+    "sessionId": "session_lake_table_001",
+    "actor": {
+      "role": "player",
+      "playerId": "player_misty001",
+      "clientId": "client_browser_01",
+      "displayName": "Misty"
+    },
+    "type": "moveToken",
+    "opId": "op_01HZY7F2MAPMOVE1",
+    "baseRevision": 41,
+    "scopes": [
+      {
+        "lane": "token",
+        "mapSlug": "thickerby-vale",
+        "resource": {
+          "kind": "token",
+          "tokenId": "token_pikachu",
+          "mapSlug": "thickerby-vale"
+        }
+      }
+    ],
+    "payload": {
+      "tokenId": "token_pikachu",
+      "mapSlug": "thickerby-vale",
+      "to": { "x": 5, "y": 8, "z": 0 }
+    },
+    "metadata": {
+      "clientIssuedAt": "2026-05-25T12:00:00.000Z",
+      "clientSequence": 12,
+      "traceId": "trace-token-move-12"
+    }
+  }
+}
+```
+
+## Accepted command example
+
+When a command is valid, authorized, and non-conflicting, the server applies it to authoritative state, advances the revision once, persists the authoritative change, replies to the sender with `commandAck`, and broadcasts a small `patch` event to relevant clients in the same session.
+
+```json
+{
+  "schemaVersion": 1,
+  "type": "commandAck",
+  "direction": "server",
+  "sessionId": "session_lake_table_001",
+  "result": {
+    "schemaVersion": 1,
+    "status": "accepted",
+    "accepted": true,
+    "sessionId": "session_lake_table_001",
+    "opId": "op_01HZY7F2MAPMOVE1",
+    "commandType": "moveToken",
+    "actor": {
+      "role": "player",
+      "playerId": "player_misty001",
+      "clientId": "client_browser_01",
+      "displayName": "Misty"
+    },
+    "currentRevision": 42,
+    "scopes": [
+      {
+        "lane": "token",
+        "mapSlug": "thickerby-vale",
+        "resource": {
+          "kind": "token",
+          "tokenId": "token_pikachu",
+          "mapSlug": "thickerby-vale"
+        }
+      }
+    ],
+    "event": {
+      "eventType": "tokenMoved",
+      "revision": 42,
+      "payload": {
+        "tokenId": "token_pikachu",
+        "mapSlug": "thickerby-vale",
+        "to": { "x": 5, "y": 8, "z": 0 }
+      }
+    },
+    "metadata": {
+      "serverProcessedAt": "2026-05-25T12:00:00.050Z",
+      "traceId": "trace-token-move-12"
+    }
+  }
+}
+```
+
+```json
+{
+  "schemaVersion": 1,
+  "type": "patch",
+  "direction": "server",
+  "sessionId": "session_lake_table_001",
+  "event": {
+    "eventId": "event_rev_42",
+    "eventType": "tokenMoved",
+    "revision": 42,
+    "commandType": "moveToken",
+    "opId": "op_01HZY7F2MAPMOVE1",
+    "actor": {
+      "role": "player",
+      "playerId": "player_misty001",
+      "clientId": "client_browser_01",
+      "displayName": "Misty"
+    },
+    "scopes": [
+      {
+        "lane": "token",
+        "mapSlug": "thickerby-vale",
+        "resource": {
+          "kind": "token",
+          "tokenId": "token_pikachu",
+          "mapSlug": "thickerby-vale"
+        }
+      }
+    ],
+    "payload": {
+      "tokenId": "token_pikachu",
+      "mapSlug": "thickerby-vale",
+      "from": { "x": 4, "y": 8, "z": 0 },
+      "to": { "x": 5, "y": 8, "z": 0 }
+    }
+  }
+}
+```
+
+Accepted command rules:
+
+- `currentRevision` is the authoritative revision after applying the command.
+- A command is applied at most once for a given `opId` operation scope.
+- The patch/event is small and domain-specific; it is not a whole-map autosave from the client.
+- The sender may receive both the ack and the broadcast patch depending on later fanout policy, but the ack remains the command result.
+
+## Rejected command example
+
+When the command cannot be applied, the server replies with `commandReject`. Rejections do not advance the authoritative revision. The example below rejects a stale same-token move and returns current token state so the client can reconcile or roll back optimistic UI.
+
+```json
+{
+  "schemaVersion": 1,
+  "type": "commandReject",
+  "direction": "server",
+  "sessionId": "session_lake_table_001",
+  "result": {
+    "schemaVersion": 1,
+    "status": "rejected",
+    "accepted": false,
+    "reason": "stale",
+    "message": "Token token_pikachu changed after revision 40.",
+    "retryable": true,
+    "sessionId": "session_lake_table_001",
+    "opId": "op_01HZY7F2STALEMOVE1",
+    "commandType": "moveToken",
+    "actor": {
+      "role": "player",
+      "playerId": "player_misty001",
+      "clientId": "client_browser_01",
+      "displayName": "Misty"
+    },
+    "currentRevision": 42,
+    "baseRevision": 40,
+    "scopes": [
+      {
+        "lane": "token",
+        "mapSlug": "thickerby-vale",
+        "resource": {
+          "kind": "token",
+          "tokenId": "token_pikachu",
+          "mapSlug": "thickerby-vale"
+        }
+      }
+    ],
+    "changedScopes": [
+      {
+        "lane": "token",
+        "mapSlug": "thickerby-vale",
+        "resource": {
+          "kind": "token",
+          "tokenId": "token_pikachu",
+          "mapSlug": "thickerby-vale"
+        }
+      }
+    ],
+    "currentState": {
+      "tokenId": "token_pikachu",
+      "mapSlug": "thickerby-vale",
+      "position": { "x": 5, "y": 8, "z": 0 },
+      "revision": 42
+    },
+    "metadata": {
+      "serverProcessedAt": "2026-05-25T12:00:01.000Z",
+      "traceId": "trace-token-move-13"
+    }
+  }
+}
+```
+
+Rejection categories are:
+
+| Reason | Use |
+| --- | --- |
+| `invalid` | The envelope, message, or command-specific payload is malformed or missing required values. |
+| `unauthorized` | The actor is not allowed to perform the command, such as a player controlling an unassigned or hidden token. |
+| `stale` | The command was based on an old revision and the same resource changed after that base revision. |
+| `conflict` | The command is valid but cannot be applied safely with the current authoritative state. |
+
+Invalid rejections include structured validation issues. Unauthorized, stale, and conflict rejections may include safe current state for reconciliation.
+
+## Duplicate `opId` handling
+
+If the same session/client operation scope submits a previously processed `opId`, the server must not apply effects again. It returns either the original result or a duplicate acknowledgement with enough information for the client to reconcile.
+
+Duplicate results travel as `commandAck` messages because the duplicate was recognized and handled idempotently; no new rejection or state mutation occurs.
+
+```json
+{
+  "schemaVersion": 1,
+  "type": "commandAck",
+  "direction": "server",
+  "sessionId": "session_lake_table_001",
+  "result": {
+    "schemaVersion": 1,
+    "status": "duplicate",
+    "duplicate": true,
+    "idempotent": true,
+    "sessionId": "session_lake_table_001",
+    "opId": "op_01HZY7F2MAPMOVE1",
+    "commandType": "moveToken",
+    "actor": {
+      "role": "player",
+      "playerId": "player_misty001",
+      "clientId": "client_browser_01",
+      "displayName": "Misty"
+    },
+    "currentRevision": 42,
+    "scopes": [
+      {
+        "lane": "token",
+        "mapSlug": "thickerby-vale",
+        "resource": {
+          "kind": "token",
+          "tokenId": "token_pikachu",
+          "mapSlug": "thickerby-vale"
+        }
+      }
+    ],
+    "original": {
+      "status": "accepted",
+      "revision": 42
+    }
+  }
+}
+```
+
+If the same `opId` is reused with a materially different command envelope or payload, later server work must reject it safely rather than treating it as an edit to the original command.
+
+## Error messages
+
+`error` messages are reserved for transport/session failures that are not normal command rejections, such as malformed message frames, unsupported message types, missing sessions, disabled session hosting, ended sessions, rate limits, or internal failures. Use command rejections when the message is valid enough to identify and answer a command.
+
+```json
+{
+  "schemaVersion": 1,
+  "type": "error",
+  "direction": "server",
+  "sessionId": "session_lake_table_001",
+  "code": "session-host-disabled",
+  "message": "Session hosting is not enabled on this Rotom Table server.",
+  "retryable": false
+}
+```
+
+## Validation expectations
+
+Later implementation tickets should keep these checks at the protocol boundary:
+
+1. Reject non-object or unsupported WebSocket messages before dispatch.
+2. Validate `schemaVersion`, `direction`, `type`, and session scoping.
+3. For client commands, run the shared command-envelope validator before command-specific validation.
+4. Validate the socket identity against the session store; do not trust the actor field alone.
+5. Recheck permissions and visibility against current authoritative state before applying player commands.
+6. Detect duplicate `opId` submissions before applying effects.
+7. Compare `baseRevision` and command scopes against recent authoritative event metadata.
+8. Apply, persist, acknowledge, and broadcast only after all validation and conflict checks pass.
+9. Fail closed to a rejection or snapshot fallback when replay/conflict safety cannot be proven.
+
+## Related docs
+
+- [Track 2 roadmap](track-2-roadmap.md)
+- [Track 2 glossary](track-2-glossary.md)
+- [Track 2 validation matrix](track-2-validation-matrix.md)
+- [ADR 003: WebSocket session transport](adrs/003-websocket-session-transport.md)
+- [ADR 004: Server-authoritative commands](adrs/004-server-authoritative-commands.md)
+- [ADR 005: Session identity and permissions](adrs/005-session-identity-and-permissions.md)
+- [ADR 006: Revisions and conflict rules](adrs/006-revisions-and-conflict-rules.md)
+- [ADR 008: Session runtime safety flag](adrs/008-session-runtime-safety-flag.md)

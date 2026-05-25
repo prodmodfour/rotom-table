@@ -13,6 +13,7 @@ This directory collects presentation and reviewer documentation for Rotom Table.
 - [Track 2 roadmap](track-2-roadmap.md) — locked GM-hosted session scope, lifecycle, concurrency model, roadmap phases, and non-goals.
 - [Track 2 glossary](track-2-glossary.md) — shared vocabulary for session identity, commands, revisions, WebSocket flow, persistence, and safety boundaries.
 - [Track 2 validation matrix](track-2-validation-matrix.md) — expected tests, smoke checks, docs, and safety reviews for later implementation areas.
+- [Track 2 session protocol](track-2-session-protocol.md) — shared identity, command envelope, result, WebSocket message, ack/reject, duplicate, and reconnect contracts.
 - [ADR 001: GM-hosted session model](adrs/001-gm-hosted-session-model.md) — decision record for GM-controlled sessions instead of SaaS, public multi-tenancy, or generic collaborative editing.
 - [ADR 002: LAN first and named Cloudflare Tunnel second](adrs/002-lan-first-named-cloudflare-tunnel.md) — decision record for LAN-first hosting, named-tunnel remote access, and Quick Tunnel caveats.
 - [ADR 003: WebSocket session transport](adrs/003-websocket-session-transport.md) — decision record for using WebSockets for live session commands, acks/rejections, broadcasts, heartbeat, and reconnect.

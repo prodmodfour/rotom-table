@@ -1,6 +1,6 @@
 # Track 2 glossary
 
-This glossary defines the vocabulary used by the Track 2 GM-hosted session roadmap, ADRs, protocol docs, implementation tickets, and tests.
+This glossary defines the vocabulary used by the Track 2 GM-hosted session roadmap, ADRs, [session protocol](track-2-session-protocol.md), implementation tickets, and tests.
 
 ## Product and hosting terms
 
