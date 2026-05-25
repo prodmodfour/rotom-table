@@ -90,6 +90,14 @@ The tracker returns `new`, `duplicate`, or `mismatched-opId` decisions. Exact du
 
 This helper is process-local state, not a database. Snapshots and the optional event log remain the recovery baseline after server restart; future reconnect/replay work may rebuild or bypass recent-op memory from durable local data when safe.
 
+## Session cleanup and explicit end
+
+`server/utils/sessionCleanup.ts` defines the server-side lifecycle policy for in-memory session records. The default policy treats an active session as idle after 12 hours without server-owned activity and retains ended in-memory records for 24 hours before pruning them. Server-owned activity includes store updates plus authoritative state/presence timestamps, so future heartbeat, reconnect, command, join, and assignment paths should touch the store or state when a client is still active.
+
+The explicit end-session helper is the path future GM management routes should use when the GM ends a table. It idempotently marks the session record `ended`, stamps `endedAt`, removes the session from active join-code lookups, and clears process-local duplicate-`opId` records for that session. Repeated end requests leave the original `endedAt` intact.
+
+Cleanup passes are conservative: an idle active session is ended but not deleted in the same pass, giving later socket/broadcast/persistence code a stable `session-ended` state to report. Only sessions that were already ended before a cleanup pass and have exceeded the ended-record retention window are pruned from the in-memory store. Cleanup does not delete `data/sessions/<sessionId>/snapshot.json` or `events.jsonl`; local snapshots and optional logs remain the recovery/backup boundary until the GM removes local files deliberately.
+
 ## Message flow
 
 ### 1. Socket hello and reconnect
