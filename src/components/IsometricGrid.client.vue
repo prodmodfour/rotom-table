@@ -67,6 +67,7 @@ import { createGridRenderer } from '~/utils/isometric/gridRenderer'
 import {
   createPointerRaycastScratch,
   createRendererPointerBoundsCache,
+  createTokenProxyPickTargetCache,
   getMoveGridIntersectionFromPointer,
   pickBuildTargetFromPointer,
   pickHazardTargetFromPointer,
@@ -448,6 +449,7 @@ let rendererSizeState: IsometricRendererSizeState | null = null
 const pointerTracker = createPointerTravelTracker()
 const rendererBoundsCache = createRendererPointerBoundsCache()
 const pointerRaycastScratch = createPointerRaycastScratch()
+const tokenProxyPickTargets = createTokenProxyPickTargetCache()
 const renderFrameTimingSampler = createRenderFrameTimingSampler()
 
 const readRenderMetricsNowMs = (): number => {
@@ -620,14 +622,24 @@ const refreshPokemonStyles = () => {
   applyLayerVisibility()
 }
 
+const onCreateRenderObject = (renderObject: PokemonRenderObject) => {
+  tokenProxyPickTargets.add(renderObject)
+  applyRenderObjectPosition(renderObject)
+}
+
+const disposeRenderObject = (renderObject: PokemonRenderObject) => {
+  tokenProxyPickTargets.remove(renderObject)
+  disposePokemonRenderObject(renderObject)
+}
+
 const syncPokemonObjects = () => {
   syncPokemonRenderObjects({
     renderObjects,
     pokemons: props.pokemons,
     createRenderObject: buildRenderObject,
-    onCreateRenderObject: applyRenderObjectPosition,
+    onCreateRenderObject,
     updateRenderObject: updatePokemonRenderObjectFromSpawn,
-    disposeRenderObject: disposePokemonRenderObject,
+    disposeRenderObject,
     clearHoverForToken: hoverController.clearIfHovered,
   })
 
@@ -686,6 +698,7 @@ const pickPokemonId = (event: MouseEvent | PointerEvent) =>
     camera,
     raycaster,
     renderObjects: renderObjects.values(),
+    tokenProxyTargets: tokenProxyPickTargets,
     boundsCache: rendererBoundsCache,
     scratch: pointerRaycastScratch,
   })
@@ -1397,7 +1410,7 @@ onBeforeUnmount(() => {
     fieldEffectRenderer,
     voxelRenderer,
     renderObjects,
-    disposeRenderObject: disposePokemonRenderObject,
+    disposeRenderObject,
     gridRenderer,
     controls,
     renderer,
@@ -1409,6 +1422,7 @@ onBeforeUnmount(() => {
   camera = null
   rendererSizeState = null
   rendererBoundsCache.invalidate()
+  tokenProxyPickTargets.clear()
 })
 
 useIsometricSceneWatchers({

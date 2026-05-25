@@ -3,6 +3,7 @@ import * as THREE from 'three'
 import {
   createPointerRaycastScratch,
   createRendererPointerBoundsCache,
+  createTokenProxyPickTargetCache,
   getMoveGridIntersectionFromPointer,
   pickBuildTargetFromPointer,
   pickHazardTargetFromPointer,
@@ -183,6 +184,68 @@ describe('isometric interaction target picking', () => {
     expect(scratch.pointer.x).toBe(0.5)
     expect(scratch.pointer.y).toBe(-0.5)
     expect(raycaster.setFromCamera).toHaveBeenLastCalledWith(scratch.pointer, camera)
+  })
+
+  it('updates cached token proxy targets only when render objects are added or removed', () => {
+    const cache = createTokenProxyPickTargetCache()
+    const proxyA = new THREE.Mesh()
+    const proxyB = new THREE.Mesh()
+    const renderObjectA = { proxy: proxyA }
+    const renderObjectB = { proxy: proxyB }
+
+    cache.add(renderObjectA)
+    cache.add(renderObjectA)
+    expect(cache.targets()).toEqual([proxyA])
+
+    cache.add(renderObjectB)
+    expect(cache.targets()).toEqual([proxyA, proxyB])
+    const snapshot = cache.snapshot()
+    snapshot.pop()
+    expect(cache.targets()).toEqual([proxyA, proxyB])
+
+    cache.remove(renderObjectA)
+    expect(cache.targets()).toEqual([proxyB])
+    cache.remove(renderObjectA)
+    expect(cache.targets()).toEqual([proxyB])
+
+    cache.clear()
+    expect(cache.targets()).toEqual([])
+  })
+
+  it('uses cached token proxy targets without iterating render objects for each pick', () => {
+    const scratch = createPointerRaycastScratch()
+    const cache = createTokenProxyPickTargetCache()
+    const proxy = new THREE.Mesh()
+    proxy.userData.pokemonId = 'cached-token'
+    cache.add({ proxy })
+    const renderObjects = {
+      [Symbol.iterator]: vi.fn(function* () {
+        throw new Error('render objects should not be rebuilt when proxy targets are cached')
+      }),
+    } as unknown as Iterable<never>
+    const intersectObjects = vi.fn((targets: THREE.Object3D[], _recursive: boolean, optionalTarget?: THREE.Intersection[]) => {
+      expect(targets).toBe(cache.targets())
+      expect(optionalTarget).toBe(scratch.intersections)
+      optionalTarget?.push({ distance: 0, object: proxy, point: new THREE.Vector3() } as THREE.Intersection)
+      return optionalTarget ?? []
+    })
+    const raycaster = {
+      setFromCamera: vi.fn(),
+      intersectObjects,
+      ray: { intersectPlane: vi.fn(() => null) },
+    } as unknown as THREE.Raycaster
+
+    expect(pickPokemonIdFromPointer({
+      event,
+      renderer: makeRenderer().renderer,
+      camera,
+      raycaster,
+      renderObjects,
+      tokenProxyTargets: cache,
+      scratch,
+    })).toBe('cached-token')
+    expect(renderObjects[Symbol.iterator]).not.toHaveBeenCalled()
+    expect(scratch.pokemonProxyTargets).toEqual([])
   })
 
   it('reuses token proxy target and intersection arrays when scratch is provided', () => {

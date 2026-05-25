@@ -30,6 +30,22 @@ export interface PointerRaycastScratch {
   readonly intersections: THREE.Intersection[]
 }
 
+export interface TokenProxyPickTargetSource {
+  readonly proxy: THREE.Object3D
+}
+
+export interface TokenProxyPickTargetCache {
+  add(renderObject: TokenProxyPickTargetSource): void
+  remove(renderObject: TokenProxyPickTargetSource): void
+  clear(): void
+  /**
+   * Returns the live cached target array for raycasting. Callers must not mutate
+   * it; use snapshot() when a defensive copy is needed for tests/debugging.
+   */
+  targets(): THREE.Object3D[]
+  snapshot(): THREE.Object3D[]
+}
+
 const POINTER_GROUND_NORMAL = new THREE.Vector3(0, 1, 0)
 
 export const createPointerRaycastScratch = (): PointerRaycastScratch => ({
@@ -41,6 +57,37 @@ export const createPointerRaycastScratch = (): PointerRaycastScratch => ({
   hazardTargets: [],
   intersections: [],
 })
+
+export const createTokenProxyPickTargetCache = (): TokenProxyPickTargetCache => {
+  const targets: THREE.Object3D[] = []
+  const targetSet = new Set<THREE.Object3D>()
+
+  const removeTarget = (target: THREE.Object3D) => {
+    if (!targetSet.delete(target)) return
+
+    const index = targets.indexOf(target)
+    if (index !== -1) targets.splice(index, 1)
+  }
+
+  return {
+    add(renderObject) {
+      const target = renderObject.proxy
+      if (targetSet.has(target)) return
+
+      targetSet.add(target)
+      targets.push(target)
+    },
+    remove(renderObject) {
+      removeTarget(renderObject.proxy)
+    },
+    clear() {
+      targetSet.clear()
+      targets.length = 0
+    },
+    targets: () => targets,
+    snapshot: () => [...targets],
+  }
+}
 
 const copyRendererPointerBounds = (bounds: RendererPointerBounds): RendererPointerBounds => ({
   left: bounds.left,
@@ -140,6 +187,7 @@ export const pickPokemonIdFromPointer = (options: {
   camera: THREE.Camera | null
   raycaster: THREE.Raycaster
   renderObjects: Iterable<PokemonRenderObject>
+  tokenProxyTargets?: TokenProxyPickTargetCache
   boundsCache?: RendererPointerBoundsCache
   scratch?: PointerRaycastScratch
 }) => {
@@ -152,9 +200,11 @@ export const pickPokemonIdFromPointer = (options: {
     scratch: options.scratch,
   })) return null
 
-  const proxies = options.scratch
-    ? fillPokemonProxyTargets(options.renderObjects, options.scratch.pokemonProxyTargets)
-    : Array.from(options.renderObjects, (renderObject) => renderObject.proxy)
+  const proxies = options.tokenProxyTargets?.targets() ?? (
+    options.scratch
+      ? fillPokemonProxyTargets(options.renderObjects, options.scratch.pokemonProxyTargets)
+      : Array.from(options.renderObjects, (renderObject) => renderObject.proxy)
+  )
   const intersections = intersectObjectsWithScratch(options.raycaster, proxies, options.scratch)
   const hit = intersections[0]?.object
 
