@@ -73,6 +73,82 @@ describe('isometric render scheduler', () => {
     })
   })
 
+  it('coalesces duplicate invalidations across requests before the pending frame runs', () => {
+    const driver = createAnimationFrameDriver()
+    const renderFrame = vi.fn()
+    const scheduler = createIsometricRenderScheduler({
+      renderFrame,
+      requestAnimationFrame: driver.requestAnimationFrame,
+      cancelAnimationFrame: driver.cancelAnimationFrame,
+    })
+
+    expect(scheduler.requestRender(['tokens', 'camera'])).toEqual({
+      isFramePending: true,
+      activeAnimation: false,
+      dirtyReasons: ['tokens', 'camera'],
+      isDisposed: false,
+    })
+    expect(driver.requestAnimationFrame).toHaveBeenCalledOnce()
+
+    expect(scheduler.requestRender(['tokens', 'resize', 'camera'])).toEqual({
+      isFramePending: true,
+      activeAnimation: false,
+      dirtyReasons: ['tokens', 'camera', 'resize'],
+      isDisposed: false,
+    })
+    expect(driver.requestAnimationFrame).toHaveBeenCalledOnce()
+    expect(driver.pendingFrameCount()).toBe(1)
+
+    expect(driver.flushNextFrame(8)).toBe(true)
+
+    expect(renderFrame).toHaveBeenCalledOnce()
+    expect(renderFrame).toHaveBeenCalledWith({
+      timestampMs: 8,
+      reasons: ['tokens', 'camera', 'resize'],
+      activeAnimation: false,
+    })
+  })
+
+  it('does not schedule duplicate RAFs while one is pending', () => {
+    const driver = createAnimationFrameDriver()
+    const renderFrame = vi.fn(() => ({ activeAnimation: false }))
+    const scheduler = createIsometricRenderScheduler({
+      renderFrame,
+      requestAnimationFrame: driver.requestAnimationFrame,
+      cancelAnimationFrame: driver.cancelAnimationFrame,
+    })
+
+    scheduler.requestRender('initial')
+    scheduler.setActiveAnimation(true)
+    scheduler.requestRender(['initial', 'debug'])
+    scheduler.setActiveAnimation(true)
+
+    expect(driver.requestAnimationFrame).toHaveBeenCalledOnce()
+    expect(driver.pendingFrameCount()).toBe(1)
+    expect(scheduler.snapshot()).toEqual({
+      isFramePending: true,
+      activeAnimation: true,
+      dirtyReasons: ['initial', 'debug'],
+      isDisposed: false,
+    })
+
+    expect(driver.flushNextFrame(16)).toBe(true)
+
+    expect(driver.requestAnimationFrame).toHaveBeenCalledOnce()
+    expect(renderFrame).toHaveBeenCalledOnce()
+    expect(renderFrame).toHaveBeenCalledWith({
+      timestampMs: 16,
+      reasons: ['initial', 'debug', 'animation'],
+      activeAnimation: true,
+    })
+    expect(scheduler.snapshot()).toEqual({
+      isFramePending: false,
+      activeAnimation: false,
+      dirtyReasons: [],
+      isDisposed: false,
+    })
+  })
+
   it('continues scheduling frames while active animation remains true', () => {
     const driver = createAnimationFrameDriver()
     const renderFrame = vi.fn()
@@ -141,6 +217,54 @@ describe('isometric render scheduler', () => {
     expect(renderFrame).toHaveBeenCalledWith({
       timestampMs: 24,
       reasons: ['camera'],
+      activeAnimation: false,
+    })
+  })
+
+  it('cancels a mounted scheduler pending frame before a remounted scheduler renders', () => {
+    const driver = createAnimationFrameDriver()
+    const firstRenderFrame = vi.fn()
+    const firstScheduler = createIsometricRenderScheduler({
+      renderFrame: firstRenderFrame,
+      requestAnimationFrame: driver.requestAnimationFrame,
+      cancelAnimationFrame: driver.cancelAnimationFrame,
+    })
+
+    firstScheduler.requestRender('initial')
+    firstScheduler.setActiveAnimation(true)
+
+    expect(driver.requestAnimationFrame).toHaveBeenCalledOnce()
+    expect(firstScheduler.dispose()).toEqual({
+      isFramePending: false,
+      activeAnimation: false,
+      dirtyReasons: [],
+      isDisposed: true,
+    })
+    expect(driver.cancelAnimationFrame).toHaveBeenCalledWith(1)
+    expect(driver.pendingFrameCount()).toBe(0)
+
+    const secondRenderFrame = vi.fn()
+    const secondScheduler = createIsometricRenderScheduler({
+      renderFrame: secondRenderFrame,
+      requestAnimationFrame: driver.requestAnimationFrame,
+      cancelAnimationFrame: driver.cancelAnimationFrame,
+    })
+
+    expect(secondScheduler.requestRender('initial')).toEqual({
+      isFramePending: true,
+      activeAnimation: false,
+      dirtyReasons: ['initial'],
+      isDisposed: false,
+    })
+    expect(driver.requestAnimationFrame).toHaveBeenCalledTimes(2)
+
+    expect(driver.flushNextFrame(48)).toBe(true)
+
+    expect(firstRenderFrame).not.toHaveBeenCalled()
+    expect(secondRenderFrame).toHaveBeenCalledOnce()
+    expect(secondRenderFrame).toHaveBeenCalledWith({
+      timestampMs: 48,
+      reasons: ['initial'],
       activeAnimation: false,
     })
   })
