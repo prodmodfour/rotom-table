@@ -94,6 +94,7 @@ import {
 } from '~/utils/isometric/sceneState'
 import { createIsometricTokenMovementInteractionController } from '~/utils/isometric/tokenMovementInteraction'
 import { createIsometricTokenSendOutInteractionController } from '~/utils/isometric/tokenSendOutInteraction'
+import { movementPathPlacementRevision } from '~/utils/mapMovementPathCache'
 import {
   applyPokemonRenderObjectPosition,
   createPokemonRenderObject,
@@ -392,6 +393,7 @@ const renderedFieldEffects = computed(() => normalizeMapFieldEffects(props.field
 const fieldEffectsRevision = computed(() => getFieldEffectsRevisionKey(renderedFieldEffects.value))
 const hazardRevision = computed(() => getHazardsRevisionKey(renderedHazards.value))
 const terrainVoxelRevision = computed(() => getTerrainVoxelsRevisionKey(renderedTerrainVoxels.value))
+const pokemonPlacementRevision = computed(() => movementPathPlacementRevision(props.pokemons))
 const mapMovementOccupancy = computed(() =>
   buildMapOccupancy({
     voxels: renderedTerrainVoxels.value,
@@ -940,6 +942,7 @@ const movementInteraction = createIsometricTokenMovementInteractionController({
   getDimensions: () => props.dimensions,
   getMapVoxels: () => renderedTerrainVoxels.value,
   getMapVoxelsRevision: () => terrainVoxelRevision.value,
+  getPokemonPlacementRevision: () => pokemonPlacementRevision.value,
   getPreviewLayerY,
   getGroundLevelY: normalizedGroundLevelY,
   getCamera: () => camera,

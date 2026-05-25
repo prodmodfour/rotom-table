@@ -1,12 +1,15 @@
 import { describe, expect, it } from 'vitest'
 import {
+  createMapMovementPathCache,
   MOVEMENT_PATH_CACHE_KEY_VERSION,
   movementPathCacheKey,
   movementPathCapabilitiesCachePart,
+  movementPathPlacementRevision,
   movementPathRevisionCachePart,
   type MovementPathCacheKeyOptions,
   type MovementPathCacheSelectedToken,
 } from '~/utils/mapMovementPathCache'
+import type { MovementPathResult } from '~/utils/mapMovementPathfinding'
 
 const selectedToken = (
   overrides: Partial<MovementPathCacheSelectedToken> = {},
@@ -31,7 +34,19 @@ const cacheOptions = (
   ...overrides,
 })
 
-describe('movement path cache keys', () => {
+const movementResult = (overrides: Partial<MovementPathResult> = {}): MovementPathResult => ({
+  path: [{ x: 0, y: 0, z: 0 }, { x: 1, y: 0, z: 1 }],
+  distance: 1,
+  movementLimit: 6,
+  capabilityKeys: ['overland'],
+  capabilityLabels: ['Overland'],
+  capabilityLabel: 'Overland',
+  legal: true,
+  reason: 'legal',
+  ...overrides,
+})
+
+describe('movement path cache', () => {
   it('builds stable keys for equivalent pathfinding inputs', () => {
     const first = movementPathCacheKey(cacheOptions({
       selectedToken: selectedToken({ movementCapabilities: { sky: 4, overland: 6 } }),
@@ -93,5 +108,41 @@ describe('movement path cache keys', () => {
     expect(movementPathCacheKey(cacheOptions({ selectedToken: null }))).toBeNull()
     expect(movementPathCacheKey(cacheOptions({ start: null }))).toBeNull()
     expect(movementPathCacheKey(cacheOptions({ goal: null }))).toBeNull()
+  })
+
+  it('builds placement revisions from pathfinding-relevant footprint state', () => {
+    const first = movementPathPlacementRevision([
+      { id: 'b', position: { x: 2, y: 0, z: 1 }, base: 1, clearance: 1 },
+      { id: 'a', position: { x: 0, y: 0, z: 0 }, base: 1, clearance: 2 },
+    ])
+    const reordered = movementPathPlacementRevision([
+      { id: 'a', position: { x: 0, y: 0, z: 0 }, base: 1, clearance: 2 },
+      { id: 'b', position: { x: 2, y: 0, z: 1 }, base: 1, clearance: 1 },
+    ])
+    const moved = movementPathPlacementRevision([
+      { id: 'a', position: { x: 1, y: 0, z: 0 }, base: 1, clearance: 2 },
+      { id: 'b', position: { x: 2, y: 0, z: 1 }, base: 1, clearance: 1 },
+    ])
+
+    expect(reordered).toBe(first)
+    expect(moved).not.toBe(first)
+  })
+
+  it('caches movement path results defensively by key', () => {
+    const cache = createMapMovementPathCache({ maxEntries: 2 })
+    const key = movementPathCacheKey(cacheOptions())!
+    const compute = () => movementResult()
+
+    const miss = cache.getOrCompute(key, compute)
+    const hit = cache.getOrCompute(key, () => movementResult({ distance: 99 }))
+
+    expect(miss.hit).toBe(false)
+    expect(hit.hit).toBe(true)
+    expect(hit.result.distance).toBe(1)
+
+    hit.result.path?.push({ x: 9, y: 9, z: 9 })
+    hit.result.capabilityLabels.push('Mutated')
+
+    expect(cache.get(key)).toEqual(movementResult())
   })
 })

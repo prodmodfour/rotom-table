@@ -6,7 +6,14 @@ import { canPlacePokemon } from '~/utils/gridPlacement'
 import {
   findMovementPathForPokemon,
   movementPathFailureMessage,
+  type MovementPathResult,
 } from '~/utils/mapMovementPathfinding'
+import {
+  createMapMovementPathCache,
+  movementPathCacheKey,
+  movementPathPlacementRevision,
+  type MovementPathRevision,
+} from '~/utils/mapMovementPathCache'
 import {
   EMPTY_MOVE_PREVIEW,
   getMovePreviewAnchor,
@@ -37,6 +44,7 @@ export interface TokenMovementInteractionDependencies {
   getDimensions: () => GridDimensions
   getMapVoxels: () => readonly MapVoxelV2[]
   getMapVoxelsRevision?: () => string | number | null
+  getPokemonPlacementRevision?: () => MovementPathRevision
   getPreviewLayerY: () => number
   getGroundLevelY: () => number
   getCamera: () => THREE.Camera | null
@@ -56,6 +64,7 @@ export const createIsometricTokenMovementInteractionController = (
   let activePreviewCanPlace = false
   let activePreviewAnchor: GridAnchor | null = null
   let lastPreviewAnchorKey: string | null = null
+  const movementPathCache = createMapMovementPathCache()
 
   const resetPreviewAnchorCache = () => {
     lastPreviewAnchorKey = null
@@ -100,27 +109,46 @@ export const createIsometricTokenMovementInteractionController = (
 
     ensurePreviewObjects()
 
+    const pokemons = dependencies.getPokemons()
+    const dimensions = dependencies.getDimensions()
+    const groundLevelY = dependencies.getGroundLevelY()
     const canForcePlace = canPlacePokemon(
       selected,
       anchor,
-      dependencies.getPokemons(),
-      dependencies.getDimensions(),
+      pokemons,
+      dimensions,
       selected.id,
     )
-    let movementPath: ReturnType<typeof findMovementPathForPokemon> | null = null
+    let movementPath: MovementPathResult | null = null
     if (canForcePlace) {
-      dependencies.recordPathfindingRequest?.()
-      movementPath = findMovementPathForPokemon({
-        pokemon: selected,
-        start: selected.position,
-        goal: anchor,
-        pokemons: dependencies.getPokemons(),
-        dimensions: dependencies.getDimensions(),
-        exceptId: selected.id,
-        voxels: dependencies.getMapVoxels(),
-        groundLevelY: dependencies.getGroundLevelY(),
-        terrainRevision: dependencies.getMapVoxelsRevision?.() ?? null,
-      })
+      const terrainRevision = dependencies.getMapVoxelsRevision?.() ?? null
+      const placementRevision = dependencies.getPokemonPlacementRevision?.()
+        ?? movementPathPlacementRevision(pokemons)
+      const cacheKey = terrainRevision == null
+        ? null
+        : movementPathCacheKey({
+            selectedToken: selected,
+            start: selected.position,
+            goal: anchor,
+            dimensions,
+            groundLevelY,
+            terrainRevision,
+            placementRevision,
+          })
+      movementPath = movementPathCache.getOrCompute(cacheKey, () => {
+        dependencies.recordPathfindingRequest?.()
+        return findMovementPathForPokemon({
+          pokemon: selected,
+          start: selected.position,
+          goal: anchor,
+          pokemons,
+          dimensions,
+          exceptId: selected.id,
+          voxels: dependencies.getMapVoxels(),
+          groundLevelY,
+          terrainRevision,
+        })
+      }).result
     }
     const path = movementPath?.path ?? null
     const reachable = Boolean(movementPath?.legal)
@@ -130,7 +158,7 @@ export const createIsometricTokenMovementInteractionController = (
       canForcePlace,
       reachable,
       path,
-      groundLevelY: dependencies.getGroundLevelY(),
+      groundLevelY,
       camera: dependencies.getCamera(),
     })
 
@@ -226,6 +254,7 @@ export const createIsometricTokenMovementInteractionController = (
     activePreview = emptyPreview()
     activePreviewCanPlace = false
     resetPreviewAnchorCache()
+    movementPathCache.clear()
     ensurePreviewObjects()
     emitPreview()
   }
@@ -243,6 +272,9 @@ export const createIsometricTokenMovementInteractionController = (
     performSelectedMove,
     refreshAfterStateChange,
     resetForSelectionChange,
-    disposeOwner: dependencies.previewRenderer.disposeOwner,
+    disposeOwner: () => {
+      movementPathCache.clear()
+      dependencies.previewRenderer.disposeOwner()
+    },
   }
 }

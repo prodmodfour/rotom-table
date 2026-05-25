@@ -52,11 +52,13 @@ const makeController = () => {
   const selectedState = { value: selected as SpawnedPokemon | null }
   const previewLayerY = { value: 0 }
   const terrainRevision = { value: 'terrain-revision-a' as string | number | null }
+  const placementRevision = { value: 'placement-revision-a' as string | number | null }
   const getSelectedPokemon = vi.fn(() => selectedState.value)
   const getPokemons = vi.fn(() => pokemons)
   const getDimensions = vi.fn(() => dimensions)
   const getMapVoxels = vi.fn(() => voxels)
   const getMapVoxelsRevision = vi.fn(() => terrainRevision.value)
+  const getPokemonPlacementRevision = vi.fn(() => placementRevision.value)
 
   const controller = createIsometricTokenMovementInteractionController({
     getSelectedPokemon,
@@ -64,6 +66,7 @@ const makeController = () => {
     getDimensions,
     getMapVoxels,
     getMapVoxelsRevision,
+    getPokemonPlacementRevision,
     getPreviewLayerY: () => previewLayerY.value,
     getGroundLevelY: () => 0,
     getCamera: () => null,
@@ -83,6 +86,7 @@ const makeController = () => {
     pokemons,
     voxels,
     terrainRevision,
+    placementRevision,
     renderer,
     emitPreviewChange,
     movePokemon,
@@ -93,6 +97,7 @@ const makeController = () => {
     getDimensions,
     getMapVoxels,
     getMapVoxelsRevision,
+    getPokemonPlacementRevision,
   }
 }
 
@@ -160,7 +165,42 @@ describe('isometric token movement interaction', () => {
     expect(emitPreviewChange).not.toHaveBeenCalled()
   })
 
-  it('refreshes the same movement preview anchor when selected token or scene state changes', () => {
+  it('reuses cached pathfinding results when returning to a previous preview anchor', () => {
+    const { controller, renderer, getMapVoxels, recordPathfindingRequest } = makeController()
+
+    controller.updatePreviewAtAnchor({ x: 2, y: 0, z: 2 })
+    controller.updatePreviewAtAnchor({ x: 1, y: 0, z: 1 })
+    getMapVoxels.mockClear()
+    recordPathfindingRequest.mockClear()
+    renderer.update.mockClear()
+
+    controller.updatePreviewAtAnchor({ x: 2, y: 0, z: 2 })
+
+    expect(renderer.update).toHaveBeenCalledOnce()
+    expect(renderer.update).toHaveBeenLastCalledWith(expect.objectContaining({
+      anchor: { x: 2, y: 0, z: 2 },
+      reachable: true,
+    }))
+    expect(getMapVoxels).not.toHaveBeenCalled()
+    expect(recordPathfindingRequest).not.toHaveBeenCalled()
+  })
+
+  it('misses the movement path cache after placement revision changes', () => {
+    const { controller, placementRevision, getMapVoxels, recordPathfindingRequest } = makeController()
+
+    controller.updatePreviewAtAnchor({ x: 2, y: 0, z: 2 })
+    controller.updatePreviewAtAnchor({ x: 1, y: 0, z: 1 })
+    placementRevision.value = 'placement-revision-b'
+    getMapVoxels.mockClear()
+    recordPathfindingRequest.mockClear()
+
+    controller.updatePreviewAtAnchor({ x: 2, y: 0, z: 2 })
+
+    expect(getMapVoxels).toHaveBeenCalledOnce()
+    expect(recordPathfindingRequest).toHaveBeenCalledOnce()
+  })
+
+  it('refreshes the same movement preview anchor when selected token changes and reuses cached paths for unchanged state', () => {
     const { controller, selectedState, renderer, getMapVoxels } = makeController()
 
     controller.updatePreviewAtAnchor({ x: 2, y: 0, z: 2 })
@@ -186,7 +226,7 @@ describe('isometric token movement interaction', () => {
       pokemon: selectedState.value,
       anchor: { x: 2, y: 0, z: 2 },
     }))
-    expect(getMapVoxels).toHaveBeenCalledOnce()
+    expect(getMapVoxels).not.toHaveBeenCalled()
   })
 
   it('resets the movement preview anchor cache when visuals are cleared', () => {
