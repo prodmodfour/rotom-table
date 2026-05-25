@@ -46,6 +46,30 @@ export interface TokenProxyPickTargetCache {
   snapshot(): THREE.Object3D[]
 }
 
+export interface BuildHazardPickTargetCacheSnapshot {
+  readonly floorPlane: THREE.Object3D | null
+  readonly voxelMeshes: THREE.Object3D[]
+  readonly hazardMeshes: THREE.Object3D[]
+  readonly buildTargets: THREE.Object3D[]
+  readonly hazardTargets: THREE.Object3D[]
+}
+
+export interface BuildHazardPickTargetCache {
+  /**
+   * Update these collections only when their renderers create, replace, or
+   * dispose render objects. The returned target arrays are live and reused for
+   * raycasting; callers must not mutate them.
+   */
+  setFloorPlane(floorPlane: THREE.Object3D | null): void
+  setVoxelMeshes(meshes: Iterable<THREE.Object3D>): void
+  setHazardMeshes(meshes: Iterable<THREE.Object3D>): void
+  clear(): void
+  floorPlane(): THREE.Object3D | null
+  buildTargets(): THREE.Object3D[]
+  hazardTargets(): THREE.Object3D[]
+  snapshot(): BuildHazardPickTargetCacheSnapshot
+}
+
 const POINTER_GROUND_NORMAL = new THREE.Vector3(0, 1, 0)
 
 export const createPointerRaycastScratch = (): PointerRaycastScratch => ({
@@ -86,6 +110,86 @@ export const createTokenProxyPickTargetCache = (): TokenProxyPickTargetCache => 
     },
     targets: () => targets,
     snapshot: () => [...targets],
+  }
+}
+
+const sameObjectTargets = (
+  current: readonly THREE.Object3D[],
+  next: readonly THREE.Object3D[],
+): boolean => current.length === next.length &&
+  current.every((target, index) => target === next[index])
+
+export const createBuildHazardPickTargetCache = (): BuildHazardPickTargetCache => {
+  let floorPlane: THREE.Object3D | null = null
+  let voxelMeshes: THREE.Object3D[] = []
+  let hazardMeshes: THREE.Object3D[] = []
+  const buildTargets: THREE.Object3D[] = []
+  const hazardTargets: THREE.Object3D[] = []
+  let buildTargetsDirty = false
+  let hazardTargetsDirty = false
+
+  const rebuildBuildTargets = () => {
+    buildTargets.length = 0
+    if (floorPlane) buildTargets.push(floorPlane)
+    buildTargets.push(...voxelMeshes)
+    buildTargetsDirty = false
+  }
+
+  const rebuildHazardTargets = () => {
+    hazardTargets.length = 0
+    hazardTargets.push(...hazardMeshes)
+    hazardTargets.push(...voxelMeshes)
+    hazardTargetsDirty = false
+  }
+
+  return {
+    setFloorPlane(nextFloorPlane) {
+      if (floorPlane === nextFloorPlane) return
+      floorPlane = nextFloorPlane
+      buildTargetsDirty = true
+    },
+    setVoxelMeshes(meshes) {
+      const nextVoxelMeshes = Array.from(meshes)
+      if (sameObjectTargets(voxelMeshes, nextVoxelMeshes)) return
+      voxelMeshes = nextVoxelMeshes
+      buildTargetsDirty = true
+      hazardTargetsDirty = true
+    },
+    setHazardMeshes(meshes) {
+      const nextHazardMeshes = Array.from(meshes)
+      if (sameObjectTargets(hazardMeshes, nextHazardMeshes)) return
+      hazardMeshes = nextHazardMeshes
+      hazardTargetsDirty = true
+    },
+    clear() {
+      floorPlane = null
+      voxelMeshes = []
+      hazardMeshes = []
+      buildTargets.length = 0
+      hazardTargets.length = 0
+      buildTargetsDirty = false
+      hazardTargetsDirty = false
+    },
+    floorPlane: () => floorPlane,
+    buildTargets() {
+      if (buildTargetsDirty) rebuildBuildTargets()
+      return buildTargets
+    },
+    hazardTargets() {
+      if (hazardTargetsDirty) rebuildHazardTargets()
+      return hazardTargets
+    },
+    snapshot() {
+      if (buildTargetsDirty) rebuildBuildTargets()
+      if (hazardTargetsDirty) rebuildHazardTargets()
+      return {
+        floorPlane,
+        voxelMeshes: [...voxelMeshes],
+        hazardMeshes: [...hazardMeshes],
+        buildTargets: [...buildTargets],
+        hazardTargets: [...hazardTargets],
+      }
+    },
   }
 }
 
@@ -246,8 +350,9 @@ export const pickBuildTargetFromPointer = (options: {
   renderer: THREE.WebGLRenderer | null
   camera: THREE.Camera | null
   raycaster: THREE.Raycaster
-  floorPlane: THREE.Object3D | null
-  voxelMeshes: THREE.Object3D[]
+  floorPlane?: THREE.Object3D | null
+  voxelMeshes?: THREE.Object3D[]
+  pickTargetCache?: BuildHazardPickTargetCache
   dimensions: GridDimensions
   pokemons: SpawnedPokemon[]
   allVoxelOccupancy: ReadonlySet<string>
@@ -264,17 +369,21 @@ export const pickBuildTargetFromPointer = (options: {
     scratch: options.scratch,
   })) return null
 
-  const targets = options.scratch?.buildTargets ?? []
-  targets.length = 0
-  if (options.floorPlane) targets.push(options.floorPlane)
-  targets.push(...options.voxelMeshes)
+  const floorPlane = options.pickTargetCache?.floorPlane() ?? options.floorPlane ?? null
+  const targets = options.pickTargetCache?.buildTargets() ?? (() => {
+    const scratchTargets = options.scratch?.buildTargets ?? []
+    scratchTargets.length = 0
+    if (floorPlane) scratchTargets.push(floorPlane)
+    scratchTargets.push(...(options.voxelMeshes ?? []))
+    return scratchTargets
+  })()
 
   const intersections = intersectObjectsWithScratch(options.raycaster, targets, options.scratch)
   const hit = intersections[0]
   if (!hit) return null
 
   let voxel: MapVoxelV2 | null = null
-  if (hit.object !== options.floorPlane) {
+  if (hit.object !== floorPlane) {
     const mesh = hit.object as THREE.InstancedMesh
     const voxels = mesh.userData.voxels as MapVoxelV2[] | undefined
     if (voxels && hit.instanceId !== undefined) {
@@ -360,8 +469,9 @@ export const pickHazardTargetFromPointer = (options: {
   renderer: THREE.WebGLRenderer | null
   camera: THREE.Camera | null
   raycaster: THREE.Raycaster
-  hazardMeshes: THREE.Object3D[]
-  voxelMeshes: THREE.Object3D[]
+  hazardMeshes?: THREE.Object3D[]
+  voxelMeshes?: THREE.Object3D[]
+  pickTargetCache?: BuildHazardPickTargetCache
   hazards: MapHazardV2[]
   dimensions: GridDimensions
   groundLevelY: number
@@ -377,10 +487,13 @@ export const pickHazardTargetFromPointer = (options: {
     scratch: options.scratch,
   })) return null
 
-  const targets = options.scratch?.hazardTargets ?? []
-  targets.length = 0
-  targets.push(...options.hazardMeshes)
-  targets.push(...options.voxelMeshes)
+  const targets = options.pickTargetCache?.hazardTargets() ?? (() => {
+    const scratchTargets = options.scratch?.hazardTargets ?? []
+    scratchTargets.length = 0
+    scratchTargets.push(...(options.hazardMeshes ?? []))
+    scratchTargets.push(...(options.voxelMeshes ?? []))
+    return scratchTargets
+  })()
 
   const intersections = intersectObjectsWithScratch(options.raycaster, targets, options.scratch)
   const target = intersections[0]

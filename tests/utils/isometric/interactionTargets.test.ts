@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import * as THREE from 'three'
 import {
+  createBuildHazardPickTargetCache,
   createPointerRaycastScratch,
   createRendererPointerBoundsCache,
   createTokenProxyPickTargetCache,
@@ -212,6 +213,67 @@ describe('isometric interaction target picking', () => {
     expect(cache.targets()).toEqual([])
   })
 
+  it('caches build and hazard pick targets until renderer collections change', () => {
+    const cache = createBuildHazardPickTargetCache()
+    const floorPlane = new THREE.Object3D()
+    const nextFloorPlane = new THREE.Object3D()
+    const voxelA = new THREE.Object3D()
+    const voxelB = new THREE.Object3D()
+    const hazardA = new THREE.Object3D()
+    const hazardB = new THREE.Object3D()
+
+    cache.setFloorPlane(floorPlane)
+    cache.setVoxelMeshes([voxelA])
+    cache.setHazardMeshes([hazardA])
+
+    const buildTargets = cache.buildTargets()
+    const hazardTargets = cache.hazardTargets()
+    expect(buildTargets).toEqual([floorPlane, voxelA])
+    expect(hazardTargets).toEqual([hazardA, voxelA])
+    expect(cache.buildTargets()).toBe(buildTargets)
+    expect(cache.hazardTargets()).toBe(hazardTargets)
+
+    cache.setFloorPlane(floorPlane)
+    cache.setVoxelMeshes([voxelA])
+    cache.setHazardMeshes([hazardA])
+    expect(cache.buildTargets()).toBe(buildTargets)
+    expect(cache.hazardTargets()).toBe(hazardTargets)
+    expect(buildTargets).toEqual([floorPlane, voxelA])
+    expect(hazardTargets).toEqual([hazardA, voxelA])
+
+    cache.setFloorPlane(nextFloorPlane)
+    cache.setVoxelMeshes([voxelB])
+    cache.setHazardMeshes([hazardB])
+    expect(cache.floorPlane()).toBe(nextFloorPlane)
+    expect(cache.buildTargets()).toBe(buildTargets)
+    expect(cache.hazardTargets()).toBe(hazardTargets)
+    expect(buildTargets).toEqual([nextFloorPlane, voxelB])
+    expect(hazardTargets).toEqual([hazardB, voxelB])
+
+    const snapshot = cache.snapshot()
+    snapshot.voxelMeshes.pop()
+    snapshot.hazardTargets.pop()
+    expect(cache.snapshot()).toEqual({
+      floorPlane: nextFloorPlane,
+      voxelMeshes: [voxelB],
+      hazardMeshes: [hazardB],
+      buildTargets: [nextFloorPlane, voxelB],
+      hazardTargets: [hazardB, voxelB],
+    })
+
+    cache.clear()
+    expect(cache.floorPlane()).toBeNull()
+    expect(buildTargets).toEqual([])
+    expect(hazardTargets).toEqual([])
+    expect(cache.snapshot()).toEqual({
+      floorPlane: null,
+      voxelMeshes: [],
+      hazardMeshes: [],
+      buildTargets: [],
+      hazardTargets: [],
+    })
+  })
+
   it('uses cached token proxy targets without iterating render objects for each pick', () => {
     const scratch = createPointerRaycastScratch()
     const cache = createTokenProxyPickTargetCache()
@@ -345,6 +407,62 @@ describe('isometric interaction target picking', () => {
     expect(intersectObjects.mock.calls[1]?.[0]).toBe(scratch.hazardTargets)
     expect(scratch.hazardTargets).toEqual([hazardMesh, voxelMesh])
     expect(intersectionEntryLengths).toEqual([0, 0])
+  })
+
+  it('uses cached build and hazard target lists without rebuilding scratch target arrays', () => {
+    const scratch = createPointerRaycastScratch()
+    const cache = createBuildHazardPickTargetCache()
+    const floorPlane = new THREE.Object3D()
+    const voxelMesh = new THREE.Object3D()
+    const hazardMesh = new THREE.Object3D()
+    hazardMesh.userData.hazard = { x: 3, y: 1, z: 2, kind: 'spikes' }
+    cache.setFloorPlane(floorPlane)
+    cache.setVoxelMeshes([voxelMesh])
+    cache.setHazardMeshes([hazardMesh])
+
+    const intersectObjects = vi.fn((targets: THREE.Object3D[], _recursive: boolean, optionalTarget?: THREE.Intersection[]) => {
+      expect(optionalTarget).toBe(scratch.intersections)
+      optionalTarget?.push(targets === cache.buildTargets()
+        ? { distance: 0, object: floorPlane, point: { x: 1.2, y: 0, z: 2.8 } } as THREE.Intersection
+        : { distance: 0, object: hazardMesh, point: new THREE.Vector3() } as THREE.Intersection)
+      return optionalTarget ?? []
+    })
+    const raycaster = {
+      setFromCamera: vi.fn(),
+      intersectObjects,
+      ray: { intersectPlane: vi.fn(() => null) },
+    } as unknown as THREE.Raycaster
+
+    expect(pickBuildTargetFromPointer({
+      event,
+      tool: 'pencil',
+      renderer: makeRenderer().renderer,
+      camera,
+      raycaster,
+      pickTargetCache: cache,
+      dimensions: { x: 4, y: 4, z: 4 },
+      pokemons: [],
+      allVoxelOccupancy: new Set(),
+      mapMovementOccupancy: new Set(),
+      scratch,
+    })).toEqual({ action: 'place', cell: { x: 1, y: 0, z: 2 }, valid: true })
+    expect(intersectObjects.mock.calls[0]?.[0]).toBe(cache.buildTargets())
+    expect(scratch.buildTargets).toEqual([])
+
+    expect(pickHazardTargetFromPointer({
+      event,
+      tool: 'pencil',
+      renderer: makeRenderer().renderer,
+      camera,
+      raycaster,
+      pickTargetCache: cache,
+      hazards: [],
+      dimensions: { x: 4, y: 4, z: 4 },
+      groundLevelY: 0,
+      scratch,
+    })).toEqual({ action: 'place', cell: { x: 3, y: 1, z: 2 }, valid: true })
+    expect(intersectObjects.mock.calls[1]?.[0]).toBe(cache.hazardTargets())
+    expect(scratch.hazardTargets).toEqual([])
   })
 
   it('reuses ground-plane scratch objects for movement-grid intersections', () => {

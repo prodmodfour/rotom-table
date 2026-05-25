@@ -65,6 +65,7 @@ import { createHazardRenderer } from '~/utils/isometric/hazardRenderer'
 import { createFieldEffectRenderer } from '~/utils/isometric/fieldEffectRenderer'
 import { createGridRenderer } from '~/utils/isometric/gridRenderer'
 import {
+  createBuildHazardPickTargetCache,
   createPointerRaycastScratch,
   createRendererPointerBoundsCache,
   createTokenProxyPickTargetCache,
@@ -450,6 +451,7 @@ const pointerTracker = createPointerTravelTracker()
 const rendererBoundsCache = createRendererPointerBoundsCache()
 const pointerRaycastScratch = createPointerRaycastScratch()
 const tokenProxyPickTargets = createTokenProxyPickTargetCache()
+const buildHazardPickTargets = createBuildHazardPickTargetCache()
 const renderFrameTimingSampler = createRenderFrameTimingSampler()
 
 const readRenderMetricsNowMs = (): number => {
@@ -579,6 +581,7 @@ const updateGridVisibility = () => {
 
 const buildGrid = () => {
   gridRenderer.sync(props.dimensions)
+  buildHazardPickTargets.setFloorPlane(gridRenderer.floorPlane())
   updateGridVisibility()
 }
 
@@ -650,6 +653,7 @@ const syncVoxelMeshes = () => {
   voxelRenderer.sync(renderedTerrainVoxels.value, {
     ghostVoxelsFaded: props.ghostVoxelsFaded,
   })
+  buildHazardPickTargets.setVoxelMeshes(voxelRenderer.meshes())
   applyLayerVisibility()
 }
 
@@ -665,6 +669,7 @@ const syncFieldEffectMeshes = () => {
 
 const syncHazardMeshes = () => {
   hazardRenderer.sync(renderedHazards.value)
+  buildHazardPickTargets.setHazardMeshes(hazardRenderer.meshes())
   applyLayerVisibility()
 }
 
@@ -892,8 +897,7 @@ const pickBuildTarget = (
     renderer,
     camera,
     raycaster,
-    floorPlane: gridRenderer.floorPlane(),
-    voxelMeshes: voxelRenderer.meshes(),
+    pickTargetCache: buildHazardPickTargets,
     dimensions: props.dimensions,
     pokemons: props.pokemons,
     allVoxelOccupancy: allVoxelOccupancy.value,
@@ -929,8 +933,7 @@ const pickHazardTarget = (
     renderer,
     camera,
     raycaster,
-    hazardMeshes: hazardRenderer.meshes(),
-    voxelMeshes: voxelRenderer.meshes(),
+    pickTargetCache: buildHazardPickTargets,
     hazards: renderedHazards.value,
     dimensions: props.dimensions,
     groundLevelY: normalizedGroundLevelY(),
@@ -1423,6 +1426,7 @@ onBeforeUnmount(() => {
   rendererSizeState = null
   rendererBoundsCache.invalidate()
   tokenProxyPickTargets.clear()
+  buildHazardPickTargets.clear()
 })
 
 useIsometricSceneWatchers({
