@@ -32,6 +32,7 @@ describe('render invalidation reasons', () => {
 
   it('narrows unknown values to known invalidation reasons', () => {
     expect(isRenderInvalidationReason('camera')).toBe(true)
+    expect(isRenderInvalidationReason('hazards')).toBe(true)
     expect(isRenderInvalidationReason('token-texture')).toBe(true)
     expect(isRenderInvalidationReason('controller-build-note')).toBe(false)
     expect(isRenderInvalidationReason(undefined)).toBe(false)

@@ -124,10 +124,10 @@ import {
   createIsometricRenderMetricsSnapshotWithRendererInfo,
 } from '~/utils/isometric/renderMetrics'
 import { sampleWebGLRendererInfo } from '~/utils/isometric/rendererInfoSampler'
-import type { RenderInvalidationReason } from '~/utils/isometric/renderInvalidation'
 import {
   createIsometricRenderScheduler,
   type IsometricRenderScheduler,
+  type IsometricRenderSchedulerReasonInput,
   type IsometricScheduledRenderFrame,
 } from '~/utils/isometric/renderScheduler'
 import {
@@ -1013,6 +1013,7 @@ watch(activeSendOutRequest, (request) => {
 watch([terrainVoxelRevision, () => props.dimensions], () => {
   if (!activeSendOutRequest.value) return
   sendOutInteraction.refreshAfterStateChange()
+  requestScheduledSceneFrame('movement-preview')
 })
 
 watch([() => props.buildMode, () => props.hazardMode], ([buildActive, hazardActive]) => {
@@ -1022,10 +1023,39 @@ watch([() => props.buildMode, () => props.hazardMode], ([buildActive, hazardActi
 
 watch(() => props.moveAutomationTargeting, (targeting) => {
   if (!targeting) return
+
   closeContextMenu()
   sendOutInteraction.cancel()
   clearPreviewVisuals()
+  requestScheduledSceneFrame('movement-preview')
 })
+
+watch(
+  () => props.moveAutomationTargeting,
+  () => {
+    if (!renderer) return
+    requestScheduledSceneFrame('targeting')
+  },
+  { deep: true },
+)
+
+watch(
+  () => props.moveAutomationFeedback,
+  () => {
+    if (!renderer) return
+    requestScheduledSceneFrame('targeting')
+  },
+  { deep: true },
+)
+
+watch(
+  () => props.attackOfOpportunityPrompts,
+  () => {
+    if (!renderer) return
+    requestScheduledSceneFrame('targeting')
+  },
+  { deep: true },
+)
 
 const sameMoveTargetHitChance = (
   a: MoveAutomationTargetHitChance | undefined,
@@ -1187,35 +1217,10 @@ function resolveSceneAnimationContinuation() {
   ])
 }
 
-function requestScheduledSceneFrame(reason: RenderInvalidationReason) {
+function requestScheduledSceneFrame(reason: IsometricRenderSchedulerReasonInput) {
   renderScheduler?.requestRender(reason)
   renderScheduler?.setActiveAnimation(resolveSceneAnimationContinuation().active)
 }
-
-watch(
-  [
-    () => props.pokemons,
-    () => props.selectedId,
-    () => props.activeTurnId,
-    terrainVoxelRevision,
-    hazardRevision,
-    fieldEffectsRevision,
-    () => props.layerVisibility,
-    () => [props.buildMode, props.buildTool, props.buildMaterial, props.buildColor, props.buildGhostVoxel] as const,
-    () => [props.hazardMode, props.hazardTool, props.hazardKind] as const,
-    () => props.ghostVoxelsFaded,
-    () => props.groundLevelY,
-    () => [props.dimensions.x, props.dimensions.y, props.dimensions.z] as const,
-    () => props.moveAutomationTargeting,
-    () => props.moveAutomationFeedback,
-    () => props.attackOfOpportunityPrompts,
-  ],
-  () => {
-    if (!renderer) return
-    requestScheduledSceneFrame('scene-state')
-  },
-  { deep: true },
-)
 
 const renderOneShotScheduledFrame = (frame: IsometricScheduledRenderFrame): boolean => {
   if (!renderer || !cssRenderer || !camera || !controls) {
@@ -1368,6 +1373,7 @@ useIsometricSceneWatchers({
     hazardSettings: () => [props.hazardTool, props.hazardKind] as const,
     groundLevelY: () => props.groundLevelY,
     dimensionsKey: () => [props.dimensions.x, props.dimensions.y, props.dimensions.z] as const,
+    activeTurnId: () => props.activeTurnId,
     isRendererReady: () => Boolean(renderer),
   },
   actions: {
@@ -1398,6 +1404,7 @@ useIsometricSceneWatchers({
     buildGrid,
     alignCameraToGrid,
     syncRendererSize,
+    requestRender: requestScheduledSceneFrame,
   },
 })
 </script>
