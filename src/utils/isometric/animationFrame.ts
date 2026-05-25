@@ -2,6 +2,7 @@ import type * as THREE from 'three'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import type { PokemonRenderObject } from '~/utils/isometric/types'
 import { getIsometricSpriteLighting } from '~/utils/isometric/spriteLighting'
+import { tokenCenterLerpNeedsAnimation } from '~/utils/isometric/tokenRenderState'
 import { animatePokemonRenderObject } from '~/utils/isometric/tokenRenderer'
 import { nowMs } from '~/utils/isometric/worldSprites'
 
@@ -11,14 +12,23 @@ export interface IsometricAnimationFrameResult {
   frameNowMs: number
   spriteBrightness: number
   haloAlpha: number
+  cssRendered: boolean
+}
+
+export interface IsometricCss3DRenderDirtyTrackerLike {
+  markDirty?: (reason?: 'camera' | 'targeting' | 'token-style') => void
+  consumeDirty: () => boolean
 }
 
 export interface IsometricAnimationFrameOptions {
   clock: Pick<THREE.Clock, 'getDelta' | 'elapsedTime'>
   renderObjects: Iterable<PokemonRenderObject>
-  applyRenderObjectPosition: (renderObject: PokemonRenderObject) => void
-  controls: { target: THREE.Vector3; update: () => void }
-  fieldEffectRenderer: { update: (delta: number, elapsedTime: number) => void }
+  applyRenderObjectPosition: (renderObject: PokemonRenderObject) => boolean | void
+  controls: { target: THREE.Vector3; update: () => boolean | void }
+  fieldEffectRenderer: {
+    update: (delta: number, elapsedTime: number) => void
+    needsAnimationFrame?: () => boolean
+  }
   tokenMovePreviewRenderer: {
     animate: (options: {
       pokemon: SpawnedPokemon | null
@@ -38,7 +48,8 @@ export interface IsometricAnimationFrameOptions {
   facingDirection: THREE.Vector2
   frameNowMs?: number
   animateRenderObject?: typeof animatePokemonRenderObject
-  beforeRender?: () => void
+  beforeRender?: () => boolean | void
+  css3DRenderDirtyTracker?: IsometricCss3DRenderDirtyTrackerLike
 }
 
 export const stepIsometricAnimationFrame = (
@@ -49,17 +60,23 @@ export const stepIsometricAnimationFrame = (
   const renderObjects = Array.from(options.renderObjects)
 
   for (const renderObject of renderObjects) {
-    if (renderObject.currentCenter.distanceToSquared(renderObject.targetCenter) < 0.000001) {
-      renderObject.currentCenter.copy(renderObject.targetCenter)
-    } else {
+    if (tokenCenterLerpNeedsAnimation(renderObject)) {
       renderObject.currentCenter.lerp(renderObject.targetCenter, damping)
+    } else {
+      renderObject.currentCenter.copy(renderObject.targetCenter)
     }
 
-    options.applyRenderObjectPosition(renderObject)
+    if (options.applyRenderObjectPosition(renderObject) === true) {
+      options.css3DRenderDirtyTracker?.markDirty?.('token-style')
+    }
   }
 
-  options.controls.update()
-  options.fieldEffectRenderer.update(delta, options.clock.elapsedTime)
+  const controlsChanged = options.controls.update() === true
+  if (controlsChanged) options.css3DRenderDirtyTracker?.markDirty?.('camera')
+
+  if (options.fieldEffectRenderer.needsAnimationFrame?.() ?? true) {
+    options.fieldEffectRenderer.update(delta, options.clock.elapsedTime)
+  }
 
   const { spriteBrightness, haloAlpha } = getIsometricSpriteLighting({
     cameraPosition: options.camera.position,
@@ -88,10 +105,14 @@ export const stepIsometricAnimationFrame = (
     haloAlpha,
   })
 
-  options.beforeRender?.()
+  if (options.beforeRender?.() === true) {
+    options.css3DRenderDirtyTracker?.markDirty?.('targeting')
+  }
+
+  const cssRendered = options.css3DRenderDirtyTracker?.consumeDirty() ?? true
 
   options.renderer.render(options.scene, options.camera)
-  options.cssRenderer.render(options.scene, options.camera)
+  if (cssRendered) options.cssRenderer.render(options.scene, options.camera)
 
   return {
     delta,
@@ -99,5 +120,6 @@ export const stepIsometricAnimationFrame = (
     frameNowMs,
     spriteBrightness,
     haloAlpha,
+    cssRendered,
   }
 }

@@ -18,7 +18,7 @@ Generate or refresh the local fixture maps:
 node scripts/generate_benchmark_maps.mjs --overwrite
 ```
 
-Then run the app in development mode, open the maps in the `track-1-benchmarks` folder, and append `?debug=render`, `?debug=render-metrics`, or `?debug=isometric-render` to the map route when collecting overlay values.
+Then run the app in development mode, open the maps in the `track-1-benchmarks` folder, and append `?debug=render`, `?debug=render-metrics`, or `?debug=isometric-render` to the map route when collecting overlay values. Follow the [Performance benchmark runbook](performance-benchmark-runbook.md) when recording before/after measurements.
 
 ## Generated fixtures
 

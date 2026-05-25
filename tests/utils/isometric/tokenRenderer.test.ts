@@ -1,8 +1,12 @@
 import * as THREE from 'three'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import type { PokemonRenderObject, WorldSpriteState } from '~/utils/isometric/types'
-import { updatePokemonRenderObjectFromSpawn } from '~/utils/isometric/tokenRenderer'
+import {
+  disposePokemonRenderObject,
+  updatePokemonRenderObjectFromSpawn,
+} from '~/utils/isometric/tokenRenderer'
+import { createTokenRenderGeometryCache } from '~/utils/isometric/tokenGeometryCache'
 
 const spawnedPokemon = (overrides: Partial<SpawnedPokemon> = {}): SpawnedPokemon => ({
   species: 'Trainer',
@@ -33,9 +37,30 @@ const spawnedPokemon = (overrides: Partial<SpawnedPokemon> = {}): SpawnedPokemon
 })
 
 const makeRenderObject = (pokemon: SpawnedPokemon): PokemonRenderObject => {
-  const sprite = new THREE.Sprite(new THREE.SpriteMaterial())
-  const halo = new THREE.Sprite(new THREE.SpriteMaterial())
-  const spriteState = { sprite, halo } as WorldSpriteState
+  const spriteMaterial = new THREE.SpriteMaterial()
+  const haloMaterial = new THREE.SpriteMaterial()
+  const sprite = new THREE.Sprite(spriteMaterial)
+  const halo = new THREE.Sprite(haloMaterial)
+  const spriteState: WorldSpriteState = {
+    sprite,
+    material: spriteMaterial,
+    halo,
+    haloMaterial,
+    texture: null,
+    releaseTexture: null,
+    assetKey: null,
+    loadToken: 0,
+    textureLoading: false,
+    animationMeta: null,
+    animationStartedAtMs: 0,
+    currentFrame: -1,
+    textureRepeat: new THREE.Vector2(1, 1),
+    textureOffset: new THREE.Vector2(),
+    mirroredX: false,
+    onTextureLoadComplete: null,
+    ghost: false,
+    invalid: false,
+  }
 
   sprite.scale.set(pokemon.width, pokemon.height, 1)
   halo.scale.set(pokemon.width * 1.25, pokemon.height * 1.15, 1)
@@ -44,9 +69,16 @@ const makeRenderObject = (pokemon: SpawnedPokemon): PokemonRenderObject => {
     id: pokemon.id,
     sprite,
     spriteState,
-    elevationBadge: {} as PokemonRenderObject['elevationBadge'],
-    hpBar: {} as PokemonRenderObject['hpBar'],
-    combatStageGlass: {} as PokemonRenderObject['combatStageGlass'],
+    elevationBadge: new THREE.Object3D() as PokemonRenderObject['elevationBadge'],
+    hpBar: new THREE.Object3D() as PokemonRenderObject['hpBar'],
+    combatStageGlass: {
+      mesh: new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial()),
+      texture: new THREE.Texture() as unknown as THREE.CanvasTexture,
+      canvas: {} as HTMLCanvasElement,
+      context: {} as CanvasRenderingContext2D,
+      renderedKey: '',
+      active: false,
+    },
     volume: new THREE.Mesh(
       new THREE.BoxGeometry(pokemon.base, pokemon.clearance, pokemon.base),
       [new THREE.MeshBasicMaterial()],
@@ -100,5 +132,115 @@ describe('token renderer', () => {
     expect(renderObject.volume.geometry.parameters.height).toBe(2)
     expect(renderObject.proxy.geometry.parameters.height).toBe(2)
     expect(renderObject.shadow.geometry.parameters.radius).toBeCloseTo(0.67)
+  })
+
+  it('reuses cached live token volume, edge, and proxy geometries by dimensions', () => {
+    const cache = createTokenRenderGeometryCache()
+    const first = makeRenderObject(spawnedPokemon({ id: 'first-token' }))
+    const second = makeRenderObject(spawnedPokemon({ id: 'second-token' }))
+    const firstResized = spawnedPokemon({
+      id: 'first-token',
+      base: 2,
+      clearance: 3,
+      width: 0.85,
+      height: 2.25,
+    })
+    const secondResized = spawnedPokemon({
+      id: 'second-token',
+      base: 2,
+      clearance: 3,
+      width: 1.5,
+      height: 2.25,
+    })
+
+    updatePokemonRenderObjectFromSpawn(first, firstResized, { geometryCache: cache })
+    updatePokemonRenderObjectFromSpawn(second, secondResized, { geometryCache: cache })
+
+    expect(first.volume.geometry).toBe(second.volume.geometry)
+    expect(first.edges.geometry).toBe(second.edges.geometry)
+    expect(first.proxy.geometry).toBe(second.proxy.geometry)
+    expect(first.proxy.geometry).not.toBe(first.volume.geometry)
+    expect(first.volume.geometry.parameters.width).toBe(2)
+    expect(first.volume.geometry.parameters.height).toBe(3)
+    expect(first.proxy.geometry.parameters.width).toBe(2)
+    expect(first.proxy.geometry.parameters.height).toBe(3)
+    expect(cache.snapshot()).toEqual({
+      volumeBoxGeometryCount: 1,
+      volumeEdgesGeometryCount: 1,
+      proxyBoxGeometryCount: 1,
+    })
+  })
+
+  it('keeps shared token geometries alive until every render object releases them', () => {
+    const cache = createTokenRenderGeometryCache()
+    const first = makeRenderObject(spawnedPokemon({ id: 'first-token' }))
+    const second = makeRenderObject(spawnedPokemon({ id: 'second-token' }))
+    const firstResized = spawnedPokemon({ id: 'first-token', base: 2, clearance: 3 })
+    const secondResized = spawnedPokemon({ id: 'second-token', base: 2, clearance: 3 })
+
+    updatePokemonRenderObjectFromSpawn(first, firstResized, { geometryCache: cache })
+    updatePokemonRenderObjectFromSpawn(second, secondResized, { geometryCache: cache })
+
+    const volumeDisposeSpy = vi.spyOn(first.volume.geometry, 'dispose')
+    const edgesDisposeSpy = vi.spyOn(first.edges.geometry, 'dispose')
+    const proxyDisposeSpy = vi.spyOn(first.proxy.geometry, 'dispose')
+
+    disposePokemonRenderObject(first)
+
+    expect(volumeDisposeSpy).not.toHaveBeenCalled()
+    expect(edgesDisposeSpy).not.toHaveBeenCalled()
+    expect(proxyDisposeSpy).not.toHaveBeenCalled()
+    expect(cache.snapshot()).toEqual({
+      volumeBoxGeometryCount: 1,
+      volumeEdgesGeometryCount: 1,
+      proxyBoxGeometryCount: 1,
+    })
+
+    disposePokemonRenderObject(second)
+
+    expect(volumeDisposeSpy).toHaveBeenCalledTimes(1)
+    expect(edgesDisposeSpy).toHaveBeenCalledTimes(1)
+    expect(proxyDisposeSpy).toHaveBeenCalledTimes(1)
+    expect(cache.snapshot()).toEqual({
+      volumeBoxGeometryCount: 0,
+      volumeEdgesGeometryCount: 0,
+      proxyBoxGeometryCount: 0,
+    })
+  })
+
+  it('releases cached geometry dimensions when tokens resize away from them', () => {
+    const cache = createTokenRenderGeometryCache()
+    const first = makeRenderObject(spawnedPokemon({ id: 'first-token' }))
+    const second = makeRenderObject(spawnedPokemon({ id: 'second-token' }))
+
+    updatePokemonRenderObjectFromSpawn(first, spawnedPokemon({ id: 'first-token', base: 2, clearance: 2 }), {
+      geometryCache: cache,
+    })
+    updatePokemonRenderObjectFromSpawn(second, spawnedPokemon({ id: 'second-token', base: 2, clearance: 2 }), {
+      geometryCache: cache,
+    })
+
+    const oldVolumeGeometry = first.volume.geometry
+    const oldProxyGeometry = first.proxy.geometry
+    const oldVolumeDisposeSpy = vi.spyOn(oldVolumeGeometry, 'dispose')
+    const oldProxyDisposeSpy = vi.spyOn(oldProxyGeometry, 'dispose')
+
+    updatePokemonRenderObjectFromSpawn(first, spawnedPokemon({ id: 'first-token', base: 3, clearance: 2 }), {
+      geometryCache: cache,
+    })
+
+    expect(oldVolumeDisposeSpy).not.toHaveBeenCalled()
+    expect(oldProxyDisposeSpy).not.toHaveBeenCalled()
+    expect(second.volume.geometry).toBe(oldVolumeGeometry)
+    expect(second.proxy.geometry).toBe(oldProxyGeometry)
+
+    updatePokemonRenderObjectFromSpawn(second, spawnedPokemon({ id: 'second-token', base: 3, clearance: 2 }), {
+      geometryCache: cache,
+    })
+
+    expect(oldVolumeDisposeSpy).toHaveBeenCalledTimes(1)
+    expect(oldProxyDisposeSpy).toHaveBeenCalledTimes(1)
+    expect(first.volume.geometry).toBe(second.volume.geometry)
+    expect(first.proxy.geometry).toBe(second.proxy.geometry)
   })
 })

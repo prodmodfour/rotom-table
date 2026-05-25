@@ -3,9 +3,11 @@ import {
   ISOMETRIC_RENDER_FRAME_REASON_LABELS,
   ISOMETRIC_RENDER_FRAME_REASONS,
   createEmptyIsometricRenderMetricsSnapshot,
+  createEmptyPointerInteractionMetrics,
   createEmptyRenderFrameTimingMetrics,
   createEmptySampledWebGLRendererInfo,
   createIsometricRenderMetricsSnapshotWithFrameTiming,
+  createIsometricRenderMetricsSnapshotWithPointerInteractions,
   createIsometricRenderMetricsSnapshotWithRendererInfo,
   createRenderFrameReasonCounts,
   incrementRenderFrameReasonCount,
@@ -70,6 +72,24 @@ describe('isometric render metrics model', () => {
     expect(metrics.reasonCounts).not.toBe(nextMetrics.reasonCounts)
   })
 
+  it('creates zeroed pointer interaction metrics without sampling browser state', () => {
+    const metrics = createEmptyPointerInteractionMetrics()
+    const nextMetrics = createEmptyPointerInteractionMetrics()
+
+    expect(metrics).toEqual({
+      pointerMoveEventCount: 0,
+      pointerMoveFrameCount: 0,
+      coalescedPointerMoveEventCount: 0,
+      lastPointerMoveFrameCoalescedEventCount: null,
+      raycastCount: 0,
+      raycastCounts: {},
+      pathfindingRequestCount: 0,
+      pathfindingCacheHitCount: 0,
+      pathfindingCacheMissCount: 0,
+    })
+    expect(metrics.raycastCounts).not.toBe(nextMetrics.raycastCounts)
+  })
+
   it('creates a sampled WebGL renderer info shell', () => {
     const sample = createEmptySampledWebGLRendererInfo(1234)
     const nextSample = createEmptySampledWebGLRendererInfo(5678)
@@ -105,6 +125,8 @@ describe('isometric render metrics model', () => {
     expect(snapshot.rendererInfo).toBeNull()
     expect(snapshot.frames.frameCount).toBe(0)
     expect(snapshot.frames.lastFrameReasons).toEqual([])
+    expect(snapshot.pointerInteractions.pointerMoveEventCount).toBe(0)
+    expect(snapshot.pointerInteractions.raycastCounts).toEqual({})
   })
 
   it('adds frame timing metrics to an existing metrics snapshot without mutating it', () => {
@@ -149,5 +171,35 @@ describe('isometric render metrics model', () => {
     expect(updated.rendererInfo).not.toBe(rendererInfo)
     expect(updated.rendererInfo?.memory).not.toBe(rendererInfo.memory)
     expect(createIsometricRenderMetricsSnapshotWithRendererInfo(snapshot, null)).toBe(snapshot)
+  })
+
+  it('adds pointer interaction metrics to an existing metrics snapshot without mutating it', () => {
+    const snapshot = createEmptyIsometricRenderMetricsSnapshot(42)
+    const pointerInteractions = createEmptyPointerInteractionMetrics()
+    pointerInteractions.pointerMoveEventCount = 5
+    pointerInteractions.pointerMoveFrameCount = 2
+    pointerInteractions.coalescedPointerMoveEventCount = 5
+    pointerInteractions.lastPointerMoveFrameCoalescedEventCount = 3
+    pointerInteractions.raycastCount = 4
+    pointerInteractions.raycastCounts['token-pick'] = 3
+    pointerInteractions.pathfindingRequestCount = 1
+    pointerInteractions.pathfindingCacheHitCount = 2
+    pointerInteractions.pathfindingCacheMissCount = 1
+
+    const updated = createIsometricRenderMetricsSnapshotWithPointerInteractions(
+      snapshot,
+      pointerInteractions,
+      300,
+    )
+
+    expect(snapshot.pointerInteractions.pointerMoveEventCount).toBe(0)
+    expect(updated).not.toBe(snapshot)
+    expect(updated.devOnly).toBe(true)
+    expect(updated.sampledAtMs).toBe(300)
+    expect(updated.frames).toBe(snapshot.frames)
+    expect(updated.rendererInfo).toBeNull()
+    expect(updated.pointerInteractions).toEqual(pointerInteractions)
+    expect(updated.pointerInteractions).not.toBe(pointerInteractions)
+    expect(updated.pointerInteractions.raycastCounts).not.toBe(pointerInteractions.raycastCounts)
   })
 })

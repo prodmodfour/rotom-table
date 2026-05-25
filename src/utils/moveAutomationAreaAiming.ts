@@ -5,6 +5,16 @@ export interface MoveAutomationAreaAimPoint {
   z: number
 }
 
+export interface MoveAutomationAreaDirectionUpdateThrottle {
+  currentRequestedDirection: () => MoveAutomationAreaDirection | null
+  syncCurrentDirection: (direction: MoveAutomationAreaDirection | null | undefined) => void
+  shouldEmitDirection: (
+    direction: MoveAutomationAreaDirection | null | undefined,
+    currentDirection?: MoveAutomationAreaDirection | null,
+  ) => boolean
+  reset: () => void
+}
+
 const OCTANT_RADIANS = Math.PI / 4
 const POINTER_AIM_DEAD_ZONE = 0.25
 
@@ -42,3 +52,33 @@ export const moveAutomationAreaDirectionFromPoint = (
   x: point.x - origin.x,
   z: point.z - origin.z,
 }, deadZone)
+
+const normalizeMoveAutomationAreaDirection = (
+  direction: MoveAutomationAreaDirection | null | undefined,
+): MoveAutomationAreaDirection | null => direction ?? null
+
+export const createMoveAutomationAreaDirectionUpdateThrottle = (
+  initialDirection?: MoveAutomationAreaDirection | null,
+): MoveAutomationAreaDirectionUpdateThrottle => {
+  let lastRequestedDirection = normalizeMoveAutomationAreaDirection(initialDirection)
+
+  const syncCurrentDirection = (direction: MoveAutomationAreaDirection | null | undefined) => {
+    lastRequestedDirection = normalizeMoveAutomationAreaDirection(direction)
+  }
+
+  return {
+    currentRequestedDirection: () => lastRequestedDirection,
+    syncCurrentDirection,
+    shouldEmitDirection: (direction, currentDirection) => {
+      const nextDirection = normalizeMoveAutomationAreaDirection(direction)
+      if (!nextDirection) return false
+
+      const appliedDirection = normalizeMoveAutomationAreaDirection(currentDirection)
+      if (nextDirection === appliedDirection || nextDirection === lastRequestedDirection) return false
+
+      lastRequestedDirection = nextDirection
+      return true
+    },
+    reset: () => syncCurrentDirection(null),
+  }
+}

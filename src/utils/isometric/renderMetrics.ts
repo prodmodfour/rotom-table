@@ -18,6 +18,24 @@ export type RenderFrameReason = RenderInvalidationReason
 
 export type RenderFrameReasonCounts = Partial<Record<RenderFrameReason, number>>
 
+export const ISOMETRIC_POINTER_RAYCAST_KINDS = [
+  'token-pick',
+  'movement-plane',
+  'build-pick',
+  'hazard-pick',
+] as const
+
+export type IsometricPointerRaycastKind = typeof ISOMETRIC_POINTER_RAYCAST_KINDS[number]
+
+export type PointerRaycastKindCounts = Partial<Record<IsometricPointerRaycastKind, number>>
+
+export const ISOMETRIC_POINTER_RAYCAST_KIND_LABELS: Record<IsometricPointerRaycastKind, string> = {
+  'token-pick': 'Token pick raycasts',
+  'movement-plane': 'Movement plane raycasts',
+  'build-pick': 'Build pick raycasts',
+  'hazard-pick': 'Hazard pick raycasts',
+}
+
 export const ISOMETRIC_RENDER_FRAME_REASON_LABELS = ISOMETRIC_RENDER_INVALIDATION_REASON_LABELS
 
 export interface RenderFrameTimingMetrics {
@@ -59,12 +77,25 @@ export interface SampledWebGLRendererInfo {
   programs: SampledWebGLRendererProgramInfo
 }
 
+export interface PointerInteractionMetrics {
+  pointerMoveEventCount: number
+  pointerMoveFrameCount: number
+  coalescedPointerMoveEventCount: number
+  lastPointerMoveFrameCoalescedEventCount: number | null
+  raycastCount: number
+  raycastCounts: PointerRaycastKindCounts
+  pathfindingRequestCount: number
+  pathfindingCacheHitCount: number
+  pathfindingCacheMissCount: number
+}
+
 export interface IsometricRenderMetricsSnapshot {
   /** Marker to keep this model scoped to explicit debug/developer instrumentation. */
   devOnly: true
   sampledAtMs: number
   frames: RenderFrameTimingMetrics
   rendererInfo: SampledWebGLRendererInfo | null
+  pointerInteractions: PointerInteractionMetrics
 }
 
 export const isRenderFrameReason = isRenderInvalidationReason
@@ -91,6 +122,29 @@ export const createRenderFrameReasonCounts = (
 
   return counts
 }
+
+export const createEmptyPointerRaycastKindCounts = (): PointerRaycastKindCounts => ({})
+
+export const incrementPointerRaycastKindCount = (
+  counts: PointerRaycastKindCounts,
+  kind: IsometricPointerRaycastKind,
+  increment = 1,
+): PointerRaycastKindCounts => ({
+  ...counts,
+  [kind]: (counts[kind] ?? 0) + increment,
+})
+
+export const createEmptyPointerInteractionMetrics = (): PointerInteractionMetrics => ({
+  pointerMoveEventCount: 0,
+  pointerMoveFrameCount: 0,
+  coalescedPointerMoveEventCount: 0,
+  lastPointerMoveFrameCoalescedEventCount: null,
+  raycastCount: 0,
+  raycastCounts: createEmptyPointerRaycastKindCounts(),
+  pathfindingRequestCount: 0,
+  pathfindingCacheHitCount: 0,
+  pathfindingCacheMissCount: 0,
+})
 
 export const createEmptyRenderFrameTimingMetrics = (): RenderFrameTimingMetrics => ({
   frameCount: 0,
@@ -131,6 +185,7 @@ export const createEmptyIsometricRenderMetricsSnapshot = (
   sampledAtMs,
   frames: createEmptyRenderFrameTimingMetrics(),
   rendererInfo: null,
+  pointerInteractions: createEmptyPointerInteractionMetrics(),
 })
 
 const copyRenderFrameTimingMetrics = (
@@ -139,6 +194,13 @@ const copyRenderFrameTimingMetrics = (
   ...frames,
   lastFrameReasons: [...frames.lastFrameReasons],
   reasonCounts: { ...frames.reasonCounts },
+})
+
+const copyPointerInteractionMetrics = (
+  pointerInteractions: PointerInteractionMetrics,
+): PointerInteractionMetrics => ({
+  ...pointerInteractions,
+  raycastCounts: { ...pointerInteractions.raycastCounts },
 })
 
 const copySampledWebGLRendererInfo = (
@@ -170,6 +232,16 @@ export const createIsometricRenderMetricsSnapshotWithFrameTiming = (
   ...snapshot,
   sampledAtMs,
   frames: copyRenderFrameTimingMetrics(frames),
+})
+
+export const createIsometricRenderMetricsSnapshotWithPointerInteractions = (
+  snapshot: IsometricRenderMetricsSnapshot,
+  pointerInteractions: PointerInteractionMetrics,
+  sampledAtMs = snapshot.sampledAtMs,
+): IsometricRenderMetricsSnapshot => ({
+  ...snapshot,
+  sampledAtMs,
+  pointerInteractions: copyPointerInteractionMetrics(pointerInteractions),
 })
 
 export const createIsometricRenderMetricsSnapshotWithRendererInfo = (

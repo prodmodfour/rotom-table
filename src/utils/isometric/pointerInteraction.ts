@@ -1,5 +1,11 @@
 import type { BuildTool } from '#shared/mapEditor'
 import type { SpawnedPokemon } from '~/types/pokemon'
+import {
+  createPointerEventCoalescer,
+  type CoalescedPointerEventFrame,
+  type PointerEventCoalescerCancelAnimationFrame,
+  type PointerEventCoalescerRequestAnimationFrame,
+} from '~/utils/isometric/pointerEventCoalescer'
 
 export interface PointerTravelTrackerLike {
   start(event: PointerEvent): void
@@ -41,6 +47,9 @@ export interface IsometricPointerInteractionOptions {
   hideBuildGhost: () => void
   hideHazardGhost: () => void
   closeTopmostOverlay: () => boolean
+  onPointerMoveFrame?: (frame: CoalescedPointerEventFrame) => void
+  pointerMoveRequestAnimationFrame?: PointerEventCoalescerRequestAnimationFrame
+  pointerMoveCancelAnimationFrame?: PointerEventCoalescerCancelAnimationFrame
 }
 
 export interface PointerCoords {
@@ -82,6 +91,9 @@ export const createIsometricPointerInteractionController = ({
   hideBuildGhost,
   hideHazardGhost,
   closeTopmostOverlay,
+  onPointerMoveFrame = () => {},
+  pointerMoveRequestAnimationFrame,
+  pointerMoveCancelAnimationFrame,
 }: IsometricPointerInteractionOptions) => {
   let lastPointerCoords: PointerCoords | null = null
 
@@ -119,6 +131,7 @@ export const createIsometricPointerInteractionController = ({
 
   const handleRightClick = (event: MouseEvent) => {
     event.preventDefault()
+    flushPointerMove()
 
     if (getPlacementModeActive()) {
       cancelPlacement()
@@ -159,9 +172,7 @@ export const createIsometricPointerInteractionController = ({
     pointerTracker.start(event)
   }
 
-  const handlePointerMove = (event: PointerEvent) => {
-    pointerTracker.move(event)
-    lastPointerCoords = { clientX: event.clientX, clientY: event.clientY }
+  const processPointerMove = (event: PointerEvent) => {
     updateHoverFromPointer(event)
 
     if (getPlacementModeActive()) {
@@ -191,7 +202,26 @@ export const createIsometricPointerInteractionController = ({
     }
   }
 
+  const pointerMoveCoalescer = createPointerEventCoalescer({
+    processFrame: (frame) => {
+      processPointerMove(frame.event as unknown as PointerEvent)
+      onPointerMoveFrame(frame)
+    },
+    requestAnimationFrame: pointerMoveRequestAnimationFrame,
+    cancelAnimationFrame: pointerMoveCancelAnimationFrame,
+  })
+
+  const flushPointerMove = () => pointerMoveCoalescer.flush()
+  const cancelPointerMove = () => pointerMoveCoalescer.cancel()
+
+  const handlePointerMove = (event: PointerEvent) => {
+    pointerTracker.move(event)
+    lastPointerCoords = { clientX: event.clientX, clientY: event.clientY }
+    pointerMoveCoalescer.queue(event)
+  }
+
   const handleWheel = (event: WheelEvent) => {
+    flushPointerMove()
     const selectedPokemon = getSelectedPokemon()
 
     if (getPlacementModeActive()) {
@@ -216,6 +246,8 @@ export const createIsometricPointerInteractionController = ({
   }
 
   const handlePointerUp = (event: PointerEvent) => {
+    flushPointerMove()
+
     if (!pointerTracker.isClick() || event.button !== 0) {
       return
     }
@@ -244,6 +276,7 @@ export const createIsometricPointerInteractionController = ({
   }
 
   const handlePointerLeave = () => {
+    cancelPointerMove()
     lastPointerCoords = null
     clearHoveredPokemon()
     if (getBuildMode()) {
@@ -258,6 +291,8 @@ export const createIsometricPointerInteractionController = ({
     if (event.key !== 'Escape') {
       return
     }
+
+    cancelPointerMove()
 
     if (closeTopmostOverlay()) return
     if (getPlacementModeActive()) {
@@ -283,5 +318,8 @@ export const createIsometricPointerInteractionController = ({
     handlePointerUp,
     handlePointerLeave,
     handleEscape,
+    flushPointerMove,
+    cancelPointerMove,
+    dispose: () => pointerMoveCoalescer.dispose(),
   }
 }

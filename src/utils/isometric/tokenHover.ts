@@ -9,6 +9,7 @@ export interface HoverBadgeRenderObject {
 export interface TokenHoverControllerDependencies<TRenderObject extends HoverBadgeRenderObject> {
   getRenderObject: (id: string) => TRenderObject | undefined
   updateHoveredRenderObject: (renderObject: TRenderObject) => void
+  onHoverChange?: (nextId: string | null, previousId: string | null) => void
 }
 
 export const updateHoveredPokemonElevationBadge = (
@@ -35,8 +36,8 @@ export const createIsometricTokenHoverController = <TRenderObject extends HoverB
 
   const id = () => hoveredId
 
-  const set = (nextId: string | null) => {
-    if (hoveredId === nextId) return
+  const set = (nextId: string | null): boolean => {
+    if (hoveredId === nextId) return false
 
     const previousId = hoveredId
     hoveredId = nextId
@@ -46,16 +47,20 @@ export const createIsometricTokenHoverController = <TRenderObject extends HoverB
       if (previous) previous.elevationBadge.visible = false
     }
 
-    if (!nextId) return
+    if (nextId) {
+      const next = dependencies.getRenderObject(nextId)
+      if (next) dependencies.updateHoveredRenderObject(next)
+    }
 
-    const next = dependencies.getRenderObject(nextId)
-    if (next) dependencies.updateHoveredRenderObject(next)
+    dependencies.onHoverChange?.(nextId, previousId)
+    return true
   }
 
-  const clear = () => set(null)
+  const clear = (): boolean => set(null)
 
-  const clearIfHovered = (idToClear: string) => {
-    if (hoveredId === idToClear) clear()
+  const clearIfHovered = (idToClear: string): boolean => {
+    if (hoveredId !== idToClear) return false
+    return clear()
   }
 
   return {

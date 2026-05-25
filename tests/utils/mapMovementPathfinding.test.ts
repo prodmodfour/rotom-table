@@ -2,6 +2,10 @@ import { describe, expect, it } from 'vitest'
 import { findMovementPathForPokemon } from '~/utils/mapMovementPathfinding'
 import type { MapVoxelV2 } from '~/types/map'
 import type { SpawnedPokemon } from '~/types/pokemon'
+import {
+  buildMapMovementTerrainIndex,
+  type MapMovementTerrainIndex,
+} from '~/utils/mapMovementTerrain'
 
 const token = (overrides: Partial<SpawnedPokemon> = {}): SpawnedPokemon => ({
   id: 'mover',
@@ -34,17 +38,29 @@ const token = (overrides: Partial<SpawnedPokemon> = {}): SpawnedPokemon => ({
 
 const dimensions = { x: 6, y: 3, z: 6 }
 
-const route = (pokemon: SpawnedPokemon, goal: SpawnedPokemon['position'], voxels: MapVoxelV2[] = []) =>
-  findMovementPathForPokemon({
+interface RouteOptions {
+  voxels?: MapVoxelV2[]
+  terrainIndex?: MapMovementTerrainIndex | null
+}
+
+const route = (
+  pokemon: SpawnedPokemon,
+  goal: SpawnedPokemon['position'],
+  options: MapVoxelV2[] | RouteOptions = [],
+) => {
+  const routeOptions: RouteOptions = Array.isArray(options) ? { voxels: options } : options
+  return findMovementPathForPokemon({
     pokemon,
     start: pokemon.position,
     goal,
     pokemons: [pokemon],
     dimensions,
     exceptId: pokemon.id,
-    voxels,
+    voxels: routeOptions.voxels ?? [],
     groundLevelY: 0,
+    terrainIndex: routeOptions.terrainIndex ?? null,
   })
+}
 
 describe('map movement pathfinding', () => {
   it('counts diagonal movement with the PTU alternating 1m/2m rule', () => {
@@ -134,6 +150,32 @@ describe('map movement pathfinding', () => {
     expect(result.path).toBeNull()
     expect(result.legal).toBe(false)
     expect(result.reason).toBe('missing-capability')
+  })
+
+  it('can use a prebuilt terrain index instead of raw voxels', () => {
+    const walker = token({ movementCapabilities: { overland: 6 } })
+    const water: MapVoxelV2[] = [{ x: 1, y: 0, z: 0, materialId: 'deep_water' }]
+    const terrainIndex = buildMapMovementTerrainIndex(water)
+
+    const result = route(walker, { x: 1, y: 0, z: 0 }, { terrainIndex })
+
+    expect(result.path).toBeNull()
+    expect(result.legal).toBe(false)
+    expect(result.reason).toBe('missing-capability')
+  })
+
+  it('lets an injected terrain index take precedence over voxel inputs', () => {
+    const walker = token({ movementCapabilities: { overland: 6 } })
+    const waterVoxels: MapVoxelV2[] = [{ x: 1, y: 0, z: 0, materialId: 'deep_water' }]
+    const clearTerrainIndex = buildMapMovementTerrainIndex([])
+
+    const result = route(walker, { x: 1, y: 0, z: 0 }, {
+      voxels: waterVoxels,
+      terrainIndex: clearTerrainIndex,
+    })
+
+    expect(result.legal).toBe(true)
+    expect(result.capabilityLabels).toEqual(['Overland'])
   })
 
   it('allows Burrow movement through burrow terrain and blocks it otherwise', () => {
