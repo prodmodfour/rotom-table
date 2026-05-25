@@ -114,7 +114,7 @@ import {
 import { createIsometricSceneGraph } from '~/utils/isometric/sceneGraph'
 import { stepIsometricAnimationFrame } from '~/utils/isometric/animationFrame'
 import {
-  applyIsometricLayerVisibility,
+  createIsometricLayerVisibilityApplicator,
   setIsometricGridVisibility,
 } from '~/utils/isometric/layerVisibility'
 import { createIsometricBuildInteractionController } from '~/utils/isometric/buildInteraction'
@@ -467,6 +467,7 @@ const buildHazardPickTargets = createBuildHazardPickTargetCache()
 const renderFrameTimingSampler = createRenderFrameTimingSampler()
 const pointerInteractionMetricsSampler = createPointerInteractionMetricsSampler()
 const css3DRenderDirtyTracker = createCss3DRenderDirtyTracker()
+const layerVisibilityApplicator = createIsometricLayerVisibilityApplicator()
 
 const readRenderMetricsNowMs = (): number => {
   const performanceNow = globalThis.performance?.now
@@ -704,7 +705,7 @@ const refreshPokemonStyles = () => {
     selectedId: props.selectedId,
     paintRenderObjectStyle: (renderObject, selected) => paintPokemonRenderObjectStyle(renderObject, selected),
   })
-  applyLayerVisibility()
+  applyLayerVisibility({ force: true })
 }
 
 const onCreateRenderObject = (renderObject: PokemonRenderObject) => {
@@ -739,7 +740,7 @@ const syncVoxelMeshes = () => {
     terrainRevision: terrainVoxelRevision.value,
   })
   buildHazardPickTargets.setVoxelMeshes(voxelRenderer.meshes())
-  applyLayerVisibility()
+  applyLayerVisibility({ force: true })
 }
 
 const syncFieldEffectMeshes = () => {
@@ -749,17 +750,21 @@ const syncFieldEffectMeshes = () => {
     groundLevelY: normalizedGroundLevelY(),
     effects: renderedFieldEffects.value,
   })
-  applyLayerVisibility()
+  applyLayerVisibility({ force: true })
 }
 
 const syncHazardMeshes = () => {
   hazardRenderer.sync(renderedHazards.value)
   buildHazardPickTargets.setHazardMeshes(hazardRenderer.meshes())
-  applyLayerVisibility()
+  applyLayerVisibility({ force: true })
 }
 
-const applyLayerVisibility = () => {
-  applyIsometricLayerVisibility({
+const applyLayerVisibility = (options: { force?: boolean } = {}) => {
+  if (options.force) {
+    layerVisibilityApplicator.invalidate()
+  }
+
+  return layerVisibilityApplicator.apply({
     layers: visibleLayers(),
     hasSelectedPokemon: Boolean(selectedPokemon.value),
     buildMode: props.buildMode,

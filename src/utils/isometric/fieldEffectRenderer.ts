@@ -60,6 +60,10 @@ export const createFieldEffectRenderer = (
     for (const object of fieldEffectObjects.splice(0)) disposeObject3D(object)
   }
 
+  const applyObjectVisibility = (object: THREE.Object3D, nextVisible: boolean) => {
+    if (object.visible !== nextVisible) object.visible = nextVisible
+  }
+
   const getAnimationState = () => createFieldEffectAnimationState(
     visible,
     fieldEffectAnimators.length,
@@ -113,8 +117,8 @@ export const createFieldEffectRenderer = (
       fieldEffectObjects.push(boundary)
     })
 
-    container.visible = visible
-    for (const object of fieldEffectObjects) object.visible = visible
+    applyObjectVisibility(container, visible)
+    for (const object of fieldEffectObjects) applyObjectVisibility(object, visible)
   }
 
   return {
@@ -129,9 +133,11 @@ export const createFieldEffectRenderer = (
     },
 
     setVisible(nextVisible) {
+      if (visible === nextVisible) return
+
       visible = nextVisible
-      container.visible = nextVisible
-      for (const object of fieldEffectObjects) object.visible = nextVisible
+      applyObjectVisibility(container, nextVisible)
+      for (const object of fieldEffectObjects) applyObjectVisibility(object, nextVisible)
     },
 
     getAnimationState,

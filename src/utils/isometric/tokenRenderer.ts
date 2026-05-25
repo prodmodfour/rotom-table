@@ -504,22 +504,30 @@ export const paintPokemonRenderObjectStyle = (
   renderObject.liftTarget = selectionLiftTarget(selected)
 }
 
+const applyObjectVisibility = (object: THREE.Object3D, nextVisible: boolean) => {
+  if (object.visible !== nextVisible) object.visible = nextVisible
+}
+
+const applyElementDisplay = (element: HTMLElement, nextDisplay: string) => {
+  if (element.style.display !== nextDisplay) element.style.display = nextDisplay
+}
+
 export const setPokemonRenderObjectLayerVisibility = (
   renderObject: PokemonRenderObject,
   layers: LayerVisibility,
 ) => {
   const tokens = layers.tokens
-  renderObject.sprite.visible = tokens
-  renderObject.spriteState.halo.visible = tokens
-  renderObject.volume.visible = tokens
-  renderObject.edges.visible = tokens
-  renderObject.proxy.visible = tokens
-  renderObject.combatStageGlass.mesh.visible = tokens && renderObject.combatStageGlass.active
-  renderObject.elevationBadge.visible = tokens && renderObject.elevationBadge.visible
-  renderObject.hpBar.visible = tokens && renderObject.hpBar.visible
-  renderObject.elevationBadge.element.style.display = tokens ? '' : 'none'
-  renderObject.hpBar.element.style.display = tokens ? '' : 'none'
-  renderObject.shadow.visible = layers.shadows && tokens
+  applyObjectVisibility(renderObject.sprite, tokens)
+  applyObjectVisibility(renderObject.spriteState.halo, tokens)
+  applyObjectVisibility(renderObject.volume, tokens)
+  applyObjectVisibility(renderObject.edges, tokens)
+  applyObjectVisibility(renderObject.proxy, tokens)
+  applyObjectVisibility(renderObject.combatStageGlass.mesh, tokens && renderObject.combatStageGlass.active)
+  applyObjectVisibility(renderObject.elevationBadge, tokens && renderObject.elevationBadge.visible)
+  applyObjectVisibility(renderObject.hpBar, tokens && renderObject.hpBar.visible)
+  applyElementDisplay(renderObject.elevationBadge.element, tokens ? '' : 'none')
+  applyElementDisplay(renderObject.hpBar.element, tokens ? '' : 'none')
+  applyObjectVisibility(renderObject.shadow, layers.shadows && tokens)
 }
 
 export const animatePokemonRenderObject = (
