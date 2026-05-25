@@ -83,7 +83,8 @@ export const makeSunnyWeatherVisual = (
   return {
     group,
     update: (_delta, elapsed) => {
-      for (const ray of rays) {
+      for (let i = 0; i < rays.length; i += 1) {
+        const ray = rays[i]
         ray.sprite.position.set(
           ray.baseX + Math.sin(elapsed * 0.18 + ray.phase) * ray.drift,
           ray.baseY + Math.sin(elapsed * 0.14 + ray.phase * 0.7) * 0.06,

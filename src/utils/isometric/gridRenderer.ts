@@ -49,6 +49,19 @@ export const createGridRenderer = (group: THREE.Group) => {
   let floorGridLines: THREE.LineSegments | null = null
   let moveGridLines: THREE.LineSegments | null = null
   let floorPlane: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial> | null = null
+  let appliedGridVisible = true
+  let appliedMovementVisible = true
+
+  const applyGridObjectVisibility = () => {
+    if (group.visible !== appliedGridVisible) group.visible = appliedGridVisible
+    if (floorGridLines && floorGridLines.visible !== appliedGridVisible) {
+      floorGridLines.visible = appliedGridVisible
+    }
+    const nextMoveGridVisible = appliedGridVisible && appliedMovementVisible
+    if (moveGridLines && moveGridLines.visible !== nextMoveGridVisible) {
+      moveGridLines.visible = nextMoveGridVisible
+    }
+  }
 
   const disposeGridObjects = () => {
     disposeObject3D(floorGridLines)
@@ -102,12 +115,17 @@ export const createGridRenderer = (group: THREE.Group) => {
       floorPlane.rotation.x = -Math.PI / 2
       floorPlane.position.set(dimensions.x / 2, 0, dimensions.z / 2)
       group.add(floorPlane)
+      applyGridObjectVisibility()
     },
 
     setVisible({ grid, movement }: { grid: boolean; movement: boolean }) {
-      group.visible = grid
-      if (floorGridLines) floorGridLines.visible = grid
-      if (moveGridLines) moveGridLines.visible = grid && movement
+      if (appliedGridVisible === grid && appliedMovementVisible === movement) {
+        return
+      }
+
+      appliedGridVisible = grid
+      appliedMovementVisible = movement
+      applyGridObjectVisibility()
     },
 
     floorPlane() {

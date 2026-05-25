@@ -4,6 +4,7 @@ import {
   EMPTY_MOVE_PREVIEW,
   getMovePreviewAnchor,
   getNextMovePreviewElevationAnchor,
+  movementPreviewAnchorKey,
 } from '~/utils/isometric/movementPreview'
 
 const pokemon = (overrides: Partial<SpawnedPokemon> = {}): SpawnedPokemon => ({
@@ -41,6 +42,17 @@ describe('isometric movement preview helpers', () => {
       reachable: false,
       pathLength: 0,
     })
+  })
+
+  it('builds stable selected-token and anchor keys for movement preview caching', () => {
+    expect(movementPreviewAnchorKey(pokemon({ id: 'token-a' }), { x: 1, y: 2, z: 3 }))
+      .toBe('token-a:1:2:3')
+    expect(movementPreviewAnchorKey(pokemon({ id: 'token-b' }), { x: 1, y: 2, z: 3 }))
+      .toBe('token-b:1:2:3')
+    expect(movementPreviewAnchorKey(pokemon({ id: 'token-a' }), { x: 1, y: 3, z: 3 }))
+      .toBe('token-a:1:3:3')
+    expect(movementPreviewAnchorKey(null, { x: 1, y: 2, z: 3 })).toBeNull()
+    expect(movementPreviewAnchorKey(pokemon({ id: 'token-a' }), null)).toBeNull()
   })
 
   it('builds a clamped token anchor from a grid intersection point', () => {

@@ -11,6 +11,16 @@ type MoveGridPoint = Pick<GridAnchor, 'x' | 'z'>
 
 type MovePreviewPokemon = Pick<SpawnedPokemon, 'base' | 'clearance'>
 
+type MovePreviewSelectedPokemon = Pick<SpawnedPokemon, 'id'>
+
+export const movementPreviewAnchorKey = (
+  pokemon: MovePreviewSelectedPokemon | null | undefined,
+  anchor: GridAnchor | null | undefined,
+): string | null => {
+  if (!pokemon || !anchor) return null
+  return [pokemon.id, anchor.x, anchor.y, anchor.z].join(':')
+}
+
 const clampInt = (value: number, min: number, max: number): number =>
   Math.min(max, Math.max(min, Math.round(value)))
 

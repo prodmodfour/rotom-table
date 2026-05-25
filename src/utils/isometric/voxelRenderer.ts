@@ -11,6 +11,8 @@ export const GHOST_VOXEL_FADED_OPACITY = 0.1
 
 export interface VoxelRendererSyncOptions {
   ghostVoxelsFaded?: boolean
+  /** Stable terrain revision from the caller; falls back to an overlay-specific voxel signature. */
+  terrainRevision?: string
 }
 
 export interface VoxelRenderer {
@@ -26,10 +28,46 @@ interface VoxelRenderTraits {
   renderOrder: number
 }
 
+interface VoxelBucketSnapshot {
+  voxels: MapVoxelV2[]
+  traits: VoxelRenderTraits
+  semanticSignature: string
+}
+
+const voxelInstancePositionKey = (voxel: MapVoxelV2): string =>
+  `${voxel.x},${voxel.y},${voxel.z}`
+
+const voxelBucketPositionSignature = (voxels: ReadonlyArray<MapVoxelV2>): string =>
+  Array.from(voxels, voxelInstancePositionKey).sort().join('|')
+
+const voxelRenderTraitsSignature = (traits: VoxelRenderTraits): string =>
+  `${traits.opacity}:${traits.depthWrite ? 'depth' : 'no-depth'}:${traits.renderOrder}`
+
+const terrainTopEdgeOverlayVoxelSignature = (voxels: ReadonlyArray<MapVoxelV2>): string =>
+  Array.from(voxels, (voxel) => [
+    voxel.x,
+    voxel.y,
+    voxel.z,
+    voxel.ghost === true ? 'ghost' : 'solid',
+  ].join(','))
+    .sort()
+    .join('|')
+
+export const terrainTopEdgeOverlayCacheKey = (
+  voxels: ReadonlyArray<MapVoxelV2>,
+  options: VoxelRendererSyncOptions = {},
+): string => {
+  const terrainRevision = options.terrainRevision === undefined
+    ? `voxels:${terrainTopEdgeOverlayVoxelSignature(voxels)}`
+    : `revision:${options.terrainRevision}`
+  const ghostFadeRevision = options.ghostVoxelsFaded === true ? 'ghost-fade:on' : 'ghost-fade:off'
+
+  return `${terrainRevision}|${ghostFadeRevision}`
+}
+
 const disposeVoxelGroup = (container: THREE.Group, group: VoxelGroup) => {
   container.remove(group.mesh)
   group.mesh.dispose()
-  group.geometry.dispose()
   for (const material of group.materials) material.dispose()
 }
 
@@ -62,6 +100,19 @@ const rendererVoxelGroupKey = (
     ? 'ghost-faded'
     : 'normal'
   return `${baseKey}|${ghostBucket}`
+}
+
+const buildVoxelBucketSnapshot = (
+  voxels: ReadonlyArray<MapVoxelV2>,
+  options: VoxelRendererSyncOptions,
+): VoxelBucketSnapshot => {
+  const groupVoxels = Array.from(voxels)
+  const traits = resolveVoxelRenderTraits(groupVoxels[0], options)
+  return {
+    voxels: groupVoxels,
+    traits,
+    semanticSignature: `${voxelRenderTraitsSignature(traits)}|${voxelBucketPositionSignature(groupVoxels)}`,
+  }
 }
 
 const appendTerrainTopEdgeLines = (
@@ -175,22 +226,45 @@ export const buildTerrainTopEdgeOverlay = (
 export const createVoxelRenderer = (container: THREE.Group): VoxelRenderer => {
   const voxelGroups = new Map<string, VoxelGroup>()
   let terrainTopEdgeOverlay: THREE.Group | null = null
+  let terrainTopEdgeOverlayRevision: string | null = null
+  let voxelBoxGeometry: THREE.BoxGeometry | null = null
   let visible = true
+
+  const getVoxelBoxGeometry = () => {
+    voxelBoxGeometry ??= new THREE.BoxGeometry(1, 1, 1)
+    return voxelBoxGeometry
+  }
+
+  const disposeVoxelBoxGeometry = () => {
+    voxelBoxGeometry?.dispose()
+    voxelBoxGeometry = null
+  }
+
+  const applyObjectVisibility = (object: THREE.Object3D, nextVisible: boolean) => {
+    if (object.visible !== nextVisible) object.visible = nextVisible
+  }
 
   const disposeTerrainTopEdgeOverlay = () => {
     disposeObject3D(terrainTopEdgeOverlay)
     terrainTopEdgeOverlay = null
+    terrainTopEdgeOverlayRevision = null
   }
 
   const syncTerrainTopEdgeOverlay = (
     voxels: ReadonlyArray<MapVoxelV2>,
     options: VoxelRendererSyncOptions,
   ) => {
+    const nextRevision = terrainTopEdgeOverlayCacheKey(voxels, options)
+    if (terrainTopEdgeOverlayRevision === nextRevision) {
+      return
+    }
+
     disposeTerrainTopEdgeOverlay()
+    terrainTopEdgeOverlayRevision = nextRevision
     const overlay = buildTerrainTopEdgeOverlay(voxels, options)
     if (overlay.children.length === 0) return
 
-    overlay.visible = visible
+    applyObjectVisibility(overlay, visible)
     terrainTopEdgeOverlay = overlay
     container.add(terrainTopEdgeOverlay)
   }
@@ -217,31 +291,41 @@ export const createVoxelRenderer = (container: THREE.Group): VoxelRenderer => {
         arr.push(voxel)
       }
 
+      const bucketSnapshots = new Map<string, VoxelBucketSnapshot>()
+      for (const [key, groupVoxels] of buckets.entries()) {
+        bucketSnapshots.set(key, buildVoxelBucketSnapshot(groupVoxels, options))
+      }
+
       // Drop groups that no longer have any voxels.
       for (const [key, group] of voxelGroups.entries()) {
-        if (!buckets.has(key)) {
+        if (!bucketSnapshots.has(key)) {
           disposeVoxelGroup(container, group)
-          voxelGroups.delete(key)
         }
       }
 
-      // Rebuild each bucket. We always rebuild rather than try to mutate
-      // ``InstancedMesh.count`` in place — voxel changes are debounced
-      // through the save layer so the cost is bounded.
+      const nextVoxelGroups = new Map<string, VoxelGroup>()
       const matrix = new THREE.Matrix4()
-      for (const [key, groupVoxels] of buckets.entries()) {
+      for (const [key, snapshot] of bucketSnapshots.entries()) {
+        const groupVoxels = snapshot.voxels
         const existing = voxelGroups.get(key)
+        if (existing && existing.semanticSignature === snapshot.semanticSignature) {
+          applyObjectVisibility(existing.mesh, visible)
+          // Keep the existing instance matrices and userData voxel array aligned;
+          // reordered-but-equivalent inputs do not need either to change.
+          nextVoxelGroups.set(key, existing)
+          continue
+        }
+
         if (existing) {
           disposeVoxelGroup(container, existing)
-          voxelGroups.delete(key)
         }
-        const traits = resolveVoxelRenderTraits(groupVoxels[0], options)
-        const geometry = new THREE.BoxGeometry(1, 1, 1)
+        const traits = snapshot.traits
+        const geometry = getVoxelBoxGeometry()
         const materials = buildVoxelFaceMaterials(groupVoxels[0], traits.opacity, traits.depthWrite)
         const mesh = new THREE.InstancedMesh(geometry, materials, groupVoxels.length)
         mesh.userData.voxels = groupVoxels
         mesh.renderOrder = traits.renderOrder
-        mesh.visible = visible
+        applyObjectVisibility(mesh, visible)
         for (let i = 0; i < groupVoxels.length; i += 1) {
           const v = groupVoxels[i]
           matrix.makeTranslation(v.x + 0.5, v.y + 0.5, v.z + 0.5)
@@ -249,7 +333,19 @@ export const createVoxelRenderer = (container: THREE.Group): VoxelRenderer => {
         }
         mesh.instanceMatrix.needsUpdate = true
         container.add(mesh)
-        voxelGroups.set(key, { key, geometry, materials, mesh, voxels: groupVoxels })
+        nextVoxelGroups.set(key, {
+          key,
+          geometry,
+          materials,
+          mesh,
+          voxels: groupVoxels,
+          semanticSignature: snapshot.semanticSignature,
+        })
+      }
+
+      voxelGroups.clear()
+      for (const [key, group] of nextVoxelGroups.entries()) {
+        voxelGroups.set(key, group)
       }
 
       syncTerrainTopEdgeOverlay(voxels, options)
@@ -258,15 +354,18 @@ export const createVoxelRenderer = (container: THREE.Group): VoxelRenderer => {
     dispose() {
       disposeTerrainTopEdgeOverlay()
       disposeAllVoxelGroups()
+      disposeVoxelBoxGeometry()
     },
 
     setVisible(nextVisible) {
+      if (visible === nextVisible) return
+
       visible = nextVisible
-      container.visible = nextVisible
+      applyObjectVisibility(container, nextVisible)
       for (const group of voxelGroups.values()) {
-        group.mesh.visible = nextVisible
+        applyObjectVisibility(group.mesh, nextVisible)
       }
-      if (terrainTopEdgeOverlay) terrainTopEdgeOverlay.visible = nextVisible
+      if (terrainTopEdgeOverlay) applyObjectVisibility(terrainTopEdgeOverlay, nextVisible)
     },
 
     meshes() {

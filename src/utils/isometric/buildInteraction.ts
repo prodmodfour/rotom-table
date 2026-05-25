@@ -22,6 +22,21 @@ export interface BuildInteractionGhostOptions {
   styleForCell: (cell?: { x: number; y: number; z: number }) => ReturnType<typeof resolveBuildVoxelRenderStyle>
 }
 
+type BuildPreviewStyleState = Pick<BuildInteractionState, 'buildMode' | 'buildMaterial' | 'buildColor'>
+
+export const buildPreviewAnchorKey = (
+  target: BuildTarget | null,
+  state: BuildPreviewStyleState,
+): string => {
+  if (!state.buildMode) return 'inactive'
+  if (!target) return 'none'
+
+  const targetKey = `${target.action}:${target.valid ? 'valid' : 'invalid'}:${target.cell.x},${target.cell.y},${target.cell.z}`
+  if (target.action !== 'place' || !target.valid) return targetKey
+
+  return `${targetKey}:${state.buildMaterial}:${state.buildColor ?? ''}`
+}
+
 export interface BuildInteractionDependencies {
   getState: () => BuildInteractionState
   pickTarget: (event: BuildPointerEvent, tool: BuildTool) => BuildTarget | null
@@ -43,9 +58,25 @@ export const createIsometricBuildInteractionController = (
     })
   }
 
+  let lastPreviewAnchorKey: string | null = null
+
+  const resetPreviewAnchor = () => {
+    lastPreviewAnchorKey = null
+  }
+
+  const hideGhost = () => {
+    resetPreviewAnchor()
+    dependencies.hideGhost()
+  }
+
   const updateGhost = (target: BuildTarget | null) => {
+    const state = dependencies.getState()
+    const nextAnchorKey = buildPreviewAnchorKey(target, state)
+    if (nextAnchorKey === lastPreviewAnchorKey) return
+
+    lastPreviewAnchorKey = nextAnchorKey
     dependencies.updateGhost(target, {
-      buildMode: dependencies.getState().buildMode,
+      buildMode: state.buildMode,
       styleForCell,
     })
   }
@@ -53,7 +84,7 @@ export const createIsometricBuildInteractionController = (
   const updatePreviewFromPointer = (event: BuildPointerEvent) => {
     const state = dependencies.getState()
     if (!state.buildMode) {
-      dependencies.hideGhost()
+      hideGhost()
       return
     }
 
@@ -91,5 +122,7 @@ export const createIsometricBuildInteractionController = (
     updatePreviewFromPointer,
     replayPreview,
     performAction,
+    hideGhost,
+    resetPreviewAnchor,
   }
 }
