@@ -5,6 +5,7 @@ import type { TokenCombatStageGlass } from '~/utils/isometric/tokenCombatStageGl
 import type { MapHazardKind, MapVoxelV2 } from '~/types/map'
 import type { SpriteAnimation, SpriteCrop } from '~/types/pokemon'
 import type { TokenFacingDirection } from '~/types/tokenFacing'
+import type { TokenRenderGeometryLeases } from '~/utils/isometric/tokenGeometryCache'
 
 export interface WorldSpriteState {
   sprite: THREE.Sprite
@@ -44,6 +45,8 @@ export interface PokemonRenderObject {
   proxy: THREE.Mesh<THREE.BoxGeometry, THREE.MeshBasicMaterial>
   /** Soft radial-gradient disc on the floor; the "planted on the ground" cue. */
   shadow: THREE.Mesh<THREE.CircleGeometry, THREE.MeshBasicMaterial>
+  /** Optional ref-counted geometry leases for renderer-owned shared token boxes. */
+  geometryLeases?: TokenRenderGeometryLeases
   currentCenter: THREE.Vector3
   targetCenter: THREE.Vector3
   width: number
@@ -74,10 +77,13 @@ export interface PokemonRenderObject {
 
 export interface VoxelGroup {
   key: string
+  /** Renderer-owned shared unit box geometry; individual buckets own only their materials. */
   geometry: THREE.BoxGeometry
   materials: THREE.MeshBasicMaterial[]
   mesh: THREE.InstancedMesh
   voxels: MapVoxelV2[]
+  /** Output-relevant render traits and voxel positions used to skip unchanged bucket rebuilds. */
+  semanticSignature: string
 }
 
 export interface BuildTarget {
