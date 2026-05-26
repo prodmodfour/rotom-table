@@ -571,12 +571,13 @@ A transport-only smoke check should verify:
 3. neither patch carries whole-map fields such as `placements` or `fieldEffects`;
 4. the server-owned session/map revisions, persisted snapshot calls, socket revision tracking, and authoritative token position/facing all advance to revision 2.
 
-This automated fake-peer smoke test does not replace later browser multi-tab, LAN, or named-tunnel smoke scripts; it locks the server-authoritative two-client command/fanout behaviour while those later operational checks are still pending.
+This automated fake-peer smoke test complements the local browser helper in [Track 2 multi-tab local smoke script](track-2-multi-tab-smoke.md). Together they cover server-authoritative two-client command/fanout behaviour plus the GM/player session-map tab flow before later LAN and named-tunnel operational checks.
 
 ## Related docs
 
 - [Track 2 session protocol](track-2-session-protocol.md)
 - [Track 2 session lobby and manual QA](track-2-session-lobby.md)
+- [Track 2 multi-tab local smoke script](track-2-multi-tab-smoke.md)
 - [Track 2 session storage](track-2-session-storage.md)
 - [Track 2 validation matrix](track-2-validation-matrix.md)
 - [ADR 002: LAN first and named Cloudflare Tunnel second](adrs/002-lan-first-named-cloudflare-tunnel.md)

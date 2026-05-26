@@ -52,6 +52,7 @@ export interface UseAbilityAutomationPanelOptions {
   modifyConditions: SheetUpdateHandler<MoveAutomationConditionUpdate>
   modifyAbilityActivation: SheetUpdateHandler<AbilitySheetActivationUpdate>
   onBeforeNonImmediateAction?: (event: { userId: string; abilityName: string }) => void
+  dispatchAbilityUse?: (event: { userId: string; abilityName: string; targetTokenId?: string }) => boolean | undefined
   now?: () => number
   maxLogEntries?: number
 }
@@ -73,6 +74,7 @@ export const useAbilityAutomationPanel = ({
   modifyConditions,
   modifyAbilityActivation,
   onBeforeNonImmediateAction,
+  dispatchAbilityUse,
   now,
   maxLogEntries = DEFAULT_ABILITY_AUTOMATION_LOG_ENTRIES,
 }: UseAbilityAutomationPanelOptions) => {
@@ -153,6 +155,9 @@ export const useAbilityAutomationPanel = ({
     option: TokenAbilityMenuOption,
   ) => {
     onBeforeNonImmediateAction?.({ userId: user.id, abilityName: option.name })
+    const sessionDispatchResult = dispatchAbilityUse?.({ userId: user.id, abilityName: option.name })
+    if (sessionDispatchResult !== undefined) return
+
     await modifyAbilityActivation({
       id: user.id,
       abilityName: option.name,
@@ -173,6 +178,12 @@ export const useAbilityAutomationPanel = ({
     user: SpawnedPokemon,
     option: TokenAbilityMenuOption,
   ) => {
+    const sessionDispatchResult = dispatchAbilityUse?.({ userId: user.id, abilityName: option.name })
+    if (sessionDispatchResult !== undefined) {
+      onBeforeNonImmediateAction?.({ userId: user.id, abilityName: option.name })
+      return
+    }
+
     const transaction = resolveMapAbilityAutomationTransaction({
       abilityName: option.name,
       user,
@@ -234,13 +245,19 @@ export const useAbilityAutomationPanel = ({
     const target = findSpawnedPokemon(targetId)
     if (!user || !target) return
 
+    activeAbilityTargeting.value = null
+    const sessionDispatchResult = dispatchAbilityUse?.({ userId: user.id, abilityName: request.abilityName, targetTokenId: target.id })
+    if (sessionDispatchResult !== undefined) {
+      onBeforeNonImmediateAction?.({ userId: user.id, abilityName: request.abilityName })
+      return
+    }
+
     const transaction = resolveMapAbilityAutomationTransaction({
       abilityName: request.abilityName,
       user,
       target,
       fieldEffects: map.value?.fieldEffects,
     })
-    activeAbilityTargeting.value = null
     if (!transaction) return
 
     await applyAbilityAutomationTransaction(transaction)

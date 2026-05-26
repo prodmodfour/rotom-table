@@ -42,7 +42,9 @@ npm run build
 - [docs/track-2-session-protocol.md](docs/track-2-session-protocol.md) — shared Track 2 session protocol types, message flow, and accepted/rejected command examples.
 - [docs/track-2-websocket-protocol.md](docs/track-2-websocket-protocol.md) — live session WebSocket route, message examples, heartbeat, reconnect, command flow, and named-tunnel expectations.
 - [docs/track-2-table-action-commands.md](docs/track-2-table-action-commands.md) — supported HP, condition, initiative, move/action, hazard, field-effect, and terrain session commands with permissions, conflicts, and limitations.
+- [docs/track-2-client-integration.md](docs/track-2-client-integration.md) — how local map mode and explicit session mode coexist, including disconnect and conflict recovery guidance.
 - [docs/track-2-session-lobby.md](docs/track-2-session-lobby.md) — GM/player join flow, expected LAN usage, and two-browser lobby smoke checklist.
+- [docs/track-2-multi-tab-smoke.md](docs/track-2-multi-tab-smoke.md) — local multi-tab helper for GM/player session-mode token propagation smoke checks.
 - [docs/track-2-session-storage.md](docs/track-2-session-storage.md) — local session snapshot/event-log paths, privacy boundaries, backup guidance, and recovery limits.
 - [docs/local-development.md](docs/local-development.md) — local setup, scripts, and filesystem persistence notes.
 - [docs/fan-project-notice.md](docs/fan-project-notice.md) — fan project and ownership boundaries.
@@ -161,6 +163,7 @@ Saved sheets and maps are edited by the app itself. Track 2 session snapshots an
 | `npm run typecheck` | Run Nuxt/Vue TypeScript checks. |
 | `npm test` | Run the Vitest test suite once. |
 | `npm run test:watch` | Run Vitest in watch mode. |
+| `npm run smoke:session:multi-tab` | Open/print local Track 2 GM/player smoke URLs and run focused token/client smoke checks. |
 | `npm run check:move-automation` | Check move automation coverage. |
 | `npm run sync:item-sprites` | Sync item sprite assets. |
 | `npm run refactor:loop` | Run the refactor loop helper script. |

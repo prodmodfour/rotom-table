@@ -1,6 +1,15 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import AppNavigation from '~/components/AppNavigation.vue'
+import MapSessionNavigationPanel from '~/components/map/MapSessionNavigationPanel.vue'
+
+const props = withDefaults(defineProps<{
+  mapSlug?: string | null
+  sessionModeEnabled?: boolean
+}>(), {
+  mapSlug: null,
+  sessionModeEnabled: false,
+})
 
 const expanded = ref(false)
 const railRef = ref<HTMLElement | null>(null)
@@ -64,6 +73,10 @@ const handleFocusOut = (event: FocusEvent) => {
       class="map-navigation-rail__content"
     >
       <AppNavigation orientation="vertical" :show-role-badge="false" />
+      <MapSessionNavigationPanel
+        :map-slug="props.mapSlug"
+        :session-mode-enabled="props.sessionModeEnabled"
+      />
     </div>
   </aside>
 </template>

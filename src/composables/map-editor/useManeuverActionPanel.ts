@@ -30,6 +30,7 @@ export interface UseManeuverActionPanelOptions {
   trainerBySlug: SheetMapRef<TrainerSheet>
   canControlPlacement: (id: string) => boolean
   onBeforeManeuverAction?: (event: ManeuverActionEvent) => void
+  dispatchManeuverUse?: (event: ManeuverActionEvent & { targetTokenId?: string }) => boolean | undefined
   now?: () => number
   maxLogEntries?: number
 }
@@ -59,6 +60,7 @@ export const useManeuverActionPanel = ({
   trainerBySlug,
   canControlPlacement,
   onBeforeManeuverAction,
+  dispatchManeuverUse,
   now,
   maxLogEntries = DEFAULT_MANEUVER_LOG_ENTRIES,
 }: UseManeuverActionPanelOptions) => {
@@ -132,6 +134,13 @@ export const useManeuverActionPanel = ({
     if (!map.value || !canControlPlacement(user.id)) return false
 
     onBeforeManeuverAction?.({ userId: user.id, maneuverName: maneuver.name })
+    const sessionDispatchResult = dispatchManeuverUse?.({
+      userId: user.id,
+      maneuverName: maneuver.name,
+      ...(target === null ? {} : { targetTokenId: target.id }),
+    })
+    if (sessionDispatchResult !== undefined) return sessionDispatchResult
+
     map.value.metadata = appendManeuverLogEntry(map.value.metadata, {
       userId: user.id,
       userName: user.species,

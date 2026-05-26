@@ -156,7 +156,7 @@ Patch payloads are intentionally narrow. Clients that need a full recovery after
 
 ## Current limitations and migration notes
 
-- The server and WebSocket command boundaries are implemented and covered by focused tests, but broad client UI wiring for HP, conditions, initiative, hazards, field effects, terrain, and action buttons is still part of later client-integration tickets. Token move/turn already have explicit session-mode dispatch and optimistic handling; the table action buttons are documented here as server/socket capabilities until they are wired.
+- The server and WebSocket command boundaries are implemented and covered by focused tests. The map scene panel now routes explicit session-mode scene events for token delete/send-out, HP, combat stages, conditions, move usage, maneuver/ability/order use, next/previous initiative, hazards, move-created field effects, and terrain voxel edits through command envelopes instead of local whole-map mutation. Local mode still uses the existing local-first handlers, and token move/turn keep their explicit optimistic dispatch/reconciliation path.
 - Legacy local mode still uses local-first JSON saves and legacy SSE where applicable. Session mode must continue to use WebSocket commands and small patches.
 - This is not public authentication. The existing local role picker remains a trust switch, while Track 2 commands rely on the session-host flag, hello/auth handshake, GM key, join code, player IDs, client IDs, and server-side assignments.
 - The optional event log is not yet a full replay guarantee. Reconnect remains snapshot-safe when replay is unavailable.
