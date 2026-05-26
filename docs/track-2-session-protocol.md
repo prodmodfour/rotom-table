@@ -2,7 +2,7 @@
 
 This document describes the shared TypeScript protocol contracts introduced for Track 2 session mode. It records the wire vocabulary that later server and client tickets must use when they add the session store, WebSocket endpoint, lobby UI, command handlers, and reconnect behaviour.
 
-This is a contract document, not a claim that every command handler is already complete. The current shared contracts live in `shared/` and are covered by focused Vitest tests; the `moveToken` payload contract and validator now live in `shared/sessionTokenCommands.ts`, while server application, persistence, broadcast, and client dispatch for token movement remain later token-command tickets. See [Track 2 WebSocket protocol](track-2-websocket-protocol.md) for the live socket route, message examples, heartbeat/reconnect flow, command transport boundary, and named-tunnel expectations after the WebSocket transport chunk. See [Track 2 session lobby and manual QA](track-2-session-lobby.md) for the current GM/player join flow and two-browser smoke checklist, and [Track 2 session storage](track-2-session-storage.md) for the operational snapshot/event-log layout, backup guidance, and recovery limitations.
+This is a contract document, not a claim that every command handler is already complete. The current shared contracts live in `shared/` and are covered by focused Vitest tests; the `moveToken` payload contract and validator live in `shared/sessionTokenCommands.ts`, and `server/useCases/applyMoveTokenCommand.ts` now applies authorized token movement to server-owned map state with occupancy/rules validation, revision increments, snapshot persistence, and duplicate-`opId` handling. WebSocket command dispatch, fanout broadcasts, stale same-token rejection, and client dispatch/optimism remain later token-command tickets. See [Track 2 WebSocket protocol](track-2-websocket-protocol.md) for the live socket route, message examples, heartbeat/reconnect flow, command transport boundary, and named-tunnel expectations after the WebSocket transport chunk. See [Track 2 session lobby and manual QA](track-2-session-lobby.md) for the current GM/player join flow and two-browser smoke checklist, and [Track 2 session storage](track-2-session-storage.md) for the operational snapshot/event-log layout, backup guidance, and recovery limitations.
 
 ## Protocol goals
 
@@ -27,7 +27,7 @@ The protocol must preserve these locked decisions:
 | `shared/sessionRevisions.ts` | monotonic `Revision`, `SessionRevision`, `MapRevision` helpers | Wire revisions are safe non-negative integers. Accepted commands advance revisions; rejections and duplicates do not. |
 | `shared/sessionCommands.ts` | command envelope, `opId`, `baseRevision`, scope lanes, metadata | The common command wrapper is shared before individual command payloads are implemented. |
 | `shared/sessionCommandValidation.ts` | common envelope validator | Validates schema, IDs, actor shape, revisions, scopes, metadata, and payload presence. Command-specific payload validation is intentionally separate. |
-| `shared/sessionTokenCommands.ts` | token command payload contracts and validators | Defines the `moveToken` payload, token-position scope helper, grid-position validation, and player/GM token-control permission check used by later token handlers. |
+| `shared/sessionTokenCommands.ts` | token command payload contracts and validators | Defines the `moveToken` payload, token-position scope helper, grid-position validation, and player/GM token-control permission check used by token handlers. |
 | `shared/sessionCommandResults.ts` | accepted, rejected, duplicate, stale, unauthorized, invalid, conflict result shapes | Results are the server's authoritative answer to a submitted command. |
 | `shared/sessionMessages.ts` | WebSocket message unions | Defines client `hello`, `heartbeat`, `command` messages and server `hello`, `heartbeat`, `commandAck`, `commandReject`, `snapshot`, `patch`, `presence`, and `error` messages. |
 | `shared/sessionState.ts` | authoritative session state model | Defines the server-owned session snapshot shape: selected map slug, session/map revisions, map documents, connected clients, joined players, and GM-managed assignments. |
@@ -627,7 +627,7 @@ A server heartbeat ping uses the same message shape with `direction: "server"` a
 
 ### 4. Client command
 
-The client wraps a command envelope in a client `command` message. The `moveToken` payload below is the shared command contract shape; later token-command tickets wire it into server application, persistence, broadcasts, and client dispatch.
+The client wraps a command envelope in a client `command` message. The `moveToken` payload below is the shared command contract shape. The server-side `applyMoveTokenCommandUseCase` can validate and apply this command against authoritative state, but the WebSocket route still returns `unsupported-message` for command frames until the later dispatch/broadcast tickets wire it into the live socket path.
 
 ```json
 {
@@ -676,7 +676,7 @@ The shared `validateMoveTokenCommand` helper composes the common envelope valida
 
 ## Accepted command example
 
-When a command is valid, authorized, and non-conflicting, the server applies it to authoritative state, advances the revision once, persists the authoritative change, replies to the sender with `commandAck`, and broadcasts a small `patch` event to relevant clients in the same session.
+When a command is valid, authorized, and non-conflicting, the server applies it to authoritative state, advances the revision once, and persists the authoritative change. The `moveToken` server use case now produces the accepted result and `tokenMoved` patch event shown below; later socket tickets send the `commandAck` to the sender and broadcast the small `patch` event to relevant clients in the same session.
 
 ```json
 {

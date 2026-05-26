@@ -9,7 +9,7 @@ This document describes the transport slice that exists after the WebSocket tran
 - the server validates hello, heartbeat, and command frame shapes before dispatch;
 - same-session fanout exists for presence, command results, patches, and snapshots;
 - reconnect currently falls back to an authoritative snapshot when replay is unavailable;
-- the shared `moveToken` command payload contract and validator exist, but command-specific application/broadcast/client handlers are still later tickets, so accepted/rejected examples below are the contract those handlers must follow rather than proof that token movement already applies.
+- the shared `moveToken` command payload contract, validator, and server-side application use case exist, but WebSocket command dispatch, broadcast fanout, stale same-token rejection, and client handlers are still later tickets, so accepted/rejected examples below describe the contract those socket handlers will send rather than proof that token movement already applies through `/api/sessions/socket`.
 
 ## Route, runtime gate, and URL shape
 
@@ -252,7 +252,7 @@ GM snapshots can include the full server-owned state. Player snapshots are filte
 
 ## Command flow
 
-The client sends a command envelope inside a client `command` message. The envelope includes the authenticated actor, an `opId`, `baseRevision`, scope lanes, and a JSON payload. The `moveToken` example below matches the shared payload validator, while server application and broadcasts remain later token-command work.
+The client sends a command envelope inside a client `command` message. The envelope includes the authenticated actor, an `opId`, `baseRevision`, scope lanes, and a JSON payload. The `moveToken` example below matches the shared payload validator and the server-side application use case; WebSocket dispatch and broadcasts remain later token-command work.
 
 ```json
 {
@@ -297,16 +297,15 @@ The client sends a command envelope inside a client `command` message. The envel
 }
 ```
 
-Server processing order for future command handlers:
+Server processing order for the command path:
 
 1. Validate the WebSocket frame and command envelope.
 2. Verify the command `sessionId` and actor match the authenticated socket.
 3. Check permissions and visibility against the current authoritative session state.
 4. Check `opId` idempotency before applying side effects.
-5. Compare `baseRevision` and scopes against current state and recent resource changes.
-6. Apply valid non-conflicting effects to server-owned state.
-7. Increment the relevant revision, persist a snapshot/event, send `commandAck` to the sender, and fan out a small `patch` to same-session clients.
-8. Return `commandReject` for invalid, unauthorized, stale, or conflicting commands without advancing revision.
+5. Apply valid non-conflicting effects to server-owned state after command-specific rules checks such as map bounds, blocking voxels, and occupied token cells. Stale same-token revision rejection lands in a later token-command ticket.
+6. Increment the relevant revision, persist a snapshot/event, send `commandAck` to the sender, and fan out a small `patch` to same-session clients.
+7. Return `commandReject` for invalid, unauthorized, stale, or conflicting commands without advancing revision.
 
 Current transport boundary: until command-specific dispatch lands, a valid authenticated command frame receives a server `error` with `code: "unsupported-message"` instead of mutating state.
 
