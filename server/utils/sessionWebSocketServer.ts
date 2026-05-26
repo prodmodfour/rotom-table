@@ -1,3 +1,6 @@
+import {
+  type SessionCommandResult,
+} from '#shared/sessionCommandResults'
 import { validateSessionCommandEnvelope } from '#shared/sessionCommandValidation'
 import type { SessionCommandEnvelope } from '#shared/sessionCommands'
 import {
@@ -20,12 +23,15 @@ import {
   type SessionErrorDetails,
   type SessionErrorMessage,
   type SessionHeartbeatMessage,
+  type SessionPatchEvent,
   type SessionServerHelloMessage,
   type SessionSnapshotMessage,
 } from '#shared/sessionMessages'
 import {
   MOVE_TOKEN_COMMAND_TYPE,
+  TURN_TOKEN_COMMAND_TYPE,
   type MoveTokenCommand,
+  type TurnTokenCommand,
 } from '#shared/sessionTokenCommands'
 import type { TabletopMapV2 } from '~/types/map'
 import {
@@ -34,6 +40,12 @@ import {
   type ApplyMoveTokenCommandInput,
   type ApplyMoveTokenCommandUseCaseResult,
 } from '../useCases/applyMoveTokenCommand'
+import {
+  applyTurnTokenCommandUseCase,
+  type ApplyTurnTokenCommandDependencies,
+  type ApplyTurnTokenCommandInput,
+  type ApplyTurnTokenCommandUseCaseResult,
+} from '../useCases/applyTurnTokenCommand'
 import { findPlayerAssignment, type SessionActor } from '#shared/sessionPermissions'
 import { isSessionRevision, type SessionRevision } from '#shared/sessionRevisions'
 import {
@@ -189,8 +201,18 @@ export type SessionSocketMoveTokenCommandApplier = (
   dependencies?: ApplyMoveTokenCommandDependencies,
 ) => ApplyMoveTokenCommandUseCaseResult
 
+export type SessionSocketTurnTokenCommandApplier = (
+  input: ApplyTurnTokenCommandInput,
+  dependencies?: ApplyTurnTokenCommandDependencies,
+) => ApplyTurnTokenCommandUseCaseResult
+
 export type SessionSocketMoveTokenCommandDependencies = Omit<
   ApplyMoveTokenCommandDependencies,
+  'env' | 'store' | 'clock'
+>
+
+export type SessionSocketTurnTokenCommandDependencies = Omit<
+  ApplyTurnTokenCommandDependencies,
   'env' | 'store' | 'clock'
 >
 
@@ -201,7 +223,9 @@ export interface SessionSocketHandlerDependencies<TMapDocument = unknown> {
   readonly store?: InMemorySessionStore<AuthoritativeSessionState<TMapDocument>>
   readonly clock?: SessionSocketClock
   readonly applyMoveTokenCommand?: SessionSocketMoveTokenCommandApplier
+  readonly applyTurnTokenCommand?: SessionSocketTurnTokenCommandApplier
   readonly moveTokenCommandDependencies?: SessionSocketMoveTokenCommandDependencies
+  readonly turnTokenCommandDependencies?: SessionSocketTurnTokenCommandDependencies
 }
 
 type MutablePendingSessionSocketConnection = {
@@ -223,7 +247,9 @@ interface ResolvedSessionSocketHandlerDependencies<TMapDocument = unknown> {
   readonly store: InMemorySessionStore<AuthoritativeSessionState<TMapDocument>>
   readonly clock: SessionSocketClock
   readonly applyMoveTokenCommand: SessionSocketMoveTokenCommandApplier
+  readonly applyTurnTokenCommand: SessionSocketTurnTokenCommandApplier
   readonly moveTokenCommandDependencies: SessionSocketMoveTokenCommandDependencies
+  readonly turnTokenCommandDependencies: SessionSocketTurnTokenCommandDependencies
 }
 
 interface SessionSocketHandshakeFailure {
@@ -634,7 +660,9 @@ const resolveDependencies = <TMapDocument>(
   store: dependencies.store ?? (sessionStore as InMemorySessionStore<AuthoritativeSessionState<TMapDocument>>),
   clock: dependencies.clock ?? defaultSessionSocketClock,
   applyMoveTokenCommand: dependencies.applyMoveTokenCommand ?? applyMoveTokenCommandUseCase,
+  applyTurnTokenCommand: dependencies.applyTurnTokenCommand ?? applyTurnTokenCommandUseCase,
   moveTokenCommandDependencies: dependencies.moveTokenCommandDependencies ?? {},
+  turnTokenCommandDependencies: dependencies.turnTokenCommandDependencies ?? {},
 })
 
 const sendJson = (peer: SessionSocketPeerLike, value: unknown): void => {
@@ -1395,10 +1423,10 @@ const handleAuthenticatedSocketCommand = <TMapDocument>(
 ): void => {
   const command = commandMessage.command
 
-  if (command.type !== MOVE_TOKEN_COMMAND_TYPE) {
+  if (command.type !== MOVE_TOKEN_COMMAND_TYPE && command.type !== TURN_TOKEN_COMMAND_TYPE) {
     sendJson(peer, createSessionSocketErrorMessage({
       code: 'unsupported-message',
-      message: 'Track 2 session WebSocket command dispatch currently supports moveToken commands only.',
+      message: 'Track 2 session WebSocket command dispatch currently supports moveToken and turnToken commands only.',
       retryable: false,
       sessionId: connection.sessionId,
       currentRevision: connection.currentRevision,
@@ -1406,16 +1434,27 @@ const handleAuthenticatedSocketCommand = <TMapDocument>(
     return
   }
 
-  let applied: ApplyMoveTokenCommandUseCaseResult
+  let applied: ApplyMoveTokenCommandUseCaseResult | ApplyTurnTokenCommandUseCaseResult
   try {
-    applied = dependencies.applyMoveTokenCommand({
-      command: command as MoveTokenCommand,
-    }, {
-      ...dependencies.moveTokenCommandDependencies,
-      env: dependencies.env,
-      store: dependencies.store as unknown as InMemorySessionStore<AuthoritativeSessionState<TabletopMapV2>>,
-      clock: () => receivedAt,
-    })
+    if (command.type === MOVE_TOKEN_COMMAND_TYPE) {
+      applied = dependencies.applyMoveTokenCommand({
+        command: command as MoveTokenCommand,
+      }, {
+        ...dependencies.moveTokenCommandDependencies,
+        env: dependencies.env,
+        store: dependencies.store as unknown as InMemorySessionStore<AuthoritativeSessionState<TabletopMapV2>>,
+        clock: () => receivedAt,
+      })
+    } else {
+      applied = dependencies.applyTurnTokenCommand({
+        command: command as TurnTokenCommand,
+      }, {
+        ...dependencies.turnTokenCommandDependencies,
+        env: dependencies.env,
+        store: dependencies.store as unknown as InMemorySessionStore<AuthoritativeSessionState<TabletopMapV2>>,
+        clock: () => receivedAt,
+      })
+    }
   } catch (error) {
     sendJson(peer, createSessionSocketErrorMessage({
       code: socketErrorCodeForCommandDispatchError(error),
@@ -1427,7 +1466,9 @@ const handleAuthenticatedSocketCommand = <TMapDocument>(
     return
   }
 
-  const resultMessage = createSessionCommandResultFanoutMessage(applied.result)
+  const resultMessage = createSessionCommandResultFanoutMessage(
+    applied.result as SessionCommandResult<string, unknown, unknown, SessionRevision>,
+  )
   sendJson(peer, resultMessage)
   updateAuthenticatedSessionSocketRevisions(
     applied.result.sessionId,
@@ -1439,7 +1480,7 @@ const handleAuthenticatedSocketCommand = <TMapDocument>(
 
   const patchMessage = createSessionPatchFanoutMessage(
     applied.result.sessionId,
-    applied.patchEvent,
+    applied.patchEvent as SessionPatchEvent<string, unknown, SessionRevision>,
   )
 
   if (dependencies.peers === undefined) {

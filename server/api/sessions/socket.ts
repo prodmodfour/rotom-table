@@ -6,8 +6,8 @@
  * GM/player hello identity before a socket is associated with a session and
  * keeps authenticated sockets alive with app-level heartbeat ping/pong frames,
  * sends reconnect snapshot fallback when replay is unavailable, dispatches
- * server-authoritative moveToken commands, and fans out server presence plus
- * accepted tokenMoved patches only to authenticated peers in the same session.
+ * server-authoritative moveToken and turnToken commands, and fans out server
+ * presence plus accepted tokenMoved/tokenTurned patches only to authenticated peers in the same session.
  * This route still does not grant map-edit authority by itself.
  */
 import { defineWebSocketHandler } from 'h3'

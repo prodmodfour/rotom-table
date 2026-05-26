@@ -20,15 +20,27 @@ import {
   MOVE_TOKEN_COMMAND_SCOPE_FIELD,
   MOVE_TOKEN_COMMAND_TYPE,
   MOVE_TOKEN_COMMAND_VALIDATION_CODES,
+  SESSION_TOKEN_FACING_DIRECTIONS,
+  TURN_TOKEN_COMMAND_SCOPE_FIELD,
+  TURN_TOKEN_COMMAND_TYPE,
+  TURN_TOKEN_COMMAND_VALIDATION_CODES,
   assertValidMoveTokenCommand,
+  assertValidTurnTokenCommand,
   createMoveTokenCommandScope,
+  createTurnTokenCommandScope,
   isMoveTokenCommandValidationCode,
   isMoveTokenPosition,
+  isSessionTokenFacingDirection,
+  isTurnTokenCommandValidationCode,
   validateMoveTokenCommand,
+  validateTurnTokenCommand,
   type MoveTokenCommand,
   type MoveTokenCommandPayload,
   type MoveTokenCommandValidationCode,
   type MoveTokenGridPosition,
+  type TurnTokenCommand,
+  type TurnTokenCommandPayload,
+  type TurnTokenCommandValidationCode,
 } from '#shared/sessionTokenCommands'
 import { parseOpId } from '#shared/sessionCommands'
 
@@ -107,6 +119,24 @@ const buildMoveTokenCommand = (
   payload: {
     tokenId: 'token-pikachu',
     to: { x: 4, y: 1, z: 6 },
+    ...overrides,
+  },
+})
+
+const buildTurnTokenCommand = (
+  overrides: Partial<TurnTokenCommandPayload> = {},
+  actor: PlayerSessionActor | GmSessionActor = playerActor,
+): TurnTokenCommand<typeof actor> => ({
+  schemaVersion: SESSION_COMMAND_ENVELOPE_VERSION,
+  sessionId,
+  actor,
+  type: TURN_TOKEN_COMMAND_TYPE,
+  opId,
+  baseRevision: parseSessionRevision(7),
+  scopes: [createTurnTokenCommandScope(tokenResource)],
+  payload: {
+    tokenId: 'token-pikachu',
+    facing: 'north-west',
     ...overrides,
   },
 })
@@ -278,5 +308,128 @@ describe('moveToken command contract and validator', () => {
     })
     expect(() => assertValidMoveTokenCommand(unassignedCommand, { assignments }, 'test move'))
       .toThrow('test move is invalid')
+  })
+})
+
+describe('turnToken command contract and validator', () => {
+  it('defines the command type, payload, facing values, and token facing scope helper', () => {
+    const payload = {
+      tokenId: 'token-pikachu',
+      facing: 'north-west',
+    } as const satisfies TurnTokenCommandPayload
+    const scope = createTurnTokenCommandScope(tokenResource)
+
+    expect(TURN_TOKEN_COMMAND_TYPE).toBe('turnToken')
+    expect(TURN_TOKEN_COMMAND_SCOPE_FIELD).toBe('facing')
+    expect(SESSION_TOKEN_FACING_DIRECTIONS).toEqual([
+      'south-east',
+      'north-east',
+      'north-west',
+      'south-west',
+    ])
+    expect(TURN_TOKEN_COMMAND_VALIDATION_CODES).toContain('invalid-facing')
+    expect(isTurnTokenCommandValidationCode('permission-denied')).toBe(true)
+    expect(isTurnTokenCommandValidationCode('invalid-position')).toBe(false)
+    expect(isSessionTokenFacingDirection(payload.facing)).toBe(true)
+    expect(isSessionTokenFacingDirection('north')).toBe(false)
+    expect(scope).toEqual({
+      lane: 'token',
+      resource: tokenResource,
+      field: 'facing',
+      mapSlug: 'viridian-gym',
+    })
+
+    expectTypeOf<(typeof TURN_TOKEN_COMMAND_VALIDATION_CODES)[number]>()
+      .toEqualTypeOf<TurnTokenCommandValidationCode>()
+  })
+
+  it('accepts valid player and GM turnToken commands with token-control permission checks', () => {
+    const playerCommand = buildTurnTokenCommand()
+    const playerResult = validateTurnTokenCommand(playerCommand, { assignments })
+    const gmCommand = buildTurnTokenCommand({}, gmActor)
+    const gmResult = validateTurnTokenCommand(gmCommand)
+
+    expect(playerResult.valid).toBe(true)
+    if (!playerResult.valid) throw new Error('expected player turnToken command to validate')
+    expect(playerResult.payload).toEqual({ tokenId: 'token-pikachu', facing: 'north-west' })
+    expect(playerResult.resource).toEqual(tokenResource)
+    expect(playerResult.permission).toMatchObject({ allowed: true, role: 'player' })
+    expect(assertValidTurnTokenCommand(playerCommand, { assignments })).toBe(playerCommand)
+    expectTypeOf(playerResult.command).toMatchTypeOf<SessionCommandEnvelope<'turnToken'>>()
+
+    expect(gmResult.valid).toBe(true)
+    if (!gmResult.valid) throw new Error('expected GM turnToken command to validate')
+    expect(gmResult.permission).toMatchObject({ allowed: true, role: 'gm' })
+  })
+
+  it('validates turnToken command type, payload facing shape, and matching facing scope', () => {
+    const invalidPayloadCommand = {
+      ...buildTurnTokenCommand(),
+      type: 'moveToken',
+      payload: {
+        tokenId: '',
+        facing: 'north',
+      },
+    }
+    const invalidScopeCommand = {
+      ...buildTurnTokenCommand(),
+      scopes: [
+        {
+          lane: 'token',
+          resource: tokenResource,
+          field: 'position',
+          mapSlug: 'viridian-gym',
+        },
+      ],
+    }
+
+    const payloadResult = validateTurnTokenCommand(invalidPayloadCommand, { assignments })
+    const payloadIssueByPath = new Map(payloadResult.issues.map((issue) => [issue.path, issue]))
+    const scopeResult = validateTurnTokenCommand(invalidScopeCommand, { assignments })
+
+    expect(payloadResult.valid).toBe(false)
+    expect(payloadIssueByPath.get('type')?.code).toBe('invalid-command-type')
+    expect(payloadIssueByPath.get('payload.tokenId')?.code).toBe('invalid-token-id')
+    expect(payloadIssueByPath.get('payload.facing')?.code).toBe('invalid-facing')
+    expect(scopeResult.valid).toBe(false)
+    expect(scopeResult.issues).toMatchObject([
+      {
+        path: 'scopes',
+        code: 'invalid-token-scope',
+      },
+    ])
+  })
+
+  it('denies player turnToken commands for unassigned, hidden, or unknown-player token control', () => {
+    const unassignedCommand = {
+      ...buildTurnTokenCommand({ tokenId: 'token-eevee' }),
+      scopes: [createTurnTokenCommandScope(unassignedTokenResource)],
+    }
+    const hiddenAssignment = {
+      ...assignment,
+      visibleResources: [],
+    } satisfies PlayerAssignmentRecord
+    const unknownPlayerCommand = buildTurnTokenCommand({}, otherPlayerActor)
+
+    const unassignedResult = validateTurnTokenCommand(unassignedCommand, { assignments })
+    const hiddenResult = validateTurnTokenCommand(buildTurnTokenCommand(), {
+      assignments: [hiddenAssignment],
+    })
+    const unknownResult = validateTurnTokenCommand(unknownPlayerCommand, { assignments })
+
+    expect(unassignedResult.valid).toBe(false)
+    expect(unassignedResult).toMatchObject({
+      permission: { allowed: false, reason: 'resource-not-assigned', role: 'player' },
+    })
+    expect(hiddenResult.valid).toBe(false)
+    expect(hiddenResult).toMatchObject({
+      permission: { allowed: false, reason: 'resource-not-visible', role: 'player' },
+    })
+    expect(unknownResult.valid).toBe(false)
+    expect(unknownResult).toMatchObject({
+      permission: { allowed: false, reason: 'missing-player-identity', role: 'player' },
+    })
+    expect(() => assertValidTurnTokenCommand(unassignedCommand, { assignments }, 'test turn'))
+      .toThrow('test turn is invalid')
   })
 })
