@@ -562,6 +562,17 @@ A transport-only smoke check should verify:
 6. Malformed, pre-auth, cross-session, or actor-mismatched frames receive safe errors and do not mutate state.
 7. Legacy `/api/events` still works for non-session local-first realtime and is not used by session clients.
 
+## Automated chunk-05 token command smoke coverage
+
+`tests/server/sessionTokenCommandTwoClientSmoke.test.ts` is the chunk-05 two-client token-command smoke test. It opens authenticated GM and player WebSocket peers in the same session, assigns the player a token, and verifies that:
+
+1. the player can send `moveToken` for the assigned token, receive an accepted `commandAck`, and both clients receive the same small `tokenMoved` patch;
+2. the GM can send `turnToken` at the next revision, receive an accepted `commandAck`, and both clients receive the same small `tokenTurned` patch;
+3. neither patch carries whole-map fields such as `placements` or `fieldEffects`;
+4. the server-owned session/map revisions, persisted snapshot calls, socket revision tracking, and authoritative token position/facing all advance to revision 2.
+
+This automated fake-peer smoke test does not replace later browser multi-tab, LAN, or named-tunnel smoke scripts; it locks the server-authoritative two-client command/fanout behaviour while those later operational checks are still pending.
+
 ## Related docs
 
 - [Track 2 session protocol](track-2-session-protocol.md)
