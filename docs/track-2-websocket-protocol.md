@@ -536,7 +536,7 @@ No session data should be sent to a socket before hello/auth, and no presence, p
 
 ## Named Cloudflare Tunnel expectations
 
-LAN remains the primary supported Track 2 hosting path. For remote players, the supported path is a named Cloudflare Tunnel with a stable hostname pointing to the private GM-hosted Rotom Table server.
+LAN remains the primary supported Track 2 hosting path. For same-Wi-Fi startup commands, IP discovery, player browser paths, and network troubleshooting, use the [Track 2 LAN hosting runbook](track-2-lan-hosting.md). For remote players, the supported path is a named Cloudflare Tunnel with a stable hostname pointing to the private GM-hosted Rotom Table server.
 
 WebSocket-specific expectations for that named tunnel:
 
@@ -577,6 +577,7 @@ This automated fake-peer smoke test complements the local browser helper in [Tra
 
 - [Track 2 session protocol](track-2-session-protocol.md)
 - [Track 2 session lobby and manual QA](track-2-session-lobby.md)
+- [Track 2 LAN hosting runbook](track-2-lan-hosting.md)
 - [Track 2 multi-tab local smoke script](track-2-multi-tab-smoke.md)
 - [Track 2 session storage](track-2-session-storage.md)
 - [Track 2 validation matrix](track-2-validation-matrix.md)

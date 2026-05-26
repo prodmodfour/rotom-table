@@ -1,0 +1,193 @@
+# Track 2 LAN hosting runbook
+
+This runbook is the supported same-network hosting path for Track 2 table sessions. The GM runs Rotom Table on a machine they control, enables the session host explicitly, and players connect from browsers on the same Wi-Fi or wired LAN.
+
+LAN hosting keeps the locked Track 2 architecture intact: one GM-hosted server owns session authority, live clients use `WebSocket /api/sessions/socket`, commands are acknowledged or rejected by the server, state is persisted as local JSON snapshots/event logs, and browsers must not autosave whole maps as the live session concurrency mechanism.
+
+For the lobby flow itself, see [Track 2 session lobby and manual QA](track-2-session-lobby.md). For local multi-tab token propagation checks, see [Track 2 multi-tab local smoke script](track-2-multi-tab-smoke.md). Remote play over the internet is separate named Cloudflare Tunnel work; do not use ad-hoc public exposure as the LAN path.
+
+## Before you start
+
+Use this runbook when all players are on the same trusted local network.
+
+Preflight checklist:
+
+- [ ] The GM machine is on a private network the GM controls or trusts.
+- [ ] Players are on the same Wi-Fi/LAN, not a guest network with client isolation enabled.
+- [ ] Dependencies are installed with `npm install`.
+- [ ] The working tree is clean enough that generated session files or private campaign data will be easy to spot before committing.
+- [ ] The GM has chosen the existing local **GM Login** role before starting a session.
+- [ ] The GM understands the local role picker is a trust switch for local use, not hardened public authentication.
+- [ ] The GM is not port-forwarding the dev server through a router and is not using Quick Tunnel for a campaign session.
+
+Useful verification before a real table session:
+
+```bash
+npm run typecheck
+npm test
+npm run build
+```
+
+## Start the LAN host
+
+Session hosting is disabled unless the exact runtime flag is set. For a development LAN session on macOS/Linux, start Nuxt bound to every local interface:
+
+```bash
+ROTOM_ENABLE_SESSION_HOST=1 npm run dev -- --host 0.0.0.0
+```
+
+If you need an explicit port, keep the port in the player URL:
+
+```bash
+ROTOM_ENABLE_SESSION_HOST=1 npm run dev -- --host 0.0.0.0 --port 3000
+```
+
+PowerShell equivalent:
+
+```powershell
+$env:ROTOM_ENABLE_SESSION_HOST = "1"
+npm run dev -- --host 0.0.0.0 --port 3000
+```
+
+Notes:
+
+- `--host 0.0.0.0` is what makes the dev server listen on the LAN interface. Without it, `localhost` may work only on the GM machine.
+- Keep the terminal open for the whole session. If the GM laptop sleeps, changes networks, or stops the process, players will disconnect and need to reconnect.
+- The WebSocket route uses the same origin and port as the browser page. Players do not need a separate socket URL; `http://192.168.1.42:3000` resolves the socket as `ws://192.168.1.42:3000/api/sessions/socket`.
+- A later hosting-hardening ticket may add a dedicated npm helper script. Until then, use the explicit flag plus `--host 0.0.0.0` command above.
+
+## Find the GM machine's LAN address
+
+Nuxt often prints a `Network:` URL after startup. Prefer that private URL if it appears. If not, find an IPv4 address on the active Wi-Fi or wired interface.
+
+Common commands:
+
+| Platform | Command | What to use |
+| --- | --- | --- |
+| macOS Wi-Fi | `ipconfig getifaddr en0` | The printed IPv4 address, often `192.168.x.x` or `10.x.x.x`. |
+| macOS fallback | `ifconfig | grep "inet "` | Use the non-`127.0.0.1` address for the active interface. |
+| Linux | `hostname -I` | Use the first private IPv4 address for the active LAN. |
+| Linux detailed | `ip -4 addr show scope global` | Use the `inet` address on Wi-Fi or Ethernet, without the `/24` suffix. |
+| Windows PowerShell/CMD | `ipconfig` | Use the `IPv4 Address` under the active Wi-Fi or Ethernet adapter. |
+
+Good LAN addresses usually look like one of these private ranges:
+
+- `192.168.x.x`
+- `10.x.x.x`
+- `172.16.x.x` through `172.31.x.x`
+
+Do not give players `localhost`, `127.0.0.1`, `0.0.0.0`, a `169.254.x.x` link-local address, or a public IP address. `localhost` always means "this same device," so on a player laptop it points at the player laptop, not the GM host.
+
+Example player-facing base URL:
+
+```text
+http://192.168.1.42:3000
+```
+
+## GM setup flow
+
+1. Start Rotom Table with `ROTOM_ENABLE_SESSION_HOST=1 npm run dev -- --host 0.0.0.0`.
+2. On the GM machine, open `http://localhost:3000/login` or `http://<GM-LAN-IP>:3000/login` and choose **GM Login**.
+3. Open `http://<GM-LAN-IP>:3000/sessions#gm-lobby-title` so the safety banner evaluates the same LAN URL that players will use.
+4. Confirm the safety banner reports hosting enabled and a LAN/private-network exposure. If it reports disabled, stop and restart with the runtime flag. If it reports remote or unknown unexpectedly, do not share the URL until the network path is understood.
+5. Press **Start GM session**.
+6. Confirm the lobby shows a session ID, revision, and player join code. The GM key must not be shown in page chrome or copied into chat.
+7. Share only the player-facing base URL and join code with trusted players, for example:
+
+   ```text
+   Open http://192.168.1.42:3000/sessions#player-lobby-title and enter the join code I will send separately.
+   ```
+
+8. After players join, use **Refresh lobby** to verify player display names and assignment counts.
+9. When the table is ready, open the session map intentionally with `?session=1`, for example `http://192.168.1.42:3000/maps/viridian-gym?session=1`.
+
+The plain `/maps/<slug>` route remains local-first. Use it for normal local editing; use `/maps/<slug>?session=1` when the live table should use server-authoritative session commands.
+
+## Player join flow
+
+Players should use a separate browser profile, browser container, or private/incognito window from any GM browser identity.
+
+1. Join the same Wi-Fi/LAN as the GM.
+2. Open the GM-provided URL, for example `http://192.168.1.42:3000/sessions#player-lobby-title`.
+3. Enter the join code and a display name.
+4. Press **Join session**.
+5. Confirm the player summary shows the expected display name, active session status, and current revision.
+6. Open the explicit session map only after joining, for example `http://192.168.1.42:3000/maps/viridian-gym?session=1`.
+7. If a command is rejected as unauthorized, ask the GM to assign the relevant token or sheet. If it is rejected as stale/conflicting, use the in-app refresh/reconnect guidance before retrying.
+
+Players should not use `http://localhost:3000` unless Rotom Table is running on their own machine. They should not receive GM keys, raw snapshots, local session files, private maps/sheets, or router/tunnel credentials.
+
+## LAN smoke checklist
+
+Use this quick pass before relying on a LAN session for play:
+
+- [ ] GM starts with `ROTOM_ENABLE_SESSION_HOST=1 npm run dev -- --host 0.0.0.0`.
+- [ ] GM opens `/sessions` through the private LAN URL and confirms the safety banner classifies the exposure as LAN/private.
+- [ ] Player opens `http://<GM-LAN-IP>:3000/sessions#player-lobby-title` from a different device and can load the page.
+- [ ] GM starts a session; player joins with a display name and the join code.
+- [ ] GM refreshes the lobby and sees the player exactly once.
+- [ ] GM and player open `http://<GM-LAN-IP>:3000/maps/<map-slug>?session=1`.
+- [ ] A basic token move/turn or other supported session command propagates through the session view without a whole-map autosave.
+- [ ] Reloading the player session map reconnects or requests a snapshot rather than making stale browser state authoritative.
+- [ ] The plain `http://<GM-LAN-IP>:3000/maps/<map-slug>` route still behaves as local-first mode.
+- [ ] No generated `data/sessions/` files, join codes, GM keys, or private campaign data are staged for commit.
+
+You can reuse the existing local smoke helper to print LAN URLs by passing the LAN base URL:
+
+```bash
+npm run smoke:session:multi-tab -- --base-url http://<GM-LAN-IP>:3000 --map <map-slug> --no-open
+```
+
+The helper is still a local browser aid; this runbook remains the source for cross-device LAN setup and network troubleshooting.
+
+## Troubleshooting
+
+| Symptom | Likely cause | What to check |
+| --- | --- | --- |
+| Player browser cannot load the page | Server is bound only to localhost, wrong IP/port, firewall block, or network isolation | Restart with `--host 0.0.0.0`; confirm the URL includes the printed/private IP and port; make sure both devices are on the same Wi-Fi/LAN; disable guest/client isolation; allow Node/Nuxt through the OS firewall. |
+| Player used `localhost` and sees nothing or another app | `localhost` points to the player device | Use `http://<GM-LAN-IP>:3000`, not `localhost`, from player devices. |
+| Safety banner says hosting disabled | Runtime flag was not set when Nuxt started | Stop the server and restart with `ROTOM_ENABLE_SESSION_HOST=1`; changing the environment variable after startup is not enough. |
+| Safety banner says local while testing LAN | The GM opened `localhost` | Reopen `/sessions` through `http://<GM-LAN-IP>:3000/sessions` to verify the player-facing path. |
+| Safety banner says remote or unknown unexpectedly | The request may be coming through a proxy, tunnel, VPN, public hostname, or unusual interface | Do not share the join code until the path is understood. For remote play, wait for the named Cloudflare Tunnel runbook rather than improvising public exposure. |
+| Join code fails | Code was copied incorrectly, the session ended, or the player has stale browser identity | Re-copy the current code from the GM lobby, refresh the GM lobby, use **Forget in this browser** on stale clients, then join again. |
+| WebSocket stays disconnected/reconnecting | Network changed, laptop slept, firewall/proxy closed the socket, or the browser is on a different network | Keep the GM host awake, reload the player page, use the reconnect/snapshot banner, and verify `ws://<GM-LAN-IP>:3000/api/sessions/socket` is not blocked by local security software. |
+| Player can see the session but cannot move a token | Player has not been assigned that token/sheet or the resource is not visible | The GM must assign controllable resources for player commands; GM-only commands remain GM-only. |
+| Command rejected as stale/conflict | Another accepted command changed the same resource first | Refresh the session snapshot, inspect current state, and retry from the latest table state. |
+| Local files changed after the smoke | Session snapshots/event logs are local runtime data | `data/sessions/` is ignored/private. Do not commit session files, generated private sheets, GM keys, join codes, screenshots with secrets, or real `.env` files. |
+
+Firewall hints:
+
+- macOS may prompt to allow incoming connections for Node or the terminal app.
+- Windows may prompt through Windows Defender Firewall; allow access only on private networks you trust.
+- Linux users with `ufw` can temporarily allow the dev port with `sudo ufw allow 3000/tcp` and remove that rule after the session if it is no longer needed.
+
+## Shut down after play
+
+1. Ask players to stop sending commands and close session-map tabs.
+2. In each browser profile that should not remember the table identity, use **Forget in this browser** from `/sessions`.
+3. Stop the Nuxt process with `Ctrl+C`.
+4. Unset the runtime flag in shells that keep environment variables:
+
+   ```bash
+   unset ROTOM_ENABLE_SESSION_HOST
+   ```
+
+   PowerShell:
+
+   ```powershell
+   Remove-Item Env:ROTOM_ENABLE_SESSION_HOST
+   ```
+
+5. Remove any temporary firewall rule if you added one only for the session.
+6. Check `git status --short` and make sure no private campaign data, generated session snapshots/event logs, join codes, GM keys, tunnel credentials, or real `.env` files are staged.
+
+Back up local session snapshots only if the GM intentionally wants a private recovery copy. See [Track 2 session storage](track-2-session-storage.md) for snapshot/event-log backup and recovery guidance.
+
+## Boundaries
+
+- LAN hosting is the primary supported Track 2 path; remote players should use the later named Cloudflare Tunnel runbook with a stable hostname.
+- Quick Tunnel is not the supported campaign-session path.
+- The existing `/login` GM/player picker is not public auth.
+- The session join code and GM key are session-local credentials, not full accounts.
+- Do not add a database, cloud persistence layer, SaaS deployment target, or shared-document autosave model to make LAN hosting work.
+- Keep Track 1 map rendering and local-first workflows intact; explicit session mode is entered through `/maps/<slug>?session=1`.

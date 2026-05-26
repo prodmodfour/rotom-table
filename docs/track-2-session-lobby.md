@@ -2,7 +2,7 @@
 
 This guide documents the current Track 2 lobby slice: how a GM starts a guarded session, how a player joins with a session-local display name, how the minimal lobby should behave on a LAN, and how to manually smoke-test the flow with two browsers.
 
-It is intentionally scoped to the identity/join/lobby surface. For the client-integration smoke that opens explicit GM/player session-map tabs and checks basic token command propagation, see [Track 2 multi-tab local smoke script](track-2-multi-tab-smoke.md). Full LAN and named-tunnel hosting runbooks land in later Track 2 phases.
+It is intentionally scoped to the identity/join/lobby surface. For same-Wi-Fi setup commands, IP discovery, player browser URLs, and cross-device troubleshooting, see the [Track 2 LAN hosting runbook](track-2-lan-hosting.md). For the client-integration smoke that opens explicit GM/player session-map tabs and checks basic token command propagation, see [Track 2 multi-tab local smoke script](track-2-multi-tab-smoke.md). Named-tunnel hosting runbooks land in later Track 2 phases.
 
 ## What exists in this slice
 
@@ -36,7 +36,7 @@ Important boundaries:
 
 ## Expected LAN usage for the lobby slice
 
-For the current lobby slice, the expected table shape is still GM-hosted and LAN-first:
+For detailed same-network setup and troubleshooting, use the [Track 2 LAN hosting runbook](track-2-lan-hosting.md). For the current lobby slice, the expected table shape is still GM-hosted and LAN-first:
 
 1. The GM runs Rotom Table on their own machine or a small machine they control.
 2. Session hosting is explicitly enabled with `ROTOM_ENABLE_SESSION_HOST=1`.

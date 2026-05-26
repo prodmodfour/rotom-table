@@ -44,6 +44,7 @@ npm run build
 - [docs/track-2-table-action-commands.md](docs/track-2-table-action-commands.md) — supported HP, condition, initiative, move/action, hazard, field-effect, and terrain session commands with permissions, conflicts, and limitations.
 - [docs/track-2-client-integration.md](docs/track-2-client-integration.md) — how local map mode and explicit session mode coexist, including disconnect and conflict recovery guidance.
 - [docs/track-2-session-lobby.md](docs/track-2-session-lobby.md) — GM/player join flow, expected LAN usage, and two-browser lobby smoke checklist.
+- [docs/track-2-lan-hosting.md](docs/track-2-lan-hosting.md) — same-Wi-Fi/LAN hosting runbook with startup commands, IP discovery, player URLs, and troubleshooting.
 - [docs/track-2-multi-tab-smoke.md](docs/track-2-multi-tab-smoke.md) — local multi-tab helper for GM/player session-mode token propagation smoke checks.
 - [docs/track-2-session-storage.md](docs/track-2-session-storage.md) — local session snapshot/event-log paths, privacy boundaries, backup guidance, and recovery limits.
 - [docs/local-development.md](docs/local-development.md) — local setup, scripts, and filesystem persistence notes.

@@ -36,7 +36,7 @@ For a same-Wi-Fi/LAN lobby smoke test, bind the dev server to the LAN interface 
 ROTOM_ENABLE_SESSION_HOST=1 npm run dev -- --host 0.0.0.0
 ```
 
-See [Track 2 session lobby and manual QA](track-2-session-lobby.md) for the GM/player join flow, safety boundaries, and two-browser checklist. For the client-integration smoke that opens GM/player session-map tabs and checks basic token command propagation, use:
+See [Track 2 LAN hosting runbook](track-2-lan-hosting.md) for same-Wi-Fi setup, IP discovery, player browser URLs, and troubleshooting. See [Track 2 session lobby and manual QA](track-2-session-lobby.md) for the GM/player join flow, safety boundaries, and two-browser checklist. For the client-integration smoke that opens GM/player session-map tabs and checks basic token command propagation, use:
 
 ```bash
 npm run smoke:session:multi-tab -- --map <map-slug>

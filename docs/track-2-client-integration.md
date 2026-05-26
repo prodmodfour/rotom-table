@@ -112,7 +112,7 @@ ROTOM_ENABLE_SESSION_HOST=1 npm run dev
 npm run smoke:session:multi-tab -- --map <map-slug>
 ```
 
-The helper opens or prints the GM lobby, player lobby, plain local map route, and explicit session map route. The corresponding [multi-tab smoke checklist](track-2-multi-tab-smoke.md) covers token propagation, rejection/reconnect guidance, local-mode comparison, and cleanup without committing private runtime data.
+The helper opens or prints the GM lobby, player lobby, plain local map route, and explicit session map route. The corresponding [multi-tab smoke checklist](track-2-multi-tab-smoke.md) covers token propagation, rejection/reconnect guidance, local-mode comparison, and cleanup without committing private runtime data. For cross-device same-Wi-Fi setup and troubleshooting, use the [Track 2 LAN hosting runbook](track-2-lan-hosting.md).
 
 Focused automated coverage currently lives in:
 
@@ -130,4 +130,4 @@ Focused automated coverage currently lives in:
 - The session view must not expose GM keys, raw join-code secrets outside the lobby, hidden maps, hidden sheets, raw snapshots, tunnel credentials, or private campaign data.
 - Track 1 render quality and local map functionality should remain unchanged. The session/local state split is additive and guarded by the explicit query flag.
 
-See the [Track 2 session protocol](track-2-session-protocol.md) for protocol contracts, the [Track 2 WebSocket protocol](track-2-websocket-protocol.md) for live transport details, the [Track 2 table action commands](track-2-table-action-commands.md) for command behaviours, the [Track 2 session lobby guide](track-2-session-lobby.md) for start/join flow, and the [Track 2 multi-tab smoke guide](track-2-multi-tab-smoke.md) for a local browser checklist.
+See the [Track 2 session protocol](track-2-session-protocol.md) for protocol contracts, the [Track 2 WebSocket protocol](track-2-websocket-protocol.md) for live transport details, the [Track 2 table action commands](track-2-table-action-commands.md) for command behaviours, the [Track 2 session lobby guide](track-2-session-lobby.md) for start/join flow, the [Track 2 LAN hosting runbook](track-2-lan-hosting.md) for same-network hosting, and the [Track 2 multi-tab smoke guide](track-2-multi-tab-smoke.md) for a local browser checklist.
