@@ -142,13 +142,14 @@ describe('useSessionMapSceneCommands', () => {
     ])
   })
 
-  it('routes token delete, send-out, initiative, hazard, and terrain events as small commands', () => {
+  it('routes token delete, send-out, initiative, hazard, and terrain events as small commands without mutating the map ref', () => {
     const { dispatcher, commands } = createDispatcher()
+    const map = mapFixture()
     let opIndex = 0
     const opIds = ['op_delete001', 'op_sendout01', 'op_nextinit1', 'op_hazard001', 'op_terrain01']
     const sceneCommands = useSessionMapSceneCommands({
       enabled: ref(true),
-      map: ref(mapFixture()),
+      map: ref(map),
       mapSlug: 'arena-map',
       session: dispatcher,
       createOpId: () => parseOpId(opIds[opIndex++]!),
@@ -190,6 +191,10 @@ describe('useSessionMapSceneCommands', () => {
       mapSlug: 'arena-map',
       voxel: { x: 5, y: 0, z: 5, materialId: 'stone', ghost: true },
     })
+    expect(map.placements.map((placement) => placement.id)).toEqual(['token-pikachu', 'token-trainer'])
+    expect(map.hazards).toEqual([])
+    expect(map.voxels).toEqual([])
+    expect(map.initiative).toEqual({ activeId: null, round: 1 })
   })
 
   it('routes targeted action menu selections through session action commands', () => {

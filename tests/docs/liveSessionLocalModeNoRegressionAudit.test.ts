@@ -60,7 +60,8 @@ describe('Live session local-mode no-regression audit', () => {
 
   it('keeps source-level local/session route boundaries locked', () => {
     const mapRoute = readText('src/pages/maps/[slug].vue')
-    expect(mapRoute).toContain('useEditableMap(slug)')
+    expect(mapRoute).toContain('useEditableMap(slug, {')
+    expect(mapRoute).toContain('autosaveEnabled: computed(() => !sessionMoveTokenEnabled.value)')
     expect(mapRoute).toContain('isSessionModeQueryEnabled(route.query.session)')
     expect(mapRoute).toContain('if (sessionMoveTokenEnabled.value)')
     expect(mapRoute).toContain('deletePlacement(id)')

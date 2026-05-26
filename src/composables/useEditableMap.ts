@@ -19,7 +19,7 @@
  * tabs may overwrite each other within the ~200 ms debounce window,
  * which is acceptable for a single-user dev tool.
  */
-import { onBeforeUnmount, ref, watch, type Ref } from 'vue'
+import { computed, onBeforeUnmount, ref, watch, type Ref } from 'vue'
 import { getClientId } from '~/utils/clientId'
 import { isRealtimeEcho, mapChannel } from '#shared/realtime'
 import { createAutosaveResourceController } from '~/utils/autosaveResource'
@@ -33,6 +33,21 @@ import type { TabletopMap } from '~/types/map'
 
 export type MapSaveStatus = 'idle' | 'loading' | 'saving' | 'saved' | 'error' | 'not-found'
 
+interface BooleanRef {
+  readonly value: boolean
+}
+
+export interface UseEditableMapOptions {
+  readonly debounceMs?: number
+  /**
+   * Controls whether mutations to this persisted map ref may write through the
+   * local-first whole-map autosave route. Session-mode map views pass `false`
+   * so live play uses session commands and server-owned snapshots instead of
+   * browser-owned map saves.
+   */
+  readonly autosaveEnabled?: BooleanRef
+}
+
 export interface UseEditableMapReturn {
   map: Ref<TabletopMap | null>
   status: Ref<MapSaveStatus>
@@ -43,7 +58,20 @@ export interface UseEditableMapReturn {
   reload: () => Promise<void>
 }
 
-export const useEditableMap = (slug: string, debounceMs = 200): UseEditableMapReturn => {
+const normalizeOptions = (options: number | UseEditableMapOptions): Required<Pick<UseEditableMapOptions, 'debounceMs'>> & {
+  readonly autosaveEnabled?: BooleanRef
+} => (
+  typeof options === 'number'
+    ? { debounceMs: options }
+    : { debounceMs: options.debounceMs ?? 200, autosaveEnabled: options.autosaveEnabled }
+)
+
+export const useEditableMap = (
+  slug: string,
+  options: number | UseEditableMapOptions = 200,
+): UseEditableMapReturn => {
+  const { debounceMs, autosaveEnabled: autosaveEnabledRef } = normalizeOptions(options)
+  const autosaveEnabled = computed(() => autosaveEnabledRef?.value ?? true)
   const map = ref<TabletopMap | null>(null)
   const status = ref<MapSaveStatus>('loading')
   const error = ref<string | null>(null)
@@ -122,7 +150,7 @@ export const useEditableMap = (slug: string, debounceMs = 200): UseEditableMapRe
   }
 
   const performSave = async () => {
-    if (!map.value) return
+    if (!autosaveEnabled.value || !map.value) return
     const snapshot = clonePersistableMapPayload(map.value)
 
     await runLatestAutosave({
@@ -142,6 +170,10 @@ export const useEditableMap = (slug: string, debounceMs = 200): UseEditableMapRe
   }
 
   const saveNow = async () => {
+    if (!autosaveEnabled.value) {
+      autosave.cancelPendingSave()
+      return
+    }
     await autosave.saveNow()
   }
 
@@ -167,10 +199,19 @@ export const useEditableMap = (slug: string, debounceMs = 200): UseEditableMapRe
   watch(
     map,
     (current) => {
+      if (!autosaveEnabled.value) return
       autosave.scheduleIfDirty(current)
     },
     { deep: true },
   )
+
+  watch(autosaveEnabled, (enabled) => {
+    if (!enabled) {
+      autosave.cancelPendingSave()
+      return
+    }
+    autosave.scheduleIfDirty(map.value)
+  })
 
   useRealtimeChannel(mapChannel(slug), (event) => {
     if (isRealtimeEcho(event, clientId)) return
@@ -200,8 +241,11 @@ export const useEditableMap = (slug: string, debounceMs = 200): UseEditableMapRe
   onBeforeUnmount(() => {
     if (!autosave.task.hasPending()) return
     // Skip flushing the pending save when the slug was renamed away
-    // from us — the old filename no longer exists on disk.
-    if (renamedTo.value) {
+    // from us — the old filename no longer exists on disk. Also cancel
+    // pending local-first writes while the map view is in session mode;
+    // session clients must send explicit session commands instead of a
+    // browser-owned whole-map save.
+    if (renamedTo.value || !autosaveEnabled.value) {
       autosave.cancelPendingSave()
       return
     }
