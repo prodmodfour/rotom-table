@@ -66,6 +66,8 @@ describe('Live session deployment smoke checklist', () => {
     expect(checklist).toContain('| Initiative |')
     expect(checklist).toContain('| Reconnect |')
     expect(checklist).toContain('| Conflict rejection |')
+    expect(checklist).toContain('Live session concurrency benchmark notes')
+    expect(checklist).toContain('generic timing buckets such as `<250ms`, `250-1000ms`, `1-3s`, or `>3s`')
     expect(checklist).toContain('Pass, fail, or block guidance')
     expect(checklist).toContain('Do not paste real join codes, GM keys, snapshots, event logs')
   })

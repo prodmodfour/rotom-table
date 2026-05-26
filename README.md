@@ -54,7 +54,7 @@ npm run build
 - [docs/live-session-real-flow-smoke.md](docs/live-session-real-flow-smoke.md) — automated start, attach, join, assign, session socket, token move, reconnect snapshot, and cleanup smoke helper.
 - [docs/live-session-lan-manual-smoke-results.md](docs/live-session-lan-manual-smoke-results.md) — recorded LAN browser-client smoke results for guarded startup, two-player join, session socket presence, reconnect, and cleanup.
 - [docs/live-session-command-audit.md](docs/live-session-command-audit.md) — integrated multi-client command audit covering accepted commands, reconnect, permissions, and stale conflicts.
-- [docs/live-session-concurrency-benchmark-notes.md](docs/live-session-concurrency-benchmark-notes.md) — multi-client concurrency behaviour, latency-sensitive path, and performance limitation notes.
+- [docs/live-session-concurrency-benchmark-notes.md](docs/live-session-concurrency-benchmark-notes.md) — expected LAN/named-tunnel concurrency behaviour, latency-sensitive paths, replay/snapshot fallback, and before-game smoke checks.
 - [docs/live-session-implementation-review.md](docs/live-session-implementation-review.md) — implementation review linking product docs, source areas, validation evidence, and known limitations.
 - [docs/live-session-readiness-summary.md](docs/live-session-readiness-summary.md) — product/developer readiness summary for validation, evidence links, and architecture confirmation.
 - [docs/live-session-local-mode-no-regression-audit.md](docs/live-session-local-mode-no-regression-audit.md) — local-first no-regression audit for plain map/sheet workflows, legacy SSE, and session-mode opt-in boundaries.

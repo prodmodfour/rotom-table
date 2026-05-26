@@ -28,7 +28,7 @@ This directory collects presentation and reviewer documentation for Rotom Table.
 - [Live session real-flow smoke script](live-session-real-flow-smoke.md) — automated start, attach, join, assign, session socket, token move, reconnect snapshot, and cleanup helper for a running dev server.
 - [Live session LAN manual smoke results](live-session-lan-manual-smoke-results.md) — recorded LAN browser-client smoke results for guarded startup, two-player join, session socket presence, reconnect, and cleanup.
 - [Live session integrated command audit](live-session-command-audit.md) — automated multi-client command audit covering accepted commands, reconnect, permissions, and stale conflicts.
-- [Live session concurrency benchmark notes](live-session-concurrency-benchmark-notes.md) — multi-client concurrency behaviour, latency-sensitive path, and performance limitation notes.
+- [Live session concurrency benchmark notes](live-session-concurrency-benchmark-notes.md) — expected LAN/named-tunnel concurrency behaviour, latency-sensitive paths, replay/snapshot fallback, and before-game smoke checks.
 - [Live session implementation review](live-session-implementation-review.md) — product docs, source areas, validation evidence, and known limitations.
 - [Live session readiness summary](live-session-readiness-summary.md) — product/developer readiness summary for validation, evidence links, and architecture confirmation.
 - [Live session local-mode no-regression audit](live-session-local-mode-no-regression-audit.md) — local-first no-regression audit for plain map/sheet workflows, legacy SSE, and explicit session-mode opt-in boundaries.

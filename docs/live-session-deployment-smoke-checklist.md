@@ -41,6 +41,7 @@ Use generic names in notes such as `GM`, `Player A`, `Player B`, `table.example.
 - [ ] The GM has chosen **GM Login** in the existing local `/login` role picker. This trust picker is not public authentication.
 - [ ] The working tree is clean before the smoke: `git status --short` prints no private campaign/runtime files.
 - [ ] Standard checks passed recently, preferably through the project validation: `npm run typecheck`, `npm test`, and `npm run build`.
+- [ ] The GM has reviewed the [Live session concurrency benchmark notes](live-session-concurrency-benchmark-notes.md) and is ready to record generic timing buckets such as `<250ms`, `250-1000ms`, `1-3s`, or `>3s` without pasting secrets or private campaign data.
 - [ ] Optional focused checks passed before manual deployment smoke:
 
   ```bash

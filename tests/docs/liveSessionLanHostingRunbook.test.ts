@@ -53,6 +53,17 @@ describe('Live session LAN hosting runbook', () => {
     expect(runbook).toContain('GM uses **Assign map tokens** and **Assign control**')
   })
 
+  it('documents LAN latency and concurrency expectations', () => {
+    expect(runbook).toContain('LAN latency and concurrency expectations')
+    expect(runbook).toContain('lowest-jitter live-session path for a small trusted table')
+    expect(runbook).toContain('does not promise a millisecond latency target')
+    expect(runbook).toContain("server's accepted revision order")
+    expect(runbook).toContain('Event replay is currently unavailable for reconnect')
+    expect(runbook).toContain('actor-scoped snapshot fallback')
+    expect(runbook).toContain('live-session-concurrency-benchmark-notes.md')
+    expect(runbook).toContain('`1-3s` or `>3s` timing buckets')
+  })
+
   it('keeps safety, troubleshooting, and cleanup boundaries visible', () => {
     expect(runbook).toContain('not hardened public authentication')
     expect(runbook).toContain('Quick Tunnel is not the supported campaign-session path')

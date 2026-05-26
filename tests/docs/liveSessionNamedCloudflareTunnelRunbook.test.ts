@@ -54,6 +54,17 @@ describe('Live session named Cloudflare Tunnel runbook', () => {
     expect(runbook).toContain('snapshot fallback')
   })
 
+  it('documents remote latency and concurrency expectations', () => {
+    expect(runbook).toContain('Remote latency and concurrency expectations')
+    expect(runbook).toContain('browser-to-Cloudflare-to-GM-host round trip')
+    expect(runbook).toContain('Remote players should expect more jitter than LAN')
+    expect(runbook).toContain("server's accepted revision order")
+    expect(runbook).toContain('Event replay is currently unavailable for reconnect')
+    expect(runbook).toContain('actor-scoped snapshot fallback')
+    expect(runbook).toContain('live-session-concurrency-benchmark-notes.md')
+    expect(runbook).toContain('repeated `1-3s` or `>3s` actions')
+  })
+
   it('documents remote session hosting safety checks and secret hygiene', () => {
     expect(runbook).toContain('## Remote invite and secret hygiene')
     expect(runbook).toContain('Before sharing a join code over the remote hostname')
