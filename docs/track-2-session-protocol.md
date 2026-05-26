@@ -2,7 +2,7 @@
 
 This document describes the shared TypeScript protocol contracts introduced for Track 2 session mode. It records the wire vocabulary that later server and client tickets must use when they add the session store, WebSocket endpoint, lobby UI, command handlers, and reconnect behaviour.
 
-This is a contract document, not a claim that every command handler is already complete. The current shared contracts live in `shared/` and are covered by focused Vitest tests; the `moveToken` payload contract and validator live in `shared/sessionTokenCommands.ts`, and `server/useCases/applyMoveTokenCommand.ts` now applies authorized token movement to server-owned map state with occupancy/rules validation, revision increments, snapshot persistence, and duplicate-`opId` handling. WebSocket command dispatch, fanout broadcasts, stale same-token rejection, and client dispatch/optimism remain later token-command tickets. See [Track 2 WebSocket protocol](track-2-websocket-protocol.md) for the live socket route, message examples, heartbeat/reconnect flow, command transport boundary, and named-tunnel expectations after the WebSocket transport chunk. See [Track 2 session lobby and manual QA](track-2-session-lobby.md) for the current GM/player join flow and two-browser smoke checklist, and [Track 2 session storage](track-2-session-storage.md) for the operational snapshot/event-log layout, backup guidance, and recovery limitations.
+This is a contract document, not a claim that every command handler is already complete. The current shared contracts live in `shared/` and are covered by focused Vitest tests; the `moveToken` payload contract and validator live in `shared/sessionTokenCommands.ts`, and `server/useCases/applyMoveTokenCommand.ts` now applies authorized token movement to server-owned map state with occupancy/rules validation, revision increments, snapshot persistence, duplicate-`opId` handling, a sender `commandAck`, and a same-session `tokenMoved` patch broadcast over `/api/sessions/socket`. Stale same-token rejection and client dispatch/optimism remain later token-command tickets. See [Track 2 WebSocket protocol](track-2-websocket-protocol.md) for the live socket route, message examples, heartbeat/reconnect flow, command transport boundary, and named-tunnel expectations after the WebSocket transport chunk. See [Track 2 session lobby and manual QA](track-2-session-lobby.md) for the current GM/player join flow and two-browser smoke checklist, and [Track 2 session storage](track-2-session-storage.md) for the operational snapshot/event-log layout, backup guidance, and recovery limitations.
 
 ## Protocol goals
 
@@ -106,7 +106,7 @@ Example remote-exposure response:
 
 New sockets start as `pending-hello`. The first accepted client frame must be a JSON client `hello` with the session ID and session-local identity returned by the start/join endpoints. The server validates the GM key for GM clients, validates the player ID plus safe display name for player clients, rejects client-ID collisions with a different actor, records the connected client in authoritative session state without incrementing the session revision, and replies with a server `hello` carrying the validated actor, current revision, and heartbeat configuration. Invalid, unknown, ended, or unauthorized hello attempts receive a safe server `error` frame and the socket is closed with the policy close code.
 
-Inbound frames are validated before dispatch. The server accepts only JSON client messages with `schemaVersion: 1`, `direction: "client"`, a valid `sessionId`, and a client message type of `hello`, `heartbeat`, or `command`; malformed frames receive a `malformed-message` error and close. Valid heartbeat or command frames sent before hello/auth receive `unauthorized` and close. After hello/auth, heartbeat and command messages must target the authenticated session, and command envelopes must pass the shared envelope validator and match the authenticated actor before any future command dispatcher can see them. Until command dispatch lands, valid authenticated command frames still receive `unsupported-message` without closing the socket.
+Inbound frames are validated before dispatch. The server accepts only JSON client messages with `schemaVersion: 1`, `direction: "client"`, a valid `sessionId`, and a client message type of `hello`, `heartbeat`, or `command`; malformed frames receive a `malformed-message` error and close. Valid heartbeat or command frames sent before hello/auth receive `unauthorized` and close. After hello/auth, heartbeat and command messages must target the authenticated session, and command envelopes must pass the shared envelope validator and match the authenticated actor before command handlers see them. The live socket route now dispatches `moveToken`; authenticated command types that are not implemented yet receive `unsupported-message` without closing the socket.
 
 After hello/auth succeeds, heartbeat is active. The server sends app-level heartbeat `ping` frames on the negotiated interval, replies to authenticated client `ping` frames with `pong`, records client `ping`/`pong` activity in the in-memory connected-client presence record without incrementing the session revision, and closes sockets that have not produced readable client activity within the heartbeat timeout. The client wrapper starts its own heartbeat `ping` loop after the server `hello`, answers server `ping` frames with `pong`, and closes the browser socket when server activity is stale.
 
@@ -114,7 +114,7 @@ The WebSocket server now keeps a process-local peer registry for fanout. Server-
 
 A socket close or heartbeat timeout marks the authenticated client as `disconnected` in in-memory authoritative state; no snapshot or command event is written for this transient presence update yet, though the presence change is fanned out to same-session sockets.
 
-The client wrapper lives in `src/composables/useSessionSocket.ts`. It resolves `/api/sessions/socket` to `ws://` or `wss://` from the current browser location, wraps the browser `WebSocket`, exposes connection status (`idle`, `connecting`, `open`, `closing`, `closed`, `error`, or `unavailable`), records the last error/close/server message, maintains a bounded JSON send queue, flushes queued messages after `open`, and provides explicit `connect`, `disconnect`, and `cleanup` methods. It can build/send a client `hello` from the remembered session-local identity, auto-sending that hello before queued messages when configured with `hello: { identity }`, tracks whether the server hello was accepted or rejected, sends heartbeat pings after the negotiated server hello, answers server heartbeat pings, reports stale heartbeat timeouts, and records reconnect snapshot fallback messages. It still does not implement command dispatch, optimistic map state, or event replay application.
+The client wrapper lives in `src/composables/useSessionSocket.ts`. It resolves `/api/sessions/socket` to `ws://` or `wss://` from the current browser location, wraps the browser `WebSocket`, exposes connection status (`idle`, `connecting`, `open`, `closing`, `closed`, `error`, or `unavailable`), records the last error/close/server message, maintains a bounded JSON send queue, flushes queued messages after `open`, and provides explicit `connect`, `disconnect`, and `cleanup` methods. It can build/send a client `hello` from the remembered session-local identity, auto-sending that hello before queued messages when configured with `hello: { identity }`, tracks whether the server hello was accepted or rejected, sends heartbeat pings after the negotiated server hello, answers server heartbeat pings, reports stale heartbeat timeouts, and records reconnect snapshot fallback messages. It still does not provide high-level client command dispatch, optimistic map state, or event replay application.
 
 ## Legacy SSE migration boundary
 
@@ -627,7 +627,7 @@ A server heartbeat ping uses the same message shape with `direction: "server"` a
 
 ### 4. Client command
 
-The client wraps a command envelope in a client `command` message. The `moveToken` payload below is the shared command contract shape. The server-side `applyMoveTokenCommandUseCase` can validate and apply this command against authoritative state, but the WebSocket route still returns `unsupported-message` for command frames until the later dispatch/broadcast tickets wire it into the live socket path.
+The client wraps a command envelope in a client `command` message. The `moveToken` payload below is the shared command contract shape. The WebSocket route validates the authenticated socket actor, dispatches `moveToken` to `applyMoveTokenCommandUseCase`, sends the sender a command result, and broadcasts the accepted `tokenMoved` patch to authenticated peers in the same session.
 
 ```json
 {
@@ -676,7 +676,7 @@ The shared `validateMoveTokenCommand` helper composes the common envelope valida
 
 ## Accepted command example
 
-When a command is valid, authorized, and non-conflicting, the server applies it to authoritative state, advances the revision once, and persists the authoritative change. The `moveToken` server use case now produces the accepted result and `tokenMoved` patch event shown below; later socket tickets send the `commandAck` to the sender and broadcast the small `patch` event to relevant clients in the same session.
+When a command is valid, authorized, and non-conflicting, the server applies it to authoritative state, advances the revision once, and persists the authoritative change. The `moveToken` WebSocket path now sends the accepted result below as a `commandAck` to the submitting socket and broadcasts the small `tokenMoved` `patch` event to authenticated clients in the same session.
 
 ```json
 {
@@ -770,7 +770,7 @@ Accepted command rules:
 - `currentRevision` is the authoritative revision after applying the command.
 - A command is applied at most once for a given `opId` operation scope.
 - The patch/event is small and domain-specific; it is not a whole-map autosave from the client.
-- The sender may receive both the ack and the broadcast patch depending on the command-specific fanout policy, but the ack remains the command result.
+- The sender receives the ack as the command result and may also receive the same broadcast patch as every other authenticated same-session client.
 
 ## Rejected command example
 

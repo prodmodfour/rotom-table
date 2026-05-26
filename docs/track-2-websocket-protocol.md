@@ -9,7 +9,7 @@ This document describes the transport slice that exists after the WebSocket tran
 - the server validates hello, heartbeat, and command frame shapes before dispatch;
 - same-session fanout exists for presence, command results, patches, and snapshots;
 - reconnect currently falls back to an authoritative snapshot when replay is unavailable;
-- the shared `moveToken` command payload contract, validator, and server-side application use case exist, but WebSocket command dispatch, broadcast fanout, stale same-token rejection, and client handlers are still later tickets, so accepted/rejected examples below describe the contract those socket handlers will send rather than proof that token movement already applies through `/api/sessions/socket`.
+- the shared `moveToken` command payload contract, validator, server-side application use case, sender acknowledgement, and same-session `tokenMoved` patch broadcast now apply through `/api/sessions/socket`; stale same-token rejection and high-level client handlers are still later token-command tickets.
 
 ## Route, runtime gate, and URL shape
 
@@ -42,7 +42,7 @@ Every WebSocket message is JSON and carries:
 
 Client message types are `hello`, `heartbeat`, and `command`. Server message types are `hello`, `heartbeat`, `commandAck`, `commandReject`, `snapshot`, `patch`, `presence`, and `error`.
 
-Unknown frames, invalid JSON, unsupported message types, wrong schema versions, missing session scope, pre-auth heartbeat/command messages, and cross-session messages fail closed with a safe server `error` frame when possible. Valid authenticated command frames are currently envelope-validated and answered with `unsupported-message` until command handlers land.
+Unknown frames, invalid JSON, unsupported message types, wrong schema versions, missing session scope, pre-auth heartbeat/command messages, and cross-session messages fail closed with a safe server `error` frame when possible. Valid authenticated `moveToken` frames are dispatched to the server-authoritative command handler; authenticated command types that are not implemented yet receive `unsupported-message` without closing the socket.
 
 ## Connection lifecycle
 
@@ -252,7 +252,7 @@ GM snapshots can include the full server-owned state. Player snapshots are filte
 
 ## Command flow
 
-The client sends a command envelope inside a client `command` message. The envelope includes the authenticated actor, an `opId`, `baseRevision`, scope lanes, and a JSON payload. The `moveToken` example below matches the shared payload validator and the server-side application use case; WebSocket dispatch and broadcasts remain later token-command work.
+The client sends a command envelope inside a client `command` message. The envelope includes the authenticated actor, an `opId`, `baseRevision`, scope lanes, and a JSON payload. The `moveToken` example below matches the shared payload validator and is dispatched by the WebSocket route to the server-side application use case.
 
 ```json
 {
@@ -307,7 +307,7 @@ Server processing order for the command path:
 6. Increment the relevant revision, persist a snapshot/event, send `commandAck` to the sender, and fan out a small `patch` to same-session clients.
 7. Return `commandReject` for invalid, unauthorized, stale, or conflicting commands without advancing revision.
 
-Current transport boundary: until command-specific dispatch lands, a valid authenticated command frame receives a server `error` with `code: "unsupported-message"` instead of mutating state.
+Current transport boundary: `moveToken` dispatch is live. Other command types still receive a server `error` with `code: "unsupported-message"` instead of mutating state until their command-specific tickets land.
 
 ### Accepted command and patch
 
@@ -394,7 +394,7 @@ Current transport boundary: until command-specific dispatch lands, a valid authe
 }
 ```
 
-The patch is a small authoritative event, not a whole-map autosave from a browser.
+The patch is a small authoritative event, not a whole-map autosave from a browser. Accepted `moveToken` commands send `commandAck` to the submitting socket and fan out this patch to authenticated peers in the same session; the sender can receive both frames.
 
 ### Rejected command
 
@@ -511,7 +511,7 @@ Use server `error` messages for socket/session failures that are outside a norma
   "direction": "server",
   "sessionId": "session_lake_table_001",
   "code": "unsupported-message",
-  "message": "Command dispatch is not implemented for this session socket yet.",
+  "message": "Track 2 session WebSocket command dispatch currently supports moveToken commands only.",
   "retryable": false,
   "currentRevision": 42
 }
