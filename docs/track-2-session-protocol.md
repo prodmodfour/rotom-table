@@ -2,7 +2,7 @@
 
 This document describes the shared TypeScript protocol contracts introduced for Track 2 session mode. It records the wire vocabulary that later server and client tickets must use when they add the session store, WebSocket endpoint, lobby UI, command handlers, and reconnect behaviour.
 
-This is a contract document, not a claim that the WebSocket runtime is already complete. The current shared contracts live in `shared/` and are covered by focused Vitest tests; command-specific payload contracts such as `moveToken` land in later command tickets. See [Track 2 session lobby and manual QA](track-2-session-lobby.md) for the current GM/player join flow and two-browser smoke checklist, and [Track 2 session storage](track-2-session-storage.md) for the operational snapshot/event-log layout, backup guidance, and recovery limitations.
+This is a contract document, not a claim that every command handler is already complete. The current shared contracts live in `shared/` and are covered by focused Vitest tests; command-specific payload contracts such as `moveToken` land in later command tickets. See [Track 2 WebSocket protocol](track-2-websocket-protocol.md) for the live socket route, message examples, heartbeat/reconnect flow, command transport boundary, and named-tunnel expectations after the WebSocket transport chunk. See [Track 2 session lobby and manual QA](track-2-session-lobby.md) for the current GM/player join flow and two-browser smoke checklist, and [Track 2 session storage](track-2-session-storage.md) for the operational snapshot/event-log layout, backup guidance, and recovery limitations.
 
 ## Protocol goals
 
@@ -927,6 +927,7 @@ Later implementation tickets should keep these checks at the protocol boundary:
 - [Track 2 roadmap](track-2-roadmap.md)
 - [Track 2 glossary](track-2-glossary.md)
 - [Track 2 validation matrix](track-2-validation-matrix.md)
+- [Track 2 WebSocket protocol](track-2-websocket-protocol.md)
 - [ADR 003: WebSocket session transport](adrs/003-websocket-session-transport.md)
 - [ADR 004: Server-authoritative commands](adrs/004-server-authoritative-commands.md)
 - [ADR 005: Session identity and permissions](adrs/005-session-identity-and-permissions.md)
