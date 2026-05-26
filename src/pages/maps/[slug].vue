@@ -27,8 +27,12 @@ import { useOrderActionPanel } from '~/composables/map-editor/useOrderActionPane
 import { useTerrainBuilder } from '~/composables/map-editor/useTerrainBuilder'
 import { useAttackOfOpportunityPanel } from '~/utils/attackOfOpportunity'
 import { useTokenSheetMutations } from '~/composables/map-editor/useTokenSheetMutations'
-import { useSessionMapEditorState } from '~/composables/map-editor/useSessionMapEditorState'
-import { useSessionMoveTokenDispatch, isSessionModeQueryEnabled } from '~/composables/map-editor/useSessionMoveTokenDispatch'
+import { useSessionMap } from '~/composables/map-editor/useSessionMap'
+import {
+  useSessionMoveTokenDispatch,
+  isSessionModeQueryEnabled,
+  type SessionMoveTokenSocket,
+} from '~/composables/map-editor/useSessionMoveTokenDispatch'
 import { useTokenControls } from '~/composables/map-editor/useTokenControls'
 import { MAP_API_PATHS } from '~/utils/apiRoutes'
 import { getClientId } from '~/utils/clientId'
@@ -62,17 +66,17 @@ watch(renamedTo, (newSlug) => {
 })
 
 const sessionMoveTokenEnabled = computed(() => isSessionModeQueryEnabled(route.query.session))
-const sessionMoveTokenDispatch = useSessionMoveTokenDispatch({
-  enabled: sessionMoveTokenEnabled,
-  mapSlug: slug,
-})
-const sessionMapEditorState = useSessionMapEditorState({
+const sessionMap = useSessionMap({
   enabled: sessionMoveTokenEnabled,
   localMap: localEditableMap,
   mapSlug: slug,
-  socket: sessionMoveTokenDispatch.socket,
 })
-const map = sessionMapEditorState.map
+const sessionMoveTokenDispatch = useSessionMoveTokenDispatch({
+  enabled: sessionMoveTokenEnabled,
+  mapSlug: slug,
+  socket: sessionMap.socket as unknown as SessionMoveTokenSocket,
+})
+const map = sessionMap.map
 const mapStatus = computed(() => (
   sessionMoveTokenEnabled.value && map.value
     ? 'idle'
@@ -90,6 +94,13 @@ interface MapScenePanelHandle {
 const gridRef = ref<MapScenePanelHandle | null>(null)
 
 onMounted(() => {
+  if (sessionMoveTokenEnabled.value) sessionMap.loadSessionSnapshot()
+  sessionMoveTokenDispatch.loadRememberedIdentity()
+})
+
+watch(sessionMoveTokenEnabled, (enabled) => {
+  if (!enabled) return
+  sessionMap.loadSessionSnapshot()
   sessionMoveTokenDispatch.loadRememberedIdentity()
 })
 
