@@ -109,6 +109,21 @@ const serverPingMessage: SessionServerMessage = {
   lastSeenRevision: INITIAL_SESSION_REVISION,
 }
 
+const reconnectSnapshotMessage: SessionServerMessage = {
+  schemaVersion: SESSION_MESSAGE_SCHEMA_VERSION,
+  type: 'snapshot',
+  direction: 'server',
+  sessionId: SESSION_ID,
+  reason: 'reconnect',
+  currentRevision: INITIAL_SESSION_REVISION,
+  replayAvailable: false,
+  snapshot: {
+    sessionId: SESSION_ID,
+    revision: INITIAL_SESSION_REVISION,
+    selectedMapSlug: null,
+  },
+}
+
 class FakeSessionWebSocket implements SessionSocketLike {
   readonly url: string
   readyState = 0
@@ -322,7 +337,9 @@ describe('useSessionSocket', () => {
     fake.instances[0]?.receive(JSON.stringify(serverHelloMessage))
 
     expect(sessionSocket.helloStatus.value).toBe('accepted')
+    expect(sessionSocket.reconnectStatus.value).toBe('resumed')
     expect(sessionSocket.lastServerHello.value).toEqual(serverHelloMessage)
+    expect(sessionSocket.lastKnownRevision.value).toBe(INITIAL_SESSION_REVISION)
   })
 
   it('queues manual client hello frames before the socket opens', () => {
@@ -344,6 +361,32 @@ describe('useSessionSocket', () => {
     expect(fake.instances[0]?.sent).toEqual([
       JSON.stringify(createSessionClientHelloMessage(gmIdentity, { reconnect: false })),
     ])
+  })
+
+  it('tracks reconnect snapshot fallback after a server hello requires it', () => {
+    const fake = makeFakeWebSocketConstructor()
+    const sessionSocket = useSessionSocket({
+      webSocketConstructor: fake.Constructor,
+      location: { protocol: 'http:', host: 'localhost:3000' },
+    })
+
+    sessionSocket.connect()
+    fake.instances[0]?.open()
+    fake.instances[0]?.receive(JSON.stringify({
+      ...serverHelloMessage,
+      snapshotRequired: true,
+    }))
+
+    expect(sessionSocket.helloStatus.value).toBe('accepted')
+    expect(sessionSocket.reconnectStatus.value).toBe('snapshot-required')
+    expect(sessionSocket.lastSnapshot.value).toBeNull()
+    expect(sessionSocket.lastKnownRevision.value).toBe(INITIAL_SESSION_REVISION)
+
+    fake.instances[0]?.receive(JSON.stringify(reconnectSnapshotMessage))
+
+    expect(sessionSocket.reconnectStatus.value).toBe('snapshot-received')
+    expect(sessionSocket.lastSnapshot.value).toEqual(reconnectSnapshotMessage)
+    expect(sessionSocket.lastKnownRevision.value).toBe(INITIAL_SESSION_REVISION)
   })
 
   it('starts client heartbeat pings after server hello and pongs server pings', () => {

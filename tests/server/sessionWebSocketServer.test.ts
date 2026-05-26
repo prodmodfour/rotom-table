@@ -12,7 +12,7 @@ import {
   parseSessionDisplayName,
   parseSessionId,
 } from '#shared/sessionIdentity'
-import { INITIAL_SESSION_REVISION } from '#shared/sessionRevisions'
+import { INITIAL_SESSION_REVISION, parseMapRevision, parseSessionRevision } from '#shared/sessionRevisions'
 import {
   createAuthoritativeSessionState,
   type AuthoritativeSessionState,
@@ -31,7 +31,10 @@ import {
   SESSION_SOCKET_HEARTBEAT_TIMEOUT_REASON,
   SESSION_SOCKET_PENDING_HELLO_STATUS,
   SESSION_SOCKET_POLICY_CLOSE_CODE,
+  SESSION_SOCKET_REPLAY_AVAILABLE,
   createInMemorySessionSocketRegistry,
+  createSessionReconnectSnapshotMessage,
+  createSessionReconnectSnapshotState,
   handleSessionSocketClose,
   handleSessionSocketError,
   handleSessionSocketHeartbeatTick,
@@ -39,6 +42,7 @@ import {
   handleSessionSocketOpen,
   handleSessionSocketUpgrade,
   isSessionSocketConnectionStale,
+  resolveSessionSocketReconnectDecision,
   type SessionSocketPeerLike,
 } from '~~/server/utils/sessionWebSocketServer'
 import { createInMemorySessionStore } from '~~/server/utils/sessionStore'
@@ -59,6 +63,8 @@ const GM_CLIENT_ID = parseClientId('client_gmclient01')
 const PLAYER_ID = parsePlayerId('player_misty001')
 const PLAYER_CLIENT_ID = parseClientId('client_player01')
 const PLAYER_DISPLAY_NAME = parseSessionDisplayName('Misty')
+const REVISION_3 = parseSessionRevision(3)
+const MAP_REVISION_1 = parseMapRevision(1)
 const CREATED_AT = '2026-05-26T09:00:00.000Z'
 
 const makeRequest = (): { url: string, headers: Headers, context: Record<string, unknown> } => ({
@@ -326,7 +332,10 @@ describe('session WebSocket route skeleton', () => {
       },
       currentRevision: INITIAL_SESSION_REVISION,
       resumed: true,
+      snapshotRequired: false,
+      replayFromRevision: INITIAL_SESSION_REVISION,
     })
+    expect(peer.sent).toHaveLength(1)
     expect(registry.get('peer-player')).toMatchObject({
       status: SESSION_SOCKET_AUTHENTICATED_STATUS,
       sessionId: SESSION_ID,
@@ -347,6 +356,189 @@ describe('session WebSocket route skeleton', () => {
         lastSeenRevision: INITIAL_SESSION_REVISION,
       },
     ])
+  })
+
+  it('decides when reconnect handshakes require snapshot fallback', () => {
+    expect(resolveSessionSocketReconnectDecision({
+      reconnect: false,
+      currentRevision: REVISION_3,
+    })).toEqual({
+      reconnect: false,
+      currentRevision: REVISION_3,
+      snapshotRequired: false,
+      replayAvailable: SESSION_SOCKET_REPLAY_AVAILABLE,
+      reason: 'initial-connection',
+    })
+
+    expect(resolveSessionSocketReconnectDecision({
+      reconnect: true,
+      currentRevision: REVISION_3,
+      lastSeenRevision: REVISION_3,
+    })).toEqual({
+      reconnect: true,
+      currentRevision: REVISION_3,
+      lastSeenRevision: REVISION_3,
+      snapshotRequired: false,
+      replayAvailable: SESSION_SOCKET_REPLAY_AVAILABLE,
+      reason: 'current-revision',
+    })
+
+    expect(resolveSessionSocketReconnectDecision({
+      reconnect: true,
+      currentRevision: REVISION_3,
+      lastSeenRevision: INITIAL_SESSION_REVISION,
+    })).toEqual({
+      reconnect: true,
+      currentRevision: REVISION_3,
+      lastSeenRevision: INITIAL_SESSION_REVISION,
+      snapshotRequired: true,
+      replayAvailable: SESSION_SOCKET_REPLAY_AVAILABLE,
+      reason: 'revision-gap-replay-unavailable',
+    })
+
+    expect(resolveSessionSocketReconnectDecision({
+      reconnect: true,
+      currentRevision: INITIAL_SESSION_REVISION,
+      lastSeenRevision: REVISION_3,
+    })).toMatchObject({
+      snapshotRequired: true,
+      reason: 'client-revision-ahead',
+    })
+  })
+
+  it('sends a reconnect snapshot when the client last saw an older revision and replay is unavailable', () => {
+    const registry = createInMemorySessionSocketRegistry()
+    const store = createInMemorySessionStore<AuthoritativeSessionState>()
+    const state = createAuthoritativeSessionState({
+      sessionId: SESSION_ID,
+      revision: REVISION_3,
+      selectedMapSlug: 'hidden-map',
+      maps: [
+        {
+          mapSlug: 'hidden-map',
+          revision: MAP_REVISION_1,
+          document: { secret: true },
+        },
+        {
+          mapSlug: 'visible-map',
+          revision: MAP_REVISION_1,
+          document: { public: true },
+        },
+      ],
+      createdAt: CREATED_AT,
+      updatedAt: CREATED_AT,
+      players: [
+        {
+          playerId: PLAYER_ID,
+          displayName: PLAYER_DISPLAY_NAME,
+          joinedAt: CREATED_AT,
+          updatedAt: CREATED_AT,
+        },
+      ],
+      assignments: [
+        {
+          playerId: PLAYER_ID,
+          displayName: PLAYER_DISPLAY_NAME,
+          controllableResources: [],
+          visibleResources: [{ kind: 'map', mapSlug: 'visible-map' }],
+          updatedAt: CREATED_AT,
+        },
+      ],
+    })
+    store.create({
+      sessionId: SESSION_ID,
+      joinCode: JOIN_CODE,
+      gmKey: GM_KEY,
+      revision: state.revision,
+      createdAt: CREATED_AT,
+      updatedAt: CREATED_AT,
+      state,
+    })
+    const peer = makePeer('peer-reconnect')
+    handleSessionSocketOpen(peer, {
+      env: enabledEnv,
+      registry,
+      clock: () => '2026-05-26T10:15:00.000Z',
+    })
+
+    handleSessionSocketMessage(peer, {
+      text: () => JSON.stringify(playerHello({
+        reconnect: true,
+        lastSeenRevision: INITIAL_SESSION_REVISION,
+      })),
+    }, {
+      registry,
+      store,
+      clock: () => '2026-05-26T10:15:05.000Z',
+    })
+
+    const updatedState = store.get(SESSION_ID)?.state
+    expect(updatedState).toBeDefined()
+    expect(peer.closed).toEqual([])
+    expect(parseSentJson(peer, 0)).toMatchObject({
+      schemaVersion: SESSION_MESSAGE_SCHEMA_VERSION,
+      type: 'hello',
+      direction: 'server',
+      sessionId: SESSION_ID,
+      currentRevision: REVISION_3,
+      resumed: true,
+      snapshotRequired: true,
+    })
+    expect(parseSentJson(peer, 0)).not.toHaveProperty('replayFromRevision')
+    const reconnectActor = {
+      role: 'player' as const,
+      playerId: PLAYER_ID,
+      clientId: PLAYER_CLIENT_ID,
+      displayName: PLAYER_DISPLAY_NAME,
+    }
+    const expectedSnapshotState = createSessionReconnectSnapshotState(updatedState!, reconnectActor)
+    expect(parseSentJson(peer, 1)).toEqual(createSessionReconnectSnapshotMessage(updatedState!, reconnectActor))
+    expect(parseSentJson(peer, 1)).toMatchObject({
+      schemaVersion: SESSION_MESSAGE_SCHEMA_VERSION,
+      type: 'snapshot',
+      direction: 'server',
+      sessionId: SESSION_ID,
+      reason: 'reconnect',
+      currentRevision: REVISION_3,
+      replayAvailable: false,
+      snapshot: {
+        revision: REVISION_3,
+        selectedMapSlug: null,
+        updatedAt: '2026-05-26T10:15:05.000Z',
+        maps: [
+          {
+            mapSlug: 'visible-map',
+            document: { public: true },
+          },
+        ],
+        connectedClients: [
+          {
+            clientId: PLAYER_CLIENT_ID,
+            status: 'connected',
+            lastSeenRevision: INITIAL_SESSION_REVISION,
+          },
+        ],
+        players: [
+          {
+            playerId: PLAYER_ID,
+            displayName: PLAYER_DISPLAY_NAME,
+          },
+        ],
+        assignments: [
+          {
+            playerId: PLAYER_ID,
+            visibleResources: [{ kind: 'map', mapSlug: 'visible-map' }],
+          },
+        ],
+      },
+    })
+    expect(expectedSnapshotState.maps.some((map) => map.mapSlug === 'hidden-map')).toBe(false)
+    expect(peer.sent).toHaveLength(2)
+    expect(registry.get('peer-reconnect')).toMatchObject({
+      status: SESSION_SOCKET_AUTHENTICATED_STATUS,
+      currentRevision: REVISION_3,
+      lastSeenRevision: INITIAL_SESSION_REVISION,
+    })
   })
 
   it('rejects non-hello frames before authentication without granting session authority', () => {

@@ -16,10 +16,12 @@ import {
   type SessionErrorMessage,
   type SessionHeartbeatMessage,
   type SessionServerHelloMessage,
+  type SessionSnapshotMessage,
 } from '#shared/sessionMessages'
-import type { SessionActor } from '#shared/sessionPermissions'
+import { findPlayerAssignment, type SessionActor } from '#shared/sessionPermissions'
 import { isSessionRevision, type SessionRevision } from '#shared/sessionRevisions'
 import {
+  createAuthoritativeSessionState,
   findSessionConnectedClient,
   findSessionPlayerRecord,
   upsertSessionConnectedClient,
@@ -34,6 +36,7 @@ import {
 } from './sessionHosting'
 import {
   createSessionPresenceFanoutMessage,
+  createSessionSnapshotFanoutMessage,
   fanoutSessionServerMessage,
   type InMemorySessionSocketPeerRegistry,
 } from './sessionWebSocketFanout'
@@ -56,6 +59,7 @@ export const SESSION_SOCKET_HEARTBEAT_INTERVAL_MS = 25_000 as const
 export const SESSION_SOCKET_HEARTBEAT_TIMEOUT_MS = 60_000 as const
 export const SESSION_SOCKET_HEARTBEAT_TIMEOUT_REASON =
   'Session WebSocket heartbeat timed out.' as const
+export const SESSION_SOCKET_REPLAY_AVAILABLE = false as const
 
 export type SessionSocketConnectionStatus =
   | typeof SESSION_SOCKET_PENDING_HELLO_STATUS
@@ -126,6 +130,22 @@ export interface TouchSessionSocketConnectionOptions {
   readonly lastSeenAt?: string
   readonly lastSeenRevision?: SessionRevision
   readonly currentRevision?: SessionRevision
+}
+
+export type SessionSocketReconnectDecisionReason =
+  | 'initial-connection'
+  | 'current-revision'
+  | 'missing-last-seen-revision'
+  | 'revision-gap-replay-unavailable'
+  | 'client-revision-ahead'
+
+export interface SessionSocketReconnectDecision {
+  readonly reconnect: boolean
+  readonly currentRevision: SessionRevision
+  readonly lastSeenRevision?: SessionRevision
+  readonly snapshotRequired: boolean
+  readonly replayAvailable: typeof SESSION_SOCKET_REPLAY_AVAILABLE
+  readonly reason: SessionSocketReconnectDecisionReason
 }
 
 export interface InMemorySessionSocketRegistry {
@@ -288,6 +308,103 @@ export const isSessionSocketConnectionStale = (
 const createHeartbeatNonce = (peerId: string, sentAt: string): string => {
   const parsed = parseIsoTimestampMs(sentAt)
   return `hb-${peerId}-${parsed ?? sentAt}`
+}
+
+export const resolveSessionSocketReconnectDecision = (input: {
+  readonly reconnect: boolean
+  readonly currentRevision: SessionRevision
+  readonly lastSeenRevision?: SessionRevision
+}): SessionSocketReconnectDecision => {
+  if (!input.reconnect) {
+    return {
+      reconnect: false,
+      currentRevision: input.currentRevision,
+      ...(input.lastSeenRevision === undefined ? {} : { lastSeenRevision: input.lastSeenRevision }),
+      snapshotRequired: false,
+      replayAvailable: SESSION_SOCKET_REPLAY_AVAILABLE,
+      reason: 'initial-connection',
+    }
+  }
+
+  if (input.lastSeenRevision === undefined) {
+    return {
+      reconnect: true,
+      currentRevision: input.currentRevision,
+      snapshotRequired: true,
+      replayAvailable: SESSION_SOCKET_REPLAY_AVAILABLE,
+      reason: 'missing-last-seen-revision',
+    }
+  }
+
+  if (input.lastSeenRevision === input.currentRevision) {
+    return {
+      reconnect: true,
+      currentRevision: input.currentRevision,
+      lastSeenRevision: input.lastSeenRevision,
+      snapshotRequired: false,
+      replayAvailable: SESSION_SOCKET_REPLAY_AVAILABLE,
+      reason: 'current-revision',
+    }
+  }
+
+  return {
+    reconnect: true,
+    currentRevision: input.currentRevision,
+    lastSeenRevision: input.lastSeenRevision,
+    snapshotRequired: true,
+    replayAvailable: SESSION_SOCKET_REPLAY_AVAILABLE,
+    reason: input.lastSeenRevision > input.currentRevision
+      ? 'client-revision-ahead'
+      : 'revision-gap-replay-unavailable',
+  }
+}
+
+export const createSessionReconnectSnapshotState = <TMapDocument = unknown>(
+  state: AuthoritativeSessionState<TMapDocument>,
+  actor: SessionActor,
+): AuthoritativeSessionState<TMapDocument> => {
+  if (actor.role === 'gm') return state
+
+  const player = findSessionPlayerRecord(state.players, actor.playerId)
+  const assignment = findPlayerAssignment(state.assignments, actor.playerId)
+  const visibleMapSlugs = new Set(
+    assignment?.visibleResources
+      .filter((resource) => resource.kind === 'map')
+      .map((resource) => resource.mapSlug) ?? [],
+  )
+  const maps = state.maps.filter((map) => visibleMapSlugs.has(map.mapSlug))
+  const selectedMapSlug = state.selectedMapSlug !== null && visibleMapSlugs.has(state.selectedMapSlug)
+    ? state.selectedMapSlug
+    : null
+
+  return createAuthoritativeSessionState({
+    sessionId: state.sessionId,
+    revision: state.revision,
+    selectedMapSlug,
+    maps,
+    connectedClients: state.connectedClients.filter(
+      (client) => client.actor.role === 'player' && client.actor.playerId === actor.playerId,
+    ),
+    players: player === undefined ? [] : [player],
+    assignments: assignment === undefined ? [] : [assignment],
+    createdAt: state.createdAt,
+    updatedAt: state.updatedAt,
+  })
+}
+
+export const createSessionReconnectSnapshotMessage = <TMapDocument = unknown>(
+  state: AuthoritativeSessionState<TMapDocument>,
+  actor?: SessionActor,
+): SessionSnapshotMessage<AuthoritativeSessionState<TMapDocument>, SessionRevision> => {
+  const snapshot = actor === undefined ? state : createSessionReconnectSnapshotState(state, actor)
+
+  return createSessionSnapshotFanoutMessage({
+    sessionId: state.sessionId,
+    reason: 'reconnect',
+    currentRevision: state.revision,
+    snapshot,
+    replayAvailable: SESSION_SOCKET_REPLAY_AVAILABLE,
+  })
 }
 
 export const createInMemorySessionSocketRegistry = (
@@ -869,6 +986,12 @@ const authenticateSocketHello = <TMapDocument>(
     ...(hello.lastSeenRevision === undefined ? {} : { lastSeenRevision: hello.lastSeenRevision }),
   })
 
+  const reconnectDecision = resolveSessionSocketReconnectDecision({
+    reconnect: hello.reconnect,
+    currentRevision: updatedRecord.revision,
+    ...(hello.lastSeenRevision === undefined ? {} : { lastSeenRevision: hello.lastSeenRevision }),
+  })
+
   const serverHello: SessionServerHelloMessage<SessionRevision> = {
     schemaVersion: SESSION_MESSAGE_SCHEMA_VERSION,
     type: 'hello',
@@ -881,9 +1004,20 @@ const authenticateSocketHello = <TMapDocument>(
       intervalMs: SESSION_SOCKET_HEARTBEAT_INTERVAL_MS,
       timeoutMs: SESSION_SOCKET_HEARTBEAT_TIMEOUT_MS,
     },
+    ...(hello.reconnect ? { snapshotRequired: reconnectDecision.snapshotRequired } : {}),
+    ...(
+      hello.reconnect &&
+      !reconnectDecision.snapshotRequired &&
+      hello.lastSeenRevision !== undefined
+        ? { replayFromRevision: hello.lastSeenRevision }
+        : {}
+    ),
   }
 
   sendJson(peer, serverHello)
+  if (reconnectDecision.snapshotRequired) {
+    sendJson(peer, createSessionReconnectSnapshotMessage(nextState, actorResult.actor))
+  }
   fanoutPresenceChange(nextState, 'joined', dependencies)
   return serverHello
 }

@@ -5,9 +5,10 @@
  * ROTOM_ENABLE_SESSION_HOST=1 is set. The current slice validates the initial
  * GM/player hello identity before a socket is associated with a session and
  * keeps authenticated sockets alive with app-level heartbeat ping/pong frames,
- * and fans out server presence updates only to authenticated peers in the same
- * session. Later tickets add reconnect snapshot fallback and command dispatch;
- * this route still does not grant map-edit authority by itself.
+ * sends reconnect snapshot fallback when replay is unavailable, and fans out
+ * server presence updates only to authenticated peers in the same session.
+ * Later tickets add command dispatch; this route still does not grant map-edit
+ * authority by itself.
  */
 import { defineWebSocketHandler } from 'h3'
 import {

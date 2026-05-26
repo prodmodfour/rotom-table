@@ -3,6 +3,7 @@ import type { SessionClientIdentity } from '#shared/sessionClientIdentity'
 import {
   SESSION_MESSAGE_SCHEMA_VERSION,
   isSessionHeartbeatKind,
+  isSessionSnapshotReason,
   type SessionClientHelloMessage,
   type SessionClientMessage,
   type SessionHeartbeatConfig,
@@ -10,6 +11,7 @@ import {
   type SessionHeartbeatMessage,
   type SessionServerHelloMessage,
   type SessionServerMessage,
+  type SessionSnapshotMessage,
 } from '#shared/sessionMessages'
 import { isSessionId, type SessionId } from '#shared/sessionIdentity'
 import { isSessionRevision, type SessionRevision } from '#shared/sessionRevisions'
@@ -95,6 +97,7 @@ export type SessionSocketSendResult<TMessage = SessionClientMessage> =
 
 export type SessionSocketHelloStatus = 'idle' | 'queued' | 'sent' | 'accepted' | 'rejected'
 export type SessionSocketHeartbeatStatus = 'idle' | 'active' | 'stale'
+export type SessionSocketReconnectStatus = 'idle' | 'resumed' | 'snapshot-required' | 'snapshot-received'
 
 export interface CreateSessionClientHelloMessageOptions {
   readonly reconnect?: boolean
@@ -279,6 +282,19 @@ const isServerHeartbeatMessage = (
   (message.nonce === undefined || typeof message.nonce === 'string') &&
   (message.lastSeenRevision === undefined || isSessionRevision(message.lastSeenRevision))
 
+const isServerSnapshotMessage = (
+  message: unknown,
+): message is SessionSnapshotMessage<unknown, SessionRevision> =>
+  isRecord(message) &&
+  message.schemaVersion === SESSION_MESSAGE_SCHEMA_VERSION &&
+  message.type === 'snapshot' &&
+  message.direction === 'server' &&
+  isSessionId(message.sessionId) &&
+  isSessionSnapshotReason(message.reason) &&
+  isSessionRevision(message.currentRevision) &&
+  Object.prototype.hasOwnProperty.call(message, 'snapshot') &&
+  (message.replayAvailable === undefined || typeof message.replayAvailable === 'boolean')
+
 const isUsableHeartbeatConfig = (config: SessionHeartbeatConfig): boolean =>
   Number.isSafeInteger(config.intervalMs) &&
   config.intervalMs > 0 &&
@@ -337,8 +353,11 @@ export const useSessionSocket = <
   const lastRawMessage = ref<string | null>(null)
   const lastMessage = ref<TServerMessage | null>(null)
   const lastServerHello = ref<SessionServerHelloMessage<SessionRevision> | null>(null)
+  const lastSnapshot = ref<SessionSnapshotMessage<unknown, SessionRevision> | null>(null)
+  const lastKnownRevision = ref<SessionRevision | null>(null)
   const helloStatus = ref<SessionSocketHelloStatus>('idle')
   const heartbeatStatus = ref<SessionSocketHeartbeatStatus>('idle')
+  const reconnectStatus = ref<SessionSocketReconnectStatus>('idle')
   const heartbeatConfig = ref<SessionHeartbeatConfig | null>(null)
   const lastServerMessageAt = ref<string | null>(null)
   const lastHeartbeatSentAt = ref<string | null>(null)
@@ -387,6 +406,11 @@ export const useSessionSocket = <
     return flushed
   }
 
+  const heartbeatRevisionMetadata = (): Pick<CreateSessionClientHeartbeatMessageOptions, 'lastSeenRevision'> => {
+    const revision = lastKnownRevision.value
+    return revision === null ? {} : { lastSeenRevision: revision }
+  }
+
   const handleOpen = (openedSocket: SessionSocketLike) => {
     if (socket.value !== openedSocket) return
     status.value = 'open'
@@ -417,22 +441,29 @@ export const useSessionSocket = <
       lastServerMessageAt.value = receivedAt
       if (isServerHelloMessage(parsed)) {
         lastServerHello.value = parsed
+        lastKnownRevision.value = parsed.currentRevision
         helloStatus.value = 'accepted'
+        reconnectStatus.value = parsed.resumed
+          ? parsed.snapshotRequired === true ? 'snapshot-required' : 'resumed'
+          : 'idle'
         heartbeatConfig.value = parsed.heartbeat
         if (isUsableHeartbeatConfig(parsed.heartbeat)) {
           startHeartbeat(parsed.sessionId, parsed.heartbeat)
         }
       } else if (isServerHeartbeatMessage(parsed)) {
         lastHeartbeatReceivedAt.value = receivedAt
+        if (parsed.lastSeenRevision !== undefined) lastKnownRevision.value = parsed.lastSeenRevision
         if (parsed.heartbeat === 'ping') {
           sendHeartbeat(parsed.sessionId, {
             heartbeat: 'pong',
             ...(parsed.nonce === undefined ? {} : { nonce: parsed.nonce }),
-            ...(lastServerHello.value?.currentRevision === undefined
-              ? {}
-              : { lastSeenRevision: lastServerHello.value.currentRevision }),
+            ...heartbeatRevisionMetadata(),
           })
         }
+      } else if (isServerSnapshotMessage(parsed)) {
+        lastSnapshot.value = parsed
+        lastKnownRevision.value = parsed.currentRevision
+        if (parsed.reason === 'reconnect') reconnectStatus.value = 'snapshot-received'
       } else if (isServerAuthRejectionMessage(parsed)) {
         helloStatus.value = 'rejected'
       }
@@ -499,8 +530,11 @@ export const useSessionSocket = <
     lastError.value = null
     lastClose.value = null
     lastServerHello.value = null
+    lastSnapshot.value = null
+    lastKnownRevision.value = null
     heartbeatConfig.value = null
     heartbeatStatus.value = 'idle'
+    reconnectStatus.value = 'idle'
     lastServerMessageAt.value = null
     lastHeartbeatSentAt.value = null
     lastHeartbeatReceivedAt.value = null
@@ -644,9 +678,7 @@ export const useSessionSocket = <
 
       sendHeartbeat(sessionId, {
         heartbeat: 'ping',
-        ...(lastServerHello.value?.currentRevision === undefined
-          ? {}
-          : { lastSeenRevision: lastServerHello.value.currentRevision }),
+        ...heartbeatRevisionMetadata(),
       })
     }, config.intervalMs)
     const maybeUnref = (heartbeatTimer as { unref?: () => void }).unref
@@ -714,8 +746,11 @@ export const useSessionSocket = <
     lastRawMessage,
     lastMessage,
     lastServerHello,
+    lastSnapshot,
+    lastKnownRevision,
     helloStatus,
     heartbeatStatus,
+    reconnectStatus,
     heartbeatConfig,
     lastServerMessageAt,
     lastHeartbeatSentAt,
