@@ -8,6 +8,7 @@ import { parseOpId } from '#shared/sessionCommands'
 import {
   SESSION_MESSAGE_SCHEMA_VERSION,
   type SessionClientMessage,
+  type SessionServerMessage,
 } from '#shared/sessionMessages'
 import {
   parseClientId,
@@ -70,6 +71,7 @@ const placement = {
   id: 'token-pikachu',
   sheetKind: 'pokemon' as const,
   sheetSlug: 'pikachu',
+  position: { x: 1, y: 0, z: 2 },
 }
 
 const makeIdentityStorage = (identity: SessionClientIdentity | null): SessionClientIdentityStorage => ({
@@ -100,12 +102,15 @@ const makeSocket = (overrides: {
 } = {}) => {
   const sentMessages: SessionClientMessage<MoveTokenCommand>[] = []
   const helloIdentities: SessionClientIdentity[] = []
+  const messageHandlers: Array<(message: SessionServerMessage, raw: string) => void> = []
   const socket: SessionMoveTokenSocket & {
     readonly sentMessages: SessionClientMessage<MoveTokenCommand>[]
     readonly helloIdentities: SessionClientIdentity[]
+    readonly messageHandlers: Array<(message: SessionServerMessage, raw: string) => void>
     readonly connect: ReturnType<typeof vi.fn>
     readonly sendHello: ReturnType<typeof vi.fn>
     readonly send: ReturnType<typeof vi.fn>
+    readonly addMessageHandler: ReturnType<typeof vi.fn>
   } = {
     status: ref(overrides.status ?? 'idle') as Ref<SessionSocketStatus>,
     helloStatus: ref(overrides.helloStatus ?? 'idle') as Ref<SessionSocketHelloStatus>,
@@ -142,8 +147,16 @@ const makeSocket = (overrides: {
       sentMessages.push(message)
       return queuedResult(message)
     }),
+    addMessageHandler: vi.fn((handler: (message: SessionServerMessage, raw: string) => void) => {
+      messageHandlers.push(handler)
+      return () => {
+        const index = messageHandlers.indexOf(handler)
+        if (index >= 0) messageHandlers.splice(index, 1)
+      }
+    }),
     sentMessages,
     helloIdentities,
+    messageHandlers,
   }
   return socket
 }
@@ -255,6 +268,261 @@ describe('session moveToken client dispatch', () => {
     })
     expect(result.command.payload.to).toEqual({ x: 4, y: 0, z: 2 })
     expect(dispatch.lastError.value).toBeNull()
+  })
+
+  it('applies an optimistic token-position override and confirms it from an accepted ack', () => {
+    const socket = makeSocket({ lastKnownRevision: REVISION_2 })
+    const dispatch = useSessionMoveTokenDispatch({
+      enabled: ref(true),
+      mapSlug: ref('arena-map'),
+      identityStorage: makeIdentityStorage(playerIdentity),
+      socket,
+      createOpId: () => OP_ID,
+      now: () => '2026-05-26T12:00:00.000Z',
+    })
+
+    const result = dispatch.dispatchMoveToken({
+      placement,
+      to: { x: 4, y: 0, z: 2 },
+    })
+
+    expect(result.dispatched).toBe(true)
+    if (!result.dispatched) throw new Error(result.message)
+    expect(socket.addMessageHandler).toHaveBeenCalledTimes(1)
+    expect(dispatch.optimisticMoves.value).toMatchObject([
+      {
+        opId: OP_ID,
+        tokenId: 'token-pikachu',
+        mapSlug: 'arena-map',
+        from: { x: 1, y: 0, z: 2 },
+        to: { x: 4, y: 0, z: 2 },
+        position: { x: 4, y: 0, z: 2 },
+        status: 'pending',
+        baseRevision: REVISION_2,
+      },
+    ])
+    expect(dispatch.tokenPositionOverrides.value).toMatchObject([
+      {
+        tokenId: 'token-pikachu',
+        mapSlug: 'arena-map',
+        position: { x: 4, y: 0, z: 2 },
+        status: 'pending',
+        opId: OP_ID,
+      },
+    ])
+
+    socket.messageHandlers[0]?.({
+      schemaVersion: SESSION_MESSAGE_SCHEMA_VERSION,
+      type: 'commandAck',
+      direction: 'server',
+      sessionId: SESSION_ID,
+      result: {
+        schemaVersion: 1,
+        status: 'accepted',
+        accepted: true,
+        sessionId: SESSION_ID,
+        opId: OP_ID,
+        commandType: MOVE_TOKEN_COMMAND_TYPE,
+        actor: result.command.actor,
+        currentRevision: REVISION_4,
+        scopes: result.command.scopes,
+        event: {
+          eventId: 'event_rev_4',
+          eventType: 'tokenMoved',
+          revision: REVISION_4,
+          commandType: MOVE_TOKEN_COMMAND_TYPE,
+          opId: OP_ID,
+          actor: result.command.actor,
+          scopes: result.command.scopes,
+          payload: {
+            tokenId: 'token-pikachu',
+            mapSlug: 'arena-map',
+            from: { x: 1, y: 0, z: 2 },
+            to: { x: 4, y: 0, z: 2 },
+          },
+        },
+      },
+    } satisfies SessionServerMessage, '')
+
+    expect(dispatch.optimisticMoves.value).toMatchObject([
+      {
+        opId: OP_ID,
+        status: 'confirmed',
+        currentRevision: REVISION_4,
+        position: { x: 4, y: 0, z: 2 },
+      },
+    ])
+    expect(dispatch.tokenPositionOverrides.value[0]).toMatchObject({
+      status: 'confirmed',
+      revision: REVISION_4,
+      position: { x: 4, y: 0, z: 2 },
+    })
+    expect(dispatch.lastError.value).toBeNull()
+  })
+
+  it('reconciles an optimistic move to current authoritative token state on rejection', () => {
+    const socket = makeSocket({ lastKnownRevision: REVISION_2 })
+    const dispatch = useSessionMoveTokenDispatch({
+      enabled: ref(true),
+      mapSlug: 'arena-map',
+      identityStorage: makeIdentityStorage(playerIdentity),
+      socket,
+      createOpId: () => OP_ID,
+      now: () => '2026-05-26T12:00:00.000Z',
+    })
+
+    const result = dispatch.dispatchMoveToken({ placement, to: { x: 4, y: 0, z: 2 } })
+    expect(result.dispatched).toBe(true)
+    if (!result.dispatched) throw new Error(result.message)
+
+    dispatch.handleServerMessage({
+      schemaVersion: SESSION_MESSAGE_SCHEMA_VERSION,
+      type: 'commandReject',
+      direction: 'server',
+      sessionId: SESSION_ID,
+      result: {
+        schemaVersion: 1,
+        status: 'rejected',
+        accepted: false,
+        reason: 'stale',
+        message: 'Token token-pikachu changed after revision 2.',
+        retryable: true,
+        sessionId: SESSION_ID,
+        opId: OP_ID,
+        commandType: MOVE_TOKEN_COMMAND_TYPE,
+        actor: result.command.actor,
+        currentRevision: REVISION_4,
+        baseRevision: REVISION_2,
+        scopes: result.command.scopes,
+        changedScopes: result.command.scopes,
+        currentState: {
+          tokenId: 'token-pikachu',
+          mapSlug: 'arena-map',
+          position: { x: 2, y: 0, z: 2 },
+          revision: REVISION_4,
+        },
+      },
+    } satisfies SessionServerMessage)
+
+    expect(dispatch.tokenPositionOverrides.value).toMatchObject([
+      {
+        tokenId: 'token-pikachu',
+        mapSlug: 'arena-map',
+        status: 'reconciled',
+        position: { x: 2, y: 0, z: 2 },
+        revision: REVISION_4,
+        message: 'Token token-pikachu changed after revision 2.',
+      },
+    ])
+    expect(dispatch.lastError.value).toBe('Token token-pikachu changed after revision 2.')
+    expect(dispatch.lastRejection.value).toMatchObject({
+      opId: OP_ID,
+      tokenId: 'token-pikachu',
+      mapSlug: 'arena-map',
+      reason: 'stale',
+      currentRevision: REVISION_4,
+    })
+  })
+
+  it('rolls back an optimistic move when a rejection has no current token state', () => {
+    const dispatch = useSessionMoveTokenDispatch({
+      enabled: ref(true),
+      mapSlug: 'arena-map',
+      identityStorage: makeIdentityStorage(playerIdentity),
+      socket: makeSocket({ lastKnownRevision: REVISION_2 }),
+      createOpId: () => OP_ID,
+      now: () => '2026-05-26T12:00:00.000Z',
+    })
+
+    const result = dispatch.dispatchMoveToken({ placement, to: { x: 4, y: 0, z: 2 } })
+    expect(result.dispatched).toBe(true)
+    if (!result.dispatched) throw new Error(result.message)
+    expect(dispatch.tokenPositionOverrides.value).toHaveLength(1)
+
+    dispatch.handleServerMessage({
+      schemaVersion: SESSION_MESSAGE_SCHEMA_VERSION,
+      type: 'commandReject',
+      direction: 'server',
+      sessionId: SESSION_ID,
+      result: {
+        schemaVersion: 1,
+        status: 'rejected',
+        accepted: false,
+        reason: 'invalid',
+        message: 'moveToken payload is invalid.',
+        retryable: false,
+        sessionId: SESSION_ID,
+        opId: OP_ID,
+        commandType: MOVE_TOKEN_COMMAND_TYPE,
+        actor: result.command.actor,
+        currentRevision: REVISION_2,
+        scopes: result.command.scopes,
+        issues: [],
+      },
+    } satisfies SessionServerMessage)
+
+    expect(dispatch.optimisticMoves.value).toEqual([])
+    expect(dispatch.tokenPositionOverrides.value).toEqual([])
+    expect(dispatch.lastRejection.value).toMatchObject({
+      opId: OP_ID,
+      reason: 'invalid',
+      message: 'moveToken payload is invalid.',
+    })
+  })
+
+  it('applies authoritative tokenMoved patches as confirmed visual overrides', () => {
+    const dispatch = useSessionMoveTokenDispatch({
+      enabled: ref(true),
+      mapSlug: 'arena-map',
+      identityStorage: makeIdentityStorage(playerIdentity),
+      socket: makeSocket(),
+      now: () => '2026-05-26T12:00:00.000Z',
+    })
+
+    dispatch.handleServerMessage({
+      schemaVersion: SESSION_MESSAGE_SCHEMA_VERSION,
+      type: 'patch',
+      direction: 'server',
+      sessionId: SESSION_ID,
+      event: {
+        eventId: 'event_rev_4',
+        eventType: 'tokenMoved',
+        revision: REVISION_4,
+        commandType: MOVE_TOKEN_COMMAND_TYPE,
+        opId: OP_ID,
+        actor: {
+          role: 'player',
+          playerId: PLAYER_ID,
+          clientId: PLAYER_CLIENT_ID,
+          displayName: DISPLAY_NAME,
+        },
+        scopes: [],
+        payload: {
+          tokenId: 'token-pikachu',
+          mapSlug: 'arena-map',
+          from: { x: 1, y: 0, z: 2 },
+          to: { x: 5, y: 0, z: 2 },
+        },
+      },
+    } satisfies SessionServerMessage)
+
+    expect(dispatch.optimisticMoves.value).toMatchObject([
+      {
+        opId: OP_ID,
+        tokenId: 'token-pikachu',
+        mapSlug: 'arena-map',
+        status: 'confirmed',
+        position: { x: 5, y: 0, z: 2 },
+        currentRevision: REVISION_4,
+      },
+    ])
+    expect(dispatch.tokenPositionOverrides.value[0]).toMatchObject({
+      tokenId: 'token-pikachu',
+      mapSlug: 'arena-map',
+      status: 'confirmed',
+      revision: REVISION_4,
+      position: { x: 5, y: 0, z: 2 },
+    })
   })
 
   it('does not dispatch or connect when session mode is disabled', () => {

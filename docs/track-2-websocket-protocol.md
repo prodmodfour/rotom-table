@@ -9,7 +9,7 @@ This document describes the transport slice that exists after the WebSocket tran
 - the server validates hello, heartbeat, and command frame shapes before dispatch;
 - same-session fanout exists for presence, command results, patches, and snapshots;
 - reconnect currently falls back to an authoritative snapshot when replay is unavailable;
-- the shared `moveToken` command payload contract, validator, server-side application use case, stale same-token rejection, sender acknowledgement/rejection, same-session `tokenMoved` patch broadcast, and explicit map-view client dispatch now apply through `/api/sessions/socket`; optimistic client movement and reconciliation are still later token-command tickets.
+- the shared `moveToken` command payload contract, validator, server-side application use case, stale same-token rejection, sender acknowledgement/rejection, same-session `tokenMoved` patch broadcast, explicit map-view client dispatch, and client-local optimistic visual reconciliation now apply through `/api/sessions/socket`.
 
 ## Route, runtime gate, and URL shape
 
@@ -307,7 +307,7 @@ Server processing order for the command path:
 6. Increment the relevant revision, persist a snapshot/event, send `commandAck` to the sender, and fan out a small `patch` to same-session clients.
 7. Return `commandReject` for invalid, unauthorized, stale, or conflicting commands without advancing revision.
 
-Current transport boundary: `moveToken` dispatch is live on both the WebSocket route and the explicit map-view session mode. The client does not yet apply optimistic movement or patch reconciliation locally, so accepted movement may not visibly update until later client-integration tickets wire authoritative session map state into the renderer. Other command types still receive a server `error` with `code: "unsupported-message"` instead of mutating state until their command-specific tickets land.
+Current transport boundary: `moveToken` dispatch is live on both the WebSocket route and the explicit map-view session mode. The client now applies a local optimistic token-position override after a `moveToken` command is queued/sent, confirms that override from `commandAck` or `tokenMoved` patch frames, and rolls it back or reconciles it to returned `currentState.position` on `commandReject`. The optimistic override affects rendering/session controls only; it does not mutate the persisted map document or trigger whole-map autosave. Other command types still receive a server `error` with `code: "unsupported-message"` instead of mutating state until their command-specific tickets land.
 
 ### Accepted command and patch
 
