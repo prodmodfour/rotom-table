@@ -54,7 +54,9 @@ const gmKey = parseGmKey('gmkey_attachmapabcdefghijklmnopqrstuvwxyz')
 const wrongGmKey = parseGmKey('gmkey_wrongattachmapabcdefghijklmnopq')
 const gmClientId = parseClientId('client_attachGM1')
 const playerId = parsePlayerId('player_attach01')
+const otherPlayerId = parsePlayerId('player_attach02')
 const playerDisplayName = parseSessionDisplayName('Misty')
+const otherPlayerDisplayName = parseSessionDisplayName('Brock')
 const baseRevision = parseSessionRevision(3)
 const preservedMapRevision = parseMapRevision(7)
 
@@ -284,6 +286,7 @@ describe('attachSessionMapUseCase', () => {
     expect(stored?.state?.maps[0]).toEqual({
       mapSlug: viridianMapSlug,
       revision: INITIAL_MAP_REVISION,
+      playerVisibleByDefault: true,
       document: persistedMap,
     })
     expect(stored?.state?.maps[0]?.document).not.toBe(persistedMap)
@@ -299,6 +302,60 @@ describe('attachSessionMapUseCase', () => {
     expect(mapDependencies.readMap).toHaveBeenCalledWith(`/maps/${viridianMapSlug}.json`)
     expect(writeSnapshot).toHaveBeenCalledTimes(1)
     expect(writeSnapshot.mock.calls[0]?.[0]).toEqual(stored?.state)
+  })
+
+  it('grants selected attached map visibility to every existing joined player when requested', () => {
+    const state = createBaseState({
+      players: [
+        {
+          playerId,
+          displayName: playerDisplayName,
+          joinedAt,
+          updatedAt: joinedAt,
+        },
+        {
+          playerId: otherPlayerId,
+          displayName: otherPlayerDisplayName,
+          joinedAt,
+          updatedAt: joinedAt,
+        },
+      ],
+      assignments: [
+        {
+          playerId,
+          displayName: playerDisplayName,
+          controllableResources: [],
+          visibleResources: [{ kind: 'map', mapSlug: pewterMapSlug }],
+          updatedAt: joinedAt,
+        },
+      ],
+    })
+    const store = createStoreWithSession({ state })
+
+    const result = attachMap({ store })
+    const storedAssignments = store.get(sessionId)?.state?.assignments ?? []
+
+    expect(result.visibility).toEqual({
+      behavior: 'visible-to-all-players',
+      grantsJoinedPlayers: true,
+      grantsFuturePlayers: true,
+      visiblePlayerIds: [playerId, otherPlayerId],
+    })
+    expect(storedAssignments).toHaveLength(2)
+    expect(storedAssignments.find((assignment) => assignment.playerId === playerId)?.visibleResources)
+      .toEqual([
+        { kind: 'map', mapSlug: pewterMapSlug },
+        { kind: 'map', mapSlug: viridianMapSlug },
+      ])
+    expect(storedAssignments.find((assignment) => assignment.playerId === otherPlayerId))
+      .toMatchObject({
+        playerId: otherPlayerId,
+        displayName: otherPlayerDisplayName,
+        controllableResources: [],
+        visibleResources: [{ kind: 'map', mapSlug: viridianMapSlug }],
+        updatedAt: attachedAt,
+        updatedByClientId: gmClientId,
+      })
   })
 
   it('preserves an existing session map revision and current selection when requested', () => {

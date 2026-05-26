@@ -11,6 +11,7 @@ import {
 } from '#shared/sessionIdentity'
 import { INITIAL_SESSION_REVISION, incrementSessionRevision } from '#shared/sessionRevisions'
 import {
+  createAuthoritativeSessionMapState,
   createAuthoritativeSessionState,
   type AuthoritativeSessionState,
 } from '#shared/sessionState'
@@ -232,6 +233,43 @@ describe('joinPlayerSessionUseCase', () => {
     expect(stored?.state?.connectedClients).toEqual([])
     expect(writeSnapshot).toHaveBeenCalledTimes(1)
     expect(writeSnapshot.mock.calls[0]?.[0]).toEqual(stored?.state)
+  })
+
+  it('gives new players default visibility to attached session maps marked visible to future players', () => {
+    const state = createBaseState({
+      selectedMapSlug: 'viridian-gym',
+      maps: [
+        createAuthoritativeSessionMapState({
+          mapSlug: 'hidden-room',
+          document: { label: 'GM only' },
+        }),
+        createAuthoritativeSessionMapState({
+          mapSlug: 'viridian-gym',
+          playerVisibleByDefault: true,
+          document: { label: 'Visible table map' },
+        }),
+      ],
+    })
+    const store = createStoreWithSession({ state })
+
+    const result = joinSession({ store })
+
+    expect(result.state.assignments).toEqual([
+      {
+        playerId,
+        displayName: mistyDisplayName,
+        controllableResources: [],
+        visibleResources: [{ kind: 'map', mapSlug: 'viridian-gym' }],
+        updatedAt: joinedAt,
+      },
+    ])
+    expect(store.get(sessionId)?.state?.assignments[0]?.visibleResources).toEqual([
+      { kind: 'map', mapSlug: 'viridian-gym' },
+    ])
+    expect(store.get(sessionId)?.state?.assignments[0]?.visibleResources).not.toContainEqual({
+      kind: 'map',
+      mapSlug: 'hidden-room',
+    })
   })
 
   it('allows duplicate display names while keeping session-local player IDs distinct', () => {

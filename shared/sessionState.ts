@@ -20,6 +20,11 @@ export interface AuthoritativeSessionMapState<TMapDocument = unknown> {
   readonly mapSlug: SessionMapSlug
   readonly revision: MapRevision
   /**
+   * When true, newly joined players receive a visible map grant for this
+   * session map unless the GM later replaces the map with a stricter rule.
+   */
+  readonly playerVisibleByDefault?: boolean
+  /**
    * Server-owned map document/slice for this map. Session commands mutate this
    * copy and then broadcast small accepted patches instead of accepting live
    * whole-map autosaves from clients.
@@ -73,6 +78,7 @@ export interface CreateAuthoritativeSessionMapStateInput<TMapDocument = unknown>
   readonly mapSlug: SessionMapSlug
   readonly document: TMapDocument
   readonly revision?: MapRevision
+  readonly playerVisibleByDefault?: boolean
 }
 
 export interface SessionStateUpdateOptions {
@@ -214,6 +220,7 @@ export const createAuthoritativeSessionMapState = <TMapDocument = unknown>(
 ): AuthoritativeSessionMapState<TMapDocument> => ({
   mapSlug: normalizeSessionMapSlug(input.mapSlug),
   revision: input.revision ?? INITIAL_MAP_REVISION,
+  ...(input.playerVisibleByDefault === true ? { playerVisibleByDefault: true } : {}),
   document: input.document,
 })
 
@@ -248,6 +255,10 @@ export const getSelectedSessionMapState = <TMapDocument>(
   state: Pick<AuthoritativeSessionState<TMapDocument>, 'maps' | 'selectedMapSlug'>,
 ): AuthoritativeSessionMapState<TMapDocument> | undefined =>
   getSessionMapState(state, state.selectedMapSlug)
+
+export const isSessionMapVisibleByDefaultToPlayers = <TMapDocument>(
+  map: Pick<AuthoritativeSessionMapState<TMapDocument>, 'playerVisibleByDefault'>,
+): boolean => map.playerVisibleByDefault === true
 
 export const setSelectedSessionMapSlug = <TMapDocument>(
   state: AuthoritativeSessionState<TMapDocument>,

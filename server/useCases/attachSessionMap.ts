@@ -292,9 +292,16 @@ export const attachSessionMapUseCase = <TMapDocument = TabletopMap>(
   const nextRevision = incrementSessionRevision(currentState.revision)
   const previousSelectedMapSlug = currentState.selectedMapSlug
   const mapRevision = existingMapRevisionFor(currentState, request.mapSlug)
+  const grantsJoinedPlayers = shouldGrantAttachedMapVisibilityToJoinedPlayers(
+    request.visibilityBehavior,
+  )
+  const grantsFuturePlayers = shouldGrantAttachedMapVisibilityToFuturePlayers(
+    request.visibilityBehavior,
+  )
   const attachedMap = createAuthoritativeSessionMapState<TMapDocument>({
     mapSlug: request.mapSlug,
     revision: mapRevision,
+    playerVisibleByDefault: grantsFuturePlayers,
     document: loadedMap.document,
   })
   const selectedMapSlug = shouldSelectAttachedSessionMap(request.selectedMapBehavior)
@@ -311,12 +318,6 @@ export const attachSessionMapUseCase = <TMapDocument = TabletopMap>(
     createdAt: currentState.createdAt,
     updatedAt: attachedAt,
   })
-  const grantsJoinedPlayers = shouldGrantAttachedMapVisibilityToJoinedPlayers(
-    request.visibilityBehavior,
-  )
-  const grantsFuturePlayers = shouldGrantAttachedMapVisibilityToFuturePlayers(
-    request.visibilityBehavior,
-  )
   const visibilityUpdate = grantsJoinedPlayers
     ? grantAttachedMapVisibilityToJoinedPlayers(
         baseNextState,

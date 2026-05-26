@@ -371,6 +371,21 @@ const parseOptionalNonEmptyStringField = (
   return parseNonEmptyStringField(record[key], `${path}.${key}`, issues)
 }
 
+const parseOptionalBooleanField = (
+  record: UnknownRecord,
+  key: string,
+  path: string,
+  issues: SessionSnapshotValidationIssue[],
+): boolean | undefined => {
+  if (!hasOwn(record, key)) return undefined
+  if (typeof record[key] !== 'boolean') {
+    addValidationIssue(issues, `${path}.${key}`, 'invalid-field', `${path}.${key} must be boolean`)
+    return undefined
+  }
+
+  return record[key]
+}
+
 const parseSheetKindField = (
   value: unknown,
   path: string,
@@ -564,6 +579,12 @@ const parseSessionMapState = <TMapDocument>(
 
   const mapSlug = parseNonEmptyStringField(record.mapSlug, `${path}.mapSlug`, issues)
   const revision = parseMapRevisionField(record.revision, `${path}.revision`, issues)
+  const playerVisibleByDefault = parseOptionalBooleanField(
+    record,
+    'playerVisibleByDefault',
+    path,
+    issues,
+  )
   if (!hasOwn(record, 'document')) {
     addValidationIssue(issues, `${path}.document`, 'invalid-field', `${path}.document is required`)
   }
@@ -575,6 +596,7 @@ const parseSessionMapState = <TMapDocument>(
   return createAuthoritativeSessionMapState<TMapDocument>({
     mapSlug,
     revision,
+    playerVisibleByDefault,
     document: record.document as TMapDocument,
   })
 }
