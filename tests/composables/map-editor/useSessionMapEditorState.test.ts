@@ -80,12 +80,53 @@ describe('useSessionMapEditorState', () => {
     expect(state.sessionMap.value?.placements[0]?.position).toEqual({ x: 4, y: 0, z: 4 })
     expect(localMap.value.placements[0]?.position).toEqual({ x: 2, y: 0, z: 1 })
     expect(state.source.value).toBe('local-seed')
+    expect(state.hasAuthoritativeSessionState.value).toBe(false)
 
     enabled.value = false
     await nextTick()
 
     expect(state.map.value).toBe(localMap.value)
     expect(state.map.value?.placements[0]?.position).toEqual({ x: 2, y: 0, z: 1 })
+  })
+
+  it('treats a snapshot without the current visible map as a local placeholder only', async () => {
+    const localMap = ref(mapFixture({ name: 'Local placeholder' }))
+    const enabled = ref(true)
+    const state = useSessionMapEditorState({ enabled, localMap, mapSlug: 'arena-map' })
+    await nextTick()
+
+    const otherMap = mapFixture({ slug: 'other-map', name: 'Other Map' })
+    const snapshot = createAuthoritativeSessionState({
+      sessionId: SESSION_ID,
+      revision: REVISION_2,
+      selectedMapSlug: 'other-map',
+      maps: [createAuthoritativeSessionMapState({
+        mapSlug: 'other-map',
+        revision: MAP_REVISION_1,
+        document: otherMap,
+      })],
+      createdAt: '2026-05-26T12:00:00.000Z',
+    })
+
+    const applied = state.applySessionSnapshot(serverMessage({
+      schemaVersion: SESSION_MESSAGE_SCHEMA_VERSION,
+      type: 'snapshot',
+      direction: 'server',
+      sessionId: SESSION_ID,
+      reason: 'reconnect',
+      currentRevision: REVISION_2,
+      snapshot,
+      replayAvailable: false,
+    } as SessionServerMessage) as Extract<SessionServerMessage, { readonly type: 'snapshot' }>)
+
+    expect(applied).toBe(false)
+    expect(state.map.value).toEqual(localMap.value)
+    expect(state.map.value).not.toBe(localMap.value)
+    expect(state.source.value).toBe('local-seed')
+    expect(state.hasAuthoritativeSessionState.value).toBe(false)
+    expect(state.sessionRevision.value).toBeNull()
+    expect(state.mapRevision.value).toBeNull()
+    expect(state.lastIgnoredMessage.value).toContain('did not include visible map "arena-map"')
   })
 
   it('adopts visible authoritative snapshot map documents without mutating the local editable map', async () => {

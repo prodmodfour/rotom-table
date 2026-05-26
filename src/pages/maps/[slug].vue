@@ -35,7 +35,12 @@ import {
   type SessionMoveTokenSocket,
 } from '~/composables/map-editor/useSessionMoveTokenDispatch'
 import { useTokenControls } from '~/composables/map-editor/useTokenControls'
-import { formatSessionCommandRejectionNotice } from '~/utils/sessionCommandRejectionUi'
+import type { AuthoritativeSessionState } from '#shared/sessionState'
+import { buildSessionTokenControlModel } from '~/utils/sessionTokenControl'
+import {
+  formatSessionCommandRejectionNotice,
+  runSessionCommandRejectionRefreshAction,
+} from '~/utils/sessionCommandRejectionUi'
 import { buildSessionConnectionStatusNotice } from '~/utils/sessionConnectionStatusUi'
 import { buildSessionPresencePanelModel } from '~/utils/sessionPresencePanel'
 import { MAP_API_PATHS } from '~/utils/apiRoutes'
@@ -55,21 +60,22 @@ const route = useRoute()
 const router = useRouter()
 const { isGm, isPlayer } = useAuth()
 const slug = routeSlugParam(route.params)
+const sessionMoveTokenEnabled = computed(() => isSessionModeQueryEnabled(route.query.session))
 
 const {
   map: localEditableMap,
   status,
   error,
   renamedTo,
-} = useEditableMap(slug)
+} = useEditableMap(slug, {
+  autosaveEnabled: computed(() => !sessionMoveTokenEnabled.value),
+})
 const { pokemonBySlug, trainerBySlug } = useLiveSheets()
 const { postJson } = useApiClient()
 
 watch(renamedTo, (newSlug) => {
   if (newSlug) router.replace(mapEditorPath(newSlug))
 })
-
-const sessionMoveTokenEnabled = computed(() => isSessionModeQueryEnabled(route.query.session))
 const sessionMap = useSessionMap({
   enabled: sessionMoveTokenEnabled,
   localMap: localEditableMap,
@@ -79,6 +85,7 @@ const sessionMoveTokenDispatch = useSessionMoveTokenDispatch({
   enabled: sessionMoveTokenEnabled,
   mapSlug: slug,
   socket: sessionMap.socket as unknown as SessionMoveTokenSocket,
+  hasAuthoritativeSessionState: sessionMap.mapState.hasAuthoritativeSessionState,
 })
 const map = sessionMap.map
 const sessionSceneCommands = useSessionMapSceneCommands({
@@ -91,6 +98,35 @@ const mapStatus = computed(() => (
   sessionMoveTokenEnabled.value && map.value
     ? 'idle'
     : status.value
+))
+const sessionAssignmentTokens = computed(() => (map.value?.placements ?? []).map((placement) => ({
+  tokenId: placement.id,
+  mapSlug: slug,
+  sheetKind: placement.sheetKind,
+  sheetSlug: placement.sheetSlug,
+})))
+const sessionSnapshotState = computed(() => (
+  sessionMap.socket.lastSnapshot.value?.snapshot as AuthoritativeSessionState<TabletopMap> | undefined
+) ?? null)
+const sessionTokenControlModel = computed(() => buildSessionTokenControlModel({
+  enabled: sessionMoveTokenEnabled.value,
+  identity: sessionMap.identity.value,
+  mapSlug: slug,
+  placements: map.value?.placements ?? [],
+  assignments: sessionSnapshotState.value?.assignments,
+  hasAuthoritativeSessionState: sessionMap.mapState.hasAuthoritativeSessionState.value,
+}))
+const sessionTokenControlNotice = computed(() => sessionTokenControlModel.value.notice)
+const sessionMapReadyForCommands = computed(() => sessionMap.mapState.hasAuthoritativeSessionState.value)
+const canUseSessionTokenSendOut = computed(() => (
+  sessionMoveTokenEnabled.value
+    ? sessionMap.identity.value !== null && sessionMapReadyForCommands.value
+    : canSpawnTokens.value
+))
+const canUseSessionTokenDelete = computed(() => (
+  sessionMoveTokenEnabled.value
+    ? sessionMap.identity.value?.role === 'gm' && sessionMapReadyForCommands.value
+    : isGm.value
 ))
 
 useHead(() => ({
@@ -161,8 +197,13 @@ const {
   mapGroundLevelY,
   canSpawnTokens,
   canControlAllTokens: isGm,
-  canDeleteTokens: isGm,
+  canDeleteTokens: canUseSessionTokenDelete,
+  canSendOutTokens: canUseSessionTokenSendOut,
   sessionMoveTokenDispatcher: sessionMoveTokenDispatch,
+  sessionTokenControl: {
+    enabled: sessionMoveTokenEnabled,
+    controllablePlacementIds: computed(() => sessionTokenControlModel.value.controllablePlacementIds),
+  },
 })
 
 const selectPokemon = (id: string | null) => {
@@ -660,10 +701,12 @@ const dismissSessionCommandRejection = () => {
   if (opId !== undefined) dismissedSessionCommandRejectionOpId.value = opId
 }
 
-const refreshSessionSnapshotAfterRejection = () => {
-  dismissedSessionCommandRejectionOpId.value = null
-  sessionMap.refreshSessionSnapshot()
-}
+const refreshSessionSnapshotAfterRejection = () => runSessionCommandRejectionRefreshAction({
+  resetDismissal: () => {
+    dismissedSessionCommandRejectionOpId.value = null
+  },
+  refreshSessionSnapshot: sessionMap.refreshSessionSnapshot,
+})
 
 const openMoveAutomationFromContext = (payload: { id: string; moveName?: string | null }) => {
   cancelAbilityAutomationTargeting()
@@ -765,6 +808,7 @@ useMapDimensionReconciliation({
       <MapNavigationRail
         :map-slug="slug"
         :session-mode-enabled="sessionMoveTokenEnabled"
+        :map-tokens="sessionAssignmentTokens"
       />
     </template>
 
@@ -797,7 +841,8 @@ useMapDimensionReconciliation({
         :hazard-mode="hazardMode && canEditMap"
         :hazard-tool="hazardTool"
         :hazard-kind="hazardKind"
-        :can-delete-tokens="isGm"
+        :can-delete-tokens="canUseSessionTokenDelete"
+        :session-token-control-notice="sessionTokenControlNotice"
         :move-automation-targeting="actionAutomationTargeting"
         :move-automation-feedback="moveAutomationFeedback"
         :move-usage-error="sceneActionError"

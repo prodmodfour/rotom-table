@@ -7,14 +7,14 @@ It is intentionally scoped to the identity/join/lobby surface. For the GM flow t
 ## Current lobby behaviour
 
 - `/sessions` is an additive lobby route. It does not replace the existing `/login` trust picker or local-first map/sheet workflows.
-- Map routes expose a compact **Table session** panel in the map navigation rail with links to `/sessions#gm-lobby-title`, `/sessions#player-lobby-title`, an **Attach current map** action for remembered GM sessions, and an explicit `/maps/<slug>?session=1` session-mode view for the current map.
+- Map routes expose a compact **Table session** panel in the map navigation rail with links to `/sessions#gm-lobby-title`, `/sessions#player-lobby-title`, an **Attach current map** action for remembered GM sessions, a **Player access** / **Assign map tokens** panel for GM token assignment on the selected attached map, and an explicit `/maps/<slug>?session=1` session-mode view for the current map.
 - `GET /api/sessions/safety` returns a no-secret banner status so the GM can see whether hosting is disabled, local, LAN, remote, or unknown before sharing a join code. When hosting is enabled it also warns if no active session-local GM key/join code exists yet, if a remote/proxied request appears before session start, or if an active session record is missing expected credentials or authoritative state.
 - `POST /api/sessions/start` creates a session-local GM identity, join code, initial authoritative state, and local JSON snapshot when session hosting is explicitly enabled.
 - `POST /api/sessions/join` creates a session-local player ID/client ID/display name from a valid join code.
 - `POST /api/sessions/manage` lets the GM refresh the read-only lobby summary with joined players, connected-client presence records, assignment counts, selected-map details, attached-map summaries, and the join code.
 - `POST /api/sessions/maps/attach` lets a remembered GM session attach a persisted map by slug to the server-owned live session state; it never accepts a browser-supplied whole-map document as authority.
 - `POST /api/sessions/player-state` lets a joined player refresh only their own identity, assignments, and visible session map summary.
-- `POST /api/sessions/assignments` is the GM-only assignment endpoint; the lobby displays assignment counts and player assignment summaries, while full assignment editing remains a GM API/use-case operation rather than a rich lobby editor.
+- `POST /api/sessions/assignments` is the GM-only assignment endpoint used by the map navigation rail's **Assign map tokens** controls; the lobby displays assignment counts and player assignment summaries so the GM and players can verify access.
 
 The lobby must not autosave whole maps, grant players map-edit authority, expose the GM key in page chrome, or imply that the local role picker is public authentication.
 
@@ -57,6 +57,16 @@ Use the URL printed by Nuxt or the GM machine's private IP address. If a browser
 
 Remote campaign play should use the [Live session named Cloudflare Tunnel runbook](live-session-cloudflare-tunnel-hosting.md) with a stable hostname. Quick Tunnel may be mentioned only as a temporary development smoke-test option, must not be treated as the supported campaign path, and is documented in the [Live session Quick Tunnel caveat](live-session-quick-tunnel-caveat.md).
 
+## Complete attach/assign/open flow
+
+A complete table pass uses the lobby and map page together:
+
+1. The GM starts Rotom Table with session hosting enabled, chooses **GM Login**, opens `/sessions#gm-lobby-title`, and presses **Start GM session**.
+2. The GM opens the saved map on the plain `/maps/<slug>` route and presses **Attach current map to live session** so the host owns the selected session map state.
+3. Players join from `/sessions#player-lobby-title` with the join code and display names, then refresh remembered state until **Visible session maps** lists the attached map.
+4. The GM refreshes the lobby, verifies joined players and assignment counts, then uses **Assign map tokens** / **Assign control** on the map page for any token each player should move or act with.
+5. GM and players open `/maps/<slug>?session=1`. Accepted actions travel as session commands and patches; unauthorized, stale revision, no map attached, no token assigned, and disconnected socket states use the in-app guidance rather than local-first map saves.
+
 ## GM flow
 
 1. Start the app with session hosting enabled.
@@ -69,7 +79,7 @@ Remote campaign play should use the [Live session named Cloudflare Tunnel runboo
 8. Expand the map navigation rail and press **Attach current map to live session**. This publishes the persisted map by slug into server-owned session map state, selects it by default, and grants player visibility by default.
 9. Share only the join code and the app URL with trusted players.
 10. Use **Refresh lobby** after players join to confirm they appear in the joined-player list and that the selected map is available for session mode.
-11. Assign controllable token and/or sheet resources for players who should act on the map; map visibility alone lets players open the session map but does not grant token control.
+11. In the map navigation rail **Player access** section, use **Assign map tokens** / **Assign control** to grant controllable token resources to players who should act on the map; map visibility alone lets players open the session map but does not grant token control.
 12. From a map view, use **Open attached session map** or **Open session map** only when you intentionally want that route to use `?session=1` and WebSocket commands. The plain `/maps/<slug>` route remains local-first.
 13. Keep the GM browser/private profile open. If the GM browser forgets the session identity, the simplest current recovery is to start a new session and share the new code.
 
@@ -80,7 +90,7 @@ Remote campaign play should use the [Live session named Cloudflare Tunnel runboo
 3. Enter a table display name.
 4. Press **Join session**.
 5. Confirm the player summary shows the chosen display name, active session status, and current revision.
-6. Confirm the assignment panel says the GM has not assigned controllable sheets or tokens yet unless assignment data was created by a GM endpoint call.
+6. Confirm **Your assignments** shows either the assigned token/sheet resources or a no token assigned message until the GM uses **Assign map tokens**.
 7. Confirm **Visible session maps** lists the attached map when the GM attached it with player visibility. If no map is listed, ask the GM to attach a saved map or grant visibility, then refresh the remembered session.
 8. Use the visible map link to open `/maps/<slug>?session=1` only after the browser has a remembered player identity.
 9. Reload the page and use **Refresh remembered session** to confirm the browser-local identity can refresh the player-filtered state.
@@ -131,7 +141,8 @@ Use one GM browser and one separate player browser/profile. Do not commit any ge
 
 - [ ] GM browser: press **Refresh lobby**.
 - [ ] GM browser: verify the joined-player list includes the player display name.
-- [ ] GM browser: verify assignment counts are visible and remain empty unless a GM assignment endpoint call has been made.
+- [ ] GM browser: verify assignment counts are visible and remain empty until the GM assigns a controllable resource.
+- [ ] Map view: use **Assign map tokens** to assign one current map token to the player, verify **Assign control** changes to **Unassign control**, and verify **Refresh lobby** updates assignment counts.
 - [ ] GM browser: verify refreshing the lobby does not create a new join code or duplicate player entry.
 - [ ] Map view: expand the navigation rail, verify the **Table session** panel links to start/manage, join, attach the current map, and `?session=1`, and verify following **Return to local map** removes the session query rather than changing the saved map.
 
@@ -160,16 +171,20 @@ When recording a manual pass in a PR or build note, keep it generic and avoid re
 | GM start | Join code shown; GM key not visible in page chrome | |
 | Player join | Player identity created from code and display name | |
 | Map attachment | Saved map attached by slug; session map available without exposing map JSON | |
+| Token assignment | GM assigns one current map token with **Assign map tokens**; no token assigned state clears for that player | |
 | GM refresh | Joined player appears once | |
 | Player refresh | Player-filtered state reloads after page refresh and lists visible session maps | |
 | Cleanup | Remembered identity cleared; no private data committed | |
 
 ## Troubleshooting notes
 
-- **Start fails while testing locally:** confirm the process was started with `ROTOM_ENABLE_SESSION_HOST=1`; changing the shell variable after Nuxt starts is not enough.
+- **Host flag disabled:** confirm the process was started with `ROTOM_ENABLE_SESSION_HOST=1`; changing the shell variable after Nuxt starts is not enough.
 - **The start button is disabled:** choose **GM Login** in the existing local `/login` route first.
 - **Player cannot reach the LAN URL:** verify the GM used `--host 0.0.0.0`, both devices are on the same network, and the firewall permits the dev-server port.
 - **Player join fails:** re-check the code from the GM lobby, make sure the session is still active, and refresh the GM lobby to confirm the session did not end.
-- **Player has no visible maps:** ask the GM to attach a saved map to the live session or grant player visibility, then refresh the remembered session.
+- **No map attached or not visible:** ask the GM to attach a saved map to the live session or grant player visibility, then refresh the remembered session.
+- **No token assigned:** the player may see the session map but cannot control that token; the GM should use **Assign map tokens** and the player should refresh/retry from the latest state.
+- **Stale revision:** use the session map refresh/reconnect action before retrying; do not switch to the plain local-first map to force the action.
+- **Disconnected socket:** keep the host running, confirm the session socket path is reachable, then refresh the session map or remembered lobby state.
 - **A browser has stale identity:** use **Forget in this browser**, then join again or start a new session.
 - **Session files appeared locally:** `data/sessions/` is ignored/private runtime data. Back it up only when needed and do not commit it.

@@ -27,8 +27,10 @@ Open the plain map route for local editing. Open the explicit `?session=1` route
 2. The GM uses `/sessions#gm-lobby-title` to start or manage a session. The response includes session-local GM identity and a player join code; the page should not expose the GM key in generic page chrome.
 3. A player uses `/sessions#player-lobby-title` with the join code and a display name. The server returns a session-local `playerId`, `clientId`, and safe display name.
 4. The GM opens the saved map, uses **Attach current map to live session**, and lets the host load that persisted map by slug into server-owned session map state.
-5. The map navigation panel links to the lobby, can attach the current map for remembered GM sessions, and links to the current map with `?session=1`. These links are affordances only; they do not start hosting, join a player, reveal join codes, or switch local map routes into session mode by themselves.
-6. Use separate browser profiles, containers, or private windows for GM and player testing. Session-local identities are stored per browser profile; using one profile for multiple roles can overwrite the remembered identity.
+5. After players join, the GM uses **Assign map tokens** / **Assign control** in the map navigation panel for tokens each player should move or act with.
+6. Players use **Visible session maps** from `/sessions` or an explicit `/maps/<slug>?session=1` URL after they have a remembered player identity and the map is visible to them.
+7. The map navigation panel links to the lobby, can attach the current map for remembered GM sessions, can manage current-map token assignments for remembered GM sessions, and links to the current map with `?session=1`. These links are affordances only; they do not start hosting, join a player, reveal join codes, or switch local map routes into session mode by themselves.
+8. Use separate browser profiles, containers, or private windows for GM and player testing. Session-local identities are stored per browser profile; using one profile for multiple roles can overwrite the remembered identity.
 
 The existing `/login` GM/player role picker remains a local trust switch for the app shell. It is not public authentication. Live session authority comes from the runtime flag, session-local GM key or player identity, WebSocket hello/auth validation, and server-side permission checks.
 
@@ -52,12 +54,26 @@ Use local mode for map preparation, private campaign editing, and any workflow w
 - `src/composables/map-editor/useSessionMap.ts` loads the remembered GM/player session identity, opens the shared session WebSocket, sends a reconnect hello, and requests an authoritative snapshot fallback.
 - `src/composables/map-editor/useSessionMapEditorState.ts` keeps a separate session map clone. It may be seeded from the local map for first paint, but that local seed is only a visual starting point; authoritative `snapshot` and `patch` messages replace or update the session clone.
 - Applying session patches mutates only that clone; it does not mutate the local autosaved map ref and does not send whole-map saves from live clients.
+- A player who has map visibility but no matching token/sheet assignment can observe the selected session map but cannot control that token; GM authority remains available to the GM.
 - `src/composables/map-editor/useSessionMoveTokenDispatch.ts` sends selected token movement and facing as `moveToken` and `turnToken` command messages instead of direct local placement writes.
 - `src/composables/map-editor/useSessionMapSceneCommands.ts` routes MapScenePanel table actions through command envelopes for token delete/send-out, HP, combat stages, conditions, move/maneuver/ability/order use, initiative, hazards, field effects, and terrain voxel edits.
 - The server validates actor identity, permissions, visibility, payload shape, resource scopes, and revision/conflict rules before accepting a command.
 - Accepted commands return `commandAck` to the sender and same-session `patch` messages to connected clients. Rejected commands return `commandReject` and do not advance the authoritative revision.
 
 Session mode is therefore not a generic shared-document editor. Browsers request table actions; the GM-hosted server owns the accepted session state.
+
+## Session map readiness checklist
+
+Before a user treats `/maps/<slug>?session=1` as ready for live play, confirm the full chain is true:
+
+- session hosting is enabled with `ROTOM_ENABLE_SESSION_HOST=1` and the session socket can connect;
+- the GM has started a live session and the browser has a remembered GM or player session identity;
+- the saved map was attached by slug and appears in the authoritative snapshot or a later patch;
+- the current actor is allowed to see that session map;
+- players who should move or act with a token have a matching assignment from **Assign map tokens**;
+- the route has received an authoritative snapshot or patch for the attached map, not only a local visual seed.
+
+If any item is false, use the recovery guidance below instead of sending local-first edits or treating stale browser state as authority.
 
 ## Optimistic token UX
 
@@ -72,11 +88,12 @@ The optimistic layer is deliberately local to the session view. It should not wr
 
 ## Session map UI surfaces
 
-`/maps/<slug>?session=1` renders three session-specific surfaces in the map scene panel:
+`/maps/<slug>?session=1` renders session-specific surfaces on the map page:
 
 - **Presence panel** — shows safe display names, GM/player liveness, connected player/client counts, current revision, current browser role, and assignment counts. It does not show GM keys, join codes, hidden maps, whole snapshots, or raw assignment payloads.
 - **Connection status banner** — shows reconnecting, stale, disconnected, and recovered-snapshot states based on the shared socket/session map state. Its refresh/reconnect actions reuse the explicit snapshot refresh path.
 - **Command rejection banner** — turns `invalid`, `unauthorized`, `stale`, and `conflict` command rejections into player-safe titles, details, and guidance. It does not render permission objects, GM keys, join codes, hidden sheet data, or raw current-state payloads.
+- **Player access / Assign map tokens** — lets a remembered GM assign or unassign current map token control for joined players once the active attached map and lobby summary are available.
 
 These surfaces are informational and recovery-oriented. They do not grant permission and do not replace server validation.
 
@@ -86,11 +103,13 @@ Use these steps when the connection status banner reports reconnecting, stale, d
 
 | What you see | What it means | Safe recovery |
 | --- | --- | --- |
+| Host flag disabled | The session endpoints or socket fail closed because the app was not started with the explicit host flag. | Restart the app with `ROTOM_ENABLE_SESSION_HOST=1`, then return to `/sessions` and refresh the remembered identity before reopening the session map. |
 | Reconnecting / waiting for snapshot | The WebSocket, hello/auth, or snapshot fallback is still pending. | Wait briefly. If it persists, confirm the dev server is still running with `ROTOM_ENABLE_SESSION_HOST=1`, then use the banner refresh/reconnect action or reload `/maps/<slug>?session=1`. |
-| Disconnected | The browser is showing the last authoritative state it received, but the session socket is not live. | Do not treat new browser-local edits as authoritative. Reconnect from the banner, reload the session map, or return to `/sessions` to verify the remembered identity. |
-| Stale / snapshot required | The client cannot safely replay from its last revision or heartbeat activity became stale. | Use the refresh-session action. The client sends a reconnect hello without `lastSeenRevision`, and the server should answer with the current actor-scoped snapshot fallback. |
+| Disconnected socket | The browser is showing the last authoritative state it received, but the session socket is not live. | Do not treat new browser-local edits as authoritative. Reconnect from the banner, reload the session map, or return to `/sessions` to verify the remembered identity. |
+| Stale revision / snapshot required | The client cannot safely replay from its last revision or heartbeat activity became stale. | Use the refresh-session action. The client sends a reconnect hello without `lastSeenRevision`, and the server should answer with the current actor-scoped snapshot fallback. |
 | Recovered snapshot | The map view rebuilt itself from an authoritative snapshot. | Inspect the current table state before retrying an action; local optimistic changes that were not accepted may be gone. |
-| Missing map or missing identity | The session snapshot does not include the requested map for this actor, the GM has not attached the map, the map is not visible to this player, or the browser has no valid remembered identity. | Return to `/sessions`, rejoin or refresh identity, ask the GM to attach the saved map and verify map visibility/assignments, then reopen the explicit session map route. |
+| No map attached or missing identity | The session snapshot does not include the requested map for this actor, the GM has not attached the map, the map is not visible to this player, or the browser has no valid remembered identity. | Return to `/sessions`, rejoin or refresh identity, ask the GM to attach the saved map and verify map visibility/assignments, then reopen the explicit session map route. |
+| No token assigned | The map is visible, but this player has no controllable token/sheet assignment for the attempted action. | Ask the GM to use **Assign map tokens** for the relevant current map token, refresh or retry from the latest session map state, and do not change the local role picker to bypass session permissions. |
 
 If a browser profile has the wrong role or a stale player identity, use **Forget in this browser** on `/sessions`, then join again. For manual GM/player testing, keep roles in separate browser profiles.
 

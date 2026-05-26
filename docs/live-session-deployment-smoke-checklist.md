@@ -23,7 +23,7 @@ Run the same functional scenario in each deployment mode you plan to use:
 1. GM starts a guarded session.
 2. GM attaches the saved map to server-owned session state.
 3. Two players join from separate browser identities and can see the attached map.
-4. GM assigns controllable resources needed for player actions.
+4. GM assigns controllable resources needed for player actions with **Assign map tokens**.
 5. GM and both players open the explicit session map route.
 6. A token move propagates to all clients as a small authoritative patch.
 7. An initiative change propagates to all clients as a small authoritative patch.
@@ -48,6 +48,16 @@ Use generic names in notes such as `GM`, `Player A`, `Player B`, `table.example.
 
 - [ ] The GM understands that `data/sessions/`, optional `events.jsonl`, generated sheets, join codes, GM keys, tunnel credentials, private keys, and real `.env` files must stay out of git.
 - [ ] Quick Tunnel is not being used for a campaign-session smoke. If a temporary `trycloudflare.com` URL is used for development only, use the [Quick Tunnel caveat](live-session-quick-tunnel-caveat.md) instead of this deployment checklist.
+
+## Common failure states to verify
+
+A deployment smoke should prove the happy path and that common recovery paths are understandable:
+
+- **Host flag disabled** — starting without `ROTOM_ENABLE_SESSION_HOST=1` must leave `/sessions`, attach-map, assignment, and session socket behaviour fail-closed.
+- **No map attached** — players may join, but **Visible session maps** remains empty and the session map route must not claim authoritative readiness until the GM attaches the saved map.
+- **No token assigned** — a player who can see the attached map but lacks a token assignment receives disabled controls or an unauthorized rejection instead of moving the authoritative token.
+- **Stale revision** — a command sent from an older revision is rejected safely and does not advance the accepted session revision.
+- **Disconnected socket** — reload or network interruption shows reconnect/disconnected UI and recovers through replay or an actor-scoped snapshot without whole-map autosave.
 
 ## LAN deployment lane
 
@@ -120,7 +130,7 @@ Run this scenario after completing either the LAN lane or the named-tunnel lane.
 - [ ] Player B browser: join from the same URL with a separate display name such as `Player B`.
 - [ ] GM browser: press **Refresh lobby** and verify both players appear exactly once.
 - [ ] Player browsers: refresh remembered session state and verify each player sees only their own identity, assignment summary, current revision, safe session status, and the attached map in **Visible session maps**.
-- [ ] GM browser: assign any token/sheet resources that Player A or Player B should control during the smoke.
+- [ ] GM browser: use the map navigation rail **Assign map tokens** panel to assign at least one current map token to Player A. Leave another visible player without that token assignment if you want to verify the no token assigned rejection path.
 
 ### 2. Open session map and verify presence
 
@@ -193,6 +203,7 @@ Keep evidence generic. Fill this table for each mode tested without pasting secr
 | Safety banner | LAN/private for `http://<GM-LAN-IP>:3000`; expected remote/tunnel for `https://table.example.com` | | |
 | Two players | Player A and Player B join from separate browser identities and appear once in GM lobby | | |
 | Session map | GM, Player A, and Player B open `<base-url>/maps/<map-slug>?session=1` | | |
+| Token assignment | GM uses **Assign map tokens** so Player A can control one current map token while unassigned players remain view-only | | |
 | Token move | Accepted token move propagates to all clients as `tokenMoved` or equivalent small patch | | |
 | Initiative | Accepted initiative action propagates to all clients as `initiativeUpdated` or equivalent small patch | | |
 | Reconnect | Reload/disconnect recovers from remembered identity with current authoritative state or snapshot fallback | | |

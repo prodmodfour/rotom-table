@@ -220,6 +220,30 @@ const snapshotMessage = (map: TabletopMap): SessionServerMessage => ({
   }),
 })
 
+const snapshotWithoutCurrentMapMessage = (): SessionServerMessage => {
+  const otherMap = mapFixture({ slug: 'other-map', name: 'Other Map' })
+  return {
+    schemaVersion: SESSION_MESSAGE_SCHEMA_VERSION,
+    type: 'snapshot',
+    direction: 'server',
+    sessionId: SESSION_ID,
+    reason: 'reconnect',
+    currentRevision: REVISION_2,
+    replayAvailable: false,
+    snapshot: createAuthoritativeSessionState({
+      sessionId: SESSION_ID,
+      revision: REVISION_2,
+      selectedMapSlug: 'other-map',
+      maps: [createAuthoritativeSessionMapState({
+        mapSlug: 'other-map',
+        revision: MAP_REVISION_1,
+        document: otherMap,
+      })],
+      createdAt: '2026-05-26T12:00:00.000Z',
+    }),
+  }
+}
+
 const patchMessage = (revision = REVISION_3): SessionServerMessage => ({
   schemaVersion: SESSION_MESSAGE_SCHEMA_VERSION,
   type: 'patch',
@@ -380,7 +404,7 @@ describe('useSessionMap', () => {
     })
   })
 
-  it('dispatches commands through the shared socket after ensuring hello/auth is queued', () => {
+  it('does not dispatch commands while only the local seed map is visible', () => {
     const identity = gmIdentity()
     const storage = createStorage(identity)
     const socket = new FakeSessionMapSocket()
@@ -395,8 +419,63 @@ describe('useSessionMap', () => {
 
     const result = sessionMap.dispatchCommand(command)
 
+    expect(result).toMatchObject({
+      dispatched: false,
+      reason: 'awaiting-authoritative-map',
+    })
+    expect(sessionMap.mapState.source.value).toBe('local-seed')
+    expect(sessionMap.mapState.hasAuthoritativeSessionState.value).toBe(false)
+    expect(sessionMap.lastError.value).toContain('authoritative live session map snapshot')
+    expect(socket.sentHellos).toHaveLength(0)
+    expect(socket.sentMessages).toHaveLength(0)
+  })
+
+  it('does not dispatch commands when the authoritative snapshot lacks the current visible map', () => {
+    const identity = gmIdentity()
+    const storage = createStorage(identity)
+    const socket = new FakeSessionMapSocket()
+    socket.status.value = 'open'
+    socket.helloStatus.value = 'accepted'
+    const sessionMap = useSessionMap({
+      enabled: ref(true),
+      localMap: ref(mapFixture({ name: 'Local placeholder' })),
+      mapSlug: 'arena-map',
+      identityStorage: storage,
+      socket,
+    })
+
+    socket.emit(snapshotWithoutCurrentMapMessage())
+
+    expect(sessionMap.snapshotStatus.value).toBe('missing-map')
+    expect(sessionMap.mapState.hasAuthoritativeSessionState.value).toBe(false)
+    expect(sessionMap.error.value).toContain('did not include visible map "arena-map"')
+    expect(sessionMap.dispatchCommand(commandFixture())).toMatchObject({
+      dispatched: false,
+      reason: 'awaiting-authoritative-map',
+    })
+    expect(socket.sentMessages).toHaveLength(0)
+  })
+
+  it('dispatches commands through the shared socket after an authoritative session map arrives', () => {
+    const identity = gmIdentity()
+    const storage = createStorage(identity)
+    const socket = new FakeSessionMapSocket()
+    socket.status.value = 'open'
+    socket.helloStatus.value = 'accepted'
+    const sessionMap = useSessionMap({
+      enabled: ref(true),
+      localMap: ref(mapFixture()),
+      mapSlug: 'arena-map',
+      identityStorage: storage,
+      socket,
+    })
+    socket.emit(snapshotMessage(mapFixture()))
+    const command = commandFixture({ baseRevision: REVISION_2 })
+
+    const result = sessionMap.dispatchCommand(command)
+
     expect(result).toMatchObject({ dispatched: true })
-    expect(socket.sentHellos).toHaveLength(1)
+    expect(socket.sentHellos).toHaveLength(0)
     expect(socket.sentMessages).toEqual([{
       schemaVersion: SESSION_MESSAGE_SCHEMA_VERSION,
       type: 'command',

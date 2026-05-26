@@ -79,6 +79,7 @@ export type SessionMapCommandDispatchFailureReason =
   | 'missing-session-identity'
   | 'session-mismatch'
   | 'actor-mismatch'
+  | 'awaiting-authoritative-map'
   | 'socket-unavailable'
   | 'hello-failed'
   | 'send-failed'
@@ -340,6 +341,13 @@ export const useSessionMap = (options: UseSessionMapOptions): UseSessionMapRetur
       return failDispatch('actor-mismatch', 'Cannot dispatch a session command for a different session actor.')
     }
 
+    if (!mapState.hasAuthoritativeSessionState.value) {
+      return failDispatch(
+        'awaiting-authoritative-map',
+        'Waiting for an authoritative live session map snapshot before sending session commands. Refresh the session map or ask the GM to attach this map to the live session.',
+      )
+    }
+
     const helloResult = ensureHelloForSession()
     if (!helloResult.ok) {
       return failDispatch(
@@ -362,7 +370,7 @@ export const useSessionMap = (options: UseSessionMapOptions): UseSessionMapRetur
 
     if (message.type === 'snapshot') {
       snapshotStatus.value = mapState.lastIgnoredMessage.value === null ? 'received' : 'missing-map'
-      if (mapState.lastIgnoredMessage.value !== null) lastError.value = mapState.lastIgnoredMessage.value
+      lastError.value = mapState.lastIgnoredMessage.value
       return
     }
 
@@ -415,7 +423,7 @@ export const useSessionMap = (options: UseSessionMapOptions): UseSessionMapRetur
     if (socket.status.value === 'closed' || socket.status.value === 'idle' || socket.status.value === 'closing') {
       return mapState.hasAuthoritativeSessionState.value ? 'ready' : 'closed'
     }
-    return 'ready'
+    return mapState.hasAuthoritativeSessionState.value ? 'ready' : 'loading-snapshot'
   })
 
   const error = computed(() => lastError.value ?? socket.lastError.value)

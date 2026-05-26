@@ -67,6 +67,25 @@ describe('buildSessionConnectionStatusNotice', () => {
     expect(notice?.actionLabel).toBeUndefined()
   })
 
+  it('labels local placeholder maps while waiting for authoritative session state', () => {
+    const notice = buildSessionConnectionStatusNotice(baseInput({
+      status: 'loading-snapshot',
+      snapshotStatus: 'requested',
+      hasAuthoritativeSessionState: false,
+      lastKnownRevision: null,
+    }))
+
+    expect(notice).toMatchObject({
+      kind: 'reconnecting',
+      tone: 'info',
+      title: 'Waiting for authoritative session map',
+      currentRevision: null,
+      actionLabel: 'Refresh snapshot',
+    })
+    expect(notice?.summary).toContain('local map only as a visual placeholder')
+    expect(notice?.detail).toContain('Session commands stay disabled')
+  })
+
   it('shows recovered snapshot state after reconnect fallback arrives', () => {
     const snapshot = reconnectSnapshot(REVISION_3)
     const notice = buildSessionConnectionStatusNotice(baseInput({
@@ -154,6 +173,8 @@ describe('buildSessionConnectionStatusNotice', () => {
       currentRevision: REVISION_3,
       actionLabel: 'Refresh snapshot',
     })
+    expect(notice?.detail).toContain('attach this map')
+    expect(notice?.detail).toContain('make it visible')
     expect(JSON.stringify(notice)).not.toContain('gmkey')
   })
 })
