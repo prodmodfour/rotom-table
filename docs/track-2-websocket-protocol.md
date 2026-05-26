@@ -577,6 +577,10 @@ A transport-only smoke check should verify:
 
 This automated fake-peer smoke test complements the local browser helper in [Track 2 multi-tab local smoke script](track-2-multi-tab-smoke.md). Together they cover server-authoritative two-client command/fanout behaviour plus the GM/player session-map tab flow before the LAN/named-tunnel deployment checks in [Track 2 deployment smoke checklist](track-2-deployment-smoke-checklist.md).
 
+## Integrated command audit coverage
+
+`tests/server/sessionIntegratedCommandAudit.test.ts` is the final-audit fake-peer command pass documented in [Track 2 integrated command audit](track-2-command-audit.md). It keeps the same server-authoritative WebSocket path and audits one GM, two same-session players, and one unrelated-session peer across accepted `moveToken`, `turnToken`, `modifyHp`, `modifyConditions`, and `nextInitiative` commands; same-session patch fanout; cross-session isolation; an unauthorized view-only player rejection; stale same-token movement rejection; and reconnect snapshot fallback with player filtering.
+
 ## Related docs
 
 - [Track 2 session protocol](track-2-session-protocol.md)
@@ -584,6 +588,7 @@ This automated fake-peer smoke test complements the local browser helper in [Tra
 - [Track 2 LAN hosting runbook](track-2-lan-hosting.md)
 - [Track 2 named Cloudflare Tunnel runbook](track-2-cloudflare-tunnel-hosting.md)
 - [Track 2 deployment smoke checklist](track-2-deployment-smoke-checklist.md)
+- [Track 2 integrated command audit](track-2-command-audit.md)
 - [Track 2 Quick Tunnel caveat](track-2-quick-tunnel-caveat.md)
 - [Track 2 multi-tab local smoke script](track-2-multi-tab-smoke.md)
 - [Track 2 session storage](track-2-session-storage.md)
