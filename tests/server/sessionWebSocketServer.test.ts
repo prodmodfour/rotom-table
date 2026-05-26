@@ -1,12 +1,32 @@
 import { describe, expect, it } from 'vitest'
+import {
+  SESSION_MESSAGE_SCHEMA_VERSION,
+  type SessionClientHelloMessage,
+} from '#shared/sessionMessages'
+import {
+  parseClientId,
+  parseGmKey,
+  parseJoinCode,
+  parsePlayerId,
+  parseSessionDisplayName,
+  parseSessionId,
+} from '#shared/sessionIdentity'
+import { INITIAL_SESSION_REVISION } from '#shared/sessionRevisions'
+import {
+  createAuthoritativeSessionState,
+  type AuthoritativeSessionState,
+} from '#shared/sessionState'
 import socketRoute from '~~/server/api/sessions/socket'
 import {
   SESSION_HOST_ENABLE_ENV,
   SESSION_HOST_ENABLE_VALUE,
 } from '~~/server/utils/sessionHosting'
 import {
+  SESSION_SOCKET_AUTHENTICATED_STATUS,
   SESSION_SOCKET_DISABLED_MESSAGE,
   SESSION_SOCKET_DISABLED_STATUS,
+  SESSION_SOCKET_HEARTBEAT_INTERVAL_MS,
+  SESSION_SOCKET_HEARTBEAT_TIMEOUT_MS,
   SESSION_SOCKET_PENDING_HELLO_STATUS,
   SESSION_SOCKET_POLICY_CLOSE_CODE,
   createInMemorySessionSocketRegistry,
@@ -17,6 +37,7 @@ import {
   handleSessionSocketUpgrade,
   type SessionSocketPeerLike,
 } from '~~/server/utils/sessionWebSocketServer'
+import { createInMemorySessionStore } from '~~/server/utils/sessionStore'
 
 type FakePeer = SessionSocketPeerLike & {
   readonly sent: unknown[]
@@ -25,6 +46,16 @@ type FakePeer = SessionSocketPeerLike & {
 
 const enabledEnv = { [SESSION_HOST_ENABLE_ENV]: SESSION_HOST_ENABLE_VALUE }
 const disabledEnv = { [SESSION_HOST_ENABLE_ENV]: '' }
+
+const SESSION_ID = parseSessionId('session_abcdefghijkl')
+const JOIN_CODE = parseJoinCode('ABC234')
+const GM_KEY = parseGmKey('gmkey_abcdefghijklmnopqrstuvwxyz')
+const OTHER_GM_KEY = parseGmKey('gmkey_zyxwvutsrqponmlkjihgfedcba')
+const GM_CLIENT_ID = parseClientId('client_gmclient01')
+const PLAYER_ID = parsePlayerId('player_misty001')
+const PLAYER_CLIENT_ID = parseClientId('client_player01')
+const PLAYER_DISPLAY_NAME = parseSessionDisplayName('Misty')
+const CREATED_AT = '2026-05-26T09:00:00.000Z'
 
 const makeRequest = (): { url: string, headers: Headers, context: Record<string, unknown> } => ({
   url: 'ws://localhost:3000/api/sessions/socket',
@@ -50,6 +81,74 @@ const makePeer = (id = 'peer-a'): FakePeer => {
     },
   }
 }
+
+const createStoreWithSession = () => {
+  const store = createInMemorySessionStore<AuthoritativeSessionState>()
+  const state = createAuthoritativeSessionState({
+    sessionId: SESSION_ID,
+    createdAt: CREATED_AT,
+    updatedAt: CREATED_AT,
+    players: [
+      {
+        playerId: PLAYER_ID,
+        displayName: PLAYER_DISPLAY_NAME,
+        joinedAt: CREATED_AT,
+        updatedAt: CREATED_AT,
+      },
+    ],
+    assignments: [
+      {
+        playerId: PLAYER_ID,
+        displayName: PLAYER_DISPLAY_NAME,
+        controllableResources: [],
+        visibleResources: [],
+        updatedAt: CREATED_AT,
+      },
+    ],
+  })
+
+  store.create({
+    sessionId: SESSION_ID,
+    joinCode: JOIN_CODE,
+    gmKey: GM_KEY,
+    revision: state.revision,
+    createdAt: CREATED_AT,
+    updatedAt: CREATED_AT,
+    state,
+  })
+
+  return { store, state }
+}
+
+const gmHello = (gmKey = GM_KEY): SessionClientHelloMessage => ({
+  schemaVersion: SESSION_MESSAGE_SCHEMA_VERSION,
+  type: 'hello',
+  direction: 'client',
+  sessionId: SESSION_ID,
+  identity: {
+    role: 'gm',
+    clientId: GM_CLIENT_ID,
+    gmKey,
+  },
+  reconnect: false,
+})
+
+const playerHello = (overrides: Partial<SessionClientHelloMessage> = {}): SessionClientHelloMessage => ({
+  schemaVersion: SESSION_MESSAGE_SCHEMA_VERSION,
+  type: 'hello',
+  direction: 'client',
+  sessionId: SESSION_ID,
+  identity: {
+    role: 'player',
+    clientId: PLAYER_CLIENT_ID,
+    playerId: PLAYER_ID,
+    displayName: PLAYER_DISPLAY_NAME,
+  },
+  reconnect: false,
+  ...overrides,
+})
+
+const parseSentJson = (peer: FakePeer, index = 0): unknown => JSON.parse(String(peer.sent[index]))
 
 describe('session WebSocket route skeleton', () => {
   it('enables Nitro WebSocket hooks at the session socket route', () => {
@@ -119,7 +218,122 @@ describe('session WebSocket route skeleton', () => {
     ])
   })
 
-  it('does not process commands before later hello/auth tickets wire dispatch', () => {
+  it('authenticates a GM hello and records the connected client in authoritative state', () => {
+    const registry = createInMemorySessionSocketRegistry()
+    const { store } = createStoreWithSession()
+    const peer = makePeer('peer-gm')
+    handleSessionSocketOpen(peer, {
+      env: enabledEnv,
+      registry,
+      clock: () => '2026-05-26T10:00:00.000Z',
+    })
+
+    handleSessionSocketMessage(peer, { text: () => JSON.stringify(gmHello()) }, {
+      registry,
+      store,
+      clock: () => '2026-05-26T10:00:05.000Z',
+    })
+
+    expect(peer.closed).toEqual([])
+    expect(parseSentJson(peer)).toEqual({
+      schemaVersion: SESSION_MESSAGE_SCHEMA_VERSION,
+      type: 'hello',
+      direction: 'server',
+      sessionId: SESSION_ID,
+      actor: {
+        role: 'gm',
+        clientId: GM_CLIENT_ID,
+      },
+      currentRevision: INITIAL_SESSION_REVISION,
+      resumed: false,
+      heartbeat: {
+        intervalMs: SESSION_SOCKET_HEARTBEAT_INTERVAL_MS,
+        timeoutMs: SESSION_SOCKET_HEARTBEAT_TIMEOUT_MS,
+      },
+    })
+    expect(registry.get('peer-gm')).toMatchObject({
+      peerId: 'peer-gm',
+      status: SESSION_SOCKET_AUTHENTICATED_STATUS,
+      sessionId: SESSION_ID,
+      actor: {
+        role: 'gm',
+        clientId: GM_CLIENT_ID,
+      },
+      authenticatedAt: '2026-05-26T10:00:05.000Z',
+      currentRevision: INITIAL_SESSION_REVISION,
+    })
+    expect(store.get(SESSION_ID)?.state?.connectedClients).toEqual([
+      {
+        clientId: GM_CLIENT_ID,
+        actor: {
+          role: 'gm',
+          clientId: GM_CLIENT_ID,
+        },
+        status: 'connected',
+        connectedAt: '2026-05-26T10:00:00.000Z',
+        lastSeenAt: '2026-05-26T10:00:05.000Z',
+      },
+    ])
+  })
+
+  it('authenticates a player hello with display-name identity and last seen revision', () => {
+    const registry = createInMemorySessionSocketRegistry()
+    const { store } = createStoreWithSession()
+    const peer = makePeer('peer-player')
+    handleSessionSocketOpen(peer, {
+      env: enabledEnv,
+      registry,
+      clock: () => '2026-05-26T10:10:00.000Z',
+    })
+
+    handleSessionSocketMessage(peer, {
+      text: () => JSON.stringify(playerHello({
+        reconnect: true,
+        lastSeenRevision: INITIAL_SESSION_REVISION,
+      })),
+    }, {
+      registry,
+      store,
+      clock: () => '2026-05-26T10:10:03.000Z',
+    })
+
+    expect(parseSentJson(peer)).toMatchObject({
+      schemaVersion: SESSION_MESSAGE_SCHEMA_VERSION,
+      type: 'hello',
+      direction: 'server',
+      sessionId: SESSION_ID,
+      actor: {
+        role: 'player',
+        playerId: PLAYER_ID,
+        clientId: PLAYER_CLIENT_ID,
+        displayName: PLAYER_DISPLAY_NAME,
+      },
+      currentRevision: INITIAL_SESSION_REVISION,
+      resumed: true,
+    })
+    expect(registry.get('peer-player')).toMatchObject({
+      status: SESSION_SOCKET_AUTHENTICATED_STATUS,
+      sessionId: SESSION_ID,
+      lastSeenRevision: INITIAL_SESSION_REVISION,
+    })
+    expect(store.get(SESSION_ID)?.state?.connectedClients).toEqual([
+      {
+        clientId: PLAYER_CLIENT_ID,
+        actor: {
+          role: 'player',
+          playerId: PLAYER_ID,
+          clientId: PLAYER_CLIENT_ID,
+          displayName: PLAYER_DISPLAY_NAME,
+        },
+        status: 'connected',
+        connectedAt: '2026-05-26T10:10:00.000Z',
+        lastSeenAt: '2026-05-26T10:10:03.000Z',
+        lastSeenRevision: INITIAL_SESSION_REVISION,
+      },
+    ])
+  })
+
+  it('rejects non-hello frames before authentication without granting session authority', () => {
     const registry = createInMemorySessionSocketRegistry()
     const peer = makePeer('peer-message')
     handleSessionSocketOpen(peer, {
@@ -128,23 +342,134 @@ describe('session WebSocket route skeleton', () => {
       clock: () => '2026-05-26T10:00:00.000Z',
     })
 
-    handleSessionSocketMessage(peer, { text: () => '{"type":"hello"}' }, {
+    handleSessionSocketMessage(peer, { text: () => '{"type":"heartbeat"}' }, {
       registry,
       clock: () => '2026-05-26T10:00:05.000Z',
     })
 
-    expect(registry.get('peer-message')).toMatchObject({
-      lastSeenAt: '2026-05-26T10:00:05.000Z',
-      status: SESSION_SOCKET_PENDING_HELLO_STATUS,
-    })
-    expect(peer.sent).toHaveLength(1)
-    expect(JSON.parse(String(peer.sent[0]))).toMatchObject({
+    expect(registry.get('peer-message')).toBeUndefined()
+    expect(peer.closed).toEqual([
+      {
+        code: SESSION_SOCKET_POLICY_CLOSE_CODE,
+        reason: 'A valid Track 2 session WebSocket hello is required before other messages.',
+      },
+    ])
+    expect(parseSentJson(peer)).toMatchObject({
       schemaVersion: 1,
       type: 'error',
       direction: 'server',
+      code: 'unauthorized',
+      retryable: false,
+    })
+  })
+
+  it('rejects an invalid GM key and closes the unauthenticated socket', () => {
+    const registry = createInMemorySessionSocketRegistry()
+    const { store } = createStoreWithSession()
+    const peer = makePeer('peer-bad-gm')
+    handleSessionSocketOpen(peer, { env: enabledEnv, registry })
+
+    handleSessionSocketMessage(peer, { text: () => JSON.stringify(gmHello(OTHER_GM_KEY)) }, {
+      registry,
+      store,
+      clock: () => '2026-05-26T10:20:00.000Z',
+    })
+
+    expect(registry.get('peer-bad-gm')).toBeUndefined()
+    expect(peer.closed[0]).toMatchObject({ code: SESSION_SOCKET_POLICY_CLOSE_CODE })
+    expect(parseSentJson(peer)).toMatchObject({
+      schemaVersion: SESSION_MESSAGE_SCHEMA_VERSION,
+      type: 'error',
+      direction: 'server',
+      sessionId: SESSION_ID,
+      code: 'unauthorized',
+      currentRevision: INITIAL_SESSION_REVISION,
+      retryable: false,
+    })
+    expect(store.get(SESSION_ID)?.state?.connectedClients).toEqual([])
+  })
+
+  it('keeps authenticated sockets open but reports unsupported messages until later tickets dispatch them', () => {
+    const registry = createInMemorySessionSocketRegistry()
+    const { store } = createStoreWithSession()
+    const peer = makePeer('peer-authenticated-message')
+    handleSessionSocketOpen(peer, { env: enabledEnv, registry })
+    handleSessionSocketMessage(peer, { text: () => JSON.stringify(gmHello()) }, {
+      registry,
+      store,
+      clock: () => '2026-05-26T10:30:00.000Z',
+    })
+
+    handleSessionSocketMessage(peer, { text: () => JSON.stringify({
+      schemaVersion: SESSION_MESSAGE_SCHEMA_VERSION,
+      type: 'heartbeat',
+      direction: 'client',
+      sessionId: SESSION_ID,
+      heartbeat: 'ping',
+    }) }, {
+      registry,
+      store,
+      clock: () => '2026-05-26T10:30:05.000Z',
+    })
+
+    expect(registry.get('peer-authenticated-message')).toMatchObject({
+      status: SESSION_SOCKET_AUTHENTICATED_STATUS,
+      lastSeenAt: '2026-05-26T10:30:05.000Z',
+    })
+    expect(peer.closed).toEqual([])
+    expect(parseSentJson(peer, 1)).toMatchObject({
+      schemaVersion: SESSION_MESSAGE_SCHEMA_VERSION,
+      type: 'error',
+      direction: 'server',
+      sessionId: SESSION_ID,
       code: 'unsupported-message',
       retryable: false,
     })
+  })
+
+  it('marks an authenticated client disconnected when its socket closes', () => {
+    const registry = createInMemorySessionSocketRegistry()
+    const { store } = createStoreWithSession()
+    const peer = makePeer('peer-close-player')
+    handleSessionSocketOpen(peer, {
+      env: enabledEnv,
+      registry,
+      clock: () => '2026-05-26T10:40:00.000Z',
+    })
+    handleSessionSocketMessage(peer, { text: () => JSON.stringify(playerHello()) }, {
+      registry,
+      store,
+      clock: () => '2026-05-26T10:40:01.000Z',
+    })
+
+    const closed = handleSessionSocketClose(peer, { code: 1000, reason: 'done' }, {
+      registry,
+      store,
+      clock: () => '2026-05-26T10:41:00.000Z',
+    })
+
+    expect(closed).toMatchObject({
+      status: SESSION_SOCKET_AUTHENTICATED_STATUS,
+      sessionId: SESSION_ID,
+      closeCode: 1000,
+      closeReason: 'done',
+      closedAt: '2026-05-26T10:41:00.000Z',
+    })
+    expect(store.get(SESSION_ID)?.state?.connectedClients).toEqual([
+      {
+        clientId: PLAYER_CLIENT_ID,
+        actor: {
+          role: 'player',
+          playerId: PLAYER_ID,
+          clientId: PLAYER_CLIENT_ID,
+          displayName: PLAYER_DISPLAY_NAME,
+        },
+        status: 'disconnected',
+        connectedAt: '2026-05-26T10:40:00.000Z',
+        lastSeenAt: '2026-05-26T10:41:00.000Z',
+        disconnectedAt: '2026-05-26T10:41:00.000Z',
+      },
+    ])
   })
 
   it('updates pending connection activity on socket errors without disconnecting', () => {

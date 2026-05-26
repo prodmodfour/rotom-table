@@ -99,13 +99,15 @@ Example remote-exposure response:
 }
 ```
 
-## Session WebSocket route skeleton
+## Session WebSocket route and hello/auth
 
 `WebSocket /api/sessions/socket` is the reserved live session transport route. Nitro WebSocket support is enabled in the server build, and the route upgrade fails closed unless `ROTOM_ENABLE_SESSION_HOST=1` is set. This keeps the same explicit runtime safety gate as the HTTP session endpoints.
 
-The current server skeleton records raw connect/disconnect lifecycle as `pending-hello` only. It does not yet authenticate GM/player identity, subscribe a peer to a session, start heartbeat timers, replay reconnect data, broadcast fanout, or dispatch commands; those behaviours are intentionally scoped to the later WebSocket transport tickets. Until the hello/auth ticket lands, inbound messages receive a safe server `error` frame with `code: "unsupported-message"` and no map or snapshot authority is granted.
+New sockets start as `pending-hello`. The first accepted client frame must be a JSON client `hello` with the session ID and session-local identity returned by the start/join endpoints. The server validates the GM key for GM clients, validates the player ID plus safe display name for player clients, rejects client-ID collisions with a different actor, records the connected client in authoritative session state without incrementing the session revision, and replies with a server `hello` carrying the validated actor, current revision, and heartbeat configuration. Invalid, unknown, ended, or unauthorized hello attempts receive a safe server `error` frame and the socket is closed with the policy close code.
 
-The client skeleton lives in `src/composables/useSessionSocket.ts`. It resolves `/api/sessions/socket` to `ws://` or `wss://` from the current browser location, wraps the browser `WebSocket`, exposes connection status (`idle`, `connecting`, `open`, `closing`, `closed`, `error`, or `unavailable`), records the last error/close/server message, maintains a bounded JSON send queue, flushes queued messages after `open`, and provides explicit `connect`, `disconnect`, and `cleanup` methods. It intentionally does not send hello/auth, heartbeat, reconnect, or command messages by itself; later transport and command tickets will feed those shared protocol messages through this wrapper.
+After hello/auth succeeds, the current slice keeps the socket open but still returns `unsupported-message` for heartbeat and command frames until later transport tickets wire heartbeat timers, reconnect snapshot fallback, command dispatch, and session fanout. A socket close marks the authenticated client as `disconnected` in in-memory authoritative state; no snapshot or command event is written for this transient presence update yet.
+
+The client wrapper lives in `src/composables/useSessionSocket.ts`. It resolves `/api/sessions/socket` to `ws://` or `wss://` from the current browser location, wraps the browser `WebSocket`, exposes connection status (`idle`, `connecting`, `open`, `closing`, `closed`, `error`, or `unavailable`), records the last error/close/server message, maintains a bounded JSON send queue, flushes queued messages after `open`, and provides explicit `connect`, `disconnect`, and `cleanup` methods. It can build/send a client `hello` from the remembered session-local identity, auto-sending that hello before queued messages when configured with `hello: { identity }`, and tracks whether the server hello was accepted or rejected. It still does not implement heartbeat loops, reconnect replay/snapshot fallback, command dispatch, or optimistic map state.
 
 ## GM start-session endpoint
 
@@ -464,7 +466,7 @@ After session hosting is enabled and a GM/player has session-local identity, the
 }
 ```
 
-The server validates the identity and replies with a server `hello`. If replay is unavailable or unsafe, `snapshotRequired` is true and a `snapshot` message follows.
+The server validates the identity and replies with a server `hello`. In the current ticket 042 slice the reply authenticates the socket and reports the current revision; reconnect replay and snapshot fallback are reserved for the later reconnect ticket. Once that lands, `snapshotRequired` can be true and a `snapshot` message will follow when replay is unavailable or unsafe.
 
 ```json
 {

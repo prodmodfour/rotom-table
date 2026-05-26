@@ -1,7 +1,23 @@
 import { describe, expect, it, vi } from 'vitest'
-import { SESSION_MESSAGE_SCHEMA_VERSION, type SessionClientMessage, type SessionServerMessage } from '#shared/sessionMessages'
-import { parseSessionId } from '#shared/sessionIdentity'
 import {
+  SESSION_CLIENT_IDENTITY_SCHEMA_VERSION,
+  type SessionClientIdentity,
+} from '#shared/sessionClientIdentity'
+import {
+  SESSION_MESSAGE_SCHEMA_VERSION,
+  type SessionClientMessage,
+  type SessionServerMessage,
+} from '#shared/sessionMessages'
+import {
+  parseClientId,
+  parseGmKey,
+  parsePlayerId,
+  parseSessionDisplayName,
+  parseSessionId,
+} from '#shared/sessionIdentity'
+import { INITIAL_SESSION_REVISION } from '#shared/sessionRevisions'
+import {
+  createSessionClientHelloMessage,
   resolveSessionSocketUrl,
   useSessionSocket,
   type SessionSocketConstructor,
@@ -11,6 +27,31 @@ import {
 } from '~/composables/useSessionSocket'
 
 const SESSION_ID = parseSessionId('session_abcdefghijkl')
+const GM_CLIENT_ID = parseClientId('client_gmclient01')
+const PLAYER_CLIENT_ID = parseClientId('client_player01')
+const PLAYER_ID = parsePlayerId('player_misty001')
+const GM_KEY = parseGmKey('gmkey_abcdefghijklmnopqrstuvwxyz')
+const PLAYER_DISPLAY_NAME = parseSessionDisplayName('Misty')
+
+const gmIdentity: SessionClientIdentity = {
+  schemaVersion: SESSION_CLIENT_IDENTITY_SCHEMA_VERSION,
+  role: 'gm',
+  sessionId: SESSION_ID,
+  clientId: GM_CLIENT_ID,
+  gmKey: GM_KEY,
+  rememberedAt: '2026-05-26T10:00:00.000Z',
+}
+
+const playerIdentity: SessionClientIdentity = {
+  schemaVersion: SESSION_CLIENT_IDENTITY_SCHEMA_VERSION,
+  role: 'player',
+  sessionId: SESSION_ID,
+  clientId: PLAYER_CLIENT_ID,
+  playerId: PLAYER_ID,
+  displayName: PLAYER_DISPLAY_NAME,
+  rememberedAt: '2026-05-26T10:00:00.000Z',
+  lastSeenRevision: INITIAL_SESSION_REVISION,
+}
 
 const clientHeartbeatMessage: SessionClientMessage = {
   schemaVersion: SESSION_MESSAGE_SCHEMA_VERSION,
@@ -26,8 +67,27 @@ const serverErrorMessage: SessionServerMessage = {
   type: 'error',
   direction: 'server',
   code: 'unsupported-message',
-  message: 'Track 2 session WebSocket is connected, but hello/auth handling lands later.',
+  message: 'Track 2 session WebSocket is connected, but command dispatch lands later.',
   retryable: false,
+}
+
+const serverHelloMessage: SessionServerMessage = {
+  schemaVersion: SESSION_MESSAGE_SCHEMA_VERSION,
+  type: 'hello',
+  direction: 'server',
+  sessionId: SESSION_ID,
+  actor: {
+    role: 'player',
+    playerId: PLAYER_ID,
+    clientId: PLAYER_CLIENT_ID,
+    displayName: PLAYER_DISPLAY_NAME,
+  },
+  currentRevision: INITIAL_SESSION_REVISION,
+  resumed: true,
+  heartbeat: {
+    intervalMs: 25000,
+    timeoutMs: 60000,
+  },
 }
 
 class FakeSessionWebSocket implements SessionSocketLike {
@@ -114,6 +174,44 @@ describe('resolveSessionSocketUrl', () => {
   })
 })
 
+describe('createSessionClientHelloMessage', () => {
+  it('builds GM and player hello frames from remembered session-local identities', () => {
+    expect(createSessionClientHelloMessage(gmIdentity, {
+      reconnect: false,
+      messageId: 'hello-gm-1',
+      sentAt: '2026-05-26T11:00:00.000Z',
+    })).toEqual({
+      schemaVersion: SESSION_MESSAGE_SCHEMA_VERSION,
+      type: 'hello',
+      direction: 'client',
+      sessionId: SESSION_ID,
+      reconnect: false,
+      messageId: 'hello-gm-1',
+      sentAt: '2026-05-26T11:00:00.000Z',
+      identity: {
+        role: 'gm',
+        clientId: GM_CLIENT_ID,
+        gmKey: GM_KEY,
+      },
+    })
+
+    expect(createSessionClientHelloMessage(playerIdentity)).toEqual({
+      schemaVersion: SESSION_MESSAGE_SCHEMA_VERSION,
+      type: 'hello',
+      direction: 'client',
+      sessionId: SESSION_ID,
+      reconnect: true,
+      lastSeenRevision: INITIAL_SESSION_REVISION,
+      identity: {
+        role: 'player',
+        clientId: PLAYER_CLIENT_ID,
+        playerId: PLAYER_ID,
+        displayName: PLAYER_DISPLAY_NAME,
+      },
+    })
+  })
+})
+
 describe('useSessionSocket', () => {
   it('reports WebSocket unavailability without touching session identity or HTTP endpoints', () => {
     const sessionSocket = useSessionSocket({ webSocketConstructor: null })
@@ -158,6 +256,57 @@ describe('useSessionSocket', () => {
     expect(sessionSocket.isOpen.value).toBe(true)
     expect(sessionSocket.queuedMessageCount.value).toBe(0)
     expect(fake.instances[0]?.sent).toEqual([JSON.stringify(clientHeartbeatMessage)])
+  })
+
+  it('auto-sends a client hello before flushing queued messages and tracks server acceptance', () => {
+    const fake = makeFakeWebSocketConstructor()
+    const sessionSocket = useSessionSocket({
+      webSocketConstructor: fake.Constructor,
+      location: { protocol: 'http:', host: 'localhost:3000' },
+      hello: {
+        identity: playerIdentity,
+        messageId: 'hello-player-1',
+      },
+    })
+
+    sessionSocket.send(clientHeartbeatMessage)
+    sessionSocket.connect()
+    fake.instances[0]?.open()
+
+    const expectedHello = createSessionClientHelloMessage(playerIdentity, {
+      messageId: 'hello-player-1',
+    })
+    expect(fake.instances[0]?.sent).toEqual([
+      JSON.stringify(expectedHello),
+      JSON.stringify(clientHeartbeatMessage),
+    ])
+    expect(sessionSocket.helloStatus.value).toBe('sent')
+
+    fake.instances[0]?.receive(JSON.stringify(serverHelloMessage))
+
+    expect(sessionSocket.helloStatus.value).toBe('accepted')
+    expect(sessionSocket.lastServerHello.value).toEqual(serverHelloMessage)
+  })
+
+  it('queues manual client hello frames before the socket opens', () => {
+    const fake = makeFakeWebSocketConstructor()
+    const sessionSocket = useSessionSocket({
+      webSocketConstructor: fake.Constructor,
+      location: { protocol: 'http:', host: 'localhost:3000' },
+    })
+
+    expect(sessionSocket.sendHello(gmIdentity, { reconnect: false })).toMatchObject({
+      ok: true,
+      delivery: 'queued',
+    })
+    expect(sessionSocket.helloStatus.value).toBe('queued')
+
+    sessionSocket.connect()
+    fake.instances[0]?.open()
+
+    expect(fake.instances[0]?.sent).toEqual([
+      JSON.stringify(createSessionClientHelloMessage(gmIdentity, { reconnect: false })),
+    ])
   })
 
   it('sends immediately when open and records parsed server messages', () => {

@@ -1,8 +1,13 @@
 import { computed, getCurrentScope, onScopeDispose, ref, shallowRef } from 'vue'
-import type {
-  SessionClientMessage,
-  SessionServerMessage,
+import type { SessionClientIdentity } from '#shared/sessionClientIdentity'
+import {
+  SESSION_MESSAGE_SCHEMA_VERSION,
+  type SessionClientHelloMessage,
+  type SessionClientMessage,
+  type SessionServerHelloMessage,
+  type SessionServerMessage,
 } from '#shared/sessionMessages'
+import type { SessionRevision } from '#shared/sessionRevisions'
 import { SESSION_API_PATHS } from '~/utils/apiRoutes'
 
 export const SESSION_SOCKET_READY_STATE_CONNECTING = 0 as const
@@ -80,6 +85,22 @@ export type SessionSocketSendResult<TMessage = SessionClientMessage> =
       readonly message: string
     }
 
+export type SessionSocketHelloStatus = 'idle' | 'queued' | 'sent' | 'accepted' | 'rejected'
+
+export interface CreateSessionClientHelloMessageOptions {
+  readonly reconnect?: boolean
+  readonly lastSeenRevision?: SessionRevision
+  readonly messageId?: string
+  readonly sentAt?: string
+  readonly traceId?: string
+}
+
+export interface SessionSocketAutoHelloOptions extends CreateSessionClientHelloMessageOptions {
+  readonly identity: SessionClientIdentity
+  /** Defaults to true when hello options are supplied. */
+  readonly auto?: boolean
+}
+
 export type SessionSocketClock = () => string
 export type SessionSocketSerializer<TMessage> = (message: TMessage) => string
 export type SessionSocketParser<TMessage> = (raw: string) => TMessage
@@ -92,6 +113,8 @@ export interface UseSessionSocketOptions<
   readonly autoConnect?: boolean
   /** Full URL or app-relative path. Defaults to `/api/sessions/socket`. */
   readonly url?: string
+  /** Optional session-local identity used to send a client hello after open. */
+  readonly hello?: SessionSocketAutoHelloOptions | null
   readonly location?: SessionSocketLocationLike
   readonly webSocketConstructor?: SessionSocketConstructor | null
   readonly now?: SessionSocketClock
@@ -155,6 +178,67 @@ const defaultSerialize = <TMessage>(message: TMessage): string => {
 
 const defaultParse = <TMessage>(raw: string): TMessage => JSON.parse(raw) as TMessage
 
+export const createSessionClientHelloMessage = (
+  identity: SessionClientIdentity,
+  options: CreateSessionClientHelloMessageOptions = {},
+): SessionClientHelloMessage<SessionRevision> => {
+  const lastSeenRevision = options.lastSeenRevision ?? identity.lastSeenRevision
+  const base = {
+    schemaVersion: SESSION_MESSAGE_SCHEMA_VERSION,
+    type: 'hello',
+    direction: 'client',
+    sessionId: identity.sessionId,
+    reconnect: options.reconnect ?? lastSeenRevision !== undefined,
+    ...(lastSeenRevision === undefined ? {} : { lastSeenRevision }),
+    ...(options.messageId === undefined ? {} : { messageId: options.messageId }),
+    ...(options.sentAt === undefined ? {} : { sentAt: options.sentAt }),
+    ...(options.traceId === undefined ? {} : { traceId: options.traceId }),
+  } as const
+
+  if (identity.role === 'gm') {
+    return {
+      ...base,
+      identity: {
+        role: 'gm',
+        clientId: identity.clientId,
+        gmKey: identity.gmKey,
+      },
+    }
+  }
+
+  return {
+    ...base,
+    identity: {
+      role: 'player',
+      clientId: identity.clientId,
+      playerId: identity.playerId,
+      displayName: identity.displayName,
+    },
+  }
+}
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value)
+
+const isServerHelloMessage = (message: unknown): message is SessionServerHelloMessage =>
+  isRecord(message) &&
+  message.schemaVersion === SESSION_MESSAGE_SCHEMA_VERSION &&
+  message.type === 'hello' &&
+  message.direction === 'server'
+
+const isServerAuthRejectionMessage = (message: unknown): boolean =>
+  isRecord(message) &&
+  message.schemaVersion === SESSION_MESSAGE_SCHEMA_VERSION &&
+  message.type === 'error' &&
+  message.direction === 'server' &&
+  (
+    message.code === 'unauthorized' ||
+    message.code === 'session-not-found' ||
+    message.code === 'session-ended' ||
+    message.code === 'session-host-disabled' ||
+    message.code === 'malformed-message'
+  )
+
 const isSocketOpen = (socket: SessionSocketLike | null): socket is SessionSocketLike =>
   socket !== null && socket.readyState === SESSION_SOCKET_READY_STATE_OPEN
 
@@ -185,6 +269,8 @@ export const useSessionSocket = <
   const lastError = ref<string | null>(null)
   const lastRawMessage = ref<string | null>(null)
   const lastMessage = ref<TServerMessage | null>(null)
+  const lastServerHello = ref<SessionServerHelloMessage | null>(null)
+  const helloStatus = ref<SessionSocketHelloStatus>('idle')
   const lastClose = ref<SessionSocketCloseSummary | null>(null)
   const sendQueueItems = shallowRef<QueuedSessionSocketMessage<TClientMessage>[]>([])
   let nextSequence = 1
@@ -230,6 +316,13 @@ export const useSessionSocket = <
     if (socket.value !== openedSocket) return
     status.value = 'open'
     lastError.value = null
+
+    if (options.hello !== undefined && options.hello !== null && options.hello.auto !== false) {
+      const { identity, auto: _auto, ...helloOptions } = options.hello
+      void _auto
+      sendHello(identity, helloOptions)
+    }
+
     flushSendQueue()
   }
 
@@ -245,6 +338,12 @@ export const useSessionSocket = <
     try {
       const parsed = parse(event.data)
       lastMessage.value = parsed
+      if (isServerHelloMessage(parsed)) {
+        lastServerHello.value = parsed
+        helloStatus.value = 'accepted'
+      } else if (isServerAuthRejectionMessage(parsed)) {
+        helloStatus.value = 'rejected'
+      }
       for (const handler of messageHandlers) handler(parsed, event.data)
     } catch (error) {
       lastError.value = normalizeErrorMessage(error, 'Unable to parse session WebSocket message.')
@@ -306,6 +405,8 @@ export const useSessionSocket = <
     status.value = 'connecting'
     lastError.value = null
     lastClose.value = null
+    lastServerHello.value = null
+    if (options.hello !== undefined && options.hello !== null) helloStatus.value = 'idle'
     resolvedUrl.value = url
 
     try {
@@ -366,6 +467,23 @@ export const useSessionSocket = <
     }
   }
 
+  const sendHello = (
+    identity: SessionClientIdentity,
+    helloOptions: CreateSessionClientHelloMessageOptions = {},
+  ): SessionSocketSendResult<TClientMessage> => {
+    const result = send(
+      createSessionClientHelloMessage(identity, helloOptions) as unknown as TClientMessage,
+    )
+
+    if (result.ok) {
+      helloStatus.value = result.delivery === 'queued' ? 'queued' : 'sent'
+    } else {
+      helloStatus.value = 'rejected'
+    }
+
+    return result
+  }
+
   const disconnect = (code = 1000, reason = 'session socket disconnect'): void => {
     const currentSocket = socket.value
     if (currentSocket === null) {
@@ -424,6 +542,8 @@ export const useSessionSocket = <
     lastError,
     lastRawMessage,
     lastMessage,
+    lastServerHello,
+    helloStatus,
     lastClose,
     sendQueue,
     queuedMessageCount,
@@ -435,6 +555,7 @@ export const useSessionSocket = <
     disconnect,
     cleanup,
     send,
+    sendHello,
     flushSendQueue,
     clearSendQueue,
     addMessageHandler,
