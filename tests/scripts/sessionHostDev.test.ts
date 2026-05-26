@@ -18,7 +18,7 @@ import {
 const testDir = dirname(fileURLToPath(import.meta.url))
 const repoRoot = resolve(testDir, '../..')
 
-describe('Track 2 session host dev helper', () => {
+describe('live session host dev helper', () => {
   it('resolves the LAN script to the explicit session flag and LAN bind address', () => {
     const config = resolveSessionHostConfig({ mode: 'lan' })
     const command = buildSessionHostDevCommand(config)

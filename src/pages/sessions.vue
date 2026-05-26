@@ -49,7 +49,7 @@ const currentSessionId = computed(() => gmSession.value?.sessionId ?? playerSess
 const safetyBannerSeverity = computed(() => safetyStatus.value?.severity ?? 'unknown')
 const safetyTitle = computed(() => safetyStatus.value?.title ?? 'Checking session hosting safety')
 const safetySummary = computed(() => safetyStatus.value?.summary
-  ?? 'Rotom Table is checking whether Track 2 session hosting is disabled, local-only, LAN reachable, or remotely exposed.')
+  ?? 'Rotom Table is checking whether live session hosting is disabled, local-only, LAN reachable, or remotely exposed.')
 const safetyFlagLabel = computed(() => {
   if (!safetyStatus.value) return 'Checking'
   return safetyStatus.value.hostEnabled ? 'Enabled' : 'Disabled'
@@ -171,12 +171,12 @@ onMounted(() => {
     </section>
 
     <section class="session-hero panel-card" aria-labelledby="session-lobby-title">
-      <p class="eyebrow">Track 2 preview</p>
+      <p class="eyebrow">Live session preview</p>
       <h1 id="session-lobby-title">Session lobby</h1>
       <p class="hero-copy">
         Start a GM-hosted table session, share a join code, or join with a
         session-local display name. This lobby is additive: the existing local
-        trust login still gates the app while Track 2 session identity is built out.
+        trust login still gates the app while live session identity is built out.
       </p>
       <dl class="session-facts">
         <div>

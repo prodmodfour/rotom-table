@@ -352,7 +352,7 @@ const createHarness = () => {
   return { enabled, mapSlug, localMap, storage, socket, scope, sessionMap, dispatcher }
 }
 
-describe('client-side Track 2 session integration', () => {
+describe('client-side Live session integration', () => {
   it('loads a reconnect snapshot, dispatches moveToken, and confirms optimistic state from ack plus patch', () => {
     const { localMap, storage, socket, scope, sessionMap, dispatcher } = createHarness()
 

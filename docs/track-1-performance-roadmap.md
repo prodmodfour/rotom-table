@@ -67,7 +67,7 @@ Avoid disposing and rebuilding equivalent geometry, buffers, overlays, and targe
 
 ### 6. Validate and audit
 
-Finish with repeatable benchmark notes, resource cleanup coverage, a no-quality-loss audit, and a final implementation review. The [Track 1 no-quality-loss audit](performance-no-quality-loss-audit.md) records the integrated review that found no intentional visual-quality or functionality reduction, and the [Track 1 final implementation review](performance-track-1-final-review.md) records completion readiness, completed chunk PR coverage, and final automation handoff notes. Any optimization that changes output should be treated as a bug unless it is an intentional, separately reviewed product change.
+Finish with repeatable benchmark notes, resource cleanup coverage, a no-quality-loss audit, and a final implementation review. The [Track 1 no-quality-loss audit](performance-no-quality-loss-audit.md) records the integrated review that found no intentional visual-quality or functionality reduction, and the [Track 1 final implementation review](performance-track-1-final-review.md) records completion readiness, completed implementation review coverage, and performance readiness notes. Any optimization that changes output should be treated as a bug unless it is an intentional, separately reviewed product change.
 
 ## Validation expectations
 
@@ -79,4 +79,4 @@ npm test
 npm run build
 ```
 
-When a ticket introduces pure utilities or cache invalidation, add focused Vitest coverage near the relevant code. Documentation-only changes should keep this roadmap and related docs accurate without changing runtime behaviour.
+When a change introduces pure utilities or cache invalidation, add focused Vitest coverage near the relevant code. Documentation-only changes should keep this roadmap and related docs accurate without changing runtime behaviour.

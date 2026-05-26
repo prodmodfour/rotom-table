@@ -8,7 +8,7 @@ This workflow complements the scenario definitions in [Performance benchmark sce
 
 Decide which two commits or branches you are comparing before opening the app:
 
-- **Before:** the base branch, merge base, or previous performance chunk that reviewers should compare against.
+- **Before:** the base branch, merge base, or previous performance baseline that reviewers should compare against.
 - **After:** the branch or commit under review.
 - **Mode:** use the same app mode for both runs. The debug render overlay is dev-safe and normally appears in `npm run dev`; if you use a custom benchmark build, record that explicitly.
 - **Fixture version:** use the same generated fixture maps for both runs. If the fixture generator changed, record the generator commit and rerun both before and after with the refreshed fixtures.

@@ -39,7 +39,7 @@ type FakePeer = SessionSocketPeerLike & {
 }
 
 const disabledMessage =
-  'Track 2 session hosting is disabled. Set ROTOM_ENABLE_SESSION_HOST=1 to enable session endpoints.'
+  'live session hosting is disabled. Set ROTOM_ENABLE_SESSION_HOST=1 to enable session endpoints.'
 
 const repoPath = (relativePath: string): string => resolve(process.cwd(), relativePath)
 const readRepoText = (relativePath: string): string => readFileSync(repoPath(relativePath), 'utf8')
@@ -104,7 +104,7 @@ const guardedSessionRoutes = [
   },
 ] as const
 
-describe('Track 2 hosting hardening regression coverage', () => {
+describe('live session hosting hardening regression coverage', () => {
   afterEach(() => {
     sessionStore.clear()
     vi.unstubAllEnvs()

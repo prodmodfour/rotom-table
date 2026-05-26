@@ -6,15 +6,15 @@ Status: Accepted
 
 ## Context
 
-Track 2 sessions are GM-hosted and session-scoped. A GM starts one table session on a machine they control, and players join from browsers over LAN or a named Cloudflare Tunnel. The existing local GM/player role picker is a trusted-table convenience and is not hardened public authentication.
+Live sessions are GM-hosted and session-scoped. A GM starts one table session on a machine they control, and players join from browsers over LAN or a named Cloudflare Tunnel. The existing local GM/player role picker is a trusted-table convenience and is not hardened public authentication.
 
 Live session commands still need clear authority boundaries. The server must know which connected browser is acting as the GM, which player is sending a command, which client instance is reconnecting, which resources that player can see, and which tokens or sheets the player may control. Those checks must happen on the GM-hosted server before a command mutates authoritative state.
 
-Track 2 therefore needs enough identity to run one table session safely without turning Rotom Table into an account system, SaaS product, or public multi-tenant service.
+Live session therefore needs enough identity to run one table session safely without turning Rotom Table into an account system, SaaS product, or public multi-tenant service.
 
 ## Decision
 
-Track 2 uses **session-local identity and server-enforced permissions**.
+Live session uses **session-local identity and server-enforced permissions**.
 
 A session has identities and credentials that are generated for that session only:
 
@@ -26,7 +26,7 @@ A session has identities and credentials that are generated for that session onl
 - **Display name** — player-provided table name shown in lobby and presence UI after sanitization. It is not an authentication factor.
 - **Assignments** — GM-managed records that grant a player control over specific sheets, tokens, or additional controllable resources.
 
-There are no full user accounts in Track 2. There is no third-party auth provider, global user profile, password reset flow, cross-campaign identity, tenant membership model, or cloud identity store.
+There are no full user accounts in Live session. There is no third-party auth provider, global user profile, password reset flow, cross-campaign identity, tenant membership model, or cloud identity store.
 
 The GM-hosted server is responsible for permission decisions. Client UI may hide unavailable actions, but server validation is authoritative. Every session command and WebSocket handshake that relies on identity must be checked against the current session state before it can mutate or subscribe to authoritative data.
 
@@ -76,11 +76,11 @@ The implementation defines concrete TypeScript types and predicates for controll
 
 ### Full accounts or external auth providers
 
-Rejected for Track 2. Accounts would add registration, login, password or provider management, profile data, recovery flows, account/session linking, and long-term security obligations. Track 2 only needs session-local identity for a GM-hosted table session.
+Rejected for Live session. Accounts would add registration, login, password or provider management, profile data, recovery flows, account/session linking, and long-term security obligations. Live session only needs session-local identity for a GM-hosted table session.
 
 ### Public multi-tenant identity
 
-Rejected. A tenant/user/membership model would imply SaaS deployment, tenant isolation, hosted persistence, and broader public security hardening. Rotom Table Track 2 remains GM-hosted and local-first.
+Rejected. A tenant/user/membership model would imply SaaS deployment, tenant isolation, hosted persistence, and broader public security hardening. Rotom Table Live session remains GM-hosted and local-first.
 
 ### Display-name based permissions
 
@@ -105,7 +105,7 @@ Rejected. A join code only lets a player ask to join the current session. It mus
 
 ## Validation notes
 
-Reviewers can validate this ADR by checking that Track 2 work:
+Reviewers can validate this ADR by checking that live-session work:
 
 - uses session-local IDs and credentials rather than global accounts;
 - keeps display names out of permission keys;

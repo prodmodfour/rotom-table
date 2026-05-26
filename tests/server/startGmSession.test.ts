@@ -130,7 +130,7 @@ describe('startGmSessionUseCase', () => {
       () => startSession({ store, writeSnapshot, env: {} }),
       {
         statusCode: 403,
-        message: 'Track 2 session hosting is disabled. Set ROTOM_ENABLE_SESSION_HOST=1 to enable session endpoints.',
+        message: 'live session hosting is disabled. Set ROTOM_ENABLE_SESSION_HOST=1 to enable session endpoints.',
       },
     )
     expect(store.size).toBe(0)

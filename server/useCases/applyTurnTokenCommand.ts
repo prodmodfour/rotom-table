@@ -248,21 +248,21 @@ const getActiveTurnTokenRecord = (
   if (record === undefined) {
     throw new ApplyTurnTokenCommandUseCaseError(
       404,
-      'No Track 2 table session was found for the supplied turnToken command',
+      'No live session was found for the supplied turnToken command',
     )
   }
 
   if (record.status !== 'active') {
     throw new ApplyTurnTokenCommandUseCaseError(
       409,
-      'The Track 2 table session must be active before turnToken commands can apply',
+      'The live session must be active before turnToken commands can apply',
     )
   }
 
   if (record.state === undefined) {
     throw new ApplyTurnTokenCommandUseCaseError(
       500,
-      'The Track 2 table session has no authoritative state available for turnToken commands',
+      'The live session has no authoritative state available for turnToken commands',
     )
   }
 
@@ -845,7 +845,7 @@ export const applyTurnTokenCommandUseCase = (
   if (updatedRecord === undefined) {
     throw new ApplyTurnTokenCommandUseCaseError(
       409,
-      'The Track 2 table session ended before turnToken could apply',
+      'The live session ended before turnToken could apply',
     )
   }
 

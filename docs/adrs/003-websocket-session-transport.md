@@ -6,13 +6,13 @@ Status: Accepted
 
 ## Context
 
-Track 2 adds live GM-hosted table sessions where the GM's Rotom Table server is the authority for session state. During a session, multiple browser clients need to send table commands, receive command acknowledgements or rejections, see presence updates, receive accepted map/table patches, and reconnect without losing the authoritative revision.
+Live session adds live GM-hosted table sessions where the GM's Rotom Table server is the authority for session state. During a session, multiple browser clients need to send table commands, receive command acknowledgements or rejections, see presence updates, receive accepted map/table patches, and reconnect without losing the authoritative revision.
 
 The existing app may keep local-first and non-session realtime behaviour during migration, including any Server-Sent Events (SSE) paths that are still useful outside session mode. The new live session channel, however, needs bidirectional messaging with explicit ordering and session-scoped fanout. It also must work for the supported hosting modes: LAN first, and named Cloudflare Tunnel for remote players.
 
 ## Decision
 
-Track 2 live session concurrency uses **WebSockets** as the session transport.
+live session concurrency uses **WebSockets** as the session transport.
 
 Each live GM/player client connects to a session WebSocket endpoint after the GM has explicitly enabled session hosting. The WebSocket channel carries structured session messages for:
 
@@ -24,9 +24,9 @@ Each live GM/player client connects to a session WebSocket endpoint after the GM
 - heartbeat/keepalive messages;
 - transport-level errors and safe close reasons.
 
-Existing SSE code may remain for non-session or local-sync routes during the migration, but new Track 2 session concurrency must not rely on SSE, polling, or whole-map autosave as the primary live transport.
+Existing SSE code may remain for non-session or local-sync routes during the migration, but new Live session concurrency must not rely on SSE, polling, or whole-map autosave as the primary live transport.
 
-The TypeScript message unions, validators, endpoint shape, and client composables are defined in the Track 2 implementation. This ADR locks the transport expectation they must follow.
+The TypeScript message unions, validators, endpoint shape, and client composables are defined in the live-session implementation. This ADR locks the transport expectation they must follow.
 
 ## Rationale
 
@@ -66,7 +66,7 @@ A reconnecting client reports its last observed revision during the hello/reconn
 
 ### SSE as the live session channel
 
-Rejected for new session concurrency. SSE is useful for one-way server-to-client updates, but Track 2 needs a bidirectional session channel for commands, acks/rejections, heartbeat, and reconnect handshakes. Keeping commands on separate HTTP requests while broadcasts arrive over SSE would complicate ordering, duplicate handling, and reconnect semantics. Existing SSE paths may remain outside session mode.
+Rejected for new session concurrency. SSE is useful for one-way server-to-client updates, but Live session needs a bidirectional session channel for commands, acks/rejections, heartbeat, and reconnect handshakes. Keeping commands on separate HTTP requests while broadcasts arrive over SSE would complicate ordering, duplicate handling, and reconnect semantics. Existing SSE paths may remain outside session mode.
 
 ### HTTP polling or long polling
 
@@ -74,11 +74,11 @@ Rejected for live sessions. Polling would add latency, waste requests during qui
 
 ### Peer-to-peer or WebRTC authority
 
-Rejected for Track 2. Peer-to-peer transport would complicate NAT traversal, permissions, and authoritative conflict handling. Track 2 is explicitly GM-hosted: the GM's server remains the authority and clients communicate through it.
+Rejected for Live session. Peer-to-peer transport would complicate NAT traversal, permissions, and authoritative conflict handling. Live session is explicitly GM-hosted: the GM's server remains the authority and clients communicate through it.
 
 ### Hosted realtime service
 
-Rejected for Track 2. A managed realtime service would introduce cloud dependency and operational assumptions that conflict with the local-first GM-hosted architecture. The session channel should run in the GM-controlled Rotom Table process.
+Rejected for Live session. A managed realtime service would introduce cloud dependency and operational assumptions that conflict with the local-first GM-hosted architecture. The session channel should run in the GM-controlled Rotom Table process.
 
 ## Consequences
 
@@ -90,7 +90,7 @@ Rejected for Track 2. A managed realtime service would introduce cloud dependenc
 
 ## Validation notes
 
-Reviewers can validate this ADR by checking that Track 2 work:
+Reviewers can validate this ADR by checking that live-session work:
 
 - uses WebSockets for live session commands, results, broadcasts, presence, heartbeat, and reconnect;
 - keeps SSE, if present, limited to non-session/local migration paths;

@@ -209,7 +209,7 @@ describe('updatePlayerAssignmentUseCase', () => {
       () => updateAssignment({ store, writeSnapshot, env: {} }),
       {
         statusCode: 403,
-        message: 'Track 2 session hosting is disabled. Set ROTOM_ENABLE_SESSION_HOST=1 to enable session endpoints.',
+        message: 'live session hosting is disabled. Set ROTOM_ENABLE_SESSION_HOST=1 to enable session endpoints.',
       },
     )
 
@@ -379,7 +379,7 @@ describe('updatePlayerAssignmentUseCase', () => {
       }),
       {
         statusCode: 404,
-        message: 'No Track 2 table session was found for the supplied session ID',
+        message: 'No live session was found for the supplied session ID',
       },
     )
     expectHttpError(
@@ -390,7 +390,7 @@ describe('updatePlayerAssignmentUseCase', () => {
       }),
       {
         statusCode: 403,
-        message: 'The supplied GM key is not authorized to update player assignments for this Track 2 table session',
+        message: 'The supplied GM key is not authorized to update player assignments for this live session',
       },
     )
     expectHttpError(
@@ -408,7 +408,7 @@ describe('updatePlayerAssignmentUseCase', () => {
       () => updateAssignment({ store: endedStore, writeSnapshot }),
       {
         statusCode: 409,
-        message: 'The Track 2 table session must be active before player assignments can be changed',
+        message: 'The live session must be active before player assignments can be changed',
       },
     )
 
@@ -423,7 +423,7 @@ describe('updatePlayerAssignmentUseCase', () => {
       () => updateAssignment({ store }),
       {
         statusCode: 500,
-        message: 'The Track 2 table session has no authoritative state available for player assignment updates',
+        message: 'The live session has no authoritative state available for player assignment updates',
       },
     )
   })

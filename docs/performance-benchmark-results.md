@@ -1,6 +1,6 @@
 # Track 1 integrated benchmark pass
 
-This page records the ticket 061 integrated benchmark pass using the public Track 1 fixture maps and the debug render overlay. It is a current-branch measurement, not a historical pre-Track 1 checkout: the pre-instrumentation branch did not have equivalent overlay counters. In the tables below, **before** means the overlay snapshot at the start of a measurement window and **after** means the end-of-window overlay delta on the integrated Track 1 branch.
+This page records the this review integrated benchmark pass using the public Track 1 fixture maps and the debug render overlay. It is a current-branch measurement, not a historical pre-Track 1 checkout: the pre-instrumentation branch did not have equivalent overlay counters. In the tables below, **before** means the overlay snapshot at the start of a measurement window and **after** means the end-of-window overlay delta on the integrated Track 1 branch.
 
 ## Run identity
 
@@ -31,4 +31,4 @@ The fixture generator was refreshed before the pass so the browser-observed toke
 - Typical and stress idle windows intentionally kept rendering because animated weather/field effects were visible. The empty map confirms the settled no-animation path stops duplicate idle RAF/render work.
 - Movement-preview cache notes use repeated anchors on the same selected token. Hits appear after the first visit to an unchanged terrain/placement key; immediately repeated identical anchors are short-circuited earlier and do not increment cache counters.
 - Browser console after the final pass had no app errors or warnings beyond normal Nuxt dev informational logs.
-- The [Track 1 no-quality-loss audit](performance-no-quality-loss-audit.md) records the final visual-quality and functionality review for this benchmark branch, and the [Track 1 final implementation review](performance-track-1-final-review.md) records completion readiness before final automation closure.
+- The [Track 1 no-quality-loss audit](performance-no-quality-loss-audit.md) records the final visual-quality and functionality review for this benchmark branch, and the [Track 1 final implementation review](performance-track-1-final-review.md) records readiness before repository review.

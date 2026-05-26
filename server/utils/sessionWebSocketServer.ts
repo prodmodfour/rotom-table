@@ -198,7 +198,7 @@ export const SESSION_SOCKET_UPGRADE_REQUIRED_STATUS = 426 as const
 export const SESSION_SOCKET_POLICY_CLOSE_CODE = 1008 as const
 
 export const SESSION_SOCKET_DISABLED_MESSAGE =
-  `Track 2 session WebSocket hosting is disabled. Set ${SESSION_HOST_ENABLE_ENV}=${SESSION_HOST_ENABLE_VALUE} to enable the session socket.` as const
+  `live session WebSocket hosting is disabled. Set ${SESSION_HOST_ENABLE_ENV}=${SESSION_HOST_ENABLE_VALUE} to enable the session socket.` as const
 
 export const SESSION_SOCKET_PENDING_HELLO_STATUS = 'pending-hello' as const
 export const SESSION_SOCKET_AUTHENTICATED_STATUS = 'authenticated' as const
@@ -1287,7 +1287,7 @@ const getSocketSessionRecord = <TMapDocument>(
       ok: false,
       failure: {
         code: 'session-not-found',
-        message: 'No active Track 2 table session was found for this WebSocket hello.',
+        message: 'No active live session was found for this WebSocket hello.',
         retryable: false,
         sessionId,
       },
@@ -1299,7 +1299,7 @@ const getSocketSessionRecord = <TMapDocument>(
       ok: false,
       failure: {
         code: 'session-ended',
-        message: 'The Track 2 table session for this WebSocket hello has ended.',
+        message: 'The live session for this WebSocket hello has ended.',
         retryable: false,
         sessionId,
         currentRevision: record.revision,
@@ -1312,7 +1312,7 @@ const getSocketSessionRecord = <TMapDocument>(
       ok: false,
       failure: {
         code: 'internal-error',
-        message: 'The Track 2 table session has no authoritative state for WebSocket hello.',
+        message: 'The live session has no authoritative state for WebSocket hello.',
         retryable: true,
         sessionId,
         currentRevision: record.revision,
@@ -1335,7 +1335,7 @@ const actorFromHello = <TMapDocument>(
         ok: false,
         failure: {
           code: 'unauthorized',
-          message: 'The supplied GM key is not authorized for this Track 2 table session socket.',
+          message: 'The supplied GM key is not authorized for this live session socket.',
           retryable: false,
           sessionId: record.sessionId,
           currentRevision: record.revision,
@@ -1358,7 +1358,7 @@ const actorFromHello = <TMapDocument>(
       ok: false,
       failure: {
         code: 'unauthorized',
-        message: 'The supplied player identity is not authorized for this Track 2 table session socket.',
+        message: 'The supplied player identity is not authorized for this live session socket.',
         retryable: false,
         sessionId: record.sessionId,
         currentRevision: record.revision,
@@ -1496,7 +1496,7 @@ const authenticateSocketHello = <TMapDocument>(
   if (updatedRecord === undefined) {
     closeForHandshakeFailure(peer, {
       code: 'session-ended',
-      message: 'The Track 2 table session ended before WebSocket hello could finish.',
+      message: 'The live session ended before WebSocket hello could finish.',
       retryable: false,
       sessionId: recordResult.record.sessionId,
       currentRevision: recordResult.record.revision,
@@ -1637,7 +1637,7 @@ const handleAuthenticatedSocketHeartbeat = <TMapDocument>(
   if (connection === undefined || connection.status !== SESSION_SOCKET_AUTHENTICATED_STATUS) {
     closeForHandshakeFailure(peer, {
       code: 'unauthorized',
-      message: 'A valid Track 2 session WebSocket hello is required before heartbeat messages.',
+      message: 'A valid live session WebSocket hello is required before heartbeat messages.',
       retryable: false,
     }, dependencies)
     return undefined
@@ -1660,7 +1660,7 @@ const handleAuthenticatedSocketHeartbeat = <TMapDocument>(
   if (updatedRecord === undefined) {
     closeForHandshakeFailure(peer, {
       code: 'session-ended',
-      message: 'The Track 2 table session ended before heartbeat could be recorded.',
+      message: 'The live session ended before heartbeat could be recorded.',
       retryable: false,
       sessionId: connection.sessionId,
       currentRevision: connection.currentRevision,
@@ -1716,7 +1716,7 @@ const socketErrorCodeForCommandDispatchError = (error: unknown): SessionErrorCod
 
 const commandDispatchErrorMessage = (error: unknown): string => {
   if (error instanceof Error && error.message.trim().length > 0) return error.message
-  return 'Track 2 session command dispatch failed.'
+  return 'live session command dispatch failed.'
 }
 
 const isCommandDispatchRetryable = (error: unknown): boolean =>
@@ -1757,7 +1757,7 @@ const handleAuthenticatedSocketCommand = <TMapDocument>(
   ) {
     sendJson(peer, createSessionSocketErrorMessage({
       code: 'unsupported-message',
-      message: 'Track 2 session WebSocket command dispatch currently supports moveToken, turnToken, spawnToken, deleteToken, sendOutPokemon, modifyHp, modifyCombatStages, modifyConditions, useMove, useManeuver, useAbility, useOrder, setInitiative, nextInitiative, previousInitiative, placeHazard, removeHazard, setFieldEffect, removeFieldEffect, tickFieldEffectDurations, buildTerrainVoxel, and removeTerrainVoxel commands only.',
+      message: 'live session WebSocket command dispatch currently supports moveToken, turnToken, spawnToken, deleteToken, sendOutPokemon, modifyHp, modifyCombatStages, modifyConditions, useMove, useManeuver, useAbility, useOrder, setInitiative, nextInitiative, previousInitiative, placeHazard, removeHazard, setFieldEffect, removeFieldEffect, tickFieldEffectDurations, buildTerrainVoxel, and removeTerrainVoxel commands only.',
       retryable: false,
       sessionId: connection.sessionId,
       currentRevision: connection.currentRevision,
@@ -1997,7 +1997,7 @@ export const handleSessionSocketMessage = <TMapDocument = unknown>(
     if (authenticatedConnection === undefined) {
       closeForHandshakeFailure(peer, {
         code: 'unauthorized',
-        message: 'A valid Track 2 session WebSocket hello is required before heartbeat messages.',
+        message: 'A valid live session WebSocket hello is required before heartbeat messages.',
         retryable: false,
       }, resolved)
       return
@@ -2017,7 +2017,7 @@ export const handleSessionSocketMessage = <TMapDocument = unknown>(
     if (authenticatedConnection === undefined) {
       closeForHandshakeFailure(peer, {
         code: 'unauthorized',
-        message: 'A valid Track 2 session WebSocket hello is required before command messages.',
+        message: 'A valid live session WebSocket hello is required before command messages.',
         retryable: false,
       }, resolved)
       return

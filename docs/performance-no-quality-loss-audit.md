@@ -1,6 +1,6 @@
 # Track 1 no-quality-loss audit
 
-This audit records the ticket 062 review of Track 1 performance work. The review checks whether the integrated Track 1 branch intentionally reduced visual quality or table functionality to claim performance gains.
+This audit records the this review review of Track 1 performance work. The review checks whether the integrated Track 1 branch intentionally reduced visual quality or table functionality to claim performance gains.
 
 ## Outcome
 
@@ -45,5 +45,5 @@ The benchmark pass also noted no app console errors or warnings beyond normal Nu
 
 - Treat any future output-changing optimization as a product change, not as Track 1 performance-only work.
 - Keep using the benchmark runbook and guardrail tests for later performance PRs.
-- Use the [Track 1 final implementation review](performance-track-1-final-review.md) as the handoff checklist before marking the autonomous Track 1 run complete.
+- Use the [Track 1 final implementation review](performance-track-1-final-review.md) as the handoff checklist before marking the performance readiness review complete.
 - Add focused tests or explicit docs whenever a new cache, dirty reason, or resource reuse path could affect visible output or tool behaviour.

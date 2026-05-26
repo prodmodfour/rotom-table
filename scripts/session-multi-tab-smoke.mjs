@@ -12,7 +12,7 @@ export const FOCUSED_SMOKE_TESTS = Object.freeze([
   'tests/composables/map-editor/sessionClientIntegration.test.ts',
 ])
 
-const HELP_TEXT = `Track 2 multi-tab local smoke helper
+const HELP_TEXT = `Live session multi-tab local smoke helper
 
 Usage:
   npm run smoke:session:multi-tab -- [options]
@@ -324,7 +324,7 @@ export const runSmokeCli = (argv = process.argv.slice(2)) => {
     return 2
   }
 
-  process.stdout.write('Track 2 multi-tab local smoke helper\n')
+  process.stdout.write('Live session multi-tab local smoke helper\n')
   if (process.env[SESSION_HOST_ENABLE_ENV] !== SESSION_HOST_ENABLE_VALUE) {
     process.stdout.write(
       `\nWarning: this shell does not have ${SESSION_HOST_ENABLE_ENV}=${SESSION_HOST_ENABLE_VALUE}. ` +

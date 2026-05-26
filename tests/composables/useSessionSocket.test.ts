@@ -71,7 +71,7 @@ const serverErrorMessage: SessionServerMessage = {
   type: 'error',
   direction: 'server',
   code: 'unsupported-message',
-  message: 'Track 2 session WebSocket is connected, but command dispatch lands later.',
+  message: 'live session WebSocket is connected, but command dispatch lands later.',
   retryable: false,
 }
 

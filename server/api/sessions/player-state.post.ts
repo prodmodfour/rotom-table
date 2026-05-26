@@ -1,7 +1,7 @@
 /**
  * POST /api/sessions/player-state
  *
- * Returns the player-filtered state summary for one Track 2 table session:
+ * Returns the player-filtered state summary for one live session:
  * the caller's own player identity, assignment record, current-map visibility,
  * and lifecycle status. The route fails closed unless ROTOM_ENABLE_SESSION_HOST=1
  * is present and validates the session-local player identity instead of trusting

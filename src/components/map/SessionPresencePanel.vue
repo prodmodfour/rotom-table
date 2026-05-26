@@ -23,10 +23,10 @@ const clientLabel = (participant: SessionPresenceParticipant): string => {
 </script>
 
 <template>
-  <aside class="session-presence" aria-label="Track 2 session presence">
+  <aside class="session-presence" aria-label="Live session presence">
     <header class="session-presence__header">
       <div class="session-presence__title-block">
-        <p class="session-presence__kicker">Track 2 session</p>
+        <p class="session-presence__kicker">Live session</p>
         <h2>Presence</h2>
       </div>
       <div class="session-presence__actor" :title="props.model.sessionId">

@@ -6,7 +6,7 @@ Status: Accepted
 
 ## Context
 
-Track 2 keeps Rotom Table shaped as a GM-hosted table session. A GM runs the app on a machine they control, and players connect by browser for the duration of the session. That shape needs a practical hosting story for two cases:
+Live session keeps Rotom Table shaped as a GM-hosted table session. A GM runs the app on a machine they control, and players connect by browser for the duration of the session. That shape needs a practical hosting story for two cases:
 
 1. everyone is on the same local network; and
 2. one or more players need remote access over the internet.
@@ -15,7 +15,7 @@ The hosting path must preserve local-first ownership and avoid implying that Rot
 
 ## Decision
 
-Rotom Table Track 2 supports hosting in this order:
+Rotom Table Live session supports hosting in this order:
 
 1. **LAN / same Wi-Fi is the primary path.** The GM runs Rotom Table locally or on a small machine they control. Players connect to the GM-owned server from browsers on the same network.
 2. **Named Cloudflare Tunnel is the supported remote path.** For remote players, the GM may configure a named Cloudflare Tunnel with a stable public hostname that forwards to the private Rotom Table server.
@@ -76,15 +76,15 @@ Rejected. It is convenient for quick checks, but its temporary URL and ad-hoc se
 
 ### Full cloud deployment
 
-Rejected for Track 2. A cloud deployment would imply operational responsibilities, account management, hosted persistence, tenant isolation, and broader security hardening that are outside the GM-hosted session goal.
+Rejected for Live session. A cloud deployment would imply operational responsibilities, account management, hosted persistence, tenant isolation, and broader security hardening that are outside the GM-hosted session goal.
 
 ### VPN-only remote access
 
-Rejected as the primary documented remote path. VPNs can work for some groups, but they are too environment-specific to be the Track 2 supported remote mode. A named tunnel gives one documented route while still pointing at the GM-controlled private server.
+Rejected as the primary documented remote path. VPNs can work for some groups, but they are too environment-specific to be the Live session supported remote mode. A named tunnel gives one documented route while still pointing at the GM-controlled private server.
 
 ## Validation notes
 
-Reviewers can validate this ADR by checking that Track 2 work:
+Reviewers can validate this ADR by checking that live-session work:
 
 - documents LAN as the first supported hosting path;
 - documents named Cloudflare Tunnel as the supported remote path with a stable hostname;

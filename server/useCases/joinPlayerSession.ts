@@ -177,21 +177,21 @@ const getJoinableRecord = <TMapDocument>(
   if (record === undefined) {
     throw new JoinPlayerSessionUseCaseError(
       404,
-      'No active Track 2 table session was found for the supplied join code',
+      'No active live session was found for the supplied join code',
     )
   }
 
   if (record.status !== 'active') {
     throw new JoinPlayerSessionUseCaseError(
       409,
-      'The Track 2 table session for this join code is no longer active',
+      'The live session for this join code is no longer active',
     )
   }
 
   if (record.state === undefined) {
     throw new JoinPlayerSessionUseCaseError(
       500,
-      'The Track 2 table session has no authoritative state available for player join',
+      'The live session has no authoritative state available for player join',
     )
   }
 
@@ -260,7 +260,7 @@ export const joinPlayerSessionUseCase = <TMapDocument = unknown>(
   if (updatedRecord === undefined) {
     throw new JoinPlayerSessionUseCaseError(
       409,
-      'The Track 2 table session ended before the player could join',
+      'The live session ended before the player could join',
     )
   }
 

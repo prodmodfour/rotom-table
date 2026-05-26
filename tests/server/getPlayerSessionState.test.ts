@@ -238,7 +238,7 @@ describe('getPlayerSessionStateUseCase', () => {
       () => getPlayerState({ store, env: {} }),
       {
         statusCode: 403,
-        message: 'Track 2 session hosting is disabled. Set ROTOM_ENABLE_SESSION_HOST=1 to enable session endpoints.',
+        message: 'live session hosting is disabled. Set ROTOM_ENABLE_SESSION_HOST=1 to enable session endpoints.',
       },
     )
   })
@@ -369,14 +369,14 @@ describe('getPlayerSessionStateUseCase', () => {
       () => getPlayerState({ store, input: { ...defaultInput, sessionId: unknownSessionId } }),
       {
         statusCode: 404,
-        message: 'No Track 2 table session was found for the supplied session ID',
+        message: 'No live session was found for the supplied session ID',
       },
     )
     expectHttpError(
       () => getPlayerState({ store, input: { ...defaultInput, displayName: otherDisplayName } }),
       {
         statusCode: 403,
-        message: 'The supplied player identity is not authorized to read this Track 2 table session',
+        message: 'The supplied player identity is not authorized to read this live session',
       },
     )
     expectHttpError(
@@ -395,7 +395,7 @@ describe('getPlayerSessionStateUseCase', () => {
       () => getPlayerState({ store }),
       {
         statusCode: 500,
-        message: 'The Track 2 table session has no authoritative state available for player state reads',
+        message: 'The live session has no authoritative state available for player state reads',
       },
     )
   })

@@ -1,7 +1,7 @@
 /**
  * WebSocket /api/sessions/socket
  *
- * Track 2 session socket endpoint. The upgrade fails closed unless
+ * live session socket endpoint. The upgrade fails closed unless
  * ROTOM_ENABLE_SESSION_HOST=1 is set. The current slice validates the initial
  * GM/player hello identity before a socket is associated with a session and
  * keeps authenticated sockets alive with app-level heartbeat ping/pong frames,

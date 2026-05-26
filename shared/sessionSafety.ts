@@ -242,30 +242,30 @@ const warningTextForExposure = (exposure: SessionSafetyExposure): readonly strin
   switch (exposure) {
     case 'disabled':
       return [
-        `Track 2 session endpoints fail closed until ${SESSION_HOST_ENABLE_ENV}=${SESSION_HOST_ENABLE_VALUE} is set.`,
+        `live session endpoints fail closed until ${SESSION_HOST_ENABLE_ENV}=${SESSION_HOST_ENABLE_VALUE} is set.`,
         'The existing GM/player role picker remains a local trust switch, not public authentication.',
       ]
     case 'local':
       return [
-        'Track 2 session hosting is enabled for this request, but the host looks local-only.',
+        'live session hosting is enabled for this request, but the host looks local-only.',
         'GM keys and join codes are session-local secrets; keep the GM browser private.',
         'The existing GM/player role picker is still not public authentication.',
       ]
     case 'lan':
       return [
-        'Track 2 session hosting is enabled and this request looks reachable on a LAN or same-Wi-Fi address.',
+        'live session hosting is enabled and this request looks reachable on a LAN or same-Wi-Fi address.',
         'Anyone who can reach this Rotom Table server can load the local app; share join codes only with trusted players.',
         'The existing GM/player role picker is still not public authentication.',
       ]
     case 'remote':
       return [
-        'Track 2 session hosting is enabled and this request appears to use a public hostname, proxy, or tunnel.',
+        'live session hosting is enabled and this request appears to use a public hostname, proxy, or tunnel.',
         'Use a named Cloudflare Tunnel with a stable hostname for campaign play; Quick Tunnel is development smoke-test only.',
         'Do not rely on the local GM/player role picker as public auth; keep the GM session key and browser private.',
       ]
     case 'unknown':
       return [
-        'Track 2 session hosting is enabled, but Rotom Table could not classify the request host.',
+        'live session hosting is enabled, but Rotom Table could not classify the request host.',
         'Assume the server may be exposed until you verify the bind address, firewall, and tunnel configuration.',
         'The existing GM/player role picker is still not public authentication.',
       ]

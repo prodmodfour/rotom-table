@@ -1,7 +1,7 @@
 /**
  * GET /api/sessions/safety
  *
- * Returns a no-secret Track 2 hosting safety summary for the current request.
+ * Returns a no-secret live session hosting safety summary for the current request.
  * Unlike session creation/join routes, this endpoint is intentionally readable
  * while hosting is disabled so the lobby can explain that session endpoints fail
  * closed until ROTOM_ENABLE_SESSION_HOST=1 is set.

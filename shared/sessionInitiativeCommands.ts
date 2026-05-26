@@ -104,7 +104,7 @@ export type InitiativeCommandValidationCode =
   (typeof INITIATIVE_COMMAND_VALIDATION_CODES)[number]
 
 export interface InitiativeCommandValidationContext {
-  /** Initiative controls are GM-only in Track 2; this context is reserved for later finer-grained policy. */
+  /** Initiative controls are GM-only in Live session; this context is reserved for later finer-grained policy. */
   readonly assignments?: readonly unknown[]
 }
 

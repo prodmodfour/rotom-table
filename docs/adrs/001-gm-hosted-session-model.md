@@ -6,30 +6,30 @@ Status: Accepted
 
 ## Context
 
-Track 2 adds real multi-device play so a GM can host a Rotom Table session and players can keep the app open during the game. The existing app is local-first: campaign maps, sheets, trainers, and encounter tables are inspectable JSON files on the machine running Rotom Table, and the current GM/player role picker is a trusted local-table convenience rather than hardened public authentication.
+Live session adds real multi-device play so a GM can host a Rotom Table session and players can keep the app open during the game. The existing app is local-first: campaign maps, sheets, trainers, and encounter tables are inspectable JSON files on the machine running Rotom Table, and the current GM/player role picker is a trusted local-table convenience rather than hardened public authentication.
 
-The concurrency problem Track 2 solves is table-session coordination, not general document collaboration or public product hosting. Live players need authoritative outcomes for moves, HP changes, initiative, visibility, and assignments. They also need clear acknowledgements, rejections, and reconnect behaviour. Those requirements are tied to tabletop domain rules and permissions, not just shared text/document editing.
+The concurrency problem Live session solves is table-session coordination, not general document collaboration or public product hosting. Live players need authoritative outcomes for moves, HP changes, initiative, visibility, and assignments. They also need clear acknowledgements, rejections, and reconnect behaviour. Those requirements are tied to tabletop domain rules and permissions, not just shared text/document editing.
 
 ## Decision
 
-Rotom Table Track 2 is a **GM-hosted table session**.
+Rotom Table Live session is a **GM-hosted table session**.
 
 A GM runs Rotom Table locally or on a small machine they control. Players connect by browser to that GM-owned server for one table session. During session mode, the GM-hosted server is the authority for session identity, permissions, command validation, revisions, snapshots, and broadcasts.
 
-This decision means Track 2 is intentionally not:
+This decision means Live session is intentionally not:
 
 - a SaaS product;
 - a public multi-tenant app;
 - a generic collaborative document editor;
 - a cloud-first database application.
 
-Existing local-first workflows remain supported outside session mode. Track 2 adds a guarded session mode beside them rather than replacing the whole app with a hosted collaboration platform.
+Existing local-first workflows remain supported outside session mode. Live session adds a guarded session mode beside them rather than replacing the whole app with a hosted collaboration platform.
 
 ## Rejected alternatives
 
 ### SaaS or public multi-tenant hosting
 
-Rejected for Track 2. A SaaS shape would require durable tenant isolation, account management, hardened public auth, abuse handling, centralized operations, hosted persistence, and a broader security model. That is far beyond the current local table tool and would conflict with the locked Track 2 goal of GM-controlled hosting.
+Rejected for Live session. A SaaS shape would require durable tenant isolation, account management, hardened public auth, abuse handling, centralized operations, hosted persistence, and a broader security model. That is far beyond the current local table tool and would conflict with the locked Live session goal of GM-controlled hosting.
 
 ### Generic collaborative document editing
 
@@ -41,7 +41,7 @@ Rejected. The existing GM/player selector is suitable for trusted local use, but
 
 ### Cloud-first persistence rewrite
 
-Rejected for Track 2. Local JSON state is a project strength: it is inspectable, easy to back up, and aligned with home campaign ownership. Track 2 may add session snapshots and optional event logs, but it does not introduce Postgres, Redis, Durable Objects, or another hosted database as the session foundation.
+Rejected for Live session. Local JSON state is a project strength: it is inspectable, easy to back up, and aligned with home campaign ownership. Live session may add session snapshots and optional event logs, but it does not introduce Postgres, Redis, Durable Objects, or another hosted database as the session foundation.
 
 ## Consequences
 
@@ -55,7 +55,7 @@ Rejected for Track 2. Local JSON state is a project strength: it is inspectable,
 
 ## Validation notes
 
-Reviewers can validate this ADR by checking that Track 2 work:
+Reviewers can validate this ADR by checking that live-session work:
 
 - keeps LAN and GM-controlled remote access as the user story;
 - avoids tenant/account/cloud-database requirements;

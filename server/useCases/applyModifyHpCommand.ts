@@ -306,21 +306,21 @@ const getActiveModifyHpRecord = (
   if (record === undefined) {
     throw new ApplyModifyHpCommandUseCaseError(
       404,
-      'No Track 2 table session was found for the supplied modifyHp command',
+      'No live session was found for the supplied modifyHp command',
     )
   }
 
   if (record.status !== 'active') {
     throw new ApplyModifyHpCommandUseCaseError(
       409,
-      'The Track 2 table session must be active before modifyHp commands can apply',
+      'The live session must be active before modifyHp commands can apply',
     )
   }
 
   if (record.state === undefined) {
     throw new ApplyModifyHpCommandUseCaseError(
       500,
-      'The Track 2 table session has no authoritative state available for modifyHp commands',
+      'The live session has no authoritative state available for modifyHp commands',
     )
   }
 
@@ -373,7 +373,7 @@ const createUnauthorizedRejection = (
   status: 'rejected',
   accepted: false,
   reason: 'unauthorized',
-  message: permission?.message ?? 'Only the GM or a player assigned to the target token or sheet can modify HP in a Track 2 table session.',
+  message: permission?.message ?? 'Only the GM or a player assigned to the target token or sheet can modify HP in a live session.',
   retryable: false,
   sessionId: command.sessionId,
   opId: command.opId,
@@ -980,7 +980,7 @@ export const applyModifyHpCommandUseCase = (
     rollbackWrittenSheet(writeSheet, sheetResult.sheet.path, sheetResult.sheet.original)
     throw new ApplyModifyHpCommandUseCaseError(
       409,
-      'The Track 2 table session ended before modifyHp could apply',
+      'The live session ended before modifyHp could apply',
     )
   }
 

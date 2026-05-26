@@ -36,34 +36,34 @@ npm run build
 - [docs/review-guide.md](docs/review-guide.md) — fastest path through the project for recruiters and reviewers.
 - [docs/architecture.md](docs/architecture.md) — high-level Nuxt, Nitro, local data, and Three.js architecture.
 - [docs/data-model.md](docs/data-model.md) — maps, sheets, trainers, encounter tables, app-owned PTU reference data, and generated sheets.
-- [docs/track-2-roadmap.md](docs/track-2-roadmap.md) — planned GM-hosted session concurrency scope, lifecycle, and non-goals.
-- [docs/track-2-glossary.md](docs/track-2-glossary.md) — shared Track 2 vocabulary for identity, commands, revisions, reconnect, and safety.
-- [docs/track-2-validation-matrix.md](docs/track-2-validation-matrix.md) — expected tests, smoke checks, docs, and safety reviews for Track 2 implementation areas.
-- [docs/track-2-session-protocol.md](docs/track-2-session-protocol.md) — shared Track 2 session protocol types, message flow, and accepted/rejected command examples.
-- [docs/track-2-websocket-protocol.md](docs/track-2-websocket-protocol.md) — live session WebSocket route, message examples, heartbeat, reconnect, command flow, and named-tunnel expectations.
-- [docs/track-2-table-action-commands.md](docs/track-2-table-action-commands.md) — supported HP, condition, initiative, move/action, hazard, field-effect, and terrain session commands with permissions, conflicts, and limitations.
-- [docs/track-2-client-integration.md](docs/track-2-client-integration.md) — how local map mode and explicit session mode coexist, including disconnect and conflict recovery guidance.
-- [docs/track-2-session-lobby.md](docs/track-2-session-lobby.md) — GM/player join flow, expected LAN usage, and two-browser lobby smoke checklist.
-- [docs/track-2-session-host-runtime.md](docs/track-2-session-host-runtime.md) — npm helpers for guarded LAN and named-tunnel session host startup.
-- [docs/track-2-public-exposure-checks.md](docs/track-2-public-exposure-checks.md) — no-secret safety banner checks for unsafe public/LAN startup states before sharing join codes.
-- [docs/track-2-lan-hosting.md](docs/track-2-lan-hosting.md) — same-Wi-Fi/LAN hosting runbook with startup commands, IP discovery, player URLs, and troubleshooting.
-- [docs/track-2-cloudflare-tunnel-hosting.md](docs/track-2-cloudflare-tunnel-hosting.md) — named Cloudflare Tunnel runbook with stable hostname setup, WebSocket considerations, safety warnings, and rollback steps.
-- [docs/track-2-named-tunnel-documentation-review.md](docs/track-2-named-tunnel-documentation-review.md) — final audit review of named-tunnel doc accuracy, current Cloudflare assumptions, and safety warnings.
-- [docs/track-2-deployment-smoke-checklist.md](docs/track-2-deployment-smoke-checklist.md) — LAN and named-tunnel deployment smoke checklist for two players, reconnect, token movement, initiative, and conflict rejection.
-- [docs/track-2-lan-manual-smoke-results.md](docs/track-2-lan-manual-smoke-results.md) — recorded LAN browser-client smoke results for guarded startup, two-player join, WebSocket presence, reconnect, and cleanup.
-- [docs/track-2-command-audit.md](docs/track-2-command-audit.md) — integrated multi-client command audit covering accepted commands, reconnect, permissions, and stale conflicts.
-- [docs/track-2-concurrency-benchmark-notes.md](docs/track-2-concurrency-benchmark-notes.md) — final multi-client concurrency behaviour, latency-sensitive path, and performance limitation notes.
-- [docs/track-2-final-implementation-review.md](docs/track-2-final-implementation-review.md) — final implementation review linking chunk PRs, tests, docs, and known limitations.
-- [docs/track-2-autonomous-completion-marker.md](docs/track-2-autonomous-completion-marker.md) — ticket 099 completion marker for final quality-gate handoff, chunk coverage, and architecture confirmation.
-- [docs/track-2-local-mode-no-regression-audit.md](docs/track-2-local-mode-no-regression-audit.md) — final local-first no-regression audit for plain map/sheet workflows, legacy SSE, and session-mode opt-in boundaries.
-- [docs/track-2-quick-tunnel-caveat.md](docs/track-2-quick-tunnel-caveat.md) — Quick Tunnel caveats for temporary development smoke tests only, including legacy SSE limitations.
-- [docs/track-2-multi-tab-smoke.md](docs/track-2-multi-tab-smoke.md) — local multi-tab helper for GM/player session-mode token propagation smoke checks.
-- [docs/track-2-session-storage.md](docs/track-2-session-storage.md) — local session snapshot/event-log paths, privacy boundaries, backup guidance, and recovery limits.
-- [docs/track-2-session-backup-recovery.md](docs/track-2-session-backup-recovery.md) — private session backup/restore runbook for snapshots, optional event logs, and referenced campaign data.
-- [docs/track-2-final-persistence-recovery-audit.md](docs/track-2-final-persistence-recovery-audit.md) — final persistence/recovery audit for snapshots, optional event logs, backup docs, cleanup, and local data hygiene.
-- [docs/track-2-security-review.md](docs/track-2-security-review.md) — Trust boundaries, join-code limits, tunnel exposure risks, non-hardened areas, and Track 2 security non-goals.
-- [docs/track-2-final-session-security-audit.md](docs/track-2-final-session-security-audit.md) — Final session security audit for auth/session/cookie/permission boundaries, public exposure warnings, and remaining non-goals.
-- [docs/track-2-dependency-runtime-review.md](docs/track-2-dependency-runtime-review.md) — Track 2 dependency inventory, runtime flags, Node/Nitro compatibility, and Cloudflare tunnel assumptions.
+- [docs/live-session-roadmap.md](docs/live-session-roadmap.md) — planned GM-hosted session concurrency scope, lifecycle, and non-goals.
+- [docs/live-session-glossary.md](docs/live-session-glossary.md) — shared Live session vocabulary for identity, commands, revisions, reconnect, and safety.
+- [docs/live-session-validation-matrix.md](docs/live-session-validation-matrix.md) — expected tests, smoke checks, docs, and safety reviews for live-session implementation areas.
+- [docs/live-session-protocol.md](docs/live-session-protocol.md) — shared live session protocol types, message flow, and accepted/rejected command examples.
+- [docs/live-session-websocket-protocol.md](docs/live-session-websocket-protocol.md) — live session WebSocket route, message examples, heartbeat, reconnect, command flow, and named-tunnel expectations.
+- [docs/live-session-table-action-commands.md](docs/live-session-table-action-commands.md) — supported HP, condition, initiative, move/action, hazard, field-effect, and terrain session commands with permissions, conflicts, and limitations.
+- [docs/live-session-client-integration.md](docs/live-session-client-integration.md) — how local map mode and explicit session mode coexist, including disconnect and conflict recovery guidance.
+- [docs/live-session-lobby.md](docs/live-session-lobby.md) — GM/player join flow, expected LAN usage, and two-browser lobby smoke checklist.
+- [docs/live-session-host-runtime.md](docs/live-session-host-runtime.md) — npm helpers for guarded LAN and named-tunnel session host startup.
+- [docs/live-session-public-exposure-checks.md](docs/live-session-public-exposure-checks.md) — no-secret safety banner checks for unsafe public/LAN startup states before sharing join codes.
+- [docs/live-session-lan-hosting.md](docs/live-session-lan-hosting.md) — same-Wi-Fi/LAN hosting runbook with startup commands, IP discovery, player URLs, and troubleshooting.
+- [docs/live-session-cloudflare-tunnel-hosting.md](docs/live-session-cloudflare-tunnel-hosting.md) — named Cloudflare Tunnel runbook with stable hostname setup, WebSocket considerations, safety warnings, and rollback steps.
+- [docs/live-session-named-tunnel-documentation-review.md](docs/live-session-named-tunnel-documentation-review.md) — final audit review of named-tunnel doc accuracy, current Cloudflare assumptions, and safety warnings.
+- [docs/live-session-deployment-smoke-checklist.md](docs/live-session-deployment-smoke-checklist.md) — LAN and named-tunnel deployment smoke checklist for two players, reconnect, token movement, initiative, and conflict rejection.
+- [docs/live-session-lan-manual-smoke-results.md](docs/live-session-lan-manual-smoke-results.md) — recorded LAN browser-client smoke results for guarded startup, two-player join, WebSocket presence, reconnect, and cleanup.
+- [docs/live-session-command-audit.md](docs/live-session-command-audit.md) — integrated multi-client command audit covering accepted commands, reconnect, permissions, and stale conflicts.
+- [docs/live-session-concurrency-benchmark-notes.md](docs/live-session-concurrency-benchmark-notes.md) — final multi-client concurrency behaviour, latency-sensitive path, and performance limitation notes.
+- [docs/live-session-implementation-review.md](docs/live-session-implementation-review.md) — implementation review linking product docs, source areas, validation evidence, and known limitations.
+- [docs/live-session-readiness-summary.md](docs/live-session-readiness-summary.md) — product/developer readiness summary for validation, evidence links, and architecture confirmation.
+- [docs/live-session-local-mode-no-regression-audit.md](docs/live-session-local-mode-no-regression-audit.md) — final local-first no-regression audit for plain map/sheet workflows, legacy SSE, and session-mode opt-in boundaries.
+- [docs/live-session-quick-tunnel-caveat.md](docs/live-session-quick-tunnel-caveat.md) — Quick Tunnel caveats for temporary development smoke tests only, including legacy SSE limitations.
+- [docs/live-session-multi-tab-smoke.md](docs/live-session-multi-tab-smoke.md) — local multi-tab helper for GM/player session-mode token propagation smoke checks.
+- [docs/live-session-storage.md](docs/live-session-storage.md) — local session snapshot/event-log paths, privacy boundaries, backup guidance, and recovery limits.
+- [docs/live-session-backup-recovery.md](docs/live-session-backup-recovery.md) — private session backup/restore runbook for snapshots, optional event logs, and referenced campaign data.
+- [docs/live-session-persistence-recovery-audit.md](docs/live-session-persistence-recovery-audit.md) — final persistence/recovery audit for snapshots, optional event logs, backup docs, cleanup, and local data hygiene.
+- [docs/live-session-security-review.md](docs/live-session-security-review.md) — Trust boundaries, join-code limits, tunnel exposure risks, non-hardened areas, and Live session security non-goals.
+- [docs/live-session-security-readiness-audit.md](docs/live-session-security-readiness-audit.md) — Final session security audit for auth/session/cookie/permission boundaries, public exposure warnings, and remaining non-goals.
+- [docs/live-session-dependency-runtime-review.md](docs/live-session-dependency-runtime-review.md) — Live session dependency inventory, runtime flags, Node/Nitro compatibility, and Cloudflare tunnel assumptions.
 - [docs/local-development.md](docs/local-development.md) — local setup, scripts, and filesystem persistence notes.
 - [docs/fan-project-notice.md](docs/fan-project-notice.md) — fan project and ownership boundaries.
 
@@ -138,7 +138,7 @@ See [docs/architecture.md](docs/architecture.md) for more detail.
 | --- | --- |
 | `/` | Redirects to the map library. |
 | `/login` | Choose GM or Player session mode. |
-| `/sessions` | Track 2 guarded session lobby for GM start/manage and player join flows. |
+| `/sessions` | Live session guarded session lobby for GM start/manage and player join flows. |
 | `/maps` | Map library and folders. |
 | `/maps/:slug` | Map editor/table view. |
 | `/sheets` | Pokémon and trainer sheet library. |
@@ -155,7 +155,7 @@ See [docs/architecture.md](docs/architecture.md) for more detail.
 | Path | What it contains |
 | --- | --- |
 | `data/maps/` | Saved map JSON and map-adjacent local files. |
-| `data/sessions/` | Track 2 local session snapshots and optional event logs; ignored/private runtime data. |
+| `data/sessions/` | Live session local session snapshots and optional event logs; ignored/private runtime data. |
 | `data/sheets/` | Pokémon character-sheet JSON, including generated wild sheets. |
 | `data/trainers/` | Trainer sheet JSON. |
 | `encounter_tables/` | Encounter-table JSON, grouped by folder/region. |
@@ -169,21 +169,21 @@ See [docs/architecture.md](docs/architecture.md) for more detail.
 | `shared/` | Shared auth/path/sheet helpers used by both app and server. |
 | `tests/` | Vitest coverage for shared logic, utilities, composables, and server helpers. |
 
-Saved sheets and maps are edited by the app itself. Track 2 session snapshots and optional event logs live under `data/sessions/` when session hosting is used. In development, Nuxt/Vite ignores changes under `data/sheets`, `data/trainers`, and `data/maps` so autosaves do not force a full page reload. `.gitignore` is configured to keep personal campaign data and session runtime files out of the repository while allowing curated examples to remain inspectable.
+Saved sheets and maps are edited by the app itself. Live session snapshots and optional event logs live under `data/sessions/` when session hosting is used. In development, Nuxt/Vite ignores changes under `data/sheets`, `data/trainers`, and `data/maps` so autosaves do not force a full page reload. `.gitignore` is configured to keep personal campaign data and session runtime files out of the repository while allowing curated examples to remain inspectable.
 
 ## npm scripts
 
 | Command | Description |
 | --- | --- |
-| `npm run dev` | Start the Nuxt development server without enabling Track 2 session hosting. |
-| `npm run dev:session:lan` | Start a guarded Track 2 session host with `ROTOM_ENABLE_SESSION_HOST=1` and LAN binding (`0.0.0.0:3000`). |
-| `npm run dev:session:tunnel` | Start a guarded Track 2 session host with `ROTOM_ENABLE_SESSION_HOST=1` and loopback binding (`127.0.0.1:3000`) for a named tunnel. |
+| `npm run dev` | Start the Nuxt development server without enabling live session hosting. |
+| `npm run dev:session:lan` | Start a guarded live session host with `ROTOM_ENABLE_SESSION_HOST=1` and LAN binding (`0.0.0.0:3000`). |
+| `npm run dev:session:tunnel` | Start a guarded live session host with `ROTOM_ENABLE_SESSION_HOST=1` and loopback binding (`127.0.0.1:3000`) for a named tunnel. |
 | `npm run build` | Build the Nuxt app. |
 | `npm run preview` | Preview the built app. |
 | `npm run typecheck` | Run Nuxt/Vue TypeScript checks. |
 | `npm test` | Run the Vitest test suite once. |
 | `npm run test:watch` | Run Vitest in watch mode. |
-| `npm run smoke:session:multi-tab` | Open/print local Track 2 GM/player smoke URLs and run focused token/client smoke checks. |
+| `npm run smoke:session:multi-tab` | Open/print local Live session GM/player smoke URLs and run focused token/client smoke checks. |
 | `npm run check:move-automation` | Check move automation coverage. |
 | `npm run sync:item-sprites` | Sync item sprite assets. |
 | `npm run refactor:loop` | Run the refactor loop helper script. |

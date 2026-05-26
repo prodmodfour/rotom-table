@@ -582,6 +582,6 @@ describe('applyMoveTokenCommandUseCase', () => {
       store,
       operationTracker: false,
       writeSnapshot: createSnapshotWriter([]),
-    })).toThrow('Track 2 session hosting is disabled')
+    })).toThrow('live session hosting is disabled')
   })
 })

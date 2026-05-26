@@ -607,7 +607,7 @@ describe('session WebSocket route', () => {
     expect(peer.closed).toEqual([
       {
         code: SESSION_SOCKET_POLICY_CLOSE_CODE,
-        reason: 'A valid Track 2 session WebSocket hello is required before command messages.',
+        reason: 'A valid live session WebSocket hello is required before command messages.',
       },
     ])
     expect(parseSentJson(peer)).toMatchObject({
@@ -706,7 +706,7 @@ describe('session WebSocket route', () => {
       direction: 'server',
       sessionId: SESSION_ID,
       code: 'unsupported-message',
-      message: 'Track 2 session WebSocket command dispatch currently supports moveToken, turnToken, spawnToken, deleteToken, sendOutPokemon, modifyHp, modifyCombatStages, modifyConditions, useMove, useManeuver, useAbility, useOrder, setInitiative, nextInitiative, previousInitiative, placeHazard, removeHazard, setFieldEffect, removeFieldEffect, tickFieldEffectDurations, buildTerrainVoxel, and removeTerrainVoxel commands only.',
+      message: 'live session WebSocket command dispatch currently supports moveToken, turnToken, spawnToken, deleteToken, sendOutPokemon, modifyHp, modifyCombatStages, modifyConditions, useMove, useManeuver, useAbility, useOrder, setInitiative, nextInitiative, previousInitiative, placeHazard, removeHazard, setFieldEffect, removeFieldEffect, tickFieldEffectDurations, buildTerrainVoxel, and removeTerrainVoxel commands only.',
       retryable: false,
     })
   })

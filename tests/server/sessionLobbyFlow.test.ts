@@ -168,7 +168,7 @@ const expectHttpError = (
   expect(thrown).toMatchObject(expected)
 }
 
-describe('Track 2 join/lobby endpoint flow coverage', () => {
+describe('Live session join/lobby endpoint flow coverage', () => {
   it('covers start, duplicate-name joins, GM management, player state, and assignment permissions together', () => {
     const { store, writeSnapshot, clock } = createLobbyHarness()
 
@@ -344,7 +344,7 @@ describe('Track 2 join/lobby endpoint flow coverage', () => {
       }),
       {
         statusCode: 404,
-        message: 'No active Track 2 table session was found for the supplied join code',
+        message: 'No active live session was found for the supplied join code',
       },
     )
     expect(store.get(sessionId)?.state?.players).toEqual([])
@@ -376,7 +376,7 @@ describe('Track 2 join/lobby endpoint flow coverage', () => {
       }),
       {
         statusCode: 403,
-        message: 'The supplied GM key is not authorized to update player assignments for this Track 2 table session',
+        message: 'The supplied GM key is not authorized to update player assignments for this live session',
       },
     )
     expectHttpError(
@@ -510,7 +510,7 @@ describe('Track 2 join/lobby endpoint flow coverage', () => {
     for (const { name, action } of cases) {
       expectHttpError(action, {
         statusCode: 403,
-        message: 'Track 2 session hosting is disabled. Set ROTOM_ENABLE_SESSION_HOST=1 to enable session endpoints.',
+        message: 'live session hosting is disabled. Set ROTOM_ENABLE_SESSION_HOST=1 to enable session endpoints.',
       })
       expect(name).toBeTruthy()
     }

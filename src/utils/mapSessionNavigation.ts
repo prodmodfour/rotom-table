@@ -79,7 +79,7 @@ export const buildMapSessionNavigationModel = (
 
   return {
     heading: 'Table session',
-    summary: 'Start or join a GM-hosted Track 2 session, then opt this map into session mode when you are ready to play.',
+    summary: 'Start or join a GM-hosted Live session, then opt this map into session mode when you are ready to play.',
     statusLabel: sessionModeEnabled
       ? 'Session mode active for this map view. Commands use the WebSocket session channel.'
       : 'Local map mode is unchanged. Session commands start only after opening this map with session=1.',

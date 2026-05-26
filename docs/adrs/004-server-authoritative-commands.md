@@ -8,13 +8,13 @@ Status: Accepted
 
 Rotom Table's existing local-first workflows persist maps, sheets, trainers, and related campaign files as inspectable JSON on the machine running the app. That model is appropriate for local mode, where one trusted user edits the campaign state directly and whole-map saves are easy to inspect, back up, and repair.
 
-Track 2 adds live GM-hosted sessions where several browser clients may act at the same time. In that environment, whole-map autosave from each live client would make the browser that saved last the accidental authority. It would also make it difficult to explain which player was allowed to change a resource, why a stale move overwrote a newer one, whether a retry was applied twice, and what state a reconnecting client should trust.
+Live session adds live GM-hosted sessions where several browser clients may act at the same time. In that environment, whole-map autosave from each live client would make the browser that saved last the accidental authority. It would also make it difficult to explain which player was allowed to change a resource, why a stale move overwrote a newer one, whether a retry was applied twice, and what state a reconnecting client should trust.
 
 Live table play needs domain outcomes rather than document-merging outcomes. Moving a token, changing HP, advancing initiative, placing hazards, or assigning controllable resources must be validated against session identity, permissions, visibility, current authoritative state, and conflict rules before the state changes.
 
 ## Decision
 
-Track 2 live session state changes use **server-authoritative command envelopes**.
+live session state changes use **server-authoritative command envelopes**.
 
 In session mode, clients request changes by sending typed commands over the WebSocket session channel. A command envelope includes the common metadata the server needs to make an authoritative decision, such as:
 
@@ -71,7 +71,7 @@ Server-authoritative commands do not require a cloud database or SaaS backend. T
 ## Compatibility boundaries
 
 - **Local mode keeps local-first saves.** Existing non-session map and sheet editing may continue to load and save whole JSON documents through the app's local-first workflows.
-- **Session mode is additive and guarded.** The command path applies when a Track 2 session is active and session hosting has been explicitly enabled.
+- **Session mode is additive and guarded.** The command path applies when a Live session is active and session hosting has been explicitly enabled.
 - **Server snapshots are allowed.** The server may write whole authoritative session snapshots for recovery. That is not the same as accepting whole-map autosaves from multiple live clients.
 - **Imports, exports, setup, and GM maintenance can remain document-oriented outside live play.** Those workflows should not become the session concurrency mechanism.
 - **Legacy non-session realtime paths may remain during migration.** Existing SSE or local-sync behaviour can continue outside the new WebSocket session command channel.
@@ -85,15 +85,15 @@ Rejected for session concurrency. It recreates last-writer-wins behaviour, makes
 
 ### Generic collaborative document editing
 
-Rejected for Track 2 live sessions. CRDTs or generic shared-document merge tools are useful in some document editors, but Rotom Table needs table-domain validation, GM/player authority boundaries, revision-aware conflict handling, and command-specific acknowledgements.
+Rejected for live sessions. CRDTs or generic shared-document merge tools are useful in some document editors, but Rotom Table needs table-domain validation, GM/player authority boundaries, revision-aware conflict handling, and command-specific acknowledgements.
 
 ### Client-side authority with peer reconciliation
 
-Rejected. Letting browsers apply state changes directly and reconcile later would make the trust boundary unclear, especially for player-controlled resources. Track 2 is GM-hosted: the GM's server is the authority.
+Rejected. Letting browsers apply state changes directly and reconcile later would make the trust boundary unclear, especially for player-controlled resources. Live session is GM-hosted: the GM's server is the authority.
 
 ### Database-mediated conflict resolution
 
-Rejected for Track 2. Adding a hosted database or queue would conflict with the local-first GM-hosted architecture. Conflict decisions belong in the session command application layer, backed by local JSON snapshots and optional event logs.
+Rejected for Live session. Adding a hosted database or queue would conflict with the local-first GM-hosted architecture. Conflict decisions belong in the session command application layer, backed by local JSON snapshots and optional event logs.
 
 ## Consequences
 
@@ -106,7 +106,7 @@ Rejected for Track 2. Adding a hosted database or queue would conflict with the 
 
 ## Validation notes
 
-Reviewers can validate this ADR by checking that Track 2 work:
+Reviewers can validate this ADR by checking that live-session work:
 
 - routes session-mode token and table actions through command envelopes;
 - rejects malformed, unauthorized, stale, and conflicting commands before state mutation;

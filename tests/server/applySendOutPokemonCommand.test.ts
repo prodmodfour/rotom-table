@@ -458,6 +458,6 @@ describe('applySendOutPokemonCommandUseCase', () => {
       writeSnapshot: createSnapshotWriter([]),
       resolveSheets,
       resolveFootprint,
-    })).toThrow('Track 2 session hosting is disabled')
+    })).toThrow('live session hosting is disabled')
   })
 })

@@ -6,13 +6,13 @@ Status: Accepted
 
 ## Context
 
-Track 2 live sessions use server-authoritative command envelopes instead of client autosaving whole map documents. Multiple GM and player browser clients can still act at nearly the same time, retry after transient network failures, or reconnect from stale local state. The server therefore needs deterministic rules for deciding when a command is new, duplicate, stale, conflicting, or safe to apply.
+live sessions use server-authoritative command envelopes instead of client autosaving whole map documents. Multiple GM and player browser clients can still act at nearly the same time, retry after transient network failures, or reconnect from stale local state. The server therefore needs deterministic rules for deciding when a command is new, duplicate, stale, conflicting, or safe to apply.
 
-These rules must preserve the locked Track 2 shape: one GM-hosted session authority, WebSocket command/results/broadcast flow, session-local identity and permissions, local JSON snapshots plus optional event logs, and no generic shared-document editor or hosted database layer.
+These rules must preserve the locked Live session shape: one GM-hosted session authority, WebSocket command/results/broadcast flow, session-local identity and permissions, local JSON snapshots plus optional event logs, and no generic shared-document editor or hosted database layer.
 
 ## Decision
 
-Track 2 uses **server-owned monotonic revisions plus operation IDs** to decide command ordering and conflicts.
+Live session uses **server-owned monotonic revisions plus operation IDs** to decide command ordering and conflicts.
 
 Each session has an authoritative revision for the current session/map state. Each command envelope includes a client-generated `opId`, the client's observed `baseRevision`, actor/client identity, command type, command payload, and enough resource scope information for the server to evaluate conflicts. The server validates and applies commands sequentially against the authoritative state it owns.
 
@@ -72,7 +72,7 @@ Commands touching unrelated scopes may apply across small revision gaps when the
 
 ## Resource conflict scopes
 
-Each command type defines the resource scopes it touches. Later command contracts and validators must make those scopes explicit enough for server-side conflict checks. Initial Track 2 conflict lanes are:
+Each command type defines the resource scopes it touches. Later command contracts and validators must make those scopes explicit enough for server-side conflict checks. Initial Live session conflict lanes are:
 
 | Scope | Conflict rule |
 | --- | --- |
@@ -112,7 +112,7 @@ Rejected for live sessions. It would let the last browser save overwrite newer a
 
 ### Strict global revision equality for every command
 
-Rejected as too conservative. Requiring every command's `baseRevision` to equal the current revision would reject safe independent actions, such as one player moving an assigned token while the GM adjusts an unrelated effect. Track 2 allows bounded cross-revision acceptance when resource scopes prove independence.
+Rejected as too conservative. Requiring every command's `baseRevision` to equal the current revision would reject safe independent actions, such as one player moving an assigned token while the GM adjusts an unrelated effect. Live session allows bounded cross-revision acceptance when resource scopes prove independence.
 
 ### Client-side timestamps or optimistic ordering as authority
 
@@ -120,11 +120,11 @@ Rejected. Browser clocks and network timing cannot be the source of truth for ta
 
 ### Generic document merge or CRDT conflict handling
 
-Rejected for Track 2 session concurrency. Rotom Table conflicts are table-domain conflicts involving permissions, visibility, token state, sheet rules, and GM authority. The server should evaluate typed commands, not merge arbitrary shared documents.
+Rejected for Live session concurrency. Rotom Table conflicts are table-domain conflicts involving permissions, visibility, token state, sheet rules, and GM authority. The server should evaluate typed commands, not merge arbitrary shared documents.
 
 ### Database locks or hosted transaction service
 
-Rejected for Track 2. The GM-hosted process can apply commands sequentially against in-memory authoritative state and persist local snapshots/events. Adding Postgres, Redis, Durable Objects, or another hosted transaction layer is outside the locked architecture.
+Rejected for Live session. The GM-hosted process can apply commands sequentially against in-memory authoritative state and persist local snapshots/events. Adding Postgres, Redis, Durable Objects, or another hosted transaction layer is outside the locked architecture.
 
 ## Consequences
 
@@ -137,7 +137,7 @@ Rejected for Track 2. The GM-hosted process can apply commands sequentially agai
 
 ## Validation notes
 
-Reviewers can validate this ADR by checking that Track 2 work:
+Reviewers can validate this ADR by checking that live-session work:
 
 - increments revisions only for accepted authoritative commands;
 - returns idempotent results for duplicate `opId` retries without reapplying effects;
