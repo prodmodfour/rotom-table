@@ -30,6 +30,9 @@ export const MODIFY_CONDITIONS_COMMAND_TYPE = 'modifyConditions' as const
 export const MODIFY_CONDITIONS_COMMAND_SCOPE_FIELD = 'conditions' as const
 export const MODIFY_CONDITIONS_ACTIONS = ['add', 'remove', 'replace'] as const
 
+export const USE_MOVE_COMMAND_TYPE = 'useMove' as const
+export const USE_MOVE_COMMAND_SCOPE_FIELD = 'moveUsage' as const
+
 export type SessionCombatStageKey = (typeof SESSION_COMBAT_STAGE_KEYS)[number]
 export type SessionCombatStageMap = Record<SessionCombatStageKey, number>
 export type ModifyConditionsAction = (typeof MODIFY_CONDITIONS_ACTIONS)[number]
@@ -79,6 +82,21 @@ export type ModifyConditionsCommand<
 > = SessionCommandEnvelope<
   typeof MODIFY_CONDITIONS_COMMAND_TYPE,
   ModifyConditionsCommandPayload,
+  TActor,
+  SessionRevision
+>
+
+export interface UseMoveCommandPayload {
+  readonly tokenId: string
+  /** Display or canonical move name selected by the acting client. The server resolves it against the placed sheet. */
+  readonly moveName: string
+}
+
+export type UseMoveCommand<
+  TActor extends SessionActor = SessionActor,
+> = SessionCommandEnvelope<
+  typeof USE_MOVE_COMMAND_TYPE,
+  UseMoveCommandPayload,
   TActor,
   SessionRevision
 >
@@ -217,6 +235,50 @@ export type ModifyConditionsCommandValidationResult<
   TActor extends SessionActor = SessionActor,
 > = ModifyConditionsCommandValidationSuccess<TActor> | ModifyConditionsCommandValidationFailure
 
+export const USE_MOVE_COMMAND_VALIDATION_CODES = [
+  'invalid-command-type',
+  'invalid-payload',
+  'invalid-token-id',
+  'invalid-move-name',
+  'invalid-token-scope',
+  'invalid-sheet-scope',
+  'permission-denied',
+] as const
+
+export type UseMoveCommandValidationCode =
+  (typeof USE_MOVE_COMMAND_VALIDATION_CODES)[number]
+
+export interface UseMoveCommandValidationContext {
+  /** Current GM-managed assignments. GM actors are allowed; player actors must control the target token or sheet. */
+  readonly assignments?: readonly PlayerAssignmentRecord[]
+}
+
+export interface UseMoveCommandValidationSuccess<
+  TActor extends SessionActor = SessionActor,
+> {
+  readonly valid: true
+  readonly command: UseMoveCommand<TActor>
+  readonly payload: UseMoveCommandPayload
+  /** Token resource used to locate the map placement whose move is being used. */
+  readonly resource: SessionTokenResourceRef
+  readonly tokenResource: SessionTokenResourceRef
+  /** Optional sheet resource used to authorize sheet-assigned players and stale daily-frequency checks. */
+  readonly sheetResource?: SessionSheetResourceRef
+  readonly permittedResource: SessionTokenResourceRef | SessionSheetResourceRef
+  readonly permission: Extract<PermissionResult, { readonly allowed: true }>
+  readonly issues: readonly []
+}
+
+export interface UseMoveCommandValidationFailure {
+  readonly valid: false
+  readonly issues: readonly SessionCommandValidationIssue[]
+  readonly permission?: PermissionDenied
+}
+
+export type UseMoveCommandValidationResult<
+  TActor extends SessionActor = SessionActor,
+> = UseMoveCommandValidationSuccess<TActor> | UseMoveCommandValidationFailure
+
 type MutableIssueList = SessionCommandValidationIssue[]
 type UnknownRecord = Record<string, unknown>
 
@@ -240,7 +302,7 @@ const describeReceived = (value: unknown): string => {
 const addIssue = (
   issues: MutableIssueList,
   path: string,
-  code: ModifyHpCommandValidationCode | ModifyCombatStagesCommandValidationCode | ModifyConditionsCommandValidationCode,
+  code: ModifyHpCommandValidationCode | ModifyCombatStagesCommandValidationCode | ModifyConditionsCommandValidationCode | UseMoveCommandValidationCode,
   message: string,
   expected?: string,
   received?: unknown,
@@ -1412,6 +1474,357 @@ export const assertValidModifyConditionsCommand = <
   label = 'modifyConditions command',
 ): ModifyConditionsCommand<TActor> => {
   const result = validateModifyConditionsCommand<TActor>(value, context)
+  if (result.valid) return result.command
+
+  const summary = result.issues.map((issue) => `${issue.path}: ${issue.message}`).join('; ')
+  throw new Error(`${label} is invalid: ${summary}`)
+}
+
+const cloneUseMovePayload = (payload: UseMoveCommandPayload): UseMoveCommandPayload => ({
+  tokenId: payload.tokenId,
+  moveName: payload.moveName,
+})
+
+export const isUseMoveCommandValidationCode = (
+  value: unknown,
+): value is UseMoveCommandValidationCode =>
+  (USE_MOVE_COMMAND_VALIDATION_CODES as readonly unknown[]).includes(value)
+
+export const createUseMoveTokenCommandScope = (
+  resource: SessionTokenResourceRef,
+): SessionCommandScope => ({
+  lane: 'token',
+  resource: cloneTokenResource(resource),
+  field: USE_MOVE_COMMAND_SCOPE_FIELD,
+  ...(resource.mapSlug === undefined ? {} : { mapSlug: resource.mapSlug }),
+})
+
+export const createUseMoveSheetCommandScope = (
+  resource: SessionSheetResourceRef,
+): SessionCommandScope => ({
+  lane: 'sheet',
+  resource: cloneSheetResource(resource),
+  field: USE_MOVE_COMMAND_SCOPE_FIELD,
+})
+
+const collectUseMovePayloadIssues = (
+  payload: unknown,
+  issues: MutableIssueList,
+): UseMoveCommandPayload | undefined => {
+  if (!isRecord(payload)) {
+    addIssue(
+      issues,
+      'payload',
+      'invalid-payload',
+      'useMove payload must be an object.',
+      EXPECTED_OBJECT,
+      payload,
+    )
+    return undefined
+  }
+
+  const tokenId = payload.tokenId
+  const moveName = payload.moveName
+
+  if (!isNonEmptyString(tokenId)) {
+    addIssue(
+      issues,
+      'payload.tokenId',
+      'invalid-token-id',
+      'useMove payload.tokenId must be a non-empty token ID string.',
+      EXPECTED_NON_EMPTY_STRING,
+      tokenId,
+    )
+  }
+
+  if (!isNonEmptyString(moveName)) {
+    addIssue(
+      issues,
+      'payload.moveName',
+      'invalid-move-name',
+      'useMove payload.moveName must be a non-empty move name string.',
+      EXPECTED_NON_EMPTY_STRING,
+      moveName,
+    )
+  }
+
+  if (issues.some((issue) => issue.path.startsWith('payload.'))) {
+    return undefined
+  }
+
+  return cloneUseMovePayload({
+    tokenId: (tokenId as string).trim(),
+    moveName: (moveName as string).trim(),
+  })
+}
+
+const useMoveTokenResourceFromScope = (
+  scope: SessionCommandScope,
+  path: string,
+  issues: MutableIssueList,
+): SessionTokenResourceRef | undefined => {
+  if (scope.resource?.kind !== 'token') return undefined
+
+  const tokenResource = scope.resource
+  if (hasOwn(tokenResource, 'sheetKind') && tokenResource.sheetKind !== undefined && !isSheetKind(tokenResource.sheetKind)) {
+    addIssue(
+      issues,
+      `${path}.resource.sheetKind`,
+      'invalid-token-scope',
+      'useMove token scope sheetKind must be pokemon or trainer when provided.',
+      EXPECTED_SHEET_KIND,
+      tokenResource.sheetKind,
+    )
+  }
+
+  if (hasOwn(tokenResource, 'sheetSlug') && tokenResource.sheetSlug !== undefined && !isNonEmptyString(tokenResource.sheetSlug)) {
+    addIssue(
+      issues,
+      `${path}.resource.sheetSlug`,
+      'invalid-token-scope',
+      'useMove token scope sheetSlug must be a non-empty string when provided.',
+      EXPECTED_NON_EMPTY_STRING,
+      tokenResource.sheetSlug,
+    )
+  }
+
+  if (hasOwn(tokenResource, 'mapSlug') && tokenResource.mapSlug !== undefined && !isNonEmptyString(tokenResource.mapSlug)) {
+    addIssue(
+      issues,
+      `${path}.resource.mapSlug`,
+      'invalid-token-scope',
+      'useMove token scope mapSlug must be a non-empty string when provided.',
+      EXPECTED_NON_EMPTY_STRING,
+      tokenResource.mapSlug,
+    )
+  }
+
+  if (hasOwn(tokenResource, 'mapSlug') && hasOwn(scope, 'mapSlug') && tokenResource.mapSlug !== scope.mapSlug) {
+    addIssue(
+      issues,
+      `${path}.mapSlug`,
+      'invalid-token-scope',
+      'useMove token scope mapSlug must match the token resource mapSlug when both are provided.',
+      'matching token scope map slug',
+      scope.mapSlug,
+    )
+  }
+
+  return {
+    ...tokenResource,
+    ...(tokenResource.mapSlug === undefined && typeof scope.mapSlug === 'string'
+      ? { mapSlug: scope.mapSlug }
+      : {}),
+  }
+}
+
+const useMoveSheetResourceFromScope = (
+  scope: SessionCommandScope,
+  path: string,
+  issues: MutableIssueList,
+): SessionSheetResourceRef | undefined => {
+  if (scope.resource?.kind !== 'sheet') return undefined
+
+  const sheetResource = scope.resource as unknown as UnknownRecord
+  if (!isSheetKind(sheetResource.sheetKind)) {
+    addIssue(
+      issues,
+      `${path}.resource.sheetKind`,
+      'invalid-sheet-scope',
+      'useMove sheet scope sheetKind must be pokemon or trainer.',
+      EXPECTED_SHEET_KIND,
+      sheetResource.sheetKind,
+    )
+  }
+
+  if (!isNonEmptyString(sheetResource.sheetSlug)) {
+    addIssue(
+      issues,
+      `${path}.resource.sheetSlug`,
+      'invalid-sheet-scope',
+      'useMove sheet scope sheetSlug must be a non-empty string.',
+      EXPECTED_NON_EMPTY_STRING,
+      sheetResource.sheetSlug,
+    )
+  }
+
+  if (issues.some((issue) => issue.path.startsWith(path))) return undefined
+
+  return cloneSheetResource(scope.resource as SessionSheetResourceRef)
+}
+
+const findUseMoveResources = (
+  command: UseMoveCommand,
+  payload: UseMoveCommandPayload | undefined,
+  issues: MutableIssueList,
+): {
+  readonly tokenResource?: SessionTokenResourceRef
+  readonly sheetResource?: SessionSheetResourceRef
+} => {
+  if (payload === undefined) return {}
+
+  const tokenScopeResources = command.scopes.map((scope, index) => ({
+    index,
+    scope,
+    resource: useMoveTokenResourceFromScope(scope, `scopes[${index}]`, issues),
+  }))
+  const matchingTokenScope = tokenScopeResources.find(({ scope, resource }) =>
+    resource !== undefined &&
+    scope.lane === 'token' &&
+    scope.field === USE_MOVE_COMMAND_SCOPE_FIELD &&
+    resource.tokenId === payload.tokenId,
+  )
+
+  if (matchingTokenScope?.resource === undefined) {
+    addIssue(
+      issues,
+      'scopes',
+      'invalid-token-scope',
+      'useMove commands must include a token scope with resource.kind "token", field "moveUsage", and a tokenId matching payload.tokenId.',
+      'matching token moveUsage scope',
+      command.scopes,
+    )
+  } else if (
+    hasOwn(matchingTokenScope.scope, 'mapSlug') &&
+    typeof matchingTokenScope.scope.mapSlug === 'string' &&
+    matchingTokenScope.scope.mapSlug.trim().length === 0
+  ) {
+    addIssue(
+      issues,
+      `scopes[${matchingTokenScope.index}].mapSlug`,
+      'invalid-token-scope',
+      'useMove token scope mapSlug must be a non-empty string when provided.',
+      EXPECTED_NON_EMPTY_STRING,
+      matchingTokenScope.scope.mapSlug,
+    )
+  }
+
+  const matchingSheetScope = command.scopes
+    .map((scope, index) => ({
+      index,
+      scope,
+      resource: useMoveSheetResourceFromScope(scope, `scopes[${index}]`, issues),
+    }))
+    .find(({ scope, resource }) =>
+      resource !== undefined &&
+      scope.lane === 'sheet' &&
+      scope.field === USE_MOVE_COMMAND_SCOPE_FIELD,
+    )
+
+  const tokenResource = matchingTokenScope?.resource
+  const sheetResource = matchingSheetScope?.resource
+  if (
+    tokenResource !== undefined &&
+    sheetResource !== undefined &&
+    (
+      (tokenResource.sheetKind !== undefined && tokenResource.sheetKind !== sheetResource.sheetKind) ||
+      (tokenResource.sheetSlug !== undefined && tokenResource.sheetSlug !== sheetResource.sheetSlug)
+    )
+  ) {
+    addIssue(
+      issues,
+      'scopes',
+      'invalid-sheet-scope',
+      'useMove sheet scope must match the token scope sheet identity when both are provided.',
+      'matching token and sheet resource identity',
+      command.scopes,
+    )
+  }
+
+  return {
+    ...(tokenResource === undefined ? {} : { tokenResource: cloneTokenResource(tokenResource) }),
+    ...(sheetResource === undefined ? {} : { sheetResource: cloneSheetResource(sheetResource) }),
+  }
+}
+
+export const validateUseMoveCommand = <
+  TActor extends SessionActor = SessionActor,
+>(
+  value: unknown,
+  context: UseMoveCommandValidationContext = {},
+): UseMoveCommandValidationResult<TActor> => {
+  const envelopeResult = validateSessionCommandEnvelope<UseMoveCommand<TActor>>(value)
+  if (!envelopeResult.valid) {
+    return { valid: false, issues: envelopeResult.issues }
+  }
+
+  const command = envelopeResult.command
+  const issues: MutableIssueList = []
+
+  if (command.type !== USE_MOVE_COMMAND_TYPE) {
+    addIssue(
+      issues,
+      'type',
+      'invalid-command-type',
+      'useMove validators only accept command envelopes with type "useMove".',
+      USE_MOVE_COMMAND_TYPE,
+      command.type,
+    )
+  }
+
+  const payload = collectUseMovePayloadIssues(command.payload, issues)
+  const { tokenResource, sheetResource } = findUseMoveResources(command, payload, issues)
+
+  let permission: PermissionResult | undefined
+  let permittedResource: SessionTokenResourceRef | SessionSheetResourceRef | undefined
+  if (tokenResource !== undefined) {
+    const tokenPermission = canActorControlResource(command.actor, context.assignments ?? [], tokenResource)
+    if (tokenPermission.allowed) {
+      permission = tokenPermission
+      permittedResource = tokenResource
+    } else if (sheetResource !== undefined) {
+      const sheetPermission = canActorControlResource(command.actor, context.assignments ?? [], sheetResource)
+      if (sheetPermission.allowed) {
+        permission = sheetPermission
+        permittedResource = sheetResource
+      } else {
+        permission = tokenPermission
+      }
+    } else {
+      permission = tokenPermission
+    }
+
+    if (permission !== undefined && !permission.allowed) {
+      addIssue(
+        issues,
+        'actor',
+        'permission-denied',
+        permission.message,
+        'GM actor, assigned visible token resource, or assigned visible sheet resource',
+        command.actor,
+      )
+    }
+  }
+
+  if (issues.length > 0) {
+    return {
+      valid: false,
+      issues,
+      ...(permission !== undefined && !permission.allowed ? { permission } : {}),
+    }
+  }
+
+  return {
+    valid: true,
+    command,
+    payload: payload as UseMoveCommandPayload,
+    resource: tokenResource as SessionTokenResourceRef,
+    tokenResource: tokenResource as SessionTokenResourceRef,
+    ...(sheetResource === undefined ? {} : { sheetResource }),
+    permittedResource: permittedResource as SessionTokenResourceRef | SessionSheetResourceRef,
+    permission: permission as Extract<PermissionResult, { readonly allowed: true }>,
+    issues: [],
+  }
+}
+
+export const assertValidUseMoveCommand = <
+  TActor extends SessionActor = SessionActor,
+>(
+  value: unknown,
+  context: UseMoveCommandValidationContext = {},
+  label = 'useMove command',
+): UseMoveCommand<TActor> => {
+  const result = validateUseMoveCommand<TActor>(value, context)
   if (result.valid) return result.command
 
   const summary = result.issues.map((issue) => `${issue.path}: ${issue.message}`).join('; ')

@@ -21,21 +21,27 @@ import {
   MODIFY_COMBAT_STAGES_COMMAND_TYPE,
   MODIFY_CONDITIONS_COMMAND_TYPE,
   MODIFY_HP_COMMAND_TYPE,
+  USE_MOVE_COMMAND_TYPE,
   createModifyCombatStagesSheetCommandScope,
   createModifyCombatStagesTokenCommandScope,
   createModifyConditionsSheetCommandScope,
   createModifyConditionsTokenCommandScope,
   createModifyHpSheetCommandScope,
   createModifyHpTokenCommandScope,
+  createUseMoveSheetCommandScope,
+  createUseMoveTokenCommandScope,
   isModifyCombatStagesCommandValidationCode,
   isModifyConditionsCommandValidationCode,
   isModifyHpCommandValidationCode,
+  isUseMoveCommandValidationCode,
   validateModifyCombatStagesCommand,
   validateModifyConditionsCommand,
   validateModifyHpCommand,
+  validateUseMoveCommand,
   type ModifyCombatStagesCommand,
   type ModifyConditionsCommand,
   type ModifyHpCommand,
+  type UseMoveCommand,
 } from '#shared/sessionTableActionCommands'
 
 const sessionId = parseSessionId('session_modifyhp0001')
@@ -140,6 +146,24 @@ const createModifyConditionsCommand = (
     tokenId: 'token-pikachu',
     action: 'replace',
     conditions: ['Burned', 'Disabled: Thunderbolt'],
+  },
+  ...overrides,
+})
+
+const createUseMoveCommand = (overrides: Partial<UseMoveCommand> = {}): UseMoveCommand => ({
+  schemaVersion: SESSION_COMMAND_ENVELOPE_VERSION,
+  sessionId,
+  actor: playerActor,
+  type: USE_MOVE_COMMAND_TYPE,
+  opId: parseOpId('op_usemove001'),
+  baseRevision: parseSessionRevision(0),
+  scopes: [
+    createUseMoveTokenCommandScope(tokenResource),
+    createUseMoveSheetCommandScope(sheetResource),
+  ],
+  payload: {
+    tokenId: 'token-pikachu',
+    moveName: 'Thunderbolt',
   },
   ...overrides,
 })
@@ -341,6 +365,64 @@ describe('session table action commands', () => {
     })
     expect(unauthorized.valid).toBe(false)
     if (unauthorized.valid) throw new Error('expected unauthorized condition result')
+    expect(unauthorized.permission).toMatchObject({
+      allowed: false,
+      reason: 'missing-player-identity',
+    })
+    expect(unauthorized.issues).toContainEqual(expect.objectContaining({ code: 'permission-denied' }))
+  })
+
+  it('validates useMove commands for GM and assigned token or sheet controllers', () => {
+    const tokenAssigned = validateUseMoveCommand(createUseMoveCommand(), {
+      assignments: [assignment],
+    })
+
+    expect(tokenAssigned.valid).toBe(true)
+    if (!tokenAssigned.valid) throw new Error('expected valid useMove command')
+    expect(tokenAssigned.command.type).toBe(USE_MOVE_COMMAND_TYPE)
+    expect(tokenAssigned.payload).toEqual({ tokenId: 'token-pikachu', moveName: 'Thunderbolt' })
+    expect(tokenAssigned.tokenResource).toEqual(tokenResource)
+    expect(tokenAssigned.sheetResource).toEqual(sheetResource)
+    expect(tokenAssigned.permission).toMatchObject({ allowed: true, role: 'player' })
+
+    expect(validateUseMoveCommand(createUseMoveCommand({ actor: gmActor }), { assignments: [] }).valid).toBe(true)
+
+    const sheetAssigned = validateUseMoveCommand(createUseMoveCommand(), {
+      assignments: [sheetAssignment],
+    })
+    expect(sheetAssigned.valid).toBe(true)
+    if (!sheetAssigned.valid) throw new Error('expected sheet-assigned useMove command')
+    expect(sheetAssigned.permittedResource).toEqual(sheetResource)
+  })
+
+  it('reports useMove payload, scope, and permission issues', () => {
+    const invalidPayload = validateUseMoveCommand(createUseMoveCommand({
+      payload: {
+        tokenId: '',
+        moveName: '  ',
+      },
+    }), { assignments: [assignment] })
+
+    expect(invalidPayload.valid).toBe(false)
+    if (invalidPayload.valid) throw new Error('expected invalid useMove payload')
+    expect(invalidPayload.issues.map((issue) => issue.code)).toEqual(expect.arrayContaining([
+      'invalid-token-id',
+      'invalid-move-name',
+    ]))
+    expect(isUseMoveCommandValidationCode('invalid-move-name')).toBe(true)
+
+    const invalidScope = validateUseMoveCommand(createUseMoveCommand({
+      scopes: [createUseMoveTokenCommandScope({ ...tokenResource, tokenId: 'other-token' })],
+    }), { assignments: [assignment] })
+    expect(invalidScope.valid).toBe(false)
+    if (invalidScope.valid) throw new Error('expected invalid useMove scope')
+    expect(invalidScope.issues).toContainEqual(expect.objectContaining({ code: 'invalid-token-scope' }))
+
+    const unauthorized = validateUseMoveCommand(createUseMoveCommand(), {
+      assignments: [],
+    })
+    expect(unauthorized.valid).toBe(false)
+    if (unauthorized.valid) throw new Error('expected unauthorized useMove result')
     expect(unauthorized.permission).toMatchObject({
       allowed: false,
       reason: 'missing-player-identity',

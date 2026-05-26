@@ -43,9 +43,11 @@ import {
   MODIFY_COMBAT_STAGES_COMMAND_TYPE,
   MODIFY_CONDITIONS_COMMAND_TYPE,
   MODIFY_HP_COMMAND_TYPE,
+  USE_MOVE_COMMAND_TYPE,
   type ModifyCombatStagesCommand,
   type ModifyConditionsCommand,
   type ModifyHpCommand,
+  type UseMoveCommand,
 } from '#shared/sessionTableActionCommands'
 import {
   NEXT_INITIATIVE_COMMAND_TYPE,
@@ -108,6 +110,12 @@ import {
   type ApplyInitiativeCommandInput,
   type ApplyInitiativeCommandUseCaseResult,
 } from '../useCases/applyInitiativeCommand'
+import {
+  applyUseMoveCommandUseCase,
+  type ApplyUseMoveCommandDependencies,
+  type ApplyUseMoveCommandInput,
+  type ApplyUseMoveCommandUseCaseResult,
+} from '../useCases/applyUseMoveCommand'
 import { findPlayerAssignment, type SessionActor } from '#shared/sessionPermissions'
 import { isSessionRevision, type SessionRevision } from '#shared/sessionRevisions'
 import {
@@ -303,6 +311,11 @@ export type SessionSocketInitiativeCommandApplier = (
   dependencies?: ApplyInitiativeCommandDependencies,
 ) => ApplyInitiativeCommandUseCaseResult
 
+export type SessionSocketUseMoveCommandApplier = (
+  input: ApplyUseMoveCommandInput,
+  dependencies?: ApplyUseMoveCommandDependencies,
+) => ApplyUseMoveCommandUseCaseResult
+
 export type SessionSocketMoveTokenCommandDependencies = Omit<
   ApplyMoveTokenCommandDependencies,
   'env' | 'store' | 'clock'
@@ -348,6 +361,11 @@ export type SessionSocketInitiativeCommandDependencies = Omit<
   'env' | 'store' | 'clock'
 >
 
+export type SessionSocketUseMoveCommandDependencies = Omit<
+  ApplyUseMoveCommandDependencies,
+  'env' | 'store' | 'clock'
+>
+
 export interface SessionSocketHandlerDependencies<TMapDocument = unknown> {
   readonly env?: SessionHostRuntimeEnv
   readonly registry?: InMemorySessionSocketRegistry
@@ -363,6 +381,7 @@ export interface SessionSocketHandlerDependencies<TMapDocument = unknown> {
   readonly applyModifyCombatStagesCommand?: SessionSocketModifyCombatStagesCommandApplier
   readonly applyModifyConditionsCommand?: SessionSocketModifyConditionsCommandApplier
   readonly applyInitiativeCommand?: SessionSocketInitiativeCommandApplier
+  readonly applyUseMoveCommand?: SessionSocketUseMoveCommandApplier
   readonly moveTokenCommandDependencies?: SessionSocketMoveTokenCommandDependencies
   readonly turnTokenCommandDependencies?: SessionSocketTurnTokenCommandDependencies
   readonly spawnTokenCommandDependencies?: SessionSocketSpawnTokenCommandDependencies
@@ -372,6 +391,7 @@ export interface SessionSocketHandlerDependencies<TMapDocument = unknown> {
   readonly modifyCombatStagesCommandDependencies?: SessionSocketModifyCombatStagesCommandDependencies
   readonly modifyConditionsCommandDependencies?: SessionSocketModifyConditionsCommandDependencies
   readonly initiativeCommandDependencies?: SessionSocketInitiativeCommandDependencies
+  readonly useMoveCommandDependencies?: SessionSocketUseMoveCommandDependencies
 }
 
 type MutablePendingSessionSocketConnection = {
@@ -401,6 +421,7 @@ interface ResolvedSessionSocketHandlerDependencies<TMapDocument = unknown> {
   readonly applyModifyCombatStagesCommand: SessionSocketModifyCombatStagesCommandApplier
   readonly applyModifyConditionsCommand: SessionSocketModifyConditionsCommandApplier
   readonly applyInitiativeCommand: SessionSocketInitiativeCommandApplier
+  readonly applyUseMoveCommand: SessionSocketUseMoveCommandApplier
   readonly moveTokenCommandDependencies: SessionSocketMoveTokenCommandDependencies
   readonly turnTokenCommandDependencies: SessionSocketTurnTokenCommandDependencies
   readonly spawnTokenCommandDependencies: SessionSocketSpawnTokenCommandDependencies
@@ -410,6 +431,7 @@ interface ResolvedSessionSocketHandlerDependencies<TMapDocument = unknown> {
   readonly modifyCombatStagesCommandDependencies: SessionSocketModifyCombatStagesCommandDependencies
   readonly modifyConditionsCommandDependencies: SessionSocketModifyConditionsCommandDependencies
   readonly initiativeCommandDependencies: SessionSocketInitiativeCommandDependencies
+  readonly useMoveCommandDependencies: SessionSocketUseMoveCommandDependencies
 }
 
 interface SessionSocketHandshakeFailure {
@@ -828,6 +850,7 @@ const resolveDependencies = <TMapDocument>(
   applyModifyCombatStagesCommand: dependencies.applyModifyCombatStagesCommand ?? applyModifyCombatStagesCommandUseCase,
   applyModifyConditionsCommand: dependencies.applyModifyConditionsCommand ?? applyModifyConditionsCommandUseCase,
   applyInitiativeCommand: dependencies.applyInitiativeCommand ?? applyInitiativeCommandUseCase,
+  applyUseMoveCommand: dependencies.applyUseMoveCommand ?? applyUseMoveCommandUseCase,
   moveTokenCommandDependencies: dependencies.moveTokenCommandDependencies ?? {},
   turnTokenCommandDependencies: dependencies.turnTokenCommandDependencies ?? {},
   spawnTokenCommandDependencies: dependencies.spawnTokenCommandDependencies ?? {},
@@ -837,6 +860,7 @@ const resolveDependencies = <TMapDocument>(
   modifyCombatStagesCommandDependencies: dependencies.modifyCombatStagesCommandDependencies ?? {},
   modifyConditionsCommandDependencies: dependencies.modifyConditionsCommandDependencies ?? {},
   initiativeCommandDependencies: dependencies.initiativeCommandDependencies ?? {},
+  useMoveCommandDependencies: dependencies.useMoveCommandDependencies ?? {},
 })
 
 const sendJson = (peer: SessionSocketPeerLike, value: unknown): void => {
@@ -1606,13 +1630,14 @@ const handleAuthenticatedSocketCommand = <TMapDocument>(
     command.type !== MODIFY_HP_COMMAND_TYPE &&
     command.type !== MODIFY_COMBAT_STAGES_COMMAND_TYPE &&
     command.type !== MODIFY_CONDITIONS_COMMAND_TYPE &&
+    command.type !== USE_MOVE_COMMAND_TYPE &&
     command.type !== SET_INITIATIVE_COMMAND_TYPE &&
     command.type !== NEXT_INITIATIVE_COMMAND_TYPE &&
     command.type !== PREVIOUS_INITIATIVE_COMMAND_TYPE
   ) {
     sendJson(peer, createSessionSocketErrorMessage({
       code: 'unsupported-message',
-      message: 'Track 2 session WebSocket command dispatch currently supports moveToken, turnToken, spawnToken, deleteToken, sendOutPokemon, modifyHp, modifyCombatStages, modifyConditions, setInitiative, nextInitiative, and previousInitiative commands only.',
+      message: 'Track 2 session WebSocket command dispatch currently supports moveToken, turnToken, spawnToken, deleteToken, sendOutPokemon, modifyHp, modifyCombatStages, modifyConditions, useMove, setInitiative, nextInitiative, and previousInitiative commands only.',
       retryable: false,
       sessionId: connection.sessionId,
       currentRevision: connection.currentRevision,
@@ -1630,6 +1655,7 @@ const handleAuthenticatedSocketCommand = <TMapDocument>(
     | ApplyModifyCombatStagesCommandUseCaseResult
     | ApplyModifyConditionsCommandUseCaseResult
     | ApplyInitiativeCommandUseCaseResult
+    | ApplyUseMoveCommandUseCaseResult
   try {
     if (command.type === MOVE_TOKEN_COMMAND_TYPE) {
       applied = dependencies.applyMoveTokenCommand({
@@ -1699,6 +1725,15 @@ const handleAuthenticatedSocketCommand = <TMapDocument>(
         command: command as ModifyConditionsCommand,
       }, {
         ...dependencies.modifyConditionsCommandDependencies,
+        env: dependencies.env,
+        store: dependencies.store as unknown as InMemorySessionStore<AuthoritativeSessionState<TabletopMapV2>>,
+        clock: () => receivedAt,
+      })
+    } else if (command.type === USE_MOVE_COMMAND_TYPE) {
+      applied = dependencies.applyUseMoveCommand({
+        command: command as UseMoveCommand,
+      }, {
+        ...dependencies.useMoveCommandDependencies,
         env: dependencies.env,
         store: dependencies.store as unknown as InMemorySessionStore<AuthoritativeSessionState<TabletopMapV2>>,
         clock: () => receivedAt,
