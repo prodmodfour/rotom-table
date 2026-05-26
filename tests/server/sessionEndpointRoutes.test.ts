@@ -1,6 +1,7 @@
 import type { EventHandler, EventHandlerRequest, H3Event } from 'h3'
 import { describe, expect, it, vi } from 'vitest'
 import assignmentsRoute from '~~/server/api/sessions/assignments.post'
+import attachMapRoute from '~~/server/api/sessions/maps/attach.post'
 import joinRoute from '~~/server/api/sessions/join.post'
 import manageRoute from '~~/server/api/sessions/manage.post'
 import playerStateRoute from '~~/server/api/sessions/player-state.post'
@@ -24,6 +25,7 @@ describe('live session endpoint runtime gate', () => {
         ['manage', manageRoute],
         ['player-state', playerStateRoute],
         ['assignments', assignmentsRoute],
+        ['maps/attach', attachMapRoute],
       ]
 
       for (const [name, handler] of routes) {
