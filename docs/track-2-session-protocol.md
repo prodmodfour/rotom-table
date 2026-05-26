@@ -971,6 +971,7 @@ Later implementation tickets should keep these checks at the protocol boundary:
 - [Track 2 LAN hosting runbook](track-2-lan-hosting.md)
 - [Track 2 named Cloudflare Tunnel runbook](track-2-cloudflare-tunnel-hosting.md)
 - [Track 2 Quick Tunnel caveat](track-2-quick-tunnel-caveat.md)
+- [Track 2 session backup and recovery](track-2-session-backup-recovery.md)
 - [ADR 003: WebSocket session transport](adrs/003-websocket-session-transport.md)
 - [ADR 004: Server-authoritative commands](adrs/004-server-authoritative-commands.md)
 - [ADR 005: Session identity and permissions](adrs/005-session-identity-and-permissions.md)

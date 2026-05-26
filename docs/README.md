@@ -25,6 +25,7 @@ This directory collects presentation and reviewer documentation for Rotom Table.
 - [Track 2 Quick Tunnel caveat](track-2-quick-tunnel-caveat.md) — temporary development smoke-test boundary, campaign-session rejection, and legacy SSE limitations.
 - [Track 2 multi-tab local smoke script](track-2-multi-tab-smoke.md) — local GM/player session-mode tab helper and token propagation checklist.
 - [Track 2 session storage](track-2-session-storage.md) — default snapshot/event-log paths, ignored/private data boundaries, backup guidance, cleanup behaviour, and recovery limitations.
+- [Track 2 session backup and recovery](track-2-session-backup-recovery.md) — private backup/restore runbook for snapshots, optional event logs, referenced campaign data, and local-only recovery limits.
 - [ADR 001: GM-hosted session model](adrs/001-gm-hosted-session-model.md) — decision record for GM-controlled sessions instead of SaaS, public multi-tenancy, or generic collaborative editing.
 - [ADR 002: LAN first and named Cloudflare Tunnel second](adrs/002-lan-first-named-cloudflare-tunnel.md) — decision record for LAN-first hosting, named-tunnel remote access, and Quick Tunnel caveats.
 - [ADR 003: WebSocket session transport](adrs/003-websocket-session-transport.md) — decision record for using WebSockets for live session commands, acks/rejections, broadcasts, heartbeat, and reconnect.

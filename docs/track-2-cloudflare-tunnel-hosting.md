@@ -2,7 +2,7 @@
 
 This runbook is the supported remote-player hosting path for Track 2 table sessions. The GM still runs Rotom Table on a machine they control; a named Cloudflare Tunnel gives trusted remote players a stable HTTPS hostname that forwards to that private server.
 
-Use the [Track 2 LAN hosting runbook](track-2-lan-hosting.md) first when everyone is on the same network. Use this guide only when players are remote and the GM intentionally wants to publish a stable hostname such as `https://table.example.com` for a campaign session. For the no-secret safety banner checks that catch remote exposure before a session-local GM key, join code, and authoritative state are ready, see [Track 2 public exposure checks](track-2-public-exposure-checks.md).
+Use the [Track 2 LAN hosting runbook](track-2-lan-hosting.md) first when everyone is on the same network. Use this guide only when players are remote and the GM intentionally wants to publish a stable hostname such as `https://table.example.com` for a campaign session. For the no-secret safety banner checks that catch remote exposure before a session-local GM key, join code, and authoritative state are ready, see [Track 2 public exposure checks](track-2-public-exposure-checks.md). For private snapshot/event-log backup and restore procedures before or after remote play, see [Track 2 session backup and recovery](track-2-session-backup-recovery.md).
 
 Named tunnel hosting keeps the locked Track 2 architecture intact: one GM-hosted server owns session authority, live clients use `WebSocket /api/sessions/socket`, commands are acknowledged or rejected by the server, state is persisted as local JSON snapshots/event logs, and browsers must not autosave whole maps as the live session concurrency mechanism.
 
@@ -257,7 +257,7 @@ For emergency rollback after accidental exposure or a leaked hostname/join code:
 6. Review Cloudflare Access/WAF/DNS settings before re-enabling the hostname.
 7. Check the repository and any shared evidence for screenshots, logs, real hostnames that should remain private, GM keys, join codes, session snapshots, event logs, tunnel credentials, or real `.env` files.
 
-Back up local session snapshots only if the GM intentionally wants a private recovery copy. See [Track 2 session storage](track-2-session-storage.md) for snapshot/event-log backup and recovery guidance.
+Back up local session snapshots only if the GM intentionally wants a private recovery copy. See [Track 2 session storage](track-2-session-storage.md) for snapshot/event-log layout details and [Track 2 session backup and recovery](track-2-session-backup-recovery.md) for private backup/restore steps.
 
 ## Boundaries
 

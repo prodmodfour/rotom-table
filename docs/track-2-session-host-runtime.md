@@ -104,6 +104,7 @@ See the [Track 2 named Cloudflare Tunnel runbook](track-2-cloudflare-tunnel-host
 - LAN and named Cloudflare Tunnel are the supported Track 2 hosting paths. Quick Tunnel remains temporary development smoke-test only; see the [Track 2 Quick Tunnel caveat](track-2-quick-tunnel-caveat.md).
 - Live session clients must use `/maps/<slug>?session=1` and WebSocket command flow. Plain `/maps/<slug>` remains local-first.
 - Before committing, run `git status --short` and confirm generated `data/sessions/` snapshots/event logs, join codes, GM keys, screenshots with secrets, and private campaign JSON are not staged.
+- For private session archives and restores after hosting, use the [Track 2 session backup and recovery runbook](track-2-session-backup-recovery.md); do not turn backups into a cloud database or public shared drive.
 
 ## Shutdown
 

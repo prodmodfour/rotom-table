@@ -51,6 +51,7 @@ npm run build
 - [docs/track-2-quick-tunnel-caveat.md](docs/track-2-quick-tunnel-caveat.md) — Quick Tunnel caveats for temporary development smoke tests only, including legacy SSE limitations.
 - [docs/track-2-multi-tab-smoke.md](docs/track-2-multi-tab-smoke.md) — local multi-tab helper for GM/player session-mode token propagation smoke checks.
 - [docs/track-2-session-storage.md](docs/track-2-session-storage.md) — local session snapshot/event-log paths, privacy boundaries, backup guidance, and recovery limits.
+- [docs/track-2-session-backup-recovery.md](docs/track-2-session-backup-recovery.md) — private session backup/restore runbook for snapshots, optional event logs, and referenced campaign data.
 - [docs/local-development.md](docs/local-development.md) — local setup, scripts, and filesystem persistence notes.
 - [docs/fan-project-notice.md](docs/fan-project-notice.md) — fan project and ownership boundaries.
 

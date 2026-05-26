@@ -4,7 +4,7 @@ This runbook is the supported same-network hosting path for Track 2 table sessio
 
 LAN hosting keeps the locked Track 2 architecture intact: one GM-hosted server owns session authority, live clients use `WebSocket /api/sessions/socket`, commands are acknowledged or rejected by the server, state is persisted as local JSON snapshots/event logs, and browsers must not autosave whole maps as the live session concurrency mechanism.
 
-For the lobby flow itself, see [Track 2 session lobby and manual QA](track-2-session-lobby.md). For no-secret warnings around unsafe host startup and missing session-local credentials/state, see [Track 2 public exposure checks](track-2-public-exposure-checks.md). For local multi-tab token propagation checks, see [Track 2 multi-tab local smoke script](track-2-multi-tab-smoke.md). For remote play over the internet, use the [Track 2 named Cloudflare Tunnel runbook](track-2-cloudflare-tunnel-hosting.md); do not use ad-hoc public exposure as the LAN path.
+For the lobby flow itself, see [Track 2 session lobby and manual QA](track-2-session-lobby.md). For no-secret warnings around unsafe host startup and missing session-local credentials/state, see [Track 2 public exposure checks](track-2-public-exposure-checks.md). For local multi-tab token propagation checks, see [Track 2 multi-tab local smoke script](track-2-multi-tab-smoke.md). For private snapshot/event-log backups and restores, see [Track 2 session backup and recovery](track-2-session-backup-recovery.md). For remote play over the internet, use the [Track 2 named Cloudflare Tunnel runbook](track-2-cloudflare-tunnel-hosting.md); do not use ad-hoc public exposure as the LAN path.
 
 ## Before you start
 
@@ -195,7 +195,7 @@ Firewall hints:
 5. Remove any temporary firewall rule if you added one only for the session.
 6. Check `git status --short` and make sure no private campaign data, generated session snapshots/event logs, join codes, GM keys, tunnel credentials, or real `.env` files are staged.
 
-Back up local session snapshots only if the GM intentionally wants a private recovery copy. See [Track 2 session storage](track-2-session-storage.md) for snapshot/event-log backup and recovery guidance.
+Back up local session snapshots only if the GM intentionally wants a private recovery copy. See [Track 2 session storage](track-2-session-storage.md) for snapshot/event-log layout details and [Track 2 session backup and recovery](track-2-session-backup-recovery.md) for private backup/restore steps.
 
 ## Boundaries
 
