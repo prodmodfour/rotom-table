@@ -331,6 +331,12 @@ A successful response returns the player's own identity, their assignment record
 
 When the server's selected/current map is not visible to the player, `currentMapVisible` is `false` and `currentMap` is `null`; the hidden map slug is not included. Ended sessions may still return status to already joined players, but the endpoint stays read-only and never grants whole-map save authority.
 
+## Minimal session lobby UI
+
+`/sessions` provides the first additive lobby surface for the endpoints above. It does not replace the existing local `/login` trust picker: the page is still reached through the current app shell, the GM start action still requires the local GM role plus `ROTOM_ENABLE_SESSION_HOST=1`, and player joins still create only session-local `playerId`/`clientId`/display-name continuity.
+
+The GM panel can start a session, show the player join code, refresh the read-only management summary, and list joined players plus assignment counts. The player panel collects a join code and display name, stores the returned player identity in browser-local session identity storage, and refreshes the player-filtered session-state summary. The lobby intentionally does not send map edits, autosave whole documents, or expose the stored GM key in the page chrome.
+
 ## Client identity continuity helper
 
 `shared/sessionClientIdentity.ts` and `src/utils/sessionClientIdentityStorage.ts` define the browser continuity boundary for the identities returned by the GM start and player join flows. The helper stores one active session-local identity under `rotom:session:identity` in `localStorage` so a browser can reload or reconnect without asking the GM/player to copy the returned IDs again. A small `rotom-session-identity` cookie stores only a continuity hint for UI hydration and future same-origin request helpers.
