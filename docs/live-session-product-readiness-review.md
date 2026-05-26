@@ -47,6 +47,22 @@ Focused coverage includes:
 - `tests/scripts/sessionRealFlowSmoke.test.ts` plus `npm run smoke:session:real-flow` for an operator smoke helper that exercises start, attach, join, assign, session socket movement, reconnect snapshot, and cleanup against a running host.
 - `tests/docs/productTerminologyGuard.test.ts` and related docs tests for product vocabulary, current links, secret hygiene, and operator runbook coverage.
 
+## Current verification checkpoint
+
+The current product/developer verification pass was run on 2026-05-26 with the session-host runtime gate enabled for a loopback dev server:
+
+```bash
+ROTOM_ENABLE_SESSION_HOST=1 npm run dev -- --host 127.0.0.1 --port 3100
+npm run smoke:session:real-flow -- --base-url http://127.0.0.1:3100 --timeout-ms 12000
+npm test -- tests/docs/productTerminologyGuard.test.ts
+```
+
+Result:
+
+- The product terminology guard passed for tracked filenames and content, including stale external-process and review-management wording.
+- The real-flow smoke passed through start, attaching a saved smoke map, joining Player A and Player B, assigning one map token, authenticating three session sockets, accepting Player A's `moveToken` command, fanning out same-session patches, reconnecting Player B with a filtered snapshot, and removing generated smoke data.
+- A repository scan found no old external-process or review-workflow statements in tracked files.
+
 ## Known limits to keep visible
 
 - Live sessions assume trusted table participants. They are not hardened public authentication, abuse protection, or public multi-user hosting.

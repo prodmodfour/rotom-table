@@ -91,6 +91,28 @@ describe('live session product readiness review', () => {
     }
   })
 
+  it('records the current product verification checkpoint', () => {
+    for (const phrase of [
+      '## Current verification checkpoint',
+      'session-host runtime gate enabled for a loopback dev server',
+      'ROTOM_ENABLE_SESSION_HOST=1 npm run dev -- --host 127.0.0.1 --port 3100',
+      'npm run smoke:session:real-flow -- --base-url http://127.0.0.1:3100 --timeout-ms 12000',
+      'npm test -- tests/docs/productTerminologyGuard.test.ts',
+      'product terminology guard passed for tracked filenames and content',
+      'stale external-process and review-management wording',
+      'start, attaching a saved smoke map, joining Player A and Player B',
+      'assigning one map token',
+      'authenticating three session sockets',
+      "accepting Player A's `moveToken` command",
+      'fanning out same-session patches',
+      'reconnecting Player B with a filtered snapshot',
+      'removing generated smoke data',
+      'repository scan found no old external-process or review-workflow statements',
+    ]) {
+      expect(review).toContain(phrase)
+    }
+  })
+
   it('keeps limitations and the operator checklist visible', () => {
     for (const phrase of [
       'Live sessions assume trusted table participants',
