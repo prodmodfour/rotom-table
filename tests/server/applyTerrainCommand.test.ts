@@ -421,7 +421,7 @@ describe('applyTerrainCommandUseCase', () => {
     })
     expect(glass.status).toBe('rejected')
     if (glass.status !== 'rejected') throw new Error('expected glass rejection')
-    expect(glass.result.message).toContain('not available to the Track 1 terrain builder palette')
+    expect(glass.result.message).toContain('not available to the terrain builder palette')
 
     expect(snapshotCalls).toEqual([])
     expect(store.get(sessionId)?.state?.revision).toBe(parseSessionRevision(0))

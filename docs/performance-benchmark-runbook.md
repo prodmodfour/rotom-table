@@ -1,8 +1,8 @@
 # Performance benchmark runbook
 
-Use this runbook when collecting Track 1 before/after measurements for the isometric map. The goal is to make performance changes observable while preserving the same map data, renderer quality, visual effects, and table functionality.
+Use this runbook when collecting before/after map rendering performance measurements for the isometric map. The goal is to make performance changes observable while preserving the same map data, renderer quality, visual effects, and table functionality.
 
-This workflow complements the scenario definitions in [Performance benchmark scenarios](performance-benchmark-scenarios.md), the public fixture generator in [Performance benchmark fixtures](performance-benchmark-fixtures.md), the recorded [Track 1 integrated benchmark pass](performance-benchmark-results.md), and the no-quality-loss rules in [Performance guardrails](performance-guardrails.md).
+This workflow complements the scenario definitions in [Performance benchmark scenarios](performance-benchmark-scenarios.md), the public fixture generator in [Performance benchmark fixtures](performance-benchmark-fixtures.md), the recorded [Map rendering integrated benchmark pass](performance-benchmark-results.md), and the no-quality-loss rules in [Performance guardrails](performance-guardrails.md).
 
 ## 1. Choose the comparison
 
@@ -29,7 +29,7 @@ Do not change antialiasing, device pixel ratio, weather/effect density, layer vi
    node scripts/generate_benchmark_maps.mjs --overwrite
    ```
 
-   Generated files live under `data/maps/track-1-benchmarks/` and are ignored local data. Do not commit them.
+   Generated files live under `data/maps/performance-benchmarks/` and are ignored local data. Do not commit them.
 
 3. Start the app in the same mode for both runs:
 

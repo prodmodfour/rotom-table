@@ -140,7 +140,7 @@ export const hasIsometricRenderDebugQueryFlag = (query: IsometricRenderDebugQuer
 /**
  * Client-safe render-debug gate. It is inert without an explicit query flag and
  * dev-only by default so normal production users cannot accidentally enable
- * Track 1 diagnostics.
+ * Render diagnostics.
  */
 export const isIsometricRenderDebugEnabled = ({
   query,

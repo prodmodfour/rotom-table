@@ -21,7 +21,7 @@ The current dependency shape is intentionally small:
 | App/server framework | `nuxt` in `package.json` (lockfile currently resolves Nuxt 3.x) | Provides the Vue app and Nitro server used by the GM-hosted process. |
 | Nitro WebSocket support | `nitro.experimental.websocket = true` in `nuxt.config.ts`; Nuxt/Nitro transitive packages include Nitro/H3/CrossWS implementations in the lockfile | Required for `defineWebSocketHandler` at `WebSocket /api/sessions/socket`; do not replace this with a separate realtime server without another review. |
 | Optional transitive packages | Nuxt/Nitro/devtools may place packages such as `ws` or `ioredis` in `package-lock.json` | These are not direct Rotom Table dependencies, are not imported by Live session code, and do not change the local JSON persistence or Nitro WebSocket architecture. |
-| Renderer | `three` plus `@types/three` | Existing Track 1 map rendering dependency; Live session must not degrade render quality to simplify hosting. |
+| Renderer | `three` plus `@types/three` | Existing map rendering dependency; Live session must not degrade render quality to simplify hosting. |
 | UI assets | `@fontsource/*`, `@phosphor-icons/vue` | Existing presentation/UI dependencies, not session authority. |
 | Type/test tooling | `typescript`, `vue-tsc`, `vitest`, `@types/node` | Used by `npm run typecheck`, `npm test`, and documentation/runtime regression coverage. |
 | Node built-ins | `node:fs`, `node:path`, `node:crypto`, `node:child_process`, `node:process` | Used for local JSON persistence, ID generation, and helper scripts; no extra service is introduced. |

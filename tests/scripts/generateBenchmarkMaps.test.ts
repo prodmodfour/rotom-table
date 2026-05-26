@@ -19,7 +19,7 @@ type BenchmarkMap = TabletopMap & {
   fieldEffects: Required<NonNullable<TabletopMap['fieldEffects']>>
 }
 
-describe('Track 1 benchmark map fixture generator', () => {
+describe('map rendering performance benchmark map fixture generator', () => {
   it('builds deterministic valid map documents from public example sheets', () => {
     const fixtures = buildBenchmarkMapFixtures() as BenchmarkMap[]
 
@@ -35,7 +35,7 @@ describe('Track 1 benchmark map fixture generator', () => {
       expect(fixture.folder).toBe(BENCHMARK_FIXTURE_FOLDER)
       expect(fixture.playerVisible).toBe(false)
       expect(fixture.metadata).toMatchObject({
-        benchmarkFixture: 'track-1-render-performance',
+        benchmarkFixture: 'map-render-performance',
         privacy: 'synthetic public example data only',
       })
       expect(fixture.placements.every((placement) => placement.sheetSlug.startsWith('examples-'))).toBe(true)

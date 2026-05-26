@@ -58,7 +58,7 @@ describe('Live session LAN hosting runbook', () => {
     expect(readText('docs/live-session-roadmap.md')).toContain('live-session-lan-hosting.md')
     expect(readText('docs/live-session-host-runtime.md')).toContain('live-session-lan-hosting.md')
     expect(readText('docs/live-session-lobby.md')).toContain('live-session-lan-hosting.md')
-    expect(readText('docs/live-session-websocket-protocol.md')).toContain('live-session-lan-hosting.md')
+    expect(readText('docs/live-session-socket-protocol.md')).toContain('live-session-lan-hosting.md')
     expect(readText('docs/live-session-protocol.md')).toContain('live-session-lan-hosting.md')
   })
 })

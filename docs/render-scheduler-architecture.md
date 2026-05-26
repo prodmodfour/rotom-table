@@ -2,7 +2,7 @@
 
 The isometric map uses dirty render scheduling to avoid duplicate idle frames while preserving the same visual output. A frame is scheduled only when scene state is dirty or when a concrete animation source still needs time to settle.
 
-This page documents the Track 1 render-scheduler model for future map performance work. It complements the broader [Track 1 performance roadmap](track-1-performance-roadmap.md) and the no-quality-loss rules in [Performance guardrails](performance-guardrails.md).
+This page documents the render-scheduler model for future map performance work. It complements the broader [Map rendering performance roadmap](map-rendering-performance-roadmap.md) and the no-quality-loss rules in [Performance guardrails](performance-guardrails.md).
 
 ## Key modules
 

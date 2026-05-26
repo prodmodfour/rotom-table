@@ -91,7 +91,7 @@ export interface TerrainPatchPayload {
   readonly current: MapVoxelV2 | null
   readonly built?: MapVoxelV2
   readonly removed?: MapVoxelV2
-  /** Applying this patch to `map.voxels` must preserve Track 1 terrain renderer invalidation. */
+  /** Applying this patch to `map.voxels` must preserve terrain renderer invalidation. */
   readonly rendererInvalidation: typeof TERRAIN_RENDER_INVALIDATION_REASONS
 }
 
@@ -650,7 +650,7 @@ const buildTerrainVoxelOnMap = (
       result: createConflictRejection(
         command,
         record,
-        `Terrain material ${voxel.materialId} is not available to the Track 1 terrain builder palette.`,
+        `Terrain material ${voxel.materialId} is not available to the terrain builder palette.`,
         processedAt,
         {
           retryable: false,

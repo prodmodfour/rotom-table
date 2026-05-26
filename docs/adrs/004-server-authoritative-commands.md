@@ -75,7 +75,7 @@ Server-authoritative commands do not require a cloud database or SaaS backend. T
 - **Server snapshots are allowed.** The server may write whole authoritative session snapshots for recovery. That is not the same as accepting whole-map autosaves from multiple live clients.
 - **Imports, exports, setup, and GM maintenance can remain document-oriented outside live play.** Those workflows should not become the session concurrency mechanism.
 - **Legacy non-session realtime paths may remain during migration.** Existing SSE or local-sync behaviour can continue outside the new WebSocket session command channel.
-- **Track 1 rendering and map functionality must remain intact.** Session commands should feed authoritative state into the existing map experience without reducing visual quality or removing local map features.
+- **Map rendering quality and map functionality must remain intact.** Session commands should feed authoritative state into the existing map experience without reducing visual quality or removing local map features.
 
 ## Rejected alternatives
 

@@ -7,7 +7,7 @@ import { createRenderMetricsOverlayViewModel } from '~/utils/isometric/renderMet
 const props = defineProps<{
   /** Hidden by default; callers should only enable this behind the render debug gate. */
   enabled?: boolean
-  /** Optional live metrics. Null/omitted data keeps the shell useful for early Track 1 tickets. */
+  /** Optional live metrics. Null/omitted data keeps the shell useful for early render-instrumentation work. */
   metrics?: IsometricRenderMetricsSnapshot | null
   title?: string
 }>()
@@ -25,7 +25,7 @@ const viewModel = computed(() => createRenderMetricsOverlayViewModel(metricsSnap
   >
     <header class="render-metrics-overlay__header">
       <div>
-        <p class="render-metrics-overlay__eyebrow">Track 1 debug</p>
+        <p class="render-metrics-overlay__eyebrow">Render debug</p>
         <h2>{{ overlayTitle }}</h2>
       </div>
       <span class="render-metrics-overlay__badge">dev</span>

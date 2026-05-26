@@ -1,6 +1,6 @@
 # Live session concurrency benchmark notes
 
-This review records the final Live session multi-client concurrency benchmark notes after the command audit, LAN browser smoke, named-tunnel documentation review, local-mode no-regression audit, security audit, and persistence/recovery audit landed. Read it with the [Live session integrated command audit](live-session-command-audit.md), [Live session LAN manual smoke results](live-session-lan-manual-smoke-results.md), [Live session deployment smoke checklist](live-session-deployment-smoke-checklist.md), [Live session WebSocket protocol](live-session-websocket-protocol.md), and [Live session dependency and runtime review](live-session-dependency-runtime-review.md).
+This review records the final Live session multi-client concurrency benchmark notes after the command audit, LAN browser smoke, named-tunnel documentation review, local-mode no-regression audit, security audit, and persistence/recovery audit landed. Read it with the [Live session integrated command audit](live-session-command-audit.md), [Live session LAN manual smoke results](live-session-lan-manual-smoke-results.md), [Live session deployment smoke checklist](live-session-deployment-smoke-checklist.md), [Live session socket protocol](live-session-socket-protocol.md), and [Live session dependency and runtime review](live-session-dependency-runtime-review.md).
 
 Audit date: 2026-05-26
 
@@ -59,7 +59,7 @@ These limits are acceptable for Live session and should remain explicit:
 - Reconnect replay is currently unavailable (`replayAvailable: false`), so stale reconnects use snapshot fallback. For large visible maps, snapshot transfer and client-side scene reconciliation can dominate recovery time.
 - Accepted command handlers persist local JSON snapshots. Snapshot size, sheet writes, filesystem speed, and fsync behaviour can affect acknowledgement/fanout timing.
 - The current docs do not claim production abuse resistance, rate limiting, CAPTCHA, horizontal scaling, hosted databases, Redis, Durable Objects, or public multi-tenant isolation.
-- Track 1 renderer performance still matters. Session patches avoid whole-map network saves, but large terrain/hazard/effect scenes can still cost client rendering work after a patch is applied.
+- Map renderer performance still matters. Session patches avoid whole-map network saves, but large terrain/hazard/effect scenes can still cost client rendering work after a patch is applied.
 - Quick Tunnel remains development smoke-test only; temporary `trycloudflare.com` behaviour is not a campaign benchmark or supported remote latency baseline.
 
 ## Operator benchmark checklist

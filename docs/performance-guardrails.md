@@ -1,6 +1,6 @@
 # Performance guardrails
 
-Rotom Table performance work must preserve the same visible map state and table functionality. Track 1 optimizes duplicate work, scheduling, caching, and allocation patterns; it must not claim wins by degrading renderer quality or hiding features.
+Rotom Table performance work must preserve the same visible map state and table functionality. Map rendering performance work optimizes duplicate work, scheduling, caching, and allocation patterns; it must not claim wins by degrading renderer quality or hiding features.
 
 ## Hard no-quality-loss rules
 
@@ -34,4 +34,4 @@ Current tests include focused no-quality-loss checks:
 - `tests/utils/isometric/weatherVisualConfig.test.ts` locks representative weather particle baselines.
 - `tests/utils/isometric/weatherVisualFactory.test.ts` verifies every supported weather kind still creates a visible render group.
 
-If a future product change intentionally alters visual output, document it separately and update these guardrails in the same reviewed change. Track 1 performance-only changes should not loosen them. The [Track 1 no-quality-loss audit](performance-no-quality-loss-audit.md) records the integrated Track 1 review against these rules.
+If a future product change intentionally alters visual output, document it separately and update these guardrails in the same reviewed change. Map rendering performance-only changes should not loosen them. The [Map rendering no-quality-loss audit](performance-no-quality-loss-audit.md) records the integrated map rendering performance review against these rules.

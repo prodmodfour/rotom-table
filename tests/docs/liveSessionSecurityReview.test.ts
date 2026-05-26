@@ -83,7 +83,7 @@ describe('Live session security review documentation', () => {
     expect(readText('docs/live-session-roadmap.md')).toContain('live-session-security-review.md')
     expect(readText('docs/live-session-validation-matrix.md')).toContain('live-session-security-review.md')
     expect(readText('docs/live-session-protocol.md')).toContain('live-session-security-review.md')
-    expect(readText('docs/live-session-websocket-protocol.md')).toContain('live-session-security-review.md')
+    expect(readText('docs/live-session-socket-protocol.md')).toContain('live-session-security-review.md')
     expect(readText('docs/live-session-host-runtime.md')).toContain('live-session-security-review.md')
     expect(readText('docs/live-session-public-exposure-checks.md')).toContain('live-session-security-review.md')
     expect(readText('docs/live-session-lan-hosting.md')).toContain('live-session-security-review.md')

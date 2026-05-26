@@ -80,15 +80,15 @@ describe('Live session stale-note cleanup', () => {
 
   it('records product readiness evidence without changing the locked architecture', () => {
     const review = readText('docs/live-session-implementation-review.md')
-    const websocketProtocol = readText('docs/live-session-websocket-protocol.md')
+    const socketProtocol = readText('docs/live-session-socket-protocol.md')
     const sessionProtocol = readText('docs/live-session-protocol.md')
 
     expect(review).toContain('Keep live-session docs, tests, comments, and user-facing copy in product language')
     expect(review).toContain('live-session-readiness-summary.md')
     expect(review).toContain('tests/docs/liveSessionProductTerminologyCleanup.test.ts')
     expect(review).toContain('tests/docs/liveSessionReadinessSummary.test.ts')
-    expect(websocketProtocol).toContain('authenticated command types outside the implemented Live session set')
-    expect(websocketProtocol).toContain('useSessionMapSceneCommands')
+    expect(socketProtocol).toContain('authenticated command types outside the implemented Live session set')
+    expect(socketProtocol).toContain('useSessionMapSceneCommands')
     expect(sessionProtocol).toContain('implemented session behaviours for live session mode')
     expect(review).toContain('GM-hosted table sessions')
     expect(review).toContain('`WebSocket /api/sessions/socket`')

@@ -46,7 +46,7 @@ describe('live session host runtime scripts documentation', () => {
     expect(readText('docs/local-development.md')).toContain('live-session-host-runtime.md')
     expect(readText('docs/live-session-roadmap.md')).toContain('live-session-host-runtime.md')
     expect(readText('docs/live-session-protocol.md')).toContain('live-session-host-runtime.md')
-    expect(readText('docs/live-session-websocket-protocol.md')).toContain('live-session-host-runtime.md')
+    expect(readText('docs/live-session-socket-protocol.md')).toContain('live-session-host-runtime.md')
     expect(readText('docs/live-session-lobby.md')).toContain('live-session-host-runtime.md')
     expect(readText('docs/live-session-client-integration.md')).toContain('live-session-host-runtime.md')
     expect(readText('docs/live-session-multi-tab-smoke.md')).toContain('live-session-host-runtime.md')

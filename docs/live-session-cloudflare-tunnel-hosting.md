@@ -273,4 +273,4 @@ Back up local session snapshots only if the GM intentionally wants a private rec
 - Cloudflare Access is optional extra protection, not a replacement for Rotom Table session-local GM/player validation.
 - The session join code and GM key are session-local credentials, not full accounts; see the [Live session security review](live-session-security-review.md) for join-code limits, tunnel exposure risks, and incident response.
 - Do not add a database, cloud persistence layer, SaaS deployment target, Durable Objects, Redis, Postgres, or shared-document autosave model to make tunnel hosting work.
-- Keep Track 1 map rendering and local-first workflows intact; explicit session mode is entered through `/maps/<slug>?session=1`.
+- Keep map rendering quality and local-first workflows intact; explicit session mode is entered through `/maps/<slug>?session=1`.

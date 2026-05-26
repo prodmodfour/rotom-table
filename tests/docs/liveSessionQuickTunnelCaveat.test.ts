@@ -68,7 +68,7 @@ describe('Live session Quick Tunnel caveat', () => {
     expect(readText('docs/live-session-glossary.md')).toContain('live-session-quick-tunnel-caveat.md')
     expect(readText('docs/live-session-validation-matrix.md')).toContain('live-session-quick-tunnel-caveat.md')
     expect(readText('docs/live-session-protocol.md')).toContain('live-session-quick-tunnel-caveat.md')
-    expect(readText('docs/live-session-websocket-protocol.md')).toContain('live-session-quick-tunnel-caveat.md')
+    expect(readText('docs/live-session-socket-protocol.md')).toContain('live-session-quick-tunnel-caveat.md')
     expect(readText('docs/live-session-lan-hosting.md')).toContain('live-session-quick-tunnel-caveat.md')
     expect(readText('docs/live-session-cloudflare-tunnel-hosting.md')).toContain('live-session-quick-tunnel-caveat.md')
     expect(readText('docs/live-session-lobby.md')).toContain('live-session-quick-tunnel-caveat.md')

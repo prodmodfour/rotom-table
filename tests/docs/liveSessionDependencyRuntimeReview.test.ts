@@ -152,7 +152,7 @@ describe('Live session dependency and runtime review', () => {
     expect(readText('docs/live-session-roadmap.md')).toContain('live-session-dependency-runtime-review.md')
     expect(readText('docs/live-session-validation-matrix.md')).toContain('live-session-dependency-runtime-review.md')
     expect(readText('docs/live-session-protocol.md')).toContain('live-session-dependency-runtime-review.md')
-    expect(readText('docs/live-session-websocket-protocol.md')).toContain('live-session-dependency-runtime-review.md')
+    expect(readText('docs/live-session-socket-protocol.md')).toContain('live-session-dependency-runtime-review.md')
     expect(readText('docs/live-session-host-runtime.md')).toContain('live-session-dependency-runtime-review.md')
     expect(readText('docs/live-session-public-exposure-checks.md')).toContain('live-session-dependency-runtime-review.md')
     expect(readText('docs/live-session-lan-hosting.md')).toContain('live-session-dependency-runtime-review.md')

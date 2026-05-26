@@ -56,7 +56,7 @@ describe('Live session LAN manual smoke results docs', () => {
     expect(readText('docs/live-session-lan-hosting.md')).toContain('live-session-lan-manual-smoke-results.md')
     expect(readText('docs/live-session-deployment-smoke-checklist.md')).toContain('live-session-lan-manual-smoke-results.md')
     expect(readText('docs/live-session-protocol.md')).toContain('live-session-lan-manual-smoke-results.md')
-    expect(readText('docs/live-session-websocket-protocol.md')).toContain('live-session-lan-manual-smoke-results.md')
+    expect(readText('docs/live-session-socket-protocol.md')).toContain('live-session-lan-manual-smoke-results.md')
     expect(readText('docs/live-session-validation-matrix.md')).toContain('live-session-lan-manual-smoke-results.md')
   })
 })

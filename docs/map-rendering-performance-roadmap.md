@@ -1,6 +1,6 @@
-# Track 1 performance roadmap
+# Map rendering performance roadmap
 
-Track 1 focuses on making the isometric map runtime more efficient on laptops with integrated or weak GPUs while preserving the same visible scene and table functionality. It is a performance and observability track, not a visual redesign or rules change.
+The map rendering performance plan focuses on making the isometric map runtime more efficient on laptops with integrated or weak GPUs while preserving the same visible scene and table functionality. It is a performance and observability plan, not a visual redesign or rules change.
 
 ## Goals
 
@@ -12,7 +12,7 @@ Track 1 focuses on making the isometric map runtime more efficient on laptops wi
 
 ## Non-goals
 
-Track 1 does not change multiplayer, persistence, authentication, campaign data ownership, PTU rules, or public hosting assumptions. It also does not replace the renderer or introduce a degraded low-quality mode.
+Map rendering performance work does not change multiplayer, persistence, authentication, campaign data ownership, PTU rules, or public hosting assumptions. It also does not replace the renderer or introduce a degraded low-quality mode.
 
 ## No-quality-loss rules
 
@@ -67,11 +67,11 @@ Avoid disposing and rebuilding equivalent geometry, buffers, overlays, and targe
 
 ### 6. Validate and audit
 
-Finish with repeatable benchmark notes, resource cleanup coverage, a no-quality-loss audit, and a final implementation review. The [Track 1 no-quality-loss audit](performance-no-quality-loss-audit.md) records the integrated review that found no intentional visual-quality or functionality reduction, and the [Track 1 final implementation review](performance-track-1-final-review.md) records completion readiness, completed implementation review coverage, and performance readiness notes. Any optimization that changes output should be treated as a bug unless it is an intentional, separately reviewed product change.
+Finish with repeatable benchmark notes, resource cleanup coverage, a no-quality-loss audit, and a readiness review. The [Map rendering no-quality-loss audit](performance-no-quality-loss-audit.md) records the integrated review that found no intentional visual-quality or functionality reduction, and the [Map rendering performance readiness review](performance-readiness-review.md) records readiness, validation coverage, and performance notes. Any optimization that changes output should be treated as a bug unless it is an intentional, separately reviewed product change.
 
 ## Validation expectations
 
-Before sharing Track 1 changes, run the standard checks:
+Before sharing map rendering performance changes, run the standard checks:
 
 ```bash
 npm run typecheck

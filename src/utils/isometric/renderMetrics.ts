@@ -6,7 +6,7 @@ import {
 } from './renderInvalidation'
 
 /**
- * Developer-only data model for Track 1 isometric render instrumentation.
+ * Developer-only data model for isometric render instrumentation.
  *
  * These types and helpers intentionally do not read browser state, sample a
  * Three.js renderer, or render UI. Runtime code can opt into filling this

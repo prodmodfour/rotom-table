@@ -82,7 +82,7 @@ The following commands are GM-only in Live session. Player actors are rejected e
 | `setFieldEffect` | optional `mapSlug`; category `weather`, `terrain`, or `room`; kind; optional `rounds`, `source`, `weatherMode`, `terrainScope`, `startsNextRound` | `lane: "field-effect"`, `field: "fieldEffects"` | Sets a Weather/Terrain/Room effect; `rounds: 0` removes that kind; weather replaces by default or appends a bounded second weather with `weatherMode: "append"` | `fieldEffectsUpdated` with previous/current field effects | player actor, mismatched kind/category, no-op, missing map, stale field-effect lane |
 | `removeFieldEffect` | optional `mapSlug`; category `weather`, `terrain`, `room`, or `all`; optional kind | `lane: "field-effect"`, `field: "fieldEffects"` | Removes one kind, a whole category, or all field effects | `fieldEffectsUpdated` | player actor, missing/no active effect, missing map, stale field-effect lane |
 | `tickFieldEffectDurations` | optional `mapSlug`; optional positive `amount` (default `1`) | `lane: "field-effect"`, `field: "fieldEffects"` | Decrements finite durations and removes expired effects; `null` or absent duration is sustained | `fieldEffectsUpdated` with `tickAmount` | player actor, invalid amount, no finite durations changed, stale field-effect lane |
-| `buildTerrainVoxel` | optional `mapSlug`; `voxel` cell, `materialId`, optional color/ghost/blocking/tags | `lane: "terrain"`, `field: "voxel:x,y,z"` | Builds or replaces one voxel using Track 1 terrain-builder material/default-colour rules | `terrainVoxelsUpdated` with previous/current cell voxel and renderer invalidation reasons | player actor, out-of-bounds cell, occupied token cell, unbuildable material, no-op, stale same-cell edit |
+| `buildTerrainVoxel` | optional `mapSlug`; `voxel` cell, `materialId`, optional color/ghost/blocking/tags | `lane: "terrain"`, `field: "voxel:x,y,z"` | Builds or replaces one voxel using terrain-builder material/default-colour rules | `terrainVoxelsUpdated` with previous/current cell voxel and renderer invalidation reasons | player actor, out-of-bounds cell, occupied token cell, unbuildable material, no-op, stale same-cell edit |
 | `removeTerrainVoxel` | optional `mapSlug`; `cell` | `lane: "terrain"`, `field: "voxel:x,y,z"` | Removes one voxel from a cell | `terrainVoxelsUpdated` with removed voxel and renderer invalidation reasons | player actor, missing voxel/no-op, out-of-bounds cell, stale same-cell edit |
 
 Supported hazard kinds are `spikes`, `toxic-spikes`, `sticky-web`, `stealth-rock`, and `fire`. Toxic Spikes supports layers `1` and `2`; other hazard kinds ignore layer after validation/normalization.
@@ -93,7 +93,7 @@ Supported field-effect kinds are:
 - Terrain: `electric`, `grassy`, `misty`, `psychic`
 - Room: `magic`, `trick`, `wonder`
 
-Terrain patches include the renderer invalidation reasons `terrain`, `movement-preview`, `build-preview`, and `hazard-preview` so session-map client integration preserves Track 1 scene refresh behaviour.
+Terrain patches include the renderer invalidation reasons `terrain`, `movement-preview`, `build-preview`, and `hazard-preview` so session-map client integration preserves existing scene refresh behaviour.
 
 ## Permission matrix
 
@@ -162,7 +162,7 @@ Patch payloads are intentionally narrow. Clients that need a full recovery after
 - The optional event log is not a full replay guarantee in Live session. Reconnect remains snapshot-safe when replay is unavailable.
 - Ability automation is deliberately limited to known active/session-safe boundaries. Passive abilities or abilities without a Live session automation boundary reject instead of pretending automation happened.
 - Hazard, field-effect, and terrain commands mutate the map lanes they own; they do not calculate all downstream PTU effects such as damage, visibility, or movement rules by themselves.
-- Terrain commands preserve Track 1 render invalidation expectations, and session-map client integration applies terrain patch events to the session-authoritative map clone.
+- Terrain commands preserve map render invalidation expectations, and session-map client integration applies terrain patch events to the session-authoritative map clone.
 - Session persistence remains local JSON snapshots and sheet files; no database, SaaS service, Quick Tunnel-first deployment, or generic collaborative-document model is introduced.
 
 ## Validation coverage
@@ -193,4 +193,4 @@ The table-action command flows are covered by focused shared-contract, server-us
 - `tests/server/sessionFieldEffectWebSocketDispatch.test.ts`
 - `tests/server/sessionTerrainWebSocketDispatch.test.ts`
 
-For the surrounding transport and storage details, see the [live session protocol](live-session-protocol.md), [Live session WebSocket protocol](live-session-websocket-protocol.md), and [live session storage](live-session-storage.md) guides.
+For the surrounding transport and storage details, see the [live session protocol](live-session-protocol.md), [Live session socket protocol](live-session-socket-protocol.md), and [live session storage](live-session-storage.md) guides.

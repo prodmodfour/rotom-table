@@ -93,7 +93,7 @@ describe('Live session named tunnel documentation review', () => {
     expect(readText('docs/README.md')).toContain('live-session-named-tunnel-documentation-review.md')
     expect(readText('docs/live-session-roadmap.md')).toContain('live-session-named-tunnel-documentation-review.md')
     expect(readText('docs/live-session-validation-matrix.md')).toContain('live-session-named-tunnel-documentation-review.md')
-    expect(readText('docs/live-session-websocket-protocol.md')).toContain('live-session-named-tunnel-documentation-review.md')
+    expect(readText('docs/live-session-socket-protocol.md')).toContain('live-session-named-tunnel-documentation-review.md')
     expect(runbook).toContain('live-session-named-tunnel-documentation-review.md')
   })
 })

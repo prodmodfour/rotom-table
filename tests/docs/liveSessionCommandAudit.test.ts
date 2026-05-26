@@ -58,7 +58,7 @@ describe('Live session integrated command audit docs', () => {
     expect(readText('README.md')).toContain('docs/live-session-command-audit.md')
     expect(readText('docs/README.md')).toContain('live-session-command-audit.md')
     expect(readText('docs/live-session-protocol.md')).toContain('live-session-command-audit.md')
-    expect(readText('docs/live-session-websocket-protocol.md')).toContain('live-session-command-audit.md')
+    expect(readText('docs/live-session-socket-protocol.md')).toContain('live-session-command-audit.md')
     expect(readText('docs/live-session-validation-matrix.md')).toContain('live-session-command-audit.md')
   })
 })

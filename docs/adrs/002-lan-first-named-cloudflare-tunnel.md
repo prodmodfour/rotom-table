@@ -11,7 +11,7 @@ Live session keeps Rotom Table shaped as a GM-hosted table session. A GM runs th
 1. everyone is on the same local network; and
 2. one or more players need remote access over the internet.
 
-The hosting path must preserve local-first ownership and avoid implying that Rotom Table has become a public SaaS service or a hardened multi-tenant deployment. It also must be compatible with WebSocket session transport, reconnect behaviour, and explicit session-host safety gates.
+The hosting path must preserve local-first ownership and avoid implying that Rotom Table has become a public SaaS service or a hardened multi-tenant deployment. It also must be compatible with session socket transport, reconnect behaviour, and explicit session-host safety gates.
 
 ## Decision
 

@@ -1,4 +1,4 @@
-# ADR 003: WebSocket session transport
+# ADR 003: Session socket transport
 
 Date: 2026-05-25
 

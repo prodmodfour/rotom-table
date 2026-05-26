@@ -1,13 +1,13 @@
-# Track 1 integrated benchmark pass
+# Map rendering integrated benchmark pass
 
-This page records the this review integrated benchmark pass using the public Track 1 fixture maps and the debug render overlay. It is a current-branch measurement, not a historical pre-Track 1 checkout: the pre-instrumentation branch did not have equivalent overlay counters. In the tables below, **before** means the overlay snapshot at the start of a measurement window and **after** means the end-of-window overlay delta on the integrated Track 1 branch.
+This page records an integrated benchmark pass using the public performance fixture maps and the debug render overlay. It is a current implementation measurement, not a historical baseline checkout: the pre-instrumentation state did not have equivalent overlay counters. In the tables below, **before** means the overlay snapshot at the start of a measurement window and **after** means the end-of-window overlay delta.
 
 ## Run identity
 
 | Field | Value |
 | --- | --- |
 | Date | 2026-05-25 07:51 UTC |
-| Branch | `perf/track1/060-063-benchmark-audit-review` |
+| Measurement source | Current map-rendering performance implementation |
 | App mode | `npm run dev`, Nuxt dev server at `http://127.0.0.1:3100` |
 | Browser | Headless Chrome 147 on Linux x86_64 |
 | Viewport | `1280×720`, browser/device pixel ratio `1` |
@@ -15,7 +15,7 @@ This page records the this review integrated benchmark pass using the public Tra
 | Debug flag | `?debug=render` |
 | Measurement windows | 30s idle after an 8s warm-up; scripted pointer sweep; six repeated movement-preview anchors for typical/stress maps |
 
-The fixture generator was refreshed before the pass so the browser-observed token counts match the documented fixture counts. Generated files under `data/maps/track-1-benchmarks/` remain ignored local data and are not committed.
+The fixture generator was refreshed before the pass so the browser-observed token counts match the documented fixture counts. Generated files under `data/maps/performance-benchmarks/` remain ignored local data and are not committed.
 
 ## Scenario results
 
@@ -31,4 +31,4 @@ The fixture generator was refreshed before the pass so the browser-observed toke
 - Typical and stress idle windows intentionally kept rendering because animated weather/field effects were visible. The empty map confirms the settled no-animation path stops duplicate idle RAF/render work.
 - Movement-preview cache notes use repeated anchors on the same selected token. Hits appear after the first visit to an unchanged terrain/placement key; immediately repeated identical anchors are short-circuited earlier and do not increment cache counters.
 - Browser console after the final pass had no app errors or warnings beyond normal Nuxt dev informational logs.
-- The [Track 1 no-quality-loss audit](performance-no-quality-loss-audit.md) records the final visual-quality and functionality review for this benchmark branch, and the [Track 1 final implementation review](performance-track-1-final-review.md) records readiness before repository review.
+- The [Map rendering no-quality-loss audit](performance-no-quality-loss-audit.md) records the final visual-quality and functionality review for this benchmark pass, and the [Map rendering performance readiness review](performance-readiness-review.md) records readiness before repository review.

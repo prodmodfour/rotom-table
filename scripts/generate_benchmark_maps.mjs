@@ -7,7 +7,7 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 const PROJECT_ROOT = resolve(__dirname, '..')
 
-export const BENCHMARK_FIXTURE_FOLDER = 'track-1-benchmarks'
+export const BENCHMARK_FIXTURE_FOLDER = 'performance-benchmarks'
 export const DEFAULT_OUTPUT_DIR = `data/maps/${BENCHMARK_FIXTURE_FOLDER}`
 export const BENCHMARK_FIXTURE_VERSION = 1
 export const BENCHMARK_FIXTURE_TIMESTAMP = Date.UTC(2026, 0, 1, 0, 0, 0)
@@ -95,7 +95,7 @@ const baseMap = ({ slug, name, dimensions, voxels, hazards, fieldEffects, placem
   lights: [],
   initiative: { activeId: placements[0]?.id ?? null, round: 1 },
   metadata: {
-    benchmarkFixture: 'track-1-render-performance',
+    benchmarkFixture: 'map-render-performance',
     fixtureVersion: BENCHMARK_FIXTURE_VERSION,
     privacy: 'synthetic public example data only',
     reproducibility: 'generated deterministically by scripts/generate_benchmark_maps.mjs',
@@ -110,7 +110,7 @@ const buildEmptyBenchmarkMap = () => {
 
   return baseMap({
     slug: 'benchmark-empty-map',
-    name: 'Track 1 Benchmark - Empty Map',
+    name: 'Performance Benchmark - Empty Map',
     dimensions: { x: 8, y: 3, z: 8 },
     voxels: toVoxelArray(voxels),
     hazards: [],
@@ -151,7 +151,7 @@ const buildTypicalBenchmarkMap = () => {
 
   return baseMap({
     slug: 'benchmark-typical-map',
-    name: 'Track 1 Benchmark - Typical Map',
+    name: 'Performance Benchmark - Typical Map',
     dimensions: { x: 18, y: 5, z: 14 },
     voxels: toVoxelArray(voxels),
     hazards,
@@ -230,7 +230,7 @@ const buildStressBenchmarkMap = () => {
 
   return baseMap({
     slug: 'benchmark-stress-map',
-    name: 'Track 1 Benchmark - Stress Map',
+    name: 'Performance Benchmark - Stress Map',
     dimensions: { x: 32, y: 8, z: 28 },
     voxels: toVoxelArray(voxels),
     hazards: buildStressHazards(),
@@ -319,10 +319,10 @@ export const parseBenchmarkFixtureArgs = (argv) => {
   return options
 }
 
-const HELP = `Usage: node scripts/generate_benchmark_maps.mjs [options]\n\nGenerates deterministic Track 1 benchmark maps under the ignored local maps folder.\n\nOptions:\n  --dry-run          Print fixture summaries without writing files.\n  --overwrite        Replace existing generated fixture files.\n  --output <dir>     Output directory relative to the repo root.\n  -h, --help         Show this help.\n`
+const HELP = `Usage: node scripts/generate_benchmark_maps.mjs [options]\n\nGenerates deterministic performance benchmark maps under the ignored local maps folder.\n\nOptions:\n  --dry-run          Print fixture summaries without writing files.\n  --overwrite        Replace existing generated fixture files.\n  --output <dir>     Output directory relative to the repo root.\n  -h, --help         Show this help.\n`
 
 const printSummary = (summaries) => {
-  console.log('Track 1 benchmark map fixtures:')
+  console.log('Performance benchmark map fixtures:')
   for (const summary of summaries) {
     console.log(`- ${summary.file}: ${summary.dimensions}, ${summary.voxels} voxels, ${summary.placements} tokens, ${summary.hazards} hazards, ${summary.fieldEffects} field effects`)
   }
