@@ -25,6 +25,7 @@ This directory collects presentation and reviewer documentation for Rotom Table.
 - [Live session named Cloudflare Tunnel runbook](live-session-cloudflare-tunnel-hosting.md) — stable-hostname remote setup, session socket considerations, safety warnings, and rollback steps.
 - [Live session named tunnel documentation review](live-session-named-tunnel-documentation-review.md) — named-tunnel doc accuracy, current Cloudflare assumptions, and safety warnings.
 - [Live session deployment smoke checklist](live-session-deployment-smoke-checklist.md) — LAN and named-tunnel smoke steps for two players, reconnect, token movement, initiative, conflict rejection, and cleanup evidence.
+- [Live session real-flow smoke script](live-session-real-flow-smoke.md) — automated start, attach, join, assign, session socket, token move, reconnect snapshot, and cleanup helper for a running dev server.
 - [Live session LAN manual smoke results](live-session-lan-manual-smoke-results.md) — recorded LAN browser-client smoke results for guarded startup, two-player join, session socket presence, reconnect, and cleanup.
 - [Live session integrated command audit](live-session-command-audit.md) — automated multi-client command audit covering accepted commands, reconnect, permissions, and stale conflicts.
 - [Live session concurrency benchmark notes](live-session-concurrency-benchmark-notes.md) — multi-client concurrency behaviour, latency-sensitive path, and performance limitation notes.

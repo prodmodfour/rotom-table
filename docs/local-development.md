@@ -48,6 +48,14 @@ See [live session host runtime scripts](live-session-host-runtime.md) for helper
 npm run smoke:session:multi-tab -- --map <map-slug>
 ```
 
+For an automated same-machine pass through start, attach, join, assign, session socket token movement, reconnect snapshot fallback, and cleanup, use:
+
+```bash
+npm run smoke:session:real-flow
+```
+
+See [Live session real-flow smoke script](live-session-real-flow-smoke.md) for options such as `--map <map-slug> --token <token-id>`, dry-run output, secret redaction, and cleanup behaviour.
+
 The existing local GM/player picker remains a trust switch for local use, not public authentication. For the live-session review of plain `npm run dev`, `/maps/<slug>`, sheet autosave, and legacy SSE local-mode behaviour, see the [Live session local-mode no-regression audit](live-session-local-mode-no-regression-audit.md).
 
 ## Checks

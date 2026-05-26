@@ -51,6 +51,7 @@ npm run build
 - [docs/live-session-cloudflare-tunnel-hosting.md](docs/live-session-cloudflare-tunnel-hosting.md) — named Cloudflare Tunnel runbook with stable hostname setup, session socket considerations, safety warnings, and rollback steps.
 - [docs/live-session-named-tunnel-documentation-review.md](docs/live-session-named-tunnel-documentation-review.md) — named-tunnel doc accuracy, current Cloudflare assumptions, and safety warnings.
 - [docs/live-session-deployment-smoke-checklist.md](docs/live-session-deployment-smoke-checklist.md) — LAN and named-tunnel deployment smoke checklist for two players, reconnect, token movement, initiative, and conflict rejection.
+- [docs/live-session-real-flow-smoke.md](docs/live-session-real-flow-smoke.md) — automated start, attach, join, assign, session socket, token move, reconnect snapshot, and cleanup smoke helper.
 - [docs/live-session-lan-manual-smoke-results.md](docs/live-session-lan-manual-smoke-results.md) — recorded LAN browser-client smoke results for guarded startup, two-player join, session socket presence, reconnect, and cleanup.
 - [docs/live-session-command-audit.md](docs/live-session-command-audit.md) — integrated multi-client command audit covering accepted commands, reconnect, permissions, and stale conflicts.
 - [docs/live-session-concurrency-benchmark-notes.md](docs/live-session-concurrency-benchmark-notes.md) — multi-client concurrency behaviour, latency-sensitive path, and performance limitation notes.
@@ -185,6 +186,7 @@ Saved sheets and maps are edited by the app itself. Live session snapshots and o
 | `npm test` | Run the Vitest test suite once. |
 | `npm run test:watch` | Run Vitest in watch mode. |
 | `npm run smoke:session:multi-tab` | Open/print local live session GM/player smoke URLs and run focused token/client smoke checks. |
+| `npm run smoke:session:real-flow` | Exercise start, attach, join, assign, session socket token move, reconnect snapshot, and smoke cleanup against a running session host. |
 | `npm run check:move-automation` | Check move automation coverage. |
 | `npm run sync:item-sprites` | Sync item sprite assets. |
 | `npm run refactor:loop` | Run the refactor loop helper script. |
