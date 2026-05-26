@@ -14,6 +14,11 @@ type Rule = {
   pattern: RegExp
 }
 
+type Example = {
+  label: string
+  value: string
+}
+
 const contentRules: Rule[] = [
   {
     label: 'old session phase name',
@@ -37,22 +42,108 @@ const contentRules: Rule[] = [
   },
   {
     label: 'numbered process note',
-    pattern: new RegExp(`${join('tick', 'et')}s?\\s+0\\d\\d`, 'i'),
+    pattern: new RegExp(`${join('tick', 'et')}s?[\\s_-]+0\\d\\d`, 'i'),
   },
 ]
 
 const filenameRules: Rule[] = [
   {
     label: 'old session phase filename',
-    pattern: new RegExp(`(^|/)${join('tr', 'ack')}[-_]?2`, 'i'),
+    pattern: new RegExp(`${join('tr', 'ack')}[-_]?2`, 'i'),
   },
   {
     label: 'old completion filename',
     pattern: new RegExp(join('autonomous', '.*completion|completion', '-marker'), 'i'),
   },
   {
+    label: 'old external-process filename',
+    pattern: new RegExp(`${join('outer')}[-_]?${join('controller')}`, 'i'),
+  },
+  {
     label: 'old review-process filename',
-    pattern: new RegExp(join('chunk', '-pr'), 'i'),
+    pattern: new RegExp(`${join('chunk')}[-_]?${join('pr')}`, 'i'),
+  },
+  {
+    label: 'old controller filename',
+    pattern: new RegExp(`${join('build')}[-_]?${join('controller')}`, 'i'),
+  },
+]
+
+const contentExamples: Example[] = [
+  {
+    label: 'spaced phase name',
+    value: `${join('Tr', 'ack')} 2`,
+  },
+  {
+    label: 'compact phase name',
+    value: `${join('tr', 'ack')}2`,
+  },
+  {
+    label: 'hyphenated phase name',
+    value: `${join('track')}-2`,
+  },
+  {
+    label: 'underscored phase name',
+    value: `${join('track')}_2`,
+  },
+  {
+    label: 'completion phrase',
+    value: join('autonomous', ' completion'),
+  },
+  {
+    label: 'external-process phrase',
+    value: join('outer', ' controller'),
+  },
+  {
+    label: 'review-process phrase',
+    value: join('chunk', ' PR'),
+  },
+  {
+    label: 'controller phrase',
+    value: join('build', ' controller'),
+  },
+  {
+    label: 'singular numbered note',
+    value: join('ticket', ' 004'),
+  },
+  {
+    label: 'plural numbered note',
+    value: join('tickets', ' 004'),
+  },
+]
+
+const filenameExamples: Example[] = [
+  {
+    label: 'compact phase path',
+    value: `docs/${join('track', '2')}-notes.md`,
+  },
+  {
+    label: 'hyphenated phase path',
+    value: `docs/${join('track', '-2')}-notes.md`,
+  },
+  {
+    label: 'underscored phase path',
+    value: `tests/docs/${join('track', '_2')}Notes.test.ts`,
+  },
+  {
+    label: 'completion process path',
+    value: `docs/${join('autonomous', '-completion')}.md`,
+  },
+  {
+    label: 'marker path',
+    value: `docs/${join('completion', '-marker')}.md`,
+  },
+  {
+    label: 'external-process path',
+    value: `docs/${join('outer', '-controller')}.md`,
+  },
+  {
+    label: 'review-process path',
+    value: `docs/${join('chunk', '-pr')}.md`,
+  },
+  {
+    label: 'controller path',
+    value: `docs/${join('build', '-controller')}.md`,
   },
 ]
 
@@ -72,7 +163,37 @@ const toText = (relativePath: string): string | undefined => {
   return bytes.toString('utf8')
 }
 
+const matchesAny = (rules: Rule[], value: string): boolean => rules.some((rule) => rule.pattern.test(value))
+
 describe('product terminology guard', () => {
+  it('recognizes the forbidden content terms used by the repository leakage scan', () => {
+    for (const example of contentExamples) {
+      expect(matchesAny(contentRules, example.value), example.label).toBe(true)
+    }
+  })
+
+  it('recognizes forbidden tracked filename terms before file content is read', () => {
+    for (const example of filenameExamples) {
+      expect(matchesAny(filenameRules, example.value), example.label).toBe(true)
+    }
+  })
+
+  it('scans tracked app, docs, test, and script files', () => {
+    const files = trackedFiles()
+
+    for (const expectedPath of [
+      'README.md',
+      'docs/live-session-readiness-summary.md',
+      'scripts/session-host-dev.mjs',
+      'server/api/sessions/start.post.ts',
+      'shared/sessionCommands.ts',
+      'src/pages/sessions.vue',
+      'tests/docs/productTerminologyGuard.test.ts',
+    ]) {
+      expect(files, `${expectedPath} should be scanned`).toContain(expectedPath)
+    }
+  })
+
   it('keeps old process language out of tracked target filenames and content', () => {
     const filenameMatches: string[] = []
     const contentMatches: string[] = []
