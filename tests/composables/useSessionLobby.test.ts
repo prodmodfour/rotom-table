@@ -3,6 +3,7 @@ import {
   SESSION_CLIENT_IDENTITY_SCHEMA_VERSION,
   type SessionClientIdentity,
 } from '#shared/sessionClientIdentity'
+import { createSessionSafetyStatus } from '#shared/sessionSafety'
 import {
   parseClientId,
   parseGmKey,
@@ -177,8 +178,11 @@ const makeStorage = (initial: SessionClientIdentity | null = null) => {
 const makeApiClient = (handlers: Record<string, (body: unknown) => unknown | Promise<unknown>>) => {
   const calls: { request: string; body: unknown }[] = []
   const apiClient: ApiClient = {
-    getJson: vi.fn(async () => {
-      throw new Error('unexpected GET request')
+    getJson: vi.fn(async (request: string) => {
+      calls.push({ request, body: undefined })
+      const handler = handlers[request]
+      if (handler === undefined) throw new Error(`unexpected GET request: ${request}`)
+      return await handler(undefined)
     }) as ApiClient['getJson'],
     postJson: vi.fn(async (request: string, body: unknown) => {
       calls.push({ request, body })
@@ -192,6 +196,28 @@ const makeApiClient = (handlers: Record<string, (body: unknown) => unknown | Pro
 }
 
 describe('useSessionLobby', () => {
+  it('loads the no-secret session safety status without changing lobby request messages', async () => {
+    const safetyStatus = createSessionSafetyStatus({
+      hostEnabled: true,
+      requestHost: '192.168.1.50:3000',
+    })
+    const api = makeApiClient({
+      [SESSION_API_PATHS.safety]: () => safetyStatus,
+    })
+    const lobby = useSessionLobby({
+      apiClient: api.apiClient,
+      identityStorage: makeStorage().storage,
+    })
+
+    await lobby.loadSafetyStatus()
+
+    expect(api.calls).toEqual([{ request: SESSION_API_PATHS.safety, body: undefined }])
+    expect(lobby.safetyStatus.value).toEqual(safetyStatus)
+    expect(lobby.safetyError.value).toBeNull()
+    expect(lobby.lastError.value).toBeNull()
+    expect(lobby.lastNotice.value).toBeNull()
+  })
+
   it('starts a GM session, remembers the GM identity, and fetches management state', async () => {
     const storage = makeStorage()
     const api = makeApiClient({

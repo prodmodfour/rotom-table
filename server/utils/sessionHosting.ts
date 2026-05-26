@@ -1,9 +1,17 @@
+import {
+  SESSION_HOST_ENABLE_ENV,
+  SESSION_HOST_ENABLE_VALUE,
+  isSessionHostFlagEnabled,
+  type SessionSafetyRuntimeEnv,
+} from '#shared/sessionSafety'
 import { UseCaseHttpError } from './useCaseErrors'
 
-export const SESSION_HOST_ENABLE_ENV = 'ROTOM_ENABLE_SESSION_HOST' as const
-export const SESSION_HOST_ENABLE_VALUE = '1' as const
+export {
+  SESSION_HOST_ENABLE_ENV,
+  SESSION_HOST_ENABLE_VALUE,
+} from '#shared/sessionSafety'
 
-export type SessionHostRuntimeEnv = Record<string, string | undefined>
+export type SessionHostRuntimeEnv = SessionSafetyRuntimeEnv
 
 export class SessionHostDisabledError extends UseCaseHttpError<403> {
   constructor() {
@@ -16,7 +24,7 @@ export class SessionHostDisabledError extends UseCaseHttpError<403> {
 
 export const isSessionHostEnabled = (
   env: SessionHostRuntimeEnv = process.env,
-): boolean => env[SESSION_HOST_ENABLE_ENV] === SESSION_HOST_ENABLE_VALUE
+): boolean => isSessionHostFlagEnabled(env)
 
 export const assertSessionHostEnabled = (
   env: SessionHostRuntimeEnv = process.env,

@@ -18,6 +18,8 @@ const {
   identity,
   gmManagement,
   playerState,
+  safetyStatus,
+  safetyError,
   busy,
   lastError,
   lastNotice,
@@ -25,6 +27,7 @@ const {
   gmSession,
   playerSession,
   playerIdentity,
+  loadSafetyStatus,
   startGmSession,
   joinPlayerSession,
   refreshSessionSummary,
@@ -38,6 +41,22 @@ const canJoin = computed(() =>
   joinCode.value.trim().length > 0 && displayName.value.trim().length > 0 && !busy.value,
 )
 const currentSessionId = computed(() => gmSession.value?.sessionId ?? playerSession.value?.sessionId ?? null)
+const safetyBannerSeverity = computed(() => safetyStatus.value?.severity ?? 'unknown')
+const safetyTitle = computed(() => safetyStatus.value?.title ?? 'Checking session hosting safety')
+const safetySummary = computed(() => safetyStatus.value?.summary
+  ?? 'Rotom Table is checking whether Track 2 session hosting is disabled, local-only, LAN reachable, or remotely exposed.')
+const safetyFlagLabel = computed(() => {
+  if (!safetyStatus.value) return 'Checking'
+  return safetyStatus.value.hostEnabled ? 'Enabled' : 'Disabled'
+})
+const safetyExposureLabel = computed(() => safetyStatus.value?.exposure ?? 'checking')
+const safetyHostLabel = computed(() => safetyStatus.value?.effectiveHost ?? '—')
+const safetyWarnings = computed(() => safetyStatus.value?.warnings ?? [
+  'Until the safety check responds, treat this page as local prep and do not share join codes.',
+])
+const safetyActions = computed(() => safetyStatus.value?.recommendedActions ?? [
+  'Refresh the page if the safety banner does not finish loading.',
+])
 
 const safeRefresh = async () => {
   try {
@@ -80,6 +99,7 @@ const assignmentSummary = (assignment: PlayerAssignmentRecord): string =>
   `${assignment.controllableResources.length} controllable · ${assignment.visibleResources.length} visible`
 
 onMounted(() => {
+  void loadSafetyStatus().catch(() => undefined)
   void loadRememberedIdentity({ refresh: true }).catch(() => undefined)
 })
 </script>
@@ -87,6 +107,49 @@ onMounted(() => {
 <template>
   <main class="session-lobby-page">
     <AppNavigation />
+
+    <section
+      class="safety-banner panel-card"
+      :class="`safety-banner--${safetyBannerSeverity}`"
+      aria-labelledby="session-safety-title"
+    >
+      <div class="safety-banner__main">
+        <p class="eyebrow">Session safety</p>
+        <h2 id="session-safety-title">{{ safetyTitle }}</h2>
+        <p>{{ safetySummary }}</p>
+        <p v-if="safetyError" class="safety-banner__error" role="status">
+          Could not refresh hosting safety status: {{ safetyError }}
+        </p>
+      </div>
+      <dl class="safety-facts" aria-label="Session hosting safety state">
+        <div>
+          <dt>Host flag</dt>
+          <dd>{{ safetyFlagLabel }}</dd>
+        </div>
+        <div>
+          <dt>Exposure</dt>
+          <dd>{{ safetyExposureLabel }}</dd>
+        </div>
+        <div>
+          <dt>Effective host</dt>
+          <dd>{{ safetyHostLabel }}</dd>
+        </div>
+      </dl>
+      <div class="safety-banner__lists">
+        <section aria-labelledby="session-safety-warnings-title">
+          <h3 id="session-safety-warnings-title">Warnings</h3>
+          <ul>
+            <li v-for="warning in safetyWarnings" :key="warning">{{ warning }}</li>
+          </ul>
+        </section>
+        <section aria-labelledby="session-safety-actions-title">
+          <h3 id="session-safety-actions-title">Before sharing</h3>
+          <ul>
+            <li v-for="action in safetyActions" :key="action">{{ action }}</li>
+          </ul>
+        </section>
+      </div>
+    </section>
 
     <section class="session-hero panel-card" aria-labelledby="session-lobby-title">
       <p class="eyebrow">Track 2 preview</p>
@@ -328,9 +391,101 @@ onMounted(() => {
   margin-top: 1rem;
 }
 
-.session-hero {
+.session-hero,
+.safety-banner {
   display: grid;
   gap: 0.75rem;
+}
+
+.safety-banner {
+  border-color: rgba(232, 151, 55, 0.55);
+  background:
+    linear-gradient(135deg, rgba(232, 151, 55, 0.12), transparent 22rem),
+    var(--paper-soft);
+}
+
+.safety-banner--safe {
+  border-color: rgba(70, 180, 122, 0.45);
+  background:
+    linear-gradient(135deg, rgba(70, 180, 122, 0.11), transparent 22rem),
+    var(--paper-soft);
+}
+
+.safety-banner--danger {
+  border-color: rgba(255, 31, 45, 0.62);
+  background:
+    linear-gradient(135deg, rgba(255, 31, 45, 0.14), transparent 22rem),
+    var(--paper-soft);
+}
+
+.safety-banner--unknown {
+  border-style: dashed;
+}
+
+.safety-banner__main {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.safety-banner__main p,
+.safety-banner__lists li {
+  color: var(--ink-soft);
+  line-height: 1.5;
+}
+
+.safety-banner__main p {
+  margin: 0;
+}
+
+.safety-banner__error {
+  color: var(--accent) !important;
+  font-weight: 700;
+}
+
+.safety-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.65rem;
+  margin: 0;
+}
+
+.safety-facts div {
+  min-width: 0;
+  padding: 0.65rem;
+  border: 1px solid var(--rule-soft);
+  background: var(--paper-inset);
+}
+
+.safety-facts dt {
+  color: var(--ink-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.safety-facts dd {
+  margin: 0.25rem 0 0;
+  overflow-wrap: anywhere;
+  color: var(--ink-bright);
+  font-weight: 800;
+}
+
+.safety-banner__lists {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+  gap: 0.75rem;
+}
+
+.safety-banner__lists h3 {
+  margin-bottom: 0.35rem;
+}
+
+.safety-banner__lists ul {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0;
+  padding-left: 1.15rem;
 }
 
 .eyebrow {

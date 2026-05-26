@@ -12,6 +12,7 @@ import type {
   SessionDisplayName,
   SessionId,
 } from '#shared/sessionIdentity'
+import type { SessionSafetyStatus } from '#shared/sessionSafety'
 import type {
   PlayerAssignmentRecord,
   PlayerSessionActor,
@@ -159,6 +160,8 @@ export const useSessionLobby = (options: UseSessionLobbyOptions = {}) => {
   const gmManagement = ref<GmSessionManagementResponse | null>(null)
   const joinedPlayerSession = ref<JoinPlayerSessionResponse | null>(null)
   const playerState = ref<PlayerSessionStateResponse | null>(null)
+  const safetyStatus = ref<SessionSafetyStatus | null>(null)
+  const safetyError = ref<string | null>(null)
   const busy = ref(false)
   const lastError = ref<string | null>(null)
   const lastNotice = ref<string | null>(null)
@@ -221,6 +224,19 @@ export const useSessionLobby = (options: UseSessionLobbyOptions = {}) => {
     startedGmSession.value = null
     rememberIdentityRevision(playerIdentityValue, response.session.revision)
     return response
+  }
+
+  const loadSafetyStatus = async (): Promise<SessionSafetyStatus> => {
+    try {
+      const response = await apiClient.getJson<SessionSafetyStatus>(SESSION_API_PATHS.safety)
+      safetyStatus.value = response
+      safetyError.value = null
+      return response
+    } catch (error) {
+      safetyStatus.value = null
+      safetyError.value = sessionLobbyErrorMessage(error)
+      throw error
+    }
   }
 
   const startGmSession = async (): Promise<StartGmSessionResponse> => {
@@ -347,6 +363,8 @@ export const useSessionLobby = (options: UseSessionLobbyOptions = {}) => {
     gmManagement,
     joinedPlayerSession,
     playerState,
+    safetyStatus,
+    safetyError,
     busy,
     lastError,
     lastNotice,
@@ -356,6 +374,7 @@ export const useSessionLobby = (options: UseSessionLobbyOptions = {}) => {
     gmSession,
     playerSession,
     playerIdentity,
+    loadSafetyStatus,
     startGmSession,
     joinPlayerSession,
     refreshSessionSummary,

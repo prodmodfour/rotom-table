@@ -30,6 +30,7 @@ The protocol must preserve these locked decisions:
 | `shared/sessionCommandResults.ts` | accepted, rejected, duplicate, stale, unauthorized, invalid, conflict result shapes | Results are the server's authoritative answer to a submitted command. |
 | `shared/sessionMessages.ts` | WebSocket message unions | Defines client `hello`, `heartbeat`, `command` messages and server `hello`, `heartbeat`, `commandAck`, `commandReject`, `snapshot`, `patch`, `presence`, and `error` messages. |
 | `shared/sessionState.ts` | authoritative session state model | Defines the server-owned session snapshot shape: selected map slug, session/map revisions, map documents, connected clients, joined players, and GM-managed assignments. |
+| `shared/sessionSafety.ts` | no-secret session-hosting safety banner status | Classifies the current request as disabled, local, LAN, remote, or unknown so the lobby can warn before join codes are shared. |
 
 ## Wire format rules
 
@@ -54,6 +55,49 @@ The shared permission helpers distinguish:
 - controllable resources, which a player may command only when assigned and visible.
 
 Permission denials use safe reasons such as `gm-required`, `player-required`, `resource-not-visible`, `resource-not-assigned`, and `missing-player-identity`. These reasons are suitable for player-facing conflict/rejection UI without exposing secrets.
+
+## Session safety status endpoint and banner
+
+`GET /api/sessions/safety` returns a no-secret summary for the current request so the `/sessions` lobby can display a safety banner before a GM starts or shares a hosted session. This endpoint is intentionally readable even when session hosting is disabled; its purpose is to make the fail-closed state visible rather than to grant session authority.
+
+The response includes:
+
+- whether the exact `ROTOM_ENABLE_SESSION_HOST=1` flag is active;
+- the normalized request host and forwarded host, when present;
+- a coarse exposure classification: `disabled`, `local`, `lan`, `remote`, or `unknown`;
+- a severity for the banner and player-safe warnings/actions.
+
+It never returns GM keys, join codes, player IDs, snapshots, map documents, or other campaign data. The banner repeats the Track 2 safety boundary: the existing local GM/player role picker is a trust switch for the local app, not public authentication. When hosting is enabled on a LAN or public/tunnel hostname, the GM should verify that the server exposure is intentional, use a named Cloudflare Tunnel for remote campaign play, treat Quick Tunnel as development smoke-test only, and stop the server or unset the flag after the session.
+
+Example remote-exposure response:
+
+```json
+{
+  "schemaVersion": 1,
+  "hostEnabled": true,
+  "requiredFlag": {
+    "name": "ROTOM_ENABLE_SESSION_HOST",
+    "value": "1"
+  },
+  "exposure": "remote",
+  "severity": "danger",
+  "requestHost": "localhost",
+  "forwardedHost": "campaign.example.net",
+  "effectiveHost": "campaign.example.net",
+  "forwarded": true,
+  "title": "Session hosting exposed remotely",
+  "summary": "This browser reached Rotom Table through campaign.example.net, which looks publicly exposed or proxied.",
+  "warnings": [
+    "Track 2 session hosting is enabled and this request appears to use a public hostname, proxy, or tunnel.",
+    "Use a named Cloudflare Tunnel with a stable hostname for campaign play; Quick Tunnel is development smoke-test only.",
+    "Do not rely on the local GM/player role picker as public auth; keep the GM session key and browser private."
+  ],
+  "recommendedActions": [
+    "Confirm the hostname is a named Cloudflare Tunnel or another deliberate private-server exposure path before sharing it.",
+    "Rotate the join code by starting a new session if it was shared outside the trusted table."
+  ]
+}
+```
 
 ## GM start-session endpoint
 

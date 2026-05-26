@@ -15,6 +15,7 @@ describe('API route constants', () => {
 
   it('exposes session API paths', () => {
     expect(SESSION_API_PATHS).toEqual({
+      safety: '/api/sessions/safety',
       start: '/api/sessions/start',
       join: '/api/sessions/join',
       manage: '/api/sessions/manage',
