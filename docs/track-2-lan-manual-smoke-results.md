@@ -20,7 +20,7 @@ Notes:
 
 - The autonomous harness used separate browser contexts on the same host through the private LAN interface because no physical second device is available inside the build controller.
 - Real table operators should still run the deployment checklist from actual player devices before relying on a campaign session.
-- Accepted table command propagation is covered by the integrated command audit in [Track 2 integrated command audit](track-2-command-audit.md) and remains part of the full deployment checklist.
+- Accepted table command propagation is covered by the integrated command audit in [Track 2 integrated command audit](track-2-command-audit.md), with final latency-sensitive behaviour and limitations summarized in [Track 2 concurrency benchmark notes](track-2-concurrency-benchmark-notes.md), and remains part of the full deployment checklist.
 
 ## Steps observed
 

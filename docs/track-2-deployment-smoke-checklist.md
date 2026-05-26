@@ -13,6 +13,7 @@ Related runbooks:
 - [Track 2 multi-tab local smoke script](track-2-multi-tab-smoke.md) for local tab helpers and focused automated token/client checks.
 - [Track 2 security review](track-2-security-review.md) for trust boundaries, join-code limits, tunnel exposure risks, and incident response.
 - [Track 2 dependency and runtime review](track-2-dependency-runtime-review.md) for dependency inventory, runtime flags, Node/Nitro compatibility, and Cloudflare assumptions.
+- [Track 2 concurrency benchmark notes](track-2-concurrency-benchmark-notes.md) for final latency-sensitive behaviour observations, operator timing buckets, and known performance limits.
 
 ## Smoke scope
 
