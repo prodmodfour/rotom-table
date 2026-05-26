@@ -42,6 +42,17 @@ describe('Live session LAN hosting runbook', () => {
     expect(runbook).toContain('use `/maps/<slug>?session=1` when the live table should use server-authoritative session commands')
   })
 
+  it('requires real player device rehearsal and recovery checks before play', () => {
+    expect(runbook).toContain('Real-device rehearsal before play')
+    expect(runbook).toContain('actual phones, tablets, or laptops players expect to use at the table')
+    expect(runbook).toContain('do not rely only on tabs on the GM machine')
+    expect(runbook).toContain('fix that device/network issue before play')
+    expect(runbook).toContain('No-map-attached recovery')
+    expect(runbook).toContain('No-token-assigned recovery')
+    expect(runbook).toContain('presses **Attach current map to live session** with player visibility')
+    expect(runbook).toContain('GM uses **Assign map tokens** and **Assign control**')
+  })
+
   it('keeps safety, troubleshooting, and cleanup boundaries visible', () => {
     expect(runbook).toContain('not hardened public authentication')
     expect(runbook).toContain('Quick Tunnel is not the supported campaign-session path')

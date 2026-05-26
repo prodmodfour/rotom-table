@@ -14,6 +14,7 @@ Preflight checklist:
 
 - [ ] The GM machine is on a private network the GM controls or trusts.
 - [ ] Players are on the same Wi-Fi/LAN, not a guest network with client isolation enabled.
+- [ ] At least one actual player device can be available for a rehearsal before play; do not rely only on tabs on the GM machine.
 - [ ] Dependencies are installed with `npm install`.
 - [ ] The working tree is clean enough that generated session files or private campaign data will be easy to spot before committing.
 - [ ] The GM has chosen the existing local **GM Login** role before starting a session.
@@ -96,6 +97,28 @@ Example player-facing base URL:
 ```text
 http://192.168.1.42:3000
 ```
+
+## Real-device rehearsal before play
+
+Run a short rehearsal from the actual phones, tablets, or laptops players expect to use at the table. Local tabs on the GM machine and the automated smoke helpers are useful, but they do not prove Wi-Fi isolation, firewall prompts, browser profile storage, or device-specific WebSocket behaviour.
+
+Use the same private base URL the players will use during the game, for example `http://<GM-LAN-IP>:3000`:
+
+1. GM starts the host with `npm run dev:session:lan` and opens `/sessions#gm-lobby-title` through the LAN URL.
+2. Each player device opens `/sessions#player-lobby-title` through the LAN URL, joins with a safe display name, and confirms the remembered player summary loads without using the GM browser profile.
+3. GM opens the saved map on `/maps/<map-slug>`, presses **Attach current map to live session**, and refreshes the lobby.
+4. Each player device refreshes the remembered session and confirms the map appears under **Visible session maps**.
+5. GM uses **Assign map tokens** and **Assign control** for the token each player should test.
+6. GM and players open `/maps/<map-slug>?session=1` and verify the session socket connects, reconnects after a page reload, and shows the same current map state.
+7. An assigned player moves or turns only their assigned token; an unassigned player should see the no-token-assigned guidance or an unauthorized rejection instead of moving the authoritative token.
+8. End the rehearsal by closing session-map tabs and using **Forget in this browser** on player devices that should not keep the remembered session identity.
+
+If any actual player device cannot load `/sessions`, connect the session socket, see **Visible session maps**, or send an assigned session command, fix that device/network issue before play instead of falling back to `localhost` or plain local-first map editing.
+
+### Rehearsal recovery drills
+
+- **No-map-attached recovery** — before the GM attaches a map, player devices can join but should not see a usable session map link. The GM opens the saved map on the plain route, presses **Attach current map to live session** with player visibility, then players refresh the remembered session until the map appears under **Visible session maps**.
+- **No-token-assigned recovery** — after the map is visible, leave one player unassigned briefly and confirm token controls are disabled or unauthorized. The GM uses **Assign map tokens** and **Assign control** for the relevant current map token or sheet; the player refreshes/reconnects the session map and retries only after the assignment appears.
 
 ## GM setup flow
 
