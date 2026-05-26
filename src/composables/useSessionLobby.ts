@@ -59,9 +59,21 @@ export interface StartGmSessionResponse {
   }
 }
 
+export interface SessionLobbyMapSummary {
+  readonly mapSlug: SessionMapSlug
+  readonly revision: MapRevision
+  readonly selected: boolean
+  readonly attached: true
+  readonly availableForSessionMode: true
+  readonly playerVisibleByDefault?: boolean
+}
+
 export interface GmSessionManagementResponse {
   readonly session: SessionLobbySessionSummary & {
     readonly selectedMapSlug: SelectedSessionMapSlug
+    readonly selectedMapRevision: MapRevision | null
+    readonly selectedMapAttached: boolean
+    readonly sessionMapAvailable: boolean
     readonly playerCount: number
     readonly connectedClientCount: number
     readonly assignmentCount: number
@@ -70,6 +82,8 @@ export interface GmSessionManagementResponse {
   readonly join: {
     readonly joinCode: JoinCode
   }
+  readonly selectedMap: SessionLobbyMapSummary | null
+  readonly maps: readonly SessionLobbyMapSummary[]
   readonly players: readonly SessionPlayerRecord[]
   readonly connectedClients: readonly SessionConnectedClientRecord[]
   readonly assignments: readonly PlayerAssignmentRecord[]
@@ -102,16 +116,12 @@ export interface PlayerSessionStateResponse {
   }
   readonly assignment: PlayerAssignmentRecord
   readonly visibility: {
+    readonly selectedMapAttached: boolean
     readonly currentMapVisible: boolean
-    readonly currentMap: {
-      readonly mapSlug: SessionMapSlug
-      readonly revision: MapRevision
-    } | null
+    readonly currentMapAvailable: boolean
+    readonly currentMap: SessionLobbyMapSummary | null
     readonly visibleMapSlugs: readonly SessionMapSlug[]
-    readonly visibleMaps: readonly {
-      readonly mapSlug: SessionMapSlug
-      readonly revision: MapRevision
-    }[]
+    readonly visibleMaps: readonly SessionLobbyMapSummary[]
   }
 }
 

@@ -271,12 +271,32 @@ describe('getPlayerSessionStateUseCase', () => {
     })
     expect(result.assignment).toEqual(state.assignments[0])
     expect(result.visibility).toEqual({
+      selectedMapAttached: true,
       currentMapVisible: true,
-      currentMap: { mapSlug: 'viridian-gym', revision: visibleMapRevision },
+      currentMapAvailable: true,
+      currentMap: {
+        mapSlug: 'viridian-gym',
+        revision: visibleMapRevision,
+        selected: true,
+        attached: true,
+        availableForSessionMode: true,
+      },
       visibleMapSlugs: ['arena-side-room', 'viridian-gym'],
       visibleMaps: [
-        { mapSlug: 'arena-side-room', revision: sideMapRevision },
-        { mapSlug: 'viridian-gym', revision: visibleMapRevision },
+        {
+          mapSlug: 'arena-side-room',
+          revision: sideMapRevision,
+          selected: false,
+          attached: true,
+          availableForSessionMode: true,
+        },
+        {
+          mapSlug: 'viridian-gym',
+          revision: visibleMapRevision,
+          selected: true,
+          attached: true,
+          availableForSessionMode: true,
+        },
       ],
     })
     expect(result).not.toHaveProperty('join')
@@ -284,6 +304,24 @@ describe('getPlayerSessionStateUseCase', () => {
     expect(result.session).not.toHaveProperty('selectedMapSlug')
     expect(result).not.toHaveProperty('players')
     expect(result).not.toHaveProperty('connectedClients')
+  })
+
+  it('reports no available session map before a map is attached', () => {
+    const state = createPlayerState({
+      selectedMapSlug: null,
+      maps: [],
+      assignments: [],
+    })
+    const result = getPlayerState({ store: createStoreWithSession({ state }) })
+
+    expect(result.visibility).toEqual({
+      selectedMapAttached: false,
+      currentMapVisible: false,
+      currentMapAvailable: false,
+      currentMap: null,
+      visibleMapSlugs: [],
+      visibleMaps: [],
+    })
   })
 
   it('returns cloned assignment resources so callers cannot mutate stored state through the response', () => {
@@ -302,7 +340,9 @@ describe('getPlayerSessionStateUseCase', () => {
     const result = getPlayerState({ store: createStoreWithSession({ state }) })
 
     expect(result.session).not.toHaveProperty('selectedMapSlug')
+    expect(result.visibility.selectedMapAttached).toBe(true)
     expect(result.visibility.currentMapVisible).toBe(false)
+    expect(result.visibility.currentMapAvailable).toBe(false)
     expect(result.visibility.currentMap).toBeNull()
     expect(result.visibility.visibleMapSlugs).toEqual(['arena-side-room', 'viridian-gym'])
     expect(result.visibility.visibleMaps).not.toContainEqual({
@@ -323,7 +363,9 @@ describe('getPlayerSessionStateUseCase', () => {
       updatedAt,
     })
     expect(result.visibility).toEqual({
+      selectedMapAttached: true,
       currentMapVisible: false,
+      currentMapAvailable: false,
       currentMap: null,
       visibleMapSlugs: [],
       visibleMaps: [],

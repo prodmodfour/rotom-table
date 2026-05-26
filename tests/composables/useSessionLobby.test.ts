@@ -63,6 +63,9 @@ const makeManagementResponse = (revision = 0): GmSessionManagementResponse => ({
     status: 'active',
     revision: parseSessionRevision(revision),
     selectedMapSlug: null,
+    selectedMapRevision: null,
+    selectedMapAttached: false,
+    sessionMapAvailable: false,
     createdAt: CREATED_AT,
     updatedAt: CREATED_AT,
     playerCount: 1,
@@ -73,6 +76,8 @@ const makeManagementResponse = (revision = 0): GmSessionManagementResponse => ({
   join: {
     joinCode: JOIN_CODE,
   },
+  selectedMap: null,
+  maps: [],
   players: [{
     playerId: PLAYER_ID,
     displayName: DISPLAY_NAME,
@@ -147,10 +152,24 @@ const makePlayerStateResponse = (revision = 1): PlayerSessionStateResponse => ({
     updatedAt: CREATED_AT,
   },
   visibility: {
+    selectedMapAttached: true,
     currentMapVisible: true,
-    currentMap: { mapSlug: MAP_SLUG, revision: parseMapRevision(2) },
+    currentMapAvailable: true,
+    currentMap: {
+      mapSlug: MAP_SLUG,
+      revision: parseMapRevision(2),
+      selected: true,
+      attached: true,
+      availableForSessionMode: true,
+    },
     visibleMapSlugs: [MAP_SLUG],
-    visibleMaps: [{ mapSlug: MAP_SLUG, revision: parseMapRevision(2) }],
+    visibleMaps: [{
+      mapSlug: MAP_SLUG,
+      revision: parseMapRevision(2),
+      selected: true,
+      attached: true,
+      availableForSessionMode: true,
+    }],
   },
 })
 
