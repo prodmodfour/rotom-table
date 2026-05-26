@@ -11,6 +11,7 @@ Related runbooks:
 - [Track 2 session host runtime scripts](track-2-session-host-runtime.md) for `npm run dev:session:lan` and `npm run dev:session:tunnel` helper details.
 - [Track 2 multi-tab local smoke script](track-2-multi-tab-smoke.md) for local tab helpers and focused automated token/client checks.
 - [Track 2 security review](track-2-security-review.md) for trust boundaries, join-code limits, tunnel exposure risks, and incident response.
+- [Track 2 dependency and runtime review](track-2-dependency-runtime-review.md) for dependency inventory, runtime flags, Node/Nitro compatibility, and Cloudflare assumptions.
 
 ## Smoke scope
 

@@ -121,7 +121,7 @@ Example remote-exposure response:
 }
 ```
 
-See [Track 2 public exposure checks](track-2-public-exposure-checks.md) for the operational checklist attached to these startup issues, and [Track 2 security review](track-2-security-review.md) for the broader trust boundaries, join-code limits, tunnel exposure risks, and non-hardened areas.
+See [Track 2 public exposure checks](track-2-public-exposure-checks.md) for the operational checklist attached to these startup issues, [Track 2 security review](track-2-security-review.md) for the broader trust boundaries, join-code limits, tunnel exposure risks, and non-hardened areas, and [Track 2 dependency and runtime review](track-2-dependency-runtime-review.md) for the reviewed package/runtime boundaries.
 
 ## Session WebSocket route and hello/auth
 
@@ -974,6 +974,7 @@ Later implementation tickets should keep these checks at the protocol boundary:
 - [Track 2 Quick Tunnel caveat](track-2-quick-tunnel-caveat.md)
 - [Track 2 session backup and recovery](track-2-session-backup-recovery.md)
 - [Track 2 security review](track-2-security-review.md)
+- [Track 2 dependency and runtime review](track-2-dependency-runtime-review.md)
 - [ADR 003: WebSocket session transport](adrs/003-websocket-session-transport.md)
 - [ADR 004: Server-authoritative commands](adrs/004-server-authoritative-commands.md)
 - [ADR 005: Session identity and permissions](adrs/005-session-identity-and-permissions.md)

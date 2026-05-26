@@ -106,6 +106,7 @@ See the [Track 2 named Cloudflare Tunnel runbook](track-2-cloudflare-tunnel-host
 - Before committing, run `git status --short` and confirm generated `data/sessions/` snapshots/event logs, join codes, GM keys, screenshots with secrets, and private campaign JSON are not staged.
 - For private session archives and restores after hosting, use the [Track 2 session backup and recovery runbook](track-2-session-backup-recovery.md); do not turn backups into a cloud database or public shared drive.
 - For the full trust-boundary review, join-code limits, tunnel exposure risks, incident response, and non-hardened areas, see the [Track 2 security review](track-2-security-review.md).
+- For dependency inventory, exact runtime flag expectations, Node/Nitro WebSocket compatibility, and Cloudflare tunnel assumptions, see the [Track 2 dependency and runtime review](track-2-dependency-runtime-review.md).
 
 ## Shutdown
 

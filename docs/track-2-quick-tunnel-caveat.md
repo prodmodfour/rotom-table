@@ -139,6 +139,7 @@ Track 2 live sessions use the WebSocket route at `/api/sessions/socket` for comm
 - [Track 2 client integration guide](track-2-client-integration.md)
 - [Track 2 multi-tab local smoke script](track-2-multi-tab-smoke.md)
 - [Track 2 security review](track-2-security-review.md)
+- [Track 2 dependency and runtime review](track-2-dependency-runtime-review.md)
 - [ADR 002: LAN first and named Cloudflare Tunnel second](adrs/002-lan-first-named-cloudflare-tunnel.md)
 - [ADR 003: WebSocket session transport](adrs/003-websocket-session-transport.md)
 - [ADR 008: Session runtime safety flag](adrs/008-session-runtime-safety-flag.md)
