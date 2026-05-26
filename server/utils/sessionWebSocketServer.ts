@@ -43,11 +43,17 @@ import {
   MODIFY_COMBAT_STAGES_COMMAND_TYPE,
   MODIFY_CONDITIONS_COMMAND_TYPE,
   MODIFY_HP_COMMAND_TYPE,
+  USE_ABILITY_COMMAND_TYPE,
+  USE_MANEUVER_COMMAND_TYPE,
   USE_MOVE_COMMAND_TYPE,
+  USE_ORDER_COMMAND_TYPE,
   type ModifyCombatStagesCommand,
   type ModifyConditionsCommand,
   type ModifyHpCommand,
+  type UseAbilityCommand,
+  type UseManeuverCommand,
   type UseMoveCommand,
+  type UseOrderCommand,
 } from '#shared/sessionTableActionCommands'
 import {
   NEXT_INITIATIVE_COMMAND_TYPE,
@@ -116,6 +122,12 @@ import {
   type ApplyUseMoveCommandInput,
   type ApplyUseMoveCommandUseCaseResult,
 } from '../useCases/applyUseMoveCommand'
+import {
+  applyUseTableActionCommandUseCase,
+  type ApplyUseTableActionCommandDependencies,
+  type ApplyUseTableActionCommandInput,
+  type ApplyUseTableActionCommandUseCaseResult,
+} from '../useCases/applyUseTableActionCommand'
 import { findPlayerAssignment, type SessionActor } from '#shared/sessionPermissions'
 import { isSessionRevision, type SessionRevision } from '#shared/sessionRevisions'
 import {
@@ -316,6 +328,11 @@ export type SessionSocketUseMoveCommandApplier = (
   dependencies?: ApplyUseMoveCommandDependencies,
 ) => ApplyUseMoveCommandUseCaseResult
 
+export type SessionSocketUseTableActionCommandApplier = (
+  input: ApplyUseTableActionCommandInput,
+  dependencies?: ApplyUseTableActionCommandDependencies,
+) => ApplyUseTableActionCommandUseCaseResult
+
 export type SessionSocketMoveTokenCommandDependencies = Omit<
   ApplyMoveTokenCommandDependencies,
   'env' | 'store' | 'clock'
@@ -366,6 +383,11 @@ export type SessionSocketUseMoveCommandDependencies = Omit<
   'env' | 'store' | 'clock'
 >
 
+export type SessionSocketUseTableActionCommandDependencies = Omit<
+  ApplyUseTableActionCommandDependencies,
+  'env' | 'store' | 'clock'
+>
+
 export interface SessionSocketHandlerDependencies<TMapDocument = unknown> {
   readonly env?: SessionHostRuntimeEnv
   readonly registry?: InMemorySessionSocketRegistry
@@ -382,6 +404,7 @@ export interface SessionSocketHandlerDependencies<TMapDocument = unknown> {
   readonly applyModifyConditionsCommand?: SessionSocketModifyConditionsCommandApplier
   readonly applyInitiativeCommand?: SessionSocketInitiativeCommandApplier
   readonly applyUseMoveCommand?: SessionSocketUseMoveCommandApplier
+  readonly applyUseTableActionCommand?: SessionSocketUseTableActionCommandApplier
   readonly moveTokenCommandDependencies?: SessionSocketMoveTokenCommandDependencies
   readonly turnTokenCommandDependencies?: SessionSocketTurnTokenCommandDependencies
   readonly spawnTokenCommandDependencies?: SessionSocketSpawnTokenCommandDependencies
@@ -392,6 +415,7 @@ export interface SessionSocketHandlerDependencies<TMapDocument = unknown> {
   readonly modifyConditionsCommandDependencies?: SessionSocketModifyConditionsCommandDependencies
   readonly initiativeCommandDependencies?: SessionSocketInitiativeCommandDependencies
   readonly useMoveCommandDependencies?: SessionSocketUseMoveCommandDependencies
+  readonly useTableActionCommandDependencies?: SessionSocketUseTableActionCommandDependencies
 }
 
 type MutablePendingSessionSocketConnection = {
@@ -422,6 +446,7 @@ interface ResolvedSessionSocketHandlerDependencies<TMapDocument = unknown> {
   readonly applyModifyConditionsCommand: SessionSocketModifyConditionsCommandApplier
   readonly applyInitiativeCommand: SessionSocketInitiativeCommandApplier
   readonly applyUseMoveCommand: SessionSocketUseMoveCommandApplier
+  readonly applyUseTableActionCommand: SessionSocketUseTableActionCommandApplier
   readonly moveTokenCommandDependencies: SessionSocketMoveTokenCommandDependencies
   readonly turnTokenCommandDependencies: SessionSocketTurnTokenCommandDependencies
   readonly spawnTokenCommandDependencies: SessionSocketSpawnTokenCommandDependencies
@@ -432,6 +457,7 @@ interface ResolvedSessionSocketHandlerDependencies<TMapDocument = unknown> {
   readonly modifyConditionsCommandDependencies: SessionSocketModifyConditionsCommandDependencies
   readonly initiativeCommandDependencies: SessionSocketInitiativeCommandDependencies
   readonly useMoveCommandDependencies: SessionSocketUseMoveCommandDependencies
+  readonly useTableActionCommandDependencies: SessionSocketUseTableActionCommandDependencies
 }
 
 interface SessionSocketHandshakeFailure {
@@ -851,6 +877,7 @@ const resolveDependencies = <TMapDocument>(
   applyModifyConditionsCommand: dependencies.applyModifyConditionsCommand ?? applyModifyConditionsCommandUseCase,
   applyInitiativeCommand: dependencies.applyInitiativeCommand ?? applyInitiativeCommandUseCase,
   applyUseMoveCommand: dependencies.applyUseMoveCommand ?? applyUseMoveCommandUseCase,
+  applyUseTableActionCommand: dependencies.applyUseTableActionCommand ?? applyUseTableActionCommandUseCase,
   moveTokenCommandDependencies: dependencies.moveTokenCommandDependencies ?? {},
   turnTokenCommandDependencies: dependencies.turnTokenCommandDependencies ?? {},
   spawnTokenCommandDependencies: dependencies.spawnTokenCommandDependencies ?? {},
@@ -861,6 +888,7 @@ const resolveDependencies = <TMapDocument>(
   modifyConditionsCommandDependencies: dependencies.modifyConditionsCommandDependencies ?? {},
   initiativeCommandDependencies: dependencies.initiativeCommandDependencies ?? {},
   useMoveCommandDependencies: dependencies.useMoveCommandDependencies ?? {},
+  useTableActionCommandDependencies: dependencies.useTableActionCommandDependencies ?? {},
 })
 
 const sendJson = (peer: SessionSocketPeerLike, value: unknown): void => {
@@ -1631,13 +1659,16 @@ const handleAuthenticatedSocketCommand = <TMapDocument>(
     command.type !== MODIFY_COMBAT_STAGES_COMMAND_TYPE &&
     command.type !== MODIFY_CONDITIONS_COMMAND_TYPE &&
     command.type !== USE_MOVE_COMMAND_TYPE &&
+    command.type !== USE_MANEUVER_COMMAND_TYPE &&
+    command.type !== USE_ABILITY_COMMAND_TYPE &&
+    command.type !== USE_ORDER_COMMAND_TYPE &&
     command.type !== SET_INITIATIVE_COMMAND_TYPE &&
     command.type !== NEXT_INITIATIVE_COMMAND_TYPE &&
     command.type !== PREVIOUS_INITIATIVE_COMMAND_TYPE
   ) {
     sendJson(peer, createSessionSocketErrorMessage({
       code: 'unsupported-message',
-      message: 'Track 2 session WebSocket command dispatch currently supports moveToken, turnToken, spawnToken, deleteToken, sendOutPokemon, modifyHp, modifyCombatStages, modifyConditions, useMove, setInitiative, nextInitiative, and previousInitiative commands only.',
+      message: 'Track 2 session WebSocket command dispatch currently supports moveToken, turnToken, spawnToken, deleteToken, sendOutPokemon, modifyHp, modifyCombatStages, modifyConditions, useMove, useManeuver, useAbility, useOrder, setInitiative, nextInitiative, and previousInitiative commands only.',
       retryable: false,
       sessionId: connection.sessionId,
       currentRevision: connection.currentRevision,
@@ -1656,6 +1687,7 @@ const handleAuthenticatedSocketCommand = <TMapDocument>(
     | ApplyModifyConditionsCommandUseCaseResult
     | ApplyInitiativeCommandUseCaseResult
     | ApplyUseMoveCommandUseCaseResult
+    | ApplyUseTableActionCommandUseCaseResult
   try {
     if (command.type === MOVE_TOKEN_COMMAND_TYPE) {
       applied = dependencies.applyMoveTokenCommand({
@@ -1734,6 +1766,19 @@ const handleAuthenticatedSocketCommand = <TMapDocument>(
         command: command as UseMoveCommand,
       }, {
         ...dependencies.useMoveCommandDependencies,
+        env: dependencies.env,
+        store: dependencies.store as unknown as InMemorySessionStore<AuthoritativeSessionState<TabletopMapV2>>,
+        clock: () => receivedAt,
+      })
+    } else if (
+      command.type === USE_MANEUVER_COMMAND_TYPE ||
+      command.type === USE_ABILITY_COMMAND_TYPE ||
+      command.type === USE_ORDER_COMMAND_TYPE
+    ) {
+      applied = dependencies.applyUseTableActionCommand({
+        command: command as UseManeuverCommand | UseAbilityCommand | UseOrderCommand,
+      }, {
+        ...dependencies.useTableActionCommandDependencies,
         env: dependencies.env,
         store: dependencies.store as unknown as InMemorySessionStore<AuthoritativeSessionState<TabletopMapV2>>,
         clock: () => receivedAt,

@@ -21,27 +21,45 @@ import {
   MODIFY_COMBAT_STAGES_COMMAND_TYPE,
   MODIFY_CONDITIONS_COMMAND_TYPE,
   MODIFY_HP_COMMAND_TYPE,
+  USE_ABILITY_COMMAND_TYPE,
+  USE_MANEUVER_COMMAND_TYPE,
   USE_MOVE_COMMAND_TYPE,
+  USE_ORDER_COMMAND_TYPE,
   createModifyCombatStagesSheetCommandScope,
   createModifyCombatStagesTokenCommandScope,
   createModifyConditionsSheetCommandScope,
   createModifyConditionsTokenCommandScope,
   createModifyHpSheetCommandScope,
   createModifyHpTokenCommandScope,
+  createUseAbilitySheetCommandScope,
+  createUseAbilityTokenCommandScope,
+  createUseManeuverSheetCommandScope,
+  createUseManeuverTokenCommandScope,
   createUseMoveSheetCommandScope,
   createUseMoveTokenCommandScope,
+  createUseOrderSheetCommandScope,
+  createUseOrderTokenCommandScope,
   isModifyCombatStagesCommandValidationCode,
   isModifyConditionsCommandValidationCode,
   isModifyHpCommandValidationCode,
+  isUseAbilityCommandValidationCode,
+  isUseManeuverCommandValidationCode,
   isUseMoveCommandValidationCode,
+  isUseOrderCommandValidationCode,
   validateModifyCombatStagesCommand,
   validateModifyConditionsCommand,
   validateModifyHpCommand,
+  validateUseAbilityCommand,
+  validateUseManeuverCommand,
   validateUseMoveCommand,
+  validateUseOrderCommand,
   type ModifyCombatStagesCommand,
   type ModifyConditionsCommand,
   type ModifyHpCommand,
+  type UseAbilityCommand,
+  type UseManeuverCommand,
   type UseMoveCommand,
+  type UseOrderCommand,
 } from '#shared/sessionTableActionCommands'
 
 const sessionId = parseSessionId('session_modifyhp0001')
@@ -164,6 +182,68 @@ const createUseMoveCommand = (overrides: Partial<UseMoveCommand> = {}): UseMoveC
   payload: {
     tokenId: 'token-pikachu',
     moveName: 'Thunderbolt',
+  },
+  ...overrides,
+})
+
+const createUseManeuverCommand = (
+  overrides: Partial<UseManeuverCommand> = {},
+): UseManeuverCommand => ({
+  schemaVersion: SESSION_COMMAND_ENVELOPE_VERSION,
+  sessionId,
+  actor: playerActor,
+  type: USE_MANEUVER_COMMAND_TYPE,
+  opId: parseOpId('op_useman001'),
+  baseRevision: parseSessionRevision(0),
+  scopes: [
+    createUseManeuverTokenCommandScope(tokenResource),
+    createUseManeuverSheetCommandScope(sheetResource),
+  ],
+  payload: {
+    tokenId: 'token-pikachu',
+    maneuverName: 'Trip',
+    targetTokenId: 'token-eevee',
+  },
+  ...overrides,
+})
+
+const createUseAbilityCommand = (
+  overrides: Partial<UseAbilityCommand> = {},
+): UseAbilityCommand => ({
+  schemaVersion: SESSION_COMMAND_ENVELOPE_VERSION,
+  sessionId,
+  actor: playerActor,
+  type: USE_ABILITY_COMMAND_TYPE,
+  opId: parseOpId('op_useabl001'),
+  baseRevision: parseSessionRevision(0),
+  scopes: [
+    createUseAbilityTokenCommandScope(tokenResource),
+    createUseAbilitySheetCommandScope(sheetResource),
+  ],
+  payload: {
+    tokenId: 'token-pikachu',
+    abilityName: 'Sand Veil',
+  },
+  ...overrides,
+})
+
+const createUseOrderCommand = (
+  overrides: Partial<UseOrderCommand> = {},
+): UseOrderCommand => ({
+  schemaVersion: SESSION_COMMAND_ENVELOPE_VERSION,
+  sessionId,
+  actor: playerActor,
+  type: USE_ORDER_COMMAND_TYPE,
+  opId: parseOpId('op_useord001'),
+  baseRevision: parseSessionRevision(0),
+  scopes: [
+    createUseOrderTokenCommandScope(tokenResource),
+    createUseOrderSheetCommandScope(sheetResource),
+  ],
+  payload: {
+    tokenId: 'token-pikachu',
+    orderName: 'Inspired Training',
+    targetTokenId: 'token-eevee',
   },
   ...overrides,
 })
@@ -427,6 +507,133 @@ describe('session table action commands', () => {
       allowed: false,
       reason: 'missing-player-identity',
     })
+    expect(unauthorized.issues).toContainEqual(expect.objectContaining({ code: 'permission-denied' }))
+  })
+
+  it('validates useManeuver commands for GM and assigned token or sheet controllers', () => {
+    const tokenAssigned = validateUseManeuverCommand(createUseManeuverCommand(), {
+      assignments: [assignment],
+    })
+
+    expect(tokenAssigned.valid).toBe(true)
+    if (!tokenAssigned.valid) throw new Error('expected valid useManeuver command')
+    expect(tokenAssigned.command.type).toBe(USE_MANEUVER_COMMAND_TYPE)
+    expect(tokenAssigned.payload).toEqual({
+      tokenId: 'token-pikachu',
+      maneuverName: 'Trip',
+      targetTokenId: 'token-eevee',
+    })
+    expect(tokenAssigned.tokenResource).toEqual(tokenResource)
+    expect(tokenAssigned.sheetResource).toEqual(sheetResource)
+    expect(tokenAssigned.permission).toMatchObject({ allowed: true, role: 'player' })
+
+    expect(validateUseManeuverCommand(createUseManeuverCommand({ actor: gmActor }), { assignments: [] }).valid).toBe(true)
+
+    const sheetAssigned = validateUseManeuverCommand(createUseManeuverCommand(), {
+      assignments: [sheetAssignment],
+    })
+    expect(sheetAssigned.valid).toBe(true)
+    if (!sheetAssigned.valid) throw new Error('expected sheet-assigned useManeuver command')
+    expect(sheetAssigned.permittedResource).toEqual(sheetResource)
+  })
+
+  it('reports useManeuver payload, scope, and permission issues', () => {
+    const invalidPayload = validateUseManeuverCommand(createUseManeuverCommand({
+      payload: {
+        tokenId: '',
+        maneuverName: '  ',
+        targetTokenId: '',
+      },
+    }), { assignments: [assignment] })
+
+    expect(invalidPayload.valid).toBe(false)
+    if (invalidPayload.valid) throw new Error('expected invalid useManeuver payload')
+    expect(invalidPayload.issues.map((issue) => issue.code)).toEqual(expect.arrayContaining([
+      'invalid-token-id',
+      'invalid-maneuver-name',
+      'invalid-target-token-id',
+    ]))
+    expect(isUseManeuverCommandValidationCode('invalid-maneuver-name')).toBe(true)
+
+    const invalidScope = validateUseManeuverCommand(createUseManeuverCommand({
+      scopes: [createUseManeuverTokenCommandScope({ ...tokenResource, tokenId: 'other-token' })],
+    }), { assignments: [assignment] })
+    expect(invalidScope.valid).toBe(false)
+    if (invalidScope.valid) throw new Error('expected invalid useManeuver scope')
+    expect(invalidScope.issues).toContainEqual(expect.objectContaining({ code: 'invalid-token-scope' }))
+
+    const unauthorized = validateUseManeuverCommand(createUseManeuverCommand(), { assignments: [] })
+    expect(unauthorized.valid).toBe(false)
+    if (unauthorized.valid) throw new Error('expected unauthorized useManeuver result')
+    expect(unauthorized.permission).toMatchObject({ allowed: false })
+    expect(unauthorized.issues).toContainEqual(expect.objectContaining({ code: 'permission-denied' }))
+  })
+
+  it('validates useAbility commands and requires assigned token or sheet control', () => {
+    const result = validateUseAbilityCommand(createUseAbilityCommand(), {
+      assignments: [assignment],
+    })
+
+    expect(result.valid).toBe(true)
+    if (!result.valid) throw new Error('expected valid useAbility command')
+    expect(result.command.type).toBe(USE_ABILITY_COMMAND_TYPE)
+    expect(result.payload).toEqual({ tokenId: 'token-pikachu', abilityName: 'Sand Veil' })
+    expect(result.tokenResource).toEqual(tokenResource)
+    expect(result.sheetResource).toEqual(sheetResource)
+
+    expect(validateUseAbilityCommand(createUseAbilityCommand({ actor: gmActor }), { assignments: [] }).valid).toBe(true)
+    expect(validateUseAbilityCommand(createUseAbilityCommand(), { assignments: [sheetAssignment] }).valid).toBe(true)
+
+    const invalidPayload = validateUseAbilityCommand(createUseAbilityCommand({
+      payload: { tokenId: 'token-pikachu', abilityName: '', targetTokenId: '' },
+    }), { assignments: [assignment] })
+    expect(invalidPayload.valid).toBe(false)
+    if (invalidPayload.valid) throw new Error('expected invalid useAbility payload')
+    expect(invalidPayload.issues.map((issue) => issue.code)).toEqual(expect.arrayContaining([
+      'invalid-ability-name',
+      'invalid-target-token-id',
+    ]))
+    expect(isUseAbilityCommandValidationCode('invalid-ability-name')).toBe(true)
+
+    const unauthorized = validateUseAbilityCommand(createUseAbilityCommand(), { assignments: [] })
+    expect(unauthorized.valid).toBe(false)
+    if (unauthorized.valid) throw new Error('expected unauthorized useAbility result')
+    expect(unauthorized.issues).toContainEqual(expect.objectContaining({ code: 'permission-denied' }))
+  })
+
+  it('validates useOrder commands and requires assigned token or sheet control', () => {
+    const result = validateUseOrderCommand(createUseOrderCommand(), {
+      assignments: [assignment],
+    })
+
+    expect(result.valid).toBe(true)
+    if (!result.valid) throw new Error('expected valid useOrder command')
+    expect(result.command.type).toBe(USE_ORDER_COMMAND_TYPE)
+    expect(result.payload).toEqual({
+      tokenId: 'token-pikachu',
+      orderName: 'Inspired Training',
+      targetTokenId: 'token-eevee',
+    })
+    expect(result.tokenResource).toEqual(tokenResource)
+    expect(result.sheetResource).toEqual(sheetResource)
+
+    expect(validateUseOrderCommand(createUseOrderCommand({ actor: gmActor }), { assignments: [] }).valid).toBe(true)
+    expect(validateUseOrderCommand(createUseOrderCommand(), { assignments: [sheetAssignment] }).valid).toBe(true)
+
+    const invalidPayload = validateUseOrderCommand(createUseOrderCommand({
+      payload: { tokenId: 'token-pikachu', orderName: '', targetTokenId: '' },
+    }), { assignments: [assignment] })
+    expect(invalidPayload.valid).toBe(false)
+    if (invalidPayload.valid) throw new Error('expected invalid useOrder payload')
+    expect(invalidPayload.issues.map((issue) => issue.code)).toEqual(expect.arrayContaining([
+      'invalid-order-name',
+      'invalid-target-token-id',
+    ]))
+    expect(isUseOrderCommandValidationCode('invalid-order-name')).toBe(true)
+
+    const unauthorized = validateUseOrderCommand(createUseOrderCommand(), { assignments: [] })
+    expect(unauthorized.valid).toBe(false)
+    if (unauthorized.valid) throw new Error('expected unauthorized useOrder result')
     expect(unauthorized.issues).toContainEqual(expect.objectContaining({ code: 'permission-denied' }))
   })
 })

@@ -33,6 +33,15 @@ export const MODIFY_CONDITIONS_ACTIONS = ['add', 'remove', 'replace'] as const
 export const USE_MOVE_COMMAND_TYPE = 'useMove' as const
 export const USE_MOVE_COMMAND_SCOPE_FIELD = 'moveUsage' as const
 
+export const USE_MANEUVER_COMMAND_TYPE = 'useManeuver' as const
+export const USE_MANEUVER_COMMAND_SCOPE_FIELD = 'maneuver' as const
+
+export const USE_ABILITY_COMMAND_TYPE = 'useAbility' as const
+export const USE_ABILITY_COMMAND_SCOPE_FIELD = 'ability' as const
+
+export const USE_ORDER_COMMAND_TYPE = 'useOrder' as const
+export const USE_ORDER_COMMAND_SCOPE_FIELD = 'order' as const
+
 export type SessionCombatStageKey = (typeof SESSION_COMBAT_STAGE_KEYS)[number]
 export type SessionCombatStageMap = Record<SessionCombatStageKey, number>
 export type ModifyConditionsAction = (typeof MODIFY_CONDITIONS_ACTIONS)[number]
@@ -97,6 +106,57 @@ export type UseMoveCommand<
 > = SessionCommandEnvelope<
   typeof USE_MOVE_COMMAND_TYPE,
   UseMoveCommandPayload,
+  TActor,
+  SessionRevision
+>
+
+export interface UseManeuverCommandPayload {
+  readonly tokenId: string
+  /** Display or canonical maneuver name selected by the acting client. */
+  readonly maneuverName: string
+  /** Optional map-local target token selected by clients after targeting UI. */
+  readonly targetTokenId?: string
+}
+
+export type UseManeuverCommand<
+  TActor extends SessionActor = SessionActor,
+> = SessionCommandEnvelope<
+  typeof USE_MANEUVER_COMMAND_TYPE,
+  UseManeuverCommandPayload,
+  TActor,
+  SessionRevision
+>
+
+export interface UseAbilityCommandPayload {
+  readonly tokenId: string
+  /** Display or canonical ability name selected by the acting client. */
+  readonly abilityName: string
+  /** Optional map-local target token selected by clients after targeting UI. */
+  readonly targetTokenId?: string
+}
+
+export type UseAbilityCommand<
+  TActor extends SessionActor = SessionActor,
+> = SessionCommandEnvelope<
+  typeof USE_ABILITY_COMMAND_TYPE,
+  UseAbilityCommandPayload,
+  TActor,
+  SessionRevision
+>
+
+export interface UseOrderCommandPayload {
+  readonly tokenId: string
+  /** Display or canonical order name selected by the acting trainer client. */
+  readonly orderName: string
+  /** Optional map-local target token selected by clients after targeting UI. */
+  readonly targetTokenId?: string
+}
+
+export type UseOrderCommand<
+  TActor extends SessionActor = SessionActor,
+> = SessionCommandEnvelope<
+  typeof USE_ORDER_COMMAND_TYPE,
+  UseOrderCommandPayload,
   TActor,
   SessionRevision
 >
@@ -279,6 +339,99 @@ export type UseMoveCommandValidationResult<
   TActor extends SessionActor = SessionActor,
 > = UseMoveCommandValidationSuccess<TActor> | UseMoveCommandValidationFailure
 
+export const USE_MANEUVER_COMMAND_VALIDATION_CODES = [
+  'invalid-command-type',
+  'invalid-payload',
+  'invalid-token-id',
+  'invalid-maneuver-name',
+  'invalid-target-token-id',
+  'invalid-token-scope',
+  'invalid-sheet-scope',
+  'permission-denied',
+] as const
+
+export type UseManeuverCommandValidationCode =
+  (typeof USE_MANEUVER_COMMAND_VALIDATION_CODES)[number]
+
+export const USE_ABILITY_COMMAND_VALIDATION_CODES = [
+  'invalid-command-type',
+  'invalid-payload',
+  'invalid-token-id',
+  'invalid-ability-name',
+  'invalid-target-token-id',
+  'invalid-token-scope',
+  'invalid-sheet-scope',
+  'permission-denied',
+] as const
+
+export type UseAbilityCommandValidationCode =
+  (typeof USE_ABILITY_COMMAND_VALIDATION_CODES)[number]
+
+export const USE_ORDER_COMMAND_VALIDATION_CODES = [
+  'invalid-command-type',
+  'invalid-payload',
+  'invalid-token-id',
+  'invalid-order-name',
+  'invalid-target-token-id',
+  'invalid-token-scope',
+  'invalid-sheet-scope',
+  'permission-denied',
+] as const
+
+export type UseOrderCommandValidationCode =
+  (typeof USE_ORDER_COMMAND_VALIDATION_CODES)[number]
+
+export interface UseTableActionCommandValidationContext {
+  /** Current GM-managed assignments. GM actors are allowed; player actors must control the acting token or sheet. */
+  readonly assignments?: readonly PlayerAssignmentRecord[]
+}
+
+export type UseManeuverCommandValidationContext = UseTableActionCommandValidationContext
+export type UseAbilityCommandValidationContext = UseTableActionCommandValidationContext
+export type UseOrderCommandValidationContext = UseTableActionCommandValidationContext
+
+export interface UseTableActionCommandValidationSuccess<
+  TCommand extends SessionCommandEnvelope<string, unknown, TActor, SessionRevision>,
+  TPayload,
+  TActor extends SessionActor = SessionActor,
+> {
+  readonly valid: true
+  readonly command: TCommand
+  readonly payload: TPayload
+  /** Token resource used to locate the map placement whose action is being used. */
+  readonly resource: SessionTokenResourceRef
+  readonly tokenResource: SessionTokenResourceRef
+  /** Optional sheet resource used to authorize sheet-assigned players. */
+  readonly sheetResource?: SessionSheetResourceRef
+  readonly permittedResource: SessionTokenResourceRef | SessionSheetResourceRef
+  readonly permission: Extract<PermissionResult, { readonly allowed: true }>
+  readonly issues: readonly []
+}
+
+export interface UseTableActionCommandValidationFailure {
+  readonly valid: false
+  readonly issues: readonly SessionCommandValidationIssue[]
+  readonly permission?: PermissionDenied
+}
+
+export type UseManeuverCommandValidationResult<
+  TActor extends SessionActor = SessionActor,
+> =
+  | UseTableActionCommandValidationSuccess<UseManeuverCommand<TActor>, UseManeuverCommandPayload, TActor>
+  | UseTableActionCommandValidationFailure
+
+export type UseAbilityCommandValidationResult<
+  TActor extends SessionActor = SessionActor,
+> =
+  | UseTableActionCommandValidationSuccess<UseAbilityCommand<TActor>, UseAbilityCommandPayload, TActor>
+  | UseTableActionCommandValidationFailure
+
+export type UseOrderCommandValidationResult<
+  TActor extends SessionActor = SessionActor,
+> =
+  | UseTableActionCommandValidationSuccess<UseOrderCommand<TActor>, UseOrderCommandPayload, TActor>
+  | UseTableActionCommandValidationFailure
+
 type MutableIssueList = SessionCommandValidationIssue[]
 type UnknownRecord = Record<string, unknown>
 
@@ -302,7 +455,14 @@ const describeReceived = (value: unknown): string => {
 const addIssue = (
   issues: MutableIssueList,
   path: string,
-  code: ModifyHpCommandValidationCode | ModifyCombatStagesCommandValidationCode | ModifyConditionsCommandValidationCode | UseMoveCommandValidationCode,
+  code:
+    | ModifyHpCommandValidationCode
+    | ModifyCombatStagesCommandValidationCode
+    | ModifyConditionsCommandValidationCode
+    | UseMoveCommandValidationCode
+    | UseManeuverCommandValidationCode
+    | UseAbilityCommandValidationCode
+    | UseOrderCommandValidationCode,
   message: string,
   expected?: string,
   received?: unknown,
@@ -1825,6 +1985,565 @@ export const assertValidUseMoveCommand = <
   label = 'useMove command',
 ): UseMoveCommand<TActor> => {
   const result = validateUseMoveCommand<TActor>(value, context)
+  if (result.valid) return result.command
+
+  const summary = result.issues.map((issue) => `${issue.path}: ${issue.message}`).join('; ')
+  throw new Error(`${label} is invalid: ${summary}`)
+}
+
+type UseTableActionPayload =
+  | UseManeuverCommandPayload
+  | UseAbilityCommandPayload
+  | UseOrderCommandPayload
+
+type UseTableActionCommand<TActor extends SessionActor = SessionActor> =
+  | UseManeuverCommand<TActor>
+  | UseAbilityCommand<TActor>
+  | UseOrderCommand<TActor>
+
+type UseTableActionNameField = 'maneuverName' | 'abilityName' | 'orderName'
+
+type UseTableActionInvalidNameCode =
+  | 'invalid-maneuver-name'
+  | 'invalid-ability-name'
+  | 'invalid-order-name'
+
+type UseTableActionCommandType =
+  | typeof USE_MANEUVER_COMMAND_TYPE
+  | typeof USE_ABILITY_COMMAND_TYPE
+  | typeof USE_ORDER_COMMAND_TYPE
+
+type UseTableActionScopeField =
+  | typeof USE_MANEUVER_COMMAND_SCOPE_FIELD
+  | typeof USE_ABILITY_COMMAND_SCOPE_FIELD
+  | typeof USE_ORDER_COMMAND_SCOPE_FIELD
+
+interface UseTableActionSpec {
+  readonly commandType: UseTableActionCommandType
+  readonly scopeField: UseTableActionScopeField
+  readonly nameField: UseTableActionNameField
+  readonly invalidNameCode: UseTableActionInvalidNameCode
+  readonly label: 'useManeuver' | 'useAbility' | 'useOrder'
+  readonly noun: 'maneuver' | 'ability' | 'order'
+}
+
+const USE_MANEUVER_SPEC: UseTableActionSpec = {
+  commandType: USE_MANEUVER_COMMAND_TYPE,
+  scopeField: USE_MANEUVER_COMMAND_SCOPE_FIELD,
+  nameField: 'maneuverName',
+  invalidNameCode: 'invalid-maneuver-name',
+  label: 'useManeuver',
+  noun: 'maneuver',
+}
+
+const USE_ABILITY_SPEC: UseTableActionSpec = {
+  commandType: USE_ABILITY_COMMAND_TYPE,
+  scopeField: USE_ABILITY_COMMAND_SCOPE_FIELD,
+  nameField: 'abilityName',
+  invalidNameCode: 'invalid-ability-name',
+  label: 'useAbility',
+  noun: 'ability',
+}
+
+const USE_ORDER_SPEC: UseTableActionSpec = {
+  commandType: USE_ORDER_COMMAND_TYPE,
+  scopeField: USE_ORDER_COMMAND_SCOPE_FIELD,
+  nameField: 'orderName',
+  invalidNameCode: 'invalid-order-name',
+  label: 'useOrder',
+  noun: 'order',
+}
+
+const createUseTableActionPayload = (
+  spec: UseTableActionSpec,
+  tokenId: string,
+  actionName: string,
+  targetTokenId: string | undefined,
+): UseTableActionPayload => {
+  const base = {
+    tokenId: tokenId.trim(),
+    ...(targetTokenId === undefined ? {} : { targetTokenId: targetTokenId.trim() }),
+  }
+
+  if (spec.nameField === 'maneuverName') return { ...base, maneuverName: actionName.trim() }
+  if (spec.nameField === 'abilityName') return { ...base, abilityName: actionName.trim() }
+  return { ...base, orderName: actionName.trim() }
+}
+
+const collectUseTableActionPayloadIssues = (
+  payload: unknown,
+  issues: MutableIssueList,
+  spec: UseTableActionSpec,
+): UseTableActionPayload | undefined => {
+  if (!isRecord(payload)) {
+    addIssue(
+      issues,
+      'payload',
+      'invalid-payload',
+      `${spec.label} payload must be an object.`,
+      EXPECTED_OBJECT,
+      payload,
+    )
+    return undefined
+  }
+
+  const tokenId = payload.tokenId
+  const actionName = payload[spec.nameField]
+  const targetTokenId = payload.targetTokenId
+
+  if (!isNonEmptyString(tokenId)) {
+    addIssue(
+      issues,
+      'payload.tokenId',
+      'invalid-token-id',
+      `${spec.label} payload.tokenId must be a non-empty token ID string.`,
+      EXPECTED_NON_EMPTY_STRING,
+      tokenId,
+    )
+  }
+
+  if (!isNonEmptyString(actionName)) {
+    addIssue(
+      issues,
+      `payload.${spec.nameField}`,
+      spec.invalidNameCode,
+      `${spec.label} payload.${spec.nameField} must be a non-empty ${spec.noun} name string.`,
+      EXPECTED_NON_EMPTY_STRING,
+      actionName,
+    )
+  }
+
+  if (targetTokenId !== undefined && !isNonEmptyString(targetTokenId)) {
+    addIssue(
+      issues,
+      'payload.targetTokenId',
+      'invalid-target-token-id',
+      `${spec.label} payload.targetTokenId must be a non-empty token ID string when provided.`,
+      EXPECTED_NON_EMPTY_STRING,
+      targetTokenId,
+    )
+  }
+
+  if (issues.some((issue) => issue.path.startsWith('payload.'))) return undefined
+
+  return createUseTableActionPayload(
+    spec,
+    tokenId as string,
+    actionName as string,
+    targetTokenId as string | undefined,
+  )
+}
+
+const useTableActionTokenResourceFromScope = (
+  scope: SessionCommandScope,
+  path: string,
+  issues: MutableIssueList,
+  spec: UseTableActionSpec,
+): SessionTokenResourceRef | undefined => {
+  if (scope.resource?.kind !== 'token') return undefined
+
+  const tokenResource = scope.resource
+  if (hasOwn(tokenResource, 'sheetKind') && tokenResource.sheetKind !== undefined && !isSheetKind(tokenResource.sheetKind)) {
+    addIssue(
+      issues,
+      `${path}.resource.sheetKind`,
+      'invalid-token-scope',
+      `${spec.label} token scope sheetKind must be pokemon or trainer when provided.`,
+      EXPECTED_SHEET_KIND,
+      tokenResource.sheetKind,
+    )
+  }
+
+  if (hasOwn(tokenResource, 'sheetSlug') && tokenResource.sheetSlug !== undefined && !isNonEmptyString(tokenResource.sheetSlug)) {
+    addIssue(
+      issues,
+      `${path}.resource.sheetSlug`,
+      'invalid-token-scope',
+      `${spec.label} token scope sheetSlug must be a non-empty string when provided.`,
+      EXPECTED_NON_EMPTY_STRING,
+      tokenResource.sheetSlug,
+    )
+  }
+
+  if (hasOwn(tokenResource, 'mapSlug') && tokenResource.mapSlug !== undefined && !isNonEmptyString(tokenResource.mapSlug)) {
+    addIssue(
+      issues,
+      `${path}.resource.mapSlug`,
+      'invalid-token-scope',
+      `${spec.label} token scope mapSlug must be a non-empty string when provided.`,
+      EXPECTED_NON_EMPTY_STRING,
+      tokenResource.mapSlug,
+    )
+  }
+
+  if (hasOwn(tokenResource, 'mapSlug') && hasOwn(scope, 'mapSlug') && tokenResource.mapSlug !== scope.mapSlug) {
+    addIssue(
+      issues,
+      `${path}.mapSlug`,
+      'invalid-token-scope',
+      `${spec.label} token scope mapSlug must match the token resource mapSlug when both are provided.`,
+      'matching token scope map slug',
+      scope.mapSlug,
+    )
+  }
+
+  return {
+    ...tokenResource,
+    ...(tokenResource.mapSlug === undefined && typeof scope.mapSlug === 'string'
+      ? { mapSlug: scope.mapSlug }
+      : {}),
+  }
+}
+
+const useTableActionSheetResourceFromScope = (
+  scope: SessionCommandScope,
+  path: string,
+  issues: MutableIssueList,
+  spec: UseTableActionSpec,
+): SessionSheetResourceRef | undefined => {
+  if (scope.resource?.kind !== 'sheet') return undefined
+
+  const sheetResource = scope.resource as unknown as UnknownRecord
+  if (!isSheetKind(sheetResource.sheetKind)) {
+    addIssue(
+      issues,
+      `${path}.resource.sheetKind`,
+      'invalid-sheet-scope',
+      `${spec.label} sheet scope sheetKind must be pokemon or trainer.`,
+      EXPECTED_SHEET_KIND,
+      sheetResource.sheetKind,
+    )
+  }
+
+  if (!isNonEmptyString(sheetResource.sheetSlug)) {
+    addIssue(
+      issues,
+      `${path}.resource.sheetSlug`,
+      'invalid-sheet-scope',
+      `${spec.label} sheet scope sheetSlug must be a non-empty string.`,
+      EXPECTED_NON_EMPTY_STRING,
+      sheetResource.sheetSlug,
+    )
+  }
+
+  if (issues.some((issue) => issue.path.startsWith(path))) return undefined
+
+  return cloneSheetResource(scope.resource as SessionSheetResourceRef)
+}
+
+const findUseTableActionResources = (
+  command: UseTableActionCommand,
+  payload: UseTableActionPayload | undefined,
+  issues: MutableIssueList,
+  spec: UseTableActionSpec,
+): {
+  readonly tokenResource?: SessionTokenResourceRef
+  readonly sheetResource?: SessionSheetResourceRef
+} => {
+  if (payload === undefined) return {}
+
+  const tokenScopeResources = command.scopes.map((scope, index) => ({
+    index,
+    scope,
+    resource: useTableActionTokenResourceFromScope(scope, `scopes[${index}]`, issues, spec),
+  }))
+  const matchingTokenScope = tokenScopeResources.find(({ scope, resource }) =>
+    resource !== undefined &&
+    scope.lane === 'token' &&
+    scope.field === spec.scopeField &&
+    resource.tokenId === payload.tokenId,
+  )
+
+  if (matchingTokenScope?.resource === undefined) {
+    addIssue(
+      issues,
+      'scopes',
+      'invalid-token-scope',
+      `${spec.label} commands must include a token scope with resource.kind "token", field "${spec.scopeField}", and a tokenId matching payload.tokenId.`,
+      `matching token ${spec.scopeField} scope`,
+      command.scopes,
+    )
+  } else if (
+    hasOwn(matchingTokenScope.scope, 'mapSlug') &&
+    typeof matchingTokenScope.scope.mapSlug === 'string' &&
+    matchingTokenScope.scope.mapSlug.trim().length === 0
+  ) {
+    addIssue(
+      issues,
+      `scopes[${matchingTokenScope.index}].mapSlug`,
+      'invalid-token-scope',
+      `${spec.label} token scope mapSlug must be a non-empty string when provided.`,
+      EXPECTED_NON_EMPTY_STRING,
+      matchingTokenScope.scope.mapSlug,
+    )
+  }
+
+  const matchingSheetScope = command.scopes
+    .map((scope, index) => ({
+      index,
+      scope,
+      resource: useTableActionSheetResourceFromScope(scope, `scopes[${index}]`, issues, spec),
+    }))
+    .find(({ scope, resource }) =>
+      resource !== undefined &&
+      scope.lane === 'sheet' &&
+      scope.field === spec.scopeField,
+    )
+
+  const tokenResource = matchingTokenScope?.resource
+  const sheetResource = matchingSheetScope?.resource
+  if (
+    tokenResource !== undefined &&
+    sheetResource !== undefined &&
+    (
+      (tokenResource.sheetKind !== undefined && tokenResource.sheetKind !== sheetResource.sheetKind) ||
+      (tokenResource.sheetSlug !== undefined && tokenResource.sheetSlug !== sheetResource.sheetSlug)
+    )
+  ) {
+    addIssue(
+      issues,
+      'scopes',
+      'invalid-sheet-scope',
+      `${spec.label} sheet scope must match the token scope sheet identity when both are provided.`,
+      'matching token and sheet resource identity',
+      command.scopes,
+    )
+  }
+
+  return {
+    ...(tokenResource === undefined ? {} : { tokenResource: cloneTokenResource(tokenResource) }),
+    ...(sheetResource === undefined ? {} : { sheetResource: cloneSheetResource(sheetResource) }),
+  }
+}
+
+const validateUseTableActionCommand = <
+  TCommand extends UseTableActionCommand<TActor>,
+  TPayload extends UseTableActionPayload,
+  TResult extends
+    | UseManeuverCommandValidationResult<TActor>
+    | UseAbilityCommandValidationResult<TActor>
+    | UseOrderCommandValidationResult<TActor>,
+  TActor extends SessionActor = SessionActor,
+>(
+  value: unknown,
+  context: UseTableActionCommandValidationContext,
+  spec: UseTableActionSpec,
+): TResult => {
+  const envelopeResult = validateSessionCommandEnvelope<TCommand>(value)
+  if (!envelopeResult.valid) {
+    return { valid: false, issues: envelopeResult.issues } as TResult
+  }
+
+  const command = envelopeResult.command
+  const issues: MutableIssueList = []
+
+  if (command.type !== spec.commandType) {
+    addIssue(
+      issues,
+      'type',
+      'invalid-command-type',
+      `${spec.label} validators only accept command envelopes with type "${spec.commandType}".`,
+      spec.commandType,
+      command.type,
+    )
+  }
+
+  const payload = collectUseTableActionPayloadIssues(command.payload, issues, spec)
+  const { tokenResource, sheetResource } = findUseTableActionResources(command, payload, issues, spec)
+
+  let permission: PermissionResult | undefined
+  let permittedResource: SessionTokenResourceRef | SessionSheetResourceRef | undefined
+  if (tokenResource !== undefined) {
+    const tokenPermission = canActorControlResource(command.actor, context.assignments ?? [], tokenResource)
+    if (tokenPermission.allowed) {
+      permission = tokenPermission
+      permittedResource = tokenResource
+    } else if (sheetResource !== undefined) {
+      const sheetPermission = canActorControlResource(command.actor, context.assignments ?? [], sheetResource)
+      if (sheetPermission.allowed) {
+        permission = sheetPermission
+        permittedResource = sheetResource
+      } else {
+        permission = tokenPermission
+      }
+    } else {
+      permission = tokenPermission
+    }
+
+    if (permission !== undefined && !permission.allowed) {
+      addIssue(
+        issues,
+        'actor',
+        'permission-denied',
+        permission.message,
+        'GM actor, assigned visible token resource, or assigned visible sheet resource',
+        command.actor,
+      )
+    }
+  }
+
+  if (issues.length > 0) {
+    return {
+      valid: false,
+      issues,
+      ...(permission !== undefined && !permission.allowed ? { permission } : {}),
+    } as unknown as TResult
+  }
+
+  return {
+    valid: true,
+    command,
+    payload: payload as TPayload,
+    resource: tokenResource as SessionTokenResourceRef,
+    tokenResource: tokenResource as SessionTokenResourceRef,
+    ...(sheetResource === undefined ? {} : { sheetResource }),
+    permittedResource: permittedResource as SessionTokenResourceRef | SessionSheetResourceRef,
+    permission: permission as Extract<PermissionResult, { readonly allowed: true }>,
+    issues: [],
+  } as unknown as TResult
+}
+
+export const isUseManeuverCommandValidationCode = (
+  value: unknown,
+): value is UseManeuverCommandValidationCode =>
+  (USE_MANEUVER_COMMAND_VALIDATION_CODES as readonly unknown[]).includes(value)
+
+export const createUseManeuverTokenCommandScope = (
+  resource: SessionTokenResourceRef,
+): SessionCommandScope => ({
+  lane: 'token',
+  resource: cloneTokenResource(resource),
+  field: USE_MANEUVER_COMMAND_SCOPE_FIELD,
+  ...(resource.mapSlug === undefined ? {} : { mapSlug: resource.mapSlug }),
+})
+
+export const createUseManeuverSheetCommandScope = (
+  resource: SessionSheetResourceRef,
+): SessionCommandScope => ({
+  lane: 'sheet',
+  resource: cloneSheetResource(resource),
+  field: USE_MANEUVER_COMMAND_SCOPE_FIELD,
+})
+
+export const validateUseManeuverCommand = <
+  TActor extends SessionActor = SessionActor,
+>(
+  value: unknown,
+  context: UseManeuverCommandValidationContext = {},
+): UseManeuverCommandValidationResult<TActor> =>
+  validateUseTableActionCommand<
+    UseManeuverCommand<TActor>,
+    UseManeuverCommandPayload,
+    UseManeuverCommandValidationResult<TActor>,
+    TActor
+  >(value, context, USE_MANEUVER_SPEC)
+
+export const assertValidUseManeuverCommand = <
+  TActor extends SessionActor = SessionActor,
+>(
+  value: unknown,
+  context: UseManeuverCommandValidationContext = {},
+  label = 'useManeuver command',
+): UseManeuverCommand<TActor> => {
+  const result = validateUseManeuverCommand<TActor>(value, context)
+  if (result.valid) return result.command
+
+  const summary = result.issues.map((issue) => `${issue.path}: ${issue.message}`).join('; ')
+  throw new Error(`${label} is invalid: ${summary}`)
+}
+
+export const isUseAbilityCommandValidationCode = (
+  value: unknown,
+): value is UseAbilityCommandValidationCode =>
+  (USE_ABILITY_COMMAND_VALIDATION_CODES as readonly unknown[]).includes(value)
+
+export const createUseAbilityTokenCommandScope = (
+  resource: SessionTokenResourceRef,
+): SessionCommandScope => ({
+  lane: 'token',
+  resource: cloneTokenResource(resource),
+  field: USE_ABILITY_COMMAND_SCOPE_FIELD,
+  ...(resource.mapSlug === undefined ? {} : { mapSlug: resource.mapSlug }),
+})
+
+export const createUseAbilitySheetCommandScope = (
+  resource: SessionSheetResourceRef,
+): SessionCommandScope => ({
+  lane: 'sheet',
+  resource: cloneSheetResource(resource),
+  field: USE_ABILITY_COMMAND_SCOPE_FIELD,
+})
+
+export const validateUseAbilityCommand = <
+  TActor extends SessionActor = SessionActor,
+>(
+  value: unknown,
+  context: UseAbilityCommandValidationContext = {},
+): UseAbilityCommandValidationResult<TActor> =>
+  validateUseTableActionCommand<
+    UseAbilityCommand<TActor>,
+    UseAbilityCommandPayload,
+    UseAbilityCommandValidationResult<TActor>,
+    TActor
+  >(value, context, USE_ABILITY_SPEC)
+
+export const assertValidUseAbilityCommand = <
+  TActor extends SessionActor = SessionActor,
+>(
+  value: unknown,
+  context: UseAbilityCommandValidationContext = {},
+  label = 'useAbility command',
+): UseAbilityCommand<TActor> => {
+  const result = validateUseAbilityCommand<TActor>(value, context)
+  if (result.valid) return result.command
+
+  const summary = result.issues.map((issue) => `${issue.path}: ${issue.message}`).join('; ')
+  throw new Error(`${label} is invalid: ${summary}`)
+}
+
+export const isUseOrderCommandValidationCode = (
+  value: unknown,
+): value is UseOrderCommandValidationCode =>
+  (USE_ORDER_COMMAND_VALIDATION_CODES as readonly unknown[]).includes(value)
+
+export const createUseOrderTokenCommandScope = (
+  resource: SessionTokenResourceRef,
+): SessionCommandScope => ({
+  lane: 'token',
+  resource: cloneTokenResource(resource),
+  field: USE_ORDER_COMMAND_SCOPE_FIELD,
+  ...(resource.mapSlug === undefined ? {} : { mapSlug: resource.mapSlug }),
+})
+
+export const createUseOrderSheetCommandScope = (
+  resource: SessionSheetResourceRef,
+): SessionCommandScope => ({
+  lane: 'sheet',
+  resource: cloneSheetResource(resource),
+  field: USE_ORDER_COMMAND_SCOPE_FIELD,
+})
+
+export const validateUseOrderCommand = <
+  TActor extends SessionActor = SessionActor,
+>(
+  value: unknown,
+  context: UseOrderCommandValidationContext = {},
+): UseOrderCommandValidationResult<TActor> =>
+  validateUseTableActionCommand<
+    UseOrderCommand<TActor>,
+    UseOrderCommandPayload,
+    UseOrderCommandValidationResult<TActor>,
+    TActor
+  >(value, context, USE_ORDER_SPEC)
+
+export const assertValidUseOrderCommand = <
+  TActor extends SessionActor = SessionActor,
+>(
+  value: unknown,
+  context: UseOrderCommandValidationContext = {},
+  label = 'useOrder command',
+): UseOrderCommand<TActor> => {
+  const result = validateUseOrderCommand<TActor>(value, context)
   if (result.valid) return result.command
 
   const summary = result.issues.map((issue) => `${issue.path}: ${issue.message}`).join('; ')
