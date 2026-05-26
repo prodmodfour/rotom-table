@@ -18,11 +18,17 @@ import type {
 } from '#shared/sessionPermissions'
 import { parseSessionRevision } from '#shared/sessionRevisions'
 import {
+  MODIFY_COMBAT_STAGES_COMMAND_TYPE,
   MODIFY_HP_COMMAND_TYPE,
+  createModifyCombatStagesSheetCommandScope,
+  createModifyCombatStagesTokenCommandScope,
   createModifyHpSheetCommandScope,
   createModifyHpTokenCommandScope,
+  isModifyCombatStagesCommandValidationCode,
   isModifyHpCommandValidationCode,
+  validateModifyCombatStagesCommand,
   validateModifyHpCommand,
+  type ModifyCombatStagesCommand,
   type ModifyHpCommand,
 } from '#shared/sessionTableActionCommands'
 
@@ -72,7 +78,7 @@ const sheetAssignment = {
   controllableResources: [sheetResource],
 } as const satisfies PlayerAssignmentRecord
 
-const createCommand = (overrides: Partial<ModifyHpCommand> = {}): ModifyHpCommand => ({
+const createModifyHpCommand = (overrides: Partial<ModifyHpCommand> = {}): ModifyHpCommand => ({
   schemaVersion: SESSION_COMMAND_ENVELOPE_VERSION,
   sessionId,
   actor: playerActor,
@@ -91,9 +97,29 @@ const createCommand = (overrides: Partial<ModifyHpCommand> = {}): ModifyHpComman
   ...overrides,
 })
 
+const createModifyCombatStagesCommand = (
+  overrides: Partial<ModifyCombatStagesCommand> = {},
+): ModifyCombatStagesCommand => ({
+  schemaVersion: SESSION_COMMAND_ENVELOPE_VERSION,
+  sessionId,
+  actor: playerActor,
+  type: MODIFY_COMBAT_STAGES_COMMAND_TYPE,
+  opId: parseOpId('op_modifycs001'),
+  baseRevision: parseSessionRevision(0),
+  scopes: [
+    createModifyCombatStagesTokenCommandScope(tokenResource),
+    createModifyCombatStagesSheetCommandScope(sheetResource),
+  ],
+  payload: {
+    tokenId: 'token-pikachu',
+    stages: { atk: 1, def: -1, satk: 0, sdef: 2, spd: 0, acc: -2 },
+  },
+  ...overrides,
+})
+
 describe('session table action commands', () => {
   it('validates modifyHp commands for assigned token resources', () => {
-    const result = validateModifyHpCommand(createCommand(), {
+    const result = validateModifyHpCommand(createModifyHpCommand(), {
       assignments: [assignment],
     })
 
@@ -107,9 +133,9 @@ describe('session table action commands', () => {
   })
 
   it('allows the GM and sheet-assigned players to modify HP', () => {
-    expect(validateModifyHpCommand(createCommand({ actor: gmActor }), { assignments: [] }).valid).toBe(true)
+    expect(validateModifyHpCommand(createModifyHpCommand({ actor: gmActor }), { assignments: [] }).valid).toBe(true)
 
-    const sheetAssigned = validateModifyHpCommand(createCommand(), {
+    const sheetAssigned = validateModifyHpCommand(createModifyHpCommand(), {
       assignments: [sheetAssignment],
     })
     expect(sheetAssigned.valid).toBe(true)
@@ -118,7 +144,7 @@ describe('session table action commands', () => {
   })
 
   it('reports payload and scope validation issues', () => {
-    const invalidPayload = validateModifyHpCommand(createCommand({
+    const invalidPayload = validateModifyHpCommand(createModifyHpCommand({
       payload: {
         tokenId: '',
         currentHp: 1.5,
@@ -135,7 +161,7 @@ describe('session table action commands', () => {
     ]))
     expect(isModifyHpCommandValidationCode('invalid-current-hp')).toBe(true)
 
-    const invalidScope = validateModifyHpCommand(createCommand({
+    const invalidScope = validateModifyHpCommand(createModifyHpCommand({
       scopes: [createModifyHpTokenCommandScope({ ...tokenResource, tokenId: 'other-token' })],
     }), { assignments: [assignment] })
 
@@ -145,7 +171,7 @@ describe('session table action commands', () => {
   })
 
   it('denies players without a controllable visible token or sheet assignment', () => {
-    const result = validateModifyHpCommand(createCommand(), {
+    const result = validateModifyHpCommand(createModifyHpCommand(), {
       assignments: [],
     })
 
@@ -156,5 +182,68 @@ describe('session table action commands', () => {
       reason: 'missing-player-identity',
     })
     expect(result.issues).toContainEqual(expect.objectContaining({ code: 'permission-denied' }))
+  })
+
+  it('validates modifyCombatStages commands for GM and assigned token or sheet controllers', () => {
+    const tokenAssigned = validateModifyCombatStagesCommand(createModifyCombatStagesCommand(), {
+      assignments: [assignment],
+    })
+
+    expect(tokenAssigned.valid).toBe(true)
+    if (!tokenAssigned.valid) throw new Error('expected valid combat-stage command')
+    expect(tokenAssigned.command.type).toBe(MODIFY_COMBAT_STAGES_COMMAND_TYPE)
+    expect(tokenAssigned.payload).toEqual({
+      tokenId: 'token-pikachu',
+      stages: { atk: 1, def: -1, satk: 0, sdef: 2, spd: 0, acc: -2 },
+    })
+    expect(tokenAssigned.tokenResource).toEqual(tokenResource)
+    expect(tokenAssigned.sheetResource).toEqual(sheetResource)
+    expect(tokenAssigned.permission).toMatchObject({ allowed: true, role: 'player' })
+
+    expect(validateModifyCombatStagesCommand(createModifyCombatStagesCommand({ actor: gmActor }), {
+      assignments: [],
+    }).valid).toBe(true)
+
+    const sheetAssigned = validateModifyCombatStagesCommand(createModifyCombatStagesCommand(), {
+      assignments: [sheetAssignment],
+    })
+    expect(sheetAssigned.valid).toBe(true)
+    if (!sheetAssigned.valid) throw new Error('expected sheet-assigned combat-stage command')
+    expect(sheetAssigned.permittedResource).toEqual(sheetResource)
+  })
+
+  it('reports modifyCombatStages payload, scope, and permission issues', () => {
+    const invalidPayload = validateModifyCombatStagesCommand(createModifyCombatStagesCommand({
+      payload: {
+        tokenId: '',
+        stages: { atk: 7, def: -7, satk: 0, sdef: 2.5, spd: 0, acc: '1' },
+      } as unknown as ModifyCombatStagesCommand['payload'],
+    }), { assignments: [assignment] })
+
+    expect(invalidPayload.valid).toBe(false)
+    if (invalidPayload.valid) throw new Error('expected invalid combat-stage payload')
+    expect(invalidPayload.issues.map((issue) => issue.code)).toEqual(expect.arrayContaining([
+      'invalid-token-id',
+      'invalid-stages',
+    ]))
+    expect(isModifyCombatStagesCommandValidationCode('invalid-stages')).toBe(true)
+
+    const invalidScope = validateModifyCombatStagesCommand(createModifyCombatStagesCommand({
+      scopes: [createModifyCombatStagesTokenCommandScope({ ...tokenResource, tokenId: 'other-token' })],
+    }), { assignments: [assignment] })
+    expect(invalidScope.valid).toBe(false)
+    if (invalidScope.valid) throw new Error('expected invalid combat-stage scope')
+    expect(invalidScope.issues).toContainEqual(expect.objectContaining({ code: 'invalid-token-scope' }))
+
+    const unauthorized = validateModifyCombatStagesCommand(createModifyCombatStagesCommand(), {
+      assignments: [],
+    })
+    expect(unauthorized.valid).toBe(false)
+    if (unauthorized.valid) throw new Error('expected unauthorized combat-stage result')
+    expect(unauthorized.permission).toMatchObject({
+      allowed: false,
+      reason: 'missing-player-identity',
+    })
+    expect(unauthorized.issues).toContainEqual(expect.objectContaining({ code: 'permission-denied' }))
   })
 })
