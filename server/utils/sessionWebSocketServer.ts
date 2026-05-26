@@ -61,6 +61,11 @@ import {
   SET_INITIATIVE_COMMAND_TYPE,
   type InitiativeCommand,
 } from '#shared/sessionInitiativeCommands'
+import {
+  PLACE_HAZARD_COMMAND_TYPE,
+  REMOVE_HAZARD_COMMAND_TYPE,
+  type HazardCommand,
+} from '#shared/sessionHazardCommands'
 import type { TabletopMapV2 } from '~/types/map'
 import {
   applyMoveTokenCommandUseCase,
@@ -116,6 +121,12 @@ import {
   type ApplyInitiativeCommandInput,
   type ApplyInitiativeCommandUseCaseResult,
 } from '../useCases/applyInitiativeCommand'
+import {
+  applyHazardCommandUseCase,
+  type ApplyHazardCommandDependencies,
+  type ApplyHazardCommandInput,
+  type ApplyHazardCommandUseCaseResult,
+} from '../useCases/applyHazardCommand'
 import {
   applyUseMoveCommandUseCase,
   type ApplyUseMoveCommandDependencies,
@@ -323,6 +334,11 @@ export type SessionSocketInitiativeCommandApplier = (
   dependencies?: ApplyInitiativeCommandDependencies,
 ) => ApplyInitiativeCommandUseCaseResult
 
+export type SessionSocketHazardCommandApplier = (
+  input: ApplyHazardCommandInput,
+  dependencies?: ApplyHazardCommandDependencies,
+) => ApplyHazardCommandUseCaseResult
+
 export type SessionSocketUseMoveCommandApplier = (
   input: ApplyUseMoveCommandInput,
   dependencies?: ApplyUseMoveCommandDependencies,
@@ -378,6 +394,11 @@ export type SessionSocketInitiativeCommandDependencies = Omit<
   'env' | 'store' | 'clock'
 >
 
+export type SessionSocketHazardCommandDependencies = Omit<
+  ApplyHazardCommandDependencies,
+  'env' | 'store' | 'clock'
+>
+
 export type SessionSocketUseMoveCommandDependencies = Omit<
   ApplyUseMoveCommandDependencies,
   'env' | 'store' | 'clock'
@@ -403,6 +424,7 @@ export interface SessionSocketHandlerDependencies<TMapDocument = unknown> {
   readonly applyModifyCombatStagesCommand?: SessionSocketModifyCombatStagesCommandApplier
   readonly applyModifyConditionsCommand?: SessionSocketModifyConditionsCommandApplier
   readonly applyInitiativeCommand?: SessionSocketInitiativeCommandApplier
+  readonly applyHazardCommand?: SessionSocketHazardCommandApplier
   readonly applyUseMoveCommand?: SessionSocketUseMoveCommandApplier
   readonly applyUseTableActionCommand?: SessionSocketUseTableActionCommandApplier
   readonly moveTokenCommandDependencies?: SessionSocketMoveTokenCommandDependencies
@@ -414,6 +436,7 @@ export interface SessionSocketHandlerDependencies<TMapDocument = unknown> {
   readonly modifyCombatStagesCommandDependencies?: SessionSocketModifyCombatStagesCommandDependencies
   readonly modifyConditionsCommandDependencies?: SessionSocketModifyConditionsCommandDependencies
   readonly initiativeCommandDependencies?: SessionSocketInitiativeCommandDependencies
+  readonly hazardCommandDependencies?: SessionSocketHazardCommandDependencies
   readonly useMoveCommandDependencies?: SessionSocketUseMoveCommandDependencies
   readonly useTableActionCommandDependencies?: SessionSocketUseTableActionCommandDependencies
 }
@@ -445,6 +468,7 @@ interface ResolvedSessionSocketHandlerDependencies<TMapDocument = unknown> {
   readonly applyModifyCombatStagesCommand: SessionSocketModifyCombatStagesCommandApplier
   readonly applyModifyConditionsCommand: SessionSocketModifyConditionsCommandApplier
   readonly applyInitiativeCommand: SessionSocketInitiativeCommandApplier
+  readonly applyHazardCommand: SessionSocketHazardCommandApplier
   readonly applyUseMoveCommand: SessionSocketUseMoveCommandApplier
   readonly applyUseTableActionCommand: SessionSocketUseTableActionCommandApplier
   readonly moveTokenCommandDependencies: SessionSocketMoveTokenCommandDependencies
@@ -456,6 +480,7 @@ interface ResolvedSessionSocketHandlerDependencies<TMapDocument = unknown> {
   readonly modifyCombatStagesCommandDependencies: SessionSocketModifyCombatStagesCommandDependencies
   readonly modifyConditionsCommandDependencies: SessionSocketModifyConditionsCommandDependencies
   readonly initiativeCommandDependencies: SessionSocketInitiativeCommandDependencies
+  readonly hazardCommandDependencies: SessionSocketHazardCommandDependencies
   readonly useMoveCommandDependencies: SessionSocketUseMoveCommandDependencies
   readonly useTableActionCommandDependencies: SessionSocketUseTableActionCommandDependencies
 }
@@ -876,6 +901,7 @@ const resolveDependencies = <TMapDocument>(
   applyModifyCombatStagesCommand: dependencies.applyModifyCombatStagesCommand ?? applyModifyCombatStagesCommandUseCase,
   applyModifyConditionsCommand: dependencies.applyModifyConditionsCommand ?? applyModifyConditionsCommandUseCase,
   applyInitiativeCommand: dependencies.applyInitiativeCommand ?? applyInitiativeCommandUseCase,
+  applyHazardCommand: dependencies.applyHazardCommand ?? applyHazardCommandUseCase,
   applyUseMoveCommand: dependencies.applyUseMoveCommand ?? applyUseMoveCommandUseCase,
   applyUseTableActionCommand: dependencies.applyUseTableActionCommand ?? applyUseTableActionCommandUseCase,
   moveTokenCommandDependencies: dependencies.moveTokenCommandDependencies ?? {},
@@ -887,6 +913,7 @@ const resolveDependencies = <TMapDocument>(
   modifyCombatStagesCommandDependencies: dependencies.modifyCombatStagesCommandDependencies ?? {},
   modifyConditionsCommandDependencies: dependencies.modifyConditionsCommandDependencies ?? {},
   initiativeCommandDependencies: dependencies.initiativeCommandDependencies ?? {},
+  hazardCommandDependencies: dependencies.hazardCommandDependencies ?? {},
   useMoveCommandDependencies: dependencies.useMoveCommandDependencies ?? {},
   useTableActionCommandDependencies: dependencies.useTableActionCommandDependencies ?? {},
 })
@@ -1664,11 +1691,13 @@ const handleAuthenticatedSocketCommand = <TMapDocument>(
     command.type !== USE_ORDER_COMMAND_TYPE &&
     command.type !== SET_INITIATIVE_COMMAND_TYPE &&
     command.type !== NEXT_INITIATIVE_COMMAND_TYPE &&
-    command.type !== PREVIOUS_INITIATIVE_COMMAND_TYPE
+    command.type !== PREVIOUS_INITIATIVE_COMMAND_TYPE &&
+    command.type !== PLACE_HAZARD_COMMAND_TYPE &&
+    command.type !== REMOVE_HAZARD_COMMAND_TYPE
   ) {
     sendJson(peer, createSessionSocketErrorMessage({
       code: 'unsupported-message',
-      message: 'Track 2 session WebSocket command dispatch currently supports moveToken, turnToken, spawnToken, deleteToken, sendOutPokemon, modifyHp, modifyCombatStages, modifyConditions, useMove, useManeuver, useAbility, useOrder, setInitiative, nextInitiative, and previousInitiative commands only.',
+      message: 'Track 2 session WebSocket command dispatch currently supports moveToken, turnToken, spawnToken, deleteToken, sendOutPokemon, modifyHp, modifyCombatStages, modifyConditions, useMove, useManeuver, useAbility, useOrder, setInitiative, nextInitiative, previousInitiative, placeHazard, and removeHazard commands only.',
       retryable: false,
       sessionId: connection.sessionId,
       currentRevision: connection.currentRevision,
@@ -1686,6 +1715,7 @@ const handleAuthenticatedSocketCommand = <TMapDocument>(
     | ApplyModifyCombatStagesCommandUseCaseResult
     | ApplyModifyConditionsCommandUseCaseResult
     | ApplyInitiativeCommandUseCaseResult
+    | ApplyHazardCommandUseCaseResult
     | ApplyUseMoveCommandUseCaseResult
     | ApplyUseTableActionCommandUseCaseResult
   try {
@@ -1783,11 +1813,24 @@ const handleAuthenticatedSocketCommand = <TMapDocument>(
         store: dependencies.store as unknown as InMemorySessionStore<AuthoritativeSessionState<TabletopMapV2>>,
         clock: () => receivedAt,
       })
-    } else {
+    } else if (
+      command.type === SET_INITIATIVE_COMMAND_TYPE ||
+      command.type === NEXT_INITIATIVE_COMMAND_TYPE ||
+      command.type === PREVIOUS_INITIATIVE_COMMAND_TYPE
+    ) {
       applied = dependencies.applyInitiativeCommand({
         command: command as InitiativeCommand,
       }, {
         ...dependencies.initiativeCommandDependencies,
+        env: dependencies.env,
+        store: dependencies.store as unknown as InMemorySessionStore<AuthoritativeSessionState<TabletopMapV2>>,
+        clock: () => receivedAt,
+      })
+    } else {
+      applied = dependencies.applyHazardCommand({
+        command: command as HazardCommand,
+      }, {
+        ...dependencies.hazardCommandDependencies,
         env: dependencies.env,
         store: dependencies.store as unknown as InMemorySessionStore<AuthoritativeSessionState<TabletopMapV2>>,
         clock: () => receivedAt,
