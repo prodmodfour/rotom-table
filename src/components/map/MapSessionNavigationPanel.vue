@@ -37,7 +37,8 @@ const {
   lastError,
   lastNotice,
   attachMapToSession,
-  updatePlayerAssignment,
+  assignSessionMapTokenToPlayer,
+  unassignSessionMapTokenFromPlayer,
   loadRememberedIdentity,
 } = useSessionLobby()
 
@@ -118,10 +119,15 @@ const updateTokenControl = async (
   assignmentFeedback.value = null
 
   try {
-    await updatePlayerAssignment({
+    const updateAssignment = action === 'assign'
+      ? assignSessionMapTokenToPlayer
+      : unassignSessionMapTokenFromPlayer
+    await updateAssignment({
       playerId,
-      action,
-      resources: [resource],
+      tokenId: resource.tokenId,
+      mapSlug: resource.mapSlug ?? tokenAssignmentModel.value.selectedMapSlug ?? tokenAssignmentModel.value.mapSlug,
+      sheetKind: resource.sheetKind ?? null,
+      sheetSlug: resource.sheetSlug ?? null,
     })
     assignmentFeedback.value = {
       kind: 'notice',

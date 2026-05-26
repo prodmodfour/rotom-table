@@ -4,18 +4,18 @@ import {
   type SessionTokenResourceRef,
 } from '#shared/sessionPermissions'
 import type { PlayerId, SessionDisplayName } from '#shared/sessionIdentity'
-import { isSheetKind, type SheetKind } from '#shared/sheets'
+import {
+  normalizeSessionMapTokenResources,
+  normalizeSessionTokenAssignmentText,
+  sessionTokenResourceKey,
+  type SessionMapTokenResourceInput,
+} from '~/utils/sessionTokenAssignmentResources'
 
 export type SessionTokenAssignmentRememberedRole = 'gm' | 'player' | null
 export type SessionTokenAssignmentAction = 'assign' | 'unassign'
 export type SessionTokenAssignmentStatusKind = 'ready' | 'blocked' | 'busy' | 'empty'
 
-export interface SessionTokenAssignmentTokenInput {
-  readonly tokenId?: string | null
-  readonly mapSlug?: string | null
-  readonly sheetKind?: SheetKind | null
-  readonly sheetSlug?: string | null
-}
+export type SessionTokenAssignmentTokenInput = SessionMapTokenResourceInput
 
 export interface SessionTokenAssignmentPlayerInput {
   readonly playerId: PlayerId
@@ -69,58 +69,7 @@ export interface SessionTokenAssignmentPanelModel {
   readonly players: readonly SessionTokenAssignmentPlayerModel[]
 }
 
-const normalizeText = (value: string | null | undefined): string | null => {
-  if (typeof value !== 'string') return null
-  const trimmed = value.trim()
-  return trimmed.length > 0 ? trimmed : null
-}
-
-const normalizeSheetKind = (value: SheetKind | null | undefined): SheetKind | undefined =>
-  isSheetKind(value) ? value : undefined
-
-const tokenResourceKey = (resource: Pick<SessionTokenResourceRef, 'tokenId' | 'mapSlug'>): string =>
-  `${resource.mapSlug ?? 'current-map'}::${resource.tokenId}`
-
-const createTokenResource = (
-  token: SessionTokenAssignmentTokenInput,
-  fallbackMapSlug: string,
-): SessionTokenResourceRef | null => {
-  const tokenId = normalizeText(token.tokenId)
-  if (tokenId === null) return null
-
-  const mapSlug = normalizeText(token.mapSlug) ?? fallbackMapSlug
-  const sheetKind = normalizeSheetKind(token.sheetKind)
-  const sheetSlug = normalizeText(token.sheetSlug)
-
-  return {
-    kind: 'token',
-    tokenId,
-    mapSlug,
-    ...(sheetKind === undefined ? {} : { sheetKind }),
-    ...(sheetSlug === null ? {} : { sheetSlug }),
-  }
-}
-
-const normalizeTokenResources = (
-  tokens: readonly SessionTokenAssignmentTokenInput[],
-  mapSlug: string | null,
-): readonly SessionTokenResourceRef[] => {
-  if (mapSlug === null) return []
-
-  const seen = new Set<string>()
-  const resources: SessionTokenResourceRef[] = []
-  for (const token of tokens) {
-    const resource = createTokenResource(token, mapSlug)
-    if (resource === null) continue
-
-    const key = tokenResourceKey(resource)
-    if (seen.has(key)) continue
-    seen.add(key)
-    resources.push(resource)
-  }
-
-  return resources
-}
+const normalizeText = normalizeSessionTokenAssignmentText
 
 const assignmentForPlayer = (
   assignments: readonly PlayerAssignmentRecord[],
@@ -179,7 +128,7 @@ export const buildSessionTokenAssignmentPanelModel = (
   const selectedMapSlug = normalizeText(options.selectedMapSlug)
   const players = options.players ?? []
   const assignments = options.assignments ?? []
-  const resources = normalizeTokenResources(options.tokens ?? [], mapSlug)
+  const resources = normalizeSessionMapTokenResources(options.tokens ?? [], mapSlug)
   const disabledReason = getPanelDisabledReason(options, mapSlug, selectedMapSlug)
   const canManage = disabledReason === null
 
@@ -190,7 +139,7 @@ export const buildSessionTokenAssignmentPanelModel = (
       const action: SessionTokenAssignmentAction = assigned ? 'unassign' : 'assign'
       const disabled = !canManage
       return {
-        key: `${player.playerId}::${tokenResourceKey(resource)}`,
+        key: `${player.playerId}::${sessionTokenResourceKey(resource)}`,
         tokenId: resource.tokenId,
         label: `${kindLabel(resource)} ${tokenDisplaySlug(resource)}`,
         description: tokenDescription(resource),

@@ -23,8 +23,10 @@ import type {
   PlayerAssignmentRecord,
   PlayerSessionActor,
   SessionControllableResourceRef,
+  SessionTokenResourceRef,
 } from '#shared/sessionPermissions'
 import type { MapRevision, SessionRevision } from '#shared/sessionRevisions'
+import type { SheetKind } from '#shared/sheets'
 import type {
   SelectedSessionMapSlug,
   SessionConnectedClientRecord,
@@ -38,6 +40,10 @@ import {
   type SessionClientIdentityStorage,
 } from '~/utils/sessionClientIdentityStorage'
 import { useApiClient } from '~/composables/useApiClient'
+import {
+  buildSessionMapTokenResource,
+  normalizeSessionTokenAssignmentText,
+} from '~/utils/sessionTokenAssignmentResources'
 
 export type SessionLobbyLifecycleStatus = 'active' | 'ended'
 export type SessionLobbyClock = () => string
@@ -149,6 +155,14 @@ export interface UpdatePlayerAssignmentForm {
   readonly playerId: PlayerId
   readonly action: UpdatePlayerAssignmentAction
   readonly resources: readonly SessionControllableResourceRef[]
+}
+
+export interface UpdatePlayerMapTokenAssignmentForm {
+  readonly playerId: PlayerId
+  readonly tokenId: string
+  readonly mapSlug?: string | null
+  readonly sheetKind?: SheetKind | null
+  readonly sheetSlug?: string | null
 }
 
 export interface UpdatePlayerAssignmentResponse {
@@ -400,6 +414,43 @@ export const useSessionLobby = (options: UseSessionLobbyOptions = {}) => {
     }
   }
 
+  const selectedMapSlugForTokenAssignment = (): string | null => {
+    const selectedMap = gmManagement.value?.selectedMap
+    if (selectedMap?.availableForSessionMode === true) return selectedMap.mapSlug
+
+    const session = gmManagement.value?.session
+    if (
+      session?.selectedMapAttached === true &&
+      session.sessionMapAvailable === true &&
+      session.selectedMapSlug !== null
+    ) {
+      return session.selectedMapSlug
+    }
+
+    return lastAttachedSessionMap.value?.map.mapSlug ?? null
+  }
+
+  const mapTokenResourceForAssignment = (
+    form: UpdatePlayerMapTokenAssignmentForm,
+  ): SessionTokenResourceRef => {
+    const fallbackMapSlug = selectedMapSlugForTokenAssignment()
+    const requestedMapSlug = normalizeSessionTokenAssignmentText(form.mapSlug)
+    const resource = buildSessionMapTokenResource({
+      tokenId: form.tokenId,
+      mapSlug: requestedMapSlug,
+      sheetKind: form.sheetKind,
+      sheetSlug: form.sheetSlug,
+    }, {
+      fallbackMapSlug,
+    })
+
+    if (resource === null) {
+      throw new Error('Choose a token on an attached live session map before assigning player token control.')
+    }
+
+    return resource
+  }
+
   const updatePlayerAssignment = async (
     form: UpdatePlayerAssignmentForm,
   ): Promise<UpdatePlayerAssignmentResponse> => {
@@ -441,6 +492,35 @@ export const useSessionLobby = (options: UseSessionLobbyOptions = {}) => {
       busy.value = false
     }
   }
+
+  const updatePlayerMapTokenAssignment = async (
+    action: UpdatePlayerAssignmentAction,
+    form: UpdatePlayerMapTokenAssignmentForm,
+  ): Promise<UpdatePlayerAssignmentResponse> => {
+    let resource: SessionTokenResourceRef
+    try {
+      resource = mapTokenResourceForAssignment(form)
+    } catch (error) {
+      recordFailure(error)
+      throw error
+    }
+
+    return await updatePlayerAssignment({
+      playerId: form.playerId,
+      action,
+      resources: [resource],
+    })
+  }
+
+  const assignSessionMapTokenToPlayer = async (
+    form: UpdatePlayerMapTokenAssignmentForm,
+  ): Promise<UpdatePlayerAssignmentResponse> =>
+    await updatePlayerMapTokenAssignment('assign', form)
+
+  const unassignSessionMapTokenFromPlayer = async (
+    form: UpdatePlayerMapTokenAssignmentForm,
+  ): Promise<UpdatePlayerAssignmentResponse> =>
+    await updatePlayerMapTokenAssignment('unassign', form)
 
   const refreshSessionSummary = async (): Promise<
     GmSessionManagementResponse | PlayerSessionStateResponse | null
@@ -524,6 +604,8 @@ export const useSessionLobby = (options: UseSessionLobbyOptions = {}) => {
     joinPlayerSession,
     attachMapToSession,
     updatePlayerAssignment,
+    assignSessionMapTokenToPlayer,
+    unassignSessionMapTokenFromPlayer,
     refreshSessionSummary,
     loadRememberedIdentity,
     clearRememberedIdentity,
