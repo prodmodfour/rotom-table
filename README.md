@@ -64,7 +64,7 @@ npm run build
 - [docs/live-session-backup-recovery.md](docs/live-session-backup-recovery.md) — private session backup/restore runbook for snapshots, optional event logs, and referenced campaign data.
 - [docs/live-session-persistence-recovery-audit.md](docs/live-session-persistence-recovery-audit.md) — persistence/recovery audit for snapshots, optional event logs, backup docs, cleanup, and local data hygiene.
 - [docs/live-session-security-review.md](docs/live-session-security-review.md) — trust boundaries, join-code limits, tunnel exposure risks, non-hardened areas, and live session security non-goals.
-- [docs/live-session-security-readiness-audit.md](docs/live-session-security-readiness-audit.md) — session security readiness review for auth/session/cookie/permission boundaries, public exposure warnings, and remaining non-goals.
+- [docs/live-session-security-secret-hygiene-readiness.md](docs/live-session-security-secret-hygiene-readiness.md) — security and secret-hygiene readiness review for auth/session/cookie/permission boundaries, public exposure warnings, committed-data hygiene, and remaining non-goals.
 - [docs/live-session-dependency-runtime-review.md](docs/live-session-dependency-runtime-review.md) — live session dependency inventory, runtime flags, Node/Nitro compatibility, and Cloudflare tunnel assumptions.
 - [docs/local-development.md](docs/local-development.md) — local setup, scripts, and filesystem persistence notes.
 - [docs/fan-project-notice.md](docs/fan-project-notice.md) — fan project and ownership boundaries.

@@ -38,7 +38,7 @@ This directory collects presentation and reviewer documentation for Rotom Table.
 - [Live session backup and recovery](live-session-backup-recovery.md) — private backup/restore runbook for snapshots, optional event logs, referenced campaign data, and local-only recovery limits.
 - [Live session persistence/recovery audit](live-session-persistence-recovery-audit.md) — snapshots, optional event logs, backup/restore docs, cleanup, and local data hygiene.
 - [Live session security review](live-session-security-review.md) — trust boundaries, non-hardened areas, join-code limits, tunnel exposure risks, incident response, and security non-goals.
-- [Live session security readiness audit](live-session-security-readiness-audit.md) — auth/session/cookie/permission boundaries, public exposure warnings, and remaining non-goals.
+- [Live session security and secret-hygiene readiness](live-session-security-secret-hygiene-readiness.md) — auth/session/cookie/permission boundaries, public exposure warnings, committed-data hygiene, and remaining non-goals.
 - [Live session dependency and runtime review](live-session-dependency-runtime-review.md) — dependency inventory, runtime flags, Node/Nitro compatibility, and Cloudflare tunnel assumptions.
 - [ADR 001: GM-hosted session model](adrs/001-gm-hosted-session-model.md) — decision record for GM-controlled sessions instead of SaaS, public multi-tenancy, or generic collaborative editing.
 - [ADR 002: LAN first and named Cloudflare Tunnel second](adrs/002-lan-first-named-cloudflare-tunnel.md) — decision record for LAN-first hosting, named-tunnel remote access, and Quick Tunnel caveats.

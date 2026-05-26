@@ -1,6 +1,6 @@
 # Live session persistence and recovery audit
 
-This review records the current Live session persistence/recovery posture for the state, command, hosting, LAN smoke, local-mode, and security boundaries. Read it with the [live session storage guide](live-session-storage.md), [Live session backup and recovery runbook](live-session-backup-recovery.md), [Live session security readiness audit](live-session-security-readiness-audit.md), and [Live session local-mode no-regression audit](live-session-local-mode-no-regression-audit.md).
+This review records the current Live session persistence/recovery posture for the state, command, hosting, LAN smoke, local-mode, and security boundaries. Read it with the [live session storage guide](live-session-storage.md), [Live session backup and recovery runbook](live-session-backup-recovery.md), [Live session security and secret-hygiene readiness](live-session-security-secret-hygiene-readiness.md), and [Live session local-mode no-regression audit](live-session-local-mode-no-regression-audit.md).
 
 Audit date: 2026-05-26
 

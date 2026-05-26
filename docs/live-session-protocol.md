@@ -122,7 +122,7 @@ Example remote-exposure response:
 }
 ```
 
-See [Live session public exposure checks](live-session-public-exposure-checks.md) for the operational checklist attached to these startup issues, [Live session security review](live-session-security-review.md) for the broader trust boundaries, join-code limits, tunnel exposure risks, and non-hardened areas, [Live session security readiness audit](live-session-security-readiness-audit.md) for the auth/session/cookie/permission boundary review, [Live session persistence/recovery audit](live-session-persistence-recovery-audit.md) for the snapshot/event-log and backup hygiene review, [Live session concurrency benchmark notes](live-session-concurrency-benchmark-notes.md) for latency-sensitive concurrency observations, [Live session implementation review](live-session-implementation-review.md) for implementation evidence, tests, docs, and limitations, and [Live session dependency and runtime review](live-session-dependency-runtime-review.md) for the reviewed package/runtime boundaries.
+See [Live session public exposure checks](live-session-public-exposure-checks.md) for the operational checklist attached to these startup issues, [Live session security review](live-session-security-review.md) for the broader trust boundaries, join-code limits, tunnel exposure risks, and non-hardened areas, [Live session security and secret-hygiene readiness](live-session-security-secret-hygiene-readiness.md) for the auth/session/cookie/permission boundary review, [Live session persistence/recovery audit](live-session-persistence-recovery-audit.md) for the snapshot/event-log and backup hygiene review, [Live session concurrency benchmark notes](live-session-concurrency-benchmark-notes.md) for latency-sensitive concurrency observations, [Live session implementation review](live-session-implementation-review.md) for implementation evidence, tests, docs, and limitations, and [Live session dependency and runtime review](live-session-dependency-runtime-review.md) for the reviewed package/runtime boundaries.
 
 ## Session WebSocket route and hello/auth
 
@@ -1037,7 +1037,7 @@ live-session implementation keeps these checks at the protocol boundary:
 - [Live session Quick Tunnel caveat](live-session-quick-tunnel-caveat.md)
 - [Live session backup and recovery](live-session-backup-recovery.md)
 - [Live session security review](live-session-security-review.md)
-- [Live session security readiness audit](live-session-security-readiness-audit.md)
+- [Live session security and secret-hygiene readiness](live-session-security-secret-hygiene-readiness.md)
 - [Live session implementation review](live-session-implementation-review.md)
 - [Live session dependency and runtime review](live-session-dependency-runtime-review.md)
 - [ADR 003: Session socket transport](adrs/003-session-socket-transport.md)

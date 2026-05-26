@@ -50,7 +50,7 @@ describe('live session readiness summary', () => {
       'docs/live-session-lan-manual-smoke-results.md',
       'docs/live-session-named-tunnel-documentation-review.md',
       'docs/live-session-local-mode-no-regression-audit.md',
-      'docs/live-session-security-readiness-audit.md',
+      'docs/live-session-security-secret-hygiene-readiness.md',
       'docs/live-session-persistence-recovery-audit.md',
       'docs/live-session-concurrency-benchmark-notes.md',
     ]

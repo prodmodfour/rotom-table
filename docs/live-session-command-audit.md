@@ -43,6 +43,6 @@ This audit complements, but does not replace:
 - [Live session deployment smoke checklist](live-session-deployment-smoke-checklist.md) for LAN and named Cloudflare Tunnel deployment validation;
 - [Live session local-mode no-regression audit](live-session-local-mode-no-regression-audit.md) for plain map/sheet workflows, local autosave, and legacy SSE checks;
 - [Live session concurrency benchmark notes](live-session-concurrency-benchmark-notes.md) for latency-sensitive behaviour observations and performance limitations;
-- [Live session security readiness audit](live-session-security-readiness-audit.md) for auth/session/cookie/permission boundary review;
+- [Live session security and secret-hygiene readiness](live-session-security-secret-hygiene-readiness.md) for auth/session/cookie/permission boundary review;
 - [Live session persistence/recovery audit](live-session-persistence-recovery-audit.md) for snapshot/event-log and local data hygiene review;
 - [Live session implementation review](live-session-implementation-review.md) for implementation evidence, tests, docs, and known limitations.
