@@ -63,6 +63,15 @@ Result:
 - The real-flow smoke passed through start, attaching a saved smoke map, joining Player A and Player B, assigning one map token, authenticating three session sockets, accepting Player A's `moveToken` command, fanning out same-session patches, reconnecting Player B with a filtered snapshot, and removing generated smoke data.
 - A repository scan found no old external-process or review-workflow statements in tracked files.
 
+## Readiness confirmation
+
+For this source revision, the live-session readiness criteria are satisfied:
+
+- Product vocabulary and repository-hygiene scans pass for tracked filenames and content.
+- Typecheck, automated tests, and the production build pass for the server-owned attach/assign/session-command flow described above.
+- No product-level blockers are recorded for the GM start → attach map → join → assign token → session command → reconnect snapshot flow.
+- Local-first map and sheet editing remains the default outside explicit session mode.
+
 ## Known limits to keep visible
 
 - Live sessions assume trusted table participants. They are not hardened public authentication, abuse protection, or public multi-user hosting.

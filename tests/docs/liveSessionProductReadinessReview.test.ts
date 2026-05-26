@@ -113,6 +113,20 @@ describe('live session product readiness review', () => {
     }
   })
 
+  it('records the readiness confirmation for the current source revision', () => {
+    for (const phrase of [
+      '## Readiness confirmation',
+      'live-session readiness criteria are satisfied',
+      'Product vocabulary and repository-hygiene scans pass for tracked filenames and content',
+      'Typecheck, automated tests, and the production build pass',
+      'server-owned attach/assign/session-command flow',
+      'No product-level blockers are recorded for the GM start → attach map → join → assign token → session command → reconnect snapshot flow',
+      'Local-first map and sheet editing remains the default outside explicit session mode',
+    ]) {
+      expect(review).toContain(phrase)
+    }
+  })
+
   it('keeps limitations and the operator checklist visible', () => {
     for (const phrase of [
       'Live sessions assume trusted table participants',
