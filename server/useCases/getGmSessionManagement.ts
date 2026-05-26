@@ -11,11 +11,13 @@ import type {
   SessionControllableResourceRef,
   SessionVisibleResourceRef,
 } from '#shared/sessionPermissions'
-import type { SessionRevision } from '#shared/sessionRevisions'
+import type { MapRevision, SessionRevision } from '#shared/sessionRevisions'
 import type {
+  AuthoritativeSessionMapState,
   AuthoritativeSessionState,
   SelectedSessionMapSlug,
   SessionConnectedClientRecord,
+  SessionMapSlug,
   SessionPlayerRecord,
 } from '#shared/sessionState'
 import { assertSessionHostEnabled, type SessionHostRuntimeEnv } from '../utils/sessionHosting'
@@ -46,6 +48,9 @@ export interface ManagedGmSessionDetails {
   readonly status: SessionStoreStatus
   readonly revision: SessionRevision
   readonly selectedMapSlug: SelectedSessionMapSlug
+  readonly selectedMapRevision: MapRevision | null
+  readonly selectedMapAttached: boolean
+  readonly sessionMapAvailable: boolean
   readonly createdAt: string
   readonly updatedAt: string
   readonly endedAt?: string
@@ -63,9 +68,20 @@ export type ManagedSessionPlayerSummary = SessionPlayerRecord
 export type ManagedSessionConnectedClientSummary = SessionConnectedClientRecord
 export type ManagedSessionAssignmentSummary = PlayerAssignmentRecord
 
+export interface ManagedSessionMapSummary {
+  readonly mapSlug: SessionMapSlug
+  readonly revision: MapRevision
+  readonly selected: boolean
+  readonly attached: true
+  readonly availableForSessionMode: true
+  readonly playerVisibleByDefault: boolean
+}
+
 export interface GetGmSessionManagementUseCaseResult<TMapDocument = unknown> {
   readonly session: ManagedGmSessionDetails
   readonly join: ManagedGmSessionJoinDetails
+  readonly selectedMap: ManagedSessionMapSummary | null
+  readonly maps: readonly ManagedSessionMapSummary[]
   readonly players: readonly ManagedSessionPlayerSummary[]
   readonly connectedClients: readonly ManagedSessionConnectedClientSummary[]
   readonly assignments: readonly ManagedSessionAssignmentSummary[]
@@ -159,6 +175,18 @@ const cloneAssignments = (
     visibleResources: cloneVisibleResources(assignment.visibleResources),
   }))
 
+const summarizeAttachedMaps = <TMapDocument>(
+  maps: readonly AuthoritativeSessionMapState<TMapDocument>[],
+  selectedMapSlug: SelectedSessionMapSlug,
+): readonly ManagedSessionMapSummary[] => maps.map((map) => ({
+  mapSlug: map.mapSlug,
+  revision: map.revision,
+  selected: selectedMapSlug === map.mapSlug,
+  attached: true as const,
+  availableForSessionMode: true as const,
+  playerVisibleByDefault: map.playerVisibleByDefault === true,
+}))
+
 export const getGmSessionManagementUseCase = <TMapDocument = unknown>(
   input: GetGmSessionManagementInput = {},
   dependencies: GetGmSessionManagementDependencies<TMapDocument> = {},
@@ -172,6 +200,8 @@ export const getGmSessionManagementUseCase = <TMapDocument = unknown>(
   const gmKey = normalizeGmKeyForManagement(input.gmKey)
   const record = getManagedSessionRecord(activeStore, sessionId, gmKey)
   const state = record.state
+  const maps = summarizeAttachedMaps(state.maps, state.selectedMapSlug)
+  const selectedMap = maps.find((map) => map.selected) ?? null
 
   return {
     session: {
@@ -179,6 +209,9 @@ export const getGmSessionManagementUseCase = <TMapDocument = unknown>(
       status: record.status,
       revision: record.revision,
       selectedMapSlug: state.selectedMapSlug,
+      selectedMapRevision: selectedMap?.revision ?? null,
+      selectedMapAttached: selectedMap !== null,
+      sessionMapAvailable: selectedMap?.availableForSessionMode === true,
       createdAt: record.createdAt,
       updatedAt: record.updatedAt,
       ...(record.endedAt === undefined ? {} : { endedAt: record.endedAt }),
@@ -190,6 +223,8 @@ export const getGmSessionManagementUseCase = <TMapDocument = unknown>(
     join: {
       joinCode: record.joinCode,
     },
+    selectedMap,
+    maps,
     players: clonePlayers(state.players),
     connectedClients: cloneConnectedClients(state.connectedClients),
     assignments: cloneAssignments(state.assignments),

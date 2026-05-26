@@ -2,7 +2,8 @@
  * POST /api/sessions/manage
  *
  * Returns the GM management summary for one live session: join code,
- * joined players, connected clients, assignments, and lifecycle status. The
+ * attached session map summaries, joined players, connected clients,
+ * assignments, and lifecycle status. The
  * route fails closed unless ROTOM_ENABLE_SESSION_HOST=1 is present and requires
  * the session-local GM key rather than trusting the local role picker as public
  * authentication.
@@ -24,6 +25,8 @@ export default defineEventHandler(async (event) => {
     return {
       session: result.session,
       join: result.join,
+      selectedMap: result.selectedMap,
+      maps: result.maps,
       players: result.players,
       connectedClients: result.connectedClients,
       assignments: result.assignments,

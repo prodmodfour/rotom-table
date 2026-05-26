@@ -176,7 +176,32 @@ describe('getGmSessionManagementUseCase', () => {
     )
   })
 
-  it('returns GM management status, join code, players, clients, and assignments', () => {
+  it('reports that no selected session map is available before a map is attached', () => {
+    const state = createAuthoritativeSessionState<{ readonly tokenCount: number }>({
+      sessionId,
+      revision,
+      createdAt,
+      updatedAt,
+    })
+    const store = createStoreWithSession({ state })
+
+    const result = getManagement({ store })
+
+    expect(result.session).toMatchObject({
+      sessionId,
+      status: 'active',
+      revision,
+      selectedMapSlug: null,
+      selectedMapRevision: null,
+      selectedMapAttached: false,
+      sessionMapAvailable: false,
+      mapCount: 0,
+    })
+    expect(result.selectedMap).toBeNull()
+    expect(result.maps).toEqual([])
+  })
+
+  it('returns GM management status, join code, attached maps, players, clients, and assignments', () => {
     const state = createManagedState()
     const store = createStoreWithSession({ state })
 
@@ -187,6 +212,9 @@ describe('getGmSessionManagementUseCase', () => {
       status: 'active',
       revision,
       selectedMapSlug: 'viridian-gym',
+      selectedMapRevision: mapRevision,
+      selectedMapAttached: true,
+      sessionMapAvailable: true,
       createdAt,
       updatedAt,
       playerCount: 1,
@@ -194,7 +222,17 @@ describe('getGmSessionManagementUseCase', () => {
       assignmentCount: 1,
       mapCount: 1,
     })
+    const mapSummary = {
+      mapSlug: 'viridian-gym',
+      revision: mapRevision,
+      selected: true,
+      attached: true,
+      availableForSessionMode: true,
+      playerVisibleByDefault: false,
+    }
     expect(result.join).toEqual({ joinCode })
+    expect(result.selectedMap).toEqual(mapSummary)
+    expect(result.maps).toEqual([mapSummary])
     expect(result.players).toEqual(state.players)
     expect(result.connectedClients).toEqual(state.connectedClients)
     expect(result.assignments).toEqual(state.assignments)

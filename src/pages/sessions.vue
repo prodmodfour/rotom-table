@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import AppNavigation from '~/components/AppNavigation.vue'
 import { useSessionLobby } from '~/composables/useSessionLobby'
+import { buildPlayerSessionMapNavigationModel } from '~/utils/playerSessionMapNavigation'
 import {
   SESSION_LOBBY_GM_SECTION_ID,
   SESSION_LOBBY_PLAYER_SECTION_ID,
@@ -46,6 +47,7 @@ const canJoin = computed(() =>
   joinCode.value.trim().length > 0 && displayName.value.trim().length > 0 && !busy.value,
 )
 const currentSessionId = computed(() => gmSession.value?.sessionId ?? playerSession.value?.sessionId ?? null)
+const playerMapNavigation = computed(() => buildPlayerSessionMapNavigationModel(playerState.value?.visibility ?? null))
 const safetyBannerSeverity = computed(() => safetyStatus.value?.severity ?? 'unknown')
 const safetyTitle = computed(() => safetyStatus.value?.title ?? 'Checking live session hosting safety')
 const safetySummary = computed(() => safetyStatus.value?.summary
@@ -346,6 +348,31 @@ onMounted(() => {
               <dd>{{ playerState?.visibility.currentMapVisible ? 'Yes' : 'No' }}</dd>
             </div>
           </dl>
+
+          <section class="mini-section" aria-labelledby="visible-session-maps-title">
+            <h3 id="visible-session-maps-title">{{ playerMapNavigation.heading }}</h3>
+            <p class="empty-text">{{ playerMapNavigation.summary }}</p>
+            <ul v-if="playerMapNavigation.links.length > 0" class="session-map-list">
+              <li
+                v-for="link in playerMapNavigation.links"
+                :key="link.key"
+                :class="{ 'session-map-list__item--selected': link.selected }"
+              >
+                <NuxtLink
+                  :to="link.to"
+                  class="session-map-link"
+                  :aria-label="`${link.label}: ${link.mapSlug}. ${link.description}`"
+                >
+                  <span>{{ link.label }}</span>
+                  <strong>{{ link.mapSlug }}</strong>
+                  <small>{{ link.description }}</small>
+                </NuxtLink>
+              </li>
+            </ul>
+            <p v-else-if="playerMapNavigation.emptyMessage" class="empty-text" role="status">
+              {{ playerMapNavigation.emptyMessage }}
+            </p>
+          </section>
 
           <section class="mini-section" aria-labelledby="player-assignments-title">
             <h3 id="player-assignments-title">Your assignments</h3>
@@ -729,7 +756,8 @@ h3 {
 }
 
 .player-list,
-.assignment-list {
+.assignment-list,
+.session-map-list {
   display: grid;
   gap: 0.45rem;
   list-style: none;
@@ -738,7 +766,8 @@ h3 {
 }
 
 .player-list li,
-.assignment-list li {
+.assignment-list li,
+.session-map-list li {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
@@ -746,6 +775,11 @@ h3 {
   padding: 0.6rem;
   border: 1px solid var(--rule-soft);
   background: var(--paper-inset);
+}
+
+.session-map-list__item--selected {
+  border-color: rgba(255, 31, 45, 0.5) !important;
+  background: rgba(255, 31, 45, 0.08) !important;
 }
 
 .player-list span,
@@ -757,6 +791,44 @@ h3 {
 .player-list small,
 .assignment-list small {
   color: var(--ink-muted);
+  overflow-wrap: anywhere;
+}
+
+.session-map-link {
+  display: grid;
+  gap: 0.2rem;
+  width: 100%;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.session-map-link:hover,
+.session-map-link:focus-visible {
+  color: var(--accent);
+  outline: none;
+}
+
+.session-map-link:focus-visible {
+  outline: 2px solid rgba(255, 31, 45, 0.35);
+  outline-offset: 3px;
+}
+
+.session-map-link span {
+  color: var(--accent);
+  font-size: 0.76rem;
+  font-weight: 850;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.session-map-link strong {
+  color: var(--ink-bright);
+  overflow-wrap: anywhere;
+}
+
+.session-map-link small {
+  color: var(--ink-muted);
+  line-height: 1.4;
   overflow-wrap: anywhere;
 }
 

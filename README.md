@@ -43,6 +43,7 @@ npm run build
 - [docs/live-session-socket-protocol.md](docs/live-session-socket-protocol.md) — live session socket route, message examples, heartbeat, reconnect, command flow, and named-tunnel expectations.
 - [docs/live-session-table-action-commands.md](docs/live-session-table-action-commands.md) — supported HP, condition, initiative, move/action, hazard, field-effect, and terrain session commands with permissions, conflicts, and limitations.
 - [docs/live-session-client-integration.md](docs/live-session-client-integration.md) — how local map mode and explicit session mode coexist, including disconnect and conflict recovery guidance.
+- [docs/live-session-map-attachment.md](docs/live-session-map-attachment.md) — GM flow for attaching saved maps to server-owned live session state before players open session maps.
 - [docs/live-session-lobby.md](docs/live-session-lobby.md) — GM/player join flow, expected LAN usage, and two-browser lobby smoke checklist.
 - [docs/live-session-host-runtime.md](docs/live-session-host-runtime.md) — npm helpers for guarded LAN and named-tunnel session host startup.
 - [docs/live-session-public-exposure-checks.md](docs/live-session-public-exposure-checks.md) — no-secret safety banner checks for unsafe public/LAN startup states before sharing join codes.

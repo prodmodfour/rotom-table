@@ -20,6 +20,7 @@ import {
 } from '#shared/sessionIdentity'
 import { INITIAL_SESSION_REVISION, parseMapRevision, parseSessionRevision } from '#shared/sessionRevisions'
 import {
+  createAuthoritativeSessionMapState,
   createAuthoritativeSessionState,
   type AuthoritativeSessionState,
 } from '#shared/sessionState'
@@ -587,6 +588,67 @@ describe('session socket route', () => {
       currentRevision: REVISION_3,
       lastSeenRevision: INITIAL_SESSION_REVISION,
     })
+  })
+
+  it('keeps a visible attached selected map in player reconnect snapshots while filtering hidden maps', () => {
+    const state = createAuthoritativeSessionState<Record<string, boolean>>({
+      sessionId: SESSION_ID,
+      revision: REVISION_3,
+      selectedMapSlug: 'viridian-gym',
+      maps: [
+        createAuthoritativeSessionMapState<Record<string, boolean>>({
+          mapSlug: 'hidden-map',
+          revision: MAP_REVISION_1,
+          document: { secret: true },
+        }),
+        createAuthoritativeSessionMapState<Record<string, boolean>>({
+          mapSlug: 'viridian-gym',
+          revision: MAP_REVISION_1,
+          playerVisibleByDefault: true,
+          document: { public: true },
+        }),
+      ],
+      createdAt: CREATED_AT,
+      updatedAt: CREATED_AT,
+      players: [
+        {
+          playerId: PLAYER_ID,
+          displayName: PLAYER_DISPLAY_NAME,
+          joinedAt: CREATED_AT,
+          updatedAt: CREATED_AT,
+        },
+      ],
+      assignments: [
+        {
+          playerId: PLAYER_ID,
+          displayName: PLAYER_DISPLAY_NAME,
+          controllableResources: [],
+          visibleResources: [{ kind: 'map', mapSlug: 'viridian-gym' }],
+          updatedAt: CREATED_AT,
+        },
+      ],
+    })
+    const actor = {
+      role: 'player' as const,
+      playerId: PLAYER_ID,
+      clientId: PLAYER_CLIENT_ID,
+      displayName: PLAYER_DISPLAY_NAME,
+    }
+
+    const snapshotMessage = createSessionReconnectSnapshotMessage(state, actor)
+
+    expect(snapshotMessage.snapshot.selectedMapSlug).toBe('viridian-gym')
+    expect(snapshotMessage.snapshot.maps).toEqual([
+      {
+        mapSlug: 'viridian-gym',
+        revision: MAP_REVISION_1,
+        playerVisibleByDefault: true,
+        document: { public: true },
+      },
+    ])
+    expect(snapshotMessage.snapshot.maps).not.toContainEqual(expect.objectContaining({
+      mapSlug: 'hidden-map',
+    }))
   })
 
   it('rejects valid command frames before authentication without granting session authority', () => {

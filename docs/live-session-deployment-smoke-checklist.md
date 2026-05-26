@@ -11,6 +11,7 @@ Related runbooks:
 - [Live session named Cloudflare Tunnel runbook](live-session-cloudflare-tunnel-hosting.md) for stable remote hostname setup, WebSocket considerations, and rollback.
 - [live session host runtime scripts](live-session-host-runtime.md) for `npm run dev:session:lan` and `npm run dev:session:tunnel` helper details.
 - [Live session multi-tab local smoke script](live-session-multi-tab-smoke.md) for local tab helpers and focused automated token/client checks.
+- [Live session map attachment flow](live-session-map-attachment.md) for attaching saved maps to server-owned session state before players open session maps.
 - [Live session security review](live-session-security-review.md) for trust boundaries, join-code limits, tunnel exposure risks, and incident response.
 - [Live session dependency and runtime review](live-session-dependency-runtime-review.md) for dependency inventory, runtime flags, Node/Nitro compatibility, and Cloudflare assumptions.
 - [Live session concurrency benchmark notes](live-session-concurrency-benchmark-notes.md) for latency-sensitive behaviour observations, operator timing buckets, and known performance limits.
@@ -20,19 +21,21 @@ Related runbooks:
 Run the same functional scenario in each deployment mode you plan to use:
 
 1. GM starts a guarded session.
-2. Two players join from separate browser identities.
-3. GM and both players open the explicit session map route.
-4. A token move propagates to all clients as a small authoritative patch.
-5. An initiative change propagates to all clients as a small authoritative patch.
-6. A player/client reconnects and receives current authoritative state.
-7. A stale/conflicting same-resource command is rejected safely.
-8. Cleanup leaves no secrets or private runtime data staged for commit.
+2. GM attaches the saved map to server-owned session state.
+3. Two players join from separate browser identities and can see the attached map.
+4. GM assigns controllable resources needed for player actions.
+5. GM and both players open the explicit session map route.
+6. A token move propagates to all clients as a small authoritative patch.
+7. An initiative change propagates to all clients as a small authoritative patch.
+8. A player/client reconnects and receives current authoritative state.
+9. A stale/conflicting same-resource command is rejected safely.
+10. Cleanup leaves no secrets or private runtime data staged for commit.
 
 Use generic names in notes such as `GM`, `Player A`, `Player B`, `table.example.com`, and `<map-slug>`. Do not paste real join codes, GM keys, snapshots, event logs, private player names, Cloudflare tokens, tunnel credentials, screenshots with secrets, or real `.env` values into evidence.
 
 ## Preflight for both modes
 
-- [ ] The target map exists and has at least one placed token that can be moved and one initiative entry or token that can be placed into initiative.
+- [ ] The target map exists, is saved, and has at least one placed token that can be moved and one initiative entry or token that can be placed into initiative.
 - [ ] The GM browser and each player browser use separate profiles, browser containers, private windows, or devices so session-local identities do not overwrite each other.
 - [ ] The GM has chosen **GM Login** in the existing local `/login` role picker. This trust picker is not public authentication.
 - [ ] The working tree is clean before the smoke: `git status --short` prints no private campaign/runtime files.
@@ -112,10 +115,12 @@ Run this scenario after completing either the LAN lane or the named-tunnel lane.
 - [ ] GM browser: open `<base-url>/login` and confirm **GM Login** is active.
 - [ ] GM browser: open `<base-url>/sessions#gm-lobby-title` and press **Start GM session**.
 - [ ] GM browser: confirm a session ID, current revision, and player join code appear; the GM key is not shown in page chrome or copied into shared chat.
+- [ ] GM browser: open `<base-url>/maps/<map-slug>`, press **Attach current map to live session**, and confirm the selected map is available for session mode.
 - [ ] Player A browser: join from `<base-url>/sessions#player-lobby-title` with the join code and a safe display name such as `Player A`.
 - [ ] Player B browser: join from the same URL with a separate display name such as `Player B`.
 - [ ] GM browser: press **Refresh lobby** and verify both players appear exactly once.
-- [ ] Player browsers: refresh remembered session state and verify each player sees only their own identity, assignment summary, current revision, and safe session status.
+- [ ] Player browsers: refresh remembered session state and verify each player sees only their own identity, assignment summary, current revision, safe session status, and the attached map in **Visible session maps**.
+- [ ] GM browser: assign any token/sheet resources that Player A or Player B should control during the smoke.
 
 ### 2. Open session map and verify presence
 
@@ -123,7 +128,7 @@ Run this scenario after completing either the LAN lane or the named-tunnel lane.
 - [ ] Player A browser: open `<base-url>/maps/<map-slug>?session=1`.
 - [ ] Player B browser: open `<base-url>/maps/<map-slug>?session=1`.
 - [ ] The session/presence panel shows the current session and three connected browser identities: GM, Player A, and Player B.
-- [ ] The plain `<base-url>/maps/<map-slug>` route remains local-first and is not used for the live smoke actions.
+- [ ] The plain `<base-url>/maps/<map-slug>` route remains local-first and is not used for the live smoke actions after attachment.
 
 ### 3. Token move propagation
 

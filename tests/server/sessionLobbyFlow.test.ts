@@ -238,7 +238,9 @@ describe('Live session join/lobby endpoint flow coverage', () => {
     })
     expect(firstStateBeforeAssignment.assignment.controllableResources).toEqual([])
     expect(firstStateBeforeAssignment.visibility).toEqual({
+      selectedMapAttached: false,
       currentMapVisible: false,
+      currentMapAvailable: false,
       currentMap: null,
       visibleMapSlugs: [],
       visibleMaps: [],

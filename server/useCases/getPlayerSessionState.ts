@@ -71,10 +71,15 @@ export type PlayerSessionAssignmentDetails = PlayerAssignmentRecord
 export interface PlayerVisibleMapSummary {
   readonly mapSlug: SessionMapSlug
   readonly revision: MapRevision
+  readonly selected: boolean
+  readonly attached: true
+  readonly availableForSessionMode: true
 }
 
 export interface PlayerSessionVisibilityDetails {
+  readonly selectedMapAttached: boolean
   readonly currentMapVisible: boolean
+  readonly currentMapAvailable: boolean
   readonly currentMap: PlayerVisibleMapSummary | null
   readonly visibleMapSlugs: readonly SessionMapSlug[]
   readonly visibleMaps: readonly PlayerVisibleMapSummary[]
@@ -220,17 +225,26 @@ const summarizeVisibleMaps = <TMapDocument>(
   const visibleMapSlugs = [...visibleMapSlugSet].sort((left, right) => left.localeCompare(right))
   const visibleMaps = state.maps
     .filter((map) => visibleMapSlugSet.has(map.mapSlug))
-    .map((map) => ({ mapSlug: map.mapSlug, revision: map.revision }))
+    .map((map) => ({
+      mapSlug: map.mapSlug,
+      revision: map.revision,
+      selected: state.selectedMapSlug === map.mapSlug,
+      attached: true as const,
+      availableForSessionMode: true as const,
+    }))
 
   const selectedMap = state.selectedMapSlug === null
     ? undefined
     : state.maps.find((map) => map.mapSlug === state.selectedMapSlug)
-  const currentMap = selectedMap === undefined || !visibleMapSlugSet.has(selectedMap.mapSlug)
-    ? null
-    : { mapSlug: selectedMap.mapSlug, revision: selectedMap.revision }
+  const selectedMapAttached = selectedMap !== undefined
+  const currentMap = selectedMapAttached && visibleMapSlugSet.has(selectedMap.mapSlug)
+    ? visibleMaps.find((map) => map.mapSlug === selectedMap.mapSlug) ?? null
+    : null
 
   return {
+    selectedMapAttached,
     currentMapVisible: currentMap !== null,
+    currentMapAvailable: currentMap?.availableForSessionMode === true,
     currentMap,
     visibleMapSlugs,
     visibleMaps,

@@ -8,9 +8,10 @@ import {
   type SessionDisplayName,
   type SessionId,
 } from '#shared/sessionIdentity'
-import type { PlayerSessionActor } from '#shared/sessionPermissions'
+import type { PlayerSessionActor, SessionVisibleResourceRef } from '#shared/sessionPermissions'
 import { incrementSessionRevision, type SessionRevision } from '#shared/sessionRevisions'
 import {
+  isSessionMapVisibleByDefaultToPlayers,
   upsertSessionPlayerAssignment,
   upsertSessionPlayerRecord,
   type AuthoritativeSessionState,
@@ -198,6 +199,13 @@ const getJoinableRecord = <TMapDocument>(
   return record as JoinableSessionStoreRecord<TMapDocument>
 }
 
+const getDefaultVisibleMapResources = <TMapDocument>(
+  state: AuthoritativeSessionState<TMapDocument>,
+): readonly SessionVisibleResourceRef[] =>
+  state.maps
+    .filter(isSessionMapVisibleByDefaultToPlayers)
+    .map((map) => ({ kind: 'map' as const, mapSlug: map.mapSlug }))
+
 const createJoinedPlayerState = <TMapDocument>(
   state: AuthoritativeSessionState<TMapDocument>,
   playerId: PlayerId,
@@ -211,6 +219,7 @@ const createJoinedPlayerState = <TMapDocument>(
     joinedAt,
     updatedAt: joinedAt,
   }
+  const visibleResources = getDefaultVisibleMapResources(state)
 
   const withPlayer = upsertSessionPlayerRecord(state, player, {
     revision: nextRevision,
@@ -221,7 +230,7 @@ const createJoinedPlayerState = <TMapDocument>(
     playerId,
     displayName,
     controllableResources: [],
-    visibleResources: [],
+    visibleResources,
     updatedAt: joinedAt,
   }, {
     revision: nextRevision,
