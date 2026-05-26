@@ -8,6 +8,7 @@ import {
   type SessionClientMessage,
   type SessionServerMessage,
 } from '#shared/sessionMessages'
+import { parseOpId } from '#shared/sessionCommands'
 import {
   parseClientId,
   parseGmKey,
@@ -15,7 +16,7 @@ import {
   parseSessionDisplayName,
   parseSessionId,
 } from '#shared/sessionIdentity'
-import { INITIAL_SESSION_REVISION } from '#shared/sessionRevisions'
+import { INITIAL_SESSION_REVISION, parseSessionRevision } from '#shared/sessionRevisions'
 import {
   createSessionClientHeartbeatMessage,
   createSessionClientHelloMessage,
@@ -33,6 +34,8 @@ const PLAYER_CLIENT_ID = parseClientId('client_player01')
 const PLAYER_ID = parsePlayerId('player_misty001')
 const GM_KEY = parseGmKey('gmkey_abcdefghijklmnopqrstuvwxyz')
 const PLAYER_DISPLAY_NAME = parseSessionDisplayName('Misty')
+const OP_ID = parseOpId('op_12345678')
+const SESSION_REVISION_3 = parseSessionRevision(3)
 
 const gmIdentity: SessionClientIdentity = {
   schemaVersion: SESSION_CLIENT_IDENTITY_SCHEMA_VERSION,
@@ -487,6 +490,61 @@ describe('useSessionSocket', () => {
     } finally {
       vi.useRealTimers()
     }
+  })
+
+  it('updates the last known revision from command results and patch broadcasts', () => {
+    const fake = makeFakeWebSocketConstructor()
+    const sessionSocket = useSessionSocket({
+      webSocketConstructor: fake.Constructor,
+      location: { protocol: 'http:', host: 'localhost:3000' },
+    })
+
+    sessionSocket.connect()
+    fake.instances[0]?.open()
+    fake.instances[0]?.receive(JSON.stringify({
+      schemaVersion: SESSION_MESSAGE_SCHEMA_VERSION,
+      type: 'commandAck',
+      direction: 'server',
+      sessionId: SESSION_ID,
+      result: {
+        schemaVersion: 1,
+        status: 'accepted',
+        accepted: true,
+        sessionId: SESSION_ID,
+        opId: OP_ID,
+        commandType: 'moveToken',
+        actor: {
+          role: 'player',
+          playerId: PLAYER_ID,
+          clientId: PLAYER_CLIENT_ID,
+          displayName: PLAYER_DISPLAY_NAME,
+        },
+        currentRevision: SESSION_REVISION_3,
+        scopes: [],
+      },
+    } satisfies SessionServerMessage))
+
+    expect(sessionSocket.lastKnownRevision.value).toBe(SESSION_REVISION_3)
+
+    fake.instances[0]?.receive(JSON.stringify({
+      schemaVersion: SESSION_MESSAGE_SCHEMA_VERSION,
+      type: 'patch',
+      direction: 'server',
+      sessionId: SESSION_ID,
+      event: {
+        eventType: 'tokenMoved',
+        revision: parseSessionRevision(4),
+        commandType: 'moveToken',
+        opId: OP_ID,
+        scopes: [],
+        payload: {
+          tokenId: 'token-pikachu',
+          to: { x: 3, y: 0, z: 2 },
+        },
+      },
+    } satisfies SessionServerMessage))
+
+    expect(sessionSocket.lastKnownRevision.value).toBe(parseSessionRevision(4))
   })
 
   it('sends immediately when open and records parsed server messages', () => {

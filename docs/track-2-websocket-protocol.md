@@ -5,11 +5,11 @@ This is the WebSocket-focused reference for the Track 2 session transport. It co
 This document describes the transport slice that exists after the WebSocket transport chunk:
 
 - the runtime-gated session socket route exists at `WebSocket /api/sessions/socket`;
-- the client wrapper can connect, send hello, queue messages, run heartbeat, and track reconnect snapshots;
+- the client wrapper can connect, send hello, queue messages, run heartbeat, track reconnect snapshots, and keep its last-known revision current from command results and patch broadcasts;
 - the server validates hello, heartbeat, and command frame shapes before dispatch;
 - same-session fanout exists for presence, command results, patches, and snapshots;
 - reconnect currently falls back to an authoritative snapshot when replay is unavailable;
-- command-specific handlers such as `moveToken` are still later tickets, so accepted/rejected command examples below are the contract those handlers must follow rather than proof that token commands already apply.
+- the shared `moveToken`, `turnToken`, `spawnToken`, `deleteToken`, and `sendOutPokemon` command payload contracts, validators, server-side application use cases, sender acknowledgement/rejection, and same-session `tokenMoved`/`tokenTurned`/`tokenSpawned`/`tokenDeleted`/`pokemonSentOut` patch broadcasts now apply through `/api/sessions/socket`; move/turn also have explicit map-view client dispatch and client-local optimistic visual reconciliation.
 
 ## Route, runtime gate, and URL shape
 
@@ -42,7 +42,7 @@ Every WebSocket message is JSON and carries:
 
 Client message types are `hello`, `heartbeat`, and `command`. Server message types are `hello`, `heartbeat`, `commandAck`, `commandReject`, `snapshot`, `patch`, `presence`, and `error`.
 
-Unknown frames, invalid JSON, unsupported message types, wrong schema versions, missing session scope, pre-auth heartbeat/command messages, and cross-session messages fail closed with a safe server `error` frame when possible. Valid authenticated command frames are currently envelope-validated and answered with `unsupported-message` until command handlers land.
+Unknown frames, invalid JSON, unsupported message types, wrong schema versions, missing session scope, pre-auth heartbeat/command messages, and cross-session messages fail closed with a safe server `error` frame when possible. Valid authenticated `moveToken`, `turnToken`, `spawnToken`, `deleteToken`, and `sendOutPokemon` frames are dispatched to server-authoritative command handlers; authenticated command types that are not implemented yet receive `unsupported-message` without closing the socket.
 
 ## Connection lifecycle
 
@@ -252,7 +252,7 @@ GM snapshots can include the full server-owned state. Player snapshots are filte
 
 ## Command flow
 
-The client sends a command envelope inside a client `command` message. The envelope includes the authenticated actor, an `opId`, `baseRevision`, scope lanes, and a JSON payload. The `moveToken` example below is illustrative until token command tickets define the exact payload and validator.
+The client sends a command envelope inside a client `command` message. The envelope includes the authenticated actor, an `opId`, `baseRevision`, scope lanes, and a JSON payload. The `moveToken` example below matches the shared movement payload validator and is dispatched by the WebSocket route to the server-side application use case; `turnToken` uses the same envelope with `field: "facing"` and payload `{ "tokenId": string, "facing": "south-east" | "north-east" | "north-west" | "south-west" }`. GM-only `spawnToken` uses `field: "spawn"` and a placement payload; GM-only `deleteToken` uses `field: "delete"` and a token ID payload. `sendOutPokemon` includes both a trainer `field: "sendOut"` token scope and a spawned Pokémon `field: "spawn"` token scope, with payload `{ "trainerTokenId": string, "pokemonSlug": string, "tokenId": string, "position": { "x": number, "y": number, "z": number }, "facing"?: direction }`. The map page currently uses move/turn paths only when it is explicitly opened in session mode with a remembered session identity, for example `/maps/viridian-gym?session=1`; otherwise local-first token dragging and turning still mutate and autosave the local map as before. Spawn/delete/send-out dispatch exists at the shared/server/socket layer for session mode and awaits a later client UI integration slice.
 
 ```json
 {
@@ -280,12 +280,12 @@ The client sends a command envelope inside a client `command` message. The envel
           "kind": "token",
           "tokenId": "token_pikachu",
           "mapSlug": "viridian-gym"
-        }
+        },
+        "field": "position"
       }
     ],
     "payload": {
       "tokenId": "token_pikachu",
-      "mapSlug": "viridian-gym",
       "to": { "x": 5, "y": 8, "z": 0 }
     },
     "metadata": {
@@ -297,18 +297,17 @@ The client sends a command envelope inside a client `command` message. The envel
 }
 ```
 
-Server processing order for future command handlers:
+Server processing order for the command path:
 
 1. Validate the WebSocket frame and command envelope.
 2. Verify the command `sessionId` and actor match the authenticated socket.
 3. Check permissions and visibility against the current authoritative session state.
 4. Check `opId` idempotency before applying side effects.
-5. Compare `baseRevision` and scopes against current state and recent resource changes.
-6. Apply valid non-conflicting effects to server-owned state.
-7. Increment the relevant revision, persist a snapshot/event, send `commandAck` to the sender, and fan out a small `patch` to same-session clients.
-8. Return `commandReject` for invalid, unauthorized, stale, or conflicting commands without advancing revision.
+5. Reject stale same-resource move/turn commands when a newer accepted change for the same token field exists, or when the server lacks enough recent command history to prove the old base revision is safe; the rejection includes the current authoritative token state. Valid non-conflicting effects then apply to server-owned state after command-specific rules checks such as map bounds, blocking voxels, occupied token cells, valid facing values, GM-only spawn/delete authority, duplicate placement IDs, missing delete targets, sheet identity matches, send-out trainer control, trainer current-team ownership, and Poké Ball throw range.
+6. Increment the relevant revision, persist a snapshot/event, send `commandAck` to the sender, and fan out a small `patch` to same-session clients.
+7. Return `commandReject` for invalid, unauthorized, stale, or conflicting commands without advancing revision.
 
-Current transport boundary: until command-specific dispatch lands, a valid authenticated command frame receives a server `error` with `code: "unsupported-message"` instead of mutating state.
+Current transport boundary: `moveToken` and `turnToken` dispatch are live on both the WebSocket route and the explicit map-view session mode. The client now applies local optimistic token-position and token-facing overrides after commands are queued/sent, confirms those overrides from `commandAck` or `tokenMoved`/`tokenTurned` patch frames, and rolls them back or reconciles them to returned `currentState.position`/`currentState.facing` on `commandReject`. The optimistic overrides affect rendering/session controls only; they do not mutate the persisted map document or trigger whole-map autosave. `spawnToken`, `deleteToken`, and `sendOutPokemon` dispatch are live on the WebSocket route with `tokenSpawned`/`tokenDeleted`/`pokemonSentOut` broadcasts; they are not yet wired to the map page buttons. Other command types still receive a server `error` with `code: "unsupported-message"` instead of mutating state until their command-specific tickets land.
 
 ### Accepted command and patch
 
@@ -395,7 +394,7 @@ Current transport boundary: until command-specific dispatch lands, a valid authe
 }
 ```
 
-The patch is a small authoritative event, not a whole-map autosave from a browser.
+The patch is a small authoritative event, not a whole-map autosave from a browser. Accepted `moveToken`, `turnToken`, `spawnToken`, `deleteToken`, and `sendOutPokemon` commands send `commandAck` to the submitting socket and fan out small token-specific patches to authenticated peers in the same session; the sender can receive both frames. Spawn patches include the authoritative placement that was appended; delete patches include the removed placement and whether the active initiative pointer was cleared; send-out patches include the source trainer token, Pokémon sheet slug, and spawned placement.
 
 ### Rejected command
 
@@ -455,7 +454,7 @@ The patch is a small authoritative event, not a whole-map autosave from a browse
 }
 ```
 
-Normal command rejections use `reason: "invalid"`, `"unauthorized"`, `"stale"`, or `"conflict"`. They are distinct from transport `error` messages.
+Normal command rejections use `reason: "invalid"`, `"unauthorized"`, `"stale"`, or `"conflict"`. For `moveToken`, stale same-token rejections include `baseRevision`, `changedScopes`, and the current authoritative token position/revision so clients can reconcile optimistic state. For `turnToken`, stale same-token facing rejections include the same revision/scope metadata plus the current authoritative facing. `spawnToken`/`deleteToken` reject player actors as unauthorized and return conflicts for duplicate spawn IDs, missing delete targets, sheet-identity mismatches, and blocked/out-of-bounds/occupied spawn cells. `sendOutPokemon` rejects players who do not control the trainer token and returns conflicts for non-trainer source tokens, missing sheets, Pokémon not on the trainer's current team, duplicate spawned token IDs, occupied/out-of-bounds destinations, and destinations outside Poké Ball throw range. They are distinct from transport `error` messages.
 
 ### Duplicate `opId`
 
@@ -512,7 +511,7 @@ Use server `error` messages for socket/session failures that are outside a norma
   "direction": "server",
   "sessionId": "session_lake_table_001",
   "code": "unsupported-message",
-  "message": "Command dispatch is not implemented for this session socket yet.",
+  "message": "Track 2 session WebSocket command dispatch currently supports moveToken, turnToken, spawnToken, deleteToken, and sendOutPokemon commands only.",
   "retryable": false,
   "currentRevision": 42
 }
@@ -562,6 +561,17 @@ A transport-only smoke check should verify:
 5. A stale or closed socket reconnects with `lastSeenRevision` and receives either no snapshot when current or a filtered snapshot when stale.
 6. Malformed, pre-auth, cross-session, or actor-mismatched frames receive safe errors and do not mutate state.
 7. Legacy `/api/events` still works for non-session local-first realtime and is not used by session clients.
+
+## Automated chunk-05 token command smoke coverage
+
+`tests/server/sessionTokenCommandTwoClientSmoke.test.ts` is the chunk-05 two-client token-command smoke test. It opens authenticated GM and player WebSocket peers in the same session, assigns the player a token, and verifies that:
+
+1. the player can send `moveToken` for the assigned token, receive an accepted `commandAck`, and both clients receive the same small `tokenMoved` patch;
+2. the GM can send `turnToken` at the next revision, receive an accepted `commandAck`, and both clients receive the same small `tokenTurned` patch;
+3. neither patch carries whole-map fields such as `placements` or `fieldEffects`;
+4. the server-owned session/map revisions, persisted snapshot calls, socket revision tracking, and authoritative token position/facing all advance to revision 2.
+
+This automated fake-peer smoke test does not replace later browser multi-tab, LAN, or named-tunnel smoke scripts; it locks the server-authoritative two-client command/fanout behaviour while those later operational checks are still pending.
 
 ## Related docs
 

@@ -1,5 +1,5 @@
 import { computed, ref } from 'vue'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import {
   pokedexPathForSpecies,
   sheetPathForPlacement,
@@ -50,6 +50,21 @@ const makeControls = (
     isGm?: boolean
     nextId?: string
     now?: () => number
+    sessionMoveTokenDispatcher?: {
+      readonly enabled: { readonly value: boolean }
+      readonly tokenPositionOverrides?: { readonly value: readonly {
+        readonly tokenId: string
+        readonly mapSlug: string
+        readonly position: TabletopMap['placements'][number]['position']
+      }[] }
+      readonly tokenFacingOverrides?: { readonly value: readonly {
+        readonly tokenId: string
+        readonly mapSlug: string
+        readonly facing: NonNullable<TabletopMap['placements'][number]['facing']>
+      }[] }
+      dispatchMoveToken(payload: { placement: TabletopMap['placements'][number]; to: TabletopMap['placements'][number]['position'] }): { readonly dispatched: boolean }
+      dispatchTurnToken?(payload: { placement: TabletopMap['placements'][number]; facing: NonNullable<TabletopMap['placements'][number]['facing']> }): { readonly dispatched: boolean }
+    }
   } = {},
 ) => {
   const map = ref(options.map ?? mapFixture())
@@ -66,6 +81,7 @@ const makeControls = (
       canSpawnTokens: isGm,
       canControlAllTokens: isGm,
       canDeleteTokens: isGm,
+      sessionMoveTokenDispatcher: options.sessionMoveTokenDispatcher,
       createPlacementId: () => options.nextId ?? 'token-1',
       now: options.now,
     }),
@@ -155,6 +171,138 @@ describe('useTokenControls', () => {
         lines: ['Bolt moved 3 squares from (0, 0, 0) to (2, 0, 1).'],
       },
     ])
+  })
+
+  it('dispatches session-mode token movement without directly mutating the local map', () => {
+    const sheet = pokemon()
+    const map = mapFixture()
+    map.placements = [
+      { id: 'bolt-token', sheetKind: 'pokemon', sheetSlug: sheet.slug, position: { x: 0, y: 0, z: 0 } },
+    ]
+    const tokenPositionOverrides = ref<{
+      tokenId: string
+      mapSlug: string
+      position: TabletopMap['placements'][number]['position']
+    }[]>([])
+    const dispatchMoveToken = vi.fn(({ placement, to }) => {
+      tokenPositionOverrides.value = [{
+        tokenId: placement.id,
+        mapSlug: map.slug,
+        position: to,
+      }]
+      return { dispatched: true }
+    })
+    const { controls } = makeControls({
+      map,
+      pokemonSheets: [sheet],
+      sessionMoveTokenDispatcher: {
+        enabled: ref(true),
+        tokenPositionOverrides,
+        dispatchMoveToken,
+      },
+    })
+
+    controls.selectPlacement('bolt-token')
+    controls.updatePreview({ position: { x: 2, y: 0, z: 1 }, reachable: true, pathLength: 3 })
+    controls.movePlacement({ id: 'bolt-token', position: { x: 2, y: 0, z: 1 } })
+
+    expect(dispatchMoveToken).toHaveBeenCalledWith({
+      placement: map.placements[0],
+      to: { x: 2, y: 0, z: 1 },
+    })
+    expect(map.placements[0]?.position).toEqual({ x: 0, y: 0, z: 0 })
+    expect(controls.spawnedPokemon.value[0]?.position).toEqual({ x: 2, y: 0, z: 1 })
+    expect(map.metadata?.movementLog).toBeUndefined()
+    expect(controls.selectedId.value).toBeNull()
+  })
+
+  it('dispatches session-mode token turns without directly mutating the local map', () => {
+    const sheet = pokemon()
+    const map = mapFixture()
+    map.placements = [
+      {
+        id: 'bolt-token',
+        sheetKind: 'pokemon',
+        sheetSlug: sheet.slug,
+        position: { x: 0, y: 0, z: 0 },
+        facing: 'south-east',
+        turned: false,
+      },
+    ]
+    const tokenFacingOverrides = ref<{
+      tokenId: string
+      mapSlug: string
+      facing: NonNullable<TabletopMap['placements'][number]['facing']>
+    }[]>([])
+    const dispatchTurnToken = vi.fn(({ placement, facing }) => {
+      tokenFacingOverrides.value = [{
+        tokenId: placement.id,
+        mapSlug: map.slug,
+        facing,
+      }]
+      return { dispatched: true }
+    })
+    const { controls } = makeControls({
+      map,
+      pokemonSheets: [sheet],
+      sessionMoveTokenDispatcher: {
+        enabled: ref(true),
+        tokenFacingOverrides,
+        dispatchMoveToken: vi.fn(() => ({ dispatched: false })),
+        dispatchTurnToken,
+      },
+    })
+
+    controls.selectPlacement('bolt-token')
+    controls.turnPlacement('bolt-token')
+
+    expect(dispatchTurnToken).toHaveBeenCalledWith({
+      placement: map.placements[0],
+      facing: 'north-east',
+    })
+    expect(map.placements[0]).toMatchObject({ facing: 'south-east', turned: false })
+    expect(controls.spawnedPokemon.value[0]).toMatchObject({ facing: 'north-east', turned: false })
+    expect(controls.selectedId.value).toBeNull()
+  })
+
+  it('uses the current optimistic session token position when dispatching a follow-up move', () => {
+    const sheet = pokemon()
+    const map = mapFixture()
+    map.placements = [
+      { id: 'bolt-token', sheetKind: 'pokemon', sheetSlug: sheet.slug, position: { x: 0, y: 0, z: 0 } },
+    ]
+    const tokenPositionOverrides = ref([
+      {
+        tokenId: 'bolt-token',
+        mapSlug: map.slug,
+        position: { x: 1, y: 0, z: 1 },
+      },
+    ])
+    const dispatchMoveToken = vi.fn(() => ({ dispatched: true }))
+    const { controls } = makeControls({
+      map,
+      pokemonSheets: [sheet],
+      sessionMoveTokenDispatcher: {
+        enabled: ref(true),
+        tokenPositionOverrides,
+        dispatchMoveToken,
+      },
+    })
+
+    expect(controls.spawnedPokemon.value[0]?.position).toEqual({ x: 1, y: 0, z: 1 })
+
+    controls.movePlacement({ id: 'bolt-token', position: { x: 2, y: 0, z: 1 } })
+
+    expect(dispatchMoveToken).toHaveBeenCalledWith({
+      placement: {
+        id: 'bolt-token',
+        sheetKind: 'pokemon',
+        sheetSlug: sheet.slug,
+        position: { x: 1, y: 0, z: 1 },
+      },
+      to: { x: 2, y: 0, z: 1 },
+    })
+    expect(map.placements[0]?.position).toEqual({ x: 0, y: 0, z: 0 })
   })
 
   it('turns moved tokens toward cardinal destinations instead of preserving stale side-facing', () => {

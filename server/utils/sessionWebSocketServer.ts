@@ -1,3 +1,6 @@
+import {
+  type SessionCommandResult,
+} from '#shared/sessionCommandResults'
 import { validateSessionCommandEnvelope } from '#shared/sessionCommandValidation'
 import type { SessionCommandEnvelope } from '#shared/sessionCommands'
 import {
@@ -20,9 +23,53 @@ import {
   type SessionErrorDetails,
   type SessionErrorMessage,
   type SessionHeartbeatMessage,
+  type SessionPatchEvent,
   type SessionServerHelloMessage,
   type SessionSnapshotMessage,
 } from '#shared/sessionMessages'
+import {
+  DELETE_TOKEN_COMMAND_TYPE,
+  MOVE_TOKEN_COMMAND_TYPE,
+  SEND_OUT_POKEMON_COMMAND_TYPE,
+  SPAWN_TOKEN_COMMAND_TYPE,
+  TURN_TOKEN_COMMAND_TYPE,
+  type DeleteTokenCommand,
+  type MoveTokenCommand,
+  type SendOutPokemonCommand,
+  type SpawnTokenCommand,
+  type TurnTokenCommand,
+} from '#shared/sessionTokenCommands'
+import type { TabletopMapV2 } from '~/types/map'
+import {
+  applyMoveTokenCommandUseCase,
+  type ApplyMoveTokenCommandDependencies,
+  type ApplyMoveTokenCommandInput,
+  type ApplyMoveTokenCommandUseCaseResult,
+} from '../useCases/applyMoveTokenCommand'
+import {
+  applyTurnTokenCommandUseCase,
+  type ApplyTurnTokenCommandDependencies,
+  type ApplyTurnTokenCommandInput,
+  type ApplyTurnTokenCommandUseCaseResult,
+} from '../useCases/applyTurnTokenCommand'
+import {
+  applySpawnTokenCommandUseCase,
+  type ApplySpawnTokenCommandDependencies,
+  type ApplySpawnTokenCommandInput,
+  type ApplySpawnTokenCommandUseCaseResult,
+} from '../useCases/applySpawnTokenCommand'
+import {
+  applyDeleteTokenCommandUseCase,
+  type ApplyDeleteTokenCommandDependencies,
+  type ApplyDeleteTokenCommandInput,
+  type ApplyDeleteTokenCommandUseCaseResult,
+} from '../useCases/applyDeleteTokenCommand'
+import {
+  applySendOutPokemonCommandUseCase,
+  type ApplySendOutPokemonCommandDependencies,
+  type ApplySendOutPokemonCommandInput,
+  type ApplySendOutPokemonCommandUseCaseResult,
+} from '../useCases/applySendOutPokemonCommand'
 import { findPlayerAssignment, type SessionActor } from '#shared/sessionPermissions'
 import { isSessionRevision, type SessionRevision } from '#shared/sessionRevisions'
 import {
@@ -40,6 +87,8 @@ import {
   type SessionHostRuntimeEnv,
 } from './sessionHosting'
 import {
+  createSessionCommandResultFanoutMessage,
+  createSessionPatchFanoutMessage,
   createSessionPresenceFanoutMessage,
   createSessionSnapshotFanoutMessage,
   fanoutSessionServerMessage,
@@ -50,6 +99,7 @@ import {
   type InMemorySessionStore,
   type SessionStoreRecord,
 } from './sessionStore'
+import { isUseCaseHttpErrorLike } from './useCaseErrors'
 
 export const SESSION_SOCKET_DISABLED_STATUS = 403 as const
 export const SESSION_SOCKET_UPGRADE_REQUIRED_STATUS = 426 as const
@@ -170,12 +220,72 @@ export interface InMemorySessionSocketRegistry {
   clear(): void
 }
 
+export type SessionSocketMoveTokenCommandApplier = (
+  input: ApplyMoveTokenCommandInput,
+  dependencies?: ApplyMoveTokenCommandDependencies,
+) => ApplyMoveTokenCommandUseCaseResult
+
+export type SessionSocketTurnTokenCommandApplier = (
+  input: ApplyTurnTokenCommandInput,
+  dependencies?: ApplyTurnTokenCommandDependencies,
+) => ApplyTurnTokenCommandUseCaseResult
+
+export type SessionSocketSpawnTokenCommandApplier = (
+  input: ApplySpawnTokenCommandInput,
+  dependencies?: ApplySpawnTokenCommandDependencies,
+) => ApplySpawnTokenCommandUseCaseResult
+
+export type SessionSocketDeleteTokenCommandApplier = (
+  input: ApplyDeleteTokenCommandInput,
+  dependencies?: ApplyDeleteTokenCommandDependencies,
+) => ApplyDeleteTokenCommandUseCaseResult
+
+export type SessionSocketSendOutPokemonCommandApplier = (
+  input: ApplySendOutPokemonCommandInput,
+  dependencies?: ApplySendOutPokemonCommandDependencies,
+) => ApplySendOutPokemonCommandUseCaseResult
+
+export type SessionSocketMoveTokenCommandDependencies = Omit<
+  ApplyMoveTokenCommandDependencies,
+  'env' | 'store' | 'clock'
+>
+
+export type SessionSocketTurnTokenCommandDependencies = Omit<
+  ApplyTurnTokenCommandDependencies,
+  'env' | 'store' | 'clock'
+>
+
+export type SessionSocketSpawnTokenCommandDependencies = Omit<
+  ApplySpawnTokenCommandDependencies,
+  'env' | 'store' | 'clock'
+>
+
+export type SessionSocketDeleteTokenCommandDependencies = Omit<
+  ApplyDeleteTokenCommandDependencies,
+  'env' | 'store' | 'clock'
+>
+
+export type SessionSocketSendOutPokemonCommandDependencies = Omit<
+  ApplySendOutPokemonCommandDependencies,
+  'env' | 'store' | 'clock'
+>
+
 export interface SessionSocketHandlerDependencies<TMapDocument = unknown> {
   readonly env?: SessionHostRuntimeEnv
   readonly registry?: InMemorySessionSocketRegistry
   readonly peers?: InMemorySessionSocketPeerRegistry
   readonly store?: InMemorySessionStore<AuthoritativeSessionState<TMapDocument>>
   readonly clock?: SessionSocketClock
+  readonly applyMoveTokenCommand?: SessionSocketMoveTokenCommandApplier
+  readonly applyTurnTokenCommand?: SessionSocketTurnTokenCommandApplier
+  readonly applySpawnTokenCommand?: SessionSocketSpawnTokenCommandApplier
+  readonly applyDeleteTokenCommand?: SessionSocketDeleteTokenCommandApplier
+  readonly applySendOutPokemonCommand?: SessionSocketSendOutPokemonCommandApplier
+  readonly moveTokenCommandDependencies?: SessionSocketMoveTokenCommandDependencies
+  readonly turnTokenCommandDependencies?: SessionSocketTurnTokenCommandDependencies
+  readonly spawnTokenCommandDependencies?: SessionSocketSpawnTokenCommandDependencies
+  readonly deleteTokenCommandDependencies?: SessionSocketDeleteTokenCommandDependencies
+  readonly sendOutPokemonCommandDependencies?: SessionSocketSendOutPokemonCommandDependencies
 }
 
 type MutablePendingSessionSocketConnection = {
@@ -196,6 +306,16 @@ interface ResolvedSessionSocketHandlerDependencies<TMapDocument = unknown> {
   readonly peers?: InMemorySessionSocketPeerRegistry
   readonly store: InMemorySessionStore<AuthoritativeSessionState<TMapDocument>>
   readonly clock: SessionSocketClock
+  readonly applyMoveTokenCommand: SessionSocketMoveTokenCommandApplier
+  readonly applyTurnTokenCommand: SessionSocketTurnTokenCommandApplier
+  readonly applySpawnTokenCommand: SessionSocketSpawnTokenCommandApplier
+  readonly applyDeleteTokenCommand: SessionSocketDeleteTokenCommandApplier
+  readonly applySendOutPokemonCommand: SessionSocketSendOutPokemonCommandApplier
+  readonly moveTokenCommandDependencies: SessionSocketMoveTokenCommandDependencies
+  readonly turnTokenCommandDependencies: SessionSocketTurnTokenCommandDependencies
+  readonly spawnTokenCommandDependencies: SessionSocketSpawnTokenCommandDependencies
+  readonly deleteTokenCommandDependencies: SessionSocketDeleteTokenCommandDependencies
+  readonly sendOutPokemonCommandDependencies: SessionSocketSendOutPokemonCommandDependencies
 }
 
 interface SessionSocketHandshakeFailure {
@@ -605,6 +725,16 @@ const resolveDependencies = <TMapDocument>(
   ...(dependencies.peers === undefined ? {} : { peers: dependencies.peers }),
   store: dependencies.store ?? (sessionStore as InMemorySessionStore<AuthoritativeSessionState<TMapDocument>>),
   clock: dependencies.clock ?? defaultSessionSocketClock,
+  applyMoveTokenCommand: dependencies.applyMoveTokenCommand ?? applyMoveTokenCommandUseCase,
+  applyTurnTokenCommand: dependencies.applyTurnTokenCommand ?? applyTurnTokenCommandUseCase,
+  applySpawnTokenCommand: dependencies.applySpawnTokenCommand ?? applySpawnTokenCommandUseCase,
+  applyDeleteTokenCommand: dependencies.applyDeleteTokenCommand ?? applyDeleteTokenCommandUseCase,
+  applySendOutPokemonCommand: dependencies.applySendOutPokemonCommand ?? applySendOutPokemonCommandUseCase,
+  moveTokenCommandDependencies: dependencies.moveTokenCommandDependencies ?? {},
+  turnTokenCommandDependencies: dependencies.turnTokenCommandDependencies ?? {},
+  spawnTokenCommandDependencies: dependencies.spawnTokenCommandDependencies ?? {},
+  deleteTokenCommandDependencies: dependencies.deleteTokenCommandDependencies ?? {},
+  sendOutPokemonCommandDependencies: dependencies.sendOutPokemonCommandDependencies ?? {},
 })
 
 const sendJson = (peer: SessionSocketPeerLike, value: unknown): void => {
@@ -1323,6 +1453,157 @@ const handleAuthenticatedSocketHeartbeat = <TMapDocument>(
   return pong
 }
 
+const updateAuthenticatedSessionSocketRevisions = <TMapDocument>(
+  sessionId: SessionId,
+  currentRevision: SessionRevision,
+  dependencies: Pick<ResolvedSessionSocketHandlerDependencies<TMapDocument>, 'registry'>,
+): void => {
+  for (const connection of dependencies.registry.list()) {
+    if (connection.status !== SESSION_SOCKET_AUTHENTICATED_STATUS) continue
+    if (connection.sessionId !== sessionId) continue
+
+    dependencies.registry.touch(connection.peerId, {
+      lastSeenAt: connection.lastSeenAt,
+      currentRevision,
+    })
+  }
+}
+
+const socketErrorCodeForCommandDispatchError = (error: unknown): SessionErrorCode => {
+  if (!isUseCaseHttpErrorLike(error)) return 'internal-error'
+  if (error.statusCode === 403) return 'session-host-disabled'
+  if (error.statusCode === 404) return 'session-not-found'
+  if (error.statusCode === 409) return 'session-ended'
+  if (error.statusCode === 400) return 'malformed-message'
+  return 'internal-error'
+}
+
+const commandDispatchErrorMessage = (error: unknown): string => {
+  if (error instanceof Error && error.message.trim().length > 0) return error.message
+  return 'Track 2 session command dispatch failed.'
+}
+
+const isCommandDispatchRetryable = (error: unknown): boolean =>
+  !isUseCaseHttpErrorLike(error) || error.statusCode >= 500
+
+const handleAuthenticatedSocketCommand = <TMapDocument>(
+  peer: SessionSocketPeerLike,
+  commandMessage: SessionCommandMessage<SessionCommandEnvelope>,
+  receivedAt: string,
+  connection: AuthenticatedSessionSocketConnection,
+  dependencies: ResolvedSessionSocketHandlerDependencies<TMapDocument>,
+): void => {
+  const command = commandMessage.command
+
+  if (
+    command.type !== MOVE_TOKEN_COMMAND_TYPE &&
+    command.type !== TURN_TOKEN_COMMAND_TYPE &&
+    command.type !== SPAWN_TOKEN_COMMAND_TYPE &&
+    command.type !== DELETE_TOKEN_COMMAND_TYPE &&
+    command.type !== SEND_OUT_POKEMON_COMMAND_TYPE
+  ) {
+    sendJson(peer, createSessionSocketErrorMessage({
+      code: 'unsupported-message',
+      message: 'Track 2 session WebSocket command dispatch currently supports moveToken, turnToken, spawnToken, deleteToken, and sendOutPokemon commands only.',
+      retryable: false,
+      sessionId: connection.sessionId,
+      currentRevision: connection.currentRevision,
+    }))
+    return
+  }
+
+  let applied:
+    | ApplyMoveTokenCommandUseCaseResult
+    | ApplyTurnTokenCommandUseCaseResult
+    | ApplySpawnTokenCommandUseCaseResult
+    | ApplyDeleteTokenCommandUseCaseResult
+    | ApplySendOutPokemonCommandUseCaseResult
+  try {
+    if (command.type === MOVE_TOKEN_COMMAND_TYPE) {
+      applied = dependencies.applyMoveTokenCommand({
+        command: command as MoveTokenCommand,
+      }, {
+        ...dependencies.moveTokenCommandDependencies,
+        env: dependencies.env,
+        store: dependencies.store as unknown as InMemorySessionStore<AuthoritativeSessionState<TabletopMapV2>>,
+        clock: () => receivedAt,
+      })
+    } else if (command.type === TURN_TOKEN_COMMAND_TYPE) {
+      applied = dependencies.applyTurnTokenCommand({
+        command: command as TurnTokenCommand,
+      }, {
+        ...dependencies.turnTokenCommandDependencies,
+        env: dependencies.env,
+        store: dependencies.store as unknown as InMemorySessionStore<AuthoritativeSessionState<TabletopMapV2>>,
+        clock: () => receivedAt,
+      })
+    } else if (command.type === SPAWN_TOKEN_COMMAND_TYPE) {
+      applied = dependencies.applySpawnTokenCommand({
+        command: command as SpawnTokenCommand,
+      }, {
+        ...dependencies.spawnTokenCommandDependencies,
+        env: dependencies.env,
+        store: dependencies.store as unknown as InMemorySessionStore<AuthoritativeSessionState<TabletopMapV2>>,
+        clock: () => receivedAt,
+      })
+    } else if (command.type === DELETE_TOKEN_COMMAND_TYPE) {
+      applied = dependencies.applyDeleteTokenCommand({
+        command: command as DeleteTokenCommand,
+      }, {
+        ...dependencies.deleteTokenCommandDependencies,
+        env: dependencies.env,
+        store: dependencies.store as unknown as InMemorySessionStore<AuthoritativeSessionState<TabletopMapV2>>,
+        clock: () => receivedAt,
+      })
+    } else {
+      applied = dependencies.applySendOutPokemonCommand({
+        command: command as SendOutPokemonCommand,
+      }, {
+        ...dependencies.sendOutPokemonCommandDependencies,
+        env: dependencies.env,
+        store: dependencies.store as unknown as InMemorySessionStore<AuthoritativeSessionState<TabletopMapV2>>,
+        clock: () => receivedAt,
+      })
+    }
+  } catch (error) {
+    sendJson(peer, createSessionSocketErrorMessage({
+      code: socketErrorCodeForCommandDispatchError(error),
+      message: commandDispatchErrorMessage(error),
+      retryable: isCommandDispatchRetryable(error),
+      sessionId: connection.sessionId,
+      currentRevision: connection.currentRevision,
+    }))
+    return
+  }
+
+  const resultMessage = createSessionCommandResultFanoutMessage(
+    applied.result as SessionCommandResult<string, unknown, unknown, SessionRevision>,
+  )
+  sendJson(peer, resultMessage)
+  updateAuthenticatedSessionSocketRevisions(
+    applied.result.sessionId,
+    applied.result.currentRevision,
+    dependencies,
+  )
+
+  if (applied.status !== 'accepted') return
+
+  const patchMessage = createSessionPatchFanoutMessage(
+    applied.result.sessionId,
+    applied.patchEvent as SessionPatchEvent<string, unknown, SessionRevision>,
+  )
+
+  if (dependencies.peers === undefined) {
+    sendJson(peer, patchMessage)
+    return
+  }
+
+  fanoutSessionServerMessage(patchMessage, {
+    registry: dependencies.registry,
+    peers: dependencies.peers,
+  })
+}
+
 export const handleSessionSocketMessage = <TMapDocument = unknown>(
   peer: SessionSocketPeerLike,
   message: SessionSocketMessageLike,
@@ -1384,13 +1665,13 @@ export const handleSessionSocketMessage = <TMapDocument = unknown>(
       return
     }
 
-    sendJson(peer, createSessionSocketErrorMessage({
-      code: 'unsupported-message',
-      message: 'Track 2 session WebSocket hello/auth and heartbeat are complete, but command dispatch lands in later transport tickets.',
-      retryable: false,
-      sessionId: authenticatedConnection.sessionId,
-      currentRevision: authenticatedConnection.currentRevision,
-    }))
+    handleAuthenticatedSocketCommand(
+      peer,
+      parsedCommand.value.commandMessage,
+      lastSeenAt,
+      authenticatedConnection,
+      resolved,
+    )
     return
   }
 

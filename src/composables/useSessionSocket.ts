@@ -295,6 +295,31 @@ const isServerSnapshotMessage = (
   Object.prototype.hasOwnProperty.call(message, 'snapshot') &&
   (message.replayAvailable === undefined || typeof message.replayAvailable === 'boolean')
 
+const serverMessageRevision = (message: unknown): SessionRevision | undefined => {
+  if (!isRecord(message) || message.schemaVersion !== SESSION_MESSAGE_SCHEMA_VERSION) return undefined
+
+  if (
+    (message.type === 'commandAck' || message.type === 'commandReject') &&
+    isRecord(message.result) &&
+    isSessionRevision(message.result.currentRevision)
+  ) {
+    return message.result.currentRevision
+  }
+
+  if (message.type === 'patch' && isRecord(message.event) && isSessionRevision(message.event.revision)) {
+    return message.event.revision
+  }
+
+  if (
+    (message.type === 'presence' || message.type === 'error') &&
+    isSessionRevision(message.currentRevision)
+  ) {
+    return message.currentRevision
+  }
+
+  return undefined
+}
+
 const isUsableHeartbeatConfig = (config: SessionHeartbeatConfig): boolean =>
   Number.isSafeInteger(config.intervalMs) &&
   config.intervalMs > 0 &&
@@ -439,6 +464,8 @@ export const useSessionSocket = <
       const receivedAt = now()
       lastMessage.value = parsed
       lastServerMessageAt.value = receivedAt
+      const parsedRevision = serverMessageRevision(parsed)
+      if (parsedRevision !== undefined) lastKnownRevision.value = parsedRevision
       if (isServerHelloMessage(parsed)) {
         lastServerHello.value = parsed
         lastKnownRevision.value = parsed.currentRevision
