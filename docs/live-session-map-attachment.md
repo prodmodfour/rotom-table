@@ -14,7 +14,7 @@ Use it after the GM has chosen a supported host path from the [LAN hosting runbo
 6. Confirm the map is selected for the live session and available as a session map.
 7. Share the player-facing URL and join code with trusted players.
 8. Players join from `/sessions#player-lobby-title`, refresh their lobby state, and open a listed **Visible session maps** link.
-9. The GM assigns controllable token and/or sheet resources for players who should act on the map.
+9. The GM assigns controllable token and/or sheet resources for players who should act on the map by using **Assign map tokens** / **Assign control** in the map navigation rail.
 10. GM and players use `/maps/<map-slug>?session=1` for live play so actions travel as session commands.
 
 Plain `/maps/<map-slug>` remains local-first. Use it for map preparation and private editing. Use `/maps/<map-slug>?session=1` only when the table is playing through the live session.
@@ -38,7 +38,8 @@ Use a GM browser/profile that remembers the session-local GM identity returned b
 5. Expand the map navigation rail. The **Attach current map** panel should report **Local-first map view** and say it is ready to attach the persisted map.
 6. Press **Attach current map to live session**.
 7. After success, the panel reports the map was attached and offers **Open attached session map**. The GM management summary also reports the selected map slug, selected map revision, attached-map availability, and map count.
-8. Open `/maps/<map-slug>?session=1` only when the GM wants the view to read the server-owned session map and send table actions as session commands.
+8. In **Player access**, use **Assign map tokens** to grant token control to joined players. Assignment buttons change between **Assign control** and **Unassign control** without exposing session secrets.
+9. Open `/maps/<map-slug>?session=1` only when the GM wants the view to read the server-owned session map and send table actions as session commands.
 
 The default attach action selects the attached map and makes it visible to joined players and future players. Reattaching the same persisted map republishes the map by slug, advances the session revision once, and preserves that session map's revision value so clients can continue reconciling against the same map lane.
 
@@ -89,7 +90,15 @@ Visibility and control are separate. A visible map grant lets the player open th
 
 Map attachment can grant map visibility, but it does not automatically let every player move every token. Player commands still pass server-side assignment checks.
 
-Current assignment changes use the GM-only assignment endpoint:
+The normal GM UI is the map navigation rail on the attached map:
+
+1. Refresh the GM lobby so joined players and assignment counts are current.
+2. Open the selected session map or attached map page as the GM.
+3. In **Player access**, expand **Assign map tokens**.
+4. Use **Assign control** for each current map token a player should control; use **Unassign control** to remove that token control while leaving unrelated map visibility intact.
+5. Ask players to refresh or retry from the latest session map state after assignments change.
+
+The controls call the GM-only assignment endpoint:
 
 ```http
 POST /api/sessions/assignments
@@ -116,6 +125,16 @@ POST /api/sessions/assignments
 ```
 
 Assigning a token or sheet adds that resource to the player's controllable and visible resources. Unassigning removes matching token/sheet control without removing unrelated map visibility. The GM lobby summary shows joined players and assignment counts so the GM can verify who has access before asking players to act.
+
+## Session map readiness and common failure states
+
+Use this readiness check before asking players to move tokens:
+
+- **Host flag disabled** — attach, join, assignment, and session socket calls fail closed unless the app was started with `ROTOM_ENABLE_SESSION_HOST=1`.
+- **No map attached** — `/sessions` may show a live session and joined players, but players will not see a **Visible session maps** link and `/maps/<slug>?session=1` cannot claim authoritative readiness for that map.
+- **No token assigned** — the player can see the session map, but controls stay disabled or commands reject as unauthorized until the GM assigns the relevant current map token or sheet.
+- **Stale revision** — the browser built a command from an older session/map revision. Refresh the session map snapshot, inspect the latest table state, and retry only if the action still applies.
+- **Disconnected socket** — the session map is showing the last authoritative state it received. Reconnect or refresh the snapshot before sending more commands; do not use the plain local-first route as live-session authority.
 
 ## Authority and persistence boundary
 

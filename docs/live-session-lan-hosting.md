@@ -114,7 +114,7 @@ http://192.168.1.42:3000
    ```
 
 10. After players join, use **Refresh lobby** to verify player display names, visible map state, and assignment counts.
-11. Assign controllable token and/or sheet resources for players who should act on the map.
+11. In the map navigation rail, use **Assign map tokens** and **Assign control** for each player/token that should act on the selected session map. Map visibility lets players open the map; token assignment lets them send token commands.
 12. When the table is ready, open the session map intentionally with `?session=1`, for example `http://192.168.1.42:3000/maps/viridian-gym?session=1`.
 
 The plain `/maps/<slug>` route remains local-first. Use it for normal local editing; use `/maps/<slug>?session=1` when the live table should use server-authoritative session commands.
@@ -129,7 +129,7 @@ Players should use a separate browser profile, browser container, or private/inc
 4. Press **Join session**.
 5. Confirm the player summary shows the expected display name, active session status, and current revision.
 6. Refresh the remembered session and open the attached map from **Visible session maps**, or use the explicit session map URL after the GM confirms attachment, for example `http://192.168.1.42:3000/maps/viridian-gym?session=1`.
-7. If a command is rejected as unauthorized, ask the GM to assign the relevant token or sheet. If it is rejected as stale/conflicting, use the in-app refresh/reconnect guidance before retrying.
+7. If a command is rejected as unauthorized, ask the GM to assign the relevant token or sheet. If it is rejected as stale/conflicting, use the in-app refresh/reconnect guidance before retrying. If the session socket is disconnected, wait for reconnect or refresh the session map rather than using the plain local-first map as authority.
 
 Players should not use `http://localhost:3000` unless Rotom Table is running on their own machine. They should not receive GM keys, raw snapshots, local session files, private maps/sheets, or router/tunnel credentials.
 
@@ -143,12 +143,22 @@ Use this quick pass before relying on a LAN session for play. For the expanded t
 - [ ] GM starts a session, attaches the saved map from `/maps/<map-slug>`, and confirms it is available as the selected session map.
 - [ ] Player joins with a display name and the join code, then sees the attached map in **Visible session maps** after refresh.
 - [ ] GM refreshes the lobby and sees the player exactly once.
-- [ ] GM assigns any token/sheet resources the player should control.
+- [ ] GM uses the **Assign map tokens** panel to assign any token/sheet resources the player should control; the player sees no token assigned guidance until assignment exists.
 - [ ] GM and player open `http://<GM-LAN-IP>:3000/maps/<map-slug>?session=1`.
 - [ ] A basic token move/turn or other supported session command propagates through the session view without a whole-map autosave.
 - [ ] Reloading the player session map reconnects or requests a snapshot rather than making stale browser state authoritative.
 - [ ] The plain `http://<GM-LAN-IP>:3000/maps/<map-slug>` route still behaves as local-first mode.
 - [ ] No generated `data/sessions/` files, join codes, GM keys, or private campaign data are staged for commit.
+
+## Common live-session blockers
+
+Resolve these before play; they are expected operator states, not reasons to bypass session mode.
+
+- **Host flag disabled** — `/sessions` reports hosting disabled, or attach/join/session socket calls fail closed. Stop Nuxt and restart with `ROTOM_ENABLE_SESSION_HOST=1`, preferably through `npm run dev:session:lan`.
+- **No map attached** — players can join but no **Visible session maps** link appears. The GM opens the saved map on the plain route and presses **Attach current map to live session** with player visibility.
+- **No token assigned** — a player can see the selected session map but token controls are disabled or commands reject as unauthorized. The GM uses **Assign map tokens** to grant control for the relevant current map token or sheet.
+- **Stale revision** — a command was built from an older table revision after another accepted command changed the same resource. Use the in-app refresh/reconnect action, inspect the current state, then retry only if the action still makes sense.
+- **Disconnected socket** — the session map banner reports disconnected or reconnecting. Keep the GM host awake, verify firewall/network reachability, and refresh the session map snapshot instead of sending local-first edits.
 
 You can reuse the existing local smoke helper to print LAN URLs by passing the LAN base URL:
 
