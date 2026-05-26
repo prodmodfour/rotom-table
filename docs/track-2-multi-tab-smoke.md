@@ -2,7 +2,7 @@
 
 This guide covers the local browser smoke helper for the Track 2 client-integration slice. It opens GM and player entry points on one development machine and gives a short checklist for verifying that explicit session-mode map views use server-authoritative token commands and same-session WebSocket patches.
 
-This is a local development smoke check, not a LAN runbook, named-tunnel runbook, public auth hardening guide, or replacement for the automated Vitest suite.
+This is a local development smoke check, not a LAN runbook, named-tunnel runbook, public auth hardening guide, or replacement for the automated Vitest suite. For the underlying local-mode/session-mode boundary and recovery guidance, see the [Track 2 client integration guide](track-2-client-integration.md).
 
 ## Script
 
