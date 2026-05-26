@@ -2,7 +2,7 @@
 
 This guide documents the current Track 2 lobby slice: how a GM starts a guarded session, how a player joins with a session-local display name, how the minimal lobby should behave on a LAN, and how to manually smoke-test the flow with two browsers.
 
-It is intentionally scoped to the identity/join/lobby surface. WebSocket transport, live command fanout, token movement, reconnect patches, and full hosting runbooks land in later Track 2 phases.
+It is intentionally scoped to the identity/join/lobby surface. For the client-integration smoke that opens explicit GM/player session-map tabs and checks basic token command propagation, see [Track 2 multi-tab local smoke script](track-2-multi-tab-smoke.md). Full LAN and named-tunnel hosting runbooks land in later Track 2 phases.
 
 ## What exists in this slice
 
@@ -133,7 +133,7 @@ Use one GM browser and one separate player browser/profile. Do not commit any ge
 - [ ] Player browser: an invalid or expired join code shows a safe error and does not create a player identity.
 - [ ] A non-GM local role cannot start a GM session from the lobby.
 - [ ] The lobby does not expose raw snapshots, map documents, GM keys, real secrets, or private campaign data.
-- [ ] Moving tokens or other live table actions are not expected to sync yet; those behaviours belong to later WebSocket and command tickets.
+- [ ] For live token movement, use the focused [Track 2 multi-tab local smoke script](track-2-multi-tab-smoke.md); this lobby-only checklist should still confirm that the join/manage UI itself does not send map autosaves or expose raw session data.
 
 ## Evidence template
 
