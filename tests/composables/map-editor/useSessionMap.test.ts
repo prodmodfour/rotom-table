@@ -131,6 +131,7 @@ class FakeSessionMapSocket implements SessionMapSocket {
   }> = []
   readonly sentMessages: SessionClientMessage[] = []
   connectResult = true
+  cleanupCount = 0
   sendResult: Extract<SessionSocketSendResult<SessionClientMessage>, { readonly ok: false }> | null = null
 
   connect(): boolean {
@@ -148,8 +149,8 @@ class FakeSessionMapSocket implements SessionMapSocket {
   }
 
   cleanup(): void {
+    this.cleanupCount += 1
     this.status.value = 'closed'
-    this.handlers.splice(0)
   }
 
   sendHello(
@@ -298,6 +299,30 @@ describe('useSessionMap', () => {
     expect(socket.sentHellos[0]?.identity).not.toHaveProperty('lastSeenRevision')
     expect(sessionMap.snapshotStatus.value).toBe('requested')
     expect(sessionMap.status.value).toBe('connecting')
+  })
+
+  it('refreshes the session snapshot by resetting the socket and forcing a fresh reconnect hello', () => {
+    const identity = gmIdentity()
+    const storage = createStorage(identity)
+    const socket = new FakeSessionMapSocket()
+    socket.status.value = 'open'
+    socket.helloStatus.value = 'accepted'
+    const sessionMap = useSessionMap({
+      enabled: ref(true),
+      localMap: ref(mapFixture()),
+      mapSlug: 'arena-map',
+      identityStorage: storage,
+      socket,
+    })
+
+    const result = sessionMap.refreshSessionSnapshot()
+
+    expect(result).toMatchObject({ ok: true, delivery: 'hello-queued' })
+    expect(socket.cleanupCount).toBe(1)
+    expect(socket.status.value).toBe('connecting')
+    expect(socket.sentHellos).toHaveLength(1)
+    expect(socket.sentHellos[0]?.identity).not.toHaveProperty('lastSeenRevision')
+    expect(socket.sentHellos[0]?.options).toEqual({ reconnect: true })
   })
 
   it('adopts session snapshots and patches from socket events without mutating the local editable map', () => {

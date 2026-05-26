@@ -35,6 +35,7 @@ import {
   type SessionMoveTokenSocket,
 } from '~/composables/map-editor/useSessionMoveTokenDispatch'
 import { useTokenControls } from '~/composables/map-editor/useTokenControls'
+import { formatSessionCommandRejectionNotice } from '~/utils/sessionCommandRejectionUi'
 import { MAP_API_PATHS } from '~/utils/apiRoutes'
 import { getClientId } from '~/utils/clientId'
 import { isSameAnchor } from '~/utils/gridGeometry'
@@ -613,6 +614,32 @@ const actionAutomationTargeting = computed(() =>
   ?? orderActionTargeting.value,
 )
 
+const dismissedSessionCommandRejectionOpId = ref<string | null>(null)
+const sessionCommandRejectionNotice = computed(() => {
+  if (!sessionMoveTokenEnabled.value) return null
+  const rejectMessage = sessionMap.lastCommandReject.value
+  if (rejectMessage === null) return null
+  if (dismissedSessionCommandRejectionOpId.value === rejectMessage.result.opId) return null
+  return formatSessionCommandRejectionNotice(rejectMessage)
+})
+
+watch(
+  () => sessionMap.lastCommandReject.value?.result.opId ?? null,
+  (opId, previousOpId) => {
+    if (opId !== previousOpId) dismissedSessionCommandRejectionOpId.value = null
+  },
+)
+
+const dismissSessionCommandRejection = () => {
+  const opId = sessionMap.lastCommandReject.value?.result.opId
+  if (opId !== undefined) dismissedSessionCommandRejectionOpId.value = opId
+}
+
+const refreshSessionSnapshotAfterRejection = () => {
+  dismissedSessionCommandRejectionOpId.value = null
+  sessionMap.refreshSessionSnapshot()
+}
+
 const openMoveAutomationFromContext = (payload: { id: string; moveName?: string | null }) => {
   cancelAbilityAutomationTargeting()
   cancelManeuverActionTargeting()
@@ -657,11 +684,13 @@ const selectActionAutomationTarget = (targetId: string) => {
   if (orderActionTargeting.value) selectOrderActionTarget(targetId)
 }
 
-const sceneActionError = computed(() =>
-  sessionMoveTokenEnabled.value
-    ? sessionSceneCommands.lastError.value ?? sessionMoveTokenDispatch.lastError.value ?? moveUsageError.value
-    : moveUsageError.value,
-)
+const sceneActionError = computed(() => {
+  if (!sessionMoveTokenEnabled.value) return moveUsageError.value
+  const tokenDispatchError = sessionMap.lastCommandReject.value === null
+    ? sessionMoveTokenDispatch.lastError.value
+    : null
+  return sessionSceneCommands.lastError.value ?? tokenDispatchError ?? moveUsageError.value
+})
 
 const cancelActionAutomationTargeting = () => {
   if (moveAutomationTargeting.value) {
@@ -755,6 +784,7 @@ useMapDimensionReconciliation({
         :token-ability-options-by-id="tokenAbilityOptionsById"
         :token-order-options-by-id="tokenOrderOptionsById"
         :token-send-out-options-by-id="tokenSendOutOptionsById"
+        :session-command-rejection="sessionCommandRejectionNotice"
         @select-pokemon="selectPokemon"
         @focus-initiative-entry="focusInitiativeEntry"
         @previous-initiative="previousInitiativeAndExpireAoo"
@@ -791,6 +821,8 @@ useMapDimensionReconciliation({
         @dismiss-celebrate-trigger="dismissCelebrateTriggerPrompt"
         @apply-celebrate-trigger="applyCelebrateTriggerPrompt"
         @use-attack-of-opportunity="useAttackOfOpportunity"
+        @refresh-session-snapshot="refreshSessionSnapshotAfterRejection"
+        @dismiss-session-command-rejection="dismissSessionCommandRejection"
       />
     </template>
 

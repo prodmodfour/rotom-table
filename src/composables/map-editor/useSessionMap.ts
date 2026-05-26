@@ -141,6 +141,7 @@ export interface UseSessionMapReturn {
   readonly lastPresence: Ref<SessionPresenceMessage | null>
   loadRememberedIdentity(): SessionClientIdentity | null
   loadSessionSnapshot(): SessionMapLoadSnapshotResult
+  refreshSessionSnapshot(): SessionMapLoadSnapshotResult
   dispatchCommand<TCommand extends SessionCommandEnvelope>(
     command: TCommand,
   ): SessionMapCommandDispatchResult<TCommand>
@@ -264,7 +265,7 @@ export const useSessionMap = (options: UseSessionMapOptions): UseSessionMapRetur
       return failLoad('socket-unavailable', socket.lastError.value ?? 'Track 2 session WebSocket is not available.')
     }
 
-    if (socket.helloStatus.value === 'accepted' && isActiveSocketStatus(socket.status.value)) {
+    if (socket.helloStatus.value === 'accepted' && socket.status.value === 'open') {
       lastError.value = null
       return { ok: true, identity: currentIdentity, delivery: 'already-authenticated' }
     }
@@ -290,6 +291,23 @@ export const useSessionMap = (options: UseSessionMapOptions): UseSessionMapRetur
   }
 
   const loadSessionSnapshot = (): SessionMapLoadSnapshotResult => ensureHelloForSession()
+
+  const refreshSessionSnapshot = (): SessionMapLoadSnapshotResult => {
+    if (!enabled.value) {
+      return failLoad('not-session-mode', 'Track 2 session map sync is not enabled for this map view.')
+    }
+
+    const currentIdentity = identity.value ?? loadRememberedIdentity()
+    if (currentIdentity === null) {
+      return failLoad(
+        'missing-session-identity',
+        'No remembered Track 2 session identity was found; open the session lobby and start or join a session first.',
+      )
+    }
+
+    socket.cleanup()
+    return ensureHelloForSession()
+  }
 
   const failDispatch = (
     reason: SessionMapCommandDispatchFailureReason,
@@ -437,6 +455,7 @@ export const useSessionMap = (options: UseSessionMapOptions): UseSessionMapRetur
     lastPresence,
     loadRememberedIdentity,
     loadSessionSnapshot,
+    refreshSessionSnapshot,
     dispatchCommand,
     handleServerMessage,
     cleanup,
