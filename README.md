@@ -44,6 +44,7 @@ npm run build
 - [docs/track-2-table-action-commands.md](docs/track-2-table-action-commands.md) — supported HP, condition, initiative, move/action, hazard, field-effect, and terrain session commands with permissions, conflicts, and limitations.
 - [docs/track-2-client-integration.md](docs/track-2-client-integration.md) — how local map mode and explicit session mode coexist, including disconnect and conflict recovery guidance.
 - [docs/track-2-session-lobby.md](docs/track-2-session-lobby.md) — GM/player join flow, expected LAN usage, and two-browser lobby smoke checklist.
+- [docs/track-2-session-host-runtime.md](docs/track-2-session-host-runtime.md) — npm helpers for guarded LAN and named-tunnel session host startup.
 - [docs/track-2-lan-hosting.md](docs/track-2-lan-hosting.md) — same-Wi-Fi/LAN hosting runbook with startup commands, IP discovery, player URLs, and troubleshooting.
 - [docs/track-2-cloudflare-tunnel-hosting.md](docs/track-2-cloudflare-tunnel-hosting.md) — named Cloudflare Tunnel runbook with stable hostname setup, WebSocket considerations, safety warnings, and rollback steps.
 - [docs/track-2-quick-tunnel-caveat.md](docs/track-2-quick-tunnel-caveat.md) — Quick Tunnel caveats for temporary development smoke tests only, including legacy SSE limitations.
@@ -160,7 +161,9 @@ Saved sheets and maps are edited by the app itself. Track 2 session snapshots an
 
 | Command | Description |
 | --- | --- |
-| `npm run dev` | Start the Nuxt development server. |
+| `npm run dev` | Start the Nuxt development server without enabling Track 2 session hosting. |
+| `npm run dev:session:lan` | Start a guarded Track 2 session host with `ROTOM_ENABLE_SESSION_HOST=1` and LAN binding (`0.0.0.0:3000`). |
+| `npm run dev:session:tunnel` | Start a guarded Track 2 session host with `ROTOM_ENABLE_SESSION_HOST=1` and loopback binding (`127.0.0.1:3000`) for a named tunnel. |
 | `npm run build` | Build the Nuxt app. |
 | `npm run preview` | Preview the built app. |
 | `npm run typecheck` | Run Nuxt/Vue TypeScript checks. |

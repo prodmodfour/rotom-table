@@ -19,7 +19,9 @@ Session WebSockets use the same explicit host opt-in as the Track 2 HTTP session
 ROTOM_ENABLE_SESSION_HOST=1
 ```
 
-Unless that exact flag is set, `/api/sessions/socket` fails closed and does not admit live session clients. This protects the existing trust-based local GM/player role picker from silently becoming public authentication.
+For local development hosting, use `npm run dev:session:lan` for same-Wi-Fi play or `npm run dev:session:tunnel` before starting a named Cloudflare Tunnel; see [Track 2 session host runtime scripts](track-2-session-host-runtime.md) for the safe bindings and manual equivalents.
+
+Unless that exact flag is set in the Nuxt process, `/api/sessions/socket` fails closed and does not admit live session clients. This protects the existing trust-based local GM/player role picker from silently becoming public authentication.
 
 Clients resolve the route relative to the current browser origin:
 

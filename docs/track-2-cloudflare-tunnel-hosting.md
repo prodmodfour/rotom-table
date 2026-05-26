@@ -102,6 +102,18 @@ Dashboard-managed tunnels are also acceptable if they publish the same stable ho
 For tunnel hosting, prefer binding Rotom Table to loopback so the public path is the named tunnel rather than an additional LAN listener:
 
 ```bash
+npm run dev:session:tunnel
+```
+
+The helper sets `ROTOM_ENABLE_SESSION_HOST=1` for the Nuxt child process and starts Nuxt with the safe named-tunnel defaults `--host 127.0.0.1 --port 3000`. To inspect the resolved command without starting Nuxt:
+
+```bash
+npm run dev:session:tunnel -- --print-only
+```
+
+Manual macOS/Linux equivalent:
+
+```bash
 ROTOM_ENABLE_SESSION_HOST=1 npm run dev -- --host 127.0.0.1 --port 3000
 ```
 
@@ -120,11 +132,11 @@ cloudflared tunnel run rotom-table
 
 Keep both terminals open for the whole session. If the GM laptop sleeps, changes networks, the Nuxt process exits, or `cloudflared` disconnects, players will lose the live session and need to reconnect.
 
-If the GM intentionally wants LAN access at the same time, use the LAN runbook and make that exposure explicit. Do not bind to `0.0.0.0` casually just because remote players are using a tunnel.
+If the GM intentionally wants LAN access at the same time, use the LAN runbook and make that exposure explicit. Do not bind to `0.0.0.0` casually just because remote players are using a tunnel. See [Track 2 session host runtime scripts](track-2-session-host-runtime.md) for helper options and shutdown notes.
 
 ## GM setup flow
 
-1. Start Rotom Table with `ROTOM_ENABLE_SESSION_HOST=1 npm run dev -- --host 127.0.0.1 --port 3000`.
+1. Start Rotom Table with `npm run dev:session:tunnel` (manual equivalent: `ROTOM_ENABLE_SESSION_HOST=1 npm run dev -- --host 127.0.0.1 --port 3000`).
 2. Start `cloudflared tunnel run rotom-table`.
 3. On the GM machine, open `https://table.example.com/login` and choose **GM Login**.
 4. Open `https://table.example.com/sessions#gm-lobby-title` so the safety banner evaluates the same public hostname players will use.

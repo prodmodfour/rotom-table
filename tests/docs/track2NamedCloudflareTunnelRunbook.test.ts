@@ -24,6 +24,8 @@ describe('Track 2 named Cloudflare Tunnel runbook', () => {
   })
 
   it('documents the explicit Rotom Table runtime gate and safe tunnel binding', () => {
+    expect(runbook).toContain('npm run dev:session:tunnel')
+    expect(runbook).toContain('npm run dev:session:tunnel -- --print-only')
     expect(runbook).toContain('ROTOM_ENABLE_SESSION_HOST=1 npm run dev -- --host 127.0.0.1 --port 3000')
     expect(runbook).toContain('$env:ROTOM_ENABLE_SESSION_HOST = "1"')
     expect(runbook).toContain('prefer binding Rotom Table to loopback')
@@ -65,6 +67,7 @@ describe('Track 2 named Cloudflare Tunnel runbook', () => {
     expect(readText('docs/track-2-session-protocol.md')).toContain('track-2-cloudflare-tunnel-hosting.md')
     expect(readText('docs/track-2-websocket-protocol.md')).toContain('track-2-cloudflare-tunnel-hosting.md')
     expect(readText('docs/track-2-lan-hosting.md')).toContain('track-2-cloudflare-tunnel-hosting.md')
+    expect(readText('docs/track-2-session-host-runtime.md')).toContain('track-2-cloudflare-tunnel-hosting.md')
     expect(readText('docs/track-2-session-lobby.md')).toContain('track-2-cloudflare-tunnel-hosting.md')
     expect(readText('docs/track-2-client-integration.md')).toContain('track-2-cloudflare-tunnel-hosting.md')
     expect(readText('docs/track-2-multi-tab-smoke.md')).toContain('track-2-cloudflare-tunnel-hosting.md')

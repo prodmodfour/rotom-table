@@ -4,6 +4,8 @@
   "type": "module",
   "scripts": {
     "dev": "nuxt dev",
+    "dev:session:lan": "node scripts/session-host-dev.mjs --mode lan",
+    "dev:session:tunnel": "node scripts/session-host-dev.mjs --mode tunnel",
     "build": "nuxt build",
     "preview": "nuxt preview",
     "postinstall": "NODE_ENV=development nuxt prepare",

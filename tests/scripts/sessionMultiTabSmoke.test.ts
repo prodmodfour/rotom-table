@@ -59,6 +59,7 @@ describe('Track 2 multi-tab smoke helper', () => {
   it('prints a verification checklist for command patches, rejections, reconnect, and cleanup', () => {
     const checklist = buildSmokeChecklist({ mapSlug: 'arena-map' }).join('\n')
 
+    expect(checklist).toContain('npm run dev:session:lan')
     expect(checklist).toContain(`${SESSION_HOST_ENABLE_ENV}=${SESSION_HOST_ENABLE_VALUE} npm run dev`)
     expect(checklist).toContain('separate browser profiles')
     expect(checklist).toContain('/maps/arena-map?session=1')

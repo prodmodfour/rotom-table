@@ -18,6 +18,7 @@ This directory collects presentation and reviewer documentation for Rotom Table.
 - [Track 2 table action commands](track-2-table-action-commands.md) — supported HP, condition, initiative, move/action, hazard, field-effect, and terrain session commands with permissions, conflicts, and limitations.
 - [Track 2 client integration](track-2-client-integration.md) — local mode versus explicit session mode, optimistic UX, disconnect recovery, and conflict/retry guidance.
 - [Track 2 session lobby and manual QA](track-2-session-lobby.md) — GM/player join flow, expected LAN usage, and two-browser lobby smoke checklist.
+- [Track 2 session host runtime scripts](track-2-session-host-runtime.md) — npm helpers for guarded LAN and named-tunnel session host startup.
 - [Track 2 LAN hosting runbook](track-2-lan-hosting.md) — same-Wi-Fi/LAN setup commands, IP discovery, player join URLs, smoke checks, and troubleshooting.
 - [Track 2 named Cloudflare Tunnel runbook](track-2-cloudflare-tunnel-hosting.md) — stable-hostname remote setup, WebSocket considerations, safety warnings, and rollback steps.
 - [Track 2 Quick Tunnel caveat](track-2-quick-tunnel-caveat.md) — temporary development smoke-test boundary, campaign-session rejection, and legacy SSE limitations.

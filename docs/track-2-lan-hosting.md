@@ -30,13 +30,25 @@ npm run build
 
 ## Start the LAN host
 
-Session hosting is disabled unless the exact runtime flag is set. For a development LAN session on macOS/Linux, start Nuxt bound to every local interface:
+Session hosting is disabled unless the exact runtime flag is set. For a development LAN session, use the dedicated helper script:
 
 ```bash
-ROTOM_ENABLE_SESSION_HOST=1 npm run dev -- --host 0.0.0.0
+npm run dev:session:lan
 ```
 
-If you need an explicit port, keep the port in the player URL:
+The helper sets `ROTOM_ENABLE_SESSION_HOST=1` for the Nuxt child process and starts Nuxt with the safe LAN defaults `--host 0.0.0.0 --port 3000`. To inspect the resolved command without starting Nuxt:
+
+```bash
+npm run dev:session:lan -- --print-only
+```
+
+If you need a different port, keep the port in the player URL:
+
+```bash
+npm run dev:session:lan -- --port 3001
+```
+
+Manual macOS/Linux equivalent:
 
 ```bash
 ROTOM_ENABLE_SESSION_HOST=1 npm run dev -- --host 0.0.0.0 --port 3000
@@ -52,9 +64,10 @@ npm run dev -- --host 0.0.0.0 --port 3000
 Notes:
 
 - `--host 0.0.0.0` is what makes the dev server listen on the LAN interface. Without it, `localhost` may work only on the GM machine.
+- The helper does not create a `.env` file, account, GM key, join code, session snapshot, or tunnel credential; it only starts the local Nuxt process with the explicit runtime gate and LAN binding.
 - Keep the terminal open for the whole session. If the GM laptop sleeps, changes networks, or stops the process, players will disconnect and need to reconnect.
 - The WebSocket route uses the same origin and port as the browser page. Players do not need a separate socket URL; `http://192.168.1.42:3000` resolves the socket as `ws://192.168.1.42:3000/api/sessions/socket`.
-- A later hosting-hardening ticket may add a dedicated npm helper script. Until then, use the explicit flag plus `--host 0.0.0.0` command above.
+- See [Track 2 session host runtime scripts](track-2-session-host-runtime.md) for the helper's tunnel mode, dry-run output, and shutdown notes.
 
 ## Find the GM machine's LAN address
 
@@ -86,7 +99,7 @@ http://192.168.1.42:3000
 
 ## GM setup flow
 
-1. Start Rotom Table with `ROTOM_ENABLE_SESSION_HOST=1 npm run dev -- --host 0.0.0.0`.
+1. Start Rotom Table with `npm run dev:session:lan` (manual equivalent: `ROTOM_ENABLE_SESSION_HOST=1 npm run dev -- --host 0.0.0.0 --port 3000`).
 2. On the GM machine, open `http://localhost:3000/login` or `http://<GM-LAN-IP>:3000/login` and choose **GM Login**.
 3. Open `http://<GM-LAN-IP>:3000/sessions#gm-lobby-title` so the safety banner evaluates the same LAN URL that players will use.
 4. Confirm the safety banner reports hosting enabled and a LAN/private-network exposure. If it reports disabled, stop and restart with the runtime flag. If it reports remote or unknown unexpectedly, do not share the URL until the network path is understood.
@@ -121,7 +134,7 @@ Players should not use `http://localhost:3000` unless Rotom Table is running on 
 
 Use this quick pass before relying on a LAN session for play:
 
-- [ ] GM starts with `ROTOM_ENABLE_SESSION_HOST=1 npm run dev -- --host 0.0.0.0`.
+- [ ] GM starts with `npm run dev:session:lan` (or the manual equivalent `ROTOM_ENABLE_SESSION_HOST=1 npm run dev -- --host 0.0.0.0 --port 3000`).
 - [ ] GM opens `/sessions` through the private LAN URL and confirms the safety banner classifies the exposure as LAN/private.
 - [ ] Player opens `http://<GM-LAN-IP>:3000/sessions#player-lobby-title` from a different device and can load the page.
 - [ ] GM starts a session; player joins with a display name and the join code.

@@ -2,7 +2,7 @@
 
 This guide explains how the current Track 2 client slice lets local-first map editing and session-authoritative play coexist. It also gives player-safe recovery steps for disconnects, stale state, and command conflicts.
 
-It is not a LAN runbook, named Cloudflare Tunnel runbook, public authentication guide, or deployment hardening checklist. Hosting operations remain separate; this document focuses on what a browser sees after the GM has explicitly enabled session hosting and started or joined a table session. For remote setup with a stable hostname, see the [Track 2 named Cloudflare Tunnel runbook](track-2-cloudflare-tunnel-hosting.md). For temporary `trycloudflare.com` smoke-test caveats and legacy SSE limitations, see the [Track 2 Quick Tunnel caveat](track-2-quick-tunnel-caveat.md).
+It is not a LAN runbook, named Cloudflare Tunnel runbook, public authentication guide, or deployment hardening checklist. Hosting operations remain separate; this document focuses on what a browser sees after the GM has explicitly enabled session hosting and started or joined a table session. For guarded startup helpers, see the [Track 2 session host runtime scripts](track-2-session-host-runtime.md). For remote setup with a stable hostname, see the [Track 2 named Cloudflare Tunnel runbook](track-2-cloudflare-tunnel-hosting.md). For temporary `trycloudflare.com` smoke-test caveats and legacy SSE limitations, see the [Track 2 Quick Tunnel caveat](track-2-quick-tunnel-caveat.md).
 
 ## Short version
 
@@ -16,11 +16,13 @@ Open the plain map route for local editing. Open the explicit `?session=1` route
 
 ## Entry points and identity
 
-1. Start the app with the explicit host flag when the GM wants session hosting:
+1. Start the app with a guarded helper when the GM wants session hosting:
 
    ```bash
-   ROTOM_ENABLE_SESSION_HOST=1 npm run dev
+   npm run dev:session:lan
    ```
+
+   For a named Cloudflare Tunnel, use `npm run dev:session:tunnel`; for same-machine-only development, the manual equivalent remains `ROTOM_ENABLE_SESSION_HOST=1 npm run dev`.
 
 2. The GM uses `/sessions#gm-lobby-title` to start or manage a session. The response includes session-local GM identity and a player join code; the page should not expose the GM key in generic page chrome.
 3. A player uses `/sessions#player-lobby-title` with the join code and a display name. The server returns a session-local `playerId`, `clientId`, and safe display name.
@@ -108,7 +110,7 @@ For retryable stale/conflict cases, prefer the banner refresh action before retr
 Use the local multi-tab smoke helper when validating this client-integration slice:
 
 ```bash
-ROTOM_ENABLE_SESSION_HOST=1 npm run dev
+npm run dev:session:lan
 npm run smoke:session:multi-tab -- --map <map-slug>
 ```
 

@@ -23,6 +23,7 @@ describe('Track 2 Quick Tunnel caveat', () => {
   })
 
   it('documents a guarded smoke command without presenting it as campaign setup', () => {
+    expect(caveat).toContain('npm run dev:session:tunnel')
     expect(caveat).toContain('ROTOM_ENABLE_SESSION_HOST=1 npm run dev -- --host 127.0.0.1 --port 3000')
     expect(caveat).toContain('cloudflared tunnel --url http://localhost:3000')
     expect(caveat).toContain('https://temporary-name.trycloudflare.com')

@@ -27,6 +27,9 @@ Options:
   --help                 Show this help.
 
 Before running the browser portion, start Rotom Table separately with:
+  npm run dev:session:lan
+
+Same-machine manual equivalent:
   ${SESSION_HOST_ENABLE_ENV}=${SESSION_HOST_ENABLE_VALUE} npm run dev
 `
 
@@ -221,7 +224,7 @@ export const buildSmokeChecklist = (input = {}) => {
   const localMapPath = mapSlug === null ? '/maps/<map-slug>' : mapPathFor(mapSlug, false)
 
   return [
-    `Start Rotom Table in a separate terminal with ${SESSION_HOST_ENABLE_ENV}=${SESSION_HOST_ENABLE_VALUE} npm run dev and confirm the app is reachable at ${baseUrl}.`,
+    `Start Rotom Table in a separate terminal with npm run dev:session:lan (or ${SESSION_HOST_ENABLE_ENV}=${SESSION_HOST_ENABLE_VALUE} npm run dev for same-machine smoke) and confirm the app is reachable at ${baseUrl}.`,
     'Use separate browser profiles/windows for GM and player so their browser-local session identity records do not overwrite each other.',
     'GM profile: open /login, choose GM Login, then open /sessions#gm-lobby-title and press Start GM session. Confirm the join code is visible and the GM key is not shown in page chrome.',
     'Player profile: open /sessions#player-lobby-title, join with the GM join code and a safe display name, then confirm the player summary is active and does not reveal the GM key, join code, other players, hidden maps, or raw snapshots.',

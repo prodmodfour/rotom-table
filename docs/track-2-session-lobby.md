@@ -2,7 +2,7 @@
 
 This guide documents the current Track 2 lobby slice: how a GM starts a guarded session, how a player joins with a session-local display name, how the minimal lobby should behave on a LAN, and how to manually smoke-test the flow with two browsers.
 
-It is intentionally scoped to the identity/join/lobby surface. For same-Wi-Fi setup commands, IP discovery, player browser URLs, and cross-device troubleshooting, see the [Track 2 LAN hosting runbook](track-2-lan-hosting.md). For stable-hostname remote setup, WebSocket considerations, safety warnings, and rollback steps, see the [Track 2 named Cloudflare Tunnel runbook](track-2-cloudflare-tunnel-hosting.md). For temporary `trycloudflare.com` smoke-test caveats and legacy SSE limitations, see the [Track 2 Quick Tunnel caveat](track-2-quick-tunnel-caveat.md). For the client-integration smoke that opens explicit GM/player session-map tabs and checks basic token command propagation, see [Track 2 multi-tab local smoke script](track-2-multi-tab-smoke.md).
+It is intentionally scoped to the identity/join/lobby surface. For guarded startup helpers, see the [Track 2 session host runtime scripts](track-2-session-host-runtime.md). For same-Wi-Fi setup commands, IP discovery, player browser URLs, and cross-device troubleshooting, see the [Track 2 LAN hosting runbook](track-2-lan-hosting.md). For stable-hostname remote setup, WebSocket considerations, safety warnings, and rollback steps, see the [Track 2 named Cloudflare Tunnel runbook](track-2-cloudflare-tunnel-hosting.md). For temporary `trycloudflare.com` smoke-test caveats and legacy SSE limitations, see the [Track 2 Quick Tunnel caveat](track-2-quick-tunnel-caveat.md). For the client-integration smoke that opens explicit GM/player session-map tabs and checks basic token command propagation, see [Track 2 multi-tab local smoke script](track-2-multi-tab-smoke.md).
 
 ## What exists in this slice
 
@@ -19,11 +19,13 @@ The lobby must not autosave whole maps, grant players map-edit authority, expose
 
 ## Safety and identity rules
 
-Session hosting is disabled by default. Start the app with the exact flag before using the lobby endpoints:
+Session hosting is disabled by default. Start the app with a guarded helper before using the lobby endpoints:
 
 ```bash
-ROTOM_ENABLE_SESSION_HOST=1 npm run dev
+npm run dev:session:lan
 ```
+
+The helper sets the exact `ROTOM_ENABLE_SESSION_HOST=1` runtime flag for Nuxt. For same-machine-only smoke tests, the manual equivalent is `ROTOM_ENABLE_SESSION_HOST=1 npm run dev`; for LAN and named-tunnel safe defaults, prefer the runtime scripts guide.
 
 Important boundaries:
 
@@ -39,15 +41,15 @@ Important boundaries:
 For detailed same-network setup and troubleshooting, use the [Track 2 LAN hosting runbook](track-2-lan-hosting.md). For the current lobby slice, the expected table shape is still GM-hosted and LAN-first:
 
 1. The GM runs Rotom Table on their own machine or a small machine they control.
-2. Session hosting is explicitly enabled with `ROTOM_ENABLE_SESSION_HOST=1`.
+2. Session hosting is explicitly enabled with `ROTOM_ENABLE_SESSION_HOST=1`, typically via `npm run dev:session:lan` for LAN smoke testing.
 3. Players on the same Wi-Fi/LAN open the GM machine's private address in a browser, for example `http://192.168.1.42:3000/sessions`.
 4. The GM verifies the `/sessions` safety banner before sharing the join code.
 5. Players join with the code and a display name; the server creates session-local player/client identity and keeps authoritative state on the GM host.
 
-When testing LAN access in development, bind the dev server to the LAN interface:
+When testing LAN access in development, bind the dev server to the LAN interface with the helper:
 
 ```bash
-ROTOM_ENABLE_SESSION_HOST=1 npm run dev -- --host 0.0.0.0
+npm run dev:session:lan
 ```
 
 Use the URL printed by Nuxt or the GM machine's private IP address. If a browser cannot connect, check that both devices are on the same network and that the GM machine's firewall allows the dev-server port. Stop the server or unset `ROTOM_ENABLE_SESSION_HOST` after the smoke test.
@@ -98,7 +100,7 @@ Use one GM browser and one separate player browser/profile. Do not commit any ge
 
 ### Enabled GM start
 
-- [ ] Restart with `ROTOM_ENABLE_SESSION_HOST=1 npm run dev` for same-machine testing, or `ROTOM_ENABLE_SESSION_HOST=1 npm run dev -- --host 0.0.0.0` for LAN testing.
+- [ ] Restart with `ROTOM_ENABLE_SESSION_HOST=1 npm run dev` for same-machine testing, or `npm run dev:session:lan` for LAN testing.
 - [ ] GM browser: choose **GM Login** at `/login`.
 - [ ] GM browser: open `/sessions` directly or from the map navigation rail **Start/manage session** shortcut and verify the safety banner classification matches the expected host (`local` for localhost, `lan` for a private IP).
 - [ ] GM browser: press **Start GM session**.

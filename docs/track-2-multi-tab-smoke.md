@@ -2,15 +2,17 @@
 
 This guide covers the local browser smoke helper for the Track 2 client-integration slice. It opens GM and player entry points on one development machine and gives a short checklist for verifying that explicit session-mode map views use server-authoritative token commands and same-session WebSocket patches.
 
-This is a local development smoke check, not a LAN runbook, named-tunnel runbook, public auth hardening guide, or replacement for the automated Vitest suite. For cross-device same-Wi-Fi setup, IP discovery, and player URLs, see the [Track 2 LAN hosting runbook](track-2-lan-hosting.md). For remote stable-hostname setup, WebSocket considerations, safety warnings, and rollback steps, see the [Track 2 named Cloudflare Tunnel runbook](track-2-cloudflare-tunnel-hosting.md). For temporary `trycloudflare.com` caveats and legacy SSE limitations, see the [Track 2 Quick Tunnel caveat](track-2-quick-tunnel-caveat.md). For the underlying local-mode/session-mode boundary and recovery guidance, see the [Track 2 client integration guide](track-2-client-integration.md).
+This is a local development smoke check, not a LAN runbook, named-tunnel runbook, public auth hardening guide, or replacement for the automated Vitest suite. For guarded startup helpers, see the [Track 2 session host runtime scripts](track-2-session-host-runtime.md). For cross-device same-Wi-Fi setup, IP discovery, and player URLs, see the [Track 2 LAN hosting runbook](track-2-lan-hosting.md). For remote stable-hostname setup, WebSocket considerations, safety warnings, and rollback steps, see the [Track 2 named Cloudflare Tunnel runbook](track-2-cloudflare-tunnel-hosting.md). For temporary `trycloudflare.com` caveats and legacy SSE limitations, see the [Track 2 Quick Tunnel caveat](track-2-quick-tunnel-caveat.md). For the underlying local-mode/session-mode boundary and recovery guidance, see the [Track 2 client integration guide](track-2-client-integration.md).
 
 ## Script
 
-Start Rotom Table in one terminal with the explicit session-host flag:
+Start Rotom Table in one terminal with the guarded LAN helper:
 
 ```bash
-ROTOM_ENABLE_SESSION_HOST=1 npm run dev
+npm run dev:session:lan
 ```
+
+For same-machine-only smoke tests, the manual equivalent remains `ROTOM_ENABLE_SESSION_HOST=1 npm run dev`; LAN binding is useful when the same checklist is reused across devices.
 
 Then run the smoke helper from a second terminal:
 
@@ -51,7 +53,7 @@ Those tests lock the fake two-client WebSocket command fanout and the client ses
 
 - [ ] `git status --short` is clean before the smoke.
 - [ ] The map named by `<map-slug>` exists locally and has at least one placed token.
-- [ ] The app was started with `ROTOM_ENABLE_SESSION_HOST=1 npm run dev`.
+- [ ] The app was started with `npm run dev:session:lan` or the same-machine manual equivalent `ROTOM_ENABLE_SESSION_HOST=1 npm run dev`.
 - [ ] The GM uses one browser profile/window and the player uses a separate browser profile/window.
 
 ### Start and join

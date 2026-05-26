@@ -13,11 +13,14 @@ describe('Track 2 LAN hosting runbook', () => {
   const runbook = readText('docs/track-2-lan-hosting.md')
 
   it('documents the explicit LAN host startup command and runtime gate', () => {
-    expect(runbook).toContain('ROTOM_ENABLE_SESSION_HOST=1 npm run dev -- --host 0.0.0.0')
+    expect(runbook).toContain('npm run dev:session:lan')
+    expect(runbook).toContain('npm run dev:session:lan -- --print-only')
+    expect(runbook).toContain('npm run dev:session:lan -- --port 3001')
+    expect(runbook).toContain('ROTOM_ENABLE_SESSION_HOST=1 npm run dev -- --host 0.0.0.0 --port 3000')
     expect(runbook).toContain('npm run dev -- --host 0.0.0.0 --port 3000')
     expect(runbook).toContain('$env:ROTOM_ENABLE_SESSION_HOST = "1"')
     expect(runbook).toContain('Session hosting is disabled unless the exact runtime flag is set')
-    expect(runbook).toContain('A later hosting-hardening ticket may add a dedicated npm helper script')
+    expect(runbook).toContain('only starts the local Nuxt process with the explicit runtime gate and LAN binding')
   })
 
   it('documents IP discovery and safe private LAN addresses', () => {
@@ -53,6 +56,7 @@ describe('Track 2 LAN hosting runbook', () => {
     expect(readText('docs/README.md')).toContain('track-2-lan-hosting.md')
     expect(readText('docs/local-development.md')).toContain('track-2-lan-hosting.md')
     expect(readText('docs/track-2-roadmap.md')).toContain('track-2-lan-hosting.md')
+    expect(readText('docs/track-2-session-host-runtime.md')).toContain('track-2-lan-hosting.md')
     expect(readText('docs/track-2-session-lobby.md')).toContain('track-2-lan-hosting.md')
     expect(readText('docs/track-2-websocket-protocol.md')).toContain('track-2-lan-hosting.md')
     expect(readText('docs/track-2-session-protocol.md')).toContain('track-2-lan-hosting.md')

@@ -38,7 +38,13 @@ Quick Tunnel creates an ad-hoc public URL for the normal Rotom Table origin. It 
 
 ## If you run a temporary smoke test
 
-Use a clean working tree, a throwaway table session, and fake or non-sensitive map data. Start Rotom Table with the same explicit session-host gate used by supported hosting modes:
+Use a clean working tree, a throwaway table session, and fake or non-sensitive map data. Start Rotom Table with the same explicit session-host gate and loopback binding used by named-tunnel hosting:
+
+```bash
+npm run dev:session:tunnel
+```
+
+Manual equivalent:
 
 ```bash
 ROTOM_ENABLE_SESSION_HOST=1 npm run dev -- --host 127.0.0.1 --port 3000
