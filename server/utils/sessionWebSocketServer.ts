@@ -33,6 +33,11 @@ import {
   type SessionHostRuntimeEnv,
 } from './sessionHosting'
 import {
+  createSessionPresenceFanoutMessage,
+  fanoutSessionServerMessage,
+  type InMemorySessionSocketPeerRegistry,
+} from './sessionWebSocketFanout'
+import {
   sessionStore,
   type InMemorySessionStore,
   type SessionStoreRecord,
@@ -143,6 +148,7 @@ export interface InMemorySessionSocketRegistry {
 export interface SessionSocketHandlerDependencies<TMapDocument = unknown> {
   readonly env?: SessionHostRuntimeEnv
   readonly registry?: InMemorySessionSocketRegistry
+  readonly peers?: InMemorySessionSocketPeerRegistry
   readonly store?: InMemorySessionStore<AuthoritativeSessionState<TMapDocument>>
   readonly clock?: SessionSocketClock
 }
@@ -162,6 +168,7 @@ type MutableSessionSocketConnection =
 interface ResolvedSessionSocketHandlerDependencies<TMapDocument = unknown> {
   readonly env: SessionHostRuntimeEnv
   readonly registry: InMemorySessionSocketRegistry
+  readonly peers?: InMemorySessionSocketPeerRegistry
   readonly store: InMemorySessionStore<AuthoritativeSessionState<TMapDocument>>
   readonly clock: SessionSocketClock
 }
@@ -422,6 +429,7 @@ const resolveDependencies = <TMapDocument>(
 ): ResolvedSessionSocketHandlerDependencies<TMapDocument> => ({
   env: dependencies.env ?? process.env,
   registry: dependencies.registry ?? sessionSocketRegistry,
+  ...(dependencies.peers === undefined ? {} : { peers: dependencies.peers }),
   store: dependencies.store ?? (sessionStore as InMemorySessionStore<AuthoritativeSessionState<TMapDocument>>),
   clock: dependencies.clock ?? defaultSessionSocketClock,
 })
@@ -441,10 +449,11 @@ const closeSocketConnection = <TMapDocument>(
   peer: SessionSocketPeerLike,
   code: number,
   reason: string,
-  dependencies: Pick<ResolvedSessionSocketHandlerDependencies<TMapDocument>, 'registry' | 'store' | 'clock'>,
+  dependencies: Pick<ResolvedSessionSocketHandlerDependencies<TMapDocument>, 'registry' | 'peers' | 'store' | 'clock'>,
 ): ClosedSessionSocketConnection | undefined => {
   peer.close(code, reason)
   stopSessionSocketHeartbeatTimer(peer.id)
+  dependencies.peers?.unregister(peer.id)
   const closed = dependencies.registry.close(peer.id, {
     code,
     reason,
@@ -457,7 +466,7 @@ const closeSocketConnection = <TMapDocument>(
 const closeForHandshakeFailure = <TMapDocument>(
   peer: SessionSocketPeerLike,
   failure: SessionSocketHandshakeFailure,
-  dependencies: Pick<ResolvedSessionSocketHandlerDependencies<TMapDocument>, 'registry' | 'store' | 'clock'>,
+  dependencies: Pick<ResolvedSessionSocketHandlerDependencies<TMapDocument>, 'registry' | 'peers' | 'store' | 'clock'>,
 ): void => {
   sendSocketError(peer, failure)
   closeSocketConnection(peer, SESSION_SOCKET_POLICY_CLOSE_CODE, failure.message, dependencies)
@@ -760,6 +769,22 @@ const createConnectedClientRecord = <TMapDocument>(
   }
 }
 
+const fanoutPresenceChange = <TMapDocument>(
+  state: AuthoritativeSessionState<TMapDocument>,
+  change: 'snapshot' | 'joined' | 'left' | 'updated',
+  dependencies: Pick<ResolvedSessionSocketHandlerDependencies<TMapDocument>, 'registry' | 'peers'>,
+): void => {
+  if (dependencies.peers === undefined) return
+
+  fanoutSessionServerMessage(
+    createSessionPresenceFanoutMessage(state, change),
+    {
+      registry: dependencies.registry,
+      peers: dependencies.peers,
+    },
+  )
+}
+
 const authenticateSocketHello = <TMapDocument>(
   peer: SessionSocketPeerLike,
   hello: SessionClientHelloMessage<SessionRevision>,
@@ -859,12 +884,13 @@ const authenticateSocketHello = <TMapDocument>(
   }
 
   sendJson(peer, serverHello)
+  fanoutPresenceChange(nextState, 'joined', dependencies)
   return serverHello
 }
 
 const markAuthenticatedConnectionDisconnected = <TMapDocument>(
   connection: ClosedSessionSocketConnection,
-  dependencies: Pick<ResolvedSessionSocketHandlerDependencies<TMapDocument>, 'store'>,
+  dependencies: Pick<ResolvedSessionSocketHandlerDependencies<TMapDocument>, 'registry' | 'peers' | 'store'>,
 ): void => {
   if (connection.status !== SESSION_SOCKET_AUTHENTICATED_STATUS) return
 
@@ -884,10 +910,13 @@ const markAuthenticatedConnectionDisconnected = <TMapDocument>(
     revision: record.state.revision,
     updatedAt: connection.closedAt,
   })
-  dependencies.store.setState(connection.sessionId, nextState, {
+  const updatedRecord = dependencies.store.setState(connection.sessionId, nextState, {
     revision: nextState.revision,
     updatedAt: connection.closedAt,
   })
+  if (updatedRecord?.state !== undefined) {
+    fanoutPresenceChange(updatedRecord.state, 'left', dependencies)
+  }
 }
 
 export const handleSessionSocketUpgrade = (
@@ -902,13 +931,15 @@ export const handleSessionSocketOpen = (
   peer: SessionSocketPeerLike,
   dependencies: SessionSocketHandlerDependencies = {},
 ): PendingSessionSocketConnection | undefined => {
-  const { env, registry, clock } = resolveDependencies(dependencies)
+  const { env, registry, peers, clock } = resolveDependencies(dependencies)
   if (!isSessionHostEnabled(env)) {
     peer.close(SESSION_SOCKET_POLICY_CLOSE_CODE, SESSION_SOCKET_DISABLED_MESSAGE)
     return undefined
   }
 
-  return registry.open(peer.id, { connectedAt: clock() })
+  const connection = registry.open(peer.id, { connectedAt: clock() })
+  peers?.register(peer)
+  return connection
 }
 
 const updateHeartbeatPresence = <TMapDocument>(
@@ -1151,6 +1182,7 @@ export const handleSessionSocketClose = <TMapDocument = unknown>(
 ): ClosedSessionSocketConnection | undefined => {
   const resolved = resolveDependencies(dependencies)
   stopSessionSocketHeartbeatTimer(peer.id)
+  resolved.peers?.unregister(peer.id)
   const closed = resolved.registry.close(peer.id, { ...details, closedAt: resolved.clock() })
   if (closed !== undefined) markAuthenticatedConnectionDisconnected(closed, resolved)
   return closed

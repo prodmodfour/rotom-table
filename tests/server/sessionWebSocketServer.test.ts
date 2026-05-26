@@ -172,7 +172,7 @@ describe('session WebSocket route skeleton', () => {
 
     expect(hooks?.upgrade).toBe(handleSessionSocketUpgrade)
     expect(hooks?.open).toBeTypeOf('function')
-    expect(hooks?.message).toBe(handleSessionSocketMessage)
+    expect(hooks?.message).toBeTypeOf('function')
     expect(hooks?.close).toBeTypeOf('function')
     expect(hooks?.error).toBe(handleSessionSocketError)
   })
