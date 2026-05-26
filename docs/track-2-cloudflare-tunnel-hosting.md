@@ -22,7 +22,7 @@ It also does **not** make the existing `/login` GM/player role picker public aut
 
 Cloudflare Access or other edge controls can be useful extra protection, but they are not a replacement for Rotom Table's session-local validation.
 
-Quick Tunnel is not the supported campaign-session path. It can appear only as a temporary development smoke-test option in the dedicated Quick Tunnel caveat docs; do not use `trycloudflare.com` URLs as the normal remote table URL.
+Quick Tunnel is not the supported campaign-session path. It can appear only as a temporary development smoke-test option in the [Track 2 Quick Tunnel caveat](track-2-quick-tunnel-caveat.md); do not use `trycloudflare.com` URLs as the normal remote table URL.
 
 ## Before you start
 
@@ -249,7 +249,7 @@ Back up local session snapshots only if the GM intentionally wants a private rec
 ## Boundaries
 
 - LAN hosting remains the primary supported Track 2 path; named Cloudflare Tunnel is the supported remote path for trusted remote players.
-- Quick Tunnel is not the supported campaign-session path.
+- Quick Tunnel is not the supported campaign-session path; see the [Track 2 Quick Tunnel caveat](track-2-quick-tunnel-caveat.md) for the temporary development-only boundary and legacy SSE limitations.
 - The existing `/login` GM/player picker is not public auth.
 - Cloudflare Access is optional extra protection, not a replacement for Rotom Table session-local GM/player validation.
 - The session join code and GM key are session-local credentials, not full accounts.

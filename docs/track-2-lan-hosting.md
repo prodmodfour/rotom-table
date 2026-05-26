@@ -186,7 +186,7 @@ Back up local session snapshots only if the GM intentionally wants a private rec
 ## Boundaries
 
 - LAN hosting is the primary supported Track 2 path; remote players should use the [Track 2 named Cloudflare Tunnel runbook](track-2-cloudflare-tunnel-hosting.md) with a stable hostname.
-- Quick Tunnel is not the supported campaign-session path.
+- Quick Tunnel is not the supported campaign-session path; see the [Track 2 Quick Tunnel caveat](track-2-quick-tunnel-caveat.md) before using a temporary `trycloudflare.com` URL for development smoke tests.
 - The existing `/login` GM/player picker is not public auth.
 - The session join code and GM key are session-local credentials, not full accounts.
 - Do not add a database, cloud persistence layer, SaaS deployment target, or shared-document autosave model to make LAN hosting work.

@@ -12,7 +12,7 @@ This glossary defines the vocabulary used by the Track 2 GM-hosted session roadm
 | Session mode | The guarded Track 2 workflow where live clients send commands to a server-authoritative session instead of autosaving whole map documents. |
 | LAN hosting | The primary supported Track 2 deployment path: GM and players are on the same local network or Wi-Fi. |
 | Named Cloudflare Tunnel | The supported remote Track 2 path: a stable public hostname forwards to the private GM-hosted Rotom Table server. |
-| Quick Tunnel | A temporary Cloudflare tunnel URL. It may be documented for development smoke tests only and is not the supported campaign-session path. |
+| Quick Tunnel | A temporary Cloudflare tunnel URL. It may be documented for development smoke tests only and is not the supported campaign-session path; see the [Track 2 Quick Tunnel caveat](track-2-quick-tunnel-caveat.md). |
 | Public multi-tenant hosting | A SaaS-style deployment where unrelated groups share hosted infrastructure. This is a Track 2 non-goal. |
 | Trust-based role picker | The current local GM/player/guest selector. It is convenient for local table use, but it is not hardened public authentication. |
 

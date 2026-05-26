@@ -2,7 +2,7 @@
 
 This guide documents the current Track 2 lobby slice: how a GM starts a guarded session, how a player joins with a session-local display name, how the minimal lobby should behave on a LAN, and how to manually smoke-test the flow with two browsers.
 
-It is intentionally scoped to the identity/join/lobby surface. For same-Wi-Fi setup commands, IP discovery, player browser URLs, and cross-device troubleshooting, see the [Track 2 LAN hosting runbook](track-2-lan-hosting.md). For stable-hostname remote setup, WebSocket considerations, safety warnings, and rollback steps, see the [Track 2 named Cloudflare Tunnel runbook](track-2-cloudflare-tunnel-hosting.md). For the client-integration smoke that opens explicit GM/player session-map tabs and checks basic token command propagation, see [Track 2 multi-tab local smoke script](track-2-multi-tab-smoke.md).
+It is intentionally scoped to the identity/join/lobby surface. For same-Wi-Fi setup commands, IP discovery, player browser URLs, and cross-device troubleshooting, see the [Track 2 LAN hosting runbook](track-2-lan-hosting.md). For stable-hostname remote setup, WebSocket considerations, safety warnings, and rollback steps, see the [Track 2 named Cloudflare Tunnel runbook](track-2-cloudflare-tunnel-hosting.md). For temporary `trycloudflare.com` smoke-test caveats and legacy SSE limitations, see the [Track 2 Quick Tunnel caveat](track-2-quick-tunnel-caveat.md). For the client-integration smoke that opens explicit GM/player session-map tabs and checks basic token command propagation, see [Track 2 multi-tab local smoke script](track-2-multi-tab-smoke.md).
 
 ## What exists in this slice
 
@@ -52,7 +52,7 @@ ROTOM_ENABLE_SESSION_HOST=1 npm run dev -- --host 0.0.0.0
 
 Use the URL printed by Nuxt or the GM machine's private IP address. If a browser cannot connect, check that both devices are on the same network and that the GM machine's firewall allows the dev-server port. Stop the server or unset `ROTOM_ENABLE_SESSION_HOST` after the smoke test.
 
-Remote campaign play should use the [Track 2 named Cloudflare Tunnel runbook](track-2-cloudflare-tunnel-hosting.md) with a stable hostname. Quick Tunnel may be mentioned only as a temporary development smoke-test option and must not be treated as the supported campaign path.
+Remote campaign play should use the [Track 2 named Cloudflare Tunnel runbook](track-2-cloudflare-tunnel-hosting.md) with a stable hostname. Quick Tunnel may be mentioned only as a temporary development smoke-test option, must not be treated as the supported campaign path, and is documented in the [Track 2 Quick Tunnel caveat](track-2-quick-tunnel-caveat.md).
 
 ## GM flow
 

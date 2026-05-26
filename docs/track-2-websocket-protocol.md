@@ -532,7 +532,7 @@ No session data should be sent to a socket before hello/auth, and no presence, p
 
 ## Legacy SSE boundary
 
-`GET /api/events` remains the legacy Server-Sent Events channel for local-first, non-session map/sheet/library updates. It is not used for Track 2 session commands, acknowledgements, rejections, presence, heartbeat, reconnect, or session patches. Existing local workflows may still carry whole saved map/sheet payloads over SSE; live sessions must use `/api/sessions/socket` and server-authoritative commands instead.
+`GET /api/events` remains the legacy Server-Sent Events channel for local-first, non-session map/sheet/library updates. It is not used for Track 2 session commands, acknowledgements, rejections, presence, heartbeat, reconnect, or session patches. Existing local workflows may still carry whole saved map/sheet payloads over SSE; live sessions must use `/api/sessions/socket` and server-authoritative commands instead. The [Track 2 Quick Tunnel caveat](track-2-quick-tunnel-caveat.md) documents why a temporary `trycloudflare.com` URL does not make legacy SSE a supported public session transport.
 
 ## Named Cloudflare Tunnel expectations
 
@@ -548,7 +548,7 @@ WebSocket-specific expectations for that named tunnel:
 - handle tunnel/proxy closure by reconnecting with `lastSeenRevision` and accepting snapshot fallback when replay is unavailable;
 - do not commit tunnel credentials, tokens, private hostnames that should remain private, real `.env` files, GM keys, join codes, snapshots, or event logs.
 
-Quick Tunnel is not the supported campaign-session deployment path. It may be useful only for temporary development smoke tests, and any use should be documented as unstable, ad hoc, and unsuitable for regular campaign play.
+Quick Tunnel is not the supported campaign-session deployment path. It may be useful only for temporary development smoke tests, and any use should be documented as unstable, ad hoc, and unsuitable for regular campaign play. See the [Track 2 Quick Tunnel caveat](track-2-quick-tunnel-caveat.md) for the allowed smoke-test boundary, cleanup expectations, and legacy SSE limitations.
 
 ## Manual chunk-04 smoke expectations
 
@@ -579,6 +579,7 @@ This automated fake-peer smoke test complements the local browser helper in [Tra
 - [Track 2 session lobby and manual QA](track-2-session-lobby.md)
 - [Track 2 LAN hosting runbook](track-2-lan-hosting.md)
 - [Track 2 named Cloudflare Tunnel runbook](track-2-cloudflare-tunnel-hosting.md)
+- [Track 2 Quick Tunnel caveat](track-2-quick-tunnel-caveat.md)
 - [Track 2 multi-tab local smoke script](track-2-multi-tab-smoke.md)
 - [Track 2 session storage](track-2-session-storage.md)
 - [Track 2 validation matrix](track-2-validation-matrix.md)
