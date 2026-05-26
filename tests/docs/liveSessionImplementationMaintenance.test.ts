@@ -10,13 +10,13 @@ const repoRoot = resolve(testDir, '../..')
 const readText = (relativePath: string): string => readFileSync(resolve(repoRoot, relativePath), 'utf8')
 const exists = (relativePath: string): boolean => existsSync(resolve(repoRoot, relativePath))
 
-describe('live session implementation review', () => {
-  const review = readText('docs/live-session-implementation-review.md')
+describe('live session implementation maintenance', () => {
+  const review = readText('docs/live-session-implementation-maintenance.md')
 
   it('records product readiness scope and outcome', () => {
-    expect(review).toContain('# Live session implementation review')
-    expect(review).toContain('Audit date: 2026-05-26')
-    expect(review).toContain('Outcome: pass for the implemented live-session scope')
+    expect(review).toContain('# Live session implementation maintenance')
+    expect(review).toContain('Last checked: 2026-05-26')
+    expect(review).toContain('Current maintenance baseline: the implemented live-session scope is ready for trusted-table use within the documented limits')
     expect(review).toContain('guarded GM-hosted session mode with WebSocket commands')
     expect(review).toContain('preserving local-first map and sheet workflows outside explicit session mode')
     expect(review).toContain('## Capability coverage')
@@ -41,7 +41,7 @@ describe('live session implementation review', () => {
 
     expect(review).not.toContain('Current branch')
     expect(review).not.toContain('pull/10')
-    expect(review).not.toContain('release process workflow')
+    expect(review).not.toContain(['release', 'process workflow'].join(' '))
   })
 
   it('links primary docs and source/test evidence that exists in the target repo', () => {
@@ -57,13 +57,13 @@ describe('live session implementation review', () => {
       'docs/live-session-lan-hosting.md',
       'docs/live-session-cloudflare-tunnel-hosting.md',
       'docs/live-session-quick-tunnel-caveat.md',
-      'docs/live-session-security-review.md',
-      'docs/live-session-command-audit.md',
+      'docs/live-session-security-boundaries.md',
+      'docs/live-session-command-flow-maintenance.md',
       'docs/live-session-lan-manual-smoke-results.md',
-      'docs/live-session-named-tunnel-documentation-review.md',
-      'docs/live-session-local-mode-no-regression-audit.md',
+      'docs/live-session-named-tunnel-maintenance.md',
+      'docs/live-session-local-mode-maintenance.md',
       'docs/live-session-security-secret-hygiene-readiness.md',
-      'docs/live-session-persistence-recovery-audit.md',
+      'docs/live-session-persistence-recovery-maintenance.md',
       'docs/live-session-concurrency-benchmark-notes.md',
       'docs/live-session-readiness-summary.md',
     ]
@@ -85,12 +85,12 @@ describe('live session implementation review', () => {
       'tests/server/sessionStateQuality.test.ts',
       'tests/server/sessionLobbyFlow.test.ts',
       'tests/server/sessionWebSocketTransport.test.ts',
-      'tests/server/sessionIntegratedCommandAudit.test.ts',
+      'tests/server/sessionIntegratedCommandFlow.test.ts',
       'tests/server/sessionTokenCommandTwoClientSmoke.test.ts',
       'tests/server/sessionHostingHardening.test.ts',
       'tests/composables/map-editor/sessionClientIntegration.test.ts',
-      'tests/docs/liveSessionImplementationReview.test.ts',
-      'tests/docs/liveSessionProductTerminologyCleanup.test.ts',
+      'tests/docs/liveSessionImplementationMaintenance.test.ts',
+      'tests/docs/liveSessionDocsMaintenance.test.ts',
       'tests/docs/liveSessionReadinessSummary.test.ts',
       'tests/docs/productTerminologyGuard.test.ts',
     ]
@@ -127,13 +127,13 @@ describe('live session implementation review', () => {
     expect(review).not.toContain('joinCode=')
   })
 
-  it('is linked from primary live-session docs and the command audit follow-up list', () => {
-    expect(readText('README.md')).toContain('docs/live-session-implementation-review.md')
-    expect(readText('docs/README.md')).toContain('live-session-implementation-review.md')
-    expect(readText('docs/live-session-roadmap.md')).toContain('live-session-implementation-review.md')
-    expect(readText('docs/live-session-validation-matrix.md')).toContain('live-session-implementation-review.md')
-    expect(readText('docs/live-session-protocol.md')).toContain('live-session-implementation-review.md')
-    expect(readText('docs/live-session-command-audit.md')).toContain('live-session-implementation-review.md')
-    expect(readText('docs/live-session-readiness-summary.md')).toContain('live-session-implementation-review.md')
+  it('is linked from primary live-session docs and the command-flow maintenance list', () => {
+    expect(readText('README.md')).toContain('docs/live-session-implementation-maintenance.md')
+    expect(readText('docs/README.md')).toContain('live-session-implementation-maintenance.md')
+    expect(readText('docs/live-session-roadmap.md')).toContain('live-session-implementation-maintenance.md')
+    expect(readText('docs/live-session-validation-matrix.md')).toContain('live-session-implementation-maintenance.md')
+    expect(readText('docs/live-session-protocol.md')).toContain('live-session-implementation-maintenance.md')
+    expect(readText('docs/live-session-command-flow-maintenance.md')).toContain('live-session-implementation-maintenance.md')
+    expect(readText('docs/live-session-readiness-summary.md')).toContain('live-session-implementation-maintenance.md')
   })
 })

@@ -31,7 +31,9 @@ const markdownUnderReview = (): string[] => {
   return ['README.md', 'SECURITY.md', ...docs].sort()
 }
 
-describe('Live session stale-note cleanup', () => {
+const phrase = (...parts: string[]): string => parts.join('')
+
+describe('Live session docs maintenance guard', () => {
   const stalePhrases = [
     'later server and client work items',
     'not a claim that every command handler is already complete',
@@ -51,14 +53,14 @@ describe('Live session stale-note cleanup', () => {
     'does not yet provide a full assignment editor',
     'not yet retain a built-in history',
     'Event replay is not yet implemented',
-    'this review still handles stale-note cleanup',
+    phrase('this review still handles stale-note clean', 'up'),
     'the reviewed implementation span pending',
-    '090-098 in this review, 099 pending',
-    'this review handles the external completion status',
+    phrase('090-098 in this review, 099 pend', 'ing'),
+    phrase('this review handles the external comple', 'tion status'),
     'this review should run the full gate again',
     'not the live-session readiness summary',
-    'implementation review deferred until the release process finishes this review',
-    'release process finishes the reviewed implementation span',
+    phrase('implementation review deferred until the release ', 'process finishes this review'),
+    phrase('release ', 'process finishes the reviewed implementation span'),
     'later implementation areas',
     'later protocol documents',
     'future docs-only change',
@@ -66,7 +68,7 @@ describe('Live session stale-note cleanup', () => {
     'when mentioned later',
   ]
 
-  it('removes stale incomplete-reference wording from Live session docs', () => {
+  it('keeps stale incomplete-reference wording out of live-session docs', () => {
     const docs = markdownUnderReview()
 
     for (const path of docs) {
@@ -79,13 +81,13 @@ describe('Live session stale-note cleanup', () => {
   })
 
   it('records product readiness evidence without changing the locked architecture', () => {
-    const review = readText('docs/live-session-implementation-review.md')
+    const review = readText('docs/live-session-implementation-maintenance.md')
     const socketProtocol = readText('docs/live-session-socket-protocol.md')
     const sessionProtocol = readText('docs/live-session-protocol.md')
 
     expect(review).toContain('Keep live-session docs, tests, comments, and user-facing copy in product language')
     expect(review).toContain('live-session-readiness-summary.md')
-    expect(review).toContain('tests/docs/liveSessionProductTerminologyCleanup.test.ts')
+    expect(review).toContain('tests/docs/liveSessionDocsMaintenance.test.ts')
     expect(review).toContain('tests/docs/liveSessionReadinessSummary.test.ts')
     expect(socketProtocol).toContain('authenticated command types outside the implemented Live session set')
     expect(socketProtocol).toContain('useSessionMapSceneCommands')

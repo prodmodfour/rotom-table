@@ -505,7 +505,7 @@ const expectAcceptedFanout = (input: {
   return { ack, patch }
 }
 
-describe('integrated multi-client command audit', () => {
+describe('integrated multi-client command flow', () => {
   it('audits accepted commands, reconnect snapshot fallback, permission denial, and stale conflict handling', () => {
     const registry = createInMemorySessionSocketRegistry()
     const peers = createInMemorySessionSocketPeerRegistry()

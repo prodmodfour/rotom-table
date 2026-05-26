@@ -20,7 +20,7 @@ Notes:
 
 - The local smoke-test harness used separate browser contexts on the same host through the private LAN interface because the recorded test environment had no physical second device available.
 - Real table operators should still run the deployment checklist from actual player devices before relying on a campaign session.
-- Accepted table command propagation is covered by the integrated command audit in [Live session integrated command audit](live-session-command-audit.md), with latency-sensitive behaviour and limitations summarized in [Live session concurrency benchmark notes](live-session-concurrency-benchmark-notes.md), and remains part of the full deployment checklist.
+- Accepted table command propagation is covered by the integrated command-flow coverage in [Live session command-flow maintenance](live-session-command-flow-maintenance.md), with latency-sensitive behaviour and limitations summarized in [Live session concurrency benchmark notes](live-session-concurrency-benchmark-notes.md), and remains part of the full deployment checklist.
 
 ## Steps observed
 
@@ -49,7 +49,7 @@ After the fix, `npm run build` succeeded, the LAN dev helper served `/sessions`,
 
 ## Boundaries and follow-up guidance
 
-- This smoke is a LAN browser-client pass, not a named Cloudflare Tunnel review; see the [Live session named Cloudflare Tunnel runbook](live-session-cloudflare-tunnel-hosting.md) and [Live session named tunnel documentation review](live-session-named-tunnel-documentation-review.md) for remote-hosting review.
+- This smoke is a LAN browser-client pass, not a named Cloudflare Tunnel review; see the [Live session named Cloudflare Tunnel runbook](live-session-cloudflare-tunnel-hosting.md) and [Live session named-tunnel maintenance checklist](live-session-named-tunnel-maintenance.md) for remote-hosting review.
 - Quick Tunnel was not used and remains development-smoke-test only; see the [Live session Quick Tunnel caveat](live-session-quick-tunnel-caveat.md).
 - The existing `/login` GM/player picker remains a local trust switch, not public authentication.
 - Browser clients did not autosave whole maps as live session authority; reconnect used a server snapshot fallback.

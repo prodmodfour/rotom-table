@@ -14,9 +14,9 @@ describe('Live session concurrency benchmark notes', () => {
   const notes = readText('docs/live-session-concurrency-benchmark-notes.md')
 
   it('records the current scope, outcome, and measurement caveats', () => {
-    expect(notes).toContain('This review')
-    expect(notes).toContain('Audit date: 2026-05-26')
-    expect(notes).toContain('Outcome: pass for the locked Live session small-table concurrency posture')
+    expect(notes).toContain('This note records')
+    expect(notes).toContain('Last checked: 2026-05-26')
+    expect(notes).toContain('Current maintenance baseline: the locked live-session small-table concurrency posture is ready')
     expect(notes).toContain('not a load test, WAN benchmark, browser FPS benchmark, or numeric latency SLA')
     expect(notes).toContain('No millisecond latency target is claimed')
     expect(notes).toContain('separate Chromium contexts through a private LAN URL')
@@ -41,7 +41,7 @@ describe('Live session concurrency benchmark notes', () => {
 
   it('summarizes multi-client command, fanout, permission, stale, and reconnect behaviour evidence', () => {
     const expectedEvidence = [
-      'tests/server/sessionIntegratedCommandAudit.test.ts',
+      'tests/server/sessionIntegratedCommandFlow.test.ts',
       'tests/server/sessionTokenCommandTwoClientSmoke.test.ts',
       'tests/server/sessionWebSocketTransport.test.ts',
       'tests/server/applyMoveTokenCommand.test.ts',
@@ -124,7 +124,7 @@ describe('Live session concurrency benchmark notes', () => {
     expect(readText('docs/live-session-validation-matrix.md')).toContain('live-session-concurrency-benchmark-notes.md')
     expect(readText('docs/live-session-protocol.md')).toContain('live-session-concurrency-benchmark-notes.md')
     expect(readText('docs/live-session-socket-protocol.md')).toContain('live-session-concurrency-benchmark-notes.md')
-    expect(readText('docs/live-session-command-audit.md')).toContain('live-session-concurrency-benchmark-notes.md')
+    expect(readText('docs/live-session-command-flow-maintenance.md')).toContain('live-session-concurrency-benchmark-notes.md')
     expect(readText('docs/live-session-lan-hosting.md')).toContain('live-session-concurrency-benchmark-notes.md')
     expect(readText('docs/live-session-cloudflare-tunnel-hosting.md')).toContain('live-session-concurrency-benchmark-notes.md')
     expect(readText('docs/live-session-deployment-smoke-checklist.md')).toContain('live-session-concurrency-benchmark-notes.md')

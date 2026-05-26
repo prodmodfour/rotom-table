@@ -1,16 +1,16 @@
 # Live session readiness summary
 
-This page summarizes the current Rotom Table GM-hosted live-session implementation for maintainers and operators. It is a product/developer readiness index, not a one-off status log.
+This page summarizes the current Rotom Table GM-hosted live-session implementation for maintainers and operators. It is a product/developer readiness index, not a status log.
 
-Audit date: 2026-05-26
+Last checked: 2026-05-26
 
-Outcome: ready for trusted-table live-session smoke testing within the documented limits. The implementation keeps the existing local-first app intact while adding an explicit session-hosting mode for small groups.
+Current readiness baseline: ready for trusted-table live-session smoke testing within the documented limits. The implementation keeps the existing local-first app intact while adding an explicit session-hosting mode for small groups.
 
 ## Readiness checks
 
 - Session hosting remains opt-in through `ROTOM_ENABLE_SESSION_HOST=1` or the guarded `npm run dev:session:*` helpers.
 - Standard validation is `npm run typecheck`, `npm test`, and `npm run build` from the repository root.
-- No target-maintenance files, private/generated maps or sheets, session snapshots, event logs, tunnel credentials, tokens, private keys, screenshots with secrets, or real `.env` files are intentionally added to the repository.
+- No maintenance-only notes, private/generated maps or sheets, session snapshots, event logs, tunnel credentials, tokens, private keys, screenshots with secrets, or real `.env` files are intentionally added to the repository.
 - The documented limitations remain product limitations, not hidden follow-up work: trusted small-table scale, no public auth or SaaS hardening, process-local WebSocket presence/recent-`opId` memory, snapshot fallback without event replay, local JSON write latency, no WAN/load benchmark, Quick Tunnel development-smoke only, and no committed private/session/secret data.
 
 ## Architecture lock confirmed
@@ -28,17 +28,17 @@ The live-session implementation still matches the locked architecture:
 
 ## Evidence index
 
-Use these product/developer documents and tests to review the live-session scope:
+Use these product/developer documents and tests to maintain the live-session scope:
 
-- [Live session implementation review](live-session-implementation-review.md) links primary docs, source areas, tests, and known limitations.
-- [Live session integrated command audit](live-session-command-audit.md) covers move, turn, HP, conditions, initiative, reconnect, permissions, stale conflicts, same-session patch fanout, and cross-session isolation.
+- [Live session implementation maintenance](live-session-implementation-maintenance.md) links primary docs, source areas, tests, and known limitations.
+- [Live session command-flow maintenance](live-session-command-flow-maintenance.md) covers move, turn, HP, conditions, initiative, reconnect, permissions, stale conflicts, same-session patch fanout, and cross-session isolation.
 - [Live session LAN manual smoke results](live-session-lan-manual-smoke-results.md) records the multi-browser LAN pass with redacted join-code evidence, WebSocket presence, reconnect snapshot fallback, and cleanup.
-- [Live session named tunnel documentation review](live-session-named-tunnel-documentation-review.md) records the named Cloudflare Tunnel doc/source review and safety assumptions.
-- [Live session local-mode no-regression audit](live-session-local-mode-no-regression-audit.md) confirms plain local map/sheet workflows, local autosave, and legacy SSE boundaries remain intact.
+- [Live session named-tunnel maintenance checklist](live-session-named-tunnel-maintenance.md) keeps the named Cloudflare Tunnel doc/source baseline and safety assumptions.
+- [Live session local-mode maintenance checks](live-session-local-mode-maintenance.md) confirms plain local map/sheet workflows, local autosave, and legacy SSE boundaries remain intact.
 - [Live session security and secret-hygiene readiness](live-session-security-secret-hygiene-readiness.md) reviews auth/session/cookie/permission boundaries, public exposure warnings, committed-data hygiene, and remaining security non-goals.
-- [Live session persistence/recovery audit](live-session-persistence-recovery-audit.md) reviews local snapshots, optional event logs, backup/recovery docs, cleanup, and data hygiene.
+- [Live session persistence/recovery maintenance](live-session-persistence-recovery-maintenance.md) tracks local snapshots, optional event logs, backup/recovery docs, cleanup, and data hygiene.
 - [Live session concurrency benchmark notes](live-session-concurrency-benchmark-notes.md) records latency-sensitive behaviour observations and performance limits for the trusted small-table scope.
-- `tests/server/sessionIntegratedCommandAudit.test.ts`, `tests/server/sessionWebSocketTransport.test.ts`, `tests/server/sessionHostingHardening.test.ts`, `tests/composables/map-editor/sessionClientIntegration.test.ts`, `tests/docs/liveSessionProductTerminologyCleanup.test.ts`, `tests/docs/liveSessionReadinessSummary.test.ts`, and `tests/docs/productTerminologyGuard.test.ts` provide focused regression coverage around the readiness surface.
+- `tests/server/sessionIntegratedCommandFlow.test.ts`, `tests/server/sessionWebSocketTransport.test.ts`, `tests/server/sessionHostingHardening.test.ts`, `tests/composables/map-editor/sessionClientIntegration.test.ts`, `tests/docs/liveSessionDocsMaintenance.test.ts`, `tests/docs/liveSessionReadinessSummary.test.ts`, and `tests/docs/productTerminologyGuard.test.ts` provide focused regression coverage around the readiness surface.
 
 ## Operator boundary
 

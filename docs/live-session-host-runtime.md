@@ -105,8 +105,8 @@ See the [Live session named Cloudflare Tunnel runbook](live-session-cloudflare-t
 - Live session clients must use `/maps/<slug>?session=1` and WebSocket command flow after the GM attaches the saved map to server-owned session state. Plain `/maps/<slug>` remains local-first, and any browser-local seed shown before a snapshot is not command authority.
 - Before committing, run `git status --short` and confirm generated `data/sessions/` snapshots/event logs, join codes, GM keys, screenshots with secrets, and private campaign JSON are not staged.
 - For private session archives and restores after hosting, use the [Live session backup and recovery runbook](live-session-backup-recovery.md); do not turn backups into a cloud database or public shared drive.
-- For the full trust-boundary review, join-code limits, tunnel exposure risks, incident response, and non-hardened areas, see the [Live session security review](live-session-security-review.md).
-- For dependency inventory, exact runtime flag expectations, Node/Nitro WebSocket compatibility, and Cloudflare tunnel assumptions, see the [Live session dependency and runtime review](live-session-dependency-runtime-review.md).
+- For the full trust-boundary review, join-code limits, tunnel exposure risks, incident response, and non-hardened areas, see the [Live session security boundaries](live-session-security-boundaries.md).
+- For dependency inventory, exact runtime flag expectations, Node/Nitro WebSocket compatibility, and Cloudflare tunnel assumptions, see the [Live session dependency and runtime maintenance](live-session-dependency-runtime-maintenance.md).
 
 ## Shutdown
 

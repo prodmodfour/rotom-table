@@ -538,7 +538,7 @@ No session data should be sent to a socket before hello/auth, and no presence, p
 
 ## Named Cloudflare Tunnel expectations
 
-LAN remains the primary supported live session hosting path. For same-Wi-Fi startup commands, IP discovery, player browser paths, and network troubleshooting, use the [Live session LAN hosting runbook](live-session-lan-hosting.md). The recorded LAN browser-client pass is in [Live session LAN manual smoke results](live-session-lan-manual-smoke-results.md). For remote players, use the [Live session named Cloudflare Tunnel runbook](live-session-cloudflare-tunnel-hosting.md): the supported path is a named Cloudflare Tunnel with a stable hostname pointing to the private GM-hosted Rotom Table server. The [Live session named tunnel documentation review](live-session-named-tunnel-documentation-review.md) records the current Cloudflare assumptions and safety-warning pass for that runbook. For the end-to-end deployment smoke that exercises two players, reconnect, token movement, initiative, and conflict rejection in either mode, use the [Live session deployment smoke checklist](live-session-deployment-smoke-checklist.md). For latency-sensitive behaviour observations and limitations, see the [Live session concurrency benchmark notes](live-session-concurrency-benchmark-notes.md).
+LAN remains the primary supported live session hosting path. For same-Wi-Fi startup commands, IP discovery, player browser paths, and network troubleshooting, use the [Live session LAN hosting runbook](live-session-lan-hosting.md). The recorded LAN browser-client pass is in [Live session LAN manual smoke results](live-session-lan-manual-smoke-results.md). For remote players, use the [Live session named Cloudflare Tunnel runbook](live-session-cloudflare-tunnel-hosting.md): the supported path is a named Cloudflare Tunnel with a stable hostname pointing to the private GM-hosted Rotom Table server. The [Live session named-tunnel maintenance checklist](live-session-named-tunnel-maintenance.md) records the current Cloudflare assumptions and safety-warning pass for that runbook. For the end-to-end deployment smoke that exercises two players, reconnect, token movement, initiative, and conflict rejection in either mode, use the [Live session deployment smoke checklist](live-session-deployment-smoke-checklist.md). For latency-sensitive behaviour observations and limitations, see the [Live session concurrency benchmark notes](live-session-concurrency-benchmark-notes.md).
 
 WebSocket-specific expectations for that named tunnel:
 
@@ -550,7 +550,7 @@ WebSocket-specific expectations for that named tunnel:
 - handle tunnel/proxy closure by reconnecting with `lastSeenRevision` and accepting snapshot fallback when replay is unavailable;
 - do not commit tunnel credentials, tokens, private hostnames that should remain private, real `.env` files, GM keys, join codes, snapshots, or event logs.
 
-See the [Live session security review](live-session-security-review.md) for the broader trust boundaries, join-code limits, tunnel exposure risks, and non-hardened areas, and the [Live session dependency and runtime review](live-session-dependency-runtime-review.md) for Node/Nitro WebSocket compatibility plus Cloudflare tunnel assumptions.
+See the [Live session security boundaries](live-session-security-boundaries.md) for the broader trust boundaries, join-code limits, tunnel exposure risks, and non-hardened areas, and the [Live session dependency and runtime maintenance](live-session-dependency-runtime-maintenance.md) for Node/Nitro WebSocket compatibility plus Cloudflare tunnel assumptions.
 
 Quick Tunnel is not the supported campaign-session deployment path. It may be useful only for temporary development smoke tests, and any use should be documented as unstable, ad hoc, and unsuitable for regular campaign play. See the [Live session Quick Tunnel caveat](live-session-quick-tunnel-caveat.md) for the allowed smoke-test boundary, cleanup expectations, and legacy SSE limitations.
 
@@ -577,9 +577,9 @@ A transport-only smoke check should verify:
 
 This automated fake-peer smoke test complements the local browser helper in [Live session multi-tab local smoke script](live-session-multi-tab-smoke.md) and the recorded LAN browser-client pass in [Live session LAN manual smoke results](live-session-lan-manual-smoke-results.md). Together they cover server-authoritative two-client command/fanout behaviour plus the GM/player session-map tab flow before the LAN/named-tunnel deployment checks in [Live session deployment smoke checklist](live-session-deployment-smoke-checklist.md).
 
-## Integrated command audit coverage
+## Integrated command-flow coverage
 
-`tests/server/sessionIntegratedCommandAudit.test.ts` is the fake-peer command pass documented in [Live session integrated command audit](live-session-command-audit.md). It keeps the same server-authoritative WebSocket path and audits one GM, two same-session players, and one unrelated-session peer across accepted `moveToken`, `turnToken`, `modifyHp`, `modifyConditions`, and `nextInitiative` commands; same-session patch fanout; cross-session isolation; an unauthorized view-only player rejection; stale same-token movement rejection; and reconnect snapshot fallback with player filtering. The [Live session concurrency benchmark notes](live-session-concurrency-benchmark-notes.md) summarize the latency-sensitive command path, heartbeat/reconnect observations, and known scaling limits around that evidence.
+`tests/server/sessionIntegratedCommandFlow.test.ts` is the fake-peer command pass documented in [Live session command-flow maintenance](live-session-command-flow-maintenance.md). It keeps the same server-authoritative WebSocket path and audits one GM, two same-session players, and one unrelated-session peer across accepted `moveToken`, `turnToken`, `modifyHp`, `modifyConditions`, and `nextInitiative` commands; same-session patch fanout; cross-session isolation; an unauthorized view-only player rejection; stale same-token movement rejection; and reconnect snapshot fallback with player filtering. The [Live session concurrency benchmark notes](live-session-concurrency-benchmark-notes.md) summarize the latency-sensitive command path, heartbeat/reconnect observations, and known scaling limits around that evidence.
 
 ## Related docs
 
@@ -587,16 +587,16 @@ This automated fake-peer smoke test complements the local browser helper in [Liv
 - [live session lobby and manual QA](live-session-lobby.md)
 - [Live session LAN hosting runbook](live-session-lan-hosting.md)
 - [Live session named Cloudflare Tunnel runbook](live-session-cloudflare-tunnel-hosting.md)
-- [Live session named tunnel documentation review](live-session-named-tunnel-documentation-review.md)
+- [Live session named-tunnel maintenance checklist](live-session-named-tunnel-maintenance.md)
 - [Live session deployment smoke checklist](live-session-deployment-smoke-checklist.md)
 - [Live session LAN manual smoke results](live-session-lan-manual-smoke-results.md)
-- [Live session integrated command audit](live-session-command-audit.md)
+- [Live session command-flow maintenance](live-session-command-flow-maintenance.md)
 - [Live session concurrency benchmark notes](live-session-concurrency-benchmark-notes.md)
 - [Live session Quick Tunnel caveat](live-session-quick-tunnel-caveat.md)
 - [Live session multi-tab local smoke script](live-session-multi-tab-smoke.md)
 - [live session storage](live-session-storage.md)
-- [Live session security review](live-session-security-review.md)
-- [Live session dependency and runtime review](live-session-dependency-runtime-review.md)
+- [Live session security boundaries](live-session-security-boundaries.md)
+- [Live session dependency and runtime maintenance](live-session-dependency-runtime-maintenance.md)
 - [Live session validation matrix](live-session-validation-matrix.md)
 - [ADR 002: LAN first and named Cloudflare Tunnel second](adrs/002-lan-first-named-cloudflare-tunnel.md)
 - [ADR 003: Session socket transport](adrs/003-session-socket-transport.md)

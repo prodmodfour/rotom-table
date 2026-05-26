@@ -10,23 +10,23 @@ const repoRoot = resolve(testDir, '../..')
 const readText = (relativePath: string): string => readFileSync(resolve(repoRoot, relativePath), 'utf8')
 const exists = (relativePath: string): boolean => existsSync(resolve(repoRoot, relativePath))
 
-describe('Live session persistence and recovery audit', () => {
-  const audit = readText('docs/live-session-persistence-recovery-audit.md')
+describe('Live session persistence and recovery maintenance', () => {
+  const audit = readText('docs/live-session-persistence-recovery-maintenance.md')
 
-  it('records the persistence and recovery audit outcome and scope', () => {
-    expect(audit).toContain('This review')
-    expect(audit).toContain('Audit date: 2026-05-26')
-    expect(audit).toContain('Outcome: pass for the locked Live session local-first persistence model')
+  it('records the persistence and recovery maintenance baseline and scope', () => {
+    expect(audit).toContain('This maintenance guide')
+    expect(audit).toContain('Last checked: 2026-05-26')
+    expect(audit).toContain('Current maintenance baseline: the locked live-session local-first persistence model is ready')
     expect(audit).toContain('snapshot.json')
     expect(audit).toContain('events.jsonl')
     expect(audit).toContain('backup/restore documentation')
     expect(audit).toContain('Local data hygiene')
     expect(audit).toContain('did not create a live public tunnel')
     expect(audit).toContain('did not create a live public tunnel, commit private campaign data')
-    expect(audit).toContain('did not change the architecture into SaaS')
+    expect(audit).toContain('does not change the architecture into SaaS')
   })
 
-  it('audits atomic snapshot writes and fail-closed recovery helpers', () => {
+  it('checks atomic snapshot writes and fail-closed recovery helpers', () => {
     expect(audit).toContain('same-directory `snapshot.json.tmp-*` file')
     expect(audit).toContain('renames it over the latest `snapshot.json`')
     expect(audit).toContain('previous valid snapshot remains the recovery candidate')
@@ -47,8 +47,8 @@ describe('Live session persistence and recovery audit', () => {
     expect(snapshots).toContain("'invalid-shape'")
   })
 
-  it('audits the optional event log without promoting it to recovery authority', () => {
-    expect(audit).toContain('The accepted limitation is that `events.jsonl` is audit/replay-oriented data today')
+  it('checks the optional event log without promoting it to recovery authority', () => {
+    expect(audit).toContain('The accepted limitation is that `events.jsonl` is troubleshooting/replay-oriented data today')
     expect(audit).toContain('not sufficient when `snapshot.json` is missing or invalid')
     expect(audit).toContain('not a command stream clients can edit')
     expect(audit).toContain('one compact JSON object per line')
@@ -166,14 +166,14 @@ describe('Live session persistence and recovery audit', () => {
   })
 
   it('is linked from primary Live session, storage, backup, and security docs', () => {
-    expect(readText('README.md')).toContain('docs/live-session-persistence-recovery-audit.md')
-    expect(readText('docs/README.md')).toContain('live-session-persistence-recovery-audit.md')
-    expect(readText('docs/local-development.md')).toContain('live-session-persistence-recovery-audit.md')
-    expect(readText('SECURITY.md')).toContain('docs/live-session-persistence-recovery-audit.md')
-    expect(readText('docs/live-session-roadmap.md')).toContain('live-session-persistence-recovery-audit.md')
-    expect(readText('docs/live-session-validation-matrix.md')).toContain('live-session-persistence-recovery-audit.md')
-    expect(readText('docs/live-session-protocol.md')).toContain('live-session-persistence-recovery-audit.md')
-    expect(readText('docs/live-session-storage.md')).toContain('live-session-persistence-recovery-audit.md')
-    expect(readText('docs/live-session-backup-recovery.md')).toContain('live-session-persistence-recovery-audit.md')
+    expect(readText('README.md')).toContain('docs/live-session-persistence-recovery-maintenance.md')
+    expect(readText('docs/README.md')).toContain('live-session-persistence-recovery-maintenance.md')
+    expect(readText('docs/local-development.md')).toContain('live-session-persistence-recovery-maintenance.md')
+    expect(readText('SECURITY.md')).toContain('docs/live-session-persistence-recovery-maintenance.md')
+    expect(readText('docs/live-session-roadmap.md')).toContain('live-session-persistence-recovery-maintenance.md')
+    expect(readText('docs/live-session-validation-matrix.md')).toContain('live-session-persistence-recovery-maintenance.md')
+    expect(readText('docs/live-session-protocol.md')).toContain('live-session-persistence-recovery-maintenance.md')
+    expect(readText('docs/live-session-storage.md')).toContain('live-session-persistence-recovery-maintenance.md')
+    expect(readText('docs/live-session-backup-recovery.md')).toContain('live-session-persistence-recovery-maintenance.md')
   })
 })

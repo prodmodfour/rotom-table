@@ -23,23 +23,23 @@ This directory collects presentation and reviewer documentation for Rotom Table.
 - [Live session public exposure checks](live-session-public-exposure-checks.md) — no-secret safety banner checks for unsafe public/LAN startup states before sharing join codes.
 - [Live session LAN hosting runbook](live-session-lan-hosting.md) — same-Wi-Fi/LAN setup commands, IP discovery, player join URLs, smoke checks, and troubleshooting.
 - [Live session named Cloudflare Tunnel runbook](live-session-cloudflare-tunnel-hosting.md) — stable-hostname remote setup, session socket considerations, safety warnings, and rollback steps.
-- [Live session named tunnel documentation review](live-session-named-tunnel-documentation-review.md) — named-tunnel doc accuracy, current Cloudflare assumptions, and safety warnings.
+- [Live session named-tunnel maintenance checklist](live-session-named-tunnel-maintenance.md) — named-tunnel doc accuracy, current Cloudflare assumptions, and safety warnings.
 - [Live session deployment smoke checklist](live-session-deployment-smoke-checklist.md) — LAN and named-tunnel smoke steps for two players, reconnect, token movement, initiative, conflict rejection, and cleanup evidence.
 - [Live session real-flow smoke script](live-session-real-flow-smoke.md) — automated start, attach, join, assign, session socket, token move, reconnect snapshot, and cleanup helper for a running dev server.
 - [Live session LAN manual smoke results](live-session-lan-manual-smoke-results.md) — recorded LAN browser-client smoke results for guarded startup, two-player join, session socket presence, reconnect, and cleanup.
-- [Live session integrated command audit](live-session-command-audit.md) — automated multi-client command audit covering accepted commands, reconnect, permissions, and stale conflicts.
+- [Live session command-flow maintenance](live-session-command-flow-maintenance.md) — automated multi-client command-flow coverage covering accepted commands, reconnect, permissions, and stale conflicts.
 - [Live session concurrency benchmark notes](live-session-concurrency-benchmark-notes.md) — expected LAN/named-tunnel concurrency behaviour, latency-sensitive paths, replay/snapshot fallback, and before-game smoke checks.
-- [Live session implementation review](live-session-implementation-review.md) — product docs, source areas, validation evidence, and known limitations.
+- [Live session implementation maintenance](live-session-implementation-maintenance.md) — product docs, source areas, validation evidence, and known limitations.
 - [Live session readiness summary](live-session-readiness-summary.md) — product/developer readiness summary for validation, evidence links, and architecture confirmation.
-- [Live session local-mode no-regression audit](live-session-local-mode-no-regression-audit.md) — local-first no-regression audit for plain map/sheet workflows, legacy SSE, and explicit session-mode opt-in boundaries.
+- [Live session local-mode maintenance checks](live-session-local-mode-maintenance.md) — local-first maintenance checks for plain map/sheet workflows, legacy SSE, and explicit session-mode opt-in boundaries.
 - [Live session Quick Tunnel caveat](live-session-quick-tunnel-caveat.md) — temporary development smoke-test boundary, campaign-session rejection, and legacy SSE limitations.
 - [Live session multi-tab local smoke script](live-session-multi-tab-smoke.md) — local GM/player session-mode tab helper and token propagation checklist.
 - [live session storage](live-session-storage.md) — default snapshot/event-log paths, ignored/private data boundaries, backup guidance, cleanup behaviour, and recovery limitations.
 - [Live session backup and recovery](live-session-backup-recovery.md) — private backup/restore runbook for snapshots, optional event logs, referenced campaign data, and local-only recovery limits.
-- [Live session persistence/recovery audit](live-session-persistence-recovery-audit.md) — snapshots, optional event logs, backup/restore docs, cleanup, and local data hygiene.
-- [Live session security review](live-session-security-review.md) — trust boundaries, non-hardened areas, join-code limits, tunnel exposure risks, incident response, and security non-goals.
+- [Live session persistence/recovery maintenance](live-session-persistence-recovery-maintenance.md) — snapshots, optional event logs, backup/restore docs, cleanup, and local data hygiene.
+- [Live session security boundaries](live-session-security-boundaries.md) — trust boundaries, non-hardened areas, join-code limits, tunnel exposure risks, incident response, and security non-goals.
 - [Live session security and secret-hygiene readiness](live-session-security-secret-hygiene-readiness.md) — auth/session/cookie/permission boundaries, public exposure warnings, committed-data hygiene, and remaining non-goals.
-- [Live session dependency and runtime review](live-session-dependency-runtime-review.md) — dependency inventory, runtime flags, Node/Nitro compatibility, and Cloudflare tunnel assumptions.
+- [Live session dependency and runtime maintenance](live-session-dependency-runtime-maintenance.md) — dependency inventory, runtime flags, Node/Nitro compatibility, and Cloudflare tunnel assumptions.
 - [ADR 001: GM-hosted session model](adrs/001-gm-hosted-session-model.md) — decision record for GM-controlled sessions instead of SaaS, public multi-tenancy, or generic collaborative editing.
 - [ADR 002: LAN first and named Cloudflare Tunnel second](adrs/002-lan-first-named-cloudflare-tunnel.md) — decision record for LAN-first hosting, named-tunnel remote access, and Quick Tunnel caveats.
 - [ADR 003: Session socket transport](adrs/003-session-socket-transport.md) — decision record for using the session socket for live session commands, acks/rejections, broadcasts, heartbeat, and reconnect.
@@ -53,8 +53,8 @@ This directory collects presentation and reviewer documentation for Rotom Table.
 - [Performance benchmark fixtures](performance-benchmark-fixtures.md) — local fixture generator and manual checklist for reproducing benchmark maps without private campaign data.
 - [Performance benchmark runbook](performance-benchmark-runbook.md) — step-by-step before/after measurement workflow and debug overlay interpretation guide.
 - [Map rendering integrated benchmark pass](performance-benchmark-results.md) — recorded empty, typical, and stress fixture measurements from the current performance implementation.
-- [Map rendering no-quality-loss audit](performance-no-quality-loss-audit.md) — map rendering performance audit confirming no intentional visual-quality or functionality reduction.
-- [Map rendering performance readiness review](performance-readiness-review.md) — performance readiness checklist, validation coverage, and no-quality-loss evidence.
+- [Map rendering no-quality-loss guardrails](performance-no-quality-loss.md) — map rendering performance guardrails confirming no intentional visual-quality or functionality reduction.
+- [Map rendering performance readiness](performance-readiness.md) — performance readiness checklist, validation coverage, and no-quality-loss evidence.
 - [Performance guardrails](performance-guardrails.md) — reviewer checklist and automated checks that prevent performance work from reducing visual quality or map functionality.
 - [Fan project notice](fan-project-notice.md) — unofficial fan-project boundaries.
 

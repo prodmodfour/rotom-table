@@ -13,8 +13,8 @@ Related runbooks:
 - [Live session multi-tab local smoke script](live-session-multi-tab-smoke.md) for local tab helpers and focused automated token/client checks.
 - [Live session real-flow smoke script](live-session-real-flow-smoke.md) for an automated same-machine start, attach, join, assign, session socket token move, reconnect snapshot, and cleanup pass.
 - [Live session map attachment flow](live-session-map-attachment.md) for attaching saved maps to server-owned session state before players open session maps.
-- [Live session security review](live-session-security-review.md) for trust boundaries, join-code limits, tunnel exposure risks, and incident response.
-- [Live session dependency and runtime review](live-session-dependency-runtime-review.md) for dependency inventory, runtime flags, Node/Nitro compatibility, and Cloudflare assumptions.
+- [Live session security boundaries](live-session-security-boundaries.md) for trust boundaries, join-code limits, tunnel exposure risks, and incident response.
+- [Live session dependency and runtime maintenance](live-session-dependency-runtime-maintenance.md) for dependency inventory, runtime flags, Node/Nitro compatibility, and Cloudflare assumptions.
 - [Live session concurrency benchmark notes](live-session-concurrency-benchmark-notes.md) for latency-sensitive behaviour observations, operator timing buckets, and known performance limits.
 
 ## Smoke scope

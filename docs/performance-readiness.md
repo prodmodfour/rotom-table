@@ -1,6 +1,6 @@
-# Map rendering performance readiness review
+# Map rendering performance readiness
 
-This page records the readiness review for the map rendering performance work. It is a performance documentation and validation summary, not a runtime behaviour change.
+This page records the readiness maintenance for the map rendering performance work. It is a performance documentation and validation summary, not a runtime behaviour change.
 
 ## Outcome
 
@@ -11,7 +11,7 @@ This page records the readiness review for the map rendering performance work. I
 | Area | Result | Evidence |
 | --- | --- | --- |
 | Benchmark evidence | Pass | The [benchmark runbook](performance-benchmark-runbook.md) and [integrated benchmark pass](performance-benchmark-results.md) document empty, typical, and stress fixture measurements with normal renderer quality and visible effects enabled. |
-| No-quality-loss evidence | Pass | The [no-quality-loss audit](performance-no-quality-loss-audit.md) found no intentional visual-quality or functionality reduction. Guardrail tests cover renderer quality and weather/effect visual baselines. |
+| No-quality-loss evidence | Pass | The [no-quality-loss guardrails](performance-no-quality-loss.md) found no intentional visual-quality or functionality reduction. Guardrail tests cover renderer quality and weather/effect visual baselines. |
 | Architecture coverage | Pass | The [render scheduler architecture](render-scheduler-architecture.md) documents dirty render reasons, WebGL/CSS dirty layers, active animation sources, lifecycle behaviour, and future-extension checklists. |
 | Runtime validation | Pass | Standard validation uses `npm run typecheck`, `npm test`, and `npm run build`. |
 | Data hygiene | Pass | Generated benchmark maps, secrets, and private campaign data remain out of the repository. |

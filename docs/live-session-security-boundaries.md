@@ -1,12 +1,12 @@
-# Live session security review
+# Live session security boundaries
 
-This review records the security posture for GM-hosted live sessions and the current hosting/runtime safeguards. It should be read with the [LAN hosting runbook](live-session-lan-hosting.md), [named Cloudflare Tunnel runbook](live-session-cloudflare-tunnel-hosting.md), [deployment smoke checklist](live-session-deployment-smoke-checklist.md), [Quick Tunnel caveat](live-session-quick-tunnel-caveat.md), [public exposure checks](live-session-public-exposure-checks.md), [session host runtime scripts](live-session-host-runtime.md), [dependency and runtime review](live-session-dependency-runtime-review.md), [session backup and recovery runbook](live-session-backup-recovery.md), and the [Live session security and secret-hygiene readiness](live-session-security-secret-hygiene-readiness.md).
+This guide records the security boundaries for GM-hosted live sessions and the current hosting/runtime safeguards. It should be read with the [LAN hosting runbook](live-session-lan-hosting.md), [named Cloudflare Tunnel runbook](live-session-cloudflare-tunnel-hosting.md), [deployment smoke checklist](live-session-deployment-smoke-checklist.md), [Quick Tunnel caveat](live-session-quick-tunnel-caveat.md), [public exposure checks](live-session-public-exposure-checks.md), [session host runtime scripts](live-session-host-runtime.md), [dependency and runtime maintenance](live-session-dependency-runtime-maintenance.md), [session backup and recovery runbook](live-session-backup-recovery.md), and the [Live session security and secret-hygiene readiness](live-session-security-secret-hygiene-readiness.md).
 
 Live session remains a trusted-table, GM-hosted feature. It is appropriate for a GM-controlled machine serving known players on a LAN or through a named Cloudflare Tunnel when the GM follows the runbooks. It is not a hardened public service for anonymous internet users.
 
 The [Live session security and secret-hygiene readiness](live-session-security-secret-hygiene-readiness.md) documents the current auth/session/cookie/permission boundaries, public exposure warnings, committed-data hygiene, and remaining non-goals alongside the command, LAN smoke, named-tunnel documentation, and local-mode no-regression evidence.
 
-## Security outcome
+## Security baseline
 
 The current Live session boundary is acceptable for the locked product shape when all of these are true:
 
@@ -29,7 +29,7 @@ If any of those assumptions are false, do not treat Live session as secure enoug
 | WebSocket command channel | Authenticated same-session peers after a valid hello. | Malformed frames, stale clients, cross-session clients, and unsupported command types. | The socket route validates JSON message shape, session ID, hello identity, actor match, command envelope, `opId`, `baseRevision`, permissions, and same-session fanout. Heartbeat detects stale clients. | Bugs in command-specific validation could still expose state or accept an unsafe action. Recent duplicate-`opId` memory is process-local after restart. |
 | Player browsers | Player UI after join, visible resources, assigned controllable tokens/sheets, and sanitized display name. | Browser devtools, modified clients, stale optimistic state, and copied local storage. | The server treats browser commands as requests, not authority; reconnect uses authoritative replay/snapshot fallback; UI sanitizes player-facing rejection/presence details. | A player can attempt arbitrary WebSocket frames. Display names are labels, not identities. Use separate browser profiles for GM and player identities. |
 | LAN or named tunnel network path | A private LAN the GM trusts, or a stable named Cloudflare Tunnel intentionally configured by the GM. | Other devices on the LAN, public internet traffic that reaches the tunnel, proxies, caches, and edge rules. | LAN and named tunnel runbooks specify safe bindings, safety-banner checks, WebSocket expectations, no-cache guidance, and rollback steps. | A tunnel exposes the normal Rotom Table origin, not just one lobby page. Cloudflare Access/WAF can add protection but is not Rotom Table authentication. |
-| Local JSON persistence and backups | Latest valid `data/sessions/<sessionId>/snapshot.json`, optional `events.jsonl`, referenced maps/sheets/trainers/encounter tables, and private backup archives. | Git history, public issue trackers, screenshots, shared drives, and player machines. | `.gitignore` keeps runtime session data private; snapshot writes are atomic; backup docs require private archives and no-secret git checks. | Backups are not encrypted by the app. Optional event logs are audit/replay-oriented data, not standalone authority. |
+| Local JSON persistence and backups | Latest valid `data/sessions/<sessionId>/snapshot.json`, optional `events.jsonl`, referenced maps/sheets/trainers/encounter tables, and private backup archives. | Git history, public issue trackers, screenshots, shared drives, and player machines. | `.gitignore` keeps runtime session data private; snapshot writes are atomic; backup docs require private archives and no-secret git checks. | Backups are not encrypted by the app. Optional event logs are troubleshooting/replay-oriented data, not standalone authority. |
 | Legacy local realtime/SSE | Existing local-first map/sheet/library sync outside session mode. | Live Live session clients. | live session commands, acks/rejections, presence, heartbeat, reconnect, and patches use WebSockets instead of `/api/events`. | Legacy SSE may carry whole map/sheet payloads for local mode; do not expose or repurpose it as a public session transport. |
 
 ## Data and secret handling
@@ -101,9 +101,9 @@ Use this when something is shared too broadly or the host appears exposed unexpe
 7. Check git status and shared evidence for private maps, sheets, snapshots, event logs, screenshots, join codes, GM keys, tunnel credentials, tokens, private keys, or real `.env` files.
 8. Restore only from trusted private backups. Do not overwrite server snapshots with player browser state.
 
-## Reviewer checklist
+## Maintainer checklist
 
-Before marking a live session hosting setup or docs change as acceptable:
+Before accepting a live session hosting setup or docs change:
 
 - [ ] Session hosting remains disabled without the explicit runtime flag.
 - [ ] `/sessions` safety output is no-secret and warns about remote/LAN exposure before a ready session exists.

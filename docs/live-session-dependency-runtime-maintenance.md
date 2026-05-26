@@ -1,10 +1,10 @@
-# Live session dependency and runtime review
+# Live session dependency and runtime maintenance
 
-This review records the dependency, Node/Nitro runtime, and Cloudflare Tunnel assumptions for live session hosting. It should be read with the [session host runtime scripts](live-session-host-runtime.md), [LAN hosting runbook](live-session-lan-hosting.md), [named Cloudflare Tunnel runbook](live-session-cloudflare-tunnel-hosting.md), [deployment smoke checklist](live-session-deployment-smoke-checklist.md), [Quick Tunnel caveat](live-session-quick-tunnel-caveat.md), and [security review](live-session-security-review.md).
+This maintenance guide records the dependency, Node/Nitro runtime, and Cloudflare Tunnel assumptions for live session hosting. It should be read with the [session host runtime scripts](live-session-host-runtime.md), [LAN hosting runbook](live-session-lan-hosting.md), [named Cloudflare Tunnel runbook](live-session-cloudflare-tunnel-hosting.md), [deployment smoke checklist](live-session-deployment-smoke-checklist.md), [Quick Tunnel caveat](live-session-quick-tunnel-caveat.md), and [security boundaries](live-session-security-boundaries.md).
 
 Live session remains a GM-hosted table session. It does not require a package, a database, a cloud service, a public auth provider, or a new deployment target.
 
-## Review outcome
+## Maintenance baseline
 
 - **No new direct runtime dependency is required for live session hosting.** The session host uses the existing Nuxt/Nitro app, TypeScript shared contracts, browser `WebSocket`, and Node built-ins.
 - **The live session socket depends on Nitro's WebSocket support through Nuxt/Nitro**, not on a separately added `ws`, Socket.IO, Yjs, Hocuspocus, or collaborative-document server package.
@@ -19,7 +19,7 @@ The current dependency shape is intentionally small:
 | Area | Current packages or APIs | Live session note |
 | --- | --- | --- |
 | App/server framework | `nuxt` in `package.json` (lockfile currently resolves Nuxt 3.x) | Provides the Vue app and Nitro server used by the GM-hosted process. |
-| Nitro WebSocket support | `nitro.experimental.websocket = true` in `nuxt.config.ts`; Nuxt/Nitro transitive packages include Nitro/H3/CrossWS implementations in the lockfile | Required for `defineWebSocketHandler` at `WebSocket /api/sessions/socket`; do not replace this with a separate realtime server without another review. |
+| Nitro WebSocket support | `nitro.experimental.websocket = true` in `nuxt.config.ts`; Nuxt/Nitro transitive packages include Nitro/H3/CrossWS implementations in the lockfile | Required for `defineWebSocketHandler` at `WebSocket /api/sessions/socket`; do not replace this with a separate realtime server without another architecture check. |
 | Optional transitive packages | Nuxt/Nitro/devtools may place packages such as `ws` or `ioredis` in `package-lock.json` | These are not direct Rotom Table dependencies, are not imported by Live session code, and do not change the local JSON persistence or Nitro WebSocket architecture. |
 | Renderer | `three` plus `@types/three` | Existing map rendering dependency; Live session must not degrade render quality to simplify hosting. |
 | UI assets | `@fontsource/*`, `@phosphor-icons/vue` | Existing presentation/UI dependencies, not session authority. |
@@ -27,7 +27,7 @@ The current dependency shape is intentionally small:
 | Node built-ins | `node:fs`, `node:path`, `node:crypto`, `node:child_process`, `node:process` | Used for local JSON persistence, ID generation, and helper scripts; no extra service is introduced. |
 | Operator tools | `cloudflared` CLI, optional Python/`just` helpers | Installed and run by the GM/operator outside npm dependencies. Tunnel credentials stay outside the repository. |
 
-If a future Live session change adds a package that changes live transport, persistence, hosting, authentication, encryption, proxying, or Cloudflare integration, update this review and add focused tests before merging that change.
+If a future Live session change adds a package that changes live transport, persistence, hosting, authentication, encryption, proxying, or Cloudflare integration, update this maintenance guide and add focused tests before merging that change.
 
 ## Dependency boundaries to preserve
 
@@ -63,9 +63,9 @@ Both session-host helpers support `--port <port>` and `--print-only`. They set t
 
 ## Node and Nitro compatibility assumptions
 
-- Use a maintained Node.js LTS runtime for development and GM-hosted sessions. Node 20 or newer is the documented floor for live-session review because the project uses ESM, modern Node built-ins, `@types/node` 20.x, and Nuxt/Nitro WebSocket support; the standard validation currently runs on a newer Node runtime.
-- Run live session hosting on the normal Node/Nuxt/Nitro server process. Static hosting, edge/serverless adapters, Cloudflare Workers, Durable Objects, or serverless functions are not reviewed Live session hosts.
-- `nuxt.config.ts` intentionally enables `nitro.experimental.websocket = true`. Removing that flag, changing the server adapter, or moving the socket route away from H3/Nitro requires re-running WebSocket transport tests and updating this review.
+- Use a maintained Node.js LTS runtime for development and GM-hosted sessions. Node 20 or newer is the documented floor for live-session hosting because the project uses ESM, modern Node built-ins, `@types/node` 20.x, and Nuxt/Nitro WebSocket support; the standard validation currently runs on a newer Node runtime.
+- Run live session hosting on the normal Node/Nuxt/Nitro server process. Static hosting, edge/serverless adapters, Cloudflare Workers, Durable Objects, or serverless functions are not supported live-session hosts.
+- `nuxt.config.ts` intentionally enables `nitro.experimental.websocket = true`. Removing that flag, changing the server adapter, or moving the socket route away from H3/Nitro requires re-running WebSocket transport tests and updating this maintenance guide.
 - The GM host must have filesystem access for local JSON reads/writes under the expected repository data paths, including `data/sessions/` for snapshots/event logs. A read-only deployment is not a supported live-session host.
 - Production-like hosting remains out of scope for Live session. If the app is ever packaged as a long-running production Node service, repeat this review for process management, TLS termination, backups, log redaction, file permissions, and route hardening.
 
@@ -94,7 +94,7 @@ Assumptions to preserve:
 
 Before accepting dependency or runtime changes that affect live session hosting:
 
-- [ ] `package.json` and `package-lock.json` were reviewed for new realtime, database, auth, Cloudflare, or hosted-service packages.
+- [ ] `package.json` and `package-lock.json` were checked for new realtime, database, auth, Cloudflare, or hosted-service packages.
 - [ ] `nuxt.config.ts` still enables Nitro WebSockets for the Node/Nuxt host.
 - [ ] `npm run dev` remains the disabled-by-default local-first path.
 - [ ] `npm run dev:session:lan -- --print-only` shows `ROTOM_ENABLE_SESSION_HOST=1`, `--host 0.0.0.0`, and the selected port.
@@ -105,7 +105,7 @@ Before accepting dependency or runtime changes that affect live session hosting:
 
 ## Known limits
 
-- Live session does not review static export, public SaaS hosting, Cloudflare Workers, Durable Objects, serverless Node adapters, public multi-tenancy, or cloud databases as supported session hosts.
+- Live session does not support static export, public SaaS hosting, Cloudflare Workers, Durable Objects, serverless Node adapters, public multi-tenancy, or cloud databases as supported session hosts.
 - Nitro WebSocket support is still explicitly enabled through an experimental configuration flag. Keep focused WebSocket transport tests in the validation and re-check upstream Nuxt/Nitro release notes before major version upgrades.
 - The app does not encrypt local snapshots/backups, manage Cloudflare credentials, rotate secrets automatically, or provide production-grade internet abuse controls.
 - Legacy `/api/events` SSE remains only for local-first non-session paths. It is not a dependency or runtime path for Live session commands, acknowledgements/rejections, presence, heartbeat, reconnect, or conflict handling.

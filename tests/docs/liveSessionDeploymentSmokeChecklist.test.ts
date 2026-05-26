@@ -87,6 +87,6 @@ describe('Live session deployment smoke checklist', () => {
     expect(readText('docs/live-session-multi-tab-smoke.md')).toContain('live-session-deployment-smoke-checklist.md')
     expect(readText('docs/live-session-public-exposure-checks.md')).toContain('live-session-deployment-smoke-checklist.md')
     expect(readText('docs/live-session-quick-tunnel-caveat.md')).toContain('live-session-deployment-smoke-checklist.md')
-    expect(readText('docs/live-session-security-review.md')).toContain('live-session-deployment-smoke-checklist.md')
+    expect(readText('docs/live-session-security-boundaries.md')).toContain('live-session-deployment-smoke-checklist.md')
   })
 })

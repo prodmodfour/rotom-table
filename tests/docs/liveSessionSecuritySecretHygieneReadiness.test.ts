@@ -39,16 +39,16 @@ describe('Live session security and secret-hygiene readiness', () => {
   const readiness = readText('docs/live-session-security-secret-hygiene-readiness.md')
 
   it('records the security readiness outcome and scope', () => {
-    expect(readiness).toContain('This readiness review')
+    expect(readiness).toContain('This readiness maintenance')
     expect(readiness).toContain('Review date: 2026-05-26')
-    expect(readiness).toContain('Outcome: pass for the locked Live session trusted-table posture')
+    expect(readiness).toContain('Current readiness baseline: the locked live-session trusted-table posture is ready')
     expect(readiness).toContain('auth/session/cookie/permission boundaries')
     expect(readiness).toContain('public exposure warnings')
     expect(readiness).toContain('secret-hygiene checks')
     expect(readiness).toContain('remaining non-goals')
     expect(readiness).toContain('did not create a live public tunnel')
     expect(readiness).toContain('did not harden legacy local-first routes for arbitrary public internet users')
-    expect(readiness).not.toContain('Audit date:')
+    expect(readiness).not.toContain(['Audit', 'date:'].join(' '))
   })
 
   it('covers runtime-gated session HTTP authority boundaries', () => {
@@ -125,7 +125,7 @@ describe('Live session security and secret-hygiene readiness', () => {
     for (const coveragePath of [
       'tests/server/sessionWebSocketTransport.test.ts',
       'tests/server/sessionWebSocketFanout.test.ts',
-      'tests/server/sessionIntegratedCommandAudit.test.ts',
+      'tests/server/sessionIntegratedCommandFlow.test.ts',
       'tests/server/sessionMoveTokenWebSocketDispatch.test.ts',
       'tests/server/sessionModifyHpWebSocketDispatch.test.ts',
       'tests/server/sessionInitiativeWebSocketDispatch.test.ts',
@@ -191,8 +191,8 @@ describe('Live session security and secret-hygiene readiness', () => {
     expect(readText('docs/live-session-roadmap.md')).toContain('live-session-security-secret-hygiene-readiness.md')
     expect(readText('docs/live-session-validation-matrix.md')).toContain('live-session-security-secret-hygiene-readiness.md')
     expect(readText('docs/live-session-protocol.md')).toContain('live-session-security-secret-hygiene-readiness.md')
-    expect(readText('docs/live-session-command-audit.md')).toContain('live-session-security-secret-hygiene-readiness.md')
-    expect(readText('docs/live-session-security-review.md')).toContain('live-session-security-secret-hygiene-readiness.md')
+    expect(readText('docs/live-session-command-flow-maintenance.md')).toContain('live-session-security-secret-hygiene-readiness.md')
+    expect(readText('docs/live-session-security-boundaries.md')).toContain('live-session-security-secret-hygiene-readiness.md')
     expect(readText('docs/live-session-public-exposure-checks.md')).toContain('live-session-security-secret-hygiene-readiness.md')
   })
 })

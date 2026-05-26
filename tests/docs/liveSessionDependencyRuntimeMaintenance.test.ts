@@ -43,8 +43,8 @@ const forbiddenDirectDependencies = [
   '@cloudflare/workers-types',
 ]
 
-describe('Live session dependency and runtime review', () => {
-  const review = readText('docs/live-session-dependency-runtime-review.md')
+describe('Live session dependency and runtime maintenance', () => {
+  const review = readText('docs/live-session-dependency-runtime-maintenance.md')
   const pkg = readJson<PackageJson>('package.json')
   const lock = readJson<PackageLockJson>('package-lock.json')
   const nuxtConfig = readText('nuxt.config.ts')
@@ -113,7 +113,7 @@ describe('Live session dependency and runtime review', () => {
     expect(review).toContain('Node 20 or newer is the documented floor')
     expect(review).toContain('@types/node` 20.x')
     expect(review).toContain('normal Node/Nuxt/Nitro server process')
-    expect(review).toContain('Static hosting, edge/serverless adapters, Cloudflare Workers, Durable Objects, or serverless functions are not reviewed Live session hosts')
+    expect(review).toContain('Static hosting, edge/serverless adapters, Cloudflare Workers, Durable Objects, or serverless functions are not supported live-session hosts')
     expect(review).toContain('nuxt.config.ts` intentionally enables `nitro.experimental.websocket = true')
     expect(review).toContain('A read-only deployment is not a supported live-session host')
     expect(nuxtConfig).toContain('nitro: {')
@@ -135,7 +135,7 @@ describe('Live session dependency and runtime review', () => {
   })
 
   it('provides a dependency/runtime verification checklist and known limits', () => {
-    expect(review).toContain('`package.json` and `package-lock.json` were reviewed')
+    expect(review).toContain('`package.json` and `package-lock.json` were checked')
     expect(review).toContain('npm run dev:session:lan -- --print-only')
     expect(review).toContain('npm run dev:session:tunnel -- --print-only')
     expect(review).toContain('The full validation passes: `npm run typecheck`, `npm test`, and `npm run build`')
@@ -145,20 +145,20 @@ describe('Live session dependency and runtime review', () => {
   })
 
   it('is linked from primary live session hosting, protocol, and review docs', () => {
-    expect(readText('README.md')).toContain('docs/live-session-dependency-runtime-review.md')
-    expect(readText('docs/README.md')).toContain('live-session-dependency-runtime-review.md')
-    expect(readText('SECURITY.md')).toContain('docs/live-session-dependency-runtime-review.md')
-    expect(readText('docs/local-development.md')).toContain('live-session-dependency-runtime-review.md')
-    expect(readText('docs/live-session-roadmap.md')).toContain('live-session-dependency-runtime-review.md')
-    expect(readText('docs/live-session-validation-matrix.md')).toContain('live-session-dependency-runtime-review.md')
-    expect(readText('docs/live-session-protocol.md')).toContain('live-session-dependency-runtime-review.md')
-    expect(readText('docs/live-session-socket-protocol.md')).toContain('live-session-dependency-runtime-review.md')
-    expect(readText('docs/live-session-host-runtime.md')).toContain('live-session-dependency-runtime-review.md')
-    expect(readText('docs/live-session-public-exposure-checks.md')).toContain('live-session-dependency-runtime-review.md')
-    expect(readText('docs/live-session-lan-hosting.md')).toContain('live-session-dependency-runtime-review.md')
-    expect(readText('docs/live-session-cloudflare-tunnel-hosting.md')).toContain('live-session-dependency-runtime-review.md')
-    expect(readText('docs/live-session-quick-tunnel-caveat.md')).toContain('live-session-dependency-runtime-review.md')
-    expect(readText('docs/live-session-security-review.md')).toContain('live-session-dependency-runtime-review.md')
-    expect(readText('docs/live-session-deployment-smoke-checklist.md')).toContain('live-session-dependency-runtime-review.md')
+    expect(readText('README.md')).toContain('docs/live-session-dependency-runtime-maintenance.md')
+    expect(readText('docs/README.md')).toContain('live-session-dependency-runtime-maintenance.md')
+    expect(readText('SECURITY.md')).toContain('docs/live-session-dependency-runtime-maintenance.md')
+    expect(readText('docs/local-development.md')).toContain('live-session-dependency-runtime-maintenance.md')
+    expect(readText('docs/live-session-roadmap.md')).toContain('live-session-dependency-runtime-maintenance.md')
+    expect(readText('docs/live-session-validation-matrix.md')).toContain('live-session-dependency-runtime-maintenance.md')
+    expect(readText('docs/live-session-protocol.md')).toContain('live-session-dependency-runtime-maintenance.md')
+    expect(readText('docs/live-session-socket-protocol.md')).toContain('live-session-dependency-runtime-maintenance.md')
+    expect(readText('docs/live-session-host-runtime.md')).toContain('live-session-dependency-runtime-maintenance.md')
+    expect(readText('docs/live-session-public-exposure-checks.md')).toContain('live-session-dependency-runtime-maintenance.md')
+    expect(readText('docs/live-session-lan-hosting.md')).toContain('live-session-dependency-runtime-maintenance.md')
+    expect(readText('docs/live-session-cloudflare-tunnel-hosting.md')).toContain('live-session-dependency-runtime-maintenance.md')
+    expect(readText('docs/live-session-quick-tunnel-caveat.md')).toContain('live-session-dependency-runtime-maintenance.md')
+    expect(readText('docs/live-session-security-boundaries.md')).toContain('live-session-dependency-runtime-maintenance.md')
+    expect(readText('docs/live-session-deployment-smoke-checklist.md')).toContain('live-session-dependency-runtime-maintenance.md')
   })
 })

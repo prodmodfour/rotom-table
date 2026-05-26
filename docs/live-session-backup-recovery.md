@@ -2,7 +2,7 @@
 
 This runbook explains how a GM keeps Live session data recoverable without changing the locked architecture. Rotom Table remains a GM-hosted, local-first app: the GM-controlled server owns the live session, players connect by browser, commands travel over `WebSocket /api/sessions/socket`, and persistence is local JSON snapshots plus an optional append-only event log.
 
-Use this guide with the [live session storage guide](live-session-storage.md), the [Live session persistence/recovery audit](live-session-persistence-recovery-audit.md), the [LAN hosting runbook](live-session-lan-hosting.md), the [named Cloudflare Tunnel runbook](live-session-cloudflare-tunnel-hosting.md), and the [Live session security review](live-session-security-review.md). It does not introduce a database, SaaS backup service, public accounts, Quick Tunnel campaign hosting, or client-owned whole-map recovery.
+Use this guide with the [live session storage guide](live-session-storage.md), the [Live session persistence/recovery maintenance](live-session-persistence-recovery-maintenance.md), the [LAN hosting runbook](live-session-lan-hosting.md), the [named Cloudflare Tunnel runbook](live-session-cloudflare-tunnel-hosting.md), and the [Live session security boundaries](live-session-security-boundaries.md). It does not introduce a database, SaaS backup service, public accounts, Quick Tunnel campaign hosting, or client-owned whole-map recovery.
 
 ## Backup and recovery rules
 

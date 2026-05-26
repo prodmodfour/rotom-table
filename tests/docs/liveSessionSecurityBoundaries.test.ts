@@ -9,8 +9,8 @@ const repoRoot = resolve(testDir, '../..')
 
 const readText = (relativePath: string): string => readFileSync(resolve(repoRoot, relativePath), 'utf8')
 
-describe('Live session security review documentation', () => {
-  const review = readText('docs/live-session-security-review.md')
+describe('Live session security boundaries documentation', () => {
+  const review = readText('docs/live-session-security-boundaries.md')
 
   it('records the locked Live session security outcome without changing the architecture', () => {
     expect(review).toContain('trusted-table, GM-hosted feature')
@@ -76,19 +76,19 @@ describe('Live session security review documentation', () => {
   })
 
   it('is linked from primary docs, hosting runbooks, and security guidance', () => {
-    expect(readText('README.md')).toContain('docs/live-session-security-review.md')
-    expect(readText('docs/README.md')).toContain('live-session-security-review.md')
-    expect(readText('SECURITY.md')).toContain('docs/live-session-security-review.md')
-    expect(readText('docs/local-development.md')).toContain('live-session-security-review.md')
-    expect(readText('docs/live-session-roadmap.md')).toContain('live-session-security-review.md')
-    expect(readText('docs/live-session-validation-matrix.md')).toContain('live-session-security-review.md')
-    expect(readText('docs/live-session-protocol.md')).toContain('live-session-security-review.md')
-    expect(readText('docs/live-session-socket-protocol.md')).toContain('live-session-security-review.md')
-    expect(readText('docs/live-session-host-runtime.md')).toContain('live-session-security-review.md')
-    expect(readText('docs/live-session-public-exposure-checks.md')).toContain('live-session-security-review.md')
-    expect(readText('docs/live-session-lan-hosting.md')).toContain('live-session-security-review.md')
-    expect(readText('docs/live-session-cloudflare-tunnel-hosting.md')).toContain('live-session-security-review.md')
-    expect(readText('docs/live-session-quick-tunnel-caveat.md')).toContain('live-session-security-review.md')
-    expect(readText('docs/live-session-backup-recovery.md')).toContain('live-session-security-review.md')
+    expect(readText('README.md')).toContain('docs/live-session-security-boundaries.md')
+    expect(readText('docs/README.md')).toContain('live-session-security-boundaries.md')
+    expect(readText('SECURITY.md')).toContain('docs/live-session-security-boundaries.md')
+    expect(readText('docs/local-development.md')).toContain('live-session-security-boundaries.md')
+    expect(readText('docs/live-session-roadmap.md')).toContain('live-session-security-boundaries.md')
+    expect(readText('docs/live-session-validation-matrix.md')).toContain('live-session-security-boundaries.md')
+    expect(readText('docs/live-session-protocol.md')).toContain('live-session-security-boundaries.md')
+    expect(readText('docs/live-session-socket-protocol.md')).toContain('live-session-security-boundaries.md')
+    expect(readText('docs/live-session-host-runtime.md')).toContain('live-session-security-boundaries.md')
+    expect(readText('docs/live-session-public-exposure-checks.md')).toContain('live-session-security-boundaries.md')
+    expect(readText('docs/live-session-lan-hosting.md')).toContain('live-session-security-boundaries.md')
+    expect(readText('docs/live-session-cloudflare-tunnel-hosting.md')).toContain('live-session-security-boundaries.md')
+    expect(readText('docs/live-session-quick-tunnel-caveat.md')).toContain('live-session-security-boundaries.md')
+    expect(readText('docs/live-session-backup-recovery.md')).toContain('live-session-security-boundaries.md')
   })
 })

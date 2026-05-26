@@ -10,13 +10,13 @@ const repoRoot = resolve(testDir, '../..')
 const readText = (relativePath: string): string => readFileSync(resolve(repoRoot, relativePath), 'utf8')
 const exists = (relativePath: string): boolean => existsSync(resolve(repoRoot, relativePath))
 
-describe('Live session local-mode no-regression audit', () => {
-  const audit = readText('docs/live-session-local-mode-no-regression-audit.md')
+describe('Live session local-mode maintenance checks', () => {
+  const audit = readText('docs/live-session-local-mode-maintenance.md')
 
-  it('records the local-first audit outcome and scope', () => {
-    expect(audit).toContain('local-first no-regression review')
-    expect(audit).toContain('Audit date: 2026-05-26')
-    expect(audit).toContain('Outcome: pass for the audited local-first boundaries')
+  it('records the local-first maintenance baseline and scope', () => {
+    expect(audit).toContain('local-first maintenance checks')
+    expect(audit).toContain('Last checked: 2026-05-26')
+    expect(audit).toContain('Current maintenance baseline: the checked local-first boundaries remain intact')
     expect(audit).toContain('Plain `npm run dev` remains the default local app')
     expect(audit).toContain('plain `/maps/<slug>` remains local-first')
     expect(audit).toContain('sheet editing still uses local autosave/persistence')
@@ -98,20 +98,20 @@ describe('Live session local-mode no-regression audit', () => {
     expect(audit).toContain('Production write limitations remain')
     expect(audit).toContain('`/login` GM/player role picker remains a trust switch')
     expect(audit).toContain('not public authentication')
-    expect(audit).toContain('does not broaden Live session into public authentication, SaaS hosting, a generic collaborative document editor, cloud persistence, or Quick Tunnel campaign hosting')
+    expect(audit).toContain('do not broaden Live session into public authentication, SaaS hosting, a generic collaborative document editor, cloud persistence, or Quick Tunnel campaign hosting')
   })
 
   it('is linked from primary Live session and local-development docs', () => {
-    expect(readText('README.md')).toContain('docs/live-session-local-mode-no-regression-audit.md')
-    expect(readText('docs/README.md')).toContain('live-session-local-mode-no-regression-audit.md')
+    expect(readText('README.md')).toContain('docs/live-session-local-mode-maintenance.md')
+    expect(readText('docs/README.md')).toContain('live-session-local-mode-maintenance.md')
     const localDevelopment = readText('docs/local-development.md')
     expect(localDevelopment).toContain('Local-first versus live-session mode')
     expect(localDevelopment).toContain('Plain `npm run dev` is local-first mode')
     expect(localDevelopment).toContain('Leaving `?session=1` off is the intended local-first editing path')
-    expect(localDevelopment).toContain('live-session-local-mode-no-regression-audit.md')
-    expect(readText('docs/live-session-roadmap.md')).toContain('live-session-local-mode-no-regression-audit.md')
-    expect(readText('docs/live-session-validation-matrix.md')).toContain('live-session-local-mode-no-regression-audit.md')
-    expect(readText('docs/live-session-client-integration.md')).toContain('live-session-local-mode-no-regression-audit.md')
-    expect(readText('docs/live-session-command-audit.md')).toContain('live-session-local-mode-no-regression-audit.md')
+    expect(localDevelopment).toContain('live-session-local-mode-maintenance.md')
+    expect(readText('docs/live-session-roadmap.md')).toContain('live-session-local-mode-maintenance.md')
+    expect(readText('docs/live-session-validation-matrix.md')).toContain('live-session-local-mode-maintenance.md')
+    expect(readText('docs/live-session-client-integration.md')).toContain('live-session-local-mode-maintenance.md')
+    expect(readText('docs/live-session-command-flow-maintenance.md')).toContain('live-session-local-mode-maintenance.md')
   })
 })

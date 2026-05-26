@@ -1,10 +1,10 @@
-# Live session local-mode no-regression audit
+# Live session local-mode maintenance checks
 
-This document records the local-first no-regression review for existing non-session Rotom Table workflows. It is a local-mode/source-and-test audit, not a replacement for a GM's private campaign smoke pass.
+This document records the local-first maintenance checks for existing non-session Rotom Table workflows. It is a local-mode source-and-test check, not a replacement for a GM's private campaign smoke pass.
 
-Audit date: 2026-05-26
+Last checked: 2026-05-26
 
-Outcome: pass for the audited local-first boundaries. Plain `npm run dev` remains the default local app, plain `/maps/<slug>` remains local-first, sheet editing still uses local autosave/persistence, and legacy non-session realtime still uses `GET /api/events`. Session-authoritative behaviour remains opt-in through guarded hosting plus the explicit `?session=1` map route.
+Current maintenance baseline: the checked local-first boundaries remain intact. Plain `npm run dev` remains the default local app, plain `/maps/<slug>` remains local-first, sheet editing still uses local autosave/persistence, and legacy non-session realtime still uses `GET /api/events`. Session-authoritative behaviour remains opt-in through guarded hosting plus the explicit `?session=1` map route.
 
 ## Mode boundary summary
 
@@ -14,7 +14,7 @@ Outcome: pass for the audited local-first boundaries. Plain `npm run dev` remain
 
 ## Scope
 
-The audit covers the local workflows most likely to be affected by Live session client/server integration:
+These checks cover the local workflows most likely to be affected by Live session client/server integration:
 
 - default startup with `npm run dev` and no `ROTOM_ENABLE_SESSION_HOST=1` flag;
 - the trust-based local `/login` GM/player role picker;
@@ -25,11 +25,11 @@ The audit covers the local workflows most likely to be affected by Live session 
 - legacy local realtime/SSE updates for maps, sheets, and libraries;
 - local data hygiene for generated sheets, private campaign JSON, and Live session `data/sessions/` runtime files.
 
-The audit intentionally does not broaden Live session into public authentication, SaaS hosting, a generic collaborative document editor, cloud persistence, or Quick Tunnel campaign hosting.
+These checks intentionally do not broaden Live session into public authentication, SaaS hosting, a generic collaborative document editor, cloud persistence, or Quick Tunnel campaign hosting.
 
 ## Evidence summary
 
-| Local workflow or boundary | Audit result | Evidence |
+| Local workflow or boundary | Maintenance result | Evidence |
 | --- | --- | --- |
 | Default local startup | `npm run dev` stays the default local-first command and does not enable session hosting. Session HTTP/WebSocket routes fail closed unless the exact session-host flag is set. | `README.md`, `docs/local-development.md`, and `tests/server/sessionHostingHardening.test.ts`. |
 | Plain map route | `/maps/<slug>` still creates the local editable map through `useEditableMap(slug)`. Session command routing is gated by `isSessionModeQueryEnabled(route.query.session)` and the explicit `?session=1` query. | `src/pages/maps/[slug].vue`, `src/composables/useEditableMap.ts`, `tests/composables/map-editor/useSessionMoveTokenDispatch.test.ts`, and `tests/composables/map-editor/useSessionMapEditorState.test.ts`. |
@@ -43,7 +43,7 @@ The audit intentionally does not broaden Live session into public authentication
 
 ## Source boundary checks
 
-The source check confirmed these local/session split points:
+The source check confirms these local/session split points:
 
 - `src/pages/maps/[slug].vue` always creates the local map with `useEditableMap(slug)` and then chooses session mode only when `isSessionModeQueryEnabled(route.query.session)` is true.
 - Local fallbacks remain present for table actions: `deletePlacement(id)`, `turnPlacement`, `movePlacement`, `nextInitiative()`, `previousInitiative()`, local HP/stage/condition sheet mutations, local `recordMoveUsage`, `placeHazard`, `removeHazard`, `placeVoxel`, `removeVoxel`, and `sendOutPokemon`.
@@ -54,7 +54,7 @@ The source check confirmed these local/session split points:
 ## Known limitations that remain acceptable
 
 - Local mode still uses whole-map and whole-sheet JSON saves with last-writer-wins semantics. That is the intended local-first behaviour for one trusted editing browser and is not the live-session concurrency mechanism.
-- This audit did not use private campaign data and did not exercise every possible manual UI click in a real campaign. Operators should still run a local smoke on their own maps/sheets before a table session.
+- These checks do not use private campaign data and did not exercise every possible manual UI click in a real campaign. Operators should still run a local smoke on their own maps/sheets before a table session.
 - Production write limitations remain: browser-based editing and autosave are intended for local development/GM-hosted use, not a hardened public deployment.
 - The `/login` GM/player role picker remains a trust switch for local use. It is not public authentication and should not be treated as a substitute for session-local permissions or real auth.
 - Plain `/maps/<slug>` can save local JSON. Do not use it to resolve a live session conflict unless the GM intentionally wants to edit the local campaign files outside session authority.
