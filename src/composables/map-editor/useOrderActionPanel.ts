@@ -33,6 +33,7 @@ export interface UseOrderActionPanelOptions {
   trainerBySlug: SheetMapRef<TrainerSheet>
   canControlPlacement: (id: string) => boolean
   onBeforeOrderAction?: (event: OrderActionEvent) => void
+  dispatchOrderUse?: (event: OrderActionEvent & { targetTokenId?: string }) => boolean | undefined
   now?: () => number
   idFactory?: () => string
   maxLogEntries?: number
@@ -72,6 +73,7 @@ export const useOrderActionPanel = ({
   trainerBySlug,
   canControlPlacement,
   onBeforeOrderAction,
+  dispatchOrderUse,
   now,
   idFactory,
   maxLogEntries = DEFAULT_ORDER_LOG_ENTRIES,
@@ -162,6 +164,13 @@ export const useOrderActionPanel = ({
     if (!map.value || !canControlPlacement(user.id)) return false
 
     onBeforeOrderAction?.({ userId: user.id, orderName: order.name })
+    const sessionDispatchResult = dispatchOrderUse?.({
+      userId: user.id,
+      orderName: order.name,
+      ...(target === null ? {} : { targetTokenId: target.id }),
+    })
+    if (sessionDispatchResult !== undefined) return sessionDispatchResult
+
     const activeEffect = createActiveOrderEffect({
       user,
       order,

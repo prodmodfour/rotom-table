@@ -28,6 +28,7 @@ import { useTerrainBuilder } from '~/composables/map-editor/useTerrainBuilder'
 import { useAttackOfOpportunityPanel } from '~/utils/attackOfOpportunity'
 import { useTokenSheetMutations } from '~/composables/map-editor/useTokenSheetMutations'
 import { useSessionMap } from '~/composables/map-editor/useSessionMap'
+import { useSessionMapSceneCommands } from '~/composables/map-editor/useSessionMapSceneCommands'
 import {
   useSessionMoveTokenDispatch,
   isSessionModeQueryEnabled,
@@ -77,6 +78,12 @@ const sessionMoveTokenDispatch = useSessionMoveTokenDispatch({
   socket: sessionMap.socket as unknown as SessionMoveTokenSocket,
 })
 const map = sessionMap.map
+const sessionSceneCommands = useSessionMapSceneCommands({
+  enabled: sessionMoveTokenEnabled,
+  map,
+  mapSlug: slug,
+  session: sessionMap,
+})
 const mapStatus = computed(() => (
   sessionMoveTokenEnabled.value && map.value
     ? 'idle'
@@ -159,7 +166,14 @@ const selectPokemon = (id: string | null) => {
   if (buildMode.value) return
   selectPlacement(id)
 }
-const deletePokemon = deletePlacement
+const deletePokemon = (id: string) => {
+  if (sessionMoveTokenEnabled.value) {
+    const result = sessionSceneCommands.dispatchDeletePokemon(id)
+    if (result.dispatched) clearSelection()
+    return
+  }
+  deletePlacement(id)
+}
 const turnPokemon = turnPlacement
 let attackOfOpportunityPanel: ReturnType<typeof useAttackOfOpportunityPanel> | null = null
 const movePokemon = (payload: { id: string; position: GridAnchor }) => {
@@ -295,12 +309,20 @@ const orderTimelinePoint = () => ({
 
 const previousInitiativeAndExpireAoo = () => {
   attackOfOpportunityPanel?.clearAttackOfOpportunityPromptsForNonImmediateAction()
+  if (sessionMoveTokenEnabled.value) {
+    sessionSceneCommands.dispatchPreviousInitiative()
+    return
+  }
   previousInitiative()
 }
 
 const nextInitiativeAndExpireAoo = () => {
   const before = orderTimelinePoint()
   attackOfOpportunityPanel?.clearAttackOfOpportunityPromptsForNonImmediateAction()
+  if (sessionMoveTokenEnabled.value) {
+    sessionSceneCommands.dispatchNextInitiative()
+    return
+  }
   nextInitiative()
   expireActiveOrdersAfterInitiativeAdvance({ before, after: orderTimelinePoint() })
 }
@@ -315,6 +337,30 @@ const {
   sheetLookup,
   canControlPlacement,
 })
+
+const modifyHpFromScene: typeof modifyHp = async (payload, options) => {
+  if (sessionMoveTokenEnabled.value) {
+    sessionSceneCommands.dispatchModifyHp(payload)
+    return
+  }
+  await modifyHp(payload, options)
+}
+
+const modifyCombatStagesFromScene: typeof modifyCombatStages = async (payload, options) => {
+  if (sessionMoveTokenEnabled.value) {
+    sessionSceneCommands.dispatchModifyCombatStages(payload)
+    return
+  }
+  await modifyCombatStages(payload, options)
+}
+
+const modifyConditionsFromScene: typeof modifyConditions = async (payload, options) => {
+  if (sessionMoveTokenEnabled.value) {
+    sessionSceneCommands.dispatchModifyConditions(payload)
+    return
+  }
+  await modifyConditions(payload, options)
+}
 
 interface RecordMoveUsageResponse {
   ok: true
@@ -349,6 +395,15 @@ const applyRecordedSheetUsage = (response: RecordMoveUsageResponse) => {
 }
 
 const recordMoveUsage = async (request: { placementId: string; moveName: string }) => {
+  if (sessionMoveTokenEnabled.value) {
+    const result = sessionSceneCommands.dispatchUseMove({
+      id: request.placementId,
+      moveName: request.moveName,
+    })
+    if (!result.dispatched) throw new Error(result.message)
+    return
+  }
+
   const response = await postJson<RecordMoveUsageResponse>(MAP_API_PATHS.useMove, {
     slug,
     placementId: request.placementId,
@@ -357,6 +412,55 @@ const recordMoveUsage = async (request: { placementId: string; moveName: string 
   })
   applyRecordedMapUsage(response.map)
   applyRecordedSheetUsage(response)
+}
+
+const applyMoveFieldEffectFromScene: typeof applyMoveFieldEffect = (effect) => {
+  if (sessionMoveTokenEnabled.value) {
+    sessionSceneCommands.dispatchApplyFieldEffect(effect)
+    return
+  }
+  applyMoveFieldEffect(effect)
+}
+
+const placeHazardFromScene: typeof placeHazard = (hazard) => {
+  if (sessionMoveTokenEnabled.value) {
+    sessionSceneCommands.dispatchPlaceHazard(hazard)
+    return
+  }
+  placeHazard(hazard)
+}
+
+const removeHazardFromScene: typeof removeHazard = (cell) => {
+  if (sessionMoveTokenEnabled.value) {
+    sessionSceneCommands.dispatchRemoveHazard(cell)
+    return
+  }
+  removeHazard(cell)
+}
+
+const placeVoxelFromScene: typeof placeVoxel = (voxel) => {
+  if (sessionMoveTokenEnabled.value) {
+    sessionSceneCommands.dispatchPlaceVoxel(voxel)
+    return
+  }
+  placeVoxel(voxel)
+}
+
+const removeVoxelFromScene: typeof removeVoxel = (cell) => {
+  if (sessionMoveTokenEnabled.value) {
+    sessionSceneCommands.dispatchRemoveVoxel(cell)
+    return
+  }
+  removeVoxel(cell)
+}
+
+const sendOutPokemonFromScene: typeof sendOutPokemon = (payload) => {
+  if (sessionMoveTokenEnabled.value) {
+    const result = sessionSceneCommands.dispatchSendOutPokemon(payload)
+    if (result.dispatched) clearSelection()
+    return
+  }
+  sendOutPokemon(payload)
 }
 
 const {
@@ -391,11 +495,11 @@ const {
   trainerBySlug,
   canEditMap,
   canControlPlacement,
-  modifyHp,
-  modifyCombatStages,
-  modifyConditions,
-  applyMoveFieldEffect,
-  placeHazard,
+  modifyHp: modifyHpFromScene,
+  modifyCombatStages: modifyCombatStagesFromScene,
+  modifyConditions: modifyConditionsFromScene,
+  applyMoveFieldEffect: applyMoveFieldEffectFromScene,
+  placeHazard: placeHazardFromScene,
   recordMoveUsage,
   onBeforeNonImmediateAction: () => {
     attackOfOpportunityPanel?.clearAttackOfOpportunityPromptsForNonImmediateAction()
@@ -436,9 +540,17 @@ const {
   pokemonBySlug,
   trainerBySlug,
   canControlPlacement,
-  modifyCombatStages,
-  modifyConditions,
+  modifyCombatStages: modifyCombatStagesFromScene,
+  modifyConditions: modifyConditionsFromScene,
   modifyAbilityActivation,
+  dispatchAbilityUse: (event) => {
+    if (!sessionMoveTokenEnabled.value) return undefined
+    return sessionSceneCommands.dispatchUseAbility({
+      id: event.userId,
+      abilityName: event.abilityName,
+      targetTokenId: event.targetTokenId,
+    }).dispatched
+  },
   onBeforeNonImmediateAction: () => {
     attackOfOpportunityPanel?.clearAttackOfOpportunityPromptsForNonImmediateAction()
   },
@@ -455,6 +567,14 @@ const {
   spawnedPokemon,
   trainerBySlug,
   canControlPlacement,
+  dispatchManeuverUse: (event) => {
+    if (!sessionMoveTokenEnabled.value) return undefined
+    return sessionSceneCommands.dispatchUseManeuver({
+      id: event.userId,
+      maneuverName: event.maneuverName,
+      targetTokenId: event.targetTokenId,
+    }).dispatched
+  },
   onBeforeManeuverAction: () => {
     attackOfOpportunityPanel?.clearAttackOfOpportunityPromptsForNonImmediateAction()
   },
@@ -465,6 +585,14 @@ const orderActionPanel = useOrderActionPanel({
   spawnedPokemon,
   trainerBySlug,
   canControlPlacement,
+  dispatchOrderUse: (event) => {
+    if (!sessionMoveTokenEnabled.value) return undefined
+    return sessionSceneCommands.dispatchUseOrder({
+      id: event.userId,
+      orderName: event.orderName,
+      targetTokenId: event.targetTokenId,
+    }).dispatched
+  },
   onBeforeOrderAction: () => {
     attackOfOpportunityPanel?.clearAttackOfOpportunityPromptsForNonImmediateAction()
   },
@@ -531,7 +659,7 @@ const selectActionAutomationTarget = (targetId: string) => {
 
 const sceneActionError = computed(() =>
   sessionMoveTokenEnabled.value
-    ? sessionMoveTokenDispatch.lastError.value ?? moveUsageError.value
+    ? sessionSceneCommands.lastError.value ?? sessionMoveTokenDispatch.lastError.value ?? moveUsageError.value
     : moveUsageError.value,
 )
 
@@ -634,21 +762,21 @@ useMapDimensionReconciliation({
         @move-pokemon="movePokemon"
         @turn-pokemon="turnPokemon"
         @delete-pokemon="deletePokemon"
-        @modify-hp="modifyHp"
-        @modify-combat-stages="modifyCombatStages"
-        @modify-conditions="modifyConditions"
+        @modify-hp="modifyHpFromScene"
+        @modify-combat-stages="modifyCombatStagesFromScene"
+        @modify-conditions="modifyConditionsFromScene"
         @use-move="openMoveAutomationFromContext"
         @use-maneuver="useManeuverFromContext"
         @use-ability="openAbilityAutomationFromContext"
         @use-order="useOrderFromContext"
-        @send-out-pokemon="sendOutPokemon"
+        @send-out-pokemon="sendOutPokemonFromScene"
         @view-sheet="viewSheet"
         @view-pokedex="viewPokedex"
         @preview-change="updatePreview"
-        @place-voxel="placeVoxel"
-        @remove-voxel="removeVoxel"
-        @place-hazard="placeHazard"
-        @remove-hazard="removeHazard"
+        @place-voxel="placeVoxelFromScene"
+        @remove-voxel="removeVoxelFromScene"
+        @place-hazard="placeHazardFromScene"
+        @remove-hazard="removeHazardFromScene"
         @select-move-target="selectActionAutomationTarget"
         @select-move-area-direction="selectMoveAutomationAreaDirection"
         @cancel-move-targeting="cancelActionAutomationTargeting"
