@@ -45,6 +45,7 @@ npm run build
 - [docs/track-2-client-integration.md](docs/track-2-client-integration.md) — how local map mode and explicit session mode coexist, including disconnect and conflict recovery guidance.
 - [docs/track-2-session-lobby.md](docs/track-2-session-lobby.md) — GM/player join flow, expected LAN usage, and two-browser lobby smoke checklist.
 - [docs/track-2-session-host-runtime.md](docs/track-2-session-host-runtime.md) — npm helpers for guarded LAN and named-tunnel session host startup.
+- [docs/track-2-public-exposure-checks.md](docs/track-2-public-exposure-checks.md) — no-secret safety banner checks for unsafe public/LAN startup states before sharing join codes.
 - [docs/track-2-lan-hosting.md](docs/track-2-lan-hosting.md) — same-Wi-Fi/LAN hosting runbook with startup commands, IP discovery, player URLs, and troubleshooting.
 - [docs/track-2-cloudflare-tunnel-hosting.md](docs/track-2-cloudflare-tunnel-hosting.md) — named Cloudflare Tunnel runbook with stable hostname setup, WebSocket considerations, safety warnings, and rollback steps.
 - [docs/track-2-quick-tunnel-caveat.md](docs/track-2-quick-tunnel-caveat.md) — Quick Tunnel caveats for temporary development smoke tests only, including legacy SSE limitations.

@@ -56,6 +56,16 @@ const safetyFlagLabel = computed(() => {
 })
 const safetyExposureLabel = computed(() => safetyStatus.value?.exposure ?? 'checking')
 const safetyHostLabel = computed(() => safetyStatus.value?.effectiveHost ?? '—')
+const safetySessionReadinessLabel = computed(() => {
+  const status = safetyStatus.value
+  if (!status) return 'Checking'
+
+  const activeCount = status.sessionSettings.activeSessionCount
+  const activeLabel = activeCount === null
+    ? 'unknown active sessions'
+    : `${activeCount} active session${activeCount === 1 ? '' : 's'}`
+  return `${status.sessionReadiness} · ${activeLabel}`
+})
 const safetyWarnings = computed(() => safetyStatus.value?.warnings ?? [
   'Until the safety check responds, treat this page as local prep and do not share join codes.',
 ])
@@ -138,6 +148,10 @@ onMounted(() => {
         <div>
           <dt>Effective host</dt>
           <dd>{{ safetyHostLabel }}</dd>
+        </div>
+        <div>
+          <dt>Session readiness</dt>
+          <dd>{{ safetySessionReadinessLabel }}</dd>
         </div>
       </dl>
       <div class="safety-banner__lists">

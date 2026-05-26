@@ -2,7 +2,7 @@
 
 This runbook is the supported remote-player hosting path for Track 2 table sessions. The GM still runs Rotom Table on a machine they control; a named Cloudflare Tunnel gives trusted remote players a stable HTTPS hostname that forwards to that private server.
 
-Use the [Track 2 LAN hosting runbook](track-2-lan-hosting.md) first when everyone is on the same network. Use this guide only when players are remote and the GM intentionally wants to publish a stable hostname such as `https://table.example.com` for a campaign session.
+Use the [Track 2 LAN hosting runbook](track-2-lan-hosting.md) first when everyone is on the same network. Use this guide only when players are remote and the GM intentionally wants to publish a stable hostname such as `https://table.example.com` for a campaign session. For the no-secret safety banner checks that catch remote exposure before a session-local GM key, join code, and authoritative state are ready, see [Track 2 public exposure checks](track-2-public-exposure-checks.md).
 
 Named tunnel hosting keeps the locked Track 2 architecture intact: one GM-hosted server owns session authority, live clients use `WebSocket /api/sessions/socket`, commands are acknowledged or rejected by the server, state is persisted as local JSON snapshots/event logs, and browsers must not autosave whole maps as the live session concurrency mechanism.
 
@@ -140,9 +140,9 @@ If the GM intentionally wants LAN access at the same time, use the LAN runbook a
 2. Start `cloudflared tunnel run rotom-table`.
 3. On the GM machine, open `https://table.example.com/login` and choose **GM Login**.
 4. Open `https://table.example.com/sessions#gm-lobby-title` so the safety banner evaluates the same public hostname players will use.
-5. Confirm the safety banner reports session hosting enabled and a deliberate remote/tunnel exposure. If it reports disabled, stop and restart Rotom Table with the runtime flag. If it reports a surprising host, do not share the join code until the tunnel/DNS path is understood.
+5. Confirm the safety banner reports session hosting enabled and a deliberate remote/tunnel exposure. If it reports disabled, stop and restart Rotom Table with the runtime flag. If it reports a surprising host, do not share the join code until the tunnel/DNS path is understood. A remote/no-active-session warning is expected before step 6; missing credentials, missing authoritative state, or unknown readiness after startup are blockers.
 6. Press **Start GM session**.
-7. Confirm the lobby shows a session ID, revision, and player join code. The GM key must not be copied into chat or shown in screenshots.
+7. Confirm the lobby shows a session ID, revision, and player join code, and that safety readiness no longer warns about missing session-local credentials or authoritative state. The GM key must not be copied into chat or shown in screenshots.
 8. Share only the stable player URL and join code with trusted players, for example:
 
    ```text
@@ -218,6 +218,7 @@ The helper remains a browser/tab aid; this runbook remains the source for named-
 | Safety banner says hosting disabled | Runtime flag was not set when Nuxt started | Stop Rotom Table and restart with `ROTOM_ENABLE_SESSION_HOST=1`; changing the environment variable after startup is not enough. |
 | Safety banner says local while testing remote | The GM opened `localhost` instead of the public hostname | Reopen `/sessions` through `https://table.example.com/sessions#gm-lobby-title` before sharing the join code. |
 | Safety banner shows an unexpected hostname | DNS, proxy, Access, or tunnel config points somewhere unintended | Do not share the join code until the public hostname and target service are understood. |
+| Safety banner says no active session, missing credentials, or missing authoritative state | The tunnel is public before GM startup, or session startup state is incomplete | Start the GM session before sharing a code. If credentials/state are missing after start, stop the tunnel, unset the runtime flag, and start a fresh session or recover from a trusted private snapshot. |
 | Player blocked before the lobby | Cloudflare Access/WAF/DNS policy or browser security prompt | Confirm the player is allowed by the optional edge policy; remember Access is extra protection, not Rotom Table session auth. |
 | WebSocket stays disconnected/reconnecting | Tunnel or browser closed the socket, laptop slept, cached/proxied path, or Access challenge interrupted the socket | Keep the GM host awake, disable aggressive cache rules for session paths, verify `wss://table.example.com/api/sessions/socket` reaches the app, then reload or use the reconnect/snapshot banner. |
 | Player can join but cannot move a token | Player has not been assigned that token/sheet or the command is GM-only | The GM must assign controllable resources for player commands; GM-only commands remain GM-only. |

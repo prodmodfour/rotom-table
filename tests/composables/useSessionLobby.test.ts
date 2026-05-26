@@ -218,14 +218,24 @@ describe('useSessionLobby', () => {
     expect(lobby.lastNotice.value).toBeNull()
   })
 
-  it('starts a GM session, remembers the GM identity, and fetches management state', async () => {
+  it('starts a GM session, remembers the GM identity, refreshes safety, and fetches management state', async () => {
     const storage = makeStorage()
+    const readySafetyStatus = createSessionSafetyStatus({
+      hostEnabled: true,
+      requestHost: '192.168.1.50:3000',
+      sessionSettings: {
+        activeSessionCount: 1,
+        credentialedSessionCount: 1,
+        stateBackedSessionCount: 1,
+      },
+    })
     const api = makeApiClient({
       [SESSION_API_PATHS.start]: () => makeStartResponse(0),
       [SESSION_API_PATHS.manage]: (body) => {
         expect(body).toEqual({ sessionId: SESSION_ID, gmKey: GM_KEY })
         return makeManagementResponse(0)
       },
+      [SESSION_API_PATHS.safety]: () => readySafetyStatus,
     })
     const lobby = useSessionLobby({
       apiClient: api.apiClient,
@@ -238,6 +248,7 @@ describe('useSessionLobby', () => {
     expect(api.calls.map((call) => call.request)).toEqual([
       SESSION_API_PATHS.start,
       SESSION_API_PATHS.manage,
+      SESSION_API_PATHS.safety,
     ])
     expect(lobby.identity.value).toMatchObject({
       schemaVersion: SESSION_CLIENT_IDENTITY_SCHEMA_VERSION,
@@ -251,6 +262,7 @@ describe('useSessionLobby', () => {
     expect(storage.storage.remember).toHaveBeenCalled()
     expect(lobby.gmJoinCode.value).toBe(JOIN_CODE)
     expect(lobby.gmManagement.value?.players[0]?.displayName).toBe(DISPLAY_NAME)
+    expect(lobby.safetyStatus.value).toEqual(readySafetyStatus)
     expect(lobby.lastNotice.value).toBe('Started a GM-hosted Track 2 session in this browser.')
     expect(lobby.lastError.value).toBeNull()
   })

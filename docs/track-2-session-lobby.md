@@ -2,13 +2,13 @@
 
 This guide documents the current Track 2 lobby slice: how a GM starts a guarded session, how a player joins with a session-local display name, how the minimal lobby should behave on a LAN, and how to manually smoke-test the flow with two browsers.
 
-It is intentionally scoped to the identity/join/lobby surface. For guarded startup helpers, see the [Track 2 session host runtime scripts](track-2-session-host-runtime.md). For same-Wi-Fi setup commands, IP discovery, player browser URLs, and cross-device troubleshooting, see the [Track 2 LAN hosting runbook](track-2-lan-hosting.md). For stable-hostname remote setup, WebSocket considerations, safety warnings, and rollback steps, see the [Track 2 named Cloudflare Tunnel runbook](track-2-cloudflare-tunnel-hosting.md). For temporary `trycloudflare.com` smoke-test caveats and legacy SSE limitations, see the [Track 2 Quick Tunnel caveat](track-2-quick-tunnel-caveat.md). For the client-integration smoke that opens explicit GM/player session-map tabs and checks basic token command propagation, see [Track 2 multi-tab local smoke script](track-2-multi-tab-smoke.md).
+It is intentionally scoped to the identity/join/lobby surface. For guarded startup helpers, see the [Track 2 session host runtime scripts](track-2-session-host-runtime.md). For no-secret warnings around public/LAN exposure before session-local credentials and authoritative state are ready, see [Track 2 public exposure checks](track-2-public-exposure-checks.md). For same-Wi-Fi setup commands, IP discovery, player browser URLs, and cross-device troubleshooting, see the [Track 2 LAN hosting runbook](track-2-lan-hosting.md). For stable-hostname remote setup, WebSocket considerations, safety warnings, and rollback steps, see the [Track 2 named Cloudflare Tunnel runbook](track-2-cloudflare-tunnel-hosting.md). For temporary `trycloudflare.com` smoke-test caveats and legacy SSE limitations, see the [Track 2 Quick Tunnel caveat](track-2-quick-tunnel-caveat.md). For the client-integration smoke that opens explicit GM/player session-map tabs and checks basic token command propagation, see [Track 2 multi-tab local smoke script](track-2-multi-tab-smoke.md).
 
 ## What exists in this slice
 
 - `/sessions` is an additive lobby route. It does not replace the existing `/login` trust picker or local-first map/sheet workflows.
 - Map routes expose a compact **Table session** panel in the map navigation rail with links to `/sessions#gm-lobby-title`, `/sessions#player-lobby-title`, and an explicit `/maps/<slug>?session=1` session-mode view for the current map.
-- `GET /api/sessions/safety` returns a no-secret banner status so the GM can see whether hosting is disabled, local, LAN, remote, or unknown before sharing a join code.
+- `GET /api/sessions/safety` returns a no-secret banner status so the GM can see whether hosting is disabled, local, LAN, remote, or unknown before sharing a join code. When hosting is enabled it also warns if no active session-local GM key/join code exists yet, if a remote/proxied request appears before session start, or if an active session record is missing expected credentials or authoritative state.
 - `POST /api/sessions/start` creates a session-local GM identity, join code, initial authoritative state, and local JSON snapshot when session hosting is explicitly enabled.
 - `POST /api/sessions/join` creates a session-local player ID/client ID/display name from a valid join code.
 - `POST /api/sessions/manage` lets the GM refresh the read-only lobby summary with joined players, connected-client presence records, assignment counts, and the join code.
@@ -61,9 +61,9 @@ Remote campaign play should use the [Track 2 named Cloudflare Tunnel runbook](tr
 1. Start the app with session hosting enabled.
 2. In the GM browser, open `/login` and choose **GM Login**.
 3. Open `/sessions` from the navigation.
-4. Read the safety banner. Do not share a join code if the exposure is surprising.
+4. Read the safety banner. Do not share a join code if the exposure is surprising. A no-active-session warning is expected before the GM starts a session; missing-credential, missing-state, or unknown-readiness warnings are blockers.
 5. Press **Start GM session**.
-6. Confirm the lobby shows a session ID, revision `0`, and a player join code.
+6. Confirm the lobby shows a session ID, revision `0`, a player join code, and safety readiness that is no longer missing session-local credentials or authoritative state.
 7. Share only the join code and the app URL with trusted players.
 8. Use **Refresh lobby** after players join to confirm they appear in the joined-player list.
 9. From a map view, expand the map navigation rail and use **Open session map** only when you intentionally want that route to use `?session=1` and WebSocket commands. The plain `/maps/<slug>` route remains local-first.

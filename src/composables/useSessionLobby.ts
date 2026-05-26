@@ -258,6 +258,7 @@ export const useSessionLobby = (options: UseSessionLobbyOptions = {}) => {
       }
       rememberIdentity(nextIdentity)
       await fetchGmManagement(nextIdentity)
+      await loadSafetyStatus().catch(() => undefined)
       lastNotice.value = 'Started a GM-hosted Track 2 session in this browser.'
       return response
     } catch (error) {

@@ -71,9 +71,11 @@ The response includes:
 - whether the exact `ROTOM_ENABLE_SESSION_HOST=1` flag is active;
 - the normalized request host and forwarded host, when present;
 - a coarse exposure classification: `disabled`, `local`, `lan`, `remote`, or `unknown`;
-- a severity for the banner and player-safe warnings/actions.
+- a severity for the banner and player-safe warnings/actions;
+- no-secret session readiness counts for active sessions, credentialed sessions, and state-backed sessions;
+- startup issue codes such as `host-enabled-without-active-session`, `remote-exposure-before-session-start`, `host-enabled-without-session-secrets`, `host-enabled-without-authoritative-state`, and `host-enabled-session-readiness-unknown`.
 
-It never returns GM keys, join codes, player IDs, snapshots, map documents, or other campaign data. The banner repeats the Track 2 safety boundary: the existing local GM/player role picker is a trust switch for the local app, not public authentication. When hosting is enabled on a LAN or public/tunnel hostname, the GM should verify that the server exposure is intentional, use a named Cloudflare Tunnel for remote campaign play, treat Quick Tunnel as development smoke-test only, and stop the server or unset the flag after the session.
+It never returns GM keys, join codes, player IDs, snapshots, map documents, or other campaign data. The banner repeats the Track 2 safety boundary: the existing local GM/player role picker is a trust switch for the local app, not public authentication. When hosting is enabled on a LAN or public/tunnel hostname, the GM should verify that the server exposure is intentional, use a named Cloudflare Tunnel for remote campaign play, treat Quick Tunnel as development smoke-test only, and stop the server or unset the flag after the session. If the banner reports missing session-local credentials, no active session after startup, missing authoritative state, or unknown readiness, do not share the URL or join code until the host is restarted, recovered from a trusted private snapshot, or a fresh GM session has rotated the join code.
 
 Example remote-exposure response:
 
@@ -91,19 +93,35 @@ Example remote-exposure response:
   "forwardedHost": "campaign.example.net",
   "effectiveHost": "campaign.example.net",
   "forwarded": true,
+  "sessionSettings": {
+    "activeSessionCount": 0,
+    "credentialedSessionCount": 0,
+    "stateBackedSessionCount": 0
+  },
+  "sessionReadiness": "not-started",
+  "startupIssues": [
+    "host-enabled-without-active-session",
+    "remote-exposure-before-session-start"
+  ],
   "title": "Session hosting exposed remotely",
   "summary": "This browser reached Rotom Table through campaign.example.net, which looks publicly exposed or proxied.",
   "warnings": [
     "Track 2 session hosting is enabled and this request appears to use a public hostname, proxy, or tunnel.",
     "Use a named Cloudflare Tunnel with a stable hostname for campaign play; Quick Tunnel is development smoke-test only.",
-    "Do not rely on the local GM/player role picker as public auth; keep the GM session key and browser private."
+    "Do not rely on the local GM/player role picker as public auth; keep the GM session key and browser private.",
+    "Session hosting is enabled but no active session-local GM key and join code have been created yet; start a GM session from /sessions before sharing any player URL.",
+    "This host appears remotely exposed before a join code/session has been intentionally created; stop the tunnel or complete GM startup before sharing the URL."
   ],
   "recommendedActions": [
     "Confirm the hostname is a named Cloudflare Tunnel or another deliberate private-server exposure path before sharing it.",
-    "Rotate the join code by starting a new session if it was shared outside the trusted table."
+    "Rotate the join code by starting a new session if it was shared outside the trusted table.",
+    "Open /sessions as the GM, start a session, verify a fresh join code, then share only that code and the player URL with trusted players.",
+    "If this is not an intentional named Cloudflare Tunnel or trusted smoke test, stop the tunnel/proxy before continuing."
   ]
 }
 ```
+
+See [Track 2 public exposure checks](track-2-public-exposure-checks.md) for the operational checklist attached to these startup issues.
 
 ## Session WebSocket route and hello/auth
 

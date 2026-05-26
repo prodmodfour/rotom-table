@@ -4,7 +4,7 @@ This runbook is the supported same-network hosting path for Track 2 table sessio
 
 LAN hosting keeps the locked Track 2 architecture intact: one GM-hosted server owns session authority, live clients use `WebSocket /api/sessions/socket`, commands are acknowledged or rejected by the server, state is persisted as local JSON snapshots/event logs, and browsers must not autosave whole maps as the live session concurrency mechanism.
 
-For the lobby flow itself, see [Track 2 session lobby and manual QA](track-2-session-lobby.md). For local multi-tab token propagation checks, see [Track 2 multi-tab local smoke script](track-2-multi-tab-smoke.md). For remote play over the internet, use the [Track 2 named Cloudflare Tunnel runbook](track-2-cloudflare-tunnel-hosting.md); do not use ad-hoc public exposure as the LAN path.
+For the lobby flow itself, see [Track 2 session lobby and manual QA](track-2-session-lobby.md). For no-secret warnings around unsafe host startup and missing session-local credentials/state, see [Track 2 public exposure checks](track-2-public-exposure-checks.md). For local multi-tab token propagation checks, see [Track 2 multi-tab local smoke script](track-2-multi-tab-smoke.md). For remote play over the internet, use the [Track 2 named Cloudflare Tunnel runbook](track-2-cloudflare-tunnel-hosting.md); do not use ad-hoc public exposure as the LAN path.
 
 ## Before you start
 
@@ -102,9 +102,9 @@ http://192.168.1.42:3000
 1. Start Rotom Table with `npm run dev:session:lan` (manual equivalent: `ROTOM_ENABLE_SESSION_HOST=1 npm run dev -- --host 0.0.0.0 --port 3000`).
 2. On the GM machine, open `http://localhost:3000/login` or `http://<GM-LAN-IP>:3000/login` and choose **GM Login**.
 3. Open `http://<GM-LAN-IP>:3000/sessions#gm-lobby-title` so the safety banner evaluates the same LAN URL that players will use.
-4. Confirm the safety banner reports hosting enabled and a LAN/private-network exposure. If it reports disabled, stop and restart with the runtime flag. If it reports remote or unknown unexpectedly, do not share the URL until the network path is understood.
+4. Confirm the safety banner reports hosting enabled and a LAN/private-network exposure. If it reports disabled, stop and restart with the runtime flag. If it reports remote or unknown unexpectedly, do not share the URL until the network path is understood. A no-active-session warning is expected before step 5; missing credentials, missing authoritative state, or unknown readiness are blockers.
 5. Press **Start GM session**.
-6. Confirm the lobby shows a session ID, revision, and player join code. The GM key must not be shown in page chrome or copied into chat.
+6. Confirm the lobby shows a session ID, revision, and player join code, and that the safety readiness no longer warns about missing session-local credentials or authoritative state. The GM key must not be shown in page chrome or copied into chat.
 7. Share only the player-facing base URL and join code with trusted players, for example:
 
    ```text
@@ -162,6 +162,7 @@ The helper is still a local browser aid; this runbook remains the source for cro
 | Safety banner says hosting disabled | Runtime flag was not set when Nuxt started | Stop the server and restart with `ROTOM_ENABLE_SESSION_HOST=1`; changing the environment variable after startup is not enough. |
 | Safety banner says local while testing LAN | The GM opened `localhost` | Reopen `/sessions` through `http://<GM-LAN-IP>:3000/sessions` to verify the player-facing path. |
 | Safety banner says remote or unknown unexpectedly | The request may be coming through a proxy, tunnel, VPN, public hostname, or unusual interface | Do not share the join code until the path is understood. For remote play, use the [Track 2 named Cloudflare Tunnel runbook](track-2-cloudflare-tunnel-hosting.md) rather than improvising public exposure. |
+| Safety banner says no active session, missing credentials, or missing authoritative state | The host is reachable before GM startup, or in-memory session startup state is incomplete | Start the GM session before sharing a code. If credentials/state are missing after start, stop hosting and start a fresh session or recover from a trusted private snapshot. |
 | Join code fails | Code was copied incorrectly, the session ended, or the player has stale browser identity | Re-copy the current code from the GM lobby, refresh the GM lobby, use **Forget in this browser** on stale clients, then join again. |
 | WebSocket stays disconnected/reconnecting | Network changed, laptop slept, firewall/proxy closed the socket, or the browser is on a different network | Keep the GM host awake, reload the player page, use the reconnect/snapshot banner, and verify `ws://<GM-LAN-IP>:3000/api/sessions/socket` is not blocked by local security software. |
 | Player can see the session but cannot move a token | Player has not been assigned that token/sheet or the resource is not visible | The GM must assign controllable resources for player commands; GM-only commands remain GM-only. |
