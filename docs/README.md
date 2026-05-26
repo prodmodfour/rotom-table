@@ -26,10 +26,10 @@ This directory collects presentation and reviewer documentation for Rotom Table.
 - [Live session deployment smoke checklist](live-session-deployment-smoke-checklist.md) — LAN and named-tunnel smoke steps for two players, reconnect, token movement, initiative, conflict rejection, and cleanup evidence.
 - [Live session LAN manual smoke results](live-session-lan-manual-smoke-results.md) — recorded LAN browser-client smoke results for guarded startup, two-player join, session socket presence, reconnect, and cleanup.
 - [Live session integrated command audit](live-session-command-audit.md) — automated multi-client command audit covering accepted commands, reconnect, permissions, and stale conflicts.
-- [Live session concurrency benchmark notes](live-session-concurrency-benchmark-notes.md) — final multi-client concurrency behaviour, latency-sensitive path, and performance limitation notes.
+- [Live session concurrency benchmark notes](live-session-concurrency-benchmark-notes.md) — multi-client concurrency behaviour, latency-sensitive path, and performance limitation notes.
 - [Live session implementation review](live-session-implementation-review.md) — product docs, source areas, validation evidence, and known limitations.
 - [Live session readiness summary](live-session-readiness-summary.md) — product/developer readiness summary for validation, evidence links, and architecture confirmation.
-- [Live session local-mode no-regression audit](live-session-local-mode-no-regression-audit.md) — final local-first audit for plain map/sheet workflows, legacy SSE, and explicit session-mode opt-in boundaries.
+- [Live session local-mode no-regression audit](live-session-local-mode-no-regression-audit.md) — local-first no-regression audit for plain map/sheet workflows, legacy SSE, and explicit session-mode opt-in boundaries.
 - [Live session Quick Tunnel caveat](live-session-quick-tunnel-caveat.md) — temporary development smoke-test boundary, campaign-session rejection, and legacy SSE limitations.
 - [Live session multi-tab local smoke script](live-session-multi-tab-smoke.md) — local GM/player session-mode tab helper and token propagation checklist.
 - [live session storage](live-session-storage.md) — default snapshot/event-log paths, ignored/private data boundaries, backup guidance, cleanup behaviour, and recovery limitations.
@@ -51,7 +51,7 @@ This directory collects presentation and reviewer documentation for Rotom Table.
 - [Performance benchmark fixtures](performance-benchmark-fixtures.md) — local fixture generator and manual checklist for reproducing benchmark maps without private campaign data.
 - [Performance benchmark runbook](performance-benchmark-runbook.md) — step-by-step before/after measurement workflow and debug overlay interpretation guide.
 - [Map rendering integrated benchmark pass](performance-benchmark-results.md) — recorded empty, typical, and stress fixture measurements from the current performance implementation.
-- [Map rendering no-quality-loss audit](performance-no-quality-loss-audit.md) — final map rendering performance audit confirming no intentional visual-quality or functionality reduction.
+- [Map rendering no-quality-loss audit](performance-no-quality-loss-audit.md) — map rendering performance audit confirming no intentional visual-quality or functionality reduction.
 - [Map rendering performance readiness review](performance-readiness-review.md) — performance readiness checklist, validation coverage, and no-quality-loss evidence.
 - [Performance guardrails](performance-guardrails.md) — reviewer checklist and automated checks that prevent performance work from reducing visual quality or map functionality.
 - [Fan project notice](fan-project-notice.md) — unofficial fan-project boundaries.

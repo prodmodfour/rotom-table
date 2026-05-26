@@ -13,7 +13,7 @@ const exists = (relativePath: string): boolean => existsSync(resolve(repoRoot, r
 describe('Live session concurrency benchmark notes', () => {
   const notes = readText('docs/live-session-concurrency-benchmark-notes.md')
 
-  it('records the this review scope, outcome, and measurement caveats', () => {
+  it('records the current scope, outcome, and measurement caveats', () => {
     expect(notes).toContain('This review')
     expect(notes).toContain('Audit date: 2026-05-26')
     expect(notes).toContain('Outcome: pass for the locked Live session small-table concurrency posture')
@@ -75,7 +75,7 @@ describe('Live session concurrency benchmark notes', () => {
   it('keeps known performance limitations and locked architecture boundaries explicit', () => {
     expect(notes).toContain('trusted small table, not a public high-concurrency service')
     expect(notes).toContain('not a soak test for dozens of players')
-    expect(notes).toContain('No real WAN/named-tunnel latency measurement was collected')
+    expect(notes).toContain('No real WAN/named-tunnel latency measurement is recorded here')
     expect(notes).toContain('WebSocket peer state, connected-client presence, and recent duplicate-`opId` tracking are process-local')
     expect(notes).toContain('Accepted command handlers persist local JSON snapshots')
     expect(notes).toContain('Map renderer performance still matters')

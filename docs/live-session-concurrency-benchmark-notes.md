@@ -1,6 +1,6 @@
 # Live session concurrency benchmark notes
 
-This review records the final Live session multi-client concurrency benchmark notes after the command audit, LAN browser smoke, named-tunnel documentation review, local-mode no-regression audit, security audit, and persistence/recovery audit landed. Read it with the [Live session integrated command audit](live-session-command-audit.md), [Live session LAN manual smoke results](live-session-lan-manual-smoke-results.md), [Live session deployment smoke checklist](live-session-deployment-smoke-checklist.md), [Live session socket protocol](live-session-socket-protocol.md), and [Live session dependency and runtime review](live-session-dependency-runtime-review.md).
+This review records the current Live session multi-client concurrency benchmark notes for the command, LAN browser smoke, named-tunnel documentation, local-mode no-regression, security, and persistence/recovery boundaries. Read it with the [Live session integrated command audit](live-session-command-audit.md), [Live session LAN manual smoke results](live-session-lan-manual-smoke-results.md), [Live session deployment smoke checklist](live-session-deployment-smoke-checklist.md), [Live session socket protocol](live-session-socket-protocol.md), and [Live session dependency and runtime review](live-session-dependency-runtime-review.md).
 
 Audit date: 2026-05-26
 
@@ -10,8 +10,8 @@ Outcome: pass for the locked Live session small-table concurrency posture, with 
 
 This note is intentionally conservative:
 
-- It records observations from focused automated fake-WebSocket tests and the this review LAN browser-client smoke on the local test host.
-- The release process has one machine, so the recorded LAN browser smoke used separate Chromium contexts through a private LAN URL rather than physically separate player devices.
+- It records observations from focused automated fake-WebSocket tests and the recorded LAN browser-client smoke on the local test host.
+- The recorded LAN browser smoke used separate Chromium contexts through a private LAN URL rather than physically separate player devices because the test environment had one machine available.
 - No live named Cloudflare Tunnel, public WAN path, real campaign map, private sheets, screenshots, join codes, GM keys, session snapshots, tunnel credentials, or real `.env` files were recorded.
 - No millisecond latency target is claimed. Browser, filesystem, map size, local CPU/GPU load, Wi-Fi quality, and Cloudflare edge routing can all change user-visible latency.
 - Operators should run the [deployment smoke checklist](live-session-deployment-smoke-checklist.md) on their real LAN or named-tunnel environment before trusting a campaign session.
@@ -25,7 +25,7 @@ This note is intentionally conservative:
 | Permission and conflict behaviour | An unassigned/view-only player move was rejected as `unauthorized`; a stale same-token move from revision 0 after accepted movement was rejected as `stale` with current authoritative token state. Neither rejection advanced the revision or wrote an accepted-command snapshot. | `tests/server/sessionIntegratedCommandAudit.test.ts`, `tests/server/applyMoveTokenCommand.test.ts`, and [Live session integrated command audit](live-session-command-audit.md). |
 | Reconnect behaviour | A stale reconnect with `lastSeenRevision: 0` received `snapshotRequired: true` and an actor-filtered snapshot because event replay is currently unavailable. The snapshot path stayed server-authoritative and did not trust browser-local state. | `tests/server/sessionWebSocketTransport.test.ts`, `tests/server/sessionIntegratedCommandAudit.test.ts`, and `server/utils/sessionWebSocketServer.ts`. |
 | Heartbeat and liveness | The WebSocket server negotiates a 25 second heartbeat interval and a 60 second stale timeout. Heartbeat pings/pongs update liveness without incrementing revisions, and stale sockets close safely. | `server/utils/sessionWebSocketServer.ts` and `tests/server/sessionWebSocketTransport.test.ts`. |
-| Browser LAN smoke | Three Chromium contexts (`GM browser`, `Player A browser`, `Player B browser`) connected through `http://<private-LAN-IP>:31091`, completed session start/join, received server hello messages at revision 2, observed same-session presence, and recovered a stale player reconnect with a snapshot. The smoke reported no page errors or warning/error console messages in the final run. | [Live session LAN manual smoke results](live-session-lan-manual-smoke-results.md). |
+| Browser LAN smoke | Three Chromium contexts (`GM browser`, `Player A browser`, `Player B browser`) connected through `http://<private-LAN-IP>:31091`, completed session start/join, received server hello messages at revision 2, observed same-session presence, and recovered a stale player reconnect with a snapshot. The smoke reported no page errors or warning/error console messages in the recorded run. | [Live session LAN manual smoke results](live-session-lan-manual-smoke-results.md). |
 | Client integration | Explicit `/maps/<slug>?session=1` views use a session-authoritative map clone, WebSocket command dispatch, optimistic move confirmation, stale rejection reconciliation, reconnect refresh, and cleanup without mutating the local autosaved map document. | `tests/composables/map-editor/sessionClientIntegration.test.ts` and [Live session client integration](live-session-client-integration.md). |
 
 ## Latency-sensitive command path
@@ -54,7 +54,7 @@ The local filesystem snapshot write is on the accepted-command path. On the loca
 These limits are acceptable for Live session and should remain explicit:
 
 - The implementation is sized for a trusted small table, not a public high-concurrency service. Automated coverage exercises one GM plus two same-session players and an unrelated-session isolation peer; it is not a soak test for dozens of players.
-- No real WAN/named-tunnel latency measurement was collected for this review. A named Cloudflare Tunnel adds network and edge routing variables that each GM should smoke-test with their actual players.
+- No real WAN/named-tunnel latency measurement is recorded here. A named Cloudflare Tunnel adds network and edge routing variables that each GM should smoke-test with their actual players.
 - WebSocket peer state, connected-client presence, and recent duplicate-`opId` tracking are process-local. A restart requires snapshot recovery and loses transient liveness/recent-operation memory.
 - Reconnect replay is currently unavailable (`replayAvailable: false`), so stale reconnects use snapshot fallback. For large visible maps, snapshot transfer and client-side scene reconciliation can dominate recovery time.
 - Accepted command handlers persist local JSON snapshots. Snapshot size, sheet writes, filesystem speed, and fsync behaviour can affect acknowledgement/fanout timing.
@@ -75,11 +75,11 @@ When a GM wants environment-specific numbers, record only generic, no-secret obs
 
 Use placeholders such as `Player A`, `Player B`, `table.example.com`, `<private-LAN-IP>`, and `<map-slug>`. Do not paste real join codes, GM keys, player names, snapshots, event logs, private campaign files, tunnel tokens, screenshots with secrets, or real `.env` values.
 
-## Final concurrency checklist
+## Concurrency checklist
 
 - [x] Live session concurrency uses WebSocket commands, acks/rejections, patches, heartbeat, presence, and reconnect.
 - [x] Accepted commands in the integrated audit advance revisions exactly once and fan out same-session patches only.
 - [x] Unauthorized and stale same-resource commands reject safely without accepted revision or snapshot advancement.
 - [x] Reconnect snapshot fallback is server-authoritative and actor-filtered when replay is unavailable.
-- [x] LAN browser smoke observed session start/join, WebSocket hello/presence, reconnect snapshot fallback, and no final-run browser console/page errors.
+- [x] LAN browser smoke observed session start/join, WebSocket hello/presence, reconnect snapshot fallback, and no recorded browser console/page errors.
 - [x] Known latency and scaling limitations are documented without adding public auth, SaaS hosting, cloud databases, Quick Tunnel campaign hosting, or browser-owned whole-map autosave.

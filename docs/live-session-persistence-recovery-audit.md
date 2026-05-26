@@ -1,6 +1,6 @@
-# Live session final persistence and recovery audit
+# Live session persistence and recovery audit
 
-This review records the final Live session persistence/recovery audit after the state, command, hosting, LAN smoke, local-mode, and security audit passes landed. Read it with the [live session storage guide](live-session-storage.md), [Live session backup and recovery runbook](live-session-backup-recovery.md), [Live session security readiness audit](live-session-security-readiness-audit.md), and [Live session local-mode no-regression audit](live-session-local-mode-no-regression-audit.md).
+This review records the current Live session persistence/recovery posture for the state, command, hosting, LAN smoke, local-mode, and security boundaries. Read it with the [live session storage guide](live-session-storage.md), [Live session backup and recovery runbook](live-session-backup-recovery.md), [Live session security readiness audit](live-session-security-readiness-audit.md), and [Live session local-mode no-regression audit](live-session-local-mode-no-regression-audit.md).
 
 Audit date: 2026-05-26
 
@@ -35,7 +35,7 @@ The audit intentionally did not change the architecture into SaaS, public multi-
 | Reconnect/restart recovery | Pass. WebSocket reconnect falls back to current actor-scoped server snapshots when replay is unavailable; restart recovery uses the validated latest snapshot. Browser state is not the recovery authority. | `server/utils/sessionWebSocketServer.ts`, `src/composables/map-editor/useSessionMap.ts`, `tests/server/sessionWebSocketTransport.test.ts`, `tests/composables/map-editor/sessionClientIntegration.test.ts`, and `docs/live-session-backup-recovery.md`. |
 | Cleanup and retention | Pass. Cleanup expires or prunes process-local in-memory records and clears recent operation tracking, but it does not delete `snapshot.json` or `events.jsonl`. Disk cleanup remains an explicit GM backup/removal decision. | `server/utils/sessionCleanup.ts`, `tests/server/sessionCleanup.test.ts`, `docs/live-session-storage.md`, and `docs/live-session-backup-recovery.md`. |
 | Backup/restore docs | Pass. The runbook covers safe backup timing, `tar`/`rsync`/PowerShell examples, restore startup, reconnect guidance, invalid-snapshot fail-closed behaviour, event-log limitations, credential leak response, and local/private data boundaries. | `docs/live-session-backup-recovery.md` and `tests/docs/liveSessionBackupRecovery.test.ts`. |
-| Local data hygiene | Pass. Docs and ignore rules keep `data/sessions/`, private maps/sheets/trainers, generated sheets, snapshots, event logs, tunnel credentials, private keys, tokens, real `.env` files, and backup archives out of git. | `.gitignore`, `README.md`, `docs/local-development.md`, `docs/live-session-storage.md`, `docs/live-session-security-review.md`, and this audit's repository status check. |
+| Local data hygiene | Pass. Docs and ignore rules keep `data/sessions/`, private maps/sheets/trainers, generated sheets, snapshots, event logs, tunnel credentials, private keys, tokens, real `.env` files, and backup archives out of git. | `.gitignore`, `README.md`, `docs/local-development.md`, `docs/live-session-storage.md`, `docs/live-session-security-review.md`, and repository hygiene guidance in this review. |
 
 ## Snapshot persistence findings
 
@@ -99,12 +99,12 @@ The backup/recovery runbook remains accurate for the current implementation:
 
 ## Local data hygiene findings
 
-The final hygiene pass confirms:
+The hygiene review confirms:
 
 - `.gitignore` ignores `data/sessions/`, `data/maps/`, non-example `data/sheets/`, `data/trainers/`, `.env`, `.env.*`, local caches, and temp folders.
 - Documentation warns that snapshots, event logs, backup archives, private maps/sheets/trainers, generated wild sheets, player display names, player/client IDs, GM keys, join codes, tunnel credentials, private keys, tokens, screenshots with secrets, and real environment files stay out of git and public issue trackers.
 - Tests use synthetic temporary roots under the OS temp directory or synthetic checked-in docs; they do not depend on runtime `data/sessions/` files.
-- This review added only documentation and a documentation/source-boundary regression test. It did not add or commit generated/private maps, sheets, snapshots, event logs, tunnel credentials, tokens, private keys, real `.env` files, or backup archives.
+- Repository changes should not add or commit generated/private maps, sheets, snapshots, event logs, tunnel credentials, tokens, private keys, real `.env` files, or backup archives.
 
 ## Remaining limitations
 
@@ -118,7 +118,7 @@ These are still acceptable for Live session and should stay explicit:
 - Restore does not configure Cloudflare DNS, tunnel credentials, firewalls, browser profiles, or public-auth controls.
 - Public hosting, SaaS persistence, cloud databases, automatic replication, Durable Objects, Redis, Postgres, and browser-owned whole-map recovery remain out of scope.
 
-## Final persistence checklist
+## Persistence checklist
 
 - [x] Session snapshots are local JSON under `data/sessions/<sessionId>/snapshot.json`.
 - [x] Snapshot writes use temp-file-and-rename semantics with same-directory temp files and default fsync behaviour.
@@ -130,7 +130,7 @@ These are still acceptable for Live session and should stay explicit:
 - [x] Cleanup does not silently delete snapshot/event-log files.
 - [x] Backup docs include referenced local campaign data and private archive guidance.
 - [x] `.gitignore` and docs keep runtime session files, private campaign data, backups, credentials, and real environment files out of git.
-- [x] No database, SaaS storage, Quick Tunnel campaign path, or cloud-first persistence layer was added.
+- [x] No database, SaaS storage, Quick Tunnel campaign path, or cloud-first persistence layer is part of this model.
 
 ## Operator reminder
 

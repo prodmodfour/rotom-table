@@ -1,6 +1,6 @@
 # Live session readiness summary
 
-This page summarizes the current Rotom Table GM-hosted live-session implementation for maintainers and operators. It is a product/developer readiness index, not a release-process log.
+This page summarizes the current Rotom Table GM-hosted live-session implementation for maintainers and operators. It is a product/developer readiness index, not a one-off status log.
 
 Audit date: 2026-05-26
 

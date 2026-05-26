@@ -1,6 +1,6 @@
 # Map rendering performance readiness review
 
-This page records the final readiness review for the map rendering performance work. It is a performance documentation and validation summary, not a runtime behaviour change.
+This page records the readiness review for the map rendering performance work. It is a performance documentation and validation summary, not a runtime behaviour change.
 
 ## Outcome
 

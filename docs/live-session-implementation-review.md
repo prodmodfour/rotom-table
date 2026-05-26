@@ -78,5 +78,5 @@ These limitations are intentionally explicit and are not defects in this live-se
 ## Maintenance notes
 
 - Keep live-session docs, tests, comments, and user-facing copy in product language.
-- Keep useful readiness evidence in product/developer docs rather than process-history files.
+- Keep useful readiness evidence in product/developer docs rather than one-off status notes.
 - Run the standard validation commands after changing session routes, commands, transport, persistence, or hosting helpers.

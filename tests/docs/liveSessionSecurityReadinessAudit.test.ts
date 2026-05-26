@@ -13,7 +13,7 @@ const exists = (relativePath: string): boolean => existsSync(resolve(repoRoot, r
 describe('Live session security readiness audit', () => {
   const audit = readText('docs/live-session-security-readiness-audit.md')
 
-  it('records the this review security audit outcome and scope', () => {
+  it('records the security audit outcome and scope', () => {
     expect(audit).toContain('This review')
     expect(audit).toContain('Audit date: 2026-05-26')
     expect(audit).toContain('Outcome: pass for the locked Live session trusted-table posture')
@@ -139,7 +139,7 @@ describe('Live session security readiness audit', () => {
     expect(audit).toContain('no hardening claim for every legacy local-first mutating route')
     expect(audit).toContain('no browser-owned recovery authority')
     expect(audit).toContain('no Quick Tunnel campaign hosting and no legacy SSE session command transport')
-    expect(audit).toContain('No real secrets, tunnel credentials, snapshots, event logs, private campaign files, or generated/private sheet data were added')
+    expect(audit).toContain('No real secrets, tunnel credentials, snapshots, event logs, private campaign files, or generated/private sheet data are present in tracked files')
     expect(audit).not.toContain('Quick Tunnel remains the supported campaign-session path')
     expect(audit).not.toContain('gmKey=')
     expect(audit).not.toContain('joinCode=')

@@ -1,10 +1,10 @@
 # Live session security review
 
-This review records the security posture for GM-hosted live sessions after the hosting-hardening work. It should be read with the [LAN hosting runbook](live-session-lan-hosting.md), [named Cloudflare Tunnel runbook](live-session-cloudflare-tunnel-hosting.md), [deployment smoke checklist](live-session-deployment-smoke-checklist.md), [Quick Tunnel caveat](live-session-quick-tunnel-caveat.md), [public exposure checks](live-session-public-exposure-checks.md), [session host runtime scripts](live-session-host-runtime.md), [dependency and runtime review](live-session-dependency-runtime-review.md), [session backup and recovery runbook](live-session-backup-recovery.md), and the [Live session security readiness audit](live-session-security-readiness-audit.md).
+This review records the security posture for GM-hosted live sessions and the current hosting/runtime safeguards. It should be read with the [LAN hosting runbook](live-session-lan-hosting.md), [named Cloudflare Tunnel runbook](live-session-cloudflare-tunnel-hosting.md), [deployment smoke checklist](live-session-deployment-smoke-checklist.md), [Quick Tunnel caveat](live-session-quick-tunnel-caveat.md), [public exposure checks](live-session-public-exposure-checks.md), [session host runtime scripts](live-session-host-runtime.md), [dependency and runtime review](live-session-dependency-runtime-review.md), [session backup and recovery runbook](live-session-backup-recovery.md), and the [Live session security readiness audit](live-session-security-readiness-audit.md).
 
 Live session remains a trusted-table, GM-hosted feature. It is appropriate for a GM-controlled machine serving known players on a LAN or through a named Cloudflare Tunnel when the GM follows the runbooks. It is not a hardened public service for anonymous internet users.
 
-This review's [final session security audit](live-session-security-readiness-audit.md) rechecked the implemented auth/session/cookie/permission boundaries, public exposure warnings, and remaining non-goals after the final command, LAN smoke, named-tunnel documentation, and local-mode no-regression passes.
+The [Live session security readiness audit](live-session-security-readiness-audit.md) documents the current auth/session/cookie/permission boundaries, public exposure warnings, and remaining non-goals alongside the command, LAN smoke, named-tunnel documentation, and local-mode no-regression evidence.
 
 ## Security outcome
 

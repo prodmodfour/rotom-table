@@ -58,7 +58,7 @@ describe('Live session dependency and runtime review', () => {
     expect(review).toContain('No hosted persistence package is imported, configured, or required by Rotom Table')
     expect(review).toContain('local JSON snapshots plus the optional local JSON-lines event log')
     expect(review).toContain('cloudflared` is an external operator tool, not an npm dependency')
-    expect(review).toContain('does not add a package, a database, a cloud service, a public auth provider, or a new deployment target')
+    expect(review).toContain('does not require a package, a database, a cloud service, a public auth provider, or a new deployment target')
     expect(review).not.toContain('Quick Tunnel is the supported')
   })
 

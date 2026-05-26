@@ -64,7 +64,7 @@ Then use explicit session map URLs such as:
 http://192.168.1.42:3000/maps/<map-slug>?session=1
 ```
 
-See the [Live session LAN hosting runbook](live-session-lan-hosting.md) for IP discovery, firewall troubleshooting, smoke checks, and cleanup. See [Live session LAN manual smoke results](live-session-lan-manual-smoke-results.md) for the recorded this review browser-client pass. See the [Live session deployment smoke checklist](live-session-deployment-smoke-checklist.md) for the expanded two-player LAN/named-tunnel pass covering reconnect, token movement, initiative, and conflict rejection. See [Live session public exposure checks](live-session-public-exposure-checks.md) for the safety banner warnings that appear when the host is reachable before an active session-local GM key, join code, and authoritative state are ready.
+See the [Live session LAN hosting runbook](live-session-lan-hosting.md) for IP discovery, firewall troubleshooting, smoke checks, and cleanup. See [Live session LAN manual smoke results](live-session-lan-manual-smoke-results.md) for the recorded browser-client pass. See the [Live session deployment smoke checklist](live-session-deployment-smoke-checklist.md) for the expanded two-player LAN/named-tunnel pass covering reconnect, token movement, initiative, and conflict rejection. See [Live session public exposure checks](live-session-public-exposure-checks.md) for the safety banner warnings that appear when the host is reachable before an active session-local GM key, join code, and authoritative state are ready.
 
 ## Named tunnel mode
 

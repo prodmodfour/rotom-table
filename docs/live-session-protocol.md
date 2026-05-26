@@ -121,7 +121,7 @@ Example remote-exposure response:
 }
 ```
 
-See [Live session public exposure checks](live-session-public-exposure-checks.md) for the operational checklist attached to these startup issues, [Live session security review](live-session-security-review.md) for the broader trust boundaries, join-code limits, tunnel exposure risks, and non-hardened areas, [Live session security readiness audit](live-session-security-readiness-audit.md) for the this review auth/session/cookie/permission boundary review, [Live session persistence/recovery audit](live-session-persistence-recovery-audit.md) for the this review snapshot/event-log and backup hygiene review, [Live session concurrency benchmark notes](live-session-concurrency-benchmark-notes.md) for the this review latency-sensitive concurrency observations, [Live session implementation review](live-session-implementation-review.md) for the this review implementation review/test/doc/limitation review, and [Live session dependency and runtime review](live-session-dependency-runtime-review.md) for the reviewed package/runtime boundaries.
+See [Live session public exposure checks](live-session-public-exposure-checks.md) for the operational checklist attached to these startup issues, [Live session security review](live-session-security-review.md) for the broader trust boundaries, join-code limits, tunnel exposure risks, and non-hardened areas, [Live session security readiness audit](live-session-security-readiness-audit.md) for the auth/session/cookie/permission boundary review, [Live session persistence/recovery audit](live-session-persistence-recovery-audit.md) for the snapshot/event-log and backup hygiene review, [Live session concurrency benchmark notes](live-session-concurrency-benchmark-notes.md) for latency-sensitive concurrency observations, [Live session implementation review](live-session-implementation-review.md) for implementation evidence, tests, docs, and limitations, and [Live session dependency and runtime review](live-session-dependency-runtime-review.md) for the reviewed package/runtime boundaries.
 
 ## Session WebSocket route and hello/auth
 
@@ -466,7 +466,7 @@ This model is the state stored in the in-memory session store and written as loc
 
 Snapshot writes serialize the complete JSON in memory, write a unique temp file in the same session directory, flush and close it, rename it over `snapshot.json`, best-effort flush the directory, and remove the temp file on failures before publish.
 
-Snapshot reads use the same session-scoped path, parse the latest `snapshot.json`, validate the persisted envelope, schema versions, session ID, revisions, timestamps, authoritative state arrays, presence actors, players, assignments, visible/controllable resources, and cross-check that the envelope and state refer to the requested session/revision. `recoverSessionStateFromSnapshot` returns the validated `AuthoritativeSessionState` for reconnect or restart paths, or a typed failure such as `not-found`, `invalid-json`, or `invalid-shape`; it never reconstructs live authority from client autosave state. The final source/doc review for this boundary is recorded in the [Live session persistence/recovery audit](live-session-persistence-recovery-audit.md).
+Snapshot reads use the same session-scoped path, parse the latest `snapshot.json`, validate the persisted envelope, schema versions, session ID, revisions, timestamps, authoritative state arrays, presence actors, players, assignments, visible/controllable resources, and cross-check that the envelope and state refer to the requested session/revision. `recoverSessionStateFromSnapshot` returns the validated `AuthoritativeSessionState` for reconnect or restart paths, or a typed failure such as `not-found`, `invalid-json`, or `invalid-shape`; it never reconstructs live authority from client autosave state. The source/doc review for this boundary is recorded in the [Live session persistence/recovery audit](live-session-persistence-recovery-audit.md).
 
 ## Optional local event log
 
@@ -521,7 +521,7 @@ After session hosting is enabled and a GM/player has session-local identity, the
 }
 ```
 
-The server validates the identity and replies with a server `hello`. The reply authenticates the socket, reports the current revision, and records whether the connection resumed. If `reconnect` is true and the client's `lastSeenRevision` already matches the current authoritative revision, `snapshotRequired` is false and no snapshot is sent. If the client omits `lastSeenRevision`, reports an older revision, or reports a future revision the server cannot prove safe, event replay is treated as unavailable in this slice and `snapshotRequired` is true. An actor-scoped authoritative `snapshot` message follows the server `hello` with `reason: "reconnect"` and `replayAvailable: false`.
+The server validates the identity and replies with a server `hello`. The reply authenticates the socket, reports the current revision, and records whether the connection resumed. If `reconnect` is true and the client's `lastSeenRevision` already matches the current authoritative revision, `snapshotRequired` is false and no snapshot is sent. If the client omits `lastSeenRevision`, reports an older revision, or reports a future revision the server cannot prove safe, event replay is treated as unavailable in the current implementation and `snapshotRequired` is true. An actor-scoped authoritative `snapshot` message follows the server `hello` with `reason: "reconnect"` and `replayAvailable: false`.
 
 ```json
 {
@@ -545,7 +545,7 @@ The server validates the identity and replies with a server `hello`. The reply a
 }
 ```
 
-Because event replay is not available in this slice, the server then sends the current authoritative snapshot view to the reconnecting peer. GM clients receive the full server-owned state; player clients receive only their own player/assignment records and map documents for maps assigned visible to that player.
+Because event replay is not available in the current implementation, the server then sends the current authoritative snapshot view to the reconnecting peer. GM clients receive the full server-owned state; player clients receive only their own player/assignment records and map documents for maps assigned visible to that player.
 
 ```json
 {

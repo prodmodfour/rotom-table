@@ -1,6 +1,6 @@
 # Live session table action command reference
 
-This guide documents the server-authoritative table action commands for live sessions. It is the reviewer-facing inventory for HP, combat-stage, condition, move/action, initiative, hazard, field-effect, and terrain command flows after the reviewed implementation span.
+This guide documents the server-authoritative table action commands for live sessions. It is the developer-facing inventory for HP, combat-stage, condition, move/action, initiative, hazard, field-effect, and terrain command flows in the current implementation.
 
 The architecture remains the locked Live session model: a GM-hosted local server, explicit session-host runtime flag, WebSocket command transport, session-local identity, server-owned revisions, local JSON snapshots, and small same-session patches instead of live-client whole-map autosaves.
 

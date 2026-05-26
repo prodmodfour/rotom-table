@@ -163,9 +163,9 @@ npm run check:move-automation
 
 Until the explicit registry is complete, unregistered moves remain visible but disabled in the map move menu instead of falling back to manual resolution.
 
-## Recommended next implementation slice
+## Recommended next implementation area
 
 1. Add explicit script modules in small reviewed batches.
 2. Run `npm run check:move-automation` in CI once the explicit registry is expected to be complete.
-3. Implement small reviewed slices of deliberately varied explicit scripts: plain attacks, status-only moves, multi-target area attacks, shields/interrupts, weather/terrain moves, and copy/random moves.
+3. Implement small reviewed areas of deliberately varied explicit scripts: plain attacks, status-only moves, multi-target area attacks, shields/interrupts, weather/terrain moves, and copy/random moves.
 4. Continue until every canonical move has a reviewed explicit script.

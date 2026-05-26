@@ -208,7 +208,7 @@ A reconnecting client sends another `hello` with `reconnect: true` and its `last
 }
 ```
 
-If the client is current, the server can answer with `snapshotRequired: false`. If the client is missing revisions, omits a revision, or reports a future revision that the server cannot prove safe, this slice treats replay as unavailable and follows the server `hello` with a `snapshot` message:
+If the client is current, the server can answer with `snapshotRequired: false`. If the client is missing revisions, omits a revision, or reports a future revision that the server cannot prove safe, the current implementation treats replay as unavailable and follows the server `hello` with a `snapshot` message:
 
 ```json
 {
@@ -538,7 +538,7 @@ No session data should be sent to a socket before hello/auth, and no presence, p
 
 ## Named Cloudflare Tunnel expectations
 
-LAN remains the primary supported live session hosting path. For same-Wi-Fi startup commands, IP discovery, player browser paths, and network troubleshooting, use the [Live session LAN hosting runbook](live-session-lan-hosting.md). The recorded this review LAN browser-client pass is in [Live session LAN manual smoke results](live-session-lan-manual-smoke-results.md). For remote players, use the [Live session named Cloudflare Tunnel runbook](live-session-cloudflare-tunnel-hosting.md): the supported path is a named Cloudflare Tunnel with a stable hostname pointing to the private GM-hosted Rotom Table server. The this review [Live session named tunnel documentation review](live-session-named-tunnel-documentation-review.md) records the current Cloudflare assumptions and safety-warning pass for that runbook. For the end-to-end deployment smoke that exercises two players, reconnect, token movement, initiative, and conflict rejection in either mode, use the [Live session deployment smoke checklist](live-session-deployment-smoke-checklist.md). For final latency-sensitive behaviour observations and limitations, see the [Live session concurrency benchmark notes](live-session-concurrency-benchmark-notes.md).
+LAN remains the primary supported live session hosting path. For same-Wi-Fi startup commands, IP discovery, player browser paths, and network troubleshooting, use the [Live session LAN hosting runbook](live-session-lan-hosting.md). The recorded LAN browser-client pass is in [Live session LAN manual smoke results](live-session-lan-manual-smoke-results.md). For remote players, use the [Live session named Cloudflare Tunnel runbook](live-session-cloudflare-tunnel-hosting.md): the supported path is a named Cloudflare Tunnel with a stable hostname pointing to the private GM-hosted Rotom Table server. The [Live session named tunnel documentation review](live-session-named-tunnel-documentation-review.md) records the current Cloudflare assumptions and safety-warning pass for that runbook. For the end-to-end deployment smoke that exercises two players, reconnect, token movement, initiative, and conflict rejection in either mode, use the [Live session deployment smoke checklist](live-session-deployment-smoke-checklist.md). For latency-sensitive behaviour observations and limitations, see the [Live session concurrency benchmark notes](live-session-concurrency-benchmark-notes.md).
 
 WebSocket-specific expectations for that named tunnel:
 
@@ -579,7 +579,7 @@ This automated fake-peer smoke test complements the local browser helper in [Liv
 
 ## Integrated command audit coverage
 
-`tests/server/sessionIntegratedCommandAudit.test.ts` is the final-audit fake-peer command pass documented in [Live session integrated command audit](live-session-command-audit.md). It keeps the same server-authoritative WebSocket path and audits one GM, two same-session players, and one unrelated-session peer across accepted `moveToken`, `turnToken`, `modifyHp`, `modifyConditions`, and `nextInitiative` commands; same-session patch fanout; cross-session isolation; an unauthorized view-only player rejection; stale same-token movement rejection; and reconnect snapshot fallback with player filtering. The final [Live session concurrency benchmark notes](live-session-concurrency-benchmark-notes.md) summarize the latency-sensitive command path, heartbeat/reconnect observations, and known scaling limits around that evidence.
+`tests/server/sessionIntegratedCommandAudit.test.ts` is the fake-peer command pass documented in [Live session integrated command audit](live-session-command-audit.md). It keeps the same server-authoritative WebSocket path and audits one GM, two same-session players, and one unrelated-session peer across accepted `moveToken`, `turnToken`, `modifyHp`, `modifyConditions`, and `nextInitiative` commands; same-session patch fanout; cross-session isolation; an unauthorized view-only player rejection; stale same-token movement rejection; and reconnect snapshot fallback with player filtering. The [Live session concurrency benchmark notes](live-session-concurrency-benchmark-notes.md) summarize the latency-sensitive command path, heartbeat/reconnect observations, and known scaling limits around that evidence.
 
 ## Related docs
 

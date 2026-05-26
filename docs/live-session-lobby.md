@@ -1,10 +1,10 @@
 # live session lobby and manual QA
 
-This guide documents the current Live session lobby slice: how a GM starts a guarded session, how a player joins with a session-local display name, how the minimal lobby should behave on a LAN, and how to manually smoke-test the flow with two browsers.
+This guide documents the current live session lobby flow: how a GM starts a guarded session, how a player joins with a session-local display name, how the minimal lobby should behave on a LAN, and how to manually smoke-test the flow with two browsers.
 
 It is intentionally scoped to the identity/join/lobby surface. For guarded startup helpers, see the [live session host runtime scripts](live-session-host-runtime.md). For no-secret warnings around public/LAN exposure before session-local credentials and authoritative state are ready, see [Live session public exposure checks](live-session-public-exposure-checks.md). For same-Wi-Fi setup commands, IP discovery, player browser URLs, and cross-device troubleshooting, see the [Live session LAN hosting runbook](live-session-lan-hosting.md). For stable-hostname remote setup, WebSocket considerations, safety warnings, and rollback steps, see the [Live session named Cloudflare Tunnel runbook](live-session-cloudflare-tunnel-hosting.md). For the fuller two-player LAN/named-tunnel smoke covering reconnect, token movement, initiative, and conflict rejection, see the [Live session deployment smoke checklist](live-session-deployment-smoke-checklist.md). For temporary `trycloudflare.com` smoke-test caveats and legacy SSE limitations, see the [Live session Quick Tunnel caveat](live-session-quick-tunnel-caveat.md). For the client-integration smoke that opens explicit GM/player session-map tabs and checks basic token command propagation, see [Live session multi-tab local smoke script](live-session-multi-tab-smoke.md).
 
-## What exists in this slice
+## Current lobby behaviour
 
 - `/sessions` is an additive lobby route. It does not replace the existing `/login` trust picker or local-first map/sheet workflows.
 - Map routes expose a compact **Table session** panel in the map navigation rail with links to `/sessions#gm-lobby-title`, `/sessions#player-lobby-title`, and an explicit `/maps/<slug>?session=1` session-mode view for the current map.
@@ -36,9 +36,9 @@ Important boundaries:
 - Player display names are labels; duplicate names may exist because identity comes from generated `playerId` and `clientId` values.
 - The browser continuity cookie is only a non-secret hint. GM keys and join codes must not be placed in cookies or committed to docs/logs.
 
-## Expected LAN usage for the lobby slice
+## Expected LAN usage for the lobby
 
-For detailed same-network setup and troubleshooting, use the [Live session LAN hosting runbook](live-session-lan-hosting.md). For the current lobby slice, the expected table shape is still GM-hosted and LAN-first:
+For detailed same-network setup and troubleshooting, use the [Live session LAN hosting runbook](live-session-lan-hosting.md). For the current lobby, the expected table shape is still GM-hosted and LAN-first:
 
 1. The GM runs Rotom Table on their own machine or a small machine they control.
 2. Session hosting is explicitly enabled with `ROTOM_ENABLE_SESSION_HOST=1`, typically via `npm run dev:session:lan` for LAN smoke testing.

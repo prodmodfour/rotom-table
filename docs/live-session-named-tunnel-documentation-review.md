@@ -1,6 +1,6 @@
 # Live session named tunnel documentation review
 
-This review reviewed the Live session named Cloudflare Tunnel documentation for accuracy, current Cloudflare assumptions, and safety warnings. This is a documentation/audit record, not a live remote smoke result. No real Cloudflare account, hostname, tunnel token, join code, GM key, snapshot, event log, private map, private sheet, or `.env` file was used or recorded.
+This document records a review of the Live session named Cloudflare Tunnel documentation for accuracy, current Cloudflare assumptions, and safety warnings. It is documentation evidence, not a live remote smoke result. No real Cloudflare account, hostname, tunnel token, join code, GM key, snapshot, event log, private map, private sheet, or `.env` file was used or recorded.
 
 ## Review outcome
 
@@ -72,4 +72,4 @@ Use this short checklist in addition to the runbook:
 
 ## Boundaries
 
-This review does not add a Cloudflare dependency, change runtime code, create a tunnel, run a live public hostname, or claim production-grade public hardening. It only records that the named-tunnel documentation is accurate for the supported Live session remote path and that remaining environment-specific verification belongs in the deployment smoke checklist.
+This document does not add a Cloudflare dependency, change runtime code, create a tunnel, run a live public hostname, or claim production-grade public hardening. It records that the named-tunnel documentation is accurate for the supported Live session remote path and that remaining environment-specific verification belongs in the deployment smoke checklist.

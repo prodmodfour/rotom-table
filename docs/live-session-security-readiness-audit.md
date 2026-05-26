@@ -1,6 +1,6 @@
 # Live session security readiness audit
 
-This review records the final Live session security audit after the command, hosting, LAN smoke, named-tunnel documentation, and local-mode no-regression passes landed. It should be read with the [Live session security review](live-session-security-review.md), [public exposure checks](live-session-public-exposure-checks.md), [deployment smoke checklist](live-session-deployment-smoke-checklist.md), [LAN manual smoke results](live-session-lan-manual-smoke-results.md), [named tunnel documentation review](live-session-named-tunnel-documentation-review.md), [local-mode no-regression audit](live-session-local-mode-no-regression-audit.md), and [session backup and recovery runbook](live-session-backup-recovery.md).
+This review records the current Live session security posture for the command, hosting, LAN smoke, named-tunnel documentation, and local-mode no-regression boundaries. It should be read with the [Live session security review](live-session-security-review.md), [public exposure checks](live-session-public-exposure-checks.md), [deployment smoke checklist](live-session-deployment-smoke-checklist.md), [LAN manual smoke results](live-session-lan-manual-smoke-results.md), [named tunnel documentation review](live-session-named-tunnel-documentation-review.md), [local-mode no-regression audit](live-session-local-mode-no-regression-audit.md), and [session backup and recovery runbook](live-session-backup-recovery.md).
 
 Audit date: 2026-05-26
 
@@ -37,13 +37,13 @@ The audit intentionally did not harden legacy local-first routes for arbitrary p
 | Same-session fanout and leakage | Pass. Presence, command acks/rejections, patches, and reconnect snapshots target authenticated peers in the same session and do not fan out to unrelated sessions. | `server/utils/sessionWebSocketFanout.ts`, `tests/server/sessionWebSocketFanout.test.ts`, `tests/server/sessionWebSocketTransport.test.ts`, and `tests/server/sessionIntegratedCommandAudit.test.ts`. |
 | Public exposure warnings | Pass. The no-secret safety endpoint/banner reports disabled/local/LAN/remote exposure and startup readiness without returning GM keys, join codes, player IDs, session IDs, snapshots, maps, tunnel credentials, or private campaign data. | `server/api/sessions/safety.get.ts`, `shared/sessionSafety.ts`, `src/pages/sessions.vue`, `docs/live-session-public-exposure-checks.md`, `tests/shared/sessionSafety.test.ts`, and `tests/server/sessionSafetyEndpoint.test.ts`. |
 | Hosting runbooks | Pass. LAN remains primary, named Cloudflare Tunnel remains the supported remote path, and Quick Tunnel remains development smoke-test only. | `docs/live-session-lan-hosting.md`, `docs/live-session-cloudflare-tunnel-hosting.md`, `docs/live-session-quick-tunnel-caveat.md`, `docs/live-session-named-tunnel-documentation-review.md`, and `docs/live-session-deployment-smoke-checklist.md`. |
-| Data and secret hygiene | Pass for this audit. No generated/private map or sheet data, session snapshots, event logs, tunnel credentials, tokens, private keys, real `.env` files, GM keys, or real join codes were added. | `.gitignore`, `docs/live-session-storage.md`, `docs/live-session-backup-recovery.md`, `docs/live-session-security-review.md`, and the this review repository status check before finalization. |
+| Data and secret hygiene | Pass. Generated/private map or sheet data, session snapshots, event logs, tunnel credentials, tokens, private keys, real `.env` files, GM keys, and real join codes must stay out of tracked files. | `.gitignore`, `docs/live-session-storage.md`, `docs/live-session-backup-recovery.md`, `docs/live-session-security-review.md`, and the repository hygiene guidance in this review. |
 
 Representative WebSocket command-dispatch evidence includes `tests/server/sessionMoveTokenWebSocketDispatch.test.ts`, `tests/server/sessionModifyHpWebSocketDispatch.test.ts`, `tests/server/sessionInitiativeWebSocketDispatch.test.ts`, and `tests/server/sessionTerrainWebSocketDispatch.test.ts` in addition to the integrated multi-client audit.
 
 ## Auth and session authority findings
 
-The final source review confirms that Live session authority is separate from the local trust picker:
+The source review confirms that Live session authority is separate from the local trust picker:
 
 - The existing `/login` page remains a local GM/player trust switch for non-session app navigation. It is still not public authentication.
 - `POST /api/sessions/start` calls `assertSessionHostEnabled()` and then `requireGm(event)` before creating the GM session. This keeps accidental disabled/default startup fail-closed and preserves the local GM start boundary.
@@ -81,7 +81,7 @@ The accepted limitation is that command-specific bugs could still exist. Live se
 
 ## Public exposure findings
 
-The final public-exposure review confirms the warnings remain aligned with the locked hosting model:
+The public-exposure review confirms the warnings remain aligned with the locked hosting model:
 
 - Plain `npm run dev` remains local-first and does not enable session hosting.
 - `npm run dev:session:lan` explicitly enables the runtime flag and binds to `0.0.0.0` for same-Wi-Fi/LAN play.
@@ -105,9 +105,9 @@ These limitations are still explicit and acceptable for Live session:
 - no browser-owned recovery authority from local storage, screenshots, stale optimistic state, or copied map JSON;
 - no Quick Tunnel campaign hosting and no legacy SSE session command transport.
 
-If Rotom Table later targets public hosting, that must be a separate architecture track with real authentication, route-by-route authorization, rate limiting, hosted persistence decisions, backup encryption, secret management, incident response, and content/asset rights review.
+If Rotom Table later targets public hosting, that must be a separate architecture effort with real authentication, route-by-route authorization, rate limiting, hosted persistence decisions, backup encryption, secret management, incident response, and content/asset rights review.
 
-## Final security checklist
+## Security checklist
 
 - [x] Session hosting is disabled by default and requires the exact `ROTOM_ENABLE_SESSION_HOST=1` opt-in.
 - [x] The local `/login` GM/player picker is still documented as a trust switch, not public authentication.
@@ -119,7 +119,7 @@ If Rotom Table later targets public hosting, that must be a separate architectur
 - [x] Public exposure warnings cover disabled, local, LAN, remote/tunnel, and missing-session-readiness states without returning secrets.
 - [x] LAN remains primary, named Cloudflare Tunnel remains the supported remote path, and Quick Tunnel remains dev smoke-test only.
 - [x] Remaining public-service hardening work is documented as out of scope rather than hidden behind session-local identity.
-- [x] No real secrets, tunnel credentials, snapshots, event logs, private campaign files, or generated/private sheet data were added by this audit.
+- [x] No real secrets, tunnel credentials, snapshots, event logs, private campaign files, or generated/private sheet data are present in tracked files.
 
 ## Operator reminder
 

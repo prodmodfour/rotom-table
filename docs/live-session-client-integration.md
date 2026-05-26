@@ -1,8 +1,8 @@
 # Live session client integration guide
 
-This guide explains how the current Live session client slice lets local-first map editing and session-authoritative play coexist. It also gives player-safe recovery steps for disconnects, stale state, and command conflicts.
+This guide explains how the current Live session client integration lets local-first map editing and session-authoritative play coexist. It also gives player-safe recovery steps for disconnects, stale state, and command conflicts.
 
-It is not a LAN runbook, named Cloudflare Tunnel runbook, public authentication guide, or deployment hardening checklist. Hosting operations remain separate; this document focuses on what a browser sees after the GM has explicitly enabled session hosting and started or joined a table session. For guarded startup helpers, see the [live session host runtime scripts](live-session-host-runtime.md). For remote setup with a stable hostname, see the [Live session named Cloudflare Tunnel runbook](live-session-cloudflare-tunnel-hosting.md). For the two-player LAN/named-tunnel smoke covering reconnect, token movement, initiative, and conflict rejection, see the [Live session deployment smoke checklist](live-session-deployment-smoke-checklist.md); for the recorded this review LAN browser-client smoke, see [Live session LAN manual smoke results](live-session-lan-manual-smoke-results.md). For temporary `trycloudflare.com` smoke-test caveats and legacy SSE limitations, see the [Live session Quick Tunnel caveat](live-session-quick-tunnel-caveat.md).
+It is not a LAN runbook, named Cloudflare Tunnel runbook, public authentication guide, or deployment hardening checklist. Hosting operations remain separate; this document focuses on what a browser sees after the GM has explicitly enabled session hosting and started or joined a table session. For guarded startup helpers, see the [live session host runtime scripts](live-session-host-runtime.md). For remote setup with a stable hostname, see the [Live session named Cloudflare Tunnel runbook](live-session-cloudflare-tunnel-hosting.md). For the two-player LAN/named-tunnel smoke covering reconnect, token movement, initiative, and conflict rejection, see the [Live session deployment smoke checklist](live-session-deployment-smoke-checklist.md); for the recorded LAN browser-client smoke, see [Live session LAN manual smoke results](live-session-lan-manual-smoke-results.md). For temporary `trycloudflare.com` smoke-test caveats and legacy SSE limitations, see the [Live session Quick Tunnel caveat](live-session-quick-tunnel-caveat.md).
 
 ## Short version
 
@@ -107,7 +107,7 @@ For retryable stale/conflict cases, prefer the banner refresh action before retr
 
 ## Manual verification
 
-Use the local multi-tab smoke helper when validating this client-integration slice:
+Use the local multi-tab smoke helper when validating this client integration path:
 
 ```bash
 npm run dev:session:lan
@@ -116,7 +116,7 @@ npm run smoke:session:multi-tab -- --map <map-slug>
 
 The helper opens or prints the GM lobby, player lobby, plain local map route, and explicit session map route. The corresponding [multi-tab smoke checklist](live-session-multi-tab-smoke.md) covers token propagation, rejection/reconnect guidance, local-mode comparison, and cleanup without committing private runtime data. For cross-device same-Wi-Fi setup and troubleshooting, use the [Live session LAN hosting runbook](live-session-lan-hosting.md). For remote players over a stable hostname, use the [Live session named Cloudflare Tunnel runbook](live-session-cloudflare-tunnel-hosting.md). Do not use Quick Tunnel for campaign play; see the [Live session Quick Tunnel caveat](live-session-quick-tunnel-caveat.md) for the temporary development-only boundary.
 
-The final local-mode regression review is recorded in [Live session local-mode no-regression audit](live-session-local-mode-no-regression-audit.md), which cross-checks the plain map/sheet workflows, legacy SSE, local autosave, and explicit `?session=1` opt-in boundary after Live session landed.
+The local-mode regression review is recorded in [Live session local-mode no-regression audit](live-session-local-mode-no-regression-audit.md), which cross-checks the plain map/sheet workflows, legacy SSE, local autosave, and explicit `?session=1` opt-in boundary for live-session mode.
 
 Focused automated coverage currently lives in:
 

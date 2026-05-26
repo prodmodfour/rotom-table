@@ -48,21 +48,21 @@ npm run build
 - [docs/live-session-public-exposure-checks.md](docs/live-session-public-exposure-checks.md) — no-secret safety banner checks for unsafe public/LAN startup states before sharing join codes.
 - [docs/live-session-lan-hosting.md](docs/live-session-lan-hosting.md) — same-Wi-Fi/LAN hosting runbook with startup commands, IP discovery, player URLs, and troubleshooting.
 - [docs/live-session-cloudflare-tunnel-hosting.md](docs/live-session-cloudflare-tunnel-hosting.md) — named Cloudflare Tunnel runbook with stable hostname setup, session socket considerations, safety warnings, and rollback steps.
-- [docs/live-session-named-tunnel-documentation-review.md](docs/live-session-named-tunnel-documentation-review.md) — final audit review of named-tunnel doc accuracy, current Cloudflare assumptions, and safety warnings.
+- [docs/live-session-named-tunnel-documentation-review.md](docs/live-session-named-tunnel-documentation-review.md) — named-tunnel doc accuracy, current Cloudflare assumptions, and safety warnings.
 - [docs/live-session-deployment-smoke-checklist.md](docs/live-session-deployment-smoke-checklist.md) — LAN and named-tunnel deployment smoke checklist for two players, reconnect, token movement, initiative, and conflict rejection.
 - [docs/live-session-lan-manual-smoke-results.md](docs/live-session-lan-manual-smoke-results.md) — recorded LAN browser-client smoke results for guarded startup, two-player join, session socket presence, reconnect, and cleanup.
 - [docs/live-session-command-audit.md](docs/live-session-command-audit.md) — integrated multi-client command audit covering accepted commands, reconnect, permissions, and stale conflicts.
-- [docs/live-session-concurrency-benchmark-notes.md](docs/live-session-concurrency-benchmark-notes.md) — final multi-client concurrency behaviour, latency-sensitive path, and performance limitation notes.
+- [docs/live-session-concurrency-benchmark-notes.md](docs/live-session-concurrency-benchmark-notes.md) — multi-client concurrency behaviour, latency-sensitive path, and performance limitation notes.
 - [docs/live-session-implementation-review.md](docs/live-session-implementation-review.md) — implementation review linking product docs, source areas, validation evidence, and known limitations.
 - [docs/live-session-readiness-summary.md](docs/live-session-readiness-summary.md) — product/developer readiness summary for validation, evidence links, and architecture confirmation.
-- [docs/live-session-local-mode-no-regression-audit.md](docs/live-session-local-mode-no-regression-audit.md) — final local-first no-regression audit for plain map/sheet workflows, legacy SSE, and session-mode opt-in boundaries.
+- [docs/live-session-local-mode-no-regression-audit.md](docs/live-session-local-mode-no-regression-audit.md) — local-first no-regression audit for plain map/sheet workflows, legacy SSE, and session-mode opt-in boundaries.
 - [docs/live-session-quick-tunnel-caveat.md](docs/live-session-quick-tunnel-caveat.md) — Quick Tunnel caveats for temporary development smoke tests only, including legacy SSE limitations.
 - [docs/live-session-multi-tab-smoke.md](docs/live-session-multi-tab-smoke.md) — local multi-tab helper for GM/player session-mode token propagation smoke checks.
 - [docs/live-session-storage.md](docs/live-session-storage.md) — local session snapshot/event-log paths, privacy boundaries, backup guidance, and recovery limits.
 - [docs/live-session-backup-recovery.md](docs/live-session-backup-recovery.md) — private session backup/restore runbook for snapshots, optional event logs, and referenced campaign data.
-- [docs/live-session-persistence-recovery-audit.md](docs/live-session-persistence-recovery-audit.md) — final persistence/recovery audit for snapshots, optional event logs, backup docs, cleanup, and local data hygiene.
+- [docs/live-session-persistence-recovery-audit.md](docs/live-session-persistence-recovery-audit.md) — persistence/recovery audit for snapshots, optional event logs, backup docs, cleanup, and local data hygiene.
 - [docs/live-session-security-review.md](docs/live-session-security-review.md) — trust boundaries, join-code limits, tunnel exposure risks, non-hardened areas, and live session security non-goals.
-- [docs/live-session-security-readiness-audit.md](docs/live-session-security-readiness-audit.md) — Final session security audit for auth/session/cookie/permission boundaries, public exposure warnings, and remaining non-goals.
+- [docs/live-session-security-readiness-audit.md](docs/live-session-security-readiness-audit.md) — session security readiness review for auth/session/cookie/permission boundaries, public exposure warnings, and remaining non-goals.
 - [docs/live-session-dependency-runtime-review.md](docs/live-session-dependency-runtime-review.md) — live session dependency inventory, runtime flags, Node/Nitro compatibility, and Cloudflare tunnel assumptions.
 - [docs/local-development.md](docs/local-development.md) — local setup, scripts, and filesystem persistence notes.
 - [docs/fan-project-notice.md](docs/fan-project-notice.md) — fan project and ownership boundaries.

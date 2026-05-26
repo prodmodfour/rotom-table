@@ -1,8 +1,8 @@
 # Live session dependency and runtime review
 
-This review records the dependency, Node/Nitro runtime, and Cloudflare Tunnel assumptions for the live session hosting-hardening slice. It should be read with the [session host runtime scripts](live-session-host-runtime.md), [LAN hosting runbook](live-session-lan-hosting.md), [named Cloudflare Tunnel runbook](live-session-cloudflare-tunnel-hosting.md), [deployment smoke checklist](live-session-deployment-smoke-checklist.md), [Quick Tunnel caveat](live-session-quick-tunnel-caveat.md), and [security review](live-session-security-review.md).
+This review records the dependency, Node/Nitro runtime, and Cloudflare Tunnel assumptions for live session hosting. It should be read with the [session host runtime scripts](live-session-host-runtime.md), [LAN hosting runbook](live-session-lan-hosting.md), [named Cloudflare Tunnel runbook](live-session-cloudflare-tunnel-hosting.md), [deployment smoke checklist](live-session-deployment-smoke-checklist.md), [Quick Tunnel caveat](live-session-quick-tunnel-caveat.md), and [security review](live-session-security-review.md).
 
-Live session remains a GM-hosted table session. This review does not add a package, a database, a cloud service, a public auth provider, or a new deployment target.
+Live session remains a GM-hosted table session. It does not require a package, a database, a cloud service, a public auth provider, or a new deployment target.
 
 ## Review outcome
 

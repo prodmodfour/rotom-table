@@ -1,6 +1,6 @@
 # Live session LAN manual smoke results
 
-This document records the this review LAN browser smoke pass. It is evidence from one local test host; it does not replace the operator [Live session LAN hosting runbook](live-session-lan-hosting.md) or the broader [Live session deployment smoke checklist](live-session-deployment-smoke-checklist.md) that a GM should run with their real table network and campaign data.
+This document records a LAN browser smoke pass. It is evidence from one local test host; it does not replace the operator [Live session LAN hosting runbook](live-session-lan-hosting.md) or the broader [Live session deployment smoke checklist](live-session-deployment-smoke-checklist.md) that a GM should run with their real table network and campaign data.
 
 The smoke preserved the locked Live session shape: the GM hosted Rotom Table with the explicit runtime gate, browser clients connected over the LAN-bound origin, live session traffic used `WebSocket /api/sessions/socket`, reconnect recovered from server authority, and no generated session snapshots, join codes, GM keys, or private campaign data were committed.
 
@@ -14,13 +14,13 @@ The smoke preserved the locked Live session shape: the GM hosted Rotom Table wit
 | Player-facing URL shape | `http://<private-LAN-IP>:31091` |
 | Browser clients | Three separate Chromium browser contexts: `GM browser`, `Player A browser`, and `Player B browser` |
 | Session credentials in notes | Redacted; only the join-code length was recorded (`8 characters`) |
-| Final status | Passed for LAN lobby reachability, two-player join, WebSocket hello/presence, reconnect snapshot fallback, and data-hygiene cleanup |
+| Status | Passed for LAN lobby reachability, two-player join, WebSocket hello/presence, reconnect snapshot fallback, and data-hygiene cleanup |
 
 Notes:
 
-- The local smoke-test harness used separate browser contexts on the same host through the private LAN interface because no physical second device is available inside the release process.
+- The local smoke-test harness used separate browser contexts on the same host through the private LAN interface because the recorded test environment had no physical second device available.
 - Real table operators should still run the deployment checklist from actual player devices before relying on a campaign session.
-- Accepted table command propagation is covered by the integrated command audit in [Live session integrated command audit](live-session-command-audit.md), with final latency-sensitive behaviour and limitations summarized in [Live session concurrency benchmark notes](live-session-concurrency-benchmark-notes.md), and remains part of the full deployment checklist.
+- Accepted table command propagation is covered by the integrated command audit in [Live session integrated command audit](live-session-command-audit.md), with latency-sensitive behaviour and limitations summarized in [Live session concurrency benchmark notes](live-session-concurrency-benchmark-notes.md), and remains part of the full deployment checklist.
 
 ## Steps observed
 
@@ -33,7 +33,7 @@ Notes:
 | WebSocket hello | Each browser client opens the same-origin session socket and receives a server hello | GM, Player A, and Player B each opened `ws://<private-LAN-IP>:31091/api/sessions/socket` and received server `hello` messages at revision `2` after the two joins. |
 | Presence fanout | Same-session socket clients receive presence updates without cross-session leakage | Same-session `presence` messages were observed in the browser WebSocket message buffers after the three hellos. No unrelated session was opened in this LAN smoke. |
 | Reconnect snapshot fallback | A reconnecting player with a stale revision receives a server-authoritative snapshot fallback | Player B closed the socket and reconnected with stale `lastSeenRevision: 0`; the server replied with `snapshotRequired: true` and a `snapshot` message with `reason: "reconnect"` at revision `2`. |
-| Browser errors | No visible page crash or client console failure during the pass | The three browser contexts reported no page errors and no warning/error console messages during the final smoke run. |
+| Browser errors | No visible page crash or client console failure during the pass | The three browser contexts reported no page errors and no warning/error console messages during the recorded smoke run. |
 | Data hygiene | Local runtime data is cleaned up and not staged | The dev server was stopped, generated `data/sessions/` snapshots were removed from the checkout, and no join code, GM key, session ID, snapshot, private map, or `.env` file was staged. |
 
 ## Runtime regression found and fixed during the pass

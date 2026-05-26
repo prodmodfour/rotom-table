@@ -13,10 +13,10 @@ describe('Live session named tunnel documentation review', () => {
   const review = readText('docs/live-session-named-tunnel-documentation-review.md')
   const runbook = readText('docs/live-session-cloudflare-tunnel-hosting.md')
 
-  it('records the this review review outcome and scope', () => {
-    expect(review).toContain('This review')
+  it('records the documentation review outcome and scope', () => {
+    expect(review).toContain('This document records a review')
     expect(review).toContain('Outcome: pass for documentation accuracy as of 2026-05-26')
-    expect(review).toContain('documentation/audit record, not a live remote smoke result')
+    expect(review).toContain('documentation evidence, not a live remote smoke result')
     expect(review).toContain('No real Cloudflare account, hostname, tunnel token, join code, GM key, snapshot, event log')
     expect(review).toContain('The review did not run a live public tunnel')
     expect(review).toContain('requires a real Cloudflare account, DNS zone, and stable hostname')
@@ -81,7 +81,7 @@ describe('Live session named tunnel documentation review', () => {
   })
 
   it('updates the named tunnel runbook with the review status', () => {
-    expect(runbook).toContain('This review review status')
+    expect(runbook).toContain('Documentation review status')
     expect(runbook).toContain('reviewed on 2026-05-26 against official Cloudflare docs')
     expect(runbook).toContain('Live session named tunnel documentation review](live-session-named-tunnel-documentation-review.md)')
     expect(runbook).toContain('The review did not run a live public tunnel')

@@ -1,6 +1,6 @@
 # Live session integrated multi-client command audit
 
-This audit records the final Live session command-flow pass for the GM-hosted session model. It is an automated fake-WebSocket audit, not a public-hosting or LAN smoke pass; the LAN/manual deployment checks are covered by [Live session deployment smoke checklist](live-session-deployment-smoke-checklist.md), [Live session LAN manual smoke results](live-session-lan-manual-smoke-results.md), and the final audit docs.
+This audit records the current Live session command-flow review for the GM-hosted session model. It is an automated fake-WebSocket audit, not a public-hosting or LAN smoke pass; the LAN/manual deployment checks are covered by [Live session deployment smoke checklist](live-session-deployment-smoke-checklist.md), [Live session LAN manual smoke results](live-session-lan-manual-smoke-results.md), and the product readiness docs.
 
 Audit date: 2026-05-26
 
@@ -45,4 +45,4 @@ This audit complements, but does not replace:
 - [Live session concurrency benchmark notes](live-session-concurrency-benchmark-notes.md) for latency-sensitive behaviour observations and performance limitations;
 - [Live session security readiness audit](live-session-security-readiness-audit.md) for auth/session/cookie/permission boundary review;
 - [Live session persistence/recovery audit](live-session-persistence-recovery-audit.md) for snapshot/event-log and local data hygiene review;
-- [Live session implementation review](live-session-implementation-review.md) for completed implementation reviews, tests, docs, and known limitations.
+- [Live session implementation review](live-session-implementation-review.md) for implementation evidence, tests, docs, and known limitations.

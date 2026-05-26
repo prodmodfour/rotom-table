@@ -13,8 +13,8 @@ const exists = (relativePath: string): boolean => existsSync(resolve(repoRoot, r
 describe('Live session local-mode no-regression audit', () => {
   const audit = readText('docs/live-session-local-mode-no-regression-audit.md')
 
-  it('records the this review local-first audit outcome and scope', () => {
-    expect(audit).toContain('this review final audit')
+  it('records the local-first audit outcome and scope', () => {
+    expect(audit).toContain('local-first no-regression review')
     expect(audit).toContain('Audit date: 2026-05-26')
     expect(audit).toContain('Outcome: pass for the audited local-first boundaries')
     expect(audit).toContain('Plain `npm run dev` remains the default local app')

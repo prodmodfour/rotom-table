@@ -1,6 +1,6 @@
 # Live session local-mode no-regression audit
 
-This document records the this review final audit for existing local-first, non-session Rotom Table workflows after the Live session work landed. It is a local-mode/source-and-test audit, not a replacement for a GM's private campaign smoke pass.
+This document records the local-first no-regression review for existing non-session Rotom Table workflows. It is a local-mode/source-and-test audit, not a replacement for a GM's private campaign smoke pass.
 
 Audit date: 2026-05-26
 
@@ -37,7 +37,7 @@ The audit intentionally does not broaden Live session into public authentication
 
 ## Source boundary checks
 
-The final source check for this review confirmed these local/session split points:
+The source check confirmed these local/session split points:
 
 - `src/pages/maps/[slug].vue` always creates the local map with `useEditableMap(slug)` and then chooses session mode only when `isSessionModeQueryEnabled(route.query.session)` is true.
 - Local fallbacks remain present for table actions: `deletePlacement(id)`, `turnPlacement`, `movePlacement`, `nextInitiative()`, `previousInitiative()`, local HP/stage/condition sheet mutations, local `recordMoveUsage`, `placeHazard`, `removeHazard`, `placeVoxel`, `removeVoxel`, and `sendOutPokemon`.

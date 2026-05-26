@@ -1,6 +1,6 @@
 # Live session deployment smoke checklist
 
-Use this checklist before trusting a live session on either supported deployment path: same-Wi-Fi/LAN or a named Cloudflare Tunnel with a stable hostname. It is a repeatable operator checklist, not a record that a specific environment has passed; operators and final audits can copy the evidence template and fill in observed results.
+Use this checklist before trusting a live session on either supported deployment path: same-Wi-Fi/LAN or a named Cloudflare Tunnel with a stable hostname. It is a repeatable operator checklist, not a record that a specific environment has passed; operators can copy the evidence template and fill in observed results.
 
 The smoke keeps the locked Live session architecture intact: the GM runs the server, session hosting is explicitly enabled, live clients use `WebSocket /api/sessions/socket`, accepted changes are server-authoritative command patches, reconnect uses authoritative state, and runtime data stays in local JSON snapshots/event logs. Do not use this checklist to introduce public accounts, SaaS hosting, a cloud database, or whole-map browser autosave as the live concurrency model.
 
@@ -13,7 +13,7 @@ Related runbooks:
 - [Live session multi-tab local smoke script](live-session-multi-tab-smoke.md) for local tab helpers and focused automated token/client checks.
 - [Live session security review](live-session-security-review.md) for trust boundaries, join-code limits, tunnel exposure risks, and incident response.
 - [Live session dependency and runtime review](live-session-dependency-runtime-review.md) for dependency inventory, runtime flags, Node/Nitro compatibility, and Cloudflare assumptions.
-- [Live session concurrency benchmark notes](live-session-concurrency-benchmark-notes.md) for final latency-sensitive behaviour observations, operator timing buckets, and known performance limits.
+- [Live session concurrency benchmark notes](live-session-concurrency-benchmark-notes.md) for latency-sensitive behaviour observations, operator timing buckets, and known performance limits.
 
 ## Smoke scope
 

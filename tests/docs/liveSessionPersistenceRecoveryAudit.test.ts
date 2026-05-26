@@ -10,10 +10,10 @@ const repoRoot = resolve(testDir, '../..')
 const readText = (relativePath: string): string => readFileSync(resolve(repoRoot, relativePath), 'utf8')
 const exists = (relativePath: string): boolean => existsSync(resolve(repoRoot, relativePath))
 
-describe('Live session final persistence and recovery audit', () => {
+describe('Live session persistence and recovery audit', () => {
   const audit = readText('docs/live-session-persistence-recovery-audit.md')
 
-  it('records the this review persistence and recovery audit outcome and scope', () => {
+  it('records the persistence and recovery audit outcome and scope', () => {
     expect(audit).toContain('This review')
     expect(audit).toContain('Audit date: 2026-05-26')
     expect(audit).toContain('Outcome: pass for the locked Live session local-first persistence model')
@@ -145,8 +145,8 @@ describe('Live session final persistence and recovery audit', () => {
   it('keeps local data hygiene and architecture limitations explicit', () => {
     expect(audit).toContain('`.gitignore` ignores `data/sessions/`')
     expect(audit).toContain('backup archives')
-    expect(audit).toContain('This review added only documentation and a documentation/source-boundary regression test')
-    expect(audit).toContain('No database, SaaS storage, Quick Tunnel campaign path, or cloud-first persistence layer was added')
+    expect(audit).toContain('Repository changes should not add or commit generated/private maps')
+    expect(audit).toContain('No database, SaaS storage, Quick Tunnel campaign path, or cloud-first persistence layer is part of this model')
     expect(audit).toContain('Rotom Table keeps one latest `snapshot.json` per session directory')
     expect(audit).toContain('`events.jsonl` is optional and not a replacement for a valid snapshot')
     expect(audit).toContain('Backup archives are not encrypted by Rotom Table')
