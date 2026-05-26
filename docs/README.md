@@ -15,6 +15,7 @@ This directory collects presentation and reviewer documentation for Rotom Table.
 - [Track 2 validation matrix](track-2-validation-matrix.md) — expected tests, smoke checks, docs, and safety reviews for later implementation areas.
 - [Track 2 session protocol](track-2-session-protocol.md) — shared identity, command envelope, result, WebSocket message, ack/reject, duplicate, and reconnect contracts.
 - [Track 2 WebSocket protocol](track-2-websocket-protocol.md) — live session socket route, message examples, heartbeat, reconnect, command flow, and named-tunnel expectations.
+- [Track 2 table action commands](track-2-table-action-commands.md) — supported HP, condition, initiative, move/action, hazard, field-effect, and terrain session commands with permissions, conflicts, and limitations.
 - [Track 2 session lobby and manual QA](track-2-session-lobby.md) — GM/player join flow, expected LAN usage, and two-browser lobby smoke checklist.
 - [Track 2 session storage](track-2-session-storage.md) — default snapshot/event-log paths, ignored/private data boundaries, backup guidance, cleanup behaviour, and recovery limitations.
 - [ADR 001: GM-hosted session model](adrs/001-gm-hosted-session-model.md) — decision record for GM-controlled sessions instead of SaaS, public multi-tenancy, or generic collaborative editing.

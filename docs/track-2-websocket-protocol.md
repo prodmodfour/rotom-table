@@ -1,6 +1,6 @@
 # Track 2 WebSocket protocol
 
-This is the WebSocket-focused reference for the Track 2 session transport. It complements the broader [Track 2 session protocol](track-2-session-protocol.md) by collecting the live socket route, message examples, heartbeat/reconnect behaviour, command-result flow, session isolation rules, and named Cloudflare Tunnel expectations in one place.
+This is the WebSocket-focused reference for the Track 2 session transport. It complements the broader [Track 2 session protocol](track-2-session-protocol.md) and the [Track 2 table action command reference](track-2-table-action-commands.md) by collecting the live socket route, message examples, heartbeat/reconnect behaviour, command-result flow, session isolation rules, and named Cloudflare Tunnel expectations in one place.
 
 This document describes the transport slice that exists after the WebSocket transport chunk:
 
