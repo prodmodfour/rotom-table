@@ -1,5 +1,6 @@
+import pokedexData from '~~/data/reference/pokedex.json'
 import type { CharacterSheet, StatKey } from '~/types/characterSheet'
-import { getPokedexEntry } from '~~/data/characterSheets'
+import type { PokedexRecord } from '~/types/pokemon'
 import { adjustedNatureModForStat, resolveNatureMod } from '~/utils/ptuNatures'
 import { computeInjuryAdjustedMaxHp, computePokemonFormulaMaxHp } from '~/utils/ptuHp'
 import { resolveLevitateAbilitySpeed } from '~/utils/sheetPassiveAbilityEffects'
@@ -12,6 +13,13 @@ import {
   applyNumberedCapabilityBonus,
   resolveMoveGrantedCapabilities,
 } from '~/utils/sheets/pokemonMoveGrantedCapabilities'
+
+const pokedexBySpecies = new Map<string, PokedexRecord>(
+  (pokedexData as PokedexRecord[]).map((entry) => [entry.species, entry]),
+)
+
+const getPokedexEntry = (species: string): PokedexRecord | null =>
+  pokedexBySpecies.get(species) ?? null
 
 // Maps a PTU "Skill" name (as stored in pokedex.json) to the camelCase key on
 // CharacterSheetSkills, so species defaults (e.g. ``"Athletics": "3d6+1"``)

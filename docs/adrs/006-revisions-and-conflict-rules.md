@@ -137,7 +137,7 @@ Rejected for Track 2. The GM-hosted process can apply commands sequentially agai
 
 ## Validation notes
 
-Reviewers can validate this ADR by checking that later Track 2 work:
+Reviewers can validate this ADR by checking that Track 2 work:
 
 - increments revisions only for accepted authoritative commands;
 - returns idempotent results for duplicate `opId` retries without reapplying effects;

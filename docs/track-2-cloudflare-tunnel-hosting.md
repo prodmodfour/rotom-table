@@ -2,9 +2,15 @@
 
 This runbook is the supported remote-player hosting path for Track 2 table sessions. The GM still runs Rotom Table on a machine they control; a named Cloudflare Tunnel gives trusted remote players a stable HTTPS hostname that forwards to that private server.
 
-Use the [Track 2 LAN hosting runbook](track-2-lan-hosting.md) first when everyone is on the same network. Use this guide only when players are remote and the GM intentionally wants to publish a stable hostname such as `https://table.example.com` for a campaign session. For the no-secret safety banner checks that catch remote exposure before a session-local GM key, join code, and authoritative state are ready, see [Track 2 public exposure checks](track-2-public-exposure-checks.md). For the fuller two-player deployment smoke covering reconnect, token movement, initiative, and conflict rejection, see the [Track 2 deployment smoke checklist](track-2-deployment-smoke-checklist.md). For private snapshot/event-log backup and restore procedures before or after remote play, see [Track 2 session backup and recovery](track-2-session-backup-recovery.md). For trust boundaries, join-code limits, tunnel exposure risks, and non-hardened areas, see the [Track 2 security review](track-2-security-review.md). For dependency inventory, Node/Nitro compatibility, and Cloudflare tunnel assumptions, see the [Track 2 dependency and runtime review](track-2-dependency-runtime-review.md).
+Use the [Track 2 LAN hosting runbook](track-2-lan-hosting.md) first when everyone is on the same network. Use this guide only when players are remote and the GM intentionally wants to publish a stable hostname such as `https://table.example.com` for a campaign session. For the no-secret safety banner checks that catch remote exposure before a session-local GM key, join code, and authoritative state are ready, see [Track 2 public exposure checks](track-2-public-exposure-checks.md). For the fuller two-player deployment smoke covering reconnect, token movement, initiative, and conflict rejection, see the [Track 2 deployment smoke checklist](track-2-deployment-smoke-checklist.md). For the ticket 092 accuracy/current-assumptions/safety-warning pass over this guide, see the [Track 2 named tunnel documentation review](track-2-named-tunnel-documentation-review.md). For private snapshot/event-log backup and restore procedures before or after remote play, see [Track 2 session backup and recovery](track-2-session-backup-recovery.md). For trust boundaries, join-code limits, tunnel exposure risks, and non-hardened areas, see the [Track 2 security review](track-2-security-review.md). For dependency inventory, Node/Nitro compatibility, and Cloudflare tunnel assumptions, see the [Track 2 dependency and runtime review](track-2-dependency-runtime-review.md).
 
 Named tunnel hosting keeps the locked Track 2 architecture intact: one GM-hosted server owns session authority, live clients use `WebSocket /api/sessions/socket`, commands are acknowledged or rejected by the server, state is persisted as local JSON snapshots/event logs, and browsers must not autosave whole maps as the live session concurrency mechanism.
+
+## Ticket 092 review status
+
+This runbook was reviewed on 2026-05-26 against official Cloudflare docs for locally managed tunnel commands, configuration files, public-hostname routing, WebSocket support, cache rules, and tunnel credential permissions. The review found the documented CLI workflow, loopback runtime binding, ingress config, same-origin WebSocket route, no-cache guidance, optional Access/WAF boundary, credential hygiene, and rollback steps current for Track 2. See [Track 2 named tunnel documentation review](track-2-named-tunnel-documentation-review.md) for the source checklist and audit table.
+
+The review did not run a live public tunnel because that requires a real Cloudflare account, DNS zone, and stable hostname. Use the [Track 2 deployment smoke checklist](track-2-deployment-smoke-checklist.md) for environment-specific named-tunnel proof before relying on a campaign session.
 
 ## What this runbook does and does not do
 
@@ -91,7 +97,7 @@ Notes:
 
 - Use the tunnel UUID from `cloudflared tunnel create rotom-table`.
 - On Windows, use the matching credentials path for that machine instead of `/home/<you>/...`.
-- Keep this config and the credentials JSON outside `workspace/rotom-table` unless you create a redacted example file in a future docs-only change.
+- Keep this config and the credentials JSON outside `workspace/rotom-table` unless you create a redacted example file in a separate docs-only change.
 - The `service: http://localhost:3000` line points Cloudflare to the local Nuxt server. Players still use `https://table.example.com`.
 - Keep the catch-all `http_status:404` rule so unexpected hostnames do not silently route into Rotom Table.
 

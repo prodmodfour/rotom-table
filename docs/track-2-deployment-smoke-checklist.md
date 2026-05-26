@@ -1,17 +1,19 @@
 # Track 2 deployment smoke checklist
 
-Use this checklist before trusting a Track 2 table session on either supported deployment path: same-Wi-Fi/LAN or a named Cloudflare Tunnel with a stable hostname. It is a repeatable operator checklist, not a record that a specific environment has passed; later audit tickets can copy the evidence template and fill in observed results.
+Use this checklist before trusting a Track 2 table session on either supported deployment path: same-Wi-Fi/LAN or a named Cloudflare Tunnel with a stable hostname. It is a repeatable operator checklist, not a record that a specific environment has passed; operators and final audits can copy the evidence template and fill in observed results.
 
 The smoke keeps the locked Track 2 architecture intact: the GM runs the server, session hosting is explicitly enabled, live clients use `WebSocket /api/sessions/socket`, accepted changes are server-authoritative command patches, reconnect uses authoritative state, and runtime data stays in local JSON snapshots/event logs. Do not use this checklist to introduce public accounts, SaaS hosting, a cloud database, or whole-map browser autosave as the live concurrency model.
 
 Related runbooks:
 
 - [Track 2 LAN hosting runbook](track-2-lan-hosting.md) for private same-network setup, IP discovery, and firewall troubleshooting.
+- [Track 2 LAN manual smoke results](track-2-lan-manual-smoke-results.md) for the recorded ticket 091 browser-client LAN pass.
 - [Track 2 named Cloudflare Tunnel runbook](track-2-cloudflare-tunnel-hosting.md) for stable remote hostname setup, WebSocket considerations, and rollback.
 - [Track 2 session host runtime scripts](track-2-session-host-runtime.md) for `npm run dev:session:lan` and `npm run dev:session:tunnel` helper details.
 - [Track 2 multi-tab local smoke script](track-2-multi-tab-smoke.md) for local tab helpers and focused automated token/client checks.
 - [Track 2 security review](track-2-security-review.md) for trust boundaries, join-code limits, tunnel exposure risks, and incident response.
 - [Track 2 dependency and runtime review](track-2-dependency-runtime-review.md) for dependency inventory, runtime flags, Node/Nitro compatibility, and Cloudflare assumptions.
+- [Track 2 concurrency benchmark notes](track-2-concurrency-benchmark-notes.md) for final latency-sensitive behaviour observations, operator timing buckets, and known performance limits.
 
 ## Smoke scope
 

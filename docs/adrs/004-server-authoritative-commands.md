@@ -97,7 +97,7 @@ Rejected for Track 2. Adding a hosted database or queue would conflict with the 
 
 ## Consequences
 
-- Later contract work must define shared command envelopes, `opId` handling, `baseRevision`, command result shapes, message schemas, and validators.
+- Contract work must define shared command envelopes, `opId` handling, `baseRevision`, command result shapes, message schemas, and validators.
 - Server implementation must maintain authoritative session state and apply command effects before broadcasting changes.
 - Client session mode must dispatch commands instead of directly saving whole maps for live table actions.
 - Optimistic UI must reconcile against server acks, rejections, and authoritative patches.
@@ -106,7 +106,7 @@ Rejected for Track 2. Adding a hosted database or queue would conflict with the 
 
 ## Validation notes
 
-Reviewers can validate this ADR by checking that later Track 2 work:
+Reviewers can validate this ADR by checking that Track 2 work:
 
 - routes session-mode token and table actions through command envelopes;
 - rejects malformed, unauthorized, stale, and conflicting commands before state mutation;

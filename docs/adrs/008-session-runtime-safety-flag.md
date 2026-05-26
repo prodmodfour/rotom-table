@@ -26,7 +26,7 @@ The flag is a runtime safety gate, not a secret and not authentication. Once hos
 
 ## Required behaviour
 
-Later implementation tickets must preserve these behaviours:
+Implementation and follow-up changes must preserve these behaviours:
 
 - **Default disabled:** a normal local development or local-first run does not host Track 2 sessions unless the flag is explicitly enabled.
 - **Fail closed:** session endpoints and sockets reject or hide themselves when the flag is absent, empty, misspelled, or set to any value other than the documented enabled value.
@@ -46,7 +46,7 @@ When a GM binds the server to a LAN interface or places it behind a named Cloudf
 - join codes are invitation secrets for the current session, not durable passwords;
 - a leaked GM key grants GM authority for that session;
 - named tunnels must be stopped or restricted when no longer needed;
-- Quick Tunnel, when mentioned later, is only a temporary development smoke-test path;
+- Quick Tunnel, when mentioned, is only a temporary development smoke-test path;
 - Track 2 does not provide full accounts, tenant isolation, abuse handling, or hardened public auth.
 
 This boundary is especially important while legacy local-first and non-session functionality coexists with session mode. The safety gate ensures the app does not accidentally publish a session API, but it does not replace route-level validation, permission checks, or conservative docs.
@@ -76,7 +76,7 @@ Rejected. Session hosting must not become enabled merely because the app is in d
 ## Consequences
 
 - Start-session, join-session, WebSocket, and session command routes must check a shared runtime gate before doing session work.
-- Later tests must cover disabled-by-default behaviour, exact enabled value handling, unsafe startup states, and preservation of local mode when the flag is absent.
+- Tests must cover disabled-by-default behaviour, exact enabled value handling, unsafe startup states, and preservation of local mode when the flag is absent.
 - Hosting docs and npm scripts should show the explicit flag alongside LAN or named-tunnel commands.
 - UI work should surface a clear session-hosting safety banner when the flag is enabled and avoid implying production-grade public auth.
 - Logs and docs may name `ROTOM_ENABLE_SESSION_HOST`, but they must not print or commit real GM keys, join codes, tunnel credentials, private campaign data, snapshots, or `.env` files.
@@ -84,7 +84,7 @@ Rejected. Session hosting must not become enabled merely because the app is in d
 
 ## Validation notes
 
-Reviewers can validate this ADR by checking that later Track 2 work:
+Reviewers can validate this ADR by checking that Track 2 work:
 
 - keeps session hosting disabled unless `ROTOM_ENABLE_SESSION_HOST=1` is present;
 - fails closed for session routes and sockets when the flag is absent or invalid;

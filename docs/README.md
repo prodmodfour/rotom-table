@@ -12,7 +12,7 @@ This directory collects presentation and reviewer documentation for Rotom Table.
 - [Track 1 performance roadmap](track-1-performance-roadmap.md) — no-quality-loss performance constraints, benchmark categories, and staged isometric map optimization plan.
 - [Track 2 roadmap](track-2-roadmap.md) — locked GM-hosted session scope, lifecycle, concurrency model, roadmap phases, and non-goals.
 - [Track 2 glossary](track-2-glossary.md) — shared vocabulary for session identity, commands, revisions, WebSocket flow, persistence, and safety boundaries.
-- [Track 2 validation matrix](track-2-validation-matrix.md) — expected tests, smoke checks, docs, and safety reviews for later implementation areas.
+- [Track 2 validation matrix](track-2-validation-matrix.md) — expected tests, smoke checks, docs, and safety reviews for Track 2 implementation areas.
 - [Track 2 session protocol](track-2-session-protocol.md) — shared identity, command envelope, result, WebSocket message, ack/reject, duplicate, and reconnect contracts.
 - [Track 2 WebSocket protocol](track-2-websocket-protocol.md) — live session socket route, message examples, heartbeat, reconnect, command flow, and named-tunnel expectations.
 - [Track 2 table action commands](track-2-table-action-commands.md) — supported HP, condition, initiative, move/action, hazard, field-effect, and terrain session commands with permissions, conflicts, and limitations.
@@ -22,12 +22,21 @@ This directory collects presentation and reviewer documentation for Rotom Table.
 - [Track 2 public exposure checks](track-2-public-exposure-checks.md) — no-secret safety banner checks for unsafe public/LAN startup states before sharing join codes.
 - [Track 2 LAN hosting runbook](track-2-lan-hosting.md) — same-Wi-Fi/LAN setup commands, IP discovery, player join URLs, smoke checks, and troubleshooting.
 - [Track 2 named Cloudflare Tunnel runbook](track-2-cloudflare-tunnel-hosting.md) — stable-hostname remote setup, WebSocket considerations, safety warnings, and rollback steps.
+- [Track 2 named tunnel documentation review](track-2-named-tunnel-documentation-review.md) — ticket 092 review of named-tunnel doc accuracy, current Cloudflare assumptions, and safety warnings.
 - [Track 2 deployment smoke checklist](track-2-deployment-smoke-checklist.md) — LAN and named-tunnel smoke steps for two players, reconnect, token movement, initiative, conflict rejection, and cleanup evidence.
+- [Track 2 LAN manual smoke results](track-2-lan-manual-smoke-results.md) — recorded LAN browser-client smoke results for guarded startup, two-player join, WebSocket presence, reconnect, and cleanup.
+- [Track 2 integrated command audit](track-2-command-audit.md) — automated multi-client command audit covering accepted commands, reconnect, permissions, and stale conflicts.
+- [Track 2 concurrency benchmark notes](track-2-concurrency-benchmark-notes.md) — final multi-client concurrency behaviour, latency-sensitive path, and performance limitation notes.
+- [Track 2 final implementation review](track-2-final-implementation-review.md) — ticket 097 review linking completed chunk PRs, tests, docs, and known limitations.
+- [Track 2 autonomous completion marker](track-2-autonomous-completion-marker.md) — ticket 099 completion marker for final quality-gate handoff, chunk coverage, and architecture confirmation.
+- [Track 2 local-mode no-regression audit](track-2-local-mode-no-regression-audit.md) — final local-first audit for plain map/sheet workflows, legacy SSE, and explicit session-mode opt-in boundaries.
 - [Track 2 Quick Tunnel caveat](track-2-quick-tunnel-caveat.md) — temporary development smoke-test boundary, campaign-session rejection, and legacy SSE limitations.
 - [Track 2 multi-tab local smoke script](track-2-multi-tab-smoke.md) — local GM/player session-mode tab helper and token propagation checklist.
 - [Track 2 session storage](track-2-session-storage.md) — default snapshot/event-log paths, ignored/private data boundaries, backup guidance, cleanup behaviour, and recovery limitations.
 - [Track 2 session backup and recovery](track-2-session-backup-recovery.md) — private backup/restore runbook for snapshots, optional event logs, referenced campaign data, and local-only recovery limits.
+- [Track 2 final persistence/recovery audit](track-2-final-persistence-recovery-audit.md) — ticket 095 review of snapshots, optional event logs, backup/restore docs, cleanup, and local data hygiene.
 - [Track 2 security review](track-2-security-review.md) — trust boundaries, non-hardened areas, join-code limits, tunnel exposure risks, incident response, and security non-goals.
+- [Track 2 final session security audit](track-2-final-session-security-audit.md) — ticket 094 audit of auth/session/cookie/permission boundaries, public exposure warnings, and remaining non-goals.
 - [Track 2 dependency and runtime review](track-2-dependency-runtime-review.md) — dependency inventory, runtime flags, Node/Nitro compatibility, and Cloudflare tunnel assumptions.
 - [ADR 001: GM-hosted session model](adrs/001-gm-hosted-session-model.md) — decision record for GM-controlled sessions instead of SaaS, public multi-tenancy, or generic collaborative editing.
 - [ADR 002: LAN first and named Cloudflare Tunnel second](adrs/002-lan-first-named-cloudflare-tunnel.md) — decision record for LAN-first hosting, named-tunnel remote access, and Quick Tunnel caveats.

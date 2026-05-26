@@ -2,7 +2,7 @@
 
 Track 2 session storage is local operational data for a GM-hosted table session. It exists so the server can recover authoritative session state after reconnects, restarts, or crashes without adding hosted database infrastructure or letting live browsers become the source of truth.
 
-This document describes the storage layout introduced by the Track 2 state/persistence work. It is an operations and recovery guide, not a claim that later lobby, WebSocket, or command routes are complete yet. For step-by-step private archive, restore, and recovery procedures, see the [Track 2 session backup and recovery runbook](track-2-session-backup-recovery.md).
+This document describes the storage layout introduced by the Track 2 state/persistence work. It is an operations and recovery guide for the local JSON snapshot/event-log boundary used by lobby, WebSocket, and command routes. For step-by-step private archive, restore, and recovery procedures, see the [Track 2 session backup and recovery runbook](track-2-session-backup-recovery.md). For the final ticket 095 review of snapshots, optional event logs, cleanup, backup docs, and local data hygiene, see the [Track 2 final persistence/recovery audit](track-2-final-persistence-recovery-audit.md).
 
 ## Storage principles
 
@@ -23,7 +23,7 @@ Runtime helpers resolve session storage relative to the project root by default:
 | `data/sessions/<sessionId>/events.jsonl` | `server/utils/sessionEventLog.ts` when optional logging is used | Append-only JSON-lines command/event entries. May be absent. | Ignored/private. |
 | `data/sessions/<sessionId>/snapshot.json.tmp-*` | Snapshot writer during atomic publish | Same-directory temporary file written before rename. | Ignored/private; safe to remove only when the app is stopped or the writer has abandoned it. |
 
-Tests may pass an alternate `rootDir`, but production/runtime code should treat `data/sessions/` as the session storage root unless a later documented configuration changes it.
+Tests may pass an alternate `rootDir`, but production/runtime code should treat `data/sessions/` as the session storage root unless a separate documented configuration changes it.
 
 ## Snapshot file
 
@@ -46,13 +46,13 @@ Snapshot reads validate the envelope, schema versions, session ID, revision, tim
 - `kind: "command"` entries bind a command envelope to the server's command result and resulting revision.
 - `kind: "event"` entries record server-side session events or operational markers.
 
-The event log can support future reconnect replay, troubleshooting, and recovery assistance, but it is not the required source of truth. The latest valid snapshot remains the recovery baseline, and reconnect must fall back to a current snapshot whenever replay is disabled, missing, truncated, corrupted, out of order, or unsafe.
+The event log can support replay-oriented follow-up work, troubleshooting, and recovery assistance, but it is not the required source of truth. The latest valid snapshot remains the recovery baseline, and reconnect must fall back to a current snapshot whenever replay is disabled, missing, truncated, corrupted, out of order, or unsafe.
 
 The log is append-only while a session is active. It must not become a collaborative document edit stream or bypass command validation and permissions.
 
 ## Privacy and git boundaries
 
-`data/sessions/` is ignored by `.gitignore` because snapshots and event logs may contain private campaign state, player display names, resource assignments, map/sheet slices, command metadata, and future session-local secret or secret-derived material.
+`data/sessions/` is ignored by `.gitignore` because snapshots and event logs may contain private campaign state, player display names, resource assignments, map/sheet slices, command metadata, and session-local secret or secret-derived material.
 
 Before committing any branch, run `git status` from the target repository and confirm that no files under `data/sessions/` are staged. Do not commit:
 
@@ -83,9 +83,9 @@ To restore a session on the same machine or a replacement machine:
 2. Copy the saved `data/sessions/<sessionId>/` directory back into the project root.
 3. Restore any referenced local campaign data such as maps, sheets, trainers, encounter tables, and private assets.
 4. Start the server with the documented session-host runtime flag when session hosting is needed.
-5. Let the server load the latest valid `snapshot.json`; future reconnect work may replay safe `events.jsonl` entries after that snapshot when available.
+5. Let the server load the latest valid `snapshot.json`; Track 2 reconnect remains safe through snapshot fallback when event replay is unavailable.
 
-If no valid snapshot exists, the server must not silently reconstruct live authority from browser state. The GM should restore an older backup or start a new session. If an event log exists but the latest snapshot is missing or invalid, recovery still cannot assume the log alone is safe unless later tooling explicitly validates and documents that path.
+If no valid snapshot exists, the server must not silently reconstruct live authority from browser state. The GM should restore an older backup or start a new session. If an event log exists but the latest snapshot is missing or invalid, recovery still cannot assume the log alone is safe unless dedicated tooling explicitly validates and documents that path.
 
 ## Cleanup and deletion
 
@@ -100,9 +100,9 @@ Manual deletion of local session files is a GM operation. Only delete `data/sess
 
 ## Known limitations
 
-- The current default path stores one latest `snapshot.json` per session. It does not yet retain a built-in history of older snapshots.
-- `events.jsonl` is optional and helper-level only until later reconnect/replay tickets wire it into the WebSocket runtime.
-- Recent duplicate-`opId` tracking is currently process-local memory unless a future command/recovery path durably records enough metadata in snapshots or events.
+- The current default path stores one latest `snapshot.json` per session. It does not retain a built-in history of older snapshots.
+- `events.jsonl` is optional and helper-level only in Track 2; WebSocket reconnect uses snapshot fallback when replay is unavailable.
+- Recent duplicate-`opId` tracking is process-local memory unless a follow-up command/recovery path durably records enough metadata in snapshots or events.
 - Snapshots are local JSON, not encrypted archives. Protect filesystem permissions and backups accordingly.
 - Corrupted, missing, or mismatched snapshots fail recovery with typed reasons instead of trusting stale clients.
 - Cleanup does not free disk space automatically; GMs decide when to archive or remove old session directories.

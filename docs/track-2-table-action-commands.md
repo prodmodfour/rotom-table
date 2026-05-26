@@ -66,7 +66,7 @@ These commands route table action usage through the session command boundary whi
 Notes:
 
 - `useMove` preserves local move-frequency semantics: EOT/Scene tracking is map-scoped, Daily tracking is sheet-scoped, and untracked frequencies are accepted as ordered session events.
-- `useAbility` intentionally rejects abilities that do not yet have an active Track 2 automation boundary. That fail-closed behaviour prevents clients from claiming unsupported automation applied.
+- `useAbility` intentionally rejects abilities without an active Track 2 automation boundary. That fail-closed behaviour prevents clients from claiming unsupported automation applied.
 - `useOrder` is trainer-only. Pokémon tokens cannot issue order commands even if a malformed client sends the envelope.
 
 ### GM-only map lanes
@@ -93,7 +93,7 @@ Supported field-effect kinds are:
 - Terrain: `electric`, `grassy`, `misty`, `psychic`
 - Room: `magic`, `trick`, `wonder`
 
-Terrain patches include the renderer invalidation reasons `terrain`, `movement-preview`, `build-preview`, and `hazard-preview` so future client integration preserves Track 1 scene refresh behaviour.
+Terrain patches include the renderer invalidation reasons `terrain`, `movement-preview`, `build-preview`, and `hazard-preview` so session-map client integration preserves Track 1 scene refresh behaviour.
 
 ## Permission matrix
 
@@ -115,7 +115,7 @@ The table action commands follow the Track 2 conflict model:
 - Duplicate `opId` retries return the original accepted or rejected result idempotently.
 - Accepted commands increment the session revision and affected map revision once.
 - Invalid, unauthorized, stale, conflict, no-op, and snapshot-failure outcomes do not advance revisions.
-- Stale same-resource commands return a safe `currentState` snapshot where the handler has one, so later rejection UI can reconcile from the authoritative value.
+- Stale same-resource commands return a safe `currentState` snapshot where the handler has one, so rejection UI can reconcile from the authoritative value.
 - Commands on unrelated resources may apply across small revision gaps only when the handler can prove the touched scopes do not overlap. Terrain explicitly allows tracked disjoint-cell edits across a small revision gap; same-cell edits stay stale-rejected.
 - GM commands are not raw overrides. They generally win over player permission boundaries, but still pass shape, map bounds, target existence, no-op, stale, and persistence checks.
 - Sheet-backed commands write the sheet first and then the session snapshot; if the snapshot write fails, the handler rolls the sheet and in-memory state back to the previous value.
@@ -152,17 +152,17 @@ Accepted commands broadcast these small event types to same-session clients:
 | `fieldEffectsUpdated` | map slug, command type, previous/current field effects, category/kind/tick summary |
 | `terrainVoxelsUpdated` | map slug, cell, previous/current voxel, built/removed voxel, renderer invalidation reasons |
 
-Patch payloads are intentionally narrow. Clients that need a full recovery after missed patches should use reconnect snapshot fallback instead of assuming every future event can replay the whole session.
+Patch payloads are intentionally narrow. Clients that need a full recovery after missed patches should use reconnect snapshot fallback instead of assuming patch events can replay the whole session.
 
 ## Current limitations and migration notes
 
 - The server and WebSocket command boundaries are implemented and covered by focused tests. The map scene panel now routes explicit session-mode scene events for token delete/send-out, HP, combat stages, conditions, move usage, maneuver/ability/order use, next/previous initiative, hazards, move-created field effects, and terrain voxel edits through command envelopes instead of local whole-map mutation. Local mode still uses the existing local-first handlers, and token move/turn keep their explicit optimistic dispatch/reconciliation path.
 - Legacy local mode still uses local-first JSON saves and legacy SSE where applicable. Session mode must continue to use WebSocket commands and small patches.
 - This is not public authentication. The existing local role picker remains a trust switch, while Track 2 commands rely on the session-host flag, hello/auth handshake, GM key, join code, player IDs, client IDs, and server-side assignments.
-- The optional event log is not yet a full replay guarantee. Reconnect remains snapshot-safe when replay is unavailable.
+- The optional event log is not a full replay guarantee in Track 2. Reconnect remains snapshot-safe when replay is unavailable.
 - Ability automation is deliberately limited to known active/session-safe boundaries. Passive abilities or abilities without a Track 2 automation boundary reject instead of pretending automation happened.
 - Hazard, field-effect, and terrain commands mutate the map lanes they own; they do not calculate all downstream PTU effects such as damage, visibility, or movement rules by themselves.
-- Terrain commands preserve Track 1 render invalidation expectations, but visual client application of patches is completed by later session-map/client integration work.
+- Terrain commands preserve Track 1 render invalidation expectations, and session-map client integration applies terrain patch events to the session-authoritative map clone.
 - Session persistence remains local JSON snapshots and sheet files; no database, SaaS service, Quick Tunnel-first deployment, or generic collaborative-document model is introduced.
 
 ## Validation coverage

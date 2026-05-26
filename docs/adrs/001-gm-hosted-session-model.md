@@ -50,12 +50,12 @@ Rejected for Track 2. Local JSON state is a project strength: it is inspectable,
 - Session code must assume one GM-owned authority per session rather than unrelated tenants sharing a public service.
 - Player identity is session-local, not a full account system.
 - Live session changes must flow through server-authoritative commands, not whole-map client autosaves as the primary concurrency mechanism.
-- Documentation and later implementation work must keep public exposure warnings clear, especially where the trust-based local role picker still exists.
-- Future architecture decisions for transport, hosting paths, persistence, runtime safety, identity, and conflict rules must remain consistent with this GM-hosted product shape.
+- Documentation and implementation work must keep public exposure warnings clear, especially where the trust-based local role picker still exists.
+- Follow-up architecture decisions for transport, hosting paths, persistence, runtime safety, identity, and conflict rules must remain consistent with this GM-hosted product shape.
 
 ## Validation notes
 
-Reviewers can validate this ADR by checking that later Track 2 work:
+Reviewers can validate this ADR by checking that Track 2 work:
 
 - keeps LAN and GM-controlled remote access as the user story;
 - avoids tenant/account/cloud-database requirements;

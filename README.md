@@ -48,12 +48,21 @@ npm run build
 - [docs/track-2-public-exposure-checks.md](docs/track-2-public-exposure-checks.md) — no-secret safety banner checks for unsafe public/LAN startup states before sharing join codes.
 - [docs/track-2-lan-hosting.md](docs/track-2-lan-hosting.md) — same-Wi-Fi/LAN hosting runbook with startup commands, IP discovery, player URLs, and troubleshooting.
 - [docs/track-2-cloudflare-tunnel-hosting.md](docs/track-2-cloudflare-tunnel-hosting.md) — named Cloudflare Tunnel runbook with stable hostname setup, WebSocket considerations, safety warnings, and rollback steps.
+- [docs/track-2-named-tunnel-documentation-review.md](docs/track-2-named-tunnel-documentation-review.md) — final audit review of named-tunnel doc accuracy, current Cloudflare assumptions, and safety warnings.
 - [docs/track-2-deployment-smoke-checklist.md](docs/track-2-deployment-smoke-checklist.md) — LAN and named-tunnel deployment smoke checklist for two players, reconnect, token movement, initiative, and conflict rejection.
+- [docs/track-2-lan-manual-smoke-results.md](docs/track-2-lan-manual-smoke-results.md) — recorded LAN browser-client smoke results for guarded startup, two-player join, WebSocket presence, reconnect, and cleanup.
+- [docs/track-2-command-audit.md](docs/track-2-command-audit.md) — integrated multi-client command audit covering accepted commands, reconnect, permissions, and stale conflicts.
+- [docs/track-2-concurrency-benchmark-notes.md](docs/track-2-concurrency-benchmark-notes.md) — final multi-client concurrency behaviour, latency-sensitive path, and performance limitation notes.
+- [docs/track-2-final-implementation-review.md](docs/track-2-final-implementation-review.md) — final implementation review linking chunk PRs, tests, docs, and known limitations.
+- [docs/track-2-autonomous-completion-marker.md](docs/track-2-autonomous-completion-marker.md) — ticket 099 completion marker for final quality-gate handoff, chunk coverage, and architecture confirmation.
+- [docs/track-2-local-mode-no-regression-audit.md](docs/track-2-local-mode-no-regression-audit.md) — final local-first no-regression audit for plain map/sheet workflows, legacy SSE, and session-mode opt-in boundaries.
 - [docs/track-2-quick-tunnel-caveat.md](docs/track-2-quick-tunnel-caveat.md) — Quick Tunnel caveats for temporary development smoke tests only, including legacy SSE limitations.
 - [docs/track-2-multi-tab-smoke.md](docs/track-2-multi-tab-smoke.md) — local multi-tab helper for GM/player session-mode token propagation smoke checks.
 - [docs/track-2-session-storage.md](docs/track-2-session-storage.md) — local session snapshot/event-log paths, privacy boundaries, backup guidance, and recovery limits.
 - [docs/track-2-session-backup-recovery.md](docs/track-2-session-backup-recovery.md) — private session backup/restore runbook for snapshots, optional event logs, and referenced campaign data.
+- [docs/track-2-final-persistence-recovery-audit.md](docs/track-2-final-persistence-recovery-audit.md) — final persistence/recovery audit for snapshots, optional event logs, backup docs, cleanup, and local data hygiene.
 - [docs/track-2-security-review.md](docs/track-2-security-review.md) — Trust boundaries, join-code limits, tunnel exposure risks, non-hardened areas, and Track 2 security non-goals.
+- [docs/track-2-final-session-security-audit.md](docs/track-2-final-session-security-audit.md) — Final session security audit for auth/session/cookie/permission boundaries, public exposure warnings, and remaining non-goals.
 - [docs/track-2-dependency-runtime-review.md](docs/track-2-dependency-runtime-review.md) — Track 2 dependency inventory, runtime flags, Node/Nitro compatibility, and Cloudflare tunnel assumptions.
 - [docs/local-development.md](docs/local-development.md) — local setup, scripts, and filesystem persistence notes.
 - [docs/fan-project-notice.md](docs/fan-project-notice.md) — fan project and ownership boundaries.
