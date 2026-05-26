@@ -10,7 +10,7 @@
  *   3. A *HP snapshot* at spawn time. PTU formulas are layered through
  *      `resolveStats` / `computeMaxHp` (Pokémon) and the trainer equivalents.
  */
-import { getPokedexEntry } from '~~/data/characterSheets'
+import pokedexData from '~~/data/reference/pokedex.json'
 import { computeFullMaxHp, computeMaxHp, resolveCapabilities, resolveSkills, resolveStats, type ResolvedCapability } from '~/utils/sheets/pokemonDerived'
 import { computeTrainerFullMaxHp, computeTrainerMaxHp, resolveTrainerCapabilities, resolveTrainerSkills, resolveTrainerStats, type TrainerCapabilityRow } from '~/utils/sheets/trainerDerived'
 import { pokemonCatalog, pokemonCatalogBySpecies } from '~~/data/pokemonCatalog'
@@ -34,12 +34,19 @@ import { movementCapabilityKeyFromLabel, normalizeMovementCapabilitySpeed } from
 import type { CharacterSheet, CharacterSheetSkills } from '~/types/characterSheet'
 import type { CombatStageMap } from '~/types/combatStages'
 import type { MovementCapabilitySpeeds } from '~/types/movement'
-import type { PokemonCatalogEntry } from '~/types/pokemon'
+import type { PokedexRecord, PokemonCatalogEntry } from '~/types/pokemon'
 import type { TrainerSheet, TrainerSkillKey } from '~/types/trainerSheet'
 
 const trainerCatalogBySpriteUrl = new Map(
   trainerCatalog.map((entry) => [entry.spriteUrl, entry]),
 )
+
+const pokedexBySpecies = new Map<string, PokedexRecord>(
+  (pokedexData as PokedexRecord[]).map((entry) => [entry.species, entry]),
+)
+
+const getPokedexEntryForSpawnSnapshot = (species: string): PokedexRecord | null =>
+  pokedexBySpecies.get(species) ?? null
 
 const trainerCatalogByLowerName = new Map(
   trainerCatalog.map((entry) => [entry.species.toLowerCase(), entry]),
@@ -176,7 +183,7 @@ export const pokemonHpSnapshot = (
   const sdef = stats.find((row) => row.key === 'sdef')?.total ?? 0
   const spd = stats.find((row) => row.key === 'spd')?.total ?? 0
   const evasion = pokemonEvasionModifiers(sheet)
-  const species = getPokedexEntry(sheet.species)
+  const species = getPokedexEntryForSpawnSnapshot(sheet.species)
   const defenderTypes = sheet.types ?? species?.types ?? []
   const capabilityRows = resolveCapabilities(sheet).rows
   const defenderCapabilities = defenderCapabilitiesFromRows(capabilityRows)

@@ -7,6 +7,7 @@ The smoke keeps the locked Track 2 architecture intact: the GM runs the server, 
 Related runbooks:
 
 - [Track 2 LAN hosting runbook](track-2-lan-hosting.md) for private same-network setup, IP discovery, and firewall troubleshooting.
+- [Track 2 LAN manual smoke results](track-2-lan-manual-smoke-results.md) for the recorded ticket 091 browser-client LAN pass.
 - [Track 2 named Cloudflare Tunnel runbook](track-2-cloudflare-tunnel-hosting.md) for stable remote hostname setup, WebSocket considerations, and rollback.
 - [Track 2 session host runtime scripts](track-2-session-host-runtime.md) for `npm run dev:session:lan` and `npm run dev:session:tunnel` helper details.
 - [Track 2 multi-tab local smoke script](track-2-multi-tab-smoke.md) for local tab helpers and focused automated token/client checks.

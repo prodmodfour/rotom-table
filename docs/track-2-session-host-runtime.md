@@ -64,7 +64,7 @@ Then use explicit session map URLs such as:
 http://192.168.1.42:3000/maps/<map-slug>?session=1
 ```
 
-See the [Track 2 LAN hosting runbook](track-2-lan-hosting.md) for IP discovery, firewall troubleshooting, smoke checks, and cleanup. See the [Track 2 deployment smoke checklist](track-2-deployment-smoke-checklist.md) for the expanded two-player LAN/named-tunnel pass covering reconnect, token movement, initiative, and conflict rejection. See [Track 2 public exposure checks](track-2-public-exposure-checks.md) for the safety banner warnings that appear when the host is reachable before an active session-local GM key, join code, and authoritative state are ready.
+See the [Track 2 LAN hosting runbook](track-2-lan-hosting.md) for IP discovery, firewall troubleshooting, smoke checks, and cleanup. See [Track 2 LAN manual smoke results](track-2-lan-manual-smoke-results.md) for the recorded ticket 091 browser-client pass. See the [Track 2 deployment smoke checklist](track-2-deployment-smoke-checklist.md) for the expanded two-player LAN/named-tunnel pass covering reconnect, token movement, initiative, and conflict rejection. See [Track 2 public exposure checks](track-2-public-exposure-checks.md) for the safety banner warnings that appear when the host is reachable before an active session-local GM key, join code, and authoritative state are ready.
 
 ## Named tunnel mode
 
