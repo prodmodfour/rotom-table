@@ -1,6 +1,6 @@
 # Track 2 public exposure warnings and startup checks
 
-This guide records the additional hardening checks that run before a GM shares a Track 2 hosted session URL. It complements the [LAN hosting runbook](track-2-lan-hosting.md), [named Cloudflare Tunnel runbook](track-2-cloudflare-tunnel-hosting.md), [Quick Tunnel caveat](track-2-quick-tunnel-caveat.md), [session host runtime scripts](track-2-session-host-runtime.md), and [security review](track-2-security-review.md).
+This guide records the additional hardening checks that run before a GM shares a Track 2 hosted session URL. It complements the [LAN hosting runbook](track-2-lan-hosting.md), [named Cloudflare Tunnel runbook](track-2-cloudflare-tunnel-hosting.md), [deployment smoke checklist](track-2-deployment-smoke-checklist.md), [Quick Tunnel caveat](track-2-quick-tunnel-caveat.md), [session host runtime scripts](track-2-session-host-runtime.md), and [security review](track-2-security-review.md).
 
 Track 2 remains a GM-hosted table session, not a SaaS deployment or public multi-tenant app. These checks do not add full accounts or hardened public auth; they make unsafe startup states visible while the session-local GM key, player join code, player IDs, client IDs, assignments, and WebSocket command validation continue to enforce table authority.
 

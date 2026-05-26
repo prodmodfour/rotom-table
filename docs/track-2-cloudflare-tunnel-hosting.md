@@ -2,7 +2,7 @@
 
 This runbook is the supported remote-player hosting path for Track 2 table sessions. The GM still runs Rotom Table on a machine they control; a named Cloudflare Tunnel gives trusted remote players a stable HTTPS hostname that forwards to that private server.
 
-Use the [Track 2 LAN hosting runbook](track-2-lan-hosting.md) first when everyone is on the same network. Use this guide only when players are remote and the GM intentionally wants to publish a stable hostname such as `https://table.example.com` for a campaign session. For the no-secret safety banner checks that catch remote exposure before a session-local GM key, join code, and authoritative state are ready, see [Track 2 public exposure checks](track-2-public-exposure-checks.md). For private snapshot/event-log backup and restore procedures before or after remote play, see [Track 2 session backup and recovery](track-2-session-backup-recovery.md). For trust boundaries, join-code limits, tunnel exposure risks, and non-hardened areas, see the [Track 2 security review](track-2-security-review.md).
+Use the [Track 2 LAN hosting runbook](track-2-lan-hosting.md) first when everyone is on the same network. Use this guide only when players are remote and the GM intentionally wants to publish a stable hostname such as `https://table.example.com` for a campaign session. For the no-secret safety banner checks that catch remote exposure before a session-local GM key, join code, and authoritative state are ready, see [Track 2 public exposure checks](track-2-public-exposure-checks.md). For the fuller two-player deployment smoke covering reconnect, token movement, initiative, and conflict rejection, see the [Track 2 deployment smoke checklist](track-2-deployment-smoke-checklist.md). For private snapshot/event-log backup and restore procedures before or after remote play, see [Track 2 session backup and recovery](track-2-session-backup-recovery.md). For trust boundaries, join-code limits, tunnel exposure risks, and non-hardened areas, see the [Track 2 security review](track-2-security-review.md).
 
 Named tunnel hosting keeps the locked Track 2 architecture intact: one GM-hosted server owns session authority, live clients use `WebSocket /api/sessions/socket`, commands are acknowledged or rejected by the server, state is persisted as local JSON snapshots/event logs, and browsers must not autosave whole maps as the live session concurrency mechanism.
 
@@ -189,7 +189,7 @@ Operational expectations:
 
 ## Remote smoke checklist
 
-Use this quick pass before relying on a named tunnel for play:
+Use this quick pass before relying on a named tunnel for play. For the expanded two-player pass that also covers initiative, reconnect, and conflict rejection across LAN and named tunnels, use the [Track 2 deployment smoke checklist](track-2-deployment-smoke-checklist.md).
 
 - [ ] `cloudflared tunnel run rotom-table` connects without errors.
 - [ ] `https://table.example.com/sessions#gm-lobby-title` loads from the GM browser through the public hostname.

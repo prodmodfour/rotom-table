@@ -8,6 +8,7 @@ Use these runbooks for supported play instead:
 
 - [Track 2 LAN hosting runbook](track-2-lan-hosting.md) for same-Wi-Fi/LAN sessions.
 - [Track 2 named Cloudflare Tunnel runbook](track-2-cloudflare-tunnel-hosting.md) for remote players over a stable hostname.
+- [Track 2 deployment smoke checklist](track-2-deployment-smoke-checklist.md) for the supported LAN/named-tunnel two-player smoke pass.
 
 ## What Quick Tunnel is allowed to prove
 
@@ -132,6 +133,7 @@ Track 2 live sessions use the WebSocket route at `/api/sessions/socket` for comm
 
 - [Track 2 LAN hosting runbook](track-2-lan-hosting.md)
 - [Track 2 named Cloudflare Tunnel runbook](track-2-cloudflare-tunnel-hosting.md)
+- [Track 2 deployment smoke checklist](track-2-deployment-smoke-checklist.md)
 - [Track 2 WebSocket protocol](track-2-websocket-protocol.md)
 - [Track 2 session protocol](track-2-session-protocol.md)
 - [Track 2 client integration guide](track-2-client-integration.md)

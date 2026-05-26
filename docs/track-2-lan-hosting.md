@@ -4,7 +4,7 @@ This runbook is the supported same-network hosting path for Track 2 table sessio
 
 LAN hosting keeps the locked Track 2 architecture intact: one GM-hosted server owns session authority, live clients use `WebSocket /api/sessions/socket`, commands are acknowledged or rejected by the server, state is persisted as local JSON snapshots/event logs, and browsers must not autosave whole maps as the live session concurrency mechanism.
 
-For the lobby flow itself, see [Track 2 session lobby and manual QA](track-2-session-lobby.md). For no-secret warnings around unsafe host startup and missing session-local credentials/state, see [Track 2 public exposure checks](track-2-public-exposure-checks.md). For local multi-tab token propagation checks, see [Track 2 multi-tab local smoke script](track-2-multi-tab-smoke.md). For private snapshot/event-log backups and restores, see [Track 2 session backup and recovery](track-2-session-backup-recovery.md). For trust boundaries, join-code limits, and non-hardened areas, see the [Track 2 security review](track-2-security-review.md). For remote play over the internet, use the [Track 2 named Cloudflare Tunnel runbook](track-2-cloudflare-tunnel-hosting.md); do not use ad-hoc public exposure as the LAN path.
+For the lobby flow itself, see [Track 2 session lobby and manual QA](track-2-session-lobby.md). For no-secret warnings around unsafe host startup and missing session-local credentials/state, see [Track 2 public exposure checks](track-2-public-exposure-checks.md). For local multi-tab token propagation checks, see [Track 2 multi-tab local smoke script](track-2-multi-tab-smoke.md). For the fuller two-player deployment smoke covering reconnect, token movement, initiative, and conflict rejection, see the [Track 2 deployment smoke checklist](track-2-deployment-smoke-checklist.md). For private snapshot/event-log backups and restores, see [Track 2 session backup and recovery](track-2-session-backup-recovery.md). For trust boundaries, join-code limits, and non-hardened areas, see the [Track 2 security review](track-2-security-review.md). For remote play over the internet, use the [Track 2 named Cloudflare Tunnel runbook](track-2-cloudflare-tunnel-hosting.md); do not use ad-hoc public exposure as the LAN path.
 
 ## Before you start
 
@@ -132,7 +132,7 @@ Players should not use `http://localhost:3000` unless Rotom Table is running on 
 
 ## LAN smoke checklist
 
-Use this quick pass before relying on a LAN session for play:
+Use this quick pass before relying on a LAN session for play. For the expanded two-player pass that also covers initiative, reconnect, and conflict rejection across LAN and named tunnels, use the [Track 2 deployment smoke checklist](track-2-deployment-smoke-checklist.md).
 
 - [ ] GM starts with `npm run dev:session:lan` (or the manual equivalent `ROTOM_ENABLE_SESSION_HOST=1 npm run dev -- --host 0.0.0.0 --port 3000`).
 - [ ] GM opens `/sessions` through the private LAN URL and confirms the safety banner classifies the exposure as LAN/private.

@@ -1,6 +1,6 @@
 # Track 2 security review
 
-This review records the security posture for Track 2 GM-hosted sessions after the hosting-hardening work. It should be read with the [LAN hosting runbook](track-2-lan-hosting.md), [named Cloudflare Tunnel runbook](track-2-cloudflare-tunnel-hosting.md), [Quick Tunnel caveat](track-2-quick-tunnel-caveat.md), [public exposure checks](track-2-public-exposure-checks.md), [session host runtime scripts](track-2-session-host-runtime.md), and [session backup and recovery runbook](track-2-session-backup-recovery.md).
+This review records the security posture for Track 2 GM-hosted sessions after the hosting-hardening work. It should be read with the [LAN hosting runbook](track-2-lan-hosting.md), [named Cloudflare Tunnel runbook](track-2-cloudflare-tunnel-hosting.md), [deployment smoke checklist](track-2-deployment-smoke-checklist.md), [Quick Tunnel caveat](track-2-quick-tunnel-caveat.md), [public exposure checks](track-2-public-exposure-checks.md), [session host runtime scripts](track-2-session-host-runtime.md), and [session backup and recovery runbook](track-2-session-backup-recovery.md).
 
 Track 2 remains a trusted-table, GM-hosted feature. It is appropriate for a GM-controlled machine serving known players on a LAN or through a named Cloudflare Tunnel when the GM follows the runbooks. It is not a hardened public service for anonymous internet users.
 

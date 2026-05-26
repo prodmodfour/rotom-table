@@ -48,6 +48,7 @@ npm run build
 - [docs/track-2-public-exposure-checks.md](docs/track-2-public-exposure-checks.md) — no-secret safety banner checks for unsafe public/LAN startup states before sharing join codes.
 - [docs/track-2-lan-hosting.md](docs/track-2-lan-hosting.md) — same-Wi-Fi/LAN hosting runbook with startup commands, IP discovery, player URLs, and troubleshooting.
 - [docs/track-2-cloudflare-tunnel-hosting.md](docs/track-2-cloudflare-tunnel-hosting.md) — named Cloudflare Tunnel runbook with stable hostname setup, WebSocket considerations, safety warnings, and rollback steps.
+- [docs/track-2-deployment-smoke-checklist.md](docs/track-2-deployment-smoke-checklist.md) — LAN and named-tunnel deployment smoke checklist for two players, reconnect, token movement, initiative, and conflict rejection.
 - [docs/track-2-quick-tunnel-caveat.md](docs/track-2-quick-tunnel-caveat.md) — Quick Tunnel caveats for temporary development smoke tests only, including legacy SSE limitations.
 - [docs/track-2-multi-tab-smoke.md](docs/track-2-multi-tab-smoke.md) — local multi-tab helper for GM/player session-mode token propagation smoke checks.
 - [docs/track-2-session-storage.md](docs/track-2-session-storage.md) — local session snapshot/event-log paths, privacy boundaries, backup guidance, and recovery limits.
