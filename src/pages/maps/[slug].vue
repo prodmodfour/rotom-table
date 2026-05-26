@@ -27,6 +27,7 @@ import { useOrderActionPanel } from '~/composables/map-editor/useOrderActionPane
 import { useTerrainBuilder } from '~/composables/map-editor/useTerrainBuilder'
 import { useAttackOfOpportunityPanel } from '~/utils/attackOfOpportunity'
 import { useTokenSheetMutations } from '~/composables/map-editor/useTokenSheetMutations'
+import { useSessionMapEditorState } from '~/composables/map-editor/useSessionMapEditorState'
 import { useSessionMoveTokenDispatch, isSessionModeQueryEnabled } from '~/composables/map-editor/useSessionMoveTokenDispatch'
 import { useTokenControls } from '~/composables/map-editor/useTokenControls'
 import { MAP_API_PATHS } from '~/utils/apiRoutes'
@@ -47,13 +48,36 @@ const router = useRouter()
 const { isGm, isPlayer } = useAuth()
 const slug = routeSlugParam(route.params)
 
-const { map, status, error, renamedTo } = useEditableMap(slug)
+const {
+  map: localEditableMap,
+  status,
+  error,
+  renamedTo,
+} = useEditableMap(slug)
 const { pokemonBySlug, trainerBySlug } = useLiveSheets()
 const { postJson } = useApiClient()
 
 watch(renamedTo, (newSlug) => {
   if (newSlug) router.replace(mapEditorPath(newSlug))
 })
+
+const sessionMoveTokenEnabled = computed(() => isSessionModeQueryEnabled(route.query.session))
+const sessionMoveTokenDispatch = useSessionMoveTokenDispatch({
+  enabled: sessionMoveTokenEnabled,
+  mapSlug: slug,
+})
+const sessionMapEditorState = useSessionMapEditorState({
+  enabled: sessionMoveTokenEnabled,
+  localMap: localEditableMap,
+  mapSlug: slug,
+  socket: sessionMoveTokenDispatch.socket,
+})
+const map = sessionMapEditorState.map
+const mapStatus = computed(() => (
+  sessionMoveTokenEnabled.value && map.value
+    ? 'idle'
+    : status.value
+))
 
 useHead(() => ({
   title: map.value ? `${map.value.name} · Maps` : 'Maps · Rotom Table',
@@ -64,12 +88,6 @@ interface MapScenePanelHandle {
 }
 
 const gridRef = ref<MapScenePanelHandle | null>(null)
-
-const sessionMoveTokenEnabled = computed(() => isSessionModeQueryEnabled(route.query.session))
-const sessionMoveTokenDispatch = useSessionMoveTokenDispatch({
-  enabled: sessionMoveTokenEnabled,
-  mapSlug: slug,
-})
 
 onMounted(() => {
   sessionMoveTokenDispatch.loadRememberedIdentity()
@@ -559,7 +577,7 @@ useMapDimensionReconciliation({
         ref="gridRef"
         :map="map"
         :can-view-map="canViewMap"
-        :status="status"
+        :status="mapStatus"
         :error="error"
         :slug="slug"
         :spawned-pokemon="spawnedPokemon"
