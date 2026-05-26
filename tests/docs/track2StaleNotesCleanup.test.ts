@@ -53,6 +53,11 @@ describe('Track 2 stale-note cleanup', () => {
     'Event replay is not yet implemented',
     'ticket 098 still handles stale-note cleanup',
     'tickets 098-099 pending',
+    '090-098 in this review, 099 pending',
+    'ticket 099 handles the controller-only completion status',
+    'ticket 099 should run the full gate again',
+    'not the autonomous completion marker',
+    'chunk PR deferred until the outer controller finishes ticket 099',
     'outer controller finishes tickets 098-099',
     'later implementation areas',
     'later protocol documents',
@@ -79,8 +84,10 @@ describe('Track 2 stale-note cleanup', () => {
     const sessionProtocol = readText('docs/track-2-session-protocol.md')
 
     expect(review).toContain('ticket 098 stale-note cleanup')
-    expect(review).toContain('090-098 in this review, 099 pending')
+    expect(review).toContain('| `09-final-audit` | 090-099 |')
+    expect(review).toContain('track-2-autonomous-completion-marker.md')
     expect(review).toContain('tests/docs/track2StaleNotesCleanup.test.ts')
+    expect(review).toContain('tests/docs/track2AutonomousCompletionMarker.test.ts')
     expect(websocketProtocol).toContain('authenticated command types outside the implemented Track 2 set')
     expect(websocketProtocol).toContain('useSessionMapSceneCommands')
     expect(sessionProtocol).toContain('implemented session behaviours for Track 2 session mode')

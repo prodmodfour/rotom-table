@@ -54,6 +54,7 @@ npm run build
 - [docs/track-2-command-audit.md](docs/track-2-command-audit.md) — integrated multi-client command audit covering accepted commands, reconnect, permissions, and stale conflicts.
 - [docs/track-2-concurrency-benchmark-notes.md](docs/track-2-concurrency-benchmark-notes.md) — final multi-client concurrency behaviour, latency-sensitive path, and performance limitation notes.
 - [docs/track-2-final-implementation-review.md](docs/track-2-final-implementation-review.md) — final implementation review linking chunk PRs, tests, docs, and known limitations.
+- [docs/track-2-autonomous-completion-marker.md](docs/track-2-autonomous-completion-marker.md) — ticket 099 completion marker for final quality-gate handoff, chunk coverage, and architecture confirmation.
 - [docs/track-2-local-mode-no-regression-audit.md](docs/track-2-local-mode-no-regression-audit.md) — final local-first no-regression audit for plain map/sheet workflows, legacy SSE, and session-mode opt-in boundaries.
 - [docs/track-2-quick-tunnel-caveat.md](docs/track-2-quick-tunnel-caveat.md) — Quick Tunnel caveats for temporary development smoke tests only, including legacy SSE limitations.
 - [docs/track-2-multi-tab-smoke.md](docs/track-2-multi-tab-smoke.md) — local multi-tab helper for GM/player session-mode token propagation smoke checks.

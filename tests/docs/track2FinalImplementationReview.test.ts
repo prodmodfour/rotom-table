@@ -13,13 +13,14 @@ const exists = (relativePath: string): boolean => existsSync(resolve(repoRoot, r
 describe('Track 2 final implementation review', () => {
   const review = readText('docs/track-2-final-implementation-review.md')
 
-  it('records the ticket 097 scope, outcome, and final-handoff boundary', () => {
+  it('records the ticket 097 scope, outcome, cleanup evidence, and completion handoff', () => {
     expect(review).toContain('Ticket 097')
+    expect(review).toContain('ticket 099 adds the target-side autonomous completion marker')
     expect(review).toContain('Audit date: 2026-05-26')
     expect(review).toContain('Outcome: pass for the implemented Track 2 scope')
-    expect(review).toContain('not the autonomous completion marker')
     expect(review).toContain('ticket 098 stale-note cleanup')
-    expect(review).toContain('ticket 099 handles the controller-only completion status')
+    expect(review).toContain('ticket 099 autonomous completion marker')
+    expect(review).toContain('track-2-autonomous-completion-marker.md')
     expect(review).toContain('chunk 09 PR should be created/merged by the outer build loop only')
   })
 
@@ -46,7 +47,8 @@ describe('Track 2 final implementation review', () => {
     }
 
     expect(review).toContain('Current branch `track2/09-final-audit-final-audit`')
-    expect(review).toContain('chunk PR deferred until the outer controller finishes ticket 099')
+    expect(review).toContain('chunk PR creation and merge remain owned by the outer controller workflow')
+    expect(review).toContain('| `09-final-audit` | 090-099 |')
   })
 
   it('links primary docs and source/test evidence that exists in the target repo', () => {
@@ -70,6 +72,7 @@ describe('Track 2 final implementation review', () => {
       'docs/track-2-final-session-security-audit.md',
       'docs/track-2-final-persistence-recovery-audit.md',
       'docs/track-2-concurrency-benchmark-notes.md',
+      'docs/track-2-autonomous-completion-marker.md',
     ]
 
     for (const path of expectedDocPaths) {
@@ -95,6 +98,7 @@ describe('Track 2 final implementation review', () => {
       'tests/composables/map-editor/sessionClientIntegration.test.ts',
       'tests/docs/track2FinalImplementationReview.test.ts',
       'tests/docs/track2StaleNotesCleanup.test.ts',
+      'tests/docs/track2AutonomousCompletionMarker.test.ts',
     ]
 
     for (const path of expectedCodeAndTestPaths) {
@@ -136,5 +140,6 @@ describe('Track 2 final implementation review', () => {
     expect(readText('docs/track-2-validation-matrix.md')).toContain('track-2-final-implementation-review.md')
     expect(readText('docs/track-2-session-protocol.md')).toContain('track-2-final-implementation-review.md')
     expect(readText('docs/track-2-command-audit.md')).toContain('track-2-final-implementation-review.md')
+    expect(readText('docs/track-2-autonomous-completion-marker.md')).toContain('track-2-final-implementation-review.md')
   })
 })

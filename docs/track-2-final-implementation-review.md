@@ -1,10 +1,10 @@
 # Track 2 final implementation review
 
-Ticket 097 records the final implementation review for Rotom Table Track 2 GM-hosted session concurrency. It links the completed chunk PRs that introduced the feature, the target docs reviewers should read, the automated/manual validation evidence, and the known limitations that remain intentional for Track 2.
+Ticket 097 records the final implementation review for Rotom Table Track 2 GM-hosted session concurrency, and ticket 099 adds the target-side autonomous completion marker. This review links the completed chunk PRs that introduced the feature, the target docs reviewers should read, the automated/manual validation evidence, and the known limitations that remain intentional for Track 2.
 
 Audit date: 2026-05-26
 
-Outcome: pass for the implemented Track 2 scope. The target branch now contains a guarded GM-hosted session mode with WebSocket commands, session-local identity, server-owned revisions, snapshot recovery, client integration, hosting runbooks, final audit notes, and ticket 098 stale-note cleanup. This page is not the autonomous completion marker: ticket 099 handles the controller-only completion status.
+Outcome: pass for the implemented Track 2 scope. The target branch now contains a guarded GM-hosted session mode with WebSocket commands, session-local identity, server-owned revisions, snapshot recovery, client integration, hosting runbooks, final audit notes, ticket 098 stale-note cleanup, and the [ticket 099 autonomous completion marker](track-2-autonomous-completion-marker.md).
 
 ## Locked scope reviewed
 
@@ -22,7 +22,7 @@ The implementation still matches the locked Track 2 architecture:
 
 ## Completed chunk PR coverage
 
-The table below links the public chunk PRs already merged by the outer autonomous controller. The final-audit chunk is still on the current branch until all tickets 090-099 are done, so its public PR is intentionally deferred to the controller after ticket 099.
+The table below links the public chunk PRs already merged by the outer autonomous controller for chunks 00-08. The final-audit chunk is complete on the current branch after ticket 099, and its public PR remains owned by the outer controller workflow.
 
 | Chunk | Tickets | Chunk PR / branch | Review focus | Primary evidence |
 | --- | --- | --- | --- | --- |
@@ -35,7 +35,7 @@ The table below links the public chunk PRs already merged by the outer autonomou
 | `06-table-actions` | 060-069 | [PR #16](https://github.com/prodmodfour/rotom-table/pull/16) | HP, combat stages, conditions, initiative, move/action boundaries, hazards, field effects, and terrain commands. | `shared/sessionTableActionCommands.ts`, `shared/sessionInitiativeCommands.ts`, `shared/sessionTerrainCommands.ts`, `tests/server/applyModifyHpCommand.test.ts`, [table action commands](track-2-table-action-commands.md). |
 | `07-client-integration` | 070-079 | [PR #17](https://github.com/prodmodfour/rotom-table/pull/17) | Session/local map state split, session map composable, scene command routing, rejection/presence/reconnect UI, navigation, multi-tab smoke helper. | `src/composables/map-editor/useSessionMap.ts`, `src/composables/map-editor/useSessionMapSceneCommands.ts`, `tests/composables/map-editor/sessionClientIntegration.test.ts`, [client integration guide](track-2-client-integration.md). |
 | `08-hosting-hardening` | 080-089 | [PR #18](https://github.com/prodmodfour/rotom-table/pull/18) | LAN/named-tunnel runbooks, Quick Tunnel caveat, guarded startup scripts, exposure checks, backup/recovery, security, dependency/runtime review, hosting hardening tests. | [LAN hosting](track-2-lan-hosting.md), [named tunnel hosting](track-2-cloudflare-tunnel-hosting.md), [security review](track-2-security-review.md), `tests/server/sessionHostingHardening.test.ts`. |
-| `09-final-audit` | 090-098 in this review, 099 pending | Current branch `track2/09-final-audit-final-audit`; chunk PR deferred until the outer controller finishes ticket 099. | Integrated command audit, LAN browser smoke, named-tunnel doc review, local-mode audit, security audit, persistence/recovery audit, concurrency notes, this final implementation review, and stale-note cleanup. | [command audit](track-2-command-audit.md), [LAN manual smoke results](track-2-lan-manual-smoke-results.md), [named tunnel documentation review](track-2-named-tunnel-documentation-review.md), [final concurrency notes](track-2-concurrency-benchmark-notes.md), `tests/docs/track2StaleNotesCleanup.test.ts`. |
+| `09-final-audit` | 090-099 | Current branch `track2/09-final-audit-final-audit`; chunk PR creation and merge remain owned by the outer controller workflow. | Integrated command audit, LAN browser smoke, named-tunnel doc review, local-mode audit, security audit, persistence/recovery audit, concurrency notes, this final implementation review, stale-note cleanup, and autonomous completion marker. | [command audit](track-2-command-audit.md), [LAN manual smoke results](track-2-lan-manual-smoke-results.md), [named tunnel documentation review](track-2-named-tunnel-documentation-review.md), [final concurrency notes](track-2-concurrency-benchmark-notes.md), [autonomous completion marker](track-2-autonomous-completion-marker.md), `tests/docs/track2StaleNotesCleanup.test.ts`, `tests/docs/track2AutonomousCompletionMarker.test.ts`. |
 
 ## Validation evidence index
 
@@ -48,7 +48,7 @@ The table below links the public chunk PRs already merged by the outer autonomou
 | Token and table commands | `tests/server/sessionIntegratedCommandAudit.test.ts`, `tests/server/sessionTokenCommandTwoClientSmoke.test.ts`, token command use-case/WebSocket tests, table action use-case/WebSocket tests, [integrated command audit](track-2-command-audit.md), and [table action commands](track-2-table-action-commands.md). |
 | Client session mode | `tests/composables/map-editor/sessionClientIntegration.test.ts`, `tests/composables/map-editor/useSessionMapEditorState.test.ts`, `tests/composables/map-editor/useSessionMap.test.ts`, `tests/composables/map-editor/useSessionMapSceneCommands.test.ts`, `tests/utils/sessionCommandRejectionUi.test.ts`, `tests/utils/sessionPresencePanel.test.ts`, `tests/utils/sessionConnectionStatusUi.test.ts`, and [client integration guide](track-2-client-integration.md). |
 | Hosting, safety, and operations | `tests/scripts/sessionHostDev.test.ts`, `tests/scripts/sessionMultiTabSmoke.test.ts`, `tests/server/sessionHostingHardening.test.ts`, `tests/server/sessionSafetyEndpoint.test.ts`, [session host runtime scripts](track-2-session-host-runtime.md), [public exposure checks](track-2-public-exposure-checks.md), [deployment smoke checklist](track-2-deployment-smoke-checklist.md), and [dependency/runtime review](track-2-dependency-runtime-review.md). |
-| Final audits and smoke checks | [LAN manual smoke results](track-2-lan-manual-smoke-results.md), [named tunnel documentation review](track-2-named-tunnel-documentation-review.md), [local-mode no-regression audit](track-2-local-mode-no-regression-audit.md), [final session security audit](track-2-final-session-security-audit.md), [final persistence/recovery audit](track-2-final-persistence-recovery-audit.md), [final concurrency benchmark notes](track-2-concurrency-benchmark-notes.md), this ticket's `tests/docs/track2FinalImplementationReview.test.ts`, and the stale-note cleanup guard `tests/docs/track2StaleNotesCleanup.test.ts`. |
+| Final audits and smoke checks | [LAN manual smoke results](track-2-lan-manual-smoke-results.md), [named tunnel documentation review](track-2-named-tunnel-documentation-review.md), [local-mode no-regression audit](track-2-local-mode-no-regression-audit.md), [final session security audit](track-2-final-session-security-audit.md), [final persistence/recovery audit](track-2-final-persistence-recovery-audit.md), [final concurrency benchmark notes](track-2-concurrency-benchmark-notes.md), [autonomous completion marker](track-2-autonomous-completion-marker.md), this ticket's `tests/docs/track2FinalImplementationReview.test.ts`, the stale-note cleanup guard `tests/docs/track2StaleNotesCleanup.test.ts`, and `tests/docs/track2AutonomousCompletionMarker.test.ts`. |
 | Full gate | The controller quality gate for this ticket runs `npm run typecheck`, `npm test`, `npm run build`, and controller-side cleanliness/pollution checks from the repository root. |
 
 ## Reviewer reading path
@@ -79,7 +79,7 @@ These limitations are intentionally explicit and are not defects in this Track 2
 
 ## Final handoff notes
 
-- This document started as the ticket 097 implementation review and now includes ticket 098 stale-note cleanup evidence.
+- This document started as the ticket 097 implementation review and now includes ticket 098 stale-note cleanup evidence plus the ticket 099 target-side completion marker.
 - Ticket 098 cleaned stale Track 2 notes and outdated references without changing the locked architecture.
-- Ticket 099 should run the full gate again, verify all tickets are `DONE` or honestly `BLOCKED`, and update controller automation status.
-- The chunk 09 PR should be created/merged by the outer build loop only after all tickets in the chunk are done.
+- Ticket 099 records completion in [the autonomous completion marker](track-2-autonomous-completion-marker.md), reruns the full controller quality gate, and updates controller automation status outside the target repository.
+- The chunk 09 PR should be created/merged by the outer build loop only after ticket 099 is finalized.

@@ -28,6 +28,7 @@ This directory collects presentation and reviewer documentation for Rotom Table.
 - [Track 2 integrated command audit](track-2-command-audit.md) — automated multi-client command audit covering accepted commands, reconnect, permissions, and stale conflicts.
 - [Track 2 concurrency benchmark notes](track-2-concurrency-benchmark-notes.md) — final multi-client concurrency behaviour, latency-sensitive path, and performance limitation notes.
 - [Track 2 final implementation review](track-2-final-implementation-review.md) — ticket 097 review linking completed chunk PRs, tests, docs, and known limitations.
+- [Track 2 autonomous completion marker](track-2-autonomous-completion-marker.md) — ticket 099 completion marker for final quality-gate handoff, chunk coverage, and architecture confirmation.
 - [Track 2 local-mode no-regression audit](track-2-local-mode-no-regression-audit.md) — final local-first audit for plain map/sheet workflows, legacy SSE, and explicit session-mode opt-in boundaries.
 - [Track 2 Quick Tunnel caveat](track-2-quick-tunnel-caveat.md) — temporary development smoke-test boundary, campaign-session rejection, and legacy SSE limitations.
 - [Track 2 multi-tab local smoke script](track-2-multi-tab-smoke.md) — local GM/player session-mode tab helper and token propagation checklist.
