@@ -115,6 +115,17 @@ A socket close or heartbeat timeout marks the authenticated client as `disconnec
 
 The client wrapper lives in `src/composables/useSessionSocket.ts`. It resolves `/api/sessions/socket` to `ws://` or `wss://` from the current browser location, wraps the browser `WebSocket`, exposes connection status (`idle`, `connecting`, `open`, `closing`, `closed`, `error`, or `unavailable`), records the last error/close/server message, maintains a bounded JSON send queue, flushes queued messages after `open`, and provides explicit `connect`, `disconnect`, and `cleanup` methods. It can build/send a client `hello` from the remembered session-local identity, auto-sending that hello before queued messages when configured with `hello: { identity }`, tracks whether the server hello was accepted or rejected, sends heartbeat pings after the negotiated server hello, answers server heartbeat pings, reports stale heartbeat timeouts, and records reconnect snapshot fallback messages. It still does not implement command dispatch, optimistic map state, or event replay application.
 
+## Legacy SSE migration boundary
+
+The existing non-session realtime channel remains available during the WebSocket migration. It is intentionally separate from Track 2 session hosting:
+
+- `GET /api/events` is still the legacy Server-Sent Events stream for local-first map, sheet, and library updates outside session mode. It uses the existing local role cookie through `requireAuthRole`, not the `ROTOM_ENABLE_SESSION_HOST=1` gate, GM keys, join codes, player IDs, or session revisions.
+- `src/composables/useRealtime.ts` continues to open one browser `EventSource` to `/api/events` and route events by legacy channels such as `maps`, `map:<slug>`, `sheets`, and `sheet:<kind>:<slug>`. Local-mode composables such as `useEditableMap`, `useEditableSheet`, `useLiveSheets`, and map-library subscriptions keep using this path for cross-tab/local-device echo suppression.
+- Legacy SSE events may carry whole saved map or sheet payloads and retain their existing last-writer-wins semantics. That is acceptable only for the current local-first/non-session workflow.
+- Live Track 2 sessions must not use `/api/events` for commands, command acknowledgements/rejections, presence, heartbeat, or reconnect. Session clients use `WebSocket /api/sessions/socket` after the session-host flag and hello/auth handshake, then later command tickets route table mutations through server-authoritative command handlers.
+
+This boundary lets the app preserve existing Track 1/local workflows while the session WebSocket stack lands in additive slices. Future tickets may replace specific local-mode behaviours with session-aware alternatives when a session is active, but they should not remove the legacy SSE route until a separate migration ticket explicitly does so.
+
 ## GM start-session endpoint
 
 `POST /api/sessions/start` creates the first server-side identity and state record for a Track 2 table session. The route fails closed unless `ROTOM_ENABLE_SESSION_HOST=1` is present, and the server use case repeats that runtime-gate check before allocating anything. The route currently also requires the existing local GM role so the GM can start a session from the trusted local app, but that role picker is not public authentication; the returned session-local GM key is the credential GM management routes and future WebSocket handshakes must validate.
