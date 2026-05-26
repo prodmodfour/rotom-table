@@ -65,6 +65,10 @@ const makeControls = (
       dispatchMoveToken(payload: { placement: TabletopMap['placements'][number]; to: TabletopMap['placements'][number]['position'] }): { readonly dispatched: boolean }
       dispatchTurnToken?(payload: { placement: TabletopMap['placements'][number]; facing: NonNullable<TabletopMap['placements'][number]['facing']> }): { readonly dispatched: boolean }
     }
+    sessionTokenControl?: {
+      readonly enabled: { readonly value: boolean }
+      readonly controllablePlacementIds: { readonly value: readonly string[] }
+    }
   } = {},
 ) => {
   const map = ref(options.map ?? mapFixture())
@@ -82,6 +86,7 @@ const makeControls = (
       canControlAllTokens: isGm,
       canDeleteTokens: isGm,
       sessionMoveTokenDispatcher: options.sessionMoveTokenDispatcher,
+      sessionTokenControl: options.sessionTokenControl,
       createPlacementId: () => options.nextId ?? 'token-1',
       now: options.now,
     }),
@@ -140,6 +145,31 @@ describe('useTokenControls', () => {
     isGm.value = true
     controls.deletePlacement('gm-token')
     expect(map.placements.map((placement) => placement.id)).toEqual(['player-token'])
+  })
+
+  it('uses session token assignments instead of local player sheet flags in session mode', () => {
+    const playerSheet = pokemon({ slug: 'local-player-mon', player: true })
+    const assignedSheet = pokemon({ slug: 'assigned-mon', player: false })
+    const map = mapFixture()
+    map.placements = [
+      { id: 'local-player-token', sheetKind: 'pokemon', sheetSlug: playerSheet.slug, position: { x: 0, y: 0, z: 0 } },
+      { id: 'assigned-token', sheetKind: 'pokemon', sheetSlug: assignedSheet.slug, position: { x: 1, y: 0, z: 0 } },
+    ]
+    const { controls } = makeControls({
+      map,
+      pokemonSheets: [playerSheet, assignedSheet],
+      isGm: false,
+      sessionTokenControl: {
+        enabled: ref(true),
+        controllablePlacementIds: ref(['assigned-token']),
+      },
+    })
+
+    expect(controls.controllablePlacementIds.value).toEqual(['assigned-token'])
+    controls.selectPlacement('local-player-token')
+    expect(controls.selectedId.value).toBeNull()
+    controls.selectPlacement('assigned-token')
+    expect(controls.selectedId.value).toBe('assigned-token')
   })
 
   it('logs token movement as a combat action', () => {

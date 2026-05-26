@@ -35,6 +35,8 @@ import {
   type SessionMoveTokenSocket,
 } from '~/composables/map-editor/useSessionMoveTokenDispatch'
 import { useTokenControls } from '~/composables/map-editor/useTokenControls'
+import type { AuthoritativeSessionState } from '#shared/sessionState'
+import { buildSessionTokenControlModel } from '~/utils/sessionTokenControl'
 import { formatSessionCommandRejectionNotice } from '~/utils/sessionCommandRejectionUi'
 import { buildSessionConnectionStatusNotice } from '~/utils/sessionConnectionStatusUi'
 import { buildSessionPresencePanelModel } from '~/utils/sessionPresencePanel'
@@ -98,6 +100,28 @@ const sessionAssignmentTokens = computed(() => (map.value?.placements ?? []).map
   sheetKind: placement.sheetKind,
   sheetSlug: placement.sheetSlug,
 })))
+const sessionSnapshotState = computed(() => (
+  sessionMap.socket.lastSnapshot.value?.snapshot as AuthoritativeSessionState<TabletopMap> | undefined
+) ?? null)
+const sessionTokenControlModel = computed(() => buildSessionTokenControlModel({
+  enabled: sessionMoveTokenEnabled.value,
+  identity: sessionMap.identity.value,
+  mapSlug: slug,
+  placements: map.value?.placements ?? [],
+  assignments: sessionSnapshotState.value?.assignments,
+  hasSnapshot: sessionMap.socket.lastSnapshot.value !== null,
+}))
+const sessionTokenControlNotice = computed(() => sessionTokenControlModel.value.notice)
+const canUseSessionTokenSendOut = computed(() => (
+  sessionMoveTokenEnabled.value
+    ? sessionMap.identity.value !== null
+    : canSpawnTokens.value
+))
+const canUseSessionTokenDelete = computed(() => (
+  sessionMoveTokenEnabled.value
+    ? sessionMap.identity.value?.role === 'gm'
+    : isGm.value
+))
 
 useHead(() => ({
   title: map.value ? `${map.value.name} · Maps` : 'Maps · Rotom Table',
@@ -167,8 +191,13 @@ const {
   mapGroundLevelY,
   canSpawnTokens,
   canControlAllTokens: isGm,
-  canDeleteTokens: isGm,
+  canDeleteTokens: canUseSessionTokenDelete,
+  canSendOutTokens: canUseSessionTokenSendOut,
   sessionMoveTokenDispatcher: sessionMoveTokenDispatch,
+  sessionTokenControl: {
+    enabled: sessionMoveTokenEnabled,
+    controllablePlacementIds: computed(() => sessionTokenControlModel.value.controllablePlacementIds),
+  },
 })
 
 const selectPokemon = (id: string | null) => {
@@ -804,7 +833,8 @@ useMapDimensionReconciliation({
         :hazard-mode="hazardMode && canEditMap"
         :hazard-tool="hazardTool"
         :hazard-kind="hazardKind"
-        :can-delete-tokens="isGm"
+        :can-delete-tokens="canUseSessionTokenDelete"
+        :session-token-control-notice="sessionTokenControlNotice"
         :move-automation-targeting="actionAutomationTargeting"
         :move-automation-feedback="moveAutomationFeedback"
         :move-usage-error="sceneActionError"

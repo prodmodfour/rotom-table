@@ -62,6 +62,11 @@ interface SessionMoveTokenDispatcherLike {
   dispatchTurnToken?(payload: { placement: SheetPlacement; facing: TokenFacingDirection }): { readonly dispatched: boolean }
 }
 
+interface SessionTokenControlLike {
+  readonly enabled: BooleanRef
+  readonly controllablePlacementIds: ReadonlyValueRef<readonly string[]>
+}
+
 type SheetMapRef<T> = Ref<Map<string, T> | undefined>
 
 export type MapTokenSheetSelection =
@@ -77,8 +82,10 @@ export interface UseTokenControlsOptions {
   canSpawnTokens: BooleanRef
   canControlAllTokens: BooleanRef
   canDeleteTokens?: BooleanRef
+  canSendOutTokens?: BooleanRef
   selectionDisabled?: BooleanRef
   sessionMoveTokenDispatcher?: SessionMoveTokenDispatcherLike
+  sessionTokenControl?: SessionTokenControlLike
   createPlacementId?: () => string
   now?: () => number
   maxMovementLogEntries?: number
@@ -109,8 +116,10 @@ export const useTokenControls = ({
   canSpawnTokens,
   canControlAllTokens,
   canDeleteTokens = canControlAllTokens,
+  canSendOutTokens = canSpawnTokens,
   selectionDisabled,
   sessionMoveTokenDispatcher,
+  sessionTokenControl,
   createPlacementId = defaultCreatePlacementId,
   now,
   maxMovementLogEntries,
@@ -198,6 +207,11 @@ export const useTokenControls = ({
 
   const controllablePlacementIds = computed(() => {
     if (!map.value) return []
+    if (sessionTokenControl?.enabled.value) {
+      const placementIds = new Set(map.value.placements.map((placement) => placement.id))
+      return [...new Set(sessionTokenControl.controllablePlacementIds.value)]
+        .filter((id) => placementIds.has(id))
+    }
     if (canControlAllTokens.value) return map.value.placements.map((placement) => placement.id)
     return map.value.placements
       .filter((placement) => {
@@ -229,7 +243,7 @@ export const useTokenControls = ({
   const tokenSendOutOptionsById = computed(() => buildTokenSendOutOptionsByPlacementId(
     map.value?.placements ?? [],
     sheetLookup.value,
-    canSpawnTokens.value,
+    canSendOutTokens.value,
   ))
 
   const resetPreview = () => {
@@ -277,7 +291,7 @@ export const useTokenControls = ({
   }
 
   const sendOutPokemon = (payload: { trainerId: string; pokemonSlug: string; position: GridAnchor }) => {
-    if (!map.value || !canSpawnTokens.value || !canControlPlacement(payload.trainerId)) return
+    if (!map.value || !canSendOutTokens.value || !canControlPlacement(payload.trainerId)) return
 
     const trainerPlacement = placementById(payload.trainerId)
     if (trainerPlacement?.sheetKind !== 'trainer') return

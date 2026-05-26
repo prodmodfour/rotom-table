@@ -92,6 +92,7 @@ const props = defineProps<{
   tokenAbilityOptionsById?: Record<string, TokenAbilityMenuOption[]>
   tokenOrderOptionsById?: Record<string, TokenOrderMenuOption[]>
   tokenSendOutOptionsById?: Record<string, TokenSendOutOption[]>
+  sessionTokenControlNotice?: string | null
   sessionCommandRejection?: SessionCommandRejectionNotice | null
   sessionConnectionStatus?: SessionConnectionStatusNotice | null
   sessionPresence?: SessionPresencePanelModel | null
@@ -232,6 +233,15 @@ defineExpose({ focusPokemon })
         @refresh-session="emit('refresh-session-snapshot')"
       />
 
+      <div
+        v-if="props.map && canViewMap && props.sessionTokenControlNotice"
+        class="session-token-control-notice"
+        role="status"
+        aria-live="polite"
+      >
+        {{ props.sessionTokenControlNotice }}
+      </div>
+
       <MapCombatLog
         v-if="props.map && canViewMap"
         :messages="combatLogMessages"
@@ -287,6 +297,24 @@ defineExpose({ focusPokemon })
   background: var(--paper);
 }
 
+.session-token-control-notice {
+  position: absolute;
+  z-index: 6;
+  top: calc(var(--map-overlay-gutter, 0.75rem) + 6.8rem);
+  left: calc(var(--map-overlay-gutter, 0.75rem) + var(--map-nav-rail-width, 0px) + 0.75rem);
+  width: min(32rem, calc(100vw - var(--map-nav-rail-width, 0px) - 2.5rem));
+  padding: 0.62rem 0.78rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 48%, rgba(255, 255, 255, 0.22));
+  border-radius: 0.85rem;
+  background: color-mix(in srgb, rgba(8, 10, 14, 0.82) 86%, var(--paper));
+  color: color-mix(in srgb, var(--ink-bright) 88%, transparent);
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.28);
+  font-size: 0.78rem;
+  font-weight: 850;
+  line-height: 1.32;
+  pointer-events: none;
+}
+
 .move-usage-error {
   position: absolute;
   top: 1rem;
@@ -304,5 +332,12 @@ defineExpose({ focusPokemon })
   font-weight: 900;
   text-align: center;
   pointer-events: none;
+}
+
+@media (max-width: 840px) {
+  .session-token-control-notice {
+    left: var(--map-overlay-gutter, 0.75rem);
+    width: min(30rem, calc(100vw - 1.5rem));
+  }
 }
 </style>
