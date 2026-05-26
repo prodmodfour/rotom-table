@@ -7,8 +7,9 @@
  * keeps authenticated sockets alive with app-level heartbeat ping/pong frames,
  * sends reconnect snapshot fallback when replay is unavailable, dispatches
  * server-authoritative moveToken, turnToken, spawnToken, deleteToken, sendOutPokemon, modifyHp, modifyCombatStages, modifyConditions,
- * useMove, useManeuver, useAbility, useOrder, setInitiative, nextInitiative, previousInitiative, placeHazard, and removeHazard commands,
- * and fans out server presence plus accepted tokenMoved/tokenTurned/tokenSpawned/tokenDeleted/pokemonSentOut/hpModified/combatStagesModified/conditionsModified/moveUsed/maneuverUsed/abilityUsed/orderUsed/initiativeUpdated/hazardsUpdated
+ * useMove, useManeuver, useAbility, useOrder, setInitiative, nextInitiative, previousInitiative, placeHazard, removeHazard,
+ * setFieldEffect, removeFieldEffect, and tickFieldEffectDurations commands,
+ * and fans out server presence plus accepted tokenMoved/tokenTurned/tokenSpawned/tokenDeleted/pokemonSentOut/hpModified/combatStagesModified/conditionsModified/moveUsed/maneuverUsed/abilityUsed/orderUsed/initiativeUpdated/hazardsUpdated/fieldEffectsUpdated
  * patches only to authenticated peers in the same session.
  * This route still does not grant map-edit authority by itself.
  */

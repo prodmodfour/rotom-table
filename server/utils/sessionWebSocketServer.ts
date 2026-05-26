@@ -66,6 +66,12 @@ import {
   REMOVE_HAZARD_COMMAND_TYPE,
   type HazardCommand,
 } from '#shared/sessionHazardCommands'
+import {
+  REMOVE_FIELD_EFFECT_COMMAND_TYPE,
+  SET_FIELD_EFFECT_COMMAND_TYPE,
+  TICK_FIELD_EFFECT_DURATIONS_COMMAND_TYPE,
+  type FieldEffectCommand,
+} from '#shared/sessionFieldEffectCommands'
 import type { TabletopMapV2 } from '~/types/map'
 import {
   applyMoveTokenCommandUseCase,
@@ -127,6 +133,12 @@ import {
   type ApplyHazardCommandInput,
   type ApplyHazardCommandUseCaseResult,
 } from '../useCases/applyHazardCommand'
+import {
+  applyFieldEffectCommandUseCase,
+  type ApplyFieldEffectCommandDependencies,
+  type ApplyFieldEffectCommandInput,
+  type ApplyFieldEffectCommandUseCaseResult,
+} from '../useCases/applyFieldEffectCommand'
 import {
   applyUseMoveCommandUseCase,
   type ApplyUseMoveCommandDependencies,
@@ -339,6 +351,11 @@ export type SessionSocketHazardCommandApplier = (
   dependencies?: ApplyHazardCommandDependencies,
 ) => ApplyHazardCommandUseCaseResult
 
+export type SessionSocketFieldEffectCommandApplier = (
+  input: ApplyFieldEffectCommandInput,
+  dependencies?: ApplyFieldEffectCommandDependencies,
+) => ApplyFieldEffectCommandUseCaseResult
+
 export type SessionSocketUseMoveCommandApplier = (
   input: ApplyUseMoveCommandInput,
   dependencies?: ApplyUseMoveCommandDependencies,
@@ -399,6 +416,11 @@ export type SessionSocketHazardCommandDependencies = Omit<
   'env' | 'store' | 'clock'
 >
 
+export type SessionSocketFieldEffectCommandDependencies = Omit<
+  ApplyFieldEffectCommandDependencies,
+  'env' | 'store' | 'clock'
+>
+
 export type SessionSocketUseMoveCommandDependencies = Omit<
   ApplyUseMoveCommandDependencies,
   'env' | 'store' | 'clock'
@@ -425,6 +447,7 @@ export interface SessionSocketHandlerDependencies<TMapDocument = unknown> {
   readonly applyModifyConditionsCommand?: SessionSocketModifyConditionsCommandApplier
   readonly applyInitiativeCommand?: SessionSocketInitiativeCommandApplier
   readonly applyHazardCommand?: SessionSocketHazardCommandApplier
+  readonly applyFieldEffectCommand?: SessionSocketFieldEffectCommandApplier
   readonly applyUseMoveCommand?: SessionSocketUseMoveCommandApplier
   readonly applyUseTableActionCommand?: SessionSocketUseTableActionCommandApplier
   readonly moveTokenCommandDependencies?: SessionSocketMoveTokenCommandDependencies
@@ -437,6 +460,7 @@ export interface SessionSocketHandlerDependencies<TMapDocument = unknown> {
   readonly modifyConditionsCommandDependencies?: SessionSocketModifyConditionsCommandDependencies
   readonly initiativeCommandDependencies?: SessionSocketInitiativeCommandDependencies
   readonly hazardCommandDependencies?: SessionSocketHazardCommandDependencies
+  readonly fieldEffectCommandDependencies?: SessionSocketFieldEffectCommandDependencies
   readonly useMoveCommandDependencies?: SessionSocketUseMoveCommandDependencies
   readonly useTableActionCommandDependencies?: SessionSocketUseTableActionCommandDependencies
 }
@@ -469,6 +493,7 @@ interface ResolvedSessionSocketHandlerDependencies<TMapDocument = unknown> {
   readonly applyModifyConditionsCommand: SessionSocketModifyConditionsCommandApplier
   readonly applyInitiativeCommand: SessionSocketInitiativeCommandApplier
   readonly applyHazardCommand: SessionSocketHazardCommandApplier
+  readonly applyFieldEffectCommand: SessionSocketFieldEffectCommandApplier
   readonly applyUseMoveCommand: SessionSocketUseMoveCommandApplier
   readonly applyUseTableActionCommand: SessionSocketUseTableActionCommandApplier
   readonly moveTokenCommandDependencies: SessionSocketMoveTokenCommandDependencies
@@ -481,6 +506,7 @@ interface ResolvedSessionSocketHandlerDependencies<TMapDocument = unknown> {
   readonly modifyConditionsCommandDependencies: SessionSocketModifyConditionsCommandDependencies
   readonly initiativeCommandDependencies: SessionSocketInitiativeCommandDependencies
   readonly hazardCommandDependencies: SessionSocketHazardCommandDependencies
+  readonly fieldEffectCommandDependencies: SessionSocketFieldEffectCommandDependencies
   readonly useMoveCommandDependencies: SessionSocketUseMoveCommandDependencies
   readonly useTableActionCommandDependencies: SessionSocketUseTableActionCommandDependencies
 }
@@ -902,6 +928,7 @@ const resolveDependencies = <TMapDocument>(
   applyModifyConditionsCommand: dependencies.applyModifyConditionsCommand ?? applyModifyConditionsCommandUseCase,
   applyInitiativeCommand: dependencies.applyInitiativeCommand ?? applyInitiativeCommandUseCase,
   applyHazardCommand: dependencies.applyHazardCommand ?? applyHazardCommandUseCase,
+  applyFieldEffectCommand: dependencies.applyFieldEffectCommand ?? applyFieldEffectCommandUseCase,
   applyUseMoveCommand: dependencies.applyUseMoveCommand ?? applyUseMoveCommandUseCase,
   applyUseTableActionCommand: dependencies.applyUseTableActionCommand ?? applyUseTableActionCommandUseCase,
   moveTokenCommandDependencies: dependencies.moveTokenCommandDependencies ?? {},
@@ -914,6 +941,7 @@ const resolveDependencies = <TMapDocument>(
   modifyConditionsCommandDependencies: dependencies.modifyConditionsCommandDependencies ?? {},
   initiativeCommandDependencies: dependencies.initiativeCommandDependencies ?? {},
   hazardCommandDependencies: dependencies.hazardCommandDependencies ?? {},
+  fieldEffectCommandDependencies: dependencies.fieldEffectCommandDependencies ?? {},
   useMoveCommandDependencies: dependencies.useMoveCommandDependencies ?? {},
   useTableActionCommandDependencies: dependencies.useTableActionCommandDependencies ?? {},
 })
@@ -1693,11 +1721,14 @@ const handleAuthenticatedSocketCommand = <TMapDocument>(
     command.type !== NEXT_INITIATIVE_COMMAND_TYPE &&
     command.type !== PREVIOUS_INITIATIVE_COMMAND_TYPE &&
     command.type !== PLACE_HAZARD_COMMAND_TYPE &&
-    command.type !== REMOVE_HAZARD_COMMAND_TYPE
+    command.type !== REMOVE_HAZARD_COMMAND_TYPE &&
+    command.type !== SET_FIELD_EFFECT_COMMAND_TYPE &&
+    command.type !== REMOVE_FIELD_EFFECT_COMMAND_TYPE &&
+    command.type !== TICK_FIELD_EFFECT_DURATIONS_COMMAND_TYPE
   ) {
     sendJson(peer, createSessionSocketErrorMessage({
       code: 'unsupported-message',
-      message: 'Track 2 session WebSocket command dispatch currently supports moveToken, turnToken, spawnToken, deleteToken, sendOutPokemon, modifyHp, modifyCombatStages, modifyConditions, useMove, useManeuver, useAbility, useOrder, setInitiative, nextInitiative, previousInitiative, placeHazard, and removeHazard commands only.',
+      message: 'Track 2 session WebSocket command dispatch currently supports moveToken, turnToken, spawnToken, deleteToken, sendOutPokemon, modifyHp, modifyCombatStages, modifyConditions, useMove, useManeuver, useAbility, useOrder, setInitiative, nextInitiative, previousInitiative, placeHazard, removeHazard, setFieldEffect, removeFieldEffect, and tickFieldEffectDurations commands only.',
       retryable: false,
       sessionId: connection.sessionId,
       currentRevision: connection.currentRevision,
@@ -1716,6 +1747,7 @@ const handleAuthenticatedSocketCommand = <TMapDocument>(
     | ApplyModifyConditionsCommandUseCaseResult
     | ApplyInitiativeCommandUseCaseResult
     | ApplyHazardCommandUseCaseResult
+    | ApplyFieldEffectCommandUseCaseResult
     | ApplyUseMoveCommandUseCaseResult
     | ApplyUseTableActionCommandUseCaseResult
   try {
@@ -1826,11 +1858,23 @@ const handleAuthenticatedSocketCommand = <TMapDocument>(
         store: dependencies.store as unknown as InMemorySessionStore<AuthoritativeSessionState<TabletopMapV2>>,
         clock: () => receivedAt,
       })
-    } else {
+    } else if (
+      command.type === PLACE_HAZARD_COMMAND_TYPE ||
+      command.type === REMOVE_HAZARD_COMMAND_TYPE
+    ) {
       applied = dependencies.applyHazardCommand({
         command: command as HazardCommand,
       }, {
         ...dependencies.hazardCommandDependencies,
+        env: dependencies.env,
+        store: dependencies.store as unknown as InMemorySessionStore<AuthoritativeSessionState<TabletopMapV2>>,
+        clock: () => receivedAt,
+      })
+    } else {
+      applied = dependencies.applyFieldEffectCommand({
+        command: command as FieldEffectCommand,
+      }, {
+        ...dependencies.fieldEffectCommandDependencies,
         env: dependencies.env,
         store: dependencies.store as unknown as InMemorySessionStore<AuthoritativeSessionState<TabletopMapV2>>,
         clock: () => receivedAt,
