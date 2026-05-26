@@ -48,7 +48,7 @@ describe('Track 2 final persistence and recovery audit', () => {
   })
 
   it('audits the optional event log without promoting it to recovery authority', () => {
-    expect(audit).toContain('The accepted limitation is that `events.jsonl` is audit/future-replay data today')
+    expect(audit).toContain('The accepted limitation is that `events.jsonl` is audit/replay-oriented data today')
     expect(audit).toContain('not sufficient when `snapshot.json` is missing or invalid')
     expect(audit).toContain('not a command stream clients can edit')
     expect(audit).toContain('one compact JSON object per line')

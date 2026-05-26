@@ -1,6 +1,6 @@
 # Track 2 deployment smoke checklist
 
-Use this checklist before trusting a Track 2 table session on either supported deployment path: same-Wi-Fi/LAN or a named Cloudflare Tunnel with a stable hostname. It is a repeatable operator checklist, not a record that a specific environment has passed; later audit tickets can copy the evidence template and fill in observed results.
+Use this checklist before trusting a Track 2 table session on either supported deployment path: same-Wi-Fi/LAN or a named Cloudflare Tunnel with a stable hostname. It is a repeatable operator checklist, not a record that a specific environment has passed; operators and final audits can copy the evidence template and fill in observed results.
 
 The smoke keeps the locked Track 2 architecture intact: the GM runs the server, session hosting is explicitly enabled, live clients use `WebSocket /api/sessions/socket`, accepted changes are server-authoritative command patches, reconnect uses authoritative state, and runtime data stays in local JSON snapshots/event logs. Do not use this checklist to introduce public accounts, SaaS hosting, a cloud database, or whole-map browser autosave as the live concurrency model.
 

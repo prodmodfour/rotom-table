@@ -28,7 +28,7 @@ This glossary defines the vocabulary used by the Track 2 GM-hosted session roadm
 | Client ID | Identifier for one browser/client instance. One player can reconnect or have more than one client over time. |
 | Session actor | The GM or a player identity attached to a command or socket message. |
 | Assignment | GM-managed record that gives a player control over specific sheets, tokens, or other resources. |
-| Controllable resource | A token, sheet, or later table resource that a player may command when assigned and visible. |
+| Controllable resource | A token, sheet, or additional table resource that a player may command when assigned and visible. |
 | Visible resource | A map, sheet, token, or state slice the player is allowed to see. Visibility does not always imply control. |
 | Permission result | A structured allow/deny answer explaining whether an actor can perform an operation and why it was denied. |
 

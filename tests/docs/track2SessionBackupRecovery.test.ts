@@ -16,7 +16,7 @@ describe('Track 2 session backup and recovery runbook', () => {
     expect(runbook).toContain('data/sessions/<sessionId>/snapshot.json')
     expect(runbook).toContain('data/sessions/<sessionId>/events.jsonl')
     expect(runbook).toContain('latest valid `data/sessions/<sessionId>/snapshot.json` is the recovery baseline')
-    expect(runbook).toContain('optional. It can support audit, troubleshooting, or future replay')
+    expect(runbook).toContain('optional. It can support audit, troubleshooting, or replay-oriented follow-up work')
     expect(runbook).toContain('not sufficient by itself')
     expect(runbook).toContain('Track 2 does not add Postgres, Redis, Durable Objects, cloud object storage, automatic replication, or a hosted database')
   })

@@ -12,7 +12,7 @@ This directory collects presentation and reviewer documentation for Rotom Table.
 - [Track 1 performance roadmap](track-1-performance-roadmap.md) — no-quality-loss performance constraints, benchmark categories, and staged isometric map optimization plan.
 - [Track 2 roadmap](track-2-roadmap.md) — locked GM-hosted session scope, lifecycle, concurrency model, roadmap phases, and non-goals.
 - [Track 2 glossary](track-2-glossary.md) — shared vocabulary for session identity, commands, revisions, WebSocket flow, persistence, and safety boundaries.
-- [Track 2 validation matrix](track-2-validation-matrix.md) — expected tests, smoke checks, docs, and safety reviews for later implementation areas.
+- [Track 2 validation matrix](track-2-validation-matrix.md) — expected tests, smoke checks, docs, and safety reviews for Track 2 implementation areas.
 - [Track 2 session protocol](track-2-session-protocol.md) — shared identity, command envelope, result, WebSocket message, ack/reject, duplicate, and reconnect contracts.
 - [Track 2 WebSocket protocol](track-2-websocket-protocol.md) — live session socket route, message examples, heartbeat, reconnect, command flow, and named-tunnel expectations.
 - [Track 2 table action commands](track-2-table-action-commands.md) — supported HP, condition, initiative, move/action, hazard, field-effect, and terrain session commands with permissions, conflicts, and limitations.

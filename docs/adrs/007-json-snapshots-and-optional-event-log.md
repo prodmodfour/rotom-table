@@ -22,7 +22,7 @@ All session persistence remains local-first JSON under app-owned local data path
 
 ## Snapshot contents
 
-The exact TypeScript types will be defined in later implementation tickets, but every persisted snapshot must be shaped around authoritative session state rather than client document edits. A snapshot should include:
+The TypeScript snapshot types are defined in the Track 2 implementation, and every persisted snapshot is shaped around authoritative session state rather than client document edits. A snapshot should include:
 
 - schema/version information for validation and migrations;
 - `sessionId` and non-account session metadata;
@@ -50,7 +50,7 @@ The implementation should follow this pattern:
 
 A failed write must not replace the previous valid snapshot. If persistence fails after a command has changed in-memory authoritative state, the server must fail closed for durability-sensitive flows: report the persistence failure, avoid pretending a non-durable command was safely committed, and avoid asking clients to trust a state the server cannot recover.
 
-Initial implementation may write a snapshot after each accepted command for simplicity and safety. Later implementations may coalesce snapshots only when every acknowledged accepted command is otherwise durably represented by an event-log entry and recovery can reconstruct the latest acknowledged revision.
+The implementation may write a snapshot after each accepted command for simplicity and safety. Follow-up implementations may coalesce snapshots only when every acknowledged accepted command is otherwise durably represented by an event-log entry and recovery can reconstruct the latest acknowledged revision.
 
 ## Optional event log
 
@@ -89,7 +89,7 @@ Rejected commands do not advance revision and do not need to be replayable state
 
 ## Storage and privacy boundaries
 
-Session persistence is local operational data, not source code. Later storage docs and implementation must ensure:
+Session persistence is local operational data, not source code. Storage docs and implementation must ensure:
 
 - snapshot and event-log directories are outside committed source fixtures or are ignored by git;
 - generated/private campaign data is never added to the repository;
@@ -132,7 +132,7 @@ Rejected. Tests may use synthetic fixtures, but real snapshots, logs, campaign m
 
 ## Validation notes
 
-Reviewers can validate this ADR by checking that later Track 2 work:
+Reviewers can validate this ADR by checking that Track 2 work:
 
 - writes session snapshots from server-authoritative state only;
 - uses atomic temp-file-and-rename semantics for latest snapshots;

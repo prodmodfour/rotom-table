@@ -49,7 +49,7 @@ After the fix, `npm run build` succeeded, the LAN dev helper served `/sessions`,
 
 ## Boundaries and follow-up guidance
 
-- This smoke is a LAN browser-client pass, not a named Cloudflare Tunnel review; see the [Track 2 named Cloudflare Tunnel runbook](track-2-cloudflare-tunnel-hosting.md) and later named-tunnel audit tickets for remote-hosting review.
+- This smoke is a LAN browser-client pass, not a named Cloudflare Tunnel review; see the [Track 2 named Cloudflare Tunnel runbook](track-2-cloudflare-tunnel-hosting.md) and [Track 2 named tunnel documentation review](track-2-named-tunnel-documentation-review.md) for remote-hosting review.
 - Quick Tunnel was not used and remains development-smoke-test only; see the [Track 2 Quick Tunnel caveat](track-2-quick-tunnel-caveat.md).
 - The existing `/login` GM/player picker remains a local trust switch, not public authentication.
 - Browser clients did not autosave whole maps as live session authority; reconnect used a server snapshot fallback.

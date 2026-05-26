@@ -4,7 +4,7 @@ Ticket 097 records the final implementation review for Rotom Table Track 2 GM-ho
 
 Audit date: 2026-05-26
 
-Outcome: pass for the implemented Track 2 scope. The target branch now contains a guarded GM-hosted session mode with WebSocket commands, session-local identity, server-owned revisions, snapshot recovery, client integration, hosting runbooks, and final audit notes. This page is not the autonomous completion marker: ticket 098 still handles stale-note cleanup and ticket 099 handles the controller-only completion status.
+Outcome: pass for the implemented Track 2 scope. The target branch now contains a guarded GM-hosted session mode with WebSocket commands, session-local identity, server-owned revisions, snapshot recovery, client integration, hosting runbooks, final audit notes, and ticket 098 stale-note cleanup. This page is not the autonomous completion marker: ticket 099 handles the controller-only completion status.
 
 ## Locked scope reviewed
 
@@ -35,7 +35,7 @@ The table below links the public chunk PRs already merged by the outer autonomou
 | `06-table-actions` | 060-069 | [PR #16](https://github.com/prodmodfour/rotom-table/pull/16) | HP, combat stages, conditions, initiative, move/action boundaries, hazards, field effects, and terrain commands. | `shared/sessionTableActionCommands.ts`, `shared/sessionInitiativeCommands.ts`, `shared/sessionTerrainCommands.ts`, `tests/server/applyModifyHpCommand.test.ts`, [table action commands](track-2-table-action-commands.md). |
 | `07-client-integration` | 070-079 | [PR #17](https://github.com/prodmodfour/rotom-table/pull/17) | Session/local map state split, session map composable, scene command routing, rejection/presence/reconnect UI, navigation, multi-tab smoke helper. | `src/composables/map-editor/useSessionMap.ts`, `src/composables/map-editor/useSessionMapSceneCommands.ts`, `tests/composables/map-editor/sessionClientIntegration.test.ts`, [client integration guide](track-2-client-integration.md). |
 | `08-hosting-hardening` | 080-089 | [PR #18](https://github.com/prodmodfour/rotom-table/pull/18) | LAN/named-tunnel runbooks, Quick Tunnel caveat, guarded startup scripts, exposure checks, backup/recovery, security, dependency/runtime review, hosting hardening tests. | [LAN hosting](track-2-lan-hosting.md), [named tunnel hosting](track-2-cloudflare-tunnel-hosting.md), [security review](track-2-security-review.md), `tests/server/sessionHostingHardening.test.ts`. |
-| `09-final-audit` | 090-097 in this review, 098-099 pending | Current branch `track2/09-final-audit-final-audit`; chunk PR deferred until the outer controller finishes tickets 098-099. | Integrated command audit, LAN browser smoke, named-tunnel doc review, local-mode audit, security audit, persistence/recovery audit, concurrency notes, this final implementation review. | [command audit](track-2-command-audit.md), [LAN manual smoke results](track-2-lan-manual-smoke-results.md), [named tunnel documentation review](track-2-named-tunnel-documentation-review.md), [final concurrency notes](track-2-concurrency-benchmark-notes.md). |
+| `09-final-audit` | 090-098 in this review, 099 pending | Current branch `track2/09-final-audit-final-audit`; chunk PR deferred until the outer controller finishes ticket 099. | Integrated command audit, LAN browser smoke, named-tunnel doc review, local-mode audit, security audit, persistence/recovery audit, concurrency notes, this final implementation review, and stale-note cleanup. | [command audit](track-2-command-audit.md), [LAN manual smoke results](track-2-lan-manual-smoke-results.md), [named tunnel documentation review](track-2-named-tunnel-documentation-review.md), [final concurrency notes](track-2-concurrency-benchmark-notes.md), `tests/docs/track2StaleNotesCleanup.test.ts`. |
 
 ## Validation evidence index
 
@@ -48,7 +48,7 @@ The table below links the public chunk PRs already merged by the outer autonomou
 | Token and table commands | `tests/server/sessionIntegratedCommandAudit.test.ts`, `tests/server/sessionTokenCommandTwoClientSmoke.test.ts`, token command use-case/WebSocket tests, table action use-case/WebSocket tests, [integrated command audit](track-2-command-audit.md), and [table action commands](track-2-table-action-commands.md). |
 | Client session mode | `tests/composables/map-editor/sessionClientIntegration.test.ts`, `tests/composables/map-editor/useSessionMapEditorState.test.ts`, `tests/composables/map-editor/useSessionMap.test.ts`, `tests/composables/map-editor/useSessionMapSceneCommands.test.ts`, `tests/utils/sessionCommandRejectionUi.test.ts`, `tests/utils/sessionPresencePanel.test.ts`, `tests/utils/sessionConnectionStatusUi.test.ts`, and [client integration guide](track-2-client-integration.md). |
 | Hosting, safety, and operations | `tests/scripts/sessionHostDev.test.ts`, `tests/scripts/sessionMultiTabSmoke.test.ts`, `tests/server/sessionHostingHardening.test.ts`, `tests/server/sessionSafetyEndpoint.test.ts`, [session host runtime scripts](track-2-session-host-runtime.md), [public exposure checks](track-2-public-exposure-checks.md), [deployment smoke checklist](track-2-deployment-smoke-checklist.md), and [dependency/runtime review](track-2-dependency-runtime-review.md). |
-| Final audits and smoke checks | [LAN manual smoke results](track-2-lan-manual-smoke-results.md), [named tunnel documentation review](track-2-named-tunnel-documentation-review.md), [local-mode no-regression audit](track-2-local-mode-no-regression-audit.md), [final session security audit](track-2-final-session-security-audit.md), [final persistence/recovery audit](track-2-final-persistence-recovery-audit.md), [final concurrency benchmark notes](track-2-concurrency-benchmark-notes.md), and this ticket's `tests/docs/track2FinalImplementationReview.test.ts`. |
+| Final audits and smoke checks | [LAN manual smoke results](track-2-lan-manual-smoke-results.md), [named tunnel documentation review](track-2-named-tunnel-documentation-review.md), [local-mode no-regression audit](track-2-local-mode-no-regression-audit.md), [final session security audit](track-2-final-session-security-audit.md), [final persistence/recovery audit](track-2-final-persistence-recovery-audit.md), [final concurrency benchmark notes](track-2-concurrency-benchmark-notes.md), this ticket's `tests/docs/track2FinalImplementationReview.test.ts`, and the stale-note cleanup guard `tests/docs/track2StaleNotesCleanup.test.ts`. |
 | Full gate | The controller quality gate for this ticket runs `npm run typecheck`, `npm test`, `npm run build`, and controller-side cleanliness/pollution checks from the repository root. |
 
 ## Reviewer reading path
@@ -69,7 +69,7 @@ These limitations are intentionally explicit and are not defects in this Track 2
 - The `/login` GM/player role picker remains trust-based local UI, not public authentication. Session-local GM keys and join codes do not replace production auth.
 - No rate limiting, CAPTCHA, OAuth/MFA, abuse monitoring, encrypted backup service, tamper-proof audit log, horizontal scaling, Redis, Durable Objects, Postgres, or cloud database is introduced.
 - WebSocket peer tracking, connected-client presence, and recent duplicate-`opId` memory are process-local. Restart recovery uses local snapshots and loses transient liveness/recent-operation memory.
-- Event replay is not yet implemented (`replayAvailable: false`); stale reconnects use actor-filtered snapshot fallback, which can be more expensive for large visible maps.
+- Event replay is not implemented in Track 2 (`replayAvailable: false`); stale reconnects use actor-filtered snapshot fallback, which can be more expensive for large visible maps.
 - Accepted command latency includes local JSON snapshot and sometimes sheet writes. Filesystem speed, fsync behaviour, sheet size, map size, and renderer cost can affect perceived latency.
 - No autonomous WAN/named-tunnel latency benchmark or load/soak test was recorded. Operators should run the deployment smoke checklist with their actual players and network.
 - Quick Tunnel remains development smoke-test only. It is not a stable campaign-session path and should not be treated as a performance baseline.
@@ -79,7 +79,7 @@ These limitations are intentionally explicit and are not defects in this Track 2
 
 ## Final handoff notes
 
-- This document completes the ticket 097 implementation review only.
-- Ticket 098 should clean up stale Track 2 notes and incomplete references without changing the locked architecture.
+- This document started as the ticket 097 implementation review and now includes ticket 098 stale-note cleanup evidence.
+- Ticket 098 cleaned stale Track 2 notes and outdated references without changing the locked architecture.
 - Ticket 099 should run the full gate again, verify all tickets are `DONE` or honestly `BLOCKED`, and update controller automation status.
 - The chunk 09 PR should be created/merged by the outer build loop only after all tickets in the chunk are done.

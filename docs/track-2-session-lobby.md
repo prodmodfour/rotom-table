@@ -13,7 +13,7 @@ It is intentionally scoped to the identity/join/lobby surface. For guarded start
 - `POST /api/sessions/join` creates a session-local player ID/client ID/display name from a valid join code.
 - `POST /api/sessions/manage` lets the GM refresh the read-only lobby summary with joined players, connected-client presence records, assignment counts, and the join code.
 - `POST /api/sessions/player-state` lets a joined player refresh only their own identity, assignments, and current-map visibility summary.
-- `POST /api/sessions/assignments` is the GM-only assignment endpoint; the current minimal lobby displays assignment counts and player assignment summaries but does not yet provide a full assignment editor.
+- `POST /api/sessions/assignments` is the GM-only assignment endpoint; the lobby displays assignment counts and player assignment summaries, while full assignment editing remains a GM API/use-case operation rather than a rich lobby editor.
 
 The lobby must not autosave whole maps, grant players map-edit authority, expose the GM key in page chrome, or imply that the local role picker is public authentication.
 

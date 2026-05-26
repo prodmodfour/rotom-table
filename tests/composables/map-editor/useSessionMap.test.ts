@@ -433,7 +433,7 @@ describe('useSessionMap', () => {
     expect(socket.sentMessages).toHaveLength(0)
   })
 
-  it('exposes server command rejection and error state for later UI surfaces', () => {
+  it('exposes server command rejection and error state for rejection UI surfaces', () => {
     const identity = gmIdentity({ lastSeenRevision: REVISION_0 })
     const storage = createStorage(identity)
     const socket = new FakeSessionMapSocket()

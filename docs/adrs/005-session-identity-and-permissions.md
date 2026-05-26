@@ -24,7 +24,7 @@ A session has identities and credentials that are generated for that session onl
 - **Player ID** — server-generated identifier for one joined player within the session.
 - **Client ID** — identifier for one browser/client instance, used for reconnect continuity, duplicate handling, diagnostics, and presence.
 - **Display name** — player-provided table name shown in lobby and presence UI after sanitization. It is not an authentication factor.
-- **Assignments** — GM-managed records that grant a player control over specific sheets, tokens, or later controllable resources.
+- **Assignments** — GM-managed records that grant a player control over specific sheets, tokens, or additional controllable resources.
 
 There are no full user accounts in Track 2. There is no third-party auth provider, global user profile, password reset flow, cross-campaign identity, tenant membership model, or cloud identity store.
 
@@ -36,7 +36,7 @@ The GM-hosted server is responsible for permission decisions. Client UI may hide
 
 The GM identity has broad authority for one session: starting and ending the session, viewing and managing joined players, assigning or revoking controllable resources, selecting visible maps or state slices, and issuing GM-only table commands as those commands land.
 
-GM authority is still bounded by validation and safety rules. A GM command may be rejected if it is malformed, targets missing resources, violates command-specific invariants, or fails later revision/conflict checks. The GM key is also scoped to one session and must not be treated as an account password.
+GM authority is still bounded by validation and safety rules. A GM command may be rejected if it is malformed, targets missing resources, violates command-specific invariants, or fails revision/conflict checks. The GM key is also scoped to one session and must not be treated as an account password.
 
 ### Player authority
 
@@ -61,7 +61,7 @@ Assignments are explicit GM-managed grants such as "player A may control token T
 - GM-only resources and hidden table state remain unavailable to player commands;
 - assignment changes take effect on the server and are reflected through presence/session-state updates.
 
-Later implementation tickets define the concrete TypeScript types and predicates for controllable resource references, assignment records, visibility checks, and permission results. This ADR locks the behaviour those implementations must preserve.
+The implementation defines concrete TypeScript types and predicates for controllable resource references, assignment records, visibility checks, and permission results. This ADR locks the behaviour those implementations must preserve.
 
 ## Safety boundaries
 
@@ -105,7 +105,7 @@ Rejected. A join code only lets a player ask to join the current session. It mus
 
 ## Validation notes
 
-Reviewers can validate this ADR by checking that later Track 2 work:
+Reviewers can validate this ADR by checking that Track 2 work:
 
 - uses session-local IDs and credentials rather than global accounts;
 - keeps display names out of permission keys;

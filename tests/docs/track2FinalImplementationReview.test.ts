@@ -18,7 +18,7 @@ describe('Track 2 final implementation review', () => {
     expect(review).toContain('Audit date: 2026-05-26')
     expect(review).toContain('Outcome: pass for the implemented Track 2 scope')
     expect(review).toContain('not the autonomous completion marker')
-    expect(review).toContain('ticket 098 still handles stale-note cleanup')
+    expect(review).toContain('ticket 098 stale-note cleanup')
     expect(review).toContain('ticket 099 handles the controller-only completion status')
     expect(review).toContain('chunk 09 PR should be created/merged by the outer build loop only')
   })
@@ -46,7 +46,7 @@ describe('Track 2 final implementation review', () => {
     }
 
     expect(review).toContain('Current branch `track2/09-final-audit-final-audit`')
-    expect(review).toContain('chunk PR deferred until the outer controller finishes tickets 098-099')
+    expect(review).toContain('chunk PR deferred until the outer controller finishes ticket 099')
   })
 
   it('links primary docs and source/test evidence that exists in the target repo', () => {
@@ -94,6 +94,7 @@ describe('Track 2 final implementation review', () => {
       'tests/server/sessionHostingHardening.test.ts',
       'tests/composables/map-editor/sessionClientIntegration.test.ts',
       'tests/docs/track2FinalImplementationReview.test.ts',
+      'tests/docs/track2StaleNotesCleanup.test.ts',
     ]
 
     for (const path of expectedCodeAndTestPaths) {

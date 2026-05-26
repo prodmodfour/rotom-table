@@ -97,7 +97,7 @@ Notes:
 
 - Use the tunnel UUID from `cloudflared tunnel create rotom-table`.
 - On Windows, use the matching credentials path for that machine instead of `/home/<you>/...`.
-- Keep this config and the credentials JSON outside `workspace/rotom-table` unless you create a redacted example file in a future docs-only change.
+- Keep this config and the credentials JSON outside `workspace/rotom-table` unless you create a redacted example file in a separate docs-only change.
 - The `service: http://localhost:3000` line points Cloudflare to the local Nuxt server. Players still use `https://table.example.com`.
 - Keep the catch-all `http_status:404` rule so unexpected hostnames do not silently route into Rotom Table.
 

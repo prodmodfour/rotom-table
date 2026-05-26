@@ -7,7 +7,7 @@ Use this guide with the [Track 2 session storage guide](track-2-session-storage.
 ## Backup and recovery rules
 
 - The latest valid `data/sessions/<sessionId>/snapshot.json` is the recovery baseline for authoritative session state.
-- `data/sessions/<sessionId>/events.jsonl` is optional. It can support audit, troubleshooting, or future replay, but it is not sufficient by itself when the latest snapshot is missing, invalid, truncated, or from another session.
+- `data/sessions/<sessionId>/events.jsonl` is optional. It can support audit, troubleshooting, or replay-oriented follow-up work, but it is not sufficient by itself when the latest snapshot is missing, invalid, truncated, or from another session.
 - Live browser state is never the recovery authority. If clients reconnect after a disconnect, they use `lastSeenRevision` and receive replay only when safe; otherwise the server sends an authoritative snapshot fallback.
 - Backups are private GM-controlled file backups. Track 2 does not add Postgres, Redis, Durable Objects, cloud object storage, automatic replication, or a hosted database.
 - Session files, maps, sheets, generated data, player names, join codes, GM keys, tunnel credentials, and real `.env` files must stay out of git.
@@ -19,7 +19,7 @@ Back up the session directory and any campaign data that the session references.
 | Path or data | Why it matters | Privacy note |
 | --- | --- | --- |
 | `data/sessions/<sessionId>/snapshot.json` | Latest server-authoritative session state, including revision, selected map state, players, clients, and assignments. | Private campaign/session data; ignored by git. |
-| `data/sessions/<sessionId>/events.jsonl` | Optional append-only command/event history for audit or future replay after the snapshot. | Private command metadata; may be absent. |
+| `data/sessions/<sessionId>/events.jsonl` | Optional append-only command/event history for audit or replay-oriented follow-up work after the snapshot. | Private command metadata; may be absent. |
 | `data/maps/` | Local map documents and map-adjacent campaign files referenced by session state. | Private campaign maps; ignored by git. |
 | `data/sheets/` | Pokémon sheets, including generated wild sheets and player/NPC sheet data. | Private sheet data unless deliberately curated as test/example data. |
 | `data/trainers/` | Trainer sheets used by trainer tokens and send-out Pokémon commands. | Private campaign data. |
@@ -107,7 +107,7 @@ Recovery tooling must validate the snapshot schema, session ID, revision, timest
 | A player reloads or loses network during play | Use the reconnect UI. The client sends `lastSeenRevision`; if replay is unavailable, the server sends an actor-scoped snapshot fallback. |
 | The GM host crashes but `snapshot.json` is valid | Restart with `npm run dev:session:lan` or `npm run dev:session:tunnel`, then let clients reconnect from the server-owned snapshot. |
 | The latest snapshot is missing, invalid JSON, wrong-session, or mismatched revision | Do not trust browser state. Move the bad file aside for diagnosis, restore an older private backup, or start a fresh session. |
-| `events.jsonl` exists but `snapshot.json` is unusable | Treat the event log as audit/troubleshooting data only unless future tooling explicitly validates log-only replay. Restore a snapshot backup or start fresh. |
+| `events.jsonl` exists but `snapshot.json` is unusable | Treat the event log as audit/troubleshooting data only unless dedicated tooling explicitly validates log-only replay. Restore a snapshot backup or start fresh. |
 | A join code, GM key, tunnel hostname, or screenshot leaked | Stop exposure, rotate by starting a fresh session, and follow the LAN/named-tunnel rollback steps. Do not rely on backups as public auth. |
 | A player made optimistic moves before disconnecting | Reconcile from accepted acks, authoritative patches, or snapshot fallback. Do not copy the player's map JSON over the session snapshot. |
 
@@ -129,7 +129,7 @@ Track 2 backup/recovery keeps the following on GM-controlled storage:
 - `data/sessions/<sessionId>/snapshot.json` and optional `events.jsonl`;
 - map documents, sheet files, trainer files, generated wild sheets, encounter tables, and private assets;
 - player display names, player IDs, client IDs, assignments, command metadata, `opId` values, revisions, and presence/reconnect history stored in snapshots or logs;
-- session-local GM keys and join codes wherever they appear in live memory, browser identity storage, screenshots, copied notes, or future recovery metadata;
+- session-local GM keys and join codes wherever they appear in live memory, browser identity storage, screenshots, copied notes, or recovery metadata;
 - named Cloudflare Tunnel config, credentials JSON, `cert.pem`, Access/WAF settings, tokens, private keys, and real `.env` files.
 
 Do not commit these files or paste raw snapshots/event logs into issue trackers. If a support request needs evidence, create a synthetic reproduction or scrub private data first.

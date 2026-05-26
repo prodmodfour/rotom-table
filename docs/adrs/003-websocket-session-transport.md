@@ -26,7 +26,7 @@ Each live GM/player client connects to a session WebSocket endpoint after the GM
 
 Existing SSE code may remain for non-session or local-sync routes during the migration, but new Track 2 session concurrency must not rely on SSE, polling, or whole-map autosave as the primary live transport.
 
-The exact TypeScript message unions, validators, endpoint shape, and client composables are defined by later implementation tickets. This ADR locks the transport expectation they must follow.
+The TypeScript message unions, validators, endpoint shape, and client composables are defined in the Track 2 implementation. This ADR locks the transport expectation they must follow.
 
 ## Rationale
 
@@ -40,7 +40,7 @@ The server must be able to tell the sender whether a command was accepted, rejec
 
 ### Session-scoped broadcasts
 
-Accepted changes should be fanned out as small session events or patches to connected clients in the same session. WebSockets support prompt fanout for token movement, HP changes, initiative, presence, and later table events without every client autosaving or refetching whole map JSON.
+Accepted changes should be fanned out as small session events or patches to connected clients in the same session. WebSockets support prompt fanout for token movement, HP changes, initiative, presence, and table events without every client autosaving or refetching whole map JSON.
 
 ### Heartbeat and stale connection detection
 
@@ -82,7 +82,7 @@ Rejected for Track 2. A managed realtime service would introduce cloud dependenc
 
 ## Consequences
 
-- Later session transport work must add a WebSocket server route or adapter and a client connection composable.
+- Session transport work must add a WebSocket server route or adapter and a client connection composable.
 - Message schema work must include hello, heartbeat, command, ack/reject, snapshot, patch/event, presence, and error messages.
 - Transport tests must cover handshake validation, heartbeat, malformed messages, reconnect, and session isolation.
 - Hosting docs must account for WebSocket behaviour on LAN and through a named Cloudflare Tunnel.
@@ -90,7 +90,7 @@ Rejected for Track 2. A managed realtime service would introduce cloud dependenc
 
 ## Validation notes
 
-Reviewers can validate this ADR by checking that later Track 2 work:
+Reviewers can validate this ADR by checking that Track 2 work:
 
 - uses WebSockets for live session commands, results, broadcasts, presence, heartbeat, and reconnect;
 - keeps SSE, if present, limited to non-session/local migration paths;

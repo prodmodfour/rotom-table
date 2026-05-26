@@ -11,7 +11,7 @@ Track 2 keeps Rotom Table shaped as a GM-hosted table session. A GM runs the app
 1. everyone is on the same local network; and
 2. one or more players need remote access over the internet.
 
-The hosting path must preserve local-first ownership and avoid implying that Rotom Table has become a public SaaS service or a hardened multi-tenant deployment. It also must be compatible with later WebSocket session transport, reconnect behaviour, and explicit session-host safety gates.
+The hosting path must preserve local-first ownership and avoid implying that Rotom Table has become a public SaaS service or a hardened multi-tenant deployment. It also must be compatible with WebSocket session transport, reconnect behaviour, and explicit session-host safety gates.
 
 ## Decision
 
@@ -35,7 +35,7 @@ LAN hosting best matches the existing local-first app and the tabletop use case:
 - there is no dependency on external DNS, tunnel credentials, or cloud availability for in-person play;
 - the networking model is easy to explain and debug: start the server, find the host address, and join from another browser on the same Wi-Fi.
 
-LAN first also reinforces that the current trust-based local role picker is not public authentication. Later session-hosting code still needs an explicit runtime flag and session-local credentials, but the default supported story starts with the smallest exposure boundary.
+LAN first also reinforces that the current trust-based local role picker is not public authentication. Session-hosting code still needs an explicit runtime flag and session-local credentials, but the default supported story starts with the smallest exposure boundary.
 
 ### Named Cloudflare Tunnel second
 
@@ -57,7 +57,7 @@ Quick Tunnel is rejected for supported campaign sessions because it is intention
 - it is harder to document stable player instructions, rollback steps, and operational expectations;
 - the convenience can obscure the distinction between a development smoke test and a supported remote table setup.
 
-Quick Tunnel can still be useful for a short developer smoke test when future docs call it out as temporary and limited. It must not be presented as the recommended remote path for real play.
+Quick Tunnel can still be useful for a short developer smoke test when docs call it out as temporary and limited. It must not be presented as the recommended remote path for real play.
 
 ## Consequences
 
@@ -66,7 +66,7 @@ Quick Tunnel can still be useful for a short developer smoke test when future do
 - WebSocket, heartbeat, reconnect, and session-safety work must be validated against LAN and named-tunnel assumptions.
 - Session hosting still requires an explicit runtime opt-in and must not treat the local GM/player role picker as public auth.
 - The GM remains responsible for deciding who can reach their server and for stopping or removing tunnel exposure when a session ends.
-- Future docs may mention Quick Tunnel only as a temporary development smoke-test tool with clear caveats.
+- Docs may mention Quick Tunnel only as a temporary development smoke-test tool with clear caveats.
 
 ## Rejected alternatives
 
@@ -84,7 +84,7 @@ Rejected as the primary documented remote path. VPNs can work for some groups, b
 
 ## Validation notes
 
-Reviewers can validate this ADR by checking that later Track 2 work:
+Reviewers can validate this ADR by checking that Track 2 work:
 
 - documents LAN as the first supported hosting path;
 - documents named Cloudflare Tunnel as the supported remote path with a stable hostname;

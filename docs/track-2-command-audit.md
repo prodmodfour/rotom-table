@@ -1,6 +1,6 @@
 # Track 2 integrated multi-client command audit
 
-This audit records the final Track 2 command-flow pass for the GM-hosted session model. It is an automated fake-WebSocket audit, not a public-hosting or LAN smoke pass; the LAN/manual deployment checks remain in [Track 2 deployment smoke checklist](track-2-deployment-smoke-checklist.md) and the later final-audit tickets.
+This audit records the final Track 2 command-flow pass for the GM-hosted session model. It is an automated fake-WebSocket audit, not a public-hosting or LAN smoke pass; the LAN/manual deployment checks are covered by [Track 2 deployment smoke checklist](track-2-deployment-smoke-checklist.md), [Track 2 LAN manual smoke results](track-2-lan-manual-smoke-results.md), and the final audit docs.
 
 Audit date: 2026-05-26
 

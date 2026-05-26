@@ -220,7 +220,7 @@ const gmCommandMessage = (overrides: {
 
 const parseSentJson = (peer: FakePeer, index = 0): unknown => JSON.parse(String(peer.sent[index]))
 
-describe('session WebSocket route skeleton', () => {
+describe('session WebSocket route', () => {
   it('enables Nitro WebSocket hooks at the session socket route', () => {
     const hooks = (socketRoute as unknown as { __websocket__?: Record<string, unknown> }).__websocket__
 
