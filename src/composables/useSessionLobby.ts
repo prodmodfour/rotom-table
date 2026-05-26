@@ -1,4 +1,10 @@
 import { computed, ref } from 'vue'
+import type {
+  AttachSessionMapInput,
+  AttachSessionMapResult,
+  SessionMapAttachmentSelectedMapBehavior,
+  SessionMapAttachmentVisibilityBehavior,
+} from '#shared/sessionMapAttachment'
 import {
   SESSION_CLIENT_IDENTITY_SCHEMA_VERSION,
   updateSessionClientIdentityRevision,
@@ -130,6 +136,12 @@ export interface JoinPlayerSessionForm {
   readonly displayName: string
 }
 
+export interface AttachSessionMapForm {
+  readonly mapSlug: string
+  readonly selectedMapBehavior?: SessionMapAttachmentSelectedMapBehavior
+  readonly visibilityBehavior?: SessionMapAttachmentVisibilityBehavior
+}
+
 export interface UseSessionLobbyOptions {
   readonly apiClient?: ApiClient
   readonly identityStorage?: SessionClientIdentityStorage
@@ -170,6 +182,7 @@ export const useSessionLobby = (options: UseSessionLobbyOptions = {}) => {
   const gmManagement = ref<GmSessionManagementResponse | null>(null)
   const joinedPlayerSession = ref<JoinPlayerSessionResponse | null>(null)
   const playerState = ref<PlayerSessionStateResponse | null>(null)
+  const lastAttachedSessionMap = ref<AttachSessionMapResult | null>(null)
   const safetyStatus = ref<SessionSafetyStatus | null>(null)
   const safetyError = ref<string | null>(null)
   const busy = ref(false)
@@ -191,14 +204,14 @@ export const useSessionLobby = (options: UseSessionLobbyOptions = {}) => {
     return nextIdentity
   }
 
-  const rememberIdentityRevision = (
-    nextIdentity: SessionClientIdentity,
+  const rememberIdentityRevision = <TIdentity extends SessionClientIdentity>(
+    nextIdentity: TIdentity,
     revision: SessionRevision,
-  ): SessionClientIdentity => rememberIdentity(updateSessionClientIdentityRevision(
+  ): TIdentity => rememberIdentity(updateSessionClientIdentityRevision(
     nextIdentity,
     revision,
     clock(),
-  ))
+  )) as TIdentity
 
   const recordFailure = (error: unknown): void => {
     const message = sessionLobbyErrorMessage(error)
@@ -232,6 +245,7 @@ export const useSessionLobby = (options: UseSessionLobbyOptions = {}) => {
     playerState.value = response
     gmManagement.value = null
     startedGmSession.value = null
+    lastAttachedSessionMap.value = null
     rememberIdentityRevision(playerIdentityValue, response.session.revision)
     return response
   }
@@ -257,6 +271,7 @@ export const useSessionLobby = (options: UseSessionLobbyOptions = {}) => {
     try {
       const response = await apiClient.postJson<StartGmSessionResponse>(SESSION_API_PATHS.start, {})
       startedGmSession.value = response
+      lastAttachedSessionMap.value = null
       const nextIdentity: Extract<SessionClientIdentity, { role: 'gm' }> = {
         schemaVersion: SESSION_CLIENT_IDENTITY_SCHEMA_VERSION,
         role: 'gm',
@@ -290,6 +305,7 @@ export const useSessionLobby = (options: UseSessionLobbyOptions = {}) => {
         displayName: form.displayName,
       })
       joinedPlayerSession.value = response
+      lastAttachedSessionMap.value = null
       const nextIdentity: Extract<SessionClientIdentity, { role: 'player' }> = {
         schemaVersion: SESSION_CLIENT_IDENTITY_SCHEMA_VERSION,
         role: 'player',
@@ -303,6 +319,50 @@ export const useSessionLobby = (options: UseSessionLobbyOptions = {}) => {
       rememberIdentity(nextIdentity)
       await fetchPlayerState(nextIdentity)
       lastNotice.value = `Joined the live session as ${response.player.displayName}.`
+      return response
+    } catch (error) {
+      recordFailure(error)
+      throw error
+    } finally {
+      busy.value = false
+    }
+  }
+
+  const attachMapToSession = async (form: AttachSessionMapForm): Promise<AttachSessionMapResult> => {
+    busy.value = true
+    lastError.value = null
+    lastNotice.value = null
+
+    try {
+      const currentIdentity = identity.value ?? identityStorage.load()
+      if (identity.value === null && currentIdentity !== null) {
+        identity.value = currentIdentity
+      }
+      if (currentIdentity?.role !== 'gm') {
+        throw new Error('A remembered GM live session is required before attaching a session map.')
+      }
+
+      const requestBody: AttachSessionMapInput = {
+        sessionId: currentIdentity.sessionId,
+        gmKey: currentIdentity.gmKey,
+        gmClientId: currentIdentity.clientId,
+        mapSlug: form.mapSlug.trim(),
+        ...(form.selectedMapBehavior === undefined
+          ? {}
+          : { selectedMapBehavior: form.selectedMapBehavior }),
+        ...(form.visibilityBehavior === undefined
+          ? {}
+          : { visibilityBehavior: form.visibilityBehavior }),
+      }
+
+      const response = await apiClient.postJson<AttachSessionMapResult>(
+        SESSION_API_PATHS.attachMap,
+        requestBody,
+      )
+      lastAttachedSessionMap.value = response
+      const refreshedIdentity = rememberIdentityRevision(currentIdentity, response.session.revision)
+      await fetchGmManagement(refreshedIdentity)
+      lastNotice.value = `Attached ${response.map.mapSlug} to the live session map.`
       return response
     } catch (error) {
       recordFailure(error)
@@ -364,6 +424,7 @@ export const useSessionLobby = (options: UseSessionLobbyOptions = {}) => {
     gmManagement.value = null
     joinedPlayerSession.value = null
     playerState.value = null
+    lastAttachedSessionMap.value = null
     lastError.value = null
     lastNotice.value = 'Cleared the remembered live session identity for this browser.'
   }
@@ -374,6 +435,7 @@ export const useSessionLobby = (options: UseSessionLobbyOptions = {}) => {
     gmManagement,
     joinedPlayerSession,
     playerState,
+    lastAttachedSessionMap,
     safetyStatus,
     safetyError,
     busy,
@@ -388,6 +450,7 @@ export const useSessionLobby = (options: UseSessionLobbyOptions = {}) => {
     loadSafetyStatus,
     startGmSession,
     joinPlayerSession,
+    attachMapToSession,
     refreshSessionSummary,
     loadRememberedIdentity,
     clearRememberedIdentity,
