@@ -7,6 +7,7 @@ export const SESSION_API_PATHS = {
   manage: '/api/sessions/manage',
   playerState: '/api/sessions/player-state',
   assignments: '/api/sessions/assignments',
+  socket: '/api/sessions/socket',
 } as const
 
 export const MAP_API_PATHS = {

@@ -52,6 +52,9 @@ export default defineNuxtConfig({
     },
   },
   nitro: {
+    experimental: {
+      websocket: true,
+    },
     publicAssets: [
       {
         dir: resolve(process.cwd(), 'trainer_sizes/sprites'),

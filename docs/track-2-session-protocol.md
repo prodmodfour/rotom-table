@@ -2,7 +2,7 @@
 
 This document describes the shared TypeScript protocol contracts introduced for Track 2 session mode. It records the wire vocabulary that later server and client tickets must use when they add the session store, WebSocket endpoint, lobby UI, command handlers, and reconnect behaviour.
 
-This is a contract document, not a claim that the WebSocket runtime is already complete. The current shared contracts live in `shared/` and are covered by focused Vitest tests; command-specific payload contracts such as `moveToken` land in later command tickets. See [Track 2 session lobby and manual QA](track-2-session-lobby.md) for the current GM/player join flow and two-browser smoke checklist, and [Track 2 session storage](track-2-session-storage.md) for the operational snapshot/event-log layout, backup guidance, and recovery limitations.
+This is a contract document, not a claim that every command handler is already complete. The current shared contracts live in `shared/` and are covered by focused Vitest tests; command-specific payload contracts such as `moveToken` land in later command tickets. See [Track 2 WebSocket protocol](track-2-websocket-protocol.md) for the live socket route, message examples, heartbeat/reconnect flow, command transport boundary, and named-tunnel expectations after the WebSocket transport chunk. See [Track 2 session lobby and manual QA](track-2-session-lobby.md) for the current GM/player join flow and two-browser smoke checklist, and [Track 2 session storage](track-2-session-storage.md) for the operational snapshot/event-log layout, backup guidance, and recovery limitations.
 
 ## Protocol goals
 
@@ -98,6 +98,33 @@ Example remote-exposure response:
   ]
 }
 ```
+
+## Session WebSocket route and hello/auth
+
+`WebSocket /api/sessions/socket` is the reserved live session transport route. Nitro WebSocket support is enabled in the server build, and the route upgrade fails closed unless `ROTOM_ENABLE_SESSION_HOST=1` is set. This keeps the same explicit runtime safety gate as the HTTP session endpoints.
+
+New sockets start as `pending-hello`. The first accepted client frame must be a JSON client `hello` with the session ID and session-local identity returned by the start/join endpoints. The server validates the GM key for GM clients, validates the player ID plus safe display name for player clients, rejects client-ID collisions with a different actor, records the connected client in authoritative session state without incrementing the session revision, and replies with a server `hello` carrying the validated actor, current revision, and heartbeat configuration. Invalid, unknown, ended, or unauthorized hello attempts receive a safe server `error` frame and the socket is closed with the policy close code.
+
+Inbound frames are validated before dispatch. The server accepts only JSON client messages with `schemaVersion: 1`, `direction: "client"`, a valid `sessionId`, and a client message type of `hello`, `heartbeat`, or `command`; malformed frames receive a `malformed-message` error and close. Valid heartbeat or command frames sent before hello/auth receive `unauthorized` and close. After hello/auth, heartbeat and command messages must target the authenticated session, and command envelopes must pass the shared envelope validator and match the authenticated actor before any future command dispatcher can see them. Until command dispatch lands, valid authenticated command frames still receive `unsupported-message` without closing the socket.
+
+After hello/auth succeeds, heartbeat is active. The server sends app-level heartbeat `ping` frames on the negotiated interval, replies to authenticated client `ping` frames with `pong`, records client `ping`/`pong` activity in the in-memory connected-client presence record without incrementing the session revision, and closes sockets that have not produced readable client activity within the heartbeat timeout. The client wrapper starts its own heartbeat `ping` loop after the server `hello`, answers server `ping` frames with `pong`, and closes the browser socket when server activity is stale.
+
+The WebSocket server now keeps a process-local peer registry for fanout. Server-scoped `presence`, `commandAck`, `commandReject`, `patch`, and `snapshot` frames are serialized once and sent only to authenticated peers whose registry entry has the same `sessionId`; pending sockets, disconnected peers, explicit cross-session targets, and missing peer handles are skipped instead of receiving data. Successful hello/auth and socket close/heartbeat-timeout paths broadcast presence updates to the remaining authenticated peers in that same session. Heartbeat activity updates are recorded locally but are not broadcast on every ping/pong to avoid turning liveness traffic into noisy table updates.
+
+A socket close or heartbeat timeout marks the authenticated client as `disconnected` in in-memory authoritative state; no snapshot or command event is written for this transient presence update yet, though the presence change is fanned out to same-session sockets.
+
+The client wrapper lives in `src/composables/useSessionSocket.ts`. It resolves `/api/sessions/socket` to `ws://` or `wss://` from the current browser location, wraps the browser `WebSocket`, exposes connection status (`idle`, `connecting`, `open`, `closing`, `closed`, `error`, or `unavailable`), records the last error/close/server message, maintains a bounded JSON send queue, flushes queued messages after `open`, and provides explicit `connect`, `disconnect`, and `cleanup` methods. It can build/send a client `hello` from the remembered session-local identity, auto-sending that hello before queued messages when configured with `hello: { identity }`, tracks whether the server hello was accepted or rejected, sends heartbeat pings after the negotiated server hello, answers server heartbeat pings, reports stale heartbeat timeouts, and records reconnect snapshot fallback messages. It still does not implement command dispatch, optimistic map state, or event replay application.
+
+## Legacy SSE migration boundary
+
+The existing non-session realtime channel remains available during the WebSocket migration. It is intentionally separate from Track 2 session hosting:
+
+- `GET /api/events` is still the legacy Server-Sent Events stream for local-first map, sheet, and library updates outside session mode. It uses the existing local role cookie through `requireAuthRole`, not the `ROTOM_ENABLE_SESSION_HOST=1` gate, GM keys, join codes, player IDs, or session revisions.
+- `src/composables/useRealtime.ts` continues to open one browser `EventSource` to `/api/events` and route events by legacy channels such as `maps`, `map:<slug>`, `sheets`, and `sheet:<kind>:<slug>`. Local-mode composables such as `useEditableMap`, `useEditableSheet`, `useLiveSheets`, and map-library subscriptions keep using this path for cross-tab/local-device echo suppression.
+- Legacy SSE events may carry whole saved map or sheet payloads and retain their existing last-writer-wins semantics. That is acceptable only for the current local-first/non-session workflow.
+- Live Track 2 sessions must not use `/api/events` for commands, command acknowledgements/rejections, presence, heartbeat, or reconnect. Session clients use `WebSocket /api/sessions/socket` after the session-host flag and hello/auth handshake, then later command tickets route table mutations through server-authoritative command handlers.
+
+This boundary lets the app preserve existing Track 1/local workflows while the session WebSocket stack lands in additive slices. Future tickets may replace specific local-mode behaviours with session-aware alternatives when a session is active, but they should not remove the legacy SSE route until a separate migration ticket explicitly does so.
 
 ## GM start-session endpoint
 
@@ -427,7 +454,7 @@ This helper is process-local state, not a database. Snapshots and the optional e
 
 ## Session cleanup and explicit end
 
-`server/utils/sessionCleanup.ts` defines the server-side lifecycle policy for in-memory session records. The default policy treats an active session as idle after 12 hours without server-owned activity and retains ended in-memory records for 24 hours before pruning them. Server-owned activity includes store updates plus authoritative state/presence timestamps, so future heartbeat, reconnect, command, join, and assignment paths should touch the store or state when a client is still active.
+`server/utils/sessionCleanup.ts` defines the server-side lifecycle policy for in-memory session records. The default policy treats an active session as idle after 12 hours without server-owned activity and retains ended in-memory records for 24 hours before pruning them. Server-owned activity includes store updates plus authoritative state/presence timestamps; the WebSocket heartbeat path now touches connected-client presence without revision increments, and future reconnect/command paths should do the same when a client is still active.
 
 The explicit end-session helper is the path future GM management routes should use when the GM ends a table. It idempotently marks the session record `ended`, stamps `endedAt`, removes the session from active join-code lookups, and clears process-local duplicate-`opId` records for that session. Repeated end requests leave the original `endedAt` intact.
 
@@ -456,7 +483,7 @@ After session hosting is enabled and a GM/player has session-local identity, the
 }
 ```
 
-The server validates the identity and replies with a server `hello`. If replay is unavailable or unsafe, `snapshotRequired` is true and a `snapshot` message follows.
+The server validates the identity and replies with a server `hello`. The reply authenticates the socket, reports the current revision, and records whether the connection resumed. If `reconnect` is true and the client's `lastSeenRevision` already matches the current authoritative revision, `snapshotRequired` is false and no snapshot is sent. If the client omits `lastSeenRevision`, reports an older revision, or reports a future revision the server cannot prove safe, event replay is treated as unavailable in this slice and `snapshotRequired` is true. An actor-scoped authoritative `snapshot` message follows the server `hello` with `reason: "reconnect"` and `replayAvailable: false`.
 
 ```json
 {
@@ -476,14 +503,82 @@ The server validates the identity and replies with a server `hello`. If replay i
     "intervalMs": 25000,
     "timeoutMs": 60000
   },
-  "snapshotRequired": false,
-  "replayFromRevision": 41
+  "snapshotRequired": true
+}
+```
+
+Because event replay is not available in this slice, the server then sends the current authoritative snapshot view to the reconnecting peer. GM clients receive the full server-owned state; player clients receive only their own player/assignment records and map documents for maps assigned visible to that player.
+
+```json
+{
+  "schemaVersion": 1,
+  "type": "snapshot",
+  "direction": "server",
+  "sessionId": "session_lake_table_001",
+  "reason": "reconnect",
+  "currentRevision": 42,
+  "replayAvailable": false,
+  "snapshot": {
+    "schemaVersion": 1,
+    "sessionId": "session_lake_table_001",
+    "revision": 42,
+    "selectedMapSlug": "viridian-gym",
+    "maps": [
+      {
+        "mapSlug": "viridian-gym",
+        "revision": 42,
+        "document": {
+          "name": "Viridian Gym",
+          "tokens": []
+        }
+      }
+    ],
+    "connectedClients": [
+      {
+        "clientId": "client_browser_01",
+        "actor": {
+          "role": "player",
+          "playerId": "player_misty001",
+          "clientId": "client_browser_01",
+          "displayName": "Misty"
+        },
+        "status": "connected",
+        "connectedAt": "2026-05-25T12:05:00.000Z",
+        "lastSeenAt": "2026-05-25T12:05:00.000Z",
+        "lastSeenRevision": 41
+      }
+    ],
+    "players": [
+      {
+        "playerId": "player_misty001",
+        "displayName": "Misty",
+        "joinedAt": "2026-05-25T12:00:00.000Z",
+        "updatedAt": "2026-05-25T12:00:00.000Z"
+      }
+    ],
+    "assignments": [
+      {
+        "playerId": "player_misty001",
+        "displayName": "Misty",
+        "controllableResources": [],
+        "visibleResources": [
+          {
+            "kind": "map",
+            "mapSlug": "viridian-gym"
+          }
+        ],
+        "updatedAt": "2026-05-25T12:00:00.000Z"
+      }
+    ],
+    "createdAt": "2026-05-25T12:00:00.000Z",
+    "updatedAt": "2026-05-25T12:05:00.000Z"
+  }
 }
 ```
 
 ### 2. Snapshot and presence
 
-The server sends snapshots for initial load, reconnect fallback, recovery, permission changes, or manual sync. Presence messages are session-scoped and must never fan out across sessions.
+The server sends snapshots for initial load, reconnect fallback, recovery, permission changes, or manual sync. The active reconnect fallback snapshot is derived from the current server-owned `AuthoritativeSessionState`: GM clients receive the full state, while player clients receive only their own player/assignment records, their own connected-client records, and map documents whose map slugs are in their visible resource assignments. It contains the connected-client record created by the successful hello/auth path and does not expose the GM key, join code, hidden maps, or other players' assignment records to player clients. Presence messages are session-scoped and must never fan out across sessions.
 
 ```json
 {
@@ -524,6 +619,10 @@ Either side may send heartbeat messages according to the negotiated heartbeat co
   "lastSeenRevision": 42
 }
 ```
+
+The current implementation negotiates a 25 second heartbeat interval and a 60 second timeout in the server `hello`. Those values are intentionally below common proxy/tunnel idle windows so a quiet table still sends application traffic in both directions while hosted over LAN or a named Cloudflare Tunnel. If a browser, the GM server, or an intermediary such as Cloudflare closes an idle/stale WebSocket anyway, clients should treat the socket as disconnected and reconnect with their last seen revision; if replay is unavailable, the server sends the current snapshot fallback. Heartbeat keeps live sockets detectable and warm, but it is not authentication and does not grant map-edit authority.
+
+A server heartbeat ping uses the same message shape with `direction: "server"` and `heartbeat: "ping"`; clients answer with a matching `pong` nonce. A client heartbeat ping receives a server `pong`. Heartbeat `lastSeenRevision` is advisory activity metadata and does not advance the session revision.
 
 ### 4. Client command
 
@@ -668,7 +767,7 @@ Accepted command rules:
 - `currentRevision` is the authoritative revision after applying the command.
 - A command is applied at most once for a given `opId` operation scope.
 - The patch/event is small and domain-specific; it is not a whole-map autosave from the client.
-- The sender may receive both the ack and the broadcast patch depending on later fanout policy, but the ack remains the command result.
+- The sender may receive both the ack and the broadcast patch depending on the command-specific fanout policy, but the ack remains the command result.
 
 ## Rejected command example
 
@@ -828,6 +927,7 @@ Later implementation tickets should keep these checks at the protocol boundary:
 - [Track 2 roadmap](track-2-roadmap.md)
 - [Track 2 glossary](track-2-glossary.md)
 - [Track 2 validation matrix](track-2-validation-matrix.md)
+- [Track 2 WebSocket protocol](track-2-websocket-protocol.md)
 - [ADR 003: WebSocket session transport](adrs/003-websocket-session-transport.md)
 - [ADR 004: Server-authoritative commands](adrs/004-server-authoritative-commands.md)
 - [ADR 005: Session identity and permissions](adrs/005-session-identity-and-permissions.md)
