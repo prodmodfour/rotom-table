@@ -706,7 +706,7 @@ describe('session WebSocket route skeleton', () => {
       direction: 'server',
       sessionId: SESSION_ID,
       code: 'unsupported-message',
-      message: 'Track 2 session WebSocket command dispatch currently supports moveToken, turnToken, spawnToken, deleteToken, sendOutPokemon, modifyHp, modifyCombatStages, and modifyConditions commands only.',
+      message: 'Track 2 session WebSocket command dispatch currently supports moveToken, turnToken, spawnToken, deleteToken, sendOutPokemon, modifyHp, modifyCombatStages, modifyConditions, setInitiative, nextInitiative, and previousInitiative commands only.',
       retryable: false,
     })
   })
