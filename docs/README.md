@@ -32,6 +32,7 @@ This directory collects presentation and reviewer documentation for Rotom Table.
 - [Track 2 session storage](track-2-session-storage.md) — default snapshot/event-log paths, ignored/private data boundaries, backup guidance, cleanup behaviour, and recovery limitations.
 - [Track 2 session backup and recovery](track-2-session-backup-recovery.md) — private backup/restore runbook for snapshots, optional event logs, referenced campaign data, and local-only recovery limits.
 - [Track 2 security review](track-2-security-review.md) — trust boundaries, non-hardened areas, join-code limits, tunnel exposure risks, incident response, and security non-goals.
+- [Track 2 final session security audit](track-2-final-session-security-audit.md) — ticket 094 audit of auth/session/cookie/permission boundaries, public exposure warnings, and remaining non-goals.
 - [Track 2 dependency and runtime review](track-2-dependency-runtime-review.md) — dependency inventory, runtime flags, Node/Nitro compatibility, and Cloudflare tunnel assumptions.
 - [ADR 001: GM-hosted session model](adrs/001-gm-hosted-session-model.md) — decision record for GM-controlled sessions instead of SaaS, public multi-tenancy, or generic collaborative editing.
 - [ADR 002: LAN first and named Cloudflare Tunnel second](adrs/002-lan-first-named-cloudflare-tunnel.md) — decision record for LAN-first hosting, named-tunnel remote access, and Quick Tunnel caveats.
