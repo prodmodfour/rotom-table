@@ -43,4 +43,6 @@ This audit complements, but does not replace:
 - [Track 2 deployment smoke checklist](track-2-deployment-smoke-checklist.md) for LAN and named Cloudflare Tunnel deployment validation;
 - [Track 2 local-mode no-regression audit](track-2-local-mode-no-regression-audit.md) for plain map/sheet workflows, local autosave, and legacy SSE checks;
 - [Track 2 final concurrency benchmark notes](track-2-concurrency-benchmark-notes.md) for latency-sensitive behaviour observations and performance limitations;
-- the remaining final-audit tickets for security, persistence/recovery, and implementation review.
+- [Track 2 final session security audit](track-2-final-session-security-audit.md) for auth/session/cookie/permission boundary review;
+- [Track 2 final persistence/recovery audit](track-2-final-persistence-recovery-audit.md) for snapshot/event-log and local data hygiene review;
+- [Track 2 final implementation review](track-2-final-implementation-review.md) for completed chunk PRs, tests, docs, and known limitations.
