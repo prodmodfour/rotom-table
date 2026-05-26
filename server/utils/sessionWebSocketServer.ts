@@ -72,6 +72,11 @@ import {
   TICK_FIELD_EFFECT_DURATIONS_COMMAND_TYPE,
   type FieldEffectCommand,
 } from '#shared/sessionFieldEffectCommands'
+import {
+  BUILD_TERRAIN_VOXEL_COMMAND_TYPE,
+  REMOVE_TERRAIN_VOXEL_COMMAND_TYPE,
+  type TerrainCommand,
+} from '#shared/sessionTerrainCommands'
 import type { TabletopMapV2 } from '~/types/map'
 import {
   applyMoveTokenCommandUseCase,
@@ -139,6 +144,12 @@ import {
   type ApplyFieldEffectCommandInput,
   type ApplyFieldEffectCommandUseCaseResult,
 } from '../useCases/applyFieldEffectCommand'
+import {
+  applyTerrainCommandUseCase,
+  type ApplyTerrainCommandDependencies,
+  type ApplyTerrainCommandInput,
+  type ApplyTerrainCommandUseCaseResult,
+} from '../useCases/applyTerrainCommand'
 import {
   applyUseMoveCommandUseCase,
   type ApplyUseMoveCommandDependencies,
@@ -356,6 +367,11 @@ export type SessionSocketFieldEffectCommandApplier = (
   dependencies?: ApplyFieldEffectCommandDependencies,
 ) => ApplyFieldEffectCommandUseCaseResult
 
+export type SessionSocketTerrainCommandApplier = (
+  input: ApplyTerrainCommandInput,
+  dependencies?: ApplyTerrainCommandDependencies,
+) => ApplyTerrainCommandUseCaseResult
+
 export type SessionSocketUseMoveCommandApplier = (
   input: ApplyUseMoveCommandInput,
   dependencies?: ApplyUseMoveCommandDependencies,
@@ -421,6 +437,11 @@ export type SessionSocketFieldEffectCommandDependencies = Omit<
   'env' | 'store' | 'clock'
 >
 
+export type SessionSocketTerrainCommandDependencies = Omit<
+  ApplyTerrainCommandDependencies,
+  'env' | 'store' | 'clock'
+>
+
 export type SessionSocketUseMoveCommandDependencies = Omit<
   ApplyUseMoveCommandDependencies,
   'env' | 'store' | 'clock'
@@ -448,6 +469,7 @@ export interface SessionSocketHandlerDependencies<TMapDocument = unknown> {
   readonly applyInitiativeCommand?: SessionSocketInitiativeCommandApplier
   readonly applyHazardCommand?: SessionSocketHazardCommandApplier
   readonly applyFieldEffectCommand?: SessionSocketFieldEffectCommandApplier
+  readonly applyTerrainCommand?: SessionSocketTerrainCommandApplier
   readonly applyUseMoveCommand?: SessionSocketUseMoveCommandApplier
   readonly applyUseTableActionCommand?: SessionSocketUseTableActionCommandApplier
   readonly moveTokenCommandDependencies?: SessionSocketMoveTokenCommandDependencies
@@ -461,6 +483,7 @@ export interface SessionSocketHandlerDependencies<TMapDocument = unknown> {
   readonly initiativeCommandDependencies?: SessionSocketInitiativeCommandDependencies
   readonly hazardCommandDependencies?: SessionSocketHazardCommandDependencies
   readonly fieldEffectCommandDependencies?: SessionSocketFieldEffectCommandDependencies
+  readonly terrainCommandDependencies?: SessionSocketTerrainCommandDependencies
   readonly useMoveCommandDependencies?: SessionSocketUseMoveCommandDependencies
   readonly useTableActionCommandDependencies?: SessionSocketUseTableActionCommandDependencies
 }
@@ -494,6 +517,7 @@ interface ResolvedSessionSocketHandlerDependencies<TMapDocument = unknown> {
   readonly applyInitiativeCommand: SessionSocketInitiativeCommandApplier
   readonly applyHazardCommand: SessionSocketHazardCommandApplier
   readonly applyFieldEffectCommand: SessionSocketFieldEffectCommandApplier
+  readonly applyTerrainCommand: SessionSocketTerrainCommandApplier
   readonly applyUseMoveCommand: SessionSocketUseMoveCommandApplier
   readonly applyUseTableActionCommand: SessionSocketUseTableActionCommandApplier
   readonly moveTokenCommandDependencies: SessionSocketMoveTokenCommandDependencies
@@ -507,6 +531,7 @@ interface ResolvedSessionSocketHandlerDependencies<TMapDocument = unknown> {
   readonly initiativeCommandDependencies: SessionSocketInitiativeCommandDependencies
   readonly hazardCommandDependencies: SessionSocketHazardCommandDependencies
   readonly fieldEffectCommandDependencies: SessionSocketFieldEffectCommandDependencies
+  readonly terrainCommandDependencies: SessionSocketTerrainCommandDependencies
   readonly useMoveCommandDependencies: SessionSocketUseMoveCommandDependencies
   readonly useTableActionCommandDependencies: SessionSocketUseTableActionCommandDependencies
 }
@@ -929,6 +954,7 @@ const resolveDependencies = <TMapDocument>(
   applyInitiativeCommand: dependencies.applyInitiativeCommand ?? applyInitiativeCommandUseCase,
   applyHazardCommand: dependencies.applyHazardCommand ?? applyHazardCommandUseCase,
   applyFieldEffectCommand: dependencies.applyFieldEffectCommand ?? applyFieldEffectCommandUseCase,
+  applyTerrainCommand: dependencies.applyTerrainCommand ?? applyTerrainCommandUseCase,
   applyUseMoveCommand: dependencies.applyUseMoveCommand ?? applyUseMoveCommandUseCase,
   applyUseTableActionCommand: dependencies.applyUseTableActionCommand ?? applyUseTableActionCommandUseCase,
   moveTokenCommandDependencies: dependencies.moveTokenCommandDependencies ?? {},
@@ -942,6 +968,7 @@ const resolveDependencies = <TMapDocument>(
   initiativeCommandDependencies: dependencies.initiativeCommandDependencies ?? {},
   hazardCommandDependencies: dependencies.hazardCommandDependencies ?? {},
   fieldEffectCommandDependencies: dependencies.fieldEffectCommandDependencies ?? {},
+  terrainCommandDependencies: dependencies.terrainCommandDependencies ?? {},
   useMoveCommandDependencies: dependencies.useMoveCommandDependencies ?? {},
   useTableActionCommandDependencies: dependencies.useTableActionCommandDependencies ?? {},
 })
@@ -1724,11 +1751,13 @@ const handleAuthenticatedSocketCommand = <TMapDocument>(
     command.type !== REMOVE_HAZARD_COMMAND_TYPE &&
     command.type !== SET_FIELD_EFFECT_COMMAND_TYPE &&
     command.type !== REMOVE_FIELD_EFFECT_COMMAND_TYPE &&
-    command.type !== TICK_FIELD_EFFECT_DURATIONS_COMMAND_TYPE
+    command.type !== TICK_FIELD_EFFECT_DURATIONS_COMMAND_TYPE &&
+    command.type !== BUILD_TERRAIN_VOXEL_COMMAND_TYPE &&
+    command.type !== REMOVE_TERRAIN_VOXEL_COMMAND_TYPE
   ) {
     sendJson(peer, createSessionSocketErrorMessage({
       code: 'unsupported-message',
-      message: 'Track 2 session WebSocket command dispatch currently supports moveToken, turnToken, spawnToken, deleteToken, sendOutPokemon, modifyHp, modifyCombatStages, modifyConditions, useMove, useManeuver, useAbility, useOrder, setInitiative, nextInitiative, previousInitiative, placeHazard, removeHazard, setFieldEffect, removeFieldEffect, and tickFieldEffectDurations commands only.',
+      message: 'Track 2 session WebSocket command dispatch currently supports moveToken, turnToken, spawnToken, deleteToken, sendOutPokemon, modifyHp, modifyCombatStages, modifyConditions, useMove, useManeuver, useAbility, useOrder, setInitiative, nextInitiative, previousInitiative, placeHazard, removeHazard, setFieldEffect, removeFieldEffect, tickFieldEffectDurations, buildTerrainVoxel, and removeTerrainVoxel commands only.',
       retryable: false,
       sessionId: connection.sessionId,
       currentRevision: connection.currentRevision,
@@ -1748,6 +1777,7 @@ const handleAuthenticatedSocketCommand = <TMapDocument>(
     | ApplyInitiativeCommandUseCaseResult
     | ApplyHazardCommandUseCaseResult
     | ApplyFieldEffectCommandUseCaseResult
+    | ApplyTerrainCommandUseCaseResult
     | ApplyUseMoveCommandUseCaseResult
     | ApplyUseTableActionCommandUseCaseResult
   try {
@@ -1870,11 +1900,24 @@ const handleAuthenticatedSocketCommand = <TMapDocument>(
         store: dependencies.store as unknown as InMemorySessionStore<AuthoritativeSessionState<TabletopMapV2>>,
         clock: () => receivedAt,
       })
-    } else {
+    } else if (
+      command.type === SET_FIELD_EFFECT_COMMAND_TYPE ||
+      command.type === REMOVE_FIELD_EFFECT_COMMAND_TYPE ||
+      command.type === TICK_FIELD_EFFECT_DURATIONS_COMMAND_TYPE
+    ) {
       applied = dependencies.applyFieldEffectCommand({
         command: command as FieldEffectCommand,
       }, {
         ...dependencies.fieldEffectCommandDependencies,
+        env: dependencies.env,
+        store: dependencies.store as unknown as InMemorySessionStore<AuthoritativeSessionState<TabletopMapV2>>,
+        clock: () => receivedAt,
+      })
+    } else {
+      applied = dependencies.applyTerrainCommand({
+        command: command as TerrainCommand,
+      }, {
+        ...dependencies.terrainCommandDependencies,
         env: dependencies.env,
         store: dependencies.store as unknown as InMemorySessionStore<AuthoritativeSessionState<TabletopMapV2>>,
         clock: () => receivedAt,
