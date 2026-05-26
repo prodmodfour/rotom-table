@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import FieldEffectsMenuModal from '~/components/map/FieldEffectsMenuModal.vue'
 import InitiativeMenuModal from '~/components/map/InitiativeMenuModal.vue'
 import MapAdminPanel from '~/components/map/MapAdminPanel.vue'
@@ -27,6 +27,7 @@ import { useOrderActionPanel } from '~/composables/map-editor/useOrderActionPane
 import { useTerrainBuilder } from '~/composables/map-editor/useTerrainBuilder'
 import { useAttackOfOpportunityPanel } from '~/utils/attackOfOpportunity'
 import { useTokenSheetMutations } from '~/composables/map-editor/useTokenSheetMutations'
+import { useSessionMoveTokenDispatch, isSessionModeQueryEnabled } from '~/composables/map-editor/useSessionMoveTokenDispatch'
 import { useTokenControls } from '~/composables/map-editor/useTokenControls'
 import { MAP_API_PATHS } from '~/utils/apiRoutes'
 import { getClientId } from '~/utils/clientId'
@@ -63,6 +64,16 @@ interface MapScenePanelHandle {
 }
 
 const gridRef = ref<MapScenePanelHandle | null>(null)
+
+const sessionMoveTokenEnabled = computed(() => isSessionModeQueryEnabled(route.query.session))
+const sessionMoveTokenDispatch = useSessionMoveTokenDispatch({
+  enabled: sessionMoveTokenEnabled,
+  mapSlug: slug,
+})
+
+onMounted(() => {
+  sessionMoveTokenDispatch.loadRememberedIdentity()
+})
 
 const {
   canEditMap,
@@ -112,6 +123,7 @@ const {
   canSpawnTokens,
   canControlAllTokens: isGm,
   canDeleteTokens: isGm,
+  sessionMoveTokenDispatcher: sessionMoveTokenDispatch,
 })
 
 const selectPokemon = (id: string | null) => {
@@ -488,6 +500,12 @@ const selectActionAutomationTarget = (targetId: string) => {
   if (orderActionTargeting.value) selectOrderActionTarget(targetId)
 }
 
+const sceneActionError = computed(() =>
+  sessionMoveTokenEnabled.value
+    ? sessionMoveTokenDispatch.lastError.value ?? moveUsageError.value
+    : moveUsageError.value,
+)
+
 const cancelActionAutomationTargeting = () => {
   if (moveAutomationTargeting.value) {
     cancelMoveAutomationTargeting()
@@ -568,7 +586,7 @@ useMapDimensionReconciliation({
         :can-delete-tokens="isGm"
         :move-automation-targeting="actionAutomationTargeting"
         :move-automation-feedback="moveAutomationFeedback"
-        :move-usage-error="moveUsageError"
+        :move-usage-error="sceneActionError"
         :spite-reaction-prompts="spiteReactionPrompts"
         :cute-charm-reaction-prompts="cuteCharmReactionPrompts"
         :poison-point-reaction-prompts="poisonPointReactionPrompts"

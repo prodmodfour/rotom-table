@@ -5,11 +5,11 @@ This is the WebSocket-focused reference for the Track 2 session transport. It co
 This document describes the transport slice that exists after the WebSocket transport chunk:
 
 - the runtime-gated session socket route exists at `WebSocket /api/sessions/socket`;
-- the client wrapper can connect, send hello, queue messages, run heartbeat, and track reconnect snapshots;
+- the client wrapper can connect, send hello, queue messages, run heartbeat, track reconnect snapshots, and keep its last-known revision current from command results and patch broadcasts;
 - the server validates hello, heartbeat, and command frame shapes before dispatch;
 - same-session fanout exists for presence, command results, patches, and snapshots;
 - reconnect currently falls back to an authoritative snapshot when replay is unavailable;
-- the shared `moveToken` command payload contract, validator, server-side application use case, stale same-token rejection, sender acknowledgement/rejection, and same-session `tokenMoved` patch broadcast now apply through `/api/sessions/socket`; high-level client handlers are still later token-command tickets.
+- the shared `moveToken` command payload contract, validator, server-side application use case, stale same-token rejection, sender acknowledgement/rejection, same-session `tokenMoved` patch broadcast, and explicit map-view client dispatch now apply through `/api/sessions/socket`; optimistic client movement and reconciliation are still later token-command tickets.
 
 ## Route, runtime gate, and URL shape
 
@@ -252,7 +252,7 @@ GM snapshots can include the full server-owned state. Player snapshots are filte
 
 ## Command flow
 
-The client sends a command envelope inside a client `command` message. The envelope includes the authenticated actor, an `opId`, `baseRevision`, scope lanes, and a JSON payload. The `moveToken` example below matches the shared payload validator and is dispatched by the WebSocket route to the server-side application use case.
+The client sends a command envelope inside a client `command` message. The envelope includes the authenticated actor, an `opId`, `baseRevision`, scope lanes, and a JSON payload. The `moveToken` example below matches the shared payload validator and is dispatched by the WebSocket route to the server-side application use case. The map page uses this path only when it is explicitly opened in session mode with a remembered session identity, for example `/maps/viridian-gym?session=1`; otherwise local-first token dragging still mutates and autosaves the local map as before.
 
 ```json
 {
@@ -307,7 +307,7 @@ Server processing order for the command path:
 6. Increment the relevant revision, persist a snapshot/event, send `commandAck` to the sender, and fan out a small `patch` to same-session clients.
 7. Return `commandReject` for invalid, unauthorized, stale, or conflicting commands without advancing revision.
 
-Current transport boundary: `moveToken` dispatch is live. Other command types still receive a server `error` with `code: "unsupported-message"` instead of mutating state until their command-specific tickets land.
+Current transport boundary: `moveToken` dispatch is live on both the WebSocket route and the explicit map-view session mode. The client does not yet apply optimistic movement or patch reconciliation locally, so accepted movement may not visibly update until later client-integration tickets wire authoritative session map state into the renderer. Other command types still receive a server `error` with `code: "unsupported-message"` instead of mutating state until their command-specific tickets land.
 
 ### Accepted command and patch
 

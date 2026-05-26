@@ -1,5 +1,5 @@
 import { computed, ref } from 'vue'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import {
   pokedexPathForSpecies,
   sheetPathForPlacement,
@@ -50,6 +50,10 @@ const makeControls = (
     isGm?: boolean
     nextId?: string
     now?: () => number
+    sessionMoveTokenDispatcher?: {
+      readonly enabled: { readonly value: boolean }
+      dispatchMoveToken(payload: { placement: TabletopMap['placements'][number]; to: TabletopMap['placements'][number]['position'] }): { readonly dispatched: boolean }
+    }
   } = {},
 ) => {
   const map = ref(options.map ?? mapFixture())
@@ -66,6 +70,7 @@ const makeControls = (
       canSpawnTokens: isGm,
       canControlAllTokens: isGm,
       canDeleteTokens: isGm,
+      sessionMoveTokenDispatcher: options.sessionMoveTokenDispatcher,
       createPlacementId: () => options.nextId ?? 'token-1',
       now: options.now,
     }),
@@ -155,6 +160,35 @@ describe('useTokenControls', () => {
         lines: ['Bolt moved 3 squares from (0, 0, 0) to (2, 0, 1).'],
       },
     ])
+  })
+
+  it('dispatches session-mode token movement without directly mutating the local map', () => {
+    const sheet = pokemon()
+    const map = mapFixture()
+    map.placements = [
+      { id: 'bolt-token', sheetKind: 'pokemon', sheetSlug: sheet.slug, position: { x: 0, y: 0, z: 0 } },
+    ]
+    const dispatchMoveToken = vi.fn(() => ({ dispatched: true }))
+    const { controls } = makeControls({
+      map,
+      pokemonSheets: [sheet],
+      sessionMoveTokenDispatcher: {
+        enabled: ref(true),
+        dispatchMoveToken,
+      },
+    })
+
+    controls.selectPlacement('bolt-token')
+    controls.updatePreview({ position: { x: 2, y: 0, z: 1 }, reachable: true, pathLength: 3 })
+    controls.movePlacement({ id: 'bolt-token', position: { x: 2, y: 0, z: 1 } })
+
+    expect(dispatchMoveToken).toHaveBeenCalledWith({
+      placement: map.placements[0],
+      to: { x: 2, y: 0, z: 1 },
+    })
+    expect(map.placements[0]?.position).toEqual({ x: 0, y: 0, z: 0 })
+    expect(map.metadata?.movementLog).toBeUndefined()
+    expect(controls.selectedId.value).toBeNull()
   })
 
   it('turns moved tokens toward cardinal destinations instead of preserving stale side-facing', () => {

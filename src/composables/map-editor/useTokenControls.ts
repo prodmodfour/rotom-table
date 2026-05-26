@@ -36,6 +36,11 @@ interface BooleanRef {
   readonly value: boolean
 }
 
+interface SessionMoveTokenDispatcherLike {
+  readonly enabled: BooleanRef
+  dispatchMoveToken(payload: { placement: SheetPlacement; to: GridAnchor }): { readonly dispatched: boolean }
+}
+
 type SheetMapRef<T> = Ref<Map<string, T> | undefined>
 
 export type MapTokenSheetSelection =
@@ -52,6 +57,7 @@ export interface UseTokenControlsOptions {
   canControlAllTokens: BooleanRef
   canDeleteTokens?: BooleanRef
   selectionDisabled?: BooleanRef
+  sessionMoveTokenDispatcher?: SessionMoveTokenDispatcherLike
   createPlacementId?: () => string
   now?: () => number
   maxMovementLogEntries?: number
@@ -83,6 +89,7 @@ export const useTokenControls = ({
   canControlAllTokens,
   canDeleteTokens = canControlAllTokens,
   selectionDisabled,
+  sessionMoveTokenDispatcher,
   createPlacementId = defaultCreatePlacementId,
   now,
   maxMovementLogEntries,
@@ -227,6 +234,15 @@ export const useTokenControls = ({
     if (!map.value || !canControlPlacement(payload.id)) return
     const placement = placementById(payload.id)
     if (!placement) return
+
+    if (sessionMoveTokenDispatcher?.enabled.value) {
+      const result = sessionMoveTokenDispatcher.dispatchMoveToken({
+        placement,
+        to: payload.position,
+      })
+      if (result.dispatched) clearSelection()
+      return
+    }
 
     const from = { ...placement.position }
     const to = { ...payload.position }
