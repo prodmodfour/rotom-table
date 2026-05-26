@@ -103,7 +103,9 @@ Example remote-exposure response:
 
 `WebSocket /api/sessions/socket` is the reserved live session transport route. Nitro WebSocket support is enabled in the server build, and the route upgrade fails closed unless `ROTOM_ENABLE_SESSION_HOST=1` is set. This keeps the same explicit runtime safety gate as the HTTP session endpoints.
 
-The current skeleton records raw connect/disconnect lifecycle as `pending-hello` only. It does not yet authenticate GM/player identity, subscribe a peer to a session, start heartbeat timers, replay reconnect data, broadcast fanout, or dispatch commands; those behaviours are intentionally scoped to the later WebSocket transport tickets. Until the hello/auth ticket lands, inbound messages receive a safe server `error` frame with `code: "unsupported-message"` and no map or snapshot authority is granted.
+The current server skeleton records raw connect/disconnect lifecycle as `pending-hello` only. It does not yet authenticate GM/player identity, subscribe a peer to a session, start heartbeat timers, replay reconnect data, broadcast fanout, or dispatch commands; those behaviours are intentionally scoped to the later WebSocket transport tickets. Until the hello/auth ticket lands, inbound messages receive a safe server `error` frame with `code: "unsupported-message"` and no map or snapshot authority is granted.
+
+The client skeleton lives in `src/composables/useSessionSocket.ts`. It resolves `/api/sessions/socket` to `ws://` or `wss://` from the current browser location, wraps the browser `WebSocket`, exposes connection status (`idle`, `connecting`, `open`, `closing`, `closed`, `error`, or `unavailable`), records the last error/close/server message, maintains a bounded JSON send queue, flushes queued messages after `open`, and provides explicit `connect`, `disconnect`, and `cleanup` methods. It intentionally does not send hello/auth, heartbeat, reconnect, or command messages by itself; later transport and command tickets will feed those shared protocol messages through this wrapper.
 
 ## GM start-session endpoint
 
