@@ -1,17 +1,25 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { SESSION_COMMAND_RESULT_SCHEMA_VERSION } from '#shared/sessionCommandResults'
 import { parseOpId } from '#shared/sessionCommands'
 import { SESSION_MESSAGE_SCHEMA_VERSION, type SessionCommandRejectMessage } from '#shared/sessionMessages'
-import { parseClientId, parseSessionId } from '#shared/sessionIdentity'
+import {
+  parseClientId,
+  parsePlayerId,
+  parseSessionDisplayName,
+  parseSessionId,
+} from '#shared/sessionIdentity'
 import { parseSessionRevision } from '#shared/sessionRevisions'
 import {
   formatSessionCommandRejectionNotice,
   labelForSessionCommandType,
+  runSessionCommandRejectionRefreshAction,
   sanitizeSessionCommandRejectionText,
 } from '~/utils/sessionCommandRejectionUi'
 
 const SESSION_ID = parseSessionId('session_rejectui0001')
 const CLIENT_ID = parseClientId('client_rejectui01')
+const PLAYER_ID = parsePlayerId('player_rejectui01')
+const DISPLAY_NAME = parseSessionDisplayName('Leaf')
 const OP_ID = parseOpId('op_rejectui000001')
 const REVISION_1 = parseSessionRevision(1)
 const REVISION_2 = parseSessionRevision(2)
@@ -59,6 +67,7 @@ describe('session command rejection UI helpers', () => {
       retryable: true,
       refreshLabel: 'Refresh session map',
       dismissLabel: 'Dismiss',
+      kind: 'stale-session-map',
     })
     expect(notice?.detail).toBe('Token changed after revision 1. Refresh first.')
     expect(notice?.summary).toContain('authoritative session map unchanged')
@@ -66,12 +75,55 @@ describe('session command rejection UI helpers', () => {
     expect(notice?.guidance).toContain('try the action again')
   })
 
-  it('keeps unauthorized notices player-safe without dumping permission or state objects', () => {
+  it('tells the GM to attach a map when session hosting has no attached map state', () => {
+    const notice = formatSessionCommandRejectionNotice(commandReject({
+      reason: 'conflict',
+      message: 'Map arena-map is not available in the authoritative session state.',
+      retryable: true,
+      conflictingScopes: [{ lane: 'map', mapSlug: 'arena-map' }],
+    }))
+
+    expect(notice).toMatchObject({
+      kind: 'not-attached-map',
+      reasonLabel: 'Map not attached',
+      title: 'Attach this map before sending live session commands',
+      detail: 'This command targeted map "arena-map", but the active live session does not have that map attached.',
+    })
+    expect(notice?.summary).toContain('active live session does not have an attached copy')
+    expect(notice?.guidance).toContain('Attach this saved map')
+    expect(notice?.guidance).toContain('refresh the session map')
+  })
+
+  it('explains missing selected-map rejections with an attach-and-refresh recovery', () => {
+    const notice = formatSessionCommandRejectionNotice(commandReject({
+      reason: 'conflict',
+      message: 'moveToken commands must identify a map or the session must have a selected map.',
+      retryable: false,
+      conflictingScopes: [],
+    }))
+
+    expect(notice).toMatchObject({
+      kind: 'missing-session-map',
+      reasonLabel: 'No session map',
+      title: 'Attach or select a session map before sending commands',
+      detail: 'The command did not identify a session map, and the live session has no selected map yet.',
+    })
+    expect(notice?.guidance).toContain('Attach the saved map')
+    expect(notice?.guidance).toContain('refresh')
+  })
+
+  it('keeps unauthorized token notices player-safe without dumping permission or state objects', () => {
     const notice = formatSessionCommandRejectionNotice(commandReject({
       reason: 'unauthorized',
       message: 'You do not control that token.',
       retryable: false,
       commandType: 'useAbility',
+      actor: {
+        role: 'player',
+        playerId: PLAYER_ID,
+        clientId: CLIENT_ID,
+        displayName: DISPLAY_NAME,
+      },
       permission: {
         allowed: false,
         reason: 'resource-not-assigned',
@@ -84,12 +136,13 @@ describe('session command rejection UI helpers', () => {
     const renderedText = JSON.stringify(notice)
     expect(notice).toMatchObject({
       commandLabel: 'Use ability',
-      reasonLabel: 'Not allowed',
-      title: 'Action not allowed in this session',
+      kind: 'unauthorized-token',
+      reasonLabel: 'Token not assigned',
+      title: 'This token is not assigned for control',
       detail: 'You do not control that token.',
       retryable: false,
     })
-    expect(notice?.guidance).toContain('Ask the GM to assign')
+    expect(notice?.guidance).toContain('Ask the GM to assign this token')
     expect(renderedText).not.toContain('do-not-render')
     expect(renderedText).not.toContain('token-secret')
     expect(renderedText).not.toContain('internal permission text')
@@ -101,7 +154,7 @@ describe('session command rejection UI helpers', () => {
     expect(sanitizeSessionCommandRejectionText(longText)).toMatch(/^bad value x+…$/)
     expect(sanitizeSessionCommandRejectionText(longText).length).toBeLessThanOrEqual(220)
     expect(formatSessionCommandRejectionNotice(commandReject({ message: '   \n\t   ' }))?.detail)
-      .toBe('Move token was rejected by session hosting.')
+      .toBe('Move token used an older session map revision.')
 
     const invalid = formatSessionCommandRejectionNotice(commandReject({
       reason: 'invalid',
@@ -111,6 +164,25 @@ describe('session command rejection UI helpers', () => {
     }))
     expect(invalid?.detail).toBe('Move token was rejected because the request was incomplete or malformed.')
     expect(JSON.stringify(invalid)).not.toContain('secretPath')
+  })
+
+  it('runs the rejection-banner refresh callbacks in order', () => {
+    const calls: string[] = []
+    const resetDismissal = vi.fn(() => calls.push('reset'))
+    const refreshSessionSnapshot = vi.fn(() => {
+      calls.push('refresh')
+      return { ok: true as const, delivery: 'hello-queued' as const }
+    })
+
+    const result = runSessionCommandRejectionRefreshAction({
+      resetDismissal,
+      refreshSessionSnapshot,
+    })
+
+    expect(result).toEqual({ ok: true, delivery: 'hello-queued' })
+    expect(calls).toEqual(['reset', 'refresh'])
+    expect(resetDismissal).toHaveBeenCalledTimes(1)
+    expect(refreshSessionSnapshot).toHaveBeenCalledTimes(1)
   })
 
   it('humanizes unknown command types without exposing raw protocol punctuation', () => {

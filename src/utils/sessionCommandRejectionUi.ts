@@ -65,6 +65,16 @@ const RETRYABLE_GUIDANCE: Readonly<Record<SessionCommandRejectionReason, string>
   conflict: 'Refresh the session map, choose a valid target or value, then try the action again.',
 }
 
+export type SessionCommandRejectionNoticeKind =
+  | 'invalid-command'
+  | 'stale-session-map'
+  | 'unauthorized-token'
+  | 'unauthorized-resource'
+  | 'missing-session-map'
+  | 'not-attached-map'
+  | 'missing-token'
+  | 'conflict'
+
 export interface SessionCommandRejectionNotice {
   readonly opId: OpId
   readonly commandType: SessionCommandType
@@ -80,6 +90,12 @@ export interface SessionCommandRejectionNotice {
   readonly baseRevision?: Revision
   readonly refreshLabel: string
   readonly dismissLabel: string
+  readonly kind: SessionCommandRejectionNoticeKind
+}
+
+export interface SessionCommandRejectionRefreshActionCallbacks<TResult = unknown> {
+  resetDismissal(): void
+  refreshSessionSnapshot(): TResult
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> => (
@@ -98,6 +114,11 @@ export const sanitizeSessionCommandRejectionText = (value: unknown): string => {
   return `${normalized.slice(0, MAX_SAFE_MESSAGE_LENGTH - 1).trimEnd()}…`
 }
 
+const safeInlineValue = (value: unknown): string | undefined => {
+  const safe = sanitizeSessionCommandRejectionText(value)
+  return safe.length > 0 ? safe : undefined
+}
+
 export const labelForSessionCommandType = (commandType: SessionCommandType): string => {
   const known = COMMAND_LABELS[commandType]
   if (known !== undefined) return known
@@ -112,9 +133,239 @@ export const labelForSessionCommandType = (commandType: SessionCommandType): str
   return humanized.charAt(0).toUpperCase() + humanized.slice(1)
 }
 
+export const runSessionCommandRejectionRefreshAction = <TResult>(
+  callbacks: SessionCommandRejectionRefreshActionCallbacks<TResult>,
+): TResult => {
+  callbacks.resetDismissal()
+  return callbacks.refreshSessionSnapshot()
+}
+
 const baseRevisionFromResult = (result: SessionCommandRejectMessage['result']): Revision | undefined => {
   if (!isRecord(result)) return undefined
   return 'baseRevision' in result ? result.baseRevision as Revision : undefined
+}
+
+const resourceFromResult = (result: SessionCommandRejectMessage['result']): Record<string, unknown> | null => (
+  isRecord(result) && isRecord(result.resource) ? result.resource : null
+)
+
+const permissionFromResult = (result: SessionCommandRejectMessage['result']): Record<string, unknown> | null => (
+  isRecord(result) && isRecord(result.permission) ? result.permission : null
+)
+
+const currentStateFromResult = (result: SessionCommandRejectMessage['result']): Record<string, unknown> | null => (
+  isRecord(result) && isRecord(result.currentState) ? result.currentState : null
+)
+
+const scopedMapSlugFromResult = (result: SessionCommandRejectMessage['result']): string | undefined => {
+  const resource = resourceFromResult(result)
+  const resourceMapSlug = safeInlineValue(resource?.mapSlug)
+  if (resourceMapSlug !== undefined) return resourceMapSlug
+
+  const currentState = currentStateFromResult(result)
+  const stateMapSlug = safeInlineValue(currentState?.mapSlug)
+  if (stateMapSlug !== undefined) return stateMapSlug
+
+  const scope = result.scopes.find((candidate) => safeInlineValue(candidate.mapSlug) !== undefined)
+  return safeInlineValue(scope?.mapSlug)
+}
+
+const extractMapSlugFromUnavailableDetail = (detail: string): string | undefined => {
+  const match = detail.match(/^Map\s+(.+?)\s+is not available in the authoritative session state\.$/i)
+  return safeInlineValue(match?.[1])
+}
+
+const extractMapSlugFromMissingTokenDetail = (detail: string): string | undefined => {
+  const match = detail.match(/^Token\s+.+?\s+is not present on map\s+(.+?)\.$/i)
+  return safeInlineValue(match?.[1])
+}
+
+const mapReference = (mapSlug: string | undefined): string => (
+  mapSlug === undefined ? 'this map' : `map "${mapSlug}"`
+)
+
+const isGmActor = (result: SessionCommandRejectMessage['result']): boolean => result.actor.role === 'gm'
+
+interface RejectionCopy {
+  readonly kind: SessionCommandRejectionNoticeKind
+  readonly reasonLabel: string
+  readonly title: string
+  readonly summary: string
+  readonly detail: string
+  readonly guidance: string
+}
+
+const isMissingSelectedMapDetail = (detail: string): boolean => (
+  /must identify a map/i.test(detail) || /session must have a selected map/i.test(detail)
+)
+
+const isMissingTokenDetail = (detail: string): boolean => /^Token\s+.+?\s+is not present on map\s+.+?\.$/i.test(detail)
+
+const buildNotAttachedMapCopy = (
+  result: SessionCommandRejectMessage['result'],
+  mapSlug: string | undefined,
+): RejectionCopy => {
+  const mapText = mapReference(mapSlug)
+  const gm = isGmActor(result)
+  return {
+    kind: 'not-attached-map',
+    reasonLabel: 'Map not attached',
+    title: gm
+      ? 'Attach this map before sending live session commands'
+      : 'This session map is not attached yet',
+    summary: 'Session hosting kept the session map unchanged because the active live session does not have an attached copy of this map.',
+    detail: `This command targeted ${mapText}, but the active live session does not have that map attached.`,
+    guidance: gm
+      ? 'Attach this saved map to the active live session from the map page, then refresh the session map before trying again.'
+      : 'Ask the GM to attach this map to the live session, then use Refresh session map before trying again.',
+  }
+}
+
+const buildMissingSessionMapCopy = (result: SessionCommandRejectMessage['result']): RejectionCopy => {
+  const gm = isGmActor(result)
+  return {
+    kind: 'missing-session-map',
+    reasonLabel: 'No session map',
+    title: gm
+      ? 'Attach or select a session map before sending commands'
+      : 'The live session needs a map attached',
+    summary: 'Session hosting kept the session map unchanged because no attached or selected session map is available for this command.',
+    detail: 'The command did not identify a session map, and the live session has no selected map yet.',
+    guidance: gm
+      ? 'Attach the saved map to the active live session, make it the selected session map, then refresh before trying again.'
+      : 'Ask the GM to attach and select a session map, then use Refresh session map before trying again.',
+  }
+}
+
+const buildMissingTokenCopy = (
+  result: SessionCommandRejectMessage['result'],
+  safeDetail: string,
+): RejectionCopy => {
+  const mapSlug = extractMapSlugFromMissingTokenDetail(safeDetail) ?? scopedMapSlugFromResult(result)
+  return {
+    kind: 'missing-token',
+    reasonLabel: 'Token missing',
+    title: 'Token is no longer on this session map',
+    summary: 'Session hosting kept the session map unchanged because the command targeted a token that is not present on the current session map.',
+    detail: safeDetail.length > 0
+      ? safeDetail
+      : `The selected token is not present on ${mapReference(mapSlug)}.`,
+    guidance: 'Refresh the session map to see the current token list. If the token should be available, ask the GM to attach the latest map state or update assignments.',
+  }
+}
+
+const unauthorizedTokenLabel = (permissionReason: unknown): string => {
+  if (permissionReason === 'resource-not-visible') return 'Token not visible'
+  if (permissionReason === 'resource-not-controllable') return 'Token visible only'
+  return 'Token not assigned'
+}
+
+const buildUnauthorizedTokenCopy = (
+  result: SessionCommandRejectMessage['result'],
+  commandLabel: string,
+  safeDetail: string,
+): RejectionCopy => {
+  const permission = permissionFromResult(result)
+  const gm = isGmActor(result)
+  return {
+    kind: 'unauthorized-token',
+    reasonLabel: unauthorizedTokenLabel(permission?.reason),
+    title: 'This token is not assigned for control',
+    summary: 'Session hosting kept the session map unchanged because this session identity cannot control the targeted token.',
+    detail: safeDetail.length > 0
+      ? safeDetail
+      : `${commandLabel} needs a token assignment before it can change the session map.`,
+    guidance: gm
+      ? 'Review player token assignments in the live session controls, then refresh the session map after making changes.'
+      : 'Ask the GM to assign this token to you for control, then use Refresh session map before trying again.',
+  }
+}
+
+const buildUnauthorizedResourceCopy = (
+  result: SessionCommandRejectMessage['result'],
+  commandLabel: string,
+  safeDetail: string,
+): RejectionCopy => {
+  const gm = isGmActor(result)
+  return {
+    kind: 'unauthorized-resource',
+    reasonLabel: REASON_LABELS.unauthorized,
+    title: REASON_TITLES.unauthorized,
+    summary: REASON_SUMMARIES.unauthorized,
+    detail: safeDetail.length > 0
+      ? safeDetail
+      : `${commandLabel} needs an assignment before it can change the session map.`,
+    guidance: gm
+      ? 'Review live session assignments, then refresh the session map before trying again.'
+      : NON_RETRYABLE_GUIDANCE.unauthorized,
+  }
+}
+
+const buildStaleMapCopy = (
+  commandLabel: string,
+  safeDetail: string,
+  retryable: boolean,
+): RejectionCopy => ({
+  kind: 'stale-session-map',
+  reasonLabel: REASON_LABELS.stale,
+  title: REASON_TITLES.stale,
+  summary: REASON_SUMMARIES.stale,
+  detail: safeDetail.length > 0
+    ? safeDetail
+    : `${commandLabel} used an older session map revision.`,
+  guidance: retryable
+    ? RETRYABLE_GUIDANCE.stale
+    : NON_RETRYABLE_GUIDANCE.stale,
+})
+
+const buildDefaultCopy = (
+  result: SessionCommandRejectMessage['result'],
+  commandLabel: string,
+  safeDetail: string,
+): RejectionCopy => {
+  const reason = result.reason
+  const detail = reason === 'invalid'
+    ? `${commandLabel} was rejected because the request was incomplete or malformed.`
+    : safeDetail.length > 0
+      ? safeDetail
+      : `${commandLabel} was rejected by session hosting.`
+
+  return {
+    kind: reason === 'invalid' ? 'invalid-command' : 'conflict',
+    reasonLabel: REASON_LABELS[reason],
+    title: REASON_TITLES[reason],
+    summary: REASON_SUMMARIES[reason],
+    detail,
+    guidance: result.retryable ? RETRYABLE_GUIDANCE[reason] : NON_RETRYABLE_GUIDANCE[reason],
+  }
+}
+
+const buildRejectionCopy = (
+  result: SessionCommandRejectMessage['result'],
+  commandLabel: string,
+  safeDetail: string,
+): RejectionCopy => {
+  if (result.reason === 'stale') return buildStaleMapCopy(commandLabel, safeDetail, result.retryable)
+
+  if (result.reason === 'unauthorized') {
+    const permission = permissionFromResult(result)
+    const permissionResource = isRecord(permission?.resource) ? permission.resource : null
+    const resource = resourceFromResult(result) ?? permissionResource
+    return resource?.kind === 'token'
+      ? buildUnauthorizedTokenCopy(result, commandLabel, safeDetail)
+      : buildUnauthorizedResourceCopy(result, commandLabel, safeDetail)
+  }
+
+  if (result.reason === 'conflict') {
+    const unavailableMapSlug = extractMapSlugFromUnavailableDetail(safeDetail)
+    if (unavailableMapSlug !== undefined || /not available in the authoritative session state/i.test(safeDetail)) {
+      return buildNotAttachedMapCopy(result, unavailableMapSlug ?? scopedMapSlugFromResult(result))
+    }
+    if (isMissingSelectedMapDetail(safeDetail)) return buildMissingSessionMapCopy(result)
+    if (isMissingTokenDetail(safeDetail)) return buildMissingTokenCopy(result, safeDetail)
+  }
+
+  return buildDefaultCopy(result, commandLabel, safeDetail)
 }
 
 export const formatSessionCommandRejectionNotice = (
@@ -126,26 +377,24 @@ export const formatSessionCommandRejectionNotice = (
   const reason = result.reason
   const commandLabel = labelForSessionCommandType(result.commandType)
   const safeDetail = sanitizeSessionCommandRejectionText(result.message)
-  const detail = reason === 'invalid'
-    ? `${commandLabel} was rejected because the request was incomplete or malformed.`
-    : safeDetail.length > 0
-      ? safeDetail
-      : `${commandLabel} was rejected by session hosting.`
+  const copy = buildRejectionCopy(result, commandLabel, safeDetail)
+  const baseRevision = baseRevisionFromResult(result)
 
   return {
     opId: result.opId,
     commandType: result.commandType,
     commandLabel,
     reason,
-    reasonLabel: REASON_LABELS[reason],
-    title: REASON_TITLES[reason],
-    summary: REASON_SUMMARIES[reason],
-    detail,
-    guidance: result.retryable ? RETRYABLE_GUIDANCE[reason] : NON_RETRYABLE_GUIDANCE[reason],
+    reasonLabel: copy.reasonLabel,
+    title: copy.title,
+    summary: copy.summary,
+    detail: copy.detail,
+    guidance: copy.guidance,
     retryable: result.retryable,
     currentRevision: result.currentRevision,
-    ...(baseRevisionFromResult(result) === undefined ? {} : { baseRevision: baseRevisionFromResult(result) }),
+    ...(baseRevision === undefined ? {} : { baseRevision }),
     refreshLabel: 'Refresh session map',
     dismissLabel: 'Dismiss',
+    kind: copy.kind,
   }
 }

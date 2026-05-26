@@ -37,7 +37,10 @@ import {
 import { useTokenControls } from '~/composables/map-editor/useTokenControls'
 import type { AuthoritativeSessionState } from '#shared/sessionState'
 import { buildSessionTokenControlModel } from '~/utils/sessionTokenControl'
-import { formatSessionCommandRejectionNotice } from '~/utils/sessionCommandRejectionUi'
+import {
+  formatSessionCommandRejectionNotice,
+  runSessionCommandRejectionRefreshAction,
+} from '~/utils/sessionCommandRejectionUi'
 import { buildSessionConnectionStatusNotice } from '~/utils/sessionConnectionStatusUi'
 import { buildSessionPresencePanelModel } from '~/utils/sessionPresencePanel'
 import { MAP_API_PATHS } from '~/utils/apiRoutes'
@@ -697,10 +700,12 @@ const dismissSessionCommandRejection = () => {
   if (opId !== undefined) dismissedSessionCommandRejectionOpId.value = opId
 }
 
-const refreshSessionSnapshotAfterRejection = () => {
-  dismissedSessionCommandRejectionOpId.value = null
-  sessionMap.refreshSessionSnapshot()
-}
+const refreshSessionSnapshotAfterRejection = () => runSessionCommandRejectionRefreshAction({
+  resetDismissal: () => {
+    dismissedSessionCommandRejectionOpId.value = null
+  },
+  refreshSessionSnapshot: sessionMap.refreshSessionSnapshot,
+})
 
 const openMoveAutomationFromContext = (payload: { id: string; moveName?: string | null }) => {
   cancelAbilityAutomationTargeting()
