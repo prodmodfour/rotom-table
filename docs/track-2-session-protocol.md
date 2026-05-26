@@ -2,7 +2,7 @@
 
 This document describes the shared TypeScript protocol contracts introduced for Track 2 session mode. It records the wire vocabulary that later server and client tickets must use when they add the session store, WebSocket endpoint, lobby UI, command handlers, and reconnect behaviour.
 
-This is a contract document, not a claim that the WebSocket runtime is already complete. The current shared contracts live in `shared/` and are covered by focused Vitest tests; command-specific payload contracts such as `moveToken` land in later command tickets. See [Track 2 session storage](track-2-session-storage.md) for the operational snapshot/event-log layout, backup guidance, and recovery limitations.
+This is a contract document, not a claim that the WebSocket runtime is already complete. The current shared contracts live in `shared/` and are covered by focused Vitest tests; command-specific payload contracts such as `moveToken` land in later command tickets. See [Track 2 session lobby and manual QA](track-2-session-lobby.md) for the current GM/player join flow and two-browser smoke checklist, and [Track 2 session storage](track-2-session-storage.md) for the operational snapshot/event-log layout, backup guidance, and recovery limitations.
 
 ## Protocol goals
 
@@ -379,7 +379,7 @@ When the server's selected/current map is not visible to the player, `currentMap
 
 `/sessions` provides the first additive lobby surface for the endpoints above. It does not replace the existing local `/login` trust picker: the page is still reached through the current app shell, the GM start action still requires the local GM role plus `ROTOM_ENABLE_SESSION_HOST=1`, and player joins still create only session-local `playerId`/`clientId`/display-name continuity.
 
-The GM panel can start a session, show the player join code, refresh the read-only management summary, and list joined players plus assignment counts. The player panel collects a join code and display name, stores the returned player identity in browser-local session identity storage, and refreshes the player-filtered session-state summary. The lobby intentionally does not send map edits, autosave whole documents, or expose the stored GM key in the page chrome.
+The GM panel can start a session, show the player join code, refresh the read-only management summary, and list joined players plus assignment counts. The player panel collects a join code and display name, stores the returned player identity in browser-local session identity storage, and refreshes the player-filtered session-state summary. The lobby intentionally does not send map edits, autosave whole documents, or expose the stored GM key in the page chrome. The operational lobby flow and two-browser manual QA checklist live in [Track 2 session lobby and manual QA](track-2-session-lobby.md).
 
 ## Client identity continuity helper
 

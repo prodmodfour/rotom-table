@@ -22,6 +22,22 @@ npm run dev
 
 Nuxt will print the local URL, usually `http://localhost:3000`. Open the app and choose **GM Login** or **Player Login**. The selected role is stored in the `rotom-role` cookie.
 
+## Track 2 session lobby smoke testing
+
+Session hosting is disabled by default. To smoke-test the current Track 2 lobby on one machine, start the app with the explicit runtime flag:
+
+```bash
+ROTOM_ENABLE_SESSION_HOST=1 npm run dev
+```
+
+For a same-Wi-Fi/LAN lobby smoke test, bind the dev server to the LAN interface and have players open the GM machine's private URL:
+
+```bash
+ROTOM_ENABLE_SESSION_HOST=1 npm run dev -- --host 0.0.0.0
+```
+
+See [Track 2 session lobby and manual QA](track-2-session-lobby.md) for the GM/player join flow, safety boundaries, and two-browser checklist. The existing local GM/player picker remains a trust switch for local use, not public authentication.
+
 ## Checks
 
 Run TypeScript/Nuxt checks:
