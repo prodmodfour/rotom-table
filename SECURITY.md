@@ -4,6 +4,8 @@
 
 Rotom Table is currently a local-first, trust-based tabletop tool. The GM/Player session model is a role picker backed by a cookie; it is not hardened public authentication.
 
+Track 2 GM-hosted sessions add a guarded session-local join flow for trusted tables, but they do not turn Rotom Table into a hardened public service. See [docs/track-2-security-review.md](docs/track-2-security-review.md) for the current Track 2 trust boundaries, join-code limits, tunnel exposure risks, and non-goals.
+
 Do not expose this application publicly without replacing the current auth and persistence assumptions. A public deployment should include, at minimum:
 
 - real authentication and authorization

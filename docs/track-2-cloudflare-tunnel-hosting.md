@@ -2,7 +2,7 @@
 
 This runbook is the supported remote-player hosting path for Track 2 table sessions. The GM still runs Rotom Table on a machine they control; a named Cloudflare Tunnel gives trusted remote players a stable HTTPS hostname that forwards to that private server.
 
-Use the [Track 2 LAN hosting runbook](track-2-lan-hosting.md) first when everyone is on the same network. Use this guide only when players are remote and the GM intentionally wants to publish a stable hostname such as `https://table.example.com` for a campaign session. For the no-secret safety banner checks that catch remote exposure before a session-local GM key, join code, and authoritative state are ready, see [Track 2 public exposure checks](track-2-public-exposure-checks.md). For private snapshot/event-log backup and restore procedures before or after remote play, see [Track 2 session backup and recovery](track-2-session-backup-recovery.md).
+Use the [Track 2 LAN hosting runbook](track-2-lan-hosting.md) first when everyone is on the same network. Use this guide only when players are remote and the GM intentionally wants to publish a stable hostname such as `https://table.example.com` for a campaign session. For the no-secret safety banner checks that catch remote exposure before a session-local GM key, join code, and authoritative state are ready, see [Track 2 public exposure checks](track-2-public-exposure-checks.md). For private snapshot/event-log backup and restore procedures before or after remote play, see [Track 2 session backup and recovery](track-2-session-backup-recovery.md). For trust boundaries, join-code limits, tunnel exposure risks, and non-hardened areas, see the [Track 2 security review](track-2-security-review.md).
 
 Named tunnel hosting keeps the locked Track 2 architecture intact: one GM-hosted server owns session authority, live clients use `WebSocket /api/sessions/socket`, commands are acknowledged or rejected by the server, state is persisted as local JSON snapshots/event logs, and browsers must not autosave whole maps as the live session concurrency mechanism.
 
@@ -265,6 +265,6 @@ Back up local session snapshots only if the GM intentionally wants a private rec
 - Quick Tunnel is not the supported campaign-session path; see the [Track 2 Quick Tunnel caveat](track-2-quick-tunnel-caveat.md) for the temporary development-only boundary and legacy SSE limitations.
 - The existing `/login` GM/player picker is not public auth.
 - Cloudflare Access is optional extra protection, not a replacement for Rotom Table session-local GM/player validation.
-- The session join code and GM key are session-local credentials, not full accounts.
+- The session join code and GM key are session-local credentials, not full accounts; see the [Track 2 security review](track-2-security-review.md) for join-code limits, tunnel exposure risks, and incident response.
 - Do not add a database, cloud persistence layer, SaaS deployment target, Durable Objects, Redis, Postgres, or shared-document autosave model to make tunnel hosting work.
 - Keep Track 1 map rendering and local-first workflows intact; explicit session mode is entered through `/maps/<slug>?session=1`.

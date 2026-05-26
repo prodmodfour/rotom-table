@@ -550,6 +550,8 @@ WebSocket-specific expectations for that named tunnel:
 - handle tunnel/proxy closure by reconnecting with `lastSeenRevision` and accepting snapshot fallback when replay is unavailable;
 - do not commit tunnel credentials, tokens, private hostnames that should remain private, real `.env` files, GM keys, join codes, snapshots, or event logs.
 
+See the [Track 2 security review](track-2-security-review.md) for the broader trust boundaries, join-code limits, tunnel exposure risks, and non-hardened areas.
+
 Quick Tunnel is not the supported campaign-session deployment path. It may be useful only for temporary development smoke tests, and any use should be documented as unstable, ad hoc, and unsuitable for regular campaign play. See the [Track 2 Quick Tunnel caveat](track-2-quick-tunnel-caveat.md) for the allowed smoke-test boundary, cleanup expectations, and legacy SSE limitations.
 
 ## Manual chunk-04 smoke expectations
@@ -584,6 +586,7 @@ This automated fake-peer smoke test complements the local browser helper in [Tra
 - [Track 2 Quick Tunnel caveat](track-2-quick-tunnel-caveat.md)
 - [Track 2 multi-tab local smoke script](track-2-multi-tab-smoke.md)
 - [Track 2 session storage](track-2-session-storage.md)
+- [Track 2 security review](track-2-security-review.md)
 - [Track 2 validation matrix](track-2-validation-matrix.md)
 - [ADR 002: LAN first and named Cloudflare Tunnel second](adrs/002-lan-first-named-cloudflare-tunnel.md)
 - [ADR 003: WebSocket session transport](adrs/003-websocket-session-transport.md)

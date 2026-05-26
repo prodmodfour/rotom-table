@@ -4,7 +4,7 @@ This runbook is the supported same-network hosting path for Track 2 table sessio
 
 LAN hosting keeps the locked Track 2 architecture intact: one GM-hosted server owns session authority, live clients use `WebSocket /api/sessions/socket`, commands are acknowledged or rejected by the server, state is persisted as local JSON snapshots/event logs, and browsers must not autosave whole maps as the live session concurrency mechanism.
 
-For the lobby flow itself, see [Track 2 session lobby and manual QA](track-2-session-lobby.md). For no-secret warnings around unsafe host startup and missing session-local credentials/state, see [Track 2 public exposure checks](track-2-public-exposure-checks.md). For local multi-tab token propagation checks, see [Track 2 multi-tab local smoke script](track-2-multi-tab-smoke.md). For private snapshot/event-log backups and restores, see [Track 2 session backup and recovery](track-2-session-backup-recovery.md). For remote play over the internet, use the [Track 2 named Cloudflare Tunnel runbook](track-2-cloudflare-tunnel-hosting.md); do not use ad-hoc public exposure as the LAN path.
+For the lobby flow itself, see [Track 2 session lobby and manual QA](track-2-session-lobby.md). For no-secret warnings around unsafe host startup and missing session-local credentials/state, see [Track 2 public exposure checks](track-2-public-exposure-checks.md). For local multi-tab token propagation checks, see [Track 2 multi-tab local smoke script](track-2-multi-tab-smoke.md). For private snapshot/event-log backups and restores, see [Track 2 session backup and recovery](track-2-session-backup-recovery.md). For trust boundaries, join-code limits, and non-hardened areas, see the [Track 2 security review](track-2-security-review.md). For remote play over the internet, use the [Track 2 named Cloudflare Tunnel runbook](track-2-cloudflare-tunnel-hosting.md); do not use ad-hoc public exposure as the LAN path.
 
 ## Before you start
 
@@ -202,6 +202,6 @@ Back up local session snapshots only if the GM intentionally wants a private rec
 - LAN hosting is the primary supported Track 2 path; remote players should use the [Track 2 named Cloudflare Tunnel runbook](track-2-cloudflare-tunnel-hosting.md) with a stable hostname.
 - Quick Tunnel is not the supported campaign-session path; see the [Track 2 Quick Tunnel caveat](track-2-quick-tunnel-caveat.md) before using a temporary `trycloudflare.com` URL for development smoke tests.
 - The existing `/login` GM/player picker is not public auth.
-- The session join code and GM key are session-local credentials, not full accounts.
+- The session join code and GM key are session-local credentials, not full accounts; see the [Track 2 security review](track-2-security-review.md) for join-code limits and incident response.
 - Do not add a database, cloud persistence layer, SaaS deployment target, or shared-document autosave model to make LAN hosting work.
 - Keep Track 1 map rendering and local-first workflows intact; explicit session mode is entered through `/maps/<slug>?session=1`.

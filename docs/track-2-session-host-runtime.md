@@ -105,6 +105,7 @@ See the [Track 2 named Cloudflare Tunnel runbook](track-2-cloudflare-tunnel-host
 - Live session clients must use `/maps/<slug>?session=1` and WebSocket command flow. Plain `/maps/<slug>` remains local-first.
 - Before committing, run `git status --short` and confirm generated `data/sessions/` snapshots/event logs, join codes, GM keys, screenshots with secrets, and private campaign JSON are not staged.
 - For private session archives and restores after hosting, use the [Track 2 session backup and recovery runbook](track-2-session-backup-recovery.md); do not turn backups into a cloud database or public shared drive.
+- For the full trust-boundary review, join-code limits, tunnel exposure risks, incident response, and non-hardened areas, see the [Track 2 security review](track-2-security-review.md).
 
 ## Shutdown
 

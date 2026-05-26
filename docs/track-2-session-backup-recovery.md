@@ -2,7 +2,7 @@
 
 This runbook explains how a GM keeps Track 2 session data recoverable without changing the locked architecture. Rotom Table remains a GM-hosted, local-first app: the GM-controlled server owns the live session, players connect by browser, commands travel over `WebSocket /api/sessions/socket`, and persistence is local JSON snapshots plus an optional append-only event log.
 
-Use this guide with the [Track 2 session storage guide](track-2-session-storage.md), the [LAN hosting runbook](track-2-lan-hosting.md), and the [named Cloudflare Tunnel runbook](track-2-cloudflare-tunnel-hosting.md). It does not introduce a database, SaaS backup service, public accounts, Quick Tunnel campaign hosting, or client-owned whole-map recovery.
+Use this guide with the [Track 2 session storage guide](track-2-session-storage.md), the [LAN hosting runbook](track-2-lan-hosting.md), the [named Cloudflare Tunnel runbook](track-2-cloudflare-tunnel-hosting.md), and the [Track 2 security review](track-2-security-review.md). It does not introduce a database, SaaS backup service, public accounts, Quick Tunnel campaign hosting, or client-owned whole-map recovery.
 
 ## Backup and recovery rules
 
