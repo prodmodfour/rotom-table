@@ -45,6 +45,7 @@ describe('live session readiness summary', () => {
 
   it('links readiness evidence and target tests that exist', () => {
     const expectedDocPaths = [
+      'docs/live-session-product-readiness-review.md',
       'docs/live-session-implementation-maintenance.md',
       'docs/live-session-command-flow-maintenance.md',
       'docs/live-session-lan-manual-smoke-results.md',
@@ -67,6 +68,7 @@ describe('live session readiness summary', () => {
       'tests/composables/map-editor/sessionClientIntegration.test.ts',
       'tests/docs/liveSessionDocsMaintenance.test.ts',
       'tests/docs/liveSessionReadinessSummary.test.ts',
+      'tests/docs/liveSessionProductReadinessReview.test.ts',
       'tests/docs/productTerminologyGuard.test.ts',
     ]
 

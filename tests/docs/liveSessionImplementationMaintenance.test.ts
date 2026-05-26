@@ -65,6 +65,7 @@ describe('live session implementation maintenance', () => {
       'docs/live-session-security-secret-hygiene-readiness.md',
       'docs/live-session-persistence-recovery-maintenance.md',
       'docs/live-session-concurrency-benchmark-notes.md',
+      'docs/live-session-product-readiness-review.md',
       'docs/live-session-readiness-summary.md',
     ]
 
@@ -91,6 +92,7 @@ describe('live session implementation maintenance', () => {
       'tests/composables/map-editor/sessionClientIntegration.test.ts',
       'tests/docs/liveSessionImplementationMaintenance.test.ts',
       'tests/docs/liveSessionDocsMaintenance.test.ts',
+      'tests/docs/liveSessionProductReadinessReview.test.ts',
       'tests/docs/liveSessionReadinessSummary.test.ts',
       'tests/docs/productTerminologyGuard.test.ts',
     ]

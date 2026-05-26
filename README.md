@@ -56,6 +56,7 @@ npm run build
 - [docs/live-session-command-flow-maintenance.md](docs/live-session-command-flow-maintenance.md) — integrated multi-client command-flow coverage covering accepted commands, reconnect, permissions, and stale conflicts.
 - [docs/live-session-concurrency-benchmark-notes.md](docs/live-session-concurrency-benchmark-notes.md) — expected LAN/named-tunnel concurrency behaviour, latency-sensitive paths, replay/snapshot fallback, and before-game smoke checks.
 - [docs/live-session-implementation-maintenance.md](docs/live-session-implementation-maintenance.md) — implementation maintenance guide linking product docs, source areas, validation evidence, and known limitations.
+- [docs/live-session-product-readiness-review.md](docs/live-session-product-readiness-review.md) — concise product/developer readiness review for architecture, table flow, validation, limits, and operator checks.
 - [docs/live-session-readiness-summary.md](docs/live-session-readiness-summary.md) — product/developer readiness summary for validation, evidence links, and architecture confirmation.
 - [docs/live-session-local-mode-maintenance.md](docs/live-session-local-mode-maintenance.md) — local-mode maintenance checks for plain map/sheet workflows, legacy SSE, and session-mode opt-in boundaries.
 - [docs/live-session-quick-tunnel-caveat.md](docs/live-session-quick-tunnel-caveat.md) — Quick Tunnel caveats for temporary development smoke tests only, including legacy SSE limitations.

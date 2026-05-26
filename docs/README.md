@@ -30,6 +30,7 @@ This directory collects presentation and reviewer documentation for Rotom Table.
 - [Live session command-flow maintenance](live-session-command-flow-maintenance.md) — automated multi-client command-flow coverage covering accepted commands, reconnect, permissions, and stale conflicts.
 - [Live session concurrency benchmark notes](live-session-concurrency-benchmark-notes.md) — expected LAN/named-tunnel concurrency behaviour, latency-sensitive paths, replay/snapshot fallback, and before-game smoke checks.
 - [Live session implementation maintenance](live-session-implementation-maintenance.md) — product docs, source areas, validation evidence, and known limitations.
+- [Live session product readiness review](live-session-product-readiness-review.md) — concise product/developer readiness review for architecture, table flow, validation, limits, and operator checks.
 - [Live session readiness summary](live-session-readiness-summary.md) — product/developer readiness summary for validation, evidence links, and architecture confirmation.
 - [Live session local-mode maintenance checks](live-session-local-mode-maintenance.md) — local-first maintenance checks for plain map/sheet workflows, legacy SSE, and explicit session-mode opt-in boundaries.
 - [Live session Quick Tunnel caveat](live-session-quick-tunnel-caveat.md) — temporary development smoke-test boundary, campaign-session rejection, and legacy SSE limitations.

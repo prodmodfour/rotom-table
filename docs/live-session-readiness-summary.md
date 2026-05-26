@@ -30,6 +30,7 @@ The live-session implementation still matches the locked architecture:
 
 Use these product/developer documents and tests to maintain the live-session scope:
 
+- [Live session product readiness review](live-session-product-readiness-review.md) gives a concise architecture, table-flow, validation, limitations, and operator-checklist entry point.
 - [Live session implementation maintenance](live-session-implementation-maintenance.md) links primary docs, source areas, tests, and known limitations.
 - [Live session command-flow maintenance](live-session-command-flow-maintenance.md) covers move, turn, HP, conditions, initiative, reconnect, permissions, stale conflicts, same-session patch fanout, and cross-session isolation.
 - [Live session LAN manual smoke results](live-session-lan-manual-smoke-results.md) records the multi-browser LAN pass with redacted join-code evidence, WebSocket presence, reconnect snapshot fallback, and cleanup.
@@ -38,7 +39,7 @@ Use these product/developer documents and tests to maintain the live-session sco
 - [Live session security and secret-hygiene readiness](live-session-security-secret-hygiene-readiness.md) reviews auth/session/cookie/permission boundaries, public exposure warnings, committed-data hygiene, and remaining security non-goals.
 - [Live session persistence/recovery maintenance](live-session-persistence-recovery-maintenance.md) tracks local snapshots, optional event logs, backup/recovery docs, cleanup, and data hygiene.
 - [Live session concurrency benchmark notes](live-session-concurrency-benchmark-notes.md) records latency-sensitive behaviour observations and performance limits for the trusted small-table scope.
-- `tests/server/sessionIntegratedCommandFlow.test.ts`, `tests/server/sessionWebSocketTransport.test.ts`, `tests/server/sessionHostingHardening.test.ts`, `tests/composables/map-editor/sessionClientIntegration.test.ts`, `tests/docs/liveSessionDocsMaintenance.test.ts`, `tests/docs/liveSessionReadinessSummary.test.ts`, and `tests/docs/productTerminologyGuard.test.ts` provide focused regression coverage around the readiness surface.
+- `tests/server/sessionIntegratedCommandFlow.test.ts`, `tests/server/sessionWebSocketTransport.test.ts`, `tests/server/sessionHostingHardening.test.ts`, `tests/composables/map-editor/sessionClientIntegration.test.ts`, `tests/docs/liveSessionDocsMaintenance.test.ts`, `tests/docs/liveSessionReadinessSummary.test.ts`, `tests/docs/liveSessionProductReadinessReview.test.ts`, and `tests/docs/productTerminologyGuard.test.ts` provide focused regression coverage around the readiness surface.
 
 ## Operator boundary
 
