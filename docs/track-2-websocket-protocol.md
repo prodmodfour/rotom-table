@@ -538,7 +538,7 @@ No session data should be sent to a socket before hello/auth, and no presence, p
 
 ## Named Cloudflare Tunnel expectations
 
-LAN remains the primary supported Track 2 hosting path. For same-Wi-Fi startup commands, IP discovery, player browser paths, and network troubleshooting, use the [Track 2 LAN hosting runbook](track-2-lan-hosting.md). The recorded ticket 091 LAN browser-client pass is in [Track 2 LAN manual smoke results](track-2-lan-manual-smoke-results.md). For remote players, use the [Track 2 named Cloudflare Tunnel runbook](track-2-cloudflare-tunnel-hosting.md): the supported path is a named Cloudflare Tunnel with a stable hostname pointing to the private GM-hosted Rotom Table server. For the end-to-end deployment smoke that exercises two players, reconnect, token movement, initiative, and conflict rejection in either mode, use the [Track 2 deployment smoke checklist](track-2-deployment-smoke-checklist.md).
+LAN remains the primary supported Track 2 hosting path. For same-Wi-Fi startup commands, IP discovery, player browser paths, and network troubleshooting, use the [Track 2 LAN hosting runbook](track-2-lan-hosting.md). The recorded ticket 091 LAN browser-client pass is in [Track 2 LAN manual smoke results](track-2-lan-manual-smoke-results.md). For remote players, use the [Track 2 named Cloudflare Tunnel runbook](track-2-cloudflare-tunnel-hosting.md): the supported path is a named Cloudflare Tunnel with a stable hostname pointing to the private GM-hosted Rotom Table server. The ticket 092 [Track 2 named tunnel documentation review](track-2-named-tunnel-documentation-review.md) records the current Cloudflare assumptions and safety-warning pass for that runbook. For the end-to-end deployment smoke that exercises two players, reconnect, token movement, initiative, and conflict rejection in either mode, use the [Track 2 deployment smoke checklist](track-2-deployment-smoke-checklist.md).
 
 WebSocket-specific expectations for that named tunnel:
 
@@ -587,6 +587,7 @@ This automated fake-peer smoke test complements the local browser helper in [Tra
 - [Track 2 session lobby and manual QA](track-2-session-lobby.md)
 - [Track 2 LAN hosting runbook](track-2-lan-hosting.md)
 - [Track 2 named Cloudflare Tunnel runbook](track-2-cloudflare-tunnel-hosting.md)
+- [Track 2 named tunnel documentation review](track-2-named-tunnel-documentation-review.md)
 - [Track 2 deployment smoke checklist](track-2-deployment-smoke-checklist.md)
 - [Track 2 LAN manual smoke results](track-2-lan-manual-smoke-results.md)
 - [Track 2 integrated command audit](track-2-command-audit.md)

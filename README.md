@@ -48,6 +48,7 @@ npm run build
 - [docs/track-2-public-exposure-checks.md](docs/track-2-public-exposure-checks.md) — no-secret safety banner checks for unsafe public/LAN startup states before sharing join codes.
 - [docs/track-2-lan-hosting.md](docs/track-2-lan-hosting.md) — same-Wi-Fi/LAN hosting runbook with startup commands, IP discovery, player URLs, and troubleshooting.
 - [docs/track-2-cloudflare-tunnel-hosting.md](docs/track-2-cloudflare-tunnel-hosting.md) — named Cloudflare Tunnel runbook with stable hostname setup, WebSocket considerations, safety warnings, and rollback steps.
+- [docs/track-2-named-tunnel-documentation-review.md](docs/track-2-named-tunnel-documentation-review.md) — final audit review of named-tunnel doc accuracy, current Cloudflare assumptions, and safety warnings.
 - [docs/track-2-deployment-smoke-checklist.md](docs/track-2-deployment-smoke-checklist.md) — LAN and named-tunnel deployment smoke checklist for two players, reconnect, token movement, initiative, and conflict rejection.
 - [docs/track-2-lan-manual-smoke-results.md](docs/track-2-lan-manual-smoke-results.md) — recorded LAN browser-client smoke results for guarded startup, two-player join, WebSocket presence, reconnect, and cleanup.
 - [docs/track-2-command-audit.md](docs/track-2-command-audit.md) — integrated multi-client command audit covering accepted commands, reconnect, permissions, and stale conflicts.

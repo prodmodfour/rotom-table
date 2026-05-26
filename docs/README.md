@@ -22,6 +22,7 @@ This directory collects presentation and reviewer documentation for Rotom Table.
 - [Track 2 public exposure checks](track-2-public-exposure-checks.md) — no-secret safety banner checks for unsafe public/LAN startup states before sharing join codes.
 - [Track 2 LAN hosting runbook](track-2-lan-hosting.md) — same-Wi-Fi/LAN setup commands, IP discovery, player join URLs, smoke checks, and troubleshooting.
 - [Track 2 named Cloudflare Tunnel runbook](track-2-cloudflare-tunnel-hosting.md) — stable-hostname remote setup, WebSocket considerations, safety warnings, and rollback steps.
+- [Track 2 named tunnel documentation review](track-2-named-tunnel-documentation-review.md) — ticket 092 review of named-tunnel doc accuracy, current Cloudflare assumptions, and safety warnings.
 - [Track 2 deployment smoke checklist](track-2-deployment-smoke-checklist.md) — LAN and named-tunnel smoke steps for two players, reconnect, token movement, initiative, conflict rejection, and cleanup evidence.
 - [Track 2 LAN manual smoke results](track-2-lan-manual-smoke-results.md) — recorded LAN browser-client smoke results for guarded startup, two-player join, WebSocket presence, reconnect, and cleanup.
 - [Track 2 integrated command audit](track-2-command-audit.md) — automated multi-client command audit covering accepted commands, reconnect, permissions, and stale conflicts.
