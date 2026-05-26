@@ -99,6 +99,12 @@ Example remote-exposure response:
 }
 ```
 
+## Session WebSocket route skeleton
+
+`WebSocket /api/sessions/socket` is the reserved live session transport route. Nitro WebSocket support is enabled in the server build, and the route upgrade fails closed unless `ROTOM_ENABLE_SESSION_HOST=1` is set. This keeps the same explicit runtime safety gate as the HTTP session endpoints.
+
+The current skeleton records raw connect/disconnect lifecycle as `pending-hello` only. It does not yet authenticate GM/player identity, subscribe a peer to a session, start heartbeat timers, replay reconnect data, broadcast fanout, or dispatch commands; those behaviours are intentionally scoped to the later WebSocket transport tickets. Until the hello/auth ticket lands, inbound messages receive a safe server `error` frame with `code: "unsupported-message"` and no map or snapshot authority is granted.
+
 ## GM start-session endpoint
 
 `POST /api/sessions/start` creates the first server-side identity and state record for a Track 2 table session. The route fails closed unless `ROTOM_ENABLE_SESSION_HOST=1` is present, and the server use case repeats that runtime-gate check before allocating anything. The route currently also requires the existing local GM role so the GM can start a session from the trusted local app, but that role picker is not public authentication; the returned session-local GM key is the credential GM management routes and future WebSocket handshakes must validate.
