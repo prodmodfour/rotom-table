@@ -36,6 +36,7 @@ import {
 } from '~/composables/map-editor/useSessionMoveTokenDispatch'
 import { useTokenControls } from '~/composables/map-editor/useTokenControls'
 import { formatSessionCommandRejectionNotice } from '~/utils/sessionCommandRejectionUi'
+import { buildSessionPresencePanelModel } from '~/utils/sessionPresencePanel'
 import { MAP_API_PATHS } from '~/utils/apiRoutes'
 import { getClientId } from '~/utils/clientId'
 import { isSameAnchor } from '~/utils/gridGeometry'
@@ -623,6 +624,15 @@ const sessionCommandRejectionNotice = computed(() => {
   return formatSessionCommandRejectionNotice(rejectMessage)
 })
 
+const sessionPresencePanel = computed(() => {
+  if (!sessionMoveTokenEnabled.value) return null
+  return buildSessionPresencePanelModel({
+    identity: sessionMap.identity.value,
+    presence: sessionMap.lastPresence.value,
+    snapshot: sessionMap.socket.lastSnapshot.value,
+  })
+})
+
 watch(
   () => sessionMap.lastCommandReject.value?.result.opId ?? null,
   (opId, previousOpId) => {
@@ -785,6 +795,7 @@ useMapDimensionReconciliation({
         :token-order-options-by-id="tokenOrderOptionsById"
         :token-send-out-options-by-id="tokenSendOutOptionsById"
         :session-command-rejection="sessionCommandRejectionNotice"
+        :session-presence="sessionPresencePanel"
         @select-pokemon="selectPokemon"
         @focus-initiative-entry="focusInitiativeEntry"
         @previous-initiative="previousInitiativeAndExpireAoo"

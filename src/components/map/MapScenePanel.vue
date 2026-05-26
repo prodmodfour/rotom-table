@@ -5,6 +5,7 @@ import MapSceneStatus from '~/components/map/MapSceneStatus.vue'
 import MapMoveReactionPromptStack from '~/components/map/MapMoveReactionPromptStack.vue'
 import InitiativeInfoBar from '~/components/map/InitiativeInfoBar.vue'
 import SessionCommandRejectionBanner from '~/components/map/SessionCommandRejectionBanner.vue'
+import SessionPresencePanel from '~/components/map/SessionPresencePanel.vue'
 import MapCombatLog from '~/components/map/MapCombatLog.vue'
 import type { BuildTool } from '#shared/mapEditor'
 import type { CombatStageMap } from '~/types/combatStages'
@@ -39,6 +40,7 @@ import type { TokenSendOutOption } from '~/utils/mapTokenSendOut'
 import type { MapSaveStatus } from '~/composables/useEditableMap'
 import type { InitiativeRow } from '~/composables/map-editor/useInitiativeTracker'
 import type { SessionCommandRejectionNotice } from '~/utils/sessionCommandRejectionUi'
+import type { SessionPresencePanelModel } from '~/utils/sessionPresencePanel'
 import { buildCombatLogMessages } from '~/utils/combatLog'
 import type { PreviewState } from '~/utils/gridPreview'
 
@@ -89,6 +91,7 @@ const props = defineProps<{
   tokenOrderOptionsById?: Record<string, TokenOrderMenuOption[]>
   tokenSendOutOptionsById?: Record<string, TokenSendOutOption[]>
   sessionCommandRejection?: SessionCommandRejectionNotice | null
+  sessionPresence?: SessionPresencePanelModel | null
 }>()
 
 const emit = defineEmits<{
@@ -213,6 +216,11 @@ defineExpose({ focusPokemon })
         @focus="emit('focus-initiative-entry', $event)"
         @previous="emit('previous-initiative')"
         @next="emit('next-initiative')"
+      />
+
+      <SessionPresencePanel
+        v-if="props.map && canViewMap && props.sessionPresence"
+        :model="props.sessionPresence"
       />
 
       <MapCombatLog
