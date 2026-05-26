@@ -22,6 +22,9 @@ describe('Live session local-mode no-regression audit', () => {
     expect(audit).toContain('sheet editing still uses local autosave/persistence')
     expect(audit).toContain('legacy non-session realtime still uses `GET /api/events`')
     expect(audit).toContain('explicit `?session=1` map route')
+    expect(audit).toContain('Local-first mode is the default')
+    expect(audit).toContain('Live-session mode is explicit')
+    expect(audit).toContain('Local and session state do not share write authority')
   })
 
   it('covers local map, sheet, realtime, and data-hygiene workflows', () => {
@@ -38,6 +41,7 @@ describe('Live session local-mode no-regression audit', () => {
       'tests/server/sessionHostingHardening.test.ts',
       'tests/server/legacyRealtimeBoundary.test.ts',
       'tests/composables/useRealtime.test.ts',
+      'tests/composables/localFirstEditingNoRegression.test.ts',
       'tests/composables/map-editor/useSessionMapEditorState.test.ts',
       'tests/composables/map-editor/sessionClientIntegration.test.ts',
       'tests/composables/map-editor/useTokenControls.test.ts',
@@ -90,7 +94,7 @@ describe('Live session local-mode no-regression audit', () => {
   it('documents accepted limitations without changing locked architecture', () => {
     expect(audit).toContain('last-writer-wins semantics')
     expect(audit).toContain('intended local-first behaviour')
-    expect(audit).toContain('not the live Live session concurrency mechanism')
+    expect(audit).toContain('not the live-session concurrency mechanism')
     expect(audit).toContain('Production write limitations remain')
     expect(audit).toContain('`/login` GM/player role picker remains a trust switch')
     expect(audit).toContain('not public authentication')
@@ -100,7 +104,11 @@ describe('Live session local-mode no-regression audit', () => {
   it('is linked from primary Live session and local-development docs', () => {
     expect(readText('README.md')).toContain('docs/live-session-local-mode-no-regression-audit.md')
     expect(readText('docs/README.md')).toContain('live-session-local-mode-no-regression-audit.md')
-    expect(readText('docs/local-development.md')).toContain('live-session-local-mode-no-regression-audit.md')
+    const localDevelopment = readText('docs/local-development.md')
+    expect(localDevelopment).toContain('Local-first versus live-session mode')
+    expect(localDevelopment).toContain('Plain `npm run dev` is local-first mode')
+    expect(localDevelopment).toContain('Leaving `?session=1` off is the intended local-first editing path')
+    expect(localDevelopment).toContain('live-session-local-mode-no-regression-audit.md')
     expect(readText('docs/live-session-roadmap.md')).toContain('live-session-local-mode-no-regression-audit.md')
     expect(readText('docs/live-session-validation-matrix.md')).toContain('live-session-local-mode-no-regression-audit.md')
     expect(readText('docs/live-session-client-integration.md')).toContain('live-session-local-mode-no-regression-audit.md')

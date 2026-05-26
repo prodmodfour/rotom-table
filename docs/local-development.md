@@ -22,7 +22,15 @@ npm run dev
 
 Nuxt will print the local URL, usually `http://localhost:3000`. Open the app and choose **GM Login** or **Player Login**. The selected role is stored in the `rotom-role` cookie.
 
-## live session lobby smoke testing
+## Local-first versus live-session mode
+
+Plain `npm run dev` is local-first mode. Map and sheet routes such as `/maps/<slug>`, `/sheets/<slug>`, and `/sheets/trainers/<slug>` save local JSON through autosave and keep using legacy `/api/events` realtime updates for same-machine or trusted-LAN local editing.
+
+Live-session mode is an explicit opt-in. The GM must start session hosting with `ROTOM_ENABLE_SESSION_HOST=1` through one of the guarded helpers, attach a saved map to the active live session, and open the map with `?session=1` before table actions use session commands and the session socket. Leaving `?session=1` off is the intended local-first editing path and does not attach browser-owned map changes to live-session authority.
+
+For the automated and source-level no-regression evidence around local map autosave, sheet autosave, legacy local sync, and non-session navigation, see the [Live session local-mode no-regression audit](live-session-local-mode-no-regression-audit.md).
+
+## Live session lobby smoke testing
 
 Session hosting is disabled by default. Plain `npm run dev` keeps live session endpoints and sockets fail-closed. Use the guarded helper that matches the smoke path:
 
