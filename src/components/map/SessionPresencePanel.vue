@@ -35,7 +35,7 @@ const clientLabel = (participant: SessionPresenceParticipant): string => {
       </div>
     </header>
 
-    <dl class="session-presence__summary" aria-label="Session presence summary">
+    <dl class="session-presence__summary" aria-label="Live session presence summary">
       <div>
         <dt>Players online</dt>
         <dd>{{ props.model.connectedPlayerCount }}</dd>
@@ -54,7 +54,7 @@ const clientLabel = (participant: SessionPresenceParticipant): string => {
       Your controls: <strong>{{ props.model.selfParticipant.controls.label }}</strong>
     </p>
 
-    <ul class="session-presence__list" aria-label="Session participants">
+    <ul class="session-presence__list" aria-label="Live session participants">
       <li
         v-for="participant in props.model.participants"
         :key="participant.id"

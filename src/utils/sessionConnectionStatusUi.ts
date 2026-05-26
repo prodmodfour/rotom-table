@@ -95,8 +95,8 @@ export const buildSessionConnectionStatusNotice = (
     return staleNotice(
       input,
       'Session snapshot did not include this map',
-      'The table view is not authoritative for the current map yet.',
-      'Ask the GM to make this map visible or refresh after assignments change.',
+      'The session map view is not authoritative for the current map yet.',
+      'Ask the GM to make this session map visible or refresh after assignments change.'
     )
   }
 
@@ -104,24 +104,24 @@ export const buildSessionConnectionStatusNotice = (
     return staleNotice(
       input,
       'Session heartbeat is stale',
-      'This browser stopped receiving timely WebSocket heartbeat traffic from the session host.',
-      'Treat the visible table as read-only until a fresh authoritative snapshot is recovered.',
+      'This browser stopped receiving timely session socket heartbeat traffic from session hosting.',
+      'Treat the visible session map as read-only until a fresh authoritative snapshot is recovered.'
     )
   }
 
   if (closedSocketStatuses.has(input.socketStatus)) {
     const fallbackDetail = input.socketStatus === 'unavailable'
-      ? 'WebSocket support is unavailable in this browser/runtime.'
+      ? 'Session socket support is unavailable in this browser/runtime.'
       : input.socketStatus === 'error'
-        ? 'The session WebSocket reported an error.'
-        : 'The session WebSocket is closed.'
+        ? 'The session socket reported an error.'
+        : 'The session socket is closed.'
     return {
       kind: 'disconnected',
       tone: 'danger',
-      title: 'Disconnected from session host',
+      title: 'Disconnected from session hosting',
       summary: input.hasAuthoritativeSessionState
-        ? `Showing the last authoritative table state at ${revisionPhrase(currentRevision)}.`
-        : 'No authoritative session snapshot is currently available for this map.',
+        ? `Showing the last authoritative session map at ${revisionPhrase(currentRevision)}.`
+        : 'No authoritative session map snapshot is currently available for this map.',
       detail: cleanDetail(input.lastError) ?? fallbackDetail,
       currentRevision,
       actionLabel: 'Reconnect',
@@ -133,8 +133,8 @@ export const buildSessionConnectionStatusNotice = (
       return staleNotice(
         input,
         'Waiting for a fresh session snapshot',
-        `Your visible table may be stale after ${revisionPhrase(currentRevision)}.`,
-        'The host could not replay every missed event, so the client is waiting for a full authoritative snapshot.',
+        `Your visible session map may be stale after ${revisionPhrase(currentRevision)}.`,
+        'Session hosting could not replay every missed event, so the client is waiting for a full authoritative snapshot.',
       )
     }
 
@@ -142,8 +142,8 @@ export const buildSessionConnectionStatusNotice = (
       kind: 'reconnecting',
       tone: 'info',
       title: 'Loading authoritative snapshot',
-      summary: 'The session host requested snapshot recovery for this map view.',
-      detail: 'Commands should wait until the reconnect snapshot has arrived.',
+      summary: 'Session hosting requested snapshot recovery for this session map view.',
+      detail: 'Session commands should wait until the reconnect snapshot has arrived.',
       currentRevision,
     }
   }
@@ -152,7 +152,7 @@ export const buildSessionConnectionStatusNotice = (
     return staleNotice(
       input,
       'Refreshing session authority',
-      `Showing the last authoritative table state at ${revisionPhrase(currentRevision)} while a fresh snapshot is requested.`,
+      `Showing the last authoritative session map at ${revisionPhrase(currentRevision)} while a fresh snapshot is requested.`,
       'Avoid making repeat actions until the refreshed snapshot arrives.',
     )
   }
@@ -167,11 +167,11 @@ export const buildSessionConnectionStatusNotice = (
     return {
       kind: 'reconnecting',
       tone: 'info',
-      title: 'Reconnecting to session host',
+      title: 'Reconnecting to session hosting',
       summary: input.hasAuthoritativeSessionState
-        ? `Keeping the last table state visible at ${revisionPhrase(currentRevision)} while the socket reconnects.`
-        : 'Opening the session WebSocket and asking the host for the authoritative table state.',
-      detail: 'Commands will queue or wait for hello/snapshot recovery before the server applies them.',
+        ? `Keeping the last session map visible at ${revisionPhrase(currentRevision)} while the session socket reconnects.`
+        : 'Opening the session socket and asking session hosting for the authoritative session map.',
+      detail: 'Session commands will queue or wait for hello/snapshot recovery before the server applies them.',
       currentRevision,
     }
   }
@@ -184,8 +184,8 @@ export const buildSessionConnectionStatusNotice = (
       kind: 'recovered-snapshot',
       tone: 'success',
       title: 'Recovered authoritative snapshot',
-      summary: `Session state is current through ${revisionPhrase(currentRevision)}.`,
-      detail: 'The map view was rebuilt from the GM-hosted authoritative snapshot rather than a local autosave.',
+      summary: `Live session state is current through ${revisionPhrase(currentRevision)}.`,
+      detail: 'The session map view was rebuilt from the GM-hosted authoritative snapshot rather than a local autosave.',
       currentRevision,
     }
   }

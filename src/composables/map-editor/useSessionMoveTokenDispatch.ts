@@ -853,7 +853,7 @@ export const useSessionMoveTokenDispatch = (
 
   const ensureSocketHello = (currentIdentity: SessionClientIdentity): SessionMoveTokenDispatchResult | null => {
     if (!socket.connect()) {
-      return fail('socket-unavailable', 'live session WebSocket is not available for moveToken dispatch.')
+      return fail('socket-unavailable', 'Session socket is not available for moveToken dispatch.')
     }
 
     const status = socket.status.value
@@ -875,7 +875,7 @@ export const useSessionMoveTokenDispatch = (
 
   const ensureSocketHelloForTurn = (currentIdentity: SessionClientIdentity): SessionTurnTokenDispatchResult | null => {
     if (!socket.connect()) {
-      return turnFail('socket-unavailable', 'live session WebSocket is not available for turnToken dispatch.')
+      return turnFail('socket-unavailable', 'Session socket is not available for turnToken dispatch.')
     }
 
     const status = socket.status.value
@@ -1060,7 +1060,7 @@ export const useSessionMoveTokenDispatch = (
       return {
         dispatched: false,
         reason: 'not-session-mode',
-        message: 'live session command dispatch is not enabled for this map view.',
+        message: 'Session command dispatch is not enabled for this map view.',
       }
     }
 
@@ -1112,7 +1112,7 @@ export const useSessionMoveTokenDispatch = (
       return {
         dispatched: false,
         reason: 'not-session-mode',
-        message: 'live session command dispatch is not enabled for this map view.',
+        message: 'Session command dispatch is not enabled for this map view.',
       }
     }
 

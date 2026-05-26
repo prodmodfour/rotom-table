@@ -1,10 +1,10 @@
 /**
  * POST /api/sessions/join
  *
- * Lets a player join an active Live session GM-hosted table session with a short
- * join code and a sanitized display name. The route fails closed unless
- * ROTOM_ENABLE_SESSION_HOST=1 is present and intentionally does not use the
- * existing local role picker as public auth.
+ * Lets a player join an active live session with a short join code and a
+ * sanitized display name. The route fails closed unless ROTOM_ENABLE_SESSION_HOST=1
+ * is present and intentionally does not use the existing local role picker as
+ * public auth.
  */
 import { defineEventHandler, readBody } from 'h3'
 import { assertSessionHostEnabled } from '../../utils/sessionHosting'

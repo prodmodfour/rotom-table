@@ -1160,7 +1160,7 @@ const useAbilityPlan = (
       result: createConflictRejection(
         command,
         record,
-        `Ability ${option.name} does not have a Live session automation boundary yet.`,
+        `Ability ${option.name} does not have a live session automation boundary yet.`,
         processedAt,
         { retryable: false, currentState: useTableActionStateFromTarget(command, target, record.revision) },
       ),

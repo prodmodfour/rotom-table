@@ -250,7 +250,7 @@ export const useSessionMap = (options: UseSessionMapOptions): UseSessionMapRetur
 
   const ensureHelloForSession = (): SessionMapLoadSnapshotResult => {
     if (!enabled.value) {
-      return failLoad('not-session-mode', 'live session map sync is not enabled for this map view.')
+      return failLoad('not-session-mode', 'Session map sync is not enabled for this map view.')
     }
 
     const currentIdentity = identity.value ?? loadRememberedIdentity()
@@ -262,7 +262,7 @@ export const useSessionMap = (options: UseSessionMapOptions): UseSessionMapRetur
     }
 
     if (!socket.connect()) {
-      return failLoad('socket-unavailable', socket.lastError.value ?? 'live session WebSocket is not available.')
+      return failLoad('socket-unavailable', socket.lastError.value ?? 'Session socket is not available.')
     }
 
     if (socket.helloStatus.value === 'accepted' && socket.status.value === 'open') {
@@ -294,7 +294,7 @@ export const useSessionMap = (options: UseSessionMapOptions): UseSessionMapRetur
 
   const refreshSessionSnapshot = (): SessionMapLoadSnapshotResult => {
     if (!enabled.value) {
-      return failLoad('not-session-mode', 'live session map sync is not enabled for this map view.')
+      return failLoad('not-session-mode', 'Session map sync is not enabled for this map view.')
     }
 
     const currentIdentity = identity.value ?? loadRememberedIdentity()
@@ -321,7 +321,7 @@ export const useSessionMap = (options: UseSessionMapOptions): UseSessionMapRetur
     command: TCommand,
   ): SessionMapCommandDispatchResult<TCommand> => {
     if (!enabled.value) {
-      return failDispatch('not-session-mode', 'live session command dispatch is not enabled for this map view.')
+      return failDispatch('not-session-mode', 'Session command dispatch is not enabled for this map view.')
     }
 
     const currentIdentity = identity.value ?? loadRememberedIdentity()
@@ -333,11 +333,11 @@ export const useSessionMap = (options: UseSessionMapOptions): UseSessionMapRetur
     }
 
     if (command.sessionId !== currentIdentity.sessionId) {
-      return failDispatch('session-mismatch', 'Cannot dispatch a command for a different Live session.')
+      return failDispatch('session-mismatch', 'Cannot dispatch a command for a different live session.')
     }
 
     if (!actorMatchesIdentity(command, currentIdentity)) {
-      return failDispatch('actor-mismatch', 'Cannot dispatch a command for a different session actor.')
+      return failDispatch('actor-mismatch', 'Cannot dispatch a session command for a different session actor.')
     }
 
     const helloResult = ensureHelloForSession()

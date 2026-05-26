@@ -20,7 +20,7 @@ const emit = defineEmits<{
     <span class="session-connection-status__pulse" aria-hidden="true" />
     <div class="session-connection-status__copy">
       <p class="session-connection-status__kicker">
-        <span>Session connection</span>
+        <span>Session socket</span>
         <span aria-hidden="true">•</span>
         <span>{{ props.notice.currentRevision === null ? 'revision unknown' : `rev ${props.notice.currentRevision}` }}</span>
       </p>

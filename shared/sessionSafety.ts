@@ -358,7 +358,7 @@ const summaryForExposure = (exposure: SessionSafetyExposure, effectiveHost: stri
   const hostText = effectiveHost ?? 'unknown host'
   switch (exposure) {
     case 'disabled':
-      return 'Session start, join, management, and future socket endpoints are disabled by default.'
+      return 'Live session start, join, management, and session socket endpoints are disabled by default.'
     case 'local':
       return `This browser reached Rotom Table through ${hostText}, which looks local to the GM machine.`
     case 'lan':

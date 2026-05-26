@@ -143,12 +143,12 @@ describe('live session hosting hardening regression coverage', () => {
     }
   })
 
-  it('keeps the session WebSocket disabled by default and closes disabled opens without registering peers', async () => {
+  it('keeps the session socket disabled by default and closes disabled opens without registering peers', async () => {
     for (const value of [undefined, '', 'true', 'yes', 'on'] as const) {
       const env = value === undefined ? {} : { [SESSION_HOST_ENABLE_ENV]: value }
       const response = handleSessionSocketUpgrade(makeUpgradeRequest(), { env })
 
-      expect(response, `${String(value)} should reject WebSocket upgrades`).toBeInstanceOf(Response)
+      expect(response, `${String(value)} should reject session socket upgrades`).toBeInstanceOf(Response)
       expect(response?.status).toBe(SESSION_SOCKET_DISABLED_STATUS)
       expect(await response?.text()).toBe(SESSION_SOCKET_DISABLED_MESSAGE)
     }

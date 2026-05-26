@@ -12,15 +12,15 @@ describe('map session navigation model', () => {
     })
     const links = linkMap(model)
 
-    expect(model.heading).toBe('Table session')
-    expect(model.statusLabel).toContain('Local map mode is unchanged')
+    expect(model.heading).toBe('Live session map')
+    expect(model.statusLabel).toContain('Local-first map mode is unchanged')
     expect(links.get('start-manage-session')).toMatchObject({
-      label: 'Start/manage session',
+      label: 'Start/manage live session',
       to: '/sessions#gm-lobby-title',
       kind: 'lobby',
     })
     expect(links.get('join-session')).toMatchObject({
-      label: 'Join session',
+      label: 'Join live session',
       to: '/sessions#player-lobby-title',
       kind: 'lobby',
     })
@@ -39,7 +39,7 @@ describe('map session navigation model', () => {
     })
     const links = linkMap(model)
 
-    expect(model.statusLabel).toContain('Session mode active')
+    expect(model.statusLabel).toContain('Session commands use the session socket')
     expect(links.get('open-local-map')).toMatchObject({
       label: 'Return to local map',
       to: '/maps/folder%2Fname',

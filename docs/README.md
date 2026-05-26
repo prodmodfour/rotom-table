@@ -10,21 +10,21 @@ This directory collects presentation and reviewer documentation for Rotom Table.
 - [Local development](local-development.md) — setup commands, checks, optional `just` recipes, and local filesystem behaviour.
 - [Screenshots](screenshots.md) — capture checklist for future screenshots; no missing images are linked.
 - [Track 1 performance roadmap](track-1-performance-roadmap.md) — no-quality-loss performance constraints, benchmark categories, and staged isometric map optimization plan.
-- [Live session roadmap](live-session-roadmap.md) — locked GM-hosted session scope, lifecycle, concurrency model, roadmap phases, and non-goals.
-- [Live session glossary](live-session-glossary.md) — shared vocabulary for session identity, commands, revisions, WebSocket flow, persistence, and safety boundaries.
+- [Live session roadmap](live-session-roadmap.md) — locked GM-hosted live session scope, lifecycle, concurrency model, roadmap phases, and non-goals.
+- [Live session glossary](live-session-glossary.md) — shared vocabulary for session identity, commands, revisions, session socket flow, persistence, and safety boundaries.
 - [Live session validation matrix](live-session-validation-matrix.md) — expected tests, smoke checks, docs, and safety reviews for live-session implementation areas.
-- [live session protocol](live-session-protocol.md) — shared identity, command envelope, result, WebSocket message, ack/reject, duplicate, and reconnect contracts.
-- [Live session WebSocket protocol](live-session-websocket-protocol.md) — live session socket route, message examples, heartbeat, reconnect, command flow, and named-tunnel expectations.
+- [Live session protocol](live-session-protocol.md) — shared identity, command envelope, result, session socket message, ack/reject, duplicate, and reconnect contracts.
+- [Live session socket protocol](live-session-websocket-protocol.md) — live session socket route, message examples, heartbeat, reconnect, command flow, and named-tunnel expectations.
 - [Live session table action commands](live-session-table-action-commands.md) — supported HP, condition, initiative, move/action, hazard, field-effect, and terrain session commands with permissions, conflicts, and limitations.
 - [Live session client integration](live-session-client-integration.md) — local mode versus explicit session mode, optimistic UX, disconnect recovery, and conflict/retry guidance.
 - [live session lobby and manual QA](live-session-lobby.md) — GM/player join flow, expected LAN usage, and two-browser lobby smoke checklist.
 - [live session host runtime scripts](live-session-host-runtime.md) — npm helpers for guarded LAN and named-tunnel session host startup.
 - [Live session public exposure checks](live-session-public-exposure-checks.md) — no-secret safety banner checks for unsafe public/LAN startup states before sharing join codes.
 - [Live session LAN hosting runbook](live-session-lan-hosting.md) — same-Wi-Fi/LAN setup commands, IP discovery, player join URLs, smoke checks, and troubleshooting.
-- [Live session named Cloudflare Tunnel runbook](live-session-cloudflare-tunnel-hosting.md) — stable-hostname remote setup, WebSocket considerations, safety warnings, and rollback steps.
+- [Live session named Cloudflare Tunnel runbook](live-session-cloudflare-tunnel-hosting.md) — stable-hostname remote setup, session socket considerations, safety warnings, and rollback steps.
 - [Live session named tunnel documentation review](live-session-named-tunnel-documentation-review.md) — named-tunnel doc accuracy, current Cloudflare assumptions, and safety warnings.
 - [Live session deployment smoke checklist](live-session-deployment-smoke-checklist.md) — LAN and named-tunnel smoke steps for two players, reconnect, token movement, initiative, conflict rejection, and cleanup evidence.
-- [Live session LAN manual smoke results](live-session-lan-manual-smoke-results.md) — recorded LAN browser-client smoke results for guarded startup, two-player join, WebSocket presence, reconnect, and cleanup.
+- [Live session LAN manual smoke results](live-session-lan-manual-smoke-results.md) — recorded LAN browser-client smoke results for guarded startup, two-player join, session socket presence, reconnect, and cleanup.
 - [Live session integrated command audit](live-session-command-audit.md) — automated multi-client command audit covering accepted commands, reconnect, permissions, and stale conflicts.
 - [Live session concurrency benchmark notes](live-session-concurrency-benchmark-notes.md) — final multi-client concurrency behaviour, latency-sensitive path, and performance limitation notes.
 - [Live session implementation review](live-session-implementation-review.md) — product docs, source areas, validation evidence, and known limitations.
@@ -40,7 +40,7 @@ This directory collects presentation and reviewer documentation for Rotom Table.
 - [Live session dependency and runtime review](live-session-dependency-runtime-review.md) — dependency inventory, runtime flags, Node/Nitro compatibility, and Cloudflare tunnel assumptions.
 - [ADR 001: GM-hosted session model](adrs/001-gm-hosted-session-model.md) — decision record for GM-controlled sessions instead of SaaS, public multi-tenancy, or generic collaborative editing.
 - [ADR 002: LAN first and named Cloudflare Tunnel second](adrs/002-lan-first-named-cloudflare-tunnel.md) — decision record for LAN-first hosting, named-tunnel remote access, and Quick Tunnel caveats.
-- [ADR 003: WebSocket session transport](adrs/003-websocket-session-transport.md) — decision record for using WebSockets for live session commands, acks/rejections, broadcasts, heartbeat, and reconnect.
+- [ADR 003: Session socket transport](adrs/003-websocket-session-transport.md) — decision record for using the session socket for live session commands, acks/rejections, broadcasts, heartbeat, and reconnect.
 - [ADR 004: Server-authoritative commands](adrs/004-server-authoritative-commands.md) — decision record for command envelopes instead of live whole-map autosave, including local-first compatibility boundaries.
 - [ADR 005: Session identity and permissions](adrs/005-session-identity-and-permissions.md) — decision record for session-local GM/player identity, join codes, display names, assignments, and server-enforced permissions without full accounts.
 - [ADR 006: Revisions and conflict rules](adrs/006-revisions-and-conflict-rules.md) — decision record for monotonic revisions, `opId` idempotency, stale command handling, GM precedence, and per-resource conflicts.

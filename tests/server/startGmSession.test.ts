@@ -228,7 +228,7 @@ describe('startGmSessionUseCase', () => {
       }),
       {
         statusCode: 503,
-        message: 'Unable to allocate a unique session ID for a new table session',
+        message: 'Unable to allocate a unique session ID for a new live session',
       },
     )
     expect(store.size).toBe(1)

@@ -61,7 +61,7 @@ afterEach(() => {
 })
 
 describe('useRealtime legacy SSE transport', () => {
-  it('keeps non-session realtime on /api/events instead of the session WebSocket', async () => {
+  it('keeps non-session realtime on /api/events instead of the session socket', async () => {
     const { webSocketConstructor } = installBrowserRealtimeGlobals()
     const { subscribeChannel } = await loadRealtimeModule()
     const received: RealtimeEvent[] = []

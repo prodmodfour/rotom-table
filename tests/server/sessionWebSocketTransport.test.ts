@@ -293,7 +293,7 @@ const authenticateGm = (
   messageAt(peer, hello, dependencies, authenticatedAt)
 }
 
-describe('session WebSocket transport integration tests', () => {
+describe('session socket transport integration tests', () => {
   it('authenticates GM/player hellos and isolates joined presence by session', () => {
     const dependencies = createTransportDependencies()
     const gmPeer = makePeer('peer-transport-gm')
@@ -583,7 +583,7 @@ describe('session WebSocket transport integration tests', () => {
     expect(malformedPeer.closed).toEqual([
       {
         code: SESSION_SOCKET_POLICY_CLOSE_CODE,
-        reason: 'Session WebSocket messages must be valid JSON.',
+        reason: 'Session socket messages must be valid JSON.',
       },
     ])
     expect(parseSentJson(malformedPeer)).toMatchObject({
@@ -591,7 +591,7 @@ describe('session WebSocket transport integration tests', () => {
       type: 'error',
       direction: 'server',
       code: 'malformed-message',
-      message: 'Session WebSocket messages must be valid JSON.',
+      message: 'Session socket messages must be valid JSON.',
       retryable: false,
     })
     expect(dependencies.registry.get('peer-malformed')).toBeUndefined()
@@ -622,7 +622,7 @@ describe('session WebSocket transport integration tests', () => {
     expect(gmPeer.closed).toEqual([
       {
         code: SESSION_SOCKET_POLICY_CLOSE_CODE,
-        reason: 'Session WebSocket command session does not match the authenticated socket.',
+        reason: 'Session socket command session does not match the authenticated socket.',
       },
     ])
     expect(parseLastSentJson(gmPeer)).toMatchObject({

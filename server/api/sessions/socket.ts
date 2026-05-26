@@ -1,16 +1,14 @@
 /**
- * WebSocket /api/sessions/socket
+ * Session socket /api/sessions/socket
  *
- * live session socket endpoint. The upgrade fails closed unless
- * ROTOM_ENABLE_SESSION_HOST=1 is set. The current slice validates the initial
- * GM/player hello identity before a socket is associated with a session and
+ * Live session socket endpoint. The upgrade fails closed unless
+ * ROTOM_ENABLE_SESSION_HOST=1 is set. The route validates the initial
+ * GM/player hello identity before a socket is associated with a live session,
  * keeps authenticated sockets alive with app-level heartbeat ping/pong frames,
  * sends reconnect snapshot fallback when replay is unavailable, dispatches
- * server-authoritative moveToken, turnToken, spawnToken, deleteToken, sendOutPokemon, modifyHp, modifyCombatStages, modifyConditions,
- * useMove, useManeuver, useAbility, useOrder, setInitiative, nextInitiative, previousInitiative, placeHazard, removeHazard,
- * setFieldEffect, removeFieldEffect, tickFieldEffectDurations, buildTerrainVoxel, and removeTerrainVoxel commands,
- * and fans out server presence plus accepted tokenMoved/tokenTurned/tokenSpawned/tokenDeleted/pokemonSentOut/hpModified/combatStagesModified/conditionsModified/moveUsed/maneuverUsed/abilityUsed/orderUsed/initiativeUpdated/hazardsUpdated/fieldEffectsUpdated/terrainVoxelsUpdated
- * patches only to authenticated peers in the same session.
+ * server-authoritative session commands for token, sheet, initiative, hazard,
+ * field-effect, and terrain actions, and fans out presence plus accepted
+ * patches only to authenticated peers in the same live session.
  * This route still does not grant map-edit authority by itself.
  */
 import { defineWebSocketHandler } from 'h3'

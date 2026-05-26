@@ -284,7 +284,7 @@ export const useSessionMapSceneCommands = (
   }
 
   const requireActor = <TCommand extends SessionMapSceneCommand>(): true | Extract<SessionMapSceneCommandDispatchResult<TCommand>, { readonly dispatched: false }> => {
-    if (!enabled.value) return fail<TCommand>('not-session-mode', 'Live session scene command dispatch is not enabled for this map view.')
+    if (!enabled.value) return fail<TCommand>('not-session-mode', 'Session command dispatch is not enabled for this map view.')
     if (options.session.identity.value === null) {
       return fail<TCommand>('missing-session-identity', 'No remembered live session identity was found; open the session lobby and start or join a session first.')
     }
@@ -294,7 +294,7 @@ export const useSessionMapSceneCommands = (
   const requireMap = <TCommand extends SessionMapSceneCommand>(): TabletopMap | Extract<SessionMapSceneCommandDispatchResult<TCommand>, { readonly dispatched: false }> => {
     const actor = requireActor<TCommand>()
     if (actor !== true) return actor
-    if (!options.map.value) return fail<TCommand>('missing-map', 'Cannot dispatch a live session command before the map is loaded.')
+    if (!options.map.value) return fail<TCommand>('missing-map', 'Cannot dispatch a session command before the map is loaded.')
     return options.map.value
   }
 
@@ -304,7 +304,7 @@ export const useSessionMapSceneCommands = (
     const map = requireMap<TCommand>()
     if ('dispatched' in map) return map
     const placement = placementById(tokenId)
-    if (!placement) return fail<TCommand>('missing-placement', 'Cannot dispatch a live session command because the token is no longer on the map.')
+    if (!placement) return fail<TCommand>('missing-placement', 'Cannot dispatch a session command because the token is no longer on the map.')
     return placement
   }
 

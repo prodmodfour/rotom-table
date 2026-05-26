@@ -60,10 +60,10 @@ describe('buildSessionConnectionStatusNotice', () => {
     expect(notice).toMatchObject({
       kind: 'reconnecting',
       tone: 'info',
-      title: 'Reconnecting to session host',
+      title: 'Reconnecting to session hosting',
       currentRevision: null,
     })
-    expect(notice?.summary).toContain('Opening the session WebSocket')
+    expect(notice?.summary).toContain('Opening the session socket')
     expect(notice?.actionLabel).toBeUndefined()
   })
 
@@ -97,11 +97,11 @@ describe('buildSessionConnectionStatusNotice', () => {
     expect(notice).toMatchObject({
       kind: 'disconnected',
       tone: 'danger',
-      title: 'Disconnected from session host',
+      title: 'Disconnected from session hosting',
       currentRevision: REVISION_2,
       actionLabel: 'Reconnect',
     })
-    expect(notice?.summary).toContain('last authoritative table state')
+    expect(notice?.summary).toContain('last authoritative session map')
     expect(notice?.detail).toBe('Socket closed by the browser. Retry soon.')
   })
 

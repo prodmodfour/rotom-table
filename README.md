@@ -36,21 +36,21 @@ npm run build
 - [docs/review-guide.md](docs/review-guide.md) — fastest path through the project for recruiters and reviewers.
 - [docs/architecture.md](docs/architecture.md) — high-level Nuxt, Nitro, local data, and Three.js architecture.
 - [docs/data-model.md](docs/data-model.md) — maps, sheets, trainers, encounter tables, app-owned PTU reference data, and generated sheets.
-- [docs/live-session-roadmap.md](docs/live-session-roadmap.md) — planned GM-hosted session concurrency scope, lifecycle, and non-goals.
-- [docs/live-session-glossary.md](docs/live-session-glossary.md) — shared Live session vocabulary for identity, commands, revisions, reconnect, and safety.
+- [docs/live-session-roadmap.md](docs/live-session-roadmap.md) — GM-hosted live session scope, lifecycle, and non-goals.
+- [docs/live-session-glossary.md](docs/live-session-glossary.md) — shared live session vocabulary for identity, commands, revisions, reconnect, and safety.
 - [docs/live-session-validation-matrix.md](docs/live-session-validation-matrix.md) — expected tests, smoke checks, docs, and safety reviews for live-session implementation areas.
 - [docs/live-session-protocol.md](docs/live-session-protocol.md) — shared live session protocol types, message flow, and accepted/rejected command examples.
-- [docs/live-session-websocket-protocol.md](docs/live-session-websocket-protocol.md) — live session WebSocket route, message examples, heartbeat, reconnect, command flow, and named-tunnel expectations.
+- [docs/live-session-websocket-protocol.md](docs/live-session-websocket-protocol.md) — live session socket route, message examples, heartbeat, reconnect, command flow, and named-tunnel expectations.
 - [docs/live-session-table-action-commands.md](docs/live-session-table-action-commands.md) — supported HP, condition, initiative, move/action, hazard, field-effect, and terrain session commands with permissions, conflicts, and limitations.
 - [docs/live-session-client-integration.md](docs/live-session-client-integration.md) — how local map mode and explicit session mode coexist, including disconnect and conflict recovery guidance.
 - [docs/live-session-lobby.md](docs/live-session-lobby.md) — GM/player join flow, expected LAN usage, and two-browser lobby smoke checklist.
 - [docs/live-session-host-runtime.md](docs/live-session-host-runtime.md) — npm helpers for guarded LAN and named-tunnel session host startup.
 - [docs/live-session-public-exposure-checks.md](docs/live-session-public-exposure-checks.md) — no-secret safety banner checks for unsafe public/LAN startup states before sharing join codes.
 - [docs/live-session-lan-hosting.md](docs/live-session-lan-hosting.md) — same-Wi-Fi/LAN hosting runbook with startup commands, IP discovery, player URLs, and troubleshooting.
-- [docs/live-session-cloudflare-tunnel-hosting.md](docs/live-session-cloudflare-tunnel-hosting.md) — named Cloudflare Tunnel runbook with stable hostname setup, WebSocket considerations, safety warnings, and rollback steps.
+- [docs/live-session-cloudflare-tunnel-hosting.md](docs/live-session-cloudflare-tunnel-hosting.md) — named Cloudflare Tunnel runbook with stable hostname setup, session socket considerations, safety warnings, and rollback steps.
 - [docs/live-session-named-tunnel-documentation-review.md](docs/live-session-named-tunnel-documentation-review.md) — final audit review of named-tunnel doc accuracy, current Cloudflare assumptions, and safety warnings.
 - [docs/live-session-deployment-smoke-checklist.md](docs/live-session-deployment-smoke-checklist.md) — LAN and named-tunnel deployment smoke checklist for two players, reconnect, token movement, initiative, and conflict rejection.
-- [docs/live-session-lan-manual-smoke-results.md](docs/live-session-lan-manual-smoke-results.md) — recorded LAN browser-client smoke results for guarded startup, two-player join, WebSocket presence, reconnect, and cleanup.
+- [docs/live-session-lan-manual-smoke-results.md](docs/live-session-lan-manual-smoke-results.md) — recorded LAN browser-client smoke results for guarded startup, two-player join, session socket presence, reconnect, and cleanup.
 - [docs/live-session-command-audit.md](docs/live-session-command-audit.md) — integrated multi-client command audit covering accepted commands, reconnect, permissions, and stale conflicts.
 - [docs/live-session-concurrency-benchmark-notes.md](docs/live-session-concurrency-benchmark-notes.md) — final multi-client concurrency behaviour, latency-sensitive path, and performance limitation notes.
 - [docs/live-session-implementation-review.md](docs/live-session-implementation-review.md) — implementation review linking product docs, source areas, validation evidence, and known limitations.
@@ -61,9 +61,9 @@ npm run build
 - [docs/live-session-storage.md](docs/live-session-storage.md) — local session snapshot/event-log paths, privacy boundaries, backup guidance, and recovery limits.
 - [docs/live-session-backup-recovery.md](docs/live-session-backup-recovery.md) — private session backup/restore runbook for snapshots, optional event logs, and referenced campaign data.
 - [docs/live-session-persistence-recovery-audit.md](docs/live-session-persistence-recovery-audit.md) — final persistence/recovery audit for snapshots, optional event logs, backup docs, cleanup, and local data hygiene.
-- [docs/live-session-security-review.md](docs/live-session-security-review.md) — Trust boundaries, join-code limits, tunnel exposure risks, non-hardened areas, and Live session security non-goals.
+- [docs/live-session-security-review.md](docs/live-session-security-review.md) — trust boundaries, join-code limits, tunnel exposure risks, non-hardened areas, and live session security non-goals.
 - [docs/live-session-security-readiness-audit.md](docs/live-session-security-readiness-audit.md) — Final session security audit for auth/session/cookie/permission boundaries, public exposure warnings, and remaining non-goals.
-- [docs/live-session-dependency-runtime-review.md](docs/live-session-dependency-runtime-review.md) — Live session dependency inventory, runtime flags, Node/Nitro compatibility, and Cloudflare tunnel assumptions.
+- [docs/live-session-dependency-runtime-review.md](docs/live-session-dependency-runtime-review.md) — live session dependency inventory, runtime flags, Node/Nitro compatibility, and Cloudflare tunnel assumptions.
 - [docs/local-development.md](docs/local-development.md) — local setup, scripts, and filesystem persistence notes.
 - [docs/fan-project-notice.md](docs/fan-project-notice.md) — fan project and ownership boundaries.
 
@@ -74,7 +74,7 @@ npm run build
 - **Pokédex browser** — search and filter Pokémon entries, view sprites and detail panes, and jump directly to Pokémon-specific pages.
 - **Reference library** — browse moves, maneuvers, abilities, capabilities, conditions, rules, items, features, and edges.
 - **Encounter tools** — manage JSON encounter tables, roll previews, and generate wild Pokémon sheets into the sheet library.
-- **GM/player access modes** — GM-only routes and controls are hidden from player sessions and checked on server routes.
+- **GM/player access modes** — GM-only routes and controls are hidden from the player role and checked on server routes.
 - **Filesystem-backed data** — maps, sheets, trainers, and encounter tables are stored as JSON in the repository tree for easy inspection, backup, and diffing.
 
 ## Suggested review path
@@ -137,8 +137,8 @@ See [docs/architecture.md](docs/architecture.md) for more detail.
 | Route | Purpose |
 | --- | --- |
 | `/` | Redirects to the map library. |
-| `/login` | Choose GM or Player session mode. |
-| `/sessions` | Live session guarded session lobby for GM start/manage and player join flows. |
+| `/login` | Choose the local GM or Player role. |
+| `/sessions` | Live session lobby for session hosting, GM start/manage, and player join flows. |
 | `/maps` | Map library and folders. |
 | `/maps/:slug` | Map editor/table view. |
 | `/sheets` | Pokémon and trainer sheet library. |
@@ -155,7 +155,7 @@ See [docs/architecture.md](docs/architecture.md) for more detail.
 | Path | What it contains |
 | --- | --- |
 | `data/maps/` | Saved map JSON and map-adjacent local files. |
-| `data/sessions/` | Live session local session snapshots and optional event logs; ignored/private runtime data. |
+| `data/sessions/` | Live session snapshots and optional event logs; ignored/private runtime data. |
 | `data/sheets/` | Pokémon character-sheet JSON, including generated wild sheets. |
 | `data/trainers/` | Trainer sheet JSON. |
 | `encounter_tables/` | Encounter-table JSON, grouped by folder/region. |
@@ -183,7 +183,7 @@ Saved sheets and maps are edited by the app itself. Live session snapshots and o
 | `npm run typecheck` | Run Nuxt/Vue TypeScript checks. |
 | `npm test` | Run the Vitest test suite once. |
 | `npm run test:watch` | Run Vitest in watch mode. |
-| `npm run smoke:session:multi-tab` | Open/print local Live session GM/player smoke URLs and run focused token/client smoke checks. |
+| `npm run smoke:session:multi-tab` | Open/print local live session GM/player smoke URLs and run focused token/client smoke checks. |
 | `npm run check:move-automation` | Check move automation coverage. |
 | `npm run sync:item-sprites` | Sync item sprite assets. |
 | `npm run refactor:loop` | Run the refactor loop helper script. |

@@ -33,36 +33,36 @@ const COMMAND_LABELS: Readonly<Record<string, string>> = {
 const REASON_LABELS: Readonly<Record<SessionCommandRejectionReason, string>> = {
   invalid: 'Invalid command',
   unauthorized: 'Not allowed',
-  stale: 'Stale table state',
+  stale: 'Stale session map',
   conflict: 'Conflict',
 }
 
 const REASON_TITLES: Readonly<Record<SessionCommandRejectionReason, string>> = {
   invalid: 'Action could not be sent safely',
   unauthorized: 'Action not allowed in this session',
-  stale: 'Action needs the latest table state',
+  stale: 'Action needs the latest session map',
   conflict: 'Action could not apply',
 }
 
 const REASON_SUMMARIES: Readonly<Record<SessionCommandRejectionReason, string>> = {
-  invalid: 'The server rejected the command shape before changing the table.',
-  unauthorized: 'The server kept the table unchanged because this session identity does not control that resource.',
-  stale: 'The server kept the authoritative table unchanged because the target changed after your last known revision.',
-  conflict: 'The server kept the authoritative table unchanged because the target is blocked, missing, already changed, or otherwise conflicts with the current table.',
+  invalid: 'The server rejected the session command shape before changing the session map.',
+  unauthorized: 'The server kept the session map unchanged because this session identity does not control that resource.',
+  stale: 'The server kept the authoritative session map unchanged because the target changed after your last known revision.',
+  conflict: 'The server kept the authoritative session map unchanged because the target is blocked, missing, already changed, or otherwise conflicts with the current session map.',
 }
 
 const NON_RETRYABLE_GUIDANCE: Readonly<Record<SessionCommandRejectionReason, string>> = {
-  invalid: 'Refresh the session view and try once more. If this repeats, ask the GM to reload the table session.',
+  invalid: 'Refresh the session map and try once more. If this repeats, ask the GM to reload the live session.',
   unauthorized: 'Ask the GM to assign the relevant sheet or token before trying again.',
-  stale: 'Refresh the session view before trying again.',
-  conflict: 'Review the current table state with the GM before trying again.',
+  stale: 'Refresh the session map before trying again.',
+  conflict: 'Review the current session map with the GM before trying again.',
 }
 
 const RETRYABLE_GUIDANCE: Readonly<Record<SessionCommandRejectionReason, string>> = {
-  invalid: 'Refresh the session view and try once more. If this repeats, ask the GM to reload the table session.',
+  invalid: 'Refresh the session map and try once more. If this repeats, ask the GM to reload the live session.',
   unauthorized: 'Ask the GM to assign the relevant sheet or token before trying again.',
-  stale: 'Refresh the session view, check the latest token or sheet state, then try the action again.',
-  conflict: 'Refresh the session view, choose a valid target or value, then try the action again.',
+  stale: 'Refresh the session map, check the latest token or sheet state, then try the action again.',
+  conflict: 'Refresh the session map, choose a valid target or value, then try the action again.',
 }
 
 export interface SessionCommandRejectionNotice {
@@ -130,7 +130,7 @@ export const formatSessionCommandRejectionNotice = (
     ? `${commandLabel} was rejected because the request was incomplete or malformed.`
     : safeDetail.length > 0
       ? safeDetail
-      : `${commandLabel} was rejected by the session host.`
+      : `${commandLabel} was rejected by session hosting.`
 
   return {
     opId: result.opId,
@@ -145,7 +145,7 @@ export const formatSessionCommandRejectionNotice = (
     retryable: result.retryable,
     currentRevision: result.currentRevision,
     ...(baseRevisionFromResult(result) === undefined ? {} : { baseRevision: baseRevisionFromResult(result) }),
-    refreshLabel: 'Refresh session view',
+    refreshLabel: 'Refresh session map',
     dismissLabel: 'Dismiss',
   }
 }

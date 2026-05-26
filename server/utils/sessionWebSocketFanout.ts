@@ -138,7 +138,7 @@ export const createInMemorySessionSocketPeerRegistry = (): InMemorySessionSocket
     },
     register(peer) {
       if (peer.id.trim().length === 0) {
-        throw new Error('Session WebSocket peer ID is required')
+        throw new Error('Session socket peer ID is required')
       }
       peersById.set(peer.id, peer)
     },

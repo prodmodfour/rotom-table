@@ -141,7 +141,7 @@ export type FieldEffectCommandValidationCode =
   (typeof FIELD_EFFECT_COMMAND_VALIDATION_CODES)[number]
 
 export interface FieldEffectCommandValidationContext {
-  /** Field-effect controls are GM-only in Live session; this context is reserved for later table policy. */
+  /** Field-effect controls are GM-only in live session mode; this context is reserved for later table policy. */
   readonly assignments?: readonly unknown[]
 }
 

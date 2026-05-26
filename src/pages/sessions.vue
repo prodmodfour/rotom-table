@@ -13,7 +13,7 @@ import type {
   SessionVisibleResourceRef,
 } from '#shared/sessionPermissions'
 
-useHead({ title: 'Session Lobby · Rotom Table' })
+useHead({ title: 'Live session lobby · Rotom Table' })
 
 const { isGm, roleLabel } = useAuth()
 const joinCode = ref('')
@@ -47,7 +47,7 @@ const canJoin = computed(() =>
 )
 const currentSessionId = computed(() => gmSession.value?.sessionId ?? playerSession.value?.sessionId ?? null)
 const safetyBannerSeverity = computed(() => safetyStatus.value?.severity ?? 'unknown')
-const safetyTitle = computed(() => safetyStatus.value?.title ?? 'Checking session hosting safety')
+const safetyTitle = computed(() => safetyStatus.value?.title ?? 'Checking live session hosting safety')
 const safetySummary = computed(() => safetyStatus.value?.summary
   ?? 'Rotom Table is checking whether live session hosting is disabled, local-only, LAN reachable, or remotely exposed.')
 const safetyFlagLabel = computed(() => {
@@ -129,14 +129,14 @@ onMounted(() => {
       aria-labelledby="session-safety-title"
     >
       <div class="safety-banner__main">
-        <p class="eyebrow">Session safety</p>
+        <p class="eyebrow">Live session safety</p>
         <h2 id="session-safety-title">{{ safetyTitle }}</h2>
         <p>{{ safetySummary }}</p>
         <p v-if="safetyError" class="safety-banner__error" role="status">
           Could not refresh hosting safety status: {{ safetyError }}
         </p>
       </div>
-      <dl class="safety-facts" aria-label="Session hosting safety state">
+      <dl class="safety-facts" aria-label="Live session hosting safety state">
         <div>
           <dt>Host flag</dt>
           <dd>{{ safetyFlagLabel }}</dd>
@@ -150,7 +150,7 @@ onMounted(() => {
           <dd>{{ safetyHostLabel }}</dd>
         </div>
         <div>
-          <dt>Session readiness</dt>
+          <dt>Live session readiness</dt>
           <dd>{{ safetySessionReadinessLabel }}</dd>
         </div>
       </dl>
@@ -171,12 +171,12 @@ onMounted(() => {
     </section>
 
     <section class="session-hero panel-card" aria-labelledby="session-lobby-title">
-      <p class="eyebrow">Live session preview</p>
-      <h1 id="session-lobby-title">Session lobby</h1>
+      <p class="eyebrow">Session hosting</p>
+      <h1 id="session-lobby-title">Live session lobby</h1>
       <p class="hero-copy">
-        Start a GM-hosted table session, share a join code, or join with a
+        Start a GM-hosted live session, share a join code, or join with a
         session-local display name. This lobby is additive: the existing local
-        trust login still gates the app while live session identity is built out.
+        trust login still gates the app while live session identity is active.
       </p>
       <dl class="session-facts">
         <div>
@@ -184,7 +184,7 @@ onMounted(() => {
           <dd>{{ roleLabel }}</dd>
         </div>
         <div>
-          <dt>Remembered session</dt>
+          <dt>Remembered live session</dt>
           <dd>{{ identity ? identity.role.toUpperCase() : 'None' }}</dd>
         </div>
         <div>
@@ -201,15 +201,15 @@ onMounted(() => {
       {{ lastNotice }}
     </p>
 
-    <section class="lobby-grid" aria-label="Session lobby actions">
+    <section class="lobby-grid" aria-label="Live session lobby actions">
       <article class="lobby-card panel-card" aria-labelledby="gm-lobby-title">
         <div class="card-heading">
-          <p class="eyebrow">GM host</p>
-          <h2 :id="SESSION_LOBBY_GM_SECTION_ID">Start and manage</h2>
+          <p class="eyebrow">Session hosting</p>
+          <h2 :id="SESSION_LOBBY_GM_SECTION_ID">Start and manage live session</h2>
         </div>
         <p class="card-copy">
-          Creates an in-memory authoritative session, a private GM key stored only
-          in this browser, and a player join code. The server still requires
+          Creates a server-owned live session, a private GM key stored only
+          in this browser, and a player join code. Session hosting still requires
           <code>ROTOM_ENABLE_SESSION_HOST=1</code> and the local GM role.
         </p>
 
@@ -220,7 +220,7 @@ onMounted(() => {
             :disabled="busy || !isGm"
             @click="handleStartSession"
           >
-            {{ hasGmIdentity ? 'Start another session' : 'Start GM session' }}
+            {{ hasGmIdentity ? 'Start another live session' : 'Start GM live session' }}
           </button>
           <button
             type="button"
@@ -233,7 +233,7 @@ onMounted(() => {
         </div>
 
         <p v-if="!isGm" class="hint-text">
-          Choose the existing GM Login before starting a hosted session. This is
+          Choose the existing GM Login before starting a live session. This is
           not public authentication; it is only the current local trust picker.
         </p>
 
@@ -265,7 +265,7 @@ onMounted(() => {
           <section class="mini-section" aria-labelledby="joined-players-title">
             <h3 id="joined-players-title">Joined players</h3>
             <p v-if="!gmManagement || gmManagement.players.length === 0" class="empty-text">
-              No players have joined this session yet.
+              No players have joined this live session yet.
             </p>
             <ul v-else class="player-list">
               <li v-for="player in gmManagement.players" :key="player.playerId">
@@ -278,7 +278,7 @@ onMounted(() => {
           <section class="mini-section" aria-labelledby="assignments-title">
             <h3 id="assignments-title">Assignments</h3>
             <p v-if="!gmManagement || gmManagement.assignments.length === 0" class="empty-text">
-              No sheet or token assignments yet.
+              No live session sheet or token assignments yet.
             </p>
             <ul v-else class="assignment-list">
               <li v-for="assignment in gmManagement.assignments" :key="assignment.playerId">
@@ -293,12 +293,12 @@ onMounted(() => {
       <article class="lobby-card panel-card" aria-labelledby="player-lobby-title">
         <div class="card-heading">
           <p class="eyebrow">Player join</p>
-          <h2 :id="SESSION_LOBBY_PLAYER_SECTION_ID">Join with display name</h2>
+          <h2 :id="SESSION_LOBBY_PLAYER_SECTION_ID">Join live session</h2>
         </div>
         <p class="card-copy">
           Enter the GM's join code and a table display name. The returned player
           ID and client ID are remembered locally for later reconnect and
-          WebSocket handshakes.
+          session socket handshakes.
         </p>
 
         <form class="join-form" @submit.prevent="handleJoinSession">
@@ -323,7 +323,7 @@ onMounted(() => {
             >
           </label>
           <button type="submit" class="primary-button" :disabled="!canJoin">
-            Join session
+            Join live session
           </button>
         </form>
 
@@ -342,7 +342,7 @@ onMounted(() => {
               <dd>{{ playerSession?.revision ?? '—' }}</dd>
             </div>
             <div>
-              <dt>Current map visible</dt>
+              <dt>Session map visible</dt>
               <dd>{{ playerState?.visibility.currentMapVisible ? 'Yes' : 'No' }}</dd>
             </div>
           </dl>
@@ -369,9 +369,9 @@ onMounted(() => {
     <section class="lobby-footer panel-card" aria-labelledby="remembered-session-title">
       <div>
         <p class="eyebrow">Browser memory</p>
-        <h2 :id="SESSION_LOBBY_REMEMBERED_SECTION_ID">Remembered session identity</h2>
+        <h2 :id="SESSION_LOBBY_REMEMBERED_SECTION_ID">Remembered live session identity</h2>
         <p>
-          Rotom Table stores one session-local identity in this browser's local
+          Rotom Table stores one live session identity in this browser's local
           storage. The cookie hint is non-secret; GM keys are not placed in cookies.
         </p>
       </div>
@@ -382,7 +382,7 @@ onMounted(() => {
           :disabled="busy || !identity"
           @click="safeRefresh"
         >
-          Refresh remembered session
+          Refresh remembered live session
         </button>
         <button
           type="button"

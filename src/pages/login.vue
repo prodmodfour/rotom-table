@@ -24,7 +24,7 @@ const chooseRole = async (nextRole: AuthRole) => {
       <h1 id="login-title">Choose a login</h1>
       <p class="login-copy">
         For now this uses the table's trust system: no passwords, just pick the role
-        you are using this session.
+        you are using for local-first access.
       </p>
 
       <div class="login-actions" role="group" aria-label="Login options">
@@ -39,7 +39,7 @@ const chooseRole = async (nextRole: AuthRole) => {
       </div>
 
       <p v-if="role" class="current-role">
-        Current session: <strong>{{ roleLabel }}</strong>
+        Current login: <strong>{{ roleLabel }}</strong>
       </p>
     </section>
   </main>

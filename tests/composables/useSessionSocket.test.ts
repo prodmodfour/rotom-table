@@ -71,7 +71,7 @@ const serverErrorMessage: SessionServerMessage = {
   type: 'error',
   direction: 'server',
   code: 'unsupported-message',
-  message: 'live session WebSocket is connected, but command dispatch lands later.',
+  message: 'live session socket is connected, but command dispatch lands later.',
   retryable: false,
 }
 
@@ -268,14 +268,14 @@ describe('createSessionClientHelloMessage', () => {
 })
 
 describe('useSessionSocket', () => {
-  it('reports WebSocket unavailability without touching session identity or HTTP endpoints', () => {
+  it('reports session socket unavailability without touching session identity or HTTP endpoints', () => {
     const sessionSocket = useSessionSocket({ webSocketConstructor: null })
 
     expect(sessionSocket.connect()).toBe(false)
 
     expect(sessionSocket.status.value).toBe('unavailable')
     expect(sessionSocket.isUnavailable.value).toBe(true)
-    expect(sessionSocket.lastError.value).toBe('WebSocket is not available in this runtime.')
+    expect(sessionSocket.lastError.value).toBe('Session socket is not available in this runtime.')
     expect(sessionSocket.socket.value).toBeNull()
   })
 
@@ -467,9 +467,9 @@ describe('useSessionSocket', () => {
 
       expect(sessionSocket.heartbeatStatus.value).toBe('stale')
       expect(sessionSocket.status.value).toBe('closing')
-      expect(sessionSocket.lastError.value).toBe('Session WebSocket heartbeat timed out.')
+      expect(sessionSocket.lastError.value).toBe('Session socket heartbeat timed out.')
       expect(fake.instances[0]?.closed).toEqual([
-        { code: 1008, reason: 'Session WebSocket heartbeat timed out.' },
+        { code: 1008, reason: 'Session socket heartbeat timed out.' },
       ])
       expect(fake.instances[0]?.sent).toEqual([
         JSON.stringify(createSessionClientHeartbeatMessage(SESSION_ID, {
@@ -646,9 +646,9 @@ describe('useSessionSocket', () => {
     expect(sessionSocket.send(serverErrorMessage)).toEqual({
       ok: false,
       reason: 'queue-full',
-      message: 'Session WebSocket send queue is full (1 messages).',
+      message: 'Session socket send queue is full (1 messages).'
     })
-    expect(sessionSocket.lastError.value).toBe('Session WebSocket send queue is full (1 messages).')
+    expect(sessionSocket.lastError.value).toBe('Session socket send queue is full (1 messages).')
 
     const serializationFailure = sessionSocket.send(circular)
     expect(serializationFailure).toMatchObject({ ok: false, reason: 'serialization-failed' })

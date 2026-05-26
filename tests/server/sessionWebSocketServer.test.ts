@@ -220,7 +220,7 @@ const gmCommandMessage = (overrides: {
 
 const parseSentJson = (peer: FakePeer, index = 0): unknown => JSON.parse(String(peer.sent[index]))
 
-describe('session WebSocket route', () => {
+describe('session socket route', () => {
   it('enables Nitro WebSocket hooks at the session socket route', () => {
     const hooks = (socketRoute as unknown as { __websocket__?: Record<string, unknown> }).__websocket__
 
@@ -231,7 +231,7 @@ describe('session WebSocket route', () => {
     expect(hooks?.error).toBe(handleSessionSocketError)
   })
 
-  it('fails WebSocket upgrades closed unless the explicit session-host flag is set', async () => {
+  it('fails session socket upgrades closed unless the explicit session-host flag is set', async () => {
     const disabledResponse = handleSessionSocketUpgrade(makeRequest(), { env: disabledEnv })
     expect(disabledResponse).toBeInstanceOf(Response)
     expect(disabledResponse?.status).toBe(SESSION_SOCKET_DISABLED_STATUS)
@@ -607,7 +607,7 @@ describe('session WebSocket route', () => {
     expect(peer.closed).toEqual([
       {
         code: SESSION_SOCKET_POLICY_CLOSE_CODE,
-        reason: 'A valid live session WebSocket hello is required before command messages.',
+        reason: 'A valid live session socket hello is required before command messages.',
       },
     ])
     expect(parseSentJson(peer)).toMatchObject({
@@ -633,7 +633,7 @@ describe('session WebSocket route', () => {
     expect(peer.closed).toEqual([
       {
         code: SESSION_SOCKET_POLICY_CLOSE_CODE,
-        reason: 'Session WebSocket command is malformed.',
+        reason: 'Session socket command is malformed.',
       },
     ])
     expect(parseSentJson(peer)).toMatchObject({
@@ -706,7 +706,7 @@ describe('session WebSocket route', () => {
       direction: 'server',
       sessionId: SESSION_ID,
       code: 'unsupported-message',
-      message: 'live session WebSocket command dispatch currently supports moveToken, turnToken, spawnToken, deleteToken, sendOutPokemon, modifyHp, modifyCombatStages, modifyConditions, useMove, useManeuver, useAbility, useOrder, setInitiative, nextInitiative, previousInitiative, placeHazard, removeHazard, setFieldEffect, removeFieldEffect, tickFieldEffectDurations, buildTerrainVoxel, and removeTerrainVoxel commands only.',
+      message: 'live session command dispatch currently supports moveToken, turnToken, spawnToken, deleteToken, sendOutPokemon, modifyHp, modifyCombatStages, modifyConditions, useMove, useManeuver, useAbility, useOrder, setInitiative, nextInitiative, previousInitiative, placeHazard, removeHazard, setFieldEffect, removeFieldEffect, tickFieldEffectDurations, buildTerrainVoxel, and removeTerrainVoxel commands only.',
       retryable: false,
     })
   })
@@ -738,7 +738,7 @@ describe('session WebSocket route', () => {
     expect(peer.closed).toEqual([
       {
         code: SESSION_SOCKET_POLICY_CLOSE_CODE,
-        reason: 'Session WebSocket command is malformed.',
+        reason: 'Session socket command is malformed.',
       },
     ])
     expect(parseSentJson(peer, 1)).toMatchObject({
@@ -778,7 +778,7 @@ describe('session WebSocket route', () => {
     expect(peer.closed).toEqual([
       {
         code: SESSION_SOCKET_POLICY_CLOSE_CODE,
-        reason: 'Session WebSocket command session does not match the authenticated socket.',
+        reason: 'Session socket command session does not match the authenticated socket.',
       },
     ])
     expect(parseSentJson(peer, 1)).toMatchObject({
@@ -822,7 +822,7 @@ describe('session WebSocket route', () => {
     expect(peer.closed).toEqual([
       {
         code: SESSION_SOCKET_POLICY_CLOSE_CODE,
-        reason: 'Session WebSocket command actor does not match the authenticated socket.',
+        reason: 'Session socket command actor does not match the authenticated socket.',
       },
     ])
     expect(parseSentJson(peer, 1)).toMatchObject({
@@ -952,7 +952,7 @@ describe('session WebSocket route', () => {
     expect(peer.closed).toEqual([
       {
         code: SESSION_SOCKET_POLICY_CLOSE_CODE,
-        reason: 'Session WebSocket heartbeat session does not match the authenticated socket.',
+        reason: 'Session socket heartbeat session does not match the authenticated socket.',
       },
     ])
     expect(parseSentJson(peer, 1)).toMatchObject({

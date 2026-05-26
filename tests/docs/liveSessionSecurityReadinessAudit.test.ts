@@ -89,7 +89,7 @@ describe('Live session security readiness audit', () => {
 
     const socketServer = readText('server/utils/sessionWebSocketServer.ts')
     expect(socketServer).toContain('const actorsMatch')
-    expect(socketServer).toContain('Session WebSocket command actor does not match the authenticated socket')
+    expect(socketServer).toContain('Session socket command actor does not match the authenticated socket')
     expect(socketServer).toContain('createSessionReconnectSnapshotState')
     expect(socketServer).toContain('connectedClients: state.connectedClients.filter')
     expect(socketServer).toContain('players: player === undefined ? [] : [player]')

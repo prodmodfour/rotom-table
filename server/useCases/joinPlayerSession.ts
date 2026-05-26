@@ -148,7 +148,7 @@ const allocateUniquePlayerId = <TMapDocument>(
 
   throw new JoinPlayerSessionUseCaseError(
     503,
-    'Unable to allocate a unique player ID for this table session',
+    'Unable to allocate a unique player ID for this live session',
   )
 }
 
@@ -165,7 +165,7 @@ const allocateUniqueClientId = <TMapDocument>(
 
   throw new JoinPlayerSessionUseCaseError(
     503,
-    'Unable to allocate a unique client ID for this table session',
+    'Unable to allocate a unique client ID for this live session',
   )
 }
 

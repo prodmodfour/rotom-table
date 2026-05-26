@@ -263,7 +263,7 @@ describe('useSessionLobby', () => {
     expect(lobby.gmJoinCode.value).toBe(JOIN_CODE)
     expect(lobby.gmManagement.value?.players[0]?.displayName).toBe(DISPLAY_NAME)
     expect(lobby.safetyStatus.value).toEqual(readySafetyStatus)
-    expect(lobby.lastNotice.value).toBe('Started a GM-hosted Live session in this browser.')
+    expect(lobby.lastNotice.value).toBe('Started a GM-hosted live session in this browser.')
     expect(lobby.lastError.value).toBeNull()
   })
 
@@ -310,7 +310,7 @@ describe('useSessionLobby', () => {
       { kind: 'token', tokenId: 'token-pikachu', mapSlug: MAP_SLUG },
     ])
     expect(lobby.playerIdentity.value?.displayName).toBe(DISPLAY_NAME)
-    expect(lobby.lastNotice.value).toBe('Joined the Live session as Riley.')
+    expect(lobby.lastNotice.value).toBe('Joined the live session as Riley.')
   })
 
   it('loads a remembered GM identity, refreshes it, and clears browser state', async () => {

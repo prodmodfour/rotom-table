@@ -28,7 +28,7 @@ const model = computed(() => buildMapSessionNavigationModel({
       {{ model.statusLabel }}
     </p>
 
-    <div class="map-session-navigation__links" aria-label="Session navigation shortcuts">
+    <div class="map-session-navigation__links" aria-label="Live session navigation shortcuts">
       <NuxtLink
         v-for="link in model.links"
         :key="link.key"

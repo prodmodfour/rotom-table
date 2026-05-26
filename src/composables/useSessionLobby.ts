@@ -259,7 +259,7 @@ export const useSessionLobby = (options: UseSessionLobbyOptions = {}) => {
       rememberIdentity(nextIdentity)
       await fetchGmManagement(nextIdentity)
       await loadSafetyStatus().catch(() => undefined)
-      lastNotice.value = 'Started a GM-hosted Live session in this browser.'
+      lastNotice.value = 'Started a GM-hosted live session in this browser.'
       return response
     } catch (error) {
       recordFailure(error)
@@ -292,7 +292,7 @@ export const useSessionLobby = (options: UseSessionLobbyOptions = {}) => {
       }
       rememberIdentity(nextIdentity)
       await fetchPlayerState(nextIdentity)
-      lastNotice.value = `Joined the Live session as ${response.player.displayName}.`
+      lastNotice.value = `Joined the live session as ${response.player.displayName}.`
       return response
     } catch (error) {
       recordFailure(error)
@@ -320,7 +320,7 @@ export const useSessionLobby = (options: UseSessionLobbyOptions = {}) => {
       const response = currentIdentity.role === 'gm'
         ? await fetchGmManagement(currentIdentity)
         : await fetchPlayerState(currentIdentity)
-      lastNotice.value = 'Refreshed the remembered Live session.'
+      lastNotice.value = 'Refreshed the remembered live session.'
       return response
     } catch (error) {
       recordFailure(error)

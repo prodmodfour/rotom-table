@@ -30,7 +30,7 @@ const emit = defineEmits<{
       <p class="rejection-guidance">{{ props.notice.guidance }}</p>
     </div>
 
-    <div class="rejection-actions" aria-label="Session command rejection actions">
+    <div class="rejection-actions" aria-label="Live session command rejection actions">
       <button type="button" class="refresh-button" @click="emit('refresh-session')">
         {{ props.notice.refreshLabel }}
       </button>
