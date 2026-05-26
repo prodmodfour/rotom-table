@@ -76,6 +76,14 @@ const tokenResource = {
   sheetSlug: 'pikachu',
 } as const satisfies SessionTokenResourceRef
 
+const eeveeTokenResource = {
+  kind: 'token',
+  tokenId: 'token-eevee',
+  mapSlug: 'arena-map',
+  sheetKind: 'pokemon',
+  sheetSlug: 'eevee',
+} as const satisfies SessionTokenResourceRef
+
 const assignment = {
   playerId,
   displayName,
@@ -365,6 +373,128 @@ describe('applyMoveTokenCommandUseCase', () => {
       expect(store.get(sessionId)?.state).toEqual(initialState)
       expect(snapshotCalls).toEqual([])
     }
+  })
+
+  it('rejects stale same-token moveToken commands with current authoritative token state', () => {
+    const initialState = createState()
+    const store = createStoreWithState(initialState)
+    const tracker = createInMemorySessionOperationTracker()
+    const snapshotCalls: AuthoritativeSessionState<TabletopMapV2>[] = []
+
+    const first = applyMoveTokenCommandUseCase({ command: createCommand() }, {
+      env: enabledEnv,
+      store,
+      operationTracker: tracker,
+      clock: () => processedAt,
+      writeSnapshot: createSnapshotWriter(snapshotCalls),
+    })
+    expect(first.status).toBe('accepted')
+
+    const staleCommand = createCommand({
+      opId: parseOpId('op_movetokenucstale001'),
+      baseRevision: parseSessionRevision(0),
+      payload: {
+        tokenId: 'token-pikachu',
+        to: { x: 4, y: 0, z: 2 },
+      },
+      metadata: {
+        clientIssuedAt: '2026-05-26T10:00:06.000Z',
+        clientSequence: 2,
+        traceId: 'trace-move-token-stale',
+      },
+    })
+
+    const result = applyMoveTokenCommandUseCase({ command: staleCommand }, {
+      env: enabledEnv,
+      store,
+      operationTracker: tracker,
+      clock: () => '2026-05-26T10:00:06.100Z',
+      writeSnapshot: createSnapshotWriter(snapshotCalls),
+    })
+
+    expect(result.status).toBe('rejected')
+    if (result.status !== 'rejected') throw new Error('expected stale rejection')
+    expect(result.result).toMatchObject({
+      status: 'rejected',
+      reason: 'stale',
+      retryable: true,
+      currentRevision: parseSessionRevision(1),
+      baseRevision: parseSessionRevision(0),
+      message: 'Token token-pikachu changed after revision 0.',
+      currentState: {
+        tokenId: 'token-pikachu',
+        mapSlug: 'arena-map',
+        position: { x: 2, y: 0, z: 2 },
+        revision: parseSessionRevision(1),
+        mapRevision: parseMapRevision(1),
+        sheetKind: 'pokemon',
+        sheetSlug: 'pikachu',
+      },
+      metadata: {
+        serverProcessedAt: '2026-05-26T10:00:06.100Z',
+        traceId: 'trace-move-token-stale',
+      },
+    })
+    if (result.result.reason !== 'stale') throw new Error('expected stale result shape')
+    expect(result.result.changedScopes).toEqual(createCommand().scopes)
+    expect(snapshotCalls).toHaveLength(1)
+    expect(store.get(sessionId)?.revision).toBe(parseSessionRevision(1))
+    expect(getSessionMapState(store.get(sessionId)?.state ?? initialState, 'arena-map')?.document.placements
+      .find((placement) => placement.id === 'token-pikachu')?.position)
+      .toEqual({ x: 2, y: 0, z: 2 })
+    expect(tracker.recordCount).toBe(2)
+  })
+
+  it('allows stale-base moveToken commands across a tracked unrelated token revision gap', () => {
+    const initialState = createState()
+    const store = createStoreWithState(initialState)
+    const tracker = createInMemorySessionOperationTracker()
+    const snapshotCalls: AuthoritativeSessionState<TabletopMapV2>[] = []
+
+    const eeveeMove = createCommand({
+      actor: gmActor,
+      opId: parseOpId('op_movetokenuceevee001'),
+      scopes: [createMoveTokenCommandScope(eeveeTokenResource)],
+      payload: {
+        tokenId: 'token-eevee',
+        to: { x: 4, y: 0, z: 2 },
+      },
+    })
+    expect(applyMoveTokenCommandUseCase({ command: eeveeMove }, {
+      env: enabledEnv,
+      store,
+      operationTracker: tracker,
+      clock: () => processedAt,
+      writeSnapshot: createSnapshotWriter(snapshotCalls),
+    }).status).toBe('accepted')
+
+    const pikachuMove = createCommand({
+      opId: parseOpId('op_movetokenucgap001'),
+      baseRevision: parseSessionRevision(0),
+      payload: {
+        tokenId: 'token-pikachu',
+        to: { x: 2, y: 0, z: 2 },
+      },
+    })
+    const result = applyMoveTokenCommandUseCase({ command: pikachuMove }, {
+      env: enabledEnv,
+      store,
+      operationTracker: tracker,
+      clock: () => '2026-05-26T10:00:06.000Z',
+      writeSnapshot: createSnapshotWriter(snapshotCalls),
+    })
+
+    expect(result.status).toBe('accepted')
+    if (result.status !== 'accepted') throw new Error('expected unrelated stale gap to apply')
+    expect(result.session.revision).toBe(parseSessionRevision(2))
+    expect(result.previousToken.position).toEqual({ x: 1, y: 0, z: 1 })
+    expect(result.token.position).toEqual({ x: 2, y: 0, z: 2 })
+    expect(snapshotCalls).toHaveLength(2)
+    expect(getSessionMapState(store.get(sessionId)?.state ?? initialState, 'arena-map')?.document.placements)
+      .toEqual(expect.arrayContaining([
+        expect.objectContaining({ id: 'token-pikachu', position: { x: 2, y: 0, z: 2 } }),
+        expect.objectContaining({ id: 'token-eevee', position: { x: 4, y: 0, z: 2 } }),
+      ]))
   })
 
   it('returns duplicate opId results without applying a move twice', () => {

@@ -9,7 +9,7 @@ This document describes the transport slice that exists after the WebSocket tran
 - the server validates hello, heartbeat, and command frame shapes before dispatch;
 - same-session fanout exists for presence, command results, patches, and snapshots;
 - reconnect currently falls back to an authoritative snapshot when replay is unavailable;
-- the shared `moveToken` command payload contract, validator, server-side application use case, sender acknowledgement, and same-session `tokenMoved` patch broadcast now apply through `/api/sessions/socket`; stale same-token rejection and high-level client handlers are still later token-command tickets.
+- the shared `moveToken` command payload contract, validator, server-side application use case, stale same-token rejection, sender acknowledgement/rejection, and same-session `tokenMoved` patch broadcast now apply through `/api/sessions/socket`; high-level client handlers are still later token-command tickets.
 
 ## Route, runtime gate, and URL shape
 
@@ -303,7 +303,7 @@ Server processing order for the command path:
 2. Verify the command `sessionId` and actor match the authenticated socket.
 3. Check permissions and visibility against the current authoritative session state.
 4. Check `opId` idempotency before applying side effects.
-5. Apply valid non-conflicting effects to server-owned state after command-specific rules checks such as map bounds, blocking voxels, and occupied token cells. Stale same-token revision rejection lands in a later token-command ticket.
+5. Reject stale same-token movement when a newer accepted token change exists, or when the server lacks enough recent command history to prove the old base revision is safe; the rejection includes the current authoritative token state. Valid non-conflicting effects then apply to server-owned state after command-specific rules checks such as map bounds, blocking voxels, and occupied token cells.
 6. Increment the relevant revision, persist a snapshot/event, send `commandAck` to the sender, and fan out a small `patch` to same-session clients.
 7. Return `commandReject` for invalid, unauthorized, stale, or conflicting commands without advancing revision.
 
@@ -454,7 +454,7 @@ The patch is a small authoritative event, not a whole-map autosave from a browse
 }
 ```
 
-Normal command rejections use `reason: "invalid"`, `"unauthorized"`, `"stale"`, or `"conflict"`. They are distinct from transport `error` messages.
+Normal command rejections use `reason: "invalid"`, `"unauthorized"`, `"stale"`, or `"conflict"`. For `moveToken`, stale same-token rejections include `baseRevision`, `changedScopes`, and the current authoritative token position/revision so clients can reconcile optimistic state. They are distinct from transport `error` messages.
 
 ### Duplicate `opId`
 

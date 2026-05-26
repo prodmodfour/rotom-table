@@ -5,9 +5,11 @@ import {
   type SessionCommandInvalidRejection,
   type SessionCommandRejectedResult,
   type SessionCommandResultMetadata,
+  type SessionCommandStaleRejection,
   type SessionCommandUnauthorizedRejection,
   type SessionCommandValidationIssue,
 } from '#shared/sessionCommandResults'
+import { type SessionCommandScope } from '#shared/sessionCommands'
 import { validateSessionCommandEnvelope } from '#shared/sessionCommandValidation'
 import {
   type SessionId,
@@ -16,7 +18,7 @@ import type {
   PermissionDenied,
   SessionTokenResourceRef,
 } from '#shared/sessionPermissions'
-import type { MapRevision, SessionRevision } from '#shared/sessionRevisions'
+import { compareSessionRevisions, type MapRevision, type SessionRevision } from '#shared/sessionRevisions'
 import {
   getSessionMapState,
   type AuthoritativeSessionMapState,
@@ -38,6 +40,7 @@ import { assertSessionHostEnabled, type SessionHostRuntimeEnv } from '../utils/s
 import {
   sessionOperationTracker,
   type InMemorySessionOperationTracker,
+  type SessionOperationRecord,
 } from '../utils/sessionOperationTracker'
 import {
   applyAcceptedSessionCommandEffect,
@@ -397,6 +400,36 @@ const createConflictRejection = (
   metadata: metadataForResult(command, processedAt),
 })
 
+const createStaleRejection = (
+  command: MoveTokenCommand,
+  record: MoveTokenSessionRecord,
+  message: string,
+  processedAt: string,
+  currentState: MoveTokenCurrentState | null,
+  changedScopes: readonly SessionCommandScope[] = command.scopes,
+): SessionCommandStaleRejection<
+  typeof MOVE_TOKEN_COMMAND_TYPE,
+  MoveTokenCurrentState | null,
+  SessionRevision
+> => ({
+  schemaVersion: SESSION_COMMAND_RESULT_SCHEMA_VERSION,
+  status: 'rejected',
+  accepted: false,
+  reason: 'stale',
+  message,
+  retryable: true,
+  sessionId: command.sessionId,
+  opId: command.opId,
+  commandType: MOVE_TOKEN_COMMAND_TYPE,
+  actor: command.actor,
+  currentRevision: record.revision,
+  scopes: command.scopes,
+  baseRevision: command.baseRevision,
+  changedScopes,
+  currentState,
+  metadata: metadataForResult(command, processedAt),
+})
+
 const rejectionOutcome = (
   command: MoveTokenCommand,
   record: MoveTokenSessionRecord,
@@ -532,6 +565,95 @@ const resolveMoveTokenTarget = (
       resource,
     },
   }
+}
+
+const acceptedOperationAfterBase = (
+  operation: SessionOperationRecord,
+  baseRevision: SessionRevision,
+): boolean => operation.result.status === 'accepted' &&
+  compareSessionRevisions(baseRevision, operation.result.currentRevision) === -1
+
+const scopeTouchesTokenPosition = (
+  scope: SessionCommandScope,
+  tokenId: string,
+  mapSlug: SessionMapSlug,
+): boolean => {
+  const resource = scope.resource
+  if (scope.lane !== 'token') return false
+  if (scope.field !== 'position') return false
+  if (resource?.kind !== 'token') return false
+  if (resource.tokenId !== tokenId) return false
+
+  const scopedMapSlug = resource.mapSlug ?? scope.mapSlug
+  return scopedMapSlug === undefined || scopedMapSlug === mapSlug
+}
+
+const operationTouchesMoveTokenTarget = (
+  operation: SessionOperationRecord,
+  target: ResolvedMoveTokenTarget,
+): boolean => operation.commandType === MOVE_TOKEN_COMMAND_TYPE &&
+  operation.scopes.some((scope) => scopeTouchesTokenPosition(
+    scope,
+    target.placement.id,
+    target.mapSlug,
+  ))
+
+const staleMoveTokenRejection = (
+  command: MoveTokenCommand,
+  record: MoveTokenSessionRecord,
+  target: ResolvedMoveTokenTarget,
+  processedAt: string,
+  tracker: InMemorySessionOperationTracker | false,
+): MoveTokenRejectedResult | undefined => {
+  if (compareSessionRevisions(command.baseRevision, record.revision) !== -1) return undefined
+
+  const currentToken = tokenStateFromPlacement(
+    target.mapSlug,
+    target.mapState.revision,
+    record.revision,
+    target.placement,
+  )
+
+  if (tracker === false) {
+    return createStaleRejection(
+      command,
+      record,
+      `Token ${command.payload.tokenId} may have changed after revision ${command.baseRevision}; refresh from revision ${record.revision} before moving it again.`,
+      processedAt,
+      currentToken,
+    )
+  }
+
+  const acceptedSinceBase = tracker
+    .list(command.sessionId)
+    .filter((operation) => acceptedOperationAfterBase(operation, command.baseRevision))
+
+  const matchingTokenChange = acceptedSinceBase.find((operation) =>
+    operationTouchesMoveTokenTarget(operation, target),
+  )
+  if (matchingTokenChange !== undefined) {
+    return createStaleRejection(
+      command,
+      record,
+      `Token ${command.payload.tokenId} changed after revision ${command.baseRevision}.`,
+      processedAt,
+      currentToken,
+      matchingTokenChange.scopes,
+    )
+  }
+
+  const revisionGap = record.revision - command.baseRevision
+  if (acceptedSinceBase.length === 0 || revisionGap > tracker.maxRecordsPerSession) {
+    return createStaleRejection(
+      command,
+      record,
+      `Token ${command.payload.tokenId} may have changed after revision ${command.baseRevision}; refresh from revision ${record.revision} before moving it again.`,
+      processedAt,
+      currentToken,
+    )
+  }
+
+  return undefined
 }
 
 const validateMoveDestination = (
@@ -730,6 +852,18 @@ export const applyMoveTokenCommandUseCase = (
   if (!targetResult.ok) {
     rememberRejectedResult(tracker, envelope, targetResult.result, processedAt)
     return rejectionOutcome(envelope, record, record.state, targetResult.result)
+  }
+
+  const staleRejection = staleMoveTokenRejection(
+    commandValidation.command,
+    record,
+    targetResult.target,
+    processedAt,
+    tracker,
+  )
+  if (staleRejection !== undefined) {
+    rememberRejectedResult(tracker, envelope, staleRejection, processedAt)
+    return rejectionOutcome(envelope, record, record.state, staleRejection)
   }
 
   const destinationRejection = validateMoveDestination(

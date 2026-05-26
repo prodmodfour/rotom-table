@@ -2,7 +2,7 @@
 
 This document describes the shared TypeScript protocol contracts introduced for Track 2 session mode. It records the wire vocabulary that later server and client tickets must use when they add the session store, WebSocket endpoint, lobby UI, command handlers, and reconnect behaviour.
 
-This is a contract document, not a claim that every command handler is already complete. The current shared contracts live in `shared/` and are covered by focused Vitest tests; the `moveToken` payload contract and validator live in `shared/sessionTokenCommands.ts`, and `server/useCases/applyMoveTokenCommand.ts` now applies authorized token movement to server-owned map state with occupancy/rules validation, revision increments, snapshot persistence, duplicate-`opId` handling, a sender `commandAck`, and a same-session `tokenMoved` patch broadcast over `/api/sessions/socket`. Stale same-token rejection and client dispatch/optimism remain later token-command tickets. See [Track 2 WebSocket protocol](track-2-websocket-protocol.md) for the live socket route, message examples, heartbeat/reconnect flow, command transport boundary, and named-tunnel expectations after the WebSocket transport chunk. See [Track 2 session lobby and manual QA](track-2-session-lobby.md) for the current GM/player join flow and two-browser smoke checklist, and [Track 2 session storage](track-2-session-storage.md) for the operational snapshot/event-log layout, backup guidance, and recovery limitations.
+This is a contract document, not a claim that every command handler is already complete. The current shared contracts live in `shared/` and are covered by focused Vitest tests; the `moveToken` payload contract and validator live in `shared/sessionTokenCommands.ts`, and `server/useCases/applyMoveTokenCommand.ts` now applies authorized token movement to server-owned map state with occupancy/rules validation, stale same-token rejection with current token state, revision increments, snapshot persistence, duplicate-`opId` handling, a sender `commandAck`/`commandReject`, and a same-session `tokenMoved` patch broadcast over `/api/sessions/socket`. Client dispatch/optimism remains a later token-command ticket. See [Track 2 WebSocket protocol](track-2-websocket-protocol.md) for the live socket route, message examples, heartbeat/reconnect flow, command transport boundary, and named-tunnel expectations after the WebSocket transport chunk. See [Track 2 session lobby and manual QA](track-2-session-lobby.md) for the current GM/player join flow and two-browser smoke checklist, and [Track 2 session storage](track-2-session-storage.md) for the operational snapshot/event-log layout, backup guidance, and recovery limitations.
 
 ## Protocol goals
 
@@ -845,7 +845,7 @@ Rejection categories are:
 | `stale` | The command was based on an old revision and the same resource changed after that base revision. |
 | `conflict` | The command is valid but cannot be applied safely with the current authoritative state. |
 
-Invalid rejections include structured validation issues. Unauthorized, stale, and conflict rejections may include safe current state for reconciliation.
+Invalid rejections include structured validation issues. Unauthorized, stale, and conflict rejections may include safe current state for reconciliation. Current `moveToken` stale checks reject same-token movement when a newer accepted move for that token is known, and conservatively reject old-base moves when recent command history is insufficient to prove the same token did not change.
 
 ## Duplicate `opId` handling
 
