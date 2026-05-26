@@ -4,6 +4,19 @@ export const SESSION_SAFETY_SCHEMA_VERSION = 1 as const
 
 export type SessionSafetyExposure = 'disabled' | 'local' | 'lan' | 'remote' | 'unknown'
 export type SessionSafetySeverity = 'safe' | 'caution' | 'danger'
+export type SessionSafetySessionReadiness = 'disabled' | 'not-started' | 'ready' | 'unsafe' | 'unknown'
+export type SessionSafetyStartupIssue =
+  | 'host-enabled-without-active-session'
+  | 'host-enabled-without-session-secrets'
+  | 'host-enabled-without-authoritative-state'
+  | 'host-enabled-session-readiness-unknown'
+  | 'remote-exposure-before-session-start'
+
+export interface SessionSafetySessionSettings {
+  readonly activeSessionCount: number | null
+  readonly credentialedSessionCount: number | null
+  readonly stateBackedSessionCount: number | null
+}
 
 export interface SessionSafetyStatus {
   readonly schemaVersion: typeof SESSION_SAFETY_SCHEMA_VERSION
@@ -18,6 +31,9 @@ export interface SessionSafetyStatus {
   readonly forwardedHost: string | null
   readonly effectiveHost: string | null
   readonly forwarded: boolean
+  readonly sessionSettings: SessionSafetySessionSettings
+  readonly sessionReadiness: SessionSafetySessionReadiness
+  readonly startupIssues: readonly SessionSafetyStartupIssue[]
   readonly title: string
   readonly summary: string
   readonly warnings: readonly string[]
@@ -31,6 +47,7 @@ export interface CreateSessionSafetyStatusInput {
   readonly forwardedProto?: string | null
   readonly forwardedFor?: string | null
   readonly cloudflareRay?: string | null
+  readonly sessionSettings?: Partial<SessionSafetySessionSettings> | null
 }
 
 export type SessionSafetyRuntimeEnv = Record<string, string | undefined>
@@ -38,6 +55,21 @@ export type SessionSafetyRuntimeEnv = Record<string, string | undefined>
 export const isSessionHostFlagEnabled = (
   env: SessionSafetyRuntimeEnv,
 ): boolean => env[SESSION_HOST_ENABLE_ENV] === SESSION_HOST_ENABLE_VALUE
+
+const normalizeSessionCount = (value: number | null | undefined): number | null => {
+  if (value === null || value === undefined) return null
+  return Number.isInteger(value) && value >= 0 ? value : null
+}
+
+const normalizeSessionSettings = (
+  settings: Partial<SessionSafetySessionSettings> | null | undefined,
+): SessionSafetySessionSettings => ({
+  activeSessionCount: normalizeSessionCount(settings?.activeSessionCount),
+  credentialedSessionCount: normalizeSessionCount(settings?.credentialedSessionCount),
+  stateBackedSessionCount: normalizeSessionCount(settings?.stateBackedSessionCount),
+})
+
+const uniqueText = (values: readonly string[]): readonly string[] => [...new Set(values)]
 
 const firstHeaderValue = (value: string | null | undefined): string | null => {
   if (typeof value !== 'string') return null
@@ -135,6 +167,77 @@ const severityForExposure = (exposure: SessionSafetyExposure): SessionSafetySeve
   return 'danger'
 }
 
+const startupIssuesForStatus = (
+  hostEnabled: boolean,
+  exposure: SessionSafetyExposure,
+  settings: SessionSafetySessionSettings,
+): readonly SessionSafetyStartupIssue[] => {
+  if (!hostEnabled) return []
+
+  const issues: SessionSafetyStartupIssue[] = []
+
+  if (settings.activeSessionCount === null) {
+    issues.push('host-enabled-session-readiness-unknown')
+    return issues
+  }
+
+  if (settings.activeSessionCount === 0) {
+    issues.push('host-enabled-without-active-session')
+    if (exposure === 'remote' || exposure === 'unknown') {
+      issues.push('remote-exposure-before-session-start')
+    }
+    return issues
+  }
+
+  if (settings.credentialedSessionCount === null || settings.stateBackedSessionCount === null) {
+    issues.push('host-enabled-session-readiness-unknown')
+  }
+
+  if (
+    settings.credentialedSessionCount !== null
+    && settings.credentialedSessionCount < settings.activeSessionCount
+  ) {
+    issues.push('host-enabled-without-session-secrets')
+  }
+
+  if (
+    settings.stateBackedSessionCount !== null
+    && settings.stateBackedSessionCount < settings.activeSessionCount
+  ) {
+    issues.push('host-enabled-without-authoritative-state')
+  }
+
+  return [...new Set(issues)]
+}
+
+const readinessForStatus = (
+  hostEnabled: boolean,
+  settings: SessionSafetySessionSettings,
+  startupIssues: readonly SessionSafetyStartupIssue[],
+): SessionSafetySessionReadiness => {
+  if (!hostEnabled) return 'disabled'
+  if (settings.activeSessionCount === null) return 'unknown'
+  if (settings.activeSessionCount === 0) return 'not-started'
+  if (
+    startupIssues.includes('host-enabled-without-session-secrets')
+    || startupIssues.includes('host-enabled-without-authoritative-state')
+  ) return 'unsafe'
+  if (startupIssues.includes('host-enabled-session-readiness-unknown')) return 'unknown'
+  return 'ready'
+}
+
+const severityForStatus = (
+  exposure: SessionSafetyExposure,
+  startupIssues: readonly SessionSafetyStartupIssue[],
+): SessionSafetySeverity => {
+  if (
+    startupIssues.includes('host-enabled-without-session-secrets')
+    || startupIssues.includes('host-enabled-without-authoritative-state')
+  ) return 'danger'
+
+  return severityForExposure(exposure)
+}
+
 const warningTextForExposure = (exposure: SessionSafetyExposure): readonly string[] => {
   switch (exposure) {
     case 'disabled':
@@ -169,6 +272,25 @@ const warningTextForExposure = (exposure: SessionSafetyExposure): readonly strin
   }
 }
 
+const warningTextForStartupIssue = (issue: SessionSafetyStartupIssue): string => {
+  switch (issue) {
+    case 'host-enabled-without-active-session':
+      return 'Session hosting is enabled but no active session-local GM key and join code have been created yet; start a GM session from /sessions before sharing any player URL.'
+    case 'host-enabled-without-session-secrets':
+      return 'An active session record is missing its expected session-local GM key or join code; stop hosting and start a fresh session before players connect.'
+    case 'host-enabled-without-authoritative-state':
+      return 'An active session record is missing authoritative session state; stop hosting and recover from the latest private snapshot or start a fresh session before players connect.'
+    case 'host-enabled-session-readiness-unknown':
+      return 'Rotom Table could not verify active-session, GM-key, join-code, and authoritative-state readiness; treat the host as unsafe until checked.'
+    case 'remote-exposure-before-session-start':
+      return 'This host appears remotely exposed before a join code/session has been intentionally created; stop the tunnel or complete GM startup before sharing the URL.'
+  }
+}
+
+const warningTextForStartupIssues = (
+  issues: readonly SessionSafetyStartupIssue[],
+): readonly string[] => issues.map(warningTextForStartupIssue)
+
 const actionTextForExposure = (exposure: SessionSafetyExposure): readonly string[] => {
   switch (exposure) {
     case 'disabled':
@@ -197,6 +319,25 @@ const actionTextForExposure = (exposure: SessionSafetyExposure): readonly string
       ]
   }
 }
+
+const actionTextForStartupIssue = (issue: SessionSafetyStartupIssue): string => {
+  switch (issue) {
+    case 'host-enabled-without-active-session':
+      return 'Open /sessions as the GM, start a session, verify a fresh join code, then share only that code and the player URL with trusted players.'
+    case 'host-enabled-without-session-secrets':
+      return 'Stop Rotom Table, unset the session-host flag, then start a new hosted session so the GM key and join code rotate together.'
+    case 'host-enabled-without-authoritative-state':
+      return 'Stop hosting and recover from a private session snapshot, or start a fresh session before allowing players to send commands.'
+    case 'host-enabled-session-readiness-unknown':
+      return 'Refresh the safety banner; if readiness remains unknown, stop hosting and review the startup path before sharing the lobby.'
+    case 'remote-exposure-before-session-start':
+      return 'If this is not an intentional named Cloudflare Tunnel or trusted smoke test, stop the tunnel/proxy before continuing.'
+  }
+}
+
+const actionTextForStartupIssues = (
+  issues: readonly SessionSafetyStartupIssue[],
+): readonly string[] => issues.map(actionTextForStartupIssue)
 
 const titleForExposure = (exposure: SessionSafetyExposure): string => {
   switch (exposure) {
@@ -244,6 +385,8 @@ export const createSessionSafetyStatus = (
     ? classifyEnabledExposure(requestHost, forwardedHost, forwarded)
     : 'disabled'
   const effectiveHost = input.hostEnabled ? forwardedHost ?? requestHost : requestHost
+  const sessionSettings = normalizeSessionSettings(input.sessionSettings)
+  const startupIssues = startupIssuesForStatus(input.hostEnabled, exposure, sessionSettings)
 
   return {
     schemaVersion: SESSION_SAFETY_SCHEMA_VERSION,
@@ -253,14 +396,23 @@ export const createSessionSafetyStatus = (
       value: SESSION_HOST_ENABLE_VALUE,
     },
     exposure,
-    severity: severityForExposure(exposure),
+    severity: severityForStatus(exposure, startupIssues),
     requestHost,
     forwardedHost,
     effectiveHost,
     forwarded,
+    sessionSettings,
+    sessionReadiness: readinessForStatus(input.hostEnabled, sessionSettings, startupIssues),
+    startupIssues,
     title: titleForExposure(exposure),
     summary: summaryForExposure(exposure, effectiveHost),
-    warnings: warningTextForExposure(exposure),
-    recommendedActions: actionTextForExposure(exposure),
+    warnings: uniqueText([
+      ...warningTextForExposure(exposure),
+      ...warningTextForStartupIssues(startupIssues),
+    ]),
+    recommendedActions: uniqueText([
+      ...actionTextForExposure(exposure),
+      ...actionTextForStartupIssues(startupIssues),
+    ]),
   }
 }

@@ -2,13 +2,13 @@
 
 This guide documents the current Track 2 lobby slice: how a GM starts a guarded session, how a player joins with a session-local display name, how the minimal lobby should behave on a LAN, and how to manually smoke-test the flow with two browsers.
 
-It is intentionally scoped to the identity/join/lobby surface. For the client-integration smoke that opens explicit GM/player session-map tabs and checks basic token command propagation, see [Track 2 multi-tab local smoke script](track-2-multi-tab-smoke.md). Full LAN and named-tunnel hosting runbooks land in later Track 2 phases.
+It is intentionally scoped to the identity/join/lobby surface. For guarded startup helpers, see the [Track 2 session host runtime scripts](track-2-session-host-runtime.md). For no-secret warnings around public/LAN exposure before session-local credentials and authoritative state are ready, see [Track 2 public exposure checks](track-2-public-exposure-checks.md). For same-Wi-Fi setup commands, IP discovery, player browser URLs, and cross-device troubleshooting, see the [Track 2 LAN hosting runbook](track-2-lan-hosting.md). For stable-hostname remote setup, WebSocket considerations, safety warnings, and rollback steps, see the [Track 2 named Cloudflare Tunnel runbook](track-2-cloudflare-tunnel-hosting.md). For the fuller two-player LAN/named-tunnel smoke covering reconnect, token movement, initiative, and conflict rejection, see the [Track 2 deployment smoke checklist](track-2-deployment-smoke-checklist.md). For temporary `trycloudflare.com` smoke-test caveats and legacy SSE limitations, see the [Track 2 Quick Tunnel caveat](track-2-quick-tunnel-caveat.md). For the client-integration smoke that opens explicit GM/player session-map tabs and checks basic token command propagation, see [Track 2 multi-tab local smoke script](track-2-multi-tab-smoke.md).
 
 ## What exists in this slice
 
 - `/sessions` is an additive lobby route. It does not replace the existing `/login` trust picker or local-first map/sheet workflows.
 - Map routes expose a compact **Table session** panel in the map navigation rail with links to `/sessions#gm-lobby-title`, `/sessions#player-lobby-title`, and an explicit `/maps/<slug>?session=1` session-mode view for the current map.
-- `GET /api/sessions/safety` returns a no-secret banner status so the GM can see whether hosting is disabled, local, LAN, remote, or unknown before sharing a join code.
+- `GET /api/sessions/safety` returns a no-secret banner status so the GM can see whether hosting is disabled, local, LAN, remote, or unknown before sharing a join code. When hosting is enabled it also warns if no active session-local GM key/join code exists yet, if a remote/proxied request appears before session start, or if an active session record is missing expected credentials or authoritative state.
 - `POST /api/sessions/start` creates a session-local GM identity, join code, initial authoritative state, and local JSON snapshot when session hosting is explicitly enabled.
 - `POST /api/sessions/join` creates a session-local player ID/client ID/display name from a valid join code.
 - `POST /api/sessions/manage` lets the GM refresh the read-only lobby summary with joined players, connected-client presence records, assignment counts, and the join code.
@@ -19,11 +19,13 @@ The lobby must not autosave whole maps, grant players map-edit authority, expose
 
 ## Safety and identity rules
 
-Session hosting is disabled by default. Start the app with the exact flag before using the lobby endpoints:
+Session hosting is disabled by default. Start the app with a guarded helper before using the lobby endpoints:
 
 ```bash
-ROTOM_ENABLE_SESSION_HOST=1 npm run dev
+npm run dev:session:lan
 ```
+
+The helper sets the exact `ROTOM_ENABLE_SESSION_HOST=1` runtime flag for Nuxt. For same-machine-only smoke tests, the manual equivalent is `ROTOM_ENABLE_SESSION_HOST=1 npm run dev`; for LAN and named-tunnel safe defaults, prefer the runtime scripts guide.
 
 Important boundaries:
 
@@ -36,32 +38,32 @@ Important boundaries:
 
 ## Expected LAN usage for the lobby slice
 
-For the current lobby slice, the expected table shape is still GM-hosted and LAN-first:
+For detailed same-network setup and troubleshooting, use the [Track 2 LAN hosting runbook](track-2-lan-hosting.md). For the current lobby slice, the expected table shape is still GM-hosted and LAN-first:
 
 1. The GM runs Rotom Table on their own machine or a small machine they control.
-2. Session hosting is explicitly enabled with `ROTOM_ENABLE_SESSION_HOST=1`.
+2. Session hosting is explicitly enabled with `ROTOM_ENABLE_SESSION_HOST=1`, typically via `npm run dev:session:lan` for LAN smoke testing.
 3. Players on the same Wi-Fi/LAN open the GM machine's private address in a browser, for example `http://192.168.1.42:3000/sessions`.
 4. The GM verifies the `/sessions` safety banner before sharing the join code.
 5. Players join with the code and a display name; the server creates session-local player/client identity and keeps authoritative state on the GM host.
 
-When testing LAN access in development, bind the dev server to the LAN interface:
+When testing LAN access in development, bind the dev server to the LAN interface with the helper:
 
 ```bash
-ROTOM_ENABLE_SESSION_HOST=1 npm run dev -- --host 0.0.0.0
+npm run dev:session:lan
 ```
 
 Use the URL printed by Nuxt or the GM machine's private IP address. If a browser cannot connect, check that both devices are on the same network and that the GM machine's firewall allows the dev-server port. Stop the server or unset `ROTOM_ENABLE_SESSION_HOST` after the smoke test.
 
-Remote campaign play should use a named Cloudflare Tunnel with a stable hostname in later hosting docs. Quick Tunnel may be mentioned only as a temporary development smoke-test option and must not be treated as the supported campaign path.
+Remote campaign play should use the [Track 2 named Cloudflare Tunnel runbook](track-2-cloudflare-tunnel-hosting.md) with a stable hostname. Quick Tunnel may be mentioned only as a temporary development smoke-test option, must not be treated as the supported campaign path, and is documented in the [Track 2 Quick Tunnel caveat](track-2-quick-tunnel-caveat.md).
 
 ## GM flow
 
 1. Start the app with session hosting enabled.
 2. In the GM browser, open `/login` and choose **GM Login**.
 3. Open `/sessions` from the navigation.
-4. Read the safety banner. Do not share a join code if the exposure is surprising.
+4. Read the safety banner. Do not share a join code if the exposure is surprising. A no-active-session warning is expected before the GM starts a session; missing-credential, missing-state, or unknown-readiness warnings are blockers.
 5. Press **Start GM session**.
-6. Confirm the lobby shows a session ID, revision `0`, and a player join code.
+6. Confirm the lobby shows a session ID, revision `0`, a player join code, and safety readiness that is no longer missing session-local credentials or authoritative state.
 7. Share only the join code and the app URL with trusted players.
 8. Use **Refresh lobby** after players join to confirm they appear in the joined-player list.
 9. From a map view, expand the map navigation rail and use **Open session map** only when you intentionally want that route to use `?session=1` and WebSocket commands. The plain `/maps/<slug>` route remains local-first.
@@ -98,7 +100,7 @@ Use one GM browser and one separate player browser/profile. Do not commit any ge
 
 ### Enabled GM start
 
-- [ ] Restart with `ROTOM_ENABLE_SESSION_HOST=1 npm run dev` for same-machine testing, or `ROTOM_ENABLE_SESSION_HOST=1 npm run dev -- --host 0.0.0.0` for LAN testing.
+- [ ] Restart with `ROTOM_ENABLE_SESSION_HOST=1 npm run dev` for same-machine testing, or `npm run dev:session:lan` for LAN testing.
 - [ ] GM browser: choose **GM Login** at `/login`.
 - [ ] GM browser: open `/sessions` directly or from the map navigation rail **Start/manage session** shortcut and verify the safety banner classification matches the expected host (`local` for localhost, `lan` for a private IP).
 - [ ] GM browser: press **Start GM session**.

@@ -2,7 +2,7 @@
 
 This guide explains how the current Track 2 client slice lets local-first map editing and session-authoritative play coexist. It also gives player-safe recovery steps for disconnects, stale state, and command conflicts.
 
-It is not a LAN runbook, named Cloudflare Tunnel runbook, public authentication guide, or deployment hardening checklist. Hosting operations remain separate; this document focuses on what a browser sees after the GM has explicitly enabled session hosting and started or joined a table session.
+It is not a LAN runbook, named Cloudflare Tunnel runbook, public authentication guide, or deployment hardening checklist. Hosting operations remain separate; this document focuses on what a browser sees after the GM has explicitly enabled session hosting and started or joined a table session. For guarded startup helpers, see the [Track 2 session host runtime scripts](track-2-session-host-runtime.md). For remote setup with a stable hostname, see the [Track 2 named Cloudflare Tunnel runbook](track-2-cloudflare-tunnel-hosting.md). For the two-player LAN/named-tunnel smoke covering reconnect, token movement, initiative, and conflict rejection, see the [Track 2 deployment smoke checklist](track-2-deployment-smoke-checklist.md). For temporary `trycloudflare.com` smoke-test caveats and legacy SSE limitations, see the [Track 2 Quick Tunnel caveat](track-2-quick-tunnel-caveat.md).
 
 ## Short version
 
@@ -16,11 +16,13 @@ Open the plain map route for local editing. Open the explicit `?session=1` route
 
 ## Entry points and identity
 
-1. Start the app with the explicit host flag when the GM wants session hosting:
+1. Start the app with a guarded helper when the GM wants session hosting:
 
    ```bash
-   ROTOM_ENABLE_SESSION_HOST=1 npm run dev
+   npm run dev:session:lan
    ```
+
+   For a named Cloudflare Tunnel, use `npm run dev:session:tunnel`; for same-machine-only development, the manual equivalent remains `ROTOM_ENABLE_SESSION_HOST=1 npm run dev`.
 
 2. The GM uses `/sessions#gm-lobby-title` to start or manage a session. The response includes session-local GM identity and a player join code; the page should not expose the GM key in generic page chrome.
 3. A player uses `/sessions#player-lobby-title` with the join code and a display name. The server returns a session-local `playerId`, `clientId`, and safe display name.
@@ -108,11 +110,11 @@ For retryable stale/conflict cases, prefer the banner refresh action before retr
 Use the local multi-tab smoke helper when validating this client-integration slice:
 
 ```bash
-ROTOM_ENABLE_SESSION_HOST=1 npm run dev
+npm run dev:session:lan
 npm run smoke:session:multi-tab -- --map <map-slug>
 ```
 
-The helper opens or prints the GM lobby, player lobby, plain local map route, and explicit session map route. The corresponding [multi-tab smoke checklist](track-2-multi-tab-smoke.md) covers token propagation, rejection/reconnect guidance, local-mode comparison, and cleanup without committing private runtime data.
+The helper opens or prints the GM lobby, player lobby, plain local map route, and explicit session map route. The corresponding [multi-tab smoke checklist](track-2-multi-tab-smoke.md) covers token propagation, rejection/reconnect guidance, local-mode comparison, and cleanup without committing private runtime data. For cross-device same-Wi-Fi setup and troubleshooting, use the [Track 2 LAN hosting runbook](track-2-lan-hosting.md). For remote players over a stable hostname, use the [Track 2 named Cloudflare Tunnel runbook](track-2-cloudflare-tunnel-hosting.md). Do not use Quick Tunnel for campaign play; see the [Track 2 Quick Tunnel caveat](track-2-quick-tunnel-caveat.md) for the temporary development-only boundary.
 
 Focused automated coverage currently lives in:
 
@@ -130,4 +132,4 @@ Focused automated coverage currently lives in:
 - The session view must not expose GM keys, raw join-code secrets outside the lobby, hidden maps, hidden sheets, raw snapshots, tunnel credentials, or private campaign data.
 - Track 1 render quality and local map functionality should remain unchanged. The session/local state split is additive and guarded by the explicit query flag.
 
-See the [Track 2 session protocol](track-2-session-protocol.md) for protocol contracts, the [Track 2 WebSocket protocol](track-2-websocket-protocol.md) for live transport details, the [Track 2 table action commands](track-2-table-action-commands.md) for command behaviours, the [Track 2 session lobby guide](track-2-session-lobby.md) for start/join flow, and the [Track 2 multi-tab smoke guide](track-2-multi-tab-smoke.md) for a local browser checklist.
+See the [Track 2 session protocol](track-2-session-protocol.md) for protocol contracts, the [Track 2 WebSocket protocol](track-2-websocket-protocol.md) for live transport details, the [Track 2 table action commands](track-2-table-action-commands.md) for command behaviours, the [Track 2 session lobby guide](track-2-session-lobby.md) for start/join flow, the [Track 2 LAN hosting runbook](track-2-lan-hosting.md) for same-network hosting, the [Track 2 named Cloudflare Tunnel runbook](track-2-cloudflare-tunnel-hosting.md) for stable-hostname remote hosting, the [Track 2 deployment smoke checklist](track-2-deployment-smoke-checklist.md) for two-player deployment checks, the [Track 2 Quick Tunnel caveat](track-2-quick-tunnel-caveat.md) for temporary smoke-test limits and legacy SSE caveats, and the [Track 2 multi-tab smoke guide](track-2-multi-tab-smoke.md) for a local browser checklist.

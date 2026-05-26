@@ -24,19 +24,25 @@ Nuxt will print the local URL, usually `http://localhost:3000`. Open the app and
 
 ## Track 2 session lobby smoke testing
 
-Session hosting is disabled by default. To smoke-test the current Track 2 lobby on one machine, start the app with the explicit runtime flag:
+Session hosting is disabled by default. Plain `npm run dev` keeps Track 2 session endpoints and sockets fail-closed. Use the guarded helper that matches the smoke path:
 
 ```bash
-ROTOM_ENABLE_SESSION_HOST=1 npm run dev
+npm run dev:session:lan
 ```
 
-For a same-Wi-Fi/LAN lobby smoke test, bind the dev server to the LAN interface and have players open the GM machine's private URL:
+LAN mode sets `ROTOM_ENABLE_SESSION_HOST=1` for the Nuxt child process and binds to `0.0.0.0:3000` so players on the same trusted private network can open the GM machine's URL. For a named Cloudflare Tunnel smoke, prefer loopback binding:
 
 ```bash
-ROTOM_ENABLE_SESSION_HOST=1 npm run dev -- --host 0.0.0.0
+npm run dev:session:tunnel
 ```
 
-See [Track 2 session lobby and manual QA](track-2-session-lobby.md) for the GM/player join flow, safety boundaries, and two-browser checklist. For the client-integration smoke that opens GM/player session-map tabs and checks basic token command propagation, use:
+The manual LAN equivalent remains:
+
+```bash
+ROTOM_ENABLE_SESSION_HOST=1 npm run dev -- --host 0.0.0.0 --port 3000
+```
+
+See [Track 2 session host runtime scripts](track-2-session-host-runtime.md) for helper options, safe defaults, and shutdown notes. See [Track 2 public exposure checks](track-2-public-exposure-checks.md) for no-secret safety banner warnings around public/LAN startup before session-local credentials and authoritative state are ready. See [Track 2 LAN hosting runbook](track-2-lan-hosting.md) for same-Wi-Fi setup, IP discovery, player browser URLs, and troubleshooting. See [Track 2 named Cloudflare Tunnel runbook](track-2-cloudflare-tunnel-hosting.md) for stable-hostname remote setup, WebSocket considerations, safety warnings, and rollback steps. See [Track 2 deployment smoke checklist](track-2-deployment-smoke-checklist.md) for the two-player LAN/named-tunnel pass covering reconnect, token movement, initiative, and conflict rejection. See [Track 2 Quick Tunnel caveat](track-2-quick-tunnel-caveat.md) before using any temporary `trycloudflare.com` URL; Quick Tunnel is development smoke-test only and does not make legacy SSE a supported session transport. See [Track 2 security review](track-2-security-review.md) for trust boundaries, join-code limits, tunnel exposure risks, and non-hardened areas. See [Track 2 dependency and runtime review](track-2-dependency-runtime-review.md) for the reviewed package/runtime boundaries, exact session-host flag, Node/Nitro compatibility, and Cloudflare assumptions. See [Track 2 session lobby and manual QA](track-2-session-lobby.md) for the GM/player join flow, safety boundaries, and two-browser checklist. For the client-integration smoke that opens GM/player session-map tabs and checks basic token command propagation, use:
 
 ```bash
 npm run smoke:session:multi-tab -- --map <map-slug>
@@ -107,7 +113,7 @@ The app edits local JSON files during development:
 
 Nuxt/Vite are configured to ignore app-written sheet/map data changes so autosaves do not trigger full page reloads while editing. If you edit files outside the browser, refresh the relevant page or restart the dev server if the UI does not reflect the change.
 
-`.gitignore` is configured to keep personal campaign data and Track 2 session runtime files out of the repository by default. Before committing, check `git status` and make sure private campaign data, real player details, session snapshots/event logs, credentials, and unreleased story notes are not included. See [Track 2 session storage](track-2-session-storage.md) for snapshot/event-log backup and recovery guidance.
+`.gitignore` is configured to keep personal campaign data and Track 2 session runtime files out of the repository by default. Before committing, check `git status` and make sure private campaign data, real player details, session snapshots/event logs, credentials, and unreleased story notes are not included. See [Track 2 session storage](track-2-session-storage.md) for snapshot/event-log layout details, [Track 2 session backup and recovery](track-2-session-backup-recovery.md) for private archive/restore guidance, and [Track 2 security review](track-2-security-review.md) for no-secret data-handling boundaries.
 
 ## Production write limitations
 

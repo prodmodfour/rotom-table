@@ -2,7 +2,7 @@
 
 Track 2 session storage is local operational data for a GM-hosted table session. It exists so the server can recover authoritative session state after reconnects, restarts, or crashes without adding hosted database infrastructure or letting live browsers become the source of truth.
 
-This document describes the storage layout introduced by the Track 2 state/persistence work. It is an operations and recovery guide, not a claim that later lobby, WebSocket, or command routes are complete yet.
+This document describes the storage layout introduced by the Track 2 state/persistence work. It is an operations and recovery guide, not a claim that later lobby, WebSocket, or command routes are complete yet. For step-by-step private archive, restore, and recovery procedures, see the [Track 2 session backup and recovery runbook](track-2-session-backup-recovery.md).
 
 ## Storage principles
 
@@ -64,7 +64,7 @@ Synthetic fixtures for tests are acceptable only when they use fake data and liv
 
 ## Backup guidance
 
-For a recoverable campaign backup, copy the whole local data set that the session may reference, not just the latest session file:
+The dedicated [Track 2 session backup and recovery runbook](track-2-session-backup-recovery.md) has the current operator checklist and example archive commands. In short, for a recoverable campaign backup, copy the whole local data set that the session may reference, not just the latest session file:
 
 - `data/sessions/<sessionId>/` for Track 2 snapshots and optional event logs;
 - `data/maps/`, `data/sheets/`, and `data/trainers/` for local campaign documents that may still be referenced by session state;

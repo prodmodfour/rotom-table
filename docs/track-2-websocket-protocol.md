@@ -19,7 +19,9 @@ Session WebSockets use the same explicit host opt-in as the Track 2 HTTP session
 ROTOM_ENABLE_SESSION_HOST=1
 ```
 
-Unless that exact flag is set, `/api/sessions/socket` fails closed and does not admit live session clients. This protects the existing trust-based local GM/player role picker from silently becoming public authentication.
+For local development hosting, use `npm run dev:session:lan` for same-Wi-Fi play or `npm run dev:session:tunnel` before starting a named Cloudflare Tunnel; see [Track 2 session host runtime scripts](track-2-session-host-runtime.md) for the safe bindings and manual equivalents.
+
+Unless that exact flag is set in the Nuxt process, `/api/sessions/socket` fails closed and does not admit live session clients. This protects the existing trust-based local GM/player role picker from silently becoming public authentication.
 
 Clients resolve the route relative to the current browser origin:
 
@@ -532,11 +534,11 @@ No session data should be sent to a socket before hello/auth, and no presence, p
 
 ## Legacy SSE boundary
 
-`GET /api/events` remains the legacy Server-Sent Events channel for local-first, non-session map/sheet/library updates. It is not used for Track 2 session commands, acknowledgements, rejections, presence, heartbeat, reconnect, or session patches. Existing local workflows may still carry whole saved map/sheet payloads over SSE; live sessions must use `/api/sessions/socket` and server-authoritative commands instead.
+`GET /api/events` remains the legacy Server-Sent Events channel for local-first, non-session map/sheet/library updates. It is not used for Track 2 session commands, acknowledgements, rejections, presence, heartbeat, reconnect, or session patches. Existing local workflows may still carry whole saved map/sheet payloads over SSE; live sessions must use `/api/sessions/socket` and server-authoritative commands instead. The [Track 2 Quick Tunnel caveat](track-2-quick-tunnel-caveat.md) documents why a temporary `trycloudflare.com` URL does not make legacy SSE a supported public session transport.
 
 ## Named Cloudflare Tunnel expectations
 
-LAN remains the primary supported Track 2 hosting path. For remote players, the supported path is a named Cloudflare Tunnel with a stable hostname pointing to the private GM-hosted Rotom Table server.
+LAN remains the primary supported Track 2 hosting path. For same-Wi-Fi startup commands, IP discovery, player browser paths, and network troubleshooting, use the [Track 2 LAN hosting runbook](track-2-lan-hosting.md). For remote players, use the [Track 2 named Cloudflare Tunnel runbook](track-2-cloudflare-tunnel-hosting.md): the supported path is a named Cloudflare Tunnel with a stable hostname pointing to the private GM-hosted Rotom Table server. For the end-to-end deployment smoke that exercises two players, reconnect, token movement, initiative, and conflict rejection in either mode, use the [Track 2 deployment smoke checklist](track-2-deployment-smoke-checklist.md).
 
 WebSocket-specific expectations for that named tunnel:
 
@@ -548,7 +550,9 @@ WebSocket-specific expectations for that named tunnel:
 - handle tunnel/proxy closure by reconnecting with `lastSeenRevision` and accepting snapshot fallback when replay is unavailable;
 - do not commit tunnel credentials, tokens, private hostnames that should remain private, real `.env` files, GM keys, join codes, snapshots, or event logs.
 
-Quick Tunnel is not the supported campaign-session deployment path. It may be useful only for temporary development smoke tests, and any use should be documented as unstable, ad hoc, and unsuitable for regular campaign play.
+See the [Track 2 security review](track-2-security-review.md) for the broader trust boundaries, join-code limits, tunnel exposure risks, and non-hardened areas, and the [Track 2 dependency and runtime review](track-2-dependency-runtime-review.md) for Node/Nitro WebSocket compatibility plus Cloudflare tunnel assumptions.
+
+Quick Tunnel is not the supported campaign-session deployment path. It may be useful only for temporary development smoke tests, and any use should be documented as unstable, ad hoc, and unsuitable for regular campaign play. See the [Track 2 Quick Tunnel caveat](track-2-quick-tunnel-caveat.md) for the allowed smoke-test boundary, cleanup expectations, and legacy SSE limitations.
 
 ## Manual chunk-04 smoke expectations
 
@@ -571,14 +575,20 @@ A transport-only smoke check should verify:
 3. neither patch carries whole-map fields such as `placements` or `fieldEffects`;
 4. the server-owned session/map revisions, persisted snapshot calls, socket revision tracking, and authoritative token position/facing all advance to revision 2.
 
-This automated fake-peer smoke test complements the local browser helper in [Track 2 multi-tab local smoke script](track-2-multi-tab-smoke.md). Together they cover server-authoritative two-client command/fanout behaviour plus the GM/player session-map tab flow before later LAN and named-tunnel operational checks.
+This automated fake-peer smoke test complements the local browser helper in [Track 2 multi-tab local smoke script](track-2-multi-tab-smoke.md). Together they cover server-authoritative two-client command/fanout behaviour plus the GM/player session-map tab flow before the LAN/named-tunnel deployment checks in [Track 2 deployment smoke checklist](track-2-deployment-smoke-checklist.md).
 
 ## Related docs
 
 - [Track 2 session protocol](track-2-session-protocol.md)
 - [Track 2 session lobby and manual QA](track-2-session-lobby.md)
+- [Track 2 LAN hosting runbook](track-2-lan-hosting.md)
+- [Track 2 named Cloudflare Tunnel runbook](track-2-cloudflare-tunnel-hosting.md)
+- [Track 2 deployment smoke checklist](track-2-deployment-smoke-checklist.md)
+- [Track 2 Quick Tunnel caveat](track-2-quick-tunnel-caveat.md)
 - [Track 2 multi-tab local smoke script](track-2-multi-tab-smoke.md)
 - [Track 2 session storage](track-2-session-storage.md)
+- [Track 2 security review](track-2-security-review.md)
+- [Track 2 dependency and runtime review](track-2-dependency-runtime-review.md)
 - [Track 2 validation matrix](track-2-validation-matrix.md)
 - [ADR 002: LAN first and named Cloudflare Tunnel second](adrs/002-lan-first-named-cloudflare-tunnel.md)
 - [ADR 003: WebSocket session transport](adrs/003-websocket-session-transport.md)
