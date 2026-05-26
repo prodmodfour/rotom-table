@@ -17,27 +17,48 @@ import {
 } from '#shared/sessionPermissions'
 import { parseSessionRevision, type SessionRevision } from '#shared/sessionRevisions'
 import {
+  DELETE_TOKEN_COMMAND_SCOPE_FIELD,
+  DELETE_TOKEN_COMMAND_TYPE,
+  DELETE_TOKEN_COMMAND_VALIDATION_CODES,
   MOVE_TOKEN_COMMAND_SCOPE_FIELD,
   MOVE_TOKEN_COMMAND_TYPE,
   MOVE_TOKEN_COMMAND_VALIDATION_CODES,
   SESSION_TOKEN_FACING_DIRECTIONS,
+  SPAWN_TOKEN_COMMAND_SCOPE_FIELD,
+  SPAWN_TOKEN_COMMAND_TYPE,
+  SPAWN_TOKEN_COMMAND_VALIDATION_CODES,
   TURN_TOKEN_COMMAND_SCOPE_FIELD,
   TURN_TOKEN_COMMAND_TYPE,
   TURN_TOKEN_COMMAND_VALIDATION_CODES,
+  assertValidDeleteTokenCommand,
   assertValidMoveTokenCommand,
+  assertValidSpawnTokenCommand,
   assertValidTurnTokenCommand,
+  createDeleteTokenCommandScope,
   createMoveTokenCommandScope,
+  createSpawnTokenCommandScope,
   createTurnTokenCommandScope,
+  isDeleteTokenCommandValidationCode,
   isMoveTokenCommandValidationCode,
   isMoveTokenPosition,
   isSessionTokenFacingDirection,
+  isSpawnTokenCommandValidationCode,
+  isSpawnTokenPlacementPayload,
   isTurnTokenCommandValidationCode,
+  validateDeleteTokenCommand,
   validateMoveTokenCommand,
+  validateSpawnTokenCommand,
   validateTurnTokenCommand,
+  type DeleteTokenCommand,
+  type DeleteTokenCommandPayload,
+  type DeleteTokenCommandValidationCode,
   type MoveTokenCommand,
   type MoveTokenCommandPayload,
   type MoveTokenCommandValidationCode,
   type MoveTokenGridPosition,
+  type SpawnTokenCommand,
+  type SpawnTokenCommandPayload,
+  type SpawnTokenCommandValidationCode,
   type TurnTokenCommand,
   type TurnTokenCommandPayload,
   type TurnTokenCommandValidationCode,
@@ -137,6 +158,46 @@ const buildTurnTokenCommand = (
   payload: {
     tokenId: 'token-pikachu',
     facing: 'north-west',
+    ...overrides,
+  },
+})
+
+const buildSpawnTokenCommand = (
+  overrides: Partial<SpawnTokenCommandPayload['placement']> = {},
+  actor: PlayerSessionActor | GmSessionActor = gmActor,
+): SpawnTokenCommand<typeof actor> => ({
+  schemaVersion: SESSION_COMMAND_ENVELOPE_VERSION,
+  sessionId,
+  actor,
+  type: SPAWN_TOKEN_COMMAND_TYPE,
+  opId,
+  baseRevision: parseSessionRevision(7),
+  scopes: [createSpawnTokenCommandScope(tokenResource)],
+  payload: {
+    placement: {
+      id: 'token-pikachu',
+      sheetKind: 'pokemon',
+      sheetSlug: 'pikachu',
+      position: { x: 4, y: 1, z: 6 },
+      facing: 'south-east',
+      ...overrides,
+    },
+  },
+})
+
+const buildDeleteTokenCommand = (
+  overrides: Partial<DeleteTokenCommandPayload> = {},
+  actor: PlayerSessionActor | GmSessionActor = gmActor,
+): DeleteTokenCommand<typeof actor> => ({
+  schemaVersion: SESSION_COMMAND_ENVELOPE_VERSION,
+  sessionId,
+  actor,
+  type: DELETE_TOKEN_COMMAND_TYPE,
+  opId,
+  baseRevision: parseSessionRevision(7),
+  scopes: [createDeleteTokenCommandScope(tokenResource)],
+  payload: {
+    tokenId: 'token-pikachu',
     ...overrides,
   },
 })
@@ -431,5 +492,175 @@ describe('turnToken command contract and validator', () => {
     })
     expect(() => assertValidTurnTokenCommand(unassignedCommand, { assignments }, 'test turn'))
       .toThrow('test turn is invalid')
+  })
+})
+
+describe('spawnToken command contract and validator', () => {
+  it('defines the GM-only spawnToken command, payload, and token spawn scope helper', () => {
+    const payload = {
+      placement: {
+        id: 'token-pikachu',
+        sheetKind: 'pokemon',
+        sheetSlug: 'pikachu',
+        position: { x: 4, y: 1, z: 6 },
+        facing: 'south-east',
+      },
+    } as const satisfies SpawnTokenCommandPayload
+    const scope = createSpawnTokenCommandScope(tokenResource)
+
+    expect(SPAWN_TOKEN_COMMAND_TYPE).toBe('spawnToken')
+    expect(SPAWN_TOKEN_COMMAND_SCOPE_FIELD).toBe('spawn')
+    expect(SPAWN_TOKEN_COMMAND_VALIDATION_CODES).toContain('permission-denied')
+    expect(isSpawnTokenCommandValidationCode('invalid-sheet-kind')).toBe(true)
+    expect(isSpawnTokenCommandValidationCode('invalid-op-id')).toBe(false)
+    expect(isSpawnTokenPlacementPayload(payload.placement)).toBe(true)
+    expect(scope).toEqual({
+      lane: 'token',
+      resource: tokenResource,
+      field: 'spawn',
+      mapSlug: 'viridian-gym',
+    })
+
+    expectTypeOf<(typeof SPAWN_TOKEN_COMMAND_VALIDATION_CODES)[number]>()
+      .toEqualTypeOf<SpawnTokenCommandValidationCode>()
+  })
+
+  it('accepts valid GM spawnToken commands and rejects player actors as unauthorized', () => {
+    const gmCommand = buildSpawnTokenCommand()
+    const gmResult = validateSpawnTokenCommand(gmCommand)
+    const playerCommand = buildSpawnTokenCommand({}, playerActor)
+    const playerResult = validateSpawnTokenCommand(playerCommand)
+
+    expect(gmResult.valid).toBe(true)
+    if (!gmResult.valid) throw new Error('expected GM spawnToken command to validate')
+    expect(gmResult.command).toBe(gmCommand)
+    expect(gmResult.payload).toEqual(gmCommand.payload)
+    expect(gmResult.resource).toEqual(tokenResource)
+    expect(gmResult.permission).toMatchObject({ allowed: true, role: 'gm' })
+    expect(assertValidSpawnTokenCommand(gmCommand)).toBe(gmCommand)
+    expectTypeOf(gmResult.command).toMatchTypeOf<SessionCommandEnvelope<'spawnToken'>>()
+
+    expect(playerResult.valid).toBe(false)
+    expect(playerResult).toMatchObject({
+      permission: { allowed: false, reason: 'gm-required', role: 'player' },
+    })
+  })
+
+  it('validates spawnToken payload shape and matching token spawn scope', () => {
+    const invalidPayloadCommand = {
+      ...buildSpawnTokenCommand(),
+      payload: {
+        placement: {
+          id: '',
+          sheetKind: 'item',
+          sheetSlug: '',
+          position: { x: -1, y: 1.5, z: Number.NaN },
+          facing: 'north',
+          initiative: 1.25,
+        },
+      },
+    }
+    const invalidScopeCommand = {
+      ...buildSpawnTokenCommand(),
+      scopes: [createMoveTokenCommandScope(tokenResource)],
+    }
+
+    const payloadResult = validateSpawnTokenCommand(invalidPayloadCommand)
+    const payloadIssueByPath = new Map(payloadResult.issues.map((issue) => [issue.path, issue]))
+    const scopeResult = validateSpawnTokenCommand(invalidScopeCommand)
+
+    expect(payloadResult.valid).toBe(false)
+    expect(payloadIssueByPath.get('payload.placement.id')?.code).toBe('invalid-token-id')
+    expect(payloadIssueByPath.get('payload.placement.sheetKind')?.code).toBe('invalid-sheet-kind')
+    expect(payloadIssueByPath.get('payload.placement.sheetSlug')?.code).toBe('invalid-sheet-slug')
+    expect(payloadIssueByPath.get('payload.placement.position.x')?.code).toBe('invalid-position')
+    expect(payloadIssueByPath.get('payload.placement.position.y')?.code).toBe('invalid-position')
+    expect(payloadIssueByPath.get('payload.placement.position.z')?.code).toBe('invalid-position')
+    expect(payloadIssueByPath.get('payload.placement.facing')?.code).toBe('invalid-facing')
+    expect(payloadIssueByPath.get('payload.placement.initiative')?.code).toBe('invalid-initiative')
+    expect(scopeResult.valid).toBe(false)
+    expect(scopeResult.issues).toMatchObject([
+      {
+        path: 'scopes',
+        code: 'invalid-token-scope',
+      },
+    ])
+  })
+})
+
+describe('deleteToken command contract and validator', () => {
+  it('defines the GM-only deleteToken command, payload, and token delete scope helper', () => {
+    const payload = {
+      tokenId: 'token-pikachu',
+    } as const satisfies DeleteTokenCommandPayload
+    const scope = createDeleteTokenCommandScope(tokenResource)
+
+    expect(DELETE_TOKEN_COMMAND_TYPE).toBe('deleteToken')
+    expect(DELETE_TOKEN_COMMAND_SCOPE_FIELD).toBe('delete')
+    expect(DELETE_TOKEN_COMMAND_VALIDATION_CODES).toContain('permission-denied')
+    expect(isDeleteTokenCommandValidationCode('invalid-token-id')).toBe(true)
+    expect(isDeleteTokenCommandValidationCode('invalid-position')).toBe(false)
+    expect(scope).toEqual({
+      lane: 'token',
+      resource: tokenResource,
+      field: 'delete',
+      mapSlug: 'viridian-gym',
+    })
+
+    expectTypeOf<(typeof DELETE_TOKEN_COMMAND_VALIDATION_CODES)[number]>()
+      .toEqualTypeOf<DeleteTokenCommandValidationCode>()
+    expectTypeOf(payload).toMatchTypeOf<DeleteTokenCommandPayload>()
+  })
+
+  it('accepts valid GM deleteToken commands and rejects player actors as unauthorized', () => {
+    const gmCommand = buildDeleteTokenCommand()
+    const gmResult = validateDeleteTokenCommand(gmCommand)
+    const playerCommand = buildDeleteTokenCommand({}, playerActor)
+    const playerResult = validateDeleteTokenCommand(playerCommand)
+
+    expect(gmResult.valid).toBe(true)
+    if (!gmResult.valid) throw new Error('expected GM deleteToken command to validate')
+    expect(gmResult.command).toBe(gmCommand)
+    expect(gmResult.payload).toEqual({ tokenId: 'token-pikachu' })
+    expect(gmResult.resource).toEqual(tokenResource)
+    expect(gmResult.permission).toMatchObject({ allowed: true, role: 'gm' })
+    expect(assertValidDeleteTokenCommand(gmCommand)).toBe(gmCommand)
+    expectTypeOf(gmResult.command).toMatchTypeOf<SessionCommandEnvelope<'deleteToken'>>()
+
+    expect(playerResult.valid).toBe(false)
+    expect(playerResult).toMatchObject({
+      permission: { allowed: false, reason: 'gm-required', role: 'player' },
+    })
+  })
+
+  it('validates deleteToken payload shape and matching token delete scope', () => {
+    const invalidPayloadCommand = {
+      ...buildDeleteTokenCommand(),
+      type: 'spawnToken',
+      payload: {
+        tokenId: '',
+      },
+    }
+    const invalidScopeCommand = {
+      ...buildDeleteTokenCommand(),
+      scopes: [createTurnTokenCommandScope(tokenResource)],
+    }
+
+    const payloadResult = validateDeleteTokenCommand(invalidPayloadCommand)
+    const payloadIssueByPath = new Map(payloadResult.issues.map((issue) => [issue.path, issue]))
+    const scopeResult = validateDeleteTokenCommand(invalidScopeCommand)
+
+    expect(payloadResult.valid).toBe(false)
+    expect(payloadIssueByPath.get('type')?.code).toBe('invalid-command-type')
+    expect(payloadIssueByPath.get('payload.tokenId')?.code).toBe('invalid-token-id')
+    expect(scopeResult.valid).toBe(false)
+    expect(scopeResult.issues).toMatchObject([
+      {
+        path: 'scopes',
+        code: 'invalid-token-scope',
+      },
+    ])
+    expect(() => assertValidDeleteTokenCommand(invalidScopeCommand, {}, 'test delete'))
+      .toThrow('test delete is invalid')
   })
 })

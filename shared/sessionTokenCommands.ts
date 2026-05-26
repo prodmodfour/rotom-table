@@ -9,6 +9,7 @@ import {
 } from './sessionCommandValidation'
 import {
   canActorControlResource,
+  canUseGmAuthority,
   type PermissionDenied,
   type PermissionResult,
   type PlayerAssignmentRecord,
@@ -16,13 +17,19 @@ import {
   type SessionTokenResourceRef,
 } from './sessionPermissions'
 import type { SessionRevision } from './sessionRevisions'
-import { isSheetKind } from './sheets'
+import { isSheetKind, type SheetKind } from './sheets'
 
 export const MOVE_TOKEN_COMMAND_TYPE = 'moveToken' as const
 export const MOVE_TOKEN_COMMAND_SCOPE_FIELD = 'position' as const
 
 export const TURN_TOKEN_COMMAND_TYPE = 'turnToken' as const
 export const TURN_TOKEN_COMMAND_SCOPE_FIELD = 'facing' as const
+
+export const SPAWN_TOKEN_COMMAND_TYPE = 'spawnToken' as const
+export const SPAWN_TOKEN_COMMAND_SCOPE_FIELD = 'spawn' as const
+
+export const DELETE_TOKEN_COMMAND_TYPE = 'deleteToken' as const
+export const DELETE_TOKEN_COMMAND_SCOPE_FIELD = 'delete' as const
 
 export const SESSION_TOKEN_FACING_DIRECTIONS = [
   'south-east',
@@ -51,6 +58,23 @@ export interface TurnTokenCommandPayload {
   readonly facing: SessionTokenFacingDirection
 }
 
+export interface SpawnTokenPlacementPayload {
+  readonly id: string
+  readonly sheetKind: SheetKind
+  readonly sheetSlug: string
+  readonly position: MoveTokenPosition
+  readonly facing?: SessionTokenFacingDirection
+  readonly initiative?: number | null
+}
+
+export interface SpawnTokenCommandPayload {
+  readonly placement: SpawnTokenPlacementPayload
+}
+
+export interface DeleteTokenCommandPayload {
+  readonly tokenId: string
+}
+
 export type MoveTokenCommand<
   TActor extends SessionActor = SessionActor,
 > = SessionCommandEnvelope<
@@ -65,6 +89,24 @@ export type TurnTokenCommand<
 > = SessionCommandEnvelope<
   typeof TURN_TOKEN_COMMAND_TYPE,
   TurnTokenCommandPayload,
+  TActor,
+  SessionRevision
+>
+
+export type SpawnTokenCommand<
+  TActor extends SessionActor = SessionActor,
+> = SessionCommandEnvelope<
+  typeof SPAWN_TOKEN_COMMAND_TYPE,
+  SpawnTokenCommandPayload,
+  TActor,
+  SessionRevision
+>
+
+export type DeleteTokenCommand<
+  TActor extends SessionActor = SessionActor,
+> = SessionCommandEnvelope<
+  typeof DELETE_TOKEN_COMMAND_TYPE,
+  DeleteTokenCommandPayload,
   TActor,
   SessionRevision
 >
@@ -92,6 +134,33 @@ export const TURN_TOKEN_COMMAND_VALIDATION_CODES = [
 
 export type TurnTokenCommandValidationCode =
   (typeof TURN_TOKEN_COMMAND_VALIDATION_CODES)[number]
+
+export const SPAWN_TOKEN_COMMAND_VALIDATION_CODES = [
+  'invalid-command-type',
+  'invalid-payload',
+  'invalid-token-id',
+  'invalid-sheet-kind',
+  'invalid-sheet-slug',
+  'invalid-position',
+  'invalid-facing',
+  'invalid-initiative',
+  'invalid-token-scope',
+  'permission-denied',
+] as const
+
+export type SpawnTokenCommandValidationCode =
+  (typeof SPAWN_TOKEN_COMMAND_VALIDATION_CODES)[number]
+
+export const DELETE_TOKEN_COMMAND_VALIDATION_CODES = [
+  'invalid-command-type',
+  'invalid-payload',
+  'invalid-token-id',
+  'invalid-token-scope',
+  'permission-denied',
+] as const
+
+export type DeleteTokenCommandValidationCode =
+  (typeof DELETE_TOKEN_COMMAND_VALIDATION_CODES)[number]
 
 export interface MoveTokenCommandValidationContext {
   /**
@@ -151,13 +220,61 @@ export type TurnTokenCommandValidationResult<
   TActor extends SessionActor = SessionActor,
 > = TurnTokenCommandValidationSuccess<TActor> | TurnTokenCommandValidationFailure
 
+export interface SpawnTokenCommandValidationContext {}
+
+export interface SpawnTokenCommandValidationSuccess<
+  TActor extends SessionActor = SessionActor,
+> {
+  readonly valid: true
+  readonly command: SpawnTokenCommand<TActor>
+  readonly payload: SpawnTokenCommandPayload
+  readonly resource: SessionTokenResourceRef
+  readonly permission: Extract<PermissionResult, { readonly allowed: true }>
+  readonly issues: readonly []
+}
+
+export interface SpawnTokenCommandValidationFailure {
+  readonly valid: false
+  readonly issues: readonly SessionCommandValidationIssue[]
+  readonly permission?: PermissionDenied
+}
+
+export type SpawnTokenCommandValidationResult<
+  TActor extends SessionActor = SessionActor,
+> = SpawnTokenCommandValidationSuccess<TActor> | SpawnTokenCommandValidationFailure
+
+export interface DeleteTokenCommandValidationContext {}
+
+export interface DeleteTokenCommandValidationSuccess<
+  TActor extends SessionActor = SessionActor,
+> {
+  readonly valid: true
+  readonly command: DeleteTokenCommand<TActor>
+  readonly payload: DeleteTokenCommandPayload
+  readonly resource: SessionTokenResourceRef
+  readonly permission: Extract<PermissionResult, { readonly allowed: true }>
+  readonly issues: readonly []
+}
+
+export interface DeleteTokenCommandValidationFailure {
+  readonly valid: false
+  readonly issues: readonly SessionCommandValidationIssue[]
+  readonly permission?: PermissionDenied
+}
+
+export type DeleteTokenCommandValidationResult<
+  TActor extends SessionActor = SessionActor,
+> = DeleteTokenCommandValidationSuccess<TActor> | DeleteTokenCommandValidationFailure
+
 type MutableIssueList = SessionCommandValidationIssue[]
 type UnknownRecord = Record<string, unknown>
 
 const EXPECTED_OBJECT = 'object'
 const EXPECTED_NON_EMPTY_STRING = 'non-empty string'
 const EXPECTED_GRID_COORDINATE = 'safe non-negative integer grid coordinate'
+const EXPECTED_SAFE_INTEGER = 'safe integer'
 const EXPECTED_TOKEN_FACING = SESSION_TOKEN_FACING_DIRECTIONS.join(' | ')
+const EXPECTED_SHEET_KIND = 'pokemon | trainer'
 
 const hasOwn = (record: object, key: string): boolean =>
   Object.prototype.hasOwnProperty.call(record, key)
@@ -171,7 +288,7 @@ const describeReceived = (value: unknown): string => {
 const addIssue = (
   issues: MutableIssueList,
   path: string,
-  code: MoveTokenCommandValidationCode,
+  code: string,
   message: string,
   expected?: string,
   received?: unknown,
@@ -201,6 +318,17 @@ const clonePosition = (position: MoveTokenPosition): MoveTokenPosition => ({
   z: position.z,
 })
 
+const cloneSpawnTokenPlacement = (
+  placement: SpawnTokenPlacementPayload,
+): SpawnTokenPlacementPayload => ({
+  id: placement.id,
+  sheetKind: placement.sheetKind,
+  sheetSlug: placement.sheetSlug,
+  position: clonePosition(placement.position),
+  ...(placement.facing === undefined ? {} : { facing: placement.facing }),
+  ...(placement.initiative === undefined ? {} : { initiative: placement.initiative }),
+})
+
 export const isMoveTokenCommandValidationCode = (
   value: unknown,
 ): value is MoveTokenCommandValidationCode =>
@@ -210,6 +338,16 @@ export const isTurnTokenCommandValidationCode = (
   value: unknown,
 ): value is TurnTokenCommandValidationCode =>
   (TURN_TOKEN_COMMAND_VALIDATION_CODES as readonly unknown[]).includes(value)
+
+export const isSpawnTokenCommandValidationCode = (
+  value: unknown,
+): value is SpawnTokenCommandValidationCode =>
+  (SPAWN_TOKEN_COMMAND_VALIDATION_CODES as readonly unknown[]).includes(value)
+
+export const isDeleteTokenCommandValidationCode = (
+  value: unknown,
+): value is DeleteTokenCommandValidationCode =>
+  (DELETE_TOKEN_COMMAND_VALIDATION_CODES as readonly unknown[]).includes(value)
 
 export const isSessionTokenFacingDirection = (
   value: unknown,
@@ -221,6 +359,21 @@ export const isMoveTokenPosition = (value: unknown): value is MoveTokenPosition 
   isGridCoordinate(value.x) &&
   isGridCoordinate(value.y) &&
   isGridCoordinate(value.z)
+
+export const isSpawnTokenPlacementPayload = (
+  value: unknown,
+): value is SpawnTokenPlacementPayload =>
+  isRecord(value) &&
+  isNonEmptyString(value.id) &&
+  isSheetKind(value.sheetKind) &&
+  isNonEmptyString(value.sheetSlug) &&
+  isMoveTokenPosition(value.position) &&
+  (value.facing === undefined || isSessionTokenFacingDirection(value.facing)) &&
+  (
+    value.initiative === undefined ||
+    value.initiative === null ||
+    (typeof value.initiative === 'number' && Number.isSafeInteger(value.initiative))
+  )
 
 export const createMoveTokenCommandScope = (
   resource: SessionTokenResourceRef,
@@ -237,6 +390,24 @@ export const createTurnTokenCommandScope = (
   lane: 'token',
   resource: cloneTokenResource(resource),
   field: TURN_TOKEN_COMMAND_SCOPE_FIELD,
+  ...(resource.mapSlug === undefined ? {} : { mapSlug: resource.mapSlug }),
+})
+
+export const createSpawnTokenCommandScope = (
+  resource: SessionTokenResourceRef,
+): SessionCommandScope => ({
+  lane: 'token',
+  resource: cloneTokenResource(resource),
+  field: SPAWN_TOKEN_COMMAND_SCOPE_FIELD,
+  ...(resource.mapSlug === undefined ? {} : { mapSlug: resource.mapSlug }),
+})
+
+export const createDeleteTokenCommandScope = (
+  resource: SessionTokenResourceRef,
+): SessionCommandScope => ({
+  lane: 'token',
+  resource: cloneTokenResource(resource),
+  field: DELETE_TOKEN_COMMAND_SCOPE_FIELD,
   ...(resource.mapSlug === undefined ? {} : { mapSlug: resource.mapSlug }),
 })
 
@@ -666,6 +837,446 @@ export const assertValidTurnTokenCommand = <
   label = 'turnToken command',
 ): TurnTokenCommand<TActor> => {
   const result = validateTurnTokenCommand<TActor>(value, context)
+  if (result.valid) return result.command
+
+  const summary = result.issues.map((issue) => `${issue.path}: ${issue.message}`).join('; ')
+  throw new Error(`${label} is invalid: ${summary}`)
+}
+
+const addSpawnIssue = (
+  issues: MutableIssueList,
+  path: string,
+  code: SpawnTokenCommandValidationCode,
+  message: string,
+  expected?: string,
+  received?: unknown,
+): void => {
+  issues.push({
+    path,
+    code,
+    message,
+    ...(expected === undefined ? {} : { expected }),
+    ...(received === undefined ? {} : { received: describeReceived(received) }),
+  })
+}
+
+const addDeleteIssue = (
+  issues: MutableIssueList,
+  path: string,
+  code: DeleteTokenCommandValidationCode,
+  message: string,
+  expected?: string,
+  received?: unknown,
+): void => {
+  issues.push({
+    path,
+    code,
+    message,
+    ...(expected === undefined ? {} : { expected }),
+    ...(received === undefined ? {} : { received: describeReceived(received) }),
+  })
+}
+
+const collectSpawnTokenPayloadIssues = (
+  payload: unknown,
+  issues: MutableIssueList,
+): SpawnTokenCommandPayload | undefined => {
+  if (!isRecord(payload)) {
+    addSpawnIssue(
+      issues,
+      'payload',
+      'invalid-payload',
+      'spawnToken payload must be an object.',
+      EXPECTED_OBJECT,
+      payload,
+    )
+    return undefined
+  }
+
+  if (!isRecord(payload.placement)) {
+    addSpawnIssue(
+      issues,
+      'payload.placement',
+      'invalid-payload',
+      'spawnToken payload.placement must be an object.',
+      EXPECTED_OBJECT,
+      payload.placement,
+    )
+    return undefined
+  }
+
+  const placement = payload.placement
+  const tokenId = placement.id
+  const sheetKind = placement.sheetKind
+  const sheetSlug = placement.sheetSlug
+
+  if (!isNonEmptyString(tokenId)) {
+    addSpawnIssue(
+      issues,
+      'payload.placement.id',
+      'invalid-token-id',
+      'spawnToken payload.placement.id must be a non-empty token ID string.',
+      EXPECTED_NON_EMPTY_STRING,
+      tokenId,
+    )
+  }
+
+  if (!isSheetKind(sheetKind)) {
+    addSpawnIssue(
+      issues,
+      'payload.placement.sheetKind',
+      'invalid-sheet-kind',
+      'spawnToken payload.placement.sheetKind must be pokemon or trainer.',
+      EXPECTED_SHEET_KIND,
+      sheetKind,
+    )
+  }
+
+  if (!isNonEmptyString(sheetSlug)) {
+    addSpawnIssue(
+      issues,
+      'payload.placement.sheetSlug',
+      'invalid-sheet-slug',
+      'spawnToken payload.placement.sheetSlug must be a non-empty string.',
+      EXPECTED_NON_EMPTY_STRING,
+      sheetSlug,
+    )
+  }
+
+  if (!isRecord(placement.position)) {
+    addSpawnIssue(
+      issues,
+      'payload.placement.position',
+      'invalid-position',
+      'spawnToken payload.placement.position must be a grid position object.',
+      EXPECTED_OBJECT,
+      placement.position,
+    )
+  } else {
+    for (const axis of ['x', 'y', 'z'] as const) {
+      if (!isGridCoordinate(placement.position[axis])) {
+        addSpawnIssue(
+          issues,
+          `payload.placement.position.${axis}`,
+          'invalid-position',
+          `spawnToken payload.placement.position.${axis} must be a ${EXPECTED_GRID_COORDINATE}.`,
+          EXPECTED_GRID_COORDINATE,
+          placement.position[axis],
+        )
+      }
+    }
+  }
+
+  if (placement.facing !== undefined && !isSessionTokenFacingDirection(placement.facing)) {
+    addSpawnIssue(
+      issues,
+      'payload.placement.facing',
+      'invalid-facing',
+      `spawnToken payload.placement.facing must be one of ${EXPECTED_TOKEN_FACING} when provided.`,
+      EXPECTED_TOKEN_FACING,
+      placement.facing,
+    )
+  }
+
+  if (
+    placement.initiative !== undefined &&
+    placement.initiative !== null &&
+    !(typeof placement.initiative === 'number' && Number.isSafeInteger(placement.initiative))
+  ) {
+    addSpawnIssue(
+      issues,
+      'payload.placement.initiative',
+      'invalid-initiative',
+      'spawnToken payload.placement.initiative must be a safe integer or null when provided.',
+      `${EXPECTED_SAFE_INTEGER} | null`,
+      placement.initiative,
+    )
+  }
+
+  if (issues.some((issue) => issue.path.startsWith('payload.'))) {
+    return undefined
+  }
+
+  return {
+    placement: cloneSpawnTokenPlacement(placement as unknown as SpawnTokenPlacementPayload),
+  }
+}
+
+const findSpawnTokenResource = (
+  command: SpawnTokenCommand,
+  payload: SpawnTokenCommandPayload | undefined,
+  issues: MutableIssueList,
+): SessionTokenResourceRef | undefined => {
+  if (payload === undefined) return undefined
+
+  const matchingTokenScope = command.scopes
+    .map((scope, index) => ({
+      index,
+      scope,
+      resource: tokenResourceFromScope(scope, `scopes[${index}]`, issues, 'spawnToken'),
+    }))
+    .find(({ scope, resource }) =>
+      resource !== undefined &&
+      scope.lane === 'token' &&
+      scope.field === SPAWN_TOKEN_COMMAND_SCOPE_FIELD &&
+      resource.tokenId === payload.placement.id &&
+      (resource.sheetKind === undefined || resource.sheetKind === payload.placement.sheetKind) &&
+      (resource.sheetSlug === undefined || resource.sheetSlug === payload.placement.sheetSlug),
+    )
+
+  if (matchingTokenScope?.resource === undefined) {
+    addSpawnIssue(
+      issues,
+      'scopes',
+      'invalid-token-scope',
+      'spawnToken commands must include a token scope with resource.kind "token", field "spawn", tokenId matching payload.placement.id, and any sheet identity matching payload.placement.',
+      'matching token spawn scope',
+      command.scopes,
+    )
+    return undefined
+  }
+
+  if (
+    hasOwn(matchingTokenScope.scope, 'mapSlug') &&
+    typeof matchingTokenScope.scope.mapSlug === 'string' &&
+    matchingTokenScope.scope.mapSlug.trim().length === 0
+  ) {
+    addSpawnIssue(
+      issues,
+      `scopes[${matchingTokenScope.index}].mapSlug`,
+      'invalid-token-scope',
+      'spawnToken token scope mapSlug must be a non-empty string when provided.',
+      EXPECTED_NON_EMPTY_STRING,
+      matchingTokenScope.scope.mapSlug,
+    )
+  }
+
+  return cloneTokenResource(matchingTokenScope.resource)
+}
+
+const collectDeleteTokenPayloadIssues = (
+  payload: unknown,
+  issues: MutableIssueList,
+): DeleteTokenCommandPayload | undefined => {
+  if (!isRecord(payload)) {
+    addDeleteIssue(
+      issues,
+      'payload',
+      'invalid-payload',
+      'deleteToken payload must be an object.',
+      EXPECTED_OBJECT,
+      payload,
+    )
+    return undefined
+  }
+
+  const tokenId = payload.tokenId
+  if (!isNonEmptyString(tokenId)) {
+    addDeleteIssue(
+      issues,
+      'payload.tokenId',
+      'invalid-token-id',
+      'deleteToken payload.tokenId must be a non-empty token ID string.',
+      EXPECTED_NON_EMPTY_STRING,
+      tokenId,
+    )
+  }
+
+  if (issues.some((issue) => issue.path.startsWith('payload.'))) {
+    return undefined
+  }
+
+  return {
+    tokenId: tokenId as string,
+  }
+}
+
+const findDeleteTokenResource = (
+  command: DeleteTokenCommand,
+  payload: DeleteTokenCommandPayload | undefined,
+  issues: MutableIssueList,
+): SessionTokenResourceRef | undefined => {
+  if (payload === undefined) return undefined
+
+  const matchingTokenScope = command.scopes
+    .map((scope, index) => ({
+      index,
+      scope,
+      resource: tokenResourceFromScope(scope, `scopes[${index}]`, issues, 'deleteToken'),
+    }))
+    .find(({ scope, resource }) =>
+      resource !== undefined &&
+      scope.lane === 'token' &&
+      scope.field === DELETE_TOKEN_COMMAND_SCOPE_FIELD &&
+      resource.tokenId === payload.tokenId,
+    )
+
+  if (matchingTokenScope?.resource === undefined) {
+    addDeleteIssue(
+      issues,
+      'scopes',
+      'invalid-token-scope',
+      'deleteToken commands must include a token scope with resource.kind "token", field "delete", and a tokenId matching payload.tokenId.',
+      'matching token delete scope',
+      command.scopes,
+    )
+    return undefined
+  }
+
+  if (
+    hasOwn(matchingTokenScope.scope, 'mapSlug') &&
+    typeof matchingTokenScope.scope.mapSlug === 'string' &&
+    matchingTokenScope.scope.mapSlug.trim().length === 0
+  ) {
+    addDeleteIssue(
+      issues,
+      `scopes[${matchingTokenScope.index}].mapSlug`,
+      'invalid-token-scope',
+      'deleteToken token scope mapSlug must be a non-empty string when provided.',
+      EXPECTED_NON_EMPTY_STRING,
+      matchingTokenScope.scope.mapSlug,
+    )
+  }
+
+  return cloneTokenResource(matchingTokenScope.resource)
+}
+
+export const validateSpawnTokenCommand = <
+  TActor extends SessionActor = SessionActor,
+>(
+  value: unknown,
+  _context: SpawnTokenCommandValidationContext = {},
+): SpawnTokenCommandValidationResult<TActor> => {
+  const envelopeResult = validateSessionCommandEnvelope<SpawnTokenCommand<TActor>>(value)
+  if (!envelopeResult.valid) {
+    return { valid: false, issues: envelopeResult.issues }
+  }
+
+  const command = envelopeResult.command
+  const issues: MutableIssueList = []
+
+  if (command.type !== SPAWN_TOKEN_COMMAND_TYPE) {
+    addSpawnIssue(
+      issues,
+      'type',
+      'invalid-command-type',
+      'spawnToken validators only accept command envelopes with type "spawnToken".',
+      SPAWN_TOKEN_COMMAND_TYPE,
+      command.type,
+    )
+  }
+
+  const payload = collectSpawnTokenPayloadIssues(command.payload, issues)
+  const resource = findSpawnTokenResource(command, payload, issues)
+  const permission = canUseGmAuthority(command.actor)
+  if (!permission.allowed) {
+    addSpawnIssue(
+      issues,
+      'actor',
+      'permission-denied',
+      permission.message,
+      'GM actor',
+      command.actor,
+    )
+  }
+
+  if (issues.length > 0) {
+    return {
+      valid: false,
+      issues,
+      ...(permission.allowed ? {} : { permission }),
+    }
+  }
+
+  return {
+    valid: true,
+    command,
+    payload: payload as SpawnTokenCommandPayload,
+    resource: resource as SessionTokenResourceRef,
+    permission: permission as Extract<PermissionResult, { readonly allowed: true }>,
+    issues: [],
+  }
+}
+
+export const assertValidSpawnTokenCommand = <
+  TActor extends SessionActor = SessionActor,
+>(
+  value: unknown,
+  context: SpawnTokenCommandValidationContext = {},
+  label = 'spawnToken command',
+): SpawnTokenCommand<TActor> => {
+  const result = validateSpawnTokenCommand<TActor>(value, context)
+  if (result.valid) return result.command
+
+  const summary = result.issues.map((issue) => `${issue.path}: ${issue.message}`).join('; ')
+  throw new Error(`${label} is invalid: ${summary}`)
+}
+
+export const validateDeleteTokenCommand = <
+  TActor extends SessionActor = SessionActor,
+>(
+  value: unknown,
+  _context: DeleteTokenCommandValidationContext = {},
+): DeleteTokenCommandValidationResult<TActor> => {
+  const envelopeResult = validateSessionCommandEnvelope<DeleteTokenCommand<TActor>>(value)
+  if (!envelopeResult.valid) {
+    return { valid: false, issues: envelopeResult.issues }
+  }
+
+  const command = envelopeResult.command
+  const issues: MutableIssueList = []
+
+  if (command.type !== DELETE_TOKEN_COMMAND_TYPE) {
+    addDeleteIssue(
+      issues,
+      'type',
+      'invalid-command-type',
+      'deleteToken validators only accept command envelopes with type "deleteToken".',
+      DELETE_TOKEN_COMMAND_TYPE,
+      command.type,
+    )
+  }
+
+  const payload = collectDeleteTokenPayloadIssues(command.payload, issues)
+  const resource = findDeleteTokenResource(command, payload, issues)
+  const permission = canUseGmAuthority(command.actor)
+  if (!permission.allowed) {
+    addDeleteIssue(
+      issues,
+      'actor',
+      'permission-denied',
+      permission.message,
+      'GM actor',
+      command.actor,
+    )
+  }
+
+  if (issues.length > 0) {
+    return {
+      valid: false,
+      issues,
+      ...(permission.allowed ? {} : { permission }),
+    }
+  }
+
+  return {
+    valid: true,
+    command,
+    payload: payload as DeleteTokenCommandPayload,
+    resource: resource as SessionTokenResourceRef,
+    permission: permission as Extract<PermissionResult, { readonly allowed: true }>,
+    issues: [],
+  }
+}
+
+export const assertValidDeleteTokenCommand = <
+  TActor extends SessionActor = SessionActor,
+>(
+  value: unknown,
+  context: DeleteTokenCommandValidationContext = {},
+  label = 'deleteToken command',
+): DeleteTokenCommand<TActor> => {
+  const result = validateDeleteTokenCommand<TActor>(value, context)
   if (result.valid) return result.command
 
   const summary = result.issues.map((issue) => `${issue.path}: ${issue.message}`).join('; ')

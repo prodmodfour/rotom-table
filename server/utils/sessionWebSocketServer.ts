@@ -28,9 +28,13 @@ import {
   type SessionSnapshotMessage,
 } from '#shared/sessionMessages'
 import {
+  DELETE_TOKEN_COMMAND_TYPE,
   MOVE_TOKEN_COMMAND_TYPE,
+  SPAWN_TOKEN_COMMAND_TYPE,
   TURN_TOKEN_COMMAND_TYPE,
+  type DeleteTokenCommand,
   type MoveTokenCommand,
+  type SpawnTokenCommand,
   type TurnTokenCommand,
 } from '#shared/sessionTokenCommands'
 import type { TabletopMapV2 } from '~/types/map'
@@ -46,6 +50,18 @@ import {
   type ApplyTurnTokenCommandInput,
   type ApplyTurnTokenCommandUseCaseResult,
 } from '../useCases/applyTurnTokenCommand'
+import {
+  applySpawnTokenCommandUseCase,
+  type ApplySpawnTokenCommandDependencies,
+  type ApplySpawnTokenCommandInput,
+  type ApplySpawnTokenCommandUseCaseResult,
+} from '../useCases/applySpawnTokenCommand'
+import {
+  applyDeleteTokenCommandUseCase,
+  type ApplyDeleteTokenCommandDependencies,
+  type ApplyDeleteTokenCommandInput,
+  type ApplyDeleteTokenCommandUseCaseResult,
+} from '../useCases/applyDeleteTokenCommand'
 import { findPlayerAssignment, type SessionActor } from '#shared/sessionPermissions'
 import { isSessionRevision, type SessionRevision } from '#shared/sessionRevisions'
 import {
@@ -206,6 +222,16 @@ export type SessionSocketTurnTokenCommandApplier = (
   dependencies?: ApplyTurnTokenCommandDependencies,
 ) => ApplyTurnTokenCommandUseCaseResult
 
+export type SessionSocketSpawnTokenCommandApplier = (
+  input: ApplySpawnTokenCommandInput,
+  dependencies?: ApplySpawnTokenCommandDependencies,
+) => ApplySpawnTokenCommandUseCaseResult
+
+export type SessionSocketDeleteTokenCommandApplier = (
+  input: ApplyDeleteTokenCommandInput,
+  dependencies?: ApplyDeleteTokenCommandDependencies,
+) => ApplyDeleteTokenCommandUseCaseResult
+
 export type SessionSocketMoveTokenCommandDependencies = Omit<
   ApplyMoveTokenCommandDependencies,
   'env' | 'store' | 'clock'
@@ -213,6 +239,16 @@ export type SessionSocketMoveTokenCommandDependencies = Omit<
 
 export type SessionSocketTurnTokenCommandDependencies = Omit<
   ApplyTurnTokenCommandDependencies,
+  'env' | 'store' | 'clock'
+>
+
+export type SessionSocketSpawnTokenCommandDependencies = Omit<
+  ApplySpawnTokenCommandDependencies,
+  'env' | 'store' | 'clock'
+>
+
+export type SessionSocketDeleteTokenCommandDependencies = Omit<
+  ApplyDeleteTokenCommandDependencies,
   'env' | 'store' | 'clock'
 >
 
@@ -224,8 +260,12 @@ export interface SessionSocketHandlerDependencies<TMapDocument = unknown> {
   readonly clock?: SessionSocketClock
   readonly applyMoveTokenCommand?: SessionSocketMoveTokenCommandApplier
   readonly applyTurnTokenCommand?: SessionSocketTurnTokenCommandApplier
+  readonly applySpawnTokenCommand?: SessionSocketSpawnTokenCommandApplier
+  readonly applyDeleteTokenCommand?: SessionSocketDeleteTokenCommandApplier
   readonly moveTokenCommandDependencies?: SessionSocketMoveTokenCommandDependencies
   readonly turnTokenCommandDependencies?: SessionSocketTurnTokenCommandDependencies
+  readonly spawnTokenCommandDependencies?: SessionSocketSpawnTokenCommandDependencies
+  readonly deleteTokenCommandDependencies?: SessionSocketDeleteTokenCommandDependencies
 }
 
 type MutablePendingSessionSocketConnection = {
@@ -248,8 +288,12 @@ interface ResolvedSessionSocketHandlerDependencies<TMapDocument = unknown> {
   readonly clock: SessionSocketClock
   readonly applyMoveTokenCommand: SessionSocketMoveTokenCommandApplier
   readonly applyTurnTokenCommand: SessionSocketTurnTokenCommandApplier
+  readonly applySpawnTokenCommand: SessionSocketSpawnTokenCommandApplier
+  readonly applyDeleteTokenCommand: SessionSocketDeleteTokenCommandApplier
   readonly moveTokenCommandDependencies: SessionSocketMoveTokenCommandDependencies
   readonly turnTokenCommandDependencies: SessionSocketTurnTokenCommandDependencies
+  readonly spawnTokenCommandDependencies: SessionSocketSpawnTokenCommandDependencies
+  readonly deleteTokenCommandDependencies: SessionSocketDeleteTokenCommandDependencies
 }
 
 interface SessionSocketHandshakeFailure {
@@ -661,8 +705,12 @@ const resolveDependencies = <TMapDocument>(
   clock: dependencies.clock ?? defaultSessionSocketClock,
   applyMoveTokenCommand: dependencies.applyMoveTokenCommand ?? applyMoveTokenCommandUseCase,
   applyTurnTokenCommand: dependencies.applyTurnTokenCommand ?? applyTurnTokenCommandUseCase,
+  applySpawnTokenCommand: dependencies.applySpawnTokenCommand ?? applySpawnTokenCommandUseCase,
+  applyDeleteTokenCommand: dependencies.applyDeleteTokenCommand ?? applyDeleteTokenCommandUseCase,
   moveTokenCommandDependencies: dependencies.moveTokenCommandDependencies ?? {},
   turnTokenCommandDependencies: dependencies.turnTokenCommandDependencies ?? {},
+  spawnTokenCommandDependencies: dependencies.spawnTokenCommandDependencies ?? {},
+  deleteTokenCommandDependencies: dependencies.deleteTokenCommandDependencies ?? {},
 })
 
 const sendJson = (peer: SessionSocketPeerLike, value: unknown): void => {
@@ -1423,10 +1471,15 @@ const handleAuthenticatedSocketCommand = <TMapDocument>(
 ): void => {
   const command = commandMessage.command
 
-  if (command.type !== MOVE_TOKEN_COMMAND_TYPE && command.type !== TURN_TOKEN_COMMAND_TYPE) {
+  if (
+    command.type !== MOVE_TOKEN_COMMAND_TYPE &&
+    command.type !== TURN_TOKEN_COMMAND_TYPE &&
+    command.type !== SPAWN_TOKEN_COMMAND_TYPE &&
+    command.type !== DELETE_TOKEN_COMMAND_TYPE
+  ) {
     sendJson(peer, createSessionSocketErrorMessage({
       code: 'unsupported-message',
-      message: 'Track 2 session WebSocket command dispatch currently supports moveToken and turnToken commands only.',
+      message: 'Track 2 session WebSocket command dispatch currently supports moveToken, turnToken, spawnToken, and deleteToken commands only.',
       retryable: false,
       sessionId: connection.sessionId,
       currentRevision: connection.currentRevision,
@@ -1434,7 +1487,11 @@ const handleAuthenticatedSocketCommand = <TMapDocument>(
     return
   }
 
-  let applied: ApplyMoveTokenCommandUseCaseResult | ApplyTurnTokenCommandUseCaseResult
+  let applied:
+    | ApplyMoveTokenCommandUseCaseResult
+    | ApplyTurnTokenCommandUseCaseResult
+    | ApplySpawnTokenCommandUseCaseResult
+    | ApplyDeleteTokenCommandUseCaseResult
   try {
     if (command.type === MOVE_TOKEN_COMMAND_TYPE) {
       applied = dependencies.applyMoveTokenCommand({
@@ -1445,11 +1502,29 @@ const handleAuthenticatedSocketCommand = <TMapDocument>(
         store: dependencies.store as unknown as InMemorySessionStore<AuthoritativeSessionState<TabletopMapV2>>,
         clock: () => receivedAt,
       })
-    } else {
+    } else if (command.type === TURN_TOKEN_COMMAND_TYPE) {
       applied = dependencies.applyTurnTokenCommand({
         command: command as TurnTokenCommand,
       }, {
         ...dependencies.turnTokenCommandDependencies,
+        env: dependencies.env,
+        store: dependencies.store as unknown as InMemorySessionStore<AuthoritativeSessionState<TabletopMapV2>>,
+        clock: () => receivedAt,
+      })
+    } else if (command.type === SPAWN_TOKEN_COMMAND_TYPE) {
+      applied = dependencies.applySpawnTokenCommand({
+        command: command as SpawnTokenCommand,
+      }, {
+        ...dependencies.spawnTokenCommandDependencies,
+        env: dependencies.env,
+        store: dependencies.store as unknown as InMemorySessionStore<AuthoritativeSessionState<TabletopMapV2>>,
+        clock: () => receivedAt,
+      })
+    } else {
+      applied = dependencies.applyDeleteTokenCommand({
+        command: command as DeleteTokenCommand,
+      }, {
+        ...dependencies.deleteTokenCommandDependencies,
         env: dependencies.env,
         store: dependencies.store as unknown as InMemorySessionStore<AuthoritativeSessionState<TabletopMapV2>>,
         clock: () => receivedAt,
