@@ -9,7 +9,7 @@ This document describes the transport slice that exists after the WebSocket tran
 - the server validates hello, heartbeat, and command frame shapes before dispatch;
 - same-session fanout exists for presence, command results, patches, and snapshots;
 - reconnect currently falls back to an authoritative snapshot when replay is unavailable;
-- command-specific handlers such as `moveToken` are still later tickets, so accepted/rejected command examples below are the contract those handlers must follow rather than proof that token commands already apply.
+- the shared `moveToken` command payload contract and validator exist, but command-specific application/broadcast/client handlers are still later tickets, so accepted/rejected examples below are the contract those handlers must follow rather than proof that token movement already applies.
 
 ## Route, runtime gate, and URL shape
 
@@ -252,7 +252,7 @@ GM snapshots can include the full server-owned state. Player snapshots are filte
 
 ## Command flow
 
-The client sends a command envelope inside a client `command` message. The envelope includes the authenticated actor, an `opId`, `baseRevision`, scope lanes, and a JSON payload. The `moveToken` example below is illustrative until token command tickets define the exact payload and validator.
+The client sends a command envelope inside a client `command` message. The envelope includes the authenticated actor, an `opId`, `baseRevision`, scope lanes, and a JSON payload. The `moveToken` example below matches the shared payload validator, while server application and broadcasts remain later token-command work.
 
 ```json
 {
@@ -280,12 +280,12 @@ The client sends a command envelope inside a client `command` message. The envel
           "kind": "token",
           "tokenId": "token_pikachu",
           "mapSlug": "viridian-gym"
-        }
+        },
+        "field": "position"
       }
     ],
     "payload": {
       "tokenId": "token_pikachu",
-      "mapSlug": "viridian-gym",
       "to": { "x": 5, "y": 8, "z": 0 }
     },
     "metadata": {
