@@ -6,13 +6,13 @@ Status: Accepted
 
 ## Context
 
-Rotom Table is local-first: campaign maps, sheets, generated data, and related table state are files owned by the person running the app. Track 2 adds a GM-hosted session authority, but it does not change the product into a hosted database service. The session server still runs on the GM's machine or another small machine they control.
+Rotom Table is local-first: campaign maps, sheets, generated data, and related table state are files owned by the person running the app. Live session adds a GM-hosted session authority, but it does not change the product into a hosted database service. The session server still runs on the GM's machine or another small machine they control.
 
 Live sessions need recoverable state for reconnects, restarts, crashes, and manual backups. At the same time, persistence must not reintroduce live client whole-map last-writer-wins saves, and it must not require Postgres, Redis, Durable Objects, or another cloud persistence layer.
 
 ## Decision
 
-Track 2 persists session state as **local JSON snapshots**, with an **optional append-only JSON-lines event log** for replay, audit, and recovery assistance.
+Live session persists session state as **local JSON snapshots**, with an **optional append-only JSON-lines event log** for replay, audit, and recovery assistance.
 
 A session snapshot is the latest server-authoritative representation of one session. It is written by the GM-hosted server after accepted authoritative changes, not by arbitrary browser clients. The snapshot includes enough information to resume or reconcile the session, such as session identity metadata, selected map state, players, assignments, connected-client-independent presence data, current revision, recent processed `opId` results, and command/resource metadata needed for safe reconnect behaviour.
 
@@ -22,7 +22,7 @@ All session persistence remains local-first JSON under app-owned local data path
 
 ## Snapshot contents
 
-The TypeScript snapshot types are defined in the Track 2 implementation, and every persisted snapshot is shaped around authoritative session state rather than client document edits. A snapshot should include:
+The TypeScript snapshot types are defined in the live-session implementation, and every persisted snapshot is shaped around authoritative session state rather than client document edits. A snapshot should include:
 
 - schema/version information for validation and migrations;
 - `sessionId` and non-account session metadata;
@@ -93,7 +93,7 @@ Session persistence is local operational data, not source code. Storage docs and
 
 - snapshot and event-log directories are outside committed source fixtures or are ignored by git;
 - generated/private campaign data is never added to the repository;
-- backups are explicit GM-controlled file backups, not automatic cloud replication introduced by Track 2;
+- backups are explicit GM-controlled file backups, not automatic cloud replication introduced by Live session;
 - logs do not print GM keys, join codes, private tokens, or full secret values unnecessarily;
 - named Cloudflare Tunnel hosting does not change where session state is stored;
 - Quick Tunnel remains development smoke-test only and does not alter persistence expectations.
@@ -102,7 +102,7 @@ Session persistence is local operational data, not source code. Storage docs and
 
 ### Hosted database persistence
 
-Rejected for Track 2. Postgres, Redis, Durable Objects, managed document databases, and SaaS persistence conflict with the locked GM-hosted local-first architecture.
+Rejected for Live session. Postgres, Redis, Durable Objects, managed document databases, and SaaS persistence conflict with the locked GM-hosted local-first architecture.
 
 ### Client-owned whole-map saves for live recovery
 
@@ -132,7 +132,7 @@ Rejected. Tests may use synthetic fixtures, but real snapshots, logs, campaign m
 
 ## Validation notes
 
-Reviewers can validate this ADR by checking that Track 2 work:
+Reviewers can validate this ADR by checking that live-session work:
 
 - writes session snapshots from server-authoritative state only;
 - uses atomic temp-file-and-rename semantics for latest snapshots;

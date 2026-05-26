@@ -108,7 +108,7 @@ export type HazardCommandValidationCode =
   (typeof HAZARD_COMMAND_VALIDATION_CODES)[number]
 
 export interface HazardCommandValidationContext {
-  /** Hazard placement/removal is GM-only in Track 2; this context is reserved for future table policy. */
+  /** Hazard placement/removal is GM-only in live session mode; this context is reserved for future table policy. */
   readonly assignments?: readonly unknown[]
 }
 

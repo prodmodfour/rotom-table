@@ -7,13 +7,13 @@ import playerStateRoute from '~~/server/api/sessions/player-state.post'
 import startRoute from '~~/server/api/sessions/start.post'
 import { SESSION_HOST_ENABLE_ENV } from '~~/server/utils/sessionHosting'
 
-const disabledMessage = 'Track 2 session hosting is disabled. Set ROTOM_ENABLE_SESSION_HOST=1 to enable session endpoints.'
+const disabledMessage = 'live session hosting is disabled. Set ROTOM_ENABLE_SESSION_HOST=1 to enable session endpoints.'
 
 type SessionRouteHandler = EventHandler<EventHandlerRequest, unknown>
 
 const invokeRoute = async (handler: SessionRouteHandler) => handler({} as H3Event)
 
-describe('Track 2 session endpoint runtime gate', () => {
+describe('live session endpoint runtime gate', () => {
   it('fails closed before lobby endpoint handlers read or mutate session state', async () => {
     vi.stubEnv(SESSION_HOST_ENABLE_ENV, '')
 

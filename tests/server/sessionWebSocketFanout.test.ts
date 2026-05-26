@@ -207,7 +207,7 @@ const playerHello = (): SessionClientHelloMessage => ({
   reconnect: false,
 })
 
-describe('session WebSocket fanout', () => {
+describe('session socket fanout', () => {
   it('fans out presence to authenticated peers in the same session only', () => {
     const registry = createInMemorySessionSocketRegistry()
     const peers = createInMemorySessionSocketPeerRegistry()

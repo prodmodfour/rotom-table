@@ -288,21 +288,21 @@ const getActiveInitiativeRecord = (
   if (record === undefined) {
     throw new ApplyInitiativeCommandUseCaseError(
       404,
-      'No Track 2 table session was found for the supplied initiative command',
+      'No live session was found for the supplied initiative command',
     )
   }
 
   if (record.status !== 'active') {
     throw new ApplyInitiativeCommandUseCaseError(
       409,
-      'The Track 2 table session must be active before initiative commands can apply',
+      'The live session must be active before initiative commands can apply',
     )
   }
 
   if (record.state === undefined) {
     throw new ApplyInitiativeCommandUseCaseError(
       500,
-      'The Track 2 table session has no authoritative state available for initiative commands',
+      'The live session has no authoritative state available for initiative commands',
     )
   }
 
@@ -950,7 +950,7 @@ export const applyInitiativeCommandUseCase = (
   if (updatedRecord === undefined) {
     throw new ApplyInitiativeCommandUseCaseError(
       409,
-      'The Track 2 table session ended before initiative could apply',
+      'The live session ended before initiative could apply',
     )
   }
 

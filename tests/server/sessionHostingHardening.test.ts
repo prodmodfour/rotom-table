@@ -39,7 +39,7 @@ type FakePeer = SessionSocketPeerLike & {
 }
 
 const disabledMessage =
-  'Track 2 session hosting is disabled. Set ROTOM_ENABLE_SESSION_HOST=1 to enable session endpoints.'
+  'live session hosting is disabled. Set ROTOM_ENABLE_SESSION_HOST=1 to enable session endpoints.'
 
 const repoPath = (relativePath: string): string => resolve(process.cwd(), relativePath)
 const readRepoText = (relativePath: string): string => readFileSync(repoPath(relativePath), 'utf8')
@@ -104,7 +104,7 @@ const guardedSessionRoutes = [
   },
 ] as const
 
-describe('Track 2 hosting hardening regression coverage', () => {
+describe('live session hosting hardening regression coverage', () => {
   afterEach(() => {
     sessionStore.clear()
     vi.unstubAllEnvs()
@@ -143,12 +143,12 @@ describe('Track 2 hosting hardening regression coverage', () => {
     }
   })
 
-  it('keeps the session WebSocket disabled by default and closes disabled opens without registering peers', async () => {
+  it('keeps the session socket disabled by default and closes disabled opens without registering peers', async () => {
     for (const value of [undefined, '', 'true', 'yes', 'on'] as const) {
       const env = value === undefined ? {} : { [SESSION_HOST_ENABLE_ENV]: value }
       const response = handleSessionSocketUpgrade(makeUpgradeRequest(), { env })
 
-      expect(response, `${String(value)} should reject WebSocket upgrades`).toBeInstanceOf(Response)
+      expect(response, `${String(value)} should reject session socket upgrades`).toBeInstanceOf(Response)
       expect(response?.status).toBe(SESSION_SOCKET_DISABLED_STATUS)
       expect(await response?.text()).toBe(SESSION_SOCKET_DISABLED_MESSAGE)
     }

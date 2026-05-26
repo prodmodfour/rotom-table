@@ -1,6 +1,6 @@
 # Performance benchmark scenarios
 
-Track 1 performance PRs should compare the same scenario before and after the change. These scenarios define the map categories to exercise; they intentionally avoid private campaign data and do not require lowering visual quality, disabling effects, or changing rules to produce better numbers.
+Map rendering performance PRs should compare the same scenario before and after the change. These scenarios define the map categories to exercise; they intentionally avoid private campaign data and do not require lowering visual quality, disabling effects, or changing rules to produce better numbers.
 
 Use `?debug=render`, `?debug=render-metrics`, or `?debug=isometric-render` on map routes when collecting debug overlay values. If a metric is not available yet, record `N/A` rather than changing the scenario.
 

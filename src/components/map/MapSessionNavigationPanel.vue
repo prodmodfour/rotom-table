@@ -18,7 +18,7 @@ const model = computed(() => buildMapSessionNavigationModel({
 
 <template>
   <section class="map-session-navigation" aria-labelledby="map-session-navigation-title">
-    <p class="map-session-navigation__eyebrow">Track 2</p>
+    <p class="map-session-navigation__eyebrow">Live session</p>
     <h2 id="map-session-navigation-title">{{ model.heading }}</h2>
     <p class="map-session-navigation__summary">{{ model.summary }}</p>
     <p
@@ -28,7 +28,7 @@ const model = computed(() => buildMapSessionNavigationModel({
       {{ model.statusLabel }}
     </p>
 
-    <div class="map-session-navigation__links" aria-label="Session navigation shortcuts">
+    <div class="map-session-navigation__links" aria-label="Live session navigation shortcuts">
       <NuxtLink
         v-for="link in model.links"
         :key="link.key"

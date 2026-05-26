@@ -24,7 +24,7 @@ export const SESSION_SOCKET_READY_STATE_CLOSED = 3 as const
 export const SESSION_SOCKET_DEFAULT_MAX_QUEUE_SIZE = 100 as const
 export const SESSION_SOCKET_HEARTBEAT_TIMEOUT_CLOSE_CODE = 1008 as const
 export const SESSION_SOCKET_HEARTBEAT_TIMEOUT_CLOSE_REASON =
-  'Session WebSocket heartbeat timed out.' as const
+  'Session socket heartbeat timed out.' as const
 
 export type SessionSocketStatus =
   | 'idle'
@@ -175,7 +175,7 @@ export const resolveSessionSocketUrl = (
   location: SessionSocketLocationLike | undefined = getBrowserLocation(),
 ): string => {
   const requested = input.trim()
-  if (requested.length === 0) throw new Error('Session WebSocket URL is required')
+  if (requested.length === 0) throw new Error('Session socket URL is required')
   if (requested.startsWith('ws://') || requested.startsWith('wss://')) return requested
 
   if (requested.startsWith('http://') || requested.startsWith('https://')) {
@@ -198,7 +198,7 @@ export const resolveSessionSocketUrl = (
 const defaultSerialize = <TMessage>(message: TMessage): string => {
   const serialized = JSON.stringify(message)
   if (typeof serialized !== 'string') {
-    throw new Error('Session WebSocket messages must be JSON-serializable')
+    throw new Error('Session socket messages must be JSON-serializable')
   }
   return serialized
 }
@@ -422,7 +422,7 @@ export const useSessionSocket = <
       } catch (error) {
         remaining.push(...sendQueueItems.value.slice(index))
         status.value = 'error'
-        lastError.value = normalizeErrorMessage(error, 'Failed to flush queued session WebSocket message.')
+        lastError.value = normalizeErrorMessage(error, 'Failed to flush queued session socket message.')
         break
       }
     }
@@ -454,7 +454,7 @@ export const useSessionSocket = <
     if (socket.value !== messageSocket) return
 
     if (typeof event.data !== 'string') {
-      lastError.value = 'Received a non-text session WebSocket message.'
+      lastError.value = 'Received a non-text session socket message.'
       return
     }
 
@@ -496,14 +496,14 @@ export const useSessionSocket = <
       }
       for (const handler of messageHandlers) handler(parsed, event.data)
     } catch (error) {
-      lastError.value = normalizeErrorMessage(error, 'Unable to parse session WebSocket message.')
+      lastError.value = normalizeErrorMessage(error, 'Unable to parse session socket message.')
     }
   }
 
   const handleError = (errorSocket: SessionSocketLike, event: unknown) => {
     if (socket.value !== errorSocket) return
     status.value = 'error'
-    lastError.value = normalizeErrorMessage(event, 'Session WebSocket connection error.')
+    lastError.value = normalizeErrorMessage(event, 'Session socket connection error.')
   }
 
   const handleClose = (closedSocket: SessionSocketLike, event: SessionSocketCloseEventLike) => {
@@ -540,7 +540,7 @@ export const useSessionSocket = <
 
     if (WebSocketConstructor === null) {
       status.value = 'unavailable'
-      lastError.value = 'WebSocket is not available in this runtime.'
+      lastError.value = 'Session socket is not available in this runtime.'
       return false
     }
 
@@ -549,7 +549,7 @@ export const useSessionSocket = <
       url = resolveSessionSocketUrl(options.url ?? SESSION_API_PATHS.socket, options.location)
     } catch (error) {
       status.value = 'error'
-      lastError.value = normalizeErrorMessage(error, 'Unable to resolve session WebSocket URL.')
+      lastError.value = normalizeErrorMessage(error, 'Unable to resolve session socket URL.')
       return false
     }
 
@@ -578,7 +578,7 @@ export const useSessionSocket = <
     } catch (error) {
       socket.value = null
       status.value = 'error'
-      lastError.value = normalizeErrorMessage(error, 'Unable to open session WebSocket connection.')
+      lastError.value = normalizeErrorMessage(error, 'Unable to open session socket connection.')
       return false
     }
   }
@@ -588,7 +588,7 @@ export const useSessionSocket = <
     serialized: string,
   ): SessionSocketSendResult<TClientMessage> => {
     if (sendQueueItems.value.length >= maxQueueSize) {
-      const messageText = `Session WebSocket send queue is full (${maxQueueSize} messages).`
+      const messageText = `Session socket send queue is full (${maxQueueSize} messages).`
       lastError.value = messageText
       return { ok: false, reason: 'queue-full', message: messageText }
     }
@@ -609,7 +609,7 @@ export const useSessionSocket = <
     try {
       serialized = serialize(message)
     } catch (error) {
-      const messageText = normalizeErrorMessage(error, 'Unable to serialize session WebSocket message.')
+      const messageText = normalizeErrorMessage(error, 'Unable to serialize session socket message.')
       lastError.value = messageText
       return { ok: false, reason: 'serialization-failed', message: messageText }
     }
@@ -621,7 +621,7 @@ export const useSessionSocket = <
       currentSocket.send(serialized)
       return { ok: true, delivery: 'sent', serialized }
     } catch (error) {
-      const messageText = normalizeErrorMessage(error, 'Unable to send session WebSocket message.')
+      const messageText = normalizeErrorMessage(error, 'Unable to send session socket message.')
       status.value = 'error'
       lastError.value = messageText
       return { ok: false, reason: 'send-failed', message: messageText }
@@ -733,7 +733,7 @@ export const useSessionSocket = <
     } catch (error) {
       socket.value = null
       status.value = 'error'
-      lastError.value = normalizeErrorMessage(error, 'Unable to close session WebSocket connection.')
+      lastError.value = normalizeErrorMessage(error, 'Unable to close session socket connection.')
     }
   }
 
@@ -749,7 +749,7 @@ export const useSessionSocket = <
           currentSocket.close(1000, 'session socket cleanup')
         }
       } catch (error) {
-        lastError.value = normalizeErrorMessage(error, 'Unable to clean up session WebSocket connection.')
+        lastError.value = normalizeErrorMessage(error, 'Unable to clean up session socket connection.')
       }
     }
     if (status.value !== 'unavailable') status.value = 'closed'

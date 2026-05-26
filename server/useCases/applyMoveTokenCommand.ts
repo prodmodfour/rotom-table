@@ -287,21 +287,21 @@ const getActiveMoveTokenRecord = (
   if (record === undefined) {
     throw new ApplyMoveTokenCommandUseCaseError(
       404,
-      'No Track 2 table session was found for the supplied moveToken command',
+      'No live session was found for the supplied moveToken command',
     )
   }
 
   if (record.status !== 'active') {
     throw new ApplyMoveTokenCommandUseCaseError(
       409,
-      'The Track 2 table session must be active before moveToken commands can apply',
+      'The live session must be active before moveToken commands can apply',
     )
   }
 
   if (record.state === undefined) {
     throw new ApplyMoveTokenCommandUseCaseError(
       500,
-      'The Track 2 table session has no authoritative state available for moveToken commands',
+      'The live session has no authoritative state available for moveToken commands',
     )
   }
 
@@ -919,7 +919,7 @@ export const applyMoveTokenCommandUseCase = (
   if (updatedRecord === undefined) {
     throw new ApplyMoveTokenCommandUseCaseError(
       409,
-      'The Track 2 table session ended before moveToken could apply',
+      'The live session ended before moveToken could apply',
     )
   }
 

@@ -106,7 +106,7 @@ const allocateUniqueSessionId = <TMapDocument>(
 
   throw new StartGmSessionUseCaseError(
     503,
-    'Unable to allocate a unique session ID for a new table session',
+    'Unable to allocate a unique session ID for a new live session',
   )
 }
 
@@ -122,7 +122,7 @@ const allocateUniqueJoinCode = <TMapDocument>(
 
   throw new StartGmSessionUseCaseError(
     503,
-    'Unable to allocate a unique player join code for a new table session',
+    'Unable to allocate a unique player join code for a new live session',
   )
 }
 

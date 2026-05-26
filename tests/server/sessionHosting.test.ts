@@ -20,7 +20,7 @@ describe('session hosting runtime gate', () => {
 
   it('throws an HTTP-compatible fail-closed error when disabled', () => {
     expect(() => assertSessionHostEnabled({})).toThrowErrorMatchingInlineSnapshot(
-      `[SessionHostDisabledError: Track 2 session hosting is disabled. Set ROTOM_ENABLE_SESSION_HOST=1 to enable session endpoints.]`,
+      `[SessionHostDisabledError: live session hosting is disabled. Set ROTOM_ENABLE_SESSION_HOST=1 to enable session endpoints.]`,
     )
 
     try {

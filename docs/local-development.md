@@ -22,9 +22,9 @@ npm run dev
 
 Nuxt will print the local URL, usually `http://localhost:3000`. Open the app and choose **GM Login** or **Player Login**. The selected role is stored in the `rotom-role` cookie.
 
-## Track 2 session lobby smoke testing
+## live session lobby smoke testing
 
-Session hosting is disabled by default. Plain `npm run dev` keeps Track 2 session endpoints and sockets fail-closed. Use the guarded helper that matches the smoke path:
+Session hosting is disabled by default. Plain `npm run dev` keeps live session endpoints and sockets fail-closed. Use the guarded helper that matches the smoke path:
 
 ```bash
 npm run dev:session:lan
@@ -42,13 +42,13 @@ The manual LAN equivalent remains:
 ROTOM_ENABLE_SESSION_HOST=1 npm run dev -- --host 0.0.0.0 --port 3000
 ```
 
-See [Track 2 session host runtime scripts](track-2-session-host-runtime.md) for helper options, safe defaults, and shutdown notes. See [Track 2 public exposure checks](track-2-public-exposure-checks.md) for no-secret safety banner warnings around public/LAN startup before session-local credentials and authoritative state are ready. See [Track 2 LAN hosting runbook](track-2-lan-hosting.md) for same-Wi-Fi setup, IP discovery, player browser URLs, and troubleshooting. See [Track 2 named Cloudflare Tunnel runbook](track-2-cloudflare-tunnel-hosting.md) for stable-hostname remote setup, WebSocket considerations, safety warnings, and rollback steps. See [Track 2 deployment smoke checklist](track-2-deployment-smoke-checklist.md) for the two-player LAN/named-tunnel pass covering reconnect, token movement, initiative, and conflict rejection, [Track 2 LAN manual smoke results](track-2-lan-manual-smoke-results.md) for the recorded ticket 091 browser-client LAN pass, and [Track 2 concurrency benchmark notes](track-2-concurrency-benchmark-notes.md) for final latency-sensitive behaviour observations and known performance limits. See [Track 2 Quick Tunnel caveat](track-2-quick-tunnel-caveat.md) before using any temporary `trycloudflare.com` URL; Quick Tunnel is development smoke-test only and does not make legacy SSE a supported session transport. See [Track 2 security review](track-2-security-review.md) for trust boundaries, join-code limits, tunnel exposure risks, and non-hardened areas. See [Track 2 dependency and runtime review](track-2-dependency-runtime-review.md) for the reviewed package/runtime boundaries, exact session-host flag, Node/Nitro compatibility, and Cloudflare assumptions. See [Track 2 session lobby and manual QA](track-2-session-lobby.md) for the GM/player join flow, safety boundaries, and two-browser checklist. For the client-integration smoke that opens GM/player session-map tabs and checks basic token command propagation, use:
+See [live session host runtime scripts](live-session-host-runtime.md) for helper options, safe defaults, and shutdown notes. See [Live session public exposure checks](live-session-public-exposure-checks.md) for no-secret safety banner warnings around public/LAN startup before session-local credentials and authoritative state are ready. See [Live session LAN hosting runbook](live-session-lan-hosting.md) for same-Wi-Fi setup, IP discovery, player browser URLs, and troubleshooting. See [Live session named Cloudflare Tunnel runbook](live-session-cloudflare-tunnel-hosting.md) for stable-hostname remote setup, WebSocket considerations, safety warnings, and rollback steps. See [Live session deployment smoke checklist](live-session-deployment-smoke-checklist.md) for the two-player LAN/named-tunnel pass covering reconnect, token movement, initiative, and conflict rejection, [Live session LAN manual smoke results](live-session-lan-manual-smoke-results.md) for the recorded browser-client LAN pass, and [Live session concurrency benchmark notes](live-session-concurrency-benchmark-notes.md) for latency-sensitive behaviour observations and known performance limits. See [Live session Quick Tunnel caveat](live-session-quick-tunnel-caveat.md) before using any temporary `trycloudflare.com` URL; Quick Tunnel is development smoke-test only and does not make legacy SSE a supported session transport. See [Live session security review](live-session-security-review.md) for trust boundaries, join-code limits, tunnel exposure risks, and non-hardened areas. See [Live session dependency and runtime review](live-session-dependency-runtime-review.md) for the reviewed package/runtime boundaries, exact session-host flag, Node/Nitro compatibility, and Cloudflare assumptions. See [live session lobby and manual QA](live-session-lobby.md) for the GM/player join flow, safety boundaries, and two-browser checklist. For the client-integration smoke that opens GM/player session-map tabs and checks basic token command propagation, use:
 
 ```bash
 npm run smoke:session:multi-tab -- --map <map-slug>
 ```
 
-The existing local GM/player picker remains a trust switch for local use, not public authentication. For the final Track 2 review of plain `npm run dev`, `/maps/<slug>`, sheet autosave, and legacy SSE local-mode behaviour, see the [Track 2 local-mode no-regression audit](track-2-local-mode-no-regression-audit.md).
+The existing local GM/player picker remains a trust switch for local use, not public authentication. For the live-session review of plain `npm run dev`, `/maps/<slug>`, sheet autosave, and legacy SSE local-mode behaviour, see the [Live session local-mode no-regression audit](live-session-local-mode-no-regression-audit.md).
 
 ## Checks
 
@@ -106,14 +106,14 @@ Encounter generation without `preview` writes generated Pokémon sheets under `d
 The app edits local JSON files during development:
 
 - maps: `data/maps/`
-- Track 2 session snapshots and optional event logs: `data/sessions/`
+- live session snapshots and optional event logs: `data/sessions/`
 - Pokémon sheets: `data/sheets/`
 - trainer sheets: `data/trainers/`
 - encounter tables: `encounter_tables/`
 
 Nuxt/Vite are configured to ignore app-written sheet/map data changes so autosaves do not trigger full page reloads while editing. If you edit files outside the browser, refresh the relevant page or restart the dev server if the UI does not reflect the change.
 
-`.gitignore` is configured to keep personal campaign data and Track 2 session runtime files out of the repository by default. Before committing, check `git status` and make sure private campaign data, real player details, session snapshots/event logs, credentials, and unreleased story notes are not included. See [Track 2 session storage](track-2-session-storage.md) for snapshot/event-log layout details, [Track 2 session backup and recovery](track-2-session-backup-recovery.md) for private archive/restore guidance, [Track 2 final persistence/recovery audit](track-2-final-persistence-recovery-audit.md) for the final snapshot/event-log and hygiene review, and [Track 2 security review](track-2-security-review.md) for no-secret data-handling boundaries.
+`.gitignore` is configured to keep personal campaign data and Live session runtime files out of the repository by default. Before committing, check `git status` and make sure private campaign data, real player details, session snapshots/event logs, credentials, and unreleased story notes are not included. See [live session storage](live-session-storage.md) for snapshot/event-log layout details, [Live session backup and recovery](live-session-backup-recovery.md) for private archive/restore guidance, [Live session persistence/recovery audit](live-session-persistence-recovery-audit.md) for the snapshot/event-log and hygiene review, and [Live session security review](live-session-security-review.md) for no-secret data-handling boundaries.
 
 ## Production write limitations
 

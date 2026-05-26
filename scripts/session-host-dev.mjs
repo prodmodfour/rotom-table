@@ -28,7 +28,7 @@ export const SESSION_HOST_MODES = Object.freeze({
 
 const VALID_MODES = Object.keys(SESSION_HOST_MODES)
 
-const HELP_TEXT = `Track 2 session host dev helper
+const HELP_TEXT = `live session host dev helper
 
 Usage:
   npm run dev:session:lan -- [options]
@@ -159,7 +159,7 @@ export const buildSessionHostChecklist = (input = {}) => {
     `Player-facing base URL shape: ${config.playerBaseUrl.replace(':3000', `:${config.port}`)} (then /sessions#player-lobby-title or /maps/<slug>?session=1).`,
     config.followUp,
     'The existing /login GM/player role picker is still trust-based local UI, not public authentication.',
-    'Track 2 live play must continue to use WebSocket /api/sessions/socket and server-authoritative commands, not whole-map autosave.',
+    'Live session live play must continue to use WebSocket /api/sessions/socket and server-authoritative commands, not whole-map autosave.',
     'Quick Tunnel remains development-smoke-test only; use LAN or a named Cloudflare Tunnel for supported table sessions.',
     'Before committing, confirm generated data/sessions/ snapshots/event logs, real .env files, GM keys, join codes, and private campaign data are not staged.',
   ]
@@ -194,7 +194,7 @@ export const runSessionHostCli = (argv = process.argv.slice(2)) => {
   const checklist = buildSessionHostChecklist(config)
   const command = buildSessionHostDevCommand(config)
 
-  process.stdout.write('Track 2 session host dev helper\n')
+  process.stdout.write('live session host dev helper\n')
   printSection('Resolved safe defaults')
   checklist.forEach((line) => process.stdout.write(`- ${line}\n`))
 

@@ -138,14 +138,14 @@ const getPlayerReadableSessionRecord = <TMapDocument>(
   if (record === undefined) {
     throw new GetPlayerSessionStateUseCaseError(
       404,
-      'No Track 2 table session was found for the supplied session ID',
+      'No live session was found for the supplied session ID',
     )
   }
 
   if (record.state === undefined) {
     throw new GetPlayerSessionStateUseCaseError(
       500,
-      'The Track 2 table session has no authoritative state available for player state reads',
+      'The live session has no authoritative state available for player state reads',
     )
   }
 
@@ -161,7 +161,7 @@ const getAuthorizedPlayerRecord = (
   if (player === undefined || player.displayName !== displayName) {
     throw new GetPlayerSessionStateUseCaseError(
       403,
-      'The supplied player identity is not authorized to read this Track 2 table session',
+      'The supplied player identity is not authorized to read this live session',
     )
   }
 

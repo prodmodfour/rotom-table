@@ -259,7 +259,7 @@ export const useSessionLobby = (options: UseSessionLobbyOptions = {}) => {
       rememberIdentity(nextIdentity)
       await fetchGmManagement(nextIdentity)
       await loadSafetyStatus().catch(() => undefined)
-      lastNotice.value = 'Started a GM-hosted Track 2 session in this browser.'
+      lastNotice.value = 'Started a GM-hosted live session in this browser.'
       return response
     } catch (error) {
       recordFailure(error)
@@ -292,7 +292,7 @@ export const useSessionLobby = (options: UseSessionLobbyOptions = {}) => {
       }
       rememberIdentity(nextIdentity)
       await fetchPlayerState(nextIdentity)
-      lastNotice.value = `Joined the Track 2 session as ${response.player.displayName}.`
+      lastNotice.value = `Joined the live session as ${response.player.displayName}.`
       return response
     } catch (error) {
       recordFailure(error)
@@ -308,7 +308,7 @@ export const useSessionLobby = (options: UseSessionLobbyOptions = {}) => {
     const currentIdentity = identity.value
     if (currentIdentity === null) {
       lastError.value = null
-      lastNotice.value = 'No remembered Track 2 session identity was found in this browser.'
+      lastNotice.value = 'No remembered live session identity was found in this browser.'
       return null
     }
 
@@ -320,7 +320,7 @@ export const useSessionLobby = (options: UseSessionLobbyOptions = {}) => {
       const response = currentIdentity.role === 'gm'
         ? await fetchGmManagement(currentIdentity)
         : await fetchPlayerState(currentIdentity)
-      lastNotice.value = 'Refreshed the remembered Track 2 session.'
+      lastNotice.value = 'Refreshed the remembered live session.'
       return response
     } catch (error) {
       recordFailure(error)
@@ -337,12 +337,12 @@ export const useSessionLobby = (options: UseSessionLobbyOptions = {}) => {
     identity.value = loadedIdentity
 
     if (loadedIdentity === null) {
-      lastNotice.value = 'No remembered Track 2 session identity was found in this browser.'
+      lastNotice.value = 'No remembered live session identity was found in this browser.'
       return null
     }
 
     lastError.value = null
-    lastNotice.value = 'Loaded the remembered Track 2 session identity for this browser.'
+    lastNotice.value = 'Loaded the remembered live session identity for this browser.'
     if (loadOptions.refresh) await refreshSessionSummary()
     return loadedIdentity
   }
@@ -355,7 +355,7 @@ export const useSessionLobby = (options: UseSessionLobbyOptions = {}) => {
     joinedPlayerSession.value = null
     playerState.value = null
     lastError.value = null
-    lastNotice.value = 'Cleared the remembered Track 2 session identity for this browser.'
+    lastNotice.value = 'Cleared the remembered live session identity for this browser.'
   }
 
   return {

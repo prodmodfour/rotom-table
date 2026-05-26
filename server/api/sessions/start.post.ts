@@ -1,7 +1,7 @@
 /**
  * POST /api/sessions/start
  *
- * Starts a Track 2 GM-hosted table session. The route fails closed unless
+ * Starts a GM-hosted live session. The route fails closed unless
  * ROTOM_ENABLE_SESSION_HOST=1 is present, and still requires the existing local
  * GM role before creating a session-local GM key and player join code.
  */

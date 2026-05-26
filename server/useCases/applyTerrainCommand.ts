@@ -91,7 +91,7 @@ export interface TerrainPatchPayload {
   readonly current: MapVoxelV2 | null
   readonly built?: MapVoxelV2
   readonly removed?: MapVoxelV2
-  /** Applying this patch to `map.voxels` must preserve Track 1 terrain renderer invalidation. */
+  /** Applying this patch to `map.voxels` must preserve terrain renderer invalidation. */
   readonly rendererInvalidation: typeof TERRAIN_RENDER_INVALIDATION_REASONS
 }
 
@@ -270,21 +270,21 @@ const getActiveTerrainRecord = (
   if (record === undefined) {
     throw new ApplyTerrainCommandUseCaseError(
       404,
-      'No Track 2 table session was found for the supplied terrain command',
+      'No live session was found for the supplied terrain command',
     )
   }
 
   if (record.status !== 'active') {
     throw new ApplyTerrainCommandUseCaseError(
       409,
-      'The Track 2 table session must be active before terrain commands can apply',
+      'The live session must be active before terrain commands can apply',
     )
   }
 
   if (record.state === undefined) {
     throw new ApplyTerrainCommandUseCaseError(
       500,
-      'The Track 2 table session has no authoritative state available for terrain commands',
+      'The live session has no authoritative state available for terrain commands',
     )
   }
 
@@ -337,7 +337,7 @@ const createUnauthorizedRejection = (
   status: 'rejected',
   accepted: false,
   reason: 'unauthorized',
-  message: permission?.message ?? 'Only the GM can edit terrain voxels in a Track 2 table session.',
+  message: permission?.message ?? 'Only the GM can edit terrain voxels in a live session.',
   retryable: false,
   sessionId: command.sessionId,
   opId: command.opId,
@@ -650,7 +650,7 @@ const buildTerrainVoxelOnMap = (
       result: createConflictRejection(
         command,
         record,
-        `Terrain material ${voxel.materialId} is not available to the Track 1 terrain builder palette.`,
+        `Terrain material ${voxel.materialId} is not available to the terrain builder palette.`,
         processedAt,
         {
           retryable: false,
@@ -966,7 +966,7 @@ export const applyTerrainCommandUseCase = (
   if (updatedRecord === undefined) {
     throw new ApplyTerrainCommandUseCaseError(
       409,
-      'The Track 2 table session ended before terrain could apply',
+      'The live session ended before terrain could apply',
     )
   }
 

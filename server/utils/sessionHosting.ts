@@ -17,7 +17,7 @@ export class SessionHostDisabledError extends UseCaseHttpError<403> {
   constructor() {
     super(
       403,
-      `Track 2 session hosting is disabled. Set ${SESSION_HOST_ENABLE_ENV}=${SESSION_HOST_ENABLE_VALUE} to enable session endpoints.`,
+      `live session hosting is disabled. Set ${SESSION_HOST_ENABLE_ENV}=${SESSION_HOST_ENABLE_VALUE} to enable session endpoints.`,
     )
   }
 }

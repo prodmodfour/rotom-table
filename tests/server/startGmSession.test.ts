@@ -130,7 +130,7 @@ describe('startGmSessionUseCase', () => {
       () => startSession({ store, writeSnapshot, env: {} }),
       {
         statusCode: 403,
-        message: 'Track 2 session hosting is disabled. Set ROTOM_ENABLE_SESSION_HOST=1 to enable session endpoints.',
+        message: 'live session hosting is disabled. Set ROTOM_ENABLE_SESSION_HOST=1 to enable session endpoints.',
       },
     )
     expect(store.size).toBe(0)
@@ -228,7 +228,7 @@ describe('startGmSessionUseCase', () => {
       }),
       {
         statusCode: 503,
-        message: 'Unable to allocate a unique session ID for a new table session',
+        message: 'Unable to allocate a unique session ID for a new live session',
       },
     )
     expect(store.size).toBe(1)

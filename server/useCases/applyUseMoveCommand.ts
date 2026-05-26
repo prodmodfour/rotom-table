@@ -425,21 +425,21 @@ const getActiveUseMoveRecord = (
   if (record === undefined) {
     throw new ApplyUseMoveCommandUseCaseError(
       404,
-      'No Track 2 table session was found for the supplied useMove command',
+      'No live session was found for the supplied useMove command',
     )
   }
 
   if (record.status !== 'active') {
     throw new ApplyUseMoveCommandUseCaseError(
       409,
-      'The Track 2 table session must be active before useMove commands can apply',
+      'The live session must be active before useMove commands can apply',
     )
   }
 
   if (record.state === undefined) {
     throw new ApplyUseMoveCommandUseCaseError(
       500,
-      'The Track 2 table session has no authoritative state available for useMove commands',
+      'The live session has no authoritative state available for useMove commands',
     )
   }
 
@@ -492,7 +492,7 @@ const createUnauthorizedRejection = (
   status: 'rejected',
   accepted: false,
   reason: 'unauthorized',
-  message: permission?.message ?? 'Only the GM or a player assigned to the target token or sheet can use a move in a Track 2 table session.',
+  message: permission?.message ?? 'Only the GM or a player assigned to the target token or sheet can use a move in a live session.',
   retryable: false,
   sessionId: command.sessionId,
   opId: command.opId,
@@ -1245,7 +1245,7 @@ export const applyUseMoveCommandUseCase = (
     }
     throw new ApplyUseMoveCommandUseCaseError(
       409,
-      'The Track 2 table session ended before useMove could apply',
+      'The live session ended before useMove could apply',
     )
   }
 

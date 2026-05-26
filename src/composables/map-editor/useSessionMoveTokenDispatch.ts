@@ -853,7 +853,7 @@ export const useSessionMoveTokenDispatch = (
 
   const ensureSocketHello = (currentIdentity: SessionClientIdentity): SessionMoveTokenDispatchResult | null => {
     if (!socket.connect()) {
-      return fail('socket-unavailable', 'Track 2 session WebSocket is not available for moveToken dispatch.')
+      return fail('socket-unavailable', 'Session socket is not available for moveToken dispatch.')
     }
 
     const status = socket.status.value
@@ -875,7 +875,7 @@ export const useSessionMoveTokenDispatch = (
 
   const ensureSocketHelloForTurn = (currentIdentity: SessionClientIdentity): SessionTurnTokenDispatchResult | null => {
     if (!socket.connect()) {
-      return turnFail('socket-unavailable', 'Track 2 session WebSocket is not available for turnToken dispatch.')
+      return turnFail('socket-unavailable', 'Session socket is not available for turnToken dispatch.')
     }
 
     const status = socket.status.value
@@ -1060,7 +1060,7 @@ export const useSessionMoveTokenDispatch = (
       return {
         dispatched: false,
         reason: 'not-session-mode',
-        message: 'Track 2 session command dispatch is not enabled for this map view.',
+        message: 'Session command dispatch is not enabled for this map view.',
       }
     }
 
@@ -1068,7 +1068,7 @@ export const useSessionMoveTokenDispatch = (
     if (currentIdentity === null) {
       return fail(
         'missing-session-identity',
-        'No remembered Track 2 session identity was found; open the session lobby and start or join a session first.',
+        'No remembered live session identity was found; open the session lobby and start or join a session first.',
       )
     }
 
@@ -1112,7 +1112,7 @@ export const useSessionMoveTokenDispatch = (
       return {
         dispatched: false,
         reason: 'not-session-mode',
-        message: 'Track 2 session command dispatch is not enabled for this map view.',
+        message: 'Session command dispatch is not enabled for this map view.',
       }
     }
 
@@ -1120,7 +1120,7 @@ export const useSessionMoveTokenDispatch = (
     if (currentIdentity === null) {
       return turnFail(
         'missing-session-identity',
-        'No remembered Track 2 session identity was found; open the session lobby and start or join a session first.',
+        'No remembered live session identity was found; open the session lobby and start or join a session first.',
       )
     }
 

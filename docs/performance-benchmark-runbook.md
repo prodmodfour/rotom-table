@@ -1,14 +1,14 @@
 # Performance benchmark runbook
 
-Use this runbook when collecting Track 1 before/after measurements for the isometric map. The goal is to make performance changes observable while preserving the same map data, renderer quality, visual effects, and table functionality.
+Use this runbook when collecting before/after map rendering performance measurements for the isometric map. The goal is to make performance changes observable while preserving the same map data, renderer quality, visual effects, and table functionality.
 
-This workflow complements the scenario definitions in [Performance benchmark scenarios](performance-benchmark-scenarios.md), the public fixture generator in [Performance benchmark fixtures](performance-benchmark-fixtures.md), the recorded [Track 1 integrated benchmark pass](performance-benchmark-results.md), and the no-quality-loss rules in [Performance guardrails](performance-guardrails.md).
+This workflow complements the scenario definitions in [Performance benchmark scenarios](performance-benchmark-scenarios.md), the public fixture generator in [Performance benchmark fixtures](performance-benchmark-fixtures.md), the recorded [Map rendering integrated benchmark pass](performance-benchmark-results.md), and the no-quality-loss rules in [Performance guardrails](performance-guardrails.md).
 
 ## 1. Choose the comparison
 
 Decide which two commits or branches you are comparing before opening the app:
 
-- **Before:** the base branch, merge base, or previous performance chunk that reviewers should compare against.
+- **Before:** the base branch, merge base, or previous performance baseline that reviewers should compare against.
 - **After:** the branch or commit under review.
 - **Mode:** use the same app mode for both runs. The debug render overlay is dev-safe and normally appears in `npm run dev`; if you use a custom benchmark build, record that explicitly.
 - **Fixture version:** use the same generated fixture maps for both runs. If the fixture generator changed, record the generator commit and rerun both before and after with the refreshed fixtures.
@@ -29,7 +29,7 @@ Do not change antialiasing, device pixel ratio, weather/effect density, layer vi
    node scripts/generate_benchmark_maps.mjs --overwrite
    ```
 
-   Generated files live under `data/maps/track-1-benchmarks/` and are ignored local data. Do not commit them.
+   Generated files live under `data/maps/performance-benchmarks/` and are ignored local data. Do not commit them.
 
 3. Start the app in the same mode for both runs:
 

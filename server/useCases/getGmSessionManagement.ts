@@ -107,21 +107,21 @@ const getManagedSessionRecord = <TMapDocument>(
   if (record === undefined) {
     throw new GetGmSessionManagementUseCaseError(
       404,
-      'No Track 2 table session was found for the supplied session ID',
+      'No live session was found for the supplied session ID',
     )
   }
 
   if (record.gmKey !== gmKey) {
     throw new GetGmSessionManagementUseCaseError(
       403,
-      'The supplied GM key is not authorized to manage this Track 2 table session',
+      'The supplied GM key is not authorized to manage this live session',
     )
   }
 
   if (record.state === undefined) {
     throw new GetGmSessionManagementUseCaseError(
       500,
-      'The Track 2 table session has no authoritative state available for GM management',
+      'The live session has no authoritative state available for GM management',
     )
   }
 

@@ -277,21 +277,21 @@ const getActiveSpawnTokenRecord = (
   if (record === undefined) {
     throw new ApplySpawnTokenCommandUseCaseError(
       404,
-      'No Track 2 table session was found for the supplied spawnToken command',
+      'No live session was found for the supplied spawnToken command',
     )
   }
 
   if (record.status !== 'active') {
     throw new ApplySpawnTokenCommandUseCaseError(
       409,
-      'The Track 2 table session must be active before spawnToken commands can apply',
+      'The live session must be active before spawnToken commands can apply',
     )
   }
 
   if (record.state === undefined) {
     throw new ApplySpawnTokenCommandUseCaseError(
       500,
-      'The Track 2 table session has no authoritative state available for spawnToken commands',
+      'The live session has no authoritative state available for spawnToken commands',
     )
   }
 
@@ -344,7 +344,7 @@ const createUnauthorizedRejection = (
   status: 'rejected',
   accepted: false,
   reason: 'unauthorized',
-  message: permission?.message ?? 'Only the GM can spawn tokens in a Track 2 table session.',
+  message: permission?.message ?? 'Only the GM can spawn tokens in a live session.',
   retryable: false,
   sessionId: command.sessionId,
   opId: command.opId,
@@ -702,7 +702,7 @@ export const applySpawnTokenCommandUseCase = (
   if (updatedRecord === undefined) {
     throw new ApplySpawnTokenCommandUseCaseError(
       409,
-      'The Track 2 table session ended before spawnToken could apply',
+      'The live session ended before spawnToken could apply',
     )
   }
 

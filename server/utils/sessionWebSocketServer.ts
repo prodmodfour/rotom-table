@@ -198,14 +198,14 @@ export const SESSION_SOCKET_UPGRADE_REQUIRED_STATUS = 426 as const
 export const SESSION_SOCKET_POLICY_CLOSE_CODE = 1008 as const
 
 export const SESSION_SOCKET_DISABLED_MESSAGE =
-  `Track 2 session WebSocket hosting is disabled. Set ${SESSION_HOST_ENABLE_ENV}=${SESSION_HOST_ENABLE_VALUE} to enable the session socket.` as const
+  `live session socket hosting is disabled. Set ${SESSION_HOST_ENABLE_ENV}=${SESSION_HOST_ENABLE_VALUE} to enable the session socket.` as const
 
 export const SESSION_SOCKET_PENDING_HELLO_STATUS = 'pending-hello' as const
 export const SESSION_SOCKET_AUTHENTICATED_STATUS = 'authenticated' as const
 export const SESSION_SOCKET_HEARTBEAT_INTERVAL_MS = 25_000 as const
 export const SESSION_SOCKET_HEARTBEAT_TIMEOUT_MS = 60_000 as const
 export const SESSION_SOCKET_HEARTBEAT_TIMEOUT_REASON =
-  'Session WebSocket heartbeat timed out.' as const
+  'Session socket heartbeat timed out.' as const
 export const SESSION_SOCKET_REPLAY_AVAILABLE = false as const
 
 export type SessionSocketConnectionStatus =
@@ -811,7 +811,7 @@ export const createInMemorySessionSocketRegistry = (
     options: { readonly connectedAt?: string } = {},
   ): PendingSessionSocketConnection => {
     if (peerId.trim().length === 0) {
-      throw new Error('Session WebSocket peer ID is required')
+      throw new Error('Session socket peer ID is required')
     }
 
     const connectedAt = options.connectedAt ?? clock()
@@ -1017,7 +1017,7 @@ const parseClientMessageKind = (value: unknown): ParseSessionSocketClientMessage
       ok: false,
       failure: {
         code: 'malformed-message',
-        message: 'Session WebSocket messages must be JSON objects.',
+        message: 'Session socket messages must be JSON objects.',
         retryable: false,
       },
     }
@@ -1028,7 +1028,7 @@ const parseClientMessageKind = (value: unknown): ParseSessionSocketClientMessage
       ok: false,
       failure: {
         code: 'malformed-message',
-        message: 'Session WebSocket client message type is malformed or unsupported.',
+        message: 'Session socket client message type is malformed or unsupported.',
         retryable: false,
         ...(isSessionId(value.sessionId) ? { sessionId: value.sessionId } : {}),
         details: detailsFromIssues(['type must be one of hello, heartbeat, or command']),
@@ -1045,7 +1045,7 @@ const parseHelloMessage = (value: unknown): ParseSessionSocketHelloResult => {
       ok: false,
       failure: {
         code: 'malformed-message',
-        message: 'Session WebSocket hello must be a JSON object.',
+        message: 'Session socket hello must be a JSON object.',
         retryable: false,
       },
     }
@@ -1078,7 +1078,7 @@ const parseHelloMessage = (value: unknown): ParseSessionSocketHelloResult => {
       ok: false,
       failure: {
         code: 'malformed-message',
-        message: 'Session WebSocket hello is malformed.',
+        message: 'Session socket hello is malformed.',
         retryable: false,
         ...(isSessionId(value.sessionId) ? { sessionId: value.sessionId } : {}),
         details: detailsFromIssues(issues),
@@ -1103,7 +1103,7 @@ const parseHeartbeatMessage = (
       ok: false,
       failure: {
         code: 'malformed-message',
-        message: 'Session WebSocket heartbeat must be a JSON object.',
+        message: 'Session socket heartbeat must be a JSON object.',
         retryable: false,
         ...(connection === undefined ? {} : {
           sessionId: connection.sessionId,
@@ -1120,7 +1120,7 @@ const parseHeartbeatMessage = (
       ok: false,
       failure: {
         code: 'unauthorized',
-        message: 'Session WebSocket heartbeat session does not match the authenticated socket.',
+        message: 'Session socket heartbeat session does not match the authenticated socket.',
         retryable: false,
         sessionId: connection.sessionId,
         currentRevision: connection.currentRevision,
@@ -1142,7 +1142,7 @@ const parseHeartbeatMessage = (
       ok: false,
       failure: {
         code: 'malformed-message',
-        message: 'Session WebSocket heartbeat is malformed.',
+        message: 'Session socket heartbeat is malformed.',
         retryable: false,
         ...(connection === undefined ? {} : {
           sessionId: connection.sessionId,
@@ -1175,7 +1175,7 @@ const parseCommandMessage = (
       ok: false,
       failure: {
         code: 'malformed-message',
-        message: 'Session WebSocket command must be a JSON object.',
+        message: 'Session socket command must be a JSON object.',
         retryable: false,
         ...(connection === undefined ? {} : {
           sessionId: connection.sessionId,
@@ -1192,7 +1192,7 @@ const parseCommandMessage = (
       ok: false,
       failure: {
         code: 'unauthorized',
-        message: 'Session WebSocket command session does not match the authenticated socket.',
+        message: 'Session socket command session does not match the authenticated socket.',
         retryable: false,
         sessionId: connection.sessionId,
         currentRevision: connection.currentRevision,
@@ -1212,7 +1212,7 @@ const parseCommandMessage = (
       ok: false,
       failure: {
         code: 'malformed-message',
-        message: 'Session WebSocket command is malformed.',
+        message: 'Session socket command is malformed.',
         retryable: false,
         ...(connection === undefined ? (isSessionId(value.sessionId) ? { sessionId: value.sessionId } : {}) : {
           sessionId: connection.sessionId,
@@ -1228,7 +1228,7 @@ const parseCommandMessage = (
       ok: false,
       failure: {
         code: 'unauthorized',
-        message: 'Session WebSocket command actor does not match the authenticated socket.',
+        message: 'Session socket command actor does not match the authenticated socket.',
         retryable: false,
         sessionId: connection.sessionId,
         currentRevision: connection.currentRevision,
@@ -1255,7 +1255,7 @@ const parseSocketMessageJson = (
       ok: false,
       failure: {
         code: 'malformed-message',
-        message: 'Session WebSocket messages must be readable text frames.',
+        message: 'Session socket messages must be readable text frames.',
         retryable: false,
       },
     }
@@ -1268,7 +1268,7 @@ const parseSocketMessageJson = (
       ok: false,
       failure: {
         code: 'malformed-message',
-        message: 'Session WebSocket messages must be valid JSON.',
+        message: 'Session socket messages must be valid JSON.',
         retryable: false,
       },
     }
@@ -1287,7 +1287,7 @@ const getSocketSessionRecord = <TMapDocument>(
       ok: false,
       failure: {
         code: 'session-not-found',
-        message: 'No active Track 2 table session was found for this WebSocket hello.',
+        message: 'No active live session was found for this session socket hello.',
         retryable: false,
         sessionId,
       },
@@ -1299,7 +1299,7 @@ const getSocketSessionRecord = <TMapDocument>(
       ok: false,
       failure: {
         code: 'session-ended',
-        message: 'The Track 2 table session for this WebSocket hello has ended.',
+        message: 'The live session for this session socket hello has ended.',
         retryable: false,
         sessionId,
         currentRevision: record.revision,
@@ -1312,7 +1312,7 @@ const getSocketSessionRecord = <TMapDocument>(
       ok: false,
       failure: {
         code: 'internal-error',
-        message: 'The Track 2 table session has no authoritative state for WebSocket hello.',
+        message: 'The live session has no authoritative state for session socket hello.',
         retryable: true,
         sessionId,
         currentRevision: record.revision,
@@ -1335,7 +1335,7 @@ const actorFromHello = <TMapDocument>(
         ok: false,
         failure: {
           code: 'unauthorized',
-          message: 'The supplied GM key is not authorized for this Track 2 table session socket.',
+          message: 'The supplied GM key is not authorized for this live session socket.',
           retryable: false,
           sessionId: record.sessionId,
           currentRevision: record.revision,
@@ -1358,7 +1358,7 @@ const actorFromHello = <TMapDocument>(
       ok: false,
       failure: {
         code: 'unauthorized',
-        message: 'The supplied player identity is not authorized for this Track 2 table session socket.',
+        message: 'The supplied player identity is not authorized for this live session socket.',
         retryable: false,
         sessionId: record.sessionId,
         currentRevision: record.revision,
@@ -1437,7 +1437,7 @@ const authenticateSocketHello = <TMapDocument>(
   if (existingConnection === undefined) {
     closeForHandshakeFailure(peer, {
       code: 'unauthorized',
-      message: 'The session WebSocket connection is not registered for hello/auth.',
+      message: 'The session socket connection is not registered for hello/auth.',
       retryable: false,
       sessionId: hello.sessionId,
     }, dependencies)
@@ -1447,7 +1447,7 @@ const authenticateSocketHello = <TMapDocument>(
   if (existingConnection.status !== SESSION_SOCKET_PENDING_HELLO_STATUS) {
     closeForHandshakeFailure(peer, {
       code: 'unauthorized',
-      message: 'The session WebSocket connection already completed hello/auth.',
+      message: 'The session socket connection already completed hello/auth.',
       retryable: false,
       sessionId: existingConnection.sessionId,
       currentRevision: existingConnection.currentRevision,
@@ -1496,7 +1496,7 @@ const authenticateSocketHello = <TMapDocument>(
   if (updatedRecord === undefined) {
     closeForHandshakeFailure(peer, {
       code: 'session-ended',
-      message: 'The Track 2 table session ended before WebSocket hello could finish.',
+      message: 'The live session ended before session socket hello could finish.',
       retryable: false,
       sessionId: recordResult.record.sessionId,
       currentRevision: recordResult.record.revision,
@@ -1637,7 +1637,7 @@ const handleAuthenticatedSocketHeartbeat = <TMapDocument>(
   if (connection === undefined || connection.status !== SESSION_SOCKET_AUTHENTICATED_STATUS) {
     closeForHandshakeFailure(peer, {
       code: 'unauthorized',
-      message: 'A valid Track 2 session WebSocket hello is required before heartbeat messages.',
+      message: 'A valid live session socket hello is required before heartbeat messages.',
       retryable: false,
     }, dependencies)
     return undefined
@@ -1660,7 +1660,7 @@ const handleAuthenticatedSocketHeartbeat = <TMapDocument>(
   if (updatedRecord === undefined) {
     closeForHandshakeFailure(peer, {
       code: 'session-ended',
-      message: 'The Track 2 table session ended before heartbeat could be recorded.',
+      message: 'The live session ended before heartbeat could be recorded.',
       retryable: false,
       sessionId: connection.sessionId,
       currentRevision: connection.currentRevision,
@@ -1716,7 +1716,7 @@ const socketErrorCodeForCommandDispatchError = (error: unknown): SessionErrorCod
 
 const commandDispatchErrorMessage = (error: unknown): string => {
   if (error instanceof Error && error.message.trim().length > 0) return error.message
-  return 'Track 2 session command dispatch failed.'
+  return 'live session command dispatch failed.'
 }
 
 const isCommandDispatchRetryable = (error: unknown): boolean =>
@@ -1757,7 +1757,7 @@ const handleAuthenticatedSocketCommand = <TMapDocument>(
   ) {
     sendJson(peer, createSessionSocketErrorMessage({
       code: 'unsupported-message',
-      message: 'Track 2 session WebSocket command dispatch currently supports moveToken, turnToken, spawnToken, deleteToken, sendOutPokemon, modifyHp, modifyCombatStages, modifyConditions, useMove, useManeuver, useAbility, useOrder, setInitiative, nextInitiative, previousInitiative, placeHazard, removeHazard, setFieldEffect, removeFieldEffect, tickFieldEffectDurations, buildTerrainVoxel, and removeTerrainVoxel commands only.',
+      message: 'live session command dispatch currently supports moveToken, turnToken, spawnToken, deleteToken, sendOutPokemon, modifyHp, modifyCombatStages, modifyConditions, useMove, useManeuver, useAbility, useOrder, setInitiative, nextInitiative, previousInitiative, placeHazard, removeHazard, setFieldEffect, removeFieldEffect, tickFieldEffectDurations, buildTerrainVoxel, and removeTerrainVoxel commands only.',
       retryable: false,
       sessionId: connection.sessionId,
       currentRevision: connection.currentRevision,
@@ -1997,7 +1997,7 @@ export const handleSessionSocketMessage = <TMapDocument = unknown>(
     if (authenticatedConnection === undefined) {
       closeForHandshakeFailure(peer, {
         code: 'unauthorized',
-        message: 'A valid Track 2 session WebSocket hello is required before heartbeat messages.',
+        message: 'A valid live session socket hello is required before heartbeat messages.',
         retryable: false,
       }, resolved)
       return
@@ -2017,7 +2017,7 @@ export const handleSessionSocketMessage = <TMapDocument = unknown>(
     if (authenticatedConnection === undefined) {
       closeForHandshakeFailure(peer, {
         code: 'unauthorized',
-        message: 'A valid Track 2 session WebSocket hello is required before command messages.',
+        message: 'A valid live session socket hello is required before command messages.',
         retryable: false,
       }, resolved)
       return

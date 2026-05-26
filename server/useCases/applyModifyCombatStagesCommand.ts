@@ -299,21 +299,21 @@ const getActiveModifyCombatStagesRecord = (
   if (record === undefined) {
     throw new ApplyModifyCombatStagesCommandUseCaseError(
       404,
-      'No Track 2 table session was found for the supplied modifyCombatStages command',
+      'No live session was found for the supplied modifyCombatStages command',
     )
   }
 
   if (record.status !== 'active') {
     throw new ApplyModifyCombatStagesCommandUseCaseError(
       409,
-      'The Track 2 table session must be active before modifyCombatStages commands can apply',
+      'The live session must be active before modifyCombatStages commands can apply',
     )
   }
 
   if (record.state === undefined) {
     throw new ApplyModifyCombatStagesCommandUseCaseError(
       500,
-      'The Track 2 table session has no authoritative state available for modifyCombatStages commands',
+      'The live session has no authoritative state available for modifyCombatStages commands',
     )
   }
 
@@ -366,7 +366,7 @@ const createUnauthorizedRejection = (
   status: 'rejected',
   accepted: false,
   reason: 'unauthorized',
-  message: permission?.message ?? 'Only the GM or a player assigned to the target token or sheet can modify combat stages in a Track 2 table session.',
+  message: permission?.message ?? 'Only the GM or a player assigned to the target token or sheet can modify combat stages in a live session.',
   retryable: false,
   sessionId: command.sessionId,
   opId: command.opId,
@@ -972,7 +972,7 @@ export const applyModifyCombatStagesCommandUseCase = (
     rollbackWrittenSheet(writeSheet, sheetResult.sheet.path, sheetResult.sheet.original)
     throw new ApplyModifyCombatStagesCommandUseCaseError(
       409,
-      'The Track 2 table session ended before modifyCombatStages could apply',
+      'The live session ended before modifyCombatStages could apply',
     )
   }
 

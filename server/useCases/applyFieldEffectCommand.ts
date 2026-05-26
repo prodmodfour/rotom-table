@@ -279,21 +279,21 @@ const getActiveFieldEffectRecord = (
   if (record === undefined) {
     throw new ApplyFieldEffectCommandUseCaseError(
       404,
-      'No Track 2 table session was found for the supplied field-effect command',
+      'No live session was found for the supplied field-effect command',
     )
   }
 
   if (record.status !== 'active') {
     throw new ApplyFieldEffectCommandUseCaseError(
       409,
-      'The Track 2 table session must be active before field-effect commands can apply',
+      'The live session must be active before field-effect commands can apply',
     )
   }
 
   if (record.state === undefined) {
     throw new ApplyFieldEffectCommandUseCaseError(
       500,
-      'The Track 2 table session has no authoritative state available for field-effect commands',
+      'The live session has no authoritative state available for field-effect commands',
     )
   }
 
@@ -346,7 +346,7 @@ const createUnauthorizedRejection = (
   status: 'rejected',
   accepted: false,
   reason: 'unauthorized',
-  message: permission?.message ?? 'Only the GM can manage field effects in a Track 2 table session.',
+  message: permission?.message ?? 'Only the GM can manage field effects in a live session.',
   retryable: false,
   sessionId: command.sessionId,
   opId: command.opId,
@@ -978,7 +978,7 @@ export const applyFieldEffectCommandUseCase = (
   if (updatedRecord === undefined) {
     throw new ApplyFieldEffectCommandUseCaseError(
       409,
-      'The Track 2 table session ended before field effects could apply',
+      'The live session ended before field effects could apply',
     )
   }
 

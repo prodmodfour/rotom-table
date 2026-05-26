@@ -355,21 +355,21 @@ const getActiveSendOutPokemonRecord = (
   if (record === undefined) {
     throw new ApplySendOutPokemonCommandUseCaseError(
       404,
-      'No Track 2 table session was found for the supplied sendOutPokemon command',
+      'No live session was found for the supplied sendOutPokemon command',
     )
   }
 
   if (record.status !== 'active') {
     throw new ApplySendOutPokemonCommandUseCaseError(
       409,
-      'The Track 2 table session must be active before sendOutPokemon commands can apply',
+      'The live session must be active before sendOutPokemon commands can apply',
     )
   }
 
   if (record.state === undefined) {
     throw new ApplySendOutPokemonCommandUseCaseError(
       500,
-      'The Track 2 table session has no authoritative state available for sendOutPokemon commands',
+      'The live session has no authoritative state available for sendOutPokemon commands',
     )
   }
 
@@ -422,7 +422,7 @@ const createUnauthorizedRejection = (
   status: 'rejected',
   accepted: false,
   reason: 'unauthorized',
-  message: permission?.message ?? 'Only the GM or a player assigned to the trainer token can send out that trainer\'s Pokémon in a Track 2 table session.',
+  message: permission?.message ?? 'Only the GM or a player assigned to the trainer token can send out that trainer\'s Pokémon in a live session.',
   retryable: false,
   sessionId: command.sessionId,
   opId: command.opId,
@@ -1009,7 +1009,7 @@ export const applySendOutPokemonCommandUseCase = (
   if (updatedRecord === undefined) {
     throw new ApplySendOutPokemonCommandUseCaseError(
       409,
-      'The Track 2 table session ended before sendOutPokemon could apply',
+      'The live session ended before sendOutPokemon could apply',
     )
   }
 

@@ -101,7 +101,7 @@ export type TerrainCommandValidationCode =
   (typeof TERRAIN_COMMAND_VALIDATION_CODES)[number]
 
 export interface TerrainCommandValidationContext {
-  /** Terrain voxel editing is GM-only in Track 2; this context is reserved for future table policy. */
+  /** Terrain voxel editing is GM-only in live session mode; this context is reserved for future table policy. */
   readonly assignments?: readonly unknown[]
 }
 

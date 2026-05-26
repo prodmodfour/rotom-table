@@ -87,9 +87,9 @@ The browser `/generate` page can also preview or write generated results dependi
 
 The repository is configured for local campaign ownership:
 
-- personal maps, sheets, trainer files, Track 2 session snapshots, and optional event logs should not be committed by default
+- personal maps, sheets, trainer files, live session snapshots, and optional event logs should not be committed by default
 - curated example sheets can remain trackable for review/demo purposes
 - generated wild sheets should be reviewed before committing, if they are ever meant to be examples
 - JSON should stay readable and inspectable rather than hidden behind opaque binary formats
 
-Before publishing or sharing a branch, check `git status` and make sure private campaign notes, player information, unreleased story material, session files, and one-off local data are not included. See [Track 2 session storage](track-2-session-storage.md) for session snapshot/event-log backup and recovery guidance.
+Before publishing or sharing a branch, check `git status` and make sure private campaign notes, player information, unreleased story material, session files, and one-off local data are not included. See [live session storage](live-session-storage.md) for session snapshot/event-log backup and recovery guidance.

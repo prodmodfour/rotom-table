@@ -447,6 +447,6 @@ describe('applyHazardCommandUseCase', () => {
     expect(() => applyHazardCommandUseCase({ command: createPlaceCommand() }, {
       env: {},
       store,
-    })).toThrow('Track 2 session hosting is disabled')
+    })).toThrow('live session hosting is disabled')
   })
 })

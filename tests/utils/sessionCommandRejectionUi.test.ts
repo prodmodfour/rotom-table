@@ -52,17 +52,17 @@ describe('session command rejection UI helpers', () => {
       commandType: 'moveToken',
       commandLabel: 'Move token',
       reason: 'stale',
-      reasonLabel: 'Stale table state',
-      title: 'Action needs the latest table state',
+      reasonLabel: 'Stale session map',
+      title: 'Action needs the latest session map',
       currentRevision: REVISION_2,
       baseRevision: REVISION_1,
       retryable: true,
-      refreshLabel: 'Refresh session view',
+      refreshLabel: 'Refresh session map',
       dismissLabel: 'Dismiss',
     })
     expect(notice?.detail).toBe('Token changed after revision 1. Refresh first.')
-    expect(notice?.summary).toContain('authoritative table unchanged')
-    expect(notice?.guidance).toContain('Refresh the session view')
+    expect(notice?.summary).toContain('authoritative session map unchanged')
+    expect(notice?.guidance).toContain('Refresh the session map')
     expect(notice?.guidance).toContain('try the action again')
   })
 
@@ -101,7 +101,7 @@ describe('session command rejection UI helpers', () => {
     expect(sanitizeSessionCommandRejectionText(longText)).toMatch(/^bad value x+…$/)
     expect(sanitizeSessionCommandRejectionText(longText).length).toBeLessThanOrEqual(220)
     expect(formatSessionCommandRejectionNotice(commandReject({ message: '   \n\t   ' }))?.detail)
-      .toBe('Move token was rejected by the session host.')
+      .toBe('Move token was rejected by session hosting.')
 
     const invalid = formatSessionCommandRejectionNotice(commandReject({
       reason: 'invalid',

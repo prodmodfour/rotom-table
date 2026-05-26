@@ -134,7 +134,7 @@ const moveTokenPayload = {
   to: { x: 4, y: 5, z: 0 },
 } as const satisfies MoveTokenPayload
 
-describe('session WebSocket message schema types', () => {
+describe('session socket message schema types', () => {
   it('defines client/server message vocabularies and narrow runtime predicates', () => {
     expect(SESSION_MESSAGE_SCHEMA_VERSION).toBe(1)
     expect(SESSION_MESSAGE_DIRECTIONS).toEqual(['client', 'server'])

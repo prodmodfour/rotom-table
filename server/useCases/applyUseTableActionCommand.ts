@@ -434,21 +434,21 @@ const getActiveUseTableActionRecord = (
   if (record === undefined) {
     throw new ApplyUseTableActionCommandUseCaseError(
       404,
-      'No Track 2 table session was found for the supplied table action command',
+      'No live session was found for the supplied table action command',
     )
   }
 
   if (record.status !== 'active') {
     throw new ApplyUseTableActionCommandUseCaseError(
       409,
-      'The Track 2 table session must be active before table action commands can apply',
+      'The live session must be active before table action commands can apply',
     )
   }
 
   if (record.state === undefined) {
     throw new ApplyUseTableActionCommandUseCaseError(
       500,
-      'The Track 2 table session has no authoritative state available for table action commands',
+      'The live session has no authoritative state available for table action commands',
     )
   }
 
@@ -501,7 +501,7 @@ const createUnauthorizedRejection = (
   status: 'rejected',
   accepted: false,
   reason: 'unauthorized',
-  message: permission?.message ?? 'Only the GM or a player assigned to the acting token or sheet can use this table action in a Track 2 table session.',
+  message: permission?.message ?? 'Only the GM or a player assigned to the acting token or sheet can use this table action in a live session.',
   retryable: false,
   sessionId: command.sessionId,
   opId: command.opId,
@@ -1160,7 +1160,7 @@ const useAbilityPlan = (
       result: createConflictRejection(
         command,
         record,
-        `Ability ${option.name} does not have a Track 2 session automation boundary yet.`,
+        `Ability ${option.name} does not have a live session automation boundary yet.`,
         processedAt,
         { retryable: false, currentState: useTableActionStateFromTarget(command, target, record.revision) },
       ),
@@ -1714,7 +1714,7 @@ export const applyUseTableActionCommandUseCase = (
     if (planned.plan.writePlans.length > 0) rollbackWrittenSheets(writeSheet, planned.plan.writePlans)
     throw new ApplyUseTableActionCommandUseCaseError(
       409,
-      `The Track 2 table session ended before ${commandValidation.command.type} could apply`,
+      `The live session ended before ${commandValidation.command.type} could apply`,
     )
   }
 

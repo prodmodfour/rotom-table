@@ -14,7 +14,7 @@ import {
   parseSmokeCliArgs,
 } from '../../scripts/session-multi-tab-smoke.mjs'
 
-describe('Track 2 multi-tab smoke helper', () => {
+describe('Live session multi-tab smoke helper', () => {
   it('builds safe default lobby URLs and a map chooser without requiring secrets', () => {
     const urls = buildSmokeUrls()
 

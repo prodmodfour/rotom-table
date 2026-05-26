@@ -250,19 +250,19 @@ export const useSessionMap = (options: UseSessionMapOptions): UseSessionMapRetur
 
   const ensureHelloForSession = (): SessionMapLoadSnapshotResult => {
     if (!enabled.value) {
-      return failLoad('not-session-mode', 'Track 2 session map sync is not enabled for this map view.')
+      return failLoad('not-session-mode', 'Session map sync is not enabled for this map view.')
     }
 
     const currentIdentity = identity.value ?? loadRememberedIdentity()
     if (currentIdentity === null) {
       return failLoad(
         'missing-session-identity',
-        'No remembered Track 2 session identity was found; open the session lobby and start or join a session first.',
+        'No remembered live session identity was found; open the session lobby and start or join a session first.',
       )
     }
 
     if (!socket.connect()) {
-      return failLoad('socket-unavailable', socket.lastError.value ?? 'Track 2 session WebSocket is not available.')
+      return failLoad('socket-unavailable', socket.lastError.value ?? 'Session socket is not available.')
     }
 
     if (socket.helloStatus.value === 'accepted' && socket.status.value === 'open') {
@@ -294,14 +294,14 @@ export const useSessionMap = (options: UseSessionMapOptions): UseSessionMapRetur
 
   const refreshSessionSnapshot = (): SessionMapLoadSnapshotResult => {
     if (!enabled.value) {
-      return failLoad('not-session-mode', 'Track 2 session map sync is not enabled for this map view.')
+      return failLoad('not-session-mode', 'Session map sync is not enabled for this map view.')
     }
 
     const currentIdentity = identity.value ?? loadRememberedIdentity()
     if (currentIdentity === null) {
       return failLoad(
         'missing-session-identity',
-        'No remembered Track 2 session identity was found; open the session lobby and start or join a session first.',
+        'No remembered live session identity was found; open the session lobby and start or join a session first.',
       )
     }
 
@@ -321,23 +321,23 @@ export const useSessionMap = (options: UseSessionMapOptions): UseSessionMapRetur
     command: TCommand,
   ): SessionMapCommandDispatchResult<TCommand> => {
     if (!enabled.value) {
-      return failDispatch('not-session-mode', 'Track 2 session command dispatch is not enabled for this map view.')
+      return failDispatch('not-session-mode', 'Session command dispatch is not enabled for this map view.')
     }
 
     const currentIdentity = identity.value ?? loadRememberedIdentity()
     if (currentIdentity === null) {
       return failDispatch(
         'missing-session-identity',
-        'No remembered Track 2 session identity was found; open the session lobby and start or join a session first.',
+        'No remembered live session identity was found; open the session lobby and start or join a session first.',
       )
     }
 
     if (command.sessionId !== currentIdentity.sessionId) {
-      return failDispatch('session-mismatch', 'Cannot dispatch a command for a different Track 2 session.')
+      return failDispatch('session-mismatch', 'Cannot dispatch a command for a different live session.')
     }
 
     if (!actorMatchesIdentity(command, currentIdentity)) {
-      return failDispatch('actor-mismatch', 'Cannot dispatch a command for a different session actor.')
+      return failDispatch('actor-mismatch', 'Cannot dispatch a session command for a different session actor.')
     }
 
     const helloResult = ensureHelloForSession()

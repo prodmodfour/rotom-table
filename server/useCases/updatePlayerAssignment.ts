@@ -240,28 +240,28 @@ const getAssignableSessionRecord = <TMapDocument>(
   if (record === undefined) {
     throw new UpdatePlayerAssignmentUseCaseError(
       404,
-      'No Track 2 table session was found for the supplied session ID',
+      'No live session was found for the supplied session ID',
     )
   }
 
   if (record.gmKey !== gmKey) {
     throw new UpdatePlayerAssignmentUseCaseError(
       403,
-      'The supplied GM key is not authorized to update player assignments for this Track 2 table session',
+      'The supplied GM key is not authorized to update player assignments for this live session',
     )
   }
 
   if (record.status !== 'active') {
     throw new UpdatePlayerAssignmentUseCaseError(
       409,
-      'The Track 2 table session must be active before player assignments can be changed',
+      'The live session must be active before player assignments can be changed',
     )
   }
 
   if (record.state === undefined) {
     throw new UpdatePlayerAssignmentUseCaseError(
       500,
-      'The Track 2 table session has no authoritative state available for player assignment updates',
+      'The live session has no authoritative state available for player assignment updates',
     )
   }
 
@@ -432,7 +432,7 @@ export const updatePlayerAssignmentUseCase = <TMapDocument = unknown>(
   if (updatedRecord === undefined) {
     throw new UpdatePlayerAssignmentUseCaseError(
       409,
-      'The Track 2 table session ended before player assignments could be changed',
+      'The live session ended before player assignments could be changed',
     )
   }
 

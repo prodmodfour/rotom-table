@@ -164,7 +164,7 @@ describe('joinPlayerSessionUseCase', () => {
       () => joinSession({ store, writeSnapshot, env: {} }),
       {
         statusCode: 403,
-        message: 'Track 2 session hosting is disabled. Set ROTOM_ENABLE_SESSION_HOST=1 to enable session endpoints.',
+        message: 'live session hosting is disabled. Set ROTOM_ENABLE_SESSION_HOST=1 to enable session endpoints.',
       },
     )
     expect(store.get(sessionId)?.state?.players).toEqual([])
@@ -298,7 +298,7 @@ describe('joinPlayerSessionUseCase', () => {
       }),
       {
         statusCode: 404,
-        message: 'No active Track 2 table session was found for the supplied join code',
+        message: 'No active live session was found for the supplied join code',
       },
     )
     expectHttpError(
@@ -309,7 +309,7 @@ describe('joinPlayerSessionUseCase', () => {
       }),
       {
         statusCode: 409,
-        message: 'The Track 2 table session for this join code is no longer active',
+        message: 'The live session for this join code is no longer active',
       },
     )
     expect(activeStore.get(sessionId)?.state?.players).toEqual([])

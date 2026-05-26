@@ -6,15 +6,15 @@ Status: Accepted
 
 ## Context
 
-Track 2 lets a GM-hosted Rotom Table process accept browser connections from multiple devices. That is a meaningful exposure change from the existing local-first workflow, where the GM/player role picker is a trusted table convenience and app data usually stays on one machine.
+Live session lets a GM-hosted Rotom Table process accept browser connections from multiple devices. That is a meaningful exposure change from the existing local-first workflow, where the GM/player role picker is a trusted table convenience and app data usually stays on one machine.
 
-The supported hosting paths are LAN first and named Cloudflare Tunnel second. Both can make the app reachable by people beyond the GM's browser, and a named tunnel can make it reachable from the public internet. Track 2 therefore needs a deliberate runtime safety gate before any session-hosting routes, WebSocket endpoints, lobby flows, or public join surfaces are enabled.
+The supported hosting paths are LAN first and named Cloudflare Tunnel second. Both can make the app reachable by people beyond the GM's browser, and a named tunnel can make it reachable from the public internet. Live session therefore needs a deliberate runtime safety gate before any session-hosting routes, WebSocket endpoints, lobby flows, or public join surfaces are enabled.
 
 The safety gate must prevent accidental exposure. It must also make clear that enabling session hosting does not convert the current local role picker into hardened public authentication, and does not make Rotom Table a SaaS or public multi-tenant service.
 
 ## Decision
 
-Track 2 session hosting requires an explicit runtime opt-in. The canonical flag is:
+live session hosting requires an explicit runtime opt-in. The canonical flag is:
 
 ```bash
 ROTOM_ENABLE_SESSION_HOST=1
@@ -28,7 +28,7 @@ The flag is a runtime safety gate, not a secret and not authentication. Once hos
 
 Implementation and follow-up changes must preserve these behaviours:
 
-- **Default disabled:** a normal local development or local-first run does not host Track 2 sessions unless the flag is explicitly enabled.
+- **Default disabled:** a normal local development or local-first run does not host Live sessions unless the flag is explicitly enabled.
 - **Fail closed:** session endpoints and sockets reject or hide themselves when the flag is absent, empty, misspelled, or set to any value other than the documented enabled value.
 - **Visible opt-in:** server logs, UI banners, and hosting docs should make the enabled/disabled state clear to the GM.
 - **No role-picker escalation:** the existing trusted GM/player role picker remains a local convenience and must not be treated as public auth for session hosting.
@@ -47,7 +47,7 @@ When a GM binds the server to a LAN interface or places it behind a named Cloudf
 - a leaked GM key grants GM authority for that session;
 - named tunnels must be stopped or restricted when no longer needed;
 - Quick Tunnel, when mentioned, is only a temporary development smoke-test path;
-- Track 2 does not provide full accounts, tenant isolation, abuse handling, or hardened public auth.
+- Live session does not provide full accounts, tenant isolation, abuse handling, or hardened public auth.
 
 This boundary is especially important while legacy local-first and non-session functionality coexists with session mode. The safety gate ensures the app does not accidentally publish a session API, but it does not replace route-level validation, permission checks, or conservative docs.
 
@@ -67,7 +67,7 @@ Rejected. The flag only gates whether hosting can start. Session identity, comma
 
 ### Full account/auth provider requirement
 
-Rejected for Track 2. Adding accounts or external auth would conflict with the locked no-full-accounts, GM-hosted product shape. The safety flag combines with session-local identity rather than a SaaS-style login system.
+Rejected for Live session. Adding accounts or external auth would conflict with the locked no-full-accounts, GM-hosted product shape. The safety flag combines with session-local identity rather than a SaaS-style login system.
 
 ### Environment-specific implicit enablement
 
@@ -84,7 +84,7 @@ Rejected. Session hosting must not become enabled merely because the app is in d
 
 ## Validation notes
 
-Reviewers can validate this ADR by checking that Track 2 work:
+Reviewers can validate this ADR by checking that live-session work:
 
 - keeps session hosting disabled unless `ROTOM_ENABLE_SESSION_HOST=1` is present;
 - fails closed for session routes and sockets when the flag is absent or invalid;

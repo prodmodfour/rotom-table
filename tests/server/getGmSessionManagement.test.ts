@@ -171,7 +171,7 @@ describe('getGmSessionManagementUseCase', () => {
       () => getManagement({ store, env: {} }),
       {
         statusCode: 403,
-        message: 'Track 2 session hosting is disabled. Set ROTOM_ENABLE_SESSION_HOST=1 to enable session endpoints.',
+        message: 'live session hosting is disabled. Set ROTOM_ENABLE_SESSION_HOST=1 to enable session endpoints.',
       },
     )
   })
@@ -254,14 +254,14 @@ describe('getGmSessionManagementUseCase', () => {
       () => getManagement({ store, input: { sessionId: unknownSessionId, gmKey } }),
       {
         statusCode: 404,
-        message: 'No Track 2 table session was found for the supplied session ID',
+        message: 'No live session was found for the supplied session ID',
       },
     )
     expectHttpError(
       () => getManagement({ store, input: { sessionId, gmKey: wrongGmKey } }),
       {
         statusCode: 403,
-        message: 'The supplied GM key is not authorized to manage this Track 2 table session',
+        message: 'The supplied GM key is not authorized to manage this live session',
       },
     )
   })
@@ -273,7 +273,7 @@ describe('getGmSessionManagementUseCase', () => {
       () => getManagement({ store }),
       {
         statusCode: 500,
-        message: 'The Track 2 table session has no authoritative state available for GM management',
+        message: 'The live session has no authoritative state available for GM management',
       },
     )
   })
