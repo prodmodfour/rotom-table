@@ -9,7 +9,7 @@ This document describes the transport slice that exists after the WebSocket tran
 - the server validates hello, heartbeat, and command frame shapes before dispatch;
 - same-session fanout exists for presence, command results, patches, and snapshots;
 - reconnect currently falls back to an authoritative snapshot when replay is unavailable;
-- the shared `moveToken`, `turnToken`, `spawnToken`, and `deleteToken` command payload contracts, validators, server-side application use cases, sender acknowledgement/rejection, and same-session `tokenMoved`/`tokenTurned`/`tokenSpawned`/`tokenDeleted` patch broadcasts now apply through `/api/sessions/socket`; move/turn also have explicit map-view client dispatch and client-local optimistic visual reconciliation.
+- the shared `moveToken`, `turnToken`, `spawnToken`, `deleteToken`, and `sendOutPokemon` command payload contracts, validators, server-side application use cases, sender acknowledgement/rejection, and same-session `tokenMoved`/`tokenTurned`/`tokenSpawned`/`tokenDeleted`/`pokemonSentOut` patch broadcasts now apply through `/api/sessions/socket`; move/turn also have explicit map-view client dispatch and client-local optimistic visual reconciliation.
 
 ## Route, runtime gate, and URL shape
 
@@ -42,7 +42,7 @@ Every WebSocket message is JSON and carries:
 
 Client message types are `hello`, `heartbeat`, and `command`. Server message types are `hello`, `heartbeat`, `commandAck`, `commandReject`, `snapshot`, `patch`, `presence`, and `error`.
 
-Unknown frames, invalid JSON, unsupported message types, wrong schema versions, missing session scope, pre-auth heartbeat/command messages, and cross-session messages fail closed with a safe server `error` frame when possible. Valid authenticated `moveToken`, `turnToken`, `spawnToken`, and `deleteToken` frames are dispatched to server-authoritative command handlers; authenticated command types that are not implemented yet receive `unsupported-message` without closing the socket.
+Unknown frames, invalid JSON, unsupported message types, wrong schema versions, missing session scope, pre-auth heartbeat/command messages, and cross-session messages fail closed with a safe server `error` frame when possible. Valid authenticated `moveToken`, `turnToken`, `spawnToken`, `deleteToken`, and `sendOutPokemon` frames are dispatched to server-authoritative command handlers; authenticated command types that are not implemented yet receive `unsupported-message` without closing the socket.
 
 ## Connection lifecycle
 
@@ -252,7 +252,7 @@ GM snapshots can include the full server-owned state. Player snapshots are filte
 
 ## Command flow
 
-The client sends a command envelope inside a client `command` message. The envelope includes the authenticated actor, an `opId`, `baseRevision`, scope lanes, and a JSON payload. The `moveToken` example below matches the shared movement payload validator and is dispatched by the WebSocket route to the server-side application use case; `turnToken` uses the same envelope with `field: "facing"` and payload `{ "tokenId": string, "facing": "south-east" | "north-east" | "north-west" | "south-west" }`. GM-only `spawnToken` uses `field: "spawn"` and a placement payload; GM-only `deleteToken` uses `field: "delete"` and a token ID payload. The map page currently uses move/turn paths only when it is explicitly opened in session mode with a remembered session identity, for example `/maps/viridian-gym?session=1`; otherwise local-first token dragging and turning still mutate and autosave the local map as before. Spawn/delete dispatch exists at the shared/server/socket layer for session mode and awaits a later client UI integration slice.
+The client sends a command envelope inside a client `command` message. The envelope includes the authenticated actor, an `opId`, `baseRevision`, scope lanes, and a JSON payload. The `moveToken` example below matches the shared movement payload validator and is dispatched by the WebSocket route to the server-side application use case; `turnToken` uses the same envelope with `field: "facing"` and payload `{ "tokenId": string, "facing": "south-east" | "north-east" | "north-west" | "south-west" }`. GM-only `spawnToken` uses `field: "spawn"` and a placement payload; GM-only `deleteToken` uses `field: "delete"` and a token ID payload. `sendOutPokemon` includes both a trainer `field: "sendOut"` token scope and a spawned Pokémon `field: "spawn"` token scope, with payload `{ "trainerTokenId": string, "pokemonSlug": string, "tokenId": string, "position": { "x": number, "y": number, "z": number }, "facing"?: direction }`. The map page currently uses move/turn paths only when it is explicitly opened in session mode with a remembered session identity, for example `/maps/viridian-gym?session=1`; otherwise local-first token dragging and turning still mutate and autosave the local map as before. Spawn/delete/send-out dispatch exists at the shared/server/socket layer for session mode and awaits a later client UI integration slice.
 
 ```json
 {
@@ -303,11 +303,11 @@ Server processing order for the command path:
 2. Verify the command `sessionId` and actor match the authenticated socket.
 3. Check permissions and visibility against the current authoritative session state.
 4. Check `opId` idempotency before applying side effects.
-5. Reject stale same-resource move/turn commands when a newer accepted change for the same token field exists, or when the server lacks enough recent command history to prove the old base revision is safe; the rejection includes the current authoritative token state. Valid non-conflicting effects then apply to server-owned state after command-specific rules checks such as map bounds, blocking voxels, occupied token cells, valid facing values, GM-only spawn/delete authority, duplicate placement IDs, missing delete targets, and sheet identity matches.
+5. Reject stale same-resource move/turn commands when a newer accepted change for the same token field exists, or when the server lacks enough recent command history to prove the old base revision is safe; the rejection includes the current authoritative token state. Valid non-conflicting effects then apply to server-owned state after command-specific rules checks such as map bounds, blocking voxels, occupied token cells, valid facing values, GM-only spawn/delete authority, duplicate placement IDs, missing delete targets, sheet identity matches, send-out trainer control, trainer current-team ownership, and Poké Ball throw range.
 6. Increment the relevant revision, persist a snapshot/event, send `commandAck` to the sender, and fan out a small `patch` to same-session clients.
 7. Return `commandReject` for invalid, unauthorized, stale, or conflicting commands without advancing revision.
 
-Current transport boundary: `moveToken` and `turnToken` dispatch are live on both the WebSocket route and the explicit map-view session mode. The client now applies local optimistic token-position and token-facing overrides after commands are queued/sent, confirms those overrides from `commandAck` or `tokenMoved`/`tokenTurned` patch frames, and rolls them back or reconciles them to returned `currentState.position`/`currentState.facing` on `commandReject`. The optimistic overrides affect rendering/session controls only; they do not mutate the persisted map document or trigger whole-map autosave. `spawnToken` and `deleteToken` dispatch are live on the WebSocket route as GM-only commands with `tokenSpawned`/`tokenDeleted` broadcasts; they are not yet wired to the map page buttons. Other command types still receive a server `error` with `code: "unsupported-message"` instead of mutating state until their command-specific tickets land.
+Current transport boundary: `moveToken` and `turnToken` dispatch are live on both the WebSocket route and the explicit map-view session mode. The client now applies local optimistic token-position and token-facing overrides after commands are queued/sent, confirms those overrides from `commandAck` or `tokenMoved`/`tokenTurned` patch frames, and rolls them back or reconciles them to returned `currentState.position`/`currentState.facing` on `commandReject`. The optimistic overrides affect rendering/session controls only; they do not mutate the persisted map document or trigger whole-map autosave. `spawnToken`, `deleteToken`, and `sendOutPokemon` dispatch are live on the WebSocket route with `tokenSpawned`/`tokenDeleted`/`pokemonSentOut` broadcasts; they are not yet wired to the map page buttons. Other command types still receive a server `error` with `code: "unsupported-message"` instead of mutating state until their command-specific tickets land.
 
 ### Accepted command and patch
 
@@ -394,7 +394,7 @@ Current transport boundary: `moveToken` and `turnToken` dispatch are live on bot
 }
 ```
 
-The patch is a small authoritative event, not a whole-map autosave from a browser. Accepted `moveToken`, `turnToken`, `spawnToken`, and `deleteToken` commands send `commandAck` to the submitting socket and fan out small token-specific patches to authenticated peers in the same session; the sender can receive both frames. Spawn patches include the authoritative placement that was appended; delete patches include the removed placement and whether the active initiative pointer was cleared.
+The patch is a small authoritative event, not a whole-map autosave from a browser. Accepted `moveToken`, `turnToken`, `spawnToken`, `deleteToken`, and `sendOutPokemon` commands send `commandAck` to the submitting socket and fan out small token-specific patches to authenticated peers in the same session; the sender can receive both frames. Spawn patches include the authoritative placement that was appended; delete patches include the removed placement and whether the active initiative pointer was cleared; send-out patches include the source trainer token, Pokémon sheet slug, and spawned placement.
 
 ### Rejected command
 
@@ -454,7 +454,7 @@ The patch is a small authoritative event, not a whole-map autosave from a browse
 }
 ```
 
-Normal command rejections use `reason: "invalid"`, `"unauthorized"`, `"stale"`, or `"conflict"`. For `moveToken`, stale same-token rejections include `baseRevision`, `changedScopes`, and the current authoritative token position/revision so clients can reconcile optimistic state. For `turnToken`, stale same-token facing rejections include the same revision/scope metadata plus the current authoritative facing. `spawnToken`/`deleteToken` reject player actors as unauthorized and return conflicts for duplicate spawn IDs, missing delete targets, sheet-identity mismatches, and blocked/out-of-bounds/occupied spawn cells. They are distinct from transport `error` messages.
+Normal command rejections use `reason: "invalid"`, `"unauthorized"`, `"stale"`, or `"conflict"`. For `moveToken`, stale same-token rejections include `baseRevision`, `changedScopes`, and the current authoritative token position/revision so clients can reconcile optimistic state. For `turnToken`, stale same-token facing rejections include the same revision/scope metadata plus the current authoritative facing. `spawnToken`/`deleteToken` reject player actors as unauthorized and return conflicts for duplicate spawn IDs, missing delete targets, sheet-identity mismatches, and blocked/out-of-bounds/occupied spawn cells. `sendOutPokemon` rejects players who do not control the trainer token and returns conflicts for non-trainer source tokens, missing sheets, Pokémon not on the trainer's current team, duplicate spawned token IDs, occupied/out-of-bounds destinations, and destinations outside Poké Ball throw range. They are distinct from transport `error` messages.
 
 ### Duplicate `opId`
 
@@ -511,7 +511,7 @@ Use server `error` messages for socket/session failures that are outside a norma
   "direction": "server",
   "sessionId": "session_lake_table_001",
   "code": "unsupported-message",
-  "message": "Track 2 session WebSocket command dispatch currently supports moveToken, turnToken, spawnToken, and deleteToken commands only.",
+  "message": "Track 2 session WebSocket command dispatch currently supports moveToken, turnToken, spawnToken, deleteToken, and sendOutPokemon commands only.",
   "retryable": false,
   "currentRevision": 42
 }
