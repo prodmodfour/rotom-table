@@ -19,6 +19,7 @@ This directory collects presentation and reviewer documentation for Rotom Table.
 - [Track 2 client integration](track-2-client-integration.md) — local mode versus explicit session mode, optimistic UX, disconnect recovery, and conflict/retry guidance.
 - [Track 2 session lobby and manual QA](track-2-session-lobby.md) — GM/player join flow, expected LAN usage, and two-browser lobby smoke checklist.
 - [Track 2 LAN hosting runbook](track-2-lan-hosting.md) — same-Wi-Fi/LAN setup commands, IP discovery, player join URLs, smoke checks, and troubleshooting.
+- [Track 2 named Cloudflare Tunnel runbook](track-2-cloudflare-tunnel-hosting.md) — stable-hostname remote setup, WebSocket considerations, safety warnings, and rollback steps.
 - [Track 2 multi-tab local smoke script](track-2-multi-tab-smoke.md) — local GM/player session-mode tab helper and token propagation checklist.
 - [Track 2 session storage](track-2-session-storage.md) — default snapshot/event-log paths, ignored/private data boundaries, backup guidance, cleanup behaviour, and recovery limitations.
 - [ADR 001: GM-hosted session model](adrs/001-gm-hosted-session-model.md) — decision record for GM-controlled sessions instead of SaaS, public multi-tenancy, or generic collaborative editing.

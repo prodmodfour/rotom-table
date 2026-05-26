@@ -4,7 +4,7 @@ This runbook is the supported same-network hosting path for Track 2 table sessio
 
 LAN hosting keeps the locked Track 2 architecture intact: one GM-hosted server owns session authority, live clients use `WebSocket /api/sessions/socket`, commands are acknowledged or rejected by the server, state is persisted as local JSON snapshots/event logs, and browsers must not autosave whole maps as the live session concurrency mechanism.
 
-For the lobby flow itself, see [Track 2 session lobby and manual QA](track-2-session-lobby.md). For local multi-tab token propagation checks, see [Track 2 multi-tab local smoke script](track-2-multi-tab-smoke.md). Remote play over the internet is separate named Cloudflare Tunnel work; do not use ad-hoc public exposure as the LAN path.
+For the lobby flow itself, see [Track 2 session lobby and manual QA](track-2-session-lobby.md). For local multi-tab token propagation checks, see [Track 2 multi-tab local smoke script](track-2-multi-tab-smoke.md). For remote play over the internet, use the [Track 2 named Cloudflare Tunnel runbook](track-2-cloudflare-tunnel-hosting.md); do not use ad-hoc public exposure as the LAN path.
 
 ## Before you start
 
@@ -148,7 +148,7 @@ The helper is still a local browser aid; this runbook remains the source for cro
 | Player used `localhost` and sees nothing or another app | `localhost` points to the player device | Use `http://<GM-LAN-IP>:3000`, not `localhost`, from player devices. |
 | Safety banner says hosting disabled | Runtime flag was not set when Nuxt started | Stop the server and restart with `ROTOM_ENABLE_SESSION_HOST=1`; changing the environment variable after startup is not enough. |
 | Safety banner says local while testing LAN | The GM opened `localhost` | Reopen `/sessions` through `http://<GM-LAN-IP>:3000/sessions` to verify the player-facing path. |
-| Safety banner says remote or unknown unexpectedly | The request may be coming through a proxy, tunnel, VPN, public hostname, or unusual interface | Do not share the join code until the path is understood. For remote play, wait for the named Cloudflare Tunnel runbook rather than improvising public exposure. |
+| Safety banner says remote or unknown unexpectedly | The request may be coming through a proxy, tunnel, VPN, public hostname, or unusual interface | Do not share the join code until the path is understood. For remote play, use the [Track 2 named Cloudflare Tunnel runbook](track-2-cloudflare-tunnel-hosting.md) rather than improvising public exposure. |
 | Join code fails | Code was copied incorrectly, the session ended, or the player has stale browser identity | Re-copy the current code from the GM lobby, refresh the GM lobby, use **Forget in this browser** on stale clients, then join again. |
 | WebSocket stays disconnected/reconnecting | Network changed, laptop slept, firewall/proxy closed the socket, or the browser is on a different network | Keep the GM host awake, reload the player page, use the reconnect/snapshot banner, and verify `ws://<GM-LAN-IP>:3000/api/sessions/socket` is not blocked by local security software. |
 | Player can see the session but cannot move a token | Player has not been assigned that token/sheet or the resource is not visible | The GM must assign controllable resources for player commands; GM-only commands remain GM-only. |
@@ -185,7 +185,7 @@ Back up local session snapshots only if the GM intentionally wants a private rec
 
 ## Boundaries
 
-- LAN hosting is the primary supported Track 2 path; remote players should use the later named Cloudflare Tunnel runbook with a stable hostname.
+- LAN hosting is the primary supported Track 2 path; remote players should use the [Track 2 named Cloudflare Tunnel runbook](track-2-cloudflare-tunnel-hosting.md) with a stable hostname.
 - Quick Tunnel is not the supported campaign-session path.
 - The existing `/login` GM/player picker is not public auth.
 - The session join code and GM key are session-local credentials, not full accounts.

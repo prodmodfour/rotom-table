@@ -536,7 +536,7 @@ No session data should be sent to a socket before hello/auth, and no presence, p
 
 ## Named Cloudflare Tunnel expectations
 
-LAN remains the primary supported Track 2 hosting path. For same-Wi-Fi startup commands, IP discovery, player browser paths, and network troubleshooting, use the [Track 2 LAN hosting runbook](track-2-lan-hosting.md). For remote players, the supported path is a named Cloudflare Tunnel with a stable hostname pointing to the private GM-hosted Rotom Table server.
+LAN remains the primary supported Track 2 hosting path. For same-Wi-Fi startup commands, IP discovery, player browser paths, and network troubleshooting, use the [Track 2 LAN hosting runbook](track-2-lan-hosting.md). For remote players, use the [Track 2 named Cloudflare Tunnel runbook](track-2-cloudflare-tunnel-hosting.md): the supported path is a named Cloudflare Tunnel with a stable hostname pointing to the private GM-hosted Rotom Table server.
 
 WebSocket-specific expectations for that named tunnel:
 
@@ -571,13 +571,14 @@ A transport-only smoke check should verify:
 3. neither patch carries whole-map fields such as `placements` or `fieldEffects`;
 4. the server-owned session/map revisions, persisted snapshot calls, socket revision tracking, and authoritative token position/facing all advance to revision 2.
 
-This automated fake-peer smoke test complements the local browser helper in [Track 2 multi-tab local smoke script](track-2-multi-tab-smoke.md). Together they cover server-authoritative two-client command/fanout behaviour plus the GM/player session-map tab flow before later LAN and named-tunnel operational checks.
+This automated fake-peer smoke test complements the local browser helper in [Track 2 multi-tab local smoke script](track-2-multi-tab-smoke.md). Together they cover server-authoritative two-client command/fanout behaviour plus the GM/player session-map tab flow before LAN and named-tunnel operational checks.
 
 ## Related docs
 
 - [Track 2 session protocol](track-2-session-protocol.md)
 - [Track 2 session lobby and manual QA](track-2-session-lobby.md)
 - [Track 2 LAN hosting runbook](track-2-lan-hosting.md)
+- [Track 2 named Cloudflare Tunnel runbook](track-2-cloudflare-tunnel-hosting.md)
 - [Track 2 multi-tab local smoke script](track-2-multi-tab-smoke.md)
 - [Track 2 session storage](track-2-session-storage.md)
 - [Track 2 validation matrix](track-2-validation-matrix.md)
