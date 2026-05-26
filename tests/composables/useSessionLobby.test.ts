@@ -24,6 +24,7 @@ import {
   type JoinPlayerSessionResponse,
   type PlayerSessionStateResponse,
   type StartGmSessionResponse,
+  type UpdatePlayerAssignmentResponse,
 } from '~/composables/useSessionLobby'
 
 const SESSION_ID = parseSessionId('session_abcdefghijkl')
@@ -104,6 +105,14 @@ const attachedMapSummary = {
   playerVisibleByDefault: true,
 } as const
 
+const pikachuTokenResource = {
+  kind: 'token',
+  tokenId: 'token-pikachu',
+  mapSlug: MAP_SLUG,
+  sheetKind: 'pokemon',
+  sheetSlug: 'pikachu',
+} as const
+
 const makeAttachedManagementResponse = (revision = 2): GmSessionManagementResponse => {
   const response = makeManagementResponse(revision)
   return {
@@ -143,6 +152,38 @@ const makeAttachMapResponse = (revision = 2): AttachSessionMapResult => ({
     grantsJoinedPlayers: true,
     grantsFuturePlayers: true,
     visiblePlayerIds: [PLAYER_ID],
+  },
+  snapshot: {
+    writtenAt: CREATED_AT,
+    revision: parseSessionRevision(revision),
+  },
+})
+
+const makeUpdateAssignmentResponse = (revision = 3): UpdatePlayerAssignmentResponse => ({
+  session: {
+    sessionId: SESSION_ID,
+    status: 'active',
+    revision: parseSessionRevision(revision),
+    createdAt: CREATED_AT,
+    updatedAt: CREATED_AT,
+  },
+  player: {
+    playerId: PLAYER_ID,
+    displayName: DISPLAY_NAME,
+    joinedAt: CREATED_AT,
+    updatedAt: CREATED_AT,
+  },
+  assignment: {
+    playerId: PLAYER_ID,
+    displayName: DISPLAY_NAME,
+    controllableResources: [pikachuTokenResource],
+    visibleResources: [{ kind: 'map', mapSlug: MAP_SLUG }, pikachuTokenResource],
+    updatedAt: CREATED_AT,
+    updatedByClientId: GM_CLIENT_ID,
+  },
+  change: {
+    action: 'assign',
+    resources: [pikachuTokenResource],
   },
   snapshot: {
     writtenAt: CREATED_AT,
@@ -480,6 +521,112 @@ describe('useSessionLobby', () => {
     expect(lobby.busy.value).toBe(false)
   })
 
+  it('assigns a current map token for a joined player and refreshes GM management state', async () => {
+    const storedIdentity: SessionClientIdentity = {
+      schemaVersion: SESSION_CLIENT_IDENTITY_SCHEMA_VERSION,
+      role: 'gm',
+      sessionId: SESSION_ID,
+      clientId: GM_CLIENT_ID,
+      gmKey: GM_KEY,
+      rememberedAt: CREATED_AT,
+      lastSeenRevision: parseSessionRevision(2),
+    }
+    const storage = makeStorage(storedIdentity)
+    const assignmentResponse = makeUpdateAssignmentResponse(3)
+    const api = makeApiClient({
+      [SESSION_API_PATHS.assignments]: (body) => {
+        expect(body).toEqual({
+          sessionId: SESSION_ID,
+          gmKey: GM_KEY,
+          gmClientId: GM_CLIENT_ID,
+          playerId: PLAYER_ID,
+          action: 'assign',
+          resources: [pikachuTokenResource],
+        })
+        return assignmentResponse
+      },
+      [SESSION_API_PATHS.manage]: (body) => {
+        expect(body).toEqual({ sessionId: SESSION_ID, gmKey: GM_KEY })
+        return makeAttachedManagementResponse(3)
+      },
+    })
+    const lobby = useSessionLobby({
+      apiClient: api.apiClient,
+      identityStorage: storage.storage,
+      clock: () => REMEMBERED_AT,
+    })
+
+    const result = await lobby.updatePlayerAssignment({
+      playerId: PLAYER_ID,
+      action: 'assign',
+      resources: [pikachuTokenResource],
+    })
+
+    expect(result).toEqual(assignmentResponse)
+    expect(api.calls.map((call) => call.request)).toEqual([
+      SESSION_API_PATHS.assignments,
+      SESSION_API_PATHS.manage,
+    ])
+    expect(storage.storage.load).toHaveBeenCalled()
+    expect(lobby.lastUpdatedPlayerAssignment.value).toEqual(assignmentResponse)
+    expect(lobby.gmManagement.value?.selectedMap?.mapSlug).toBe(MAP_SLUG)
+    expect(lobby.identity.value?.lastSeenRevision).toBe(parseSessionRevision(3))
+    expect(storage.stored()).toEqual(lobby.identity.value)
+    expect(lobby.lastNotice.value).toBe('Assigned 1 token resource for Riley.')
+    expect(lobby.lastError.value).toBeNull()
+    expect(lobby.busy.value).toBe(false)
+  })
+
+  it('surfaces assignment request failures without exposing GM secrets', async () => {
+    const storedIdentity: SessionClientIdentity = {
+      schemaVersion: SESSION_CLIENT_IDENTITY_SCHEMA_VERSION,
+      role: 'gm',
+      sessionId: SESSION_ID,
+      clientId: GM_CLIENT_ID,
+      gmKey: GM_KEY,
+      rememberedAt: CREATED_AT,
+      lastSeenRevision: parseSessionRevision(2),
+    }
+    const storage = makeStorage(storedIdentity)
+    const apiError = {
+      data: { statusMessage: 'The selected token is not available for live session assignment.' },
+    }
+    const api = makeApiClient({
+      [SESSION_API_PATHS.assignments]: () => {
+        throw apiError
+      },
+    })
+    const lobby = useSessionLobby({
+      apiClient: api.apiClient,
+      identityStorage: storage.storage,
+      clock: () => REMEMBERED_AT,
+    })
+
+    await expect(lobby.updatePlayerAssignment({
+      playerId: PLAYER_ID,
+      action: 'unassign',
+      resources: [pikachuTokenResource],
+    })).rejects.toEqual(apiError)
+
+    expect(api.calls).toEqual([{
+      request: SESSION_API_PATHS.assignments,
+      body: {
+        sessionId: SESSION_ID,
+        gmKey: GM_KEY,
+        gmClientId: GM_CLIENT_ID,
+        playerId: PLAYER_ID,
+        action: 'unassign',
+        resources: [pikachuTokenResource],
+      },
+    }])
+    expect(lobby.lastUpdatedPlayerAssignment.value).toBeNull()
+    expect(lobby.gmManagement.value).toBeNull()
+    expect(lobby.lastNotice.value).toBeNull()
+    expect(lobby.lastError.value).toBe('The selected token is not available for live session assignment.')
+    expect(lobby.lastError.value).not.toContain('gmkey_')
+    expect(lobby.busy.value).toBe(false)
+  })
+
   it('surfaces attach-map request failures without requiring a page reload', async () => {
     const storedIdentity: SessionClientIdentity = {
       schemaVersion: SESSION_CLIENT_IDENTITY_SCHEMA_VERSION,
@@ -524,7 +671,7 @@ describe('useSessionLobby', () => {
     expect(lobby.busy.value).toBe(false)
   })
 
-  it('requires a remembered GM live session before attaching a map', async () => {
+  it('requires a remembered GM live session before GM-only session map actions', async () => {
     const storage = makeStorage()
     const api = makeApiClient({})
     const lobby = useSessionLobby({
@@ -536,9 +683,16 @@ describe('useSessionLobby', () => {
     await expect(lobby.attachMapToSession({ mapSlug: MAP_SLUG })).rejects.toThrow(
       'A remembered GM live session is required before attaching a session map.',
     )
+    expect(lobby.lastError.value).toBe('A remembered GM live session is required before attaching a session map.')
+
+    await expect(lobby.updatePlayerAssignment({
+      playerId: PLAYER_ID,
+      action: 'assign',
+      resources: [pikachuTokenResource],
+    })).rejects.toThrow('A remembered GM live session is required before assigning player tokens.')
 
     expect(api.calls).toEqual([])
-    expect(lobby.lastError.value).toBe('A remembered GM live session is required before attaching a session map.')
+    expect(lobby.lastError.value).toBe('A remembered GM live session is required before assigning player tokens.')
     expect(lobby.lastNotice.value).toBeNull()
     expect(lobby.busy.value).toBe(false)
   })

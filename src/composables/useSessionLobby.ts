@@ -22,6 +22,7 @@ import type { SessionSafetyStatus } from '#shared/sessionSafety'
 import type {
   PlayerAssignmentRecord,
   PlayerSessionActor,
+  SessionControllableResourceRef,
 } from '#shared/sessionPermissions'
 import type { MapRevision, SessionRevision } from '#shared/sessionRevisions'
 import type {
@@ -142,6 +143,28 @@ export interface AttachSessionMapForm {
   readonly visibilityBehavior?: SessionMapAttachmentVisibilityBehavior
 }
 
+export type UpdatePlayerAssignmentAction = 'assign' | 'unassign'
+
+export interface UpdatePlayerAssignmentForm {
+  readonly playerId: PlayerId
+  readonly action: UpdatePlayerAssignmentAction
+  readonly resources: readonly SessionControllableResourceRef[]
+}
+
+export interface UpdatePlayerAssignmentResponse {
+  readonly session: SessionLobbySessionSummary
+  readonly player: SessionPlayerRecord
+  readonly assignment: PlayerAssignmentRecord
+  readonly change: {
+    readonly action: UpdatePlayerAssignmentAction
+    readonly resources: readonly SessionControllableResourceRef[]
+  }
+  readonly snapshot: {
+    readonly writtenAt: string
+    readonly revision: SessionRevision
+  }
+}
+
 export interface UseSessionLobbyOptions {
   readonly apiClient?: ApiClient
   readonly identityStorage?: SessionClientIdentityStorage
@@ -183,6 +206,7 @@ export const useSessionLobby = (options: UseSessionLobbyOptions = {}) => {
   const joinedPlayerSession = ref<JoinPlayerSessionResponse | null>(null)
   const playerState = ref<PlayerSessionStateResponse | null>(null)
   const lastAttachedSessionMap = ref<AttachSessionMapResult | null>(null)
+  const lastUpdatedPlayerAssignment = ref<UpdatePlayerAssignmentResponse | null>(null)
   const safetyStatus = ref<SessionSafetyStatus | null>(null)
   const safetyError = ref<string | null>(null)
   const busy = ref(false)
@@ -246,6 +270,7 @@ export const useSessionLobby = (options: UseSessionLobbyOptions = {}) => {
     gmManagement.value = null
     startedGmSession.value = null
     lastAttachedSessionMap.value = null
+    lastUpdatedPlayerAssignment.value = null
     rememberIdentityRevision(playerIdentityValue, response.session.revision)
     return response
   }
@@ -272,6 +297,7 @@ export const useSessionLobby = (options: UseSessionLobbyOptions = {}) => {
       const response = await apiClient.postJson<StartGmSessionResponse>(SESSION_API_PATHS.start, {})
       startedGmSession.value = response
       lastAttachedSessionMap.value = null
+      lastUpdatedPlayerAssignment.value = null
       const nextIdentity: Extract<SessionClientIdentity, { role: 'gm' }> = {
         schemaVersion: SESSION_CLIENT_IDENTITY_SCHEMA_VERSION,
         role: 'gm',
@@ -306,6 +332,7 @@ export const useSessionLobby = (options: UseSessionLobbyOptions = {}) => {
       })
       joinedPlayerSession.value = response
       lastAttachedSessionMap.value = null
+      lastUpdatedPlayerAssignment.value = null
       const nextIdentity: Extract<SessionClientIdentity, { role: 'player' }> = {
         schemaVersion: SESSION_CLIENT_IDENTITY_SCHEMA_VERSION,
         role: 'player',
@@ -360,9 +387,52 @@ export const useSessionLobby = (options: UseSessionLobbyOptions = {}) => {
         requestBody,
       )
       lastAttachedSessionMap.value = response
+      lastUpdatedPlayerAssignment.value = null
       const refreshedIdentity = rememberIdentityRevision(currentIdentity, response.session.revision)
       await fetchGmManagement(refreshedIdentity)
       lastNotice.value = `Attached ${response.map.mapSlug} to the live session map.`
+      return response
+    } catch (error) {
+      recordFailure(error)
+      throw error
+    } finally {
+      busy.value = false
+    }
+  }
+
+  const updatePlayerAssignment = async (
+    form: UpdatePlayerAssignmentForm,
+  ): Promise<UpdatePlayerAssignmentResponse> => {
+    busy.value = true
+    lastError.value = null
+    lastNotice.value = null
+
+    try {
+      const currentIdentity = identity.value ?? identityStorage.load()
+      if (identity.value === null && currentIdentity !== null) {
+        identity.value = currentIdentity
+      }
+      if (currentIdentity?.role !== 'gm') {
+        throw new Error('A remembered GM live session is required before assigning player tokens.')
+      }
+
+      const response = await apiClient.postJson<UpdatePlayerAssignmentResponse>(
+        SESSION_API_PATHS.assignments,
+        {
+          sessionId: currentIdentity.sessionId,
+          gmKey: currentIdentity.gmKey,
+          gmClientId: currentIdentity.clientId,
+          playerId: form.playerId,
+          action: form.action,
+          resources: form.resources,
+        },
+      )
+      lastUpdatedPlayerAssignment.value = response
+      const refreshedIdentity = rememberIdentityRevision(currentIdentity, response.session.revision)
+      await fetchGmManagement(refreshedIdentity)
+      const resourceCount = response.change.resources.length
+      const resourceLabel = resourceCount === 1 ? 'token resource' : 'token resources'
+      lastNotice.value = `${response.change.action === 'assign' ? 'Assigned' : 'Unassigned'} ${resourceCount} ${resourceLabel} for ${response.player.displayName}.`
       return response
     } catch (error) {
       recordFailure(error)
@@ -425,6 +495,7 @@ export const useSessionLobby = (options: UseSessionLobbyOptions = {}) => {
     joinedPlayerSession.value = null
     playerState.value = null
     lastAttachedSessionMap.value = null
+    lastUpdatedPlayerAssignment.value = null
     lastError.value = null
     lastNotice.value = 'Cleared the remembered live session identity for this browser.'
   }
@@ -436,6 +507,7 @@ export const useSessionLobby = (options: UseSessionLobbyOptions = {}) => {
     joinedPlayerSession,
     playerState,
     lastAttachedSessionMap,
+    lastUpdatedPlayerAssignment,
     safetyStatus,
     safetyError,
     busy,
@@ -451,6 +523,7 @@ export const useSessionLobby = (options: UseSessionLobbyOptions = {}) => {
     startGmSession,
     joinPlayerSession,
     attachMapToSession,
+    updatePlayerAssignment,
     refreshSessionSummary,
     loadRememberedIdentity,
     clearRememberedIdentity,

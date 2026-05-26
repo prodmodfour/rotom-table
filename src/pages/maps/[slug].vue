@@ -92,6 +92,12 @@ const mapStatus = computed(() => (
     ? 'idle'
     : status.value
 ))
+const sessionAssignmentTokens = computed(() => (map.value?.placements ?? []).map((placement) => ({
+  tokenId: placement.id,
+  mapSlug: slug,
+  sheetKind: placement.sheetKind,
+  sheetSlug: placement.sheetSlug,
+})))
 
 useHead(() => ({
   title: map.value ? `${map.value.name} · Maps` : 'Maps · Rotom Table',
@@ -765,6 +771,7 @@ useMapDimensionReconciliation({
       <MapNavigationRail
         :map-slug="slug"
         :session-mode-enabled="sessionMoveTokenEnabled"
+        :map-tokens="sessionAssignmentTokens"
       />
     </template>
 

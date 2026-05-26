@@ -2,13 +2,16 @@
 import { ref } from 'vue'
 import AppNavigation from '~/components/AppNavigation.vue'
 import MapSessionNavigationPanel from '~/components/map/MapSessionNavigationPanel.vue'
+import type { SessionTokenAssignmentTokenInput } from '~/utils/sessionTokenAssignmentPanel'
 
 const props = withDefaults(defineProps<{
   mapSlug?: string | null
   sessionModeEnabled?: boolean
+  mapTokens?: readonly SessionTokenAssignmentTokenInput[]
 }>(), {
   mapSlug: null,
   sessionModeEnabled: false,
+  mapTokens: () => [],
 })
 
 const expanded = ref(false)
@@ -76,6 +79,7 @@ const handleFocusOut = (event: FocusEvent) => {
       <MapSessionNavigationPanel
         :map-slug="props.mapSlug"
         :session-mode-enabled="props.sessionModeEnabled"
+        :map-tokens="props.mapTokens"
       />
     </div>
   </aside>
