@@ -6,8 +6,8 @@
  * GM/player hello identity before a socket is associated with a session and
  * keeps authenticated sockets alive with app-level heartbeat ping/pong frames,
  * sends reconnect snapshot fallback when replay is unavailable, dispatches
- * server-authoritative moveToken, turnToken, spawnToken, deleteToken, sendOutPokemon, modifyHp, and modifyCombatStages commands,
- * and fans out server presence plus accepted tokenMoved/tokenTurned/tokenSpawned/tokenDeleted/pokemonSentOut/hpModified/combatStagesModified
+ * server-authoritative moveToken, turnToken, spawnToken, deleteToken, sendOutPokemon, modifyHp, modifyCombatStages, and modifyConditions commands,
+ * and fans out server presence plus accepted tokenMoved/tokenTurned/tokenSpawned/tokenDeleted/pokemonSentOut/hpModified/combatStagesModified/conditionsModified
  * patches only to authenticated peers in the same session.
  * This route still does not grant map-edit authority by itself.
  */

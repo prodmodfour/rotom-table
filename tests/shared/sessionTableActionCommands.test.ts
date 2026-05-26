@@ -19,16 +19,22 @@ import type {
 import { parseSessionRevision } from '#shared/sessionRevisions'
 import {
   MODIFY_COMBAT_STAGES_COMMAND_TYPE,
+  MODIFY_CONDITIONS_COMMAND_TYPE,
   MODIFY_HP_COMMAND_TYPE,
   createModifyCombatStagesSheetCommandScope,
   createModifyCombatStagesTokenCommandScope,
+  createModifyConditionsSheetCommandScope,
+  createModifyConditionsTokenCommandScope,
   createModifyHpSheetCommandScope,
   createModifyHpTokenCommandScope,
   isModifyCombatStagesCommandValidationCode,
+  isModifyConditionsCommandValidationCode,
   isModifyHpCommandValidationCode,
   validateModifyCombatStagesCommand,
+  validateModifyConditionsCommand,
   validateModifyHpCommand,
   type ModifyCombatStagesCommand,
+  type ModifyConditionsCommand,
   type ModifyHpCommand,
 } from '#shared/sessionTableActionCommands'
 
@@ -113,6 +119,27 @@ const createModifyCombatStagesCommand = (
   payload: {
     tokenId: 'token-pikachu',
     stages: { atk: 1, def: -1, satk: 0, sdef: 2, spd: 0, acc: -2 },
+  },
+  ...overrides,
+})
+
+const createModifyConditionsCommand = (
+  overrides: Partial<ModifyConditionsCommand> = {},
+): ModifyConditionsCommand => ({
+  schemaVersion: SESSION_COMMAND_ENVELOPE_VERSION,
+  sessionId,
+  actor: playerActor,
+  type: MODIFY_CONDITIONS_COMMAND_TYPE,
+  opId: parseOpId('op_modifycond001'),
+  baseRevision: parseSessionRevision(0),
+  scopes: [
+    createModifyConditionsTokenCommandScope(tokenResource),
+    createModifyConditionsSheetCommandScope(sheetResource),
+  ],
+  payload: {
+    tokenId: 'token-pikachu',
+    action: 'replace',
+    conditions: ['Burned', 'Disabled: Thunderbolt'],
   },
   ...overrides,
 })
@@ -240,6 +267,80 @@ describe('session table action commands', () => {
     })
     expect(unauthorized.valid).toBe(false)
     if (unauthorized.valid) throw new Error('expected unauthorized combat-stage result')
+    expect(unauthorized.permission).toMatchObject({
+      allowed: false,
+      reason: 'missing-player-identity',
+    })
+    expect(unauthorized.issues).toContainEqual(expect.objectContaining({ code: 'permission-denied' }))
+  })
+
+  it('validates modifyConditions commands for replace/add/remove actions and assigned resources', () => {
+    const replace = validateModifyConditionsCommand(createModifyConditionsCommand(), {
+      assignments: [assignment],
+    })
+
+    expect(replace.valid).toBe(true)
+    if (!replace.valid) throw new Error('expected valid condition command')
+    expect(replace.command.type).toBe(MODIFY_CONDITIONS_COMMAND_TYPE)
+    expect(replace.payload).toEqual({
+      tokenId: 'token-pikachu',
+      action: 'replace',
+      conditions: ['Burned', 'Disabled: Thunderbolt'],
+    })
+    expect(replace.tokenResource).toEqual(tokenResource)
+    expect(replace.sheetResource).toEqual(sheetResource)
+    expect(replace.permission).toMatchObject({ allowed: true, role: 'player' })
+
+    expect(validateModifyConditionsCommand(createModifyConditionsCommand({
+      actor: gmActor,
+      payload: { tokenId: 'token-pikachu', action: 'add', conditions: ['Poisoned'] },
+    }), { assignments: [] }).valid).toBe(true)
+
+    const sheetAssigned = validateModifyConditionsCommand(createModifyConditionsCommand({
+      payload: { tokenId: 'token-pikachu', action: 'remove', conditions: ['Burned'] },
+    }), { assignments: [sheetAssignment] })
+    expect(sheetAssigned.valid).toBe(true)
+    if (!sheetAssigned.valid) throw new Error('expected sheet-assigned condition command')
+    expect(sheetAssigned.permittedResource).toEqual(sheetResource)
+  })
+
+  it('reports modifyConditions payload, scope, and permission issues', () => {
+    const invalidPayload = validateModifyConditionsCommand(createModifyConditionsCommand({
+      payload: {
+        tokenId: '',
+        action: 'toggle',
+        conditions: ['Burned', '', 12],
+      } as unknown as ModifyConditionsCommand['payload'],
+    }), { assignments: [assignment] })
+
+    expect(invalidPayload.valid).toBe(false)
+    if (invalidPayload.valid) throw new Error('expected invalid condition payload')
+    expect(invalidPayload.issues.map((issue) => issue.code)).toEqual(expect.arrayContaining([
+      'invalid-token-id',
+      'invalid-action',
+      'invalid-conditions',
+    ]))
+    expect(isModifyConditionsCommandValidationCode('invalid-action')).toBe(true)
+
+    const emptyAdd = validateModifyConditionsCommand(createModifyConditionsCommand({
+      payload: { tokenId: 'token-pikachu', action: 'add', conditions: [] },
+    }), { assignments: [assignment] })
+    expect(emptyAdd.valid).toBe(false)
+    if (emptyAdd.valid) throw new Error('expected empty add to fail')
+    expect(emptyAdd.issues).toContainEqual(expect.objectContaining({ code: 'invalid-conditions' }))
+
+    const invalidScope = validateModifyConditionsCommand(createModifyConditionsCommand({
+      scopes: [createModifyConditionsTokenCommandScope({ ...tokenResource, tokenId: 'other-token' })],
+    }), { assignments: [assignment] })
+    expect(invalidScope.valid).toBe(false)
+    if (invalidScope.valid) throw new Error('expected invalid condition scope')
+    expect(invalidScope.issues).toContainEqual(expect.objectContaining({ code: 'invalid-token-scope' }))
+
+    const unauthorized = validateModifyConditionsCommand(createModifyConditionsCommand(), {
+      assignments: [],
+    })
+    expect(unauthorized.valid).toBe(false)
+    if (unauthorized.valid) throw new Error('expected unauthorized condition result')
     expect(unauthorized.permission).toMatchObject({
       allowed: false,
       reason: 'missing-player-identity',

@@ -26,8 +26,13 @@ export const MODIFY_COMBAT_STAGES_COMMAND_TYPE = 'modifyCombatStages' as const
 export const MODIFY_COMBAT_STAGES_COMMAND_SCOPE_FIELD = 'combatStages' as const
 export const SESSION_COMBAT_STAGE_KEYS = ['atk', 'def', 'satk', 'sdef', 'spd', 'acc'] as const
 
+export const MODIFY_CONDITIONS_COMMAND_TYPE = 'modifyConditions' as const
+export const MODIFY_CONDITIONS_COMMAND_SCOPE_FIELD = 'conditions' as const
+export const MODIFY_CONDITIONS_ACTIONS = ['add', 'remove', 'replace'] as const
+
 export type SessionCombatStageKey = (typeof SESSION_COMBAT_STAGE_KEYS)[number]
 export type SessionCombatStageMap = Record<SessionCombatStageKey, number>
+export type ModifyConditionsAction = (typeof MODIFY_CONDITIONS_ACTIONS)[number]
 
 export interface ModifyHpCommandPayload {
   readonly tokenId: string
@@ -57,6 +62,23 @@ export type ModifyCombatStagesCommand<
 > = SessionCommandEnvelope<
   typeof MODIFY_COMBAT_STAGES_COMMAND_TYPE,
   ModifyCombatStagesCommandPayload,
+  TActor,
+  SessionRevision
+>
+
+export interface ModifyConditionsCommandPayload {
+  readonly tokenId: string
+  /** Whether the server should add to, remove from, or replace the authoritative condition list. */
+  readonly action: ModifyConditionsAction
+  /** PTU condition entries. Replace may be empty to clear explicit conditions; add/remove require at least one entry. */
+  readonly conditions: readonly string[]
+}
+
+export type ModifyConditionsCommand<
+  TActor extends SessionActor = SessionActor,
+> = SessionCommandEnvelope<
+  typeof MODIFY_CONDITIONS_COMMAND_TYPE,
+  ModifyConditionsCommandPayload,
   TActor,
   SessionRevision
 >
@@ -150,6 +172,51 @@ export type ModifyCombatStagesCommandValidationResult<
   TActor extends SessionActor = SessionActor,
 > = ModifyCombatStagesCommandValidationSuccess<TActor> | ModifyCombatStagesCommandValidationFailure
 
+export const MODIFY_CONDITIONS_COMMAND_VALIDATION_CODES = [
+  'invalid-command-type',
+  'invalid-payload',
+  'invalid-token-id',
+  'invalid-action',
+  'invalid-conditions',
+  'invalid-token-scope',
+  'invalid-sheet-scope',
+  'permission-denied',
+] as const
+
+export type ModifyConditionsCommandValidationCode =
+  (typeof MODIFY_CONDITIONS_COMMAND_VALIDATION_CODES)[number]
+
+export interface ModifyConditionsCommandValidationContext {
+  /** Current GM-managed assignments. GM actors are allowed; player actors must control the target token or sheet. */
+  readonly assignments?: readonly PlayerAssignmentRecord[]
+}
+
+export interface ModifyConditionsCommandValidationSuccess<
+  TActor extends SessionActor = SessionActor,
+> {
+  readonly valid: true
+  readonly command: ModifyConditionsCommand<TActor>
+  readonly payload: ModifyConditionsCommandPayload
+  /** Token resource used to locate the map placement. */
+  readonly resource: SessionTokenResourceRef
+  readonly tokenResource: SessionTokenResourceRef
+  /** Optional sheet resource used to authorize sheet-assigned players. */
+  readonly sheetResource?: SessionSheetResourceRef
+  readonly permittedResource: SessionTokenResourceRef | SessionSheetResourceRef
+  readonly permission: Extract<PermissionResult, { readonly allowed: true }>
+  readonly issues: readonly []
+}
+
+export interface ModifyConditionsCommandValidationFailure {
+  readonly valid: false
+  readonly issues: readonly SessionCommandValidationIssue[]
+  readonly permission?: PermissionDenied
+}
+
+export type ModifyConditionsCommandValidationResult<
+  TActor extends SessionActor = SessionActor,
+> = ModifyConditionsCommandValidationSuccess<TActor> | ModifyConditionsCommandValidationFailure
+
 type MutableIssueList = SessionCommandValidationIssue[]
 type UnknownRecord = Record<string, unknown>
 
@@ -158,6 +225,8 @@ const EXPECTED_NON_EMPTY_STRING = 'non-empty string'
 const EXPECTED_SAFE_INTEGER = 'safe integer'
 const EXPECTED_NON_NEGATIVE_SAFE_INTEGER = 'safe non-negative integer'
 const EXPECTED_SHEET_KIND = 'pokemon | trainer'
+const EXPECTED_CONDITION_ACTION = 'add | remove | replace'
+const EXPECTED_CONDITION_LIST = 'array of non-empty condition strings'
 
 const hasOwn = (record: object, key: string): boolean =>
   Object.prototype.hasOwnProperty.call(record, key)
@@ -171,7 +240,7 @@ const describeReceived = (value: unknown): string => {
 const addIssue = (
   issues: MutableIssueList,
   path: string,
-  code: ModifyHpCommandValidationCode | ModifyCombatStagesCommandValidationCode,
+  code: ModifyHpCommandValidationCode | ModifyCombatStagesCommandValidationCode | ModifyConditionsCommandValidationCode,
   message: string,
   expected?: string,
   received?: unknown,
@@ -946,6 +1015,403 @@ export const assertValidModifyCombatStagesCommand = <
   label = 'modifyCombatStages command',
 ): ModifyCombatStagesCommand<TActor> => {
   const result = validateModifyCombatStagesCommand<TActor>(value, context)
+  if (result.valid) return result.command
+
+  const summary = result.issues.map((issue) => `${issue.path}: ${issue.message}`).join('; ')
+  throw new Error(`${label} is invalid: ${summary}`)
+}
+
+const isModifyConditionsAction = (value: unknown): value is ModifyConditionsAction =>
+  (MODIFY_CONDITIONS_ACTIONS as readonly unknown[]).includes(value)
+
+const cloneConditionList = (conditions: readonly string[]): string[] =>
+  conditions.map((condition) => condition.trim())
+
+const cloneModifyConditionsPayload = (
+  payload: ModifyConditionsCommandPayload,
+): ModifyConditionsCommandPayload => ({
+  tokenId: payload.tokenId,
+  action: payload.action,
+  conditions: cloneConditionList(payload.conditions),
+})
+
+export const isModifyConditionsCommandValidationCode = (
+  value: unknown,
+): value is ModifyConditionsCommandValidationCode =>
+  (MODIFY_CONDITIONS_COMMAND_VALIDATION_CODES as readonly unknown[]).includes(value)
+
+export const createModifyConditionsTokenCommandScope = (
+  resource: SessionTokenResourceRef,
+): SessionCommandScope => ({
+  lane: 'token',
+  resource: cloneTokenResource(resource),
+  field: MODIFY_CONDITIONS_COMMAND_SCOPE_FIELD,
+  ...(resource.mapSlug === undefined ? {} : { mapSlug: resource.mapSlug }),
+})
+
+export const createModifyConditionsSheetCommandScope = (
+  resource: SessionSheetResourceRef,
+): SessionCommandScope => ({
+  lane: 'sheet',
+  resource: cloneSheetResource(resource),
+  field: MODIFY_CONDITIONS_COMMAND_SCOPE_FIELD,
+})
+
+const collectModifyConditionsPayloadIssues = (
+  payload: unknown,
+  issues: MutableIssueList,
+): ModifyConditionsCommandPayload | undefined => {
+  if (!isRecord(payload)) {
+    addIssue(
+      issues,
+      'payload',
+      'invalid-payload',
+      'modifyConditions payload must be an object.',
+      EXPECTED_OBJECT,
+      payload,
+    )
+    return undefined
+  }
+
+  const tokenId = payload.tokenId
+  const action = payload.action
+  const conditions = payload.conditions
+
+  if (!isNonEmptyString(tokenId)) {
+    addIssue(
+      issues,
+      'payload.tokenId',
+      'invalid-token-id',
+      'modifyConditions payload.tokenId must be a non-empty token ID string.',
+      EXPECTED_NON_EMPTY_STRING,
+      tokenId,
+    )
+  }
+
+  if (!isModifyConditionsAction(action)) {
+    addIssue(
+      issues,
+      'payload.action',
+      'invalid-action',
+      'modifyConditions payload.action must be add, remove, or replace.',
+      EXPECTED_CONDITION_ACTION,
+      action,
+    )
+  }
+
+  if (!Array.isArray(conditions)) {
+    addIssue(
+      issues,
+      'payload.conditions',
+      'invalid-conditions',
+      'modifyConditions payload.conditions must be an array of condition names.',
+      EXPECTED_CONDITION_LIST,
+      conditions,
+    )
+  } else {
+    conditions.forEach((condition, index) => {
+      if (!isNonEmptyString(condition)) {
+        addIssue(
+          issues,
+          `payload.conditions[${index}]`,
+          'invalid-conditions',
+          'modifyConditions condition entries must be non-empty strings.',
+          EXPECTED_NON_EMPTY_STRING,
+          condition,
+        )
+      }
+    })
+
+    if (isModifyConditionsAction(action) && action !== 'replace' && conditions.length === 0) {
+      addIssue(
+        issues,
+        'payload.conditions',
+        'invalid-conditions',
+        'modifyConditions add/remove actions require at least one condition entry.',
+        'non-empty condition list for add/remove',
+        conditions,
+      )
+    }
+  }
+
+  if (issues.some((issue) => issue.path.startsWith('payload.'))) {
+    return undefined
+  }
+
+  return cloneModifyConditionsPayload({
+    tokenId: tokenId as string,
+    action: action as ModifyConditionsAction,
+    conditions: conditions as string[],
+  })
+}
+
+const conditionsTokenResourceFromScope = (
+  scope: SessionCommandScope,
+  path: string,
+  issues: MutableIssueList,
+): SessionTokenResourceRef | undefined => {
+  if (scope.resource?.kind !== 'token') return undefined
+
+  const tokenResource = scope.resource
+  if (hasOwn(tokenResource, 'sheetKind') && tokenResource.sheetKind !== undefined && !isSheetKind(tokenResource.sheetKind)) {
+    addIssue(
+      issues,
+      `${path}.resource.sheetKind`,
+      'invalid-token-scope',
+      'modifyConditions token scope sheetKind must be pokemon or trainer when provided.',
+      EXPECTED_SHEET_KIND,
+      tokenResource.sheetKind,
+    )
+  }
+
+  if (hasOwn(tokenResource, 'sheetSlug') && tokenResource.sheetSlug !== undefined && !isNonEmptyString(tokenResource.sheetSlug)) {
+    addIssue(
+      issues,
+      `${path}.resource.sheetSlug`,
+      'invalid-token-scope',
+      'modifyConditions token scope sheetSlug must be a non-empty string when provided.',
+      EXPECTED_NON_EMPTY_STRING,
+      tokenResource.sheetSlug,
+    )
+  }
+
+  if (hasOwn(tokenResource, 'mapSlug') && tokenResource.mapSlug !== undefined && !isNonEmptyString(tokenResource.mapSlug)) {
+    addIssue(
+      issues,
+      `${path}.resource.mapSlug`,
+      'invalid-token-scope',
+      'modifyConditions token scope mapSlug must be a non-empty string when provided.',
+      EXPECTED_NON_EMPTY_STRING,
+      tokenResource.mapSlug,
+    )
+  }
+
+  if (hasOwn(tokenResource, 'mapSlug') && hasOwn(scope, 'mapSlug') && tokenResource.mapSlug !== scope.mapSlug) {
+    addIssue(
+      issues,
+      `${path}.mapSlug`,
+      'invalid-token-scope',
+      'modifyConditions token scope mapSlug must match the token resource mapSlug when both are provided.',
+      'matching token scope map slug',
+      scope.mapSlug,
+    )
+  }
+
+  return {
+    ...tokenResource,
+    ...(tokenResource.mapSlug === undefined && typeof scope.mapSlug === 'string'
+      ? { mapSlug: scope.mapSlug }
+      : {}),
+  }
+}
+
+const conditionsSheetResourceFromScope = (
+  scope: SessionCommandScope,
+  path: string,
+  issues: MutableIssueList,
+): SessionSheetResourceRef | undefined => {
+  if (scope.resource?.kind !== 'sheet') return undefined
+
+  const sheetResource = scope.resource as unknown as UnknownRecord
+  if (!isSheetKind(sheetResource.sheetKind)) {
+    addIssue(
+      issues,
+      `${path}.resource.sheetKind`,
+      'invalid-sheet-scope',
+      'modifyConditions sheet scope sheetKind must be pokemon or trainer.',
+      EXPECTED_SHEET_KIND,
+      sheetResource.sheetKind,
+    )
+  }
+
+  if (!isNonEmptyString(sheetResource.sheetSlug)) {
+    addIssue(
+      issues,
+      `${path}.resource.sheetSlug`,
+      'invalid-sheet-scope',
+      'modifyConditions sheet scope sheetSlug must be a non-empty string.',
+      EXPECTED_NON_EMPTY_STRING,
+      sheetResource.sheetSlug,
+    )
+  }
+
+  if (issues.some((issue) => issue.path.startsWith(path))) return undefined
+
+  return cloneSheetResource(scope.resource as SessionSheetResourceRef)
+}
+
+const findModifyConditionsResources = (
+  command: ModifyConditionsCommand,
+  payload: ModifyConditionsCommandPayload | undefined,
+  issues: MutableIssueList,
+): {
+  readonly tokenResource?: SessionTokenResourceRef
+  readonly sheetResource?: SessionSheetResourceRef
+} => {
+  if (payload === undefined) return {}
+
+  const tokenScopeResources = command.scopes.map((scope, index) => ({
+    index,
+    scope,
+    resource: conditionsTokenResourceFromScope(scope, `scopes[${index}]`, issues),
+  }))
+  const matchingTokenScope = tokenScopeResources.find(({ scope, resource }) =>
+    resource !== undefined &&
+    scope.lane === 'token' &&
+    scope.field === MODIFY_CONDITIONS_COMMAND_SCOPE_FIELD &&
+    resource.tokenId === payload.tokenId,
+  )
+
+  if (matchingTokenScope?.resource === undefined) {
+    addIssue(
+      issues,
+      'scopes',
+      'invalid-token-scope',
+      'modifyConditions commands must include a token scope with resource.kind "token", field "conditions", and a tokenId matching payload.tokenId.',
+      'matching token conditions scope',
+      command.scopes,
+    )
+  } else if (
+    hasOwn(matchingTokenScope.scope, 'mapSlug') &&
+    typeof matchingTokenScope.scope.mapSlug === 'string' &&
+    matchingTokenScope.scope.mapSlug.trim().length === 0
+  ) {
+    addIssue(
+      issues,
+      `scopes[${matchingTokenScope.index}].mapSlug`,
+      'invalid-token-scope',
+      'modifyConditions token scope mapSlug must be a non-empty string when provided.',
+      EXPECTED_NON_EMPTY_STRING,
+      matchingTokenScope.scope.mapSlug,
+    )
+  }
+
+  const matchingSheetScope = command.scopes
+    .map((scope, index) => ({
+      index,
+      scope,
+      resource: conditionsSheetResourceFromScope(scope, `scopes[${index}]`, issues),
+    }))
+    .find(({ scope, resource }) =>
+      resource !== undefined &&
+      scope.lane === 'sheet' &&
+      scope.field === MODIFY_CONDITIONS_COMMAND_SCOPE_FIELD,
+    )
+
+  const tokenResource = matchingTokenScope?.resource
+  const sheetResource = matchingSheetScope?.resource
+  if (
+    tokenResource !== undefined &&
+    sheetResource !== undefined &&
+    (
+      (tokenResource.sheetKind !== undefined && tokenResource.sheetKind !== sheetResource.sheetKind) ||
+      (tokenResource.sheetSlug !== undefined && tokenResource.sheetSlug !== sheetResource.sheetSlug)
+    )
+  ) {
+    addIssue(
+      issues,
+      'scopes',
+      'invalid-sheet-scope',
+      'modifyConditions sheet scope must match the token scope sheet identity when both are provided.',
+      'matching token and sheet resource identity',
+      command.scopes,
+    )
+  }
+
+  return {
+    ...(tokenResource === undefined ? {} : { tokenResource: cloneTokenResource(tokenResource) }),
+    ...(sheetResource === undefined ? {} : { sheetResource: cloneSheetResource(sheetResource) }),
+  }
+}
+
+export const validateModifyConditionsCommand = <
+  TActor extends SessionActor = SessionActor,
+>(
+  value: unknown,
+  context: ModifyConditionsCommandValidationContext = {},
+): ModifyConditionsCommandValidationResult<TActor> => {
+  const envelopeResult = validateSessionCommandEnvelope<ModifyConditionsCommand<TActor>>(value)
+  if (!envelopeResult.valid) {
+    return { valid: false, issues: envelopeResult.issues }
+  }
+
+  const command = envelopeResult.command
+  const issues: MutableIssueList = []
+
+  if (command.type !== MODIFY_CONDITIONS_COMMAND_TYPE) {
+    addIssue(
+      issues,
+      'type',
+      'invalid-command-type',
+      'modifyConditions validators only accept command envelopes with type "modifyConditions".',
+      MODIFY_CONDITIONS_COMMAND_TYPE,
+      command.type,
+    )
+  }
+
+  const payload = collectModifyConditionsPayloadIssues(command.payload, issues)
+  const { tokenResource, sheetResource } = findModifyConditionsResources(command, payload, issues)
+
+  let permission: PermissionResult | undefined
+  let permittedResource: SessionTokenResourceRef | SessionSheetResourceRef | undefined
+  if (tokenResource !== undefined) {
+    const tokenPermission = canActorControlResource(command.actor, context.assignments ?? [], tokenResource)
+    if (tokenPermission.allowed) {
+      permission = tokenPermission
+      permittedResource = tokenResource
+    } else if (sheetResource !== undefined) {
+      const sheetPermission = canActorControlResource(command.actor, context.assignments ?? [], sheetResource)
+      if (sheetPermission.allowed) {
+        permission = sheetPermission
+        permittedResource = sheetResource
+      } else {
+        permission = tokenPermission
+      }
+    } else {
+      permission = tokenPermission
+    }
+
+    if (permission !== undefined && !permission.allowed) {
+      addIssue(
+        issues,
+        'actor',
+        'permission-denied',
+        permission.message,
+        'GM actor, assigned visible token resource, or assigned visible sheet resource',
+        command.actor,
+      )
+    }
+  }
+
+  if (issues.length > 0) {
+    return {
+      valid: false,
+      issues,
+      ...(permission !== undefined && !permission.allowed ? { permission } : {}),
+    }
+  }
+
+  return {
+    valid: true,
+    command,
+    payload: payload as ModifyConditionsCommandPayload,
+    resource: tokenResource as SessionTokenResourceRef,
+    tokenResource: tokenResource as SessionTokenResourceRef,
+    ...(sheetResource === undefined ? {} : { sheetResource }),
+    permittedResource: permittedResource as SessionTokenResourceRef | SessionSheetResourceRef,
+    permission: permission as Extract<PermissionResult, { readonly allowed: true }>,
+    issues: [],
+  }
+}
+
+export const assertValidModifyConditionsCommand = <
+  TActor extends SessionActor = SessionActor,
+>(
+  value: unknown,
+  context: ModifyConditionsCommandValidationContext = {},
+  label = 'modifyConditions command',
+): ModifyConditionsCommand<TActor> => {
+  const result = validateModifyConditionsCommand<TActor>(value, context)
   if (result.valid) return result.command
 
   const summary = result.issues.map((issue) => `${issue.path}: ${issue.message}`).join('; ')
