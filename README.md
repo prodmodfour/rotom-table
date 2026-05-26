@@ -57,6 +57,7 @@ npm run build
 - [docs/track-2-multi-tab-smoke.md](docs/track-2-multi-tab-smoke.md) — local multi-tab helper for GM/player session-mode token propagation smoke checks.
 - [docs/track-2-session-storage.md](docs/track-2-session-storage.md) — local session snapshot/event-log paths, privacy boundaries, backup guidance, and recovery limits.
 - [docs/track-2-session-backup-recovery.md](docs/track-2-session-backup-recovery.md) — private session backup/restore runbook for snapshots, optional event logs, and referenced campaign data.
+- [docs/track-2-final-persistence-recovery-audit.md](docs/track-2-final-persistence-recovery-audit.md) — final persistence/recovery audit for snapshots, optional event logs, backup docs, cleanup, and local data hygiene.
 - [docs/track-2-security-review.md](docs/track-2-security-review.md) — Trust boundaries, join-code limits, tunnel exposure risks, non-hardened areas, and Track 2 security non-goals.
 - [docs/track-2-final-session-security-audit.md](docs/track-2-final-session-security-audit.md) — Final session security audit for auth/session/cookie/permission boundaries, public exposure warnings, and remaining non-goals.
 - [docs/track-2-dependency-runtime-review.md](docs/track-2-dependency-runtime-review.md) — Track 2 dependency inventory, runtime flags, Node/Nitro compatibility, and Cloudflare tunnel assumptions.

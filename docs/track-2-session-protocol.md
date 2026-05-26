@@ -121,7 +121,7 @@ Example remote-exposure response:
 }
 ```
 
-See [Track 2 public exposure checks](track-2-public-exposure-checks.md) for the operational checklist attached to these startup issues, [Track 2 security review](track-2-security-review.md) for the broader trust boundaries, join-code limits, tunnel exposure risks, and non-hardened areas, [Track 2 final session security audit](track-2-final-session-security-audit.md) for the ticket 094 auth/session/cookie/permission boundary review, and [Track 2 dependency and runtime review](track-2-dependency-runtime-review.md) for the reviewed package/runtime boundaries.
+See [Track 2 public exposure checks](track-2-public-exposure-checks.md) for the operational checklist attached to these startup issues, [Track 2 security review](track-2-security-review.md) for the broader trust boundaries, join-code limits, tunnel exposure risks, and non-hardened areas, [Track 2 final session security audit](track-2-final-session-security-audit.md) for the ticket 094 auth/session/cookie/permission boundary review, [Track 2 final persistence/recovery audit](track-2-final-persistence-recovery-audit.md) for the ticket 095 snapshot/event-log and backup hygiene review, and [Track 2 dependency and runtime review](track-2-dependency-runtime-review.md) for the reviewed package/runtime boundaries.
 
 ## Session WebSocket route and hello/auth
 
@@ -466,7 +466,7 @@ This model is the state stored in the in-memory session store and later written 
 
 Snapshot writes serialize the complete JSON in memory, write a unique temp file in the same session directory, flush and close it, rename it over `snapshot.json`, best-effort flush the directory, and remove the temp file on failures before publish.
 
-Snapshot reads use the same session-scoped path, parse the latest `snapshot.json`, validate the persisted envelope, schema versions, session ID, revisions, timestamps, authoritative state arrays, presence actors, players, assignments, visible/controllable resources, and cross-check that the envelope and state refer to the requested session/revision. `recoverSessionStateFromSnapshot` returns the validated `AuthoritativeSessionState` for reconnect or restart paths, or a typed failure such as `not-found`, `invalid-json`, or `invalid-shape`; it never reconstructs live authority from client autosave state.
+Snapshot reads use the same session-scoped path, parse the latest `snapshot.json`, validate the persisted envelope, schema versions, session ID, revisions, timestamps, authoritative state arrays, presence actors, players, assignments, visible/controllable resources, and cross-check that the envelope and state refer to the requested session/revision. `recoverSessionStateFromSnapshot` returns the validated `AuthoritativeSessionState` for reconnect or restart paths, or a typed failure such as `not-found`, `invalid-json`, or `invalid-shape`; it never reconstructs live authority from client autosave state. The final source/doc review for this boundary is recorded in the [Track 2 final persistence/recovery audit](track-2-final-persistence-recovery-audit.md).
 
 ## Optional local event log
 

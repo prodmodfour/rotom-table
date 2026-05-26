@@ -2,7 +2,7 @@
 
 Track 2 session storage is local operational data for a GM-hosted table session. It exists so the server can recover authoritative session state after reconnects, restarts, or crashes without adding hosted database infrastructure or letting live browsers become the source of truth.
 
-This document describes the storage layout introduced by the Track 2 state/persistence work. It is an operations and recovery guide, not a claim that later lobby, WebSocket, or command routes are complete yet. For step-by-step private archive, restore, and recovery procedures, see the [Track 2 session backup and recovery runbook](track-2-session-backup-recovery.md).
+This document describes the storage layout introduced by the Track 2 state/persistence work. It is an operations and recovery guide, not a claim that later lobby, WebSocket, or command routes are complete yet. For step-by-step private archive, restore, and recovery procedures, see the [Track 2 session backup and recovery runbook](track-2-session-backup-recovery.md). For the final ticket 095 review of snapshots, optional event logs, cleanup, backup docs, and local data hygiene, see the [Track 2 final persistence/recovery audit](track-2-final-persistence-recovery-audit.md).
 
 ## Storage principles
 
