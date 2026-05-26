@@ -5,6 +5,7 @@ import MapSceneStatus from '~/components/map/MapSceneStatus.vue'
 import MapMoveReactionPromptStack from '~/components/map/MapMoveReactionPromptStack.vue'
 import InitiativeInfoBar from '~/components/map/InitiativeInfoBar.vue'
 import SessionCommandRejectionBanner from '~/components/map/SessionCommandRejectionBanner.vue'
+import SessionConnectionStatusBanner from '~/components/map/SessionConnectionStatusBanner.vue'
 import SessionPresencePanel from '~/components/map/SessionPresencePanel.vue'
 import MapCombatLog from '~/components/map/MapCombatLog.vue'
 import type { BuildTool } from '#shared/mapEditor'
@@ -40,6 +41,7 @@ import type { TokenSendOutOption } from '~/utils/mapTokenSendOut'
 import type { MapSaveStatus } from '~/composables/useEditableMap'
 import type { InitiativeRow } from '~/composables/map-editor/useInitiativeTracker'
 import type { SessionCommandRejectionNotice } from '~/utils/sessionCommandRejectionUi'
+import type { SessionConnectionStatusNotice } from '~/utils/sessionConnectionStatusUi'
 import type { SessionPresencePanelModel } from '~/utils/sessionPresencePanel'
 import { buildCombatLogMessages } from '~/utils/combatLog'
 import type { PreviewState } from '~/utils/gridPreview'
@@ -91,6 +93,7 @@ const props = defineProps<{
   tokenOrderOptionsById?: Record<string, TokenOrderMenuOption[]>
   tokenSendOutOptionsById?: Record<string, TokenSendOutOption[]>
   sessionCommandRejection?: SessionCommandRejectionNotice | null
+  sessionConnectionStatus?: SessionConnectionStatusNotice | null
   sessionPresence?: SessionPresencePanelModel | null
 }>()
 
@@ -221,6 +224,12 @@ defineExpose({ focusPokemon })
       <SessionPresencePanel
         v-if="props.map && canViewMap && props.sessionPresence"
         :model="props.sessionPresence"
+      />
+
+      <SessionConnectionStatusBanner
+        v-if="props.map && canViewMap && props.sessionConnectionStatus"
+        :notice="props.sessionConnectionStatus"
+        @refresh-session="emit('refresh-session-snapshot')"
       />
 
       <MapCombatLog

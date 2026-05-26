@@ -36,6 +36,7 @@ import {
 } from '~/composables/map-editor/useSessionMoveTokenDispatch'
 import { useTokenControls } from '~/composables/map-editor/useTokenControls'
 import { formatSessionCommandRejectionNotice } from '~/utils/sessionCommandRejectionUi'
+import { buildSessionConnectionStatusNotice } from '~/utils/sessionConnectionStatusUi'
 import { buildSessionPresencePanelModel } from '~/utils/sessionPresencePanel'
 import { MAP_API_PATHS } from '~/utils/apiRoutes'
 import { getClientId } from '~/utils/clientId'
@@ -633,6 +634,20 @@ const sessionPresencePanel = computed(() => {
   })
 })
 
+const sessionConnectionStatusNotice = computed(() => buildSessionConnectionStatusNotice({
+  enabled: sessionMoveTokenEnabled.value,
+  status: sessionMap.status.value,
+  socketStatus: sessionMap.socket.status.value,
+  helloStatus: sessionMap.socket.helloStatus.value,
+  heartbeatStatus: sessionMap.socket.heartbeatStatus.value,
+  reconnectStatus: sessionMap.socket.reconnectStatus.value,
+  snapshotStatus: sessionMap.snapshotStatus.value,
+  hasAuthoritativeSessionState: sessionMap.mapState.hasAuthoritativeSessionState.value,
+  lastKnownRevision: sessionMap.socket.lastKnownRevision.value,
+  lastSnapshot: sessionMap.socket.lastSnapshot.value,
+  lastError: sessionMap.socket.lastError.value,
+}))
+
 watch(
   () => sessionMap.lastCommandReject.value?.result.opId ?? null,
   (opId, previousOpId) => {
@@ -795,6 +810,7 @@ useMapDimensionReconciliation({
         :token-order-options-by-id="tokenOrderOptionsById"
         :token-send-out-options-by-id="tokenSendOutOptionsById"
         :session-command-rejection="sessionCommandRejectionNotice"
+        :session-connection-status="sessionConnectionStatusNotice"
         :session-presence="sessionPresencePanel"
         @select-pokemon="selectPokemon"
         @focus-initiative-entry="focusInitiativeEntry"
