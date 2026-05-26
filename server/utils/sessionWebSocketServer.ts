@@ -39,6 +39,44 @@ import {
   type SpawnTokenCommand,
   type TurnTokenCommand,
 } from '#shared/sessionTokenCommands'
+import {
+  MODIFY_COMBAT_STAGES_COMMAND_TYPE,
+  MODIFY_CONDITIONS_COMMAND_TYPE,
+  MODIFY_HP_COMMAND_TYPE,
+  USE_ABILITY_COMMAND_TYPE,
+  USE_MANEUVER_COMMAND_TYPE,
+  USE_MOVE_COMMAND_TYPE,
+  USE_ORDER_COMMAND_TYPE,
+  type ModifyCombatStagesCommand,
+  type ModifyConditionsCommand,
+  type ModifyHpCommand,
+  type UseAbilityCommand,
+  type UseManeuverCommand,
+  type UseMoveCommand,
+  type UseOrderCommand,
+} from '#shared/sessionTableActionCommands'
+import {
+  NEXT_INITIATIVE_COMMAND_TYPE,
+  PREVIOUS_INITIATIVE_COMMAND_TYPE,
+  SET_INITIATIVE_COMMAND_TYPE,
+  type InitiativeCommand,
+} from '#shared/sessionInitiativeCommands'
+import {
+  PLACE_HAZARD_COMMAND_TYPE,
+  REMOVE_HAZARD_COMMAND_TYPE,
+  type HazardCommand,
+} from '#shared/sessionHazardCommands'
+import {
+  REMOVE_FIELD_EFFECT_COMMAND_TYPE,
+  SET_FIELD_EFFECT_COMMAND_TYPE,
+  TICK_FIELD_EFFECT_DURATIONS_COMMAND_TYPE,
+  type FieldEffectCommand,
+} from '#shared/sessionFieldEffectCommands'
+import {
+  BUILD_TERRAIN_VOXEL_COMMAND_TYPE,
+  REMOVE_TERRAIN_VOXEL_COMMAND_TYPE,
+  type TerrainCommand,
+} from '#shared/sessionTerrainCommands'
 import type { TabletopMapV2 } from '~/types/map'
 import {
   applyMoveTokenCommandUseCase,
@@ -70,6 +108,60 @@ import {
   type ApplySendOutPokemonCommandInput,
   type ApplySendOutPokemonCommandUseCaseResult,
 } from '../useCases/applySendOutPokemonCommand'
+import {
+  applyModifyHpCommandUseCase,
+  type ApplyModifyHpCommandDependencies,
+  type ApplyModifyHpCommandInput,
+  type ApplyModifyHpCommandUseCaseResult,
+} from '../useCases/applyModifyHpCommand'
+import {
+  applyModifyCombatStagesCommandUseCase,
+  type ApplyModifyCombatStagesCommandDependencies,
+  type ApplyModifyCombatStagesCommandInput,
+  type ApplyModifyCombatStagesCommandUseCaseResult,
+} from '../useCases/applyModifyCombatStagesCommand'
+import {
+  applyModifyConditionsCommandUseCase,
+  type ApplyModifyConditionsCommandDependencies,
+  type ApplyModifyConditionsCommandInput,
+  type ApplyModifyConditionsCommandUseCaseResult,
+} from '../useCases/applyModifyConditionsCommand'
+import {
+  applyInitiativeCommandUseCase,
+  type ApplyInitiativeCommandDependencies,
+  type ApplyInitiativeCommandInput,
+  type ApplyInitiativeCommandUseCaseResult,
+} from '../useCases/applyInitiativeCommand'
+import {
+  applyHazardCommandUseCase,
+  type ApplyHazardCommandDependencies,
+  type ApplyHazardCommandInput,
+  type ApplyHazardCommandUseCaseResult,
+} from '../useCases/applyHazardCommand'
+import {
+  applyFieldEffectCommandUseCase,
+  type ApplyFieldEffectCommandDependencies,
+  type ApplyFieldEffectCommandInput,
+  type ApplyFieldEffectCommandUseCaseResult,
+} from '../useCases/applyFieldEffectCommand'
+import {
+  applyTerrainCommandUseCase,
+  type ApplyTerrainCommandDependencies,
+  type ApplyTerrainCommandInput,
+  type ApplyTerrainCommandUseCaseResult,
+} from '../useCases/applyTerrainCommand'
+import {
+  applyUseMoveCommandUseCase,
+  type ApplyUseMoveCommandDependencies,
+  type ApplyUseMoveCommandInput,
+  type ApplyUseMoveCommandUseCaseResult,
+} from '../useCases/applyUseMoveCommand'
+import {
+  applyUseTableActionCommandUseCase,
+  type ApplyUseTableActionCommandDependencies,
+  type ApplyUseTableActionCommandInput,
+  type ApplyUseTableActionCommandUseCaseResult,
+} from '../useCases/applyUseTableActionCommand'
 import { findPlayerAssignment, type SessionActor } from '#shared/sessionPermissions'
 import { isSessionRevision, type SessionRevision } from '#shared/sessionRevisions'
 import {
@@ -245,6 +337,51 @@ export type SessionSocketSendOutPokemonCommandApplier = (
   dependencies?: ApplySendOutPokemonCommandDependencies,
 ) => ApplySendOutPokemonCommandUseCaseResult
 
+export type SessionSocketModifyHpCommandApplier = (
+  input: ApplyModifyHpCommandInput,
+  dependencies?: ApplyModifyHpCommandDependencies,
+) => ApplyModifyHpCommandUseCaseResult
+
+export type SessionSocketModifyCombatStagesCommandApplier = (
+  input: ApplyModifyCombatStagesCommandInput,
+  dependencies?: ApplyModifyCombatStagesCommandDependencies,
+) => ApplyModifyCombatStagesCommandUseCaseResult
+
+export type SessionSocketModifyConditionsCommandApplier = (
+  input: ApplyModifyConditionsCommandInput,
+  dependencies?: ApplyModifyConditionsCommandDependencies,
+) => ApplyModifyConditionsCommandUseCaseResult
+
+export type SessionSocketInitiativeCommandApplier = (
+  input: ApplyInitiativeCommandInput,
+  dependencies?: ApplyInitiativeCommandDependencies,
+) => ApplyInitiativeCommandUseCaseResult
+
+export type SessionSocketHazardCommandApplier = (
+  input: ApplyHazardCommandInput,
+  dependencies?: ApplyHazardCommandDependencies,
+) => ApplyHazardCommandUseCaseResult
+
+export type SessionSocketFieldEffectCommandApplier = (
+  input: ApplyFieldEffectCommandInput,
+  dependencies?: ApplyFieldEffectCommandDependencies,
+) => ApplyFieldEffectCommandUseCaseResult
+
+export type SessionSocketTerrainCommandApplier = (
+  input: ApplyTerrainCommandInput,
+  dependencies?: ApplyTerrainCommandDependencies,
+) => ApplyTerrainCommandUseCaseResult
+
+export type SessionSocketUseMoveCommandApplier = (
+  input: ApplyUseMoveCommandInput,
+  dependencies?: ApplyUseMoveCommandDependencies,
+) => ApplyUseMoveCommandUseCaseResult
+
+export type SessionSocketUseTableActionCommandApplier = (
+  input: ApplyUseTableActionCommandInput,
+  dependencies?: ApplyUseTableActionCommandDependencies,
+) => ApplyUseTableActionCommandUseCaseResult
+
 export type SessionSocketMoveTokenCommandDependencies = Omit<
   ApplyMoveTokenCommandDependencies,
   'env' | 'store' | 'clock'
@@ -270,6 +407,51 @@ export type SessionSocketSendOutPokemonCommandDependencies = Omit<
   'env' | 'store' | 'clock'
 >
 
+export type SessionSocketModifyHpCommandDependencies = Omit<
+  ApplyModifyHpCommandDependencies,
+  'env' | 'store' | 'clock'
+>
+
+export type SessionSocketModifyCombatStagesCommandDependencies = Omit<
+  ApplyModifyCombatStagesCommandDependencies,
+  'env' | 'store' | 'clock'
+>
+
+export type SessionSocketModifyConditionsCommandDependencies = Omit<
+  ApplyModifyConditionsCommandDependencies,
+  'env' | 'store' | 'clock'
+>
+
+export type SessionSocketInitiativeCommandDependencies = Omit<
+  ApplyInitiativeCommandDependencies,
+  'env' | 'store' | 'clock'
+>
+
+export type SessionSocketHazardCommandDependencies = Omit<
+  ApplyHazardCommandDependencies,
+  'env' | 'store' | 'clock'
+>
+
+export type SessionSocketFieldEffectCommandDependencies = Omit<
+  ApplyFieldEffectCommandDependencies,
+  'env' | 'store' | 'clock'
+>
+
+export type SessionSocketTerrainCommandDependencies = Omit<
+  ApplyTerrainCommandDependencies,
+  'env' | 'store' | 'clock'
+>
+
+export type SessionSocketUseMoveCommandDependencies = Omit<
+  ApplyUseMoveCommandDependencies,
+  'env' | 'store' | 'clock'
+>
+
+export type SessionSocketUseTableActionCommandDependencies = Omit<
+  ApplyUseTableActionCommandDependencies,
+  'env' | 'store' | 'clock'
+>
+
 export interface SessionSocketHandlerDependencies<TMapDocument = unknown> {
   readonly env?: SessionHostRuntimeEnv
   readonly registry?: InMemorySessionSocketRegistry
@@ -281,11 +463,29 @@ export interface SessionSocketHandlerDependencies<TMapDocument = unknown> {
   readonly applySpawnTokenCommand?: SessionSocketSpawnTokenCommandApplier
   readonly applyDeleteTokenCommand?: SessionSocketDeleteTokenCommandApplier
   readonly applySendOutPokemonCommand?: SessionSocketSendOutPokemonCommandApplier
+  readonly applyModifyHpCommand?: SessionSocketModifyHpCommandApplier
+  readonly applyModifyCombatStagesCommand?: SessionSocketModifyCombatStagesCommandApplier
+  readonly applyModifyConditionsCommand?: SessionSocketModifyConditionsCommandApplier
+  readonly applyInitiativeCommand?: SessionSocketInitiativeCommandApplier
+  readonly applyHazardCommand?: SessionSocketHazardCommandApplier
+  readonly applyFieldEffectCommand?: SessionSocketFieldEffectCommandApplier
+  readonly applyTerrainCommand?: SessionSocketTerrainCommandApplier
+  readonly applyUseMoveCommand?: SessionSocketUseMoveCommandApplier
+  readonly applyUseTableActionCommand?: SessionSocketUseTableActionCommandApplier
   readonly moveTokenCommandDependencies?: SessionSocketMoveTokenCommandDependencies
   readonly turnTokenCommandDependencies?: SessionSocketTurnTokenCommandDependencies
   readonly spawnTokenCommandDependencies?: SessionSocketSpawnTokenCommandDependencies
   readonly deleteTokenCommandDependencies?: SessionSocketDeleteTokenCommandDependencies
   readonly sendOutPokemonCommandDependencies?: SessionSocketSendOutPokemonCommandDependencies
+  readonly modifyHpCommandDependencies?: SessionSocketModifyHpCommandDependencies
+  readonly modifyCombatStagesCommandDependencies?: SessionSocketModifyCombatStagesCommandDependencies
+  readonly modifyConditionsCommandDependencies?: SessionSocketModifyConditionsCommandDependencies
+  readonly initiativeCommandDependencies?: SessionSocketInitiativeCommandDependencies
+  readonly hazardCommandDependencies?: SessionSocketHazardCommandDependencies
+  readonly fieldEffectCommandDependencies?: SessionSocketFieldEffectCommandDependencies
+  readonly terrainCommandDependencies?: SessionSocketTerrainCommandDependencies
+  readonly useMoveCommandDependencies?: SessionSocketUseMoveCommandDependencies
+  readonly useTableActionCommandDependencies?: SessionSocketUseTableActionCommandDependencies
 }
 
 type MutablePendingSessionSocketConnection = {
@@ -311,11 +511,29 @@ interface ResolvedSessionSocketHandlerDependencies<TMapDocument = unknown> {
   readonly applySpawnTokenCommand: SessionSocketSpawnTokenCommandApplier
   readonly applyDeleteTokenCommand: SessionSocketDeleteTokenCommandApplier
   readonly applySendOutPokemonCommand: SessionSocketSendOutPokemonCommandApplier
+  readonly applyModifyHpCommand: SessionSocketModifyHpCommandApplier
+  readonly applyModifyCombatStagesCommand: SessionSocketModifyCombatStagesCommandApplier
+  readonly applyModifyConditionsCommand: SessionSocketModifyConditionsCommandApplier
+  readonly applyInitiativeCommand: SessionSocketInitiativeCommandApplier
+  readonly applyHazardCommand: SessionSocketHazardCommandApplier
+  readonly applyFieldEffectCommand: SessionSocketFieldEffectCommandApplier
+  readonly applyTerrainCommand: SessionSocketTerrainCommandApplier
+  readonly applyUseMoveCommand: SessionSocketUseMoveCommandApplier
+  readonly applyUseTableActionCommand: SessionSocketUseTableActionCommandApplier
   readonly moveTokenCommandDependencies: SessionSocketMoveTokenCommandDependencies
   readonly turnTokenCommandDependencies: SessionSocketTurnTokenCommandDependencies
   readonly spawnTokenCommandDependencies: SessionSocketSpawnTokenCommandDependencies
   readonly deleteTokenCommandDependencies: SessionSocketDeleteTokenCommandDependencies
   readonly sendOutPokemonCommandDependencies: SessionSocketSendOutPokemonCommandDependencies
+  readonly modifyHpCommandDependencies: SessionSocketModifyHpCommandDependencies
+  readonly modifyCombatStagesCommandDependencies: SessionSocketModifyCombatStagesCommandDependencies
+  readonly modifyConditionsCommandDependencies: SessionSocketModifyConditionsCommandDependencies
+  readonly initiativeCommandDependencies: SessionSocketInitiativeCommandDependencies
+  readonly hazardCommandDependencies: SessionSocketHazardCommandDependencies
+  readonly fieldEffectCommandDependencies: SessionSocketFieldEffectCommandDependencies
+  readonly terrainCommandDependencies: SessionSocketTerrainCommandDependencies
+  readonly useMoveCommandDependencies: SessionSocketUseMoveCommandDependencies
+  readonly useTableActionCommandDependencies: SessionSocketUseTableActionCommandDependencies
 }
 
 interface SessionSocketHandshakeFailure {
@@ -730,11 +948,29 @@ const resolveDependencies = <TMapDocument>(
   applySpawnTokenCommand: dependencies.applySpawnTokenCommand ?? applySpawnTokenCommandUseCase,
   applyDeleteTokenCommand: dependencies.applyDeleteTokenCommand ?? applyDeleteTokenCommandUseCase,
   applySendOutPokemonCommand: dependencies.applySendOutPokemonCommand ?? applySendOutPokemonCommandUseCase,
+  applyModifyHpCommand: dependencies.applyModifyHpCommand ?? applyModifyHpCommandUseCase,
+  applyModifyCombatStagesCommand: dependencies.applyModifyCombatStagesCommand ?? applyModifyCombatStagesCommandUseCase,
+  applyModifyConditionsCommand: dependencies.applyModifyConditionsCommand ?? applyModifyConditionsCommandUseCase,
+  applyInitiativeCommand: dependencies.applyInitiativeCommand ?? applyInitiativeCommandUseCase,
+  applyHazardCommand: dependencies.applyHazardCommand ?? applyHazardCommandUseCase,
+  applyFieldEffectCommand: dependencies.applyFieldEffectCommand ?? applyFieldEffectCommandUseCase,
+  applyTerrainCommand: dependencies.applyTerrainCommand ?? applyTerrainCommandUseCase,
+  applyUseMoveCommand: dependencies.applyUseMoveCommand ?? applyUseMoveCommandUseCase,
+  applyUseTableActionCommand: dependencies.applyUseTableActionCommand ?? applyUseTableActionCommandUseCase,
   moveTokenCommandDependencies: dependencies.moveTokenCommandDependencies ?? {},
   turnTokenCommandDependencies: dependencies.turnTokenCommandDependencies ?? {},
   spawnTokenCommandDependencies: dependencies.spawnTokenCommandDependencies ?? {},
   deleteTokenCommandDependencies: dependencies.deleteTokenCommandDependencies ?? {},
   sendOutPokemonCommandDependencies: dependencies.sendOutPokemonCommandDependencies ?? {},
+  modifyHpCommandDependencies: dependencies.modifyHpCommandDependencies ?? {},
+  modifyCombatStagesCommandDependencies: dependencies.modifyCombatStagesCommandDependencies ?? {},
+  modifyConditionsCommandDependencies: dependencies.modifyConditionsCommandDependencies ?? {},
+  initiativeCommandDependencies: dependencies.initiativeCommandDependencies ?? {},
+  hazardCommandDependencies: dependencies.hazardCommandDependencies ?? {},
+  fieldEffectCommandDependencies: dependencies.fieldEffectCommandDependencies ?? {},
+  terrainCommandDependencies: dependencies.terrainCommandDependencies ?? {},
+  useMoveCommandDependencies: dependencies.useMoveCommandDependencies ?? {},
+  useTableActionCommandDependencies: dependencies.useTableActionCommandDependencies ?? {},
 })
 
 const sendJson = (peer: SessionSocketPeerLike, value: unknown): void => {
@@ -1500,11 +1736,28 @@ const handleAuthenticatedSocketCommand = <TMapDocument>(
     command.type !== TURN_TOKEN_COMMAND_TYPE &&
     command.type !== SPAWN_TOKEN_COMMAND_TYPE &&
     command.type !== DELETE_TOKEN_COMMAND_TYPE &&
-    command.type !== SEND_OUT_POKEMON_COMMAND_TYPE
+    command.type !== SEND_OUT_POKEMON_COMMAND_TYPE &&
+    command.type !== MODIFY_HP_COMMAND_TYPE &&
+    command.type !== MODIFY_COMBAT_STAGES_COMMAND_TYPE &&
+    command.type !== MODIFY_CONDITIONS_COMMAND_TYPE &&
+    command.type !== USE_MOVE_COMMAND_TYPE &&
+    command.type !== USE_MANEUVER_COMMAND_TYPE &&
+    command.type !== USE_ABILITY_COMMAND_TYPE &&
+    command.type !== USE_ORDER_COMMAND_TYPE &&
+    command.type !== SET_INITIATIVE_COMMAND_TYPE &&
+    command.type !== NEXT_INITIATIVE_COMMAND_TYPE &&
+    command.type !== PREVIOUS_INITIATIVE_COMMAND_TYPE &&
+    command.type !== PLACE_HAZARD_COMMAND_TYPE &&
+    command.type !== REMOVE_HAZARD_COMMAND_TYPE &&
+    command.type !== SET_FIELD_EFFECT_COMMAND_TYPE &&
+    command.type !== REMOVE_FIELD_EFFECT_COMMAND_TYPE &&
+    command.type !== TICK_FIELD_EFFECT_DURATIONS_COMMAND_TYPE &&
+    command.type !== BUILD_TERRAIN_VOXEL_COMMAND_TYPE &&
+    command.type !== REMOVE_TERRAIN_VOXEL_COMMAND_TYPE
   ) {
     sendJson(peer, createSessionSocketErrorMessage({
       code: 'unsupported-message',
-      message: 'Track 2 session WebSocket command dispatch currently supports moveToken, turnToken, spawnToken, deleteToken, and sendOutPokemon commands only.',
+      message: 'Track 2 session WebSocket command dispatch currently supports moveToken, turnToken, spawnToken, deleteToken, sendOutPokemon, modifyHp, modifyCombatStages, modifyConditions, useMove, useManeuver, useAbility, useOrder, setInitiative, nextInitiative, previousInitiative, placeHazard, removeHazard, setFieldEffect, removeFieldEffect, tickFieldEffectDurations, buildTerrainVoxel, and removeTerrainVoxel commands only.',
       retryable: false,
       sessionId: connection.sessionId,
       currentRevision: connection.currentRevision,
@@ -1518,6 +1771,15 @@ const handleAuthenticatedSocketCommand = <TMapDocument>(
     | ApplySpawnTokenCommandUseCaseResult
     | ApplyDeleteTokenCommandUseCaseResult
     | ApplySendOutPokemonCommandUseCaseResult
+    | ApplyModifyHpCommandUseCaseResult
+    | ApplyModifyCombatStagesCommandUseCaseResult
+    | ApplyModifyConditionsCommandUseCaseResult
+    | ApplyInitiativeCommandUseCaseResult
+    | ApplyHazardCommandUseCaseResult
+    | ApplyFieldEffectCommandUseCaseResult
+    | ApplyTerrainCommandUseCaseResult
+    | ApplyUseMoveCommandUseCaseResult
+    | ApplyUseTableActionCommandUseCaseResult
   try {
     if (command.type === MOVE_TOKEN_COMMAND_TYPE) {
       applied = dependencies.applyMoveTokenCommand({
@@ -1555,11 +1817,107 @@ const handleAuthenticatedSocketCommand = <TMapDocument>(
         store: dependencies.store as unknown as InMemorySessionStore<AuthoritativeSessionState<TabletopMapV2>>,
         clock: () => receivedAt,
       })
-    } else {
+    } else if (command.type === SEND_OUT_POKEMON_COMMAND_TYPE) {
       applied = dependencies.applySendOutPokemonCommand({
         command: command as SendOutPokemonCommand,
       }, {
         ...dependencies.sendOutPokemonCommandDependencies,
+        env: dependencies.env,
+        store: dependencies.store as unknown as InMemorySessionStore<AuthoritativeSessionState<TabletopMapV2>>,
+        clock: () => receivedAt,
+      })
+    } else if (command.type === MODIFY_HP_COMMAND_TYPE) {
+      applied = dependencies.applyModifyHpCommand({
+        command: command as ModifyHpCommand,
+      }, {
+        ...dependencies.modifyHpCommandDependencies,
+        env: dependencies.env,
+        store: dependencies.store as unknown as InMemorySessionStore<AuthoritativeSessionState<TabletopMapV2>>,
+        clock: () => receivedAt,
+      })
+    } else if (command.type === MODIFY_COMBAT_STAGES_COMMAND_TYPE) {
+      applied = dependencies.applyModifyCombatStagesCommand({
+        command: command as ModifyCombatStagesCommand,
+      }, {
+        ...dependencies.modifyCombatStagesCommandDependencies,
+        env: dependencies.env,
+        store: dependencies.store as unknown as InMemorySessionStore<AuthoritativeSessionState<TabletopMapV2>>,
+        clock: () => receivedAt,
+      })
+    } else if (command.type === MODIFY_CONDITIONS_COMMAND_TYPE) {
+      applied = dependencies.applyModifyConditionsCommand({
+        command: command as ModifyConditionsCommand,
+      }, {
+        ...dependencies.modifyConditionsCommandDependencies,
+        env: dependencies.env,
+        store: dependencies.store as unknown as InMemorySessionStore<AuthoritativeSessionState<TabletopMapV2>>,
+        clock: () => receivedAt,
+      })
+    } else if (command.type === USE_MOVE_COMMAND_TYPE) {
+      applied = dependencies.applyUseMoveCommand({
+        command: command as UseMoveCommand,
+      }, {
+        ...dependencies.useMoveCommandDependencies,
+        env: dependencies.env,
+        store: dependencies.store as unknown as InMemorySessionStore<AuthoritativeSessionState<TabletopMapV2>>,
+        clock: () => receivedAt,
+      })
+    } else if (
+      command.type === USE_MANEUVER_COMMAND_TYPE ||
+      command.type === USE_ABILITY_COMMAND_TYPE ||
+      command.type === USE_ORDER_COMMAND_TYPE
+    ) {
+      applied = dependencies.applyUseTableActionCommand({
+        command: command as UseManeuverCommand | UseAbilityCommand | UseOrderCommand,
+      }, {
+        ...dependencies.useTableActionCommandDependencies,
+        env: dependencies.env,
+        store: dependencies.store as unknown as InMemorySessionStore<AuthoritativeSessionState<TabletopMapV2>>,
+        clock: () => receivedAt,
+      })
+    } else if (
+      command.type === SET_INITIATIVE_COMMAND_TYPE ||
+      command.type === NEXT_INITIATIVE_COMMAND_TYPE ||
+      command.type === PREVIOUS_INITIATIVE_COMMAND_TYPE
+    ) {
+      applied = dependencies.applyInitiativeCommand({
+        command: command as InitiativeCommand,
+      }, {
+        ...dependencies.initiativeCommandDependencies,
+        env: dependencies.env,
+        store: dependencies.store as unknown as InMemorySessionStore<AuthoritativeSessionState<TabletopMapV2>>,
+        clock: () => receivedAt,
+      })
+    } else if (
+      command.type === PLACE_HAZARD_COMMAND_TYPE ||
+      command.type === REMOVE_HAZARD_COMMAND_TYPE
+    ) {
+      applied = dependencies.applyHazardCommand({
+        command: command as HazardCommand,
+      }, {
+        ...dependencies.hazardCommandDependencies,
+        env: dependencies.env,
+        store: dependencies.store as unknown as InMemorySessionStore<AuthoritativeSessionState<TabletopMapV2>>,
+        clock: () => receivedAt,
+      })
+    } else if (
+      command.type === SET_FIELD_EFFECT_COMMAND_TYPE ||
+      command.type === REMOVE_FIELD_EFFECT_COMMAND_TYPE ||
+      command.type === TICK_FIELD_EFFECT_DURATIONS_COMMAND_TYPE
+    ) {
+      applied = dependencies.applyFieldEffectCommand({
+        command: command as FieldEffectCommand,
+      }, {
+        ...dependencies.fieldEffectCommandDependencies,
+        env: dependencies.env,
+        store: dependencies.store as unknown as InMemorySessionStore<AuthoritativeSessionState<TabletopMapV2>>,
+        clock: () => receivedAt,
+      })
+    } else {
+      applied = dependencies.applyTerrainCommand({
+        command: command as TerrainCommand,
+      }, {
+        ...dependencies.terrainCommandDependencies,
         env: dependencies.env,
         store: dependencies.store as unknown as InMemorySessionStore<AuthoritativeSessionState<TabletopMapV2>>,
         clock: () => receivedAt,

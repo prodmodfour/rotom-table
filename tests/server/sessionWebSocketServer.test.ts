@@ -674,7 +674,7 @@ describe('session WebSocket route skeleton', () => {
     expect(store.get(SESSION_ID)?.state?.connectedClients).toEqual([])
   })
 
-  it('keeps authenticated sockets open but reports unsupported non-token command messages', () => {
+  it('keeps authenticated sockets open but reports unsupported command messages', () => {
     const registry = createInMemorySessionSocketRegistry()
     const { store } = createStoreWithSession()
     const peer = makePeer('peer-authenticated-message')
@@ -706,7 +706,7 @@ describe('session WebSocket route skeleton', () => {
       direction: 'server',
       sessionId: SESSION_ID,
       code: 'unsupported-message',
-      message: 'Track 2 session WebSocket command dispatch currently supports moveToken, turnToken, spawnToken, deleteToken, and sendOutPokemon commands only.',
+      message: 'Track 2 session WebSocket command dispatch currently supports moveToken, turnToken, spawnToken, deleteToken, sendOutPokemon, modifyHp, modifyCombatStages, modifyConditions, useMove, useManeuver, useAbility, useOrder, setInitiative, nextInitiative, previousInitiative, placeHazard, removeHazard, setFieldEffect, removeFieldEffect, tickFieldEffectDurations, buildTerrainVoxel, and removeTerrainVoxel commands only.',
       retryable: false,
     })
   })
