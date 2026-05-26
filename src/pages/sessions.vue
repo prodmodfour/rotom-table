@@ -2,6 +2,11 @@
 import { computed, onMounted, ref } from 'vue'
 import AppNavigation from '~/components/AppNavigation.vue'
 import { useSessionLobby } from '~/composables/useSessionLobby'
+import {
+  SESSION_LOBBY_GM_SECTION_ID,
+  SESSION_LOBBY_PLAYER_SECTION_ID,
+  SESSION_LOBBY_REMEMBERED_SECTION_ID,
+} from '~/utils/appRoutes'
 import type {
   PlayerAssignmentRecord,
   SessionControllableResourceRef,
@@ -186,7 +191,7 @@ onMounted(() => {
       <article class="lobby-card panel-card" aria-labelledby="gm-lobby-title">
         <div class="card-heading">
           <p class="eyebrow">GM host</p>
-          <h2 id="gm-lobby-title">Start and manage</h2>
+          <h2 :id="SESSION_LOBBY_GM_SECTION_ID">Start and manage</h2>
         </div>
         <p class="card-copy">
           Creates an in-memory authoritative session, a private GM key stored only
@@ -274,7 +279,7 @@ onMounted(() => {
       <article class="lobby-card panel-card" aria-labelledby="player-lobby-title">
         <div class="card-heading">
           <p class="eyebrow">Player join</p>
-          <h2 id="player-lobby-title">Join with display name</h2>
+          <h2 :id="SESSION_LOBBY_PLAYER_SECTION_ID">Join with display name</h2>
         </div>
         <p class="card-copy">
           Enter the GM's join code and a table display name. The returned player
@@ -350,7 +355,7 @@ onMounted(() => {
     <section class="lobby-footer panel-card" aria-labelledby="remembered-session-title">
       <div>
         <p class="eyebrow">Browser memory</p>
-        <h2 id="remembered-session-title">Remembered session identity</h2>
+        <h2 :id="SESSION_LOBBY_REMEMBERED_SECTION_ID">Remembered session identity</h2>
         <p>
           Rotom Table stores one session-local identity in this browser's local
           storage. The cookie hint is non-secret; GM keys are not placed in cookies.

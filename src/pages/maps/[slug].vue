@@ -762,7 +762,10 @@ useMapDimensionReconciliation({
 <template>
   <MapEditorLayout>
     <template #nav>
-      <MapNavigationRail />
+      <MapNavigationRail
+        :map-slug="slug"
+        :session-mode-enabled="sessionMoveTokenEnabled"
+      />
     </template>
 
     <template #scene>

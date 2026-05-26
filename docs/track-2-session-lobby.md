@@ -7,6 +7,7 @@ It is intentionally scoped to the identity/join/lobby surface. WebSocket transpo
 ## What exists in this slice
 
 - `/sessions` is an additive lobby route. It does not replace the existing `/login` trust picker or local-first map/sheet workflows.
+- Map routes expose a compact **Table session** panel in the map navigation rail with links to `/sessions#gm-lobby-title`, `/sessions#player-lobby-title`, and an explicit `/maps/<slug>?session=1` session-mode view for the current map.
 - `GET /api/sessions/safety` returns a no-secret banner status so the GM can see whether hosting is disabled, local, LAN, remote, or unknown before sharing a join code.
 - `POST /api/sessions/start` creates a session-local GM identity, join code, initial authoritative state, and local JSON snapshot when session hosting is explicitly enabled.
 - `POST /api/sessions/join` creates a session-local player ID/client ID/display name from a valid join code.
@@ -63,7 +64,8 @@ Remote campaign play should use a named Cloudflare Tunnel with a stable hostname
 6. Confirm the lobby shows a session ID, revision `0`, and a player join code.
 7. Share only the join code and the app URL with trusted players.
 8. Use **Refresh lobby** after players join to confirm they appear in the joined-player list.
-9. Keep the GM browser/private profile open. If the GM browser forgets the session identity, the simplest current recovery is to start a new session and share the new code.
+9. From a map view, expand the map navigation rail and use **Open session map** only when you intentionally want that route to use `?session=1` and WebSocket commands. The plain `/maps/<slug>` route remains local-first.
+10. Keep the GM browser/private profile open. If the GM browser forgets the session identity, the simplest current recovery is to start a new session and share the new code.
 
 ## Player flow
 
@@ -73,8 +75,9 @@ Remote campaign play should use a named Cloudflare Tunnel with a stable hostname
 4. Press **Join session**.
 5. Confirm the player summary shows the chosen display name, active session status, and current revision.
 6. Confirm the assignment panel says the GM has not assigned controllable sheets or tokens yet unless assignment data was created by a GM endpoint call.
-7. Reload the page and use **Refresh remembered session** to confirm the browser-local identity can refresh the player-filtered state.
-8. Use **Forget in this browser** when the test is finished or when reusing the browser for another player.
+7. Expand the map navigation rail from a map view and use **Join session** if you need to return to the player join panel; use **Open session map** only after the browser has a remembered player identity.
+8. Reload the page and use **Refresh remembered session** to confirm the browser-local identity can refresh the player-filtered state.
+9. Use **Forget in this browser** when the test is finished or when reusing the browser for another player.
 
 ## Two-browser manual QA checklist
 
@@ -97,13 +100,13 @@ Use one GM browser and one separate player browser/profile. Do not commit any ge
 
 - [ ] Restart with `ROTOM_ENABLE_SESSION_HOST=1 npm run dev` for same-machine testing, or `ROTOM_ENABLE_SESSION_HOST=1 npm run dev -- --host 0.0.0.0` for LAN testing.
 - [ ] GM browser: choose **GM Login** at `/login`.
-- [ ] GM browser: open `/sessions` and verify the safety banner classification matches the expected host (`local` for localhost, `lan` for a private IP).
+- [ ] GM browser: open `/sessions` directly or from the map navigation rail **Start/manage session** shortcut and verify the safety banner classification matches the expected host (`local` for localhost, `lan` for a private IP).
 - [ ] GM browser: press **Start GM session**.
 - [ ] GM browser: record that a join code is displayed and the GM key itself is not shown in the page chrome.
 
 ### Player join
 
-- [ ] Player browser/profile: open the same `/sessions` URL.
+- [ ] Player browser/profile: open the same `/sessions` URL, or use the map navigation rail **Join session** shortcut if starting from a map view.
 - [ ] Enter the join code and a display name.
 - [ ] Press **Join session**.
 - [ ] Player browser: verify active session status, display name, revision, and player-only assignment summary.
@@ -115,6 +118,7 @@ Use one GM browser and one separate player browser/profile. Do not commit any ge
 - [ ] GM browser: verify the joined-player list includes the player display name.
 - [ ] GM browser: verify assignment counts are visible and remain empty unless a GM assignment endpoint call has been made.
 - [ ] GM browser: verify refreshing the lobby does not create a new join code or duplicate player entry.
+- [ ] Map view: expand the navigation rail, verify the **Table session** panel links to start/manage, join, and `?session=1`, and verify following **Return to local map** removes the session query rather than changing the saved map.
 
 ### Identity continuity and cleanup
 
