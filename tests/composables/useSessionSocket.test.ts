@@ -17,6 +17,7 @@ import {
 } from '#shared/sessionIdentity'
 import { INITIAL_SESSION_REVISION } from '#shared/sessionRevisions'
 import {
+  createSessionClientHeartbeatMessage,
   createSessionClientHelloMessage,
   resolveSessionSocketUrl,
   useSessionSocket,
@@ -88,6 +89,24 @@ const serverHelloMessage: SessionServerMessage = {
     intervalMs: 25000,
     timeoutMs: 60000,
   },
+}
+
+const fastServerHelloMessage: SessionServerMessage = {
+  ...serverHelloMessage,
+  heartbeat: {
+    intervalMs: 1000,
+    timeoutMs: 3000,
+  },
+}
+
+const serverPingMessage: SessionServerMessage = {
+  schemaVersion: SESSION_MESSAGE_SCHEMA_VERSION,
+  type: 'heartbeat',
+  direction: 'server',
+  sessionId: SESSION_ID,
+  heartbeat: 'ping',
+  nonce: 'hb-server-1',
+  lastSeenRevision: INITIAL_SESSION_REVISION,
 }
 
 class FakeSessionWebSocket implements SessionSocketLike {
@@ -210,6 +229,24 @@ describe('createSessionClientHelloMessage', () => {
       },
     })
   })
+
+  it('builds client heartbeat frames with optional nonce and revision', () => {
+    expect(createSessionClientHeartbeatMessage(SESSION_ID, {
+      heartbeat: 'pong',
+      nonce: 'hb-server-1',
+      sentAt: '2026-05-26T11:00:00.000Z',
+      lastSeenRevision: INITIAL_SESSION_REVISION,
+    })).toEqual({
+      schemaVersion: SESSION_MESSAGE_SCHEMA_VERSION,
+      type: 'heartbeat',
+      direction: 'client',
+      sessionId: SESSION_ID,
+      heartbeat: 'pong',
+      nonce: 'hb-server-1',
+      sentAt: '2026-05-26T11:00:00.000Z',
+      lastSeenRevision: INITIAL_SESSION_REVISION,
+    })
+  })
 })
 
 describe('useSessionSocket', () => {
@@ -307,6 +344,106 @@ describe('useSessionSocket', () => {
     expect(fake.instances[0]?.sent).toEqual([
       JSON.stringify(createSessionClientHelloMessage(gmIdentity, { reconnect: false })),
     ])
+  })
+
+  it('starts client heartbeat pings after server hello and pongs server pings', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-05-26T12:00:00.000Z'))
+
+    try {
+      const fake = makeFakeWebSocketConstructor()
+      const sessionSocket = useSessionSocket({
+        webSocketConstructor: fake.Constructor,
+        location: { protocol: 'http:', host: 'localhost:3000' },
+        now: () => new Date(Date.now()).toISOString(),
+      })
+
+      sessionSocket.connect()
+      fake.instances[0]?.open()
+      fake.instances[0]?.receive(JSON.stringify(fastServerHelloMessage))
+
+      expect(sessionSocket.heartbeatStatus.value).toBe('active')
+      expect(sessionSocket.heartbeatConfig.value).toEqual({ intervalMs: 1000, timeoutMs: 3000 })
+      expect(sessionSocket.lastServerMessageAt.value).toBe('2026-05-26T12:00:00.000Z')
+
+      vi.advanceTimersByTime(1000)
+
+      expect(fake.instances[0]?.sent[0]).toBe(JSON.stringify(createSessionClientHeartbeatMessage(SESSION_ID, {
+        heartbeat: 'ping',
+        nonce: 'hb-client-1',
+        sentAt: '2026-05-26T12:00:01.000Z',
+        lastSeenRevision: INITIAL_SESSION_REVISION,
+      })))
+      expect(sessionSocket.lastHeartbeatSentAt.value).toBe('2026-05-26T12:00:01.000Z')
+      expect(sessionSocket.lastHeartbeatNonce.value).toBe('hb-client-1')
+
+      fake.instances[0]?.receive(JSON.stringify(serverPingMessage))
+
+      expect(sessionSocket.lastHeartbeatReceivedAt.value).toBe('2026-05-26T12:00:01.000Z')
+      expect(fake.instances[0]?.sent[1]).toBe(JSON.stringify(createSessionClientHeartbeatMessage(SESSION_ID, {
+        heartbeat: 'pong',
+        nonce: 'hb-server-1',
+        sentAt: '2026-05-26T12:00:01.000Z',
+        lastSeenRevision: INITIAL_SESSION_REVISION,
+      })))
+
+      vi.advanceTimersByTime(1000)
+      expect(fake.instances[0]?.sent[2]).toBe(JSON.stringify(createSessionClientHeartbeatMessage(SESSION_ID, {
+        heartbeat: 'ping',
+        nonce: 'hb-client-2',
+        sentAt: '2026-05-26T12:00:02.000Z',
+        lastSeenRevision: INITIAL_SESSION_REVISION,
+      })))
+
+      sessionSocket.cleanup()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('closes the client socket when server heartbeat activity becomes stale', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-05-26T12:10:00.000Z'))
+
+    try {
+      const fake = makeFakeWebSocketConstructor()
+      const sessionSocket = useSessionSocket({
+        webSocketConstructor: fake.Constructor,
+        location: { protocol: 'http:', host: 'localhost:3000' },
+        now: () => new Date(Date.now()).toISOString(),
+      })
+
+      sessionSocket.connect()
+      fake.instances[0]?.open()
+      fake.instances[0]?.receive(JSON.stringify(fastServerHelloMessage))
+
+      vi.advanceTimersByTime(3000)
+
+      expect(sessionSocket.heartbeatStatus.value).toBe('stale')
+      expect(sessionSocket.status.value).toBe('closing')
+      expect(sessionSocket.lastError.value).toBe('Session WebSocket heartbeat timed out.')
+      expect(fake.instances[0]?.closed).toEqual([
+        { code: 1008, reason: 'Session WebSocket heartbeat timed out.' },
+      ])
+      expect(fake.instances[0]?.sent).toEqual([
+        JSON.stringify(createSessionClientHeartbeatMessage(SESSION_ID, {
+          heartbeat: 'ping',
+          nonce: 'hb-client-1',
+          sentAt: '2026-05-26T12:10:01.000Z',
+          lastSeenRevision: INITIAL_SESSION_REVISION,
+        })),
+        JSON.stringify(createSessionClientHeartbeatMessage(SESSION_ID, {
+          heartbeat: 'ping',
+          nonce: 'hb-client-2',
+          sentAt: '2026-05-26T12:10:02.000Z',
+          lastSeenRevision: INITIAL_SESSION_REVISION,
+        })),
+      ])
+
+      sessionSocket.cleanup()
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   it('sends immediately when open and records parsed server messages', () => {

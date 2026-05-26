@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   SESSION_MESSAGE_SCHEMA_VERSION,
   type SessionClientHelloMessage,
+  type SessionHeartbeatMessage,
 } from '#shared/sessionMessages'
 import {
   parseClientId,
@@ -27,14 +28,17 @@ import {
   SESSION_SOCKET_DISABLED_STATUS,
   SESSION_SOCKET_HEARTBEAT_INTERVAL_MS,
   SESSION_SOCKET_HEARTBEAT_TIMEOUT_MS,
+  SESSION_SOCKET_HEARTBEAT_TIMEOUT_REASON,
   SESSION_SOCKET_PENDING_HELLO_STATUS,
   SESSION_SOCKET_POLICY_CLOSE_CODE,
   createInMemorySessionSocketRegistry,
   handleSessionSocketClose,
   handleSessionSocketError,
+  handleSessionSocketHeartbeatTick,
   handleSessionSocketMessage,
   handleSessionSocketOpen,
   handleSessionSocketUpgrade,
+  isSessionSocketConnectionStale,
   type SessionSocketPeerLike,
 } from '~~/server/utils/sessionWebSocketServer'
 import { createInMemorySessionStore } from '~~/server/utils/sessionStore'
@@ -145,6 +149,18 @@ const playerHello = (overrides: Partial<SessionClientHelloMessage> = {}): Sessio
     displayName: PLAYER_DISPLAY_NAME,
   },
   reconnect: false,
+  ...overrides,
+})
+
+const clientHeartbeat = (
+  overrides: Partial<SessionHeartbeatMessage<'client'>> = {},
+): SessionHeartbeatMessage<'client'> => ({
+  schemaVersion: SESSION_MESSAGE_SCHEMA_VERSION,
+  type: 'heartbeat',
+  direction: 'client',
+  sessionId: SESSION_ID,
+  heartbeat: 'ping',
+  nonce: 'heartbeat-001',
   ...overrides,
 })
 
@@ -342,7 +358,7 @@ describe('session WebSocket route skeleton', () => {
       clock: () => '2026-05-26T10:00:00.000Z',
     })
 
-    handleSessionSocketMessage(peer, { text: () => '{"type":"heartbeat"}' }, {
+    handleSessionSocketMessage(peer, { text: () => '{"type":"command"}' }, {
       registry,
       clock: () => '2026-05-26T10:00:05.000Z',
     })
@@ -389,7 +405,7 @@ describe('session WebSocket route skeleton', () => {
     expect(store.get(SESSION_ID)?.state?.connectedClients).toEqual([])
   })
 
-  it('keeps authenticated sockets open but reports unsupported messages until later tickets dispatch them', () => {
+  it('keeps authenticated sockets open but reports unsupported command messages until later tickets dispatch them', () => {
     const registry = createInMemorySessionSocketRegistry()
     const { store } = createStoreWithSession()
     const peer = makePeer('peer-authenticated-message')
@@ -402,10 +418,10 @@ describe('session WebSocket route skeleton', () => {
 
     handleSessionSocketMessage(peer, { text: () => JSON.stringify({
       schemaVersion: SESSION_MESSAGE_SCHEMA_VERSION,
-      type: 'heartbeat',
+      type: 'command',
       direction: 'client',
       sessionId: SESSION_ID,
-      heartbeat: 'ping',
+      command: { type: 'moveToken' },
     }) }, {
       registry,
       store,
@@ -425,6 +441,208 @@ describe('session WebSocket route skeleton', () => {
       code: 'unsupported-message',
       retryable: false,
     })
+  })
+
+  it('answers authenticated client heartbeat pings, records activity, and keeps sockets open', () => {
+    const registry = createInMemorySessionSocketRegistry()
+    const { store } = createStoreWithSession()
+    const peer = makePeer('peer-heartbeat')
+    handleSessionSocketOpen(peer, {
+      env: enabledEnv,
+      registry,
+      clock: () => '2026-05-26T10:50:00.000Z',
+    })
+    handleSessionSocketMessage(peer, { text: () => JSON.stringify(playerHello()) }, {
+      registry,
+      store,
+      clock: () => '2026-05-26T10:50:01.000Z',
+    })
+
+    handleSessionSocketMessage(peer, {
+      text: () => JSON.stringify(clientHeartbeat({
+        heartbeat: 'ping',
+        nonce: 'hb-client-1',
+        lastSeenRevision: INITIAL_SESSION_REVISION,
+      })),
+    }, {
+      registry,
+      store,
+      clock: () => '2026-05-26T10:50:20.000Z',
+    })
+
+    expect(peer.closed).toEqual([])
+    expect(parseSentJson(peer, 1)).toEqual({
+      schemaVersion: SESSION_MESSAGE_SCHEMA_VERSION,
+      type: 'heartbeat',
+      direction: 'server',
+      sessionId: SESSION_ID,
+      heartbeat: 'pong',
+      nonce: 'hb-client-1',
+      lastSeenRevision: INITIAL_SESSION_REVISION,
+    })
+    expect(registry.get('peer-heartbeat')).toMatchObject({
+      status: SESSION_SOCKET_AUTHENTICATED_STATUS,
+      lastSeenAt: '2026-05-26T10:50:20.000Z',
+      lastSeenRevision: INITIAL_SESSION_REVISION,
+      currentRevision: INITIAL_SESSION_REVISION,
+    })
+    expect(store.get(SESSION_ID)?.state?.connectedClients).toEqual([
+      {
+        clientId: PLAYER_CLIENT_ID,
+        actor: {
+          role: 'player',
+          playerId: PLAYER_ID,
+          clientId: PLAYER_CLIENT_ID,
+          displayName: PLAYER_DISPLAY_NAME,
+        },
+        status: 'connected',
+        connectedAt: '2026-05-26T10:50:00.000Z',
+        lastSeenAt: '2026-05-26T10:50:20.000Z',
+        lastSeenRevision: INITIAL_SESSION_REVISION,
+      },
+    ])
+  })
+
+  it('records authenticated client heartbeat pongs without echoing another frame', () => {
+    const registry = createInMemorySessionSocketRegistry()
+    const { store } = createStoreWithSession()
+    const peer = makePeer('peer-heartbeat-pong')
+    handleSessionSocketOpen(peer, { env: enabledEnv, registry })
+    handleSessionSocketMessage(peer, { text: () => JSON.stringify(gmHello()) }, {
+      registry,
+      store,
+      clock: () => '2026-05-26T10:55:00.000Z',
+    })
+
+    handleSessionSocketMessage(peer, {
+      text: () => JSON.stringify(clientHeartbeat({ heartbeat: 'pong', nonce: 'hb-server-1' })),
+    }, {
+      registry,
+      store,
+      clock: () => '2026-05-26T10:55:10.000Z',
+    })
+
+    expect(peer.sent).toHaveLength(1)
+    expect(peer.closed).toEqual([])
+    expect(registry.get('peer-heartbeat-pong')).toMatchObject({
+      lastSeenAt: '2026-05-26T10:55:10.000Z',
+    })
+    expect(store.get(SESSION_ID)?.state?.connectedClients[0]).toMatchObject({
+      clientId: GM_CLIENT_ID,
+      status: 'connected',
+      lastSeenAt: '2026-05-26T10:55:10.000Z',
+    })
+  })
+
+  it('closes malformed or cross-session heartbeat frames after authentication', () => {
+    const registry = createInMemorySessionSocketRegistry()
+    const { store } = createStoreWithSession()
+    const peer = makePeer('peer-bad-heartbeat')
+    handleSessionSocketOpen(peer, { env: enabledEnv, registry })
+    handleSessionSocketMessage(peer, { text: () => JSON.stringify(gmHello()) }, {
+      registry,
+      store,
+      clock: () => '2026-05-26T11:00:00.000Z',
+    })
+
+    handleSessionSocketMessage(peer, {
+      text: () => JSON.stringify(clientHeartbeat({
+        sessionId: parseSessionId('session_other000001x'),
+      })),
+    }, {
+      registry,
+      store,
+      clock: () => '2026-05-26T11:00:05.000Z',
+    })
+
+    expect(registry.get('peer-bad-heartbeat')).toBeUndefined()
+    expect(peer.closed).toEqual([
+      {
+        code: SESSION_SOCKET_POLICY_CLOSE_CODE,
+        reason: 'Session WebSocket heartbeat session does not match the authenticated socket.',
+      },
+    ])
+    expect(parseSentJson(peer, 1)).toMatchObject({
+      schemaVersion: SESSION_MESSAGE_SCHEMA_VERSION,
+      type: 'error',
+      direction: 'server',
+      sessionId: SESSION_ID,
+      code: 'unauthorized',
+      retryable: false,
+    })
+  })
+
+  it('sends server heartbeat pings and closes stale authenticated sockets', () => {
+    const registry = createInMemorySessionSocketRegistry()
+    const { store } = createStoreWithSession()
+    const peer = makePeer('peer-heartbeat-tick')
+    handleSessionSocketOpen(peer, {
+      env: enabledEnv,
+      registry,
+      clock: () => '2026-05-26T11:10:00.000Z',
+    })
+    handleSessionSocketMessage(peer, { text: () => JSON.stringify(playerHello()) }, {
+      registry,
+      store,
+      clock: () => '2026-05-26T11:10:01.000Z',
+    })
+
+    expect(isSessionSocketConnectionStale(
+      registry.get('peer-heartbeat-tick')!,
+      '2026-05-26T11:10:20.000Z',
+    )).toBe(false)
+
+    const ping = handleSessionSocketHeartbeatTick(peer, {
+      registry,
+      store,
+      clock: () => '2026-05-26T11:10:26.000Z',
+    })
+
+    expect(ping.action).toBe('sent-ping')
+    expect(parseSentJson(peer, 1)).toEqual({
+      schemaVersion: SESSION_MESSAGE_SCHEMA_VERSION,
+      type: 'heartbeat',
+      direction: 'server',
+      sessionId: SESSION_ID,
+      heartbeat: 'ping',
+      nonce: `hb-peer-heartbeat-tick-${Date.parse('2026-05-26T11:10:26.000Z')}`,
+      lastSeenRevision: INITIAL_SESSION_REVISION,
+    })
+
+    expect(isSessionSocketConnectionStale(
+      registry.get('peer-heartbeat-tick')!,
+      '2026-05-26T11:11:01.000Z',
+    )).toBe(true)
+
+    const closed = handleSessionSocketHeartbeatTick(peer, {
+      registry,
+      store,
+      clock: () => '2026-05-26T11:11:01.000Z',
+    })
+
+    expect(closed.action).toBe('closed-stale')
+    expect(peer.closed).toEqual([
+      {
+        code: SESSION_SOCKET_POLICY_CLOSE_CODE,
+        reason: SESSION_SOCKET_HEARTBEAT_TIMEOUT_REASON,
+      },
+    ])
+    expect(registry.get('peer-heartbeat-tick')).toBeUndefined()
+    expect(store.get(SESSION_ID)?.state?.connectedClients).toEqual([
+      {
+        clientId: PLAYER_CLIENT_ID,
+        actor: {
+          role: 'player',
+          playerId: PLAYER_ID,
+          clientId: PLAYER_CLIENT_ID,
+          displayName: PLAYER_DISPLAY_NAME,
+        },
+        status: 'disconnected',
+        connectedAt: '2026-05-26T11:10:00.000Z',
+        lastSeenAt: '2026-05-26T11:11:01.000Z',
+        disconnectedAt: '2026-05-26T11:11:01.000Z',
+      },
+    ])
   })
 
   it('marks an authenticated client disconnected when its socket closes', () => {

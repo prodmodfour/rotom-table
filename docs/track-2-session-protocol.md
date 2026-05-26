@@ -105,9 +105,11 @@ Example remote-exposure response:
 
 New sockets start as `pending-hello`. The first accepted client frame must be a JSON client `hello` with the session ID and session-local identity returned by the start/join endpoints. The server validates the GM key for GM clients, validates the player ID plus safe display name for player clients, rejects client-ID collisions with a different actor, records the connected client in authoritative session state without incrementing the session revision, and replies with a server `hello` carrying the validated actor, current revision, and heartbeat configuration. Invalid, unknown, ended, or unauthorized hello attempts receive a safe server `error` frame and the socket is closed with the policy close code.
 
-After hello/auth succeeds, the current slice keeps the socket open but still returns `unsupported-message` for heartbeat and command frames until later transport tickets wire heartbeat timers, reconnect snapshot fallback, command dispatch, and session fanout. A socket close marks the authenticated client as `disconnected` in in-memory authoritative state; no snapshot or command event is written for this transient presence update yet.
+After hello/auth succeeds, heartbeat is active. The server sends app-level heartbeat `ping` frames on the negotiated interval, replies to authenticated client `ping` frames with `pong`, records client `ping`/`pong` activity in the in-memory connected-client presence record without incrementing the session revision, and closes sockets that have not produced readable client activity within the heartbeat timeout. The client wrapper starts its own heartbeat `ping` loop after the server `hello`, answers server `ping` frames with `pong`, and closes the browser socket when server activity is stale. Command dispatch, reconnect snapshot fallback, and session fanout still land in later transport tickets; authenticated non-heartbeat command frames currently receive `unsupported-message`.
 
-The client wrapper lives in `src/composables/useSessionSocket.ts`. It resolves `/api/sessions/socket` to `ws://` or `wss://` from the current browser location, wraps the browser `WebSocket`, exposes connection status (`idle`, `connecting`, `open`, `closing`, `closed`, `error`, or `unavailable`), records the last error/close/server message, maintains a bounded JSON send queue, flushes queued messages after `open`, and provides explicit `connect`, `disconnect`, and `cleanup` methods. It can build/send a client `hello` from the remembered session-local identity, auto-sending that hello before queued messages when configured with `hello: { identity }`, and tracks whether the server hello was accepted or rejected. It still does not implement heartbeat loops, reconnect replay/snapshot fallback, command dispatch, or optimistic map state.
+A socket close or heartbeat timeout marks the authenticated client as `disconnected` in in-memory authoritative state; no snapshot or command event is written for this transient presence update yet.
+
+The client wrapper lives in `src/composables/useSessionSocket.ts`. It resolves `/api/sessions/socket` to `ws://` or `wss://` from the current browser location, wraps the browser `WebSocket`, exposes connection status (`idle`, `connecting`, `open`, `closing`, `closed`, `error`, or `unavailable`), records the last error/close/server message, maintains a bounded JSON send queue, flushes queued messages after `open`, and provides explicit `connect`, `disconnect`, and `cleanup` methods. It can build/send a client `hello` from the remembered session-local identity, auto-sending that hello before queued messages when configured with `hello: { identity }`, tracks whether the server hello was accepted or rejected, sends heartbeat pings after the negotiated server hello, answers server heartbeat pings, and reports stale heartbeat timeouts. It still does not implement reconnect replay/snapshot fallback, command dispatch, or optimistic map state.
 
 ## GM start-session endpoint
 
@@ -437,7 +439,7 @@ This helper is process-local state, not a database. Snapshots and the optional e
 
 ## Session cleanup and explicit end
 
-`server/utils/sessionCleanup.ts` defines the server-side lifecycle policy for in-memory session records. The default policy treats an active session as idle after 12 hours without server-owned activity and retains ended in-memory records for 24 hours before pruning them. Server-owned activity includes store updates plus authoritative state/presence timestamps, so future heartbeat, reconnect, command, join, and assignment paths should touch the store or state when a client is still active.
+`server/utils/sessionCleanup.ts` defines the server-side lifecycle policy for in-memory session records. The default policy treats an active session as idle after 12 hours without server-owned activity and retains ended in-memory records for 24 hours before pruning them. Server-owned activity includes store updates plus authoritative state/presence timestamps; the WebSocket heartbeat path now touches connected-client presence without revision increments, and future reconnect/command paths should do the same when a client is still active.
 
 The explicit end-session helper is the path future GM management routes should use when the GM ends a table. It idempotently marks the session record `ended`, stamps `endedAt`, removes the session from active join-code lookups, and clears process-local duplicate-`opId` records for that session. Repeated end requests leave the original `endedAt` intact.
 
@@ -534,6 +536,10 @@ Either side may send heartbeat messages according to the negotiated heartbeat co
   "lastSeenRevision": 42
 }
 ```
+
+The current implementation negotiates a 25 second heartbeat interval and a 60 second timeout in the server `hello`. Those values are intentionally below common proxy/tunnel idle windows so a quiet table still sends application traffic in both directions while hosted over LAN or a named Cloudflare Tunnel. If a browser, the GM server, or an intermediary such as Cloudflare closes an idle/stale WebSocket anyway, clients should treat the socket as disconnected; reconnect snapshot fallback is covered by the later reconnect ticket. Heartbeat keeps live sockets detectable and warm, but it is not authentication and does not grant map-edit authority.
+
+A server heartbeat ping uses the same message shape with `direction: "server"` and `heartbeat: "ping"`; clients answer with a matching `pong` nonce. A client heartbeat ping receives a server `pong`. Heartbeat `lastSeenRevision` is advisory activity metadata and does not advance the session revision.
 
 ### 4. Client command
 

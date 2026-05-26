@@ -9,10 +9,12 @@ import {
 } from '#shared/sessionIdentity'
 import {
   SESSION_MESSAGE_SCHEMA_VERSION,
+  isSessionHeartbeatKind,
   type SessionClientHelloMessage,
   type SessionErrorCode,
   type SessionErrorDetails,
   type SessionErrorMessage,
+  type SessionHeartbeatMessage,
   type SessionServerHelloMessage,
 } from '#shared/sessionMessages'
 import type { SessionActor } from '#shared/sessionPermissions'
@@ -47,6 +49,8 @@ export const SESSION_SOCKET_PENDING_HELLO_STATUS = 'pending-hello' as const
 export const SESSION_SOCKET_AUTHENTICATED_STATUS = 'authenticated' as const
 export const SESSION_SOCKET_HEARTBEAT_INTERVAL_MS = 25_000 as const
 export const SESSION_SOCKET_HEARTBEAT_TIMEOUT_MS = 60_000 as const
+export const SESSION_SOCKET_HEARTBEAT_TIMEOUT_REASON =
+  'Session WebSocket heartbeat timed out.' as const
 
 export type SessionSocketConnectionStatus =
   | typeof SESSION_SOCKET_PENDING_HELLO_STATUS
@@ -113,6 +117,12 @@ export interface AuthenticateSessionSocketConnectionOptions {
   readonly lastSeenRevision?: SessionRevision
 }
 
+export interface TouchSessionSocketConnectionOptions {
+  readonly lastSeenAt?: string
+  readonly lastSeenRevision?: SessionRevision
+  readonly currentRevision?: SessionRevision
+}
+
 export interface InMemorySessionSocketRegistry {
   readonly size: number
   open(peerId: string, options?: { readonly connectedAt?: string }): PendingSessionSocketConnection
@@ -120,7 +130,7 @@ export interface InMemorySessionSocketRegistry {
     peerId: string,
     options: AuthenticateSessionSocketConnectionOptions,
   ): AuthenticatedSessionSocketConnection | undefined
-  touch(peerId: string, options?: { readonly lastSeenAt?: string }): SessionSocketConnection | undefined
+  touch(peerId: string, options?: TouchSessionSocketConnectionOptions): SessionSocketConnection | undefined
   close(
     peerId: string,
     details?: SessionSocketCloseDetails & { readonly closedAt?: string },
@@ -169,13 +179,40 @@ interface ParsedSessionSocketHello {
   readonly hello: SessionClientHelloMessage<SessionRevision>
 }
 
+interface ParsedSessionSocketHeartbeat {
+  readonly heartbeat: SessionHeartbeatMessage<'client', SessionRevision>
+}
+
 type ParseSessionSocketHelloResult =
   | { readonly ok: true; readonly value: ParsedSessionSocketHello }
+  | { readonly ok: false; readonly failure: SessionSocketHandshakeFailure }
+
+type ParseSessionSocketHeartbeatResult =
+  | { readonly ok: true; readonly value: ParsedSessionSocketHeartbeat }
   | { readonly ok: false; readonly failure: SessionSocketHandshakeFailure }
 
 type SocketSessionRecord<TMapDocument> = SessionStoreRecord<AuthoritativeSessionState<TMapDocument>> & {
   readonly state: AuthoritativeSessionState<TMapDocument>
 }
+
+export type SessionSocketHeartbeatTickResult =
+  | { readonly action: 'missing-connection' }
+  | { readonly action: 'pending-hello'; readonly connection: PendingSessionSocketConnection }
+  | {
+      readonly action: 'sent-ping'
+      readonly connection: AuthenticatedSessionSocketConnection
+      readonly message: SessionHeartbeatMessage<'server', SessionRevision>
+    }
+  | {
+      readonly action: 'closed-stale'
+      readonly connection: SessionSocketConnection
+      readonly closed?: ClosedSessionSocketConnection
+    }
+  | {
+      readonly action: 'closed-session-unavailable'
+      readonly connection: AuthenticatedSessionSocketConnection
+      readonly closed?: ClosedSessionSocketConnection
+    }
 
 const defaultSessionSocketClock: SessionSocketClock = () => new Date().toISOString()
 
@@ -223,6 +260,27 @@ const actorsMatch = (left: SessionActor, right: SessionActor): boolean => {
     right.role === 'player' &&
     left.playerId === right.playerId &&
     left.displayName === right.displayName
+}
+
+const parseIsoTimestampMs = (timestamp: string): number | undefined => {
+  const parsed = Date.parse(timestamp)
+  return Number.isFinite(parsed) ? parsed : undefined
+}
+
+export const isSessionSocketConnectionStale = (
+  connection: Pick<SessionSocketConnection, 'lastSeenAt'>,
+  now: string,
+  timeoutMs = SESSION_SOCKET_HEARTBEAT_TIMEOUT_MS,
+): boolean => {
+  const lastSeenMs = parseIsoTimestampMs(connection.lastSeenAt)
+  const nowMs = parseIsoTimestampMs(now)
+  if (lastSeenMs === undefined || nowMs === undefined) return false
+  return nowMs - lastSeenMs >= timeoutMs
+}
+
+const createHeartbeatNonce = (peerId: string, sentAt: string): string => {
+  const parsed = parseIsoTimestampMs(sentAt)
+  return `hb-${peerId}-${parsed ?? sentAt}`
 }
 
 export const createInMemorySessionSocketRegistry = (
@@ -278,12 +336,18 @@ export const createInMemorySessionSocketRegistry = (
 
   const touch = (
     peerId: string,
-    options: { readonly lastSeenAt?: string } = {},
+    options: TouchSessionSocketConnectionOptions = {},
   ): SessionSocketConnection | undefined => {
     const connection = connectionsByPeerId.get(peerId)
     if (connection === undefined) return undefined
 
     connection.lastSeenAt = options.lastSeenAt ?? clock()
+    if (connection.status === SESSION_SOCKET_AUTHENTICATED_STATUS) {
+      if (options.currentRevision !== undefined) connection.currentRevision = options.currentRevision
+      if (options.lastSeenRevision !== undefined) {
+        connection.lastSeenRevision = options.lastSeenRevision
+      }
+    }
     return cloneConnection(connection)
   }
 
@@ -373,18 +437,30 @@ const sendSocketError = (
   sendJson(peer, createSessionSocketErrorMessage(failure))
 }
 
-const closeForHandshakeFailure = (
+const closeSocketConnection = <TMapDocument>(
   peer: SessionSocketPeerLike,
-  failure: SessionSocketHandshakeFailure,
-  dependencies: Pick<ResolvedSessionSocketHandlerDependencies, 'registry' | 'clock'>,
-): void => {
-  sendSocketError(peer, failure)
-  peer.close(SESSION_SOCKET_POLICY_CLOSE_CODE, failure.message)
-  dependencies.registry.close(peer.id, {
-    code: SESSION_SOCKET_POLICY_CLOSE_CODE,
-    reason: failure.message,
+  code: number,
+  reason: string,
+  dependencies: Pick<ResolvedSessionSocketHandlerDependencies<TMapDocument>, 'registry' | 'store' | 'clock'>,
+): ClosedSessionSocketConnection | undefined => {
+  peer.close(code, reason)
+  stopSessionSocketHeartbeatTimer(peer.id)
+  const closed = dependencies.registry.close(peer.id, {
+    code,
+    reason,
     closedAt: dependencies.clock(),
   })
+  if (closed !== undefined) markAuthenticatedConnectionDisconnected(closed, dependencies)
+  return closed
+}
+
+const closeForHandshakeFailure = <TMapDocument>(
+  peer: SessionSocketPeerLike,
+  failure: SessionSocketHandshakeFailure,
+  dependencies: Pick<ResolvedSessionSocketHandlerDependencies<TMapDocument>, 'registry' | 'store' | 'clock'>,
+): void => {
+  sendSocketError(peer, failure)
+  closeSocketConnection(peer, SESSION_SOCKET_POLICY_CLOSE_CODE, failure.message, dependencies)
 }
 
 const parseHelloMessage = (value: unknown): ParseSessionSocketHelloResult => {
@@ -443,6 +519,75 @@ const parseHelloMessage = (value: unknown): ParseSessionSocketHelloResult => {
     ok: true,
     value: {
       hello: value as unknown as SessionClientHelloMessage<SessionRevision>,
+    },
+  }
+}
+
+const parseHeartbeatMessage = (
+  value: unknown,
+  connection: AuthenticatedSessionSocketConnection,
+): ParseSessionSocketHeartbeatResult => {
+  if (!isRecord(value)) {
+    return {
+      ok: false,
+      failure: {
+        code: 'malformed-message',
+        message: 'Session WebSocket heartbeat must be a JSON object.',
+        retryable: false,
+        sessionId: connection.sessionId,
+        currentRevision: connection.currentRevision,
+      },
+    }
+  }
+
+  const issues: string[] = []
+  if (value.schemaVersion !== SESSION_MESSAGE_SCHEMA_VERSION) {
+    issues.push(`schemaVersion must be ${SESSION_MESSAGE_SCHEMA_VERSION}`)
+  }
+  if (value.type !== 'heartbeat') issues.push('type must be heartbeat')
+  if (value.direction !== 'client') issues.push('direction must be client')
+  if (!isSessionId(value.sessionId)) {
+    issues.push('sessionId must be a valid SessionId')
+  } else if (value.sessionId !== connection.sessionId) {
+    return {
+      ok: false,
+      failure: {
+        code: 'unauthorized',
+        message: 'Session WebSocket heartbeat session does not match the authenticated socket.',
+        retryable: false,
+        sessionId: connection.sessionId,
+        currentRevision: connection.currentRevision,
+      },
+    }
+  }
+  if (!isSessionHeartbeatKind(value.heartbeat)) {
+    issues.push('heartbeat must be ping or pong')
+  }
+  if (value.nonce !== undefined && (typeof value.nonce !== 'string' || value.nonce.trim().length === 0)) {
+    issues.push('nonce must be a non-empty string when provided')
+  }
+  if (value.lastSeenRevision !== undefined && !isSessionRevision(value.lastSeenRevision)) {
+    issues.push('lastSeenRevision must be a safe non-negative session revision')
+  }
+
+  if (issues.length > 0) {
+    return {
+      ok: false,
+      failure: {
+        code: 'malformed-message',
+        message: 'Session WebSocket heartbeat is malformed.',
+        retryable: false,
+        sessionId: connection.sessionId,
+        currentRevision: connection.currentRevision,
+        details: detailsFromIssues(issues),
+      },
+    }
+  }
+
+  return {
+    ok: true,
+    value: {
+      heartbeat: value as unknown as SessionHeartbeatMessage<'client', SessionRevision>,
     },
   }
 }
@@ -719,7 +864,7 @@ const authenticateSocketHello = <TMapDocument>(
 
 const markAuthenticatedConnectionDisconnected = <TMapDocument>(
   connection: ClosedSessionSocketConnection,
-  dependencies: ResolvedSessionSocketHandlerDependencies<TMapDocument>,
+  dependencies: Pick<ResolvedSessionSocketHandlerDependencies<TMapDocument>, 'store'>,
 ): void => {
   if (connection.status !== SESSION_SOCKET_AUTHENTICATED_STATUS) return
 
@@ -766,6 +911,100 @@ export const handleSessionSocketOpen = (
   return registry.open(peer.id, { connectedAt: clock() })
 }
 
+const updateHeartbeatPresence = <TMapDocument>(
+  connection: AuthenticatedSessionSocketConnection,
+  heartbeat: SessionHeartbeatMessage<'client', SessionRevision>,
+  receivedAt: string,
+  record: SocketSessionRecord<TMapDocument>,
+  dependencies: ResolvedSessionSocketHandlerDependencies<TMapDocument>,
+): SessionStoreRecord<AuthoritativeSessionState<TMapDocument>> | undefined => {
+  const connectedClient = createConnectedClientRecord(
+    record.state,
+    connection.actor,
+    connection.connectedAt,
+    receivedAt,
+    heartbeat.lastSeenRevision ?? connection.lastSeenRevision,
+  )
+  const nextState = upsertSessionConnectedClient(record.state, connectedClient, {
+    revision: record.state.revision,
+    updatedAt: receivedAt,
+  })
+
+  return dependencies.store.setState(record.sessionId, nextState, {
+    revision: nextState.revision,
+    updatedAt: receivedAt,
+  })
+}
+
+const handleAuthenticatedSocketHeartbeat = <TMapDocument>(
+  peer: SessionSocketPeerLike,
+  value: unknown,
+  receivedAt: string,
+  dependencies: ResolvedSessionSocketHandlerDependencies<TMapDocument>,
+): SessionHeartbeatMessage<'server', SessionRevision> | undefined => {
+  const connection = dependencies.registry.get(peer.id)
+  if (connection === undefined || connection.status !== SESSION_SOCKET_AUTHENTICATED_STATUS) {
+    closeForHandshakeFailure(peer, {
+      code: 'unauthorized',
+      message: 'A valid Track 2 session WebSocket hello is required before heartbeat messages.',
+      retryable: false,
+    }, dependencies)
+    return undefined
+  }
+
+  const parsedHeartbeat = parseHeartbeatMessage(value, connection)
+  if (!parsedHeartbeat.ok) {
+    closeForHandshakeFailure(peer, parsedHeartbeat.failure, dependencies)
+    return undefined
+  }
+
+  const recordResult = getSocketSessionRecord(dependencies.store, connection.sessionId)
+  if (!recordResult.ok) {
+    closeForHandshakeFailure(peer, recordResult.failure, dependencies)
+    return undefined
+  }
+
+  const heartbeat = parsedHeartbeat.value.heartbeat
+  const updatedRecord = updateHeartbeatPresence(
+    connection,
+    heartbeat,
+    receivedAt,
+    recordResult.record,
+    dependencies,
+  )
+
+  if (updatedRecord === undefined) {
+    closeForHandshakeFailure(peer, {
+      code: 'session-ended',
+      message: 'The Track 2 table session ended before heartbeat could be recorded.',
+      retryable: false,
+      sessionId: connection.sessionId,
+      currentRevision: connection.currentRevision,
+    }, dependencies)
+    return undefined
+  }
+
+  dependencies.registry.touch(peer.id, {
+    lastSeenAt: receivedAt,
+    currentRevision: updatedRecord.revision,
+    ...(heartbeat.lastSeenRevision === undefined ? {} : { lastSeenRevision: heartbeat.lastSeenRevision }),
+  })
+
+  if (heartbeat.heartbeat !== 'ping') return undefined
+
+  const pong: SessionHeartbeatMessage<'server', SessionRevision> = {
+    schemaVersion: SESSION_MESSAGE_SCHEMA_VERSION,
+    type: 'heartbeat',
+    direction: 'server',
+    sessionId: connection.sessionId,
+    heartbeat: 'pong',
+    ...(heartbeat.nonce === undefined ? {} : { nonce: heartbeat.nonce }),
+    lastSeenRevision: updatedRecord.revision,
+  }
+  sendJson(peer, pong)
+  return pong
+}
+
 export const handleSessionSocketMessage = <TMapDocument = unknown>(
   peer: SessionSocketPeerLike,
   message: SessionSocketMessageLike,
@@ -781,12 +1020,27 @@ export const handleSessionSocketMessage = <TMapDocument = unknown>(
     return
   }
 
+  const existingConnection = resolved.registry.get(peer.id)
+
+  if (isRecord(json.value) && json.value.type === 'heartbeat') {
+    if (existingConnection?.status === SESSION_SOCKET_AUTHENTICATED_STATUS) {
+      handleAuthenticatedSocketHeartbeat(peer, json.value, lastSeenAt, resolved)
+      return
+    }
+
+    closeForHandshakeFailure(peer, {
+      code: 'unauthorized',
+      message: 'A valid Track 2 session WebSocket hello is required before heartbeat messages.',
+      retryable: false,
+    }, resolved)
+    return
+  }
+
   if (!isRecord(json.value) || json.value.type !== 'hello') {
-    const existingConnection = resolved.registry.get(peer.id)
     if (existingConnection?.status === SESSION_SOCKET_AUTHENTICATED_STATUS) {
       sendJson(peer, createSessionSocketErrorMessage({
         code: 'unsupported-message',
-        message: 'Track 2 session WebSocket hello/auth is complete, but heartbeat and command dispatch land in later transport tickets.',
+        message: 'Track 2 session WebSocket hello/auth and heartbeat are complete, but command dispatch lands in later transport tickets.',
         retryable: false,
         sessionId: existingConnection.sessionId,
         currentRevision: existingConnection.currentRevision,
@@ -811,12 +1065,92 @@ export const handleSessionSocketMessage = <TMapDocument = unknown>(
   authenticateSocketHello(peer, parsedHello.value.hello, resolved)
 }
 
+export const handleSessionSocketHeartbeatTick = <TMapDocument = unknown>(
+  peer: SessionSocketPeerLike,
+  dependencies: SessionSocketHandlerDependencies<TMapDocument> = {},
+): SessionSocketHeartbeatTickResult => {
+  const resolved = resolveDependencies(dependencies)
+  const now = resolved.clock()
+  const connection = resolved.registry.get(peer.id)
+  if (connection === undefined) {
+    stopSessionSocketHeartbeatTimer(peer.id)
+    return { action: 'missing-connection' }
+  }
+
+  if (isSessionSocketConnectionStale(connection, now)) {
+    const closed = closeSocketConnection(
+      peer,
+      SESSION_SOCKET_POLICY_CLOSE_CODE,
+      SESSION_SOCKET_HEARTBEAT_TIMEOUT_REASON,
+      resolved,
+    )
+    return { action: 'closed-stale', connection, ...(closed === undefined ? {} : { closed }) }
+  }
+
+  if (connection.status !== SESSION_SOCKET_AUTHENTICATED_STATUS) {
+    return { action: 'pending-hello', connection }
+  }
+
+  const recordResult = getSocketSessionRecord(resolved.store, connection.sessionId)
+  if (!recordResult.ok) {
+    sendSocketError(peer, recordResult.failure)
+    const closed = closeSocketConnection(
+      peer,
+      SESSION_SOCKET_POLICY_CLOSE_CODE,
+      recordResult.failure.message,
+      resolved,
+    )
+    return { action: 'closed-session-unavailable', connection, ...(closed === undefined ? {} : { closed }) }
+  }
+
+  const ping: SessionHeartbeatMessage<'server', SessionRevision> = {
+    schemaVersion: SESSION_MESSAGE_SCHEMA_VERSION,
+    type: 'heartbeat',
+    direction: 'server',
+    sessionId: connection.sessionId,
+    heartbeat: 'ping',
+    nonce: createHeartbeatNonce(peer.id, now),
+    lastSeenRevision: recordResult.record.revision,
+  }
+  sendJson(peer, ping)
+  return { action: 'sent-ping', connection, message: ping }
+}
+
+type SessionSocketHeartbeatTimer = ReturnType<typeof setInterval>
+
+const sessionSocketHeartbeatTimers = new Map<string, SessionSocketHeartbeatTimer>()
+
+export const stopSessionSocketHeartbeatTimer = (peerId: string): boolean => {
+  const timer = sessionSocketHeartbeatTimers.get(peerId)
+  if (timer === undefined) return false
+  clearInterval(timer)
+  sessionSocketHeartbeatTimers.delete(peerId)
+  return true
+}
+
+export const startSessionSocketHeartbeatTimer = <TMapDocument = unknown>(
+  peer: SessionSocketPeerLike,
+  dependencies: SessionSocketHandlerDependencies<TMapDocument> = {},
+  options: { readonly intervalMs?: number } = {},
+): SessionSocketHeartbeatTimer => {
+  stopSessionSocketHeartbeatTimer(peer.id)
+  const intervalMs = options.intervalMs ?? SESSION_SOCKET_HEARTBEAT_INTERVAL_MS
+  const timer = setInterval(() => {
+    handleSessionSocketHeartbeatTick(peer, dependencies)
+  }, intervalMs)
+  const maybeUnref = (timer as { unref?: () => void }).unref
+  if (typeof maybeUnref === 'function') maybeUnref.call(timer)
+  sessionSocketHeartbeatTimers.set(peer.id, timer)
+  return timer
+}
+
 export const handleSessionSocketClose = <TMapDocument = unknown>(
   peer: SessionSocketPeerLike,
   details: SessionSocketCloseDetails = {},
   dependencies: SessionSocketHandlerDependencies<TMapDocument> = {},
 ): ClosedSessionSocketConnection | undefined => {
   const resolved = resolveDependencies(dependencies)
+  stopSessionSocketHeartbeatTimer(peer.id)
   const closed = resolved.registry.close(peer.id, { ...details, closedAt: resolved.clock() })
   if (closed !== undefined) markAuthenticatedConnectionDisconnected(closed, resolved)
   return closed

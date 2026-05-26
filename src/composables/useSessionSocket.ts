@@ -2,12 +2,17 @@ import { computed, getCurrentScope, onScopeDispose, ref, shallowRef } from 'vue'
 import type { SessionClientIdentity } from '#shared/sessionClientIdentity'
 import {
   SESSION_MESSAGE_SCHEMA_VERSION,
+  isSessionHeartbeatKind,
   type SessionClientHelloMessage,
   type SessionClientMessage,
+  type SessionHeartbeatConfig,
+  type SessionHeartbeatKind,
+  type SessionHeartbeatMessage,
   type SessionServerHelloMessage,
   type SessionServerMessage,
 } from '#shared/sessionMessages'
-import type { SessionRevision } from '#shared/sessionRevisions'
+import { isSessionId, type SessionId } from '#shared/sessionIdentity'
+import { isSessionRevision, type SessionRevision } from '#shared/sessionRevisions'
 import { SESSION_API_PATHS } from '~/utils/apiRoutes'
 
 export const SESSION_SOCKET_READY_STATE_CONNECTING = 0 as const
@@ -15,6 +20,9 @@ export const SESSION_SOCKET_READY_STATE_OPEN = 1 as const
 export const SESSION_SOCKET_READY_STATE_CLOSING = 2 as const
 export const SESSION_SOCKET_READY_STATE_CLOSED = 3 as const
 export const SESSION_SOCKET_DEFAULT_MAX_QUEUE_SIZE = 100 as const
+export const SESSION_SOCKET_HEARTBEAT_TIMEOUT_CLOSE_CODE = 1008 as const
+export const SESSION_SOCKET_HEARTBEAT_TIMEOUT_CLOSE_REASON =
+  'Session WebSocket heartbeat timed out.' as const
 
 export type SessionSocketStatus =
   | 'idle'
@@ -86,6 +94,7 @@ export type SessionSocketSendResult<TMessage = SessionClientMessage> =
     }
 
 export type SessionSocketHelloStatus = 'idle' | 'queued' | 'sent' | 'accepted' | 'rejected'
+export type SessionSocketHeartbeatStatus = 'idle' | 'active' | 'stale'
 
 export interface CreateSessionClientHelloMessageOptions {
   readonly reconnect?: boolean
@@ -98,6 +107,20 @@ export interface CreateSessionClientHelloMessageOptions {
 export interface SessionSocketAutoHelloOptions extends CreateSessionClientHelloMessageOptions {
   readonly identity: SessionClientIdentity
   /** Defaults to true when hello options are supplied. */
+  readonly auto?: boolean
+}
+
+export interface CreateSessionClientHeartbeatMessageOptions {
+  readonly heartbeat?: SessionHeartbeatKind
+  readonly nonce?: string
+  readonly lastSeenRevision?: SessionRevision
+  readonly messageId?: string
+  readonly sentAt?: string
+  readonly traceId?: string
+}
+
+export interface SessionSocketHeartbeatOptions {
+  /** Defaults to true after the server hello negotiates heartbeat timing. */
   readonly auto?: boolean
 }
 
@@ -115,6 +138,7 @@ export interface UseSessionSocketOptions<
   readonly url?: string
   /** Optional session-local identity used to send a client hello after open. */
   readonly hello?: SessionSocketAutoHelloOptions | null
+  readonly heartbeat?: SessionSocketHeartbeatOptions
   readonly location?: SessionSocketLocationLike
   readonly webSocketConstructor?: SessionSocketConstructor | null
   readonly now?: SessionSocketClock
@@ -217,14 +241,49 @@ export const createSessionClientHelloMessage = (
   }
 }
 
+export const createSessionClientHeartbeatMessage = (
+  sessionId: SessionId,
+  options: CreateSessionClientHeartbeatMessageOptions = {},
+): SessionHeartbeatMessage<'client', SessionRevision> => ({
+  schemaVersion: SESSION_MESSAGE_SCHEMA_VERSION,
+  type: 'heartbeat',
+  direction: 'client',
+  sessionId,
+  heartbeat: options.heartbeat ?? 'ping',
+  ...(options.nonce === undefined ? {} : { nonce: options.nonce }),
+  ...(options.lastSeenRevision === undefined ? {} : { lastSeenRevision: options.lastSeenRevision }),
+  ...(options.messageId === undefined ? {} : { messageId: options.messageId }),
+  ...(options.sentAt === undefined ? {} : { sentAt: options.sentAt }),
+  ...(options.traceId === undefined ? {} : { traceId: options.traceId }),
+})
+
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
 
-const isServerHelloMessage = (message: unknown): message is SessionServerHelloMessage =>
+const isServerHelloMessage = (message: unknown): message is SessionServerHelloMessage<SessionRevision> =>
   isRecord(message) &&
   message.schemaVersion === SESSION_MESSAGE_SCHEMA_VERSION &&
   message.type === 'hello' &&
-  message.direction === 'server'
+  message.direction === 'server' &&
+  isSessionRevision(message.currentRevision)
+
+const isServerHeartbeatMessage = (
+  message: unknown,
+): message is SessionHeartbeatMessage<'server', SessionRevision> =>
+  isRecord(message) &&
+  message.schemaVersion === SESSION_MESSAGE_SCHEMA_VERSION &&
+  message.type === 'heartbeat' &&
+  message.direction === 'server' &&
+  isSessionId(message.sessionId) &&
+  isSessionHeartbeatKind(message.heartbeat) &&
+  (message.nonce === undefined || typeof message.nonce === 'string') &&
+  (message.lastSeenRevision === undefined || isSessionRevision(message.lastSeenRevision))
+
+const isUsableHeartbeatConfig = (config: SessionHeartbeatConfig): boolean =>
+  Number.isSafeInteger(config.intervalMs) &&
+  config.intervalMs > 0 &&
+  Number.isSafeInteger(config.timeoutMs) &&
+  config.timeoutMs > config.intervalMs
 
 const isServerAuthRejectionMessage = (message: unknown): boolean =>
   isRecord(message) &&
@@ -252,6 +311,14 @@ const detachSocketHandlers = (socket: SessionSocketLike): void => {
   socket.onclose = null
 }
 
+type SessionSocketHeartbeatTimer = ReturnType<typeof setInterval>
+
+const parseTimestampMs = (timestamp: string | null): number | undefined => {
+  if (timestamp === null) return undefined
+  const parsed = Date.parse(timestamp)
+  return Number.isFinite(parsed) ? parsed : undefined
+}
+
 export const useSessionSocket = <
   TClientMessage = SessionClientMessage,
   TServerMessage = SessionServerMessage,
@@ -269,11 +336,19 @@ export const useSessionSocket = <
   const lastError = ref<string | null>(null)
   const lastRawMessage = ref<string | null>(null)
   const lastMessage = ref<TServerMessage | null>(null)
-  const lastServerHello = ref<SessionServerHelloMessage | null>(null)
+  const lastServerHello = ref<SessionServerHelloMessage<SessionRevision> | null>(null)
   const helloStatus = ref<SessionSocketHelloStatus>('idle')
+  const heartbeatStatus = ref<SessionSocketHeartbeatStatus>('idle')
+  const heartbeatConfig = ref<SessionHeartbeatConfig | null>(null)
+  const lastServerMessageAt = ref<string | null>(null)
+  const lastHeartbeatSentAt = ref<string | null>(null)
+  const lastHeartbeatReceivedAt = ref<string | null>(null)
+  const lastHeartbeatNonce = ref<string | null>(null)
   const lastClose = ref<SessionSocketCloseSummary | null>(null)
   const sendQueueItems = shallowRef<QueuedSessionSocketMessage<TClientMessage>[]>([])
   let nextSequence = 1
+  let nextHeartbeatSequence = 1
+  let heartbeatTimer: SessionSocketHeartbeatTimer | null = null
 
   const sendQueue = computed<readonly QueuedSessionSocketMessage<TClientMessage>[]>(() => sendQueueItems.value)
   const queuedMessageCount = computed(() => sendQueueItems.value.length)
@@ -337,10 +412,27 @@ export const useSessionSocket = <
     lastRawMessage.value = event.data
     try {
       const parsed = parse(event.data)
+      const receivedAt = now()
       lastMessage.value = parsed
+      lastServerMessageAt.value = receivedAt
       if (isServerHelloMessage(parsed)) {
         lastServerHello.value = parsed
         helloStatus.value = 'accepted'
+        heartbeatConfig.value = parsed.heartbeat
+        if (isUsableHeartbeatConfig(parsed.heartbeat)) {
+          startHeartbeat(parsed.sessionId, parsed.heartbeat)
+        }
+      } else if (isServerHeartbeatMessage(parsed)) {
+        lastHeartbeatReceivedAt.value = receivedAt
+        if (parsed.heartbeat === 'ping') {
+          sendHeartbeat(parsed.sessionId, {
+            heartbeat: 'pong',
+            ...(parsed.nonce === undefined ? {} : { nonce: parsed.nonce }),
+            ...(lastServerHello.value?.currentRevision === undefined
+              ? {}
+              : { lastSeenRevision: lastServerHello.value.currentRevision }),
+          })
+        }
       } else if (isServerAuthRejectionMessage(parsed)) {
         helloStatus.value = 'rejected'
       }
@@ -365,6 +457,7 @@ export const useSessionSocket = <
       ...(event.wasClean === undefined ? {} : { wasClean: event.wasClean }),
     }
     socket.value = null
+    stopHeartbeat()
     detachSocketHandlers(closedSocket)
     if (status.value !== 'error') status.value = 'closed'
   }
@@ -406,6 +499,13 @@ export const useSessionSocket = <
     lastError.value = null
     lastClose.value = null
     lastServerHello.value = null
+    heartbeatConfig.value = null
+    heartbeatStatus.value = 'idle'
+    lastServerMessageAt.value = null
+    lastHeartbeatSentAt.value = null
+    lastHeartbeatReceivedAt.value = null
+    lastHeartbeatNonce.value = null
+    stopHeartbeat()
     if (options.hello !== undefined && options.hello !== null) helloStatus.value = 'idle'
     resolvedUrl.value = url
 
@@ -484,7 +584,77 @@ export const useSessionSocket = <
     return result
   }
 
+  const createHeartbeatNonce = (): string => {
+    const nonce = `hb-client-${nextHeartbeatSequence}`
+    nextHeartbeatSequence += 1
+    return nonce
+  }
+
+  const stopHeartbeat = (): void => {
+    if (heartbeatTimer !== null) {
+      clearInterval(heartbeatTimer)
+      heartbeatTimer = null
+    }
+    if (heartbeatStatus.value !== 'stale') heartbeatStatus.value = 'idle'
+  }
+
+  const isHeartbeatStale = (config: SessionHeartbeatConfig): boolean => {
+    const lastActivityMs = parseTimestampMs(lastServerMessageAt.value)
+    const nowMs = parseTimestampMs(now())
+    if (lastActivityMs === undefined || nowMs === undefined) return false
+    return nowMs - lastActivityMs >= config.timeoutMs
+  }
+
+  const sendHeartbeat = (
+    sessionId: SessionId,
+    heartbeatOptions: CreateSessionClientHeartbeatMessageOptions = {},
+  ): SessionSocketSendResult<TClientMessage> => {
+    const sentAt = heartbeatOptions.sentAt ?? now()
+    const nonce = heartbeatOptions.nonce ?? createHeartbeatNonce()
+    const message = createSessionClientHeartbeatMessage(sessionId, {
+      ...heartbeatOptions,
+      sentAt,
+      nonce,
+    })
+    const result = send(message as unknown as TClientMessage)
+    if (result.ok) {
+      lastHeartbeatSentAt.value = sentAt
+      lastHeartbeatNonce.value = nonce
+    }
+    return result
+  }
+
+  const closeForStaleHeartbeat = (): void => {
+    heartbeatStatus.value = 'stale'
+    lastError.value = SESSION_SOCKET_HEARTBEAT_TIMEOUT_CLOSE_REASON
+    disconnect(SESSION_SOCKET_HEARTBEAT_TIMEOUT_CLOSE_CODE, SESSION_SOCKET_HEARTBEAT_TIMEOUT_CLOSE_REASON)
+  }
+
+  const startHeartbeat = (sessionId: SessionId, config: SessionHeartbeatConfig): void => {
+    if (options.heartbeat?.auto === false) return
+    stopHeartbeat()
+    heartbeatStatus.value = 'active'
+    heartbeatTimer = setInterval(() => {
+      if (isHeartbeatStale(config)) {
+        closeForStaleHeartbeat()
+        stopHeartbeat()
+        heartbeatStatus.value = 'stale'
+        return
+      }
+
+      sendHeartbeat(sessionId, {
+        heartbeat: 'ping',
+        ...(lastServerHello.value?.currentRevision === undefined
+          ? {}
+          : { lastSeenRevision: lastServerHello.value.currentRevision }),
+      })
+    }, config.intervalMs)
+    const maybeUnref = (heartbeatTimer as { unref?: () => void }).unref
+    if (typeof maybeUnref === 'function') maybeUnref.call(heartbeatTimer)
+  }
+
   const disconnect = (code = 1000, reason = 'session socket disconnect'): void => {
+    stopHeartbeat()
     const currentSocket = socket.value
     if (currentSocket === null) {
       if (status.value !== 'unavailable') status.value = 'closed'
@@ -509,6 +679,7 @@ export const useSessionSocket = <
   }
 
   const cleanup = (): void => {
+    stopHeartbeat()
     clearSendQueue()
     const currentSocket = socket.value
     if (currentSocket !== null) {
@@ -544,6 +715,12 @@ export const useSessionSocket = <
     lastMessage,
     lastServerHello,
     helloStatus,
+    heartbeatStatus,
+    heartbeatConfig,
+    lastServerMessageAt,
+    lastHeartbeatSentAt,
+    lastHeartbeatReceivedAt,
+    lastHeartbeatNonce,
     lastClose,
     sendQueue,
     queuedMessageCount,
@@ -556,6 +733,7 @@ export const useSessionSocket = <
     cleanup,
     send,
     sendHello,
+    sendHeartbeat,
     flushSendQueue,
     clearSendQueue,
     addMessageHandler,
