@@ -48,7 +48,7 @@ See [Track 2 session host runtime scripts](track-2-session-host-runtime.md) for 
 npm run smoke:session:multi-tab -- --map <map-slug>
 ```
 
-The existing local GM/player picker remains a trust switch for local use, not public authentication.
+The existing local GM/player picker remains a trust switch for local use, not public authentication. For the final Track 2 review of plain `npm run dev`, `/maps/<slug>`, sheet autosave, and legacy SSE local-mode behaviour, see the [Track 2 local-mode no-regression audit](track-2-local-mode-no-regression-audit.md).
 
 ## Checks
 

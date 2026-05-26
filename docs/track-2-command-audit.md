@@ -41,4 +41,5 @@ This audit complements, but does not replace:
 
 - [Track 2 multi-tab local smoke script](track-2-multi-tab-smoke.md) for local GM/player browser-tab checks;
 - [Track 2 deployment smoke checklist](track-2-deployment-smoke-checklist.md) for LAN and named Cloudflare Tunnel deployment validation;
-- the remaining final-audit tickets for LAN manual results, named-tunnel doc review, local-mode no-regression checks, security, persistence/recovery, and performance notes.
+- [Track 2 local-mode no-regression audit](track-2-local-mode-no-regression-audit.md) for plain map/sheet workflows, local autosave, and legacy SSE checks;
+- the remaining final-audit tickets for security, persistence/recovery, and performance notes.
