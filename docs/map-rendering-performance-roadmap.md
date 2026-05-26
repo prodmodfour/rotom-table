@@ -67,7 +67,7 @@ Avoid disposing and rebuilding equivalent geometry, buffers, overlays, and targe
 
 ### 6. Validate and audit
 
-Finish with repeatable benchmark notes, resource cleanup coverage, a no-quality-loss audit, and a readiness review. The [Map rendering no-quality-loss audit](performance-no-quality-loss-audit.md) records the integrated review that found no intentional visual-quality or functionality reduction, and the [Map rendering performance readiness review](performance-readiness-review.md) records readiness, validation coverage, and performance notes. Any optimization that changes output should be treated as a bug unless it is an intentional, separately reviewed product change.
+Finish with repeatable benchmark notes, resource cleanup coverage, a no-quality-loss guardrails, and a readiness maintenance. The [Map rendering no-quality-loss guardrails](performance-no-quality-loss.md) records the integrated review that found no intentional visual-quality or functionality reduction, and the [Map rendering performance readiness](performance-readiness.md) records readiness, validation coverage, and performance notes. Any optimization that changes output should be treated as a bug unless it is an intentional, separately reviewed product change.
 
 ## Validation expectations
 

@@ -1,16 +1,16 @@
-# Live session persistence and recovery audit
+# Live session persistence and recovery maintenance
 
-This review records the current Live session persistence/recovery posture for the state, command, hosting, LAN smoke, local-mode, and security boundaries. Read it with the [live session storage guide](live-session-storage.md), [Live session backup and recovery runbook](live-session-backup-recovery.md), [Live session security readiness audit](live-session-security-readiness-audit.md), and [Live session local-mode no-regression audit](live-session-local-mode-no-regression-audit.md).
+This maintenance guide records the current live-session persistence/recovery posture for the state, command, hosting, LAN smoke, local-mode, and security boundaries. Read it with the [live session storage guide](live-session-storage.md), [Live session backup and recovery runbook](live-session-backup-recovery.md), [Live session security and secret-hygiene readiness](live-session-security-secret-hygiene-readiness.md), and [Live session local-mode maintenance checks](live-session-local-mode-maintenance.md).
 
-Audit date: 2026-05-26
+Last checked: 2026-05-26
 
-Outcome: pass for the locked Live session local-first persistence model, with explicit limitations. Live session authority remains on the GM-hosted server; accepted commands update server-owned state, advance revisions, and persist local JSON snapshots with optional JSON-lines events. Recovery uses the latest validated snapshot or a GM-controlled private backup, not browser local storage, stale optimistic UI state, copied whole-map autosaves, a hosted database, or a public cloud service.
+Current maintenance baseline: the locked live-session local-first persistence model is ready within explicit limitations. Live session authority remains on the GM-hosted server; accepted commands update server-owned state, advance revisions, and persist local JSON snapshots with optional JSON-lines events. Recovery uses the latest validated snapshot or a GM-controlled private backup, not browser local storage, stale optimistic UI state, copied whole-map autosaves, a hosted database, or a public cloud service.
 
-This audit reviewed source code, tests, and documentation. It did not create a live public tunnel, commit private campaign data, restore a real campaign backup, record real GM keys or join codes, add encrypted backup tooling, add automatic cloud replication, or add a database.
+This maintenance pass checked source code, tests, and documentation. It did not create a live public tunnel, commit private campaign data, restore a real campaign backup, record real GM keys or join codes, add encrypted backup tooling, add automatic cloud replication, or add a database.
 
 ## Scope
 
-The audit covered these persistence and recovery boundaries:
+This maintenance guide covers these persistence and recovery boundaries:
 
 - local session storage paths under `data/sessions/<sessionId>/`;
 - atomic `snapshot.json` writes, validated snapshot reads, and recovery helper behaviour;
@@ -21,21 +21,21 @@ The audit covered these persistence and recovery boundaries:
 - cleanup behaviour for in-memory records versus on-disk session artifacts;
 - `.gitignore` and no-secret/no-private-data hygiene for local runtime files and backups.
 
-The audit intentionally did not change the architecture into SaaS, public multi-tenancy, a generic collaborative document editor, Quick Tunnel campaign hosting, cloud database persistence, or browser-owned live whole-map recovery.
+This maintenance guide intentionally does not change the architecture into SaaS, public multi-tenancy, a generic collaborative document editor, Quick Tunnel campaign hosting, cloud database persistence, or browser-owned live whole-map recovery.
 
 ## Evidence summary
 
-| Boundary | Audit result | Source and test evidence |
+| Boundary | Maintenance result | Source and test evidence |
 | --- | --- | --- |
 | Local storage root | Pass. Session artifacts resolve under `data/sessions/<sessionId>/` by default and use safe path joins. The runtime directory is ignored/private. | `server/utils/sessionSnapshots.ts`, `server/utils/sessionEventLog.ts`, `server/utils/fsPaths.ts`, `.gitignore`, `tests/server/sessionSnapshots.test.ts`, and `tests/server/sessionEventLog.test.ts`. |
 | Atomic snapshot writes | Pass. Snapshots serialize to JSON first, write a same-directory temp file with restrictive permissions, flush by default, rename over `snapshot.json`, best-effort fsync the directory, and remove failed temp files. | `writeSessionSnapshot`, `SESSION_SNAPSHOT_TEMP_FILE_PREFIX`, `tests/server/sessionSnapshots.test.ts`. |
 | Snapshot validation and recovery | Pass. Reads validate schema version, session ID, revision, timestamps, authoritative state, maps, clients, players, assignments, and envelope/state consistency before returning recovery state. Missing, invalid JSON, invalid shape, and wrong-session snapshots fail closed. | `readSessionSnapshot`, `recoverSessionStateFromSnapshot`, `validatePersistedSessionSnapshot`, `tests/server/sessionSnapshots.test.ts`, and `tests/server/sessionStateQuality.test.ts`. |
-| Optional event log | Pass with documented limits. `events.jsonl` entries are validated command/event JSON-lines records and can support audit or replay-oriented follow-up work, but the log is optional and is not a standalone recovery authority without a valid snapshot. | `server/utils/sessionEventLog.ts`, `server/utils/sessionRevisionApplication.ts`, `tests/server/sessionEventLog.test.ts`, and `tests/server/sessionRevisionApplication.test.ts`. |
+| Optional event log | Pass with documented limits. `events.jsonl` entries are validated command/event JSON-lines records and can support troubleshooting or replay-oriented follow-up work, but the log is optional and is not a standalone recovery authority without a valid snapshot. | `server/utils/sessionEventLog.ts`, `server/utils/sessionRevisionApplication.ts`, `tests/server/sessionEventLog.test.ts`, and `tests/server/sessionRevisionApplication.test.ts`. |
 | Accepted command persistence | Pass for implemented command families. Start/join/assignment and command use cases write authoritative snapshots after accepted changes; sheet-writing command handlers roll back sheet updates when session snapshot persistence fails. Rejections and duplicate retries do not create live-client whole-map authority. | `server/useCases/startGmSession.ts`, `server/useCases/joinPlayerSession.ts`, `server/useCases/updatePlayerAssignment.ts`, `server/useCases/applyMoveTokenCommand.ts`, `server/useCases/applyTurnTokenCommand.ts`, `server/useCases/applySpawnTokenCommand.ts`, `server/useCases/applyDeleteTokenCommand.ts`, `server/useCases/applySendOutPokemonCommand.ts`, `server/useCases/applyModifyHpCommand.ts`, `server/useCases/applyModifyCombatStagesCommand.ts`, `server/useCases/applyModifyConditionsCommand.ts`, `server/useCases/applyUseMoveCommand.ts`, `server/useCases/applyUseTableActionCommand.ts`, `server/useCases/applyInitiativeCommand.ts`, `server/useCases/applyHazardCommand.ts`, `server/useCases/applyFieldEffectCommand.ts`, `server/useCases/applyTerrainCommand.ts`, and focused server tests. |
 | Reconnect/restart recovery | Pass. WebSocket reconnect falls back to current actor-scoped server snapshots when replay is unavailable; restart recovery uses the validated latest snapshot. Browser state is not the recovery authority. | `server/utils/sessionWebSocketServer.ts`, `src/composables/map-editor/useSessionMap.ts`, `tests/server/sessionWebSocketTransport.test.ts`, `tests/composables/map-editor/sessionClientIntegration.test.ts`, and `docs/live-session-backup-recovery.md`. |
 | Cleanup and retention | Pass. Cleanup expires or prunes process-local in-memory records and clears recent operation tracking, but it does not delete `snapshot.json` or `events.jsonl`. Disk cleanup remains an explicit GM backup/removal decision. | `server/utils/sessionCleanup.ts`, `tests/server/sessionCleanup.test.ts`, `docs/live-session-storage.md`, and `docs/live-session-backup-recovery.md`. |
 | Backup/restore docs | Pass. The runbook covers safe backup timing, `tar`/`rsync`/PowerShell examples, restore startup, reconnect guidance, invalid-snapshot fail-closed behaviour, event-log limitations, credential leak response, and local/private data boundaries. | `docs/live-session-backup-recovery.md` and `tests/docs/liveSessionBackupRecovery.test.ts`. |
-| Local data hygiene | Pass. Docs and ignore rules keep `data/sessions/`, private maps/sheets/trainers, generated sheets, snapshots, event logs, tunnel credentials, private keys, tokens, real `.env` files, and backup archives out of git. | `.gitignore`, `README.md`, `docs/local-development.md`, `docs/live-session-storage.md`, `docs/live-session-security-review.md`, and repository hygiene guidance in this review. |
+| Local data hygiene | Pass. Docs and ignore rules keep `data/sessions/`, private maps/sheets/trainers, generated sheets, snapshots, event logs, tunnel credentials, private keys, tokens, real `.env` files, and backup archives out of git. | `.gitignore`, `README.md`, `docs/local-development.md`, `docs/live-session-storage.md`, `docs/live-session-security-boundaries.md`, and repository hygiene guidance in this maintenance guide. |
 
 ## Snapshot persistence findings
 
@@ -72,7 +72,7 @@ This is intentionally a latest-snapshot recovery model. It does not add automati
 - Appends use one compact JSON object per line, trailing newline, append mode, restrictive permissions, file fsync by default, and best-effort directory fsync.
 - `server/utils/sessionRevisionApplication.ts` can create a validated command event-log entry as part of an accepted-command effect, but it deliberately does not append the log or write snapshots itself.
 
-The accepted limitation is that `events.jsonl` is audit/replay-oriented data today. It is not sufficient when `snapshot.json` is missing or invalid, and it is not a command stream clients can edit.
+The accepted limitation is that `events.jsonl` is troubleshooting/replay-oriented data today. It is not sufficient when `snapshot.json` is missing or invalid, and it is not a command stream clients can edit.
 
 ## Command persistence and rollback findings
 
@@ -99,7 +99,7 @@ The backup/recovery runbook remains accurate for the current implementation:
 
 ## Local data hygiene findings
 
-The hygiene review confirms:
+The hygiene check confirms:
 
 - `.gitignore` ignores `data/sessions/`, `data/maps/`, non-example `data/sheets/`, `data/trainers/`, `.env`, `.env.*`, local caches, and temp folders.
 - Documentation warns that snapshots, event logs, backup archives, private maps/sheets/trainers, generated wild sheets, player display names, player/client IDs, GM keys, join codes, tunnel credentials, private keys, tokens, screenshots with secrets, and real environment files stay out of git and public issue trackers.
@@ -118,13 +118,13 @@ These are still acceptable for Live session and should stay explicit:
 - Restore does not configure Cloudflare DNS, tunnel credentials, firewalls, browser profiles, or public-auth controls.
 - Public hosting, SaaS persistence, cloud databases, automatic replication, Durable Objects, Redis, Postgres, and browser-owned whole-map recovery remain out of scope.
 
-## Persistence checklist
+## Persistence maintenance checklist
 
 - [x] Session snapshots are local JSON under `data/sessions/<sessionId>/snapshot.json`.
 - [x] Snapshot writes use temp-file-and-rename semantics with same-directory temp files and default fsync behaviour.
 - [x] Snapshot reads validate shape and fail closed before recovery.
 - [x] The latest valid snapshot remains the authoritative recovery baseline.
-- [x] Optional `events.jsonl` is append-only JSON-lines audit/replay-oriented data, not standalone recovery authority.
+- [x] Optional `events.jsonl` is append-only JSON-lines troubleshooting/replay-oriented data, not standalone recovery authority.
 - [x] Accepted commands persist after server validation/revision application and roll back sheet side effects where needed.
 - [x] Reconnect uses server-owned snapshots/patches, not browser-owned whole-map autosaves.
 - [x] Cleanup does not silently delete snapshot/event-log files.

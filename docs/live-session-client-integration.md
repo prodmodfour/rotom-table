@@ -137,7 +137,7 @@ npm run smoke:session:multi-tab -- --map <map-slug>
 
 The helper opens or prints the GM lobby, player lobby, plain local map route, and explicit session map route. Use the [Live session map attachment flow](live-session-map-attachment.md) before treating that session route as authoritative for a real table. The corresponding [multi-tab smoke checklist](live-session-multi-tab-smoke.md) covers token propagation, rejection/reconnect guidance, local-mode comparison, and cleanup without committing private runtime data. For cross-device same-Wi-Fi setup and troubleshooting, use the [Live session LAN hosting runbook](live-session-lan-hosting.md). For remote players over a stable hostname, use the [Live session named Cloudflare Tunnel runbook](live-session-cloudflare-tunnel-hosting.md). Do not use Quick Tunnel for campaign play; see the [Live session Quick Tunnel caveat](live-session-quick-tunnel-caveat.md) for the temporary development-only boundary.
 
-The local-mode regression review is recorded in [Live session local-mode no-regression audit](live-session-local-mode-no-regression-audit.md), which cross-checks the plain map/sheet workflows, legacy SSE, local autosave, and explicit `?session=1` opt-in boundary for live-session mode.
+The local-mode regression review is recorded in [Live session local-mode maintenance checks](live-session-local-mode-maintenance.md), which cross-checks the plain map/sheet workflows, legacy SSE, local autosave, and explicit `?session=1` opt-in boundary for live-session mode.
 
 Focused automated coverage currently lives in:
 

@@ -1,10 +1,10 @@
-# Live session named tunnel documentation review
+# Live session named-tunnel maintenance checklist
 
-This document records a review of the Live session named Cloudflare Tunnel documentation for accuracy, current Cloudflare assumptions, and safety warnings. It is documentation evidence, not a live remote smoke result. No real Cloudflare account, hostname, tunnel token, join code, GM key, snapshot, event log, private map, private sheet, or `.env` file was used or recorded.
+This maintenance checklist records the live-session named Cloudflare Tunnel documentation baseline, current Cloudflare assumptions, and safety warnings. It is a source/reference check, not a live remote smoke result. No real Cloudflare account, hostname, tunnel token, join code, GM key, snapshot, event log, private map, private sheet, or `.env` file was used or recorded.
 
-## Review outcome
+## Maintenance baseline
 
-**Outcome: pass for documentation accuracy as of 2026-05-26.** The existing [Live session named Cloudflare Tunnel runbook](live-session-cloudflare-tunnel-hosting.md) still matches the locked architecture and the current operator assumptions:
+**Current baseline as of 2026-05-26:** The existing [Live session named Cloudflare Tunnel runbook](live-session-cloudflare-tunnel-hosting.md) still matches the locked architecture and the current operator assumptions:
 
 - LAN remains the primary supported hosting path; a named Cloudflare Tunnel with a stable hostname remains the supported remote path.
 - Rotom Table still runs as a GM-controlled Node/Nuxt/Nitro process with the exact `ROTOM_ENABLE_SESSION_HOST=1` runtime gate.
@@ -17,7 +17,7 @@ This document records a review of the Live session named Cloudflare Tunnel docum
 
 ## Source material checked
 
-The review compared Rotom Table docs against current Cloudflare documentation and the Live session project constraints:
+This checklist compares Rotom Table docs against current Cloudflare documentation and the live-session project constraints:
 
 | Source | What it confirmed for the runbook |
 | --- | --- |
@@ -33,17 +33,17 @@ Cloudflare dashboard labels and Zero Trust navigation can change over time. The 
 
 ## Runbook cross-check
 
-| Review area | Current documented state | Result |
+| Check area | Current documented state | Result |
 | --- | --- | --- |
 | Stable remote hostname | The runbook uses `table.example.com`, `cloudflared tunnel route dns rotom-table table.example.com`, and `cloudflared tunnel run rotom-table`; it rejects temporary `trycloudflare.com` URLs for campaign play. | Pass |
 | Local host binding | The runbook prefers `npm run dev:session:tunnel`, whose documented/manual equivalent is `ROTOM_ENABLE_SESSION_HOST=1 npm run dev -- --host 127.0.0.1 --port 3000`, so the public path is the tunnel rather than an extra LAN listener. | Pass |
 | Ingress config | The documented `~/.cloudflared/config.yml` maps `hostname: table.example.com` to `service: http://localhost:3000` and ends with `service: http_status:404`. | Pass |
 | WebSocket route | The runbook and protocol docs preserve `/api/sessions/socket` and same-origin `wss://table.example.com/api/sessions/socket` without asking players to enter a separate socket URL. | Pass |
-| Cache assumptions | The runbook, deployment smoke checklist, dependency/runtime review, and security review all warn not to cache `/sessions`, `/maps/*`, `/api/sessions/*`, WebSocket responses, patches, snapshots, or lobby state. | Pass |
+| Cache assumptions | The runbook, deployment smoke checklist, dependency/runtime maintenance, and security boundaries all warn not to cache `/sessions`, `/maps/*`, `/api/sessions/*`, WebSocket responses, patches, snapshots, or lobby state. | Pass |
 | Optional edge protection | Cloudflare Access/WAF/IP restrictions are documented as optional outer gates only; Live session server-side GM key, join code, player/client identity, assignments, revisions, and command validation remain authoritative. | Pass |
 | Safety banner/readiness | The GM flow requires opening `/sessions` through the public hostname, checking the remote/tunnel safety banner, treating pre-start no-active-session as expected, and blocking on missing credentials/state or unknown readiness after startup. | Pass |
 | Rollback/shutdown | The runbook documents stopping `cloudflared`, stopping Nuxt, unsetting `ROTOM_ENABLE_SESSION_HOST`, disabling the DNS/CNAME/hostname if needed, deleting retired tunnels, rotating join codes through a fresh session, and checking git hygiene. | Pass |
-| Secrets and private data | All reviewed docs use placeholders and explicitly prohibit committing tunnel credentials, tokens, real hostnames that should remain private, GM keys, join codes, snapshots, event logs, private maps/sheets, screenshots with secrets, and real `.env` files. | Pass |
+| Secrets and private data | All linked docs use placeholders and explicitly prohibit committing tunnel credentials, tokens, real hostnames that should remain private, GM keys, join codes, snapshots, event logs, private maps/sheets, screenshots with secrets, and real `.env` files. | Pass |
 | Architecture lock | The docs do not introduce Quick Tunnel campaign hosting, public accounts, SaaS hosting, Cloudflare Workers/Durable Objects, Redis/Postgres, hosted databases, or browser-owned whole-map live autosave. | Pass |
 
 ## Current assumptions to preserve
@@ -53,7 +53,7 @@ Cloudflare dashboard labels and Zero Trust navigation can change over time. The 
 - The GM machine must stay awake, online, and able to write local JSON session snapshots/event logs for the duration of play.
 - If a dashboard-managed tunnel is used instead of the documented local config file, its public hostname must still point to the same local Rotom Table service and preserve `/api/sessions/socket` upgrade behaviour.
 - Optional Cloudflare Access/WAF/cache changes must be smoke-tested before a session; Access challenges or cache rules can interrupt or mislead WebSocket/session UI even though they are not Rotom Table authority.
-- The review did not run a live public tunnel. A live named-tunnel deployment smoke still requires a real Cloudflare account, DNS zone, and stable hostname plus remote clients; use the [Live session deployment smoke checklist](live-session-deployment-smoke-checklist.md) to record that environment-specific result.
+- This maintenance check does not run a live public tunnel. A live named-tunnel deployment smoke still requires a real Cloudflare account, DNS zone, and stable hostname plus remote clients; use the [Live session deployment smoke checklist](live-session-deployment-smoke-checklist.md) to record that environment-specific result.
 
 ## Operator checklist before a named-tunnel game
 
@@ -72,4 +72,4 @@ Use this short checklist in addition to the runbook:
 
 ## Boundaries
 
-This document does not add a Cloudflare dependency, change runtime code, create a tunnel, run a live public hostname, or claim production-grade public hardening. It records that the named-tunnel documentation is accurate for the supported Live session remote path and that remaining environment-specific verification belongs in the deployment smoke checklist.
+This document does not add a Cloudflare dependency, change runtime code, create a tunnel, run a live public hostname, or claim production-grade public hardening. It keeps the named-tunnel documentation baseline visible for the supported live-session remote path and leaves environment-specific verification to the deployment smoke checklist.

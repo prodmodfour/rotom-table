@@ -42,6 +42,28 @@ describe('Live session LAN hosting runbook', () => {
     expect(runbook).toContain('use `/maps/<slug>?session=1` when the live table should use server-authoritative session commands')
   })
 
+  it('requires real player device rehearsal and recovery checks before play', () => {
+    expect(runbook).toContain('Real-device rehearsal before play')
+    expect(runbook).toContain('actual phones, tablets, or laptops players expect to use at the table')
+    expect(runbook).toContain('do not rely only on tabs on the GM machine')
+    expect(runbook).toContain('fix that device/network issue before play')
+    expect(runbook).toContain('No-map-attached recovery')
+    expect(runbook).toContain('No-token-assigned recovery')
+    expect(runbook).toContain('presses **Attach current map to live session** with player visibility')
+    expect(runbook).toContain('GM uses **Assign map tokens** and **Assign control**')
+  })
+
+  it('documents LAN latency and concurrency expectations', () => {
+    expect(runbook).toContain('LAN latency and concurrency expectations')
+    expect(runbook).toContain('lowest-jitter live-session path for a small trusted table')
+    expect(runbook).toContain('does not promise a millisecond latency target')
+    expect(runbook).toContain("server's accepted revision order")
+    expect(runbook).toContain('Event replay is currently unavailable for reconnect')
+    expect(runbook).toContain('actor-scoped snapshot fallback')
+    expect(runbook).toContain('live-session-concurrency-benchmark-notes.md')
+    expect(runbook).toContain('`1-3s` or `>3s` timing buckets')
+  })
+
   it('keeps safety, troubleshooting, and cleanup boundaries visible', () => {
     expect(runbook).toContain('not hardened public authentication')
     expect(runbook).toContain('Quick Tunnel is not the supported campaign-session path')

@@ -14,18 +14,34 @@ describe('Live session concurrency benchmark notes', () => {
   const notes = readText('docs/live-session-concurrency-benchmark-notes.md')
 
   it('records the current scope, outcome, and measurement caveats', () => {
-    expect(notes).toContain('This review')
-    expect(notes).toContain('Audit date: 2026-05-26')
-    expect(notes).toContain('Outcome: pass for the locked Live session small-table concurrency posture')
+    expect(notes).toContain('This note records')
+    expect(notes).toContain('Last checked: 2026-05-26')
+    expect(notes).toContain('Current maintenance baseline: the locked live-session small-table concurrency posture is ready')
     expect(notes).toContain('not a load test, WAN benchmark, browser FPS benchmark, or numeric latency SLA')
     expect(notes).toContain('No millisecond latency target is claimed')
     expect(notes).toContain('separate Chromium contexts through a private LAN URL')
     expect(notes).toContain('No live named Cloudflare Tunnel')
   })
 
+  it('documents expected LAN and named-tunnel behaviour plus before-game checks', () => {
+    expect(notes).toContain('Expected behaviour for LAN and named-tunnel play')
+    expect(notes).toContain('LAN expectation')
+    expect(notes).toContain('one GM plus a few players')
+    expect(notes).toContain('near-immediate after the local optimistic preview')
+    expect(notes).toContain('Named-tunnel expectation')
+    expect(notes).toContain('browser-to-Cloudflare-to-GM-host round trip')
+    expect(notes).toContain('more jitter than LAN')
+    expect(notes).toContain('stable named tunnel tested with actual players')
+    expect(notes).toContain('Before-game GM/player smoke checks')
+    expect(notes).toContain('**Visible session maps**')
+    expect(notes).toContain('**Assign map tokens** / **Assign control**')
+    expect(notes).toContain('no-token-assigned guidance or a safe unauthorized rejection')
+    expect(notes).toContain('`<250ms`, `250-1000ms`, `1-3s`, or `>3s`')
+  })
+
   it('summarizes multi-client command, fanout, permission, stale, and reconnect behaviour evidence', () => {
     const expectedEvidence = [
-      'tests/server/sessionIntegratedCommandAudit.test.ts',
+      'tests/server/sessionIntegratedCommandFlow.test.ts',
       'tests/server/sessionTokenCommandTwoClientSmoke.test.ts',
       'tests/server/sessionWebSocketTransport.test.ts',
       'tests/server/applyMoveTokenCommand.test.ts',
@@ -56,7 +72,8 @@ describe('Live session concurrency benchmark notes', () => {
     expect(notes).toContain('25 second heartbeat interval')
     expect(notes).toContain('60 second stale timeout')
     expect(notes).toContain('`replayAvailable: false`')
-    expect(notes).toContain('snapshot fallback')
+    expect(notes).toContain('event replay is not available for reconnect')
+    expect(notes).toContain('stale reconnects use snapshot fallback unless a future validated replay implementation updates these docs and tests')
 
     const socketServer = readText('server/utils/sessionWebSocketServer.ts')
     expect(socketServer).toContain('SESSION_SOCKET_HEARTBEAT_INTERVAL_MS = 25_000')
@@ -107,7 +124,9 @@ describe('Live session concurrency benchmark notes', () => {
     expect(readText('docs/live-session-validation-matrix.md')).toContain('live-session-concurrency-benchmark-notes.md')
     expect(readText('docs/live-session-protocol.md')).toContain('live-session-concurrency-benchmark-notes.md')
     expect(readText('docs/live-session-socket-protocol.md')).toContain('live-session-concurrency-benchmark-notes.md')
-    expect(readText('docs/live-session-command-audit.md')).toContain('live-session-concurrency-benchmark-notes.md')
+    expect(readText('docs/live-session-command-flow-maintenance.md')).toContain('live-session-concurrency-benchmark-notes.md')
+    expect(readText('docs/live-session-lan-hosting.md')).toContain('live-session-concurrency-benchmark-notes.md')
+    expect(readText('docs/live-session-cloudflare-tunnel-hosting.md')).toContain('live-session-concurrency-benchmark-notes.md')
     expect(readText('docs/live-session-deployment-smoke-checklist.md')).toContain('live-session-concurrency-benchmark-notes.md')
     expect(readText('docs/live-session-lan-manual-smoke-results.md')).toContain('live-session-concurrency-benchmark-notes.md')
   })

@@ -33,6 +33,18 @@ describe('Live session named Cloudflare Tunnel runbook', () => {
     expect(runbook).toContain('session hosting enabled and a deliberate remote/tunnel exposure')
   })
 
+  it('documents a remote-player rehearsal with attached maps and assignments', () => {
+    expect(runbook).toContain('## Remote-player rehearsal before play')
+    expect(runbook).toContain('actual remote player browser or device')
+    expect(runbook).toContain('Attach current map to live session')
+    expect(runbook).toContain('Visible session maps')
+    expect(runbook).toContain('Assign map tokens')
+    expect(runbook).toContain('Assign control')
+    expect(runbook).toContain('/maps/<map-slug>?session=1')
+    expect(runbook).toContain('No-map-attached recovery')
+    expect(runbook).toContain('No-token-assigned recovery')
+  })
+
   it('documents WebSocket, heartbeat, reconnect, and cache expectations', () => {
     expect(runbook).toContain('wss://table.example.com/api/sessions/socket')
     expect(runbook).toContain('Preserve the `/api/sessions/socket` path')
@@ -42,8 +54,30 @@ describe('Live session named Cloudflare Tunnel runbook', () => {
     expect(runbook).toContain('snapshot fallback')
   })
 
+  it('documents remote latency and concurrency expectations', () => {
+    expect(runbook).toContain('Remote latency and concurrency expectations')
+    expect(runbook).toContain('browser-to-Cloudflare-to-GM-host round trip')
+    expect(runbook).toContain('Remote players should expect more jitter than LAN')
+    expect(runbook).toContain("server's accepted revision order")
+    expect(runbook).toContain('Event replay is currently unavailable for reconnect')
+    expect(runbook).toContain('actor-scoped snapshot fallback')
+    expect(runbook).toContain('live-session-concurrency-benchmark-notes.md')
+    expect(runbook).toContain('repeated `1-3s` or `>3s` actions')
+  })
+
+  it('documents remote session hosting safety checks and secret hygiene', () => {
+    expect(runbook).toContain('## Remote invite and secret hygiene')
+    expect(runbook).toContain('Before sharing a join code over the remote hostname')
+    expect(runbook).toContain('session hosting enabled and the expected remote/tunnel exposure')
+    expect(runbook).toContain('missing session-local credentials or missing authoritative state')
+    expect(runbook).toContain('no Cloudflare cache rule or Access challenge interrupting session socket upgrades')
+    expect(runbook).toContain('Do not share the join code until all five checks pass')
+    expect(runbook).toContain('Keep GM keys, tunnel credentials, `cert.pem`, credentials JSON, Cloudflare API tokens')
+  })
+
   it('keeps public exposure safety boundaries visible', () => {
     expect(runbook).toContain('Quick Tunnel is not the supported campaign-session path')
+    expect(runbook).toContain('temporary development smoke option')
     expect(runbook).toContain('not public auth')
     expect(runbook).toContain('Cloudflare Access is optional extra protection, not a replacement')
     expect(runbook).toContain('Do not add a database, cloud persistence layer, SaaS deployment target')

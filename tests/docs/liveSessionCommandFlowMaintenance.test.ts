@@ -9,11 +9,11 @@ const repoRoot = resolve(testDir, '../..')
 
 const readText = (relativePath: string): string => readFileSync(resolve(repoRoot, relativePath), 'utf8')
 
-describe('Live session integrated command audit docs', () => {
-  const audit = readText('docs/live-session-command-audit.md')
+describe('Live session command-flow maintenance docs', () => {
+  const audit = readText('docs/live-session-command-flow-maintenance.md')
 
-  it('records the automated multi-client command audit evidence', () => {
-    expect(audit).toContain('tests/server/sessionIntegratedCommandAudit.test.ts')
+  it('records the automated multi-client command-flow evidence', () => {
+    expect(audit).toContain('tests/server/sessionIntegratedCommandFlow.test.ts')
     expect(audit).toContain('one GM socket, two player sockets in the same session, and a GM socket in a different session')
     expect(audit).toContain('handleSessionSocketMessage')
     expect(audit).toContain('real WebSocket dispatcher and server-authoritative use cases')
@@ -55,10 +55,10 @@ describe('Live session integrated command audit docs', () => {
   })
 
   it('links from primary Live session protocol and review docs', () => {
-    expect(readText('README.md')).toContain('docs/live-session-command-audit.md')
-    expect(readText('docs/README.md')).toContain('live-session-command-audit.md')
-    expect(readText('docs/live-session-protocol.md')).toContain('live-session-command-audit.md')
-    expect(readText('docs/live-session-socket-protocol.md')).toContain('live-session-command-audit.md')
-    expect(readText('docs/live-session-validation-matrix.md')).toContain('live-session-command-audit.md')
+    expect(readText('README.md')).toContain('docs/live-session-command-flow-maintenance.md')
+    expect(readText('docs/README.md')).toContain('live-session-command-flow-maintenance.md')
+    expect(readText('docs/live-session-protocol.md')).toContain('live-session-command-flow-maintenance.md')
+    expect(readText('docs/live-session-socket-protocol.md')).toContain('live-session-command-flow-maintenance.md')
+    expect(readText('docs/live-session-validation-matrix.md')).toContain('live-session-command-flow-maintenance.md')
   })
 })

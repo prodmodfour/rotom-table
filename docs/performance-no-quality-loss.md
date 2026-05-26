@@ -1,6 +1,6 @@
-# Map rendering no-quality-loss audit
+# Map rendering no-quality-loss guardrails
 
-This audit records the map rendering performance review. The review checks whether the current performance implementation intentionally reduced visual quality or table functionality to claim performance gains.
+This guide records the map rendering no-quality-loss guardrails. It checks whether the current performance implementation intentionally reduced visual quality or table functionality to claim performance gains.
 
 ## Outcome
 
@@ -8,16 +8,16 @@ This audit records the map rendering performance review. The review checks wheth
 
 ## Scope and method
 
-Reviewed current map rendering performance documentation, benchmark notes, focused guardrail tests, and isometric renderer utilities, including:
+Checked current map rendering performance documentation, benchmark notes, focused guardrail tests, and isometric renderer utilities, including:
 
 - [Performance guardrails](performance-guardrails.md) and [Map rendering performance roadmap](map-rendering-performance-roadmap.md);
 - [Isometric render scheduler architecture](render-scheduler-architecture.md);
 - [Performance benchmark scenarios](performance-benchmark-scenarios.md), [fixtures](performance-benchmark-fixtures.md), [runbook](performance-benchmark-runbook.md), and [integrated benchmark pass](performance-benchmark-results.md);
 - renderer quality, weather visual, render scheduler, pointer interaction, movement cache, voxel/token geometry, CSS3D HUD, layer visibility, and cleanup tests.
 
-This is a code/docs/test audit plus the integrated benchmark visual-equivalence notes. It is not a pixel-diff screenshot suite; future visual redesigns should be reviewed separately from map rendering performance-only work.
+This is a code/docs/test check plus the integrated benchmark visual-equivalence notes. It is not a pixel-diff screenshot suite; future visual redesigns should be checked separately from map rendering performance-only work.
 
-## Audit checklist
+## Guardrail checklist
 
 | Area | Result | Evidence |
 | --- | --- | --- |
@@ -31,7 +31,7 @@ This is a code/docs/test audit plus the integrated benchmark visual-equivalence 
 | CSS3D HUD and layer visibility | Pass | CSS3D dirty tracking skips CSS renderer work only on WebGL-only frames; HP bars, elevation badges, reticles, attack-of-opportunity buttons, and targeting overlays mark CSS dirty when output changes. Layer visibility applicators skip repeated identical writes but force application after renderer resource syncs. |
 | Map and table functionality | Pass | The performance work did not remove terrain editing, hazards, field effects, movement previews, move targeting/automation, token controls, HP/status overlays, initiative, or sheet interactions. Existing and added Vitest coverage exercises map editor, move automation, interaction controllers, scheduler lifecycle, and cleanup paths. |
 
-## Benchmark visual-equivalence review
+## Benchmark visual-equivalence check
 
 The integrated benchmark pass records the same public fixture maps with normal renderer quality and visible effects enabled:
 
@@ -45,5 +45,5 @@ The benchmark pass also noted no app console errors or warnings beyond normal Nu
 
 - Treat any future output-changing optimization as a product change, not as map rendering performance-only work.
 - Keep using the benchmark runbook and guardrail tests for later performance PRs.
-- Use the [Map rendering performance readiness review](performance-readiness-review.md) as the handoff checklist before marking the performance readiness review complete.
+- Use the [Map rendering performance readiness](performance-readiness.md) as the handoff checklist before accepting performance changes.
 - Add focused tests or explicit docs whenever a new cache, dirty reason, or resource reuse path could affect visible output or tool behaviour.

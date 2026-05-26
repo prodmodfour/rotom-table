@@ -2,7 +2,7 @@
 
 live session storage is local operational data for a GM-hosted table session. It exists so the server can recover authoritative session state after reconnects, restarts, or crashes without adding hosted database infrastructure or letting live browsers become the source of truth.
 
-This document describes the storage layout used by the live session state and persistence layer. It is an operations and recovery guide for the local JSON snapshot/event-log boundary used by lobby, WebSocket, and command routes. For step-by-step private archive, restore, and recovery procedures, see the [Live session backup and recovery runbook](live-session-backup-recovery.md). For the review of snapshots, optional event logs, cleanup, backup docs, and local data hygiene, see the [Live session persistence/recovery audit](live-session-persistence-recovery-audit.md).
+This document describes the storage layout used by the live session state and persistence layer. It is an operations and recovery guide for the local JSON snapshot/event-log boundary used by lobby, WebSocket, and command routes. For step-by-step private archive, restore, and recovery procedures, see the [Live session backup and recovery runbook](live-session-backup-recovery.md). For the maintenance guide to snapshots, optional event logs, cleanup, backup docs, and local data hygiene, see the [Live session persistence/recovery maintenance](live-session-persistence-recovery-maintenance.md).
 
 ## Storage principles
 

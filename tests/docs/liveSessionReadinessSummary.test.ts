@@ -15,12 +15,12 @@ describe('live session readiness summary', () => {
 
   it('records product readiness scope and standard validation', () => {
     expect(summary).toContain('# Live session readiness summary')
-    expect(summary).toContain('Audit date: 2026-05-26')
-    expect(summary).toContain('Outcome: ready for trusted-table live-session smoke testing')
+    expect(summary).toContain('Last checked: 2026-05-26')
+    expect(summary).toContain('Current readiness baseline: ready for trusted-table live-session smoke testing')
     expect(summary).toContain('Session hosting remains opt-in')
     expect(summary).toContain('`ROTOM_ENABLE_SESSION_HOST=1`')
     expect(summary).toContain('`npm run typecheck`, `npm test`, and `npm run build`')
-    expect(summary).toContain('No target-maintenance files, private/generated maps or sheets')
+    expect(summary).toContain('No maintenance-only notes, private/generated maps or sheets')
     expect(summary).toContain('documented limitations remain product limitations')
   })
 
@@ -45,13 +45,14 @@ describe('live session readiness summary', () => {
 
   it('links readiness evidence and target tests that exist', () => {
     const expectedDocPaths = [
-      'docs/live-session-implementation-review.md',
-      'docs/live-session-command-audit.md',
+      'docs/live-session-product-readiness-review.md',
+      'docs/live-session-implementation-maintenance.md',
+      'docs/live-session-command-flow-maintenance.md',
       'docs/live-session-lan-manual-smoke-results.md',
-      'docs/live-session-named-tunnel-documentation-review.md',
-      'docs/live-session-local-mode-no-regression-audit.md',
-      'docs/live-session-security-readiness-audit.md',
-      'docs/live-session-persistence-recovery-audit.md',
+      'docs/live-session-named-tunnel-maintenance.md',
+      'docs/live-session-local-mode-maintenance.md',
+      'docs/live-session-security-secret-hygiene-readiness.md',
+      'docs/live-session-persistence-recovery-maintenance.md',
       'docs/live-session-concurrency-benchmark-notes.md',
     ]
 
@@ -61,12 +62,13 @@ describe('live session readiness summary', () => {
     }
 
     const expectedTestPaths = [
-      'tests/server/sessionIntegratedCommandAudit.test.ts',
+      'tests/server/sessionIntegratedCommandFlow.test.ts',
       'tests/server/sessionWebSocketTransport.test.ts',
       'tests/server/sessionHostingHardening.test.ts',
       'tests/composables/map-editor/sessionClientIntegration.test.ts',
-      'tests/docs/liveSessionProductTerminologyCleanup.test.ts',
+      'tests/docs/liveSessionDocsMaintenance.test.ts',
       'tests/docs/liveSessionReadinessSummary.test.ts',
+      'tests/docs/liveSessionProductReadinessReview.test.ts',
       'tests/docs/productTerminologyGuard.test.ts',
     ]
 
@@ -82,7 +84,7 @@ describe('live session readiness summary', () => {
       'docs/README.md',
       'docs/live-session-roadmap.md',
       'docs/live-session-validation-matrix.md',
-      'docs/live-session-implementation-review.md',
+      'docs/live-session-implementation-maintenance.md',
     ]) {
       expect(readText(path), `${path} should link the readiness summary`).toContain(
         'live-session-readiness-summary.md',

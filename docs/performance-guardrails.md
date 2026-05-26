@@ -16,7 +16,7 @@ Do not use any of these as the primary optimization path:
 
 Acceptable performance changes should instead reduce avoidable work: dirty render scheduling, event coalescing, deterministic caches, safe resource reuse, skipped unchanged sync passes, and developer-only instrumentation.
 
-## Reviewer checklist
+## Maintainer checklist
 
 For each performance PR, reviewers should confirm that:
 
@@ -34,4 +34,4 @@ Current tests include focused no-quality-loss checks:
 - `tests/utils/isometric/weatherVisualConfig.test.ts` locks representative weather particle baselines.
 - `tests/utils/isometric/weatherVisualFactory.test.ts` verifies every supported weather kind still creates a visible render group.
 
-If a future product change intentionally alters visual output, document it separately and update these guardrails in the same reviewed change. Map rendering performance-only changes should not loosen them. The [Map rendering no-quality-loss audit](performance-no-quality-loss-audit.md) records the integrated map rendering performance review against these rules.
+If a future product change intentionally alters visual output, document it separately and update these guardrails in the same reviewed change. Map rendering performance-only changes should not loosen them. The [Map rendering no-quality-loss guardrails](performance-no-quality-loss.md) records the integrated map rendering performance review against these rules.

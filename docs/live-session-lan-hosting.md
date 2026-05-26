@@ -4,7 +4,7 @@ This runbook is the supported same-network hosting path for live sessions. The G
 
 LAN hosting keeps the locked Live session architecture intact: one GM-hosted server owns session authority, live clients use `WebSocket /api/sessions/socket`, commands are acknowledged or rejected by the server, state is persisted as local JSON snapshots/event logs, and browsers must not autosave whole maps as the live session concurrency mechanism.
 
-For the lobby flow itself, see [live session lobby and manual QA](live-session-lobby.md). For attaching the saved map to server-owned session state before players open it, see the [Live session map attachment flow](live-session-map-attachment.md). For no-secret warnings around unsafe host startup and missing session-local credentials/state, see [Live session public exposure checks](live-session-public-exposure-checks.md). For local multi-tab token propagation checks, see [Live session multi-tab local smoke script](live-session-multi-tab-smoke.md). For the recorded LAN browser-client pass, see [Live session LAN manual smoke results](live-session-lan-manual-smoke-results.md). For the fuller two-player deployment smoke covering reconnect, token movement, initiative, and conflict rejection, see the [Live session deployment smoke checklist](live-session-deployment-smoke-checklist.md). For private snapshot/event-log backups and restores, see [Live session backup and recovery](live-session-backup-recovery.md). For trust boundaries, join-code limits, and non-hardened areas, see the [Live session security review](live-session-security-review.md). For dependency inventory, Node/Nitro compatibility, and runtime flag assumptions, see the [Live session dependency and runtime review](live-session-dependency-runtime-review.md). For remote play over the internet, use the [Live session named Cloudflare Tunnel runbook](live-session-cloudflare-tunnel-hosting.md); do not use ad-hoc public exposure as the LAN path.
+For the lobby flow itself, see [live session lobby and manual QA](live-session-lobby.md). For attaching the saved map to server-owned session state before players open it, see the [Live session map attachment flow](live-session-map-attachment.md). For no-secret warnings around unsafe host startup and missing session-local credentials/state, see [Live session public exposure checks](live-session-public-exposure-checks.md). For local multi-tab token propagation checks, see [Live session multi-tab local smoke script](live-session-multi-tab-smoke.md). For the recorded LAN browser-client pass, see [Live session LAN manual smoke results](live-session-lan-manual-smoke-results.md). For the fuller two-player deployment smoke covering reconnect, token movement, initiative, and conflict rejection, see the [Live session deployment smoke checklist](live-session-deployment-smoke-checklist.md). For expected concurrency and latency behaviour, see the [Live session concurrency benchmark notes](live-session-concurrency-benchmark-notes.md). For private snapshot/event-log backups and restores, see [Live session backup and recovery](live-session-backup-recovery.md). For trust boundaries, join-code limits, and non-hardened areas, see the [Live session security boundaries](live-session-security-boundaries.md). For dependency inventory, Node/Nitro compatibility, and runtime flag assumptions, see the [Live session dependency and runtime maintenance](live-session-dependency-runtime-maintenance.md). For remote play over the internet, use the [Live session named Cloudflare Tunnel runbook](live-session-cloudflare-tunnel-hosting.md); do not use ad-hoc public exposure as the LAN path.
 
 ## Before you start
 
@@ -14,6 +14,7 @@ Preflight checklist:
 
 - [ ] The GM machine is on a private network the GM controls or trusts.
 - [ ] Players are on the same Wi-Fi/LAN, not a guest network with client isolation enabled.
+- [ ] At least one actual player device can be available for a rehearsal before play; do not rely only on tabs on the GM machine.
 - [ ] Dependencies are installed with `npm install`.
 - [ ] The working tree is clean enough that generated session files or private campaign data will be easy to spot before committing.
 - [ ] The GM has chosen the existing local **GM Login** role before starting a session.
@@ -96,6 +97,36 @@ Example player-facing base URL:
 ```text
 http://192.168.1.42:3000
 ```
+
+## Real-device rehearsal before play
+
+Run a short rehearsal from the actual phones, tablets, or laptops players expect to use at the table. Local tabs on the GM machine and the automated smoke helpers are useful, but they do not prove Wi-Fi isolation, firewall prompts, browser profile storage, or device-specific WebSocket behaviour.
+
+Use the same private base URL the players will use during the game, for example `http://<GM-LAN-IP>:3000`:
+
+1. GM starts the host with `npm run dev:session:lan` and opens `/sessions#gm-lobby-title` through the LAN URL.
+2. Each player device opens `/sessions#player-lobby-title` through the LAN URL, joins with a safe display name, and confirms the remembered player summary loads without using the GM browser profile.
+3. GM opens the saved map on `/maps/<map-slug>`, presses **Attach current map to live session**, and refreshes the lobby.
+4. Each player device refreshes the remembered session and confirms the map appears under **Visible session maps**.
+5. GM uses **Assign map tokens** and **Assign control** for the token each player should test.
+6. GM and players open `/maps/<map-slug>?session=1` and verify the session socket connects, reconnects after a page reload, and shows the same current map state.
+7. An assigned player moves or turns only their assigned token; an unassigned player should see the no-token-assigned guidance or an unauthorized rejection instead of moving the authoritative token.
+8. End the rehearsal by closing session-map tabs and using **Forget in this browser** on player devices that should not keep the remembered session identity.
+
+If any actual player device cannot load `/sessions`, connect the session socket, see **Visible session maps**, or send an assigned session command, fix that device/network issue before play instead of falling back to `localhost` or plain local-first map editing.
+
+### Rehearsal recovery drills
+
+- **No-map-attached recovery** — before the GM attaches a map, player devices can join but should not see a usable session map link. The GM opens the saved map on the plain route, presses **Attach current map to live session** with player visibility, then players refresh the remembered session until the map appears under **Visible session maps**.
+- **No-token-assigned recovery** — after the map is visible, leave one player unassigned briefly and confirm token controls are disabled or unauthorized. The GM uses **Assign map tokens** and **Assign control** for the relevant current map token or sheet; the player refreshes/reconnects the session map and retries only after the assignment appears.
+
+## LAN latency and concurrency expectations
+
+A healthy private Wi-Fi or wired LAN should be the lowest-jitter live-session path for a small trusted table. Simple token moves, turns, and table actions should usually feel responsive after the local optimistic preview, but Rotom Table does not promise a millisecond latency target.
+
+Command order is the server's accepted revision order, not the order browsers display local previews. Same-resource stale commands reject safely, view-only players remain unauthorized until the GM assigns control, and presence/heartbeat only report liveness. Event replay is currently unavailable for reconnect, so stale reconnects use an actor-scoped snapshot fallback rather than trusting browser-local state.
+
+Before play, run the real-device rehearsal above or the [Live session deployment smoke checklist](live-session-deployment-smoke-checklist.md). If repeated actions land in the `1-3s` or `>3s` timing buckets from the [Live session concurrency benchmark notes](live-session-concurrency-benchmark-notes.md), check Wi-Fi quality, firewall prompts, GM-machine load, map/render size, and local disk speed before starting the game.
 
 ## GM setup flow
 
@@ -218,6 +249,6 @@ Back up local session snapshots only if the GM intentionally wants a private rec
 - LAN hosting is the primary supported Live session path; remote players should use the [Live session named Cloudflare Tunnel runbook](live-session-cloudflare-tunnel-hosting.md) with a stable hostname.
 - Quick Tunnel is not the supported campaign-session path; see the [Live session Quick Tunnel caveat](live-session-quick-tunnel-caveat.md) before using a temporary `trycloudflare.com` URL for development smoke tests.
 - The existing `/login` GM/player picker is not public auth.
-- The session join code and GM key are session-local credentials, not full accounts; see the [Live session security review](live-session-security-review.md) for join-code limits and incident response.
+- The session join code and GM key are session-local credentials, not full accounts; see the [Live session security boundaries](live-session-security-boundaries.md) for join-code limits and incident response.
 - Do not add a database, cloud persistence layer, SaaS deployment target, or shared-document autosave model to make LAN hosting work.
 - Keep map rendering quality and local-first workflows intact; explicit session mode is entered through `/maps/<slug>?session=1`.

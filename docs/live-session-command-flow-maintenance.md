@@ -1,18 +1,18 @@
-# Live session integrated multi-client command audit
+# Live session command-flow maintenance
 
-This audit records the current Live session command-flow review for the GM-hosted session model. It is an automated fake-WebSocket audit, not a public-hosting or LAN smoke pass; the LAN/manual deployment checks are covered by [Live session deployment smoke checklist](live-session-deployment-smoke-checklist.md), [Live session LAN manual smoke results](live-session-lan-manual-smoke-results.md), and the product readiness docs.
+This maintenance note records the current live-session command-flow coverage for the GM-hosted session model. It is an automated fake-WebSocket coverage pass, not a public-hosting or LAN smoke pass; the LAN/manual deployment checks are covered by [Live session deployment smoke checklist](live-session-deployment-smoke-checklist.md), [Live session LAN manual smoke results](live-session-lan-manual-smoke-results.md), and the product readiness docs.
 
-Audit date: 2026-05-26
+Last checked: 2026-05-26
 
 ## Evidence
 
-Automated coverage lives in `tests/server/sessionIntegratedCommandAudit.test.ts`.
+Automated coverage lives in `tests/server/sessionIntegratedCommandFlow.test.ts`.
 
 The test opens one GM socket, two player sockets in the same session, and a GM socket in a different session. It then drives command frames through `handleSessionSocketMessage` with the real WebSocket dispatcher and server-authoritative use cases.
 
-## Audited flows
+## Checked flows
 
-| Area | Command or message | Audit result |
+| Area | Command or message | Expected result |
 | --- | --- | --- |
 | Token movement | assigned player sends `moveToken` | Accepted at revision 1, snapshot written once, sender receives `commandAck`, all same-session clients receive the same small `tokenMoved` patch, and the unrelated session receives nothing. |
 | Token facing | GM sends `turnToken` | Accepted at revision 2, `tokenTurned` patch fans out to same-session clients only, and the authoritative token keeps the new facing/turned state. |
@@ -25,24 +25,24 @@ The test opens one GM socket, two player sockets in the same session, and a GM s
 
 ## Boundary checks
 
-The audit confirms these Live session architecture boundaries for the covered flows:
+The checks confirm these live-session architecture boundaries for the covered flows:
 
 - live session mutations travel through `WebSocket /api/sessions/socket` command frames, `commandAck`/`commandReject`, and small `patch` messages;
 - accepted commands advance the server-owned session/map revision exactly once;
 - rejected unauthorized and stale commands do not advance revisions or write snapshots;
 - same-session fanout does not leak patches to an unrelated session;
-- patches for the audited commands do not include whole-map `placements`, `voxels`, or `fieldEffects` payloads;
+- patches for the checked commands do not include whole-map `placements`, `voxels`, or `fieldEffects` payloads;
 - reconnect snapshot fallback is server-authoritative and actor-filtered for a player client;
-- no Quick Tunnel campaign path, public account system, SaaS host, cloud database, or browser-owned whole-map autosave is introduced by this audit.
+- no Quick Tunnel campaign path, public account system, SaaS host, cloud database, or browser-owned whole-map autosave is introduced by these checks.
 
 ## Follow-up manual coverage
 
-This audit complements, but does not replace:
+These checks complement, but do not replace:
 
 - [Live session multi-tab local smoke script](live-session-multi-tab-smoke.md) for local GM/player browser-tab checks;
 - [Live session deployment smoke checklist](live-session-deployment-smoke-checklist.md) for LAN and named Cloudflare Tunnel deployment validation;
-- [Live session local-mode no-regression audit](live-session-local-mode-no-regression-audit.md) for plain map/sheet workflows, local autosave, and legacy SSE checks;
+- [Live session local-mode maintenance checks](live-session-local-mode-maintenance.md) for plain map/sheet workflows, local autosave, and legacy SSE checks;
 - [Live session concurrency benchmark notes](live-session-concurrency-benchmark-notes.md) for latency-sensitive behaviour observations and performance limitations;
-- [Live session security readiness audit](live-session-security-readiness-audit.md) for auth/session/cookie/permission boundary review;
-- [Live session persistence/recovery audit](live-session-persistence-recovery-audit.md) for snapshot/event-log and local data hygiene review;
-- [Live session implementation review](live-session-implementation-review.md) for implementation evidence, tests, docs, and known limitations.
+- [Live session security and secret-hygiene readiness](live-session-security-secret-hygiene-readiness.md) for auth/session/cookie/permission boundary review;
+- [Live session persistence/recovery maintenance](live-session-persistence-recovery-maintenance.md) for snapshot/event-log and local data hygiene review;
+- [Live session implementation maintenance](live-session-implementation-maintenance.md) for implementation evidence, tests, docs, and known limitations.

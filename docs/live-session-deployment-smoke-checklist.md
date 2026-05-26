@@ -11,9 +11,10 @@ Related runbooks:
 - [Live session named Cloudflare Tunnel runbook](live-session-cloudflare-tunnel-hosting.md) for stable remote hostname setup, WebSocket considerations, and rollback.
 - [live session host runtime scripts](live-session-host-runtime.md) for `npm run dev:session:lan` and `npm run dev:session:tunnel` helper details.
 - [Live session multi-tab local smoke script](live-session-multi-tab-smoke.md) for local tab helpers and focused automated token/client checks.
+- [Live session real-flow smoke script](live-session-real-flow-smoke.md) for an automated same-machine start, attach, join, assign, session socket token move, reconnect snapshot, and cleanup pass.
 - [Live session map attachment flow](live-session-map-attachment.md) for attaching saved maps to server-owned session state before players open session maps.
-- [Live session security review](live-session-security-review.md) for trust boundaries, join-code limits, tunnel exposure risks, and incident response.
-- [Live session dependency and runtime review](live-session-dependency-runtime-review.md) for dependency inventory, runtime flags, Node/Nitro compatibility, and Cloudflare assumptions.
+- [Live session security boundaries](live-session-security-boundaries.md) for trust boundaries, join-code limits, tunnel exposure risks, and incident response.
+- [Live session dependency and runtime maintenance](live-session-dependency-runtime-maintenance.md) for dependency inventory, runtime flags, Node/Nitro compatibility, and Cloudflare assumptions.
 - [Live session concurrency benchmark notes](live-session-concurrency-benchmark-notes.md) for latency-sensitive behaviour observations, operator timing buckets, and known performance limits.
 
 ## Smoke scope
@@ -40,6 +41,7 @@ Use generic names in notes such as `GM`, `Player A`, `Player B`, `table.example.
 - [ ] The GM has chosen **GM Login** in the existing local `/login` role picker. This trust picker is not public authentication.
 - [ ] The working tree is clean before the smoke: `git status --short` prints no private campaign/runtime files.
 - [ ] Standard checks passed recently, preferably through the project validation: `npm run typecheck`, `npm test`, and `npm run build`.
+- [ ] The GM has reviewed the [Live session concurrency benchmark notes](live-session-concurrency-benchmark-notes.md) and is ready to record generic timing buckets such as `<250ms`, `250-1000ms`, `1-3s`, or `>3s` without pasting secrets or private campaign data.
 - [ ] Optional focused checks passed before manual deployment smoke:
 
   ```bash
