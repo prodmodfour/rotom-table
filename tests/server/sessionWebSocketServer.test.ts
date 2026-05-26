@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import {
+  SESSION_COMMAND_ENVELOPE_VERSION,
+  parseOpId,
+  type SessionCommandEnvelope,
+} from '#shared/sessionCommands'
+import {
   SESSION_MESSAGE_SCHEMA_VERSION,
   type SessionClientHelloMessage,
+  type SessionCommandMessage,
   type SessionHeartbeatMessage,
 } from '#shared/sessionMessages'
 import {
@@ -65,6 +71,7 @@ const PLAYER_CLIENT_ID = parseClientId('client_player01')
 const PLAYER_DISPLAY_NAME = parseSessionDisplayName('Misty')
 const REVISION_3 = parseSessionRevision(3)
 const MAP_REVISION_1 = parseMapRevision(1)
+const OP_ID = parseOpId('op_socketvalid001')
 const CREATED_AT = '2026-05-26T09:00:00.000Z'
 
 const makeRequest = (): { url: string, headers: Headers, context: Record<string, unknown> } => ({
@@ -169,6 +176,47 @@ const clientHeartbeat = (
   nonce: 'heartbeat-001',
   ...overrides,
 })
+
+const gmCommandMessage = (overrides: {
+  readonly message?: Partial<SessionCommandMessage>
+  readonly command?: Partial<SessionCommandEnvelope>
+} = {}): SessionCommandMessage => {
+  const command: SessionCommandEnvelope = {
+    schemaVersion: SESSION_COMMAND_ENVELOPE_VERSION,
+    sessionId: SESSION_ID,
+    actor: {
+      role: 'gm',
+      clientId: GM_CLIENT_ID,
+    },
+    type: 'moveToken',
+    opId: OP_ID,
+    baseRevision: INITIAL_SESSION_REVISION,
+    scopes: [
+      {
+        lane: 'token',
+        resource: {
+          kind: 'token',
+          tokenId: 'token-pikachu',
+          mapSlug: 'viridian-gym',
+        },
+      },
+    ],
+    payload: {
+      tokenId: 'token-pikachu',
+      position: { x: 1, y: 2, z: 0 },
+    },
+    ...overrides.command,
+  }
+
+  return {
+    schemaVersion: SESSION_MESSAGE_SCHEMA_VERSION,
+    type: 'command',
+    direction: 'client',
+    sessionId: SESSION_ID,
+    command,
+    ...overrides.message,
+  }
+}
 
 const parseSentJson = (peer: FakePeer, index = 0): unknown => JSON.parse(String(peer.sent[index]))
 
@@ -541,7 +589,7 @@ describe('session WebSocket route skeleton', () => {
     })
   })
 
-  it('rejects non-hello frames before authentication without granting session authority', () => {
+  it('rejects valid command frames before authentication without granting session authority', () => {
     const registry = createInMemorySessionSocketRegistry()
     const peer = makePeer('peer-message')
     handleSessionSocketOpen(peer, {
@@ -550,7 +598,7 @@ describe('session WebSocket route skeleton', () => {
       clock: () => '2026-05-26T10:00:00.000Z',
     })
 
-    handleSessionSocketMessage(peer, { text: () => '{"type":"command"}' }, {
+    handleSessionSocketMessage(peer, { text: () => JSON.stringify(gmCommandMessage()) }, {
       registry,
       clock: () => '2026-05-26T10:00:05.000Z',
     })
@@ -559,7 +607,7 @@ describe('session WebSocket route skeleton', () => {
     expect(peer.closed).toEqual([
       {
         code: SESSION_SOCKET_POLICY_CLOSE_CODE,
-        reason: 'A valid Track 2 session WebSocket hello is required before other messages.',
+        reason: 'A valid Track 2 session WebSocket hello is required before command messages.',
       },
     ])
     expect(parseSentJson(peer)).toMatchObject({
@@ -568,6 +616,35 @@ describe('session WebSocket route skeleton', () => {
       direction: 'server',
       code: 'unauthorized',
       retryable: false,
+    })
+  })
+
+  it('validates message shape before pre-auth dispatch', () => {
+    const registry = createInMemorySessionSocketRegistry()
+    const peer = makePeer('peer-malformed-preauth')
+    handleSessionSocketOpen(peer, { env: enabledEnv, registry })
+
+    handleSessionSocketMessage(peer, { text: () => JSON.stringify({ type: 'command' }) }, {
+      registry,
+      clock: () => '2026-05-26T10:05:00.000Z',
+    })
+
+    expect(registry.get('peer-malformed-preauth')).toBeUndefined()
+    expect(peer.closed).toEqual([
+      {
+        code: SESSION_SOCKET_POLICY_CLOSE_CODE,
+        reason: 'Session WebSocket command is malformed.',
+      },
+    ])
+    expect(parseSentJson(peer)).toMatchObject({
+      schemaVersion: SESSION_MESSAGE_SCHEMA_VERSION,
+      type: 'error',
+      direction: 'server',
+      code: 'malformed-message',
+      retryable: false,
+      details: {
+        issues: expect.stringContaining('schemaVersion must be 1'),
+      },
     })
   })
 
@@ -608,13 +685,7 @@ describe('session WebSocket route skeleton', () => {
       clock: () => '2026-05-26T10:30:00.000Z',
     })
 
-    handleSessionSocketMessage(peer, { text: () => JSON.stringify({
-      schemaVersion: SESSION_MESSAGE_SCHEMA_VERSION,
-      type: 'command',
-      direction: 'client',
-      sessionId: SESSION_ID,
-      command: { type: 'moveToken' },
-    }) }, {
+    handleSessionSocketMessage(peer, { text: () => JSON.stringify(gmCommandMessage()) }, {
       registry,
       store,
       clock: () => '2026-05-26T10:30:05.000Z',
@@ -631,6 +702,131 @@ describe('session WebSocket route skeleton', () => {
       direction: 'server',
       sessionId: SESSION_ID,
       code: 'unsupported-message',
+      retryable: false,
+    })
+  })
+
+  it('closes malformed command messages before authenticated dispatch', () => {
+    const registry = createInMemorySessionSocketRegistry()
+    const { store } = createStoreWithSession()
+    const peer = makePeer('peer-malformed-command')
+    handleSessionSocketOpen(peer, { env: enabledEnv, registry })
+    handleSessionSocketMessage(peer, { text: () => JSON.stringify(gmHello()) }, {
+      registry,
+      store,
+      clock: () => '2026-05-26T10:35:00.000Z',
+    })
+
+    handleSessionSocketMessage(peer, { text: () => JSON.stringify({
+      schemaVersion: SESSION_MESSAGE_SCHEMA_VERSION,
+      type: 'command',
+      direction: 'client',
+      sessionId: SESSION_ID,
+      command: { type: 'moveToken' },
+    }) }, {
+      registry,
+      store,
+      clock: () => '2026-05-26T10:35:05.000Z',
+    })
+
+    expect(registry.get('peer-malformed-command')).toBeUndefined()
+    expect(peer.closed).toEqual([
+      {
+        code: SESSION_SOCKET_POLICY_CLOSE_CODE,
+        reason: 'Session WebSocket command is malformed.',
+      },
+    ])
+    expect(parseSentJson(peer, 1)).toMatchObject({
+      schemaVersion: SESSION_MESSAGE_SCHEMA_VERSION,
+      type: 'error',
+      direction: 'server',
+      sessionId: SESSION_ID,
+      code: 'malformed-message',
+      currentRevision: INITIAL_SESSION_REVISION,
+      retryable: false,
+      details: {
+        issues: expect.stringContaining('command.schemaVersion'),
+      },
+    })
+  })
+
+  it('closes cross-session command messages before authenticated dispatch', () => {
+    const registry = createInMemorySessionSocketRegistry()
+    const { store } = createStoreWithSession()
+    const peer = makePeer('peer-cross-session-command')
+    handleSessionSocketOpen(peer, { env: enabledEnv, registry })
+    handleSessionSocketMessage(peer, { text: () => JSON.stringify(gmHello()) }, {
+      registry,
+      store,
+      clock: () => '2026-05-26T10:36:00.000Z',
+    })
+
+    handleSessionSocketMessage(peer, { text: () => JSON.stringify(gmCommandMessage({
+      message: { sessionId: parseSessionId('session_other000001x') },
+    })) }, {
+      registry,
+      store,
+      clock: () => '2026-05-26T10:36:05.000Z',
+    })
+
+    expect(registry.get('peer-cross-session-command')).toBeUndefined()
+    expect(peer.closed).toEqual([
+      {
+        code: SESSION_SOCKET_POLICY_CLOSE_CODE,
+        reason: 'Session WebSocket command session does not match the authenticated socket.',
+      },
+    ])
+    expect(parseSentJson(peer, 1)).toMatchObject({
+      schemaVersion: SESSION_MESSAGE_SCHEMA_VERSION,
+      type: 'error',
+      direction: 'server',
+      sessionId: SESSION_ID,
+      code: 'unauthorized',
+      currentRevision: INITIAL_SESSION_REVISION,
+      retryable: false,
+    })
+  })
+
+  it('closes command messages whose actor does not match the authenticated socket', () => {
+    const registry = createInMemorySessionSocketRegistry()
+    const { store } = createStoreWithSession()
+    const peer = makePeer('peer-wrong-actor-command')
+    handleSessionSocketOpen(peer, { env: enabledEnv, registry })
+    handleSessionSocketMessage(peer, { text: () => JSON.stringify(gmHello()) }, {
+      registry,
+      store,
+      clock: () => '2026-05-26T10:37:00.000Z',
+    })
+
+    handleSessionSocketMessage(peer, { text: () => JSON.stringify(gmCommandMessage({
+      command: {
+        actor: {
+          role: 'player',
+          playerId: PLAYER_ID,
+          clientId: PLAYER_CLIENT_ID,
+          displayName: PLAYER_DISPLAY_NAME,
+        },
+      },
+    })) }, {
+      registry,
+      store,
+      clock: () => '2026-05-26T10:37:05.000Z',
+    })
+
+    expect(registry.get('peer-wrong-actor-command')).toBeUndefined()
+    expect(peer.closed).toEqual([
+      {
+        code: SESSION_SOCKET_POLICY_CLOSE_CODE,
+        reason: 'Session WebSocket command actor does not match the authenticated socket.',
+      },
+    ])
+    expect(parseSentJson(peer, 1)).toMatchObject({
+      schemaVersion: SESSION_MESSAGE_SCHEMA_VERSION,
+      type: 'error',
+      direction: 'server',
+      sessionId: SESSION_ID,
+      code: 'unauthorized',
+      currentRevision: INITIAL_SESSION_REVISION,
       retryable: false,
     })
   })

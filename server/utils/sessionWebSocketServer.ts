@@ -1,3 +1,5 @@
+import { validateSessionCommandEnvelope } from '#shared/sessionCommandValidation'
+import type { SessionCommandEnvelope } from '#shared/sessionCommands'
 import {
   isClientId,
   isGmKey,
@@ -9,8 +11,11 @@ import {
 } from '#shared/sessionIdentity'
 import {
   SESSION_MESSAGE_SCHEMA_VERSION,
+  isSessionClientMessageType,
   isSessionHeartbeatKind,
   type SessionClientHelloMessage,
+  type SessionClientMessageType,
+  type SessionCommandMessage,
   type SessionErrorCode,
   type SessionErrorDetails,
   type SessionErrorMessage,
@@ -210,12 +215,24 @@ interface ParsedSessionSocketHeartbeat {
   readonly heartbeat: SessionHeartbeatMessage<'client', SessionRevision>
 }
 
+interface ParsedSessionSocketCommand {
+  readonly commandMessage: SessionCommandMessage<SessionCommandEnvelope>
+}
+
 type ParseSessionSocketHelloResult =
   | { readonly ok: true; readonly value: ParsedSessionSocketHello }
   | { readonly ok: false; readonly failure: SessionSocketHandshakeFailure }
 
 type ParseSessionSocketHeartbeatResult =
   | { readonly ok: true; readonly value: ParsedSessionSocketHeartbeat }
+  | { readonly ok: false; readonly failure: SessionSocketHandshakeFailure }
+
+type ParseSessionSocketCommandResult =
+  | { readonly ok: true; readonly value: ParsedSessionSocketCommand }
+  | { readonly ok: false; readonly failure: SessionSocketHandshakeFailure }
+
+type ParseSessionSocketClientMessageKindResult =
+  | { readonly ok: true; readonly type: SessionClientMessageType }
   | { readonly ok: false; readonly failure: SessionSocketHandshakeFailure }
 
 type SocketSessionRecord<TMapDocument> = SessionStoreRecord<AuthoritativeSessionState<TMapDocument>> & {
@@ -273,9 +290,48 @@ const sortConnections = (
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
 
+const isNonEmptyString = (value: unknown): value is string =>
+  typeof value === 'string' && value.trim().length > 0
+
 const detailsFromIssues = (
   issues: readonly string[],
 ): SessionErrorDetails => ({ issues: issues.join('; ') })
+
+const appendClientMessageBaseIssues = (
+  value: Record<string, unknown>,
+  expectedType: SessionClientMessageType,
+  issues: string[],
+): void => {
+  if (value.schemaVersion !== SESSION_MESSAGE_SCHEMA_VERSION) {
+    issues.push(`schemaVersion must be ${SESSION_MESSAGE_SCHEMA_VERSION}`)
+  }
+  if (value.type !== expectedType) issues.push(`type must be ${expectedType}`)
+  if (value.direction !== 'client') issues.push('direction must be client')
+  if (!isSessionId(value.sessionId)) issues.push('sessionId must be a valid SessionId')
+
+  if (value.messageId !== undefined && !isNonEmptyString(value.messageId)) {
+    issues.push('messageId must be a non-empty string when provided')
+  }
+  if (value.sentAt !== undefined && !isNonEmptyString(value.sentAt)) {
+    issues.push('sentAt must be a non-empty string when provided')
+  }
+  if (value.traceId !== undefined && !isNonEmptyString(value.traceId)) {
+    issues.push('traceId must be a non-empty string when provided')
+  }
+}
+
+const failureWithAuthenticatedContext = (
+  failure: SessionSocketHandshakeFailure,
+  connection: SessionSocketConnection | undefined,
+): SessionSocketHandshakeFailure => {
+  if (connection?.status !== SESSION_SOCKET_AUTHENTICATED_STATUS) return failure
+
+  return {
+    ...failure,
+    sessionId: connection.sessionId,
+    currentRevision: connection.currentRevision,
+  }
+}
 
 const actorsMatch = (left: SessionActor, right: SessionActor): boolean => {
   if (left.role !== right.role) return false
@@ -589,6 +645,34 @@ const closeForHandshakeFailure = <TMapDocument>(
   closeSocketConnection(peer, SESSION_SOCKET_POLICY_CLOSE_CODE, failure.message, dependencies)
 }
 
+const parseClientMessageKind = (value: unknown): ParseSessionSocketClientMessageKindResult => {
+  if (!isRecord(value)) {
+    return {
+      ok: false,
+      failure: {
+        code: 'malformed-message',
+        message: 'Session WebSocket messages must be JSON objects.',
+        retryable: false,
+      },
+    }
+  }
+
+  if (!isSessionClientMessageType(value.type)) {
+    return {
+      ok: false,
+      failure: {
+        code: 'malformed-message',
+        message: 'Session WebSocket client message type is malformed or unsupported.',
+        retryable: false,
+        ...(isSessionId(value.sessionId) ? { sessionId: value.sessionId } : {}),
+        details: detailsFromIssues(['type must be one of hello, heartbeat, or command']),
+      },
+    }
+  }
+
+  return { ok: true, type: value.type }
+}
+
 const parseHelloMessage = (value: unknown): ParseSessionSocketHelloResult => {
   if (!isRecord(value)) {
     return {
@@ -602,12 +686,7 @@ const parseHelloMessage = (value: unknown): ParseSessionSocketHelloResult => {
   }
 
   const issues: string[] = []
-  if (value.schemaVersion !== SESSION_MESSAGE_SCHEMA_VERSION) {
-    issues.push(`schemaVersion must be ${SESSION_MESSAGE_SCHEMA_VERSION}`)
-  }
-  if (value.type !== 'hello') issues.push('type must be hello')
-  if (value.direction !== 'client') issues.push('direction must be client')
-  if (!isSessionId(value.sessionId)) issues.push('sessionId must be a valid SessionId')
+  appendClientMessageBaseIssues(value, 'hello', issues)
   if (typeof value.reconnect !== 'boolean') issues.push('reconnect must be boolean')
   if (value.lastSeenRevision !== undefined && !isSessionRevision(value.lastSeenRevision)) {
     issues.push('lastSeenRevision must be a safe non-negative session revision')
@@ -651,7 +730,7 @@ const parseHelloMessage = (value: unknown): ParseSessionSocketHelloResult => {
 
 const parseHeartbeatMessage = (
   value: unknown,
-  connection: AuthenticatedSessionSocketConnection,
+  connection?: AuthenticatedSessionSocketConnection,
 ): ParseSessionSocketHeartbeatResult => {
   if (!isRecord(value)) {
     return {
@@ -660,21 +739,17 @@ const parseHeartbeatMessage = (
         code: 'malformed-message',
         message: 'Session WebSocket heartbeat must be a JSON object.',
         retryable: false,
-        sessionId: connection.sessionId,
-        currentRevision: connection.currentRevision,
+        ...(connection === undefined ? {} : {
+          sessionId: connection.sessionId,
+          currentRevision: connection.currentRevision,
+        }),
       },
     }
   }
 
   const issues: string[] = []
-  if (value.schemaVersion !== SESSION_MESSAGE_SCHEMA_VERSION) {
-    issues.push(`schemaVersion must be ${SESSION_MESSAGE_SCHEMA_VERSION}`)
-  }
-  if (value.type !== 'heartbeat') issues.push('type must be heartbeat')
-  if (value.direction !== 'client') issues.push('direction must be client')
-  if (!isSessionId(value.sessionId)) {
-    issues.push('sessionId must be a valid SessionId')
-  } else if (value.sessionId !== connection.sessionId) {
+  appendClientMessageBaseIssues(value, 'heartbeat', issues)
+  if (isSessionId(value.sessionId) && connection !== undefined && value.sessionId !== connection.sessionId) {
     return {
       ok: false,
       failure: {
@@ -689,7 +764,7 @@ const parseHeartbeatMessage = (
   if (!isSessionHeartbeatKind(value.heartbeat)) {
     issues.push('heartbeat must be ping or pong')
   }
-  if (value.nonce !== undefined && (typeof value.nonce !== 'string' || value.nonce.trim().length === 0)) {
+  if (value.nonce !== undefined && !isNonEmptyString(value.nonce)) {
     issues.push('nonce must be a non-empty string when provided')
   }
   if (value.lastSeenRevision !== undefined && !isSessionRevision(value.lastSeenRevision)) {
@@ -703,8 +778,10 @@ const parseHeartbeatMessage = (
         code: 'malformed-message',
         message: 'Session WebSocket heartbeat is malformed.',
         retryable: false,
-        sessionId: connection.sessionId,
-        currentRevision: connection.currentRevision,
+        ...(connection === undefined ? {} : {
+          sessionId: connection.sessionId,
+          currentRevision: connection.currentRevision,
+        }),
         details: detailsFromIssues(issues),
       },
     }
@@ -714,6 +791,89 @@ const parseHeartbeatMessage = (
     ok: true,
     value: {
       heartbeat: value as unknown as SessionHeartbeatMessage<'client', SessionRevision>,
+    },
+  }
+}
+
+const formatCommandValidationIssue = (issue: { readonly path: string; readonly message: string }): string => {
+  const path = issue.path === '$' ? 'command' : `command.${issue.path}`
+  return `${path}: ${issue.message}`
+}
+
+const parseCommandMessage = (
+  value: unknown,
+  connection?: AuthenticatedSessionSocketConnection,
+): ParseSessionSocketCommandResult => {
+  if (!isRecord(value)) {
+    return {
+      ok: false,
+      failure: {
+        code: 'malformed-message',
+        message: 'Session WebSocket command must be a JSON object.',
+        retryable: false,
+        ...(connection === undefined ? {} : {
+          sessionId: connection.sessionId,
+          currentRevision: connection.currentRevision,
+        }),
+      },
+    }
+  }
+
+  const issues: string[] = []
+  appendClientMessageBaseIssues(value, 'command', issues)
+  if (isSessionId(value.sessionId) && connection !== undefined && value.sessionId !== connection.sessionId) {
+    return {
+      ok: false,
+      failure: {
+        code: 'unauthorized',
+        message: 'Session WebSocket command session does not match the authenticated socket.',
+        retryable: false,
+        sessionId: connection.sessionId,
+        currentRevision: connection.currentRevision,
+      },
+    }
+  }
+
+  const commandValidation = validateSessionCommandEnvelope(value.command)
+  if (!commandValidation.valid) {
+    issues.push(...commandValidation.issues.map(formatCommandValidationIssue))
+  } else if (isSessionId(value.sessionId) && commandValidation.command.sessionId !== value.sessionId) {
+    issues.push('command.sessionId must match the message sessionId')
+  }
+
+  if (issues.length > 0) {
+    return {
+      ok: false,
+      failure: {
+        code: 'malformed-message',
+        message: 'Session WebSocket command is malformed.',
+        retryable: false,
+        ...(connection === undefined ? (isSessionId(value.sessionId) ? { sessionId: value.sessionId } : {}) : {
+          sessionId: connection.sessionId,
+          currentRevision: connection.currentRevision,
+        }),
+        details: detailsFromIssues(issues),
+      },
+    }
+  }
+
+  if (commandValidation.valid && connection !== undefined && !actorsMatch(commandValidation.command.actor, connection.actor)) {
+    return {
+      ok: false,
+      failure: {
+        code: 'unauthorized',
+        message: 'Session WebSocket command actor does not match the authenticated socket.',
+        retryable: false,
+        sessionId: connection.sessionId,
+        currentRevision: connection.currentRevision,
+      },
+    }
+  }
+
+  return {
+    ok: true,
+    value: {
+      commandMessage: value as unknown as SessionCommandMessage<SessionCommandEnvelope>,
     },
   }
 }
@@ -923,7 +1083,7 @@ const authenticateSocketHello = <TMapDocument>(
       code: 'unauthorized',
       message: 'The session WebSocket connection already completed hello/auth.',
       retryable: false,
-      sessionId: hello.sessionId,
+      sessionId: existingConnection.sessionId,
       currentRevision: existingConnection.currentRevision,
     }, dependencies)
     return undefined
@@ -1103,7 +1263,7 @@ const updateHeartbeatPresence = <TMapDocument>(
 
 const handleAuthenticatedSocketHeartbeat = <TMapDocument>(
   peer: SessionSocketPeerLike,
-  value: unknown,
+  heartbeat: SessionHeartbeatMessage<'client', SessionRevision>,
   receivedAt: string,
   dependencies: ResolvedSessionSocketHandlerDependencies<TMapDocument>,
 ): SessionHeartbeatMessage<'server', SessionRevision> | undefined => {
@@ -1117,19 +1277,12 @@ const handleAuthenticatedSocketHeartbeat = <TMapDocument>(
     return undefined
   }
 
-  const parsedHeartbeat = parseHeartbeatMessage(value, connection)
-  if (!parsedHeartbeat.ok) {
-    closeForHandshakeFailure(peer, parsedHeartbeat.failure, dependencies)
-    return undefined
-  }
-
   const recordResult = getSocketSessionRecord(dependencies.store, connection.sessionId)
   if (!recordResult.ok) {
     closeForHandshakeFailure(peer, recordResult.failure, dependencies)
     return undefined
   }
 
-  const heartbeat = parsedHeartbeat.value.heartbeat
   const updatedRecord = updateHeartbeatPresence(
     connection,
     heartbeat,
@@ -1178,52 +1331,72 @@ export const handleSessionSocketMessage = <TMapDocument = unknown>(
   const resolved = resolveDependencies(dependencies)
   const lastSeenAt = resolved.clock()
   resolved.registry.touch(peer.id, { lastSeenAt })
+  const existingConnection = resolved.registry.get(peer.id)
+  const authenticatedConnection = existingConnection?.status === SESSION_SOCKET_AUTHENTICATED_STATUS
+    ? existingConnection
+    : undefined
 
   const json = parseSocketMessageJson(message)
   if (!json.ok) {
-    closeForHandshakeFailure(peer, json.failure, resolved)
+    closeForHandshakeFailure(peer, failureWithAuthenticatedContext(json.failure, existingConnection), resolved)
     return
   }
 
-  const existingConnection = resolved.registry.get(peer.id)
+  const messageKind = parseClientMessageKind(json.value)
+  if (!messageKind.ok) {
+    closeForHandshakeFailure(peer, failureWithAuthenticatedContext(messageKind.failure, existingConnection), resolved)
+    return
+  }
 
-  if (isRecord(json.value) && json.value.type === 'heartbeat') {
-    if (existingConnection?.status === SESSION_SOCKET_AUTHENTICATED_STATUS) {
-      handleAuthenticatedSocketHeartbeat(peer, json.value, lastSeenAt, resolved)
+  if (messageKind.type === 'heartbeat') {
+    const parsedHeartbeat = parseHeartbeatMessage(json.value, authenticatedConnection)
+    if (!parsedHeartbeat.ok) {
+      closeForHandshakeFailure(peer, failureWithAuthenticatedContext(parsedHeartbeat.failure, existingConnection), resolved)
       return
     }
 
-    closeForHandshakeFailure(peer, {
-      code: 'unauthorized',
-      message: 'A valid Track 2 session WebSocket hello is required before heartbeat messages.',
-      retryable: false,
-    }, resolved)
-    return
-  }
-
-  if (!isRecord(json.value) || json.value.type !== 'hello') {
-    if (existingConnection?.status === SESSION_SOCKET_AUTHENTICATED_STATUS) {
-      sendJson(peer, createSessionSocketErrorMessage({
-        code: 'unsupported-message',
-        message: 'Track 2 session WebSocket hello/auth and heartbeat are complete, but command dispatch lands in later transport tickets.',
+    if (authenticatedConnection === undefined) {
+      closeForHandshakeFailure(peer, {
+        code: 'unauthorized',
+        message: 'A valid Track 2 session WebSocket hello is required before heartbeat messages.',
         retryable: false,
-        sessionId: existingConnection.sessionId,
-        currentRevision: existingConnection.currentRevision,
-      }))
+      }, resolved)
       return
     }
 
-    closeForHandshakeFailure(peer, {
-      code: 'unauthorized',
-      message: 'A valid Track 2 session WebSocket hello is required before other messages.',
+    handleAuthenticatedSocketHeartbeat(peer, parsedHeartbeat.value.heartbeat, lastSeenAt, resolved)
+    return
+  }
+
+  if (messageKind.type === 'command') {
+    const parsedCommand = parseCommandMessage(json.value, authenticatedConnection)
+    if (!parsedCommand.ok) {
+      closeForHandshakeFailure(peer, failureWithAuthenticatedContext(parsedCommand.failure, existingConnection), resolved)
+      return
+    }
+
+    if (authenticatedConnection === undefined) {
+      closeForHandshakeFailure(peer, {
+        code: 'unauthorized',
+        message: 'A valid Track 2 session WebSocket hello is required before command messages.',
+        retryable: false,
+      }, resolved)
+      return
+    }
+
+    sendJson(peer, createSessionSocketErrorMessage({
+      code: 'unsupported-message',
+      message: 'Track 2 session WebSocket hello/auth and heartbeat are complete, but command dispatch lands in later transport tickets.',
       retryable: false,
-    }, resolved)
+      sessionId: authenticatedConnection.sessionId,
+      currentRevision: authenticatedConnection.currentRevision,
+    }))
     return
   }
 
   const parsedHello = parseHelloMessage(json.value)
   if (!parsedHello.ok) {
-    closeForHandshakeFailure(peer, parsedHello.failure, resolved)
+    closeForHandshakeFailure(peer, failureWithAuthenticatedContext(parsedHello.failure, existingConnection), resolved)
     return
   }
 
