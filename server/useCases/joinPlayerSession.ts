@@ -1,0 +1,310 @@
+import {
+  parseJoinCode,
+  parseSessionDisplayName,
+  sanitizeSessionDisplayNameString,
+  type ClientId,
+  type JoinCode,
+  type PlayerId,
+  type SessionDisplayName,
+  type SessionId,
+} from '#shared/sessionIdentity'
+import type { PlayerSessionActor } from '#shared/sessionPermissions'
+import { incrementSessionRevision, type SessionRevision } from '#shared/sessionRevisions'
+import {
+  upsertSessionPlayerAssignment,
+  upsertSessionPlayerRecord,
+  type AuthoritativeSessionState,
+  type SessionPlayerRecord,
+} from '#shared/sessionState'
+import { assertSessionHostEnabled, type SessionHostRuntimeEnv } from '../utils/sessionHosting'
+import {
+  generateClientId as defaultGenerateClientId,
+  generatePlayerId as defaultGeneratePlayerId,
+} from '../utils/sessionIdentityGenerators'
+import {
+  writeSessionSnapshot,
+  type WriteSessionSnapshotOptions,
+  type WriteSessionSnapshotResult,
+} from '../utils/sessionSnapshots'
+import {
+  sessionStore,
+  type InMemorySessionStore,
+  type SessionStoreRecord,
+  type SessionStoreStatus,
+} from '../utils/sessionStore'
+import { UseCaseHttpError } from '../utils/useCaseErrors'
+
+export class JoinPlayerSessionUseCaseError<TStatusCode extends number = number>
+  extends UseCaseHttpError<TStatusCode> {}
+
+export interface JoinPlayerSessionInput {
+  readonly joinCode?: unknown
+  readonly displayName?: unknown
+}
+
+export type JoinPlayerSessionClock = () => string
+export type JoinPlayerSessionIdFactory<TValue> = () => TValue
+export type JoinPlayerSessionSnapshotWriter<TMapDocument = unknown> = (
+  state: AuthoritativeSessionState<TMapDocument>,
+  options?: WriteSessionSnapshotOptions<TMapDocument>,
+) => WriteSessionSnapshotResult<TMapDocument>
+
+export interface JoinPlayerSessionDependencies<TMapDocument = unknown> {
+  readonly env?: SessionHostRuntimeEnv
+  readonly store?: InMemorySessionStore<AuthoritativeSessionState<TMapDocument>>
+  readonly clock?: JoinPlayerSessionClock
+  readonly generatePlayerId?: JoinPlayerSessionIdFactory<PlayerId>
+  readonly generateClientId?: JoinPlayerSessionIdFactory<ClientId>
+  readonly writeSnapshot?: JoinPlayerSessionSnapshotWriter<TMapDocument>
+  readonly maxGenerateAttempts?: number
+}
+
+export interface JoinedPlayerSessionDetails {
+  readonly sessionId: SessionId
+  readonly status: SessionStoreStatus
+  readonly revision: SessionRevision
+  readonly createdAt: string
+  readonly updatedAt: string
+}
+
+export interface JoinedPlayerIdentityDetails {
+  readonly playerId: PlayerId
+  readonly clientId: ClientId
+  readonly displayName: SessionDisplayName
+  readonly joinedAt: string
+  readonly actor: PlayerSessionActor
+}
+
+export interface JoinedSessionSnapshotDetails {
+  readonly writtenAt: string
+  readonly revision: SessionRevision
+}
+
+export interface JoinPlayerSessionUseCaseResult<TMapDocument = unknown> {
+  readonly session: JoinedPlayerSessionDetails
+  readonly player: JoinedPlayerIdentityDetails
+  readonly snapshot: JoinedSessionSnapshotDetails
+  readonly record: SessionStoreRecord<AuthoritativeSessionState<TMapDocument>>
+  readonly state: AuthoritativeSessionState<TMapDocument>
+}
+
+type JoinableSessionStoreRecord<TMapDocument> = SessionStoreRecord<
+  AuthoritativeSessionState<TMapDocument>
+> & {
+  readonly state: AuthoritativeSessionState<TMapDocument>
+}
+
+const DEFAULT_GENERATE_ATTEMPTS = 16
+
+const defaultClock: JoinPlayerSessionClock = () => new Date().toISOString()
+
+const messageFromError = (error: unknown): string =>
+  error instanceof Error ? error.message : String(error)
+
+const normalizeGenerateAttempts = (value: number | undefined): number => {
+  const attempts = value ?? DEFAULT_GENERATE_ATTEMPTS
+  if (!Number.isInteger(attempts) || attempts < 1) {
+    throw new JoinPlayerSessionUseCaseError(500, 'maxGenerateAttempts must be a positive integer')
+  }
+  return attempts
+}
+
+const normalizeJoinCodeForJoin = (value: unknown): JoinCode => {
+  try {
+    return parseJoinCode(value)
+  } catch (error) {
+    throw new JoinPlayerSessionUseCaseError(400, messageFromError(error))
+  }
+}
+
+const normalizeDisplayNameForJoin = (value: unknown): SessionDisplayName => {
+  if (typeof value !== 'string') {
+    throw new JoinPlayerSessionUseCaseError(400, 'displayName is required')
+  }
+
+  const sanitized = sanitizeSessionDisplayNameString(value)
+  if (sanitized.length === 0) {
+    throw new JoinPlayerSessionUseCaseError(400, 'displayName is required')
+  }
+
+  try {
+    return parseSessionDisplayName(sanitized)
+  } catch (error) {
+    throw new JoinPlayerSessionUseCaseError(400, messageFromError(error))
+  }
+}
+
+const allocateUniquePlayerId = <TMapDocument>(
+  state: AuthoritativeSessionState<TMapDocument>,
+  generatePlayerId: JoinPlayerSessionIdFactory<PlayerId>,
+  maxAttempts: number,
+): PlayerId => {
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    const playerId = generatePlayerId()
+    const playerExists = state.players.some((player) => player.playerId === playerId)
+    const assignmentExists = state.assignments.some((assignment) => assignment.playerId === playerId)
+    if (!playerExists && !assignmentExists) return playerId
+  }
+
+  throw new JoinPlayerSessionUseCaseError(
+    503,
+    'Unable to allocate a unique player ID for this table session',
+  )
+}
+
+const allocateUniqueClientId = <TMapDocument>(
+  state: AuthoritativeSessionState<TMapDocument>,
+  generateClientId: JoinPlayerSessionIdFactory<ClientId>,
+  maxAttempts: number,
+): ClientId => {
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    const clientId = generateClientId()
+    const clientExists = state.connectedClients.some((client) => client.clientId === clientId)
+    if (!clientExists) return clientId
+  }
+
+  throw new JoinPlayerSessionUseCaseError(
+    503,
+    'Unable to allocate a unique client ID for this table session',
+  )
+}
+
+const getJoinableRecord = <TMapDocument>(
+  store: InMemorySessionStore<AuthoritativeSessionState<TMapDocument>>,
+  joinCode: JoinCode,
+): JoinableSessionStoreRecord<TMapDocument> => {
+  const record = store.getByJoinCode(joinCode)
+  if (record === undefined) {
+    throw new JoinPlayerSessionUseCaseError(
+      404,
+      'No active Track 2 table session was found for the supplied join code',
+    )
+  }
+
+  if (record.status !== 'active') {
+    throw new JoinPlayerSessionUseCaseError(
+      409,
+      'The Track 2 table session for this join code is no longer active',
+    )
+  }
+
+  if (record.state === undefined) {
+    throw new JoinPlayerSessionUseCaseError(
+      500,
+      'The Track 2 table session has no authoritative state available for player join',
+    )
+  }
+
+  return record as JoinableSessionStoreRecord<TMapDocument>
+}
+
+const createJoinedPlayerState = <TMapDocument>(
+  state: AuthoritativeSessionState<TMapDocument>,
+  playerId: PlayerId,
+  displayName: SessionDisplayName,
+  joinedAt: string,
+): AuthoritativeSessionState<TMapDocument> => {
+  const nextRevision = incrementSessionRevision(state.revision)
+  const player: SessionPlayerRecord = {
+    playerId,
+    displayName,
+    joinedAt,
+    updatedAt: joinedAt,
+  }
+
+  const withPlayer = upsertSessionPlayerRecord(state, player, {
+    revision: nextRevision,
+    updatedAt: joinedAt,
+  })
+
+  return upsertSessionPlayerAssignment(withPlayer, {
+    playerId,
+    displayName,
+    controllableResources: [],
+    visibleResources: [],
+    updatedAt: joinedAt,
+  }, {
+    revision: nextRevision,
+    updatedAt: joinedAt,
+  })
+}
+
+export const joinPlayerSessionUseCase = <TMapDocument = unknown>(
+  input: JoinPlayerSessionInput = {},
+  dependencies: JoinPlayerSessionDependencies<TMapDocument> = {},
+): JoinPlayerSessionUseCaseResult<TMapDocument> => {
+  assertSessionHostEnabled(dependencies.env)
+
+  const activeStore = dependencies.store ?? (sessionStore as InMemorySessionStore<
+    AuthoritativeSessionState<TMapDocument>
+  >)
+  const clock = dependencies.clock ?? defaultClock
+  const generatePlayerId = dependencies.generatePlayerId ?? defaultGeneratePlayerId
+  const generateClientId = dependencies.generateClientId ?? defaultGenerateClientId
+  const snapshotWriter = dependencies.writeSnapshot ?? writeSessionSnapshot
+  const maxGenerateAttempts = normalizeGenerateAttempts(dependencies.maxGenerateAttempts)
+
+  const joinCode = normalizeJoinCodeForJoin(input.joinCode)
+  const displayName = normalizeDisplayNameForJoin(input.displayName)
+  const record = getJoinableRecord(activeStore, joinCode)
+  const currentState = record.state
+  const playerId = allocateUniquePlayerId(currentState, generatePlayerId, maxGenerateAttempts)
+  const clientId = allocateUniqueClientId(currentState, generateClientId, maxGenerateAttempts)
+  const joinedAt = clock()
+  const nextState = createJoinedPlayerState(currentState, playerId, displayName, joinedAt)
+
+  const updatedRecord = activeStore.setState(record.sessionId, nextState, {
+    revision: nextState.revision,
+    updatedAt: joinedAt,
+  })
+  if (updatedRecord === undefined) {
+    throw new JoinPlayerSessionUseCaseError(
+      409,
+      'The Track 2 table session ended before the player could join',
+    )
+  }
+
+  let snapshot: WriteSessionSnapshotResult<TMapDocument>
+  try {
+    snapshot = snapshotWriter(nextState, { clock: () => joinedAt })
+  } catch (error) {
+    activeStore.setState(record.sessionId, currentState, {
+      revision: record.revision,
+      updatedAt: record.updatedAt,
+    })
+    throw new JoinPlayerSessionUseCaseError(
+      500,
+      `Failed to write joined-player session snapshot: ${messageFromError(error)}`,
+    )
+  }
+
+  const actor: PlayerSessionActor = {
+    role: 'player',
+    playerId,
+    clientId,
+    displayName,
+  }
+
+  return {
+    session: {
+      sessionId: updatedRecord.sessionId,
+      status: updatedRecord.status,
+      revision: updatedRecord.revision,
+      createdAt: updatedRecord.createdAt,
+      updatedAt: updatedRecord.updatedAt,
+    },
+    player: {
+      playerId,
+      clientId,
+      displayName,
+      joinedAt,
+      actor,
+    },
+    snapshot: {
+      writtenAt: snapshot.snapshot.writtenAt,
+      revision: snapshot.snapshot.revision,
+    },
+    record: updatedRecord,
+    state: nextState,
+  }
+}

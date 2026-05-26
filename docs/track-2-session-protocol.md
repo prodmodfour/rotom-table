@@ -2,7 +2,7 @@
 
 This document describes the shared TypeScript protocol contracts introduced for Track 2 session mode. It records the wire vocabulary that later server and client tickets must use when they add the session store, WebSocket endpoint, lobby UI, command handlers, and reconnect behaviour.
 
-This is a contract document, not a claim that the WebSocket runtime is already complete. The current shared contracts live in `shared/` and are covered by focused Vitest tests; command-specific payload contracts such as `moveToken` land in later command tickets. See [Track 2 session storage](track-2-session-storage.md) for the operational snapshot/event-log layout, backup guidance, and recovery limitations.
+This is a contract document, not a claim that the WebSocket runtime is already complete. The current shared contracts live in `shared/` and are covered by focused Vitest tests; command-specific payload contracts such as `moveToken` land in later command tickets. See [Track 2 session lobby and manual QA](track-2-session-lobby.md) for the current GM/player join flow and two-browser smoke checklist, and [Track 2 session storage](track-2-session-storage.md) for the operational snapshot/event-log layout, backup guidance, and recovery limitations.
 
 ## Protocol goals
 
@@ -22,6 +22,7 @@ The protocol must preserve these locked decisions:
 | Module | Contract area | Notes |
 | --- | --- | --- |
 | `shared/sessionIdentity.ts` | `SessionId`, `PlayerId`, `ClientId`, `JoinCode`, `GmKey`, safe display names | Runtime wire values are strings. TypeScript brands prevent accidental mixing in app code. |
+| `shared/sessionClientIdentity.ts` | Browser-persisted session-local GM/player identity records plus non-secret cookie hints | Local storage can remember the full session-local identity for reconnect; the cookie hint deliberately excludes GM keys and join codes. |
 | `shared/sessionPermissions.ts` | GM/player actors, visible and controllable resources, assignments, permission results | Players can only view visible resources and control assigned visible resources. GM authority is broader but still validated. |
 | `shared/sessionRevisions.ts` | monotonic `Revision`, `SessionRevision`, `MapRevision` helpers | Wire revisions are safe non-negative integers. Accepted commands advance revisions; rejections and duplicates do not. |
 | `shared/sessionCommands.ts` | command envelope, `opId`, `baseRevision`, scope lanes, metadata | The common command wrapper is shared before individual command payloads are implemented. |
@@ -29,6 +30,7 @@ The protocol must preserve these locked decisions:
 | `shared/sessionCommandResults.ts` | accepted, rejected, duplicate, stale, unauthorized, invalid, conflict result shapes | Results are the server's authoritative answer to a submitted command. |
 | `shared/sessionMessages.ts` | WebSocket message unions | Defines client `hello`, `heartbeat`, `command` messages and server `hello`, `heartbeat`, `commandAck`, `commandReject`, `snapshot`, `patch`, `presence`, and `error` messages. |
 | `shared/sessionState.ts` | authoritative session state model | Defines the server-owned session snapshot shape: selected map slug, session/map revisions, map documents, connected clients, joined players, and GM-managed assignments. |
+| `shared/sessionSafety.ts` | no-secret session-hosting safety banner status | Classifies the current request as disabled, local, LAN, remote, or unknown so the lobby can warn before join codes are shared. |
 
 ## Wire format rules
 
@@ -53,6 +55,339 @@ The shared permission helpers distinguish:
 - controllable resources, which a player may command only when assigned and visible.
 
 Permission denials use safe reasons such as `gm-required`, `player-required`, `resource-not-visible`, `resource-not-assigned`, and `missing-player-identity`. These reasons are suitable for player-facing conflict/rejection UI without exposing secrets.
+
+## Session safety status endpoint and banner
+
+`GET /api/sessions/safety` returns a no-secret summary for the current request so the `/sessions` lobby can display a safety banner before a GM starts or shares a hosted session. This endpoint is intentionally readable even when session hosting is disabled; its purpose is to make the fail-closed state visible rather than to grant session authority.
+
+The response includes:
+
+- whether the exact `ROTOM_ENABLE_SESSION_HOST=1` flag is active;
+- the normalized request host and forwarded host, when present;
+- a coarse exposure classification: `disabled`, `local`, `lan`, `remote`, or `unknown`;
+- a severity for the banner and player-safe warnings/actions.
+
+It never returns GM keys, join codes, player IDs, snapshots, map documents, or other campaign data. The banner repeats the Track 2 safety boundary: the existing local GM/player role picker is a trust switch for the local app, not public authentication. When hosting is enabled on a LAN or public/tunnel hostname, the GM should verify that the server exposure is intentional, use a named Cloudflare Tunnel for remote campaign play, treat Quick Tunnel as development smoke-test only, and stop the server or unset the flag after the session.
+
+Example remote-exposure response:
+
+```json
+{
+  "schemaVersion": 1,
+  "hostEnabled": true,
+  "requiredFlag": {
+    "name": "ROTOM_ENABLE_SESSION_HOST",
+    "value": "1"
+  },
+  "exposure": "remote",
+  "severity": "danger",
+  "requestHost": "localhost",
+  "forwardedHost": "campaign.example.net",
+  "effectiveHost": "campaign.example.net",
+  "forwarded": true,
+  "title": "Session hosting exposed remotely",
+  "summary": "This browser reached Rotom Table through campaign.example.net, which looks publicly exposed or proxied.",
+  "warnings": [
+    "Track 2 session hosting is enabled and this request appears to use a public hostname, proxy, or tunnel.",
+    "Use a named Cloudflare Tunnel with a stable hostname for campaign play; Quick Tunnel is development smoke-test only.",
+    "Do not rely on the local GM/player role picker as public auth; keep the GM session key and browser private."
+  ],
+  "recommendedActions": [
+    "Confirm the hostname is a named Cloudflare Tunnel or another deliberate private-server exposure path before sharing it.",
+    "Rotate the join code by starting a new session if it was shared outside the trusted table."
+  ]
+}
+```
+
+## GM start-session endpoint
+
+`POST /api/sessions/start` creates the first server-side identity and state record for a Track 2 table session. The route fails closed unless `ROTOM_ENABLE_SESSION_HOST=1` is present, and the server use case repeats that runtime-gate check before allocating anything. The route currently also requires the existing local GM role so the GM can start a session from the trusted local app, but that role picker is not public authentication; the returned session-local GM key is the credential GM management routes and future WebSocket handshakes must validate.
+
+A successful start creates an active in-memory session record, a session ID, a short player join code, a GM key, a GM client ID for the starting browser, an empty authoritative session state at revision `0`, and an initial local JSON snapshot. The response is shaped as session/join details rather than a whole-map autosave:
+
+```json
+{
+  "session": {
+    "sessionId": "session_generated_table_id",
+    "status": "active",
+    "revision": 0,
+    "createdAt": "2026-05-25T12:00:00.000Z",
+    "updatedAt": "2026-05-25T12:00:00.000Z"
+  },
+  "gm": {
+    "gmKey": "gmkey_exampleGeneratedSecretValue01",
+    "clientId": "client_generated_browser_id"
+  },
+  "join": {
+    "joinCode": "ABCD2345"
+  },
+  "snapshot": {
+    "writtenAt": "2026-05-25T12:00:00.000Z",
+    "revision": 0
+  }
+}
+```
+
+The GM key and join code are session-local secrets and should be shown or stored only by later lobby/client-identity flows. Starting a session does not add accounts, hosted persistence, or client whole-map authority.
+
+## Player join-session endpoint
+
+`POST /api/sessions/join` lets a player join an active Track 2 table session with a short join code and a display name. The route fails closed unless `ROTOM_ENABLE_SESSION_HOST=1` is present, but unlike the GM start route it does not require the existing local role-picker cookie: the join code is the session-local capability for creating a player identity. This is still not public account authentication; it creates only a session-local `playerId`, `clientId`, safe display name, and empty assignment record for the GM to manage later.
+
+Request bodies are small and do not contain map state:
+
+```json
+{
+  "joinCode": "ABCD-2345",
+  "displayName": "Misty"
+}
+```
+
+The server normalizes join-code casing/separators, sanitizes the display name into the shared safe display-name shape, rejects unknown or ended sessions, creates a unique player ID and client ID, advances the session revision, writes the updated authoritative snapshot, and returns the identity the later WebSocket hello/client-identity flow must use:
+
+```json
+{
+  "session": {
+    "sessionId": "session_generated_table_id",
+    "status": "active",
+    "revision": 1,
+    "createdAt": "2026-05-25T12:00:00.000Z",
+    "updatedAt": "2026-05-25T12:01:00.000Z"
+  },
+  "player": {
+    "playerId": "player_generated_id",
+    "clientId": "client_generated_browser_id",
+    "displayName": "Misty",
+    "joinedAt": "2026-05-25T12:01:00.000Z",
+    "actor": {
+      "role": "player",
+      "playerId": "player_generated_id",
+      "clientId": "client_generated_browser_id",
+      "displayName": "Misty"
+    }
+  },
+  "snapshot": {
+    "writtenAt": "2026-05-25T12:01:00.000Z",
+    "revision": 1
+  }
+}
+```
+
+Duplicate display names are allowed because identity comes from the generated `playerId`, not the display label. The initial assignment record has no visible or controllable resources; the GM player-assignment endpoint decides which sheets/tokens each player can see or command. Joining never gives a player whole-map save authority.
+
+## GM session management endpoint
+
+`POST /api/sessions/manage` returns the GM-facing lobby summary for one Track 2 table session. The route fails closed unless `ROTOM_ENABLE_SESSION_HOST=1` is present and requires the session-local `gmKey`; it must not rely on the trust-based local role picker as public authentication. The request body contains only the session identity and GM key, not map edits:
+
+```json
+{
+  "sessionId": "session_generated_table_id",
+  "gmKey": "gmkey_exampleGeneratedSecretValue01"
+}
+```
+
+A successful response lists the current session lifecycle status, the player join code, joined players, connected-client presence records, and the GM-managed assignment records that describe visible and controllable resources:
+
+```json
+{
+  "session": {
+    "sessionId": "session_generated_table_id",
+    "status": "active",
+    "revision": 1,
+    "selectedMapSlug": "viridian-gym",
+    "createdAt": "2026-05-25T12:00:00.000Z",
+    "updatedAt": "2026-05-25T12:01:00.000Z",
+    "playerCount": 1,
+    "connectedClientCount": 1,
+    "assignmentCount": 1,
+    "mapCount": 1
+  },
+  "join": {
+    "joinCode": "ABCD2345"
+  },
+  "players": [
+    {
+      "playerId": "player_generated_id",
+      "displayName": "Misty",
+      "joinedAt": "2026-05-25T12:01:00.000Z",
+      "updatedAt": "2026-05-25T12:01:00.000Z"
+    }
+  ],
+  "connectedClients": [
+    {
+      "clientId": "client_generated_browser_id",
+      "actor": {
+        "role": "player",
+        "playerId": "player_generated_id",
+        "clientId": "client_generated_browser_id",
+        "displayName": "Misty"
+      },
+      "status": "connected",
+      "connectedAt": "2026-05-25T12:01:05.000Z",
+      "lastSeenAt": "2026-05-25T12:01:30.000Z",
+      "lastSeenRevision": 1
+    }
+  ],
+  "assignments": [
+    {
+      "playerId": "player_generated_id",
+      "displayName": "Misty",
+      "controllableResources": [],
+      "visibleResources": [],
+      "updatedAt": "2026-05-25T12:01:00.000Z"
+    }
+  ]
+}
+```
+
+The response intentionally excludes the GM key. It may include an ended session's status for GM inspection, but ended sessions remain absent from active join-code lookups. This endpoint is read-only; assignment mutation uses the GM player-assignment endpoint below.
+
+## GM player-assignment endpoint
+
+`POST /api/sessions/assignments` lets the GM assign or unassign player-controllable `sheet` and `token` resources for one joined player. The route fails closed unless `ROTOM_ENABLE_SESSION_HOST=1` is present, requires the session-local `gmKey`, and only updates active sessions. It does not accept `map` resources as controllable assignments, and it does not trust the local role picker or player-supplied actors as public authentication.
+
+```json
+{
+  "sessionId": "session_generated_table_id",
+  "gmKey": "gmkey_exampleGeneratedSecretValue01",
+  "gmClientId": "client_gm_browser_id",
+  "playerId": "player_generated_id",
+  "action": "assign",
+  "resources": [
+    { "kind": "sheet", "sheetKind": "trainer", "sheetSlug": "misty" },
+    {
+      "kind": "token",
+      "tokenId": "token-starmie",
+      "mapSlug": "viridian-gym",
+      "sheetKind": "pokemon",
+      "sheetSlug": "starmie"
+    }
+  ]
+}
+```
+
+Accepted assignment updates advance the authoritative session revision, update the player's assignment record, and write a local session snapshot. Assigning a sheet/token adds it to both `controllableResources` and `visibleResources` so later permission checks can allow player control. Unassigning removes matching sheet/token control and exact sheet/token visibility while preserving unrelated visible maps. Duplicate resources are collapsed rather than stored multiple times.
+
+```json
+{
+  "session": {
+    "sessionId": "session_generated_table_id",
+    "status": "active",
+    "revision": 2,
+    "createdAt": "2026-05-25T12:00:00.000Z",
+    "updatedAt": "2026-05-25T12:02:00.000Z"
+  },
+  "player": {
+    "playerId": "player_generated_id",
+    "displayName": "Misty",
+    "joinedAt": "2026-05-25T12:01:00.000Z",
+    "updatedAt": "2026-05-25T12:01:00.000Z"
+  },
+  "assignment": {
+    "playerId": "player_generated_id",
+    "displayName": "Misty",
+    "controllableResources": [
+      { "kind": "sheet", "sheetKind": "trainer", "sheetSlug": "misty" },
+      { "kind": "token", "tokenId": "token-starmie", "mapSlug": "viridian-gym" }
+    ],
+    "visibleResources": [
+      { "kind": "sheet", "sheetKind": "trainer", "sheetSlug": "misty" },
+      { "kind": "token", "tokenId": "token-starmie", "mapSlug": "viridian-gym" }
+    ],
+    "updatedAt": "2026-05-25T12:02:00.000Z",
+    "updatedByClientId": "client_gm_browser_id"
+  },
+  "change": {
+    "action": "assign",
+    "resources": [
+      { "kind": "sheet", "sheetKind": "trainer", "sheetSlug": "misty" },
+      { "kind": "token", "tokenId": "token-starmie", "mapSlug": "viridian-gym" }
+    ]
+  },
+  "snapshot": {
+    "writtenAt": "2026-05-25T12:02:00.000Z",
+    "revision": 2
+  }
+}
+```
+
+The response excludes the GM key and join code. If snapshot persistence fails, the server rolls back the in-memory assignment update so reconnect/player-state reads do not observe a revision that was not persisted.
+
+## Player session-state endpoint
+
+`POST /api/sessions/player-state` returns the player-filtered lobby/session summary for one joined player. The route fails closed unless `ROTOM_ENABLE_SESSION_HOST=1` is present and validates the session-local `sessionId`, `playerId`, `clientId`, and safe `displayName` returned by the join flow. These IDs are session-local continuity values, not full account auth.
+
+```json
+{
+  "sessionId": "session_generated_table_id",
+  "playerId": "player_generated_id",
+  "clientId": "client_generated_browser_id",
+  "displayName": "Misty"
+}
+```
+
+A successful response returns the player's own identity, their assignment record, session lifecycle status, and current-map visibility filtered through visible map assignments. It does not return the GM key, join code, other players, connected-client lists, hidden selected-map slugs, or map documents:
+
+```json
+{
+  "session": {
+    "sessionId": "session_generated_table_id",
+    "status": "active",
+    "revision": 1,
+    "createdAt": "2026-05-25T12:00:00.000Z",
+    "updatedAt": "2026-05-25T12:01:00.000Z"
+  },
+  "player": {
+    "playerId": "player_generated_id",
+    "clientId": "client_generated_browser_id",
+    "displayName": "Misty",
+    "joinedAt": "2026-05-25T12:01:00.000Z",
+    "updatedAt": "2026-05-25T12:01:00.000Z",
+    "actor": {
+      "role": "player",
+      "playerId": "player_generated_id",
+      "clientId": "client_generated_browser_id",
+      "displayName": "Misty"
+    }
+  },
+  "assignment": {
+    "playerId": "player_generated_id",
+    "displayName": "Misty",
+    "controllableResources": [],
+    "visibleResources": [
+      { "kind": "map", "mapSlug": "viridian-gym" }
+    ],
+    "updatedAt": "2026-05-25T12:02:00.000Z"
+  },
+  "visibility": {
+    "currentMapVisible": true,
+    "currentMap": {
+      "mapSlug": "viridian-gym",
+      "revision": 2
+    },
+    "visibleMapSlugs": ["viridian-gym"],
+    "visibleMaps": [
+      { "mapSlug": "viridian-gym", "revision": 2 }
+    ]
+  }
+}
+```
+
+When the server's selected/current map is not visible to the player, `currentMapVisible` is `false` and `currentMap` is `null`; the hidden map slug is not included. Ended sessions may still return status to already joined players, but the endpoint stays read-only and never grants whole-map save authority.
+
+## Minimal session lobby UI
+
+`/sessions` provides the first additive lobby surface for the endpoints above. It does not replace the existing local `/login` trust picker: the page is still reached through the current app shell, the GM start action still requires the local GM role plus `ROTOM_ENABLE_SESSION_HOST=1`, and player joins still create only session-local `playerId`/`clientId`/display-name continuity.
+
+The GM panel can start a session, show the player join code, refresh the read-only management summary, and list joined players plus assignment counts. The player panel collects a join code and display name, stores the returned player identity in browser-local session identity storage, and refreshes the player-filtered session-state summary. The lobby intentionally does not send map edits, autosave whole documents, or expose the stored GM key in the page chrome. The operational lobby flow and two-browser manual QA checklist live in [Track 2 session lobby and manual QA](track-2-session-lobby.md).
+
+## Client identity continuity helper
+
+`shared/sessionClientIdentity.ts` and `src/utils/sessionClientIdentityStorage.ts` define the browser continuity boundary for the identities returned by the GM start and player join flows. The helper stores one active session-local identity under `rotom:session:identity` in `localStorage` so a browser can reload or reconnect without asking the GM/player to copy the returned IDs again. A small `rotom-session-identity` cookie stores only a continuity hint for UI hydration and future same-origin request helpers.
+
+The full local identity may include the session-local GM key for a GM browser, or the player ID/display name for a player browser. The cookie hint intentionally excludes GM keys and join codes, uses `SameSite=Lax`, and is not an authentication credential. Later WebSocket and session-state routes must still validate any cookie, local-storage value, or client-supplied actor against the authoritative session state before subscribing, applying commands, or showing privileged data.
+
+The helper clears malformed local records or malformed/secret-bearing cookie hints instead of treating them as authority. This keeps Track 2 as session-local continuity, not full accounts, public auth, or durable cloud identity.
 
 ## Authoritative state shape
 

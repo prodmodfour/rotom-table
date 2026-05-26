@@ -1,4 +1,4 @@
-import { HOME_PATH, isHomePath } from '~/utils/appRoutes'
+import { HOME_PATH, SESSION_LOBBY_PATH, isHomePath } from '~/utils/appRoutes'
 import { ENCOUNTER_GENERATOR_PATH, ENCOUNTER_TABLES_PATH } from '~/utils/encounterRoutes'
 import { isLegacyGridPath } from '~/utils/legacyGridRoutes'
 import { MAP_LIBRARY_PATH } from '~/utils/mapRoutes'
@@ -14,6 +14,7 @@ export interface AppNavItem {
 
 export const PRIMARY_APP_NAV_ITEMS: AppNavItem[] = [
   { path: MAP_LIBRARY_PATH, label: 'Maps' },
+  { path: SESSION_LOBBY_PATH, label: 'Session' },
   { path: POKEDEX_PATH, label: 'Pokédex' },
   { path: SHEET_LIBRARY_PATH, label: 'Sheets' },
   { path: ENCOUNTER_GENERATOR_PATH, label: 'Generate', gmOnly: true },

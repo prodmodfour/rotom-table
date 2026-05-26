@@ -40,6 +40,7 @@ npm run build
 - [docs/track-2-glossary.md](docs/track-2-glossary.md) — shared Track 2 vocabulary for identity, commands, revisions, reconnect, and safety.
 - [docs/track-2-validation-matrix.md](docs/track-2-validation-matrix.md) — expected tests, smoke checks, docs, and safety reviews for Track 2 implementation areas.
 - [docs/track-2-session-protocol.md](docs/track-2-session-protocol.md) — shared Track 2 session protocol types, message flow, and accepted/rejected command examples.
+- [docs/track-2-session-lobby.md](docs/track-2-session-lobby.md) — GM/player join flow, expected LAN usage, and two-browser lobby smoke checklist.
 - [docs/track-2-session-storage.md](docs/track-2-session-storage.md) — local session snapshot/event-log paths, privacy boundaries, backup guidance, and recovery limits.
 - [docs/local-development.md](docs/local-development.md) — local setup, scripts, and filesystem persistence notes.
 - [docs/fan-project-notice.md](docs/fan-project-notice.md) — fan project and ownership boundaries.
@@ -115,6 +116,7 @@ See [docs/architecture.md](docs/architecture.md) for more detail.
 | --- | --- |
 | `/` | Redirects to the map library. |
 | `/login` | Choose GM or Player session mode. |
+| `/sessions` | Track 2 guarded session lobby for GM start/manage and player join flows. |
 | `/maps` | Map library and folders. |
 | `/maps/:slug` | Map editor/table view. |
 | `/sheets` | Pokémon and trainer sheet library. |

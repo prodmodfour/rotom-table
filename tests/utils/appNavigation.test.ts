@@ -11,6 +11,7 @@ describe('app navigation helpers', () => {
   it('filters GM-only nav items for player-visible navigation', () => {
     expect(filterAppNavItems(PRIMARY_APP_NAV_ITEMS, false).map((item) => item.path)).toEqual([
       '/maps',
+      '/sessions',
       '/pokedex',
       '/sheets',
     ])
@@ -29,6 +30,8 @@ describe('app navigation helpers', () => {
   it('uses exact matching for the home route and prefix matching otherwise', () => {
     expect(isAppNavItemActive('/', '/')).toBe(true)
     expect(isAppNavItemActive('/maps', '/')).toBe(false)
+    expect(isAppNavItemActive('/sessions', '/sessions')).toBe(true)
+    expect(isAppNavItemActive('/sessions/join', '/sessions')).toBe(true)
     expect(isAppNavItemActive('/moves/tackle', '/moves')).toBe(true)
     expect(isAppNavItemActive('/abilities', '/moves')).toBe(false)
   })
