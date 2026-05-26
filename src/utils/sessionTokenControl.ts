@@ -24,6 +24,7 @@ export interface BuildSessionTokenControlModelInput {
   readonly placements: readonly Pick<SheetPlacement, 'id' | 'sheetKind' | 'sheetSlug'>[]
   readonly assignments?: readonly PlayerAssignmentRecord[]
   readonly hasSnapshot?: boolean
+  readonly hasAuthoritativeSessionState?: boolean
 }
 
 export interface SessionTokenControlModel {
@@ -81,6 +82,17 @@ export const buildSessionTokenControlModel = (
     }
   }
 
+  const hasAuthoritativeSessionState = input.hasAuthoritativeSessionState ?? input.hasSnapshot
+  if (hasAuthoritativeSessionState === false) {
+    return {
+      enabled: true,
+      status: 'waiting-for-snapshot',
+      controllablePlacementIds: [],
+      notice: 'Waiting for an authoritative live session map from session hosting before enabling token controls.',
+      assignment: null,
+    }
+  }
+
   if (input.identity.role === 'gm') {
     return {
       enabled: true,
@@ -91,7 +103,7 @@ export const buildSessionTokenControlModel = (
     }
   }
 
-  if (input.hasSnapshot === false || input.assignments === undefined) {
+  if (input.assignments === undefined) {
     return {
       enabled: true,
       status: 'waiting-for-snapshot',

@@ -96,7 +96,7 @@ export const buildSessionConnectionStatusNotice = (
       input,
       'Session snapshot did not include this map',
       'The session map view is not authoritative for the current map yet.',
-      'Ask the GM to make this session map visible or refresh after assignments change.'
+      'Ask the GM to attach this map to the live session or make it visible, then refresh the session map.'
     )
   }
 
@@ -145,6 +145,25 @@ export const buildSessionConnectionStatusNotice = (
       summary: 'Session hosting requested snapshot recovery for this session map view.',
       detail: 'Session commands should wait until the reconnect snapshot has arrived.',
       currentRevision,
+    }
+  }
+
+  if (
+    !input.hasAuthoritativeSessionState &&
+    (
+      input.status === 'loading-snapshot' ||
+      input.snapshotStatus === 'requested' ||
+      input.helloStatus === 'accepted'
+    )
+  ) {
+    return {
+      kind: 'reconnecting',
+      tone: 'info',
+      title: 'Waiting for authoritative session map',
+      summary: 'Showing the saved local map only as a visual placeholder until session hosting sends an attached visible session map.',
+      detail: 'Session commands stay disabled until an attached map snapshot or patch arrives. If this does not recover, ask the GM to attach this map to the live session or make it visible.',
+      currentRevision,
+      actionLabel: 'Refresh snapshot',
     }
   }
 

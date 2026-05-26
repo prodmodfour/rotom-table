@@ -81,6 +81,7 @@ const sessionMoveTokenDispatch = useSessionMoveTokenDispatch({
   enabled: sessionMoveTokenEnabled,
   mapSlug: slug,
   socket: sessionMap.socket as unknown as SessionMoveTokenSocket,
+  hasAuthoritativeSessionState: sessionMap.mapState.hasAuthoritativeSessionState,
 })
 const map = sessionMap.map
 const sessionSceneCommands = useSessionMapSceneCommands({
@@ -109,17 +110,18 @@ const sessionTokenControlModel = computed(() => buildSessionTokenControlModel({
   mapSlug: slug,
   placements: map.value?.placements ?? [],
   assignments: sessionSnapshotState.value?.assignments,
-  hasSnapshot: sessionMap.socket.lastSnapshot.value !== null,
+  hasAuthoritativeSessionState: sessionMap.mapState.hasAuthoritativeSessionState.value,
 }))
 const sessionTokenControlNotice = computed(() => sessionTokenControlModel.value.notice)
+const sessionMapReadyForCommands = computed(() => sessionMap.mapState.hasAuthoritativeSessionState.value)
 const canUseSessionTokenSendOut = computed(() => (
   sessionMoveTokenEnabled.value
-    ? sessionMap.identity.value !== null
+    ? sessionMap.identity.value !== null && sessionMapReadyForCommands.value
     : canSpawnTokens.value
 ))
 const canUseSessionTokenDelete = computed(() => (
   sessionMoveTokenEnabled.value
-    ? sessionMap.identity.value?.role === 'gm'
+    ? sessionMap.identity.value?.role === 'gm' && sessionMapReadyForCommands.value
     : isGm.value
 ))
 

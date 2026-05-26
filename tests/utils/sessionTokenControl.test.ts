@@ -76,6 +76,21 @@ describe('session token control model', () => {
     expect(model.notice).toBeNull()
   })
 
+  it('waits for authoritative session map state before enabling GM token controls', () => {
+    const model = buildSessionTokenControlModel({
+      enabled: true,
+      identity: gmIdentity,
+      mapSlug: 'cerulean-gym',
+      placements,
+      assignments: [],
+      hasAuthoritativeSessionState: false,
+    })
+
+    expect(model.status).toBe('waiting-for-snapshot')
+    expect(model.controllablePlacementIds).toEqual([])
+    expect(model.notice).toContain('authoritative live session map')
+  })
+
   it('lets the session GM control every token on the session map', () => {
     const model = buildSessionTokenControlModel({
       enabled: true,

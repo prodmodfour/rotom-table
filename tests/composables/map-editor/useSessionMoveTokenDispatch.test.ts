@@ -332,6 +332,34 @@ describe('session moveToken client dispatch', () => {
     expect(dispatch.lastError.value).toBeNull()
   })
 
+  it('blocks token movement while the session map is still a local placeholder', () => {
+    const socket = makeSocket({ lastKnownRevision: REVISION_4 })
+    const dispatch = useSessionMoveTokenDispatch({
+      enabled: ref(true),
+      mapSlug: ref('arena-map'),
+      identityStorage: makeIdentityStorage(playerIdentity),
+      socket,
+      hasAuthoritativeSessionState: ref(false),
+      createOpId: () => OP_ID,
+      now: () => '2026-05-26T12:00:00.000Z',
+    })
+
+    const result = dispatch.dispatchMoveToken({
+      placement,
+      to: { x: 4, y: 0, z: 2 },
+    })
+
+    expect(result).toMatchObject({
+      dispatched: false,
+      reason: 'awaiting-authoritative-map',
+    })
+    expect(dispatch.lastError.value).toContain('authoritative live session map snapshot')
+    expect(socket.connect).not.toHaveBeenCalled()
+    expect(socket.sendHello).not.toHaveBeenCalled()
+    expect(socket.send).not.toHaveBeenCalled()
+    expect(dispatch.optimisticMoves.value).toEqual([])
+  })
+
   it('queues hello before the turnToken command and applies a confirmed facing override', () => {
     const socket = makeSocket({ lastKnownRevision: REVISION_4 })
     const dispatch = useSessionMoveTokenDispatch({

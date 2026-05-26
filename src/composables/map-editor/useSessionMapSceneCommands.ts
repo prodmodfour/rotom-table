@@ -119,6 +119,7 @@ export type SessionMapSceneCommandDispatchFailureReason =
   | 'missing-map'
   | 'missing-placement'
   | 'missing-action-name'
+  | 'awaiting-authoritative-map'
   | 'send-failed'
 
 export type SessionMapSceneCommandDispatchResult<TCommand extends SessionMapSceneCommand = SessionMapSceneCommand> =
@@ -253,7 +254,12 @@ export const useSessionMapSceneCommands = (
     command: TCommand,
   ): SessionMapSceneCommandDispatchResult<TCommand> => {
     const result = options.session.dispatchCommand(command)
-    if (!result.dispatched) return fail<TCommand>('send-failed', result.message)
+    if (!result.dispatched) {
+      return fail<TCommand>(
+        result.reason === 'awaiting-authoritative-map' ? 'awaiting-authoritative-map' : 'send-failed',
+        result.message,
+      )
+    }
     lastError.value = null
     return { dispatched: true, command, result }
   }

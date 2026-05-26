@@ -97,6 +97,7 @@ export type SessionMoveTokenDispatchFailureReason =
   | 'not-session-mode'
   | 'missing-session-identity'
   | 'missing-placement'
+  | 'awaiting-authoritative-map'
   | 'socket-unavailable'
   | 'hello-failed'
   | 'send-failed'
@@ -118,6 +119,7 @@ export type SessionTurnTokenDispatchFailureReason =
   | 'not-session-mode'
   | 'missing-session-identity'
   | 'missing-placement'
+  | 'awaiting-authoritative-map'
   | 'socket-unavailable'
   | 'hello-failed'
   | 'send-failed'
@@ -232,6 +234,7 @@ export interface UseSessionMoveTokenDispatchOptions {
   readonly socket?: SessionMoveTokenSocket
   readonly now?: () => string
   readonly createOpId?: () => OpId
+  readonly hasAuthoritativeSessionState?: BooleanRef
 }
 
 const defaultClock = (): string => new Date().toISOString()
@@ -505,6 +508,7 @@ export const useSessionMoveTokenDispatch = (
   const identity = ref<SessionClientIdentity | null>(identityStorage.load())
   const lastError = ref<string | null>(null)
   const enabled = computed(() => options.enabled.value)
+  const hasAuthoritativeSessionState = computed(() => options.hasAuthoritativeSessionState?.value ?? true)
   const optimisticMoves = ref<SessionMoveTokenOptimisticMove[]>([])
   const optimisticTurns = ref<SessionTurnTokenOptimisticTurn[]>([])
   const lastRejection = ref<SessionMoveTokenOptimisticRejection | null>(null)
@@ -1073,7 +1077,14 @@ export const useSessionMoveTokenDispatch = (
     }
 
     if (input.placement === null || input.placement === undefined) {
-      return fail('missing-placement', 'Cannot dispatch moveToken because the selected token is no longer on the map.')
+      return fail('missing-placement', 'Cannot move the selected token because it is no longer on the session map.')
+    }
+
+    if (!hasAuthoritativeSessionState.value) {
+      return fail(
+        'awaiting-authoritative-map',
+        'Waiting for an authoritative live session map snapshot before moving tokens. Refresh the session map or ask the GM to attach this map to the live session.',
+      )
     }
 
     const helloFailure = ensureSocketHello(currentIdentity)
@@ -1125,7 +1136,14 @@ export const useSessionMoveTokenDispatch = (
     }
 
     if (input.placement === null || input.placement === undefined) {
-      return turnFail('missing-placement', 'Cannot dispatch turnToken because the selected token is no longer on the map.')
+      return turnFail('missing-placement', 'Cannot turn the selected token because it is no longer on the session map.')
+    }
+
+    if (!hasAuthoritativeSessionState.value) {
+      return turnFail(
+        'awaiting-authoritative-map',
+        'Waiting for an authoritative live session map snapshot before turning tokens. Refresh the session map or ask the GM to attach this map to the live session.',
+      )
     }
 
     const helloFailure = ensureSocketHelloForTurn(currentIdentity)

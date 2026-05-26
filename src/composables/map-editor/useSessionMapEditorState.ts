@@ -415,7 +415,14 @@ export const useSessionMapEditorState = (
       mapSlug,
     )
     if (mapState === null) {
-      lastIgnoredMessage.value = `Session snapshot did not include visible map "${mapSlug}".`
+      const ignoredMessage = `Session snapshot did not include visible map "${mapSlug}".`
+      if (!resetSessionMapFromLocal()) {
+        sessionMap.value = null
+        source.value = 'none'
+        sessionRevision.value = null
+        mapRevision.value = null
+      }
+      lastIgnoredMessage.value = ignoredMessage
       return false
     }
 
