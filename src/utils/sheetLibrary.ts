@@ -30,6 +30,14 @@ export interface TrainerSheetLibraryItem {
 
 export type SheetLibraryItem = PokemonSheetLibraryItem | TrainerSheetLibraryItem
 
+export type SheetLibraryAccessBadgeVariant = 'accent' | 'success'
+
+export interface SheetLibraryAccessBadge {
+  label: string
+  variant: SheetLibraryAccessBadgeVariant
+  title: string
+}
+
 export interface BuildSheetLibraryItemsOptions {
   pokemonSheets: ReadonlyArray<CharacterSheet>
   trainerSheets: ReadonlyArray<TrainerSheet>
@@ -58,6 +66,34 @@ export const sheetLibraryKey = (kind: SheetLibraryKind, slug: string): string =>
 
 export const displaySheetLibraryName = (item: SheetLibraryItem): string =>
   item.kind === 'pokemon' ? item.sheet.nickname : item.sheet.name
+
+export const sheetLibraryAccessBadge = (item: SheetLibraryItem): SheetLibraryAccessBadge | null => {
+  if (item.sheet.playerProfileAccessible === true) {
+    return {
+      label: 'Linked profile',
+      variant: 'success',
+      title: 'This private character sheet is linked to the selected player profile.',
+    }
+  }
+
+  if (item.sheet.player === true) {
+    return {
+      label: 'Player accessible',
+      variant: 'accent',
+      title: 'This character sheet is broadly visible to players.',
+    }
+  }
+
+  if (item.sheet.sessionPlayerAccessible === true) {
+    return {
+      label: 'Player accessible',
+      variant: 'accent',
+      title: 'This private character sheet is currently available to players.',
+    }
+  }
+
+  return null
+}
 
 export const applyFolderRenames = (
   path: string,

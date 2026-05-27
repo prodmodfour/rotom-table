@@ -44,6 +44,8 @@ const emit = defineEmits<{
         </template>
         <template v-else>
           You are seeing only maps the GM has marked as player visible.
+          On a map, your selected player profile can control tokens whose
+          character sheets are linked to that profile.
         </template>
       </template>
     </LibraryIntroCopy>

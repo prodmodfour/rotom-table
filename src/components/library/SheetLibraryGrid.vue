@@ -11,6 +11,9 @@ defineProps<{
   hasAnything: boolean
   hoverTarget: string | null
   isDragging: boolean
+  isGm: boolean
+  isPlayer: boolean
+  hasSelectedProfile: boolean
   canDrag: boolean
   searchTerm: string
   canDropOn: (path: string) => boolean
@@ -69,12 +72,24 @@ const emit = defineEmits<{
     />
 
     <template #empty>
-      <template v-if="canDrag">
-        This folder is empty. Drag a sheet here from another folder or use
-        <strong>+ New folder</strong> to add a subfolder.
+      <template v-if="isGm">
+        <template v-if="canDrag">
+          This folder is empty. Drag a sheet here from another folder or use
+          <strong>+ New folder</strong> to add a subfolder.
+        </template>
+        <template v-else>
+          This folder is empty.
+        </template>
+      </template>
+      <template v-else-if="isPlayer && hasSelectedProfile">
+        No player-accessible or linked sheets in this folder.
+      </template>
+      <template v-else-if="isPlayer">
+        No player-accessible sheets in this folder. Choose a player profile
+        to include linked private character sheets.
       </template>
       <template v-else>
-        No player-accessible sheets in this folder.
+        Log in to browse character sheets.
       </template>
     </template>
   </LibraryGridSection>

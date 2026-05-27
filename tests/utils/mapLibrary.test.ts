@@ -72,14 +72,20 @@ describe('mapLibrary helpers', () => {
     expect(mapSummaryMatchesQuery(item, 'atrium')).toBe(false)
   })
 
-  it('builds map folder sets from summaries and explicit folders', () => {
-    expect([...buildMapFolderSet([
+  it('builds map folder sets from summaries and GM-only explicit folders', () => {
+    const items = [
       summary('root'),
       summary('wild', 'npcs/wild'),
-    ], ['npcs', 'npcs/wild/cave'])].sort()).toEqual([
+    ]
+    const explicitFolders = ['npcs', 'npcs/wild/cave']
+
+    expect([...buildMapFolderSet(items, explicitFolders)].sort()).toEqual([
       'npcs',
       'npcs/wild',
       'npcs/wild/cave',
+    ])
+    expect([...buildMapFolderSet(items, explicitFolders, { includeExtraFolders: false })].sort()).toEqual([
+      'npcs/wild',
     ])
   })
 

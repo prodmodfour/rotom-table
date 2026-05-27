@@ -90,10 +90,13 @@ describe('useSheetLibraryData', () => {
     expect([...data.allFolders.value]).toEqual(['players/Hassan'])
   })
 
-  it('loads runtime sheets for players without loading GM-only folder listings', async () => {
+  it('loads runtime player-accessible and profile-linked sheets without loading GM-only folder listings', async () => {
     const fetchFolders = vi.fn(async () => ({ folders: ['gm-only'] }))
     const fetchSheets = vi.fn(async () => ({
-      pokemonSheets: [],
+      pokemonSheets: [
+        makePokemonSheet({ slug: 'linked-mon', player: false, playerProfileAccessible: true }),
+        makePokemonSheet({ slug: 'hidden-mon', player: false }),
+      ],
       trainerSheets: [
         makeTrainerSheet({ slug: 'player-trainer', player: true }),
         makeTrainerSheet({ slug: 'hidden-trainer', player: false }),
@@ -116,7 +119,7 @@ describe('useSheetLibraryData', () => {
 
     expect(fetchFolders).not.toHaveBeenCalled()
     expect(fetchSheets).toHaveBeenCalledTimes(1)
-    expect(data.items.value.map((item) => item.slug)).toEqual(['player-trainer'])
+    expect(data.items.value.map((item) => item.slug).sort()).toEqual(['linked-mon', 'player-trainer'])
   })
 
   it('honours player-only filtering from the reactive auth state', () => {

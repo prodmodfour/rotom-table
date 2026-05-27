@@ -11,6 +11,7 @@ import {
   isInsideDeletedSheetFolder,
   matchesSheetLibraryQuery,
   resolveSheetLibraryFolder,
+  sheetLibraryAccessBadge,
   sheetLibraryKey,
 } from '~/utils/sheetLibrary'
 import type { CharacterSheet } from '~/types/characterSheet'
@@ -63,9 +64,24 @@ describe('sheetLibrary helpers', () => {
     })
   })
 
-  it('resolves keys, display names, folder overrides, and folder renames', () => {
+  it('resolves keys, display names, access badges, folder overrides, and folder renames', () => {
     const item = buildSheetLibraryItems({
       pokemonSheets: [pokemon()],
+      trainerSheets: [],
+      speciesTypesFor: () => [],
+      spriteUrlFor: () => null,
+    })[0]
+    const linkedItem = buildSheetLibraryItems({
+      pokemonSheets: [pokemon({
+        player: false,
+        playerProfileAccessible: true,
+      })],
+      trainerSheets: [],
+      speciesTypesFor: () => [],
+      spriteUrlFor: () => null,
+    })[0]
+    const privateItem = buildSheetLibraryItems({
+      pokemonSheets: [pokemon({ player: false })],
       trainerSheets: [],
       speciesTypesFor: () => [],
       spriteUrlFor: () => null,
@@ -73,6 +89,9 @@ describe('sheetLibrary helpers', () => {
 
     expect(sheetLibraryKey('pokemon', 'bolt')).toBe('pokemon:bolt')
     expect(displaySheetLibraryName(item)).toBe('Bolt')
+    expect(sheetLibraryAccessBadge(item)).toMatchObject({ label: 'Player accessible', variant: 'accent' })
+    expect(sheetLibraryAccessBadge(linkedItem)).toMatchObject({ label: 'Linked profile', variant: 'success' })
+    expect(sheetLibraryAccessBadge(privateItem)).toBeNull()
     expect(applyFolderRenames('team/alpha/deep', [{ from: 'team/alpha', to: 'team/beta' }])).toBe('team/beta/deep')
     expect(resolveSheetLibraryFolder(item, { 'pokemon:bolt': 'staging' }, [{ from: 'staging', to: 'archive' }])).toBe('archive')
   })

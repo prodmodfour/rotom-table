@@ -12,6 +12,10 @@ useHead({
 })
 
 const {
+  isGm,
+  isPlayer,
+  selectedProfileDisplayName,
+  hasSelectedProfile,
   canDrag,
   searchTerm,
   visibleSheets,
@@ -65,6 +69,9 @@ const {
         v-model:search-term="searchTerm"
         :filtered-count="filteredCount"
         :total-count="totalCount"
+        :is-gm="isGm"
+        :is-player="isPlayer"
+        :selected-profile-name="selectedProfileDisplayName"
         :can-drag="canDrag"
         :creating="creating"
         :creating-sheet="creatingSheet"
@@ -98,6 +105,9 @@ const {
       :has-anything="hasAnything"
       :hover-target="hoverTarget"
       :is-dragging="drag !== null"
+      :is-gm="isGm"
+      :is-player="isPlayer"
+      :has-selected-profile="hasSelectedProfile"
       :can-drag="canDrag"
       :search-term="searchTerm"
       :can-drop-on="canDropOn"

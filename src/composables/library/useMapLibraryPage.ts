@@ -54,7 +54,9 @@ export const useMapLibraryPage = () => {
     return isPlayer.value ? all.filter((map) => map.playerVisible === true) : all
   })
 
-  const allFolders = computed(() => buildMapFolderSet(items.value, extraFolders))
+  const allFolders = computed(() => buildMapFolderSet(items.value, extraFolders, {
+    includeExtraFolders: isGm.value,
+  }))
 
   const { currentPath, goToFolder, breadcrumbs } = useLibraryFolderNavigation({
     routePath: mapLibraryPath(),

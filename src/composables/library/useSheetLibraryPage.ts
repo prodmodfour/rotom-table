@@ -35,7 +35,12 @@ export const useSheetLibraryPage = () => {
   const { isGm: rawIsGm, isPlayer: rawIsPlayer } = useAuth()
   const isGm = computed<boolean>(() => rawIsGm.value === true)
   const isPlayer = computed<boolean>(() => rawIsPlayer.value === true)
-  const { selectedProfileId, loadRememberedProfile } = usePlayerProfiles()
+  const {
+    selectedProfileId,
+    selectedProfileDisplayName,
+    hasSelectedProfile,
+    loadRememberedProfile,
+  } = usePlayerProfiles()
   if (import.meta.client && isPlayer.value) loadRememberedProfile()
 
   const canDrag = computed<boolean>(() => Boolean(import.meta.dev && isGm.value))
@@ -205,6 +210,10 @@ export const useSheetLibraryPage = () => {
   })
 
   return {
+    isGm,
+    isPlayer,
+    selectedProfileDisplayName,
+    hasSelectedProfile,
     canDrag,
     searchTerm,
     visibleSheets,

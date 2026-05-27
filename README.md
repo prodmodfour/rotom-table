@@ -70,8 +70,8 @@ npm run build
 
 ## Features
 
-- **Isometric map table** — create map folders, edit maps, build voxel terrain, place hazards, manage field effects, spawn Pokémon and trainer tokens, move/turn tokens, track initiative, and use move/ability automation.
-- **Sheet library** — create, organise, rename, edit, and autosave Pokémon and trainer sheets from the browser.
+- **Isometric map table** — create map folders, edit maps, build voxel terrain, place hazards, manage field effects, spawn Pokémon and trainer tokens, move/turn tokens, track initiative, and use move/ability automation. Players browse GM-marked player-visible maps and control tokens through linked character sheets.
+- **Sheet library** — create, organise, rename, edit, and autosave Pokémon and trainer sheets from the browser. GMs manage library files; players browse public sheets plus sheets linked to their selected profile.
 - **Pokédex browser** — search and filter Pokémon entries, view sprites and detail panes, and jump directly to Pokémon-specific pages.
 - **Reference library** — browse moves, maneuvers, abilities, capabilities, conditions, rules, items, features, and edges.
 - **Encounter tools** — manage JSON encounter tables, roll previews, and generate wild Pokémon sheets into the sheet library.
@@ -141,9 +141,9 @@ See [docs/architecture.md](docs/architecture.md) for more detail.
 | `/login` | Choose the local GM role or select/create the persistent player profile for Player Login. |
 | `/sessions` | Direct-only legacy live-session identity/socket lobby for maintenance smoke checks; not linked from normal app navigation or required for profile-based play. |
 | `/player-profiles` | GM-only player profile list plus Pokémon/trainer sheet link and unlink management. |
-| `/maps` | Map library and folders. |
-| `/maps/:slug` | Map editor/table view. |
-| `/sheets` | Pokémon and trainer sheet library. |
+| `/maps` | Map library and folders; players see player-visible maps only. |
+| `/maps/:slug` | Map editor/table view with profile-linked player token control. |
+| `/sheets` | Pokémon and trainer sheet library; players see public and selected-profile-linked sheets. |
 | `/sheets/:slug` | Pokémon sheet editor. |
 | `/sheets/trainers/:slug` | Trainer sheet editor. |
 | `/pokedex` | Searchable Pokédex browser. |

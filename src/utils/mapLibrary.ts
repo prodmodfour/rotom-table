@@ -29,13 +29,22 @@ export const mapSummaryMatchesQuery = (
 ): boolean => [item.name, item.folder]
   .some((value) => normalizeSearchText(value).includes(normalizedQuery))
 
+export interface BuildMapFolderSetOptions {
+  includeExtraFolders?: boolean
+}
+
 export const buildMapFolderSet = (
   items: readonly MapSummary[],
   extraFolders: Iterable<string>,
+  options: BuildMapFolderSetOptions = {},
 ): Set<string> => {
   const folders = new Set<string>()
   for (const item of items) if (item.folder) folders.add(item.folder)
-  for (const folder of extraFolders) folders.add(folder)
+
+  if (options.includeExtraFolders !== false) {
+    for (const folder of extraFolders) folders.add(folder)
+  }
+
   return folders
 }
 
