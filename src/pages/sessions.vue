@@ -2,7 +2,6 @@
 import { computed, onMounted, ref } from 'vue'
 import AppNavigation from '~/components/AppNavigation.vue'
 import { useSessionLobby } from '~/composables/useSessionLobby'
-import { buildPlayerSessionMapNavigationModel } from '~/utils/playerSessionMapNavigation'
 import {
   LOGIN_PATH,
   SESSION_LOBBY_GM_SECTION_ID,
@@ -11,11 +10,6 @@ import {
 } from '~/utils/appRoutes'
 import { MAP_LIBRARY_PATH } from '~/utils/mapRoutes'
 import { POKEDEX_PATH } from '~/utils/pokedex/routes'
-import type {
-  PlayerAssignmentRecord,
-  SessionControllableResourceRef,
-  SessionVisibleResourceRef,
-} from '#shared/sessionPermissions'
 
 useHead({ title: 'Legacy live-session lobby · Rotom Table' })
 
@@ -49,7 +43,6 @@ const hasGmIdentity = computed(() => identity.value?.role === 'gm')
 const hasPlayerIdentity = computed(() => identity.value?.role === 'player')
 const canJoin = computed(() => displayName.value.trim().length > 0 && !busy.value)
 const currentSessionId = computed(() => gmSession.value?.sessionId ?? playerSession.value?.sessionId ?? null)
-const playerMapNavigation = computed(() => buildPlayerSessionMapNavigationModel(playerState.value?.visibility ?? null))
 const safetyBannerSeverity = computed(() => safetyStatus.value?.severity ?? 'unknown')
 const safetyTitle = computed(() => safetyStatus.value?.title ?? 'Checking live session hosting safety')
 const safetySummary = computed(() => safetyStatus.value?.summary
@@ -123,19 +116,6 @@ const handlePickPlayerProfile = async (playerId: string) => {
     // The composable stores a user-safe error string for the page.
   }
 }
-
-const resourceLabel = (resource: SessionControllableResourceRef | SessionVisibleResourceRef): string => {
-  if (resource.kind === 'map') return `Map ${resource.mapSlug}`
-  if (resource.kind === 'sheet') return `${resource.sheetKind} sheet ${resource.sheetSlug}`
-
-  const tokenParts = [resource.tokenId]
-  if (resource.mapSlug) tokenParts.push(`map ${resource.mapSlug}`)
-  if (resource.sheetSlug) tokenParts.push(`sheet ${resource.sheetSlug}`)
-  return `Token ${tokenParts.join(' · ')}`
-}
-
-const assignmentSummary = (assignment: PlayerAssignmentRecord): string =>
-  `${assignment.controllableResources.length} controllable · ${assignment.visibleResources.length} visible`
 
 onMounted(() => {
   void loadSafetyStatus()
@@ -304,10 +284,6 @@ onMounted(() => {
               <dt>Players</dt>
               <dd>{{ gmManagement?.players.length ?? 0 }}</dd>
             </div>
-            <div>
-              <dt>Assignments</dt>
-              <dd>{{ gmManagement?.assignments.length ?? 0 }}</dd>
-            </div>
           </dl>
 
           <section class="mini-section" aria-labelledby="joined-players-title">
@@ -319,19 +295,6 @@ onMounted(() => {
               <li v-for="player in gmManagement.players" :key="player.playerId">
                 <span>{{ player.displayName }}</span>
                 <small>{{ player.playerId }}</small>
-              </li>
-            </ul>
-          </section>
-
-          <section class="mini-section" aria-labelledby="assignments-title">
-            <h3 id="assignments-title">Assignments</h3>
-            <p v-if="!gmManagement || gmManagement.assignments.length === 0" class="empty-text">
-              No live session sheet or token assignments yet.
-            </p>
-            <ul v-else class="assignment-list">
-              <li v-for="assignment in gmManagement.assignments" :key="assignment.playerId">
-                <span>{{ assignment.displayName }}</span>
-                <small>{{ assignmentSummary(assignment) }}</small>
               </li>
             </ul>
           </section>
@@ -424,51 +387,15 @@ onMounted(() => {
               <dt>Revision</dt>
               <dd>{{ playerSession?.revision ?? '—' }}</dd>
             </div>
-            <div>
-              <dt>Session map visible</dt>
-              <dd>{{ playerState?.visibility.currentMapVisible ? 'Yes' : 'No' }}</dd>
-            </div>
           </dl>
 
-          <section class="mini-section" aria-labelledby="visible-session-maps-title">
-            <h3 id="visible-session-maps-title">{{ playerMapNavigation.heading }}</h3>
-            <p class="empty-text">{{ playerMapNavigation.summary }}</p>
-            <ul v-if="playerMapNavigation.links.length > 0" class="session-map-list">
-              <li
-                v-for="link in playerMapNavigation.links"
-                :key="link.key"
-                :class="{ 'session-map-list__item--selected': link.selected }"
-              >
-                <NuxtLink
-                  :to="link.to"
-                  class="session-map-link"
-                  :aria-label="`${link.label}: ${link.mapSlug}. ${link.description}`"
-                >
-                  <span>{{ link.label }}</span>
-                  <strong>{{ link.mapSlug }}</strong>
-                  <small>{{ link.description }}</small>
-                </NuxtLink>
-              </li>
-            </ul>
-            <p v-else-if="playerMapNavigation.emptyMessage" class="empty-text" role="status">
-              {{ playerMapNavigation.emptyMessage }}
+          <section class="mini-section" aria-labelledby="legacy-session-boundary-title">
+            <h3 id="legacy-session-boundary-title">Legacy session boundary</h3>
+            <p class="empty-text">
+              This page now keeps only the old session-local identity and socket smoke surface.
+              Map links, token assignment panels, and session-map controls have been removed;
+              use persistent player profiles for normal map and sheet control.
             </p>
-          </section>
-
-          <section class="mini-section" aria-labelledby="player-assignments-title">
-            <h3 id="player-assignments-title">Your assignments</h3>
-            <p v-if="!playerState || playerState.assignment.controllableResources.length === 0" class="empty-text">
-              The GM has not assigned controllable sheets or tokens yet.
-            </p>
-            <ul v-else class="assignment-list">
-              <li
-                v-for="resource in playerState.assignment.controllableResources"
-                :key="resourceLabel(resource)"
-              >
-                <span>{{ resourceLabel(resource) }}</span>
-                <small>Controllable</small>
-              </li>
-            </ul>
           </section>
         </div>
       </article>
@@ -861,9 +788,7 @@ h3 {
 }
 
 .player-list,
-.profile-list,
-.assignment-list,
-.session-map-list {
+.profile-list {
   display: grid;
   gap: 0.45rem;
   list-style: none;
@@ -872,9 +797,7 @@ h3 {
 }
 
 .player-list li,
-.profile-list li,
-.assignment-list li,
-.session-map-list li {
+.profile-list li {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
@@ -882,11 +805,6 @@ h3 {
   padding: 0.6rem;
   border: 1px solid var(--rule-soft);
   background: var(--paper-inset);
-}
-
-.session-map-list__item--selected {
-  border-color: rgba(255, 31, 45, 0.5) !important;
-  background: rgba(255, 31, 45, 0.08) !important;
 }
 
 .profile-button {
@@ -915,54 +833,14 @@ h3 {
 }
 
 .player-list span,
-.profile-button span,
-.assignment-list span {
+.profile-button span {
   color: var(--ink-bright);
   font-weight: 800;
 }
 
 .player-list small,
-.profile-button small,
-.assignment-list small {
+.profile-button small {
   color: var(--ink-muted);
-  overflow-wrap: anywhere;
-}
-
-.session-map-link {
-  display: grid;
-  gap: 0.2rem;
-  width: 100%;
-  color: var(--ink);
-  text-decoration: none;
-}
-
-.session-map-link:hover,
-.session-map-link:focus-visible {
-  color: var(--accent);
-  outline: none;
-}
-
-.session-map-link:focus-visible {
-  outline: 2px solid rgba(255, 31, 45, 0.35);
-  outline-offset: 3px;
-}
-
-.session-map-link span {
-  color: var(--accent);
-  font-size: 0.76rem;
-  font-weight: 850;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-}
-
-.session-map-link strong {
-  color: var(--ink-bright);
-  overflow-wrap: anywhere;
-}
-
-.session-map-link small {
-  color: var(--ink-muted);
-  line-height: 1.4;
   overflow-wrap: anywhere;
 }
 

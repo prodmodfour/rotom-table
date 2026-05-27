@@ -43,7 +43,7 @@ npm run build
 - [docs/live-session-protocol.md](docs/live-session-protocol.md) — legacy live-session protocol types, message flow, and accepted/rejected command examples.
 - [docs/live-session-socket-protocol.md](docs/live-session-socket-protocol.md) — legacy live-session socket route, message examples, heartbeat, reconnect, command flow, and named-tunnel expectations.
 - [docs/live-session-table-action-commands.md](docs/live-session-table-action-commands.md) — legacy HP, condition, initiative, move/action, hazard, field-effect, and terrain session commands with permissions, conflicts, and limitations.
-- [docs/live-session-client-integration.md](docs/live-session-client-integration.md) — legacy live-session client boundaries, including disconnect and conflict recovery guidance; normal play uses player profiles.
+- [docs/live-session-client-integration.md](docs/live-session-client-integration.md) — legacy live-session client boundary notes; old session-map client helpers are removed and normal play uses player profiles.
 - [docs/live-session-lobby.md](docs/live-session-lobby.md) — direct-only legacy session identity/socket lobby boundaries and smoke checklist; not normal profile-based play.
 - [docs/live-session-host-runtime.md](docs/live-session-host-runtime.md) — npm helpers for guarded LAN and named-tunnel session host startup.
 - [docs/live-session-public-exposure-checks.md](docs/live-session-public-exposure-checks.md) — no-secret safety banner checks for unsafe public/LAN startup states before sharing join codes.
@@ -57,9 +57,8 @@ npm run build
 - [docs/live-session-implementation-maintenance.md](docs/live-session-implementation-maintenance.md) — implementation maintenance guide linking product docs, source areas, validation evidence, and known limitations.
 - [docs/live-session-product-readiness-review.md](docs/live-session-product-readiness-review.md) — concise product/developer readiness review for architecture, table flow, validation, limits, and operator checks.
 - [docs/live-session-readiness-summary.md](docs/live-session-readiness-summary.md) — product/developer readiness summary for validation, evidence links, and architecture confirmation.
-- [docs/live-session-local-mode-maintenance.md](docs/live-session-local-mode-maintenance.md) — local-mode maintenance checks for plain map/sheet workflows, legacy SSE, and session-mode opt-in boundaries.
+- [docs/live-session-local-mode-maintenance.md](docs/live-session-local-mode-maintenance.md) — local-mode maintenance checks for plain map/sheet workflows, profile play, and legacy session isolation.
 - [docs/live-session-quick-tunnel-caveat.md](docs/live-session-quick-tunnel-caveat.md) — Quick Tunnel caveats for temporary development smoke tests only, including legacy SSE limitations.
-- [docs/live-session-multi-tab-smoke.md](docs/live-session-multi-tab-smoke.md) — local multi-tab helper for GM/player session-mode token propagation smoke checks.
 - [docs/live-session-storage.md](docs/live-session-storage.md) — local session snapshot/event-log paths, privacy boundaries, backup guidance, and recovery limits.
 - [docs/live-session-backup-recovery.md](docs/live-session-backup-recovery.md) — private session backup/restore runbook for snapshots, optional event logs, and referenced campaign data.
 - [docs/live-session-persistence-recovery-maintenance.md](docs/live-session-persistence-recovery-maintenance.md) — persistence/recovery maintenance for snapshots, optional event logs, backup docs, cleanup, and local data hygiene.
@@ -187,7 +186,6 @@ Saved sheets, maps, and player profiles are edited by the app itself. Legacy liv
 | `npm run typecheck` | Run Nuxt/Vue TypeScript checks. |
 | `npm test` | Run the Vitest test suite once. |
 | `npm run test:watch` | Run Vitest in watch mode. |
-| `npm run smoke:session:multi-tab` | Legacy helper for isolated live-session lobby/socket maintenance smoke checks; not normal profile-based play. |
 | `npm run check:move-automation` | Check move automation coverage. |
 | `npm run sync:item-sprites` | Sync item sprite assets. |
 | `npm run refactor:loop` | Run the refactor loop helper script. |

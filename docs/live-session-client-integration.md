@@ -16,9 +16,9 @@ Normal player map control now comes from persistent player profiles on the regul
 
 ## Remaining legacy client surfaces
 
-The legacy `/sessions` page, session identity storage, and `WebSocket /api/sessions/socket` helpers remain only for direct maintenance/smoke checks while the old session code exists. They are guarded by `ROTOM_ENABLE_SESSION_HOST=1` and should not be linked from normal app navigation or used as a prerequisite for map play.
+The legacy `/sessions` page and session identity storage remain only for direct maintenance/smoke checks while the old session code exists. The old session-map client helpers, banners, explicit session-map navigation links, and multi-tab session-map smoke helper have been removed. Remaining guarded session endpoints still require `ROTOM_ENABLE_SESSION_HOST=1` and should not be linked from normal app navigation or used as a prerequisite for map play.
 
-Legacy session clients must still avoid exposing GM keys, join codes, hidden maps, raw snapshots, tunnel credentials, or private campaign data. Browser-local session identity remains a continuity aid, not public authentication.
+Legacy session surfaces must still avoid exposing GM keys, join codes, hidden maps, raw snapshots, tunnel credentials, or private campaign data. Browser-local session identity remains a continuity aid, not public authentication.
 
 ## Validation
 
@@ -30,7 +30,7 @@ npm test
 npm run build
 ```
 
-Profile-play behaviour is covered by profile selection, route guard, sheet access, library, token-control, document-backed action, and smoke-flow tests. Legacy session client tests may remain useful for maintaining isolated socket helpers, but they are not the normal play acceptance path.
+Profile-play behaviour is covered by profile selection, route guard, sheet access, library, token-control, document-backed action, and smoke-flow tests. Legacy session endpoint/socket tests may remain useful for maintaining isolated guarded surfaces, but they are not the normal play acceptance path.
 
 ## Boundaries
 

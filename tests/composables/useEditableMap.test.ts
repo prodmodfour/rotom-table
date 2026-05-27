@@ -256,7 +256,7 @@ describe('useEditableMap autosave boundary', () => {
     expect(apiMocks.postJson).not.toHaveBeenCalled()
   })
 
-  it('pauses whole-map autosave in session mode and resumes it for local-first editing', async () => {
+  it('pauses whole-map autosave while disabled and resumes it for local-first editing', async () => {
     const autosaveEnabled = ref(false)
     const editable = useEditableMap('arena-map', { debounceMs: 10, autosaveEnabled })
     await flushPromises()

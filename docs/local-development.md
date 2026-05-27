@@ -22,7 +22,7 @@ npm run dev
 
 Nuxt will print the local URL, usually `http://localhost:3000`. Open the app and choose **GM Login** or **Player Login**. The selected role is stored in the `rotom-role` cookie. Player Login then opens the persistent player profile picker for this browser.
 
-## Local-first versus live-session mode
+## Local-first profile play and legacy live-session hosting
 
 Plain `npm run dev` is local-first mode. Map and sheet routes such as `/maps/<slug>`, `/sheets/<slug>`, and `/sheets/trainers/<slug>` save local JSON through autosave and keep using legacy `/api/events` realtime updates for same-machine or trusted-LAN local editing.
 
@@ -52,11 +52,7 @@ The manual LAN equivalent remains:
 ROTOM_ENABLE_SESSION_HOST=1 npm run dev -- --host 0.0.0.0 --port 3000
 ```
 
-See [live session host runtime scripts](live-session-host-runtime.md) for helper options, safe defaults, and shutdown notes. See [Live session public exposure checks](live-session-public-exposure-checks.md) for no-secret safety banner warnings around public/LAN startup before session-local credentials and authoritative state are ready. See [Live session LAN hosting runbook](live-session-lan-hosting.md), [Live session named Cloudflare Tunnel runbook](live-session-cloudflare-tunnel-hosting.md), and [Live session deployment smoke checklist](live-session-deployment-smoke-checklist.md) only when maintaining the legacy lobby/socket surfaces; they are not instructions for normal profile-based play. See [Live session Quick Tunnel caveat](live-session-quick-tunnel-caveat.md), [Live session security boundaries](live-session-security-boundaries.md), and [Live session dependency and runtime maintenance](live-session-dependency-runtime-maintenance.md) for the checked legacy boundaries. See [live session lobby and manual QA](live-session-lobby.md) for the direct-only legacy lobby checklist. For the legacy client-integration smoke helper, use:
-
-```bash
-npm run smoke:session:multi-tab -- --map <map-slug>
-```
+See [live session host runtime scripts](live-session-host-runtime.md) for helper options, safe defaults, and shutdown notes. See [Live session public exposure checks](live-session-public-exposure-checks.md) for no-secret safety banner warnings around public/LAN startup before session-local credentials and authoritative state are ready. See [Live session LAN hosting runbook](live-session-lan-hosting.md), [Live session named Cloudflare Tunnel runbook](live-session-cloudflare-tunnel-hosting.md), and [Live session deployment smoke checklist](live-session-deployment-smoke-checklist.md) only when maintaining the legacy lobby/socket surfaces; they are not instructions for normal profile-based play. See [Live session Quick Tunnel caveat](live-session-quick-tunnel-caveat.md), [Live session security boundaries](live-session-security-boundaries.md), and [Live session dependency and runtime maintenance](live-session-dependency-runtime-maintenance.md) for the checked legacy boundaries. See [live session lobby and manual QA](live-session-lobby.md) for the direct-only legacy lobby checklist.
 
 The existing local GM/player picker remains a trust switch for local use, not public authentication. For the maintenance checks for plain `npm run dev`, `/maps/<slug>`, sheet autosave, profile-linked control, and legacy SSE local-mode behaviour, see the [Live session local-mode maintenance checks](live-session-local-mode-maintenance.md).
 

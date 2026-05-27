@@ -156,8 +156,8 @@ Patch payloads are intentionally narrow. Clients that need a full recovery after
 
 ## Current limitations and migration notes
 
-- The server and WebSocket command boundaries are implemented and covered by focused tests. The map scene panel now routes explicit session-mode scene events for token delete/send-out, HP, combat stages, conditions, move usage, maneuver/ability/order use, next/previous initiative, hazards, move-created field effects, and terrain voxel edits through command envelopes instead of local whole-map mutation. Local mode still uses the existing local-first handlers, and token move/turn keep their explicit optimistic dispatch/reconciliation path.
-- Legacy local mode still uses local-first JSON saves and legacy SSE where applicable. Session mode must continue to use WebSocket commands and small patches.
+- The server and WebSocket command boundaries remain covered by focused tests for legacy maintenance, but the old client session-map command helpers and explicit session-map UI have been removed. Normal map play uses profile-derived document-backed APIs instead of this legacy command client.
+- Legacy local mode still uses local-first JSON saves and legacy SSE where applicable. Remaining server-side session command tests must stay isolated from normal profile-based map play.
 - This is not public authentication. The existing local role picker remains a trust switch, while Live session commands rely on the session-host flag, hello/auth handshake, GM key, join code, player IDs, client IDs, and server-side assignments.
 - The optional event log is not a full replay guarantee in Live session. Reconnect remains snapshot-safe when replay is unavailable.
 - Ability automation is deliberately limited to known active/session-safe boundaries. Passive abilities or abilities without a Live session automation boundary reject instead of pretending automation happened.

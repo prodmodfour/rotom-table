@@ -39,7 +39,6 @@ The checks confirm these live-session architecture boundaries for the covered fl
 
 These checks complement, but do not replace:
 
-- [Live session multi-tab local smoke script](live-session-multi-tab-smoke.md) for local GM/player browser-tab checks;
 - [Live session deployment smoke checklist](live-session-deployment-smoke-checklist.md) for LAN and named Cloudflare Tunnel deployment validation;
 - [Live session local-mode maintenance checks](live-session-local-mode-maintenance.md) for plain map/sheet workflows, local autosave, and legacy SSE checks;
 - [Live session concurrency benchmark notes](live-session-concurrency-benchmark-notes.md) for latency-sensitive behaviour observations and performance limitations;
