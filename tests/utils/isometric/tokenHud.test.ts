@@ -211,6 +211,18 @@ describe('token HUD HP bar rendering', () => {
     expect(updateTokenHpBar(bar, { currentHp: 6 })).toBe(false)
   })
 
+  it('re-anchors an unchanged HP bar so selection lift cannot accumulate', () => {
+    const bar = buildHpBar(spawnedPokemon())
+
+    expect(updateTokenHpBar(bar)).toBe(true)
+    const anchor = bar.position.clone()
+
+    bar.position.y += 0.08
+
+    expect(updateTokenHpBar(bar)).toBe(false)
+    expect(bar.position.toArray()).toEqual(anchor.toArray())
+  })
+
   it('reports HP bar position, label, conditions, active-turn, and visibility changes', () => {
     const bar = buildHpBar(spawnedPokemon())
 

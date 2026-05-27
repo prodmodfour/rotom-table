@@ -510,6 +510,17 @@ export const updateHpBar = ({
   }
 
   if (bar.visible && sameTokenStatusRenderState(tokenStatusRenderState(bar), nextState)) {
+    // Selection lift is applied after HUD layout each animation frame. Reset
+    // the CSS3D object back to its layout anchor even when the HUD content did
+    // not change, otherwise the post-layout lift offset accumulates and the HP
+    // bar visibly drifts upward while a token is selected.
+    if (
+      bar.position.x !== nextState.x ||
+      bar.position.y !== nextState.y ||
+      bar.position.z !== nextState.z
+    ) {
+      bar.position.set(nextState.x, nextState.y, nextState.z)
+    }
     return false
   }
 
