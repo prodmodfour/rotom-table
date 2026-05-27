@@ -1,6 +1,7 @@
 import type { EventHandler, EventHandlerRequest, H3Event } from 'h3'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { UseCaseHttpError } from '~~/server/utils/useCaseErrors'
+import { subscribeRealtime } from '~~/server/utils/realtime'
 import type { TabletopMap } from '~/types/map'
 
 const mocks = vi.hoisted(() => ({
@@ -87,6 +88,46 @@ describe('map save API route', () => {
       clientId: 'client-1',
       playerProfile: profile,
     })
+  })
+
+  it('publishes linked-player whole-map save events to realtime subscribers', async () => {
+    const map = mapFixture()
+    const profile = {
+      schemaVersion: 1,
+      id: 'profile_ash00000',
+      displayName: 'Ash',
+      linkedCharacters: [{ sheetKind: 'pokemon', sheetSlug: 'pikachu' }],
+    }
+    const events = [
+      { channel: 'map:arena', type: 'updated' as const, clientId: 'client-1', data: map },
+      { channel: 'maps', type: 'updated' as const, clientId: 'client-1', data: { slug: 'arena', name: 'Arena' } },
+    ]
+    const received: unknown[] = []
+    const unsubscribe = subscribeRealtime((event) => received.push(event))
+    const now = vi.spyOn(Date, 'now').mockReturnValue(654_321)
+
+    try {
+      mocks.resolvePlayerProfileForPolicy.mockReturnValue(profile)
+      mocks.saveMapUseCase.mockReturnValue({ ok: true, path: 'data/maps/arena.json', map, events })
+
+      await expect(invokeRoute(saveRoute, {
+        role: 'player',
+        body: {
+          slug: 'arena',
+          map,
+          clientId: 'client-1',
+          profileId: 'profile_ash00000',
+        },
+      })).resolves.toEqual({ ok: true, path: 'data/maps/arena.json', map })
+    } finally {
+      unsubscribe()
+      now.mockRestore()
+    }
+
+    expect(received).toEqual([
+      { ...events[0], timestamp: 654_321 },
+      { ...events[1], timestamp: 654_321 },
+    ])
   })
 
   it('keeps GM map saves independent from player profile selection', async () => {

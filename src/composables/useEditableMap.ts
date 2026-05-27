@@ -160,7 +160,24 @@ export const useEditableMap = (
     assignIfChanged(target, 'updatedAt', next.updatedAt)
   }
 
+  const mapUpdatedAt = (candidate: TabletopMap | null | undefined): number | null => {
+    const value = candidate?.updatedAt
+    return typeof value === 'number' && Number.isFinite(value) ? value : null
+  }
+
+  const isStalePersistedMap = (incoming: TabletopMap): boolean => {
+    const incomingUpdatedAt = mapUpdatedAt(incoming)
+    const currentUpdatedAt = mapUpdatedAt(map.value)
+    return incomingUpdatedAt !== null && currentUpdatedAt !== null && incomingUpdatedAt < currentUpdatedAt
+  }
+
   const applyPersistedMap = (incoming: TabletopMap) => {
+    if (isStalePersistedMap(incoming)) return
+    // A full persisted map response/event is authoritative. Cancel any
+    // queued whole-map write so adopting another tab/device's update or a
+    // document-backed token action does not echo the same state back through
+    // `/api/maps/save` a debounce later.
+    autosave.cancelPendingSave()
     autosave.snapshot.markClean(incoming)
     applyServerMap(incoming)
     status.value = 'idle'
@@ -169,6 +186,11 @@ export const useEditableMap = (
 
   const performSave = async () => {
     if (!autosaveEnabled.value || !map.value) return
+    if (autosave.snapshot.isClean(map.value)) {
+      if (status.value === 'saving') autosave.statusController.markSaved()
+      return
+    }
+
     const snapshot = clonePersistableMapPayload(map.value)
     const playerProfileId = playerProfileIdRef?.value ?? null
 
@@ -182,7 +204,7 @@ export const useEditableMap = (
         ...(playerProfileId ? { profileId: playerProfileId } : {}),
       }),
       onSuccess: (result, { latest }) => {
-        if (!latest) return
+        if (!latest || isStalePersistedMap(result.map)) return
         // Adopt the persisted version (server stamps `updatedAt`).
         autosave.snapshot.markClean(result.map)
         // Splice in the new updatedAt without disturbing other fields the

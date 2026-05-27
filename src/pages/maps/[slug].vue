@@ -408,7 +408,12 @@ interface RecordMoveUsageResponse {
 }
 
 const applyRecordedMapUsage = (incoming: TabletopMap | undefined) => {
-  if (!incoming || !map.value) return
+  if (!incoming) return
+  if (isPlayer.value) {
+    applyPersistedMap(incoming)
+    return
+  }
+  if (!map.value) return
   map.value.moveUsage = incoming.moveUsage
   map.value.updatedAt = incoming.updatedAt
 }
