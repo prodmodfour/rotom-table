@@ -21,7 +21,7 @@ npm install
 npm run dev
 ```
 
-Nuxt will print the local URL, usually `http://localhost:3000`. Open it in a browser and choose **GM Login** for editing/encounter tools or **Player Login** for the shared player-facing view.
+Nuxt will print the local URL, usually `http://localhost:3000`. Open it in a browser and choose **GM Login** for editing/encounter tools or **Player Login** to choose or create the persistent player profile for this browser.
 
 Recommended verification commands:
 
@@ -77,7 +77,7 @@ npm run build
 - **Pokédex browser** — search and filter Pokémon entries, view sprites and detail panes, and jump directly to Pokémon-specific pages.
 - **Reference library** — browse moves, maneuvers, abilities, capabilities, conditions, rules, items, features, and edges.
 - **Encounter tools** — manage JSON encounter tables, roll previews, and generate wild Pokémon sheets into the sheet library.
-- **GM/player access modes** — GM-only routes and controls are hidden from the player role and checked on server routes.
+- **GM/player access modes** — GM-only routes and controls are hidden from the player role and checked on server routes; Player Login asks for a persistent player profile before continuing.
 - **Filesystem-backed data** — maps, sheets, trainers, and encounter tables are stored as JSON in the repository tree for easy inspection, backup, and diffing.
 
 ## Suggested review path
@@ -140,7 +140,7 @@ See [docs/architecture.md](docs/architecture.md) for more detail.
 | Route | Purpose |
 | --- | --- |
 | `/` | Redirects to the map library. |
-| `/login` | Choose the local GM or Player role. |
+| `/login` | Choose the local GM role or select/create the persistent player profile for Player Login. |
 | `/sessions` | Live session lobby for session hosting, GM start/manage, and player join flows. |
 | `/maps` | Map library and folders. |
 | `/maps/:slug` | Map editor/table view. |

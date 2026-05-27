@@ -21,6 +21,10 @@ export interface PlayerProfileListResponse {
   readonly profiles: readonly PlayerProfile[]
 }
 
+export interface PlayerProfileCreateResponse {
+  readonly profile: PlayerProfile
+}
+
 export interface UsePlayerProfilesOptions {
   readonly apiClient?: ApiClient
   readonly selectionStorage?: PlayerProfileSelectionStorage
@@ -30,6 +34,10 @@ export interface UsePlayerProfilesOptions {
 export interface ReloadPlayerProfilesOptions {
   readonly silent?: boolean
   readonly clearMissingSelection?: boolean
+}
+
+export interface CreatePlayerProfileOptions {
+  readonly silent?: boolean
 }
 
 interface RememberPlayerProfileOptions {
@@ -71,6 +79,14 @@ const normalizePlayerProfileListResponse = (response: unknown): PlayerProfile[] 
   }
 
   return response.profiles.map((profile, index) => normalizePlayerProfile(profile, `profiles[${index}]`))
+}
+
+const normalizePlayerProfileCreateResponse = (response: unknown): PlayerProfile => {
+  if (!isRecord(response)) {
+    throw new Error('Player profile create response must be an object.')
+  }
+
+  return normalizePlayerProfile(response.profile, 'profile')
 }
 
 const comparePlayerProfilesForClient = (left: PlayerProfile, right: PlayerProfile): number => {
@@ -233,6 +249,31 @@ export const usePlayerProfiles = (options: UsePlayerProfilesOptions = {}) => {
     }
   }
 
+  const createProfile = async (
+    displayName: unknown,
+    createOptions: CreatePlayerProfileOptions = {},
+  ): Promise<PlayerProfile> => {
+    busy.value = true
+    lastError.value = null
+    if (createOptions.silent !== true) lastNotice.value = null
+
+    try {
+      const response = await apiClient.postJson<unknown>(PLAYER_PROFILE_API_PATHS.create, { displayName })
+      const profile = normalizePlayerProfileCreateResponse(response)
+      rememberProfile(profile, { silent: true })
+      lastError.value = null
+      if (createOptions.silent !== true) {
+        lastNotice.value = `Created and selected player profile ${profile.displayName}.`
+      }
+      return profile
+    } catch (error) {
+      if (createOptions.silent !== true) recordFailure(error)
+      throw error
+    } finally {
+      busy.value = false
+    }
+  }
+
   const clearSelectedProfile = (): void => {
     selectionStorage.clear()
     selectedProfile.value = null
@@ -255,6 +296,8 @@ export const usePlayerProfiles = (options: UsePlayerProfilesOptions = {}) => {
     loadRememberedProfile,
     reloadProfiles,
     reload: reloadProfiles,
+    createProfile,
+    create: createProfile,
     rememberProfile,
     remember: rememberProfile,
     rememberProfileById,

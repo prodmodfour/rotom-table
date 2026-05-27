@@ -170,6 +170,49 @@ describe('usePlayerProfiles', () => {
     ))
   })
 
+  it('creates a player profile from a display name and remembers it for login pickers', async () => {
+    const { storage, stored } = makeStorage()
+    const { apiClient, calls } = makeApiClient({
+      [PLAYER_PROFILE_API_PATHS.create]: () => ({ profile: brockProfile }),
+    })
+    const profiles = usePlayerProfiles({
+      apiClient,
+      selectionStorage: storage,
+      clock: () => SELECTED_AT,
+    })
+
+    await expect(profiles.createProfile('  Brock  ')).resolves.toEqual(brockProfile)
+
+    expect(calls).toEqual([{
+      request: PLAYER_PROFILE_API_PATHS.create,
+      method: 'POST',
+      body: { displayName: '  Brock  ' },
+    }])
+    expect(profiles.profiles.value).toEqual([brockProfile])
+    expect(profiles.selectedProfile.value).toEqual(brockProfile)
+    expect(stored()).toEqual(createRememberedPlayerProfileSelection(brockProfile, SELECTED_AT))
+    expect(profiles.lastNotice.value).toBe('Created and selected player profile Brock.')
+  })
+
+  it('records safe errors for failed profile creation without replacing the selected profile', async () => {
+    const { storage, stored } = makeStorage(rememberedAsh)
+    const { apiClient } = makeApiClient({
+      [PLAYER_PROFILE_API_PATHS.create]: () => {
+        throw { data: { statusMessage: 'displayName is required' } }
+      },
+    })
+    const profiles = usePlayerProfiles({ apiClient, selectionStorage: storage })
+    profiles.loadRememberedProfile()
+
+    await expect(profiles.createProfile('   ')).rejects.toMatchObject({
+      data: { statusMessage: 'displayName is required' },
+    })
+
+    expect(stored()).toEqual(rememberedAsh)
+    expect(profiles.selectedProfileSummary.value).toEqual(rememberedAsh)
+    expect(profiles.lastError.value).toBe('displayName is required')
+  })
+
   it('clears a missing remembered profile after reload so players can recover gracefully', async () => {
     const { storage, stored } = makeStorage(rememberedAsh)
     const { apiClient } = makeApiClient({
