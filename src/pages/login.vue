@@ -3,6 +3,10 @@ import { computed, onMounted, ref } from 'vue'
 import type { AuthRole } from '#shared/auth'
 import type { PlayerProfile } from '#shared/playerProfiles'
 import { resolveLoginRedirectTarget } from '~/utils/loginRedirect'
+import {
+  PLAYER_PROFILE_REQUIRED_QUERY_KEY,
+  profileRequiredLoginNotice,
+} from '~/utils/playerProfileRouteGuards'
 
 useHead({ title: 'Login · Rotom Table' })
 
@@ -30,6 +34,9 @@ const redirectTarget = (nextRole: AuthRole) =>
 
 const showPlayerProfilePicker = computed(() => (
   playerProfilePickerRequested.value || role.value === 'player'
+))
+const playerProfileGuardNotice = computed(() => profileRequiredLoginNotice(
+  route.query[PLAYER_PROFILE_REQUIRED_QUERY_KEY],
 ))
 
 const trimmedNewProfileDisplayName = computed(() => newProfileDisplayName.value.trim())
@@ -144,6 +151,9 @@ onMounted(() => {
           profile is remembered in this browser for future player logins.
         </p>
 
+        <p v-if="playerProfileGuardNotice" class="profile-message profile-message--notice">
+          {{ playerProfileGuardNotice }}
+        </p>
         <p v-if="profileNotice" class="profile-message profile-message--notice">
           {{ profileNotice }}
         </p>
