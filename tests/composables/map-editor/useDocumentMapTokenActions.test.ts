@@ -106,4 +106,48 @@ describe('useDocumentMapTokenActions', () => {
     expect(actions.status.value).toBe('idle')
     expect(actions.lastError.value).toBeNull()
   })
+
+  it('posts document-backed table actions and applies returned sheet updates', async () => {
+    const map = mapFixture()
+    const profileId = ref(parsePlayerProfileId('profile_ash00000'))
+    const applyPersistedMap = vi.fn()
+    const applySheetUpdate = vi.fn()
+    const sheetUpdate = {
+      kind: 'pokemon' as const,
+      slug: 'pikachu',
+      path: 'data/pokemon/pikachu.json',
+      sheet: { slug: 'pikachu', combat: { conditions: ['Burned'] } },
+    }
+    apiMocks.postJson.mockResolvedValue({
+      ok: true,
+      path: 'data/maps/arena-map.json',
+      map,
+      action: { type: 'ability', placementId: 'token-pikachu', name: 'Healer' },
+      sheetUpdates: [sheetUpdate],
+    })
+
+    const actions = useDocumentMapTokenActions({
+      slug: 'arena-map',
+      playerProfileId: profileId,
+      applyPersistedMap,
+      applySheetUpdate,
+    })
+    const result = await actions.useAbility({
+      placementId: 'token-pikachu',
+      abilityName: 'Healer',
+      targetPlacementId: 'target-token',
+    })
+
+    expect(result.dispatched).toBe(true)
+    expect(apiMocks.postJson).toHaveBeenCalledWith(MAP_API_PATHS.useAbility, {
+      slug: 'arena-map',
+      clientId: 'ssr',
+      profileId: 'profile_ash00000',
+      placementId: 'token-pikachu',
+      abilityName: 'Healer',
+      targetPlacementId: 'target-token',
+    })
+    expect(applyPersistedMap).toHaveBeenCalledWith(map)
+    expect(applySheetUpdate).toHaveBeenCalledWith(sheetUpdate)
+  })
 })

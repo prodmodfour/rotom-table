@@ -13,11 +13,26 @@ interface ReadonlyValueRef<TValue> {
 
 export type DocumentMapTokenActionStatus = 'idle' | 'saving' | 'error'
 
+export interface DocumentMapTokenActionSheetUpdate {
+  kind: 'pokemon' | 'trainer'
+  slug: string
+  path: string
+  sheet: Record<string, unknown>
+}
+
 export interface DocumentMapTokenActionResponse {
   ok: true
   path: string
   map: TabletopMap
-  placement: SheetPlacement
+  placement?: SheetPlacement
+  action?: {
+    type: 'maneuver' | 'ability' | 'order'
+    placementId: string
+    targetPlacementId?: string
+    name: string
+    category?: string
+  }
+  sheetUpdates?: DocumentMapTokenActionSheetUpdate[]
 }
 
 export interface DocumentMapTokenActionDispatchResult {
@@ -30,6 +45,7 @@ export interface UseDocumentMapTokenActionsOptions {
   slug: string
   playerProfileId?: ReadonlyValueRef<PlayerProfileId | null | undefined>
   applyPersistedMap?: (map: TabletopMap) => void
+  applySheetUpdate?: (update: DocumentMapTokenActionSheetUpdate) => void
 }
 
 export interface UseDocumentMapTokenActionsReturn {
@@ -44,6 +60,21 @@ export interface UseDocumentMapTokenActionsReturn {
   turnToken: (payload: {
     placementId: string
     facing: TokenFacingDirection
+  }) => Promise<DocumentMapTokenActionDispatchResult>
+  useManeuver: (payload: {
+    placementId: string
+    maneuverName: string
+    targetPlacementId?: string
+  }) => Promise<DocumentMapTokenActionDispatchResult>
+  useAbility: (payload: {
+    placementId: string
+    abilityName: string
+    targetPlacementId?: string
+  }) => Promise<DocumentMapTokenActionDispatchResult>
+  useOrder: (payload: {
+    placementId: string
+    orderName: string
+    targetPlacementId?: string
   }) => Promise<DocumentMapTokenActionDispatchResult>
 }
 
@@ -78,6 +109,7 @@ export const useDocumentMapTokenActions = (
         ...body,
       })
       options.applyPersistedMap?.(response.map)
+      for (const update of response.sheetUpdates ?? []) options.applySheetUpdate?.(update)
       status.value = 'idle'
       return { dispatched: true, response }
     } catch (error) {
@@ -105,11 +137,41 @@ export const useDocumentMapTokenActions = (
     },
   )
 
+  const useManeuver: UseDocumentMapTokenActionsReturn['useManeuver'] = (payload) => runAction(
+    MAP_API_PATHS.useManeuver,
+    {
+      placementId: payload.placementId,
+      maneuverName: payload.maneuverName,
+      ...(payload.targetPlacementId ? { targetPlacementId: payload.targetPlacementId } : {}),
+    },
+  )
+
+  const useAbility: UseDocumentMapTokenActionsReturn['useAbility'] = (payload) => runAction(
+    MAP_API_PATHS.useAbility,
+    {
+      placementId: payload.placementId,
+      abilityName: payload.abilityName,
+      ...(payload.targetPlacementId ? { targetPlacementId: payload.targetPlacementId } : {}),
+    },
+  )
+
+  const useOrder: UseDocumentMapTokenActionsReturn['useOrder'] = (payload) => runAction(
+    MAP_API_PATHS.useOrder,
+    {
+      placementId: payload.placementId,
+      orderName: payload.orderName,
+      ...(payload.targetPlacementId ? { targetPlacementId: payload.targetPlacementId } : {}),
+    },
+  )
+
   return {
     status,
     lastError,
     clearError,
     moveToken,
     turnToken,
+    useManeuver,
+    useAbility,
+    useOrder,
   }
 }

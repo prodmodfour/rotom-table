@@ -2,6 +2,7 @@ import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { mapChannel, mapsChannel, sheetChannel, sheetsChannel, type RealtimeEvent } from '#shared/realtime'
 import { findMove } from '~~/data/ptuReference'
 import type { AuthRole } from '#shared/auth'
+import type { PlayerProfile } from '#shared/playerProfiles'
 import type { SheetKind } from '#shared/sheets'
 import type { TabletopMap } from '~/types/map'
 import type { ParsedMoveFrequency, MoveFrequencyKind } from '~/utils/moveUsage'
@@ -21,9 +22,9 @@ import { relativeToProjectRoot } from '../utils/fsPaths'
 import { findMapFile, readMapFile, writeMapFile } from '../utils/mapStorage'
 import { summarizeMap } from '../utils/mapSummaries'
 import { canSaveMap } from '../policies/mapPolicy'
+import { actorCanControlMapPlacement } from '../policies/playerProfileTokenControlPolicy'
 import {
   readSheetFile,
-  sheetIsPlayerAccessible,
   stripDerivedSheetFields,
   writeSheetFile,
 } from '../utils/sheetStorage'
@@ -37,6 +38,7 @@ export interface RecordMoveUsageInput {
   placementId: string
   moveName: string
   clientId?: string
+  playerProfile?: PlayerProfile | null
 }
 
 interface SheetFileRecord {
@@ -50,7 +52,6 @@ export interface RecordMoveUsageDependencies {
   writeMap?: (path: string, map: TabletopMap) => void
   readSheet?: (kind: SheetKind, slug: string) => SheetFileRecord | null
   writeSheet?: (path: string, sheet: Record<string, unknown>) => void
-  canControlSheet?: (kind: SheetKind, slug: string) => boolean
   now?: () => number
   relativePath?: (path: string) => string
 }
@@ -347,7 +348,6 @@ export const recordMoveUsageUseCase = (
   const writeMap = dependencies.writeMap ?? writeMapFile
   const readSheet = dependencies.readSheet ?? ((kind: SheetKind, slug: string) => readSheetFile<Record<string, unknown>>(kind, slug))
   const writeSheet = dependencies.writeSheet ?? writeSheetFile
-  const canControlSheet = dependencies.canControlSheet ?? sheetIsPlayerAccessible
   const now = dependencies.now ?? Date.now
   const relativePath = dependencies.relativePath ?? relativeToProjectRoot
 
@@ -364,8 +364,15 @@ export const recordMoveUsageUseCase = (
     throw new RecordMoveUsageUseCaseError(404, `Placement ${input.placementId} not found`)
   }
 
-  if (input.role === 'player' && !canControlSheet(placement.sheetKind, placement.sheetSlug)) {
-    throw new RecordMoveUsageUseCaseError(403, 'Sheet is not marked as player accessible')
+  if (!actorCanControlMapPlacement({
+    role: input.role,
+    profile: input.playerProfile,
+    placement,
+  })) {
+    const message = input.role === 'player' && !input.playerProfile
+      ? 'Select a player profile to control linked map tokens'
+      : 'Token is not linked to selected player profile'
+    throw new RecordMoveUsageUseCaseError(403, message)
   }
 
   const sheetFile = readSheet(placement.sheetKind, placement.sheetSlug)

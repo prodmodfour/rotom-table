@@ -1,7 +1,8 @@
-import type { ComputedRef, Ref } from 'vue'
+import { ref, type ComputedRef, type Ref } from 'vue'
 import { useApiClient } from '~/composables/useApiClient'
 import { SHEET_API_PATHS } from '~/utils/apiRoutes'
 import { getClientId as defaultGetClientId } from '~/utils/clientId'
+import { getErrorMessage } from '~/utils/errorMessages'
 import {
   applyAbilityActivationToSheet,
   applyCombatStagesToSheet,
@@ -14,6 +15,7 @@ import {
   type PlacementSheetUpdater,
   type SheetLookupMaps,
 } from '~/utils/sheetMutations'
+import type { PlayerProfileId } from '#shared/playerProfiles'
 import type { SheetKind, TabletopMap } from '~/types/map'
 import type {
   MoveAutomationCombatStageUpdate,
@@ -31,14 +33,20 @@ export interface SavePlacedSheetRequest {
   slug: string
   sheet: Record<string, unknown>
   clientId: string
+  profileId?: PlayerProfileId
 }
 
 export type SavePlacedSheet = (request: SavePlacedSheetRequest) => Promise<void>
+
+interface ReadonlyValueRef<TValue> {
+  readonly value: TValue
+}
 
 export interface UseTokenSheetMutationsOptions {
   map: Ref<TabletopMap | null>
   sheetLookup: ComputedRef<SheetLookupMaps>
   canControlPlacement: (id: string) => boolean
+  playerProfileId?: ReadonlyValueRef<PlayerProfileId | null | undefined>
   getClientId?: () => string
   saveSheet?: SavePlacedSheet
   logError?: (label: string, error: unknown) => void
@@ -52,10 +60,22 @@ export const useTokenSheetMutations = ({
   map,
   sheetLookup,
   canControlPlacement,
+  playerProfileId,
   getClientId = defaultGetClientId,
   saveSheet = savePlacedSheetWithFetch,
   logError = (label, error) => console.error(`[${label}] save failed`, error),
 }: UseTokenSheetMutationsOptions) => {
+  const lastError = ref<string | null>(null)
+
+  const clearError = () => {
+    lastError.value = null
+  }
+
+  const profileRequestFields = (): { profileId?: PlayerProfileId } => {
+    const profileId = playerProfileId?.value ?? null
+    return profileId ? { profileId } : {}
+  }
+
   const updatePlacedSheet = async (
     id: string,
     update: PlacementSheetUpdater,
@@ -74,16 +94,19 @@ export const useTokenSheetMutations = ({
     if (!context) return false
 
     commitSheetUpdate(context)
+    lastError.value = null
     try {
       await saveSheet({
         kind: context.kind,
         slug: context.slug,
         sheet: toPersistableSheetPayload(context.updated),
         clientId: getClientId(),
+        ...profileRequestFields(),
       })
       return true
     } catch (error) {
       rollbackSheetUpdate(context)
+      lastError.value = getErrorMessage(error, { fallback: 'Token sheet action failed' })
       logError(logLabel, error)
       return false
     }
@@ -139,6 +162,8 @@ export const useTokenSheetMutations = ({
   }
 
   return {
+    lastError,
+    clearError,
     updatePlacedSheet,
     modifyHp,
     modifyCombatStages,

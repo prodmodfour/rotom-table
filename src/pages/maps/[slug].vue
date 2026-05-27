@@ -84,10 +84,20 @@ const {
 })
 const { pokemonBySlug, trainerBySlug, reloadRuntimeSheets } = useLiveSheets()
 const { postJson } = useApiClient()
+const applyDocumentSheetUpdate = (update: { kind: 'pokemon' | 'trainer'; slug: string; sheet: Record<string, unknown> }) => {
+  if (update.kind === 'pokemon') {
+    const previous = pokemonBySlug.value.get(update.slug)
+    pokemonBySlug.value.set(update.slug, { ...(previous ?? {}), ...update.sheet } as CharacterSheet)
+    return
+  }
+  const previous = trainerBySlug.value.get(update.slug)
+  trainerBySlug.value.set(update.slug, { ...(previous ?? {}), ...update.sheet } as TrainerSheet)
+}
 const documentTokenActions = useDocumentMapTokenActions({
   slug,
   playerProfileId: computed(() => (isPlayer.value ? selectedProfileId.value : null)),
   applyPersistedMap,
+  applySheetUpdate: applyDocumentSheetUpdate,
 })
 
 watch(renamedTo, (newSlug) => {
@@ -477,6 +487,7 @@ const nextInitiativeAndExpireAoo = () => {
 }
 
 const {
+  lastError: tokenSheetMutationError,
   modifyHp,
   modifyCombatStages,
   modifyConditions,
@@ -485,6 +496,7 @@ const {
   map,
   sheetLookup,
   canControlPlacement,
+  playerProfileId: computed(() => (isPlayer.value ? selectedProfileId.value : null)),
 })
 
 const modifyHpFromScene: typeof modifyHp = async (payload, options) => {
@@ -558,6 +570,7 @@ const recordMoveUsage = async (request: { placementId: string; moveName: string 
     placementId: request.placementId,
     moveName: request.moveName,
     clientId: getClientId(),
+    ...(isPlayer.value && selectedProfileId.value ? { profileId: selectedProfileId.value } : {}),
   })
   applyRecordedMapUsage(response.map)
   applyRecordedSheetUsage(response)
@@ -693,12 +706,20 @@ const {
   modifyConditions: modifyConditionsFromScene,
   modifyAbilityActivation,
   dispatchAbilityUse: (event) => {
-    if (!sessionMoveTokenEnabled.value) return undefined
-    return sessionSceneCommands.dispatchUseAbility({
-      id: event.userId,
+    if (sessionMoveTokenEnabled.value) {
+      return sessionSceneCommands.dispatchUseAbility({
+        id: event.userId,
+        abilityName: event.abilityName,
+        targetTokenId: event.targetTokenId,
+      }).dispatched
+    }
+    if (!shouldUseDocumentTokenActions()) return undefined
+    void documentTokenActions.useAbility({
+      placementId: event.userId,
       abilityName: event.abilityName,
-      targetTokenId: event.targetTokenId,
-    }).dispatched
+      ...(event.targetTokenId ? { targetPlacementId: event.targetTokenId } : {}),
+    })
+    return true
   },
   onBeforeNonImmediateAction: () => {
     attackOfOpportunityPanel?.clearAttackOfOpportunityPromptsForNonImmediateAction()
@@ -717,12 +738,20 @@ const {
   trainerBySlug,
   canControlPlacement,
   dispatchManeuverUse: (event) => {
-    if (!sessionMoveTokenEnabled.value) return undefined
-    return sessionSceneCommands.dispatchUseManeuver({
-      id: event.userId,
+    if (sessionMoveTokenEnabled.value) {
+      return sessionSceneCommands.dispatchUseManeuver({
+        id: event.userId,
+        maneuverName: event.maneuverName,
+        targetTokenId: event.targetTokenId,
+      }).dispatched
+    }
+    if (!shouldUseDocumentTokenActions()) return undefined
+    void documentTokenActions.useManeuver({
+      placementId: event.userId,
       maneuverName: event.maneuverName,
-      targetTokenId: event.targetTokenId,
-    }).dispatched
+      ...(event.targetTokenId ? { targetPlacementId: event.targetTokenId } : {}),
+    })
+    return true
   },
   onBeforeManeuverAction: () => {
     attackOfOpportunityPanel?.clearAttackOfOpportunityPromptsForNonImmediateAction()
@@ -735,12 +764,20 @@ const orderActionPanel = useOrderActionPanel({
   trainerBySlug,
   canControlPlacement,
   dispatchOrderUse: (event) => {
-    if (!sessionMoveTokenEnabled.value) return undefined
-    return sessionSceneCommands.dispatchUseOrder({
-      id: event.userId,
+    if (sessionMoveTokenEnabled.value) {
+      return sessionSceneCommands.dispatchUseOrder({
+        id: event.userId,
+        orderName: event.orderName,
+        targetTokenId: event.targetTokenId,
+      }).dispatched
+    }
+    if (!shouldUseDocumentTokenActions()) return undefined
+    void documentTokenActions.useOrder({
+      placementId: event.userId,
       orderName: event.orderName,
-      targetTokenId: event.targetTokenId,
-    }).dispatched
+      ...(event.targetTokenId ? { targetPlacementId: event.targetTokenId } : {}),
+    })
+    return true
   },
   onBeforeOrderAction: () => {
     attackOfOpportunityPanel?.clearAttackOfOpportunityPromptsForNonImmediateAction()
@@ -858,7 +895,9 @@ const selectActionAutomationTarget = (targetId: string) => {
 }
 
 const sceneActionError = computed(() => {
-  if (!sessionMoveTokenEnabled.value) return moveUsageError.value
+  if (!sessionMoveTokenEnabled.value) {
+    return documentTokenActions.lastError.value ?? tokenSheetMutationError.value ?? moveUsageError.value
+  }
   const tokenDispatchError = sessionMap.lastCommandReject.value === null
     ? sessionMoveTokenDispatch.lastError.value
     : null
