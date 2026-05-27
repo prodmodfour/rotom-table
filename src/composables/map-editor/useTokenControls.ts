@@ -25,13 +25,11 @@ import {
   nextTokenFacingForPlacement,
   setTokenFacingOnPlacement,
   tokenFacingForPlacement,
-  tokenFacingStoresLegacyTurned,
   tokenFacingTowardPoint,
 } from '~/utils/tokenFacing'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { GridAnchor, MapVoxelV2, SheetPlacement, TabletopMap } from '~/types/map'
 import type { SpawnedPokemon } from '~/types/pokemon'
-import type { TokenFacingDirection } from '~/types/tokenFacing'
 import type { TrainerSheet } from '~/types/trainerSheet'
 
 interface BooleanRef {
@@ -40,26 +38,6 @@ interface BooleanRef {
 
 interface ReadonlyValueRef<TValue> {
   readonly value: TValue
-}
-
-interface SessionMoveTokenPositionOverrideLike {
-  readonly tokenId: string
-  readonly mapSlug: string
-  readonly position: GridAnchor
-}
-
-interface SessionTurnTokenFacingOverrideLike {
-  readonly tokenId: string
-  readonly mapSlug: string
-  readonly facing: TokenFacingDirection
-}
-
-interface SessionMoveTokenDispatcherLike {
-  readonly enabled: BooleanRef
-  readonly tokenPositionOverrides?: ReadonlyValueRef<readonly SessionMoveTokenPositionOverrideLike[]>
-  readonly tokenFacingOverrides?: ReadonlyValueRef<readonly SessionTurnTokenFacingOverrideLike[]>
-  dispatchMoveToken(payload: { placement: SheetPlacement; to: GridAnchor }): { readonly dispatched: boolean }
-  dispatchTurnToken?(payload: { placement: SheetPlacement; facing: TokenFacingDirection }): { readonly dispatched: boolean }
 }
 
 interface TokenControlOverrideLike {
@@ -85,8 +63,6 @@ export interface UseTokenControlsOptions {
   canSendOutTokens?: BooleanRef
   selectionDisabled?: BooleanRef
   tokenControl?: TokenControlOverrideLike
-  sessionMoveTokenDispatcher?: SessionMoveTokenDispatcherLike
-  sessionTokenControl?: TokenControlOverrideLike
   createPlacementId?: () => string
   now?: () => number
   maxMovementLogEntries?: number
@@ -120,8 +96,6 @@ export const useTokenControls = ({
   canSendOutTokens = canSpawnTokens,
   selectionDisabled,
   tokenControl,
-  sessionMoveTokenDispatcher,
-  sessionTokenControl,
   createPlacementId = defaultCreatePlacementId,
   now,
   maxMovementLogEntries,
@@ -134,77 +108,10 @@ export const useTokenControls = ({
     trainer: trainerBySlug.value ?? EMPTY_TRAINER_SHEETS,
   }))
 
-  const cloneGridAnchor = (position: GridAnchor): GridAnchor => ({
-    x: position.x,
-    y: position.y,
-    z: position.z,
-  })
-
-  const sessionPositionOverrideById = computed(() => {
-    const currentMap = map.value
-    const overrides = sessionMoveTokenDispatcher?.tokenPositionOverrides?.value
-    if (!currentMap || !sessionMoveTokenDispatcher?.enabled.value || !overrides?.length) {
-      return new Map<string, GridAnchor>()
-    }
-
-    const byId = new Map<string, GridAnchor>()
-    for (const override of overrides) {
-      if (override.mapSlug !== currentMap.slug) continue
-      byId.set(override.tokenId, cloneGridAnchor(override.position))
-    }
-    return byId
-  })
-
-  const sessionFacingOverrideById = computed(() => {
-    const currentMap = map.value
-    const overrides = sessionMoveTokenDispatcher?.tokenFacingOverrides?.value
-    if (!currentMap || !sessionMoveTokenDispatcher?.enabled.value || !overrides?.length) {
-      return new Map<string, TokenFacingDirection>()
-    }
-
-    const byId = new Map<string, TokenFacingDirection>()
-    for (const override of overrides) {
-      if (override.mapSlug !== currentMap.slug) continue
-      byId.set(override.tokenId, override.facing)
-    }
-    return byId
-  })
-
-  const placementsWithSessionOverrides = computed(() => {
-    const currentMap = map.value
-    if (!currentMap) return []
-
-    const positionOverrides = sessionPositionOverrideById.value
-    const facingOverrides = sessionFacingOverrideById.value
-    if (positionOverrides.size === 0 && facingOverrides.size === 0) return currentMap.placements
-
-    return currentMap.placements.map((placement) => {
-      const position = positionOverrides.get(placement.id)
-      const facing = facingOverrides.get(placement.id)
-      if (position === undefined && facing === undefined) return placement
-      return {
-        ...placement,
-        ...(position === undefined ? {} : { position: cloneGridAnchor(position) }),
-        ...(facing === undefined ? {} : {
-          facing,
-          turned: tokenFacingStoresLegacyTurned(facing),
-        }),
-      }
-    })
-  })
-
   const spawnedPokemon = computed<SpawnedPokemon[]>(() => {
     const currentMap = map.value
     if (!currentMap) return []
-
-    if (sessionPositionOverrideById.value.size === 0 && sessionFacingOverrideById.value.size === 0) {
-      return placementsToSpawned(currentMap, sheetLookup.value)
-    }
-
-    return placementsToSpawned({
-      ...currentMap,
-      placements: placementsWithSessionOverrides.value,
-    }, sheetLookup.value)
+    return placementsToSpawned(currentMap, sheetLookup.value)
   })
 
   const placementIdsFromOverride = (
@@ -218,9 +125,6 @@ export const useTokenControls = ({
 
   const controllablePlacementIds = computed(() => {
     if (!map.value) return []
-    if (sessionTokenControl?.enabled.value) {
-      return placementIdsFromOverride(sessionTokenControl, map.value.placements)
-    }
     if (tokenControl?.enabled.value) {
       return placementIdsFromOverride(tokenControl, map.value.placements)
     }
@@ -231,22 +135,6 @@ export const useTokenControls = ({
   const controllablePlacementIdSet = computed(() => new Set(controllablePlacementIds.value))
   const canControlPlacement = (id: string): boolean => controllablePlacementIdSet.value.has(id)
   const placementById = (id: string) => map.value?.placements.find((placement) => placement.id === id) ?? null
-  const placementForSessionDispatch = (id: string): SheetPlacement | null => {
-    const placement = placementById(id)
-    if (!placement) return null
-
-    const overridePosition = sessionPositionOverrideById.value.get(id)
-    const overrideFacing = sessionFacingOverrideById.value.get(id)
-    if (overridePosition === undefined && overrideFacing === undefined) return placement
-    return {
-      ...placement,
-      ...(overridePosition === undefined ? {} : { position: cloneGridAnchor(overridePosition) }),
-      ...(overrideFacing === undefined ? {} : {
-        facing: overrideFacing,
-        turned: tokenFacingStoresLegacyTurned(overrideFacing),
-      }),
-    }
-  }
   const tokenSendOutOptionsById = computed(() => buildTokenSendOutOptionsByPlacementId(
     map.value?.placements ?? [],
     sheetLookup.value,
@@ -355,17 +243,7 @@ export const useTokenControls = ({
     if (!map.value || !canControlPlacement(id)) return
     const placement = placementById(id)
     if (!placement) return
-    const sessionPlacement = placementForSessionDispatch(id) ?? placement
-    const facing = nextTokenFacingForPlacement(sessionPlacement)
-
-    if (sessionMoveTokenDispatcher?.enabled.value) {
-      const result = sessionMoveTokenDispatcher.dispatchTurnToken?.({
-        placement: sessionPlacement,
-        facing,
-      })
-      if (result?.dispatched) clearSelection()
-      return
-    }
+    const facing = nextTokenFacingForPlacement(placement)
 
     setTokenFacingOnPlacement(placement, facing)
   }
@@ -374,15 +252,6 @@ export const useTokenControls = ({
     if (!map.value || !canControlPlacement(payload.id)) return
     const placement = placementById(payload.id)
     if (!placement) return
-
-    if (sessionMoveTokenDispatcher?.enabled.value) {
-      const result = sessionMoveTokenDispatcher.dispatchMoveToken({
-        placement: placementForSessionDispatch(payload.id) ?? placement,
-        to: payload.position,
-      })
-      if (result.dispatched) clearSelection()
-      return
-    }
 
     const from = { ...placement.position }
     const to = { ...payload.position }

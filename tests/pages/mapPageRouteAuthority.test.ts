@@ -22,5 +22,22 @@ describe('map page route authority', () => {
     expect(mapPage).not.toContain('useSessionMapSceneCommands')
     expect(mapPage).not.toContain('sessionMoveTokenEnabled')
     expect(mapPage).not.toContain('autosaveEnabled: computed(() => !session')
+
+    const scenePanel = readSource('src/components/map/MapScenePanel.vue')
+    expect(scenePanel).not.toContain('SessionCommandRejectionBanner')
+    expect(scenePanel).not.toContain('SessionConnectionStatusBanner')
+    expect(scenePanel).not.toContain('SessionPresencePanel')
+    expect(scenePanel).not.toContain('refresh-session-snapshot')
+    expect(scenePanel).not.toContain('dismiss-session-command-rejection')
+
+    const tokenControls = readSource('src/composables/map-editor/useTokenControls.ts')
+    expect(tokenControls).not.toContain('sessionMoveTokenDispatcher')
+    expect(tokenControls).not.toContain('sessionTokenControl')
+    expect(tokenControls).not.toContain('dispatchMoveToken')
+    expect(tokenControls).not.toContain('dispatchTurnToken')
+
+    const mapAccess = readSource('src/composables/map-editor/useMapAccess.ts')
+    expect(mapAccess).not.toContain('sessionModeEnabled')
+    expect(mapAccess).not.toContain('hasAuthoritativeSessionState')
   })
 })

@@ -134,12 +134,12 @@ export const useManeuverActionPanel = ({
     if (!map.value || !canControlPlacement(user.id)) return false
 
     onBeforeManeuverAction?.({ userId: user.id, maneuverName: maneuver.name })
-    const sessionDispatchResult = dispatchManeuverUse?.({
+    const dispatchResult = dispatchManeuverUse?.({
       userId: user.id,
       maneuverName: maneuver.name,
       ...(target === null ? {} : { targetTokenId: target.id }),
     })
-    if (sessionDispatchResult !== undefined) return sessionDispatchResult
+    if (dispatchResult !== undefined) return dispatchResult
 
     map.value.metadata = appendManeuverLogEntry(map.value.metadata, {
       userId: user.id,

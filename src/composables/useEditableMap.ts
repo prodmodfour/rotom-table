@@ -46,9 +46,8 @@ export interface UseEditableMapOptions {
   readonly debounceMs?: number
   /**
    * Controls whether mutations to this persisted map ref may write through the
-   * local-first whole-map autosave route. Session-mode map views pass `false`
-   * so live play uses session commands and server-owned snapshots instead of
-   * browser-owned map saves.
+   * local-first whole-map autosave route. External document actions can pause
+   * autosave while they adopt server-persisted map responses.
    */
   readonly autosaveEnabled?: BooleanRef
   readonly playerProfileId?: ReadonlyValueRef<PlayerProfileId | null | undefined>
@@ -262,9 +261,8 @@ export const useEditableMap = (
     if (!autosave.task.hasPending()) return
     // Skip flushing the pending save when the slug was renamed away
     // from us — the old filename no longer exists on disk. Also cancel
-    // pending local-first writes while the map view is in session mode;
-    // session clients must send explicit session commands instead of a
-    // browser-owned whole-map save.
+    // pending local-first writes while autosave is intentionally paused
+    // so external document actions can remain the write authority.
     if (renamedTo.value || !autosaveEnabled.value) {
       autosave.cancelPendingSave()
       return
