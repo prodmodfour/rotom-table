@@ -6,7 +6,7 @@ import {
   type PlayerProfile,
 } from '#shared/playerProfiles'
 import { useGmPlayerProfileManagement } from '~/composables/useGmPlayerProfileManagement'
-import { PLAYER_PROFILE_API_PATHS } from '~/utils/apiRoutes'
+import { PLAYER_PROFILE_API_PATHS, SHEET_API_PATHS } from '~/utils/apiRoutes'
 import type { ApiClient } from '~/utils/apiClient'
 
 const ashProfile: PlayerProfile = {
@@ -23,7 +23,7 @@ const mistyProfile: PlayerProfile = {
   linkedCharacters: [],
 }
 
-const makeApiClient = (handlers: Record<string, () => unknown | Promise<unknown>>) => {
+const makeApiClient = (handlers: Record<string, (body?: unknown) => unknown | Promise<unknown>>) => {
   const calls: { request: string; method: 'GET' | 'POST'; body?: unknown }[] = []
   const apiClient: ApiClient = {
     getJson: vi.fn(async (request: string) => {
@@ -36,7 +36,7 @@ const makeApiClient = (handlers: Record<string, () => unknown | Promise<unknown>
       calls.push({ request, method: 'POST', body })
       const handler = handlers[request]
       if (handler === undefined) throw new Error(`unexpected POST request: ${request}`)
-      return await handler()
+      return await handler(body)
     }) as ApiClient['postJson'],
   }
 
@@ -124,5 +124,93 @@ describe('useGmPlayerProfileManagement', () => {
       `Player profile ${ashProfile.id} has not been loaded.`,
     )
     expect(management.lastError.value).toBe(`Player profile ${ashProfile.id} has not been loaded.`)
+  })
+
+  it('loads linkable character sheet options and filters already linked sheets', async () => {
+    const { apiClient, calls } = makeApiClient({
+      [PLAYER_PROFILE_API_PATHS.list]: () => ({ profiles: [ashProfile] }),
+      [SHEET_API_PATHS.list]: () => ({
+        pokemonSheets: [{ slug: 'pikachu', nickname: 'Pikachu', species: 'Pikachu', folder: 'party' }],
+        trainerSheets: [{ slug: 'brock', name: 'Brock', folder: 'leaders' }],
+      }),
+    })
+    const management = useGmPlayerProfileManagement({ apiClient })
+
+    await management.loadProfiles()
+    management.selectProfile(ashProfile.id)
+    await expect(management.loadLinkableCharacters()).resolves.toMatchObject([
+      { key: 'trainer:brock', label: 'Brock · Trainer sheet', detailsLabel: 'brock · leaders' },
+      { key: 'pokemon:pikachu', label: 'Pikachu · Pokémon sheet', detailsLabel: 'pikachu · party' },
+    ])
+
+    expect(calls).toEqual([
+      { request: PLAYER_PROFILE_API_PATHS.list, method: 'GET' },
+      { request: SHEET_API_PATHS.list, method: 'GET' },
+    ])
+    expect(management.availableLinkOptions.value.map((option) => option.key)).toEqual(['trainer:brock'])
+    expect(management.lastNotice.value).toBe('Loaded 2 linkable character sheets.')
+  })
+
+  it('links and unlinks selected profile characters through the profile update API', async () => {
+    const ashWithTrainer: PlayerProfile = {
+      ...ashProfile,
+      linkedCharacters: [
+        { sheetKind: 'pokemon', sheetSlug: 'pikachu' },
+        { sheetKind: 'trainer', sheetSlug: 'brock' },
+      ],
+    }
+    const ashTrainerOnly: PlayerProfile = {
+      ...ashProfile,
+      linkedCharacters: [{ sheetKind: 'trainer', sheetSlug: 'brock' }],
+    }
+    const updateBodies: unknown[] = []
+    const { apiClient } = makeApiClient({
+      [PLAYER_PROFILE_API_PATHS.list]: () => ({ profiles: [ashProfile] }),
+      [SHEET_API_PATHS.list]: () => ({
+        pokemonSheets: [{ slug: 'pikachu', nickname: 'Pikachu', species: 'Pikachu' }],
+        trainerSheets: [{ slug: 'brock', name: 'Brock' }],
+      }),
+      [PLAYER_PROFILE_API_PATHS.update]: (body) => {
+        updateBodies.push(body)
+        const linkedCharacters = (body as { linkedCharacters: unknown[] }).linkedCharacters
+        return {
+          profile: linkedCharacters.some((ref) => (
+            (ref as { sheetKind?: unknown; sheetSlug?: unknown }).sheetKind === 'pokemon'
+          )) ? ashWithTrainer : ashTrainerOnly,
+        }
+      },
+    })
+    const management = useGmPlayerProfileManagement({ apiClient })
+
+    await management.loadProfiles()
+    management.selectProfile(ashProfile.id)
+    await management.loadLinkableCharacters()
+
+    await expect(management.linkCharacterToSelectedProfile({
+      sheetKind: 'trainer',
+      sheetSlug: 'brock',
+    })).resolves.toEqual(ashWithTrainer)
+    expect(updateBodies[0]).toEqual({
+      profileId: 'profile_ash00000',
+      linkedCharacters: [
+        { sheetKind: 'pokemon', sheetSlug: 'pikachu' },
+        { sheetKind: 'trainer', sheetSlug: 'brock' },
+      ],
+    })
+    expect(management.selectedProfile.value).toEqual(ashWithTrainer)
+    expect(management.availableLinkOptions.value).toEqual([])
+    expect(management.lastNotice.value).toBe('Linked Brock · Trainer sheet to Ash.')
+
+    await expect(management.unlinkCharacterFromSelectedProfile({
+      sheetKind: 'pokemon',
+      sheetSlug: 'pikachu',
+    })).resolves.toEqual(ashTrainerOnly)
+    expect(updateBodies[1]).toEqual({
+      profileId: 'profile_ash00000',
+      linkedCharacters: [{ sheetKind: 'trainer', sheetSlug: 'brock' }],
+    })
+    expect(management.selectedProfile.value).toEqual(ashTrainerOnly)
+    expect(management.availableLinkOptions.value.map((option) => option.key)).toEqual(['pokemon:pikachu'])
+    expect(management.lastNotice.value).toBe('Unlinked Pikachu · Pokémon sheet from Ash.')
   })
 })

@@ -21,7 +21,7 @@ npm install
 npm run dev
 ```
 
-Nuxt will print the local URL, usually `http://localhost:3000`. Open it in a browser and choose **GM Login** for editing/encounter tools or **Player Login** to choose or create the persistent player profile for this browser. When logged in as a player, the app navigation shows the selected profile and lets you switch or clear it while keeping maps, Pokédex, sheets, and reference pages available.
+Nuxt will print the local URL, usually `http://localhost:3000`. Open it in a browser and choose **GM Login** for editing/encounter tools or **Player Login** to choose or create the persistent player profile for this browser. GMs can open `/player-profiles` to link or unlink existing Pokémon and trainer sheets to those profiles. When logged in as a player, the app navigation shows the selected profile and lets you switch or clear it while keeping maps, Pokédex, sheets, and reference pages available.
 
 Recommended verification commands:
 
@@ -142,7 +142,7 @@ See [docs/architecture.md](docs/architecture.md) for more detail.
 | `/` | Redirects to the map library. |
 | `/login` | Choose the local GM role or select/create the persistent player profile for Player Login. |
 | `/sessions` | Live session lobby for session hosting, GM start/manage, and player join flows. |
-| `/player-profiles` | GM-only player profile list and linked-character review. |
+| `/player-profiles` | GM-only player profile list plus Pokémon/trainer sheet link and unlink management. |
 | `/maps` | Map library and folders. |
 | `/maps/:slug` | Map editor/table view. |
 | `/sheets` | Pokémon and trainer sheet library. |

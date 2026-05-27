@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import AppNavigation from '~/components/AppNavigation.vue'
 import { useGmPlayerProfileManagement } from '~/composables/useGmPlayerProfileManagement'
 import {
@@ -7,6 +7,7 @@ import {
   PLAYER_PROFILE_MANAGEMENT_NO_LINKS_TEXT,
   PLAYER_PROFILE_MANAGEMENT_NO_SELECTION_TEXT,
   buildPlayerProfileManagementDetail,
+  linkableCharacterOptionByKey,
 } from '~/utils/playerProfileManagement'
 import { DEFAULT_LOGIN_REDIRECT } from '~/utils/loginRedirect'
 
@@ -25,19 +26,39 @@ const {
   selectedProfileId,
   selectedProfile,
   profileCount,
+  linkableCharacterOptions,
+  availableLinkOptions,
   loading,
+  loadingLinkableCharacters,
+  savingProfileLinks,
   lastError,
   lastNotice,
   loadProfiles,
+  loadLinkableCharacters,
   selectProfile,
+  linkCharacterToSelectedProfile,
+  unlinkCharacterFromSelectedProfile,
 } = useGmPlayerProfileManagement()
 
-const selectedProfileDetail = computed(() => buildPlayerProfileManagementDetail(selectedProfile.value))
+const linkCandidateKey = ref('')
+const selectedProfileDetail = computed(() => buildPlayerProfileManagementDetail(
+  selectedProfile.value,
+  linkableCharacterOptions.value,
+))
 const linkedCharacterCount = computed(() => selectedProfile.value?.linkedCharacters.length ?? 0)
+const selectedLinkCandidate = computed(() => (
+  linkCandidateKey.value
+    ? linkableCharacterOptionByKey(availableLinkOptions.value, linkCandidateKey.value)
+    : null
+))
 
 const refreshProfiles = async () => {
+  await Promise.allSettled([loadProfiles(), loadLinkableCharacters()])
+}
+
+const refreshLinkableCharacters = async () => {
   try {
-    await loadProfiles()
+    await loadLinkableCharacters()
   } catch {
     // The composable stores a user-safe error message for this page.
   }
@@ -46,6 +67,25 @@ const refreshProfiles = async () => {
 const openProfile = (profileId: string) => {
   try {
     selectProfile(profileId)
+    linkCandidateKey.value = ''
+  } catch {
+    // The composable stores a user-safe error message for this page.
+  }
+}
+
+const linkSelectedCharacter = async () => {
+  if (!selectedLinkCandidate.value) return
+  try {
+    await linkCharacterToSelectedProfile(selectedLinkCandidate.value.ref)
+    linkCandidateKey.value = ''
+  } catch {
+    // The composable stores a user-safe error message for this page.
+  }
+}
+
+const unlinkCharacter = async (ref: { sheetKind: string; sheetSlug: string }) => {
+  try {
+    await unlinkCharacterFromSelectedProfile(ref)
   } catch {
     // The composable stores a user-safe error message for this page.
   }
@@ -112,7 +152,7 @@ onMounted(() => {
           <button
             type="button"
             class="secondary-button"
-            :disabled="loading"
+            :disabled="loading || loadingLinkableCharacters"
             @click="refreshProfiles"
           >
             Refresh
@@ -174,16 +214,72 @@ onMounted(() => {
           </dl>
 
           <section class="linked-characters" aria-labelledby="linked-characters-title">
-            <h3 id="linked-characters-title">Linked characters</h3>
+            <div class="linked-characters-heading">
+              <div>
+                <h3 id="linked-characters-title">Linked characters</h3>
+                <p class="state-text">
+                  Select existing Pokémon or trainer sheets from the current sheet library.
+                </p>
+              </div>
+              <button
+                type="button"
+                class="secondary-button"
+                :disabled="loadingLinkableCharacters"
+                @click="refreshLinkableCharacters"
+              >
+                Refresh sheets
+              </button>
+            </div>
+
+            <form class="link-character-form" aria-label="Link a character sheet" @submit.prevent="linkSelectedCharacter">
+              <label for="link-character-select">Link an existing sheet</label>
+              <div class="link-character-controls">
+                <select
+                  id="link-character-select"
+                  v-model="linkCandidateKey"
+                  :disabled="loadingLinkableCharacters || savingProfileLinks || availableLinkOptions.length === 0"
+                >
+                  <option value="">Choose a Pokémon or trainer sheet…</option>
+                  <option v-for="option in availableLinkOptions" :key="option.key" :value="option.key">
+                    {{ option.label }} — {{ option.detailsLabel }}
+                  </option>
+                </select>
+                <button
+                  type="submit"
+                  class="secondary-button"
+                  :disabled="!selectedLinkCandidate || savingProfileLinks"
+                >
+                  Link character
+                </button>
+              </div>
+              <p v-if="loadingLinkableCharacters" class="state-text">Loading sheet library…</p>
+              <p v-else-if="linkableCharacterOptions.length === 0" class="state-text">
+                No Pokémon or trainer sheets are available to link.
+              </p>
+              <p v-else-if="availableLinkOptions.length === 0" class="state-text">
+                Every loaded character sheet is already linked to this profile.
+              </p>
+            </form>
+
             <p v-if="linkedCharacterCount === 0" class="state-text">
               {{ PLAYER_PROFILE_MANAGEMENT_NO_LINKS_TEXT }}
             </p>
             <ul v-else class="linked-character-list">
               <li v-for="character in selectedProfileDetail.linkedCharacters" :key="character.key">
-                <NuxtLink class="linked-character-card" :to="character.href">
-                  <span>{{ character.label }}</span>
-                  <small>{{ character.kindLabel }} · {{ character.sheetSlug }}</small>
-                </NuxtLink>
+                <div class="linked-character-row">
+                  <NuxtLink class="linked-character-card" :to="character.href">
+                    <span>{{ character.label }}</span>
+                    <small>{{ character.kindLabel }} · {{ character.sheetSlug }}</small>
+                  </NuxtLink>
+                  <button
+                    type="button"
+                    class="secondary-button danger-button"
+                    :disabled="savingProfileLinks"
+                    @click="unlinkCharacter(character.ref)"
+                  >
+                    Unlink
+                  </button>
+                </div>
               </li>
             </ul>
           </section>
@@ -328,7 +424,8 @@ h3 {
 
 .secondary-button,
 .profile-list-button,
-.linked-character-card {
+.linked-character-card,
+.link-character-controls select {
   border: 1px solid var(--rule-soft);
   background: var(--paper);
   color: var(--ink);
@@ -354,15 +451,23 @@ h3 {
 .profile-list-button:hover,
 .profile-list-button:focus-visible,
 .linked-character-card:hover,
-.linked-character-card:focus-visible {
+.linked-character-card:focus-visible,
+.link-character-controls select:hover,
+.link-character-controls select:focus-visible {
   border-color: var(--accent);
   background: var(--paper-hover);
   outline: none;
 }
 
-.secondary-button:disabled {
+.secondary-button:disabled,
+.link-character-controls select:disabled {
   cursor: not-allowed;
   opacity: 0.58;
+}
+
+.danger-button {
+  border-color: rgba(255, 31, 45, 0.42);
+  color: var(--bad);
 }
 
 .profile-list,
@@ -423,8 +528,39 @@ h3 {
   border-top: 1px solid var(--rule-soft);
 }
 
+.linked-characters-heading,
+.link-character-controls,
+.linked-character-row {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.link-character-form {
+  display: grid;
+  gap: 0.45rem;
+  margin-top: 1rem;
+  padding: 0.8rem;
+  border: 1px solid var(--rule-soft);
+  background: var(--paper-inset);
+}
+
+.link-character-form label {
+  color: var(--ink-bright);
+  font-weight: 800;
+}
+
+.link-character-controls select {
+  flex: 1 1 18rem;
+  min-height: 2.35rem;
+  padding: 0.5rem 0.65rem;
+  font: inherit;
+}
+
 .linked-character-card {
   display: grid;
+  flex: 1 1 auto;
   gap: 0.2rem;
   padding: 0.8rem;
   text-decoration: none;
@@ -437,7 +573,10 @@ h3 {
   }
 
   .panel-heading,
-  .panel-heading--detail {
+  .panel-heading--detail,
+  .linked-characters-heading,
+  .link-character-controls,
+  .linked-character-row {
     display: grid;
   }
 }

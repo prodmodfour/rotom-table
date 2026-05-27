@@ -1,9 +1,14 @@
 import type { AuthRole } from '#shared/auth'
-import type { PlayerProfile } from '#shared/playerProfiles'
+import {
+  linkedCharacterRefKey,
+  type LinkedCharacterRef,
+  type PlayerProfile,
+} from '#shared/playerProfiles'
 import {
   updatePlayerProfile as updateStoredPlayerProfile,
   type UpdatePlayerProfileInput as UpdateStoredPlayerProfileInput,
 } from '../utils/playerProfileStorage'
+import { findPersistedSheetFile } from '../utils/sheetStorage'
 import {
   PlayerProfileUseCaseError,
   assertGmProfileRequest,
@@ -27,10 +32,28 @@ export interface UpdatePlayerProfileDependencies {
     profileId: unknown,
     input: UpdateStoredPlayerProfileInput,
   ) => PlayerProfile | null
+  readonly sheetExists?: (ref: LinkedCharacterRef) => boolean
 }
 
 export interface UpdatePlayerProfileResult {
   readonly profile: PlayerProfile
+}
+
+const defaultSheetExists = (ref: LinkedCharacterRef): boolean =>
+  findPersistedSheetFile(ref.sheetKind, ref.sheetSlug) !== null
+
+const assertLinkedCharacterSheetsExist = (
+  refs: readonly LinkedCharacterRef[],
+  sheetExists: (ref: LinkedCharacterRef) => boolean,
+): void => {
+  for (const ref of refs) {
+    if (!sheetExists(ref)) {
+      throw new PlayerProfileUseCaseError(
+        400,
+        `linkedCharacters contains unknown ${ref.sheetKind} sheet "${ref.sheetSlug}" (${linkedCharacterRefKey(ref)})`,
+      )
+    }
+  }
 }
 
 export const updatePlayerProfileUseCase = (
@@ -51,7 +74,9 @@ export const updatePlayerProfileUseCase = (
   }
 
   if (hasOwn(request, 'linkedCharacters')) {
-    update.linkedCharacters = normalizePlayerProfileRequestLinkedCharacters(request.linkedCharacters)
+    const linkedCharacters = normalizePlayerProfileRequestLinkedCharacters(request.linkedCharacters)
+    assertLinkedCharacterSheetsExist(linkedCharacters, dependencies.sheetExists ?? defaultSheetExists)
+    update.linkedCharacters = linkedCharacters
   }
 
   if (!hasOwn(update, 'displayName') && !hasOwn(update, 'linkedCharacters')) {

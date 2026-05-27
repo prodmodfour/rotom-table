@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import {
   PLAYER_PROFILE_SCHEMA_VERSION,
+  linkedCharacterRefKey,
   normalizeLinkedCharacterRefs,
   parsePlayerProfileDisplayName,
   parsePlayerProfileId,
@@ -133,6 +134,9 @@ describe('player profile use cases', () => {
       })
       return updated
     })
+    const sheetExists = vi.fn((ref: LinkedCharacterRef) => (
+      new Set(['pokemon:geodude', 'trainer:brock']).has(linkedCharacterRefKey(ref))
+    ))
 
     expect(updatePlayerProfileUseCase({
       role: 'gm',
@@ -142,7 +146,8 @@ describe('player profile use cases', () => {
         { sheetKind: 'trainer', sheetSlug: 'brock' },
         { sheetKind: 'pokemon', sheetSlug: 'geodude' },
       ],
-    }, { updateProfile })).toEqual({ profile: updated })
+    }, { updateProfile, sheetExists })).toEqual({ profile: updated })
+    expect(sheetExists).toHaveBeenCalledTimes(2)
     expect(updateProfile).toHaveBeenCalledOnce()
   })
 
@@ -187,6 +192,23 @@ describe('player profile use cases', () => {
       400,
       'At least one of displayName or linkedCharacters is required',
     )
+    expect(updateProfile).not.toHaveBeenCalled()
+  })
+
+  it('rejects profile links to sheets that are not in the current libraries', () => {
+    const updateProfile = vi.fn(() => makeProfile('profile_brock000', 'Brock'))
+    const sheetExists = vi.fn(() => false)
+
+    expectUseCaseError(
+      () => updatePlayerProfileUseCase({
+        role: 'gm',
+        profileId: 'profile_brock000',
+        linkedCharacters: [{ sheetKind: 'trainer', sheetSlug: 'missing-trainer' }],
+      }, { updateProfile, sheetExists }),
+      400,
+      'linkedCharacters contains unknown trainer sheet "missing-trainer" (trainer:missing-trainer)',
+    )
+    expect(sheetExists).toHaveBeenCalledWith({ sheetKind: 'trainer', sheetSlug: 'missing-trainer' })
     expect(updateProfile).not.toHaveBeenCalled()
   })
 

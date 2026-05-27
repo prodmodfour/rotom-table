@@ -9,8 +9,10 @@ import {
   PLAYER_PROFILE_MANAGEMENT_EMPTY_TEXT,
   PLAYER_PROFILE_MANAGEMENT_NO_LINKS_TEXT,
   PLAYER_PROFILE_MANAGEMENT_NO_SELECTION_TEXT,
+  buildLinkableCharacterSheetOptions,
   buildLinkedCharacterManagementView,
   buildPlayerProfileManagementDetail,
+  filterAvailableLinkableCharacterOptions,
   playerProfileLinkedCharacterCountLabel,
   playerProfileLinkedCharacterLabel,
 } from '~/utils/playerProfileManagement'
@@ -48,6 +50,7 @@ describe('player profile management helpers', () => {
 
     expect(buildLinkedCharacterManagementView({ sheetKind: 'pokemon', sheetSlug: 'pikachu' })).toEqual({
       key: 'pokemon:pikachu',
+      ref: { sheetKind: 'pokemon', sheetSlug: 'pikachu' },
       label: 'Pokémon sheet · pikachu',
       kindLabel: 'Pokémon',
       sheetSlug: 'pikachu',
@@ -55,11 +58,52 @@ describe('player profile management helpers', () => {
     })
     expect(buildLinkedCharacterManagementView({ sheetKind: 'trainer', sheetSlug: 'ash' })).toEqual({
       key: 'trainer:ash',
+      ref: { sheetKind: 'trainer', sheetSlug: 'ash' },
       label: 'Trainer sheet · ash',
       kindLabel: 'Trainer',
       sheetSlug: 'ash',
       href: '/sheets/trainers/ash',
     })
+  })
+
+  it('builds understandable link options from current Pokémon and trainer libraries', () => {
+    const options = buildLinkableCharacterSheetOptions({
+      pokemonSheets: [
+        { slug: 'pikachu', nickname: 'Sparky', species: 'Pikachu', folder: 'party' },
+      ],
+      trainerSheets: [
+        { slug: 'brock', name: 'Brock', folder: 'leaders' },
+      ],
+    })
+
+    expect(options).toEqual([
+      {
+        key: 'trainer:brock',
+        ref: { sheetKind: 'trainer', sheetSlug: 'brock' },
+        label: 'Brock · Trainer sheet',
+        detailsLabel: 'brock · leaders',
+        displayName: 'Brock',
+        kindLabel: 'Trainer',
+        sheetSlug: 'brock',
+        folder: 'leaders',
+        href: '/sheets/trainers/brock',
+      },
+      {
+        key: 'pokemon:pikachu',
+        ref: { sheetKind: 'pokemon', sheetSlug: 'pikachu' },
+        label: 'Sparky · Pokémon sheet',
+        detailsLabel: 'pikachu · Pikachu · party',
+        displayName: 'Sparky',
+        kindLabel: 'Pokémon',
+        sheetSlug: 'pikachu',
+        folder: 'party',
+        href: '/sheets/pikachu',
+      },
+    ])
+
+    expect(filterAvailableLinkableCharacterOptions(options, [
+      { sheetKind: 'pokemon', sheetSlug: 'pikachu' },
+    ]).map((option) => option.key)).toEqual(['trainer:brock'])
   })
 
   it('builds a detail view model for the selected profile', () => {
@@ -71,6 +115,7 @@ describe('player profile management helpers', () => {
       linkedCharacters: [
         {
           key: 'pokemon:pikachu',
+          ref: { sheetKind: 'pokemon', sheetSlug: 'pikachu' },
           label: 'Pokémon sheet · pikachu',
           kindLabel: 'Pokémon',
           sheetSlug: 'pikachu',
@@ -78,6 +123,7 @@ describe('player profile management helpers', () => {
         },
         {
           key: 'trainer:ash',
+          ref: { sheetKind: 'trainer', sheetSlug: 'ash' },
           label: 'Trainer sheet · ash',
           kindLabel: 'Trainer',
           sheetSlug: 'ash',
