@@ -1,7 +1,9 @@
 import type { AuthRole } from '#shared/auth'
+import type { PlayerProfile } from '#shared/playerProfiles'
 import type { SheetKind } from '#shared/sheets'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { TrainerSheet } from '~/types/trainerSheet'
+import { playerCanAccessSheet } from '../policies/playerProfilePolicy'
 import { listSheetFilesWithFolders } from '../utils/sheetStorage'
 
 export type PlayerSheetAccessPredicate = (
@@ -12,6 +14,7 @@ export type PlayerSheetAccessPredicate = (
 
 export interface ListSheetsInput {
   role: AuthRole
+  playerProfile?: PlayerProfile | null
   canAccessPlayerSheet?: PlayerSheetAccessPredicate
 }
 
@@ -25,13 +28,17 @@ export interface ListSheetsResult {
   trainerSheets: TrainerSheet[]
 }
 
-const isPlayerAccessible = (sheet: { player?: unknown }): boolean => sheet.player === true
-
 const canListPlayerSheet = <TSheet extends CharacterSheet | TrainerSheet>(
   kind: SheetKind,
   sheet: TSheet,
-  canAccessPlayerSheet?: PlayerSheetAccessPredicate,
-): boolean => isPlayerAccessible(sheet) || canAccessPlayerSheet?.(kind, sheet.slug, sheet) === true
+  input: ListSheetsInput,
+): boolean => playerCanAccessSheet({
+  kind,
+  slug: sheet.slug,
+  sheet,
+  playerProfile: input.playerProfile,
+  canAccessPlayerSheet: input.canAccessPlayerSheet,
+})
 
 export const listSheetsUseCase = (
   input: ListSheetsInput,
@@ -47,8 +54,8 @@ export const listSheetsUseCase = (
 
   if (input.role === 'player') {
     return {
-      pokemonSheets: pokemonSheets.filter((sheet) => canListPlayerSheet('pokemon', sheet, input.canAccessPlayerSheet)),
-      trainerSheets: trainerSheets.filter((sheet) => canListPlayerSheet('trainer', sheet, input.canAccessPlayerSheet)),
+      pokemonSheets: pokemonSheets.filter((sheet) => canListPlayerSheet('pokemon', sheet, input)),
+      trainerSheets: trainerSheets.filter((sheet) => canListPlayerSheet('trainer', sheet, input)),
     }
   }
 

@@ -8,6 +8,7 @@ import {
   readObjectBody,
   requireNonProduction,
 } from '../../utils/http'
+import { resolvePlayerProfileForPolicy } from '../../policies/playerProfilePolicy'
 import { saveSheetUseCase } from '../../useCases/saveSheet'
 import { normalizeRealtimeClientId } from '#shared/realtime'
 
@@ -16,6 +17,7 @@ interface SaveBody {
   slug?: unknown
   sheet?: unknown
   clientId?: unknown
+  profileId?: unknown
 }
 
 export default defineEventHandler(async (event) => {
@@ -28,12 +30,16 @@ export default defineEventHandler(async (event) => {
   const sheet = expectRecord(body.sheet, 'sheet')
 
   try {
+    const playerProfile = role === 'player'
+      ? resolvePlayerProfileForPolicy(body.profileId)
+      : null
     const result = saveSheetUseCase({
       role,
       kind,
       slug,
       sheet,
       clientId: normalizeRealtimeClientId(body.clientId),
+      playerProfile,
     })
     publishUseCaseRealtimeEvents(result.events)
     return { ok: result.ok, slug: result.slug, path: result.path, sheet: result.sheet }

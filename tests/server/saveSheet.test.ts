@@ -1,6 +1,19 @@
 import { describe, expect, it, vi } from 'vitest'
 import { SaveSheetUseCaseError, saveSheetUseCase } from '../../server/useCases/saveSheet'
+import {
+  PLAYER_PROFILE_SCHEMA_VERSION,
+  type PlayerProfile,
+  type PlayerProfileDisplayName,
+  type PlayerProfileId,
+} from '../../shared/playerProfiles'
 import type { SheetKind } from '../../shared/sheets'
+
+const playerProfile = (linkedCharacters: PlayerProfile['linkedCharacters']): PlayerProfile => ({
+  schemaVersion: PLAYER_PROFILE_SCHEMA_VERSION,
+  id: 'profile_ash00000' as PlayerProfileId,
+  displayName: 'Ash' as PlayerProfileDisplayName,
+  linkedCharacters,
+})
 
 const createDeps = () => {
   const writes: Array<{ path: string; sheet: Record<string, unknown> }> = []
@@ -92,6 +105,37 @@ describe('save sheet use case', () => {
       kind: 'trainer',
       slug: 'brock',
       sheet: { slug: 'brock', name: 'Brock', player: true },
+    })
+  })
+
+  it('allows player saves for linked private profile sheets without making them public', () => {
+    const { deps, writes } = createDeps()
+    deps.isPlayerAccessible.mockReturnValue(false)
+    const depsWithExisting = {
+      ...deps,
+      readExistingSheet: vi.fn(() => ({ slug: 'brock', name: 'Brock', player: false })),
+    }
+
+    const result = saveSheetUseCase({
+      role: 'player',
+      kind: 'trainer',
+      slug: 'brock',
+      sheet: { slug: 'brock', name: 'Brock', level: 6, folder: 'gm/private', player: true },
+      playerProfile: playerProfile([{ sheetKind: 'trainer', sheetSlug: 'brock' }]),
+    }, depsWithExisting)
+
+    expect(deps.isPlayerAccessible).toHaveBeenCalledWith('trainer', 'brock')
+    expect(depsWithExisting.readExistingSheet).toHaveBeenCalledWith('/repo/data/sheets/brock.json')
+    expect(writes).toEqual([
+      {
+        path: '/repo/data/sheets/brock.json',
+        sheet: { slug: 'brock', name: 'Brock', level: 6, player: false },
+      },
+    ])
+    expect(result.events[0]?.data).toEqual({
+      kind: 'trainer',
+      slug: 'brock',
+      sheet: { slug: 'brock', name: 'Brock', level: 6, player: false },
     })
   })
 
@@ -254,7 +298,7 @@ describe('save sheet use case', () => {
       kind: 'pokemon',
       slug: 'locked',
       sheet: { slug: 'locked', player: false },
-    }, deps)).toThrow('Sheet is not marked as player accessible')
+    }, deps)).toThrow('Sheet is not marked as player accessible or linked to the selected player profile')
 
     try {
       saveSheetUseCase({ role: 'player', kind: 'pokemon', slug: 'locked', sheet: { slug: 'locked' } }, deps)
