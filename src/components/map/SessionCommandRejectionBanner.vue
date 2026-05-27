@@ -44,7 +44,7 @@ const emit = defineEmits<{
 <style scoped>
 .session-command-rejection {
   position: absolute;
-  top: 1rem;
+  top: var(--map-top-info-top, calc(var(--map-overlay-gutter, 0.75rem) + var(--map-initiative-info-bar-height, 4rem) + 0.6rem));
   left: 50%;
   z-index: 10900;
   display: grid;

@@ -43,7 +43,7 @@ const emit = defineEmits<{
 .session-connection-status {
   position: absolute;
   z-index: 7;
-  top: var(--map-overlay-gutter, 0.75rem);
+  top: var(--map-top-info-top, calc(var(--map-overlay-gutter, 0.75rem) + var(--map-initiative-info-bar-height, 4rem) + 0.6rem));
   left: calc(var(--map-overlay-gutter, 0.75rem) + var(--map-nav-rail-width, 0px) + 0.75rem);
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;

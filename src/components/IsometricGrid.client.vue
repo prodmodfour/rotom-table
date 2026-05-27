@@ -1873,7 +1873,7 @@ useIsometricSceneWatchers({
 .movement-preview-hud {
   position: absolute;
   z-index: 10;
-  top: 1rem;
+  top: var(--map-top-info-top, calc(var(--map-overlay-gutter, 0.75rem) + var(--map-initiative-info-bar-height, 4rem) + 0.6rem));
   left: 50%;
   display: flex;
   align-items: center;
@@ -1913,7 +1913,7 @@ useIsometricSceneWatchers({
 .move-targeting-hud {
   position: absolute;
   z-index: 10;
-  top: 1rem;
+  top: var(--map-top-info-top, calc(var(--map-overlay-gutter, 0.75rem) + var(--map-initiative-info-bar-height, 4rem) + 0.6rem));
   left: 50%;
   display: flex;
   align-items: center;

@@ -145,7 +145,7 @@ const celebrateTargetList = (prompt: MoveAutomationCelebratePrompt): string => n
 .reaction-prompt-stack {
   position: absolute;
   z-index: 12;
-  top: 1rem;
+  top: var(--map-top-info-top, calc(var(--map-overlay-gutter, 0.75rem) + var(--map-initiative-info-bar-height, 4rem) + 0.6rem));
   right: 1rem;
   display: flex;
   flex-direction: column;

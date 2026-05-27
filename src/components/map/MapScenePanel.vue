@@ -317,7 +317,7 @@ defineExpose({ focusPokemon })
 
 .move-usage-error {
   position: absolute;
-  top: 1rem;
+  top: var(--map-top-info-top, calc(var(--map-overlay-gutter, 0.75rem) + var(--map-initiative-info-bar-height, 4rem) + 0.6rem));
   left: 50%;
   z-index: 10800;
   max-width: min(32rem, calc(100vw - 2rem));
