@@ -43,6 +43,8 @@ describe('API route constants', () => {
       load: '/api/maps/load',
       save: '/api/maps/save',
       useMove: '/api/maps/use-move',
+      moveToken: '/api/maps/tokens/move',
+      turnToken: '/api/maps/tokens/turn',
       create: '/api/maps/create',
       createFolder: '/api/maps/create-folder',
       move: '/api/maps/move',

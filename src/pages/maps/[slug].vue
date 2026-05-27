@@ -10,6 +10,7 @@ import SheetsMenuModal from '~/components/map/SheetsMenuModal.vue'
 import { useEditableMap } from '~/composables/useEditableMap'
 import { useLiveSheets } from '~/composables/useLiveSheets'
 import { useApiClient } from '~/composables/useApiClient'
+import { useDocumentMapTokenActions } from '~/composables/map-editor/useDocumentMapTokenActions'
 import { useFieldEffectsEditor } from '~/composables/map-editor/useFieldEffectsEditor'
 import { useHazardBuilder } from '~/composables/map-editor/useHazardBuilder'
 import { useInitiativeTracker } from '~/composables/map-editor/useInitiativeTracker'
@@ -48,6 +49,7 @@ import { MAP_API_PATHS } from '~/utils/apiRoutes'
 import { getClientId } from '~/utils/clientId'
 import { isSameAnchor } from '~/utils/gridGeometry'
 import { mapEditorPath, mapLibraryPath } from '~/utils/mapRoutes'
+import { nextTokenFacingForPlacement } from '~/utils/tokenFacing'
 import { routeSlugParam } from '~/utils/routeParams'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { GridAnchor, TabletopMap } from '~/types/map'
@@ -75,12 +77,18 @@ const {
   status,
   error,
   renamedTo,
+  applyPersistedMap,
 } = useEditableMap(slug, {
   autosaveEnabled: computed(() => !sessionMoveTokenEnabled.value),
   playerProfileId: computed(() => (isPlayer.value ? selectedProfileId.value : null)),
 })
 const { pokemonBySlug, trainerBySlug, reloadRuntimeSheets } = useLiveSheets()
 const { postJson } = useApiClient()
+const documentTokenActions = useDocumentMapTokenActions({
+  slug,
+  playerProfileId: computed(() => (isPlayer.value ? selectedProfileId.value : null)),
+  applyPersistedMap,
+})
 
 watch(renamedTo, (newSlug) => {
   if (newSlug) router.replace(mapEditorPath(newSlug))
@@ -132,6 +140,9 @@ const playerProfileTokenControlModel = computed(() => buildClientPlayerProfileTo
 }))
 const tokenControlNotice = computed(() => {
   if (sessionMoveTokenEnabled.value) return sessionTokenControlModel.value.notice
+  if (isPlayer.value && documentTokenActions.lastError.value) {
+    return `Token action failed: ${documentTokenActions.lastError.value}`
+  }
   if (isPlayer.value && playerProfileError.value) {
     return `Player profile unavailable: ${playerProfileError.value}`
   }
@@ -275,11 +286,48 @@ const deletePokemon = (id: string) => {
   }
   deletePlacement(id)
 }
-const turnPokemon = turnPlacement
+const shouldUseDocumentTokenActions = () => isPlayer.value && !sessionMoveTokenEnabled.value
+
+const turnPokemon = (id: string) => {
+  if (shouldUseDocumentTokenActions()) {
+    const placement = placementById(id)
+    if (!placement || !canControlPlacement(id)) return
+    const facing = nextTokenFacingForPlacement(placement)
+    void documentTokenActions.turnToken({ placementId: id, facing }).then((result) => {
+      if (result.dispatched) clearSelection()
+    })
+    return
+  }
+  turnPlacement(id)
+}
+
 let attackOfOpportunityPanel: ReturnType<typeof useAttackOfOpportunityPanel> | null = null
 const movePokemon = (payload: { id: string; position: GridAnchor }) => {
   const from = spawnedPokemon.value.find((pokemon) => pokemon.id === payload.id)?.position
+    ?? placementById(payload.id)?.position
   const previousPosition = from ? { ...from } : null
+
+  if (shouldUseDocumentTokenActions()) {
+    if (!canControlPlacement(payload.id)) return
+    void documentTokenActions.moveToken({
+      placementId: payload.id,
+      position: payload.position,
+      pathLength: previewState.value.pathLength,
+    }).then((result) => {
+      if (!result.dispatched) return
+      clearSelection()
+      const currentPosition = placementById(payload.id)?.position
+      if (!previousPosition || !currentPosition || isSameAnchor(previousPosition, currentPosition)) return
+      attackOfOpportunityPanel?.clearAttackOfOpportunityPromptsForNonImmediateAction()
+      attackOfOpportunityPanel?.provokeMovementAttackOfOpportunity({
+        provokerId: payload.id,
+        from: previousPosition,
+        to: { ...currentPosition },
+      })
+    })
+    return
+  }
+
   movePlacement(payload)
 
   const currentPosition = placementById(payload.id)?.position

@@ -118,6 +118,33 @@ describe('useEditableMap autosave boundary', () => {
     })
   })
 
+  it('adopts document-backed token action responses without scheduling another whole-map save', async () => {
+    const editable = useEditableMap('arena-map', { debounceMs: 10 })
+    await flushPromises()
+
+    editable.applyPersistedMap(mapFixture({
+      placements: [
+        {
+          id: 'token-pikachu',
+          sheetKind: 'pokemon',
+          sheetSlug: 'pikachu',
+          position: { x: 3, y: 0, z: 2 },
+          facing: 'south-east',
+          turned: false,
+        },
+      ],
+      updatedAt: 250,
+    }))
+    await nextTick()
+    await vi.advanceTimersByTimeAsync(10)
+    await flushPromises()
+
+    expect(editable.map.value?.placements[0]?.position).toEqual({ x: 3, y: 0, z: 2 })
+    expect(editable.map.value?.updatedAt).toBe(250)
+    expect(apiMocks.postJson).not.toHaveBeenCalled()
+    expect(editable.status.value).toBe('idle')
+  })
+
   it('pauses whole-map autosave in session mode and resumes it for local-first editing', async () => {
     const autosaveEnabled = ref(false)
     const editable = useEditableMap('arena-map', { debounceMs: 10, autosaveEnabled })

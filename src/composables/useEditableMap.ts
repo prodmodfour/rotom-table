@@ -62,6 +62,7 @@ export interface UseEditableMapReturn {
   renamedTo: Ref<string | null>
   saveNow: () => Promise<void>
   reload: () => Promise<void>
+  applyPersistedMap: (incoming: TabletopMap) => void
 }
 
 const normalizeOptions = (options: number | UseEditableMapOptions): Required<Pick<UseEditableMapOptions, 'debounceMs'>> & {
@@ -160,6 +161,13 @@ export const useEditableMap = (
     assignIfChanged(target, 'updatedAt', next.updatedAt)
   }
 
+  const applyPersistedMap = (incoming: TabletopMap) => {
+    autosave.snapshot.markClean(incoming)
+    applyServerMap(incoming)
+    status.value = 'idle'
+    error.value = null
+  }
+
   const performSave = async () => {
     if (!autosaveEnabled.value || !map.value) return
     const snapshot = clonePersistableMapPayload(map.value)
@@ -199,9 +207,7 @@ export const useEditableMap = (
     error.value = null
     try {
       const data = await getJson<{ map: TabletopMap }>(MAP_API_PATHS.load, { params: { slug } })
-      autosave.snapshot.markClean(data.map)
-      applyServerMap(data.map)
-      status.value = 'idle'
+      applyPersistedMap(data.map)
     } catch (err: unknown) {
       const e = err as { statusCode?: number; statusMessage?: string; message?: string }
       if (e?.statusCode === 404) {
@@ -234,9 +240,7 @@ export const useEditableMap = (
     if (isRealtimeEcho(event, clientId)) return
     if (event.type === 'updated' && event.data) {
       const incoming = event.data as TabletopMap
-      autosave.snapshot.markClean(incoming)
-      applyServerMap(incoming)
-      status.value = 'idle'
+      applyPersistedMap(incoming)
     } else if (event.type === 'deleted') {
       status.value = 'not-found'
       map.value = null
@@ -247,8 +251,7 @@ export const useEditableMap = (
       // gone) and let the page navigate to the new URL.
       autosave.cancelPendingSave()
       if (payload.map) {
-        autosave.snapshot.markClean(payload.map)
-        applyServerMap(payload.map)
+        applyPersistedMap(payload.map)
       }
       status.value = 'idle'
       renamedTo.value = payload.newSlug
@@ -271,5 +274,5 @@ export const useEditableMap = (
 
   void reload()
 
-  return { map, status, error, renamedTo, saveNow, reload }
+  return { map, status, error, renamedTo, saveNow, reload, applyPersistedMap }
 }
