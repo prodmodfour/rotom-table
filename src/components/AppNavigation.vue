@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted, watch } from 'vue'
 import {
   PRIMARY_APP_NAV_ITEMS,
   REFERENCE_APP_NAV_ITEMS,
@@ -7,6 +7,10 @@ import {
   isAppNavItemActive,
 } from '~/utils/appNavigation'
 import { LOGIN_PATH } from '~/utils/appRoutes'
+import {
+  playerProfileNavStatusText,
+  playerProfileSwitchRoute,
+} from '~/utils/playerProfileNavigation'
 
 withDefaults(defineProps<{
   orientation?: 'horizontal' | 'vertical'
@@ -18,17 +22,52 @@ withDefaults(defineProps<{
 
 const route = useRoute()
 const router = useRouter()
-const { isGm, roleLabel, logout } = useAuth()
+const { isGm, isPlayer, roleLabel, logout } = useAuth()
+const {
+  selectedProfileDisplayName,
+  hasSelectedProfile,
+  loadRememberedProfile,
+  reloadProfiles,
+  clearSelectedProfile,
+} = usePlayerProfiles()
 
 const primaryItems = computed(() => filterAppNavItems(PRIMARY_APP_NAV_ITEMS, isGm.value))
 const referenceItems = computed(() => filterAppNavItems(REFERENCE_APP_NAV_ITEMS, isGm.value))
+const playerProfileStatusText = computed(() => playerProfileNavStatusText(selectedProfileDisplayName.value))
+const switchProfileRoute = computed(() => playerProfileSwitchRoute(route.fullPath))
 
 const isActive = (path: string) => isAppNavItemActive(route.path, path)
+
+if (import.meta.client && isPlayer.value) loadRememberedProfile()
+
+const syncPlayerProfileForNavigation = async () => {
+  if (!isPlayer.value) return
+
+  loadRememberedProfile()
+  try {
+    await reloadProfiles({ silent: true, clearMissingSelection: true })
+  } catch {
+    // Keep navigation usable if profiles cannot be refreshed; the login picker shows detailed errors.
+  }
+}
+
+const handleClearProfile = async () => {
+  clearSelectedProfile()
+  await router.push(switchProfileRoute.value)
+}
 
 const handleLogout = async () => {
   logout()
   await router.push(LOGIN_PATH)
 }
+
+onMounted(() => {
+  void syncPlayerProfileForNavigation()
+})
+
+watch(isPlayer, (nextIsPlayer) => {
+  if (nextIsPlayer) void syncPlayerProfileForNavigation()
+})
 </script>
 
 <template>
@@ -55,6 +94,26 @@ const handleLogout = async () => {
       {{ item.label }}
     </NuxtLink>
     <span class="nav-spacer" aria-hidden="true" />
+    <div
+      v-if="isPlayer"
+      class="profile-status"
+      aria-live="polite"
+    >
+      <span class="profile-status__text">{{ playerProfileStatusText }}</span>
+      <span class="profile-status__actions" role="group" aria-label="Player profile actions">
+        <NuxtLink class="profile-action" :to="switchProfileRoute">
+          {{ hasSelectedProfile ? 'Switch profile' : 'Choose profile' }}
+        </NuxtLink>
+        <button
+          v-if="hasSelectedProfile"
+          type="button"
+          class="profile-action profile-action--button"
+          @click="handleClearProfile"
+        >
+          Clear profile
+        </button>
+      </span>
+    </div>
     <span v-if="showRoleBadge" class="role-badge">{{ roleLabel }}</span>
     <button type="button" class="nav-link nav-link--button" @click="handleLogout">
       Logout
@@ -100,6 +159,71 @@ const handleLogout = async () => {
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+.profile-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-width: 0;
+  max-width: min(100%, 34rem);
+  padding: 0.35rem 0.45rem 0.35rem 0.65rem;
+  border: 1px solid var(--rule-soft);
+  border-radius: 999px;
+  background: var(--paper-inset);
+  color: var(--ink-soft);
+  font-size: 0.82rem;
+}
+
+.profile-status__text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ink-bright);
+  font-weight: 700;
+}
+
+.profile-status__actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex: 0 0 auto;
+}
+
+.profile-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 1.75rem;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--rule-soft);
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--accent);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-decoration: none;
+  text-transform: uppercase;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+.profile-action:hover,
+.profile-action:focus-visible {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: #ff5c67;
+  outline: none;
+}
+
+.profile-action--button {
+  appearance: none;
 }
 
 .nav-link {
@@ -162,10 +286,27 @@ const handleLogout = async () => {
 }
 
 .app-navigation--vertical .nav-link,
-.app-navigation--vertical .role-badge {
+.app-navigation--vertical .role-badge,
+.app-navigation--vertical .profile-status {
   width: 100%;
   min-height: 2.35rem;
   padding: 0.5rem 0.45rem;
+}
+
+.app-navigation--vertical .profile-status {
+  align-items: stretch;
+  border-radius: 12px;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.app-navigation--vertical .profile-status__actions {
+  display: grid;
+  grid-template-columns: 1fr;
+}
+
+.app-navigation--vertical .profile-action {
+  width: 100%;
 }
 
 .app-navigation--vertical .nav-link {

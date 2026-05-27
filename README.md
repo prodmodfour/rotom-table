@@ -21,7 +21,7 @@ npm install
 npm run dev
 ```
 
-Nuxt will print the local URL, usually `http://localhost:3000`. Open it in a browser and choose **GM Login** for editing/encounter tools or **Player Login** to choose or create the persistent player profile for this browser.
+Nuxt will print the local URL, usually `http://localhost:3000`. Open it in a browser and choose **GM Login** for editing/encounter tools or **Player Login** to choose or create the persistent player profile for this browser. When logged in as a player, the app navigation shows the selected profile and lets you switch or clear it while keeping maps, Pokédex, sheets, and reference pages available.
 
 Recommended verification commands:
 
