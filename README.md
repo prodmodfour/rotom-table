@@ -142,6 +142,7 @@ See [docs/architecture.md](docs/architecture.md) for more detail.
 | `/` | Redirects to the map library. |
 | `/login` | Choose the local GM role or select/create the persistent player profile for Player Login. |
 | `/sessions` | Live session lobby for session hosting, GM start/manage, and player join flows. |
+| `/player-profiles` | GM-only player profile list and linked-character review. |
 | `/maps` | Map library and folders. |
 | `/maps/:slug` | Map editor/table view. |
 | `/sheets` | Pokémon and trainer sheet library. |

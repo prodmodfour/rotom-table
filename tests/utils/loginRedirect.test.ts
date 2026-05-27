@@ -11,6 +11,7 @@ import {
   isSafeInternalRedirect,
   resolveLoginRedirectTarget,
 } from '~/utils/loginRedirect'
+import { PLAYER_PROFILE_MANAGEMENT_PATH } from '~/utils/playerProfileRoutes'
 
 describe('loginRedirect', () => {
   it('exposes canonical login and player-blocked route constants', () => {
@@ -18,6 +19,7 @@ describe('loginRedirect', () => {
     expect(PLAYER_BLOCKED_REDIRECT_PREFIXES).toEqual([
       ENCOUNTER_GENERATOR_PATH,
       ENCOUNTER_TABLES_PATH,
+      PLAYER_PROFILE_MANAGEMENT_PATH,
     ])
   })
 
@@ -34,6 +36,8 @@ describe('loginRedirect', () => {
     expect(isPlayerBlockedRedirectPath(`${ENCOUNTER_GENERATOR_PATH}/history`)).toBe(true)
     expect(isPlayerBlockedRedirectPath(ENCOUNTER_TABLES_PATH)).toBe(true)
     expect(isPlayerBlockedRedirectPath(`${ENCOUNTER_TABLES_PATH}/kanto`)).toBe(true)
+    expect(isPlayerBlockedRedirectPath(PLAYER_PROFILE_MANAGEMENT_PATH)).toBe(true)
+    expect(isPlayerBlockedRedirectPath(`${PLAYER_PROFILE_MANAGEMENT_PATH}/profile_ash00000`)).toBe(true)
     expect(isPlayerBlockedRedirectPath('/maps/generate')).toBe(false)
   })
 
@@ -45,6 +49,7 @@ describe('loginRedirect', () => {
   it('blocks player redirects to GM-only routes while allowing GM redirects', () => {
     expect(resolveLoginRedirectTarget(ENCOUNTER_GENERATOR_PATH, 'player')).toBe(DEFAULT_LOGIN_REDIRECT)
     expect(resolveLoginRedirectTarget(`${ENCOUNTER_TABLES_PATH}/kanto`, 'player')).toBe(DEFAULT_LOGIN_REDIRECT)
+    expect(resolveLoginRedirectTarget(PLAYER_PROFILE_MANAGEMENT_PATH, 'player')).toBe(DEFAULT_LOGIN_REDIRECT)
     expect(resolveLoginRedirectTarget(ENCOUNTER_GENERATOR_PATH, 'gm')).toBe(ENCOUNTER_GENERATOR_PATH)
     expect(resolveLoginRedirectTarget('/maps/atrium', 'player')).toBe('/maps/atrium')
   })

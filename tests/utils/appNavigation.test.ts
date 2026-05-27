@@ -7,6 +7,7 @@ import {
 } from '~/utils/appNavigation'
 import { LOGIN_PATH } from '~/utils/appRoutes'
 import { ENCOUNTER_TABLES_PATH } from '~/utils/encounterRoutes'
+import { PLAYER_PROFILE_MANAGEMENT_PATH } from '~/utils/playerProfileRoutes'
 import {
   NO_PLAYER_PROFILE_NAV_LABEL,
   playerProfileNavStatusText,
@@ -22,6 +23,7 @@ describe('app navigation helpers', () => {
       '/sheets',
     ])
     expect(PRIMARY_APP_NAV_ITEMS.find((item) => item.path === '/sessions')?.label).toBe('Live session')
+    expect(filterAppNavItems(PRIMARY_APP_NAV_ITEMS, true).some((item) => item.path === PLAYER_PROFILE_MANAGEMENT_PATH)).toBe(true)
     expect(filterAppNavItems(REFERENCE_APP_NAV_ITEMS, false).map((item) => item.path)).toEqual([
       '/moves',
       '/maneuvers',

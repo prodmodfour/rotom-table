@@ -1,8 +1,12 @@
 import type { AuthRole } from '#shared/auth'
 import { ENCOUNTER_GM_ONLY_PATH_PREFIXES } from '~/utils/encounterRoutes'
 import { MAP_LIBRARY_PATH } from '~/utils/mapRoutes'
+import { PLAYER_PROFILE_GM_ONLY_PATH_PREFIXES } from '~/utils/playerProfileRoutes'
 
-export const PLAYER_BLOCKED_REDIRECT_PREFIXES = ENCOUNTER_GM_ONLY_PATH_PREFIXES
+export const PLAYER_BLOCKED_REDIRECT_PREFIXES = [
+  ...ENCOUNTER_GM_ONLY_PATH_PREFIXES,
+  ...PLAYER_PROFILE_GM_ONLY_PATH_PREFIXES,
+] as const
 
 export const DEFAULT_LOGIN_REDIRECT = MAP_LIBRARY_PATH
 
