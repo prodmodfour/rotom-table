@@ -92,7 +92,7 @@ const props = defineProps<{
   tokenAbilityOptionsById?: Record<string, TokenAbilityMenuOption[]>
   tokenOrderOptionsById?: Record<string, TokenOrderMenuOption[]>
   tokenSendOutOptionsById?: Record<string, TokenSendOutOption[]>
-  sessionTokenControlNotice?: string | null
+  tokenControlNotice?: string | null
   sessionCommandRejection?: SessionCommandRejectionNotice | null
   sessionConnectionStatus?: SessionConnectionStatusNotice | null
   sessionPresence?: SessionPresencePanelModel | null
@@ -234,12 +234,12 @@ defineExpose({ focusPokemon })
       />
 
       <div
-        v-if="props.map && canViewMap && props.sessionTokenControlNotice"
-        class="session-token-control-notice"
+        v-if="props.map && canViewMap && props.tokenControlNotice"
+        class="token-control-notice"
         role="status"
         aria-live="polite"
       >
-        {{ props.sessionTokenControlNotice }}
+        {{ props.tokenControlNotice }}
       </div>
 
       <MapCombatLog
@@ -297,7 +297,7 @@ defineExpose({ focusPokemon })
   background: var(--paper);
 }
 
-.session-token-control-notice {
+.token-control-notice {
   position: absolute;
   z-index: 6;
   top: calc(var(--map-overlay-gutter, 0.75rem) + 6.8rem);
@@ -335,7 +335,7 @@ defineExpose({ focusPokemon })
 }
 
 @media (max-width: 840px) {
-  .session-token-control-notice {
+  .token-control-notice {
     left: var(--map-overlay-gutter, 0.75rem);
     width: min(30rem, calc(100vw - 1.5rem));
   }

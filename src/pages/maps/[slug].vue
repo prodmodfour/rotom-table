@@ -36,6 +36,7 @@ import {
 } from '~/composables/map-editor/useSessionMoveTokenDispatch'
 import { useTokenControls } from '~/composables/map-editor/useTokenControls'
 import type { AuthoritativeSessionState } from '#shared/sessionState'
+import { buildClientPlayerProfileTokenControlModel } from '~/utils/playerProfileTokenControl'
 import { buildSessionTokenControlModel } from '~/utils/sessionTokenControl'
 import {
   formatSessionCommandRejectionNotice,
@@ -58,7 +59,7 @@ definePageMeta({
 
 const route = useRoute()
 const router = useRouter()
-const { isGm, isPlayer } = useAuth()
+const { role, isGm, isPlayer } = useAuth()
 const slug = routeSlugParam(route.params)
 const sessionMoveTokenEnabled = computed(() => isSessionModeQueryEnabled(route.query.session))
 
@@ -72,6 +73,13 @@ const {
 })
 const { pokemonBySlug, trainerBySlug, reloadRuntimeSheets } = useLiveSheets()
 const { postJson } = useApiClient()
+const {
+  selectedProfile,
+  selectedProfileId,
+  loadRememberedProfile,
+  reloadProfiles,
+  lastError: playerProfileError,
+} = usePlayerProfiles()
 
 watch(renamedTo, (newSlug) => {
   if (newSlug) router.replace(mapEditorPath(newSlug))
@@ -116,7 +124,18 @@ const sessionTokenControlModel = computed(() => buildSessionTokenControlModel({
   assignments: sessionSnapshotState.value?.assignments,
   hasAuthoritativeSessionState: sessionMap.mapState.hasAuthoritativeSessionState.value,
 }))
-const sessionTokenControlNotice = computed(() => sessionTokenControlModel.value.notice)
+const playerProfileTokenControlModel = computed(() => buildClientPlayerProfileTokenControlModel({
+  role: role.value,
+  profile: selectedProfile.value,
+  placements: map.value?.placements ?? [],
+}))
+const tokenControlNotice = computed(() => {
+  if (sessionMoveTokenEnabled.value) return sessionTokenControlModel.value.notice
+  if (isPlayer.value && playerProfileError.value) {
+    return `Player profile unavailable: ${playerProfileError.value}`
+  }
+  return playerProfileTokenControlModel.value.notice
+})
 const sessionMapReadyForCommands = computed(() => sessionMap.mapState.hasAuthoritativeSessionState.value)
 const canUseSessionTokenSendOut = computed(() => (
   sessionMoveTokenEnabled.value
@@ -139,15 +158,33 @@ interface MapScenePanelHandle {
 
 const gridRef = ref<MapScenePanelHandle | null>(null)
 
+if (import.meta.client && isPlayer.value) loadRememberedProfile()
+
+const syncPlayerProfileForMapControl = async () => {
+  if (!import.meta.client || !isPlayer.value) return
+  loadRememberedProfile()
+  try {
+    await reloadProfiles({ clearMissingSelection: true })
+  } catch {
+    // Keep the map view available; token-control notices surface the profile loading problem.
+  }
+  await reloadRuntimeSheets({ profileId: selectedProfileId.value })
+}
+
 onMounted(() => {
   if (sessionMoveTokenEnabled.value) sessionMap.loadSessionSnapshot()
   sessionMoveTokenDispatch.loadRememberedIdentity()
+  void syncPlayerProfileForMapControl()
 })
 
 watch(sessionMoveTokenEnabled, (enabled) => {
   if (!enabled) return
   sessionMap.loadSessionSnapshot()
   sessionMoveTokenDispatch.loadRememberedIdentity()
+})
+
+watch(isPlayer, (nextIsPlayer) => {
+  if (nextIsPlayer) void syncPlayerProfileForMapControl()
 })
 
 watch(
@@ -214,6 +251,10 @@ const {
   canControlAllTokens: isGm,
   canDeleteTokens: canUseSessionTokenDelete,
   canSendOutTokens: canUseSessionTokenSendOut,
+  tokenControl: {
+    enabled: computed(() => !sessionMoveTokenEnabled.value),
+    controllablePlacementIds: computed(() => playerProfileTokenControlModel.value.controllablePlacementIds),
+  },
   sessionMoveTokenDispatcher: sessionMoveTokenDispatch,
   sessionTokenControl: {
     enabled: sessionMoveTokenEnabled,
@@ -857,7 +898,7 @@ useMapDimensionReconciliation({
         :hazard-tool="hazardTool"
         :hazard-kind="hazardKind"
         :can-delete-tokens="canUseSessionTokenDelete"
-        :session-token-control-notice="sessionTokenControlNotice"
+        :token-control-notice="tokenControlNotice"
         :move-automation-targeting="actionAutomationTargeting"
         :move-automation-feedback="moveAutomationFeedback"
         :move-usage-error="sceneActionError"

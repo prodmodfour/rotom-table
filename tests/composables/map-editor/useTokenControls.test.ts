@@ -50,6 +50,10 @@ const makeControls = (
     isGm?: boolean
     nextId?: string
     now?: () => number
+    tokenControl?: {
+      readonly enabled: { readonly value: boolean }
+      readonly controllablePlacementIds: { readonly value: readonly string[] }
+    }
     sessionMoveTokenDispatcher?: {
       readonly enabled: { readonly value: boolean }
       readonly tokenPositionOverrides?: { readonly value: readonly {
@@ -85,6 +89,7 @@ const makeControls = (
       canSpawnTokens: isGm,
       canControlAllTokens: isGm,
       canDeleteTokens: isGm,
+      tokenControl: options.tokenControl,
       sessionMoveTokenDispatcher: options.sessionMoveTokenDispatcher,
       sessionTokenControl: options.sessionTokenControl,
       createPlacementId: () => options.nextId ?? 'token-1',
@@ -114,37 +119,73 @@ describe('useTokenControls', () => {
     expect(controls.spawnedPokemon.value[0]?.id).toBe('spawned-1')
   })
 
-  it('uses player sheet access for token control and keeps deletion GM-only', () => {
-    const playerSheet = pokemon({ slug: 'player-mon', player: true })
+  it('uses explicit profile-derived token control and keeps deletion GM-only', () => {
+    const publicSheet = pokemon({ slug: 'public-mon', player: true })
+    const linkedSheet = pokemon({ slug: 'linked-mon', player: false })
     const hiddenTrainer = trainer({ slug: 'hidden-trainer', player: false })
     const map = mapFixture()
     map.placements = [
-      { id: 'player-token', sheetKind: 'pokemon', sheetSlug: playerSheet.slug, position: { x: 0, y: 0, z: 0 } },
-      { id: 'gm-token', sheetKind: 'trainer', sheetSlug: hiddenTrainer.slug, position: { x: 1, y: 0, z: 0 } },
+      { id: 'public-token', sheetKind: 'pokemon', sheetSlug: publicSheet.slug, position: { x: 0, y: 0, z: 0 } },
+      { id: 'linked-token', sheetKind: 'pokemon', sheetSlug: linkedSheet.slug, position: { x: 1, y: 0, z: 0 } },
+      { id: 'gm-token', sheetKind: 'trainer', sheetSlug: hiddenTrainer.slug, position: { x: 2, y: 0, z: 0 } },
     ]
-    const { controls, isGm } = makeControls({
+    const { controls } = makeControls({
+      map,
+      pokemonSheets: [publicSheet, linkedSheet],
+      trainerSheets: [hiddenTrainer],
+      isGm: false,
+      tokenControl: {
+        enabled: ref(true),
+        controllablePlacementIds: ref(['linked-token', 'missing-token', 'linked-token']),
+      },
+    })
+
+    expect(controls.controllablePlacementIds.value).toEqual(['linked-token'])
+    controls.selectPlacement('public-token')
+    expect(controls.selectedId.value).toBeNull()
+    controls.selectPlacement('linked-token')
+    controls.selectPlacement('gm-token')
+    expect(controls.selectedId.value).toBe('linked-token')
+
+    controls.deletePlacement('linked-token')
+    expect(map.placements.map((placement) => placement.id)).toEqual(['public-token', 'linked-token', 'gm-token'])
+
+    controls.turnPlacement('linked-token')
+    expect(map.placements[1]).toMatchObject({ facing: 'north-east', turned: false })
+    controls.turnPlacement('linked-token')
+    expect(map.placements[1]).toMatchObject({ facing: 'north-west', turned: true })
+  })
+
+  it('does not use public player sheet flags as token control without a profile override', () => {
+    const playerSheet = pokemon({ slug: 'player-mon', player: true })
+    const map = mapFixture()
+    map.placements = [
+      { id: 'public-token', sheetKind: 'pokemon', sheetSlug: playerSheet.slug, position: { x: 0, y: 0, z: 0 } },
+    ]
+    const { controls } = makeControls({
       map,
       pokemonSheets: [playerSheet],
-      trainerSheets: [hiddenTrainer],
       isGm: false,
     })
 
-    expect(controls.controllablePlacementIds.value).toEqual(['player-token'])
-    controls.selectPlacement('player-token')
-    controls.selectPlacement('gm-token')
-    expect(controls.selectedId.value).toBe('player-token')
+    expect(controls.controllablePlacementIds.value).toEqual([])
+    controls.selectPlacement('public-token')
+    controls.turnPlacement('public-token')
+    expect(controls.selectedId.value).toBeNull()
+    expect(map.placements[0]?.facing).toBeUndefined()
+  })
 
-    controls.deletePlacement('player-token')
-    expect(map.placements.map((placement) => placement.id)).toEqual(['player-token', 'gm-token'])
+  it('lets GMs control and delete all tokens without a token-control override', () => {
+    const sheet = pokemon({ slug: 'gm-mon', player: false })
+    const map = mapFixture()
+    map.placements = [
+      { id: 'gm-token', sheetKind: 'pokemon', sheetSlug: sheet.slug, position: { x: 0, y: 0, z: 0 } },
+    ]
+    const { controls } = makeControls({ map, pokemonSheets: [sheet], isGm: true })
 
-    controls.turnPlacement('player-token')
-    expect(map.placements[0]).toMatchObject({ facing: 'north-east', turned: false })
-    controls.turnPlacement('player-token')
-    expect(map.placements[0]).toMatchObject({ facing: 'north-west', turned: true })
-
-    isGm.value = true
+    expect(controls.controllablePlacementIds.value).toEqual(['gm-token'])
     controls.deletePlacement('gm-token')
-    expect(map.placements.map((placement) => placement.id)).toEqual(['player-token'])
+    expect(map.placements).toEqual([])
   })
 
   it('uses session token assignments instead of local player sheet flags in session mode', () => {

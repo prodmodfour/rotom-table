@@ -62,7 +62,7 @@ interface SessionMoveTokenDispatcherLike {
   dispatchTurnToken?(payload: { placement: SheetPlacement; facing: TokenFacingDirection }): { readonly dispatched: boolean }
 }
 
-interface SessionTokenControlLike {
+interface TokenControlOverrideLike {
   readonly enabled: BooleanRef
   readonly controllablePlacementIds: ReadonlyValueRef<readonly string[]>
 }
@@ -84,8 +84,9 @@ export interface UseTokenControlsOptions {
   canDeleteTokens?: BooleanRef
   canSendOutTokens?: BooleanRef
   selectionDisabled?: BooleanRef
+  tokenControl?: TokenControlOverrideLike
   sessionMoveTokenDispatcher?: SessionMoveTokenDispatcherLike
-  sessionTokenControl?: SessionTokenControlLike
+  sessionTokenControl?: TokenControlOverrideLike
   createPlacementId?: () => string
   now?: () => number
   maxMovementLogEntries?: number
@@ -118,6 +119,7 @@ export const useTokenControls = ({
   canDeleteTokens = canControlAllTokens,
   canSendOutTokens = canSpawnTokens,
   selectionDisabled,
+  tokenControl,
   sessionMoveTokenDispatcher,
   sessionTokenControl,
   createPlacementId = defaultCreatePlacementId,
@@ -205,20 +207,25 @@ export const useTokenControls = ({
     }, sheetLookup.value)
   })
 
+  const placementIdsFromOverride = (
+    control: TokenControlOverrideLike,
+    placements: readonly SheetPlacement[],
+  ): string[] => {
+    const placementIds = new Set(placements.map((placement) => placement.id))
+    return [...new Set(control.controllablePlacementIds.value)]
+      .filter((id) => placementIds.has(id))
+  }
+
   const controllablePlacementIds = computed(() => {
     if (!map.value) return []
     if (sessionTokenControl?.enabled.value) {
-      const placementIds = new Set(map.value.placements.map((placement) => placement.id))
-      return [...new Set(sessionTokenControl.controllablePlacementIds.value)]
-        .filter((id) => placementIds.has(id))
+      return placementIdsFromOverride(sessionTokenControl, map.value.placements)
+    }
+    if (tokenControl?.enabled.value) {
+      return placementIdsFromOverride(tokenControl, map.value.placements)
     }
     if (canControlAllTokens.value) return map.value.placements.map((placement) => placement.id)
-    return map.value.placements
-      .filter((placement) => {
-        const sheets = placement.sheetKind === 'pokemon' ? pokemonBySlug.value : trainerBySlug.value
-        return sheets?.get(placement.sheetSlug)?.player === true
-      })
-      .map((placement) => placement.id)
+    return []
   })
 
   const controllablePlacementIdSet = computed(() => new Set(controllablePlacementIds.value))
