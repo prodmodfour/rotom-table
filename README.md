@@ -21,7 +21,7 @@ npm install
 npm run dev
 ```
 
-Nuxt will print the local URL, usually `http://localhost:3000`. Open it in a browser and choose **GM Login** for editing/encounter tools or **Player Login** to choose or create the persistent player profile for this browser. GMs can open `/player-profiles` to link or unlink existing Pokémon and trainer sheets to those profiles. When logged in as a player, the app navigation shows the selected profile and lets you switch or clear it while keeping maps, Pokédex, sheets, and reference pages available. On map pages, players and GMs use the normal navigation rail; profile-linked token control no longer requires attach-current-map or session-map management controls in that rail.
+Nuxt will print the local URL, usually `http://localhost:3000`. Open it in a browser and choose **GM Login** for editing/encounter tools or **Player Login** to choose or create the persistent player profile for this browser. GMs can open `/player-profiles` to link or unlink existing Pokémon and trainer sheets to those profiles. When logged in as a player, the app navigation shows the selected profile and lets you switch or clear it while keeping maps, Pokédex, sheets, and reference pages available. On map pages, players and GMs use the normal navigation rail; profile-linked token control no longer requires attach-current-map, session-map management controls, or the legacy session lobby.
 
 Recommended verification commands:
 
@@ -43,7 +43,7 @@ npm run build
 - [docs/live-session-socket-protocol.md](docs/live-session-socket-protocol.md) — live session socket route, message examples, heartbeat, reconnect, command flow, and named-tunnel expectations.
 - [docs/live-session-table-action-commands.md](docs/live-session-table-action-commands.md) — supported HP, condition, initiative, move/action, hazard, field-effect, and terrain session commands with permissions, conflicts, and limitations.
 - [docs/live-session-client-integration.md](docs/live-session-client-integration.md) — legacy live-session client boundaries, including disconnect and conflict recovery guidance.
-- [docs/live-session-lobby.md](docs/live-session-lobby.md) — GM/player join flow, expected LAN usage, and two-browser lobby smoke checklist.
+- [docs/live-session-lobby.md](docs/live-session-lobby.md) — direct-only legacy session identity/socket lobby boundaries and smoke checklist; not normal profile-based play.
 - [docs/live-session-host-runtime.md](docs/live-session-host-runtime.md) — npm helpers for guarded LAN and named-tunnel session host startup.
 - [docs/live-session-public-exposure-checks.md](docs/live-session-public-exposure-checks.md) — no-secret safety banner checks for unsafe public/LAN startup states before sharing join codes.
 - [docs/live-session-lan-hosting.md](docs/live-session-lan-hosting.md) — same-Wi-Fi/LAN hosting runbook with startup commands, IP discovery, player URLs, and troubleshooting.
@@ -139,7 +139,7 @@ See [docs/architecture.md](docs/architecture.md) for more detail.
 | --- | --- |
 | `/` | Redirects to the map library. |
 | `/login` | Choose the local GM role or select/create the persistent player profile for Player Login. |
-| `/sessions` | Live session lobby for session hosting, GM start/manage, and player join flows. |
+| `/sessions` | Direct-only legacy live-session identity/socket lobby for maintenance smoke checks; not linked from normal app navigation or required for profile-based play. |
 | `/player-profiles` | GM-only player profile list plus Pokémon/trainer sheet link and unlink management. |
 | `/maps` | Map library and folders. |
 | `/maps/:slug` | Map editor/table view. |

@@ -4,17 +4,20 @@ import AppNavigation from '~/components/AppNavigation.vue'
 import { useSessionLobby } from '~/composables/useSessionLobby'
 import { buildPlayerSessionMapNavigationModel } from '~/utils/playerSessionMapNavigation'
 import {
+  LOGIN_PATH,
   SESSION_LOBBY_GM_SECTION_ID,
   SESSION_LOBBY_PLAYER_SECTION_ID,
   SESSION_LOBBY_REMEMBERED_SECTION_ID,
 } from '~/utils/appRoutes'
+import { MAP_LIBRARY_PATH } from '~/utils/mapRoutes'
+import { POKEDEX_PATH } from '~/utils/pokedex/routes'
 import type {
   PlayerAssignmentRecord,
   SessionControllableResourceRef,
   SessionVisibleResourceRef,
 } from '#shared/sessionPermissions'
 
-useHead({ title: 'Live session lobby · Rotom Table' })
+useHead({ title: 'Legacy live-session lobby · Rotom Table' })
 
 const { isGm, roleLabel } = useAuth()
 const displayName = ref('')
@@ -148,6 +151,30 @@ onMounted(() => {
   <main class="session-lobby-page">
     <AppNavigation />
 
+    <section class="normal-play-banner panel-card" aria-labelledby="normal-play-title">
+      <div>
+        <p class="eyebrow">Legacy session surface</p>
+        <h2 id="normal-play-title">Normal play does not use the session lobby</h2>
+        <p>
+          Players normally choose a persistent profile from Login, open a player-visible map,
+          and control profile-linked characters on the regular map route. This direct lobby page
+          remains only for legacy session identity/socket smoke checks and is no longer linked
+          from the app navigation.
+        </p>
+      </div>
+      <div class="normal-play-links" aria-label="Normal play routes">
+        <NuxtLink class="primary-button" :to="MAP_LIBRARY_PATH">
+          Open maps
+        </NuxtLink>
+        <NuxtLink class="secondary-button" :to="LOGIN_PATH">
+          Choose profile
+        </NuxtLink>
+        <NuxtLink class="secondary-button" :to="POKEDEX_PATH">
+          Browse Pokédex
+        </NuxtLink>
+      </div>
+    </section>
+
     <section
       class="safety-banner panel-card"
       :class="`safety-banner--${safetyBannerSeverity}`"
@@ -196,13 +223,13 @@ onMounted(() => {
     </section>
 
     <section class="session-hero panel-card" aria-labelledby="session-lobby-title">
-      <p class="eyebrow">Session hosting</p>
-      <h1 id="session-lobby-title">Live session lobby</h1>
+      <p class="eyebrow">Legacy session hosting</p>
+      <h1 id="session-lobby-title">Legacy live-session lobby</h1>
       <p class="hero-copy">
-        Start a GM-hosted live session, then players can join the currently
-        running table by creating a profile or picking an existing one. This
-        lobby is additive: the existing local trust login still gates the app
-        while live session identity is active.
+        This page is intentionally isolated from the normal play flow. Use it only
+        when you deliberately need the old session-local identity and socket lobby
+        for maintenance or smoke testing; profile-based map play uses the normal
+        app navigation and regular <code>/maps/&lt;slug&gt;</code> route.
       </p>
       <dl class="session-facts">
         <div>
@@ -227,17 +254,16 @@ onMounted(() => {
       {{ lastNotice }}
     </p>
 
-    <section class="lobby-grid" aria-label="Live session lobby actions">
+    <section class="lobby-grid" aria-label="Legacy live-session lobby actions">
       <article class="lobby-card panel-card" aria-labelledby="gm-lobby-title">
         <div class="card-heading">
-          <p class="eyebrow">Session hosting</p>
-          <h2 :id="SESSION_LOBBY_GM_SECTION_ID">Start and manage live session</h2>
+          <p class="eyebrow">Legacy session hosting</p>
+          <h2 :id="SESSION_LOBBY_GM_SECTION_ID">Start and manage legacy live session</h2>
         </div>
         <p class="card-copy">
-          Creates a server-owned live session and a private GM key stored only
-          in this browser. Players use the player lobby below to pick or create
-          a session profile for the active table. Session hosting still requires
-          <code>ROTOM_ENABLE_SESSION_HOST=1</code> and the local GM role.
+          Creates a server-owned legacy live session and a private GM key stored only
+          in this browser. This is not required for normal profile-based play. Session
+          hosting still requires <code>ROTOM_ENABLE_SESSION_HOST=1</code> and the local GM role.
         </p>
 
         <div class="action-row">
@@ -314,13 +340,13 @@ onMounted(() => {
 
       <article class="lobby-card panel-card" aria-labelledby="player-lobby-title">
         <div class="card-heading">
-          <p class="eyebrow">Player join</p>
-          <h2 :id="SESSION_LOBBY_PLAYER_SECTION_ID">Join live session</h2>
+          <p class="eyebrow">Legacy player join</p>
+          <h2 :id="SESSION_LOBBY_PLAYER_SECTION_ID">Join legacy live session</h2>
         </div>
         <p class="card-copy">
-          No join code is needed. Players target the currently running live
-          session on this server, then create a profile or pick one that already
-          exists at the table.
+          This legacy join flow creates or reuses a session-local player identity
+          for the currently running live session on this server. It does not replace
+          the persistent player profile picker used for normal maps and sheets.
         </p>
 
         <dl class="detail-list" aria-label="Current player lobby session">
@@ -492,10 +518,34 @@ onMounted(() => {
   margin-top: 1rem;
 }
 
+.normal-play-banner,
 .session-hero,
 .safety-banner {
   display: grid;
   gap: 0.75rem;
+}
+
+.normal-play-banner {
+  border-color: rgba(70, 180, 122, 0.5);
+  background:
+    linear-gradient(135deg, rgba(70, 180, 122, 0.12), transparent 24rem),
+    var(--paper-soft);
+}
+
+.normal-play-banner p {
+  margin-bottom: 0;
+  color: var(--ink-soft);
+  line-height: 1.55;
+}
+
+.normal-play-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.normal-play-links a {
+  text-decoration: none;
 }
 
 .safety-banner {

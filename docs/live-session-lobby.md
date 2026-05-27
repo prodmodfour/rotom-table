@@ -6,7 +6,7 @@ For guarded startup helpers, see the [live session host runtime scripts](live-se
 
 ## Current lobby behaviour
 
-- `/sessions` is an additive legacy lobby route. It does not replace the existing `/login` trust picker, persistent player profile picker, or normal map/sheet workflows.
+- `/sessions` is an additive legacy lobby route kept for direct maintenance/smoke access only. It is no longer linked from the normal app navigation and does not replace the existing `/login` trust picker, persistent player profile picker, or normal map/sheet workflows.
 - `GET /api/sessions/safety` returns a no-secret banner status so the GM can see whether hosting is disabled, local, LAN, remote, or unknown before sharing a join code.
 - `POST /api/sessions/start` creates a session-local GM identity, join code, initial authoritative state, and local JSON snapshot when session hosting is explicitly enabled.
 - `POST /api/sessions/join` creates a session-local player ID/client ID/display name from a valid join code.
@@ -14,7 +14,7 @@ For guarded startup helpers, see the [live session host runtime scripts](live-se
 - `POST /api/sessions/player-state` lets a joined player refresh only their own identity, assignments, and visible session map summary.
 - `POST /api/sessions/assignments` remains the GM-only assignment endpoint for legacy session token/sheet resources.
 
-The removed `/api/sessions/maps/attach` route is not part of the product flow. GMs should not instruct players to use session maps for normal play; players normally open the relevant player-visible map and act with profile-linked characters.
+The removed `/api/sessions/maps/attach` route is not part of the product flow. GMs should not instruct players to use the lobby or session maps for normal play; players normally open the relevant player-visible map and act with profile-linked characters.
 
 ## Safety and identity rules
 

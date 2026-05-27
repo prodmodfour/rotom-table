@@ -17,7 +17,7 @@ This directory collects presentation and reviewer documentation for Rotom Table.
 - [Live session socket protocol](live-session-socket-protocol.md) — live session socket route, message examples, heartbeat, reconnect, command flow, and named-tunnel expectations.
 - [Live session table action commands](live-session-table-action-commands.md) — supported HP, condition, initiative, move/action, hazard, field-effect, and terrain session commands with permissions, conflicts, and limitations.
 - [Live session client integration](live-session-client-integration.md) — legacy live-session client boundaries, optimistic UX, disconnect recovery, and conflict/retry guidance.
-- [live session lobby and manual QA](live-session-lobby.md) — GM/player join flow, expected LAN usage, and two-browser lobby smoke checklist.
+- [live session lobby and manual QA](live-session-lobby.md) — direct-only legacy session identity/socket lobby boundaries and two-browser smoke checklist; not normal profile-based play.
 - [live session host runtime scripts](live-session-host-runtime.md) — npm helpers for guarded LAN and named-tunnel session host startup.
 - [Live session public exposure checks](live-session-public-exposure-checks.md) — no-secret safety banner checks for unsafe public/LAN startup states before sharing join codes.
 - [Live session LAN hosting runbook](live-session-lan-hosting.md) — same-Wi-Fi/LAN setup commands, IP discovery, player join URLs, smoke checks, and troubleshooting.
