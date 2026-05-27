@@ -1,5 +1,7 @@
 import {
+  normalizeJoinCodeInput,
   parseJoinCode,
+  parsePlayerId,
   parseSessionDisplayName,
   sanitizeSessionDisplayNameString,
   type ClientId,
@@ -11,6 +13,7 @@ import {
 import type { PlayerSessionActor, SessionVisibleResourceRef } from '#shared/sessionPermissions'
 import { incrementSessionRevision, type SessionRevision } from '#shared/sessionRevisions'
 import {
+  findSessionPlayerRecord,
   isSessionMapVisibleByDefaultToPlayers,
   upsertSessionPlayerAssignment,
   upsertSessionPlayerRecord,
@@ -39,8 +42,15 @@ export class JoinPlayerSessionUseCaseError<TStatusCode extends number = number>
   extends UseCaseHttpError<TStatusCode> {}
 
 export interface JoinPlayerSessionInput {
+  /**
+   * Legacy/manual join-code override. When omitted, players join the currently
+   * running active session on this server.
+   */
   readonly joinCode?: unknown
+  /** Display name for creating a new player profile. */
   readonly displayName?: unknown
+  /** Existing player profile to pick in the currently running session. */
+  readonly playerId?: unknown
 }
 
 export type JoinPlayerSessionClock = () => string
@@ -110,9 +120,29 @@ const normalizeGenerateAttempts = (value: number | undefined): number => {
   return attempts
 }
 
+const hasJoinCodeInput = (value: unknown): boolean => {
+  if (value === undefined || value === null) return false
+  if (typeof value === 'string') return normalizeJoinCodeInput(value).length > 0
+  return true
+}
+
+const hasPlayerProfileInput = (value: unknown): boolean => {
+  if (value === undefined || value === null) return false
+  if (typeof value === 'string') return value.trim().length > 0
+  return true
+}
+
 const normalizeJoinCodeForJoin = (value: unknown): JoinCode => {
   try {
     return parseJoinCode(value)
+  } catch (error) {
+    throw new JoinPlayerSessionUseCaseError(400, messageFromError(error))
+  }
+}
+
+const normalizePlayerIdForProfileSelection = (value: unknown): PlayerId => {
+  try {
+    return parsePlayerId(value)
   } catch (error) {
     throw new JoinPlayerSessionUseCaseError(400, messageFromError(error))
   }
@@ -170,7 +200,25 @@ const allocateUniqueClientId = <TMapDocument>(
   )
 }
 
-const getJoinableRecord = <TMapDocument>(
+const assertJoinableRecord = <TMapDocument>(
+  record: SessionStoreRecord<AuthoritativeSessionState<TMapDocument>>,
+  endedMessage: string,
+): JoinableSessionStoreRecord<TMapDocument> => {
+  if (record.status !== 'active') {
+    throw new JoinPlayerSessionUseCaseError(409, endedMessage)
+  }
+
+  if (record.state === undefined) {
+    throw new JoinPlayerSessionUseCaseError(
+      500,
+      'The live session has no authoritative state available for player join',
+    )
+  }
+
+  return record as JoinableSessionStoreRecord<TMapDocument>
+}
+
+const getJoinableRecordByCode = <TMapDocument>(
   store: InMemorySessionStore<AuthoritativeSessionState<TMapDocument>>,
   joinCode: JoinCode,
 ): JoinableSessionStoreRecord<TMapDocument> => {
@@ -182,21 +230,31 @@ const getJoinableRecord = <TMapDocument>(
     )
   }
 
-  if (record.status !== 'active') {
+  return assertJoinableRecord(record, 'The live session for this join code is no longer active')
+}
+
+const getCurrentJoinableRecord = <TMapDocument>(
+  store: InMemorySessionStore<AuthoritativeSessionState<TMapDocument>>,
+): JoinableSessionStoreRecord<TMapDocument> => {
+  const activeRecords = store.listActive()
+  const record = activeRecords[activeRecords.length - 1]
+  if (record === undefined) {
     throw new JoinPlayerSessionUseCaseError(
-      409,
-      'The live session for this join code is no longer active',
+      404,
+      'No active live session is currently running on this server',
     )
   }
 
-  if (record.state === undefined) {
-    throw new JoinPlayerSessionUseCaseError(
-      500,
-      'The live session has no authoritative state available for player join',
-    )
-  }
+  return assertJoinableRecord(record, 'The currently running live session is no longer active')
+}
 
-  return record as JoinableSessionStoreRecord<TMapDocument>
+const getJoinableRecord = <TMapDocument>(
+  store: InMemorySessionStore<AuthoritativeSessionState<TMapDocument>>,
+  joinCodeInput: unknown,
+): JoinableSessionStoreRecord<TMapDocument> => {
+  if (!hasJoinCodeInput(joinCodeInput)) return getCurrentJoinableRecord(store)
+
+  return getJoinableRecordByCode(store, normalizeJoinCodeForJoin(joinCodeInput))
 }
 
 const getDefaultVisibleMapResources = <TMapDocument>(
@@ -253,10 +311,62 @@ export const joinPlayerSessionUseCase = <TMapDocument = unknown>(
   const snapshotWriter = dependencies.writeSnapshot ?? writeSessionSnapshot
   const maxGenerateAttempts = normalizeGenerateAttempts(dependencies.maxGenerateAttempts)
 
-  const joinCode = normalizeJoinCodeForJoin(input.joinCode)
-  const displayName = normalizeDisplayNameForJoin(input.displayName)
-  const record = getJoinableRecord(activeStore, joinCode)
+  const record = getJoinableRecord(activeStore, input.joinCode)
   const currentState = record.state
+
+  if (hasPlayerProfileInput(input.playerId)) {
+    const playerId = normalizePlayerIdForProfileSelection(input.playerId)
+    const player = findSessionPlayerRecord(currentState.players, playerId)
+    if (player === undefined) {
+      throw new JoinPlayerSessionUseCaseError(
+        404,
+        'No joined player profile was found for the supplied player ID',
+      )
+    }
+
+    if (input.displayName !== undefined && input.displayName !== null) {
+      const suppliedDisplayName = normalizeDisplayNameForJoin(input.displayName)
+      if (suppliedDisplayName !== player.displayName) {
+        throw new JoinPlayerSessionUseCaseError(
+          403,
+          'The supplied display name does not match the selected player profile',
+        )
+      }
+    }
+
+    const clientId = allocateUniqueClientId(currentState, generateClientId, maxGenerateAttempts)
+    const actor: PlayerSessionActor = {
+      role: 'player',
+      playerId: player.playerId,
+      clientId,
+      displayName: player.displayName,
+    }
+
+    return {
+      session: {
+        sessionId: record.sessionId,
+        status: record.status,
+        revision: record.revision,
+        createdAt: record.createdAt,
+        updatedAt: record.updatedAt,
+      },
+      player: {
+        playerId: player.playerId,
+        clientId,
+        displayName: player.displayName,
+        joinedAt: player.joinedAt,
+        actor,
+      },
+      snapshot: {
+        writtenAt: record.updatedAt,
+        revision: record.revision,
+      },
+      record,
+      state: currentState,
+    }
+  }
+
+  const displayName = normalizeDisplayNameForJoin(input.displayName)
   const playerId = allocateUniquePlayerId(currentState, generatePlayerId, maxGenerateAttempts)
   const clientId = allocateUniqueClientId(currentState, generateClientId, maxGenerateAttempts)
   const joinedAt = clock()

@@ -22,6 +22,7 @@ import {
   useSessionLobby,
   type GmSessionManagementResponse,
   type JoinPlayerSessionResponse,
+  type PlayerSessionProfilesResponse,
   type PlayerSessionStateResponse,
   type StartGmSessionResponse,
   type UpdatePlayerAssignmentResponse,
@@ -273,6 +274,22 @@ const makePlayerStateResponse = (revision = 1): PlayerSessionStateResponse => ({
   },
 })
 
+const makePlayerProfilesResponse = (revision = 1): PlayerSessionProfilesResponse => ({
+  session: {
+    sessionId: SESSION_ID,
+    status: 'active',
+    revision: parseSessionRevision(revision),
+    createdAt: CREATED_AT,
+    updatedAt: CREATED_AT,
+  },
+  profiles: [{
+    playerId: PLAYER_ID,
+    displayName: DISPLAY_NAME,
+    joinedAt: CREATED_AT,
+    updatedAt: CREATED_AT,
+  }],
+})
+
 const makeStorage = (initial: SessionClientIdentity | null = null) => {
   let stored = initial
   const storage: SessionClientIdentityStorage = {
@@ -430,6 +447,68 @@ describe('useSessionLobby', () => {
     ])
     expect(lobby.playerIdentity.value?.displayName).toBe(DISPLAY_NAME)
     expect(lobby.lastNotice.value).toBe('Joined the live session as Riley.')
+  })
+
+  it('loads player profiles and joins the current live session without a join code', async () => {
+    const storage = makeStorage()
+    const api = makeApiClient({
+      [SESSION_API_PATHS.playerProfiles]: () => makePlayerProfilesResponse(1),
+      [SESSION_API_PATHS.join]: (body) => {
+        expect(body).toEqual({ displayName: '<Riley>' })
+        return makeJoinResponse(1)
+      },
+      [SESSION_API_PATHS.playerState]: () => makePlayerStateResponse(2),
+    })
+    const lobby = useSessionLobby({
+      apiClient: api.apiClient,
+      identityStorage: storage.storage,
+      clock: () => REMEMBERED_AT,
+    })
+
+    await lobby.loadPlayerProfiles()
+    await lobby.joinPlayerSession({ displayName: '<Riley>' })
+
+    expect(api.calls.map((call) => call.request)).toEqual([
+      SESSION_API_PATHS.playerProfiles,
+      SESSION_API_PATHS.join,
+      SESSION_API_PATHS.playerState,
+    ])
+    expect(lobby.playerProfileSession.value?.sessionId).toBe(SESSION_ID)
+    expect(lobby.playerProfiles.value.map((profile) => profile.displayName)).toEqual([DISPLAY_NAME])
+    expect(lobby.identity.value).toMatchObject({
+      role: 'player',
+      playerId: PLAYER_ID,
+      displayName: DISPLAY_NAME,
+    })
+    expect(lobby.lastNotice.value).toBe('Joined the live session as Riley.')
+  })
+
+  it('picks an existing player profile without sending a display name', async () => {
+    const storage = makeStorage()
+    const api = makeApiClient({
+      [SESSION_API_PATHS.join]: (body) => {
+        expect(body).toEqual({ playerId: PLAYER_ID })
+        return makeJoinResponse(1)
+      },
+      [SESSION_API_PATHS.playerState]: () => makePlayerStateResponse(2),
+    })
+    const lobby = useSessionLobby({
+      apiClient: api.apiClient,
+      identityStorage: storage.storage,
+      clock: () => REMEMBERED_AT,
+    })
+
+    await lobby.joinPlayerSession({ playerId: PLAYER_ID })
+
+    expect(api.calls.map((call) => call.request)).toEqual([
+      SESSION_API_PATHS.join,
+      SESSION_API_PATHS.playerState,
+    ])
+    expect(lobby.identity.value).toMatchObject({
+      role: 'player',
+      playerId: PLAYER_ID,
+      displayName: DISPLAY_NAME,
+    })
   })
 
   it('loads a remembered GM identity, refreshes it, and clears browser state', async () => {

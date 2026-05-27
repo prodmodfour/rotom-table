@@ -49,8 +49,8 @@ describe('session safety endpoint startup checks', () => {
         'remote-exposure-before-session-start',
       ],
     })
-    expect(status.warnings.join('\n')).toContain('no active session-local GM key and join code')
-    expect(status.recommendedActions.join('\n')).toContain('start a session, verify a fresh join code')
+    expect(status.warnings.join('\n')).toContain('no active session-local GM table')
+    expect(status.recommendedActions.join('\n')).toContain('start a session, then share only the player URL')
     expect(JSON.stringify(status)).not.toContain('gmkey_')
   })
 

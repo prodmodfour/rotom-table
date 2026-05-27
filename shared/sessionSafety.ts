@@ -248,13 +248,13 @@ const warningTextForExposure = (exposure: SessionSafetyExposure): readonly strin
     case 'local':
       return [
         'live session hosting is enabled for this request, but the host looks local-only.',
-        'GM keys and join codes are session-local secrets; keep the GM browser private.',
+        'GM keys are session-local secrets; keep the GM browser private.',
         'The existing GM/player role picker is still not public authentication.',
       ]
     case 'lan':
       return [
         'live session hosting is enabled and this request looks reachable on a LAN or same-Wi-Fi address.',
-        'Anyone who can reach this Rotom Table server can load the local app; share join codes only with trusted players.',
+        'Anyone who can reach this Rotom Table server can load the local app; share the player URL only with trusted players.',
         'The existing GM/player role picker is still not public authentication.',
       ]
     case 'remote':
@@ -275,15 +275,15 @@ const warningTextForExposure = (exposure: SessionSafetyExposure): readonly strin
 const warningTextForStartupIssue = (issue: SessionSafetyStartupIssue): string => {
   switch (issue) {
     case 'host-enabled-without-active-session':
-      return 'Session hosting is enabled but no active session-local GM key and join code have been created yet; start a GM session from /sessions before sharing any player URL.'
+      return 'Session hosting is enabled but no active session-local GM table has been created yet; start a GM session from /sessions before sharing any player URL.'
     case 'host-enabled-without-session-secrets':
-      return 'An active session record is missing its expected session-local GM key or join code; stop hosting and start a fresh session before players connect.'
+      return 'An active session record is missing its expected session-local GM key or internal session credential; stop hosting and start a fresh session before players connect.'
     case 'host-enabled-without-authoritative-state':
       return 'An active session record is missing authoritative session state; stop hosting and recover from the latest private snapshot or start a fresh session before players connect.'
     case 'host-enabled-session-readiness-unknown':
-      return 'Rotom Table could not verify active-session, GM-key, join-code, and authoritative-state readiness; treat the host as unsafe until checked.'
+      return 'Rotom Table could not verify active-session, GM-key, profile-lobby, and authoritative-state readiness; treat the host as unsafe until checked.'
     case 'remote-exposure-before-session-start':
-      return 'This host appears remotely exposed before a join code/session has been intentionally created; stop the tunnel or complete GM startup before sharing the URL.'
+      return 'This host appears remotely exposed before a live session has been intentionally created; stop the tunnel or complete GM startup before sharing the URL.'
   }
 }
 
@@ -299,18 +299,18 @@ const actionTextForExposure = (exposure: SessionSafetyExposure): readonly string
       ]
     case 'local':
       return [
-        'Keep the server on localhost for private prep, or intentionally bind it for LAN/named-tunnel hosting before sharing join codes.',
+        'Keep the server on localhost for private prep, or intentionally bind it for LAN/named-tunnel hosting before sharing the player URL.',
         `Unset ${SESSION_HOST_ENABLE_ENV} or stop the server when the hosted session is over.`,
       ]
     case 'lan':
       return [
-        'Confirm every player is on the intended LAN/same Wi-Fi before sharing the join code.',
+        'Confirm every player is on the intended LAN/same Wi-Fi before sharing the player URL.',
         `Unset ${SESSION_HOST_ENABLE_ENV} or stop the server when the hosted session is over.`,
       ]
     case 'remote':
       return [
         'Confirm the hostname is a named Cloudflare Tunnel or another deliberate private-server exposure path before sharing it.',
-        'Rotate the join code by starting a new session if it was shared outside the trusted table.',
+        'Start a fresh session if the player URL or a browser profile was shared outside the trusted table.',
       ]
     case 'unknown':
       return [
@@ -323,9 +323,9 @@ const actionTextForExposure = (exposure: SessionSafetyExposure): readonly string
 const actionTextForStartupIssue = (issue: SessionSafetyStartupIssue): string => {
   switch (issue) {
     case 'host-enabled-without-active-session':
-      return 'Open /sessions as the GM, start a session, verify a fresh join code, then share only that code and the player URL with trusted players.'
+      return 'Open /sessions as the GM, start a session, then share only the player URL with trusted players.'
     case 'host-enabled-without-session-secrets':
-      return 'Stop Rotom Table, unset the session-host flag, then start a new hosted session so the GM key and join code rotate together.'
+      return 'Stop Rotom Table, unset the session-host flag, then start a new hosted session so the GM key and player profiles reset together.'
     case 'host-enabled-without-authoritative-state':
       return 'Stop hosting and recover from a private session snapshot, or start a fresh session before allowing players to send commands.'
     case 'host-enabled-session-readiness-unknown':

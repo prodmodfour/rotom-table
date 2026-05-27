@@ -138,9 +138,22 @@ export interface PlayerSessionStateResponse {
   }
 }
 
+export interface PlayerSessionProfileSummary {
+  readonly playerId: PlayerId
+  readonly displayName: SessionDisplayName
+  readonly joinedAt: string
+  readonly updatedAt: string
+}
+
+export interface PlayerSessionProfilesResponse {
+  readonly session: SessionLobbySessionSummary | null
+  readonly profiles: readonly PlayerSessionProfileSummary[]
+}
+
 export interface JoinPlayerSessionForm {
-  readonly joinCode: string
-  readonly displayName: string
+  readonly joinCode?: string
+  readonly displayName?: string
+  readonly playerId?: PlayerId | string
 }
 
 export interface AttachSessionMapForm {
@@ -219,6 +232,7 @@ export const useSessionLobby = (options: UseSessionLobbyOptions = {}) => {
   const gmManagement = ref<GmSessionManagementResponse | null>(null)
   const joinedPlayerSession = ref<JoinPlayerSessionResponse | null>(null)
   const playerState = ref<PlayerSessionStateResponse | null>(null)
+  const playerProfileLobby = ref<PlayerSessionProfilesResponse | null>(null)
   const lastAttachedSessionMap = ref<AttachSessionMapResult | null>(null)
   const lastUpdatedPlayerAssignment = ref<UpdatePlayerAssignmentResponse | null>(null)
   const safetyStatus = ref<SessionSafetyStatus | null>(null)
@@ -235,6 +249,8 @@ export const useSessionLobby = (options: UseSessionLobbyOptions = {}) => {
   const gmSession = computed(() => gmManagement.value?.session ?? startedGmSession.value?.session ?? null)
   const playerSession = computed(() => playerState.value?.session ?? joinedPlayerSession.value?.session ?? null)
   const playerIdentity = computed(() => playerState.value?.player ?? joinedPlayerSession.value?.player ?? null)
+  const playerProfileSession = computed(() => playerProfileLobby.value?.session ?? null)
+  const playerProfiles = computed(() => playerProfileLobby.value?.profiles ?? [])
 
   const rememberIdentity = (nextIdentity: SessionClientIdentity): SessionClientIdentity => {
     identity.value = nextIdentity
@@ -302,6 +318,20 @@ export const useSessionLobby = (options: UseSessionLobbyOptions = {}) => {
     }
   }
 
+  const loadPlayerProfiles = async (
+    loadOptions: { readonly silent?: boolean } = {},
+  ): Promise<PlayerSessionProfilesResponse> => {
+    try {
+      const response = await apiClient.getJson<PlayerSessionProfilesResponse>(SESSION_API_PATHS.playerProfiles)
+      playerProfileLobby.value = response
+      return response
+    } catch (error) {
+      playerProfileLobby.value = null
+      if (loadOptions.silent !== true) recordFailure(error)
+      throw error
+    }
+  }
+
   const startGmSession = async (): Promise<StartGmSessionResponse> => {
     busy.value = true
     lastError.value = null
@@ -340,10 +370,14 @@ export const useSessionLobby = (options: UseSessionLobbyOptions = {}) => {
     lastNotice.value = null
 
     try {
-      const response = await apiClient.postJson<JoinPlayerSessionResponse>(SESSION_API_PATHS.join, {
-        joinCode: form.joinCode,
-        displayName: form.displayName,
-      })
+      const requestBody: Record<string, unknown> = {}
+      if (form.joinCode !== undefined && form.joinCode.trim().length > 0) {
+        requestBody.joinCode = form.joinCode
+      }
+      if (form.displayName !== undefined) requestBody.displayName = form.displayName
+      if (form.playerId !== undefined) requestBody.playerId = form.playerId
+
+      const response = await apiClient.postJson<JoinPlayerSessionResponse>(SESSION_API_PATHS.join, requestBody)
       joinedPlayerSession.value = response
       lastAttachedSessionMap.value = null
       lastUpdatedPlayerAssignment.value = null
@@ -586,6 +620,7 @@ export const useSessionLobby = (options: UseSessionLobbyOptions = {}) => {
     gmManagement,
     joinedPlayerSession,
     playerState,
+    playerProfileLobby,
     lastAttachedSessionMap,
     lastUpdatedPlayerAssignment,
     safetyStatus,
@@ -599,7 +634,10 @@ export const useSessionLobby = (options: UseSessionLobbyOptions = {}) => {
     gmSession,
     playerSession,
     playerIdentity,
+    playerProfileSession,
+    playerProfiles,
     loadSafetyStatus,
+    loadPlayerProfiles,
     startGmSession,
     joinPlayerSession,
     attachMapToSession,

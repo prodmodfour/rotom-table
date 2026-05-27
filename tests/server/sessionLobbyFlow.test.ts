@@ -33,6 +33,9 @@ import {
   type GetGmSessionManagementInput,
 } from '~~/server/useCases/getGmSessionManagement'
 import {
+  getPlayerSessionProfilesUseCase,
+} from '~~/server/useCases/getPlayerSessionProfiles'
+import {
   getPlayerSessionStateUseCase,
   type GetPlayerSessionStateInput,
 } from '~~/server/useCases/getPlayerSessionState'
@@ -65,6 +68,7 @@ const secondPlayerId = parsePlayerId('player_lobby002')
 const missingPlayerId = parsePlayerId('player_lobby999')
 const firstClientId = parseClientId('client_lobbyP01')
 const secondClientId = parseClientId('client_lobbyP02')
+const pickedProfileClientId = parseClientId('client_lobbyP03')
 const duplicateDisplayName = parseSessionDisplayName('Misty')
 
 const pikachuSheet = {
@@ -177,7 +181,7 @@ describe('Live session join/lobby endpoint flow coverage', () => {
       store,
       writeSnapshot,
       clock,
-      { joinCode: ' lby-234 ', displayName: 'Misty' },
+      { displayName: 'Misty' },
       firstPlayerId,
       firstClientId,
     )
@@ -204,6 +208,39 @@ describe('Live session join/lobby endpoint flow coverage', () => {
       displayName: duplicateDisplayName,
     })
     expect(firstJoin.player.playerId).not.toBe(secondJoin.player.playerId)
+
+    const playerProfiles = getPlayerSessionProfilesUseCase({ env: enabledEnv, store })
+    expect(playerProfiles.session).toMatchObject({
+      sessionId,
+      revision: parseSessionRevision(2),
+    })
+    expect(playerProfiles.profiles.map((profile) => profile.playerId)).toEqual([
+      firstPlayerId,
+      secondPlayerId,
+    ])
+    expect(playerProfiles.profiles.map((profile) => profile.displayName)).toEqual([
+      duplicateDisplayName,
+      duplicateDisplayName,
+    ])
+    expect(playerProfiles).not.toHaveProperty('join')
+    expect(playerProfiles).not.toHaveProperty('gmKey')
+    expect(JSON.stringify(playerProfiles)).not.toContain(String(gmKey))
+    expect(JSON.stringify(playerProfiles)).not.toContain(String(joinCode))
+
+    const pickedProfile = joinLobbyPlayer(
+      store,
+      writeSnapshot,
+      clock,
+      { playerId: firstPlayerId },
+      secondPlayerId,
+      pickedProfileClientId,
+    )
+    expect(pickedProfile.player).toMatchObject({
+      playerId: firstPlayerId,
+      clientId: pickedProfileClientId,
+      displayName: duplicateDisplayName,
+    })
+    expect(pickedProfile.session.revision).toBe(parseSessionRevision(2))
 
     const managementAfterJoins = getGmSessionManagementUseCase({ sessionId, gmKey }, {
       env: enabledEnv,
@@ -476,6 +513,13 @@ describe('Live session join/lobby endpoint flow coverage', () => {
       {
         name: 'management',
         action: () => getGmSessionManagementUseCase({ sessionId, gmKey } satisfies GetGmSessionManagementInput, {
+          env: disabledEnv,
+          store,
+        }),
+      },
+      {
+        name: 'player-profiles',
+        action: () => getPlayerSessionProfilesUseCase({
           env: disabledEnv,
           store,
         }),

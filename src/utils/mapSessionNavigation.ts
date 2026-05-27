@@ -47,14 +47,14 @@ export const buildMapSessionNavigationModel = (
       key: 'start-manage-session',
       label: 'Start/manage live session',
       to: sessionLobbyStartManagePath(),
-      description: 'Open the GM live session panel for the join code, players, and assignment summary.',
+      description: 'Open the GM live session panel for players and assignment summary.',
       kind: 'lobby',
     },
     {
       key: 'join-session',
       label: 'Join live session',
       to: sessionLobbyJoinPath(),
-      description: 'Open the player live session panel for a join code and display name.',
+      description: 'Open the player live session panel to create or pick a profile.',
       kind: 'lobby',
     },
   ]

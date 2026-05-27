@@ -235,6 +235,42 @@ describe('joinPlayerSessionUseCase', () => {
     expect(writeSnapshot.mock.calls[0]?.[0]).toEqual(stored?.state)
   })
 
+  it('joins the current active session without a join code and picks an existing profile', () => {
+    const store = createStoreWithSession()
+    const writeSnapshot = createSnapshotWriter()
+
+    const createdProfile = joinSession({
+      store,
+      writeSnapshot,
+      input: { displayName: 'Misty' },
+    })
+    const pickedProfile = joinSession({
+      store,
+      writeSnapshot,
+      input: { playerId },
+      generateClientId: constantFactory(nextClientId),
+    })
+
+    expect(createdProfile.player).toMatchObject({
+      playerId,
+      clientId,
+      displayName: parseSessionDisplayName('Misty'),
+    })
+    expect(pickedProfile.player).toMatchObject({
+      playerId,
+      clientId: nextClientId,
+      displayName: parseSessionDisplayName('Misty'),
+    })
+    expect(pickedProfile.session.revision).toBe(createdProfile.session.revision)
+    expect(pickedProfile.snapshot).toEqual({
+      writtenAt: joinedAt,
+      revision: createdProfile.session.revision,
+    })
+    expect(store.get(sessionId)?.state?.players).toHaveLength(1)
+    expect(store.get(sessionId)?.state?.assignments).toHaveLength(1)
+    expect(writeSnapshot).toHaveBeenCalledTimes(1)
+  })
+
   it('gives new players default visibility to attached session maps marked visible to future players', () => {
     const state = createBaseState({
       selectedMapSlug: 'viridian-gym',
@@ -323,8 +359,9 @@ describe('joinPlayerSessionUseCase', () => {
     expect(writeSnapshot).not.toHaveBeenCalled()
   })
 
-  it('rejects unknown or ended join codes without creating a player identity', () => {
+  it('rejects unknown, missing, or ended sessions without creating a player identity', () => {
     const activeStore = createStoreWithSession()
+    const emptyStore = createInMemorySessionStore<AuthoritativeSessionState>()
     const endedStore = createStoreWithSession({ status: 'ended' })
     const writeSnapshot = createSnapshotWriter()
 
@@ -341,6 +378,17 @@ describe('joinPlayerSessionUseCase', () => {
     )
     expectHttpError(
       () => joinSession({
+        store: emptyStore,
+        writeSnapshot,
+        input: { displayName: 'Ash' },
+      }),
+      {
+        statusCode: 404,
+        message: 'No active live session is currently running on this server',
+      },
+    )
+    expectHttpError(
+      () => joinSession({
         store: endedStore,
         writeSnapshot,
         input: { joinCode, displayName: 'Ash' },
@@ -351,6 +399,7 @@ describe('joinPlayerSessionUseCase', () => {
       },
     )
     expect(activeStore.get(sessionId)?.state?.players).toEqual([])
+    expect(emptyStore.size).toBe(0)
     expect(endedStore.get(sessionId)?.state?.players).toEqual([])
     expect(writeSnapshot).not.toHaveBeenCalled()
   })

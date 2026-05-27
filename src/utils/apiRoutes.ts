@@ -4,6 +4,7 @@ export const SESSION_API_PATHS = {
   safety: '/api/sessions/safety',
   start: '/api/sessions/start',
   join: '/api/sessions/join',
+  playerProfiles: '/api/sessions/player-profiles',
   manage: '/api/sessions/manage',
   playerState: '/api/sessions/player-state',
   assignments: '/api/sessions/assignments',

@@ -17,7 +17,6 @@ import type {
 useHead({ title: 'Live session lobby · Rotom Table' })
 
 const { isGm, roleLabel } = useAuth()
-const joinCode = ref('')
 const displayName = ref('')
 
 const {
@@ -29,11 +28,13 @@ const {
   busy,
   lastError,
   lastNotice,
-  gmJoinCode,
   gmSession,
   playerSession,
   playerIdentity,
+  playerProfileSession,
+  playerProfiles,
   loadSafetyStatus,
+  loadPlayerProfiles,
   startGmSession,
   joinPlayerSession,
   refreshSessionSummary,
@@ -43,9 +44,7 @@ const {
 
 const hasGmIdentity = computed(() => identity.value?.role === 'gm')
 const hasPlayerIdentity = computed(() => identity.value?.role === 'player')
-const canJoin = computed(() =>
-  joinCode.value.trim().length > 0 && displayName.value.trim().length > 0 && !busy.value,
-)
+const canJoin = computed(() => displayName.value.trim().length > 0 && !busy.value)
 const currentSessionId = computed(() => gmSession.value?.sessionId ?? playerSession.value?.sessionId ?? null)
 const playerMapNavigation = computed(() => buildPlayerSessionMapNavigationModel(playerState.value?.visibility ?? null))
 const safetyBannerSeverity = computed(() => safetyStatus.value?.severity ?? 'unknown')
@@ -69,7 +68,7 @@ const safetySessionReadinessLabel = computed(() => {
   return `${status.sessionReadiness} · ${activeLabel}`
 })
 const safetyWarnings = computed(() => safetyStatus.value?.warnings ?? [
-  'Until the safety check responds, treat this page as local prep and do not share join codes.',
+  'Until the safety check responds, treat this page as local prep and do not share the player URL.',
 ])
 const safetyActions = computed(() => safetyStatus.value?.recommendedActions ?? [
   'Refresh the page if the safety banner does not finish loading.',
@@ -86,8 +85,17 @@ const safeRefresh = async () => {
 const handleStartSession = async () => {
   try {
     await startGmSession()
+    await loadProfilesQuietly()
   } catch {
     // The composable stores a user-safe error string for the page.
+  }
+}
+
+const loadProfilesQuietly = async () => {
+  try {
+    await loadPlayerProfiles({ silent: true })
+  } catch {
+    // The safety banner explains disabled hosting; profile refresh is best-effort.
   }
 }
 
@@ -95,8 +103,19 @@ const handleJoinSession = async () => {
   if (!canJoin.value) return
 
   try {
-    await joinPlayerSession({ joinCode: joinCode.value, displayName: displayName.value })
-    joinCode.value = ''
+    await joinPlayerSession({ displayName: displayName.value })
+    displayName.value = ''
+    await loadProfilesQuietly()
+  } catch {
+    // The composable stores a user-safe error string for the page.
+  }
+}
+
+const handlePickPlayerProfile = async (playerId: string) => {
+  if (busy.value) return
+
+  try {
+    await joinPlayerSession({ playerId })
   } catch {
     // The composable stores a user-safe error string for the page.
   }
@@ -116,7 +135,11 @@ const assignmentSummary = (assignment: PlayerAssignmentRecord): string =>
   `${assignment.controllableResources.length} controllable · ${assignment.visibleResources.length} visible`
 
 onMounted(() => {
-  void loadSafetyStatus().catch(() => undefined)
+  void loadSafetyStatus()
+    .then((status) => {
+      if (status.hostEnabled) void loadProfilesQuietly()
+    })
+    .catch(() => undefined)
   void loadRememberedIdentity({ refresh: true }).catch(() => undefined)
 })
 </script>
@@ -176,9 +199,10 @@ onMounted(() => {
       <p class="eyebrow">Session hosting</p>
       <h1 id="session-lobby-title">Live session lobby</h1>
       <p class="hero-copy">
-        Start a GM-hosted live session, share a join code, or join with a
-        session-local display name. This lobby is additive: the existing local
-        trust login still gates the app while live session identity is active.
+        Start a GM-hosted live session, then players can join the currently
+        running table by creating a profile or picking an existing one. This
+        lobby is additive: the existing local trust login still gates the app
+        while live session identity is active.
       </p>
       <dl class="session-facts">
         <div>
@@ -210,8 +234,9 @@ onMounted(() => {
           <h2 :id="SESSION_LOBBY_GM_SECTION_ID">Start and manage live session</h2>
         </div>
         <p class="card-copy">
-          Creates a server-owned live session, a private GM key stored only
-          in this browser, and a player join code. Session hosting still requires
+          Creates a server-owned live session and a private GM key stored only
+          in this browser. Players use the player lobby below to pick or create
+          a session profile for the active table. Session hosting still requires
           <code>ROTOM_ENABLE_SESSION_HOST=1</code> and the local GM role.
         </p>
 
@@ -222,7 +247,7 @@ onMounted(() => {
             :disabled="busy || !isGm"
             @click="handleStartSession"
           >
-            {{ hasGmIdentity ? 'Start another live session' : 'Start GM live session' }}
+            {{ hasGmIdentity ? 'Start fresh live session' : 'Start GM live session' }}
           </button>
           <button
             type="button"
@@ -240,11 +265,6 @@ onMounted(() => {
         </p>
 
         <div v-if="hasGmIdentity" class="session-summary">
-          <div class="code-panel" aria-label="Player join code">
-            <span>Player join code</span>
-            <strong>{{ gmJoinCode ?? 'Refresh required' }}</strong>
-          </div>
-
           <dl class="detail-list">
             <div>
               <dt>Status</dt>
@@ -298,24 +318,36 @@ onMounted(() => {
           <h2 :id="SESSION_LOBBY_PLAYER_SECTION_ID">Join live session</h2>
         </div>
         <p class="card-copy">
-          Enter the GM's join code and a table display name. The returned player
-          ID and client ID are remembered locally for later reconnect and
-          session socket handshakes.
+          No join code is needed. Players target the currently running live
+          session on this server, then create a profile or pick one that already
+          exists at the table.
         </p>
+
+        <dl class="detail-list" aria-label="Current player lobby session">
+          <div>
+            <dt>Active table</dt>
+            <dd>{{ playerProfileSession ? 'Live session running' : 'Waiting for GM' }}</dd>
+          </div>
+          <div>
+            <dt>Profiles</dt>
+            <dd>{{ playerProfiles.length }}</dd>
+          </div>
+        </dl>
+
+        <div class="action-row">
+          <button
+            type="button"
+            class="secondary-button"
+            :disabled="busy"
+            @click="loadProfilesQuietly"
+          >
+            Refresh profiles
+          </button>
+        </div>
 
         <form class="join-form" @submit.prevent="handleJoinSession">
           <label>
-            <span>Join code</span>
-            <input
-              v-model="joinCode"
-              autocomplete="off"
-              inputmode="text"
-              placeholder="ABCD-2345"
-              :disabled="busy"
-            >
-          </label>
-          <label>
-            <span>Display name</span>
+            <span>New profile display name</span>
             <input
               v-model="displayName"
               autocomplete="nickname"
@@ -325,9 +357,32 @@ onMounted(() => {
             >
           </label>
           <button type="submit" class="primary-button" :disabled="!canJoin">
-            Join live session
+            Create profile and join
           </button>
         </form>
+
+        <section class="mini-section" aria-labelledby="existing-player-profiles-title">
+          <h3 id="existing-player-profiles-title">Existing player profiles</h3>
+          <p v-if="!playerProfileSession" class="empty-text">
+            Ask the GM to start the live session. This lobby will use it automatically once it is running.
+          </p>
+          <p v-else-if="playerProfiles.length === 0" class="empty-text">
+            No player profiles have been created for this live session yet.
+          </p>
+          <ul v-else class="profile-list">
+            <li v-for="profile in playerProfiles" :key="profile.playerId">
+              <button
+                type="button"
+                class="profile-button"
+                :disabled="busy"
+                @click="handlePickPlayerProfile(profile.playerId)"
+              >
+                <span>{{ profile.displayName }}</span>
+                <small>{{ profile.playerId }}</small>
+              </button>
+            </li>
+          </ul>
+        </section>
 
         <div v-if="hasPlayerIdentity" class="session-summary">
           <dl class="detail-list">
@@ -756,6 +811,7 @@ h3 {
 }
 
 .player-list,
+.profile-list,
 .assignment-list,
 .session-map-list {
   display: grid;
@@ -766,6 +822,7 @@ h3 {
 }
 
 .player-list li,
+.profile-list li,
 .assignment-list li,
 .session-map-list li {
   display: flex;
@@ -782,13 +839,40 @@ h3 {
   background: rgba(255, 31, 45, 0.08) !important;
 }
 
+.profile-button {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.4rem 0.75rem;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+}
+
+.profile-button:hover,
+.profile-button:focus-visible {
+  color: var(--accent);
+  outline: none;
+}
+
+.profile-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
 .player-list span,
+.profile-button span,
 .assignment-list span {
   color: var(--ink-bright);
   font-weight: 800;
 }
 
 .player-list small,
+.profile-button small,
 .assignment-list small {
   color: var(--ink-muted);
   overflow-wrap: anywhere;

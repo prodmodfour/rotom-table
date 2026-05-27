@@ -55,7 +55,7 @@ describe('session safety status', () => {
     expect(status.sessionReadiness).toBe('ready')
     expect(status.startupIssues).toEqual([])
     expect(status.summary).toContain('looks local')
-    expect(status.warnings.join('\n')).toContain('GM keys and join codes')
+    expect(status.warnings.join('\n')).toContain('GM keys are session-local secrets')
   })
 
   it('classifies enabled private IP and single-label host requests as LAN exposure', () => {
@@ -111,7 +111,7 @@ describe('session safety status', () => {
     expect(status.recommendedActions.join('\n')).toContain('Verify the server bind address')
   })
 
-  it('warns when hosting is enabled before a GM session creates keys and a join code', () => {
+  it('warns when hosting is enabled before a GM session creates a live table', () => {
     const status = createSessionSafetyStatus({
       hostEnabled: true,
       requestHost: 'localhost:3000',
@@ -138,9 +138,9 @@ describe('session safety status', () => {
       'host-enabled-without-active-session',
       'remote-exposure-before-session-start',
     ])
-    expect(status.warnings.join('\n')).toContain('no active session-local GM key and join code')
-    expect(status.warnings.join('\n')).toContain('remotely exposed before a join code/session')
-    expect(status.recommendedActions.join('\n')).toContain('start a session, verify a fresh join code')
+    expect(status.warnings.join('\n')).toContain('no active session-local GM table')
+    expect(status.warnings.join('\n')).toContain('remotely exposed before a live session')
+    expect(status.recommendedActions.join('\n')).toContain('start a session, then share only the player URL')
     expect(JSON.stringify(status)).not.toContain('gmkey_')
   })
 
@@ -162,7 +162,7 @@ describe('session safety status', () => {
       'host-enabled-without-session-secrets',
       'host-enabled-without-authoritative-state',
     ])
-    expect(status.warnings.join('\n')).toContain('missing its expected session-local GM key or join code')
+    expect(status.warnings.join('\n')).toContain('missing its expected session-local GM key or internal session credential')
     expect(status.warnings.join('\n')).toContain('missing authoritative session state')
     expect(status.recommendedActions.join('\n')).toContain('start a new hosted session')
     expect(JSON.stringify(status)).not.toContain('joinCode')
