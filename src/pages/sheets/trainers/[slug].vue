@@ -5,7 +5,13 @@ import { normalizeTrainerSheet } from '~/utils/sheetNormalize'
 import { useEditableSheetResource } from '~/composables/sheets/useEditableSheetResource'
 import { useSheetRenameUrlSync } from '~/composables/sheets/useSheetRenameUrlSync'
 import { SHEET_API_PATHS } from '~/utils/apiRoutes'
+import { getErrorMessage } from '~/utils/errorMessages'
 import { routeSlugParam } from '~/utils/routeParams'
+import {
+  buildSheetLoadQuery,
+  PLAYER_PROFILE_REQUIRED_FOR_LINKED_SHEET_MESSAGE,
+  sheetApiProfileContext,
+} from '~/utils/sheetApiRequests'
 import type { TrainerSheet } from '~/types/trainerSheet'
 
 // ---------------------------------------------------------------------------
@@ -20,13 +26,23 @@ definePageMeta({
 
 const route = useRoute()
 const { isGm, isPlayer } = useAuth()
+const { selectedProfileId, loadRememberedProfile } = usePlayerProfiles()
+if (import.meta.client && isPlayer.value) loadRememberedProfile()
+
 const slug = routeSlugParam(route.params)
 const staticBaseSheet = trainerSheetsBySlug.get(slug) ?? null
-const { data: runtimeSheetResult } = await useFetch<{ sheet: TrainerSheet } | null>(SHEET_API_PATHS.load, {
+const currentSheetProfileContext = () => sheetApiProfileContext(isPlayer.value, selectedProfileId.value)
+const sheetLoadQuery = computed(() => buildSheetLoadQuery({
+  kind: 'trainer',
+  slug,
+  profileContext: currentSheetProfileContext(),
+}))
+const { data: runtimeSheetResult, error: runtimeSheetError } = await useFetch<{ sheet: TrainerSheet } | null>(SHEET_API_PATHS.load, {
   default: () => null,
   immediate: import.meta.dev,
   key: `trainer-sheet-${slug}`,
-  query: { kind: 'trainer', slug },
+  query: sheetLoadQuery,
+  server: !isPlayer.value,
 })
 const baseSheet = runtimeSheetResult.value?.sheet ?? (import.meta.dev ? null : staticBaseSheet)
 const {
@@ -39,6 +55,7 @@ const {
   kind: 'trainer',
   isPlayer,
   normalize: normalizeTrainerSheet,
+  profileContext: currentSheetProfileContext,
 })
 
 useSheetRenameUrlSync({
@@ -48,6 +65,15 @@ useSheetRenameUrlSync({
 })
 
 const sheetFolder = computed(() => sheet.value?.folder ?? '')
+const sheetLoadErrorMessage = computed(() => {
+  if (!runtimeSheetError.value) return null
+  const message = getErrorMessage(runtimeSheetError.value)
+  if (isPlayer.value && !selectedProfileId.value && message.includes('linked to the selected player profile')) {
+    return PLAYER_PROFILE_REQUIRED_FOR_LINKED_SHEET_MESSAGE
+  }
+  return message
+})
+const sheetNotFoundMessage = computed(() => sheetLoadErrorMessage.value ?? 'No trainer for slug')
 const sheetPathLabel = computed(() => {
   if (!sheet.value) return null
   return sheet.value.name || sheet.value.slug
@@ -76,7 +102,7 @@ useHead(() => ({
     <template #not-found>
       <SheetNotFoundCard
         title="Trainer not found"
-        message="No trainer for slug"
+        :message="sheetNotFoundMessage"
         :slug="slug"
       />
     </template>

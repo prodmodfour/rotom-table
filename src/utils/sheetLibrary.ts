@@ -121,8 +121,9 @@ export const buildSheetLibraryItems = (options: BuildSheetLibraryItemsOptions): 
   return [...pokes, ...trainers]
 }
 
-const isPlayerVisibleSheet = (sheet: { player?: unknown; sessionPlayerAccessible?: unknown }): boolean =>
-  sheet.player === true || sheet.sessionPlayerAccessible === true
+const isPlayerVisibleSheet = (
+  sheet: { player?: unknown; sessionPlayerAccessible?: unknown; playerProfileAccessible?: unknown },
+): boolean => sheet.player === true || sheet.sessionPlayerAccessible === true || sheet.playerProfileAccessible === true
 
 export const applySheetLibraryOverrides = (
   baseItems: ReadonlyArray<SheetLibraryItem>,

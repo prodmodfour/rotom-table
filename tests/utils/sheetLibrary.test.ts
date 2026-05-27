@@ -88,6 +88,12 @@ describe('sheetLibrary helpers', () => {
           player: false,
           sessionPlayerAccessible: true,
         } as Partial<CharacterSheet>),
+        pokemon({
+          slug: 'profile-linked',
+          nickname: 'Profile Linked',
+          player: false,
+          playerProfileAccessible: true,
+        } as Partial<CharacterSheet>),
       ],
       trainerSheets: [trainer()],
       speciesTypesFor: () => [],
@@ -103,9 +109,10 @@ describe('sheetLibrary helpers', () => {
       deletedFolders: new Set(['team/beta/live/archive']),
     })
 
-    expect(items).toHaveLength(2)
+    expect(items).toHaveLength(3)
     expect(items[0]).toMatchObject({ folder: 'team/beta/live', sortKey: 'sparky' })
     expect(items[1]).toMatchObject({ slug: 'session-granted', sortKey: 'session granted' })
+    expect(items[2]).toMatchObject({ slug: 'profile-linked', sortKey: 'profile linked' })
     expect(displaySheetLibraryName(items[0])).toBe('Sparky')
     expect(displaySheetLibraryName(baseItems[0])).toBe('Bolt')
   })

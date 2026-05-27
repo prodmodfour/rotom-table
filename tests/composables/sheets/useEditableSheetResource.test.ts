@@ -50,4 +50,15 @@ describe('useEditableSheetResource', () => {
 
     expect(resource.sheet.value?.slug).toBe('player-sheet')
   })
+
+  it('allows profile-linked sheets marked by the sheet load API for player sessions', () => {
+    const resource = useEditableSheetResource<TestSheet>({
+      baseSheet: { slug: 'linked-sheet', playerProfileAccessible: true } as TestSheet,
+      kind: 'pokemon',
+      isPlayer: computed(() => true),
+      normalize: (sheet) => sheet,
+    })
+
+    expect(resource.sheet.value?.slug).toBe('linked-sheet')
+  })
 })

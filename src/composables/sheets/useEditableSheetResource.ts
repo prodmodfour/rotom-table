@@ -1,6 +1,7 @@
 import { computed, type ComputedRef } from 'vue'
 import { deepCloneJson } from '~/utils/serialization'
 import { useEditableSheet, type SaveStatus, type UseEditableSheetReturn } from '~/composables/useEditableSheet'
+import type { SheetApiProfileContext } from '~/utils/sheetApiRequests'
 import type { SheetKind } from '#shared/sheets'
 
 export interface EditableSheetResourceOptions<TSheet extends { slug: string; player?: boolean }> {
@@ -9,6 +10,7 @@ export interface EditableSheetResourceOptions<TSheet extends { slug: string; pla
   isPlayer: ComputedRef<boolean>
   normalize: (sheet: TSheet) => TSheet
   prepareInitial?: (sheet: TSheet) => void
+  profileContext?: () => SheetApiProfileContext
 }
 
 export interface EditableSheetResource<TSheet extends { slug: string }> {
@@ -19,16 +21,26 @@ export interface EditableSheetResource<TSheet extends { slug: string }> {
   renamedTo: ComputedRef<string | null>
 }
 
+const isPlayerAccessibleSheet = (sheet: { player?: unknown; sessionPlayerAccessible?: unknown; playerProfileAccessible?: unknown }): boolean => (
+  sheet.player === true ||
+  sheet.sessionPlayerAccessible === true ||
+  sheet.playerProfileAccessible === true
+)
+
 export function useEditableSheetResource<TSheet extends { slug: string; player?: boolean }>(
   options: EditableSheetResourceOptions<TSheet>,
 ): EditableSheetResource<TSheet> {
   const canAccessBaseSheet = computed(() => Boolean(
     options.baseSheet && (
       !options.isPlayer.value ||
-      options.baseSheet.player === true ||
-      (options.baseSheet as { sessionPlayerAccessible?: unknown }).sessionPlayerAccessible === true
+      isPlayerAccessibleSheet(options.baseSheet)
     ),
   ))
+  const requiresSelectedPlayerProfile = (): boolean => Boolean(
+    options.isPlayer.value &&
+    options.baseSheet &&
+    (options.baseSheet as { playerProfileAccessible?: unknown }).playerProfileAccessible === true,
+  )
 
   const initialClone = canAccessBaseSheet.value && options.baseSheet
     ? options.normalize(deepCloneJson(options.baseSheet))
@@ -36,7 +48,10 @@ export function useEditableSheetResource<TSheet extends { slug: string; player?:
 
   if (initialClone) options.prepareInitial?.(initialClone)
 
-  const editor = initialClone ? useEditableSheet(initialClone, options.kind) : null
+  const editor = initialClone ? useEditableSheet(initialClone, options.kind, {
+    profileContext: options.profileContext,
+    requiresSelectedPlayerProfile,
+  }) : null
   const sheet = computed<TSheet | null>(() => editor?.sheet.value ?? null)
   const saveStatus = computed<SaveStatus>(() => editor?.saveStatus.value ?? 'idle')
   const saveError = computed<string | null>(() => editor?.saveError.value ?? null)

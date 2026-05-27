@@ -22,6 +22,7 @@ import { useApiClient } from '~/composables/useApiClient'
 import { useWindowKeydown } from '~/composables/useWindowKeydown'
 import { SHEET_API_PATHS } from '~/utils/apiRoutes'
 import { isEscapeKey } from '~/utils/keyboardShortcuts'
+import { sheetApiProfileContext } from '~/utils/sheetApiRequests'
 import { sheetEditorPath, sheetLibraryPath } from '~/utils/sheetRoutes'
 
 type SheetItem = SheetLibraryItem
@@ -34,6 +35,9 @@ export const useSheetLibraryPage = () => {
   const { isGm: rawIsGm, isPlayer: rawIsPlayer } = useAuth()
   const isGm = computed<boolean>(() => rawIsGm.value === true)
   const isPlayer = computed<boolean>(() => rawIsPlayer.value === true)
+  const { selectedProfileId, loadRememberedProfile } = usePlayerProfiles()
+  if (import.meta.client && isPlayer.value) loadRememberedProfile()
+
   const canDrag = computed<boolean>(() => Boolean(import.meta.dev && isGm.value))
 
   const {
@@ -50,6 +54,7 @@ export const useSheetLibraryPage = () => {
     isGm,
     isPlayer,
     canLoadFolders: canDrag,
+    sheetProfileContext: () => sheetApiProfileContext(isPlayer.value, selectedProfileId.value),
   })
 
   const { currentPath, goToFolder, breadcrumbs } = useLibraryFolderNavigation({

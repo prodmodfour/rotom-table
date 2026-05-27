@@ -24,7 +24,12 @@ import { createAutosaveResourceController } from '~/utils/autosaveResource'
 import { runLatestAutosave } from '~/utils/autosaveSaveRunner'
 import { bindAutosaveUnloadFlushers, sendJsonWithUnloadFallback } from '~/utils/autosaveUnload'
 import { SHEET_API_PATHS } from '~/utils/apiRoutes'
+import { getErrorMessage } from '~/utils/errorMessages'
 import { deepCloneJson } from '~/utils/serialization'
+import {
+  buildSheetSaveBody,
+  type SheetApiProfileContext,
+} from '~/utils/sheetApiRequests'
 import { stablePersistableSheetJson, toPersistableSheetPayload } from '~/utils/sheets/persistence'
 import { useApiClient } from './useApiClient'
 import { subscribeChannel, type RealtimeEvent } from './useRealtime'
@@ -36,6 +41,10 @@ export type SaveStatus = 'idle' | 'saving' | 'saved' | 'error'
 export interface UseEditableSheetOptions {
   /** Milliseconds to wait after the last change before saving. */
   debounceMs?: number
+  /** Supplies the current player profile identity for player-owned sheet saves. */
+  profileContext?: () => SheetApiProfileContext
+  /** Require a selected profile before saving profile-linked private sheets. */
+  requiresSelectedPlayerProfile?: () => boolean
 }
 
 export interface UseEditableSheetReturn<T> {
@@ -81,6 +90,16 @@ export function useEditableSheet<T extends { slug: string }>(
     const desiredSlug = slugify(displayNameFor(value))
     return Boolean(desiredSlug && desiredSlug !== value.slug)
   }
+  const currentProfileContext = (): SheetApiProfileContext | undefined => options.profileContext?.()
+  const requiresSelectedPlayerProfile = (): boolean => options.requiresSelectedPlayerProfile?.() === true
+  const buildSaveBody = (payload: Record<string, unknown>): Record<string, unknown> => buildSheetSaveBody({
+    kind,
+    slug: sheet.value.slug,
+    sheet: payload,
+    clientId,
+    profileContext: currentProfileContext(),
+    requireSelectedPlayerProfile: requiresSelectedPlayerProfile(),
+  })
 
   const jsonFor = (value: T): string => stablePersistableSheetJson(value)
   // Mirrors what's persisted on disk; used by the deep watcher to skip
@@ -150,12 +169,7 @@ export function useEditableSheet<T extends { slug: string }>(
     await runLatestAutosave({
       guard: autosave.guard,
       status: autosave.statusController,
-      save: () => postJson<SaveSheetResponse<T>>(SHEET_API_PATHS.save, {
-        kind,
-        slug: sheet.value.slug,
-        sheet: payload,
-        clientId,
-      }),
+      save: () => postJson<SaveSheetResponse<T>>(SHEET_API_PATHS.save, buildSaveBody(payload)),
       onSuccess: (result, { latest }) => {
         const persistedSheet = result.sheet ? deepCloneJson(result.sheet) : null
         const persistedSlug = result.slug ?? persistedSheet?.slug
@@ -205,7 +219,14 @@ export function useEditableSheet<T extends { slug: string }>(
 
     const payload = toPersistedPayload(sheet.value)
     const payloadJson = stablePersistableSheetJson(sheet.value)
-    const body = JSON.stringify({ kind, slug: sheet.value.slug, sheet: payload, clientId })
+    let body: string
+    try {
+      body = JSON.stringify(buildSaveBody(payload))
+    } catch (error) {
+      saveStatus.value = 'error'
+      saveError.value = getErrorMessage(error)
+      return
+    }
 
     sendJsonWithUnloadFallback(SHEET_API_PATHS.save, body)
 
