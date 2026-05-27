@@ -46,7 +46,6 @@ import {
   type WriteSessionSnapshotResult,
 } from '~~/server/utils/sessionSnapshots'
 import { createInMemorySessionStore } from '~~/server/utils/sessionStore'
-import { attachSessionMapUseCase } from '~~/server/useCases/attachSessionMap'
 import { joinPlayerSessionUseCase } from '~~/server/useCases/joinPlayerSession'
 import { startGmSessionUseCase } from '~~/server/useCases/startGmSession'
 import { updatePlayerAssignmentUseCase } from '~~/server/useCases/updatePlayerAssignment'
@@ -197,8 +196,8 @@ afterEach(() => {
   roots = []
 })
 
-describe('session map attachment persistence and recovery', () => {
-  it('recovers attached map state, selected map state, visibility, and assignments from snapshots', () => {
+describe('session map persistence and recovery', () => {
+  it('recovers session map state, selected map state, visibility, and assignments from snapshots', () => {
     const sandboxRoot = tempRoot()
     const snapshotRoot = join(sandboxRoot, 'data', 'sessions')
     const writes: WriteSessionSnapshotResult<TestMapDocument>[] = []
@@ -215,7 +214,7 @@ describe('session map attachment persistence and recovery', () => {
       generateClientId: constantFactory<ClientId>(gmClientId),
       writeSnapshot,
     })
-    joinPlayerSessionUseCase<TestMapDocument>({ joinCode, displayName }, {
+    const joinResult = joinPlayerSessionUseCase<TestMapDocument>({ joinCode, displayName }, {
       env: enabledEnv,
       store,
       clock: () => joinedAt,
@@ -223,14 +222,38 @@ describe('session map attachment persistence and recovery', () => {
       generateClientId: constantFactory<ClientId>(playerClientId),
       writeSnapshot,
     })
-    attachSessionMapUseCase<TestMapDocument>({ sessionId, gmKey, gmClientId, mapSlug }, {
-      env: enabledEnv,
-      store,
-      clock: () => attachedAt,
-      findMapPath: () => `/persisted/maps/${mapSlug}.json`,
-      readMap: () => persistedMap,
-      writeSnapshot,
+    const sessionMapState = createAuthoritativeSessionState<TestMapDocument>({
+      sessionId,
+      revision: parseSessionRevision(2),
+      selectedMapSlug: mapSlug,
+      maps: [
+        createAuthoritativeSessionMapState<TestMapDocument>({
+          mapSlug,
+          revision: INITIAL_MAP_REVISION,
+          playerVisibleByDefault: true,
+          document: persistedMap,
+        }),
+      ],
+      connectedClients: joinResult.state.connectedClients,
+      players: joinResult.state.players,
+      assignments: [
+        {
+          playerId,
+          displayName,
+          controllableResources: [],
+          visibleResources: [{ kind: 'map', mapSlug }],
+          updatedAt: attachedAt,
+          updatedByClientId: gmClientId,
+        },
+      ],
+      createdAt: joinResult.state.createdAt,
+      updatedAt: attachedAt,
     })
+    expect(store.setState(sessionId, sessionMapState, {
+      revision: sessionMapState.revision,
+      updatedAt: attachedAt,
+    })?.revision).toBe(sessionMapState.revision)
+    writeSnapshot(sessionMapState, { clock: () => attachedAt })
     const assignmentResult = updatePlayerAssignmentUseCase<TestMapDocument>({
       sessionId,
       gmKey,

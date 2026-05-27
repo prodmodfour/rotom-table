@@ -13,7 +13,12 @@ import {
   type SessionId,
 } from '#shared/sessionIdentity'
 import { INITIAL_MAP_REVISION, INITIAL_SESSION_REVISION, parseSessionRevision } from '#shared/sessionRevisions'
-import type { AuthoritativeSessionState, SessionMapSlug } from '#shared/sessionState'
+import {
+  createAuthoritativeSessionMapState,
+  createAuthoritativeSessionState,
+  type AuthoritativeSessionState,
+  type SessionMapSlug,
+} from '#shared/sessionState'
 import { SESSION_HOST_ENABLE_ENV } from '~~/server/utils/sessionHosting'
 import {
   SESSION_SNAPSHOT_SCHEMA_VERSION,
@@ -21,7 +26,6 @@ import {
   type WriteSessionSnapshotResult,
 } from '~~/server/utils/sessionSnapshots'
 import { createInMemorySessionStore } from '~~/server/utils/sessionStore'
-import { attachSessionMapUseCase } from '~~/server/useCases/attachSessionMap'
 import { getGmSessionManagementUseCase } from '~~/server/useCases/getGmSessionManagement'
 import { getPlayerSessionStateUseCase } from '~~/server/useCases/getPlayerSessionState'
 import { joinPlayerSessionUseCase } from '~~/server/useCases/joinPlayerSession'
@@ -39,7 +43,7 @@ const gmClientId = parseClientId('client_mapsummarygm')
 const playerId = parsePlayerId('player_mapsummary01')
 const playerClientId = parseClientId('client_mapsummaryp1')
 const displayName = parseSessionDisplayName('Riley')
-const mapSlug = 'summary-attach-map' as SessionMapSlug
+const mapSlug = 'summary-session-map' as SessionMapSlug
 
 type TestMapDocument = {
   readonly slug: string
@@ -82,8 +86,8 @@ const createSnapshotWriter = (): SnapshotWriter => vi.fn((
   }
 })
 
-describe('live session map attachment summaries', () => {
-  it('updates GM management and player-state summaries before and after a map is attached', () => {
+describe('live session map summaries', () => {
+  it('updates GM management and player-state summaries before and after a session map is available', () => {
     const store = createInMemorySessionStore<AuthoritativeSessionState<TestMapDocument>>()
     const writeSnapshot = createSnapshotWriter()
     const clock = queueFactory([startedAt, joinedAt, attachedAt])
@@ -141,19 +145,40 @@ describe('live session map attachment summaries', () => {
       visibleMaps: [],
     })
 
-    attachSessionMapUseCase<TestMapDocument>({
+    const currentState = store.get(sessionId)?.state
+    if (currentState === undefined) throw new Error('expected active test session state')
+    const sessionMapState = createAuthoritativeSessionState<TestMapDocument>({
       sessionId,
-      gmKey,
-      gmClientId,
-      mapSlug,
-    }, {
-      env: enabledEnv,
-      store,
-      clock,
-      findMapPath: () => `/maps/${mapSlug}.json`,
-      readMap: () => ({ slug: mapSlug, name: 'Summary Attach Map', placements: [] }),
-      writeSnapshot,
+      revision: parseSessionRevision(2),
+      selectedMapSlug: mapSlug,
+      maps: [
+        createAuthoritativeSessionMapState<TestMapDocument>({
+          mapSlug,
+          revision: INITIAL_MAP_REVISION,
+          playerVisibleByDefault: true,
+          document: { slug: mapSlug, name: 'Summary Session Map', placements: [] },
+        }),
+      ],
+      connectedClients: currentState.connectedClients,
+      players: currentState.players,
+      assignments: [
+        {
+          playerId,
+          displayName,
+          controllableResources: [],
+          visibleResources: [{ kind: 'map', mapSlug }],
+          updatedAt: attachedAt,
+          updatedByClientId: gmClientId,
+        },
+      ],
+      createdAt: currentState.createdAt,
+      updatedAt: attachedAt,
     })
+    expect(store.setState(sessionId, sessionMapState, {
+      revision: sessionMapState.revision,
+      updatedAt: attachedAt,
+    })?.revision).toBe(sessionMapState.revision)
+    writeSnapshot(sessionMapState, { clock: () => attachedAt })
 
     const managementAfterAttach = getGmSessionManagementUseCase<TestMapDocument>({ sessionId, gmKey }, {
       env: enabledEnv,
@@ -199,7 +224,7 @@ describe('live session map attachment summaries', () => {
     expect(managementAfterAttach.players).toEqual([{ playerId, displayName, joinedAt, updatedAt: joinedAt }])
     expect(managementAfterAttach.assignments[0]?.visibleResources).toEqual([{ kind: 'map', mapSlug }])
     expect(managementAfterAttach).not.toHaveProperty('gmKey')
-    expect(JSON.stringify(managementAfterAttach.selectedMap)).not.toContain('Summary Attach Map')
+    expect(JSON.stringify(managementAfterAttach.selectedMap)).not.toContain('Summary Session Map')
 
     expect(playerAfterAttach.visibility).toEqual({
       selectedMapAttached: true,

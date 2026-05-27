@@ -271,7 +271,7 @@ describe('joinPlayerSessionUseCase', () => {
     expect(writeSnapshot).toHaveBeenCalledTimes(1)
   })
 
-  it('gives new players default visibility to attached session maps marked visible to future players', () => {
+  it('gives new players default visibility to session maps marked visible to future players', () => {
     const state = createBaseState({
       selectedMapSlug: 'viridian-gym',
       maps: [

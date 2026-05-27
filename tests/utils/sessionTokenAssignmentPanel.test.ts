@@ -100,7 +100,7 @@ describe('session token assignment panel model', () => {
     expect(brock?.tokens[0]?.action).toBe('assign')
   })
 
-  it('explains no-map and not-attached states without exposing session secrets', () => {
+  it('explains no-map and unavailable session-map states without exposing session secrets', () => {
     const noMap = buildSessionTokenAssignmentPanelModel({
       localRoleIsGm: true,
       rememberedRole: 'gm',
@@ -109,15 +109,15 @@ describe('session token assignment panel model', () => {
     expect(noMap.canManage).toBe(false)
     expect(noMap.summary).toBe('Open a saved map before assigning live session token control.')
 
-    const notAttached = buildSessionTokenAssignmentPanelModel({
+    const unavailable = buildSessionTokenAssignmentPanelModel({
       ...baseReadyOptions,
       selectedMapSlug: null,
       selectedMapAttached: false,
       sessionMapAvailable: false,
     })
-    expect(notAttached.statusKind).toBe('blocked')
-    expect(notAttached.summary).toBe('Attach a map to the live session before assigning player token control.')
-    expect(JSON.stringify(notAttached)).not.toContain('gmkey_')
+    expect(unavailable.statusKind).toBe('blocked')
+    expect(unavailable.summary).toBe('Select an available session map before assigning player token control.')
+    expect(JSON.stringify(unavailable)).not.toContain('gmkey_')
   })
 
   it('shows empty states for joined-player and current-token gaps', () => {

@@ -3,7 +3,6 @@ import {
   SESSION_CLIENT_IDENTITY_SCHEMA_VERSION,
   type SessionClientIdentity,
 } from '#shared/sessionClientIdentity'
-import type { AttachSessionMapResult } from '#shared/sessionMapAttachment'
 import {
   parseClientId,
   parseGmKey,
@@ -168,35 +167,6 @@ const makeManagementResponse = (
   }
 }
 
-const makeAttachResponse = (): AttachSessionMapResult => ({
-  session: {
-    sessionId: SESSION_ID,
-    revision: parseSessionRevision(2),
-    selectedMapSlug: MAP_SLUG,
-    mapCount: 1,
-  },
-  map: {
-    mapSlug: MAP_SLUG,
-    revision: MAP_REVISION,
-    selected: true,
-  },
-  selection: {
-    behavior: 'select-attached-map',
-    previousSelectedMapSlug: null,
-    selectedMapSlug: MAP_SLUG,
-  },
-  visibility: {
-    behavior: 'visible-to-all-players',
-    grantsJoinedPlayers: true,
-    grantsFuturePlayers: true,
-    visiblePlayerIds: [PLAYER_ID],
-  },
-  snapshot: {
-    writtenAt: CREATED_AT,
-    revision: parseSessionRevision(2),
-  },
-})
-
 const makeAssignmentResponse = (): UpdatePlayerAssignmentResponse => ({
   session: {
     sessionId: SESSION_ID,
@@ -267,10 +237,9 @@ const makePlayerStateResponse = (): PlayerSessionStateResponse => ({
 })
 
 describe('session lobby map flow integration', () => {
-  it('moves a remembered GM from map attach to refreshed token assignment state', async () => {
+  it('moves a remembered GM from an available session map to refreshed token assignment state', async () => {
     const storage = makeStorage(gmIdentity())
     const managementResponses = [
-      makeManagementResponse(1),
       makeManagementResponse(2, { mapAttached: true, assignments: [visibleMapAssignment] }),
       makeManagementResponse(3, { mapAttached: true, assignments: [tokenControlAssignment] }),
     ]
@@ -280,17 +249,6 @@ describe('session lobby map flow integration', () => {
         const response = managementResponses.shift()
         if (response === undefined) throw new Error('unexpected extra live session management refresh')
         return response
-      },
-      [SESSION_API_PATHS.attachMap]: (body) => {
-        expect(body).toEqual({
-          sessionId: SESSION_ID,
-          gmKey: GM_KEY,
-          gmClientId: GM_CLIENT_ID,
-          mapSlug: MAP_SLUG,
-          selectedMapBehavior: 'select-attached-map',
-          visibilityBehavior: 'visible-to-all-players',
-        })
-        return makeAttachResponse()
       },
       [SESSION_API_PATHS.assignments]: (body) => {
         expect(body).toEqual({
@@ -311,26 +269,6 @@ describe('session lobby map flow integration', () => {
     })
 
     await lobby.loadRememberedIdentity({ refresh: true })
-
-    const beforeAttachPanel = buildSessionTokenAssignmentPanelModel({
-      mapSlug: MAP_SLUG,
-      selectedMapSlug: lobby.gmManagement.value?.session.selectedMapSlug ?? null,
-      selectedMapAttached: lobby.gmManagement.value?.session.selectedMapAttached ?? false,
-      sessionMapAvailable: lobby.gmManagement.value?.session.sessionMapAvailable ?? false,
-      localRoleIsGm: true,
-      rememberedRole: lobby.identity.value?.role ?? null,
-      players: lobby.gmManagement.value?.players ?? [],
-      assignments: lobby.gmManagement.value?.assignments ?? [],
-      tokens: [{ tokenId: tokenResource.tokenId, sheetKind: 'pokemon', sheetSlug: 'pikachu' }],
-    })
-    expect(beforeAttachPanel.statusKind).toBe('blocked')
-    expect(beforeAttachPanel.summary).toBe('Attach a map to the live session before assigning player token control.')
-
-    await lobby.attachMapToSession({
-      mapSlug: MAP_SLUG,
-      selectedMapBehavior: 'select-attached-map',
-      visibilityBehavior: 'visible-to-all-players',
-    })
 
     const readyPanel = buildSessionTokenAssignmentPanelModel({
       mapSlug: MAP_SLUG,
@@ -374,12 +312,9 @@ describe('session lobby map flow integration', () => {
 
     expect(api.calls.map((call) => call.request)).toEqual([
       SESSION_API_PATHS.manage,
-      SESSION_API_PATHS.attachMap,
-      SESSION_API_PATHS.manage,
       SESSION_API_PATHS.assignments,
       SESSION_API_PATHS.manage,
     ])
-    expect(lobby.lastAttachedSessionMap.value?.map.mapSlug).toBe(MAP_SLUG)
     expect(lobby.lastUpdatedPlayerAssignment.value?.assignment).toEqual(tokenControlAssignment)
     expect(lobby.gmManagement.value?.assignments).toEqual([tokenControlAssignment])
     expect(lobby.identity.value?.lastSeenRevision).toBe(parseSessionRevision(3))

@@ -1083,7 +1083,7 @@ export const useSessionMoveTokenDispatch = (
     if (!hasAuthoritativeSessionState.value) {
       return fail(
         'awaiting-authoritative-map',
-        'Waiting for an authoritative live session map snapshot before moving tokens. Refresh the session map or ask the GM to attach this map to the live session.',
+        'Waiting for an authoritative live session map snapshot before moving tokens. Refresh the session map or ask the GM to verify this map is visible in the live session.',
       )
     }
 
@@ -1142,7 +1142,7 @@ export const useSessionMoveTokenDispatch = (
     if (!hasAuthoritativeSessionState.value) {
       return turnFail(
         'awaiting-authoritative-map',
-        'Waiting for an authoritative live session map snapshot before turning tokens. Refresh the session map or ask the GM to attach this map to the live session.',
+        'Waiting for an authoritative live session map snapshot before turning tokens. Refresh the session map or ask the GM to verify this map is visible in the live session.',
       )
     }
 

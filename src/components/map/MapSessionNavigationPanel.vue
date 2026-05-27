@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useSessionLobby } from '~/composables/useSessionLobby'
-import { buildMapSessionAttachmentActionModel } from '~/utils/mapSessionAttachmentAction'
 import { buildMapSessionNavigationModel } from '~/utils/mapSessionNavigation'
 import {
   buildSessionTokenAssignmentPanelModel,
@@ -32,40 +31,19 @@ const { isGm } = useAuth()
 const {
   identity,
   gmManagement,
-  lastAttachedSessionMap,
   busy,
   lastError,
   lastNotice,
-  attachMapToSession,
   assignSessionMapTokenToPlayer,
   unassignSessionMapTokenFromPlayer,
   loadRememberedIdentity,
 } = useSessionLobby()
 
-const attachFeedback = ref<PanelFeedback | null>(null)
 const assignmentFeedback = ref<PanelFeedback | null>(null)
 
 const model = computed(() => buildMapSessionNavigationModel({
   mapSlug: props.mapSlug,
   sessionModeEnabled: props.sessionModeEnabled,
-}))
-
-const currentAttachedMapSlug = computed(() => {
-  const mapSlug = props.mapSlug?.trim()
-  if (!mapSlug) return null
-  if (lastAttachedSessionMap.value?.map.mapSlug === mapSlug) return mapSlug
-  return gmManagement.value?.maps.find((sessionMap) => sessionMap.mapSlug === mapSlug)?.mapSlug ?? null
-})
-
-const attachmentModel = computed(() => buildMapSessionAttachmentActionModel({
-  mapSlug: props.mapSlug,
-  sessionModeEnabled: props.sessionModeEnabled,
-  localRoleIsGm: isGm.value,
-  rememberedRole: identity.value?.role ?? null,
-  busy: busy.value,
-  attachedMapSlug: currentAttachedMapSlug.value,
-  lastError: attachFeedback.value?.kind === 'error' ? attachFeedback.value.message : null,
-  lastNotice: attachFeedback.value?.kind === 'notice' ? attachFeedback.value.message : null,
 }))
 
 const tokenAssignmentModel = computed(() => buildSessionTokenAssignmentPanelModel({
@@ -84,30 +62,6 @@ const tokenAssignmentModel = computed(() => buildSessionTokenAssignmentPanelMode
 onMounted(() => {
   void loadRememberedIdentity({ refresh: true }).catch(() => undefined)
 })
-
-const attachCurrentMap = async () => {
-  if (!attachmentModel.value.canAttach || attachmentModel.value.mapSlug === null) return
-
-  attachFeedback.value = null
-  assignmentFeedback.value = null
-
-  try {
-    await attachMapToSession({
-      mapSlug: attachmentModel.value.mapSlug,
-      selectedMapBehavior: 'select-attached-map',
-      visibilityBehavior: 'visible-to-all-players',
-    })
-    attachFeedback.value = {
-      kind: 'notice',
-      message: lastNotice.value ?? `Attached ${attachmentModel.value.mapSlug} to the live session map.`,
-    }
-  } catch {
-    attachFeedback.value = {
-      kind: 'error',
-      message: lastError.value ?? 'Could not attach the current map to the live session.',
-    }
-  }
-}
 
 const updateTokenControl = async (
   playerId: PlayerId,
@@ -153,38 +107,6 @@ const updateTokenControl = async (
     >
       {{ model.statusLabel }}
     </p>
-
-    <section class="map-session-attach" aria-labelledby="map-session-attach-title">
-      <div class="map-session-attach__heading">
-        <p>{{ attachmentModel.modeLabel }}</p>
-        <h3 id="map-session-attach-title">Attach current map</h3>
-      </div>
-      <p class="map-session-attach__copy">{{ attachmentModel.modeSummary }}</p>
-      <p
-        class="map-session-attach__message"
-        :class="`map-session-attach__message--${attachmentModel.statusKind}`"
-        role="status"
-      >
-        {{ attachmentModel.statusMessage }}
-      </p>
-      <div class="map-session-attach__actions">
-        <button
-          type="button"
-          class="map-session-attach__button"
-          :disabled="!attachmentModel.canAttach"
-          @click="attachCurrentMap"
-        >
-          {{ attachmentModel.attachButtonLabel }}
-        </button>
-        <NuxtLink
-          v-if="attachmentModel.openSessionMapHref"
-          :to="attachmentModel.openSessionMapHref"
-          class="map-session-attach__link"
-        >
-          {{ attachmentModel.openSessionMapLabel }}
-        </NuxtLink>
-      </div>
-    </section>
 
     <section class="map-session-assignments" aria-labelledby="map-session-assignments-title">
       <div class="map-session-assignments__heading">
@@ -314,128 +236,6 @@ const updateTokenControl = async (
   border-color: rgba(70, 180, 122, 0.45);
   background: rgba(70, 180, 122, 0.12);
   color: var(--ink-bright);
-}
-
-.map-session-attach {
-  display: grid;
-  gap: 0.45rem;
-  padding: 0.55rem;
-  border: 1px solid var(--rule-soft);
-  border-radius: 10px;
-  background: var(--paper);
-}
-
-.map-session-attach__heading {
-  display: grid;
-  gap: 0.18rem;
-}
-
-.map-session-attach__heading p,
-.map-session-attach__heading h3,
-.map-session-attach__copy,
-.map-session-attach__message {
-  margin: 0;
-}
-
-.map-session-attach__heading p {
-  color: var(--accent);
-  font-size: 0.64rem;
-  font-weight: 900;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-
-.map-session-attach__heading h3 {
-  color: var(--ink-bright);
-  font-size: 0.82rem;
-  line-height: 1.2;
-}
-
-.map-session-attach__copy,
-.map-session-attach__message {
-  color: var(--ink-soft);
-  font-size: 0.68rem;
-  line-height: 1.35;
-}
-
-.map-session-attach__message {
-  padding: 0.42rem 0.46rem;
-  border: 1px solid var(--rule-soft);
-  border-radius: 9px;
-  background: var(--paper-inset);
-  font-weight: 700;
-}
-
-.map-session-attach__message--ready,
-.map-session-attach__message--success {
-  border-color: rgba(70, 180, 122, 0.45);
-  background: rgba(70, 180, 122, 0.10);
-  color: var(--ink-bright);
-}
-
-.map-session-attach__message--busy {
-  border-color: rgba(143, 184, 255, 0.45);
-  background: rgba(143, 184, 255, 0.10);
-}
-
-.map-session-attach__message--error {
-  border-color: rgba(255, 31, 45, 0.55);
-  background: rgba(255, 31, 45, 0.10);
-  color: var(--accent);
-}
-
-.map-session-attach__actions {
-  display: grid;
-  gap: 0.4rem;
-}
-
-.map-session-attach__button,
-.map-session-attach__link {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 0;
-  min-height: 2.25rem;
-  padding: 0.48rem 0.55rem;
-  border: 1px solid var(--rule-soft);
-  border-radius: 10px;
-  font: inherit;
-  font-size: 0.72rem;
-  font-weight: 850;
-  text-align: center;
-}
-
-.map-session-attach__button {
-  background: var(--accent);
-  color: #fff;
-  cursor: pointer;
-}
-
-.map-session-attach__button:disabled {
-  background: var(--paper-soft);
-  color: var(--ink-muted);
-  cursor: not-allowed;
-}
-
-.map-session-attach__link {
-  background: var(--paper-inset);
-  color: var(--ink-bright);
-  text-decoration: none;
-}
-
-.map-session-attach__button:not(:disabled):hover,
-.map-session-attach__button:not(:disabled):focus-visible,
-.map-session-attach__link:hover,
-.map-session-attach__link:focus-visible {
-  border-color: var(--accent);
-  outline: none;
-  transform: translateY(-1px);
-}
-
-.map-session-attach__button:not(:disabled):focus-visible,
-.map-session-attach__link:focus-visible {
-  outline: 2px solid rgba(255, 31, 45, 0.35);
-  outline-offset: 2px;
 }
 
 .map-session-assignments {

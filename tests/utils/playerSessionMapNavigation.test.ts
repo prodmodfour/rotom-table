@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { buildPlayerSessionMapNavigationModel } from '~/utils/playerSessionMapNavigation'
 
 describe('player session map navigation model', () => {
-  it('builds session-mode links for visible attached maps with the selected map first', () => {
+  it('builds session-mode links for visible session maps with the selected map first', () => {
     const model = buildPlayerSessionMapNavigationModel({
       selectedMapAttached: true,
       currentMapVisible: true,
@@ -79,7 +79,7 @@ describe('player session map navigation model', () => {
     ])
   })
 
-  it('explains that the GM needs to attach a map when no session map is attached', () => {
+  it('explains that the GM needs to make a session map available when none is available', () => {
     const model = buildPlayerSessionMapNavigationModel({
       selectedMapAttached: false,
       currentMapVisible: false,
@@ -91,11 +91,11 @@ describe('player session map navigation model', () => {
 
     expect(model.status).toBe('needs-session-map')
     expect(model.links).toEqual([])
-    expect(model.summary).toBe('No session map is attached to this live session yet.')
-    expect(model.emptyMessage).toContain('The GM needs to attach a saved map')
+    expect(model.summary).toBe('No session map is available to this live session yet.')
+    expect(model.emptyMessage).toContain('No visible session maps are available')
   })
 
-  it('explains that the GM needs to make the attached map visible when the player has no visible maps', () => {
+  it('explains that the GM needs to make a session map visible when the player has no visible maps', () => {
     const model = buildPlayerSessionMapNavigationModel({
       selectedMapAttached: true,
       currentMapVisible: false,
@@ -108,7 +108,7 @@ describe('player session map navigation model', () => {
     expect(model.status).toBe('needs-player-visibility')
     expect(model.links).toEqual([])
     expect(model.summary).toContain('not visible to your player')
-    expect(model.emptyMessage).toContain('Ask the GM to make the attached session map visible')
+    expect(model.emptyMessage).toContain('Ask the GM to make the session map visible')
   })
 
   it('shows a loading state before a joined player state is available', () => {
@@ -116,6 +116,6 @@ describe('player session map navigation model', () => {
 
     expect(model.status).toBe('loading')
     expect(model.links).toEqual([])
-    expect(model.emptyMessage).toContain('lists attached session maps')
+    expect(model.emptyMessage).toContain('lists session maps')
   })
 })

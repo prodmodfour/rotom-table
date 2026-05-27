@@ -344,7 +344,7 @@ export const useSessionMap = (options: UseSessionMapOptions): UseSessionMapRetur
     if (!mapState.hasAuthoritativeSessionState.value) {
       return failDispatch(
         'awaiting-authoritative-map',
-        'Waiting for an authoritative live session map snapshot before sending session commands. Refresh the session map or ask the GM to attach this map to the live session.',
+        'Waiting for an authoritative live session map snapshot before sending session commands. Refresh the session map or ask the GM to verify this map is visible in the live session.',
       )
     }
 

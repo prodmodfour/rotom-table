@@ -3,7 +3,6 @@ import {
   SESSION_CLIENT_IDENTITY_SCHEMA_VERSION,
   type SessionClientIdentity,
 } from '#shared/sessionClientIdentity'
-import type { AttachSessionMapResult } from '#shared/sessionMapAttachment'
 import { createSessionSafetyStatus } from '#shared/sessionSafety'
 import {
   parseClientId,
@@ -130,35 +129,6 @@ const makeAttachedManagementResponse = (revision = 2): GmSessionManagementRespon
     maps: [attachedMapSummary],
   }
 }
-
-const makeAttachMapResponse = (revision = 2): AttachSessionMapResult => ({
-  session: {
-    sessionId: SESSION_ID,
-    revision: parseSessionRevision(revision),
-    selectedMapSlug: MAP_SLUG,
-    mapCount: 1,
-  },
-  map: {
-    mapSlug: MAP_SLUG,
-    revision: attachedMapSummary.revision,
-    selected: true,
-  },
-  selection: {
-    behavior: 'select-attached-map',
-    previousSelectedMapSlug: null,
-    selectedMapSlug: MAP_SLUG,
-  },
-  visibility: {
-    behavior: 'visible-to-all-players',
-    grantsJoinedPlayers: true,
-    grantsFuturePlayers: true,
-    visiblePlayerIds: [PLAYER_ID],
-  },
-  snapshot: {
-    writtenAt: CREATED_AT,
-    revision: parseSessionRevision(revision),
-  },
-})
 
 const makeUpdateAssignmentResponse = (
   revision = 3,
@@ -546,63 +516,6 @@ describe('useSessionLobby', () => {
     expect(lobby.lastNotice.value).toBe('Cleared the remembered live session identity for this browser.')
   })
 
-  it('attaches a persisted map for a remembered GM session and refreshes lobby state', async () => {
-    const storedIdentity: SessionClientIdentity = {
-      schemaVersion: SESSION_CLIENT_IDENTITY_SCHEMA_VERSION,
-      role: 'gm',
-      sessionId: SESSION_ID,
-      clientId: GM_CLIENT_ID,
-      gmKey: GM_KEY,
-      rememberedAt: CREATED_AT,
-      lastSeenRevision: parseSessionRevision(0),
-    }
-    const storage = makeStorage(storedIdentity)
-    const attachResponse = makeAttachMapResponse(2)
-    const api = makeApiClient({
-      [SESSION_API_PATHS.attachMap]: (body) => {
-        expect(body).toEqual({
-          sessionId: SESSION_ID,
-          gmKey: GM_KEY,
-          gmClientId: GM_CLIENT_ID,
-          mapSlug: MAP_SLUG,
-          selectedMapBehavior: 'preserve-current-selection',
-          visibilityBehavior: 'visible-to-joined-players',
-        })
-        return attachResponse
-      },
-      [SESSION_API_PATHS.manage]: (body) => {
-        expect(body).toEqual({ sessionId: SESSION_ID, gmKey: GM_KEY })
-        return makeAttachedManagementResponse(2)
-      },
-    })
-    const lobby = useSessionLobby({
-      apiClient: api.apiClient,
-      identityStorage: storage.storage,
-      clock: () => REMEMBERED_AT,
-    })
-
-    const result = await lobby.attachMapToSession({
-      mapSlug: ` ${MAP_SLUG} `,
-      selectedMapBehavior: 'preserve-current-selection',
-      visibilityBehavior: 'visible-to-joined-players',
-    })
-
-    expect(result).toEqual(attachResponse)
-    expect(api.calls.map((call) => call.request)).toEqual([
-      SESSION_API_PATHS.attachMap,
-      SESSION_API_PATHS.manage,
-    ])
-    expect(storage.storage.load).toHaveBeenCalled()
-    expect(lobby.lastAttachedSessionMap.value).toEqual(attachResponse)
-    expect(lobby.gmManagement.value?.selectedMap?.mapSlug).toBe(MAP_SLUG)
-    expect(lobby.gmManagement.value?.session.sessionMapAvailable).toBe(true)
-    expect(lobby.identity.value?.lastSeenRevision).toBe(parseSessionRevision(2))
-    expect(storage.stored()).toEqual(lobby.identity.value)
-    expect(lobby.lastNotice.value).toBe(`Attached ${MAP_SLUG} to the live session map.`)
-    expect(lobby.lastError.value).toBeNull()
-    expect(lobby.busy.value).toBe(false)
-  })
-
   it('assigns a current map token for a joined player and refreshes GM management state', async () => {
     const storedIdentity: SessionClientIdentity = {
       schemaVersion: SESSION_CLIENT_IDENTITY_SCHEMA_VERSION,
@@ -780,12 +693,12 @@ describe('useSessionLobby', () => {
     await expect(lobby.assignSessionMapTokenToPlayer({
       playerId: PLAYER_ID,
       tokenId: ' ',
-    })).rejects.toThrow('Choose a token on an attached live session map before assigning player token control.')
+    })).rejects.toThrow('Choose a token on an available live session map before assigning player token control.')
 
     expect(api.calls).toEqual([])
     expect(lobby.lastUpdatedPlayerAssignment.value).toBeNull()
     expect(lobby.lastNotice.value).toBeNull()
-    expect(lobby.lastError.value).toBe('Choose a token on an attached live session map before assigning player token control.')
+    expect(lobby.lastError.value).toBe('Choose a token on an available live session map before assigning player token control.')
   })
 
   it('surfaces assignment request failures without exposing GM secrets', async () => {
@@ -838,51 +751,7 @@ describe('useSessionLobby', () => {
     expect(lobby.busy.value).toBe(false)
   })
 
-  it('surfaces attach-map request failures without requiring a page reload', async () => {
-    const storedIdentity: SessionClientIdentity = {
-      schemaVersion: SESSION_CLIENT_IDENTITY_SCHEMA_VERSION,
-      role: 'gm',
-      sessionId: SESSION_ID,
-      clientId: GM_CLIENT_ID,
-      gmKey: GM_KEY,
-      rememberedAt: CREATED_AT,
-      lastSeenRevision: parseSessionRevision(0),
-    }
-    const storage = makeStorage(storedIdentity)
-    const apiError = {
-      data: { statusMessage: 'That persisted map is not available to attach to the live session.' },
-    }
-    const api = makeApiClient({
-      [SESSION_API_PATHS.attachMap]: () => {
-        throw apiError
-      },
-    })
-    const lobby = useSessionLobby({
-      apiClient: api.apiClient,
-      identityStorage: storage.storage,
-      clock: () => REMEMBERED_AT,
-    })
-
-    await expect(lobby.attachMapToSession({ mapSlug: MAP_SLUG })).rejects.toEqual(apiError)
-
-    expect(storage.storage.load).toHaveBeenCalled()
-    expect(api.calls).toEqual([{
-      request: SESSION_API_PATHS.attachMap,
-      body: {
-        sessionId: SESSION_ID,
-        gmKey: GM_KEY,
-        gmClientId: GM_CLIENT_ID,
-        mapSlug: MAP_SLUG,
-      },
-    }])
-    expect(lobby.lastAttachedSessionMap.value).toBeNull()
-    expect(lobby.gmManagement.value).toBeNull()
-    expect(lobby.lastNotice.value).toBeNull()
-    expect(lobby.lastError.value).toBe('That persisted map is not available to attach to the live session.')
-    expect(lobby.busy.value).toBe(false)
-  })
-
-  it('requires a remembered GM live session before GM-only session map actions', async () => {
+  it('requires a remembered GM live session before GM-only session token actions', async () => {
     const storage = makeStorage()
     const api = makeApiClient({})
     const lobby = useSessionLobby({
@@ -890,11 +759,6 @@ describe('useSessionLobby', () => {
       identityStorage: storage.storage,
       clock: () => REMEMBERED_AT,
     })
-
-    await expect(lobby.attachMapToSession({ mapSlug: MAP_SLUG })).rejects.toThrow(
-      'A remembered GM live session is required before attaching a session map.',
-    )
-    expect(lobby.lastError.value).toBe('A remembered GM live session is required before attaching a session map.')
 
     await expect(lobby.updatePlayerAssignment({
       playerId: PLAYER_ID,

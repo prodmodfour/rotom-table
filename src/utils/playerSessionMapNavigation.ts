@@ -61,7 +61,7 @@ const labelForMap = (map: PlayerSessionMapNavigationMapSummary): string => (
 const descriptionForMap = (map: PlayerSessionMapNavigationMapSummary): string => {
   const slug = normalizeMapSlug(map.mapSlug) ?? 'this map'
   const revision = revisionLabel(map.revision)
-  const readiness = revision === null ? 'attached' : `${revision} attached`
+  const readiness = revision === null ? 'available' : `${revision} available`
   if (map.selected === true) {
     return `${slug} is the selected live session map with ${readiness}. Open it in session mode so table actions use session commands.`
   }
@@ -107,7 +107,7 @@ export const buildPlayerSessionMapNavigationModel = (
     return {
       heading,
       summary: 'Join a live session or refresh the remembered live session to see session maps visible to you.',
-      emptyMessage: 'After you join, Rotom Table lists attached session maps the GM has made visible to your player.',
+      emptyMessage: 'After you join, Rotom Table lists session maps the GM has made visible to your player.',
       status: 'loading',
       links: [],
     }
@@ -140,8 +140,8 @@ export const buildPlayerSessionMapNavigationModel = (
   if (!visibility.selectedMapAttached) {
     return {
       heading,
-      summary: 'No session map is attached to this live session yet.',
-      emptyMessage: 'The GM needs to attach a saved map to the live session, then players can refresh the lobby and open the session map.',
+      summary: 'No session map is available to this live session yet.',
+      emptyMessage: 'No visible session maps are available for this player. Ask the GM to verify map visibility, then refresh the lobby.',
       status: 'needs-session-map',
       links: [],
     }
@@ -152,10 +152,10 @@ export const buildPlayerSessionMapNavigationModel = (
     heading,
     summary: currentMapReady
       ? 'The selected session map is not listed yet.'
-      : 'A session map is attached, but it is not visible to your player yet.',
+      : 'A session map is available, but it is not visible to your player yet.',
     emptyMessage: currentMapReady
       ? 'Refresh the lobby to reload your visible session maps.'
-      : 'Ask the GM to make the attached session map visible to players or grant your player access, then refresh the lobby.',
+      : 'Ask the GM to make the session map visible to players or grant your player access, then refresh the lobby.',
     status: 'needs-player-visibility',
     links: [],
   }

@@ -23,7 +23,6 @@ describe('API route constants', () => {
       manage: '/api/sessions/manage',
       playerState: '/api/sessions/player-state',
       assignments: '/api/sessions/assignments',
-      attachMap: '/api/sessions/maps/attach',
       socket: '/api/sessions/socket',
     })
   })

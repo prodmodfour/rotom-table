@@ -71,7 +71,7 @@ export type SessionCommandRejectionNoticeKind =
   | 'unauthorized-token'
   | 'unauthorized-resource'
   | 'missing-session-map'
-  | 'not-attached-map'
+  | 'session-map-unavailable'
   | 'missing-token'
   | 'conflict'
 
@@ -201,23 +201,23 @@ const isMissingSelectedMapDetail = (detail: string): boolean => (
 
 const isMissingTokenDetail = (detail: string): boolean => /^Token\s+.+?\s+is not present on map\s+.+?\.$/i.test(detail)
 
-const buildNotAttachedMapCopy = (
+const buildUnavailableSessionMapCopy = (
   result: SessionCommandRejectMessage['result'],
   mapSlug: string | undefined,
 ): RejectionCopy => {
   const mapText = mapReference(mapSlug)
   const gm = isGmActor(result)
   return {
-    kind: 'not-attached-map',
-    reasonLabel: 'Map not attached',
+    kind: 'session-map-unavailable',
+    reasonLabel: 'Map unavailable',
     title: gm
-      ? 'Attach this map before sending live session commands'
-      : 'This session map is not attached yet',
-    summary: 'Session hosting kept the session map unchanged because the active live session does not have an attached copy of this map.',
-    detail: `This command targeted ${mapText}, but the active live session does not have that map attached.`,
+      ? 'Select an available session map before sending live session commands'
+      : 'This session map is not available yet',
+    summary: 'Session hosting kept the session map unchanged because the active live session does not have an available copy of this map.',
+    detail: `This command targeted ${mapText}, but the active live session does not have that map available.`,
     guidance: gm
-      ? 'Attach this saved map to the active live session from the map page, then refresh the session map before trying again.'
-      : 'Ask the GM to attach this map to the live session, then use Refresh session map before trying again.',
+      ? 'Verify the map is available in the active live session, then refresh the session map before trying again.'
+      : 'Ask the GM to verify this map is available in the live session, then use Refresh session map before trying again.',
   }
 }
 
@@ -227,13 +227,13 @@ const buildMissingSessionMapCopy = (result: SessionCommandRejectMessage['result'
     kind: 'missing-session-map',
     reasonLabel: 'No session map',
     title: gm
-      ? 'Attach or select a session map before sending commands'
-      : 'The live session needs a map attached',
-    summary: 'Session hosting kept the session map unchanged because no attached or selected session map is available for this command.',
+      ? 'Select a session map before sending commands'
+      : 'The live session needs an available map',
+    summary: 'Session hosting kept the session map unchanged because no selected session map is available for this command.',
     detail: 'The command did not identify a session map, and the live session has no selected map yet.',
     guidance: gm
-      ? 'Attach the saved map to the active live session, make it the selected session map, then refresh before trying again.'
-      : 'Ask the GM to attach and select a session map, then use Refresh session map before trying again.',
+      ? 'Select an available session map, then refresh before trying again.'
+      : 'Ask the GM to select an available session map, then use Refresh session map before trying again.',
   }
 }
 
@@ -250,7 +250,7 @@ const buildMissingTokenCopy = (
     detail: safeDetail.length > 0
       ? safeDetail
       : `The selected token is not present on ${mapReference(mapSlug)}.`,
-    guidance: 'Refresh the session map to see the current token list. If the token should be available, ask the GM to attach the latest map state or update assignments.',
+    guidance: 'Refresh the session map to see the current token list. If the token should be available, ask the GM to verify map state or update assignments.',
   }
 }
 
@@ -359,7 +359,7 @@ const buildRejectionCopy = (
   if (result.reason === 'conflict') {
     const unavailableMapSlug = extractMapSlugFromUnavailableDetail(safeDetail)
     if (unavailableMapSlug !== undefined || /not available in the authoritative session state/i.test(safeDetail)) {
-      return buildNotAttachedMapCopy(result, unavailableMapSlug ?? scopedMapSlugFromResult(result))
+      return buildUnavailableSessionMapCopy(result, unavailableMapSlug ?? scopedMapSlugFromResult(result))
     }
     if (isMissingSelectedMapDetail(safeDetail)) return buildMissingSessionMapCopy(result)
     if (isMissingTokenDetail(safeDetail)) return buildMissingTokenCopy(result, safeDetail)

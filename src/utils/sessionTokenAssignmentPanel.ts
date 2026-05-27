@@ -112,10 +112,10 @@ const getPanelDisabledReason = (
     return 'Start or load a GM live session in this browser before assigning tokens.'
   }
   if (options.selectedMapAttached !== true || options.sessionMapAvailable !== true || selectedMapSlug === null) {
-    return 'Attach a map to the live session before assigning player token control.'
+    return 'Select an available session map before assigning player token control.'
   }
   if (selectedMapSlug !== mapSlug) {
-    return `The active session map is ${selectedMapSlug}. Open or attach ${mapSlug} before assigning its tokens.`
+    return `The active session map is ${selectedMapSlug}. Open ${mapSlug} or select it before assigning its tokens.`
   }
   if (options.busy === true) return 'Updating live session token assignments…'
   return null

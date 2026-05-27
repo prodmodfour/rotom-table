@@ -173,8 +173,7 @@ describe('buildSessionConnectionStatusNotice', () => {
       currentRevision: REVISION_3,
       actionLabel: 'Refresh snapshot',
     })
-    expect(notice?.detail).toContain('attach this map')
-    expect(notice?.detail).toContain('make it visible')
+    expect(notice?.detail).toContain('verify this map is visible')
     expect(JSON.stringify(notice)).not.toContain('gmkey')
   })
 })

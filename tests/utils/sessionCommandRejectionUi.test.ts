@@ -75,7 +75,7 @@ describe('session command rejection UI helpers', () => {
     expect(notice?.guidance).toContain('try the action again')
   })
 
-  it('tells the GM to attach a map when session hosting has no attached map state', () => {
+  it('tells the GM when session hosting has no available map state', () => {
     const notice = formatSessionCommandRejectionNotice(commandReject({
       reason: 'conflict',
       message: 'Map arena-map is not available in the authoritative session state.',
@@ -84,17 +84,17 @@ describe('session command rejection UI helpers', () => {
     }))
 
     expect(notice).toMatchObject({
-      kind: 'not-attached-map',
-      reasonLabel: 'Map not attached',
-      title: 'Attach this map before sending live session commands',
-      detail: 'This command targeted map "arena-map", but the active live session does not have that map attached.',
+      kind: 'session-map-unavailable',
+      reasonLabel: 'Map unavailable',
+      title: 'Select an available session map before sending live session commands',
+      detail: 'This command targeted map "arena-map", but the active live session does not have that map available.',
     })
-    expect(notice?.summary).toContain('active live session does not have an attached copy')
-    expect(notice?.guidance).toContain('Attach this saved map')
+    expect(notice?.summary).toContain('active live session does not have an available copy')
+    expect(notice?.guidance).toContain('Verify the map is available')
     expect(notice?.guidance).toContain('refresh the session map')
   })
 
-  it('explains missing selected-map rejections with an attach-and-refresh recovery', () => {
+  it('explains missing selected-map rejections with a select-and-refresh recovery', () => {
     const notice = formatSessionCommandRejectionNotice(commandReject({
       reason: 'conflict',
       message: 'moveToken commands must identify a map or the session must have a selected map.',
@@ -105,10 +105,10 @@ describe('session command rejection UI helpers', () => {
     expect(notice).toMatchObject({
       kind: 'missing-session-map',
       reasonLabel: 'No session map',
-      title: 'Attach or select a session map before sending commands',
+      title: 'Select a session map before sending commands',
       detail: 'The command did not identify a session map, and the live session has no selected map yet.',
     })
-    expect(notice?.guidance).toContain('Attach the saved map')
+    expect(notice?.guidance).toContain('Select an available session map')
     expect(notice?.guidance).toContain('refresh')
   })
 
