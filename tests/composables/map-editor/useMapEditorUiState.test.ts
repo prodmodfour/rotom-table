@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { nextTick, ref } from 'vue'
 import { describe, expect, it, vi } from 'vitest'
 import { useMapEditorUiState } from '~/composables/map-editor/useMapEditorUiState'
 
@@ -130,10 +130,31 @@ describe('useMapEditorUiState', () => {
     expect(ui.fieldEffectsMenuOpen.value).toBe(false)
   })
 
-  it('opens sheets and initiative menus from keyboard shortcuts', () => {
+  it('blocks the sheet-spawn menu when map editing is unavailable', () => {
     const ui = useMapEditorUiState({
       isGm: ref(false),
       canEditMap: ref(false),
+      buildMode: ref(false),
+      hazardMode: ref(false),
+      clearSelection: vi.fn(),
+      registerKeydown: vi.fn(),
+    })
+
+    const sheetsEvent = keyEvent({ key: 's', ctrlKey: true })
+    ui.handleKeydown(sheetsEvent)
+
+    expect(sheetsEvent.preventDefault).toHaveBeenCalledTimes(1)
+    expect(ui.canOpenMapMenu('sheets')).toBe(false)
+    expect(ui.openSheetsMenu()).toBe(false)
+    expect(ui.toggleSheetsMenu()).toBe(false)
+    expect(ui.sheetsMenuOpen.value).toBe(false)
+    expect(ui.activeMapMenu.value).toBe(null)
+  })
+
+  it('opens sheets and initiative menus from keyboard shortcuts when allowed', () => {
+    const ui = useMapEditorUiState({
+      isGm: ref(true),
+      canEditMap: ref(true),
       buildMode: ref(false),
       hazardMode: ref(false),
       clearSelection: vi.fn(),
@@ -186,6 +207,26 @@ describe('useMapEditorUiState', () => {
     expect(event.preventDefault).not.toHaveBeenCalled()
     expect(buildMode.value).toBe(false)
     expect(hazardMode.value).toBe(false)
+  })
+
+  it('closes the sheet-spawn menu when map editing is lost', async () => {
+    const canEditMap = ref(true)
+    const ui = useMapEditorUiState({
+      isGm: ref(true),
+      canEditMap,
+      buildMode: ref(false),
+      hazardMode: ref(false),
+      clearSelection: vi.fn(),
+      registerKeydown: vi.fn(),
+    })
+
+    expect(ui.openSheetsMenu()).toBe(true)
+    expect(ui.sheetsMenuOpen.value).toBe(true)
+
+    canEditMap.value = false
+    await nextTick()
+
+    expect(ui.sheetsMenuOpen.value).toBe(false)
   })
 
   it('handles the GM admin keyboard shortcut and Escape close behavior', () => {

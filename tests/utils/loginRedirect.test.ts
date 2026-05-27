@@ -12,6 +12,8 @@ import {
   resolveLoginRedirectTarget,
 } from '~/utils/loginRedirect'
 import { PLAYER_PROFILE_MANAGEMENT_PATH } from '~/utils/playerProfileRoutes'
+import { POKEDEX_PATH } from '~/utils/pokedex/routes'
+import { referenceDetailPath, referenceIndexPath } from '~/utils/reference/routes'
 
 describe('loginRedirect', () => {
   it('exposes canonical login and player-blocked route constants', () => {
@@ -52,5 +54,12 @@ describe('loginRedirect', () => {
     expect(resolveLoginRedirectTarget(PLAYER_PROFILE_MANAGEMENT_PATH, 'player')).toBe(DEFAULT_LOGIN_REDIRECT)
     expect(resolveLoginRedirectTarget(ENCOUNTER_GENERATOR_PATH, 'gm')).toBe(ENCOUNTER_GENERATOR_PATH)
     expect(resolveLoginRedirectTarget('/maps/atrium', 'player')).toBe('/maps/atrium')
+  })
+
+  it('allows player redirects to map, Pokédex, and reference pages', () => {
+    expect(resolveLoginRedirectTarget('/maps/atrium', 'player')).toBe('/maps/atrium')
+    expect(resolveLoginRedirectTarget(`${POKEDEX_PATH}/pikachu`, 'player')).toBe(`${POKEDEX_PATH}/pikachu`)
+    expect(resolveLoginRedirectTarget(referenceIndexPath('move'), 'player')).toBe('/moves')
+    expect(resolveLoginRedirectTarget(referenceDetailPath('rule', 'combat-stages'), 'player')).toBe('/rules/combat-stages')
   })
 })
