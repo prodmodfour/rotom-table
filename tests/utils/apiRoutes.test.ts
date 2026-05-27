@@ -3,6 +3,7 @@ import {
   API_EVENTS_PATH,
   ENCOUNTER_API_PATHS,
   MAP_API_PATHS,
+  PLAYER_PROFILE_API_PATHS,
   POKEDEX_API_PATHS,
   SESSION_API_PATHS,
   SHEET_API_PATHS,
@@ -24,6 +25,14 @@ describe('API route constants', () => {
       assignments: '/api/sessions/assignments',
       attachMap: '/api/sessions/maps/attach',
       socket: '/api/sessions/socket',
+    })
+  })
+
+  it('exposes persistent player profile API paths', () => {
+    expect(PLAYER_PROFILE_API_PATHS).toEqual({
+      list: '/api/player-profiles/list',
+      create: '/api/player-profiles/create',
+      update: '/api/player-profiles/update',
     })
   })
 

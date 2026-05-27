@@ -1,5 +1,9 @@
 import { describe, expect, expectTypeOf, it } from 'vitest'
 import {
+  PLAYER_PROFILE_SELECTION_LOCAL_STORAGE_KEY,
+  PLAYER_PROFILE_SELECTION_SCHEMA_VERSION,
+  createRememberedPlayerProfileSelection,
+  deserializeRememberedPlayerProfileSelection,
   isLinkedCharacterRef,
   isPlayerProfile,
   isPlayerProfileDisplayName,
@@ -11,10 +15,13 @@ import {
   parsePlayerProfileDisplayName,
   parsePlayerProfileId,
   sanitizePlayerProfileDisplayName,
+  serializeRememberedPlayerProfileSelection,
+  validateRememberedPlayerProfileSelection,
   type LinkedCharacterRef,
   type PlayerProfile,
   type PlayerProfileDisplayName,
   type PlayerProfileId,
+  type RememberedPlayerProfileSelection,
 } from '#shared/playerProfiles'
 
 describe('player profile domain types', () => {
@@ -160,5 +167,56 @@ describe('player profile domain types', () => {
     ).toThrow('playerProfile.linkedCharacters must not contain duplicate character ref')
     expect(isPlayerProfile({ ...baseProfile, linkedCharacters: [] })).toBe(true)
     expect(isPlayerProfile({ ...baseProfile, linkedCharacters: [{ sheetKind: 'unknown', sheetSlug: 'x' }] })).toBe(false)
+  })
+
+  it('round-trips remembered browser player profile selections', () => {
+    const profile = normalizePlayerProfile({
+      schemaVersion: 1,
+      id: 'profile_party001',
+      displayName: 'The Party',
+      linkedCharacters: [],
+    })
+    const rememberedAt = '2026-05-27T12:00:00.000Z'
+    const selection = createRememberedPlayerProfileSelection(profile, rememberedAt)
+    const serialized = serializeRememberedPlayerProfileSelection(selection)
+
+    expect(PLAYER_PROFILE_SELECTION_SCHEMA_VERSION).toBe(1)
+    expect(PLAYER_PROFILE_SELECTION_LOCAL_STORAGE_KEY).toBe('rotom:player-profile:selection')
+    expect(selection).toEqual({
+      schemaVersion: PLAYER_PROFILE_SELECTION_SCHEMA_VERSION,
+      profileId: profile.id,
+      displayName: profile.displayName,
+      rememberedAt,
+    })
+    expect(deserializeRememberedPlayerProfileSelection(serialized)).toEqual({ ok: true, selection })
+    expectTypeOf(selection).toEqualTypeOf<RememberedPlayerProfileSelection>()
+  })
+
+  it('rejects malformed remembered browser profile selections', () => {
+    const result = validateRememberedPlayerProfileSelection({
+      schemaVersion: 99,
+      profileId: 'profile_short',
+      displayName: ' Bad',
+      rememberedAt: 'not-a-date',
+    })
+
+    expect(result.ok).toBe(false)
+    if (!result.ok) {
+      expect(result.issues.map((issue) => issue.code)).toEqual([
+        'unsupported-schema-version',
+        'invalid-profile-id',
+        'invalid-display-name',
+        'invalid-remembered-at',
+      ])
+    }
+
+    expect(deserializeRememberedPlayerProfileSelection('{not-json')).toEqual({
+      ok: false,
+      issues: [{
+        path: '',
+        code: 'invalid-json',
+        message: 'player profile selection JSON is invalid',
+      }],
+    })
   })
 })

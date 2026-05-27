@@ -12,6 +12,12 @@ export const SESSION_API_PATHS = {
   socket: '/api/sessions/socket',
 } as const
 
+export const PLAYER_PROFILE_API_PATHS = {
+  list: '/api/player-profiles/list',
+  create: '/api/player-profiles/create',
+  update: '/api/player-profiles/update',
+} as const
+
 export const MAP_API_PATHS = {
   list: '/api/maps/list',
   folders: '/api/maps/folders',

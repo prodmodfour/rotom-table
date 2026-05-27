@@ -26,6 +26,34 @@ export interface PlayerProfile {
   readonly linkedCharacters: readonly LinkedCharacterRef[]
 }
 
+export const PLAYER_PROFILE_SELECTION_SCHEMA_VERSION = 1 as const
+export const PLAYER_PROFILE_SELECTION_LOCAL_STORAGE_KEY = 'rotom:player-profile:selection' as const
+
+export interface RememberedPlayerProfileSelection {
+  readonly schemaVersion: typeof PLAYER_PROFILE_SELECTION_SCHEMA_VERSION
+  readonly profileId: PlayerProfileId
+  readonly displayName: PlayerProfileDisplayName
+  readonly rememberedAt: string
+}
+
+export type PlayerProfileSelectionValidationIssueCode =
+  | 'invalid-json'
+  | 'not-object'
+  | 'unsupported-schema-version'
+  | 'invalid-profile-id'
+  | 'invalid-display-name'
+  | 'invalid-remembered-at'
+
+export interface PlayerProfileSelectionValidationIssue {
+  readonly path: string
+  readonly code: PlayerProfileSelectionValidationIssueCode
+  readonly message: string
+}
+
+export type PlayerProfileSelectionValidationResult =
+  | { readonly ok: true; readonly selection: RememberedPlayerProfileSelection }
+  | { readonly ok: false; readonly issues: readonly PlayerProfileSelectionValidationIssue[] }
+
 type UnknownRecord = Record<string, unknown>
 
 const PLAYER_PROFILE_DISPLAY_NAME_DELIMITER_RE = /[<>]/g
@@ -49,6 +77,9 @@ const parseBrandedString = <TValue extends string>(
 
 const isRecord = (value: unknown): value is UnknownRecord =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
+
+const isRememberedAt = (value: unknown): value is string =>
+  typeof value === 'string' && value.trim().length > 0 && !Number.isNaN(Date.parse(value))
 
 const compareStrings = (left: string, right: string): number => left.localeCompare(right)
 
@@ -208,4 +239,105 @@ export const isPlayerProfile = (value: unknown): value is PlayerProfile => {
   } catch {
     return false
   }
+}
+
+export const createRememberedPlayerProfileSelection = (
+  profile: Pick<PlayerProfile, 'id' | 'displayName'>,
+  rememberedAt: string,
+): RememberedPlayerProfileSelection => assertValidRememberedPlayerProfileSelection({
+  schemaVersion: PLAYER_PROFILE_SELECTION_SCHEMA_VERSION,
+  profileId: profile.id,
+  displayName: profile.displayName,
+  rememberedAt,
+})
+
+export const validateRememberedPlayerProfileSelection = (
+  value: unknown,
+): PlayerProfileSelectionValidationResult => {
+  if (!isRecord(value)) {
+    return {
+      ok: false,
+      issues: [{ path: '', code: 'not-object', message: 'player profile selection must be an object' }],
+    }
+  }
+
+  const issues: PlayerProfileSelectionValidationIssue[] = []
+
+  if (value.schemaVersion !== PLAYER_PROFILE_SELECTION_SCHEMA_VERSION) {
+    issues.push({
+      path: 'schemaVersion',
+      code: 'unsupported-schema-version',
+      message: `schemaVersion must be ${PLAYER_PROFILE_SELECTION_SCHEMA_VERSION}`,
+    })
+  }
+
+  if (!isPlayerProfileId(value.profileId)) {
+    issues.push({
+      path: 'profileId',
+      code: 'invalid-profile-id',
+      message: `profileId must match ${PLAYER_PROFILE_ID_PATTERN_DESCRIPTION}`,
+    })
+  }
+
+  if (!isPlayerProfileDisplayName(value.displayName)) {
+    issues.push({
+      path: 'displayName',
+      code: 'invalid-display-name',
+      message: `displayName must be ${PLAYER_PROFILE_DISPLAY_NAME_MIN_LENGTH}-${PLAYER_PROFILE_DISPLAY_NAME_MAX_LENGTH} safe display characters`,
+    })
+  }
+
+  if (!isRememberedAt(value.rememberedAt)) {
+    issues.push({
+      path: 'rememberedAt',
+      code: 'invalid-remembered-at',
+      message: 'rememberedAt must be a valid timestamp string',
+    })
+  }
+
+  if (issues.length > 0) return { ok: false, issues }
+
+  return {
+    ok: true,
+    selection: {
+      schemaVersion: PLAYER_PROFILE_SELECTION_SCHEMA_VERSION,
+      profileId: value.profileId as PlayerProfileId,
+      displayName: value.displayName as PlayerProfileDisplayName,
+      rememberedAt: value.rememberedAt as string,
+    },
+  }
+}
+
+export const assertValidRememberedPlayerProfileSelection = (
+  value: unknown,
+): RememberedPlayerProfileSelection => {
+  const result = validateRememberedPlayerProfileSelection(value)
+  if (result.ok) return result.selection
+
+  throw new Error(result.issues.map((issue) => `${issue.path || 'selection'}: ${issue.message}`).join('; '))
+}
+
+export const serializeRememberedPlayerProfileSelection = (
+  selection: RememberedPlayerProfileSelection,
+): string => JSON.stringify(assertValidRememberedPlayerProfileSelection(selection))
+
+const parseSerializedPlayerProfileSelectionJson = (
+  serialized: string,
+): { readonly ok: true; readonly value: unknown } | { readonly ok: false; readonly issues: readonly PlayerProfileSelectionValidationIssue[] } => {
+  try {
+    return { ok: true, value: JSON.parse(serialized) }
+  } catch {
+    return {
+      ok: false,
+      issues: [{ path: '', code: 'invalid-json', message: 'player profile selection JSON is invalid' }],
+    }
+  }
+}
+
+export const deserializeRememberedPlayerProfileSelection = (
+  serialized: string,
+): PlayerProfileSelectionValidationResult => {
+  const parsed = parseSerializedPlayerProfileSelectionJson(serialized)
+  if (!parsed.ok) return parsed
+  return validateRememberedPlayerProfileSelection(parsed.value)
 }
